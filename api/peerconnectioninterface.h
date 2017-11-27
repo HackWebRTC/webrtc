@@ -82,6 +82,7 @@
 #include "api/rtceventlogoutput.h"
 #include "api/rtpreceiverinterface.h"
 #include "api/rtpsenderinterface.h"
+#include "api/rtptransceiverinterface.h"
 #include "api/setremotedescriptionobserverinterface.h"
 #include "api/stats/rtcstatscollectorcallback.h"
 #include "api/statstypes.h"
@@ -601,6 +602,57 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   // Returns true on success.
   virtual bool RemoveTrack(RtpSenderInterface* sender) = 0;
 
+  // AddTransceiver creates a new RtpTransceiver and adds it to the set of
+  // transceivers. Adding a transceiver will cause future calls to CreateOffer
+  // to add a media description for the corresponding transceiver.
+  //
+  // The initial value of |mid| in the returned transceiver is null. Setting a
+  // new session description may change it to a non-null value.
+  //
+  // https://w3c.github.io/webrtc-pc/#dom-rtcpeerconnection-addtransceiver
+  //
+  // Optionally, an RtpTransceiverInit structure can be specified to configure
+  // the transceiver from construction. If not specified, the transceiver will
+  // default to having a direction of kSendRecv and not be part of any streams.
+  //
+  // These methods are only available when Unified Plan is enabled (see
+  // RTCConfiguration).
+  //
+  // Common errors:
+  // - INTERNAL_ERROR: The configuration does not have Unified Plan enabled.
+  // TODO(steveanton): Make these pure virtual once downstream projects have
+  // updated.
+
+  // Adds a transceiver with a sender set to transmit the given track. The kind
+  // of the transceiver (and sender/receiver) will be derived from the kind of
+  // the track.
+  // Errors:
+  // - INVALID_PARAMETER: |track| is null.
+  virtual RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>>
+  AddTransceiver(rtc::scoped_refptr<MediaStreamTrackInterface> track) {
+    LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR, "not implemented");
+  }
+  virtual RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>>
+  AddTransceiver(rtc::scoped_refptr<MediaStreamTrackInterface> track,
+                 const RtpTransceiverInit& init) {
+    LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR, "not implemented");
+  }
+
+  // Adds a transceiver with the given kind. Can either be MEDIA_TYPE_AUDIO or
+  // MEDIA_TYPE_VIDEO.
+  // Errors:
+  // - INVALID_PARAMETER: |media_type| is not MEDIA_TYPE_AUDIO or
+  //                      MEDIA_TYPE_VIDEO.
+  virtual RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>>
+  AddTransceiver(cricket::MediaType media_type) {
+    LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR, "not implemented");
+  }
+  virtual RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>>
+  AddTransceiver(cricket::MediaType media_type,
+                 const RtpTransceiverInit& init) {
+    LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR, "not implemented");
+  }
+
   // Returns pointer to a DtmfSender on success. Otherwise returns null.
   //
   // This API is no longer part of the standard; instead DtmfSenders are
@@ -648,6 +700,15 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   virtual std::vector<rtc::scoped_refptr<RtpReceiverInterface>> GetReceivers()
       const {
     return std::vector<rtc::scoped_refptr<RtpReceiverInterface>>();
+  }
+
+  // Get all RtpTransceivers, created either through AddTransceiver, AddTrack or
+  // by a remote description applied with SetRemoteDescription.
+  // Note: This method is only available when Unified Plan is enabled (see
+  // RTCConfiguration).
+  virtual std::vector<rtc::scoped_refptr<RtpTransceiverInterface>>
+  GetTransceivers() const {
+    return {};
   }
 
   virtual bool GetStats(StatsObserver* observer,

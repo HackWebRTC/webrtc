@@ -179,22 +179,64 @@ bool PeerConnectionWrapper::SetSdp(
   return observer->result();
 }
 
+rtc::scoped_refptr<RtpTransceiverInterface>
+PeerConnectionWrapper::AddTransceiver(cricket::MediaType media_type) {
+  RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>> result =
+      pc()->AddTransceiver(media_type);
+  EXPECT_EQ(RTCErrorType::NONE, result.error().type());
+  return result.MoveValue();
+}
+
+rtc::scoped_refptr<RtpTransceiverInterface>
+PeerConnectionWrapper::AddTransceiver(cricket::MediaType media_type,
+                                      const RtpTransceiverInit& init) {
+  RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>> result =
+      pc()->AddTransceiver(media_type, init);
+  EXPECT_EQ(RTCErrorType::NONE, result.error().type());
+  return result.MoveValue();
+}
+
+rtc::scoped_refptr<RtpTransceiverInterface>
+PeerConnectionWrapper::AddTransceiver(
+    rtc::scoped_refptr<MediaStreamTrackInterface> track) {
+  RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>> result =
+      pc()->AddTransceiver(track);
+  EXPECT_EQ(RTCErrorType::NONE, result.error().type());
+  return result.MoveValue();
+}
+
+rtc::scoped_refptr<RtpTransceiverInterface>
+PeerConnectionWrapper::AddTransceiver(
+    rtc::scoped_refptr<MediaStreamTrackInterface> track,
+    const RtpTransceiverInit& init) {
+  RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>> result =
+      pc()->AddTransceiver(track, init);
+  EXPECT_EQ(RTCErrorType::NONE, result.error().type());
+  return result.MoveValue();
+}
+
+rtc::scoped_refptr<AudioTrackInterface> PeerConnectionWrapper::CreateAudioTrack(
+    const std::string& label) {
+  return pc_factory()->CreateAudioTrack(label, nullptr);
+}
+
+rtc::scoped_refptr<VideoTrackInterface> PeerConnectionWrapper::CreateVideoTrack(
+    const std::string& label) {
+  auto video_source = pc_factory()->CreateVideoSource(
+      rtc::MakeUnique<cricket::FakeVideoCapturer>());
+  return pc_factory()->CreateVideoTrack(label, video_source);
+}
+
 rtc::scoped_refptr<RtpSenderInterface> PeerConnectionWrapper::AddAudioTrack(
     const std::string& track_label,
     std::vector<MediaStreamInterface*> streams) {
-  auto media_stream_track =
-      pc_factory()->CreateAudioTrack(track_label, nullptr);
-  return pc()->AddTrack(media_stream_track, std::move(streams));
+  return pc()->AddTrack(CreateAudioTrack(track_label), std::move(streams));
 }
 
 rtc::scoped_refptr<RtpSenderInterface> PeerConnectionWrapper::AddVideoTrack(
     const std::string& track_label,
     std::vector<MediaStreamInterface*> streams) {
-  auto video_source = pc_factory()->CreateVideoSource(
-      rtc::MakeUnique<cricket::FakeVideoCapturer>());
-  auto media_stream_track =
-      pc_factory()->CreateVideoTrack(track_label, video_source);
-  return pc()->AddTrack(media_stream_track, std::move(streams));
+  return pc()->AddTrack(CreateVideoTrack(track_label), std::move(streams));
 }
 
 PeerConnectionInterface::SignalingState

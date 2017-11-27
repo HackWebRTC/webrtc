@@ -33,6 +33,20 @@ BEGIN_SIGNALING_PROXY_MAP(PeerConnection)
                 MediaStreamTrackInterface*,
                 std::vector<MediaStreamInterface*>)
   PROXY_METHOD1(bool, RemoveTrack, RtpSenderInterface*)
+  PROXY_METHOD1(RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>>,
+                AddTransceiver,
+                rtc::scoped_refptr<MediaStreamTrackInterface>)
+  PROXY_METHOD2(RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>>,
+                AddTransceiver,
+                rtc::scoped_refptr<MediaStreamTrackInterface>,
+                const RtpTransceiverInit&)
+  PROXY_METHOD1(RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>>,
+                AddTransceiver,
+                cricket::MediaType)
+  PROXY_METHOD2(RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>>,
+                AddTransceiver,
+                cricket::MediaType,
+                const RtpTransceiverInit&)
   PROXY_METHOD1(rtc::scoped_refptr<DtmfSenderInterface>,
                 CreateDtmfSender,
                 AudioTrackInterface*)
@@ -44,6 +58,8 @@ BEGIN_SIGNALING_PROXY_MAP(PeerConnection)
                      GetSenders)
   PROXY_CONSTMETHOD0(std::vector<rtc::scoped_refptr<RtpReceiverInterface>>,
                      GetReceivers)
+  PROXY_CONSTMETHOD0(std::vector<rtc::scoped_refptr<RtpTransceiverInterface>>,
+                     GetTransceivers)
   PROXY_METHOD3(bool,
                 GetStats,
                 StatsObserver*,
