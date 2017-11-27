@@ -163,9 +163,22 @@ class MediaContentDescription : public ContentDescription {
   std::string protocol() const { return protocol_; }
   void set_protocol(const std::string& protocol) { protocol_ = protocol; }
 
-  MediaContentDirection direction() const { return direction_; }
-  void set_direction(MediaContentDirection direction) {
+  // TODO(steveanton): Remove once |direction()| uses RtpTransceiverDirection.
+  webrtc::RtpTransceiverDirection transceiver_direction() const {
+    return direction_;
+  }
+  void set_transceiver_direction(webrtc::RtpTransceiverDirection direction) {
     direction_ = direction;
+  }
+
+  // MediaContentDirection is deprecated; use RtpTransceiverDirection instead.
+  // TODO(steveanton): Change this method to return RtpTransceiverDirection once
+  // external users have switched to |transceiver_direction()|.
+  MediaContentDirection direction() const {
+    return MediaContentDirectionFromRtpTransceiverDirection(direction_);
+  }
+  void set_direction(MediaContentDirection direction) {
+    direction_ = RtpTransceiverDirectionFromMediaContentDirection(direction);
   }
 
   bool rtcp_mux() const { return rtcp_mux_; }
@@ -295,7 +308,8 @@ class MediaContentDescription : public ContentDescription {
   StreamParamsVec streams_;
   bool conference_mode_ = false;
   bool partial_ = false;
-  MediaContentDirection direction_ = MD_SENDRECV;
+  webrtc::RtpTransceiverDirection direction_ =
+      webrtc::RtpTransceiverDirection::kSendRecv;
   rtc::SocketAddress connection_address_;
 };
 
