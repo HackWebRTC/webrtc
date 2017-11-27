@@ -11,6 +11,7 @@
 #include "modules/rtp_rtcp/source/rtcp_packet/nack.h"
 
 #include <algorithm>
+#include <utility>
 
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/common_header.h"
@@ -123,9 +124,13 @@ bool Nack::Create(uint8_t* packet,
 
 void Nack::SetPacketIds(const uint16_t* nack_list, size_t length) {
   RTC_DCHECK(nack_list);
+  SetPacketIds(std::vector<uint16_t>(nack_list, nack_list + length));
+}
+
+void Nack::SetPacketIds(std::vector<uint16_t> nack_list) {
   RTC_DCHECK(packet_ids_.empty());
   RTC_DCHECK(packed_.empty());
-  packet_ids_.assign(nack_list, nack_list + length);
+  packet_ids_ = std::move(nack_list);
   Pack();
 }
 

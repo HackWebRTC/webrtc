@@ -447,6 +447,28 @@ TEST(RtcpTransceiverImplTest,
   EXPECT_EQ(CompactNtpRttToMs(report_blocks[1].delay_since_last_sr()), 100);
 }
 
+TEST(RtcpTransceiverImplTest, SendsNack) {
+  const uint32_t kSenderSsrc = 1234;
+  const uint32_t kRemoteSsrc = 4321;
+  std::vector<uint16_t> kMissingSequenceNumbers = {34, 37, 38};
+  MockTransport outgoing_transport;
+  RtcpTransceiverConfig config;
+  config.feedback_ssrc = kSenderSsrc;
+  config.schedule_periodic_compound_packets = false;
+  config.outgoing_transport = &outgoing_transport;
+  RtcpTransceiverImpl rtcp_transceiver(config);
+  RtcpPacketParser rtcp_parser;
+  EXPECT_CALL(outgoing_transport, SendRtcp(_, _))
+      .WillOnce(Invoke(&rtcp_parser, &RtcpPacketParser::Parse));
+
+  rtcp_transceiver.SendNack(kRemoteSsrc, kMissingSequenceNumbers);
+
+  EXPECT_EQ(rtcp_parser.nack()->num_packets(), 1);
+  EXPECT_EQ(rtcp_parser.nack()->sender_ssrc(), kSenderSsrc);
+  EXPECT_EQ(rtcp_parser.nack()->media_ssrc(), kRemoteSsrc);
+  EXPECT_EQ(rtcp_parser.nack()->packet_ids(), kMissingSequenceNumbers);
+}
+
 TEST(RtcpTransceiverImplTest, RequestKeyFrameWithPictureLossIndication) {
   const uint32_t kSenderSsrc = 1234;
   const uint32_t kRemoteSsrcs[] = {4321, 5321};

@@ -18,6 +18,7 @@
 #include "modules/rtp_rtcp/source/rtcp_packet.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/common_header.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/fir.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/nack.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/pli.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/receiver_report.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/report_block.h"
@@ -128,6 +129,18 @@ void RtcpTransceiverImpl::SetRemb(int bitrate_bps,
 
 void RtcpTransceiverImpl::UnsetRemb() {
   remb_.reset();
+}
+
+void RtcpTransceiverImpl::SendNack(uint32_t ssrc,
+                                   std::vector<uint16_t> sequence_numbers) {
+  RTC_DCHECK(!sequence_numbers.empty());
+  SendImmediateFeedback([&](PacketSender* sender) {
+    rtcp::Nack nack;
+    nack.SetSenderSsrc(config_.feedback_ssrc);
+    nack.SetMediaSsrc(ssrc);
+    nack.SetPacketIds(std::move(sequence_numbers));
+    sender->AppendPacket(nack);
+  });
 }
 
 void RtcpTransceiverImpl::SendPictureLossIndication(

@@ -44,7 +44,10 @@ class RtcpTransceiver {
   // Stops sending REMB in following compound packets.
   void UnsetRemb();
 
-  // Request new key frame.
+  // Reports missing packets, https://tools.ietf.org/html/rfc4585#section-6.2.1
+  void SendNack(uint32_t ssrc, std::vector<uint16_t> sequence_numbers);
+
+  // Requests new key frame.
   // using PLI, https://tools.ietf.org/html/rfc4585#section-6.3.1.1
   void SendPictureLossIndication(std::vector<uint32_t> ssrcs);
   // using FIR, https://tools.ietf.org/html/rfc5104#section-4.3.1.2

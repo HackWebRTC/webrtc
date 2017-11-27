@@ -44,6 +44,8 @@ class RtcpTransceiverImpl {
   void SetRemb(int bitrate_bps, std::vector<uint32_t> ssrcs);
   void UnsetRemb();
 
+  void SendNack(uint32_t ssrc, std::vector<uint16_t> sequence_numbers);
+
   void SendPictureLossIndication(rtc::ArrayView<const uint32_t> ssrcs);
   void SendFullIntraRequest(rtc::ArrayView<const uint32_t> ssrcs);
 

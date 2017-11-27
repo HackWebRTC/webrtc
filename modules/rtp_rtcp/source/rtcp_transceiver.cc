@@ -90,6 +90,22 @@ void RtcpTransceiver::UnsetRemb() {
   });
 }
 
+void RtcpTransceiver::SendNack(uint32_t ssrc,
+                               std::vector<uint16_t> sequence_numbers) {
+  // TODO(danilchap): Replace with lambda with move capture when available.
+  struct Closure {
+    void operator()() {
+      if (ptr)
+        ptr->SendNack(ssrc, std::move(sequence_numbers));
+    }
+
+    rtc::WeakPtr<RtcpTransceiverImpl> ptr;
+    uint32_t ssrc;
+    std::vector<uint16_t> sequence_numbers;
+  };
+  task_queue_->PostTask(Closure{ptr_, ssrc, std::move(sequence_numbers)});
+}
+
 void RtcpTransceiver::SendPictureLossIndication(std::vector<uint32_t> ssrcs) {
   // TODO(danilchap): Replace with lambda with move capture when available.
   struct Closure {
