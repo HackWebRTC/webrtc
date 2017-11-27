@@ -94,17 +94,6 @@ class PeerConnection : public PeerConnectionInterface,
       std::vector<MediaStreamInterface*> streams) override;
   bool RemoveTrack(RtpSenderInterface* sender) override;
 
-  RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>> AddTransceiver(
-      rtc::scoped_refptr<MediaStreamTrackInterface> track) override;
-  RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>> AddTransceiver(
-      rtc::scoped_refptr<MediaStreamTrackInterface> track,
-      const RtpTransceiverInit& init) override;
-  RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>> AddTransceiver(
-      cricket::MediaType media_type) override;
-  RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>> AddTransceiver(
-      cricket::MediaType media_type,
-      const RtpTransceiverInit& init) override;
-
   // Gets the DTLS SSL certificate associated with the audio transport on the
   // remote side. This will become populated once the DTLS connection with the
   // peer has been completed, as indicated by the ICE connection state
@@ -124,8 +113,6 @@ class PeerConnection : public PeerConnectionInterface,
   std::vector<rtc::scoped_refptr<RtpSenderInterface>> GetSenders()
       const override;
   std::vector<rtc::scoped_refptr<RtpReceiverInterface>> GetReceivers()
-      const override;
-  std::vector<rtc::scoped_refptr<RtpTransceiverInterface>> GetTransceivers()
       const override;
 
   rtc::scoped_refptr<DataChannelInterface> CreateDataChannel(
@@ -339,11 +326,6 @@ class PeerConnection : public PeerConnectionInterface,
   void AddVideoTrack(VideoTrackInterface* track, MediaStreamInterface* stream);
   void RemoveVideoTrack(VideoTrackInterface* track,
                         MediaStreamInterface* stream);
-
-  RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>> AddTransceiver(
-      cricket::MediaType media_type,
-      rtc::scoped_refptr<MediaStreamTrackInterface> track,
-      const RtpTransceiverInit& init);
 
   void SetIceConnectionState(IceConnectionState new_state);
   // Called any time the IceGatheringState changes

@@ -27,16 +27,11 @@
 #include "rtc_base/refcountedobject.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/thread.h"
-#include "test/gmock.h"
 
 // This file contains tests for RTP Media API-related behavior of
 // |webrtc::PeerConnection|, see https://w3c.github.io/webrtc-pc/#rtp-media-api.
 
-namespace webrtc {
-
-using RTCConfiguration = PeerConnectionInterface::RTCConfiguration;
-using ::testing::ElementsAre;
-using ::testing::UnorderedElementsAre;
+namespace {
 
 const uint32_t kDefaultTimeout = 10000u;
 
@@ -60,37 +55,28 @@ class OnSuccessObserver : public rtc::RefCountedObject<
 class PeerConnectionRtpTest : public testing::Test {
  public:
   PeerConnectionRtpTest()
-      : pc_factory_(
-            CreatePeerConnectionFactory(rtc::Thread::Current(),
-                                        rtc::Thread::Current(),
-                                        rtc::Thread::Current(),
-                                        FakeAudioCaptureModule::Create(),
-                                        CreateBuiltinAudioEncoderFactory(),
-                                        CreateBuiltinAudioDecoderFactory(),
-                                        nullptr,
-                                        nullptr)) {}
+      : pc_factory_(webrtc::CreatePeerConnectionFactory(
+            rtc::Thread::Current(),
+            rtc::Thread::Current(),
+            rtc::Thread::Current(),
+            FakeAudioCaptureModule::Create(),
+            webrtc::CreateBuiltinAudioEncoderFactory(),
+            webrtc::CreateBuiltinAudioDecoderFactory(),
+            nullptr,
+            nullptr)) {}
 
-  std::unique_ptr<PeerConnectionWrapper> CreatePeerConnection() {
-    return CreatePeerConnection(RTCConfiguration());
-  }
-
-  std::unique_ptr<PeerConnectionWrapper> CreatePeerConnectionWithUnifiedPlan() {
-    RTCConfiguration config;
-    config.sdp_semantics = SdpSemantics::kUnifiedPlan;
-    return CreatePeerConnection(config);
-  }
-
-  std::unique_ptr<PeerConnectionWrapper> CreatePeerConnection(
-      const RTCConfiguration& config) {
-    auto observer = rtc::MakeUnique<MockPeerConnectionObserver>();
+  std::unique_ptr<webrtc::PeerConnectionWrapper> CreatePeerConnection() {
+    webrtc::PeerConnectionInterface::RTCConfiguration config;
+    auto observer = rtc::MakeUnique<webrtc::MockPeerConnectionObserver>();
     auto pc = pc_factory_->CreatePeerConnection(config, nullptr, nullptr,
                                                 observer.get());
-    return rtc::MakeUnique<PeerConnectionWrapper>(pc_factory_, pc,
-                                                  std::move(observer));
+    return std::unique_ptr<webrtc::PeerConnectionWrapper>(
+        new webrtc::PeerConnectionWrapper(pc_factory_, pc,
+                                          std::move(observer)));
   }
 
  protected:
-  rtc::scoped_refptr<PeerConnectionFactoryInterface> pc_factory_;
+  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> pc_factory_;
 };
 
 // These tests cover |webrtc::PeerConnectionObserver| callbacks firing upon
@@ -101,7 +87,7 @@ TEST_F(PeerConnectionRtpCallbacksTest, AddTrackWithoutStreamFiresOnAddTrack) {
   auto caller = CreatePeerConnection();
   auto callee = CreatePeerConnection();
 
-  rtc::scoped_refptr<AudioTrackInterface> audio_track(
+  rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
       pc_factory_->CreateAudioTrack("audio_track", nullptr));
   EXPECT_TRUE(caller->pc()->AddTrack(audio_track.get(), {}));
   ASSERT_TRUE(
@@ -121,9 +107,9 @@ TEST_F(PeerConnectionRtpCallbacksTest, AddTrackWithStreamFiresOnAddTrack) {
   auto caller = CreatePeerConnection();
   auto callee = CreatePeerConnection();
 
-  rtc::scoped_refptr<AudioTrackInterface> audio_track(
+  rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
       pc_factory_->CreateAudioTrack("audio_track", nullptr));
-  auto stream = MediaStream::Create("audio_stream");
+  auto stream = webrtc::MediaStream::Create("audio_stream");
   EXPECT_TRUE(caller->pc()->AddTrack(audio_track.get(), {stream.get()}));
   ASSERT_TRUE(
       callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal(),
@@ -142,7 +128,7 @@ TEST_F(PeerConnectionRtpCallbacksTest,
   auto caller = CreatePeerConnection();
   auto callee = CreatePeerConnection();
 
-  rtc::scoped_refptr<AudioTrackInterface> audio_track(
+  rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
       pc_factory_->CreateAudioTrack("audio_track", nullptr));
   auto sender = caller->pc()->AddTrack(audio_track.get(), {});
   ASSERT_TRUE(
@@ -164,9 +150,9 @@ TEST_F(PeerConnectionRtpCallbacksTest,
   auto caller = CreatePeerConnection();
   auto callee = CreatePeerConnection();
 
-  rtc::scoped_refptr<AudioTrackInterface> audio_track(
+  rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
       pc_factory_->CreateAudioTrack("audio_track", nullptr));
-  auto stream = MediaStream::Create("audio_stream");
+  auto stream = webrtc::MediaStream::Create("audio_stream");
   auto sender = caller->pc()->AddTrack(audio_track.get(), {stream.get()});
   ASSERT_TRUE(
       callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal(),
@@ -187,12 +173,12 @@ TEST_F(PeerConnectionRtpCallbacksTest,
   auto caller = CreatePeerConnection();
   auto callee = CreatePeerConnection();
 
-  rtc::scoped_refptr<AudioTrackInterface> audio_track1(
+  rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track1(
       pc_factory_->CreateAudioTrack("audio_track1", nullptr));
-  rtc::scoped_refptr<AudioTrackInterface> audio_track2(
+  rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track2(
       pc_factory_->CreateAudioTrack("audio_track2", nullptr));
-  auto stream = MediaStream::Create("shared_audio_stream");
-  std::vector<MediaStreamInterface*> streams{stream.get()};
+  auto stream = webrtc::MediaStream::Create("shared_audio_stream");
+  std::vector<webrtc::MediaStreamInterface*> streams{stream.get()};
   auto sender1 = caller->pc()->AddTrack(audio_track1.get(), streams);
   auto sender2 = caller->pc()->AddTrack(audio_track2.get(), streams);
   ASSERT_TRUE(
@@ -208,7 +194,7 @@ TEST_F(PeerConnectionRtpCallbacksTest,
                                    static_cast<webrtc::RTCError*>(nullptr)));
   ASSERT_EQ(callee->observer()->add_track_events_.size(), 2u);
   EXPECT_EQ(
-      std::vector<rtc::scoped_refptr<RtpReceiverInterface>>{
+      std::vector<rtc::scoped_refptr<webrtc::RtpReceiverInterface>>{
           callee->observer()->add_track_events_[0].receiver},
       callee->observer()->remove_track_events_);
 
@@ -452,146 +438,4 @@ TEST_F(PeerConnectionRtpLegacyObserverTest,
   EXPECT_FALSE(observer->called());
 }
 
-// RtpTransceiver Tests
-
-// Test that by default there are no transceivers with Unified Plan.
-TEST_F(PeerConnectionRtpTest, PeerConnectionHasNoTransceivers) {
-  auto caller = CreatePeerConnectionWithUnifiedPlan();
-  EXPECT_THAT(caller->pc()->GetTransceivers(), ElementsAre());
-}
-
-// Test that a transceiver created with the audio kind has the correct initial
-// properties.
-TEST_F(PeerConnectionRtpTest, AddTransceiverHasCorrectInitProperties) {
-  auto caller = CreatePeerConnectionWithUnifiedPlan();
-
-  auto transceiver = caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO);
-  EXPECT_EQ(rtc::nullopt, transceiver->mid());
-  EXPECT_FALSE(transceiver->stopped());
-  EXPECT_EQ(RtpTransceiverDirection::kSendRecv, transceiver->direction());
-  EXPECT_EQ(rtc::nullopt, transceiver->current_direction());
-}
-
-// Test that adding a transceiver with the audio kind creates an audio sender
-// and audio receiver with the receiver having a live audio track.
-TEST_F(PeerConnectionRtpTest,
-       AddAudioTransceiverCreatesAudioSenderAndReceiver) {
-  auto caller = CreatePeerConnectionWithUnifiedPlan();
-
-  auto transceiver = caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO);
-
-  ASSERT_TRUE(transceiver->sender());
-  EXPECT_EQ(cricket::MEDIA_TYPE_AUDIO, transceiver->sender()->media_type());
-
-  ASSERT_TRUE(transceiver->receiver());
-  EXPECT_EQ(cricket::MEDIA_TYPE_AUDIO, transceiver->receiver()->media_type());
-
-  auto track = transceiver->receiver()->track();
-  ASSERT_TRUE(track);
-  EXPECT_EQ(MediaStreamTrackInterface::kAudioKind, track->kind());
-  EXPECT_EQ(MediaStreamTrackInterface::TrackState::kLive, track->state());
-}
-
-// Test that adding a transceiver with the video kind creates an video sender
-// and video receiver with the receiver having a live video track.
-TEST_F(PeerConnectionRtpTest,
-       AddAudioTransceiverCreatesVideoSenderAndReceiver) {
-  auto caller = CreatePeerConnectionWithUnifiedPlan();
-
-  auto transceiver = caller->AddTransceiver(cricket::MEDIA_TYPE_VIDEO);
-
-  ASSERT_TRUE(transceiver->sender());
-  EXPECT_EQ(cricket::MEDIA_TYPE_VIDEO, transceiver->sender()->media_type());
-
-  ASSERT_TRUE(transceiver->receiver());
-  EXPECT_EQ(cricket::MEDIA_TYPE_VIDEO, transceiver->receiver()->media_type());
-
-  auto track = transceiver->receiver()->track();
-  ASSERT_TRUE(track);
-  EXPECT_EQ(MediaStreamTrackInterface::kVideoKind, track->kind());
-  EXPECT_EQ(MediaStreamTrackInterface::TrackState::kLive, track->state());
-}
-
-// Test that after a call to AddTransceiver, the transceiver shows in
-// GetTransceivers(), the transceiver's sender shows in GetSenders(), and the
-// transceiver's receiver shows in GetReceivers().
-TEST_F(PeerConnectionRtpTest, AddTransceiverShowsInLists) {
-  auto caller = CreatePeerConnectionWithUnifiedPlan();
-
-  auto transceiver = caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO);
-  EXPECT_EQ(
-      std::vector<rtc::scoped_refptr<RtpTransceiverInterface>>{transceiver},
-      caller->pc()->GetTransceivers());
-  EXPECT_EQ(
-      std::vector<rtc::scoped_refptr<RtpSenderInterface>>{
-          transceiver->sender()},
-      caller->pc()->GetSenders());
-  EXPECT_EQ(
-      std::vector<rtc::scoped_refptr<RtpReceiverInterface>>{
-          transceiver->receiver()},
-      caller->pc()->GetReceivers());
-}
-
-// Test that the direction passed in through the AddTransceiver init parameter
-// is set in the returned transceiver.
-TEST_F(PeerConnectionRtpTest, AddTransceiverWithDirectionIsReflected) {
-  auto caller = CreatePeerConnectionWithUnifiedPlan();
-
-  RtpTransceiverInit init;
-  init.direction = RtpTransceiverDirection::kSendOnly;
-  auto transceiver = caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO, init);
-  EXPECT_EQ(RtpTransceiverDirection::kSendOnly, transceiver->direction());
-}
-
-TEST_F(PeerConnectionRtpTest, AddTransceiverWithInvalidKindReturnsError) {
-  auto caller = CreatePeerConnectionWithUnifiedPlan();
-
-  auto result = caller->pc()->AddTransceiver(cricket::MEDIA_TYPE_DATA);
-  EXPECT_EQ(RTCErrorType::INVALID_PARAMETER, result.error().type());
-}
-
-// Test that calling AddTransceiver with a track creates a transceiver which has
-// its sender's track set to the passed-in track.
-TEST_F(PeerConnectionRtpTest, AddTransceiverWithTrackCreatesSenderWithTrack) {
-  auto caller = CreatePeerConnectionWithUnifiedPlan();
-
-  auto audio_track = caller->CreateAudioTrack("audio track");
-  auto transceiver = caller->AddTransceiver(audio_track);
-
-  auto sender = transceiver->sender();
-  ASSERT_TRUE(sender->track());
-  EXPECT_EQ(audio_track, sender->track());
-
-  auto receiver = transceiver->receiver();
-  ASSERT_TRUE(receiver->track());
-  EXPECT_EQ(MediaStreamTrackInterface::kAudioKind, receiver->track()->kind());
-  EXPECT_EQ(MediaStreamTrackInterface::TrackState::kLive,
-            receiver->track()->state());
-}
-
-// Test that calling AddTransceiver twice with the same track creates distinct
-// transceivers, senders with the same track.
-TEST_F(PeerConnectionRtpTest,
-       AddTransceiverTwiceWithSameTrackCreatesMultipleTransceivers) {
-  auto caller = CreatePeerConnectionWithUnifiedPlan();
-
-  auto audio_track = caller->CreateAudioTrack("audio track");
-
-  auto transceiver1 = caller->AddTransceiver(audio_track);
-  auto transceiver2 = caller->AddTransceiver(audio_track);
-
-  EXPECT_NE(transceiver1, transceiver2);
-
-  auto sender1 = transceiver1->sender();
-  auto sender2 = transceiver2->sender();
-  EXPECT_NE(sender1, sender2);
-  EXPECT_EQ(audio_track, sender1->track());
-  EXPECT_EQ(audio_track, sender2->track());
-
-  EXPECT_THAT(caller->pc()->GetTransceivers(),
-              UnorderedElementsAre(transceiver1, transceiver2));
-  EXPECT_THAT(caller->pc()->GetSenders(),
-              UnorderedElementsAre(sender1, sender2));
-}
-
-}  // namespace webrtc
+}  // namespace

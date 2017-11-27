@@ -1205,110 +1205,6 @@ bool PeerConnection::RemoveTrack(RtpSenderInterface* sender) {
   return true;
 }
 
-RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>>
-PeerConnection::AddTransceiver(
-    rtc::scoped_refptr<MediaStreamTrackInterface> track) {
-  return AddTransceiver(track, RtpTransceiverInit());
-}
-
-RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>>
-PeerConnection::AddTransceiver(
-    rtc::scoped_refptr<MediaStreamTrackInterface> track,
-    const RtpTransceiverInit& init) {
-  if (!IsUnifiedPlan()) {
-    LOG_AND_RETURN_ERROR(
-        RTCErrorType::INTERNAL_ERROR,
-        "AddTransceiver only supported when Unified Plan is enabled.");
-  }
-  if (!track) {
-    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER, "track is null");
-  }
-  cricket::MediaType media_type;
-  if (track->kind() == MediaStreamTrackInterface::kAudioKind) {
-    media_type = cricket::MEDIA_TYPE_AUDIO;
-  } else if (track->kind() == MediaStreamTrackInterface::kVideoKind) {
-    media_type = cricket::MEDIA_TYPE_VIDEO;
-  } else {
-    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
-                         "Track kind is not audio or video");
-  }
-  return AddTransceiver(media_type, track, init);
-}
-
-RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>>
-PeerConnection::AddTransceiver(cricket::MediaType media_type) {
-  return AddTransceiver(media_type, RtpTransceiverInit());
-}
-
-RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>>
-PeerConnection::AddTransceiver(cricket::MediaType media_type,
-                               const RtpTransceiverInit& init) {
-  if (!IsUnifiedPlan()) {
-    LOG_AND_RETURN_ERROR(
-        RTCErrorType::INTERNAL_ERROR,
-        "AddTransceiver only supported when Unified Plan is enabled.");
-  }
-  if (!(media_type == cricket::MEDIA_TYPE_AUDIO ||
-        media_type == cricket::MEDIA_TYPE_VIDEO)) {
-    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
-                         "media type is not audio or video");
-  }
-  return AddTransceiver(media_type, nullptr, init);
-}
-
-RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>>
-PeerConnection::AddTransceiver(
-    cricket::MediaType media_type,
-    rtc::scoped_refptr<MediaStreamTrackInterface> track,
-    const RtpTransceiverInit& init) {
-  RTC_DCHECK((media_type == cricket::MEDIA_TYPE_AUDIO ||
-              media_type == cricket::MEDIA_TYPE_VIDEO));
-  if (track) {
-    RTC_DCHECK_EQ(media_type,
-                  (track->kind() == MediaStreamTrackInterface::kAudioKind
-                       ? cricket::MEDIA_TYPE_AUDIO
-                       : cricket::MEDIA_TYPE_VIDEO));
-  }
-
-  // TODO(bugs.webrtc.org/7600): Verify init.
-
-  rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> sender;
-  rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
-      receiver;
-  std::string receiver_id = rtc::CreateRandomUuid();
-  if (media_type == cricket::MEDIA_TYPE_AUDIO) {
-    sender = RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
-        signaling_thread(), new AudioRtpSender(nullptr, stats_.get()));
-    receiver = RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
-        signaling_thread(), new AudioRtpReceiver(receiver_id, {}, 0, nullptr));
-  } else {
-    RTC_DCHECK_EQ(cricket::MEDIA_TYPE_VIDEO, media_type);
-    sender = RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
-        signaling_thread(), new VideoRtpSender(nullptr));
-    receiver = RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
-        signaling_thread(),
-        new VideoRtpReceiver(receiver_id, {}, worker_thread(), 0, nullptr));
-  }
-  // TODO(bugs.webrtc.org/7600): Initializing the sender/receiver with a null
-  // channel prevents users from calling SetParameters on them, which is needed
-  // to be in compliance with the spec.
-
-  if (track) {
-    sender->SetTrack(track);
-  }
-
-  rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
-      transceiver = RtpTransceiverProxyWithInternal<RtpTransceiver>::Create(
-          signaling_thread(), new RtpTransceiver(sender, receiver));
-  transceiver->SetDirection(init.direction);
-
-  transceivers_.push_back(transceiver);
-
-  observer_->OnRenegotiationNeeded();
-
-  return rtc::scoped_refptr<RtpTransceiverInterface>(transceiver);
-}
-
 rtc::scoped_refptr<DtmfSenderInterface> PeerConnection::CreateDtmfSender(
     AudioTrackInterface* track) {
   TRACE_EVENT0("webrtc", "PeerConnection::CreateDtmfSender");
@@ -1399,16 +1295,6 @@ PeerConnection::GetReceiversInternal() const {
                          receivers.end());
   }
   return all_receivers;
-}
-
-std::vector<rtc::scoped_refptr<RtpTransceiverInterface>>
-PeerConnection::GetTransceivers() const {
-  RTC_DCHECK(IsUnifiedPlan());
-  std::vector<rtc::scoped_refptr<RtpTransceiverInterface>> all_transceivers;
-  for (auto transceiver : transceivers_) {
-    all_transceivers.push_back(transceiver);
-  }
-  return all_transceivers;
 }
 
 bool PeerConnection::GetStats(StatsObserver* observer,
