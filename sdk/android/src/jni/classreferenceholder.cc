@@ -59,7 +59,6 @@ ClassReferenceHolder::ClassReferenceHolder(JNIEnv* jni) {
   LoadClass(jni, "java/nio/ByteBuffer");
   LoadClass(jni, "java/util/ArrayList");
   LoadClass(jni, "java/util/LinkedHashMap");
-  LoadClass(jni, "org/webrtc/AudioTrack");
   LoadClass(jni, "org/webrtc/Camera1Enumerator");
   LoadClass(jni, "org/webrtc/Camera2Enumerator");
   LoadClass(jni, "org/webrtc/CameraEnumerationAndroid");
@@ -76,7 +75,6 @@ ClassReferenceHolder::ClassReferenceHolder(JNIEnv* jni) {
   LoadClass(jni, "org/webrtc/MediaCodecVideoEncoder$OutputBufferInfo");
   LoadClass(jni, "org/webrtc/MediaCodecVideoEncoder$VideoCodecType");
   LoadClass(jni, "org/webrtc/MediaSource$State");
-  LoadClass(jni, "org/webrtc/MediaStream");
   LoadClass(jni, "org/webrtc/MediaStreamTrack");
   LoadClass(jni, "org/webrtc/MediaStreamTrack$MediaType");
   LoadClass(jni, "org/webrtc/MediaStreamTrack$State");
@@ -114,7 +112,6 @@ ClassReferenceHolder::ClassReferenceHolder(JNIEnv* jni) {
   LoadClass(jni, "org/webrtc/VideoFrame$TextureBuffer");
   LoadClass(jni, "org/webrtc/VideoRenderer$I420Frame");
   LoadClass(jni, "org/webrtc/VideoSink");
-  LoadClass(jni, "org/webrtc/VideoTrack");
   LoadClass(jni, "org/webrtc/WrappedNativeI420Buffer");
 }
 

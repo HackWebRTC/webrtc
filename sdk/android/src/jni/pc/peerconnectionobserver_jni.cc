@@ -14,6 +14,7 @@
 #include <string>
 
 #include "rtc_base/ptr_util.h"
+#include "sdk/android/generated_peerconnection_jni/jni/MediaStream_jni.h"
 #include "sdk/android/src/jni/classreferenceholder.h"
 #include "sdk/android/src/jni/pc/datachannel.h"
 #include "sdk/android/src/jni/pc/java_native_conversion.h"
@@ -31,22 +32,6 @@ PeerConnectionObserverJni::PeerConnectionObserverJni(JNIEnv* jni,
                                                      jobject j_observer)
     : j_observer_global_(jni, j_observer),
       j_observer_class_(jni, GetObjectClass(jni, *j_observer_global_)),
-      j_media_stream_class_(jni, FindClass(jni, "org/webrtc/MediaStream")),
-      j_media_stream_ctor_(
-          GetMethodID(jni, *j_media_stream_class_, "<init>", "(J)V")),
-      j_media_stream_track_class_(
-          jni,
-          FindClass(jni, "org/webrtc/MediaStreamTrack")),
-      j_track_dispose_id_(
-          GetMethodID(jni, *j_media_stream_track_class_, "dispose", "()V")),
-      j_native_track_id_(
-          GetFieldID(jni, *j_media_stream_track_class_, "nativeTrack", "J")),
-      j_audio_track_class_(jni, FindClass(jni, "org/webrtc/AudioTrack")),
-      j_audio_track_ctor_(
-          GetMethodID(jni, *j_audio_track_class_, "<init>", "(J)V")),
-      j_video_track_class_(jni, FindClass(jni, "org/webrtc/VideoTrack")),
-      j_video_track_ctor_(
-          GetMethodID(jni, *j_video_track_class_, "<init>", "(J)V")),
       j_rtp_receiver_class_(jni, FindClass(jni, "org/webrtc/RtpReceiver")),
       j_rtp_receiver_ctor_(
           GetMethodID(jni, *j_rtp_receiver_class_, "<init>", "(J)V")) {}
@@ -159,66 +144,17 @@ void PeerConnectionObserverJni::OnAddStream(
 void PeerConnectionObserverJni::AddNativeAudioTrackToJavaStream(
     rtc::scoped_refptr<AudioTrackInterface> track,
     jobject j_stream) {
-  jstring id = JavaStringFromStdString(jni(), track->id());
-  // Java AudioTrack holds one reference. Corresponding Release() is in
-  // MediaStreamTrack_free, triggered by AudioTrack.dispose().
-  track->AddRef();
-  jobject j_track = jni()->NewObject(*j_audio_track_class_, j_audio_track_ctor_,
-                                     reinterpret_cast<jlong>(track.get()), id);
-  CHECK_EXCEPTION(jni()) << "error during NewObject";
-
-  // Now add to the audioTracks linked list.
-  jfieldID audio_tracks_id = GetFieldID(jni(), *j_media_stream_class_,
-                                        "audioTracks", "Ljava/util/List;");
-  jobject audio_tracks = GetObjectField(jni(), j_stream, audio_tracks_id);
-  jmethodID add = GetMethodID(jni(), GetObjectClass(jni(), audio_tracks), "add",
-                              "(Ljava/lang/Object;)Z");
-  jboolean added = jni()->CallBooleanMethod(audio_tracks, add, j_track);
-  CHECK_EXCEPTION(jni()) << "error during CallBooleanMethod";
-  RTC_CHECK(added);
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  Java_MediaStream_addNativeAudioTrack(env, j_stream,
+                                       jlongFromPointer(track.release()));
 }
 
 void PeerConnectionObserverJni::AddNativeVideoTrackToJavaStream(
     rtc::scoped_refptr<VideoTrackInterface> track,
     jobject j_stream) {
-  jstring id = JavaStringFromStdString(jni(), track->id());
-  // Java VideoTrack holds one reference. Corresponding Release() is in
-  // MediaStreamTrack_free, triggered by VideoTrack.dispose().
-  track->AddRef();
-  jobject j_track = jni()->NewObject(*j_video_track_class_, j_video_track_ctor_,
-                                     reinterpret_cast<jlong>(track.get()), id);
-  CHECK_EXCEPTION(jni()) << "error during NewObject";
-
-  // Now add to the videoTracks linked list.
-  jfieldID video_tracks_id = GetFieldID(jni(), *j_media_stream_class_,
-                                        "videoTracks", "Ljava/util/List;");
-  jobject video_tracks = GetObjectField(jni(), j_stream, video_tracks_id);
-  jmethodID add = GetMethodID(jni(), GetObjectClass(jni(), video_tracks), "add",
-                              "(Ljava/lang/Object;)Z");
-  jboolean added = jni()->CallBooleanMethod(video_tracks, add, j_track);
-  CHECK_EXCEPTION(jni()) << "error during CallBooleanMethod";
-  RTC_CHECK(added);
-}
-
-void PeerConnectionObserverJni::RemoveAndDisposeNativeTrackFromJavaTrackList(
-    MediaStreamTrackInterface* track,
-    jobject j_tracks) {
-  Iterable iterable_tracks(jni(), j_tracks);
-  for (auto it = iterable_tracks.begin(); it != iterable_tracks.end(); ++it) {
-    MediaStreamTrackInterface* native_track =
-        reinterpret_cast<MediaStreamTrackInterface*>(
-            jni()->GetLongField(*it, j_native_track_id_));
-    CHECK_EXCEPTION(jni()) << "error during GetLongField";
-    if (native_track == track) {
-      jni()->CallVoidMethod(*it, j_track_dispose_id_);
-      it.Remove();
-      return;
-    }
-  }
-  // If we reached this point, we didn't find the track, which means we're
-  // getting a "track removed" callback but the Java stream doesn't have a
-  // corresponding track, which indicates a bug somewhere.
-  RTC_NOTREACHED();
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  Java_MediaStream_addNativeVideoTrack(env, j_stream,
+                                       jlongFromPointer(track.release()));
 }
 
 void PeerConnectionObserverJni::OnAudioTrackAddedToStream(
@@ -240,23 +176,19 @@ void PeerConnectionObserverJni::OnVideoTrackAddedToStream(
 void PeerConnectionObserverJni::OnAudioTrackRemovedFromStream(
     AudioTrackInterface* track,
     MediaStreamInterface* stream) {
-  ScopedLocalRefFrame local_ref_frame(jni());
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  ScopedLocalRefFrame local_ref_frame(env);
   jobject j_stream = GetOrCreateJavaStream(stream);
-  jfieldID audio_tracks_id = GetFieldID(jni(), *j_media_stream_class_,
-                                        "audioTracks", "Ljava/util/List;");
-  jobject audio_tracks = GetObjectField(jni(), j_stream, audio_tracks_id);
-  RemoveAndDisposeNativeTrackFromJavaTrackList(track, audio_tracks);
+  Java_MediaStream_removeAudioTrack(env, j_stream, jlongFromPointer(track));
 }
 
 void PeerConnectionObserverJni::OnVideoTrackRemovedFromStream(
     VideoTrackInterface* track,
     MediaStreamInterface* stream) {
-  ScopedLocalRefFrame local_ref_frame(jni());
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  ScopedLocalRefFrame local_ref_frame(env);
   jobject j_stream = GetOrCreateJavaStream(stream);
-  jfieldID video_tracks_id = GetFieldID(jni(), *j_media_stream_class_,
-                                        "videoTracks", "Ljava/util/List;");
-  jobject video_tracks = GetObjectField(jni(), j_stream, video_tracks_id);
-  RemoveAndDisposeNativeTrackFromJavaTrackList(track, video_tracks);
+  Java_MediaStream_removeVideoTrack(env, j_stream, jlongFromPointer(track));
 }
 
 void PeerConnectionObserverJni::OnRemoveStream(
@@ -336,10 +268,9 @@ void PeerConnectionObserverJni::DisposeRemoteStream(
       stream_observers_.end());
 
   remote_streams_.erase(it);
-  jni()->CallVoidMethod(
-      j_stream, GetMethodID(jni(), *j_media_stream_class_, "dispose", "()V"));
-  CHECK_EXCEPTION(jni()) << "error during MediaStream.dispose()";
-  DeleteGlobalRef(jni(), j_stream);
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  Java_MediaStream_dispose(env, j_stream);
+  DeleteGlobalRef(env, j_stream);
 }
 
 void PeerConnectionObserverJni::DisposeRtpReceiver(
@@ -365,9 +296,7 @@ jobject PeerConnectionObserverJni::GetOrCreateJavaStream(
   // MediaStream_free, triggered by MediaStream.dispose().
   stream->AddRef();
   jobject j_stream =
-      jni()->NewObject(*j_media_stream_class_, j_media_stream_ctor_,
-                       reinterpret_cast<jlong>(stream.get()));
-  CHECK_EXCEPTION(jni()) << "error during NewObject";
+      Java_MediaStream_Constructor(jni(), jlongFromPointer(stream.get()));
 
   remote_streams_[stream] = NewGlobalRef(jni(), j_stream);
   return j_stream;
@@ -376,8 +305,8 @@ jobject PeerConnectionObserverJni::GetOrCreateJavaStream(
 jobjectArray PeerConnectionObserverJni::NativeToJavaMediaStreamArray(
     JNIEnv* jni,
     const std::vector<rtc::scoped_refptr<MediaStreamInterface>>& streams) {
-  jobjectArray java_streams =
-      jni->NewObjectArray(streams.size(), *j_media_stream_class_, nullptr);
+  jobjectArray java_streams = jni->NewObjectArray(
+      streams.size(), org_webrtc_MediaStream_clazz(jni), nullptr);
   CHECK_EXCEPTION(jni) << "error during NewObjectArray";
   for (size_t i = 0; i < streams.size(); ++i) {
     jobject j_stream = GetOrCreateJavaStream(streams[i]);

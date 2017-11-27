@@ -15,7 +15,7 @@ namespace webrtc {
 namespace jni {
 
 JNI_FUNCTION_DECLARATION(jboolean,
-                         MediaStream_nativeAddAudioTrack,
+                         MediaStream_addAudioTrackToNativeStream,
                          JNIEnv* jni,
                          jclass,
                          jlong pointer,
@@ -25,7 +25,7 @@ JNI_FUNCTION_DECLARATION(jboolean,
 }
 
 JNI_FUNCTION_DECLARATION(jboolean,
-                         MediaStream_nativeAddVideoTrack,
+                         MediaStream_addVideoTrackToNativeStream,
                          JNIEnv* jni,
                          jclass,
                          jlong pointer,
@@ -35,7 +35,7 @@ JNI_FUNCTION_DECLARATION(jboolean,
 }
 
 JNI_FUNCTION_DECLARATION(jboolean,
-                         MediaStream_nativeRemoveAudioTrack,
+                         MediaStream_removeNativeAudioTrack,
                          JNIEnv* jni,
                          jclass,
                          jlong pointer,
@@ -45,7 +45,7 @@ JNI_FUNCTION_DECLARATION(jboolean,
 }
 
 JNI_FUNCTION_DECLARATION(jboolean,
-                         MediaStream_nativeRemoveVideoTrack,
+                         MediaStream_removeNativeVideoTrack,
                          JNIEnv* jni,
                          jclass,
                          jlong pointer,
@@ -55,7 +55,7 @@ JNI_FUNCTION_DECLARATION(jboolean,
 }
 
 JNI_FUNCTION_DECLARATION(jstring,
-                         MediaStream_nativeLabel,
+                         MediaStream_getNativeLabel,
                          JNIEnv* jni,
                          jclass,
                          jlong j_p) {

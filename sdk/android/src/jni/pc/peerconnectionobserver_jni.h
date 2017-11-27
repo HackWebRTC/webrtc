@@ -87,14 +87,6 @@ class PeerConnectionObserverJni : public PeerConnectionObserver,
   void AddNativeVideoTrackToJavaStream(
       rtc::scoped_refptr<VideoTrackInterface> track,
       jobject j_stream);
-  // Remove and dispose the Java MediaStreamTrack object that wraps |track|,
-  // given |j_tracks| which is a linked list of tracks (either the videoTracks
-  // or audioTracks member of MediaStream).
-  //
-  // DCHECKs if the track isn't found.
-  void RemoveAndDisposeNativeTrackFromJavaTrackList(
-      MediaStreamTrackInterface* track,
-      jobject j_tracks);
 
   // Callbacks invoked when a native stream changes, and the Java stream needs
   // to be updated; MediaStreamObserver is used to make this simpler.
@@ -109,15 +101,6 @@ class PeerConnectionObserverJni : public PeerConnectionObserver,
 
   const ScopedGlobalRef<jobject> j_observer_global_;
   const ScopedGlobalRef<jclass> j_observer_class_;
-  const ScopedGlobalRef<jclass> j_media_stream_class_;
-  const jmethodID j_media_stream_ctor_;
-  const ScopedGlobalRef<jclass> j_media_stream_track_class_;
-  const jmethodID j_track_dispose_id_;
-  const jfieldID j_native_track_id_;
-  const ScopedGlobalRef<jclass> j_audio_track_class_;
-  const jmethodID j_audio_track_ctor_;
-  const ScopedGlobalRef<jclass> j_video_track_class_;
-  const jmethodID j_video_track_ctor_;
   const ScopedGlobalRef<jclass> j_rtp_receiver_class_;
   const jmethodID j_rtp_receiver_ctor_;
 
