@@ -912,6 +912,7 @@ class EchoControl {
   struct Metrics {
     double echo_return_loss;
     double echo_return_loss_enhancement;
+    int delay_ms;
   };
 
   // Collect current metrics from the echo controller.

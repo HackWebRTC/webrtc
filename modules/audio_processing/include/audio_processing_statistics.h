@@ -44,6 +44,11 @@ struct AudioProcessingStats {
   rtc::Optional<double> residual_echo_likelihood;
   // Maximum residual echo likelihood from the last time period.
   rtc::Optional<double> residual_echo_likelihood_recent_max;
+
+  // The instantaneous delay estimate produced in the AEC. The unit is in
+  // milliseconds and the value is the instantaneous value at the time of the
+  // call to |GetStatistics()|.
+  int delay_ms;
 };
 
 }  // namespace webrtc

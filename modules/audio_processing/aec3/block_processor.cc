@@ -183,6 +183,8 @@ void BlockProcessorImpl::UpdateEchoLeakageStatus(bool leakage_detected) {
 
 void BlockProcessorImpl::GetMetrics(EchoControl::Metrics* metrics) const {
   echo_remover_->GetMetrics(metrics);
+  const int block_size_ms = sample_rate_hz_ == 8000 ? 8 : 4;
+  metrics->delay_ms = static_cast<int>(render_buffer_->Delay()) * block_size_ms;
 }
 
 }  // namespace
