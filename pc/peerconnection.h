@@ -394,8 +394,8 @@ class PeerConnection : public PeerConnectionInterface,
   // local description or remote description.
   void GenerateMediaDescriptionOptions(
       const SessionDescriptionInterface* session_desc,
-      cricket::RtpTransceiverDirection audio_direction,
-      cricket::RtpTransceiverDirection video_direction,
+      RtpTransceiverDirection audio_direction,
+      RtpTransceiverDirection video_direction,
       rtc::Optional<size_t>* audio_index,
       rtc::Optional<size_t>* video_index,
       rtc::Optional<size_t>* data_index,

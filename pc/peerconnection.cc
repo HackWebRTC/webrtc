@@ -31,6 +31,7 @@
 #include "pc/mediastream.h"
 #include "pc/mediastreamobserver.h"
 #include "pc/remoteaudiosource.h"
+#include "pc/rtpmediautils.h"
 #include "pc/rtpreceiver.h"
 #include "pc/rtpsender.h"
 #include "pc/sctputils.h"
@@ -2527,9 +2528,9 @@ void PeerConnection::GetOptionsForOffer(
   if (local_description()) {
     GenerateMediaDescriptionOptions(
         local_description(),
-        cricket::RtpTransceiverDirection(send_audio, recv_audio),
-        cricket::RtpTransceiverDirection(send_video, recv_video), &audio_index,
-        &video_index, &data_index, session_options);
+        RtpTransceiverDirectionFromSendRecv(send_audio, recv_audio),
+        RtpTransceiverDirectionFromSendRecv(send_video, recv_video),
+        &audio_index, &video_index, &data_index, session_options);
   }
 
   // Add audio/video/data m= sections to the end if needed.
@@ -2537,21 +2538,23 @@ void PeerConnection::GetOptionsForOffer(
     session_options->media_description_options.push_back(
         cricket::MediaDescriptionOptions(
             cricket::MEDIA_TYPE_AUDIO, cricket::CN_AUDIO,
-            cricket::RtpTransceiverDirection(send_audio, recv_audio), false));
+            RtpTransceiverDirectionFromSendRecv(send_audio, recv_audio),
+            false));
     audio_index = session_options->media_description_options.size() - 1;
   }
   if (!video_index && offer_new_video_description) {
     session_options->media_description_options.push_back(
         cricket::MediaDescriptionOptions(
             cricket::MEDIA_TYPE_VIDEO, cricket::CN_VIDEO,
-            cricket::RtpTransceiverDirection(send_video, recv_video), false));
+            RtpTransceiverDirectionFromSendRecv(send_video, recv_video),
+            false));
     video_index = session_options->media_description_options.size() - 1;
   }
   if (!data_index && offer_new_data_description) {
     session_options->media_description_options.push_back(
         cricket::MediaDescriptionOptions(
             cricket::MEDIA_TYPE_DATA, cricket::CN_DATA,
-            cricket::RtpTransceiverDirection(true, true), false));
+            RtpTransceiverDirection::kSendRecv, false));
     data_index = session_options->media_description_options.size() - 1;
   }
 
@@ -2623,9 +2626,9 @@ void PeerConnection::GetOptionsForAnswer(
     // direction with the offered direction.
     GenerateMediaDescriptionOptions(
         remote_description(),
-        cricket::RtpTransceiverDirection(send_audio, recv_audio),
-        cricket::RtpTransceiverDirection(send_video, recv_video), &audio_index,
-        &video_index, &data_index, session_options);
+        RtpTransceiverDirectionFromSendRecv(send_audio, recv_audio),
+        RtpTransceiverDirectionFromSendRecv(send_video, recv_video),
+        &audio_index, &video_index, &data_index, session_options);
   }
 
   cricket::MediaDescriptionOptions* audio_media_description_options =
@@ -2662,8 +2665,8 @@ void PeerConnection::GetOptionsForAnswer(
 
 void PeerConnection::GenerateMediaDescriptionOptions(
     const SessionDescriptionInterface* session_desc,
-    cricket::RtpTransceiverDirection audio_direction,
-    cricket::RtpTransceiverDirection video_direction,
+    RtpTransceiverDirection audio_direction,
+    RtpTransceiverDirection video_direction,
     rtc::Optional<size_t>* audio_index,
     rtc::Optional<size_t>* video_index,
     rtc::Optional<size_t>* data_index,
@@ -2676,12 +2679,12 @@ void PeerConnection::GenerateMediaDescriptionOptions(
         session_options->media_description_options.push_back(
             cricket::MediaDescriptionOptions(
                 cricket::MEDIA_TYPE_AUDIO, content.name,
-                cricket::RtpTransceiverDirection(false, false), true));
+                RtpTransceiverDirection::kInactive, true));
       } else {
         session_options->media_description_options.push_back(
             cricket::MediaDescriptionOptions(
                 cricket::MEDIA_TYPE_AUDIO, content.name, audio_direction,
-                !audio_direction.send && !audio_direction.recv));
+                audio_direction == RtpTransceiverDirection::kInactive));
         *audio_index = session_options->media_description_options.size() - 1;
       }
     } else if (IsVideoContent(&content)) {
@@ -2690,12 +2693,12 @@ void PeerConnection::GenerateMediaDescriptionOptions(
         session_options->media_description_options.push_back(
             cricket::MediaDescriptionOptions(
                 cricket::MEDIA_TYPE_VIDEO, content.name,
-                cricket::RtpTransceiverDirection(false, false), true));
+                RtpTransceiverDirection::kInactive, true));
       } else {
         session_options->media_description_options.push_back(
             cricket::MediaDescriptionOptions(
                 cricket::MEDIA_TYPE_VIDEO, content.name, video_direction,
-                !video_direction.send && !video_direction.recv));
+                video_direction == RtpTransceiverDirection::kInactive));
         *video_index = session_options->media_description_options.size() - 1;
       }
     } else {
@@ -2705,14 +2708,14 @@ void PeerConnection::GenerateMediaDescriptionOptions(
         session_options->media_description_options.push_back(
             cricket::MediaDescriptionOptions(
                 cricket::MEDIA_TYPE_DATA, content.name,
-                cricket::RtpTransceiverDirection(false, false), true));
+                RtpTransceiverDirection::kInactive, true));
       } else {
         session_options->media_description_options.push_back(
             cricket::MediaDescriptionOptions(
                 cricket::MEDIA_TYPE_DATA, content.name,
                 // Direction for data sections is meaningless, but legacy
                 // endpoints might expect sendrecv.
-                cricket::RtpTransceiverDirection(true, true), false));
+                RtpTransceiverDirection::kSendRecv, false));
         *data_index = session_options->media_description_options.size() - 1;
       }
     }

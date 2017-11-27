@@ -20,6 +20,7 @@
 #include "p2p/base/fakeportallocator.h"
 #include "pc/mediasession.h"
 #include "pc/peerconnectionwrapper.h"
+#include "pc/rtpmediautils.h"
 #include "pc/sdputils.h"
 #ifdef WEBRTC_ANDROID
 #include "pc/test/androidtestinitializer.h"
@@ -429,16 +430,18 @@ TEST_P(PeerConnectionMediaAnswerDirectionTest, VerifyDirection) {
   // 2. Receive if the answerer has explicitly set the offer_to_receive to 1 or
   //    if it has been left as default.
   auto offer_direction =
-      cricket::RtpTransceiverDirection::FromMediaContentDirection(
+      cricket::RtpTransceiverDirectionFromMediaContentDirection(
           offer_direction_);
+  bool offer_send = RtpTransceiverDirectionHasSend(offer_direction);
+  bool offer_recv = RtpTransceiverDirectionHasRecv(offer_direction);
 
   // The negotiated components determine the direction set in the answer.
-  bool negotiate_send = (send_media_ && offer_direction.recv);
-  bool negotiate_recv = ((offer_to_receive_ != 0) && offer_direction.send);
+  bool negotiate_send = (send_media_ && offer_recv);
+  bool negotiate_recv = ((offer_to_receive_ != 0) && offer_send);
 
   auto expected_direction =
-      cricket::RtpTransceiverDirection(negotiate_send, negotiate_recv)
-          .ToMediaContentDirection();
+      cricket::MediaContentDirectionFromRtpTransceiverDirection(
+          RtpTransceiverDirectionFromSendRecv(negotiate_send, negotiate_recv));
   EXPECT_EQ(expected_direction,
             GetMediaContentDirection(answer.get(), cricket::CN_AUDIO));
 }

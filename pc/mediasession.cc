@@ -25,6 +25,7 @@
 #include "media/base/mediaconstants.h"
 #include "p2p/base/p2pconstants.h"
 #include "pc/channelmanager.h"
+#include "pc/rtpmediautils.h"
 #include "pc/srtpfilter.h"
 #include "rtc_base/base64.h"
 #include "rtc_base/checks.h"
@@ -33,6 +34,9 @@
 #include "rtc_base/stringutils.h"
 
 namespace {
+
+using webrtc::RtpTransceiverDirection;
+
 const char kInline[] = "inline:";
 
 void GetSupportedSdesCryptoSuiteNames(void (*func)(const rtc::CryptoOptions&,
@@ -97,30 +101,47 @@ static bool IsSctp(const std::string& protocol) {
   return IsPlainSctp(protocol) || IsDtlsSctp(protocol);
 }
 
-RtpTransceiverDirection RtpTransceiverDirection::FromMediaContentDirection(
-    MediaContentDirection md) {
-  const bool send = (md == MD_SENDRECV || md == MD_SENDONLY);
-  const bool recv = (md == MD_SENDRECV || md == MD_RECVONLY);
-  return RtpTransceiverDirection(send, recv);
+RtpTransceiverDirection RtpTransceiverDirectionFromMediaContentDirection(
+    MediaContentDirection direction) {
+  switch (direction) {
+    case MD_SENDRECV:
+      return RtpTransceiverDirection::kSendRecv;
+    case MD_SENDONLY:
+      return RtpTransceiverDirection::kSendOnly;
+    case MD_RECVONLY:
+      return RtpTransceiverDirection::kRecvOnly;
+    case MD_INACTIVE:
+      return RtpTransceiverDirection::kInactive;
+  }
+  RTC_NOTREACHED();
+  return RtpTransceiverDirection::kInactive;
 }
 
-MediaContentDirection RtpTransceiverDirection::ToMediaContentDirection() const {
-  if (send && recv) {
-    return MD_SENDRECV;
-  } else if (send) {
-    return MD_SENDONLY;
-  } else if (recv) {
-    return MD_RECVONLY;
+MediaContentDirection MediaContentDirectionFromRtpTransceiverDirection(
+    RtpTransceiverDirection direction) {
+  switch (direction) {
+    case RtpTransceiverDirection::kSendRecv:
+      return MD_SENDRECV;
+    case RtpTransceiverDirection::kSendOnly:
+      return MD_SENDONLY;
+    case RtpTransceiverDirection::kRecvOnly:
+      return MD_RECVONLY;
+    case RtpTransceiverDirection::kInactive:
+      return MD_INACTIVE;
   }
-
+  RTC_NOTREACHED();
   return MD_INACTIVE;
 }
 
-RtpTransceiverDirection
-NegotiateRtpTransceiverDirection(RtpTransceiverDirection offer,
-                                 RtpTransceiverDirection wants) {
-  return RtpTransceiverDirection(offer.recv && wants.send,
-                                 offer.send && wants.recv);
+static RtpTransceiverDirection NegotiateRtpTransceiverDirection(
+    RtpTransceiverDirection offer,
+    RtpTransceiverDirection wants) {
+  bool offer_send = webrtc::RtpTransceiverDirectionHasSend(offer);
+  bool offer_recv = webrtc::RtpTransceiverDirectionHasRecv(offer);
+  bool wants_send = webrtc::RtpTransceiverDirectionHasSend(wants);
+  bool wants_recv = webrtc::RtpTransceiverDirectionHasRecv(wants);
+  return webrtc::RtpTransceiverDirectionFromSendRecv(offer_recv && wants_send,
+                                                     offer_send && wants_recv);
 }
 
 static bool IsMediaContentOfType(const ContentInfo* content,
@@ -1156,11 +1177,12 @@ static bool CreateMediaContentAnswer(
   }
 
   auto offer_rtd =
-      RtpTransceiverDirection::FromMediaContentDirection(offer->direction());
+      RtpTransceiverDirectionFromMediaContentDirection(offer->direction());
 
-  answer->set_direction(NegotiateRtpTransceiverDirection(
-                            offer_rtd, media_description_options.direction)
-                            .ToMediaContentDirection());
+  answer->set_direction(
+      cricket::MediaContentDirectionFromRtpTransceiverDirection(
+          NegotiateRtpTransceiverDirection(
+              offer_rtd, media_description_options.direction)));
   return true;
 }
 
@@ -1569,34 +1591,37 @@ SessionDescription* MediaSessionDescriptionFactory::CreateAnswer(
 
 const AudioCodecs& MediaSessionDescriptionFactory::GetAudioCodecsForOffer(
     const RtpTransceiverDirection& direction) const {
-  // If stream is inactive - generate list as if sendrecv.
-  if (direction.send == direction.recv) {
-    return audio_sendrecv_codecs_;
-  } else if (direction.send) {
-    return audio_send_codecs_;
-  } else {
-    return audio_recv_codecs_;
+  switch (direction) {
+    // If stream is inactive - generate list as if sendrecv.
+    case RtpTransceiverDirection::kSendRecv:
+    case RtpTransceiverDirection::kInactive:
+      return audio_sendrecv_codecs_;
+    case RtpTransceiverDirection::kSendOnly:
+      return audio_send_codecs_;
+    case RtpTransceiverDirection::kRecvOnly:
+      return audio_recv_codecs_;
   }
+  RTC_NOTREACHED();
+  return audio_sendrecv_codecs_;
 }
 
 const AudioCodecs& MediaSessionDescriptionFactory::GetAudioCodecsForAnswer(
     const RtpTransceiverDirection& offer,
     const RtpTransceiverDirection& answer) const {
-  // For inactive and sendrecv answers, generate lists as if we were to accept
-  // the offer's direction. See RFC 3264 Section 6.1.
-  if (answer.send == answer.recv) {
-    if (offer.send == offer.recv) {
-      return audio_sendrecv_codecs_;
-    } else if (offer.send) {
-      return audio_recv_codecs_;
-    } else {
+  switch (answer) {
+    // For inactive and sendrecv answers, generate lists as if we were to accept
+    // the offer's direction. See RFC 3264 Section 6.1.
+    case RtpTransceiverDirection::kSendRecv:
+    case RtpTransceiverDirection::kInactive:
+      return GetAudioCodecsForOffer(
+          webrtc::RtpTransceiverDirectionReversed(offer));
+    case RtpTransceiverDirection::kSendOnly:
       return audio_send_codecs_;
-    }
-  } else if (answer.send) {
-    return audio_send_codecs_;
-  } else {
-    return audio_recv_codecs_;
+    case RtpTransceiverDirection::kRecvOnly:
+      return audio_recv_codecs_;
   }
+  RTC_NOTREACHED();
+  return audio_sendrecv_codecs_;
 }
 
 void MergeCodecsFromDescription(const SessionDescription* description,
@@ -1908,7 +1933,8 @@ bool MediaSessionDescriptionFactory::AddAudioContentForOffer(
   SetMediaProtocol(secure_transport, audio.get());
 
   audio->set_direction(
-      media_description_options.direction.ToMediaContentDirection());
+      cricket::MediaContentDirectionFromRtpTransceiverDirection(
+          media_description_options.direction));
 
   desc->AddContent(media_description_options.mid, NS_JINGLE_RTP,
                    media_description_options.stopped, audio.release());
@@ -1979,7 +2005,8 @@ bool MediaSessionDescriptionFactory::AddVideoContentForOffer(
   SetMediaProtocol(secure_transport, video.get());
 
   video->set_direction(
-      media_description_options.direction.ToMediaContentDirection());
+      cricket::MediaContentDirectionFromRtpTransceiverDirection(
+          media_description_options.direction));
 
   desc->AddContent(media_description_options.mid, NS_JINGLE_RTP,
                    media_description_options.stopped, video.release());
@@ -2098,7 +2125,7 @@ bool MediaSessionDescriptionFactory::AddAudioContentForAnswer(
   // and the selected direction in the answer.
   // Note these will be filtered one final time in CreateMediaContentAnswer.
   auto wants_rtd = media_description_options.direction;
-  auto offer_rtd = RtpTransceiverDirection::FromMediaContentDirection(
+  auto offer_rtd = RtpTransceiverDirectionFromMediaContentDirection(
       offer_audio_description->direction());
   auto answer_rtd = NegotiateRtpTransceiverDirection(offer_rtd, wants_rtd);
   AudioCodecs supported_audio_codecs =

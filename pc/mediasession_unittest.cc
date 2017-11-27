@@ -18,6 +18,7 @@
 #include "p2p/base/transportdescription.h"
 #include "p2p/base/transportinfo.h"
 #include "pc/mediasession.h"
+#include "pc/rtpmediautils.h"
 #include "pc/srtpfilter.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/fakesslidentity.h"
@@ -66,7 +67,6 @@ using cricket::MEDIA_TYPE_DATA;
 using cricket::SEC_DISABLED;
 using cricket::SEC_ENABLED;
 using cricket::SEC_REQUIRED;
-using cricket::RtpTransceiverDirection;
 using rtc::CS_AES_CM_128_HMAC_SHA1_32;
 using rtc::CS_AES_CM_128_HMAC_SHA1_80;
 using rtc::CS_AEAD_AES_128_GCM;
@@ -276,7 +276,7 @@ static void AddMediaSection(MediaType type,
                             MediaSessionOptions* opts) {
   opts->media_description_options.push_back(MediaDescriptionOptions(
       type, mid,
-      cricket::RtpTransceiverDirection::FromMediaContentDirection(direction),
+      cricket::RtpTransceiverDirectionFromMediaContentDirection(direction),
       stopped));
 }
 
@@ -3608,7 +3608,7 @@ void TestAudioCodecsOffer(MediaContentDirection direction) {
   MediaSessionOptions opts;
   AddMediaSection(MEDIA_TYPE_AUDIO, "audio", direction, kActive, &opts);
 
-  if (RtpTransceiverDirection::FromMediaContentDirection(direction).send) {
+  if (direction == cricket::MD_SENDRECV || direction == cricket::MD_SENDONLY) {
     AttachSenderToMediaSection("audio", MEDIA_TYPE_AUDIO, kAudioTrack1,
                                {kMediaStream1}, 1, &opts);
   }
@@ -3707,8 +3707,8 @@ void TestAudioCodecsAnswer(MediaContentDirection offer_direction,
   AddMediaSection(MEDIA_TYPE_AUDIO, "audio", offer_direction, kActive,
                   &offer_opts);
 
-  if (RtpTransceiverDirection::FromMediaContentDirection(offer_direction)
-          .send) {
+  if (webrtc::RtpTransceiverDirectionHasSend(
+          RtpTransceiverDirectionFromMediaContentDirection(offer_direction))) {
     AttachSenderToMediaSection("audio", MEDIA_TYPE_AUDIO, kAudioTrack1,
                                {kMediaStream1}, 1, &offer_opts);
   }
@@ -3721,8 +3721,8 @@ void TestAudioCodecsAnswer(MediaContentDirection offer_direction,
   AddMediaSection(MEDIA_TYPE_AUDIO, "audio", answer_direction, kActive,
                   &answer_opts);
 
-  if (RtpTransceiverDirection::FromMediaContentDirection(answer_direction)
-          .send) {
+  if (webrtc::RtpTransceiverDirectionHasSend(
+          RtpTransceiverDirectionFromMediaContentDirection(answer_direction))) {
     AttachSenderToMediaSection("audio", MEDIA_TYPE_AUDIO, kAudioTrack1,
                                {kMediaStream1}, 1, &answer_opts);
   }

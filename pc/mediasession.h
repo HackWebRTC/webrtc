@@ -20,13 +20,14 @@
 
 #include "api/cryptoparams.h"
 #include "api/mediatypes.h"
+#include "api/rtptransceiverinterface.h"
 #include "media/base/codec.h"
 #include "media/base/mediachannel.h"
 #include "media/base/mediaconstants.h"
 #include "media/base/mediaengine.h"  // For DataChannelType
 #include "media/base/streamparams.h"
-#include "p2p/base/sessiondescription.h"
 #include "p2p/base/jseptransport.h"
+#include "p2p/base/sessiondescription.h"
 #include "p2p/base/transportdescriptionfactory.h"
 
 namespace cricket {
@@ -73,33 +74,11 @@ const int kAutoBandwidth = -1;
 // Default RTCP CNAME for unit tests.
 const char kDefaultRtcpCname[] = "DefaultRtcpCname";
 
-struct RtpTransceiverDirection {
-  bool send;
-  bool recv;
-
-  RtpTransceiverDirection(bool send, bool recv) : send(send), recv(recv) {}
-
-  bool operator==(const RtpTransceiverDirection& o) const {
-    return send == o.send && recv == o.recv;
-  }
-
-  bool operator!=(const RtpTransceiverDirection& o) const {
-    return !(*this == o);
-  }
-
-  static RtpTransceiverDirection FromMediaContentDirection(
-      MediaContentDirection md);
-
-  MediaContentDirection ToMediaContentDirection() const;
-
-  RtpTransceiverDirection Reversed() const {
-    return RtpTransceiverDirection(recv, send);
-  }
-};
-
-RtpTransceiverDirection
-NegotiateRtpTransceiverDirection(RtpTransceiverDirection offer,
-                                 RtpTransceiverDirection wants);
+webrtc::RtpTransceiverDirection
+RtpTransceiverDirectionFromMediaContentDirection(
+    MediaContentDirection direction);
+MediaContentDirection MediaContentDirectionFromRtpTransceiverDirection(
+    webrtc::RtpTransceiverDirection direction);
 
 // Options for an RtpSender contained with an media description/"m=" section.
 struct SenderOptions {
@@ -114,7 +93,7 @@ struct SenderOptions {
 struct MediaDescriptionOptions {
   MediaDescriptionOptions(MediaType type,
                           const std::string& mid,
-                          RtpTransceiverDirection direction,
+                          webrtc::RtpTransceiverDirection direction,
                           bool stopped)
       : type(type), mid(mid), direction(direction), stopped(stopped) {}
 
@@ -132,7 +111,7 @@ struct MediaDescriptionOptions {
 
   MediaType type;
   std::string mid;
-  RtpTransceiverDirection direction;
+  webrtc::RtpTransceiverDirection direction;
   bool stopped;
   TransportOptions transport_options;
   // Note: There's no equivalent "RtpReceiverOptions" because only send
@@ -467,10 +446,10 @@ class MediaSessionDescriptionFactory {
 
  private:
   const AudioCodecs& GetAudioCodecsForOffer(
-      const RtpTransceiverDirection& direction) const;
+      const webrtc::RtpTransceiverDirection& direction) const;
   const AudioCodecs& GetAudioCodecsForAnswer(
-      const RtpTransceiverDirection& offer,
-      const RtpTransceiverDirection& answer) const;
+      const webrtc::RtpTransceiverDirection& offer,
+      const webrtc::RtpTransceiverDirection& answer) const;
   void GetCodecsForOffer(const SessionDescription* current_description,
                          AudioCodecs* audio_codecs,
                          VideoCodecs* video_codecs,
