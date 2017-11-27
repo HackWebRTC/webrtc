@@ -12,6 +12,7 @@
 #define API_RTPTRANSCEIVERINTERFACE_H_
 
 #include <string>
+#include <vector>
 
 #include "api/optional.h"
 #include "api/rtpreceiverinterface.h"
@@ -20,11 +21,27 @@
 
 namespace webrtc {
 
+// https://w3c.github.io/webrtc-pc/#dom-rtcrtptransceiverdirection
 enum class RtpTransceiverDirection {
   kSendRecv,
   kSendOnly,
   kRecvOnly,
   kInactive
+};
+
+// Structure for initializing an RtpTransceiver in a call to
+// PeerConnectionInterface::AddTransceiver.
+// https://w3c.github.io/webrtc-pc/#dom-rtcrtptransceiverinit
+struct RtpTransceiverInit final {
+  // Direction of the RtpTransceiver. See RtpTransceiverInterface::direction().
+  RtpTransceiverDirection direction = RtpTransceiverDirection::kSendRecv;
+
+  // The added RtpTransceiver will be added to these streams.
+  // TODO(bugs.webrtc.org/7600): Not implemented.
+  std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams;
+
+  // TODO(bugs.webrtc.org/7600): Not implemented.
+  std::vector<RtpEncodingParameters> send_encodings;
 };
 
 // The RtpTransceiverInterface maps to the RTCRtpTransceiver defined by the

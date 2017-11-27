@@ -22,16 +22,16 @@
 namespace webrtc {
 
 AudioRtpReceiver::AudioRtpReceiver(
-    const std::string& track_id,
+    const std::string& receiver_id,
     std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams,
     uint32_t ssrc,
     cricket::VoiceChannel* channel)
-    : id_(track_id),
+    : id_(receiver_id),
       ssrc_(ssrc),
       channel_(channel),
       track_(AudioTrackProxy::Create(
           rtc::Thread::Current(),
-          AudioTrack::Create(track_id,
+          AudioTrack::Create(receiver_id,
                              RemoteAudioSource::Create(ssrc, channel)))),
       streams_(std::move(streams)),
       cached_track_enabled_(track_->enabled()) {
