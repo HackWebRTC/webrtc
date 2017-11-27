@@ -24,6 +24,7 @@ const char AlrDetector::kScreenshareProbingBweExperimentName[] =
     "WebRTC-ProbingScreenshareBwe";
 const char AlrDetector::kStrictPacingAndProbingExperimentName[] =
     "WebRTC-StrictPacingAndProbing";
+const char kDefaultProbingScreenshareBweSettings[] = "1.0,2875,80,40,-60,3";
 
 AlrDetector::AlrDetector()
     : bandwidth_usage_percent_(kDefaultAlrBandwidthUsagePercent),
@@ -87,6 +88,14 @@ AlrDetector::ParseAlrSettingsFromFieldTrial(const char* experiment_name) {
   if (suffix_pos != std::string::npos &&
       suffix_pos == group_name.length() - kIgnoredSuffix.length()) {
     group_name.resize(group_name.length() - kIgnoredSuffix.length());
+  }
+
+  if (experiment_name == kScreenshareProbingBweExperimentName) {
+    // This experiment is now default-on with fixed settings.
+    // TODO(sprang): Remove this kill-switch and clean up experiment code.
+    if (group_name != "Disabled") {
+      group_name = kDefaultProbingScreenshareBweSettings;
+    }
   }
 
   if (group_name.empty())

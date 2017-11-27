@@ -3542,7 +3542,7 @@ TEST_F(VideoSendStreamTest, SendsKeepAlive) {
 TEST_F(VideoSendStreamTest, ConfiguresAlrWhenSendSideOn) {
   const std::string kAlrProbingExperiment =
       std::string(AlrDetector::kScreenshareProbingBweExperimentName) +
-      "/1.1,2875,85,20,-20,0/";
+      "/1.0,2875,80,40,-60,3/";
   test::ScopedFieldTrials alr_experiment(kAlrProbingExperiment);
   class PacingFactorObserver : public test::SendTest {
    public:
@@ -3607,7 +3607,7 @@ TEST_F(VideoSendStreamTest, ConfiguresAlrWhenSendSideOn) {
   };
 
   // Send-side bwe on, use pacing factor from |kAlrProbingExperiment| above.
-  PacingFactorObserver test_with_send_side(true, 1.1f);
+  PacingFactorObserver test_with_send_side(true, 1.0f);
   RunBaseTest(&test_with_send_side);
 
   // Send-side bwe off, use default pacing factor.
