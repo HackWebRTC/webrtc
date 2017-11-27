@@ -121,6 +121,7 @@ if (rtc_include_tests) {
     "../resources/att-downlink.rx",
     "../resources/att-uplink.rx",
     "../resources/audio_coding/neteq_opus.rtp",
+    "../resources/audio_coding/neteq_opus_dtx.rtp",
     "../resources/audio_coding/neteq_universal_new.rtp",
     "../resources/audio_coding/speech_mono_16kHz.pcm",
     "../resources/audio_coding/speech_mono_32_48kHz.pcm",

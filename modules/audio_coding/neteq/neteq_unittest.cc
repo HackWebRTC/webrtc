@@ -32,6 +32,7 @@
 #include "rtc_base/protobuf_utils.h"
 #include "rtc_base/sha1digest.h"
 #include "rtc_base/stringencode.h"
+#include "test/field_trial.h"
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
 #include "typedefs.h"  // NOLINT(build/include)
@@ -524,6 +525,48 @@ TEST_F(NetEqDecodingTest, MAYBE_TestOpusBitExactness) {
                    network_stats_checksum,
                    rtcp_stats_checksum,
                    FLAG_gen_ref);
+}
+
+// This test fixture is identical to NetEqDecodingTest, except that it enables
+// the WebRTC-NetEqOpusDtxDelayFix field trial.
+// TODO(bugs.webrtc.org/8488): When the field trial is over and the feature is
+// default enabled, remove this fixture class and let the
+// TestOpusDtxBitExactness test build directly on NetEqDecodingTest.
+class NetEqDecodingTestWithOpusDtxFieldTrial : public NetEqDecodingTest {
+ public:
+  NetEqDecodingTestWithOpusDtxFieldTrial()
+      : override_field_trials_("WebRTC-NetEqOpusDtxDelayFix/Enabled/") {}
+
+ private:
+  test::ScopedFieldTrials override_field_trials_;
+};
+
+#if !defined(WEBRTC_IOS) &&                                         \
+    defined(WEBRTC_NETEQ_UNITTEST_BITEXACT) &&                      \
+    defined(WEBRTC_CODEC_OPUS)
+#define MAYBE_TestOpusDtxBitExactness TestOpusDtxBitExactness
+#else
+#define MAYBE_TestOpusDtxBitExactness DISABLED_TestOpusDtxBitExactness
+#endif
+TEST_F(NetEqDecodingTestWithOpusDtxFieldTrial, MAYBE_TestOpusDtxBitExactness) {
+  const std::string input_rtp_file =
+      webrtc::test::ResourcePath("audio_coding/neteq_opus_dtx", "rtp");
+
+  const std::string output_checksum =
+      PlatformChecksum("713af6c92881f5aab1285765ee6680da9d1c06ce",
+                       "3ec991b96872123f1554c03c543ca5d518431e46",
+                       "da9f9a2d94e0c2d67342fad4965d7b91cda50b25",
+                       "713af6c92881f5aab1285765ee6680da9d1c06ce",
+                       "713af6c92881f5aab1285765ee6680da9d1c06ce");
+
+  const std::string network_stats_checksum =
+      "bab58dc587d956f326056d7340c96eb9d2d3cc21";
+
+  const std::string rtcp_stats_checksum =
+      "ac27a7f305efb58b39bf123dccee25dee5758e63";
+
+  DecodeAndCompare(input_rtp_file, output_checksum, network_stats_checksum,
+                   rtcp_stats_checksum, FLAG_gen_ref);
 }
 
 // Use fax mode to avoid time-scaling. This is to simplify the testing of
