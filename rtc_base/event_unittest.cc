@@ -66,7 +66,7 @@ public:
 };
 
 // These tests are disabled by default and only intended to be run manually.
-TEST(EventTest, PerformanceSingleThread) {
+TEST(EventTest, DISABLED_PerformanceSingleThread) {
   static const int kNumIterations = 10000000;
   Event event(false, false);
   for (int i = 0; i < kNumIterations; ++i) {
@@ -75,7 +75,7 @@ TEST(EventTest, PerformanceSingleThread) {
   }
 }
 
-TEST(EventTest, PerformanceMultiThread) {
+TEST(EventTest, DISABLED_PerformanceMultiThread) {
   static const int kNumIterations = 10000;
   Event read(false, false);
   Event write(false, false);
