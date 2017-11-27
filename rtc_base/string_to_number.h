@@ -65,9 +65,9 @@ StringToNumber(const char* str, int base = 10) {
       string_to_number_internal::ParseSigned(str, base);
   if (value && *value >= std::numeric_limits<T>::lowest() &&
       *value <= std::numeric_limits<T>::max()) {
-    return rtc::Optional<T>(static_cast<T>(*value));
+    return static_cast<T>(*value);
   }
-  return rtc::Optional<T>();
+  return rtc::nullopt;
 }
 
 template <typename T>
@@ -83,9 +83,9 @@ StringToNumber(const char* str, int base = 10) {
   rtc::Optional<unsigned_type> value =
       string_to_number_internal::ParseUnsigned(str, base);
   if (value && *value <= std::numeric_limits<T>::max()) {
-    return rtc::Optional<T>(static_cast<T>(*value));
+    return static_cast<T>(*value);
   }
-  return rtc::Optional<T>();
+  return rtc::nullopt;
 }
 
 // The std::string overloads only exists if there is a matching const char*

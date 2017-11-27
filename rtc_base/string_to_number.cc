@@ -23,10 +23,10 @@ rtc::Optional<signed_type> ParseSigned(const char* str, int base) {
     errno = 0;
     const signed_type value = std::strtoll(str, &end, base);
     if (end && *end == '\0' && errno == 0) {
-      return rtc::Optional<signed_type>(value);
+      return value;
     }
   }
-  return rtc::Optional<signed_type>();
+  return rtc::nullopt;
 }
 
 rtc::Optional<unsigned_type> ParseUnsigned(const char* str, int base) {
@@ -40,10 +40,10 @@ rtc::Optional<unsigned_type> ParseUnsigned(const char* str, int base) {
     errno = 0;
     const unsigned_type value = std::strtoull(str, &end, base);
     if (end && *end == '\0' && errno == 0 && (value == 0 || !is_negative)) {
-      return rtc::Optional<unsigned_type>(value);
+      return value;
     }
   }
-  return rtc::Optional<unsigned_type>();
+  return rtc::nullopt;
 }
 
 }  // namespace string_to_number_internal
