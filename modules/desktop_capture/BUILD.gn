@@ -139,10 +139,6 @@ if (rtc_include_tests) {
     ]
 
     sources = [
-      "desktop_frame_generator.cc",
-      "desktop_frame_generator.h",
-      "fake_desktop_capturer.cc",
-      "fake_desktop_capturer.h",
       "mock_desktop_capturer_callback.cc",
       "mock_desktop_capturer_callback.h",
     ]
@@ -214,12 +210,16 @@ rtc_static_library("desktop_capture_generic") {
     "desktop_capturer_differ_wrapper.h",
     "desktop_capturer_wrapper.cc",
     "desktop_capturer_wrapper.h",
+    "desktop_frame_generator.cc",
+    "desktop_frame_generator.h",
     "desktop_frame_rotation.cc",
     "desktop_frame_rotation.h",
     "desktop_frame_win.cc",
     "desktop_frame_win.h",
     "differ_block.cc",
     "differ_block.h",
+    "fake_desktop_capturer.cc",
+    "fake_desktop_capturer.h",
     "fallback_desktop_capturer_wrapper.cc",
     "fallback_desktop_capturer_wrapper.h",
     "mac/desktop_configuration.h",
