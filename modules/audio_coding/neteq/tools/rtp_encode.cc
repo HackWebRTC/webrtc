@@ -110,7 +110,9 @@ class Packetizer : public AudioPacketizationCallback {
                    size_t payload_len_bytes,
                    const RTPFragmentationHeader* fragmentation) override {
     RTC_CHECK(!fragmentation);
-    RTC_DCHECK_GT(payload_len_bytes, 0);
+    if (payload_len_bytes == 0) {
+      return 0;
+    }
 
     constexpr size_t kRtpHeaderLength = 12;
     constexpr size_t kRtpDumpHeaderLength = 8;
@@ -302,7 +304,7 @@ int RunRtpEncode(int argc, char* argv[]) {
       CreateEncoder(codec_it->second.type, payload_type);
 
   // Create an external VAD/CNG encoder if needed.
-  if (FLAG_dtx && codec_it->second.internal_dtx) {
+  if (FLAG_dtx && !codec_it->second.internal_dtx) {
     AudioEncoderCng::Config cng_config = GetCngConfig(codec->SampleRateHz());
     RTC_DCHECK(codec);
     cng_config.speech_encoder = std::move(codec);
