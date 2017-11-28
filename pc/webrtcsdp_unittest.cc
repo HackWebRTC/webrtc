@@ -16,6 +16,7 @@
 #include "api/jsepsessiondescription.h"
 #include "media/base/mediaconstants.h"
 #include "media/engine/webrtcvideoengine.h"
+#include "p2p/base/port.h"
 #include "p2p/base/p2pconstants.h"
 #include "pc/mediasession.h"
 #include "rtc_base/checks.h"

@@ -14,6 +14,7 @@
 
 #include "pc/mediasession.h"
 #include "pc/webrtcsdp.h"
+#include "p2p/base/port.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/stringencode.h"
 

@@ -52,13 +52,6 @@ rtc_source_set("rtc_h264_profile_id") {
 }
 
 rtc_static_library("rtc_media_base") {
-  # TODO(kjellander): Remove (bugs.webrtc.org/6828)
-  # Enabling GN check triggers cyclic dependency error:
-  #   :rtc_media_base ->
-  #   ../pc:rtc_pc_base ->
-  #   :rtc_data ->
-  #   :rtc_media_base
-  check_includes = false
   defines = []
   libs = []
   deps = []
@@ -119,9 +112,18 @@ rtc_static_library("rtc_media_base") {
   deps += [
     "..:webrtc_common",
     "../api:libjingle_peerconnection_api",
+    "../api:optional",
+    "../api:video_frame_api",
+    "../api:video_frame_api_i420",
+    "../api/audio_codecs:audio_codecs_api",
+    "../api/video_codecs:video_codecs_api",
+    "../call:call_interfaces",
+    "../call:video_stream_api",
+    "../modules/audio_processing:audio_processing_statistics",
     "../p2p",
     "../rtc_base:rtc_base",
     "../rtc_base:rtc_base_approved",
+    "../system_wrappers:field_trial_api",
   ]
 
   public_deps += [ ":rtc_h264_profile_id" ]

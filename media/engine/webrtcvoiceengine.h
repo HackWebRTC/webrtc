@@ -192,7 +192,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   bool RemoveSendStream(uint32_t ssrc) override;
   bool AddRecvStream(const StreamParams& sp) override;
   bool RemoveRecvStream(uint32_t ssrc) override;
-  bool GetActiveStreams(AudioInfo::StreamList* actives) override;
+  bool GetActiveStreams(StreamList* actives) override;
   int GetOutputLevel() override;
   // SSRC=0 will apply the new volume to current and future unsignaled streams.
   bool SetOutputVolume(uint32_t ssrc, double volume) override;

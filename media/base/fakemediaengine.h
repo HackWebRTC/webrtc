@@ -382,7 +382,7 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
     return true;
   }
 
-  virtual bool GetActiveStreams(AudioInfo::StreamList* streams) { return true; }
+  virtual bool GetActiveStreams(StreamList* streams) { return true; }
   virtual int GetOutputLevel() { return 0; }
 
   virtual bool CanInsertDtmf() {

@@ -15,6 +15,7 @@
 #include "api/jsepicecandidate.h"
 #include "api/jsepsessiondescription.h"
 #include "api/webrtcsdp.h"
+#include "p2p/base/port.h"
 #include "p2p/base/p2pconstants.h"
 #include "p2p/base/sessiondescription.h"
 #include "pc/mediasession.h"

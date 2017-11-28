@@ -12,10 +12,6 @@
 
 #if !defined(DISABLE_MEDIA_ENGINE_FACTORY)
 
-#if defined(HAVE_WEBRTC_VOICE) && defined(HAVE_WEBRTC_VIDEO)
-#include "media/engine/webrtcmediaengine.h"
-#endif  // HAVE_WEBRTC_VOICE && HAVE_WEBRTC_VIDEO
-
 namespace cricket {
 
 MediaEngineFactory::MediaEngineCreateFunction
