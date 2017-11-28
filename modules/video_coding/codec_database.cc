@@ -254,6 +254,7 @@ bool VCMCodecDataBase::RequiresEncoderReset(const VideoCodec& new_send_codec) {
     case kVideoCodecRED:
     case kVideoCodecULPFEC:
     case kVideoCodecFlexfec:
+    case kVideoCodecStereo:
       break;
     // Unknown codec type, reset just to be sure.
     case kVideoCodecUnknown:

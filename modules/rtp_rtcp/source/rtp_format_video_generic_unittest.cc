@@ -59,7 +59,7 @@ size_t GetEffectivePacketsSizeDifference(std::vector<size_t>* payload_sizes,
 
 }  // namespace
 
-TEST(RtpPacketizerVideoGeneric, AllPacketsMayBeEqual_RespectsMaxPayloadSize) {
+TEST(RtpPacketizerVideoGeneric, AllPacketsMayBeEqualAndRespectMaxPayloadSize) {
   const size_t kMaxPayloadLen = 6;
   const size_t kLastPacketReductionLen = 2;
   const size_t kPayloadSize = 13;

@@ -58,6 +58,8 @@ RtpVideoCodecTypes ConvertToRtpVideoCodecType(VideoCodecType type) {
     case kVideoCodecRED:
     case kVideoCodecULPFEC:
       return kRtpVideoNone;
+    case kVideoCodecStereo:
+      return kRtpVideoStereo;
     default:
       return kRtpVideoGeneric;
   }

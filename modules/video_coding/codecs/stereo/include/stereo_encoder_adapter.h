@@ -11,6 +11,7 @@
 #ifndef MODULES_VIDEO_CODING_CODECS_STEREO_INCLUDE_STEREO_ENCODER_ADAPTER_H_
 #define MODULES_VIDEO_CODING_CODECS_STEREO_INCLUDE_STEREO_ENCODER_ADAPTER_H_
 
+#include <map>
 #include <memory>
 #include <vector>
 
@@ -56,15 +57,16 @@ class StereoEncoderAdapter : public VideoEncoder {
   // Wrapper class that redirects OnEncodedImage() calls.
   class AdapterEncodedImageCallback;
 
-  // Holds the encoded image output of a frame.
-  struct EncodedImageData;
-
   VideoEncoderFactory* const factory_;
   std::vector<std::unique_ptr<VideoEncoder>> encoders_;
   std::vector<std::unique_ptr<AdapterEncodedImageCallback>> adapter_callbacks_;
   EncodedImageCallback* encoded_complete_callback_;
 
-  uint64_t picture_index_ = 0;
+  // Holds the encoded image info.
+  struct ImageStereoInfo;
+  std::map<uint32_t /* timestamp */, ImageStereoInfo> image_stereo_info_;
+
+  uint16_t picture_index_ = 0;
   std::vector<uint8_t> stereo_dummy_planes_;
 };
 

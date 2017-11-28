@@ -33,13 +33,19 @@ VideoCodecTest::FakeEncodeCompleteCallback::OnEncodedImage(
     const CodecSpecificInfo* codec_specific_info,
     const RTPFragmentationHeader* fragmentation) {
   rtc::CritScope lock(&test_->encoded_frame_section_);
-  test_->encoded_frame_.emplace(frame);
+  test_->encoded_frames_.push_back(frame);
   RTC_DCHECK(codec_specific_info);
-  test_->codec_specific_info_.codecType = codec_specific_info->codecType;
-  // Skip |codec_name|, to avoid allocating.
-  test_->codec_specific_info_.codecSpecific =
-      codec_specific_info->codecSpecific;
-  test_->encoded_frame_event_.Set();
+  test_->codec_specific_infos_.push_back(*codec_specific_info);
+  if (!test_->wait_for_encoded_frames_threshold_) {
+    test_->encoded_frame_event_.Set();
+    return Result(Result::OK);
+  }
+
+  if (test_->encoded_frames_.size() ==
+      test_->wait_for_encoded_frames_threshold_) {
+    test_->wait_for_encoded_frames_threshold_ = 1;
+    test_->encoded_frame_event_.Set();
+  }
   return Result(Result::OK);
 }
 
@@ -74,17 +80,38 @@ void VideoCodecTest::SetUp() {
 bool VideoCodecTest::WaitForEncodedFrame(
     EncodedImage* frame,
     CodecSpecificInfo* codec_specific_info) {
-  bool ret = encoded_frame_event_.Wait(kEncodeTimeoutMs);
-  EXPECT_TRUE(ret) << "Timed out while waiting for an encoded frame.";
+  std::vector<EncodedImage> frames;
+  std::vector<CodecSpecificInfo> codec_specific_infos;
+  if (!WaitForEncodedFrames(&frames, &codec_specific_infos))
+    return false;
+  EXPECT_EQ(frames.size(), static_cast<size_t>(1));
+  EXPECT_EQ(frames.size(), codec_specific_infos.size());
+  *frame = frames[0];
+  *codec_specific_info = codec_specific_infos[0];
+  return true;
+}
+
+void VideoCodecTest::SetWaitForEncodedFramesThreshold(size_t num_frames) {
+  rtc::CritScope lock(&encoded_frame_section_);
+  wait_for_encoded_frames_threshold_ = num_frames;
+}
+
+bool VideoCodecTest::WaitForEncodedFrames(
+    std::vector<EncodedImage>* frames,
+    std::vector<CodecSpecificInfo>* codec_specific_info) {
+  EXPECT_TRUE(encoded_frame_event_.Wait(kEncodeTimeoutMs))
+      << "Timed out while waiting for encoded frame.";
   // This becomes unsafe if there are multiple threads waiting for frames.
   rtc::CritScope lock(&encoded_frame_section_);
-  EXPECT_TRUE(encoded_frame_);
-  if (encoded_frame_) {
-    *frame = std::move(*encoded_frame_);
-    encoded_frame_.reset();
-    RTC_DCHECK(codec_specific_info);
-    codec_specific_info->codecType = codec_specific_info_.codecType;
-    codec_specific_info->codecSpecific = codec_specific_info_.codecSpecific;
+  EXPECT_FALSE(encoded_frames_.empty());
+  EXPECT_FALSE(codec_specific_infos_.empty());
+  EXPECT_EQ(encoded_frames_.size(), codec_specific_infos_.size());
+  if (!encoded_frames_.empty()) {
+    *frames = encoded_frames_;
+    encoded_frames_.clear();
+    RTC_DCHECK(!codec_specific_infos_.empty());
+    *codec_specific_info = codec_specific_infos_;
+    codec_specific_infos_.clear();
     return true;
   } else {
     return false;

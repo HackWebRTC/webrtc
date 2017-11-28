@@ -22,6 +22,7 @@
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/include/module_common_types_public.h"
 #include "modules/video_coding/codecs/h264/include/h264_globals.h"
+#include "modules/video_coding/codecs/stereo/include/stereo_globals.h"
 #include "modules/video_coding/codecs/vp8/include/vp8_globals.h"
 #include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
 #include "rtc_base/constructormagic.h"
@@ -39,19 +40,27 @@ struct RTPAudioHeader {
   size_t channel;                     // number of channels 2 = stereo
 };
 
+enum RtpVideoCodecTypes {
+  kRtpVideoNone = 0,
+  kRtpVideoGeneric = 1,
+  kRtpVideoVp8 = 2,
+  kRtpVideoVp9 = 3,
+  kRtpVideoH264 = 4,
+  kRtpVideoStereo = 5
+};
+
+struct RTPVideoHeaderStereo {
+  RtpVideoCodecTypes associated_codec_type;
+  StereoIndices indices;
+};
+
 union RTPVideoTypeHeader {
   RTPVideoHeaderVP8 VP8;
   RTPVideoHeaderVP9 VP9;
   RTPVideoHeaderH264 H264;
+  RTPVideoHeaderStereo stereo;
 };
 
-enum RtpVideoCodecTypes {
-  kRtpVideoNone,
-  kRtpVideoGeneric,
-  kRtpVideoVp8,
-  kRtpVideoVp9,
-  kRtpVideoH264
-};
 // Since RTPVideoHeader is used as a member of a union, it can't have a
 // non-trivial default constructor.
 struct RTPVideoHeader {
