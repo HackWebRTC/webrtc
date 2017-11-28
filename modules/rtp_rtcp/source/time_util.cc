@@ -12,6 +12,8 @@
 
 #include <algorithm>
 
+#include "rtc_base/timeutils.h"
+
 namespace webrtc {
 namespace {
 // TODO(danilchap): Make generic, optimize and move to base.
@@ -19,20 +21,53 @@ inline int64_t DivideRoundToNearest(int64_t x, uint32_t y) {
   // Callers ensure x is positive and x + y / 2 doesn't overflow.
   return (x + y / 2) / y;
 }
+
+int64_t NtpOffsetUs() {
+  constexpr int64_t kNtpJan1970Sec = 2208988800;
+  int64_t clock_time = rtc::TimeMicros();
+  int64_t utc_time = rtc::TimeUTCMicros();
+  return utc_time - clock_time + kNtpJan1970Sec * rtc::kNumMicrosecsPerSec;
+}
+
 }  // namespace
+
+NtpTime TimeMicrosToNtp(int64_t time_us) {
+  // Calculate the offset once.
+  static int64_t ntp_offset_us = NtpOffsetUs();
+
+  int64_t time_ntp_us = time_us + ntp_offset_us;
+  RTC_DCHECK_GE(time_ntp_us, 0);  // Time before year 1900 is unsupported.
+
+  // TODO(danilchap): Convert both seconds and fraction together using int128
+  // when that type is easily available.
+  // Currently conversion is done separetly for seconds and fraction of a second
+  // to avoid overflow.
+
+  // Convert seconds to uint32 through uint64 for well-defined cast.
+  // Wrap around (will happen in 2036) is expected for ntp time.
+  uint32_t ntp_seconds =
+      static_cast<uint64_t>(time_ntp_us / rtc::kNumMicrosecsPerSec);
+
+  // Scale fractions of the second to ntp resolution.
+  constexpr int64_t kNtpInSecond = 1LL << 32;
+  int64_t us_fractions = time_ntp_us % rtc::kNumMicrosecsPerSec;
+  uint32_t ntp_fractions =
+      us_fractions * kNtpInSecond / rtc::kNumMicrosecsPerSec;
+  return NtpTime(ntp_seconds, ntp_fractions);
+}
 
 uint32_t SaturatedUsToCompactNtp(int64_t us) {
   constexpr uint32_t kMaxCompactNtp = 0xFFFFFFFF;
-  constexpr int64_t kMicrosecondsInSecond = 1000000;
   constexpr int kCompactNtpInSecond = 0x10000;
   if (us <= 0)
     return 0;
-  if (us >= kMaxCompactNtp * kMicrosecondsInSecond / kCompactNtpInSecond)
+  if (us >= kMaxCompactNtp * rtc::kNumMicrosecsPerSec / kCompactNtpInSecond)
     return kMaxCompactNtp;
   // To convert to compact ntp need to divide by 1e6 to get seconds,
   // then multiply by 0x10000 to get the final result.
   // To avoid float operations, multiplication and division swapped.
-  return DivideRoundToNearest(us * kCompactNtpInSecond, kMicrosecondsInSecond);
+  return DivideRoundToNearest(us * kCompactNtpInSecond,
+                              rtc::kNumMicrosecsPerSec);
 }
 
 int64_t CompactNtpRttToMs(uint32_t compact_ntp_interval) {
