@@ -121,12 +121,7 @@ int32_t VideoEncoderWrapper::Encode(
   ScopedLocalRefFrame local_ref_frame(jni);
 
   // Construct encode info.
-  jobjectArray j_frame_types =
-      jni->NewObjectArray(frame_types->size(), *frame_type_class_, nullptr);
-  for (size_t i = 0; i < frame_types->size(); ++i) {
-    jobject j_frame_type = NativeToJavaFrameType(jni, (*frame_types)[i]);
-    jni->SetObjectArrayElement(j_frame_types, i, j_frame_type);
-  }
+  jobjectArray j_frame_types = NativeToJavaFrameTypeArray(jni, *frame_types);
   jobject encode_info = Java_EncodeInfo_Constructor(jni, j_frame_types);
 
   FrameExtraInfo info;
@@ -169,10 +164,10 @@ VideoEncoderWrapper::ScalingSettings VideoEncoderWrapper::GetScalingSettings()
   bool isOn =
       Java_VideoEncoderWrapper_getScalingSettingsOn(jni, j_scaling_settings);
 
-  rtc::Optional<int> low = JavaIntegerToOptionalInt(
+  rtc::Optional<int> low = JavaToNativeOptionalInt(
       jni,
       Java_VideoEncoderWrapper_getScalingSettingsLow(jni, j_scaling_settings));
-  rtc::Optional<int> high = JavaIntegerToOptionalInt(
+  rtc::Optional<int> high = JavaToNativeOptionalInt(
       jni,
       Java_VideoEncoderWrapper_getScalingSettingsHigh(jni, j_scaling_settings));
 
@@ -200,7 +195,7 @@ void VideoEncoderWrapper::OnEncodedFrame(JNIEnv* jni,
 
   std::vector<uint8_t> buffer_copy(buffer_size);
   memcpy(buffer_copy.data(), buffer, buffer_size);
-  const int qp = JavaIntegerToOptionalInt(jni, j_qp).value_or(-1);
+  const int qp = JavaToNativeOptionalInt(jni, j_qp).value_or(-1);
 
   encoder_queue_->PostTask(
       [

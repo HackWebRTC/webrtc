@@ -104,7 +104,7 @@ JNI_FUNCTION_DECLARATION(jstring,
                          JNIEnv* jni,
                          jclass,
                          jstring j_name) {
-  return JavaStringFromStdString(
+  return NativeToJavaString(
       jni, field_trial::FindFullName(JavaToStdString(jni, j_name)));
 }
 

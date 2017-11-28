@@ -16,6 +16,7 @@
 #include "rtc_base/ptr_util.h"
 #include "sdk/android/generated_peerconnection_jni/jni/MediaStream_jni.h"
 #include "sdk/android/src/jni/classreferenceholder.h"
+#include "sdk/android/src/jni/jni_helpers.h"
 #include "sdk/android/src/jni/pc/datachannel.h"
 #include "sdk/android/src/jni/pc/java_native_conversion.h"
 
@@ -48,7 +49,7 @@ void PeerConnectionObserverJni::OnIceCandidate(
     const IceCandidateInterface* candidate) {
   JNIEnv* env = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(env);
-  jobject j_candidate = NativeToJavaCandidate(env, *candidate);
+  jobject j_candidate = NativeToJavaIceCandidate(env, *candidate);
 
   jmethodID m = GetMethodID(env, *j_observer_class_, "onIceCandidate",
                             "(Lorg/webrtc/IceCandidate;)V");
