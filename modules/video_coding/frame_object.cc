@@ -43,9 +43,14 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
   frame_type_ = first_packet->frameType;
   codec_type_ = first_packet->codec;
 
+  // Stereo codec appends CopyCodecSpecific to last packet to avoid copy.
+  VCMPacket* packet_with_codec_specific =
+      codec_type_ == kVideoCodecStereo ? packet_buffer_->GetPacket(last_seq_num)
+                                       : first_packet;
+
   // TODO(philipel): Remove when encoded image is replaced by FrameObject.
   // VCMEncodedFrame members
-  CopyCodecSpecific(&first_packet->video_header);
+  CopyCodecSpecific(&packet_with_codec_specific->video_header);
   _completeFrame = true;
   _payloadType = first_packet->payloadType;
   _timeStamp = first_packet->timestamp;

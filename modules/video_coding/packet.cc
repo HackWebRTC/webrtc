@@ -133,6 +133,9 @@ void VCMPacket::CopyCodecSpecifics(const RTPVideoHeader& videoHeader) {
       }
       codec = kVideoCodecH264;
       return;
+    case kRtpVideoStereo:
+      codec = kVideoCodecStereo;
+      return;
     case kRtpVideoGeneric:
       codec = kVideoCodecGeneric;
       return;

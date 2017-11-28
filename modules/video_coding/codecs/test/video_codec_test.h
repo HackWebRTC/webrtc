@@ -12,6 +12,7 @@
 #define MODULES_VIDEO_CODING_CODECS_TEST_VIDEO_CODEC_TEST_H_
 
 #include <memory>
+#include <vector>
 
 #include "api/video_codecs/video_decoder.h"
 #include "api/video_codecs/video_encoder.h"
@@ -32,6 +33,7 @@ class VideoCodecTest : public ::testing::Test {
         decode_complete_callback_(this),
         encoded_frame_event_(false /* manual reset */,
                              false /* initially signaled */),
+        wait_for_encoded_frames_threshold_(1),
         decoded_frame_event_(false /* manual reset */,
                              false /* initially signaled */) {}
 
@@ -74,8 +76,19 @@ class VideoCodecTest : public ::testing::Test {
 
   void SetUp() override;
 
+  // Helper method for waiting a single encoded frame.
   bool WaitForEncodedFrame(EncodedImage* frame,
                            CodecSpecificInfo* codec_specific_info);
+
+  // Helper methods for waiting for multiple encoded frames. Caller must
+  // define how many frames are to be waited for via |num_frames| before calling
+  // Encode(). Then, they can expect to retrive them via WaitForEncodedFrames().
+  void SetWaitForEncodedFramesThreshold(size_t num_frames);
+  bool WaitForEncodedFrames(
+      std::vector<EncodedImage>* frames,
+      std::vector<CodecSpecificInfo>* codec_specific_info);
+
+  // Helper method for waiting a single decoded frame.
   bool WaitForDecodedFrame(std::unique_ptr<VideoFrame>* frame,
                            rtc::Optional<uint8_t>* qp);
 
@@ -95,9 +108,11 @@ class VideoCodecTest : public ::testing::Test {
 
   rtc::Event encoded_frame_event_;
   rtc::CriticalSection encoded_frame_section_;
-  rtc::Optional<EncodedImage> encoded_frame_
+  size_t wait_for_encoded_frames_threshold_;
+  std::vector<EncodedImage> encoded_frames_
       RTC_GUARDED_BY(encoded_frame_section_);
-  CodecSpecificInfo codec_specific_info_ RTC_GUARDED_BY(encoded_frame_section_);
+  std::vector<CodecSpecificInfo> codec_specific_infos_
+      RTC_GUARDED_BY(encoded_frame_section_);
 
   rtc::Event decoded_frame_event_;
   rtc::CriticalSection decoded_frame_section_;

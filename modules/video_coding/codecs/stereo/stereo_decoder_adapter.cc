@@ -33,18 +33,18 @@ class StereoDecoderAdapter::AdapterDecodedImageCallback
                               AlphaCodecStream stream_idx)
       : adapter_(adapter), stream_idx_(stream_idx) {}
 
-  void Decoded(VideoFrame& decodedImage,
+  void Decoded(VideoFrame& decoded_image,
                rtc::Optional<int32_t> decode_time_ms,
                rtc::Optional<uint8_t> qp) override {
     if (!adapter_)
       return;
-    adapter_->Decoded(stream_idx_, &decodedImage, decode_time_ms, qp);
+    adapter_->Decoded(stream_idx_, &decoded_image, decode_time_ms, qp);
   }
-  int32_t Decoded(VideoFrame& decodedImage) override {
+  int32_t Decoded(VideoFrame& decoded_image) override {
     RTC_NOTREACHED();
     return WEBRTC_VIDEO_CODEC_OK;
   }
-  int32_t Decoded(VideoFrame& decodedImage, int64_t decode_time_ms) override {
+  int32_t Decoded(VideoFrame& decoded_image, int64_t decode_time_ms) override {
     RTC_NOTREACHED();
     return WEBRTC_VIDEO_CODEC_OK;
   }
@@ -57,22 +57,22 @@ class StereoDecoderAdapter::AdapterDecodedImageCallback
 struct StereoDecoderAdapter::DecodedImageData {
   explicit DecodedImageData(AlphaCodecStream stream_idx)
       : stream_idx_(stream_idx),
-        decodedImage_(I420Buffer::Create(1 /* width */, 1 /* height */),
-                      0,
-                      0,
-                      kVideoRotation_0) {
+        decoded_image_(I420Buffer::Create(1 /* width */, 1 /* height */),
+                       0,
+                       0,
+                       kVideoRotation_0) {
     RTC_DCHECK_EQ(kAXXStream, stream_idx);
   }
   DecodedImageData(AlphaCodecStream stream_idx,
-                   const VideoFrame& decodedImage,
+                   const VideoFrame& decoded_image,
                    const rtc::Optional<int32_t>& decode_time_ms,
                    const rtc::Optional<uint8_t>& qp)
       : stream_idx_(stream_idx),
-        decodedImage_(decodedImage),
+        decoded_image_(decoded_image),
         decode_time_ms_(decode_time_ms),
         qp_(qp) {}
   const AlphaCodecStream stream_idx_;
-  VideoFrame decodedImage_;
+  VideoFrame decoded_image_;
   const rtc::Optional<int32_t> decode_time_ms_;
   const rtc::Optional<uint8_t> qp_;
 
@@ -113,14 +113,21 @@ int32_t StereoDecoderAdapter::Decode(
     const RTPFragmentationHeader* /*fragmentation*/,
     const CodecSpecificInfo* codec_specific_info,
     int64_t render_time_ms) {
-  // TODO(emircan): Read |codec_specific_info->stereoInfo| to split frames.
-  int32_t rv =
-      decoders_[kYUVStream]->Decode(input_image, missing_frames, nullptr,
-                                    codec_specific_info, render_time_ms);
-  if (rv)
-    return rv;
-  rv = decoders_[kAXXStream]->Decode(input_image, missing_frames, nullptr,
-                                     codec_specific_info, render_time_ms);
+  const CodecSpecificInfoStereo& stereo_info =
+      codec_specific_info->codecSpecific.stereo;
+  RTC_DCHECK_LT(static_cast<size_t>(stereo_info.indices.frame_index),
+                decoders_.size());
+  if (stereo_info.indices.frame_count == 1) {
+    RTC_DCHECK_EQ(static_cast<int>(stereo_info.indices.frame_index), 0);
+    RTC_DCHECK(decoded_data_.find(input_image._timeStamp) ==
+               decoded_data_.end());
+    decoded_data_.emplace(std::piecewise_construct,
+                          std::forward_as_tuple(input_image._timeStamp),
+                          std::forward_as_tuple(kAXXStream));
+  }
+
+  int32_t rv = decoders_[stereo_info.indices.frame_index]->Decode(
+      input_image, missing_frames, nullptr, nullptr, render_time_ms);
   return rv;
 }
 
@@ -152,12 +159,12 @@ void StereoDecoderAdapter::Decoded(AlphaCodecStream stream_idx,
     if (stream_idx == kYUVStream) {
       RTC_DCHECK_EQ(kAXXStream, other_image_data.stream_idx_);
       MergeAlphaImages(decoded_image, decode_time_ms, qp,
-                       &other_image_data.decodedImage_,
+                       &other_image_data.decoded_image_,
                        other_image_data.decode_time_ms_, other_image_data.qp_);
     } else {
       RTC_DCHECK_EQ(kYUVStream, other_image_data.stream_idx_);
       RTC_DCHECK_EQ(kAXXStream, stream_idx);
-      MergeAlphaImages(&other_image_data.decodedImage_,
+      MergeAlphaImages(&other_image_data.decoded_image_,
                        other_image_data.decode_time_ms_, other_image_data.qp_,
                        decoded_image, decode_time_ms, qp);
     }
@@ -166,6 +173,8 @@ void StereoDecoderAdapter::Decoded(AlphaCodecStream stream_idx,
   }
   RTC_DCHECK(decoded_data_.find(decoded_image->timestamp()) ==
              decoded_data_.end());
+  // decoded_data_[decoded_image->timestamp()] =
+  //     DecodedImageData(stream_idx, *decoded_image, decode_time_ms, qp);
   decoded_data_.emplace(
       std::piecewise_construct,
       std::forward_as_tuple(decoded_image->timestamp()),
@@ -173,16 +182,21 @@ void StereoDecoderAdapter::Decoded(AlphaCodecStream stream_idx,
 }
 
 void StereoDecoderAdapter::MergeAlphaImages(
-    VideoFrame* decodedImage,
+    VideoFrame* decoded_image,
     const rtc::Optional<int32_t>& decode_time_ms,
     const rtc::Optional<uint8_t>& qp,
-    VideoFrame* alpha_decodedImage,
+    VideoFrame* alpha_decoded_image,
     const rtc::Optional<int32_t>& alpha_decode_time_ms,
     const rtc::Optional<uint8_t>& alpha_qp) {
+  if (!alpha_decoded_image->timestamp()) {
+    decoded_complete_callback_->Decoded(*decoded_image, decode_time_ms, qp);
+    return;
+  }
+
   rtc::scoped_refptr<webrtc::I420BufferInterface> yuv_buffer =
-      decodedImage->video_frame_buffer()->ToI420();
+      decoded_image->video_frame_buffer()->ToI420();
   rtc::scoped_refptr<webrtc::I420BufferInterface> alpha_buffer =
-      alpha_decodedImage->video_frame_buffer()->ToI420();
+      alpha_decoded_image->video_frame_buffer()->ToI420();
   RTC_DCHECK_EQ(yuv_buffer->width(), alpha_buffer->width());
   RTC_DCHECK_EQ(yuv_buffer->height(), alpha_buffer->height());
   rtc::scoped_refptr<I420ABufferInterface> merged_buffer = WrapI420ABuffer(
@@ -192,8 +206,8 @@ void StereoDecoderAdapter::MergeAlphaImages(
       alpha_buffer->StrideY(),
       rtc::Bind(&KeepBufferRefs, yuv_buffer, alpha_buffer));
 
-  VideoFrame merged_image(merged_buffer, decodedImage->timestamp(),
-                          0 /* render_time_ms */, decodedImage->rotation());
+  VideoFrame merged_image(merged_buffer, decoded_image->timestamp(),
+                          0 /* render_time_ms */, decoded_image->rotation());
   decoded_complete_callback_->Decoded(merged_image, decode_time_ms, qp);
 }
 

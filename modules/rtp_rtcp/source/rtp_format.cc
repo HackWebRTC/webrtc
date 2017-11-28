@@ -14,6 +14,7 @@
 
 #include "modules/rtp_rtcp/source/rtp_format_h264.h"
 #include "modules/rtp_rtcp/source/rtp_format_video_generic.h"
+#include "modules/rtp_rtcp/source/rtp_format_video_stereo.h"
 #include "modules/rtp_rtcp/source/rtp_format_vp8.h"
 #include "modules/rtp_rtcp/source/rtp_format_vp9.h"
 
@@ -36,6 +37,10 @@ RtpPacketizer* RtpPacketizer::Create(RtpVideoCodecTypes type,
       RTC_CHECK(rtp_type_header);
       return new RtpPacketizerVp9(rtp_type_header->VP9, max_payload_len,
                                   last_packet_reduction_len);
+    case kRtpVideoStereo:
+      return new RtpPacketizerStereo(rtp_type_header->stereo, frame_type,
+                                     max_payload_len,
+                                     last_packet_reduction_len);
     case kRtpVideoGeneric:
       return new RtpPacketizerGeneric(frame_type, max_payload_len,
                                       last_packet_reduction_len);
@@ -53,6 +58,8 @@ RtpDepacketizer* RtpDepacketizer::Create(RtpVideoCodecTypes type) {
       return new RtpDepacketizerVp8();
     case kRtpVideoVp9:
       return new RtpDepacketizerVp9();
+    case kRtpVideoStereo:
+      return new RtpDepacketizerStereo();
     case kRtpVideoGeneric:
       return new RtpDepacketizerGeneric();
     case kRtpVideoNone:

@@ -193,6 +193,28 @@ void VCMEncodedFrame::CopyCodecSpecific(const RTPVideoHeader* header) {
         _codecSpecificInfo.codecType = kVideoCodecH264;
         break;
       }
+      case kRtpVideoStereo: {
+        _codecSpecificInfo.codecType = kVideoCodecStereo;
+        VideoCodecType associated_codec_type = kVideoCodecUnknown;
+        switch (header->codecHeader.stereo.associated_codec_type) {
+          case kRtpVideoVp8:
+            associated_codec_type = kVideoCodecVP8;
+            break;
+          case kRtpVideoVp9:
+            associated_codec_type = kVideoCodecVP9;
+            break;
+          case kRtpVideoH264:
+            associated_codec_type = kVideoCodecH264;
+            break;
+          default:
+            RTC_NOTREACHED();
+        }
+        _codecSpecificInfo.codecSpecific.stereo.associated_codec_type =
+            associated_codec_type;
+        _codecSpecificInfo.codecSpecific.stereo.indices =
+            header->codecHeader.stereo.indices;
+        break;
+      }
       default: {
         _codecSpecificInfo.codecType = kVideoCodecUnknown;
         break;
