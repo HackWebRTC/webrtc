@@ -134,39 +134,29 @@ void RtcpTransceiverImpl::UnsetRemb() {
 void RtcpTransceiverImpl::SendNack(uint32_t ssrc,
                                    std::vector<uint16_t> sequence_numbers) {
   RTC_DCHECK(!sequence_numbers.empty());
-  SendImmediateFeedback([&](PacketSender* sender) {
-    rtcp::Nack nack;
-    nack.SetSenderSsrc(config_.feedback_ssrc);
-    nack.SetMediaSsrc(ssrc);
-    nack.SetPacketIds(std::move(sequence_numbers));
-    sender->AppendPacket(nack);
-  });
+  rtcp::Nack nack;
+  nack.SetSenderSsrc(config_.feedback_ssrc);
+  nack.SetMediaSsrc(ssrc);
+  nack.SetPacketIds(std::move(sequence_numbers));
+  SendImmediateFeedback(nack);
 }
 
-void RtcpTransceiverImpl::SendPictureLossIndication(
-    rtc::ArrayView<const uint32_t> ssrcs) {
-  RTC_DCHECK(!ssrcs.empty());
-  SendImmediateFeedback([this, ssrcs](PacketSender* sender) {
-    for (uint32_t media_ssrc : ssrcs) {
-      rtcp::Pli pli;
-      pli.SetSenderSsrc(config_.feedback_ssrc);
-      pli.SetMediaSsrc(media_ssrc);
-      sender->AppendPacket(pli);
-    }
-  });
+void RtcpTransceiverImpl::SendPictureLossIndication(uint32_t ssrc) {
+  rtcp::Pli pli;
+  pli.SetSenderSsrc(config_.feedback_ssrc);
+  pli.SetMediaSsrc(ssrc);
+  SendImmediateFeedback(pli);
 }
 
 void RtcpTransceiverImpl::SendFullIntraRequest(
     rtc::ArrayView<const uint32_t> ssrcs) {
   RTC_DCHECK(!ssrcs.empty());
-  SendImmediateFeedback([this, ssrcs](PacketSender* sender) {
-    rtcp::Fir fir;
-    fir.SetSenderSsrc(config_.feedback_ssrc);
-    for (uint32_t media_ssrc : ssrcs)
-      fir.AddRequestTo(media_ssrc,
-                       remote_senders_[media_ssrc].fir_sequence_number++);
-    sender->AppendPacket(fir);
-  });
+  rtcp::Fir fir;
+  fir.SetSenderSsrc(config_.feedback_ssrc);
+  for (uint32_t media_ssrc : ssrcs)
+    fir.AddRequestTo(media_ssrc,
+                     remote_senders_[media_ssrc].fir_sequence_number++);
+  SendImmediateFeedback(fir);
 }
 
 void RtcpTransceiverImpl::HandleReceivedPacket(
@@ -255,15 +245,17 @@ void RtcpTransceiverImpl::SendPeriodicCompoundPacket() {
 }
 
 void RtcpTransceiverImpl::SendImmediateFeedback(
-    rtc::FunctionView<void(PacketSender*)> append_feedback) {
+    const rtcp::RtcpPacket& rtcp_packet) {
   PacketSender sender(config_.outgoing_transport, config_.max_packet_size);
+  // Compound mode requires every sent rtcp packet to be compound, i.e. start
+  // with a sender or receiver report.
   if (config_.rtcp_mode == RtcpMode::kCompound)
     CreateCompoundPacket(&sender);
 
-  append_feedback(&sender);
-
+  sender.AppendPacket(rtcp_packet);
   sender.Send();
 
+  // If compound packet was sent, delay (reschedule) the periodic one.
   if (config_.rtcp_mode == RtcpMode::kCompound)
     ReschedulePeriodicCompoundPackets();
 }

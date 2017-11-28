@@ -49,7 +49,7 @@ class RtcpTransceiver {
 
   // Requests new key frame.
   // using PLI, https://tools.ietf.org/html/rfc4585#section-6.3.1.1
-  void SendPictureLossIndication(std::vector<uint32_t> ssrcs);
+  void SendPictureLossIndication(uint32_t ssrc);
   // using FIR, https://tools.ietf.org/html/rfc5104#section-4.3.1.2
   void SendFullIntraRequest(std::vector<uint32_t> ssrcs);
 

@@ -106,18 +106,12 @@ void RtcpTransceiver::SendNack(uint32_t ssrc,
   task_queue_->PostTask(Closure{ptr_, ssrc, std::move(sequence_numbers)});
 }
 
-void RtcpTransceiver::SendPictureLossIndication(std::vector<uint32_t> ssrcs) {
-  // TODO(danilchap): Replace with lambda with move capture when available.
-  struct Closure {
-    void operator()() {
-      if (ptr)
-        ptr->SendPictureLossIndication(ssrcs);
-    }
-
-    rtc::WeakPtr<RtcpTransceiverImpl> ptr;
-    std::vector<uint32_t> ssrcs;
-  };
-  task_queue_->PostTask(Closure{ptr_, std::move(ssrcs)});
+void RtcpTransceiver::SendPictureLossIndication(uint32_t ssrc) {
+  rtc::WeakPtr<RtcpTransceiverImpl> ptr = ptr_;
+  task_queue_->PostTask([ptr, ssrc] {
+    if (ptr)
+      ptr->SendPictureLossIndication(ssrc);
+  });
 }
 
 void RtcpTransceiver::SendFullIntraRequest(std::vector<uint32_t> ssrcs) {

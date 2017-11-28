@@ -23,7 +23,6 @@
 #include "modules/rtp_rtcp/source/rtcp_packet/report_block.h"
 #include "modules/rtp_rtcp/source/rtcp_transceiver_config.h"
 #include "rtc_base/constructormagic.h"
-#include "rtc_base/function_view.h"
 #include "rtc_base/weak_ptr.h"
 #include "system_wrappers/include/ntp_time.h"
 
@@ -46,7 +45,7 @@ class RtcpTransceiverImpl {
 
   void SendNack(uint32_t ssrc, std::vector<uint16_t> sequence_numbers);
 
-  void SendPictureLossIndication(rtc::ArrayView<const uint32_t> ssrcs);
+  void SendPictureLossIndication(uint32_t ssrc);
   void SendFullIntraRequest(rtc::ArrayView<const uint32_t> ssrcs);
 
  private:
@@ -63,8 +62,7 @@ class RtcpTransceiverImpl {
   void CreateCompoundPacket(PacketSender* sender);
   // Sends RTCP packets.
   void SendPeriodicCompoundPacket();
-  void SendImmediateFeedback(
-      rtc::FunctionView<void(PacketSender*)> append_feedback);
+  void SendImmediateFeedback(const rtcp::RtcpPacket& rtcp_packet);
   // Generate Report Blocks to be send in Sender or Receiver Report.
   std::vector<rtcp::ReportBlock> CreateReportBlocks();
 

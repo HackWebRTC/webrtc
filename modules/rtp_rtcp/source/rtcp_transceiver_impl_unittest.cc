@@ -476,7 +476,7 @@ TEST(RtcpTransceiverImplTest, SendsNack) {
 
 TEST(RtcpTransceiverImplTest, RequestKeyFrameWithPictureLossIndication) {
   const uint32_t kSenderSsrc = 1234;
-  const uint32_t kRemoteSsrcs[] = {4321, 5321};
+  const uint32_t kRemoteSsrc = 4321;
   RtcpTransceiverConfig config;
   config.feedback_ssrc = kSenderSsrc;
   config.schedule_periodic_compound_packets = false;
@@ -485,14 +485,12 @@ TEST(RtcpTransceiverImplTest, RequestKeyFrameWithPictureLossIndication) {
   config.outgoing_transport = &transport;
   RtcpTransceiverImpl rtcp_transceiver(config);
 
-  rtcp_transceiver.SendPictureLossIndication(kRemoteSsrcs);
+  rtcp_transceiver.SendPictureLossIndication(kRemoteSsrc);
 
-  // Expect a pli packet per ssrc in the sent single compound packet.
   EXPECT_EQ(transport.num_packets(), 1);
-  EXPECT_EQ(rtcp_parser.pli()->num_packets(), 2);
+  EXPECT_EQ(rtcp_parser.pli()->num_packets(), 1);
   EXPECT_EQ(rtcp_parser.pli()->sender_ssrc(), kSenderSsrc);
-  // test::RtcpPacketParser overwrites first pli packet with second one.
-  EXPECT_EQ(rtcp_parser.pli()->media_ssrc(), kRemoteSsrcs[1]);
+  EXPECT_EQ(rtcp_parser.pli()->media_ssrc(), kRemoteSsrc);
 }
 
 TEST(RtcpTransceiverImplTest, RequestKeyFrameWithFullIntraRequest) {
