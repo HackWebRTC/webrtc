@@ -62,6 +62,9 @@ default_args = {
 
   mac_sdk_min = "10.12"
 
+  # http://bugs.webrtc.org/8570
+  ios_deployment_target = "9.0"
+
   # WebRTC does not want to switch to C++14 yet.
   use_cxx11 = true
 
