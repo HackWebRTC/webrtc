@@ -101,38 +101,6 @@ static bool IsSctp(const std::string& protocol) {
   return IsPlainSctp(protocol) || IsDtlsSctp(protocol);
 }
 
-RtpTransceiverDirection RtpTransceiverDirectionFromMediaContentDirection(
-    MediaContentDirection direction) {
-  switch (direction) {
-    case MD_SENDRECV:
-      return RtpTransceiverDirection::kSendRecv;
-    case MD_SENDONLY:
-      return RtpTransceiverDirection::kSendOnly;
-    case MD_RECVONLY:
-      return RtpTransceiverDirection::kRecvOnly;
-    case MD_INACTIVE:
-      return RtpTransceiverDirection::kInactive;
-  }
-  RTC_NOTREACHED();
-  return RtpTransceiverDirection::kInactive;
-}
-
-MediaContentDirection MediaContentDirectionFromRtpTransceiverDirection(
-    RtpTransceiverDirection direction) {
-  switch (direction) {
-    case RtpTransceiverDirection::kSendRecv:
-      return MD_SENDRECV;
-    case RtpTransceiverDirection::kSendOnly:
-      return MD_SENDONLY;
-    case RtpTransceiverDirection::kRecvOnly:
-      return MD_RECVONLY;
-    case RtpTransceiverDirection::kInactive:
-      return MD_INACTIVE;
-  }
-  RTC_NOTREACHED();
-  return MD_INACTIVE;
-}
-
 static RtpTransceiverDirection NegotiateRtpTransceiverDirection(
     RtpTransceiverDirection offer,
     RtpTransceiverDirection wants) {
@@ -1176,13 +1144,8 @@ static bool CreateMediaContentAnswer(
     return false;  // Something went seriously wrong.
   }
 
-  auto offer_rtd =
-      RtpTransceiverDirectionFromMediaContentDirection(offer->direction());
-
-  answer->set_direction(
-      cricket::MediaContentDirectionFromRtpTransceiverDirection(
-          NegotiateRtpTransceiverDirection(
-              offer_rtd, media_description_options.direction)));
+  answer->set_direction(NegotiateRtpTransceiverDirection(
+      offer->direction(), media_description_options.direction));
   return true;
 }
 
@@ -1258,29 +1221,6 @@ static bool IsDtlsActive(const ContentInfo* content,
 
   return current_description->transport_infos()[msection_index]
       .description.secure();
-}
-
-std::string MediaContentDirectionToString(MediaContentDirection direction) {
-  std::string dir_str;
-  switch (direction) {
-    case MD_INACTIVE:
-      dir_str = "inactive";
-      break;
-    case MD_SENDONLY:
-      dir_str = "sendonly";
-      break;
-    case MD_RECVONLY:
-      dir_str = "recvonly";
-      break;
-    case MD_SENDRECV:
-      dir_str = "sendrecv";
-      break;
-    default:
-      RTC_NOTREACHED();
-      break;
-  }
-
-  return dir_str;
 }
 
 void MediaDescriptionOptions::AddAudioSender(
@@ -1932,9 +1872,7 @@ bool MediaSessionDescriptionFactory::AddAudioContentForOffer(
   bool secure_transport = (transport_desc_factory_->secure() != SEC_DISABLED);
   SetMediaProtocol(secure_transport, audio.get());
 
-  audio->set_direction(
-      cricket::MediaContentDirectionFromRtpTransceiverDirection(
-          media_description_options.direction));
+  audio->set_direction(media_description_options.direction);
 
   desc->AddContent(media_description_options.mid, NS_JINGLE_RTP,
                    media_description_options.stopped, audio.release());
@@ -2004,9 +1942,7 @@ bool MediaSessionDescriptionFactory::AddVideoContentForOffer(
   bool secure_transport = (transport_desc_factory_->secure() != SEC_DISABLED);
   SetMediaProtocol(secure_transport, video.get());
 
-  video->set_direction(
-      cricket::MediaContentDirectionFromRtpTransceiverDirection(
-          media_description_options.direction));
+  video->set_direction(media_description_options.direction);
 
   desc->AddContent(media_description_options.mid, NS_JINGLE_RTP,
                    media_description_options.stopped, video.release());
@@ -2125,8 +2061,7 @@ bool MediaSessionDescriptionFactory::AddAudioContentForAnswer(
   // and the selected direction in the answer.
   // Note these will be filtered one final time in CreateMediaContentAnswer.
   auto wants_rtd = media_description_options.direction;
-  auto offer_rtd = RtpTransceiverDirectionFromMediaContentDirection(
-      offer_audio_description->direction());
+  auto offer_rtd = offer_audio_description->direction();
   auto answer_rtd = NegotiateRtpTransceiverDirection(offer_rtd, wants_rtd);
   AudioCodecs supported_audio_codecs =
       GetAudioCodecsForAnswer(offer_rtd, answer_rtd);

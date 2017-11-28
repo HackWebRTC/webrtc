@@ -205,10 +205,10 @@ class BaseChannel
                       rtc::PacketTransportInternal* new_packet_transport);
 
   bool was_ever_writable() const { return was_ever_writable_; }
-  void set_local_content_direction(MediaContentDirection direction) {
+  void set_local_content_direction(webrtc::RtpTransceiverDirection direction) {
     local_content_direction_ = direction;
   }
-  void set_remote_content_direction(MediaContentDirection direction) {
+  void set_remote_content_direction(webrtc::RtpTransceiverDirection direction) {
     remote_content_direction_ = direction;
   }
   // These methods verify that:
@@ -413,8 +413,10 @@ class BaseChannel
   bool enabled_ = false;
   std::vector<StreamParams> local_streams_;
   std::vector<StreamParams> remote_streams_;
-  MediaContentDirection local_content_direction_ = MD_INACTIVE;
-  MediaContentDirection remote_content_direction_ = MD_INACTIVE;
+  webrtc::RtpTransceiverDirection local_content_direction_ =
+      webrtc::RtpTransceiverDirection::kInactive;
+  webrtc::RtpTransceiverDirection remote_content_direction_ =
+      webrtc::RtpTransceiverDirection::kInactive;
 
   // The cached encrypted header extension IDs.
   rtc::Optional<std::vector<int>> catched_send_extension_ids_;

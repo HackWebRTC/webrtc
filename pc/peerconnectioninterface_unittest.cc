@@ -350,6 +350,7 @@ using webrtc::RTCError;
 using webrtc::RTCErrorType;
 using webrtc::RtpReceiverInterface;
 using webrtc::RtpSenderInterface;
+using webrtc::RtpTransceiverDirection;
 using webrtc::SdpParseError;
 using webrtc::SessionDescriptionInterface;
 using webrtc::StreamCollection;
@@ -2203,14 +2204,14 @@ TEST_F(PeerConnectionInterfaceTest, CreateSubsequentRecvOnlyOffer) {
   const cricket::VideoContentDescription* video_desc =
       static_cast<const cricket::VideoContentDescription*>(
           video_content->description);
-  ASSERT_EQ(cricket::MD_RECVONLY, video_desc->direction());
+  ASSERT_EQ(RtpTransceiverDirection::kRecvOnly, video_desc->direction());
 
   const cricket::ContentInfo* audio_content =
       cricket::GetFirstAudioContent(offer->description());
   const cricket::AudioContentDescription* audio_desc =
       static_cast<const cricket::AudioContentDescription*>(
           audio_content->description);
-  ASSERT_EQ(cricket::MD_RECVONLY, audio_desc->direction());
+  ASSERT_EQ(RtpTransceiverDirection::kRecvOnly, audio_desc->direction());
 }
 
 // Test that if we're receiving (but not sending) a track, and the
@@ -2240,14 +2241,14 @@ TEST_F(PeerConnectionInterfaceTest, CreateSubsequentInactiveOffer) {
   const cricket::VideoContentDescription* video_desc =
       static_cast<const cricket::VideoContentDescription*>(
           video_content->description);
-  ASSERT_EQ(cricket::MD_INACTIVE, video_desc->direction());
+  ASSERT_EQ(RtpTransceiverDirection::kInactive, video_desc->direction());
 
   const cricket::ContentInfo* audio_content =
       cricket::GetFirstAudioContent(offer->description());
   const cricket::AudioContentDescription* audio_desc =
       static_cast<const cricket::AudioContentDescription*>(
           audio_content->description);
-  ASSERT_EQ(cricket::MD_INACTIVE, audio_desc->direction());
+  ASSERT_EQ(RtpTransceiverDirection::kInactive, audio_desc->direction());
 }
 
 // Test that we can use SetConfiguration to change the ICE servers of the

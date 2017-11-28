@@ -1466,16 +1466,16 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
   // RFC 3264
   // a=sendrecv || a=sendonly || a=sendrecv || a=inactive
   switch (media_desc->direction()) {
-    case cricket::MD_INACTIVE:
+    case RtpTransceiverDirection::kInactive:
       InitAttrLine(kAttributeInactive, &os);
       break;
-    case cricket::MD_SENDONLY:
+    case RtpTransceiverDirection::kSendOnly:
       InitAttrLine(kAttributeSendOnly, &os);
       break;
-    case cricket::MD_RECVONLY:
+    case RtpTransceiverDirection::kRecvOnly:
       InitAttrLine(kAttributeRecvOnly, &os);
       break;
-    case cricket::MD_SENDRECV:
+    case RtpTransceiverDirection::kSendRecv:
     default:
       InitAttrLine(kAttributeSendRecv, &os);
       break;
@@ -2880,13 +2880,13 @@ bool ParseContent(const std::string& message,
           return false;
         }
       } else if (HasAttribute(line, kAttributeSendOnly)) {
-        media_desc->set_direction(cricket::MD_SENDONLY);
+        media_desc->set_direction(RtpTransceiverDirection::kSendOnly);
       } else if (HasAttribute(line, kAttributeRecvOnly)) {
-        media_desc->set_direction(cricket::MD_RECVONLY);
+        media_desc->set_direction(RtpTransceiverDirection::kRecvOnly);
       } else if (HasAttribute(line, kAttributeInactive)) {
-        media_desc->set_direction(cricket::MD_INACTIVE);
+        media_desc->set_direction(RtpTransceiverDirection::kInactive);
       } else if (HasAttribute(line, kAttributeSendRecv)) {
-        media_desc->set_direction(cricket::MD_SENDRECV);
+        media_desc->set_direction(RtpTransceiverDirection::kSendRecv);
       } else if (HasAttribute(line, kAttributeExtmap)) {
         RtpExtension extmap;
         if (!ParseExtmap(line, &extmap, error)) {

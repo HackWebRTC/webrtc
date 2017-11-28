@@ -33,6 +33,7 @@ using cricket::CA_ANSWER;
 using cricket::DtlsTransportInternal;
 using cricket::FakeVoiceMediaChannel;
 using cricket::StreamParams;
+using webrtc::RtpTransceiverDirection;
 
 namespace {
 const cricket::AudioCodec kPcmuCodec(0, "PCMU", 64000, 8000, 1);
@@ -974,7 +975,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     typename T::Content content2;
     CreateContent(0, kPcmuCodec, kH264Codec, &content2);
     // Set |content2| to be InActive.
-    content2.set_direction(cricket::MD_INACTIVE);
+    content2.set_direction(RtpTransceiverDirection::kInactive);
 
     EXPECT_TRUE(channel1_->Enable(true));
     EXPECT_TRUE(channel2_->Enable(true));
@@ -1003,7 +1004,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_FALSE(media_channel2_->sending());  // local InActive
 
     // Update |content2| to be RecvOnly.
-    content2.set_direction(cricket::MD_RECVONLY);
+    content2.set_direction(RtpTransceiverDirection::kRecvOnly);
     EXPECT_TRUE(channel2_->SetLocalContent(&content2, CA_PRANSWER, NULL));
     EXPECT_TRUE(channel1_->SetRemoteContent(&content2, CA_PRANSWER, NULL));
 
@@ -1017,7 +1018,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_FALSE(media_channel2_->sending());  // local RecvOnly
 
     // Update |content2| to be SendRecv.
-    content2.set_direction(cricket::MD_SENDRECV);
+    content2.set_direction(RtpTransceiverDirection::kSendRecv);
     EXPECT_TRUE(channel2_->SetLocalContent(&content2, CA_ANSWER, NULL));
     EXPECT_TRUE(channel1_->SetRemoteContent(&content2, CA_ANSWER, NULL));
 

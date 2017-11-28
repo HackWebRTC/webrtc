@@ -113,7 +113,7 @@ class PeerConnectionMediaTest : public ::testing::Test {
     return static_cast<const cricket::MediaContentDescription*>(content_desc);
   }
 
-  cricket::MediaContentDirection GetMediaContentDirection(
+  RtpTransceiverDirection GetMediaContentDirection(
       const SessionDescriptionInterface* sdesc,
       const std::string& mid) {
     auto* media_content = GetMediaContent(sdesc, mid);
@@ -339,7 +339,7 @@ TEST_F(PeerConnectionMediaTest,
 class PeerConnectionMediaOfferDirectionTest
     : public PeerConnectionMediaTest,
       public ::testing::WithParamInterface<
-          std::tuple<bool, int, cricket::MediaContentDirection>> {
+          std::tuple<bool, int, RtpTransceiverDirection>> {
  protected:
   PeerConnectionMediaOfferDirectionTest() {
     send_media_ = std::get<0>(GetParam());
@@ -349,7 +349,7 @@ class PeerConnectionMediaOfferDirectionTest
 
   bool send_media_;
   int offer_to_receive_;
-  cricket::MediaContentDirection expected_direction_;
+  RtpTransceiverDirection expected_direction_;
 };
 
 // Tests that the correct direction is set on the media description according
@@ -365,7 +365,7 @@ TEST_P(PeerConnectionMediaOfferDirectionTest, VerifyDirection) {
   auto offer = caller->CreateOffer(options);
 
   auto* media_content = GetMediaContent(offer.get(), cricket::CN_AUDIO);
-  if (expected_direction_ == cricket::MD_INACTIVE) {
+  if (expected_direction_ == RtpTransceiverDirection::kInactive) {
     EXPECT_FALSE(media_content);
   } else {
     EXPECT_EQ(expected_direction_, media_content->direction());
@@ -374,19 +374,20 @@ TEST_P(PeerConnectionMediaOfferDirectionTest, VerifyDirection) {
 
 // Note that in these tests, MD_INACTIVE indicates that no media section is
 // included in the offer, not that the media direction is inactive.
-INSTANTIATE_TEST_CASE_P(PeerConnectionMediaTest,
-                        PeerConnectionMediaOfferDirectionTest,
-                        Values(std::make_tuple(false, -1, cricket::MD_INACTIVE),
-                               std::make_tuple(false, 0, cricket::MD_INACTIVE),
-                               std::make_tuple(false, 1, cricket::MD_RECVONLY),
-                               std::make_tuple(true, -1, cricket::MD_SENDRECV),
-                               std::make_tuple(true, 0, cricket::MD_SENDONLY),
-                               std::make_tuple(true, 1, cricket::MD_SENDRECV)));
+INSTANTIATE_TEST_CASE_P(
+    PeerConnectionMediaTest,
+    PeerConnectionMediaOfferDirectionTest,
+    Values(std::make_tuple(false, -1, RtpTransceiverDirection::kInactive),
+           std::make_tuple(false, 0, RtpTransceiverDirection::kInactive),
+           std::make_tuple(false, 1, RtpTransceiverDirection::kRecvOnly),
+           std::make_tuple(true, -1, RtpTransceiverDirection::kSendRecv),
+           std::make_tuple(true, 0, RtpTransceiverDirection::kSendOnly),
+           std::make_tuple(true, 1, RtpTransceiverDirection::kSendRecv)));
 
 class PeerConnectionMediaAnswerDirectionTest
     : public PeerConnectionMediaTest,
       public ::testing::WithParamInterface<
-          std::tuple<cricket::MediaContentDirection, bool, int>> {
+          std::tuple<RtpTransceiverDirection, bool, int>> {
  protected:
   PeerConnectionMediaAnswerDirectionTest() {
     offer_direction_ = std::get<0>(GetParam());
@@ -394,7 +395,7 @@ class PeerConnectionMediaAnswerDirectionTest
     offer_to_receive_ = std::get<2>(GetParam());
   }
 
-  cricket::MediaContentDirection offer_direction_;
+  RtpTransceiverDirection offer_direction_;
   bool send_media_;
   int offer_to_receive_;
 };
@@ -429,19 +430,15 @@ TEST_P(PeerConnectionMediaAnswerDirectionTest, VerifyDirection) {
   // 1. Send if the answerer has a local track to send.
   // 2. Receive if the answerer has explicitly set the offer_to_receive to 1 or
   //    if it has been left as default.
-  auto offer_direction =
-      cricket::RtpTransceiverDirectionFromMediaContentDirection(
-          offer_direction_);
-  bool offer_send = RtpTransceiverDirectionHasSend(offer_direction);
-  bool offer_recv = RtpTransceiverDirectionHasRecv(offer_direction);
+  bool offer_send = RtpTransceiverDirectionHasSend(offer_direction_);
+  bool offer_recv = RtpTransceiverDirectionHasRecv(offer_direction_);
 
   // The negotiated components determine the direction set in the answer.
   bool negotiate_send = (send_media_ && offer_recv);
   bool negotiate_recv = ((offer_to_receive_ != 0) && offer_send);
 
   auto expected_direction =
-      cricket::MediaContentDirectionFromRtpTransceiverDirection(
-          RtpTransceiverDirectionFromSendRecv(negotiate_send, negotiate_recv));
+      RtpTransceiverDirectionFromSendRecv(negotiate_send, negotiate_recv);
   EXPECT_EQ(expected_direction,
             GetMediaContentDirection(answer.get(), cricket::CN_AUDIO));
 }
@@ -478,10 +475,10 @@ TEST_P(PeerConnectionMediaAnswerDirectionTest, VerifyRejected) {
 
 INSTANTIATE_TEST_CASE_P(PeerConnectionMediaTest,
                         PeerConnectionMediaAnswerDirectionTest,
-                        Combine(Values(cricket::MD_INACTIVE,
-                                       cricket::MD_SENDONLY,
-                                       cricket::MD_RECVONLY,
-                                       cricket::MD_SENDRECV),
+                        Combine(Values(RtpTransceiverDirection::kInactive,
+                                       RtpTransceiverDirection::kSendOnly,
+                                       RtpTransceiverDirection::kRecvOnly,
+                                       RtpTransceiverDirection::kSendRecv),
                                 Bool(),
                                 Values(-1, 0, 1)));
 
@@ -494,9 +491,9 @@ TEST_F(PeerConnectionMediaTest, OfferHasDifferentDirectionForAudioVideo) {
   options.offer_to_receive_video = 0;
   auto offer = caller->CreateOffer(options);
 
-  EXPECT_EQ(cricket::MD_RECVONLY,
+  EXPECT_EQ(RtpTransceiverDirection::kRecvOnly,
             GetMediaContentDirection(offer.get(), cricket::CN_AUDIO));
-  EXPECT_EQ(cricket::MD_SENDONLY,
+  EXPECT_EQ(RtpTransceiverDirection::kSendOnly,
             GetMediaContentDirection(offer.get(), cricket::CN_VIDEO));
 }
 
@@ -512,9 +509,9 @@ TEST_F(PeerConnectionMediaTest, AnswerHasDifferentDirectionsForAudioVideo) {
   options.offer_to_receive_video = 0;
   auto answer = callee->CreateAnswer(options);
 
-  EXPECT_EQ(cricket::MD_RECVONLY,
+  EXPECT_EQ(RtpTransceiverDirection::kRecvOnly,
             GetMediaContentDirection(answer.get(), cricket::CN_AUDIO));
-  EXPECT_EQ(cricket::MD_SENDONLY,
+  EXPECT_EQ(RtpTransceiverDirection::kSendOnly,
             GetMediaContentDirection(answer.get(), cricket::CN_VIDEO));
 }
 

@@ -31,6 +31,7 @@
 #include "media/engine/webrtcvoiceengine.h"  // nogncheck
 #include "p2p/base/packettransportinternal.h"
 #include "pc/channelmanager.h"
+#include "pc/rtpmediautils.h"
 #include "pc/rtptransport.h"
 #include "pc/srtptransport.h"
 
@@ -101,14 +102,6 @@ struct DataChannelErrorMessageData : public rtc::MessageData {
 static bool ValidPacket(bool rtcp, const rtc::CopyOnWriteBuffer* packet) {
   // Check the packet size. We could check the header too if needed.
   return packet && IsValidRtpRtcpPacketSize(rtcp, packet->size());
-}
-
-static bool IsReceiveContentDirection(MediaContentDirection direction) {
-  return direction == MD_SENDRECV || direction == MD_RECVONLY;
-}
-
-static bool IsSendContentDirection(MediaContentDirection direction) {
-  return direction == MD_SENDRECV || direction == MD_SENDONLY;
 }
 
 template <class Codec>
@@ -510,7 +503,8 @@ bool BaseChannel::NeedsRtcpTransport() {
 
 bool BaseChannel::IsReadyToReceiveMedia_w() const {
   // Receive data if we are enabled and have local content,
-  return enabled() && IsReceiveContentDirection(local_content_direction_);
+  return enabled() &&
+         webrtc::RtpTransceiverDirectionHasRecv(local_content_direction_);
 }
 
 bool BaseChannel::IsReadyToSendMedia_w() const {
@@ -522,8 +516,9 @@ bool BaseChannel::IsReadyToSendMedia_w() const {
 bool BaseChannel::IsReadyToSendMedia_n() const {
   // Send outgoing data if we are enabled, have local and remote content,
   // and we have had some form of connectivity.
-  return enabled() && IsReceiveContentDirection(remote_content_direction_) &&
-         IsSendContentDirection(local_content_direction_) &&
+  return enabled() &&
+         webrtc::RtpTransceiverDirectionHasRecv(remote_content_direction_) &&
+         webrtc::RtpTransceiverDirectionHasSend(local_content_direction_) &&
          was_ever_writable() && (srtp_active() || !ShouldSetupDtlsSrtp_n());
 }
 

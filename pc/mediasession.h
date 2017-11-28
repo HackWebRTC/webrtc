@@ -39,15 +39,6 @@ typedef std::vector<DataCodec> DataCodecs;
 typedef std::vector<CryptoParams> CryptoParamsVec;
 typedef std::vector<webrtc::RtpExtension> RtpHeaderExtensions;
 
-enum MediaContentDirection {
-  MD_INACTIVE,
-  MD_SENDONLY,
-  MD_RECVONLY,
-  MD_SENDRECV
-};
-
-std::string MediaContentDirectionToString(MediaContentDirection direction);
-
 enum CryptoType {
   CT_NONE,
   CT_SDES,
@@ -73,12 +64,6 @@ const int kAutoBandwidth = -1;
 
 // Default RTCP CNAME for unit tests.
 const char kDefaultRtcpCname[] = "DefaultRtcpCname";
-
-webrtc::RtpTransceiverDirection
-RtpTransceiverDirectionFromMediaContentDirection(
-    MediaContentDirection direction);
-MediaContentDirection MediaContentDirectionFromRtpTransceiverDirection(
-    webrtc::RtpTransceiverDirection direction);
 
 // Options for an RtpSender contained with an media description/"m=" section.
 struct SenderOptions {
@@ -171,14 +156,9 @@ class MediaContentDescription : public ContentDescription {
     direction_ = direction;
   }
 
-  // MediaContentDirection is deprecated; use RtpTransceiverDirection instead.
-  // TODO(steveanton): Change this method to return RtpTransceiverDirection once
-  // external users have switched to |transceiver_direction()|.
-  MediaContentDirection direction() const {
-    return MediaContentDirectionFromRtpTransceiverDirection(direction_);
-  }
-  void set_direction(MediaContentDirection direction) {
-    direction_ = RtpTransceiverDirectionFromMediaContentDirection(direction);
+  webrtc::RtpTransceiverDirection direction() const { return direction_; }
+  void set_direction(webrtc::RtpTransceiverDirection direction) {
+    direction_ = direction;
   }
 
   bool rtcp_mux() const { return rtcp_mux_; }

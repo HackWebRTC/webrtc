@@ -148,16 +148,12 @@ bool CanAddLocalMediaStream(webrtc::StreamCollectionInterface* current_streams,
   return true;
 }
 
-bool MediaContentDirectionHasSend(cricket::MediaContentDirection dir) {
-  return dir == cricket::MD_SENDONLY || dir == cricket::MD_SENDRECV;
-}
-
 // If the direction is "recvonly" or "inactive", treat the description
 // as containing no streams.
 // See: https://code.google.com/p/webrtc/issues/detail?id=5054
 std::vector<cricket::StreamParams> GetActiveStreams(
     const cricket::MediaContentDescription* desc) {
-  return MediaContentDirectionHasSend(desc->direction())
+  return RtpTransceiverDirectionHasSend(desc->direction())
              ? desc->streams()
              : std::vector<cricket::StreamParams>();
 }
@@ -1772,7 +1768,7 @@ void PeerConnection::SetRemoteDescription(
     } else {
       bool default_audio_track_needed =
           !remote_peer_supports_msid_ &&
-          MediaContentDirectionHasSend(audio_desc->direction());
+          RtpTransceiverDirectionHasSend(audio_desc->direction());
       UpdateRemoteSendersList(GetActiveStreams(audio_desc),
                               default_audio_track_needed, audio_desc->type(),
                               new_streams);
@@ -1787,7 +1783,7 @@ void PeerConnection::SetRemoteDescription(
     } else {
       bool default_video_track_needed =
           !remote_peer_supports_msid_ &&
-          MediaContentDirectionHasSend(video_desc->direction());
+          RtpTransceiverDirectionHasSend(video_desc->direction());
       UpdateRemoteSendersList(GetActiveStreams(video_desc),
                               default_video_track_needed, video_desc->type(),
                               new_streams);

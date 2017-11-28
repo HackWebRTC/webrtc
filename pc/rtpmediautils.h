@@ -31,6 +31,9 @@ bool RtpTransceiverDirectionHasRecv(RtpTransceiverDirection direction);
 RtpTransceiverDirection RtpTransceiverDirectionReversed(
     RtpTransceiverDirection direction);
 
+// Returns an unspecified string representation of the given direction.
+const char* RtpTransceiverDirectionToString(RtpTransceiverDirection direction);
+
 }  // namespace webrtc
 
 #endif  // PC_RTPMEDIAUTILS_H_
