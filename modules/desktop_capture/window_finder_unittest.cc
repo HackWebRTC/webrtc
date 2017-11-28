@@ -58,6 +58,9 @@ TEST(WindowFinderTest, FindConsoleWindow) {
   // Enlarges current console window.
   system("mode 1000,1000");
   const HWND console_window = GetConsoleWindow();
+  // Ensures that current console window is visible.
+  ShowWindow(console_window, SW_MAXIMIZE);
+  // Moves the window to the top-left of the display.
   MoveWindow(console_window, 0, 0, kMaxSize, kMaxSize, true);
 
   // Brings console window to top.
