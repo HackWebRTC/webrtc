@@ -13,6 +13,7 @@
 #include <math.h>
 
 #include <algorithm>
+#include <utility>
 #include <vector>
 
 #include "p2p/base/common.h"
@@ -1084,7 +1085,6 @@ void Connection::OnReadPacket(
           port_->SendBindingErrorResponse(msg.get(), addr,
                                           STUN_ERROR_UNAUTHORIZED,
                                           STUN_ERROR_REASON_UNAUTHORIZED);
-
         }
         break;
 
