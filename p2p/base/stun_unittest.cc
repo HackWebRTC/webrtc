@@ -9,6 +9,7 @@
  */
 
 #include <string>
+#include <utility>
 
 #include "p2p/base/stun.h"
 #include "rtc_base/arraysize.h"

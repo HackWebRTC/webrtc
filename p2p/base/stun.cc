@@ -13,6 +13,7 @@
 #include <string.h>
 
 #include <memory>
+#include <utility>
 
 #include "rtc_base/byteorder.h"
 #include "rtc_base/checks.h"
@@ -69,8 +70,7 @@ bool StunMessage::SetTransactionID(const std::string& str) {
   return true;
 }
 
-static bool ImplementationDefinedRange(int attr_type)
-{
+static bool ImplementationDefinedRange(int attr_type) {
   return attr_type >= 0xC000 && attr_type <= 0xFFFF;
 }
 

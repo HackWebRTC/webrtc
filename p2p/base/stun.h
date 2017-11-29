@@ -14,6 +14,7 @@
 // This file contains classes for dealing with the STUN protocol, as specified
 // in RFC 5389, and its descendants.
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -233,7 +234,7 @@ class StunAttribute {
                                uint16_t type,
                                uint16_t length,
                                StunMessage* owner);
-  // TODO: Allow these create functions to take parameters, to reduce
+  // TODO(?): Allow these create functions to take parameters, to reduce
   // the amount of work callers need to do to initialize attributes.
   static std::unique_ptr<StunAddressAttribute> CreateAddress(uint16_t type);
   static std::unique_ptr<StunXorAddressAttribute> CreateXorAddress(
@@ -476,11 +477,11 @@ bool IsStunErrorResponseType(int msg_type);
 bool ComputeStunCredentialHash(const std::string& username,
     const std::string& realm, const std::string& password, std::string* hash);
 
-// TODO: Move the TURN/ICE stuff below out to separate files.
+// TODO(?): Move the TURN/ICE stuff below out to separate files.
 extern const char TURN_MAGIC_COOKIE_VALUE[4];
 
 // "GTURN" STUN methods.
-// TODO: Rename these methods to GTURN_ to make it clear they aren't
+// TODO(?): Rename these methods to GTURN_ to make it clear they aren't
 // part of standard STUN/TURN.
 enum RelayMessageType {
   // For now, using the same defs from TurnMessageType below.
@@ -494,7 +495,7 @@ enum RelayMessageType {
 };
 
 // "GTURN"-specific STUN attributes.
-// TODO: Rename these attributes to GTURN_ to avoid conflicts.
+// TODO(?): Rename these attributes to GTURN_ to avoid conflicts.
 enum RelayAttributeType {
   STUN_ATTR_LIFETIME                    = 0x000d,  // UInt32
   STUN_ATTR_MAGIC_COOKIE                = 0x000f,  // ByteString, 4 bytes

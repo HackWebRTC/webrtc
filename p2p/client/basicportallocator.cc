@@ -11,6 +11,7 @@
 #include "p2p/client/basicportallocator.h"
 
 #include <algorithm>
+#include <set>
 #include <string>
 #include <vector>
 

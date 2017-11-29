@@ -13,8 +13,10 @@
 
 #include <stdio.h>
 #include <list>
+#include <map>
 #include <set>
 #include <string>
+#include <vector>
 
 #include "p2p/base/port.h"
 #include "p2p/client/basicportallocator.h"
@@ -163,7 +165,7 @@ class TurnPort : public Port {
       SignalCreatePermissionResult;
   void FlushRequests(int msg_type) { request_manager_.Flush(msg_type); }
   bool HasRequests() { return !request_manager_.empty(); }
-  void set_credentials(RelayCredentials& credentials) {
+  void set_credentials(const RelayCredentials& credentials) {
     credentials_ = credentials;
   }
   // Finds the turn entry with |address| and sets its channel id.

@@ -148,7 +148,7 @@ struct RelayCredentials {
 typedef std::vector<ProtocolAddress> PortList;
 // TODO(deadbeef): Rename to TurnServerConfig.
 struct RelayServerConfig {
-  RelayServerConfig(RelayType type);
+  explicit RelayServerConfig(RelayType type);
   RelayServerConfig(const rtc::SocketAddress& address,
                     const std::string& username,
                     const std::string& password,

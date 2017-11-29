@@ -31,7 +31,7 @@ class ConnectionStatsGetter {
 
 class ConnectionMonitor : public rtc::MessageHandler,
                           public sigslot::has_slots<> {
-public:
+ public:
   ConnectionMonitor(ConnectionStatsGetter* stats_getter,
                     rtc::Thread* network_thread,
                     rtc::Thread* monitoring_thread);

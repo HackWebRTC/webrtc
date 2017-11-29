@@ -12,6 +12,8 @@
 
 #include <algorithm>
 #include <functional>
+#include <utility>
+#include <vector>
 
 #include "api/optional.h"
 #include "p2p/base/common.h"
@@ -634,7 +636,6 @@ bool TurnPort::HandleIncomingPacket(rtc::AsyncPacketSocket* socket,
   if (IsTurnChannelData(msg_type)) {
     HandleChannelData(msg_type, data, size, packet_time);
     return true;
-
   }
 
   if (msg_type == TURN_DATA_INDICATION) {
@@ -1320,7 +1321,6 @@ void TurnAllocateRequest::OnAuthChallenge(StunMessage* response, int code) {
 }
 
 void TurnAllocateRequest::OnTryAlternate(StunMessage* response, int code) {
-
   // According to RFC 5389 section 11, there are use cases where
   // authentication of response is not possible, we're not validating
   // message integrity.

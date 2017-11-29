@@ -11,7 +11,9 @@
 #ifndef P2P_BASE_FAKEICETRANSPORT_H_
 #define P2P_BASE_FAKEICETRANSPORT_H_
 
+#include <map>
 #include <string>
+#include <utility>
 
 #include "p2p/base/icetransportinternal.h"
 #include "rtc_base/asyncinvoker.h"
