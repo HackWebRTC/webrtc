@@ -51,7 +51,7 @@ void TestController::Run() {
 void TestController::SendData(const NetworkTesterPacket& packet,
                               rtc::Optional<size_t> data_size) {
   // Can be call from packet_sender or from test_controller thread.
-  size_t packet_size = packet.ByteSize();
+  size_t packet_size = packet.ByteSizeLong();
   send_data_[0] = packet_size;
   packet_size++;
   packet.SerializeToArray(&send_data_[1], std::numeric_limits<char>::max());

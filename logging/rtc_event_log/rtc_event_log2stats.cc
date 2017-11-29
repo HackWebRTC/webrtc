@@ -214,7 +214,7 @@ int main(int argc, char* argv[]) {
   size_t malformed_event_size = 0;
   size_t accumulated_event_size = 0;
   for (const webrtc::rtclog::Event& event : events) {
-    size_t serialized_size = event.ByteSize();
+    size_t serialized_size = event.ByteSizeLong();
     // When the event is written on the disk, it is part of an EventStream
     // object. The event stream will prepend a 1 byte field number/wire type,
     // and a varint encoding (base 128) of the event length.

@@ -33,6 +33,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/gtest_prod_util.h"
 #include "rtc_base/ignore_wundef.h"
+#include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/numerics/safe_minmax.h"
 #include "rtc_base/protobuf_utils.h"
 #include "rtc_base/refcountedobject.h"
@@ -243,7 +244,7 @@ void OpenFileAndWriteMessage(const std::string& filename,
   FILE* file = fopen(filename.c_str(), "wb");
   ASSERT_TRUE(file != NULL);
 
-  int32_t size = msg.ByteSize();
+  int32_t size = rtc::checked_cast<int32_t>(msg.ByteSizeLong());
   ASSERT_GT(size, 0);
   std::unique_ptr<uint8_t[]> array(new uint8_t[size]);
   ASSERT_TRUE(msg.SerializeToArray(array.get(), size));
