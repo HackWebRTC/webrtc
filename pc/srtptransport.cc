@@ -51,6 +51,9 @@ void SrtpTransport::ConnectToRtpTransport() {
                                             &SrtpTransport::OnReadyToSend);
   rtp_transport_->SignalNetworkRouteChanged.connect(
       this, &SrtpTransport::OnNetworkRouteChanged);
+  rtp_transport_->SignalWritableState.connect(this,
+                                              &SrtpTransport::OnWritableState);
+  rtp_transport_->SignalSentPacket.connect(this, &SrtpTransport::OnSentPacket);
 }
 
 bool SrtpTransport::SendRtpPacket(rtc::CopyOnWriteBuffer* packet,

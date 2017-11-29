@@ -1398,6 +1398,17 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_TRUE(CheckNoRtcp2());
   }
 
+  // Test that the DTLS to SDES fallback is not supported and the negotiation
+  // between DTLS to SDES end points will fail.
+  void SendDtlsToSdesNotSupported() {
+    int flags1 = SECURE | DTLS;
+    int flags2 = SECURE;
+    CreateChannels(flags1, flags2);
+    EXPECT_FALSE(channel1_->srtp_active());
+    EXPECT_FALSE(channel2_->srtp_active());
+    EXPECT_FALSE(SendInitiate());
+  }
+
   // Test that we properly handling SRTP negotiating down to RTP.
   void SendSrtpToRtp() {
     CreateChannels(SECURE, 0);
@@ -1982,7 +1993,7 @@ void ChannelTest<VoiceTraits>::CreateContent(
     cricket::AudioContentDescription* audio) {
   audio->AddCodec(audio_codec);
   audio->set_rtcp_mux((flags & RTCP_MUX) != 0);
-  if (flags & SECURE) {
+  if ((flags & SECURE) && !(flags & DTLS)) {
     audio->AddCrypto(cricket::CryptoParams(
         1, rtc::CS_AES_CM_128_HMAC_SHA1_32,
         "inline:" + rtc::CreateRandomString(40), std::string()));
@@ -2295,7 +2306,7 @@ TEST_F(VoiceChannelSingleThreadTest, SendSrtcpMux) {
 }
 
 TEST_F(VoiceChannelSingleThreadTest, SendDtlsSrtpToSrtp) {
-  Base::SendSrtpToSrtp(DTLS, 0);
+  Base::SendDtlsToSdesNotSupported();
 }
 
 TEST_F(VoiceChannelSingleThreadTest, SendDtlsSrtpToDtlsSrtp) {
@@ -2646,7 +2657,7 @@ TEST_F(VoiceChannelDoubleThreadTest, SendSrtcpMux) {
 }
 
 TEST_F(VoiceChannelDoubleThreadTest, SendDtlsSrtpToSrtp) {
-  Base::SendSrtpToSrtp(DTLS, 0);
+  Base::SendDtlsToSdesNotSupported();
 }
 
 TEST_F(VoiceChannelDoubleThreadTest, SendDtlsSrtpToDtlsSrtp) {
@@ -2947,7 +2958,7 @@ TEST_F(VideoChannelSingleThreadTest, SendSrtpToRtp) {
 }
 
 TEST_F(VideoChannelSingleThreadTest, SendDtlsSrtpToSrtp) {
-  Base::SendSrtpToSrtp(DTLS, 0);
+  Base::SendDtlsToSdesNotSupported();
 }
 
 TEST_F(VideoChannelSingleThreadTest, SendDtlsSrtpToDtlsSrtp) {
@@ -3170,7 +3181,7 @@ TEST_F(VideoChannelDoubleThreadTest, SendSrtpToRtp) {
 }
 
 TEST_F(VideoChannelDoubleThreadTest, SendDtlsSrtpToSrtp) {
-  Base::SendSrtpToSrtp(DTLS, 0);
+  Base::SendDtlsToSdesNotSupported();
 }
 
 TEST_F(VideoChannelDoubleThreadTest, SendDtlsSrtpToDtlsSrtp) {

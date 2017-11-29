@@ -100,9 +100,8 @@ class SrtpTransport : public RtpTransportInternalAdapter {
   }
 
  private:
-  void CreateSrtpSessions();
-
   void ConnectToRtpTransport();
+  void CreateSrtpSessions();
 
   bool SendPacket(bool rtcp,
                   rtc::CopyOnWriteBuffer* packet,
@@ -114,6 +113,12 @@ class SrtpTransport : public RtpTransportInternalAdapter {
                         const rtc::PacketTime& packet_time);
   void OnReadyToSend(bool ready) { SignalReadyToSend(ready); }
   void OnNetworkRouteChanged(rtc::Optional<rtc::NetworkRoute> network_route);
+
+  void OnWritableState(bool writable) { SignalWritableState(writable); }
+
+  void OnSentPacket(const rtc::SentPacket& sent_packet) {
+    SignalSentPacket(sent_packet);
+  }
 
   bool ProtectRtp(void* data, int in_len, int max_len, int* out_len);
 

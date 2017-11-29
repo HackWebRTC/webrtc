@@ -70,8 +70,6 @@ class DtlsSrtpTransportTest : public testing::Test,
       bool rtcp_mux_enabled) {
     auto rtp_transport = rtc::MakeUnique<RtpTransport>(rtcp_mux_enabled);
 
-    rtp_transport->SetRtpPacketTransport(rtp_dtls);
-    rtp_transport->SetRtcpPacketTransport(rtcp_dtls);
     rtp_transport->AddHandledPayloadType(0x00);
     rtp_transport->AddHandledPayloadType(0xc9);
 
@@ -437,11 +435,14 @@ TEST_F(DtlsSrtpTransportTest, EncryptedHeaderExtensionIdUpdated) {
   encrypted_headers.push_back(kHeaderExtensionIDs[0]);
   encrypted_headers.push_back(kHeaderExtensionIDs[1]);
 
-  dtls_srtp_transport1_->SetSendEncryptedHeaderExtensionIds(encrypted_headers);
-  dtls_srtp_transport1_->SetRecvEncryptedHeaderExtensionIds(encrypted_headers);
-  dtls_srtp_transport2_->SetSendEncryptedHeaderExtensionIds(encrypted_headers);
-  dtls_srtp_transport2_->SetRecvEncryptedHeaderExtensionIds(encrypted_headers);
-  SendRecvRtpPacketsWithHeaderExtension(encrypted_headers);
+  dtls_srtp_transport1_->UpdateSendEncryptedHeaderExtensionIds(
+      encrypted_headers);
+  dtls_srtp_transport1_->UpdateRecvEncryptedHeaderExtensionIds(
+      encrypted_headers);
+  dtls_srtp_transport2_->UpdateSendEncryptedHeaderExtensionIds(
+      encrypted_headers);
+  dtls_srtp_transport2_->UpdateRecvEncryptedHeaderExtensionIds(
+      encrypted_headers);
 }
 
 // Tests if RTCP muxing is enabled. DtlsSrtpTransport is ready to send once the
