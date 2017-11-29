@@ -19,7 +19,6 @@
 #include "common_audio/include/audio_util.h"
 #include "common_audio/signal_processing/include/signal_processing_library.h"
 #include "modules/audio_processing/aec/aec_core.h"
-#include "modules/audio_processing/aec3/echo_canceller3.h"
 #include "modules/audio_processing/agc/agc_manager_direct.h"
 #include "modules/audio_processing/agc2/gain_controller2.h"
 #include "modules/audio_processing/audio_buffer.h"
@@ -735,18 +734,6 @@ void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
 
   RTC_LOG(LS_INFO) << "Highpass filter activated: "
                    << config_.high_pass_filter.enabled;
-
-  // Deprecated way of activating AEC3.
-  // TODO(gustaf): Remove when possible.
-  if (config.echo_canceller3.enabled && !echo_control_factory_) {
-    capture_nonlocked_.echo_controller_enabled =
-        config_.echo_canceller3.enabled;
-    echo_control_factory_ =
-        std::unique_ptr<EchoControlFactory>(new EchoCanceller3Factory());
-    InitializeEchoController();
-    RTC_LOG(LS_INFO) << "Echo canceller 3 activated: "
-                     << capture_nonlocked_.echo_controller_enabled;
-  }
 
   config_ok = GainController2::Validate(config_.gain_controller2);
   if (!config_ok) {

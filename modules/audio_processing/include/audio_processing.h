@@ -276,12 +276,6 @@ class AudioProcessing : public rtc::RefCountInterface {
       bool enabled = false;
     } high_pass_filter;
 
-    // Deprecated way of activating AEC3.
-    // TODO(gustaf): Remove when possible.
-    struct EchoCanceller3 {
-      bool enabled = false;
-    } echo_canceller3;
-
     // Enables the next generation AGC functionality. This feature replaces the
     // standard methods of gain control in the previous AGC.
     // The functionality is not yet activated in the code and turning this on

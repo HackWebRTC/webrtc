@@ -3005,7 +3005,6 @@ std::unique_ptr<AudioProcessing> CreateApm(bool use_AEC2) {
   // Disable all components except for an AEC and the residual echo detector.
   AudioProcessing::Config config;
   config.residual_echo_detector.enabled = true;
-  config.echo_canceller3.enabled = false;
   config.high_pass_filter.enabled = false;
   config.gain_controller2.enabled = false;
   config.level_controller.enabled = false;
