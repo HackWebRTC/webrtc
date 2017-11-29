@@ -116,8 +116,8 @@ TEST_F(SendTimeHistoryTest, AddThenRemoveOutOfOrder) {
   }
   for (size_t i = 0; i < num_items; ++i) {
     PacketFeedback packet = sent_packets[i];
-    packet.arrival_time_ms = PacketFeedback::kNotReceived;
-    packet.send_time_ms = PacketFeedback::kNoSendTime;
+    packet.arrival_time_ms = -1;
+    packet.send_time_ms = -1;
     history_.AddAndRemoveOld(packet);
   }
   for (size_t i = 0; i < num_items; ++i)

@@ -1443,7 +1443,7 @@ void EventLogAnalyzer::CreateNetworkDelayFeedbackGraph(Plot* plot) {
           float x =
               static_cast<float>(clock.TimeInMicroseconds() - begin_time_) /
               1000000;
-          if (packet.send_time_ms == PacketFeedback::kNoSendTime) {
+          if (packet.send_time_ms == -1) {
             late_feedback_series.points.emplace_back(x, prev_y);
             continue;
           }
