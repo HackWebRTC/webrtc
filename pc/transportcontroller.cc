@@ -597,6 +597,19 @@ bool TransportController::SetLocalTransportDescription_n(
     return true;
   }
 
+  // The initial offer side may use ICE Lite, in which case, per RFC5245 Section
+  // 5.1.1, the answer side should take the controlling role if it is in the
+  // full ICE mode.
+  //
+  // When both sides use ICE Lite, the initial offer side must take the
+  // controlling role, and this is the default logic implemented in
+  // SetLocalDescription in PeerConnection.
+  if (transport->remote_description() &&
+      transport->remote_description()->ice_mode == ICEMODE_LITE &&
+      ice_role_ == ICEROLE_CONTROLLED && tdesc.ice_mode == ICEMODE_FULL) {
+    SetIceRole_n(ICEROLE_CONTROLLING);
+  }
+
   // Older versions of Chrome expect the ICE role to be re-determined when an
   // ICE restart occurs, and also don't perform conflict resolution correctly,
   // so for now we can't safely stop doing this, unless the application opts in
@@ -643,6 +656,15 @@ bool TransportController::SetRemoteTransportDescription_n(
     // TODO(deadbeef): Make callers smarter so they won't attempt to set a
     // description on a deleted transport.
     return true;
+  }
+
+  // If we use ICE Lite and the remote endpoint uses the full implementation of
+  // ICE, the local endpoint must take the controlled role, and the other side
+  // must be the controlling role.
+  if (transport->local_description() &&
+      transport->local_description()->ice_mode == ICEMODE_LITE &&
+      ice_role_ == ICEROLE_CONTROLLING && tdesc.ice_mode == ICEMODE_FULL) {
+    SetIceRole_n(ICEROLE_CONTROLLED);
   }
 
   RTC_LOG(LS_INFO) << "Set remote transport description on " << transport_name;
