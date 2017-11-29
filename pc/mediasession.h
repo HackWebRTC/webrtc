@@ -148,15 +148,9 @@ class MediaContentDescription : public ContentDescription {
   std::string protocol() const { return protocol_; }
   void set_protocol(const std::string& protocol) { protocol_ = protocol; }
 
-  // TODO(steveanton): Remove once |direction()| uses RtpTransceiverDirection.
-  webrtc::RtpTransceiverDirection transceiver_direction() const {
+  webrtc::RtpTransceiverDirection direction() const {
     return direction_;
   }
-  void set_transceiver_direction(webrtc::RtpTransceiverDirection direction) {
-    direction_ = direction;
-  }
-
-  webrtc::RtpTransceiverDirection direction() const { return direction_; }
   void set_direction(webrtc::RtpTransceiverDirection direction) {
     direction_ = direction;
   }
