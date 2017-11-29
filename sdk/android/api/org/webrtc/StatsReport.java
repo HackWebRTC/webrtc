@@ -17,6 +17,7 @@ public class StatsReport {
     public final String name;
     public final String value;
 
+    @CalledByNative("Value")
     public Value(String name, String value) {
       this.name = name;
       this.value = value;
@@ -36,6 +37,7 @@ public class StatsReport {
   public final double timestamp;
   public final Value[] values;
 
+  @CalledByNative
   public StatsReport(String id, String type, double timestamp, Value[] values) {
     this.id = id;
     this.type = type;

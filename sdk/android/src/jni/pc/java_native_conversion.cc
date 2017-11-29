@@ -22,15 +22,14 @@ namespace jni {
 
 namespace {
 
-jobject NativeToJavaCandidate(JNIEnv* env,
-                              const std::string& sdp_mid,
-                              int sdp_mline_index,
-                              const std::string& sdp,
-                              const std::string server_url) {
+jobject CreateJavaIceCandidate(JNIEnv* env,
+                               const std::string& sdp_mid,
+                               int sdp_mline_index,
+                               const std::string& sdp,
+                               const std::string server_url) {
   return Java_IceCandidate_Constructor(
-      env, JavaStringFromStdString(env, sdp_mid), sdp_mline_index,
-      JavaStringFromStdString(env, sdp),
-      JavaStringFromStdString(env, server_url));
+      env, NativeToJavaString(env, sdp_mid), sdp_mline_index,
+      NativeToJavaString(env, sdp), NativeToJavaString(env, server_url));
 }
 
 }  // namespace
@@ -61,31 +60,26 @@ jobject NativeToJavaCandidate(JNIEnv* env,
   std::string sdp = SdpSerializeCandidate(candidate);
   RTC_CHECK(!sdp.empty()) << "got an empty ICE candidate";
   // sdp_mline_index is not used, pass an invalid value -1.
-  return NativeToJavaCandidate(env, candidate.transport_name(),
-                               -1 /* sdp_mline_index */, sdp,
-                               "" /* server_url */);
+  return CreateJavaIceCandidate(env, candidate.transport_name(),
+                                -1 /* sdp_mline_index */, sdp,
+                                "" /* server_url */);
 }
 
-jobject NativeToJavaCandidate(JNIEnv* env,
-                              const IceCandidateInterface& candidate) {
+jobject NativeToJavaIceCandidate(JNIEnv* env,
+                                 const IceCandidateInterface& candidate) {
   std::string sdp;
   RTC_CHECK(candidate.ToString(&sdp)) << "got so far: " << sdp;
-  return NativeToJavaCandidate(env, candidate.sdp_mid(),
-                               candidate.sdp_mline_index(), sdp,
-                               candidate.candidate().url());
+  return CreateJavaIceCandidate(env, candidate.sdp_mid(),
+                                candidate.sdp_mline_index(), sdp,
+                                candidate.candidate().url());
 }
 
 jobjectArray NativeToJavaCandidateArray(
     JNIEnv* jni,
     const std::vector<cricket::Candidate>& candidates) {
-  jobjectArray java_candidates =
-      Java_IceCandidate_createArray(jni, candidates.size());
-  int i = 0;
-  for (const cricket::Candidate& candidate : candidates) {
-    jobject j_candidate = NativeToJavaCandidate(jni, candidate);
-    jni->SetObjectArrayElement(java_candidates, i++, j_candidate);
-  }
-  return java_candidates;
+  return NativeToJavaObjectArray(jni, candidates,
+                                 org_webrtc_IceCandidate_clazz(jni),
+                                 &NativeToJavaCandidate);
 }
 
 SessionDescriptionInterface* JavaToNativeSessionDescription(JNIEnv* jni,
@@ -114,13 +108,13 @@ jobject NativeToJavaSessionDescription(
     const SessionDescriptionInterface* desc) {
   std::string sdp;
   RTC_CHECK(desc->ToString(&sdp)) << "got so far: " << sdp;
-  jstring j_description = JavaStringFromStdString(jni, sdp);
+  jstring j_description = NativeToJavaString(jni, sdp);
 
   jclass j_type_class = FindClass(jni, "org/webrtc/SessionDescription$Type");
   jmethodID j_type_from_canonical = GetStaticMethodID(
       jni, j_type_class, "fromCanonicalForm",
       "(Ljava/lang/String;)Lorg/webrtc/SessionDescription$Type;");
-  jstring j_type_string = JavaStringFromStdString(jni, desc->type());
+  jstring j_type_string = NativeToJavaString(jni, desc->type());
   jobject j_type = jni->CallStaticObjectMethod(
       j_type_class, j_type_from_canonical, j_type_string);
   CHECK_EXCEPTION(jni) << "error during CallObjectMethod";
@@ -458,7 +452,7 @@ void JavaToNativeRTCConfiguration(
   jobject j_ice_check_min_interval =
       GetNullableObjectField(jni, j_rtc_config, j_ice_check_min_interval_id);
   rtc_config->ice_check_min_interval =
-      JavaIntegerToOptionalInt(jni, j_ice_check_min_interval);
+      JavaToNativeOptionalInt(jni, j_ice_check_min_interval);
   rtc_config->disable_ipv6_on_wifi =
       GetBooleanField(jni, j_rtc_config, j_disable_ipv6_on_wifi_id);
   rtc_config->max_ipv6_networks =
@@ -505,7 +499,7 @@ void JavaToNativeRtpParameters(JNIEnv* jni,
     encoding.active = GetBooleanField(jni, j_encoding_parameters, active_id);
     jobject j_bitrate =
         GetNullableObjectField(jni, j_encoding_parameters, bitrate_id);
-    encoding.max_bitrate_bps = JavaIntegerToOptionalInt(jni, j_bitrate);
+    encoding.max_bitrate_bps = JavaToNativeOptionalInt(jni, j_bitrate);
     jobject j_ssrc =
         GetNullableObjectField(jni, j_encoding_parameters, ssrc_id);
     if (!IsNull(jni, j_ssrc)) {
@@ -535,10 +529,10 @@ void JavaToNativeRtpParameters(JNIEnv* jni,
     codec.kind =
         JavaToNativeMediaType(jni, GetObjectField(jni, j_codec, kind_id));
     jobject j_clock_rate = GetNullableObjectField(jni, j_codec, clock_rate_id);
-    codec.clock_rate = JavaIntegerToOptionalInt(jni, j_clock_rate);
+    codec.clock_rate = JavaToNativeOptionalInt(jni, j_clock_rate);
     jobject j_num_channels =
         GetNullableObjectField(jni, j_codec, num_channels_id);
-    codec.num_channels = JavaIntegerToOptionalInt(jni, j_num_channels);
+    codec.num_channels = JavaToNativeOptionalInt(jni, j_num_channels);
     parameters->codecs.push_back(codec);
   }
 }
@@ -574,9 +568,8 @@ jobject NativeToJavaRtpParameters(JNIEnv* jni,
     CHECK_EXCEPTION(jni) << "error during NewObject";
     jni->SetBooleanField(j_encoding_parameters, active_id, encoding.active);
     CHECK_EXCEPTION(jni) << "error during SetBooleanField";
-    jni->SetObjectField(
-        j_encoding_parameters, bitrate_id,
-        JavaIntegerFromOptionalInt(jni, encoding.max_bitrate_bps));
+    jni->SetObjectField(j_encoding_parameters, bitrate_id,
+                        NativeToJavaInteger(jni, encoding.max_bitrate_bps));
     if (encoding.ssrc) {
       jobject j_ssrc_value = jni->NewObject(long_class, long_ctor,
                                             static_cast<jlong>(*encoding.ssrc));
@@ -612,16 +605,15 @@ jobject NativeToJavaRtpParameters(JNIEnv* jni,
     CHECK_EXCEPTION(jni) << "error during NewObject";
     jni->SetIntField(j_codec, payload_type_id, codec.payload_type);
     CHECK_EXCEPTION(jni) << "error during SetIntField";
-    jni->SetObjectField(j_codec, name_id,
-                        JavaStringFromStdString(jni, codec.name));
+    jni->SetObjectField(j_codec, name_id, NativeToJavaString(jni, codec.name));
     CHECK_EXCEPTION(jni) << "error during SetObjectField";
     jni->SetObjectField(j_codec, kind_id,
                         NativeToJavaMediaType(jni, codec.kind));
     CHECK_EXCEPTION(jni) << "error during SetObjectField";
     jni->SetObjectField(j_codec, clock_rate_id,
-                        JavaIntegerFromOptionalInt(jni, codec.clock_rate));
+                        NativeToJavaInteger(jni, codec.clock_rate));
     jni->SetObjectField(j_codec, num_channels_id,
-                        JavaIntegerFromOptionalInt(jni, codec.num_channels));
+                        NativeToJavaInteger(jni, codec.num_channels));
     jboolean added = jni->CallBooleanMethod(j_codecs, codecs_add, j_codec);
     CHECK_EXCEPTION(jni) << "error during CallBooleanMethod";
     RTC_CHECK(added);

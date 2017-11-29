@@ -32,7 +32,7 @@ std::unique_ptr<VideoDecoder> VideoDecoderFactoryWrapper::CreateVideoDecoder(
     const SdpVideoFormat& format) {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
-  jstring name = JavaStringFromStdString(jni, format.name);
+  jstring name = NativeToJavaString(jni, format.name);
   jobject decoder =
       jni->CallObjectMethod(*decoder_factory_, create_decoder_method_, name);
   return decoder != nullptr ? JavaToNativeVideoDecoder(jni, decoder) : nullptr;

@@ -350,9 +350,9 @@ JNI_FUNCTION_DECLARATION(jboolean,
                          jobject j_current,
                          jobject j_max) {
   PeerConnectionInterface::BitrateParameters params;
-  params.min_bitrate_bps = JavaIntegerToOptionalInt(jni, j_min);
-  params.current_bitrate_bps = JavaIntegerToOptionalInt(jni, j_current);
-  params.max_bitrate_bps = JavaIntegerToOptionalInt(jni, j_max);
+  params.min_bitrate_bps = JavaToNativeOptionalInt(jni, j_min);
+  params.current_bitrate_bps = JavaToNativeOptionalInt(jni, j_current);
+  params.max_bitrate_bps = JavaToNativeOptionalInt(jni, j_max);
   return ExtractNativePC(jni, j_pc)->SetBitrate(params).ok();
 }
 

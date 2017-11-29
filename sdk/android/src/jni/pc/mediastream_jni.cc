@@ -59,7 +59,7 @@ JNI_FUNCTION_DECLARATION(jstring,
                          JNIEnv* jni,
                          jclass,
                          jlong j_p) {
-  return JavaStringFromStdString(
+  return NativeToJavaString(
       jni, reinterpret_cast<MediaStreamInterface*>(j_p)->label());
 }
 

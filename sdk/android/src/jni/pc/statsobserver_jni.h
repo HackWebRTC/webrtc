@@ -26,16 +26,7 @@ class StatsObserverJni : public StatsObserver {
   void OnComplete(const StatsReports& reports) override;
 
  private:
-  jobjectArray ReportsToJava(JNIEnv* jni, const StatsReports& reports);
-
-  jobjectArray ValuesToJava(JNIEnv* jni, const StatsReport::Values& values);
-
   const ScopedGlobalRef<jobject> j_observer_global_;
-  const ScopedGlobalRef<jclass> j_observer_class_;
-  const ScopedGlobalRef<jclass> j_stats_report_class_;
-  const jmethodID j_stats_report_ctor_;
-  const ScopedGlobalRef<jclass> j_value_class_;
-  const jmethodID j_value_ctor_;
 };
 
 }  // namespace jni

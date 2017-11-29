@@ -51,11 +51,7 @@ void FreeGlobalClassReferenceHolder() {
 
 ClassReferenceHolder::ClassReferenceHolder(JNIEnv* jni) {
   LoadClass(jni, "android/graphics/SurfaceTexture");
-  LoadClass(jni, "java/lang/Boolean");
-  LoadClass(jni, "java/lang/Double");
-  LoadClass(jni, "java/lang/Long");
   LoadClass(jni, "java/lang/String");
-  LoadClass(jni, "java/math/BigInteger");
   LoadClass(jni, "java/nio/ByteBuffer");
   LoadClass(jni, "java/util/ArrayList");
   LoadClass(jni, "java/util/LinkedHashMap");

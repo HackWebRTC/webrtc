@@ -38,8 +38,8 @@ cricket::Candidate JavaToNativeCandidate(JNIEnv* jni, jobject j_candidate);
 
 jobject NativeToJavaCandidate(JNIEnv* env, const cricket::Candidate& candidate);
 
-jobject NativeToJavaCandidate(JNIEnv* env,
-                              const IceCandidateInterface& candidate);
+jobject NativeToJavaIceCandidate(JNIEnv* env,
+                                 const IceCandidateInterface& candidate);
 
 jobjectArray NativeToJavaCandidateArray(
     JNIEnv* jni,
