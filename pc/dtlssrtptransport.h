@@ -46,6 +46,13 @@ class DtlsSrtpTransport : public RtpTransportInternalAdapter {
 
   bool IsActive() { return srtp_transport_->IsActive(); }
 
+  // Cache RTP Absoulute SendTime extension header ID. This is only used when
+  // external authentication is enabled.
+  void CacheRtpAbsSendTimeHeaderExtension(int rtp_abs_sendtime_extn_id) {
+    srtp_transport_->CacheRtpAbsSendTimeHeaderExtension(
+        rtp_abs_sendtime_extn_id);
+  }
+
   // TODO(zhihuang): Remove this when we remove RtpTransportAdapter.
   RtpTransportAdapter* GetInternal() override { return nullptr; }
 

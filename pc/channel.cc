@@ -1077,6 +1077,9 @@ void BaseChannel::CacheRtpAbsSendTimeHeaderExtension_n(
   if (sdes_transport_) {
     sdes_transport_->CacheRtpAbsSendTimeHeaderExtension(
         rtp_abs_sendtime_extn_id);
+  } else if (dtls_srtp_transport_) {
+    dtls_srtp_transport_->CacheRtpAbsSendTimeHeaderExtension(
+        rtp_abs_sendtime_extn_id);
   } else {
     RTC_LOG(LS_WARNING)
         << "Trying to cache the Absolute Send Time extension id "

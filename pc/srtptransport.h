@@ -93,8 +93,8 @@ class SrtpTransport : public RtpTransportInternalAdapter {
   // Returns rtp auth params from srtp context.
   bool GetRtpAuthParams(uint8_t** key, int* key_len, int* tag_len);
 
-  // Helper method to get RTP Absoulute SendTime extension header id if
-  // present in remote supported extensions list.
+  // Cache RTP Absoulute SendTime extension header ID. This is only used when
+  // external authentication is enabled.
   void CacheRtpAbsSendTimeHeaderExtension(int rtp_abs_sendtime_extn_id) {
     rtp_abs_sendtime_extn_id_ = rtp_abs_sendtime_extn_id;
   }
