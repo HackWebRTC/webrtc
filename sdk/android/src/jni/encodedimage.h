@@ -13,6 +13,7 @@
 
 #include <jni.h>
 
+#include "api/video/video_rotation.h"
 #include "common_types.h"  // NOLINT(build/include)
 
 namespace webrtc {
@@ -23,9 +24,6 @@ namespace jni {
 
 jobject NativeToJavaFrameType(JNIEnv* env, FrameType frame_type);
 jobject NativeToJavaEncodedImage(JNIEnv* jni, const EncodedImage& image);
-jobjectArray NativeToJavaFrameTypeArray(
-    JNIEnv* env,
-    const std::vector<FrameType>& frame_types);
 
 }  // namespace jni
 }  // namespace webrtc

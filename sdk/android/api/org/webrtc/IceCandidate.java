@@ -49,4 +49,9 @@ public class IceCandidate {
   String getSdp() {
     return sdp;
   }
+
+  @CalledByNative
+  static IceCandidate[] createArray(int size) {
+    return new IceCandidate[size];
+  }
 }

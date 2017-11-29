@@ -46,11 +46,11 @@ jobject SdpVideoFormatToVideoCodecInfo(JNIEnv* jni,
   jobject j_params = jni->NewObject(hash_map_class, hash_map_constructor);
   for (auto const& param : format.parameters) {
     jni->CallObjectMethod(j_params, put_method,
-                          NativeToJavaString(jni, param.first),
-                          NativeToJavaString(jni, param.second));
+                          JavaStringFromStdString(jni, param.first),
+                          JavaStringFromStdString(jni, param.second));
   }
   return jni->NewObject(video_codec_info_class, video_codec_info_constructor,
-                        NativeToJavaString(jni, format.name), j_params);
+                        JavaStringFromStdString(jni, format.name), j_params);
 }
 
 }  // namespace jni

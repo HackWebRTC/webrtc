@@ -42,14 +42,7 @@ generate_jni("generated_base_jni") {
 }
 
 generate_jar_jni("generated_external_classes_jni") {
-  classes = [
-    "java/lang/Integer.class",
-    "java/lang/Double.class",
-    "java/lang/Long.class",
-    "java/lang/Boolean.class",
-    "java/math/BigInteger.class",
-    "java/lang/String.class",
-  ]
+  classes = [ "java/lang/Integer.class" ]
   jni_package = ""
   jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
 }
@@ -301,8 +294,6 @@ generate_jni("generated_peerconnection_jni") {
     "api/org/webrtc/RTCStats.java",
     "api/org/webrtc/RTCStatsCollectorCallback.java",
     "api/org/webrtc/RTCStatsReport.java",
-    "api/org/webrtc/StatsObserver.java",
-    "api/org/webrtc/StatsReport.java",
   ]
   jni_package = ""
   jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
@@ -366,7 +357,6 @@ rtc_static_library("peerconnection_jni") {
 
   deps = [
     ":base_jni",
-    ":generated_external_classes_jni",
     ":generated_peerconnection_jni",
     "../..:webrtc_common",
     "../../api/video_codecs:video_codecs_api",

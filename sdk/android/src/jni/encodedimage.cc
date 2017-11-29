@@ -13,7 +13,6 @@
 #include "common_video/include/video_frame.h"
 #include "rtc_base/timeutils.h"
 #include "sdk/android/generated_video_jni/jni/EncodedImage_jni.h"
-#include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {
 namespace jni {
@@ -25,20 +24,11 @@ jobject NativeToJavaFrameType(JNIEnv* env, FrameType frame_type) {
 jobject NativeToJavaEncodedImage(JNIEnv* jni, const EncodedImage& image) {
   jobject buffer = jni->NewDirectByteBuffer(image._buffer, image._length);
   jobject frame_type = NativeToJavaFrameType(jni, image._frameType);
-  jobject qp =
-      (image.qp_ == -1) ? nullptr : NativeToJavaInteger(jni, image.qp_);
+  jobject qp = (image.qp_ == -1) ? nullptr : JavaIntegerFromInt(jni, image.qp_);
   return Java_EncodedImage_Constructor(
       jni, buffer, image._encodedWidth, image._encodedHeight,
       image.capture_time_ms_ * rtc::kNumNanosecsPerMillisec, frame_type,
       static_cast<jint>(image.rotation_), image._completeFrame, qp);
-}
-
-jobjectArray NativeToJavaFrameTypeArray(
-    JNIEnv* env,
-    const std::vector<FrameType>& frame_types) {
-  return NativeToJavaObjectArray(
-      env, frame_types, org_webrtc_EncodedImage_00024FrameType_clazz(env),
-      &NativeToJavaFrameType);
 }
 
 }  // namespace jni

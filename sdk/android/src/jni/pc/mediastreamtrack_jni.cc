@@ -19,7 +19,7 @@ JNI_FUNCTION_DECLARATION(jstring,
                          JNIEnv* jni,
                          jclass,
                          jlong j_p) {
-  return NativeToJavaString(
+  return JavaStringFromStdString(
       jni, reinterpret_cast<MediaStreamTrackInterface*>(j_p)->id());
 }
 
@@ -28,7 +28,7 @@ JNI_FUNCTION_DECLARATION(jstring,
                          JNIEnv* jni,
                          jclass,
                          jlong j_p) {
-  return NativeToJavaString(
+  return JavaStringFromStdString(
       jni, reinterpret_cast<MediaStreamTrackInterface*>(j_p)->kind());
 }
 

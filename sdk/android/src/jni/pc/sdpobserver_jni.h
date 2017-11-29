@@ -64,7 +64,7 @@ class SdpObserverJni : public T {
   void DoOnFailure(const std::string& op, const std::string& error) {
     jmethodID m = GetMethodID(jni(), *j_observer_class_, "on" + op + "Failure",
                               "(Ljava/lang/String;)V");
-    jstring j_error_string = NativeToJavaString(jni(), error);
+    jstring j_error_string = JavaStringFromStdString(jni(), error);
     jni()->CallVoidMethod(*j_observer_global_, m, j_error_string);
     CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
   }

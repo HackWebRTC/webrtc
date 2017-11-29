@@ -78,7 +78,7 @@ JNI_FUNCTION_DECLARATION(jstring,
                          JNIEnv* jni,
                          jclass,
                          jlong j_rtp_sender_pointer) {
-  return NativeToJavaString(
+  return JavaStringFromStdString(
       jni, reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)->id());
 }
 

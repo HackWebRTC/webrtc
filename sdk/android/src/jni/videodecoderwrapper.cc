@@ -160,10 +160,10 @@ void VideoDecoderWrapper::OnDecodedFrame(JNIEnv* env,
   frame.set_ntp_time_ms(frame_extra_info.timestamp_ntp);
 
   rtc::Optional<int32_t> decoding_time_ms =
-      JavaToNativeOptionalInt(env, j_decode_time_ms);
+      JavaIntegerToOptionalInt(env, j_decode_time_ms);
 
   rtc::Optional<uint8_t> decoder_qp =
-      cast_optional<uint8_t, int32_t>(JavaToNativeOptionalInt(env, j_qp));
+      cast_optional<uint8_t, int32_t>(JavaIntegerToOptionalInt(env, j_qp));
   // If the decoder provides QP values itself, no need to parse the bitstream.
   // Enable QP parsing if decoder does not provide QP values itself.
   qp_parsing_enabled_ = !decoder_qp.has_value();

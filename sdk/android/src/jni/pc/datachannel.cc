@@ -111,7 +111,7 @@ JNI_FUNCTION_DECLARATION(jstring,
                          DataChannel_label,
                          JNIEnv* jni,
                          jobject j_dc) {
-  return NativeToJavaString(jni, ExtractNativeDC(jni, j_dc)->label());
+  return JavaStringFromStdString(jni, ExtractNativeDC(jni, j_dc)->label());
 }
 
 JNI_FUNCTION_DECLARATION(jint, DataChannel_id, JNIEnv* jni, jobject j_dc) {

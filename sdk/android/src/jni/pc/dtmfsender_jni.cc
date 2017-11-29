@@ -40,7 +40,7 @@ JNI_FUNCTION_DECLARATION(jstring,
                          JNIEnv* jni,
                          jclass,
                          jlong j_dtmf_sender_pointer) {
-  return NativeToJavaString(
+  return JavaStringFromStdString(
       jni,
       reinterpret_cast<DtmfSenderInterface*>(j_dtmf_sender_pointer)->tones());
 }

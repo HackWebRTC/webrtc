@@ -59,7 +59,7 @@ JNI_FUNCTION_DECLARATION(jstring,
                          JNIEnv* jni,
                          jclass,
                          jlong j_rtp_receiver_pointer) {
-  return NativeToJavaString(
+  return JavaStringFromStdString(
       jni,
       reinterpret_cast<RtpReceiverInterface*>(j_rtp_receiver_pointer)->id());
 }

@@ -34,11 +34,23 @@ class RTCStatsCollectorCallbackWrapper : public RTCStatsCollectorCallback {
   jobject ReportToJava(JNIEnv* jni,
                        const rtc::scoped_refptr<const RTCStatsReport>& report);
   jobject StatsToJava(JNIEnv* jni, const RTCStats& stats);
+  jobject MemberToJava(JNIEnv* jni, const RTCStatsMemberInterface* member);
 
   const ScopedGlobalRef<jobject> j_callback_global_;
+  const ScopedGlobalRef<jclass> j_callback_class_;
   const jclass j_linked_hash_map_class_;
   const jmethodID j_linked_hash_map_ctor_;
   const jmethodID j_linked_hash_map_put_;
+  const jclass j_boolean_class_;
+  const jmethodID j_boolean_ctor_;
+  const jclass j_integer_class_;
+  const jclass j_long_class_;
+  const jmethodID j_long_ctor_;
+  const jclass j_big_integer_class_;
+  const jmethodID j_big_integer_ctor_;
+  const jclass j_double_class_;
+  const jmethodID j_double_ctor_;
+  const jclass j_string_class_;
 };
 
 }  // namespace jni

@@ -10,60 +10,75 @@
 
 #include "sdk/android/src/jni/pc/statsobserver_jni.h"
 
-#include "sdk/android/generated_peerconnection_jni/jni/StatsObserver_jni.h"
-#include "sdk/android/generated_peerconnection_jni/jni/StatsReport_jni.h"
-#include "sdk/android/src/jni/jni_helpers.h"
+#include "sdk/android/src/jni/classreferenceholder.h"
 
 namespace webrtc {
 namespace jni {
 
-namespace {
-
-jobject NativeToJavaStatsReportValue(
-    JNIEnv* env,
-    const rtc::scoped_refptr<StatsReport::Value>& value_ptr) {
-  // Should we use the '.name' enum value here instead of converting the
-  // name to a string?
-  jstring j_name = NativeToJavaString(env, value_ptr->display_name());
-  jstring j_value = NativeToJavaString(env, value_ptr->ToString());
-  return Java_Value_Constructor(env, j_name, j_value);
+// Convenience, used since callbacks occur on the signaling thread, which may
+// be a non-Java thread.
+static JNIEnv* jni() {
+  return AttachCurrentThreadIfNeeded();
 }
-
-jobjectArray NativeToJavaStatsReportValueArray(
-    JNIEnv* env,
-    const StatsReport::Values& value_map) {
-  // Ignore the keys and make an array out of the values.
-  std::vector<StatsReport::ValuePtr> values;
-  for (const auto& it : value_map)
-    values.push_back(it.second);
-  return NativeToJavaObjectArray(env, values,
-                                 org_webrtc_StatsReport_00024Value_clazz(env),
-                                 &NativeToJavaStatsReportValue);
-}
-
-jobject NativeToJavaStatsReport(JNIEnv* env, const StatsReport& report) {
-  jstring j_id = NativeToJavaString(env, report.id()->ToString());
-  jstring j_type = NativeToJavaString(env, report.TypeToString());
-  jobjectArray j_values =
-      NativeToJavaStatsReportValueArray(env, report.values());
-  return Java_StatsReport_Constructor(env, j_id, j_type, report.timestamp(),
-                                      j_values);
-}
-
-}  // namespace
 
 StatsObserverJni::StatsObserverJni(JNIEnv* jni, jobject j_observer)
-    : j_observer_global_(jni, j_observer) {}
+    : j_observer_global_(jni, j_observer),
+      j_observer_class_(jni, GetObjectClass(jni, j_observer)),
+      j_stats_report_class_(jni, FindClass(jni, "org/webrtc/StatsReport")),
+      j_stats_report_ctor_(GetMethodID(jni,
+                                       *j_stats_report_class_,
+                                       "<init>",
+                                       "(Ljava/lang/String;Ljava/lang/String;D"
+                                       "[Lorg/webrtc/StatsReport$Value;)V")),
+      j_value_class_(jni, FindClass(jni, "org/webrtc/StatsReport$Value")),
+      j_value_ctor_(GetMethodID(jni,
+                                *j_value_class_,
+                                "<init>",
+                                "(Ljava/lang/String;Ljava/lang/String;)V")) {}
 
 void StatsObserverJni::OnComplete(const StatsReports& reports) {
-  JNIEnv* env = AttachCurrentThreadIfNeeded();
-  ScopedLocalRefFrame local_ref_frame(env);
-  jobjectArray j_reports =
-      NativeToJavaObjectArray(env, reports, org_webrtc_StatsReport_clazz(env),
-                              [](JNIEnv* env, const StatsReport* report) {
-                                return NativeToJavaStatsReport(env, *report);
-                              });
-  Java_StatsObserver_onComplete(env, *j_observer_global_, j_reports);
+  ScopedLocalRefFrame local_ref_frame(jni());
+  jobjectArray j_reports = ReportsToJava(jni(), reports);
+  jmethodID m = GetMethodID(jni(), *j_observer_class_, "onComplete",
+                            "([Lorg/webrtc/StatsReport;)V");
+  jni()->CallVoidMethod(*j_observer_global_, m, j_reports);
+  CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
+}
+
+jobjectArray StatsObserverJni::ReportsToJava(JNIEnv* jni,
+                                             const StatsReports& reports) {
+  jobjectArray reports_array =
+      jni->NewObjectArray(reports.size(), *j_stats_report_class_, NULL);
+  int i = 0;
+  for (const auto* report : reports) {
+    ScopedLocalRefFrame local_ref_frame(jni);
+    jstring j_id = JavaStringFromStdString(jni, report->id()->ToString());
+    jstring j_type = JavaStringFromStdString(jni, report->TypeToString());
+    jobjectArray j_values = ValuesToJava(jni, report->values());
+    jobject j_report =
+        jni->NewObject(*j_stats_report_class_, j_stats_report_ctor_, j_id,
+                       j_type, report->timestamp(), j_values);
+    jni->SetObjectArrayElement(reports_array, i++, j_report);
+  }
+  return reports_array;
+}
+
+jobjectArray StatsObserverJni::ValuesToJava(JNIEnv* jni,
+                                            const StatsReport::Values& values) {
+  jobjectArray j_values =
+      jni->NewObjectArray(values.size(), *j_value_class_, NULL);
+  int i = 0;
+  for (const auto& it : values) {
+    ScopedLocalRefFrame local_ref_frame(jni);
+    // Should we use the '.name' enum value here instead of converting the
+    // name to a string?
+    jstring j_name = JavaStringFromStdString(jni, it.second->display_name());
+    jstring j_value = JavaStringFromStdString(jni, it.second->ToString());
+    jobject j_element_value =
+        jni->NewObject(*j_value_class_, j_value_ctor_, j_name, j_value);
+    jni->SetObjectArrayElement(j_values, i++, j_element_value);
+  }
+  return j_values;
 }
 
 }  // namespace jni
