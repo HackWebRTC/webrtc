@@ -15,6 +15,7 @@ import static android.media.AudioManager.MODE_IN_COMMUNICATION;
 import static android.media.AudioManager.MODE_NORMAL;
 import static android.media.AudioManager.MODE_RINGTONE;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -244,6 +245,9 @@ public final class WebRtcAudioUtils {
             + "BT SCO: " + audioManager.isBluetoothScoOn());
   }
 
+  // TODO(bugs.webrtc.org/8580): Call requires API level 21 (current min is 16):
+  // `android.media.AudioManager#isVolumeFixed`: NewApi [warning]
+  @SuppressLint("NewApi")
   // Adds volume information for all possible stream types.
   private static void logAudioStateVolume(String tag, AudioManager audioManager) {
     final int[] streams = {

@@ -196,6 +196,9 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   private CpuMonitor cpuMonitor;
 
   @Override
+  // TODO(bugs.webrtc.org/8580): LayoutParams.FLAG_TURN_SCREEN_ON and
+  // LayoutParams.FLAG_SHOW_WHEN_LOCKED are deprecated.
+  @SuppressWarnings("deprecation")
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     Thread.setDefaultUncaughtExceptionHandler(new UnhandledExceptionHandler(this));
