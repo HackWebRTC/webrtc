@@ -17,7 +17,12 @@
 namespace webrtc {
 namespace test {
 
-TEST(PerfTest, AppendResult) {
+#if defined(WEBRTC_IOS)
+#define MAYBE_AppendResult DISABLED_AppendResult
+#else
+#define MAYBE_AppendResult AppendResult
+#endif
+TEST(PerfTest, MAYBE_AppendResult) {
   testing::internal::CaptureStdout();
   std::string expected = "RESULT measurementmodifier: trace= 42 units\n";
   PrintResult("measurement", "modifier", "trace", 42, "units", false);
