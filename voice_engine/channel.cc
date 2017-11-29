@@ -556,6 +556,8 @@ AudioMixer::Source::AudioFrameInfo Channel::GetAudioFrameWithInfo(
   }
 
   {
+    RTC_HISTOGRAM_COUNTS_1000("WebRTC.Audio.TargetJitterBufferDelayMs",
+                              audio_coding_->TargetDelayMs());
     const int jitter_buffer_delay = audio_coding_->FilteredCurrentDelayMs();
     rtc::CritScope lock(&video_sync_lock_);
     RTC_HISTOGRAM_COUNTS_1000("WebRTC.Audio.ReceiverDelayEstimateMs",
