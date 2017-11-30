@@ -104,69 +104,9 @@ public:
     virtual int32_t PlayoutPositionMs(
         uint32_t& durationMs) const = 0;
 
-    // Write one audio frame, i.e. the bufferLength first bytes of audioBuffer,
-    // to file. The audio frame size is determined by the codecInst.pacsize
-    // parameter of the last sucessfull StartRecordingAudioFile(..) call.
-    // Note: bufferLength must be exactly one frame.
-    virtual int32_t IncomingAudioData(
-        const int8_t* audioBuffer,
-        const size_t bufferLength) = 0;
-
-    // Open/creates file specified by fileName for writing (relative path is
-    // allowed). FileCallback::RecordNotification(..) will be called after
-    // notificationTimeMs of audio data has been recorded if
-    // notificationTimeMs is greater than zero.
-    // format specifies the type of file that should be created/opened.
-    // codecInst specifies the encoding of the audio data. maxSizeBytes
-    // specifies the number of bytes allowed to be written to file if it is
-    // greater than zero.
-    // Note: codecInst.channels should be set to 2 for stereo (and 1 for
-    // mono). Stereo is only supported for WAV files.
-    virtual int32_t StartRecordingAudioFile(
-        const char*  fileName,
-        const FileFormats    format,
-        const CodecInst&     codecInst,
-        const uint32_t notificationTimeMs = 0,
-        const uint32_t maxSizeBytes       = 0) = 0;
-
-    // Prepare for recording audio to stream.
-    // FileCallback::RecordNotification(..) will be called after
-    // notificationTimeMs of audio data has been recorded if
-    // notificationTimeMs is greater than zero.
-    // format specifies the type of file that stream should correspond to.
-    // codecInst specifies the encoding of the audio data.
-    // Note: codecInst.channels should be set to 2 for stereo (and 1 for
-    // mono). Stereo is only supported for WAV files.
-    virtual int32_t StartRecordingAudioStream(
-        OutStream&           stream,
-        const FileFormats    format,
-        const CodecInst&     codecInst,
-        const uint32_t notificationTimeMs = 0) = 0;
-
-    // Stop recording to file or stream.
-    virtual int32_t StopRecording() = 0;
-
-    // Return true if recording.
-    virtual bool IsRecording() = 0;
-
-    // Set durationMs to the number of ms that has been recorded to file.
-    virtual int32_t RecordDurationMs(uint32_t& durationMs) = 0;
-
-    // Return true if recording or playing is stereo.
-    virtual bool IsStereo() = 0;
-
     // Register callback to receive media file related notifications. Disables
     // callbacks if callback is NULL.
     virtual int32_t SetModuleFileCallback(FileCallback* callback) = 0;
-
-    // Set durationMs to the size of the file (in ms) specified by fileName.
-    // format specifies the type of file fileName refers to. freqInHz specifies
-    // the sampling frequency of the file.
-    virtual int32_t FileDurationMs(
-        const char*  fileName,
-        uint32_t&      durationMs,
-        const FileFormats    format,
-        const uint32_t freqInHz = 16000) = 0;
 
     // Update codecInst according to the current audio codec being used for
     // reading or writing.
