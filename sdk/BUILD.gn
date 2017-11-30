@@ -325,6 +325,8 @@ if (is_ios || is_mac) {
         "objc/Framework/Classes/PeerConnection/RTCPeerConnectionFactory+Private.h",
         "objc/Framework/Classes/PeerConnection/RTCPeerConnectionFactory.mm",
         "objc/Framework/Classes/PeerConnection/RTCVideoCodecH264.mm",
+        "objc/Framework/Classes/PeerConnection/RTCVideoCodecVP8.mm",
+        "objc/Framework/Classes/PeerConnection/RTCVideoCodecVP9.mm",
       ]
 
       public_configs = [ ":common_config_objc" ]
@@ -348,6 +350,8 @@ if (is_ios || is_mac) {
         "../api/video_codecs:video_codecs_api",
         "../media:rtc_audio_video",
         "../media:rtc_media_base",
+        "../modules/video_coding:webrtc_vp8",
+        "../modules/video_coding:webrtc_vp9",
         "../pc:create_pc_factory",
         "../pc:peerconnection",
         "../rtc_base:rtc_base",
@@ -443,8 +447,6 @@ if (is_ios || is_mac) {
         "objc/Framework/Classes/PeerConnection/RTCVideoCapturer.m",
         "objc/Framework/Classes/PeerConnection/RTCVideoCodec+Private.h",
         "objc/Framework/Classes/PeerConnection/RTCVideoCodec.mm",
-        "objc/Framework/Classes/PeerConnection/RTCVideoCodecVP8.mm",
-        "objc/Framework/Classes/PeerConnection/RTCVideoCodecVP9.mm",
         "objc/Framework/Classes/PeerConnection/RTCVideoEncoderSettings.mm",
         "objc/Framework/Classes/PeerConnection/RTCVideoFrame+Private.h",
         "objc/Framework/Classes/PeerConnection/RTCVideoFrame.mm",
@@ -513,8 +515,6 @@ if (is_ios || is_mac) {
         "../common_video",
         "../media:rtc_media_base",
         "../modules:module_api",
-        "../modules/video_coding:webrtc_vp8",
-        "../modules/video_coding:webrtc_vp9",
         "../pc:peerconnection",
         "../rtc_base:rtc_base",
       ]
