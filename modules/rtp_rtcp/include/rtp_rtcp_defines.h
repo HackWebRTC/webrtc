@@ -289,7 +289,7 @@ struct PacketFeedback {
   PacketFeedback(int64_t arrival_time_ms, uint16_t sequence_number)
       : PacketFeedback(-1,
                        arrival_time_ms,
-                       -1,
+                       kNoSendTime,
                        sequence_number,
                        0,
                        0,
@@ -317,8 +317,8 @@ struct PacketFeedback {
                  uint16_t remote_net_id,
                  const PacedPacketInfo& pacing_info)
       : PacketFeedback(creation_time_ms,
-                       -1,
-                       -1,
+                       kNotReceived,
+                       kNoSendTime,
                        sequence_number,
                        payload_size,
                        local_net_id,
@@ -344,6 +344,7 @@ struct PacketFeedback {
 
   static constexpr int kNotAProbe = -1;
   static constexpr int64_t kNotReceived = -1;
+  static constexpr int64_t kNoSendTime = -1;
 
   // NOTE! The variable |creation_time_ms| is not used when testing equality.
   //       This is due to |creation_time_ms| only being used by SendTimeHistory

@@ -19,7 +19,7 @@ namespace webrtc {
 
 namespace {
 bool IsInSendTimeHistory(const PacketFeedback& packet) {
-  return packet.send_time_ms >= 0;
+  return packet.send_time_ms != PacketFeedback::kNoSendTime;
 }
 }  // namespace
 
