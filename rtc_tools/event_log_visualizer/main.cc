@@ -132,6 +132,11 @@ DEFINE_bool(show_detector_state,
             "Show the state of the delay based BWE detector on the total "
             "bitrate graph");
 
+DEFINE_bool(
+    print_triage_notifications,
+    false,
+    "Print triage notifications, i.e. a list of suspicious looking events.");
+
 void SetAllPlotFlags(bool setting);
 
 
@@ -304,6 +309,11 @@ int main(int argc, char* argv[]) {
   }
 
   collection->Draw();
+
+  if (FLAG_print_triage_notifications) {
+    analyzer.CreateTriageNotifications();
+    analyzer.PrintNotifications(stderr);
+  }
 
   return 0;
 }

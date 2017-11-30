@@ -203,6 +203,7 @@ if (!build_with_chromium) {
         "event_log_visualizer/plot_protobuf.h",
         "event_log_visualizer/plot_python.cc",
         "event_log_visualizer/plot_python.h",
+        "event_log_visualizer/triage_notifications.h",
       ]
       if (!build_with_chromium && is_clang) {
         # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
