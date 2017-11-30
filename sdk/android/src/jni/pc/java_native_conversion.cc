@@ -505,7 +505,7 @@ void JavaToNativeRtpParameters(JNIEnv* jni,
     if (!IsNull(jni, j_ssrc)) {
       jlong ssrc_value = jni->CallLongMethod(j_ssrc, long_value_id);
       CHECK_EXCEPTION(jni) << "error during CallLongMethod";
-      encoding.ssrc = rtc::Optional<uint32_t>(ssrc_value);
+      encoding.ssrc = ssrc_value;
     }
     parameters->encodings.push_back(encoding);
   }

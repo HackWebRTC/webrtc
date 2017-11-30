@@ -418,7 +418,7 @@ JNI_FUNCTION_DECLARATION(jlong,
   if (key_type != rtc::KT_DEFAULT) {
     rtc::scoped_refptr<rtc::RTCCertificate> certificate =
         rtc::RTCCertificateGenerator::GenerateCertificate(
-            rtc::KeyParams(key_type), rtc::Optional<uint64_t>());
+            rtc::KeyParams(key_type), rtc::nullopt);
     if (!certificate) {
       RTC_LOG(LS_ERROR) << "Failed to generate certificate. KeyType: "
                         << key_type;
