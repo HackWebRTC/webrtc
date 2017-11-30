@@ -16,6 +16,13 @@ config("common_video_config") {
 }
 
 rtc_static_library("common_video") {
+  # TODO(bugs.webrtc.org/6828): Remove dependency cycle:
+  # //common_video:common_video ->
+  # //media:rtc_media_base ->
+  # //call:call_interfaces ->
+  # //call:video_stream_api ->
+  # //common_video:common_video
+  check_includes = false
   sources = [
     "bitrate_adjuster.cc",
     "h264/h264_bitstream_parser.cc",

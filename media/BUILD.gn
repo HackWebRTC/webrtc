@@ -86,13 +86,11 @@ rtc_static_library("rtc_media_base") {
     "base/videocapturerfactory.h",
     "base/videocommon.cc",
     "base/videocommon.h",
+    "base/videosinkinterface.h",
     "base/videosourcebase.cc",
     "base/videosourcebase.h",
-
-    # TODO(aleloi): add "base/videosinkinterface.h"
     "base/videosourceinterface.cc",
-
-    # TODO(aleloi): add "base/videosourceinterface.h"
+    "base/videosourceinterface.h",
   ]
 
   if (!build_with_chromium && is_clang) {
