@@ -783,6 +783,9 @@ void BaseChannel::EnableSdes_n() {
   DisconnectFromRtpTransport();
   sdes_transport_ = rtc::MakeUnique<webrtc::SrtpTransport>(
       std::move(unencrypted_rtp_transport_), content_name_);
+#if defined(ENABLE_EXTERNAL_AUTH)
+  sdes_transport_->EnableExternalAuth();
+#endif
   rtp_transport_ = sdes_transport_.get();
   ConnectToRtpTransport();
   RTC_LOG(LS_INFO) << "Wrapping RtpTransport in SrtpTransport.";
