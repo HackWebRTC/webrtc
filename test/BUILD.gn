@@ -148,6 +148,7 @@ rtc_source_set("test_support") {
 
   deps = [
     "..:webrtc_common",
+    "../api:array_view",
     "../common_video",
     "../rtc_base:gtest_prod",
     "../rtc_base:rtc_base_approved",
