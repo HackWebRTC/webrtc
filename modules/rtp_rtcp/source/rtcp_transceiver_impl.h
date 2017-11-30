@@ -54,6 +54,10 @@ class RtcpTransceiverImpl {
 
   void HandleReceivedPacket(const rtcp::CommonHeader& rtcp_packet_header,
                             int64_t now_us);
+  void HandleSenderReport(const rtcp::CommonHeader& rtcp_packet_header,
+                          int64_t now_us);
+  void HandleExtendedReports(const rtcp::CommonHeader& rtcp_packet_header,
+                             int64_t now_us);
 
   void ReschedulePeriodicCompoundPackets();
   void SchedulePeriodicCompoundPackets(int64_t delay_ms);
@@ -64,7 +68,7 @@ class RtcpTransceiverImpl {
   void SendPeriodicCompoundPacket();
   void SendImmediateFeedback(const rtcp::RtcpPacket& rtcp_packet);
   // Generate Report Blocks to be send in Sender or Receiver Report.
-  std::vector<rtcp::ReportBlock> CreateReportBlocks();
+  std::vector<rtcp::ReportBlock> CreateReportBlocks(int64_t now_us);
 
   const RtcpTransceiverConfig config_;
 
