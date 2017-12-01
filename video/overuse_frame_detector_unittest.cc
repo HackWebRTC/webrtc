@@ -15,6 +15,8 @@
 #include "modules/video_coding/utility/quality_scaler.h"
 #include "rtc_base/event.h"
 #include "rtc_base/fakeclock.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/random.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "video/overuse_frame_detector.h"
@@ -22,6 +24,8 @@
 namespace webrtc {
 
 using ::testing::InvokeWithoutArgs;
+using ::testing::AtLeast;
+using ::testing::_;
 
 namespace {
   const int kWidth = 640;
@@ -97,27 +101,20 @@ class OveruseFrameDetectorTest : public ::testing::Test,
                                        int width,
                                        int height,
                                        int delay_us) {
-    VideoFrame frame(I420Buffer::Create(width, height),
-                     webrtc::kVideoRotation_0, 0);
-    uint32_t timestamp = 0;
     while (num_frames-- > 0) {
-      frame.set_timestamp(timestamp);
-      overuse_detector_->FrameCaptured(frame, rtc::TimeMicros());
-      clock_.AdvanceTimeMicros(delay_us);
-      overuse_detector_->FrameSent(timestamp, rtc::TimeMicros());
-      clock_.AdvanceTimeMicros(interval_us - delay_us);
-      timestamp += interval_us * 90 / 1000;
+      overuse_detector_->FrameCaptured(width, height);
+      overuse_detector_->FrameEncoded(rtc::TimeMicros(), delay_us);
+      clock_.AdvanceTimeMicros(interval_us);
     }
   }
 
   void ForceUpdate(int width, int height) {
-    // Insert one frame, wait a second and then put in another to force update
-    // the usage. From the tests where these are used, adding another sample
-    // doesn't affect the expected outcome (this is mainly to check initial
-    // values and whether the overuse detector has been reset or not).
-    InsertAndSendFramesWithInterval(2, rtc::kNumMicrosecsPerSec,
-                                    width, height, kFrameIntervalUs);
+    // This is mainly to check initial values and whether the overuse
+    // detector has been reset or not.
+    InsertAndSendFramesWithInterval(1, rtc::kNumMicrosecsPerSec, width, height,
+                                    kFrameIntervalUs);
   }
+
   void TriggerOveruse(int num_times) {
     const int kDelayUs = 32 * rtc::kNumMicrosecsPerMillisec;
     for (int i = 0; i < num_times; ++i) {
@@ -269,74 +266,9 @@ TEST_F(OveruseFrameDetectorTest, ResetAfterFrameTimeout) {
   EXPECT_EQ(InitialUsage(), UsagePercent());
 }
 
-TEST_F(OveruseFrameDetectorTest, MinFrameSamplesBeforeUpdating) {
-  options_.min_frame_samples = 40;
-  ReinitializeOveruseDetector();
-  InsertAndSendFramesWithInterval(
-      40, kFrameIntervalUs, kWidth, kHeight, kProcessTimeUs);
-  EXPECT_EQ(InitialUsage(), UsagePercent());
-  // Pass time far enough to digest all previous samples.
-  clock_.AdvanceTimeMicros(rtc::kNumMicrosecsPerSec);
-  InsertAndSendFramesWithInterval(1, kFrameIntervalUs, kWidth, kHeight,
-                                  kProcessTimeUs);
-  // The last sample has not been processed here.
-  EXPECT_EQ(InitialUsage(), UsagePercent());
-
-  // Pass time far enough to digest all previous samples, 41 in total.
-  clock_.AdvanceTimeMicros(rtc::kNumMicrosecsPerSec);
-  InsertAndSendFramesWithInterval(
-      1, kFrameIntervalUs, kWidth, kHeight, kProcessTimeUs);
-  EXPECT_NE(InitialUsage(), UsagePercent());
-}
-
 TEST_F(OveruseFrameDetectorTest, InitialProcessingUsage) {
   ForceUpdate(kWidth, kHeight);
   EXPECT_EQ(InitialUsage(), UsagePercent());
-}
-
-TEST_F(OveruseFrameDetectorTest, MeasuresMultipleConcurrentSamples) {
-  EXPECT_CALL(*(observer_.get()), AdaptDown(reason_))
-      .Times(testing::AtLeast(1));
-  static const int kIntervalUs = 33 * rtc::kNumMicrosecsPerMillisec;
-  static const size_t kNumFramesEncodingDelay = 3;
-  VideoFrame frame(I420Buffer::Create(kWidth, kHeight),
-                   webrtc::kVideoRotation_0, 0);
-  for (size_t i = 0; i < 1000; ++i) {
-    // Unique timestamps.
-    frame.set_timestamp(static_cast<uint32_t>(i));
-    overuse_detector_->FrameCaptured(frame, rtc::TimeMicros());
-    clock_.AdvanceTimeMicros(kIntervalUs);
-    if (i > kNumFramesEncodingDelay) {
-      overuse_detector_->FrameSent(
-          static_cast<uint32_t>(i - kNumFramesEncodingDelay),
-          rtc::TimeMicros());
-    }
-    overuse_detector_->CheckForOveruse();
-  }
-}
-
-TEST_F(OveruseFrameDetectorTest, UpdatesExistingSamples) {
-  // >85% encoding time should trigger overuse.
-  EXPECT_CALL(*(observer_.get()), AdaptDown(reason_))
-      .Times(testing::AtLeast(1));
-  static const int kIntervalUs = 33 * rtc::kNumMicrosecsPerMillisec;
-  static const int kDelayUs = 30 * rtc::kNumMicrosecsPerMillisec;
-  VideoFrame frame(I420Buffer::Create(kWidth, kHeight),
-                   webrtc::kVideoRotation_0, 0);
-  uint32_t timestamp = 0;
-  for (size_t i = 0; i < 1000; ++i) {
-    frame.set_timestamp(timestamp);
-    overuse_detector_->FrameCaptured(frame, rtc::TimeMicros());
-    // Encode and send first parts almost instantly.
-    clock_.AdvanceTimeMicros(rtc::kNumMicrosecsPerMillisec);
-    overuse_detector_->FrameSent(timestamp, rtc::TimeMicros());
-    // Encode heavier part, resulting in >85% usage total.
-    clock_.AdvanceTimeMicros(kDelayUs - rtc::kNumMicrosecsPerMillisec);
-    overuse_detector_->FrameSent(timestamp, rtc::TimeMicros());
-    clock_.AdvanceTimeMicros(kIntervalUs - kDelayUs);
-    timestamp += kIntervalUs * 90 / 1000;
-    overuse_detector_->CheckForOveruse();
-  }
 }
 
 TEST_F(OveruseFrameDetectorTest, RunOnTqNormalUsage) {
@@ -369,115 +301,59 @@ TEST_F(OveruseFrameDetectorTest, RunOnTqNormalUsage) {
   EXPECT_TRUE(event.Wait(10000));
 }
 
-TEST_F(OveruseFrameDetectorTest, MaxIntervalScalesWithFramerate) {
-  const int kCapturerMaxFrameRate = 30;
-  const int kEncodeMaxFrameRate = 20;  // Maximum fps the encoder can sustain.
+// Models screencast, with irregular arrival of frames which are heavy
+// to encode.
+TEST_F(OveruseFrameDetectorTest, NoOveruseForLargeRandomFrameInterval) {
+  EXPECT_CALL(*(observer_.get()), AdaptDown(_)).Times(0);
+  EXPECT_CALL(*(observer_.get()), AdaptUp(reason_)).Times(AtLeast(1));
 
-  // Trigger overuse.
-  int64_t frame_interval_us = rtc::kNumMicrosecsPerSec / kCapturerMaxFrameRate;
-  // Processing time just below over use limit given kEncodeMaxFrameRate.
-  int64_t processing_time_us =
-      (98 * OveruseProcessingTimeLimitForFramerate(kEncodeMaxFrameRate)) / 100;
-  EXPECT_CALL(*(observer_.get()), AdaptDown(reason_)).Times(1);
-  for (int i = 0; i < options_.high_threshold_consecutive_count; ++i) {
-    InsertAndSendFramesWithInterval(1200, frame_interval_us, kWidth, kHeight,
-                                    processing_time_us);
+  const int kNumFrames = 500;
+  const int kEncodeTimeUs = 100 * rtc::kNumMicrosecsPerMillisec;
+
+  const int kMinIntervalUs = 30 * rtc::kNumMicrosecsPerMillisec;
+  const int kMaxIntervalUs = 1000 * rtc::kNumMicrosecsPerMillisec;
+
+  webrtc::Random random(17);
+
+  for (int i = 0; i < kNumFrames; i++) {
+    int interval_us = random.Rand(kMinIntervalUs, kMaxIntervalUs);
+    overuse_detector_->FrameCaptured(kWidth, kHeight);
+    overuse_detector_->FrameEncoded(rtc::TimeMicros(), kEncodeTimeUs);
+
     overuse_detector_->CheckForOveruse();
+    clock_.AdvanceTimeMicros(interval_us);
   }
-
-  // Simulate frame rate reduction and normal usage.
-  frame_interval_us = rtc::kNumMicrosecsPerSec / kEncodeMaxFrameRate;
-  overuse_detector_->OnTargetFramerateUpdated(kEncodeMaxFrameRate);
-  EXPECT_CALL(*(observer_.get()), AdaptDown(reason_)).Times(0);
-  for (int i = 0; i < options_.high_threshold_consecutive_count; ++i) {
-    InsertAndSendFramesWithInterval(1200, frame_interval_us, kWidth, kHeight,
-                                    processing_time_us);
-    overuse_detector_->CheckForOveruse();
-  }
-
-  // Reduce processing time to trigger underuse.
-  processing_time_us =
-      (98 * UnderuseProcessingTimeLimitForFramerate(kEncodeMaxFrameRate)) / 100;
-  EXPECT_CALL(*(observer_.get()), AdaptUp(reason_)).Times(1);
-  InsertAndSendFramesWithInterval(1200, frame_interval_us, kWidth, kHeight,
-                                  processing_time_us);
-  overuse_detector_->CheckForOveruse();
+  // Average usage 19%. Check that estimate is in the right ball park.
+  EXPECT_NEAR(UsagePercent(), 20, 10);
 }
 
-TEST_F(OveruseFrameDetectorTest, RespectsMinFramerate) {
-  const int kMinFrameRate = 7;  // Minimum fps allowed by current detector impl.
-  overuse_detector_->OnTargetFramerateUpdated(kMinFrameRate);
+// Models screencast, with irregular arrival of frames, often
+// exceeding the timeout interval.
+TEST_F(OveruseFrameDetectorTest, NoOveruseForRandomFrameIntervalWithReset) {
+  EXPECT_CALL(*(observer_.get()), AdaptDown(_)).Times(0);
+  EXPECT_CALL(*(observer_.get()), AdaptUp(reason_)).Times(AtLeast(1));
 
-  // Normal usage just at the limit.
-  int64_t frame_interval_us = rtc::kNumMicrosecsPerSec / kMinFrameRate;
-  // Processing time just below over use limit given kEncodeMaxFrameRate.
-  int64_t processing_time_us =
-      (98 * OveruseProcessingTimeLimitForFramerate(kMinFrameRate)) / 100;
-  EXPECT_CALL(*(observer_.get()), AdaptDown(reason_)).Times(0);
-  for (int i = 0; i < options_.high_threshold_consecutive_count; ++i) {
-    InsertAndSendFramesWithInterval(1200, frame_interval_us, kWidth, kHeight,
-                                    processing_time_us);
+  const int kNumFrames = 500;
+  const int kEncodeTimeUs = 100 * rtc::kNumMicrosecsPerMillisec;
+
+  const int kMinIntervalUs = 30 * rtc::kNumMicrosecsPerMillisec;
+  const int kMaxIntervalUs = 3000 * rtc::kNumMicrosecsPerMillisec;
+
+  webrtc::Random random(17);
+
+  for (int i = 0; i < kNumFrames; i++) {
+    int interval_us = random.Rand(kMinIntervalUs, kMaxIntervalUs);
+    overuse_detector_->FrameCaptured(kWidth, kHeight);
+    overuse_detector_->FrameEncoded(rtc::TimeMicros(), kEncodeTimeUs);
+
     overuse_detector_->CheckForOveruse();
+    clock_.AdvanceTimeMicros(interval_us);
   }
-
-  // Over the limit to overuse.
-  processing_time_us =
-      (102 * OveruseProcessingTimeLimitForFramerate(kMinFrameRate)) / 100;
-  EXPECT_CALL(*(observer_.get()), AdaptDown(reason_)).Times(1);
-  for (int i = 0; i < options_.high_threshold_consecutive_count; ++i) {
-    InsertAndSendFramesWithInterval(1200, frame_interval_us, kWidth, kHeight,
-                                    processing_time_us);
-    overuse_detector_->CheckForOveruse();
-  }
-
-  // Reduce input frame rate. Should still trigger overuse.
-  overuse_detector_->OnTargetFramerateUpdated(kMinFrameRate - 1);
-  EXPECT_CALL(*(observer_.get()), AdaptDown(reason_)).Times(1);
-  for (int i = 0; i < options_.high_threshold_consecutive_count; ++i) {
-    InsertAndSendFramesWithInterval(1200, frame_interval_us, kWidth, kHeight,
-                                    processing_time_us);
-    overuse_detector_->CheckForOveruse();
-  }
-}
-
-TEST_F(OveruseFrameDetectorTest, LimitsMaxFrameInterval) {
-  const int kMaxFrameRate = 20;
-  overuse_detector_->OnTargetFramerateUpdated(kMaxFrameRate);
-  int64_t frame_interval_us = rtc::kNumMicrosecsPerSec / kMaxFrameRate;
-  // Maximum frame interval allowed is 35% above ideal.
-  int64_t max_frame_interval_us = (135 * frame_interval_us) / 100;
-  // Maximum processing time, without triggering overuse, allowed with the above
-  // frame interval.
-  int64_t max_processing_time_us =
-      (max_frame_interval_us * options_.high_encode_usage_threshold_percent) /
-      100;
-
-  // Processing time just below overuse limit given kMaxFrameRate.
-  int64_t processing_time_us = (98 * max_processing_time_us) / 100;
-  EXPECT_CALL(*(observer_.get()), AdaptDown(reason_)).Times(0);
-  for (int i = 0; i < options_.high_threshold_consecutive_count; ++i) {
-    InsertAndSendFramesWithInterval(1200, max_frame_interval_us, kWidth,
-                                    kHeight, processing_time_us);
-    overuse_detector_->CheckForOveruse();
-  }
-
-  // Go above limit, trigger overuse.
-  processing_time_us = (102 * max_processing_time_us) / 100;
-  EXPECT_CALL(*(observer_.get()), AdaptDown(reason_)).Times(1);
-  for (int i = 0; i < options_.high_threshold_consecutive_count; ++i) {
-    InsertAndSendFramesWithInterval(1200, max_frame_interval_us, kWidth,
-                                    kHeight, processing_time_us);
-    overuse_detector_->CheckForOveruse();
-  }
-
-  // Increase frame interval, should still trigger overuse.
-  max_frame_interval_us *= 2;
-  EXPECT_CALL(*(observer_.get()), AdaptDown(reason_)).Times(1);
-  for (int i = 0; i < options_.high_threshold_consecutive_count; ++i) {
-    InsertAndSendFramesWithInterval(1200, max_frame_interval_us, kWidth,
-                                    kHeight, processing_time_us);
-    overuse_detector_->CheckForOveruse();
-  }
+  // Average usage 6.6%, but since the frame_timeout_interval_ms is
+  // only 1500 ms, we often reset the estimate to the initial value.
+  // Check that estimate is in the right ball park.
+  EXPECT_GE(UsagePercent(), 1);
+  EXPECT_LE(UsagePercent(), InitialUsage() + 5);
 }
 
 }  // namespace webrtc

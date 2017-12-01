@@ -23,7 +23,6 @@
 #include "common_video/include/frame_callback.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/numerics/exp_filter.h"
 #include "rtc_base/timeutils.h"
 #include "system_wrappers/include/field_trial.h"
 
@@ -48,31 +47,15 @@ const double kRampUpBackoffFactor = 2.0;
 // Max number of overuses detected before always applying the rampup delay.
 const int kMaxOverusesBeforeApplyRampupDelay = 4;
 
-// The maximum exponent to use in VCMExpFilter.
-const float kMaxExp = 7.0f;
-// Default value used before first reconfiguration.
-const int kDefaultFrameRate = 30;
-// Default sample diff, default frame rate.
-const float kDefaultSampleDiffMs = 1000.0f / kDefaultFrameRate;
-// A factor applied to the sample diff on OnTargetFramerateUpdated to determine
-// a max limit for the sample diff. For instance, with a framerate of 30fps,
-// the sample diff is capped to (1000 / 30) * 1.35 = 45ms. This prevents
-// triggering too soon if there are individual very large outliers.
-const float kMaxSampleDiffMarginFactor = 1.35f;
-// Minimum framerate allowed for usage calculation. This prevents crazy long
-// encode times from being accepted if the frame rate happens to be low.
-const int kMinFramerate = 7;
-const int kMaxFramerate = 30;
-
 const auto kScaleReasonCpu = AdaptationObserverInterface::AdaptReason::kCpu;
 }  // namespace
 
 CpuOveruseOptions::CpuOveruseOptions()
     : high_encode_usage_threshold_percent(85),
       frame_timeout_interval_ms(1500),
-      min_frame_samples(120),
       min_process_count(3),
-      high_threshold_consecutive_count(2) {
+      high_threshold_consecutive_count(2),
+      filter_time_ms(5000) {
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
   // This is proof-of-concept code for letting the physical core count affect
   // the interval into which we attempt to scale. For now, the code is Mac OS
@@ -123,72 +106,43 @@ CpuOveruseOptions::CpuOveruseOptions()
 class OveruseFrameDetector::SendProcessingUsage {
  public:
   explicit SendProcessingUsage(const CpuOveruseOptions& options)
-      : kWeightFactorFrameDiff(0.998f),
-        kWeightFactorProcessing(0.995f),
-        kInitialSampleDiffMs(40.0f),
-        count_(0),
-        options_(options),
-        max_sample_diff_ms_(kDefaultSampleDiffMs * kMaxSampleDiffMarginFactor),
-        filtered_processing_ms_(new rtc::ExpFilter(kWeightFactorProcessing)),
-        filtered_frame_diff_ms_(new rtc::ExpFilter(kWeightFactorFrameDiff)) {
+      : options_(options) {
     Reset();
   }
   virtual ~SendProcessingUsage() {}
 
   void Reset() {
-    count_ = 0;
-    max_sample_diff_ms_ = kDefaultSampleDiffMs * kMaxSampleDiffMarginFactor;
-    filtered_frame_diff_ms_->Reset(kWeightFactorFrameDiff);
-    filtered_frame_diff_ms_->Apply(1.0f, kInitialSampleDiffMs);
-    filtered_processing_ms_->Reset(kWeightFactorProcessing);
-    filtered_processing_ms_->Apply(1.0f, InitialProcessingMs());
+    // Start in between the underuse and overuse threshold.
+    load_estimate_ = (options_.low_encode_usage_threshold_percent +
+                      options_.high_encode_usage_threshold_percent) /
+                     200.0;
   }
 
-  void SetMaxSampleDiffMs(float diff_ms) { max_sample_diff_ms_ = diff_ms; }
+  void AddSample(double encode_time, double diff_time) {
+    RTC_CHECK_GE(diff_time, 0.0);
 
-  void AddCaptureSample(float sample_ms) {
-    float exp = sample_ms / kDefaultSampleDiffMs;
-    exp = std::min(exp, kMaxExp);
-    filtered_frame_diff_ms_->Apply(exp, sample_ms);
-  }
-
-  void AddSample(float processing_ms, int64_t diff_last_sample_ms) {
-    ++count_;
-    float exp = diff_last_sample_ms / kDefaultSampleDiffMs;
-    exp = std::min(exp, kMaxExp);
-    filtered_processing_ms_->Apply(exp, processing_ms);
-  }
-
-  virtual int Value() {
-    if (count_ < static_cast<uint32_t>(options_.min_frame_samples)) {
-      return static_cast<int>(InitialUsageInPercent() + 0.5f);
+    // Use the filter update
+    //
+    // load <-- x/d (1-exp (-d/T)) + exp (-d/T) load
+    //
+    // where we must take care for small d, using the proper limit
+    // (1 - exp(-d/tau)) / d = 1/tau - d/2tau^2 + O(d^2)
+    double tau = (1e-3 * options_.filter_time_ms);
+    double e = diff_time / tau;
+    double c;
+    if (e < 0.0001) {
+      c = (1 - e / 2) / tau;
+    } else {
+      c = -expm1(-e) / diff_time;
     }
-    float frame_diff_ms = std::max(filtered_frame_diff_ms_->filtered(), 1.0f);
-    frame_diff_ms = std::min(frame_diff_ms, max_sample_diff_ms_);
-    float encode_usage_percent =
-        100.0f * filtered_processing_ms_->filtered() / frame_diff_ms;
-    return static_cast<int>(encode_usage_percent + 0.5);
+    load_estimate_ = c * encode_time + exp(-e) * load_estimate_;
   }
+
+  virtual int Value() { return static_cast<int>(100.0 * load_estimate_ + 0.5); }
 
  private:
-  float InitialUsageInPercent() const {
-    // Start in between the underuse and overuse threshold.
-    return (options_.low_encode_usage_threshold_percent +
-            options_.high_encode_usage_threshold_percent) / 2.0f;
-  }
-
-  float InitialProcessingMs() const {
-    return InitialUsageInPercent() * kInitialSampleDiffMs / 100;
-  }
-
-  const float kWeightFactorFrameDiff;
-  const float kWeightFactorProcessing;
-  const float kInitialSampleDiffMs;
-  uint64_t count_;
   const CpuOveruseOptions options_;
-  float max_sample_diff_ms_;
-  std::unique_ptr<rtc::ExpFilter> filtered_processing_ms_;
-  std::unique_ptr<rtc::ExpFilter> filtered_frame_diff_ms_;
+  double load_estimate_;
 };
 
 // Class used for manual testing of overuse, enabled via field trial flag.
@@ -218,6 +172,7 @@ class OveruseFrameDetector::OverdoseInjector
     int64_t now_ms = rtc::TimeMillis();
     if (last_toggling_ms_ == -1) {
       last_toggling_ms_ = now_ms;
+
     } else {
       switch (state_) {
         case State::kNormal:
@@ -255,7 +210,6 @@ class OveruseFrameDetector::OverdoseInjector
         overried_usage_value.emplace(5);
         break;
     }
-
     return overried_usage_value.value_or(SendProcessingUsage::Value());
   }
 
@@ -348,7 +302,6 @@ OveruseFrameDetector::OveruseFrameDetector(
       last_capture_time_us_(-1),
       last_processed_capture_time_us_(-1),
       num_pixels_(0),
-      max_framerate_(kDefaultFrameRate),
       last_overuse_time_ms_(-1),
       checks_above_threshold_(0),
       num_overuse_detections_(0),
@@ -399,93 +352,41 @@ bool OveruseFrameDetector::FrameTimeoutDetected(int64_t now_us) const {
       options_.frame_timeout_interval_ms * rtc::kNumMicrosecsPerMillisec;
 }
 
-void OveruseFrameDetector::ResetAll(int num_pixels) {
-  // Reset state, as a result resolution being changed. Do not however change
-  // the current frame rate back to the default.
+void OveruseFrameDetector::ResetAll() {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
-  num_pixels_ = num_pixels;
   usage_->Reset();
-  frame_timing_.clear();
   last_capture_time_us_ = -1;
   last_processed_capture_time_us_ = -1;
   num_process_times_ = 0;
   metrics_ = rtc::Optional<CpuOveruseMetrics>();
-  OnTargetFramerateUpdated(max_framerate_);
 }
 
-void OveruseFrameDetector::OnTargetFramerateUpdated(int framerate_fps) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
-  RTC_DCHECK_GE(framerate_fps, 0);
-  max_framerate_ = std::min(kMaxFramerate, framerate_fps);
-  usage_->SetMaxSampleDiffMs((1000 / std::max(kMinFramerate, max_framerate_)) *
-                             kMaxSampleDiffMarginFactor);
-}
-
-void OveruseFrameDetector::FrameCaptured(const VideoFrame& frame,
-                                         int64_t time_when_first_seen_us) {
+void OveruseFrameDetector::FrameCaptured(int width, int height) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
 
-  if (FrameSizeChanged(frame.width() * frame.height()) ||
-      FrameTimeoutDetected(time_when_first_seen_us)) {
-    ResetAll(frame.width() * frame.height());
+  if (FrameSizeChanged(width * height)) {
+    ResetAll();
+    num_pixels_ = width * height;
   }
-
-  if (last_capture_time_us_ != -1)
-    usage_->AddCaptureSample(
-        1e-3 * (time_when_first_seen_us - last_capture_time_us_));
-
-  last_capture_time_us_ = time_when_first_seen_us;
-
-  frame_timing_.push_back(FrameTiming(frame.timestamp_us(), frame.timestamp(),
-                                      time_when_first_seen_us));
 }
 
-void OveruseFrameDetector::FrameSent(uint32_t timestamp,
-                                     int64_t time_sent_in_us) {
+void OveruseFrameDetector::FrameEncoded(int64_t capture_time_us,
+                                        int64_t encode_duration_us) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
-  // Delay before reporting actual encoding time, used to have the ability to
-  // detect total encoding time when encoding more than one layer. Encoding is
-  // here assumed to finish within a second (or that we get enough long-time
-  // samples before one second to trigger an overuse even when this is not the
-  // case).
-  static const int64_t kEncodingTimeMeasureWindowMs = 1000;
-  for (auto& it : frame_timing_) {
-    if (it.timestamp == timestamp) {
-      it.last_send_us = time_sent_in_us;
-      break;
-    }
+  if (FrameTimeoutDetected(capture_time_us)) {
+    ResetAll();
+  } else if (last_capture_time_us_ != -1) {
+    usage_->AddSample(1e-6 * encode_duration_us,
+                      1e-6 * (capture_time_us - last_capture_time_us_));
   }
-  // TODO(pbos): Handle the case/log errors when not finding the corresponding
-  // frame (either very slow encoding or incorrect wrong timestamps returned
-  // from the encoder).
-  // This is currently the case for all frames on ChromeOS, so logging them
-  // would be spammy, and triggering overuse would be wrong.
-  // https://crbug.com/350106
-  while (!frame_timing_.empty()) {
-    FrameTiming timing = frame_timing_.front();
-    if (time_sent_in_us - timing.capture_us <
-        kEncodingTimeMeasureWindowMs * rtc::kNumMicrosecsPerMillisec) {
-      break;
-    }
-    if (timing.last_send_us != -1) {
-      int encode_duration_us =
-          static_cast<int>(timing.last_send_us - timing.capture_us);
-      if (encoder_timing_) {
-        // TODO(nisse): Update encoder_timing_ to also use us units.
-        encoder_timing_->OnEncodeTiming(timing.capture_time_us /
-                                        rtc::kNumMicrosecsPerMillisec,
-                                        encode_duration_us /
-                                        rtc::kNumMicrosecsPerMillisec);
-      }
-      if (last_processed_capture_time_us_ != -1) {
-        int64_t diff_us = timing.capture_us - last_processed_capture_time_us_;
-        usage_->AddSample(1e-3 * encode_duration_us, 1e-3 * diff_us);
-      }
-      last_processed_capture_time_us_ = timing.capture_us;
-      EncodedFrameTimeMeasured(encode_duration_us /
-                               rtc::kNumMicrosecsPerMillisec);
-    }
-    frame_timing_.pop_front();
+  last_capture_time_us_ = capture_time_us;
+  EncodedFrameTimeMeasured(encode_duration_us / rtc::kNumMicrosecsPerMillisec);
+
+  if (encoder_timing_) {
+    // TODO(nisse): Update encoder_timing_ to also use us units.
+    encoder_timing_->OnEncodeTiming(
+        capture_time_us / rtc::kNumMicrosecsPerMillisec,
+        encode_duration_us / rtc::kNumMicrosecsPerMillisec);
   }
 }
 
