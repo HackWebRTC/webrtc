@@ -11,7 +11,6 @@
 #ifndef MODULES_CONGESTION_CONTROLLER_INCLUDE_SEND_SIDE_CONGESTION_CONTROLLER_H_
 #define MODULES_CONGESTION_CONTROLLER_INCLUDE_SEND_SIDE_CONGESTION_CONTROLLER_H_
 
-#include <deque>
 #include <memory>
 #include <vector>
 
@@ -137,11 +136,7 @@ class SendSideCongestionController : public CallStatsObserver,
   const std::unique_ptr<ProbeController> probe_controller_;
   const std::unique_ptr<RateLimiter> retransmission_rate_limiter_;
   TransportFeedbackAdapter transport_feedback_adapter_;
-
   rtc::CriticalSection network_state_lock_;
-  std::deque<int64_t> feedback_rtts_ RTC_GUARDED_BY(network_state_lock_);
-  rtc::Optional<int64_t> min_feedback_rtt_ms_
-      RTC_GUARDED_BY(network_state_lock_);
   uint32_t last_reported_bitrate_bps_ RTC_GUARDED_BY(network_state_lock_);
   uint8_t last_reported_fraction_loss_ RTC_GUARDED_BY(network_state_lock_);
   int64_t last_reported_rtt_ RTC_GUARDED_BY(network_state_lock_);

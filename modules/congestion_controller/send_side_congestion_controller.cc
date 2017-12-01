@@ -315,35 +315,10 @@ void SendSideCongestionController::AddPacket(
 void SendSideCongestionController::OnTransportFeedback(
     const rtcp::TransportFeedback& feedback) {
   RTC_DCHECK_RUNS_SERIALIZED(&worker_race_);
-  int64_t feedback_time_ms = clock_->TimeInMilliseconds();
-
   transport_feedback_adapter_.OnTransportFeedback(feedback);
-  std::vector<PacketFeedback> feedback_vector =
-      transport_feedback_adapter_.GetTransportFeedbackVector();
+  std::vector<PacketFeedback> feedback_vector = ReceivedPacketFeedbackVector(
+      transport_feedback_adapter_.GetTransportFeedbackVector());
   SortPacketFeedbackVector(&feedback_vector);
-
-  int64_t feedback_rtt = -1;
-  for (const auto& packet_feedback : feedback_vector) {
-    if (packet_feedback.send_time_ms != PacketFeedback::kNoSendTime &&
-        packet_feedback.arrival_time_ms != PacketFeedback::kNotReceived) {
-      int64_t rtt = feedback_time_ms - packet_feedback.send_time_ms;
-      // max() is used to account for feedback being delayed by the
-      // receiver.
-      feedback_rtt = std::max(rtt, feedback_rtt);
-    }
-  }
-  if (feedback_rtt > -1) {
-    rtc::CritScope cs(&network_state_lock_);
-    feedback_rtts_.push_back(feedback_rtt);
-    const size_t kFeedbackRttWindow = 32;
-    if (feedback_rtts_.size() > kFeedbackRttWindow)
-      feedback_rtts_.pop_front();
-    min_feedback_rtt_ms_.emplace(
-        *std::min_element(feedback_rtts_.begin(), feedback_rtts_.end()));
-  }
-
-  std::vector<PacketFeedback> received_feedback_vector =
-      ReceivedPacketFeedbackVector(feedback_vector);
 
   bool currently_in_alr =
       pacer_->GetApplicationLimitedRegionStartTime().has_value();
@@ -377,20 +352,22 @@ void SendSideCongestionController::LimitOutstandingBytes(
     size_t num_outstanding_bytes) {
   RTC_DCHECK(in_cwnd_experiment_);
   rtc::CritScope lock(&network_state_lock_);
+  rtc::Optional<int64_t> min_rtt_ms =
+      transport_feedback_adapter_.GetMinFeedbackLoopRtt();
   // No valid RTT. Could be because send-side BWE isn't used, in which case
   // we don't try to limit the outstanding packets.
-  if (!min_feedback_rtt_ms_)
+  if (!min_rtt_ms)
     return;
   const size_t kMinCwndBytes = 2 * 1500;
   size_t max_outstanding_bytes =
-      std::max<size_t>((*min_feedback_rtt_ms_ + accepted_queue_ms_) *
+      std::max<size_t>((*min_rtt_ms + accepted_queue_ms_) *
                            last_reported_bitrate_bps_ / 1000 / 8,
                        kMinCwndBytes);
   RTC_LOG(LS_INFO) << clock_->TimeInMilliseconds()
                    << " Outstanding bytes: " << num_outstanding_bytes
                    << " pacer queue: " << pacer_->QueueInMs()
                    << " max outstanding: " << max_outstanding_bytes;
-  RTC_LOG(LS_INFO) << "Feedback rtt: " << *min_feedback_rtt_ms_
+  RTC_LOG(LS_INFO) << "Feedback rtt: " << *min_rtt_ms
                    << " Bitrate: " << last_reported_bitrate_bps_;
   pause_pacer_ = num_outstanding_bytes > max_outstanding_bytes;
 }
