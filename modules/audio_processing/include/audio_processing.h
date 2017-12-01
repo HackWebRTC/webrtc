@@ -1154,6 +1154,8 @@ struct EchoCanceller3Config {
     size_t default_delay = 5;
     size_t down_sampling_factor = 4;
     size_t num_filters = 4;
+    size_t api_call_jitter_blocks = 26;
+    size_t min_echo_path_delay_blocks = 5;
   } delay;
 
   struct Erle {

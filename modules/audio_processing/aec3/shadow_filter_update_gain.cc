@@ -51,7 +51,7 @@ void ShadowFilterUpdateGain::Compute(
   constexpr float kNoiseGatePower = 220075344.f;
   constexpr float kMuFixed = .5f;
   std::array<float, kFftLengthBy2Plus1> mu;
-  const auto& X2 = render_buffer.SpectralSum(size_partitions);
+  auto X2 = render_buffer.SpectralSum(size_partitions);
   std::transform(X2.begin(), X2.end(), mu.begin(), [&](float a) {
     return a > kNoiseGatePower ? kMuFixed / a : 0.f;
   });

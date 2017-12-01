@@ -16,7 +16,7 @@
 
 #include "modules/audio_processing/aec3/adaptive_fir_filter.h"
 #include "modules/audio_processing/aec3/aec3_common.h"
-#include "modules/audio_processing/aec3/render_buffer.h"
+#include "modules/audio_processing/aec3/echo_path_variability.h"
 #include "modules/audio_processing/aec3/render_signal_analyzer.h"
 #include "modules/audio_processing/aec3/subtractor_output.h"
 #include "rtc_base/constructormagic.h"
@@ -32,7 +32,7 @@ class MainFilterUpdateGain {
   ~MainFilterUpdateGain();
 
   // Takes action in the case of a known echo path change.
-  void HandleEchoPathChange();
+  void HandleEchoPathChange(const EchoPathVariability& echo_path_variability);
 
   // Computes the gain.
   void Compute(const RenderBuffer& render_buffer,

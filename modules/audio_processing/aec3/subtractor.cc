@@ -59,14 +59,28 @@ Subtractor::~Subtractor() = default;
 
 void Subtractor::HandleEchoPathChange(
     const EchoPathVariability& echo_path_variability) {
-  use_shadow_filter_frequency_response_ = false;
-  if (echo_path_variability.delay_change) {
+  const auto full_reset = [&]() {
+    use_shadow_filter_frequency_response_ = false;
     main_filter_.HandleEchoPathChange();
     shadow_filter_.HandleEchoPathChange();
-    G_main_.HandleEchoPathChange();
+    G_main_.HandleEchoPathChange(echo_path_variability);
     G_shadow_.HandleEchoPathChange();
     converged_filter_ = false;
     converged_filter_counter_ = 0;
+  };
+
+  // TODO(peah): Add delay-change specific reset behavior.
+  if ((echo_path_variability.delay_change ==
+       EchoPathVariability::DelayAdjustment::kBufferFlush) ||
+      (echo_path_variability.delay_change ==
+       EchoPathVariability::DelayAdjustment::kDelayReset)) {
+    full_reset();
+  } else if (echo_path_variability.delay_change ==
+             EchoPathVariability::DelayAdjustment::kNewDetectedDelay) {
+    full_reset();
+  } else if (echo_path_variability.delay_change ==
+             EchoPathVariability::DelayAdjustment::kBufferReadjustment) {
+    full_reset();
   }
 }
 
@@ -120,8 +134,8 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
   }
 
   // Compute spectra for future use.
-  E_main.Spectrum(optimization_, &output->E2_main);
-  E_shadow.Spectrum(optimization_, &output->E2_shadow);
+  E_main.Spectrum(optimization_, output->E2_main);
+  E_shadow.Spectrum(optimization_, output->E2_shadow);
 
   // Update the main filter.
   G_main_.Compute(render_buffer, render_signal_analyzer, *output, main_filter_,

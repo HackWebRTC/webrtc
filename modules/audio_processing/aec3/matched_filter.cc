@@ -338,7 +338,7 @@ void MatchedFilter::Update(const DownsampledRenderBuffer& render_buffer,
     bool filters_updated = false;
 
     size_t x_start_index =
-        (render_buffer.position + alignment_shift + sub_block_size_ - 1) %
+        (render_buffer.read + alignment_shift + sub_block_size_ - 1) %
         render_buffer.buffer.size();
 
     switch (optimization_) {

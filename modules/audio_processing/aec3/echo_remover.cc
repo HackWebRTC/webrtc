@@ -174,7 +174,7 @@ void EchoRemoverImpl::ProcessCapture(
   // Compute spectra.
   fft_.ZeroPaddedFft(y0, &Y);
   LinearEchoPower(E_main, Y, &S2_linear);
-  Y.Spectrum(optimization_, &Y2);
+  Y.Spectrum(optimization_, Y2);
 
   // Update the AEC state information.
   aec_state_.Update(subtractor_.FilterFrequencyResponse(),

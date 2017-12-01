@@ -42,6 +42,7 @@ constexpr int kAdaptiveFilterLength = 12;
 constexpr int kUnknownDelayRenderWindowSize = 30;
 constexpr int kAdaptiveFilterTimeDomainLength =
     kAdaptiveFilterLength * kFftLengthBy2;
+constexpr int kRenderTransferQueueSizeFrames = 100;
 
 constexpr size_t kMaxNumBands = 3;
 constexpr size_t kSubFrameLength = 80;
@@ -52,11 +53,6 @@ constexpr size_t kMatchedFilterWindowSizeSubBlocks = 32;
 constexpr size_t kMatchedFilterAlignmentShiftSizeSubBlocks =
     kMatchedFilterWindowSizeSubBlocks * 3 / 4;
 
-constexpr size_t kMinEchoPathDelayBlocks = 5;
-constexpr size_t kMaxApiCallsJitterBlocks = 26;
-constexpr size_t kRenderTransferQueueSize = kMaxApiCallsJitterBlocks / 2;
-static_assert(2 * kRenderTransferQueueSize >= kMaxApiCallsJitterBlocks,
-              "Requirement to ensure buffer overflow detection");
 
 constexpr size_t kEchoPathChangeConvergenceBlocks = 2 * kNumBlocksPerSecond;
 
@@ -83,9 +79,8 @@ constexpr size_t GetDownSampledBufferSize(size_t down_sampling_factor,
 
 constexpr size_t GetRenderDelayBufferSize(size_t down_sampling_factor,
                                           size_t num_matched_filters) {
-  return (3 *
-          GetDownSampledBufferSize(down_sampling_factor, num_matched_filters)) /
-         (4 * kBlockSize / down_sampling_factor);
+  return GetDownSampledBufferSize(down_sampling_factor, num_matched_filters) /
+         (kBlockSize / down_sampling_factor);
 }
 
 // Detects what kind of optimizations to use for the code.

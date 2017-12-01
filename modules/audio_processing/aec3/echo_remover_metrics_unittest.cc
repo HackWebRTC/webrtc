@@ -65,7 +65,7 @@ TEST(TransformDbMetricForReporting, DbFsScaling) {
   Aec3Fft fft;
   x.fill(1000.f);
   fft.ZeroPaddedFft(x, &X);
-  X.Spectrum(Aec3Optimization::kNone, &X2);
+  X.Spectrum(Aec3Optimization::kNone, X2);
 
   float offset = -10.f * log10(32768.f * 32768.f);
   EXPECT_NEAR(offset, -90.3f, 0.1f);

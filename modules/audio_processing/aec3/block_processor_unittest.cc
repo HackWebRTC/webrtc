@@ -115,7 +115,7 @@ TEST(BlockProcessor, DISABLED_DelayControllerIntegration) {
             new StrictMock<webrtc::test::MockRenderDelayBuffer>(rate));
     EXPECT_CALL(*render_delay_buffer_mock, Insert(_))
         .Times(kNumBlocks)
-        .WillRepeatedly(Return(true));
+        .WillRepeatedly(Return(RenderDelayBuffer::BufferingEvent::kNone));
     EXPECT_CALL(*render_delay_buffer_mock, IsBlockAvailable())
         .Times(kNumBlocks)
         .WillRepeatedly(Return(true));
@@ -160,11 +160,12 @@ TEST(BlockProcessor, DISABLED_SubmoduleIntegration) {
 
     EXPECT_CALL(*render_delay_buffer_mock, Insert(_))
         .Times(kNumBlocks - 1)
-        .WillRepeatedly(Return(true));
+        .WillRepeatedly(Return(RenderDelayBuffer::BufferingEvent::kNone));
     EXPECT_CALL(*render_delay_buffer_mock, IsBlockAvailable())
         .Times(kNumBlocks)
         .WillRepeatedly(Return(true));
-    EXPECT_CALL(*render_delay_buffer_mock, UpdateBuffers()).Times(kNumBlocks);
+    EXPECT_CALL(*render_delay_buffer_mock, PrepareCaptureCall())
+        .Times(kNumBlocks);
     EXPECT_CALL(*render_delay_buffer_mock, SetDelay(9)).Times(AtLeast(1));
     EXPECT_CALL(*render_delay_buffer_mock, Delay())
         .Times(kNumBlocks)

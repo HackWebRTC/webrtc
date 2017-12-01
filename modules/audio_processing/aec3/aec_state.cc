@@ -64,28 +64,45 @@ AecState::~AecState() = default;
 
 void AecState::HandleEchoPathChange(
     const EchoPathVariability& echo_path_variability) {
-  if (echo_path_variability.AudioPathChanged()) {
+  const auto full_reset = [&]() {
     blocks_since_last_saturation_ = kUnknownDelayRenderWindowSize + 1;
     usable_linear_estimate_ = false;
     echo_leakage_detected_ = false;
     capture_signal_saturation_ = false;
     echo_saturation_ = false;
     max_render_.fill(0.f);
+    force_zero_gain_counter_ = 0;
+    blocks_with_filter_adaptation_ = 0;
+    blocks_with_strong_render_ = 0;
+    initial_state_ = true;
+    capture_block_counter_ = 0;
+    linear_echo_estimate_ = false;
+    sufficient_filter_updates_ = false;
+    render_received_ = false;
+    force_zero_gain_ = true;
+  };
 
-    if (echo_path_variability.delay_change) {
-      force_zero_gain_counter_ = 0;
-      blocks_with_filter_adaptation_ = 0;
-      blocks_with_strong_render_ = 0;
-      initial_state_ = true;
-      linear_echo_estimate_ = false;
-      sufficient_filter_updates_ = false;
-      render_received_ = false;
-      force_zero_gain_ = true;
-      capture_block_counter_ = 0;
-    }
-    if (echo_path_variability.gain_change) {
-      capture_block_counter_ = kNumBlocksPerSecond;
-    }
+  // TODO(peah): Refine the reset scheme according to the type of gain and
+  // delay adjustment.
+  if (echo_path_variability.gain_change) {
+    full_reset();
+  }
+
+  if (echo_path_variability.delay_change !=
+      EchoPathVariability::DelayAdjustment::kBufferReadjustment) {
+    full_reset();
+  } else if (echo_path_variability.delay_change !=
+             EchoPathVariability::DelayAdjustment::kBufferFlush) {
+    full_reset();
+
+  } else if (echo_path_variability.delay_change !=
+             EchoPathVariability::DelayAdjustment::kDelayReset) {
+    full_reset();
+  } else if (echo_path_variability.delay_change !=
+             EchoPathVariability::DelayAdjustment::kNewDetectedDelay) {
+    full_reset();
+  } else if (echo_path_variability.gain_change) {
+    capture_block_counter_ = kNumBlocksPerSecond;
   }
 }
 

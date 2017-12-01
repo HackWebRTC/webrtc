@@ -47,22 +47,20 @@ constexpr size_t kDownSamplingFactors[] = {2, 4, 8};
 // Verifies the output of GetDelay when there are no AnalyzeRender calls.
 TEST(RenderDelayController, NoRenderSignal) {
   std::vector<float> block(kBlockSize, 0.f);
+  EchoCanceller3Config config;
   for (size_t num_matched_filters = 4; num_matched_filters == 10;
        num_matched_filters++) {
     for (auto down_sampling_factor : kDownSamplingFactors) {
+      config.delay.down_sampling_factor = down_sampling_factor;
+      config.delay.num_filters = num_matched_filters;
       for (auto rate : {8000, 16000, 32000, 48000}) {
         SCOPED_TRACE(ProduceDebugText(rate));
         std::unique_ptr<RenderDelayBuffer> delay_buffer(
-            RenderDelayBuffer::Create(
-                NumBandsForRate(rate), down_sampling_factor,
-                GetDownSampledBufferSize(down_sampling_factor,
-                                         num_matched_filters),
-                GetRenderDelayBufferSize(down_sampling_factor,
-                                         num_matched_filters)));
+            RenderDelayBuffer::Create(config, NumBandsForRate(rate)));
         std::unique_ptr<RenderDelayController> delay_controller(
-            RenderDelayController::Create(EchoCanceller3Config(), rate));
+            RenderDelayController::Create(config, rate));
         for (size_t k = 0; k < 100; ++k) {
-          EXPECT_EQ(kMinEchoPathDelayBlocks,
+          EXPECT_EQ(config.delay.min_echo_path_delay_blocks,
                     delay_controller->GetDelay(
                         delay_buffer->GetDownsampledRenderBuffer(), block));
         }
@@ -78,26 +76,24 @@ TEST(RenderDelayController, BasicApiCalls) {
   for (size_t num_matched_filters = 4; num_matched_filters == 10;
        num_matched_filters++) {
     for (auto down_sampling_factor : kDownSamplingFactors) {
+      EchoCanceller3Config config;
+      config.delay.down_sampling_factor = down_sampling_factor;
+      config.delay.num_filters = num_matched_filters;
       for (auto rate : {8000, 16000, 32000, 48000}) {
         std::vector<std::vector<float>> render_block(
             NumBandsForRate(rate), std::vector<float>(kBlockSize, 0.f));
         std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-            RenderDelayBuffer::Create(
-                NumBandsForRate(rate), down_sampling_factor,
-                GetDownSampledBufferSize(down_sampling_factor,
-                                         num_matched_filters),
-                GetRenderDelayBufferSize(down_sampling_factor,
-                                         num_matched_filters)));
+            RenderDelayBuffer::Create(config, NumBandsForRate(rate)));
         std::unique_ptr<RenderDelayController> delay_controller(
             RenderDelayController::Create(EchoCanceller3Config(), rate));
         for (size_t k = 0; k < 10; ++k) {
           render_delay_buffer->Insert(render_block);
-          render_delay_buffer->UpdateBuffers();
+          render_delay_buffer->PrepareCaptureCall();
           delay_blocks = delay_controller->GetDelay(
               render_delay_buffer->GetDownsampledRenderBuffer(), capture_block);
         }
         EXPECT_FALSE(delay_controller->AlignmentHeadroomSamples());
-        EXPECT_EQ(kMinEchoPathDelayBlocks, delay_blocks);
+        EXPECT_EQ(config.delay.min_echo_path_delay_blocks, delay_blocks);
       }
     }
   }
@@ -112,6 +108,10 @@ TEST(RenderDelayController, Alignment) {
   for (size_t num_matched_filters = 4; num_matched_filters == 10;
        num_matched_filters++) {
     for (auto down_sampling_factor : kDownSamplingFactors) {
+      EchoCanceller3Config config;
+      config.delay.down_sampling_factor = down_sampling_factor;
+      config.delay.num_filters = num_matched_filters;
+
       for (auto rate : {8000, 16000, 32000, 48000}) {
         std::vector<std::vector<float>> render_block(
             NumBandsForRate(rate), std::vector<float>(kBlockSize, 0.f));
@@ -119,20 +119,15 @@ TEST(RenderDelayController, Alignment) {
         for (size_t delay_samples : {15, 50, 150, 200, 800, 4000}) {
           SCOPED_TRACE(ProduceDebugText(rate, delay_samples));
           std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-              RenderDelayBuffer::Create(
-                  NumBandsForRate(rate), down_sampling_factor,
-                  GetDownSampledBufferSize(down_sampling_factor,
-                                           num_matched_filters),
-                  GetRenderDelayBufferSize(down_sampling_factor,
-                                           num_matched_filters)));
+              RenderDelayBuffer::Create(config, NumBandsForRate(rate)));
           std::unique_ptr<RenderDelayController> delay_controller(
-              RenderDelayController::Create(EchoCanceller3Config(), rate));
+              RenderDelayController::Create(config, rate));
           DelayBuffer<float> signal_delay_buffer(delay_samples);
           for (size_t k = 0; k < (400 + delay_samples / kBlockSize); ++k) {
             RandomizeSampleVector(&random_generator, render_block[0]);
             signal_delay_buffer.Delay(render_block[0], capture_block);
             render_delay_buffer->Insert(render_block);
-            render_delay_buffer->UpdateBuffers();
+            render_delay_buffer->PrepareCaptureCall();
             delay_blocks = delay_controller->GetDelay(
                 render_delay_buffer->GetDownsampledRenderBuffer(),
                 capture_block);
@@ -164,6 +159,9 @@ TEST(RenderDelayController, NonCausalAlignment) {
   for (size_t num_matched_filters = 4; num_matched_filters == 10;
        num_matched_filters++) {
     for (auto down_sampling_factor : kDownSamplingFactors) {
+      EchoCanceller3Config config;
+      config.delay.down_sampling_factor = down_sampling_factor;
+      config.delay.num_filters = num_matched_filters;
       for (auto rate : {8000, 16000, 32000, 48000}) {
         std::vector<std::vector<float>> render_block(
             NumBandsForRate(rate), std::vector<float>(kBlockSize, 0.f));
@@ -173,12 +171,7 @@ TEST(RenderDelayController, NonCausalAlignment) {
         for (int delay_samples : {-15, -50, -150, -200}) {
           SCOPED_TRACE(ProduceDebugText(rate, -delay_samples));
           std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-              RenderDelayBuffer::Create(
-                  NumBandsForRate(rate), down_sampling_factor,
-                  GetDownSampledBufferSize(down_sampling_factor,
-                                           num_matched_filters),
-                  GetRenderDelayBufferSize(down_sampling_factor,
-                                           num_matched_filters)));
+              RenderDelayBuffer::Create(config, NumBandsForRate(rate)));
           std::unique_ptr<RenderDelayController> delay_controller(
               RenderDelayController::Create(EchoCanceller3Config(), rate));
           DelayBuffer<float> signal_delay_buffer(-delay_samples);
@@ -187,7 +180,7 @@ TEST(RenderDelayController, NonCausalAlignment) {
             RandomizeSampleVector(&random_generator, capture_block[0]);
             signal_delay_buffer.Delay(capture_block[0], render_block[0]);
             render_delay_buffer->Insert(render_block);
-            render_delay_buffer->UpdateBuffers();
+            render_delay_buffer->PrepareCaptureCall();
             delay_blocks = delay_controller->GetDelay(
                 render_delay_buffer->GetDownsampledRenderBuffer(),
                 capture_block[0]);
@@ -212,6 +205,9 @@ TEST(RenderDelayController, AlignmentWithJitter) {
   for (size_t num_matched_filters = 4; num_matched_filters == 10;
        num_matched_filters++) {
     for (auto down_sampling_factor : kDownSamplingFactors) {
+      EchoCanceller3Config config;
+      config.delay.down_sampling_factor = down_sampling_factor;
+      config.delay.num_filters = num_matched_filters;
       for (auto rate : {8000, 16000, 32000, 48000}) {
         std::vector<std::vector<float>> render_block(
             NumBandsForRate(rate), std::vector<float>(kBlockSize, 0.f));
@@ -219,28 +215,25 @@ TEST(RenderDelayController, AlignmentWithJitter) {
           size_t delay_blocks = 0;
           SCOPED_TRACE(ProduceDebugText(rate, delay_samples));
           std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-              RenderDelayBuffer::Create(
-                  NumBandsForRate(rate), down_sampling_factor,
-                  GetDownSampledBufferSize(down_sampling_factor,
-                                           num_matched_filters),
-                  GetRenderDelayBufferSize(down_sampling_factor,
-                                           num_matched_filters)));
+              RenderDelayBuffer::Create(config, NumBandsForRate(rate)));
           std::unique_ptr<RenderDelayController> delay_controller(
-              RenderDelayController::Create(EchoCanceller3Config(), rate));
+              RenderDelayController::Create(config, rate));
           DelayBuffer<float> signal_delay_buffer(delay_samples);
           for (size_t j = 0; j < (1000 + delay_samples / kBlockSize) /
-                                         kMaxApiCallsJitterBlocks +
+                                         config.delay.api_call_jitter_blocks +
                                      1;
                ++j) {
             std::vector<std::vector<float>> capture_block_buffer;
-            for (size_t k = 0; k < (kMaxApiCallsJitterBlocks - 1); ++k) {
+            for (size_t k = 0; k < (config.delay.api_call_jitter_blocks - 1);
+                 ++k) {
               RandomizeSampleVector(&random_generator, render_block[0]);
               signal_delay_buffer.Delay(render_block[0], capture_block);
               capture_block_buffer.push_back(capture_block);
               render_delay_buffer->Insert(render_block);
             }
-            for (size_t k = 0; k < (kMaxApiCallsJitterBlocks - 1); ++k) {
-              render_delay_buffer->UpdateBuffers();
+            for (size_t k = 0; k < (config.delay.api_call_jitter_blocks - 1);
+                 ++k) {
+              render_delay_buffer->PrepareCaptureCall();
               delay_blocks = delay_controller->GetDelay(
                   render_delay_buffer->GetDownsampledRenderBuffer(),
                   capture_block_buffer[k]);
@@ -275,17 +268,16 @@ TEST(RenderDelayController, InitialHeadroom) {
   for (size_t num_matched_filters = 4; num_matched_filters == 10;
        num_matched_filters++) {
     for (auto down_sampling_factor : kDownSamplingFactors) {
+      EchoCanceller3Config config;
+      config.delay.down_sampling_factor = down_sampling_factor;
+      config.delay.num_filters = num_matched_filters;
       for (auto rate : {8000, 16000, 32000, 48000}) {
         SCOPED_TRACE(ProduceDebugText(rate));
         std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-            RenderDelayBuffer::Create(
-                NumBandsForRate(rate), down_sampling_factor,
-                GetDownSampledBufferSize(down_sampling_factor,
-                                         num_matched_filters),
-                GetRenderDelayBufferSize(down_sampling_factor,
-                                         num_matched_filters)));
+            RenderDelayBuffer::Create(config, NumBandsForRate(rate)));
+
         std::unique_ptr<RenderDelayController> delay_controller(
-            RenderDelayController::Create(EchoCanceller3Config(), rate));
+            RenderDelayController::Create(config, rate));
         EXPECT_FALSE(delay_controller->AlignmentHeadroomSamples());
       }
     }
@@ -297,12 +289,11 @@ TEST(RenderDelayController, InitialHeadroom) {
 // Verifies the check for the capture signal block size.
 TEST(RenderDelayController, WrongCaptureSize) {
   std::vector<float> block(kBlockSize - 1, 0.f);
+  EchoCanceller3Config config;
   for (auto rate : {8000, 16000, 32000, 48000}) {
     SCOPED_TRACE(ProduceDebugText(rate));
     std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-        RenderDelayBuffer::Create(NumBandsForRate(rate), 4,
-                                  GetDownSampledBufferSize(4, 4),
-                                  GetRenderDelayBufferSize(4, 4)));
+        RenderDelayBuffer::Create(config, NumBandsForRate(rate)));
     EXPECT_DEATH(
         std::unique_ptr<RenderDelayController>(
             RenderDelayController::Create(EchoCanceller3Config(), rate))
@@ -318,10 +309,9 @@ TEST(RenderDelayController, WrongCaptureSize) {
 TEST(RenderDelayController, DISABLED_WrongSampleRate) {
   for (auto rate : {-1, 0, 8001, 16001}) {
     SCOPED_TRACE(ProduceDebugText(rate));
+    EchoCanceller3Config config;
     std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-        RenderDelayBuffer::Create(NumBandsForRate(rate), 4,
-                                  GetDownSampledBufferSize(4, 4),
-                                  GetRenderDelayBufferSize(4, 4)));
+        RenderDelayBuffer::Create(config, NumBandsForRate(rate)));
     EXPECT_DEATH(
         std::unique_ptr<RenderDelayController>(
             RenderDelayController::Create(EchoCanceller3Config(), rate)),

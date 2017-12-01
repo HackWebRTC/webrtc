@@ -16,7 +16,7 @@
 
 #include "modules/audio_processing/aec3/adaptive_fir_filter.h"
 #include "modules/audio_processing/aec3/aec_state.h"
-#include "modules/audio_processing/aec3/render_buffer.h"
+#include "modules/audio_processing/aec3/render_delay_buffer.h"
 #include "modules/audio_processing/aec3/render_signal_analyzer.h"
 #include "modules/audio_processing/aec3/shadow_filter_update_gain.h"
 #include "modules/audio_processing/aec3/subtractor_output.h"
@@ -40,12 +40,9 @@ void RunFilterUpdateTest(int num_blocks_to_process,
                          std::array<float, kBlockSize>* y_last_block,
                          FftData* G_last_block) {
   ApmDataDumper data_dumper(42);
-  AdaptiveFirFilter main_filter(9, DetectOptimization(), &data_dumper);
-  AdaptiveFirFilter shadow_filter(9, DetectOptimization(), &data_dumper);
+  AdaptiveFirFilter main_filter(12, DetectOptimization(), &data_dumper);
+  AdaptiveFirFilter shadow_filter(12, DetectOptimization(), &data_dumper);
   Aec3Fft fft;
-  RenderBuffer render_buffer(
-      Aec3Optimization::kNone, 3, main_filter.SizePartitions(),
-      std::vector<size_t>(1, main_filter.SizePartitions()));
   std::array<float, kBlockSize> x_old;
   x_old.fill(0.f);
   ShadowFilterUpdateGain shadow_gain;
@@ -53,7 +50,11 @@ void RunFilterUpdateTest(int num_blocks_to_process,
   Random random_generator(42U);
   std::vector<std::vector<float>> x(3, std::vector<float>(kBlockSize, 0.f));
   std::vector<float> y(kBlockSize, 0.f);
-  AecState aec_state(EchoCanceller3Config{});
+  EchoCanceller3Config config;
+  config.delay.min_echo_path_delay_blocks = 0;
+  std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
+      RenderDelayBuffer::Create(config, 3));
+  AecState aec_state(config);
   RenderSignalAnalyzer render_signal_analyzer;
   std::array<float, kFftLength> s_scratch;
   std::array<float, kBlockSize> s;
@@ -92,11 +93,18 @@ void RunFilterUpdateTest(int num_blocks_to_process,
       RandomizeSampleVector(&random_generator, x[0]);
     }
     delay_buffer.Delay(x[0], y);
-    render_buffer.Insert(x);
-    render_signal_analyzer.Update(render_buffer, aec_state.FilterDelay());
+
+    render_delay_buffer->Insert(x);
+    if (k == 0) {
+      render_delay_buffer->Reset();
+    }
+    render_delay_buffer->PrepareCaptureCall();
+
+    render_signal_analyzer.Update(render_delay_buffer->GetRenderBuffer(),
+                                  aec_state.FilterDelay());
 
     // Apply the main filter.
-    main_filter.Filter(render_buffer, &S);
+    main_filter.Filter(render_delay_buffer->GetRenderBuffer(), &S);
     fft.Ifft(S, &s_scratch);
     std::transform(y.begin(), y.end(), s_scratch.begin() + kFftLengthBy2,
                    e_main.begin(),
@@ -109,7 +117,7 @@ void RunFilterUpdateTest(int num_blocks_to_process,
     }
 
     // Apply the shadow filter.
-    shadow_filter.Filter(render_buffer, &S);
+    shadow_filter.Filter(render_delay_buffer->GetRenderBuffer(), &S);
     fft.Ifft(S, &s_scratch);
     std::transform(y.begin(), y.end(), s_scratch.begin() + kFftLengthBy2,
                    e_shadow.begin(),
@@ -119,24 +127,28 @@ void RunFilterUpdateTest(int num_blocks_to_process,
     fft.ZeroPaddedFft(e_shadow, &E_shadow);
 
     // Compute spectra for future use.
-    E_main.Spectrum(Aec3Optimization::kNone, &output.E2_main);
-    E_shadow.Spectrum(Aec3Optimization::kNone, &output.E2_shadow);
+    E_main.Spectrum(Aec3Optimization::kNone, output.E2_main);
+    E_shadow.Spectrum(Aec3Optimization::kNone, output.E2_shadow);
 
     // Adapt the shadow filter.
-    shadow_gain.Compute(render_buffer, render_signal_analyzer, E_shadow,
+    shadow_gain.Compute(render_delay_buffer->GetRenderBuffer(),
+                        render_signal_analyzer, E_shadow,
                         shadow_filter.SizePartitions(), saturation, &G);
-    shadow_filter.Adapt(render_buffer, G);
+    shadow_filter.Adapt(render_delay_buffer->GetRenderBuffer(), G);
 
     // Adapt the main filter
-    main_gain.Compute(render_buffer, render_signal_analyzer, output,
-                      main_filter, saturation, &G);
-    main_filter.Adapt(render_buffer, G);
+    main_gain.Compute(render_delay_buffer->GetRenderBuffer(),
+                      render_signal_analyzer, output, main_filter, saturation,
+                      &G);
+    main_filter.Adapt(render_delay_buffer->GetRenderBuffer(), G);
 
     // Update the delay.
-    aec_state.HandleEchoPathChange(EchoPathVariability(false, false));
+    aec_state.HandleEchoPathChange(EchoPathVariability(
+        false, EchoPathVariability::DelayAdjustment::kNone, false));
     aec_state.Update(main_filter.FilterFrequencyResponse(),
                      main_filter.FilterImpulseResponse(), true, rtc::nullopt,
-                     render_buffer, E2_main, Y2, x[0], s, false);
+                     render_delay_buffer->GetRenderBuffer(), E2_main, Y2, x[0],
+                     s, false);
   }
 
   std::copy(e_main.begin(), e_main.end(), e_last_block->begin());
@@ -158,16 +170,16 @@ std::string ProduceDebugText(size_t delay) {
 // Verifies that the check for non-null output gain parameter works.
 TEST(MainFilterUpdateGain, NullDataOutputGain) {
   ApmDataDumper data_dumper(42);
-  AdaptiveFirFilter filter(9, DetectOptimization(), &data_dumper);
-  RenderBuffer render_buffer(Aec3Optimization::kNone, 3,
-                             filter.SizePartitions(),
-                             std::vector<size_t>(1, filter.SizePartitions()));
+  AdaptiveFirFilter filter(kAdaptiveFilterLength, DetectOptimization(),
+                           &data_dumper);
+  std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
+      RenderDelayBuffer::Create(EchoCanceller3Config(), 3));
   RenderSignalAnalyzer analyzer;
   SubtractorOutput output;
   MainFilterUpdateGain gain;
-  EXPECT_DEATH(
-      gain.Compute(render_buffer, analyzer, output, filter, false, nullptr),
-      "");
+  EXPECT_DEATH(gain.Compute(render_delay_buffer->GetRenderBuffer(), analyzer,
+                            output, filter, false, nullptr),
+               "");
 }
 
 #endif
@@ -214,9 +226,9 @@ TEST(MainFilterUpdateGain, DecreasingGain) {
   RunFilterUpdateTest(300, 65, blocks_with_echo_path_changes,
                       blocks_with_saturation, false, &e, &y, &G_c);
 
-  G_a.Spectrum(Aec3Optimization::kNone, &G_a_power);
-  G_b.Spectrum(Aec3Optimization::kNone, &G_b_power);
-  G_c.Spectrum(Aec3Optimization::kNone, &G_c_power);
+  G_a.Spectrum(Aec3Optimization::kNone, G_a_power);
+  G_b.Spectrum(Aec3Optimization::kNone, G_b_power);
+  G_c.Spectrum(Aec3Optimization::kNone, G_c_power);
 
   EXPECT_GT(std::accumulate(G_a_power.begin(), G_a_power.end(), 0.),
             std::accumulate(G_b_power.begin(), G_b_power.end(), 0.));
@@ -256,8 +268,8 @@ TEST(MainFilterUpdateGain, SaturationBehavior) {
   RunFilterUpdateTest(201, 65, blocks_with_echo_path_changes,
                       blocks_with_saturation, false, &e, &y, &G_b);
 
-  G_a.Spectrum(Aec3Optimization::kNone, &G_a_power);
-  G_b.Spectrum(Aec3Optimization::kNone, &G_b_power);
+  G_a.Spectrum(Aec3Optimization::kNone, G_a_power);
+  G_b.Spectrum(Aec3Optimization::kNone, G_b_power);
 
   EXPECT_LT(std::accumulate(G_a_power.begin(), G_a_power.end(), 0.),
             std::accumulate(G_b_power.begin(), G_b_power.end(), 0.));
@@ -276,13 +288,13 @@ TEST(MainFilterUpdateGain, EchoPathChangeBehavior) {
   std::array<float, kFftLengthBy2Plus1> G_a_power;
   std::array<float, kFftLengthBy2Plus1> G_b_power;
 
-  RunFilterUpdateTest(99, 65, blocks_with_echo_path_changes,
-                      blocks_with_saturation, false, &e, &y, &G_a);
   RunFilterUpdateTest(100, 65, blocks_with_echo_path_changes,
+                      blocks_with_saturation, false, &e, &y, &G_a);
+  RunFilterUpdateTest(101, 65, blocks_with_echo_path_changes,
                       blocks_with_saturation, false, &e, &y, &G_b);
 
-  G_a.Spectrum(Aec3Optimization::kNone, &G_a_power);
-  G_b.Spectrum(Aec3Optimization::kNone, &G_b_power);
+  G_a.Spectrum(Aec3Optimization::kNone, G_a_power);
+  G_b.Spectrum(Aec3Optimization::kNone, G_b_power);
 
   EXPECT_LT(std::accumulate(G_a_power.begin(), G_a_power.end(), 0.),
             std::accumulate(G_b_power.begin(), G_b_power.end(), 0.));
