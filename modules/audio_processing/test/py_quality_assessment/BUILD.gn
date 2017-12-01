@@ -141,6 +141,7 @@ rtc_executable("apm_vad") {
     "../../../..:webrtc_common",
     "../../../../common_audio",
     "../../../../rtc_base:rtc_base_approved",
+    "../../../../system_wrappers:metrics_default",
   ]
 }
 
