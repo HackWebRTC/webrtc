@@ -248,25 +248,22 @@ const int64_t kNanosecondsPerSecond = 1000000000;
 
 - (void)handleCaptureSessionInterruption:(NSNotification *)notification {
   NSString *reasonString = nil;
-#if defined(__IPHONE_9_0) && defined(__IPHONE_OS_VERSION_MAX_ALLOWED) && \
-    __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_9_0
-  if ([UIDevice isIOS9OrLater]) {
-    NSNumber *reason = notification.userInfo[AVCaptureSessionInterruptionReasonKey];
-    if (reason) {
-      switch (reason.intValue) {
-        case AVCaptureSessionInterruptionReasonVideoDeviceNotAvailableInBackground:
-          reasonString = @"VideoDeviceNotAvailableInBackground";
-          break;
-        case AVCaptureSessionInterruptionReasonAudioDeviceInUseByAnotherClient:
-          reasonString = @"AudioDeviceInUseByAnotherClient";
-          break;
-        case AVCaptureSessionInterruptionReasonVideoDeviceInUseByAnotherClient:
-          reasonString = @"VideoDeviceInUseByAnotherClient";
-          break;
-        case AVCaptureSessionInterruptionReasonVideoDeviceNotAvailableWithMultipleForegroundApps:
-          reasonString = @"VideoDeviceNotAvailableWithMultipleForegroundApps";
-          break;
-      }
+#if TARGET_OS_IPHONE
+  NSNumber *reason = notification.userInfo[AVCaptureSessionInterruptionReasonKey];
+  if (reason) {
+    switch (reason.intValue) {
+      case AVCaptureSessionInterruptionReasonVideoDeviceNotAvailableInBackground:
+        reasonString = @"VideoDeviceNotAvailableInBackground";
+        break;
+      case AVCaptureSessionInterruptionReasonAudioDeviceInUseByAnotherClient:
+        reasonString = @"AudioDeviceInUseByAnotherClient";
+        break;
+      case AVCaptureSessionInterruptionReasonVideoDeviceInUseByAnotherClient:
+        reasonString = @"VideoDeviceInUseByAnotherClient";
+        break;
+      case AVCaptureSessionInterruptionReasonVideoDeviceNotAvailableWithMultipleForegroundApps:
+        reasonString = @"VideoDeviceNotAvailableWithMultipleForegroundApps";
+        break;
     }
   }
 #endif

@@ -83,18 +83,14 @@ static void LogDeviceInfo() {
   RTC_LOG(LS_INFO) << "LogDeviceInfo";
   @autoreleasepool {
     RTC_LOG(LS_INFO) << " system name: " << ios::GetSystemName();
-    RTC_LOG(LS_INFO) << " system version 1(2): " << ios::GetSystemVersionAsString();
-    RTC_LOG(LS_INFO) << " system version 2(2): " << ios::GetSystemVersion();
+    RTC_LOG(LS_INFO) << " system version: " << ios::GetSystemVersionAsString();
     RTC_LOG(LS_INFO) << " device type: " << ios::GetDeviceType();
     RTC_LOG(LS_INFO) << " device name: " << ios::GetDeviceName();
     RTC_LOG(LS_INFO) << " process name: " << ios::GetProcessName();
     RTC_LOG(LS_INFO) << " process ID: " << ios::GetProcessID();
     RTC_LOG(LS_INFO) << " OS version: " << ios::GetOSVersionString();
     RTC_LOG(LS_INFO) << " processing cores: " << ios::GetProcessorCount();
-#if defined(__IPHONE_9_0) && defined(__IPHONE_OS_VERSION_MAX_ALLOWED) && \
-    __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_9_0
     RTC_LOG(LS_INFO) << " low power mode: " << ios::GetLowPowerModeEnabled();
-#endif
 #if TARGET_IPHONE_SIMULATOR
     RTC_LOG(LS_INFO) << " TARGET_IPHONE_SIMULATOR is defined";
 #endif
