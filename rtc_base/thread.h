@@ -202,19 +202,6 @@ class RTC_LOCKABLE Thread : public MessageQueue {
   // You cannot call Start on non-owned threads.
   bool IsOwned();
 
-#if defined(WEBRTC_WIN)
-  HANDLE GetHandle() const {
-    return thread_;
-  }
-  DWORD GetId() const {
-    return thread_id_;
-  }
-#elif defined(WEBRTC_POSIX)
-  pthread_t GetPThread() {
-    return thread_;
-  }
-#endif
-
   // Expose private method running() for tests.
   //
   // DANGER: this is a terrible public API.  Most callers that might want to
