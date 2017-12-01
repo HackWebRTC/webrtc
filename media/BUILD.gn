@@ -265,6 +265,11 @@ rtc_static_library("rtc_data") {
       "sctp/sctptransport.h",
       "sctp/sctptransportinternal.h",
     ]
+  } else {
+    # libtool on mac does not like empty targets.
+    sources = [
+      "//rtc_base/noop.cc",
+    ]
   }
 
   configs += [ ":rtc_media_warnings_config" ]
