@@ -93,28 +93,15 @@ int32_t MediaFileImpl::PlayoutAudioData(int8_t* buffer,
     }
 
     switch (_fileFormat) {
-      case kFileFormatPcm48kHzFile:
       case kFileFormatPcm32kHzFile:
       case kFileFormatPcm16kHzFile:
       case kFileFormatPcm8kHzFile:
         bytesRead = _ptrFileUtilityObj->ReadPCMData(*_ptrInStream, buffer,
                                                     bufferLengthInBytes);
         break;
-      case kFileFormatCompressedFile:
-        bytesRead = _ptrFileUtilityObj->ReadCompressedData(
-            *_ptrInStream, buffer, bufferLengthInBytes);
-        break;
       case kFileFormatWavFile:
         bytesRead = _ptrFileUtilityObj->ReadWavDataAsMono(*_ptrInStream, buffer,
                                                           bufferLengthInBytes);
-        break;
-      case kFileFormatPreencodedFile:
-        bytesRead = _ptrFileUtilityObj->ReadPreEncodedData(
-            *_ptrInStream, buffer, bufferLengthInBytes);
-        if (bytesRead > 0) {
-          dataLengthInBytes = static_cast<size_t>(bytesRead);
-          return 0;
-        }
         break;
       default: {
         RTC_LOG(LS_ERROR) << "Invalid file format: " << _fileFormat;
@@ -220,20 +207,9 @@ int32_t MediaFileImpl::StartPlayingStream(InStream& stream,
       _fileFormat = kFileFormatWavFile;
       break;
     }
-    case kFileFormatCompressedFile: {
-      if (_ptrFileUtilityObj->InitCompressedReading(stream, startPointMs,
-                                                    stopPointMs) == -1) {
-        RTC_LOG(LS_ERROR) << "Not a valid Compressed file!";
-        StopPlaying();
-        return -1;
-      }
-      _fileFormat = kFileFormatCompressedFile;
-      break;
-    }
     case kFileFormatPcm8kHzFile:
     case kFileFormatPcm16kHzFile:
-    case kFileFormatPcm32kHzFile:
-    case kFileFormatPcm48kHzFile: {
+    case kFileFormatPcm32kHzFile: {
       // ValidFileFormat() called in the beginneing of this function
       // prevents codecInst from being NULL here.
       assert(codecInst != NULL);
@@ -246,19 +222,6 @@ int32_t MediaFileImpl::StartPlayingStream(InStream& stream,
       }
 
       _fileFormat = format;
-      break;
-    }
-    case kFileFormatPreencodedFile: {
-      // ValidFileFormat() called in the beginneing of this function
-      // prevents codecInst from being NULL here.
-      assert(codecInst != NULL);
-      if (_ptrFileUtilityObj->InitPreEncodedReading(stream, *codecInst) == -1) {
-        RTC_LOG(LS_ERROR) << "Not a valid PreEncoded file!";
-        StopPlaying();
-        return -1;
-      }
-
-      _fileFormat = kFileFormatPreencodedFile;
       break;
     }
     default: {
@@ -348,10 +311,8 @@ int32_t MediaFileImpl::codec_info(CodecInst& codecInst) const {
 bool MediaFileImpl::ValidFileFormat(const FileFormats format,
                                     const CodecInst* codecInst) {
   if (codecInst == NULL) {
-    if (format == kFileFormatPreencodedFile ||
-        format == kFileFormatPcm8kHzFile || format == kFileFormatPcm16kHzFile ||
-        format == kFileFormatPcm32kHzFile ||
-        format == kFileFormatPcm48kHzFile) {
+    if (format == kFileFormatPcm8kHzFile || format == kFileFormatPcm16kHzFile ||
+        format == kFileFormatPcm32kHzFile) {
       RTC_LOG(LS_ERROR) << "Codec info required for file format specified!";
       return false;
     }

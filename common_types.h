@@ -78,14 +78,12 @@ class OutStream : public RewindableStream {
   virtual bool Write(const void* buf, size_t len) = 0;
 };
 
+// For the deprecated MediaFile module.
 enum FileFormats {
   kFileFormatWavFile = 1,
-  kFileFormatCompressedFile = 2,
-  kFileFormatPreencodedFile = 4,
   kFileFormatPcm16kHzFile = 7,
   kFileFormatPcm8kHzFile = 8,
   kFileFormatPcm32kHzFile = 9,
-  kFileFormatPcm48kHzFile = 10
 };
 
 enum FrameType {

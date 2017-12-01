@@ -60,32 +60,6 @@ public:
     int32_t ReadPCMData(InStream& stream, int8_t* audioBuffer,
                         const size_t dataLengthInBytes);
 
-    // Prepare for playing audio from stream.
-    // startPointMs and stopPointMs, unless zero, specify what part of the file
-    // should be read. From startPointMs ms to stopPointMs ms.
-    int32_t InitCompressedReading(InStream& stream,
-                                  const uint32_t startPointMs = 0,
-                                  const uint32_t stopPointMs = 0);
-
-    // Put 10-60ms of audio data from stream into the audioBuffer depending on
-    // codec frame size. dataLengthInBytes indicates the size of audioBuffer.
-    // The return value is the number of bytes written to audioBuffer.
-    int32_t ReadCompressedData(InStream& stream,
-                               int8_t* audioBuffer,
-                               const size_t dataLengthInBytes);
-
-    // Prepare for playing audio from stream.
-    // codecInst specifies the encoding of the audio data.
-    int32_t InitPreEncodedReading(InStream& stream,
-                                  const CodecInst& codecInst);
-
-    // Put 10-60ms of audio data from stream into the audioBuffer depending on
-    // codec frame size. dataLengthInBytes indicates the size of audioBuffer.
-    // The return value is the number of bytes written to audioBuffer.
-    int32_t ReadPreEncodedData(InStream& stream,
-                               int8_t* audioBuffer,
-                               const size_t dataLengthInBytes);
-
     // Return the number of ms that have been played so far.
     uint32_t PlayoutPositionMs();
 
