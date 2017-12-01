@@ -991,6 +991,21 @@ TEST_F(SSLStreamAdapterTestDTLSCertChain, TwoCertHandshake) {
   EXPECT_EQ(kCACert, peer_cert_chain->Get(1).ToPEMString());
 }
 
+TEST_F(SSLStreamAdapterTestDTLSCertChain, TwoCertHandshakeWithCopy) {
+  std::unique_ptr<rtc::SSLIdentity> identity(
+      rtc::SSLIdentity::FromPEMChainStrings(kRSA_PRIVATE_KEY_PEM,
+                                            std::string(kCERT_PEM) + kCACert));
+  server_identity_ = identity->GetReference();
+  server_ssl_->SetIdentity(server_identity_);
+  TestHandshake();
+  std::unique_ptr<rtc::SSLCertChain> peer_cert_chain =
+      client_ssl_->GetPeerSSLCertChain();
+  ASSERT_NE(nullptr, peer_cert_chain);
+  ASSERT_EQ(2u, peer_cert_chain->GetSize());
+  EXPECT_EQ(kCERT_PEM, peer_cert_chain->Get(0).ToPEMString());
+  EXPECT_EQ(kCACert, peer_cert_chain->Get(1).ToPEMString());
+}
+
 TEST_F(SSLStreamAdapterTestDTLSCertChain, ThreeCertHandshake) {
   server_identity_ = rtc::SSLIdentity::FromPEMChainStrings(
       kRSA_PRIVATE_KEY_PEM, std::string(kCERT_PEM) + kIntCert1 + kCACert);
