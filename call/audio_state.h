@@ -16,6 +16,7 @@
 
 namespace webrtc {
 
+class AudioDeviceModule;
 class AudioProcessing;
 class AudioTransport;
 class VoiceEngine;
@@ -41,6 +42,9 @@ class AudioState : public rtc::RefCountInterface {
 
     // The audio processing module.
     rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing;
+
+    // TODO(solenberg): Temporary: audio device module.
+    rtc::scoped_refptr<webrtc::AudioDeviceModule> audio_device_module;
   };
 
   virtual AudioProcessing* audio_processing() = 0;
