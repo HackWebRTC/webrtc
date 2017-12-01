@@ -232,6 +232,7 @@ rtc_static_library("webrtc_i420") {
 
   deps = [
     ":video_coding_utility",
+    "$rtc_libyuv_dir",
     "../..:webrtc_common",
     "../../api:video_frame_api_i420",
     "../../common_video:common_video",
@@ -291,6 +292,7 @@ rtc_static_library("webrtc_vp8") {
 
   deps = [
     ":video_coding_utility",
+    "$rtc_libyuv_dir",
     "..:module_api",
     "../..:webrtc_common",
     "../../api:optional",

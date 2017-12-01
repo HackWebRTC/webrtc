@@ -63,9 +63,8 @@ rtc_static_library("video_quality_analysis") {
     "frame_analyzer/video_quality_analysis.cc",
     "frame_analyzer/video_quality_analysis.h",
   ]
-
-  public_deps = [
-    "../common_video",
+  deps = [
+    "$rtc_libyuv_dir",
   ]
 }
 
@@ -77,6 +76,7 @@ rtc_executable("frame_analyzer") {
   deps = [
     ":command_line_parser",
     ":video_quality_analysis",
+    "$rtc_libyuv_dir",
     "//build/win:default_exe_manifest",
   ]
 }
@@ -92,6 +92,7 @@ if (!build_with_chromium) {
     deps = [
       ":command_line_parser",
       ":video_quality_analysis",
+      "$rtc_libyuv_dir",
       "//build/win:default_exe_manifest",
     ]
   }
@@ -104,6 +105,7 @@ if (!build_with_chromium) {
 
     deps = [
       ":video_quality_analysis",
+      "$rtc_libyuv_dir",
     ]
   }
 
@@ -128,6 +130,7 @@ if (!build_with_chromium) {
 
     deps = [
       ":command_line_parser",
+      "$rtc_libyuv_dir",
       "../common_video",
       "//build/win:default_exe_manifest",
     ]
@@ -322,6 +325,8 @@ if (rtc_include_tests) {
       ":frame_editing_lib",
       ":reference_less_video_analysis_lib",
       ":video_quality_analysis",
+      "$rtc_libyuv_dir",
+      "../common_video:common_video",
       "../rtc_base",
       "../test:test_main",
       "//testing/gtest",

@@ -26,6 +26,7 @@ rtc_static_library("video_capture_module") {
   ]
 
   deps = [
+    "$rtc_libyuv_dir",
     "..:module_api",
     "../..:webrtc_common",
     "../../api:video_frame_api_i420",

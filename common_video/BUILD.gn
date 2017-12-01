@@ -9,10 +9,7 @@
 import("../webrtc.gni")
 
 config("common_video_config") {
-  include_dirs = [
-    "include",
-    "$rtc_libyuv_dir/include",
-  ]
+  include_dirs = [ "include" ]
 }
 
 rtc_static_library("common_video") {
@@ -63,6 +60,7 @@ rtc_static_library("common_video") {
   }
 
   deps = [
+    "$rtc_libyuv_dir",
     "..:webrtc_common",
     "../api:optional",
     "../api:video_frame_api_i420",
@@ -75,14 +73,6 @@ rtc_static_library("common_video") {
   public_deps = [
     "../api:video_frame_api",
   ]
-
-  if (rtc_build_libyuv) {
-    deps += [ "$rtc_libyuv_dir" ]
-    public_deps += [ "$rtc_libyuv_dir" ]
-  } else {
-    # Need to add a directory normally exported by libyuv.
-    include_dirs += [ "$rtc_libyuv_dir/include" ]
-  }
 }
 
 if (rtc_include_tests) {
@@ -123,6 +113,7 @@ if (rtc_include_tests) {
 
     deps = [
       ":common_video",
+      "$rtc_libyuv_dir",
       "../api:video_frame_api_i420",
       "../modules/video_capture:video_capture",
       "../rtc_base:rtc_base",

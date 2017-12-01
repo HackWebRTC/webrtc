@@ -225,18 +225,6 @@ rtc_source_set("video_frame_api") {
   deps = [
     "../rtc_base:rtc_base_approved",
   ]
-
-  # TODO(nisse): This logic is duplicated in multiple places.
-  # Define in a single place.
-  if (rtc_build_libyuv) {
-    deps += [ "$rtc_libyuv_dir" ]
-    public_deps = [
-      "$rtc_libyuv_dir",
-    ]
-  } else {
-    # Need to add a directory normally exported by libyuv.
-    include_dirs = [ "$rtc_libyuv_dir/include" ]
-  }
 }
 
 rtc_source_set("video_frame_api_i420") {
@@ -246,6 +234,7 @@ rtc_source_set("video_frame_api_i420") {
   ]
   deps = [
     ":video_frame_api",
+    "$rtc_libyuv_dir",
     "../rtc_base:rtc_base_approved",
     "../system_wrappers",
   ]

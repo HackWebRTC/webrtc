@@ -26,6 +26,7 @@ rtc_static_library("video_processing") {
 
   deps = [
     ":denoiser_filter",
+    "$rtc_libyuv_dir",
     "..:module_api",
     "../../common_audio",
     "../../common_video",

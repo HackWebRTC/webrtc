@@ -211,6 +211,7 @@ if (rtc_include_tests) {
     deps = [
       ":test_support",
       ":video_test_common",
+      "$rtc_libyuv_dir",
       "..:webrtc_common",
       "../api:video_frame_api",
       "../api:video_frame_api_i420",

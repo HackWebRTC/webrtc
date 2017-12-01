@@ -98,16 +98,8 @@ rtc_static_library("rtc_media_base") {
     suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 
-  include_dirs = []
-  if (rtc_build_libyuv) {
-    deps += [ "$rtc_libyuv_dir" ]
-    public_deps += [ "$rtc_libyuv_dir" ]
-  } else {
-    # Need to add a directory normally exported by libyuv.
-    include_dirs += [ "$rtc_libyuv_dir/include" ]
-  }
-
   deps += [
+    "$rtc_libyuv_dir",
     "..:webrtc_common",
     "../api:libjingle_peerconnection_api",
     "../api:optional",
@@ -213,15 +205,6 @@ rtc_static_library("rtc_audio_video") {
   }
 
   include_dirs = []
-  if (rtc_build_libyuv) {
-    deps += [ "$rtc_libyuv_dir" ]
-    public_deps = [
-      "$rtc_libyuv_dir",
-    ]
-  } else {
-    # Need to add a directory normally exported by libyuv.
-    include_dirs += [ "$rtc_libyuv_dir/include" ]
-  }
 
   public_configs = []
   if (build_with_chromium) {
@@ -237,6 +220,7 @@ rtc_static_library("rtc_audio_video") {
   }
   deps += [
     ":rtc_media_base",
+    "$rtc_libyuv_dir",
     "..:webrtc_common",
     "../api:call_api",
     "../api:libjingle_peerconnection_api",
@@ -370,14 +354,6 @@ if (rtc_include_tests) {
 
     configs += [ ":rtc_unittest_main_config" ]
 
-    if (rtc_build_libyuv) {
-      deps += [ "$rtc_libyuv_dir" ]
-      public_deps += [ "$rtc_libyuv_dir" ]
-    } else {
-      # Need to add a directory normally exported by libyuv.
-      include_dirs += [ "$rtc_libyuv_dir/include" ]
-    }
-
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
@@ -386,6 +362,7 @@ if (rtc_include_tests) {
     deps += [
       ":rtc_media",
       ":rtc_media_base",
+      "$rtc_libyuv_dir",
       "..:webrtc_common",
       "../api:call_api",
       "../api:video_frame_api",

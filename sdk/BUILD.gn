@@ -132,6 +132,7 @@ if (is_ios || is_mac) {
 
       deps = [
         ":common_objc",
+        "$rtc_libyuv_dir",
         "../api:libjingle_peerconnection_api",
         "../api:video_frame_api",
         "../api:video_frame_api_i420",
@@ -299,6 +300,7 @@ if (is_ios || is_mac) {
         ":corevideoframebuffer_objc",
         ":peerconnectionfactory_objc",
         ":video_objc",
+        "$rtc_libyuv_dir",
         "../api:video_frame_api",
         "../media:rtc_media_base",
         "../pc:libjingle_peerconnection",
@@ -307,13 +309,6 @@ if (is_ios || is_mac) {
 
       if (rtc_use_metal_rendering) {
         deps += [ ":metal_objc" ]
-      }
-
-      if (rtc_build_libyuv) {
-        deps += [ "$rtc_libyuv_dir" ]
-        public_deps = [
-          "$rtc_libyuv_dir",
-        ]
       }
     }
 
@@ -770,6 +765,7 @@ if (is_ios || is_mac) {
       ]
 
       deps = [
+        "$rtc_libyuv_dir",
         "../api:video_frame_api_i420",
         "../common_video",
         "../rtc_base:rtc_base_approved",
@@ -823,6 +819,7 @@ if (is_ios || is_mac) {
         ":video_objc",
         ":video_toolbox_cc",
         ":videotracksource_objc",
+        "$rtc_libyuv_dir",
         "../api/video_codecs:video_codecs_api",
         "../common_video",
         "../media:rtc_media",
@@ -845,16 +842,6 @@ if (is_ios || is_mac) {
         # Suppress warnings from the Chromium Clang plugin
         # (bugs.webrtc.org/163).
         suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-      }
-
-      if (rtc_build_libyuv) {
-        deps += [ "$rtc_libyuv_dir" ]
-        public_deps = [
-          "$rtc_libyuv_dir",
-        ]
-      } else {
-        # Need to add a directory normally exported by libyuv.
-        include_dirs = [ "$rtc_libyuv_dir/include" ]
       }
     }
   }
