@@ -344,13 +344,6 @@ if (!build_with_chromium) {
 }
 
 rtc_static_library("webrtc_common") {
-  # TODO(mbonadei): Remove (bugs.webrtc.org/7745)
-  # Enabling GN check triggers cyclic dependency error:
-  # :webrtc_common ->
-  # api:video_frame_api ->
-  # system_wrappers:system_wrappers ->
-  # webrtc_common
-  check_includes = false
   sources = [
     "common_types.cc",
     "common_types.h",
