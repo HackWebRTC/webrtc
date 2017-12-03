@@ -46,7 +46,7 @@ void HandleBrowserRequest(DataSocket* ds, bool* quit) {
   }
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char* argv[]) {
   std::string program_name = argv[0];
   std::string usage = "Example usage: " + program_name + " --port=8888";
   webrtc::test::CommandLineParser parser;

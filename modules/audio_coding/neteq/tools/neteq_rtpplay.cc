@@ -677,5 +677,5 @@ int RunTest(int argc, char* argv[]) {
 }  // namespace webrtc
 
 int main(int argc, char* argv[]) {
-  webrtc::test::RunTest(argc, argv);
+  return webrtc::test::RunTest(argc, argv);
 }

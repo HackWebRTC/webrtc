@@ -67,7 +67,7 @@ int TestCrtReportHandler(int report_type, char* msg, int* retval) {
 }
 #endif  // WEBRTC_WIN
 
-int main(int argc, char** argv) {
+int main(int argc, char* argv[]) {
   testing::InitGoogleTest(&argc, argv);
   rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, false);
   if (FLAG_help) {

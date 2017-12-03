@@ -39,7 +39,7 @@
  * --stats_file=<name_of_file> --width=<frame_width>
  * --height=<frame_height>
  */
-int main(int argc, char** argv) {
+int main(int argc, char* argv[]) {
   std::string program_name = argv[0];
   std::string usage =
       "Compares the output video with the initially sent video."
@@ -107,4 +107,5 @@ int main(int argc, char** argv) {
   webrtc::test::PrintMaxRepeatedAndSkippedFrames(
       label, parser.GetFlag("stats_file_ref"),
       parser.GetFlag("stats_file_test"));
+  return 0;
 }

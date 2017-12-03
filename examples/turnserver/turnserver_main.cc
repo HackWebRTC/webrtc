@@ -41,7 +41,7 @@ class TurnFileAuth : public cricket::TurnAuthInterface {
   rtc::OptionsFile file_;
 };
 
-int main(int argc, char **argv) {
+int main(int argc, char* argv[]) {
   if (argc != 5) {
     std::cerr << "usage: turnserver int-addr ext-ip realm auth-file"
               << std::endl;

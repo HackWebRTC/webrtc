@@ -17,7 +17,7 @@
 #include "rtc_tools/simple_command_line_parser.h"
 
 // A command-line tool to edit a YUV-video (I420 sub-sampled).
-int main(int argc, char** argv) {
+int main(int argc, char* argv[]) {
   std::string program_name = argv[0];
   std::string usage = "Deletes a series of frames in a yuv file."
     " Only I420 is supported!\n"

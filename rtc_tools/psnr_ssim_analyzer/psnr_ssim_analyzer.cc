@@ -80,7 +80,7 @@ void CompareFiles(const char* reference_file_name, const char* test_file_name,
  * --results_file=<name_of_file> --width=<width_of_frames>
  * --height=<height_of_frames>
  */
-int main(int argc, char** argv) {
+int main(int argc, char* argv[]) {
   std::string program_name = argv[0];
   std::string usage = "Runs PSNR and SSIM on two I420 videos and write the"
       "results in a file.\n"
@@ -130,4 +130,5 @@ int main(int argc, char** argv) {
   CompareFiles(parser.GetFlag("reference_file").c_str(),
                parser.GetFlag("test_file").c_str(),
                parser.GetFlag("results_file").c_str(), width, height);
+  return 0;
 }
