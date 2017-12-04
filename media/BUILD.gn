@@ -128,6 +128,7 @@ rtc_static_library("rtc_audio_video") {
   libs = []
   deps = [
     "../api:video_frame_api_i420",
+    "../call:call_interfaces",
     "../modules/video_coding:video_coding_utility",
   ]
   sources = [

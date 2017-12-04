@@ -121,12 +121,6 @@ rtc_static_library("call") {
     suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 
-  public_deps = [
-    ":call_interfaces",
-    "../api:call_api",
-    "../api:libjingle_peerconnection_api",
-  ]
-
   deps = [
     ":bitrate_allocator",
     ":call_interfaces",
@@ -196,6 +190,7 @@ if (rtc_include_tests) {
     deps = [
       ":bitrate_allocator",
       ":call",
+      ":call_interfaces",
       ":mock_rtp_interfaces",
       ":rtp_interfaces",
       ":rtp_receiver",
