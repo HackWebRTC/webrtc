@@ -183,7 +183,6 @@ bool Thread::SetName(const std::string& name, const void* obj) {
 }
 
 bool Thread::Start(Runnable* runnable) {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
   RTC_DCHECK(!IsRunning());
 
   if (IsRunning())
@@ -225,7 +224,6 @@ bool Thread::WrapCurrent() {
 }
 
 void Thread::UnwrapCurrent() {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
   // Clears the platform-specific thread-specific storage.
   ThreadManager::Instance()->SetCurrentThread(nullptr);
 #if defined(WEBRTC_WIN)
@@ -240,7 +238,6 @@ void Thread::UnwrapCurrent() {
 #elif defined(WEBRTC_POSIX)
   thread_ = 0;
 #endif
-  thread_checker_.DetachFromThread();
 }
 
 void Thread::SafeWrapCurrent() {
@@ -248,7 +245,6 @@ void Thread::SafeWrapCurrent() {
 }
 
 void Thread::Join() {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
   if (!IsRunning())
     return;
 
@@ -268,7 +264,6 @@ void Thread::Join() {
   pthread_join(thread_, nullptr);
   thread_ = 0;
 #endif
-  thread_checker_.DetachFromThread();
 }
 
 bool Thread::SetAllowBlockingCalls(bool allow) {
@@ -316,16 +311,13 @@ void Thread::Run() {
 }
 
 bool Thread::IsOwned() {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
   RTC_DCHECK(IsRunning());
   return owned_;
 }
 
 void Thread::Stop() {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
   MessageQueue::Quit();
   Join();
-  thread_checker_.DetachFromThread();
 }
 
 void Thread::Send(const Location& posted_from,
@@ -499,7 +491,6 @@ bool Thread::ProcessMessages(int cmsLoop) {
 
 bool Thread::WrapCurrentWithThreadManager(ThreadManager* thread_manager,
                                           bool need_synchronize_access) {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
   RTC_DCHECK(!IsRunning());
 
 #if defined(WEBRTC_WIN)
@@ -522,7 +513,6 @@ bool Thread::WrapCurrentWithThreadManager(ThreadManager* thread_manager,
 }
 
 bool Thread::IsRunning() {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
 #if defined(WEBRTC_WIN)
   return thread_ != nullptr;
 #elif defined(WEBRTC_POSIX)

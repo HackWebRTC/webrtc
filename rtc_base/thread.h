@@ -24,7 +24,6 @@
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/messagequeue.h"
 #include "rtc_base/platform_thread_types.h"
-#include "rtc_base/thread_checker.h"
 
 #if defined(WEBRTC_WIN)
 #include "rtc_base/win32.h"
@@ -274,21 +273,16 @@ class RTC_LOCKABLE Thread : public MessageQueue {
   std::list<_SendMessage> sendlist_;
   std::string name_;
 
-  // Used to check access to unguarded thread control state variables and ensure
-  // that control functions are called on the right thread.
-  // The |thread_checker_| might represent a 'parent' thread from which
-  // Start()/Stop() are called or it could represent the worker thread itself in
-  // case the thread is wrapped since the functions that modified the control
-  // state will in this case be called from that thread.
-  ThreadChecker thread_checker_;
+  // TODO(tommi): Add thread checks for proper use of control methods.
+  // Ideally we should be able to just use PlatformThread.
 
 #if defined(WEBRTC_POSIX)
-  pthread_t thread_ RTC_ACCESS_ON(thread_checker_) = 0;
+  pthread_t thread_ = 0;
 #endif
 
 #if defined(WEBRTC_WIN)
-  HANDLE thread_ RTC_ACCESS_ON(thread_checker_) = nullptr;
-  DWORD thread_id_ RTC_ACCESS_ON(thread_checker_) = 0;
+  HANDLE thread_ = nullptr;
+  DWORD thread_id_ = 0;
 #endif
 
   // Indicates whether or not ownership of the worker thread lies with
