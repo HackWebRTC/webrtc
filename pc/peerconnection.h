@@ -650,11 +650,13 @@ class PeerConnection : public PeerConnectionInterface,
       const std::string& content_name,
       cricket::TransportDescription* info);
 
-  // Returns the name of the transport channel when BUNDLE is enabled, or
-  // nullptr if the channel is not part of any bundle.
-  const std::string* GetBundleTransportName(
-      const cricket::ContentInfo* content,
-      const cricket::ContentGroup* bundle);
+  // Returns the transport name for the given media section identified by |mid|.
+  // If BUNDLE is enabled and the media section is part of the bundle group,
+  // the transport name will be the first mid in the bundle group. Otherwise,
+  // the transport name will be the mid of the media section.
+  std::string GetTransportNameForMediaSection(
+      const std::string& mid,
+      const cricket::ContentGroup* bundle_group) const;
 
   // Cause all the BaseChannels in the bundle group to have the same
   // transport channel.
@@ -682,12 +684,12 @@ class PeerConnection : public PeerConnectionInterface,
   bool CreateChannels(const cricket::SessionDescription* desc);
 
   // Helper methods to create media channels.
-  bool CreateVoiceChannel(const cricket::ContentInfo* content,
-                          const std::string* bundle_transport);
-  bool CreateVideoChannel(const cricket::ContentInfo* content,
-                          const std::string* bundle_transport);
-  bool CreateDataChannel(const cricket::ContentInfo* content,
-                         const std::string* bundle_transport);
+  cricket::VoiceChannel* CreateVoiceChannel(const std::string& mid,
+                                            const std::string& transport_name);
+  cricket::VideoChannel* CreateVideoChannel(const std::string& mid,
+                                            const std::string& transport_name);
+  bool CreateDataChannel(const std::string& mid,
+                         const std::string& transport_name);
 
   std::unique_ptr<SessionStats> GetSessionStats_n(
       const ChannelNamePairs& channel_name_pairs);

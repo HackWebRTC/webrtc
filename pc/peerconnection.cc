@@ -4294,62 +4294,71 @@ void PeerConnection::RemoveUnusedChannels(const SessionDescription* desc) {
   }
 }
 
-// Returns the name of the transport channel when BUNDLE is enabled, or nullptr
-// if the channel is not part of any bundle.
-const std::string* PeerConnection::GetBundleTransportName(
-    const cricket::ContentInfo* content,
-    const cricket::ContentGroup* bundle) {
-  if (!bundle) {
-    return nullptr;
+std::string PeerConnection::GetTransportNameForMediaSection(
+    const std::string& mid,
+    const cricket::ContentGroup* bundle_group) const {
+  if (!bundle_group) {
+    return mid;
   }
-  const std::string* first_content_name = bundle->FirstContentName();
+  const std::string* first_content_name = bundle_group->FirstContentName();
   if (!first_content_name) {
     RTC_LOG(LS_WARNING) << "Tried to BUNDLE with no contents.";
-    return nullptr;
+    return mid;
   }
-  if (!bundle->HasContentName(content->name)) {
-    RTC_LOG(LS_WARNING) << content->name << " is not part of any bundle group";
-    return nullptr;
+  if (!bundle_group->HasContentName(mid)) {
+    RTC_LOG(LS_WARNING) << mid << " is not part of any bundle group";
+    return mid;
   }
-  RTC_LOG(LS_INFO) << "Bundling " << content->name << " on "
-                   << *first_content_name;
-  return first_content_name;
+  RTC_LOG(LS_INFO) << "Bundling " << mid << " on " << *first_content_name;
+  return *first_content_name;
 }
 
 bool PeerConnection::CreateChannels(const SessionDescription* desc) {
-  // TODO(steveanton): Add support for multiple audio/video channels.
+  RTC_DCHECK(desc);
+
   const cricket::ContentGroup* bundle_group = nullptr;
   if (configuration_.bundle_policy ==
       PeerConnectionInterface::kBundlePolicyMaxBundle) {
     bundle_group = desc->GetGroupByName(cricket::GROUP_TYPE_BUNDLE);
     if (!bundle_group) {
-      RTC_LOG(LS_WARNING) << "max-bundle specified without BUNDLE specified";
-      return false;
-    }
-  }
-  // Creating the media channels and transport proxies.
-  const cricket::ContentInfo* voice = cricket::GetFirstAudioContent(desc);
-  if (voice && !voice->rejected && !voice_channel()) {
-    if (!CreateVoiceChannel(voice,
-                            GetBundleTransportName(voice, bundle_group))) {
-      RTC_LOG(LS_ERROR) << "Failed to create voice channel.";
+      RTC_LOG(LS_WARNING) << "max-bundle configured but session description "
+                             "has no BUNDLE group";
       return false;
     }
   }
 
+  // Creating the media channels and transport proxies.
+  const cricket::ContentInfo* voice = cricket::GetFirstAudioContent(desc);
+  if (voice && !voice->rejected &&
+      !GetAudioTransceiver()->internal()->channel()) {
+    cricket::VoiceChannel* voice_channel = CreateVoiceChannel(
+        voice->name,
+        GetTransportNameForMediaSection(voice->name, bundle_group));
+    if (!voice_channel) {
+      RTC_LOG(LS_ERROR) << "Failed to create voice channel.";
+      return false;
+    }
+    GetAudioTransceiver()->internal()->SetChannel(voice_channel);
+  }
+
   const cricket::ContentInfo* video = cricket::GetFirstVideoContent(desc);
-  if (video && !video->rejected && !video_channel()) {
-    if (!CreateVideoChannel(video,
-                            GetBundleTransportName(video, bundle_group))) {
+  if (video && !video->rejected &&
+      !GetVideoTransceiver()->internal()->channel()) {
+    cricket::VideoChannel* video_channel = CreateVideoChannel(
+        video->name,
+        GetTransportNameForMediaSection(video->name, bundle_group));
+    if (!video_channel) {
       RTC_LOG(LS_ERROR) << "Failed to create video channel.";
       return false;
     }
+    GetVideoTransceiver()->internal()->SetChannel(video_channel);
   }
 
   const cricket::ContentInfo* data = cricket::GetFirstDataContent(desc);
   if (data_channel_type_ != cricket::DCT_NONE && data && !data->rejected &&
       !rtp_data_channel_ && !sctp_transport_) {
-    if (!CreateDataChannel(data, GetBundleTransportName(data, bundle_group))) {
+    if (!CreateDataChannel(data->name, GetTransportNameForMediaSection(
+                                           data->name, bundle_group))) {
       RTC_LOG(LS_ERROR) << "Failed to create data channel.";
       return false;
     }
@@ -4359,15 +4368,9 @@ bool PeerConnection::CreateChannels(const SessionDescription* desc) {
 }
 
 // TODO(steveanton): Perhaps this should be managed by the RtpTransceiver.
-bool PeerConnection::CreateVoiceChannel(const cricket::ContentInfo* content,
-                                        const std::string* bundle_transport) {
-  // TODO(steveanton): Check to see if it's safe to create multiple voice
-  // channels.
-  RTC_DCHECK(!voice_channel());
-
-  std::string transport_name =
-      bundle_transport ? *bundle_transport : content->name;
-
+cricket::VoiceChannel* PeerConnection::CreateVoiceChannel(
+    const std::string& mid,
+    const std::string& transport_name) {
   cricket::DtlsTransportInternal* rtp_dtls_transport =
       transport_controller_->CreateDtlsTransport(
           transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP);
@@ -4380,8 +4383,8 @@ bool PeerConnection::CreateVoiceChannel(const cricket::ContentInfo* content,
 
   cricket::VoiceChannel* voice_channel = channel_manager()->CreateVoiceChannel(
       call_.get(), configuration_.media_config, rtp_dtls_transport,
-      rtcp_dtls_transport, transport_controller_->signaling_thread(),
-      content->name, SrtpRequired(), audio_options_);
+      rtcp_dtls_transport, signaling_thread(), mid, SrtpRequired(),
+      audio_options_);
   if (!voice_channel) {
     transport_controller_->DestroyDtlsTransport(
         transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP);
@@ -4389,7 +4392,7 @@ bool PeerConnection::CreateVoiceChannel(const cricket::ContentInfo* content,
       transport_controller_->DestroyDtlsTransport(
           transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTCP);
     }
-    return false;
+    return nullptr;
   }
   voice_channel->SignalRtcpMuxFullyActive.connect(
       this, &PeerConnection::DestroyRtcpTransport_n);
@@ -4398,21 +4401,13 @@ bool PeerConnection::CreateVoiceChannel(const cricket::ContentInfo* content,
   voice_channel->SignalSentPacket.connect(this,
                                           &PeerConnection::OnSentPacket_w);
 
-  GetAudioTransceiver()->internal()->SetChannel(voice_channel);
-
-  return true;
+  return voice_channel;
 }
 
 // TODO(steveanton): Perhaps this should be managed by the RtpTransceiver.
-bool PeerConnection::CreateVideoChannel(const cricket::ContentInfo* content,
-                                        const std::string* bundle_transport) {
-  // TODO(steveanton): Check to see if it's safe to create multiple video
-  // channels.
-  RTC_DCHECK(!video_channel());
-
-  std::string transport_name =
-      bundle_transport ? *bundle_transport : content->name;
-
+cricket::VideoChannel* PeerConnection::CreateVideoChannel(
+    const std::string& mid,
+    const std::string& transport_name) {
   cricket::DtlsTransportInternal* rtp_dtls_transport =
       transport_controller_->CreateDtlsTransport(
           transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP);
@@ -4425,8 +4420,8 @@ bool PeerConnection::CreateVideoChannel(const cricket::ContentInfo* content,
 
   cricket::VideoChannel* video_channel = channel_manager()->CreateVideoChannel(
       call_.get(), configuration_.media_config, rtp_dtls_transport,
-      rtcp_dtls_transport, transport_controller_->signaling_thread(),
-      content->name, SrtpRequired(), video_options_);
+      rtcp_dtls_transport, signaling_thread(), mid, SrtpRequired(),
+      video_options_);
 
   if (!video_channel) {
     transport_controller_->DestroyDtlsTransport(
@@ -4435,7 +4430,7 @@ bool PeerConnection::CreateVideoChannel(const cricket::ContentInfo* content,
       transport_controller_->DestroyDtlsTransport(
           transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTCP);
     }
-    return false;
+    return nullptr;
   }
   video_channel->SignalRtcpMuxFullyActive.connect(
       this, &PeerConnection::DestroyRtcpTransport_n);
@@ -4444,15 +4439,11 @@ bool PeerConnection::CreateVideoChannel(const cricket::ContentInfo* content,
   video_channel->SignalSentPacket.connect(this,
                                           &PeerConnection::OnSentPacket_w);
 
-  GetVideoTransceiver()->internal()->SetChannel(video_channel);
-
-  return true;
+  return video_channel;
 }
 
-bool PeerConnection::CreateDataChannel(const cricket::ContentInfo* content,
-                                       const std::string* bundle_transport) {
-  const std::string transport_name =
-      bundle_transport ? *bundle_transport : content->name;
+bool PeerConnection::CreateDataChannel(const std::string& mid,
+                                       const std::string& transport_name) {
   bool sctp = (data_channel_type_ == cricket::DCT_SCTP);
   if (sctp) {
     if (!sctp_factory_) {
@@ -4463,12 +4454,13 @@ bool PeerConnection::CreateDataChannel(const cricket::ContentInfo* content,
     }
     if (!network_thread()->Invoke<bool>(
             RTC_FROM_HERE, rtc::Bind(&PeerConnection::CreateSctpTransport_n,
-                                     this, content->name, transport_name))) {
+                                     this, mid, transport_name))) {
       return false;
     }
+    for (const auto& channel : sctp_data_channels_) {
+      channel->OnTransportChannelCreated();
+    }
   } else {
-    std::string transport_name =
-        bundle_transport ? *bundle_transport : content->name;
     cricket::DtlsTransportInternal* rtp_dtls_transport =
         transport_controller_->CreateDtlsTransport(
             transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP);
@@ -4481,8 +4473,7 @@ bool PeerConnection::CreateDataChannel(const cricket::ContentInfo* content,
 
     rtp_data_channel_ = channel_manager()->CreateRtpDataChannel(
         configuration_.media_config, rtp_dtls_transport, rtcp_dtls_transport,
-        transport_controller_->signaling_thread(), content->name,
-        SrtpRequired());
+        signaling_thread(), mid, SrtpRequired());
 
     if (!rtp_data_channel_) {
       transport_controller_->DestroyDtlsTransport(
@@ -4500,10 +4491,6 @@ bool PeerConnection::CreateDataChannel(const cricket::ContentInfo* content,
         this, &PeerConnection::OnDtlsSrtpSetupFailure);
     rtp_data_channel_->SignalSentPacket.connect(
         this, &PeerConnection::OnSentPacket_w);
-  }
-
-  for (const auto& channel : sctp_data_channels_) {
-    channel->OnTransportChannelCreated();
   }
 
   return true;
