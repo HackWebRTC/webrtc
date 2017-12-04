@@ -28,10 +28,9 @@ namespace webrtc {
 // that protects and unprotects sent and received RTP packets.
 class SrtpTransport : public RtpTransportInternalAdapter {
  public:
-  SrtpTransport(bool rtcp_mux_enabled, const std::string& content_name);
+  explicit SrtpTransport(bool rtcp_mux_enabled);
 
-  SrtpTransport(std::unique_ptr<RtpTransportInternal> rtp_transport,
-                const std::string& content_name);
+  explicit SrtpTransport(std::unique_ptr<RtpTransportInternal> rtp_transport);
 
   bool SendRtpPacket(rtc::CopyOnWriteBuffer* packet,
                      const rtc::PacketOptions& options,

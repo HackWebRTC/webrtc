@@ -196,8 +196,12 @@ void BaseChannel::Init_w(DtlsTransportInternal* rtp_dtls_transport,
                          rtc::PacketTransportInternal* rtcp_packet_transport) {
   RTC_DCHECK_RUN_ON(worker_thread_);
   network_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
-    return InitNetwork_n(rtp_dtls_transport, rtcp_dtls_transport,
-                         rtp_packet_transport, rtcp_packet_transport);
+    SetTransports_n(rtp_dtls_transport, rtcp_dtls_transport,
+                    rtp_packet_transport, rtcp_packet_transport);
+
+    if (rtcp_mux_required_) {
+      rtcp_mux_filter_.SetActive();
+    }
   });
 
   // Both RTP and RTCP channels should be set, we can call SetInterface on
@@ -205,18 +209,19 @@ void BaseChannel::Init_w(DtlsTransportInternal* rtp_dtls_transport,
   media_channel_->SetInterface(this);
 }
 
-void BaseChannel::InitNetwork_n(
-    DtlsTransportInternal* rtp_dtls_transport,
-    DtlsTransportInternal* rtcp_dtls_transport,
-    rtc::PacketTransportInternal* rtp_packet_transport,
-    rtc::PacketTransportInternal* rtcp_packet_transport) {
-  RTC_DCHECK(network_thread_->IsCurrent());
-  SetTransports_n(rtp_dtls_transport, rtcp_dtls_transport, rtp_packet_transport,
-                  rtcp_packet_transport);
+void BaseChannel::Init_w(webrtc::RtpTransportInternal* rtp_transport) {
+  RTC_DCHECK_RUN_ON(worker_thread_);
+  network_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
+    SetRtpTransport(rtp_transport);
 
-  if (rtcp_mux_required_) {
-    rtcp_mux_filter_.SetActive();
-  }
+    if (rtcp_mux_required_) {
+      rtcp_mux_filter_.SetActive();
+    }
+  });
+
+  // Both RTP and RTCP channels should be set, we can call SetInterface on
+  // the media channel and it can set network options.
+  media_channel_->SetInterface(this);
 }
 
 void BaseChannel::Deinit() {
@@ -238,6 +243,26 @@ void BaseChannel::Deinit() {
     network_thread_->Clear(&invoker_);
     network_thread_->Clear(this);
   });
+}
+
+void BaseChannel::SetRtpTransport(webrtc::RtpTransportInternal* rtp_transport) {
+  if (!network_thread_->IsCurrent()) {
+    network_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
+      SetRtpTransport(rtp_transport);
+      return;
+    });
+  }
+
+  RTC_DCHECK(rtp_transport);
+
+  if (rtp_transport_) {
+    DisconnectFromRtpTransport();
+  }
+  rtp_transport_ = rtp_transport;
+  RTC_LOG(LS_INFO) << "Setting the RtpTransport for " << content_name();
+  ConnectToRtpTransport();
+
+  UpdateWritableState_n();
 }
 
 void BaseChannel::SetTransports(DtlsTransportInternal* rtp_dtls_transport,
@@ -780,14 +805,12 @@ void BaseChannel::EnableSdes_n() {
   // time.
   RTC_DCHECK(!dtls_srtp_transport_);
   RTC_DCHECK(unencrypted_rtp_transport_);
-  DisconnectFromRtpTransport();
   sdes_transport_ = rtc::MakeUnique<webrtc::SrtpTransport>(
-      std::move(unencrypted_rtp_transport_), content_name_);
+      std::move(unencrypted_rtp_transport_));
 #if defined(ENABLE_EXTERNAL_AUTH)
   sdes_transport_->EnableExternalAuth();
 #endif
-  rtp_transport_ = sdes_transport_.get();
-  ConnectToRtpTransport();
+  SetRtpTransport(sdes_transport_.get());
   RTC_LOG(LS_INFO) << "Wrapping RtpTransport in SrtpTransport.";
 }
 
@@ -799,18 +822,16 @@ void BaseChannel::EnableDtlsSrtp_n() {
   // time.
   RTC_DCHECK(!sdes_transport_);
   RTC_DCHECK(unencrypted_rtp_transport_);
-  DisconnectFromRtpTransport();
 
   auto srtp_transport = rtc::MakeUnique<webrtc::SrtpTransport>(
-      std::move(unencrypted_rtp_transport_), content_name_);
+      std::move(unencrypted_rtp_transport_));
 #if defined(ENABLE_EXTERNAL_AUTH)
   srtp_transport->EnableExternalAuth();
 #endif
   dtls_srtp_transport_ =
       rtc::MakeUnique<webrtc::DtlsSrtpTransport>(std::move(srtp_transport));
 
-  rtp_transport_ = dtls_srtp_transport_.get();
-  ConnectToRtpTransport();
+  SetRtpTransport(dtls_srtp_transport_.get());
   if (cached_send_extension_ids_) {
     dtls_srtp_transport_->UpdateSendEncryptedHeaderExtensionIds(
         *cached_send_extension_ids_);
@@ -1847,6 +1868,14 @@ void RtpDataChannel::Init_w(
   BaseChannel::Init_w(rtp_dtls_transport, rtcp_dtls_transport,
                       rtp_packet_transport, rtcp_packet_transport);
 
+  media_channel()->SignalDataReceived.connect(this,
+                                              &RtpDataChannel::OnDataReceived);
+  media_channel()->SignalReadyToSend.connect(
+      this, &RtpDataChannel::OnDataChannelReadyToSend);
+}
+
+void RtpDataChannel::Init_w(webrtc::RtpTransportInternal* rtp_transport) {
+  BaseChannel::Init_w(rtp_transport);
   media_channel()->SignalDataReceived.connect(this,
                                               &RtpDataChannel::OnDataReceived);
   media_channel()->SignalReadyToSend.connect(

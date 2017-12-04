@@ -74,7 +74,7 @@ class DtlsSrtpTransportTest : public testing::Test,
     rtp_transport->AddHandledPayloadType(0xc9);
 
     auto srtp_transport =
-        rtc::MakeUnique<SrtpTransport>(std::move(rtp_transport), "content");
+        rtc::MakeUnique<SrtpTransport>(std::move(rtp_transport));
     auto dtls_srtp_transport =
         rtc::MakeUnique<DtlsSrtpTransport>(std::move(srtp_transport));
 

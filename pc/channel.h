@@ -86,10 +86,14 @@ class BaseChannel
               bool rtcp_mux_required,
               bool srtp_required);
   virtual ~BaseChannel();
+  // TODO(zhihuang): Remove this once the RtpTransport can be shared between
+  // BaseChannels.
   void Init_w(DtlsTransportInternal* rtp_dtls_transport,
               DtlsTransportInternal* rtcp_dtls_transport,
               rtc::PacketTransportInternal* rtp_packet_transport,
               rtc::PacketTransportInternal* rtcp_packet_transport);
+  void Init_w(webrtc::RtpTransportInternal* rtp_transport);
+
   // Deinit may be called multiple times and is simply ignored if it's already
   // done.
   void Deinit();
@@ -114,6 +118,12 @@ class BaseChannel
 
   bool writable() const { return writable_; }
 
+  // Set an RTP level transport which could be an RtpTransport without
+  // encryption, an SrtpTransport for SDES or a DtlsSrtpTransport for DTLS-SRTP.
+  // This can be called from any thread and it hops to the network thread
+  // internally. It would replace the |SetTransports| and its variants.
+  void SetRtpTransport(webrtc::RtpTransportInternal* rtp_transport);
+
   // Set the transport(s), and update writability and "ready-to-send" state.
   // |rtp_transport| must be non-null.
   // |rtcp_transport| must be supplied if NeedsRtcpTransport() is true (meaning
@@ -122,6 +132,8 @@ class BaseChannel
   // well.
   // Can not start with "rtc::PacketTransportInternal" and switch to
   // "DtlsTransportInternal", or vice-versa.
+  // TODO(zhihuang): Remove these two once the RtpTransport can be shared
+  // between BaseChannels.
   void SetTransports(DtlsTransportInternal* rtp_dtls_transport,
                      DtlsTransportInternal* rtcp_dtls_transport);
   void SetTransports(rtc::PacketTransportInternal* rtp_packet_transport,
@@ -205,6 +217,8 @@ class BaseChannel
 
   // This does not update writability or "ready-to-send" state; it just
   // disconnects from the old channel and connects to the new one.
+  // TODO(zhihuang): Remove this once the RtpTransport can be shared between
+  // BaseChannels.
   void SetTransport_n(bool rtcp,
                       DtlsTransportInternal* new_dtls_transport,
                       rtc::PacketTransportInternal* new_packet_transport);
@@ -349,10 +363,6 @@ class BaseChannel
  private:
   void ConnectToRtpTransport();
   void DisconnectFromRtpTransport();
-  void InitNetwork_n(DtlsTransportInternal* rtp_dtls_transport,
-                     DtlsTransportInternal* rtcp_dtls_transport,
-                     rtc::PacketTransportInternal* rtp_packet_transport,
-                     rtc::PacketTransportInternal* rtcp_packet_transport);
   void SignalSentPacket_n(const rtc::SentPacket& sent_packet);
   void SignalSentPacket_w(const rtc::SentPacket& sent_packet);
   bool IsReadyToSendMedia_n() const;
@@ -635,10 +645,13 @@ class RtpDataChannel : public BaseChannel {
                  bool rtcp_mux_required,
                  bool srtp_required);
   ~RtpDataChannel();
+  // TODO(zhihuang): Remove this once the RtpTransport can be shared between
+  // BaseChannels.
   void Init_w(DtlsTransportInternal* rtp_dtls_transport,
               DtlsTransportInternal* rtcp_dtls_transport,
               rtc::PacketTransportInternal* rtp_packet_transport,
               rtc::PacketTransportInternal* rtcp_packet_transport);
+  void Init_w(webrtc::RtpTransportInternal* rtp_transport);
 
   virtual bool SendData(const SendDataParams& params,
                         const rtc::CopyOnWriteBuffer& payload,
