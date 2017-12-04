@@ -34,6 +34,7 @@ rtc_static_library("ortc") {
   # libjingle_peerconnection.
   deps = [
     "../api:optional",
+    "../api:ortc_api",
     "../call:call_interfaces",
     "../call:rtp_sender",
     "../logging:rtc_event_log_api",
@@ -45,10 +46,6 @@ rtc_static_library("ortc") {
     "../pc:rtc_pc",
     "../rtc_base:rtc_base",
     "../rtc_base:rtc_base_approved",
-  ]
-
-  public_deps = [
-    "../api:ortc_api",
   ]
 
   if (!build_with_chromium && is_clang) {
@@ -77,6 +74,7 @@ if (rtc_include_tests) {
     deps = [
       ":ortc",
       "../api:libjingle_peerconnection_api",
+      "../api:ortc_api",
       "../api/audio_codecs:builtin_audio_decoder_factory",
       "../api/audio_codecs:builtin_audio_encoder_factory",
       "../media:rtc_media_tests_utils",
