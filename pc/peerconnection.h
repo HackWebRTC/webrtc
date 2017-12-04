@@ -278,12 +278,6 @@ class PeerConnection : public PeerConnectionInterface,
   // factory, it shouldn't really be public).
   bool GetSslRole(const std::string& content_name, rtc::SSLRole* role);
 
-  enum Error {
-    ERROR_NONE = 0,       // no error
-    ERROR_CONTENT = 1,    // channel errors in SetLocalContent/SetRemoteContent
-    ERROR_TRANSPORT = 2,  // transport error of some kind
-  };
-
  protected:
   ~PeerConnection() override;
 
@@ -557,9 +551,15 @@ class PeerConnection : public PeerConnectionInterface,
     kAnswer,
   };
 
+  enum class SessionError {
+    kNone,       // No error.
+    kContent,    // Error in BaseChannel SetLocalContent/SetRemoteContent.
+    kTransport,  // Error from the underlying transport.
+  };
+
   // Returns the last error in the session. See the enum above for details.
-  Error error() const { return error_; }
-  const std::string& error_desc() const { return error_desc_; }
+  SessionError session_error() const { return session_error_; }
+  const std::string& session_error_desc() const { return session_error_desc_; }
 
   cricket::BaseChannel* GetChannel(const std::string& content_name);
 
@@ -616,7 +616,7 @@ class PeerConnection : public PeerConnectionInterface,
   }
 
   // Updates the error state, signaling if necessary.
-  void SetError(Error error, const std::string& error_desc);
+  void SetSessionError(SessionError error, const std::string& error_desc);
 
   bool UpdateSessionState(Action action,
                           cricket::ContentSource source,
@@ -750,6 +750,7 @@ class PeerConnection : public PeerConnectionInterface,
       const std::vector<cricket::Candidate>& candidates);
   void OnTransportControllerDtlsHandshakeError(rtc::SSLHandshakeError error);
 
+  const char* SessionErrorToString(SessionError error) const;
   std::string GetSessionErrorMsg();
 
   // Invoked when TransportController connection completion is signaled.
@@ -833,8 +834,8 @@ class PeerConnection : public PeerConnectionInterface,
       rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
       transceivers_;
 
-  Error error_ = ERROR_NONE;
-  std::string error_desc_;
+  SessionError session_error_ = SessionError::kNone;
+  std::string session_error_desc_;
 
   std::string session_id_;
   rtc::Optional<bool> initial_offerer_;
