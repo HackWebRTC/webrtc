@@ -352,6 +352,7 @@ if (rtc_include_tests) {
         "../../api/video_codecs:video_codecs_api",
         "../../media:rtc_audio_video",
         "../../modules:module_api",
+        "../../rtc_base:rtc_base_approved",
         "../../sdk:common_objc",
         "../../sdk:peerconnection_objc",
         "../../sdk:peerconnectionfactory_objc",
