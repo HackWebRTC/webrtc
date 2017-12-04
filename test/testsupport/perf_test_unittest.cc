@@ -78,8 +78,8 @@ TEST_F(PerfTest, MAYBE_TestPrintResult) {
   expected += "RESULT measurementmodifier: trace= 42 units\n";
   PrintResult("measurement", "modifier", "trace", 42, "units", false);
 
-  expected += "*RESULT foobar: baz_v= 7 widgets\n";
-  PrintResult("foo", "bar", "baz_v", 7, "widgets", true);
+  expected += "*RESULT foobar: baz_v= 1423730 widgets\n";
+  PrintResult("foo", "bar", "baz_v", 1423730, "widgets", true);
 
   expected += "RESULT foobar: baz_me= {1,2} lemurs\n";
   PrintResultMeanAndError("foo", "bar", "baz_me", 1, 2, "lemurs", false);
