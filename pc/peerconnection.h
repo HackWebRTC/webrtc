@@ -766,11 +766,19 @@ class PeerConnection : public PeerConnectionInterface,
   const std::string GetTransportName(const std::string& content_name);
 
   void DestroyRtcpTransport_n(const std::string& transport_name);
-  void RemoveAndDestroyVideoChannel(cricket::VideoChannel* video_channel);
-  void DestroyVideoChannel(cricket::VideoChannel* video_channel);
-  void RemoveAndDestroyVoiceChannel(cricket::VoiceChannel* voice_channel);
-  void DestroyVoiceChannel(cricket::VoiceChannel* voice_channel);
+
+  // Destroys and clears the BaseChannel associated with the given transceiver,
+  // if such channel is set.
+  void DestroyTransceiverChannel(
+      rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
+          transceiver);
+
+  // Destroys the RTP data channel and/or the SCTP data channel and clears it.
   void DestroyDataChannel();
+
+  // Destroys the given BaseChannel. The channel cannot be accessed after this
+  // method is called.
+  void DestroyBaseChannel(cricket::BaseChannel* channel);
 
   // Storing the factory as a scoped reference pointer ensures that the memory
   // in the PeerConnectionFactoryImpl remains available as long as the

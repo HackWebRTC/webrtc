@@ -845,33 +845,16 @@ PeerConnection::~PeerConnection() {
   // Destroy video channels first since they may have a pointer to a voice
   // channel.
   for (auto transceiver : transceivers_) {
-    if (transceiver->internal()->media_type() == cricket::MEDIA_TYPE_VIDEO &&
-        transceiver->internal()->channel()) {
-      DestroyVideoChannel(static_cast<cricket::VideoChannel*>(
-          transceiver->internal()->channel()));
+    if (transceiver->internal()->media_type() == cricket::MEDIA_TYPE_VIDEO) {
+      DestroyTransceiverChannel(transceiver);
     }
   }
   for (auto transceiver : transceivers_) {
-    if (transceiver->internal()->media_type() == cricket::MEDIA_TYPE_AUDIO &&
-        transceiver->internal()->channel()) {
-      DestroyVoiceChannel(static_cast<cricket::VoiceChannel*>(
-          transceiver->internal()->channel()));
+    if (transceiver->internal()->media_type() == cricket::MEDIA_TYPE_AUDIO) {
+      DestroyTransceiverChannel(transceiver);
     }
   }
-  if (rtp_data_channel_) {
-    DestroyDataChannel();
-  }
-
-  // Note: Cannot use rtc::Bind to create a functor to invoke because it will
-  // grab a reference to this PeerConnection. The RefCountedObject vtable will
-  // have already been destroyed (since it is a subclass of PeerConnection) and
-  // using rtc::Bind will cause "Pure virtual function called" error to appear.
-
-  if (sctp_transport_) {
-    OnDataChannelDestroyed();
-    network_thread()->Invoke<void>(RTC_FROM_HERE,
-                                   [this] { DestroySctpTransport_n(); });
-  }
+  DestroyDataChannel();
 
   RTC_LOG(LS_INFO) << "Session: " << session_id() << " is destroyed.";
 
@@ -4267,30 +4250,21 @@ bool PeerConnection::UseCandidate(const IceCandidateInterface* candidate) {
 }
 
 void PeerConnection::RemoveUnusedChannels(const SessionDescription* desc) {
-  // TODO(steveanton): Add support for multiple audio/video channels.
   // Destroy video channel first since it may have a pointer to the
   // voice channel.
   const cricket::ContentInfo* video_info = cricket::GetFirstVideoContent(desc);
-  if ((!video_info || video_info->rejected) && video_channel()) {
-    DestroyVideoChannel(video_channel());
+  if (!video_info || video_info->rejected) {
+    DestroyTransceiverChannel(GetVideoTransceiver());
   }
 
-  const cricket::ContentInfo* voice_info = cricket::GetFirstAudioContent(desc);
-  if ((!voice_info || voice_info->rejected) && voice_channel()) {
-    DestroyVoiceChannel(voice_channel());
+  const cricket::ContentInfo* audio_info = cricket::GetFirstAudioContent(desc);
+  if (!audio_info || audio_info->rejected) {
+    DestroyTransceiverChannel(GetAudioTransceiver());
   }
 
   const cricket::ContentInfo* data_info = cricket::GetFirstDataContent(desc);
   if (!data_info || data_info->rejected) {
-    if (rtp_data_channel_) {
-      DestroyDataChannel();
-    }
-    if (sctp_transport_) {
-      OnDataChannelDestroyed();
-      network_thread()->Invoke<void>(
-          RTC_FROM_HERE,
-          rtc::Bind(&PeerConnection::DestroySctpTransport_n, this));
-    }
+    DestroyDataChannel();
   }
 }
 
@@ -4951,18 +4925,18 @@ void PeerConnection::OnSentPacket_w(const rtc::SentPacket& sent_packet) {
 const std::string PeerConnection::GetTransportName(
     const std::string& content_name) {
   cricket::BaseChannel* channel = GetChannel(content_name);
-  if (!channel) {
-    if (sctp_transport_) {
-      RTC_DCHECK(sctp_content_name_);
-      RTC_DCHECK(sctp_transport_name_);
-      if (content_name == *sctp_content_name_) {
-        return *sctp_transport_name_;
-      }
-    }
-    // Return an empty string if failed to retrieve the transport name.
-    return "";
+  if (channel) {
+    return channel->transport_name();
   }
-  return channel->transport_name();
+  if (sctp_transport_) {
+    RTC_DCHECK(sctp_content_name_);
+    RTC_DCHECK(sctp_transport_name_);
+    if (content_name == *sctp_content_name_) {
+      return *sctp_transport_name_;
+    }
+  }
+  // Return an empty string if failed to retrieve the transport name.
+  return "";
 }
 
 void PeerConnection::DestroyRtcpTransport_n(const std::string& transport_name) {
@@ -4971,57 +4945,68 @@ void PeerConnection::DestroyRtcpTransport_n(const std::string& transport_name) {
       transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTCP);
 }
 
-// TODO(steveanton): Perhaps this should be managed by the RtpTransceiver.
-void PeerConnection::DestroyVideoChannel(cricket::VideoChannel* video_channel) {
-  RTC_DCHECK(video_channel);
-  RTC_DCHECK(video_channel->rtp_dtls_transport());
-  RTC_DCHECK_EQ(GetVideoTransceiver()->internal()->channel(), video_channel);
-  GetVideoTransceiver()->internal()->SetChannel(nullptr);
-  const std::string transport_name =
-      video_channel->rtp_dtls_transport()->transport_name();
-  const bool need_to_delete_rtcp =
-      (video_channel->rtcp_dtls_transport() != nullptr);
-  // The above need to be cached before destroying the video channel so that we
-  // do not access uninitialized memory.
-  channel_manager()->DestroyVideoChannel(video_channel);
-  transport_controller_->DestroyDtlsTransport(
-      transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP);
-  if (need_to_delete_rtcp) {
-    transport_controller_->DestroyDtlsTransport(
-        transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTCP);
-  }
-}
+void PeerConnection::DestroyTransceiverChannel(
+    rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
+        transceiver) {
+  RTC_DCHECK(transceiver);
 
-// TODO(steveanton): Perhaps this should be managed by the RtpTransceiver.
-void PeerConnection::DestroyVoiceChannel(cricket::VoiceChannel* voice_channel) {
-  RTC_DCHECK(voice_channel);
-  RTC_DCHECK(voice_channel->rtp_dtls_transport());
-  RTC_DCHECK_EQ(GetAudioTransceiver()->internal()->channel(), voice_channel);
-  GetAudioTransceiver()->internal()->SetChannel(nullptr);
-  const std::string transport_name =
-      voice_channel->rtp_dtls_transport()->transport_name();
-  const bool need_to_delete_rtcp =
-      (voice_channel->rtcp_dtls_transport() != nullptr);
-  // The above need to be cached before destroying the video channel so that we
-  // do not access uninitialized memory.
-  channel_manager()->DestroyVoiceChannel(voice_channel);
-  transport_controller_->DestroyDtlsTransport(
-      transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP);
-  if (need_to_delete_rtcp) {
-    transport_controller_->DestroyDtlsTransport(
-        transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTCP);
+  cricket::BaseChannel* channel = transceiver->internal()->channel();
+  if (channel) {
+    transceiver->internal()->SetChannel(nullptr);
+    DestroyBaseChannel(channel);
   }
 }
 
 void PeerConnection::DestroyDataChannel() {
-  OnDataChannelDestroyed();
-  RTC_DCHECK(rtp_data_channel_->rtp_dtls_transport());
-  std::string transport_name;
-  transport_name = rtp_data_channel_->rtp_dtls_transport()->transport_name();
-  bool need_to_delete_rtcp =
-      (rtp_data_channel_->rtcp_dtls_transport() != nullptr);
-  channel_manager()->DestroyRtpDataChannel(rtp_data_channel_);
-  rtp_data_channel_ = nullptr;
+  if (rtp_data_channel_) {
+    OnDataChannelDestroyed();
+    DestroyBaseChannel(rtp_data_channel_);
+    rtp_data_channel_ = nullptr;
+  }
+
+  // Note: Cannot use rtc::Bind to create a functor to invoke because it will
+  // grab a reference to this PeerConnection. If this is called from the
+  // PeerConnection destructor, the RefCountedObject vtable will have already
+  // been destroyed (since it is a subclass of PeerConnection) and using
+  // rtc::Bind will cause "Pure virtual function called" error to appear.
+
+  if (sctp_transport_) {
+    OnDataChannelDestroyed();
+    network_thread()->Invoke<void>(RTC_FROM_HERE,
+                                   [this] { DestroySctpTransport_n(); });
+  }
+}
+
+void PeerConnection::DestroyBaseChannel(cricket::BaseChannel* channel) {
+  RTC_DCHECK(channel);
+  RTC_DCHECK(channel->rtp_dtls_transport());
+
+  // Need to cache these before destroying the base channel so that we do not
+  // access uninitialized memory.
+  const std::string transport_name =
+      channel->rtp_dtls_transport()->transport_name();
+  const bool need_to_delete_rtcp = (channel->rtcp_dtls_transport() != nullptr);
+
+  switch (channel->media_type()) {
+    case cricket::MEDIA_TYPE_AUDIO:
+      channel_manager()->DestroyVoiceChannel(
+          static_cast<cricket::VoiceChannel*>(channel));
+      break;
+    case cricket::MEDIA_TYPE_VIDEO:
+      channel_manager()->DestroyVideoChannel(
+          static_cast<cricket::VideoChannel*>(channel));
+      break;
+    case cricket::MEDIA_TYPE_DATA:
+      channel_manager()->DestroyRtpDataChannel(
+          static_cast<cricket::RtpDataChannel*>(channel));
+      break;
+    default:
+      RTC_NOTREACHED() << "Unknown media type: " << channel->media_type();
+      break;
+  }
+
+  // |channel| can no longer be used.
+
   transport_controller_->DestroyDtlsTransport(
       transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP);
   if (need_to_delete_rtcp) {
