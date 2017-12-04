@@ -20,7 +20,6 @@
 #include "modules/include/module_common_types.h"
 #include "rtc_base/format_macros.h"
 #include "rtc_base/logging.h"
-#include "system_wrappers/include/file_wrapper.h"
 #include "typedefs.h"  // NOLINT(build/include)
 
 namespace {
@@ -372,74 +371,6 @@ int32_t ModuleFileUtility::ReadWavDataAsMono(InStream& wav,
       }
     }
     memcpy(outData, _tempData, bytesRequested);
-  }
-  return static_cast<int32_t>(bytesRequested);
-}
-
-int32_t ModuleFileUtility::ReadWavDataAsStereo(InStream& wav,
-                                               int8_t* outDataLeft,
-                                               int8_t* outDataRight,
-                                               const size_t bufferSize) {
-  RTC_LOG(LS_VERBOSE) << "ModuleFileUtility::ReadWavDataAsStereo(wav= " << &wav
-                      << ", outLeft= " << static_cast<void*>(outDataLeft)
-                      << ", outRight= " << static_cast<void*>(outDataRight)
-                      << ", bufSize= " << bufferSize << ")";
-
-  if ((outDataLeft == NULL) || (outDataRight == NULL)) {
-    RTC_LOG(LS_ERROR) << "ReadWavDataAsStereo: an input buffer is NULL!";
-    return -1;
-  }
-  if (codec_info_.channels != 2) {
-    RTC_LOG(LS_ERROR)
-        << "ReadWavDataAsStereo: WAV file does not contain stereo data!";
-    return -1;
-  }
-  if (!_reading) {
-    RTC_LOG(LS_ERROR) << "ReadWavDataAsStereo: no longer reading file.";
-    return -1;
-  }
-
-  // The number of bytes that should be read from file.
-  const size_t totalBytesNeeded = _readSizeBytes;
-  // The number of bytes that will be written to the left and the right
-  // buffers.
-  const size_t bytesRequested = totalBytesNeeded >> 1;
-  if (bufferSize < bytesRequested) {
-    RTC_LOG(LS_ERROR) << "ReadWavDataAsStereo: Output buffers are too short!";
-    assert(false);
-    return -1;
-  }
-
-  int32_t bytesRead = ReadWavData(wav, _tempData, totalBytesNeeded);
-  if (bytesRead <= 0) {
-    RTC_LOG(LS_ERROR)
-        << "ReadWavDataAsStereo: failed to read data from WAV file.";
-    return -1;
-  }
-
-  // Turn interleaved audio to left and right buffer. Note samples can be
-  // either 1 or 2 bytes
-  if (_bytesPerSample == 1) {
-    for (size_t i = 0; i < bytesRequested; i++) {
-      outDataLeft[i] = _tempData[2 * i];
-      outDataRight[i] = _tempData[(2 * i) + 1];
-    }
-  } else if (_bytesPerSample == 2) {
-    int16_t* sampleData = reinterpret_cast<int16_t*>(_tempData);
-    int16_t* outLeft = reinterpret_cast<int16_t*>(outDataLeft);
-    int16_t* outRight = reinterpret_cast<int16_t*>(outDataRight);
-
-    // Bytes requested to samples requested.
-    size_t sampleCount = bytesRequested >> 1;
-    for (size_t i = 0; i < sampleCount; i++) {
-      outLeft[i] = sampleData[2 * i];
-      outRight[i] = sampleData[(2 * i) + 1];
-    }
-  } else {
-    RTC_LOG(LS_ERROR) << "ReadWavStereoData: unsupported sample size "
-                      << _bytesPerSample << "!";
-    assert(false);
-    return -1;
   }
   return static_cast<int32_t>(bytesRequested);
 }

@@ -33,19 +33,6 @@ public:
     int32_t PlayoutAudioData(int8_t* audioBuffer,
                              size_t& dataLengthInBytes) override;
 
-    int32_t PlayoutStereoData(int8_t* audioBufferLeft,
-                              int8_t* audioBufferRight,
-                              size_t& dataLengthInBytes) override;
-
-    int32_t StartPlayingAudioFile(
-        const char* fileName,
-        const uint32_t notificationTimeMs = 0,
-        const bool loop = false,
-        const FileFormats format = kFileFormatPcm16kHzFile,
-        const CodecInst* codecInst = NULL,
-        const uint32_t startPointMs = 0,
-        const uint32_t stopPointMs = 0) override;
-
     int32_t StartPlayingAudioStream(
         InStream& stream,
         const uint32_t notificationTimeMs = 0,
@@ -99,15 +86,12 @@ private:
     CodecInst codec_info_;
 
     InStream*  _ptrInStream;
-    OutStream* _ptrOutStream;
 
     FileFormats _fileFormat;
     uint32_t _playoutPositionMs;
     uint32_t _notificationMs;
 
     bool _playingActive;
-    bool _isStereo;
-    bool _openFile;
 
     char _fileName[512];
 

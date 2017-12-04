@@ -38,42 +38,6 @@ public:
         int8_t* audioBuffer,
         size_t& dataLengthInBytes) = 0;
 
-    // Put 10-60ms, depending on codec frame size, of audio data from file into
-    // audioBufferLeft and audioBufferRight. The buffers contain the left and
-    // right channel of played out stereo audio.
-    // dataLengthInBytes is both an input and output parameter. As input
-    // parameter it indicates the size of both audioBufferLeft and
-    // audioBufferRight. As output parameter it indicates the number of bytes
-    // written to both audio buffers.
-    // Note: This API can only be successfully called for WAV files with stereo
-    // audio.
-    virtual int32_t PlayoutStereoData(
-        int8_t* audioBufferLeft,
-        int8_t* audioBufferRight,
-        size_t& dataLengthInBytes) = 0;
-
-    // Open the file specified by fileName (relative path is allowed) for
-    // reading. FileCallback::PlayNotification(..) will be called after
-    // notificationTimeMs of the file has been played if notificationTimeMs is
-    // greater than zero. If loop is true the file will be played until
-    // StopPlaying() is called. When end of file is reached the file is read
-    // from the start. format specifies the type of file fileName refers to.
-    // codecInst specifies the encoding of the audio data. Note that
-    // file formats that contain this information (like WAV files) don't need to
-    // provide a non-NULL codecInst. startPointMs and stopPointMs, unless zero,
-    // specify what part of the file should be read. From startPointMs ms to
-    // stopPointMs ms.
-    // Note: codecInst.channels should be set to 2 for stereo (and 1 for
-    // mono). Stereo audio is only supported for WAV files.
-    virtual int32_t StartPlayingAudioFile(
-        const char* fileName,
-        const uint32_t notificationTimeMs = 0,
-        const bool loop                         = false,
-        const FileFormats format                = kFileFormatPcm16kHzFile,
-        const CodecInst* codecInst              = NULL,
-        const uint32_t startPointMs       = 0,
-        const uint32_t stopPointMs        = 0) = 0;
-
     // Prepare for playing audio from stream.
     // FileCallback::PlayNotification(..) will be called after
     // notificationTimeMs of the file has been played if notificationTimeMs is

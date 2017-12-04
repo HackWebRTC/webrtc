@@ -44,19 +44,6 @@ public:
     int32_t ReadWavDataAsMono(InStream& stream, int8_t* audioBuffer,
                               const size_t dataLengthInBytes);
 
-    // Put 10-60ms, depending on codec frame size, of audio data from file into
-    // audioBufferLeft and audioBufferRight. The buffers contain the left and
-    // right channel of played out stereo audio.
-    // dataLengthInBytes  indicates the size of both audioBufferLeft and
-    // audioBufferRight.
-    // The return value is the number of bytes read for each buffer.
-    // Note: This API can only be successfully called for WAV files with stereo
-    // audio.
-    int32_t ReadWavDataAsStereo(InStream& wav,
-                                int8_t* audioBufferLeft,
-                                int8_t* audioBufferRight,
-                                const size_t bufferLength);
-
     // Prepare for playing audio from stream.
     // startPointMs and stopPointMs, unless zero, specify what part of the file
     // should be read. From startPointMs ms to stopPointMs ms.

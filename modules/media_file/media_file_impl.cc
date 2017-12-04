@@ -13,7 +13,6 @@
 #include "modules/media_file/media_file_impl.h"
 #include "rtc_base/format_macros.h"
 #include "rtc_base/logging.h"
-#include "system_wrappers/include/file_wrapper.h"
 
 namespace webrtc {
 MediaFile* MediaFile::CreateMediaFile(const int32_t id) {
@@ -29,13 +28,10 @@ MediaFileImpl::MediaFileImpl(const int32_t id)
       _ptrFileUtilityObj(NULL),
       codec_info_(),
       _ptrInStream(NULL),
-      _ptrOutStream(NULL),
       _fileFormat((FileFormats)-1),
       _playoutPositionMs(0),
       _notificationMs(0),
       _playingActive(false),
-      _isStereo(false),
-      _openFile(false),
       _fileName(),
       _ptrCallback(NULL) {
   RTC_LOG(LS_INFO) << "MediaFileImpl()";
@@ -54,13 +50,6 @@ MediaFileImpl::~MediaFileImpl() {
     }
 
     delete _ptrFileUtilityObj;
-
-    if (_openFile) {
-      delete _ptrInStream;
-      _ptrInStream = NULL;
-      delete _ptrOutStream;
-      _ptrOutStream = NULL;
-    }
   }
 }
 
@@ -171,133 +160,6 @@ void MediaFileImpl::HandlePlayCallbacks(int32_t bytesRead) {
       _ptrCallback->PlayFileEnded(_id);
     }
   }
-}
-
-int32_t MediaFileImpl::PlayoutStereoData(int8_t* bufferLeft,
-                                         int8_t* bufferRight,
-                                         size_t& dataLengthInBytes) {
-  RTC_LOG(LS_INFO) << "MediaFileImpl::PlayoutStereoData(Left = "
-                   << static_cast<void*>(bufferLeft)
-                   << ", Right = " << static_cast<void*>(bufferRight)
-                   << ", Len= " << dataLengthInBytes << ")";
-
-  const size_t bufferLengthInBytes = dataLengthInBytes;
-  dataLengthInBytes = 0;
-
-  if (bufferLeft == NULL || bufferRight == NULL || bufferLengthInBytes == 0) {
-    RTC_LOG(LS_ERROR) << "A buffer pointer or the length is NULL!";
-    return -1;
-  }
-
-  bool playEnded = false;
-  uint32_t callbackNotifyMs = 0;
-  {
-    rtc::CritScope lock(&_crit);
-
-    if (!_playingActive || !_isStereo) {
-      RTC_LOG(LS_WARNING) << "Not currently playing stereo!";
-      return -1;
-    }
-
-    if (!_ptrFileUtilityObj) {
-      RTC_LOG(LS_ERROR)
-          << "Playing stereo, but the FileUtility objects is NULL!";
-      StopPlaying();
-      return -1;
-    }
-
-    // Stereo playout only supported for WAV files.
-    int32_t bytesRead = 0;
-    switch (_fileFormat) {
-      case kFileFormatWavFile:
-        bytesRead = _ptrFileUtilityObj->ReadWavDataAsStereo(
-            *_ptrInStream, bufferLeft, bufferRight, bufferLengthInBytes);
-        break;
-      default:
-        RTC_LOG(LS_ERROR)
-            << "Trying to read non-WAV as stereo audio (not supported)";
-        break;
-    }
-
-    if (bytesRead > 0) {
-      dataLengthInBytes = static_cast<size_t>(bytesRead);
-
-      // Check if it's time for PlayNotification(..).
-      _playoutPositionMs = _ptrFileUtilityObj->PlayoutPositionMs();
-      if (_notificationMs) {
-        if (_playoutPositionMs >= _notificationMs) {
-          _notificationMs = 0;
-          callbackNotifyMs = _playoutPositionMs;
-        }
-      }
-    } else {
-      // If no bytes were read assume end of file.
-      StopPlaying();
-      playEnded = true;
-    }
-  }
-
-  rtc::CritScope lock(&_callbackCrit);
-  if (_ptrCallback) {
-    if (callbackNotifyMs) {
-      _ptrCallback->PlayNotification(_id, callbackNotifyMs);
-    }
-    if (playEnded) {
-      _ptrCallback->PlayFileEnded(_id);
-    }
-  }
-  return 0;
-}
-
-int32_t MediaFileImpl::StartPlayingAudioFile(const char* fileName,
-                                             const uint32_t notificationTimeMs,
-                                             const bool loop,
-                                             const FileFormats format,
-                                             const CodecInst* codecInst,
-                                             const uint32_t startPointMs,
-                                             const uint32_t stopPointMs) {
-  if (!ValidFileName(fileName)) {
-    return -1;
-  }
-  if (!ValidFileFormat(format, codecInst)) {
-    return -1;
-  }
-  if (!ValidFilePositions(startPointMs, stopPointMs)) {
-    return -1;
-  }
-
-  // Check that the file will play longer than notificationTimeMs ms.
-  if ((startPointMs && stopPointMs && !loop) &&
-      (notificationTimeMs > (stopPointMs - startPointMs))) {
-    RTC_LOG(LS_ERROR) << "specified notification time is longer than amount of"
-                      << " ms that will be played";
-    return -1;
-  }
-
-  FileWrapper* inputStream = FileWrapper::Create();
-  if (inputStream == NULL) {
-    RTC_LOG(LS_INFO) << "Failed to allocate input stream for file " << fileName;
-    return -1;
-  }
-
-  if (!inputStream->OpenFile(fileName, true)) {
-    delete inputStream;
-    RTC_LOG(LS_ERROR) << "Could not open input file " << fileName;
-    return -1;
-  }
-
-  if (StartPlayingStream(*inputStream, loop, notificationTimeMs, format,
-                         codecInst, startPointMs, stopPointMs) == -1) {
-    inputStream->CloseFile();
-    delete inputStream;
-    return -1;
-  }
-
-  rtc::CritScope lock(&_crit);
-  _openFile = true;
-  strncpy(_fileName, fileName, sizeof(_fileName));
-  _fileName[sizeof(_fileName) - 1] = '\0';
-  return 0;
 }
 
 int32_t MediaFileImpl::StartPlayingAudioStream(
@@ -411,8 +273,7 @@ int32_t MediaFileImpl::StartPlayingStream(InStream& stream,
     return -1;
   }
 
-  _isStereo = (codec_info_.channels == 2);
-  if (_isStereo && (_fileFormat != kFileFormatWavFile)) {
+  if ((codec_info_.channels == 2) && (_fileFormat != kFileFormatWavFile)) {
     RTC_LOG(LS_WARNING) << "Stereo is only allowed for WAV files";
     StopPlaying();
     return -1;
@@ -427,17 +288,11 @@ int32_t MediaFileImpl::StartPlayingStream(InStream& stream,
 
 int32_t MediaFileImpl::StopPlaying() {
   rtc::CritScope lock(&_crit);
-  _isStereo = false;
   if (_ptrFileUtilityObj) {
     delete _ptrFileUtilityObj;
     _ptrFileUtilityObj = NULL;
   }
   if (_ptrInStream) {
-    // If MediaFileImpl opened the InStream it must be reclaimed here.
-    if (_openFile) {
-      delete _ptrInStream;
-      _openFile = false;
-    }
     _ptrInStream = NULL;
   }
 

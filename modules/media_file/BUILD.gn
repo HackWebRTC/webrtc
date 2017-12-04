@@ -37,7 +37,6 @@ rtc_static_library("media_file") {
     "../..:webrtc_common",
     "../../common_audio",
     "../../rtc_base:rtc_base_approved",
-    "../../system_wrappers",
   ]
 }
 
@@ -50,7 +49,6 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":media_file",
-      "../../system_wrappers:system_wrappers",
       "../../test:test_support",
     ]
     if (is_win) {
