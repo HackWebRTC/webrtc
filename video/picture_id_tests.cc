@@ -25,6 +25,7 @@ const int kMaxFramesLost = kFrameRate * kMaxSecondsLost;
 const int kMinPacketsToObserve = 10;
 const int kEncoderBitrateBps = 100000;
 const uint32_t kPictureIdWraparound = (1 << 15);
+const size_t kNumTemporalLayers[] = {1, 2, 3};
 
 const char kVp8ForcedFallbackEncoderEnabled[] =
     "WebRTC-VP8-Forced-Fallback-Encoder-v2/Enabled/";
@@ -48,6 +49,7 @@ class PictureIdObserver : public test::RtpRtcpObserver {
       : test::RtpRtcpObserver(test::CallTest::kDefaultTimeoutMs),
         codec_type_(codec_type),
         max_expected_picture_id_gap_(0),
+        max_expected_tl0_idx_gap_(0),
         num_ssrcs_to_observe_(1) {}
 
   void SetExpectedSsrcs(size_t num_expected_ssrcs) {
@@ -66,20 +68,23 @@ class PictureIdObserver : public test::RtpRtcpObserver {
   void SetMaxExpectedPictureIdGap(int max_expected_picture_id_gap) {
     rtc::CritScope lock(&crit_);
     max_expected_picture_id_gap_ = max_expected_picture_id_gap;
+    // Expect smaller gap for |tl0_pic_idx| (running index for temporal_idx 0).
+    max_expected_tl0_idx_gap_ = max_expected_picture_id_gap_ / 2;
   }
 
  private:
-  // TODO(asapersson): Add test for tl0_pic_idx.
   struct ParsedPacket {
     uint32_t timestamp;
     uint32_t ssrc;
-    uint16_t picture_id;
+    int16_t picture_id;
+    int16_t tl0_pic_idx;
+    uint8_t temporal_idx;
     FrameType frame_type;
   };
 
   bool ParsePayload(const uint8_t* packet,
                     size_t length,
-                    ParsedPacket* parsed) {
+                    ParsedPacket* parsed) const {
     RTPHeader header;
     EXPECT_TRUE(parser_->Parse(packet, length, &header));
     EXPECT_TRUE(header.ssrc == test::CallTest::kVideoSendSsrcs[0] ||
@@ -93,8 +98,8 @@ class PictureIdObserver : public test::RtpRtcpObserver {
       return false;  // Padding packet.
     }
 
-    parsed->ssrc = header.ssrc;
     parsed->timestamp = header.timestamp;
+    parsed->ssrc = header.ssrc;
 
     std::unique_ptr<RtpDepacketizer> depacketizer(
         RtpDepacketizer::Create(codec_type_));
@@ -106,10 +111,18 @@ class PictureIdObserver : public test::RtpRtcpObserver {
       case kRtpVideoVp8:
         parsed->picture_id =
             parsed_payload.type.Video.codecHeader.VP8.pictureId;
+        parsed->tl0_pic_idx =
+            parsed_payload.type.Video.codecHeader.VP8.tl0PicIdx;
+        parsed->temporal_idx =
+            parsed_payload.type.Video.codecHeader.VP8.temporalIdx;
         break;
       case kRtpVideoVp9:
         parsed->picture_id =
             parsed_payload.type.Video.codecHeader.VP9.picture_id;
+        parsed->tl0_pic_idx =
+            parsed_payload.type.Video.codecHeader.VP9.tl0_pic_idx;
+        parsed->temporal_idx =
+            parsed_payload.type.Video.codecHeader.VP9.temporal_idx;
         break;
       default:
         RTC_NOTREACHED();
@@ -120,43 +133,69 @@ class PictureIdObserver : public test::RtpRtcpObserver {
     return true;
   }
 
+  // Verify continuity and monotonicity of picture_id sequence.
+  void VerifyPictureId(const ParsedPacket& current,
+                       const ParsedPacket& last) const
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(&crit_) {
+    if (current.timestamp == last.timestamp) {
+      EXPECT_EQ(last.picture_id, current.picture_id);
+      return;  // Same frame.
+    }
+
+    // Packet belongs to a new frame.
+    // Picture id should be increasing.
+    EXPECT_TRUE((AheadOf<uint16_t, kPictureIdWraparound>(current.picture_id,
+                                                         last.picture_id)));
+
+    // Expect continuously increasing picture id.
+    int diff = ForwardDiff<uint16_t, kPictureIdWraparound>(last.picture_id,
+                                                           current.picture_id);
+    if (diff > 1) {
+      // If the VideoSendStream is destroyed, any frames still in queue is lost.
+      // Gaps only possible for first frame after a recreation, i.e. key frames.
+      EXPECT_EQ(kVideoFrameKey, current.frame_type);
+      EXPECT_LE(diff - 1, max_expected_picture_id_gap_);
+    }
+  }
+
+  void VerifyTl0Idx(const ParsedPacket& current, const ParsedPacket& last) const
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(&crit_) {
+    if (current.tl0_pic_idx == kNoTl0PicIdx ||
+        current.temporal_idx == kNoTemporalIdx) {
+      return;  // No temporal layers.
+    }
+
+    if (current.timestamp == last.timestamp || current.temporal_idx != 0) {
+      EXPECT_EQ(last.tl0_pic_idx, current.tl0_pic_idx);
+      return;
+    }
+
+    // New frame with |temporal_idx| 0.
+    // |tl0_pic_idx| should be increasing.
+    EXPECT_TRUE(AheadOf<uint8_t>(current.tl0_pic_idx, last.tl0_pic_idx));
+
+    // Expect continuously increasing idx.
+    int diff = ForwardDiff<uint8_t>(last.tl0_pic_idx, current.tl0_pic_idx);
+    if (diff > 1) {
+      // If the VideoSendStream is destroyed, any frames still in queue is lost.
+      // Gaps only possible for first frame after a recreation, i.e. key frames.
+      EXPECT_EQ(kVideoFrameKey, current.frame_type);
+      EXPECT_LE(diff - 1, max_expected_tl0_idx_gap_);
+    }
+  }
+
   Action OnSendRtp(const uint8_t* packet, size_t length) override {
     rtc::CritScope lock(&crit_);
 
     ParsedPacket parsed;
-    if (!ParsePayload(packet, length, &parsed)) {
+    if (!ParsePayload(packet, length, &parsed))
       return SEND_PACKET;
-    }
 
     uint32_t ssrc = parsed.ssrc;
     if (last_observed_packet_.find(ssrc) != last_observed_packet_.end()) {
-      // Verify continuity and monotonicity of picture_id sequence.
       // Compare to last packet.
-      if (last_observed_packet_[ssrc].timestamp == parsed.timestamp) {
-        // Packet belongs to same frame as before.
-        EXPECT_EQ(last_observed_packet_[ssrc].picture_id, parsed.picture_id);
-      } else {
-        // Packet belongs to a new frame.
-
-        // Picture id should be increasing.
-        EXPECT_TRUE((AheadOf<uint16_t, kPictureIdWraparound>(
-            parsed.picture_id, last_observed_packet_[ssrc].picture_id)));
-
-        // Picture id should not increase more than expected.
-        const int picture_id_diff = ForwardDiff<uint16_t, kPictureIdWraparound>(
-            last_observed_packet_[ssrc].picture_id, parsed.picture_id);
-
-        // For delta frames, expect continuously increasing picture id.
-        if (parsed.frame_type != kVideoFrameKey) {
-          EXPECT_EQ(picture_id_diff, 1);
-        }
-        // Any frames still in queue is lost when a VideoSendStream is
-        // destroyed. The first frame after recreation should be a key frame.
-        if (picture_id_diff > 1) {
-          EXPECT_EQ(kVideoFrameKey, parsed.frame_type);
-          EXPECT_LE(picture_id_diff - 1, max_expected_picture_id_gap_);
-        }
-      }
+      VerifyPictureId(parsed, last_observed_packet_[ssrc]);
+      VerifyTl0Idx(parsed, last_observed_packet_[ssrc]);
     }
 
     last_observed_packet_[ssrc] = parsed;
@@ -178,14 +217,18 @@ class PictureIdObserver : public test::RtpRtcpObserver {
   std::map<uint32_t, ParsedPacket> last_observed_packet_ RTC_GUARDED_BY(crit_);
   std::map<uint32_t, size_t> num_packets_sent_ RTC_GUARDED_BY(crit_);
   int max_expected_picture_id_gap_ RTC_GUARDED_BY(crit_);
+  int max_expected_tl0_idx_gap_ RTC_GUARDED_BY(crit_);
   size_t num_ssrcs_to_observe_ RTC_GUARDED_BY(crit_);
   std::set<uint32_t> observed_ssrcs_ RTC_GUARDED_BY(crit_);
 };
 
 class PictureIdTest : public test::CallTest,
-                      public ::testing::WithParamInterface<std::string> {
+                      public ::testing::WithParamInterface<
+                          ::testing::tuple<std::string, size_t>> {
  public:
-  PictureIdTest() : scoped_field_trial_(GetParam()) {}
+  PictureIdTest()
+      : scoped_field_trial_(::testing::get<0>(GetParam())),
+        num_temporal_layers_(::testing::get<1>(GetParam())) {}
 
   virtual ~PictureIdTest() {
     EXPECT_EQ(nullptr, video_send_stream_);
@@ -208,20 +251,23 @@ class PictureIdTest : public test::CallTest,
 
  private:
   test::ScopedFieldTrials scoped_field_trial_;
+  const size_t num_temporal_layers_;
   std::unique_ptr<PictureIdObserver> observer_;
 };
 
-INSTANTIATE_TEST_CASE_P(TestWithForcedFallbackEncoderEnabled,
-                        PictureIdTest,
-                        ::testing::Values(kVp8ForcedFallbackEncoderEnabled,
-                                          ""));
+INSTANTIATE_TEST_CASE_P(
+    TestWithForcedFallbackEncoderEnabled,
+    PictureIdTest,
+    ::testing::Combine(::testing::Values(kVp8ForcedFallbackEncoderEnabled, ""),
+                       ::testing::ValuesIn(kNumTemporalLayers)));
 
 // Use a special stream factory to ensure that all simulcast streams are being
 // sent.
 class VideoStreamFactory
     : public VideoEncoderConfig::VideoStreamFactoryInterface {
  public:
-  VideoStreamFactory() = default;
+  explicit VideoStreamFactory(size_t num_temporal_layers)
+      : num_of_temporal_layers_(num_temporal_layers) {}
 
  private:
   std::vector<VideoStream> CreateEncoderStreams(
@@ -238,6 +284,8 @@ class VideoStreamFactory
         streams[i].min_bitrate_bps = kEncoderBitrateBps;
         streams[i].target_bitrate_bps = kEncoderBitrateBps;
         streams[i].max_bitrate_bps = kEncoderBitrateBps;
+        streams[i].temporal_layer_thresholds_bps.resize(
+            num_of_temporal_layers_ - 1);
       }
 
       // test::CreateVideoStreams does not return frame sizes for the lower
@@ -254,10 +302,14 @@ class VideoStreamFactory
       streams[0].min_bitrate_bps = 3 * kEncoderBitrateBps;
       streams[0].target_bitrate_bps = 3 * kEncoderBitrateBps;
       streams[0].max_bitrate_bps = 3 * kEncoderBitrateBps;
+      streams[0].temporal_layer_thresholds_bps.resize(num_of_temporal_layers_ -
+                                                      1);
     }
 
     return streams;
   }
+
+  const size_t num_of_temporal_layers_;
 };
 
 void PictureIdTest::SetupEncoder(VideoEncoder* encoder,
@@ -278,7 +330,7 @@ void PictureIdTest::SetupEncoder(VideoEncoder* encoder,
     video_send_config_.encoder_settings.encoder = encoder;
     video_send_config_.encoder_settings.payload_name = payload_name;
     video_encoder_config_.video_stream_factory =
-        new rtc::RefCountedObject<VideoStreamFactory>();
+        new rtc::RefCountedObject<VideoStreamFactory>(num_temporal_layers_);
     video_encoder_config_.number_of_streams = 1;
   });
 }
@@ -375,7 +427,7 @@ TEST_P(PictureIdTest, IncreasingAfterRecreateStreamVp8) {
 
 TEST_P(PictureIdTest, ContinuousAfterStreamCountChangeVp8) {
   std::unique_ptr<VideoEncoder> encoder(VP8Encoder::Create());
-  // Make sure that that the picture id is not reset if the stream count goes
+  // Make sure that the picture id is not reset if the stream count goes
   // down and then up.
   SetupEncoder(encoder.get(), "VP8");
   TestPictureIdContinuousAfterReconfigure({3, 1, 3});
@@ -401,11 +453,12 @@ TEST_P(PictureIdTest, IncreasingAfterRecreateStreamSimulcastEncoderAdapter) {
 TEST_P(PictureIdTest, ContinuousAfterStreamCountChangeSimulcastEncoderAdapter) {
   // If forced fallback is enabled, the picture id is set in the PayloadRouter
   // and the sequence should be continuous.
-  if (GetParam() == kVp8ForcedFallbackEncoderEnabled) {
+  if (::testing::get<0>(GetParam()) == kVp8ForcedFallbackEncoderEnabled &&
+      ::testing::get<1>(GetParam()) == 1) {  // No temporal layers.
     InternalEncoderFactory internal_encoder_factory;
     SimulcastEncoderAdapter simulcast_encoder_adapter(
         &internal_encoder_factory);
-    // Make sure that that the picture id is not reset if the stream count goes
+    // Make sure that the picture id is not reset if the stream count goes
     // down and then up.
     SetupEncoder(&simulcast_encoder_adapter, "VP8");
     TestPictureIdContinuousAfterReconfigure({3, 1, 3});
