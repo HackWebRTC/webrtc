@@ -369,6 +369,13 @@ class PeerConnection : public PeerConnectionInterface,
       CreateSessionDescriptionObserver* observer,
       const std::string& error);
 
+  // Synchronous implementations of SetLocalDescription/SetRemoteDescription
+  // that return an RTCError instead of invoking a callback.
+  RTCError ApplyLocalDescription(
+      std::unique_ptr<SessionDescriptionInterface> desc);
+  RTCError ApplyRemoteDescription(
+      std::unique_ptr<SessionDescriptionInterface> desc);
+
   bool IsClosed() const {
     return signaling_state_ == PeerConnectionInterface::kClosed;
   }
@@ -566,16 +573,6 @@ class PeerConnection : public PeerConnectionInterface,
   // Get current SSL role used by SCTP's underlying transport.
   bool GetSctpSslRole(rtc::SSLRole* role);
 
-  // Validates and takes ownership of the description, setting it as the current
-  // or pending description (depending on the description's action) if it is
-  // valid. Also updates ice role, candidates, creates and destroys channels.
-  bool SetCurrentOrPendingLocalDescription(
-      std::unique_ptr<SessionDescriptionInterface> desc,
-      std::string* err_desc);
-  bool SetCurrentOrPendingRemoteDescription(
-      std::unique_ptr<SessionDescriptionInterface> desc,
-      std::string* err_desc);
-
   cricket::IceConfig ParseIceConfig(
       const PeerConnectionInterface::RTCConfiguration& config) const;
 
@@ -618,30 +615,16 @@ class PeerConnection : public PeerConnectionInterface,
   // Updates the error state, signaling if necessary.
   void SetSessionError(SessionError error, const std::string& error_desc);
 
-  bool UpdateSessionState(Action action,
-                          cricket::ContentSource source,
-                          std::string* err_desc);
+  RTCError UpdateSessionState(Action action, cricket::ContentSource source);
   Action GetAction(const std::string& type);
   // Push the media parts of the local or remote session description
   // down to all of the channels.
-  bool PushdownMediaDescription(cricket::ContentAction action,
-                                cricket::ContentSource source,
-                                std::string* error_desc);
+  RTCError PushdownMediaDescription(cricket::ContentAction action,
+                                    cricket::ContentSource source);
   bool PushdownSctpParameters_n(cricket::ContentSource source);
 
-  bool PushdownTransportDescription(cricket::ContentSource source,
-                                    cricket::ContentAction action,
-                                    std::string* error_desc);
-
-  // Helper methods to push local and remote transport descriptions.
-  bool PushdownLocalTransportDescription(
-      const cricket::SessionDescription* sdesc,
-      cricket::ContentAction action,
-      std::string* error_desc);
-  bool PushdownRemoteTransportDescription(
-      const cricket::SessionDescription* sdesc,
-      cricket::ContentAction action,
-      std::string* error_desc);
+  RTCError PushdownTransportDescription(cricket::ContentSource source,
+                                        cricket::ContentAction action);
 
   // Returns true and the TransportInfo of the given |content_name|
   // from |description|. Returns false if it's not available.
@@ -681,7 +664,7 @@ class PeerConnection : public PeerConnectionInterface,
   // Allocates media channels based on the |desc|. If |desc| doesn't have
   // the BUNDLE option, this method will disable BUNDLE in PortAllocator.
   // This method will also delete any existing media channels before creating.
-  bool CreateChannels(const cricket::SessionDescription* desc);
+  RTCError CreateChannels(const cricket::SessionDescription* desc);
 
   // Helper methods to create media channels.
   cricket::VoiceChannel* CreateVoiceChannel(const std::string& mid,
@@ -716,9 +699,8 @@ class PeerConnection : public PeerConnectionInterface,
   bool ValidateBundleSettings(const cricket::SessionDescription* desc);
   bool HasRtcpMuxEnabled(const cricket::ContentInfo* content);
   // Below methods are helper methods which verifies SDP.
-  bool ValidateSessionDescription(const SessionDescriptionInterface* sdesc,
-                                  cricket::ContentSource source,
-                                  std::string* err_desc);
+  RTCError ValidateSessionDescription(const SessionDescriptionInterface* sdesc,
+                                      cricket::ContentSource source);
 
   // Check if a call to SetLocalDescription is acceptable with |action|.
   bool ExpectSetLocalDescription(Action action);

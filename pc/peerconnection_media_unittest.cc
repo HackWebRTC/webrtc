@@ -133,7 +133,7 @@ TEST_F(PeerConnectionMediaTest,
 
   std::string error;
   ASSERT_FALSE(callee->SetRemoteDescription(caller->CreateOffer(), &error));
-  EXPECT_EQ("Failed to set remote offer sdp: Failed to create channels.",
+  EXPECT_EQ("Failed to set remote offer sdp: Failed to create voice channel.",
             error);
 }
 
@@ -144,7 +144,8 @@ TEST_F(PeerConnectionMediaTest,
 
   std::string error;
   ASSERT_FALSE(caller->SetLocalDescription(caller->CreateOffer(), &error));
-  EXPECT_EQ("Failed to set local offer sdp: Failed to create channels.", error);
+  EXPECT_EQ("Failed to set local offer sdp: Failed to create voice channel.",
+            error);
 }
 
 std::vector<std::string> GetIds(
