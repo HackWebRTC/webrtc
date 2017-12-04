@@ -471,10 +471,8 @@ void JavaToNativeRTCConfiguration(
   }
 }
 
-void JavaToNativeRtpParameters(JNIEnv* jni,
-                               jobject j_parameters,
-                               RtpParameters* parameters) {
-  RTC_CHECK(parameters != nullptr);
+RtpParameters JavaToNativeRtpParameters(JNIEnv* jni, jobject j_parameters) {
+  RtpParameters parameters;
   jclass parameters_class = jni->FindClass("org/webrtc/RtpParameters");
   jfieldID encodings_id =
       GetFieldID(jni, parameters_class, "encodings", "Ljava/util/List;");
@@ -507,7 +505,7 @@ void JavaToNativeRtpParameters(JNIEnv* jni,
       CHECK_EXCEPTION(jni) << "error during CallLongMethod";
       encoding.ssrc = ssrc_value;
     }
-    parameters->encodings.push_back(encoding);
+    parameters.encodings.push_back(encoding);
   }
 
   // Convert codecs.
@@ -533,8 +531,9 @@ void JavaToNativeRtpParameters(JNIEnv* jni,
     jobject j_num_channels =
         GetNullableObjectField(jni, j_codec, num_channels_id);
     codec.num_channels = JavaToNativeOptionalInt(jni, j_num_channels);
-    parameters->codecs.push_back(codec);
+    parameters.codecs.push_back(codec);
   }
+  return parameters;
 }
 
 jobject NativeToJavaRtpParameters(JNIEnv* jni,

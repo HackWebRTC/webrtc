@@ -98,9 +98,7 @@ void JavaToNativeRTCConfiguration(
 /*********************************************************
  * RtpParameters, used for RtpSender and RtpReceiver APIs.
  *********************************************************/
-void JavaToNativeRtpParameters(JNIEnv* jni,
-                               jobject j_parameters,
-                               RtpParameters* parameters);
+RtpParameters JavaToNativeRtpParameters(JNIEnv* jni, jobject j_parameters);
 
 jobject NativeToJavaRtpParameters(JNIEnv* jni, const RtpParameters& parameters);
 

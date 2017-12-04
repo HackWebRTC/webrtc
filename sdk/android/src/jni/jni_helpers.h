@@ -155,14 +155,22 @@ class ScopedGlobalRef {
  public:
   ScopedGlobalRef(JNIEnv* jni, T obj)
       : obj_(static_cast<T>(jni->NewGlobalRef(obj))) {}
+
+  ScopedGlobalRef(ScopedGlobalRef&& other) : obj_(other.obj_) {
+    other.obj_ = nullptr;
+  }
+
   ~ScopedGlobalRef() {
-    DeleteGlobalRef(AttachCurrentThreadIfNeeded(), obj_);
+    if (obj_) {
+      DeleteGlobalRef(AttachCurrentThreadIfNeeded(), obj_);
+    }
   }
   T operator*() const {
     return obj_;
   }
  private:
   T obj_;
+  RTC_DISALLOW_COPY_AND_ASSIGN(ScopedGlobalRef);
 };
 
 // Provides a convenient way to iterate over a Java Iterable using the

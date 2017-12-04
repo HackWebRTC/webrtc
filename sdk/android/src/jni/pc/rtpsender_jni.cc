@@ -56,8 +56,7 @@ JNI_FUNCTION_DECLARATION(jboolean,
   if (IsNull(jni, j_parameters)) {
     return false;
   }
-  RtpParameters parameters;
-  JavaToNativeRtpParameters(jni, j_parameters, &parameters);
+  RtpParameters parameters = JavaToNativeRtpParameters(jni, j_parameters);
   return reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)
       ->SetParameters(parameters);
 }

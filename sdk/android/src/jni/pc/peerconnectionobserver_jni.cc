@@ -15,6 +15,7 @@
 
 #include "rtc_base/ptr_util.h"
 #include "sdk/android/generated_peerconnection_jni/jni/MediaStream_jni.h"
+#include "sdk/android/generated_peerconnection_jni/jni/PeerConnection_jni.h"
 #include "sdk/android/src/jni/classreferenceholder.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 #include "sdk/android/src/jni/pc/datachannel.h"
@@ -31,87 +32,68 @@ static JNIEnv* jni() {
 
 PeerConnectionObserverJni::PeerConnectionObserverJni(JNIEnv* jni,
                                                      jobject j_observer)
-    : j_observer_global_(jni, j_observer),
-      j_observer_class_(jni, GetObjectClass(jni, *j_observer_global_)),
-      j_rtp_receiver_class_(jni, FindClass(jni, "org/webrtc/RtpReceiver")),
-      j_rtp_receiver_ctor_(
-          GetMethodID(jni, *j_rtp_receiver_class_, "<init>", "(J)V")) {}
+    : j_observer_global_(jni, j_observer) {}
 
 PeerConnectionObserverJni::~PeerConnectionObserverJni() {
   ScopedLocalRefFrame local_ref_frame(jni());
   while (!remote_streams_.empty())
     DisposeRemoteStream(remote_streams_.begin());
-  while (!rtp_receivers_.empty())
-    DisposeRtpReceiver(rtp_receivers_.begin());
 }
 
 void PeerConnectionObserverJni::OnIceCandidate(
     const IceCandidateInterface* candidate) {
   JNIEnv* env = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(env);
-  jobject j_candidate = NativeToJavaIceCandidate(env, *candidate);
-
-  jmethodID m = GetMethodID(env, *j_observer_class_, "onIceCandidate",
-                            "(Lorg/webrtc/IceCandidate;)V");
-  env->CallVoidMethod(*j_observer_global_, m, j_candidate);
-  CHECK_EXCEPTION(env) << "error during CallVoidMethod";
+  Java_Observer_onIceCandidate(env, *j_observer_global_,
+                               NativeToJavaIceCandidate(env, *candidate));
 }
 
 void PeerConnectionObserverJni::OnIceCandidatesRemoved(
     const std::vector<cricket::Candidate>& candidates) {
-  ScopedLocalRefFrame local_ref_frame(jni());
-  jobjectArray candidates_array = NativeToJavaCandidateArray(jni(), candidates);
-  jmethodID m = GetMethodID(jni(), *j_observer_class_, "onIceCandidatesRemoved",
-                            "([Lorg/webrtc/IceCandidate;)V");
-  jni()->CallVoidMethod(*j_observer_global_, m, candidates_array);
-  CHECK_EXCEPTION(jni()) << "Error during CallVoidMethod";
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  ScopedLocalRefFrame local_ref_frame(env);
+  Java_Observer_onIceCandidatesRemoved(
+      env, *j_observer_global_, NativeToJavaCandidateArray(env, candidates));
 }
 
 void PeerConnectionObserverJni::OnSignalingChange(
     PeerConnectionInterface::SignalingState new_state) {
-  ScopedLocalRefFrame local_ref_frame(jni());
-  jmethodID m = GetMethodID(jni(), *j_observer_class_, "onSignalingChange",
-                            "(Lorg/webrtc/PeerConnection$SignalingState;)V");
-  jobject new_state_enum = JavaEnumFromIndexAndClassName(
-      jni(), "PeerConnection$SignalingState", new_state);
-  jni()->CallVoidMethod(*j_observer_global_, m, new_state_enum);
-  CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  ScopedLocalRefFrame local_ref_frame(env);
+  Java_Observer_onSignalingChange(
+      env, *j_observer_global_,
+      Java_SignalingState_fromNativeIndex(env, new_state));
 }
 
 void PeerConnectionObserverJni::OnIceConnectionChange(
     PeerConnectionInterface::IceConnectionState new_state) {
-  ScopedLocalRefFrame local_ref_frame(jni());
-  jmethodID m =
-      GetMethodID(jni(), *j_observer_class_, "onIceConnectionChange",
-                  "(Lorg/webrtc/PeerConnection$IceConnectionState;)V");
-  jobject new_state_enum = JavaEnumFromIndexAndClassName(
-      jni(), "PeerConnection$IceConnectionState", new_state);
-  jni()->CallVoidMethod(*j_observer_global_, m, new_state_enum);
-  CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  ScopedLocalRefFrame local_ref_frame(env);
+  Java_Observer_onIceConnectionChange(
+      env, *j_observer_global_,
+      Java_IceConnectionState_fromNativeIndex(env, new_state));
 }
 
 void PeerConnectionObserverJni::OnIceConnectionReceivingChange(bool receiving) {
-  ScopedLocalRefFrame local_ref_frame(jni());
-  jmethodID m = GetMethodID(jni(), *j_observer_class_,
-                            "onIceConnectionReceivingChange", "(Z)V");
-  jni()->CallVoidMethod(*j_observer_global_, m, receiving);
-  CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  ScopedLocalRefFrame local_ref_frame(env);
+  Java_Observer_onIceConnectionReceivingChange(env, *j_observer_global_,
+                                               receiving);
 }
 
 void PeerConnectionObserverJni::OnIceGatheringChange(
     PeerConnectionInterface::IceGatheringState new_state) {
-  ScopedLocalRefFrame local_ref_frame(jni());
-  jmethodID m = GetMethodID(jni(), *j_observer_class_, "onIceGatheringChange",
-                            "(Lorg/webrtc/PeerConnection$IceGatheringState;)V");
-  jobject new_state_enum = JavaEnumFromIndexAndClassName(
-      jni(), "PeerConnection$IceGatheringState", new_state);
-  jni()->CallVoidMethod(*j_observer_global_, m, new_state_enum);
-  CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  ScopedLocalRefFrame local_ref_frame(env);
+  Java_Observer_onIceGatheringChange(
+      env, *j_observer_global_,
+      Java_IceGatheringState_fromNativeIndex(env, new_state));
 }
 
 void PeerConnectionObserverJni::OnAddStream(
     rtc::scoped_refptr<MediaStreamInterface> stream) {
-  ScopedLocalRefFrame local_ref_frame(jni());
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  ScopedLocalRefFrame local_ref_frame(env);
   // The stream could be added into the remote_streams_ map when calling
   // OnAddTrack.
   jobject j_stream = GetOrCreateJavaStream(stream);
@@ -123,10 +105,7 @@ void PeerConnectionObserverJni::OnAddStream(
     AddNativeVideoTrackToJavaStream(track, j_stream);
   }
 
-  jmethodID m = GetMethodID(jni(), *j_observer_class_, "onAddStream",
-                            "(Lorg/webrtc/MediaStream;)V");
-  jni()->CallVoidMethod(*j_observer_global_, m, j_stream);
-  CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
+  Java_Observer_onAddStream(env, *j_observer_global_, j_stream);
 
   // Create an observer to update the Java stream when the native stream's set
   // of tracks changes.
@@ -194,15 +173,12 @@ void PeerConnectionObserverJni::OnVideoTrackRemovedFromStream(
 
 void PeerConnectionObserverJni::OnRemoveStream(
     rtc::scoped_refptr<MediaStreamInterface> stream) {
-  ScopedLocalRefFrame local_ref_frame(jni());
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  ScopedLocalRefFrame local_ref_frame(env);
   NativeToJavaStreamsMap::iterator it = remote_streams_.find(stream);
   RTC_CHECK(it != remote_streams_.end())
       << "unexpected stream: " << std::hex << stream;
-  jobject j_stream = it->second;
-  jmethodID m = GetMethodID(jni(), *j_observer_class_, "onRemoveStream",
-                            "(Lorg/webrtc/MediaStream;)V");
-  jni()->CallVoidMethod(*j_observer_global_, m, j_stream);
-  CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
+  Java_Observer_onRemoveStream(env, *j_observer_global_, it->second);
 
   // Release the refptr reference so that DisposeRemoteStream can assert
   // it removes the final reference.
@@ -214,38 +190,26 @@ void PeerConnectionObserverJni::OnDataChannel(
     rtc::scoped_refptr<DataChannelInterface> channel) {
   JNIEnv* env = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(env);
-  jobject j_channel = WrapNativeDataChannel(env, channel);
-  jmethodID m = GetMethodID(env, *j_observer_class_, "onDataChannel",
-                            "(Lorg/webrtc/DataChannel;)V");
-  env->CallVoidMethod(*j_observer_global_, m, j_channel);
-  CHECK_EXCEPTION(env) << "error during CallVoidMethod";
+  Java_Observer_onDataChannel(env, *j_observer_global_,
+                              WrapNativeDataChannel(env, channel));
 }
 
 void PeerConnectionObserverJni::OnRenegotiationNeeded() {
-  ScopedLocalRefFrame local_ref_frame(jni());
-  jmethodID m =
-      GetMethodID(jni(), *j_observer_class_, "onRenegotiationNeeded", "()V");
-  jni()->CallVoidMethod(*j_observer_global_, m);
-  CHECK_EXCEPTION(jni()) << "error during CallVoidMethod";
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  ScopedLocalRefFrame local_ref_frame(env);
+  Java_Observer_onRenegotiationNeeded(env, *j_observer_global_);
 }
 
 void PeerConnectionObserverJni::OnAddTrack(
     rtc::scoped_refptr<RtpReceiverInterface> receiver,
     const std::vector<rtc::scoped_refptr<MediaStreamInterface>>& streams) {
-  ScopedLocalRefFrame local_ref_frame(jni());
-  jobject j_rtp_receiver =
-      jni()->NewObject(*j_rtp_receiver_class_, j_rtp_receiver_ctor_,
-                       jlongFromPointer(receiver.get()));
-  CHECK_EXCEPTION(jni()) << "error during NewObject";
-  receiver->AddRef();
-  rtp_receivers_[receiver] = NewGlobalRef(jni(), j_rtp_receiver);
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  ScopedLocalRefFrame local_ref_frame(env);
+  jobject j_rtp_receiver = NativeToJavaRtpReceiver(env, receiver);
+  rtp_receivers_.emplace_back(env, j_rtp_receiver);
 
-  jobjectArray j_stream_array = NativeToJavaMediaStreamArray(jni(), streams);
-  jmethodID m =
-      GetMethodID(jni(), *j_observer_class_, "onAddTrack",
-                  "(Lorg/webrtc/RtpReceiver;[Lorg/webrtc/MediaStream;)V");
-  jni()->CallVoidMethod(*j_observer_global_, m, j_rtp_receiver, j_stream_array);
-  CHECK_EXCEPTION(jni()) << "Error during CallVoidMethod";
+  Java_Observer_onAddTrack(env, *j_observer_global_, j_rtp_receiver,
+                           NativeToJavaMediaStreamArray(env, streams));
 }
 
 void PeerConnectionObserverJni::SetConstraints(
@@ -272,17 +236,6 @@ void PeerConnectionObserverJni::DisposeRemoteStream(
   JNIEnv* env = AttachCurrentThreadIfNeeded();
   Java_MediaStream_dispose(env, j_stream);
   DeleteGlobalRef(env, j_stream);
-}
-
-void PeerConnectionObserverJni::DisposeRtpReceiver(
-    const NativeToJavaRtpReceiverMap::iterator& it) {
-  jobject j_rtp_receiver = it->second;
-  rtp_receivers_.erase(it);
-  jni()->CallVoidMethod(
-      j_rtp_receiver,
-      GetMethodID(jni(), *j_rtp_receiver_class_, "dispose", "()V"));
-  CHECK_EXCEPTION(jni()) << "error during RtpReceiver.dispose()";
-  DeleteGlobalRef(jni(), j_rtp_receiver);
 }
 
 // If the NativeToJavaStreamsMap contains the stream, return it.

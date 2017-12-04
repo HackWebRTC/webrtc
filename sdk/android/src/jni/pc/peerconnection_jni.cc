@@ -168,7 +168,7 @@ JNI_FUNCTION_DECLARATION(void,
 }
 
 JNI_FUNCTION_DECLARATION(jboolean,
-                         PeerConnection_nativeSetConfiguration,
+                         PeerConnection_setNativeConfiguration,
                          JNIEnv* jni,
                          jobject j_pc,
                          jobject j_rtc_config,
@@ -185,7 +185,7 @@ JNI_FUNCTION_DECLARATION(jboolean,
 }
 
 JNI_FUNCTION_DECLARATION(jboolean,
-                         PeerConnection_nativeAddIceCandidate,
+                         PeerConnection_addNativeIceCandidate,
                          JNIEnv* jni,
                          jobject j_pc,
                          jstring j_sdp_mid,
@@ -199,7 +199,7 @@ JNI_FUNCTION_DECLARATION(jboolean,
 }
 
 JNI_FUNCTION_DECLARATION(jboolean,
-                         PeerConnection_nativeRemoveIceCandidates,
+                         PeerConnection_removeNativeIceCandidates,
                          JNIEnv* jni,
                          jobject j_pc,
                          jobjectArray j_candidates) {
@@ -213,7 +213,7 @@ JNI_FUNCTION_DECLARATION(jboolean,
 }
 
 JNI_FUNCTION_DECLARATION(jboolean,
-                         PeerConnection_nativeAddLocalStream,
+                         PeerConnection_addNativeLocalStream,
                          JNIEnv* jni,
                          jobject j_pc,
                          jlong native_stream) {
@@ -222,7 +222,7 @@ JNI_FUNCTION_DECLARATION(jboolean,
 }
 
 JNI_FUNCTION_DECLARATION(void,
-                         PeerConnection_nativeRemoveLocalStream,
+                         PeerConnection_removeNativeLocalStream,
                          JNIEnv* jni,
                          jobject j_pc,
                          jlong native_stream) {
@@ -231,7 +231,7 @@ JNI_FUNCTION_DECLARATION(void,
 }
 
 JNI_FUNCTION_DECLARATION(jobject,
-                         PeerConnection_nativeCreateSender,
+                         PeerConnection_createNativeSender,
                          JNIEnv* jni,
                          jobject j_pc,
                          jstring j_kind,
@@ -258,7 +258,7 @@ JNI_FUNCTION_DECLARATION(jobject,
 }
 
 JNI_FUNCTION_DECLARATION(jobject,
-                         PeerConnection_nativeGetSenders,
+                         PeerConnection_getNativeSenders,
                          JNIEnv* jni,
                          jobject j_pc) {
   jclass j_array_list_class = FindClass(jni, "java/util/ArrayList");
@@ -289,7 +289,7 @@ JNI_FUNCTION_DECLARATION(jobject,
 }
 
 JNI_FUNCTION_DECLARATION(jobject,
-                         PeerConnection_nativeGetReceivers,
+                         PeerConnection_getNativeReceivers,
                          JNIEnv* jni,
                          jobject j_pc) {
   jclass j_array_list_class = FindClass(jni, "java/util/ArrayList");
@@ -300,18 +300,9 @@ JNI_FUNCTION_DECLARATION(jobject,
   jobject j_receivers = jni->NewObject(j_array_list_class, j_array_list_ctor);
   CHECK_EXCEPTION(jni) << "error during NewObject";
 
-  jclass j_rtp_receiver_class = FindClass(jni, "org/webrtc/RtpReceiver");
-  jmethodID j_rtp_receiver_ctor =
-      GetMethodID(jni, j_rtp_receiver_class, "<init>", "(J)V");
-
   auto receivers = ExtractNativePC(jni, j_pc)->GetReceivers();
   for (const auto& receiver : receivers) {
-    jlong nativeReceiverPtr = jlongFromPointer(receiver.get());
-    jobject j_receiver = jni->NewObject(j_rtp_receiver_class,
-                                        j_rtp_receiver_ctor, nativeReceiverPtr);
-    CHECK_EXCEPTION(jni) << "error during NewObject";
-    // Receiver is now owned by Java object, and will be freed from there.
-    receiver->AddRef();
+    jobject j_receiver = NativeToJavaRtpReceiver(jni, receiver);
     jni->CallBooleanMethod(j_receivers, j_array_list_add, j_receiver);
     CHECK_EXCEPTION(jni) << "error during CallBooleanMethod";
   }
@@ -319,7 +310,7 @@ JNI_FUNCTION_DECLARATION(jobject,
 }
 
 JNI_FUNCTION_DECLARATION(bool,
-                         PeerConnection_nativeOldGetStats,
+                         PeerConnection_oldGetNativeStats,
                          JNIEnv* jni,
                          jobject j_pc,
                          jobject j_observer,
@@ -332,7 +323,7 @@ JNI_FUNCTION_DECLARATION(bool,
 }
 
 JNI_FUNCTION_DECLARATION(void,
-                         PeerConnection_nativeNewGetStats,
+                         PeerConnection_newGetNativeStats,
                          JNIEnv* jni,
                          jobject j_pc,
                          jobject j_callback) {
@@ -357,7 +348,7 @@ JNI_FUNCTION_DECLARATION(jboolean,
 }
 
 JNI_FUNCTION_DECLARATION(bool,
-                         PeerConnection_nativeStartRtcEventLog,
+                         PeerConnection_startNativeRtcEventLog,
                          JNIEnv* jni,
                          jobject j_pc,
                          int file_descriptor,
@@ -367,7 +358,7 @@ JNI_FUNCTION_DECLARATION(bool,
 }
 
 JNI_FUNCTION_DECLARATION(void,
-                         PeerConnection_nativeStopRtcEventLog,
+                         PeerConnection_stopNativeRtcEventLog,
                          JNIEnv* jni,
                          jobject j_pc) {
   ExtractNativePC(jni, j_pc)->StopRtcEventLog();

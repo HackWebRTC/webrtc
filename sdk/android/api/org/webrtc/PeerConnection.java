@@ -22,7 +22,16 @@ import java.util.List;
  */
 public class PeerConnection {
   /** Tracks PeerConnectionInterface::IceGatheringState */
-  public enum IceGatheringState { NEW, GATHERING, COMPLETE }
+  public enum IceGatheringState {
+    NEW,
+    GATHERING,
+    COMPLETE;
+
+    @CalledByNative("IceGatheringState")
+    static IceGatheringState fromNativeIndex(int nativeIndex) {
+      return values()[nativeIndex];
+    }
+  }
 
   /** Tracks PeerConnectionInterface::IceConnectionState */
   public enum IceConnectionState {
@@ -32,7 +41,12 @@ public class PeerConnection {
     COMPLETED,
     FAILED,
     DISCONNECTED,
-    CLOSED
+    CLOSED;
+
+    @CalledByNative("IceConnectionState")
+    static IceConnectionState fromNativeIndex(int nativeIndex) {
+      return values()[nativeIndex];
+    }
   }
 
   /** Tracks PeerConnectionInterface::TlsCertPolicy */
@@ -48,46 +62,51 @@ public class PeerConnection {
     HAVE_LOCAL_PRANSWER,
     HAVE_REMOTE_OFFER,
     HAVE_REMOTE_PRANSWER,
-    CLOSED
+    CLOSED;
+
+    @CalledByNative("SignalingState")
+    static SignalingState fromNativeIndex(int nativeIndex) {
+      return values()[nativeIndex];
+    }
   }
 
   /** Java version of PeerConnectionObserver. */
   public static interface Observer {
     /** Triggered when the SignalingState changes. */
-    public void onSignalingChange(SignalingState newState);
+    @CalledByNative("Observer") void onSignalingChange(SignalingState newState);
 
     /** Triggered when the IceConnectionState changes. */
-    public void onIceConnectionChange(IceConnectionState newState);
+    @CalledByNative("Observer") void onIceConnectionChange(IceConnectionState newState);
 
     /** Triggered when the ICE connection receiving status changes. */
-    public void onIceConnectionReceivingChange(boolean receiving);
+    @CalledByNative("Observer") void onIceConnectionReceivingChange(boolean receiving);
 
     /** Triggered when the IceGatheringState changes. */
-    public void onIceGatheringChange(IceGatheringState newState);
+    @CalledByNative("Observer") void onIceGatheringChange(IceGatheringState newState);
 
     /** Triggered when a new ICE candidate has been found. */
-    public void onIceCandidate(IceCandidate candidate);
+    @CalledByNative("Observer") void onIceCandidate(IceCandidate candidate);
 
     /** Triggered when some ICE candidates have been removed. */
-    public void onIceCandidatesRemoved(IceCandidate[] candidates);
+    @CalledByNative("Observer") void onIceCandidatesRemoved(IceCandidate[] candidates);
 
     /** Triggered when media is received on a new stream from remote peer. */
-    public void onAddStream(MediaStream stream);
+    @CalledByNative("Observer") void onAddStream(MediaStream stream);
 
     /** Triggered when a remote peer close a stream. */
-    public void onRemoveStream(MediaStream stream);
+    @CalledByNative("Observer") void onRemoveStream(MediaStream stream);
 
     /** Triggered when a remote peer opens a DataChannel. */
-    public void onDataChannel(DataChannel dataChannel);
+    @CalledByNative("Observer") void onDataChannel(DataChannel dataChannel);
 
     /** Triggered when renegotiation is necessary. */
-    public void onRenegotiationNeeded();
+    @CalledByNative("Observer") void onRenegotiationNeeded();
 
     /**
      * Triggered when a new track is signaled by the remote peer, as a result of
      * setRemoteDescription.
      */
-    public void onAddTrack(RtpReceiver receiver, MediaStream[] mediaStreams);
+    @CalledByNative("Observer") void onAddTrack(RtpReceiver receiver, MediaStream[] mediaStreams);
   }
 
   /** Java version of PeerConnectionInterface.IceServer. */
@@ -369,19 +388,19 @@ public class PeerConnection {
   public native void setAudioRecording(boolean recording);
 
   public boolean setConfiguration(RTCConfiguration config) {
-    return nativeSetConfiguration(config, nativeObserver);
+    return setNativeConfiguration(config, nativeObserver);
   }
 
   public boolean addIceCandidate(IceCandidate candidate) {
-    return nativeAddIceCandidate(candidate.sdpMid, candidate.sdpMLineIndex, candidate.sdp);
+    return addNativeIceCandidate(candidate.sdpMid, candidate.sdpMLineIndex, candidate.sdp);
   }
 
   public boolean removeIceCandidates(final IceCandidate[] candidates) {
-    return nativeRemoveIceCandidates(candidates);
+    return removeNativeIceCandidates(candidates);
   }
 
   public boolean addStream(MediaStream stream) {
-    boolean ret = nativeAddLocalStream(stream.nativeStream);
+    boolean ret = addNativeLocalStream(stream.nativeStream);
     if (!ret) {
       return false;
     }
@@ -390,7 +409,7 @@ public class PeerConnection {
   }
 
   public void removeStream(MediaStream stream) {
-    nativeRemoveLocalStream(stream.nativeStream);
+    removeNativeLocalStream(stream.nativeStream);
     localStreams.remove(stream);
   }
 
@@ -432,7 +451,7 @@ public class PeerConnection {
    * @return          A new RtpSender object if successful, or null otherwise.
    */
   public RtpSender createSender(String kind, String stream_id) {
-    RtpSender new_sender = nativeCreateSender(kind, stream_id);
+    RtpSender new_sender = createNativeSender(kind, stream_id);
     if (new_sender != null) {
       senders.add(new_sender);
     }
@@ -445,7 +464,7 @@ public class PeerConnection {
     for (RtpSender sender : senders) {
       sender.dispose();
     }
-    senders = nativeGetSenders();
+    senders = getNativeSenders();
     return Collections.unmodifiableList(senders);
   }
 
@@ -453,20 +472,20 @@ public class PeerConnection {
     for (RtpReceiver receiver : receivers) {
       receiver.dispose();
     }
-    receivers = nativeGetReceivers();
+    receivers = getNativeReceivers();
     return Collections.unmodifiableList(receivers);
   }
 
   // Older, non-standard implementation of getStats.
   @Deprecated
   public boolean getStats(StatsObserver observer, MediaStreamTrack track) {
-    return nativeOldGetStats(observer, (track == null) ? 0 : track.nativeTrack);
+    return oldGetNativeStats(observer, (track == null) ? 0 : track.nativeTrack);
   }
 
   // Gets stats using the new stats collection API, see webrtc/api/stats/. These
   // will replace old stats collection API when the new API has matured enough.
   public void getStats(RTCStatsCollectorCallback callback) {
-    nativeNewGetStats(callback);
+    newGetNativeStats(callback);
   }
 
   // Limits the bandwidth allocated for all RTP streams sent by this
@@ -479,13 +498,13 @@ public class PeerConnection {
   // continue until the stopRtcEventLog function is called. The max_size_bytes
   // argument is ignored, it is added for future use.
   public boolean startRtcEventLog(int file_descriptor, int max_size_bytes) {
-    return nativeStartRtcEventLog(file_descriptor, max_size_bytes);
+    return startNativeRtcEventLog(file_descriptor, max_size_bytes);
   }
 
   // Stops recording an RTC event log. If no RTC event log is currently being
   // recorded, this call will have no effect.
   public void stopRtcEventLog() {
-    nativeStopRtcEventLog();
+    stopNativeRtcEventLog();
   }
 
   // TODO(fischman): add support for DTMF-related methods once that API
@@ -517,7 +536,7 @@ public class PeerConnection {
   public void dispose() {
     close();
     for (MediaStream stream : localStreams) {
-      nativeRemoveLocalStream(stream.nativeStream);
+      removeNativeLocalStream(stream.nativeStream);
       stream.dispose();
     }
     localStreams.clear();
@@ -535,28 +554,28 @@ public class PeerConnection {
 
   private static native void freeObserver(long nativeObserver);
 
-  public native boolean nativeSetConfiguration(RTCConfiguration config, long nativeObserver);
+  private native boolean setNativeConfiguration(RTCConfiguration config, long nativeObserver);
 
-  private native boolean nativeAddIceCandidate(
+  private native boolean addNativeIceCandidate(
       String sdpMid, int sdpMLineIndex, String iceCandidateSdp);
 
-  private native boolean nativeRemoveIceCandidates(final IceCandidate[] candidates);
+  private native boolean removeNativeIceCandidates(final IceCandidate[] candidates);
 
-  private native boolean nativeAddLocalStream(long nativeStream);
+  private native boolean addNativeLocalStream(long nativeStream);
 
-  private native void nativeRemoveLocalStream(long nativeStream);
+  private native void removeNativeLocalStream(long nativeStream);
 
-  private native boolean nativeOldGetStats(StatsObserver observer, long nativeTrack);
+  private native boolean oldGetNativeStats(StatsObserver observer, long nativeTrack);
 
-  private native void nativeNewGetStats(RTCStatsCollectorCallback callback);
+  private native void newGetNativeStats(RTCStatsCollectorCallback callback);
 
-  private native RtpSender nativeCreateSender(String kind, String stream_id);
+  private native RtpSender createNativeSender(String kind, String stream_id);
 
-  private native List<RtpSender> nativeGetSenders();
+  private native List<RtpSender> getNativeSenders();
 
-  private native List<RtpReceiver> nativeGetReceivers();
+  private native List<RtpReceiver> getNativeReceivers();
 
-  private native boolean nativeStartRtcEventLog(int file_descriptor, int max_size_bytes);
+  private native boolean startNativeRtcEventLog(int file_descriptor, int max_size_bytes);
 
-  private native void nativeStopRtcEventLog();
+  private native void stopNativeRtcEventLog();
 }
