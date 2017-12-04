@@ -561,10 +561,10 @@ class VideoStreamEncoderTest : public ::testing::Test {
     void WaitForEncodedFrame(uint32_t expected_width,
                              uint32_t expected_height) {
       EXPECT_TRUE(encoded_frame_event_.Wait(kDefaultTimeoutMs));
-      CheckLastFrameSizeMathces(expected_width, expected_height);
+      CheckLastFrameSizeMatches(expected_width, expected_height);
     }
 
-    void CheckLastFrameSizeMathces(uint32_t expected_width,
+    void CheckLastFrameSizeMatches(uint32_t expected_width,
                                    uint32_t expected_height) {
       uint32_t width = 0;
       uint32_t height = 0;
@@ -2485,7 +2485,7 @@ TEST_F(VideoStreamEncoderTest,
     if (!WaitForFrame(kFrameTimeoutMs)) {
       ++num_frames_dropped;
     } else {
-      sink_.CheckLastFrameSizeMathces(kFrameWidth, kFrameHeight);
+      sink_.CheckLastFrameSizeMatches(kFrameWidth, kFrameHeight);
     }
   }
 
@@ -2504,7 +2504,7 @@ TEST_F(VideoStreamEncoderTest,
     if (!WaitForFrame(kFrameTimeoutMs)) {
       ++num_frames_dropped;
     } else {
-      sink_.CheckLastFrameSizeMathces(kFrameWidth, kFrameHeight);
+      sink_.CheckLastFrameSizeMatches(kFrameWidth, kFrameHeight);
     }
   }
   EXPECT_NEAR(num_frames_dropped, max_framerate_ - (max_framerate_ * 4 / 9),
@@ -2520,7 +2520,7 @@ TEST_F(VideoStreamEncoderTest,
     if (!WaitForFrame(kFrameTimeoutMs)) {
       ++num_frames_dropped;
     } else {
-      sink_.CheckLastFrameSizeMathces(kFrameWidth, kFrameHeight);
+      sink_.CheckLastFrameSizeMatches(kFrameWidth, kFrameHeight);
     }
   }
   EXPECT_NEAR(num_frames_dropped, max_framerate_ - (max_framerate_ * 2 / 3),
@@ -2536,7 +2536,7 @@ TEST_F(VideoStreamEncoderTest,
     if (!WaitForFrame(kFrameTimeoutMs)) {
       ++num_frames_dropped;
     } else {
-      sink_.CheckLastFrameSizeMathces(kFrameWidth, kFrameHeight);
+      sink_.CheckLastFrameSizeMatches(kFrameWidth, kFrameHeight);
     }
   }
   EXPECT_NEAR(num_frames_dropped, 0, kErrorMargin);
