@@ -1,0 +1,9 @@
+{
+  "tests": [
+    {
+      "app": "webrtc_perf_tests",
+      "bot_id": "build16-a7",
+      "pool": "WebRTC"
+    }
+  ]
+}
