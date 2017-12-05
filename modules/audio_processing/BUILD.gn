@@ -239,6 +239,7 @@ rtc_static_library("audio_processing") {
   defines = []
   deps = [
     ":aec_dump_interface",
+    ":audio_processing_c",
     ":audio_processing_statistics",
     "..:module_api",
     "../..:webrtc_common",
@@ -248,9 +249,6 @@ rtc_static_library("audio_processing") {
     "../../rtc_base:gtest_prod",
     "../../rtc_base:protobuf_utils",
     "../audio_coding:isac",
-  ]
-  public_deps = [
-    ":audio_processing_c",
   ]
 
   if (apm_debug_dump) {
@@ -451,10 +449,8 @@ if (rtc_build_with_neon) {
     }
 
     deps = [
-      "../../common_audio",
-    ]
-    public_deps = [
       ":audio_processing_neon_c",
+      "../../common_audio",
     ]
 
     if (apm_debug_dump) {
@@ -498,7 +494,7 @@ if (rtc_build_with_neon) {
 if (rtc_include_tests) {
   group("audio_processing_tests") {
     testonly = true
-    public_deps = [
+    deps = [
       ":audioproc_test_utils",
       ":click_annotate",
       ":nonlinear_beamformer_test",
@@ -506,11 +502,11 @@ if (rtc_include_tests) {
     ]
 
     if (rtc_enable_intelligibility_enhancer) {
-      public_deps += [ ":intelligibility_proc" ]
+      deps += [ ":intelligibility_proc" ]
     }
 
     if (rtc_enable_protobuf) {
-      public_deps += [
+      deps += [
         ":audioproc_f",
         ":audioproc_unittest_proto",
         ":unpack_aecdump",
