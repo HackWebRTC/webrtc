@@ -62,16 +62,6 @@
 #include "test/testsupport/perf_test.h"
 #include "video/transport_adapter.h"
 
-// Flaky under MemorySanitizer: bugs.webrtc.org/7419
-#if defined(MEMORY_SANITIZER)
-#define MAYBE_InitialProbing DISABLED_InitialProbing
-// Fails on iOS bots: bugs.webrtc.org/7851
-#elif defined(TARGET_IPHONE_SIMULATOR) && TARGET_IPHONE_SIMULATOR
-#define MAYBE_InitialProbing DISABLED_InitialProbing
-#else
-#define MAYBE_InitialProbing InitialProbing
-#endif
-
 namespace webrtc {
 
 namespace {
@@ -2473,7 +2463,15 @@ class ProbingTest : public test::EndToEndTest {
   Call* sender_call_;
 };
 
-TEST_P(EndToEndTest, MAYBE_InitialProbing) {
+// Flaky under MemorySanitizer: bugs.webrtc.org/7419
+// Flaky on iOS bots: bugs.webrtc.org/7851
+#if defined(MEMORY_SANITIZER)
+TEST_P(EndToEndTest, DISABLED_InitialProbing) {
+#elif defined(TARGET_IPHONE_SIMULATOR) && TARGET_IPHONE_SIMULATOR
+TEST_P(EndToEndTest, DISABLED_InitialProbing) {
+#else
+TEST_P(EndToEndTest, InitialProbing) {
+#endif
   class InitialProbingTest : public ProbingTest {
    public:
     explicit InitialProbingTest(bool* success)
