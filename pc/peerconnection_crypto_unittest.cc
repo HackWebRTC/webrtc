@@ -513,19 +513,6 @@ TEST_F(PeerConnectionCryptoUnitTest,
 // CreateOffer/CreateAnswer calls are made while waiting for the certificate,
 // they all finish after the certificate is generated.
 
-// Whether the test will call CreateOffer or CreateAnswer.
-enum class SdpType { kOffer, kAnswer };
-std::ostream& operator<<(std::ostream& out, SdpType value) {
-  switch (value) {
-    case SdpType::kOffer:
-      return out << "offer";
-    case SdpType::kAnswer:
-      return out << "answer";
-    default:
-      return out << "unknown";
-  }
-}
-
 // Whether the certificate will be generated before calling CreateOffer or
 // while CreateOffer is executing.
 enum class CertGenTime { kBefore, kDuring };

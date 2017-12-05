@@ -22,10 +22,12 @@
 #include "rtc_base/gunit.h"
 #include "rtc_base/stringencode.h"
 
+using ::testing::Values;
 using webrtc::IceCandidateCollection;
 using webrtc::IceCandidateInterface;
 using webrtc::JsepIceCandidate;
 using webrtc::JsepSessionDescription;
+using webrtc::SdpType;
 using webrtc::SessionDescriptionInterface;
 
 static const char kCandidateUfrag[] = "ufrag";
@@ -405,3 +407,20 @@ TEST_F(JsepSessionDescriptionTest, RemoveCandidateAndSetConnectionAddress) {
   ASSERT_TRUE(jsep_desc_->RemoveCandidates(candidates));
   EXPECT_EQ("0.0.0.0:9", media_desc->connection_address().ToString());
 }
+
+class EnumerateAllSdpTypesTest : public ::testing::Test,
+                                 public ::testing::WithParamInterface<SdpType> {
+};
+
+TEST_P(EnumerateAllSdpTypesTest, TestIdentity) {
+  SdpType type = GetParam();
+
+  const char* str = webrtc::SdpTypeToString(type);
+  EXPECT_EQ(type, webrtc::SdpTypeFromString(str));
+}
+
+INSTANTIATE_TEST_CASE_P(JsepSessionDescriptionTest,
+                        EnumerateAllSdpTypesTest,
+                        Values(SdpType::kOffer,
+                               SdpType::kPrAnswer,
+                               SdpType::kAnswer));
