@@ -3500,39 +3500,10 @@ RTCError PeerConnection::UpdateSessionState(cricket::ContentAction action,
   // If there's already a pending error then no state transition should happen.
   // But all call-sites should be verifying this before calling us!
   RTC_DCHECK(session_error() == SessionError::kNone);
-  std::string td_err;
-  if (action == cricket::CA_OFFER) {
-    RTCError error = PushdownTransportDescription(source, cricket::CA_OFFER);
-    if (!error.ok()) {
-      return error;
-    }
-    ChangeSignalingState(source == cricket::CS_LOCAL
-                             ? PeerConnectionInterface::kHaveLocalOffer
-                             : PeerConnectionInterface::kHaveRemoteOffer);
-    error = PushdownMediaDescription(cricket::CA_OFFER, source);
-    if (!error.ok()) {
-      SetSessionError(SessionError::kContent, error.message());
-    }
-    if (session_error() != SessionError::kNone) {
-      LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR, GetSessionErrorMsg());
-    }
-  } else if (action == cricket::CA_PRANSWER) {
-    RTCError error = PushdownTransportDescription(source, cricket::CA_PRANSWER);
-    if (!error.ok()) {
-      return error;
-    }
-    EnableChannels();
-    ChangeSignalingState(source == cricket::CS_LOCAL
-                             ? PeerConnectionInterface::kHaveLocalPrAnswer
-                             : PeerConnectionInterface::kHaveRemotePrAnswer);
-    error = PushdownMediaDescription(cricket::CA_PRANSWER, source);
-    if (!error.ok()) {
-      SetSessionError(SessionError::kContent, error.message());
-    }
-    if (session_error() != SessionError::kNone) {
-      LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR, GetSessionErrorMsg());
-    }
-  } else if (action == cricket::CA_ANSWER) {
+
+  // If this is an answer then we know whether to BUNDLE or not. If both the
+  // local and remote side have agreed to BUNDLE, go ahead and enable it.
+  if (action == cricket::CA_ANSWER) {
     const cricket::ContentGroup* local_bundle =
         local_description()->description()->GetGroupByName(
             cricket::GROUP_TYPE_BUNDLE);
@@ -3548,22 +3519,46 @@ RTCError PeerConnection::UpdateSessionState(cricket::ContentAction action,
                              kEnableBundleFailed);
       }
     }
-    // Only push down the transport description after enabling BUNDLE; we don't
-    // want to push down a description on a transport about to be destroyed.
-    RTCError error = PushdownTransportDescription(source, cricket::CA_ANSWER);
-    if (!error.ok()) {
-      return error;
-    }
-    EnableChannels();
-    ChangeSignalingState(PeerConnectionInterface::kStable);
-    error = PushdownMediaDescription(cricket::CA_ANSWER, source);
-    if (!error.ok()) {
-      SetSessionError(SessionError::kContent, error.message());
-    }
-    if (session_error() != SessionError::kNone) {
-      LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR, GetSessionErrorMsg());
-    }
   }
+
+  // Only push down the transport description after potentially enabling BUNDLE;
+  // we don't want to push down a description on a transport about to be
+  // destroyed.
+  RTCError error = PushdownTransportDescription(source, action);
+  if (!error.ok()) {
+    return error;
+  }
+
+  // If this is answer-ish we're ready to let media flow.
+  if (action == cricket::CA_ANSWER || action == cricket::CA_PRANSWER) {
+    EnableChannels();
+  }
+
+  // Update the signaling state according to the specified state machine (see
+  // https://w3c.github.io/webrtc-pc/#rtcsignalingstate-enum).
+  if (action == cricket::CA_OFFER) {
+    ChangeSignalingState(source == cricket::CS_LOCAL
+                             ? PeerConnectionInterface::kHaveLocalOffer
+                             : PeerConnectionInterface::kHaveRemoteOffer);
+  } else if (action == cricket::CA_PRANSWER) {
+    ChangeSignalingState(source == cricket::CS_LOCAL
+                             ? PeerConnectionInterface::kHaveLocalPrAnswer
+                             : PeerConnectionInterface::kHaveRemotePrAnswer);
+  } else {
+    RTC_DCHECK_EQ(action, cricket::CA_ANSWER);
+    ChangeSignalingState(PeerConnectionInterface::kStable);
+  }
+
+  // Update internal objects according to the session description's media
+  // descriptions.
+  error = PushdownMediaDescription(action, source);
+  if (!error.ok()) {
+    SetSessionError(SessionError::kContent, error.message());
+  }
+  if (session_error() != SessionError::kNone) {
+    LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR, GetSessionErrorMsg());
+  }
+
   return RTCError::OK();
 }
 
