@@ -65,6 +65,13 @@ rtc_static_library("video_quality_analysis") {
   ]
   deps = [
     "$rtc_libyuv_dir",
+
+    # TODO(bugs.webrtc.org/6828): api:optional should be a dependency
+    # of rtc_base:rtc_base_approved_generic but that causes a circular
+    # dependency. In order to fix the chromium build on MSVC64 (dbg)
+    # this dependency has to be added here so the linker can find the
+    # symbols it needs.
+    "../api:optional",
   ]
 }
 
