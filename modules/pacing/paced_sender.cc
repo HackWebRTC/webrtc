@@ -58,7 +58,7 @@ PacedSender::PacedSender(const Clock* clock,
                          std::unique_ptr<PacketQueue> packets)
     : clock_(clock),
       packet_sender_(packet_sender),
-      alr_detector_(rtc::MakeUnique<AlrDetector>()),
+      alr_detector_(rtc::MakeUnique<AlrDetector>(event_log)),
       paused_(false),
       media_budget_(rtc::MakeUnique<IntervalBudget>(0)),
       padding_budget_(rtc::MakeUnique<IntervalBudget>(0)),

@@ -522,6 +522,10 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
         bwe_probe_result_events_.push_back(parsed_log_.GetBweProbeResult(i));
         break;
       }
+      case ParsedRtcEventLog::ALR_STATE_EVENT: {
+        alr_state_events_.push_back(parsed_log_.GetAlrState(i));
+        break;
+      }
       case ParsedRtcEventLog::UNKNOWN_EVENT: {
         break;
       }
@@ -968,7 +972,8 @@ void EventLogAnalyzer::CreateFractionLossGraph(Plot* plot) {
 void EventLogAnalyzer::CreateTotalBitrateGraph(
     PacketDirection desired_direction,
     Plot* plot,
-    bool show_detector_state) {
+    bool show_detector_state,
+    bool show_alr_state) {
   struct TimestampSize {
     TimestampSize(uint64_t t, size_t s) : timestamp(t), size(s) {}
     uint64_t timestamp;
@@ -1089,12 +1094,36 @@ void EventLogAnalyzer::CreateTotalBitrateGraph(
       }
     }
 
+    IntervalSeries alr_state("ALR", "#555555", IntervalSeries::kHorizontal);
+    bool previously_in_alr = false;
+    int64_t alr_start = 0;
+    for (auto& alr : alr_state_events_) {
+      float y = ToCallTime(alr.timestamp);
+      if (!previously_in_alr && alr.in_alr) {
+        alr_start = alr.timestamp;
+        previously_in_alr = true;
+      } else if (previously_in_alr && !alr.in_alr) {
+        float x = ToCallTime(alr_start);
+        alr_state.intervals.emplace_back(x, y);
+        previously_in_alr = false;
+      }
+    }
+
+    if (previously_in_alr) {
+      float x = ToCallTime(alr_start);
+      float y = ToCallTime(end_time_);
+      alr_state.intervals.emplace_back(x, y);
+    }
+
     if (show_detector_state) {
       plot->AppendIntervalSeries(std::move(overusing_series));
       plot->AppendIntervalSeries(std::move(underusing_series));
       plot->AppendIntervalSeries(std::move(normal_series));
     }
 
+    if (show_alr_state) {
+      plot->AppendIntervalSeries(std::move(alr_state));
+    }
     plot->AppendTimeSeries(std::move(loss_series));
     plot->AppendTimeSeries(std::move(delay_series));
     plot->AppendTimeSeries(std::move(created_series));

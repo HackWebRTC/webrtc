@@ -103,8 +103,8 @@ void PythonPlot::Draw() {
     }
 
     // IntervalSeries
-    printf("interval_colors = ['#ff8e82','#5092fc','#c4ffc4']\n");
-    RTC_CHECK_LE(interval_list_.size(), 3);
+    printf("interval_colors = ['#ff8e82','#5092fc','#c4ffc4','#aaaaaa']\n");
+    RTC_CHECK_LE(interval_list_.size(), 4);
     // To get the intervals to show up in the legend we have to create patches
     // for them.
     printf("legend_patches = []\n");

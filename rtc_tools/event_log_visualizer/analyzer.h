@@ -87,7 +87,8 @@ class EventLogAnalyzer {
 
   void CreateTotalBitrateGraph(PacketDirection desired_direction,
                                Plot* plot,
-                               bool show_detector_state = false);
+                               bool show_detector_state = false,
+                               bool show_alr_state = false);
 
   void CreateStreamBitrateGraph(PacketDirection desired_direction, Plot* plot);
 
@@ -200,6 +201,8 @@ class EventLogAnalyzer {
   std::vector<ParsedRtcEventLog::BweDelayBasedUpdate> bwe_delay_updates_;
 
   std::vector<std::unique_ptr<TriageNotification>> notifications_;
+
+  std::vector<ParsedRtcEventLog::AlrStateEvent> alr_state_events_;
 
   // Window and step size used for calculating moving averages, e.g. bitrate.
   // The generated data points will be |step_| microseconds apart.

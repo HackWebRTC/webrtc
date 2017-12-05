@@ -1801,24 +1801,40 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   }
 
   if (!params.logging.rtc_event_log_name.empty()) {
-    event_log_ = RtcEventLog::Create(clock_, RtcEventLog::EncodingType::Legacy);
-    std::unique_ptr<RtcEventLogOutputFile> output(
+    send_event_log_ =
+        RtcEventLog::Create(clock_, RtcEventLog::EncodingType::Legacy);
+    recv_event_log_ =
+        RtcEventLog::Create(clock_, RtcEventLog::EncodingType::Legacy);
+    std::unique_ptr<RtcEventLogOutputFile> send_output(
         rtc::MakeUnique<RtcEventLogOutputFile>(
-            params.logging.rtc_event_log_name, RtcEventLog::kUnlimitedOutput));
-    bool event_log_started = event_log_->StartLogging(
-        std::move(output), RtcEventLog::kImmediateOutput);
+            params.logging.rtc_event_log_name + "_send",
+            RtcEventLog::kUnlimitedOutput));
+    std::unique_ptr<RtcEventLogOutputFile> recv_output(
+        rtc::MakeUnique<RtcEventLogOutputFile>(
+            params.logging.rtc_event_log_name + "_recv",
+            RtcEventLog::kUnlimitedOutput));
+    bool event_log_started =
+        send_event_log_->StartLogging(std::move(send_output),
+                                      RtcEventLog::kImmediateOutput) &&
+        recv_event_log_->StartLogging(std::move(recv_output),
+                                      RtcEventLog::kImmediateOutput);
     RTC_DCHECK(event_log_started);
+  } else {
+    send_event_log_ = RtcEventLog::CreateNull();
+    recv_event_log_ = RtcEventLog::CreateNull();
   }
 
-  Call::Config call_config(event_log_.get());
-  call_config.bitrate_config = params.call.call_bitrate_config;
+  Call::Config send_call_config(send_event_log_.get());
+  Call::Config recv_call_config(recv_event_log_.get());
+  send_call_config.bitrate_config = params.call.call_bitrate_config;
+  recv_call_config.bitrate_config = params.call.call_bitrate_config;
 
-  task_queue_.SendTask(
-      [this, &call_config, &send_transport, &recv_transport]() {
-        CreateCalls(call_config, call_config);
-        send_transport = CreateSendTransport();
-        recv_transport = CreateReceiveTransport();
-      });
+  task_queue_.SendTask([this, &send_call_config, &recv_call_config,
+                        &send_transport, &recv_transport]() {
+    CreateCalls(send_call_config, recv_call_config);
+    send_transport = CreateSendTransport();
+    recv_transport = CreateReceiveTransport();
+  });
 
   std::string graph_title = params_.analyzer.graph_title;
   if (graph_title.empty())

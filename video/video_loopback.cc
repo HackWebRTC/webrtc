@@ -133,7 +133,10 @@ int AvgPropagationDelayMs() {
   return static_cast<int>(FLAG_avg_propagation_delay_ms);
 }
 
-DEFINE_string(rtc_event_log_name, "", "Filename for rtc event log.");
+DEFINE_string(rtc_event_log_name,
+              "",
+              "Filename for rtc event log. Two files "
+              "with \"_send\" and \"_recv\" suffixes will be created.");
 std::string RtcEventLogName() {
   return static_cast<std::string>(FLAG_rtc_event_log_name);
 }

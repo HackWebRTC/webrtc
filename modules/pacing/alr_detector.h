@@ -20,6 +20,8 @@
 
 namespace webrtc {
 
+class RtcEventLog;
+
 // Application limited region detector is a class that utilizes signals of
 // elapsed time and bytes sent to estimate whether network traffic is
 // currently limited by the application's ability to generate traffic.
@@ -30,6 +32,7 @@ namespace webrtc {
 class AlrDetector {
  public:
   AlrDetector();
+  explicit AlrDetector(RtcEventLog* event_log);
   ~AlrDetector();
 
   void OnBytesSent(size_t bytes_sent, int64_t delta_time_ms);
@@ -76,6 +79,8 @@ class AlrDetector {
 
   IntervalBudget alr_budget_;
   rtc::Optional<int64_t> alr_started_time_ms_;
+
+  RtcEventLog* event_log_;
 };
 
 }  // namespace webrtc

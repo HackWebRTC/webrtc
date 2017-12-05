@@ -132,6 +132,10 @@ DEFINE_bool(show_detector_state,
             "Show the state of the delay based BWE detector on the total "
             "bitrate graph");
 
+DEFINE_bool(show_alr_state,
+            false,
+            "Show the state ALR state on the total bitrate graph");
+
 DEFINE_bool(
     print_triage_notifications,
     false,
@@ -245,12 +249,14 @@ int main(int argc, char* argv[]) {
   if (FLAG_plot_incoming_bitrate) {
     analyzer.CreateTotalBitrateGraph(webrtc::PacketDirection::kIncomingPacket,
                                      collection->AppendNewPlot(),
-                                     FLAG_show_detector_state);
+                                     FLAG_show_detector_state,
+                                     FLAG_show_alr_state);
   }
   if (FLAG_plot_outgoing_bitrate) {
     analyzer.CreateTotalBitrateGraph(webrtc::PacketDirection::kOutgoingPacket,
                                      collection->AppendNewPlot(),
-                                     FLAG_show_detector_state);
+                                     FLAG_show_detector_state,
+                                     FLAG_show_alr_state);
   }
   if (FLAG_plot_incoming_stream_bitrate) {
     analyzer.CreateStreamBitrateGraph(webrtc::PacketDirection::kIncomingPacket,

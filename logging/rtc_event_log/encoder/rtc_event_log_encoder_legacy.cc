@@ -10,6 +10,7 @@
 
 #include "logging/rtc_event_log/encoder/rtc_event_log_encoder_legacy.h"
 
+#include "logging/rtc_event_log/events/rtc_event_alr_state.h"
 #include "logging/rtc_event_log/events/rtc_event_audio_network_adaptation.h"
 #include "logging/rtc_event_log/events/rtc_event_audio_playout.h"
 #include "logging/rtc_event_log/events/rtc_event_audio_receive_stream_config.h"
@@ -114,6 +115,11 @@ std::string RtcEventLogEncoderLegacy::Encode(const RtcEvent& event) {
       return EncodeAudioNetworkAdaptation(rtc_event);
     }
 
+    case RtcEvent::Type::AlrStateEvent: {
+      auto& rtc_event = static_cast<const RtcEventAlrState&>(event);
+      return EncodeAlrState(rtc_event);
+    }
+
     case RtcEvent::Type::AudioPlayout: {
       auto& rtc_event = static_cast<const RtcEventAudioPlayout&>(event);
       return EncodeAudioPlayout(rtc_event);
@@ -202,6 +208,17 @@ std::string RtcEventLogEncoderLegacy::Encode(const RtcEvent& event) {
   int event_type = static_cast<int>(event.GetType());
   RTC_NOTREACHED() << "Unknown event type (" << event_type << ")";
   return "";
+}
+
+std::string RtcEventLogEncoderLegacy::EncodeAlrState(
+    const RtcEventAlrState& event) {
+  rtclog::Event rtclog_event;
+  rtclog_event.set_timestamp_us(event.timestamp_us_);
+  rtclog_event.set_type(rtclog::Event::ALR_STATE_EVENT);
+
+  auto alr_state = rtclog_event.mutable_alr_state();
+  alr_state->set_in_alr(event.in_alr_);
+  return Serialize(&rtclog_event);
 }
 
 std::string RtcEventLogEncoderLegacy::EncodeAudioNetworkAdaptation(

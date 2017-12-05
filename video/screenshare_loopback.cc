@@ -69,7 +69,10 @@ std::string Codec() {
   return static_cast<std::string>(FLAG_codec);
 }
 
-DEFINE_string(rtc_event_log_name, "", "Filename for rtc event log.");
+DEFINE_string(rtc_event_log_name,
+              "",
+              "Filename for rtc event log. Two files "
+              "with \"_send\" and \"_recv\" suffixes will be created.");
 std::string RtcEventLogName() {
   return static_cast<std::string>(FLAG_rtc_event_log_name);
 }

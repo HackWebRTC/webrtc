@@ -42,6 +42,7 @@ class RtcEventRtpPacketIncoming;
 class RtcEventRtpPacketOutgoing;
 class RtcEventVideoReceiveStreamConfig;
 class RtcEventVideoSendStreamConfig;
+class RtcEventAlrState;
 class RtpPacket;
 
 class RtcEventLogEncoderLegacy final : public RtcEventLogEncoder {
@@ -52,6 +53,7 @@ class RtcEventLogEncoderLegacy final : public RtcEventLogEncoder {
 
  private:
   // Encoding entry-point for the various RtcEvent subclasses.
+  std::string EncodeAlrState(const RtcEventAlrState& event);
   std::string EncodeAudioNetworkAdaptation(
       const RtcEventAudioNetworkAdaptation& event);
   std::string EncodeAudioPlayout(const RtcEventAudioPlayout& event);
