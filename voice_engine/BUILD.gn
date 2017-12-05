@@ -46,9 +46,6 @@ rtc_static_library("voice_engine") {
     suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 
-  public_deps = [
-    "../modules/audio_coding",
-  ]
   deps = [
     ":audio_level",
     "..:webrtc_common",
@@ -65,6 +62,7 @@ rtc_static_library("voice_engine") {
     "../common_audio",
     "../logging:rtc_event_log_api",
     "../modules:module_api",
+    "../modules/audio_coding",
     "../modules/audio_coding:audio_format_conversion",
     "../modules/audio_coding:audio_network_adaptor_config",
     "../modules/audio_device",
