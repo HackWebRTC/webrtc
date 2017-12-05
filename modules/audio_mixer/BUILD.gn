@@ -9,7 +9,7 @@
 import("../../webrtc.gni")
 
 group("audio_mixer") {
-  public_deps = [
+  deps = [
     ":audio_frame_manipulator",
     ":audio_mixer_impl",
   ]
@@ -32,15 +32,12 @@ rtc_static_library("audio_mixer_impl") {
     "frame_combiner.h",
   ]
 
-  public_deps = [
-    "../../api:audio_mixer_api",
-  ]
-
   deps = [
     ":audio_frame_manipulator",
     "..:module_api",
     "../..:webrtc_common",
     "../../api:array_view",
+    "../../api:audio_mixer_api",
     "../../audio/utility:audio_frame_operations",
     "../../rtc_base:rtc_base_approved",
     "../../system_wrappers",

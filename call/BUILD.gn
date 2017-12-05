@@ -202,6 +202,7 @@ if (rtc_include_tests) {
       "../logging:rtc_event_log_api",
       "../modules/audio_device:mock_audio_device",
       "../modules/audio_mixer",
+      "../modules/audio_mixer:audio_mixer_impl",
       "../modules/bitrate_controller",
       "../modules/congestion_controller",
       "../modules/congestion_controller:mock_congestion_controller",
