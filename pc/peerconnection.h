@@ -376,6 +376,15 @@ class PeerConnection : public PeerConnectionInterface,
   RTCError ApplyRemoteDescription(
       std::unique_ptr<SessionDescriptionInterface> desc);
 
+  // Returns the media section in the given session description that is
+  // associated with the RtpTransceiver. Returns null if none found or this
+  // RtpTransceiver is not associated. Logic varies depending on the
+  // SdpSemantics specified in the configuration.
+  const cricket::ContentInfo* FindMediaSectionForTransceiver(
+      rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
+          transceiver,
+      const SessionDescriptionInterface* sdesc) const;
+
   bool IsClosed() const {
     return signaling_state_ == PeerConnectionInterface::kClosed;
   }
@@ -638,7 +647,9 @@ class PeerConnection : public PeerConnectionInterface,
   bool EnableBundle(const cricket::ContentGroup& bundle);
 
   // Enables media channels to allow sending of media.
-  void EnableChannels();
+  // This enables media to flow on all configured audio/video channels and the
+  // RtpDataChannel.
+  void EnableSending();
   // Returns the media index for a local ice candidate given the content name.
   // Returns false if the local session description does not have a media
   // content called  |content_name|.

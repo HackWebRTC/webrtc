@@ -1873,6 +1873,27 @@ RTCError PeerConnection::ApplyRemoteDescription(
   return RTCError::OK();
 }
 
+const cricket::ContentInfo* PeerConnection::FindMediaSectionForTransceiver(
+    rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
+        transceiver,
+    const SessionDescriptionInterface* sdesc) const {
+  RTC_DCHECK(transceiver);
+  RTC_DCHECK(sdesc);
+  if (IsUnifiedPlan()) {
+    if (!transceiver->internal()->mid()) {
+      // This transceiver is not associated with a media section yet.
+      return nullptr;
+    }
+    return sdesc->description()->GetContentByName(
+        *transceiver->internal()->mid());
+  } else {
+    // Plan B only allows at most one audio and one video section, so use the
+    // first media section of that type.
+    return cricket::GetFirstMediaContent(sdesc->description()->contents(),
+                                         transceiver->internal()->media_type());
+  }
+}
+
 PeerConnectionInterface::RTCConfiguration PeerConnection::GetConfiguration() {
   return configuration_;
 }
@@ -3531,7 +3552,7 @@ RTCError PeerConnection::UpdateSessionState(cricket::ContentAction action,
 
   // If this is answer-ish we're ready to let media flow.
   if (action == cricket::CA_ANSWER || action == cricket::CA_PRANSWER) {
-    EnableChannels();
+    EnableSending();
   }
 
   // Update the signaling state according to the specified state machine (see
@@ -3565,30 +3586,57 @@ RTCError PeerConnection::UpdateSessionState(cricket::ContentAction action,
 RTCError PeerConnection::PushdownMediaDescription(
     cricket::ContentAction action,
     cricket::ContentSource source) {
-  const SessionDescription* sdesc =
-      (source == cricket::CS_LOCAL ? local_description() : remote_description())
-          ->description();
+  const SessionDescriptionInterface* sdesc =
+      (source == cricket::CS_LOCAL ? local_description()
+                                   : remote_description());
   RTC_DCHECK(sdesc);
-  for (auto* channel : Channels()) {
-    // TODO(steveanton): Add support for multiple channels of the same type.
+
+  // Push down the new SDP media section for each audio/video transceiver.
+  for (auto transceiver : transceivers_) {
     const ContentInfo* content_info =
-        cricket::GetFirstMediaContent(sdesc->contents(), channel->media_type());
-    if (!content_info) {
+        FindMediaSectionForTransceiver(transceiver, sdesc);
+    cricket::BaseChannel* channel = transceiver->internal()->channel();
+    if (!channel || !content_info || content_info->rejected) {
       continue;
     }
     const MediaContentDescription* content_desc =
         static_cast<const MediaContentDescription*>(content_info->description);
-    if (content_desc && !content_info->rejected) {
-      std::string error;
-      bool success =
-          (source == cricket::CS_LOCAL)
-              ? channel->SetLocalContent(content_desc, action, &error)
-              : channel->SetRemoteContent(content_desc, action, &error);
-      if (!success) {
-        LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER, std::move(error));
+    if (!content_desc) {
+      continue;
+    }
+    std::string error;
+    bool success =
+        (source == cricket::CS_LOCAL)
+            ? channel->SetLocalContent(content_desc, action, &error)
+            : channel->SetRemoteContent(content_desc, action, &error);
+    if (!success) {
+      LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER, std::move(error));
+    }
+  }
+
+  // If using the RtpDataChannel, push down the new SDP section for it too.
+  if (rtp_data_channel_) {
+    const ContentInfo* data_content =
+        cricket::GetFirstDataContent(sdesc->description());
+    if (data_content && !data_content->rejected) {
+      const MediaContentDescription* data_desc =
+          static_cast<const MediaContentDescription*>(
+              data_content->description);
+      if (data_desc) {
+        std::string error;
+        bool success =
+            (source == cricket::CS_LOCAL)
+                ? rtp_data_channel_->SetLocalContent(data_desc, action, &error)
+                : rtp_data_channel_->SetRemoteContent(data_desc, action,
+                                                      &error);
+        if (!success) {
+          LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
+                               std::move(error));
+        }
       }
     }
   }
+
   // Need complete offer/answer with an SCTP m= section before starting SCTP,
   // according to https://tools.ietf.org/html/draft-ietf-mmusic-sctp-sdp-19
   if (sctp_transport_ && local_description() && remote_description() &&
@@ -3602,6 +3650,7 @@ RTCError PeerConnection::PushdownMediaDescription(
                            "Failed to push down SCTP parameters.");
     }
   }
+
   return RTCError::OK();
 }
 
@@ -3673,14 +3722,14 @@ bool PeerConnection::EnableBundle(const cricket::ContentGroup& bundle) {
   auto maybe_set_transport = [this, bundle,
                               transport_name](cricket::BaseChannel* ch) {
     if (!ch || !bundle.HasContentName(ch->content_name())) {
-      return true;
+      return;
     }
 
     std::string old_transport_name = ch->transport_name();
     if (old_transport_name == transport_name) {
       RTC_LOG(LS_INFO) << "BUNDLE already enabled for " << ch->content_name()
                        << " on " << transport_name << ".";
-      return true;
+      return;
     }
 
     cricket::DtlsTransportInternal* rtp_dtls_transport =
@@ -3704,14 +3753,13 @@ bool PeerConnection::EnableBundle(const cricket::ContentGroup& bundle) {
       transport_controller_->DestroyDtlsTransport(
           old_transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTCP);
     }
-    return true;
   };
 
-  if (!maybe_set_transport(voice_channel()) ||
-      !maybe_set_transport(video_channel()) ||
-      !maybe_set_transport(rtp_data_channel())) {
-    return false;
+  for (auto transceiver : transceivers_) {
+    maybe_set_transport(transceiver->internal()->channel());
   }
+  maybe_set_transport(rtp_data_channel_);
+
   // For SCTP, transport creation/deletion happens here instead of in the
   // object itself.
   if (sctp_transport_) {
@@ -4027,14 +4075,12 @@ void PeerConnection::OnTransportControllerDtlsHandshakeError(
   }
 }
 
-// Enabling voice and video (and RTP data) channels.
-void PeerConnection::EnableChannels() {
-  if (voice_channel() && !voice_channel()->enabled()) {
-    voice_channel()->Enable(true);
-  }
-
-  if (video_channel() && !video_channel()->enabled()) {
-    video_channel()->Enable(true);
+void PeerConnection::EnableSending() {
+  for (auto transceiver : transceivers_) {
+    cricket::BaseChannel* channel = transceiver->internal()->channel();
+    if (channel && !channel->enabled()) {
+      channel->Enable(true);
+    }
   }
 
   if (rtp_data_channel_ && !rtp_data_channel_->enabled()) {
