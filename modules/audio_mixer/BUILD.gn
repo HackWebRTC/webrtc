@@ -61,7 +61,7 @@ rtc_static_library("audio_frame_manipulator") {
 
   deps = [
     "..:module_api",
-    "../../audio/utility",
+    "../../audio/utility:audio_frame_operations",
     "../../rtc_base:rtc_base_approved",
   ]
 }
