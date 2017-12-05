@@ -64,7 +64,7 @@ class IceCandidateInterface {
   // The URL of the ICE server which this candidate was gathered from.
   // TODO(zhihuang): Remove the default implementation once the subclasses
   // implement this method.
-  virtual std::string server_url() const { return ""; }
+  virtual std::string server_url() const;
   // Creates a SDP-ized form of this candidate.
   virtual bool ToString(std::string* out) const = 0;
 };
@@ -155,7 +155,7 @@ class SessionDescriptionInterface {
   //
   // Returns the number of candidates removed.
   virtual size_t RemoveCandidates(
-      const std::vector<cricket::Candidate>& candidates) { return 0; }
+      const std::vector<cricket::Candidate>& candidates);
 
   // Returns the number of m= sections in the session description.
   virtual size_t number_of_mediasections() const = 0;
@@ -200,7 +200,7 @@ class CreateSessionDescriptionObserver : public rtc::RefCountInterface {
   virtual void OnFailure(const std::string& error) = 0;
 
  protected:
-  ~CreateSessionDescriptionObserver() {}
+  ~CreateSessionDescriptionObserver() override = default;
 };
 
 // SetLocalDescription and SetRemoteDescription callback interface.
@@ -210,7 +210,7 @@ class SetSessionDescriptionObserver : public rtc::RefCountInterface {
   virtual void OnFailure(const std::string& error) = 0;
 
  protected:
-  ~SetSessionDescriptionObserver() {}
+  ~SetSessionDescriptionObserver() override = default;
 };
 
 }  // namespace webrtc
