@@ -69,7 +69,7 @@ const uint32_t MIN_PACKET = 296;
 
 const uint32_t IP_HEADER_SIZE = 20;  // (+ up to 40 bytes of options?)
 const uint32_t UDP_HEADER_SIZE = 8;
-// TODO: Make JINGLE_HEADER_SIZE transparent to this code?
+// TODO(?): Make JINGLE_HEADER_SIZE transparent to this code?
 const uint32_t JINGLE_HEADER_SIZE = 64;  // when relay framing is in use
 
 // Default size for receive and send buffer.
@@ -165,11 +165,11 @@ inline uint16_t bytes_to_short(const void* buf) {
 #if 0  // Not used yet
 
 enum Stat {
-  S_SENT_PACKET,   // All packet sends
-  S_RESENT_PACKET, // All packet sends that are retransmits
-  S_RECV_PACKET,   // All packet receives
-  S_RECV_NEW,      // All packet receives that are too new
-  S_RECV_OLD,      // All packet receives that are too old
+  S_SENT_PACKET,    // All packet sends
+  S_RESENT_PACKET,  // All packet sends that are retransmits
+  S_RECV_PACKET,    // All packet receives
+  S_RECV_NEW,       // All packet receives that are too new
+  S_RECV_OLD,       // All packet receives that are too old
   S_NUM_STATS
 };
 
@@ -1124,7 +1124,7 @@ void PseudoTcp::attemptSend(SendFlags sflags) {
 
     if (!transmit(seg, now)) {
       RTC_LOG_F(LS_VERBOSE) << "transmit failed";
-      // TODO: consider closing socket
+      // TODO(?): consider closing socket
       return;
     }
 
@@ -1230,7 +1230,7 @@ void PseudoTcp::parseOptions(const char* data, uint32_t len) {
 void PseudoTcp::applyOption(char kind, const char* data, uint32_t len) {
   if (kind == TCP_OPT_MSS) {
     RTC_LOG(LS_WARNING) << "Peer specified MSS option which is not supported.";
-    // TODO: Implement.
+    // TODO(?): Implement.
   } else if (kind == TCP_OPT_WND_SCALE) {
     // Window scale factor.
     // http://www.ietf.org/rfc/rfc1323.txt
