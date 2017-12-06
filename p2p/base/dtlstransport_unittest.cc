@@ -61,6 +61,7 @@ cricket::TransportDescription MakeTransportDescription(
 }
 
 using cricket::ConnectionRole;
+using webrtc::SdpType;
 
 enum Flags { NF_REOFFER = 0x1, NF_EXPECT_FAILURE = 0x2 };
 
@@ -136,7 +137,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
   // Offer DTLS if we have an identity; pass in a remote fingerprint only if
   // both sides support DTLS.
   void Negotiate(DtlsTestClient* peer,
-                 cricket::ContentAction action,
+                 SdpType action,
                  ConnectionRole local_role,
                  ConnectionRole remote_role,
                  int flags) {
@@ -146,13 +147,13 @@ class DtlsTestClient : public sigslot::has_slots<> {
 
   void SetLocalTransportDescription(
       const rtc::scoped_refptr<rtc::RTCCertificate>& cert,
-      cricket::ContentAction action,
+      SdpType action,
       ConnectionRole role,
       int flags) {
     // If |NF_EXPECT_FAILURE| is set, expect SRTD or SLTD to fail when
     // content action is CA_ANSWER.
     bool expect_success =
-        !((action == cricket::CA_ANSWER) && (flags & NF_EXPECT_FAILURE));
+        !((action == SdpType::kAnswer) && (flags & NF_EXPECT_FAILURE));
     EXPECT_EQ(expect_success,
               transport_->SetLocalTransportDescription(
                   MakeTransportDescription(cert, role), action, nullptr));
@@ -160,13 +161,13 @@ class DtlsTestClient : public sigslot::has_slots<> {
 
   void SetRemoteTransportDescription(
       const rtc::scoped_refptr<rtc::RTCCertificate>& cert,
-      cricket::ContentAction action,
+      SdpType action,
       ConnectionRole role,
       int flags) {
     // If |NF_EXPECT_FAILURE| is set, expect SRTD or SLTD to fail when
     // content action is CA_ANSWER.
     bool expect_success =
-        !((action == cricket::CA_ANSWER) && (flags & NF_EXPECT_FAILURE));
+        !((action == SdpType::kAnswer) && (flags & NF_EXPECT_FAILURE));
     EXPECT_EQ(expect_success,
               transport_->SetRemoteTransportDescription(
                   MakeTransportDescription(cert, role), action, nullptr));
@@ -175,22 +176,22 @@ class DtlsTestClient : public sigslot::has_slots<> {
   // Allow any DTLS configuration to be specified (including invalid ones).
   void Negotiate(const rtc::scoped_refptr<rtc::RTCCertificate>& local_cert,
                  const rtc::scoped_refptr<rtc::RTCCertificate>& remote_cert,
-                 cricket::ContentAction action,
+                 SdpType action,
                  ConnectionRole local_role,
                  ConnectionRole remote_role,
                  int flags) {
-    if (action == cricket::CA_OFFER) {
-      SetLocalTransportDescription(local_cert, cricket::CA_OFFER, local_role,
+    if (action == SdpType::kOffer) {
+      SetLocalTransportDescription(local_cert, SdpType::kOffer, local_role,
                                    flags);
-      SetRemoteTransportDescription(remote_cert, cricket::CA_ANSWER,
-                                    remote_role, flags);
+      SetRemoteTransportDescription(remote_cert, SdpType::kAnswer, remote_role,
+                                    flags);
     } else {
-      SetRemoteTransportDescription(remote_cert, cricket::CA_OFFER, remote_role,
+      SetRemoteTransportDescription(remote_cert, SdpType::kOffer, remote_role,
                                     flags);
       // If remote if the offerer and has no DTLS support, answer will be
       // without any fingerprint.
       SetLocalTransportDescription(remote_cert ? local_cert : nullptr,
-                                   cricket::CA_ANSWER, local_role, flags);
+                                   SdpType::kAnswer, local_role, flags);
     }
   }
 
@@ -475,14 +476,14 @@ class DtlsTransportChannelTestBase {
       // answer not yet being received on the initiating side. So the
       // connection will be made before negotiation has finished on both sides.
       client1_.SetLocalTransportDescription(client1_.certificate(),
-                                            cricket::CA_OFFER, client1_role, 0);
-      client2_.SetRemoteTransportDescription(
-          client1_.certificate(), cricket::CA_OFFER, client1_role, 0);
-      client2_.SetLocalTransportDescription(
-          client2_.certificate(), cricket::CA_ANSWER, client2_role, 0);
+                                            SdpType::kOffer, client1_role, 0);
+      client2_.SetRemoteTransportDescription(client1_.certificate(),
+                                             SdpType::kOffer, client1_role, 0);
+      client2_.SetLocalTransportDescription(client2_.certificate(),
+                                            SdpType::kAnswer, client2_role, 0);
       rv = client1_.Connect(&client2_, false);
-      client1_.SetRemoteTransportDescription(
-          client2_.certificate(), cricket::CA_ANSWER, client2_role, 0);
+      client1_.SetRemoteTransportDescription(client2_.certificate(),
+                                             SdpType::kAnswer, client2_role, 0);
     }
 
     EXPECT_TRUE(rv);
@@ -548,10 +549,10 @@ class DtlsTransportChannelTestBase {
     client1_.SetupChannels(channel_ct_, cricket::ICEROLE_CONTROLLING);
     client2_.SetupChannels(channel_ct_, cricket::ICEROLE_CONTROLLED);
     // Expect success from SLTD and SRTD.
-    client1_.Negotiate(&client2_, cricket::CA_OFFER, client1_role, client2_role,
+    client1_.Negotiate(&client2_, SdpType::kOffer, client1_role, client2_role,
                        0);
-    client2_.Negotiate(&client1_, cricket::CA_ANSWER, client2_role,
-                       client1_role, 0);
+    client2_.Negotiate(&client1_, SdpType::kAnswer, client2_role, client1_role,
+                       0);
   }
 
   // Negotiate with legacy client |client2|. Legacy client doesn't use setup
@@ -560,10 +561,10 @@ class DtlsTransportChannelTestBase {
     client1_.SetupChannels(channel_ct_, cricket::ICEROLE_CONTROLLING);
     client2_.SetupChannels(channel_ct_, cricket::ICEROLE_CONTROLLED);
     // Expect success from SLTD and SRTD.
-    client1_.Negotiate(&client2_, cricket::CA_OFFER,
+    client1_.Negotiate(&client2_, SdpType::kOffer,
                        cricket::CONNECTIONROLE_ACTPASS,
                        cricket::CONNECTIONROLE_NONE, 0);
-    client2_.Negotiate(&client1_, cricket::CA_ANSWER,
+    client2_.Negotiate(&client1_, SdpType::kAnswer,
                        cricket::CONNECTIONROLE_ACTIVE,
                        cricket::CONNECTIONROLE_NONE, 0);
   }
@@ -573,14 +574,14 @@ class DtlsTransportChannelTestBase {
                    ConnectionRole client2_role,
                    int flags) {
     if (reoffer_initiator == &client1_) {
-      client1_.Negotiate(&client2_, cricket::CA_OFFER, client1_role,
-                         client2_role, flags);
-      client2_.Negotiate(&client1_, cricket::CA_ANSWER, client2_role,
+      client1_.Negotiate(&client2_, SdpType::kOffer, client1_role, client2_role,
+                         flags);
+      client2_.Negotiate(&client1_, SdpType::kAnswer, client2_role,
                          client1_role, flags);
     } else {
-      client2_.Negotiate(&client1_, cricket::CA_OFFER, client2_role,
-                         client1_role, flags);
-      client1_.Negotiate(&client2_, cricket::CA_ANSWER, client1_role,
+      client2_.Negotiate(&client1_, SdpType::kOffer, client2_role, client1_role,
+                         flags);
+      client1_.Negotiate(&client2_, SdpType::kAnswer, client1_role,
                          client2_role, flags);
     }
   }
@@ -1019,9 +1020,9 @@ class DtlsEventOrderingTest
     client2_.SetupChannels(channel_ct_, cricket::ICEROLE_CONTROLLED,
                            simulated_delay_ms);
     client1_.SetLocalTransportDescription(client1_.certificate(),
-                                          cricket::CA_OFFER,
+                                          SdpType::kOffer,
                                           cricket::CONNECTIONROLE_ACTPASS, 0);
-    client2_.Negotiate(&client1_, cricket::CA_ANSWER,
+    client2_.Negotiate(&client1_, SdpType::kAnswer,
                        cricket::CONNECTIONROLE_ACTIVE,
                        cricket::CONNECTIONROLE_ACTPASS, 0);
 
@@ -1030,7 +1031,7 @@ class DtlsEventOrderingTest
         case CALLER_RECEIVES_FINGERPRINT:
           if (valid_fingerprint) {
             client1_.SetRemoteTransportDescription(
-                client2_.certificate(), cricket::CA_ANSWER,
+                client2_.certificate(), SdpType::kAnswer,
                 cricket::CONNECTIONROLE_ACTIVE, 0);
           } else {
             // Create a fingerprint with a correct algorithm but an invalid
@@ -1043,7 +1044,7 @@ class DtlsEventOrderingTest
             // it should return true as long as the fingerprint was formatted
             // correctly.
             EXPECT_TRUE(client1_.transport()->SetRemoteTransportDescription(
-                remote_desc, cricket::CA_ANSWER, nullptr));
+                remote_desc, SdpType::kAnswer, nullptr));
           }
           break;
         case CALLER_WRITABLE:

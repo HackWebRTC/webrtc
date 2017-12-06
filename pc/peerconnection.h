@@ -616,16 +616,15 @@ class PeerConnection : public PeerConnectionInterface,
   // Updates the error state, signaling if necessary.
   void SetSessionError(SessionError error, const std::string& error_desc);
 
-  RTCError UpdateSessionState(cricket::ContentAction action,
-                              cricket::ContentSource source);
+  RTCError UpdateSessionState(SdpType type, cricket::ContentSource source);
   // Push the media parts of the local or remote session description
   // down to all of the channels.
-  RTCError PushdownMediaDescription(cricket::ContentAction action,
+  RTCError PushdownMediaDescription(SdpType type,
                                     cricket::ContentSource source);
   bool PushdownSctpParameters_n(cricket::ContentSource source);
 
   RTCError PushdownTransportDescription(cricket::ContentSource source,
-                                        cricket::ContentAction action);
+                                        SdpType type);
 
   // Returns true and the TransportInfo of the given |content_name|
   // from |description|. Returns false if it's not available.
@@ -705,13 +704,15 @@ class PeerConnection : public PeerConnectionInterface,
   RTCError ValidateSessionDescription(const SessionDescriptionInterface* sdesc,
                                       cricket::ContentSource source);
 
-  // Check if a call to SetLocalDescription is acceptable with |action|.
-  bool ExpectSetLocalDescription(cricket::ContentAction action);
-  // Check if a call to SetRemoteDescription is acceptable with |action|.
-  bool ExpectSetRemoteDescription(cricket::ContentAction action);
+  // Check if a call to SetLocalDescription is acceptable with a session
+  // description of the given type.
+  bool ExpectSetLocalDescription(SdpType type);
+  // Check if a call to SetRemoteDescription is acceptable with a session
+  // description of the given type.
+  bool ExpectSetRemoteDescription(SdpType type);
   // Verifies a=setup attribute as per RFC 5763.
   bool ValidateDtlsSetupAttribute(const cricket::SessionDescription* desc,
-                                  cricket::ContentAction action);
+                                  SdpType type);
 
   // Returns true if we are ready to push down the remote candidate.
   // |remote_desc| is the new remote description, or NULL if the current remote

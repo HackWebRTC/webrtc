@@ -35,6 +35,7 @@
 
 namespace cricket {
 using rtc::Bind;
+using webrtc::SdpType;
 
 namespace {
 // See comment below for why we need to use a pointer to a unique_ptr.
@@ -419,21 +420,21 @@ bool BaseChannel::RemoveSendStream(uint32_t ssrc) {
 }
 
 bool BaseChannel::SetLocalContent(const MediaContentDescription* content,
-                                  ContentAction action,
+                                  SdpType type,
                                   std::string* error_desc) {
   TRACE_EVENT0("webrtc", "BaseChannel::SetLocalContent");
   return InvokeOnWorker<bool>(
       RTC_FROM_HERE,
-      Bind(&BaseChannel::SetLocalContent_w, this, content, action, error_desc));
+      Bind(&BaseChannel::SetLocalContent_w, this, content, type, error_desc));
 }
 
 bool BaseChannel::SetRemoteContent(const MediaContentDescription* content,
-                                   ContentAction action,
+                                   SdpType type,
                                    std::string* error_desc) {
   TRACE_EVENT0("webrtc", "BaseChannel::SetRemoteContent");
   return InvokeOnWorker<bool>(
-      RTC_FROM_HERE, Bind(&BaseChannel::SetRemoteContent_w, this, content,
-                          action, error_desc));
+      RTC_FROM_HERE,
+      Bind(&BaseChannel::SetRemoteContent_w, this, content, type, error_desc));
 }
 
 void BaseChannel::StartConnectionMonitor(int cms) {
@@ -744,7 +745,7 @@ void BaseChannel::ChannelNotWritable_n() {
 
 bool BaseChannel::SetRtpTransportParameters(
     const MediaContentDescription* content,
-    ContentAction action,
+    SdpType type,
     ContentSource src,
     const RtpHeaderExtensions& extensions,
     std::string* error_desc) {
@@ -759,25 +760,25 @@ bool BaseChannel::SetRtpTransportParameters(
 
   // Cache srtp_required_ for belt and suspenders check on SendPacket
   return network_thread_->Invoke<bool>(
-      RTC_FROM_HERE, Bind(&BaseChannel::SetRtpTransportParameters_n, this,
-                          content, action, src, encrypted_extension_ids,
-                          error_desc));
+      RTC_FROM_HERE,
+      Bind(&BaseChannel::SetRtpTransportParameters_n, this, content, type, src,
+           encrypted_extension_ids, error_desc));
 }
 
 bool BaseChannel::SetRtpTransportParameters_n(
     const MediaContentDescription* content,
-    ContentAction action,
+    SdpType type,
     ContentSource src,
     const std::vector<int>& encrypted_extension_ids,
     std::string* error_desc) {
   RTC_DCHECK(network_thread_->IsCurrent());
 
-  if (!SetSrtp_n(content->cryptos(), action, src, encrypted_extension_ids,
-      error_desc)) {
+  if (!SetSrtp_n(content->cryptos(), type, src, encrypted_extension_ids,
+                 error_desc)) {
     return false;
   }
 
-  if (!SetRtcpMux_n(content->rtcp_mux(), action, src, error_desc)) {
+  if (!SetRtcpMux_n(content->rtcp_mux(), type, src, error_desc)) {
     return false;
   }
 
@@ -850,7 +851,7 @@ void BaseChannel::EnableDtlsSrtp_n() {
 }
 
 bool BaseChannel::SetSrtp_n(const std::vector<CryptoParams>& cryptos,
-                            ContentAction action,
+                            SdpType type,
                             ContentSource src,
                             const std::vector<int>& encrypted_extension_ids,
                             std::string* error_desc) {
@@ -868,21 +869,21 @@ bool BaseChannel::SetSrtp_n(const std::vector<CryptoParams>& cryptos,
     EnableSdes_n();
   }
 
-  if ((action == CA_ANSWER || action == CA_PRANSWER) && dtls) {
+  if ((type == SdpType::kAnswer || type == SdpType::kPrAnswer) && dtls) {
     EnableDtlsSrtp_n();
   }
 
   UpdateEncryptedHeaderExtensionIds(src, encrypted_extension_ids);
 
   if (!dtls) {
-    switch (action) {
-      case CA_OFFER:
+    switch (type) {
+      case SdpType::kOffer:
         ret = sdes_negotiator_.SetOffer(cryptos, src);
         break;
-      case CA_PRANSWER:
+      case SdpType::kPrAnswer:
         ret = sdes_negotiator_.SetProvisionalAnswer(cryptos, src);
         break;
-      case CA_ANSWER:
+      case SdpType::kAnswer:
         ret = sdes_negotiator_.SetAnswer(cryptos, src);
         break;
       default:
@@ -891,7 +892,7 @@ bool BaseChannel::SetSrtp_n(const std::vector<CryptoParams>& cryptos,
 
     // If setting an SDES answer succeeded, apply the negotiated parameters
     // to the SRTP transport.
-    if ((action == CA_PRANSWER || action == CA_ANSWER) && ret) {
+    if ((type == SdpType::kPrAnswer || type == SdpType::kAnswer) && ret) {
       if (sdes_negotiator_.send_cipher_suite() &&
           sdes_negotiator_.recv_cipher_suite()) {
         RTC_DCHECK(cached_send_extension_ids_);
@@ -907,7 +908,7 @@ bool BaseChannel::SetSrtp_n(const std::vector<CryptoParams>& cryptos,
             *(cached_recv_extension_ids_));
       } else {
         RTC_LOG(LS_INFO) << "No crypto keys are provided for SDES.";
-        if (action == CA_ANSWER && sdes_transport_) {
+        if (type == SdpType::kAnswer && sdes_transport_) {
           // Explicitly reset the |sdes_transport_| if no crypto param is
           // provided in the answer. No need to call |ResetParams()| for
           // |sdes_negotiator_| because it resets the params inside |SetAnswer|.
@@ -925,7 +926,7 @@ bool BaseChannel::SetSrtp_n(const std::vector<CryptoParams>& cryptos,
 }
 
 bool BaseChannel::SetRtcpMux_n(bool enable,
-                               ContentAction action,
+                               SdpType type,
                                ContentSource src,
                                std::string* error_desc) {
   // Provide a more specific error message for the RTCP mux "require" policy
@@ -938,16 +939,16 @@ bool BaseChannel::SetRtcpMux_n(bool enable,
     return false;
   }
   bool ret = false;
-  switch (action) {
-    case CA_OFFER:
+  switch (type) {
+    case SdpType::kOffer:
       ret = rtcp_mux_filter_.SetOffer(enable, src);
       break;
-    case CA_PRANSWER:
+    case SdpType::kPrAnswer:
       // This may activate RTCP muxing, but we don't yet destroy the transport
       // because the final answer may deactivate it.
       ret = rtcp_mux_filter_.SetProvisionalAnswer(enable, src);
       break;
-    case CA_ANSWER:
+    case SdpType::kAnswer:
       ret = rtcp_mux_filter_.SetAnswer(enable, src);
       if (ret && rtcp_mux_filter_.IsActive()) {
         ActivateRtcpMux();
@@ -961,9 +962,9 @@ bool BaseChannel::SetRtcpMux_n(bool enable,
     return false;
   }
   rtp_transport_->SetRtcpMuxEnabled(rtcp_mux_filter_.IsActive());
-  // |rtcp_mux_filter_| can be active if |action| is CA_PRANSWER or
-  // CA_ANSWER, but we only want to tear down the RTCP transport if we received
-  // a final answer.
+  // |rtcp_mux_filter_| can be active if |action| is SdpType::kPrAnswer or
+  // SdpType::kAnswer, but we only want to tear down the RTCP transport if we
+  // received a final answer.
   if (rtcp_mux_filter_.IsActive()) {
     // If the RTP transport is already writable, then so are we.
     if (rtp_transport_->rtp_packet_transport()->writable()) {
@@ -985,11 +986,8 @@ bool BaseChannel::RemoveRecvStream_w(uint32_t ssrc) {
 }
 
 bool BaseChannel::UpdateLocalStreams_w(const std::vector<StreamParams>& streams,
-                                       ContentAction action,
+                                       SdpType type,
                                        std::string* error_desc) {
-  if (!(action == CA_OFFER || action == CA_ANSWER || action == CA_PRANSWER))
-    return false;
-
   // Check for streams that have been removed.
   bool ret = true;
   for (StreamParamsVec::const_iterator it = local_streams_.begin();
@@ -1024,11 +1022,8 @@ bool BaseChannel::UpdateLocalStreams_w(const std::vector<StreamParams>& streams,
 
 bool BaseChannel::UpdateRemoteStreams_w(
     const std::vector<StreamParams>& streams,
-    ContentAction action,
+    SdpType type,
     std::string* error_desc) {
-  if (!(action == CA_OFFER || action == CA_ANSWER || action == CA_PRANSWER))
-    return false;
-
   // Check for streams that have been removed.
   bool ret = true;
   for (StreamParamsVec::const_iterator it = remote_streams_.begin();
@@ -1422,7 +1417,7 @@ void VoiceChannel::UpdateMediaSendRecvState_w() {
 }
 
 bool VoiceChannel::SetLocalContent_w(const MediaContentDescription* content,
-                                     ContentAction action,
+                                     SdpType type,
                                      std::string* error_desc) {
   TRACE_EVENT0("webrtc", "VoiceChannel::SetLocalContent_w");
   RTC_DCHECK(worker_thread() == rtc::Thread::Current());
@@ -1439,8 +1434,8 @@ bool VoiceChannel::SetLocalContent_w(const MediaContentDescription* content,
   RtpHeaderExtensions rtp_header_extensions =
       GetFilteredRtpHeaderExtensions(audio->rtp_header_extensions());
 
-  if (!SetRtpTransportParameters(content, action, CS_LOCAL,
-      rtp_header_extensions, error_desc)) {
+  if (!SetRtpTransportParameters(content, type, CS_LOCAL, rtp_header_extensions,
+                                 error_desc)) {
     return false;
   }
 
@@ -1460,7 +1455,7 @@ bool VoiceChannel::SetLocalContent_w(const MediaContentDescription* content,
   // only give it to the media channel once we have a remote
   // description too (without a remote description, we won't be able
   // to send them anyway).
-  if (!UpdateLocalStreams_w(audio->streams(), action, error_desc)) {
+  if (!UpdateLocalStreams_w(audio->streams(), type, error_desc)) {
     SafeSetError("Failed to set local audio description streams.", error_desc);
     return false;
   }
@@ -1471,7 +1466,7 @@ bool VoiceChannel::SetLocalContent_w(const MediaContentDescription* content,
 }
 
 bool VoiceChannel::SetRemoteContent_w(const MediaContentDescription* content,
-                                      ContentAction action,
+                                      SdpType type,
                                       std::string* error_desc) {
   TRACE_EVENT0("webrtc", "VoiceChannel::SetRemoteContent_w");
   RTC_DCHECK(worker_thread() == rtc::Thread::Current());
@@ -1488,8 +1483,8 @@ bool VoiceChannel::SetRemoteContent_w(const MediaContentDescription* content,
   RtpHeaderExtensions rtp_header_extensions =
       GetFilteredRtpHeaderExtensions(audio->rtp_header_extensions());
 
-  if (!SetRtpTransportParameters(content, action, CS_REMOTE,
-      rtp_header_extensions, error_desc)) {
+  if (!SetRtpTransportParameters(content, type, CS_REMOTE,
+                                 rtp_header_extensions, error_desc)) {
     return false;
   }
 
@@ -1512,7 +1507,7 @@ bool VoiceChannel::SetRemoteContent_w(const MediaContentDescription* content,
   // and only give it to the media channel once we have a local
   // description too (without a local description, we won't be able to
   // recv them anyway).
-  if (!UpdateRemoteStreams_w(audio->streams(), action, error_desc)) {
+  if (!UpdateRemoteStreams_w(audio->streams(), type, error_desc)) {
     SafeSetError("Failed to set remote audio description streams.", error_desc);
     return false;
   }
@@ -1704,7 +1699,7 @@ void VideoChannel::StopMediaMonitor() {
 }
 
 bool VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
-                                     ContentAction action,
+                                     SdpType type,
                                      std::string* error_desc) {
   TRACE_EVENT0("webrtc", "VideoChannel::SetLocalContent_w");
   RTC_DCHECK(worker_thread() == rtc::Thread::Current());
@@ -1721,8 +1716,8 @@ bool VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
   RtpHeaderExtensions rtp_header_extensions =
       GetFilteredRtpHeaderExtensions(video->rtp_header_extensions());
 
-  if (!SetRtpTransportParameters(content, action, CS_LOCAL,
-      rtp_header_extensions, error_desc)) {
+  if (!SetRtpTransportParameters(content, type, CS_LOCAL, rtp_header_extensions,
+                                 error_desc)) {
     return false;
   }
 
@@ -1742,7 +1737,7 @@ bool VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
   // only give it to the media channel once we have a remote
   // description too (without a remote description, we won't be able
   // to send them anyway).
-  if (!UpdateLocalStreams_w(video->streams(), action, error_desc)) {
+  if (!UpdateLocalStreams_w(video->streams(), type, error_desc)) {
     SafeSetError("Failed to set local video description streams.", error_desc);
     return false;
   }
@@ -1753,7 +1748,7 @@ bool VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
 }
 
 bool VideoChannel::SetRemoteContent_w(const MediaContentDescription* content,
-                                      ContentAction action,
+                                      SdpType type,
                                       std::string* error_desc) {
   TRACE_EVENT0("webrtc", "VideoChannel::SetRemoteContent_w");
   RTC_DCHECK(worker_thread() == rtc::Thread::Current());
@@ -1770,8 +1765,8 @@ bool VideoChannel::SetRemoteContent_w(const MediaContentDescription* content,
   RtpHeaderExtensions rtp_header_extensions =
       GetFilteredRtpHeaderExtensions(video->rtp_header_extensions());
 
-  if (!SetRtpTransportParameters(content, action, CS_REMOTE,
-      rtp_header_extensions, error_desc)) {
+  if (!SetRtpTransportParameters(content, type, CS_REMOTE,
+                                 rtp_header_extensions, error_desc)) {
     return false;
   }
 
@@ -1795,7 +1790,7 @@ bool VideoChannel::SetRemoteContent_w(const MediaContentDescription* content,
   // and only give it to the media channel once we have a local
   // description too (without a local description, we won't be able to
   // recv them anyway).
-  if (!UpdateRemoteStreams_w(video->streams(), action, error_desc)) {
+  if (!UpdateRemoteStreams_w(video->streams(), type, error_desc)) {
     SafeSetError("Failed to set remote video description streams.", error_desc);
     return false;
   }
@@ -1905,7 +1900,7 @@ bool RtpDataChannel::CheckDataChannelTypeFromContent(
 }
 
 bool RtpDataChannel::SetLocalContent_w(const MediaContentDescription* content,
-                                       ContentAction action,
+                                       SdpType type,
                                        std::string* error_desc) {
   TRACE_EVENT0("webrtc", "RtpDataChannel::SetLocalContent_w");
   RTC_DCHECK(worker_thread() == rtc::Thread::Current());
@@ -1926,8 +1921,8 @@ bool RtpDataChannel::SetLocalContent_w(const MediaContentDescription* content,
   RtpHeaderExtensions rtp_header_extensions =
       GetFilteredRtpHeaderExtensions(data->rtp_header_extensions());
 
-  if (!SetRtpTransportParameters(content, action, CS_LOCAL,
-      rtp_header_extensions, error_desc)) {
+  if (!SetRtpTransportParameters(content, type, CS_LOCAL, rtp_header_extensions,
+                                 error_desc)) {
     return false;
   }
 
@@ -1947,7 +1942,7 @@ bool RtpDataChannel::SetLocalContent_w(const MediaContentDescription* content,
   // only give it to the media channel once we have a remote
   // description too (without a remote description, we won't be able
   // to send them anyway).
-  if (!UpdateLocalStreams_w(data->streams(), action, error_desc)) {
+  if (!UpdateLocalStreams_w(data->streams(), type, error_desc)) {
     SafeSetError("Failed to set local data description streams.", error_desc);
     return false;
   }
@@ -1958,7 +1953,7 @@ bool RtpDataChannel::SetLocalContent_w(const MediaContentDescription* content,
 }
 
 bool RtpDataChannel::SetRemoteContent_w(const MediaContentDescription* content,
-                                        ContentAction action,
+                                        SdpType type,
                                         std::string* error_desc) {
   TRACE_EVENT0("webrtc", "RtpDataChannel::SetRemoteContent_w");
   RTC_DCHECK(worker_thread() == rtc::Thread::Current());
@@ -1984,8 +1979,8 @@ bool RtpDataChannel::SetRemoteContent_w(const MediaContentDescription* content,
       GetFilteredRtpHeaderExtensions(data->rtp_header_extensions());
 
   RTC_LOG(LS_INFO) << "Setting remote data description";
-  if (!SetRtpTransportParameters(content, action, CS_REMOTE,
-      rtp_header_extensions, error_desc)) {
+  if (!SetRtpTransportParameters(content, type, CS_REMOTE,
+                                 rtp_header_extensions, error_desc)) {
     return false;
   }
 
@@ -2003,7 +1998,7 @@ bool RtpDataChannel::SetRemoteContent_w(const MediaContentDescription* content,
   // and only give it to the media channel once we have a local
   // description too (without a local description, we won't be able to
   // recv them anyway).
-  if (!UpdateRemoteStreams_w(data->streams(), action, error_desc)) {
+  if (!UpdateRemoteStreams_w(data->streams(), type, error_desc)) {
     SafeSetError("Failed to set remote data description streams.",
                  error_desc);
     return false;

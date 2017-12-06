@@ -22,6 +22,7 @@ using cricket::FakeIceTransport;
 using cricket::IceRole;
 using cricket::TransportDescription;
 using rtc::SocketAddress;
+using webrtc::SdpType;
 
 static const char kIceUfrag1[] = "TESTICEUFRAG0001";
 static const char kIcePwd1[] = "TESTICEPWD00000000000001";
@@ -56,8 +57,8 @@ class JsepTransportTest : public testing::Test, public sigslot::has_slots<> {
 // ufrag/password after a transport description is applied.
 TEST_F(JsepTransportTest, TestChannelIceParameters) {
   cricket::TransportDescription local_desc(kIceUfrag1, kIcePwd1);
-  ASSERT_TRUE(transport_->SetLocalTransportDescription(
-      local_desc, cricket::CA_OFFER, NULL));
+  ASSERT_TRUE(transport_->SetLocalTransportDescription(local_desc,
+                                                       SdpType::kOffer, NULL));
   EXPECT_TRUE(SetupChannel());
   EXPECT_EQ(cricket::ICEMODE_FULL, fake_ice_transport_->remote_ice_mode());
   EXPECT_EQ(kIceUfrag1, fake_ice_transport_->ice_ufrag());
@@ -65,7 +66,7 @@ TEST_F(JsepTransportTest, TestChannelIceParameters) {
 
   cricket::TransportDescription remote_desc(kIceUfrag1, kIcePwd1);
   ASSERT_TRUE(transport_->SetRemoteTransportDescription(
-      remote_desc, cricket::CA_ANSWER, NULL));
+      remote_desc, SdpType::kAnswer, NULL));
   EXPECT_EQ(cricket::ICEMODE_FULL, fake_ice_transport_->remote_ice_mode());
   EXPECT_EQ(kIceUfrag1, fake_ice_transport_->remote_ice_ufrag());
   EXPECT_EQ(kIcePwd1, fake_ice_transport_->remote_ice_pwd());
@@ -87,9 +88,9 @@ TEST_F(JsepTransportTest, NeedsIceRestart) {
   cricket::TransportDescription local_desc(kIceUfrag1, kIcePwd1);
   cricket::TransportDescription remote_desc(kIceUfrag1, kIcePwd1);
   ASSERT_TRUE(transport_->SetLocalTransportDescription(
-      local_desc, cricket::CA_OFFER, nullptr));
+      local_desc, SdpType::kOffer, nullptr));
   ASSERT_TRUE(transport_->SetRemoteTransportDescription(
-      remote_desc, cricket::CA_ANSWER, nullptr));
+      remote_desc, SdpType::kAnswer, nullptr));
 
   // Flag initially should be false.
   EXPECT_FALSE(transport_->NeedsIceRestart());
@@ -100,18 +101,18 @@ TEST_F(JsepTransportTest, NeedsIceRestart) {
 
   // Doing an identical offer/answer shouldn't clear the flag.
   ASSERT_TRUE(transport_->SetLocalTransportDescription(
-      local_desc, cricket::CA_OFFER, nullptr));
+      local_desc, SdpType::kOffer, nullptr));
   ASSERT_TRUE(transport_->SetRemoteTransportDescription(
-      remote_desc, cricket::CA_ANSWER, nullptr));
+      remote_desc, SdpType::kAnswer, nullptr));
   EXPECT_TRUE(transport_->NeedsIceRestart());
 
   // Doing an offer/answer that restarts ICE should clear the flag.
   cricket::TransportDescription ice_restart_local_desc(kIceUfrag2, kIcePwd2);
   cricket::TransportDescription ice_restart_remote_desc(kIceUfrag2, kIcePwd2);
   ASSERT_TRUE(transport_->SetLocalTransportDescription(
-      ice_restart_local_desc, cricket::CA_OFFER, nullptr));
+      ice_restart_local_desc, SdpType::kOffer, nullptr));
   ASSERT_TRUE(transport_->SetRemoteTransportDescription(
-      ice_restart_remote_desc, cricket::CA_ANSWER, nullptr));
+      ice_restart_remote_desc, SdpType::kAnswer, nullptr));
   EXPECT_FALSE(transport_->NeedsIceRestart());
 }
 
@@ -128,8 +129,8 @@ TEST_F(JsepTransportTest, TestGetStats) {
       rtc::CreateRandomString(cricket::ICE_UFRAG_LENGTH),
       rtc::CreateRandomString(cricket::ICE_PWD_LENGTH), cricket::ICEMODE_FULL,
       cricket::CONNECTIONROLE_NONE, nullptr);
-  transport_->SetLocalTransportDescription(faketransport_desc,
-                                           cricket::CA_OFFER, nullptr);
+  transport_->SetLocalTransportDescription(faketransport_desc, SdpType::kOffer,
+                                           nullptr);
   EXPECT_TRUE(transport_->GetStats(&stats));
   ASSERT_EQ(1U, stats.channel_stats.size());
   EXPECT_EQ(1, stats.channel_stats[0].component);
@@ -191,8 +192,8 @@ TEST_F(JsepTransportTest, DtlsRoleNegotiation) {
   struct NegotiateRoleParams {
     cricket::ConnectionRole local_role;
     cricket::ConnectionRole remote_role;
-    cricket::ContentAction local_action;
-    cricket::ContentAction remote_action;
+    SdpType local_type;
+    SdpType remote_type;
   };
 
   std::string error_desc;
@@ -200,13 +201,13 @@ TEST_F(JsepTransportTest, DtlsRoleNegotiation) {
   // Parameters which set the SSL role to SSL_CLIENT.
   NegotiateRoleParams valid_client_params[] = {
       {cricket::CONNECTIONROLE_ACTIVE, cricket::CONNECTIONROLE_ACTPASS,
-       cricket::CA_ANSWER, cricket::CA_OFFER},
+       SdpType::kAnswer, SdpType::kOffer},
       {cricket::CONNECTIONROLE_ACTIVE, cricket::CONNECTIONROLE_ACTPASS,
-       cricket::CA_PRANSWER, cricket::CA_OFFER},
+       SdpType::kPrAnswer, SdpType::kOffer},
       {cricket::CONNECTIONROLE_ACTPASS, cricket::CONNECTIONROLE_PASSIVE,
-       cricket::CA_OFFER, cricket::CA_ANSWER},
+       SdpType::kOffer, SdpType::kAnswer},
       {cricket::CONNECTIONROLE_ACTPASS, cricket::CONNECTIONROLE_PASSIVE,
-       cricket::CA_OFFER, cricket::CA_PRANSWER}};
+       SdpType::kOffer, SdpType::kPrAnswer}};
 
   for (auto& param : valid_client_params) {
     RecreateTransport();
@@ -216,16 +217,16 @@ TEST_F(JsepTransportTest, DtlsRoleNegotiation) {
     remote_desc.connection_role = param.remote_role;
 
     // Set the offer first.
-    if (param.local_action == cricket::CA_OFFER) {
+    if (param.local_type == SdpType::kOffer) {
       EXPECT_TRUE(transport_->SetLocalTransportDescription(
-          local_desc, param.local_action, nullptr));
+          local_desc, param.local_type, nullptr));
       EXPECT_TRUE(transport_->SetRemoteTransportDescription(
-          remote_desc, param.remote_action, nullptr));
+          remote_desc, param.remote_type, nullptr));
     } else {
       EXPECT_TRUE(transport_->SetRemoteTransportDescription(
-          remote_desc, param.remote_action, nullptr));
+          remote_desc, param.remote_type, nullptr));
       EXPECT_TRUE(transport_->SetLocalTransportDescription(
-          local_desc, param.local_action, nullptr));
+          local_desc, param.local_type, nullptr));
     }
     EXPECT_EQ(rtc::SSL_CLIENT, *transport_->GetSslRole());
   }
@@ -233,13 +234,13 @@ TEST_F(JsepTransportTest, DtlsRoleNegotiation) {
   // Parameters which set the SSL role to SSL_SERVER.
   NegotiateRoleParams valid_server_params[] = {
       {cricket::CONNECTIONROLE_PASSIVE, cricket::CONNECTIONROLE_ACTPASS,
-       cricket::CA_ANSWER, cricket::CA_OFFER},
+       SdpType::kAnswer, SdpType::kOffer},
       {cricket::CONNECTIONROLE_PASSIVE, cricket::CONNECTIONROLE_ACTPASS,
-       cricket::CA_PRANSWER, cricket::CA_OFFER},
+       SdpType::kPrAnswer, SdpType::kOffer},
       {cricket::CONNECTIONROLE_ACTPASS, cricket::CONNECTIONROLE_ACTIVE,
-       cricket::CA_OFFER, cricket::CA_ANSWER},
+       SdpType::kOffer, SdpType::kAnswer},
       {cricket::CONNECTIONROLE_ACTPASS, cricket::CONNECTIONROLE_ACTIVE,
-       cricket::CA_OFFER, cricket::CA_PRANSWER}};
+       SdpType::kOffer, SdpType::kPrAnswer}};
 
   for (auto& param : valid_server_params) {
     RecreateTransport();
@@ -249,16 +250,16 @@ TEST_F(JsepTransportTest, DtlsRoleNegotiation) {
     remote_desc.connection_role = param.remote_role;
 
     // Set the offer first.
-    if (param.local_action == cricket::CA_OFFER) {
+    if (param.local_type == SdpType::kOffer) {
       EXPECT_TRUE(transport_->SetLocalTransportDescription(
-          local_desc, param.local_action, nullptr));
+          local_desc, param.local_type, nullptr));
       EXPECT_TRUE(transport_->SetRemoteTransportDescription(
-          remote_desc, param.remote_action, nullptr));
+          remote_desc, param.remote_type, nullptr));
     } else {
       EXPECT_TRUE(transport_->SetRemoteTransportDescription(
-          remote_desc, param.remote_action, nullptr));
+          remote_desc, param.remote_type, nullptr));
       EXPECT_TRUE(transport_->SetLocalTransportDescription(
-          local_desc, param.local_action, nullptr));
+          local_desc, param.local_type, nullptr));
     }
     EXPECT_EQ(rtc::SSL_SERVER, *transport_->GetSslRole());
   }
@@ -266,29 +267,29 @@ TEST_F(JsepTransportTest, DtlsRoleNegotiation) {
   // Invalid parameters due to both peers having a duplicate role.
   NegotiateRoleParams duplicate_params[] = {
       {cricket::CONNECTIONROLE_ACTIVE, cricket::CONNECTIONROLE_ACTIVE,
-       cricket::CA_ANSWER, cricket::CA_OFFER},
+       SdpType::kAnswer, SdpType::kOffer},
       {cricket::CONNECTIONROLE_ACTPASS, cricket::CONNECTIONROLE_ACTPASS,
-       cricket::CA_ANSWER, cricket::CA_OFFER},
+       SdpType::kAnswer, SdpType::kOffer},
       {cricket::CONNECTIONROLE_PASSIVE, cricket::CONNECTIONROLE_PASSIVE,
-       cricket::CA_ANSWER, cricket::CA_OFFER},
+       SdpType::kAnswer, SdpType::kOffer},
       {cricket::CONNECTIONROLE_ACTIVE, cricket::CONNECTIONROLE_ACTIVE,
-       cricket::CA_PRANSWER, cricket::CA_OFFER},
+       SdpType::kPrAnswer, SdpType::kOffer},
       {cricket::CONNECTIONROLE_ACTPASS, cricket::CONNECTIONROLE_ACTPASS,
-       cricket::CA_PRANSWER, cricket::CA_OFFER},
+       SdpType::kPrAnswer, SdpType::kOffer},
       {cricket::CONNECTIONROLE_PASSIVE, cricket::CONNECTIONROLE_PASSIVE,
-       cricket::CA_PRANSWER, cricket::CA_OFFER},
+       SdpType::kPrAnswer, SdpType::kOffer},
       {cricket::CONNECTIONROLE_ACTIVE, cricket::CONNECTIONROLE_ACTIVE,
-       cricket::CA_OFFER, cricket::CA_ANSWER},
+       SdpType::kOffer, SdpType::kAnswer},
       {cricket::CONNECTIONROLE_ACTPASS, cricket::CONNECTIONROLE_ACTPASS,
-       cricket::CA_OFFER, cricket::CA_ANSWER},
+       SdpType::kOffer, SdpType::kAnswer},
       {cricket::CONNECTIONROLE_PASSIVE, cricket::CONNECTIONROLE_PASSIVE,
-       cricket::CA_OFFER, cricket::CA_ANSWER},
+       SdpType::kOffer, SdpType::kAnswer},
       {cricket::CONNECTIONROLE_ACTIVE, cricket::CONNECTIONROLE_ACTIVE,
-       cricket::CA_OFFER, cricket::CA_PRANSWER},
+       SdpType::kOffer, SdpType::kPrAnswer},
       {cricket::CONNECTIONROLE_ACTPASS, cricket::CONNECTIONROLE_ACTPASS,
-       cricket::CA_OFFER, cricket::CA_PRANSWER},
+       SdpType::kOffer, SdpType::kPrAnswer},
       {cricket::CONNECTIONROLE_PASSIVE, cricket::CONNECTIONROLE_PASSIVE,
-       cricket::CA_OFFER, cricket::CA_PRANSWER}};
+       SdpType::kOffer, SdpType::kPrAnswer}};
 
   for (auto& param : duplicate_params) {
     RecreateTransport();
@@ -298,45 +299,45 @@ TEST_F(JsepTransportTest, DtlsRoleNegotiation) {
     remote_desc.connection_role = param.remote_role;
 
     // Set the offer first.
-    if (param.local_action == cricket::CA_OFFER) {
+    if (param.local_type == SdpType::kOffer) {
       EXPECT_TRUE(transport_->SetLocalTransportDescription(
-          local_desc, param.local_action, nullptr));
+          local_desc, param.local_type, nullptr));
       EXPECT_FALSE(transport_->SetRemoteTransportDescription(
-          remote_desc, param.remote_action, nullptr));
+          remote_desc, param.remote_type, nullptr));
     } else {
       EXPECT_TRUE(transport_->SetRemoteTransportDescription(
-          remote_desc, param.remote_action, nullptr));
+          remote_desc, param.remote_type, nullptr));
       EXPECT_FALSE(transport_->SetLocalTransportDescription(
-          local_desc, param.local_action, nullptr));
+          local_desc, param.local_type, nullptr));
     }
   }
 
   // Invalid parameters due to the offerer not using ACTPASS.
   NegotiateRoleParams offerer_without_actpass_params[] = {
       {cricket::CONNECTIONROLE_ACTIVE, cricket::CONNECTIONROLE_PASSIVE,
-       cricket::CA_ANSWER, cricket::CA_OFFER},
+       SdpType::kAnswer, SdpType::kOffer},
       {cricket::CONNECTIONROLE_PASSIVE, cricket::CONNECTIONROLE_ACTIVE,
-       cricket::CA_ANSWER, cricket::CA_OFFER},
+       SdpType::kAnswer, SdpType::kOffer},
       {cricket::CONNECTIONROLE_ACTPASS, cricket::CONNECTIONROLE_PASSIVE,
-       cricket::CA_ANSWER, cricket::CA_OFFER},
+       SdpType::kAnswer, SdpType::kOffer},
       {cricket::CONNECTIONROLE_ACTIVE, cricket::CONNECTIONROLE_PASSIVE,
-       cricket::CA_PRANSWER, cricket::CA_OFFER},
+       SdpType::kPrAnswer, SdpType::kOffer},
       {cricket::CONNECTIONROLE_PASSIVE, cricket::CONNECTIONROLE_ACTIVE,
-       cricket::CA_PRANSWER, cricket::CA_OFFER},
+       SdpType::kPrAnswer, SdpType::kOffer},
       {cricket::CONNECTIONROLE_ACTPASS, cricket::CONNECTIONROLE_PASSIVE,
-       cricket::CA_PRANSWER, cricket::CA_OFFER},
+       SdpType::kPrAnswer, SdpType::kOffer},
       {cricket::CONNECTIONROLE_ACTIVE, cricket::CONNECTIONROLE_PASSIVE,
-       cricket::CA_OFFER, cricket::CA_ANSWER},
+       SdpType::kOffer, SdpType::kAnswer},
       {cricket::CONNECTIONROLE_PASSIVE, cricket::CONNECTIONROLE_ACTIVE,
-       cricket::CA_OFFER, cricket::CA_ANSWER},
+       SdpType::kOffer, SdpType::kAnswer},
       {cricket::CONNECTIONROLE_PASSIVE, cricket::CONNECTIONROLE_ACTPASS,
-       cricket::CA_OFFER, cricket::CA_ANSWER},
+       SdpType::kOffer, SdpType::kAnswer},
       {cricket::CONNECTIONROLE_ACTIVE, cricket::CONNECTIONROLE_PASSIVE,
-       cricket::CA_OFFER, cricket::CA_PRANSWER},
+       SdpType::kOffer, SdpType::kPrAnswer},
       {cricket::CONNECTIONROLE_PASSIVE, cricket::CONNECTIONROLE_ACTIVE,
-       cricket::CA_OFFER, cricket::CA_PRANSWER},
+       SdpType::kOffer, SdpType::kPrAnswer},
       {cricket::CONNECTIONROLE_PASSIVE, cricket::CONNECTIONROLE_ACTPASS,
-       cricket::CA_OFFER, cricket::CA_PRANSWER}};
+       SdpType::kOffer, SdpType::kPrAnswer}};
 
   for (auto& param : offerer_without_actpass_params) {
     RecreateTransport();
@@ -348,16 +349,16 @@ TEST_F(JsepTransportTest, DtlsRoleNegotiation) {
     // Set the offer first.
     // TODO(deadbeef): Really this should fail as soon as the offer is
     // attempted to be applied, and not when the answer is applied.
-    if (param.local_action == cricket::CA_OFFER) {
+    if (param.local_type == SdpType::kOffer) {
       EXPECT_TRUE(transport_->SetLocalTransportDescription(
-          local_desc, param.local_action, nullptr));
+          local_desc, param.local_type, nullptr));
       EXPECT_FALSE(transport_->SetRemoteTransportDescription(
-          remote_desc, param.remote_action, nullptr));
+          remote_desc, param.remote_type, nullptr));
     } else {
       EXPECT_TRUE(transport_->SetRemoteTransportDescription(
-          remote_desc, param.remote_action, nullptr));
+          remote_desc, param.remote_type, nullptr));
       EXPECT_FALSE(transport_->SetLocalTransportDescription(
-          local_desc, param.local_action, nullptr));
+          local_desc, param.local_type, nullptr));
     }
   }
 }
@@ -388,9 +389,9 @@ TEST_F(JsepTransportTest, RemoteOfferWithCurrentNegotiatedDtlsRole) {
   // Normal initial offer/answer with "actpass" in the offer and "active" in
   // the answer.
   ASSERT_TRUE(transport_->SetRemoteTransportDescription(
-      remote_desc, cricket::CA_OFFER, nullptr));
+      remote_desc, SdpType::kOffer, nullptr));
   ASSERT_TRUE(transport_->SetLocalTransportDescription(
-      local_desc, cricket::CA_ANSWER, nullptr));
+      local_desc, SdpType::kAnswer, nullptr));
 
   // Sanity check that role was actually negotiated.
   rtc::Optional<rtc::SSLRole> role = transport_->GetSslRole();
@@ -400,9 +401,9 @@ TEST_F(JsepTransportTest, RemoteOfferWithCurrentNegotiatedDtlsRole) {
   // Subsequent offer with current negotiated role of "passive".
   remote_desc.connection_role = cricket::CONNECTIONROLE_PASSIVE;
   EXPECT_TRUE(transport_->SetRemoteTransportDescription(
-      remote_desc, cricket::CA_OFFER, nullptr));
+      remote_desc, SdpType::kOffer, nullptr));
   EXPECT_TRUE(transport_->SetLocalTransportDescription(
-      local_desc, cricket::CA_ANSWER, nullptr));
+      local_desc, SdpType::kAnswer, nullptr));
 }
 
 // Test that a remote offer with the inverse of the current negotiated DTLS
@@ -430,9 +431,9 @@ TEST_F(JsepTransportTest, RemoteOfferThatChangesNegotiatedDtlsRole) {
   // Normal initial offer/answer with "actpass" in the offer and "active" in
   // the answer.
   ASSERT_TRUE(transport_->SetRemoteTransportDescription(
-      remote_desc, cricket::CA_OFFER, nullptr));
+      remote_desc, SdpType::kOffer, nullptr));
   ASSERT_TRUE(transport_->SetLocalTransportDescription(
-      local_desc, cricket::CA_ANSWER, nullptr));
+      local_desc, SdpType::kAnswer, nullptr));
 
   // Sanity check that role was actually negotiated.
   rtc::Optional<rtc::SSLRole> role = transport_->GetSslRole();
@@ -445,7 +446,7 @@ TEST_F(JsepTransportTest, RemoteOfferThatChangesNegotiatedDtlsRole) {
   // attempted to be applied, and not when the answer is applied.
   remote_desc.connection_role = cricket::CONNECTIONROLE_ACTIVE;
   EXPECT_TRUE(transport_->SetRemoteTransportDescription(
-      remote_desc, cricket::CA_OFFER, nullptr));
+      remote_desc, SdpType::kOffer, nullptr));
   EXPECT_FALSE(transport_->SetLocalTransportDescription(
-      local_desc, cricket::CA_ANSWER, nullptr));
+      local_desc, SdpType::kAnswer, nullptr));
 }

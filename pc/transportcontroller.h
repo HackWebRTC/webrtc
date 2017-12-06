@@ -92,11 +92,11 @@ class TransportController : public sigslot::has_slots<>,
       const std::string& transport_name) const;
   bool SetLocalTransportDescription(const std::string& transport_name,
                                     const TransportDescription& tdesc,
-                                    ContentAction action,
+                                    webrtc::SdpType type,
                                     std::string* err);
   bool SetRemoteTransportDescription(const std::string& transport_name,
                                      const TransportDescription& tdesc,
-                                     ContentAction action,
+                                     webrtc::SdpType type,
                                      std::string* err);
   // Start gathering candidates for any new transports, or transports doing an
   // ICE restart.
@@ -213,11 +213,11 @@ class TransportController : public sigslot::has_slots<>,
       const std::string& transport_name) const;
   bool SetLocalTransportDescription_n(const std::string& transport_name,
                                       const TransportDescription& tdesc,
-                                      ContentAction action,
+                                      webrtc::SdpType type,
                                       std::string* err);
   bool SetRemoteTransportDescription_n(const std::string& transport_name,
                                        const TransportDescription& tdesc,
-                                       ContentAction action,
+                                       webrtc::SdpType type,
                                        std::string* err);
   void MaybeStartGathering_n();
   bool AddRemoteCandidates_n(const std::string& transport_name,

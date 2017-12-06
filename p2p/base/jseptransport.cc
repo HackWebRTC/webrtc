@@ -22,6 +22,8 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 
+using webrtc::SdpType;
+
 namespace cricket {
 
 static bool VerifyIceParams(const TransportDescription& desc) {
@@ -232,7 +234,7 @@ bool JsepTransport::GetLocalCertificate(
 
 bool JsepTransport::SetLocalTransportDescription(
     const TransportDescription& description,
-    ContentAction action,
+    SdpType type,
     std::string* error_desc) {
   bool ret = true;
 
@@ -266,8 +268,8 @@ bool JsepTransport::SetLocalTransportDescription(
   }
 
   // If PRANSWER/ANSWER is set, we should decide transport protocol type.
-  if (action == CA_PRANSWER || action == CA_ANSWER) {
-    ret &= NegotiateTransportDescription(action, error_desc);
+  if (type == SdpType::kPrAnswer || type == SdpType::kAnswer) {
+    ret &= NegotiateTransportDescription(type, error_desc);
   }
   if (!ret) {
     return false;
@@ -285,7 +287,7 @@ bool JsepTransport::SetLocalTransportDescription(
 
 bool JsepTransport::SetRemoteTransportDescription(
     const TransportDescription& description,
-    ContentAction action,
+    SdpType type,
     std::string* error_desc) {
   bool ret = true;
 
@@ -300,8 +302,8 @@ bool JsepTransport::SetRemoteTransportDescription(
   }
 
   // If PRANSWER/ANSWER is set, we should decide transport protocol type.
-  if (action == CA_PRANSWER || action == CA_ANSWER) {
-    ret = NegotiateTransportDescription(CA_OFFER, error_desc);
+  if (type == SdpType::kPrAnswer || type == SdpType::kAnswer) {
+    ret = NegotiateTransportDescription(SdpType::kOffer, error_desc);
   }
   if (ret) {
     remote_description_set_ = true;
@@ -407,7 +409,7 @@ bool JsepTransport::ApplyNegotiatedTransportDescription(
 }
 
 bool JsepTransport::NegotiateTransportDescription(
-    ContentAction local_description_type,
+    SdpType local_description_type,
     std::string* error_desc) {
   if (!local_description_ || !remote_description_) {
     const std::string msg =
@@ -424,7 +426,7 @@ bool JsepTransport::NegotiateTransportDescription(
     if (!NegotiateRole(local_description_type, error_desc)) {
       return false;
     }
-  } else if (local_fp && (local_description_type == CA_ANSWER)) {
+  } else if (local_fp && (local_description_type == SdpType::kAnswer)) {
     return BadTransportDescription(
         "Local fingerprint supplied when caller didn't offer DTLS.",
         error_desc);
@@ -445,7 +447,7 @@ bool JsepTransport::NegotiateTransportDescription(
   return true;
 }
 
-bool JsepTransport::NegotiateRole(ContentAction local_description_type,
+bool JsepTransport::NegotiateRole(SdpType local_description_type,
                                   std::string* error_desc) {
   if (!local_description_ || !remote_description_) {
     const std::string msg =
@@ -481,7 +483,7 @@ bool JsepTransport::NegotiateRole(ContentAction local_description_type,
   ConnectionRole remote_connection_role = remote_description_->connection_role;
 
   bool is_remote_server = false;
-  if (local_description_type == CA_OFFER) {
+  if (local_description_type == SdpType::kOffer) {
     if (local_connection_role != CONNECTIONROLE_ACTPASS) {
       return BadTransportDescription(
           "Offerer must use actpass value for setup attribute.", error_desc);

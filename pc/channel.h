@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "api/call/audio_sink.h"
+#include "api/jsep.h"
 #include "api/rtpreceiverinterface.h"
 #include "media/base/mediachannel.h"
 #include "media/base/mediaengine.h"
@@ -140,10 +141,10 @@ class BaseChannel
                      rtc::PacketTransportInternal* rtcp_packet_transport);
   // Channel control
   bool SetLocalContent(const MediaContentDescription* content,
-                       ContentAction action,
+                       webrtc::SdpType type,
                        std::string* error_desc);
   bool SetRemoteContent(const MediaContentDescription* content,
-                        ContentAction action,
+                        webrtc::SdpType type,
                         std::string* error_desc);
 
   bool Enable(bool enable);
@@ -302,22 +303,26 @@ class BaseChannel
   virtual void UpdateMediaSendRecvState_w() = 0;
 
   bool UpdateLocalStreams_w(const std::vector<StreamParams>& streams,
-                            ContentAction action,
+                            webrtc::SdpType type,
                             std::string* error_desc);
   bool UpdateRemoteStreams_w(const std::vector<StreamParams>& streams,
-                             ContentAction action,
+                             webrtc::SdpType type,
                              std::string* error_desc);
   virtual bool SetLocalContent_w(const MediaContentDescription* content,
-                                 ContentAction action,
+                                 webrtc::SdpType type,
                                  std::string* error_desc) = 0;
   virtual bool SetRemoteContent_w(const MediaContentDescription* content,
-                                  ContentAction action,
+                                  webrtc::SdpType type,
                                   std::string* error_desc) = 0;
   bool SetRtpTransportParameters(const MediaContentDescription* content,
-      ContentAction action, ContentSource src,
-      const RtpHeaderExtensions& extensions, std::string* error_desc);
-  bool SetRtpTransportParameters_n(const MediaContentDescription* content,
-      ContentAction action, ContentSource src,
+                                 webrtc::SdpType type,
+                                 ContentSource src,
+                                 const RtpHeaderExtensions& extensions,
+                                 std::string* error_desc);
+  bool SetRtpTransportParameters_n(
+      const MediaContentDescription* content,
+      webrtc::SdpType type,
+      ContentSource src,
       const std::vector<int>& encrypted_extension_ids,
       std::string* error_desc);
 
@@ -336,12 +341,12 @@ class BaseChannel
                          bool* dtls,
                          std::string* error_desc);
   bool SetSrtp_n(const std::vector<CryptoParams>& params,
-                 ContentAction action,
+                 webrtc::SdpType type,
                  ContentSource src,
                  const std::vector<int>& encrypted_extension_ids,
                  std::string* error_desc);
   bool SetRtcpMux_n(bool enable,
-                    ContentAction action,
+                    webrtc::SdpType type,
                     ContentSource src,
                     std::string* error_desc);
 
@@ -526,10 +531,10 @@ class VoiceChannel : public BaseChannel {
                         const rtc::PacketTime& packet_time) override;
   void UpdateMediaSendRecvState_w() override;
   bool SetLocalContent_w(const MediaContentDescription* content,
-                         ContentAction action,
+                         webrtc::SdpType type,
                          std::string* error_desc) override;
   bool SetRemoteContent_w(const MediaContentDescription* content,
-                          ContentAction action,
+                          webrtc::SdpType type,
                           std::string* error_desc) override;
   void HandleEarlyMediaTimeout();
   bool InsertDtmf_w(uint32_t ssrc, int event, int duration);
@@ -605,10 +610,10 @@ class VideoChannel : public BaseChannel {
   // overrides from BaseChannel
   void UpdateMediaSendRecvState_w() override;
   bool SetLocalContent_w(const MediaContentDescription* content,
-                         ContentAction action,
+                         webrtc::SdpType type,
                          std::string* error_desc) override;
   bool SetRemoteContent_w(const MediaContentDescription* content,
-                          ContentAction action,
+                          webrtc::SdpType type,
                           std::string* error_desc) override;
   bool GetStats_w(VideoMediaInfo* stats);
   webrtc::RtpParameters GetRtpSendParameters_w(uint32_t ssrc) const;
@@ -720,10 +725,10 @@ class RtpDataChannel : public BaseChannel {
   bool CheckDataChannelTypeFromContent(const DataContentDescription* content,
                                        std::string* error_desc);
   bool SetLocalContent_w(const MediaContentDescription* content,
-                         ContentAction action,
+                         webrtc::SdpType type,
                          std::string* error_desc) override;
   bool SetRemoteContent_w(const MediaContentDescription* content,
-                          ContentAction action,
+                          webrtc::SdpType type,
                           std::string* error_desc) override;
   void UpdateMediaSendRecvState_w() override;
 

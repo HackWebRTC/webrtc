@@ -181,10 +181,6 @@ class SessionDescription {
   bool msid_supported_ = true;
 };
 
-// Indicates whether a ContentDescription was an offer or an answer, as
-// described in http://www.ietf.org/rfc/rfc3264.txt.
-enum ContentAction { CA_OFFER, CA_PRANSWER, CA_ANSWER };
-
 // Indicates whether a ContentDescription was sent by the local client
 // or received from the remote client.
 enum ContentSource {

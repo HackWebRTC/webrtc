@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "api/candidate.h"
+#include "api/jsep.h"
 #include "api/optional.h"
 #include "p2p/base/p2pconstants.h"
 #include "p2p/base/sessiondescription.h"
@@ -280,13 +281,13 @@ class JsepTransport : public sigslot::has_slots<> {
   // Set the local TransportDescription to be used by DTLS and ICE channels
   // that are part of this Transport.
   bool SetLocalTransportDescription(const TransportDescription& description,
-                                    ContentAction action,
+                                    webrtc::SdpType type,
                                     std::string* error_desc);
 
   // Set the remote TransportDescription to be used by DTLS and ICE channels
   // that are part of this Transport.
   bool SetRemoteTransportDescription(const TransportDescription& description,
-                                     ContentAction action,
+                                     webrtc::SdpType type,
                                      std::string* error_desc);
 
   // Set the "needs-ice-restart" flag as described in JSEP. After the flag is
@@ -336,13 +337,13 @@ class JsepTransport : public sigslot::has_slots<> {
   // should be activated.
   //
   // Called when an answer TransportDescription is applied.
-  bool NegotiateTransportDescription(ContentAction local_description_type,
+  bool NegotiateTransportDescription(webrtc::SdpType local_description_type,
                                      std::string* error_desc);
 
   // Negotiates the SSL role based off the offer and answer as specified by
   // RFC 4145, section-4.1. Returns false if the SSL role cannot be determined
   // from the local description and remote description.
-  bool NegotiateRole(ContentAction local_description_type,
+  bool NegotiateRole(webrtc::SdpType local_description_type,
                      std::string* error_desc);
 
   // Pushes down the transport parameters from the local description, such

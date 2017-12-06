@@ -18,6 +18,8 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/thread.h"
 
+using webrtc::SdpType;
+
 namespace {
 
 enum {
@@ -158,23 +160,23 @@ TransportController::GetRemoteSSLCertificate(
 bool TransportController::SetLocalTransportDescription(
     const std::string& transport_name,
     const TransportDescription& tdesc,
-    ContentAction action,
+    SdpType type,
     std::string* err) {
   return network_thread_->Invoke<bool>(
       RTC_FROM_HERE,
       rtc::Bind(&TransportController::SetLocalTransportDescription_n, this,
-                transport_name, tdesc, action, err));
+                transport_name, tdesc, type, err));
 }
 
 bool TransportController::SetRemoteTransportDescription(
     const std::string& transport_name,
     const TransportDescription& tdesc,
-    ContentAction action,
+    SdpType type,
     std::string* err) {
   return network_thread_->Invoke<bool>(
       RTC_FROM_HERE,
       rtc::Bind(&TransportController::SetRemoteTransportDescription_n, this,
-                transport_name, tdesc, action, err));
+                transport_name, tdesc, type, err));
 }
 
 void TransportController::MaybeStartGathering() {
@@ -584,7 +586,7 @@ TransportController::GetRemoteSSLCertificate_n(
 bool TransportController::SetLocalTransportDescription_n(
     const std::string& transport_name,
     const TransportDescription& tdesc,
-    ContentAction action,
+    SdpType type,
     std::string* err) {
   RTC_DCHECK(network_thread_->IsCurrent());
 
@@ -626,18 +628,18 @@ bool TransportController::SetLocalTransportDescription_n(
       (!transport->remote_description() ||
        transport->remote_description()->ice_mode != ICEMODE_LITE)) {
     IceRole new_ice_role =
-        (action == CA_OFFER) ? ICEROLE_CONTROLLING : ICEROLE_CONTROLLED;
+        (type == SdpType::kOffer) ? ICEROLE_CONTROLLING : ICEROLE_CONTROLLED;
     SetIceRole(new_ice_role);
   }
 
   RTC_LOG(LS_INFO) << "Set local transport description on " << transport_name;
-  return transport->SetLocalTransportDescription(tdesc, action, err);
+  return transport->SetLocalTransportDescription(tdesc, type, err);
 }
 
 bool TransportController::SetRemoteTransportDescription_n(
     const std::string& transport_name,
     const TransportDescription& tdesc,
-    ContentAction action,
+    SdpType type,
     std::string* err) {
   RTC_DCHECK(network_thread_->IsCurrent());
 
@@ -668,7 +670,7 @@ bool TransportController::SetRemoteTransportDescription_n(
   }
 
   RTC_LOG(LS_INFO) << "Set remote transport description on " << transport_name;
-  return transport->SetRemoteTransportDescription(tdesc, action, err);
+  return transport->SetRemoteTransportDescription(tdesc, type, err);
 }
 
 void TransportController::MaybeStartGathering_n() {
