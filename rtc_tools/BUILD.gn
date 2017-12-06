@@ -13,32 +13,32 @@ group("rtc_tools") {
   # This target shall build all targets in tools/.
   testonly = true
 
-  public_deps = [
+  deps = [
     ":command_line_parser",
     ":frame_analyzer",
     ":video_quality_analysis",
   ]
   if (!build_with_chromium) {
-    public_deps += [
+    deps += [
       ":frame_editor",
       ":psnr_ssim_analyzer",
       ":rgba_to_i420_converter",
     ]
     if (rtc_include_internal_audio_device) {
-      public_deps += [ ":force_mic_volume_max" ]
+      deps += [ ":force_mic_volume_max" ]
     }
     if (rtc_enable_protobuf) {
-      public_deps += [ ":chart_proto" ]
+      deps += [ ":chart_proto" ]
     }
   }
 
   if (rtc_include_tests) {
-    public_deps += [
+    deps += [
       ":activity_metric",
       ":tools_unittests",
     ]
     if (rtc_enable_protobuf) {
-      public_deps += [
+      deps += [
         ":event_log_visualizer",
         ":rtp_analyzer",
         "network_tester",
@@ -72,6 +72,7 @@ rtc_static_library("video_quality_analysis") {
     # this dependency has to be added here so the linker can find the
     # symbols it needs.
     "../api:optional",
+    "../common_video",
   ]
 }
 
@@ -221,6 +222,7 @@ if (!build_with_chromium) {
       }
       defines = [ "ENABLE_RTC_EVENT_LOG" ]
       deps = [
+        ":chart_proto",
         "../call:call_interfaces",
         "../call:video_stream_api",
         "../logging:rtc_event_log_impl",
@@ -239,10 +241,6 @@ if (!build_with_chromium) {
         "../modules/rtp_rtcp",
         "../system_wrappers:system_wrappers_default",
         "//build/config:exe_and_shlib_deps",
-      ]
-      public_deps = [
-        ":chart_proto",
-        "../logging:rtc_event_log_parser",
       ]
     }
   }
@@ -264,6 +262,7 @@ if (rtc_include_tests) {
       defines = [ "ENABLE_RTC_EVENT_LOG" ]
       deps = [
         ":event_log_visualizer_utils",
+        "../logging:rtc_event_log_parser",
         "../rtc_base:rtc_base_approved",
         "../test:field_trial",
         "../test:test_support",
