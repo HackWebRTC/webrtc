@@ -76,6 +76,8 @@ rtc_static_library("voice_engine") {
     "../rtc_base:rtc_base_approved",
     "../rtc_base:rtc_task_queue",
     "../system_wrappers",
+    "../system_wrappers:field_trial_api",
+    "../system_wrappers:metrics_api",
   ]
 }
 

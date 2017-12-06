@@ -51,6 +51,8 @@ rtc_static_library("remote_bitrate_estimator") {
     "../../modules/rtp_rtcp:rtp_rtcp_format",
     "../../rtc_base:rtc_base_approved",
     "../../system_wrappers",
+    "../../system_wrappers:field_trial_api",
+    "../../system_wrappers:metrics_api",
   ]
 }
 
@@ -143,6 +145,7 @@ if (rtc_include_tests) {
       "../../rtc_base:rtc_base_approved",
       "../../rtc_base:rtc_numerics",
       "../../system_wrappers",
+      "../../system_wrappers:field_trial_api",
       "../../test:test_support",
       "../../voice_engine",
       "../bitrate_controller",
@@ -202,7 +205,7 @@ if (rtc_include_tests) {
       "../..:webrtc_common",
       "../../rtc_base:rtc_base",
       "../../rtc_base:rtc_base_approved",
-      "../../system_wrappers:system_wrappers",
+      "../../system_wrappers",
       "../../test:field_trial",
       "../../test:test_support",
       "../pacing:pacing",

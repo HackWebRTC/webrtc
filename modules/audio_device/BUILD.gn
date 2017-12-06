@@ -104,6 +104,7 @@ rtc_source_set("audio_device_generic") {
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:rtc_task_queue",
     "../../system_wrappers",
+    "../../system_wrappers:metrics_api",
     "../utility",
   ]
 

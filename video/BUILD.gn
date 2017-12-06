@@ -64,6 +64,8 @@ rtc_static_library("video") {
     "../call:rtp_interfaces",
     "../call:video_stream_api",
     "../modules/rtp_rtcp:rtp_rtcp_format",
+    "../system_wrappers:field_trial_api",
+    "../system_wrappers:metrics_api",
 
     # For RtxReceiveStream.
     "../call:rtp_receiver",
@@ -115,6 +117,7 @@ if (rtc_include_tests) {
       "../rtc_base:rtc_base_tests_utils",
       "../rtc_base:rtc_task_queue",
       "../system_wrappers",
+      "../system_wrappers:field_trial_api",
       "../test:rtp_test_utils",
       "../test:test_common",
       "../test:test_renderer",

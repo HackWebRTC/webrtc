@@ -109,6 +109,8 @@ rtc_static_library("video_coding") {
     "../../rtc_base:rtc_task_queue",
     "../../rtc_base:sequenced_task_checker",
     "../../system_wrappers",
+    "../../system_wrappers:field_trial_api",
+    "../../system_wrappers:metrics_api",
     "../pacing",
     "../rtp_rtcp:rtp_rtcp_format",
     "../utility:utility",
@@ -197,7 +199,7 @@ rtc_static_library("webrtc_h264") {
     "../../api/video_codecs:video_codecs_api",
     "../../media:rtc_media_base",
     "../../rtc_base:rtc_base_approved",
-    "../../system_wrappers",
+    "../../system_wrappers:metrics_api",
   ]
 
   if (rtc_use_h264) {
@@ -303,6 +305,8 @@ rtc_static_library("webrtc_vp8") {
     "../../rtc_base:rtc_numerics",
     "../../rtc_base:sequenced_task_checker",
     "../../system_wrappers",
+    "../../system_wrappers:field_trial_api",
+    "../../system_wrappers:metrics_api",
   ]
   if (rtc_build_libvpx) {
     deps += [ rtc_libvpx_dir ]
@@ -426,7 +430,7 @@ if (rtc_include_tests) {
       "../../rtc_base:rtc_base_approved",
       "../../rtc_base:rtc_task_queue",
       "../../rtc_base:sequenced_task_checker",
-      "../../system_wrappers:system_wrappers",
+      "../../system_wrappers",
       "../../test:test_support",
       "../../test:video_test_common",
       "../../test:video_test_support",
@@ -594,8 +598,10 @@ if (rtc_include_tests) {
       "../../rtc_base:rtc_base_approved",
       "../../rtc_base:rtc_numerics",
       "../../rtc_base:rtc_task_queue",
+      "../../system_wrappers",
+      "../../system_wrappers:field_trial_api",
+      "../../system_wrappers:metrics_api",
       "../../system_wrappers:metrics_default",
-      "../../system_wrappers:system_wrappers",
       "../../test:field_trial",
       "../../test:test_support",
       "../../test:video_test_common",

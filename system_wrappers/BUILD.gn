@@ -50,14 +50,12 @@ rtc_static_library("system_wrappers") {
   defines = []
   libs = []
   deps = [
-    "..:webrtc_common",
-    "../api:optional",
-    "../modules:module_api_public",
-  ]
-  public_deps = [
     ":cpu_features_api",
     ":field_trial_api",
     ":metrics_api",
+    "..:webrtc_common",
+    "../api:optional",
+    "../modules:module_api_public",
   ]
 
   if (is_android) {
@@ -211,6 +209,7 @@ if (rtc_include_tests) {
     }
 
     deps = [
+      ":metrics_api",
       ":metrics_default",
       ":system_wrappers",
       "..:webrtc_common",

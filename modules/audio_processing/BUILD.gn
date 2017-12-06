@@ -248,6 +248,8 @@ rtc_static_library("audio_processing") {
     "../../audio/utility:audio_frame_operations",
     "../../rtc_base:gtest_prod",
     "../../rtc_base:protobuf_utils",
+    "../../system_wrappers:cpu_features_api",
+    "../../system_wrappers:metrics_api",
     "../audio_coding:isac",
   ]
 
@@ -376,7 +378,7 @@ rtc_source_set("audio_processing_c") {
     "../..:webrtc_common",
     "../../common_audio",
     "../../rtc_base:rtc_base_approved",
-    "../../system_wrappers",
+    "../../system_wrappers:cpu_features_api",
   ]
 
   if (rtc_build_with_neon) {
@@ -570,7 +572,8 @@ if (rtc_include_tests) {
       "../../rtc_base:protobuf_utils",
       "../../rtc_base:rtc_base",
       "../../rtc_base:rtc_base_approved",
-      "../../system_wrappers:system_wrappers",
+      "../../system_wrappers",
+      "../../system_wrappers:cpu_features_api",
       "../../test:test_support",
       "../audio_coding:neteq_input_audio_tools",
       "aec_dump:mock_aec_dump_unittests",
@@ -707,7 +710,7 @@ if (rtc_include_tests) {
       "../../modules:module_api",
       "../../rtc_base:protobuf_utils",
       "../../rtc_base:rtc_base_approved",
-      "../../system_wrappers:system_wrappers",
+      "../../system_wrappers",
       "../../test:test_support",
     ]
 
@@ -806,7 +809,7 @@ if (rtc_include_tests) {
       "../../api:optional",
       "../../common_audio",
       "../../rtc_base:rtc_base_approved",
-      "../../system_wrappers:system_wrappers",
+      "../../system_wrappers",
       "../../test:test_support",
       "../audio_coding:neteq_input_audio_tools",
       "//testing/gtest",
@@ -826,8 +829,7 @@ if (rtc_include_tests) {
       "../..:webrtc_common",
       "../../common_audio:common_audio",
       "../../rtc_base:rtc_base_approved",
-      "../../system_wrappers:metrics_default",
-      "../../system_wrappers:system_wrappers",
+      "../../system_wrappers",
       "../../test:test_support",
       "//testing/gtest",
     ]
@@ -843,8 +845,8 @@ if (rtc_include_tests) {
     deps = [
       ":audio_processing",
       "../..:webrtc_common",
+      "../../system_wrappers",
       "../../system_wrappers:metrics_default",
-      "../../system_wrappers:system_wrappers",
     ]
   }
 

@@ -108,7 +108,7 @@ rtc_source_set("field_trial") {
 
   deps = [
     "..:webrtc_common",
-    "../system_wrappers",
+    "../system_wrappers:field_trial_api",
     "../system_wrappers:field_trial_default",
   ]
 }
@@ -504,7 +504,7 @@ rtc_source_set("fake_audio_device") {
     "../common_audio:common_audio",
     "../modules/audio_device:audio_device",
     "../rtc_base:rtc_base_approved",
-    "../system_wrappers:system_wrappers",
+    "../system_wrappers",
   ]
 }
 
@@ -585,6 +585,7 @@ rtc_source_set("test_common") {
     "../rtc_base:rtc_task_queue",
     "../rtc_base:sequenced_task_checker",
     "../system_wrappers",
+    "../system_wrappers:field_trial_api",
     "../video",
     "../voice_engine",
     "//testing/gmock",

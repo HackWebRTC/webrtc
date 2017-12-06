@@ -124,6 +124,7 @@ rtc_static_library("audio_coding") {
   }
 
   deps = audio_coding_deps + [
+           "../../system_wrappers:metrics_api",
            "..:module_api",
            "../../api:array_view",
            "../../api/audio_codecs:audio_codecs_api",
@@ -660,7 +661,7 @@ rtc_source_set("isac_fix_c") {
     "../../common_audio",
     "../../rtc_base:compile_assert_c",
     "../../rtc_base:rtc_base_approved",
-    "../../system_wrappers",
+    "../../system_wrappers:cpu_features_api",
   ]
 
   public_deps = [
@@ -796,7 +797,7 @@ rtc_static_library("webrtc_opus") {
     "../../common_audio",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:rtc_numerics",
-    "../../system_wrappers",
+    "../../system_wrappers:field_trial_api",
   ]
   public_deps = [
     ":webrtc_opus_c",
@@ -905,6 +906,7 @@ rtc_static_library("audio_network_adaptor") {
     "../../rtc_base:protobuf_utils",
     "../../rtc_base:rtc_base_approved",
     "../../system_wrappers",
+    "../../system_wrappers:field_trial_api",
   ]
 
   if (rtc_enable_protobuf) {
@@ -1016,7 +1018,8 @@ rtc_static_library("neteq") {
     "../../common_audio",
     "../../rtc_base:gtest_prod",
     "../../rtc_base:rtc_base_approved",
-    "../../system_wrappers",
+    "../../system_wrappers:field_trial_api",
+    "../../system_wrappers:metrics_api",
   ]
 }
 
@@ -1265,7 +1268,7 @@ if (rtc_include_tests) {
       "../../api:optional",
       "../../api/audio_codecs:builtin_audio_decoder_factory",
       "../../rtc_base:rtc_base_approved",
-      "../../system_wrappers:system_wrappers",
+      "../../system_wrappers",
       "../../test:test_support",
     ]
     defines = audio_coding_defines
@@ -1295,7 +1298,8 @@ if (rtc_include_tests) {
       "../../api/audio_codecs/opus:audio_encoder_opus",
       "../../rtc_base:protobuf_utils",
       "../../rtc_base:rtc_base_approved",
-      "../../system_wrappers:system_wrappers",
+      "../../system_wrappers",
+      "../../system_wrappers:field_trial_api",
       "../../test:test_support",
     ]
 
@@ -1619,10 +1623,10 @@ if (rtc_include_tests) {
              "../../api/audio_codecs/L16:audio_encoder_L16",
              "../../api/audio_codecs/g722:audio_encoder_g722",
              "../../api/audio_codecs/ilbc:audio_encoder_ilbc",
+             "../../system_wrappers:system_wrappers_default",
              "../../api/audio_codecs/isac:audio_encoder_isac",
              "../../api/audio_codecs/opus:audio_encoder_opus",
              "../../rtc_base:rtc_base_approved",
-             "../../system_wrappers:system_wrappers_default",
            ]
 
     sources = [
@@ -1636,10 +1640,10 @@ if (rtc_include_tests) {
     testonly = true
 
     deps = audio_coding_deps + [
+             "../../system_wrappers:system_wrappers_default",
              "../rtp_rtcp:rtp_rtcp_format",
              "../../api:array_view",
              "../../rtc_base:rtc_base_approved",
-             "../../system_wrappers:system_wrappers_default",
            ]
 
     sources = [
@@ -2054,7 +2058,8 @@ if (rtc_include_tests) {
       "../../rtc_base:rtc_base",
       "../../rtc_base:rtc_base_approved",
       "../../rtc_base:rtc_base_tests_utils",
-      "../../system_wrappers:system_wrappers",
+      "../../system_wrappers",
+      "../../system_wrappers:cpu_features_api",
       "../../test:audio_codec_mocks",
       "../../test:field_trial",
       "../../test:rtp_test_utils",

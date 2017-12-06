@@ -87,7 +87,7 @@ if (rtc_include_tests) {
       ":primitives",
       "../..:webrtc_common",
       "../../rtc_base:rtc_base_approved",
-      "../../system_wrappers",
+      "../../system_wrappers:cpu_features_api",
       "../../test:test_support",
       "//testing/gmock",
     ]
@@ -329,6 +329,8 @@ rtc_static_library("desktop_capture_generic") {
     "../../api:refcountedbase",
     "../../rtc_base:rtc_base",  # TODO(kjellander): Cleanup in bugs.webrtc.org/3806.
     "../../system_wrappers",
+    "../../system_wrappers:cpu_features_api",
+    "../../system_wrappers:metrics_api",
     "//third_party/libyuv",
   ]
 

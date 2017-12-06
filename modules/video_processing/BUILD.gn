@@ -32,7 +32,7 @@ rtc_static_library("video_processing") {
     "../../common_video",
     "../../modules/utility",
     "../../rtc_base:rtc_base_approved",
-    "../../system_wrappers",
+    "../../system_wrappers:cpu_features_api",
   ]
   if (build_video_processing_sse2) {
     deps += [ ":video_processing_sse2" ]

@@ -544,12 +544,11 @@ if (is_ios || is_mac) {
             ":peerconnectionfactory_objc",
             ":videotoolbox_objc",
             ":videotracksource_objc",
-            "..//system_wrappers:system_wrappers_default",
+            "../../system_wrappers:system_wrappers_default",
             "../media:rtc_media_base",
             "../modules:module_api",
             "../rtc_base:rtc_base",
             "../rtc_base:rtc_base_tests_utils",
-            "../system_wrappers:system_wrappers_default",
           ]
           public_deps = [
             "//build/config/ios:xctest",
@@ -622,11 +621,10 @@ if (is_ios || is_mac) {
           ":peerconnectionfactory_objc",
           ":videotoolbox_objc",
           ":videotracksource_objc",
-          "..//system_wrappers:system_wrappers_default",
+          "../../system_wrappers:system_wrappers_default",
           "../media:rtc_media_base",
           "../modules:module_api",
           "../rtc_base:rtc_base_tests_utils",
-          "../system_wrappers:system_wrappers_default",
           "//test:test_support",
           "//third_party/ocmock",
         ]

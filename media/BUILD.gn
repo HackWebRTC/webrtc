@@ -130,6 +130,8 @@ rtc_static_library("rtc_audio_video") {
     "../api:video_frame_api_i420",
     "../call:call_interfaces",
     "../modules/video_coding:video_coding_utility",
+    "../system_wrappers:field_trial_api",
+    "../system_wrappers:metrics_api",
   ]
   sources = [
     "engine/adm_helpers.cc",
