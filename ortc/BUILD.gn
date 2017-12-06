@@ -33,6 +33,7 @@ rtc_static_library("ortc") {
   # PeerConnection code shares, so that ortc can depend on that instead of
   # libjingle_peerconnection.
   deps = [
+    "../api:libjingle_peerconnection_api",
     "../api:optional",
     "../api:ortc_api",
     "../call:call_interfaces",
@@ -43,7 +44,9 @@ rtc_static_library("ortc") {
     "../modules/audio_processing:audio_processing",
     "../p2p:rtc_p2p",
     "../pc:libjingle_peerconnection",
+    "../pc:peerconnection",
     "../pc:rtc_pc",
+    "../pc:rtc_pc_base",
     "../rtc_base:rtc_base",
     "../rtc_base:rtc_base_approved",
   ]

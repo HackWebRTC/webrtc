@@ -13,7 +13,7 @@ if (is_android) {
 }
 
 group("pc") {
-  public_deps = [
+  deps = [
     ":rtc_pc",
   ]
 }
@@ -92,11 +92,8 @@ rtc_static_library("rtc_pc_base") {
 }
 
 rtc_source_set("rtc_pc") {
-  public_deps = [
-    ":rtc_pc_base",
-  ]
-
   deps = [
+    ":rtc_pc_base",
     "../media:rtc_audio_video",
   ]
 }
@@ -176,6 +173,7 @@ rtc_static_library("peerconnection") {
     ":rtc_pc_base",
     "..:webrtc_common",
     "../api:call_api",
+    "../api:libjingle_peerconnection_api",
     "../api:optional",
     "../api:rtc_stats_api",
     "../api/video_codecs:video_codecs_api",
@@ -189,10 +187,6 @@ rtc_static_library("peerconnection") {
     "../stats",
     "../system_wrappers",
     "../system_wrappers:field_trial_api",
-  ]
-
-  public_deps = [
-    "../api:libjingle_peerconnection_api",
   ]
 }
 
@@ -233,7 +227,7 @@ rtc_static_library("create_pc_factory") {
 }
 
 rtc_source_set("libjingle_peerconnection") {
-  public_deps = [
+  deps = [
     ":create_pc_factory",
     ":peerconnection",
     "../api:libjingle_peerconnection_api",
@@ -287,7 +281,9 @@ if (rtc_include_tests) {
       ":libjingle_peerconnection",
       ":pc_test_utils",
       ":rtc_pc",
+      ":rtc_pc_base",
       "../api:array_view",
+      "../api:libjingle_peerconnection_api",
       "../logging:rtc_event_log_api",
       "../media:rtc_media_base",
       "../media:rtc_media_tests_utils",
@@ -333,6 +329,7 @@ if (rtc_include_tests) {
 
     deps = [
       ":libjingle_peerconnection",
+      ":peerconnection",
       ":rtc_pc_base",
       "..:webrtc_common",
       "../api:libjingle_peerconnection_test_api",
@@ -436,7 +433,10 @@ if (rtc_include_tests) {
       ]
     }
 
-    deps = []
+    deps = [
+      ":peerconnection",
+      ":rtc_pc_base",
+    ]
     if (is_android) {
       deps += [ ":android_black_magic" ]
     }

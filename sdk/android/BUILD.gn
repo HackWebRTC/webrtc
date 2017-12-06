@@ -362,6 +362,8 @@ rtc_static_library("peerconnection_jni") {
     ":generated_external_classes_jni",
     ":generated_peerconnection_jni",
     "../..:webrtc_common",
+    "../../api:libjingle_peerconnection_api",
+    "../../api:peerconnection_and_implicit_call_api",
     "../../api/video_codecs:video_codecs_api",
     "../../media:rtc_data",
     "../../media:rtc_media_base",
