@@ -39,7 +39,7 @@ constexpr size_t kFftLengthBy2Minus1 = kFftLengthBy2 - 1;
 constexpr size_t kFftLength = 2 * kFftLengthBy2;
 
 constexpr int kAdaptiveFilterLength = 12;
-constexpr int kUnknownDelayRenderWindowSize = 30;
+constexpr int kUnknownDelayRenderWindowSize = 12;
 constexpr int kAdaptiveFilterTimeDomainLength =
     kAdaptiveFilterLength * kFftLengthBy2;
 constexpr int kRenderTransferQueueSizeFrames = 100;

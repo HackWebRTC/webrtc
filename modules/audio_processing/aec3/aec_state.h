@@ -156,8 +156,8 @@ class AecState {
   bool capture_signal_saturation_ = false;
   bool echo_saturation_ = false;
   bool transparent_mode_ = false;
+  float previous_max_sample_ = 0.f;
   std::array<float, kAdaptiveFilterLength> max_render_;
-  size_t max_render_index_ = 0;
   bool force_zero_gain_ = false;
   bool render_received_ = false;
   size_t force_zero_gain_counter_ = 0;
@@ -171,7 +171,6 @@ class AecState {
   const EchoCanceller3Config config_;
   float reverb_decay_;
   bool saturating_echo_path_ = false;
-  int saturating_echo_path_counter_ = 0;
   bool initial_state_ = true;
   bool linear_echo_estimate_ = false;
   bool sufficient_filter_updates_ = false;
