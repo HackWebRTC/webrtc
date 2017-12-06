@@ -508,6 +508,12 @@ void VideoStreamEncoder::SetSource(
     bool allow_scaling = IsResolutionScalingEnabled(degradation_preference_);
     initial_rampup_ = allow_scaling ? 0 : kMaxInitialFramedrop;
     ConfigureQualityScaler();
+    if (!IsFramerateScalingEnabled(degradation_preference) &&
+        max_framerate_ != -1) {
+      // If frame rate scaling is no longer allowed, remove any potential
+      // allowance for longer frame intervals.
+      overuse_detector_->OnTargetFramerateUpdated(max_framerate_);
+    }
   });
 }
 
@@ -621,6 +627,15 @@ void VideoStreamEncoder::ReconfigureEncoder() {
 
   sink_->OnEncoderConfigurationChanged(
       std::move(streams), encoder_config_.min_transmit_bitrate_bps);
+
+  // Get the current target framerate, ie the maximum framerate as specified by
+  // the current codec configuration, or any limit imposed by cpu adaption in
+  // maintain-resolution or balanced mode. This is used to make sure overuse
+  // detection doesn't needlessly trigger in low and/or variable framerate
+  // scenarios.
+  int target_framerate = std::min(
+      max_framerate_, source_proxy_->GetActiveSinkWants().max_framerate_fps);
+  overuse_detector_->OnTargetFramerateUpdated(target_framerate);
 
   ConfigureQualityScaler();
 }
@@ -806,7 +821,7 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
   TRACE_EVENT_ASYNC_STEP0("webrtc", "Video", video_frame.render_time_ms(),
                           "Encode");
 
-  overuse_detector_->FrameCaptured(out_frame.width(), out_frame.height());
+  overuse_detector_->FrameCaptured(out_frame, time_when_posted_us);
 
   video_sender_.AddVideoFrame(out_frame, nullptr);
 }
@@ -832,21 +847,12 @@ EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
   EncodedImageCallback::Result result =
       sink_->OnEncodedImage(encoded_image, codec_specific_info, fragmentation);
 
-  int64_t capture_time_us =
-      encoded_image.capture_time_ms_ * rtc::kNumMicrosecsPerMillisec;
-  int64_t encode_duration_us;
-  if (encoded_image.timing_.flags != TimingFrameFlags::kInvalid) {
-    encode_duration_us = rtc::kNumMicrosecsPerMillisec *
-                         (encoded_image.timing_.encode_finish_ms -
-                          encoded_image.timing_.encode_start_ms);
-  } else {
-    encode_duration_us = -1;
-  }
+  int64_t time_sent_us = rtc::TimeMicros();
+  uint32_t timestamp = encoded_image._timeStamp;
   const int qp = encoded_image.qp_;
-  encoder_queue_.PostTask([this, capture_time_us, encode_duration_us, qp] {
+  encoder_queue_.PostTask([this, timestamp, time_sent_us, qp] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
-    if (encode_duration_us >= 0)
-      overuse_detector_->FrameEncoded(capture_time_us, encode_duration_us);
+    overuse_detector_->FrameSent(timestamp, time_sent_us);
     if (quality_scaler_ && qp >= 0)
       quality_scaler_->ReportQP(qp);
   });
@@ -997,6 +1003,8 @@ void VideoStreamEncoder::AdaptDown(AdaptReason reason) {
       if (requested_framerate == -1)
         return;
       RTC_DCHECK_NE(max_framerate_, -1);
+      overuse_detector_->OnTargetFramerateUpdated(
+          std::min(max_framerate_, requested_framerate));
       GetAdaptCounter().IncrementFramerate(reason);
       break;
     }
@@ -1080,8 +1088,11 @@ void VideoStreamEncoder::AdaptUp(AdaptReason reason) {
       const int requested_framerate =
           source_proxy_->RequestHigherFramerateThan(fps);
       if (requested_framerate == -1) {
+        overuse_detector_->OnTargetFramerateUpdated(max_framerate_);
         return;
       }
+      overuse_detector_->OnTargetFramerateUpdated(
+          std::min(max_framerate_, requested_framerate));
       GetAdaptCounter().DecrementFramerate(reason);
       break;
     }

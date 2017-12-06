@@ -17,6 +17,7 @@
 #include "api/optional.h"
 #include "modules/video_coding/utility/quality_scaler.h"
 #include "rtc_base/constructormagic.h"
+#include "rtc_base/numerics/exp_filter.h"
 #include "rtc_base/sequenced_task_checker.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread_annotations.h"
@@ -34,12 +35,12 @@ struct CpuOveruseOptions {
   // General settings.
   int frame_timeout_interval_ms;  // The maximum allowed interval between two
                                   // frames before resetting estimations.
+  int min_frame_samples;  // The minimum number of frames required.
   int min_process_count;  // The number of initial process times required before
                           // triggering an overuse/underuse.
   int high_threshold_consecutive_count;  // The number of consecutive checks
                                          // above the high threshold before
                                          // triggering an overuse.
-  int filter_time_ms;                    // Time constant for averaging
 };
 
 struct CpuOveruseMetrics {
@@ -76,11 +77,18 @@ class OveruseFrameDetector {
   // StartCheckForOveruse has been called.
   void StopCheckForOveruse();
 
-  // Called for each captured frame.
-  void FrameCaptured(int width, int height);
+  // Defines the current maximum framerate targeted by the capturer. This is
+  // used to make sure the encode usage percent doesn't drop unduly if the
+  // capturer has quiet periods (for instance caused by screen capturers with
+  // variable capture rate depending on content updates), otherwise we might
+  // experience adaptation toggling.
+  virtual void OnTargetFramerateUpdated(int framerate_fps);
 
-  // Called for each encoded frame.
-  void FrameEncoded(int64_t capture_time_us, int64_t encode_duration_us);
+  // Called for each captured frame.
+  void FrameCaptured(const VideoFrame& frame, int64_t time_when_first_seen_us);
+
+  // Called for each sent frame.
+  void FrameSent(uint32_t timestamp, int64_t time_sent_in_us);
 
  protected:
   void CheckForOveruse();  // Protected for test purposes.
@@ -89,6 +97,17 @@ class OveruseFrameDetector {
   class OverdoseInjector;
   class SendProcessingUsage;
   class CheckOveruseTask;
+  struct FrameTiming {
+    FrameTiming(int64_t capture_time_us, uint32_t timestamp, int64_t now)
+        : capture_time_us(capture_time_us),
+          timestamp(timestamp),
+          capture_us(now),
+          last_send_us(-1) {}
+    int64_t capture_time_us;
+    uint32_t timestamp;
+    int64_t capture_us;
+    int64_t last_send_us;
+  };
 
   void EncodedFrameTimeMeasured(int encode_duration_ms);
   bool IsOverusing(const CpuOveruseMetrics& metrics);
@@ -97,7 +116,7 @@ class OveruseFrameDetector {
   bool FrameTimeoutDetected(int64_t now) const;
   bool FrameSizeChanged(int num_pixels) const;
 
-  void ResetAll();
+  void ResetAll(int num_pixels);
 
   static std::unique_ptr<SendProcessingUsage> CreateSendProcessingUsage(
       const CpuOveruseOptions& options);
@@ -123,6 +142,7 @@ class OveruseFrameDetector {
 
   // Number of pixels of last captured frame.
   int num_pixels_ RTC_GUARDED_BY(task_checker_);
+  int max_framerate_ RTC_GUARDED_BY(task_checker_);
   int64_t last_overuse_time_ms_ RTC_GUARDED_BY(task_checker_);
   int checks_above_threshold_ RTC_GUARDED_BY(task_checker_);
   int num_overuse_detections_ RTC_GUARDED_BY(task_checker_);
@@ -134,6 +154,7 @@ class OveruseFrameDetector {
   // allocs)?
   const std::unique_ptr<SendProcessingUsage> usage_
       RTC_GUARDED_BY(task_checker_);
+  std::list<FrameTiming> frame_timing_ RTC_GUARDED_BY(task_checker_);
 
   RTC_DISALLOW_COPY_AND_ASSIGN(OveruseFrameDetector);
 };
