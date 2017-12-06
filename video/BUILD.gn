@@ -63,6 +63,7 @@ rtc_static_library("video") {
     "../call:call_interfaces",
     "../call:rtp_interfaces",
     "../call:video_stream_api",
+    "../modules/rtp_rtcp:rtp_rtcp_format",
 
     # For RtxReceiveStream.
     "../call:rtp_receiver",
@@ -278,6 +279,7 @@ if (rtc_include_tests) {
       "../modules/pacing",
       "../modules/rtp_rtcp",
       "../modules/rtp_rtcp:mock_rtp_rtcp",
+      "../modules/rtp_rtcp:rtp_rtcp_format",
       "../modules/utility",
       "../modules/video_coding",
       "../modules/video_coding:video_coding_utility",

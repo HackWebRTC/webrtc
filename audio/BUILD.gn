@@ -53,7 +53,7 @@ rtc_static_library("audio") {
     "../modules/congestion_controller:congestion_controller",
     "../modules/pacing:pacing",
     "../modules/remote_bitrate_estimator:remote_bitrate_estimator",
-    "../modules/rtp_rtcp:rtp_rtcp",
+    "../modules/rtp_rtcp",
     "../rtc_base:rtc_base",
     "../rtc_base:rtc_base_approved",
     "../rtc_base:rtc_task_queue",

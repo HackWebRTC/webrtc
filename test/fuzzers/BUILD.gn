@@ -102,6 +102,7 @@ webrtc_fuzzer_test("flexfec_header_reader_fuzzer") {
   ]
   deps = [
     "../../modules/rtp_rtcp",
+    "../../modules/rtp_rtcp:rtp_rtcp_format",
     "../../rtc_base:rtc_base_approved",
   ]
 }
@@ -112,6 +113,7 @@ webrtc_fuzzer_test("flexfec_sender_fuzzer") {
   ]
   deps = [
     "../../modules/rtp_rtcp",
+    "../../modules/rtp_rtcp:rtp_rtcp_format",
     "../../system_wrappers",
   ]
   libfuzzer_options = [ "max_len=200" ]
@@ -124,6 +126,7 @@ webrtc_fuzzer_test("ulpfec_header_reader_fuzzer") {
   deps = [
     "../../modules/rtp_rtcp",
     "../../modules/rtp_rtcp:fec_test_helper",
+    "../../modules/rtp_rtcp:rtp_rtcp_format",
     "../../rtc_base:rtc_base_approved",
   ]
 }
@@ -135,6 +138,7 @@ webrtc_fuzzer_test("ulpfec_generator_fuzzer") {
   deps = [
     "../../modules/rtp_rtcp",
     "../../modules/rtp_rtcp:fec_test_helper",
+    "../../modules/rtp_rtcp:rtp_rtcp_format",
     "../../rtc_base:rtc_base_approved",
   ]
 }
@@ -145,6 +149,7 @@ webrtc_fuzzer_test("ulpfec_receiver_fuzzer") {
   ]
   deps = [
     "../../modules/rtp_rtcp",
+    "../../modules/rtp_rtcp:rtp_rtcp_format",
     "../../rtc_base:rtc_base_approved",
   ]
   libfuzzer_options = [ "max_len=2000" ]
@@ -156,6 +161,7 @@ webrtc_fuzzer_test("flexfec_receiver_fuzzer") {
   ]
   deps = [
     "../../modules/rtp_rtcp",
+    "../../modules/rtp_rtcp:rtp_rtcp_format",
     "../../rtc_base:rtc_base_approved",
   ]
   libfuzzer_options = [ "max_len=2000" ]
@@ -189,7 +195,7 @@ webrtc_fuzzer_test("rtp_packet_fuzzer") {
     "rtp_packet_fuzzer.cc",
   ]
   deps = [
-    "../../modules/rtp_rtcp",
+    "../../modules/rtp_rtcp:rtp_rtcp_format",
   ]
   seed_corpus = "corpora/rtp-corpus"
 }
@@ -200,6 +206,7 @@ webrtc_fuzzer_test("rtp_header_fuzzer") {
   ]
   deps = [
     "../../modules/rtp_rtcp",
+    "../../modules/rtp_rtcp:rtp_rtcp_format",
   ]
 }
 
@@ -213,7 +220,7 @@ webrtc_fuzzer_test("congestion_controller_feedback_fuzzer") {
     "../../modules/congestion_controller",
     "../../modules/pacing",
     "../../modules/remote_bitrate_estimator:remote_bitrate_estimator",
-    "../../modules/rtp_rtcp",
+    "../../modules/rtp_rtcp:rtp_rtcp_format",
   ]
 }
 
@@ -226,7 +233,7 @@ rtc_static_library("audio_decoder_fuzzer") {
     "../..:webrtc_common",
     "../../api:optional",
     "../../api/audio_codecs:audio_codecs_api",
-    "../../modules/rtp_rtcp",
+    "../../modules/rtp_rtcp:rtp_rtcp_format",
     "../../rtc_base:rtc_base_approved",
   ]
 }
@@ -310,7 +317,7 @@ webrtc_fuzzer_test("neteq_rtp_fuzzer") {
     "../../modules/audio_coding:neteq_test_tools",
     "../../modules/audio_coding:neteq_tools_minimal",
     "../../modules/audio_coding:pcm16b",
-    "../../modules/rtp_rtcp",
+    "../../modules/rtp_rtcp:rtp_rtcp_format",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:rtc_base_tests_utils",
   ]
@@ -326,7 +333,7 @@ webrtc_fuzzer_test("neteq_signal_fuzzer") {
     "../../modules/audio_coding:neteq_test_tools",
     "../../modules/audio_coding:neteq_tools_minimal",
     "../../modules/audio_coding:pcm16b",
-    "../../modules/rtp_rtcp",
+    "../../modules/rtp_rtcp:rtp_rtcp_format",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:rtc_base_tests_utils",
   ]
@@ -390,7 +397,7 @@ webrtc_fuzzer_test("transport_feedback_packet_loss_tracker_fuzzer") {
   ]
   deps = [
     "../../api:array_view",
-    "../../modules/rtp_rtcp",
+    "../../modules/rtp_rtcp:rtp_rtcp_format",
     "../../rtc_base:rtc_base_approved",
     "../../voice_engine",
   ]

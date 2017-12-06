@@ -65,7 +65,7 @@ if (!build_with_chromium) {
       ":remote_bitrate_estimator",
       "../../rtc_base:rtc_base_approved",
       "../../test:rtp_test_utils",
-      "../rtp_rtcp:rtp_rtcp",
+      "../rtp_rtcp",
     ]
     if (is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -149,6 +149,7 @@ if (rtc_include_tests) {
       "../congestion_controller",
       "../pacing",
       "../rtp_rtcp",
+      "../rtp_rtcp:rtp_rtcp_format",
       "../video_coding:video_coding_utility",
       "//testing/gmock",
       "//testing/gtest",
@@ -205,7 +206,7 @@ if (rtc_include_tests) {
       "../../test:field_trial",
       "../../test:test_support",
       "../pacing:pacing",
-      "../rtp_rtcp:rtp_rtcp",
+      "../rtp_rtcp:rtp_rtcp_format",
       "//testing/gmock",
     ]
     if (is_win) {

@@ -335,7 +335,7 @@ if (rtc_include_tests) {
       "../call:video_stream_api",
       "../modules/audio_coding:rent_a_codec",
       "../modules/audio_processing:audio_processing",
-      "../modules/rtp_rtcp:rtp_rtcp",
+      "../modules/rtp_rtcp:rtp_rtcp_format",
       "../modules/video_coding:video_coding_utility",
       "../p2p:rtc_p2p",
     ]

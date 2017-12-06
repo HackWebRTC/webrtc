@@ -188,6 +188,7 @@ rtc_static_library("rtp_rtcp") {
   }
 
   deps = [
+    ":rtp_rtcp_format",
     "..:module_api",
     "../..:webrtc_common",
     "../../api:array_view",
@@ -204,10 +205,6 @@ rtc_static_library("rtp_rtcp") {
     "../../system_wrappers",
     "../audio_coding:audio_format_conversion",
     "../remote_bitrate_estimator",
-  ]
-
-  public_deps = [
-    ":rtp_rtcp_format",
   ]
 
   # TODO(jschuh): Bug 1348: fix this warning.
@@ -234,6 +231,7 @@ rtc_source_set("rtcp_transceiver") {
   ]
   deps = [
     ":rtp_rtcp",
+    ":rtp_rtcp_format",
     "../../api:array_view",
     "../../api:optional",
     "../../api:transport_api",
@@ -252,6 +250,7 @@ rtc_source_set("fec_test_helper") {
   ]
   deps = [
     ":rtp_rtcp",
+    ":rtp_rtcp_format",
     "..:module_api",
     "../../rtc_base:rtc_base_approved",
   ]
@@ -273,6 +272,7 @@ rtc_source_set("mock_rtp_rtcp") {
   ]
   deps = [
     ":rtp_rtcp",
+    ":rtp_rtcp_format",
     "..:module_api",
     "../../api:optional",
     "../../rtc_base:rtc_base_approved",
@@ -304,6 +304,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":rtp_rtcp",
+      ":rtp_rtcp_format",
       "../../rtc_base:rtc_base_approved",
       "../../test:test_support",
     ]
@@ -385,6 +386,7 @@ if (rtc_include_tests) {
       ":mock_rtp_rtcp",
       ":rtcp_transceiver",
       ":rtp_rtcp",
+      ":rtp_rtcp_format",
       "..:module_api",
       "../..:webrtc_common",
       "../../api:array_view",
