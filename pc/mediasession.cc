@@ -469,7 +469,6 @@ static bool AddStreamParams(
         for (size_t i = 0; i < ssrcs.size(); ++i) {
           stream_param.AddFidSsrc(ssrcs[i], rtx_ssrcs[i]);
         }
-        content_description->set_multistream(true);
       }
       // Generate extra ssrc for include_flexfec_stream case.
       if (include_flexfec_stream) {
@@ -478,7 +477,6 @@ static bool AddStreamParams(
           std::vector<uint32_t> flexfec_ssrcs;
           GenerateSsrcs(*current_streams, 1, &flexfec_ssrcs);
           stream_param.AddFecFrSsrc(ssrcs[0], flexfec_ssrcs[0]);
-          content_description->set_multistream(true);
         } else if (!ssrcs.empty()) {
           RTC_LOG(LS_WARNING)
               << "Our FlexFEC implementation only supports protecting "
@@ -736,7 +734,6 @@ static bool CreateMediaContentOffer(
   if (offer->type() == cricket::MEDIA_TYPE_VIDEO) {
     offer->set_rtcp_reduced_size(true);
   }
-  offer->set_multistream(session_options.is_muc);
   offer->set_rtp_header_extensions(rtp_extensions);
 
   if (!AddStreamParams(sender_options, session_options.rtcp_cname,
@@ -1867,7 +1864,6 @@ bool MediaSessionDescriptionFactory::AddAudioContentForOffer(
           crypto_suites, audio_rtp_extensions, current_streams, audio.get())) {
     return false;
   }
-  audio->set_lang(lang_);
 
   bool secure_transport = (transport_desc_factory_->secure() != SEC_DISABLED);
   SetMediaProtocol(secure_transport, audio.get());

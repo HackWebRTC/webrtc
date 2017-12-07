@@ -1469,42 +1469,6 @@ TEST_F(MediaSessionDescriptionFactoryTest,
   EXPECT_FALSE(dcd->has_ssrcs());  // No StreamParams.
 }
 
-TEST_F(MediaSessionDescriptionFactoryTest, TestPartial) {
-  MediaSessionOptions opts;
-  AddAudioVideoSections(RtpTransceiverDirection::kRecvOnly, &opts);
-  AddDataSection(cricket::DCT_RTP, RtpTransceiverDirection::kRecvOnly, &opts);
-  f1_.set_secure(SEC_ENABLED);
-  std::unique_ptr<SessionDescription> offer(f1_.CreateOffer(opts, NULL));
-  ASSERT_TRUE(offer.get() != NULL);
-  const ContentInfo* ac = offer->GetContentByName("audio");
-  const ContentInfo* vc = offer->GetContentByName("video");
-  const ContentInfo* dc = offer->GetContentByName("data");
-  AudioContentDescription* acd = const_cast<AudioContentDescription*>(
-      static_cast<const AudioContentDescription*>(ac->description));
-  VideoContentDescription* vcd = const_cast<VideoContentDescription*>(
-      static_cast<const VideoContentDescription*>(vc->description));
-  DataContentDescription* dcd = const_cast<DataContentDescription*>(
-      static_cast<const DataContentDescription*>(dc->description));
-
-  EXPECT_FALSE(acd->partial());  // default is false.
-  acd->set_partial(true);
-  EXPECT_TRUE(acd->partial());
-  acd->set_partial(false);
-  EXPECT_FALSE(acd->partial());
-
-  EXPECT_FALSE(vcd->partial());  // default is false.
-  vcd->set_partial(true);
-  EXPECT_TRUE(vcd->partial());
-  vcd->set_partial(false);
-  EXPECT_FALSE(vcd->partial());
-
-  EXPECT_FALSE(dcd->partial());  // default is false.
-  dcd->set_partial(true);
-  EXPECT_TRUE(dcd->partial());
-  dcd->set_partial(false);
-  EXPECT_FALSE(dcd->partial());
-}
-
 // Create a typical video answer, and ensure it matches what we expect.
 TEST_F(MediaSessionDescriptionFactoryTest, TestCreateVideoAnswerRtcpMux) {
   MediaSessionOptions offer_opts;
@@ -2412,7 +2376,6 @@ TEST_F(MediaSessionDescriptionFactoryTest, SimSsrcsGenerateMultipleRtxSsrcs) {
   VideoContentDescription* desc = static_cast<VideoContentDescription*>(
       offer->GetContentDescriptionByName(cricket::CN_VIDEO));
   ASSERT_TRUE(desc != NULL);
-  EXPECT_TRUE(desc->multistream());
   const StreamParamsVec& streams = desc->streams();
   // Single stream.
   ASSERT_EQ(1u, streams.size());
@@ -2453,7 +2416,6 @@ TEST_F(MediaSessionDescriptionFactoryTest, GenerateFlexfecSsrc) {
   VideoContentDescription* desc = static_cast<VideoContentDescription*>(
       offer->GetContentDescriptionByName(cricket::CN_VIDEO));
   ASSERT_TRUE(desc != nullptr);
-  EXPECT_TRUE(desc->multistream());
   const StreamParamsVec& streams = desc->streams();
   // Single stream.
   ASSERT_EQ(1u, streams.size());
@@ -2493,7 +2455,6 @@ TEST_F(MediaSessionDescriptionFactoryTest, SimSsrcsGenerateNoFlexfecSsrcs) {
   VideoContentDescription* desc = static_cast<VideoContentDescription*>(
       offer->GetContentDescriptionByName(cricket::CN_VIDEO));
   ASSERT_TRUE(desc != nullptr);
-  EXPECT_FALSE(desc->multistream());
   const StreamParamsVec& streams = desc->streams();
   // Single stream.
   ASSERT_EQ(1u, streams.size());

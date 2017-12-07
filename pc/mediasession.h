@@ -124,7 +124,6 @@ struct MediaSessionOptions {
   bool HasMediaDescription(MediaType type) const;
 
   DataChannelType data_channel_type = DCT_NONE;
-  bool is_muc = false;
   bool vad_enabled = true;  // When disabled, removes all CN codecs from SDP.
   bool rtcp_mux_enabled = true;
   bool bundle_enabled = false;
@@ -174,11 +173,6 @@ class MediaContentDescription : public ContentDescription {
     cryptos_ = cryptos;
   }
 
-  CryptoType crypto_required() const { return crypto_required_; }
-  void set_crypto_required(CryptoType type) {
-    crypto_required_ = type;
-  }
-
   const RtpHeaderExtensions& rtp_header_extensions() const {
     return rtp_header_extensions_;
   }
@@ -209,9 +203,6 @@ class MediaContentDescription : public ContentDescription {
   bool rtp_header_extensions_set() const {
     return rtp_header_extensions_set_;
   }
-  // True iff the client supports multiple streams.
-  void set_multistream(bool multistream) { multistream_ = multistream; }
-  bool multistream() const { return multistream_; }
   const StreamParamsVec& streams() const {
     return streams_;
   }
@@ -256,9 +247,6 @@ class MediaContentDescription : public ContentDescription {
   void set_conference_mode(bool enable) { conference_mode_ = enable; }
   bool conference_mode() const { return conference_mode_; }
 
-  void set_partial(bool partial) { partial_ = partial; }
-  bool partial() const { return partial_;  }
-
   // https://tools.ietf.org/html/rfc4566#section-5.7
   // May be present at the media or session level of SDP. If present at both
   // levels, the media-level attribute overwrites the session-level one.
@@ -275,13 +263,10 @@ class MediaContentDescription : public ContentDescription {
   int bandwidth_ = kAutoBandwidth;
   std::string protocol_;
   std::vector<CryptoParams> cryptos_;
-  CryptoType crypto_required_ = CT_NONE;
   std::vector<webrtc::RtpExtension> rtp_header_extensions_;
   bool rtp_header_extensions_set_ = false;
-  bool multistream_ = false;
   StreamParamsVec streams_;
   bool conference_mode_ = false;
-  bool partial_ = false;
   webrtc::RtpTransceiverDirection direction_ =
       webrtc::RtpTransceiverDirection::kSendRecv;
   rtc::SocketAddress connection_address_;
@@ -333,27 +318,12 @@ class MediaContentDescriptionImpl : public MediaContentDescription {
 
 class AudioContentDescription : public MediaContentDescriptionImpl<AudioCodec> {
  public:
-  AudioContentDescription() :
-      agc_minus_10db_(false) {}
+  AudioContentDescription() {}
 
   virtual ContentDescription* Copy() const {
     return new AudioContentDescription(*this);
   }
   virtual MediaType type() const { return MEDIA_TYPE_AUDIO; }
-
-  const std::string &lang() const { return lang_; }
-  void set_lang(const std::string &lang) { lang_ = lang; }
-
-  bool agc_minus_10db() const { return agc_minus_10db_; }
-  void set_agc_minus_10db(bool enable) {
-    agc_minus_10db_ = enable;
-  }
-
- private:
-  bool agc_minus_10db_;
-
- private:
-  std::string lang_;
 };
 
 class VideoContentDescription : public MediaContentDescriptionImpl<VideoCodec> {
@@ -553,7 +523,6 @@ class MediaSessionDescriptionFactory {
   // TODO(zhihuang): Rename secure_ to sdec_policy_; rename the related getter
   // and setter.
   SecurePolicy secure_ = SEC_DISABLED;
-  std::string lang_;
   const TransportDescriptionFactory* transport_desc_factory_;
 };
 

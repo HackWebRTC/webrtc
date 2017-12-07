@@ -63,8 +63,6 @@ enum {
   MSG_FIRSTPACKETRECEIVED,
 };
 
-static const int kAgcMinus10db = -10;
-
 static void SafeSetError(const std::string& message, std::string* error_desc) {
   if (error_desc) {
     *error_desc = message;
@@ -1491,9 +1489,6 @@ bool VoiceChannel::SetRemoteContent_w(const MediaContentDescription* content,
   AudioSendParameters send_params = last_send_params_;
   RtpSendParametersFromMediaDescription(audio, rtp_header_extensions,
       &send_params);
-  if (audio->agc_minus_10db()) {
-    send_params.options.adjust_agc_delta = kAgcMinus10db;
-  }
 
   bool parameters_applied = media_channel()->SetSendParameters(send_params);
   if (!parameters_applied) {
