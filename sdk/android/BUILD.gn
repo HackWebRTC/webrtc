@@ -468,11 +468,10 @@ template("java8_dist_jar") {
   _output_jars = []
   foreach(dep, invoker.deps) {
     _dep_name = get_label_info(dep, "name")
-    _source_jar = get_label_info(dep, "target_gen_dir") + "/" + _dep_name +
-                  "__compile_java.javac.jar"
+    _source_jar =
+        get_label_info(dep, "target_gen_dir") + "/" + _dep_name + ".javac.jar"
     _output_jar = "$target_gen_dir/" + _dep_name + ".jar"
 
-    _copy_dep = dep + "__compile_java__javac"
     _copy_target_name = "${target_name}_${_dep_name}_copy"
 
     copy(_copy_target_name) {
@@ -483,7 +482,7 @@ template("java8_dist_jar") {
         _output_jar,
       ]
       deps = [
-        _copy_dep,
+        dep,
       ]
     }
     _deps += [ ":" + _copy_target_name ]
