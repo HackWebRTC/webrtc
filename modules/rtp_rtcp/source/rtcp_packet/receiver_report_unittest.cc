@@ -27,7 +27,7 @@ namespace {
 const uint32_t kSenderSsrc = 0x12345678;
 const uint32_t kRemoteSsrc = 0x23456789;
 const uint8_t kFractionLost = 55;
-const uint32_t kCumulativeLost = 0x111213;
+const int32_t kCumulativeLost = 0x111213;
 const uint32_t kExtHighestSeqNum = 0x22232425;
 const uint32_t kJitter = 0x33343536;
 const uint32_t kLastSr = 0x44454647;

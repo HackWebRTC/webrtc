@@ -23,7 +23,7 @@ namespace {
 const uint32_t kRemoteSsrc = 0x23456789;
 const uint8_t kFractionLost = 55;
 // Use values that are streamed differently LE and BE.
-const uint32_t kCumulativeLost = 0x111213;
+const int32_t kCumulativeLost = 0x111213;
 const uint32_t kExtHighestSeqNum = 0x22232425;
 const uint32_t kJitter = 0x33343536;
 const uint32_t kLastSr = 0x44454647;
@@ -76,10 +76,14 @@ TEST(RtcpPacketReportBlockTest, ParseMatchCreate) {
 }
 
 TEST(RtcpPacketReportBlockTest, ValidateCumulativeLost) {
-  const uint32_t kMaxCumulativeLost = 0xffffff;
+  // CumulativeLost is a signed 24-bit integer.
+  const int32_t kMaxCumulativeLost = 0x7fffff;
+  const int32_t kMinCumulativeLost = -0x800000;
   ReportBlock rb;
   EXPECT_FALSE(rb.SetCumulativeLost(kMaxCumulativeLost + 1));
   EXPECT_TRUE(rb.SetCumulativeLost(kMaxCumulativeLost));
+  EXPECT_FALSE(rb.SetCumulativeLost(kMinCumulativeLost - 1));
+  EXPECT_TRUE(rb.SetCumulativeLost(kMinCumulativeLost));
 }
 
 }  // namespace
