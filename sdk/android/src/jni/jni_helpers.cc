@@ -15,10 +15,16 @@
 #include <unistd.h>
 #include <vector>
 
+#include "sdk/android/generated_external_classes_jni/jni/ArrayList_jni.h"
 #include "sdk/android/generated_external_classes_jni/jni/Boolean_jni.h"
 #include "sdk/android/generated_external_classes_jni/jni/Double_jni.h"
+#include "sdk/android/generated_external_classes_jni/jni/Enum_jni.h"
 #include "sdk/android/generated_external_classes_jni/jni/Integer_jni.h"
+#include "sdk/android/generated_external_classes_jni/jni/Iterable_jni.h"
+#include "sdk/android/generated_external_classes_jni/jni/Iterator_jni.h"
+#include "sdk/android/generated_external_classes_jni/jni/LinkedHashMap_jni.h"
 #include "sdk/android/generated_external_classes_jni/jni/Long_jni.h"
+#include "sdk/android/generated_external_classes_jni/jni/Map_jni.h"
 #include "sdk/android/src/jni/class_loader.h"
 #include "sdk/android/src/jni/classreferenceholder.h"
 
@@ -243,10 +249,9 @@ std::string JavaToStdString(JNIEnv* jni, const jstring& j_string) {
   const jclass string_class = GetObjectClass(jni, j_string);
   const jmethodID get_bytes =
       GetMethodID(jni, string_class, "getBytes", "(Ljava/lang/String;)[B");
-  const jstring charset_name = jni->NewStringUTF("ISO-8859-1");
-  CHECK_EXCEPTION(jni) << "error during NewStringUTF";
-  const jbyteArray j_byte_array =
-      (jbyteArray)jni->CallObjectMethod(j_string, get_bytes, charset_name);
+  const jbyteArray j_byte_array = (jbyteArray)jni->CallObjectMethod(
+      j_string, get_bytes, NativeToJavaString(jni, "ISO-8859-1"));
+
   CHECK_EXCEPTION(jni) << "error during CallObjectMethod";
 
   const size_t len = jni->GetArrayLength(j_byte_array);
@@ -305,8 +310,10 @@ jobject NativeToJavaInteger(JNIEnv* jni,
 }
 
 // Return the (singleton) Java Enum object corresponding to |index|;
-jobject JavaEnumFromIndex(JNIEnv* jni, jclass state_class,
-                          const std::string& state_class_name, int index) {
+static jobject JavaEnumFromIndex(JNIEnv* jni,
+                                 jclass state_class,
+                                 const std::string& state_class_name,
+                                 int index) {
   jmethodID state_values_id = GetStaticMethodID(
       jni, state_class, "values", ("()[L" + state_class_name  + ";").c_str());
   jobjectArray state_values = static_cast<jobjectArray>(
@@ -326,45 +333,26 @@ jobject JavaEnumFromIndexAndClassName(JNIEnv* jni,
 }
 
 std::string GetJavaEnumName(JNIEnv* jni, jobject j_enum) {
-  jclass enum_class = GetClass(jni, "java/lang/Enum");
-  jmethodID nameMethod =
-      GetMethodID(jni, enum_class, "name", "()Ljava/lang/String;");
-  jstring name =
-      reinterpret_cast<jstring>(jni->CallObjectMethod(j_enum, nameMethod));
-  CHECK_EXCEPTION(jni);
-  return JavaToStdString(jni, name);
+  return JavaToStdString(jni, JNI_Enum::Java_Enum_name(jni, j_enum));
 }
 
 std::map<std::string, std::string> JavaToStdMapStrings(JNIEnv* jni,
                                                        jobject j_map) {
-  jclass map_class = jni->FindClass("java/util/Map");
-  jclass set_class = jni->FindClass("java/util/Set");
-  jclass iterator_class = jni->FindClass("java/util/Iterator");
+  jobject j_entry_set = JNI_Map::Java_Map_entrySet(jni, j_map);
   jclass entry_class = jni->FindClass("java/util/Map$Entry");
-  jmethodID entry_set_method =
-      jni->GetMethodID(map_class, "entrySet", "()Ljava/util/Set;");
-  jmethodID iterator_method =
-      jni->GetMethodID(set_class, "iterator", "()Ljava/util/Iterator;");
-  jmethodID has_next_method =
-      jni->GetMethodID(iterator_class, "hasNext", "()Z");
-  jmethodID next_method =
-      jni->GetMethodID(iterator_class, "next", "()Ljava/lang/Object;");
   jmethodID get_key_method =
       jni->GetMethodID(entry_class, "getKey", "()Ljava/lang/Object;");
   jmethodID get_value_method =
       jni->GetMethodID(entry_class, "getValue", "()Ljava/lang/Object;");
 
-  jobject j_entry_set = jni->CallObjectMethod(j_map, entry_set_method);
-  jobject j_iterator = jni->CallObjectMethod(j_entry_set, iterator_method);
-
   std::map<std::string, std::string> result;
-  while (jni->CallBooleanMethod(j_iterator, has_next_method)) {
-    jobject j_entry = jni->CallObjectMethod(j_iterator, next_method);
+  for (jobject j_entry : Iterable(jni, j_entry_set)) {
     jstring j_key =
         static_cast<jstring>(jni->CallObjectMethod(j_entry, get_key_method));
     jstring j_value =
         static_cast<jstring>(jni->CallObjectMethod(j_entry, get_value_method));
-    result[JavaToStdString(jni, j_key)] = JavaToStdString(jni, j_value);
+    result.insert(std::make_pair(JavaToStdString(jni, j_key),
+                                 JavaToStdString(jni, j_value)));
   }
 
   return result;
@@ -397,18 +385,8 @@ Iterable::Iterator::Iterator() : iterator_(nullptr) {}
 
 // Creates an iterator pointing to the beginning of the specified collection.
 Iterable::Iterator::Iterator(JNIEnv* jni, jobject iterable) : jni_(jni) {
-  jclass j_class = GetObjectClass(jni, iterable);
-  jmethodID iterator_id =
-      GetMethodID(jni, j_class, "iterator", "()Ljava/util/Iterator;");
-  iterator_ = jni->CallObjectMethod(iterable, iterator_id);
-  CHECK_EXCEPTION(jni) << "error during CallObjectMethod";
-  RTC_CHECK(iterator_ != nullptr);
-
-  jclass iterator_class = GetObjectClass(jni, iterator_);
-  has_next_id_ = GetMethodID(jni, iterator_class, "hasNext", "()Z");
-  next_id_ = GetMethodID(jni, iterator_class, "next", "()Ljava/lang/Object;");
-  remove_id_ = GetMethodID(jni, iterator_class, "remove", "()V");
-
+  iterator_ = JNI_Iterable::Java_Iterable_iterator(jni, iterable);
+  RTC_CHECK(iterator_);
   // Start at the first element in the collection.
   ++(*this);
 }
@@ -419,8 +397,6 @@ Iterable::Iterator::Iterator(Iterator&& other)
     : jni_(std::move(other.jni_)),
       iterator_(std::move(other.iterator_)),
       value_(std::move(other.value_)),
-      has_next_id_(std::move(other.has_next_id_)),
-      next_id_(std::move(other.next_id_)),
       thread_checker_(std::move(other.thread_checker_)){};
 
 // Advances the iterator one step.
@@ -430,22 +406,19 @@ Iterable::Iterator& Iterable::Iterator::operator++() {
     // Can't move past the end.
     return *this;
   }
-  bool has_next = jni_->CallBooleanMethod(iterator_, has_next_id_);
-  CHECK_EXCEPTION(jni_) << "error during CallBooleanMethod";
+  bool has_next = JNI_Iterator::Java_Iterator_hasNext(jni_, iterator_);
   if (!has_next) {
     iterator_ = nullptr;
     value_ = nullptr;
     return *this;
   }
 
-  value_ = jni_->CallObjectMethod(iterator_, next_id_);
-  CHECK_EXCEPTION(jni_) << "error during CallObjectMethod";
+  value_ = JNI_Iterator::Java_Iterator_next(jni_, iterator_);
   return *this;
 }
 
 void Iterable::Iterator::Remove() {
-  jni_->CallVoidMethod(iterator_, remove_id_);
-  CHECK_EXCEPTION(jni_) << "error during CallVoidMethod";
+  JNI_Iterator::Java_Iterator_remove(jni_, iterator_);
 }
 
 // Provides a way to compare the iterator with itself and with the end iterator.
@@ -499,6 +472,25 @@ jobjectArray NativeToJavaStringArray(
   // directly (the script currently chokes on that class).
   return NativeToJavaObjectArray(
       env, container, FindClass(env, "java/lang/String"), &NativeToJavaString);
+}
+
+JavaMapBuilder::JavaMapBuilder(JNIEnv* env)
+    : env_(env),
+      j_map_(JNI_LinkedHashMap::Java_LinkedHashMap_ConstructorJULIHM(env)) {}
+
+void JavaMapBuilder::put(jobject key, jobject value) {
+  JNI_Map::Java_Map_put(env_, j_map_, key, value);
+}
+
+jobject JavaMapBuilder::GetJavaMap() {
+  return j_map_;
+}
+
+JavaListBuilder::JavaListBuilder(JNIEnv* env)
+    : env_(env), j_list_(JNI_ArrayList::Java_ArrayList_ConstructorJUALI(env)) {}
+
+void JavaListBuilder::add(jobject element) {
+  JNI_ArrayList::Java_ArrayList_addZ_JUE(env_, j_list_, element);
 }
 
 }  // namespace jni

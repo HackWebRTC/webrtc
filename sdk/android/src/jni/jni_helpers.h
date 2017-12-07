@@ -117,10 +117,6 @@ jobject NativeToJavaInteger(JNIEnv* jni,
                             const rtc::Optional<int32_t>& optional_int);
 
 // Return the (singleton) Java Enum object corresponding to |index|;
-jobject JavaEnumFromIndex(JNIEnv* jni, jclass state_class,
-                          const std::string& state_class_name, int index);
-
-// Return the (singleton) Java Enum object corresponding to |index|;
 // |state_class_fragment| is something like "MediaSource$State".
 jobject JavaEnumFromIndexAndClassName(JNIEnv* jni,
                                       const std::string& state_class_fragment,
@@ -219,9 +215,6 @@ class Iterable {
     JNIEnv* jni_ = nullptr;
     jobject iterator_ = nullptr;
     jobject value_ = nullptr;
-    jmethodID has_next_id_ = nullptr;
-    jmethodID next_id_ = nullptr;
-    jmethodID remove_id_ = nullptr;
     rtc::ThreadChecker thread_checker_;
 
     RTC_DISALLOW_COPY_AND_ASSIGN(Iterator);
@@ -267,6 +260,66 @@ jobjectArray NativeToJavaDoubleArray(JNIEnv* env,
                                      const std::vector<double>& container);
 jobjectArray NativeToJavaStringArray(JNIEnv* env,
                                      const std::vector<std::string>& container);
+
+template <typename T, typename Convert>
+std::vector<T> JavaToNativeVector(JNIEnv* env,
+                                  jobjectArray j_container,
+                                  Convert convert) {
+  std::vector<T> container;
+  const size_t size = env->GetArrayLength(j_container);
+  container.reserve(size);
+  for (size_t i = 0; i < size; ++i) {
+    container.emplace_back(
+        convert(env, env->GetObjectArrayElement(j_container, i)));
+  }
+  CHECK_EXCEPTION(env) << "Error during JavaToNativeVector";
+  return container;
+}
+
+// This is a helper class for NativeToJavaList(). Use that function instead of
+// using this class directly.
+class JavaListBuilder {
+ public:
+  explicit JavaListBuilder(JNIEnv* env);
+  void add(jobject element);
+  jobject java_list() { return j_list_; }
+
+ private:
+  JNIEnv* env_;
+  jobject j_list_;
+};
+
+template <typename C, typename Convert>
+jobject NativeToJavaList(JNIEnv* env, const C& container, Convert convert) {
+  JavaListBuilder builder(env);
+  for (const auto& e : container)
+    builder.add(convert(env, e));
+  return builder.java_list();
+}
+
+// This is a helper class for NativeToJavaMap(). Use that function instead of
+// using this class directly.
+class JavaMapBuilder {
+ public:
+  explicit JavaMapBuilder(JNIEnv* env);
+  void put(jobject key, jobject value);
+  jobject GetJavaMap();
+
+ private:
+  JNIEnv* env_;
+  jobject j_map_;
+};
+
+template <typename C, typename Convert>
+jobject NativeToJavaMap(JNIEnv* env, const C& container, Convert convert) {
+  JavaMapBuilder builder(env);
+  for (const auto& e : container) {
+    ScopedLocalRefFrame local_ref_frame(env);
+    const auto key_value_pair = convert(env, e);
+    builder.put(key_value_pair.first, key_value_pair.second);
+  }
+  return builder.GetJavaMap();
+}
 
 }  // namespace jni
 }  // namespace webrtc

@@ -16,7 +16,7 @@ namespace webrtc {
 namespace jni {
 
 JNI_FUNCTION_DECLARATION(jboolean,
-                         RtpSender_nativeSetTrack,
+                         RtpSender_setNativeTrack,
                          JNIEnv* jni,
                          jclass,
                          jlong j_rtp_sender_pointer,
@@ -26,7 +26,7 @@ JNI_FUNCTION_DECLARATION(jboolean,
 }
 
 JNI_FUNCTION_DECLARATION(jlong,
-                         RtpSender_nativeGetTrack,
+                         RtpSender_getNativeTrack,
                          JNIEnv* jni,
                          jclass,
                          jlong j_rtp_sender_pointer) {
@@ -37,7 +37,7 @@ JNI_FUNCTION_DECLARATION(jlong,
 }
 
 JNI_FUNCTION_DECLARATION(jlong,
-                         RtpSender_nativeGetDtmfSender,
+                         RtpSender_getNativeDtmfSender,
                          JNIEnv* jni,
                          jclass,
                          jlong j_rtp_sender_pointer) {
@@ -48,7 +48,7 @@ JNI_FUNCTION_DECLARATION(jlong,
 }
 
 JNI_FUNCTION_DECLARATION(jboolean,
-                         RtpSender_nativeSetParameters,
+                         RtpSender_setNativeParameters,
                          JNIEnv* jni,
                          jclass,
                          jlong j_rtp_sender_pointer,
@@ -62,7 +62,7 @@ JNI_FUNCTION_DECLARATION(jboolean,
 }
 
 JNI_FUNCTION_DECLARATION(jobject,
-                         RtpSender_nativeGetParameters,
+                         RtpSender_getNativeParameters,
                          JNIEnv* jni,
                          jclass,
                          jlong j_rtp_sender_pointer) {
@@ -73,7 +73,7 @@ JNI_FUNCTION_DECLARATION(jobject,
 }
 
 JNI_FUNCTION_DECLARATION(jstring,
-                         RtpSender_nativeId,
+                         RtpSender_getNativeId,
                          JNIEnv* jni,
                          jclass,
                          jlong j_rtp_sender_pointer) {

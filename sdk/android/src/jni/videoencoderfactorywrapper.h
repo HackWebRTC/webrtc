@@ -38,13 +38,7 @@ class VideoEncoderFactoryWrapper : public VideoEncoderFactory {
   CodecInfo QueryVideoEncoder(const SdpVideoFormat& format) const override;
 
  private:
-  std::vector<SdpVideoFormat> GetSupportedFormats(JNIEnv* jni) const;
-
   const ScopedGlobalRef<jobject> encoder_factory_;
-
-  jmethodID create_encoder_method_;
-  jmethodID get_supported_codecs_method_;
-
   std::vector<SdpVideoFormat> supported_formats_;
 };
 

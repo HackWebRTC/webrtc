@@ -35,6 +35,7 @@
 #include "api/rtpsenderinterface.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "sdk/android/generated_peerconnection_jni/jni/RtpSender_jni.h"
 #include "sdk/android/src/jni/classreferenceholder.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 #include "sdk/android/src/jni/pc/datachannel.h"
@@ -48,15 +49,27 @@
 namespace webrtc {
 namespace jni {
 
-static rtc::scoped_refptr<PeerConnectionInterface> ExtractNativePC(
-    JNIEnv* jni,
-    jobject j_pc) {
+namespace {
+
+rtc::scoped_refptr<PeerConnectionInterface> ExtractNativePC(JNIEnv* jni,
+                                                            jobject j_pc) {
   jfieldID native_pc_id =
       GetFieldID(jni, GetObjectClass(jni, j_pc), "nativePeerConnection", "J");
   jlong j_p = GetLongField(jni, j_pc, native_pc_id);
   return rtc::scoped_refptr<PeerConnectionInterface>(
       reinterpret_cast<PeerConnectionInterface*>(j_p));
 }
+
+jobject NativeToJavaRtpSender(JNIEnv* env,
+                              rtc::scoped_refptr<RtpSenderInterface> sender) {
+  if (!sender)
+    return nullptr;
+  // Sender is now owned by the Java object, and will be freed from
+  // RtpSender.dispose(), called by PeerConnection.dispose() or getSenders().
+  return Java_RtpSender_Constructor(env, jlongFromPointer(sender.release()));
+}
+
+}  // namespace
 
 JNI_FUNCTION_DECLARATION(void,
                          PeerConnection_freeObserver,
@@ -203,12 +216,9 @@ JNI_FUNCTION_DECLARATION(jboolean,
                          JNIEnv* jni,
                          jobject j_pc,
                          jobjectArray j_candidates) {
-  std::vector<cricket::Candidate> candidates;
-  size_t num_candidates = jni->GetArrayLength(j_candidates);
-  for (size_t i = 0; i < num_candidates; ++i) {
-    jobject j_candidate = jni->GetObjectArrayElement(j_candidates, i);
-    candidates.push_back(JavaToNativeCandidate(jni, j_candidate));
-  }
+  std::vector<cricket::Candidate> candidates =
+      JavaToNativeVector<cricket::Candidate>(jni, j_candidates,
+                                             &JavaToNativeCandidate);
   return ExtractNativePC(jni, j_pc)->RemoveIceCandidates(candidates);
 }
 
@@ -236,77 +246,27 @@ JNI_FUNCTION_DECLARATION(jobject,
                          jobject j_pc,
                          jstring j_kind,
                          jstring j_stream_id) {
-  jclass j_rtp_sender_class = FindClass(jni, "org/webrtc/RtpSender");
-  jmethodID j_rtp_sender_ctor =
-      GetMethodID(jni, j_rtp_sender_class, "<init>", "(J)V");
-
   std::string kind = JavaToStdString(jni, j_kind);
   std::string stream_id = JavaToStdString(jni, j_stream_id);
   rtc::scoped_refptr<RtpSenderInterface> sender =
       ExtractNativePC(jni, j_pc)->CreateSender(kind, stream_id);
-  if (!sender.get()) {
-    return nullptr;
-  }
-  jlong nativeSenderPtr = jlongFromPointer(sender.get());
-  jobject j_sender =
-      jni->NewObject(j_rtp_sender_class, j_rtp_sender_ctor, nativeSenderPtr);
-  CHECK_EXCEPTION(jni) << "error during NewObject";
-  // Sender is now owned by the Java object, and will be freed from
-  // RtpSender.dispose(), called by PeerConnection.dispose() or getSenders().
-  sender->AddRef();
-  return j_sender;
+  return NativeToJavaRtpSender(jni, sender);
 }
 
 JNI_FUNCTION_DECLARATION(jobject,
                          PeerConnection_getNativeSenders,
                          JNIEnv* jni,
                          jobject j_pc) {
-  jclass j_array_list_class = FindClass(jni, "java/util/ArrayList");
-  jmethodID j_array_list_ctor =
-      GetMethodID(jni, j_array_list_class, "<init>", "()V");
-  jmethodID j_array_list_add =
-      GetMethodID(jni, j_array_list_class, "add", "(Ljava/lang/Object;)Z");
-  jobject j_senders = jni->NewObject(j_array_list_class, j_array_list_ctor);
-  CHECK_EXCEPTION(jni) << "error during NewObject";
-
-  jclass j_rtp_sender_class = FindClass(jni, "org/webrtc/RtpSender");
-  jmethodID j_rtp_sender_ctor =
-      GetMethodID(jni, j_rtp_sender_class, "<init>", "(J)V");
-
-  auto senders = ExtractNativePC(jni, j_pc)->GetSenders();
-  for (const auto& sender : senders) {
-    jlong nativeSenderPtr = jlongFromPointer(sender.get());
-    jobject j_sender =
-        jni->NewObject(j_rtp_sender_class, j_rtp_sender_ctor, nativeSenderPtr);
-    CHECK_EXCEPTION(jni) << "error during NewObject";
-    // Sender is now owned by the Java object, and will be freed from
-    // RtpSender.dispose(), called by PeerConnection.dispose() or getSenders().
-    sender->AddRef();
-    jni->CallBooleanMethod(j_senders, j_array_list_add, j_sender);
-    CHECK_EXCEPTION(jni) << "error during CallBooleanMethod";
-  }
-  return j_senders;
+  return NativeToJavaList(jni, ExtractNativePC(jni, j_pc)->GetSenders(),
+                          &NativeToJavaRtpSender);
 }
 
 JNI_FUNCTION_DECLARATION(jobject,
                          PeerConnection_getNativeReceivers,
                          JNIEnv* jni,
                          jobject j_pc) {
-  jclass j_array_list_class = FindClass(jni, "java/util/ArrayList");
-  jmethodID j_array_list_ctor =
-      GetMethodID(jni, j_array_list_class, "<init>", "()V");
-  jmethodID j_array_list_add =
-      GetMethodID(jni, j_array_list_class, "add", "(Ljava/lang/Object;)Z");
-  jobject j_receivers = jni->NewObject(j_array_list_class, j_array_list_ctor);
-  CHECK_EXCEPTION(jni) << "error during NewObject";
-
-  auto receivers = ExtractNativePC(jni, j_pc)->GetReceivers();
-  for (const auto& receiver : receivers) {
-    jobject j_receiver = NativeToJavaRtpReceiver(jni, receiver);
-    jni->CallBooleanMethod(j_receivers, j_array_list_add, j_receiver);
-    CHECK_EXCEPTION(jni) << "error during CallBooleanMethod";
-  }
-  return j_receivers;
+  return NativeToJavaList(jni, ExtractNativePC(jni, j_pc)->GetReceivers(),
+                          &NativeToJavaRtpReceiver);
 }
 
 JNI_FUNCTION_DECLARATION(bool,
