@@ -18,75 +18,19 @@
 #include "modules/audio_coding/neteq/tools/audio_checksum.h"
 #include "modules/audio_coding/neteq/tools/encode_neteq_input.h"
 #include "modules/audio_coding/neteq/tools/neteq_test.h"
-#include "modules/rtp_rtcp/source/byte_io.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/random.h"
+#include "test/fuzzers/fuzz_data_helper.h"
 
 namespace webrtc {
 namespace test {
 namespace {
-// Helper class to take care of the fuzzer input, read from it, and keep track
-// of when the end of the data has been reached.
-class FuzzData {
- public:
-  explicit FuzzData(rtc::ArrayView<const uint8_t> data) : data_(data) {}
-
-  // Returns true if n bytes can be read.
-  bool CanReadBytes(size_t n) const { return data_ix_ + n <= data_.size(); }
-
-  // Reads and returns data of type T.
-  template <typename T>
-  T Read() {
-    RTC_CHECK(CanReadBytes(sizeof(T)));
-    T x = ByteReader<T>::ReadLittleEndian(&data_[data_ix_]);
-    data_ix_ += sizeof(T);
-    return x;
-  }
-
-  // Reads and returns data of type T. Returns default_value if not enough
-  // fuzzer input remains to read a T.
-  template <typename T>
-  T ReadOrDefaultValue(T default_value) {
-    if (!CanReadBytes(sizeof(T))) {
-      return default_value;
-    }
-    return Read<T>();
-  }
-
-  // Like ReadOrDefaultValue, but replaces the value 0 with default_value.
-  template <typename T>
-  T ReadOrDefaultValueNotZero(T default_value) {
-    static_assert(std::is_integral<T>::value, "");
-    T x = ReadOrDefaultValue(default_value);
-    return x == 0 ? default_value : x;
-  }
-
-  // Returns one of the elements from the provided input array. The selection
-  // is based on the fuzzer input data. If not enough fuzzer data is available,
-  // the method will return the first element in the input array. The reason for
-  // not flaggin this as an error is that the method is called from the
-  // FuzzSignalInput constructor, and in constructors we typically do not handle
-  // errors. The code will work anyway, and the fuzzer will likely see that
-  // providing more data will actually make this method return something else.
-  template <typename T>
-  T SelectOneOf(rtc::ArrayView<const T> select_from) {
-    RTC_CHECK_LE(select_from.size(), std::numeric_limits<uint8_t>::max());
-    // Read an index between 0 and select_from.size() - 1 from the fuzzer data.
-    uint8_t index = ReadOrDefaultValue<uint8_t>(0) % select_from.size();
-    return select_from[index];
-  }
-
- private:
-  rtc::ArrayView<const uint8_t> data_;
-  size_t data_ix_ = 0;
-};
-
 // Generate a mixture of sine wave and gaussian noise.
 class SineAndNoiseGenerator : public EncodeNetEqInput::Generator {
  public:
   // The noise generator is seeded with a value from the fuzzer data, but 0 is
   // avoided (since it is not allowed by the Random class).
-  SineAndNoiseGenerator(int sample_rate_hz, FuzzData* fuzz_data)
+  SineAndNoiseGenerator(int sample_rate_hz, FuzzDataHelper* fuzz_data)
       : sample_rate_hz_(sample_rate_hz),
         fuzz_data_(*fuzz_data),
         noise_generator_(fuzz_data_.ReadOrDefaultValueNotZero<uint64_t>(1)) {}
@@ -117,13 +61,13 @@ class SineAndNoiseGenerator : public EncodeNetEqInput::Generator {
   const double kPi = std::acos(-1);
   std::vector<int16_t> samples_;
   double phase_ = 0.0;
-  FuzzData& fuzz_data_;
+  FuzzDataHelper& fuzz_data_;
   Random noise_generator_;
 };
 
 class FuzzSignalInput : public NetEqInput {
  public:
-  explicit FuzzSignalInput(FuzzData* fuzz_data,
+  explicit FuzzSignalInput(FuzzDataHelper* fuzz_data,
                            int sample_rate,
                            uint8_t payload_type)
       : fuzz_data_(*fuzz_data) {
@@ -141,8 +85,7 @@ class FuzzSignalInput : public NetEqInput {
     // call to NetEq::GetAudio. 10 ms is nominal, 9 and 11 ms will both lead to
     // clock drift (in different directions).
     constexpr int output_event_periods[] = {9, 10, 11};
-    output_event_period_ms_ =
-        fuzz_data_.SelectOneOf(rtc::ArrayView<const int>(output_event_periods));
+    output_event_period_ms_ = fuzz_data_.SelectOneOf(output_event_periods);
   }
 
   rtc::Optional<int64_t> NextPacketTime() const override {
@@ -188,7 +131,7 @@ class FuzzSignalInput : public NetEqInput {
 
  private:
   bool ended_ = false;
-  FuzzData& fuzz_data_;
+  FuzzDataHelper& fuzz_data_;
   std::unique_ptr<EncodeNetEqInput> input_;
   std::unique_ptr<PacketData> packet_;
   int64_t next_output_event_ms_ = 0;
@@ -199,13 +142,12 @@ class FuzzSignalInput : public NetEqInput {
 void FuzzOneInputTest(const uint8_t* data, size_t size) {
   if (size < 1)
     return;
-  FuzzData fuzz_data(rtc::ArrayView<const uint8_t>(data, size));
+  FuzzDataHelper fuzz_data(rtc::ArrayView<const uint8_t>(data, size));
 
   // Allowed sample rates and payload types used in the test.
   std::pair<int, uint8_t> rate_types[] = {
       {8000, 93}, {16000, 94}, {32000, 95}, {48000, 96}};
-  const auto rate_type = fuzz_data.SelectOneOf(
-      rtc::ArrayView<const std::pair<int, uint8_t>>(rate_types));
+  const auto rate_type = fuzz_data.SelectOneOf(rate_types);
   const int sample_rate = rate_type.first;
   const uint8_t payload_type = rate_type.second;
 
