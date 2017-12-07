@@ -124,11 +124,7 @@ rtc_source_set("libjingle_api_deprecated_headers") {
   # See http://bugs.webrtc.org/5883.
   check_includes = false
   sources = [
-    "datachannel.h",
-    "mediastream.h",
     "mediastreamtrack.h",
-    "rtpsender.h",
-    "streamcollection.h",
     "videotracksource.h",
     "webrtcsdp.h",
   ]
