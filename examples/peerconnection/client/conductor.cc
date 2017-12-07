@@ -24,6 +24,8 @@
 #include "rtc_base/json.h"
 #include "rtc_base/logging.h"
 
+using webrtc::SdpType;
+
 // Names used for a IceCandidate JSON object.
 const char kCandidateSdpMidName[] = "sdpMid";
 const char kCandidateSdpMlineIndexName[] = "sdpMLineIndex";
@@ -258,12 +260,13 @@ void Conductor::OnMessageFromPeer(int peer_id, const std::string& message) {
     RTC_LOG(WARNING) << "Received unknown message. " << message;
     return;
   }
-  std::string type;
+  std::string type_str;
   std::string json_object;
 
-  rtc::GetStringFromJsonObject(jmessage, kSessionDescriptionTypeName, &type);
-  if (!type.empty()) {
-    if (type == "offer-loopback") {
+  rtc::GetStringFromJsonObject(jmessage, kSessionDescriptionTypeName,
+                               &type_str);
+  if (!type_str.empty()) {
+    if (type_str == "offer-loopback") {
       // This is a loopback call.
       // Recreate the peerconnection with DTLS disabled.
       if (!ReinitializePeerConnectionForLoopback()) {
@@ -273,7 +276,12 @@ void Conductor::OnMessageFromPeer(int peer_id, const std::string& message) {
       }
       return;
     }
-
+    rtc::Optional<SdpType> type_maybe = webrtc::SdpTypeFromString(type_str);
+    if (!type_maybe) {
+      RTC_LOG(LS_ERROR) << "Unknown SDP type: " << type_str;
+      return;
+    }
+    SdpType type = *type_maybe;
     std::string sdp;
     if (!rtc::GetStringFromJsonObject(jmessage, kSessionDescriptionSdpName,
                                       &sdp)) {
@@ -281,8 +289,8 @@ void Conductor::OnMessageFromPeer(int peer_id, const std::string& message) {
       return;
     }
     webrtc::SdpParseError error;
-    webrtc::SessionDescriptionInterface* session_description(
-        webrtc::CreateSessionDescription(type, sdp, &error));
+    std::unique_ptr<webrtc::SessionDescriptionInterface> session_description =
+        webrtc::CreateSessionDescription(type, sdp, &error);
     if (!session_description) {
       RTC_LOG(WARNING) << "Can't parse received session description message. "
                        << "SdpParseError was: " << error.description;
@@ -290,9 +298,9 @@ void Conductor::OnMessageFromPeer(int peer_id, const std::string& message) {
     }
     RTC_LOG(INFO) << " Received session description :" << message;
     peer_connection_->SetRemoteDescription(
-        DummySetSessionDescriptionObserver::Create(), session_description);
-    if (session_description->type() ==
-        webrtc::SessionDescriptionInterface::kOffer) {
+        DummySetSessionDescriptionObserver::Create(),
+        session_description.release());
+    if (type == SdpType::kOffer) {
       peer_connection_->CreateAnswer(this, NULL);
     }
     return;
@@ -525,16 +533,18 @@ void Conductor::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
   // For loopback test. To save some connecting delay.
   if (loopback_) {
     // Replace message type from "offer" to "answer"
-    webrtc::SessionDescriptionInterface* session_description(
-        webrtc::CreateSessionDescription("answer", sdp, nullptr));
+    std::unique_ptr<webrtc::SessionDescriptionInterface> session_description =
+        webrtc::CreateSessionDescription(SdpType::kAnswer, sdp);
     peer_connection_->SetRemoteDescription(
-        DummySetSessionDescriptionObserver::Create(), session_description);
+        DummySetSessionDescriptionObserver::Create(),
+        session_description.release());
     return;
   }
 
   Json::StyledWriter writer;
   Json::Value jmessage;
-  jmessage[kSessionDescriptionTypeName] = desc->type();
+  jmessage[kSessionDescriptionTypeName] =
+      webrtc::SdpTypeToString(desc->GetType());
   jmessage[kSessionDescriptionSdpName] = sdp;
   SendMessage(writer.write(jmessage));
 }

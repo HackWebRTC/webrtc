@@ -15,11 +15,12 @@
 #include "api/jsepicecandidate.h"
 #include "api/jsepsessiondescription.h"
 #include "api/webrtcsdp.h"
-#include "p2p/base/port.h"
 #include "p2p/base/p2pconstants.h"
+#include "p2p/base/port.h"
 #include "p2p/base/sessiondescription.h"
 #include "pc/mediasession.h"
 #include "rtc_base/gunit.h"
+#include "rtc_base/ptr_util.h"
 #include "rtc_base/stringencode.h"
 
 using ::testing::Values;
@@ -85,7 +86,7 @@ class JsepSessionDescriptionTest : public testing::Test {
         rtc::ToString(rtc::CreateRandomId64());
     const std::string session_version =
         rtc::ToString(rtc::CreateRandomId());
-    jsep_desc_.reset(new JsepSessionDescription("dummy"));
+    jsep_desc_ = rtc::MakeUnique<JsepSessionDescription>(SdpType::kOffer);
     ASSERT_TRUE(jsep_desc_->Initialize(CreateCricketSessionDescription(),
         session_id, session_version));
   }
@@ -97,10 +98,11 @@ class JsepSessionDescriptionTest : public testing::Test {
     return sdp;
   }
 
-  SessionDescriptionInterface* DeSerialize(const std::string& sdp) {
-    JsepSessionDescription* desc(new JsepSessionDescription("dummy"));
-    EXPECT_TRUE(webrtc::SdpDeserialize(sdp, desc, nullptr));
-    return desc;
+  std::unique_ptr<SessionDescriptionInterface> DeSerialize(
+      const std::string& sdp) {
+    auto jsep_desc = rtc::MakeUnique<JsepSessionDescription>(SdpType::kOffer);
+    EXPECT_TRUE(webrtc::SdpDeserialize(sdp, jsep_desc.get(), nullptr));
+    return std::move(jsep_desc);
   }
 
   cricket::Candidate candidate_;
@@ -208,8 +210,7 @@ TEST_F(JsepSessionDescriptionTest, AddCandidateDuplicates) {
 TEST_F(JsepSessionDescriptionTest, SerializeDeserialize) {
   std::string sdp = Serialize(jsep_desc_.get());
 
-  std::unique_ptr<SessionDescriptionInterface> parsed_jsep_desc(
-      DeSerialize(sdp));
+  auto parsed_jsep_desc = DeSerialize(sdp);
   EXPECT_EQ(2u, parsed_jsep_desc->number_of_mediasections());
 
   std::string parsed_sdp = Serialize(parsed_jsep_desc.get());
@@ -227,8 +228,7 @@ TEST_F(JsepSessionDescriptionTest, SerializeDeserializeWithCandidates) {
   std::string sdp_with_candidate = Serialize(jsep_desc_.get());
   EXPECT_NE(sdp, sdp_with_candidate);
 
-  std::unique_ptr<SessionDescriptionInterface> parsed_jsep_desc(
-      DeSerialize(sdp_with_candidate));
+  auto parsed_jsep_desc = DeSerialize(sdp_with_candidate);
   std::string parsed_sdp_with_candidate = Serialize(parsed_jsep_desc.get());
 
   EXPECT_EQ(sdp_with_candidate, parsed_sdp_with_candidate);

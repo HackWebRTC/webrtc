@@ -149,7 +149,7 @@ JNI_FUNCTION_DECLARATION(void,
   rtc::scoped_refptr<SetSdpObserverJni> observer(
       new rtc::RefCountedObject<SetSdpObserverJni>(jni, j_observer, nullptr));
   ExtractNativePC(jni, j_pc)->SetLocalDescription(
-      observer, JavaToNativeSessionDescription(jni, j_sdp));
+      observer, JavaToNativeSessionDescription(jni, j_sdp).release());
 }
 
 JNI_FUNCTION_DECLARATION(void,
@@ -161,7 +161,7 @@ JNI_FUNCTION_DECLARATION(void,
   rtc::scoped_refptr<SetSdpObserverJni> observer(
       new rtc::RefCountedObject<SetSdpObserverJni>(jni, j_observer, nullptr));
   ExtractNativePC(jni, j_pc)->SetRemoteDescription(
-      observer, JavaToNativeSessionDescription(jni, j_sdp));
+      observer, JavaToNativeSessionDescription(jni, j_sdp).release());
 }
 
 JNI_FUNCTION_DECLARATION(void,

@@ -82,8 +82,9 @@ jobjectArray NativeToJavaCandidateArray(
                                  &NativeToJavaCandidate);
 }
 
-SessionDescriptionInterface* JavaToNativeSessionDescription(JNIEnv* jni,
-                                                            jobject j_sdp) {
+std::unique_ptr<SessionDescriptionInterface> JavaToNativeSessionDescription(
+    JNIEnv* jni,
+    jobject j_sdp) {
   jfieldID j_type_id = GetFieldID(jni, GetObjectClass(jni, j_sdp), "type",
                                   "Lorg/webrtc/SessionDescription$Type;");
   jobject j_type = GetObjectField(jni, j_sdp, j_type_id);
@@ -94,13 +95,18 @@ SessionDescriptionInterface* JavaToNativeSessionDescription(JNIEnv* jni,
       (jstring)jni->CallObjectMethod(j_type, j_canonical_form_id);
   CHECK_EXCEPTION(jni) << "error during CallObjectMethod";
   std::string std_type = JavaToStdString(jni, j_type_string);
+  rtc::Optional<SdpType> sdp_type_maybe = SdpTypeFromString(std_type);
+  if (!sdp_type_maybe) {
+    RTC_LOG(LS_ERROR) << "Unexpected SDP type: " << std_type;
+    return nullptr;
+  }
 
   jfieldID j_description_id = GetFieldID(jni, GetObjectClass(jni, j_sdp),
                                          "description", "Ljava/lang/String;");
   jstring j_description = (jstring)GetObjectField(jni, j_sdp, j_description_id);
   std::string std_description = JavaToStdString(jni, j_description);
 
-  return CreateSessionDescription(std_type, std_description, NULL);
+  return CreateSessionDescription(*sdp_type_maybe, std_description);
 }
 
 jobject NativeToJavaSessionDescription(

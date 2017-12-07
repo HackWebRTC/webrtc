@@ -35,6 +35,7 @@
 #include "pc/rtpreceiver.h"
 #include "pc/rtpsender.h"
 #include "pc/sctputils.h"
+#include "pc/sdputils.h"
 #include "pc/streamcollection.h"
 #include "pc/videocapturertracksource.h"
 #include "pc/videotrack.h"
@@ -1439,7 +1440,7 @@ void PeerConnection::CreateAnswer(CreateSessionDescriptionObserver* observer,
   }
 
   if (remote_description() &&
-      remote_description()->type() != SessionDescriptionInterface::kOffer) {
+      remote_description()->GetType() != SdpType::kOffer) {
     std::string error = "CreateAnswer called without remote offer.";
     RTC_LOG(LS_ERROR) << error;
     PostCreateSessionDescriptionFailure(observer, error);
@@ -1467,14 +1468,16 @@ void PeerConnection::SetLocalDescription(
     return;
   }
 
-  std::string desc_type = desc->type();
+  SdpType type = desc->GetType();
 
   RTCError error = ApplyLocalDescription(rtc::WrapUnique(desc));
   // |desc| may be destroyed at this point.
 
   if (!error.ok()) {
-    std::string error_message =
-        "Failed to set local " + desc_type + " sdp: " + error.message();
+    std::ostringstream oss;
+    oss << "Failed to set local " << SdpTypeToString(type)
+        << " sdp: " << error.message();
+    std::string error_message = oss.str();
     RTC_LOG(LS_ERROR) << error_message << " (" << error.type() << ")";
     PostSetSessionDescriptionFailure(observer, std::move(error_message));
     return;
@@ -1493,7 +1496,7 @@ void PeerConnection::SetLocalDescription(
   // before signaling that SetLocalDescription completed.
   transport_controller_->MaybeStartGathering();
 
-  if (local_description()->type() == SessionDescriptionInterface::kAnswer) {
+  if (local_description()->GetType() == SdpType::kAnswer) {
     // TODO(deadbeef): We already had to hop to the network thread for
     // MaybeStartGathering...
     network_thread()->Invoke<void>(
@@ -1640,21 +1643,23 @@ void PeerConnection::SetRemoteDescription(
     return;
   }
 
-  std::string desc_type = desc->type();
+  const SdpType type = desc->GetType();
 
   RTCError error = ApplyRemoteDescription(std::move(desc));
   // |desc| may be destroyed at this point.
 
   if (!error.ok()) {
-    std::string error_message =
-        "Failed to set remote " + desc_type + " sdp: " + error.message();
+    std::ostringstream oss;
+    oss << "Failed to set remote " << SdpTypeToString(type)
+        << " sdp: " << error.message();
+    std::string error_message = oss.str();
     RTC_LOG(LS_ERROR) << error_message << " (" << error.type() << ")";
     observer->OnSetRemoteDescriptionComplete(
         RTCError(error.type(), std::move(error_message)));
     return;
   }
 
-  if (remote_description()->type() == SessionDescriptionInterface::kAnswer) {
+  if (remote_description()->GetType() == SdpType::kAnswer) {
     // TODO(deadbeef): We already had to hop to the network thread for
     // MaybeStartGathering...
     network_thread()->Invoke<void>(
@@ -1766,7 +1771,7 @@ RTCError PeerConnection::ApplyRemoteDescription(
   // transport and expose a new checking() member from transport that can be
   // read to determine the current checking state. The existing SignalConnecting
   // actually means "gathering candidates", so cannot be be used here.
-  if (remote_description()->type() != SessionDescriptionInterface::kOffer &&
+  if (remote_description()->GetType() != SdpType::kOffer &&
       ice_connection_state() == PeerConnectionInterface::kIceConnectionNew) {
     SetIceConnectionState(PeerConnectionInterface::kIceConnectionChecking);
   }
@@ -2675,8 +2680,7 @@ void PeerConnection::GetOptionsForAnswer(
   rtc::Optional<size_t> data_index;
   if (remote_description()) {
     // The pending remote description should be an offer.
-    RTC_DCHECK(remote_description()->type() ==
-               SessionDescriptionInterface::kOffer);
+    RTC_DCHECK(remote_description()->GetType() == SdpType::kOffer);
     // Generate m= sections that match those in the offer.
     // Note that mediasession.cc will handle intersection our preferred
     // direction with the offered direction.

@@ -173,8 +173,8 @@ class PeerConnectionSignalingStateTest
         auto caller = CreatePeerConnectionWithAudioVideo(GetConfig());
         wrapper->SetRemoteDescription(caller->CreateOffer());
         auto answer = wrapper->CreateAnswer();
-        wrapper->SetLocalDescription(CloneSessionDescriptionAsType(
-            answer.get(), SessionDescriptionInterface::kPrAnswer));
+        wrapper->SetLocalDescription(
+            CloneSessionDescriptionAsType(answer.get(), SdpType::kPrAnswer));
         break;
       }
       case SignalingState::kHaveRemoteOffer: {
@@ -186,8 +186,8 @@ class PeerConnectionSignalingStateTest
         auto callee = CreatePeerConnectionWithAudioVideo(GetConfig());
         callee->SetRemoteDescription(wrapper->CreateOfferAndSetAsLocal());
         auto answer = callee->CreateAnswer();
-        wrapper->SetRemoteDescription(CloneSessionDescriptionAsType(
-            answer.get(), SessionDescriptionInterface::kPrAnswer));
+        wrapper->SetRemoteDescription(
+            CloneSessionDescriptionAsType(answer.get(), SdpType::kPrAnswer));
         break;
       }
       case SignalingState::kClosed: {

@@ -82,6 +82,7 @@ using webrtc::PeerConnectionInterface;
 using webrtc::PeerConnectionFactory;
 using webrtc::PeerConnectionProxy;
 using webrtc::RtpReceiverInterface;
+using webrtc::SdpType;
 using webrtc::SessionDescriptionInterface;
 using webrtc::StreamCollectionInterface;
 
@@ -138,8 +139,7 @@ int FindFirstMediaStatsIndexByKind(
 
 class SignalingMessageReceiver {
  public:
-  virtual void ReceiveSdpMessage(const std::string& type,
-                                 const std::string& msg) = 0;
+  virtual void ReceiveSdpMessage(SdpType type, const std::string& msg) = 0;
   virtual void ReceiveIceMessage(const std::string& sdp_mid,
                                  int sdp_mline_index,
                                  const std::string& msg) = 0;
@@ -681,8 +681,8 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
 
   void HandleIncomingOffer(const std::string& msg) {
     RTC_LOG(LS_INFO) << debug_name_ << ": HandleIncomingOffer";
-    std::unique_ptr<SessionDescriptionInterface> desc(
-        webrtc::CreateSessionDescription("offer", msg, nullptr));
+    std::unique_ptr<SessionDescriptionInterface> desc =
+        webrtc::CreateSessionDescription(SdpType::kOffer, msg);
     if (received_sdp_munger_) {
       received_sdp_munger_(desc->description());
     }
@@ -698,8 +698,8 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
 
   void HandleIncomingAnswer(const std::string& msg) {
     RTC_LOG(LS_INFO) << debug_name_ << ": HandleIncomingAnswer";
-    std::unique_ptr<SessionDescriptionInterface> desc(
-        webrtc::CreateSessionDescription("answer", msg, nullptr));
+    std::unique_ptr<SessionDescriptionInterface> desc =
+        webrtc::CreateSessionDescription(SdpType::kAnswer, msg);
     if (received_sdp_munger_) {
       received_sdp_munger_(desc->description());
     }
@@ -748,7 +748,7 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
     rtc::scoped_refptr<MockSetSessionDescriptionObserver> observer(
         new rtc::RefCountedObject<MockSetSessionDescriptionObserver>());
     RTC_LOG(LS_INFO) << debug_name_ << ": SetLocalDescriptionAndSendSdpMessage";
-    std::string type = desc->type();
+    SdpType type = desc->GetType();
     std::string sdp;
     EXPECT_TRUE(desc->ToString(&sdp));
     pc()->SetLocalDescription(observer, desc.release());
@@ -770,7 +770,7 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
 
   // Simulate sending a blob of SDP with delay |signaling_delay_ms_| (0 by
   // default).
-  void SendSdpMessage(const std::string& type, const std::string& msg) {
+  void SendSdpMessage(SdpType type, const std::string& msg) {
     if (signaling_delay_ms_ == 0) {
       RelaySdpMessageIfReceiverExists(type, msg);
     } else {
@@ -782,8 +782,7 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
     }
   }
 
-  void RelaySdpMessageIfReceiverExists(const std::string& type,
-                                       const std::string& msg) {
+  void RelaySdpMessageIfReceiverExists(SdpType type, const std::string& msg) {
     if (signaling_message_receiver_) {
       signaling_message_receiver_->ReceiveSdpMessage(type, msg);
     }
@@ -815,9 +814,8 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
   }
 
   // SignalingMessageReceiver callbacks.
-  void ReceiveSdpMessage(const std::string& type,
-                         const std::string& msg) override {
-    if (type == webrtc::SessionDescriptionInterface::kOffer) {
+  void ReceiveSdpMessage(SdpType type, const std::string& msg) override {
+    if (type == SdpType::kOffer) {
       HandleIncomingOffer(msg);
     } else {
       HandleIncomingAnswer(msg);

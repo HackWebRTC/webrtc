@@ -352,6 +352,7 @@ using webrtc::RtpReceiverInterface;
 using webrtc::RtpSenderInterface;
 using webrtc::RtpTransceiverDirection;
 using webrtc::SdpParseError;
+using webrtc::SdpType;
 using webrtc::SessionDescriptionInterface;
 using webrtc::StreamCollection;
 using webrtc::StreamCollectionInterface;
@@ -873,16 +874,14 @@ class PeerConnectionInterfaceTest : public testing::Test {
     std::string sdp;
     EXPECT_TRUE(offer->ToString(&sdp));
     std::unique_ptr<SessionDescriptionInterface> remote_offer(
-        webrtc::CreateSessionDescription(SessionDescriptionInterface::kOffer,
-                                         sdp, nullptr));
+        webrtc::CreateSessionDescription(SdpType::kOffer, sdp));
     EXPECT_TRUE(DoSetRemoteDescription(std::move(remote_offer)));
     EXPECT_EQ(PeerConnectionInterface::kHaveRemoteOffer, observer_.state_);
   }
 
   void CreateAndSetRemoteOffer(const std::string& sdp) {
     std::unique_ptr<SessionDescriptionInterface> remote_offer(
-        webrtc::CreateSessionDescription(SessionDescriptionInterface::kOffer,
-                                         sdp, nullptr));
+        webrtc::CreateSessionDescription(SdpType::kOffer, sdp));
     EXPECT_TRUE(DoSetRemoteDescription(std::move(remote_offer)));
     EXPECT_EQ(PeerConnectionInterface::kHaveRemoteOffer, observer_.state_);
   }
@@ -901,8 +900,7 @@ class PeerConnectionInterfaceTest : public testing::Test {
     std::string sdp;
     EXPECT_TRUE(answer->ToString(&sdp));
     std::unique_ptr<SessionDescriptionInterface> new_answer(
-        webrtc::CreateSessionDescription(SessionDescriptionInterface::kAnswer,
-                                         sdp, nullptr));
+        webrtc::CreateSessionDescription(SdpType::kAnswer, sdp));
     EXPECT_TRUE(DoSetLocalDescription(std::move(new_answer)));
     EXPECT_EQ(PeerConnectionInterface::kStable, observer_.state_);
   }
@@ -914,8 +912,7 @@ class PeerConnectionInterfaceTest : public testing::Test {
     std::string sdp;
     EXPECT_TRUE(answer->ToString(&sdp));
     std::unique_ptr<SessionDescriptionInterface> pr_answer(
-        webrtc::CreateSessionDescription(SessionDescriptionInterface::kPrAnswer,
-                                         sdp, nullptr));
+        webrtc::CreateSessionDescription(SdpType::kPrAnswer, sdp));
     EXPECT_TRUE(DoSetLocalDescription(std::move(pr_answer)));
     EXPECT_EQ(PeerConnectionInterface::kHaveLocalPrAnswer, observer_.state_);
   }
@@ -940,8 +937,7 @@ class PeerConnectionInterfaceTest : public testing::Test {
     std::string sdp;
     EXPECT_TRUE(offer->ToString(&sdp));
     std::unique_ptr<SessionDescriptionInterface> new_offer(
-        webrtc::CreateSessionDescription(SessionDescriptionInterface::kOffer,
-                                         sdp, nullptr));
+        webrtc::CreateSessionDescription(SdpType::kOffer, sdp));
 
     EXPECT_TRUE(DoSetLocalDescription(std::move(new_offer)));
     EXPECT_EQ(PeerConnectionInterface::kHaveLocalOffer, observer_.state_);
@@ -951,8 +947,7 @@ class PeerConnectionInterfaceTest : public testing::Test {
 
   void CreateAnswerAsRemoteDescription(const std::string& sdp) {
     std::unique_ptr<SessionDescriptionInterface> answer(
-        webrtc::CreateSessionDescription(SessionDescriptionInterface::kAnswer,
-                                         sdp, nullptr));
+        webrtc::CreateSessionDescription(SdpType::kAnswer, sdp));
     ASSERT_TRUE(answer);
     EXPECT_TRUE(DoSetRemoteDescription(std::move(answer)));
     EXPECT_EQ(PeerConnectionInterface::kStable, observer_.state_);
@@ -960,14 +955,12 @@ class PeerConnectionInterfaceTest : public testing::Test {
 
   void CreatePrAnswerAndAnswerAsRemoteDescription(const std::string& sdp) {
     std::unique_ptr<SessionDescriptionInterface> pr_answer(
-        webrtc::CreateSessionDescription(SessionDescriptionInterface::kPrAnswer,
-                                         sdp, nullptr));
+        webrtc::CreateSessionDescription(SdpType::kPrAnswer, sdp));
     ASSERT_TRUE(pr_answer);
     EXPECT_TRUE(DoSetRemoteDescription(std::move(pr_answer)));
     EXPECT_EQ(PeerConnectionInterface::kHaveRemotePrAnswer, observer_.state_);
     std::unique_ptr<SessionDescriptionInterface> answer(
-        webrtc::CreateSessionDescription(SessionDescriptionInterface::kAnswer,
-                                         sdp, nullptr));
+        webrtc::CreateSessionDescription(SdpType::kAnswer, sdp));
     ASSERT_TRUE(answer);
     EXPECT_TRUE(DoSetRemoteDescription(std::move(answer)));
     EXPECT_EQ(PeerConnectionInterface::kStable, observer_.state_);
@@ -1034,8 +1027,7 @@ class PeerConnectionInterfaceTest : public testing::Test {
     }
 
     return std::unique_ptr<SessionDescriptionInterface>(
-        webrtc::CreateSessionDescription(SessionDescriptionInterface::kOffer,
-                                         sdp_ms1, nullptr));
+        webrtc::CreateSessionDescription(SdpType::kOffer, sdp_ms1));
   }
 
   void AddAudioTrack(const std::string& track_id,
@@ -1098,8 +1090,7 @@ class PeerConnectionInterfaceTest : public testing::Test {
     std::string sdp;
     EXPECT_TRUE((*desc)->ToString(&sdp));
     std::unique_ptr<SessionDescriptionInterface> remote_offer(
-        webrtc::CreateSessionDescription(SessionDescriptionInterface::kOffer,
-                                         sdp, nullptr));
+        webrtc::CreateSessionDescription(SdpType::kOffer, sdp));
     EXPECT_TRUE(DoSetRemoteDescription(std::move(remote_offer)));
     EXPECT_EQ(PeerConnectionInterface::kHaveRemoteOffer, observer_.state_);
   }
@@ -1112,8 +1103,7 @@ class PeerConnectionInterfaceTest : public testing::Test {
     std::string sdp;
     EXPECT_TRUE((*desc)->ToString(&sdp));
     std::unique_ptr<SessionDescriptionInterface> new_offer(
-        webrtc::CreateSessionDescription(SessionDescriptionInterface::kOffer,
-                                         sdp, nullptr));
+        webrtc::CreateSessionDescription(SdpType::kOffer, sdp));
 
     EXPECT_TRUE(DoSetLocalDescription(std::move(new_offer)));
     EXPECT_EQ(PeerConnectionInterface::kHaveLocalOffer, observer_.state_);
@@ -2098,8 +2088,7 @@ TEST_F(PeerConnectionInterfaceTest, TestRejectDataChannelInAnswer) {
   std::string sdp;
   EXPECT_TRUE(pc_->local_description()->ToString(&sdp));
   std::unique_ptr<SessionDescriptionInterface> answer(
-      webrtc::CreateSessionDescription(SessionDescriptionInterface::kAnswer,
-                                       sdp, nullptr));
+      webrtc::CreateSessionDescription(SdpType::kAnswer, sdp));
   ASSERT_TRUE(answer);
   cricket::ContentInfo* data_info =
       answer->description()->GetContentByName("data");
@@ -2119,7 +2108,7 @@ TEST_F(PeerConnectionInterfaceTest, ReceiveFireFoxOffer) {
   CreatePeerConnection(&constraints);
   AddAudioVideoStream(kStreamLabel1, "audio_label", "video_label");
   std::unique_ptr<SessionDescriptionInterface> desc(
-      webrtc::CreateSessionDescription(SessionDescriptionInterface::kOffer,
+      webrtc::CreateSessionDescription(SdpType::kOffer,
                                        webrtc::kFireFoxSdpOffer, nullptr));
   EXPECT_TRUE(DoSetSessionDescription(std::move(desc), false));
   CreateAnswerAsLocalDescription();
@@ -2158,8 +2147,8 @@ TEST_F(PeerConnectionInterfaceTest, DtlsSdesFallbackNotSupported) {
   EXPECT_EQ_WAIT(1, fake_certificate_generator_->generated_certificates(),
                  kTimeout);
   std::unique_ptr<SessionDescriptionInterface> desc(
-      webrtc::CreateSessionDescription(SessionDescriptionInterface::kOffer,
-                                       kDtlsSdesFallbackSdp, nullptr));
+      webrtc::CreateSessionDescription(SdpType::kOffer, kDtlsSdesFallbackSdp,
+                                       nullptr));
   EXPECT_FALSE(DoSetSessionDescription(std::move(desc), false));
 }
 
@@ -2172,14 +2161,13 @@ TEST_F(PeerConnectionInterfaceTest, ReceiveUpdatedAudioOfferWithBadCodecs) {
   CreateOfferAsLocalDescription();
 
   std::unique_ptr<SessionDescriptionInterface> answer(
-      webrtc::CreateSessionDescription(SessionDescriptionInterface::kAnswer,
-                                       webrtc::kAudioSdp, nullptr));
+      webrtc::CreateSessionDescription(SdpType::kAnswer, webrtc::kAudioSdp,
+                                       nullptr));
   EXPECT_TRUE(DoSetSessionDescription(std::move(answer), false));
 
   std::unique_ptr<SessionDescriptionInterface> updated_offer(
-      webrtc::CreateSessionDescription(SessionDescriptionInterface::kOffer,
-                                       webrtc::kAudioSdpWithUnsupportedCodecs,
-                                       nullptr));
+      webrtc::CreateSessionDescription(
+          SdpType::kOffer, webrtc::kAudioSdpWithUnsupportedCodecs, nullptr));
   EXPECT_TRUE(DoSetSessionDescription(std::move(updated_offer), false));
   CreateAnswerAsLocalDescription();
 }
@@ -2526,14 +2514,12 @@ TEST_F(PeerConnectionInterfaceTest, CloseAndTestMethods) {
   std::string sdp;
   ASSERT_TRUE(pc_->remote_description()->ToString(&sdp));
   std::unique_ptr<SessionDescriptionInterface> remote_offer(
-      webrtc::CreateSessionDescription(SessionDescriptionInterface::kOffer, sdp,
-                                       nullptr));
+      webrtc::CreateSessionDescription(SdpType::kOffer, sdp));
   EXPECT_FALSE(DoSetRemoteDescription(std::move(remote_offer)));
 
   ASSERT_TRUE(pc_->local_description()->ToString(&sdp));
   std::unique_ptr<SessionDescriptionInterface> local_offer(
-      webrtc::CreateSessionDescription(SessionDescriptionInterface::kOffer, sdp,
-                                       nullptr));
+      webrtc::CreateSessionDescription(SdpType::kOffer, sdp));
   EXPECT_FALSE(DoSetLocalDescription(std::move(local_offer)));
 }
 
@@ -2680,8 +2666,8 @@ TEST_F(PeerConnectionInterfaceTest, RemoveTrackThenRejectMediaContent) {
   remote_stream->RemoveTrack(remote_stream->GetAudioTracks()[0]);
 
   std::unique_ptr<SessionDescriptionInterface> local_answer(
-      webrtc::CreateSessionDescription(SessionDescriptionInterface::kAnswer,
-                                       kSdpStringWithStream1, nullptr));
+      webrtc::CreateSessionDescription(SdpType::kAnswer, kSdpStringWithStream1,
+                                       nullptr));
   cricket::ContentInfo* video_info =
       local_answer->description()->GetContentByName("video");
   video_info->rejected = true;
@@ -2927,8 +2913,8 @@ TEST_F(PeerConnectionInterfaceTest,
   std::unique_ptr<SessionDescriptionInterface> offer;
   ASSERT_TRUE(DoCreateOffer(&offer, nullptr));
   // Grab a copy of the offer before it gets passed into the PC.
-  std::unique_ptr<webrtc::JsepSessionDescription> modified_offer(
-      new webrtc::JsepSessionDescription(SessionDescriptionInterface::kOffer));
+  auto modified_offer =
+      rtc::MakeUnique<webrtc::JsepSessionDescription>(webrtc::SdpType::kOffer);
   modified_offer->Initialize(offer->description()->Copy(), offer->session_id(),
                              offer->session_version());
   EXPECT_TRUE(DoSetLocalDescription(std::move(offer)));
@@ -3110,8 +3096,8 @@ TEST_F(PeerConnectionInterfaceTest, SetConfigurationCausingPartialIceRestart) {
 
   // Do ICE restart for the first m= section, initiated by remote peer.
   std::unique_ptr<webrtc::SessionDescriptionInterface> remote_offer(
-      webrtc::CreateSessionDescription(SessionDescriptionInterface::kOffer,
-                                       kSdpStringWithStream1, nullptr));
+      webrtc::CreateSessionDescription(SdpType::kOffer, kSdpStringWithStream1,
+                                       nullptr));
   ASSERT_TRUE(remote_offer);
   remote_offer->description()->transport_infos()[0].description.ice_ufrag =
       "modified";
@@ -3157,8 +3143,7 @@ TEST_F(PeerConnectionInterfaceTest, CurrentAndPendingDescriptions) {
 
   // Set remote pranswer.
   std::unique_ptr<SessionDescriptionInterface> remote_pranswer(
-      webrtc::CreateSessionDescription(SessionDescriptionInterface::kPrAnswer,
-                                       sdp, nullptr));
+      webrtc::CreateSessionDescription(SdpType::kPrAnswer, sdp));
   SessionDescriptionInterface* remote_pranswer_ptr = remote_pranswer.get();
   EXPECT_TRUE(DoSetRemoteDescription(std::move(remote_pranswer)));
   EXPECT_EQ(local_offer_ptr, pc_->pending_local_description());
@@ -3168,8 +3153,7 @@ TEST_F(PeerConnectionInterfaceTest, CurrentAndPendingDescriptions) {
 
   // Set remote answer.
   std::unique_ptr<SessionDescriptionInterface> remote_answer(
-      webrtc::CreateSessionDescription(SessionDescriptionInterface::kAnswer,
-                                       sdp, nullptr));
+      webrtc::CreateSessionDescription(SdpType::kAnswer, sdp));
   SessionDescriptionInterface* remote_answer_ptr = remote_answer.get();
   EXPECT_TRUE(DoSetRemoteDescription(std::move(remote_answer)));
   EXPECT_EQ(nullptr, pc_->pending_local_description());
@@ -3179,8 +3163,7 @@ TEST_F(PeerConnectionInterfaceTest, CurrentAndPendingDescriptions) {
 
   // Set remote offer.
   std::unique_ptr<SessionDescriptionInterface> remote_offer(
-      webrtc::CreateSessionDescription(SessionDescriptionInterface::kOffer, sdp,
-                                       nullptr));
+      webrtc::CreateSessionDescription(SdpType::kOffer, sdp));
   SessionDescriptionInterface* remote_offer_ptr = remote_offer.get();
   EXPECT_TRUE(DoSetRemoteDescription(std::move(remote_offer)));
   EXPECT_EQ(remote_offer_ptr, pc_->pending_remote_description());
@@ -3190,8 +3173,7 @@ TEST_F(PeerConnectionInterfaceTest, CurrentAndPendingDescriptions) {
 
   // Set local pranswer.
   std::unique_ptr<SessionDescriptionInterface> local_pranswer(
-      webrtc::CreateSessionDescription(SessionDescriptionInterface::kPrAnswer,
-                                       sdp, nullptr));
+      webrtc::CreateSessionDescription(SdpType::kPrAnswer, sdp));
   SessionDescriptionInterface* local_pranswer_ptr = local_pranswer.get();
   EXPECT_TRUE(DoSetLocalDescription(std::move(local_pranswer)));
   EXPECT_EQ(remote_offer_ptr, pc_->pending_remote_description());
@@ -3201,8 +3183,7 @@ TEST_F(PeerConnectionInterfaceTest, CurrentAndPendingDescriptions) {
 
   // Set local answer.
   std::unique_ptr<SessionDescriptionInterface> local_answer(
-      webrtc::CreateSessionDescription(SessionDescriptionInterface::kAnswer,
-                                       sdp, nullptr));
+      webrtc::CreateSessionDescription(SdpType::kAnswer, sdp));
   SessionDescriptionInterface* local_answer_ptr = local_answer.get();
   EXPECT_TRUE(DoSetLocalDescription(std::move(local_answer)));
   EXPECT_EQ(nullptr, pc_->pending_remote_description());

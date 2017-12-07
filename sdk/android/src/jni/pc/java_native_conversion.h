@@ -45,8 +45,9 @@ jobjectArray NativeToJavaCandidateArray(
     JNIEnv* jni,
     const std::vector<cricket::Candidate>& candidates);
 
-SessionDescriptionInterface* JavaToNativeSessionDescription(JNIEnv* jni,
-                                                            jobject j_sdp);
+std::unique_ptr<SessionDescriptionInterface> JavaToNativeSessionDescription(
+    JNIEnv* jni,
+    jobject j_sdp);
 
 jobject NativeToJavaSessionDescription(JNIEnv* jni,
                                        const SessionDescriptionInterface* desc);
