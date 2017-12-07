@@ -159,7 +159,6 @@ struct AudioOptions {
             change.audio_jitter_buffer_fast_accelerate);
     SetFrom(&typing_detection, change.typing_detection);
     SetFrom(&aecm_generate_comfort_noise, change.aecm_generate_comfort_noise);
-    SetFrom(&adjust_agc_delta, change.adjust_agc_delta);
     SetFrom(&experimental_agc, change.experimental_agc);
     SetFrom(&extended_filter_aec, change.extended_filter_aec);
     SetFrom(&delay_agnostic_aec, change.delay_agnostic_aec);
@@ -197,7 +196,6 @@ struct AudioOptions {
            intelligibility_enhancer == o.intelligibility_enhancer &&
            level_control == o.level_control &&
            residual_echo_detector == o.residual_echo_detector &&
-           adjust_agc_delta == o.adjust_agc_delta &&
            tx_agc_target_dbov == o.tx_agc_target_dbov &&
            tx_agc_digital_compression_gain ==
                o.tx_agc_digital_compression_gain &&
@@ -224,7 +222,6 @@ struct AudioOptions {
                          audio_jitter_buffer_fast_accelerate);
     ost << ToStringIfSet("typing", typing_detection);
     ost << ToStringIfSet("comfort_noise", aecm_generate_comfort_noise);
-    ost << ToStringIfSet("agc_delta", adjust_agc_delta);
     ost << ToStringIfSet("experimental_agc", experimental_agc);
     ost << ToStringIfSet("extended_filter_aec", extended_filter_aec);
     ost << ToStringIfSet("delay_agnostic_aec", delay_agnostic_aec);
@@ -266,7 +263,6 @@ struct AudioOptions {
   // Audio processing to detect typing.
   rtc::Optional<bool> typing_detection;
   rtc::Optional<bool> aecm_generate_comfort_noise;
-  rtc::Optional<int> adjust_agc_delta;
   rtc::Optional<bool> experimental_agc;
   rtc::Optional<bool> extended_filter_aec;
   rtc::Optional<bool> delay_agnostic_aec;

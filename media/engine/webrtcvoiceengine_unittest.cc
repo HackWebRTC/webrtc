@@ -208,7 +208,6 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_CALL(apm_gc_, target_level_dbfs()).WillOnce(Return(1));
     EXPECT_CALL(apm_gc_, compression_gain_db()).WillRepeatedly(Return(5));
     EXPECT_CALL(apm_gc_, is_limiter_enabled()).WillRepeatedly(Return(true));
-    EXPECT_CALL(apm_gc_, set_target_level_dbfs(1)).WillOnce(Return(0));
     EXPECT_CALL(apm_gc_, set_compression_gain_db(5)).WillRepeatedly(Return(0));
     EXPECT_CALL(apm_gc_, enable_limiter(true)).WillRepeatedly(Return(0));
     // TODO(kwiberg): We should use mock factories here, but a bunch of
@@ -2217,27 +2216,14 @@ TEST_F(WebRtcVoiceEngineTestFake, PlayoutWithMultipleStreams) {
   EXPECT_TRUE(channel_->RemoveRecvStream(kSsrcY));
 }
 
-// Test that we can create a channel configured for Codian bridges,
-// and start sending on it.
-TEST_F(WebRtcVoiceEngineTestFake, CodianSend) {
-  EXPECT_TRUE(SetupSendStream());
-  send_parameters_.options.adjust_agc_delta = -10;
-  EXPECT_CALL(apm_gc_,
-              set_target_level_dbfs(11)).Times(2).WillRepeatedly(Return(0));
-  SetSendParameters(send_parameters_);
-  SetSend(true);
-  EXPECT_TRUE(GetSendStream(kSsrcX).IsSending());
-  SetSend(false);
-  EXPECT_FALSE(GetSendStream(kSsrcX).IsSending());
-}
-
 TEST_F(WebRtcVoiceEngineTestFake, TxAgcConfigViaOptions) {
   EXPECT_TRUE(SetupSendStream());
-  EXPECT_CALL(adm_,
-              BuiltInAGCIsAvailable()).Times(2).WillRepeatedly(Return(false));
-  EXPECT_CALL(adm_, SetAGC(true)).Times(2).WillRepeatedly(Return(0));
-  EXPECT_CALL(apm_gc_, set_mode(kDefaultAgcMode)).Times(2).WillOnce(Return(0));
-  EXPECT_CALL(apm_gc_, Enable(true)).Times(2).WillOnce(Return(0));
+  EXPECT_CALL(adm_, BuiltInAGCIsAvailable())
+      .Times(1)
+      .WillRepeatedly(Return(false));
+  EXPECT_CALL(adm_, SetAGC(true)).Times(1).WillRepeatedly(Return(0));
+  EXPECT_CALL(apm_gc_, set_mode(kDefaultAgcMode)).Times(1).WillOnce(Return(0));
+  EXPECT_CALL(apm_gc_, Enable(true)).Times(1).WillOnce(Return(0));
   send_parameters_.options.tx_agc_target_dbov = 3;
   send_parameters_.options.tx_agc_digital_compression_gain = 9;
   send_parameters_.options.tx_agc_limiter = true;
@@ -2245,12 +2231,6 @@ TEST_F(WebRtcVoiceEngineTestFake, TxAgcConfigViaOptions) {
   EXPECT_CALL(apm_gc_, set_target_level_dbfs(3)).WillOnce(Return(0));
   EXPECT_CALL(apm_gc_, set_compression_gain_db(9)).WillRepeatedly(Return(0));
   EXPECT_CALL(apm_gc_, enable_limiter(true)).WillRepeatedly(Return(0));
-  SetSendParameters(send_parameters_);
-
-  // Check interaction with adjust_agc_delta. Both should be respected, for
-  // backwards compatibility.
-  send_parameters_.options.adjust_agc_delta = -10;
-  EXPECT_CALL(apm_gc_, set_target_level_dbfs(13)).WillOnce(Return(0));
   SetSendParameters(send_parameters_);
 }
 
@@ -2803,7 +2783,6 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
   EXPECT_CALL(apm_gc_, set_mode(kDefaultAgcMode)).WillOnce(Return(0));
   EXPECT_CALL(apm_gc_, Enable(true)).WillOnce(Return(0));
   send_parameters_.options.auto_gain_control = true;
-  send_parameters_.options.adjust_agc_delta = rtc::nullopt;
   SetSendParameters(send_parameters_);
 
   // Turn off other options (and stereo swapping on).

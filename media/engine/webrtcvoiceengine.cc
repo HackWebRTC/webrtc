@@ -318,7 +318,6 @@ void WebRtcVoiceEngine::Init() {
     options.audio_jitter_buffer_max_packets = 50;
     options.audio_jitter_buffer_fast_accelerate = false;
     options.typing_detection = true;
-    options.adjust_agc_delta = 0;
     options.experimental_agc = false;
     options.extended_filter_aec = false;
     options.delay_agnostic_aec = false;
@@ -490,15 +489,12 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   }
 
   if (options.tx_agc_target_dbov || options.tx_agc_digital_compression_gain ||
-      options.tx_agc_limiter || options.adjust_agc_delta) {
+      options.tx_agc_limiter) {
     // Override default_agc_config_. Generally, an unset option means "leave
     // the VoE bits alone" in this function, so we want whatever is set to be
     // stored as the new "default". If we didn't, then setting e.g.
     // tx_agc_target_dbov would reset digital compression gain and limiter
     // settings.
-    // Also, if we don't update default_agc_config_, then adjust_agc_delta
-    // would be an offset from the original values, and not whatever was set
-    // explicitly.
     default_agc_config_.targetLeveldBOv = options.tx_agc_target_dbov.value_or(
         default_agc_config_.targetLeveldBOv);
     default_agc_config_.digitalCompressionGaindB =
@@ -506,15 +502,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
             default_agc_config_.digitalCompressionGaindB);
     default_agc_config_.limiterEnable =
         options.tx_agc_limiter.value_or(default_agc_config_.limiterEnable);
-
-    webrtc::AgcConfig config = default_agc_config_;
-    if (options.adjust_agc_delta) {
-      config.targetLeveldBOv -= *options.adjust_agc_delta;
-      RTC_LOG(LS_INFO) << "Adjusting AGC level from default -"
-                       << default_agc_config_.targetLeveldBOv << "dB to -"
-                       << config.targetLeveldBOv << "dB";
-    }
-    webrtc::apm_helpers::SetAgcConfig(apm(), config);
+    webrtc::apm_helpers::SetAgcConfig(apm(), default_agc_config_);
   }
 
   if (options.intelligibility_enhancer) {
