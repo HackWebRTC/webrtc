@@ -95,9 +95,13 @@ class OveruseFrameDetector {
    public:
     virtual void Reset() = 0;
     virtual void SetMaxSampleDiffMs(float diff_ms) = 0;
-    virtual void AddCaptureSample(float sample_ms) = 0;
-    virtual void AddSample(float processing_ms,
-                           int64_t diff_last_sample_ms) = 0;
+    virtual void FrameCaptured(const VideoFrame& frame,
+                               int64_t time_when_first_seen_us,
+                               int64_t last_capture_time_us) = 0;
+    // Returns encode_time in us, if there's a new measurement.
+    virtual rtc::Optional<int> FrameSent(uint32_t timestamp,
+                                         int64_t time_sent_in_us) = 0;
+
     virtual int Value() = 0;
     virtual ~ProcessingUsage() = default;
   };
@@ -107,17 +111,6 @@ class OveruseFrameDetector {
 
  private:
   class CheckOveruseTask;
-  struct FrameTiming {
-    FrameTiming(int64_t capture_time_us, uint32_t timestamp, int64_t now)
-        : capture_time_us(capture_time_us),
-          timestamp(timestamp),
-          capture_us(now),
-          last_send_us(-1) {}
-    int64_t capture_time_us;
-    uint32_t timestamp;
-    int64_t capture_us;
-    int64_t last_send_us;
-  };
 
   void EncodedFrameTimeMeasured(int encode_duration_ms);
   bool IsOverusing(const CpuOveruseMetrics& metrics);
@@ -129,7 +122,8 @@ class OveruseFrameDetector {
   void ResetAll(int num_pixels);
 
   static std::unique_ptr<ProcessingUsage> CreateProcessingUsage(
-      const CpuOveruseOptions& options);
+      const CpuOveruseOptions& options,
+      EncodedFrameObserver* encoder_timing);
 
   rtc::SequencedTaskChecker task_checker_;
   // Owned by the task queue from where StartCheckForOveruse is called.
@@ -139,7 +133,6 @@ class OveruseFrameDetector {
 
   // Observer getting overuse reports.
   AdaptationObserverInterface* const observer_;
-  EncodedFrameObserver* const encoder_timing_;
 
   // Stats metrics.
   CpuOveruseMetricsObserver* const metrics_observer_;
@@ -148,7 +141,6 @@ class OveruseFrameDetector {
   int64_t num_process_times_ RTC_GUARDED_BY(task_checker_);
 
   int64_t last_capture_time_us_ RTC_GUARDED_BY(task_checker_);
-  int64_t last_processed_capture_time_us_ RTC_GUARDED_BY(task_checker_);
 
   // Number of pixels of last captured frame.
   int num_pixels_ RTC_GUARDED_BY(task_checker_);
@@ -162,7 +154,6 @@ class OveruseFrameDetector {
 
   const std::unique_ptr<ProcessingUsage> usage_
       RTC_PT_GUARDED_BY(task_checker_);
-  std::list<FrameTiming> frame_timing_ RTC_GUARDED_BY(task_checker_);
 
   RTC_DISALLOW_COPY_AND_ASSIGN(OveruseFrameDetector);
 };
