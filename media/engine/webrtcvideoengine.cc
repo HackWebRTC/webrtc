@@ -1396,10 +1396,8 @@ void WebRtcVideoChannel::OnPacketReceived(
   const webrtc::PacketTime webrtc_packet_time(packet_time.timestamp,
                                               packet_time.not_before);
   const webrtc::PacketReceiver::DeliveryStatus delivery_result =
-      call_->Receiver()->DeliverPacket(
-          webrtc::MediaType::VIDEO,
-          packet->cdata(), packet->size(),
-          webrtc_packet_time);
+      call_->Receiver()->DeliverPacket(webrtc::MediaType::VIDEO, *packet,
+                                       webrtc_packet_time);
   switch (delivery_result) {
     case webrtc::PacketReceiver::DELIVERY_OK:
       return;
@@ -1442,10 +1440,9 @@ void WebRtcVideoChannel::OnPacketReceived(
       break;
   }
 
-  if (call_->Receiver()->DeliverPacket(
-          webrtc::MediaType::VIDEO,
-          packet->cdata(), packet->size(),
-          webrtc_packet_time) != webrtc::PacketReceiver::DELIVERY_OK) {
+  if (call_->Receiver()->DeliverPacket(webrtc::MediaType::VIDEO, *packet,
+                                       webrtc_packet_time) !=
+      webrtc::PacketReceiver::DELIVERY_OK) {
     RTC_LOG(LS_WARNING) << "Failed to deliver RTP packet on re-delivery.";
     return;
   }
@@ -1460,10 +1457,8 @@ void WebRtcVideoChannel::OnRtcpReceived(
   // for both audio and video on the same path. Since BundleFilter doesn't
   // filter RTCP anymore incoming RTCP packets could've been going to audio (so
   // logging failures spam the log).
-  call_->Receiver()->DeliverPacket(
-      webrtc::MediaType::VIDEO,
-      packet->cdata(), packet->size(),
-      webrtc_packet_time);
+  call_->Receiver()->DeliverPacket(webrtc::MediaType::VIDEO, *packet,
+                                   webrtc_packet_time);
 }
 
 void WebRtcVideoChannel::OnReadyToSend(bool ready) {

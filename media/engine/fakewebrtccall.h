@@ -288,8 +288,7 @@ class FakeCall final : public webrtc::Call, public webrtc::PacketReceiver {
   webrtc::PacketReceiver* Receiver() override;
 
   DeliveryStatus DeliverPacket(webrtc::MediaType media_type,
-                               const uint8_t* packet,
-                               size_t length,
+                               rtc::CopyOnWriteBuffer packet,
                                const webrtc::PacketTime& packet_time) override;
 
   webrtc::Call::Stats GetStats() const override;

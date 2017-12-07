@@ -546,15 +546,14 @@ webrtc::PacketReceiver* FakeCall::Receiver() {
 
 FakeCall::DeliveryStatus FakeCall::DeliverPacket(
     webrtc::MediaType media_type,
-    const uint8_t* packet,
-    size_t length,
+    rtc::CopyOnWriteBuffer packet,
     const webrtc::PacketTime& packet_time) {
-  EXPECT_GE(length, 12u);
+  EXPECT_GE(packet.size(), 12u);
   RTC_DCHECK(media_type == webrtc::MediaType::AUDIO ||
              media_type == webrtc::MediaType::VIDEO);
 
   uint32_t ssrc;
-  if (!GetRtpSsrc(packet, length, &ssrc))
+  if (!GetRtpSsrc(packet.cdata(), packet.size(), &ssrc))
     return DELIVERY_PACKET_ERROR;
 
   if (media_type == webrtc::MediaType::VIDEO) {
@@ -566,7 +565,7 @@ FakeCall::DeliveryStatus FakeCall::DeliverPacket(
   if (media_type == webrtc::MediaType::AUDIO) {
     for (auto receiver : audio_receive_streams_) {
       if (receiver->GetConfig().rtp.remote_ssrc == ssrc) {
-        receiver->DeliverRtp(packet, length, packet_time);
+        receiver->DeliverRtp(packet.cdata(), packet.size(), packet_time);
         return DELIVERY_OK;
       }
     }

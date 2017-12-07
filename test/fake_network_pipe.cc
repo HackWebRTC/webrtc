@@ -53,8 +53,9 @@ void DemuxerImpl::DeliverPacket(const NetworkPacket* packet,
         << "payload type " << static_cast<int>(payload_type) << " unknown.";
     media_type = it->second;
   }
-  packet_receiver_->DeliverPacket(media_type, packet_data, packet_length,
-                                  packet_time);
+  packet_receiver_->DeliverPacket(
+      media_type, rtc::CopyOnWriteBuffer(packet_data, packet_length),
+      packet_time);
 }
 
 FakeNetworkPipe::FakeNetworkPipe(Clock* clock,

@@ -1343,15 +1343,14 @@ TEST_P(EndToEndTest, UnknownRtpPacketGivesUnknownSsrcReturnCode) {
 
    private:
     DeliveryStatus DeliverPacket(MediaType media_type,
-                                 const uint8_t* packet,
-                                 size_t length,
+                                 rtc::CopyOnWriteBuffer packet,
                                  const PacketTime& packet_time) override {
-      if (RtpHeaderParser::IsRtcp(packet, length)) {
-        return receiver_->DeliverPacket(media_type, packet, length,
+      if (RtpHeaderParser::IsRtcp(packet.cdata(), packet.size())) {
+        return receiver_->DeliverPacket(media_type, std::move(packet),
                                         packet_time);
       } else {
-        DeliveryStatus delivery_status =
-            receiver_->DeliverPacket(media_type, packet, length, packet_time);
+        DeliveryStatus delivery_status = receiver_->DeliverPacket(
+            media_type, std::move(packet), packet_time);
         EXPECT_EQ(DELIVERY_UNKNOWN_SSRC, delivery_status);
         delivered_packet_.Set();
         return delivery_status;
