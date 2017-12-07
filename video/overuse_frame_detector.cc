@@ -65,62 +65,11 @@ const int kMinFramerate = 7;
 const int kMaxFramerate = 30;
 
 const auto kScaleReasonCpu = AdaptationObserverInterface::AdaptReason::kCpu;
-}  // namespace
-
-CpuOveruseOptions::CpuOveruseOptions()
-    : high_encode_usage_threshold_percent(85),
-      frame_timeout_interval_ms(1500),
-      min_frame_samples(120),
-      min_process_count(3),
-      high_threshold_consecutive_count(2) {
-#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
-  // This is proof-of-concept code for letting the physical core count affect
-  // the interval into which we attempt to scale. For now, the code is Mac OS
-  // specific, since that's the platform were we saw most problems.
-  // TODO(torbjorng): Enhance SystemInfo to return this metric.
-
-  mach_port_t mach_host = mach_host_self();
-  host_basic_info hbi = {};
-  mach_msg_type_number_t info_count = HOST_BASIC_INFO_COUNT;
-  kern_return_t kr =
-      host_info(mach_host, HOST_BASIC_INFO, reinterpret_cast<host_info_t>(&hbi),
-                &info_count);
-  mach_port_deallocate(mach_task_self(), mach_host);
-
-  int n_physical_cores;
-  if (kr != KERN_SUCCESS) {
-    // If we couldn't get # of physical CPUs, don't panic. Assume we have 1.
-    n_physical_cores = 1;
-    RTC_LOG(LS_ERROR)
-        << "Failed to determine number of physical cores, assuming 1";
-  } else {
-    n_physical_cores = hbi.physical_cpu;
-    RTC_LOG(LS_INFO) << "Number of physical cores:" << n_physical_cores;
-  }
-
-  // Change init list default for few core systems. The assumption here is that
-  // encoding, which we measure here, takes about 1/4 of the processing of a
-  // two-way call. This is roughly true for x86 using both vp8 and vp9 without
-  // hardware encoding. Since we don't affect the incoming stream here, we only
-  // control about 1/2 of the total processing needs, but this is not taken into
-  // account.
-  if (n_physical_cores == 1)
-    high_encode_usage_threshold_percent = 20;  // Roughly 1/4 of 100%.
-  else if (n_physical_cores == 2)
-    high_encode_usage_threshold_percent = 40;  // Roughly 1/4 of 200%.
-#endif  // defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
-
-  // Note that we make the interval 2x+epsilon wide, since libyuv scaling steps
-  // are close to that (when squared). This wide interval makes sure that
-  // scaling up or down does not jump all the way across the interval.
-  low_encode_usage_threshold_percent =
-      (high_encode_usage_threshold_percent - 1) / 2;
-}
 
 // Class for calculating the processing usage on the send-side (the average
 // processing time of a frame divided by the average time difference between
 // captured frames).
-class OveruseFrameDetector::SendProcessingUsage {
+class SendProcessingUsage : public OveruseFrameDetector::ProcessingUsage {
  public:
   explicit SendProcessingUsage(const CpuOveruseOptions& options)
       : kWeightFactorFrameDiff(0.998f),
@@ -135,7 +84,7 @@ class OveruseFrameDetector::SendProcessingUsage {
   }
   virtual ~SendProcessingUsage() {}
 
-  void Reset() {
+  void Reset() override {
     count_ = 0;
     max_sample_diff_ms_ = kDefaultSampleDiffMs * kMaxSampleDiffMarginFactor;
     filtered_frame_diff_ms_->Reset(kWeightFactorFrameDiff);
@@ -144,22 +93,24 @@ class OveruseFrameDetector::SendProcessingUsage {
     filtered_processing_ms_->Apply(1.0f, InitialProcessingMs());
   }
 
-  void SetMaxSampleDiffMs(float diff_ms) { max_sample_diff_ms_ = diff_ms; }
+  void SetMaxSampleDiffMs(float diff_ms) override {
+    max_sample_diff_ms_ = diff_ms;
+  }
 
-  void AddCaptureSample(float sample_ms) {
+  void AddCaptureSample(float sample_ms) override {
     float exp = sample_ms / kDefaultSampleDiffMs;
     exp = std::min(exp, kMaxExp);
     filtered_frame_diff_ms_->Apply(exp, sample_ms);
   }
 
-  void AddSample(float processing_ms, int64_t diff_last_sample_ms) {
+  void AddSample(float processing_ms, int64_t diff_last_sample_ms) override {
     ++count_;
     float exp = diff_last_sample_ms / kDefaultSampleDiffMs;
     exp = std::min(exp, kMaxExp);
     filtered_processing_ms_->Apply(exp, processing_ms);
   }
 
-  virtual int Value() {
+  int Value() override {
     if (count_ < static_cast<uint32_t>(options_.min_frame_samples)) {
       return static_cast<int>(InitialUsageInPercent() + 0.5f);
     }
@@ -192,14 +143,13 @@ class OveruseFrameDetector::SendProcessingUsage {
 };
 
 // Class used for manual testing of overuse, enabled via field trial flag.
-class OveruseFrameDetector::OverdoseInjector
-    : public OveruseFrameDetector::SendProcessingUsage {
+class OverdoseInjector : public SendProcessingUsage {
  public:
   OverdoseInjector(const CpuOveruseOptions& options,
                    int64_t normal_period_ms,
                    int64_t overuse_period_ms,
                    int64_t underuse_period_ms)
-      : OveruseFrameDetector::SendProcessingUsage(options),
+      : SendProcessingUsage(options),
         normal_period_ms_(normal_period_ms),
         overuse_period_ms_(overuse_period_ms),
         underuse_period_ms_(underuse_period_ms),
@@ -267,10 +217,61 @@ class OveruseFrameDetector::OverdoseInjector
   int64_t last_toggling_ms_;
 };
 
-std::unique_ptr<OveruseFrameDetector::SendProcessingUsage>
-OveruseFrameDetector::CreateSendProcessingUsage(
-    const CpuOveruseOptions& options) {
-  std::unique_ptr<SendProcessingUsage> instance;
+}  // namespace
+
+CpuOveruseOptions::CpuOveruseOptions()
+    : high_encode_usage_threshold_percent(85),
+      frame_timeout_interval_ms(1500),
+      min_frame_samples(120),
+      min_process_count(3),
+      high_threshold_consecutive_count(2) {
+#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
+  // This is proof-of-concept code for letting the physical core count affect
+  // the interval into which we attempt to scale. For now, the code is Mac OS
+  // specific, since that's the platform were we saw most problems.
+  // TODO(torbjorng): Enhance SystemInfo to return this metric.
+
+  mach_port_t mach_host = mach_host_self();
+  host_basic_info hbi = {};
+  mach_msg_type_number_t info_count = HOST_BASIC_INFO_COUNT;
+  kern_return_t kr =
+      host_info(mach_host, HOST_BASIC_INFO, reinterpret_cast<host_info_t>(&hbi),
+                &info_count);
+  mach_port_deallocate(mach_task_self(), mach_host);
+
+  int n_physical_cores;
+  if (kr != KERN_SUCCESS) {
+    // If we couldn't get # of physical CPUs, don't panic. Assume we have 1.
+    n_physical_cores = 1;
+    RTC_LOG(LS_ERROR)
+        << "Failed to determine number of physical cores, assuming 1";
+  } else {
+    n_physical_cores = hbi.physical_cpu;
+    RTC_LOG(LS_INFO) << "Number of physical cores:" << n_physical_cores;
+  }
+
+  // Change init list default for few core systems. The assumption here is that
+  // encoding, which we measure here, takes about 1/4 of the processing of a
+  // two-way call. This is roughly true for x86 using both vp8 and vp9 without
+  // hardware encoding. Since we don't affect the incoming stream here, we only
+  // control about 1/2 of the total processing needs, but this is not taken into
+  // account.
+  if (n_physical_cores == 1)
+    high_encode_usage_threshold_percent = 20;  // Roughly 1/4 of 100%.
+  else if (n_physical_cores == 2)
+    high_encode_usage_threshold_percent = 40;  // Roughly 1/4 of 200%.
+#endif  // defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
+
+  // Note that we make the interval 2x+epsilon wide, since libyuv scaling steps
+  // are close to that (when squared). This wide interval makes sure that
+  // scaling up or down does not jump all the way across the interval.
+  low_encode_usage_threshold_percent =
+      (high_encode_usage_threshold_percent - 1) / 2;
+}
+
+std::unique_ptr<OveruseFrameDetector::ProcessingUsage>
+OveruseFrameDetector::CreateProcessingUsage(const CpuOveruseOptions& options) {
+  std::unique_ptr<ProcessingUsage> instance;
   std::string toggling_interval =
       field_trial::FindFullName("WebRTC-ForceSimulatedOveruseIntervalMs");
   if (!toggling_interval.empty()) {
@@ -355,7 +356,7 @@ OveruseFrameDetector::OveruseFrameDetector(
       last_rampup_time_ms_(-1),
       in_quick_rampup_(false),
       current_rampup_delay_ms_(kStandardRampUpDelayMs),
-      usage_(CreateSendProcessingUsage(options)) {
+      usage_(CreateProcessingUsage(options)) {
   task_checker_.Detach();
 }
 

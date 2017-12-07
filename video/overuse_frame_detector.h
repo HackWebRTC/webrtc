@@ -90,12 +90,22 @@ class OveruseFrameDetector {
   // Called for each sent frame.
   void FrameSent(uint32_t timestamp, int64_t time_sent_in_us);
 
+  // Interface for cpu load estimation. Intended for internal use only.
+  class ProcessingUsage {
+   public:
+    virtual void Reset() = 0;
+    virtual void SetMaxSampleDiffMs(float diff_ms) = 0;
+    virtual void AddCaptureSample(float sample_ms) = 0;
+    virtual void AddSample(float processing_ms,
+                           int64_t diff_last_sample_ms) = 0;
+    virtual int Value() = 0;
+    virtual ~ProcessingUsage() = default;
+  };
+
  protected:
   void CheckForOveruse();  // Protected for test purposes.
 
  private:
-  class OverdoseInjector;
-  class SendProcessingUsage;
   class CheckOveruseTask;
   struct FrameTiming {
     FrameTiming(int64_t capture_time_us, uint32_t timestamp, int64_t now)
@@ -118,7 +128,7 @@ class OveruseFrameDetector {
 
   void ResetAll(int num_pixels);
 
-  static std::unique_ptr<SendProcessingUsage> CreateSendProcessingUsage(
+  static std::unique_ptr<ProcessingUsage> CreateProcessingUsage(
       const CpuOveruseOptions& options);
 
   rtc::SequencedTaskChecker task_checker_;
@@ -150,10 +160,8 @@ class OveruseFrameDetector {
   bool in_quick_rampup_ RTC_GUARDED_BY(task_checker_);
   int current_rampup_delay_ms_ RTC_GUARDED_BY(task_checker_);
 
-  // TODO(asapersson): Can these be regular members (avoid separate heap
-  // allocs)?
-  const std::unique_ptr<SendProcessingUsage> usage_
-      RTC_GUARDED_BY(task_checker_);
+  const std::unique_ptr<ProcessingUsage> usage_
+      RTC_PT_GUARDED_BY(task_checker_);
   std::list<FrameTiming> frame_timing_ RTC_GUARDED_BY(task_checker_);
 
   RTC_DISALLOW_COPY_AND_ASSIGN(OveruseFrameDetector);
