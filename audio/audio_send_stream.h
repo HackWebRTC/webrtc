@@ -124,6 +124,16 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   std::unique_ptr<TimedTransport> timed_send_transport_adapter_;
   TimeInterval active_lifetime_;
 
+  // RFC 5285: Each distinct extension MUST have a unique ID. The value 0 is
+  // reserved for padding and MUST NOT be used as a local identifier.
+  // So it should be safe to use 0 here to indicate "not configured".
+  struct ExtensionIds {
+    int audio_level = 0;
+    int transport_sequence_number = 0;
+  };
+  static ExtensionIds FindExtensionIds(
+      const std::vector<RtpExtension>& extensions);
+
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AudioSendStream);
 };
 }  // namespace internal
