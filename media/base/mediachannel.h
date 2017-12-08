@@ -38,7 +38,7 @@
 #include "rtc_base/networkroute.h"
 #include "rtc_base/sigslot.h"
 #include "rtc_base/socket.h"
-#include "rtc_base/window.h"
+#include "rtc_base/stringencode.h"
 
 
 namespace rtc {

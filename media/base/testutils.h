@@ -20,7 +20,6 @@
 #include "rtc_base/arraysize.h"
 #include "rtc_base/basictypes.h"
 #include "rtc_base/sigslot.h"
-#include "rtc_base/window.h"
 
 namespace rtc {
 class ByteBufferReader;

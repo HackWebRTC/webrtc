@@ -620,7 +620,6 @@ rtc_static_library("rtc_base_generic") {
       "sslroots.h",
       "transformadapter.cc",
       "transformadapter.h",
-      "window.h",
     ]
 
     if (is_win) {

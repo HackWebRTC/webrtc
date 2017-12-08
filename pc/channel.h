@@ -43,7 +43,6 @@
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/network.h"
 #include "rtc_base/sigslot.h"
-#include "rtc_base/window.h"
 
 namespace webrtc {
 class AudioSinkInterface;
