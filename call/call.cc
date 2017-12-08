@@ -1323,7 +1323,6 @@ PacketReceiver::DeliveryStatus Call::DeliverRtcp(MediaType media_type,
 PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
                                                 rtc::CopyOnWriteBuffer packet,
                                                 const PacketTime& packet_time) {
-  int length = packet.size();
   TRACE_EVENT0("webrtc", "Call::DeliverRtp");
 
   RtpPacketReceived parsed_packet;
@@ -1361,6 +1360,9 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
 
   NotifyBweOfReceivedPacket(parsed_packet, media_type);
 
+  // RateCounters expect input parameter as int, save it as int,
+  // instead of converting each time it is passed to RateCounter::Add below.
+  int length = static_cast<int>(parsed_packet.size());
   if (media_type == MediaType::AUDIO) {
     if (audio_receiver_controller_.OnRtpPacket(parsed_packet)) {
       received_bytes_per_second_counter_.Add(length);
