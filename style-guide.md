@@ -36,6 +36,45 @@ instead of                          | use
 
 See [the source](webrtc/api/array_view.h) for more detailed docs.
 
+### sigslot
+
+sigslot is a lightweight library that adds a signal/slot language
+construct to C++, making it easy to implement the observer pattern
+with minimal boilerplate code.
+
+When adding a signal to a pure interface, **prefer to add a pure
+virtual method that returns a reference to a signal**:
+
+```
+sigslot::signal<int>& SignalFoo() = 0;
+```
+
+As opposed to making it a public member variable, as a lot of legacy
+code does:
+
+```
+sigslot::signal<int> SignalFoo;
+```
+
+The virtual method approach has the advantage that it keeps the
+interface stateless, and gives the subclass more flexibility in how it
+implements the signal. It may:
+
+* Have its own signal as a member variable.
+* Use a `sigslot::repeater`, to repeat a signal of another object:
+
+  ```
+  sigslot::repeater<int> foo_;
+  /* ... */
+  foo_.repeat(bar_.SignalFoo());
+  ```
+* Just return another object's signal directly, if the other object's
+  lifetime is the same as its own.
+
+  ```
+  sigslot::signal<int>& SignalFoo() { return bar_.SignalFoo(); }
+  ```
+
 ## **C**
 
 There’s a substantial chunk of legacy C code in WebRTC, and a lot of
