@@ -606,6 +606,7 @@ struct VoiceSenderInfo : public MediaSenderInfo {
         audio_level(0),
         total_input_energy(0.0),
         total_input_duration(0.0),
+        aec_quality_min(0.0),
         echo_delay_median_ms(0),
         echo_delay_std_ms(0),
         echo_return_loss(0),
@@ -623,6 +624,7 @@ struct VoiceSenderInfo : public MediaSenderInfo {
   double total_input_duration;
   // TODO(bugs.webrtc.org/8572): Remove APM stats from this struct, since they
   // are no longer needed now that we have apm_statistics.
+  float aec_quality_min;
   int echo_delay_median_ms;
   int echo_delay_std_ms;
   int echo_return_loss;
