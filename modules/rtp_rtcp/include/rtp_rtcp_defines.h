@@ -179,7 +179,7 @@ struct RTCPReportBlock {
   RTCPReportBlock(uint32_t sender_ssrc,
                   uint32_t source_ssrc,
                   uint8_t fraction_lost,
-                  uint32_t packets_lost,
+                  int32_t packets_lost,
                   uint32_t extended_highest_sequence_number,
                   uint32_t jitter,
                   uint32_t last_sender_report_timestamp,
