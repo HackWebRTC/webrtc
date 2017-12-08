@@ -7,7 +7,7 @@ vars = {
   'checkout_configuration': 'default',
   'checkout_instrumented_libraries': 'checkout_linux and checkout_configuration == "default"',
   'webrtc_git': 'https://webrtc.googlesource.com',
-  'chromium_revision': '871a7702e04da0b4b695138e7fe91ea1138ebf3e',
+  'chromium_revision': '55d42e80a50141c6ca9e64f64ce40ef9e06aee92',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
@@ -38,7 +38,7 @@ deps = {
   # TODO(kjellander): Move this to be Android-only once the libevent dependency
   # in base/third_party/libevent is solved.
   'src/base':
-    Var('chromium_git') + '/chromium/src/base' + '@' + '989f904985d8a1cd3548234a15ba3d1d97804e74',
+    Var('chromium_git') + '/chromium/src/base' + '@' + '091bdb8ac78783c386ffd7ff4a0c0cb75dbbe16c',
   'src/build':
     Var('chromium_git') + '/chromium/src/build' + '@' + 'd1735e8e2f031bab18d81dbe0988e3d5da6257e9',
   'src/buildtools':
@@ -50,13 +50,13 @@ deps = {
     'condition': 'checkout_android',
   },
   'src/ios': {
-    'url': Var('chromium_git') + '/chromium/src/ios' + '@' + 'b59a7c22acb6d58a0102c29649ce68cf31975f20',
+    'url': Var('chromium_git') + '/chromium/src/ios' + '@' + 'f8917826b7ec184241b1fe4e519f262b7da354ad',
     'condition': 'checkout_ios',
   },
   'src/testing':
     Var('chromium_git') + '/chromium/src/testing' + '@' + 'fa1655e92f9d6ab290a9083ef1efd3c91a45f6cb',
   'src/third_party':
-    Var('chromium_git') + '/chromium/src/third_party' + '@' + '4e6820e07b7a83a92da7745d5e1e0eb894090a3b',
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + '6d8f800e7125b3057e7ba7bc7b0d570c9ea2d651',
   'src/third_party/android_tools': {
     'url': Var('chromium_git') + '/android_tools.git' + '@' + 'a2e9bc7c1b41d983577907df51d339fb1e0fd02f',
     'condition': 'checkout_android',
@@ -141,7 +141,7 @@ deps = {
     'condition': 'checkout_android',
   },
   'src/third_party/usrsctp/usrsctplib':
-    Var('chromium_git') + '/external/github.com/sctplab/usrsctp' + '@' + 'f4819e1b177f7bfdd761c147f5a649b9f1a78c06',
+    Var('chromium_git') + '/external/github.com/sctplab/usrsctp' + '@' + '0e076261b832121cf120ddc04aaff87ac3a34d30',
   # WebRTC-only dependency (not present in Chromium).
   'src/third_party/winsdk_samples': {
     'url': Var('webrtc_git') + '/deps/third_party/winsdk_samples_v71' + '@' + '2d31a1cbecc86359e6ec041fb9ff6c082babd073',
@@ -155,7 +155,7 @@ deps = {
   'src/third_party/yasm/source/patched-yasm':
     Var('chromium_git') + '/chromium/deps/yasm/patched-yasm.git' + '@' + 'b98114e18d8b9b84586b10d24353ab8616d4c5fc',
   'src/tools':
-    Var('chromium_git') + '/chromium/src/tools' + '@' + 'a6903f5f210d88b5d296350cdac5005ab1101a60',
+    Var('chromium_git') + '/chromium/src/tools' + '@' + '1987e0d5193dccbb4a50946d414b3dbdd6db02b0',
   'src/tools/gyp':
     Var('chromium_git') + '/external/gyp.git' + '@' + 'd61a9397e668fa9843c4aa7da9e79460fe590bfb',
   'src/tools/swarming_client':
