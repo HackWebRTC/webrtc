@@ -195,7 +195,7 @@ TEST_F(ReceiveStatisticsTest, RtcpCallbacks) {
   EXPECT_EQ(statistics.fraction_lost, callback.stats_.fraction_lost);
   EXPECT_EQ(statistics.jitter, callback.stats_.jitter);
   EXPECT_EQ(51, statistics.fraction_lost);
-  EXPECT_EQ(1u, statistics.packets_lost);
+  EXPECT_EQ(1, statistics.packets_lost);
   EXPECT_EQ(5u, statistics.extended_highest_sequence_number);
   EXPECT_EQ(4u, statistics.jitter);
 

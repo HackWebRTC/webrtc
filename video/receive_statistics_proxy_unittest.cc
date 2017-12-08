@@ -294,7 +294,7 @@ TEST_F(ReceiveStatisticsProxyTest, GetStatsReportsDiscardedPackets) {
 
 TEST_F(ReceiveStatisticsProxyTest, GetStatsReportsRtcpStats) {
   const uint8_t kFracLost = 0;
-  const uint32_t kCumLost = 1;
+  const int32_t kCumLost = 1;
   const uint32_t kExtSeqNum = 10;
   const uint32_t kJitter = 4;
 

@@ -104,7 +104,7 @@ struct RtcpStatistics {
 
   uint8_t fraction_lost;
   union {
-    uint32_t packets_lost;
+    int32_t packets_lost;  // Defined as a 24 bit signed integer in RTCP
     RTC_DEPRECATED uint32_t cumulative_lost;
   };
   union {
