@@ -49,7 +49,16 @@ public class MediaCodecVideoDecoder {
   private static final String FORMAT_KEY_CROP_BOTTOM = "crop-bottom";
 
   // Tracks webrtc::VideoCodecType.
-  public enum VideoCodecType { VIDEO_CODEC_VP8, VIDEO_CODEC_VP9, VIDEO_CODEC_H264 }
+  public enum VideoCodecType {
+    VIDEO_CODEC_VP8,
+    VIDEO_CODEC_VP9,
+    VIDEO_CODEC_H264;
+
+    @CalledByNative("VideoCodecType")
+    static VideoCodecType fromNativeIndex(int nativeIndex) {
+      return values()[nativeIndex];
+    }
+  }
 
   // Timeout for input buffer dequeue.
   private static final int DEQUEUE_INPUT_TIMEOUT = 500000;
@@ -144,21 +153,25 @@ public class MediaCodecVideoDecoder {
   }
 
   // Functions to query if HW decoding is supported.
+  @CalledByNativeUnchecked
   public static boolean isVp8HwSupported() {
     return !hwDecoderDisabledTypes.contains(VP8_MIME_TYPE)
         && (findDecoder(VP8_MIME_TYPE, supportedVp8HwCodecPrefixes) != null);
   }
 
+  @CalledByNativeUnchecked
   public static boolean isVp9HwSupported() {
     return !hwDecoderDisabledTypes.contains(VP9_MIME_TYPE)
         && (findDecoder(VP9_MIME_TYPE, supportedVp9HwCodecPrefixes) != null);
   }
 
+  @CalledByNativeUnchecked
   public static boolean isH264HwSupported() {
     return !hwDecoderDisabledTypes.contains(H264_MIME_TYPE)
         && (findDecoder(H264_MIME_TYPE, supportedH264HwCodecPrefixes) != null);
   }
 
+  @CalledByNative
   public static boolean isH264HighProfileHwSupported() {
     if (hwDecoderDisabledTypes.contains(H264_MIME_TYPE)) {
       return false;
@@ -265,6 +278,9 @@ public class MediaCodecVideoDecoder {
     return null; // No HW decoder.
   }
 
+  @CalledByNative
+  MediaCodecVideoDecoder() {}
+
   private void checkOnMediaCodecThread() throws IllegalStateException {
     if (mediaCodecThread.getId() != Thread.currentThread().getId()) {
       throw new IllegalStateException("MediaCodecVideoDecoder previously operated on "
@@ -273,6 +289,7 @@ public class MediaCodecVideoDecoder {
   }
 
   // Pass null in |surfaceTextureHelper| to configure the codec for ByteBuffer output.
+  @CalledByNativeUnchecked
   private boolean initDecode(
       VideoCodecType type, int width, int height, SurfaceTextureHelper surfaceTextureHelper) {
     if (mediaCodecThread != null) {
@@ -346,6 +363,7 @@ public class MediaCodecVideoDecoder {
 
   // Resets the decoder so it can start decoding frames with new resolution.
   // Flushes MediaCodec and clears decoder output buffers.
+  @CalledByNativeUnchecked
   private void reset(int width, int height) {
     if (mediaCodecThread == null || mediaCodec == null) {
       throw new RuntimeException("Incorrect reset call for non-initialized decoder.");
@@ -362,6 +380,7 @@ public class MediaCodecVideoDecoder {
     droppedFrames = 0;
   }
 
+  @CalledByNativeUnchecked
   private void release() {
     Logging.d(TAG, "Java releaseDecoder. Total number of dropped frames: " + droppedFrames);
     checkOnMediaCodecThread();
@@ -408,6 +427,7 @@ public class MediaCodecVideoDecoder {
 
   // Dequeue an input buffer and return its index, -1 if no input buffer is
   // available, or -2 if the codec is no longer operative.
+  @CalledByNativeUnchecked
   private int dequeueInputBuffer() {
     checkOnMediaCodecThread();
     try {
@@ -418,6 +438,7 @@ public class MediaCodecVideoDecoder {
     }
   }
 
+  @CalledByNativeUnchecked
   private boolean queueInputBuffer(int inputBufferIndex, int size, long presentationTimeStamUs,
       long timeStampMs, long ntpTimeStamp) {
     checkOnMediaCodecThread();
@@ -475,6 +496,41 @@ public class MediaCodecVideoDecoder {
     private final long decodeTimeMs;
     // System time when this frame decoding finished.
     private final long endDecodeTimeMs;
+
+    @CalledByNative("DecodedOutputBuffer")
+    int getIndex() {
+      return index;
+    }
+
+    @CalledByNative("DecodedOutputBuffer")
+    int getOffset() {
+      return offset;
+    }
+
+    @CalledByNative("DecodedOutputBuffer")
+    int getSize() {
+      return size;
+    }
+
+    @CalledByNative("DecodedOutputBuffer")
+    long getPresentationTimestampMs() {
+      return presentationTimeStampMs;
+    }
+
+    @CalledByNative("DecodedOutputBuffer")
+    long getTimestampMs() {
+      return timeStampMs;
+    }
+
+    @CalledByNative("DecodedOutputBuffer")
+    long getNtpTimestampMs() {
+      return ntpTimeStampMs;
+    }
+
+    @CalledByNative("DecodedOutputBuffer")
+    long getDecodeTimeMs() {
+      return decodeTimeMs;
+    }
   }
 
   // Helper struct for dequeueTextureBuffer() below.
@@ -507,6 +563,41 @@ public class MediaCodecVideoDecoder {
       this.ntpTimeStampMs = ntpTimeStampMs;
       this.decodeTimeMs = decodeTimeMs;
       this.frameDelayMs = frameDelay;
+    }
+
+    @CalledByNative("DecodedTextureBuffer")
+    int getTextureId() {
+      return textureID;
+    }
+
+    @CalledByNative("DecodedTextureBuffer")
+    float[] getTransformMatrix() {
+      return transformMatrix;
+    }
+
+    @CalledByNative("DecodedTextureBuffer")
+    long getPresentationTimestampMs() {
+      return presentationTimeStampMs;
+    }
+
+    @CalledByNative("DecodedTextureBuffer")
+    long getTimeStampMs() {
+      return timeStampMs;
+    }
+
+    @CalledByNative("DecodedTextureBuffer")
+    long getNtpTimestampMs() {
+      return ntpTimeStampMs;
+    }
+
+    @CalledByNative("DecodedTextureBuffer")
+    long getDecodeTimeMs() {
+      return decodeTimeMs;
+    }
+
+    @CalledByNative("DecodedTextureBuffer")
+    long getFrameDelayMs() {
+      return frameDelayMs;
     }
   }
 
@@ -596,6 +687,7 @@ public class MediaCodecVideoDecoder {
   // Throws IllegalStateException if call is made on the wrong thread, if color format changes to an
   // unsupported format, or if |mediaCodec| is not in the Executing state. Throws CodecException
   // upon codec error.
+  @CalledByNativeUnchecked
   private DecodedOutputBuffer dequeueOutputBuffer(int dequeueTimeoutMs) {
     checkOnMediaCodecThread();
     if (decodeStartTimeMs.isEmpty()) {
@@ -679,6 +771,7 @@ public class MediaCodecVideoDecoder {
   // unsupported format, or if |mediaCodec| is not in the Executing state. Throws CodecException
   // upon codec error. If |dequeueTimeoutMs| > 0, the oldest decoded frame will be dropped if
   // a frame can't be returned.
+  @CalledByNativeUnchecked
   private DecodedTextureBuffer dequeueTextureBuffer(int dequeueTimeoutMs) {
     checkOnMediaCodecThread();
     if (!useSurface) {
@@ -740,6 +833,7 @@ public class MediaCodecVideoDecoder {
   // Throws IllegalStateException if the call is made on the wrong thread, if codec is configured
   // for surface decoding, or if |mediaCodec| is not in the Executing state. Throws
   // MediaCodec.CodecException upon codec error.
+  @CalledByNativeUnchecked
   private void returnDecodedOutputBuffer(int index)
       throws IllegalStateException, MediaCodec.CodecException {
     checkOnMediaCodecThread();
@@ -747,5 +841,40 @@ public class MediaCodecVideoDecoder {
       throw new IllegalStateException("returnDecodedOutputBuffer() called for surface decoding.");
     }
     mediaCodec.releaseOutputBuffer(index, false /* render */);
+  }
+
+  @CalledByNative
+  ByteBuffer[] getInputBuffers() {
+    return inputBuffers;
+  }
+
+  @CalledByNative
+  ByteBuffer[] getOutputBuffers() {
+    return outputBuffers;
+  }
+
+  @CalledByNative
+  int getColorFormat() {
+    return colorFormat;
+  }
+
+  @CalledByNative
+  int getWidth() {
+    return width;
+  }
+
+  @CalledByNative
+  int getHeight() {
+    return height;
+  }
+
+  @CalledByNative
+  int getStride() {
+    return stride;
+  }
+
+  @CalledByNative
+  int getSliceHeight() {
+    return sliceHeight;
   }
 }

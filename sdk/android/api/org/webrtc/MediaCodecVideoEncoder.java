@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import org.webrtc.EglBase14;
+import org.webrtc.VideoFrame;
 
 // Java-side of peerconnection_jni.cc:MediaCodecVideoEncoder.
 // This class is an implementation detail of the Java PeerConnection API.
@@ -43,7 +45,16 @@ public class MediaCodecVideoEncoder {
   private static final String TAG = "MediaCodecVideoEncoder";
 
   // Tracks webrtc::VideoCodecType.
-  public enum VideoCodecType { VIDEO_CODEC_VP8, VIDEO_CODEC_VP9, VIDEO_CODEC_H264 }
+  public enum VideoCodecType {
+    VIDEO_CODEC_VP8,
+    VIDEO_CODEC_VP9,
+    VIDEO_CODEC_H264;
+
+    @CalledByNative("VideoCodecType")
+    static VideoCodecType fromNativeIndex(int nativeIndex) {
+      return values()[nativeIndex];
+    }
+  }
 
   private static final int MEDIA_CODEC_RELEASE_TIMEOUT_MS = 5000; // Timeout for codec releasing.
   private static final int DEQUEUE_TIMEOUT = 0; // Non-blocking, no wait.
@@ -193,7 +204,7 @@ public class MediaCodecVideoEncoder {
       COLOR_QCOM_FORMATYUV420PackedSemiPlanar32m};
   private static final int[] supportedSurfaceColorList = {CodecCapabilities.COLOR_FormatSurface};
   private VideoCodecType type;
-  private int colorFormat; // Used by native code.
+  private int colorFormat;
 
   // Variables used for dynamic bitrate adjustment.
   private BitrateAdjustmentType bitrateAdjustmentType = BitrateAdjustmentType.NO_ADJUSTMENT;
@@ -242,6 +253,7 @@ public class MediaCodecVideoEncoder {
   }
 
   // Functions to query if HW encoding is supported.
+  @CalledByNative
   public static boolean isVp8HwSupported() {
     return !hwEncoderDisabledTypes.contains(VP8_MIME_TYPE)
         && (findHwEncoder(VP8_MIME_TYPE, vp8HwList(), supportedColorList) != null);
@@ -255,11 +267,13 @@ public class MediaCodecVideoEncoder {
     }
   }
 
+  @CalledByNative
   public static boolean isVp9HwSupported() {
     return !hwEncoderDisabledTypes.contains(VP9_MIME_TYPE)
         && (findHwEncoder(VP9_MIME_TYPE, vp9HwList, supportedColorList) != null);
   }
 
+  @CalledByNative
   public static boolean isH264HwSupported() {
     return !hwEncoderDisabledTypes.contains(H264_MIME_TYPE)
         && (findHwEncoder(H264_MIME_TYPE, h264HwList, supportedColorList) != null);
@@ -387,6 +401,9 @@ public class MediaCodecVideoEncoder {
     return null; // No HW encoder.
   }
 
+  @CalledByNative
+  MediaCodecVideoEncoder() {}
+
   private void checkOnMediaCodecThread() {
     if (mediaCodecThread.getId() != Thread.currentThread().getId()) {
       throw new RuntimeException("MediaCodecVideoEncoder previously operated on " + mediaCodecThread
@@ -416,6 +433,7 @@ public class MediaCodecVideoEncoder {
     }
   }
 
+  @CalledByNativeUnchecked
   boolean initEncode(VideoCodecType type, int profile, int width, int height, int kbps, int fps,
       EglBase14.Context sharedContext) {
     final boolean useSurface = sharedContext != null;
@@ -535,6 +553,7 @@ public class MediaCodecVideoEncoder {
     return true;
   }
 
+  @CalledByNativeUnchecked
   ByteBuffer[] getInputBuffers() {
     ByteBuffer[] inputBuffers = mediaCodec.getInputBuffers();
     Logging.d(TAG, "Input buffers: " + inputBuffers.length);
@@ -568,6 +587,7 @@ public class MediaCodecVideoEncoder {
     }
   }
 
+  @CalledByNativeUnchecked
   boolean encodeBuffer(
       boolean isKeyframe, int inputBuffer, int size, long presentationTimestampUs) {
     checkOnMediaCodecThread();
@@ -581,6 +601,7 @@ public class MediaCodecVideoEncoder {
     }
   }
 
+  @CalledByNativeUnchecked
   boolean encodeTexture(boolean isKeyframe, int oesTextureId, float[] transformationMatrix,
       long presentationTimestampUs) {
     checkOnMediaCodecThread();
@@ -600,9 +621,9 @@ public class MediaCodecVideoEncoder {
   }
 
   /**
-   * Encodes a new style VideoFrame. Called by JNI. |bufferIndex| is -1 if we are not encoding in
-   * surface mode.
+   * Encodes a new style VideoFrame. |bufferIndex| is -1 if we are not encoding in surface mode.
    */
+  @CalledByNativeUnchecked
   boolean encodeFrame(long nativeEncoder, boolean isKeyframe, VideoFrame frame, int bufferIndex) {
     checkOnMediaCodecThread();
     try {
@@ -637,7 +658,7 @@ public class MediaCodecVideoEncoder {
         if (dataV.capacity() < strideV * chromaHeight) {
           throw new RuntimeException("V-plane buffer size too small.");
         }
-        nativeFillBuffer(
+        fillNativeBuffer(
             nativeEncoder, bufferIndex, dataY, strideY, dataU, strideU, dataV, strideV);
         i420Buffer.release();
         // I420 consists of one full-resolution and two half-resolution planes.
@@ -652,6 +673,7 @@ public class MediaCodecVideoEncoder {
     }
   }
 
+  @CalledByNativeUnchecked
   void release() {
     Logging.d(TAG, "Java releaseEncoder");
     checkOnMediaCodecThread();
@@ -733,6 +755,7 @@ public class MediaCodecVideoEncoder {
     Logging.d(TAG, "Java releaseEncoder done");
   }
 
+  @CalledByNativeUnchecked
   private boolean setRates(int kbps, int frameRate) {
     checkOnMediaCodecThread();
 
@@ -775,6 +798,7 @@ public class MediaCodecVideoEncoder {
 
   // Dequeue an input buffer and return its index, -1 if no input buffer is
   // available, or -2 if the codec is no longer operative.
+  @CalledByNativeUnchecked
   int dequeueInputBuffer() {
     checkOnMediaCodecThread();
     try {
@@ -799,10 +823,31 @@ public class MediaCodecVideoEncoder {
     public final ByteBuffer buffer;
     public final boolean isKeyFrame;
     public final long presentationTimestampUs;
+
+    @CalledByNative("OutputBufferInfo")
+    int getIndex() {
+      return index;
+    }
+
+    @CalledByNative("OutputBufferInfo")
+    ByteBuffer getBuffer() {
+      return buffer;
+    }
+
+    @CalledByNative("OutputBufferInfo")
+    boolean isKeyFrame() {
+      return isKeyFrame;
+    }
+
+    @CalledByNative("OutputBufferInfo")
+    long getPresentationTimestampUs() {
+      return presentationTimestampUs;
+    }
   }
 
   // Dequeue and return an output buffer, or null if no output is ready.  Return
   // a fake OutputBufferInfo with index -1 if the codec is no longer operable.
+  @CalledByNativeUnchecked
   OutputBufferInfo dequeueOutputBuffer() {
     checkOnMediaCodecThread();
     try {
@@ -925,6 +970,7 @@ public class MediaCodecVideoEncoder {
 
   // Release a dequeued output buffer back to the codec for re-use.  Return
   // false if the codec is no longer operable.
+  @CalledByNativeUnchecked
   boolean releaseOutputBuffer(int index) {
     checkOnMediaCodecThread();
     try {
@@ -936,7 +982,17 @@ public class MediaCodecVideoEncoder {
     }
   }
 
+  @CalledByNative
+  int getColorFormat() {
+    return colorFormat;
+  }
+
+  @CalledByNative
+  static boolean isTextureBuffer(VideoFrame.Buffer buffer) {
+    return buffer instanceof VideoFrame.TextureBuffer;
+  }
+
   /** Fills an inputBuffer with the given index with data from the byte buffers. */
-  private static native void nativeFillBuffer(long nativeEncoder, int inputBuffer, ByteBuffer dataY,
+  private static native void fillNativeBuffer(long nativeEncoder, int inputBuffer, ByteBuffer dataY,
       int strideY, ByteBuffer dataU, int strideU, ByteBuffer dataV, int strideV);
 }

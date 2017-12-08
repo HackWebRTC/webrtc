@@ -31,6 +31,8 @@ class MediaCodecVideoDecoderFactory
 
   void DestroyVideoDecoder(VideoDecoder* decoder) override;
 
+  static bool IsH264HighProfileSupported(JNIEnv* env);
+
  private:
   jobject egl_context_;
   std::vector<VideoCodecType> supported_codec_types_;
