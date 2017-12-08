@@ -67,11 +67,9 @@ class CpuOveruseDetectorProxy : public OveruseFrameDetector {
  public:
   CpuOveruseDetectorProxy(const CpuOveruseOptions& options,
                           AdaptationObserverInterface* overuse_observer,
-                          EncodedFrameObserver* encoder_timing_,
                           CpuOveruseMetricsObserver* metrics_observer)
       : OveruseFrameDetector(options,
                              overuse_observer,
-                             encoder_timing_,
                              metrics_observer),
         last_target_framerate_fps_(-1) {}
   virtual ~CpuOveruseDetectorProxy() {}
@@ -101,12 +99,10 @@ class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
             stats_proxy,
             settings,
             nullptr /* pre_encode_callback */,
-            nullptr /* encoder_timing */,
             std::unique_ptr<OveruseFrameDetector>(
                 overuse_detector_proxy_ = new CpuOveruseDetectorProxy(
                     GetCpuOveruseOptions(settings.full_overuse_time),
                     this,
-                    nullptr,
                     stats_proxy))) {}
 
   void PostTaskAndWait(bool down, AdaptReason reason) {

@@ -24,7 +24,6 @@
 
 namespace webrtc {
 
-class EncodedFrameObserver;
 class VideoFrame;
 
 struct CpuOveruseOptions {
@@ -66,7 +65,6 @@ class OveruseFrameDetector {
  public:
   OveruseFrameDetector(const CpuOveruseOptions& options,
                        AdaptationObserverInterface* overuse_observer,
-                       EncodedFrameObserver* encoder_timing_,
                        CpuOveruseMetricsObserver* metrics_observer);
   virtual ~OveruseFrameDetector();
 
@@ -122,8 +120,7 @@ class OveruseFrameDetector {
   void ResetAll(int num_pixels);
 
   static std::unique_ptr<ProcessingUsage> CreateProcessingUsage(
-      const CpuOveruseOptions& options,
-      EncodedFrameObserver* encoder_timing);
+      const CpuOveruseOptions& options);
 
   rtc::SequencedTaskChecker task_checker_;
   // Owned by the task queue from where StartCheckForOveruse is called.

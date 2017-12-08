@@ -75,7 +75,6 @@ class VideoStreamEncoder : public rtc::VideoSinkInterface<VideoFrame>,
                      SendStatisticsProxy* stats_proxy,
                      const VideoSendStream::Config::EncoderSettings& settings,
                      rtc::VideoSinkInterface<VideoFrame>* pre_encode_callback,
-                     EncodedFrameObserver* encoder_timing,
                      std::unique_ptr<OveruseFrameDetector> overuse_detector);
   ~VideoStreamEncoder();
 

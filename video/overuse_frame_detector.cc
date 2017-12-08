@@ -20,7 +20,6 @@
 #include <utility>
 
 #include "api/video/video_frame.h"
-#include "common_video/include/frame_callback.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/exp_filter.h"
@@ -71,13 +70,11 @@ const auto kScaleReasonCpu = AdaptationObserverInterface::AdaptReason::kCpu;
 // captured frames).
 class SendProcessingUsage : public OveruseFrameDetector::ProcessingUsage {
  public:
-  explicit SendProcessingUsage(const CpuOveruseOptions& options,
-                               EncodedFrameObserver* encoder_timing)
+  explicit SendProcessingUsage(const CpuOveruseOptions& options)
       : kWeightFactorFrameDiff(0.998f),
         kWeightFactorProcessing(0.995f),
         kInitialSampleDiffMs(40.0f),
         options_(options),
-        encoder_timing_(encoder_timing),
         count_(0),
         last_processed_capture_time_us_(-1),
         max_sample_diff_ms_(kDefaultSampleDiffMs * kMaxSampleDiffMarginFactor),
@@ -142,12 +139,7 @@ class SendProcessingUsage : public OveruseFrameDetector::ProcessingUsage {
       if (timing.last_send_us != -1) {
         encode_duration_us.emplace(
             static_cast<int>(timing.last_send_us - timing.capture_us));
-        if (encoder_timing_) {
-          // TODO(nisse): Update encoder_timing_ to also use us units.
-          encoder_timing_->OnEncodeTiming(
-              timing.capture_time_us / rtc::kNumMicrosecsPerMillisec,
-              *encode_duration_us / rtc::kNumMicrosecsPerMillisec);
-        }
+
         if (last_processed_capture_time_us_ != -1) {
           int64_t diff_us = timing.capture_us - last_processed_capture_time_us_;
           AddSample(1e-3 * (*encode_duration_us), 1e-3 * diff_us);
@@ -211,7 +203,6 @@ class SendProcessingUsage : public OveruseFrameDetector::ProcessingUsage {
   const float kInitialSampleDiffMs;
 
   const CpuOveruseOptions options_;
-  EncodedFrameObserver* const encoder_timing_;
   std::list<FrameTiming> frame_timing_;
   uint64_t count_;
   int64_t last_processed_capture_time_us_;
@@ -224,11 +215,10 @@ class SendProcessingUsage : public OveruseFrameDetector::ProcessingUsage {
 class OverdoseInjector : public SendProcessingUsage {
  public:
   OverdoseInjector(const CpuOveruseOptions& options,
-                   EncodedFrameObserver* encoder_timing,
                    int64_t normal_period_ms,
                    int64_t overuse_period_ms,
                    int64_t underuse_period_ms)
-      : SendProcessingUsage(options, encoder_timing),
+      : SendProcessingUsage(options),
         normal_period_ms_(normal_period_ms),
         overuse_period_ms_(overuse_period_ms),
         underuse_period_ms_(underuse_period_ms),
@@ -350,8 +340,7 @@ CpuOveruseOptions::CpuOveruseOptions()
 
 std::unique_ptr<OveruseFrameDetector::ProcessingUsage>
 OveruseFrameDetector::CreateProcessingUsage(
-    const CpuOveruseOptions& options,
-    EncodedFrameObserver* encoder_timing) {
+    const CpuOveruseOptions& options) {
   std::unique_ptr<ProcessingUsage> instance;
   std::string toggling_interval =
       field_trial::FindFullName("WebRTC-ForceSimulatedOveruseIntervalMs");
@@ -364,7 +353,7 @@ OveruseFrameDetector::CreateProcessingUsage(
       if (normal_period_ms > 0 && overuse_period_ms > 0 &&
           underuse_period_ms > 0) {
         instance = rtc::MakeUnique<OverdoseInjector>(
-            options, encoder_timing, normal_period_ms, overuse_period_ms,
+            options, normal_period_ms, overuse_period_ms,
             underuse_period_ms);
       } else {
         RTC_LOG(LS_WARNING)
@@ -380,7 +369,7 @@ OveruseFrameDetector::CreateProcessingUsage(
 
   if (!instance) {
     // No valid overuse simulation parameters set, use normal usage class.
-    instance = rtc::MakeUnique<SendProcessingUsage>(options, encoder_timing);
+    instance = rtc::MakeUnique<SendProcessingUsage>(options);
   }
 
   return instance;
@@ -419,7 +408,6 @@ class OveruseFrameDetector::CheckOveruseTask : public rtc::QueuedTask {
 OveruseFrameDetector::OveruseFrameDetector(
     const CpuOveruseOptions& options,
     AdaptationObserverInterface* observer,
-    EncodedFrameObserver* encoder_timing,
     CpuOveruseMetricsObserver* metrics_observer)
     : check_overuse_task_(nullptr),
       options_(options),
@@ -436,7 +424,7 @@ OveruseFrameDetector::OveruseFrameDetector(
       last_rampup_time_ms_(-1),
       in_quick_rampup_(false),
       current_rampup_delay_ms_(kStandardRampUpDelayMs),
-      usage_(CreateProcessingUsage(options, encoder_timing)) {
+      usage_(CreateProcessingUsage(options)) {
   task_checker_.Detach();
 }
 

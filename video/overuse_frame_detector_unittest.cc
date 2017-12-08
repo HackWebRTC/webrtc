@@ -57,11 +57,9 @@ class OveruseFrameDetectorUnderTest : public OveruseFrameDetector {
  public:
   OveruseFrameDetectorUnderTest(const CpuOveruseOptions& options,
                                 AdaptationObserverInterface* overuse_observer,
-                                EncodedFrameObserver* encoder_timing,
                                 CpuOveruseMetricsObserver* metrics_observer)
       : OveruseFrameDetector(options,
                              overuse_observer,
-                             encoder_timing,
                              metrics_observer) {}
   ~OveruseFrameDetectorUnderTest() {}
 
@@ -79,7 +77,7 @@ class OveruseFrameDetectorTest : public ::testing::Test,
 
   void ReinitializeOveruseDetector() {
     overuse_detector_.reset(new OveruseFrameDetectorUnderTest(
-        options_, observer_.get(), nullptr, this));
+        options_, observer_.get(), this));
   }
 
   void OnEncodedFrameTimeMeasured(int encode_time_ms,
@@ -182,7 +180,7 @@ TEST_F(OveruseFrameDetectorTest, OveruseAndRecover) {
 
 TEST_F(OveruseFrameDetectorTest, OveruseAndRecoverWithNoObserver) {
   overuse_detector_.reset(new OveruseFrameDetectorUnderTest(
-      options_, nullptr, nullptr, this));
+      options_, nullptr, this));
   EXPECT_CALL(*(observer_.get()), AdaptDown(reason_)).Times(0);
   TriggerOveruse(options_.high_threshold_consecutive_count);
   EXPECT_CALL(*(observer_.get()), AdaptUp(reason_)).Times(0);
@@ -202,7 +200,7 @@ TEST_F(OveruseFrameDetectorTest, TriggerUnderuseWithMinProcessCount) {
   options_.min_process_count = 1;
   CpuOveruseObserverImpl overuse_observer;
   overuse_detector_.reset(new OveruseFrameDetectorUnderTest(
-      options_, &overuse_observer, nullptr, this));
+      options_, &overuse_observer, this));
   InsertAndSendFramesWithInterval(
       1200, kFrameIntervalUs, kWidth, kHeight, kProcessTimeUs);
   overuse_detector_->CheckForOveruse();

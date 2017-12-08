@@ -318,11 +318,6 @@ class VideoAnalyzer : public PacketReceiver,
     return receiver_->DeliverPacket(media_type, std::move(packet), packet_time);
   }
 
-  void MeasuredEncodeTiming(int64_t ntp_time_ms, int encode_time_ms) {
-    rtc::CritScope crit(&comparison_lock_);
-    samples_encode_time_ms_[ntp_time_ms] = encode_time_ms;
-  }
-
   void PreEncodeOnFrame(const VideoFrame& video_frame) {
     rtc::CritScope lock(&crit_);
     if (!first_encoded_timestamp_) {
@@ -592,9 +587,6 @@ class VideoAnalyzer : public PacketReceiver,
    public:
     explicit OnEncodeTimingProxy(VideoAnalyzer* parent) : parent_(parent) {}
 
-    void OnEncodeTiming(int64_t ntp_time_ms, int encode_time_ms) override {
-      parent_->MeasuredEncodeTiming(ntp_time_ms, encode_time_ms);
-    }
     void EncodedFrameCallback(const EncodedFrame& frame) override {
       parent_->PostEncodeFrameCallback(frame);
     }
@@ -946,27 +938,12 @@ class VideoAnalyzer : public PacketReceiver,
             "psnr "
             "ssim "
             "encode_time_ms\n");
-    int missing_encode_time_samples = 0;
     for (const Sample& sample : samples_) {
-      auto it = samples_encode_time_ms_.find(sample.input_time_ms);
-      int encode_time_ms;
-      if (it != samples_encode_time_ms_.end()) {
-        encode_time_ms = it->second;
-      } else {
-        ++missing_encode_time_samples;
-        encode_time_ms = -1;
-      }
       fprintf(out, "%d %" PRId64 " %" PRId64 " %" PRId64 " %" PRId64 " %" PRIuS
-                   " %lf %lf %d\n",
+                   " %lf %lf\n",
               sample.dropped, sample.input_time_ms, sample.send_time_ms,
               sample.recv_time_ms, sample.render_time_ms,
-              sample.encoded_frame_size, sample.psnr, sample.ssim,
-              encode_time_ms);
-    }
-    if (missing_encode_time_samples) {
-      fprintf(stderr,
-              "Warning: Missing encode_time_ms samples for %d frame(s).\n",
-              missing_encode_time_samples);
+              sample.encoded_frame_size, sample.psnr, sample.ssim);
     }
   }
 
@@ -1061,8 +1038,6 @@ class VideoAnalyzer : public PacketReceiver,
   PreEncodeProxy pre_encode_proxy_;
   OnEncodeTimingProxy encode_timing_proxy_;
   std::vector<Sample> samples_ RTC_GUARDED_BY(comparison_lock_);
-  std::map<int64_t, int> samples_encode_time_ms_
-      RTC_GUARDED_BY(comparison_lock_);
   test::Statistics sender_time_ RTC_GUARDED_BY(comparison_lock_);
   test::Statistics receiver_time_ RTC_GUARDED_BY(comparison_lock_);
   test::Statistics psnr_ RTC_GUARDED_BY(comparison_lock_);

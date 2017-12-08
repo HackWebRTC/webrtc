@@ -49,7 +49,6 @@ struct EncodedFrame {
 class EncodedFrameObserver {
  public:
   virtual void EncodedFrameCallback(const EncodedFrame& encoded_frame) = 0;
-  virtual void OnEncodeTiming(int64_t capture_ntp_ms, int encode_duration_ms) {}
 
  protected:
   virtual ~EncodedFrameObserver() {}
