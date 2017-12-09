@@ -974,15 +974,6 @@ void VideoStreamEncoder::AdaptDown(AdaptReason reason) {
       return;
   }
 
-  if (reason == kCpu) {
-    if (GetConstAdaptCounter().ResolutionCount(kCpu) >=
-            kMaxCpuResolutionDowngrades ||
-        GetConstAdaptCounter().FramerateCount(kCpu) >=
-            kMaxCpuFramerateDowngrades) {
-      return;
-    }
-  }
-
   switch (degradation_preference_) {
     case VideoSendStream::DegradationPreference::kBalanced: {
       // Try scale down framerate, if lower.

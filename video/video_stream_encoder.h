@@ -66,11 +66,6 @@ class VideoStreamEncoder : public rtc::VideoSinkInterface<VideoFrame>,
     int fps = 0;
   };
 
-  // Downscale resolution at most 2 times for CPU reasons.
-  static const int kMaxCpuResolutionDowngrades = 2;
-  // Downscale framerate at most 4 times.
-  static const int kMaxCpuFramerateDowngrades = 4;
-
   VideoStreamEncoder(uint32_t number_of_cores,
                      SendStatisticsProxy* stats_proxy,
                      const VideoSendStream::Config::EncoderSettings& settings,
