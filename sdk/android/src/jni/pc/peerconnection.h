@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SDK_ANDROID_SRC_JNI_PC_PEERCONNECTIONOBSERVER_JNI_H_
-#define SDK_ANDROID_SRC_JNI_PC_PEERCONNECTIONOBSERVER_JNI_H_
+#ifndef SDK_ANDROID_SRC_JNI_PC_PEERCONNECTION_H_
+#define SDK_ANDROID_SRC_JNI_PC_PEERCONNECTION_H_
 
 #include <pc/mediastreamobserver.h>
 #include <map>
@@ -23,6 +23,15 @@
 
 namespace webrtc {
 namespace jni {
+
+void JavaToNativeIceServers(JNIEnv* jni,
+                            jobject j_ice_servers,
+                            PeerConnectionInterface::IceServers* ice_servers);
+
+void JavaToNativeRTCConfiguration(
+    JNIEnv* jni,
+    jobject j_rtc_config,
+    PeerConnectionInterface::RTCConfiguration* rtc_config);
 
 // Adapter between the C++ PeerConnectionObserver interface and the Java
 // PeerConnection.Observer interface.  Wraps an instance of the Java interface
@@ -111,4 +120,4 @@ class PeerConnectionObserverJni : public PeerConnectionObserver,
 }  // namespace jni
 }  // namespace webrtc
 
-#endif  // SDK_ANDROID_SRC_JNI_PC_PEERCONNECTIONOBSERVER_JNI_H_
+#endif  // SDK_ANDROID_SRC_JNI_PC_PEERCONNECTION_H_

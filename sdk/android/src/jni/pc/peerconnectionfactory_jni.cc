@@ -29,7 +29,7 @@
 #include "sdk/android/src/jni/pc/java_native_conversion.h"
 #include "sdk/android/src/jni/pc/media_jni.h"
 #include "sdk/android/src/jni/pc/ownedfactoryandthreads.h"
-#include "sdk/android/src/jni/pc/peerconnectionobserver_jni.h"
+#include "sdk/android/src/jni/pc/peerconnection.h"
 #include "sdk/android/src/jni/pc/video_jni.h"
 #include "system_wrappers/include/field_trial.h"
 // Adding 'nogncheck' to disable the gn include headers check.

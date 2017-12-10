@@ -87,15 +87,6 @@ PeerConnectionInterface::TlsCertPolicy JavaToNativeTlsCertPolicy(
     JNIEnv* jni,
     jobject j_ice_server_tls_cert_policy);
 
-void JavaToNativeIceServers(JNIEnv* jni,
-                            jobject j_ice_servers,
-                            PeerConnectionInterface::IceServers* ice_servers);
-
-void JavaToNativeRTCConfiguration(
-    JNIEnv* jni,
-    jobject j_rtc_config,
-    PeerConnectionInterface::RTCConfiguration* rtc_config);
-
 /*********************************************************
  * RtpParameters, used for RtpSender and RtpReceiver APIs.
  *********************************************************/
