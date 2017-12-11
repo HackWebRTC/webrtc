@@ -59,6 +59,12 @@ VideoCodec CreateDecoderVideoCodec(const VideoReceiveStream::Decoder& decoder) {
     *(codec.H264()) = VideoEncoder::GetDefaultH264Settings();
     codec.H264()->profile =
         H264::ParseSdpProfileLevelId(decoder.codec_params)->profile;
+  } else if (codec.codecType == kVideoCodecStereo) {
+    VideoReceiveStream::Decoder associated_decoder = decoder;
+    associated_decoder.payload_name = CodecTypeToPayloadString(kVideoCodecVP9);
+    VideoCodec associated_codec = CreateDecoderVideoCodec(associated_decoder);
+    associated_codec.codecType = kVideoCodecStereo;
+    return associated_codec;
   }
 
   codec.width = 320;
