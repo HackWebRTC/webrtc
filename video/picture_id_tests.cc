@@ -23,7 +23,7 @@ const int kFrameRate = 30;
 const int kMaxSecondsLost = 5;
 const int kMaxFramesLost = kFrameRate * kMaxSecondsLost;
 const int kMinPacketsToObserve = 10;
-const int kEncoderBitrateBps = 100000;
+const int kEncoderBitrateBps = 300000;
 const uint32_t kPictureIdWraparound = (1 << 15);
 const size_t kNumTemporalLayers[] = {1, 2, 3};
 
@@ -235,8 +235,6 @@ class PictureIdTest : public test::CallTest,
     EXPECT_TRUE(video_receive_streams_.empty());
 
     task_queue_.SendTask([this]() {
-      Stop();
-      DestroyStreams();
       send_transport_.reset();
       receive_transport_.reset();
       DestroyCalls();
@@ -277,33 +275,25 @@ class VideoStreamFactory
     std::vector<VideoStream> streams =
         test::CreateVideoStreams(width, height, encoder_config);
 
-    if (encoder_config.number_of_streams > 1) {
-      RTC_DCHECK_EQ(3, encoder_config.number_of_streams);
+    // Use the same total bitrates when sending a single stream to avoid
+    // lowering the bitrate estimate and requiring a subsequent rampup.
+    const int encoder_stream_bps =
+        kEncoderBitrateBps / encoder_config.number_of_streams;
 
-      for (size_t i = 0; i < encoder_config.number_of_streams; ++i) {
-        streams[i].min_bitrate_bps = kEncoderBitrateBps;
-        streams[i].target_bitrate_bps = kEncoderBitrateBps;
-        streams[i].max_bitrate_bps = kEncoderBitrateBps;
-        streams[i].temporal_layer_thresholds_bps.resize(
-            num_of_temporal_layers_ - 1);
-      }
-
+    for (size_t i = 0; i < encoder_config.number_of_streams; ++i) {
+      streams[i].min_bitrate_bps = encoder_stream_bps;
+      streams[i].target_bitrate_bps = encoder_stream_bps;
+      streams[i].max_bitrate_bps = encoder_stream_bps;
+      streams[i].temporal_layer_thresholds_bps.resize(num_of_temporal_layers_ -
+                                                      1);
       // test::CreateVideoStreams does not return frame sizes for the lower
       // streams that are accepted by VP8Impl::InitEncode.
       // TODO(brandtr): Fix the problem in test::CreateVideoStreams, rather
       // than overriding the values here.
-      streams[1].width = streams[2].width / 2;
-      streams[1].height = streams[2].height / 2;
-      streams[0].width = streams[1].width / 2;
-      streams[0].height = streams[1].height / 2;
-    } else {
-      // Use the same total bitrates when sending a single stream to avoid
-      // lowering the bitrate estimate and requiring a subsequent rampup.
-      streams[0].min_bitrate_bps = 3 * kEncoderBitrateBps;
-      streams[0].target_bitrate_bps = 3 * kEncoderBitrateBps;
-      streams[0].max_bitrate_bps = 3 * kEncoderBitrateBps;
-      streams[0].temporal_layer_thresholds_bps.resize(num_of_temporal_layers_ -
-                                                      1);
+      streams[i].width =
+          width / (1 << (encoder_config.number_of_streams - 1 - i));
+      streams[i].height =
+          height / (1 << (encoder_config.number_of_streams - 1 - i));
     }
 
     return streams;
@@ -364,9 +354,6 @@ void PictureIdTest::TestPictureIdContinuousAfterReconfigure(
   task_queue_.SendTask([this]() {
     Stop();
     DestroyStreams();
-    send_transport_.reset();
-    receive_transport_.reset();
-    DestroyCalls();
   });
 }
 
@@ -408,8 +395,6 @@ void PictureIdTest::TestPictureIdIncreaseAfterRecreateStreams(
   task_queue_.SendTask([this]() {
     Stop();
     DestroyStreams();
-    send_transport_.reset();
-    receive_transport_.reset();
   });
 }
 
