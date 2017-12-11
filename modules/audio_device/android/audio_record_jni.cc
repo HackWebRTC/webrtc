@@ -126,6 +126,7 @@ int32_t AudioRecordJni::InitRecording() {
   int frames_per_buffer = j_audio_record_->InitRecording(
       audio_parameters_.sample_rate(), audio_parameters_.channels());
   if (frames_per_buffer < 0) {
+    direct_buffer_address_ = nullptr;
     ALOGE("InitRecording failed!");
     return -1;
   }
