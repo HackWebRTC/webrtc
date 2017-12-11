@@ -12,10 +12,12 @@
 
 #include <algorithm>
 #include <memory>
+#include <utility>
 
 #include "p2p/base/port.h"
 #include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/ptr_util.h"
 #include "rtc_base/thread.h"
 
 using webrtc::SdpType;
@@ -329,6 +331,133 @@ void TransportController::DestroyDtlsTransport_n(
   UpdateAggregateStates_n();
 }
 
+webrtc::SrtpTransport* TransportController::CreateSdesTransport(
+    const std::string& transport_name,
+    bool rtcp_mux_enabled) {
+  if (!network_thread_->IsCurrent()) {
+    return network_thread_->Invoke<webrtc::SrtpTransport*>(RTC_FROM_HERE, [&] {
+      return CreateSdesTransport(transport_name, rtcp_mux_enabled);
+    });
+  }
+
+  auto existing_rtp_transport = FindRtpTransport(transport_name);
+
+  if (existing_rtp_transport) {
+    // For SRTP transport wrapper, the |srtp_transport| is expected to be
+    // non-null and |dtls_srtp_transport| is expected to be a nullptr.
+    if (!existing_rtp_transport->srtp_transport ||
+        existing_rtp_transport->dtls_srtp_transport) {
+      RTC_LOG(LS_ERROR)
+          << "Failed to create an RTP transport for SDES using name: "
+          << transport_name << " because the type doesn't match.";
+      return nullptr;
+    }
+    existing_rtp_transport->AddRef();
+    return existing_rtp_transport->srtp_transport;
+  }
+
+  auto new_srtp_transport =
+      rtc::MakeUnique<webrtc::SrtpTransport>(rtcp_mux_enabled);
+
+  // The SDES should use an IceTransport rather than a DtlsTransport. We call
+  // |CreateDtlsTransport_n| here because the DtlsTransport will downgrade to an
+  // wrapper over IceTransport if we don't set the certificates and it will just
+  // forward the packets and signals without using DTLS. The support of SDES
+  // will be removed once all the downstream application stop using it.
+  new_srtp_transport->SetRtpPacketTransport(CreateDtlsTransport_n(
+      transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  if (!rtcp_mux_enabled) {
+    new_srtp_transport->SetRtcpPacketTransport(CreateDtlsTransport_n(
+        transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTCP));
+  }
+
+#if defined(ENABLE_EXTERNAL_AUTH)
+  new_srtp_transport->EnableExternalAuth();
+#endif
+
+  auto new_rtp_transport_wrapper = new RefCountedRtpTransport();
+  new_rtp_transport_wrapper->srtp_transport = new_srtp_transport.get();
+  new_rtp_transport_wrapper->rtp_transport = std::move(new_srtp_transport);
+  new_rtp_transport_wrapper->AddRef();
+  rtp_transports_[transport_name] = new_rtp_transport_wrapper;
+  return rtp_transports_[transport_name]->srtp_transport;
+}
+
+webrtc::DtlsSrtpTransport* TransportController::CreateDtlsSrtpTransport(
+    const std::string& transport_name,
+    bool rtcp_mux_enabled) {
+  if (!network_thread_->IsCurrent()) {
+    return network_thread_->Invoke<webrtc::DtlsSrtpTransport*>(
+        RTC_FROM_HERE, [&] {
+          return CreateDtlsSrtpTransport(transport_name, rtcp_mux_enabled);
+        });
+  }
+  auto existing_rtp_transport = FindRtpTransport(transport_name);
+
+  if (existing_rtp_transport) {
+    // For DTLS-SRTP transport wrapper, the |dtls_srtp_transport| is expected to
+    // be non-null and |srtp_transport| is expected to be a nullptr.
+    if (existing_rtp_transport->srtp_transport ||
+        !existing_rtp_transport->dtls_srtp_transport) {
+      RTC_LOG(LS_ERROR)
+          << "Failed to create an RTP transport for DTLS-SRTP using name: "
+          << transport_name << " because the type doesn't match.";
+      return nullptr;
+    }
+    existing_rtp_transport->AddRef();
+    return existing_rtp_transport->dtls_srtp_transport;
+  }
+
+  auto new_srtp_transport =
+      rtc::MakeUnique<webrtc::SrtpTransport>(rtcp_mux_enabled);
+
+#if defined(ENABLE_EXTERNAL_AUTH)
+  new_srtp_transport->EnableExternalAuth();
+#endif
+
+  auto new_dtls_srtp_transport =
+      rtc::MakeUnique<webrtc::DtlsSrtpTransport>(std::move(new_srtp_transport));
+
+  auto rtp_dtls_transport = CreateDtlsTransport_n(
+      transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP);
+  auto rtcp_dtls_transport =
+      rtcp_mux_enabled
+          ? nullptr
+          : CreateDtlsTransport_n(transport_name,
+                                  cricket::ICE_CANDIDATE_COMPONENT_RTCP);
+
+  new_dtls_srtp_transport->SetDtlsTransports(rtp_dtls_transport,
+                                             rtcp_dtls_transport);
+
+  auto new_rtp_transport_wrapper = new RefCountedRtpTransport();
+  new_rtp_transport_wrapper->dtls_srtp_transport =
+      new_dtls_srtp_transport.get();
+  new_rtp_transport_wrapper->rtp_transport = std::move(new_dtls_srtp_transport);
+  new_rtp_transport_wrapper->AddRef();
+  rtp_transports_[transport_name] = new_rtp_transport_wrapper;
+  return rtp_transports_[transport_name]->dtls_srtp_transport;
+}
+
+void TransportController::DestroyTransport(const std::string& transport_name) {
+  if (!network_thread_->IsCurrent()) {
+    network_thread_->Invoke<void>(RTC_FROM_HERE,
+                                  [&] { DestroyTransport(transport_name); });
+    return;
+  }
+
+  auto existing_rtp_transport = FindRtpTransport(transport_name);
+  if (!existing_rtp_transport) {
+    RTC_LOG(LS_WARNING) << "Attempting to delete " << transport_name
+                        << " transport , which doesn't exist.";
+    return;
+  }
+  if (existing_rtp_transport->Release() ==
+      rtc::RefCountReleaseStatus::kDroppedLastRef) {
+    rtp_transports_.erase(transport_name);
+  }
+  return;
+}
+
 std::vector<std::string> TransportController::transport_names_for_testing() {
   std::vector<std::string> ret;
   for (const auto& kv : transports_) {
@@ -402,6 +531,12 @@ void TransportController::OnMessage(rtc::Message* pmsg) {
     default:
       RTC_NOTREACHED();
   }
+}
+
+const TransportController::RefCountedRtpTransport*
+TransportController::FindRtpTransport(const std::string& transport_name) {
+  auto it = rtp_transports_.find(transport_name);
+  return it == rtp_transports_.end() ? nullptr : it->second;
 }
 
 std::vector<TransportController::RefCountedChannel*>::iterator

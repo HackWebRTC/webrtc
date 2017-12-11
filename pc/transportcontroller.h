@@ -20,6 +20,9 @@
 #include "p2p/base/dtlstransport.h"
 #include "p2p/base/jseptransport.h"
 #include "p2p/base/p2ptransportchannel.h"
+#include "pc/dtlssrtptransport.h"
+#include "pc/rtptransport.h"
+#include "pc/srtptransport.h"
 #include "rtc_base/asyncinvoker.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/refcountedobject.h"
@@ -127,6 +130,20 @@ class TransportController : public sigslot::has_slots<>,
   virtual void DestroyDtlsTransport_n(const std::string& transport_name,
                                       int component);
 
+  // Create an SrtpTransport/DtlsSrtpTransport if it doesn't exist.
+  // Otherwise, increments a reference count and returns the existing one.
+  // These methods are not currently used but the plan is to transition
+  // PeerConnection and BaseChannel to use them instead of CreateDtlsTransport.
+  webrtc::SrtpTransport* CreateSdesTransport(const std::string& transport_name,
+                                             bool rtcp_mux_enabled);
+  webrtc::DtlsSrtpTransport* CreateDtlsSrtpTransport(
+      const std::string& transport_name,
+      bool rtcp_mux_enabled);
+
+  // Destroy an RTP level transport which can be an RtpTransport, an
+  // SrtpTransport or a DtlsSrtpTransport.
+  void DestroyTransport(const std::string& transport_name);
+
   // TODO(deadbeef): Remove all for_testing methods!
   const rtc::scoped_refptr<rtc::RTCCertificate>& certificate_for_testing()
       const {
@@ -179,6 +196,24 @@ class TransportController : public sigslot::has_slots<>,
 
   class ChannelPair;
   typedef rtc::RefCountedObject<ChannelPair> RefCountedChannel;
+
+  // Wrapper for RtpTransport that keeps a reference count.
+  // When using SDES, |srtp_transport| is non-null, |dtls_srtp_transport| is
+  // null and |rtp_transport.get()| == |srtp_transport|,
+  // When using DTLS-SRTP, |dtls_srtp_transport| is non-null, |srtp_transport|
+  // is null and |rtp_transport.get()| == |dtls_srtp_transport|,
+  // When using unencrypted RTP, only |rtp_transport| is non-null.
+  struct RtpTransportWrapper {
+    // |rtp_transport| is always non-null.
+    std::unique_ptr<webrtc::RtpTransportInternal> rtp_transport;
+    webrtc::SrtpTransport* srtp_transport = nullptr;
+    webrtc::DtlsSrtpTransport* dtls_srtp_transport = nullptr;
+  };
+
+  typedef rtc::RefCountedObject<RtpTransportWrapper> RefCountedRtpTransport;
+
+  const RefCountedRtpTransport* FindRtpTransport(
+      const std::string& transport_name);
 
   // Helper functions to get a channel or transport, or iterator to it (in case
   // it needs to be erased).
@@ -250,6 +285,8 @@ class TransportController : public sigslot::has_slots<>,
 
   std::map<std::string, std::unique_ptr<JsepTransport>> transports_;
   std::vector<RefCountedChannel*> channels_;
+
+  std::map<std::string, RefCountedRtpTransport*> rtp_transports_;
 
   // Aggregate state for TransportChannelImpls.
   IceConnectionState connection_state_ = kIceConnectionConnecting;

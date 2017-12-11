@@ -22,6 +22,7 @@
 #include "rtc_base/helpers.h"
 #include "rtc_base/sslidentity.h"
 #include "rtc_base/thread.h"
+#include "test/gtest.h"
 
 using webrtc::SdpType;
 
@@ -32,6 +33,7 @@ static const char kIceUfrag2[] = "TESTICEUFRAG0002";
 static const char kIcePwd2[] = "TESTICEPWD00000000000002";
 static const char kIceUfrag3[] = "TESTICEUFRAG0003";
 static const char kIcePwd3[] = "TESTICEPWD00000000000003";
+static const bool kRtcpMuxEnabled = true;
 
 namespace cricket {
 
@@ -907,5 +909,108 @@ TEST_F(TransportControllerTest, NeedsIceRestart) {
   EXPECT_FALSE(transport_controller_->NeedsIceRestart("audio"));
   EXPECT_TRUE(transport_controller_->NeedsIceRestart("video"));
 }
+
+enum class RTPTransportType { kSdes, kDtlsSrtp };
+std::ostream& operator<<(std::ostream& out, RTPTransportType value) {
+  switch (value) {
+    case RTPTransportType::kSdes:
+      return out << "SDES";
+    case RTPTransportType::kDtlsSrtp:
+      return out << "DTLS-SRTP";
+  }
+  return out;
+}
+
+// Tests the TransportController can correctly create and destroy the RTP
+// transports.
+class TransportControllerRTPTransportTest
+    : public TransportControllerTest,
+      public ::testing::WithParamInterface<RTPTransportType> {
+ protected:
+  // Helper function used to create an RTP layer transport.
+  webrtc::RtpTransportInternal* CreateRtpTransport(
+      const std::string& transport_name) {
+    RTPTransportType type = GetParam();
+    switch (type) {
+      case RTPTransportType::kSdes:
+        return transport_controller_->CreateSdesTransport(transport_name,
+                                                          kRtcpMuxEnabled);
+      case RTPTransportType::kDtlsSrtp:
+        return transport_controller_->CreateDtlsSrtpTransport(transport_name,
+                                                              kRtcpMuxEnabled);
+    }
+    return nullptr;
+  }
+};
+
+// Tests that creating transports with the same name will cause the
+// second call to re-use the transport created in the first call.
+TEST_P(TransportControllerRTPTransportTest, CreateTransportsWithReference) {
+  const std::string transport_name = "transport";
+  webrtc::RtpTransportInternal* transport1 = CreateRtpTransport(transport_name);
+  webrtc::RtpTransportInternal* transport2 = CreateRtpTransport(transport_name);
+  EXPECT_NE(nullptr, transport1);
+  EXPECT_NE(nullptr, transport2);
+  // The TransportController is expected to return the existing one when using
+  // the same transport name.
+  EXPECT_EQ(transport1, transport2);
+  transport_controller_->DestroyTransport(transport_name);
+  transport_controller_->DestroyTransport(transport_name);
+}
+
+// Tests that creating different type of RTP transports with same name is not
+// allowed.
+TEST_P(TransportControllerRTPTransportTest,
+       CreateDifferentTypeOfTransportsWithSameName) {
+  const std::string transport_name = "transport";
+  webrtc::RtpTransportInternal* transport1 = CreateRtpTransport(transport_name);
+  EXPECT_NE(nullptr, transport1);
+  RTPTransportType type = GetParam();
+  switch (type) {
+    case RTPTransportType::kSdes:
+      EXPECT_EQ(nullptr, transport_controller_->CreateDtlsSrtpTransport(
+                             transport_name, kRtcpMuxEnabled));
+      break;
+    case RTPTransportType::kDtlsSrtp:
+      EXPECT_EQ(nullptr, transport_controller_->CreateSdesTransport(
+                             transport_name, kRtcpMuxEnabled));
+      break;
+    default:
+      ASSERT_TRUE(false);
+  }
+  transport_controller_->DestroyTransport(transport_name);
+}
+
+// Tests the RTP transport is not actually destroyed if references still exist.
+TEST_P(TransportControllerRTPTransportTest, DestroyTransportWithReference) {
+  const std::string transport_name = "transport";
+  webrtc::RtpTransportInternal* transport1 = CreateRtpTransport(transport_name);
+  webrtc::RtpTransportInternal* transport2 = CreateRtpTransport(transport_name);
+  EXPECT_NE(nullptr, transport1);
+  EXPECT_NE(nullptr, transport2);
+  transport_controller_->DestroyTransport(transport_name);
+  EXPECT_NE(nullptr, transport1->rtp_packet_transport());
+  EXPECT_EQ(nullptr, transport1->rtcp_packet_transport());
+  transport_controller_->DestroyTransport(transport_name);
+}
+
+// Tests the RTP is actually destroyed if there is no reference to it.
+TEST_P(TransportControllerRTPTransportTest, DestroyTransportWithNoReference) {
+  const std::string transport_name = "transport";
+  webrtc::RtpTransportInternal* transport1 = CreateRtpTransport(transport_name);
+  webrtc::RtpTransportInternal* transport2 = CreateRtpTransport(transport_name);
+  EXPECT_NE(nullptr, transport1);
+  EXPECT_NE(nullptr, transport2);
+  transport_controller_->DestroyTransport(transport_name);
+  transport_controller_->DestroyTransport(transport_name);
+#if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
+  EXPECT_DEATH(transport1->IsWritable(false), /*error_message=*/"");
+#endif
+}
+
+INSTANTIATE_TEST_CASE_P(TransportControllerTest,
+                        TransportControllerRTPTransportTest,
+                        ::testing::Values(RTPTransportType::kSdes,
+                                          RTPTransportType::kDtlsSrtp));
 
 }  // namespace cricket
