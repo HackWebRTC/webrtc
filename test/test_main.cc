@@ -8,7 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/file.h"
+#include <fstream>
+
 #include "rtc_base/flags.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/metrics_default.h"
@@ -35,7 +36,7 @@ DEFINE_string(force_fieldtrials, "",
     " will assign the group Enable to field trial WebRTC-FooFeature.");
 
 DEFINE_string(
-    perf_results_json_path,
+    chartjson_result_file,
     "",
     "Path where the perf results should be stored it the JSON format described "
     "by "
@@ -73,13 +74,12 @@ int main(int argc, char* argv[]) {
 
   int exit_code = RUN_ALL_TESTS();
 
-  std::string perf_results_json_path = FLAG_perf_results_json_path;
-  if (perf_results_json_path != "") {
+  std::string chartjson_result_file = FLAG_chartjson_result_file;
+  if (chartjson_result_file != "") {
     std::string json_results = webrtc::test::GetPerfResultsJSON();
-    rtc::File json_file = rtc::File::Open(perf_results_json_path);
-    json_file.Write(reinterpret_cast<const uint8_t*>(json_results.c_str()),
-                    json_results.size());
-    json_file.Close();
+    std::fstream json_file(chartjson_result_file, std::fstream::out);
+    json_file << json_results;
+    json_file.close();
   }
 
   return exit_code;
