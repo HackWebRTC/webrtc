@@ -13,7 +13,6 @@
 #include <memory>
 
 #include "common_video/include/video_frame_buffer.h"
-#include "libyuv/scale.h"
 #include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/keep_ref_until_done.h"
@@ -25,6 +24,7 @@
 #include "sdk/android/src/jni/jni_helpers.h"
 #include "sdk/android/src/jni/wrapped_native_i420_buffer.h"
 #include "system_wrappers/include/aligned_malloc.h"
+#include "third_party/libyuv/include/libyuv/scale.h"
 
 namespace webrtc {
 namespace jni {

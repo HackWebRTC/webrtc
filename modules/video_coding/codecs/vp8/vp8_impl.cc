@@ -16,10 +16,6 @@
 #include <algorithm>
 #include <string>
 
-// NOTE(ajm): Path provided by gyp.
-#include "libyuv/convert.h"  // NOLINT
-#include "libyuv/scale.h"    // NOLINT
-
 #include "common_types.h"  // NOLINT(build/include)
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/include/module_common_types.h"
@@ -37,6 +33,8 @@
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/metrics.h"
+#include "third_party/libyuv/include/libyuv/convert.h"
+#include "third_party/libyuv/include/libyuv/scale.h"
 
 namespace webrtc {
 namespace {

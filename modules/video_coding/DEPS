@@ -4,6 +4,7 @@ include_rules = [
   "+common_video",
   "+system_wrappers",
   "+rtc_tools",
+  "+third_party/libyuv",
 ]
 
 specific_include_rules = {

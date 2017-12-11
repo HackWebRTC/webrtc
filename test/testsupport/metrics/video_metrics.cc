@@ -20,7 +20,7 @@
 #include "api/video/video_frame.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "test/frame_utils.h"
-#include "libyuv/convert.h"
+#include "third_party/libyuv/include/libyuv/convert.h"
 
 namespace webrtc {
 namespace test {

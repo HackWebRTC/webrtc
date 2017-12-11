@@ -6,4 +6,5 @@ include_rules = [
   "+modules/video_capture",
   "+p2p",
   "+pc",
+  "+third_party/libyuv",
 ]

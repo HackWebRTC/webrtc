@@ -14,12 +14,12 @@
 #include <gtk/gtk.h>
 #include <stddef.h>
 
-#include "libyuv/convert_from.h"
 #include "api/video/i420_buffer.h"
 #include "examples/peerconnection/client/defaults.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/stringutils.h"
+#include "third_party/libyuv/include/libyuv/convert_from.h"
 
 using rtc::sprintfn;
 

@@ -42,6 +42,7 @@ check_targets = [
   "//test/*",
   "//video/*",
   "//voice_engine/*",
+  "//third_party/libyuv/*",
 ]
 
 # These are the list of GN files that run exec_script. This whitelist exists

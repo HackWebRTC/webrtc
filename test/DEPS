@@ -17,6 +17,7 @@ include_rules = [
   "+sdk",
   "+system_wrappers",
   "+voice_engine",
+  "+third_party/libyuv",
 ]
 
 specific_include_rules = {
