@@ -1160,6 +1160,11 @@ struct EchoCanceller3Config {
 
   struct Filter {
     size_t length_blocks = 12;
+    float shadow_rate = 0.5f;
+    float leakage_converged = 0.01f;
+    float leakage_diverged = 1.f / 60.f;
+    float main_noise_gate = 220075344.f;
+    float shadow_noise_gate = 220075344.f;
   } filter;
 
   struct Erle {

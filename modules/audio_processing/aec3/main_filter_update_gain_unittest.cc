@@ -50,8 +50,11 @@ void RunFilterUpdateTest(int num_blocks_to_process,
   Aec3Fft fft;
   std::array<float, kBlockSize> x_old;
   x_old.fill(0.f);
-  ShadowFilterUpdateGain shadow_gain;
-  MainFilterUpdateGain main_gain;
+  ShadowFilterUpdateGain shadow_gain(config.filter.shadow_rate,
+                                     config.filter.shadow_noise_gate);
+  MainFilterUpdateGain main_gain(config.filter.leakage_converged,
+                                 config.filter.leakage_diverged,
+                                 config.filter.main_noise_gate);
   Random random_generator(42U);
   std::vector<std::vector<float>> x(3, std::vector<float>(kBlockSize, 0.f));
   std::vector<float> y(kBlockSize, 0.f);
@@ -190,7 +193,9 @@ TEST(MainFilterUpdateGain, NullDataOutputGain) {
       RenderDelayBuffer::Create(config, 3));
   RenderSignalAnalyzer analyzer;
   SubtractorOutput output;
-  MainFilterUpdateGain gain;
+  MainFilterUpdateGain gain(config.filter.leakage_converged,
+                            config.filter.leakage_diverged,
+                            config.filter.main_noise_gate);
   EXPECT_DEATH(gain.Compute(*render_delay_buffer->GetRenderBuffer(), analyzer,
                             output, filter, false, nullptr),
                "");

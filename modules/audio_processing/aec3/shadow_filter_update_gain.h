@@ -21,6 +21,8 @@ namespace webrtc {
 // Provides functionality for computing the fixed gain for the shadow filter.
 class ShadowFilterUpdateGain {
  public:
+  ShadowFilterUpdateGain(float rate, float noise_gate_power);
+
   // Takes action in the case of a known echo path change.
   void HandleEchoPathChange();
 
@@ -33,6 +35,8 @@ class ShadowFilterUpdateGain {
                FftData* G);
 
  private:
+  const float rate_;
+  const float noise_gate_power_;
   // TODO(peah): Check whether this counter should instead be initialized to a
   // large value.
   size_t poor_signal_excitation_counter_ = 0;

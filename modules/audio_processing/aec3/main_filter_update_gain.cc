@@ -28,9 +28,14 @@ constexpr int kPoorExcitationCounterInitial = 1000;
 
 int MainFilterUpdateGain::instance_count_ = 0;
 
-MainFilterUpdateGain::MainFilterUpdateGain()
+MainFilterUpdateGain::MainFilterUpdateGain(float leakage_converged,
+                                           float leakage_diverged,
+                                           float noise_gate_power)
     : data_dumper_(
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
+      leakage_converged_(leakage_converged),
+      leakage_diverged_(leakage_diverged),
+      noise_gate_power_(noise_gate_power),
       poor_excitation_counter_(kPoorExcitationCounterInitial) {
   H_error_.fill(kHErrorInitial);
 }
@@ -75,11 +80,10 @@ void MainFilterUpdateGain::Compute(
     G->im.fill(0.f);
   } else {
     // Corresponds to WGN of power -39 dBFS.
-    constexpr float kNoiseGatePower = 220075344.f;
     std::array<float, kFftLengthBy2Plus1> mu;
     // mu = H_error / (0.5* H_error* X2 + n * E2).
     for (size_t k = 0; k < kFftLengthBy2Plus1; ++k) {
-      mu[k] = X2[k] > kNoiseGatePower
+      mu[k] = X2[k] > noise_gate_power_
                   ? H_error_[k] / (0.5f * H_error_[k] * X2[k] +
                                    size_partitions * E2_main[k])
                   : 0.f;
@@ -102,11 +106,9 @@ void MainFilterUpdateGain::Compute(
 
   // H_error = H_error + factor * erl.
   std::array<float, kFftLengthBy2Plus1> H_error_increase;
-  constexpr float kErlScaleAccurate = 1.f / 100.0f;
-  constexpr float kErlScaleInaccurate = 1.f / 60.0f;
   std::transform(E2_shadow.begin(), E2_shadow.end(), E2_main.begin(),
                  H_error_increase.begin(), [&](float a, float b) {
-                   return a >= b ? kErlScaleAccurate : kErlScaleInaccurate;
+                   return a >= b ? leakage_converged_ : leakage_diverged_;
                  });
   std::transform(erl.begin(), erl.end(), H_error_increase.begin(),
                  H_error_increase.begin(), std::multiplies<float>());

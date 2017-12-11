@@ -28,7 +28,9 @@ class ApmDataDumper;
 // Provides functionality for computing the adaptive gain for the main filter.
 class MainFilterUpdateGain {
  public:
-  MainFilterUpdateGain();
+  MainFilterUpdateGain(float leakage_converged,
+                       float leakage_diverged,
+                       float noise_gate_power);
   ~MainFilterUpdateGain();
 
   // Takes action in the case of a known echo path change.
@@ -45,6 +47,9 @@ class MainFilterUpdateGain {
  private:
   static int instance_count_;
   std::unique_ptr<ApmDataDumper> data_dumper_;
+  const float leakage_converged_;
+  const float leakage_diverged_;
+  const float noise_gate_power_;
   std::array<float, kFftLengthBy2Plus1> H_error_;
   size_t poor_excitation_counter_;
   size_t call_counter_ = 0;

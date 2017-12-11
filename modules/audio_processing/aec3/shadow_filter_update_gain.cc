@@ -17,6 +17,10 @@
 
 namespace webrtc {
 
+ShadowFilterUpdateGain::ShadowFilterUpdateGain(float rate,
+                                               float noise_gate_power)
+    : rate_(rate), noise_gate_power_(noise_gate_power) {}
+
 void ShadowFilterUpdateGain::HandleEchoPathChange() {
   // TODO(peah): Check whether this counter should instead be initialized to a
   // large value.
@@ -47,13 +51,10 @@ void ShadowFilterUpdateGain::Compute(
   }
 
   // Compute mu.
-  // Corresponds to WGN of power -39 dBFS.
-  constexpr float kNoiseGatePower = 220075344.f;
-  constexpr float kMuFixed = .5f;
   std::array<float, kFftLengthBy2Plus1> mu;
   auto X2 = render_buffer.SpectralSum(size_partitions);
   std::transform(X2.begin(), X2.end(), mu.begin(), [&](float a) {
-    return a > kNoiseGatePower ? kMuFixed / a : 0.f;
+    return a > noise_gate_power_ ? rate_ / a : 0.f;
   });
 
   // Avoid updating the filter close to narrow bands in the render signals.
