@@ -424,10 +424,15 @@ bool VideoReceiveStream::Decode() {
   if (frame) {
     int64_t now_ms = clock_->TimeInMilliseconds();
     RTC_DCHECK_EQ(res, video_coding::FrameBuffer::ReturnReason::kFrameFound);
-    if (video_receiver_.Decode(frame.get()) == VCM_OK) {
+    int decode_result = video_receiver_.Decode(frame.get());
+    if (decode_result == WEBRTC_VIDEO_CODEC_OK ||
+        decode_result == WEBRTC_VIDEO_CODEC_OK_REQUEST_KEYFRAME) {
       keyframe_required_ = false;
       frame_decoded_ = true;
       rtp_video_stream_receiver_.FrameDecoded(frame->picture_id);
+
+      if (decode_result == WEBRTC_VIDEO_CODEC_OK_REQUEST_KEYFRAME)
+        RequestKeyFrame();
     } else if (!frame_decoded_ || !keyframe_required_ ||
                (last_keyframe_request_ms_ + kMaxWaitForKeyFrameMs < now_ms)) {
       keyframe_required_ = true;
