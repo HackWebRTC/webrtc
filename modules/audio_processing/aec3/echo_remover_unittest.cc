@@ -64,7 +64,8 @@ TEST(EchoRemover, BasicApiCalls) {
           (k % 6 == 0 ? rtc::Optional<size_t>(k * 10)
                       : rtc::nullopt);
       render_buffer->Insert(render);
-      render_buffer->PrepareCaptureCall();
+      render_buffer->PrepareCaptureProcessing();
+
       remover->ProcessCapture(echo_path_delay_samples, echo_path_variability,
                               k % 2 == 0 ? true : false,
                               render_buffer->GetRenderBuffer(), &capture);
@@ -162,9 +163,8 @@ TEST(EchoRemover, BasicEchoRemoval) {
       std::unique_ptr<EchoRemover> remover(EchoRemover::Create(config, rate));
       std::unique_ptr<RenderDelayBuffer> render_buffer(
           RenderDelayBuffer::Create(config, NumBandsForRate(rate)));
-      if (delay_samples != render_buffer->Delay() * kBlockSize) {
-        render_buffer->SetDelay(delay_samples / kBlockSize);
-      }
+      render_buffer->SetDelay(delay_samples / kBlockSize);
+
       std::vector<std::unique_ptr<DelayBuffer<float>>> delay_buffers(x.size());
       for (size_t j = 0; j < x.size(); ++j) {
         delay_buffers[j].reset(new DelayBuffer<float>(delay_samples));
@@ -192,7 +192,7 @@ TEST(EchoRemover, BasicEchoRemoval) {
         }
 
         render_buffer->Insert(x);
-        render_buffer->PrepareCaptureCall();
+        render_buffer->PrepareCaptureProcessing();
 
         remover->ProcessCapture(delay_samples, echo_path_variability, false,
                                 render_buffer->GetRenderBuffer(), &y);

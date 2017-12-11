@@ -48,18 +48,17 @@ class MockRenderDelayBuffer : public RenderDelayBuffer {
   MOCK_METHOD1(Insert,
                RenderDelayBuffer::BufferingEvent(
                    const std::vector<std::vector<float>>& block));
-  MOCK_METHOD0(PrepareCaptureCall, RenderDelayBuffer::BufferingEvent());
-  MOCK_METHOD1(SetDelay, void(size_t delay));
-  MOCK_CONST_METHOD0(Delay, size_t());
+  MOCK_METHOD0(PrepareCaptureProcessing, RenderDelayBuffer::BufferingEvent());
+  MOCK_METHOD1(SetDelay, bool(size_t delay));
+  MOCK_CONST_METHOD0(Delay, rtc::Optional<size_t>());
   MOCK_CONST_METHOD0(MaxDelay, size_t());
-  MOCK_CONST_METHOD0(MaxApiJitter, size_t());
-  MOCK_CONST_METHOD0(IsBlockAvailable, bool());
-  MOCK_CONST_METHOD0(GetRenderBuffer, const RenderBuffer&());
+  MOCK_METHOD0(GetRenderBuffer, RenderBuffer*());
   MOCK_CONST_METHOD0(GetDownsampledRenderBuffer,
                      const DownsampledRenderBuffer&());
+  MOCK_CONST_METHOD0(CausalDelay, bool());
 
  private:
-  const RenderBuffer& FakeGetRenderBuffer() const { return render_buffer_; }
+  RenderBuffer* FakeGetRenderBuffer() { return &render_buffer_; }
   const DownsampledRenderBuffer& FakeGetDownsampledRenderBuffer() const {
     return downsampled_render_buffer_;
   }

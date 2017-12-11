@@ -52,6 +52,7 @@ void RunFilterUpdateTest(int num_blocks_to_process,
   std::vector<float> y(kBlockSize, 0.f);
   EchoCanceller3Config config;
   config.delay.min_echo_path_delay_blocks = 0;
+  config.delay.default_delay = 1;
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
       RenderDelayBuffer::Create(config, 3));
   AecState aec_state(config);
@@ -98,13 +99,14 @@ void RunFilterUpdateTest(int num_blocks_to_process,
     if (k == 0) {
       render_delay_buffer->Reset();
     }
-    render_delay_buffer->PrepareCaptureCall();
+    render_delay_buffer->PrepareCaptureProcessing();
+    render_delay_buffer->GetRenderBuffer()->UpdateSpectralSum();
 
-    render_signal_analyzer.Update(render_delay_buffer->GetRenderBuffer(),
+    render_signal_analyzer.Update(*render_delay_buffer->GetRenderBuffer(),
                                   aec_state.FilterDelay());
 
     // Apply the main filter.
-    main_filter.Filter(render_delay_buffer->GetRenderBuffer(), &S);
+    main_filter.Filter(*render_delay_buffer->GetRenderBuffer(), &S);
     fft.Ifft(S, &s_scratch);
     std::transform(y.begin(), y.end(), s_scratch.begin() + kFftLengthBy2,
                    e_main.begin(),
@@ -117,7 +119,7 @@ void RunFilterUpdateTest(int num_blocks_to_process,
     }
 
     // Apply the shadow filter.
-    shadow_filter.Filter(render_delay_buffer->GetRenderBuffer(), &S);
+    shadow_filter.Filter(*render_delay_buffer->GetRenderBuffer(), &S);
     fft.Ifft(S, &s_scratch);
     std::transform(y.begin(), y.end(), s_scratch.begin() + kFftLengthBy2,
                    e_shadow.begin(),
@@ -131,23 +133,23 @@ void RunFilterUpdateTest(int num_blocks_to_process,
     E_shadow.Spectrum(Aec3Optimization::kNone, output.E2_shadow);
 
     // Adapt the shadow filter.
-    shadow_gain.Compute(render_delay_buffer->GetRenderBuffer(),
+    shadow_gain.Compute(*render_delay_buffer->GetRenderBuffer(),
                         render_signal_analyzer, E_shadow,
                         shadow_filter.SizePartitions(), saturation, &G);
-    shadow_filter.Adapt(render_delay_buffer->GetRenderBuffer(), G);
+    shadow_filter.Adapt(*render_delay_buffer->GetRenderBuffer(), G);
 
     // Adapt the main filter
-    main_gain.Compute(render_delay_buffer->GetRenderBuffer(),
+    main_gain.Compute(*render_delay_buffer->GetRenderBuffer(),
                       render_signal_analyzer, output, main_filter, saturation,
                       &G);
-    main_filter.Adapt(render_delay_buffer->GetRenderBuffer(), G);
+    main_filter.Adapt(*render_delay_buffer->GetRenderBuffer(), G);
 
     // Update the delay.
     aec_state.HandleEchoPathChange(EchoPathVariability(
         false, EchoPathVariability::DelayAdjustment::kNone, false));
     aec_state.Update(main_filter.FilterFrequencyResponse(),
                      main_filter.FilterImpulseResponse(), true, rtc::nullopt,
-                     render_delay_buffer->GetRenderBuffer(), E2_main, Y2, x[0],
+                     *render_delay_buffer->GetRenderBuffer(), E2_main, Y2, x[0],
                      s, false);
   }
 
@@ -177,7 +179,7 @@ TEST(MainFilterUpdateGain, NullDataOutputGain) {
   RenderSignalAnalyzer analyzer;
   SubtractorOutput output;
   MainFilterUpdateGain gain;
-  EXPECT_DEATH(gain.Compute(render_delay_buffer->GetRenderBuffer(), analyzer,
+  EXPECT_DEATH(gain.Compute(*render_delay_buffer->GetRenderBuffer(), analyzer,
                             output, filter, false, nullptr),
                "");
 }

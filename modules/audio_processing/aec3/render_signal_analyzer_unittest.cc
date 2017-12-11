@@ -70,9 +70,9 @@ TEST(RenderSignalAnalyzer, NoFalseDetectionOfNarrowBands) {
     if (k == 0) {
       render_delay_buffer->Reset();
     }
-    render_delay_buffer->PrepareCaptureCall();
+    render_delay_buffer->PrepareCaptureProcessing();
 
-    analyzer.Update(render_delay_buffer->GetRenderBuffer(),
+    analyzer.Update(*render_delay_buffer->GetRenderBuffer(),
                     rtc::Optional<size_t>(0));
   }
 
@@ -109,9 +109,9 @@ TEST(RenderSignalAnalyzer, NarrowBandDetection) {
       if (k == 0) {
         render_delay_buffer->Reset();
       }
-      render_delay_buffer->PrepareCaptureCall();
+      render_delay_buffer->PrepareCaptureProcessing();
 
-      analyzer.Update(render_delay_buffer->GetRenderBuffer(),
+      analyzer.Update(*render_delay_buffer->GetRenderBuffer(),
                       known_delay ? rtc::Optional<size_t>(0) : rtc::nullopt);
     }
   };

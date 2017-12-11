@@ -45,12 +45,16 @@ TEST(RenderDelayBuffer, BufferOverflow) {
       EXPECT_EQ(RenderDelayBuffer::BufferingEvent::kNone,
                 delay_buffer->Insert(block_to_insert));
     }
+    bool overrun_occurred = false;
     for (size_t k = 0; k < 1000; ++k) {
-      delay_buffer->Insert(block_to_insert);
+      RenderDelayBuffer::BufferingEvent event =
+          delay_buffer->Insert(block_to_insert);
+      overrun_occurred =
+          overrun_occurred ||
+          RenderDelayBuffer::BufferingEvent::kRenderOverrun == event;
     }
 
-    EXPECT_EQ(RenderDelayBuffer::BufferingEvent::kRenderOverrun,
-              delay_buffer->Insert(block_to_insert));
+    EXPECT_TRUE(overrun_occurred);
   }
 }
 
@@ -63,7 +67,7 @@ TEST(RenderDelayBuffer, AvailableBlock) {
       kNumBands, std::vector<float>(kBlockSize, 1.f));
   EXPECT_EQ(RenderDelayBuffer::BufferingEvent::kNone,
             delay_buffer->Insert(input_block));
-  delay_buffer->PrepareCaptureCall();
+  delay_buffer->PrepareCaptureProcessing();
 }
 
 // Verifies the SetDelay method.
@@ -71,11 +75,12 @@ TEST(RenderDelayBuffer, SetDelay) {
   EchoCanceller3Config config;
   std::unique_ptr<RenderDelayBuffer> delay_buffer(
       RenderDelayBuffer::Create(config, 1));
-  EXPECT_EQ(config.delay.min_echo_path_delay_blocks, delay_buffer->Delay());
+  ASSERT_FALSE(delay_buffer->Delay());
   for (size_t delay = config.delay.min_echo_path_delay_blocks + 1; delay < 20;
        ++delay) {
     delay_buffer->SetDelay(delay);
-    EXPECT_EQ(delay, delay_buffer->Delay());
+    ASSERT_TRUE(delay_buffer->Delay());
+    EXPECT_EQ(delay, *delay_buffer->Delay());
   }
 }
 

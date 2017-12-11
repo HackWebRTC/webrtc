@@ -71,7 +71,8 @@ TEST(AdaptiveFirFilter, FilterAdaptationNeonOptimizations) {
     if (k == 0) {
       render_delay_buffer->Reset();
     }
-    render_delay_buffer->PrepareCaptureCall();
+    render_delay_buffer->PrepareCaptureProcessing();
+    render_delay_buffer->GetRenderBuffer()->UpdateSpectralSum();
   }
   const auto& render_buffer = render_delay_buffer->GetRenderBuffer();
 
@@ -84,10 +85,10 @@ TEST(AdaptiveFirFilter, FilterAdaptationNeonOptimizations) {
   G.im[0] = 0.f;
   G.im[G.im.size() - 1] = 0.f;
 
-  AdaptPartitions_NEON(render_buffer, G, H_NEON);
-  AdaptPartitions(render_buffer, G, H_C);
-  AdaptPartitions_NEON(render_buffer, G, H_NEON);
-  AdaptPartitions(render_buffer, G, H_C);
+  AdaptPartitions_NEON(*render_buffer, G, H_NEON);
+  AdaptPartitions(*render_buffer, G, H_C);
+  AdaptPartitions_NEON(*render_buffer, G, H_NEON);
+  AdaptPartitions(*render_buffer, G, H_C);
 
   for (size_t l = 0; l < H_C.size(); ++l) {
     for (size_t j = 0; j < H_C[l].im.size(); ++j) {
@@ -96,8 +97,8 @@ TEST(AdaptiveFirFilter, FilterAdaptationNeonOptimizations) {
     }
   }
 
-  ApplyFilter_NEON(render_buffer, H_NEON, &S_NEON);
-  ApplyFilter(render_buffer, H_C, &S_C);
+  ApplyFilter_NEON(*render_buffer, H_NEON, &S_NEON);
+  ApplyFilter(*render_buffer, H_C, &S_C);
   for (size_t j = 0; j < S_C.re.size(); ++j) {
     EXPECT_NEAR(S_C.re[j], S_NEON.re[j], fabs(S_C.re[j] * 0.00001f));
     EXPECT_NEAR(S_C.im[j], S_NEON.im[j], fabs(S_C.re[j] * 0.00001f));
@@ -182,11 +183,12 @@ TEST(AdaptiveFirFilter, FilterAdaptationSse2Optimizations) {
       if (k == 0) {
         render_delay_buffer->Reset();
       }
-      render_delay_buffer->PrepareCaptureCall();
+      render_delay_buffer->PrepareCaptureProcessing();
+      render_delay_buffer->GetRenderBuffer()->UpdateSpectralSum();
       const auto& render_buffer = render_delay_buffer->GetRenderBuffer();
 
-      ApplyFilter_SSE2(render_buffer, H_SSE2, &S_SSE2);
-      ApplyFilter(render_buffer, H_C, &S_C);
+      ApplyFilter_SSE2(*render_buffer, H_SSE2, &S_SSE2);
+      ApplyFilter(*render_buffer, H_C, &S_C);
       for (size_t j = 0; j < S_C.re.size(); ++j) {
         EXPECT_FLOAT_EQ(S_C.re[j], S_SSE2.re[j]);
         EXPECT_FLOAT_EQ(S_C.im[j], S_SSE2.im[j]);
@@ -197,8 +199,8 @@ TEST(AdaptiveFirFilter, FilterAdaptationSse2Optimizations) {
       std::for_each(G.im.begin(), G.im.end(),
                     [&](float& a) { a = random_generator.Rand<float>(); });
 
-      AdaptPartitions_SSE2(render_buffer, G, H_SSE2);
-      AdaptPartitions(render_buffer, G, H_C);
+      AdaptPartitions_SSE2(*render_buffer, G, H_SSE2);
+      AdaptPartitions(*render_buffer, G, H_C);
 
       for (size_t k = 0; k < H_C.size(); ++k) {
         for (size_t j = 0; j < H_C[k].re.size(); ++j) {
@@ -277,7 +279,7 @@ TEST(AdaptiveFirFilter, NullFilterOutput) {
   AdaptiveFirFilter filter(9, DetectOptimization(), &data_dumper);
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
       RenderDelayBuffer::Create(EchoCanceller3Config(), 3));
-  EXPECT_DEATH(filter.Filter(render_delay_buffer->GetRenderBuffer(), nullptr),
+  EXPECT_DEATH(filter.Filter(*render_delay_buffer->GetRenderBuffer(), nullptr),
                "");
 }
 
@@ -311,6 +313,7 @@ TEST(AdaptiveFirFilter, FilterAndAdapt) {
   Aec3Fft fft;
   EchoCanceller3Config config;
   config.delay.min_echo_path_delay_blocks = 0;
+  config.delay.default_delay = 1;
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
       RenderDelayBuffer::Create(config, 3));
   ShadowFilterUpdateGain gain;
@@ -362,12 +365,13 @@ TEST(AdaptiveFirFilter, FilterAndAdapt) {
       if (k == 0) {
         render_delay_buffer->Reset();
       }
-      render_delay_buffer->PrepareCaptureCall();
+      render_delay_buffer->PrepareCaptureProcessing();
+      render_delay_buffer->GetRenderBuffer()->UpdateSpectralSum();
       const auto& render_buffer = render_delay_buffer->GetRenderBuffer();
 
-      render_signal_analyzer.Update(render_buffer, aec_state.FilterDelay());
+      render_signal_analyzer.Update(*render_buffer, aec_state.FilterDelay());
 
-      filter.Filter(render_buffer, &S);
+      filter.Filter(*render_buffer, &S);
       fft.Ifft(S, &s_scratch);
       std::transform(y.begin(), y.end(), s_scratch.begin() + kFftLengthBy2,
                      e.begin(),
@@ -379,14 +383,14 @@ TEST(AdaptiveFirFilter, FilterAndAdapt) {
         s[k] = kScale * s_scratch[k + kFftLengthBy2];
       }
 
-      gain.Compute(render_buffer, render_signal_analyzer, E,
+      gain.Compute(*render_buffer, render_signal_analyzer, E,
                    filter.SizePartitions(), false, &G);
-      filter.Adapt(render_buffer, G);
+      filter.Adapt(*render_buffer, G);
       aec_state.HandleEchoPathChange(EchoPathVariability(
           false, EchoPathVariability::DelayAdjustment::kNone, false));
       aec_state.Update(filter.FilterFrequencyResponse(),
                        filter.FilterImpulseResponse(), true, rtc::nullopt,
-                       render_buffer, E2_main, Y2, x[0], s, false);
+                       *render_buffer, E2_main, Y2, x[0], s, false);
     }
     // Verify that the filter is able to perform well.
     EXPECT_LT(1000 * std::inner_product(e.begin(), e.end(), e.begin(), 0.f),

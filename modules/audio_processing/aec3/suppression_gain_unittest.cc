@@ -71,7 +71,7 @@ TEST(SuppressionGain, BasicGainComputation) {
   s.fill(10.f);
   aec_state.Update(
       subtractor.FilterFrequencyResponse(), subtractor.FilterImpulseResponse(),
-      subtractor.ConvergedFilter(), 10, render_delay_buffer->GetRenderBuffer(),
+      subtractor.ConvergedFilter(), 10, *render_delay_buffer->GetRenderBuffer(),
       E2, Y2, x[0], s, false);
   suppression_gain.GetGain(E2, R2, N2, analyzer, aec_state, x, &high_bands_gain,
                            &g);
@@ -88,14 +88,14 @@ TEST(SuppressionGain, BasicGainComputation) {
     aec_state.Update(
         subtractor.FilterFrequencyResponse(),
         subtractor.FilterImpulseResponse(), subtractor.ConvergedFilter(), 10,
-        render_delay_buffer->GetRenderBuffer(), E2, Y2, x[0], s, false);
+        *render_delay_buffer->GetRenderBuffer(), E2, Y2, x[0], s, false);
   }
 
   for (int k = 0; k < 100; ++k) {
     aec_state.Update(
         subtractor.FilterFrequencyResponse(),
         subtractor.FilterImpulseResponse(), subtractor.ConvergedFilter(), 10,
-        render_delay_buffer->GetRenderBuffer(), E2, Y2, x[0], s, false);
+        *render_delay_buffer->GetRenderBuffer(), E2, Y2, x[0], s, false);
     suppression_gain.GetGain(E2, R2, N2, analyzer, aec_state, x,
                              &high_bands_gain, &g);
   }
@@ -111,7 +111,7 @@ TEST(SuppressionGain, BasicGainComputation) {
     aec_state.Update(
         subtractor.FilterFrequencyResponse(),
         subtractor.FilterImpulseResponse(), subtractor.ConvergedFilter(), 10,
-        render_delay_buffer->GetRenderBuffer(), E2, Y2, x[0], s, false);
+        *render_delay_buffer->GetRenderBuffer(), E2, Y2, x[0], s, false);
     suppression_gain.GetGain(E2, R2, N2, analyzer, aec_state, x,
                              &high_bands_gain, &g);
   }

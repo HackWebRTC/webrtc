@@ -42,6 +42,7 @@ void RunFilterUpdateTest(int num_blocks_to_process,
 
   EchoCanceller3Config config;
   config.delay.min_echo_path_delay_blocks = 0;
+  config.delay.default_delay = 1;
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
       RenderDelayBuffer::Create(config, 3));
 
@@ -76,12 +77,13 @@ void RunFilterUpdateTest(int num_blocks_to_process,
     if (k == 0) {
       render_delay_buffer->Reset();
     }
-    render_delay_buffer->PrepareCaptureCall();
+    render_delay_buffer->PrepareCaptureProcessing();
+    render_delay_buffer->GetRenderBuffer()->UpdateSpectralSum();
 
-    render_signal_analyzer.Update(render_delay_buffer->GetRenderBuffer(),
+    render_signal_analyzer.Update(*render_delay_buffer->GetRenderBuffer(),
                                   delay_samples / kBlockSize);
 
-    shadow_filter.Filter(render_delay_buffer->GetRenderBuffer(), &S);
+    shadow_filter.Filter(*render_delay_buffer->GetRenderBuffer(), &S);
     fft.Ifft(S, &s);
     std::transform(y.begin(), y.end(), s.begin() + kFftLengthBy2,
                    e_shadow.begin(),
@@ -90,10 +92,10 @@ void RunFilterUpdateTest(int num_blocks_to_process,
                   [](float& a) { a = rtc::SafeClamp(a, -32768.f, 32767.f); });
     fft.ZeroPaddedFft(e_shadow, &E_shadow);
 
-    shadow_gain.Compute(render_delay_buffer->GetRenderBuffer(),
+    shadow_gain.Compute(*render_delay_buffer->GetRenderBuffer(),
                         render_signal_analyzer, E_shadow,
                         shadow_filter.SizePartitions(), saturation, &G);
-    shadow_filter.Adapt(render_delay_buffer->GetRenderBuffer(), G);
+    shadow_filter.Adapt(*render_delay_buffer->GetRenderBuffer(), G);
   }
 
   std::copy(e_shadow.begin(), e_shadow.end(), e_last_block->begin());

@@ -48,6 +48,8 @@ constexpr size_t kMaxNumBands = 3;
 constexpr size_t kSubFrameLength = 80;
 
 constexpr size_t kBlockSize = kFftLengthBy2;
+constexpr size_t kBlockSizeLog2 = 6;
+
 constexpr size_t kExtendedBlockSize = 2 * kFftLengthBy2;
 constexpr size_t kMatchedFilterWindowSizeSubBlocks = 32;
 constexpr size_t kMatchedFilterAlignmentShiftSizeSubBlocks =
@@ -80,11 +82,15 @@ constexpr size_t GetDownSampledBufferSize(size_t down_sampling_factor,
 constexpr size_t GetRenderDelayBufferSize(size_t down_sampling_factor,
                                           size_t num_matched_filters) {
   return GetDownSampledBufferSize(down_sampling_factor, num_matched_filters) /
-         (kBlockSize / down_sampling_factor);
+             (kBlockSize / down_sampling_factor) +
+         kAdaptiveFilterLength + 1;
 }
 
 // Detects what kind of optimizations to use for the code.
 Aec3Optimization DetectOptimization();
+
+static_assert(1 << kBlockSizeLog2 == kBlockSize,
+              "Proper number of shifts for blocksize");
 
 static_assert(1 == NumBandsForRate(8000), "Number of bands for 8 kHz");
 static_assert(1 == NumBandsForRate(16000), "Number of bands for 16 kHz");

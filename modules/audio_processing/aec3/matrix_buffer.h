@@ -23,17 +23,20 @@ struct MatrixBuffer {
   MatrixBuffer(size_t size, size_t height, size_t width);
   ~MatrixBuffer();
 
-  size_t IncIndex(size_t index) {
-    return index < buffer.size() - 1 ? index + 1 : 0;
+  int IncIndex(int index) const {
+    RTC_DCHECK_EQ(buffer.size(), static_cast<size_t>(size));
+    return index < size - 1 ? index + 1 : 0;
   }
 
-  size_t DecIndex(size_t index) {
-    return index > 0 ? index - 1 : buffer.size() - 1;
+  int DecIndex(int index) const {
+    RTC_DCHECK_EQ(buffer.size(), static_cast<size_t>(size));
+    return index > 0 ? index - 1 : size - 1;
   }
 
-  size_t OffsetIndex(size_t index, int offset) {
-    RTC_DCHECK_GE(buffer.size(), offset);
-    return (buffer.size() + index + offset) % buffer.size();
+  int OffsetIndex(int index, int offset) const {
+    RTC_DCHECK_EQ(buffer.size(), static_cast<size_t>(size));
+    RTC_DCHECK_GE(size, offset);
+    return (size + index + offset) % size;
   }
 
   void UpdateWriteIndex(int offset) { write = OffsetIndex(write, offset); }
@@ -43,10 +46,10 @@ struct MatrixBuffer {
   void IncReadIndex() { read = IncIndex(read); }
   void DecReadIndex() { read = DecIndex(read); }
 
-  size_t size;
+  const int size;
   std::vector<std::vector<std::vector<float>>> buffer;
-  size_t write = 0;
-  size_t read = 0;
+  int write = 0;
+  int read = 0;
 };
 
 }  // namespace webrtc

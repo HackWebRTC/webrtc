@@ -61,7 +61,7 @@ class EchoRemoverImpl final : public EchoRemover {
   void ProcessCapture(const rtc::Optional<size_t>& echo_path_delay_samples,
                       const EchoPathVariability& echo_path_variability,
                       bool capture_signal_saturation,
-                      const RenderBuffer& render_buffer,
+                      RenderBuffer* render_buffer,
                       std::vector<std::vector<float>>* capture) override;
 
   // Updates the status on whether echo leakage is detected in the output of the
@@ -123,11 +123,11 @@ void EchoRemoverImpl::ProcessCapture(
     const rtc::Optional<size_t>& echo_path_delay_samples,
     const EchoPathVariability& echo_path_variability,
     bool capture_signal_saturation,
-    const RenderBuffer& render_buffer,
+    RenderBuffer* render_buffer,
     std::vector<std::vector<float>>* capture) {
-  const std::vector<std::vector<float>>& x = render_buffer.MostRecentBlock();
+  const std::vector<std::vector<float>>& x = render_buffer->MostRecentBlock();
   std::vector<std::vector<float>>* y = capture;
-
+  RTC_DCHECK(render_buffer);
   RTC_DCHECK(y);
   RTC_DCHECK_EQ(x.size(), NumBandsForRate(sample_rate_hz_));
   RTC_DCHECK_EQ(y->size(), NumBandsForRate(sample_rate_hz_));
@@ -142,6 +142,8 @@ void EchoRemoverImpl::ProcessCapture(
                         LowestBandRate(sample_rate_hz_), 1);
   data_dumper_->DumpRaw("aec3_echo_remover_capture_input", y0);
   data_dumper_->DumpRaw("aec3_echo_remover_render_input", x0);
+
+  render_buffer->UpdateSpectralSum();
 
   aec_state_.UpdateCaptureSaturation(capture_signal_saturation);
 
@@ -165,10 +167,10 @@ void EchoRemoverImpl::ProcessCapture(
   auto& e_main = subtractor_output.e_main;
 
   // Analyze the render signal.
-  render_signal_analyzer_.Update(render_buffer, aec_state_.FilterDelay());
+  render_signal_analyzer_.Update(*render_buffer, aec_state_.FilterDelay());
 
   // Perform linear echo cancellation.
-  subtractor_.Process(render_buffer, y0, render_signal_analyzer_, aec_state_,
+  subtractor_.Process(*render_buffer, y0, render_signal_analyzer_, aec_state_,
                       &subtractor_output);
 
   // Compute spectra.
@@ -180,7 +182,7 @@ void EchoRemoverImpl::ProcessCapture(
   aec_state_.Update(subtractor_.FilterFrequencyResponse(),
                     subtractor_.FilterImpulseResponse(),
                     subtractor_.ConvergedFilter(), echo_path_delay_samples,
-                    render_buffer, E2_main, Y2, x0, subtractor_output.s_main,
+                    *render_buffer, E2_main, Y2, x0, subtractor_output.s_main,
                     echo_leakage_detected_);
 
   // Choose the linear output.
@@ -191,7 +193,7 @@ void EchoRemoverImpl::ProcessCapture(
   const auto& E2 = output_selector_.UseSubtractorOutput() ? E2_main : Y2;
 
   // Estimate the residual echo power.
-  residual_echo_estimator_.Estimate(aec_state_, render_buffer, S2_linear, Y2,
+  residual_echo_estimator_.Estimate(aec_state_, *render_buffer, S2_linear, Y2,
                                     &R2);
 
   // Estimate the comfort noise.
@@ -229,7 +231,7 @@ void EchoRemoverImpl::ProcessCapture(
   data_dumper_->DumpRaw("aec3_E2_shadow", E2_shadow);
   data_dumper_->DumpRaw("aec3_S2_linear", S2_linear);
   data_dumper_->DumpRaw("aec3_Y2", Y2);
-  data_dumper_->DumpRaw("aec3_X2", render_buffer.Spectrum(0));
+  data_dumper_->DumpRaw("aec3_X2", render_buffer->Spectrum(0));
   data_dumper_->DumpRaw("aec3_R2", R2);
   data_dumper_->DumpRaw("aec3_erle", aec_state_.Erle());
   data_dumper_->DumpRaw("aec3_erl", aec_state_.Erl());

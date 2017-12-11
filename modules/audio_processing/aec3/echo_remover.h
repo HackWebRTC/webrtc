@@ -37,7 +37,7 @@ class EchoRemover {
       const rtc::Optional<size_t>& echo_path_delay_samples,
       const EchoPathVariability& echo_path_variability,
       bool capture_signal_saturation,
-      const RenderBuffer& render_buffer,
+      RenderBuffer* render_buffer,
       std::vector<std::vector<float>>* capture) = 0;
 
   // Updates the status on whether echo leakage is detected in the output of the

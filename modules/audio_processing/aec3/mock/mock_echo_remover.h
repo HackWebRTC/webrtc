@@ -30,7 +30,7 @@ class MockEchoRemover : public EchoRemover {
                void(const rtc::Optional<size_t>& echo_path_delay_samples,
                     const EchoPathVariability& echo_path_variability,
                     bool capture_signal_saturation,
-                    const RenderBuffer& render_buffer,
+                    RenderBuffer* render_buffer,
                     std::vector<std::vector<float>>* capture));
 
   MOCK_METHOD1(UpdateEchoLeakageStatus, void(bool leakage_detected));

@@ -32,7 +32,7 @@ TEST(ResidualEchoEstimator, NullResidualEchoPowerOutput) {
   std::array<float, kFftLengthBy2Plus1> S2_linear;
   std::array<float, kFftLengthBy2Plus1> Y2;
   EXPECT_DEATH(ResidualEchoEstimator(EchoCanceller3Config{})
-                   .Estimate(aec_state, render_delay_buffer->GetRenderBuffer(),
+                   .Estimate(aec_state, *render_delay_buffer->GetRenderBuffer(),
                              S2_linear, Y2, nullptr),
                "");
 }
@@ -89,13 +89,13 @@ TEST(ResidualEchoEstimator, DISABLED_BasicTest) {
     if (k == 0) {
       render_delay_buffer->Reset();
     }
-    render_delay_buffer->PrepareCaptureCall();
+    render_delay_buffer->PrepareCaptureProcessing();
 
     aec_state.HandleEchoPathChange(echo_path_variability);
-    aec_state.Update(H2, h, true, 2, render_delay_buffer->GetRenderBuffer(),
+    aec_state.Update(H2, h, true, 2, *render_delay_buffer->GetRenderBuffer(),
                      E2_main, Y2, x[0], s, false);
 
-    estimator.Estimate(aec_state, render_delay_buffer->GetRenderBuffer(),
+    estimator.Estimate(aec_state, *render_delay_buffer->GetRenderBuffer(),
                        S2_linear, Y2, &R2);
   }
   std::for_each(R2.begin(), R2.end(),

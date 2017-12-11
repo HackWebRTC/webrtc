@@ -15,7 +15,7 @@
 namespace webrtc {
 
 MatrixBuffer::MatrixBuffer(size_t size, size_t height, size_t width)
-    : size(size),
+    : size(static_cast<int>(size)),
       buffer(size,
              std::vector<std::vector<float>>(height,
                                              std::vector<float>(width, 0.f))) {

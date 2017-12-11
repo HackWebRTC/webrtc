@@ -12,7 +12,7 @@
 
 namespace webrtc {
 
-FftBuffer::FftBuffer(size_t size) : buffer(size) {
+FftBuffer::FftBuffer(size_t size) : size(static_cast<int>(size)), buffer(size) {
   for (auto& b : buffer) {
     b.Clear();
   }

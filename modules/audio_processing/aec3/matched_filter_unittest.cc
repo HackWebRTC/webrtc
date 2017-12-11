@@ -145,16 +145,17 @@ TEST(MatchedFilter, LagEstimation) {
     ApmDataDumper data_dumper(0);
     for (size_t delay_samples : {5, 64, 150, 200, 800, 1000}) {
       SCOPED_TRACE(ProduceDebugText(delay_samples, down_sampling_factor));
+      EchoCanceller3Config config;
+      config.delay.down_sampling_factor = down_sampling_factor;
+      config.delay.num_filters = kNumMatchedFilters;
+      config.delay.min_echo_path_delay_blocks = 0;
+      config.delay.api_call_jitter_blocks = 0;
       Decimator capture_decimator(down_sampling_factor);
       DelayBuffer<float> signal_delay_buffer(down_sampling_factor *
                                              delay_samples);
       MatchedFilter filter(&data_dumper, DetectOptimization(), sub_block_size,
                            kWindowSizeSubBlocks, kNumMatchedFilters,
                            kAlignmentShiftSubBlocks, 150);
-      EchoCanceller3Config config;
-      config.delay.down_sampling_factor = down_sampling_factor;
-      config.delay.num_filters = kNumMatchedFilters;
-      config.delay.min_echo_path_delay_blocks = 0;
 
       std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
           RenderDelayBuffer::Create(config, 3));
@@ -164,11 +165,13 @@ TEST(MatchedFilter, LagEstimation) {
         RandomizeSampleVector(&random_generator, render[0]);
         signal_delay_buffer.Delay(render[0], capture);
         render_delay_buffer->Insert(render);
+
         if (k == 0) {
           render_delay_buffer->Reset();
         }
 
-        render_delay_buffer->PrepareCaptureCall();
+        render_delay_buffer->PrepareCaptureProcessing();
+        render_delay_buffer->GetRenderBuffer()->UpdateSpectralSum();
         std::array<float, kBlockSize> downsampled_capture_data;
         rtc::ArrayView<float> downsampled_capture(
             downsampled_capture_data.data(), sub_block_size);

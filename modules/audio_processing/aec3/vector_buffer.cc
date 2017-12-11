@@ -15,7 +15,8 @@
 namespace webrtc {
 
 VectorBuffer::VectorBuffer(size_t size, size_t height)
-    : size(size), buffer(size, std::vector<float>(height, 0.f)) {
+    : size(static_cast<int>(size)),
+      buffer(size, std::vector<float>(height, 0.f)) {
   for (auto& c : buffer) {
     std::fill(c.begin(), c.end(), 0.f);
   }

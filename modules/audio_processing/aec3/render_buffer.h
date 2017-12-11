@@ -64,7 +64,7 @@ class RenderBuffer {
 
  private:
   const MatrixBuffer* const block_buffer_;
-  VectorBuffer* spectrum_buffer_;
+  const VectorBuffer* const spectrum_buffer_;
   const FftBuffer* const fft_buffer_;
   const size_t spectral_sums_length_;
   std::array<float, kFftLengthBy2Plus1> spectral_sums_;

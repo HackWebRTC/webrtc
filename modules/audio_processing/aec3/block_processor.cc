@@ -55,6 +55,7 @@ class BlockProcessorImpl final : public BlockProcessor {
   std::unique_ptr<EchoRemover> echo_remover_;
   BlockProcessorMetrics metrics_;
   RenderDelayBuffer::BufferingEvent render_event_;
+  size_t capture_call_counter_ = 0;
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(BlockProcessorImpl);
 };
 
@@ -86,6 +87,9 @@ void BlockProcessorImpl::ProcessCapture(
   RTC_DCHECK(capture_block);
   RTC_DCHECK_EQ(NumBandsForRate(sample_rate_hz_), capture_block->size());
   RTC_DCHECK_EQ(kBlockSize, (*capture_block)[0].size());
+
+  capture_call_counter_++;
+
   data_dumper_->DumpRaw("aec3_processblock_call_order",
                         static_cast<int>(BlockProcessorApiCall::kCapture));
   data_dumper_->DumpWav("aec3_processblock_capture_input", kBlockSize,
@@ -111,30 +115,35 @@ void BlockProcessorImpl::ProcessCapture(
     echo_path_variability.delay_change =
         EchoPathVariability::DelayAdjustment::kBufferFlush;
     delay_controller_->Reset();
-    render_buffer_->Reset();
-    RTC_LOG(LS_WARNING) << "Reset due to render buffer overrun.";
+    RTC_LOG(LS_WARNING) << "Reset due to render buffer overrun at block  "
+                        << capture_call_counter_;
   }
 
   // Update the render buffers with any newly arrived render blocks and prepare
   // the render buffers for reading the render data corresponding to the current
   // capture block.
-  render_event_ = render_buffer_->PrepareCaptureCall();
+  render_event_ = render_buffer_->PrepareCaptureProcessing();
   RTC_DCHECK(RenderDelayBuffer::BufferingEvent::kRenderOverrun !=
              render_event_);
   if (render_event_ == RenderDelayBuffer::BufferingEvent::kRenderUnderrun) {
     echo_path_variability.delay_change =
-        EchoPathVariability::DelayAdjustment::kBufferReadjustment;
+        EchoPathVariability::DelayAdjustment::kDelayReset;
     delay_controller_->Reset();
-    render_buffer_->Reset();
+    capture_properly_started_ = false;
+    render_properly_started_ = false;
+
+    RTC_LOG(LS_WARNING) << "Reset due to render buffer underrrun at block "
+                        << capture_call_counter_;
   } else if (render_event_ == RenderDelayBuffer::BufferingEvent::kApiCallSkew) {
     // There have been too many render calls in a row. Reset to avoid noncausal
     // echo.
     echo_path_variability.delay_change =
         EchoPathVariability::DelayAdjustment::kDelayReset;
     delay_controller_->Reset();
-    render_buffer_->Reset();
     capture_properly_started_ = false;
     render_properly_started_ = false;
+    RTC_LOG(LS_WARNING) << "Reset due to render buffer api skew at block "
+                        << capture_call_counter_;
   }
 
   data_dumper_->DumpWav("aec3_processblock_capture_input2", kBlockSize,
@@ -143,30 +152,32 @@ void BlockProcessorImpl::ProcessCapture(
 
   // Compute and and apply the render delay required to achieve proper signal
   // alignment.
-  const size_t estimated_delay = delay_controller_->GetDelay(
+  rtc::Optional<size_t> estimated_delay = delay_controller_->GetDelay(
       render_buffer_->GetDownsampledRenderBuffer(), (*capture_block)[0]);
-  const size_t new_delay =
-      std::min(render_buffer_->MaxDelay(), estimated_delay);
 
-  bool delay_change = render_buffer_->Delay() != new_delay;
-  if (delay_change && new_delay >= config_.delay.min_echo_path_delay_blocks) {
-    echo_path_variability.delay_change =
-        EchoPathVariability::DelayAdjustment::kNewDetectedDelay;
-    render_buffer_->SetDelay(new_delay);
-    RTC_DCHECK_EQ(render_buffer_->Delay(), new_delay);
-    delay_controller_->SetDelay(new_delay);
-  } else if (delay_change &&
-             new_delay < config_.delay.min_echo_path_delay_blocks) {
-    // A noncausal delay has been detected. This can only happen if there is
-    // clockdrift, an audio pipeline issue has occurred or the specified minimum
-    // delay is too short. Perform a full reset.
-    echo_path_variability.delay_change =
-        EchoPathVariability::DelayAdjustment::kDelayReset;
-    delay_controller_->Reset();
-    render_buffer_->Reset();
-    capture_properly_started_ = false;
-    render_properly_started_ = false;
-    RTC_LOG(LS_WARNING) << "Reset due to noncausal delay.";
+  if (estimated_delay) {
+    bool delay_change = render_buffer_->SetDelay(*estimated_delay);
+
+    if (delay_change) {
+      RTC_LOG(LS_WARNING) << "Delay changed to " << *estimated_delay
+                          << " at block " << capture_call_counter_;
+      if (render_buffer_->CausalDelay()) {
+        echo_path_variability.delay_change =
+            EchoPathVariability::DelayAdjustment::kNewDetectedDelay;
+      } else {
+        // A noncausal delay has been detected. This can only happen if there is
+        // clockdrift, an audio pipeline issue has occurred or the specified
+        // minimum delay is too short. Perform a full reset.
+        echo_path_variability.delay_change =
+            EchoPathVariability::DelayAdjustment::kDelayReset;
+        delay_controller_->Reset();
+        render_buffer_->Reset();
+        capture_properly_started_ = false;
+        render_properly_started_ = false;
+        RTC_LOG(LS_WARNING) << "Reset due to noncausal delay at block "
+                            << capture_call_counter_;
+      }
+    }
   }
 
   // Remove the echo from the capture signal.
@@ -207,7 +218,8 @@ void BlockProcessorImpl::UpdateEchoLeakageStatus(bool leakage_detected) {
 void BlockProcessorImpl::GetMetrics(EchoControl::Metrics* metrics) const {
   echo_remover_->GetMetrics(metrics);
   const int block_size_ms = sample_rate_hz_ == 8000 ? 8 : 4;
-  metrics->delay_ms = static_cast<int>(render_buffer_->Delay()) * block_size_ms;
+  rtc::Optional<size_t> delay = render_buffer_->Delay();
+  metrics->delay_ms = delay ? static_cast<int>(*delay) * block_size_ms : 0;
 }
 
 }  // namespace
@@ -217,7 +229,9 @@ BlockProcessor* BlockProcessor::Create(const EchoCanceller3Config& config,
   std::unique_ptr<RenderDelayBuffer> render_buffer(
       RenderDelayBuffer::Create(config, NumBandsForRate(sample_rate_hz)));
   std::unique_ptr<RenderDelayController> delay_controller(
-      RenderDelayController::Create(config, sample_rate_hz));
+      RenderDelayController::Create(
+          config, RenderDelayBuffer::DelayEstimatorOffset(config),
+          sample_rate_hz));
   std::unique_ptr<EchoRemover> echo_remover(
       EchoRemover::Create(config, sample_rate_hz));
   return Create(config, sample_rate_hz, std::move(render_buffer),
@@ -229,7 +243,9 @@ BlockProcessor* BlockProcessor::Create(
     int sample_rate_hz,
     std::unique_ptr<RenderDelayBuffer> render_buffer) {
   std::unique_ptr<RenderDelayController> delay_controller(
-      RenderDelayController::Create(config, sample_rate_hz));
+      RenderDelayController::Create(
+          config, RenderDelayBuffer::DelayEstimatorOffset(config),
+          sample_rate_hz));
   std::unique_ptr<EchoRemover> echo_remover(
       EchoRemover::Create(config, sample_rate_hz));
   return Create(config, sample_rate_hz, std::move(render_buffer),

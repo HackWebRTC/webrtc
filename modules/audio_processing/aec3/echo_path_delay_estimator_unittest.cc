@@ -65,25 +65,15 @@ TEST(EchoPathDelayEstimator, DelayEstimation) {
     for (size_t delay_samples : {30, 64, 150, 200, 800, 4000}) {
       SCOPED_TRACE(ProduceDebugText(delay_samples, down_sampling_factor));
 
-      config.delay.min_echo_path_delay_blocks = 0;
-      while ((config.delay.min_echo_path_delay_blocks + 1) * kBlockSize <
-                 delay_samples &&
-             config.delay.min_echo_path_delay_blocks + 1 <= 5) {
-        ++config.delay.min_echo_path_delay_blocks;
-      }
-
-      const int delay_estimate_offset =
-          std::max<int>(std::min(config.delay.api_call_jitter_blocks,
-                                 config.delay.min_echo_path_delay_blocks) -
-                            1,
-                        0);
+      config.delay.api_call_jitter_blocks = 5;
       std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
           RenderDelayBuffer::Create(config, 3));
-      DelayBuffer<float> signal_delay_buffer(delay_samples);
+      DelayBuffer<float> signal_delay_buffer(
+          delay_samples + 2 * config.delay.api_call_jitter_blocks * 64);
       EchoPathDelayEstimator estimator(&data_dumper, config);
 
       rtc::Optional<size_t> estimated_delay_samples;
-      for (size_t k = 0; k < (300 + delay_samples / kBlockSize); ++k) {
+      for (size_t k = 0; k < (500 + (delay_samples) / kBlockSize); ++k) {
         RandomizeSampleVector(&random_generator, render[0]);
         signal_delay_buffer.Delay(render[0], capture);
         render_delay_buffer->Insert(render);
@@ -92,7 +82,9 @@ TEST(EchoPathDelayEstimator, DelayEstimation) {
           render_delay_buffer->Reset();
         }
 
-        render_delay_buffer->PrepareCaptureCall();
+        render_delay_buffer->PrepareCaptureProcessing();
+
+        render_delay_buffer->GetRenderBuffer()->UpdateSpectralSum();
         estimated_delay_samples = estimator.EstimateDelay(
             render_delay_buffer->GetDownsampledRenderBuffer(), capture);
       }
@@ -100,10 +92,10 @@ TEST(EchoPathDelayEstimator, DelayEstimation) {
       if (estimated_delay_samples) {
         // Due to the internal down-sampling done inside the delay estimator
         // the estimated delay cannot be expected to be exact to the true delay.
-        EXPECT_NEAR(
-            delay_samples,
-            *estimated_delay_samples + delay_estimate_offset * kBlockSize,
-            config.delay.down_sampling_factor);
+        EXPECT_NEAR(delay_samples,
+                    *estimated_delay_samples -
+                        (config.delay.api_call_jitter_blocks + 1) * 64,
+                    config.delay.down_sampling_factor);
       } else {
         ADD_FAILURE();
       }
@@ -127,7 +119,8 @@ TEST(EchoPathDelayEstimator, NoInitialDelayestimates) {
     RandomizeSampleVector(&random_generator, render[0]);
     std::copy(render[0].begin(), render[0].end(), capture.begin());
     render_delay_buffer->Insert(render);
-    render_delay_buffer->PrepareCaptureCall();
+    render_delay_buffer->PrepareCaptureProcessing();
+    render_delay_buffer->GetRenderBuffer()->UpdateSpectralSum();
     EXPECT_FALSE(estimator.EstimateDelay(
         render_delay_buffer->GetDownsampledRenderBuffer(), capture));
   }
@@ -151,7 +144,8 @@ TEST(EchoPathDelayEstimator, NoDelayEstimatesForLowLevelRenderSignals) {
     }
     std::copy(render[0].begin(), render[0].end(), capture.begin());
     render_delay_buffer->Insert(render);
-    render_delay_buffer->PrepareCaptureCall();
+    render_delay_buffer->PrepareCaptureProcessing();
+    render_delay_buffer->GetRenderBuffer()->UpdateSpectralSum();
     EXPECT_FALSE(estimator.EstimateDelay(
         render_delay_buffer->GetDownsampledRenderBuffer(), capture));
   }
@@ -172,7 +166,7 @@ TEST(EchoPathDelayEstimator, NoDelayEstimatesForUncorrelatedSignals) {
     RandomizeSampleVector(&random_generator, render[0]);
     RandomizeSampleVector(&random_generator, capture);
     render_delay_buffer->Insert(render);
-    render_delay_buffer->PrepareCaptureCall();
+    render_delay_buffer->PrepareCaptureProcessing();
     EXPECT_FALSE(estimator.EstimateDelay(
         render_delay_buffer->GetDownsampledRenderBuffer(), capture));
   }
