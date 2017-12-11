@@ -29,8 +29,8 @@ int EstimateFilterDelay(
         adaptive_filter_frequency_response) {
   const auto& H2 = adaptive_filter_frequency_response;
   constexpr size_t kUpperBin = kFftLengthBy2 - 5;
-  RTC_DCHECK_GE(kAdaptiveFilterLength, H2.size());
-  std::array<int, kAdaptiveFilterLength> delays;
+  RTC_DCHECK_GE(kMaxAdaptiveFilterLength, H2.size());
+  std::array<int, kMaxAdaptiveFilterLength> delays;
   delays.fill(0);
   for (size_t k = 1; k < kUpperBin; ++k) {
     // Find the maximum of H2[j].
@@ -56,9 +56,8 @@ AecState::AecState(const EchoCanceller3Config& config)
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
       erle_estimator_(config.erle.min, config.erle.max_l, config.erle.max_h),
       config_(config),
-      reverb_decay_(config_.ep_strength.default_len) {
-  max_render_.fill(0.f);
-}
+      max_render_(config_.filter.length_blocks, 0.f),
+      reverb_decay_(config_.ep_strength.default_len) {}
 
 AecState::~AecState() = default;
 
@@ -71,7 +70,7 @@ void AecState::HandleEchoPathChange(
     capture_signal_saturation_ = false;
     echo_saturation_ = false;
     previous_max_sample_ = 0.f;
-    max_render_.fill(0.f);
+    std::fill(max_render_.begin(), max_render_.end(), 0.f);
     force_zero_gain_counter_ = 0;
     blocks_with_filter_adaptation_ = 0;
     blocks_with_strong_render_ = 0;
@@ -107,18 +106,18 @@ void AecState::HandleEchoPathChange(
   }
 }
 
-void AecState::Update(const std::vector<std::array<float, kFftLengthBy2Plus1>>&
-                          adaptive_filter_frequency_response,
-                      const std::array<float, kAdaptiveFilterTimeDomainLength>&
-                          adaptive_filter_impulse_response,
-                      bool converged_filter,
-                      const rtc::Optional<size_t>& external_delay_samples,
-                      const RenderBuffer& render_buffer,
-                      const std::array<float, kFftLengthBy2Plus1>& E2_main,
-                      const std::array<float, kFftLengthBy2Plus1>& Y2,
-                      rtc::ArrayView<const float> x,
-                      const std::array<float, kBlockSize>& s,
-                      bool echo_leakage_detected) {
+void AecState::Update(
+    const std::vector<std::array<float, kFftLengthBy2Plus1>>&
+        adaptive_filter_frequency_response,
+    const std::vector<float>& adaptive_filter_impulse_response,
+    bool converged_filter,
+    const rtc::Optional<size_t>& external_delay_samples,
+    const RenderBuffer& render_buffer,
+    const std::array<float, kFftLengthBy2Plus1>& E2_main,
+    const std::array<float, kFftLengthBy2Plus1>& Y2,
+    rtc::ArrayView<const float> x,
+    const std::array<float, kBlockSize>& s,
+    bool echo_leakage_detected) {
   // Store input parameters.
   echo_leakage_detected_ = echo_leakage_detected;
 
@@ -208,24 +207,29 @@ void AecState::Update(const std::vector<std::array<float, kFftLengthBy2Plus1>>&
   UpdateReverb(adaptive_filter_impulse_response);
 }
 
-void AecState::UpdateReverb(
-    const std::array<float, kAdaptiveFilterTimeDomainLength>&
-        impulse_response) {
+void AecState::UpdateReverb(const std::vector<float>& impulse_response) {
   if ((!(filter_delay_ && usable_linear_estimate_)) ||
-      (*filter_delay_ > kAdaptiveFilterLength - 4)) {
+      (*filter_delay_ > config_.filter.length_blocks - 4)) {
     return;
   }
 
   // Form the data to match against by squaring the impulse response
   // coefficients.
-  std::array<float, kAdaptiveFilterTimeDomainLength> matching_data;
+  std::array<float, GetTimeDomainLength(kMaxAdaptiveFilterLength)>
+      matching_data_data;
+  RTC_DCHECK_LE(GetTimeDomainLength(config_.filter.length_blocks),
+                matching_data_data.size());
+  rtc::ArrayView<float> matching_data(
+      matching_data_data.data(),
+      GetTimeDomainLength(config_.filter.length_blocks));
   std::transform(impulse_response.begin(), impulse_response.end(),
                  matching_data.begin(), [](float a) { return a * a; });
 
   // Avoid matching against noise in the model by subtracting an estimate of the
   // model noise power.
   constexpr size_t kTailLength = 64;
-  constexpr size_t tail_index = kAdaptiveFilterTimeDomainLength - kTailLength;
+  const size_t tail_index =
+      GetTimeDomainLength(config_.filter.length_blocks) - kTailLength;
   const float tail_power = *std::max_element(matching_data.begin() + tail_index,
                                              matching_data.end());
   std::for_each(matching_data.begin(), matching_data.begin() + tail_index,

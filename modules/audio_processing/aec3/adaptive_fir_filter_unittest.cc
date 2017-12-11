@@ -308,10 +308,10 @@ TEST(AdaptiveFirFilter, FilterSize) {
 TEST(AdaptiveFirFilter, FilterAndAdapt) {
   constexpr size_t kNumBlocksToProcess = 500;
   ApmDataDumper data_dumper(42);
-  AdaptiveFirFilter filter(kAdaptiveFilterLength, DetectOptimization(),
+  EchoCanceller3Config config;
+  AdaptiveFirFilter filter(config.filter.length_blocks, DetectOptimization(),
                            &data_dumper);
   Aec3Fft fft;
-  EchoCanceller3Config config;
   config.delay.min_echo_path_delay_blocks = 0;
   config.delay.default_delay = 1;
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(

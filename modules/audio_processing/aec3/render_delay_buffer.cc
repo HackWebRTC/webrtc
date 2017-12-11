@@ -28,8 +28,6 @@
 namespace webrtc {
 namespace {
 
-constexpr int kBufferHeadroom = kAdaptiveFilterLength;
-
 class RenderDelayBufferImpl final : public RenderDelayBuffer {
  public:
   RenderDelayBufferImpl(const EchoCanceller3Config& config, size_t num_bands);
@@ -41,7 +39,7 @@ class RenderDelayBufferImpl final : public RenderDelayBuffer {
   bool SetDelay(size_t delay) override;
   rtc::Optional<size_t> Delay() const override { return delay_; }
   size_t MaxDelay() const override {
-    return blocks_.buffer.size() - 1 - kBufferHeadroom;
+    return blocks_.buffer.size() - 1 - buffer_headroom_;
   }
   RenderBuffer* GetRenderBuffer() override { return &echo_remover_buffer_; }
 
@@ -68,6 +66,7 @@ class RenderDelayBufferImpl final : public RenderDelayBuffer {
   const std::vector<std::vector<float>> zero_block_;
   const Aec3Fft fft_;
   std::vector<float> render_ds_;
+  const int buffer_headroom_;
 
   int LowRateBufferOffset() const { return DelayEstimatorOffset(config_) >> 1; }
   int MaxExternalDelayToInternalDelay(size_t delay) const;
@@ -153,18 +152,24 @@ RenderDelayBufferImpl::RenderDelayBufferImpl(const EchoCanceller3Config& config,
                                ? kBlockSize / config.delay.down_sampling_factor
                                : kBlockSize)),
       blocks_(GetRenderDelayBufferSize(config.delay.down_sampling_factor,
-                                       config.delay.num_filters),
+                                       config.delay.num_filters,
+                                       config.filter.length_blocks),
               num_bands,
               kBlockSize),
       spectra_(blocks_.buffer.size(), kFftLengthBy2Plus1),
       ffts_(blocks_.buffer.size()),
-      echo_remover_buffer_(kAdaptiveFilterLength, &blocks_, &spectra_, &ffts_),
+      delay_(config_.delay.min_echo_path_delay_blocks),
+      echo_remover_buffer_(config.filter.length_blocks,
+                           &blocks_,
+                           &spectra_,
+                           &ffts_),
       low_rate_(GetDownSampledBufferSize(config.delay.down_sampling_factor,
                                          config.delay.num_filters)),
       render_decimator_(config.delay.down_sampling_factor),
       zero_block_(num_bands, std::vector<float>(kBlockSize, 0.f)),
       fft_(),
-      render_ds_(sub_block_size_, 0.f) {
+      render_ds_(sub_block_size_, 0.f),
+      buffer_headroom_(config.filter.length_blocks) {
   RTC_DCHECK_EQ(blocks_.buffer.size(), ffts_.buffer.size());
   RTC_DCHECK_EQ(spectra_.buffer.size(), ffts_.buffer.size());
 

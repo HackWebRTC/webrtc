@@ -45,13 +45,14 @@ void PredictionError(const Aec3Fft& fft,
 }
 }  // namespace
 
-Subtractor::Subtractor(ApmDataDumper* data_dumper,
+Subtractor::Subtractor(const EchoCanceller3Config& config,
+                       ApmDataDumper* data_dumper,
                        Aec3Optimization optimization)
     : fft_(),
       data_dumper_(data_dumper),
       optimization_(optimization),
-      main_filter_(kAdaptiveFilterLength, optimization, data_dumper_),
-      shadow_filter_(kAdaptiveFilterLength, optimization, data_dumper_) {
+      main_filter_(config.filter.length_blocks, optimization, data_dumper_),
+      shadow_filter_(config.filter.length_blocks, optimization, data_dumper_) {
   RTC_DCHECK(data_dumper_);
 }
 

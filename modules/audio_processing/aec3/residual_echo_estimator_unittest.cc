@@ -70,8 +70,7 @@ TEST(ResidualEchoEstimator, DISABLED_BasicTest) {
   H2[2].fill(10.f);
   H2[2][0] = 0.1f;
 
-  std::array<float, kAdaptiveFilterTimeDomainLength> h;
-  h.fill(0.f);
+  std::vector<float> h(GetTimeDomainLength(config.filter.length_blocks), 0.f);
 
   s.fill(100.f);
 

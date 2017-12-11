@@ -33,6 +33,7 @@ namespace {
 // gain functionality.
 void RunFilterUpdateTest(int num_blocks_to_process,
                          size_t delay_samples,
+                         int filter_length_blocks,
                          const std::vector<int>& blocks_with_echo_path_changes,
                          const std::vector<int>& blocks_with_saturation,
                          bool use_silent_render_in_second_half,
@@ -40,8 +41,12 @@ void RunFilterUpdateTest(int num_blocks_to_process,
                          std::array<float, kBlockSize>* y_last_block,
                          FftData* G_last_block) {
   ApmDataDumper data_dumper(42);
-  AdaptiveFirFilter main_filter(12, DetectOptimization(), &data_dumper);
-  AdaptiveFirFilter shadow_filter(12, DetectOptimization(), &data_dumper);
+  EchoCanceller3Config config;
+  config.filter.length_blocks = filter_length_blocks;
+  AdaptiveFirFilter main_filter(config.filter.length_blocks,
+                                DetectOptimization(), &data_dumper);
+  AdaptiveFirFilter shadow_filter(config.filter.length_blocks,
+                                  DetectOptimization(), &data_dumper);
   Aec3Fft fft;
   std::array<float, kBlockSize> x_old;
   x_old.fill(0.f);
@@ -50,7 +55,6 @@ void RunFilterUpdateTest(int num_blocks_to_process,
   Random random_generator(42U);
   std::vector<std::vector<float>> x(3, std::vector<float>(kBlockSize, 0.f));
   std::vector<float> y(kBlockSize, 0.f);
-  EchoCanceller3Config config;
   config.delay.min_echo_path_delay_blocks = 0;
   config.delay.default_delay = 1;
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
@@ -159,9 +163,16 @@ void RunFilterUpdateTest(int num_blocks_to_process,
   std::copy(G.im.begin(), G.im.end(), G_last_block->im.begin());
 }
 
-std::string ProduceDebugText(size_t delay) {
+std::string ProduceDebugText(int filter_length_blocks) {
   std::ostringstream ss;
-  ss << "Delay: " << delay;
+  ss << "Length: " << filter_length_blocks;
+  return ss.str();
+}
+
+std::string ProduceDebugText(size_t delay, int filter_length_blocks) {
+  std::ostringstream ss;
+  ss << "Delay: " << delay << ", ";
+  ss << ProduceDebugText(filter_length_blocks);
   return ss.str();
 }
 
@@ -172,10 +183,11 @@ std::string ProduceDebugText(size_t delay) {
 // Verifies that the check for non-null output gain parameter works.
 TEST(MainFilterUpdateGain, NullDataOutputGain) {
   ApmDataDumper data_dumper(42);
-  AdaptiveFirFilter filter(kAdaptiveFilterLength, DetectOptimization(),
+  EchoCanceller3Config config;
+  AdaptiveFirFilter filter(config.filter.length_blocks, DetectOptimization(),
                            &data_dumper);
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-      RenderDelayBuffer::Create(EchoCanceller3Config(), 3));
+      RenderDelayBuffer::Create(config, 3));
   RenderSignalAnalyzer analyzer;
   SubtractorOutput output;
   MainFilterUpdateGain gain;
@@ -190,53 +202,62 @@ TEST(MainFilterUpdateGain, NullDataOutputGain) {
 TEST(MainFilterUpdateGain, GainCausesFilterToConverge) {
   std::vector<int> blocks_with_echo_path_changes;
   std::vector<int> blocks_with_saturation;
-  for (size_t delay_samples : {0, 64, 150, 200, 301}) {
-    SCOPED_TRACE(ProduceDebugText(delay_samples));
+  for (size_t filter_length_blocks : {12, 20, 30}) {
+    for (size_t delay_samples : {0, 64, 150, 200, 301}) {
+      SCOPED_TRACE(ProduceDebugText(delay_samples, filter_length_blocks));
 
-    std::array<float, kBlockSize> e;
-    std::array<float, kBlockSize> y;
-    FftData G;
+      std::array<float, kBlockSize> e;
+      std::array<float, kBlockSize> y;
+      FftData G;
 
-    RunFilterUpdateTest(500, delay_samples, blocks_with_echo_path_changes,
-                        blocks_with_saturation, false, &e, &y, &G);
+      RunFilterUpdateTest(500, delay_samples, filter_length_blocks,
+                          blocks_with_echo_path_changes, blocks_with_saturation,
+                          false, &e, &y, &G);
 
-    // Verify that the main filter is able to perform well.
-    EXPECT_LT(1000 * std::inner_product(e.begin(), e.end(), e.begin(), 0.f),
-              std::inner_product(y.begin(), y.end(), y.begin(), 0.f));
+      // Verify that the main filter is able to perform well.
+      EXPECT_LT(1000 * std::inner_product(e.begin(), e.end(), e.begin(), 0.f),
+                std::inner_product(y.begin(), y.end(), y.begin(), 0.f));
+    }
   }
 }
 
 // Verifies that the magnitude of the gain on average decreases for a
 // persistently exciting signal.
 TEST(MainFilterUpdateGain, DecreasingGain) {
-  std::vector<int> blocks_with_echo_path_changes;
-  std::vector<int> blocks_with_saturation;
+  for (size_t filter_length_blocks : {12, 20, 30}) {
+    SCOPED_TRACE(ProduceDebugText(filter_length_blocks));
+    std::vector<int> blocks_with_echo_path_changes;
+    std::vector<int> blocks_with_saturation;
 
-  std::array<float, kBlockSize> e;
-  std::array<float, kBlockSize> y;
-  FftData G_a;
-  FftData G_b;
-  FftData G_c;
-  std::array<float, kFftLengthBy2Plus1> G_a_power;
-  std::array<float, kFftLengthBy2Plus1> G_b_power;
-  std::array<float, kFftLengthBy2Plus1> G_c_power;
+    std::array<float, kBlockSize> e;
+    std::array<float, kBlockSize> y;
+    FftData G_a;
+    FftData G_b;
+    FftData G_c;
+    std::array<float, kFftLengthBy2Plus1> G_a_power;
+    std::array<float, kFftLengthBy2Plus1> G_b_power;
+    std::array<float, kFftLengthBy2Plus1> G_c_power;
 
-  RunFilterUpdateTest(100, 65, blocks_with_echo_path_changes,
-                      blocks_with_saturation, false, &e, &y, &G_a);
-  RunFilterUpdateTest(200, 65, blocks_with_echo_path_changes,
-                      blocks_with_saturation, false, &e, &y, &G_b);
-  RunFilterUpdateTest(300, 65, blocks_with_echo_path_changes,
-                      blocks_with_saturation, false, &e, &y, &G_c);
+    RunFilterUpdateTest(100, 65, filter_length_blocks,
+                        blocks_with_echo_path_changes, blocks_with_saturation,
+                        false, &e, &y, &G_a);
+    RunFilterUpdateTest(300, 65, filter_length_blocks,
+                        blocks_with_echo_path_changes, blocks_with_saturation,
+                        false, &e, &y, &G_b);
+    RunFilterUpdateTest(600, 65, filter_length_blocks,
+                        blocks_with_echo_path_changes, blocks_with_saturation,
+                        false, &e, &y, &G_c);
 
-  G_a.Spectrum(Aec3Optimization::kNone, G_a_power);
-  G_b.Spectrum(Aec3Optimization::kNone, G_b_power);
-  G_c.Spectrum(Aec3Optimization::kNone, G_c_power);
+    G_a.Spectrum(Aec3Optimization::kNone, G_a_power);
+    G_b.Spectrum(Aec3Optimization::kNone, G_b_power);
+    G_c.Spectrum(Aec3Optimization::kNone, G_c_power);
 
-  EXPECT_GT(std::accumulate(G_a_power.begin(), G_a_power.end(), 0.),
-            std::accumulate(G_b_power.begin(), G_b_power.end(), 0.));
+    EXPECT_GT(std::accumulate(G_a_power.begin(), G_a_power.end(), 0.),
+              std::accumulate(G_b_power.begin(), G_b_power.end(), 0.));
 
-  EXPECT_GT(std::accumulate(G_b_power.begin(), G_b_power.end(), 0.),
-            std::accumulate(G_c_power.begin(), G_c_power.end(), 0.));
+    EXPECT_GT(std::accumulate(G_b_power.begin(), G_b_power.end(), 0.),
+              std::accumulate(G_c_power.begin(), G_c_power.end(), 0.));
+  }
 }
 
 // Verifies that the gain is zero when there is saturation and that the internal
@@ -248,58 +269,69 @@ TEST(MainFilterUpdateGain, SaturationBehavior) {
     blocks_with_saturation.push_back(k);
   }
 
-  std::array<float, kBlockSize> e;
-  std::array<float, kBlockSize> y;
-  FftData G_a;
-  FftData G_b;
-  FftData G_a_ref;
-  G_a_ref.re.fill(0.f);
-  G_a_ref.im.fill(0.f);
+  for (size_t filter_length_blocks : {12, 20, 30}) {
+    SCOPED_TRACE(ProduceDebugText(filter_length_blocks));
+    std::array<float, kBlockSize> e;
+    std::array<float, kBlockSize> y;
+    FftData G_a;
+    FftData G_b;
+    FftData G_a_ref;
+    G_a_ref.re.fill(0.f);
+    G_a_ref.im.fill(0.f);
 
-  std::array<float, kFftLengthBy2Plus1> G_a_power;
-  std::array<float, kFftLengthBy2Plus1> G_b_power;
+    std::array<float, kFftLengthBy2Plus1> G_a_power;
+    std::array<float, kFftLengthBy2Plus1> G_b_power;
 
-  RunFilterUpdateTest(100, 65, blocks_with_echo_path_changes,
-                      blocks_with_saturation, false, &e, &y, &G_a);
+    RunFilterUpdateTest(100, 65, filter_length_blocks,
+                        blocks_with_echo_path_changes, blocks_with_saturation,
+                        false, &e, &y, &G_a);
 
-  EXPECT_EQ(G_a_ref.re, G_a.re);
-  EXPECT_EQ(G_a_ref.im, G_a.im);
+    EXPECT_EQ(G_a_ref.re, G_a.re);
+    EXPECT_EQ(G_a_ref.im, G_a.im);
 
-  RunFilterUpdateTest(99, 65, blocks_with_echo_path_changes,
-                      blocks_with_saturation, false, &e, &y, &G_a);
-  RunFilterUpdateTest(201, 65, blocks_with_echo_path_changes,
-                      blocks_with_saturation, false, &e, &y, &G_b);
+    RunFilterUpdateTest(99, 65, filter_length_blocks,
+                        blocks_with_echo_path_changes, blocks_with_saturation,
+                        false, &e, &y, &G_a);
+    RunFilterUpdateTest(201, 65, filter_length_blocks,
+                        blocks_with_echo_path_changes, blocks_with_saturation,
+                        false, &e, &y, &G_b);
 
-  G_a.Spectrum(Aec3Optimization::kNone, G_a_power);
-  G_b.Spectrum(Aec3Optimization::kNone, G_b_power);
+    G_a.Spectrum(Aec3Optimization::kNone, G_a_power);
+    G_b.Spectrum(Aec3Optimization::kNone, G_b_power);
 
-  EXPECT_LT(std::accumulate(G_a_power.begin(), G_a_power.end(), 0.),
-            std::accumulate(G_b_power.begin(), G_b_power.end(), 0.));
+    EXPECT_LT(std::accumulate(G_a_power.begin(), G_a_power.end(), 0.),
+              std::accumulate(G_b_power.begin(), G_b_power.end(), 0.));
+  }
 }
 
 // Verifies that the gain increases after an echo path change.
 TEST(MainFilterUpdateGain, EchoPathChangeBehavior) {
-  std::vector<int> blocks_with_echo_path_changes;
-  std::vector<int> blocks_with_saturation;
-  blocks_with_echo_path_changes.push_back(99);
+  for (size_t filter_length_blocks : {12, 20, 30}) {
+    SCOPED_TRACE(ProduceDebugText(filter_length_blocks));
+    std::vector<int> blocks_with_echo_path_changes;
+    std::vector<int> blocks_with_saturation;
+    blocks_with_echo_path_changes.push_back(99);
 
-  std::array<float, kBlockSize> e;
-  std::array<float, kBlockSize> y;
-  FftData G_a;
-  FftData G_b;
-  std::array<float, kFftLengthBy2Plus1> G_a_power;
-  std::array<float, kFftLengthBy2Plus1> G_b_power;
+    std::array<float, kBlockSize> e;
+    std::array<float, kBlockSize> y;
+    FftData G_a;
+    FftData G_b;
+    std::array<float, kFftLengthBy2Plus1> G_a_power;
+    std::array<float, kFftLengthBy2Plus1> G_b_power;
 
-  RunFilterUpdateTest(100, 65, blocks_with_echo_path_changes,
-                      blocks_with_saturation, false, &e, &y, &G_a);
-  RunFilterUpdateTest(101, 65, blocks_with_echo_path_changes,
-                      blocks_with_saturation, false, &e, &y, &G_b);
+    RunFilterUpdateTest(100, 65, filter_length_blocks,
+                        blocks_with_echo_path_changes, blocks_with_saturation,
+                        false, &e, &y, &G_a);
+    RunFilterUpdateTest(101, 65, filter_length_blocks,
+                        blocks_with_echo_path_changes, blocks_with_saturation,
+                        false, &e, &y, &G_b);
 
-  G_a.Spectrum(Aec3Optimization::kNone, G_a_power);
-  G_b.Spectrum(Aec3Optimization::kNone, G_b_power);
+    G_a.Spectrum(Aec3Optimization::kNone, G_a_power);
+    G_b.Spectrum(Aec3Optimization::kNone, G_b_power);
 
-  EXPECT_LT(std::accumulate(G_a_power.begin(), G_a_power.end(), 0.),
-            std::accumulate(G_b_power.begin(), G_b_power.end(), 0.));
+    EXPECT_LT(std::accumulate(G_a_power.begin(), G_a_power.end(), 0.),
+              std::accumulate(G_b_power.begin(), G_b_power.end(), 0.));
+  }
 }
 
 }  // namespace webrtc

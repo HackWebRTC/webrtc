@@ -60,7 +60,7 @@ TEST(SuppressionGain, BasicGainComputation) {
   EchoCanceller3Config config;
   AecState aec_state(config);
   ApmDataDumper data_dumper(42);
-  Subtractor subtractor(&data_dumper, DetectOptimization());
+  Subtractor subtractor(config, &data_dumper, DetectOptimization());
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
       RenderDelayBuffer::Create(config, 3));
 

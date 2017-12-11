@@ -43,8 +43,8 @@ TEST(AecState, NormalUsage) {
   converged_filter_frequency_response[2].fill(100.f);
   converged_filter_frequency_response[2][0] = 1.f;
 
-  std::array<float, kAdaptiveFilterTimeDomainLength> impulse_response;
-  impulse_response.fill(0.f);
+  std::vector<float> impulse_response(
+      GetTimeDomainLength(config.filter.length_blocks), 0.f);
 
   // Verify that linear AEC usability is false when the filter is diverged and
   // there is no external delay reported.
@@ -193,8 +193,8 @@ TEST(AecState, ConvergedFilterDelay) {
   std::vector<std::array<float, kFftLengthBy2Plus1>> frequency_response(
       kFilterLength);
 
-  std::array<float, kAdaptiveFilterTimeDomainLength> impulse_response;
-  impulse_response.fill(0.f);
+  std::vector<float> impulse_response(
+      GetTimeDomainLength(config.filter.length_blocks), 0.f);
 
   // Verify that the filter delay for a converged filter is properly identified.
   for (int k = 0; k < kFilterLength; ++k) {
@@ -232,13 +232,13 @@ TEST(AecState, ExternalDelay) {
   x.fill(0.f);
 
   std::vector<std::array<float, kFftLengthBy2Plus1>> frequency_response(
-      kAdaptiveFilterLength);
+      config.filter.length_blocks);
   for (auto& v : frequency_response) {
     v.fill(0.01f);
   }
 
-  std::array<float, kAdaptiveFilterTimeDomainLength> impulse_response;
-  impulse_response.fill(0.f);
+  std::vector<float> impulse_response(
+      GetTimeDomainLength(config.filter.length_blocks), 0.f);
 
   for (size_t k = 0; k < frequency_response.size() - 1; ++k) {
     state.HandleEchoPathChange(EchoPathVariability(

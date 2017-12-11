@@ -120,10 +120,7 @@ class AdaptiveFirFilter {
   }
 
   // Returns the estimate of the impulse response.
-  const std::array<float, kAdaptiveFilterTimeDomainLength>&
-  FilterImpulseResponse() const {
-    return h_;
-  }
+  const std::vector<float>& FilterImpulseResponse() const { return h_; }
 
   void DumpFilter(const char* name) {
     for (auto& H : H_) {
@@ -141,7 +138,7 @@ class AdaptiveFirFilter {
   const Aec3Optimization optimization_;
   std::vector<FftData> H_;
   std::vector<std::array<float, kFftLengthBy2Plus1>> H2_;
-  std::array<float, kAdaptiveFilterTimeDomainLength> h_;
+  std::vector<float> h_;
   std::array<float, kFftLengthBy2Plus1> erl_;
   size_t partition_to_constrain_ = 0;
 

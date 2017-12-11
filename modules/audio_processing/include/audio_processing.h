@@ -1158,6 +1158,10 @@ struct EchoCanceller3Config {
     size_t min_echo_path_delay_blocks = 5;
   } delay;
 
+  struct Filter {
+    size_t length_blocks = 12;
+  } filter;
+
   struct Erle {
     float min = 1.f;
     float max_l = 8.f;

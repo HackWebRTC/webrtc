@@ -38,10 +38,8 @@ constexpr size_t kFftLengthBy2Plus1 = kFftLengthBy2 + 1;
 constexpr size_t kFftLengthBy2Minus1 = kFftLengthBy2 - 1;
 constexpr size_t kFftLength = 2 * kFftLengthBy2;
 
-constexpr int kAdaptiveFilterLength = 12;
-constexpr int kUnknownDelayRenderWindowSize = 12;
-constexpr int kAdaptiveFilterTimeDomainLength =
-    kAdaptiveFilterLength * kFftLengthBy2;
+constexpr int kMaxAdaptiveFilterLength = 50;
+constexpr int kUnknownDelayRenderWindowSize = 30;
 constexpr int kRenderTransferQueueSizeFrames = 100;
 
 constexpr size_t kMaxNumBands = 3;
@@ -72,6 +70,10 @@ constexpr bool ValidFullBandRate(int sample_rate_hz) {
          sample_rate_hz == 32000 || sample_rate_hz == 48000;
 }
 
+constexpr int GetTimeDomainLength(int filter_length_blocks) {
+  return filter_length_blocks * kFftLengthBy2;
+}
+
 constexpr size_t GetDownSampledBufferSize(size_t down_sampling_factor,
                                           size_t num_matched_filters) {
   return kBlockSize / down_sampling_factor *
@@ -80,10 +82,11 @@ constexpr size_t GetDownSampledBufferSize(size_t down_sampling_factor,
 }
 
 constexpr size_t GetRenderDelayBufferSize(size_t down_sampling_factor,
-                                          size_t num_matched_filters) {
+                                          size_t num_matched_filters,
+                                          size_t filter_length_blocks) {
   return GetDownSampledBufferSize(down_sampling_factor, num_matched_filters) /
              (kBlockSize / down_sampling_factor) +
-         kAdaptiveFilterLength + 1;
+         filter_length_blocks + 1;
 }
 
 // Detects what kind of optimizations to use for the code.

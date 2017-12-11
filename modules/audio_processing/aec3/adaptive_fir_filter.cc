@@ -415,10 +415,10 @@ AdaptiveFirFilter::AdaptiveFirFilter(size_t size_partitions,
       fft_(),
       optimization_(optimization),
       H_(size_partitions),
-      H2_(size_partitions, std::array<float, kFftLengthBy2Plus1>()) {
+      H2_(size_partitions, std::array<float, kFftLengthBy2Plus1>()),
+      h_(GetTimeDomainLength(size_partitions), 0.f) {
   RTC_DCHECK(data_dumper_);
 
-  h_.fill(0.f);
   for (auto& H_j : H_) {
     H_j.Clear();
   }
@@ -431,7 +431,7 @@ AdaptiveFirFilter::AdaptiveFirFilter(size_t size_partitions,
 AdaptiveFirFilter::~AdaptiveFirFilter() = default;
 
 void AdaptiveFirFilter::HandleEchoPathChange() {
-  h_.fill(0.f);
+  std::fill(h_.begin(), h_.end(), 0.f);
   for (auto& H_j : H_) {
     H_j.Clear();
   }
