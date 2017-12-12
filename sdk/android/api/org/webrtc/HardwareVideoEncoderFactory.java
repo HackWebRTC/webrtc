@@ -259,7 +259,8 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
   }
 
   private boolean isH264HighProfileSupported(MediaCodecInfo info) {
-    return enableH264HighProfile && info.getName().startsWith(QCOM_PREFIX);
+    return enableH264HighProfile && Build.VERSION.SDK_INT > Build.VERSION_CODES.M
+        && info.getName().startsWith(EXYNOS_PREFIX);
   }
 
   private Map<String, String> getCodecProperties(VideoCodecType type, boolean highProfile) {

@@ -40,8 +40,7 @@ class VideoProcessorIntegrationTestMediaCodec
   }
 };
 
-// TODO(bugs.webrtc.org/8601): Fix HW encoder and re-enable.
-TEST_F(VideoProcessorIntegrationTestMediaCodec, DISABLED_ForemanCif500kbpsVp8) {
+TEST_F(VideoProcessorIntegrationTestMediaCodec, ForemanCif500kbpsVp8) {
   config_.SetCodecSettings(kVideoCodecVP8, 1, false, false, false, false, false,
                            352, 288);
 
@@ -60,9 +59,7 @@ TEST_F(VideoProcessorIntegrationTestMediaCodec, DISABLED_ForemanCif500kbpsVp8) {
                               kNoVisualizationParams);
 }
 
-// TODO(bugs.webrtc.org/8601): Fix HW encoder and re-enable.
-TEST_F(VideoProcessorIntegrationTestMediaCodec,
-       DISABLED_ForemanCif500kbpsH264CBP) {
+TEST_F(VideoProcessorIntegrationTestMediaCodec, ForemanCif500kbpsH264CBP) {
   config_.encoded_frame_checker = &h264_keyframe_checker_;
   config_.SetCodecSettings(kVideoCodecH264, 1, false, false, false, false,
                            false, 352, 288);
