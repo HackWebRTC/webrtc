@@ -12,6 +12,7 @@
 
 #include <math.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include <algorithm>
 #include <sstream>

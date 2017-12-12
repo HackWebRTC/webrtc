@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <string>
+#include <cstdio>
 
 #include "logging/rtc_event_log/events/rtc_event_alr_state.h"
 #include "logging/rtc_event_log/rtc_event_log.h"

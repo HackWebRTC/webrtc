@@ -10,6 +10,7 @@
 
 #include "media/engine/videoencodersoftwarefallbackwrapper.h"
 
+#include <cstdio>
 #include <utility>
 
 #include "media/base/h264_profile_level_id.h"

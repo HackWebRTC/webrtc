@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <string>
 
 #include "logging/rtc_event_log/events/rtc_event_bwe_update_delay_based.h"
