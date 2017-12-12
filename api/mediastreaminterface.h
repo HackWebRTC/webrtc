@@ -258,7 +258,7 @@ class AudioProcessorInterface : public rtc::RefCountInterface {
   };
 
   // Get audio processor statistics.
-  virtual void GetStats(AudioProcessorStats* stats) = 0;
+  virtual void GetStats(AudioProcessorStats* stats);
 
   // Get audio processor statistics. The |has_remote_tracks| argument should be
   // set if there are active remote tracks (this would usually be true during
