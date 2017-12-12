@@ -18,7 +18,6 @@
 #include "sdk/android/generated_peerconnection_jni/jni/RTCStatsCollectorCallback_jni.h"
 #include "sdk/android/generated_peerconnection_jni/jni/RTCStatsReport_jni.h"
 #include "sdk/android/generated_peerconnection_jni/jni/RTCStats_jni.h"
-#include "sdk/android/src/jni/classreferenceholder.h"
 
 namespace webrtc {
 namespace jni {
@@ -116,8 +115,8 @@ jobject NativeToJavaRtcStatsReport(
     const rtc::scoped_refptr<const RTCStatsReport>& report) {
   jobject j_stats_map =
       NativeToJavaMap(env, *report, [](JNIEnv* env, const RTCStats& stats) {
-        return std::pair<jobject, jobject>(NativeToJavaString(env, stats.id()),
-                                           NativeToJavaRtcStats(env, stats));
+        return std::make_pair(NativeToJavaString(env, stats.id()),
+                              NativeToJavaRtcStats(env, stats));
       });
   return Java_RTCStatsReport_create(env, report->timestamp_us(), j_stats_map);
 }

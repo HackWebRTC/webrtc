@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 import org.webrtc.EglBase14;
 import org.webrtc.VideoFrame;
 
-// Java-side of peerconnection_jni.cc:MediaCodecVideoEncoder.
+// Java-side of peerconnection.cc:MediaCodecVideoEncoder.
 // This class is an implementation detail of the Java PeerConnection API.
 @TargetApi(19)
 @SuppressWarnings("deprecation")
@@ -658,7 +658,7 @@ public class MediaCodecVideoEncoder {
         if (dataV.capacity() < strideV * chromaHeight) {
           throw new RuntimeException("V-plane buffer size too small.");
         }
-        fillNativeBuffer(
+        fillInputBufferNative(
             nativeEncoder, bufferIndex, dataY, strideY, dataU, strideU, dataV, strideV);
         i420Buffer.release();
         // I420 consists of one full-resolution and two half-resolution planes.
@@ -993,6 +993,6 @@ public class MediaCodecVideoEncoder {
   }
 
   /** Fills an inputBuffer with the given index with data from the byte buffers. */
-  private static native void fillNativeBuffer(long nativeEncoder, int inputBuffer, ByteBuffer dataY,
-      int strideY, ByteBuffer dataU, int strideU, ByteBuffer dataV, int strideV);
+  private static native void fillInputBufferNative(long nativeEncoder, int inputBuffer,
+      ByteBuffer dataY, int strideY, ByteBuffer dataU, int strideU, ByteBuffer dataV, int strideV);
 }

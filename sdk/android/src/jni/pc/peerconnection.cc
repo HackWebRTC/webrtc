@@ -42,27 +42,24 @@
 #include "sdk/android/generated_peerconnection_jni/jni/MediaStream_jni.h"
 #include "sdk/android/generated_peerconnection_jni/jni/PeerConnection_jni.h"
 #include "sdk/android/generated_peerconnection_jni/jni/RtpSender_jni.h"
-#include "sdk/android/src/jni/classreferenceholder.h"
+#include "sdk/android/generated_peerconnection_jni/jni/TurnCustomizer_jni.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 #include "sdk/android/src/jni/pc/datachannel.h"
-#include "sdk/android/src/jni/pc/java_native_conversion.h"
-#include "sdk/android/src/jni/pc/mediaconstraints_jni.h"
+#include "sdk/android/src/jni/pc/icecandidate.h"
+#include "sdk/android/src/jni/pc/mediaconstraints.h"
 #include "sdk/android/src/jni/pc/rtcstatscollectorcallbackwrapper.h"
-#include "sdk/android/src/jni/pc/sdpobserver_jni.h"
-#include "sdk/android/src/jni/pc/statsobserver_jni.h"
+#include "sdk/android/src/jni/pc/sdpobserver.h"
+#include "sdk/android/src/jni/pc/sessiondescription.h"
+#include "sdk/android/src/jni/pc/statsobserver.h"
 
 namespace webrtc {
 namespace jni {
 
 namespace {
 
-rtc::scoped_refptr<PeerConnectionInterface> ExtractNativePC(JNIEnv* jni,
-                                                            jobject j_pc) {
-  jfieldID native_pc_id =
-      GetFieldID(jni, GetObjectClass(jni, j_pc), "nativePeerConnection", "J");
-  jlong j_p = GetLongField(jni, j_pc, native_pc_id);
-  return rtc::scoped_refptr<PeerConnectionInterface>(
-      reinterpret_cast<PeerConnectionInterface*>(j_p));
+PeerConnectionInterface* ExtractNativePC(JNIEnv* jni, jobject j_pc) {
+  return reinterpret_cast<PeerConnectionInterface*>(
+      Java_PeerConnection_getNativePeerConnection(jni, j_pc));
 }
 
 jobject NativeToJavaRtpSender(JNIEnv* env,
@@ -74,49 +71,23 @@ jobject NativeToJavaRtpSender(JNIEnv* env,
   return Java_RtpSender_Constructor(env, jlongFromPointer(sender.release()));
 }
 
-// Convenience, used since callbacks occur on the signaling thread, which may
-// be a non-Java thread.
-JNIEnv* jni() {
-  return AttachCurrentThreadIfNeeded();
-}
-
-}  // namespace
-
-void JavaToNativeIceServers(JNIEnv* jni,
-                            jobject j_ice_servers,
-                            PeerConnectionInterface::IceServers* ice_servers) {
+PeerConnectionInterface::IceServers JavaToNativeIceServers(
+    JNIEnv* jni,
+    jobject j_ice_servers) {
+  PeerConnectionInterface::IceServers ice_servers;
   for (jobject j_ice_server : Iterable(jni, j_ice_servers)) {
-    jclass j_ice_server_class = GetObjectClass(jni, j_ice_server);
-    jfieldID j_ice_server_urls_id =
-        GetFieldID(jni, j_ice_server_class, "urls", "Ljava/util/List;");
-    jfieldID j_ice_server_username_id =
-        GetFieldID(jni, j_ice_server_class, "username", "Ljava/lang/String;");
-    jfieldID j_ice_server_password_id =
-        GetFieldID(jni, j_ice_server_class, "password", "Ljava/lang/String;");
-    jfieldID j_ice_server_tls_cert_policy_id =
-        GetFieldID(jni, j_ice_server_class, "tlsCertPolicy",
-                   "Lorg/webrtc/PeerConnection$TlsCertPolicy;");
     jobject j_ice_server_tls_cert_policy =
-        GetObjectField(jni, j_ice_server, j_ice_server_tls_cert_policy_id);
-    jfieldID j_ice_server_hostname_id =
-        GetFieldID(jni, j_ice_server_class, "hostname", "Ljava/lang/String;");
-    jfieldID j_ice_server_tls_alpn_protocols_id = GetFieldID(
-        jni, j_ice_server_class, "tlsAlpnProtocols", "Ljava/util/List;");
-    jfieldID j_ice_server_tls_elliptic_curves_id = GetFieldID(
-        jni, j_ice_server_class, "tlsEllipticCurves", "Ljava/util/List;");
-    jobject urls = GetObjectField(jni, j_ice_server, j_ice_server_urls_id);
-    jstring username = reinterpret_cast<jstring>(
-        GetObjectField(jni, j_ice_server, j_ice_server_username_id));
-    jstring password = reinterpret_cast<jstring>(
-        GetObjectField(jni, j_ice_server, j_ice_server_password_id));
+        Java_IceServer_getTlsCertPolicy(jni, j_ice_server);
+    jobject urls = Java_IceServer_getUrls(jni, j_ice_server);
+    jstring username = Java_IceServer_getUsername(jni, j_ice_server);
+    jstring password = Java_IceServer_getPassword(jni, j_ice_server);
     PeerConnectionInterface::TlsCertPolicy tls_cert_policy =
         JavaToNativeTlsCertPolicy(jni, j_ice_server_tls_cert_policy);
-    jstring hostname = reinterpret_cast<jstring>(
-        GetObjectField(jni, j_ice_server, j_ice_server_hostname_id));
-    jobject tls_alpn_protocols = GetNullableObjectField(
-        jni, j_ice_server, j_ice_server_tls_alpn_protocols_id);
-    jobject tls_elliptic_curves = GetNullableObjectField(
-        jni, j_ice_server, j_ice_server_tls_elliptic_curves_id);
+    jstring hostname = Java_IceServer_getHostname(jni, j_ice_server);
+    jobject tls_alpn_protocols =
+        Java_IceServer_getTlsAlpnProtocols(jni, j_ice_server);
+    jobject tls_elliptic_curves =
+        Java_IceServer_getTlsEllipticCurves(jni, j_ice_server);
     PeerConnectionInterface::IceServer server;
     server.urls = JavaToStdVectorStrings(jni, urls);
     server.username = JavaToStdString(jni, username);
@@ -126,102 +97,33 @@ void JavaToNativeIceServers(JNIEnv* jni,
     server.tls_alpn_protocols = JavaToStdVectorStrings(jni, tls_alpn_protocols);
     server.tls_elliptic_curves =
         JavaToStdVectorStrings(jni, tls_elliptic_curves);
-    ice_servers->push_back(server);
+    ice_servers.push_back(server);
   }
+  return ice_servers;
 }
+
+}  // namespace
 
 void JavaToNativeRTCConfiguration(
     JNIEnv* jni,
     jobject j_rtc_config,
     PeerConnectionInterface::RTCConfiguration* rtc_config) {
-  jclass j_rtc_config_class = GetObjectClass(jni, j_rtc_config);
-
-  jfieldID j_ice_transports_type_id =
-      GetFieldID(jni, j_rtc_config_class, "iceTransportsType",
-                 "Lorg/webrtc/PeerConnection$IceTransportsType;");
   jobject j_ice_transports_type =
-      GetObjectField(jni, j_rtc_config, j_ice_transports_type_id);
-
-  jfieldID j_bundle_policy_id =
-      GetFieldID(jni, j_rtc_config_class, "bundlePolicy",
-                 "Lorg/webrtc/PeerConnection$BundlePolicy;");
+      Java_RTCConfiguration_getIceTransportsType(jni, j_rtc_config);
   jobject j_bundle_policy =
-      GetObjectField(jni, j_rtc_config, j_bundle_policy_id);
-
-  jfieldID j_rtcp_mux_policy_id =
-      GetFieldID(jni, j_rtc_config_class, "rtcpMuxPolicy",
-                 "Lorg/webrtc/PeerConnection$RtcpMuxPolicy;");
+      Java_RTCConfiguration_getBundlePolicy(jni, j_rtc_config);
   jobject j_rtcp_mux_policy =
-      GetObjectField(jni, j_rtc_config, j_rtcp_mux_policy_id);
-
-  jfieldID j_tcp_candidate_policy_id =
-      GetFieldID(jni, j_rtc_config_class, "tcpCandidatePolicy",
-                 "Lorg/webrtc/PeerConnection$TcpCandidatePolicy;");
+      Java_RTCConfiguration_getRtcpMuxPolicy(jni, j_rtc_config);
   jobject j_tcp_candidate_policy =
-      GetObjectField(jni, j_rtc_config, j_tcp_candidate_policy_id);
-
-  jfieldID j_candidate_network_policy_id =
-      GetFieldID(jni, j_rtc_config_class, "candidateNetworkPolicy",
-                 "Lorg/webrtc/PeerConnection$CandidateNetworkPolicy;");
+      Java_RTCConfiguration_getTcpCandidatePolicy(jni, j_rtc_config);
   jobject j_candidate_network_policy =
-      GetObjectField(jni, j_rtc_config, j_candidate_network_policy_id);
-
-  jfieldID j_ice_servers_id =
-      GetFieldID(jni, j_rtc_config_class, "iceServers", "Ljava/util/List;");
-  jobject j_ice_servers = GetObjectField(jni, j_rtc_config, j_ice_servers_id);
-
-  jfieldID j_audio_jitter_buffer_max_packets_id =
-      GetFieldID(jni, j_rtc_config_class, "audioJitterBufferMaxPackets", "I");
-  jfieldID j_audio_jitter_buffer_fast_accelerate_id = GetFieldID(
-      jni, j_rtc_config_class, "audioJitterBufferFastAccelerate", "Z");
-
-  jfieldID j_ice_connection_receiving_timeout_id =
-      GetFieldID(jni, j_rtc_config_class, "iceConnectionReceivingTimeout", "I");
-
-  jfieldID j_ice_backup_candidate_pair_ping_interval_id = GetFieldID(
-      jni, j_rtc_config_class, "iceBackupCandidatePairPingInterval", "I");
-
-  jfieldID j_continual_gathering_policy_id =
-      GetFieldID(jni, j_rtc_config_class, "continualGatheringPolicy",
-                 "Lorg/webrtc/PeerConnection$ContinualGatheringPolicy;");
+      Java_RTCConfiguration_getCandidateNetworkPolicy(jni, j_rtc_config);
+  jobject j_ice_servers =
+      Java_RTCConfiguration_getIceServers(jni, j_rtc_config);
   jobject j_continual_gathering_policy =
-      GetObjectField(jni, j_rtc_config, j_continual_gathering_policy_id);
-
-  jfieldID j_ice_candidate_pool_size_id =
-      GetFieldID(jni, j_rtc_config_class, "iceCandidatePoolSize", "I");
-  jfieldID j_presume_writable_when_fully_relayed_id = GetFieldID(
-      jni, j_rtc_config_class, "presumeWritableWhenFullyRelayed", "Z");
-
-  jfieldID j_prune_turn_ports_id =
-      GetFieldID(jni, j_rtc_config_class, "pruneTurnPorts", "Z");
-
-  jfieldID j_ice_check_min_interval_id = GetFieldID(
-      jni, j_rtc_config_class, "iceCheckMinInterval", "Ljava/lang/Integer;");
-
-  jfieldID j_disable_ipv6_on_wifi_id =
-      GetFieldID(jni, j_rtc_config_class, "disableIPv6OnWifi", "Z");
-
-  jfieldID j_max_ipv6_networks_id =
-      GetFieldID(jni, j_rtc_config_class, "maxIPv6Networks", "I");
-
-  jfieldID j_ice_regather_interval_range_id =
-      GetFieldID(jni, j_rtc_config_class, "iceRegatherIntervalRange",
-                 "Lorg/webrtc/PeerConnection$IntervalRange;");
-  jclass j_interval_range_class =
-      jni->FindClass("org/webrtc/PeerConnection$IntervalRange");
-  jmethodID get_min_id =
-      GetMethodID(jni, j_interval_range_class, "getMin", "()I");
-  jmethodID get_max_id =
-      GetMethodID(jni, j_interval_range_class, "getMax", "()I");
-
-  jfieldID j_turn_customizer_type_id = GetFieldID(
-      jni, j_rtc_config_class, "turnCustomizer", "Lorg/webrtc/TurnCustomizer;");
+      Java_RTCConfiguration_getContinualGatheringPolicy(jni, j_rtc_config);
   jobject j_turn_customizer =
-      GetNullableObjectField(jni, j_rtc_config, j_turn_customizer_type_id);
-
-  jclass j_turn_customizer_class = jni->FindClass("org/webrtc/TurnCustomizer");
-  jfieldID j_native_turn_customizer_id =
-      GetFieldID(jni, j_turn_customizer_class, "nativeTurnCustomizer", "J");
+      Java_RTCConfiguration_getTurnCustomizer(jni, j_rtc_config);
 
   rtc_config->type = JavaToNativeIceTransportsType(jni, j_ice_transports_type);
   rtc_config->bundle_policy = JavaToNativeBundlePolicy(jni, j_bundle_policy);
@@ -231,43 +133,51 @@ void JavaToNativeRTCConfiguration(
       JavaToNativeTcpCandidatePolicy(jni, j_tcp_candidate_policy);
   rtc_config->candidate_network_policy =
       JavaToNativeCandidateNetworkPolicy(jni, j_candidate_network_policy);
-  JavaToNativeIceServers(jni, j_ice_servers, &rtc_config->servers);
+  rtc_config->servers = JavaToNativeIceServers(jni, j_ice_servers);
   rtc_config->audio_jitter_buffer_max_packets =
-      GetIntField(jni, j_rtc_config, j_audio_jitter_buffer_max_packets_id);
-  rtc_config->audio_jitter_buffer_fast_accelerate = GetBooleanField(
-      jni, j_rtc_config, j_audio_jitter_buffer_fast_accelerate_id);
+      Java_RTCConfiguration_getAudioJitterBufferMaxPackets(jni, j_rtc_config);
+  rtc_config->audio_jitter_buffer_fast_accelerate =
+      Java_RTCConfiguration_getAudioJitterBufferFastAccelerate(jni,
+                                                               j_rtc_config);
   rtc_config->ice_connection_receiving_timeout =
-      GetIntField(jni, j_rtc_config, j_ice_connection_receiving_timeout_id);
-  rtc_config->ice_backup_candidate_pair_ping_interval = GetIntField(
-      jni, j_rtc_config, j_ice_backup_candidate_pair_ping_interval_id);
+      Java_RTCConfiguration_getIceConnectionReceivingTimeout(jni, j_rtc_config);
+  rtc_config->ice_backup_candidate_pair_ping_interval =
+      Java_RTCConfiguration_getIceBackupCandidatePairPingInterval(jni,
+                                                                  j_rtc_config);
   rtc_config->continual_gathering_policy =
       JavaToNativeContinualGatheringPolicy(jni, j_continual_gathering_policy);
   rtc_config->ice_candidate_pool_size =
-      GetIntField(jni, j_rtc_config, j_ice_candidate_pool_size_id);
+      Java_RTCConfiguration_getIceCandidatePoolSize(jni, j_rtc_config);
   rtc_config->prune_turn_ports =
-      GetBooleanField(jni, j_rtc_config, j_prune_turn_ports_id);
-  rtc_config->presume_writable_when_fully_relayed = GetBooleanField(
-      jni, j_rtc_config, j_presume_writable_when_fully_relayed_id);
+      Java_RTCConfiguration_getPruneTurnPorts(jni, j_rtc_config);
+  rtc_config->presume_writable_when_fully_relayed =
+      Java_RTCConfiguration_getPresumeWritableWhenFullyRelayed(jni,
+                                                               j_rtc_config);
   jobject j_ice_check_min_interval =
-      GetNullableObjectField(jni, j_rtc_config, j_ice_check_min_interval_id);
+      Java_RTCConfiguration_getIceCheckMinInterval(jni, j_rtc_config);
   rtc_config->ice_check_min_interval =
       JavaToNativeOptionalInt(jni, j_ice_check_min_interval);
   rtc_config->disable_ipv6_on_wifi =
-      GetBooleanField(jni, j_rtc_config, j_disable_ipv6_on_wifi_id);
+      Java_RTCConfiguration_getDisableIPv6OnWifi(jni, j_rtc_config);
   rtc_config->max_ipv6_networks =
-      GetIntField(jni, j_rtc_config, j_max_ipv6_networks_id);
-  jobject j_ice_regather_interval_range = GetNullableObjectField(
-      jni, j_rtc_config, j_ice_regather_interval_range_id);
+      Java_RTCConfiguration_getMaxIPv6Networks(jni, j_rtc_config);
+  jobject j_ice_regather_interval_range =
+      Java_RTCConfiguration_getIceRegatherIntervalRange(jni, j_rtc_config);
   if (!IsNull(jni, j_ice_regather_interval_range)) {
-    int min = jni->CallIntMethod(j_ice_regather_interval_range, get_min_id);
-    int max = jni->CallIntMethod(j_ice_regather_interval_range, get_max_id);
+    int min = Java_IntervalRange_getMin(jni, j_ice_regather_interval_range);
+    int max = Java_IntervalRange_getMax(jni, j_ice_regather_interval_range);
     rtc_config->ice_regather_interval_range.emplace(min, max);
   }
 
   if (!IsNull(jni, j_turn_customizer)) {
     rtc_config->turn_customizer = reinterpret_cast<webrtc::TurnCustomizer*>(
-        GetLongField(jni, j_turn_customizer, j_native_turn_customizer_id));
+        Java_TurnCustomizer_getNativeTurnCustomizer(jni, j_turn_customizer));
   }
+}
+
+rtc::KeyType GetRtcConfigKeyType(JNIEnv* env, jobject j_rtc_config) {
+  return JavaToNativeKeyType(
+      env, Java_RTCConfiguration_getKeyType(env, j_rtc_config));
 }
 
 PeerConnectionObserverJni::PeerConnectionObserverJni(JNIEnv* jni,
@@ -275,7 +185,8 @@ PeerConnectionObserverJni::PeerConnectionObserverJni(JNIEnv* jni,
     : j_observer_global_(jni, j_observer) {}
 
 PeerConnectionObserverJni::~PeerConnectionObserverJni() {
-  ScopedLocalRefFrame local_ref_frame(jni());
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  ScopedLocalRefFrame local_ref_frame(env);
   while (!remote_streams_.empty())
     DisposeRemoteStream(remote_streams_.begin());
 }
@@ -380,7 +291,8 @@ void PeerConnectionObserverJni::AddNativeVideoTrackToJavaStream(
 void PeerConnectionObserverJni::OnAudioTrackAddedToStream(
     AudioTrackInterface* track,
     MediaStreamInterface* stream) {
-  ScopedLocalRefFrame local_ref_frame(jni());
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  ScopedLocalRefFrame local_ref_frame(env);
   jobject j_stream = GetOrCreateJavaStream(stream);
   AddNativeAudioTrackToJavaStream(track, j_stream);
 }
@@ -388,7 +300,8 @@ void PeerConnectionObserverJni::OnAudioTrackAddedToStream(
 void PeerConnectionObserverJni::OnVideoTrackAddedToStream(
     VideoTrackInterface* track,
     MediaStreamInterface* stream) {
-  ScopedLocalRefFrame local_ref_frame(jni());
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  ScopedLocalRefFrame local_ref_frame(env);
   jobject j_stream = GetOrCreateJavaStream(stream);
   AddNativeVideoTrackToJavaStream(track, j_stream);
 }
@@ -489,10 +402,11 @@ jobject PeerConnectionObserverJni::GetOrCreateJavaStream(
   // Java MediaStream holds one reference. Corresponding Release() is in
   // MediaStream_free, triggered by MediaStream.dispose().
   stream->AddRef();
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
   jobject j_stream =
-      Java_MediaStream_Constructor(jni(), jlongFromPointer(stream.get()));
+      Java_MediaStream_Constructor(env, jlongFromPointer(stream.get()));
 
-  remote_streams_[stream] = NewGlobalRef(jni(), j_stream);
+  remote_streams_[stream] = NewGlobalRef(env, j_stream);
   return j_stream;
 }
 
@@ -764,32 +678,26 @@ JNI_FUNCTION_DECLARATION(void,
 
 JNI_FUNCTION_DECLARATION(jobject,
                          PeerConnection_signalingState,
-                         JNIEnv* jni,
+                         JNIEnv* env,
                          jobject j_pc) {
-  PeerConnectionInterface::SignalingState state =
-      ExtractNativePC(jni, j_pc)->signaling_state();
-  return JavaEnumFromIndexAndClassName(jni, "PeerConnection$SignalingState",
-                                       state);
+  return Java_SignalingState_fromNativeIndex(
+      env, ExtractNativePC(env, j_pc)->signaling_state());
 }
 
 JNI_FUNCTION_DECLARATION(jobject,
                          PeerConnection_iceConnectionState,
-                         JNIEnv* jni,
+                         JNIEnv* env,
                          jobject j_pc) {
-  PeerConnectionInterface::IceConnectionState state =
-      ExtractNativePC(jni, j_pc)->ice_connection_state();
-  return JavaEnumFromIndexAndClassName(jni, "PeerConnection$IceConnectionState",
-                                       state);
+  return Java_IceConnectionState_fromNativeIndex(
+      env, ExtractNativePC(env, j_pc)->ice_connection_state());
 }
 
 JNI_FUNCTION_DECLARATION(jobject,
                          PeerConnection_iceGatheringState,
-                         JNIEnv* jni,
+                         JNIEnv* env,
                          jobject j_pc) {
-  PeerConnectionInterface::IceGatheringState state =
-      ExtractNativePC(jni, j_pc)->ice_gathering_state();
-  return JavaEnumFromIndexAndClassName(jni, "PeerConnection$IceGatheringState",
-                                       state);
+  return Java_IceGatheringState_fromNativeIndex(
+      env, ExtractNativePC(env, j_pc)->ice_gathering_state());
 }
 
 JNI_FUNCTION_DECLARATION(void,

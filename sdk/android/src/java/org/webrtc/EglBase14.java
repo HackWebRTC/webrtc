@@ -20,6 +20,7 @@ import android.opengl.EGLExt;
 import android.opengl.EGLSurface;
 import android.os.Build;
 import android.view.Surface;
+import org.webrtc.EglBase;
 
 /**
  * Holds EGL state and utility methods for handling an EGL14 EGLContext, an EGLDisplay,
@@ -58,6 +59,11 @@ class EglBase14 implements EglBase {
 
     public Context(android.opengl.EGLContext eglContext) {
       this.egl14Context = eglContext;
+    }
+
+    @CalledByNative("Context")
+    static boolean isEgl14Context(EglBase.Context context) {
+      return context instanceof EglBase14.Context;
     }
   }
 

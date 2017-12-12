@@ -33,12 +33,6 @@
   RTC_CHECK(!jni->ExceptionCheck()) \
       << (jni->ExceptionDescribe(), jni->ExceptionClear(), "")
 
-// Helper that calls ptr->Release() and aborts the process with a useful
-// message if that didn't actually delete *ptr because of extra refcounts.
-#define CHECK_RELEASE(ptr)                                                   \
-  RTC_CHECK((ptr)->Release() == rtc::RefCountReleaseStatus::kDroppedLastRef) \
-      << "Unexpected refcount."
-
 // Convenience macro defining JNI-accessible methods in the org.webrtc package.
 // Eliminates unnecessary boilerplate and line-wraps, reducing visual clutter.
 #define JNI_FUNCTION_DECLARATION(rettype, name, ...) \
@@ -62,39 +56,6 @@ JNIEnv* AttachCurrentThreadIfNeeded();
 // function expecting a 64-bit param) picks up garbage in the high 32 bits.
 jlong jlongFromPointer(void* ptr);
 
-// JNIEnv-helper methods that RTC_CHECK success: no Java exception thrown and
-// found object/class/method/field is non-null.
-jmethodID GetMethodID(
-    JNIEnv* jni, jclass c, const std::string& name, const char* signature);
-
-jmethodID GetStaticMethodID(
-    JNIEnv* jni, jclass c, const char* name, const char* signature);
-
-jfieldID GetFieldID(JNIEnv* jni, jclass c, const char* name,
-                    const char* signature);
-
-jfieldID GetStaticFieldID(JNIEnv* jni,
-                          jclass c,
-                          const char* name,
-                          const char* signature);
-
-jclass GetObjectClass(JNIEnv* jni, jobject object);
-
-// Throws an exception if the object field is null.
-jobject GetObjectField(JNIEnv* jni, jobject object, jfieldID id);
-
-jobject GetStaticObjectField(JNIEnv* jni, jclass c, jfieldID id);
-
-jobject GetNullableObjectField(JNIEnv* jni, jobject object, jfieldID id);
-
-jstring GetStringField(JNIEnv* jni, jobject object, jfieldID id);
-
-jlong GetLongField(JNIEnv* jni, jobject object, jfieldID id);
-
-jint GetIntField(JNIEnv* jni, jobject object, jfieldID id);
-
-bool GetBooleanField(JNIEnv* jni, jobject object, jfieldID id);
-
 // Returns true if |obj| == null in Java.
 bool IsNull(JNIEnv* jni, jobject obj);
 
@@ -106,6 +67,7 @@ std::string JavaToStdString(JNIEnv* jni, const jstring& j_string);
 std::vector<std::string> JavaToStdVectorStrings(JNIEnv* jni, jobject list);
 
 rtc::Optional<int32_t> JavaToNativeOptionalInt(JNIEnv* jni, jobject integer);
+int64_t JavaToNativeLong(JNIEnv* env, jobject j_long);
 
 jobject NativeToJavaBoolean(JNIEnv* env, bool b);
 jobject NativeToJavaInteger(JNIEnv* jni, int32_t i);
@@ -115,12 +77,6 @@ jobject NativeToJavaDouble(JNIEnv* env, double d);
 jstring NativeToJavaString(JNIEnv* jni, const std::string& native);
 jobject NativeToJavaInteger(JNIEnv* jni,
                             const rtc::Optional<int32_t>& optional_int);
-
-// Return the (singleton) Java Enum object corresponding to |index|;
-// |state_class_fragment| is something like "MediaSource$State".
-jobject JavaEnumFromIndexAndClassName(JNIEnv* jni,
-                                      const std::string& state_class_fragment,
-                                      int index);
 
 // Parses Map<String, String> to std::map<std::string, std::string>.
 std::map<std::string, std::string> JavaToStdMapStrings(JNIEnv* jni,

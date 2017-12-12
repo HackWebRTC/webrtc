@@ -16,7 +16,9 @@
 #ifndef SDK_ANDROID_SRC_JNI_JNI_GENERATOR_HELPER_H_
 #define SDK_ANDROID_SRC_JNI_JNI_GENERATOR_HELPER_H_
 
-#include "sdk/android/src/jni/jni_helpers.h"
+#include <jni.h>
+
+#include "rtc_base/checks.h"
 
 #define CHECK_CLAZZ(env, jcaller, clazz, ...) RTC_DCHECK(clazz);
 #define CHECK_NATIVE_PTR(env, jcaller, native_ptr, method_name, ...) \
@@ -25,6 +27,10 @@
 #define BASE_EXPORT
 #define JNI_REGISTRATION_EXPORT __attribute__((visibility("default")))
 #define JNI_GENERATOR_EXPORT extern "C" JNIEXPORT JNICALL
+
+#define CHECK_EXCEPTION(jni)        \
+  RTC_CHECK(!jni->ExceptionCheck()) \
+      << (jni->ExceptionDescribe(), jni->ExceptionClear(), "")
 
 namespace jni_generator {
 inline void CheckException(JNIEnv* env) {

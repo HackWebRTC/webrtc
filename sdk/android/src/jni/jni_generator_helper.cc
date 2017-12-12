@@ -63,11 +63,13 @@ jmethodID MethodID::LazyGet(JNIEnv* env,
       rtc::AtomicOps::AcquireLoadPtr(atomic_method_id);
   if (value)
     return reinterpret_cast<jmethodID>(value);
-  jmethodID id =
-      (type == MethodID::TYPE_STATIC)
-          ? webrtc::jni::GetStaticMethodID(env, clazz, method_name,
-                                           jni_signature)
-          : webrtc::jni::GetMethodID(env, clazz, method_name, jni_signature);
+  jmethodID id = (type == MethodID::TYPE_STATIC)
+                     ? env->GetStaticMethodID(clazz, method_name, jni_signature)
+                     : env->GetMethodID(clazz, method_name, jni_signature);
+  CHECK_EXCEPTION(env) << "error during GetMethodID: " << method_name << ", "
+                       << jni_signature;
+  RTC_CHECK(id) << method_name << ", " << jni_signature;
+
   rtc::AtomicOps::CompareAndSwapPtr(
       atomic_method_id, base::subtle::AtomicWord(nullptr),
       reinterpret_cast<base::subtle::AtomicWord>(id));

@@ -16,5 +16,5 @@ public interface VideoDecoderFactory {
    * Creates a VideoDecoder for the given codec. Supports the same codecs supported by
    * VideoEncoderFactory.
    */
-  public VideoDecoder createDecoder(String codecType);
+  @CalledByNative VideoDecoder createDecoder(String codecType);
 }

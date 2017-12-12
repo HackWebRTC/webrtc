@@ -18,20 +18,18 @@
 
 #include "api/peerconnectioninterface.h"
 #include "sdk/android/src/jni/jni_helpers.h"
-#include "sdk/android/src/jni/pc/mediaconstraints_jni.h"
+#include "sdk/android/src/jni/pc/mediaconstraints.h"
 #include "sdk/android/src/jni/pc/rtpreceiver.h"
 
 namespace webrtc {
 namespace jni {
 
-void JavaToNativeIceServers(JNIEnv* jni,
-                            jobject j_ice_servers,
-                            PeerConnectionInterface::IceServers* ice_servers);
-
 void JavaToNativeRTCConfiguration(
     JNIEnv* jni,
     jobject j_rtc_config,
     PeerConnectionInterface::RTCConfiguration* rtc_config);
+
+rtc::KeyType GetRtcConfigKeyType(JNIEnv* env, jobject j_rtc_config);
 
 // Adapter between the C++ PeerConnectionObserver interface and the Java
 // PeerConnection.Observer interface.  Wraps an instance of the Java interface

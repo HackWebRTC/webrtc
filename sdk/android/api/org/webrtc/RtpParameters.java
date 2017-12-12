@@ -12,6 +12,7 @@ package org.webrtc;
 
 import java.util.List;
 import java.util.ArrayList;
+import org.webrtc.MediaStreamTrack;
 
 /**
  * The parameters for an {@code RtpSender}, as defined in
@@ -34,6 +35,28 @@ public class RtpParameters {
     // SSRC to be used by this encoding.
     // Can't be changed between getParameters/setParameters.
     public Long ssrc;
+
+    @CalledByNative("Encoding")
+    Encoding(boolean active, Integer maxBitrateBps, Long ssrc) {
+      this.active = active;
+      this.maxBitrateBps = maxBitrateBps;
+      this.ssrc = ssrc;
+    }
+
+    @CalledByNative("Encoding")
+    boolean getActive() {
+      return active;
+    }
+
+    @CalledByNative("Encoding")
+    Integer getMaxBitrateBps() {
+      return maxBitrateBps;
+    }
+
+    @CalledByNative("Encoding")
+    Long getSsrc() {
+      return ssrc;
+    }
   }
 
   public static class Codec {
@@ -47,11 +70,67 @@ public class RtpParameters {
     public Integer clockRate;
     // The number of audio channels used. Set to null for video codecs.
     public Integer numChannels;
+
+    @CalledByNative("Codec")
+    Codec(int payloadType, String name, MediaStreamTrack.MediaType kind, Integer clockRate,
+        Integer numChannels) {
+      this.payloadType = payloadType;
+      this.name = name;
+      this.kind = kind;
+      this.clockRate = clockRate;
+      this.numChannels = numChannels;
+    }
+
+    @CalledByNative("Codec")
+    int getPayloadType() {
+      return payloadType;
+    }
+
+    @CalledByNative("Codec")
+    String getName() {
+      return name;
+    }
+
+    @CalledByNative("Codec")
+    MediaStreamTrack.MediaType getKind() {
+      return kind;
+    }
+
+    @CalledByNative("Codec")
+    Integer getClockRate() {
+      return clockRate;
+    }
+
+    @CalledByNative("Codec")
+    Integer getNumChannels() {
+      return numChannels;
+    }
   }
 
-  public final List<Encoding> encodings = new ArrayList<>();
+  public final List<Encoding> encodings;
   // Codec parameters can't currently be changed between getParameters and
   // setParameters. Though in the future it will be possible to reorder them or
   // remove them.
-  public final List<Codec> codecs = new ArrayList<>();
+  public final List<Codec> codecs;
+
+  public RtpParameters() {
+    this.encodings = new ArrayList<>();
+    this.codecs = new ArrayList<>();
+  }
+
+  @CalledByNative
+  RtpParameters(List<Encoding> encodings, List<Codec> codecs) {
+    this.encodings = encodings;
+    this.codecs = codecs;
+  }
+
+  @CalledByNative
+  List<Encoding> getEncodings() {
+    return encodings;
+  }
+
+  @CalledByNative
+  List<Codec> getCodecs() {
+    return codecs;
+  }
 }

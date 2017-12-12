@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SDK_ANDROID_SRC_JNI_ANDROIDMEDIAENCODER_JNI_H_
-#define SDK_ANDROID_SRC_JNI_ANDROIDMEDIAENCODER_JNI_H_
+#ifndef SDK_ANDROID_SRC_JNI_ANDROIDMEDIAENCODER_H_
+#define SDK_ANDROID_SRC_JNI_ANDROIDMEDIAENCODER_H_
 
 #include <vector>
 
-#include "sdk/android/src/jni/jni_helpers.h"
 #include "media/engine/webrtcvideoencoderfactory.h"
+#include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {
 namespace jni {
@@ -44,4 +44,4 @@ class MediaCodecVideoEncoderFactory
 }  // namespace jni
 }  // namespace webrtc
 
-#endif  // SDK_ANDROID_SRC_JNI_ANDROIDMEDIAENCODER_JNI_H_
+#endif  // SDK_ANDROID_SRC_JNI_ANDROIDMEDIAENCODER_H_

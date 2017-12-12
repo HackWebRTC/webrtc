@@ -17,7 +17,6 @@
 #include "rtc_base/logging.h"
 #include "sdk/android/generated_video_jni/jni/VideoDecoderWrapper_jni.h"
 #include "sdk/android/generated_video_jni/jni/VideoDecoder_jni.h"
-#include "sdk/android/src/jni/classreferenceholder.h"
 #include "sdk/android/src/jni/encodedimage.h"
 #include "sdk/android/src/jni/videocodecstatus.h"
 #include "sdk/android/src/jni/videoframe.h"

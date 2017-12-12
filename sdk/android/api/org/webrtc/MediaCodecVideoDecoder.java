@@ -28,7 +28,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-// Java-side of peerconnection_jni.cc:MediaCodecVideoDecoder.
+// Java-side of peerconnection.cc:MediaCodecVideoDecoder.
 // This class is an implementation detail of the Java PeerConnection API.
 @SuppressWarnings("deprecation")
 public class MediaCodecVideoDecoder {

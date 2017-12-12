@@ -251,6 +251,41 @@ public class PeerConnection {
             tlsAlpnProtocols, tlsEllipticCurves);
       }
     }
+
+    @CalledByNative("IceServer")
+    List<String> getUrls() {
+      return urls;
+    }
+
+    @CalledByNative("IceServer")
+    String getUsername() {
+      return username;
+    }
+
+    @CalledByNative("IceServer")
+    String getPassword() {
+      return password;
+    }
+
+    @CalledByNative("IceServer")
+    TlsCertPolicy getTlsCertPolicy() {
+      return tlsCertPolicy;
+    }
+
+    @CalledByNative("IceServer")
+    String getHostname() {
+      return hostname;
+    }
+
+    @CalledByNative("IceServer")
+    List<String> getTlsAlpnProtocols() {
+      return tlsAlpnProtocols;
+    }
+
+    @CalledByNative("IceServer")
+    List<String> getTlsEllipticCurves() {
+      return tlsEllipticCurves;
+    }
   }
 
   /** Java version of PeerConnectionInterface.IceTransportsType */
@@ -284,10 +319,12 @@ public class PeerConnection {
       this.max = max;
     }
 
+    @CalledByNative("IntervalRange")
     public int getMin() {
       return min;
     }
 
+    @CalledByNative("IntervalRange")
     public int getMax() {
       return max;
     }
@@ -346,6 +383,106 @@ public class PeerConnection {
       disableIPv6OnWifi = false;
       maxIPv6Networks = 5;
       iceRegatherIntervalRange = null;
+    }
+
+    @CalledByNative("RTCConfiguration")
+    IceTransportsType getIceTransportsType() {
+      return iceTransportsType;
+    }
+
+    @CalledByNative("RTCConfiguration")
+    List<IceServer> getIceServers() {
+      return iceServers;
+    }
+
+    @CalledByNative("RTCConfiguration")
+    BundlePolicy getBundlePolicy() {
+      return bundlePolicy;
+    }
+
+    @CalledByNative("RTCConfiguration")
+    RtcpMuxPolicy getRtcpMuxPolicy() {
+      return rtcpMuxPolicy;
+    }
+
+    @CalledByNative("RTCConfiguration")
+    TcpCandidatePolicy getTcpCandidatePolicy() {
+      return tcpCandidatePolicy;
+    }
+
+    @CalledByNative("RTCConfiguration")
+    CandidateNetworkPolicy getCandidateNetworkPolicy() {
+      return candidateNetworkPolicy;
+    }
+
+    @CalledByNative("RTCConfiguration")
+    int getAudioJitterBufferMaxPackets() {
+      return audioJitterBufferMaxPackets;
+    }
+
+    @CalledByNative("RTCConfiguration")
+    boolean getAudioJitterBufferFastAccelerate() {
+      return audioJitterBufferFastAccelerate;
+    }
+
+    @CalledByNative("RTCConfiguration")
+    int getIceConnectionReceivingTimeout() {
+      return iceConnectionReceivingTimeout;
+    }
+
+    @CalledByNative("RTCConfiguration")
+    int getIceBackupCandidatePairPingInterval() {
+      return iceBackupCandidatePairPingInterval;
+    }
+
+    @CalledByNative("RTCConfiguration")
+    KeyType getKeyType() {
+      return keyType;
+    }
+
+    @CalledByNative("RTCConfiguration")
+    ContinualGatheringPolicy getContinualGatheringPolicy() {
+      return continualGatheringPolicy;
+    }
+
+    @CalledByNative("RTCConfiguration")
+    int getIceCandidatePoolSize() {
+      return iceCandidatePoolSize;
+    }
+
+    @CalledByNative("RTCConfiguration")
+    boolean getPruneTurnPorts() {
+      return pruneTurnPorts;
+    }
+
+    @CalledByNative("RTCConfiguration")
+    boolean getPresumeWritableWhenFullyRelayed() {
+      return presumeWritableWhenFullyRelayed;
+    }
+
+    @CalledByNative("RTCConfiguration")
+    Integer getIceCheckMinInterval() {
+      return iceCheckMinInterval;
+    }
+
+    @CalledByNative("RTCConfiguration")
+    boolean getDisableIPv6OnWifi() {
+      return disableIPv6OnWifi;
+    }
+
+    @CalledByNative("RTCConfiguration")
+    int getMaxIPv6Networks() {
+      return maxIPv6Networks;
+    }
+
+    @CalledByNative("RTCConfiguration")
+    IntervalRange getIceRegatherIntervalRange() {
+      return iceRegatherIntervalRange;
+    }
+
+    @CalledByNative("RTCConfiguration")
+    TurnCustomizer getTurnCustomizer() {
+      return turnCustomizer;
     }
   };
 
@@ -550,6 +687,11 @@ public class PeerConnection {
     receivers.clear();
     JniCommon.nativeReleaseRef(nativePeerConnection);
     freeObserver(nativeObserver);
+  }
+
+  @CalledByNative
+  long getNativePeerConnection() {
+    return nativePeerConnection;
   }
 
   private static native void freeObserver(long nativeObserver);

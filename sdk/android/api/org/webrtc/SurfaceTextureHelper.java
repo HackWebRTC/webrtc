@@ -234,6 +234,7 @@ public class SurfaceTextureHelper {
   /** Deprecated, use textureToYuv. */
   @Deprecated
   @SuppressWarnings("deprecation") // yuvConverter.convert is deprecated
+  @CalledByNative
   void textureToYUV(final ByteBuffer buf, final int width, final int height, final int stride,
       final int textureId, final float[] transformMatrix) {
     if (textureId != oesTextureId) {

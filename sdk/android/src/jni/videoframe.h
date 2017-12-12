@@ -130,9 +130,6 @@ class AndroidVideoBuffer : public AndroidVideoFrameBuffer {
                                                       int scale_width,
                                                       int scale_height);
 
-  // Returns an instance of VideoRenderer.I420Frame (deprecated)
-  jobject ToJavaI420Frame(JNIEnv* jni, int rotation);
-
  protected:
   // Should not be called directly. Adopts the Java VideoFrame.Buffer. Use
   // Create() or Adopt() instead for clarity.

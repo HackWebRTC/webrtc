@@ -26,6 +26,7 @@ class WrappedNativeI420Buffer implements VideoFrame.I420Buffer {
   private final int strideV;
   private final long nativeBuffer;
 
+  @CalledByNative
   WrappedNativeI420Buffer(int width, int height, ByteBuffer dataY, int strideY, ByteBuffer dataU,
       int strideU, ByteBuffer dataV, int strideV, long nativeBuffer) {
     this.width = width;

@@ -20,7 +20,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/thread_checker.h"
 #include "rtc_base/timestampaligner.h"
-#include "sdk/android/src/jni/surfacetexturehelper_jni.h"
+#include "sdk/android/src/jni/surfacetexturehelper.h"
 #include "sdk/android/src/jni/videoframe.h"
 
 namespace webrtc {

@@ -13,7 +13,15 @@ package org.webrtc;
 /** Java wrapper for a C++ MediaStreamTrackInterface. */
 public class MediaStreamTrack {
   /** Tracks MediaStreamTrackInterface.TrackState */
-  public enum State { LIVE, ENDED }
+  public enum State {
+    LIVE,
+    ENDED;
+
+    @CalledByNative("State")
+    static State fromNativeIndex(int nativeIndex) {
+      return values()[nativeIndex];
+    }
+  }
 
   // Must be kept in sync with cricket::MediaType.
   public enum MediaType {

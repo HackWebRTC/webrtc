@@ -31,7 +31,6 @@ class VideoDecoderFactoryWrapper : public VideoDecoderFactory {
 
  private:
   const ScopedGlobalRef<jobject> decoder_factory_;
-  jmethodID create_decoder_method_;
 };
 
 }  // namespace jni

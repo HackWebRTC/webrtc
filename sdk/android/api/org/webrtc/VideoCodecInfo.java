@@ -35,6 +35,7 @@ public class VideoCodecInfo {
   public final Map<String, String> params;
   @Deprecated public final int payload;
 
+  @CalledByNative
   public VideoCodecInfo(String name, Map<String, String> params) {
     this.payload = 0;
     this.name = name;
@@ -65,5 +66,15 @@ public class VideoCodecInfo {
   public int hashCode() {
     Object[] values = {name.toUpperCase(Locale.ROOT), params};
     return Arrays.hashCode(values);
+  }
+
+  @CalledByNative
+  String getName() {
+    return name;
+  }
+
+  @CalledByNative
+  Map getParams() {
+    return params;
   }
 }

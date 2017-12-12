@@ -13,7 +13,7 @@ package org.webrtc;
 import java.util.HashMap;
 import java.util.Map;
 
-// Java-side of androidmetrics_jni.cc.
+// Java-side of androidmetrics.cc
 //
 // Rtc histograms can be queried through the API, getAndReset().
 // The returned map holds the name of a histogram and its samples.

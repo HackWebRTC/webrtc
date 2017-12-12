@@ -20,8 +20,8 @@
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/timeutils.h"
 #include "sdk/android/generated_video_jni/jni/VideoFrame_jni.h"
-#include "sdk/android/src/jni/classreferenceholder.h"
 #include "sdk/android/src/jni/jni_helpers.h"
+#include "sdk/android/src/jni/surfacetexturehelper.h"
 #include "sdk/android/src/jni/wrapped_native_i420_buffer.h"
 #include "system_wrappers/include/aligned_malloc.h"
 #include "third_party/libyuv/include/libyuv/scale.h"
@@ -268,20 +268,9 @@ rtc::scoped_refptr<I420BufferInterface> AndroidTextureBuffer::ToI420() {
 
   // TODO(sakal): This call to a deperecated method will be removed when
   // AndroidTextureBuffer is removed.
-  jmethodID transform_mid = GetMethodID(
-      jni,
-      GetObjectClass(jni, surface_texture_helper_),
-      "textureToYUV",
-      "(Ljava/nio/ByteBuffer;IIII[F)V");
-
   jobject byte_buffer = jni->NewDirectByteBuffer(y_data, size);
-
-  jfloatArray sampling_matrix = native_handle_.sampling_matrix.ToJava(jni);
-  jni->CallVoidMethod(surface_texture_helper_,
-                      transform_mid,
-                      byte_buffer, width(), height(), stride,
-                      native_handle_.oes_texture_id, sampling_matrix);
-  CHECK_EXCEPTION(jni) << "textureToYUV throwed an exception";
+  SurfaceTextureHelperTextureToYUV(jni, surface_texture_helper_, byte_buffer,
+                                   width(), height(), stride, native_handle_);
 
   return copy;
 }
@@ -348,21 +337,6 @@ rtc::scoped_refptr<I420BufferInterface> AndroidVideoBuffer::ToI420() {
   // We don't need to retain the buffer because toI420 returns a new object that
   // we are assumed to take the ownership of.
   return AndroidVideoI420Buffer::Adopt(jni, width_, height_, j_i420_buffer);
-}
-
-jobject AndroidVideoBuffer::ToJavaI420Frame(JNIEnv* jni, int rotation) {
-  jclass j_byte_buffer_class = jni->FindClass("java/nio/ByteBuffer");
-  jclass j_i420_frame_class =
-      FindClass(jni, "org/webrtc/VideoRenderer$I420Frame");
-  jmethodID j_i420_frame_ctor_id = GetMethodID(
-      jni, j_i420_frame_class, "<init>", "(ILorg/webrtc/VideoFrame$Buffer;J)V");
-  // Java code just uses the native frame to hold a reference to the buffer so
-  // this is okay.
-  VideoFrame* native_frame =
-      new VideoFrame(this, 0 /* timestamp */, 0 /* render_time_ms */,
-                     VideoRotation::kVideoRotation_0 /* rotation */);
-  return jni->NewObject(j_i420_frame_class, j_i420_frame_ctor_id, rotation,
-                        *j_video_frame_buffer_, jlongFromPointer(native_frame));
 }
 
 VideoFrame JavaToNativeFrame(JNIEnv* jni,

@@ -638,7 +638,7 @@ public class PeerConnectionTest {
   // - audit each place that uses |constraints| for specifying non-trivial
   //   constraints (and ensure they're honored).
   // - test error cases
-  // - ensure reasonable coverage of _jni.cc is achieved.  Coverage is
+  // - ensure reasonable coverage of jni code is achieved.  Coverage is
   //   extra-important because of all the free-text (class/method names, etc)
   //   in JNI-style programming; make sure no typos!
   // - Test that shutdown mid-interaction is crash-free.

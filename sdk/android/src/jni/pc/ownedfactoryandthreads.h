@@ -68,8 +68,6 @@ class OwnedFactoryAndThreads {
   void InvokeJavaCallbacksOnFactoryThreads();
 
  private:
-  void JavaCallbackOnFactoryThreads();
-
   const std::unique_ptr<Thread> network_thread_;
   const std::unique_ptr<Thread> worker_thread_;
   const std::unique_ptr<Thread> signaling_thread_;

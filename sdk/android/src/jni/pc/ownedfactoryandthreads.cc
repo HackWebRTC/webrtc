@@ -10,9 +10,8 @@
 
 #include "sdk/android/src/jni/pc/ownedfactoryandthreads.h"
 
-#include "rtc_base/logging.h"
-#include "sdk/android/src/jni/classreferenceholder.h"
 #include "sdk/android/src/jni/jni_helpers.h"
+#include "sdk/android/src/jni/pc/peerconnectionfactory.h"
 
 namespace webrtc {
 namespace jni {
@@ -22,44 +21,20 @@ PeerConnectionFactoryInterface* factoryFromJava(jlong j_p) {
 }
 
 OwnedFactoryAndThreads::~OwnedFactoryAndThreads() {
-  CHECK_RELEASE(factory_);
+  factory_->Release();
   if (network_monitor_factory_ != nullptr) {
     rtc::NetworkMonitorFactory::ReleaseFactory(network_monitor_factory_);
-  }
-}
-
-void OwnedFactoryAndThreads::JavaCallbackOnFactoryThreads() {
-  JNIEnv* jni = AttachCurrentThreadIfNeeded();
-  ScopedLocalRefFrame local_ref_frame(jni);
-  jclass j_factory_class = FindClass(jni, "org/webrtc/PeerConnectionFactory");
-  jmethodID m = nullptr;
-  if (network_thread_->IsCurrent()) {
-    RTC_LOG(LS_INFO) << "Network thread JavaCallback";
-    m = GetStaticMethodID(jni, j_factory_class, "onNetworkThreadReady", "()V");
-  }
-  if (worker_thread_->IsCurrent()) {
-    RTC_LOG(LS_INFO) << "Worker thread JavaCallback";
-    m = GetStaticMethodID(jni, j_factory_class, "onWorkerThreadReady", "()V");
-  }
-  if (signaling_thread_->IsCurrent()) {
-    RTC_LOG(LS_INFO) << "Signaling thread JavaCallback";
-    m = GetStaticMethodID(jni, j_factory_class, "onSignalingThreadReady",
-                          "()V");
-  }
-  if (m != nullptr) {
-    jni->CallStaticVoidMethod(j_factory_class, m);
-    CHECK_EXCEPTION(jni) << "error during JavaCallback::CallStaticVoidMethod";
   }
 }
 
 void OwnedFactoryAndThreads::InvokeJavaCallbacksOnFactoryThreads() {
   RTC_LOG(LS_INFO) << "InvokeJavaCallbacksOnFactoryThreads.";
   network_thread_->Invoke<void>(RTC_FROM_HERE,
-                                [this] { JavaCallbackOnFactoryThreads(); });
+                                &PeerConnectionFactoryNetworkThreadReady);
   worker_thread_->Invoke<void>(RTC_FROM_HERE,
-                               [this] { JavaCallbackOnFactoryThreads(); });
+                               &PeerConnectionFactoryWorkerThreadReady);
   signaling_thread_->Invoke<void>(RTC_FROM_HERE,
-                                  [this] { JavaCallbackOnFactoryThreads(); });
+                                  &PeerConnectionFactorySignalingThreadReady);
 }
 
 }  // namespace jni

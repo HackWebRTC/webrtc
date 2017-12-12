@@ -12,7 +12,8 @@
 
 #include "sdk/android/generated_peerconnection_jni/jni/RtpReceiver_jni.h"
 #include "sdk/android/src/jni/jni_helpers.h"
-#include "sdk/android/src/jni/pc/java_native_conversion.h"
+#include "sdk/android/src/jni/pc/mediastreamtrack.h"
+#include "sdk/android/src/jni/pc/rtpparameters.h"
 
 namespace webrtc {
 namespace jni {

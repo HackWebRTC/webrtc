@@ -45,7 +45,7 @@ class HardwareVideoEncoder implements VideoEncoder {
 
   private static final int MAX_VIDEO_FRAMERATE = 30;
 
-  // See MAX_ENCODER_Q_SIZE in androidmediaencoder_jni.cc.
+  // See MAX_ENCODER_Q_SIZE in androidmediaencoder.cc.
   private static final int MAX_ENCODER_Q_SIZE = 2;
 
   private static final int MEDIA_CODEC_RELEASE_TIMEOUT_MS = 5000;

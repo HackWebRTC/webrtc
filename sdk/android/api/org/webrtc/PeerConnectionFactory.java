@@ -104,6 +104,21 @@ public class PeerConnectionFactory {
     public int networkIgnoreMask;
     public boolean disableEncryption;
     public boolean disableNetworkMonitor;
+
+    @CalledByNative("Options")
+    int getNetworkIgnoreMask() {
+      return networkIgnoreMask;
+    }
+
+    @CalledByNative("Options")
+    boolean getDisableEncryption() {
+      return disableEncryption;
+    }
+
+    @CalledByNative("Options")
+    boolean getDisableNetworkMonitor() {
+      return disableNetworkMonitor;
+    }
   }
 
   /**
@@ -114,7 +129,7 @@ public class PeerConnectionFactory {
   public static void initialize(InitializationOptions options) {
     ContextUtils.initialize(options.applicationContext);
     NativeLibrary.initialize(options.nativeLibraryLoader);
-    nativeInitializeAndroidGlobals(options.applicationContext, options.enableVideoHwAcceleration);
+    initializeNativeAndroidGlobals(options.applicationContext, options.enableVideoHwAcceleration);
     initializeFieldTrials(options.fieldTrials);
     if (options.enableInternalTracer && !internalTracerInitialized) {
       initializeInternalTracer();
@@ -131,17 +146,17 @@ public class PeerConnectionFactory {
 
   // Must be called at least once before creating a PeerConnectionFactory
   // (for example, at application startup time).
-  private static native void nativeInitializeAndroidGlobals(
+  private static native void initializeNativeAndroidGlobals(
       Context context, boolean videoHwAcceleration);
 
   private static void initializeInternalTracer() {
     internalTracerInitialized = true;
-    nativeInitializeInternalTracer();
+    initializeNativeInternalTracer();
   }
 
   public static void shutdownInternalTracer() {
     internalTracerInitialized = false;
-    nativeShutdownInternalTracer();
+    shutdownNativeInternalTracer();
   }
 
   // Field trial initialization. Must be called before PeerConnectionFactory
@@ -156,16 +171,16 @@ public class PeerConnectionFactory {
   //   method2();
   // }
   public static String fieldTrialsFindFullName(String name) {
-    return NativeLibrary.isLoaded() ? nativeFieldTrialsFindFullName(name) : "";
+    return NativeLibrary.isLoaded() ? findNativeFieldTrialsFullName(name) : "";
   }
-  private static native String nativeFieldTrialsFindFullName(String name);
+  private static native String findNativeFieldTrialsFullName(String name);
   // Internal tracing initialization. Must be called before PeerConnectionFactory is created to
   // prevent racing with tracing code.
   // Deprecated, use PeerConnectionFactory.initialize instead.
-  private static native void nativeInitializeInternalTracer();
+  private static native void initializeNativeInternalTracer();
   // Internal tracing shutdown, called to prevent resource leaks. Must be called after
   // PeerConnectionFactory is gone to prevent races with code performing tracing.
-  private static native void nativeShutdownInternalTracer();
+  private static native void shutdownNativeInternalTracer();
   // Start/stop internal capturing of internal tracing.
   public static native boolean startInternalTracingCapture(String tracing_filename);
   public static native void stopInternalTracingCapture();
@@ -184,7 +199,7 @@ public class PeerConnectionFactory {
   public PeerConnectionFactory(
       Options options, VideoEncoderFactory encoderFactory, VideoDecoderFactory decoderFactory) {
     checkInitializeHasBeenCalled();
-    nativeFactory = nativeCreatePeerConnectionFactory(options, encoderFactory, decoderFactory);
+    nativeFactory = createNativePeerConnectionFactory(options, encoderFactory, decoderFactory);
     if (nativeFactory == 0) {
       throw new RuntimeException("Failed to initialize PeerConnectionFactory!");
     }
@@ -197,7 +212,7 @@ public class PeerConnectionFactory {
       throw new NullPointerException(
           "PeerConnectionFactory constructor does not accept a null AudioProcessingFactory.");
     }
-    nativeFactory = nativeCreatePeerConnectionFactoryWithAudioProcessing(
+    nativeFactory = createNativePeerConnectionFactoryWithAudioProcessing(
         options, encoderFactory, decoderFactory, audioProcessingFactory.createNative());
     if (nativeFactory == 0) {
       throw new RuntimeException("Failed to initialize PeerConnectionFactory!");
@@ -206,12 +221,12 @@ public class PeerConnectionFactory {
 
   public PeerConnection createPeerConnection(PeerConnection.RTCConfiguration rtcConfig,
       MediaConstraints constraints, PeerConnection.Observer observer) {
-    long nativeObserver = nativeCreateObserver(observer);
+    long nativeObserver = createNativeObserver(observer);
     if (nativeObserver == 0) {
       return null;
     }
     long nativePeerConnection =
-        nativeCreatePeerConnection(nativeFactory, rtcConfig, constraints, nativeObserver);
+        createNativePeerConnection(nativeFactory, rtcConfig, constraints, nativeObserver);
     if (nativePeerConnection == 0) {
       return null;
     }
@@ -225,7 +240,7 @@ public class PeerConnectionFactory {
   }
 
   public MediaStream createLocalMediaStream(String label) {
-    return new MediaStream(nativeCreateLocalMediaStream(nativeFactory, label));
+    return new MediaStream(createNativeLocalMediaStream(nativeFactory, label));
   }
 
   public VideoSource createVideoSource(VideoCapturer capturer) {
@@ -234,7 +249,7 @@ public class PeerConnectionFactory {
     final SurfaceTextureHelper surfaceTextureHelper =
         SurfaceTextureHelper.create(VIDEO_CAPTURER_THREAD_NAME, eglContext);
     long nativeAndroidVideoTrackSource =
-        nativeCreateVideoSource(nativeFactory, surfaceTextureHelper, capturer.isScreencast());
+        createNativeVideoSource(nativeFactory, surfaceTextureHelper, capturer.isScreencast());
     VideoCapturer.CapturerObserver capturerObserver =
         new AndroidVideoTrackSourceObserver(nativeAndroidVideoTrackSource);
     capturer.initialize(
@@ -243,33 +258,33 @@ public class PeerConnectionFactory {
   }
 
   public VideoTrack createVideoTrack(String id, VideoSource source) {
-    return new VideoTrack(nativeCreateVideoTrack(nativeFactory, id, source.nativeSource));
+    return new VideoTrack(createNativeVideoTrack(nativeFactory, id, source.nativeSource));
   }
 
   public AudioSource createAudioSource(MediaConstraints constraints) {
-    return new AudioSource(nativeCreateAudioSource(nativeFactory, constraints));
+    return new AudioSource(createNativeAudioSource(nativeFactory, constraints));
   }
 
   public AudioTrack createAudioTrack(String id, AudioSource source) {
-    return new AudioTrack(nativeCreateAudioTrack(nativeFactory, id, source.nativeSource));
+    return new AudioTrack(createNativeAudioTrack(nativeFactory, id, source.nativeSource));
   }
 
   // Starts recording an AEC dump. Ownership of the file is transfered to the
   // native code. If an AEC dump is already in progress, it will be stopped and
   // a new one will start using the provided file.
   public boolean startAecDump(int file_descriptor, int filesize_limit_bytes) {
-    return nativeStartAecDump(nativeFactory, file_descriptor, filesize_limit_bytes);
+    return startNativeAecDump(nativeFactory, file_descriptor, filesize_limit_bytes);
   }
 
   // Stops recording an AEC dump. If no AEC dump is currently being recorded,
   // this call will have no effect.
   public void stopAecDump() {
-    nativeStopAecDump(nativeFactory);
+    stopNativeAecDump(nativeFactory);
   }
 
   @Deprecated
   public void setOptions(Options options) {
-    nativeSetOptions(nativeFactory, options);
+    setNativeOptions(nativeFactory, options);
   }
 
   /** Set the EGL context used by HW Video encoding and decoding.
@@ -290,12 +305,12 @@ public class PeerConnectionFactory {
     }
     localEglbase = EglBase.create(localEglContext);
     remoteEglbase = EglBase.create(remoteEglContext);
-    nativeSetVideoHwAccelerationOptions(
+    setNativeVideoHwAccelerationOptions(
         nativeFactory, localEglbase.getEglBaseContext(), remoteEglbase.getEglBaseContext());
   }
 
   public void dispose() {
-    nativeFreeFactory(nativeFactory);
+    freeNativeFactory(nativeFactory);
     networkThread = null;
     workerThread = null;
     signalingThread = null;
@@ -306,7 +321,7 @@ public class PeerConnectionFactory {
   }
 
   public void threadsCallbacks() {
-    nativeThreadsCallbacks(nativeFactory);
+    invokeNativeThreadsCallbacks(nativeFactory);
   }
 
   private static void printStackTrace(Thread thread, String threadName) {
@@ -327,58 +342,66 @@ public class PeerConnectionFactory {
     printStackTrace(signalingThread, "Signaling thread");
   }
 
+  @CalledByNative
   private static void onNetworkThreadReady() {
     networkThread = Thread.currentThread();
     Logging.d(TAG, "onNetworkThreadReady");
   }
 
+  @CalledByNative
   private static void onWorkerThreadReady() {
     workerThread = Thread.currentThread();
     Logging.d(TAG, "onWorkerThreadReady");
   }
 
+  @CalledByNative
   private static void onSignalingThreadReady() {
     signalingThread = Thread.currentThread();
     Logging.d(TAG, "onSignalingThreadReady");
   }
 
-  private static native long nativeCreatePeerConnectionFactory(
+  private static native long createNativePeerConnectionFactory(
       Options options, VideoEncoderFactory encoderFactory, VideoDecoderFactory decoderFactory);
 
-  private static native long nativeCreatePeerConnectionFactoryWithAudioProcessing(Options options,
+  private static native long createNativePeerConnectionFactoryWithAudioProcessing(Options options,
       VideoEncoderFactory encoderFactory, VideoDecoderFactory decoderFactory,
       long nativeAudioProcessor);
 
-  private static native long nativeCreateObserver(PeerConnection.Observer observer);
+  private static native long createNativeObserver(PeerConnection.Observer observer);
 
-  private static native long nativeCreatePeerConnection(long nativeFactory,
+  private static native long createNativePeerConnection(long nativeFactory,
       PeerConnection.RTCConfiguration rtcConfig, MediaConstraints constraints, long nativeObserver);
 
-  private static native long nativeCreateLocalMediaStream(long nativeFactory, String label);
+  private static native long createNativeLocalMediaStream(long nativeFactory, String label);
 
-  private static native long nativeCreateVideoSource(
+  private static native long createNativeVideoSource(
       long nativeFactory, SurfaceTextureHelper surfaceTextureHelper, boolean is_screencast);
 
-  private static native long nativeCreateVideoTrack(
+  private static native long createNativeVideoTrack(
       long nativeFactory, String id, long nativeVideoSource);
 
-  private static native long nativeCreateAudioSource(
+  private static native long createNativeAudioSource(
       long nativeFactory, MediaConstraints constraints);
 
-  private static native long nativeCreateAudioTrack(
+  private static native long createNativeAudioTrack(
       long nativeFactory, String id, long nativeSource);
 
-  private static native boolean nativeStartAecDump(
+  private static native boolean startNativeAecDump(
       long nativeFactory, int file_descriptor, int filesize_limit_bytes);
 
-  private static native void nativeStopAecDump(long nativeFactory);
+  private static native void stopNativeAecDump(long nativeFactory);
 
-  @Deprecated public native void nativeSetOptions(long nativeFactory, Options options);
+  @Deprecated
+  public void nativeSetOptions(long nativeFactory, Options options) {
+    setNativeOptions(nativeFactory, options);
+  }
 
-  private static native void nativeSetVideoHwAccelerationOptions(
+  private native void setNativeOptions(long nativeFactory, Options options);
+
+  private static native void setNativeVideoHwAccelerationOptions(
       long nativeFactory, Object localEGLContext, Object remoteEGLContext);
 
-  private static native void nativeThreadsCallbacks(long nativeFactory);
+  private static native void invokeNativeThreadsCallbacks(long nativeFactory);
 
-  private static native void nativeFreeFactory(long nativeFactory);
+  private static native void freeNativeFactory(long nativeFactory);
 }
