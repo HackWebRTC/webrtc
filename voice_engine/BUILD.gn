@@ -8,7 +8,10 @@
 
 import("../webrtc.gni")
 
+visibility = [ ":*" ]
+
 rtc_static_library("voice_engine") {
+  visibility += [ "*" ]
   sources = [
     "channel.cc",
     "channel.h",
@@ -97,6 +100,7 @@ rtc_static_library("audio_level") {
 
 if (rtc_include_tests) {
   rtc_test("voice_engine_unittests") {
+    visibility += [ "*" ]
     deps = [
       ":voice_engine",
       "../api/audio_codecs:builtin_audio_decoder_factory",

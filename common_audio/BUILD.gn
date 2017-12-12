@@ -9,6 +9,8 @@
 import("//build/config/arm.gni")
 import("../webrtc.gni")
 
+visibility = [ ":*" ]
+
 config("common_audio_config") {
   include_dirs = [
     "resampler/include",
@@ -18,6 +20,7 @@ config("common_audio_config") {
 }
 
 rtc_static_library("common_audio") {
+  visibility += [ "*" ]
   sources = [
     "audio_converter.cc",
     "audio_converter.h",
@@ -102,6 +105,7 @@ rtc_static_library("common_audio") {
 }
 
 rtc_source_set("mock_common_audio") {
+  visibility += [ "*" ]
   testonly = true
   sources = [
     "mocks/mock_smoothing_filter.h",
@@ -114,7 +118,6 @@ rtc_source_set("mock_common_audio") {
 }
 
 rtc_source_set("common_audio_c_arm_asm") {
-  visibility = [ ":*" ]  # Only targets in this file can depend on this.
   sources = []
   if (current_cpu == "arm") {
     sources += [
@@ -131,7 +134,6 @@ rtc_source_set("common_audio_c_arm_asm") {
 }
 
 rtc_source_set("common_audio_c") {
-  visibility = [ ":*" ]  # Only targets in this file can depend on this.
   sources = [
     "fft4g.c",
     "fft4g.h",
@@ -228,7 +230,6 @@ rtc_source_set("common_audio_c") {
 }
 
 rtc_source_set("common_audio_cc") {
-  visibility = [ ":*" ]  # Only targets in this file can depend on this.
   sources = [
     "signal_processing/dot_product_with_scale.cc",
     "signal_processing/dot_product_with_scale.h",
@@ -255,12 +256,14 @@ rtc_source_set("sinc_resampler") {
 }
 
 rtc_source_set("fir_filter") {
+  visibility += [ "*" ]
   sources = [
     "fir_filter.h",
   ]
 }
 
 rtc_source_set("fir_filter_factory") {
+  visibility += [ "*" ]
   sources = [
     "fir_filter_c.cc",
     "fir_filter_c.h",
@@ -348,7 +351,6 @@ if (rtc_build_with_neon) {
   }
 
   rtc_source_set("common_audio_neon_c") {
-    visibility = [ ":*" ]  # Only targets in this file can depend on this.
     sources = [
       "signal_processing/cross_correlation_neon.c",
       "signal_processing/downsample_fast_neon.c",
@@ -385,6 +387,7 @@ if (rtc_build_with_neon) {
 
 if (rtc_include_tests) {
   rtc_test("common_audio_unittests") {
+    visibility += [ "*" ]
     testonly = true
 
     sources = [

@@ -11,6 +11,8 @@ import("audio_coding.gni")
 import("//build/config/arm.gni")
 import("//third_party/protobuf/proto_library.gni")
 
+visibility = [ ":*" ]
+
 audio_codec_deps = [
   ":cng",
   ":g711",
@@ -38,6 +40,7 @@ audio_coding_deps = audio_codec_deps + [
                     ]
 
 rtc_static_library("audio_format_conversion") {
+  visibility += [ "*" ]
   sources = [
     "codecs/audio_format_conversion.cc",
     "codecs/audio_format_conversion.h",
@@ -52,6 +55,7 @@ rtc_static_library("audio_format_conversion") {
 }
 
 rtc_static_library("rent_a_codec") {
+  visibility += [ "*" ]
   sources = [
     "acm2/acm_codec_database.cc",
     "acm2/acm_codec_database.h",
@@ -93,6 +97,7 @@ rtc_source_set("audio_coding_module_typedefs") {
 }
 
 rtc_static_library("audio_coding") {
+  visibility += [ "*" ]
   sources = [
     "acm2/acm_receiver.cc",
     "acm2/acm_receiver.h",
@@ -156,6 +161,7 @@ config("cng_config") {
 }
 
 rtc_static_library("cng") {
+  visibility += [ "*" ]
   sources = [
     "codecs/cng/audio_encoder_cng.cc",
     "codecs/cng/audio_encoder_cng.h",
@@ -179,6 +185,7 @@ config("red_config") {
 }
 
 rtc_static_library("red") {
+  visibility += [ "*" ]
   sources = [
     "codecs/red/audio_encoder_copy_red.cc",
     "codecs/red/audio_encoder_copy_red.h",
@@ -198,6 +205,7 @@ config("g711_config") {
 }
 
 rtc_static_library("g711") {
+  visibility += [ "*" ]
   sources = [
     "codecs/g711/audio_decoder_pcm.cc",
     "codecs/g711/audio_decoder_pcm.h",
@@ -219,7 +227,6 @@ rtc_static_library("g711") {
 }
 
 rtc_source_set("g711_c") {
-  visibility = [ ":*" ]  # Only targets in this file can depend on this.
   sources = [
     "codecs/g711/g711.c",
     "codecs/g711/g711.h",
@@ -236,6 +243,7 @@ config("g722_config") {
 }
 
 rtc_static_library("g722") {
+  visibility += [ "*" ]
   sources = [
     "codecs/g722/audio_decoder_g722.cc",
     "codecs/g722/audio_decoder_g722.h",
@@ -258,7 +266,6 @@ rtc_static_library("g722") {
 }
 
 rtc_source_set("g722_c") {
-  visibility = [ ":*" ]  # Only targets in this file can depend on this.
   sources = [
     "codecs/g722/g722_decode.c",
     "codecs/g722/g722_enc_dec.h",
@@ -276,6 +283,7 @@ config("ilbc_config") {
 }
 
 rtc_static_library("ilbc") {
+  visibility += [ "*" ]
   sources = [
     "codecs/ilbc/audio_decoder_ilbc.cc",
     "codecs/ilbc/audio_decoder_ilbc.h",
@@ -299,7 +307,6 @@ rtc_static_library("ilbc") {
 }
 
 rtc_source_set("ilbc_c") {
-  visibility = [ ":*" ]  # Only targets in this file can depend on this.
   sources = [
     "codecs/ilbc/abs_quant.c",
     "codecs/ilbc/abs_quant.h",
@@ -471,6 +478,7 @@ config("isac_config") {
 }
 
 rtc_static_library("isac") {
+  visibility += [ "*" ]
   sources = [
     "codecs/isac/main/include/audio_decoder_isac.h",
     "codecs/isac/main/include/audio_encoder_isac.h",
@@ -488,7 +496,6 @@ rtc_static_library("isac") {
 }
 
 rtc_static_library("isac_c") {
-  visibility = [ ":*" ]  # Only targets in this file can depend on this.
   sources = [
     "codecs/isac/main/include/isac.h",
     "codecs/isac/main/source/arith_routines.c",
@@ -562,6 +569,7 @@ config("isac_fix_config") {
 }
 
 rtc_static_library("isac_fix") {
+  visibility += [ "*" ]
   sources = [
     "codecs/isac/fix/source/audio_decoder_isacfix.cc",
     "codecs/isac/fix/source/audio_encoder_isacfix.cc",
@@ -585,7 +593,6 @@ rtc_static_library("isac_fix") {
 }
 
 rtc_source_set("isac_fix_common") {
-  visibility = [ ":*" ]  # Only targets in this file can depend on this.
   sources = [
     "codecs/isac/fix/source/codec.h",
     "codecs/isac/fix/source/fft.c",
@@ -606,7 +613,6 @@ rtc_source_set("isac_fix_c_arm_asm") {
 }
 
 rtc_source_set("isac_fix_c") {
-  visibility = [ ":*" ]  # Only targets in this file can depend on this.
   sources = [
     "codecs/isac/fix/include/audio_decoder_isacfix.h",
     "codecs/isac/fix/include/audio_encoder_isacfix.h",
@@ -745,6 +751,7 @@ config("pcm16b_config") {
 }
 
 rtc_static_library("pcm16b") {
+  visibility += [ "*" ]
   sources = [
     "codecs/pcm16b/audio_decoder_pcm16b.cc",
     "codecs/pcm16b/audio_decoder_pcm16b.h",
@@ -768,7 +775,6 @@ rtc_static_library("pcm16b") {
 }
 
 rtc_source_set("pcm16b_c") {
-  visibility = [ ":*" ]  # Only targets in this file can depend on this.
   sources = [
     "codecs/pcm16b/pcm16b.c",
     "codecs/pcm16b/pcm16b.h",
@@ -781,6 +787,7 @@ rtc_source_set("pcm16b_c") {
 }
 
 rtc_static_library("webrtc_opus") {
+  visibility += [ "*" ]
   sources = [
     "codecs/opus/audio_decoder_opus.cc",
     "codecs/opus/audio_decoder_opus.h",
@@ -814,7 +821,6 @@ rtc_static_library("webrtc_opus") {
 }
 
 rtc_source_set("webrtc_opus_c") {
-  visibility = [ ":*" ]  # Only targets in this file can depend on this.
   sources = [
     "codecs/opus/opus_inst.h",
     "codecs/opus/opus_interface.c",
@@ -839,6 +845,7 @@ rtc_source_set("webrtc_opus_c") {
 
 if (rtc_enable_protobuf) {
   proto_library("ana_debug_dump_proto") {
+    visibility += [ "*" ]
     sources = [
       "audio_network_adaptor/debug_dump.proto",
     ]
@@ -856,6 +863,7 @@ if (rtc_enable_protobuf) {
 }
 
 rtc_static_library("audio_network_adaptor_config") {
+  visibility += [ "*" ]
   sources = [
     "audio_network_adaptor/audio_network_adaptor_config.cc",
     "audio_network_adaptor/include/audio_network_adaptor_config.h",
@@ -866,6 +874,7 @@ rtc_static_library("audio_network_adaptor_config") {
 }
 
 rtc_static_library("audio_network_adaptor") {
+  visibility += [ "*" ]
   sources = [
     "audio_network_adaptor/audio_network_adaptor_impl.cc",
     "audio_network_adaptor/audio_network_adaptor_impl.h",
@@ -935,6 +944,7 @@ rtc_source_set("neteq_decoder_enum") {
 }
 
 rtc_static_library("neteq") {
+  visibility += [ "*" ]
   sources = [
     "neteq/accelerate.cc",
     "neteq/accelerate.h",
@@ -1028,6 +1038,7 @@ rtc_static_library("neteq") {
 # that ultimately are built and run as a part of the Chromium ecosystem, which
 # does not set the rtc_include_tests flag.
 rtc_source_set("neteq_tools_minimal") {
+  visibility += [ "*" ]
   sources = [
     "neteq/tools/audio_sink.cc",
     "neteq/tools/audio_sink.h",
@@ -1061,6 +1072,7 @@ rtc_source_set("neteq_tools_minimal") {
 }
 
 rtc_source_set("neteq_test_tools") {
+  visibility += [ "*" ]
   testonly = true
   sources = [
     "neteq/tools/audio_checksum.h",
@@ -1115,6 +1127,7 @@ config("neteq_tools_config") {
 }
 
 rtc_source_set("neteq_tools") {
+  visibility += [ "*" ]
   sources = [
     "neteq/tools/fake_decode_from_file.cc",
     "neteq/tools/fake_decode_from_file.h",
@@ -1148,6 +1161,7 @@ rtc_source_set("neteq_tools") {
 }
 
 rtc_source_set("neteq_input_audio_tools") {
+  visibility += [ "*" ]
   sources = [
     "neteq/tools/input_audio_file.cc",
     "neteq/tools/input_audio_file.h",
@@ -1190,6 +1204,7 @@ if (rtc_enable_protobuf) {
 
 if (rtc_include_tests) {
   group("audio_coding_tests") {
+    visibility += [ "*" ]
     testonly = true
     public_deps = [
       ":acm_receive_test",
@@ -1224,6 +1239,7 @@ if (rtc_include_tests) {
 
   rtc_source_set("audio_coding_modules_tests") {
     testonly = true
+    visibility += [ "*" ]
 
     sources = [
       "test/ACMTest.h",
@@ -1286,6 +1302,7 @@ if (rtc_include_tests) {
 
   rtc_source_set("audio_coding_perf_tests") {
     testonly = true
+    visibility += [ "*" ]
 
     sources = [
       "codecs/opus/opus_complexity_unittest.cc",
@@ -1942,6 +1959,7 @@ if (rtc_include_tests) {
 
   rtc_source_set("audio_coding_unittests") {
     testonly = true
+    visibility += [ "*" ]
 
     sources = [
       "acm2/acm_receiver_unittest.cc",
@@ -2090,6 +2108,7 @@ if (rtc_include_tests) {
 # webrtc/api/audio_codecs:audio_codecs_api instead.
 # TODO(kwiberg): Remove this.
 rtc_source_set("audio_decoder_interface") {
+  visibility += [ "*" ]
   sources = [
     "codecs/audio_decoder.h",
   ]
@@ -2102,6 +2121,7 @@ rtc_source_set("audio_decoder_interface") {
 # webrtc/api/audio_codecs:audio_codecs_api instead.
 # TODO(ossu): Remove this.
 rtc_source_set("audio_encoder_interface") {
+  visibility += [ "*" ]
   sources = [
     "codecs/audio_encoder.h",
   ]
