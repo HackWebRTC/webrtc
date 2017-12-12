@@ -134,6 +134,9 @@ config("common_inherited_config") {
   if (is_mac) {
     defines += [ "WEBRTC_MAC" ]
   }
+  if (is_fuchsia) {
+    defines += [ "WEBRTC_FUCHSIA" ]
+  }
   if (is_win) {
     defines += [
       "WEBRTC_WIN",
