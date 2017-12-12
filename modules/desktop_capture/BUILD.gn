@@ -176,6 +176,7 @@ if (is_mac) {
       ":primitives",
       "../../rtc_base:rtc_base",
       "../../rtc_base:rtc_base_approved",
+      "../../sdk:common_objc",
     ]
     libs = [
       "AppKit.framework",
