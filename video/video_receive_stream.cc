@@ -350,7 +350,7 @@ void VideoReceiveStream::RequestKeyFrame() {
 
 void VideoReceiveStream::OnCompleteFrame(
     std::unique_ptr<video_coding::FrameObject> frame) {
-  int last_continuous_pid = frame_buffer_->InsertFrame(std::move(frame));
+  int64_t last_continuous_pid = frame_buffer_->InsertFrame(std::move(frame));
   if (last_continuous_pid != -1)
     rtp_video_stream_receiver_.FrameContinuous(last_continuous_pid);
 }
