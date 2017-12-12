@@ -30,12 +30,14 @@ int MainFilterUpdateGain::instance_count_ = 0;
 
 MainFilterUpdateGain::MainFilterUpdateGain(float leakage_converged,
                                            float leakage_diverged,
-                                           float noise_gate_power)
+                                           float noise_gate_power,
+                                           float error_floor)
     : data_dumper_(
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
       leakage_converged_(leakage_converged),
       leakage_diverged_(leakage_diverged),
       noise_gate_power_(noise_gate_power),
+      error_floor_(error_floor),
       poor_excitation_counter_(kPoorExcitationCounterInitial) {
   H_error_.fill(kHErrorInitial);
 }
@@ -113,8 +115,9 @@ void MainFilterUpdateGain::Compute(
   std::transform(erl.begin(), erl.end(), H_error_increase.begin(),
                  H_error_increase.begin(), std::multiplies<float>());
   std::transform(H_error_.begin(), H_error_.end(), H_error_increase.begin(),
-                 H_error_.begin(),
-                 [&](float a, float b) { return std::max(a + b, 0.1f); });
+                 H_error_.begin(), [&](float a, float b) {
+                   return std::max(a + b, error_floor_);
+                 });
 
   data_dumper_->DumpRaw("aec3_main_gain_H_error", H_error_);
 }

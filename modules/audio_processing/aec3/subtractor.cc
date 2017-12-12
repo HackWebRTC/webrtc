@@ -55,7 +55,8 @@ Subtractor::Subtractor(const EchoCanceller3Config& config,
       shadow_filter_(config.filter.length_blocks, optimization, data_dumper_),
       G_main_(config.filter.leakage_converged,
               config.filter.leakage_diverged,
-              config.filter.main_noise_gate),
+              config.filter.main_noise_gate,
+              config.filter.error_floor),
       G_shadow_(config.filter.shadow_rate, config.filter.shadow_noise_gate) {
   RTC_DCHECK(data_dumper_);
 }

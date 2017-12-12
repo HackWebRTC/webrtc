@@ -30,7 +30,8 @@ class MainFilterUpdateGain {
  public:
   MainFilterUpdateGain(float leakage_converged,
                        float leakage_diverged,
-                       float noise_gate_power);
+                       float noise_gate_power,
+                       float error_floor);
   ~MainFilterUpdateGain();
 
   // Takes action in the case of a known echo path change.
@@ -50,6 +51,7 @@ class MainFilterUpdateGain {
   const float leakage_converged_;
   const float leakage_diverged_;
   const float noise_gate_power_;
+  const float error_floor_;
   std::array<float, kFftLengthBy2Plus1> H_error_;
   size_t poor_excitation_counter_;
   size_t call_counter_ = 0;
