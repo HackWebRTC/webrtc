@@ -726,32 +726,15 @@ PeerConnection::~PeerConnection() {
   TRACE_EVENT0("webrtc", "PeerConnection::~PeerConnection");
   RTC_DCHECK_RUN_ON(signaling_thread());
 
-  // Need to detach RTP transceivers from PeerConnection, since it's about to be
-  // destroyed.
-  for (auto transceiver : transceivers_) {
-    transceiver->Stop();
-  }
+  StopAndDestroyChannels();
 
-  // Destroy stats_ because it depends on session_.
+  // Destroy stats after stopping all transceivers because the senders/receivers
+  // will update the stats collector before stopping.
   stats_.reset(nullptr);
   if (stats_collector_) {
     stats_collector_->WaitForPendingRequest();
     stats_collector_ = nullptr;
   }
-
-  // Destroy video channels first since they may have a pointer to a voice
-  // channel.
-  for (auto transceiver : transceivers_) {
-    if (transceiver->internal()->media_type() == cricket::MEDIA_TYPE_VIDEO) {
-      DestroyTransceiverChannel(transceiver);
-    }
-  }
-  for (auto transceiver : transceivers_) {
-    if (transceiver->internal()->media_type() == cricket::MEDIA_TYPE_AUDIO) {
-      DestroyTransceiverChannel(transceiver);
-    }
-  }
-  DestroyDataChannel();
 
   RTC_LOG(LS_INFO) << "Session: " << session_id() << " is destroyed.";
 
@@ -768,6 +751,25 @@ PeerConnection::~PeerConnection() {
     call_.reset();
     event_log_.reset();
   });
+}
+
+void PeerConnection::StopAndDestroyChannels() {
+  for (auto transceiver : transceivers_) {
+    transceiver->Stop();
+  }
+  // Destroy video channels first since they may have a pointer to a voice
+  // channel.
+  for (auto transceiver : transceivers_) {
+    if (transceiver->internal()->media_type() == cricket::MEDIA_TYPE_VIDEO) {
+      DestroyTransceiverChannel(transceiver);
+    }
+  }
+  for (auto transceiver : transceivers_) {
+    if (transceiver->internal()->media_type() == cricket::MEDIA_TYPE_AUDIO) {
+      DestroyTransceiverChannel(transceiver);
+    }
+  }
+  DestroyDataChannel();
 }
 
 bool PeerConnection::Initialize(
@@ -2227,11 +2229,8 @@ void PeerConnection::Close() {
   stats_->UpdateStats(kStatsOutputLevelStandard);
 
   ChangeSignalingState(PeerConnectionInterface::kClosed);
-  RemoveUnusedChannels(nullptr);
-  RTC_DCHECK(!GetAudioTransceiver()->internal()->channel());
-  RTC_DCHECK(!GetVideoTransceiver()->internal()->channel());
-  RTC_DCHECK(!rtp_data_channel_);
-  RTC_DCHECK(!sctp_transport_);
+
+  StopAndDestroyChannels();
 
   network_thread()->Invoke<void>(
       RTC_FROM_HERE,

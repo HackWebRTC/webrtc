@@ -543,13 +543,6 @@ TEST_F(PeerConnectionRtpTest, AddTransceiverWithDirectionIsReflected) {
   EXPECT_EQ(RtpTransceiverDirection::kSendOnly, transceiver->direction());
 }
 
-TEST_F(PeerConnectionRtpTest, AddTransceiverWithInvalidKindReturnsError) {
-  auto caller = CreatePeerConnectionWithUnifiedPlan();
-
-  auto result = caller->pc()->AddTransceiver(cricket::MEDIA_TYPE_DATA);
-  EXPECT_EQ(RTCErrorType::INVALID_PARAMETER, result.error().type());
-}
-
 // Test that calling AddTransceiver with a track creates a transceiver which has
 // its sender's track set to the passed-in track.
 TEST_F(PeerConnectionRtpTest, AddTransceiverWithTrackCreatesSenderWithTrack) {
@@ -592,6 +585,21 @@ TEST_F(PeerConnectionRtpTest,
               UnorderedElementsAre(transceiver1, transceiver2));
   EXPECT_THAT(caller->pc()->GetSenders(),
               UnorderedElementsAre(sender1, sender2));
+}
+
+// RtpTransceiver error handling tests.
+
+TEST_F(PeerConnectionRtpTest, AddTransceiverWithInvalidKindReturnsError) {
+  auto caller = CreatePeerConnectionWithUnifiedPlan();
+
+  auto result = caller->pc()->AddTransceiver(cricket::MEDIA_TYPE_DATA);
+  EXPECT_EQ(RTCErrorType::INVALID_PARAMETER, result.error().type());
+}
+
+TEST_F(PeerConnectionRtpTest, UnifiedPlanCanClosePeerConnection) {
+  auto caller = CreatePeerConnectionWithUnifiedPlan();
+
+  caller->pc()->Close();
 }
 
 }  // namespace webrtc

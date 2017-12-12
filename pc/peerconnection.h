@@ -241,10 +241,18 @@ class PeerConnection : public PeerConnectionInterface,
   // Exposed for stats collecting.
   // TODO(steveanton): Switch callers to use the plural form and remove these.
   virtual cricket::VoiceChannel* voice_channel() const {
+    if (IsUnifiedPlan()) {
+      // TODO(steveanton): Change stats collection to work with transceivers.
+      return nullptr;
+    }
     return static_cast<cricket::VoiceChannel*>(
         GetAudioTransceiver()->internal()->channel());
   }
   virtual cricket::VideoChannel* video_channel() const {
+    if (IsUnifiedPlan()) {
+      // TODO(steveanton): Change stats collection to work with transceivers.
+      return nullptr;
+    }
     return static_cast<cricket::VideoChannel*>(
         GetVideoTransceiver()->internal()->channel());
   }
@@ -649,6 +657,11 @@ class PeerConnection : public PeerConnectionInterface,
   // This enables media to flow on all configured audio/video channels and the
   // RtpDataChannel.
   void EnableSending();
+
+  // Stops all RtpTransceivers, destroys all BaseChannels and destroys the
+  // SCTP data channel.
+  void StopAndDestroyChannels();
+
   // Returns the media index for a local ice candidate given the content name.
   // Returns false if the local session description does not have a media
   // content called  |content_name|.
