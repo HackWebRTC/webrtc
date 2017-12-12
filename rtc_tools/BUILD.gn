@@ -223,12 +223,15 @@ if (!build_with_chromium) {
       defines = [ "ENABLE_RTC_EVENT_LOG" ]
       deps = [
         ":chart_proto",
+        "../:webrtc_common",
         "../call:call_interfaces",
         "../call:video_stream_api",
+        "../logging:rtc_event_log_api",
         "../logging:rtc_event_log_impl",
         "../logging:rtc_event_log_parser",
         "../modules:module_api",
         "../modules/audio_coding:ana_debug_dump_proto",
+        "../modules/audio_coding:audio_network_adaptor",
         "../modules/audio_coding:neteq_tools",
         "../modules/rtp_rtcp:rtp_rtcp_format",
         "../rtc_base:rtc_base_approved",
@@ -263,6 +266,7 @@ if (rtc_include_tests) {
       deps = [
         ":event_log_visualizer_utils",
         "../logging:rtc_event_log_parser",
+        "../rtc_base:protobuf_utils",
         "../rtc_base:rtc_base_approved",
         "../test:field_trial",
         "../test:test_support",

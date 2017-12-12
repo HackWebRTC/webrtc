@@ -1194,6 +1194,7 @@ if (rtc_enable_protobuf) {
       ":neteq_tools_minimal",
       "../../logging:rtc_event_log_parser",
       "../../rtc_base:rtc_base_approved",
+      "../rtp_rtcp",
       "../rtp_rtcp:rtp_rtcp_format",
     ]
     public_deps = [
