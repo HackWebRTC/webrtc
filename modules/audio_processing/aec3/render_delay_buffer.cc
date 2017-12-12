@@ -206,7 +206,7 @@ RenderDelayBuffer::BufferingEvent RenderDelayBufferImpl::Insert(
   // Allow overrun and do a reset when render overrun occurrs due to more render
   // data being inserted than capture data is received.
   BufferingEvent event = RenderOverrun(blocks_, low_rate_)
-                             ? event = BufferingEvent::kRenderOverrun
+                             ? BufferingEvent::kRenderOverrun
                              : BufferingEvent::kNone;
 
   // Insert the new render block into the specified position.
