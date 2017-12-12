@@ -522,7 +522,6 @@ if (rtc_include_tests) {
       deps += [
         ":audioproc_f",
         ":audioproc_unittest_proto",
-        ":unpack_aecdump",
         "aec_dump:aec_dump_unittests",
         "test/conversational_speech",
         "test/py_quality_assessment",
@@ -738,25 +737,6 @@ if (rtc_include_tests) {
   }
 
   if (rtc_enable_protobuf) {
-    rtc_executable("unpack_aecdump") {
-      testonly = true
-      sources = [
-        "test/unpack.cc",
-      ]
-
-      deps = [
-        ":audio_processing",
-        ":audioproc_debug_proto",
-        ":audioproc_protobuf_utils",
-        ":audioproc_test_utils",
-        "../..:webrtc_common",
-        "../../common_audio",
-        "../../rtc_base:protobuf_utils",
-        "../../rtc_base:rtc_base_approved",
-        "../../system_wrappers:system_wrappers_default",
-      ]
-    }  # unpack_aecdump
-
     rtc_executable("audioproc_f") {
       testonly = true
       sources = [

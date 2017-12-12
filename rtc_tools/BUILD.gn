@@ -41,6 +41,7 @@ group("rtc_tools") {
       deps += [
         ":event_log_visualizer",
         ":rtp_analyzer",
+        ":unpack_aecdump",
         "network_tester",
       ]
     }
@@ -371,6 +372,26 @@ if (rtc_include_tests) {
       deps = [
         "../logging:rtc_event_log_proto",
       ]
-    }
+    }  # rtp_analyzer
+
+    rtc_executable("unpack_aecdump") {
+      testonly = true
+      sources = [
+        "unpack_aecdump/unpack.cc",
+      ]
+
+      deps = [
+        "..:webrtc_common",
+        "../common_audio",
+        "../modules/audio_processing",
+        "../modules/audio_processing:audioproc_debug_proto",
+        "../modules/audio_processing:audioproc_debug_proto",
+        "../modules/audio_processing:audioproc_protobuf_utils",
+        "../modules/audio_processing:audioproc_test_utils",
+        "../rtc_base:protobuf_utils",
+        "../rtc_base:rtc_base_approved",
+        "../system_wrappers:system_wrappers_default",
+      ]
+    }  # unpack_aecdump
   }
 }
