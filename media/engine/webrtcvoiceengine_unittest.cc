@@ -3300,6 +3300,18 @@ TEST_F(WebRtcVoiceEngineTestFake, PreservePlayoutWhenRecreateRecvStream) {
   EXPECT_TRUE(GetRecvStream(kSsrcX).started());
 }
 
+// Tests when GetSources is called with non-existing ssrc, it will return an
+// empty list of RtpSource without crashing.
+TEST_F(WebRtcVoiceEngineTestFake, GetSourcesWithNonExistingSsrc) {
+  // Setup an recv stream with |kSsrcX|.
+  SetupRecvStream();
+  cricket::WebRtcVoiceMediaChannel* media_channel =
+      static_cast<cricket::WebRtcVoiceMediaChannel*>(channel_);
+  // Call GetSources with |kSsrcY| which doesn't exist.
+  std::vector<webrtc::RtpSource> sources = media_channel->GetSources(kSsrcY);
+  EXPECT_EQ(0u, sources.size());
+}
+
 // Tests that the library initializes and shuts down properly.
 TEST(WebRtcVoiceEngineTest, StartupShutdown) {
   // If the VoiceEngine wants to gather available codecs early, that's fine but

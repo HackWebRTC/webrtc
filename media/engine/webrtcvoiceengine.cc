@@ -2307,9 +2307,11 @@ void WebRtcVoiceMediaChannel::SetRawAudioSink(
 std::vector<webrtc::RtpSource> WebRtcVoiceMediaChannel::GetSources(
     uint32_t ssrc) const {
   auto it = recv_streams_.find(ssrc);
-  RTC_DCHECK(it != recv_streams_.end())
-      << "Attempting to get contributing sources for SSRC:" << ssrc
-      << " which doesn't exist.";
+  if (it == recv_streams_.end()) {
+    RTC_LOG(LS_ERROR) << "Attempting to get contributing sources for SSRC:"
+                      << ssrc << " which doesn't exist.";
+    return std::vector<webrtc::RtpSource>();
+  }
   return it->second->GetSources();
 }
 
