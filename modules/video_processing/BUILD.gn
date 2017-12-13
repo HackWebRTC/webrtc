@@ -31,6 +31,7 @@ rtc_static_library("video_processing") {
     "../../common_audio",
     "../../common_video",
     "../../modules/utility",
+    "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
     "../../system_wrappers:cpu_features_api",
   ]

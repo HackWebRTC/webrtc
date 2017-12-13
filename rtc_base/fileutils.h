@@ -13,13 +13,15 @@
 
 #include <string>
 
-#if !defined(WEBRTC_WIN)
+#if defined(WEBRTC_WIN)
+#include <windows.h>
+#else
 #include <dirent.h>
 #include <stdio.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#endif
+#endif  // WEBRTC_WIN
 
 #include "rtc_base/checks.h"
 #include "rtc_base/constructormagic.h"

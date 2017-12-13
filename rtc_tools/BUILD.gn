@@ -235,6 +235,7 @@ if (!build_with_chromium) {
         "../modules/audio_coding:audio_network_adaptor",
         "../modules/audio_coding:neteq_tools",
         "../modules/rtp_rtcp:rtp_rtcp_format",
+        "../rtc_base:checks",
         "../rtc_base:rtc_base_approved",
         "../rtc_base:rtc_numerics",
 
@@ -340,6 +341,7 @@ if (rtc_include_tests) {
       "$rtc_libyuv_dir",
       "../common_video:common_video",
       "../rtc_base",
+      "../rtc_base:checks",
       "../test:test_main",
       "//testing/gtest",
     ]

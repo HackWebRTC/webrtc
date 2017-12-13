@@ -67,6 +67,7 @@ rtc_source_set("video_test_common") {
     "../common_video",
     "../media:rtc_media_base",
     "../modules/video_capture:video_capture_module",
+    "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
     "../rtc_base:rtc_task_queue",
     "../system_wrappers",
@@ -94,6 +95,7 @@ rtc_source_set("rtp_test_utils") {
     "../api:array_view",
     "../modules/rtp_rtcp",
     "../modules/rtp_rtcp:rtp_rtcp_format",
+    "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
     "//testing/gtest",
   ]
@@ -230,6 +232,7 @@ if (rtc_include_tests) {
       "../api:video_frame_api",
       "../api:video_frame_api_i420",
       "../common_video",
+      "../rtc_base:checks",
       "../rtc_base:rtc_base_approved",
       "../system_wrappers",
       "//testing/gmock",
@@ -374,6 +377,7 @@ if (is_ios) {
     ]
     deps = [
       "..:webrtc_common",
+      "../rtc_base:checks",
       "../rtc_base:rtc_base_approved",
       "../sdk:common_objc",
     ]
@@ -395,6 +399,7 @@ rtc_source_set("fileutils") {
   deps = [
     "..:webrtc_common",
     "../api:optional",
+    "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
   ]
   if (is_ios) {
@@ -458,6 +463,7 @@ rtc_source_set("fileutils_unittests") {
     ":fileutils",
     ":test_support",
     "../api:optional",
+    "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
     "//testing/gmock",
     "//testing/gtest",
@@ -498,6 +504,7 @@ rtc_source_set("single_threaded_task_queue") {
     "single_threaded_task_queue.h",
   ]
   deps = [
+    "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
   ]
 }
@@ -517,6 +524,7 @@ rtc_source_set("fake_audio_device") {
     "../api:array_view",
     "../common_audio:common_audio",
     "../modules/audio_device:audio_device",
+    "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
     "../system_wrappers",
   ]
@@ -595,6 +603,7 @@ rtc_source_set("test_common") {
     "../modules/video_coding:webrtc_h264",
     "../modules/video_coding:webrtc_vp8",
     "../modules/video_coding:webrtc_vp9",
+    "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
     "../rtc_base:rtc_task_queue",
     "../rtc_base:sequenced_task_checker",
@@ -676,6 +685,7 @@ rtc_source_set("test_renderer_generic") {
     "../common_video",
     "../media:rtc_media_base",
     "../modules/media_file",
+    "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
     "//testing/gtest",
   ]
