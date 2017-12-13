@@ -13,7 +13,7 @@
 
 #include "rtc_base/constructormagic.h"
 #if defined(WEBRTC_WIN)
-#include <windows.h>
+#include "rtc_base/win32.h"  // NOLINT: consider this a system header.
 #elif defined(WEBRTC_POSIX)
 #include <pthread.h>
 #else

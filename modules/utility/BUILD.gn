@@ -34,7 +34,6 @@ rtc_static_library("utility") {
     "../..:webrtc_common",
     "../../audio/utility:audio_frame_operations",
     "../../common_audio",
-    "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:rtc_task_queue",
     "../../system_wrappers",

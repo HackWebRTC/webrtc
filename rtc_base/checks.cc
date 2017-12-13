@@ -30,18 +30,8 @@
 #include <windows.h>
 #endif
 
-#if defined(WEBRTC_WIN)
-#define RTC_LAST_SYSTEM_ERROR \
-  (::GetLastError())
-#elif defined(__native_client__) && __native_client__
-#define RTC_LAST_SYSTEM_ERROR \
-  (0)
-#elif defined(WEBRTC_POSIX)
-#define RTC_LAST_SYSTEM_ERROR \
-  (errno)
-#endif  // WEBRTC_WIN
-
 #include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 #if defined(_MSC_VER)
 // Warning C4722: destructor never returns, potential memory leak.

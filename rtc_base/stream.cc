@@ -29,7 +29,7 @@
 #include "rtc_base/timeutils.h"
 
 #if defined(WEBRTC_WIN)
-#include <windows.h>
+#include "rtc_base/win32.h"
 #define fileno _fileno
 #endif
 

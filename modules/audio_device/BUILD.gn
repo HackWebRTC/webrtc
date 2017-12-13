@@ -76,7 +76,6 @@ if (rtc_include_internal_audio_device && is_ios) {
     deps = [
       ":audio_device_generic",
       "../../api:array_view",
-      "../../rtc_base:checks",
       "../../rtc_base:gtest_prod",
       "../../rtc_base:rtc_base",
       "../../sdk:audio_objc",
@@ -102,7 +101,6 @@ rtc_source_set("audio_device_generic") {
     "../..:webrtc_common",
     "../../api:array_view",
     "../../common_audio",
-    "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:rtc_task_queue",
     "../../system_wrappers",
@@ -331,7 +329,6 @@ if (rtc_include_tests) {
       ":mock_audio_device",
       "../../api:array_view",
       "../../api:optional",
-      "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
       "../../system_wrappers",
       "../../test:test_support",

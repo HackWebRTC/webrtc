@@ -151,7 +151,6 @@ webrtc_fuzzer_test("ulpfec_generator_fuzzer") {
     "../../modules/rtp_rtcp",
     "../../modules/rtp_rtcp:fec_test_helper",
     "../../modules/rtp_rtcp:rtp_rtcp_format",
-    "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
   ]
 }
@@ -197,7 +196,6 @@ webrtc_fuzzer_test("rtcp_receiver_fuzzer") {
   ]
   deps = [
     "../../modules/rtp_rtcp",
-    "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
     "../../system_wrappers:system_wrappers",
   ]
@@ -248,7 +246,6 @@ rtc_static_library("audio_decoder_fuzzer") {
     "../../api:optional",
     "../../api/audio_codecs:audio_codecs_api",
     "../../modules/rtp_rtcp:rtp_rtcp_format",
-    "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
   ]
 }
@@ -360,7 +357,6 @@ webrtc_fuzzer_test("residual_echo_detector_fuzzer") {
   ]
   deps = [
     "../../modules/audio_processing:audio_processing",
-    "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
   ]
 }
@@ -430,7 +426,6 @@ webrtc_fuzzer_test("audio_processing_fuzzer") {
     "../../api:optional",
     "../../modules:module_api",
     "../../modules/audio_processing",
-    "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
   ]
 }

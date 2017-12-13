@@ -47,7 +47,6 @@ rtc_static_library("lib") {
     "../../../..:webrtc_common",
     "../../../../api:array_view",
     "../../../../common_audio",
-    "../../../../rtc_base:checks",
     "../../../../rtc_base:rtc_base_approved",
   ]
   visibility = [ ":*" ]  # Only targets in this file can depend on this.

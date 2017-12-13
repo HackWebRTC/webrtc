@@ -73,7 +73,6 @@ rtc_source_set("rtp_receiver") {
     "../api:optional",
     "../modules/rtp_rtcp",
     "../modules/rtp_rtcp:rtp_rtcp_format",
-    "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
   ]
 }
@@ -99,7 +98,6 @@ rtc_source_set("bitrate_allocator") {
   ]
   deps = [
     "../modules/bitrate_controller",
-    "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
     "../rtc_base:sequenced_task_checker",
     "../system_wrappers",
@@ -144,7 +142,6 @@ rtc_static_library("call") {
     "../modules/rtp_rtcp",
     "../modules/rtp_rtcp:rtp_rtcp_format",
     "../modules/utility",
-    "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
     "../rtc_base:rtc_task_queue",
     "../rtc_base:sequenced_task_checker",
@@ -219,7 +216,6 @@ if (rtc_include_tests) {
       "../modules/rtp_rtcp:mock_rtp_rtcp",
       "../modules/rtp_rtcp:rtp_rtcp_format",
       "../modules/utility:mock_process_thread",
-      "../rtc_base:checks",
       "../rtc_base:rtc_base_approved",
       "../system_wrappers",
       "../test:audio_codec_mocks",
@@ -253,7 +249,6 @@ if (rtc_include_tests) {
       "../modules/audio_coding",
       "../modules/audio_mixer:audio_mixer_impl",
       "../modules/rtp_rtcp",
-      "../rtc_base:checks",
       "../rtc_base:rtc_base_approved",
       "../system_wrappers",
       "../system_wrappers:metrics_default",
