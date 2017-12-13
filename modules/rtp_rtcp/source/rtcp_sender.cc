@@ -230,10 +230,11 @@ int32_t RTCPSender::SetSendingStatus(const FeedbackState& feedback_state,
   return 0;
 }
 
-void RTCPSender::SetRemb(uint32_t bitrate, const std::vector<uint32_t>& ssrcs) {
+void RTCPSender::SetRemb(int64_t bitrate_bps, std::vector<uint32_t> ssrcs) {
+  RTC_CHECK_GE(bitrate_bps, 0);
   rtc::CritScope lock(&critical_section_rtcp_sender_);
-  remb_bitrate_ = bitrate;
-  remb_ssrcs_ = ssrcs;
+  remb_bitrate_ = bitrate_bps;
+  remb_ssrcs_ = std::move(ssrcs);
 
   SetFlag(kRtcpRemb, /*is_volatile=*/false);
   // Send a REMB immediately if we have a new REMB. The frequency of REMBs is

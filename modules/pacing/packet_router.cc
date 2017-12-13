@@ -153,7 +153,10 @@ uint16_t PacketRouter::AllocateSequenceNumber() {
 void PacketRouter::OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
                                            uint32_t bitrate_bps) {
   // % threshold for if we should send a new REMB asap.
-  const uint32_t kSendThresholdPercent = 97;
+  const int64_t kSendThresholdPercent = 97;
+  // TODO(danilchap): Remove receive_bitrate_bps variable and the cast
+  // when OnReceiveBitrateChanged takes bitrate as int64_t.
+  int64_t receive_bitrate_bps = static_cast<int64_t>(bitrate_bps);
 
   int64_t now_ms = rtc::TimeMillis();
   {
@@ -162,8 +165,8 @@ void PacketRouter::OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
     // If we already have an estimate, check if the new total estimate is below
     // kSendThresholdPercent of the previous estimate.
     if (last_send_bitrate_bps_ > 0) {
-      uint32_t new_remb_bitrate_bps =
-          last_send_bitrate_bps_ - bitrate_bps_ + bitrate_bps;
+      int64_t new_remb_bitrate_bps =
+          last_send_bitrate_bps_ - bitrate_bps_ + receive_bitrate_bps;
 
       if (new_remb_bitrate_bps <
           kSendThresholdPercent * last_send_bitrate_bps_ / 100) {
@@ -172,7 +175,7 @@ void PacketRouter::OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
         last_remb_time_ms_ = now_ms - kRembSendIntervalMs;
       }
     }
-    bitrate_bps_ = bitrate_bps;
+    bitrate_bps_ = receive_bitrate_bps;
 
     if (now_ms - last_remb_time_ms_ < kRembSendIntervalMs) {
       return;
@@ -180,14 +183,15 @@ void PacketRouter::OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
     // NOTE: Updated if we intend to send the data; we might not have
     // a module to actually send it.
     last_remb_time_ms_ = now_ms;
-    last_send_bitrate_bps_ = bitrate_bps;
+    last_send_bitrate_bps_ = receive_bitrate_bps;
     // Cap the value to send in remb with configured value.
-    bitrate_bps = std::min(bitrate_bps, max_bitrate_bps_);
+    receive_bitrate_bps = std::min(receive_bitrate_bps, max_bitrate_bps_);
   }
-  SendRemb(bitrate_bps, ssrcs);
+  SendRemb(receive_bitrate_bps, ssrcs);
 }
 
-void PacketRouter::SetMaxDesiredReceiveBitrate(uint32_t bitrate_bps) {
+void PacketRouter::SetMaxDesiredReceiveBitrate(int64_t bitrate_bps) {
+  RTC_DCHECK_GE(bitrate_bps, 0);
   {
     rtc::CritScope lock(&remb_crit_);
     max_bitrate_bps_ = bitrate_bps;
@@ -201,7 +205,7 @@ void PacketRouter::SetMaxDesiredReceiveBitrate(uint32_t bitrate_bps) {
   SendRemb(bitrate_bps, /*ssrcs=*/{});
 }
 
-bool PacketRouter::SendRemb(uint32_t bitrate_bps,
+bool PacketRouter::SendRemb(int64_t bitrate_bps,
                             const std::vector<uint32_t>& ssrcs) {
   rtc::CritScope lock(&modules_crit_);
 

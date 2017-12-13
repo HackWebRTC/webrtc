@@ -629,9 +629,9 @@ int32_t ModuleRtpRtcpImpl::RemoteRTCPStat(
 }
 
 // (REMB) Receiver Estimated Max Bitrate.
-void ModuleRtpRtcpImpl::SetRemb(uint32_t bitrate_bps,
-                                const std::vector<uint32_t>& ssrcs) {
-  rtcp_sender_.SetRemb(bitrate_bps, ssrcs);
+void ModuleRtpRtcpImpl::SetRemb(int64_t bitrate_bps,
+                                std::vector<uint32_t> ssrcs) {
+  rtcp_sender_.SetRemb(bitrate_bps, std::move(ssrcs));
 }
 
 void ModuleRtpRtcpImpl::UnsetRemb() {

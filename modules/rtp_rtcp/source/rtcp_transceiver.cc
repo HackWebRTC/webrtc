@@ -67,7 +67,8 @@ void RtcpTransceiver::SendCompoundPacket() {
   });
 }
 
-void RtcpTransceiver::SetRemb(int bitrate_bps, std::vector<uint32_t> ssrcs) {
+void RtcpTransceiver::SetRemb(int64_t bitrate_bps,
+                              std::vector<uint32_t> ssrcs) {
   // TODO(danilchap): Replace with lambda with move capture when available.
   struct SetRembClosure {
     void operator()() {
@@ -76,7 +77,7 @@ void RtcpTransceiver::SetRemb(int bitrate_bps, std::vector<uint32_t> ssrcs) {
     }
 
     rtc::WeakPtr<RtcpTransceiverImpl> ptr;
-    int bitrate_bps;
+    int64_t bitrate_bps;
     std::vector<uint32_t> ssrcs;
   };
   task_queue_->PostTask(SetRembClosure{ptr_, bitrate_bps, std::move(ssrcs)});

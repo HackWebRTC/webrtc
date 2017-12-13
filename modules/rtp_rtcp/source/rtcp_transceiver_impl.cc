@@ -134,7 +134,7 @@ void RtcpTransceiverImpl::SendCompoundPacket() {
   ReschedulePeriodicCompoundPackets();
 }
 
-void RtcpTransceiverImpl::SetRemb(int bitrate_bps,
+void RtcpTransceiverImpl::SetRemb(int64_t bitrate_bps,
                                   std::vector<uint32_t> ssrcs) {
   RTC_DCHECK_GE(bitrate_bps, 0);
   remb_.emplace();
