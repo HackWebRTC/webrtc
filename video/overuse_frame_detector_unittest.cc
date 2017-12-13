@@ -15,6 +15,7 @@
 #include "modules/video_coding/utility/quality_scaler.h"
 #include "rtc_base/event.h"
 #include "rtc_base/fakeclock.h"
+#include "rtc_base/random.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "video/overuse_frame_detector.h"
@@ -22,6 +23,7 @@
 namespace webrtc {
 
 using ::testing::InvokeWithoutArgs;
+using ::testing::_;
 
 namespace {
   const int kWidth = 640;
@@ -104,6 +106,33 @@ class OveruseFrameDetectorTest : public ::testing::Test,
       clock_.AdvanceTimeMicros(delay_us);
       overuse_detector_->FrameSent(timestamp, rtc::TimeMicros());
       clock_.AdvanceTimeMicros(interval_us - delay_us);
+      timestamp += interval_us * 90 / 1000;
+    }
+  }
+
+  void InsertAndSendFramesWithRandomInterval(int num_frames,
+                                             int min_interval_us,
+                                             int max_interval_us,
+                                             int width,
+                                             int height,
+                                             int delay_us) {
+    webrtc::Random random(17);
+
+    VideoFrame frame(I420Buffer::Create(width, height),
+                     webrtc::kVideoRotation_0, 0);
+    uint32_t timestamp = 0;
+    while (num_frames-- > 0) {
+      frame.set_timestamp(timestamp);
+      int interval_us = random.Rand(min_interval_us, max_interval_us);
+      overuse_detector_->FrameCaptured(frame, rtc::TimeMicros());
+      clock_.AdvanceTimeMicros(delay_us);
+      overuse_detector_->FrameSent(timestamp, rtc::TimeMicros());
+
+      overuse_detector_->CheckForOveruse();
+      // Avoid turning clock backwards.
+      if (interval_us > delay_us)
+        clock_.AdvanceTimeMicros(interval_us - delay_us);
+
       timestamp += interval_us * 90 / 1000;
     }
   }
@@ -476,6 +505,65 @@ TEST_F(OveruseFrameDetectorTest, LimitsMaxFrameInterval) {
                                     kHeight, processing_time_us);
     overuse_detector_->CheckForOveruse();
   }
+}
+
+// Models screencast, with irregular arrival of frames which are heavy
+// to encode.
+TEST_F(OveruseFrameDetectorTest, NoOveruseForLargeRandomFrameInterval) {
+  // TODO(bugs.webrtc.org/8504): When new estimator is relanded,
+  // behavior is improved in this scenario, with only AdaptUp events,
+  // and estimated load closer to the true average.
+
+  // EXPECT_CALL(*(observer_.get()), AdaptDown(_)).Times(0);
+  // EXPECT_CALL(*(observer_.get()), AdaptUp(reason_))
+  //     .Times(testing::AtLeast(1));
+
+  const int kNumFrames = 500;
+  const int kEncodeTimeUs = 100 * rtc::kNumMicrosecsPerMillisec;
+
+  const int kMinIntervalUs = 30 * rtc::kNumMicrosecsPerMillisec;
+  const int kMaxIntervalUs = 1000 * rtc::kNumMicrosecsPerMillisec;
+
+  const int kTargetFramerate = 5;
+
+  overuse_detector_->OnTargetFramerateUpdated(kTargetFramerate);
+
+  InsertAndSendFramesWithRandomInterval(kNumFrames,
+                                        kMinIntervalUs, kMaxIntervalUs,
+                                        kWidth, kHeight, kEncodeTimeUs);
+  // Average usage 19%. Check that estimate is in the right ball park.
+  // EXPECT_NEAR(UsagePercent(), 20, 10);
+  EXPECT_NEAR(UsagePercent(), 20, 35);
+}
+
+// Models screencast, with irregular arrival of frames, often
+// exceeding the timeout interval.
+TEST_F(OveruseFrameDetectorTest, NoOveruseForRandomFrameIntervalWithReset) {
+  // TODO(bugs.webrtc.org/8504): When new estimator is relanded,
+  // behavior is improved in this scenario, and we get AdaptUp events.
+  EXPECT_CALL(*(observer_.get()), AdaptDown(_)).Times(0);
+  // EXPECT_CALL(*(observer_.get()), AdaptUp(reason_))
+  //     .Times(testing::AtLeast(1));
+
+  const int kNumFrames = 500;
+  const int kEncodeTimeUs = 100 * rtc::kNumMicrosecsPerMillisec;
+
+  const int kMinIntervalUs = 30 * rtc::kNumMicrosecsPerMillisec;
+  const int kMaxIntervalUs = 3000 * rtc::kNumMicrosecsPerMillisec;
+
+  const int kTargetFramerate = 5;
+
+  overuse_detector_->OnTargetFramerateUpdated(kTargetFramerate);
+
+  InsertAndSendFramesWithRandomInterval(kNumFrames,
+                                        kMinIntervalUs, kMaxIntervalUs,
+                                        kWidth, kHeight, kEncodeTimeUs);
+
+  // Average usage 6.6%, but since the frame_timeout_interval_ms is
+  // only 1500 ms, we often reset the estimate to the initial value.
+  // Check that estimate is in the right ball park.
+  EXPECT_GE(UsagePercent(), 1);
+  EXPECT_LE(UsagePercent(), InitialUsage() + 5);
 }
 
 }  // namespace webrtc
