@@ -92,9 +92,10 @@ class PeerConnectionWrapperForBundleTest : public PeerConnectionWrapper {
   }
 
   PeerConnection* GetInternalPeerConnection() {
-    auto* pci = reinterpret_cast<
-        PeerConnectionProxyWithInternal<PeerConnectionInterface>*>(pc());
-    return reinterpret_cast<PeerConnection*>(pci->internal());
+    auto* pci =
+        static_cast<PeerConnectionProxyWithInternal<PeerConnectionInterface>*>(
+            pc());
+    return static_cast<PeerConnection*>(pci->internal());
   }
 
   // Returns true if the stats indicate that an ICE connection is either in

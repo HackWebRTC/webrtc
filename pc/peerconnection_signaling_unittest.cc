@@ -48,9 +48,10 @@ class PeerConnectionWrapperForSignalingTest : public PeerConnectionWrapper {
   }
 
   PeerConnection* GetInternalPeerConnection() {
-    auto* pci = reinterpret_cast<
-        PeerConnectionProxyWithInternal<PeerConnectionInterface>*>(pc());
-    return reinterpret_cast<PeerConnection*>(pci->internal());
+    auto* pci =
+        static_cast<PeerConnectionProxyWithInternal<PeerConnectionInterface>*>(
+            pc());
+    return static_cast<PeerConnection*>(pci->internal());
   }
 };
 

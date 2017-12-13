@@ -187,11 +187,10 @@ class PeerConnectionIceUnitTest : public ::testing::Test {
   // TODO(qingsi): Rewrite this method in terms of the standard IceTransport
   // after it is implemented.
   cricket::IceRole GetIceRole(const WrapperPtr& pc_wrapper_ptr) {
-    auto* pc_proxy = reinterpret_cast<
-        PeerConnectionProxyWithInternal<PeerConnectionInterface>*>(
-        pc_wrapper_ptr->pc());
-    PeerConnection* pc =
-        reinterpret_cast<PeerConnection*>(pc_proxy->internal());
+    auto* pc_proxy =
+        static_cast<PeerConnectionProxyWithInternal<PeerConnectionInterface>*>(
+            pc_wrapper_ptr->pc());
+    PeerConnection* pc = static_cast<PeerConnection*>(pc_proxy->internal());
     return pc->voice_channel()
         ->rtp_dtls_transport()
         ->ice_transport()
