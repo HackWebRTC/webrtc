@@ -11,10 +11,8 @@
 #import <UIKit/UIKit.h>
 
 #include "test/ios/test_support.h"
-#include "test/testsupport/perf_test.h"
 
 #import "sdk/objc/Framework/Classes/Common/RTCUIApplicationStatusObserver.h"
-#include "sdk/objc/Framework/Classes/Common/helpers.h"
 
 // Springboard will kill any iOS app that fails to check in after launch within
 // a given time. Starting a UIApplication before invoking TestSuite::Run
@@ -33,7 +31,6 @@
 static int (*g_test_suite)(void) = NULL;
 static int g_argc;
 static char **g_argv;
-static bool g_save_chartjson_result;
 
 @interface UIApplication (Testing)
 - (void)_terminateWithStatus:(int)status;
@@ -78,20 +75,6 @@ static bool g_save_chartjson_result;
 - (void)runTests {
   int exitStatus = g_test_suite();
 
-  if (g_save_chartjson_result) {
-    // Stores data into a json file under the app's document directory.
-    NSString* fileName = @"perf_result.json";
-    NSArray<NSString*>* outputDirectories = NSSearchPathForDirectoriesInDomains(
-        NSDocumentDirectory, NSUserDomainMask, YES);
-    if ([outputDirectories count] != 0) {
-      NSString* outputPath =
-          [outputDirectories[0] stringByAppendingPathComponent:fileName];
-
-      webrtc::test::WritePerfResults(
-          webrtc::ios::StdStringFromNSString(outputPath));
-    }
-  }
-
   // If a test app is too fast, it will exit before Instruments has has a
   // a chance to initialize and no test results will be seen.
   // TODO(crbug.com/137010): Figure out how much time is actually needed, and
@@ -110,14 +93,10 @@ static bool g_save_chartjson_result;
 namespace rtc {
 namespace test {
 
-// Note: This is not thread safe, and must be called from the same thread as
-// runTests above.
-void InitTestSuite(int (*test_suite)(void), int argc, char *argv[],
-                   bool save_chartjson_result) {
+void InitTestSuite(int (*test_suite)(void), int argc, char *argv[]) {
   g_test_suite = test_suite;
   g_argc = argc;
   g_argv = argv;
-  g_save_chartjson_result = save_chartjson_result;
 }
 
 void RunTestsFromIOSApp() {
