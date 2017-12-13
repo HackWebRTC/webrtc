@@ -79,10 +79,6 @@ public:
     int32_t StopRecording() override;
     bool Recording() const override;
 
-    // Microphone Automatic Gain Control (AGC)
-    int32_t SetAGC(bool enable) override;
-    bool AGC() const override;
-
     // Audio mixer initialization
     int32_t InitSpeaker() override;
     bool SpeakerIsInitialized() const override;
@@ -191,7 +187,6 @@ private:
     bool _playing;
     bool _recIsInitialized;
     bool _playIsInitialized;
-    bool _AGC;
 
     snd_pcm_sframes_t _recordingDelay;
     snd_pcm_sframes_t _playoutDelay;

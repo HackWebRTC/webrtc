@@ -41,7 +41,6 @@ class FakeAudioDeviceModule : public AudioDeviceModule {
   int32_t SetRecordingDevice(uint16_t index) override { return 0; }
   int32_t SetRecordingDevice(WindowsDeviceType device) override { return 0; }
   int32_t SetStereoRecording(bool enable) override { return 0; }
-  int32_t SetAGC(bool enable) override { return 0; }
   int32_t StopRecording() override { return 0; }
 
   int32_t Terminate() override { return 0; }

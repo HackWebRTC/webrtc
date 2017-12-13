@@ -496,8 +496,6 @@ class AudioDeviceTest : public ::testing::Test {
       // See https://bugs.chromium.org/p/webrtc/issues/detail?id=7397 for
       // details.
       EXPECT_EQ(0, audio_device_->SetStereoRecording(false));
-      EXPECT_EQ(0, audio_device_->SetAGC(false));
-      EXPECT_FALSE(audio_device_->AGC());
     }
   }
 

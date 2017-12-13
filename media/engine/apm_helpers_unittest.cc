@@ -39,10 +39,6 @@ struct TestHelper {
 
   const AudioProcessing* apm() const { return apm_.get(); }
 
-  test::MockAudioDeviceModule* adm() {
-    return &mock_audio_device_;
-  }
-
   voe::TransmitMixer* transmit_mixer() {
     return voe_wrapper_.base()->transmit_mixer();
   }
@@ -117,21 +113,18 @@ TEST(ApmHelpersTest, AgcStatus_EnableDisable) {
   TestHelper helper;
   GainControl* gc = helper.apm()->gain_control();
 #if defined(WEBRTC_IOS) || defined(WEBRTC_ANDROID)
-  apm_helpers::SetAgcStatus(helper.apm(), helper.adm(), false);
+  apm_helpers::SetAgcStatus(helper.apm(), false);
   EXPECT_FALSE(gc->is_enabled());
   EXPECT_EQ(GainControl::kFixedDigital, gc->mode());
 
-  apm_helpers::SetAgcStatus(helper.apm(), helper.adm(), true);
+  apm_helpers::SetAgcStatus(helper.apm(), true);
   EXPECT_TRUE(gc->is_enabled());
   EXPECT_EQ(GainControl::kFixedDigital, gc->mode());
 #else
-  EXPECT_CALL(*helper.adm(), SetAGC(false)).WillOnce(testing::Return(0));
-  apm_helpers::SetAgcStatus(helper.apm(), helper.adm(), false);
+  apm_helpers::SetAgcStatus(helper.apm(), false);
   EXPECT_FALSE(gc->is_enabled());
   EXPECT_EQ(GainControl::kAdaptiveAnalog, gc->mode());
-
-  EXPECT_CALL(*helper.adm(), SetAGC(true)).WillOnce(testing::Return(0));
-  apm_helpers::SetAgcStatus(helper.apm(), helper.adm(), true);
+  apm_helpers::SetAgcStatus(helper.apm(), true);
   EXPECT_TRUE(gc->is_enabled());
   EXPECT_EQ(GainControl::kAdaptiveAnalog, gc->mode());
 #endif

@@ -215,18 +215,6 @@ class AudioDeviceTemplate : public AudioDeviceGeneric {
 
   bool Recording() const override { return input_.Recording(); }
 
-  int32_t SetAGC(bool enable) override {
-    if (enable) {
-      FATAL() << "Should never be called";
-    }
-    return -1;
-  }
-
-  bool AGC() const override {
-    RTC_LOG(INFO) << __FUNCTION__;
-    return false;
-  }
-
   int32_t InitSpeaker() override {
     RTC_LOG(INFO) << __FUNCTION__;
     return 0;

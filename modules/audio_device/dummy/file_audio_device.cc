@@ -310,14 +310,6 @@ bool FileAudioDevice::Recording() const {
   return _recording;
 }
 
-int32_t FileAudioDevice::SetAGC(bool enable) {
-  return -1;
-}
-
-bool FileAudioDevice::AGC() const {
-  return false;
-}
-
 int32_t FileAudioDevice::InitSpeaker() {
   return -1;
 }
