@@ -8,8 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <fstream>
-
 #include "rtc_base/flags.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/metrics_default.h"
@@ -26,6 +24,24 @@ DEFINE_string(NSTreatUnknownArgumentsAsOpen, "",
     "Intentionally ignored flag intended for iOS simulator.");
 DEFINE_string(ApplePersistenceIgnoreState, "",
     "Intentionally ignored flag intended for iOS simulator.");
+DEFINE_bool(
+    save_chartjson_result,
+    false,
+    "Store the perf results in Documents/perf_result.json in the format "
+    "described by "
+    "https://github.com/catapult-project/catapult/blob/master/dashboard/docs/"
+    "data-format.md.");
+
+#else
+
+DEFINE_string(
+    chartjson_result_file,
+    "",
+    "Path where the perf results should be stored in the JSON format described "
+    "by "
+    "https://github.com/catapult-project/catapult/blob/master/dashboard/docs/"
+    "data-format.md.");
+
 #endif
 
 DEFINE_bool(logs, false, "print logs to stderr");
@@ -35,13 +51,6 @@ DEFINE_string(force_fieldtrials, "",
     "E.g. running with --force_fieldtrials=WebRTC-FooFeature/Enable/"
     " will assign the group Enable to field trial WebRTC-FooFeature.");
 
-DEFINE_string(
-    chartjson_result_file,
-    "",
-    "Path where the perf results should be stored it the JSON format described "
-    "by "
-    "https://github.com/catapult-project/catapult/blob/master/dashboard/docs/"
-    "data-format.md.");
 
 DEFINE_bool(help, false, "Print this message.");
 
@@ -66,21 +75,25 @@ int main(int argc, char* argv[]) {
   webrtc::test::InitFieldTrialsFromString(fieldtrials);
   webrtc::metrics::Enable();
 
+
   rtc::LogMessage::SetLogToStderr(FLAG_logs);
+
 #if defined(WEBRTC_IOS)
-  rtc::test::InitTestSuite(RUN_ALL_TESTS, argc, argv);
+
+  rtc::test::InitTestSuite(RUN_ALL_TESTS, argc, argv,
+                           FLAG_save_chartjson_result);
   rtc::test::RunTestsFromIOSApp();
-#endif
+
+#else
 
   int exit_code = RUN_ALL_TESTS();
 
   std::string chartjson_result_file = FLAG_chartjson_result_file;
   if (chartjson_result_file != "") {
-    std::string json_results = webrtc::test::GetPerfResultsJSON();
-    std::fstream json_file(chartjson_result_file, std::fstream::out);
-    json_file << json_results;
-    json_file.close();
+    webrtc::test::WritePerfResults(chartjson_result_file);
   }
 
   return exit_code;
+
+#endif
 }

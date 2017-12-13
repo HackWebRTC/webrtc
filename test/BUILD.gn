@@ -113,6 +113,19 @@ rtc_source_set("field_trial") {
   ]
 }
 
+rtc_source_set("perf_test") {
+  testonly = true
+  sources = [
+    "testsupport/perf_test.cc",
+    "testsupport/perf_test.h",
+  ]
+  deps = [
+    "..:webrtc_common",
+    "../api:array_view",
+    "../rtc_base:rtc_base_approved",
+  ]
+}
+
 if (is_ios) {
   rtc_source_set("test_support_objc") {
     testonly = true
@@ -122,6 +135,7 @@ if (is_ios) {
       "ios/test_support.mm",
     ]
     deps = [
+      ":perf_test",
       "../sdk:common_objc",
     ]
   }
@@ -135,8 +149,6 @@ rtc_source_set("test_support") {
     "gtest.h",
     "testsupport/packet_reader.cc",
     "testsupport/packet_reader.h",
-    "testsupport/perf_test.cc",
-    "testsupport/perf_test.h",
     "testsupport/unittest_utils.h",
   ]
 
@@ -188,6 +200,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":field_trial",
+      ":perf_test",
       "../rtc_base:rtc_base_approved",
       "../system_wrappers:metrics_default",
       "//testing/gmock",
@@ -287,6 +300,7 @@ if (rtc_include_tests) {
   rtc_test("test_support_unittests") {
     deps = [
       ":fake_audio_device",
+      ":perf_test",
       ":rtp_test_utils",
       "../api:video_frame_api",
       "../api:video_frame_api_i420",
