@@ -273,7 +273,7 @@ rtc_static_library("rtc_data") {
   } else {
     # libtool on mac does not like empty targets.
     sources = [
-      "//rtc_base/noop.cc",
+      "sctp/noop.cc",
     ]
   }
 
