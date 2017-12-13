@@ -89,6 +89,49 @@ rtc_source_set("rtc_base_approved") {
   }
 }
 
+rtc_source_set("checks") {
+  sources = [
+    "checks.cc",
+    "checks.h",
+  ]
+  deps = [
+    ":safe_compare",
+    "..:webrtc_common",
+  ]
+}
+
+rtc_source_set("type_traits") {
+  sources = [
+    "type_traits.h",
+  ]
+}
+
+rtc_source_set("sanitizer") {
+  sources = [
+    "sanitizer.h",
+  ]
+}
+
+rtc_source_set("safe_compare") {
+  sources = [
+    "numerics/safe_compare.h",
+  ]
+  deps = [
+    ":type_traits",
+  ]
+}
+
+rtc_source_set("rate_limiter") {
+  sources = [
+    "rate_limiter.cc",
+    "rate_limiter.h",
+  ]
+  deps = [
+    ":rtc_base_approved",
+    "../system_wrappers",
+  ]
+}
+
 # The subset of rtc_base approved for use outside of libjingle.
 rtc_source_set("rtc_base_approved_generic") {
   visibility = [
@@ -97,13 +140,14 @@ rtc_source_set("rtc_base_approved_generic") {
     ":weak_ptr_unittests",
   ]
 
-  # TODO(kjellander): Remove (bugs.webrtc.org/7480)
-  # Enabling GN check triggers a cyclic dependency caused by rate_limiter.cc:
-  #   :rtc_base_approved -> ../system_wrappers -> :rtc_base_approved
-  check_includes = false
+  cflags = []
   defines = []
   libs = []
-  deps = []
+  deps = [
+    ":checks",
+    ":safe_compare",
+    ":type_traits",
+  ]
 
   sources = [
     "arraysize.h",
@@ -122,8 +166,6 @@ rtc_source_set("rtc_base_approved_generic") {
     "bytebuffer.cc",
     "bytebuffer.h",
     "byteorder.h",
-    "checks.cc",
-    "checks.h",
     "constructormagic.h",
     "copyonwritebuffer.cc",
     "copyonwritebuffer.h",
@@ -145,7 +187,6 @@ rtc_source_set("rtc_base_approved_generic") {
     "numerics/histogram_percentile_counter.h",
     "numerics/mod_ops.h",
     "numerics/moving_max_counter.h",
-    "numerics/safe_compare.h",
     "numerics/safe_conversions.h",
     "numerics/safe_conversions_impl.h",
     "numerics/safe_minmax.h",
@@ -162,8 +203,6 @@ rtc_source_set("rtc_base_approved_generic") {
     "race_checker.h",
     "random.cc",
     "random.h",
-    "rate_limiter.cc",
-    "rate_limiter.h",
     "rate_statistics.cc",
     "rate_statistics.h",
     "ratetracker.cc",
@@ -171,7 +210,6 @@ rtc_source_set("rtc_base_approved_generic") {
     "refcount.h",
     "refcountedobject.h",
     "refcounter.h",
-    "sanitizer.h",
     "scoped_ref_ptr.h",
     "string_to_number.cc",
     "string_to_number.h",
@@ -191,10 +229,13 @@ rtc_source_set("rtc_base_approved_generic") {
     "timeutils.cc",
     "timeutils.h",
     "trace_event.h",
-    "type_traits.h",
   ]
 
-  deps += [ "..:webrtc_common" ]
+  deps += [
+    "..:webrtc_common",
+    "../api:array_view",
+    "../api:optional",
+  ]
 
   if (is_android) {
     libs += [ "log" ]
@@ -350,6 +391,7 @@ rtc_source_set("rtc_task_queue_api") {
 
 rtc_source_set("rtc_task_queue_impl") {
   deps = [
+    ":checks",
     ":rtc_base_approved",
     ":rtc_task_queue_api",
   ]
@@ -385,6 +427,7 @@ rtc_static_library("sequenced_task_checker") {
     "sequenced_task_checker_impl.h",
   ]
   deps = [
+    ":checks",
     ":rtc_base_approved",
     ":rtc_task_queue",
   ]
@@ -410,7 +453,9 @@ rtc_static_library("rtc_numerics") {
     "numerics/sequence_number_util.h",
   ]
   deps = [
+    ":checks",
     ":rtc_base_approved",
+    ":safe_compare",
     "../api:optional",
   ]
 }
@@ -480,6 +525,7 @@ rtc_static_library("rtc_base_generic") {
   libs = []
   defines = []
   deps = [
+    ":checks",
     "..:webrtc_common",
     "../api:optional",
   ]
@@ -797,6 +843,7 @@ rtc_source_set("rtc_base_tests_utils") {
   configs += [ ":rtc_base_tests_utils_warnings_config" ]
   public_configs = [ ":rtc_base_tests_utils_exported_config" ]
   deps = [
+    ":checks",
     ":rtc_base",
     "../test:field_trial",
     "../test:test_support",
@@ -841,6 +888,7 @@ if (rtc_include_tests) {
       "socketaddress_unittest.cc",
     ]
     deps = [
+      ":checks",
       ":rtc_base",
       ":rtc_base_tests_main",
       ":rtc_base_tests_utils",
@@ -900,11 +948,14 @@ if (rtc_include_tests) {
       "virtualsocket_unittest.cc",
     ]
     deps = [
+      ":checks",
+      ":rate_limiter",
       ":rtc_base",
       ":rtc_base_approved",
       ":rtc_base_tests_main",
       ":rtc_base_tests_utils",
       ":rtc_task_queue",
+      ":safe_compare",
       "../api:array_view",
       "../system_wrappers:system_wrappers",
       "../test:test_support",
@@ -933,6 +984,7 @@ if (rtc_include_tests) {
       "sequenced_task_checker_unittest.cc",
     ]
     deps = [
+      ":checks",
       ":rtc_base_approved",
       ":rtc_base_tests_main",
       ":rtc_task_queue",
@@ -1025,6 +1077,7 @@ if (rtc_include_tests) {
       ]
     }
     deps = [
+      ":checks",
       ":rtc_base_tests_main",
       ":rtc_base_tests_utils",
       "../api:optional",

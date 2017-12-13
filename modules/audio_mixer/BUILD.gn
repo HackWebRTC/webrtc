@@ -39,6 +39,7 @@ rtc_static_library("audio_mixer_impl") {
     "../../api:array_view",
     "../../api:audio_mixer_api",
     "../../audio/utility:audio_frame_operations",
+    "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
     "../../system_wrappers",
     "../audio_processing",
@@ -59,6 +60,7 @@ rtc_static_library("audio_frame_manipulator") {
   deps = [
     "..:module_api",
     "../../audio/utility:audio_frame_operations",
+    "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
   ]
 }
@@ -83,6 +85,7 @@ if (rtc_include_tests) {
       "../../api:array_view",
       "../../api:audio_mixer_api",
       "../../audio/utility:audio_frame_operations",
+      "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
       "../../rtc_base:rtc_task_queue",
       "../../test:test_support",

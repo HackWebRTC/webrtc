@@ -56,6 +56,7 @@ rtc_static_library("system_wrappers") {
     "..:webrtc_common",
     "../api:optional",
     "../modules:module_api_public",
+    "../rtc_base:checks",
   ]
 
   if (is_android) {
@@ -132,6 +133,7 @@ rtc_source_set("metrics_api") {
   ]
   deps = [
     "..:webrtc_common",
+    "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
   ]
 }

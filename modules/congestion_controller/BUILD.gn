@@ -51,6 +51,8 @@ rtc_static_library("congestion_controller") {
     "../..:webrtc_common",
     "../../api:optional",
     "../../logging:rtc_event_log_api",
+    "../../rtc_base:checks",
+    "../../rtc_base:rate_limiter",
     "../../rtc_base:rtc_base",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:rtc_numerics",
@@ -87,6 +89,7 @@ if (rtc_include_tests) {
     deps = [
       ":congestion_controller",
       ":mock_congestion_controller",
+      "../../rtc_base:checks",
       "../../rtc_base:rtc_base",
       "../../rtc_base:rtc_base_approved",
       "../../rtc_base:rtc_base_tests_utils",

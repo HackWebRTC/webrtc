@@ -28,6 +28,7 @@ rtc_static_library("primitives") {
 
   deps = [
     "../..:webrtc_common",
+    "../../rtc_base:checks",
     "../../rtc_base:rtc_base",  # TODO(kjellander): Cleanup in bugs.webrtc.org/3806.
   ]
 }
@@ -37,7 +38,9 @@ if (rtc_include_tests) {
     testonly = true
 
     sources = []
-    deps = []
+    deps = [
+      "../../rtc_base:checks",
+    ]
     if (rtc_desktop_capture_supported) {
       deps += [
         ":desktop_capture_mock",
@@ -86,6 +89,7 @@ if (rtc_include_tests) {
       ":desktop_capture_mock",
       ":primitives",
       "../..:webrtc_common",
+      "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
       "../../system_wrappers:cpu_features_api",
       "../../test:test_support",
@@ -125,6 +129,7 @@ if (rtc_include_tests) {
 
     deps = [
       ":primitives",
+      "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
       "../../system_wrappers",
     ]
@@ -174,6 +179,7 @@ if (is_mac) {
     deps = [
       ":desktop_capture_generic",
       ":primitives",
+      "../../rtc_base:checks",
       "../../rtc_base:rtc_base",
       "../../rtc_base:rtc_base_approved",
       "../../sdk:common_objc",
@@ -328,6 +334,7 @@ rtc_static_library("desktop_capture_generic") {
     ":primitives",
     "../..:webrtc_common",
     "../../api:refcountedbase",
+    "../../rtc_base:checks",
     "../../rtc_base:rtc_base",  # TODO(kjellander): Cleanup in bugs.webrtc.org/3806.
     "../../system_wrappers",
     "../../system_wrappers:cpu_features_api",

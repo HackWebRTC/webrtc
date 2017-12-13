@@ -75,6 +75,7 @@ rtc_static_library("rtc_pc_base") {
     "../media:rtc_h264_profile_id",
     "../media:rtc_media_base",
     "../p2p:rtc_p2p",
+    "../rtc_base:checks",
     "../rtc_base:rtc_base",
     "../rtc_base:rtc_task_queue",
   ]
@@ -182,6 +183,7 @@ rtc_static_library("peerconnection") {
     "../media:rtc_data",
     "../media:rtc_media_base",
     "../p2p:rtc_p2p",
+    "../rtc_base:checks",
     "../rtc_base:rtc_base",
     "../rtc_base:rtc_base_approved",
     "../stats",
@@ -289,6 +291,7 @@ if (rtc_include_tests) {
       "../media:rtc_media_tests_utils",
       "../p2p:p2p_test_utils",
       "../p2p:rtc_p2p",
+      "../rtc_base:checks",
       "../rtc_base:rtc_base",
       "../rtc_base:rtc_base_approved",
       "../rtc_base:rtc_base_tests_main",
@@ -342,6 +345,7 @@ if (rtc_include_tests) {
       "../media:rtc_media_tests_utils",
       "../modules/audio_device:audio_device",
       "../p2p:p2p_test_utils",
+      "../rtc_base:checks",
       "../rtc_base:rtc_base",
       "../rtc_base:rtc_base_approved",
       "../rtc_base:rtc_base_tests_utils",
@@ -436,6 +440,7 @@ if (rtc_include_tests) {
     deps = [
       ":peerconnection",
       ":rtc_pc_base",
+      "../rtc_base:checks",
     ]
     if (is_android) {
       deps += [ ":android_black_magic" ]

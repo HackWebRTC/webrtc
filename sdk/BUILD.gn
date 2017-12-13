@@ -68,6 +68,7 @@ if (is_ios || is_mac) {
     ]
 
     deps = [
+      "../rtc_base:checks",
       "../rtc_base:rtc_base",
     ]
     configs += [ "..:common_objc" ]
@@ -105,6 +106,7 @@ if (is_ios || is_mac) {
 
       deps = [
         ":common_objc",
+        "../rtc_base:checks",
         "../rtc_base:rtc_base_approved",
       ]
 
@@ -138,6 +140,7 @@ if (is_ios || is_mac) {
         "../api:video_frame_api_i420",
         "../common_video",
         "../media:rtc_media_base",
+        "../rtc_base:checks",
         "../rtc_base:rtc_base",
       ]
 
@@ -195,6 +198,7 @@ if (is_ios || is_mac) {
         "../api:optional",
         "../common_video",
         "../media:rtc_media_base",
+        "../rtc_base:checks",
         "../rtc_base:rtc_base",
       ]
 
@@ -259,6 +263,7 @@ if (is_ios || is_mac) {
         deps = [
           ":video_objc",
           "../api:video_frame_api",
+          "../rtc_base:checks",
           "../rtc_base:rtc_base_approved",
         ]
         configs += [ "..:common_objc" ]
@@ -515,6 +520,7 @@ if (is_ios || is_mac) {
         "../media:rtc_media_base",
         "../modules:module_api",
         "../pc:peerconnection",
+        "../rtc_base:checks",
         "../rtc_base:rtc_base",
       ]
     }
@@ -770,6 +776,7 @@ if (is_ios || is_mac) {
         "$rtc_libyuv_dir",
         "../api:video_frame_api_i420",
         "../common_video",
+        "../rtc_base:checks",
         "../rtc_base:rtc_base_approved",
       ]
 
@@ -794,6 +801,7 @@ if (is_ios || is_mac) {
         "../common_video",
         "../modules:module_api",
         "../modules/video_coding:webrtc_h264",
+        "../rtc_base:checks",
         "../rtc_base:rtc_base_approved",
       ]
       if (!build_with_chromium && is_clang) {
@@ -829,6 +837,7 @@ if (is_ios || is_mac) {
         "../modules:module_api",
         "../modules/video_coding:video_coding_utility",
         "../modules/video_coding:webrtc_h264",
+        "../rtc_base:checks",
         "../rtc_base:rtc_base_approved",
         "../system_wrappers",
       ]

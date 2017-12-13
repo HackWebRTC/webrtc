@@ -54,7 +54,10 @@ rtc_source_set("rtc_h264_profile_id") {
 rtc_static_library("rtc_media_base") {
   defines = []
   libs = []
-  deps = []
+  deps = [
+    "../rtc_base:checks",
+    "../rtc_base:sanitizer",
+  ]
   public_deps = []
   sources = [
     "base/adaptedvideotracksource.cc",
@@ -130,6 +133,7 @@ rtc_static_library("rtc_audio_video") {
     "../api:video_frame_api_i420",
     "../call:call_interfaces",
     "../modules/video_coding:video_coding_utility",
+    "../rtc_base:checks",
     "../system_wrappers:field_trial_api",
     "../system_wrappers:metrics_api",
   ]
@@ -343,6 +347,7 @@ if (rtc_include_tests) {
       "../modules/rtp_rtcp:rtp_rtcp_format",
       "../modules/video_coding:video_coding_utility",
       "../p2p:rtc_p2p",
+      "../rtc_base:checks",
     ]
     sources = [
       "base/fakemediaengine.h",
@@ -434,6 +439,7 @@ if (rtc_include_tests) {
       "../api:video_frame_api_i420",
       "../pc:rtc_pc",
       "../pc:rtc_pc_base",
+      "../rtc_base:checks",
       "../test:field_trial",
     ]
     sources = [
