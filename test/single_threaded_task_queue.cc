@@ -110,7 +110,7 @@ void SingleThreadedTaskQueueForTesting::RunLoop() {
     std::unique_ptr<QueuedTask> queued_task;
 
     // An empty queue would lead to sleeping until the queue becoems non-empty.
-    // A queue where the earliest task is shceduled for later than now, will
+    // A queue where the earliest task is scheduled for later than now, will
     // lead to sleeping until the time of the next scheduled task (or until
     // more tasks are scheduled).
     int wait_time = rtc::Event::kForever;
