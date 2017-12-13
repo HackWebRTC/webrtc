@@ -19,8 +19,10 @@
 #include "api/array_view.h"
 #include "api/optional.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/common_header.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/dlrr.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/remb.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/report_block.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/target_bitrate.h"
 #include "modules/rtp_rtcp/source/rtcp_transceiver_config.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/weak_ptr.h"
@@ -35,6 +37,11 @@ class RtcpTransceiverImpl {
  public:
   explicit RtcpTransceiverImpl(const RtcpTransceiverConfig& config);
   ~RtcpTransceiverImpl();
+
+  void AddMediaReceiverObserver(uint32_t remote_ssrc,
+                                MediaReceiverRtcpObserver* observer);
+  void RemoveMediaReceiverObserver(uint32_t remote_ssrc,
+                                   MediaReceiverRtcpObserver* observer);
 
   void ReceivePacket(rtc::ArrayView<const uint8_t> packet, int64_t now_us);
 
@@ -54,10 +61,16 @@ class RtcpTransceiverImpl {
 
   void HandleReceivedPacket(const rtcp::CommonHeader& rtcp_packet_header,
                             int64_t now_us);
+  // Individual rtcp packet handlers.
+  void HandleBye(const rtcp::CommonHeader& rtcp_packet_header);
   void HandleSenderReport(const rtcp::CommonHeader& rtcp_packet_header,
                           int64_t now_us);
   void HandleExtendedReports(const rtcp::CommonHeader& rtcp_packet_header,
                              int64_t now_us);
+  // Extended Reports blocks handlers.
+  void HandleDlrr(const rtcp::Dlrr& dlrr, int64_t now_us);
+  void HandleTargetBitrate(const rtcp::TargetBitrate& target_bitrate,
+                           uint32_t remote_ssrc);
 
   void ReschedulePeriodicCompoundPackets();
   void SchedulePeriodicCompoundPackets(int64_t delay_ms);
@@ -73,6 +86,8 @@ class RtcpTransceiverImpl {
   const RtcpTransceiverConfig config_;
 
   rtc::Optional<rtcp::Remb> remb_;
+  // TODO(danilchap): Remove entries from remote_senders_ that are no longer
+  // needed.
   std::map<uint32_t, RemoteSenderState> remote_senders_;
   rtc::WeakPtrFactory<RtcpTransceiverImpl> ptr_factory_;
 
