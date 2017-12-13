@@ -146,6 +146,7 @@ if (rtc_include_tests) {
       "../../rtc_base:rtc_numerics",
       "../../system_wrappers",
       "../../system_wrappers:field_trial_api",
+      "../../test:perf_test",
       "../../test:test_support",
       "../../voice_engine",
       "../bitrate_controller",
