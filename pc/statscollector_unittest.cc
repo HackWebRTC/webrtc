@@ -1807,9 +1807,6 @@ TEST_F(StatsCollectorTest, FilterOutNegativeInitialValues) {
                         &value_in_report));
   EXPECT_FALSE(GetValue(report, StatsReport::kStatsValueNameJitterReceived,
                         &value_in_report));
-  EXPECT_FALSE(GetValue(report,
-                        StatsReport::kStatsValueNameEchoCancellationQualityMin,
-                        &value_in_report));
   EXPECT_FALSE(GetValue(report, StatsReport::kStatsValueNameEchoDelayMedian,
                         &value_in_report));
   EXPECT_FALSE(GetValue(report, StatsReport::kStatsValueNameEchoDelayStdDev,
