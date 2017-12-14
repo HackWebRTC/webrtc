@@ -2128,6 +2128,7 @@ TEST_F(PeerConnectionInterfaceTest, ReceiveFireFoxOffer) {
   content =
       cricket::GetFirstDataContent(pc_->local_description()->description());
   ASSERT_TRUE(content != NULL);
+  // Expected to fail since it's using an incompatible format.
   EXPECT_TRUE(content->rejected);
 #endif
 }
