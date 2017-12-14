@@ -50,6 +50,8 @@ bool VideoCodecInitializer::SetupCodec(
       return false;
     }
     codec->codecType = kVideoCodecStereo;
+    strncpy(codec->plName, settings.payload_name.c_str(),
+            sizeof(codec->plName));
     return true;
   }
 

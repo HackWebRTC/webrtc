@@ -65,6 +65,8 @@ VideoCodec CreateDecoderVideoCodec(const VideoReceiveStream::Decoder& decoder) {
     associated_decoder.payload_name = CodecTypeToPayloadString(kVideoCodecVP9);
     VideoCodec associated_codec = CreateDecoderVideoCodec(associated_decoder);
     associated_codec.codecType = kVideoCodecStereo;
+    strncpy(associated_codec.plName, decoder.payload_name.c_str(),
+            sizeof(associated_codec.plName));
     return associated_codec;
   }
 
