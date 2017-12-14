@@ -60,7 +60,6 @@ rtc_static_library("common_video") {
   }
 
   deps = [
-    "$rtc_libyuv_dir",
     "..:webrtc_common",
     "../api:optional",
     "../api:video_frame_api_i420",
@@ -113,7 +112,6 @@ if (rtc_include_tests) {
 
     deps = [
       ":common_video",
-      "$rtc_libyuv_dir",
       "../api:video_frame_api_i420",
       "../modules/video_capture:video_capture",
       "../rtc_base:rtc_base",
@@ -123,6 +121,7 @@ if (rtc_include_tests) {
       "../test:video_test_common",
       "//testing/gmock",
       "//testing/gtest",
+      "//third_party/libyuv",
     ]
 
     data = common_video_resources

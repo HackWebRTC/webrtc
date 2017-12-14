@@ -227,7 +227,6 @@ if (rtc_include_tests) {
     deps = [
       ":test_support",
       ":video_test_common",
-      "$rtc_libyuv_dir",
       "..:webrtc_common",
       "../api:video_frame_api",
       "../api:video_frame_api_i420",
@@ -237,6 +236,7 @@ if (rtc_include_tests) {
       "../system_wrappers",
       "//testing/gmock",
       "//testing/gtest",
+      "//third_party/libyuv",
     ]
 
     if (!is_ios) {

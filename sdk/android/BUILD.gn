@@ -218,7 +218,6 @@ rtc_static_library("video_jni") {
     ":base_jni",
     ":generated_video_jni",
     ":peerconnection_jni",
-    "$rtc_libyuv_dir",
     "../..:webrtc_common",
     "../../api:libjingle_peerconnection_api",
     "../../api:video_frame_api",
@@ -240,6 +239,7 @@ rtc_static_library("video_jni") {
     "../../rtc_base:weak_ptr",
     "../../system_wrappers",
     "../../system_wrappers:field_trial_api",
+    "//third_party/libyuv",
   ]
 }
 
