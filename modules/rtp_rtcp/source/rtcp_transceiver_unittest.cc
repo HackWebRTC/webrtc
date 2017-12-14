@@ -10,6 +10,9 @@
 
 #include "modules/rtp_rtcp/source/rtcp_transceiver.h"
 
+#include <memory>
+
+#include "modules/rtp_rtcp/source/rtcp_packet/sender_report.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "rtc_base/event.h"
 #include "rtc_base/ptr_util.h"
@@ -22,6 +25,7 @@ namespace {
 using ::testing::AtLeast;
 using ::testing::Invoke;
 using ::testing::InvokeWithoutArgs;
+using ::testing::IsNull;
 using ::testing::NiceMock;
 using ::testing::_;
 using ::webrtc::MockTransport;
@@ -29,10 +33,17 @@ using ::webrtc::RtcpTransceiver;
 using ::webrtc::RtcpTransceiverConfig;
 using ::webrtc::rtcp::TransportFeedback;
 
+class MockMediaReceiverRtcpObserver : public webrtc::MediaReceiverRtcpObserver {
+ public:
+  MOCK_METHOD3(OnSenderReport, void(uint32_t, webrtc::NtpTime, uint32_t));
+};
+
+constexpr int kTimeoutMs = 1000;
+
 void WaitPostedTasks(rtc::TaskQueue* queue) {
   rtc::Event done(false, false);
   queue->PostTask([&done] { done.Set(); });
-  ASSERT_TRUE(done.Wait(1000));
+  ASSERT_TRUE(done.Wait(kTimeoutMs));
 }
 
 TEST(RtcpTransceiverTest, SendsRtcpOnTaskQueueWhenCreatedOffTaskQueue) {
@@ -82,6 +93,71 @@ TEST(RtcpTransceiverTest, CanBeDestoryedOnTaskQueue) {
 
   queue.PostTask([&] { rtcp_transceiver.reset(); });
   WaitPostedTasks(&queue);
+}
+
+// Use rtp timestamp to distinguish different incoming sender reports.
+rtc::CopyOnWriteBuffer CreateSenderReport(uint32_t ssrc, uint32_t rtp_time) {
+  webrtc::rtcp::SenderReport sr;
+  sr.SetSenderSsrc(ssrc);
+  sr.SetRtpTimestamp(rtp_time);
+  rtc::Buffer buffer = sr.Build();
+  // Switch to an efficient way creating CopyOnWriteBuffer from RtcpPacket when
+  // there is one. Until then do not worry about extra memcpy in test.
+  return rtc::CopyOnWriteBuffer(buffer.data(), buffer.size());
+}
+
+TEST(RtcpTransceiverTest, DoesntPostToRtcpObserverAfterCallToRemove) {
+  const uint32_t kRemoteSsrc = 1234;
+  MockTransport null_transport;
+  rtc::TaskQueue queue("rtcp");
+  RtcpTransceiverConfig config;
+  config.outgoing_transport = &null_transport;
+  config.task_queue = &queue;
+  RtcpTransceiver rtcp_transceiver(config);
+  rtc::Event observer_deleted(false, false);
+
+  auto observer = rtc::MakeUnique<MockMediaReceiverRtcpObserver>();
+  EXPECT_CALL(*observer, OnSenderReport(kRemoteSsrc, _, 1));
+  EXPECT_CALL(*observer, OnSenderReport(kRemoteSsrc, _, 2)).Times(0);
+
+  rtcp_transceiver.AddMediaReceiverRtcpObserver(kRemoteSsrc, observer.get());
+  rtcp_transceiver.ReceivePacket(CreateSenderReport(kRemoteSsrc, 1));
+  rtcp_transceiver.RemoveMediaReceiverRtcpObserver(
+      kRemoteSsrc, observer.get(),
+      /*on_removed=*/rtc::NewClosure([&] {
+        observer.reset();
+        observer_deleted.Set();
+      }));
+  rtcp_transceiver.ReceivePacket(CreateSenderReport(kRemoteSsrc, 2));
+
+  EXPECT_TRUE(observer_deleted.Wait(kTimeoutMs));
+  WaitPostedTasks(&queue);
+}
+
+TEST(RtcpTransceiverTest, RemoveMediaReceiverRtcpObserverIsNonBlocking) {
+  const uint32_t kRemoteSsrc = 1234;
+  MockTransport null_transport;
+  rtc::TaskQueue queue("rtcp");
+  RtcpTransceiverConfig config;
+  config.outgoing_transport = &null_transport;
+  config.task_queue = &queue;
+  RtcpTransceiver rtcp_transceiver(config);
+  auto observer = rtc::MakeUnique<MockMediaReceiverRtcpObserver>();
+  rtcp_transceiver.AddMediaReceiverRtcpObserver(kRemoteSsrc, observer.get());
+
+  rtc::Event queue_blocker(false, false);
+  rtc::Event observer_deleted(false, false);
+  queue.PostTask([&] { EXPECT_TRUE(queue_blocker.Wait(kTimeoutMs)); });
+  rtcp_transceiver.RemoveMediaReceiverRtcpObserver(
+      kRemoteSsrc, observer.get(),
+      /*on_removed=*/rtc::NewClosure([&] {
+        observer.reset();
+        observer_deleted.Set();
+      }));
+
+  EXPECT_THAT(observer, Not(IsNull()));
+  queue_blocker.Set();
+  EXPECT_TRUE(observer_deleted.Wait(kTimeoutMs));
 }
 
 TEST(RtcpTransceiverTest, CanCallSendCompoundPacketFromAnyThread) {

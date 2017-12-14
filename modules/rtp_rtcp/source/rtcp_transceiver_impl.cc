@@ -94,7 +94,7 @@ RtcpTransceiverImpl::RtcpTransceiverImpl(const RtcpTransceiverConfig& config)
 
 RtcpTransceiverImpl::~RtcpTransceiverImpl() = default;
 
-void RtcpTransceiverImpl::AddMediaReceiverObserver(
+void RtcpTransceiverImpl::AddMediaReceiverRtcpObserver(
     uint32_t remote_ssrc,
     MediaReceiverRtcpObserver* observer) {
   auto& stored = remote_senders_[remote_ssrc].observers;
@@ -102,7 +102,7 @@ void RtcpTransceiverImpl::AddMediaReceiverObserver(
   stored.push_back(observer);
 }
 
-void RtcpTransceiverImpl::RemoveMediaReceiverObserver(
+void RtcpTransceiverImpl::RemoveMediaReceiverRtcpObserver(
     uint32_t remote_ssrc,
     MediaReceiverRtcpObserver* observer) {
   auto remote_sender_it = remote_senders_.find(remote_ssrc);

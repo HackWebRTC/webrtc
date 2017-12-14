@@ -38,10 +38,10 @@ class RtcpTransceiverImpl {
   explicit RtcpTransceiverImpl(const RtcpTransceiverConfig& config);
   ~RtcpTransceiverImpl();
 
-  void AddMediaReceiverObserver(uint32_t remote_ssrc,
-                                MediaReceiverRtcpObserver* observer);
-  void RemoveMediaReceiverObserver(uint32_t remote_ssrc,
-                                   MediaReceiverRtcpObserver* observer);
+  void AddMediaReceiverRtcpObserver(uint32_t remote_ssrc,
+                                    MediaReceiverRtcpObserver* observer);
+  void RemoveMediaReceiverRtcpObserver(uint32_t remote_ssrc,
+                                       MediaReceiverRtcpObserver* observer);
 
   void ReceivePacket(rtc::ArrayView<const uint8_t> packet, int64_t now_us);
 

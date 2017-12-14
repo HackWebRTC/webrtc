@@ -32,6 +32,17 @@ class RtcpTransceiver {
   explicit RtcpTransceiver(const RtcpTransceiverConfig& config);
   ~RtcpTransceiver();
 
+  // Registers observer to be notified about incoming rtcp packets.
+  // Calls to observer will be done on the |config.task_queue|.
+  void AddMediaReceiverRtcpObserver(uint32_t remote_ssrc,
+                                    MediaReceiverRtcpObserver* observer);
+  // Deregisters the observer. Might return before observer is deregistered.
+  // Posts |on_removed| task when observer is deregistered.
+  void RemoveMediaReceiverRtcpObserver(
+      uint32_t remote_ssrc,
+      MediaReceiverRtcpObserver* observer,
+      std::unique_ptr<rtc::QueuedTask> on_removed);
+
   // Handles incoming rtcp packets.
   void ReceivePacket(rtc::CopyOnWriteBuffer packet);
 

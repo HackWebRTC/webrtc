@@ -391,8 +391,8 @@ TEST(RtcpTransceiverImplTest, MultipleObserversOnSameSsrc) {
   StrictMock<MockMediaReceiverRtcpObserver> observer1;
   StrictMock<MockMediaReceiverRtcpObserver> observer2;
   RtcpTransceiverImpl rtcp_transceiver(DefaultTestConfig());
-  rtcp_transceiver.AddMediaReceiverObserver(kRemoteSsrc, &observer1);
-  rtcp_transceiver.AddMediaReceiverObserver(kRemoteSsrc, &observer2);
+  rtcp_transceiver.AddMediaReceiverRtcpObserver(kRemoteSsrc, &observer1);
+  rtcp_transceiver.AddMediaReceiverRtcpObserver(kRemoteSsrc, &observer2);
 
   const NtpTime kRemoteNtp(0x9876543211);
   const uint32_t kRemoteRtp = 0x444555;
@@ -412,14 +412,14 @@ TEST(RtcpTransceiverImplTest, DoesntCallsObserverAfterRemoved) {
   StrictMock<MockMediaReceiverRtcpObserver> observer1;
   StrictMock<MockMediaReceiverRtcpObserver> observer2;
   RtcpTransceiverImpl rtcp_transceiver(DefaultTestConfig());
-  rtcp_transceiver.AddMediaReceiverObserver(kRemoteSsrc, &observer1);
-  rtcp_transceiver.AddMediaReceiverObserver(kRemoteSsrc, &observer2);
+  rtcp_transceiver.AddMediaReceiverRtcpObserver(kRemoteSsrc, &observer1);
+  rtcp_transceiver.AddMediaReceiverRtcpObserver(kRemoteSsrc, &observer2);
 
   SenderReport sr;
   sr.SetSenderSsrc(kRemoteSsrc);
   auto raw_packet = sr.Build();
 
-  rtcp_transceiver.RemoveMediaReceiverObserver(kRemoteSsrc, &observer1);
+  rtcp_transceiver.RemoveMediaReceiverRtcpObserver(kRemoteSsrc, &observer1);
 
   EXPECT_CALL(observer1, OnSenderReport(_, _, _)).Times(0);
   EXPECT_CALL(observer2, OnSenderReport(_, _, _));
@@ -432,8 +432,8 @@ TEST(RtcpTransceiverImplTest, CallsObserverOnSenderReportBySenderSsrc) {
   StrictMock<MockMediaReceiverRtcpObserver> observer1;
   StrictMock<MockMediaReceiverRtcpObserver> observer2;
   RtcpTransceiverImpl rtcp_transceiver(DefaultTestConfig());
-  rtcp_transceiver.AddMediaReceiverObserver(kRemoteSsrc1, &observer1);
-  rtcp_transceiver.AddMediaReceiverObserver(kRemoteSsrc2, &observer2);
+  rtcp_transceiver.AddMediaReceiverRtcpObserver(kRemoteSsrc1, &observer1);
+  rtcp_transceiver.AddMediaReceiverRtcpObserver(kRemoteSsrc2, &observer2);
 
   const NtpTime kRemoteNtp(0x9876543211);
   const uint32_t kRemoteRtp = 0x444555;
@@ -454,8 +454,8 @@ TEST(RtcpTransceiverImplTest, CallsObserverOnByeBySenderSsrc) {
   StrictMock<MockMediaReceiverRtcpObserver> observer1;
   StrictMock<MockMediaReceiverRtcpObserver> observer2;
   RtcpTransceiverImpl rtcp_transceiver(DefaultTestConfig());
-  rtcp_transceiver.AddMediaReceiverObserver(kRemoteSsrc1, &observer1);
-  rtcp_transceiver.AddMediaReceiverObserver(kRemoteSsrc2, &observer2);
+  rtcp_transceiver.AddMediaReceiverRtcpObserver(kRemoteSsrc1, &observer1);
+  rtcp_transceiver.AddMediaReceiverRtcpObserver(kRemoteSsrc2, &observer2);
 
   Bye bye;
   bye.SetSenderSsrc(kRemoteSsrc1);
@@ -472,8 +472,8 @@ TEST(RtcpTransceiverImplTest, CallsObserverOnTargetBitrateBySenderSsrc) {
   StrictMock<MockMediaReceiverRtcpObserver> observer1;
   StrictMock<MockMediaReceiverRtcpObserver> observer2;
   RtcpTransceiverImpl rtcp_transceiver(DefaultTestConfig());
-  rtcp_transceiver.AddMediaReceiverObserver(kRemoteSsrc1, &observer1);
-  rtcp_transceiver.AddMediaReceiverObserver(kRemoteSsrc2, &observer2);
+  rtcp_transceiver.AddMediaReceiverRtcpObserver(kRemoteSsrc1, &observer1);
+  rtcp_transceiver.AddMediaReceiverRtcpObserver(kRemoteSsrc2, &observer2);
 
   webrtc::rtcp::TargetBitrate target_bitrate;
   target_bitrate.AddTargetBitrate(0, 0, /*target_bitrate_kbps=*/10);
@@ -499,7 +499,7 @@ TEST(RtcpTransceiverImplTest, SkipsIncorrectTargetBitrateEntries) {
   const uint32_t kRemoteSsrc = 12345;
   MockMediaReceiverRtcpObserver observer;
   RtcpTransceiverImpl rtcp_transceiver(DefaultTestConfig());
-  rtcp_transceiver.AddMediaReceiverObserver(kRemoteSsrc, &observer);
+  rtcp_transceiver.AddMediaReceiverRtcpObserver(kRemoteSsrc, &observer);
 
   webrtc::rtcp::TargetBitrate target_bitrate;
   target_bitrate.AddTargetBitrate(0, 0, /*target_bitrate_kbps=*/10);
@@ -521,7 +521,7 @@ TEST(RtcpTransceiverImplTest, CallsObserverOnByeBehindSenderReport) {
   const uint32_t kRemoteSsrc = 12345;
   MockMediaReceiverRtcpObserver observer;
   RtcpTransceiverImpl rtcp_transceiver(DefaultTestConfig());
-  rtcp_transceiver.AddMediaReceiverObserver(kRemoteSsrc, &observer);
+  rtcp_transceiver.AddMediaReceiverRtcpObserver(kRemoteSsrc, &observer);
 
   CompoundPacket compound;
   SenderReport sr;
@@ -541,7 +541,7 @@ TEST(RtcpTransceiverImplTest, CallsObserverOnByeBehindUnknownRtcpPacket) {
   const uint32_t kRemoteSsrc = 12345;
   MockMediaReceiverRtcpObserver observer;
   RtcpTransceiverImpl rtcp_transceiver(DefaultTestConfig());
-  rtcp_transceiver.AddMediaReceiverObserver(kRemoteSsrc, &observer);
+  rtcp_transceiver.AddMediaReceiverRtcpObserver(kRemoteSsrc, &observer);
 
   CompoundPacket compound;
   // Use Application-Defined rtcp packet as unknown.
