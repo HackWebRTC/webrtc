@@ -10,6 +10,7 @@
 
 #include "modules/rtp_rtcp/source/rtcp_transceiver.h"
 
+#include "modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "rtc_base/event.h"
 #include "rtc_base/ptr_util.h"
 #include "test/gmock.h"
@@ -19,12 +20,14 @@
 namespace {
 
 using ::testing::AtLeast;
+using ::testing::Invoke;
 using ::testing::InvokeWithoutArgs;
 using ::testing::NiceMock;
 using ::testing::_;
 using ::webrtc::MockTransport;
 using ::webrtc::RtcpTransceiver;
 using ::webrtc::RtcpTransceiverConfig;
+using ::webrtc::rtcp::TransportFeedback;
 
 void WaitPostedTasks(rtc::TaskQueue* queue) {
   rtc::Event done(false, false);
@@ -130,6 +133,38 @@ TEST(RtcpTransceiverTest, DoesntSendPacketsAfterDestruction) {
   pause.Set();
   WaitPostedTasks(&queue);
   EXPECT_FALSE(rtcp_transceiver);
+}
+
+TEST(RtcpTransceiverTest, SendsTransportFeedbackOnTaskQueue) {
+  static constexpr uint32_t kSenderSsrc = 12345;
+  MockTransport outgoing_transport;
+  rtc::TaskQueue queue("rtcp");
+  RtcpTransceiverConfig config;
+  config.feedback_ssrc = kSenderSsrc;
+  config.outgoing_transport = &outgoing_transport;
+  config.task_queue = &queue;
+  config.schedule_periodic_compound_packets = false;
+  RtcpTransceiver rtcp_transceiver(config);
+
+  EXPECT_CALL(outgoing_transport, SendRtcp(_, _))
+      .WillOnce(Invoke([&](const uint8_t* buffer, size_t size) {
+        EXPECT_TRUE(queue.IsCurrent());
+
+        std::unique_ptr<TransportFeedback> transport_feedback =
+            TransportFeedback::ParseFrom(buffer, size);
+        EXPECT_TRUE(transport_feedback);
+        EXPECT_EQ(transport_feedback->sender_ssrc(), kSenderSsrc);
+        return true;
+      }));
+
+  // Create minimalistic transport feedback packet.
+  TransportFeedback transport_feedback;
+  transport_feedback.SetSenderSsrc(rtcp_transceiver.SSRC());
+  transport_feedback.AddReceivedPacket(321, 10000);
+
+  EXPECT_TRUE(rtcp_transceiver.SendFeedbackPacket(transport_feedback));
+
+  WaitPostedTasks(&queue);
 }
 
 }  // namespace

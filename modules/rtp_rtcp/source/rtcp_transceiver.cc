@@ -12,6 +12,7 @@
 
 #include <utility>
 
+#include "modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/event.h"
 #include "rtc_base/ptr_util.h"
@@ -89,6 +90,24 @@ void RtcpTransceiver::UnsetRemb() {
     if (ptr)
       ptr->UnsetRemb();
   });
+}
+
+uint32_t RtcpTransceiver::SSRC() const {
+  return rtcp_transceiver_->sender_ssrc();
+}
+
+bool RtcpTransceiver::SendFeedbackPacket(
+    const rtcp::TransportFeedback& packet) {
+  struct Closure {
+    void operator()() {
+      if (ptr)
+        ptr->SendRawPacket(raw_packet);
+    }
+    rtc::WeakPtr<RtcpTransceiverImpl> ptr;
+    rtc::Buffer raw_packet;
+  };
+  task_queue_->PostTask(Closure{ptr_, packet.Build()});
+  return true;
 }
 
 void RtcpTransceiver::SendNack(uint32_t ssrc,

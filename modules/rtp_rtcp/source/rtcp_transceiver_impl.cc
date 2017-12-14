@@ -149,6 +149,14 @@ void RtcpTransceiverImpl::UnsetRemb() {
   remb_.reset();
 }
 
+void RtcpTransceiverImpl::SendRawPacket(rtc::ArrayView<const uint8_t> packet) {
+  // Unlike other senders, this functions just tries to send packet away and
+  // disregard rtcp_mode, max_packet_size or anything else.
+  // TODO(bugs.webrtc.org/8239): respect config_ by creating the
+  // TransportFeedback inside this class when there is one per rtp transport.
+  config_.outgoing_transport->SendRtcp(packet.data(), packet.size());
+}
+
 void RtcpTransceiverImpl::SendNack(uint32_t ssrc,
                                    std::vector<uint16_t> sequence_numbers) {
   RTC_DCHECK(!sequence_numbers.empty());
