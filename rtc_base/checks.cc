@@ -47,6 +47,7 @@
 #endif
 
 namespace rtc {
+namespace {
 
 void VPrintError(const char* format, va_list args) {
 #if defined(WEBRTC_ANDROID)
@@ -55,6 +56,11 @@ void VPrintError(const char* format, va_list args) {
   vfprintf(stderr, format, args);
 #endif
 }
+
+#if defined(__GNUC__)
+void PrintError(const char* format, ...)
+    __attribute__((__format__(__printf__, 1, 2)));
+#endif
 
 void PrintError(const char* format, ...) {
   va_list args;
@@ -97,6 +103,8 @@ void DumpBacktrace() {
 #endif
 }
 
+}  // namespace
+
 FatalMessage::FatalMessage(const char* file, int line) {
   Init(file, line);
 }
@@ -111,7 +119,7 @@ NO_RETURN FatalMessage::~FatalMessage() {
   fflush(stdout);
   fflush(stderr);
   stream_ << std::endl << "#" << std::endl;
-  PrintError(stream_.str().c_str());
+  PrintError("%s", stream_.str().c_str());
   DumpBacktrace();
   fflush(stderr);
   abort();
