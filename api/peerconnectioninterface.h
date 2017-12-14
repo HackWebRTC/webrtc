@@ -590,10 +590,24 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   virtual void RemoveStream(MediaStreamInterface* stream) = 0;
 
   // Add a new MediaStreamTrack to be sent on this PeerConnection, and return
-  // the newly created RtpSender.
+  // the newly created RtpSender. The RtpSender will be associated with the
+  // streams specified in the |stream_labels| list.
   //
+  // Errors:
+  // - INVALID_PARAMETER: |track| is null, has a kind other than audio or video,
+  //       or a sender already exists for the track.
+  // - INVALID_STATE: The PeerConnection is closed.
+  // TODO(steveanton): Remove default implementation once downstream
+  // implementations have been updated.
+  virtual RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>>
+  AddTrackWithStreamLabels(rtc::scoped_refptr<MediaStreamTrackInterface> track,
+                           const std::vector<std::string>& stream_labels) {
+    return RTCError(RTCErrorType::UNSUPPORTED_OPERATION, "Not implemented");
+  }
   // |streams| indicates which stream labels the track should be associated
   // with.
+  // TODO(steveanton): Remove this overload once callers have moved to the
+  // signature with stream labels.
   virtual rtc::scoped_refptr<RtpSenderInterface> AddTrack(
       MediaStreamTrackInterface* track,
       std::vector<MediaStreamInterface*> streams) = 0;

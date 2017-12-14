@@ -109,6 +109,25 @@ class RtpTransceiver final
     return receivers_;
   }
 
+  // Returns the backing object for the transceiver's Unified Plan sender.
+  rtc::scoped_refptr<RtpSenderInternal> sender_internal() const;
+
+  // Returns the backing object for the transceiver's Unified Plan receiver.
+  rtc::scoped_refptr<RtpReceiverInternal> receiver_internal() const;
+
+  // According to JSEP rules for SetRemoteDescription, RtpTransceivers can be
+  // reused only if they were added by AddTrack.
+  void set_created_by_addtrack(bool created_by_addtrack) {
+    created_by_addtrack_ = created_by_addtrack;
+  }
+  bool created_by_addtrack() const { return created_by_addtrack_; }
+
+  // Returns true if this transceiver has ever had the current direction set to
+  // sendonly or sendrecv.
+  bool has_ever_been_used_to_send() const {
+    return has_ever_been_used_to_send_;
+  }
+
   // RtpTransceiverInterface implementation.
   rtc::Optional<std::string> mid() const override;
   rtc::scoped_refptr<RtpSenderInterface> sender() const override;
@@ -133,6 +152,10 @@ class RtpTransceiver final
   RtpTransceiverDirection direction_ = RtpTransceiverDirection::kInactive;
   rtc::Optional<RtpTransceiverDirection> current_direction_;
   rtc::Optional<std::string> mid_;
+  bool created_by_addtrack_ = false;
+  // TODO(steveanton): Implement this once there is a mechanism to set the
+  // current direction.
+  bool has_ever_been_used_to_send_ = false;
 
   cricket::BaseChannel* channel_ = nullptr;
 };

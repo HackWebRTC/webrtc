@@ -158,6 +158,9 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
     return candidates;
   }
 
+  bool negotiation_needed() const { return renegotiation_needed_; }
+  void clear_negotiation_needed() { renegotiation_needed_ = false; }
+
   rtc::scoped_refptr<PeerConnectionInterface> pc_;
   PeerConnectionInterface::SignalingState state_;
   std::vector<std::unique_ptr<IceCandidateInterface>> candidates_;

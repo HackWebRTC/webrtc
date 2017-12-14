@@ -113,6 +113,19 @@ bool RtpTransceiver::RemoveReceiver(RtpReceiverInterface* receiver) {
   return true;
 }
 
+rtc::scoped_refptr<RtpSenderInternal> RtpTransceiver::sender_internal() const {
+  RTC_DCHECK(unified_plan_);
+  RTC_CHECK_EQ(1u, senders_.size());
+  return senders_[0]->internal();
+}
+
+rtc::scoped_refptr<RtpReceiverInternal> RtpTransceiver::receiver_internal()
+    const {
+  RTC_DCHECK(unified_plan_);
+  RTC_CHECK_EQ(1u, receivers_.size());
+  return receivers_[0]->internal();
+}
+
 rtc::Optional<std::string> RtpTransceiver::mid() const {
   return mid_;
 }

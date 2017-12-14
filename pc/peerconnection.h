@@ -89,6 +89,9 @@ class PeerConnection : public PeerConnectionInterface,
   bool AddStream(MediaStreamInterface* local_stream) override;
   void RemoveStream(MediaStreamInterface* local_stream) override;
 
+  RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>> AddTrackWithStreamLabels(
+      rtc::scoped_refptr<MediaStreamTrackInterface> track,
+      const std::vector<std::string>& stream_labels) override;
   rtc::scoped_refptr<RtpSenderInterface> AddTrack(
       MediaStreamTrackInterface* track,
       std::vector<MediaStreamInterface*> streams) override;
@@ -342,10 +345,36 @@ class PeerConnection : public PeerConnectionInterface,
   void RemoveVideoTrack(VideoTrackInterface* track,
                         MediaStreamInterface* stream);
 
+  // AddTrack implementation when Unified Plan is specified.
+  RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>> AddTrackUnifiedPlan(
+      rtc::scoped_refptr<MediaStreamTrackInterface> track,
+      const std::vector<std::string>& stream_labels);
+  // AddTrack implementation when Plan B is specified.
+  RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>> AddTrackPlanB(
+      rtc::scoped_refptr<MediaStreamTrackInterface> track,
+      const std::vector<std::string>& stream_labels);
+
+  // Returns the first RtpTransceiver suitable for a newly added track, if such
+  // transceiver is available.
+  rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
+  FindFirstTransceiverForAddedTrack(
+      rtc::scoped_refptr<MediaStreamTrackInterface> track);
+
+  // RemoveTrack that returns an RTCError.
+  RTCError RemoveTrackInternal(rtc::scoped_refptr<RtpSenderInterface> sender);
+
+  rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
+  FindTransceiverBySender(rtc::scoped_refptr<RtpSenderInterface> sender);
+
   RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>> AddTransceiver(
       cricket::MediaType media_type,
       rtc::scoped_refptr<MediaStreamTrackInterface> track,
       const RtpTransceiverInit& init);
+
+  // Create a new RtpTransceiver of the given type and add it to the list of
+  // transceivers.
+  rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
+  CreateTransceiver(cricket::MediaType media_type);
 
   void SetIceConnectionState(IceConnectionState new_state);
   // Called any time the IceGatheringState changes

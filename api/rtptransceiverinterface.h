@@ -38,7 +38,7 @@ struct RtpTransceiverInit final {
 
   // The added RtpTransceiver will be added to these streams.
   // TODO(bugs.webrtc.org/7600): Not implemented.
-  std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams;
+  std::vector<std::string> stream_labels;
 
   // TODO(bugs.webrtc.org/7600): Not implemented.
   std::vector<RtpEncodingParameters> send_encodings;

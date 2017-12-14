@@ -46,7 +46,7 @@ void LocalAudioSinkAdapter::SetSink(cricket::AudioSource::Sink* sink) {
   sink_ = sink;
 }
 
-AudioRtpSender::AudioRtpSender(AudioTrackInterface* track,
+AudioRtpSender::AudioRtpSender(rtc::scoped_refptr<AudioTrackInterface> track,
                                const std::vector<std::string>& stream_ids,
                                cricket::VoiceChannel* channel,
                                StatsCollector* stats)
@@ -65,7 +65,7 @@ AudioRtpSender::AudioRtpSender(AudioTrackInterface* track,
   CreateDtmfSender();
 }
 
-AudioRtpSender::AudioRtpSender(AudioTrackInterface* track,
+AudioRtpSender::AudioRtpSender(rtc::scoped_refptr<AudioTrackInterface> track,
                                cricket::VoiceChannel* channel,
                                StatsCollector* stats)
     : id_(track->id()),
@@ -303,7 +303,7 @@ void AudioRtpSender::CreateDtmfSender() {
       DtmfSenderProxy::Create(rtc::Thread::Current(), sender.get());
 }
 
-VideoRtpSender::VideoRtpSender(VideoTrackInterface* track,
+VideoRtpSender::VideoRtpSender(rtc::scoped_refptr<VideoTrackInterface> track,
                                const std::vector<std::string>& stream_ids,
                                cricket::VideoChannel* channel)
     : id_(track->id()),
@@ -318,7 +318,7 @@ VideoRtpSender::VideoRtpSender(VideoTrackInterface* track,
   track_->RegisterObserver(this);
 }
 
-VideoRtpSender::VideoRtpSender(VideoTrackInterface* track,
+VideoRtpSender::VideoRtpSender(rtc::scoped_refptr<VideoTrackInterface> track,
                                cricket::VideoChannel* channel)
     : id_(track->id()),
       // TODO(steveanton): With Unified Plan this should be empty.

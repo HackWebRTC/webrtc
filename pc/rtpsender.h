@@ -83,14 +83,14 @@ class AudioRtpSender : public DtmfProviderInterface,
   // StatsCollector provided so that Add/RemoveLocalAudioTrack can be called
   // at the appropriate times.
   // |channel| can be null if one does not exist yet.
-  AudioRtpSender(AudioTrackInterface* track,
+  AudioRtpSender(rtc::scoped_refptr<AudioTrackInterface> track,
                  const std::vector<std::string>& stream_id,
                  cricket::VoiceChannel* channel,
                  StatsCollector* stats);
 
   // Randomly generates stream_id.
   // |channel| can be null if one does not exist yet.
-  AudioRtpSender(AudioTrackInterface* track,
+  AudioRtpSender(rtc::scoped_refptr<AudioTrackInterface> track,
                  cricket::VoiceChannel* channel,
                  StatsCollector* stats);
 
@@ -181,13 +181,14 @@ class VideoRtpSender : public ObserverInterface,
                        public rtc::RefCountedObject<RtpSenderInternal> {
  public:
   // |channel| can be null if one does not exist yet.
-  VideoRtpSender(VideoTrackInterface* track,
+  VideoRtpSender(rtc::scoped_refptr<VideoTrackInterface> track,
                  const std::vector<std::string>& stream_id,
                  cricket::VideoChannel* channel);
 
   // Randomly generates stream_id.
   // |channel| can be null if one does not exist yet.
-  VideoRtpSender(VideoTrackInterface* track, cricket::VideoChannel* channel);
+  VideoRtpSender(rtc::scoped_refptr<VideoTrackInterface> track,
+                 cricket::VideoChannel* channel);
 
   // Randomly generates id and stream_id.
   // |channel| can be null if one does not exist yet.
