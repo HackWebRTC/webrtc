@@ -12,7 +12,8 @@
 
 #include <algorithm>
 #include <cmath>
-#include <utility>
+#include <map>
+#include <vector>
 
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/include/video_codec_interface.h"
@@ -169,9 +170,7 @@ SendStatisticsProxy::UmaSamplesContainer::UmaSamplesContainer(
       fec_byte_counter_(clock, nullptr, true),
       first_rtcp_stats_time_ms_(-1),
       first_rtp_stats_time_ms_(-1),
-      start_stats_(stats),
-      num_streams_(0),
-      num_pixels_highest_stream_(0) {
+      start_stats_(stats) {
   InitializeBitrateCounters(stats);
 }
 
@@ -198,9 +197,7 @@ void SendStatisticsProxy::UmaSamplesContainer::InitializeBitrateCounters(
   }
 }
 
-void SendStatisticsProxy::UmaSamplesContainer::RemoveOld(
-    int64_t now_ms,
-    bool* is_limited_in_resolution) {
+void SendStatisticsProxy::UmaSamplesContainer::RemoveOld(int64_t now_ms) {
   while (!encoded_frames_.empty()) {
     auto it = encoded_frames_.begin();
     if (now_ms - it->second.send_ms < kMaxEncodedFrameWindowMs)
@@ -209,33 +206,14 @@ void SendStatisticsProxy::UmaSamplesContainer::RemoveOld(
     // Use max per timestamp.
     sent_width_counter_.Add(it->second.max_width);
     sent_height_counter_.Add(it->second.max_height);
-
-    // Check number of encoded streams per timestamp.
-    if (num_streams_ > it->second.max_simulcast_idx) {
-      *is_limited_in_resolution = false;
-      if (num_streams_ > 1) {
-        int disabled_streams = num_streams_ - 1 - it->second.max_simulcast_idx;
-        // Can be limited in resolution or framerate.
-        uint32_t pixels = it->second.max_width * it->second.max_height;
-        bool bw_limited_resolution =
-            disabled_streams > 0 && pixels < num_pixels_highest_stream_;
-        bw_limited_frame_counter_.Add(bw_limited_resolution);
-        if (bw_limited_resolution) {
-          bw_resolutions_disabled_counter_.Add(disabled_streams);
-          *is_limited_in_resolution = true;
-        }
-      }
-    }
     encoded_frames_.erase(it);
   }
 }
 
 bool SendStatisticsProxy::UmaSamplesContainer::InsertEncodedFrame(
-    const EncodedImage& encoded_frame,
-    size_t simulcast_idx,
-    bool* is_limited_in_resolution) {
+    const EncodedImage& encoded_frame) {
   int64_t now_ms = clock_->TimeInMilliseconds();
-  RemoveOld(now_ms, is_limited_in_resolution);
+  RemoveOld(now_ms);
   if (encoded_frames_.size() > kMaxEncodedFrameMapSize) {
     encoded_frames_.clear();
   }
@@ -243,10 +221,9 @@ bool SendStatisticsProxy::UmaSamplesContainer::InsertEncodedFrame(
   auto it = encoded_frames_.find(encoded_frame._timeStamp);
   if (it == encoded_frames_.end()) {
     // First frame with this timestamp.
-    encoded_frames_.insert(
-        std::make_pair(encoded_frame._timeStamp,
-                       Frame(now_ms, encoded_frame._encodedWidth,
-                             encoded_frame._encodedHeight, simulcast_idx)));
+    encoded_frames_.insert(std::make_pair(
+        encoded_frame._timeStamp, Frame(now_ms, encoded_frame._encodedWidth,
+                                        encoded_frame._encodedHeight)));
     sent_fps_counter_.Add(1);
     return true;
   }
@@ -255,8 +232,6 @@ bool SendStatisticsProxy::UmaSamplesContainer::InsertEncodedFrame(
       std::max(it->second.max_width, encoded_frame._encodedWidth);
   it->second.max_height =
       std::max(it->second.max_height, encoded_frame._encodedHeight);
-  it->second.max_simulcast_idx =
-      std::max(it->second.max_simulcast_idx, simulcast_idx);
   return false;
 }
 
@@ -615,7 +590,6 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
 
 void SendStatisticsProxy::OnEncoderReconfigured(
     const VideoEncoderConfig& config,
-    const std::vector<VideoStream>& streams,
     uint32_t preferred_bitrate_bps) {
   rtc::CritScope lock(&crit_);
   stats_.preferred_media_bitrate_bps = preferred_bitrate_bps;
@@ -626,10 +600,6 @@ void SendStatisticsProxy::OnEncoderReconfigured(
         GetUmaPrefix(config.content_type), stats_, clock_));
     content_type_ = config.content_type;
   }
-  uma_container_->encoded_frames_.clear();
-  uma_container_->num_streams_ = streams.size();
-  uma_container_->num_pixels_highest_stream_ =
-      streams.empty() ? 0 : (streams.back().width * streams.back().height);
 }
 
 void SendStatisticsProxy::OnEncodedFrameTimeMeasured(
@@ -878,6 +848,23 @@ void SendStatisticsProxy::OnSendEncodedImage(
 
   uma_container_->key_frame_counter_.Add(encoded_image._frameType ==
                                          kVideoFrameKey);
+  stats_.bw_limited_resolution =
+      encoded_image.adapt_reason_.bw_resolutions_disabled > 0 ||
+      quality_downscales_ > 0;
+
+  if (quality_downscales_ != -1) {
+    uma_container_->quality_limited_frame_counter_.Add(quality_downscales_ > 0);
+    if (quality_downscales_ > 0)
+      uma_container_->quality_downscales_counter_.Add(quality_downscales_);
+  }
+  if (encoded_image.adapt_reason_.bw_resolutions_disabled != -1) {
+    bool bw_limited = encoded_image.adapt_reason_.bw_resolutions_disabled > 0;
+    uma_container_->bw_limited_frame_counter_.Add(bw_limited);
+    if (bw_limited) {
+      uma_container_->bw_resolutions_disabled_counter_.Add(
+          encoded_image.adapt_reason_.bw_resolutions_disabled);
+    }
+  }
 
   if (encoded_image.qp_ != -1) {
     if (!stats_.qp_sum)
@@ -904,23 +891,8 @@ void SendStatisticsProxy::OnSendEncodedImage(
   }
 
   media_byte_rate_tracker_.AddSamples(encoded_image._length);
-
-  // Initialize to current since |is_limited_in_resolution| is only updated
-  // when an encoded frame is removed from the EncodedFrameMap.
-  bool is_limited_in_resolution = stats_.bw_limited_resolution;
-  if (uma_container_->InsertEncodedFrame(encoded_image, simulcast_idx,
-                                         &is_limited_in_resolution)) {
+  if (uma_container_->InsertEncodedFrame(encoded_image))
     encoded_frame_rate_tracker_.AddSamples(1);
-  }
-
-  stats_.bw_limited_resolution =
-      is_limited_in_resolution || quality_downscales_ > 0;
-
-  if (quality_downscales_ != -1) {
-    uma_container_->quality_limited_frame_counter_.Add(quality_downscales_ > 0);
-    if (quality_downscales_ > 0)
-      uma_container_->quality_downscales_counter_.Add(quality_downscales_);
-  }
 }
 
 int SendStatisticsProxy::GetSendFrameRate() const {

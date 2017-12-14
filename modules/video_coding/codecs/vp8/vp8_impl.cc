@@ -115,6 +115,15 @@ bool ValidSimulcastTemporalLayers(const VideoCodec& codec, int num_streams) {
   return true;
 }
 
+int NumStreamsDisabled(const std::vector<bool>& streams) {
+  int num_disabled = 0;
+  for (bool stream : streams) {
+    if (!stream)
+      ++num_disabled;
+  }
+  return num_disabled;
+}
+
 bool GetGfBoostPercentageFromFieldTrialGroup(int* boost_percentage) {
   std::string group = webrtc::field_trial::FindFullName(kVp8GfBoostFieldTrial);
   if (group.empty())
@@ -865,6 +874,9 @@ void VP8EncoderImpl::PopulateCodecSpecific(
 int VP8EncoderImpl::GetEncodedPartitions(
     const TemporalLayers::FrameConfig tl_configs[],
     const VideoFrame& input_image) {
+  int bw_resolutions_disabled =
+      (encoders_.size() > 1) ? NumStreamsDisabled(send_stream_) : -1;
+
   int stream_idx = static_cast<int>(encoders_.size()) - 1;
   int result = WEBRTC_VIDEO_CODEC_OK;
   for (size_t encoder_idx = 0; encoder_idx < encoders_.size();
@@ -937,6 +949,9 @@ int VP8EncoderImpl::GetEncodedPartitions(
             codec_.simulcastStream[stream_idx].height;
         encoded_images_[encoder_idx]._encodedWidth =
             codec_.simulcastStream[stream_idx].width;
+        // Report once per frame (lowest stream always sent).
+        encoded_images_[encoder_idx].adapt_reason_.bw_resolutions_disabled =
+            (stream_idx == 0) ? bw_resolutions_disabled : -1;
         int qp_128 = -1;
         vpx_codec_control(&encoders_[encoder_idx], VP8E_GET_LAST_QUANTIZER,
                           &qp_128);

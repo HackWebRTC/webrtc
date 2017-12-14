@@ -616,7 +616,7 @@ void VideoStreamEncoder::ReconfigureEncoder() {
   if (current_framerate == 0)
     current_framerate = codec.maxFramerate;
   stats_proxy_->OnEncoderReconfigured(
-      encoder_config_, streams,
+      encoder_config_,
       rate_allocator_.get()
           ? rate_allocator_->GetPreferredBitrateBps(current_framerate)
           : codec.maxBitrate);

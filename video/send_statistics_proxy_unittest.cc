@@ -28,12 +28,10 @@ const uint32_t kFirstRtxSsrc = 18;
 const uint32_t kSecondRtxSsrc = 43;
 const uint32_t kFlexFecSsrc = 55;
 const int kFpsPeriodicIntervalMs = 2000;
-const int kPreferredBps = 50000;
 const int kWidth = 640;
 const int kHeight = 480;
 const int kQpIdx0 = 21;
 const int kQpIdx1 = 39;
-const int kRtpClockRateHz = 90000;
 const CodecSpecificInfo kDefaultCodecInfo = []() {
   CodecSpecificInfo codec_info;
   codec_info.codecType = kVideoCodecVP8;
@@ -324,11 +322,12 @@ TEST_F(SendStatisticsProxyTest, OnEncodedFrameTimeMeasured) {
 TEST_F(SendStatisticsProxyTest, OnEncoderReconfiguredChangePreferredBitrate) {
   VideoSendStream::Stats stats = statistics_proxy_->GetStats();
   EXPECT_EQ(0, stats.preferred_media_bitrate_bps);
+  const int kPreferredMediaBitrateBps = 50;
 
   VideoEncoderConfig config;
-  statistics_proxy_->OnEncoderReconfigured(config, {}, kPreferredBps);
+  statistics_proxy_->OnEncoderReconfigured(config, kPreferredMediaBitrateBps);
   stats = statistics_proxy_->GetStats();
-  EXPECT_EQ(kPreferredBps, stats.preferred_media_bitrate_bps);
+  EXPECT_EQ(kPreferredMediaBitrateBps, stats.preferred_media_bitrate_bps);
 }
 
 TEST_F(SendStatisticsProxyTest, OnSendEncodedImageIncreasesFramesEncoded) {
@@ -754,7 +753,7 @@ TEST_F(SendStatisticsProxyTest, AdaptChangesReportedAfterContentSwitch) {
   // Switch content type, real-time stats should be updated.
   VideoEncoderConfig config;
   config.content_type = VideoEncoderConfig::ContentType::kScreen;
-  statistics_proxy_->OnEncoderReconfigured(config, {}, kPreferredBps);
+  statistics_proxy_->OnEncoderReconfigured(config, 50);
   EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.AdaptChangesPerMinute.Cpu"));
   EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.AdaptChangesPerMinute.Cpu", 8));
   EXPECT_EQ(0,
@@ -787,12 +786,12 @@ TEST_F(SendStatisticsProxyTest, SwitchContentTypeUpdatesHistograms) {
   // No switch, stats should not be updated.
   VideoEncoderConfig config;
   config.content_type = VideoEncoderConfig::ContentType::kRealtimeVideo;
-  statistics_proxy_->OnEncoderReconfigured(config, {}, kPreferredBps);
+  statistics_proxy_->OnEncoderReconfigured(config, 50);
   EXPECT_EQ(0, metrics::NumSamples("WebRTC.Video.InputWidthInPixels"));
 
   // Switch to screenshare, real-time stats should be updated.
   config.content_type = VideoEncoderConfig::ContentType::kScreen;
-  statistics_proxy_->OnEncoderReconfigured(config, {}, kPreferredBps);
+  statistics_proxy_->OnEncoderReconfigured(config, 50);
   EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.InputWidthInPixels"));
 }
 
@@ -1180,30 +1179,11 @@ TEST_F(SendStatisticsProxyTest, VerifyQpHistogramStats_H264) {
 }
 
 TEST_F(SendStatisticsProxyTest,
-       BandwidthLimitedHistogramsNotUpdatedForOneStream) {
-  // Configure one stream.
-  VideoEncoderConfig config;
-  config.content_type = VideoEncoderConfig::ContentType::kRealtimeVideo;
-  VideoStream stream1;
-  stream1.width = kWidth;
-  stream1.height = kHeight;
-  statistics_proxy_->OnEncoderReconfigured(config, {stream1}, kPreferredBps);
-
-  const int64_t kMaxEncodedFrameWindowMs = 800;
-  const int kFps = 20;
-  const int kNumFramesPerWindow = kFps * kMaxEncodedFrameWindowMs / 1000;
-  const int kMinSamples =  // Sample added when removed from EncodedFrameMap.
-      SendStatisticsProxy::kMinRequiredMetricsSamples + kNumFramesPerWindow;
-
-  // Stream encoded.
+       BandwidthLimitedHistogramsNotUpdatedWhenDisabled) {
   EncodedImage encoded_image;
-  encoded_image._encodedWidth = kWidth;
-  encoded_image._encodedHeight = kHeight;
-  for (int i = 0; i < kMinSamples; ++i) {
-    fake_clock_.AdvanceTimeMilliseconds(1000 / kFps);
-    encoded_image._timeStamp += (kRtpClockRateHz / kFps);
+  // encoded_image.adapt_reason_.bw_resolutions_disabled by default: -1
+  for (int i = 0; i < SendStatisticsProxy::kMinRequiredMetricsSamples; ++i)
     statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
-  }
 
   // Histograms are updated when the statistics_proxy_ is deleted.
   statistics_proxy_.reset();
@@ -1214,37 +1194,12 @@ TEST_F(SendStatisticsProxyTest,
 }
 
 TEST_F(SendStatisticsProxyTest,
-       BandwidthLimitedHistogramsUpdatedForTwoStreams_NoResolutionDisabled) {
-  // Configure two streams.
-  VideoEncoderConfig config;
-  config.content_type = VideoEncoderConfig::ContentType::kRealtimeVideo;
-  VideoStream stream1;
-  stream1.width = kWidth / 2;
-  stream1.height = kHeight / 2;
-  VideoStream stream2;
-  stream2.width = kWidth;
-  stream2.height = kHeight;
-  statistics_proxy_->OnEncoderReconfigured(config, {stream1, stream2},
-                                           kPreferredBps);
-
-  const int64_t kMaxEncodedFrameWindowMs = 800;
-  const int kFps = 20;
-  const int kNumFramesPerWindow = kFps * kMaxEncodedFrameWindowMs / 1000;
-  const int kMinSamples =  // Sample added when removed from EncodedFrameMap.
-      SendStatisticsProxy::kMinRequiredMetricsSamples + kNumFramesPerWindow;
-
-  // Two streams encoded.
+       BandwidthLimitedHistogramsUpdatedWhenEnabled_NoResolutionDisabled) {
+  const int kResolutionsDisabled = 0;
   EncodedImage encoded_image;
-  for (int i = 0; i < kMinSamples; ++i) {
-    fake_clock_.AdvanceTimeMilliseconds(1000 / kFps);
-    encoded_image._timeStamp += (kRtpClockRateHz / kFps);
-    encoded_image._encodedWidth = kWidth;
-    encoded_image._encodedHeight = kHeight;
+  encoded_image.adapt_reason_.bw_resolutions_disabled = kResolutionsDisabled;
+  for (int i = 0; i < SendStatisticsProxy::kMinRequiredMetricsSamples; ++i)
     statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
-    encoded_image._encodedWidth = kWidth / 2;
-    encoded_image._encodedHeight = kHeight / 2;
-    statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
-  }
 
   // Histograms are updated when the statistics_proxy_ is deleted.
   statistics_proxy_.reset();
@@ -1258,34 +1213,12 @@ TEST_F(SendStatisticsProxyTest,
 }
 
 TEST_F(SendStatisticsProxyTest,
-       BandwidthLimitedHistogramsUpdatedForTwoStreams_OneResolutionDisabled) {
-  // Configure two streams.
-  VideoEncoderConfig config;
-  config.content_type = VideoEncoderConfig::ContentType::kRealtimeVideo;
-  VideoStream stream1;
-  stream1.width = kWidth / 2;
-  stream1.height = kHeight / 2;
-  VideoStream stream2;
-  stream2.width = kWidth;
-  stream2.height = kHeight;
-  statistics_proxy_->OnEncoderReconfigured(config, {stream1, stream2},
-                                           kPreferredBps);
-
-  const int64_t kMaxEncodedFrameWindowMs = 800;
-  const int kFps = 20;
-  const int kNumFramesPerWindow = kFps * kMaxEncodedFrameWindowMs / 1000;
-  const int kMinSamples =  // Sample added when removed from EncodedFrameMap.
-      SendStatisticsProxy::kMinRequiredMetricsSamples + kNumFramesPerWindow;
-
-  // One stream encoded.
+       BandwidthLimitedHistogramsUpdatedWhenEnabled_OneResolutionDisabled) {
+  const int kResolutionsDisabled = 1;
   EncodedImage encoded_image;
-  encoded_image._encodedWidth = kWidth / 2;
-  encoded_image._encodedHeight = kHeight / 2;
-  for (int i = 0; i < kMinSamples; ++i) {
-    fake_clock_.AdvanceTimeMilliseconds(1000 / kFps);
-    encoded_image._timeStamp += (kRtpClockRateHz / kFps);
+  encoded_image.adapt_reason_.bw_resolutions_disabled = kResolutionsDisabled;
+  for (int i = 0; i < SendStatisticsProxy::kMinRequiredMetricsSamples; ++i)
     statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
-  }
 
   // Histograms are updated when the statistics_proxy_ is deleted.
   statistics_proxy_.reset();
@@ -1293,11 +1226,12 @@ TEST_F(SendStatisticsProxyTest,
                    "WebRTC.Video.BandwidthLimitedResolutionInPercent"));
   EXPECT_EQ(1, metrics::NumEvents(
                    "WebRTC.Video.BandwidthLimitedResolutionInPercent", 100));
-  // One resolution disabled.
+  // Resolutions disabled.
   EXPECT_EQ(1, metrics::NumSamples(
                    "WebRTC.Video.BandwidthLimitedResolutionsDisabled"));
-  EXPECT_EQ(1, metrics::NumEvents(
-                   "WebRTC.Video.BandwidthLimitedResolutionsDisabled", 1));
+  EXPECT_EQ(
+      1, metrics::NumEvents("WebRTC.Video.BandwidthLimitedResolutionsDisabled",
+                            kResolutionsDisabled));
 }
 
 TEST_F(SendStatisticsProxyTest,
@@ -1366,58 +1300,17 @@ TEST_F(SendStatisticsProxyTest,
 TEST_F(SendStatisticsProxyTest, GetStatsReportsBandwidthLimitedResolution) {
   // Initially false.
   EXPECT_FALSE(statistics_proxy_->GetStats().bw_limited_resolution);
-
-  // Configure two streams.
-  VideoEncoderConfig config;
-  config.content_type = VideoEncoderConfig::ContentType::kRealtimeVideo;
-  VideoStream stream1;
-  stream1.width = kWidth / 2;
-  stream1.height = kHeight / 2;
-  VideoStream stream2;
-  stream2.width = kWidth;
-  stream2.height = kHeight;
-  statistics_proxy_->OnEncoderReconfigured(config, {stream1, stream2},
-                                           kPreferredBps);
-
-  const int64_t kMaxEncodedFrameWindowMs = 800;
-  const int kFps = 20;
-  const int kMinSamples =  // Sample added when removed from EncodedFrameMap.
-      kFps * kMaxEncodedFrameWindowMs / 1000;
-
-  // One stream encoded.
+  // No resolution scale by default.
   EncodedImage encoded_image;
-  encoded_image._encodedWidth = kWidth / 2;
-  encoded_image._encodedHeight = kHeight / 2;
-  for (int i = 0; i < kMinSamples; ++i) {
-    fake_clock_.AdvanceTimeMilliseconds(1000 / kFps);
-    encoded_image._timeStamp += (kRtpClockRateHz / kFps);
-    statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
-    EXPECT_FALSE(statistics_proxy_->GetStats().bw_limited_resolution);
-  }
+  statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
+  EXPECT_FALSE(statistics_proxy_->GetStats().bw_limited_resolution);
 
-  // First frame removed from EncodedFrameMap, stats updated.
-  fake_clock_.AdvanceTimeMilliseconds(1000 / kFps);
-  ++encoded_image._timeStamp;
+  // Simulcast disabled resolutions
+  encoded_image.adapt_reason_.bw_resolutions_disabled = 1;
   statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
   EXPECT_TRUE(statistics_proxy_->GetStats().bw_limited_resolution);
 
-  // Two streams encoded.
-  for (int i = 0; i < kMinSamples; ++i) {
-    fake_clock_.AdvanceTimeMilliseconds(1000 / kFps);
-    encoded_image._timeStamp += (kRtpClockRateHz / kFps);
-    encoded_image._encodedWidth = kWidth;
-    encoded_image._encodedHeight = kHeight;
-    statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
-    EXPECT_TRUE(statistics_proxy_->GetStats().bw_limited_resolution);
-    encoded_image._encodedWidth = kWidth / 2;
-    encoded_image._encodedHeight = kHeight / 2;
-    statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
-    EXPECT_TRUE(statistics_proxy_->GetStats().bw_limited_resolution);
-  }
-
-  // First frame with two streams removed, expect no resolution limit.
-  fake_clock_.AdvanceTimeMilliseconds(1000 / kFps);
-  encoded_image._timeStamp += (kRtpClockRateHz / kFps);
+  encoded_image.adapt_reason_.bw_resolutions_disabled = 0;
   statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
   EXPECT_FALSE(statistics_proxy_->GetStats().bw_limited_resolution);
 
@@ -1580,7 +1473,7 @@ TEST_F(SendStatisticsProxyTest, ResetsRtcpCountersOnContentChange) {
   // Changing content type causes histograms to be reported.
   VideoEncoderConfig config;
   config.content_type = VideoEncoderConfig::ContentType::kScreen;
-  statistics_proxy_->OnEncoderReconfigured(config, {}, kPreferredBps);
+  statistics_proxy_->OnEncoderReconfigured(config, 50);
 
   EXPECT_EQ(1,
             metrics::NumSamples("WebRTC.Video.NackPacketsReceivedPerMinute"));
@@ -1744,7 +1637,7 @@ TEST_F(SendStatisticsProxyTest, ResetsRtpCountersOnContentChange) {
   // Changing content type causes histograms to be reported.
   VideoEncoderConfig config;
   config.content_type = VideoEncoderConfig::ContentType::kScreen;
-  statistics_proxy_->OnEncoderReconfigured(config, {}, kPreferredBps);
+  statistics_proxy_->OnEncoderReconfigured(config, 50000);
 
   // Interval: 3500 bytes * 4 / 2 sec = 7000 bytes / sec  = 56 kbps
   EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.BitrateSentInKbps"));
