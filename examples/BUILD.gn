@@ -19,10 +19,10 @@ if (is_android) {
 group("examples") {
   # This target shall build all targets in examples.
   testonly = true
-  public_deps = []
+  deps = []
 
   if (is_android) {
-    public_deps += [
+    deps += [
       ":AppRTCMobile",
       ":AppRTCMobileTest",
       ":AppRTCMobileTestStubbedVideoIO",
@@ -30,15 +30,15 @@ group("examples") {
   }
 
   if (!build_with_chromium) {
-    public_deps += [ ":stun_prober" ]
+    deps += [ ":stun_prober" ]
   }
 
   if (is_ios || (is_mac && target_cpu != "x86")) {
-    public_deps += [ ":AppRTCMobile" ]
+    deps += [ ":AppRTCMobile" ]
   }
 
   if (is_linux || is_win) {
-    public_deps += [
+    deps += [
       ":peerconnection_client",
       ":peerconnection_server",
       ":relayserver",
@@ -166,6 +166,8 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
     if (is_ios) {
       deps = [
         ":AppRTCMobile_ios_frameworks",
+        "../sdk:common_objc",
+        "../system_wrappers:field_trial_default",
       ]
     } else {
       deps = [
@@ -237,11 +239,12 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       ":socketrocket",
     ]
     if (is_ios) {
-      deps += [ ":AppRTCMobile_ios_frameworks" ]
-    } else {
-      public_deps = [
-        "../sdk:peerconnection_objc",
+      deps += [
+        ":AppRTCMobile_ios_frameworks",
+        "../sdk:framework_objc",
       ]
+    } else {
+      deps += [ "../sdk:peerconnection_objc" ]
     }
     libs = [ "QuartzCore.framework" ]
   }
@@ -275,6 +278,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
         ":AppRTCMobile_ios_frameworks",
         ":apprtc_common",
         ":apprtc_signaling",
+        "../sdk:framework_objc",
       ]
     }
 
@@ -293,6 +297,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
         ":AppRTCMobile_ios_bundle_data",
         ":AppRTCMobile_ios_frameworks",
         ":AppRTCMobile_lib",
+        "../sdk:framework_objc",
       ]
 
       if (target_cpu == "x86") {
@@ -301,7 +306,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
     }
 
     bundle_data("AppRTCMobile_ios_frameworks") {
-      public_deps = [
+      deps = [
         "../sdk:framework_objc+link",
       ]
       sources = [
@@ -355,6 +360,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       deps = [
         ":apprtc_common",
         ":apprtc_signaling",
+        "../sdk:metal_objc",
         "../sdk:ui_objc",
       ]
     }
@@ -431,11 +437,10 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
           "objc/AppRTCMobile/tests/ARDSettingsModel_xctest.mm",
         ]
         deps = [
-          "../rtc_base:rtc_base",
-        ]
-        public_deps = [
           ":AppRTCMobile_ios_frameworks",
           ":AppRTCMobile_lib",
+          "../rtc_base:rtc_base",
+          "../sdk:framework_objc",
           "//build/config/ios:xctest",
           "//third_party/ocmock",
         ]
@@ -448,6 +453,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
         ]
         deps = [
           ":apprtcmobile_test_sources",
+          "../sdk:framework_objc",
         ]
         ldflags = [ "-all_load" ]
       }
