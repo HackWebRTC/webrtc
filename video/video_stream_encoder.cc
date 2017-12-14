@@ -848,12 +848,26 @@ EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
   int64_t time_sent_us = rtc::TimeMicros();
   uint32_t timestamp = encoded_image._timeStamp;
   const int qp = encoded_image.qp_;
-  encoder_queue_.PostTask([this, timestamp, time_sent_us, qp] {
-    RTC_DCHECK_RUN_ON(&encoder_queue_);
-    overuse_detector_->FrameSent(timestamp, time_sent_us);
-    if (quality_scaler_ && qp >= 0)
-      quality_scaler_->ReportQP(qp);
-  });
+  int64_t capture_time_us =
+      encoded_image.capture_time_ms_ * rtc::kNumMicrosecsPerMillisec;
+
+  rtc::Optional<int> encode_duration_us;
+  if (encoded_image.timing_.flags != TimingFrameFlags::kInvalid) {
+    encode_duration_us.emplace(
+        // TODO(nisse): Maybe use capture_time_ms_ rather than encode_start_ms_?
+        rtc::kNumMicrosecsPerMillisec *
+        (encoded_image.timing_.encode_finish_ms -
+         encoded_image.timing_.encode_start_ms));
+  }
+
+  encoder_queue_.PostTask(
+      [this, timestamp, time_sent_us, qp, capture_time_us, encode_duration_us] {
+        RTC_DCHECK_RUN_ON(&encoder_queue_);
+        overuse_detector_->FrameSent(timestamp, time_sent_us, capture_time_us,
+                                     encode_duration_us);
+        if (quality_scaler_ && qp >= 0)
+          quality_scaler_->ReportQP(qp);
+      });
 
   return result;
 }

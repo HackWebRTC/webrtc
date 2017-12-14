@@ -68,9 +68,9 @@ const auto kScaleReasonCpu = AdaptationObserverInterface::AdaptReason::kCpu;
 // Class for calculating the processing usage on the send-side (the average
 // processing time of a frame divided by the average time difference between
 // captured frames).
-class SendProcessingUsage : public OveruseFrameDetector::ProcessingUsage {
+class SendProcessingUsage1 : public OveruseFrameDetector::ProcessingUsage {
  public:
-  explicit SendProcessingUsage(const CpuOveruseOptions& options)
+  explicit SendProcessingUsage1(const CpuOveruseOptions& options)
       : kWeightFactorFrameDiff(0.998f),
         kWeightFactorProcessing(0.995f),
         kInitialSampleDiffMs(40.0f),
@@ -82,7 +82,7 @@ class SendProcessingUsage : public OveruseFrameDetector::ProcessingUsage {
         filtered_frame_diff_ms_(new rtc::ExpFilter(kWeightFactorFrameDiff)) {
     Reset();
   }
-  virtual ~SendProcessingUsage() {}
+  virtual ~SendProcessingUsage1() {}
 
   void Reset() override {
     frame_timing_.clear();
@@ -109,8 +109,11 @@ class SendProcessingUsage : public OveruseFrameDetector::ProcessingUsage {
                                         time_when_first_seen_us));
   }
 
-  rtc::Optional<int> FrameSent(uint32_t timestamp,
-                               int64_t time_sent_in_us) override {
+  rtc::Optional<int> FrameSent(
+      uint32_t timestamp,
+      int64_t time_sent_in_us,
+      int64_t /* capture_time_us */,
+      rtc::Optional<int> /* encode_duration_us */) override {
     rtc::Optional<int> encode_duration_us;
     // Delay before reporting actual encoding time, used to have the ability to
     // detect total encoding time when encoding more than one layer. Encoding is
@@ -211,14 +214,86 @@ class SendProcessingUsage : public OveruseFrameDetector::ProcessingUsage {
   std::unique_ptr<rtc::ExpFilter> filtered_frame_diff_ms_;
 };
 
-// Class used for manual testing of overuse, enabled via field trial flag.
-class OverdoseInjector : public SendProcessingUsage {
+// New cpu load estimator.
+// TODO(bugs.webrtc.org/8504): For some period of time, we need to
+// switch between the two versions of the estimator for experiments.
+// When problems are sorted out, the old estimator should be deleted.
+class SendProcessingUsage2 : public OveruseFrameDetector::ProcessingUsage {
  public:
-  OverdoseInjector(const CpuOveruseOptions& options,
+  explicit SendProcessingUsage2(const CpuOveruseOptions& options)
+      : options_(options) {
+    Reset();
+  }
+  virtual ~SendProcessingUsage2() = default;
+
+  void Reset() override {
+    prev_time_us_ = -1;
+    // Start in between the underuse and overuse threshold.
+    load_estimate_ = (options_.low_encode_usage_threshold_percent +
+                      options_.high_encode_usage_threshold_percent) /
+                     200.0;
+  }
+
+  void SetMaxSampleDiffMs(float /* diff_ms */) override {}
+
+  void FrameCaptured(const VideoFrame& frame,
+                     int64_t time_when_first_seen_us,
+                     int64_t last_capture_time_us) override {}
+
+  rtc::Optional<int> FrameSent(uint32_t timestamp,
+                               int64_t time_sent_in_us,
+                               int64_t capture_time_us,
+                               rtc::Optional<int> encode_duration_us) override {
+    if (encode_duration_us) {
+      if (prev_time_us_ != -1) {
+        AddSample(1e-6 * (*encode_duration_us),
+                  1e-6 * (capture_time_us - prev_time_us_));
+      }
+    }
+    prev_time_us_ = capture_time_us;
+
+    return encode_duration_us;
+  }
+
+ private:
+  void AddSample(double encode_time, double diff_time) {
+    RTC_CHECK_GE(diff_time, 0.0);
+
+    // Use the filter update
+    //
+    // load <-- x/d (1-exp (-d/T)) + exp (-d/T) load
+    //
+    // where we must take care for small d, using the proper limit
+    // (1 - exp(-d/tau)) / d = 1/tau - d/2tau^2 + O(d^2)
+    double tau = (1e-3 * options_.filter_time_ms);
+    double e = diff_time / tau;
+    double c;
+    if (e < 0.0001) {
+      c = (1 - e / 2) / tau;
+    } else {
+      c = -expm1(-e) / diff_time;
+    }
+    load_estimate_ = c * encode_time + exp(-e) * load_estimate_;
+  }
+
+  int Value() override {
+    return static_cast<int>(100.0 * load_estimate_ + 0.5);
+  }
+
+ private:
+  const CpuOveruseOptions options_;
+  int64_t prev_time_us_ = -1;
+  double load_estimate_;
+};
+
+// Class used for manual testing of overuse, enabled via field trial flag.
+class OverdoseInjector : public OveruseFrameDetector::ProcessingUsage {
+ public:
+  OverdoseInjector(std::unique_ptr<OveruseFrameDetector::ProcessingUsage> usage,
                    int64_t normal_period_ms,
                    int64_t overuse_period_ms,
                    int64_t underuse_period_ms)
-      : SendProcessingUsage(options),
+      : usage_(std::move(usage)),
         normal_period_ms_(normal_period_ms),
         overuse_period_ms_(overuse_period_ms),
         underuse_period_ms_(underuse_period_ms),
@@ -232,6 +307,29 @@ class OverdoseInjector : public SendProcessingUsage {
   }
 
   ~OverdoseInjector() override {}
+
+  void Reset() override { usage_->Reset(); }
+
+  void SetMaxSampleDiffMs(float diff_ms) override {
+    usage_->SetMaxSampleDiffMs(diff_ms);
+  }
+
+  void FrameCaptured(const VideoFrame& frame,
+                     int64_t time_when_first_seen_us,
+                     int64_t last_capture_time_us) override {
+    usage_->FrameCaptured(frame, time_when_first_seen_us, last_capture_time_us);
+  }
+
+  rtc::Optional<int> FrameSent(
+      // These two argument used by old estimator.
+      uint32_t timestamp,
+      int64_t time_sent_in_us,
+      // And these two by the new estimator.
+      int64_t capture_time_us,
+      rtc::Optional<int> encode_duration_us) override {
+    return usage_->FrameSent(timestamp, time_sent_in_us, capture_time_us,
+                             encode_duration_us);
+  }
 
   int Value() override {
     int64_t now_ms = rtc::TimeMillis();
@@ -275,10 +373,11 @@ class OverdoseInjector : public SendProcessingUsage {
         break;
     }
 
-    return overried_usage_value.value_or(SendProcessingUsage::Value());
+    return overried_usage_value.value_or(usage_->Value());
   }
 
  private:
+  const std::unique_ptr<OveruseFrameDetector::ProcessingUsage> usage_;
   const int64_t normal_period_ms_;
   const int64_t overuse_period_ms_;
   const int64_t underuse_period_ms_;
@@ -293,7 +392,9 @@ CpuOveruseOptions::CpuOveruseOptions()
       frame_timeout_interval_ms(1500),
       min_frame_samples(120),
       min_process_count(3),
-      high_threshold_consecutive_count(2) {
+      high_threshold_consecutive_count(2),
+      // Disabled by default.
+      filter_time_ms(0) {
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
   // This is proof-of-concept code for letting the physical core count affect
   // the interval into which we attempt to scale. For now, the code is Mac OS
@@ -342,6 +443,11 @@ std::unique_ptr<OveruseFrameDetector::ProcessingUsage>
 OveruseFrameDetector::CreateProcessingUsage(
     const CpuOveruseOptions& options) {
   std::unique_ptr<ProcessingUsage> instance;
+  if (options.filter_time_ms > 0) {
+    instance = rtc::MakeUnique<SendProcessingUsage2>(options);
+  } else {
+    instance = rtc::MakeUnique<SendProcessingUsage1>(options);
+  }
   std::string toggling_interval =
       field_trial::FindFullName("WebRTC-ForceSimulatedOveruseIntervalMs");
   if (!toggling_interval.empty()) {
@@ -353,8 +459,8 @@ OveruseFrameDetector::CreateProcessingUsage(
       if (normal_period_ms > 0 && overuse_period_ms > 0 &&
           underuse_period_ms > 0) {
         instance = rtc::MakeUnique<OverdoseInjector>(
-            options, normal_period_ms, overuse_period_ms,
-            underuse_period_ms);
+            std::move(instance), normal_period_ms,
+            overuse_period_ms, underuse_period_ms);
       } else {
         RTC_LOG(LS_WARNING)
             << "Invalid (non-positive) normal/overuse/underuse periods: "
@@ -366,12 +472,6 @@ OveruseFrameDetector::CreateProcessingUsage(
                           << toggling_interval;
     }
   }
-
-  if (!instance) {
-    // No valid overuse simulation parameters set, use normal usage class.
-    instance = rtc::MakeUnique<SendProcessingUsage>(options);
-  }
-
   return instance;
 }
 
@@ -502,10 +602,12 @@ void OveruseFrameDetector::FrameCaptured(const VideoFrame& frame,
 }
 
 void OveruseFrameDetector::FrameSent(uint32_t timestamp,
-                                     int64_t time_sent_in_us) {
+                                     int64_t time_sent_in_us,
+                                     int64_t capture_time_us,
+                                     rtc::Optional<int> encode_duration_us) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
-  rtc::Optional<int> encode_duration_us =
-      usage_->FrameSent(timestamp, time_sent_in_us);
+  encode_duration_us = usage_->FrameSent(timestamp, time_sent_in_us,
+                                         capture_time_us, encode_duration_us);
 
   if (encode_duration_us) {
     EncodedFrameTimeMeasured(*encode_duration_us /

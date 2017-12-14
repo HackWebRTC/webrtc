@@ -40,6 +40,8 @@ struct CpuOveruseOptions {
   int high_threshold_consecutive_count;  // The number of consecutive checks
                                          // above the high threshold before
                                          // triggering an overuse.
+  // New estimator enabled if this is set non-zero.
+  int filter_time_ms;  // Time constant for averaging
 };
 
 struct CpuOveruseMetrics {
@@ -86,7 +88,10 @@ class OveruseFrameDetector {
   void FrameCaptured(const VideoFrame& frame, int64_t time_when_first_seen_us);
 
   // Called for each sent frame.
-  void FrameSent(uint32_t timestamp, int64_t time_sent_in_us);
+  void FrameSent(uint32_t timestamp,
+                 int64_t time_sent_in_us,
+                 int64_t capture_time_us,
+                 rtc::Optional<int> encode_duration_us);
 
   // Interface for cpu load estimation. Intended for internal use only.
   class ProcessingUsage {
@@ -97,8 +102,13 @@ class OveruseFrameDetector {
                                int64_t time_when_first_seen_us,
                                int64_t last_capture_time_us) = 0;
     // Returns encode_time in us, if there's a new measurement.
-    virtual rtc::Optional<int> FrameSent(uint32_t timestamp,
-                                         int64_t time_sent_in_us) = 0;
+    virtual rtc::Optional<int> FrameSent(
+        // These two argument used by old estimator.
+        uint32_t timestamp,
+        int64_t time_sent_in_us,
+        // And these two by the new estimator.
+        int64_t capture_time_us,
+        rtc::Optional<int> encode_duration_us) = 0;
 
     virtual int Value() = 0;
     virtual ~ProcessingUsage() = default;
