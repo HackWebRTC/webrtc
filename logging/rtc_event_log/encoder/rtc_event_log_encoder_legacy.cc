@@ -107,6 +107,18 @@ rtclog::VideoReceiveConfig_RtcpMode ConvertRtcpMode(RtcpMode rtcp_mode) {
 }
 }  // namespace
 
+std::string RtcEventLogEncoderLegacy::EncodeBatch(
+    std::deque<std::unique_ptr<RtcEvent>>::const_iterator begin,
+    std::deque<std::unique_ptr<RtcEvent>>::const_iterator end) {
+  std::string encoded_output;
+  for (auto it = begin; it != end; ++it) {
+    // TODO(terelius): Can we avoid the slight inefficiency of reallocating the
+    // string?
+    encoded_output += Encode(**it);
+  }
+  return encoded_output;
+}
+
 std::string RtcEventLogEncoderLegacy::Encode(const RtcEvent& event) {
   switch (event.GetType()) {
     case RtcEvent::Type::AudioNetworkAdaptation: {
