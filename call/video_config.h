@@ -26,6 +26,7 @@ namespace webrtc {
 struct VideoStream {
   VideoStream();
   ~VideoStream();
+  VideoStream(const VideoStream& other);
   std::string ToString() const;
 
   size_t width;
@@ -38,6 +39,9 @@ struct VideoStream {
   rtc::Optional<double> bitrate_priority;
 
   int max_qp;
+
+  // TODO(bugs.webrtc.org/8653): Support active per-simulcast layer.
+  bool active;
 
   // Bitrate thresholds for enabling additional temporal layers. Since these are
   // thresholds in between layers, we have one additional layer. One threshold
@@ -145,6 +149,11 @@ class VideoEncoderConfig {
   int max_bitrate_bps;
   // The bitrate priority used for all VideoStreams.
   double bitrate_priority;
+
+  // The simulcast layer's configurations set by the application for this video
+  // sender. These are modified by the video_stream_factory before being passed
+  // down to lower layers for the video encoding.
+  std::vector<VideoStream> simulcast_layers;
 
   // Max number of encoded VideoStreams to produce.
   size_t number_of_streams;
