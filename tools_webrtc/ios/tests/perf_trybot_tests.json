@@ -2,10 +2,6 @@
   "tests": [
     {
       "app": "webrtc_perf_tests",
-      "test args": [
-        "--gtest_filter=AudioEncoderOpusComplexityAdaptationTest.AdaptationOn",
-        "--save_chartjson_result"
-      ],
       "bot_id": "build16-a7",
       "pool": "WebRTC"
     }

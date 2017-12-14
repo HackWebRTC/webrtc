@@ -109,7 +109,7 @@ int main(int argc, char* argv[]) {
   rtc::SSLStreamAdapter::enable_time_callback_for_testing();
 
 #if defined(WEBRTC_IOS)
-  rtc::test::InitTestSuite(RUN_ALL_TESTS, argc, argv, false);
+  rtc::test::InitTestSuite(RUN_ALL_TESTS, argc, argv);
   rtc::test::RunTestsFromIOSApp();
 #endif
   const int res = RUN_ALL_TESTS();
