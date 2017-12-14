@@ -407,6 +407,19 @@ class TransportFeedbackObserver {
   virtual std::vector<PacketFeedback> GetTransportFeedbackVector() const = 0;
 };
 
+// Interface for PacketRouter to send rtcp feedback on behalf of
+// congestion controller.
+// TODO(bugs.webrtc.org/8239): Remove and use RtcpTransceiver directly
+// when RtcpTransceiver always present in rtp transport.
+class RtcpFeedbackSenderInterface {
+ public:
+  virtual ~RtcpFeedbackSenderInterface() = default;
+  virtual uint32_t SSRC() const = 0;
+  virtual bool SendFeedbackPacket(const rtcp::TransportFeedback& feedback) = 0;
+  virtual void SetRemb(int64_t bitrate_bps, std::vector<uint32_t> ssrcs) = 0;
+  virtual void UnsetRemb() = 0;
+};
+
 class PacketFeedbackObserver {
  public:
   virtual ~PacketFeedbackObserver() = default;

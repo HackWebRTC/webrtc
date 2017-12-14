@@ -46,8 +46,9 @@ class PacketRouter : public PacedSender::PacketSender,
   void AddSendRtpModule(RtpRtcp* rtp_module, bool remb_candidate);
   void RemoveSendRtpModule(RtpRtcp* rtp_module);
 
-  void AddReceiveRtpModule(RtpRtcp* rtp_module, bool remb_candidate);
-  void RemoveReceiveRtpModule(RtpRtcp* rtp_module);
+  void AddReceiveRtpModule(RtcpFeedbackSenderInterface* rtcp_sender,
+                           bool remb_candidate);
+  void RemoveReceiveRtpModule(RtcpFeedbackSenderInterface* rtcp_sender);
 
   // Implements PacedSender::Callback.
   bool TimeToSendPacket(uint32_t ssrc,
@@ -81,17 +82,22 @@ class PacketRouter : public PacedSender::PacketSender,
   bool SendTransportFeedback(rtcp::TransportFeedback* packet) override;
 
  private:
-  void AddRembModuleCandidate(RtpRtcp* candidate_module, bool sender)
+  void AddRembModuleCandidate(RtcpFeedbackSenderInterface* candidate_module,
+                              bool media_sender)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(modules_crit_);
-  void MaybeRemoveRembModuleCandidate(RtpRtcp* candidate_module, bool sender)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(modules_crit_);
+  void MaybeRemoveRembModuleCandidate(
+      RtcpFeedbackSenderInterface* candidate_module,
+      bool media_sender) RTC_EXCLUSIVE_LOCKS_REQUIRED(modules_crit_);
   void UnsetActiveRembModule() RTC_EXCLUSIVE_LOCKS_REQUIRED(modules_crit_);
   void DetermineActiveRembModule() RTC_EXCLUSIVE_LOCKS_REQUIRED(modules_crit_);
 
   rtc::RaceChecker pacer_race_;
   rtc::CriticalSection modules_crit_;
+  // Rtp and Rtcp modules of the rtp senders.
   std::list<RtpRtcp*> rtp_send_modules_ RTC_GUARDED_BY(modules_crit_);
-  std::vector<RtpRtcp*> rtp_receive_modules_ RTC_GUARDED_BY(modules_crit_);
+  // Rtcp modules of the rtp receivers.
+  std::vector<RtcpFeedbackSenderInterface*> rtcp_feedback_senders_
+      RTC_GUARDED_BY(modules_crit_);
 
   // TODO(eladalon): remb_crit_ only ever held from one function, and it's not
   // clear if that function can actually be called from more than one thread.
@@ -105,9 +111,12 @@ class PacketRouter : public PacedSender::PacketSender,
 
   // Candidates for the REMB module can be RTP sender/receiver modules, with
   // the sender modules taking precedence.
-  std::vector<RtpRtcp*> sender_remb_candidates_ RTC_GUARDED_BY(modules_crit_);
-  std::vector<RtpRtcp*> receiver_remb_candidates_ RTC_GUARDED_BY(modules_crit_);
-  RtpRtcp* active_remb_module_ RTC_GUARDED_BY(modules_crit_);
+  std::vector<RtcpFeedbackSenderInterface*> sender_remb_candidates_
+      RTC_GUARDED_BY(modules_crit_);
+  std::vector<RtcpFeedbackSenderInterface*> receiver_remb_candidates_
+      RTC_GUARDED_BY(modules_crit_);
+  RtcpFeedbackSenderInterface* active_remb_module_
+      RTC_GUARDED_BY(modules_crit_);
 
   volatile int transport_seq_;
 

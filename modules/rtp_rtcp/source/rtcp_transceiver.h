@@ -27,10 +27,10 @@ namespace webrtc {
 // Manage incoming and outgoing rtcp messages for multiple BUNDLED streams.
 //
 // This class is thread-safe wrapper of RtcpTransceiverImpl
-class RtcpTransceiver {
+class RtcpTransceiver : public RtcpFeedbackSenderInterface {
  public:
   explicit RtcpTransceiver(const RtcpTransceiverConfig& config);
-  ~RtcpTransceiver();
+  ~RtcpTransceiver() override;
 
   // Registers observer to be notified about incoming rtcp packets.
   // Calls to observer will be done on the |config.task_queue|.
@@ -51,17 +51,17 @@ class RtcpTransceiver {
 
   // (REMB) Receiver Estimated Max Bitrate.
   // Includes REMB in following compound packets.
-  void SetRemb(int64_t bitrate_bps, std::vector<uint32_t> ssrcs);
+  void SetRemb(int64_t bitrate_bps, std::vector<uint32_t> ssrcs) override;
   // Stops sending REMB in following compound packets.
-  void UnsetRemb();
+  void UnsetRemb() override;
 
   // TODO(bugs.webrtc.org/8239): Remove SendFeedbackPacket and SSRC functions
   // and move generating of the TransportFeedback message inside
   // RtcpTransceiverImpl when there is one RtcpTransceiver per rtp transport.
 
   // Returns ssrc to put as sender ssrc into rtcp::TransportFeedback.
-  uint32_t SSRC() const;
-  bool SendFeedbackPacket(const rtcp::TransportFeedback& packet);
+  uint32_t SSRC() const override;
+  bool SendFeedbackPacket(const rtcp::TransportFeedback& packet) override;
 
   // Reports missing packets, https://tools.ietf.org/html/rfc4585#section-6.2.1
   void SendNack(uint32_t ssrc, std::vector<uint16_t> sequence_numbers);
