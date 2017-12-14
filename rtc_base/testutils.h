@@ -175,6 +175,10 @@ public:
   void QueueString(const char* data) {
     QueueData(data, strlen(data));
   }
+#if defined(__GNUC__)
+  // Note: Implicit |this| argument counts as the first argument.
+  __attribute__((__format__(__printf__, 2, 3)))
+#endif
   void QueueStringF(const char* format, ...) {
     va_list args;
     va_start(args, format);
