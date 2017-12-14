@@ -621,6 +621,10 @@ bool Port::HandleIncomingPacket(rtc::AsyncPacketSocket* socket,
   return false;
 }
 
+bool Port::CanHandleIncomingPacketsFrom(const rtc::SocketAddress&) const {
+  return false;
+}
+
 void Port::SendBindingResponse(StunMessage* request,
                                const rtc::SocketAddress& addr) {
   RTC_DCHECK(request->type() == STUN_BINDING_REQUEST);
