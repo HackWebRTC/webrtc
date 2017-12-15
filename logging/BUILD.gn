@@ -137,6 +137,13 @@ if (rtc_enable_protobuf) {
     proto_out_dir = "logging/rtc_event_log"
   }
 
+  proto_library("rtc_event_log_proto2") {
+    sources = [
+      "rtc_event_log/rtc_event_log2.proto",
+    ]
+    proto_out_dir = "logging/rtc_event_log"
+  }
+
   rtc_static_library("rtc_event_log_parser") {
     sources = [
       "rtc_event_log/rtc_event_log_parser.cc",
@@ -146,6 +153,7 @@ if (rtc_enable_protobuf) {
     deps = [
       ":rtc_event_log_api",
       ":rtc_event_log_proto",
+      ":rtc_event_log_proto2",
       "..:webrtc_common",
       "../call:video_stream_api",
       "../modules/audio_coding:audio_network_adaptor",
