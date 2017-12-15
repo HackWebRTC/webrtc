@@ -1139,40 +1139,66 @@ TEST_F(WebRtcVideoEngineTest, DISABLED_RecreatesEncoderOnContentTypeChange) {
   EXPECT_EQ(0u, encoder_factory_->encoders().size());
 }
 
-#define WEBRTC_BASE_TEST(test) \
-  TEST_F(WebRtcVideoChannelBaseTest, test) { Base::test(); }
+TEST_F(WebRtcVideoChannelBaseTest, SetSend) {
+  Base::SetSend();
+}
+TEST_F(WebRtcVideoChannelBaseTest, SetSendWithoutCodecs) {
+  Base::SetSendWithoutCodecs();
+}
+TEST_F(WebRtcVideoChannelBaseTest, SetSendSetsTransportBufferSizes) {
+  Base::SetSendSetsTransportBufferSizes();
+}
 
-#define WEBRTC_DISABLED_BASE_TEST(test) \
-  TEST_F(WebRtcVideoChannelBaseTest, DISABLED_##test) { Base::test(); }
+TEST_F(WebRtcVideoChannelBaseTest, GetStats) {
+  Base::GetStats();
+}
+TEST_F(WebRtcVideoChannelBaseTest, GetStatsMultipleRecvStreams) {
+  Base::GetStatsMultipleRecvStreams();
+}
+TEST_F(WebRtcVideoChannelBaseTest, GetStatsMultipleSendStreams) {
+  Base::GetStatsMultipleSendStreams();
+}
 
-WEBRTC_BASE_TEST(SetSend);
-WEBRTC_BASE_TEST(SetSendWithoutCodecs);
-WEBRTC_BASE_TEST(SetSendSetsTransportBufferSizes);
+TEST_F(WebRtcVideoChannelBaseTest, SetSendBandwidth) {
+  Base::SetSendBandwidth();
+}
 
-WEBRTC_BASE_TEST(GetStats);
-WEBRTC_BASE_TEST(GetStatsMultipleRecvStreams);
-WEBRTC_BASE_TEST(GetStatsMultipleSendStreams);
+TEST_F(WebRtcVideoChannelBaseTest, SetSendSsrc) {
+  Base::SetSendSsrc();
+}
+TEST_F(WebRtcVideoChannelBaseTest, SetSendSsrcAfterSetCodecs) {
+  Base::SetSendSsrcAfterSetCodecs();
+}
 
-WEBRTC_BASE_TEST(SetSendBandwidth);
+TEST_F(WebRtcVideoChannelBaseTest, SetSink) {
+  Base::SetSink();
+}
 
-WEBRTC_BASE_TEST(SetSendSsrc);
-WEBRTC_BASE_TEST(SetSendSsrcAfterSetCodecs);
+TEST_F(WebRtcVideoChannelBaseTest, AddRemoveSendStreams) {
+  Base::AddRemoveSendStreams();
+}
 
-WEBRTC_BASE_TEST(SetSink);
+TEST_F(WebRtcVideoChannelBaseTest, SimulateConference) {
+  Base::SimulateConference();
+}
 
-WEBRTC_BASE_TEST(AddRemoveSendStreams);
+TEST_F(WebRtcVideoChannelBaseTest, DISABLED_AddRemoveCapturer) {
+  Base::AddRemoveCapturer();
+}
 
-WEBRTC_BASE_TEST(SimulateConference);
+TEST_F(WebRtcVideoChannelBaseTest, RemoveCapturerWithoutAdd) {
+  Base::RemoveCapturerWithoutAdd();
+}
 
-WEBRTC_DISABLED_BASE_TEST(AddRemoveCapturer);
-
-WEBRTC_BASE_TEST(RemoveCapturerWithoutAdd);
-
-WEBRTC_BASE_TEST(AddRemoveCapturerMultipleSources);
-
-WEBRTC_BASE_TEST(RejectEmptyStreamParams);
-
-WEBRTC_BASE_TEST(MultipleSendStreams);
+TEST_F(WebRtcVideoChannelBaseTest, AddRemoveCapturerMultipleSources) {
+  Base::AddRemoveCapturerMultipleSources();
+}
+TEST_F(WebRtcVideoChannelBaseTest, RejectEmptyStreamParams) {
+  Base::RejectEmptyStreamParams();
+}
+TEST_F(WebRtcVideoChannelBaseTest, MultipleSendStreams) {
+  Base::MultipleSendStreams();
+}
 
 TEST_F(WebRtcVideoChannelBaseTest, SendAndReceiveVp8Vga) {
   SendAndReceive(GetEngineCodec("VP8"));
