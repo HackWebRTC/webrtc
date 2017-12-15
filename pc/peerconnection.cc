@@ -726,15 +726,22 @@ PeerConnection::~PeerConnection() {
   TRACE_EVENT0("webrtc", "PeerConnection::~PeerConnection");
   RTC_DCHECK_RUN_ON(signaling_thread());
 
-  StopAndDestroyChannels();
+  // Need to stop transceivers before destroying the stats collector because
+  // AudioRtpSender has a reference to the StatsCollector it will update when
+  // stopping.
+  for (auto transceiver : transceivers_) {
+    transceiver->Stop();
+  }
 
-  // Destroy stats after stopping all transceivers because the senders/receivers
-  // will update the stats collector before stopping.
   stats_.reset(nullptr);
   if (stats_collector_) {
     stats_collector_->WaitForPendingRequest();
     stats_collector_ = nullptr;
   }
+
+  // Don't destroy BaseChannels until after stats has been cleaned up so that
+  // the last stats request can still read from the channels.
+  DestroyAllChannels();
 
   RTC_LOG(LS_INFO) << "Session: " << session_id() << " is destroyed.";
 
@@ -753,10 +760,7 @@ PeerConnection::~PeerConnection() {
   });
 }
 
-void PeerConnection::StopAndDestroyChannels() {
-  for (auto transceiver : transceivers_) {
-    transceiver->Stop();
-  }
+void PeerConnection::DestroyAllChannels() {
   // Destroy video channels first since they may have a pointer to a voice
   // channel.
   for (auto transceiver : transceivers_) {
@@ -2345,7 +2349,10 @@ void PeerConnection::Close() {
 
   ChangeSignalingState(PeerConnectionInterface::kClosed);
 
-  StopAndDestroyChannels();
+  for (auto transceiver : transceivers_) {
+    transceiver->Stop();
+  }
+  DestroyAllChannels();
 
   network_thread()->Invoke<void>(
       RTC_FROM_HERE,

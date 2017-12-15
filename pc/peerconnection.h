@@ -687,9 +687,8 @@ class PeerConnection : public PeerConnectionInterface,
   // RtpDataChannel.
   void EnableSending();
 
-  // Stops all RtpTransceivers, destroys all BaseChannels and destroys the
-  // SCTP data channel.
-  void StopAndDestroyChannels();
+  // Destroys all BaseChannels and destroys the SCTP data channel, if present.
+  void DestroyAllChannels();
 
   // Returns the media index for a local ice candidate given the content name.
   // Returns false if the local session description does not have a media
