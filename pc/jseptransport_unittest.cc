@@ -7,6 +7,7 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+#include "pc/jseptransport.h"
 
 #include <memory>
 
@@ -57,6 +58,13 @@ class JsepTransportTest : public testing::Test, public sigslot::has_slots<> {
 
   void RecreateTransport() {
     transport_.reset(new JsepTransport("test content name", nullptr));
+  }
+
+  bool IceCredentialsChanged(const std::string& old_ufrag,
+                             const std::string& old_pwd,
+                             const std::string& new_ufrag,
+                             const std::string& new_pwd) {
+    return (old_ufrag != new_ufrag) || (old_pwd != new_pwd);
   }
 
  protected:
