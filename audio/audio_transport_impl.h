@@ -8,25 +8,32 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef AUDIO_AUDIO_TRANSPORT_PROXY_H_
-#define AUDIO_AUDIO_TRANSPORT_PROXY_H_
+#ifndef AUDIO_AUDIO_TRANSPORT_IMPL_H_
+#define AUDIO_AUDIO_TRANSPORT_IMPL_H_
+
+#include <vector>
 
 #include "api/audio/audio_mixer.h"
 #include "common_audio/resampler/include/push_resampler.h"
-#include "modules/audio_device/include/audio_device_defines.h"
+#include "modules/audio_device/include/audio_device.h"
 #include "modules/audio_processing/include/audio_processing.h"
+#include "modules/audio_processing/typing_detection.h"
 #include "rtc_base/constructormagic.h"
+#include "rtc_base/criticalsection.h"
 #include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/thread_annotations.h"
+#include "voice_engine/audio_level.h"
 
 namespace webrtc {
 
-class AudioTransportProxy : public AudioTransport {
- public:
-  AudioTransportProxy(AudioTransport* voe_audio_transport,
-                      AudioProcessing* audio_processing,
-                      AudioMixer* mixer);
+class AudioSendStream;
 
-  ~AudioTransportProxy() override;
+class AudioTransportImpl : public AudioTransport {
+ public:
+  AudioTransportImpl(AudioMixer* mixer,
+                     AudioProcessing* audio_processing,
+                     AudioDeviceModule* audio_device_module);
+  ~AudioTransportImpl() override;
 
   int32_t RecordedDataIsAvailable(const void* audioSamples,
                                   const size_t nSamples,
@@ -48,13 +55,6 @@ class AudioTransportProxy : public AudioTransport {
                            int64_t* elapsed_time_ms,
                            int64_t* ntp_time_ms) override;
 
-  void PushCaptureData(int voe_channel,
-                       const void* audio_data,
-                       int bits_per_sample,
-                       int sample_rate,
-                       size_t number_of_channels,
-                       size_t number_of_frames) override;
-
   void PullRenderData(int bits_per_sample,
                       int sample_rate,
                       size_t number_of_channels,
@@ -63,16 +63,38 @@ class AudioTransportProxy : public AudioTransport {
                       int64_t* elapsed_time_ms,
                       int64_t* ntp_time_ms) override;
 
+  void UpdateSendingStreams(std::vector<AudioSendStream*> streams,
+                            int send_sample_rate_hz, size_t send_num_channels);
+  void SetStereoChannelSwapping(bool enable);
+  bool typing_noise_detected() const;
+  const voe::AudioLevel& audio_level() const {
+    return audio_level_;
+  }
+
  private:
-  AudioTransport* voe_audio_transport_;
-  AudioProcessing* audio_processing_;
+  // Shared.
+  AudioProcessing* audio_processing_ = nullptr;
+
+  // Capture side.
+  rtc::CriticalSection capture_lock_;
+  std::vector<AudioSendStream*> sending_streams_ RTC_GUARDED_BY(capture_lock_);
+  int send_sample_rate_hz_ RTC_GUARDED_BY(capture_lock_) = 8000;
+  size_t send_num_channels_ RTC_GUARDED_BY(capture_lock_) = 1;
+  bool typing_noise_detected_ RTC_GUARDED_BY(capture_lock_) = false;
+  bool swap_stereo_channels_ RTC_GUARDED_BY(capture_lock_) = false;
+  AudioDeviceModule* audio_device_module_ = nullptr;
+  PushResampler<int16_t> capture_resampler_;
+  voe::AudioLevel audio_level_;
+  TypingDetection typing_detection_;
+
+  // Render side.
   rtc::scoped_refptr<AudioMixer> mixer_;
   AudioFrame mixed_frame_;
   // Converts mixed audio to the audio device output rate.
-  PushResampler<int16_t> resampler_;
+  PushResampler<int16_t> render_resampler_;
 
-  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AudioTransportProxy);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AudioTransportImpl);
 };
 }  // namespace webrtc
 
-#endif  // AUDIO_AUDIO_TRANSPORT_PROXY_H_
+#endif  // AUDIO_AUDIO_TRANSPORT_IMPL_H_

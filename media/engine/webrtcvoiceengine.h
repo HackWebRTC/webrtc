@@ -32,12 +32,6 @@
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread_checker.h"
 
-namespace webrtc {
-namespace voe {
-class TransmitMixer;
-}  // namespace voe
-}  // namespace webrtc
-
 namespace cricket {
 
 class AudioDeviceModule;
@@ -115,7 +109,7 @@ class WebRtcVoiceEngine final {
 
   webrtc::AudioDeviceModule* adm();
   webrtc::AudioProcessing* apm() const;
-  webrtc::voe::TransmitMixer* transmit_mixer();
+  webrtc::AudioState* audio_state();
 
   AudioCodecs CollectCodecs(
       const std::vector<webrtc::AudioCodecSpec>& specs) const;
@@ -123,15 +117,13 @@ class WebRtcVoiceEngine final {
   rtc::ThreadChecker signal_thread_checker_;
   rtc::ThreadChecker worker_thread_checker_;
 
-  // The audio device manager.
+  // The audio device module.
   rtc::scoped_refptr<webrtc::AudioDeviceModule> adm_;
   rtc::scoped_refptr<webrtc::AudioEncoderFactory> encoder_factory_;
   rtc::scoped_refptr<webrtc::AudioDecoderFactory> decoder_factory_;
   rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer_;
-  // Reference to the APM, owned by VoE.
+  // The audio processing module.
   rtc::scoped_refptr<webrtc::AudioProcessing> apm_;
-  // Reference to the TransmitMixer, owned by VoE.
-  webrtc::voe::TransmitMixer* transmit_mixer_ = nullptr;
   // The primary instance of WebRtc VoiceEngine.
   std::unique_ptr<VoEWrapper> voe_wrapper_;
   rtc::scoped_refptr<webrtc::AudioState> audio_state_;

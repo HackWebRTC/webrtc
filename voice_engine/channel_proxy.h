@@ -107,6 +107,7 @@ class ChannelProxy : public RtpPacketSinkInterface {
       int sample_rate_hz,
       AudioFrame* audio_frame);
   virtual int PreferredSampleRate() const;
+  virtual void ProcessAndEncodeAudio(std::unique_ptr<AudioFrame> audio_frame);
   virtual void SetTransportOverhead(int transport_overhead_per_packet);
   virtual void AssociateSendChannel(const ChannelProxy& send_channel_proxy);
   virtual void DisassociateSendChannel();

@@ -22,9 +22,9 @@ namespace test {
 
 class MockVoEChannelProxy : public voe::ChannelProxy {
  public:
-  // GTest doesn't like move-only types, like std::unique_ptr
-  bool SetEncoder(int payload_type,
-                  std::unique_ptr<AudioEncoder> encoder) {
+  // GMock doesn't like move-only types, like std::unique_ptr.
+  virtual bool SetEncoder(int payload_type,
+                          std::unique_ptr<AudioEncoder> encoder) {
     return SetEncoderForMock(payload_type, &encoder);
   }
   MOCK_METHOD2(SetEncoderForMock,
@@ -77,6 +77,12 @@ class MockVoEChannelProxy : public voe::ChannelProxy {
       AudioMixer::Source::AudioFrameInfo(int sample_rate_hz,
                                          AudioFrame* audio_frame));
   MOCK_CONST_METHOD0(PreferredSampleRate, int());
+  // GMock doesn't like move-only types, like std::unique_ptr.
+  virtual void ProcessAndEncodeAudio(std::unique_ptr<AudioFrame> audio_frame) {
+    ProcessAndEncodeAudioForMock(&audio_frame);
+  }
+  MOCK_METHOD1(ProcessAndEncodeAudioForMock,
+               void(std::unique_ptr<AudioFrame>* audio_frame));
   MOCK_METHOD1(SetTransportOverhead, void(int transport_overhead_per_packet));
   MOCK_METHOD1(AssociateSendChannel,
                void(const ChannelProxy& send_channel_proxy));

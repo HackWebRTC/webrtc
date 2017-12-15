@@ -18,7 +18,6 @@
 #include "api/call/audio_sink.h"
 #include "api/call/transport.h"
 #include "api/optional.h"
-#include "common_audio/resampler/include/push_resampler.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "modules/audio_processing/rms_level.h"
@@ -181,11 +180,6 @@ class Channel
   void StopSend();
 
   // Codecs
-  struct EncoderProps {
-    int sample_rate_hz;
-    size_t num_channels;
-  };
-  rtc::Optional<EncoderProps> GetEncoderProps() const;
   int32_t GetRecCodec(CodecInst& codec);
   void SetBitRate(int bitrate_bps, int64_t probing_interval_ms);
   bool EnableAudioNetworkAdaptor(const std::string& config_string);
@@ -283,26 +277,16 @@ class Channel
   RtpRtcp* RtpRtcpModulePtr() const { return _rtpRtcpModule.get(); }
   int8_t OutputEnergyLevel() const { return _outputAudioLevel.Level(); }
 
-  // ProcessAndEncodeAudio() creates an audio frame copy and posts a task
-  // on the shared encoder task queue, wich in turn calls (on the queue)
-  // ProcessAndEncodeAudioOnTaskQueue() where the actual processing of the
-  // audio takes place. The processing mainly consists of encoding and preparing
-  // the result for sending by adding it to a send queue.
+  // ProcessAndEncodeAudio() posts a task on the shared encoder task queue,
+  // which in turn calls (on the queue) ProcessAndEncodeAudioOnTaskQueue() where
+  // the actual processing of the audio takes place. The processing mainly
+  // consists of encoding and preparing the result for sending by adding it to a
+  // send queue.
   // The main reason for using a task queue here is to release the native,
   // OS-specific, audio capture thread as soon as possible to ensure that it
   // can go back to sleep and be prepared to deliver an new captured audio
   // packet.
-  void ProcessAndEncodeAudio(const AudioFrame& audio_input);
-
-  // This version of ProcessAndEncodeAudio() is used by PushCaptureData() in
-  // VoEBase and the audio in |audio_data| has not been subject to any APM
-  // processing. Some extra steps are therfore needed when building up the
-  // audio frame copy before using the same task as in the default call to
-  // ProcessAndEncodeAudio(const AudioFrame& audio_input).
-  void ProcessAndEncodeAudio(const int16_t* audio_data,
-                             int sample_rate,
-                             size_t number_of_frames,
-                             size_t number_of_channels);
+  void ProcessAndEncodeAudio(std::unique_ptr<AudioFrame> audio_frame);
 
   // Associate to a send channel.
   // Used for obtaining RTT for a receive-only channel.
@@ -382,8 +366,6 @@ class Channel
   std::unique_ptr<AudioCodingModule> audio_coding_;
   std::unique_ptr<AudioSinkInterface> audio_sink_;
   AudioLevel _outputAudioLevel;
-  // Downsamples to the codec rate if necessary.
-  PushResampler<int16_t> input_resampler_;
   uint32_t _timeStamp RTC_ACCESS_ON(encoder_queue_);
 
   RemoteNtpTimeEstimator ntp_estimator_ RTC_GUARDED_BY(ts_stats_lock_);
@@ -421,8 +403,6 @@ class Channel
       RTC_GUARDED_BY(overhead_per_packet_lock_);
   size_t rtp_overhead_per_packet_ RTC_GUARDED_BY(overhead_per_packet_lock_);
   rtc::CriticalSection overhead_per_packet_lock_;
-  // VoENetwork
-  AudioFrame::SpeechType _outputSpeechType;
   // RtcpBandwidthObserver
   std::unique_ptr<VoERtcpObserver> rtcp_observer_;
   // An associated send channel.
@@ -438,8 +418,6 @@ class Channel
 
   // TODO(ossu): Remove once GetAudioDecoderFactory() is no longer needed.
   rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;
-
-  rtc::Optional<EncoderProps> cached_encoder_props_;
 
   rtc::ThreadChecker construction_thread_;
 

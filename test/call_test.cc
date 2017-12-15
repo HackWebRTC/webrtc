@@ -44,14 +44,12 @@ CallTest::CallTest()
       num_flexfec_streams_(0),
       decoder_factory_(CreateBuiltinAudioDecoderFactory()),
       encoder_factory_(CreateBuiltinAudioEncoderFactory()),
-      task_queue_("CallTestTaskQueue"),
-      fake_send_audio_device_(nullptr),
-      fake_recv_audio_device_(nullptr) {}
+      task_queue_("CallTestTaskQueue") {}
 
 CallTest::~CallTest() {
   task_queue_.SendTask([this]() {
-    fake_send_audio_device_.reset();
-    fake_recv_audio_device_.reset();
+    fake_send_audio_device_ = nullptr;
+    fake_recv_audio_device_ = nullptr;
     frame_generator_capturer_.reset();
   });
 }
@@ -74,6 +72,7 @@ void CallTest::RunBaseTest(BaseTest* test) {
       audio_state_config.voice_engine = voe_send_.voice_engine;
       audio_state_config.audio_mixer = AudioMixerImpl::Create();
       audio_state_config.audio_processing = apm_send_;
+      audio_state_config.audio_device_module = fake_send_audio_device_;
       send_config.audio_state = AudioState::Create(audio_state_config);
       fake_send_audio_device_->RegisterAudioCallback(
           send_config.audio_state->audio_transport());
@@ -90,6 +89,7 @@ void CallTest::RunBaseTest(BaseTest* test) {
         audio_state_config.voice_engine = voe_recv_.voice_engine;
         audio_state_config.audio_mixer = AudioMixerImpl::Create();
         audio_state_config.audio_processing = apm_recv_;
+        audio_state_config.audio_device_module = fake_recv_audio_device_;
         recv_config.audio_state = AudioState::Create(audio_state_config);
         fake_recv_audio_device_->RegisterAudioCallback(
             recv_config.audio_state->audio_transport());      }
@@ -315,10 +315,10 @@ void CallTest::CreateFrameGeneratorCapturer(int framerate,
 void CallTest::CreateFakeAudioDevices(
     std::unique_ptr<FakeAudioDevice::Capturer> capturer,
     std::unique_ptr<FakeAudioDevice::Renderer> renderer) {
-  fake_send_audio_device_.reset(new FakeAudioDevice(
-      std::move(capturer), nullptr, 1.f));
-  fake_recv_audio_device_.reset(new FakeAudioDevice(
-      nullptr, std::move(renderer), 1.f));
+  fake_send_audio_device_ = new rtc::RefCountedObject<FakeAudioDevice>(
+      std::move(capturer), nullptr, 1.f);
+  fake_recv_audio_device_ = new rtc::RefCountedObject<FakeAudioDevice>(
+      nullptr, std::move(renderer), 1.f);
 }
 
 void CallTest::CreateVideoStreams() {
@@ -432,7 +432,7 @@ void CallTest::CreateVoiceEngines() {
   voe_send_.base = VoEBase::GetInterface(voe_send_.voice_engine);
   EXPECT_EQ(0, fake_send_audio_device_->Init());
   EXPECT_EQ(0, voe_send_.base->Init(fake_send_audio_device_.get(),
-                                    apm_send_.get(), decoder_factory_));
+                                    nullptr, decoder_factory_));
   VoEBase::ChannelConfig config;
   config.enable_voice_pacing = true;
   voe_send_.channel_id = voe_send_.base->CreateChannel(config);
@@ -442,7 +442,7 @@ void CallTest::CreateVoiceEngines() {
   voe_recv_.base = VoEBase::GetInterface(voe_recv_.voice_engine);
   EXPECT_EQ(0, fake_recv_audio_device_->Init());
   EXPECT_EQ(0, voe_recv_.base->Init(fake_recv_audio_device_.get(),
-                                    apm_recv_.get(), decoder_factory_));
+                                    nullptr, decoder_factory_));
   voe_recv_.channel_id = voe_recv_.base->CreateChannel();
   EXPECT_GE(voe_recv_.channel_id, 0);
 }

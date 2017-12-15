@@ -17,6 +17,7 @@
 #include "audio/conversion.h"
 #include "call/rtp_stream_receiver_controller.h"
 #include "logging/rtc_event_log/mock/mock_rtc_event_log.h"
+#include "modules/audio_device/include/mock_audio_device.h"
 #include "modules/audio_processing/include/mock_audio_processing.h"
 #include "modules/bitrate_controller/include/mock/mock_bitrate_controller.h"
 #include "modules/pacing/packet_router.h"
@@ -75,12 +76,12 @@ struct ConfigHelper {
         audio_mixer_(new rtc::RefCountedObject<MockAudioMixer>()) {
     using testing::Invoke;
 
-    EXPECT_CALL(voice_engine_, audio_transport());
-
     AudioState::Config config;
     config.voice_engine = &voice_engine_;
     config.audio_mixer = audio_mixer_;
     config.audio_processing = new rtc::RefCountedObject<MockAudioProcessing>();
+    config.audio_device_module =
+        new rtc::RefCountedObject<MockAudioDeviceModule>();
     audio_state_ = AudioState::Create(config);
 
     EXPECT_CALL(voice_engine_, ChannelProxyFactory(kChannelId))

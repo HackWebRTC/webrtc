@@ -23,8 +23,6 @@ rtc_static_library("voice_engine") {
     "include/voe_errors.h",
     "shared_data.cc",
     "shared_data.h",
-    "transmit_mixer.cc",
-    "transmit_mixer.h",
     "transport_feedback_packet_loss_tracker.cc",
     "transport_feedback_packet_loss_tracker.h",
     "utility.cc",
@@ -36,8 +34,6 @@ rtc_static_library("voice_engine") {
   ]
 
   if (is_win) {
-    defines = [ "WEBRTC_DRIFT_COMPENSATION_SUPPORTED" ]
-
     cflags = [
       # TODO(kjellander): Bug 261: fix this warning.
       "/wd4373",  # Virtual function override.
@@ -88,6 +84,10 @@ rtc_static_library("voice_engine") {
 }
 
 rtc_static_library("audio_level") {
+  visibility += [
+    ":voice_engine",
+    "../audio:audio",
+  ]
   sources = [
     "audio_level.cc",
     "audio_level.h",
@@ -146,8 +146,6 @@ if (rtc_include_tests) {
     ]
 
     if (is_win) {
-      defines = [ "WEBRTC_DRIFT_COMPENSATION_SUPPORTED" ]
-
       cflags = [
         # TODO(kjellander): Bug 261: fix this warning.
         "/wd4373",  # Virtual function override.

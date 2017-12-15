@@ -13,17 +13,12 @@
 
 #include <memory>
 
-#include "modules/audio_device/include/mock_audio_transport.h"
 #include "modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
 #include "test/gmock.h"
 #include "test/mock_voe_channel_proxy.h"
 #include "voice_engine/voice_engine_impl.h"
 
 namespace webrtc {
-namespace voe {
-class TransmitMixer;
-}  // namespace voe
-
 namespace test {
 
 // NOTE: This class inherits from VoiceEngineImpl so that its clients will be
@@ -61,9 +56,6 @@ class MockVoiceEngine : public VoiceEngineImpl {
                   testing::SetArgPointee<0>(GetMockRtpRtcp(channel_id)));
           return proxy;
         }));
-
-    ON_CALL(*this, audio_transport())
-        .WillByDefault(testing::Return(&mock_audio_transport_));
   }
   virtual ~MockVoiceEngine() /* override */ {
     // Decrease ref count before base class d-tor is called; otherwise it will
@@ -94,7 +86,6 @@ class MockVoiceEngine : public VoiceEngineImpl {
       int(AudioDeviceModule* external_adm,
           AudioProcessing* external_apm,
           const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory));
-  MOCK_METHOD0(transmit_mixer, voe::TransmitMixer*());
   MOCK_METHOD0(Terminate, void());
   MOCK_METHOD0(CreateChannel, int());
   MOCK_METHOD1(CreateChannel, int(const ChannelConfig& config));
@@ -103,7 +94,6 @@ class MockVoiceEngine : public VoiceEngineImpl {
   MOCK_METHOD1(StopPlayout, int(int channel));
   MOCK_METHOD1(StartSend, int(int channel));
   MOCK_METHOD1(StopSend, int(int channel));
-  MOCK_METHOD0(audio_transport, AudioTransport*());
 
  private:
   // TODO(ossu): I'm not particularly happy about keeping the decoder factory
@@ -115,8 +105,6 @@ class MockVoiceEngine : public VoiceEngineImpl {
   rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;
 
   std::map<int, std::unique_ptr<MockRtpRtcp>> mock_rtp_rtcps_;
-
-  MockAudioTransport mock_audio_transport_;
 };
 }  // namespace test
 }  // namespace webrtc

@@ -20,6 +20,7 @@
 #include "call/bitrate_allocator.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "rtc_base/constructormagic.h"
+#include "rtc_base/race_checker.h"
 #include "rtc_base/thread_checker.h"
 #include "voice_engine/transport_feedback_packet_loss_tracker.h"
 
@@ -35,6 +36,8 @@ class ChannelProxy;
 }  // namespace voe
 
 namespace internal {
+class AudioState;
+
 class AudioSendStream final : public webrtc::AudioSendStream,
                               public webrtc::BitrateAllocatorObserver,
                               public webrtc::PacketFeedbackObserver {
@@ -54,6 +57,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   void Reconfigure(const webrtc::AudioSendStream::Config& config) override;
   void Start() override;
   void Stop() override;
+  void SendAudioData(std::unique_ptr<AudioFrame> audio_frame) override;
   bool SendTelephoneEvent(int payload_type, int payload_frequency, int event,
                           int duration_ms) override;
   void SetMuted(bool muted) override;
@@ -83,7 +87,11 @@ class AudioSendStream final : public webrtc::AudioSendStream,
  private:
   class TimedTransport;
 
+  internal::AudioState* audio_state();
+  const internal::AudioState* audio_state() const;
   VoiceEngine* voice_engine() const;
+
+  void StoreEncoderProperties(int sample_rate_hz, size_t num_channels);
 
   // These are all static to make it less likely that (the old) config_ is
   // accessed unintentionally.
@@ -105,11 +113,16 @@ class AudioSendStream final : public webrtc::AudioSendStream,
 
   rtc::ThreadChecker worker_thread_checker_;
   rtc::ThreadChecker pacer_thread_checker_;
+  rtc::RaceChecker audio_capture_race_checker_;
   rtc::TaskQueue* worker_queue_;
   webrtc::AudioSendStream::Config config_;
   rtc::scoped_refptr<webrtc::AudioState> audio_state_;
   std::unique_ptr<voe::ChannelProxy> channel_proxy_;
   RtcEventLog* const event_log_;
+
+  int encoder_sample_rate_hz_ = 0;
+  size_t encoder_num_channels_ = 0;
+  bool sending_ = false;
 
   BitrateAllocator* const bitrate_allocator_;
   RtpTransportControllerSendInterface* const transport_;

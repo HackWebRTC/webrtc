@@ -158,10 +158,8 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
   audio_net_config.queue_delay_ms = 500;
   audio_net_config.loss_percent = 5;
 
-  rtc::scoped_refptr<AudioProcessing> audio_processing;
   VoiceEngine* voice_engine;
   VoEBase* voe_base;
-  std::unique_ptr<FakeAudioDevice> fake_audio_device;
   VideoRtcpAndSyncObserver observer(Clock::GetRealTimeClock());
 
   std::map<uint8_t, MediaType> audio_pt_map;
@@ -177,14 +175,14 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
 
   task_queue_.SendTask([&]() {
     metrics::Reset();
-    audio_processing = AudioProcessing::Create();
     voice_engine = VoiceEngine::Create();
     voe_base = VoEBase::GetInterface(voice_engine);
-    fake_audio_device = rtc::MakeUnique<FakeAudioDevice>(
-        FakeAudioDevice::CreatePulsedNoiseCapturer(256, 48000),
-        FakeAudioDevice::CreateDiscardRenderer(48000), audio_rtp_speed);
+    rtc::scoped_refptr<FakeAudioDevice> fake_audio_device =
+        new rtc::RefCountedObject<FakeAudioDevice>(
+            FakeAudioDevice::CreatePulsedNoiseCapturer(256, 48000),
+            FakeAudioDevice::CreateDiscardRenderer(48000), audio_rtp_speed);
     EXPECT_EQ(0, fake_audio_device->Init());
-    EXPECT_EQ(0, voe_base->Init(fake_audio_device.get(), audio_processing.get(),
+    EXPECT_EQ(0, voe_base->Init(fake_audio_device.get(), nullptr,
                                 decoder_factory_));
     VoEBase::ChannelConfig config;
     config.enable_voice_pacing = true;
@@ -194,7 +192,8 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
     AudioState::Config send_audio_state_config;
     send_audio_state_config.voice_engine = voice_engine;
     send_audio_state_config.audio_mixer = AudioMixerImpl::Create();
-    send_audio_state_config.audio_processing = audio_processing;
+    send_audio_state_config.audio_processing = AudioProcessing::Create();
+    send_audio_state_config.audio_device_module = fake_audio_device;
     Call::Config sender_config(event_log_.get());
 
     auto audio_state = AudioState::Create(send_audio_state_config);
@@ -311,8 +310,6 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
     DestroyCalls();
 
     VoiceEngine::Delete(voice_engine);
-
-    fake_audio_device.reset();
   });
 
   observer.PrintResults();

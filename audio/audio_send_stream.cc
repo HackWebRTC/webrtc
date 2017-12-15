@@ -31,7 +31,6 @@
 #include "system_wrappers/include/field_trial.h"
 #include "voice_engine/channel_proxy.h"
 #include "voice_engine/include/voe_base.h"
-#include "voice_engine/transmit_mixer.h"
 #include "voice_engine/voice_engine_impl.h"
 
 namespace webrtc {
@@ -121,6 +120,7 @@ AudioSendStream::AudioSendStream(
 AudioSendStream::~AudioSendStream() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   RTC_LOG(LS_INFO) << "~AudioSendStream: " << config_.ToString();
+  RTC_DCHECK(!sending_);
   transport_->send_side_cc()->DeRegisterPacketFeedbackObserver(this);
   channel_proxy_->RegisterTransport(nullptr);
   channel_proxy_->ResetSenderCongestionControlObjects();
@@ -135,6 +135,7 @@ const webrtc::AudioSendStream::Config& AudioSendStream::GetConfig() const {
 
 void AudioSendStream::Reconfigure(
     const webrtc::AudioSendStream::Config& new_config) {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   ConfigureStream(this, new_config, false);
 }
 
@@ -232,6 +233,10 @@ void AudioSendStream::ConfigureStream(
 
 void AudioSendStream::Start() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  if (sending_) {
+    return;
+  }
+
   if (config_.min_bitrate_bps != -1 && config_.max_bitrate_bps != -1 &&
       (FindExtensionIds(config_.rtp.extensions).transport_sequence_number !=
            0 ||
@@ -246,10 +251,17 @@ void AudioSendStream::Start() {
   if (error != 0) {
     RTC_LOG(LS_ERROR) << "AudioSendStream::Start failed with error: " << error;
   }
+  sending_ = true;
+  audio_state()->AddSendingStream(this, encoder_sample_rate_hz_,
+                                  encoder_num_channels_);
 }
 
 void AudioSendStream::Stop() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  if (!sending_) {
+    return;
+  }
+
   RemoveBitrateObserver();
 
   ScopedVoEInterface<VoEBase> base(voice_engine());
@@ -257,6 +269,13 @@ void AudioSendStream::Stop() {
   if (error != 0) {
     RTC_LOG(LS_ERROR) << "AudioSendStream::Stop failed with error: " << error;
   }
+  sending_ = false;
+  audio_state()->RemoveSendingStream(this);
+}
+
+void AudioSendStream::SendAudioData(std::unique_ptr<AudioFrame> audio_frame) {
+  RTC_CHECK_RUNS_SERIALIZED(&audio_capture_race_checker_);
+  channel_proxy_->ProcessAndEncodeAudio(std::move(audio_frame));
 }
 
 bool AudioSendStream::SendTelephoneEvent(int payload_type,
@@ -313,17 +332,12 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats(
     }
   }
 
-  ScopedVoEInterface<VoEBase> base(voice_engine());
-  RTC_DCHECK(base->transmit_mixer());
-  stats.audio_level = base->transmit_mixer()->AudioLevelFullRange();
-  RTC_DCHECK_LE(0, stats.audio_level);
+  AudioState::Stats input_stats = audio_state()->GetAudioInputStats();
+  stats.audio_level = input_stats.audio_level;
+  stats.total_input_energy = input_stats.total_energy;
+  stats.total_input_duration = input_stats.total_duration;
 
-  stats.total_input_energy = base->transmit_mixer()->GetTotalInputEnergy();
-  stats.total_input_duration = base->transmit_mixer()->GetTotalInputDuration();
-
-  internal::AudioState* audio_state =
-      static_cast<internal::AudioState*>(audio_state_.get());
-  stats.typing_noise_detected = audio_state->typing_noise_detected();
+  stats.typing_noise_detected = audio_state()->typing_noise_detected();
   stats.ana_statistics = channel_proxy_->GetANAStatistics();
   RTC_DCHECK(audio_state_->audio_processing());
   stats.apm_statistics =
@@ -418,12 +432,37 @@ const TimeInterval& AudioSendStream::GetActiveLifetime() const {
   return active_lifetime_;
 }
 
+internal::AudioState* AudioSendStream::audio_state() {
+  internal::AudioState* audio_state =
+      static_cast<internal::AudioState*>(audio_state_.get());
+  RTC_DCHECK(audio_state);
+  return audio_state;
+}
+
+const internal::AudioState* AudioSendStream::audio_state() const {
+  internal::AudioState* audio_state =
+      static_cast<internal::AudioState*>(audio_state_.get());
+  RTC_DCHECK(audio_state);
+  return audio_state;
+}
+
 VoiceEngine* AudioSendStream::voice_engine() const {
   internal::AudioState* audio_state =
       static_cast<internal::AudioState*>(audio_state_.get());
   VoiceEngine* voice_engine = audio_state->voice_engine();
   RTC_DCHECK(voice_engine);
   return voice_engine;
+}
+
+void AudioSendStream::StoreEncoderProperties(int sample_rate_hz,
+                                             size_t num_channels) {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  encoder_sample_rate_hz_ = sample_rate_hz;
+  encoder_num_channels_ = num_channels;
+  if (sending_) {
+    // Update AudioState's information about the stream.
+    audio_state()->AddSendingStream(this, sample_rate_hz, num_channels);
+  }
 }
 
 // Apply current codec settings to a single voe::Channel used for sending.
@@ -472,6 +511,8 @@ bool AudioSendStream::SetupSendCodec(AudioSendStream* stream,
         new_config.send_codec_spec->format.clockrate_hz);
   }
 
+  stream->StoreEncoderProperties(encoder->SampleRateHz(),
+                                 encoder->NumChannels());
   stream->channel_proxy_->SetEncoder(new_config.send_codec_spec->payload_type,
                                      std::move(encoder));
   return true;

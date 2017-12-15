@@ -17,12 +17,6 @@
 #include "media/engine/webrtcvoe.h"
 #include "rtc_base/checks.h"
 
-namespace webrtc {
-namespace voe {
-class TransmitMixer;
-}  // namespace voe
-}  // namespace webrtc
-
 namespace cricket {
 
 #define WEBRTC_CHECK_CHANNEL(channel) \
@@ -41,8 +35,7 @@ class FakeWebRtcVoiceEngine : public webrtc::VoEBase {
     bool neteq_fast_accelerate = false;
   };
 
-  explicit FakeWebRtcVoiceEngine(webrtc::voe::TransmitMixer* transmit_mixer)
-      : transmit_mixer_(transmit_mixer) {}
+  FakeWebRtcVoiceEngine() {}
   ~FakeWebRtcVoiceEngine() override {
     RTC_CHECK(channels_.empty());
   }
@@ -67,9 +60,6 @@ class FakeWebRtcVoiceEngine : public webrtc::VoEBase {
   }
   void Terminate() override {
     inited_ = false;
-  }
-  webrtc::voe::TransmitMixer* transmit_mixer() override {
-    return transmit_mixer_;
   }
   WEBRTC_FUNC(CreateChannel, ()) {
     return CreateChannel(webrtc::VoEBase::ChannelConfig());
@@ -114,9 +104,8 @@ class FakeWebRtcVoiceEngine : public webrtc::VoEBase {
   int last_channel_ = -1;
   std::map<int, Channel*> channels_;
   bool fail_create_channel_ = false;
-  webrtc::voe::TransmitMixer* transmit_mixer_ = nullptr;
 
-  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(FakeWebRtcVoiceEngine);
+  RTC_DISALLOW_COPY_AND_ASSIGN(FakeWebRtcVoiceEngine);
 };
 
 }  // namespace cricket

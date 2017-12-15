@@ -294,4 +294,16 @@ if (rtc_include_tests) {
       "//testing/gmock",
     ]
   }
+
+  rtc_source_set("mock_call_interfaces") {
+    testonly = true
+
+    sources = [
+      "test/mock_audio_send_stream.h",
+    ]
+    deps = [
+      ":call_interfaces",
+      "//test:test_support",
+    ]
+  }
 }

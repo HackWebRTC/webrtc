@@ -256,6 +256,12 @@ int ChannelProxy::PreferredSampleRate() const {
   return channel()->PreferredSampleRate();
 }
 
+void ChannelProxy::ProcessAndEncodeAudio(
+    std::unique_ptr<AudioFrame> audio_frame) {
+  RTC_DCHECK_RUNS_SERIALIZED(&audio_thread_race_checker_);
+  return channel()->ProcessAndEncodeAudio(std::move(audio_frame));
+}
+
 void ChannelProxy::SetTransportOverhead(int transport_overhead_per_packet) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   channel()->SetTransportOverhead(transport_overhead_per_packet);

@@ -33,7 +33,6 @@
 #include "test/gtest.h"
 #include "test/mock_audio_decoder_factory.h"
 #include "test/mock_audio_encoder_factory.h"
-#include "voice_engine/transmit_mixer.h"
 
 using testing::_;
 using testing::ContainerEq;
@@ -78,27 +77,13 @@ constexpr webrtc::GainControl::Mode kDefaultAgcMode =
 constexpr webrtc::NoiseSuppression::Level kDefaultNsLevel =
     webrtc::NoiseSuppression::kHigh;
 
-class FakeVoEWrapper : public cricket::VoEWrapper {
- public:
-  explicit FakeVoEWrapper(cricket::FakeWebRtcVoiceEngine* engine)
-      : cricket::VoEWrapper(engine) {
-  }
-};
-
-class MockTransmitMixer : public webrtc::voe::TransmitMixer {
- public:
-  MockTransmitMixer() = default;
-  virtual ~MockTransmitMixer() = default;
-
-  MOCK_METHOD1(EnableStereoChannelSwapping, void(bool enable));
-};
-
 void AdmSetupExpectations(webrtc::test::MockAudioDeviceModule* adm) {
   RTC_DCHECK(adm);
 
   // Setup.
-  EXPECT_CALL(*adm, AddRef()).Times(1);
+  EXPECT_CALL(*adm, AddRef()).Times(3);
   EXPECT_CALL(*adm, Init()).WillOnce(Return(0));
+  EXPECT_CALL(*adm, RegisterAudioCallback(_)).WillOnce(Return(0));
 #if defined(WEBRTC_WIN)
   EXPECT_CALL(*adm, SetPlayoutDevice(
       testing::Matcher<webrtc::AudioDeviceModule::WindowsDeviceType>(
@@ -130,8 +115,8 @@ void AdmSetupExpectations(webrtc::test::MockAudioDeviceModule* adm) {
   EXPECT_CALL(*adm, StopRecording()).WillOnce(Return(0));
   EXPECT_CALL(*adm, RegisterAudioCallback(nullptr)).WillOnce(Return(0));
   EXPECT_CALL(*adm, Terminate()).WillOnce(Return(0));
-  EXPECT_CALL(*adm, Release())
-      .WillOnce(Return(rtc::RefCountReleaseStatus::kDroppedLastRef));
+  EXPECT_CALL(*adm, Release()).Times(3)
+      .WillRepeatedly(Return(rtc::RefCountReleaseStatus::kDroppedLastRef));
 }
 }  // namespace
 
@@ -147,15 +132,13 @@ TEST(WebRtcVoiceEngineTestStubLibrary, StartupShutdown) {
   EXPECT_CALL(*apm, ApplyConfig(_)).WillRepeatedly(SaveArg<0>(&apm_config));
   EXPECT_CALL(*apm, SetExtraOptions(testing::_));
   EXPECT_CALL(*apm, DetachAecDump());
-  StrictMock<MockTransmitMixer> transmit_mixer;
-  EXPECT_CALL(transmit_mixer, EnableStereoChannelSwapping(false));
-  cricket::FakeWebRtcVoiceEngine voe(&transmit_mixer);
+  cricket::FakeWebRtcVoiceEngine voe;
   EXPECT_FALSE(voe.IsInited());
   {
     cricket::WebRtcVoiceEngine engine(
         &adm, webrtc::MockAudioEncoderFactory::CreateUnusedFactory(),
         webrtc::MockAudioDecoderFactory::CreateUnusedFactory(), nullptr, apm,
-        new FakeVoEWrapper(&voe));
+        new cricket::VoEWrapper(&voe));
     engine.Init();
     EXPECT_TRUE(voe.IsInited());
   }
@@ -183,7 +166,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
         apm_ns_(*apm_->noise_suppression()),
         apm_vd_(*apm_->voice_detection()),
         call_(webrtc::Call::Config(&event_log_)),
-        voe_(&transmit_mixer_),
+        voe_(),
         override_field_trials_(field_trials) {
     // AudioDeviceModule.
     AdmSetupExpectations(&adm_);
@@ -202,7 +185,6 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_CALL(apm_ns_, set_level(kDefaultNsLevel)).WillOnce(Return(0));
     EXPECT_CALL(apm_ns_, Enable(true)).WillOnce(Return(0));
     EXPECT_CALL(apm_vd_, Enable(true)).WillOnce(Return(0));
-    EXPECT_CALL(transmit_mixer_, EnableStereoChannelSwapping(false));
     // Init does not overwrite default AGC config.
     EXPECT_CALL(apm_gc_, target_level_dbfs()).WillOnce(Return(1));
     EXPECT_CALL(apm_gc_, compression_gain_db()).WillRepeatedly(Return(5));
@@ -214,9 +196,9 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     // factories. Those tests should probably be moved elsewhere.
     auto encoder_factory = webrtc::CreateBuiltinAudioEncoderFactory();
     auto decoder_factory = webrtc::CreateBuiltinAudioDecoderFactory();
-    engine_.reset(new cricket::WebRtcVoiceEngine(&adm_, encoder_factory,
-                                                 decoder_factory, nullptr, apm_,
-                                                 new FakeVoEWrapper(&voe_)));
+    engine_.reset(new cricket::WebRtcVoiceEngine(
+        &adm_, encoder_factory, decoder_factory, nullptr, apm_,
+        new cricket::VoEWrapper(&voe_)));
     engine_->Init();
     send_parameters_.codecs.push_back(kPcmuCodec);
     recv_parameters_.codecs.push_back(kPcmuCodec);
@@ -723,7 +705,6 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
   webrtc::test::MockEchoCancellation& apm_ec_;
   webrtc::test::MockNoiseSuppression& apm_ns_;
   webrtc::test::MockVoiceDetection& apm_vd_;
-  StrictMock<MockTransmitMixer> transmit_mixer_;
   webrtc::RtcEventLogNullImpl event_log_;
   cricket::FakeCall call_;
   cricket::FakeWebRtcVoiceEngine voe_;
@@ -2781,7 +2762,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
   send_parameters_.options.auto_gain_control = true;
   SetSendParameters(send_parameters_);
 
-  // Turn off other options (and stereo swapping on).
+  // Turn off other options.
   EXPECT_CALL(apm_ec_, Enable(true)).WillOnce(Return(0));
   EXPECT_CALL(apm_ec_, enable_metrics(true)).WillOnce(Return(0));
   EXPECT_CALL(apm_gc_, set_mode(kDefaultAgcMode)).WillOnce(Return(0));
@@ -2789,7 +2770,6 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
   EXPECT_CALL(apm_ns_, set_level(kDefaultNsLevel)).WillOnce(Return(0));
   EXPECT_CALL(apm_ns_, Enable(false)).WillOnce(Return(0));
   EXPECT_CALL(apm_vd_, Enable(false)).WillOnce(Return(0));
-  EXPECT_CALL(transmit_mixer_, EnableStereoChannelSwapping(true));
   send_parameters_.options.noise_suppression = false;
   send_parameters_.options.highpass_filter = false;
   send_parameters_.options.typing_detection = false;
@@ -2805,7 +2785,6 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
   EXPECT_CALL(apm_ns_, set_level(kDefaultNsLevel)).WillOnce(Return(0));
   EXPECT_CALL(apm_ns_, Enable(false)).WillOnce(Return(0));
   EXPECT_CALL(apm_vd_, Enable(false)).WillOnce(Return(0));
-  EXPECT_CALL(transmit_mixer_, EnableStereoChannelSwapping(true));
   SetSendParameters(send_parameters_);
 }
 
@@ -3335,9 +3314,9 @@ TEST(WebRtcVoiceEngineTest, StartupShutdown) {
 // Tests that reference counting on the external ADM is correct.
 TEST(WebRtcVoiceEngineTest, StartupShutdownWithExternalADM) {
   testing::NiceMock<webrtc::test::MockAudioDeviceModule> adm;
-  EXPECT_CALL(adm, AddRef()).Times(3);
+  EXPECT_CALL(adm, AddRef()).Times(5);
   EXPECT_CALL(adm, Release())
-      .Times(3)
+      .Times(5)
       .WillRepeatedly(Return(rtc::RefCountReleaseStatus::kDroppedLastRef));
   {
     rtc::scoped_refptr<webrtc::AudioProcessing> apm =

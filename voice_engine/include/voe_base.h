@@ -43,10 +43,6 @@ namespace webrtc {
 
 class AudioDeviceModule;
 class AudioProcessing;
-class AudioTransport;
-namespace voe {
-class TransmitMixer;
-}  // namespace voe
 
 // VoiceEngine
 class WEBRTC_DLLEXPORT VoiceEngine {
@@ -90,16 +86,12 @@ class WEBRTC_DLLEXPORT VoEBase {
   // modules:
   // - The Audio Device Module (ADM) which implements all the audio layer
   // functionality in a separate (reference counted) module.
-  // - The AudioProcessing module handles capture-side processing.
+  // - The AudioProcessing module is unused - only kept for API compatibility.
   // - An AudioDecoderFactory - used to create audio decoders.
   virtual int Init(
       AudioDeviceModule* audio_device,
       AudioProcessing* audio_processing,
       const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory) = 0;
-
-  // This method is WIP - DO NOT USE!
-  // Returns NULL before Init() is called.
-  virtual voe::TransmitMixer* transmit_mixer() = 0;
 
   // Terminates all VoiceEngine functions and releases allocated resources.
   virtual void Terminate() = 0;
@@ -146,10 +138,6 @@ class WEBRTC_DLLEXPORT VoEBase {
   //
   // By default, recording is enabled.
   virtual int SetRecording(bool enabled) = 0;
-
-  // TODO(xians): Make the interface pure virtual after libjingle
-  // implements the interface in its FakeWebRtcVoiceEngine.
-  virtual AudioTransport* audio_transport() { return NULL; }
 
  protected:
   VoEBase() {}

@@ -20,8 +20,8 @@ rtc_static_library("audio") {
     "audio_send_stream.h",
     "audio_state.cc",
     "audio_state.h",
-    "audio_transport_proxy.cc",
-    "audio_transport_proxy.h",
+    "audio_transport_impl.cc",
+    "audio_transport_impl.h",
     "conversion.h",
     "null_audio_poller.cc",
     "null_audio_poller.h",
@@ -61,6 +61,8 @@ rtc_static_library("audio") {
     "../system_wrappers",
     "../system_wrappers:field_trial_api",
     "../voice_engine",
+    "../voice_engine:audio_level",
+    "utility:audio_frame_operations",
   ]
 }
 if (rtc_include_tests) {
@@ -99,6 +101,7 @@ if (rtc_include_tests) {
       ":audio",
       ":audio_end_to_end_test",
       "../api:mock_audio_mixer",
+      "../call:mock_call_interfaces",
       "../call:mock_rtp_interfaces",
       "../call:rtp_interfaces",
       "../call:rtp_receiver",

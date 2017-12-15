@@ -10,9 +10,7 @@
 
 #include "voice_engine/shared_data.h"
 
-#include "modules/audio_processing/include/audio_processing.h"
 #include "voice_engine/channel.h"
-#include "voice_engine/transmit_mixer.h"
 
 namespace webrtc {
 
@@ -26,14 +24,10 @@ SharedData::SharedData()
       _audioDevicePtr(NULL),
       _moduleProcessThreadPtr(ProcessThread::Create("VoiceProcessThread")),
       encoder_queue_("AudioEncoderQueue") {
-  if (TransmitMixer::Create(_transmitMixerPtr) == 0) {
-    _transmitMixerPtr->SetEngineInformation(&_channelManager);
-  }
 }
 
 SharedData::~SharedData()
 {
-    TransmitMixer::Destroy(_transmitMixerPtr);
     if (_audioDevicePtr) {
         _audioDevicePtr->Release();
     }
@@ -48,10 +42,6 @@ rtc::TaskQueue* SharedData::encoder_queue() {
 void SharedData::set_audio_device(
     const rtc::scoped_refptr<AudioDeviceModule>& audio_device) {
   _audioDevicePtr = audio_device;
-}
-
-void SharedData::set_audio_processing(AudioProcessing* audioproc) {
-  _transmitMixerPtr->SetAudioProcessingModule(audioproc);
 }
 
 int SharedData::NumOfSendingChannels() {

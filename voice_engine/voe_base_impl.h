@@ -21,16 +21,12 @@ namespace webrtc {
 
 class ProcessThread;
 
-class VoEBaseImpl : public VoEBase,
-                    public AudioTransport {
+class VoEBaseImpl : public VoEBase {
  public:
   int Init(
       AudioDeviceModule* audio_device,
       AudioProcessing* audio_processing,
       const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory) override;
-  voe::TransmitMixer* transmit_mixer() override {
-    return shared_->transmit_mixer();
-  }
   void Terminate() override;
 
   int CreateChannel() override;
@@ -44,41 +40,6 @@ class VoEBaseImpl : public VoEBase,
 
   int SetPlayout(bool enabled) override;
   int SetRecording(bool enabled) override;
-
-  AudioTransport* audio_transport() override { return this; }
-
-  // AudioTransport
-  int32_t RecordedDataIsAvailable(const void* audio_data,
-                                  const size_t number_of_frames,
-                                  const size_t bytes_per_sample,
-                                  const size_t number_of_channels,
-                                  const uint32_t sample_rate,
-                                  const uint32_t audio_delay_milliseconds,
-                                  const int32_t clock_drift,
-                                  const uint32_t volume,
-                                  const bool key_pressed,
-                                  uint32_t& new_mic_volume) override;
-  RTC_DEPRECATED int32_t NeedMorePlayData(const size_t nSamples,
-                                          const size_t nBytesPerSample,
-                                          const size_t nChannels,
-                                          const uint32_t samplesPerSec,
-                                          void* audioSamples,
-                                          size_t& nSamplesOut,
-                                          int64_t* elapsed_time_ms,
-                                          int64_t* ntp_time_ms) override;
-  void PushCaptureData(int voe_channel,
-                       const void* audio_data,
-                       int bits_per_sample,
-                       int sample_rate,
-                       size_t number_of_channels,
-                       size_t number_of_frames) override;
-  RTC_DEPRECATED void PullRenderData(int bits_per_sample,
-                                     int sample_rate,
-                                     size_t number_of_channels,
-                                     size_t number_of_frames,
-                                     void* audio_data,
-                                     int64_t* elapsed_time_ms,
-                                     int64_t* ntp_time_ms) override;
 
  protected:
   VoEBaseImpl(voe::SharedData* shared);

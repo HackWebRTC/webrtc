@@ -28,6 +28,8 @@
 
 namespace webrtc {
 
+class AudioFrame;
+
 // WORK IN PROGRESS
 // This class is under development and is not yet intended for for use outside
 // of WebRtc/Libjingle. Please use the VoiceEngine API instead.
@@ -145,6 +147,10 @@ class AudioSendStream {
   // Stops stream activity.
   // When a stream is stopped, it can't receive, process or deliver packets.
   virtual void Stop() = 0;
+
+  // Encode and send audio.
+  virtual void SendAudioData(
+      std::unique_ptr<webrtc::AudioFrame> audio_frame) = 0;
 
   // TODO(solenberg): Make payload_type a config property instead.
   virtual bool SendTelephoneEvent(int payload_type, int payload_frequency,
