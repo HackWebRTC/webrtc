@@ -23,14 +23,6 @@ namespace rtc {
 // String Encoding Utilities
 //////////////////////////////////////////////////////////////////////
 
-// TODO(nisse): Used only in httpcommon.c. Delete when that file is deleted, or
-// possibly if the HttpComposeAttributes funtion can be deleted earlier.
-// Escaping prefixes illegal characters with the escape character.  Compact, but
-// illegal characters still appear in the string.
-size_t escape(char * buffer, size_t buflen,
-              const char * source, size_t srclen,
-              const char * illegal, char escape);
-
 // Note: in-place decoding (buffer == source) is allowed.
 size_t url_decode(char * buffer, size_t buflen,
                   const char * source, size_t srclen);

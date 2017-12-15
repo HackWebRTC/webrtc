@@ -22,28 +22,6 @@ namespace rtc {
 // String Encoding Utilities
 /////////////////////////////////////////////////////////////////////////////
 
-size_t escape(char * buffer, size_t buflen,
-              const char * source, size_t srclen,
-              const char * illegal, char escape) {
-  RTC_DCHECK(buffer);  // TODO(grunell): estimate output size
-  if (buflen <= 0)
-    return 0;
-
-  size_t srcpos = 0, bufpos = 0;
-  while ((srcpos < srclen) && (bufpos + 1 < buflen)) {
-    char ch = source[srcpos++];
-    if ((ch == escape) || ::strchr(illegal, ch)) {
-      if (bufpos + 2 >= buflen)
-        break;
-      buffer[bufpos++] = escape;
-    }
-    buffer[bufpos++] = ch;
-  }
-
-  buffer[bufpos] = '\0';
-  return bufpos;
-}
-
 size_t url_decode(char * buffer, size_t buflen,
                   const char * source, size_t srclen) {
   if (nullptr == buffer)
