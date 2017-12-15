@@ -207,6 +207,12 @@ class BaseChannel
   // an RtpTransport in a more explicit way.
   bool HandlesPayloadType(int payload_type) const;
 
+  // Used by the RTCStatsCollector tests to set the transport name without
+  // creating RtpTransports.
+  void set_transport_name_for_testing(const std::string& transport_name) {
+    transport_name_ = transport_name;
+  }
+
  protected:
   virtual MediaChannel* media_channel() const { return media_channel_.get(); }
 

@@ -1807,6 +1807,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Audio) {
       test_->signaling_thread(), test_->media_engine(),
       rtc::WrapUnique(voice_media_channel), "VoiceContentName",
       kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
+  voice_channel.set_transport_name_for_testing("TransportName");
 
   test_->SetupRemoteTrackAndReceiver(
       cricket::MEDIA_TYPE_AUDIO, "RemoteAudioTrackID", 1);
@@ -1886,6 +1887,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
       test_->worker_thread(), test_->network_thread(),
       test_->signaling_thread(), rtc::WrapUnique(video_media_channel),
       "VideoContentName", kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
+  video_channel.set_transport_name_for_testing("TransportName");
 
   test_->SetupRemoteTrackAndReceiver(
       cricket::MEDIA_TYPE_VIDEO, "RemoteVideoTrackID", 1);
@@ -1988,6 +1990,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Audio) {
       test_->signaling_thread(), test_->media_engine(),
       rtc::WrapUnique(voice_media_channel), "VoiceContentName",
       kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
+  voice_channel.set_transport_name_for_testing("TransportName");
 
   test_->SetupLocalTrackAndSender(
       cricket::MEDIA_TYPE_AUDIO, "LocalAudioTrackID", 1);
@@ -2065,6 +2068,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
       test_->worker_thread(), test_->network_thread(),
       test_->signaling_thread(), rtc::WrapUnique(video_media_channel),
       "VideoContentName", kDefaultRtcpMuxRequired, kDefaultSrtpRequired);
+  video_channel.set_transport_name_for_testing("TransportName");
 
   test_->SetupLocalTrackAndSender(
       cricket::MEDIA_TYPE_VIDEO, "LocalVideoTrackID", 1);
