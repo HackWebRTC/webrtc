@@ -10,7 +10,7 @@ import("../webrtc.gni")
 import("audio_coding/audio_coding.gni")
 
 group("modules") {
-  public_deps = [
+  deps = [
     "audio_coding",
     "audio_device",
     "audio_mixer",
