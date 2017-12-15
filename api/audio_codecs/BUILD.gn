@@ -29,7 +29,9 @@ rtc_source_set("audio_codecs_api") {
     "..:array_view",
     "..:optional",
     "../..:webrtc_common",
+    "../../:typedefs",
     "../../rtc_base:checks",
+    "../../rtc_base:deprecation",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:sanitizer",
   ]

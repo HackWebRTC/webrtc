@@ -21,6 +21,7 @@
 #include "api/optional.h"
 #include "api/rtpparameters.h"
 #include "api/rtpreceiverinterface.h"
+#include "api/video/video_content_type.h"
 #include "api/video/video_timing.h"
 #include "call/video_config.h"
 #include "media/base/codec.h"

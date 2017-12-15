@@ -350,11 +350,24 @@ if (!build_with_chromium) {
   }
 }
 
+rtc_source_set("typedefs") {
+  sources = [
+    "typedefs.h",
+  ]
+}
+
 rtc_static_library("webrtc_common") {
   sources = [
     "common_types.cc",
     "common_types.h",
-    "typedefs.h",
+  ]
+  deps = [
+    ":typedefs",
+    "api:array_view",
+    "api:optional",
+    "rtc_base:checks",
+    "rtc_base:deprecation",
+    "rtc_base:stringutils",
   ]
 
   if (!build_with_chromium && is_clang) {

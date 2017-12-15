@@ -46,6 +46,7 @@ rtc_static_library("remote_bitrate_estimator") {
 
   deps = [
     "../..:webrtc_common",
+    "../../:typedefs",
     "../../api:optional",
     "../../modules:module_api",
     "../../modules/rtp_rtcp:rtp_rtcp_format",
@@ -140,6 +141,7 @@ if (rtc_include_tests) {
       ":remote_bitrate_estimator",
       "..:module_api",
       "../..:webrtc_common",
+      "../../:typedefs",
       "../../api:optional",
       "../../rtc_base:checks",
       "../../rtc_base:gtest_prod",

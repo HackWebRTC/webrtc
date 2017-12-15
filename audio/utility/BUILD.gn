@@ -21,6 +21,7 @@ rtc_static_library("audio_frame_operations") {
 
   deps = [
     "../..:webrtc_common",
+    "../../:typedefs",
     "../../modules:module_api",
     "../../modules/audio_coding:audio_format_conversion",
     "../../rtc_base:checks",

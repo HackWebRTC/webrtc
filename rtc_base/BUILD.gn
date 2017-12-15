@@ -96,13 +96,18 @@ rtc_source_set("checks") {
   ]
   deps = [
     ":safe_compare",
-    "..:webrtc_common",
+    "..:typedefs",
   ]
 }
 
-rtc_source_set("type_traits") {
+rtc_source_set("rate_limiter") {
   sources = [
-    "type_traits.h",
+    "rate_limiter.cc",
+    "rate_limiter.h",
+  ]
+  deps = [
+    ":rtc_base_approved",
+    "../system_wrappers",
   ]
 }
 
@@ -121,14 +126,25 @@ rtc_source_set("safe_compare") {
   ]
 }
 
-rtc_source_set("rate_limiter") {
+rtc_source_set("stringutils") {
   sources = [
-    "rate_limiter.cc",
-    "rate_limiter.h",
+    "stringutils.cc",
+    "stringutils.h",
   ]
   deps = [
-    ":rtc_base_approved",
-    "../system_wrappers",
+    ":checks",
+  ]
+}
+
+rtc_source_set("type_traits") {
+  sources = [
+    "type_traits.h",
+  ]
+}
+
+rtc_source_set("deprecation") {
+  sources = [
+    "deprecation.h",
   ]
 }
 
@@ -146,7 +162,9 @@ rtc_source_set("rtc_base_approved_generic") {
   deps = [
     ":checks",
     ":safe_compare",
+    ":stringutils",
     ":type_traits",
+    "../:typedefs",
   ]
 
   sources = [
@@ -171,7 +189,6 @@ rtc_source_set("rtc_base_approved_generic") {
     "copyonwritebuffer.h",
     "criticalsection.cc",
     "criticalsection.h",
-    "deprecation.h",
     "event_tracer.cc",
     "event_tracer.h",
     "file.cc",
@@ -216,8 +233,6 @@ rtc_source_set("rtc_base_approved_generic") {
     "stringencode.cc",
     "stringencode.h",
     "stringize_macros.h",
-    "stringutils.cc",
-    "stringutils.h",
     "swap_queue.h",
     "template_util.h",
     "thread_annotations.h",
@@ -526,6 +541,7 @@ rtc_static_library("rtc_base_generic") {
   defines = []
   deps = [
     ":checks",
+    ":stringutils",
     "..:webrtc_common",
     "../api:optional",
   ]
@@ -845,6 +861,7 @@ rtc_source_set("rtc_base_tests_utils") {
   deps = [
     ":checks",
     ":rtc_base",
+    ":stringutils",
     "../test:field_trial",
     "../test:test_support",
   ]
@@ -956,6 +973,7 @@ if (rtc_include_tests) {
       ":rtc_base_tests_utils",
       ":rtc_task_queue",
       ":safe_compare",
+      ":stringutils",
       "../api:array_view",
       "../system_wrappers:system_wrappers",
       "../test:test_support",
@@ -1080,6 +1098,7 @@ if (rtc_include_tests) {
       ":checks",
       ":rtc_base_tests_main",
       ":rtc_base_tests_utils",
+      ":stringutils",
       "../api:optional",
       "../test:test_support",
     ]

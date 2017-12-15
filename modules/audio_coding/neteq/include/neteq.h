@@ -18,6 +18,7 @@
 
 #include "api/audio_codecs/audio_decoder.h"
 #include "api/optional.h"
+#include "api/rtp_headers.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/neteq/neteq_decoder_enum.h"
 #include "rtc_base/constructormagic.h"

@@ -401,6 +401,7 @@ rtc_static_library("peerconnection_jni") {
     "../../rtc_base:rtc_base",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:rtc_task_queue",
+    "../../rtc_base:stringutils",
     "../../system_wrappers:field_trial_api",
   ]
 }

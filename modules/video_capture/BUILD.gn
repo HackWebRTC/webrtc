@@ -28,10 +28,12 @@ rtc_static_library("video_capture_module") {
   deps = [
     "..:module_api",
     "../..:webrtc_common",
+    "../../:typedefs",
     "../../api:video_frame_api_i420",
     "../../common_video",
     "../../media:rtc_media_base",
     "../../rtc_base:rtc_base_approved",
+    "../../rtc_base:stringutils",
     "../../system_wrappers",
     "//third_party/libyuv",
   ]

@@ -36,6 +36,7 @@ rtc_static_library("audio_mixer_impl") {
     ":audio_frame_manipulator",
     "..:module_api",
     "../..:webrtc_common",
+    "../../:typedefs",
     "../../api:array_view",
     "../../api:audio_mixer_api",
     "../../audio/utility:audio_frame_operations",

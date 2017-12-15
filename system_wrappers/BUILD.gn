@@ -54,6 +54,7 @@ rtc_static_library("system_wrappers") {
     ":field_trial_api",
     ":metrics_api",
     "..:webrtc_common",
+    "../:typedefs",
     "../api:optional",
     "../modules:module_api_public",
     "../rtc_base:checks",
@@ -112,6 +113,7 @@ rtc_source_set("cpu_features_api") {
   ]
   deps = [
     "..:webrtc_common",
+    "../:typedefs",
   ]
 }
 
@@ -215,6 +217,7 @@ if (rtc_include_tests) {
       ":metrics_default",
       ":system_wrappers",
       "..:webrtc_common",
+      "../:typedefs",
       "../rtc_base:rtc_base_approved",
       "../test:test_main",
       "//testing/gtest",

@@ -59,6 +59,8 @@ rtc_static_library("libjingle_peerconnection_api") {
     "proxy.h",
     "rtcerror.cc",
     "rtcerror.h",
+    "rtp_headers.cc",
+    "rtp_headers.h",
     "rtpparameters.cc",
     "rtpparameters.h",
     "rtpreceiverinterface.h",
@@ -84,6 +86,7 @@ rtc_static_library("libjingle_peerconnection_api") {
   ]
 
   deps = [
+    ":array_view",
     ":optional",
     ":rtc_stats_api",
     ":video_frame_api",
@@ -93,10 +96,14 @@ rtc_static_library("libjingle_peerconnection_api") {
     # Basically, don't add stuff here. You might break sensitive downstream
     # targets like pnacl. API should not depend on anything outside of this
     # file, really. All these should arguably go away in time.
+    "..:typedefs",
     "..:webrtc_common",
     "../modules/audio_processing:audio_processing_statistics",
+    "../rtc_base:checks",
+    "../rtc_base:deprecation",
     "../rtc_base:rtc_base",
     "../rtc_base:rtc_base_approved",
+    "../rtc_base:stringutils",
   ]
 
   # This is needed until bugs.webrtc.org/7504 is removed so this target can

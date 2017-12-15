@@ -100,6 +100,7 @@ rtc_source_set("audio_device_generic") {
   deps = [
     "..:module_api",
     "../..:webrtc_common",
+    "../../:typedefs",
     "../../api:array_view",
     "../../common_audio",
     "../../rtc_base:checks",

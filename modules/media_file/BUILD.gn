@@ -35,6 +35,7 @@ rtc_static_library("media_file") {
   deps = [
     "..:module_api",
     "../..:webrtc_common",
+    "../../:typedefs",
     "../../common_audio",
     "../../rtc_base:rtc_base_approved",
   ]

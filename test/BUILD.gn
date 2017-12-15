@@ -60,6 +60,7 @@ rtc_source_set("video_test_common") {
 
   deps = [
     "..:webrtc_common",
+    "../:typedefs",
     "../api:optional",
     "../api:video_frame_api_i420",
     "../api/video_codecs:video_codecs_api",
@@ -151,6 +152,7 @@ rtc_source_set("test_support") {
 
   deps = [
     "..:webrtc_common",
+    "../:typedefs",
     "../api:array_view",
     "../common_video",
     "../rtc_base:gtest_prod",
@@ -215,6 +217,7 @@ if (rtc_include_tests) {
       ":test_support",
       ":video_test_common",
       "..:webrtc_common",
+      "../:typedefs",
       "../api:video_frame_api",
       "../api:video_frame_api_i420",
       "../common_video",
@@ -362,6 +365,7 @@ if (is_ios) {
       "testsupport/iosfileutils.mm",
     ]
     deps = [
+      "..:typedefs",
       "..:webrtc_common",
       "../rtc_base:checks",
       "../rtc_base:rtc_base_approved",
@@ -384,6 +388,7 @@ rtc_source_set("fileutils") {
   ]
   deps = [
     "..:webrtc_common",
+    "../:typedefs",
     "../api:optional",
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
@@ -470,6 +475,7 @@ rtc_source_set("direct_transport") {
   }
   deps = [
     "..:webrtc_common",
+    "../:typedefs",
     "../api:transport_api",
     "../call",
     "../call:call_interfaces",
@@ -507,6 +513,7 @@ rtc_source_set("fake_audio_device") {
   }
   deps = [
     "..:webrtc_common",
+    "../:typedefs",
     "../api:array_view",
     "../common_audio:common_audio",
     "../modules/audio_device:audio_device",
@@ -565,6 +572,7 @@ rtc_source_set("test_common") {
     ":test_support",
     ":video_test_common",
     "..:webrtc_common",
+    "../:typedefs",
     "../api:transport_api",
     "../api:video_frame_api",
     "../api:video_frame_api_i420",
@@ -668,6 +676,7 @@ rtc_source_set("test_renderer_generic") {
   deps = [
     ":test_support",
     "..:webrtc_common",
+    "../:typedefs",
     "../common_video",
     "../media:rtc_media_base",
     "../modules/media_file",

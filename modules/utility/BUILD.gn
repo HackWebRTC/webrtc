@@ -32,6 +32,7 @@ rtc_static_library("utility") {
   deps = [
     "..:module_api",
     "../..:webrtc_common",
+    "../../:typedefs",
     "../../audio/utility:audio_frame_operations",
     "../../common_audio",
     "../../rtc_base:checks",

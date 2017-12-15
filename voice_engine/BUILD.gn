@@ -52,6 +52,7 @@ rtc_static_library("voice_engine") {
   deps = [
     ":audio_level",
     "..:webrtc_common",
+    "../:typedefs",
     "../api:array_view",
     "../api:audio_mixer_api",
     "../api:call_api",
@@ -94,6 +95,7 @@ rtc_static_library("audio_level") {
 
   deps = [
     "..:webrtc_common",
+    "../:typedefs",
     "../common_audio",
     "../modules:module_api",
     "../rtc_base:rtc_base_approved",
