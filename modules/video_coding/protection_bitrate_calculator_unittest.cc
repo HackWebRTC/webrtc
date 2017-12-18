@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/video_coding/protection_bitrate_calculator.h"
+#include "modules/video_coding/protection_bitrate_calculator_default.h"
 #include "system_wrappers/include/clock.h"
 #include "test/gtest.h"
 
@@ -46,7 +46,7 @@ class ProtectionBitrateCalculatorTest : public ::testing::Test {
 
   SimulatedClock clock_;
   ProtectionCallback protection_callback_;
-  ProtectionBitrateCalculator media_opt_;
+  ProtectionBitrateCalculatorDefault media_opt_;
 };
 
 TEST_F(ProtectionBitrateCalculatorTest, ProtectsUsingFecBitrate) {
