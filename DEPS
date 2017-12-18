@@ -7,7 +7,7 @@ vars = {
   'checkout_configuration': 'default',
   'checkout_instrumented_libraries': 'checkout_linux and checkout_configuration == "default"',
   'webrtc_git': 'https://webrtc.googlesource.com',
-  'chromium_revision': '41f6c8762dca5575d4dfee57457fd6b47a93cad9',
+  'chromium_revision': '05400aa561a0f4b314910fce0e62af1c1e76a35a',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
@@ -28,7 +28,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling catapult
   # and whatever else without interference from each other.
-  'catapult_revision': 'ad4583d06ecd8aca6d3f4661f075f15b47e9dbf7',
+  'catapult_revision': '8a4ac91dd3927e5edb725d452775055a695fa62d',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling libFuzzer
   # and whatever else without interference from each other.
@@ -50,13 +50,13 @@ deps = {
     'condition': 'checkout_android',
   },
   'src/ios': {
-    'url': Var('chromium_git') + '/chromium/src/ios' + '@' + '6d8ff7ffd603895972e86776a70db97a19cfc9c3',
+    'url': Var('chromium_git') + '/chromium/src/ios' + '@' + '903ed16ddeb0d0798e3f8372fad08aa9b2244eb0',
     'condition': 'checkout_ios',
   },
   'src/testing':
-    Var('chromium_git') + '/chromium/src/testing' + '@' + '20997c6a4a326d4c8803490f6d2369d0beed90b9',
+    Var('chromium_git') + '/chromium/src/testing' + '@' + 'cfaa86d436c3572e9a47da284ce38d8e774fc33a',
   'src/third_party':
-    Var('chromium_git') + '/chromium/src/third_party' + '@' + 'f51d69b2fb1e1a2dc7babd39975824249246ac5b',
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + '6abb4f1e26be3dbca7a7310cedb49a7081bfc572',
   'src/third_party/android_tools': {
     'url': Var('chromium_git') + '/android_tools.git' + '@' + 'a2e9bc7c1b41d983577907df51d339fb1e0fd02f',
     'condition': 'checkout_android',
@@ -113,7 +113,7 @@ deps = {
   'src/third_party/libsrtp':
     Var('chromium_git') + '/chromium/deps/libsrtp.git' + '@' + '1d45b8e599dc2db6ea3ae22dbc94a8c504652423',
   'src/third_party/libvpx/source/libvpx':
-    Var('chromium_git') + '/webm/libvpx.git' + '@' +  'cbe62b9c2d2b006aba52c8eebe7d842e59166fe4',
+    Var('chromium_git') + '/webm/libvpx.git' + '@' +  '14dbdd95e686eafbe556c154c9e0bd76fe1d2d1a',
   'src/third_party/libyuv':
     Var('chromium_git') + '/libyuv/libyuv.git' + '@' + 'd94a4867bf8be91e4c0fa8b7a4133ba060fe524f',
   'src/third_party/lss': {
