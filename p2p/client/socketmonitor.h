@@ -13,7 +13,7 @@
 
 #include <vector>
 
-#include "p2p/base/port.h"  // for ConnectionInfos
+#include "p2p/base/jseptransport.h"  // for ConnectionInfos
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/sigslot.h"
 #include "rtc_base/thread.h"

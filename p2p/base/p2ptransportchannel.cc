@@ -101,17 +101,6 @@ static constexpr int DEFAULT_BACKUP_CONNECTION_PING_INTERVAL = 25 * 1000;
 static constexpr int a_is_better = 1;
 static constexpr int b_is_better = -1;
 
-bool IceCredentialsChanged(const std::string& old_ufrag,
-                           const std::string& old_pwd,
-                           const std::string& new_ufrag,
-                           const std::string& new_pwd) {
-  // The standard (RFC 5245 Section 9.1.1.1) says that ICE restarts MUST change
-  // both the ufrag and password. However, section 9.2.1.1 says changing the
-  // ufrag OR password indicates an ICE restart. So, to keep compatibility with
-  // endpoints that only change one, we'll treat this as an ICE restart.
-  return (old_ufrag != new_ufrag) || (old_pwd != new_pwd);
-}
-
 P2PTransportChannel::P2PTransportChannel(const std::string& transport_name,
                                          int component,
                                          PortAllocator* allocator)
