@@ -52,8 +52,11 @@ class GainControl;
 class HighPassFilter;
 class LevelEstimator;
 class NoiseSuppression;
-class PostProcessing;
+class CustomProcessing;
 class VoiceDetection;
+
+// webrtc:8665, addedd temporarily to avoid breaking dependencies.
+typedef CustomProcessing PostProcessing;
 
 // Use to enable the extended filter mode in the AEC, along with robustness
 // measures around the reported system delays. It comes with a significant
@@ -317,14 +320,24 @@ class AudioProcessing : public rtc::RefCountInterface {
   static AudioProcessing* Create();
   // Allows passing in an optional configuration at create-time.
   static AudioProcessing* Create(const webrtc::Config& config);
-  // Deprecated. Use the Create below, with nullptr PostProcessing.
+  // Deprecated. Use the Create below, with nullptr CustomProcessing.
   RTC_DEPRECATED
   static AudioProcessing* Create(const webrtc::Config& config,
                                  NonlinearBeamformer* beamformer);
+
+  // Will be deprecated and removed as part of webrtc:8665. Use the
+  // Create below, with nullptr CustomProcessing.
+  static AudioProcessing* Create(
+      const webrtc::Config& config,
+      std::unique_ptr<CustomProcessing> capture_post_processor,
+      std::unique_ptr<EchoControlFactory> echo_control_factory,
+      NonlinearBeamformer* beamformer);
+
   // Allows passing in optional user-defined processing modules.
   static AudioProcessing* Create(
       const webrtc::Config& config,
-      std::unique_ptr<PostProcessing> capture_post_processor,
+      std::unique_ptr<CustomProcessing> capture_post_processor,
+      std::unique_ptr<CustomProcessing> render_pre_processor,
       std::unique_ptr<EchoControlFactory> echo_control_factory,
       NonlinearBeamformer* beamformer);
   ~AudioProcessing() override {}
@@ -1087,8 +1100,8 @@ class NoiseSuppression {
   virtual ~NoiseSuppression() {}
 };
 
-// Interface for a post processing submodule.
-class PostProcessing {
+// Interface for a custom processing submodule.
+class CustomProcessing {
  public:
   // (Re-)Initializes the submodule.
   virtual void Initialize(int sample_rate_hz, int num_channels) = 0;
@@ -1097,7 +1110,7 @@ class PostProcessing {
   // Returns a string representation of the module state.
   virtual std::string ToString() const = 0;
 
-  virtual ~PostProcessing() {}
+  virtual ~CustomProcessing() {}
 };
 
 // The voice activity detection (VAD) component analyzes the stream to

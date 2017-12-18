@@ -142,6 +142,7 @@ DebugDumpGenerator::DebugDumpGenerator(const std::string& input_file_name,
       apm_(AudioProcessing::Create(
           config,
           nullptr,
+          nullptr,
           (enable_aec3 ? std::unique_ptr<EchoControlFactory>(
                              new EchoCanceller3Factory())
                        : nullptr),
