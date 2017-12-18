@@ -22,26 +22,48 @@ namespace webrtc {
 
 namespace {
 
+const float kHamming64[64] = {
+    0.08f,       0.08228584f, 0.08912066f, 0.10043651f, 0.11612094f,
+    0.13601808f, 0.15993016f, 0.18761956f, 0.21881106f, 0.25319469f,
+    0.29042872f, 0.3301431f,  0.37194313f, 0.41541338f, 0.46012184f,
+    0.50562416f, 0.55146812f, 0.5971981f,  0.64235963f, 0.68650386f,
+    0.72919207f, 0.77f,       0.80852209f, 0.84437549f, 0.87720386f,
+    0.90668095f, 0.93251381f, 0.95444568f, 0.97225861f, 0.98577555f,
+    0.99486218f, 0.99942818f, 0.99942818f, 0.99486218f, 0.98577555f,
+    0.97225861f, 0.95444568f, 0.93251381f, 0.90668095f, 0.87720386f,
+    0.84437549f, 0.80852209f, 0.77f,       0.72919207f, 0.68650386f,
+    0.64235963f, 0.5971981f,  0.55146812f, 0.50562416f, 0.46012184f,
+    0.41541338f, 0.37194313f, 0.3301431f,  0.29042872f, 0.25319469f,
+    0.21881106f, 0.18761956f, 0.15993016f, 0.13601808f, 0.11612094f,
+    0.10043651f, 0.08912066f, 0.08228584f, 0.08f};
+
 void PredictionError(const Aec3Fft& fft,
                      const FftData& S,
                      rtc::ArrayView<const float> y,
                      std::array<float, kBlockSize>* e,
                      FftData* E,
                      std::array<float, kBlockSize>* s) {
-  std::array<float, kFftLength> s_scratch;
-  fft.Ifft(S, &s_scratch);
+  std::array<float, kFftLength> tmp;
+  fft.Ifft(S, &tmp);
   constexpr float kScale = 1.0f / kFftLengthBy2;
-  std::transform(y.begin(), y.end(), s_scratch.begin() + kFftLengthBy2,
-                 e->begin(), [&](float a, float b) { return a - b * kScale; });
-  std::for_each(e->begin(), e->end(),
-                [](float& a) { a = rtc::SafeClamp(a, -32768.f, 32767.f); });
-  fft.ZeroPaddedFft(*e, E);
+  std::transform(y.begin(), y.end(), tmp.begin() + kFftLengthBy2, e->begin(),
+                 [&](float a, float b) { return a - b * kScale; });
 
   if (s) {
     for (size_t k = 0; k < s->size(); ++k) {
-      (*s)[k] = kScale * s_scratch[k + kFftLengthBy2];
+      (*s)[k] = kScale * tmp[k + kFftLengthBy2];
     }
   }
+
+  std::for_each(e->begin(), e->end(),
+                [](float& a) { a = rtc::SafeClamp(a, -32768.f, 32767.f); });
+
+  RTC_DCHECK_EQ(64, e->size());
+  RTC_DCHECK_LE(64, tmp.size());
+  std::transform(e->begin(), e->end(), std::begin(kHamming64), tmp.begin(),
+                 [](float a, float b) { return a * b; });
+
+  fft.ZeroPaddedFft(rtc::ArrayView<const float>(tmp.data(), 64), E);
 }
 }  // namespace
 
@@ -110,7 +132,6 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
   // Form the output of the shadow filter.
   shadow_filter_.Filter(render_buffer, &S);
   PredictionError(fft_, S, y, &e_shadow, &E_shadow, nullptr);
-
 
   if (!converged_filter_) {
     const auto sum_of_squares = [](float a, float b) { return a + b * b; };

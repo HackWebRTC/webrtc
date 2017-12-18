@@ -162,7 +162,7 @@ TEST(Subtractor, Convergence) {
       SCOPED_TRACE(ProduceDebugText(delay_samples, filter_length_blocks));
 
       float echo_to_nearend_power =
-          RunSubtractorTest(300, delay_samples, filter_length_blocks, false,
+          RunSubtractorTest(400, delay_samples, filter_length_blocks, false,
                             blocks_with_echo_path_changes);
 
       // Use different criteria to take overmodelling into account.
