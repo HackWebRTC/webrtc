@@ -164,7 +164,13 @@ TEST(Subtractor, Convergence) {
       float echo_to_nearend_power =
           RunSubtractorTest(300, delay_samples, filter_length_blocks, false,
                             blocks_with_echo_path_changes);
-      EXPECT_GT(0.1f, echo_to_nearend_power);
+
+      // Use different criteria to take overmodelling into account.
+      if (filter_length_blocks == 12) {
+        EXPECT_GT(0.1f, echo_to_nearend_power);
+      } else {
+        EXPECT_GT(1.f, echo_to_nearend_power);
+      }
     }
   }
 }
@@ -177,9 +183,9 @@ TEST(Subtractor, NonConvergenceOnUncorrelatedSignals) {
       SCOPED_TRACE(ProduceDebugText(delay_samples, filter_length_blocks));
 
       float echo_to_nearend_power =
-          RunSubtractorTest(100, delay_samples, filter_length_blocks, true,
+          RunSubtractorTest(300, delay_samples, filter_length_blocks, true,
                             blocks_with_echo_path_changes);
-      EXPECT_NEAR(1.f, echo_to_nearend_power, 0.05);
+      EXPECT_NEAR(1.f, echo_to_nearend_power, 0.1);
     }
   }
 }

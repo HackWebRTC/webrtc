@@ -306,7 +306,7 @@ TEST(AdaptiveFirFilter, FilterSize) {
 // Verifies that the filter is being able to properly filter a signal and to
 // adapt its coefficients.
 TEST(AdaptiveFirFilter, FilterAndAdapt) {
-  constexpr size_t kNumBlocksToProcess = 500;
+  constexpr size_t kNumBlocksToProcess = 1000;
   ApmDataDumper data_dumper(42);
   EchoCanceller3Config config;
   AdaptiveFirFilter filter(config.filter.length_blocks, DetectOptimization(),

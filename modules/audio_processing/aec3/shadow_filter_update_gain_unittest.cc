@@ -157,8 +157,14 @@ TEST(ShadowFilterUpdateGain, GainCausesFilterToConverge) {
                           blocks_with_saturation, &e, &y, &G);
 
       // Verify that the main filter is able to perform well.
-      EXPECT_LT(1000 * std::inner_product(e.begin(), e.end(), e.begin(), 0.f),
-                std::inner_product(y.begin(), y.end(), y.begin(), 0.f));
+      // Use different criteria to take overmodelling into account.
+      if (filter_length_blocks == 12) {
+        EXPECT_LT(1000 * std::inner_product(e.begin(), e.end(), e.begin(), 0.f),
+                  std::inner_product(y.begin(), y.end(), y.begin(), 0.f));
+      } else {
+        EXPECT_LT(std::inner_product(e.begin(), e.end(), e.begin(), 0.f),
+                  std::inner_product(y.begin(), y.end(), y.begin(), 0.f));
+      }
     }
   }
 }
