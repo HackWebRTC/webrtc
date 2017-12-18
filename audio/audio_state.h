@@ -67,6 +67,7 @@ class AudioState final : public webrtc::AudioState {
   rtc::ThreadChecker thread_checker_;
   rtc::ThreadChecker process_thread_checker_;
   const webrtc::AudioState::Config config_;
+  bool recording_enabled_ = true;
 
   // We hold one interface pointer to the VoE to make sure it is kept alive.
   ScopedVoEInterface<VoEBase> voe_base_;

@@ -44,19 +44,6 @@ void SharedData::set_audio_device(
   _audioDevicePtr = audio_device;
 }
 
-int SharedData::NumOfSendingChannels() {
-  ChannelManager::Iterator it(&_channelManager);
-  int sending_channels = 0;
-
-  for (ChannelManager::Iterator it(&_channelManager); it.IsValid();
-       it.Increment()) {
-    if (it.GetChannel()->Sending())
-      ++sending_channels;
-  }
-
-  return sending_channels;
-}
-
 int SharedData::NumOfPlayingChannels() {
   ChannelManager::Iterator it(&_channelManager);
   int playout_channels = 0;

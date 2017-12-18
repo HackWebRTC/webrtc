@@ -121,6 +121,8 @@ class ChannelProxy : public RtpPacketSinkInterface {
   virtual void OnRecoverableUplinkPacketLossRate(
       float recoverable_packet_loss_rate);
   virtual std::vector<webrtc::RtpSource> GetSources() const;
+  virtual void StartSend();
+  virtual void StopSend();
 
  private:
   Channel* channel() const;

@@ -16,7 +16,6 @@
 
 #include "audio/audio_state.h"
 #include "audio/conversion.h"
-#include "audio/scoped_voe_interface.h"
 #include "call/rtp_transport_controller_send_interface.h"
 #include "modules/audio_coding/codecs/cng/audio_encoder_cng.h"
 #include "modules/bitrate_controller/include/bitrate_controller.h"
@@ -30,7 +29,6 @@
 #include "rtc_base/timeutils.h"
 #include "system_wrappers/include/field_trial.h"
 #include "voice_engine/channel_proxy.h"
-#include "voice_engine/include/voe_base.h"
 #include "voice_engine/voice_engine_impl.h"
 
 namespace webrtc {
@@ -245,12 +243,7 @@ void AudioSendStream::Start() {
     transport_->packet_sender()->SetAccountForAudioPackets(true);
     ConfigureBitrateObserver(config_.min_bitrate_bps, config_.max_bitrate_bps);
   }
-
-  ScopedVoEInterface<VoEBase> base(voice_engine());
-  int error = base->StartSend(config_.voe_channel_id);
-  if (error != 0) {
-    RTC_LOG(LS_ERROR) << "AudioSendStream::Start failed with error: " << error;
-  }
+  channel_proxy_->StartSend();
   sending_ = true;
   audio_state()->AddSendingStream(this, encoder_sample_rate_hz_,
                                   encoder_num_channels_);
@@ -263,12 +256,7 @@ void AudioSendStream::Stop() {
   }
 
   RemoveBitrateObserver();
-
-  ScopedVoEInterface<VoEBase> base(voice_engine());
-  int error = base->StopSend(config_.voe_channel_id);
-  if (error != 0) {
-    RTC_LOG(LS_ERROR) << "AudioSendStream::Stop failed with error: " << error;
-  }
+  channel_proxy_->StopSend();
   sending_ = false;
   audio_state()->RemoveSendingStream(this);
 }
@@ -695,7 +683,5 @@ void AudioSendStream::RegisterCngPayloadType(int payload_type,
     }
   }
 }
-
-
 }  // namespace internal
 }  // namespace webrtc

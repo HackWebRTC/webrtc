@@ -107,9 +107,6 @@ int VoEBaseImpl::DeleteChannel(int channel) {
   }
 
   shared_->channel_manager().DestroyChannel(channel);
-  if (StopSend() != 0) {
-    return -1;
-  }
   if (StopPlayout() != 0) {
     return -1;
   }
@@ -149,36 +146,6 @@ int VoEBaseImpl::StopPlayout(int channel) {
   return StopPlayout();
 }
 
-int VoEBaseImpl::StartSend(int channel) {
-  rtc::CritScope cs(shared_->crit_sec());
-  voe::ChannelOwner ch = shared_->channel_manager().GetChannel(channel);
-  voe::Channel* channelPtr = ch.channel();
-  if (channelPtr == nullptr) {
-    RTC_LOG(LS_ERROR) << "StartSend() failed to locate channel";
-    return -1;
-  }
-  if (channelPtr->Sending()) {
-    return 0;
-  }
-  if (StartSend() != 0) {
-    RTC_LOG(LS_ERROR) << "StartSend() failed to start recording";
-    return -1;
-  }
-  return channelPtr->StartSend();
-}
-
-int VoEBaseImpl::StopSend(int channel) {
-  rtc::CritScope cs(shared_->crit_sec());
-  voe::ChannelOwner ch = shared_->channel_manager().GetChannel(channel);
-  voe::Channel* channelPtr = ch.channel();
-  if (channelPtr == nullptr) {
-    RTC_LOG(LS_ERROR) << "StopSend() failed to locate channel";
-    return -1;
-  }
-  channelPtr->StopSend();
-  return StopSend();
-}
-
 int32_t VoEBaseImpl::StartPlayout() {
   if (!shared_->audio_device()->Playing()) {
     if (shared_->audio_device()->InitPlayout() != 0) {
@@ -207,35 +174,6 @@ int32_t VoEBaseImpl::StopPlayout() {
   return 0;
 }
 
-int32_t VoEBaseImpl::StartSend() {
-  if (!shared_->audio_device()->Recording()) {
-    if (shared_->audio_device()->InitRecording() != 0) {
-      RTC_LOG_F(LS_ERROR) << "Failed to initialize recording";
-      return -1;
-    }
-    if (recording_enabled_ && shared_->audio_device()->StartRecording() != 0) {
-      RTC_LOG_F(LS_ERROR) << "Failed to start recording";
-      return -1;
-    }
-  }
-  return 0;
-}
-
-int32_t VoEBaseImpl::StopSend() {
-  if (!recording_enabled_) {
-    return 0;
-  }
-  // Stop audio-device recording if no channel is recording.
-  if (shared_->NumOfSendingChannels() == 0) {
-    if (shared_->audio_device()->StopRecording() != 0) {
-      RTC_LOG(LS_ERROR) << "StopSend() failed to stop recording";
-      return -1;
-    }
-  }
-
-  return 0;
-}
-
 int32_t VoEBaseImpl::SetPlayout(bool enabled) {
   RTC_LOG(INFO) << "SetPlayout(" << enabled << ")";
   if (playout_enabled_ == enabled) {
@@ -257,32 +195,6 @@ int32_t VoEBaseImpl::SetPlayout(bool enabled) {
     ret = shared_->audio_device()->StopPlayout();
     if (ret != 0) {
       RTC_LOG(LS_ERROR) << "SetPlayout(false) failed to stop playout";
-    }
-  }
-  return ret;
-}
-
-int32_t VoEBaseImpl::SetRecording(bool enabled) {
-  RTC_LOG(INFO) << "SetRecording(" << enabled << ")";
-  if (recording_enabled_ == enabled) {
-    return 0;
-  }
-  recording_enabled_ = enabled;
-  if (shared_->NumOfSendingChannels() == 0) {
-    // If there are no channels attempting to record out yet, there's nothing to
-    // be done; we should be in a "not recording" state either way.
-    return 0;
-  }
-  int32_t ret;
-  if (enabled) {
-    ret = shared_->audio_device()->StartRecording();
-    if (ret != 0) {
-      RTC_LOG(LS_ERROR) << "SetRecording(true) failed to start recording";
-    }
-  } else {
-    ret = shared_->audio_device()->StopRecording();
-    if (ret != 0) {
-      RTC_LOG(LS_ERROR) << "SetRecording(false) failed to stop recording";
     }
   }
   return ret;

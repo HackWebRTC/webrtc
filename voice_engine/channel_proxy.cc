@@ -332,6 +332,17 @@ std::vector<RtpSource> ChannelProxy::GetSources() const {
   return channel()->GetSources();
 }
 
+void ChannelProxy::StartSend() {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  int error = channel()->StartSend();
+  RTC_DCHECK_EQ(0, error);
+}
+
+void ChannelProxy::StopSend() {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  channel()->StopSend();
+}
+
 Channel* ChannelProxy::channel() const {
   RTC_DCHECK(channel_owner_.channel());
   return channel_owner_.channel();

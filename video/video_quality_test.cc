@@ -2084,7 +2084,6 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
 
       // Start sending audio.
       audio_send_stream_->Start();
-      EXPECT_EQ(0, voe.base->StartSend(voe.send_channel_id));
     }
   });
 
@@ -2093,7 +2092,6 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
   task_queue_.SendTask([&]() {
     if (params_.audio.enabled) {
       // Stop sending audio.
-      EXPECT_EQ(0, voe.base->StopSend(voe.send_channel_id));
       audio_send_stream_->Stop();
 
       // Stop receiving audio.

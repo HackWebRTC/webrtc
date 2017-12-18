@@ -98,6 +98,8 @@ class MockVoEChannelProxy : public voe::ChannelProxy {
   MOCK_METHOD1(OnRecoverableUplinkPacketLossRate,
                void(float recoverable_packet_loss_rate));
   MOCK_CONST_METHOD0(GetSources, std::vector<RtpSource>());
+  MOCK_METHOD0(StartSend, void());
+  MOCK_METHOD0(StopSend, void());
 };
 }  // namespace test
 }  // namespace webrtc

@@ -34,12 +34,9 @@ class VoEBaseImpl : public VoEBase {
   int DeleteChannel(int channel) override;
 
   int StartPlayout(int channel) override;
-  int StartSend(int channel) override;
   int StopPlayout(int channel) override;
-  int StopSend(int channel) override;
 
   int SetPlayout(bool enabled) override;
-  int SetRecording(bool enabled) override;
 
  protected:
   VoEBaseImpl(voe::SharedData* shared);
@@ -48,14 +45,7 @@ class VoEBaseImpl : public VoEBase {
  private:
   int32_t StartPlayout();
   int32_t StopPlayout();
-  int32_t StartSend();
-  int32_t StopSend();
   void TerminateInternal();
-
-  void GetPlayoutData(int sample_rate, size_t number_of_channels,
-                      size_t number_of_frames, bool feed_data_to_apm,
-                      void* audio_data, int64_t* elapsed_time_ms,
-                      int64_t* ntp_time_ms);
 
   // Initialize channel by setting Engine Information then initializing
   // channel.
@@ -65,7 +55,6 @@ class VoEBaseImpl : public VoEBase {
   AudioFrame audioFrame_;
   voe::SharedData* shared_;
   bool playout_enabled_ = true;
-  bool recording_enabled_ = true;
 };
 
 }  // namespace webrtc
