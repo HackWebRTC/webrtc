@@ -33,28 +33,18 @@ class VoEBaseImpl : public VoEBase {
   int CreateChannel(const ChannelConfig& config) override;
   int DeleteChannel(int channel) override;
 
-  int StartPlayout(int channel) override;
-  int StopPlayout(int channel) override;
-
-  int SetPlayout(bool enabled) override;
-
  protected:
   VoEBaseImpl(voe::SharedData* shared);
   ~VoEBaseImpl() override;
 
  private:
-  int32_t StartPlayout();
-  int32_t StopPlayout();
   void TerminateInternal();
 
   // Initialize channel by setting Engine Information then initializing
   // channel.
   int InitializeChannel(voe::ChannelOwner* channel_owner);
   rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;
-
-  AudioFrame audioFrame_;
   voe::SharedData* shared_;
-  bool playout_enabled_ = true;
 };
 
 }  // namespace webrtc

@@ -100,6 +100,8 @@ class MockVoEChannelProxy : public voe::ChannelProxy {
   MOCK_CONST_METHOD0(GetSources, std::vector<RtpSource>());
   MOCK_METHOD0(StartSend, void());
   MOCK_METHOD0(StopSend, void());
+  MOCK_METHOD0(StartPlayout, void());
+  MOCK_METHOD0(StopPlayout, void());
 };
 }  // namespace test
 }  // namespace webrtc

@@ -48,7 +48,8 @@ AudioDecodingCallStats MakeAudioDecodeStatsForTest() {
   return audio_decode_stats;
 }
 
-const int kChannelId = 2;
+const int kChannelId1 = 2;
+const int kChannelId2 = 29;
 const uint32_t kRemoteSsrc = 1234;
 const uint32_t kLocalSsrc = 5678;
 const size_t kOneByteExtensionHeaderLength = 4;
@@ -84,7 +85,7 @@ struct ConfigHelper {
         new rtc::RefCountedObject<MockAudioDeviceModule>();
     audio_state_ = AudioState::Create(config);
 
-    EXPECT_CALL(voice_engine_, ChannelProxyFactory(kChannelId))
+    EXPECT_CALL(voice_engine_, ChannelProxyFactory(kChannelId1))
         .WillOnce(Invoke([this](int channel_id) {
           EXPECT_FALSE(channel_proxy_);
           channel_proxy_ = new testing::StrictMock<MockVoEChannelProxy>();
@@ -118,7 +119,15 @@ struct ConfigHelper {
                   }));
           return channel_proxy_;
         }));
-    stream_config_.voe_channel_id = kChannelId;
+    EXPECT_CALL(voice_engine_, ChannelProxyFactory(kChannelId2))
+        .WillRepeatedly(Invoke([this](int channel_id) {
+          testing::NiceMock<MockVoEChannelProxy>* proxy =
+              new testing::NiceMock<MockVoEChannelProxy>();
+          EXPECT_CALL(*proxy, GetAudioDecoderFactory())
+              .WillOnce(ReturnRef(decoder_factory_));
+          return proxy;
+        }));
+    stream_config_.voe_channel_id = kChannelId1;
     stream_config_.rtp.local_ssrc = kLocalSsrc;
     stream_config_.rtp.remote_ssrc = kRemoteSsrc;
     stream_config_.rtp.nack.rtp_history_ms = 300;
@@ -231,7 +240,7 @@ TEST(AudioReceiveStreamTest, ConfigToString) {
   AudioReceiveStream::Config config;
   config.rtp.remote_ssrc = kRemoteSsrc;
   config.rtp.local_ssrc = kLocalSsrc;
-  config.voe_channel_id = kChannelId;
+  config.voe_channel_id = kChannelId1;
   config.rtp.extensions.push_back(
       RtpExtension(RtpExtension::kAudioLevelUri, kAudioLevelId));
   EXPECT_EQ(
@@ -354,32 +363,36 @@ TEST(AudioReceiveStreamTest, SetGain) {
   recv_stream.SetGain(0.765f);
 }
 
-TEST(AudioReceiveStreamTest, StreamShouldNotBeAddedToMixerWhenVoEReturnsError) {
+TEST(AudioReceiveStreamTest, StreamsShouldBeAddedToMixerOnceOnStart) {
   ConfigHelper helper;
-  internal::AudioReceiveStream recv_stream(
+  internal::AudioReceiveStream recv_stream1(
       helper.rtp_stream_receiver_controller(),
       helper.packet_router(),
       helper.config(), helper.audio_state(), helper.event_log());
-
-  EXPECT_CALL(helper.voice_engine(), StartPlayout(_)).WillOnce(Return(-1));
-  EXPECT_CALL(*helper.audio_mixer(), AddSource(_)).Times(0);
-
-  recv_stream.Start();
-}
-
-TEST(AudioReceiveStreamTest, StreamShouldBeAddedToMixerOnStart) {
-  ConfigHelper helper;
-  internal::AudioReceiveStream recv_stream(
+  AudioReceiveStream::Config config2 = helper.config();
+  config2.voe_channel_id = kChannelId2;
+  internal::AudioReceiveStream recv_stream2(
       helper.rtp_stream_receiver_controller(),
       helper.packet_router(),
-      helper.config(), helper.audio_state(), helper.event_log());
+      config2, helper.audio_state(), helper.event_log());
 
-  EXPECT_CALL(helper.voice_engine(), StartPlayout(_)).WillOnce(Return(0));
-  EXPECT_CALL(helper.voice_engine(), StopPlayout(_));
-  EXPECT_CALL(*helper.audio_mixer(), AddSource(&recv_stream))
+  EXPECT_CALL(*helper.channel_proxy(), StartPlayout()).Times(1);
+  EXPECT_CALL(*helper.channel_proxy(), StopPlayout()).Times(1);
+  EXPECT_CALL(*helper.audio_mixer(), AddSource(&recv_stream1))
       .WillOnce(Return(true));
+  EXPECT_CALL(*helper.audio_mixer(), AddSource(&recv_stream2))
+      .WillOnce(Return(true));
+  EXPECT_CALL(*helper.audio_mixer(), RemoveSource(&recv_stream1)).Times(1);
+  EXPECT_CALL(*helper.audio_mixer(), RemoveSource(&recv_stream2)).Times(1);
 
-  recv_stream.Start();
+  recv_stream1.Start();
+  recv_stream2.Start();
+
+  // One more should not result in any more mixer sources added.
+  recv_stream1.Start();
+
+  // Stop stream before it is being destructed.
+  recv_stream2.Stop();
 }
 }  // namespace test
 }  // namespace webrtc

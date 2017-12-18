@@ -43,20 +43,6 @@ void SharedData::set_audio_device(
     const rtc::scoped_refptr<AudioDeviceModule>& audio_device) {
   _audioDevicePtr = audio_device;
 }
-
-int SharedData::NumOfPlayingChannels() {
-  ChannelManager::Iterator it(&_channelManager);
-  int playout_channels = 0;
-
-  for (ChannelManager::Iterator it(&_channelManager); it.IsValid();
-       it.Increment()) {
-    if (it.GetChannel()->Playing())
-      ++playout_channels;
-  }
-
-  return playout_channels;
-}
-
 }  // namespace voe
 
 }  // namespace webrtc

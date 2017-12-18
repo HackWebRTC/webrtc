@@ -343,6 +343,18 @@ void ChannelProxy::StopSend() {
   channel()->StopSend();
 }
 
+void ChannelProxy::StartPlayout() {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  int error = channel()->StartPlayout();
+  RTC_DCHECK_EQ(0, error);
+}
+
+void ChannelProxy::StopPlayout() {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  int error = channel()->StopPlayout();
+  RTC_DCHECK_EQ(0, error);
+}
+
 Channel* ChannelProxy::channel() const {
   RTC_DCHECK(channel_owner_.channel());
   return channel_owner_.channel();

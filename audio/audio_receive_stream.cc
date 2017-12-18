@@ -118,9 +118,7 @@ AudioReceiveStream::AudioReceiveStream(
 AudioReceiveStream::~AudioReceiveStream() {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   RTC_LOG(LS_INFO) << "~AudioReceiveStream: " << config_.ToString();
-  if (playing_) {
-    Stop();
-  }
+  Stop();
   channel_proxy_->DisassociateSendChannel();
   channel_proxy_->RegisterTransport(nullptr);
   channel_proxy_->ResetReceiverCongestionControlObjects();
@@ -132,21 +130,9 @@ void AudioReceiveStream::Start() {
   if (playing_) {
     return;
   }
-
-  int error = SetVoiceEnginePlayout(true);
-  if (error != 0) {
-    RTC_LOG(LS_ERROR) << "AudioReceiveStream::Start failed with error: "
-                      << error;
-    return;
-  }
-
-  if (!audio_state()->mixer()->AddSource(this)) {
-    RTC_LOG(LS_ERROR) << "Failed to add source to mixer.";
-    SetVoiceEnginePlayout(false);
-    return;
-  }
-
+  channel_proxy_->StartPlayout();
   playing_ = true;
+  audio_state()->AddReceivingStream(this);
 }
 
 void AudioReceiveStream::Stop() {
@@ -154,10 +140,9 @@ void AudioReceiveStream::Stop() {
   if (!playing_) {
     return;
   }
+  channel_proxy_->StopPlayout();
   playing_ = false;
-
-  audio_state()->mixer()->RemoveSource(this);
-  SetVoiceEnginePlayout(false);
+  audio_state()->RemoveReceivingStream(this);
 }
 
 webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
@@ -343,15 +328,6 @@ internal::AudioState* AudioReceiveStream::audio_state() const {
   auto* audio_state = static_cast<internal::AudioState*>(audio_state_.get());
   RTC_DCHECK(audio_state);
   return audio_state;
-}
-
-int AudioReceiveStream::SetVoiceEnginePlayout(bool playout) {
-  ScopedVoEInterface<VoEBase> base(voice_engine());
-  if (playout) {
-    return base->StartPlayout(config_.voe_channel_id);
-  } else {
-    return base->StopPlayout(config_.voe_channel_id);
-  }
 }
 }  // namespace internal
 }  // namespace webrtc

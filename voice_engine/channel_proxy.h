@@ -123,6 +123,8 @@ class ChannelProxy : public RtpPacketSinkInterface {
   virtual std::vector<webrtc::RtpSource> GetSources() const;
   virtual void StartSend();
   virtual void StopSend();
+  virtual void StartPlayout();
+  virtual void StopPlayout();
 
  private:
   Channel* channel() const;

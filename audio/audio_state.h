@@ -13,6 +13,7 @@
 
 #include <map>
 #include <memory>
+#include <unordered_set>
 
 #include "audio/audio_transport_impl.h"
 #include "audio/null_audio_poller.h"
@@ -27,6 +28,7 @@
 namespace webrtc {
 
 class AudioSendStream;
+class AudioReceiveStream;
 
 namespace internal {
 
@@ -50,8 +52,10 @@ class AudioState final : public webrtc::AudioState {
   void SetStereoChannelSwapping(bool enable) override;
 
   VoiceEngine* voice_engine();
-  rtc::scoped_refptr<AudioMixer> mixer();
   bool typing_noise_detected() const;
+
+  void AddReceivingStream(webrtc::AudioReceiveStream* stream);
+  void RemoveReceivingStream(webrtc::AudioReceiveStream* stream);
 
   void AddSendingStream(webrtc::AudioSendStream* stream,
                         int sample_rate_hz, size_t num_channels);
@@ -68,6 +72,7 @@ class AudioState final : public webrtc::AudioState {
   rtc::ThreadChecker process_thread_checker_;
   const webrtc::AudioState::Config config_;
   bool recording_enabled_ = true;
+  bool playout_enabled_ = true;
 
   // We hold one interface pointer to the VoE to make sure it is kept alive.
   ScopedVoEInterface<VoEBase> voe_base_;
@@ -85,6 +90,7 @@ class AudioState final : public webrtc::AudioState {
   // stats are still updated.
   std::unique_ptr<NullAudioPoller> null_audio_poller_;
 
+  std::unordered_set<webrtc::AudioReceiveStream*> receiving_streams_;
   struct StreamProperties {
     int sample_rate_hz = 0;
     size_t num_channels = 0;

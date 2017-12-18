@@ -109,21 +109,6 @@ class WEBRTC_DLLEXPORT VoEBase {
   // Returns -1 in case of an error, 0 otherwise.
   virtual int DeleteChannel(int channel) = 0;
 
-  // Starts forwarding the packets to the mixer/soundcard for a
-  // specified |channel|.
-  virtual int StartPlayout(int channel) = 0;
-
-  // Stops forwarding the packets to the mixer/soundcard for a
-  // specified |channel|.
-  virtual int StopPlayout(int channel) = 0;
-
-  // Enable or disable playout to the underlying device. Takes precedence over
-  // StartPlayout. Though calls to StartPlayout are remembered; if
-  // SetPlayout(true) is called after StartPlayout, playout will be started.
-  //
-  // By default, playout is enabled.
-  virtual int SetPlayout(bool enabled) = 0;
-
  protected:
   VoEBase() {}
   virtual ~VoEBase() {}

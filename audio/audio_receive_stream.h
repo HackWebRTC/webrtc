@@ -82,7 +82,6 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream,
  private:
   VoiceEngine* voice_engine() const;
   AudioState* audio_state() const;
-  int SetVoiceEnginePlayout(bool playout);
 
   rtc::ThreadChecker worker_thread_checker_;
   rtc::ThreadChecker module_process_thread_checker_;

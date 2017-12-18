@@ -40,8 +40,6 @@ public:
     ProcessThread* process_thread() { return _moduleProcessThreadPtr.get(); }
     rtc::TaskQueue* encoder_queue();
 
-    int NumOfPlayingChannels();
-
 protected:
  rtc::ThreadChecker construction_thread_;
  const uint32_t _instanceId;

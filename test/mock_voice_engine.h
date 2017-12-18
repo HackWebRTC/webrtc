@@ -90,8 +90,6 @@ class MockVoiceEngine : public VoiceEngineImpl {
   MOCK_METHOD0(CreateChannel, int());
   MOCK_METHOD1(CreateChannel, int(const ChannelConfig& config));
   MOCK_METHOD1(DeleteChannel, int(int channel));
-  MOCK_METHOD1(StartPlayout, int(int channel));
-  MOCK_METHOD1(StopPlayout, int(int channel));
 
  private:
   // TODO(ossu): I'm not particularly happy about keeping the decoder factory

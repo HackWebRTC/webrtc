@@ -14,6 +14,7 @@
 #include <utility>
 #include <vector>
 
+#include "audio/audio_receive_stream.h"
 #include "modules/audio_device/include/audio_device.h"
 #include "rtc_base/atomicops.h"
 #include "rtc_base/checks.h"
@@ -37,6 +38,7 @@ AudioState::AudioState(const AudioState::Config& config)
 
 AudioState::~AudioState() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(receiving_streams_.empty());
   RTC_DCHECK(sending_streams_.empty());
 }
 
@@ -45,14 +47,42 @@ VoiceEngine* AudioState::voice_engine() {
   return config_.voice_engine;
 }
 
-rtc::scoped_refptr<AudioMixer> AudioState::mixer() {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  return config_.audio_mixer;
-}
-
 bool AudioState::typing_noise_detected() const {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return audio_transport_.typing_noise_detected();
+}
+
+void AudioState::AddReceivingStream(webrtc::AudioReceiveStream* stream) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_EQ(0, receiving_streams_.count(stream));
+  receiving_streams_.insert(stream);
+  if (!config_.audio_mixer->AddSource(
+      static_cast<internal::AudioReceiveStream*>(stream))) {
+    RTC_LOG(LS_ERROR) << "Failed to add source to mixer.";
+  }
+
+  // Make sure playback is initialized; start playing if enabled.
+  auto* adm = config_.audio_device_module.get();
+  if (!adm->Playing()) {
+    if (adm->InitPlayout() == 0) {
+      if (playout_enabled_) {
+        adm->StartPlayout();
+      }
+    } else {
+      RTC_DLOG_F(LS_ERROR) << "Failed to initialize playout.";
+    }
+  }
+}
+
+void AudioState::RemoveReceivingStream(webrtc::AudioReceiveStream* stream) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  auto count = receiving_streams_.erase(stream);
+  RTC_DCHECK_EQ(1, count);
+  config_.audio_mixer->RemoveSource(
+      static_cast<internal::AudioReceiveStream*>(stream));
+  if (receiving_streams_.empty()) {
+    config_.audio_device_module->StopPlayout();
+  }
 }
 
 void AudioState::AddSendingStream(webrtc::AudioSendStream* stream,
@@ -89,20 +119,18 @@ void AudioState::RemoveSendingStream(webrtc::AudioSendStream* stream) {
 void AudioState::SetPlayout(bool enabled) {
   RTC_LOG(INFO) << "SetPlayout(" << enabled << ")";
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  const bool currently_enabled = (null_audio_poller_ == nullptr);
-  if (enabled == currently_enabled) {
-    return;
-  }
-  if (enabled) {
-    null_audio_poller_.reset();
-  }
-  // Will stop/start playout of the underlying device, if necessary, and
-  // remember the setting for when it receives subsequent calls of
-  // StartPlayout.
-  voe_base_->SetPlayout(enabled);
-  if (!enabled) {
-    null_audio_poller_ =
-        rtc::MakeUnique<NullAudioPoller>(&audio_transport_);
+  if (playout_enabled_ != enabled) {
+    playout_enabled_ = enabled;
+    if (enabled) {
+      null_audio_poller_.reset();
+      if (!receiving_streams_.empty()) {
+        config_.audio_device_module->StartPlayout();
+      }
+    } else {
+      config_.audio_device_module->StopPlayout();
+      null_audio_poller_ =
+          rtc::MakeUnique<NullAudioPoller>(&audio_transport_);
+    }
   }
 }
 
@@ -157,7 +185,7 @@ rtc::RefCountReleaseStatus AudioState::Release() const {
 
 void AudioState::UpdateAudioTransportWithSendingStreams() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  std::vector<AudioSendStream*> sending_streams;
+  std::vector<webrtc::AudioSendStream*> sending_streams;
   int max_sample_rate_hz = 8000;
   size_t max_num_channels = 1;
   for (const auto& kv : sending_streams_) {
