@@ -254,6 +254,11 @@ class Port : public PortInterface, public rtc::MessageHandler,
                                     const rtc::SocketAddress& remote_addr,
                                     const rtc::PacketTime& packet_time);
 
+  // Shall the port handle packet from this |remote_addr|.
+  // This method is overridden by TurnPort.
+  virtual bool CanHandleIncomingPacketsFrom(
+      const rtc::SocketAddress& remote_addr) const;
+
   // Sends a response message (normal or error) to the given request.  One of
   // these methods should be called as a response to SignalUnknownAddress.
   // NOTE: You MUST call CreateConnection BEFORE SendBindingResponse.

@@ -124,6 +124,8 @@ class TurnPort : public Port {
                             size_t size,
                             const rtc::SocketAddress& remote_addr,
                             const rtc::PacketTime& packet_time) override;
+  bool CanHandleIncomingPacketsFrom(
+      const rtc::SocketAddress& addr) const override;
   virtual void OnReadPacket(rtc::AsyncPacketSocket* socket,
                             const char* data, size_t size,
                             const rtc::SocketAddress& remote_addr,
@@ -175,6 +177,8 @@ class TurnPort : public Port {
   // Shuts down the turn port, usually because of some fatal errors.
   void Close();
 
+  void HandleConnectionDestroyed(Connection* conn) override;
+
  protected:
   TurnPort(rtc::Thread* thread,
            rtc::PacketSocketFactory* factory,
@@ -203,6 +207,11 @@ class TurnPort : public Port {
            const std::vector<std::string>& tls_elliptic_curves,
            webrtc::TurnCustomizer* customizer);
 
+  // NOTE: This method needs to be accessible for StacPort
+  // return true if entry was created (i.e channel_number consumed).
+  bool CreateOrRefreshEntry(const rtc::SocketAddress& addr,
+                            int channel_number);
+
  private:
   enum {
     MSG_ALLOCATE_ERROR = MSG_FIRST_AVAILABLE,
@@ -216,7 +225,6 @@ class TurnPort : public Port {
   typedef std::set<rtc::SocketAddress> AttemptedServerSet;
 
   void OnMessage(rtc::Message* pmsg) override;
-  void HandleConnectionDestroyed(Connection* conn) override;
 
   bool CreateTurnClientSocket();
 
@@ -264,7 +272,6 @@ class TurnPort : public Port {
   TurnEntry* FindEntry(const rtc::SocketAddress& address) const;
   TurnEntry* FindEntry(int channel_id) const;
   bool EntryExists(TurnEntry* e);
-  void CreateOrRefreshEntry(const rtc::SocketAddress& address);
   void DestroyEntry(TurnEntry* entry);
   // Destroys the entry only if |timestamp| matches the destruction timestamp
   // in |entry|.

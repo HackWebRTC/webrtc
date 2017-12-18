@@ -165,6 +165,9 @@ class StunMessage {
   // Takes ownership of the specified attribute and adds it to the message.
   void AddAttribute(std::unique_ptr<StunAttribute> attr);
 
+  // Remove the last occurrence of an attribute.
+  std::unique_ptr<StunAttribute> RemoveAttribute(int type);
+
   // Validates that a raw STUN message has a correct MESSAGE-INTEGRITY value.
   // This can't currently be done on a StunMessage, since it is affected by
   // padding data (which we discard when reading a StunMessage).
@@ -476,6 +479,18 @@ bool IsStunErrorResponseType(int msg_type);
 // Computes the STUN long-term credential hash.
 bool ComputeStunCredentialHash(const std::string& username,
     const std::string& realm, const std::string& password, std::string* hash);
+
+// Make a copy af |attribute| and return a new StunAttribute.
+//   This is useful if you don't care about what kind of attribute you
+//   are handling.
+//
+// The implementation copies by calling Write() followed by Read().
+//
+// If |tmp_buffer| is supplied this buffer will be used, otherwise
+// a buffer will created in the method.
+std::unique_ptr<StunAttribute> CopyStunAttribute(
+    const StunAttribute& attribute,
+    rtc::ByteBufferWriter* tmp_buffer_ptr = 0);
 
 // TODO(?): Move the TURN/ICE stuff below out to separate files.
 extern const char TURN_MAGIC_COOKIE_VALUE[4];

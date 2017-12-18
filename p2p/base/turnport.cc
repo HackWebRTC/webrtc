@@ -523,7 +523,11 @@ Connection* TurnPort::CreateConnection(const Candidate& remote_candidate,
             remote_candidate.address().family()) {
       // Create an entry, if needed, so we can get our permissions set up
       // correctly.
-      CreateOrRefreshEntry(remote_candidate.address());
+      if (CreateOrRefreshEntry(remote_candidate.address(),
+                               next_channel_number_)) {
+        // An entry was created.
+        next_channel_number_++;
+      }
       ProxyConnection* conn =
           new ProxyConnection(this, index, remote_candidate);
       AddOrReplaceConnection(conn);
@@ -594,6 +598,11 @@ int TurnPort::SendTo(const void* data, size_t size,
   // The caller of the function is expecting the number of user data bytes,
   // rather than the size of the packet.
   return static_cast<int>(size);
+}
+
+bool TurnPort::CanHandleIncomingPacketsFrom(
+    const rtc::SocketAddress& addr) const {
+  return server_address_.address == addr;
 }
 
 bool TurnPort::HandleIncomingPacket(rtc::AsyncPacketSocket* socket,
@@ -1070,11 +1079,13 @@ bool TurnPort::EntryExists(TurnEntry* e) {
   return it != entries_.end();
 }
 
-void TurnPort::CreateOrRefreshEntry(const rtc::SocketAddress& addr) {
+bool TurnPort::CreateOrRefreshEntry(const rtc::SocketAddress& addr,
+                                    int channel_number) {
   TurnEntry* entry = FindEntry(addr);
   if (entry == nullptr) {
-    entry = new TurnEntry(this, next_channel_number_++, addr);
+    entry = new TurnEntry(this, channel_number, addr);
     entries_.push_back(entry);
+    return true;
   } else {
     if (entry->destruction_timestamp()) {
       // Destruction should have only been scheduled (indicated by
@@ -1092,6 +1103,7 @@ void TurnPort::CreateOrRefreshEntry(const rtc::SocketAddress& addr) {
       RTC_DCHECK(GetConnection(addr));
     }
   }
+  return false;
 }
 
 void TurnPort::DestroyEntry(TurnEntry* entry) {
