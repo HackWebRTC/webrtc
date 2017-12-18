@@ -37,7 +37,6 @@ class RtcEventLog;
 // TODO(pthatcher): Think of a better name for this.  We already have
 // a TransportStats in transport.h.  Perhaps TransportsStats?
 struct SessionStats {
-  std::map<std::string, std::string> proxy_to_transport;
   std::map<std::string, cricket::TransportStats> transport_stats;
 };
 

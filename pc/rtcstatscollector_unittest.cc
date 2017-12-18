@@ -800,8 +800,6 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCodecStats) {
       .WillOnce(DoAll(SetArgPointee<0>(video_media_info), Return(true)));
 
   SessionStats session_stats;
-  session_stats.proxy_to_transport["VoiceContentName"] = "TransportName";
-  session_stats.proxy_to_transport["VideoContentName"] = "TransportName";
   session_stats.transport_stats["TransportName"].transport_name =
       "TransportName";
 
@@ -1243,7 +1241,6 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
   cricket::TransportChannelStats transport_channel_stats;
   transport_channel_stats.component = cricket::ICE_CANDIDATE_COMPONENT_RTP;
   transport_channel_stats.connection_infos.push_back(connection_info);
-  session_stats.proxy_to_transport["VideoContentName"] = "transport";
   session_stats.transport_stats["transport"].transport_name = "transport";
   session_stats.transport_stats["transport"].channel_stats.push_back(
       transport_channel_stats);
@@ -1837,7 +1834,6 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Audio) {
       .WillOnce(DoAll(SetArgPointee<0>(voice_media_info), Return(true)));
 
   SessionStats session_stats;
-  session_stats.proxy_to_transport["VoiceContentName"] = "TransportName";
   session_stats.transport_stats["TransportName"].transport_name =
       "TransportName";
 
@@ -1921,7 +1917,6 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
       .WillOnce(DoAll(SetArgPointee<0>(video_media_info), Return(true)));
 
   SessionStats session_stats;
-  session_stats.proxy_to_transport["VideoContentName"] = "TransportName";
   session_stats.transport_stats["TransportName"].transport_name =
       "TransportName";
 
@@ -2016,7 +2011,6 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Audio) {
       .WillOnce(DoAll(SetArgPointee<0>(voice_media_info), Return(true)));
 
   SessionStats session_stats;
-  session_stats.proxy_to_transport["VoiceContentName"] = "TransportName";
   session_stats.transport_stats["TransportName"].transport_name =
       "TransportName";
 
@@ -2099,7 +2093,6 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
       .WillOnce(DoAll(SetArgPointee<0>(video_media_info), Return(true)));
 
   SessionStats session_stats;
-  session_stats.proxy_to_transport["VideoContentName"] = "TransportName";
   session_stats.transport_stats["TransportName"].transport_name =
       "TransportName";
 

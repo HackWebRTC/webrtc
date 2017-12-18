@@ -4534,8 +4534,6 @@ std::unique_ptr<SessionStats> PeerConnection::GetSessionStats_n(
                                            &transport_stats)) {
         return nullptr;
       }
-      session_stats->proxy_to_transport[(*channel_name_pair)->content_name] =
-          (*channel_name_pair)->transport_name;
       session_stats->transport_stats[(*channel_name_pair)->transport_name] =
           std::move(transport_stats);
     }
