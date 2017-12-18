@@ -19,8 +19,6 @@
 #include <vector>
 
 #include "logging/rtc_event_log/encoder/rtc_event_log_encoder_legacy.h"
-#include "logging/rtc_event_log/events/rtc_event_logging_started.h"
-#include "logging/rtc_event_log/events/rtc_event_logging_stopped.h"
 #include "logging/rtc_event_log/output/rtc_event_log_output_file.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructormagic.h"
@@ -175,20 +173,15 @@ bool RtcEventLogImpl::StartLogging(std::unique_ptr<RtcEventLogOutput> output,
 
   RTC_LOG(LS_INFO) << "Starting WebRTC event log.";
 
-  // |start_event| captured by value. This is done here because we want the
-  // timestamp to reflect when StartLogging() was called; not the queueing
-  // delay of the TaskQueue.
-  // This is a bit inefficient - especially since we copy again to get it
-  // to comply with LogToOutput()'s signature - but it's a small problem.
-  RtcEventLoggingStarted start_event;
+  const int64_t timestamp_us = rtc::TimeMicros();
 
   // Binding to |this| is safe because |this| outlives the |task_queue_|.
-  auto start = [this, start_event](std::unique_ptr<RtcEventLogOutput> output) {
+  auto start = [this, timestamp_us](std::unique_ptr<RtcEventLogOutput> output) {
     RTC_DCHECK_RUN_ON(&task_queue_);
     RTC_DCHECK(output->IsActive());
     event_output_ = std::move(output);
     num_config_events_written_ = 0;
-    WriteToOutput(event_encoder_->Encode(start_event));
+    WriteToOutput(event_encoder_->EncodeLogStart(timestamp_us));
     LogEventsFromMemoryToOutput();
   };
 
@@ -339,8 +332,8 @@ void RtcEventLogImpl::StopOutput() {
 void RtcEventLogImpl::StopLoggingInternal() {
   if (event_output_) {
     RTC_DCHECK(event_output_->IsActive());
-    RtcEventLoggingStopped stop_event;
-    event_output_->Write(event_encoder_->Encode(stop_event));
+    const int64_t timestamp_us = rtc::TimeMicros();
+    event_output_->Write(event_encoder_->EncodeLogEnd(timestamp_us));
   }
   StopOutput();
 }

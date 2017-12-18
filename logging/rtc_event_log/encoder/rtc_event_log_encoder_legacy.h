@@ -52,6 +52,9 @@ class RtcEventLogEncoderLegacy final : public RtcEventLogEncoder {
 
   std::string Encode(const RtcEvent& event) override;
 
+  std::string EncodeLogStart(int64_t timestamp_us) override;
+  std::string EncodeLogEnd(int64_t timestamp_us) override;
+
   std::string EncodeBatch(
       std::deque<std::unique_ptr<RtcEvent>>::const_iterator begin,
       std::deque<std::unique_ptr<RtcEvent>>::const_iterator end) override;
@@ -69,8 +72,6 @@ class RtcEventLogEncoderLegacy final : public RtcEventLogEncoder {
   std::string EncodeBweUpdateDelayBased(
       const RtcEventBweUpdateDelayBased& event);
   std::string EncodeBweUpdateLossBased(const RtcEventBweUpdateLossBased& event);
-  std::string EncodeLoggingStarted(const RtcEventLoggingStarted& event);
-  std::string EncodeLoggingStopped(const RtcEventLoggingStopped& event);
   std::string EncodeProbeClusterCreated(
       const RtcEventProbeClusterCreated& event);
   std::string EncodeProbeResultFailure(const RtcEventProbeResultFailure& event);

@@ -37,8 +37,6 @@ class RtcEvent {
     AudioSendStreamConfig,
     BweUpdateDelayBased,
     BweUpdateLossBased,
-    LoggingStarted,
-    LoggingStopped,
     ProbeClusterCreated,
     ProbeResultFailure,
     ProbeResultSuccess,
