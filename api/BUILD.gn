@@ -242,7 +242,7 @@ rtc_source_set("video_frame_api_i420") {
   deps = [
     ":video_frame_api",
     "../rtc_base:checks",
-    "../rtc_base:rtc_base_approved",
+    "../rtc_base:rtc_base",
     "../system_wrappers",
     "//third_party/libyuv",
   ]

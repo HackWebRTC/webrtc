@@ -205,7 +205,7 @@ rtc_static_library("webrtc_h264") {
     "../../api/video_codecs:video_codecs_api",
     "../../media:rtc_media_base",
     "../../rtc_base:checks",
-    "../../rtc_base:rtc_base_approved",
+    "../../rtc_base:rtc_base",
     "../../system_wrappers:metrics_api",
   ]
 
@@ -273,7 +273,7 @@ rtc_static_library("webrtc_stereo") {
     "../../api:video_frame_api_i420",
     "../../api/video_codecs:video_codecs_api",
     "../../common_video:common_video",
-    "../../rtc_base:rtc_base_approved",
+    "../../rtc_base:rtc_base",
     "../../system_wrappers",
   ]
 }
@@ -351,7 +351,7 @@ rtc_static_library("webrtc_vp9") {
     "..:module_api",
     "../../common_video",
     "../../rtc_base:checks",
-    "../../rtc_base:rtc_base_approved",
+    "../../rtc_base:rtc_base",
     "../../system_wrappers",
   ]
   if (rtc_build_libvpx) {
@@ -501,7 +501,7 @@ if (rtc_include_tests) {
       "../../media:rtc_audio_video",
       "../../media:rtc_media_base",
       "../../rtc_base:checks",
-      "../../rtc_base:rtc_base_approved",
+      "../../rtc_base:rtc_base",
       "../../rtc_base:rtc_base_tests_utils",
       "../../system_wrappers",
       "../../test:field_trial",

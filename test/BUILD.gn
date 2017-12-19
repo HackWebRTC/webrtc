@@ -69,7 +69,7 @@ rtc_source_set("video_test_common") {
     "../media:rtc_media_base",
     "../modules/video_capture:video_capture_module",
     "../rtc_base:checks",
-    "../rtc_base:rtc_base_approved",
+    "../rtc_base:rtc_base",
     "../rtc_base:rtc_task_queue",
     "../system_wrappers",
   ]
