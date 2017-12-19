@@ -26,9 +26,9 @@
 #include "media/base/mediaconstants.h"
 #include "media/base/mediaengine.h"  // For DataChannelType
 #include "media/base/streamparams.h"
-#include "p2p/base/sessiondescription.h"
 #include "p2p/base/transportdescriptionfactory.h"
 #include "pc/jseptransport.h"
+#include "pc/sessiondescription.h"
 
 namespace cricket {
 

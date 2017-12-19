@@ -8,23 +8,26 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "p2p/base/sessiondescription.h"
+#include "pc/sessiondescription.h"
 
 namespace cricket {
+namespace {
 
-ContentInfo* FindContentInfoByName(
-    ContentInfos& contents, const std::string& name) {
-  for (ContentInfos::iterator content = contents.begin();
-       content != contents.end(); ++content) {
-    if (content->name == name) {
-      return &(*content);
+ContentInfo* FindContentInfoByName(ContentInfos* contents,
+                                   const std::string& name) {
+  RTC_DCHECK(contents);
+  for (ContentInfo& content : *contents) {
+    if (content.name == name) {
+      return &content;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
-const ContentInfo* FindContentInfoByName(
-    const ContentInfos& contents, const std::string& name) {
+}  // namespace
+
+const ContentInfo* FindContentInfoByName(const ContentInfos& contents,
+                                         const std::string& name) {
   for (ContentInfos::const_iterator content = contents.begin();
        content != contents.end(); ++content) {
     if (content->name == name) {
@@ -34,8 +37,8 @@ const ContentInfo* FindContentInfoByName(
   return NULL;
 }
 
-const ContentInfo* FindContentInfoByType(
-    const ContentInfos& contents, const std::string& type) {
+const ContentInfo* FindContentInfoByType(const ContentInfos& contents,
+                                         const std::string& type) {
   for (ContentInfos::const_iterator content = contents.begin();
        content != contents.end(); ++content) {
     if (content->type == type) {
@@ -70,8 +73,8 @@ void ContentGroup::AddContentName(const std::string& content_name) {
 }
 
 bool ContentGroup::RemoveContentName(const std::string& content_name) {
-  ContentNames::iterator iter = std::find(
-      content_names_.begin(), content_names_.end(), content_name);
+  ContentNames::iterator iter =
+      std::find(content_names_.begin(), content_names_.end(), content_name);
   if (iter == content_names_.end()) {
     return false;
   }
@@ -108,7 +111,7 @@ SessionDescription* SessionDescription::Copy() const {
   SessionDescription* copy = new SessionDescription(*this);
   // Copy all ContentDescriptions.
   for (ContentInfos::iterator content = copy->contents_.begin();
-      content != copy->contents().end(); ++content) {
+       content != copy->contents().end(); ++content) {
     content->description = content->description->Copy();
   }
   return copy;
@@ -119,9 +122,8 @@ const ContentInfo* SessionDescription::GetContentByName(
   return FindContentInfoByName(contents_, name);
 }
 
-ContentInfo* SessionDescription::GetContentByName(
-    const std::string& name)  {
-  return FindContentInfoByName(contents_, name);
+ContentInfo* SessionDescription::GetContentByName(const std::string& name) {
+  return FindContentInfoByName(&contents_, name);
 }
 
 const ContentDescription* SessionDescription::GetContentDescriptionByName(
@@ -136,7 +138,7 @@ const ContentDescription* SessionDescription::GetContentDescriptionByName(
 
 ContentDescription* SessionDescription::GetContentDescriptionByName(
     const std::string& name) {
-  ContentInfo* cinfo = FindContentInfoByName(contents_, name);
+  ContentInfo* cinfo = FindContentInfoByName(&contents_, name);
   if (cinfo == NULL) {
     return NULL;
   }

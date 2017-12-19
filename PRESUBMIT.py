@@ -32,7 +32,6 @@ CPPLINT_BLACKLIST = [
   'modules/media_file',
   'modules/utility',
   'modules/video_capture',
-  'p2p/base/sessiondescription.cc',
   'p2p/base/session.cc',
   'p2p/base/session.h',
   'p2p/base/pseudotcp.cc',
