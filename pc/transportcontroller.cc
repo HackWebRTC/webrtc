@@ -40,6 +40,47 @@ struct CandidatesData : public rtc::MessageData {
   cricket::Candidates candidates;
 };
 
+bool VerifyCandidate(const cricket::Candidate& cand, std::string* error) {
+  // No address zero.
+  if (cand.address().IsNil() || cand.address().IsAnyIP()) {
+    *error = "candidate has address of zero";
+    return false;
+  }
+
+  // Disallow all ports below 1024, except for 80 and 443 on public addresses.
+  int port = cand.address().port();
+  if (cand.protocol() == cricket::TCP_PROTOCOL_NAME &&
+      (cand.tcptype() == cricket::TCPTYPE_ACTIVE_STR || port == 0)) {
+    // Expected for active-only candidates per
+    // http://tools.ietf.org/html/rfc6544#section-4.5 so no error.
+    // Libjingle clients emit port 0, in "active" mode.
+    return true;
+  }
+  if (port < 1024) {
+    if ((port != 80) && (port != 443)) {
+      *error = "candidate has port below 1024, but not 80 or 443";
+      return false;
+    }
+
+    if (cand.address().IsPrivateIP()) {
+      *error = "candidate has port of 80 or 443 with private IP address";
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool VerifyCandidates(const cricket::Candidates& candidates,
+                      std::string* error) {
+  for (const cricket::Candidate& candidate : candidates) {
+    if (!VerifyCandidate(candidate, error)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 }  // namespace
 
 namespace cricket {

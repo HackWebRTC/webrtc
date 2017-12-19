@@ -18,9 +18,9 @@
 
 #include "api/candidate.h"
 #include "p2p/base/dtlstransport.h"
-#include "p2p/base/jseptransport.h"
 #include "p2p/base/p2ptransportchannel.h"
 #include "pc/dtlssrtptransport.h"
+#include "pc/jseptransport.h"
 #include "pc/rtptransport.h"
 #include "pc/srtptransport.h"
 #include "rtc_base/asyncinvoker.h"

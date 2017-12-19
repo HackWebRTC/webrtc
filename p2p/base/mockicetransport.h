@@ -41,8 +41,6 @@ class MockIceTransport : public IceTransportInternal {
   MOCK_METHOD0(GetError, int());
   MOCK_CONST_METHOD0(GetIceRole, cricket::IceRole());
   MOCK_METHOD1(GetStats, bool(cricket::ConnectionInfos* infos));
-  MOCK_CONST_METHOD0(IsDtlsActive, bool());
-  MOCK_CONST_METHOD1(GetSslRole, bool(rtc::SSLRole* role));
 
   IceTransportState GetState() const override {
     return IceTransportState::STATE_INIT;
