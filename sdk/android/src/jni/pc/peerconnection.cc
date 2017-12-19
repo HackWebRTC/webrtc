@@ -173,6 +173,23 @@ void JavaToNativeRTCConfiguration(
     rtc_config->turn_customizer = reinterpret_cast<webrtc::TurnCustomizer*>(
         Java_TurnCustomizer_getNativeTurnCustomizer(jni, j_turn_customizer));
   }
+
+  rtc_config->disable_ipv6 =
+      Java_RTCConfiguration_getDisableIpv6(jni, j_rtc_config);
+  rtc_config->media_config.enable_dscp =
+      Java_RTCConfiguration_getEnableDscp(jni, j_rtc_config);
+  rtc_config->media_config.video.enable_cpu_overuse_detection =
+      Java_RTCConfiguration_getEnableCpuOveruseDetection(jni, j_rtc_config);
+  rtc_config->enable_rtp_data_channel =
+      Java_RTCConfiguration_getEnableRtpDataChannel(jni, j_rtc_config);
+  rtc_config->media_config.video.suspend_below_min_bitrate =
+      Java_RTCConfiguration_getSuspendBelowMinBitrate(jni, j_rtc_config);
+  rtc_config->screencast_min_bitrate = JavaToNativeOptionalInt(
+      jni, Java_RTCConfiguration_getScreencastMinBitrate(jni, j_rtc_config));
+  rtc_config->combined_audio_video_bwe = JavaToNativeOptionalBool(
+      jni, Java_RTCConfiguration_getCombinedAudioVideoBwe(jni, j_rtc_config));
+  rtc_config->enable_dtls_srtp = JavaToNativeOptionalBool(
+      jni, Java_RTCConfiguration_getEnableDtlsSrtp(jni, j_rtc_config));
 }
 
 rtc::KeyType GetRtcConfigKeyType(JNIEnv* env, jobject j_rtc_config) {
@@ -545,7 +562,9 @@ JNI_FUNCTION_DECLARATION(jboolean,
   PeerConnectionInterface::RTCConfiguration rtc_config(
       PeerConnectionInterface::RTCConfigurationType::kAggressive);
   JavaToNativeRTCConfiguration(jni, j_rtc_config, &rtc_config);
-  CopyConstraintsIntoRtcConfiguration(observer->constraints(), &rtc_config);
+  if (observer && observer->constraints()) {
+    CopyConstraintsIntoRtcConfiguration(observer->constraints(), &rtc_config);
+  }
   return ExtractNativePC(jni, j_pc)->SetConfiguration(rtc_config);
 }
 

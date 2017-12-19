@@ -132,7 +132,6 @@ public class PeerConnectionClient {
   private VideoSink localRender;
   private List<VideoRenderer.Callbacks> remoteRenders;
   private SignalingParameters signalingParameters;
-  private MediaConstraints pcConstraints;
   private int videoWidth;
   private int videoHeight;
   private int videoFps;
@@ -541,17 +540,6 @@ public class PeerConnectionClient {
   }
 
   private void createMediaConstraintsInternal() {
-    // Create peer connection constraints.
-    pcConstraints = new MediaConstraints();
-    // Enable DTLS for normal calls and disable for loopback calls.
-    if (peerConnectionParameters.loopback) {
-      pcConstraints.optional.add(
-          new MediaConstraints.KeyValuePair(DTLS_SRTP_KEY_AGREEMENT_CONSTRAINT, "false"));
-    } else {
-      pcConstraints.optional.add(
-          new MediaConstraints.KeyValuePair(DTLS_SRTP_KEY_AGREEMENT_CONSTRAINT, "true"));
-    }
-
     // Check if there is a camera on device and disable video call if not.
     if (videoCapturer == null) {
       Log.w(TAG, "No camera on device. Switch to audio only call.");
@@ -615,7 +603,6 @@ public class PeerConnectionClient {
     }
     Log.d(TAG, "Create peer connection.");
 
-    Log.d(TAG, "PCConstraints: " + pcConstraints.toString());
     queuedRemoteCandidates = new ArrayList<>();
 
     if (videoCallEnabled) {
@@ -633,8 +620,10 @@ public class PeerConnectionClient {
     rtcConfig.continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY;
     // Use ECDSA encryption.
     rtcConfig.keyType = PeerConnection.KeyType.ECDSA;
+    // Enable DTLS for normal calls and disable for loopback calls.
+    rtcConfig.enableDtlsSrtp = !peerConnectionParameters.loopback;
 
-    peerConnection = factory.createPeerConnection(rtcConfig, pcConstraints, pcObserver);
+    peerConnection = factory.createPeerConnection(rtcConfig, pcObserver);
 
     if (dataChannelEnabled) {
       DataChannel.Init init = new DataChannel.Init();

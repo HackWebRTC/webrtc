@@ -23,14 +23,14 @@ import java.io.File;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Queue;
-import java.util.ArrayDeque;
 import java.util.Map;
+import java.util.Queue;
 import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -661,10 +661,8 @@ public class PeerConnectionTest {
     config.continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY;
     config.iceRegatherIntervalRange = new PeerConnection.IntervalRange(1000, 2000);
 
-    MediaConstraints constraints = new MediaConstraints();
     ObserverExpectations offeringExpectations = new ObserverExpectations("PCTest:offerer");
-    PeerConnection offeringPC =
-        factory.createPeerConnection(config, constraints, offeringExpectations);
+    PeerConnection offeringPC = factory.createPeerConnection(config, offeringExpectations);
     assertNotNull(offeringPC);
   }
 
@@ -678,9 +676,6 @@ public class PeerConnectionTest {
     options.networkIgnoreMask = 0;
     PeerConnectionFactory factory = new PeerConnectionFactory(options);
 
-    MediaConstraints pcConstraints = new MediaConstraints();
-    pcConstraints.mandatory.add(new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"));
-
     List<PeerConnection.IceServer> iceServers = new ArrayList<>();
     iceServers.add(
         PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer());
@@ -688,14 +683,16 @@ public class PeerConnectionTest {
                        .setUsername("fakeUsername")
                        .setPassword("fakePassword")
                        .createIceServer());
+
+    PeerConnection.RTCConfiguration rtcConfig = new PeerConnection.RTCConfiguration(iceServers);
+    rtcConfig.enableDtlsSrtp = true;
+
     ObserverExpectations offeringExpectations = new ObserverExpectations("PCTest:offerer");
-    PeerConnection offeringPC =
-        factory.createPeerConnection(iceServers, pcConstraints, offeringExpectations);
+    PeerConnection offeringPC = factory.createPeerConnection(rtcConfig, offeringExpectations);
     assertNotNull(offeringPC);
 
     ObserverExpectations answeringExpectations = new ObserverExpectations("PCTest:answerer");
-    PeerConnection answeringPC =
-        factory.createPeerConnection(iceServers, pcConstraints, answeringExpectations);
+    PeerConnection answeringPC = factory.createPeerConnection(rtcConfig, answeringExpectations);
     assertNotNull(answeringPC);
 
     // We want to use the same camera for offerer & answerer, so create it here
@@ -918,9 +915,6 @@ public class PeerConnectionTest {
     options.networkIgnoreMask = 0;
     PeerConnectionFactory factory = new PeerConnectionFactory(options);
 
-    MediaConstraints pcConstraints = new MediaConstraints();
-    pcConstraints.mandatory.add(new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"));
-
     List<PeerConnection.IceServer> iceServers = new ArrayList<>();
     iceServers.add(
         PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer());
@@ -928,14 +922,16 @@ public class PeerConnectionTest {
                        .setUsername("fakeUsername")
                        .setPassword("fakePassword")
                        .createIceServer());
+
+    PeerConnection.RTCConfiguration rtcConfig = new PeerConnection.RTCConfiguration(iceServers);
+    rtcConfig.enableDtlsSrtp = true;
+
     ObserverExpectations offeringExpectations = new ObserverExpectations("PCTest:offerer");
-    PeerConnection offeringPC =
-        factory.createPeerConnection(iceServers, pcConstraints, offeringExpectations);
+    PeerConnection offeringPC = factory.createPeerConnection(rtcConfig, offeringExpectations);
     assertNotNull(offeringPC);
 
     ObserverExpectations answeringExpectations = new ObserverExpectations("PCTest:answerer");
-    PeerConnection answeringPC =
-        factory.createPeerConnection(iceServers, pcConstraints, answeringExpectations);
+    PeerConnection answeringPC = factory.createPeerConnection(rtcConfig, answeringExpectations);
     assertNotNull(answeringPC);
 
     offeringExpectations.expectRenegotiationNeeded();
@@ -1073,21 +1069,19 @@ public class PeerConnectionTest {
     options.networkIgnoreMask = 0;
     PeerConnectionFactory factory = new PeerConnectionFactory(options);
 
-    MediaConstraints pcConstraints = new MediaConstraints();
-    pcConstraints.mandatory.add(new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"));
-
     List<PeerConnection.IceServer> iceServers = new ArrayList<>();
     iceServers.add(
         PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer());
 
+    PeerConnection.RTCConfiguration rtcConfig = new PeerConnection.RTCConfiguration(iceServers);
+    rtcConfig.enableDtlsSrtp = true;
+
     ObserverExpectations offeringExpectations = new ObserverExpectations("PCTest:offerer");
-    PeerConnection offeringPC =
-        factory.createPeerConnection(iceServers, pcConstraints, offeringExpectations);
+    PeerConnection offeringPC = factory.createPeerConnection(rtcConfig, offeringExpectations);
     assertNotNull(offeringPC);
 
     ObserverExpectations answeringExpectations = new ObserverExpectations("PCTest:answerer");
-    PeerConnection answeringPC =
-        factory.createPeerConnection(iceServers, pcConstraints, answeringExpectations);
+    PeerConnection answeringPC = factory.createPeerConnection(rtcConfig, answeringExpectations);
     assertNotNull(answeringPC);
 
     // We want to use the same camera for offerer & answerer, so create it here
@@ -1269,8 +1263,7 @@ public class PeerConnectionTest {
     PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
     PeerConnectionFactory factory = new PeerConnectionFactory(options);
 
-    // This test is fine with default PC constraints and no ICE servers.
-    MediaConstraints pcConstraints = new MediaConstraints();
+    // This test is fine with no ICE servers.
     List<PeerConnection.IceServer> iceServers = new ArrayList<>();
 
     // Use OfferToReceiveAudio/Video to ensure every offer has an audio and
@@ -1285,13 +1278,11 @@ public class PeerConnectionTest {
 
     // This PeerConnection will only be used to generate offers.
     ObserverExpectations offeringExpectations = new ObserverExpectations("offerer");
-    PeerConnection offeringPC =
-        factory.createPeerConnection(iceServers, pcConstraints, offeringExpectations);
+    PeerConnection offeringPC = factory.createPeerConnection(iceServers, offeringExpectations);
     assertNotNull(offeringPC);
 
     ObserverExpectations expectations = new ObserverExpectations("PC under test");
-    PeerConnection pcUnderTest =
-        factory.createPeerConnection(iceServers, pcConstraints, expectations);
+    PeerConnection pcUnderTest = factory.createPeerConnection(iceServers, expectations);
     assertNotNull(pcUnderTest);
 
     // Add offerer media stream with just an audio track.

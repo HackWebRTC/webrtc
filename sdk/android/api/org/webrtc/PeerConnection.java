@@ -357,6 +357,17 @@ public class PeerConnection {
     public int maxIPv6Networks;
     public IntervalRange iceRegatherIntervalRange;
 
+    // These values will be overridden by MediaStream constraints if deprecated constraints-based
+    // create peerconnection interface is used.
+    public boolean disableIpv6;
+    public boolean enableDscp;
+    public boolean enableCpuOveruseDetection;
+    public boolean enableRtpDataChannel;
+    public boolean suspendBelowMinBitrate;
+    public Integer screencastMinBitrate;
+    public Boolean combinedAudioVideoBwe;
+    public Boolean enableDtlsSrtp;
+
     // This is an optional wrapper for the C++ webrtc::TurnCustomizer.
     public TurnCustomizer turnCustomizer;
 
@@ -383,6 +394,14 @@ public class PeerConnection {
       disableIPv6OnWifi = false;
       maxIPv6Networks = 5;
       iceRegatherIntervalRange = null;
+      disableIpv6 = false;
+      enableDscp = false;
+      enableCpuOveruseDetection = true;
+      enableRtpDataChannel = false;
+      suspendBelowMinBitrate = false;
+      screencastMinBitrate = null;
+      combinedAudioVideoBwe = null;
+      enableDtlsSrtp = null;
     }
 
     @CalledByNative("RTCConfiguration")
@@ -483,6 +502,46 @@ public class PeerConnection {
     @CalledByNative("RTCConfiguration")
     TurnCustomizer getTurnCustomizer() {
       return turnCustomizer;
+    }
+
+    @CalledByNative("RTCConfiguration")
+    boolean getDisableIpv6() {
+      return disableIpv6;
+    }
+
+    @CalledByNative("RTCConfiguration")
+    boolean getEnableDscp() {
+      return enableDscp;
+    }
+
+    @CalledByNative("RTCConfiguration")
+    boolean getEnableCpuOveruseDetection() {
+      return enableCpuOveruseDetection;
+    }
+
+    @CalledByNative("RTCConfiguration")
+    boolean getEnableRtpDataChannel() {
+      return enableRtpDataChannel;
+    }
+
+    @CalledByNative("RTCConfiguration")
+    boolean getSuspendBelowMinBitrate() {
+      return suspendBelowMinBitrate;
+    }
+
+    @CalledByNative("RTCConfiguration")
+    Integer getScreencastMinBitrate() {
+      return screencastMinBitrate;
+    }
+
+    @CalledByNative("RTCConfiguration")
+    Boolean getCombinedAudioVideoBwe() {
+      return combinedAudioVideoBwe;
+    }
+
+    @CalledByNative("RTCConfiguration")
+    Boolean getEnableDtlsSrtp() {
+      return enableDtlsSrtp;
     }
   };
 

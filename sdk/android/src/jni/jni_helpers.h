@@ -67,6 +67,7 @@ std::string JavaToStdString(JNIEnv* jni, const jstring& j_string);
 std::vector<std::string> JavaToStdVectorStrings(JNIEnv* jni, jobject list);
 
 rtc::Optional<int32_t> JavaToNativeOptionalInt(JNIEnv* jni, jobject integer);
+rtc::Optional<bool> JavaToNativeOptionalBool(JNIEnv* jni, jobject boolean);
 int64_t JavaToNativeLong(JNIEnv* env, jobject j_long);
 
 jobject NativeToJavaBoolean(JNIEnv* env, bool b);

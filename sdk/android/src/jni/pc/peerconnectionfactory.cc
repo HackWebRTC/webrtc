@@ -464,8 +464,10 @@ JNI_FUNCTION_DECLARATION(jlong,
 
   PeerConnectionObserverJni* observer =
       reinterpret_cast<PeerConnectionObserverJni*>(observer_p);
-  observer->SetConstraints(JavaToNativeMediaConstraints(jni, j_constraints));
-  CopyConstraintsIntoRtcConfiguration(observer->constraints(), &rtc_config);
+  if (j_constraints != nullptr) {
+    observer->SetConstraints(JavaToNativeMediaConstraints(jni, j_constraints));
+    CopyConstraintsIntoRtcConfiguration(observer->constraints(), &rtc_config);
+  }
   rtc::scoped_refptr<PeerConnectionInterface> pc(
       f->CreatePeerConnection(rtc_config, nullptr, nullptr, observer));
   return (jlong)pc.release();

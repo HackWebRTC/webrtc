@@ -219,6 +219,11 @@ public class PeerConnectionFactory {
     }
   }
 
+  /**
+   * Deprecated. PeerConnection constraints are deprecated. Supply values in rtcConfig struct
+   * instead and use the method without constraints in the signature.
+   */
+  @Deprecated
   public PeerConnection createPeerConnection(PeerConnection.RTCConfiguration rtcConfig,
       MediaConstraints constraints, PeerConnection.Observer observer) {
     long nativeObserver = createNativeObserver(observer);
@@ -233,10 +238,26 @@ public class PeerConnectionFactory {
     return new PeerConnection(nativePeerConnection, nativeObserver);
   }
 
+  /**
+   * Deprecated. PeerConnection constraints are deprecated. Supply values in rtcConfig struct
+   * instead and use the method without constraints in the signature.
+   */
+  @Deprecated
   public PeerConnection createPeerConnection(List<PeerConnection.IceServer> iceServers,
       MediaConstraints constraints, PeerConnection.Observer observer) {
     PeerConnection.RTCConfiguration rtcConfig = new PeerConnection.RTCConfiguration(iceServers);
     return createPeerConnection(rtcConfig, constraints, observer);
+  }
+
+  public PeerConnection createPeerConnection(
+      List<PeerConnection.IceServer> iceServers, PeerConnection.Observer observer) {
+    PeerConnection.RTCConfiguration rtcConfig = new PeerConnection.RTCConfiguration(iceServers);
+    return createPeerConnection(rtcConfig, observer);
+  }
+
+  public PeerConnection createPeerConnection(
+      PeerConnection.RTCConfiguration rtcConfig, PeerConnection.Observer observer) {
+    return createPeerConnection(rtcConfig, null /* constraints */, observer);
   }
 
   public MediaStream createLocalMediaStream(String label) {
