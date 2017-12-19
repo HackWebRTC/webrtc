@@ -7,7 +7,7 @@ vars = {
   'checkout_configuration': 'default',
   'checkout_instrumented_libraries': 'checkout_linux and checkout_configuration == "default"',
   'webrtc_git': 'https://webrtc.googlesource.com',
-  'chromium_revision': 'f958ad6287c02f6712e10f3f65131a85e43e78c1',
+  'chromium_revision': '56c566205c9256cbe11305edd18e1c8d93644277',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
@@ -38,7 +38,7 @@ deps = {
   # TODO(kjellander): Move this to be Android-only once the libevent dependency
   # in base/third_party/libevent is solved.
   'src/base':
-    Var('chromium_git') + '/chromium/src/base' + '@' + '0d16f466aca7dc9d5b793150ae3d412d077a7cd3',
+    Var('chromium_git') + '/chromium/src/base' + '@' + '1672aa6eb8f37d8cfa1b2eb7efd96f261c4720b2',
   'src/build':
     Var('chromium_git') + '/chromium/src/build' + '@' + '9f00b2f2ee7fb201cb7ae3ecc45c191758d2f074',
   'src/buildtools':
@@ -56,7 +56,7 @@ deps = {
   'src/testing':
     Var('chromium_git') + '/chromium/src/testing' + '@' + '9963748f1cfd09669a8f6f4afd1b125396709e25',
   'src/third_party':
-    Var('chromium_git') + '/chromium/src/third_party' + '@' + '4654005ae49dbdf9e989b0f93e78454ff0676dfb',
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + '44b2f56d5234c53bc21dd8ab8c281e79a606db87',
   'src/third_party/android_tools': {
     'url': Var('chromium_git') + '/android_tools.git' + '@' + 'a2e9bc7c1b41d983577907df51d339fb1e0fd02f',
     'condition': 'checkout_android',
@@ -155,7 +155,7 @@ deps = {
   'src/third_party/yasm/source/patched-yasm':
     Var('chromium_git') + '/chromium/deps/yasm/patched-yasm.git' + '@' + 'b98114e18d8b9b84586b10d24353ab8616d4c5fc',
   'src/tools':
-    Var('chromium_git') + '/chromium/src/tools' + '@' + '3df0a4da11eef0965829577f49074e06df3c19ff',
+    Var('chromium_git') + '/chromium/src/tools' + '@' + 'debf035092feab5549d6f77c3afc90de224d64a3',
   'src/tools/gyp':
     Var('chromium_git') + '/external/gyp.git' + '@' + 'd61a9397e668fa9843c4aa7da9e79460fe590bfb',
   'src/tools/swarming_client':
