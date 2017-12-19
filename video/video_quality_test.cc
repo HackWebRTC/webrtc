@@ -17,36 +17,22 @@
 #include <string>
 #include <vector>
 
-#include "api/optional.h"
-#include "call/call.h"
-#include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "logging/rtc_event_log/output/rtc_event_log_output_file.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
 #include "media/engine/internalencoderfactory.h"
 #include "media/engine/webrtcvideoengine.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"
-#include "modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "modules/rtp_rtcp/source/rtp_format.h"
 #include "modules/rtp_rtcp/source/rtp_utility.h"
 #include "modules/video_coding/codecs/h264/include/h264.h"
-#include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/codecs/vp8/include/vp8_common_types.h"
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
-#include "rtc_base/checks.h"
 #include "rtc_base/cpu_time.h"
-#include "rtc_base/event.h"
 #include "rtc_base/flags.h"
 #include "rtc_base/format_macros.h"
-#include "rtc_base/logging.h"
 #include "rtc_base/memory_usage.h"
 #include "rtc_base/pathutils.h"
-#include "rtc_base/platform_file.h"
-#include "rtc_base/ptr_util.h"
-#include "rtc_base/timeutils.h"
 #include "system_wrappers/include/cpu_info.h"
-#include "system_wrappers/include/field_trial.h"
-#include "test/gtest.h"
-#include "test/layer_filtering_transport.h"
+#include "test/rtp_file_writer.h"
 #include "test/run_loop.h"
 #include "test/statistics.h"
 #include "test/testsupport/fileutils.h"
@@ -55,8 +41,6 @@
 #include "test/vcm_capturer.h"
 #include "test/video_renderer.h"
 #include "voice_engine/include/voe_base.h"
-
-#include "test/rtp_file_writer.h"
 
 DEFINE_bool(save_worst_frame,
             false,
