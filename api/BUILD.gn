@@ -304,6 +304,20 @@ if (rtc_include_tests) {
     ]
   }
 
+  rtc_source_set("mock_rtp") {
+    testonly = true
+    sources = [
+      "test/mock_rtpreceiver.h",
+      "test/mock_rtpsender.h",
+    ]
+
+    deps = [
+      ":libjingle_peerconnection_api",
+      "../test:test_support",
+      "//testing/gmock",
+    ]
+  }
+
   rtc_source_set("mock_video_codec_factory") {
     testonly = true
     sources = [

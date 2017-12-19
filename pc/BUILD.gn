@@ -442,6 +442,7 @@ if (rtc_include_tests) {
     deps = [
       ":peerconnection",
       ":rtc_pc_base",
+      "../api:mock_rtp",
       "../rtc_base:checks",
       "../rtc_base:stringutils",
     ]
