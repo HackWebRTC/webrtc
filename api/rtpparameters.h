@@ -72,6 +72,7 @@ enum class DegradationPreference {
   BALANCED,
 };
 
+extern const double kDefaultBitratePriority;
 enum class PriorityType { VERY_LOW, LOW, MEDIUM, HIGH };
 
 struct RtcpFeedback {

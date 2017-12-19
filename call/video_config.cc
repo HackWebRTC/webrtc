@@ -54,6 +54,7 @@ VideoEncoderConfig::VideoEncoderConfig()
       encoder_specific_settings(nullptr),
       min_transmit_bitrate_bps(0),
       max_bitrate_bps(0),
+      bitrate_priority(1.0),
       number_of_streams(0) {}
 
 VideoEncoderConfig::VideoEncoderConfig(VideoEncoderConfig&&) = default;

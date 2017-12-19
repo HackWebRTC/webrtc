@@ -35,6 +35,7 @@ struct VideoStream {
   int min_bitrate_bps;
   int target_bitrate_bps;
   int max_bitrate_bps;
+  rtc::Optional<double> bitrate_priority;
 
   int max_qp;
 
@@ -142,6 +143,8 @@ class VideoEncoderConfig {
   // unless the estimated bandwidth indicates that the link can handle it.
   int min_transmit_bitrate_bps;
   int max_bitrate_bps;
+  // The bitrate priority used for all VideoStreams.
+  double bitrate_priority;
 
   // Max number of encoded VideoStreams to produce.
   size_t number_of_streams;
