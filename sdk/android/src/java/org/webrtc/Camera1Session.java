@@ -69,6 +69,12 @@ class Camera1Session implements CameraSession {
       return;
     }
 
+    if (camera == null) {
+      callback.onFailure(FailureType.ERROR,
+          "android.hardware.Camera.open returned null for camera id = " + cameraId);
+      return;
+    }
+
     try {
       camera.setPreviewTexture(surfaceTextureHelper.getSurfaceTexture());
     } catch (IOException e) {
