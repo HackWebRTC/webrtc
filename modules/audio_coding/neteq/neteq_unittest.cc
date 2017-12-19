@@ -28,9 +28,9 @@
 #include "modules/include/module_common_types.h"
 #include "rtc_base/flags.h"
 #include "rtc_base/ignore_wundef.h"
+#include "rtc_base/messagedigest.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/protobuf_utils.h"
-#include "rtc_base/sha1digest.h"
 #include "rtc_base/stringencode.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
@@ -174,9 +174,9 @@ class ResultSink {
   std::unique_ptr<rtc::MessageDigest> digest_;
 };
 
-ResultSink::ResultSink(const std::string &output_file)
+ResultSink::ResultSink(const std::string& output_file)
     : output_fp_(nullptr),
-      digest_(new rtc::Sha1Digest()) {
+      digest_(rtc::MessageDigestFactory::Create(rtc::DIGEST_SHA_1)) {
   if (!output_file.empty()) {
     output_fp_ = fopen(output_file.c_str(), "wb");
     EXPECT_TRUE(output_fp_ != NULL);
