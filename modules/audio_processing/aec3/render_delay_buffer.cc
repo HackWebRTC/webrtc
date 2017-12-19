@@ -67,6 +67,11 @@ class RenderDelayBufferImpl final : public RenderDelayBuffer {
   const Aec3Fft fft_;
   std::vector<float> render_ds_;
   const int buffer_headroom_;
+  bool last_call_was_render_ = false;
+  int num_api_calls_in_a_row_ = 0;
+  int max_observed_jitter_ = 1;
+  size_t capture_call_counter_ = 0;
+  size_t render_call_counter_ = 0;
 
   int LowRateBufferOffset() const { return DelayEstimatorOffset(config_) >> 1; }
   int MaxExternalDelayToInternalDelay(size_t delay) const;
@@ -179,6 +184,9 @@ RenderDelayBufferImpl::~RenderDelayBufferImpl() = default;
 
 // Resets the buffer delays and clears the reported delays.
 void RenderDelayBufferImpl::Reset() {
+  last_call_was_render_ = false;
+  num_api_calls_in_a_row_ = 1;
+
   // Pre-fill the low rate buffer (which is used for delay estimation) to add
   // headroom for the allowed api call jitter.
   low_rate_.read = low_rate_.OffsetIndex(
@@ -195,6 +203,22 @@ void RenderDelayBufferImpl::Reset() {
 // Inserts a new block into the render buffers.
 RenderDelayBuffer::BufferingEvent RenderDelayBufferImpl::Insert(
     const std::vector<std::vector<float>>& block) {
+  ++render_call_counter_;
+  if (delay_) {
+    if (!last_call_was_render_) {
+      last_call_was_render_ = true;
+      num_api_calls_in_a_row_ = 1;
+    } else {
+      if (++num_api_calls_in_a_row_ > max_observed_jitter_) {
+        max_observed_jitter_ = num_api_calls_in_a_row_;
+        RTC_LOG(LS_INFO)
+            << "New max number api jitter observed at render block "
+            << render_call_counter_ << ":  " << num_api_calls_in_a_row_
+            << " blocks";
+      }
+    }
+  }
+
   // Increase the write indices to where the new blocks should be written.
   const int previous_write = blocks_.write;
   IncreaseWriteIndices(sub_block_size_, &blocks_, &spectra_, &ffts_,
@@ -220,6 +244,22 @@ RenderDelayBuffer::BufferingEvent RenderDelayBufferImpl::Insert(
 RenderDelayBuffer::BufferingEvent
 RenderDelayBufferImpl::PrepareCaptureProcessing() {
   BufferingEvent event = BufferingEvent::kNone;
+  ++capture_call_counter_;
+
+  if (delay_) {
+    if (last_call_was_render_) {
+      last_call_was_render_ = false;
+      num_api_calls_in_a_row_ = 1;
+    } else {
+      if (++num_api_calls_in_a_row_ > max_observed_jitter_) {
+        max_observed_jitter_ = num_api_calls_in_a_row_;
+        RTC_LOG(LS_INFO)
+            << "New max number api jitter observed at capture block "
+            << capture_call_counter_ << ":  " << num_api_calls_in_a_row_
+            << " blocks";
+      }
+    }
+  }
 
   if (RenderUnderrun(internal_delay_, blocks_, low_rate_)) {
     // Don't increase the read indices if there is a render underrun.
