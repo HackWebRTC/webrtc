@@ -438,6 +438,7 @@ if (rtc_include_tests) {
     defines = []
     deps = [
       "../api:video_frame_api_i420",
+      "../modules/audio_processing:mocks",
       "../pc:rtc_pc",
       "../pc:rtc_pc_base",
       "../rtc_base:checks",

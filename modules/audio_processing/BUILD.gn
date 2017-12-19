@@ -404,11 +404,13 @@ rtc_source_set("apm_logging") {
 rtc_source_set("aec_core") {
   configs += [ ":apm_debug_dump" ]
   sources = [
+    "aec/aec_common.h",
     "aec/aec_core.cc",
     "aec/aec_core.h",
     "aec/aec_core_optimized_methods.h",
     "aecm/aecm_core.cc",
     "aecm/aecm_core.h",
+    "aecm/aecm_defines.h",
     "aecm/echo_control_mobile.cc",
     "aecm/echo_control_mobile.h",
     "utility/block_mean_calculator.cc",
@@ -493,6 +495,19 @@ rtc_source_set("aec_core") {
 }
 
 if (rtc_include_tests) {
+  rtc_source_set("mocks") {
+    testonly = true
+    sources = [
+      "include/mock_audio_processing.h",
+    ]
+    deps = [
+      ":aec_dump_interface",
+      ":audio_processing",
+      ":audio_processing_statistics",
+      "../../test:test_support",
+    ]
+  }
+
   group("audio_processing_tests") {
     testonly = true
     deps = [
@@ -524,6 +539,10 @@ if (rtc_include_tests) {
     sources = [
       "aec/echo_cancellation_unittest.cc",
       "aec/system_delay_unittest.cc",
+      "aec3/mock/mock_block_processor.h",
+      "aec3/mock/mock_echo_remover.h",
+      "aec3/mock/mock_render_delay_buffer.h",
+      "aec3/mock/mock_render_delay_controller.h",
       "agc/agc_manager_direct_unittest.cc",
       "agc/loudness_histogram_unittest.cc",
       "agc/mock_agc.h",
@@ -531,6 +550,7 @@ if (rtc_include_tests) {
       "beamformer/array_util_unittest.cc",
       "beamformer/complex_matrix_unittest.cc",
       "beamformer/covariance_matrix_generator_unittest.cc",
+      "beamformer/matrix_test_helpers.h",
       "beamformer/matrix_unittest.cc",
       "beamformer/mock_nonlinear_beamformer.h",
       "config_unittest.cc",
@@ -564,6 +584,7 @@ if (rtc_include_tests) {
       ":apm_logging",
       ":audio_processing",
       ":audioproc_test_utils",
+      ":mocks",
       "..:module_api",
       "../..:webrtc_common",
       "../../:typedefs",
