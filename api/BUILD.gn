@@ -90,7 +90,6 @@ rtc_static_library("libjingle_peerconnection_api") {
     ":optional",
     ":rtc_stats_api",
     ":video_frame_api",
-    "../rtc_base:checks",
     "audio_codecs:audio_codecs_api",
 
     # Basically, don't add stuff here. You might break sensitive downstream
@@ -105,11 +104,8 @@ rtc_static_library("libjingle_peerconnection_api") {
     "../rtc_base:rtc_base_approved",
     "../rtc_base:stringutils",
   ]
-
-  # This is needed until bugs.webrtc.org/7504 is removed so this target can
-  # properly depend on ../media:rtc_media_base
-  # TODO(kjellander): Remove this dependency.
   if (is_nacl) {
+    # This is needed by .h files included from rtc_base.
     deps += [ "//native_client_sdk/src/libraries/nacl_io" ]
   }
 }
@@ -119,7 +115,7 @@ rtc_source_set("peerconnection_and_implicit_call_api") {
   # and the entire call module with it. We need to either get rid of this
   # dependency or pull most of call/ into the API. For now, silence the warnings
   # this creates since it creates a circular dependency (call very much depends
-  # on API). See bugs.webrtc.org/7504.
+  # on API). See bugs.webrtc.org/8667.
   check_includes = false
   sources = [
     "peerconnectioninterface.h",
