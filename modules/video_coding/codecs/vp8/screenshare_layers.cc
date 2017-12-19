@@ -113,6 +113,14 @@ TemporalLayers::FrameConfig ScreenshareLayers::UpdateLayerConfig(
   }
 
   const int64_t now_ms = clock_->TimeInMilliseconds();
+  if (target_framerate_.value_or(0) > 0 &&
+      encode_framerate_.Rate(now_ms).value_or(0) > *target_framerate_) {
+    // Max framerate exceeded, drop frame.
+    return TemporalLayers::FrameConfig(kNone, kNone, kNone);
+  }
+
+  if (stats_.first_frame_time_ms_ == -1)
+    stats_.first_frame_time_ms_ = now_ms;
 
   int64_t unwrapped_timestamp = time_wrap_handler_.Unwrap(timestamp);
   int64_t ts_diff;
@@ -121,24 +129,6 @@ TemporalLayers::FrameConfig ScreenshareLayers::UpdateLayerConfig(
   } else {
     ts_diff = unwrapped_timestamp - last_timestamp_;
   }
-
-  // If input frame rate exceeds target frame rate, either over a one second
-  // averaging window, or if frame interval is below 90% of desired value,
-  // drop frame.
-  if (target_framerate_) {
-    bool exceeds_average_rate =
-        encode_framerate_.Rate(now_ms).value_or(0) > *target_framerate_;
-    bool exceeds_inter_frame_delay =
-        ts_diff < (kOneSecond90Khz * 9) / (*target_framerate_ * 10);
-    if (exceeds_average_rate || exceeds_inter_frame_delay) {
-      // Max framerate exceeded, drop frame.
-      return TemporalLayers::FrameConfig(kNone, kNone, kNone);
-    }
-  }
-
-  if (stats_.first_frame_time_ms_ == -1)
-    stats_.first_frame_time_ms_ = now_ms;
-
   // Make sure both frame droppers leak out bits.
   layers_[0].UpdateDebt(ts_diff / 90);
   layers_[1].UpdateDebt(ts_diff / 90);

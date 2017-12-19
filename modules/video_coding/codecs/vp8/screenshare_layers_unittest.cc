@@ -442,12 +442,7 @@ TEST_F(ScreenshareLayerTest, RespectsMaxIntervalBetweenFrames) {
   ASSERT_GT(kStartTimestamp + 90 * (kLargeFrameSizeBytes * 8) / kLowBitrateKbps,
             kStartTimestamp + (ScreenshareLayers::kMaxFrameIntervalMs * 90));
 
-  // Expect drop one frame interval before the two second timeout. If we try
-  // any later, the frame will be dropped anyway by the frame rate throttling
-  // logic.
-  EXPECT_TRUE(layers_->UpdateLayerConfig(kTwoSecondsLater - kTimestampDelta5Fps)
-                  .drop_frame);
-
+  EXPECT_TRUE(layers_->UpdateLayerConfig(kTwoSecondsLater).drop_frame);
   // More than two seconds has passed since last frame, one should be emitted
   // even if bitrate target is then exceeded.
   EXPECT_EQ(kTl0Flags, VP8EncoderImpl::EncodeFlags(
@@ -477,6 +472,8 @@ TEST_F(ScreenshareLayerTest, UpdatesHistograms) {
       // Simulate one overshoot.
       layers_->FrameEncoded(0, 0);
       overshoot = true;
+      flags =
+          VP8EncoderImpl::EncodeFlags(layers_->UpdateLayerConfig(timestamp));
     }
 
     if (flags == kTl0Flags) {
@@ -592,32 +589,19 @@ TEST_F(ScreenshareLayerTest, 2LayersSyncAtOvershootDrop) {
   // Simulate overshoot of this frame.
   layers_->FrameEncoded(0, -1);
 
+  // Reencode, frame config, flags and codec specific info should remain the
+  // same as for the dropped frame.
+  timestamp_ -= kTimestampDelta5Fps;  // Undo last timestamp increment.
+  TemporalLayers::FrameConfig new_tl_config =
+      layers_->UpdateLayerConfig(timestamp_);
+  EXPECT_EQ(tl_config_, new_tl_config);
+
   config_updated_ = layers_->UpdateConfiguration(&cfg_);
   EXPECT_EQ(kTl1SyncFlags, VP8EncoderImpl::EncodeFlags(tl_config_));
 
   CodecSpecificInfoVP8 new_vp8_info;
   layers_->PopulateCodecSpecific(false, tl_config_, &new_vp8_info, timestamp_);
   EXPECT_TRUE(new_vp8_info.layerSync);
-}
-
-TEST_F(ScreenshareLayerTest, DropOnTooShortFrameInterval) {
-  // Run grace period so we have existing frames in both TL0 and Tl1.
-  EXPECT_TRUE(RunGracePeriod());
-
-  // Add a large gap, so there's plenty of room in the rate tracker.
-  timestamp_ += kTimestampDelta5Fps * 3;
-  EXPECT_FALSE(layers_->UpdateLayerConfig(timestamp_).drop_frame);
-  layers_->FrameEncoded(frame_size_, kDefaultQp);
-
-  // Frame interval below 90% if desired time is not allowed, try inserting
-  // frame just before this limit.
-  const int64_t kMinFrameInterval = (kTimestampDelta5Fps * 9) / 10;
-  timestamp_ += kMinFrameInterval - 90;
-  EXPECT_TRUE(layers_->UpdateLayerConfig(timestamp_).drop_frame);
-
-  // Try again at the limit, now it should pass.
-  timestamp_ += 90;
-  EXPECT_FALSE(layers_->UpdateLayerConfig(timestamp_).drop_frame);
 }
 
 }  // namespace webrtc
