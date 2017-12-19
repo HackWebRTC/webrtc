@@ -749,8 +749,7 @@ def CheckOrphanHeaders(input_api, output_api):
   # We need to wait until we have an input_api object and use this
   # roundabout construct to import prebubmit_checks_lib because this file is
   # eval-ed and thus doesn't have __file__.
-  error_msg = """Header file {} is not listed in any GN target.
-  Please create a target or add it to an existing one in {}"""
+  error_msg = """{} should be listed in {}."""
   results = []
   with _AddToPath(input_api.os_path.join(
       input_api.PresubmitLocalPath(), 'tools_webrtc', 'presubmit_checks_lib')):
@@ -766,7 +765,7 @@ def CheckOrphanHeaders(input_api, output_api):
       in_build_gn = IsHeaderInBuildGn(file_path, gn_file_path)
       if not in_build_gn:
         results.append(output_api.PresubmitError(error_msg.format(
-            file_path, gn_file_path)))
+            f.LocalPath(), os.path.relpath(gn_file_path))))
   return results
 
 
