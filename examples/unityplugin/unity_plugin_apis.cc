@@ -24,13 +24,12 @@ static std::map<int, rtc::scoped_refptr<SimplePeerConnection>>
 int CreatePeerConnection(const char** turn_urls,
                          const int no_of_urls,
                          const char* username,
-                         const char* credential,
-                         bool mandatory_receive_video) {
+                         const char* credential) {
   g_peer_connection_map[g_peer_connection_id] =
       new rtc::RefCountedObject<SimplePeerConnection>();
 
   if (!g_peer_connection_map[g_peer_connection_id]->InitializePeerConnection(
-          turn_urls, no_of_urls, username, credential, mandatory_receive_video))
+          turn_urls, no_of_urls, username, credential, false))
     return -1;
 
   return g_peer_connection_id++;

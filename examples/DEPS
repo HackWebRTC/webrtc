@@ -4,7 +4,6 @@ include_rules = [
   "+media",
   "+modules/audio_device",
   "+modules/video_capture",
-  "+modules/audio_processing",
   "+p2p",
   "+pc",
   "+third_party/libyuv",
