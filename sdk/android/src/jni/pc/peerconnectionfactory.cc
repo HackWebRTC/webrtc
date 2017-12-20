@@ -93,14 +93,6 @@ void PeerConnectionFactorySignalingThreadReady() {
   Java_PeerConnectionFactory_onSignalingThreadReady(env);
 }
 
-JNI_FUNCTION_DECLARATION(jlong,
-                         PeerConnectionFactory_createNativeObserver,
-                         JNIEnv* jni,
-                         jclass,
-                         jobject j_observer) {
-  return (jlong) new PeerConnectionObserverJni(jni, j_observer);
-}
-
 JNI_FUNCTION_DECLARATION(void,
                          PeerConnectionFactory_initializeNativeAndroidGlobals,
                          JNIEnv* jni,

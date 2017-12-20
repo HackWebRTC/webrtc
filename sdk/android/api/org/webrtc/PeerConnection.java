@@ -551,6 +551,14 @@ public class PeerConnection {
   private List<RtpSender> senders = new ArrayList<>();
   private List<RtpReceiver> receivers = new ArrayList<>();
 
+  /**
+   * Wraps a PeerConnection created by the factory. Can be used by clients that want to implement
+   * their PeerConnection creation in JNI.
+   */
+  public PeerConnection(NativePeerConnectionFactory factory) {
+    this(factory.createNativePeerConnection(), 0 /* nativeObserver */);
+  }
+
   PeerConnection(long nativePeerConnection, long nativeObserver) {
     this.nativePeerConnection = nativePeerConnection;
     this.nativeObserver = nativeObserver;
@@ -745,7 +753,9 @@ public class PeerConnection {
     }
     receivers.clear();
     JniCommon.nativeReleaseRef(nativePeerConnection);
-    freeObserver(nativeObserver);
+    if (nativeObserver != 0) {
+      freeNativePeerConnectionObserver(nativeObserver);
+    }
   }
 
   @CalledByNative
@@ -753,7 +763,8 @@ public class PeerConnection {
     return nativePeerConnection;
   }
 
-  private static native void freeObserver(long nativeObserver);
+  public static native long createNativePeerConnectionObserver(Observer observer);
+  public static native void freeNativePeerConnectionObserver(long nativeObserver);
 
   private native boolean setNativeConfiguration(RTCConfiguration config, long nativeObserver);
 

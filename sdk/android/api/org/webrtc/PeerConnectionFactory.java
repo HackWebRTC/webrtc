@@ -226,7 +226,7 @@ public class PeerConnectionFactory {
   @Deprecated
   public PeerConnection createPeerConnection(PeerConnection.RTCConfiguration rtcConfig,
       MediaConstraints constraints, PeerConnection.Observer observer) {
-    long nativeObserver = createNativeObserver(observer);
+    long nativeObserver = PeerConnection.createNativePeerConnectionObserver(observer);
     if (nativeObserver == 0) {
       return null;
     }
@@ -387,8 +387,6 @@ public class PeerConnectionFactory {
   private static native long createNativePeerConnectionFactoryWithAudioProcessing(Options options,
       VideoEncoderFactory encoderFactory, VideoDecoderFactory decoderFactory,
       long nativeAudioProcessor);
-
-  private static native long createNativeObserver(PeerConnection.Observer observer);
 
   private static native long createNativePeerConnection(long nativeFactory,
       PeerConnection.RTCConfiguration rtcConfig, MediaConstraints constraints, long nativeObserver);

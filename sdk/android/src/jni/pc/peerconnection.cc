@@ -440,8 +440,16 @@ jobjectArray PeerConnectionObserverJni::NativeToJavaMediaStreamArray(
   return java_streams;
 }
 
+JNI_FUNCTION_DECLARATION(jlong,
+                         PeerConnection_createNativePeerConnectionObserver,
+                         JNIEnv* jni,
+                         jclass,
+                         jobject j_observer) {
+  return jlongFromPointer(new PeerConnectionObserverJni(jni, j_observer));
+}
+
 JNI_FUNCTION_DECLARATION(void,
-                         PeerConnection_freeObserver,
+                         PeerConnection_freeNativePeerConnectionObserver,
                          JNIEnv*,
                          jclass,
                          jlong j_p) {
