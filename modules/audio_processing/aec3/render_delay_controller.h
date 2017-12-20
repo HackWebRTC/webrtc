@@ -38,9 +38,6 @@ class RenderDelayController {
   virtual rtc::Optional<size_t> GetDelay(
       const DownsampledRenderBuffer& render_buffer,
       rtc::ArrayView<const float> capture) = 0;
-
-  // Returns an approximate value for the headroom in the buffer alignment.
-  virtual rtc::Optional<size_t> AlignmentHeadroomSamples() const = 0;
 };
 }  // namespace webrtc
 

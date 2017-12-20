@@ -35,9 +35,6 @@ class RenderDelayControllerImpl final : public RenderDelayController {
   void SetDelay(size_t render_delay) override;
   rtc::Optional<size_t> GetDelay(const DownsampledRenderBuffer& render_buffer,
                                  rtc::ArrayView<const float> capture) override;
-  rtc::Optional<size_t> AlignmentHeadroomSamples() const override {
-    return headroom_samples_;
-  }
 
  private:
   static int instance_count_;
@@ -45,7 +42,6 @@ class RenderDelayControllerImpl final : public RenderDelayController {
   rtc::Optional<size_t> delay_;
   EchoPathDelayEstimator delay_estimator_;
   size_t align_call_counter_ = 0;
-  rtc::Optional<size_t> headroom_samples_;
   std::vector<float> delay_buf_;
   int delay_buf_index_ = 0;
   RenderDelayControllerMetrics metrics_;
@@ -91,7 +87,6 @@ RenderDelayControllerImpl::~RenderDelayControllerImpl() = default;
 void RenderDelayControllerImpl::Reset() {
   delay_ = rtc::nullopt;
   align_call_counter_ = 0;
-  headroom_samples_ = rtc::nullopt;
   std::fill(delay_buf_.begin(), delay_buf_.end(), 0.f);
   delay_estimator_.Reset();
 }
@@ -126,11 +121,6 @@ rtc::Optional<size_t> RenderDelayControllerImpl::GetDelay(
     // Compute and set new render delay buffer delay.
     if (align_call_counter_ > kNumBlocksPerSecond) {
       delay_ = ComputeNewBufferDelay(delay_, static_cast<int>(*delay_samples));
-      // Update render delay buffer headroom.
-      const int headroom =
-          static_cast<int>(*delay_samples) - *delay_ * kBlockSize;
-      RTC_DCHECK_LE(0, headroom);
-      headroom_samples_ = headroom;
     }
 
     metrics_.Update(static_cast<int>(*delay_samples), delay_ ? *delay_ : 0);

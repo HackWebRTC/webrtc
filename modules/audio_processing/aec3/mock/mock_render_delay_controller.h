@@ -30,7 +30,6 @@ class MockRenderDelayController : public RenderDelayController {
       GetDelay,
       rtc::Optional<size_t>(const DownsampledRenderBuffer& render_buffer,
                             rtc::ArrayView<const float> capture));
-  MOCK_CONST_METHOD0(AlignmentHeadroomSamples, rtc::Optional<size_t>());
 };
 
 }  // namespace test

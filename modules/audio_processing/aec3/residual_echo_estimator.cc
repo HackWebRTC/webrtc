@@ -108,17 +108,10 @@ void ResidualEchoEstimator::Estimate(
       R2->fill((*std::max_element(R2->begin(), R2->end())) * 100.f);
     }
   } else {
-    const rtc::Optional<size_t> delay =
-        aec_state.ExternalDelay()
-            ? (aec_state.FilterDelay() ? aec_state.FilterDelay()
-                                       : aec_state.ExternalDelay())
-            : rtc::Optional<size_t>();
-
     // Estimate the echo generating signal power.
     std::array<float, kFftLengthBy2Plus1> X2;
-    if (aec_state.ExternalDelay() && aec_state.FilterDelay()) {
-      RTC_DCHECK(delay);
-      const int delay_use = static_cast<int>(*delay);
+    if (aec_state.FilterDelay()) {
+      const int delay_use = static_cast<int>(*aec_state.FilterDelay());
 
       // Computes the spectral power over the blocks surrounding the delay.
       constexpr int kKnownDelayRenderWindowSize = 5;
@@ -147,12 +140,9 @@ void ResidualEchoEstimator::Estimate(
                       config_.ep_strength.bounded_erl,
                       aec_state.TransparentMode(), X2, Y2, R2);
 
-    if (aec_state.ExternalDelay() && aec_state.FilterDelay() &&
-        aec_state.SaturatedEcho()) {
+    if (aec_state.FilterDelay() && aec_state.SaturatedEcho()) {
       AddEchoReverb(*R2, aec_state.SaturatedEcho(),
-                    std::min(static_cast<size_t>(config_.filter.length_blocks),
-                             delay.value_or(config_.filter.length_blocks)),
-                    aec_state.ReverbDecay(), R2);
+                    config_.filter.length_blocks, aec_state.ReverbDecay(), R2);
     }
   }
 

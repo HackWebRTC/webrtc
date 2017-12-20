@@ -109,7 +109,6 @@ void AecState::Update(
         adaptive_filter_frequency_response,
     const std::vector<float>& adaptive_filter_impulse_response,
     bool converged_filter,
-    const rtc::Optional<size_t>& external_delay_samples,
     const RenderBuffer& render_buffer,
     const std::array<float, kFftLengthBy2Plus1>& E2_main,
     const std::array<float, kFftLengthBy2Plus1>& Y2,
@@ -133,12 +132,6 @@ void AecState::Update(
 
   // Estimate delays.
   filter_delay_ = EstimateFilterDelay(adaptive_filter_frequency_response);
-
-  // TODO(peah): Remove the dependency on the external delay.
-  external_delay_ =
-      external_delay_samples
-          ? rtc::Optional<size_t>(*external_delay_samples / kBlockSize)
-          : rtc::nullopt;
 
   // Update the ERL and ERLE measures.
   if (converged_filter && capture_block_counter_ >= 2 * kNumBlocksPerSecond) {
@@ -165,8 +158,7 @@ void AecState::Update(
   usable_linear_estimate_ =
       !echo_saturation_ &&
       (converged_filter || filter_has_had_time_to_converge_) &&
-      capture_block_counter_ >= 2 * kNumBlocksPerSecond && external_delay_ &&
-      !TransparentMode();
+      capture_block_counter_ >= 2 * kNumBlocksPerSecond && !TransparentMode();
 
   // After an amount of active render samples for which an echo should have been
   // detected in the capture signal if the ERL was not infinite, flag that a

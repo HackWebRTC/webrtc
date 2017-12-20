@@ -26,9 +26,8 @@ class MockEchoRemover : public EchoRemover {
  public:
   virtual ~MockEchoRemover() = default;
 
-  MOCK_METHOD5(ProcessCapture,
-               void(const rtc::Optional<size_t>& echo_path_delay_samples,
-                    const EchoPathVariability& echo_path_variability,
+  MOCK_METHOD4(ProcessCapture,
+               void(const EchoPathVariability& echo_path_variability,
                     bool capture_signal_saturation,
                     RenderBuffer* render_buffer,
                     std::vector<std::vector<float>>* capture));

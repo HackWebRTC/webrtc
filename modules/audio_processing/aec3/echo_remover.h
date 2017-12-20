@@ -34,7 +34,6 @@ class EchoRemover {
   // supplied render signal is assumed to be pre-aligned with the capture
   // signal.
   virtual void ProcessCapture(
-      const rtc::Optional<size_t>& echo_path_delay_samples,
       const EchoPathVariability& echo_path_variability,
       bool capture_signal_saturation,
       RenderBuffer* render_buffer,

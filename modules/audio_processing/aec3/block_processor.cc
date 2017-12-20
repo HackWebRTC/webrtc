@@ -182,9 +182,8 @@ void BlockProcessorImpl::ProcessCapture(
 
   // Remove the echo from the capture signal.
   echo_remover_->ProcessCapture(
-      delay_controller_->AlignmentHeadroomSamples(), echo_path_variability,
-      capture_signal_saturation, render_buffer_->GetRenderBuffer(),
-      capture_block);
+      echo_path_variability, capture_signal_saturation,
+      render_buffer_->GetRenderBuffer(), capture_block);
 
   // Update the metrics.
   metrics_.UpdateCapture(false);

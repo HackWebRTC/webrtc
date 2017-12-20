@@ -97,7 +97,6 @@ TEST(RenderDelayController, BasicApiCalls) {
               render_delay_buffer->GetDownsampledRenderBuffer(), capture_block);
         }
         EXPECT_TRUE(delay_blocks);
-        EXPECT_FALSE(delay_controller->AlignmentHeadroomSamples());
         EXPECT_EQ(config.delay.min_echo_path_delay_blocks, delay_blocks);
       }
     }
@@ -147,12 +146,6 @@ TEST(RenderDelayController, Alignment) {
                               kDelayHeadroomBlocks);
 
           EXPECT_EQ(expected_delay_blocks, delay_blocks);
-
-          const rtc::Optional<size_t> headroom_samples =
-              delay_controller->AlignmentHeadroomSamples();
-          ASSERT_TRUE(headroom_samples);
-          EXPECT_NEAR(delay_samples - *delay_blocks * kBlockSize,
-                      *headroom_samples, 4);
         }
       }
     }
@@ -197,10 +190,6 @@ TEST(RenderDelayController, NonCausalAlignment) {
           }
 
           ASSERT_FALSE(delay_blocks);
-
-          const rtc::Optional<size_t> headroom_samples =
-              delay_controller->AlignmentHeadroomSamples();
-          ASSERT_FALSE(headroom_samples);
         }
       }
     }
@@ -262,12 +251,6 @@ TEST(RenderDelayController, AlignmentWithJitter) {
 
           ASSERT_TRUE(delay_blocks);
           EXPECT_EQ(expected_delay_blocks, *delay_blocks);
-
-          const rtc::Optional<size_t> headroom_samples =
-              delay_controller->AlignmentHeadroomSamples();
-          ASSERT_TRUE(headroom_samples);
-          EXPECT_NEAR(delay_samples - *delay_blocks * kBlockSize,
-                      *headroom_samples, 4);
         }
       }
     }
@@ -292,7 +275,6 @@ TEST(RenderDelayController, InitialHeadroom) {
         std::unique_ptr<RenderDelayController> delay_controller(
             RenderDelayController::Create(
                 config, RenderDelayBuffer::DelayEstimatorOffset(config), rate));
-        EXPECT_FALSE(delay_controller->AlignmentHeadroomSamples());
       }
     }
   }

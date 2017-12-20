@@ -58,8 +58,7 @@ class EchoRemoverImpl final : public EchoRemover {
   // Removes the echo from a block of samples from the capture signal. The
   // supplied render signal is assumed to be pre-aligned with the capture
   // signal.
-  void ProcessCapture(const rtc::Optional<size_t>& echo_path_delay_samples,
-                      const EchoPathVariability& echo_path_variability,
+  void ProcessCapture(const EchoPathVariability& echo_path_variability,
                       bool capture_signal_saturation,
                       RenderBuffer* render_buffer,
                       std::vector<std::vector<float>>* capture) override;
@@ -120,7 +119,6 @@ void EchoRemoverImpl::GetMetrics(EchoControl::Metrics* metrics) const {
 }
 
 void EchoRemoverImpl::ProcessCapture(
-    const rtc::Optional<size_t>& echo_path_delay_samples,
     const EchoPathVariability& echo_path_variability,
     bool capture_signal_saturation,
     RenderBuffer* render_buffer,
@@ -179,9 +177,8 @@ void EchoRemoverImpl::ProcessCapture(
   // Update the AEC state information.
   aec_state_.Update(subtractor_.FilterFrequencyResponse(),
                     subtractor_.FilterImpulseResponse(),
-                    subtractor_.ConvergedFilter(), echo_path_delay_samples,
-                    *render_buffer, E2_main, Y2, x0, subtractor_output.s_main,
-                    echo_leakage_detected_);
+                    subtractor_.ConvergedFilter(), *render_buffer, E2_main, Y2,
+                    x0, subtractor_output.s_main, echo_leakage_detected_);
 
   // Choose the linear output.
   output_selector_.FormLinearOutput(!aec_state_.TransparentMode(), e_main, y0);
@@ -238,9 +235,6 @@ void EchoRemoverImpl::ProcessCapture(
   data_dumper_->DumpRaw(
       "aec3_filter_delay",
       aec_state_.FilterDelay() ? *aec_state_.FilterDelay() : -1);
-  data_dumper_->DumpRaw(
-      "aec3_external_delay",
-      aec_state_.ExternalDelay() ? *aec_state_.ExternalDelay() : -1);
   data_dumper_->DumpRaw("aec3_capture_saturation",
                         aec_state_.SaturatedCapture() ? 1 : 0);
 }
