@@ -96,10 +96,8 @@ void ResidualEchoEstimator::Estimate(
 
   // Estimate the residual echo power.
   if (aec_state.UsableLinearEstimate()) {
-    RTC_DCHECK(aec_state.FilterDelay());
-    const int filter_delay = *aec_state.FilterDelay();
-    LinearEstimate(S2_linear, aec_state.Erle(), filter_delay, R2);
-    AddEchoReverb(S2_linear, aec_state.SaturatedEcho(), filter_delay,
+    LinearEstimate(S2_linear, aec_state.Erle(), aec_state.FilterDelay(), R2);
+    AddEchoReverb(S2_linear, aec_state.SaturatedEcho(), aec_state.FilterDelay(),
                   aec_state.ReverbDecay(), R2);
 
     // If the echo is saturated, estimate the echo power as the maximum echo
@@ -110,24 +108,14 @@ void ResidualEchoEstimator::Estimate(
   } else {
     // Estimate the echo generating signal power.
     std::array<float, kFftLengthBy2Plus1> X2;
-    if (aec_state.FilterDelay()) {
-      const int delay_use = static_cast<int>(*aec_state.FilterDelay());
 
-      // Computes the spectral power over the blocks surrounding the delay.
-      constexpr int kKnownDelayRenderWindowSize = 5;
-      // TODO(peah): Add lookahead since that was what was there initially.
-      static_assert(
-          kUnknownDelayRenderWindowSize >= kKnownDelayRenderWindowSize,
-          "Requirement to ensure that the render buffer is overrun");
-      EchoGeneratingPower(
-          render_buffer, std::max(0, delay_use - 1),
-          std::min(kKnownDelayRenderWindowSize - 1, delay_use + 1), &X2);
-    } else {
-      // Computes the spectral power over the latest blocks.
-      // TODO(peah): Add lookahead since that was what was there initially.
-      EchoGeneratingPower(render_buffer, 0, kUnknownDelayRenderWindowSize - 1,
-                          &X2);
-    }
+    // Computes the spectral power over the blocks surrounding the delay.
+    constexpr int kKnownDelayRenderWindowSize = 5;
+    // TODO(peah): Add lookahead since that was what was there initially.
+    EchoGeneratingPower(
+        render_buffer, std::max(0, aec_state.FilterDelay() - 1),
+        std::min(kKnownDelayRenderWindowSize - 1, aec_state.FilterDelay() + 1),
+        &X2);
 
     // Subtract the stationary noise power to avoid stationary noise causing
     // excessive echo suppression.
@@ -140,7 +128,8 @@ void ResidualEchoEstimator::Estimate(
                       config_.ep_strength.bounded_erl,
                       aec_state.TransparentMode(), X2, Y2, R2);
 
-    if (aec_state.FilterDelay() && aec_state.SaturatedEcho()) {
+    if (aec_state.SaturatedEcho()) {
+      // TODO(peah): Modify to make sense theoretically.
       AddEchoReverb(*R2, aec_state.SaturatedEcho(),
                     config_.filter.length_blocks, aec_state.ReverbDecay(), R2);
     }

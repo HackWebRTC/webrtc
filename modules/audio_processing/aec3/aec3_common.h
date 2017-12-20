@@ -39,7 +39,6 @@ constexpr size_t kFftLengthBy2Minus1 = kFftLengthBy2 - 1;
 constexpr size_t kFftLength = 2 * kFftLengthBy2;
 
 constexpr int kMaxAdaptiveFilterLength = 50;
-constexpr int kUnknownDelayRenderWindowSize = 30;
 constexpr int kRenderTransferQueueSizeFrames = 100;
 
 constexpr size_t kMaxNumBands = 3;

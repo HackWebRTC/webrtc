@@ -62,7 +62,7 @@ class AecState {
   float ErlTimeDomain() const { return erl_estimator_.ErlTimeDomain(); }
 
   // Returns the delay estimate based on the linear filter.
-  rtc::Optional<size_t> FilterDelay() const { return filter_delay_; }
+  int FilterDelay() const { return filter_delay_; }
 
   // Returns whether the capture signal is saturated.
   bool SaturatedCapture() const { return capture_signal_saturation_; }
@@ -111,7 +111,6 @@ class AecState {
               const RenderBuffer& render_buffer,
               const std::array<float, kFftLengthBy2Plus1>& E2_main,
               const std::array<float, kFftLengthBy2Plus1>& Y2,
-              rtc::ArrayView<const float> x,
               const std::array<float, kBlockSize>& s_main,
               bool echo_leakage_detected);
 
@@ -151,7 +150,7 @@ class AecState {
   bool force_zero_gain_ = false;
   bool render_received_ = false;
   size_t force_zero_gain_counter_ = 0;
-  rtc::Optional<size_t> filter_delay_;
+  int filter_delay_ = 0;
   size_t blocks_since_last_saturation_ = 1000;
   float reverb_decay_to_test_ = 0.9f;
   float reverb_decay_candidate_ = 0.f;

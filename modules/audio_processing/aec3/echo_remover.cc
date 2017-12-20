@@ -178,7 +178,7 @@ void EchoRemoverImpl::ProcessCapture(
   aec_state_.Update(subtractor_.FilterFrequencyResponse(),
                     subtractor_.FilterImpulseResponse(),
                     subtractor_.ConvergedFilter(), *render_buffer, E2_main, Y2,
-                    x0, subtractor_output.s_main, echo_leakage_detected_);
+                    subtractor_output.s_main, echo_leakage_detected_);
 
   // Choose the linear output.
   output_selector_.FormLinearOutput(!aec_state_.TransparentMode(), e_main, y0);
@@ -232,9 +232,7 @@ void EchoRemoverImpl::ProcessCapture(
   data_dumper_->DumpRaw("aec3_erl", aec_state_.Erl());
   data_dumper_->DumpRaw("aec3_usable_linear_estimate",
                         aec_state_.UsableLinearEstimate());
-  data_dumper_->DumpRaw(
-      "aec3_filter_delay",
-      aec_state_.FilterDelay() ? *aec_state_.FilterDelay() : -1);
+  data_dumper_->DumpRaw("aec3_filter_delay", aec_state_.FilterDelay());
   data_dumper_->DumpRaw("aec3_capture_saturation",
                         aec_state_.SaturatedCapture() ? 1 : 0);
 }

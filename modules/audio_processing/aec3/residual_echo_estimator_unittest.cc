@@ -92,7 +92,7 @@ TEST(ResidualEchoEstimator, DISABLED_BasicTest) {
 
     aec_state.HandleEchoPathChange(echo_path_variability);
     aec_state.Update(H2, h, true, *render_delay_buffer->GetRenderBuffer(),
-                     E2_main, Y2, x[0], s, false);
+                     E2_main, Y2, s, false);
 
     estimator.Estimate(aec_state, *render_delay_buffer->GetRenderBuffer(),
                        S2_linear, Y2, &R2);

@@ -84,7 +84,7 @@ float RunSubtractorTest(int num_blocks_to_process,
     aec_state.Update(subtractor.FilterFrequencyResponse(),
                      subtractor.FilterImpulseResponse(),
                      subtractor.ConvergedFilter(),
-                     *render_delay_buffer->GetRenderBuffer(), E2_main, Y2, x[0],
+                     *render_delay_buffer->GetRenderBuffer(), E2_main, Y2,
                      output.s_main, false);
   }
 

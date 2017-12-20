@@ -112,11 +112,14 @@ void AecState::Update(
     const RenderBuffer& render_buffer,
     const std::array<float, kFftLengthBy2Plus1>& E2_main,
     const std::array<float, kFftLengthBy2Plus1>& Y2,
-    rtc::ArrayView<const float> x,
     const std::array<float, kBlockSize>& s,
     bool echo_leakage_detected) {
   // Store input parameters.
   echo_leakage_detected_ = echo_leakage_detected;
+
+  // Estimate the filter delay.
+  filter_delay_ = EstimateFilterDelay(adaptive_filter_frequency_response);
+  const std::vector<float>& x = render_buffer.Block(-filter_delay_)[0];
 
   // Update counters.
   ++capture_block_counter_;
@@ -130,12 +133,10 @@ void AecState::Update(
   // burst.
   force_zero_gain_ = ++force_zero_gain_counter_ < kNumBlocksPerSecond / 5;
 
-  // Estimate delays.
-  filter_delay_ = EstimateFilterDelay(adaptive_filter_frequency_response);
 
   // Update the ERL and ERLE measures.
   if (converged_filter && capture_block_counter_ >= 2 * kNumBlocksPerSecond) {
-    const auto& X2 = render_buffer.Spectrum(*filter_delay_);
+    const auto& X2 = render_buffer.Spectrum(filter_delay_);
     erle_estimator_.Update(X2, Y2, E2_main);
     erl_estimator_.Update(X2, Y2);
   }
@@ -174,7 +175,7 @@ void AecState::Update(
 
 void AecState::UpdateReverb(const std::vector<float>& impulse_response) {
   if ((!(filter_delay_ && usable_linear_estimate_)) ||
-      (*filter_delay_ > config_.filter.length_blocks - 4)) {
+      (filter_delay_ > static_cast<int>(config_.filter.length_blocks) - 4)) {
     return;
   }
 

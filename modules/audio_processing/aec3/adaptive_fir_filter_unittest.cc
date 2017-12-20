@@ -390,13 +390,13 @@ TEST(AdaptiveFirFilter, FilterAndAdapt) {
           false, EchoPathVariability::DelayAdjustment::kNone, false));
       aec_state.Update(filter.FilterFrequencyResponse(),
                        filter.FilterImpulseResponse(), true, *render_buffer,
-                       E2_main, Y2, x[0], s, false);
+                       E2_main, Y2, s, false);
     }
     // Verify that the filter is able to perform well.
     EXPECT_LT(1000 * std::inner_product(e.begin(), e.end(), e.begin(), 0.f),
               std::inner_product(y.begin(), y.end(), y.begin(), 0.f));
-    ASSERT_TRUE(aec_state.FilterDelay());
-    EXPECT_EQ(delay_samples / kBlockSize, *aec_state.FilterDelay());
+    EXPECT_EQ(delay_samples / kBlockSize,
+              static_cast<size_t>(aec_state.FilterDelay()));
   }
 }
 }  // namespace aec3
