@@ -16,8 +16,16 @@
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/test/fakeconstraints.h"
 #include "api/videosourceproxy.h"
+#include "media/engine/internaldecoderfactory.h"
+#include "media/engine/internalencoderfactory.h"
+#include "media/engine/stereocodecfactory.h"
 #include "media/engine/webrtcvideocapturerfactory.h"
+#include "media/engine/webrtcvideodecoderfactory.h"
+#include "media/engine/webrtcvideoencoderfactory.h"
+#include "modules/audio_device/include/audio_device.h"
+#include "modules/audio_processing/include/audio_processing.h"
 #include "modules/video_capture/video_capture_factory.h"
+#include "rtc_base/ptr_util.h"
 
 #if defined(WEBRTC_ANDROID)
 #include "examples/unityplugin/classreferenceholder.h"
@@ -94,7 +102,14 @@ bool SimplePeerConnection::InitializePeerConnection(const char** turn_urls,
     g_peer_connection_factory = webrtc::CreatePeerConnectionFactory(
         g_worker_thread.get(), g_worker_thread.get(), g_signaling_thread.get(),
         nullptr, webrtc::CreateBuiltinAudioEncoderFactory(),
-        webrtc::CreateBuiltinAudioDecoderFactory(), nullptr, nullptr);
+        webrtc::CreateBuiltinAudioDecoderFactory(),
+        std::unique_ptr<webrtc::VideoEncoderFactory>(
+            new webrtc::StereoEncoderFactory(
+                rtc::MakeUnique<webrtc::InternalEncoderFactory>())),
+        std::unique_ptr<webrtc::VideoDecoderFactory>(
+            new webrtc::StereoDecoderFactory(
+                rtc::MakeUnique<webrtc::InternalDecoderFactory>())),
+        nullptr, nullptr);
   }
   if (!g_peer_connection_factory.get()) {
     DeletePeerConnection();
