@@ -290,15 +290,15 @@ void VideoProcessorIntegrationTest::CreateEncoderAndDecoder() {
   if (config_.hw_encoder) {
 #if defined(WEBRTC_ANDROID)
     JNIEnv* env = jni::AttachCurrentThreadIfNeeded();
-    jni::ScopedLocalRefFrame local_ref_frame(env);
-    jclass factory_class =
-        webrtc::jni::GetClass(env, "org/webrtc/HardwareVideoEncoderFactory");
+    jni::ScopedJavaLocalRef<jclass> factory_class =
+        jni::GetClass(env, "org/webrtc/HardwareVideoEncoderFactory");
     jmethodID factory_constructor = env->GetMethodID(
-        factory_class, "<init>", "(Lorg/webrtc/EglBase$Context;ZZ)V");
-    jobject factory_object = env->NewObject(
-        factory_class, factory_constructor, nullptr /* shared_context */,
-        false /* enable_intel_vp8_encoder */,
-        true /* enable_h264_high_profile */);
+        factory_class.obj(), "<init>", "(Lorg/webrtc/EglBase$Context;ZZ)V");
+    jni::ScopedJavaLocalRef<jobject> factory_object(
+        env, env->NewObject(factory_class.obj(), factory_constructor,
+                            nullptr /* shared_context */,
+                            false /* enable_intel_vp8_encoder */,
+                            true /* enable_h264_high_profile */));
     encoder_factory = rtc::MakeUnique<webrtc::jni::VideoEncoderFactoryWrapper>(
         env, factory_object);
 #elif defined(WEBRTC_IOS)
@@ -316,13 +316,13 @@ void VideoProcessorIntegrationTest::CreateEncoderAndDecoder() {
   if (config_.hw_decoder) {
 #if defined(WEBRTC_ANDROID)
     JNIEnv* env = jni::AttachCurrentThreadIfNeeded();
-    jni::ScopedLocalRefFrame local_ref_frame(env);
-    jclass factory_class =
-        webrtc::jni::GetClass(env, "org/webrtc/HardwareVideoDecoderFactory");
+    jni::ScopedJavaLocalRef<jclass> factory_class =
+        jni::GetClass(env, "org/webrtc/HardwareVideoDecoderFactory");
     jmethodID factory_constructor = env->GetMethodID(
-        factory_class, "<init>", "(Lorg/webrtc/EglBase$Context;)V");
-    jobject factory_object = env->NewObject(factory_class, factory_constructor,
-                                            nullptr /* shared_context */);
+        factory_class.obj(), "<init>", "(Lorg/webrtc/EglBase$Context;)V");
+    jni::ScopedJavaLocalRef<jobject> factory_object(
+        env, env->NewObject(factory_class.obj(), factory_constructor,
+                            nullptr /* shared_context */));
     decoder_factory = rtc::MakeUnique<webrtc::jni::VideoDecoderFactoryWrapper>(
         env, factory_object);
 #elif defined(WEBRTC_IOS)

@@ -18,22 +18,28 @@
 namespace webrtc {
 namespace jni {
 
-jobject NativeToJavaFrameType(JNIEnv* env, FrameType frame_type) {
+ScopedJavaLocalRef<jobject> NativeToJavaFrameType(JNIEnv* env,
+                                                  FrameType frame_type) {
   return Java_FrameType_fromNativeIndex(env, frame_type);
 }
 
-jobject NativeToJavaEncodedImage(JNIEnv* jni, const EncodedImage& image) {
-  jobject buffer = jni->NewDirectByteBuffer(image._buffer, image._length);
-  jobject frame_type = NativeToJavaFrameType(jni, image._frameType);
-  jobject qp =
-      (image.qp_ == -1) ? nullptr : NativeToJavaInteger(jni, image.qp_);
+ScopedJavaLocalRef<jobject> NativeToJavaEncodedImage(
+    JNIEnv* jni,
+    const EncodedImage& image) {
+  ScopedJavaLocalRef<jobject> buffer =
+      NewDirectByteBuffer(jni, image._buffer, image._length);
+  ScopedJavaLocalRef<jobject> frame_type =
+      NativeToJavaFrameType(jni, image._frameType);
+  ScopedJavaLocalRef<jobject> qp;
+  if (image.qp_ != -1)
+    qp = NativeToJavaInteger(jni, image.qp_);
   return Java_EncodedImage_Constructor(
       jni, buffer, image._encodedWidth, image._encodedHeight,
       image.capture_time_ms_ * rtc::kNumNanosecsPerMillisec, frame_type,
       static_cast<jint>(image.rotation_), image._completeFrame, qp);
 }
 
-jobjectArray NativeToJavaFrameTypeArray(
+ScopedJavaLocalRef<jobjectArray> NativeToJavaFrameTypeArray(
     JNIEnv* env,
     const std::vector<FrameType>& frame_types) {
   return NativeToJavaObjectArray(

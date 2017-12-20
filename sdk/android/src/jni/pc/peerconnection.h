@@ -27,17 +27,18 @@ namespace jni {
 
 void JavaToNativeRTCConfiguration(
     JNIEnv* jni,
-    jobject j_rtc_config,
+    const JavaRef<jobject>& j_rtc_config,
     PeerConnectionInterface::RTCConfiguration* rtc_config);
 
-rtc::KeyType GetRtcConfigKeyType(JNIEnv* env, jobject j_rtc_config);
+rtc::KeyType GetRtcConfigKeyType(JNIEnv* env,
+                                 const JavaRef<jobject>& j_rtc_config);
 
 // Adapter between the C++ PeerConnectionObserver interface and the Java
 // PeerConnection.Observer interface.  Wraps an instance of the Java interface
 // and dispatches C++ callbacks to Java.
 class PeerConnectionObserverJni : public PeerConnectionObserver {
  public:
-  PeerConnectionObserverJni(JNIEnv* jni, jobject j_observer);
+  PeerConnectionObserverJni(JNIEnv* jni, const JavaRef<jobject>& j_observer);
   virtual ~PeerConnectionObserverJni();
 
   // Implementation of PeerConnectionObserver interface, which propagates
@@ -76,11 +77,11 @@ class PeerConnectionObserverJni : public PeerConnectionObserver {
       const rtc::scoped_refptr<MediaStreamInterface>& stream);
 
   // Converts array of streams, creating or re-using Java streams as necessary.
-  jobjectArray NativeToJavaMediaStreamArray(
+  ScopedJavaLocalRef<jobjectArray> NativeToJavaMediaStreamArray(
       JNIEnv* jni,
       const std::vector<rtc::scoped_refptr<MediaStreamInterface>>& streams);
 
-  const ScopedGlobalRef<jobject> j_observer_global_;
+  const ScopedJavaGlobalRef<jobject> j_observer_global_;
 
   // C++ -> Java remote streams.
   NativeToJavaStreamsMap remote_streams_;

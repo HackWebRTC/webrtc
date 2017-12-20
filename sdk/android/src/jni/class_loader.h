@@ -19,6 +19,8 @@
 
 #include <jni.h>
 
+#include "sdk/android/src/jni/scoped_java_ref.h"
+
 namespace webrtc {
 namespace jni {
 
@@ -32,7 +34,7 @@ void InitClassLoader(JNIEnv* env);
 // example, the fully-qualified class name for the java.lang.String class is:
 // "java/lang/String". This function will be used from the JNI generated code
 // and should rarely be used manually.
-jclass GetClass(JNIEnv* env, const char* name);
+ScopedJavaLocalRef<jclass> GetClass(JNIEnv* env, const char* name);
 
 }  // namespace jni
 }  // namespace webrtc

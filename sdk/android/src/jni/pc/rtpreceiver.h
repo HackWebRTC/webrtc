@@ -14,12 +14,12 @@
 #include <jni.h>
 
 #include "api/rtpreceiverinterface.h"
-#include "sdk/android/src/jni/jni_helpers.h"
+#include "sdk/android/src/jni/scoped_java_ref.h"
 
 namespace webrtc {
 namespace jni {
 
-jobject NativeToJavaRtpReceiver(
+ScopedJavaLocalRef<jobject> NativeToJavaRtpReceiver(
     JNIEnv* env,
     rtc::scoped_refptr<RtpReceiverInterface> receiver);
 
@@ -27,12 +27,12 @@ jobject NativeToJavaRtpReceiver(
 // reference. Will call dispose() in the dtor.
 class JavaRtpReceiverGlobalOwner {
  public:
-  JavaRtpReceiverGlobalOwner(JNIEnv* env, jobject j_receiver);
+  JavaRtpReceiverGlobalOwner(JNIEnv* env, const JavaRef<jobject>& j_receiver);
   JavaRtpReceiverGlobalOwner(JavaRtpReceiverGlobalOwner&& other);
   ~JavaRtpReceiverGlobalOwner();
 
  private:
-  ScopedGlobalRef<jobject> j_receiver_;
+  ScopedJavaGlobalRef<jobject> j_receiver_;
 };
 
 }  // namespace jni

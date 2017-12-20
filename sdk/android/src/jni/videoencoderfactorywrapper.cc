@@ -21,10 +21,11 @@
 namespace webrtc {
 namespace jni {
 
-VideoEncoderFactoryWrapper::VideoEncoderFactoryWrapper(JNIEnv* jni,
-                                                       jobject encoder_factory)
+VideoEncoderFactoryWrapper::VideoEncoderFactoryWrapper(
+    JNIEnv* jni,
+    const JavaRef<jobject>& encoder_factory)
     : encoder_factory_(jni, encoder_factory) {
-  const jobjectArray j_supported_codecs =
+  const ScopedJavaLocalRef<jobjectArray> j_supported_codecs =
       Java_VideoEncoderFactory_getSupportedCodecs(jni, encoder_factory);
   supported_formats_ = JavaToNativeVector<SdpVideoFormat>(
       jni, j_supported_codecs, &VideoCodecInfoToSdpVideoFormat);
@@ -33,21 +34,22 @@ VideoEncoderFactoryWrapper::VideoEncoderFactoryWrapper(JNIEnv* jni,
 std::unique_ptr<VideoEncoder> VideoEncoderFactoryWrapper::CreateVideoEncoder(
     const SdpVideoFormat& format) {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
-  ScopedLocalRefFrame local_ref_frame(jni);
-  jobject j_codec_info = SdpVideoFormatToVideoCodecInfo(jni, format);
-  jobject encoder = Java_VideoEncoderFactory_createEncoder(
-      jni, *encoder_factory_, j_codec_info);
-  return encoder != nullptr ? JavaToNativeVideoEncoder(jni, encoder) : nullptr;
+  ScopedJavaLocalRef<jobject> j_codec_info =
+      SdpVideoFormatToVideoCodecInfo(jni, format);
+  ScopedJavaLocalRef<jobject> encoder = Java_VideoEncoderFactory_createEncoder(
+      jni, encoder_factory_, j_codec_info);
+  if (!encoder.obj())
+    return nullptr;
+  return JavaToNativeVideoEncoder(jni, encoder);
 }
 
 VideoEncoderFactory::CodecInfo VideoEncoderFactoryWrapper::QueryVideoEncoder(
     const SdpVideoFormat& format) const {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
-  ScopedLocalRefFrame local_ref_frame(jni);
-
-  jobject j_codec_info = SdpVideoFormatToVideoCodecInfo(jni, format);
-  jobject encoder = Java_VideoEncoderFactory_createEncoder(
-      jni, *encoder_factory_, j_codec_info);
+  ScopedJavaLocalRef<jobject> j_codec_info =
+      SdpVideoFormatToVideoCodecInfo(jni, format);
+  ScopedJavaLocalRef<jobject> encoder = Java_VideoEncoderFactory_createEncoder(
+      jni, encoder_factory_, j_codec_info);
 
   CodecInfo codec_info;
   // Check if this is a wrapped native software encoder implementation.

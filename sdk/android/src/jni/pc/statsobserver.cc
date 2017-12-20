@@ -21,20 +21,17 @@ namespace jni {
 
 namespace {
 
-jobject NativeToJavaStatsReportValue(
+ScopedJavaLocalRef<jobject> NativeToJavaStatsReportValue(
     JNIEnv* env,
     const rtc::scoped_refptr<StatsReport::Value>& value_ptr) {
   // Should we use the '.name' enum value here instead of converting the
   // name to a string?
-  jstring j_name = NativeToJavaString(env, value_ptr->display_name());
-  jstring j_value = NativeToJavaString(env, value_ptr->ToString());
-  jobject ret = Java_Value_Constructor(env, j_name, j_value);
-  env->DeleteLocalRef(j_name);
-  env->DeleteLocalRef(j_value);
-  return ret;
+  return Java_Value_Constructor(
+      env, NativeToJavaString(env, value_ptr->display_name()),
+      NativeToJavaString(env, value_ptr->ToString()));
 }
 
-jobjectArray NativeToJavaStatsReportValueArray(
+ScopedJavaLocalRef<jobjectArray> NativeToJavaStatsReportValueArray(
     JNIEnv* env,
     const StatsReport::Values& value_map) {
   // Ignore the keys and make an array out of the values.
@@ -46,33 +43,28 @@ jobjectArray NativeToJavaStatsReportValueArray(
                                  &NativeToJavaStatsReportValue);
 }
 
-jobject NativeToJavaStatsReport(JNIEnv* env, const StatsReport& report) {
-  jstring j_id = NativeToJavaString(env, report.id()->ToString());
-  jstring j_type = NativeToJavaString(env, report.TypeToString());
-  jobjectArray j_values =
-      NativeToJavaStatsReportValueArray(env, report.values());
-  jobject ret = Java_StatsReport_Constructor(env, j_id, j_type,
-                                             report.timestamp(), j_values);
-  env->DeleteLocalRef(j_values);
-  env->DeleteLocalRef(j_type);
-  env->DeleteLocalRef(j_id);
-  return ret;
+ScopedJavaLocalRef<jobject> NativeToJavaStatsReport(JNIEnv* env,
+                                                    const StatsReport& report) {
+  return Java_StatsReport_Constructor(
+      env, NativeToJavaString(env, report.id()->ToString()),
+      NativeToJavaString(env, report.TypeToString()), report.timestamp(),
+      NativeToJavaStatsReportValueArray(env, report.values()));
 }
 
 }  // namespace
 
-StatsObserverJni::StatsObserverJni(JNIEnv* jni, jobject j_observer)
+StatsObserverJni::StatsObserverJni(JNIEnv* jni,
+                                   const JavaRef<jobject>& j_observer)
     : j_observer_global_(jni, j_observer) {}
 
 void StatsObserverJni::OnComplete(const StatsReports& reports) {
   JNIEnv* env = AttachCurrentThreadIfNeeded();
-  jobjectArray j_reports =
+  ScopedJavaLocalRef<jobjectArray> j_reports =
       NativeToJavaObjectArray(env, reports, org_webrtc_StatsReport_clazz(env),
                               [](JNIEnv* env, const StatsReport* report) {
                                 return NativeToJavaStatsReport(env, *report);
                               });
-  Java_StatsObserver_onComplete(env, *j_observer_global_, j_reports);
-  env->DeleteLocalRef(j_reports);
+  Java_StatsObserver_onComplete(env, j_observer_global_, j_reports);
 }
 
 }  // namespace jni

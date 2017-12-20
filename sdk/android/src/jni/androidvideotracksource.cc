@@ -14,6 +14,8 @@
 
 #include "api/videosourceproxy.h"
 #include "rtc_base/logging.h"
+#include "sdk/android/generated_video_jni/jni/AndroidVideoTrackSourceObserver_jni.h"
+#include "sdk/android/generated_video_jni/jni/VideoSource_jni.h"
 
 namespace webrtc {
 namespace jni {
@@ -38,7 +40,7 @@ AndroidVideoTrackSource* AndroidVideoTrackSourceFromJavaProxy(jlong j_proxy) {
 AndroidVideoTrackSource::AndroidVideoTrackSource(
     rtc::Thread* signaling_thread,
     JNIEnv* jni,
-    jobject j_surface_texture_helper,
+    const JavaRef<jobject>& j_surface_texture_helper,
     bool is_screencast)
     : AdaptedVideoTrackSource(kRequiredResolutionAlignment),
       signaling_thread_(signaling_thread),
@@ -164,12 +166,13 @@ void AndroidVideoTrackSource::OnTextureFrameCaptured(
                      rotation, translated_camera_time_us));
 }
 
-void AndroidVideoTrackSource::OnFrameCaptured(JNIEnv* jni,
-                                              int width,
-                                              int height,
-                                              int64_t timestamp_ns,
-                                              VideoRotation rotation,
-                                              jobject j_video_frame_buffer) {
+void AndroidVideoTrackSource::OnFrameCaptured(
+    JNIEnv* jni,
+    int width,
+    int height,
+    int64_t timestamp_ns,
+    VideoRotation rotation,
+    const JavaRef<jobject>& j_video_frame_buffer) {
   RTC_DCHECK(camera_thread_checker_.CalledOnValidThread());
 
   int64_t camera_time_us = timestamp_ns / rtc::kNumNanosecsPerMicrosec;
@@ -210,13 +213,11 @@ void AndroidVideoTrackSource::OnOutputFormatRequest(int width,
   video_adapter()->OnOutputFormatRequest(format);
 }
 
-JNI_FUNCTION_DECLARATION(
-    void,
-    AndroidVideoTrackSourceObserver_nativeOnByteBufferFrameCaptured,
+static void JNI_AndroidVideoTrackSourceObserver_OnByteBufferFrameCaptured(
     JNIEnv* jni,
-    jclass,
+    const JavaParamRef<jclass>&,
     jlong j_source,
-    jbyteArray j_frame,
+    const JavaParamRef<jbyteArray>& j_frame,
     jint length,
     jint width,
     jint height,
@@ -224,22 +225,20 @@ JNI_FUNCTION_DECLARATION(
     jlong timestamp) {
   AndroidVideoTrackSource* source =
       AndroidVideoTrackSourceFromJavaProxy(j_source);
-  jbyte* bytes = jni->GetByteArrayElements(j_frame, nullptr);
+  jbyte* bytes = jni->GetByteArrayElements(j_frame.obj(), nullptr);
   source->OnByteBufferFrameCaptured(bytes, length, width, height,
                                     jintToVideoRotation(rotation), timestamp);
-  jni->ReleaseByteArrayElements(j_frame, bytes, JNI_ABORT);
+  jni->ReleaseByteArrayElements(j_frame.obj(), bytes, JNI_ABORT);
 }
 
-JNI_FUNCTION_DECLARATION(
-    void,
-    AndroidVideoTrackSourceObserver_nativeOnTextureFrameCaptured,
+static void JNI_AndroidVideoTrackSourceObserver_OnTextureFrameCaptured(
     JNIEnv* jni,
-    jclass,
+    const JavaParamRef<jclass>&,
     jlong j_source,
     jint j_width,
     jint j_height,
     jint j_oes_texture_id,
-    jfloatArray j_transform_matrix,
+    const JavaParamRef<jfloatArray>& j_transform_matrix,
     jint j_rotation,
     jlong j_timestamp) {
   AndroidVideoTrackSource* source =
@@ -249,16 +248,15 @@ JNI_FUNCTION_DECLARATION(
       NativeHandleImpl(jni, j_oes_texture_id, j_transform_matrix));
 }
 
-JNI_FUNCTION_DECLARATION(void,
-                         AndroidVideoTrackSourceObserver_nativeOnFrameCaptured,
-                         JNIEnv* jni,
-                         jclass,
-                         jlong j_source,
-                         jint j_width,
-                         jint j_height,
-                         jint j_rotation,
-                         jlong j_timestamp_ns,
-                         jobject j_video_frame_buffer) {
+static void JNI_AndroidVideoTrackSourceObserver_OnFrameCaptured(
+    JNIEnv* jni,
+    const JavaParamRef<jclass>&,
+    jlong j_source,
+    jint j_width,
+    jint j_height,
+    jint j_rotation,
+    jlong j_timestamp_ns,
+    const JavaParamRef<jobject>& j_video_frame_buffer) {
   AndroidVideoTrackSource* source =
       AndroidVideoTrackSourceFromJavaProxy(j_source);
   source->OnFrameCaptured(jni, j_width, j_height, j_timestamp_ns,
@@ -266,12 +264,11 @@ JNI_FUNCTION_DECLARATION(void,
                           j_video_frame_buffer);
 }
 
-JNI_FUNCTION_DECLARATION(void,
-                         AndroidVideoTrackSourceObserver_nativeCapturerStarted,
-                         JNIEnv* jni,
-                         jclass,
-                         jlong j_source,
-                         jboolean j_success) {
+static void JNI_AndroidVideoTrackSourceObserver_CapturerStarted(
+    JNIEnv* jni,
+    const JavaParamRef<jclass>&,
+    jlong j_source,
+    jboolean j_success) {
   RTC_LOG(LS_INFO) << "AndroidVideoTrackSourceObserve_nativeCapturerStarted";
   AndroidVideoTrackSource* source =
       AndroidVideoTrackSourceFromJavaProxy(j_source);
@@ -279,25 +276,22 @@ JNI_FUNCTION_DECLARATION(void,
                              : AndroidVideoTrackSource::SourceState::kEnded);
 }
 
-JNI_FUNCTION_DECLARATION(void,
-                         AndroidVideoTrackSourceObserver_nativeCapturerStopped,
-                         JNIEnv* jni,
-                         jclass,
-                         jlong j_source) {
+static void JNI_AndroidVideoTrackSourceObserver_CapturerStopped(
+    JNIEnv* jni,
+    const JavaParamRef<jclass>&,
+    jlong j_source) {
   RTC_LOG(LS_INFO) << "AndroidVideoTrackSourceObserve_nativeCapturerStopped";
   AndroidVideoTrackSource* source =
       AndroidVideoTrackSourceFromJavaProxy(j_source);
   source->SetState(AndroidVideoTrackSource::SourceState::kEnded);
 }
 
-JNI_FUNCTION_DECLARATION(void,
-                         VideoSource_nativeAdaptOutputFormat,
-                         JNIEnv* jni,
-                         jclass,
-                         jlong j_source,
-                         jint j_width,
-                         jint j_height,
-                         jint j_fps) {
+static void JNI_VideoSource_AdaptOutputFormat(JNIEnv* jni,
+                                              const JavaParamRef<jclass>&,
+                                              jlong j_source,
+                                              jint j_width,
+                                              jint j_height,
+                                              jint j_fps) {
   RTC_LOG(LS_INFO) << "VideoSource_nativeAdaptOutputFormat";
   AndroidVideoTrackSource* source =
       AndroidVideoTrackSourceFromJavaProxy(j_source);

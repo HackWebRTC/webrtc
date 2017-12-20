@@ -9,18 +9,18 @@
  */
 
 #include "rtc_base/logsinks.h"
+#include "sdk/android/generated_peerconnection_jni/jni/CallSessionFileRotatingLogSink_jni.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {
 namespace jni {
 
-JNI_FUNCTION_DECLARATION(jlong,
-                         CallSessionFileRotatingLogSink_nativeAddSink,
-                         JNIEnv* jni,
-                         jclass,
-                         jstring j_dirPath,
-                         jint j_maxFileSize,
-                         jint j_severity) {
+static jlong JNI_CallSessionFileRotatingLogSink_AddSink(
+    JNIEnv* jni,
+    const JavaParamRef<jclass>&,
+    const JavaParamRef<jstring>& j_dirPath,
+    jint j_maxFileSize,
+    jint j_severity) {
   std::string dir_path = JavaToStdString(jni, j_dirPath);
   rtc::CallSessionFileRotatingLogSink* sink =
       new rtc::CallSessionFileRotatingLogSink(dir_path, j_maxFileSize);
@@ -33,46 +33,46 @@ JNI_FUNCTION_DECLARATION(jlong,
   }
   rtc::LogMessage::AddLogToStream(
       sink, static_cast<rtc::LoggingSeverity>(j_severity));
-  return (jlong)sink;
+  return jlongFromPointer(sink);
 }
 
-JNI_FUNCTION_DECLARATION(void,
-                         CallSessionFileRotatingLogSink_nativeDeleteSink,
-                         JNIEnv* jni,
-                         jclass,
-                         jlong j_sink) {
+static void JNI_CallSessionFileRotatingLogSink_DeleteSink(
+    JNIEnv* jni,
+    const JavaParamRef<jclass>&,
+    jlong j_sink) {
   rtc::CallSessionFileRotatingLogSink* sink =
       reinterpret_cast<rtc::CallSessionFileRotatingLogSink*>(j_sink);
   rtc::LogMessage::RemoveLogToStream(sink);
   delete sink;
 }
 
-JNI_FUNCTION_DECLARATION(jbyteArray,
-                         CallSessionFileRotatingLogSink_nativeGetLogData,
-                         JNIEnv* jni,
-                         jclass,
-                         jstring j_dirPath) {
+static ScopedJavaLocalRef<jbyteArray>
+JNI_CallSessionFileRotatingLogSink_GetLogData(
+    JNIEnv* jni,
+    const JavaParamRef<jclass>&,
+    const JavaParamRef<jstring>& j_dirPath) {
   std::string dir_path = JavaToStdString(jni, j_dirPath);
   std::unique_ptr<rtc::CallSessionFileRotatingStream> stream(
       new rtc::CallSessionFileRotatingStream(dir_path));
   if (!stream->Open()) {
     RTC_LOG_V(rtc::LoggingSeverity::LS_WARNING)
         << "Failed to open CallSessionFileRotatingStream for path " << dir_path;
-    return jni->NewByteArray(0);
+    return ScopedJavaLocalRef<jbyteArray>(jni, jni->NewByteArray(0));
   }
   size_t log_size = 0;
   if (!stream->GetSize(&log_size) || log_size == 0) {
     RTC_LOG_V(rtc::LoggingSeverity::LS_WARNING)
         << "CallSessionFileRotatingStream returns 0 size for path " << dir_path;
-    return jni->NewByteArray(0);
+    return ScopedJavaLocalRef<jbyteArray>(jni, jni->NewByteArray(0));
   }
 
   size_t read = 0;
   std::unique_ptr<jbyte> buffer(static_cast<jbyte*>(malloc(log_size)));
   stream->ReadAll(buffer.get(), log_size, &read, nullptr);
 
-  jbyteArray result = jni->NewByteArray(read);
-  jni->SetByteArrayRegion(result, 0, read, buffer.get());
+  ScopedJavaLocalRef<jbyteArray> result =
+      ScopedJavaLocalRef<jbyteArray>(jni, jni->NewByteArray(read));
+  jni->SetByteArrayRegion(result.obj(), 0, read, buffer.get());
 
   return result;
 }

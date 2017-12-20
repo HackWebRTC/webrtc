@@ -17,56 +17,52 @@
 namespace webrtc {
 namespace jni {
 
-jobject NativeToJavaMediaType(JNIEnv* jni, cricket::MediaType media_type) {
+ScopedJavaLocalRef<jobject> NativeToJavaMediaType(
+    JNIEnv* jni,
+    cricket::MediaType media_type) {
   return Java_MediaType_fromNativeIndex(jni, media_type);
 }
 
-cricket::MediaType JavaToNativeMediaType(JNIEnv* jni, jobject j_media_type) {
+cricket::MediaType JavaToNativeMediaType(JNIEnv* jni,
+                                         const JavaRef<jobject>& j_media_type) {
   return static_cast<cricket::MediaType>(
       Java_MediaType_getNative(jni, j_media_type));
 }
 
-JNI_FUNCTION_DECLARATION(jstring,
-                         MediaStreamTrack_getNativeId,
-                         JNIEnv* jni,
-                         jclass,
-                         jlong j_p) {
+static ScopedJavaLocalRef<jstring> JNI_MediaStreamTrack_GetId(
+    JNIEnv* jni,
+    const JavaParamRef<jclass>&,
+    jlong j_p) {
   return NativeToJavaString(
       jni, reinterpret_cast<MediaStreamTrackInterface*>(j_p)->id());
 }
 
-JNI_FUNCTION_DECLARATION(jstring,
-                         MediaStreamTrack_getNativeKind,
-                         JNIEnv* jni,
-                         jclass,
-                         jlong j_p) {
+static ScopedJavaLocalRef<jstring> JNI_MediaStreamTrack_GetKind(
+    JNIEnv* jni,
+    const JavaParamRef<jclass>&,
+    jlong j_p) {
   return NativeToJavaString(
       jni, reinterpret_cast<MediaStreamTrackInterface*>(j_p)->kind());
 }
 
-JNI_FUNCTION_DECLARATION(jboolean,
-                         MediaStreamTrack_getNativeEnabled,
-                         JNIEnv* jni,
-                         jclass,
-                         jlong j_p) {
+static jboolean JNI_MediaStreamTrack_GetEnabled(JNIEnv* jni,
+                                                const JavaParamRef<jclass>&,
+                                                jlong j_p) {
   return reinterpret_cast<MediaStreamTrackInterface*>(j_p)->enabled();
 }
 
-JNI_FUNCTION_DECLARATION(jobject,
-                         MediaStreamTrack_getNativeState,
-                         JNIEnv* jni,
-                         jclass,
-                         jlong j_p) {
+static ScopedJavaLocalRef<jobject> JNI_MediaStreamTrack_GetState(
+    JNIEnv* jni,
+    const JavaParamRef<jclass>&,
+    jlong j_p) {
   return Java_State_fromNativeIndex(
       jni, reinterpret_cast<MediaStreamTrackInterface*>(j_p)->state());
 }
 
-JNI_FUNCTION_DECLARATION(jboolean,
-                         MediaStreamTrack_setNativeEnabled,
-                         JNIEnv* jni,
-                         jclass,
-                         jlong j_p,
-                         jboolean enabled) {
+static jboolean JNI_MediaStreamTrack_SetEnabled(JNIEnv* jni,
+                                                const JavaParamRef<jclass>&,
+                                                jlong j_p,
+                                                jboolean enabled) {
   return reinterpret_cast<MediaStreamTrackInterface*>(j_p)->set_enabled(
       enabled);
 }

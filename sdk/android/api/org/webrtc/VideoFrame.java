@@ -25,6 +25,7 @@ import java.nio.ByteBuffer;
  * format and serves as a fallback for video sinks that can only handle I420, e.g. the internal
  * WebRTC software encoders.
  */
+@JNINamespace("webrtc::jni")
 public class VideoFrame {
   public interface Buffer {
     /**
@@ -199,7 +200,7 @@ public class VideoFrame {
     }
 
     JavaI420Buffer newBuffer = JavaI420Buffer.allocate(scaleWidth, scaleHeight);
-    cropAndScaleI420Native(buffer.getDataY(), buffer.getStrideY(), buffer.getDataU(),
+    nativeCropAndScaleI420(buffer.getDataY(), buffer.getStrideY(), buffer.getDataU(),
         buffer.getStrideU(), buffer.getDataV(), buffer.getStrideV(), cropX, cropY, cropWidth,
         cropHeight, newBuffer.getDataY(), newBuffer.getStrideY(), newBuffer.getDataU(),
         newBuffer.getStrideU(), newBuffer.getDataV(), newBuffer.getStrideV(), scaleWidth,
@@ -207,7 +208,7 @@ public class VideoFrame {
     return newBuffer;
   }
 
-  private static native void cropAndScaleI420Native(ByteBuffer srcY, int srcStrideY,
+  private static native void nativeCropAndScaleI420(ByteBuffer srcY, int srcStrideY,
       ByteBuffer srcU, int srcStrideU, ByteBuffer srcV, int srcStrideV, int cropX, int cropY,
       int cropWidth, int cropHeight, ByteBuffer dstY, int dstStrideY, ByteBuffer dstU,
       int dstStrideU, ByteBuffer dstV, int dstStrideV, int scaleWidth, int scaleHeight);

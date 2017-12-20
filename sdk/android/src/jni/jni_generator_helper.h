@@ -19,6 +19,7 @@
 #include <jni.h>
 
 #include "rtc_base/checks.h"
+#include "sdk/android/src/jni/scoped_java_ref.h"
 
 #define CHECK_CLAZZ(env, jcaller, clazz, ...) RTC_DCHECK(clazz);
 #define CHECK_NATIVE_PTR(env, jcaller, native_ptr, method_name, ...) \
@@ -56,31 +57,9 @@ typedef void* AtomicWord;
 
 namespace android {
 
-// Implement JavaRef and ScopedJavaLocalRef as a shallow wrapper on top of a
-// jobject/jclass, with no scoped destruction.
-// TODO(magjed): Start using Chromium's scoped Java refs.
-template <typename T>
-class JavaRef {
- public:
-  JavaRef() {}
-  JavaRef(JNIEnv* env, T obj) : obj_(obj) {}
-  T obj() const { return obj_; }
-
-  // Implicit on purpose.
-  JavaRef(const T& obj) : obj_(obj) {}  // NOLINT(runtime/explicit)
-  operator T() const { return obj_; }
-
- private:
-  T obj_;
-};
-
-// TODO(magjed): This looks weird, but it is safe. We don't use DeleteLocalRef
-// in WebRTC, we use ScopedLocalRefFrame instead. We should probably switch to
-// using DeleteLocalRef though.
-template <typename T>
-using ScopedJavaLocalRef = JavaRef<T>;
-template <typename T>
-using JavaParamRef = JavaRef<T>;
+using webrtc::jni::JavaRef;
+using webrtc::jni::ScopedJavaLocalRef;
+using webrtc::jni::JavaParamRef;
 
 // This function will initialize |atomic_class_id| to contain a global ref to
 // the given class, and will return that ref on subsequent calls. The caller is

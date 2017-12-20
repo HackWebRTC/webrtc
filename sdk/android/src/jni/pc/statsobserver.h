@@ -21,12 +21,12 @@ namespace jni {
 // dispatching the callback from C++ back to Java.
 class StatsObserverJni : public StatsObserver {
  public:
-  StatsObserverJni(JNIEnv* jni, jobject j_observer);
+  StatsObserverJni(JNIEnv* jni, const JavaRef<jobject>& j_observer);
 
   void OnComplete(const StatsReports& reports) override;
 
  private:
-  const ScopedGlobalRef<jobject> j_observer_global_;
+  const ScopedJavaGlobalRef<jobject> j_observer_global_;
 };
 
 }  // namespace jni

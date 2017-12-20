@@ -11,6 +11,7 @@
 #include <map>
 #include <memory>
 
+#include "sdk/android/generated_base_jni/jni/Histogram_jni.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 #include "system_wrappers/include/metrics.h"
 
@@ -18,35 +19,30 @@
 namespace webrtc {
 namespace jni {
 
-JNI_FUNCTION_DECLARATION(jlong,
-                         Histogram_nativeCreateCounts,
-                         JNIEnv* jni,
-                         jclass,
-                         jstring j_name,
-                         jint min,
-                         jint max,
-                         jint buckets) {
+static jlong JNI_Histogram_CreateCounts(JNIEnv* jni,
+                                        const JavaParamRef<jclass>&,
+                                        const JavaParamRef<jstring>& j_name,
+                                        jint min,
+                                        jint max,
+                                        jint buckets) {
   std::string name = JavaToStdString(jni, j_name);
   return jlongFromPointer(
       metrics::HistogramFactoryGetCounts(name, min, max, buckets));
 }
 
-JNI_FUNCTION_DECLARATION(jlong,
-                         Histogram_nativeCreateEnumeration,
-                         JNIEnv* jni,
-                         jclass,
-                         jstring j_name,
-                         jint max) {
+static jlong JNI_Histogram_CreateEnumeration(
+    JNIEnv* jni,
+    const JavaParamRef<jclass>&,
+    const JavaParamRef<jstring>& j_name,
+    jint max) {
   std::string name = JavaToStdString(jni, j_name);
   return jlongFromPointer(metrics::HistogramFactoryGetEnumeration(name, max));
 }
 
-JNI_FUNCTION_DECLARATION(void,
-                         Histogram_nativeAddSample,
-                         JNIEnv* jni,
-                         jclass,
-                         jlong histogram,
-                         jint sample) {
+static void JNI_Histogram_AddSample(JNIEnv* jni,
+                                    const JavaParamRef<jclass>&,
+                                    jlong histogram,
+                                    jint sample) {
   if (histogram) {
     HistogramAdd(reinterpret_cast<metrics::Histogram*>(histogram), sample);
   }

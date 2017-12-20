@@ -13,6 +13,7 @@ package org.webrtc;
 /**
  * Java wrapper of native AndroidVideoTrackSource.
  */
+@JNINamespace("webrtc::jni")
 public class VideoSource extends MediaSource {
   public VideoSource(long nativeSource) {
     super(nativeSource);
@@ -28,6 +29,5 @@ public class VideoSource extends MediaSource {
     nativeAdaptOutputFormat(nativeSource, width, height, fps);
   }
 
-  private static native void nativeAdaptOutputFormat(
-      long nativeSource, int width, int height, int fps);
+  private static native void nativeAdaptOutputFormat(long source, int width, int height, int fps);
 }

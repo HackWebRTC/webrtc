@@ -36,6 +36,7 @@ import org.webrtc.VideoFrame;
 // This class is an implementation detail of the Java PeerConnection API.
 @TargetApi(19)
 @SuppressWarnings("deprecation")
+@JNINamespace("webrtc::jni")
 public class MediaCodecVideoEncoder {
   // This class is constructed, operated, and destroyed by its C++ incarnation,
   // so the class and its methods have non-public visibility.  The API this
@@ -658,7 +659,7 @@ public class MediaCodecVideoEncoder {
         if (dataV.capacity() < strideV * chromaHeight) {
           throw new RuntimeException("V-plane buffer size too small.");
         }
-        fillInputBufferNative(
+        nativeFillInputBuffer(
             nativeEncoder, bufferIndex, dataY, strideY, dataU, strideU, dataV, strideV);
         i420Buffer.release();
         // I420 consists of one full-resolution and two half-resolution planes.
@@ -993,6 +994,6 @@ public class MediaCodecVideoEncoder {
   }
 
   /** Fills an inputBuffer with the given index with data from the byte buffers. */
-  private static native void fillInputBufferNative(long nativeEncoder, int inputBuffer,
-      ByteBuffer dataY, int strideY, ByteBuffer dataU, int strideU, ByteBuffer dataV, int strideV);
+  private static native void nativeFillInputBuffer(long encoder, int inputBuffer, ByteBuffer dataY,
+      int strideY, ByteBuffer dataU, int strideU, ByteBuffer dataV, int strideV);
 }

@@ -22,6 +22,7 @@ import java.util.concurrent.CountDownLatch;
 /**
  * Can be used to save the video frames to file.
  */
+@JNINamespace("webrtc::jni")
 public class VideoFileRenderer implements VideoRenderer.Callbacks {
   private static final String TAG = "VideoFileRenderer";
 
@@ -94,7 +95,7 @@ public class VideoFileRenderer implements VideoRenderer.Callbacks {
     final float[] texMatrix = RendererCommon.multiplyMatrices(rotatedSamplingMatrix, layoutMatrix);
 
     try {
-      ByteBuffer buffer = JniCommon.allocateNativeByteBuffer(outputFrameSize);
+      ByteBuffer buffer = JniCommon.nativeAllocateByteBuffer(outputFrameSize);
       if (!frame.yuvFrame) {
         yuvConverter.convert(outputFrameBuffer, outputFileWidth, outputFileHeight, outputFileWidth,
             frame.textureId, texMatrix);
@@ -153,7 +154,7 @@ public class VideoFileRenderer implements VideoRenderer.Callbacks {
 
         videoOutFile.write(data);
 
-        JniCommon.freeNativeByteBuffer(buffer);
+        JniCommon.nativeFreeByteBuffer(buffer);
       }
       videoOutFile.close();
       Logging.d(TAG, "Video written to disk as " + outputFileName + ". Number frames are "

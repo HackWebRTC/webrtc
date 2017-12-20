@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** Java version of VideoTrackInterface. */
+@JNINamespace("webrtc::jni")
 public class VideoTrack extends MediaStreamTrack {
   private final List<VideoRenderer> renderers = new ArrayList<>();
   private final IdentityHashMap<VideoSink, Long> sinks = new IdentityHashMap<VideoSink, Long>();
@@ -78,9 +79,8 @@ public class VideoTrack extends MediaStreamTrack {
     super.dispose();
   }
 
-  private static native void nativeAddSink(long nativeTrack, long nativeSink);
-  private static native void nativeRemoveSink(long nativeTrack, long nativeSink);
-
+  private static native void nativeAddSink(long track, long nativeSink);
+  private static native void nativeRemoveSink(long track, long nativeSink);
   private static native long nativeWrapSink(VideoSink sink);
-  private static native void nativeFreeSink(long nativeSink);
+  private static native void nativeFreeSink(long sink);
 }

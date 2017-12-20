@@ -19,6 +19,7 @@ import org.webrtc.VideoFrame;
  * class also provides a createGui() method for creating a GUI-rendering window
  * on various platforms.
  */
+@JNINamespace("webrtc::jni")
 public class VideoRenderer {
   /**
    * Java version of webrtc::VideoFrame. Frames are only constructed from native code and test
@@ -194,7 +195,7 @@ public class VideoRenderer {
   }
 
   // Helper native function to do a video frame plane copying.
-  static native void copyPlaneNative(
+  static native void nativeCopyPlane(
       ByteBuffer src, int width, int height, int srcStride, ByteBuffer dst, int dstStride);
 
   /** The real meat of VideoSinkInterface. */
@@ -213,7 +214,7 @@ public class VideoRenderer {
     frame.yuvPlanes = null;
     frame.textureId = 0;
     if (frame.nativeFramePointer != 0) {
-      releaseNativeFrame(frame.nativeFramePointer);
+      nativeReleaseFrame(frame.nativeFramePointer);
       frame.nativeFramePointer = 0;
     }
   }
@@ -221,7 +222,7 @@ public class VideoRenderer {
   long nativeVideoRenderer;
 
   public VideoRenderer(Callbacks callbacks) {
-    nativeVideoRenderer = createNativeVideoRenderer(callbacks);
+    nativeVideoRenderer = nativeCreateVideoRenderer(callbacks);
   }
 
   public void dispose() {
@@ -230,11 +231,11 @@ public class VideoRenderer {
       return;
     }
 
-    freeWrappedVideoRenderer(nativeVideoRenderer);
+    nativeFreeWrappedVideoRenderer(nativeVideoRenderer);
     nativeVideoRenderer = 0;
   }
 
-  private static native long createNativeVideoRenderer(Callbacks callbacks);
-  private static native void freeWrappedVideoRenderer(long nativeVideoRenderer);
-  private static native void releaseNativeFrame(long nativeFramePointer);
+  private static native long nativeCreateVideoRenderer(Callbacks callbacks);
+  private static native void nativeFreeWrappedVideoRenderer(long videoRenderer);
+  private static native void nativeReleaseFrame(long framePointer);
 }

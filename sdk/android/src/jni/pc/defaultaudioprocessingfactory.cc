@@ -12,16 +12,15 @@
 
 #include "modules/audio_processing/include/audio_processing.h"
 #include "rtc_base/scoped_ref_ptr.h"
+#include "sdk/android/generated_audio_jni/jni/DefaultAudioProcessingFactory_jni.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {
 namespace jni {
 
-JNI_FUNCTION_DECLARATION(
-    jlong,
-    DefaultAudioProcessingFactory_nativeCreateAudioProcessing,
+static jlong JNI_DefaultAudioProcessingFactory_CreateAudioProcessing(
     JNIEnv*,
-    jclass,
+    const JavaParamRef<jclass>&,
     jlong native_post_processor) {
   std::unique_ptr<PostProcessing> post_processor(
       reinterpret_cast<PostProcessing*>(native_post_processor));

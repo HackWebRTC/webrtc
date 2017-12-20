@@ -11,18 +11,18 @@
 #include <jni.h>
 
 #include "media/engine/videodecodersoftwarefallbackwrapper.h"
+#include "sdk/android/generated_video_jni/jni/VideoDecoderFallback_jni.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 #include "sdk/android/src/jni/wrappednativecodec.h"
 
 namespace webrtc {
 namespace jni {
 
-JNI_FUNCTION_DECLARATION(jlong,
-                         VideoDecoderFallback_createNativeDecoder,
-                         JNIEnv* jni,
-                         jclass,
-                         jobject j_fallback_decoder,
-                         jobject j_primary_decoder) {
+static jlong JNI_VideoDecoderFallback_CreateDecoder(
+    JNIEnv* jni,
+    const JavaParamRef<jclass>&,
+    const JavaParamRef<jobject>& j_fallback_decoder,
+    const JavaParamRef<jobject>& j_primary_decoder) {
   std::unique_ptr<VideoDecoder> fallback_decoder =
       JavaToNativeVideoDecoder(jni, j_fallback_decoder);
   std::unique_ptr<VideoDecoder> primary_decoder =

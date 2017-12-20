@@ -10,8 +10,14 @@
 
 package org.webrtc;
 
+@JNINamespace("webrtc::jni")
 class VP8Encoder extends WrappedNativeVideoEncoder {
-  @Override native long createNativeEncoder();
+  @Override
+  long createNativeEncoder() {
+    return nativeCreateEncoder();
+  }
+
+  static native long nativeCreateEncoder();
 
   @Override
   boolean isSoftwareEncoder() {

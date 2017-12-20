@@ -11,6 +11,7 @@
 package org.webrtc;
 
 /** An implementation of CapturerObserver that forwards all calls from Java to the C layer. */
+@JNINamespace("webrtc::jni")
 class AndroidVideoTrackSourceObserver implements VideoCapturer.CapturerObserver {
   // Pointer to VideoTrackSourceProxy proxying AndroidVideoTrackSource.
   private final long nativeSource;
@@ -49,12 +50,12 @@ class AndroidVideoTrackSourceObserver implements VideoCapturer.CapturerObserver 
         frame.getRotation(), frame.getTimestampNs(), frame.getBuffer());
   }
 
-  private native void nativeCapturerStarted(long nativeSource, boolean success);
-  private native void nativeCapturerStopped(long nativeSource);
-  private native void nativeOnByteBufferFrameCaptured(long nativeSource, byte[] data, int length,
-      int width, int height, int rotation, long timeStamp);
-  private native void nativeOnTextureFrameCaptured(long nativeSource, int width, int height,
+  private static native void nativeCapturerStarted(long source, boolean success);
+  private static native void nativeCapturerStopped(long source);
+  private static native void nativeOnByteBufferFrameCaptured(
+      long source, byte[] data, int length, int width, int height, int rotation, long timeStamp);
+  private static native void nativeOnTextureFrameCaptured(long source, int width, int height,
       int oesTextureId, float[] transformMatrix, int rotation, long timestamp);
-  private native void nativeOnFrameCaptured(long nativeSource, int width, int height, int rotation,
-      long timestampNs, VideoFrame.Buffer frame);
+  private static native void nativeOnFrameCaptured(
+      long source, int width, int height, int rotation, long timestampNs, VideoFrame.Buffer frame);
 }

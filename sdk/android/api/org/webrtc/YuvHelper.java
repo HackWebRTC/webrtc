@@ -13,6 +13,7 @@ package org.webrtc;
 import java.nio.ByteBuffer;
 
 /** Wraps libyuv methods to Java. All passed byte buffers must be direct byte buffers. */
+@JNINamespace("webrtc::jni")
 public class YuvHelper {
   /** Helper method for copying I420 to tightly packed destination buffer. */
   public static void I420Copy(ByteBuffer srcY, int srcStrideY, ByteBuffer srcU, int srcStrideU,
@@ -37,8 +38,8 @@ public class YuvHelper {
     dst.position(startV);
     final ByteBuffer dstV = dst.slice();
 
-    I420Copy(srcY, srcStrideY, srcU, srcStrideU, srcV, srcStrideV, dstY, width, dstU, chromaWidth,
-        dstV, chromaWidth, width, height);
+    nativeI420Copy(srcY, srcStrideY, srcU, srcStrideU, srcV, srcStrideV, dstY, width, dstU,
+        chromaWidth, dstV, chromaWidth, width, height);
   }
 
   /** Helper method for copying I420 to tightly packed NV12 destination buffer. */
@@ -61,14 +62,28 @@ public class YuvHelper {
     dst.position(startUV);
     final ByteBuffer dstUV = dst.slice();
 
-    I420ToNV12(srcY, srcStrideY, srcU, srcStrideU, srcV, srcStrideV, dstY, width, dstUV,
+    nativeI420ToNV12(srcY, srcStrideY, srcU, srcStrideU, srcV, srcStrideV, dstY, width, dstUV,
         chromaWidth * 2, width, height);
   }
 
-  public static native void I420Copy(ByteBuffer srcY, int srcStrideY, ByteBuffer srcU,
+  public static void I420Copy(ByteBuffer srcY, int srcStrideY, ByteBuffer srcU, int srcStrideU,
+      ByteBuffer srcV, int srcStrideV, ByteBuffer dstY, int dstStrideY, ByteBuffer dstU,
+      int dstStrideU, ByteBuffer dstV, int dstStrideV, int width, int height) {
+    nativeI420Copy(srcY, srcStrideY, srcU, srcStrideU, srcV, srcStrideV, dstY, dstStrideY, dstU,
+        dstStrideU, dstV, dstStrideV, width, height);
+  }
+
+  public static void I420ToNV12(ByteBuffer srcY, int srcStrideY, ByteBuffer srcU, int srcStrideU,
+      ByteBuffer srcV, int srcStrideV, ByteBuffer dstY, int dstStrideY, ByteBuffer dstUV,
+      int dstStrideUV, int width, int height) {
+    nativeI420ToNV12(srcY, srcStrideY, srcU, srcStrideU, srcV, srcStrideV, dstY, dstStrideY, dstUV,
+        dstStrideUV, width, height);
+  }
+
+  private static native void nativeI420Copy(ByteBuffer srcY, int srcStrideY, ByteBuffer srcU,
       int srcStrideU, ByteBuffer srcV, int srcStrideV, ByteBuffer dstY, int dstStrideY,
       ByteBuffer dstU, int dstStrideU, ByteBuffer dstV, int dstStrideV, int width, int height);
-  public static native void I420ToNV12(ByteBuffer srcY, int srcStrideY, ByteBuffer srcU,
+  private static native void nativeI420ToNV12(ByteBuffer srcY, int srcStrideY, ByteBuffer srcU,
       int srcStrideU, ByteBuffer srcV, int srcStrideV, ByteBuffer dstY, int dstStrideY,
       ByteBuffer dstUV, int dstStrideUV, int width, int height);
 }

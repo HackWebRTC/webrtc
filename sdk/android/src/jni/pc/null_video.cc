@@ -13,13 +13,30 @@
 namespace webrtc {
 namespace jni {
 
-VideoEncoderFactory* CreateVideoEncoderFactory(JNIEnv* jni,
-                                               jobject j_encoder_factory) {
+VideoEncoderFactory* CreateVideoEncoderFactory(
+    JNIEnv* jni,
+    const JavaRef<jobject>& j_encoder_factory) {
   return nullptr;
 }
 
-VideoDecoderFactory* CreateVideoDecoderFactory(JNIEnv* jni,
-                                               jobject j_decoder_factory) {
+VideoDecoderFactory* CreateVideoDecoderFactory(
+    JNIEnv* jni,
+    const JavaRef<jobject>& j_decoder_factory) {
+  return nullptr;
+}
+
+void SetEglContext(JNIEnv* env,
+                   cricket::WebRtcVideoEncoderFactory* encoder_factory,
+                   const JavaRef<jobject>& egl_context) {}
+void SetEglContext(JNIEnv* env,
+                   cricket::WebRtcVideoDecoderFactory* decoder_factory,
+                   const JavaRef<jobject>& egl_context) {}
+
+void* CreateVideoSource(JNIEnv* env,
+                        rtc::Thread* signaling_thread,
+                        rtc::Thread* worker_thread,
+                        const JavaParamRef<jobject>& j_surface_texture_helper,
+                        jboolean is_screencast) {
   return nullptr;
 }
 

@@ -20,32 +20,29 @@
 namespace webrtc {
 namespace jni {
 
-JNI_FUNCTION_DECLARATION(void, Metrics_enableNative, JNIEnv* jni, jclass) {
+static void JNI_Metrics_Enable(JNIEnv* jni, const JavaParamRef<jclass>&) {
   metrics::Enable();
 }
 
 // Gets and clears native histograms.
-JNI_FUNCTION_DECLARATION(jobject,
-                         Metrics_getAndResetNative,
-                         JNIEnv* jni,
-                         jclass) {
-  jobject j_metrics = Java_Metrics_Constructor(jni);
+static ScopedJavaLocalRef<jobject> JNI_Metrics_GetAndReset(
+    JNIEnv* jni,
+    const JavaParamRef<jclass>& jcaller) {
+  ScopedJavaLocalRef<jobject> j_metrics = Java_Metrics_Constructor(jni);
 
   std::map<std::string, std::unique_ptr<metrics::SampleInfo>> histograms;
   metrics::GetAndReset(&histograms);
   for (const auto& kv : histograms) {
     // Create and add samples to |HistogramInfo|.
-    jobject j_info = Java_HistogramInfo_Constructor(
+    ScopedJavaLocalRef<jobject> j_info = Java_HistogramInfo_Constructor(
         jni, kv.second->min, kv.second->max,
         static_cast<int>(kv.second->bucket_count));
     for (const auto& sample : kv.second->samples) {
       Java_HistogramInfo_addSample(jni, j_info, sample.first, sample.second);
     }
     // Add |HistogramInfo| to |Metrics|.
-    jstring j_name = jni->NewStringUTF(kv.first.c_str());
+    ScopedJavaLocalRef<jstring> j_name = NativeToJavaString(jni, kv.first);
     Java_Metrics_add(jni, j_metrics, j_name, j_info);
-    jni->DeleteLocalRef(j_name);
-    jni->DeleteLocalRef(j_info);
   }
   CHECK_EXCEPTION(jni);
   return j_metrics;

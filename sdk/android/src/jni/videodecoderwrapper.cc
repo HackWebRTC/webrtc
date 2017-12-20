@@ -35,7 +35,8 @@ inline rtc::Optional<Dst> cast_optional(const rtc::Optional<Src>& value) {
 }
 }  // namespace
 
-VideoDecoderWrapper::VideoDecoderWrapper(JNIEnv* jni, jobject decoder)
+VideoDecoderWrapper::VideoDecoderWrapper(JNIEnv* jni,
+                                         const JavaRef<jobject>& decoder)
     : decoder_(jni, decoder) {
   initialized_ = false;
   // QP parsing starts enabled and we disable it if the decoder provides frames.
@@ -48,22 +49,21 @@ VideoDecoderWrapper::VideoDecoderWrapper(JNIEnv* jni, jobject decoder)
 int32_t VideoDecoderWrapper::InitDecode(const VideoCodec* codec_settings,
                                         int32_t number_of_cores) {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
-  ScopedLocalRefFrame local_ref_frame(jni);
-
   codec_settings_ = *codec_settings;
   number_of_cores_ = number_of_cores;
   return InitDecodeInternal(jni);
 }
 
 int32_t VideoDecoderWrapper::InitDecodeInternal(JNIEnv* jni) {
-  jobject settings = Java_Settings_Constructor(
+  ScopedJavaLocalRef<jobject> settings = Java_Settings_Constructor(
       jni, number_of_cores_, codec_settings_.width, codec_settings_.height);
 
-  jobject callback = Java_VideoDecoderWrapper_createDecoderCallback(
-      jni, jlongFromPointer(this));
+  ScopedJavaLocalRef<jobject> callback =
+      Java_VideoDecoderWrapper_createDecoderCallback(jni,
+                                                     jlongFromPointer(this));
 
-  jobject ret =
-      Java_VideoDecoder_initDecode(jni, *decoder_, settings, callback);
+  ScopedJavaLocalRef<jobject> ret =
+      Java_VideoDecoder_initDecode(jni, decoder_, settings, callback);
   if (JavaToNativeVideoCodecStatus(jni, ret) == WEBRTC_VIDEO_CODEC_OK) {
     initialized_ = true;
   }
@@ -86,9 +86,6 @@ int32_t VideoDecoderWrapper::Decode(
     return WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE;
   }
 
-  JNIEnv* jni = AttachCurrentThreadIfNeeded();
-  ScopedLocalRefFrame local_ref_frame(jni);
-
   // Make a mutable copy so we can modify the timestamp.
   EncodedImage input_image(image_param);
   // We use RTP timestamp for capture time because capture_time_ms_ is always 0.
@@ -104,9 +101,13 @@ int32_t VideoDecoderWrapper::Decode(
       qp_parsing_enabled_ ? ParseQP(input_image) : rtc::nullopt;
   frame_extra_infos_.push_back(frame_extra_info);
 
-  jobject jinput_image = NativeToJavaEncodedImage(jni, input_image);
-  jobject ret = Java_VideoDecoder_decode(jni, *decoder_, jinput_image, nullptr);
-  return HandleReturnCode(jni, ret);
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  ScopedJavaLocalRef<jobject> jinput_image =
+      NativeToJavaEncodedImage(env, input_image);
+  ScopedJavaLocalRef<jobject> decode_info;
+  ScopedJavaLocalRef<jobject> ret =
+      Java_VideoDecoder_decode(env, decoder_, jinput_image, decode_info);
+  return HandleReturnCode(env, ret);
 }
 
 int32_t VideoDecoderWrapper::RegisterDecodeCompleteCallback(
@@ -117,8 +118,7 @@ int32_t VideoDecoderWrapper::RegisterDecodeCompleteCallback(
 
 int32_t VideoDecoderWrapper::Release() {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
-  ScopedLocalRefFrame local_ref_frame(jni);
-  jobject ret = Java_VideoDecoder_release(jni, *decoder_);
+  ScopedJavaLocalRef<jobject> ret = Java_VideoDecoder_release(jni, decoder_);
   frame_extra_infos_.clear();
   initialized_ = false;
   return HandleReturnCode(jni, ret);
@@ -126,18 +126,19 @@ int32_t VideoDecoderWrapper::Release() {
 
 bool VideoDecoderWrapper::PrefersLateDecoding() const {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
-  return Java_VideoDecoder_getPrefersLateDecoding(jni, *decoder_);
+  return Java_VideoDecoder_getPrefersLateDecoding(jni, decoder_);
 }
 
 const char* VideoDecoderWrapper::ImplementationName() const {
   return implementation_name_.c_str();
 }
 
-void VideoDecoderWrapper::OnDecodedFrame(JNIEnv* env,
-                                         jobject j_caller,
-                                         jobject j_frame,
-                                         jobject j_decode_time_ms,
-                                         jobject j_qp) {
+void VideoDecoderWrapper::OnDecodedFrame(
+    JNIEnv* env,
+    const JavaRef<jobject>& j_caller,
+    const JavaRef<jobject>& j_frame,
+    const JavaRef<jobject>& j_decode_time_ms,
+    const JavaRef<jobject>& j_qp) {
   const uint64_t timestamp_ns = GetJavaVideoFrameTimestampNs(env, j_frame);
 
   FrameExtraInfo frame_extra_info;
@@ -170,7 +171,8 @@ void VideoDecoderWrapper::OnDecodedFrame(JNIEnv* env,
                      decoder_qp ? decoder_qp : frame_extra_info.qp);
 }
 
-int32_t VideoDecoderWrapper::HandleReturnCode(JNIEnv* jni, jobject code) {
+int32_t VideoDecoderWrapper::HandleReturnCode(JNIEnv* jni,
+                                              const JavaRef<jobject>& code) {
   int32_t value = JavaToNativeVideoCodecStatus(jni, code);
   if (value < 0) {  // Any errors are represented by negative values.
     // Reset the codec.

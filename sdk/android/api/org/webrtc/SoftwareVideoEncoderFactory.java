@@ -20,7 +20,7 @@ public class SoftwareVideoEncoderFactory implements VideoEncoderFactory {
     if (info.name.equalsIgnoreCase("VP8")) {
       return new VP8Encoder();
     }
-    if (info.name.equalsIgnoreCase("VP9") && VP9Encoder.isSupported()) {
+    if (info.name.equalsIgnoreCase("VP9") && VP9Encoder.nativeIsSupported()) {
       return new VP9Encoder();
     }
 
@@ -36,7 +36,7 @@ public class SoftwareVideoEncoderFactory implements VideoEncoderFactory {
     List<VideoCodecInfo> codecs = new ArrayList<VideoCodecInfo>();
 
     codecs.add(new VideoCodecInfo("VP8", new HashMap<>()));
-    if (VP9Encoder.isSupported()) {
+    if (VP9Encoder.nativeIsSupported()) {
       codecs.add(new VideoCodecInfo("VP9", new HashMap<>()));
     }
 

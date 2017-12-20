@@ -11,6 +11,7 @@
 package org.webrtc;
 
 /** Java wrapper for a C++ RtpSenderInterface. */
+@JNINamespace("webrtc::jni")
 public class RtpSender {
   final long nativeRtpSender;
 
@@ -22,11 +23,11 @@ public class RtpSender {
   @CalledByNative
   public RtpSender(long nativeRtpSender) {
     this.nativeRtpSender = nativeRtpSender;
-    long track = getNativeTrack(nativeRtpSender);
+    long track = nativeGetTrack(nativeRtpSender);
     // It may be possible for an RtpSender to be created without a track.
     cachedTrack = (track != 0) ? new MediaStreamTrack(track) : null;
 
-    long nativeDtmfSender = getNativeDtmfSender(nativeRtpSender);
+    long nativeDtmfSender = nativeGetDtmfSender(nativeRtpSender);
     dtmfSender = (nativeDtmfSender != 0) ? new DtmfSender(nativeDtmfSender) : null;
   }
 
@@ -45,7 +46,7 @@ public class RtpSender {
    * @return              true on success and false on failure.
    */
   public boolean setTrack(MediaStreamTrack track, boolean takeOwnership) {
-    if (!setNativeTrack(nativeRtpSender, (track == null) ? 0 : track.nativeTrack)) {
+    if (!nativeSetTrack(nativeRtpSender, (track == null) ? 0 : track.nativeTrack)) {
       return false;
     }
     if (cachedTrack != null && ownsTrack) {
@@ -61,15 +62,15 @@ public class RtpSender {
   }
 
   public boolean setParameters(RtpParameters parameters) {
-    return setNativeParameters(nativeRtpSender, parameters);
+    return nativeSetParameters(nativeRtpSender, parameters);
   }
 
   public RtpParameters getParameters() {
-    return getNativeParameters(nativeRtpSender);
+    return nativeGetParameters(nativeRtpSender);
   }
 
   public String id() {
-    return getNativeId(nativeRtpSender);
+    return nativeGetId(nativeRtpSender);
   }
 
   public DtmfSender dtmf() {
@@ -86,19 +87,19 @@ public class RtpSender {
     JniCommon.nativeReleaseRef(nativeRtpSender);
   }
 
-  private static native boolean setNativeTrack(long nativeRtpSender, long nativeTrack);
+  private static native boolean nativeSetTrack(long rtpSender, long nativeTrack);
 
   // This should increment the reference count of the track.
   // Will be released in dispose() or setTrack().
-  private static native long getNativeTrack(long nativeRtpSender);
+  private static native long nativeGetTrack(long rtpSender);
 
   // This should increment the reference count of the DTMF sender.
   // Will be released in dispose().
-  private static native long getNativeDtmfSender(long nativeRtpSender);
+  private static native long nativeGetDtmfSender(long rtpSender);
 
-  private static native boolean setNativeParameters(long nativeRtpSender, RtpParameters parameters);
+  private static native boolean nativeSetParameters(long rtpSender, RtpParameters parameters);
 
-  private static native RtpParameters getNativeParameters(long nativeRtpSender);
+  private static native RtpParameters nativeGetParameters(long rtpSender);
 
-  private static native String getNativeId(long nativeRtpSender);
+  private static native String nativeGetId(long rtpSender);
 };

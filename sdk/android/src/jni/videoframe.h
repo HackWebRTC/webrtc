@@ -18,6 +18,7 @@
 #include "api/video/video_rotation.h"
 #include "rtc_base/callback.h"
 #include "sdk/android/src/jni/jni_helpers.h"
+#include "sdk/android/src/jni/surfacetexturehelper.h"
 
 namespace webrtc {
 namespace jni {
@@ -28,11 +29,12 @@ class SurfaceTextureHelper;
 // in-place.
 class Matrix {
  public:
-  Matrix(JNIEnv* jni, jfloatArray a);
+  Matrix(JNIEnv* jni, const JavaRef<jfloatArray>& a);
 
-  static Matrix fromAndroidGraphicsMatrix(JNIEnv* jni, jobject j_matrix);
+  static Matrix fromAndroidGraphicsMatrix(JNIEnv* jni,
+                                          const JavaRef<jobject>& j_matrix);
 
-  jfloatArray ToJava(JNIEnv* jni) const;
+  ScopedJavaLocalRef<jfloatArray> ToJava(JNIEnv* jni) const;
 
   // Crop arguments are relative to original size.
   void Crop(float cropped_width,
@@ -53,7 +55,7 @@ class Matrix {
 struct NativeHandleImpl {
   NativeHandleImpl(JNIEnv* jni,
                    jint j_oes_texture_id,
-                   jfloatArray j_transform_matrix);
+                   const JavaRef<jfloatArray>& j_transform_matrix);
 
   NativeHandleImpl(int id, const Matrix& matrix);
 
@@ -103,18 +105,18 @@ class AndroidVideoBuffer : public AndroidVideoFrameBuffer {
   // Creates a native VideoFrameBuffer from a Java VideoFrame.Buffer.
   static rtc::scoped_refptr<AndroidVideoBuffer> Create(
       JNIEnv* jni,
-      jobject j_video_frame_buffer);
+      const JavaRef<jobject>& j_video_frame_buffer);
 
   // Similar to the Create() above, but adopts and takes ownership of the Java
   // VideoFrame.Buffer. I.e. retain() will not be called, but release() will be
   // called when the returned AndroidVideoBuffer is destroyed.
   static rtc::scoped_refptr<AndroidVideoBuffer> Adopt(
       JNIEnv* jni,
-      jobject j_video_frame_buffer);
+      const JavaRef<jobject>& j_video_frame_buffer);
 
   ~AndroidVideoBuffer() override;
 
-  jobject video_frame_buffer() const;
+  const ScopedJavaGlobalRef<jobject>& video_frame_buffer() const;
 
   // Crops a region defined by |crop_x|, |crop_y|, |crop_width| and
   // |crop_height|. Scales it to size |scale_width| x |scale_height|.
@@ -129,7 +131,7 @@ class AndroidVideoBuffer : public AndroidVideoFrameBuffer {
  protected:
   // Should not be called directly. Adopts the Java VideoFrame.Buffer. Use
   // Create() or Adopt() instead for clarity.
-  AndroidVideoBuffer(JNIEnv* jni, jobject j_video_frame_buffer);
+  AndroidVideoBuffer(JNIEnv* jni, const JavaRef<jobject>& j_video_frame_buffer);
 
  private:
   Type type() const override;
@@ -143,16 +145,18 @@ class AndroidVideoBuffer : public AndroidVideoFrameBuffer {
   const int width_;
   const int height_;
   // Holds a VideoFrame.Buffer.
-  const ScopedGlobalRef<jobject> j_video_frame_buffer_;
+  const ScopedJavaGlobalRef<jobject> j_video_frame_buffer_;
 };
 
 VideoFrame JavaToNativeFrame(JNIEnv* jni,
-                             jobject j_video_frame,
+                             const JavaRef<jobject>& j_video_frame,
                              uint32_t timestamp_rtp);
 
-jobject NativeToJavaFrame(JNIEnv* jni, const VideoFrame& frame);
+ScopedJavaLocalRef<jobject> NativeToJavaFrame(JNIEnv* jni,
+                                              const VideoFrame& frame);
 
-int64_t GetJavaVideoFrameTimestampNs(JNIEnv* jni, jobject j_video_frame);
+int64_t GetJavaVideoFrameTimestampNs(JNIEnv* jni,
+                                     const JavaRef<jobject>& j_video_frame);
 
 }  // namespace jni
 }  // namespace webrtc

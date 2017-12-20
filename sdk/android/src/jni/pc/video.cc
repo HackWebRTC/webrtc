@@ -32,38 +32,40 @@
 namespace webrtc {
 namespace jni {
 
-VideoEncoderFactory* CreateVideoEncoderFactory(JNIEnv* jni,
-                                               jobject j_encoder_factory) {
+VideoEncoderFactory* CreateVideoEncoderFactory(
+    JNIEnv* jni,
+    const JavaRef<jobject>& j_encoder_factory) {
   return new VideoEncoderFactoryWrapper(jni, j_encoder_factory);
 }
 
-VideoDecoderFactory* CreateVideoDecoderFactory(JNIEnv* jni,
-                                               jobject j_decoder_factory) {
+VideoDecoderFactory* CreateVideoDecoderFactory(
+    JNIEnv* jni,
+    const JavaRef<jobject>& j_decoder_factory) {
   return new VideoDecoderFactoryWrapper(jni, j_decoder_factory);
 }
 
 void SetEglContext(JNIEnv* env,
                    cricket::WebRtcVideoEncoderFactory* encoder_factory,
-                   jobject egl_context) {
+                   const JavaRef<jobject>& egl_context) {
   if (encoder_factory) {
     MediaCodecVideoEncoderFactory* media_codec_factory =
         static_cast<MediaCodecVideoEncoderFactory*>(encoder_factory);
     if (media_codec_factory && Java_Context_isEgl14Context(env, egl_context)) {
       RTC_LOG(LS_INFO) << "Set EGL context for HW encoding.";
-      media_codec_factory->SetEGLContext(env, egl_context);
+      media_codec_factory->SetEGLContext(env, egl_context.obj());
     }
   }
 }
 
 void SetEglContext(JNIEnv* env,
                    cricket::WebRtcVideoDecoderFactory* decoder_factory,
-                   jobject egl_context) {
+                   const JavaRef<jobject>& egl_context) {
   if (decoder_factory) {
     MediaCodecVideoDecoderFactory* media_codec_factory =
         static_cast<MediaCodecVideoDecoderFactory*>(decoder_factory);
     if (media_codec_factory) {
       RTC_LOG(LS_INFO) << "Set EGL context for HW decoding.";
-      media_codec_factory->SetEGLContext(env, egl_context);
+      media_codec_factory->SetEGLContext(env, egl_context.obj());
     }
   }
 }
@@ -71,7 +73,7 @@ void SetEglContext(JNIEnv* env,
 void* CreateVideoSource(JNIEnv* env,
                         rtc::Thread* signaling_thread,
                         rtc::Thread* worker_thread,
-                        jobject j_surface_texture_helper,
+                        const JavaParamRef<jobject>& j_surface_texture_helper,
                         jboolean is_screencast) {
   rtc::scoped_refptr<AndroidVideoTrackSource> source(
       new rtc::RefCountedObject<AndroidVideoTrackSource>(

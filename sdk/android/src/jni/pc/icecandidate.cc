@@ -21,11 +21,12 @@ namespace jni {
 
 namespace {
 
-jobject CreateJavaIceCandidate(JNIEnv* env,
-                               const std::string& sdp_mid,
-                               int sdp_mline_index,
-                               const std::string& sdp,
-                               const std::string server_url) {
+ScopedJavaLocalRef<jobject> CreateJavaIceCandidate(
+    JNIEnv* env,
+    const std::string& sdp_mid,
+    int sdp_mline_index,
+    const std::string& sdp,
+    const std::string server_url) {
   return Java_IceCandidate_Constructor(
       env, NativeToJavaString(env, sdp_mid), sdp_mline_index,
       NativeToJavaString(env, sdp), NativeToJavaString(env, server_url));
@@ -33,7 +34,8 @@ jobject CreateJavaIceCandidate(JNIEnv* env,
 
 }  // namespace
 
-cricket::Candidate JavaToNativeCandidate(JNIEnv* jni, jobject j_candidate) {
+cricket::Candidate JavaToNativeCandidate(JNIEnv* jni,
+                                         const JavaRef<jobject>& j_candidate) {
   std::string sdp_mid =
       JavaToStdString(jni, Java_IceCandidate_getSdpMid(jni, j_candidate));
   std::string sdp =
@@ -45,8 +47,9 @@ cricket::Candidate JavaToNativeCandidate(JNIEnv* jni, jobject j_candidate) {
   return candidate;
 }
 
-jobject NativeToJavaCandidate(JNIEnv* env,
-                              const cricket::Candidate& candidate) {
+ScopedJavaLocalRef<jobject> NativeToJavaCandidate(
+    JNIEnv* env,
+    const cricket::Candidate& candidate) {
   std::string sdp = SdpSerializeCandidate(candidate);
   RTC_CHECK(!sdp.empty()) << "got an empty ICE candidate";
   // sdp_mline_index is not used, pass an invalid value -1.
@@ -55,8 +58,9 @@ jobject NativeToJavaCandidate(JNIEnv* env,
                                 "" /* server_url */);
 }
 
-jobject NativeToJavaIceCandidate(JNIEnv* env,
-                                 const IceCandidateInterface& candidate) {
+ScopedJavaLocalRef<jobject> NativeToJavaIceCandidate(
+    JNIEnv* env,
+    const IceCandidateInterface& candidate) {
   std::string sdp;
   RTC_CHECK(candidate.ToString(&sdp)) << "got so far: " << sdp;
   return CreateJavaIceCandidate(env, candidate.sdp_mid(),
@@ -64,7 +68,7 @@ jobject NativeToJavaIceCandidate(JNIEnv* env,
                                 candidate.candidate().url());
 }
 
-jobjectArray NativeToJavaCandidateArray(
+ScopedJavaLocalRef<jobjectArray> NativeToJavaCandidateArray(
     JNIEnv* jni,
     const std::vector<cricket::Candidate>& candidates) {
   return NativeToJavaObjectArray(jni, candidates,
@@ -74,7 +78,7 @@ jobjectArray NativeToJavaCandidateArray(
 
 PeerConnectionInterface::IceTransportsType JavaToNativeIceTransportsType(
     JNIEnv* jni,
-    jobject j_ice_transports_type) {
+    const JavaRef<jobject>& j_ice_transports_type) {
   std::string enum_name = GetJavaEnumName(jni, j_ice_transports_type);
 
   if (enum_name == "ALL")
@@ -95,7 +99,7 @@ PeerConnectionInterface::IceTransportsType JavaToNativeIceTransportsType(
 
 PeerConnectionInterface::BundlePolicy JavaToNativeBundlePolicy(
     JNIEnv* jni,
-    jobject j_bundle_policy) {
+    const JavaRef<jobject>& j_bundle_policy) {
   std::string enum_name = GetJavaEnumName(jni, j_bundle_policy);
 
   if (enum_name == "BALANCED")
@@ -113,7 +117,7 @@ PeerConnectionInterface::BundlePolicy JavaToNativeBundlePolicy(
 
 PeerConnectionInterface::RtcpMuxPolicy JavaToNativeRtcpMuxPolicy(
     JNIEnv* jni,
-    jobject j_rtcp_mux_policy) {
+    const JavaRef<jobject>& j_rtcp_mux_policy) {
   std::string enum_name = GetJavaEnumName(jni, j_rtcp_mux_policy);
 
   if (enum_name == "NEGOTIATE")
@@ -128,7 +132,7 @@ PeerConnectionInterface::RtcpMuxPolicy JavaToNativeRtcpMuxPolicy(
 
 PeerConnectionInterface::TcpCandidatePolicy JavaToNativeTcpCandidatePolicy(
     JNIEnv* jni,
-    jobject j_tcp_candidate_policy) {
+    const JavaRef<jobject>& j_tcp_candidate_policy) {
   std::string enum_name = GetJavaEnumName(jni, j_tcp_candidate_policy);
 
   if (enum_name == "ENABLED")
@@ -142,8 +146,9 @@ PeerConnectionInterface::TcpCandidatePolicy JavaToNativeTcpCandidatePolicy(
 }
 
 PeerConnectionInterface::CandidateNetworkPolicy
-JavaToNativeCandidateNetworkPolicy(JNIEnv* jni,
-                                   jobject j_candidate_network_policy) {
+JavaToNativeCandidateNetworkPolicy(
+    JNIEnv* jni,
+    const JavaRef<jobject>& j_candidate_network_policy) {
   std::string enum_name = GetJavaEnumName(jni, j_candidate_network_policy);
 
   if (enum_name == "ALL")
@@ -157,7 +162,8 @@ JavaToNativeCandidateNetworkPolicy(JNIEnv* jni,
   return PeerConnectionInterface::kCandidateNetworkPolicyAll;
 }
 
-rtc::KeyType JavaToNativeKeyType(JNIEnv* jni, jobject j_key_type) {
+rtc::KeyType JavaToNativeKeyType(JNIEnv* jni,
+                                 const JavaRef<jobject>& j_key_type) {
   std::string enum_name = GetJavaEnumName(jni, j_key_type);
 
   if (enum_name == "RSA")
@@ -170,7 +176,9 @@ rtc::KeyType JavaToNativeKeyType(JNIEnv* jni, jobject j_key_type) {
 }
 
 PeerConnectionInterface::ContinualGatheringPolicy
-JavaToNativeContinualGatheringPolicy(JNIEnv* jni, jobject j_gathering_policy) {
+JavaToNativeContinualGatheringPolicy(
+    JNIEnv* jni,
+    const JavaRef<jobject>& j_gathering_policy) {
   std::string enum_name = GetJavaEnumName(jni, j_gathering_policy);
   if (enum_name == "GATHER_ONCE")
     return PeerConnectionInterface::GATHER_ONCE;
@@ -185,7 +193,7 @@ JavaToNativeContinualGatheringPolicy(JNIEnv* jni, jobject j_gathering_policy) {
 
 PeerConnectionInterface::TlsCertPolicy JavaToNativeTlsCertPolicy(
     JNIEnv* jni,
-    jobject j_ice_server_tls_cert_policy) {
+    const JavaRef<jobject>& j_ice_server_tls_cert_policy) {
   std::string enum_name = GetJavaEnumName(jni, j_ice_server_tls_cert_policy);
 
   if (enum_name == "TLS_CERT_POLICY_SECURE")

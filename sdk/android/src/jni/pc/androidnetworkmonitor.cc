@@ -29,7 +29,9 @@ enum AndroidSdkVersion {
   SDK_VERSION_MARSHMALLOW = 23
 };
 
-static NetworkType GetNetworkTypeFromJava(JNIEnv* jni, jobject j_network_type) {
+static NetworkType GetNetworkTypeFromJava(
+    JNIEnv* jni,
+    const JavaRef<jobject>& j_network_type) {
   std::string enum_name = GetJavaEnumName(jni, j_network_type);
   if (enum_name == "CONNECTION_UNKNOWN") {
     return NetworkType::NETWORK_UNKNOWN;
@@ -85,29 +87,32 @@ static rtc::AdapterType AdapterTypeFromNetworkType(NetworkType network_type) {
   }
 }
 
-static rtc::IPAddress JavaToNativeIpAddress(JNIEnv* jni, jobject j_ip_address) {
-  jbyteArray j_addresses = Java_IPAddress_getAddress(jni, j_ip_address);
-  size_t address_length = jni->GetArrayLength(j_addresses);
-  jbyte* addr_array = jni->GetByteArrayElements(j_addresses, nullptr);
+static rtc::IPAddress JavaToNativeIpAddress(
+    JNIEnv* jni,
+    const JavaRef<jobject>& j_ip_address) {
+  ScopedJavaLocalRef<jbyteArray> j_addresses =
+      Java_IPAddress_getAddress(jni, j_ip_address);
+  size_t address_length = jni->GetArrayLength(j_addresses.obj());
+  jbyte* addr_array = jni->GetByteArrayElements(j_addresses.obj(), nullptr);
   CHECK_EXCEPTION(jni) << "Error during JavaToNativeIpAddress";
   if (address_length == 4) {
     // IP4
     struct in_addr ip4_addr;
     memcpy(&ip4_addr.s_addr, addr_array, 4);
-    jni->ReleaseByteArrayElements(j_addresses, addr_array, JNI_ABORT);
+    jni->ReleaseByteArrayElements(j_addresses.obj(), addr_array, JNI_ABORT);
     return rtc::IPAddress(ip4_addr);
   }
   // IP6
   RTC_CHECK(address_length == 16);
   struct in6_addr ip6_addr;
   memcpy(ip6_addr.s6_addr, addr_array, address_length);
-  jni->ReleaseByteArrayElements(j_addresses, addr_array, JNI_ABORT);
+  jni->ReleaseByteArrayElements(j_addresses.obj(), addr_array, JNI_ABORT);
   return rtc::IPAddress(ip6_addr);
 }
 
 static NetworkInformation GetNetworkInformationFromJava(
     JNIEnv* jni,
-    jobject j_network_info) {
+    const JavaRef<jobject>& j_network_info) {
   NetworkInformation network_info;
   network_info.interface_name = JavaToStdString(
       jni, Java_NetworkInformation_getName(jni, j_network_info));
@@ -115,7 +120,7 @@ static NetworkInformation GetNetworkInformationFromJava(
       Java_NetworkInformation_getHandle(jni, j_network_info));
   network_info.type = GetNetworkTypeFromJava(
       jni, Java_NetworkInformation_getConnectionType(jni, j_network_info));
-  jobjectArray j_ip_addresses =
+  ScopedJavaLocalRef<jobjectArray> j_ip_addresses =
       Java_NetworkInformation_getIpAddresses(jni, j_network_info);
   network_info.ip_addresses = JavaToNativeVector<rtc::IPAddress>(
       jni, j_ip_addresses, &JavaToNativeIpAddress);
@@ -150,7 +155,7 @@ void AndroidNetworkMonitor::Start() {
   worker_thread()->socketserver()->set_network_binder(this);
 
   JNIEnv* env = AttachCurrentThreadIfNeeded();
-  Java_NetworkMonitor_startMonitoring(env, *j_network_monitor_,
+  Java_NetworkMonitor_startMonitoring(env, j_network_monitor_,
                                       jlongFromPointer(this));
 }
 
@@ -168,7 +173,7 @@ void AndroidNetworkMonitor::Stop() {
   }
 
   JNIEnv* env = AttachCurrentThreadIfNeeded();
-  Java_NetworkMonitor_stopMonitoring(env, *j_network_monitor_,
+  Java_NetworkMonitor_stopMonitoring(env, j_network_monitor_,
                                      jlongFromPointer(this));
 
   network_handle_by_address_.clear();
@@ -186,7 +191,7 @@ rtc::NetworkBindingResult AndroidNetworkMonitor::BindSocketToNetwork(
   // networks. This may also occur if there is no connectivity manager service.
   JNIEnv* env = AttachCurrentThreadIfNeeded();
   const bool network_binding_supported =
-      Java_NetworkMonitor_networkBindingSupported(env, *j_network_monitor_);
+      Java_NetworkMonitor_networkBindingSupported(env, j_network_monitor_);
   if (!network_binding_supported) {
     RTC_LOG(LS_WARNING)
         << "BindSocketToNetwork is not supported on this platform "
@@ -341,32 +346,35 @@ AndroidNetworkMonitorFactory::CreateNetworkMonitor() {
   return new AndroidNetworkMonitor(AttachCurrentThreadIfNeeded());
 }
 
-void AndroidNetworkMonitor::NotifyConnectionTypeChanged(JNIEnv* env,
-                                                        jobject j_caller) {
+void AndroidNetworkMonitor::NotifyConnectionTypeChanged(
+    JNIEnv* env,
+    const JavaRef<jobject>& j_caller) {
   OnNetworksChanged();
 }
 
 void AndroidNetworkMonitor::NotifyOfActiveNetworkList(
     JNIEnv* env,
-    jobject j_caller,
-    jobjectArray j_network_infos) {
+    const JavaRef<jobject>& j_caller,
+    const JavaRef<jobjectArray>& j_network_infos) {
   std::vector<NetworkInformation> network_infos =
       JavaToNativeVector<NetworkInformation>(env, j_network_infos,
                                              &GetNetworkInformationFromJava);
   SetNetworkInfos(network_infos);
 }
 
-void AndroidNetworkMonitor::NotifyOfNetworkConnect(JNIEnv* env,
-                                                   jobject j_caller,
-                                                   jobject j_network_info) {
+void AndroidNetworkMonitor::NotifyOfNetworkConnect(
+    JNIEnv* env,
+    const JavaRef<jobject>& j_caller,
+    const JavaRef<jobject>& j_network_info) {
   NetworkInformation network_info =
       GetNetworkInformationFromJava(env, j_network_info);
   OnNetworkConnected(network_info);
 }
 
-void AndroidNetworkMonitor::NotifyOfNetworkDisconnect(JNIEnv* env,
-                                                      jobject j_caller,
-                                                      jlong network_handle) {
+void AndroidNetworkMonitor::NotifyOfNetworkDisconnect(
+    JNIEnv* env,
+    const JavaRef<jobject>& j_caller,
+    jlong network_handle) {
   OnNetworkDisconnected(static_cast<NetworkHandle>(network_handle));
 }
 

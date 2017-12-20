@@ -24,7 +24,7 @@ namespace jni {
 class CreateSdpObserverJni : public CreateSessionDescriptionObserver {
  public:
   CreateSdpObserverJni(JNIEnv* env,
-                       jobject j_observer,
+                       const JavaRef<jobject>& j_observer,
                        std::unique_ptr<MediaConstraintsInterface> constraints);
 
   MediaConstraintsInterface* constraints() { return constraints_.get(); }
@@ -33,14 +33,14 @@ class CreateSdpObserverJni : public CreateSessionDescriptionObserver {
   void OnFailure(const std::string& error) override;
 
  private:
-  const ScopedGlobalRef<jobject> j_observer_global_;
+  const ScopedJavaGlobalRef<jobject> j_observer_global_;
   std::unique_ptr<MediaConstraintsInterface> constraints_;
 };
 
 class SetSdpObserverJni : public SetSessionDescriptionObserver {
  public:
   SetSdpObserverJni(JNIEnv* env,
-                    jobject j_observer,
+                    const JavaRef<jobject>& j_observer,
                     std::unique_ptr<MediaConstraintsInterface> constraints);
 
   MediaConstraintsInterface* constraints() { return constraints_.get(); }
@@ -49,7 +49,7 @@ class SetSdpObserverJni : public SetSessionDescriptionObserver {
   void OnFailure(const std::string& error) override;
 
  private:
-  const ScopedGlobalRef<jobject> j_observer_global_;
+  const ScopedJavaGlobalRef<jobject> j_observer_global_;
   std::unique_ptr<MediaConstraintsInterface> constraints_;
 };
 

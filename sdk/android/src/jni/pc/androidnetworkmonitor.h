@@ -69,23 +69,24 @@ class AndroidNetworkMonitor : public rtc::NetworkMonitorBase,
   // Always expected to be called on the network thread.
   void SetNetworkInfos(const std::vector<NetworkInformation>& network_infos);
 
-  void NotifyConnectionTypeChanged(JNIEnv* env, jobject j_caller);
+  void NotifyConnectionTypeChanged(JNIEnv* env,
+                                   const JavaRef<jobject>& j_caller);
   void NotifyOfNetworkConnect(JNIEnv* env,
-                              jobject j_caller,
-                              jobject j_network_info);
+                              const JavaRef<jobject>& j_caller,
+                              const JavaRef<jobject>& j_network_info);
   void NotifyOfNetworkDisconnect(JNIEnv* env,
-                                 jobject j_caller,
+                                 const JavaRef<jobject>& j_caller,
                                  jlong network_handle);
   void NotifyOfActiveNetworkList(JNIEnv* env,
-                                 jobject j_caller,
-                                 jobjectArray j_network_infos);
+                                 const JavaRef<jobject>& j_caller,
+                                 const JavaRef<jobjectArray>& j_network_infos);
 
  private:
   void OnNetworkConnected_w(const NetworkInformation& network_info);
   void OnNetworkDisconnected_w(NetworkHandle network_handle);
 
   const int android_sdk_int_;
-  ScopedGlobalRef<jobject> j_network_monitor_;
+  ScopedJavaGlobalRef<jobject> j_network_monitor_;
   rtc::ThreadChecker thread_checker_;
   bool started_ = false;
   std::map<std::string, rtc::AdapterType> adapter_type_by_name_;

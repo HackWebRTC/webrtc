@@ -22,13 +22,12 @@ namespace {
 // Helper for translating a List<Pair<String, String>> to a Constraints.
 MediaConstraintsInterface::Constraints PopulateConstraintsFromJavaPairList(
     JNIEnv* env,
-    jobject j_list) {
+    const JavaRef<jobject>& j_list) {
   MediaConstraintsInterface::Constraints constraints;
-  for (jobject entry : Iterable(env, j_list)) {
-    jstring j_key = Java_KeyValuePair_getKey(env, entry);
-    jstring j_value = Java_KeyValuePair_getValue(env, entry);
-    constraints.emplace_back(JavaToStdString(env, j_key),
-                             JavaToStdString(env, j_value));
+  for (const JavaRef<jobject>& entry : Iterable(env, j_list)) {
+    constraints.emplace_back(
+        JavaToStdString(env, Java_KeyValuePair_getKey(env, entry)),
+        JavaToStdString(env, Java_KeyValuePair_getValue(env, entry)));
   }
   return constraints;
 }
@@ -37,7 +36,7 @@ MediaConstraintsInterface::Constraints PopulateConstraintsFromJavaPairList(
 // the constructor returns the Java object is no longer needed.
 class MediaConstraintsJni : public MediaConstraintsInterface {
  public:
-  MediaConstraintsJni(JNIEnv* env, jobject j_constraints)
+  MediaConstraintsJni(JNIEnv* env, const JavaRef<jobject>& j_constraints)
       : mandatory_(PopulateConstraintsFromJavaPairList(
             env,
             Java_MediaConstraints_getMandatory(env, j_constraints))),
@@ -59,7 +58,7 @@ class MediaConstraintsJni : public MediaConstraintsInterface {
 
 std::unique_ptr<MediaConstraintsInterface> JavaToNativeMediaConstraints(
     JNIEnv* env,
-    jobject j_constraints) {
+    const JavaRef<jobject>& j_constraints) {
   return rtc::MakeUnique<MediaConstraintsJni>(env, j_constraints);
 }
 

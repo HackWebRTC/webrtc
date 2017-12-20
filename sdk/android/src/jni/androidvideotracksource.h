@@ -30,7 +30,7 @@ class AndroidVideoTrackSource : public rtc::AdaptedVideoTrackSource {
  public:
   AndroidVideoTrackSource(rtc::Thread* signaling_thread,
                           JNIEnv* jni,
-                          jobject j_surface_texture_helper,
+                          const JavaRef<jobject>& j_surface_texture_helper,
                           bool is_screencast = false);
 
   bool is_screencast() const override { return is_screencast_; }
@@ -65,7 +65,7 @@ class AndroidVideoTrackSource : public rtc::AdaptedVideoTrackSource {
                        int height,
                        int64_t timestamp_ns,
                        VideoRotation rotation,
-                       jobject j_video_frame_buffer);
+                       const JavaRef<jobject>& j_video_frame_buffer);
 
   void OnOutputFormatRequest(int width, int height, int fps);
 

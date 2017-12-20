@@ -27,12 +27,12 @@ JavaMediaStream::JavaMediaStream(
       observer_(rtc::MakeUnique<MediaStreamObserver>(media_stream)) {
   for (rtc::scoped_refptr<AudioTrackInterface> track :
        media_stream->GetAudioTracks()) {
-    Java_MediaStream_addNativeAudioTrack(env, *j_media_stream_,
+    Java_MediaStream_addNativeAudioTrack(env, j_media_stream_,
                                          jlongFromPointer(track.release()));
   }
   for (rtc::scoped_refptr<VideoTrackInterface> track :
        media_stream->GetVideoTracks()) {
-    Java_MediaStream_addNativeVideoTrack(env, *j_media_stream_,
+    Java_MediaStream_addNativeVideoTrack(env, j_media_stream_,
                                          jlongFromPointer(track.release()));
   }
 
@@ -56,7 +56,7 @@ JavaMediaStream::~JavaMediaStream() {
   JNIEnv* env = AttachCurrentThreadIfNeeded();
   // Remove the observer first, so it doesn't react to events during deletion.
   observer_ = nullptr;
-  Java_MediaStream_dispose(env, *j_media_stream_);
+  Java_MediaStream_dispose(env, j_media_stream_);
 }
 
 void JavaMediaStream::OnAudioTrackAddedToStream(AudioTrackInterface* track,
@@ -64,7 +64,7 @@ void JavaMediaStream::OnAudioTrackAddedToStream(AudioTrackInterface* track,
   JNIEnv* env = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(env);
   track->AddRef();
-  Java_MediaStream_addNativeAudioTrack(env, *j_media_stream_,
+  Java_MediaStream_addNativeAudioTrack(env, j_media_stream_,
                                        jlongFromPointer(track));
 }
 
@@ -73,7 +73,7 @@ void JavaMediaStream::OnVideoTrackAddedToStream(VideoTrackInterface* track,
   JNIEnv* env = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(env);
   track->AddRef();
-  Java_MediaStream_addNativeVideoTrack(env, *j_media_stream_,
+  Java_MediaStream_addNativeVideoTrack(env, j_media_stream_,
                                        jlongFromPointer(track));
 }
 
@@ -82,7 +82,7 @@ void JavaMediaStream::OnAudioTrackRemovedFromStream(
     MediaStreamInterface* stream) {
   JNIEnv* env = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(env);
-  Java_MediaStream_removeAudioTrack(env, *j_media_stream_,
+  Java_MediaStream_removeAudioTrack(env, j_media_stream_,
                                     jlongFromPointer(track));
 }
 
@@ -91,7 +91,7 @@ void JavaMediaStream::OnVideoTrackRemovedFromStream(
     MediaStreamInterface* stream) {
   JNIEnv* env = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(env);
-  Java_MediaStream_removeVideoTrack(env, *j_media_stream_,
+  Java_MediaStream_removeVideoTrack(env, j_media_stream_,
                                     jlongFromPointer(track));
 }
 
@@ -99,51 +99,42 @@ jclass GetMediaStreamClass(JNIEnv* env) {
   return org_webrtc_MediaStream_clazz(env);
 }
 
-JNI_FUNCTION_DECLARATION(jboolean,
-                         MediaStream_addAudioTrackToNativeStream,
-                         JNIEnv* jni,
-                         jclass,
-                         jlong pointer,
-                         jlong j_audio_track_pointer) {
+static jboolean JNI_MediaStream_AddAudioTrackToNativeStream(
+    JNIEnv* jni,
+    const JavaParamRef<jclass>&,
+    jlong pointer,
+    jlong j_audio_track_pointer) {
   return reinterpret_cast<MediaStreamInterface*>(pointer)->AddTrack(
       reinterpret_cast<AudioTrackInterface*>(j_audio_track_pointer));
 }
 
-JNI_FUNCTION_DECLARATION(jboolean,
-                         MediaStream_addVideoTrackToNativeStream,
-                         JNIEnv* jni,
-                         jclass,
-                         jlong pointer,
-                         jlong j_video_track_pointer) {
+static jboolean JNI_MediaStream_AddVideoTrackToNativeStream(
+    JNIEnv* jni,
+    const JavaParamRef<jclass>&,
+    jlong pointer,
+    jlong j_video_track_pointer) {
   return reinterpret_cast<MediaStreamInterface*>(pointer)->AddTrack(
       reinterpret_cast<VideoTrackInterface*>(j_video_track_pointer));
 }
 
-JNI_FUNCTION_DECLARATION(jboolean,
-                         MediaStream_removeNativeAudioTrack,
-                         JNIEnv* jni,
-                         jclass,
-                         jlong pointer,
-                         jlong j_audio_track_pointer) {
+static jboolean JNI_MediaStream_RemoveAudioTrack(JNIEnv* jni,
+                                                 const JavaParamRef<jclass>&,
+                                                 jlong pointer,
+                                                 jlong j_audio_track_pointer) {
   return reinterpret_cast<MediaStreamInterface*>(pointer)->RemoveTrack(
       reinterpret_cast<AudioTrackInterface*>(j_audio_track_pointer));
 }
 
-JNI_FUNCTION_DECLARATION(jboolean,
-                         MediaStream_removeNativeVideoTrack,
-                         JNIEnv* jni,
-                         jclass,
-                         jlong pointer,
-                         jlong j_video_track_pointer) {
+static jboolean JNI_MediaStream_RemoveVideoTrack(JNIEnv* jni,
+                                                 const JavaParamRef<jclass>&,
+                                                 jlong pointer,
+                                                 jlong j_video_track_pointer) {
   return reinterpret_cast<MediaStreamInterface*>(pointer)->RemoveTrack(
       reinterpret_cast<VideoTrackInterface*>(j_video_track_pointer));
 }
 
-JNI_FUNCTION_DECLARATION(jstring,
-                         MediaStream_getNativeLabel,
-                         JNIEnv* jni,
-                         jclass,
-                         jlong j_p) {
+static ScopedJavaLocalRef<jstring>
+JNI_MediaStream_GetLabel(JNIEnv* jni, const JavaParamRef<jclass>&, jlong j_p) {
   return NativeToJavaString(
       jni, reinterpret_cast<MediaStreamInterface*>(j_p)->label());
 }

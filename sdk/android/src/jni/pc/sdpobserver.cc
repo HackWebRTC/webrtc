@@ -21,15 +21,14 @@ namespace jni {
 
 CreateSdpObserverJni::CreateSdpObserverJni(
     JNIEnv* env,
-    jobject j_observer,
+    const JavaRef<jobject>& j_observer,
     std::unique_ptr<MediaConstraintsInterface> constraints)
     : j_observer_global_(env, j_observer),
       constraints_(std::move(constraints)) {}
 
 void CreateSdpObserverJni::OnSuccess(SessionDescriptionInterface* desc) {
   JNIEnv* env = AttachCurrentThreadIfNeeded();
-  ScopedLocalRefFrame local_ref_frame(env);
-  Java_SdpObserver_onCreateSuccess(env, *j_observer_global_,
+  Java_SdpObserver_onCreateSuccess(env, j_observer_global_,
                                    NativeToJavaSessionDescription(env, desc));
   // OnSuccess transfers ownership of the description (there's a TODO to make
   // it use unique_ptr...).
@@ -38,25 +37,25 @@ void CreateSdpObserverJni::OnSuccess(SessionDescriptionInterface* desc) {
 
 void CreateSdpObserverJni::OnFailure(const std::string& error) {
   JNIEnv* env = AttachCurrentThreadIfNeeded();
-  Java_SdpObserver_onCreateFailure(env, *j_observer_global_,
+  Java_SdpObserver_onCreateFailure(env, j_observer_global_,
                                    NativeToJavaString(env, error));
 }
 
 SetSdpObserverJni::SetSdpObserverJni(
     JNIEnv* env,
-    jobject j_observer,
+    const JavaRef<jobject>& j_observer,
     std::unique_ptr<MediaConstraintsInterface> constraints)
     : j_observer_global_(env, j_observer),
       constraints_(std::move(constraints)) {}
 
 void SetSdpObserverJni::OnSuccess() {
   JNIEnv* env = AttachCurrentThreadIfNeeded();
-  Java_SdpObserver_onSetSuccess(env, *j_observer_global_);
+  Java_SdpObserver_onSetSuccess(env, j_observer_global_);
 }
 
 void SetSdpObserverJni::OnFailure(const std::string& error) {
   JNIEnv* env = AttachCurrentThreadIfNeeded();
-  Java_SdpObserver_onSetFailure(env, *j_observer_global_,
+  Java_SdpObserver_onSetFailure(env, j_observer_global_,
                                 NativeToJavaString(env, error));
 }
 

@@ -15,30 +15,30 @@
 #include "third_party/libyuv/include/libyuv/scale.h"
 
 #include "rtc_base/checks.h"
+#include "sdk/android/generated_video_jni/jni/NV12Buffer_jni.h"
 
 namespace webrtc {
 namespace jni {
 
-extern "C" JNIEXPORT void JNICALL
-Java_org_webrtc_NV12Buffer_nativeCropAndScale(JNIEnv* jni,
-                                              jclass,
-                                              jint crop_x,
-                                              jint crop_y,
-                                              jint crop_width,
-                                              jint crop_height,
-                                              jint scale_width,
-                                              jint scale_height,
-                                              jobject j_src,
-                                              jint src_width,
-                                              jint src_height,
-                                              jint src_stride,
-                                              jint src_slice_height,
-                                              jobject j_dst_y,
-                                              jint dst_stride_y,
-                                              jobject j_dst_u,
-                                              jint dst_stride_u,
-                                              jobject j_dst_v,
-                                              jint dst_stride_v) {
+static void JNI_NV12Buffer_CropAndScale(JNIEnv* jni,
+                                        const JavaParamRef<jclass>&,
+                                        jint crop_x,
+                                        jint crop_y,
+                                        jint crop_width,
+                                        jint crop_height,
+                                        jint scale_width,
+                                        jint scale_height,
+                                        const JavaParamRef<jobject>& j_src,
+                                        jint src_width,
+                                        jint src_height,
+                                        jint src_stride,
+                                        jint src_slice_height,
+                                        const JavaParamRef<jobject>& j_dst_y,
+                                        jint dst_stride_y,
+                                        const JavaParamRef<jobject>& j_dst_u,
+                                        jint dst_stride_u,
+                                        const JavaParamRef<jobject>& j_dst_v,
+                                        jint dst_stride_v) {
   const int src_stride_y = src_stride;
   const int src_stride_uv = src_stride;
   const int crop_chroma_x = crop_x / 2;
@@ -50,12 +50,15 @@ Java_org_webrtc_NV12Buffer_nativeCropAndScale(JNIEnv* jni,
   const int tmp_size = crop_chroma_height * (tmp_stride_u + tmp_stride_v);
 
   uint8_t const* src_y =
-      static_cast<uint8_t const*>(jni->GetDirectBufferAddress(j_src));
+      static_cast<uint8_t const*>(jni->GetDirectBufferAddress(j_src.obj()));
   uint8_t const* src_uv = src_y + src_slice_height * src_stride_y;
 
-  uint8_t* dst_y = static_cast<uint8_t*>(jni->GetDirectBufferAddress(j_dst_y));
-  uint8_t* dst_u = static_cast<uint8_t*>(jni->GetDirectBufferAddress(j_dst_u));
-  uint8_t* dst_v = static_cast<uint8_t*>(jni->GetDirectBufferAddress(j_dst_v));
+  uint8_t* dst_y =
+      static_cast<uint8_t*>(jni->GetDirectBufferAddress(j_dst_y.obj()));
+  uint8_t* dst_u =
+      static_cast<uint8_t*>(jni->GetDirectBufferAddress(j_dst_u.obj()));
+  uint8_t* dst_v =
+      static_cast<uint8_t*>(jni->GetDirectBufferAddress(j_dst_v.obj()));
 
   // Crop using pointer arithmetic.
   src_y += crop_x + crop_y * src_stride_y;

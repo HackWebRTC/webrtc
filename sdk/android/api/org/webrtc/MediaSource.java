@@ -11,6 +11,7 @@
 package org.webrtc;
 
 /** Java wrapper for a C++ MediaSourceInterface. */
+@JNINamespace("webrtc::jni")
 public class MediaSource {
   /** Tracks MediaSourceInterface.SourceState */
   public enum State {
@@ -32,12 +33,12 @@ public class MediaSource {
   }
 
   public State state() {
-    return getNativeState(nativeSource);
+    return nativeGetState(nativeSource);
   }
 
   public void dispose() {
     JniCommon.nativeReleaseRef(nativeSource);
   }
 
-  private static native State getNativeState(long pointer);
+  private static native State nativeGetState(long pointer);
 }

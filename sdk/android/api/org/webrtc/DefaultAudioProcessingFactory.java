@@ -11,6 +11,7 @@
 package org.webrtc;
 
 /** Factory for instantiating the default webrtc::AudioProcessing implementation. */
+@JNINamespace("webrtc::jni")
 public class DefaultAudioProcessingFactory implements AudioProcessingFactory {
   public DefaultAudioProcessingFactory() {
     this(null /* postProcessingFactory */);
@@ -43,5 +44,5 @@ public class DefaultAudioProcessingFactory implements AudioProcessingFactory {
 
   private PostProcessingFactory postProcessingFactory;
 
-  private static native long nativeCreateAudioProcessing(long nativePostProcessor);
+  private static native long nativeCreateAudioProcessing(long postProcessor);
 }

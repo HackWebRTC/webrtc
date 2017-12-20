@@ -20,17 +20,19 @@
 namespace webrtc {
 namespace jni {
 
-VideoDecoderFactoryWrapper::VideoDecoderFactoryWrapper(JNIEnv* jni,
-                                                       jobject decoder_factory)
+VideoDecoderFactoryWrapper::VideoDecoderFactoryWrapper(
+    JNIEnv* jni,
+    const JavaRef<jobject>& decoder_factory)
     : decoder_factory_(jni, decoder_factory) {}
 
 std::unique_ptr<VideoDecoder> VideoDecoderFactoryWrapper::CreateVideoDecoder(
     const SdpVideoFormat& format) {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
-  ScopedLocalRefFrame local_ref_frame(jni);
-  jobject decoder = Java_VideoDecoderFactory_createDecoder(
-      jni, *decoder_factory_, NativeToJavaString(jni, format.name));
-  return decoder != nullptr ? JavaToNativeVideoDecoder(jni, decoder) : nullptr;
+  ScopedJavaLocalRef<jobject> decoder = Java_VideoDecoderFactory_createDecoder(
+      jni, decoder_factory_, NativeToJavaString(jni, format.name));
+  if (!decoder.obj())
+    return nullptr;
+  return JavaToNativeVideoDecoder(jni, decoder);
 }
 
 std::vector<SdpVideoFormat> VideoDecoderFactoryWrapper::GetSupportedFormats()

@@ -25,7 +25,8 @@ namespace jni {
 // JNI and wraps the encoder inside VideoEncoderWrapper.
 class VideoEncoderFactoryWrapper : public VideoEncoderFactory {
  public:
-  VideoEncoderFactoryWrapper(JNIEnv* jni, jobject encoder_factory);
+  VideoEncoderFactoryWrapper(JNIEnv* jni,
+                             const JavaRef<jobject>& encoder_factory);
 
   std::unique_ptr<VideoEncoder> CreateVideoEncoder(
       const SdpVideoFormat& format) override;
@@ -38,7 +39,7 @@ class VideoEncoderFactoryWrapper : public VideoEncoderFactory {
   CodecInfo QueryVideoEncoder(const SdpVideoFormat& format) const override;
 
  private:
-  const ScopedGlobalRef<jobject> encoder_factory_;
+  const ScopedJavaGlobalRef<jobject> encoder_factory_;
   std::vector<SdpVideoFormat> supported_formats_;
 };
 

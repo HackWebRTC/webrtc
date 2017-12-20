@@ -17,8 +17,9 @@
 namespace webrtc {
 namespace jni {
 
-jobject NativeToJavaRtpSender(JNIEnv* env,
-                              rtc::scoped_refptr<RtpSenderInterface> sender) {
+ScopedJavaLocalRef<jobject> NativeToJavaRtpSender(
+    JNIEnv* env,
+    rtc::scoped_refptr<RtpSenderInterface> sender) {
   if (!sender)
     return nullptr;
   // Sender is now owned by the Java object, and will be freed from
@@ -26,44 +27,37 @@ jobject NativeToJavaRtpSender(JNIEnv* env,
   return Java_RtpSender_Constructor(env, jlongFromPointer(sender.release()));
 }
 
-JNI_FUNCTION_DECLARATION(jboolean,
-                         RtpSender_setNativeTrack,
-                         JNIEnv* jni,
-                         jclass,
-                         jlong j_rtp_sender_pointer,
-                         jlong j_track_pointer) {
+static jboolean JNI_RtpSender_SetTrack(JNIEnv* jni,
+                                       const JavaParamRef<jclass>&,
+                                       jlong j_rtp_sender_pointer,
+                                       jlong j_track_pointer) {
   return reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)
       ->SetTrack(reinterpret_cast<MediaStreamTrackInterface*>(j_track_pointer));
 }
 
-JNI_FUNCTION_DECLARATION(jlong,
-                         RtpSender_getNativeTrack,
-                         JNIEnv* jni,
-                         jclass,
-                         jlong j_rtp_sender_pointer) {
+jlong JNI_RtpSender_GetTrack(JNIEnv* jni,
+                             const JavaParamRef<jclass>&,
+                             jlong j_rtp_sender_pointer) {
   return jlongFromPointer(
       reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)
           ->track()
           .release());
 }
 
-JNI_FUNCTION_DECLARATION(jlong,
-                         RtpSender_getNativeDtmfSender,
-                         JNIEnv* jni,
-                         jclass,
-                         jlong j_rtp_sender_pointer) {
+jlong JNI_RtpSender_GetDtmfSender(JNIEnv* jni,
+                                  const JavaParamRef<jclass>&,
+                                  jlong j_rtp_sender_pointer) {
   return jlongFromPointer(
       reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)
           ->GetDtmfSender()
           .release());
 }
 
-JNI_FUNCTION_DECLARATION(jboolean,
-                         RtpSender_setNativeParameters,
-                         JNIEnv* jni,
-                         jclass,
-                         jlong j_rtp_sender_pointer,
-                         jobject j_parameters) {
+jboolean JNI_RtpSender_SetParameters(
+    JNIEnv* jni,
+    const JavaParamRef<jclass>&,
+    jlong j_rtp_sender_pointer,
+    const JavaParamRef<jobject>& j_parameters) {
   if (IsNull(jni, j_parameters)) {
     return false;
   }
@@ -72,22 +66,19 @@ JNI_FUNCTION_DECLARATION(jboolean,
       ->SetParameters(parameters);
 }
 
-JNI_FUNCTION_DECLARATION(jobject,
-                         RtpSender_getNativeParameters,
-                         JNIEnv* jni,
-                         jclass,
-                         jlong j_rtp_sender_pointer) {
+ScopedJavaLocalRef<jobject> JNI_RtpSender_GetParameters(
+    JNIEnv* jni,
+    const JavaParamRef<jclass>&,
+    jlong j_rtp_sender_pointer) {
   RtpParameters parameters =
       reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)
           ->GetParameters();
   return NativeToJavaRtpParameters(jni, parameters);
 }
 
-JNI_FUNCTION_DECLARATION(jstring,
-                         RtpSender_getNativeId,
-                         JNIEnv* jni,
-                         jclass,
-                         jlong j_rtp_sender_pointer) {
+ScopedJavaLocalRef<jstring> JNI_RtpSender_GetId(JNIEnv* jni,
+                                                const JavaParamRef<jclass>&,
+                                                jlong j_rtp_sender_pointer) {
   return NativeToJavaString(
       jni, reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)->id());
 }

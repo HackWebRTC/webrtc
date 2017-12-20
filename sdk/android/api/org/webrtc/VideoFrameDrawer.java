@@ -95,7 +95,7 @@ public class VideoFrameDrawer {
           // Input is packed already.
           packedByteBuffer = planes[i];
         } else {
-          VideoRenderer.copyPlaneNative(
+          VideoRenderer.nativeCopyPlane(
               planes[i], planeWidths[i], planeHeights[i], strides[i], copyBuffer, planeWidths[i]);
           packedByteBuffer = copyBuffer;
         }

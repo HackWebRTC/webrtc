@@ -16,15 +16,17 @@
 namespace webrtc {
 namespace jni {
 
-SdpVideoFormat VideoCodecInfoToSdpVideoFormat(JNIEnv* jni, jobject j_info) {
+SdpVideoFormat VideoCodecInfoToSdpVideoFormat(JNIEnv* jni,
+                                              const JavaRef<jobject>& j_info) {
   return SdpVideoFormat(
       JavaToStdString(jni, Java_VideoCodecInfo_getName(jni, j_info)),
       JavaToStdMapStrings(jni, Java_VideoCodecInfo_getParams(jni, j_info)));
 }
 
-jobject SdpVideoFormatToVideoCodecInfo(JNIEnv* jni,
-                                       const SdpVideoFormat& format) {
-  jobject j_params = NativeToJavaMap(
+ScopedJavaLocalRef<jobject> SdpVideoFormatToVideoCodecInfo(
+    JNIEnv* jni,
+    const SdpVideoFormat& format) {
+  ScopedJavaLocalRef<jobject> j_params = NativeToJavaMap(
       jni, format.parameters,
       [](JNIEnv* env, const std::pair<std::string, std::string>& entry) {
         return std::make_pair(NativeToJavaString(env, entry.first),

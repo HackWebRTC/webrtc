@@ -14,12 +14,14 @@
 #include <jni.h>
 
 #include "api/rtpsenderinterface.h"
+#include "sdk/android/src/jni/scoped_java_ref.h"
 
 namespace webrtc {
 namespace jni {
 
-jobject NativeToJavaRtpSender(JNIEnv* env,
-                              rtc::scoped_refptr<RtpSenderInterface> sender);
+ScopedJavaLocalRef<jobject> NativeToJavaRtpSender(
+    JNIEnv* env,
+    rtc::scoped_refptr<RtpSenderInterface> sender);
 
 }  // namespace jni
 }  // namespace webrtc

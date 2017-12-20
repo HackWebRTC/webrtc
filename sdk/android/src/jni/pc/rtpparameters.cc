@@ -19,7 +19,7 @@ namespace jni {
 
 namespace {
 
-jobject NativeToJavaRtpEncodingParameter(
+ScopedJavaLocalRef<jobject> NativeToJavaRtpEncodingParameter(
     JNIEnv* env,
     const RtpEncodingParameters& encoding) {
   return Java_Encoding_Constructor(
@@ -27,8 +27,9 @@ jobject NativeToJavaRtpEncodingParameter(
       encoding.ssrc ? NativeToJavaLong(env, *encoding.ssrc) : nullptr);
 }
 
-jobject NativeToJavaRtpCodecParameter(JNIEnv* env,
-                                      const RtpCodecParameters& codec) {
+ScopedJavaLocalRef<jobject> NativeToJavaRtpCodecParameter(
+    JNIEnv* env,
+    const RtpCodecParameters& codec) {
   return Java_Codec_Constructor(env, codec.payload_type,
                                 NativeToJavaString(env, codec.name),
                                 NativeToJavaMediaType(env, codec.kind),
@@ -38,26 +39,31 @@ jobject NativeToJavaRtpCodecParameter(JNIEnv* env,
 
 }  // namespace
 
-RtpParameters JavaToNativeRtpParameters(JNIEnv* jni, jobject j_parameters) {
+RtpParameters JavaToNativeRtpParameters(JNIEnv* jni,
+                                        const JavaRef<jobject>& j_parameters) {
   RtpParameters parameters;
 
   // Convert encodings.
-  jobject j_encodings = Java_RtpParameters_getEncodings(jni, j_parameters);
-  for (jobject j_encoding_parameters : Iterable(jni, j_encodings)) {
+  ScopedJavaLocalRef<jobject> j_encodings =
+      Java_RtpParameters_getEncodings(jni, j_parameters);
+  for (const JavaRef<jobject>& j_encoding_parameters :
+       Iterable(jni, j_encodings)) {
     RtpEncodingParameters encoding;
     encoding.active = Java_Encoding_getActive(jni, j_encoding_parameters);
-    jobject j_bitrate =
+    ScopedJavaLocalRef<jobject> j_bitrate =
         Java_Encoding_getMaxBitrateBps(jni, j_encoding_parameters);
     encoding.max_bitrate_bps = JavaToNativeOptionalInt(jni, j_bitrate);
-    jobject j_ssrc = Java_Encoding_getSsrc(jni, j_encoding_parameters);
+    ScopedJavaLocalRef<jobject> j_ssrc =
+        Java_Encoding_getSsrc(jni, j_encoding_parameters);
     if (!IsNull(jni, j_ssrc))
       encoding.ssrc = JavaToNativeLong(jni, j_ssrc);
     parameters.encodings.push_back(encoding);
   }
 
   // Convert codecs.
-  jobject j_codecs = Java_RtpParameters_getCodecs(jni, j_parameters);
-  for (jobject j_codec : Iterable(jni, j_codecs)) {
+  ScopedJavaLocalRef<jobject> j_codecs =
+      Java_RtpParameters_getCodecs(jni, j_parameters);
+  for (const JavaRef<jobject>& j_codec : Iterable(jni, j_codecs)) {
     RtpCodecParameters codec;
     codec.payload_type = Java_Codec_getPayloadType(jni, j_codec);
     codec.name = JavaToStdString(jni, Java_Codec_getName(jni, j_codec));
@@ -71,8 +77,9 @@ RtpParameters JavaToNativeRtpParameters(JNIEnv* jni, jobject j_parameters) {
   return parameters;
 }
 
-jobject NativeToJavaRtpParameters(JNIEnv* env,
-                                  const RtpParameters& parameters) {
+ScopedJavaLocalRef<jobject> NativeToJavaRtpParameters(
+    JNIEnv* env,
+    const RtpParameters& parameters) {
   return Java_RtpParameters_Constructor(
       env,
       NativeToJavaList(env, parameters.encodings,

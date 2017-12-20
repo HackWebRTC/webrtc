@@ -65,23 +65,6 @@ class AttachThreadScoped {
   JNIEnv* env_;
 };
 
-// Scoped holder for global Java refs.
-template<class T>  // T is jclass, jobject, jintArray, etc.
-class ScopedGlobalRef {
- public:
-  ScopedGlobalRef(JNIEnv* jni, T obj)
-      : jni_(jni), obj_(static_cast<T>(NewGlobalRef(jni, obj))) {}
-  ~ScopedGlobalRef() {
-    DeleteGlobalRef(jni_, obj_);
-  }
-  T operator*() const {
-    return obj_;
-  }
- private:
-  JNIEnv* jni_;
-  T obj_;
-};
-
 }  // namespace webrtc
 
 #endif  // MODULES_UTILITY_INCLUDE_HELPERS_ANDROID_H_

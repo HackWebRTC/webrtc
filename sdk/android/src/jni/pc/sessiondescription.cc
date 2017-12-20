@@ -21,7 +21,7 @@ namespace jni {
 
 std::unique_ptr<SessionDescriptionInterface> JavaToNativeSessionDescription(
     JNIEnv* jni,
-    jobject j_sdp) {
+    const JavaRef<jobject>& j_sdp) {
   std::string std_type = JavaToStdString(
       jni, Java_SessionDescription_getTypeInCanonicalForm(jni, j_sdp));
   std::string std_description =
@@ -34,18 +34,15 @@ std::unique_ptr<SessionDescriptionInterface> JavaToNativeSessionDescription(
   return CreateSessionDescription(*sdp_type_maybe, std_description);
 }
 
-jobject NativeToJavaSessionDescription(
+ScopedJavaLocalRef<jobject> NativeToJavaSessionDescription(
     JNIEnv* jni,
     const SessionDescriptionInterface* desc) {
   std::string sdp;
   RTC_CHECK(desc->ToString(&sdp)) << "got so far: " << sdp;
-  jstring j_description = NativeToJavaString(jni, sdp);
-  jobject j_type =
-      Java_Type_fromCanonicalForm(jni, NativeToJavaString(jni, desc->type()));
-  jobject j_sdp =
-      Java_SessionDescription_Constructor(jni, j_type, j_description);
-  CHECK_EXCEPTION(jni) << "error during NewObject";
-  return j_sdp;
+  return Java_SessionDescription_Constructor(
+      jni,
+      Java_Type_fromCanonicalForm(jni, NativeToJavaString(jni, desc->type())),
+      NativeToJavaString(jni, sdp));
 }
 
 }  // namespace jni

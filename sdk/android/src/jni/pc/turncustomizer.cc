@@ -15,19 +15,19 @@
 namespace webrtc {
 namespace jni {
 
-TurnCustomizer* GetNativeTurnCustomizer(JNIEnv* env,
-                                        jobject j_turn_customizer) {
+TurnCustomizer* GetNativeTurnCustomizer(
+    JNIEnv* env,
+    const JavaRef<jobject>& j_turn_customizer) {
   if (IsNull(env, j_turn_customizer))
     return nullptr;
   return reinterpret_cast<webrtc::TurnCustomizer*>(
       Java_TurnCustomizer_getNativeTurnCustomizer(env, j_turn_customizer));
 }
 
-JNI_FUNCTION_DECLARATION(void,
-                         TurnCustomizer_freeNativeTurnCustomizer,
-                         JNIEnv* jni,
-                         jclass,
-                         jlong j_turn_customizer_pointer) {
+static void JNI_TurnCustomizer_FreeTurnCustomizer(
+    JNIEnv* jni,
+    const JavaParamRef<jclass>&,
+    jlong j_turn_customizer_pointer) {
   delete reinterpret_cast<TurnCustomizer*>(j_turn_customizer_pointer);
 }
 

@@ -24,14 +24,18 @@
 namespace webrtc {
 namespace jni {
 
-cricket::Candidate JavaToNativeCandidate(JNIEnv* jni, jobject j_candidate);
+cricket::Candidate JavaToNativeCandidate(JNIEnv* jni,
+                                         const JavaRef<jobject>& j_candidate);
 
-jobject NativeToJavaCandidate(JNIEnv* env, const cricket::Candidate& candidate);
+ScopedJavaLocalRef<jobject> NativeToJavaCandidate(
+    JNIEnv* env,
+    const cricket::Candidate& candidate);
 
-jobject NativeToJavaIceCandidate(JNIEnv* env,
-                                 const IceCandidateInterface& candidate);
+ScopedJavaLocalRef<jobject> NativeToJavaIceCandidate(
+    JNIEnv* env,
+    const IceCandidateInterface& candidate);
 
-jobjectArray NativeToJavaCandidateArray(
+ScopedJavaLocalRef<jobjectArray> NativeToJavaCandidateArray(
     JNIEnv* jni,
     const std::vector<cricket::Candidate>& candidates);
 
@@ -40,32 +44,36 @@ jobjectArray NativeToJavaCandidateArray(
  *****************************************************/
 PeerConnectionInterface::IceTransportsType JavaToNativeIceTransportsType(
     JNIEnv* jni,
-    jobject j_ice_transports_type);
+    const JavaRef<jobject>& j_ice_transports_type);
 
 PeerConnectionInterface::BundlePolicy JavaToNativeBundlePolicy(
     JNIEnv* jni,
-    jobject j_bundle_policy);
+    const JavaRef<jobject>& j_bundle_policy);
 
 PeerConnectionInterface::RtcpMuxPolicy JavaToNativeRtcpMuxPolicy(
     JNIEnv* jni,
-    jobject j_rtcp_mux_policy);
+    const JavaRef<jobject>& j_rtcp_mux_policy);
 
 PeerConnectionInterface::TcpCandidatePolicy JavaToNativeTcpCandidatePolicy(
     JNIEnv* jni,
-    jobject j_tcp_candidate_policy);
+    const JavaRef<jobject>& j_tcp_candidate_policy);
 
 PeerConnectionInterface::CandidateNetworkPolicy
-JavaToNativeCandidateNetworkPolicy(JNIEnv* jni,
-                                   jobject j_candidate_network_policy);
+JavaToNativeCandidateNetworkPolicy(
+    JNIEnv* jni,
+    const JavaRef<jobject>& j_candidate_network_policy);
 
-rtc::KeyType JavaToNativeKeyType(JNIEnv* jni, jobject j_key_type);
+rtc::KeyType JavaToNativeKeyType(JNIEnv* jni,
+                                 const JavaRef<jobject>& j_key_type);
 
 PeerConnectionInterface::ContinualGatheringPolicy
-JavaToNativeContinualGatheringPolicy(JNIEnv* jni, jobject j_gathering_policy);
+JavaToNativeContinualGatheringPolicy(
+    JNIEnv* jni,
+    const JavaRef<jobject>& j_gathering_policy);
 
 PeerConnectionInterface::TlsCertPolicy JavaToNativeTlsCertPolicy(
     JNIEnv* jni,
-    jobject j_ice_server_tls_cert_policy);
+    const JavaRef<jobject>& j_ice_server_tls_cert_policy);
 
 }  // namespace jni
 }  // namespace webrtc

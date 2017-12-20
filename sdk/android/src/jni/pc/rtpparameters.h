@@ -14,12 +14,16 @@
 #include <jni.h>
 
 #include "api/rtpparameters.h"
+#include "sdk/android/src/jni/scoped_java_ref.h"
 
 namespace webrtc {
 namespace jni {
 
-RtpParameters JavaToNativeRtpParameters(JNIEnv* jni, jobject j_parameters);
-jobject NativeToJavaRtpParameters(JNIEnv* jni, const RtpParameters& parameters);
+RtpParameters JavaToNativeRtpParameters(JNIEnv* jni,
+                                        const JavaRef<jobject>& j_parameters);
+ScopedJavaLocalRef<jobject> NativeToJavaRtpParameters(
+    JNIEnv* jni,
+    const RtpParameters& parameters);
 
 }  // namespace jni
 }  // namespace webrtc

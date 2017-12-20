@@ -28,22 +28,21 @@ jclass LazyGetClass(JNIEnv* env,
       rtc::AtomicOps::AcquireLoadPtr(atomic_class_id);
   if (value)
     return reinterpret_cast<jclass>(value);
-  jclass clazz = static_cast<jclass>(
-      env->NewGlobalRef(webrtc::jni::GetClass(env, class_name)));
-  RTC_CHECK(clazz) << class_name;
+  webrtc::jni::ScopedJavaGlobalRef<jclass> clazz(
+      webrtc::jni::GetClass(env, class_name));
+  RTC_CHECK(!clazz.is_null()) << class_name;
   base::subtle::AtomicWord null_aw = nullptr;
   base::subtle::AtomicWord cas_result = rtc::AtomicOps::CompareAndSwapPtr(
       atomic_class_id, null_aw,
-      reinterpret_cast<base::subtle::AtomicWord>(clazz));
+      reinterpret_cast<base::subtle::AtomicWord>(clazz.obj()));
   if (cas_result == null_aw) {
     // We sucessfully stored |clazz| in |atomic_class_id|, so we are
     // intentionally leaking the global ref since it's now stored there.
-    return clazz;
+    return clazz.Release();
   } else {
     // Some other thread came before us and stored a global pointer in
     // |atomic_class_id|. Relase our global ref and return the ref from the
     // other thread.
-    env->DeleteGlobalRef(clazz);
     return reinterpret_cast<jclass>(cas_result);
   }
 }

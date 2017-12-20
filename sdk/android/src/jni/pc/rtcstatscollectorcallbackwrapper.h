@@ -24,13 +24,14 @@ namespace jni {
 // Java.
 class RTCStatsCollectorCallbackWrapper : public RTCStatsCollectorCallback {
  public:
-  RTCStatsCollectorCallbackWrapper(JNIEnv* jni, jobject j_callback);
+  RTCStatsCollectorCallbackWrapper(JNIEnv* jni,
+                                   const JavaRef<jobject>& j_callback);
 
   void OnStatsDelivered(
       const rtc::scoped_refptr<const RTCStatsReport>& report) override;
 
  private:
-  const ScopedGlobalRef<jobject> j_callback_global_;
+  const ScopedJavaGlobalRef<jobject> j_callback_global_;
 };
 
 }  // namespace jni

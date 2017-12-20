@@ -11,36 +11,30 @@
 #include <jni.h>
 
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
+#include "sdk/android/generated_video_jni/jni/VP9Decoder_jni.h"
+#include "sdk/android/generated_video_jni/jni/VP9Encoder_jni.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {
 namespace jni {
 
-JNI_FUNCTION_DECLARATION(jlong,
-                         VP9Encoder_createNativeEncoder,
-                         JNIEnv* jni,
-                         jobject) {
+static jlong JNI_VP9Encoder_CreateEncoder(JNIEnv* jni,
+                                          const JavaParamRef<jclass>& w) {
   return jlongFromPointer(VP9Encoder::Create().release());
 }
 
-JNI_FUNCTION_DECLARATION(jboolean,
-                         VP9Encoder_isSupported,
-                         JNIEnv* jni,
-                         jclass) {
+static jboolean JNI_VP9Encoder_IsSupported(JNIEnv* jni,
+                                           const JavaParamRef<jclass>&) {
   return VP9Encoder::IsSupported();
 }
 
-JNI_FUNCTION_DECLARATION(jlong,
-                         VP9Decoder_createNativeDecoder,
-                         JNIEnv* jni,
-                         jobject) {
+static jlong JNI_VP9Decoder_CreateDecoder(JNIEnv* jni,
+                                          const JavaParamRef<jclass>& w) {
   return jlongFromPointer(VP9Decoder::Create().release());
 }
 
-JNI_FUNCTION_DECLARATION(jboolean,
-                         VP9Decoder_isSupported,
-                         JNIEnv* jni,
-                         jclass) {
+static jboolean JNI_VP9Decoder_IsSupported(JNIEnv* jni,
+                                           const JavaParamRef<jclass>&) {
   return VP9Decoder::IsSupported();
 }
 

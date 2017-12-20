@@ -24,7 +24,7 @@ namespace jni {
 // Wraps a Java decoder and delegates all calls to it.
 class VideoDecoderWrapper : public VideoDecoder {
  public:
-  VideoDecoderWrapper(JNIEnv* jni, jobject decoder);
+  VideoDecoderWrapper(JNIEnv* jni, const JavaRef<jobject>& decoder);
 
   int32_t InitDecode(const VideoCodec* codec_settings,
                      int32_t number_of_cores) override;
@@ -49,10 +49,10 @@ class VideoDecoderWrapper : public VideoDecoder {
 
   // Wraps the frame to a AndroidVideoBuffer and passes it to the callback.
   void OnDecodedFrame(JNIEnv* env,
-                      jobject j_caller,
-                      jobject j_frame,
-                      jobject j_decode_time_ms,
-                      jobject j_qp);
+                      const JavaRef<jobject>& j_caller,
+                      const JavaRef<jobject>& j_frame,
+                      const JavaRef<jobject>& j_decode_time_ms,
+                      const JavaRef<jobject>& j_qp);
 
  private:
   struct FrameExtraInfo {
@@ -67,7 +67,7 @@ class VideoDecoderWrapper : public VideoDecoder {
 
   // Takes Java VideoCodecStatus, handles it and returns WEBRTC_VIDEO_CODEC_*
   // status code.
-  int32_t HandleReturnCode(JNIEnv* jni, jobject code);
+  int32_t HandleReturnCode(JNIEnv* jni, const JavaRef<jobject>& code);
 
   rtc::Optional<uint8_t> ParseQP(const EncodedImage& input_image);
 
@@ -82,7 +82,7 @@ class VideoDecoderWrapper : public VideoDecoder {
 
   DecodedImageCallback* callback_;
 
-  const ScopedGlobalRef<jobject> decoder_;
+  const ScopedJavaGlobalRef<jobject> decoder_;
 };
 
 }  // namespace jni

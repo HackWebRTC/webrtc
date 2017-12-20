@@ -10,13 +10,19 @@
 
 package org.webrtc;
 
+@JNINamespace("webrtc::jni")
 class VP9Encoder extends WrappedNativeVideoEncoder {
-  @Override native long createNativeEncoder();
+  @Override
+  long createNativeEncoder() {
+    return nativeCreateEncoder();
+  }
+
+  static native long nativeCreateEncoder();
 
   @Override
   boolean isSoftwareEncoder() {
     return true;
   }
 
-  static native boolean isSupported();
+  static native boolean nativeIsSupported();
 }

@@ -14,12 +14,16 @@
 #include <jni.h>
 
 #include "api/mediatypes.h"
+#include "sdk/android/src/jni/scoped_java_ref.h"
 
 namespace webrtc {
 namespace jni {
 
-jobject NativeToJavaMediaType(JNIEnv* jni, cricket::MediaType media_type);
-cricket::MediaType JavaToNativeMediaType(JNIEnv* jni, jobject j_media_type);
+ScopedJavaLocalRef<jobject> NativeToJavaMediaType(
+    JNIEnv* jni,
+    cricket::MediaType media_type);
+cricket::MediaType JavaToNativeMediaType(JNIEnv* jni,
+                                         const JavaRef<jobject>& j_media_type);
 
 }  // namespace jni
 }  // namespace webrtc

@@ -176,7 +176,7 @@ class MediaCodecVideoEncoder : public VideoEncoder {
   // frame.
   bool EncodeJavaFrame(JNIEnv* jni,
                        bool key_frame,
-                       jobject frame,
+                       const JavaRef<jobject>& frame,
                        int input_buffer_index);
 
   // Deliver any outputs pending in the MediaCodec to our |callback_| and return
@@ -206,7 +206,7 @@ class MediaCodecVideoEncoder : public VideoEncoder {
   // State that is constant for the lifetime of this object once the ctor
   // returns.
   rtc::SequencedTaskChecker encoder_queue_checker_;
-  ScopedGlobalRef<jobject> j_media_codec_video_encoder_;
+  ScopedJavaGlobalRef<jobject> j_media_codec_video_encoder_;
 
   // State that is valid only between InitEncode() and the next Release().
   int width_;   // Frame width in pixels.
@@ -265,7 +265,7 @@ class MediaCodecVideoEncoder : public VideoEncoder {
   bool scale_;
   H264::Profile profile_;
   // Global references; must be deleted in Release().
-  std::vector<ScopedGlobalRef<jobject>> input_buffers_;
+  std::vector<ScopedJavaGlobalRef<jobject>> input_buffers_;
   H264BitstreamParser h264_bitstream_parser_;
 
   // VP9 variables to populate codec specific structure.
@@ -521,11 +521,12 @@ int32_t MediaCodecVideoEncoder::InitEncodeInternal(int width,
   frames_received_since_last_key_ = kMinKeyFrameInterval;
 
   // We enforce no extra stride/padding in the format creation step.
-  jobject j_video_codec_enum =
+  ScopedJavaLocalRef<jobject> j_video_codec_enum =
       Java_VideoCodecType_fromNativeIndex(jni, codec_type);
   const bool encode_status = Java_MediaCodecVideoEncoder_initEncode(
-      jni, *j_media_codec_video_encoder_, j_video_codec_enum, profile_, width,
-      height, kbps, fps, (use_surface ? egl_context_ : nullptr));
+      jni, j_media_codec_video_encoder_, j_video_codec_enum, profile_, width,
+      height, kbps, fps,
+      JavaParamRef<jobject>(use_surface ? egl_context_ : nullptr));
   if (!encode_status) {
     ALOGE << "Failed to configure encoder.";
     ProcessHWError(false /* reset_if_fallback_unavailable */);
@@ -538,8 +539,9 @@ int32_t MediaCodecVideoEncoder::InitEncodeInternal(int width,
   }
 
   if (!use_surface) {
-    jobjectArray input_buffers = Java_MediaCodecVideoEncoder_getInputBuffers(
-        jni, *j_media_codec_video_encoder_);
+    ScopedJavaLocalRef<jobjectArray> input_buffers =
+        Java_MediaCodecVideoEncoder_getInputBuffers(
+            jni, j_media_codec_video_encoder_);
     if (CheckException(jni)) {
       ALOGE << "Exception in get input buffers.";
       ProcessHWError(false /* reset_if_fallback_unavailable */);
@@ -552,7 +554,7 @@ int32_t MediaCodecVideoEncoder::InitEncodeInternal(int width,
     }
 
     switch (Java_MediaCodecVideoEncoder_getColorFormat(
-        jni, *j_media_codec_video_encoder_)) {
+        jni, j_media_codec_video_encoder_)) {
       case COLOR_FormatYUV420Planar:
         encoder_fourcc_ = libyuv::FOURCC_YU12;
         break;
@@ -569,12 +571,12 @@ int32_t MediaCodecVideoEncoder::InitEncodeInternal(int width,
 
     RTC_CHECK(input_buffers_.empty())
         << "Unexpected double InitEncode without Release";
-    input_buffers_ = JavaToNativeVector<ScopedGlobalRef<jobject>>(
-        jni, input_buffers, [](JNIEnv* env, jobject o) {
-          return ScopedGlobalRef<jobject>(env, o);
+    input_buffers_ = JavaToNativeVector<ScopedJavaGlobalRef<jobject>>(
+        jni, input_buffers, [](JNIEnv* env, const JavaRef<jobject>& o) {
+          return ScopedJavaGlobalRef<jobject>(env, o);
         });
-    for (const ScopedGlobalRef<jobject>& buffer : input_buffers_) {
-      int64_t yuv_buffer_capacity = jni->GetDirectBufferCapacity(*buffer);
+    for (const ScopedJavaGlobalRef<jobject>& buffer : input_buffers_) {
+      int64_t yuv_buffer_capacity = jni->GetDirectBufferCapacity(buffer.obj());
       if (CheckException(jni)) {
         ALOGE << "Exception in get direct buffer capacity.";
         ProcessHWError(false /* reset_if_fallback_unavailable */);
@@ -689,7 +691,7 @@ int32_t MediaCodecVideoEncoder::Encode(
   int j_input_buffer_index = -1;
   if (!use_surface_) {
     j_input_buffer_index = Java_MediaCodecVideoEncoder_dequeueInputBuffer(
-        jni, *j_media_codec_video_encoder_);
+        jni, j_media_codec_video_encoder_);
     if (CheckException(jni)) {
       ALOGE << "Exception in dequeu input buffer.";
       return ProcessHWErrorOnEncode();
@@ -833,7 +835,7 @@ bool MediaCodecVideoEncoder::EncodeByteBuffer(JNIEnv* jni,
     return false;
   }
   bool encode_status = Java_MediaCodecVideoEncoder_encodeBuffer(
-      jni, *j_media_codec_video_encoder_, key_frame, input_buffer_index,
+      jni, j_media_codec_video_encoder_, key_frame, input_buffer_index,
       yuv_size_, current_timestamp_us_);
   if (CheckException(jni)) {
     ALOGE << "Exception in encode buffer.";
@@ -851,9 +853,8 @@ bool MediaCodecVideoEncoder::FillInputBuffer(JNIEnv* jni,
                                              int stride_u,
                                              uint8_t const* buffer_v,
                                              int stride_v) {
-  jobject j_input_buffer = *input_buffers_[input_buffer_index];
-  uint8_t* yuv_buffer =
-      reinterpret_cast<uint8_t*>(jni->GetDirectBufferAddress(j_input_buffer));
+  uint8_t* yuv_buffer = reinterpret_cast<uint8_t*>(
+      jni->GetDirectBufferAddress(input_buffers_[input_buffer_index].obj()));
   if (CheckException(jni)) {
     ALOGE << "Exception in get direct buffer address.";
     ProcessHWError(true /* reset_if_fallback_unavailable */);
@@ -877,10 +878,9 @@ bool MediaCodecVideoEncoder::EncodeTexture(JNIEnv* jni,
       static_cast<AndroidTextureBuffer*>(frame.video_frame_buffer().get())
           ->native_handle_impl();
 
-  jfloatArray sampling_matrix = handle.sampling_matrix.ToJava(jni);
   bool encode_status = Java_MediaCodecVideoEncoder_encodeTexture(
-      jni, *j_media_codec_video_encoder_, key_frame, handle.oes_texture_id,
-      sampling_matrix, current_timestamp_us_);
+      jni, j_media_codec_video_encoder_, key_frame, handle.oes_texture_id,
+      handle.sampling_matrix.ToJava(jni), current_timestamp_us_);
   if (CheckException(jni)) {
     ALOGE << "Exception in encode texture.";
     ProcessHWError(true /* reset_if_fallback_unavailable */);
@@ -891,10 +891,10 @@ bool MediaCodecVideoEncoder::EncodeTexture(JNIEnv* jni,
 
 bool MediaCodecVideoEncoder::EncodeJavaFrame(JNIEnv* jni,
                                              bool key_frame,
-                                             jobject frame,
+                                             const JavaRef<jobject>& frame,
                                              int input_buffer_index) {
   bool encode_status = Java_MediaCodecVideoEncoder_encodeFrame(
-      jni, *j_media_codec_video_encoder_, jlongFromPointer(this), key_frame,
+      jni, j_media_codec_video_encoder_, jlongFromPointer(this), key_frame,
       frame, input_buffer_index);
   if (CheckException(jni)) {
     ALOGE << "Exception in encode frame.";
@@ -926,7 +926,7 @@ int32_t MediaCodecVideoEncoder::Release() {
   weak_factory_.reset(nullptr);
   ScopedLocalRefFrame local_ref_frame(jni);
   input_buffers_.clear();
-  Java_MediaCodecVideoEncoder_release(jni, *j_media_codec_video_encoder_);
+  Java_MediaCodecVideoEncoder_release(jni, j_media_codec_video_encoder_);
   if (CheckException(jni)) {
     ALOGE << "Exception in release.";
     ProcessHWError(false /* reset_if_fallback_unavailable */);
@@ -966,8 +966,7 @@ int32_t MediaCodecVideoEncoder::SetRateAllocation(
     last_set_fps_ = frame_rate;
   }
   bool ret = Java_MediaCodecVideoEncoder_setRates(
-      jni, *j_media_codec_video_encoder_, last_set_bitrate_kbps_,
-      last_set_fps_);
+      jni, j_media_codec_video_encoder_, last_set_bitrate_kbps_, last_set_fps_);
   if (CheckException(jni) || !ret) {
     ProcessHWError(true /* reset_if_fallback_unavailable */);
     return sw_fallback_required_ ? WEBRTC_VIDEO_CODEC_OK
@@ -980,9 +979,9 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&encoder_queue_checker_);
 
   while (true) {
-    jobject j_output_buffer_info =
+    ScopedJavaLocalRef<jobject> j_output_buffer_info =
         Java_MediaCodecVideoEncoder_dequeueOutputBuffer(
-            jni, *j_media_codec_video_encoder_);
+            jni, j_media_codec_video_encoder_);
     if (CheckException(jni)) {
       ALOGE << "Exception in set dequeue output buffer.";
       ProcessHWError(true /* reset_if_fallback_unavailable */);
@@ -1000,7 +999,7 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
     }
 
     // Get key and config frame flags.
-    jobject j_output_buffer =
+    ScopedJavaLocalRef<jobject> j_output_buffer =
         Java_OutputBufferInfo_getBuffer(jni, j_output_buffer_info);
     bool key_frame =
         Java_OutputBufferInfo_isKeyFrame(jni, j_output_buffer_info);
@@ -1022,9 +1021,9 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
     }
 
     // Extract payload.
-    size_t payload_size = jni->GetDirectBufferCapacity(j_output_buffer);
+    size_t payload_size = jni->GetDirectBufferCapacity(j_output_buffer.obj());
     uint8_t* payload = reinterpret_cast<uint8_t*>(
-        jni->GetDirectBufferAddress(j_output_buffer));
+        jni->GetDirectBufferAddress(j_output_buffer.obj()));
     if (CheckException(jni)) {
       ALOGE << "Exception in get direct buffer address.";
       ProcessHWError(true /* reset_if_fallback_unavailable */);
@@ -1140,7 +1139,7 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
 
     // Return output buffer back to the encoder.
     bool success = Java_MediaCodecVideoEncoder_releaseOutputBuffer(
-        jni, *j_media_codec_video_encoder_, output_buffer_index);
+        jni, j_media_codec_video_encoder_, output_buffer_index);
     if (CheckException(jni) || !success) {
       ProcessHWError(true /* reset_if_fallback_unavailable */);
       return false;
@@ -1345,24 +1344,23 @@ void MediaCodecVideoEncoderFactory::DestroyVideoEncoder(VideoEncoder* encoder) {
   delete encoder;
 }
 
-JNI_FUNCTION_DECLARATION(void,
-                         MediaCodecVideoEncoder_fillInputBufferNative,
-                         JNIEnv* jni,
-                         jclass,
-                         jlong native_encoder,
-                         jint input_buffer,
-                         jobject j_buffer_y,
-                         jint stride_y,
-                         jobject j_buffer_u,
-                         jint stride_u,
-                         jobject j_buffer_v,
-                         jint stride_v) {
+static void JNI_MediaCodecVideoEncoder_FillInputBuffer(
+    JNIEnv* jni,
+    const JavaParamRef<jclass>&,
+    jlong native_encoder,
+    jint input_buffer,
+    const JavaParamRef<jobject>& j_buffer_y,
+    jint stride_y,
+    const JavaParamRef<jobject>& j_buffer_u,
+    jint stride_u,
+    const JavaParamRef<jobject>& j_buffer_v,
+    jint stride_v) {
   uint8_t* buffer_y =
-      static_cast<uint8_t*>(jni->GetDirectBufferAddress(j_buffer_y));
+      static_cast<uint8_t*>(jni->GetDirectBufferAddress(j_buffer_y.obj()));
   uint8_t* buffer_u =
-      static_cast<uint8_t*>(jni->GetDirectBufferAddress(j_buffer_u));
+      static_cast<uint8_t*>(jni->GetDirectBufferAddress(j_buffer_u.obj()));
   uint8_t* buffer_v =
-      static_cast<uint8_t*>(jni->GetDirectBufferAddress(j_buffer_v));
+      static_cast<uint8_t*>(jni->GetDirectBufferAddress(j_buffer_v.obj()));
 
   RTC_DCHECK(buffer_y) << "GetDirectBufferAddress returned null. Ensure that "
                           "getDataY returns a direct ByteBuffer.";

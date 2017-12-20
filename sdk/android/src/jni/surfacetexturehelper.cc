@@ -18,13 +18,14 @@
 namespace webrtc {
 namespace jni {
 
-void SurfaceTextureHelperTextureToYUV(JNIEnv* env,
-                                      jobject j_surface_texture_helper,
-                                      jobject buffer,
-                                      int width,
-                                      int height,
-                                      int stride,
-                                      const NativeHandleImpl& native_handle) {
+void SurfaceTextureHelperTextureToYUV(
+    JNIEnv* env,
+    const JavaRef<jobject>& j_surface_texture_helper,
+    const JavaRef<jobject>& buffer,
+    int width,
+    int height,
+    int stride,
+    const NativeHandleImpl& native_handle) {
   Java_SurfaceTextureHelper_textureToYUV(
       env, j_surface_texture_helper, buffer, width, height, stride,
       native_handle.oes_texture_id, native_handle.sampling_matrix.ToJava(env));
@@ -33,34 +34,35 @@ void SurfaceTextureHelperTextureToYUV(JNIEnv* env,
 rtc::scoped_refptr<SurfaceTextureHelper> SurfaceTextureHelper::create(
     JNIEnv* jni,
     const char* thread_name,
-    jobject j_egl_context) {
-  jobject j_surface_texture_helper = Java_SurfaceTextureHelper_create(
-      jni, NativeToJavaString(jni, thread_name), j_egl_context);
-  CHECK_EXCEPTION(jni)
-      << "error during initialization of Java SurfaceTextureHelper";
+    const JavaRef<jobject>& j_egl_context) {
+  ScopedJavaLocalRef<jobject> j_surface_texture_helper =
+      Java_SurfaceTextureHelper_create(
+          jni, NativeToJavaString(jni, thread_name), j_egl_context);
   if (IsNull(jni, j_surface_texture_helper))
     return nullptr;
   return new rtc::RefCountedObject<SurfaceTextureHelper>(
       jni, j_surface_texture_helper);
 }
 
-SurfaceTextureHelper::SurfaceTextureHelper(JNIEnv* jni,
-                                           jobject j_surface_texture_helper)
+SurfaceTextureHelper::SurfaceTextureHelper(
+    JNIEnv* jni,
+    const JavaRef<jobject>& j_surface_texture_helper)
     : j_surface_texture_helper_(jni, j_surface_texture_helper) {}
 
 SurfaceTextureHelper::~SurfaceTextureHelper() {
   RTC_LOG(LS_INFO) << "SurfaceTextureHelper dtor";
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
-  Java_SurfaceTextureHelper_dispose(jni, *j_surface_texture_helper_);
+  Java_SurfaceTextureHelper_dispose(jni, j_surface_texture_helper_);
 }
 
-jobject SurfaceTextureHelper::GetJavaSurfaceTextureHelper() const {
-  return *j_surface_texture_helper_;
+const ScopedJavaGlobalRef<jobject>&
+SurfaceTextureHelper::GetJavaSurfaceTextureHelper() const {
+  return j_surface_texture_helper_;
 }
 
 void SurfaceTextureHelper::ReturnTextureFrame() const {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
-  Java_SurfaceTextureHelper_returnTextureFrame(jni, *j_surface_texture_helper_);
+  Java_SurfaceTextureHelper_returnTextureFrame(jni, j_surface_texture_helper_);
 }
 
 rtc::scoped_refptr<VideoFrameBuffer> SurfaceTextureHelper::CreateTextureFrame(

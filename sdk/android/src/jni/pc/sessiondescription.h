@@ -15,16 +15,18 @@
 #include <memory>
 
 #include "api/jsep.h"
+#include "sdk/android/src/jni/scoped_java_ref.h"
 
 namespace webrtc {
 namespace jni {
 
 std::unique_ptr<SessionDescriptionInterface> JavaToNativeSessionDescription(
     JNIEnv* jni,
-    jobject j_sdp);
+    const JavaRef<jobject>& j_sdp);
 
-jobject NativeToJavaSessionDescription(JNIEnv* jni,
-                                       const SessionDescriptionInterface* desc);
+ScopedJavaLocalRef<jobject> NativeToJavaSessionDescription(
+    JNIEnv* jni,
+    const SessionDescriptionInterface* desc);
 
 }  // namespace jni
 }  // namespace webrtc

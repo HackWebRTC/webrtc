@@ -141,7 +141,7 @@ public class YuvConverter {
     // extra row, but now other code does not have to deal with v stride * v height exceeding the
     // buffer's capacity.
     final int size = stride * (height + uvHeight + 1);
-    ByteBuffer buffer = JniCommon.allocateNativeByteBuffer(size);
+    ByteBuffer buffer = JniCommon.nativeAllocateByteBuffer(size);
     convert(buffer, width, height, stride, textureBuffer.getTextureId(),
         RendererCommon.convertMatrixFromAndroidGraphicsMatrix(textureBuffer.getTransformMatrix()),
         textureBuffer.getType());
@@ -165,7 +165,7 @@ public class YuvConverter {
 
     // SurfaceTextureHelper uses the same stride for Y, U, and V data.
     return JavaI420Buffer.wrap(width, height, dataY, stride, dataU, stride, dataV, stride,
-        () -> { JniCommon.freeNativeByteBuffer(buffer); });
+        () -> { JniCommon.nativeFreeByteBuffer(buffer); });
   }
 
   /** Deprecated, use convert(TextureBuffer). */

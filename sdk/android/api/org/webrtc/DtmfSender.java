@@ -11,6 +11,7 @@
 package org.webrtc;
 
 /** Java wrapper for a C++ DtmfSenderInterface. */
+@JNINamespace("webrtc::jni")
 public class DtmfSender {
   final long nativeDtmfSender;
 
@@ -74,10 +75,10 @@ public class DtmfSender {
     JniCommon.nativeReleaseRef(nativeDtmfSender);
   }
 
-  private static native boolean nativeCanInsertDtmf(long nativeDtmfSender);
+  private static native boolean nativeCanInsertDtmf(long dtmfSender);
   private static native boolean nativeInsertDtmf(
-      long nativeDtmfSender, String tones, int duration, int interToneGap);
-  private static native String nativeTones(long nativeDtmfSender);
-  private static native int nativeDuration(long nativeDtmfSender);
-  private static native int nativeInterToneGap(long nativeDtmfSender);
+      long dtmfSender, String tones, int duration, int interToneGap);
+  private static native String nativeTones(long dtmfSender);
+  private static native int nativeDuration(long dtmfSender);
+  private static native int nativeInterToneGap(long dtmfSender);
 };

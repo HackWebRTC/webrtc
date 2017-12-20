@@ -10,16 +10,12 @@
 
 #include "api/mediastreaminterface.h"
 #include "sdk/android/generated_peerconnection_jni/jni/MediaSource_jni.h"
-#include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {
 namespace jni {
 
-JNI_FUNCTION_DECLARATION(jobject,
-                         MediaSource_getNativeState,
-                         JNIEnv* jni,
-                         jclass,
-                         jlong j_p) {
+static ScopedJavaLocalRef<jobject>
+JNI_MediaSource_GetState(JNIEnv* jni, const JavaParamRef<jclass>&, jlong j_p) {
   return Java_State_fromNativeIndex(
       jni, reinterpret_cast<MediaSourceInterface*>(j_p)->state());
 }
