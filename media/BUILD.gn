@@ -126,35 +126,28 @@ rtc_static_library("rtc_media_base") {
   }
 }
 
-rtc_static_library("rtc_audio_video") {
+rtc_static_library("rtc_constants") {
   defines = []
   libs = []
-  deps = [
-    "../api:video_frame_api_i420",
-    "../call:call_interfaces",
-    "../modules/video_coding:video_coding_utility",
-    "../rtc_base:checks",
-    "../rtc_base:stringutils",
-    "../system_wrappers:field_trial_api",
-    "../system_wrappers:metrics_api",
-    "//third_party/libyuv",
-  ]
+  deps = []
+
   sources = [
-    "engine/adm_helpers.cc",
-    "engine/adm_helpers.h",
-    "engine/apm_helpers.cc",
-    "engine/apm_helpers.h",
     "engine/constants.cc",
     "engine/constants.h",
+  ]
+}
+
+rtc_static_library("rtc_internal_video_codecs") {
+  defines = []
+  libs = []
+  deps = []
+  sources = [
     "engine/convert_legacy_video_factory.cc",
     "engine/convert_legacy_video_factory.h",
     "engine/internaldecoderfactory.cc",
     "engine/internaldecoderfactory.h",
     "engine/internalencoderfactory.cc",
     "engine/internalencoderfactory.h",
-    "engine/nullwebrtcvideoengine.h",
-    "engine/payload_type_mapper.cc",
-    "engine/payload_type_mapper.h",
     "engine/scopedvideodecoder.cc",
     "engine/scopedvideodecoder.h",
     "engine/scopedvideoencoder.cc",
@@ -171,16 +164,74 @@ rtc_static_library("rtc_audio_video") {
     "engine/videoencodersoftwarefallbackwrapper.h",
     "engine/vp8_encoder_simulcast_proxy.cc",
     "engine/vp8_encoder_simulcast_proxy.h",
+    "engine/webrtcvideodecoderfactory.cc",
+    "engine/webrtcvideodecoderfactory.h",
+    "engine/webrtcvideoencoderfactory.cc",
+    "engine/webrtcvideoencoderfactory.h",
+  ]
+
+  configs += [ ":rtc_media_warnings_config" ]
+
+  if (!build_with_chromium && is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+  }
+
+  if (is_win) {
+    cflags = [
+      "/wd4245",  # conversion from "int" to "size_t", signed/unsigned mismatch.
+      "/wd4267",  # conversion from "size_t" to "int", possible loss of data.
+      "/wd4389",  # signed/unsigned mismatch.
+    ]
+  }
+
+  include_dirs = []
+
+  public_configs = []
+  deps += [
+    ":rtc_constants",
+    ":rtc_media_base",
+    "..:webrtc_common",
+    "../api:video_frame_api_i420",
+    "../api/video_codecs:video_codecs_api",
+    "../call:call_interfaces",
+    "../call:video_stream_api",
+    "../modules/video_coding:webrtc_h264",
+    "../modules/video_coding:webrtc_stereo",
+    "../modules/video_coding:webrtc_vp8",
+    "../modules/video_coding:webrtc_vp8_helpers",
+    "../modules/video_coding:webrtc_vp9",
+    "../rtc_base:checks",
+    "../rtc_base:rtc_base_approved",
+    "../rtc_base:sequenced_task_checker",
+    "../system_wrappers",
+    "../system_wrappers:field_trial_api",
+    "../system_wrappers:metrics_api",
+    "//third_party/libyuv",
+  ]
+}
+
+rtc_static_library("rtc_audio_video") {
+  defines = []
+  libs = []
+  deps = [
+    "../rtc_base:checks",
+  ]
+
+  sources = [
+    "engine/adm_helpers.cc",
+    "engine/adm_helpers.h",
+    "engine/apm_helpers.cc",
+    "engine/apm_helpers.h",
+    "engine/nullwebrtcvideoengine.h",
+    "engine/payload_type_mapper.cc",
+    "engine/payload_type_mapper.h",
     "engine/webrtcmediaengine.cc",
     "engine/webrtcmediaengine.h",
     "engine/webrtcvideocapturer.cc",
     "engine/webrtcvideocapturer.h",
     "engine/webrtcvideocapturerfactory.cc",
     "engine/webrtcvideocapturerfactory.h",
-    "engine/webrtcvideodecoderfactory.cc",
-    "engine/webrtcvideodecoderfactory.h",
-    "engine/webrtcvideoencoderfactory.cc",
-    "engine/webrtcvideoencoderfactory.h",
     "engine/webrtcvideoengine.cc",
     "engine/webrtcvideoengine.h",
     "engine/webrtcvoe.h",
@@ -230,6 +281,8 @@ rtc_static_library("rtc_audio_video") {
     deps += [ "../modules/audio_processing/aec_dump:null_aec_dump_factory" ]
   }
   deps += [
+    ":rtc_constants",
+    ":rtc_internal_video_codecs",
     ":rtc_media_base",
     "..:webrtc_common",
     "../api:call_api",
@@ -237,30 +290,24 @@ rtc_static_library("rtc_audio_video") {
     "../api:optional",
     "../api:transport_api",
     "../api:video_frame_api",
+    "../api:video_frame_api_i420",
     "../api/audio_codecs:audio_codecs_api",
     "../api/video_codecs:video_codecs_api",
     "../call",
+    "../call:call_interfaces",
     "../call:video_stream_api",
     "../common_video:common_video",
-    "../modules/audio_coding:rent_a_codec",
     "../modules/audio_device:audio_device",
     "../modules/audio_mixer:audio_mixer_impl",
     "../modules/audio_processing:audio_processing",
-    "../modules/audio_processing/aec_dump",
     "../modules/video_capture:video_capture_module",
-    "../modules/video_coding",
-    "../modules/video_coding:webrtc_h264",
-    "../modules/video_coding:webrtc_stereo",
-    "../modules/video_coding:webrtc_vp8",
-    "../modules/video_coding:webrtc_vp9",
-    "../p2p:rtc_p2p",
     "../pc:rtc_pc_base",
     "../rtc_base:rtc_base",
-    "../rtc_base:rtc_base_approved",
     "../rtc_base:rtc_task_queue",
-    "../rtc_base:sequenced_task_checker",
+    "../rtc_base:stringutils",
     "../system_wrappers",
-    "../video",
+    "../system_wrappers:field_trial_api",
+    "../system_wrappers:metrics_api",
     "../voice_engine",
   ]
 }
@@ -378,6 +425,7 @@ if (rtc_include_tests) {
     }
 
     deps += [
+      ":rtc_internal_video_codecs",
       ":rtc_media",
       ":rtc_media_base",
       "..:webrtc_common",
@@ -437,6 +485,7 @@ if (rtc_include_tests) {
 
     defines = []
     deps = [
+      ":rtc_constants",
       "../api:video_frame_api_i420",
       "../pc:rtc_pc",
       "../pc:rtc_pc_base",
@@ -522,6 +571,7 @@ if (rtc_include_tests) {
     }
 
     deps += [
+      ":rtc_internal_video_codecs",
       ":rtc_media",
       ":rtc_media_base",
       ":rtc_media_tests_utils",
@@ -539,6 +589,7 @@ if (rtc_include_tests) {
       "../modules/video_coding:simulcast_test_utility",
       "../modules/video_coding:video_coding_utility",
       "../modules/video_coding:webrtc_vp8",
+      "../modules/video_coding:webrtc_vp8_helpers",
       "../p2p:p2p_test_utils",
       "../rtc_base:rtc_base",
       "../rtc_base:rtc_base_approved",
