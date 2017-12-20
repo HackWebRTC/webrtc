@@ -224,7 +224,6 @@ rtc_static_library("video_jni") {
     "../../api/video_codecs:video_codecs_api",
     "../../common_video:common_video",
     "../../media:rtc_audio_video",
-    "../../media:rtc_internal_video_codecs",
     "../../media:rtc_media_base",
     "../../modules:module_api",
     "../../modules/utility:utility",
