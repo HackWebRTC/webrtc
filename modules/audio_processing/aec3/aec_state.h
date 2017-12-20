@@ -35,15 +35,15 @@ class AecState {
   explicit AecState(const EchoCanceller3Config& config);
   ~AecState();
 
-  // Returns whether the linear filter estimate is usable.
+  // Returns whether the echo subtractor can be used to determine the residual
+  // echo.
   bool UsableLinearEstimate() const { return usable_linear_estimate_; }
 
   // Returns whether there has been echo leakage detected.
   bool EchoLeakageDetected() const { return echo_leakage_detected_; }
 
   // Returns whether the render signal is currently active.
-  // TODO(peah): Deprecate this in an upcoming CL.
-  bool ActiveRender() const { return blocks_with_filter_adaptation_ > 200; }
+  bool ActiveRender() const { return blocks_with_active_render_ > 200; }
 
   // Returns the ERLE.
   const std::array<float, kFftLengthBy2Plus1>& Erle() const {
@@ -101,12 +101,10 @@ class AecState {
     echo_audibility_.UpdateWithOutput(e);
   }
 
-  // Returns whether the linear filter should have been able to adapt properly.
-  bool SufficientFilterUpdates() const { return sufficient_filter_updates_; }
-
-  // Returns whether the echo subtractor can be used to determine the residual
-  // echo.
-  bool LinearEchoEstimate() const { return linear_echo_estimate_; }
+  // Returns whether the linear filter should have been able to properly adapt.
+  bool FilterHasHadTimeToConverge() const {
+    return filter_has_had_time_to_converge_;
+  }
 
   // Returns whether the AEC is in an initial state.
   bool InitialState() const { return initial_state_; }
@@ -141,14 +139,16 @@ class AecState {
   };
 
   void UpdateReverb(const std::vector<float>& impulse_response);
+  bool DetectActiveRender(rtc::ArrayView<const float> x) const;
+  bool DetectEchoSaturation(rtc::ArrayView<const float> x);
 
   static int instance_count_;
   std::unique_ptr<ApmDataDumper> data_dumper_;
   ErlEstimator erl_estimator_;
   ErleEstimator erle_estimator_;
   size_t capture_block_counter_ = 0;
-  size_t blocks_with_filter_adaptation_ = 0;
-  size_t blocks_with_strong_render_ = 0;
+  size_t blocks_with_proper_filter_adaptation_ = 0;
+  size_t blocks_with_active_render_ = 0;
   bool usable_linear_estimate_ = false;
   bool echo_leakage_detected_ = false;
   bool capture_signal_saturation_ = false;
@@ -170,8 +170,7 @@ class AecState {
   float reverb_decay_;
   bool saturating_echo_path_ = false;
   bool initial_state_ = true;
-  bool linear_echo_estimate_ = false;
-  bool sufficient_filter_updates_ = false;
+  bool filter_has_had_time_to_converge_ = false;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(AecState);
 };

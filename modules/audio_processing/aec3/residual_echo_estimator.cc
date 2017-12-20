@@ -95,7 +95,7 @@ void ResidualEchoEstimator::Estimate(
   RenderNoisePower(render_buffer, &X2_noise_floor_, &X2_noise_floor_counter_);
 
   // Estimate the residual echo power.
-  if (aec_state.LinearEchoEstimate()) {
+  if (aec_state.UsableLinearEstimate()) {
     RTC_DCHECK(aec_state.FilterDelay());
     const int filter_delay = *aec_state.FilterDelay();
     LinearEstimate(S2_linear, aec_state.Erle(), filter_delay, R2);
@@ -143,7 +143,7 @@ void ResidualEchoEstimator::Estimate(
         [](float a, float b) { return std::max(0.f, a - 10.f * b); });
 
     NonLinearEstimate(
-        aec_state.SufficientFilterUpdates(), aec_state.SaturatedEcho(),
+        aec_state.FilterHasHadTimeToConverge(), aec_state.SaturatedEcho(),
         config_.ep_strength.bounded_erl, aec_state.TransparentMode(),
         aec_state.InitialState(), X2, Y2, R2);
 

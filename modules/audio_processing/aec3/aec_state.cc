@@ -72,14 +72,13 @@ void AecState::HandleEchoPathChange(
     previous_max_sample_ = 0.f;
     std::fill(max_render_.begin(), max_render_.end(), 0.f);
     force_zero_gain_counter_ = 0;
-    blocks_with_filter_adaptation_ = 0;
-    blocks_with_strong_render_ = 0;
+    blocks_with_proper_filter_adaptation_ = 0;
     initial_state_ = true;
     capture_block_counter_ = 0;
-    linear_echo_estimate_ = false;
-    sufficient_filter_updates_ = false;
+    filter_has_had_time_to_converge_ = false;
     render_received_ = false;
     force_zero_gain_ = true;
+    blocks_with_active_render_ = 0;
   };
 
   // TODO(peah): Refine the reset scheme according to the type of gain and
@@ -123,14 +122,20 @@ void AecState::Update(
 
   // Update counters.
   ++capture_block_counter_;
+  const bool active_render_block = DetectActiveRender(x);
+  blocks_with_active_render_ += active_render_block ? 1 : 0;
+  blocks_with_proper_filter_adaptation_ +=
+      active_render_block && !SaturatedCapture() ? 1 : 0;
 
   // Force zero echo suppression gain after an echo path change to allow at
   // least some render data to be collected in order to avoid an initial echo
   // burst.
-  force_zero_gain_ = (++force_zero_gain_counter_) < kNumBlocksPerSecond / 5;
+  force_zero_gain_ = ++force_zero_gain_counter_ < kNumBlocksPerSecond / 5;
 
   // Estimate delays.
   filter_delay_ = EstimateFilterDelay(adaptive_filter_frequency_response);
+
+  // TODO(peah): Remove the dependency on the external delay.
   external_delay_ =
       external_delay_samples
           ? rtc::Optional<size_t>(*external_delay_samples / kBlockSize)
@@ -149,59 +154,31 @@ void AecState::Update(
   // Detect and flag echo saturation.
   // TODO(peah): Add the delay in this computation to ensure that the render and
   // capture signals are properly aligned.
-  RTC_DCHECK_LT(0, x.size());
-  const float max_sample = fabs(*std::max_element(
-      x.begin(), x.end(), [](float a, float b) { return a * a < b * b; }));
-
   if (config_.ep_strength.echo_can_saturate) {
-    const bool saturated_echo =
-        (previous_max_sample_ > 200.f) && SaturatedCapture();
-
-    // Counts the blocks since saturation.
-    constexpr size_t kSaturationLeakageBlocks = 20;
-
-    // Set flag for potential presence of saturated echo
-    blocks_since_last_saturation_ =
-        saturated_echo ? 0 : blocks_since_last_saturation_ + 1;
-
-    echo_saturation_ = blocks_since_last_saturation_ < kSaturationLeakageBlocks;
-  } else {
-    echo_saturation_ = false;
+    echo_saturation_ = DetectEchoSaturation(x);
   }
-  previous_max_sample_ = max_sample;
 
   // TODO(peah): Move?
-  sufficient_filter_updates_ =
-      blocks_with_filter_adaptation_ >= kEchoPathChangeConvergenceBlocks;
+  filter_has_had_time_to_converge_ =
+      blocks_with_proper_filter_adaptation_ >= 2 * kNumBlocksPerSecond;
+
+  // TODO(peah): Remove.
   initial_state_ = capture_block_counter_ < 3 * kNumBlocksPerSecond;
 
   // Flag whether the linear filter estimate is usable.
   usable_linear_estimate_ =
-      (!echo_saturation_) && (converged_filter || SufficientFilterUpdates()) &&
-      capture_block_counter_ >= 2 * kNumBlocksPerSecond && external_delay_;
-
-  linear_echo_estimate_ = UsableLinearEstimate() && !TransparentMode();
+      !echo_saturation_ &&
+      (converged_filter || filter_has_had_time_to_converge_) &&
+      capture_block_counter_ >= 2 * kNumBlocksPerSecond && external_delay_ &&
+      !TransparentMode();
 
   // After an amount of active render samples for which an echo should have been
   // detected in the capture signal if the ERL was not infinite, flag that a
   // transparent mode should be entered.
-  const float x_energy = std::inner_product(x.begin(), x.end(), x.begin(), 0.f);
-  const bool active_render_block =
-      x_energy > (config_.render_levels.active_render_limit *
-                  config_.render_levels.active_render_limit) *
-                     kFftLengthBy2;
-
-  if (active_render_block) {
-    render_received_ = true;
-  }
-
-  // Update counters.
-  blocks_with_filter_adaptation_ +=
-      (active_render_block && (!SaturatedCapture()) ? 1 : 0);
-
-  transparent_mode_ = !converged_filter &&
-                      (!render_received_ || blocks_with_filter_adaptation_ >=
-                                                5 * kNumBlocksPerSecond);
+  transparent_mode_ =
+      !converged_filter &&
+      (blocks_with_active_render_ == 0 ||
+       blocks_with_proper_filter_adaptation_ >= 5 * kNumBlocksPerSecond);
 
   // Update the room reverb estimate.
   UpdateReverb(adaptive_filter_impulse_response);
@@ -287,6 +264,28 @@ void AecState::UpdateReverb(const std::vector<float>& impulse_response) {
   }
   data_dumper_->DumpRaw("aec3_reverb_decay", reverb_decay_);
   data_dumper_->DumpRaw("aec3_tail_power", tail_power);
+}
+
+bool AecState::DetectActiveRender(rtc::ArrayView<const float> x) const {
+  const float x_energy = std::inner_product(x.begin(), x.end(), x.begin(), 0.f);
+  return x_energy > (config_.render_levels.active_render_limit *
+                     config_.render_levels.active_render_limit) *
+                        kFftLengthBy2;
+}
+
+bool AecState::DetectEchoSaturation(rtc::ArrayView<const float> x) {
+  RTC_DCHECK_LT(0, x.size());
+  const float max_sample = fabs(*std::max_element(
+      x.begin(), x.end(), [](float a, float b) { return a * a < b * b; }));
+  previous_max_sample_ = max_sample;
+
+  // Set flag for potential presence of saturated echo
+  blocks_since_last_saturation_ =
+      previous_max_sample_ > 200.f && SaturatedCapture()
+          ? 0
+          : blocks_since_last_saturation_ + 1;
+
+  return blocks_since_last_saturation_ < 20;
 }
 
 void AecState::EchoAudibility::Update(rtc::ArrayView<const float> x,

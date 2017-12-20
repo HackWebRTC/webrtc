@@ -233,7 +233,6 @@ void EchoRemoverImpl::ProcessCapture(
   data_dumper_->DumpRaw("aec3_R2", R2);
   data_dumper_->DumpRaw("aec3_erle", aec_state_.Erle());
   data_dumper_->DumpRaw("aec3_erl", aec_state_.Erl());
-  data_dumper_->DumpRaw("aec3_active_render", aec_state_.ActiveRender());
   data_dumper_->DumpRaw("aec3_usable_linear_estimate",
                         aec_state_.UsableLinearEstimate());
   data_dumper_->DumpRaw(

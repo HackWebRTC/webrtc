@@ -53,9 +53,6 @@ constexpr size_t kMatchedFilterWindowSizeSubBlocks = 32;
 constexpr size_t kMatchedFilterAlignmentShiftSizeSubBlocks =
     kMatchedFilterWindowSizeSubBlocks * 3 / 4;
 
-
-constexpr size_t kEchoPathChangeConvergenceBlocks = 2 * kNumBlocksPerSecond;
-
 // TODO(peah): Integrate this with how it is done inside audio_processing_impl.
 constexpr size_t NumBandsForRate(int sample_rate_hz) {
   return static_cast<size_t>(sample_rate_hz == 8000 ? 1

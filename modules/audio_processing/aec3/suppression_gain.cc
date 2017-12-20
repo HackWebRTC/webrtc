@@ -379,7 +379,7 @@ void SuppressionGain::GetGain(
   const bool saturated_echo = aec_state.SaturatedEcho();
   const bool saturating_echo_path = aec_state.SaturatingEchoPath();
   const bool force_zero_gain = aec_state.ForcedZeroGain();
-  const bool linear_echo_estimate = aec_state.LinearEchoEstimate();
+  const bool linear_echo_estimate = aec_state.UsableLinearEstimate();
 
   if (force_zero_gain) {
     last_gain_.fill(0.f);
