@@ -222,8 +222,6 @@ struct ConfigHelper {
                                        &fake_transport_, Eq(nullptr)))
           .Times(1);
     }
-    EXPECT_CALL(*channel_proxy_, SetBitrate(_, _))
-        .Times(1);
     EXPECT_CALL(*channel_proxy_, ResetSenderCongestionControlObjects())
         .Times(1);
     EXPECT_CALL(*channel_proxy_, RegisterTransport(nullptr)).Times(2);

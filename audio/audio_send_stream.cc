@@ -225,7 +225,9 @@ void AudioSendStream::ConfigureStream(
     RTC_LOG(LS_ERROR) << "Failed to set up send codec state.";
   }
 
-  ReconfigureBitrateObserver(stream, new_config);
+  if (stream->sending_) {
+    ReconfigureBitrateObserver(stream, new_config);
+  }
   stream->config_ = new_config;
 }
 
