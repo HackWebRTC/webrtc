@@ -13,7 +13,6 @@
 
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
-#include "api/rtpparameters.h"
 #include "call/call.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "media/base/fakemediaengine.h"
@@ -1086,9 +1085,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetRtpParametersEncodingsActive) {
   EXPECT_FALSE(GetSendStream(kSsrcX).IsSending());
 
   // Now change it back to active and verify we resume sending.
-  // This should occur even when other parameters are updated.
   parameters.encodings[0].active = true;
-  parameters.encodings[0].max_bitrate_bps = rtc::Optional<int>(6000);
   EXPECT_TRUE(channel_->SetRtpSendParameters(kSsrcX, parameters));
   EXPECT_TRUE(GetSendStream(kSsrcX).IsSending());
 }
@@ -1182,42 +1179,6 @@ TEST_F(WebRtcVoiceEngineTestFake, SetRtpSendParameterUpdatesMaxBitrate) {
 
   const int max_bitrate = GetSendStreamConfig(kSsrcX).max_bitrate_bps;
   EXPECT_EQ(max_bitrate, kMaxBitrateBps);
-}
-
-// Tests that when RTCRtpEncodingParameters.bitrate_priority gets set to
-// a value <= 0, setting the parameters returns false.
-TEST_F(WebRtcVoiceEngineTestFake, SetRtpSendParameterInvalidBitratePriority) {
-  EXPECT_TRUE(SetupSendStream());
-  webrtc::RtpParameters rtp_parameters = channel_->GetRtpSendParameters(kSsrcX);
-  EXPECT_EQ(1UL, rtp_parameters.encodings.size());
-  EXPECT_EQ(webrtc::kDefaultBitratePriority,
-            rtp_parameters.encodings[0].bitrate_priority);
-
-  rtp_parameters.encodings[0].bitrate_priority = 0;
-  EXPECT_FALSE(channel_->SetRtpSendParameters(kSsrcX, rtp_parameters));
-  rtp_parameters.encodings[0].bitrate_priority = -1.0;
-  EXPECT_FALSE(channel_->SetRtpSendParameters(kSsrcX, rtp_parameters));
-}
-
-// Test that the bitrate_priority in the send stream config gets updated when
-// SetRtpSendParameters is set for the VoiceMediaChannel.
-TEST_F(WebRtcVoiceEngineTestFake, SetRtpSendParameterUpdatesBitratePriority) {
-  EXPECT_TRUE(SetupSendStream());
-  webrtc::RtpParameters rtp_parameters = channel_->GetRtpSendParameters(kSsrcX);
-
-  EXPECT_EQ(1UL, rtp_parameters.encodings.size());
-  EXPECT_EQ(webrtc::kDefaultBitratePriority,
-            rtp_parameters.encodings[0].bitrate_priority);
-  double new_bitrate_priority = 2.0;
-  rtp_parameters.encodings[0].bitrate_priority = new_bitrate_priority;
-  EXPECT_TRUE(channel_->SetRtpSendParameters(kSsrcX, rtp_parameters));
-
-  // The priority should get set for both the audio channel's rtp parameters
-  // and the audio send stream's audio config.
-  EXPECT_EQ(
-      new_bitrate_priority,
-      channel_->GetRtpSendParameters(kSsrcX).encodings[0].bitrate_priority);
-  EXPECT_EQ(new_bitrate_priority, GetSendStreamConfig(kSsrcX).bitrate_priority);
 }
 
 // Test that GetRtpReceiveParameters returns the currently configured codecs.

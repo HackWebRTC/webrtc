@@ -980,11 +980,6 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
       RTC_LOG(LS_ERROR) << "Attempted to set RtpParameters with modified SSRC";
       return false;
     }
-    if (rtp_parameters.encodings[0].bitrate_priority <= 0) {
-      RTC_LOG(LS_ERROR) << "Attempted to set RtpParameters bitrate_priority to "
-                           "an invalid number.";
-      return false;
-    }
     return true;
   }
 
@@ -1005,25 +1000,20 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
 
     const rtc::Optional<int> old_rtp_max_bitrate =
         rtp_parameters_.encodings[0].max_bitrate_bps;
-    double old_priority = rtp_parameters_.encodings[0].bitrate_priority;
-    rtp_parameters_ = parameters;
-    config_.bitrate_priority = rtp_parameters_.encodings[0].bitrate_priority;
 
-    bool reconfigure_send_stream =
-        (rtp_parameters_.encodings[0].max_bitrate_bps != old_rtp_max_bitrate) ||
-        (rtp_parameters_.encodings[0].bitrate_priority != old_priority);
+    rtp_parameters_ = parameters;
+
     if (rtp_parameters_.encodings[0].max_bitrate_bps != old_rtp_max_bitrate) {
-      // Update the bitrate range.
+      // Reconfigure AudioSendStream with new bit rate.
       if (send_rate) {
         config_.send_codec_spec->target_bitrate_bps = send_rate;
       }
       UpdateAllowedBitrateRange();
-    }
-    if (reconfigure_send_stream) {
       ReconfigureAudioSendStream();
+    } else {
+      // parameters.encodings[0].active could have changed.
+      UpdateSendState();
     }
-    // parameters.encodings[0].active could have changed.
-    UpdateSendState();
     return true;
   }
 

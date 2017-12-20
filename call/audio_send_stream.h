@@ -104,8 +104,6 @@ class AudioSendStream {
     int min_bitrate_bps = -1;
     int max_bitrate_bps = -1;
 
-    double bitrate_priority = 1.0;
-
     // Defines whether to turn on audio network adaptor, and defines its config
     // string.
     rtc::Optional<std::string> audio_network_adaptor_config;

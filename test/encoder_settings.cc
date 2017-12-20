@@ -55,7 +55,6 @@ std::vector<VideoStream> CreateVideoStreams(
 
   stream_settings[encoder_config.number_of_streams - 1].max_bitrate_bps +=
       bitrate_left_bps;
-  stream_settings[0].bitrate_priority = encoder_config.bitrate_priority;
 
   return stream_settings;
 }

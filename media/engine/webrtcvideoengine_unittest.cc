@@ -14,7 +14,6 @@
 #include <utility>
 #include <vector>
 
-#include "api/rtpparameters.h"
 #include "api/test/mock_video_decoder_factory.h"
 #include "api/test/mock_video_encoder_factory.h"
 #include "api/video_codecs/sdp_video_format.h"
@@ -4360,122 +4359,6 @@ TEST_F(WebRtcVideoChannelTest, CannotSetSsrcInRtpSendParameters) {
   EXPECT_FALSE(channel_->SetRtpSendParameters(last_ssrc_, parameters));
 }
 
-// Tests that when RTCRtpEncodingParameters.bitrate_priority gets set to
-// a value <= 0, setting the parameters returns false.
-TEST_F(WebRtcVideoChannelTest, SetRtpSendParametersInvalidBitratePriority) {
-  AddSendStream();
-  webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(last_ssrc_);
-  EXPECT_EQ(1UL, parameters.encodings.size());
-  EXPECT_EQ(webrtc::kDefaultBitratePriority,
-            parameters.encodings[0].bitrate_priority);
-
-  parameters.encodings[0].bitrate_priority = 0;
-  EXPECT_FALSE(channel_->SetRtpSendParameters(last_ssrc_, parameters));
-  parameters.encodings[0].bitrate_priority = -2;
-  EXPECT_FALSE(channel_->SetRtpSendParameters(last_ssrc_, parameters));
-}
-
-// Tests when the the RTCRtpEncodingParameters.bitrate_priority gets set
-// properly on the VideoChannel and propogates down to the video encoder.
-TEST_F(WebRtcVideoChannelTest, SetRtpSendParametersPriorityOneStream) {
-  AddSendStream();
-  webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(last_ssrc_);
-  EXPECT_EQ(1UL, parameters.encodings.size());
-  EXPECT_EQ(webrtc::kDefaultBitratePriority,
-            parameters.encodings[0].bitrate_priority);
-
-  // Change the value and set it on the VideoChannel.
-  double new_bitrate_priority = 2.0;
-  parameters.encodings[0].bitrate_priority = new_bitrate_priority;
-  EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters));
-
-  // Verify that the encoding parameters bitrate_priority is set for the
-  // VideoChannel.
-  parameters = channel_->GetRtpSendParameters(last_ssrc_);
-  EXPECT_EQ(1UL, parameters.encodings.size());
-  EXPECT_EQ(new_bitrate_priority, parameters.encodings[0].bitrate_priority);
-
-  // Verify that the new value propagated down to the encoder.
-  std::vector<FakeVideoSendStream*> video_send_streams =
-      fake_call_->GetVideoSendStreams();
-  EXPECT_EQ(1UL, video_send_streams.size());
-  FakeVideoSendStream* video_send_stream = video_send_streams.front();
-  // Check that the WebRtcVideoSendStream updated the VideoEncoderConfig
-  // appropriately.
-  EXPECT_EQ(new_bitrate_priority,
-            video_send_stream->GetEncoderConfig().bitrate_priority);
-  // Check that the vector of VideoStreams also was propagated correctly. Note
-  // that this is testing the behavior of the FakeVideoSendStream, which mimics
-  // the calls to CreateEncoderStreams to get the VideoStreams.
-  EXPECT_EQ(rtc::Optional<double>(new_bitrate_priority),
-            video_send_stream->GetVideoStreams()[0].bitrate_priority);
-}
-
-// Tests that the RTCRtpEncodingParameters.bitrate_priority is set for the
-// VideoChannel and the value propogates to the video encoder with all simulcast
-// streams.
-TEST_F(WebRtcVideoChannelTest, SetRtpSendParametersPrioritySimulcastStreams) {
-  // Create the stream params with multiple ssrcs for simulcast.
-  const int kNumSimulcastStreams = 3;
-  std::vector<uint32_t> ssrcs = MAKE_VECTOR(kSsrcs3);
-  StreamParams stream_params = CreateSimStreamParams("cname", ssrcs);
-  AddSendStream(stream_params);
-  uint32_t primary_ssrc = stream_params.first_ssrc();
-
-  // Using the FakeVideoCapturer, we manually send a full size frame. This
-  // creates multiple VideoStreams for all simulcast layers when reconfiguring,
-  // and allows us to test this behavior.
-  cricket::FakeVideoCapturer capturer;
-  VideoOptions options;
-  EXPECT_TRUE(channel_->SetVideoSend(primary_ssrc, true, &options, &capturer));
-  EXPECT_EQ(cricket::CS_RUNNING,
-            capturer.Start(cricket::VideoFormat(
-                1920, 1080, cricket::VideoFormat::FpsToInterval(30),
-                cricket::FOURCC_I420)));
-  channel_->SetSend(true);
-  EXPECT_TRUE(capturer.CaptureFrame());
-  // Get and set the rtp encoding parameters.
-  webrtc::RtpParameters parameters =
-      channel_->GetRtpSendParameters(primary_ssrc);
-  EXPECT_EQ(1UL, parameters.encodings.size());
-  EXPECT_EQ(webrtc::kDefaultBitratePriority,
-            parameters.encodings[0].bitrate_priority);
-  // Change the value and set it on the VideoChannel.
-  double new_bitrate_priority = 2.0;
-  parameters.encodings[0].bitrate_priority = new_bitrate_priority;
-  EXPECT_TRUE(channel_->SetRtpSendParameters(primary_ssrc, parameters));
-
-  // Verify that the encoding parameters priority is set on the VideoChannel.
-  parameters = channel_->GetRtpSendParameters(primary_ssrc);
-  EXPECT_EQ(1UL, parameters.encodings.size());
-  EXPECT_EQ(new_bitrate_priority, parameters.encodings[0].bitrate_priority);
-
-  // Verify that the new value propagated down to the encoder.
-  std::vector<FakeVideoSendStream*> video_send_streams =
-      fake_call_->GetVideoSendStreams();
-  EXPECT_EQ(1UL, video_send_streams.size());
-  FakeVideoSendStream* video_send_stream = video_send_streams.front();
-  // Check that the WebRtcVideoSendStream updated the VideoEncoderConfig
-  // appropriately.
-  EXPECT_EQ(kNumSimulcastStreams,
-            video_send_stream->GetEncoderConfig().number_of_streams);
-  EXPECT_EQ(new_bitrate_priority,
-            video_send_stream->GetEncoderConfig().bitrate_priority);
-  // Check that the vector of VideoStreams also propagated correctly. The
-  // FakeVideoSendStream calls CreateEncoderStreams, and we are testing that
-  // these are created appropriately for the simulcast case.
-  EXPECT_EQ(kNumSimulcastStreams, video_send_stream->GetVideoStreams().size());
-  EXPECT_EQ(rtc::Optional<double>(new_bitrate_priority),
-            video_send_stream->GetVideoStreams()[0].bitrate_priority);
-  // Since we are only setting bitrate priority per-sender, the other
-  // VideoStreams should have a bitrate priority of 0.
-  EXPECT_EQ(rtc::nullopt,
-            video_send_stream->GetVideoStreams()[1].bitrate_priority);
-  EXPECT_EQ(rtc::nullopt,
-            video_send_stream->GetVideoStreams()[2].bitrate_priority);
-  EXPECT_TRUE(channel_->SetVideoSend(primary_ssrc, true, nullptr, nullptr));
-}
-
 // Test that a stream will not be sending if its encoding is made inactive
 // through SetRtpSendParameters.
 // TODO(deadbeef): Update this test when we start supporting setting parameters
@@ -4825,8 +4708,7 @@ class WebRtcVideoChannelSimulcastTest : public testing::Test {
     if (conference_mode) {
       expected_streams = GetSimulcastConfig(
           num_configured_streams, capture_width, capture_height, 0,
-          webrtc::kDefaultBitratePriority, kDefaultQpMax,
-          kDefaultVideoMaxFramerate, screenshare);
+          kDefaultQpMax, kDefaultVideoMaxFramerate, screenshare);
       if (screenshare) {
         for (const webrtc::VideoStream& stream : expected_streams) {
           // Never scale screen content.
