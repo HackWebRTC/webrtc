@@ -364,6 +364,9 @@ if (rtc_include_tests) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
+    if (!rtc_include_internal_audio_device) {
+      defines = [ "WEBRTC_DUMMY_AUDIO_BUILD" ]
+    }
   }
 }
 

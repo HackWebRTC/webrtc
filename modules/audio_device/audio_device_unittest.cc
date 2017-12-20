@@ -455,7 +455,8 @@ class MockAudioTransport : public test::MockAudioTransport {
 class AudioDeviceTest : public ::testing::Test {
  protected:
   AudioDeviceTest() : event_(false, false) {
-#if !defined(ADDRESS_SANITIZER) && !defined(MEMORY_SANITIZER)
+#if !defined(ADDRESS_SANITIZER) && !defined(MEMORY_SANITIZER) && \
+    !defined(WEBRTC_DUMMY_AUDIO_BUILD)
     rtc::LogMessage::LogToDebug(rtc::LS_INFO);
     // Add extra logging fields here if needed for debugging.
     // rtc::LogMessage::LogTimestamps();
