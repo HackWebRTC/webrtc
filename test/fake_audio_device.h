@@ -20,6 +20,7 @@
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/event.h"
 #include "rtc_base/platform_thread.h"
+#include "rtc_base/random.h"
 #include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
@@ -59,6 +60,26 @@ class FakeAudioDevice : public FakeAudioDeviceModule {
     virtual bool Render(rtc::ArrayView<const int16_t> data) = 0;
   };
 
+  // A fake capturer that generates pulses with random samples between
+  // -max_amplitude and +max_amplitude.
+  class PulsedNoiseCapturer final : public Capturer {
+   public:
+    PulsedNoiseCapturer(int16_t max_amplitude, int sampling_frequency_in_hz);
+
+    int SamplingFrequency() const override { return sampling_frequency_in_hz_; }
+
+    bool Capture(rtc::BufferT<int16_t>* buffer) override;
+
+    void SetMaxAmplitude(int16_t amplitude);
+
+   private:
+    int sampling_frequency_in_hz_;
+    bool fill_with_zero_;
+    Random random_generator_;
+    rtc::CriticalSection lock_;
+    int16_t max_amplitude_ RTC_GUARDED_BY(lock_);
+  };
+
   // Creates a new FakeAudioDevice. When capturing or playing, 10 ms audio
   // frames will be processed every 10ms / |speed|.
   // |capturer| is an object that produces audio data. Can be nullptr if this
@@ -74,8 +95,9 @@ class FakeAudioDevice : public FakeAudioDeviceModule {
   // Returns a Capturer instance that generates a signal where every second
   // frame is zero and every second frame is evenly distributed random noise
   // with max amplitude |max_amplitude|.
-  static std::unique_ptr<Capturer> CreatePulsedNoiseCapturer(
-      int16_t max_amplitude, int sampling_frequency_in_hz);
+  static std::unique_ptr<PulsedNoiseCapturer> CreatePulsedNoiseCapturer(
+      int16_t max_amplitude,
+      int sampling_frequency_in_hz);
 
   // Returns a Capturer instance that gets its data from a file.
   static std::unique_ptr<Capturer> CreateWavFileReader(

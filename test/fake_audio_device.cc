@@ -15,7 +15,6 @@
 
 #include "common_audio/wav_file.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/random.h"
 #include "system_wrappers/include/event_wrapper.h"
 
 namespace webrtc {
@@ -24,45 +23,6 @@ namespace {
 
 constexpr int kFrameLengthMs = 10;
 constexpr int kFramesPerSecond = 1000 / kFrameLengthMs;
-
-// Assuming 10ms audio packets..
-class PulsedNoiseCapturer final : public test::FakeAudioDevice::Capturer {
- public:
-  PulsedNoiseCapturer(int16_t max_amplitude, int sampling_frequency_in_hz)
-      : sampling_frequency_in_hz_(sampling_frequency_in_hz),
-        fill_with_zero_(false),
-        random_generator_(1),
-        max_amplitude_(max_amplitude) {
-    RTC_DCHECK_GT(max_amplitude, 0);
-  }
-
-  int SamplingFrequency() const override {
-    return sampling_frequency_in_hz_;
-  }
-
-  bool Capture(rtc::BufferT<int16_t>* buffer) override {
-    fill_with_zero_ = !fill_with_zero_;
-    buffer->SetData(
-        test::FakeAudioDevice::SamplesPerFrame(sampling_frequency_in_hz_),
-        [&](rtc::ArrayView<int16_t> data) {
-      if (fill_with_zero_) {
-        std::fill(data.begin(), data.end(), 0);
-      } else {
-        std::generate(data.begin(), data.end(), [&]() {
-          return random_generator_.Rand(-max_amplitude_, max_amplitude_);
-        });
-      }
-      return data.size();
-    });
-    return true;
-  }
-
- private:
-  int sampling_frequency_in_hz_;
-  bool fill_with_zero_;
-  Random random_generator_;
-  const int16_t max_amplitude_;
-};
 
 class WavFileReader final : public test::FakeAudioDevice::Capturer {
  public:
@@ -194,14 +154,53 @@ class DiscardRenderer final : public test::FakeAudioDevice::Renderer {
 }  // namespace
 namespace test {
 
+// Assuming 10ms audio packets.
+FakeAudioDevice::PulsedNoiseCapturer::PulsedNoiseCapturer(
+    int16_t max_amplitude,
+    int sampling_frequency_in_hz)
+    : sampling_frequency_in_hz_(sampling_frequency_in_hz),
+      fill_with_zero_(false),
+      random_generator_(1),
+      max_amplitude_(max_amplitude) {
+  RTC_DCHECK_GT(max_amplitude, 0);
+}
+
+bool FakeAudioDevice::PulsedNoiseCapturer::Capture(
+    rtc::BufferT<int16_t>* buffer) {
+  fill_with_zero_ = !fill_with_zero_;
+  int16_t max_amplitude;
+  {
+    rtc::CritScope cs(&lock_);
+    max_amplitude = max_amplitude_;
+  }
+  buffer->SetData(FakeAudioDevice::SamplesPerFrame(sampling_frequency_in_hz_),
+                  [&](rtc::ArrayView<int16_t> data) {
+                    if (fill_with_zero_) {
+                      std::fill(data.begin(), data.end(), 0);
+                    } else {
+                      std::generate(data.begin(), data.end(), [&]() {
+                        return random_generator_.Rand(-max_amplitude,
+                                                      max_amplitude);
+                      });
+                    }
+                    return data.size();
+                  });
+  return true;
+}
+
+void FakeAudioDevice::PulsedNoiseCapturer::SetMaxAmplitude(int16_t amplitude) {
+  rtc::CritScope cs(&lock_);
+  max_amplitude_ = amplitude;
+}
+
 size_t FakeAudioDevice::SamplesPerFrame(int sampling_frequency_in_hz) {
   return rtc::CheckedDivExact(sampling_frequency_in_hz, kFramesPerSecond);
 }
 
-std::unique_ptr<FakeAudioDevice::Capturer>
-    FakeAudioDevice::CreatePulsedNoiseCapturer(
-        int16_t max_amplitude, int sampling_frequency_in_hz) {
-  return std::unique_ptr<FakeAudioDevice::Capturer>(
+std::unique_ptr<FakeAudioDevice::PulsedNoiseCapturer>
+FakeAudioDevice::CreatePulsedNoiseCapturer(int16_t max_amplitude,
+                                           int sampling_frequency_in_hz) {
+  return std::unique_ptr<FakeAudioDevice::PulsedNoiseCapturer>(
       new PulsedNoiseCapturer(max_amplitude, sampling_frequency_in_hz));
 }
 
