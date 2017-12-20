@@ -12,6 +12,7 @@
 #include <string>
 #include <utility>
 
+#include "api/rtpparameters.h"
 #include "media/base/fakemediaengine.h"
 #include "media/base/rtpdataengine.h"
 #include "media/engine/fakewebrtccall.h"
@@ -600,6 +601,28 @@ TEST_F(RtpSenderReceiverTest, SetAudioMaxSendBitrate) {
   DestroyAudioRtpSender();
 }
 
+TEST_F(RtpSenderReceiverTest, SetAudioBitratePriority) {
+  CreateAudioRtpSender();
+
+  webrtc::RtpParameters params = audio_rtp_sender_->GetParameters();
+  EXPECT_EQ(1, params.encodings.size());
+  EXPECT_EQ(webrtc::kDefaultBitratePriority,
+            params.encodings[0].bitrate_priority);
+  double new_bitrate_priority = 2.0;
+  params.encodings[0].bitrate_priority = new_bitrate_priority;
+  EXPECT_TRUE(audio_rtp_sender_->SetParameters(params));
+
+  params = audio_rtp_sender_->GetParameters();
+  EXPECT_EQ(1, params.encodings.size());
+  EXPECT_EQ(new_bitrate_priority, params.encodings[0].bitrate_priority);
+
+  params = voice_media_channel_->GetRtpSendParameters(kAudioSsrc);
+  EXPECT_EQ(1, params.encodings.size());
+  EXPECT_EQ(new_bitrate_priority, params.encodings[0].bitrate_priority);
+
+  DestroyAudioRtpSender();
+}
+
 TEST_F(RtpSenderReceiverTest, VideoSenderCanSetParameters) {
   CreateVideoRtpSender();
 
@@ -632,6 +655,28 @@ TEST_F(RtpSenderReceiverTest, SetVideoMaxSendBitrate) {
 
   // Verify that the global bitrate limit has not been changed.
   EXPECT_EQ(-1, video_media_channel_->max_bps());
+
+  DestroyVideoRtpSender();
+}
+
+TEST_F(RtpSenderReceiverTest, SetVideoBitratePriority) {
+  CreateVideoRtpSender();
+
+  webrtc::RtpParameters params = video_rtp_sender_->GetParameters();
+  EXPECT_EQ(1, params.encodings.size());
+  EXPECT_EQ(webrtc::kDefaultBitratePriority,
+            params.encodings[0].bitrate_priority);
+  double new_bitrate_priority = 2.0;
+  params.encodings[0].bitrate_priority = new_bitrate_priority;
+  EXPECT_TRUE(video_rtp_sender_->SetParameters(params));
+
+  params = video_rtp_sender_->GetParameters();
+  EXPECT_EQ(1, params.encodings.size());
+  EXPECT_EQ(new_bitrate_priority, params.encodings[0].bitrate_priority);
+
+  params = video_media_channel_->GetRtpSendParameters(kVideoSsrc);
+  EXPECT_EQ(1, params.encodings.size());
+  EXPECT_EQ(new_bitrate_priority, params.encodings[0].bitrate_priority);
 
   DestroyVideoRtpSender();
 }

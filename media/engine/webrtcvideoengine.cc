@@ -1787,8 +1787,10 @@ bool WebRtcVideoChannel::WebRtcVideoSendStream::SetRtpParameters(
     return false;
   }
 
-  bool reconfigure_encoder = new_parameters.encodings[0].max_bitrate_bps !=
-                             rtp_parameters_.encodings[0].max_bitrate_bps;
+  bool reconfigure_encoder = (new_parameters.encodings[0].max_bitrate_bps !=
+                              rtp_parameters_.encodings[0].max_bitrate_bps) ||
+                             (new_parameters.encodings[0].bitrate_priority !=
+                              rtp_parameters_.encodings[0].bitrate_priority);
   rtp_parameters_ = new_parameters;
   // Codecs are currently handled at the WebRtcVideoChannel level.
   rtp_parameters_.codecs.clear();
@@ -1816,6 +1818,11 @@ bool WebRtcVideoChannel::WebRtcVideoSendStream::ValidateRtpParameters(
   }
   if (rtp_parameters.encodings[0].ssrc != rtp_parameters_.encodings[0].ssrc) {
     RTC_LOG(LS_ERROR) << "Attempted to set RtpParameters with modified SSRC";
+    return false;
+  }
+  if (rtp_parameters.encodings[0].bitrate_priority <= 0) {
+    RTC_LOG(LS_ERROR) << "Attempted to set RtpParameters bitrate_priority to "
+                         "an invalid number. bitrate_priority must be > 0.";
     return false;
   }
   return true;
@@ -1875,6 +1882,13 @@ WebRtcVideoChannel::WebRtcVideoSendStream::CreateVideoEncoderConfig(
     stream_max_bitrate = codec_max_bitrate_kbps * 1000;
   }
   encoder_config.max_bitrate_bps = stream_max_bitrate;
+
+  // The encoder config's default bitrate priority is set to 1.0,
+  // unless it is set through the sender's encoding parameters.
+  // The bitrate priority, which is used in the bitrate allocation, is done
+  // on a per sender basis, so we use the first encoding's value.
+  encoder_config.bitrate_priority =
+      rtp_parameters_.encodings[0].bitrate_priority;
 
   int max_qp = kDefaultQpMax;
   codec.GetParam(kCodecParamMaxQuantization, &max_qp);
@@ -2580,7 +2594,8 @@ std::vector<webrtc::VideoStream> EncoderStreamFactory::CreateEncoderStreams(
       (CodecNamesEq(codec_name_, kVp8CodecName) && is_screencast_ &&
        conference_mode_)) {
     return GetSimulcastConfig(encoder_config.number_of_streams, width, height,
-                              encoder_config.max_bitrate_bps, max_qp_,
+                              encoder_config.max_bitrate_bps,
+                              encoder_config.bitrate_priority, max_qp_,
                               max_framerate_, is_screencast_);
   }
 
@@ -2597,6 +2612,7 @@ std::vector<webrtc::VideoStream> EncoderStreamFactory::CreateEncoderStreams(
   stream.min_bitrate_bps = GetMinVideoBitrateBps();
   stream.target_bitrate_bps = stream.max_bitrate_bps = max_bitrate_bps;
   stream.max_qp = max_qp_;
+  stream.bitrate_priority = encoder_config.bitrate_priority;
 
   if (CodecNamesEq(codec_name_, kVp9CodecName) && !is_screencast_) {
     stream.temporal_layer_thresholds_bps.resize(GetDefaultVp9TemporalLayers() -

@@ -87,10 +87,7 @@ class BitrateAllocator {
                    uint32_t pad_up_bitrate_bps,
                    bool enforce_min_bitrate,
                    std::string track_id,
-                   // TODO(shampson): Take out default value and wire the
-                   // bitrate_priority up to the AudioSendStream::Config and
-                   // VideoSendStream::Config.
-                   double bitrate_priority = 1.0);
+                   double bitrate_priority);
 
   // Removes a previously added observer, but will not trigger a new bitrate
   // allocation.
