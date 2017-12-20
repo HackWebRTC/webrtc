@@ -52,7 +52,6 @@ class ResidualEchoEstimator {
                          bool saturated_echo,
                          bool bounded_erl,
                          bool transparent_mode,
-                         bool initial_state,
                          const std::array<float, kFftLengthBy2Plus1>& X2,
                          const std::array<float, kFftLengthBy2Plus1>& Y2,
                          std::array<float, kFftLengthBy2Plus1>* R2);

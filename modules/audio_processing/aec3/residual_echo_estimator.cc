@@ -142,10 +142,10 @@ void ResidualEchoEstimator::Estimate(
         X2.begin(), X2.end(), X2_noise_floor_.begin(), X2.begin(),
         [](float a, float b) { return std::max(0.f, a - 10.f * b); });
 
-    NonLinearEstimate(
-        aec_state.FilterHasHadTimeToConverge(), aec_state.SaturatedEcho(),
-        config_.ep_strength.bounded_erl, aec_state.TransparentMode(),
-        aec_state.InitialState(), X2, Y2, R2);
+    NonLinearEstimate(aec_state.FilterHasHadTimeToConverge(),
+                      aec_state.SaturatedEcho(),
+                      config_.ep_strength.bounded_erl,
+                      aec_state.TransparentMode(), X2, Y2, R2);
 
     if (aec_state.ExternalDelay() && aec_state.FilterDelay() &&
         aec_state.SaturatedEcho()) {
@@ -195,7 +195,6 @@ void ResidualEchoEstimator::NonLinearEstimate(
     bool saturated_echo,
     bool bounded_erl,
     bool transparent_mode,
-    bool initial_state,
     const std::array<float, kFftLengthBy2Plus1>& X2,
     const std::array<float, kFftLengthBy2Plus1>& Y2,
     std::array<float, kFftLengthBy2Plus1>* R2) {
@@ -215,9 +214,6 @@ void ResidualEchoEstimator::NonLinearEstimate(
     // If the filter should have been able to converge, and and it is known that
     // the ERL is bounded, use a very low gain.
     echo_path_gain_lf = echo_path_gain_mf = echo_path_gain_hf = 0.001f;
-  } else if (!initial_state) {
-    // If the AEC is no longer in an initial state, assume a weak echo path.
-    echo_path_gain_lf = echo_path_gain_mf = echo_path_gain_hf = 0.01f;
   } else {
     // In the initial state, use conservative gains.
     echo_path_gain_lf = config_.ep_strength.lf;

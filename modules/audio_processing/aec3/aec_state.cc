@@ -73,7 +73,6 @@ void AecState::HandleEchoPathChange(
     std::fill(max_render_.begin(), max_render_.end(), 0.f);
     force_zero_gain_counter_ = 0;
     blocks_with_proper_filter_adaptation_ = 0;
-    initial_state_ = true;
     capture_block_counter_ = 0;
     filter_has_had_time_to_converge_ = false;
     render_received_ = false;
@@ -161,9 +160,6 @@ void AecState::Update(
   // TODO(peah): Move?
   filter_has_had_time_to_converge_ =
       blocks_with_proper_filter_adaptation_ >= 2 * kNumBlocksPerSecond;
-
-  // TODO(peah): Remove.
-  initial_state_ = capture_block_counter_ < 3 * kNumBlocksPerSecond;
 
   // Flag whether the linear filter estimate is usable.
   usable_linear_estimate_ =
