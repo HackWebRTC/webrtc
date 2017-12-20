@@ -9,6 +9,11 @@
 import("../../webrtc.gni")
 
 rtc_static_library("bitrate_controller") {
+  # TODO(mbonadei): Remove (bugs.webrtc.org/6828)
+  # Errors on cyclic dependency with:
+  # congestion_controller:congestion_controller if enabled.
+  check_includes = false
+
   sources = [
     "bitrate_controller_impl.cc",
     "bitrate_controller_impl.h",
@@ -32,18 +37,9 @@ rtc_static_library("bitrate_controller") {
   }
 
   deps = [
-    "..:module_api",
-    "../../logging:rtc_event_log_api",
-    "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
     "../../system_wrappers",
-    "../../system_wrappers:field_trial_api",
-    "../../system_wrappers:metrics_api",
-    "../congestion_controller:delay_based_bwe",
-    "../pacing",
-    "../remote_bitrate_estimator:remote_bitrate_estimator",
     "../rtp_rtcp",
-    "../rtp_rtcp:rtp_rtcp_format",
   ]
 }
 

@@ -154,8 +154,6 @@ if (rtc_include_tests) {
       "../../voice_engine",
       "../bitrate_controller",
       "../congestion_controller",
-      "../congestion_controller:delay_based_bwe",
-      "../congestion_controller:estimators",
       "../pacing",
       "../rtp_rtcp",
       "../rtp_rtcp:rtp_rtcp_format",
