@@ -125,7 +125,7 @@ void EchoRemoverImpl::ProcessCapture(
     bool capture_signal_saturation,
     RenderBuffer* render_buffer,
     std::vector<std::vector<float>>* capture) {
-  const std::vector<std::vector<float>>& x = render_buffer->MostRecentBlock();
+  const std::vector<std::vector<float>>& x = render_buffer->Block(0);
   std::vector<std::vector<float>>* y = capture;
   RTC_DCHECK(render_buffer);
   RTC_DCHECK(y);
@@ -142,8 +142,6 @@ void EchoRemoverImpl::ProcessCapture(
                         LowestBandRate(sample_rate_hz_), 1);
   data_dumper_->DumpRaw("aec3_echo_remover_capture_input", y0);
   data_dumper_->DumpRaw("aec3_echo_remover_render_input", x0);
-
-  render_buffer->UpdateSpectralSum();
 
   aec_state_.UpdateCaptureSaturation(capture_signal_saturation);
 

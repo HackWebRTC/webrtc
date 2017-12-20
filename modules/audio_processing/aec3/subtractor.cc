@@ -65,6 +65,7 @@ void PredictionError(const Aec3Fft& fft,
 
   fft.ZeroPaddedFft(rtc::ArrayView<const float>(tmp.data(), 64), E);
 }
+
 }  // namespace
 
 Subtractor::Subtractor(const EchoCanceller3Config& config,
@@ -151,14 +152,19 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
   E_shadow.Spectrum(optimization_, output->E2_shadow);
 
   // Update the main filter.
-  G_main_.Compute(render_buffer, render_signal_analyzer, *output, main_filter_,
+  std::array<float, kFftLengthBy2Plus1> X2;
+  render_buffer.SpectralSum(main_filter_.SizePartitions(), &X2);
+  G_main_.Compute(X2, render_signal_analyzer, *output, main_filter_,
                   aec_state.SaturatedCapture(), &G);
   main_filter_.Adapt(render_buffer, G);
   data_dumper_->DumpRaw("aec3_subtractor_G_main", G.re);
   data_dumper_->DumpRaw("aec3_subtractor_G_main", G.im);
 
   // Update the shadow filter.
-  G_shadow_.Compute(render_buffer, render_signal_analyzer, E_shadow,
+  if (shadow_filter_.SizePartitions() != main_filter_.SizePartitions()) {
+    render_buffer.SpectralSum(shadow_filter_.SizePartitions(), &X2);
+  }
+  G_shadow_.Compute(X2, render_signal_analyzer, E_shadow,
                     shadow_filter_.SizePartitions(),
                     aec_state.SaturatedCapture(), &G);
   shadow_filter_.Adapt(render_buffer, G);

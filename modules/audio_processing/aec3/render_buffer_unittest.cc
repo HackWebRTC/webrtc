@@ -24,21 +24,21 @@ namespace webrtc {
 TEST(RenderBuffer, NullExternalFftBuffer) {
   MatrixBuffer block_buffer(10, 3, kBlockSize);
   VectorBuffer spectrum_buffer(10, kFftLengthBy2Plus1);
-  EXPECT_DEATH(RenderBuffer(1, &block_buffer, &spectrum_buffer, nullptr), "");
+  EXPECT_DEATH(RenderBuffer(&block_buffer, &spectrum_buffer, nullptr), "");
 }
 
 // Verifies the check for non-null spectrum buffer.
 TEST(RenderBuffer, NullExternalSpectrumBuffer) {
   FftBuffer fft_buffer(10);
   MatrixBuffer block_buffer(10, 3, kBlockSize);
-  EXPECT_DEATH(RenderBuffer(1, &block_buffer, nullptr, &fft_buffer), "");
+  EXPECT_DEATH(RenderBuffer(&block_buffer, nullptr, &fft_buffer), "");
 }
 
 // Verifies the check for non-null block buffer.
 TEST(RenderBuffer, NullExternalBlockBuffer) {
   FftBuffer fft_buffer(10);
   VectorBuffer spectrum_buffer(10, kFftLengthBy2Plus1);
-  EXPECT_DEATH(RenderBuffer(1, nullptr, &spectrum_buffer, &fft_buffer), "");
+  EXPECT_DEATH(RenderBuffer(nullptr, &spectrum_buffer, &fft_buffer), "");
 }
 
 #endif

@@ -105,13 +105,12 @@ TEST(AecState, NormalUsage) {
 
   x[0][0] = 5000.f;
   for (size_t k = 0;
-       k < render_delay_buffer->GetRenderBuffer()->Buffer().size(); ++k) {
+       k < render_delay_buffer->GetRenderBuffer()->GetFftBuffer().size(); ++k) {
     render_delay_buffer->Insert(x);
     if (k == 0) {
       render_delay_buffer->Reset();
     }
     render_delay_buffer->PrepareCaptureProcessing();
-    render_delay_buffer->GetRenderBuffer()->UpdateSpectralSum();
   }
 
   Y2.fill(10.f * 10000.f * 10000.f);

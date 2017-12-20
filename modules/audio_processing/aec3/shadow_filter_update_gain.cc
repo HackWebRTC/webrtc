@@ -29,7 +29,7 @@ void ShadowFilterUpdateGain::HandleEchoPathChange() {
 }
 
 void ShadowFilterUpdateGain::Compute(
-    const RenderBuffer& render_buffer,
+    const std::array<float, kFftLengthBy2Plus1>& render_power,
     const RenderSignalAnalyzer& render_signal_analyzer,
     const FftData& E_shadow,
     size_t size_partitions,
@@ -52,7 +52,7 @@ void ShadowFilterUpdateGain::Compute(
 
   // Compute mu.
   std::array<float, kFftLengthBy2Plus1> mu;
-  auto X2 = render_buffer.SpectralSum(size_partitions);
+  auto X2 = render_power;
   std::transform(X2.begin(), X2.end(), mu.begin(), [&](float a) {
     return a > noise_gate_power_ ? rate_ / a : 0.f;
   });

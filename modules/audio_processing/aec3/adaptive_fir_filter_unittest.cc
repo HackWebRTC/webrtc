@@ -72,7 +72,6 @@ TEST(AdaptiveFirFilter, FilterAdaptationNeonOptimizations) {
       render_delay_buffer->Reset();
     }
     render_delay_buffer->PrepareCaptureProcessing();
-    render_delay_buffer->GetRenderBuffer()->UpdateSpectralSum();
   }
   const auto& render_buffer = render_delay_buffer->GetRenderBuffer();
 
@@ -184,7 +183,6 @@ TEST(AdaptiveFirFilter, FilterAdaptationSse2Optimizations) {
         render_delay_buffer->Reset();
       }
       render_delay_buffer->PrepareCaptureProcessing();
-      render_delay_buffer->GetRenderBuffer()->UpdateSpectralSum();
       const auto& render_buffer = render_delay_buffer->GetRenderBuffer();
 
       ApplyFilter_SSE2(*render_buffer, H_SSE2, &S_SSE2);
@@ -367,7 +365,6 @@ TEST(AdaptiveFirFilter, FilterAndAdapt) {
         render_delay_buffer->Reset();
       }
       render_delay_buffer->PrepareCaptureProcessing();
-      render_delay_buffer->GetRenderBuffer()->UpdateSpectralSum();
       const auto& render_buffer = render_delay_buffer->GetRenderBuffer();
 
       render_signal_analyzer.Update(*render_buffer, aec_state.FilterDelay());
@@ -384,7 +381,9 @@ TEST(AdaptiveFirFilter, FilterAndAdapt) {
         s[k] = kScale * s_scratch[k + kFftLengthBy2];
       }
 
-      gain.Compute(*render_buffer, render_signal_analyzer, E,
+      std::array<float, kFftLengthBy2Plus1> render_power;
+      render_buffer->SpectralSum(filter.SizePartitions(), &render_power);
+      gain.Compute(render_power, render_signal_analyzer, E,
                    filter.SizePartitions(), false, &G);
       filter.Adapt(*render_buffer, G);
       aec_state.HandleEchoPathChange(EchoPathVariability(

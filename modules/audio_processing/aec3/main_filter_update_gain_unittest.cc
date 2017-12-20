@@ -107,7 +107,6 @@ void RunFilterUpdateTest(int num_blocks_to_process,
       render_delay_buffer->Reset();
     }
     render_delay_buffer->PrepareCaptureProcessing();
-    render_delay_buffer->GetRenderBuffer()->UpdateSpectralSum();
 
     render_signal_analyzer.Update(*render_delay_buffer->GetRenderBuffer(),
                                   aec_state.FilterDelay());
@@ -140,15 +139,18 @@ void RunFilterUpdateTest(int num_blocks_to_process,
     E_shadow.Spectrum(Aec3Optimization::kNone, output.E2_shadow);
 
     // Adapt the shadow filter.
-    shadow_gain.Compute(*render_delay_buffer->GetRenderBuffer(),
-                        render_signal_analyzer, E_shadow,
+    std::array<float, kFftLengthBy2Plus1> render_power;
+    render_delay_buffer->GetRenderBuffer()->SpectralSum(
+        shadow_filter.SizePartitions(), &render_power);
+    shadow_gain.Compute(render_power, render_signal_analyzer, E_shadow,
                         shadow_filter.SizePartitions(), saturation, &G);
     shadow_filter.Adapt(*render_delay_buffer->GetRenderBuffer(), G);
 
     // Adapt the main filter
-    main_gain.Compute(*render_delay_buffer->GetRenderBuffer(),
-                      render_signal_analyzer, output, main_filter, saturation,
-                      &G);
+    render_delay_buffer->GetRenderBuffer()->SpectralSum(
+        main_filter.SizePartitions(), &render_power);
+    main_gain.Compute(render_power, render_signal_analyzer, output, main_filter,
+                      saturation, &G);
     main_filter.Adapt(*render_delay_buffer->GetRenderBuffer(), G);
 
     // Update the delay.
@@ -189,16 +191,15 @@ TEST(MainFilterUpdateGain, NullDataOutputGain) {
   EchoCanceller3Config config;
   AdaptiveFirFilter filter(config.filter.length_blocks, DetectOptimization(),
                            &data_dumper);
-  std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-      RenderDelayBuffer::Create(config, 3));
   RenderSignalAnalyzer analyzer;
   SubtractorOutput output;
   MainFilterUpdateGain gain(
       config.filter.leakage_converged, config.filter.leakage_diverged,
       config.filter.main_noise_gate, config.filter.error_floor);
-  EXPECT_DEATH(gain.Compute(*render_delay_buffer->GetRenderBuffer(), analyzer,
-                            output, filter, false, nullptr),
-               "");
+  std::array<float, kFftLengthBy2Plus1> render_power;
+  render_power.fill(0.f);
+  EXPECT_DEATH(
+      gain.Compute(render_power, analyzer, output, filter, false, nullptr), "");
 }
 
 #endif

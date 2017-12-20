@@ -27,7 +27,7 @@ class ShadowFilterUpdateGain {
   void HandleEchoPathChange();
 
   // Computes the gain.
-  void Compute(const RenderBuffer& render_buffer,
+  void Compute(const std::array<float, kFftLengthBy2Plus1>& render_power,
                const RenderSignalAnalyzer& render_signal_analyzer,
                const FftData& E_shadow,
                size_t size_partitions,

@@ -26,48 +26,45 @@ namespace webrtc {
 // Provides a buffer of the render data for the echo remover.
 class RenderBuffer {
  public:
-  RenderBuffer(size_t num_ffts_for_spectral_sums,
-               MatrixBuffer* block_buffer,
+  RenderBuffer(MatrixBuffer* block_buffer,
                VectorBuffer* spectrum_buffer,
                FftBuffer* fft_buffer);
   ~RenderBuffer();
 
-  // Clears the buffer.
-  void Clear();
-
-  // Insert a block into the buffer.
-  void UpdateSpectralSum();
-
-  // Gets the last inserted block.
-  const std::vector<std::vector<float>>& MostRecentBlock() const {
-    return block_buffer_->buffer[block_buffer_->read];
+  // Get a block.
+  const std::vector<std::vector<float>>& Block(int buffer_offset_blocks) const {
+    int position =
+        block_buffer_->OffsetIndex(block_buffer_->read, buffer_offset_blocks);
+    return block_buffer_->buffer[position];
   }
 
   // Get the spectrum from one of the FFTs in the buffer.
-  rtc::ArrayView<const float> Spectrum(size_t buffer_offset_ffts) const {
-    size_t position = spectrum_buffer_->OffsetIndex(spectrum_buffer_->read,
-                                                    buffer_offset_ffts);
+  rtc::ArrayView<const float> Spectrum(int buffer_offset_ffts) const {
+    int position = spectrum_buffer_->OffsetIndex(spectrum_buffer_->read,
+                                                 buffer_offset_ffts);
     return spectrum_buffer_->buffer[position];
   }
 
-  // Returns the sum of the spectrums for a certain number of FFTs.
-  rtc::ArrayView<const float> SpectralSum(size_t num_ffts) const {
-    RTC_DCHECK_EQ(spectral_sums_length_, num_ffts);
-    return spectral_sums_;
+  // Returns the circular fft buffer.
+  rtc::ArrayView<const FftData> GetFftBuffer() const {
+    return fft_buffer_->buffer;
   }
 
-  // Returns the circular buffer.
-  rtc::ArrayView<const FftData> Buffer() const { return fft_buffer_->buffer; }
-
   // Returns the current position in the circular buffer.
-  size_t Position() const { return fft_buffer_->read; }
+  size_t Position() const {
+    RTC_DCHECK_EQ(spectrum_buffer_->read, fft_buffer_->read);
+    RTC_DCHECK_EQ(spectrum_buffer_->write, fft_buffer_->write);
+    return fft_buffer_->read;
+  }
+
+  // Returns the sum of the spectrums for a certain number of FFTs.
+  void SpectralSum(size_t num_spectra,
+                   std::array<float, kFftLengthBy2Plus1>* X2) const;
 
  private:
   const MatrixBuffer* const block_buffer_;
   const VectorBuffer* const spectrum_buffer_;
   const FftBuffer* const fft_buffer_;
-  const size_t spectral_sums_length_;
-  std::array<float, kFftLengthBy2Plus1> spectral_sums_;
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RenderBuffer);
 };
 

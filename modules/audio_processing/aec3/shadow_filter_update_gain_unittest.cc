@@ -83,7 +83,6 @@ void RunFilterUpdateTest(int num_blocks_to_process,
       render_delay_buffer->Reset();
     }
     render_delay_buffer->PrepareCaptureProcessing();
-    render_delay_buffer->GetRenderBuffer()->UpdateSpectralSum();
 
     render_signal_analyzer.Update(*render_delay_buffer->GetRenderBuffer(),
                                   delay_samples / kBlockSize);
@@ -97,8 +96,10 @@ void RunFilterUpdateTest(int num_blocks_to_process,
                   [](float& a) { a = rtc::SafeClamp(a, -32768.f, 32767.f); });
     fft.ZeroPaddedFft(e_shadow, &E_shadow);
 
-    shadow_gain.Compute(*render_delay_buffer->GetRenderBuffer(),
-                        render_signal_analyzer, E_shadow,
+    std::array<float, kFftLengthBy2Plus1> render_power;
+    render_delay_buffer->GetRenderBuffer()->SpectralSum(
+        shadow_filter.SizePartitions(), &render_power);
+    shadow_gain.Compute(render_power, render_signal_analyzer, E_shadow,
                         shadow_filter.SizePartitions(), saturation, &G);
     shadow_filter.Adapt(*render_delay_buffer->GetRenderBuffer(), G);
   }
@@ -130,13 +131,12 @@ std::string ProduceDebugText(size_t delay, int filter_length_blocks) {
 TEST(ShadowFilterUpdateGain, NullDataOutputGain) {
   ApmDataDumper data_dumper(42);
   FftBuffer fft_buffer(1);
-  MatrixBuffer block_buffer(fft_buffer.buffer.size(), 3, kBlockSize);
-  VectorBuffer spectrum_buffer(fft_buffer.buffer.size(), kFftLengthBy2Plus1);
-  RenderBuffer render_buffer(1, &block_buffer, &spectrum_buffer, &fft_buffer);
   RenderSignalAnalyzer analyzer;
   FftData E;
   ShadowFilterUpdateGain gain(0.5f, 220075344.f);
-  EXPECT_DEATH(gain.Compute(render_buffer, analyzer, E, 1, false, nullptr), "");
+  std::array<float, kFftLengthBy2Plus1> render_power;
+  render_power.fill(0.f);
+  EXPECT_DEATH(gain.Compute(render_power, analyzer, E, 1, false, nullptr), "");
 }
 
 #endif

@@ -171,7 +171,6 @@ TEST(MatchedFilter, LagEstimation) {
         }
 
         render_delay_buffer->PrepareCaptureProcessing();
-        render_delay_buffer->GetRenderBuffer()->UpdateSpectralSum();
         std::array<float, kBlockSize> downsampled_capture_data;
         rtc::ArrayView<float> downsampled_capture(
             downsampled_capture_data.data(), sub_block_size);

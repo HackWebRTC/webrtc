@@ -84,7 +84,6 @@ TEST(EchoPathDelayEstimator, DelayEstimation) {
 
         render_delay_buffer->PrepareCaptureProcessing();
 
-        render_delay_buffer->GetRenderBuffer()->UpdateSpectralSum();
         estimated_delay_samples = estimator.EstimateDelay(
             render_delay_buffer->GetDownsampledRenderBuffer(), capture);
       }
@@ -120,7 +119,6 @@ TEST(EchoPathDelayEstimator, NoInitialDelayestimates) {
     std::copy(render[0].begin(), render[0].end(), capture.begin());
     render_delay_buffer->Insert(render);
     render_delay_buffer->PrepareCaptureProcessing();
-    render_delay_buffer->GetRenderBuffer()->UpdateSpectralSum();
     EXPECT_FALSE(estimator.EstimateDelay(
         render_delay_buffer->GetDownsampledRenderBuffer(), capture));
   }
@@ -145,7 +143,6 @@ TEST(EchoPathDelayEstimator, NoDelayEstimatesForLowLevelRenderSignals) {
     std::copy(render[0].begin(), render[0].end(), capture.begin());
     render_delay_buffer->Insert(render);
     render_delay_buffer->PrepareCaptureProcessing();
-    render_delay_buffer->GetRenderBuffer()->UpdateSpectralSum();
     EXPECT_FALSE(estimator.EstimateDelay(
         render_delay_buffer->GetDownsampledRenderBuffer(), capture));
   }

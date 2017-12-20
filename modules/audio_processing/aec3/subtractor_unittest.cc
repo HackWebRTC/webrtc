@@ -65,7 +65,6 @@ float RunSubtractorTest(int num_blocks_to_process,
       render_delay_buffer->Reset();
     }
     render_delay_buffer->PrepareCaptureProcessing();
-    render_delay_buffer->GetRenderBuffer()->UpdateSpectralSum();
     render_signal_analyzer.Update(*render_delay_buffer->GetRenderBuffer(),
                                   aec_state.FilterDelay());
 

@@ -17,35 +17,32 @@
 
 namespace webrtc {
 
-RenderBuffer::RenderBuffer(size_t num_ffts_for_spectral_sums,
-                           MatrixBuffer* block_buffer,
+RenderBuffer::RenderBuffer(MatrixBuffer* block_buffer,
                            VectorBuffer* spectrum_buffer,
                            FftBuffer* fft_buffer)
     : block_buffer_(block_buffer),
       spectrum_buffer_(spectrum_buffer),
-      fft_buffer_(fft_buffer),
-      spectral_sums_length_(num_ffts_for_spectral_sums) {
+      fft_buffer_(fft_buffer) {
   RTC_DCHECK(block_buffer_);
   RTC_DCHECK(spectrum_buffer_);
   RTC_DCHECK(fft_buffer_);
-  RTC_DCHECK_GE(fft_buffer_->buffer.size(), spectral_sums_length_);
-
-  Clear();
+  RTC_DCHECK_EQ(block_buffer_->buffer.size(), fft_buffer_->buffer.size());
+  RTC_DCHECK_EQ(spectrum_buffer_->buffer.size(), fft_buffer_->buffer.size());
+  RTC_DCHECK_EQ(spectrum_buffer_->read, fft_buffer_->read);
+  RTC_DCHECK_EQ(spectrum_buffer_->write, fft_buffer_->write);
 }
 
 RenderBuffer::~RenderBuffer() = default;
 
-void RenderBuffer::Clear() {
-  spectral_sums_.fill(0.f);
-}
-
-void RenderBuffer::UpdateSpectralSum() {
-  std::fill(spectral_sums_.begin(), spectral_sums_.end(), 0.f);
-  size_t position = spectrum_buffer_->read;
-  for (size_t j = 0; j < spectral_sums_length_; ++j) {
-    for (size_t k = 0; k < spectral_sums_.size(); ++k) {
-      spectral_sums_[k] += spectrum_buffer_->buffer[position][k];
-    }
+void RenderBuffer::SpectralSum(
+    size_t num_spectra,
+    std::array<float, kFftLengthBy2Plus1>* X2) const {
+  X2->fill(0.f);
+  int position = spectrum_buffer_->read;
+  for (size_t j = 0; j < num_spectra; ++j) {
+    std::transform(X2->begin(), X2->end(),
+                   spectrum_buffer_->buffer[position].begin(), X2->begin(),
+                   std::plus<float>());
     position = spectrum_buffer_->IncIndex(position);
   }
 }

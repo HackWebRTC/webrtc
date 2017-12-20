@@ -134,7 +134,8 @@ void UpdateErlEstimator_SSE2(
 void AdaptPartitions(const RenderBuffer& render_buffer,
                      const FftData& G,
                      rtc::ArrayView<FftData> H) {
-  rtc::ArrayView<const FftData> render_buffer_data = render_buffer.Buffer();
+  rtc::ArrayView<const FftData> render_buffer_data =
+      render_buffer.GetFftBuffer();
   size_t index = render_buffer.Position();
   for (auto& H_j : H) {
     const FftData& X = render_buffer_data[index];
@@ -152,7 +153,8 @@ void AdaptPartitions(const RenderBuffer& render_buffer,
 void AdaptPartitions_NEON(const RenderBuffer& render_buffer,
                           const FftData& G,
                           rtc::ArrayView<FftData> H) {
-  rtc::ArrayView<const FftData> render_buffer_data = render_buffer.Buffer();
+  rtc::ArrayView<const FftData> render_buffer_data =
+      render_buffer.GetFftBuffer();
   const int lim1 =
       std::min(render_buffer_data.size() - render_buffer.Position(), H.size());
   const int lim2 = H.size();
@@ -209,7 +211,8 @@ void AdaptPartitions_NEON(const RenderBuffer& render_buffer,
 void AdaptPartitions_SSE2(const RenderBuffer& render_buffer,
                           const FftData& G,
                           rtc::ArrayView<FftData> H) {
-  rtc::ArrayView<const FftData> render_buffer_data = render_buffer.Buffer();
+  rtc::ArrayView<const FftData> render_buffer_data =
+      render_buffer.GetFftBuffer();
   const int lim1 =
       std::min(render_buffer_data.size() - render_buffer.Position(), H.size());
   const int lim2 = H.size();
@@ -274,7 +277,8 @@ void ApplyFilter(const RenderBuffer& render_buffer,
   S->re.fill(0.f);
   S->im.fill(0.f);
 
-  rtc::ArrayView<const FftData> render_buffer_data = render_buffer.Buffer();
+  rtc::ArrayView<const FftData> render_buffer_data =
+      render_buffer.GetFftBuffer();
   size_t index = render_buffer.Position();
   for (auto& H_j : H) {
     const FftData& X = render_buffer_data[index];
@@ -295,7 +299,8 @@ void ApplyFilter_NEON(const RenderBuffer& render_buffer,
   S->re.fill(0.f);
   S->im.fill(0.f);
 
-  rtc::ArrayView<const FftData> render_buffer_data = render_buffer.Buffer();
+  rtc::ArrayView<const FftData> render_buffer_data =
+      render_buffer.GetFftBuffer();
   const int lim1 =
       std::min(render_buffer_data.size() - render_buffer.Position(), H.size());
   const int lim2 = H.size();
@@ -354,7 +359,8 @@ void ApplyFilter_SSE2(const RenderBuffer& render_buffer,
   S->re.fill(0.f);
   S->im.fill(0.f);
 
-  rtc::ArrayView<const FftData> render_buffer_data = render_buffer.Buffer();
+  rtc::ArrayView<const FftData> render_buffer_data =
+      render_buffer.GetFftBuffer();
   const int lim1 =
       std::min(render_buffer_data.size() - render_buffer.Position(), H.size());
   const int lim2 = H.size();

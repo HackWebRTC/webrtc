@@ -53,7 +53,7 @@ void MainFilterUpdateGain::HandleEchoPathChange(
 }
 
 void MainFilterUpdateGain::Compute(
-    const RenderBuffer& render_buffer,
+    const std::array<float, kFftLengthBy2Plus1>& render_power,
     const RenderSignalAnalyzer& render_signal_analyzer,
     const SubtractorOutput& subtractor_output,
     const AdaptiveFirFilter& filter,
@@ -66,7 +66,7 @@ void MainFilterUpdateGain::Compute(
   const auto& E2_shadow = subtractor_output.E2_shadow;
   FftData* G = gain_fft;
   const size_t size_partitions = filter.SizePartitions();
-  auto X2 = render_buffer.SpectralSum(size_partitions);
+  auto X2 = render_power;
   const auto& erl = filter.Erl();
 
   ++call_counter_;

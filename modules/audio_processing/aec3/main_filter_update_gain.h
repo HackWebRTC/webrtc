@@ -1,6 +1,6 @@
 /*
  *  Copyright (c) 2017 The WebRTC project authors. All Rights Reserved.
- *
+spect *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
  *  tree. An additional intellectual property rights grant can be found
@@ -38,7 +38,7 @@ class MainFilterUpdateGain {
   void HandleEchoPathChange(const EchoPathVariability& echo_path_variability);
 
   // Computes the gain.
-  void Compute(const RenderBuffer& render_buffer,
+  void Compute(const std::array<float, kFftLengthBy2Plus1>& render_power,
                const RenderSignalAnalyzer& render_signal_analyzer,
                const SubtractorOutput& subtractor_output,
                const AdaptiveFirFilter& filter,
