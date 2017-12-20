@@ -149,7 +149,7 @@ AudioDeviceGeneric::InitStatus AudioDeviceLinuxALSA::Init() {
   if (_initialized) {
     return InitStatus::OK;
   }
-#if defined(USE_X11)
+#if defined(WEBRTC_USE_X11)
   // Get X display handle for typing detection
   _XDisplay = XOpenDisplay(NULL);
   if (!_XDisplay) {
@@ -193,7 +193,7 @@ int32_t AudioDeviceLinuxALSA::Terminate() {
 
     _critSect.Enter();
   }
-#if defined(USE_X11)
+#if defined(WEBRTC_USE_X11)
   if (_XDisplay) {
     XCloseDisplay(_XDisplay);
     _XDisplay = NULL;
@@ -1624,7 +1624,7 @@ bool AudioDeviceLinuxALSA::RecThreadProcess() {
 }
 
 bool AudioDeviceLinuxALSA::KeyPressed() const {
-#if defined(USE_X11)
+#if defined(WEBRTC_USE_X11)
   char szKey[32];
   unsigned int i = 0;
   char state = 0;

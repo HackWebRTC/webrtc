@@ -195,8 +195,9 @@ rtc_source_set("audio_device_generic") {
         ]
         defines += [ "LINUX_ALSA" ]
         libs = [ "dl" ]
-        if (use_x11) {
+        if (rtc_use_x11) {
           libs += [ "X11" ]
+          defines += [ "WEBRTC_USE_X11" ]
         }
         if (rtc_include_pulse_audio) {
           sources += [

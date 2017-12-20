@@ -17,7 +17,6 @@ group("modules") {
     "audio_processing",
     "bitrate_controller",
     "congestion_controller",
-    "desktop_capture",
     "media_file",
     "pacing",
     "remote_bitrate_estimator",
@@ -26,6 +25,10 @@ group("modules") {
     "video_coding",
     "video_processing",
   ]
+
+  if (rtc_desktop_capture_supported) {
+    deps += [ "desktop_capture" ]
+  }
 }
 
 rtc_source_set("module_api_public") {
@@ -83,12 +86,15 @@ if (rtc_include_tests) {
       "../test:test_main",
       "../test:video_test_common",
       "audio_coding:audio_coding_modules_tests",
-      "desktop_capture:desktop_capture_modules_tests",
       "rtp_rtcp:rtp_rtcp_modules_tests",
       "video_coding:video_coding_modules_tests",
       "//testing/gmock",
       "//testing/gtest",
     ]
+
+    if (rtc_desktop_capture_supported) {
+      deps += [ "desktop_capture:desktop_capture_modules_tests" ]
+    }
 
     data = modules_tests_resources
 
@@ -253,7 +259,6 @@ if (rtc_include_tests) {
       "audio_processing:audio_processing_unittests",
       "bitrate_controller:bitrate_controller_unittests",
       "congestion_controller:congestion_controller_unittests",
-      "desktop_capture:desktop_capture_unittests",
       "media_file:media_file_unittests",
       "pacing:pacing_unittests",
       "remote_bitrate_estimator:remote_bitrate_estimator_unittests",
@@ -263,6 +268,10 @@ if (rtc_include_tests) {
       "video_coding:video_coding_unittests",
       "video_processing:video_processing_unittests",
     ]
+
+    if (rtc_desktop_capture_supported) {
+      deps += [ "desktop_capture:desktop_capture_unittests" ]
+    }
 
     data = modules_unittests_resources
 

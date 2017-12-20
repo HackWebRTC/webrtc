@@ -18,7 +18,7 @@
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/platform_thread.h"
 
-#if defined(USE_X11)
+#if defined(WEBRTC_USE_X11)
 #include <X11/Xlib.h>
 #endif
 #include <alsa/asoundlib.h>
@@ -192,7 +192,7 @@ private:
     snd_pcm_sframes_t _playoutDelay;
 
     char _oldKeyState[32];
-#if defined(USE_X11)
+#if defined(WEBRTC_USE_X11)
     Display* _XDisplay;
 #endif
 };

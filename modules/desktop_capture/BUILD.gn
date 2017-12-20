@@ -296,7 +296,7 @@ rtc_static_library("desktop_capture_generic") {
     "window_finder_win.h",
   ]
 
-  if (use_x11) {
+  if (rtc_use_x11) {
     sources += [
       "mouse_cursor_monitor_x11.cc",
       "screen_capturer_x11.cc",
@@ -317,7 +317,7 @@ rtc_static_library("desktop_capture_generic") {
     configs += [ "//build/config/linux:x11" ]
   }
 
-  if (!is_win && !is_mac && !use_x11) {
+  if (!is_win && !is_mac && !rtc_use_x11) {
     sources += [
       "mouse_cursor_monitor_null.cc",
       "screen_capturer_null.cc",
