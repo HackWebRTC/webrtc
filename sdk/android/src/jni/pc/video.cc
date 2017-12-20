@@ -42,6 +42,44 @@ VideoDecoderFactory* CreateVideoDecoderFactory(JNIEnv* jni,
   return new VideoDecoderFactoryWrapper(jni, j_decoder_factory);
 }
 
+void SetEglContext(JNIEnv* env,
+                   cricket::WebRtcVideoEncoderFactory* encoder_factory,
+                   jobject egl_context) {
+  if (encoder_factory) {
+    MediaCodecVideoEncoderFactory* media_codec_factory =
+        static_cast<MediaCodecVideoEncoderFactory*>(encoder_factory);
+    if (media_codec_factory && Java_Context_isEgl14Context(env, egl_context)) {
+      RTC_LOG(LS_INFO) << "Set EGL context for HW encoding.";
+      media_codec_factory->SetEGLContext(env, egl_context);
+    }
+  }
+}
+
+void SetEglContext(JNIEnv* env,
+                   cricket::WebRtcVideoDecoderFactory* decoder_factory,
+                   jobject egl_context) {
+  if (decoder_factory) {
+    MediaCodecVideoDecoderFactory* media_codec_factory =
+        static_cast<MediaCodecVideoDecoderFactory*>(decoder_factory);
+    if (media_codec_factory) {
+      RTC_LOG(LS_INFO) << "Set EGL context for HW decoding.";
+      media_codec_factory->SetEGLContext(env, egl_context);
+    }
+  }
+}
+
+void* CreateVideoSource(JNIEnv* env,
+                        rtc::Thread* signaling_thread,
+                        rtc::Thread* worker_thread,
+                        jobject j_surface_texture_helper,
+                        jboolean is_screencast) {
+  rtc::scoped_refptr<AndroidVideoTrackSource> source(
+      new rtc::RefCountedObject<AndroidVideoTrackSource>(
+          signaling_thread, env, j_surface_texture_helper, is_screencast));
+  return VideoTrackSourceProxy::Create(signaling_thread, worker_thread, source)
+      .release();
+}
+
 cricket::WebRtcVideoEncoderFactory* CreateLegacyVideoEncoderFactory() {
   return new MediaCodecVideoEncoderFactory();
 }
@@ -64,82 +102,6 @@ VideoDecoderFactory* WrapLegacyVideoDecoderFactory(
              std::unique_ptr<cricket::WebRtcVideoDecoderFactory>(
                  legacy_decoder_factory))
       .release();
-}
-
-jobject GetJavaSurfaceTextureHelper(
-    const rtc::scoped_refptr<SurfaceTextureHelper>& surface_texture_helper) {
-  return surface_texture_helper
-             ? surface_texture_helper->GetJavaSurfaceTextureHelper()
-             : nullptr;
-}
-
-JNI_FUNCTION_DECLARATION(jlong,
-                         PeerConnectionFactory_createNativeVideoSource,
-                         JNIEnv* jni,
-                         jclass,
-                         jlong native_factory,
-                         jobject j_surface_texture_helper,
-                         jboolean is_screencast) {
-  OwnedFactoryAndThreads* factory =
-      reinterpret_cast<OwnedFactoryAndThreads*>(native_factory);
-
-  rtc::scoped_refptr<AndroidVideoTrackSource> source(
-      new rtc::RefCountedObject<AndroidVideoTrackSource>(
-          factory->signaling_thread(), jni, j_surface_texture_helper,
-          is_screencast));
-  rtc::scoped_refptr<VideoTrackSourceProxy> proxy_source =
-      VideoTrackSourceProxy::Create(factory->signaling_thread(),
-                                    factory->worker_thread(), source);
-
-  return (jlong)proxy_source.release();
-}
-
-JNI_FUNCTION_DECLARATION(jlong,
-                         PeerConnectionFactory_createNativeVideoTrack,
-                         JNIEnv* jni,
-                         jclass,
-                         jlong native_factory,
-                         jstring id,
-                         jlong native_source) {
-  rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
-      factoryFromJava(native_factory));
-  rtc::scoped_refptr<VideoTrackInterface> track(factory->CreateVideoTrack(
-      JavaToStdString(jni, id),
-      reinterpret_cast<VideoTrackSourceInterface*>(native_source)));
-  return (jlong)track.release();
-}
-
-JNI_FUNCTION_DECLARATION(
-    void,
-    PeerConnectionFactory_setNativeVideoHwAccelerationOptions,
-    JNIEnv* jni,
-    jclass,
-    jlong native_factory,
-    jobject local_egl_context,
-    jobject remote_egl_context) {
-  OwnedFactoryAndThreads* owned_factory =
-      reinterpret_cast<OwnedFactoryAndThreads*>(native_factory);
-
-  if (owned_factory->legacy_encoder_factory()) {
-    MediaCodecVideoEncoderFactory* encoder_factory =
-        static_cast<MediaCodecVideoEncoderFactory*>(
-            owned_factory->legacy_encoder_factory());
-    if (encoder_factory &&
-        Java_Context_isEgl14Context(jni, local_egl_context)) {
-      RTC_LOG(LS_INFO) << "Set EGL context for HW encoding.";
-      encoder_factory->SetEGLContext(jni, local_egl_context);
-    }
-  }
-
-  if (owned_factory->legacy_decoder_factory()) {
-    MediaCodecVideoDecoderFactory* decoder_factory =
-        static_cast<MediaCodecVideoDecoderFactory*>(
-            owned_factory->legacy_decoder_factory());
-    if (decoder_factory) {
-      RTC_LOG(LS_INFO) << "Set EGL context for HW decoding.";
-      decoder_factory->SetEGLContext(jni, remote_egl_context);
-    }
-  }
 }
 
 }  // namespace jni

@@ -210,16 +210,14 @@ AndroidTextureBuffer::AndroidTextureBuffer(
     int width,
     int height,
     const NativeHandleImpl& native_handle,
-    jobject surface_texture_helper,
-    const rtc::Callback0<void>& no_longer_used)
+    const rtc::scoped_refptr<SurfaceTextureHelper>& surface_texture_helper)
     : width_(width),
       height_(height),
       native_handle_(native_handle),
-      surface_texture_helper_(surface_texture_helper),
-      no_longer_used_cb_(no_longer_used) {}
+      surface_texture_helper_(surface_texture_helper) {}
 
 AndroidTextureBuffer::~AndroidTextureBuffer() {
-  no_longer_used_cb_();
+  surface_texture_helper_->ReturnTextureFrame();
 }
 
 VideoFrameBuffer::Type AndroidTextureBuffer::type() const {
@@ -269,9 +267,9 @@ rtc::scoped_refptr<I420BufferInterface> AndroidTextureBuffer::ToI420() {
   // TODO(sakal): This call to a deperecated method will be removed when
   // AndroidTextureBuffer is removed.
   jobject byte_buffer = jni->NewDirectByteBuffer(y_data, size);
-  SurfaceTextureHelperTextureToYUV(jni, surface_texture_helper_, byte_buffer,
-                                   width(), height(), stride, native_handle_);
-
+  SurfaceTextureHelperTextureToYUV(
+      jni, surface_texture_helper_->GetJavaSurfaceTextureHelper(), byte_buffer,
+      width(), height(), stride, native_handle_);
   return copy;
 }
 
@@ -364,7 +362,7 @@ static bool IsJavaVideoBuffer(rtc::scoped_refptr<VideoFrameBuffer> buffer) {
 
 jobject NativeToJavaFrame(JNIEnv* jni, const VideoFrame& frame) {
   rtc::scoped_refptr<VideoFrameBuffer> buffer = frame.video_frame_buffer();
-  jobject j_buffer;
+
   if (IsJavaVideoBuffer(buffer)) {
     RTC_DCHECK(buffer->type() == VideoFrameBuffer::Type::kNative);
     AndroidVideoFrameBuffer* android_buffer =
@@ -373,13 +371,19 @@ jobject NativeToJavaFrame(JNIEnv* jni, const VideoFrame& frame) {
                AndroidVideoFrameBuffer::AndroidType::kJavaBuffer);
     AndroidVideoBuffer* android_video_buffer =
         static_cast<AndroidVideoBuffer*>(android_buffer);
-    j_buffer = android_video_buffer->video_frame_buffer();
+
+    return Java_VideoFrame_Constructor(
+        jni, android_video_buffer->video_frame_buffer(),
+        static_cast<jint>(frame.rotation()),
+        static_cast<jlong>(frame.timestamp_us() *
+                           rtc::kNumNanosecsPerMicrosec));
   } else {
-    j_buffer = WrapI420Buffer(jni, buffer->ToI420());
+    return Java_VideoFrame_Constructor(
+        jni, WrapI420Buffer(jni, buffer->ToI420()),
+        static_cast<jint>(frame.rotation()),
+        static_cast<jlong>(frame.timestamp_us() *
+                           rtc::kNumNanosecsPerMicrosec));
   }
-  return Java_VideoFrame_Constructor(
-      jni, j_buffer, static_cast<jint>(frame.rotation()),
-      static_cast<jlong>(frame.timestamp_us() * rtc::kNumNanosecsPerMicrosec));
 }
 
 extern "C" JNIEXPORT void JNICALL

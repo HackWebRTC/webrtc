@@ -8,12 +8,23 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "api/rtpsenderinterface.h"
+#include "sdk/android/src/jni/pc/rtpsender.h"
+
+#include "sdk/android/generated_peerconnection_jni/jni/RtpSender_jni.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 #include "sdk/android/src/jni/pc/rtpparameters.h"
 
 namespace webrtc {
 namespace jni {
+
+jobject NativeToJavaRtpSender(JNIEnv* env,
+                              rtc::scoped_refptr<RtpSenderInterface> sender) {
+  if (!sender)
+    return nullptr;
+  // Sender is now owned by the Java object, and will be freed from
+  // RtpSender.dispose(), called by PeerConnection.dispose() or getSenders().
+  return Java_RtpSender_Constructor(env, jlongFromPointer(sender.release()));
+}
 
 JNI_FUNCTION_DECLARATION(jboolean,
                          RtpSender_setNativeTrack,

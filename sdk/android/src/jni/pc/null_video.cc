@@ -23,6 +23,21 @@ VideoDecoderFactory* CreateVideoDecoderFactory(JNIEnv* jni,
   return nullptr;
 }
 
+void SetEglContext(JNIEnv* env,
+                   cricket::WebRtcVideoEncoderFactory* encoder_factory,
+                   jobject egl_context) {}
+void SetEglContext(JNIEnv* env,
+                   cricket::WebRtcVideoDecoderFactory* decoder_factory,
+                   jobject egl_context) {}
+
+void* CreateVideoSource(JNIEnv* env,
+                        rtc::Thread* signaling_thread,
+                        rtc::Thread* worker_thread,
+                        jobject j_surface_texture_helper,
+                        jboolean is_screencast) {
+  return nullptr;
+}
+
 cricket::WebRtcVideoEncoderFactory* CreateLegacyVideoEncoderFactory() {
   return nullptr;
 }
@@ -38,11 +53,6 @@ VideoEncoderFactory* WrapLegacyVideoEncoderFactory(
 
 VideoDecoderFactory* WrapLegacyVideoDecoderFactory(
     cricket::WebRtcVideoDecoderFactory* legacy_decoder_factory) {
-  return nullptr;
-}
-
-jobject GetJavaSurfaceTextureHelper(
-    const rtc::scoped_refptr<SurfaceTextureHelper>& surface_texture_helper) {
   return nullptr;
 }
 

@@ -22,11 +22,8 @@ namespace jni {
 
 std::unique_ptr<VideoDecoder> JavaToNativeVideoDecoder(JNIEnv* jni,
                                                        jobject j_decoder) {
-  jclass wrapped_native_decoder_class =
-      GetClass(jni, "org/webrtc/WrappedNativeVideoDecoder");
-
   VideoDecoder* decoder;
-  if (jni->IsInstanceOf(j_decoder, wrapped_native_decoder_class)) {
+  if (Java_WrappedNativeVideoDecoder_isInstanceOf(jni, j_decoder)) {
     jlong native_decoder =
         Java_WrappedNativeVideoDecoder_createNativeDecoder(jni, j_decoder);
     decoder = reinterpret_cast<VideoDecoder*>(native_decoder);

@@ -340,6 +340,7 @@ rtc_static_library("peerconnection_jni") {
     "src/jni/pc/mediaconstraints.h",
     "src/jni/pc/mediasource.cc",
     "src/jni/pc/mediastream.cc",
+    "src/jni/pc/mediastream.h",
     "src/jni/pc/mediastreamtrack.cc",
     "src/jni/pc/mediastreamtrack.h",
     "src/jni/pc/ownedfactoryandthreads.cc",
@@ -355,6 +356,7 @@ rtc_static_library("peerconnection_jni") {
     "src/jni/pc/rtpreceiver.cc",
     "src/jni/pc/rtpreceiver.h",
     "src/jni/pc/rtpsender.cc",
+    "src/jni/pc/rtpsender.h",
     "src/jni/pc/sdpobserver.cc",
     "src/jni/pc/sdpobserver.h",
     "src/jni/pc/sessiondescription.cc",
@@ -362,6 +364,7 @@ rtc_static_library("peerconnection_jni") {
     "src/jni/pc/statsobserver.cc",
     "src/jni/pc/statsobserver.h",
     "src/jni/pc/turncustomizer.cc",
+    "src/jni/pc/turncustomizer.h",
   ]
 
   configs += [ ":libjingle_peerconnection_jni_warnings_config" ]

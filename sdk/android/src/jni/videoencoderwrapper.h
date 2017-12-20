@@ -89,7 +89,6 @@ class VideoEncoderWrapper : public VideoEncoder {
   std::string GetImplementationName(JNIEnv* jni) const;
 
   const ScopedGlobalRef<jobject> encoder_;
-  const ScopedGlobalRef<jclass> frame_type_class_;
   const ScopedGlobalRef<jclass> int_array_class_;
 
   std::string implementation_name_;

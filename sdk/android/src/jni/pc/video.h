@@ -14,6 +14,7 @@
 #include <jni.h>
 
 #include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/thread.h"
 
 namespace cricket {
 class WebRtcVideoEncoderFactory;
@@ -36,6 +37,19 @@ VideoEncoderFactory* CreateVideoEncoderFactory(JNIEnv* jni,
 VideoDecoderFactory* CreateVideoDecoderFactory(JNIEnv* jni,
                                                jobject j_decoder_factory);
 
+void SetEglContext(JNIEnv* env,
+                   cricket::WebRtcVideoEncoderFactory* encoder_factory,
+                   jobject egl_context);
+void SetEglContext(JNIEnv* env,
+                   cricket::WebRtcVideoDecoderFactory* decoder_factory,
+                   jobject egl_context);
+
+void* CreateVideoSource(JNIEnv* env,
+                        rtc::Thread* signaling_thread,
+                        rtc::Thread* worker_thread,
+                        jobject j_surface_texture_helper,
+                        jboolean is_screencast);
+
 cricket::WebRtcVideoEncoderFactory* CreateLegacyVideoEncoderFactory();
 cricket::WebRtcVideoDecoderFactory* CreateLegacyVideoDecoderFactory();
 
@@ -43,9 +57,6 @@ VideoEncoderFactory* WrapLegacyVideoEncoderFactory(
     cricket::WebRtcVideoEncoderFactory* legacy_encoder_factory);
 VideoDecoderFactory* WrapLegacyVideoDecoderFactory(
     cricket::WebRtcVideoDecoderFactory* legacy_decoder_factory);
-
-jobject GetJavaSurfaceTextureHelper(
-    const rtc::scoped_refptr<SurfaceTextureHelper>& surface_texture_helper);
 
 }  // namespace jni
 }  // namespace webrtc

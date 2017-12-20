@@ -40,4 +40,9 @@ abstract class WrappedNativeVideoDecoder implements VideoDecoder {
   public String getImplementationName() {
     throw new UnsupportedOperationException("Not implemented.");
   }
+
+  @CalledByNative
+  static boolean isInstanceOf(VideoDecoder decoder) {
+    return decoder instanceof WrappedNativeVideoDecoder;
+  }
 }

@@ -13,6 +13,7 @@
 #include "rtc_base/bind.h"
 #include "rtc_base/logging.h"
 #include "sdk/android/generated_video_jni/jni/SurfaceTextureHelper_jni.h"
+#include "sdk/android/src/jni/videoframe.h"
 
 namespace webrtc {
 namespace jni {
@@ -34,7 +35,7 @@ rtc::scoped_refptr<SurfaceTextureHelper> SurfaceTextureHelper::create(
     const char* thread_name,
     jobject j_egl_context) {
   jobject j_surface_texture_helper = Java_SurfaceTextureHelper_create(
-      jni, jni->NewStringUTF(thread_name), j_egl_context);
+      jni, NativeToJavaString(jni, thread_name), j_egl_context);
   CHECK_EXCEPTION(jni)
       << "error during initialization of Java SurfaceTextureHelper";
   if (IsNull(jni, j_surface_texture_helper))
@@ -66,9 +67,8 @@ rtc::scoped_refptr<VideoFrameBuffer> SurfaceTextureHelper::CreateTextureFrame(
     int width,
     int height,
     const NativeHandleImpl& native_handle) {
-  return new rtc::RefCountedObject<AndroidTextureBuffer>(
-      width, height, native_handle, *j_surface_texture_helper_,
-      rtc::Bind(&SurfaceTextureHelper::ReturnTextureFrame, this));
+  return new rtc::RefCountedObject<AndroidTextureBuffer>(width, height,
+                                                         native_handle, this);
 }
 
 }  // namespace jni

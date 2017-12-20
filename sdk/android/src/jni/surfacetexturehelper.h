@@ -17,10 +17,11 @@
 #include "rtc_base/refcount.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "sdk/android/src/jni/jni_helpers.h"
-#include "sdk/android/src/jni/videoframe.h"
 
 namespace webrtc {
 namespace jni {
+
+struct NativeHandleImpl;
 
 // Helper class to create and synchronize access to an Android SurfaceTexture.
 // It is used for creating VideoFrameBuffers from a SurfaceTexture when

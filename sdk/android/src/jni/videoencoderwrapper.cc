@@ -34,8 +34,6 @@ static const int kMaxJavaEncoderResets = 3;
 
 VideoEncoderWrapper::VideoEncoderWrapper(JNIEnv* jni, jobject j_encoder)
     : encoder_(jni, j_encoder),
-      frame_type_class_(jni,
-                        GetClass(jni, "org/webrtc/EncodedImage$FrameType")),
       int_array_class_(jni, jni->FindClass("[I")) {
   implementation_name_ = GetImplementationName(jni);
 

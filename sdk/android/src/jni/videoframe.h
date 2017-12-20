@@ -22,6 +22,8 @@
 namespace webrtc {
 namespace jni {
 
+class SurfaceTextureHelper;
+
 // Open gl texture matrix, in column-major order. Operations are
 // in-place.
 class Matrix {
@@ -72,11 +74,11 @@ class AndroidVideoFrameBuffer : public VideoFrameBuffer {
 
 class AndroidTextureBuffer : public AndroidVideoFrameBuffer {
  public:
-  AndroidTextureBuffer(int width,
-                       int height,
-                       const NativeHandleImpl& native_handle,
-                       jobject surface_texture_helper,
-                       const rtc::Callback0<void>& no_longer_used);
+  AndroidTextureBuffer(
+      int width,
+      int height,
+      const NativeHandleImpl& native_handle,
+      const rtc::scoped_refptr<SurfaceTextureHelper>& surface_texture_helper);
   ~AndroidTextureBuffer();
 
   NativeHandleImpl native_handle_impl() const;
@@ -93,13 +95,7 @@ class AndroidTextureBuffer : public AndroidVideoFrameBuffer {
   const int width_;
   const int height_;
   NativeHandleImpl native_handle_;
-  // Raw object pointer, relying on the caller, i.e.,
-  // AndroidVideoCapturerJni or the C++ SurfaceTextureHelper, to keep
-  // a global reference. TODO(nisse): Make this a reference to the C++
-  // SurfaceTextureHelper instead, but that requires some refactoring
-  // of AndroidVideoCapturerJni.
-  jobject surface_texture_helper_;
-  rtc::Callback0<void> no_longer_used_cb_;
+  rtc::scoped_refptr<SurfaceTextureHelper> surface_texture_helper_;
 };
 
 class AndroidVideoBuffer : public AndroidVideoFrameBuffer {

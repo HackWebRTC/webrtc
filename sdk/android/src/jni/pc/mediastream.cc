@@ -8,11 +8,96 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "api/mediastreaminterface.h"
+#include "sdk/android/src/jni/pc/mediastream.h"
+
+#include "rtc_base/ptr_util.h"
+#include "sdk/android/generated_peerconnection_jni/jni/MediaStream_jni.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {
 namespace jni {
+
+JavaMediaStream::JavaMediaStream(
+    JNIEnv* env,
+    rtc::scoped_refptr<MediaStreamInterface> media_stream)
+    : j_media_stream_(
+          env,
+          Java_MediaStream_Constructor(env,
+                                       jlongFromPointer(media_stream.get()))),
+      observer_(rtc::MakeUnique<MediaStreamObserver>(media_stream)) {
+  for (rtc::scoped_refptr<AudioTrackInterface> track :
+       media_stream->GetAudioTracks()) {
+    Java_MediaStream_addNativeAudioTrack(env, *j_media_stream_,
+                                         jlongFromPointer(track.release()));
+  }
+  for (rtc::scoped_refptr<VideoTrackInterface> track :
+       media_stream->GetVideoTracks()) {
+    Java_MediaStream_addNativeVideoTrack(env, *j_media_stream_,
+                                         jlongFromPointer(track.release()));
+  }
+
+  // Create an observer to update the Java stream when the native stream's set
+  // of tracks changes.
+  observer_->SignalAudioTrackRemoved.connect(
+      this, &JavaMediaStream::OnAudioTrackRemovedFromStream);
+  observer_->SignalVideoTrackRemoved.connect(
+      this, &JavaMediaStream::OnVideoTrackRemovedFromStream);
+  observer_->SignalAudioTrackAdded.connect(
+      this, &JavaMediaStream::OnAudioTrackAddedToStream);
+  observer_->SignalVideoTrackAdded.connect(
+      this, &JavaMediaStream::OnVideoTrackAddedToStream);
+
+  // |j_media_stream| holds one reference. Corresponding Release() is in
+  // MediaStream_free, triggered by MediaStream.dispose().
+  media_stream.release();
+}
+
+JavaMediaStream::~JavaMediaStream() {
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  // Remove the observer first, so it doesn't react to events during deletion.
+  observer_ = nullptr;
+  Java_MediaStream_dispose(env, *j_media_stream_);
+}
+
+void JavaMediaStream::OnAudioTrackAddedToStream(AudioTrackInterface* track,
+                                                MediaStreamInterface* stream) {
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  ScopedLocalRefFrame local_ref_frame(env);
+  track->AddRef();
+  Java_MediaStream_addNativeAudioTrack(env, *j_media_stream_,
+                                       jlongFromPointer(track));
+}
+
+void JavaMediaStream::OnVideoTrackAddedToStream(VideoTrackInterface* track,
+                                                MediaStreamInterface* stream) {
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  ScopedLocalRefFrame local_ref_frame(env);
+  track->AddRef();
+  Java_MediaStream_addNativeVideoTrack(env, *j_media_stream_,
+                                       jlongFromPointer(track));
+}
+
+void JavaMediaStream::OnAudioTrackRemovedFromStream(
+    AudioTrackInterface* track,
+    MediaStreamInterface* stream) {
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  ScopedLocalRefFrame local_ref_frame(env);
+  Java_MediaStream_removeAudioTrack(env, *j_media_stream_,
+                                    jlongFromPointer(track));
+}
+
+void JavaMediaStream::OnVideoTrackRemovedFromStream(
+    VideoTrackInterface* track,
+    MediaStreamInterface* stream) {
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  ScopedLocalRefFrame local_ref_frame(env);
+  Java_MediaStream_removeVideoTrack(env, *j_media_stream_,
+                                    jlongFromPointer(track));
+}
+
+jclass GetMediaStreamClass(JNIEnv* env) {
+  return org_webrtc_MediaStream_clazz(env);
+}
 
 JNI_FUNCTION_DECLARATION(jboolean,
                          MediaStream_addAudioTrackToNativeStream,
@@ -61,10 +146,6 @@ JNI_FUNCTION_DECLARATION(jstring,
                          jlong j_p) {
   return NativeToJavaString(
       jni, reinterpret_cast<MediaStreamInterface*>(j_p)->label());
-}
-
-JNI_FUNCTION_DECLARATION(void, MediaStream_free, JNIEnv*, jclass, jlong j_p) {
-  reinterpret_cast<MediaStreamInterface*>(j_p)->Release();
 }
 
 }  // namespace jni

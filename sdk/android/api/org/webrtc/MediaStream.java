@@ -84,7 +84,7 @@ public class MediaStream {
     while (!preservedVideoTracks.isEmpty()) {
       removeTrack(preservedVideoTracks.get(0 /* index */));
     }
-    free(nativeStream);
+    JniCommon.nativeReleaseRef(nativeStream);
   }
 
   public String label() {
@@ -141,6 +141,4 @@ public class MediaStream {
   private static native boolean removeNativeVideoTrack(long nativeStream, long nativeVideoTrack);
 
   private static native String getNativeLabel(long nativeStream);
-
-  private static native void free(long nativeStream);
 }
