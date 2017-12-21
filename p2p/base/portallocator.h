@@ -111,7 +111,7 @@ const uint32_t kMinimumStepDelay = 50;
 constexpr int kDefaultMaxIPv6Networks = 5;
 
 // CF = CANDIDATE FILTER
-enum {
+enum : uint32_t {
   CF_NONE = 0x0,
   CF_HOST = 0x1,
   CF_REFLEXIVE = 0x2,
