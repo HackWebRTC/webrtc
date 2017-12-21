@@ -549,6 +549,7 @@ rtc_static_library("rtc_base_generic") {
     ":checks",
     ":stringutils",
     "..:webrtc_common",
+    "../api:array_view",
     "../api:optional",
   ]
   public_deps = [
@@ -655,6 +656,8 @@ rtc_static_library("rtc_base_generic") {
     "stream.h",
     "thread.cc",
     "thread.h",
+    "zero_memory.cc",
+    "zero_memory.h",
   ]
 
   visibility = [
@@ -1090,6 +1093,7 @@ if (rtc_include_tests) {
       "stream_unittest.cc",
       "testclient_unittest.cc",
       "thread_unittest.cc",
+      "zero_memory_unittest.cc",
     ]
     if (is_win) {
       sources += [
@@ -1110,6 +1114,7 @@ if (rtc_include_tests) {
       ":rtc_base_tests_main",
       ":rtc_base_tests_utils",
       ":stringutils",
+      "../api:array_view",
       "../api:optional",
       "../test:test_support",
     ]
