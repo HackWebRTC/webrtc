@@ -10,6 +10,8 @@
 
 #include "pc/sessiondescription.h"
 
+#include <utility>
+
 namespace cricket {
 namespace {
 
@@ -38,14 +40,13 @@ const ContentInfo* FindContentInfoByName(const ContentInfos& contents,
 }
 
 const ContentInfo* FindContentInfoByType(const ContentInfos& contents,
-                                         const std::string& type) {
-  for (ContentInfos::const_iterator content = contents.begin();
-       content != contents.end(); ++content) {
-    if (content->type == type) {
-      return &(*content);
+                                         MediaProtocolType type) {
+  for (const auto& content : contents) {
+    if (content.type == type) {
+      return &content;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 ContentGroup::ContentGroup(const std::string& semantics)
@@ -147,7 +148,7 @@ ContentDescription* SessionDescription::GetContentDescriptionByName(
 }
 
 const ContentInfo* SessionDescription::FirstContentByType(
-    const std::string& type) const {
+    MediaProtocolType type) const {
   return FindContentInfoByType(contents_, type);
 }
 
@@ -156,25 +157,36 @@ const ContentInfo* SessionDescription::FirstContent() const {
 }
 
 void SessionDescription::AddContent(const std::string& name,
-                                    const std::string& type,
+                                    MediaProtocolType type,
                                     ContentDescription* description) {
-  contents_.push_back(ContentInfo(name, type, description));
+  ContentInfo content(type);
+  content.name = name;
+  content.description = description;
+  contents_.push_back(std::move(content));
 }
 
 void SessionDescription::AddContent(const std::string& name,
-                                    const std::string& type,
+                                    MediaProtocolType type,
                                     bool rejected,
                                     ContentDescription* description) {
-  contents_.push_back(ContentInfo(name, type, rejected, description));
+  ContentInfo content(type);
+  content.name = name;
+  content.rejected = rejected;
+  content.description = description;
+  contents_.push_back(std::move(content));
 }
 
 void SessionDescription::AddContent(const std::string& name,
-                                    const std::string& type,
+                                    MediaProtocolType type,
                                     bool rejected,
                                     bool bundle_only,
                                     ContentDescription* description) {
-  contents_.push_back(
-      ContentInfo(name, type, rejected, bundle_only, description));
+  ContentInfo content(type);
+  content.name = name;
+  content.rejected = rejected;
+  content.bundle_only = bundle_only;
+  content.description = description;
+  contents_.push_back(std::move(content));
 }
 
 bool SessionDescription::RemoveContentByName(const std::string& name) {

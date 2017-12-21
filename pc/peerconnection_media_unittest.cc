@@ -632,7 +632,7 @@ void ReverseMediaContent(cricket::SessionDescription* desc) {
 void ChangeMediaTypeAudioToVideo(cricket::SessionDescription* desc) {
   desc->RemoveContentByName(cricket::CN_AUDIO);
   auto* video_content = desc->GetContentByName(cricket::CN_VIDEO);
-  desc->AddContent(cricket::CN_AUDIO, cricket::NS_JINGLE_RTP,
+  desc->AddContent(cricket::CN_AUDIO, video_content->type,
                    video_content->description->Copy());
 }
 

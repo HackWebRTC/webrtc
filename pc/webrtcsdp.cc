@@ -69,6 +69,7 @@ using cricket::kCodecParamAssociatedPayloadType;
 using cricket::MediaContentDescription;
 using cricket::MediaType;
 using cricket::RtpHeaderExtensions;
+using cricket::MediaProtocolType;
 using cricket::SsrcGroup;
 using cricket::StreamParams;
 using cricket::StreamParamsVec;
@@ -2500,8 +2501,8 @@ bool ParseMediaDescription(const std::string& message,
     content->set_connection_address(address);
 
     desc->AddContent(content_name,
-                     IsDtlsSctp(protocol) ? cricket::NS_JINGLE_DRAFT_SCTP
-                                          : cricket::NS_JINGLE_RTP,
+                     IsDtlsSctp(protocol) ? MediaProtocolType::kSctp
+                                          : MediaProtocolType::kRtp,
                      content_rejected, bundle_only, content.release());
     // Create TransportInfo with the media level "ice-pwd" and "ice-ufrag".
     TransportInfo transport_info(content_name, transport);

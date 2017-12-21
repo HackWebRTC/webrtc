@@ -42,10 +42,9 @@ using cricket::ICE_CANDIDATE_COMPONENT_RTCP;
 using cricket::ICE_CANDIDATE_COMPONENT_RTP;
 using cricket::kFecSsrcGroupSemantics;
 using cricket::LOCAL_PORT_TYPE;
-using cricket::NS_JINGLE_DRAFT_SCTP;
-using cricket::NS_JINGLE_RTP;
 using cricket::RELAY_PORT_TYPE;
 using cricket::SessionDescription;
+using cricket::MediaProtocolType;
 using cricket::StreamParams;
 using cricket::STUN_PORT_TYPE;
 using cricket::TransportDescription;
@@ -880,7 +879,7 @@ class WebRtcSdpTest : public testing::Test {
     audio_desc_->AddStream(audio_stream);
     rtc::SocketAddress audio_addr("74.125.127.126", 2345);
     audio_desc_->set_connection_address(audio_addr);
-    desc_.AddContent(kAudioContentName, NS_JINGLE_RTP, audio_desc_);
+    desc_.AddContent(kAudioContentName, MediaProtocolType::kRtp, audio_desc_);
 
     // VideoContentDescription
     video_desc_ = CreateVideoContentDescription();
@@ -895,7 +894,7 @@ class WebRtcSdpTest : public testing::Test {
     video_desc_->AddStream(video_stream);
     rtc::SocketAddress video_addr("74.125.224.39", 3457);
     video_desc_->set_connection_address(video_addr);
-    desc_.AddContent(kVideoContentName, NS_JINGLE_RTP, video_desc_);
+    desc_.AddContent(kVideoContentName, MediaProtocolType::kRtp, video_desc_);
 
     // TransportInfo
     EXPECT_TRUE(desc_.AddTransportInfo(TransportInfo(
@@ -1076,8 +1075,8 @@ class WebRtcSdpTest : public testing::Test {
 
     desc_.RemoveContentByName(kAudioContentName);
     desc_.RemoveContentByName(kVideoContentName);
-    desc_.AddContent(kAudioContentName, NS_JINGLE_RTP, audio_desc_);
-    desc_.AddContent(kVideoContentName, NS_JINGLE_RTP, video_desc_);
+    desc_.AddContent(kAudioContentName, MediaProtocolType::kRtp, audio_desc_);
+    desc_.AddContent(kVideoContentName, MediaProtocolType::kRtp, video_desc_);
 
     ASSERT_TRUE(jdesc_.Initialize(desc_.Copy(), jdesc_.session_id(),
                                   jdesc_.session_version()));
@@ -1094,7 +1093,7 @@ class WebRtcSdpTest : public testing::Test {
     audio_track_2.sync_label = kStreamLabel2;
     audio_track_2.ssrcs.push_back(kAudioTrack2Ssrc);
     audio_desc_2->AddStream(audio_track_2);
-    desc_.AddContent(kAudioContentName2, NS_JINGLE_RTP, audio_desc_2);
+    desc_.AddContent(kAudioContentName2, MediaProtocolType::kRtp, audio_desc_2);
     EXPECT_TRUE(desc_.AddTransportInfo(TransportInfo(
         kAudioContentName2, TransportDescription(kUfragVoice2, kPwdVoice2))));
     // Video track 2, in stream 2.
@@ -1105,7 +1104,7 @@ class WebRtcSdpTest : public testing::Test {
     video_track_2.sync_label = kStreamLabel2;
     video_track_2.ssrcs.push_back(kVideoTrack2Ssrc);
     video_desc_2->AddStream(video_track_2);
-    desc_.AddContent(kVideoContentName2, NS_JINGLE_RTP, video_desc_2);
+    desc_.AddContent(kVideoContentName2, MediaProtocolType::kRtp, video_desc_2);
     EXPECT_TRUE(desc_.AddTransportInfo(TransportInfo(
         kVideoContentName2, TransportDescription(kUfragVideo2, kPwdVideo2))));
 
@@ -1117,7 +1116,7 @@ class WebRtcSdpTest : public testing::Test {
     video_track_3.sync_label = kStreamLabel2;
     video_track_3.ssrcs.push_back(kVideoTrack3Ssrc);
     video_desc_3->AddStream(video_track_3);
-    desc_.AddContent(kVideoContentName3, NS_JINGLE_RTP, video_desc_3);
+    desc_.AddContent(kVideoContentName3, MediaProtocolType::kRtp, video_desc_3);
     EXPECT_TRUE(desc_.AddTransportInfo(TransportInfo(
         kVideoContentName3, TransportDescription(kUfragVideo3, kPwdVideo3))));
 
@@ -1449,8 +1448,8 @@ class WebRtcSdpTest : public testing::Test {
         RtpExtension(kExtmapUri, kExtmapId, encrypted));
     desc_.RemoveContentByName(kAudioContentName);
     desc_.RemoveContentByName(kVideoContentName);
-    desc_.AddContent(kAudioContentName, NS_JINGLE_RTP, audio_desc_);
-    desc_.AddContent(kVideoContentName, NS_JINGLE_RTP, video_desc_);
+    desc_.AddContent(kAudioContentName, MediaProtocolType::kRtp, audio_desc_);
+    desc_.AddContent(kVideoContentName, MediaProtocolType::kRtp, video_desc_);
   }
 
   void RemoveCryptos() {
@@ -1482,9 +1481,9 @@ class WebRtcSdpTest : public testing::Test {
 
     desc_.RemoveContentByName(kAudioContentName);
     desc_.RemoveContentByName(kVideoContentName);
-    desc_.AddContent(kAudioContentName, NS_JINGLE_RTP, audio_rejected,
+    desc_.AddContent(kAudioContentName, MediaProtocolType::kRtp, audio_rejected,
                      audio_desc_);
-    desc_.AddContent(kVideoContentName, NS_JINGLE_RTP, video_rejected,
+    desc_.AddContent(kVideoContentName, MediaProtocolType::kRtp, video_rejected,
                      video_desc_);
     SetIceUfragPwd(kAudioContentName, audio_rejected ? "" : kUfragVoice,
                    audio_rejected ? "" : kPwdVoice);
@@ -1510,7 +1509,8 @@ class WebRtcSdpTest : public testing::Test {
                     cricket::kGoogleSctpDataCodecName);
     codec.SetParam(cricket::kCodecParamPort, kDefaultSctpPort);
     data_desc_->AddCodec(codec);
-    desc_.AddContent(kDataContentName, NS_JINGLE_DRAFT_SCTP, data.release());
+    desc_.AddContent(kDataContentName, MediaProtocolType::kSctp,
+                     data.release());
     EXPECT_TRUE(desc_.AddTransportInfo(TransportInfo(
         kDataContentName, TransportDescription(kUfragData, kPwdData))));
   }
@@ -1530,7 +1530,7 @@ class WebRtcSdpTest : public testing::Test {
         1, "AES_CM_128_HMAC_SHA1_80",
         "inline:FvLcvU2P3ZWmQxgPAgcDu7Zl9vftYElFOjEzhWs5", ""));
     data_desc_->set_protocol(cricket::kMediaProtocolSavpf);
-    desc_.AddContent(kDataContentName, NS_JINGLE_RTP, data.release());
+    desc_.AddContent(kDataContentName, MediaProtocolType::kRtp, data.release());
     EXPECT_TRUE(desc_.AddTransportInfo(TransportInfo(
         kDataContentName, TransportDescription(kUfragData, kPwdData))));
   }
@@ -1565,9 +1565,9 @@ class WebRtcSdpTest : public testing::Test {
         video_desc_->Copy());
     desc_.RemoveContentByName(kAudioContentName);
     desc_.RemoveContentByName(kVideoContentName);
-    desc_.AddContent(kAudioContentName, NS_JINGLE_RTP, audio_rejected,
+    desc_.AddContent(kAudioContentName, MediaProtocolType::kRtp, audio_rejected,
                      audio_desc_);
-    desc_.AddContent(kVideoContentName, NS_JINGLE_RTP, video_rejected,
+    desc_.AddContent(kVideoContentName, MediaProtocolType::kRtp, video_rejected,
                      video_desc_);
     SetIceUfragPwd(kAudioContentName, audio_rejected ? "" : kUfragVoice,
                    audio_rejected ? "" : kPwdVoice);

@@ -23,6 +23,7 @@
 #include "rtc_base/ptr_util.h"
 #include "rtc_base/stringencode.h"
 
+using cricket::MediaProtocolType;
 using ::testing::Values;
 using webrtc::IceCandidateCollection;
 using webrtc::IceCandidateInterface;
@@ -54,12 +55,10 @@ static cricket::SessionDescription* CreateCricketSessionDescription() {
       new cricket::VideoContentDescription());
 
   audio->AddCodec(cricket::AudioCodec(103, "ISAC", 16000, 0, 0));
-  desc->AddContent(cricket::CN_AUDIO, cricket::NS_JINGLE_RTP,
-                   audio.release());
+  desc->AddContent(cricket::CN_AUDIO, MediaProtocolType::kRtp, audio.release());
 
   video->AddCodec(cricket::VideoCodec(120, "VP8"));
-  desc->AddContent(cricket::CN_VIDEO, cricket::NS_JINGLE_RTP,
-                   video.release());
+  desc->AddContent(cricket::CN_VIDEO, MediaProtocolType::kRtp, video.release());
 
   EXPECT_TRUE(desc->AddTransportInfo(cricket::TransportInfo(
       cricket::CN_AUDIO,

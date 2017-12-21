@@ -54,6 +54,7 @@ using cricket::ContentInfo;
 using cricket::ContentInfos;
 using cricket::MediaContentDescription;
 using cricket::SessionDescription;
+using cricket::MediaProtocolType;
 using cricket::TransportInfo;
 
 using cricket::LOCAL_PORT_TYPE;
@@ -4668,7 +4669,7 @@ bool PeerConnection::ValidateBundleSettings(const SessionDescription* desc) {
     const cricket::ContentInfo* content = (&*citer);
     RTC_DCHECK(content != NULL);
     if (bundle_group->HasContentName(content->name) && !content->rejected &&
-        content->type == cricket::NS_JINGLE_RTP) {
+        content->type == MediaProtocolType::kRtp) {
       if (!HasRtcpMuxEnabled(content))
         return false;
     }

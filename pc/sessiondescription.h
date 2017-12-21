@@ -48,22 +48,37 @@ extern const char kMediaProtocolTcpDtlsSctp[];
 // Options to control how session descriptions are generated.
 const int kAutoBandwidth = -1;
 
-// Describes a session content. Individual content types inherit from
-// this class.  Analagous to a <jingle><content><description> or
-// <session><description>.
-class ContentDescription {
- public:
-  virtual ~ContentDescription() {}
-  virtual ContentDescription* Copy() const = 0;
-};
+class AudioContentDescription;
+class VideoContentDescription;
+class DataContentDescription;
 
-// "content" (as used in XEP-0166) descriptions for voice and video.
-class MediaContentDescription : public ContentDescription {
+// Describes a session description media section. There are subclasses for each
+// media type (audio, video, data) that will have additional information.
+class MediaContentDescription {
  public:
-  MediaContentDescription() {}
+  MediaContentDescription() = default;
+  virtual ~MediaContentDescription() = default;
 
   virtual MediaType type() const = 0;
+
+  // Try to cast this media description to an AudioContentDescription. Returns
+  // nullptr if the cast fails.
+  virtual AudioContentDescription* as_audio() { return nullptr; }
+  virtual const AudioContentDescription* as_audio() const { return nullptr; }
+
+  // Try to cast this media description to a VideoContentDescription. Returns
+  // nullptr if the cast fails.
+  virtual VideoContentDescription* as_video() { return nullptr; }
+  virtual const VideoContentDescription* as_video() const { return nullptr; }
+
+  // Try to cast this media description to a DataContentDescription. Returns
+  // nullptr if the cast fails.
+  virtual DataContentDescription* as_data() { return nullptr; }
+  virtual const DataContentDescription* as_data() const { return nullptr; }
+
   virtual bool has_codecs() const = 0;
+
+  virtual MediaContentDescription* Copy() const = 0;
 
   // |protocol| is the expected media transport protocol, such as RTP/AVPF,
   // RTP/SAVPF or SCTP/DTLS.
@@ -183,6 +198,10 @@ class MediaContentDescription : public ContentDescription {
   rtc::SocketAddress connection_address_;
 };
 
+// TODO(bugs.webrtc.org/8620): Remove this alias once downstream projects have
+// updated.
+using ContentDescription = MediaContentDescription;
+
 template <class C>
 class MediaContentDescriptionImpl : public MediaContentDescription {
  public:
@@ -233,6 +252,8 @@ class AudioContentDescription : public MediaContentDescriptionImpl<AudioCodec> {
     return new AudioContentDescription(*this);
   }
   virtual MediaType type() const { return MEDIA_TYPE_AUDIO; }
+  virtual AudioContentDescription* as_audio() { return this; }
+  virtual const AudioContentDescription* as_audio() const { return this; }
 };
 
 class VideoContentDescription : public MediaContentDescriptionImpl<VideoCodec> {
@@ -241,6 +262,8 @@ class VideoContentDescription : public MediaContentDescriptionImpl<VideoCodec> {
     return new VideoContentDescription(*this);
   }
   virtual MediaType type() const { return MEDIA_TYPE_VIDEO; }
+  virtual VideoContentDescription* as_video() { return this; }
+  virtual const VideoContentDescription* as_video() const { return this; }
 };
 
 class DataContentDescription : public MediaContentDescriptionImpl<DataCodec> {
@@ -251,6 +274,8 @@ class DataContentDescription : public MediaContentDescriptionImpl<DataCodec> {
     return new DataContentDescription(*this);
   }
   virtual MediaType type() const { return MEDIA_TYPE_DATA; }
+  virtual DataContentDescription* as_data() { return this; }
+  virtual const DataContentDescription* as_data() const { return this; }
 
   bool use_sctpmap() const { return use_sctpmap_; }
   void set_use_sctpmap(bool enable) { use_sctpmap_ = enable; }
@@ -259,32 +284,40 @@ class DataContentDescription : public MediaContentDescriptionImpl<DataCodec> {
   bool use_sctpmap_ = true;
 };
 
-// Analagous to a <jingle><content> or <session><description>.
-// name = name of <content name="...">
-// type = xmlns of <content>
+// Protocol used for encoding media. This is the "top level" protocol that may
+// be wrapped by zero or many transport protocols (UDP, ICE, etc.).
+enum class MediaProtocolType {
+  kRtp,  // Section will use the RTP protocol (e.g., for audio or video).
+         // https://tools.ietf.org/html/rfc3550
+  kSctp  // Section will use the SCTP protocol (e.g., for a data channel).
+         // https://tools.ietf.org/html/rfc4960
+};
+
+// TODO(bugs.webrtc.org/8620): Remove once downstream projects have updated.
+constexpr MediaProtocolType NS_JINGLE_RTP = MediaProtocolType::kRtp;
+constexpr MediaProtocolType NS_JINGLE_DRAFT_SCTP = MediaProtocolType::kSctp;
+
+// Represents a session description section. Most information about the section
+// is stored in the description, which is a subclass of MediaContentDescription.
 struct ContentInfo {
-  ContentInfo() {}
-  ContentInfo(const std::string& name,
-              const std::string& type,
-              ContentDescription* description)
-      : name(name), type(type), description(description) {}
-  ContentInfo(const std::string& name,
-              const std::string& type,
-              bool rejected,
-              ContentDescription* description)
-      : name(name), type(type), rejected(rejected), description(description) {}
-  ContentInfo(const std::string& name,
-              const std::string& type,
-              bool rejected,
-              bool bundle_only,
-              ContentDescription* description)
-      : name(name),
-        type(type),
-        rejected(rejected),
-        bundle_only(bundle_only),
-        description(description) {}
+  explicit ContentInfo(MediaProtocolType type) : type(type) {}
+
+  // Alias for |name|.
+  std::string mid() const { return name; }
+  void set_mid(const std::string& mid) { this->name = mid; }
+
+  // Alias for |description|.
+  MediaContentDescription* media_description() { return description; }
+  const MediaContentDescription* media_description() const {
+    return description;
+  }
+  void set_media_description(MediaContentDescription* description) {
+    this->description = description;
+  }
+
+  // TODO(bugs.webrtc.org/8520): Rename this to mid.
   std::string name;
-  std::string type;
+  MediaProtocolType type;
   bool rejected = false;
   bool bundle_only = false;
   ContentDescription* description = nullptr;
@@ -349,20 +382,20 @@ class SessionDescription {
   const ContentDescription* GetContentDescriptionByName(
       const std::string& name) const;
   ContentDescription* GetContentDescriptionByName(const std::string& name);
-  const ContentInfo* FirstContentByType(const std::string& type) const;
+  const ContentInfo* FirstContentByType(MediaProtocolType type) const;
   const ContentInfo* FirstContent() const;
 
   // Content mutators.
   // Adds a content to this description. Takes ownership of ContentDescription*.
   void AddContent(const std::string& name,
-                  const std::string& type,
+                  MediaProtocolType type,
                   ContentDescription* description);
   void AddContent(const std::string& name,
-                  const std::string& type,
+                  MediaProtocolType type,
                   bool rejected,
                   ContentDescription* description);
   void AddContent(const std::string& name,
-                  const std::string& type,
+                  MediaProtocolType type,
                   bool rejected,
                   bool bundle_only,
                   ContentDescription* description);

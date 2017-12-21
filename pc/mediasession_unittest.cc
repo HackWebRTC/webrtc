@@ -37,6 +37,7 @@ using cricket::MediaSessionDescriptionFactory;
 using cricket::MediaDescriptionOptions;
 using cricket::MediaSessionOptions;
 using cricket::MediaType;
+using cricket::MediaProtocolType;
 using cricket::SessionDescription;
 using cricket::SsrcGroup;
 using cricket::StreamParams;
@@ -59,7 +60,6 @@ using cricket::kAutoBandwidth;
 using cricket::AudioCodec;
 using cricket::VideoCodec;
 using cricket::DataCodec;
-using cricket::NS_JINGLE_RTP;
 using cricket::MEDIA_TYPE_AUDIO;
 using cricket::MEDIA_TYPE_VIDEO;
 using cricket::MEDIA_TYPE_DATA;
@@ -630,8 +630,8 @@ class MediaSessionDescriptionFactoryTest : public testing::Test {
     const ContentInfo* vc = answer->GetContentByName("video");
     ASSERT_TRUE(ac != NULL);
     ASSERT_TRUE(vc != NULL);
-    EXPECT_EQ(std::string(NS_JINGLE_RTP), ac->type);
-    EXPECT_EQ(std::string(NS_JINGLE_RTP), vc->type);
+    EXPECT_EQ(MediaProtocolType::kRtp, ac->type);
+    EXPECT_EQ(MediaProtocolType::kRtp, vc->type);
     const AudioContentDescription* acd =
         static_cast<const AudioContentDescription*>(ac->description);
     const VideoContentDescription* vcd =
@@ -675,7 +675,7 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateAudioOffer) {
   const ContentInfo* vc = offer->GetContentByName("video");
   ASSERT_TRUE(ac != NULL);
   ASSERT_TRUE(vc == NULL);
-  EXPECT_EQ(std::string(NS_JINGLE_RTP), ac->type);
+  EXPECT_EQ(MediaProtocolType::kRtp, ac->type);
   const AudioContentDescription* acd =
       static_cast<const AudioContentDescription*>(ac->description);
   EXPECT_EQ(MEDIA_TYPE_AUDIO, acd->type());
@@ -698,8 +698,8 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateVideoOffer) {
   const ContentInfo* vc = offer->GetContentByName("video");
   ASSERT_TRUE(ac != NULL);
   ASSERT_TRUE(vc != NULL);
-  EXPECT_EQ(std::string(NS_JINGLE_RTP), ac->type);
-  EXPECT_EQ(std::string(NS_JINGLE_RTP), vc->type);
+  EXPECT_EQ(MediaProtocolType::kRtp, ac->type);
+  EXPECT_EQ(MediaProtocolType::kRtp, vc->type);
   const AudioContentDescription* acd =
       static_cast<const AudioContentDescription*>(ac->description);
   const VideoContentDescription* vcd =
@@ -807,8 +807,8 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateRtpDataOffer) {
   const ContentInfo* dc = offer->GetContentByName("data");
   ASSERT_TRUE(ac != NULL);
   ASSERT_TRUE(dc != NULL);
-  EXPECT_EQ(std::string(NS_JINGLE_RTP), ac->type);
-  EXPECT_EQ(std::string(NS_JINGLE_RTP), dc->type);
+  EXPECT_EQ(MediaProtocolType::kRtp, ac->type);
+  EXPECT_EQ(MediaProtocolType::kRtp, dc->type);
   const AudioContentDescription* acd =
       static_cast<const AudioContentDescription*>(ac->description);
   const DataContentDescription* dcd =
@@ -952,7 +952,7 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateAudioAnswer) {
   const ContentInfo* vc = answer->GetContentByName("video");
   ASSERT_TRUE(ac != NULL);
   ASSERT_TRUE(vc == NULL);
-  EXPECT_EQ(std::string(NS_JINGLE_RTP), ac->type);
+  EXPECT_EQ(MediaProtocolType::kRtp, ac->type);
   const AudioContentDescription* acd =
       static_cast<const AudioContentDescription*>(ac->description);
   EXPECT_EQ(MEDIA_TYPE_AUDIO, acd->type());
@@ -979,7 +979,7 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateAudioAnswerGcm) {
   const ContentInfo* vc = answer->GetContentByName("video");
   ASSERT_TRUE(ac != NULL);
   ASSERT_TRUE(vc == NULL);
-  EXPECT_EQ(std::string(NS_JINGLE_RTP), ac->type);
+  EXPECT_EQ(MediaProtocolType::kRtp, ac->type);
   const AudioContentDescription* acd =
       static_cast<const AudioContentDescription*>(ac->description);
   EXPECT_EQ(MEDIA_TYPE_AUDIO, acd->type());
@@ -1005,8 +1005,8 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateVideoAnswer) {
   const ContentInfo* vc = answer->GetContentByName("video");
   ASSERT_TRUE(ac != NULL);
   ASSERT_TRUE(vc != NULL);
-  EXPECT_EQ(std::string(NS_JINGLE_RTP), ac->type);
-  EXPECT_EQ(std::string(NS_JINGLE_RTP), vc->type);
+  EXPECT_EQ(MediaProtocolType::kRtp, ac->type);
+  EXPECT_EQ(MediaProtocolType::kRtp, vc->type);
   const AudioContentDescription* acd =
       static_cast<const AudioContentDescription*>(ac->description);
   const VideoContentDescription* vcd =
@@ -1056,8 +1056,8 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateDataAnswer) {
   const ContentInfo* dc = answer->GetContentByName("data");
   ASSERT_TRUE(ac != NULL);
   ASSERT_TRUE(dc != NULL);
-  EXPECT_EQ(std::string(NS_JINGLE_RTP), ac->type);
-  EXPECT_EQ(std::string(NS_JINGLE_RTP), dc->type);
+  EXPECT_EQ(MediaProtocolType::kRtp, ac->type);
+  EXPECT_EQ(MediaProtocolType::kRtp, dc->type);
   const AudioContentDescription* acd =
       static_cast<const AudioContentDescription*>(ac->description);
   const DataContentDescription* dcd =
@@ -1090,8 +1090,8 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateDataAnswerGcm) {
   const ContentInfo* dc = answer->GetContentByName("data");
   ASSERT_TRUE(ac != NULL);
   ASSERT_TRUE(dc != NULL);
-  EXPECT_EQ(std::string(NS_JINGLE_RTP), ac->type);
-  EXPECT_EQ(std::string(NS_JINGLE_RTP), dc->type);
+  EXPECT_EQ(MediaProtocolType::kRtp, ac->type);
+  EXPECT_EQ(MediaProtocolType::kRtp, dc->type);
   const AudioContentDescription* acd =
       static_cast<const AudioContentDescription*>(ac->description);
   const DataContentDescription* dcd =
@@ -2614,11 +2614,11 @@ TEST(MediaSessionDescription, CopySessionDescription) {
   AudioContentDescription* acd(new AudioContentDescription());
   acd->set_codecs(MAKE_VECTOR(kAudioCodecs1));
   acd->AddLegacyStream(1);
-  source.AddContent(cricket::CN_AUDIO, cricket::NS_JINGLE_RTP, acd);
+  source.AddContent(cricket::CN_AUDIO, MediaProtocolType::kRtp, acd);
   VideoContentDescription* vcd(new VideoContentDescription());
   vcd->set_codecs(MAKE_VECTOR(kVideoCodecs1));
   vcd->AddLegacyStream(2);
-  source.AddContent(cricket::CN_VIDEO, cricket::NS_JINGLE_RTP, vcd);
+  source.AddContent(cricket::CN_VIDEO, MediaProtocolType::kRtp, vcd);
 
   std::unique_ptr<SessionDescription> copy(source.Copy());
   ASSERT_TRUE(copy.get() != NULL);
@@ -2627,13 +2627,13 @@ TEST(MediaSessionDescription, CopySessionDescription) {
   const ContentInfo* vc = copy->GetContentByName("video");
   ASSERT_TRUE(ac != NULL);
   ASSERT_TRUE(vc != NULL);
-  EXPECT_EQ(std::string(NS_JINGLE_RTP), ac->type);
+  EXPECT_EQ(MediaProtocolType::kRtp, ac->type);
   const AudioContentDescription* acd_copy =
       static_cast<const AudioContentDescription*>(ac->description);
   EXPECT_EQ(acd->codecs(), acd_copy->codecs());
   EXPECT_EQ(1u, acd->first_ssrc());
 
-  EXPECT_EQ(std::string(NS_JINGLE_RTP), vc->type);
+  EXPECT_EQ(MediaProtocolType::kRtp, vc->type);
   const VideoContentDescription* vcd_copy =
       static_cast<const VideoContentDescription*>(vc->description);
   EXPECT_EQ(vcd->codecs(), vcd_copy->codecs());

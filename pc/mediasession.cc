@@ -1870,7 +1870,7 @@ bool MediaSessionDescriptionFactory::AddAudioContentForOffer(
 
   audio->set_direction(media_description_options.direction);
 
-  desc->AddContent(media_description_options.mid, NS_JINGLE_RTP,
+  desc->AddContent(media_description_options.mid, MediaProtocolType::kRtp,
                    media_description_options.stopped, audio.release());
   if (!AddTransportOffer(media_description_options.mid,
                          media_description_options.transport_options,
@@ -1940,7 +1940,7 @@ bool MediaSessionDescriptionFactory::AddVideoContentForOffer(
 
   video->set_direction(media_description_options.direction);
 
-  desc->AddContent(media_description_options.mid, NS_JINGLE_RTP,
+  desc->AddContent(media_description_options.mid, MediaProtocolType::kRtp,
                    media_description_options.stopped, video.release());
   if (!AddTransportOffer(media_description_options.mid,
                          media_description_options.transport_options,
@@ -2002,12 +2002,12 @@ bool MediaSessionDescriptionFactory::AddDataContentForOffer(
   }
 
   if (is_sctp) {
-    desc->AddContent(media_description_options.mid, NS_JINGLE_DRAFT_SCTP,
+    desc->AddContent(media_description_options.mid, MediaProtocolType::kSctp,
                      data.release());
   } else {
     data->set_bandwidth(kDataMaxBandwidth);
     SetMediaProtocol(secure_transport, data.get());
-    desc->AddContent(media_description_options.mid, NS_JINGLE_RTP,
+    desc->AddContent(media_description_options.mid, MediaProtocolType::kRtp,
                      media_description_options.stopped, data.release());
   }
   if (!AddTransportOffer(media_description_options.mid,
@@ -2301,9 +2301,8 @@ void MediaSessionDescriptionFactory::ComputeAudioCodecsIntersectionAndUnion() {
 }
 
 bool IsMediaContent(const ContentInfo* content) {
-  return (content &&
-          (content->type == NS_JINGLE_RTP ||
-           content->type == NS_JINGLE_DRAFT_SCTP));
+  return (content && (content->type == MediaProtocolType::kRtp ||
+                      content->type == MediaProtocolType::kSctp));
 }
 
 bool IsAudioContent(const ContentInfo* content) {
