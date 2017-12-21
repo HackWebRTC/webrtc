@@ -4,10 +4,6 @@ party licenses. Paths to the files and associated licenses are collected here.
 Files governed by third party licenses:
 base/base64.cc
 base/base64.h
-base/md5.cc
-base/md5.h
-base/sha1.cc
-base/sha1.h
 base/sigslot.cc
 base/sigslot.h
 common_audio/fft4g.c
@@ -47,34 +43,6 @@ License:
 //*     o reserve string buffer space in advance
 //*
 //*********************************************************************
--------------------------------------------------------------------------------
-Files:
-base/md5.cc
-base/md5.h
-
-License:
-/*
- * This code implements the MD5 message-digest algorithm.
- * The algorithm is due to Ron Rivest.  This code was
- * written by Colin Plumb in 1993, no copyright is claimed.
- * This code is in the public domain; do with it what you wish.
- *
--------------------------------------------------------------------------------
-Files:
-base/sha1.cc
-base/sha1.h
-
-License:
-/*
- * SHA-1 in C
- * By Steve Reid <sreid@sea-to-sky.net>
- * 100% Public Domain
- *
- * -----------------
- * Modified 7/98
- * By James H. Brown <jbrown@burgoyne.com>
- * Still 100% Public Domain
- *
 -------------------------------------------------------------------------------
 Files:
 base/sigslot.cc

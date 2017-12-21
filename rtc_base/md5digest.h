@@ -11,24 +11,25 @@
 #ifndef RTC_BASE_MD5DIGEST_H_
 #define RTC_BASE_MD5DIGEST_H_
 
-#include "rtc_base/md5.h"
+#include <openssl/md5.h>
+
 #include "rtc_base/messagedigest.h"
 
 namespace rtc {
 
-// A simple wrapper for our MD5 implementation.
+// A simple wrapper for the MD5 implementation.
 class Md5Digest : public MessageDigest {
  public:
-  enum { kSize = 16 };
+  enum { kSize = MD5_DIGEST_LENGTH };
   Md5Digest() {
-    MD5Init(&ctx_);
+    MD5_Init(&ctx_);
   }
   size_t Size() const override;
   void Update(const void* buf, size_t len) override;
   size_t Finish(void* buf, size_t len) override;
 
  private:
-  MD5Context ctx_;
+  MD5_CTX ctx_;
 };
 
 }  // namespace rtc

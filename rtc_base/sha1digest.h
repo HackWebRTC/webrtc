@@ -11,24 +11,25 @@
 #ifndef RTC_BASE_SHA1DIGEST_H_
 #define RTC_BASE_SHA1DIGEST_H_
 
+#include <openssl/sha.h>
+
 #include "rtc_base/messagedigest.h"
-#include "rtc_base/sha1.h"
 
 namespace rtc {
 
-// A simple wrapper for our SHA-1 implementation.
+// A simple wrapper for the SHA-1 implementation.
 class Sha1Digest : public MessageDigest {
  public:
-  enum { kSize = SHA1_DIGEST_SIZE };
+  enum { kSize = SHA_DIGEST_LENGTH };
   Sha1Digest() {
-    SHA1Init(&ctx_);
+    SHA1_Init(&ctx_);
   }
   size_t Size() const override;
   void Update(const void* buf, size_t len) override;
   size_t Finish(void* buf, size_t len) override;
 
  private:
-  SHA1_CTX ctx_;
+  SHA_CTX ctx_;
 };
 
 }  // namespace rtc
