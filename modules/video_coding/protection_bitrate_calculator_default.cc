@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/video_coding/protection_bitrate_calculator.h"
+#include "modules/video_coding/protection_bitrate_calculator_default.h"
 
 namespace webrtc {
 
 using rtc::CritScope;
 
-ProtectionBitrateCalculator::ProtectionBitrateCalculator(
+ProtectionBitrateCalculatorDefault::ProtectionBitrateCalculatorDefault(
     Clock* clock,
     VCMProtectionCallback* protection_callback)
     : clock_(clock),
@@ -23,21 +23,22 @@ ProtectionBitrateCalculator::ProtectionBitrateCalculator(
           clock_->TimeInMilliseconds())),
       max_payload_size_(1460) {}
 
-ProtectionBitrateCalculator::~ProtectionBitrateCalculator(void) {
+ProtectionBitrateCalculatorDefault::~ProtectionBitrateCalculatorDefault(void) {
   loss_prot_logic_->Release();
 }
 
-void ProtectionBitrateCalculator::SetEncodingData(size_t width,
-                                                  size_t height,
-                                                  size_t num_temporal_layers,
-                                                  size_t max_payload_size) {
+void ProtectionBitrateCalculatorDefault::SetEncodingData(
+    size_t width,
+    size_t height,
+    size_t num_temporal_layers,
+    size_t max_payload_size) {
   CritScope lock(&crit_sect_);
   loss_prot_logic_->UpdateFrameSize(width, height);
   loss_prot_logic_->UpdateNumLayers(num_temporal_layers);
   max_payload_size_ = max_payload_size;
 }
 
-uint32_t ProtectionBitrateCalculator::SetTargetRates(
+uint32_t ProtectionBitrateCalculatorDefault::SetTargetRates(
     uint32_t estimated_bitrate_bps,
     int actual_framerate_fps,
     uint8_t fraction_lost,
@@ -138,8 +139,8 @@ uint32_t ProtectionBitrateCalculator::SetTargetRates(
   return estimated_bitrate_bps * (1.0 - protection_overhead_rate);
 }
 
-void ProtectionBitrateCalculator::SetProtectionMethod(bool enable_fec,
-                                                      bool enable_nack) {
+void ProtectionBitrateCalculatorDefault::SetProtectionMethod(bool enable_fec,
+                                                             bool enable_nack) {
   media_optimization::VCMProtectionMethodEnum method(media_optimization::kNone);
   if (enable_fec && enable_nack) {
     method = media_optimization::kNackFec;
@@ -152,7 +153,7 @@ void ProtectionBitrateCalculator::SetProtectionMethod(bool enable_fec,
   loss_prot_logic_->SetMethod(method);
 }
 
-void ProtectionBitrateCalculator::UpdateWithEncodedData(
+void ProtectionBitrateCalculatorDefault::UpdateWithEncodedData(
     const EncodedImage& encoded_image) {
   const size_t encoded_length = encoded_image._length;
   CritScope lock(&crit_sect_);
