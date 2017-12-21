@@ -150,6 +150,9 @@ struct MediaConfig {
 struct AudioOptions {
   void SetAll(const AudioOptions& change) {
     SetFrom(&echo_cancellation, change.echo_cancellation);
+#if defined(WEBRTC_IOS)
+    SetFrom(&ios_force_software_aec_HACK, change.ios_force_software_aec_HACK);
+#endif
     SetFrom(&auto_gain_control, change.auto_gain_control);
     SetFrom(&noise_suppression, change.noise_suppression);
     SetFrom(&highpass_filter, change.highpass_filter);
@@ -180,6 +183,9 @@ struct AudioOptions {
 
   bool operator==(const AudioOptions& o) const {
     return echo_cancellation == o.echo_cancellation &&
+#if defined(WEBRTC_IOS)
+           ios_force_software_aec_HACK == o.ios_force_software_aec_HACK &&
+#endif
            auto_gain_control == o.auto_gain_control &&
            noise_suppression == o.noise_suppression &&
            highpass_filter == o.highpass_filter &&
@@ -213,6 +219,10 @@ struct AudioOptions {
     std::ostringstream ost;
     ost << "AudioOptions {";
     ost << ToStringIfSet("aec", echo_cancellation);
+#if defined(WEBRTC_IOS)
+    ost << ToStringIfSet("ios_force_software_aec_HACK",
+                         ios_force_software_aec_HACK);
+#endif
     ost << ToStringIfSet("agc", auto_gain_control);
     ost << ToStringIfSet("ns", noise_suppression);
     ost << ToStringIfSet("hf", highpass_filter);
@@ -249,6 +259,13 @@ struct AudioOptions {
   // Audio processing that attempts to filter away the output signal from
   // later inbound pickup.
   rtc::Optional<bool> echo_cancellation;
+#if defined(WEBRTC_IOS)
+  // Forces software echo cancellation on iOS. This is a temporary workaround
+  // (until Apple fixes the bug) for a device with non-functioning AEC. May
+  // improve performance on that particular device, but will cause unpredictable
+  // behavior in all other cases. See http://bugs.webrtc.org/8682.
+  rtc::Optional<bool> ios_force_software_aec_HACK;
+#endif
   // Audio processing to adjust the sensitivity of the local mic dynamically.
   rtc::Optional<bool> auto_gain_control;
   // Audio processing to filter out background noise.

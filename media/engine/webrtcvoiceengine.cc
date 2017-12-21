@@ -361,10 +361,20 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   }
 
 #if defined(WEBRTC_IOS)
-  // On iOS, VPIO provides built-in EC.
-  options.echo_cancellation = false;
-  options.extended_filter_aec = false;
-  RTC_LOG(LS_INFO) << "Always disable AEC on iOS. Use built-in instead.";
+  if (options.ios_force_software_aec_HACK &&
+      *options.ios_force_software_aec_HACK) {
+    // EC may be forced on for a device known to have non-functioning platform
+    // AEC.
+    options.echo_cancellation = true;
+    options.extended_filter_aec = true;
+    RTC_LOG(LS_WARNING)
+        << "Force software AEC on iOS. May conflict with platform AEC.";
+  } else {
+    // On iOS, VPIO provides built-in EC.
+    options.echo_cancellation = false;
+    options.extended_filter_aec = false;
+    RTC_LOG(LS_INFO) << "Always disable AEC on iOS. Use built-in instead.";
+  }
 #elif defined(WEBRTC_ANDROID)
   ec_mode = webrtc::kEcAecm;
   options.extended_filter_aec = false;
