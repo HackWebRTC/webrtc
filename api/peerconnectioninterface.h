@@ -973,6 +973,8 @@ class PeerConnectionObserver {
     kIceState,
   };
 
+  virtual ~PeerConnectionObserver() = default;
+
   // Triggered when the SignalingState changed.
   virtual void OnSignalingChange(
       PeerConnectionInterface::SignalingState new_state) = 0;
@@ -1045,10 +1047,6 @@ class PeerConnectionObserver {
   // TODO(hbos,deadbeef): Make pure virtual when all subclasses implement it.
   virtual void OnRemoveTrack(
       rtc::scoped_refptr<RtpReceiverInterface> receiver) {}
-
- protected:
-  // Dtor protected as objects shouldn't be deleted via this interface.
-  ~PeerConnectionObserver() {}
 };
 
 // PeerConnectionFactoryInterface is the factory interface used for creating
