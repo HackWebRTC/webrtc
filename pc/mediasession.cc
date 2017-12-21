@@ -114,13 +114,10 @@ static RtpTransceiverDirection NegotiateRtpTransceiverDirection(
 
 static bool IsMediaContentOfType(const ContentInfo* content,
                                  MediaType media_type) {
-  if (!IsMediaContent(content)) {
+  if (!content || !content->media_description()) {
     return false;
   }
-
-  const MediaContentDescription* mdesc =
-      static_cast<const MediaContentDescription*>(content->description);
-  return mdesc && mdesc->type() == media_type;
+  return content->media_description()->type() == media_type;
 }
 
 static bool CreateCryptoParams(int tag, const std::string& cipher,
@@ -178,13 +175,10 @@ bool CreateMediaCryptos(const std::vector<std::string>& crypto_suites,
 }
 
 const CryptoParamsVec* GetCryptos(const ContentInfo* content) {
-  if (!content) {
+  if (!content || !content->media_description()) {
     return nullptr;
   }
-
-  RTC_DCHECK(IsMediaContent(content));
-  return &(static_cast<const MediaContentDescription*>(content->description)
-               ->cryptos());
+  return &content->media_description()->cryptos();
 }
 
 bool FindMatchingCrypto(const CryptoParamsVec& cryptos,
@@ -293,22 +287,16 @@ static void GenerateSsrcs(const StreamParamsVec& params_vec,
 // Finds all StreamParams of all media types and attach them to stream_params.
 static void GetCurrentStreamParams(const SessionDescription* sdesc,
                                    StreamParamsVec* stream_params) {
-  if (!sdesc)
+  RTC_DCHECK(stream_params);
+  if (!sdesc) {
     return;
-
-  const ContentInfos& contents = sdesc->contents();
-  for (ContentInfos::const_iterator content = contents.begin();
-       content != contents.end(); ++content) {
-    if (!IsMediaContent(&*content)) {
+  }
+  for (const ContentInfo& content : sdesc->contents()) {
+    if (!content.media_description()) {
       continue;
     }
-    const MediaContentDescription* media =
-        static_cast<const MediaContentDescription*>(
-            content->description);
-    const StreamParamsVec& streams = media->streams();
-    for (StreamParamsVec::const_iterator it = streams.begin();
-         it != streams.end(); ++it) {
-      stream_params->push_back(*it);
+    for (const StreamParams& params : content.media_description()->streams()) {
+      stream_params->push_back(params);
     }
   }
 }
@@ -553,15 +541,11 @@ static bool GetCryptosByName(const SessionDescription* sdesc,
   if (!sdesc || !cryptos) {
     return false;
   }
-
   const ContentInfo* content = sdesc->GetContentByName(content_name);
-  if (!IsMediaContent(content) || !content->description) {
+  if (!content || !content->media_description()) {
     return false;
   }
-
-  const MediaContentDescription* media_desc =
-      static_cast<const MediaContentDescription*>(content->description);
-  *cryptos = media_desc->cryptos();
+  *cryptos = content->media_description()->cryptos();
   return true;
 }
 
@@ -604,13 +588,8 @@ static bool IsRtpContent(SessionDescription* sdesc,
                          const std::string& content_name) {
   bool is_rtp = false;
   ContentInfo* content = sdesc->GetContentByName(content_name);
-  if (IsMediaContent(content)) {
-    MediaContentDescription* media_desc =
-        static_cast<MediaContentDescription*>(content->description);
-    if (!media_desc) {
-      return false;
-    }
-    is_rtp = IsRtpProtocol(media_desc->protocol());
+  if (content && content->media_description()) {
+    is_rtp = IsRtpProtocol(content->media_description()->protocol());
   }
   return is_rtp;
 }
@@ -670,8 +649,7 @@ static bool UpdateCryptoParamsForBundle(const ContentGroup& bundle_group,
     }
     ContentInfo* content = sdesc->GetContentByName(*it);
     if (IsMediaContent(content)) {
-      MediaContentDescription* media_desc =
-          static_cast<MediaContentDescription*>(content->description);
+      MediaContentDescription* media_desc = content->media_description();
       if (!media_desc) {
         return false;
       }
@@ -1570,15 +1548,15 @@ void MergeCodecsFromDescription(const SessionDescription* description,
   for (const ContentInfo& content : description->contents()) {
     if (IsMediaContentOfType(&content, MEDIA_TYPE_AUDIO)) {
       const AudioContentDescription* audio =
-          static_cast<AudioContentDescription*>(content.description);
+          content.media_description()->as_audio();
       MergeCodecs<AudioCodec>(audio->codecs(), audio_codecs, used_pltypes);
     } else if (IsMediaContentOfType(&content, MEDIA_TYPE_VIDEO)) {
       const VideoContentDescription* video =
-          static_cast<VideoContentDescription*>(content.description);
+          content.media_description()->as_video();
       MergeCodecs<VideoCodec>(video->codecs(), video_codecs, used_pltypes);
     } else if (IsMediaContentOfType(&content, MEDIA_TYPE_DATA)) {
       const DataContentDescription* data =
-          static_cast<DataContentDescription*>(content.description);
+          content.media_description()->as_data();
       MergeCodecs<DataCodec>(data->codecs(), data_codecs, used_pltypes);
     }
   }
@@ -1647,7 +1625,7 @@ void MediaSessionDescriptionFactory::GetCodecsForAnswer(
   for (const ContentInfo& content : remote_offer->contents()) {
     if (IsMediaContentOfType(&content, MEDIA_TYPE_AUDIO)) {
       const AudioContentDescription* audio =
-          static_cast<AudioContentDescription*>(content.description);
+          content.media_description()->as_audio();
       for (const AudioCodec& offered_audio_codec : audio->codecs()) {
         if (!FindMatchingCodec<AudioCodec>(audio->codecs(),
                                            filtered_offered_audio_codecs,
@@ -1659,7 +1637,7 @@ void MediaSessionDescriptionFactory::GetCodecsForAnswer(
       }
     } else if (IsMediaContentOfType(&content, MEDIA_TYPE_VIDEO)) {
       const VideoContentDescription* video =
-          static_cast<VideoContentDescription*>(content.description);
+          content.media_description()->as_video();
       for (const VideoCodec& offered_video_codec : video->codecs()) {
         if (!FindMatchingCodec<VideoCodec>(video->codecs(),
                                            filtered_offered_video_codecs,
@@ -1671,7 +1649,7 @@ void MediaSessionDescriptionFactory::GetCodecsForAnswer(
       }
     } else if (IsMediaContentOfType(&content, MEDIA_TYPE_DATA)) {
       const DataContentDescription* data =
-          static_cast<DataContentDescription*>(content.description);
+          content.media_description()->as_data();
       for (const DataCodec& offered_data_codec : data->codecs()) {
         if (!FindMatchingCodec<DataCodec>(data->codecs(),
                                           filtered_offered_data_codecs,
@@ -1714,13 +1692,13 @@ void MediaSessionDescriptionFactory::GetRtpHdrExtsToOffer(
     for (const ContentInfo& content : current_description->contents()) {
       if (IsMediaContentOfType(&content, MEDIA_TYPE_AUDIO)) {
         const AudioContentDescription* audio =
-            static_cast<const AudioContentDescription*>(content.description);
+            content.media_description()->as_audio();
         MergeRtpHdrExts(audio->rtp_header_extensions(), offer_audio_extensions,
                         &all_regular_extensions, &all_encrypted_extensions,
                         &used_ids);
       } else if (IsMediaContentOfType(&content, MEDIA_TYPE_VIDEO)) {
         const VideoContentDescription* video =
-            static_cast<const VideoContentDescription*>(content.description);
+            content.media_description()->as_video();
         MergeRtpHdrExts(video->rtp_header_extensions(), offer_video_extensions,
                         &all_regular_extensions, &all_encrypted_extensions,
                         &used_ids);
@@ -1828,8 +1806,7 @@ bool MediaSessionDescriptionFactory::AddAudioContentForOffer(
   if (current_content) {
     RTC_CHECK(IsMediaContentOfType(current_content, MEDIA_TYPE_AUDIO));
     const AudioContentDescription* acd =
-        static_cast<const AudioContentDescription*>(
-            current_content->description);
+        current_content->media_description()->as_audio();
     for (const AudioCodec& codec : acd->codecs()) {
       if (FindMatchingCodec<AudioCodec>(acd->codecs(), audio_codecs, codec,
                                         nullptr)) {
@@ -1904,8 +1881,7 @@ bool MediaSessionDescriptionFactory::AddVideoContentForOffer(
   if (current_content) {
     RTC_CHECK(IsMediaContentOfType(current_content, MEDIA_TYPE_VIDEO));
     const VideoContentDescription* vcd =
-        static_cast<const VideoContentDescription*>(
-            current_content->description);
+        current_content->media_description()->as_video();
     for (const VideoCodec& codec : vcd->codecs()) {
       if (FindMatchingCodec<VideoCodec>(vcd->codecs(), video_codecs, codec,
                                         nullptr)) {
@@ -1966,9 +1942,8 @@ bool MediaSessionDescriptionFactory::AddDataContentForOffer(
   // the current description.
   if (session_options.data_channel_type == DCT_NONE && current_content) {
     RTC_CHECK(IsMediaContentOfType(current_content, MEDIA_TYPE_DATA));
-    is_sctp = (static_cast<const DataContentDescription*>(
-                   current_content->description)
-                   ->protocol() == kMediaProtocolSctp);
+    is_sctp = (current_content->media_description()->protocol() ==
+               kMediaProtocolSctp);
   }
 
   cricket::SecurePolicy sdes_policy =
@@ -2043,7 +2018,7 @@ bool MediaSessionDescriptionFactory::AddAudioContentForAnswer(
     SessionDescription* answer) const {
   RTC_CHECK(IsMediaContentOfType(offer_content, MEDIA_TYPE_AUDIO));
   const AudioContentDescription* offer_audio_description =
-      static_cast<const AudioContentDescription*>(offer_content->description);
+      offer_content->media_description()->as_audio();
 
   std::unique_ptr<TransportDescription> audio_transport(
       CreateTransportAnswer(media_description_options.mid, offer_description,
@@ -2067,8 +2042,7 @@ bool MediaSessionDescriptionFactory::AddAudioContentForAnswer(
   if (current_content) {
     RTC_CHECK(IsMediaContentOfType(current_content, MEDIA_TYPE_AUDIO));
     const AudioContentDescription* acd =
-        static_cast<const AudioContentDescription*>(
-            current_content->description);
+        current_content->media_description()->as_audio();
     for (const AudioCodec& codec : acd->codecs()) {
       if (FindMatchingCodec<AudioCodec>(acd->codecs(), audio_codecs, codec,
                                         nullptr)) {
@@ -2135,7 +2109,7 @@ bool MediaSessionDescriptionFactory::AddVideoContentForAnswer(
     SessionDescription* answer) const {
   RTC_CHECK(IsMediaContentOfType(offer_content, MEDIA_TYPE_VIDEO));
   const VideoContentDescription* offer_video_description =
-      static_cast<const VideoContentDescription*>(offer_content->description);
+      offer_content->media_description()->as_video();
 
   std::unique_ptr<TransportDescription> video_transport(
       CreateTransportAnswer(media_description_options.mid, offer_description,
@@ -2150,8 +2124,7 @@ bool MediaSessionDescriptionFactory::AddVideoContentForAnswer(
   if (current_content) {
     RTC_CHECK(IsMediaContentOfType(current_content, MEDIA_TYPE_VIDEO));
     const VideoContentDescription* vcd =
-        static_cast<const VideoContentDescription*>(
-            current_content->description);
+        current_content->media_description()->as_video();
     for (const VideoCodec& codec : vcd->codecs()) {
       if (FindMatchingCodec<VideoCodec>(vcd->codecs(), video_codecs, codec,
                                         nullptr)) {
@@ -2235,7 +2208,7 @@ bool MediaSessionDescriptionFactory::AddDataContentForAnswer(
                         session_options.bundle_enabled;
   RTC_CHECK(IsMediaContentOfType(offer_content, MEDIA_TYPE_DATA));
   const DataContentDescription* offer_data_description =
-      static_cast<const DataContentDescription*>(offer_content->description);
+      offer_content->media_description()->as_data();
   if (!CreateMediaContentAnswer(
           offer_data_description, media_description_options, session_options,
           data_codecs, sdes_policy, GetCryptos(current_content),
@@ -2363,8 +2336,7 @@ const ContentInfo* GetFirstDataContent(const SessionDescription* sdesc) {
 const MediaContentDescription* GetFirstMediaContentDescription(
     const SessionDescription* sdesc, MediaType media_type) {
   const ContentInfo* content = GetFirstMediaContent(sdesc, media_type);
-  const ContentDescription* description = content ? content->description : NULL;
-  return static_cast<const MediaContentDescription*>(description);
+  return (content ? content->media_description() : nullptr);
 }
 
 const AudioContentDescription* GetFirstAudioContentDescription(
@@ -2436,8 +2408,7 @@ MediaContentDescription* GetFirstMediaContentDescription(
     SessionDescription* sdesc,
     MediaType media_type) {
   ContentInfo* content = GetFirstMediaContent(sdesc, media_type);
-  ContentDescription* description = content ? content->description : NULL;
-  return static_cast<MediaContentDescription*>(description);
+  return (content ? content->media_description() : nullptr);
 }
 
 AudioContentDescription* GetFirstAudioContentDescription(

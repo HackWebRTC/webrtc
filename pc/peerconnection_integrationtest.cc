@@ -118,9 +118,7 @@ PeerConnectionInterface::RTCOfferAnswerOptions IceRestartOfferAnswerOptions() {
 // attribute from received SDP, simulating a legacy endpoint.
 void RemoveSsrcsAndMsids(cricket::SessionDescription* desc) {
   for (ContentInfo& content : desc->contents()) {
-    MediaContentDescription* media_desc =
-        static_cast<MediaContentDescription*>(content.description);
-    media_desc->mutable_streams().clear();
+    content.media_description()->mutable_streams().clear();
   }
   desc->set_msid_supported(false);
 }
@@ -2110,9 +2108,8 @@ TEST_F(PeerConnectionIntegrationTest,
 // Helper for test below.
 void ModifySsrcs(cricket::SessionDescription* desc) {
   for (ContentInfo& content : desc->contents()) {
-    MediaContentDescription* media_desc =
-        static_cast<MediaContentDescription*>(content.description);
-    for (cricket::StreamParams& stream : media_desc->mutable_streams()) {
+    for (cricket::StreamParams& stream :
+         content.media_description()->mutable_streams()) {
       for (uint32_t& ssrc : stream.ssrcs) {
         ssrc = rtc::CreateRandomId();
       }
@@ -2735,10 +2732,9 @@ TEST_F(PeerConnectionIntegrationTest, SctpDataChannelToAudioVideoUpgrade) {
 }
 
 static void MakeSpecCompliantSctpOffer(cricket::SessionDescription* desc) {
-  const ContentInfo* dc_offer = GetFirstDataContent(desc);
-  ASSERT_NE(nullptr, dc_offer);
   cricket::DataContentDescription* dcd_offer =
-      static_cast<cricket::DataContentDescription*>(dc_offer->description);
+      GetFirstDataContentDescription(desc);
+  ASSERT_TRUE(dcd_offer);
   dcd_offer->set_use_sctpmap(false);
   dcd_offer->set_protocol("UDP/DTLS/SCTP");
 }

@@ -370,8 +370,7 @@ bool GetFirstSsrc(const cricket::ContentInfo* content_info, int* ssrc) {
     return false;
   }
   const cricket::MediaContentDescription* media_desc =
-      static_cast<const cricket::MediaContentDescription*>(
-          content_info->description);
+      content_info->media_description();
   if (!media_desc || media_desc->streams().empty()) {
     return false;
   }
@@ -1064,11 +1063,8 @@ class PeerConnectionInterfaceTest : public testing::Test {
 
   const std::string& GetFirstAudioStreamCname(
       const SessionDescriptionInterface* desc) {
-    const cricket::ContentInfo* audio_content =
-        cricket::GetFirstAudioContent(desc->description());
     const cricket::AudioContentDescription* audio_desc =
-        static_cast<const cricket::AudioContentDescription*>(
-            audio_content->description);
+        cricket::GetFirstAudioContentDescription(desc->description());
     return audio_desc->streams()[0].cname;
   }
 
@@ -1110,14 +1106,13 @@ class PeerConnectionInterfaceTest : public testing::Test {
   }
 
   bool HasCNCodecs(const cricket::ContentInfo* content) {
-    const cricket::ContentDescription* description = content->description;
-    RTC_DCHECK(description);
-    const cricket::AudioContentDescription* audio_content_desc =
-        static_cast<const cricket::AudioContentDescription*>(description);
-    RTC_DCHECK(audio_content_desc);
-    for (size_t i = 0; i < audio_content_desc->codecs().size(); ++i) {
-      if (audio_content_desc->codecs()[i].name == "CN")
+    RTC_DCHECK(content);
+    RTC_DCHECK(content->media_description());
+    for (const cricket::AudioCodec& codec :
+         content->media_description()->as_audio()->codecs()) {
+      if (codec.name == "CN") {
         return true;
+      }
     }
     return false;
   }
@@ -1363,19 +1358,13 @@ TEST_F(PeerConnectionInterfaceTest, AddedStreamsPresentInOffer) {
   std::unique_ptr<SessionDescriptionInterface> offer;
   ASSERT_TRUE(DoCreateOffer(&offer, nullptr));
 
-  const cricket::ContentInfo* audio_content =
-      cricket::GetFirstAudioContent(offer->description());
   const cricket::AudioContentDescription* audio_desc =
-      static_cast<const cricket::AudioContentDescription*>(
-          audio_content->description);
+      cricket::GetFirstAudioContentDescription(offer->description());
   EXPECT_TRUE(
       ContainsTrack(audio_desc->streams(), kStreamLabel1, "audio_track"));
 
-  const cricket::ContentInfo* video_content =
-      cricket::GetFirstVideoContent(offer->description());
   const cricket::VideoContentDescription* video_desc =
-      static_cast<const cricket::VideoContentDescription*>(
-          video_content->description);
+      cricket::GetFirstVideoContentDescription(offer->description());
   EXPECT_TRUE(
       ContainsTrack(video_desc->streams(), kStreamLabel1, "video_track"));
 
@@ -1384,17 +1373,13 @@ TEST_F(PeerConnectionInterfaceTest, AddedStreamsPresentInOffer) {
   AddAudioVideoStream(kStreamLabel2, "audio_track2", "video_track2");
   ASSERT_TRUE(DoCreateOffer(&offer, nullptr));
 
-  audio_content = cricket::GetFirstAudioContent(offer->description());
-  audio_desc = static_cast<const cricket::AudioContentDescription*>(
-      audio_content->description);
+  audio_desc = cricket::GetFirstAudioContentDescription(offer->description());
   EXPECT_TRUE(
       ContainsTrack(audio_desc->streams(), kStreamLabel1, "audio_track"));
   EXPECT_TRUE(
       ContainsTrack(audio_desc->streams(), kStreamLabel2, "audio_track2"));
 
-  video_content = cricket::GetFirstVideoContent(offer->description());
-  video_desc = static_cast<const cricket::VideoContentDescription*>(
-      video_content->description);
+  video_desc = cricket::GetFirstVideoContentDescription(offer->description());
   EXPECT_TRUE(
       ContainsTrack(video_desc->streams(), kStreamLabel1, "video_track"));
   EXPECT_TRUE(
@@ -1444,19 +1429,13 @@ TEST_F(PeerConnectionInterfaceTest, AddTrackRemoveTrack) {
 
   const cricket::ContentInfo* audio_content =
       cricket::GetFirstAudioContent(offer->description());
-  const cricket::AudioContentDescription* audio_desc =
-      static_cast<const cricket::AudioContentDescription*>(
-          audio_content->description);
-  EXPECT_TRUE(
-      ContainsTrack(audio_desc->streams(), kStreamLabel1, "audio_track"));
+  EXPECT_TRUE(ContainsTrack(audio_content->media_description()->streams(),
+                            kStreamLabel1, "audio_track"));
 
   const cricket::ContentInfo* video_content =
       cricket::GetFirstVideoContent(offer->description());
-  const cricket::VideoContentDescription* video_desc =
-      static_cast<const cricket::VideoContentDescription*>(
-          video_content->description);
-  EXPECT_TRUE(
-      ContainsTrack(video_desc->streams(), kStreamLabel1, "video_track"));
+  EXPECT_TRUE(ContainsTrack(video_content->media_description()->streams(),
+                            kStreamLabel1, "video_track"));
 
   EXPECT_TRUE(DoSetLocalDescription(std::move(offer)));
 
@@ -1468,16 +1447,12 @@ TEST_F(PeerConnectionInterfaceTest, AddTrackRemoveTrack) {
   ASSERT_TRUE(DoCreateOffer(&offer, nullptr));
 
   audio_content = cricket::GetFirstAudioContent(offer->description());
-  audio_desc = static_cast<const cricket::AudioContentDescription*>(
-      audio_content->description);
-  EXPECT_FALSE(
-      ContainsTrack(audio_desc->streams(), kStreamLabel1, "audio_track"));
+  EXPECT_FALSE(ContainsTrack(audio_content->media_description()->streams(),
+                             kStreamLabel1, "audio_track"));
 
   video_content = cricket::GetFirstVideoContent(offer->description());
-  video_desc = static_cast<const cricket::VideoContentDescription*>(
-      video_content->description);
-  EXPECT_FALSE(
-      ContainsTrack(video_desc->streams(), kStreamLabel1, "video_track"));
+  EXPECT_FALSE(ContainsTrack(video_content->media_description()->streams(),
+                             kStreamLabel1, "video_track"));
 
   EXPECT_TRUE(DoSetLocalDescription(std::move(offer)));
 
@@ -2190,17 +2165,13 @@ TEST_F(PeerConnectionInterfaceTest, CreateSubsequentRecvOnlyOffer) {
 
   const cricket::ContentInfo* video_content =
       cricket::GetFirstVideoContent(offer->description());
-  const cricket::VideoContentDescription* video_desc =
-      static_cast<const cricket::VideoContentDescription*>(
-          video_content->description);
-  ASSERT_EQ(RtpTransceiverDirection::kRecvOnly, video_desc->direction());
+  ASSERT_EQ(RtpTransceiverDirection::kRecvOnly,
+            video_content->media_description()->direction());
 
   const cricket::ContentInfo* audio_content =
       cricket::GetFirstAudioContent(offer->description());
-  const cricket::AudioContentDescription* audio_desc =
-      static_cast<const cricket::AudioContentDescription*>(
-          audio_content->description);
-  ASSERT_EQ(RtpTransceiverDirection::kRecvOnly, audio_desc->direction());
+  ASSERT_EQ(RtpTransceiverDirection::kRecvOnly,
+            audio_content->media_description()->direction());
 }
 
 // Test that if we're receiving (but not sending) a track, and the
@@ -2227,17 +2198,13 @@ TEST_F(PeerConnectionInterfaceTest, CreateSubsequentInactiveOffer) {
 
   const cricket::ContentInfo* video_content =
       cricket::GetFirstVideoContent(offer->description());
-  const cricket::VideoContentDescription* video_desc =
-      static_cast<const cricket::VideoContentDescription*>(
-          video_content->description);
-  ASSERT_EQ(RtpTransceiverDirection::kInactive, video_desc->direction());
+  ASSERT_EQ(RtpTransceiverDirection::kInactive,
+            video_content->media_description()->direction());
 
   const cricket::ContentInfo* audio_content =
       cricket::GetFirstAudioContent(offer->description());
-  const cricket::AudioContentDescription* audio_desc =
-      static_cast<const cricket::AudioContentDescription*>(
-          audio_content->description);
-  ASSERT_EQ(RtpTransceiverDirection::kInactive, audio_desc->direction());
+  ASSERT_EQ(RtpTransceiverDirection::kInactive,
+            audio_content->media_description()->direction());
 }
 
 // Test that we can use SetConfiguration to change the ICE servers of the

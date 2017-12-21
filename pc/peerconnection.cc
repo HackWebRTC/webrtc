@@ -334,11 +334,9 @@ bool MediaSectionsInSameOrder(const SessionDescription* existing_desc,
       return false;
     }
     const MediaContentDescription* new_desc_mdesc =
-        static_cast<const MediaContentDescription*>(
-            new_desc->contents()[i].description);
+        new_desc->contents()[i].media_description();
     const MediaContentDescription* existing_desc_mdesc =
-        static_cast<const MediaContentDescription*>(
-            existing_desc->contents()[i].description);
+        existing_desc->contents()[i].media_description();
     if (new_desc_mdesc->type() != existing_desc_mdesc->type()) {
       return false;
     }
@@ -378,8 +376,7 @@ RTCError VerifyCrypto(const SessionDescription* desc, bool dtls_enabled) {
 
     // If the content isn't rejected or bundled into another m= section, crypto
     // must be present.
-    const MediaContentDescription* media =
-        static_cast<const MediaContentDescription*>(content_info.description);
+    const MediaContentDescription* media = content_info.media_description();
     const TransportInfo* tinfo = desc->GetTransportInfoByName(mid);
     if (!media || !tinfo) {
       // Something is not right.
@@ -445,30 +442,20 @@ bool GetTrackIdBySsrc(const SessionDescription* session_description,
                       std::string* track_id) {
   RTC_DCHECK(track_id != NULL);
 
-  const cricket::ContentInfo* audio_info =
-      cricket::GetFirstAudioContent(session_description);
-  if (audio_info) {
-    const cricket::MediaContentDescription* audio_content =
-        static_cast<const cricket::MediaContentDescription*>(
-            audio_info->description);
-
-    const auto* found =
-        cricket::GetStreamBySsrc(audio_content->streams(), ssrc);
+  const cricket::AudioContentDescription* audio_desc =
+      cricket::GetFirstAudioContentDescription(session_description);
+  if (audio_desc) {
+    const auto* found = cricket::GetStreamBySsrc(audio_desc->streams(), ssrc);
     if (found) {
       *track_id = found->id;
       return true;
     }
   }
 
-  const cricket::ContentInfo* video_info =
-      cricket::GetFirstVideoContent(session_description);
-  if (video_info) {
-    const cricket::MediaContentDescription* video_content =
-        static_cast<const cricket::MediaContentDescription*>(
-            video_info->description);
-
-    const auto* found =
-        cricket::GetStreamBySsrc(video_content->streams(), ssrc);
+  const cricket::VideoContentDescription* video_desc =
+      cricket::GetFirstVideoContentDescription(session_description);
+  if (video_desc) {
+    const auto* found = cricket::GetStreamBySsrc(video_desc->streams(), ssrc);
     if (found) {
       *track_id = found->id;
       return true;
@@ -480,18 +467,16 @@ bool GetTrackIdBySsrc(const SessionDescription* session_description,
 // Get the SCTP port out of a SessionDescription.
 // Return -1 if not found.
 int GetSctpPort(const SessionDescription* session_description) {
-  const ContentInfo* content_info = GetFirstDataContent(session_description);
-  RTC_DCHECK(content_info);
-  if (!content_info) {
+  const cricket::DataContentDescription* data_desc =
+      GetFirstDataContentDescription(session_description);
+  RTC_DCHECK(data_desc);
+  if (!data_desc) {
     return -1;
   }
-  const cricket::DataContentDescription* data =
-      static_cast<const cricket::DataContentDescription*>(
-          (content_info->description));
   std::string value;
   cricket::DataCodec match_pattern(cricket::kGoogleSctpDataCodecPlType,
                                    cricket::kGoogleSctpDataCodecName);
-  for (const cricket::DataCodec& codec : data->codecs()) {
+  for (const cricket::DataCodec& codec : data_desc->codecs()) {
     if (!codec.Matches(match_pattern)) {
       continue;
     }
@@ -1706,8 +1691,7 @@ RTCError PeerConnection::ApplyLocalDescription(
       RemoveSenders(cricket::MEDIA_TYPE_AUDIO);
     } else {
       const cricket::AudioContentDescription* audio_desc =
-          static_cast<const cricket::AudioContentDescription*>(
-              audio_content->description);
+          audio_content->media_description()->as_audio();
       UpdateLocalSenders(audio_desc->streams(), audio_desc->type());
     }
   }
@@ -1719,8 +1703,7 @@ RTCError PeerConnection::ApplyLocalDescription(
       RemoveSenders(cricket::MEDIA_TYPE_VIDEO);
     } else {
       const cricket::VideoContentDescription* video_desc =
-          static_cast<const cricket::VideoContentDescription*>(
-              video_content->description);
+          video_content->media_description()->as_video();
       UpdateLocalSenders(video_desc->streams(), video_desc->type());
     }
   }
@@ -1729,8 +1712,7 @@ RTCError PeerConnection::ApplyLocalDescription(
       GetFirstDataContent(local_description()->description());
   if (data_content) {
     const cricket::DataContentDescription* data_desc =
-        static_cast<const cricket::DataContentDescription*>(
-            data_content->description);
+        data_content->media_description()->as_data();
     if (rtc::starts_with(data_desc->protocol().data(),
                          cricket::kMediaProtocolRtpPrefix)) {
       UpdateLocalRtpDataChannels(data_desc->streams());
@@ -3712,7 +3694,7 @@ RTCError PeerConnection::PushdownMediaDescription(
       continue;
     }
     const MediaContentDescription* content_desc =
-        static_cast<const MediaContentDescription*>(content_info->description);
+        content_info->media_description();
     if (!content_desc) {
       continue;
     }
@@ -3732,8 +3714,7 @@ RTCError PeerConnection::PushdownMediaDescription(
         cricket::GetFirstDataContent(sdesc->description());
     if (data_content && !data_content->rejected) {
       const MediaContentDescription* data_desc =
-          static_cast<const MediaContentDescription*>(
-              data_content->description);
+          data_content->media_description();
       if (data_desc) {
         std::string error;
         bool success =
@@ -4679,9 +4660,7 @@ bool PeerConnection::ValidateBundleSettings(const SessionDescription* desc) {
 }
 
 bool PeerConnection::HasRtcpMuxEnabled(const cricket::ContentInfo* content) {
-  const cricket::MediaContentDescription* description =
-      static_cast<cricket::MediaContentDescription*>(content->description);
-  return description->rtcp_mux();
+  return content->media_description()->rtcp_mux();
 }
 
 RTCError PeerConnection::ValidateSessionDescription(

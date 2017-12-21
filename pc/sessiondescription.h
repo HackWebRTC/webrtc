@@ -248,7 +248,7 @@ class AudioContentDescription : public MediaContentDescriptionImpl<AudioCodec> {
  public:
   AudioContentDescription() {}
 
-  virtual ContentDescription* Copy() const {
+  virtual AudioContentDescription* Copy() const {
     return new AudioContentDescription(*this);
   }
   virtual MediaType type() const { return MEDIA_TYPE_AUDIO; }
@@ -258,7 +258,7 @@ class AudioContentDescription : public MediaContentDescriptionImpl<AudioCodec> {
 
 class VideoContentDescription : public MediaContentDescriptionImpl<VideoCodec> {
  public:
-  virtual ContentDescription* Copy() const {
+  virtual VideoContentDescription* Copy() const {
     return new VideoContentDescription(*this);
   }
   virtual MediaType type() const { return MEDIA_TYPE_VIDEO; }
@@ -270,7 +270,7 @@ class DataContentDescription : public MediaContentDescriptionImpl<DataCodec> {
  public:
   DataContentDescription() {}
 
-  virtual ContentDescription* Copy() const {
+  virtual DataContentDescription* Copy() const {
     return new DataContentDescription(*this);
   }
   virtual MediaType type() const { return MEDIA_TYPE_DATA; }
@@ -300,6 +300,8 @@ constexpr MediaProtocolType NS_JINGLE_DRAFT_SCTP = MediaProtocolType::kSctp;
 // Represents a session description section. Most information about the section
 // is stored in the description, which is a subclass of MediaContentDescription.
 struct ContentInfo {
+  friend class SessionDescription;
+
   explicit ContentInfo(MediaProtocolType type) : type(type) {}
 
   // Alias for |name|.
@@ -320,7 +322,7 @@ struct ContentInfo {
   MediaProtocolType type;
   bool rejected = false;
   bool bundle_only = false;
-  ContentDescription* description = nullptr;
+  MediaContentDescription* description = nullptr;
 };
 
 typedef std::vector<std::string> ContentNames;
@@ -379,9 +381,9 @@ class SessionDescription {
   ContentInfos& contents() { return contents_; }
   const ContentInfo* GetContentByName(const std::string& name) const;
   ContentInfo* GetContentByName(const std::string& name);
-  const ContentDescription* GetContentDescriptionByName(
+  const MediaContentDescription* GetContentDescriptionByName(
       const std::string& name) const;
-  ContentDescription* GetContentDescriptionByName(const std::string& name);
+  MediaContentDescription* GetContentDescriptionByName(const std::string& name);
   const ContentInfo* FirstContentByType(MediaProtocolType type) const;
   const ContentInfo* FirstContent() const;
 
@@ -389,16 +391,16 @@ class SessionDescription {
   // Adds a content to this description. Takes ownership of ContentDescription*.
   void AddContent(const std::string& name,
                   MediaProtocolType type,
-                  ContentDescription* description);
+                  MediaContentDescription* description);
   void AddContent(const std::string& name,
                   MediaProtocolType type,
                   bool rejected,
-                  ContentDescription* description);
+                  MediaContentDescription* description);
   void AddContent(const std::string& name,
                   MediaProtocolType type,
                   bool rejected,
                   bool bundle_only,
-                  ContentDescription* description);
+                  MediaContentDescription* description);
   bool RemoveContentByName(const std::string& name);
 
   // Transport accessors.
@@ -444,8 +446,8 @@ class SessionDescription {
   bool msid_supported_ = true;
 };
 
-// Indicates whether a ContentDescription was sent by the local client
-// or received from the remote client.
+// Indicates whether a session description was sent by the local client or
+// received from the remote client.
 enum ContentSource { CS_LOCAL, CS_REMOTE };
 
 }  // namespace cricket

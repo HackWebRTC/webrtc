@@ -119,33 +119,25 @@ SdpContentPredicate HaveDtlsFingerprint() {
 SdpContentPredicate HaveSdesCryptos() {
   return [](const cricket::ContentInfo* content,
             const cricket::TransportInfo* transport) {
-    const auto* media_desc =
-        static_cast<const cricket::MediaContentDescription*>(
-            content->description);
-    return !media_desc->cryptos().empty();
+    return !content->media_description()->cryptos().empty();
   };
 }
 
 SdpContentPredicate HaveProtocol(const std::string& protocol) {
   return [protocol](const cricket::ContentInfo* content,
                     const cricket::TransportInfo* transport) {
-    const auto* media_desc =
-        static_cast<const cricket::MediaContentDescription*>(
-            content->description);
-    return media_desc->protocol() == protocol;
+    return content->media_description()->protocol() == protocol;
   };
 }
 
 SdpContentPredicate HaveSdesGcmCryptos(size_t num_crypto_suites) {
   return [num_crypto_suites](const cricket::ContentInfo* content,
                              const cricket::TransportInfo* transport) {
-    const auto* media_desc =
-        static_cast<const cricket::MediaContentDescription*>(
-            content->description);
-    if (media_desc->cryptos().size() != num_crypto_suites) {
+    const auto& cryptos = content->media_description()->cryptos();
+    if (cryptos.size() != num_crypto_suites) {
       return false;
     }
-    const cricket::CryptoParams first_params = media_desc->cryptos()[0];
+    const cricket::CryptoParams first_params = cryptos[0];
     return first_params.key_params.size() == 67U &&
            first_params.cipher_suite == "AEAD_AES_256_GCM";
   };
@@ -153,9 +145,7 @@ SdpContentPredicate HaveSdesGcmCryptos(size_t num_crypto_suites) {
 
 SdpContentMutator RemoveSdesCryptos() {
   return [](cricket::ContentInfo* content, cricket::TransportInfo* transport) {
-    auto* media_desc =
-        static_cast<cricket::MediaContentDescription*>(content->description);
-    media_desc->set_cryptos({});
+    content->media_description()->set_cryptos({});
   };
 }
 

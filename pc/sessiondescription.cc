@@ -127,24 +127,24 @@ ContentInfo* SessionDescription::GetContentByName(const std::string& name) {
   return FindContentInfoByName(&contents_, name);
 }
 
-const ContentDescription* SessionDescription::GetContentDescriptionByName(
+const MediaContentDescription* SessionDescription::GetContentDescriptionByName(
     const std::string& name) const {
   const ContentInfo* cinfo = FindContentInfoByName(contents_, name);
   if (cinfo == NULL) {
     return NULL;
   }
 
-  return cinfo->description;
+  return cinfo->media_description();
 }
 
-ContentDescription* SessionDescription::GetContentDescriptionByName(
+MediaContentDescription* SessionDescription::GetContentDescriptionByName(
     const std::string& name) {
   ContentInfo* cinfo = FindContentInfoByName(&contents_, name);
   if (cinfo == NULL) {
     return NULL;
   }
 
-  return cinfo->description;
+  return cinfo->media_description();
 }
 
 const ContentInfo* SessionDescription::FirstContentByType(
@@ -158,7 +158,7 @@ const ContentInfo* SessionDescription::FirstContent() const {
 
 void SessionDescription::AddContent(const std::string& name,
                                     MediaProtocolType type,
-                                    ContentDescription* description) {
+                                    MediaContentDescription* description) {
   ContentInfo content(type);
   content.name = name;
   content.description = description;
@@ -168,7 +168,7 @@ void SessionDescription::AddContent(const std::string& name,
 void SessionDescription::AddContent(const std::string& name,
                                     MediaProtocolType type,
                                     bool rejected,
-                                    ContentDescription* description) {
+                                    MediaContentDescription* description) {
   ContentInfo content(type);
   content.name = name;
   content.rejected = rejected;
@@ -180,7 +180,7 @@ void SessionDescription::AddContent(const std::string& name,
                                     MediaProtocolType type,
                                     bool rejected,
                                     bool bundle_only,
-                                    ContentDescription* description) {
+                                    MediaContentDescription* description) {
   ContentInfo content(type);
   content.name = name;
   content.rejected = rejected;

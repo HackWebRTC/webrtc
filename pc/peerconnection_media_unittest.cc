@@ -633,7 +633,7 @@ void ChangeMediaTypeAudioToVideo(cricket::SessionDescription* desc) {
   desc->RemoveContentByName(cricket::CN_AUDIO);
   auto* video_content = desc->GetContentByName(cricket::CN_VIDEO);
   desc->AddContent(cricket::CN_AUDIO, video_content->type,
-                   video_content->description->Copy());
+                   video_content->media_description()->Copy());
 }
 
 constexpr char kMLinesOutOfOrder[] =

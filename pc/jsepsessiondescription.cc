@@ -54,7 +54,7 @@ int GetCandidatePreferenceFromType(const std::string& type) {
 // candidates.
 void UpdateConnectionAddress(
     const JsepCandidateCollection& candidate_collection,
-    cricket::ContentDescription* content_description) {
+    cricket::MediaContentDescription* media_desc) {
   int port = kDummyPort;
   std::string ip = kDummyAddress;
   int current_preference = kPreferenceUnknown;
@@ -88,8 +88,7 @@ void UpdateConnectionAddress(
   rtc::SocketAddress connection_addr;
   connection_addr.SetIP(ip);
   connection_addr.SetPort(port);
-  static_cast<cricket::MediaContentDescription*>(content_description)
-      ->set_connection_address(connection_addr);
+  media_desc->set_connection_address(connection_addr);
 }
 
 }  // namespace
@@ -234,7 +233,7 @@ bool JsepSessionDescription::AddCandidate(
         updated_candidate_wrapper.release());
     UpdateConnectionAddress(
         candidate_collection_[mediasection_index],
-        description_->contents()[mediasection_index].description);
+        description_->contents()[mediasection_index].media_description());
   }
 
   return true;
@@ -252,7 +251,7 @@ size_t JsepSessionDescription::RemoveCandidates(
     num_removed += candidate_collection_[mediasection_index].remove(candidate);
     UpdateConnectionAddress(
         candidate_collection_[mediasection_index],
-        description_->contents()[mediasection_index].description);
+        description_->contents()[mediasection_index].media_description());
   }
   return num_removed;
 }

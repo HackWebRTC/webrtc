@@ -382,8 +382,8 @@ TEST_F(JsepSessionDescriptionTest, RemoveCandidateAndSetConnectionAddress) {
   JsepIceCandidate jice3("audio", 0, candidate3);
 
   size_t audio_index = 0;
-  auto media_desc = static_cast<cricket::MediaContentDescription*>(
-      jsep_desc_->description()->contents()[audio_index].description);
+  auto media_desc =
+      jsep_desc_->description()->contents()[audio_index].media_description();
 
   ASSERT_TRUE(jsep_desc_->AddCandidate(&jice1));
   ASSERT_TRUE(jsep_desc_->AddCandidate(&jice2));
