@@ -211,6 +211,30 @@ if (rtc_include_tests) {
     }
   }
 
+  rtc_executable("sv_loopback") {
+    testonly = true
+    sources = [
+      "sv_loopback.cc",
+    ]
+    deps = [
+      ":video_quality_test",
+      "../rtc_base:rtc_base_approved",
+      "../system_wrappers:metrics_default",
+      "../test:field_trial",
+      "../test:run_test",
+      "../test:run_test_interface",
+      "../test:test_common",
+      "../test:test_renderer",
+      "../test:test_support",
+      "//testing/gmock",
+      "//testing/gtest",
+    ]
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+
   rtc_executable("video_replay") {
     testonly = true
     sources = [

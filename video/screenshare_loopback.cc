@@ -273,24 +273,24 @@ void Loopback() {
 
   VideoQualityTest::Params params;
   params.call = {flags::FLAG_send_side_bwe, call_bitrate_config};
-  params.video = {true,
-                  flags::Width(),
-                  flags::Height(),
-                  flags::Fps(),
-                  flags::MinBitrateKbps() * 1000,
-                  flags::TargetBitrateKbps() * 1000,
-                  flags::MaxBitrateKbps() * 1000,
-                  false,
-                  flags::Codec(),
-                  flags::NumTemporalLayers(),
-                  flags::SelectedTL(),
-                  flags::MinTransmitBitrateKbps() * 1000,
-                  false,  // ULPFEC disabled.
-                  false,  // FlexFEC disabled.
-                  ""};
-  params.screenshare = {true, flags::GenerateSlides(),
-                        flags::SlideChangeInterval(),
-                        flags::ScrollDuration(), flags::Slides()};
+  params.video[0] = {true,
+                     flags::Width(),
+                     flags::Height(),
+                     flags::Fps(),
+                     flags::MinBitrateKbps() * 1000,
+                     flags::TargetBitrateKbps() * 1000,
+                     flags::MaxBitrateKbps() * 1000,
+                     false,
+                     flags::Codec(),
+                     flags::NumTemporalLayers(),
+                     flags::SelectedTL(),
+                     flags::MinTransmitBitrateKbps() * 1000,
+                     false,  // ULPFEC disabled.
+                     false,  // FlexFEC disabled.
+                     ""};
+  params.screenshare[0] = {true, flags::GenerateSlides(),
+                           flags::SlideChangeInterval(),
+                           flags::ScrollDuration(), flags::Slides()};
   params.analyzer = {"screenshare", 0.0, 0.0, flags::DurationSecs(),
       flags::OutputFilename(), flags::GraphTitle()};
   params.pipe = pipe_config;
@@ -299,7 +299,7 @@ void Loopback() {
 
   if (flags::NumStreams() > 1 && flags::Stream0().empty() &&
       flags::Stream1().empty()) {
-    params.ss.infer_streams = true;
+    params.ss[0].infer_streams = true;
   }
 
   std::vector<std::string> stream_descriptors;
@@ -309,8 +309,9 @@ void Loopback() {
   SL_descriptors.push_back(flags::SL0());
   SL_descriptors.push_back(flags::SL1());
   VideoQualityTest::FillScalabilitySettings(
-      &params, stream_descriptors, flags::NumStreams(), flags::SelectedStream(),
-      flags::NumSpatialLayers(), flags::SelectedSL(), SL_descriptors);
+      &params, 0, stream_descriptors, flags::NumStreams(),
+      flags::SelectedStream(), flags::NumSpatialLayers(), flags::SelectedSL(),
+      SL_descriptors);
 
   VideoQualityTest test;
   if (flags::DurationSecs()) {

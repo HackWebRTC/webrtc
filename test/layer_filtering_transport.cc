@@ -28,13 +28,54 @@ LayerFilteringTransport::LayerFilteringTransport(
     uint8_t vp9_video_payload_type,
     int selected_tl,
     int selected_sl,
+    const std::map<uint8_t, MediaType>& payload_type_map,
+    uint32_t ssrc_to_filter_min,
+    uint32_t ssrc_to_filter_max)
+    : DirectTransport(task_queue, config, send_call, payload_type_map),
+      vp8_video_payload_type_(vp8_video_payload_type),
+      vp9_video_payload_type_(vp9_video_payload_type),
+      selected_tl_(selected_tl),
+      selected_sl_(selected_sl),
+      discarded_last_packet_(false),
+      ssrc_to_filter_min_(ssrc_to_filter_min),
+      ssrc_to_filter_max_(ssrc_to_filter_max) {}
+
+LayerFilteringTransport::LayerFilteringTransport(
+    SingleThreadedTaskQueueForTesting* task_queue,
+    std::unique_ptr<FakeNetworkPipe> pipe,
+    Call* send_call,
+    uint8_t vp8_video_payload_type,
+    uint8_t vp9_video_payload_type,
+    int selected_tl,
+    int selected_sl,
+    uint32_t ssrc_to_filter_min,
+    uint32_t ssrc_to_filter_max)
+    : DirectTransport(task_queue, std::move(pipe), send_call),
+      vp8_video_payload_type_(vp8_video_payload_type),
+      vp9_video_payload_type_(vp9_video_payload_type),
+      selected_tl_(selected_tl),
+      selected_sl_(selected_sl),
+      discarded_last_packet_(false),
+      ssrc_to_filter_min_(ssrc_to_filter_min),
+      ssrc_to_filter_max_(ssrc_to_filter_max) {}
+
+LayerFilteringTransport::LayerFilteringTransport(
+    SingleThreadedTaskQueueForTesting* task_queue,
+    const FakeNetworkPipe::Config& config,
+    Call* send_call,
+    uint8_t vp8_video_payload_type,
+    uint8_t vp9_video_payload_type,
+    int selected_tl,
+    int selected_sl,
     const std::map<uint8_t, MediaType>& payload_type_map)
     : DirectTransport(task_queue, config, send_call, payload_type_map),
       vp8_video_payload_type_(vp8_video_payload_type),
       vp9_video_payload_type_(vp9_video_payload_type),
       selected_tl_(selected_tl),
       selected_sl_(selected_sl),
-      discarded_last_packet_(false) {}
+      discarded_last_packet_(false),
+      ssrc_to_filter_min_(0),
+      ssrc_to_filter_max_(0xFFFFFFFF) {}
 
 LayerFilteringTransport::LayerFilteringTransport(
     SingleThreadedTaskQueueForTesting* task_queue,
@@ -49,7 +90,9 @@ LayerFilteringTransport::LayerFilteringTransport(
       vp9_video_payload_type_(vp9_video_payload_type),
       selected_tl_(selected_tl),
       selected_sl_(selected_sl),
-      discarded_last_packet_(false) {}
+      discarded_last_packet_(false),
+      ssrc_to_filter_min_(0),
+      ssrc_to_filter_max_(0xFFFFFFFF) {}
 
 bool LayerFilteringTransport::DiscardedLastPacket() const {
   return discarded_last_packet_;
@@ -67,6 +110,11 @@ bool LayerFilteringTransport::SendRtp(const uint8_t* packet,
   RtpUtility::RtpHeaderParser parser(packet, length);
   RTPHeader header;
   parser.Parse(&header);
+
+  if (header.ssrc < ssrc_to_filter_min_ || header.ssrc > ssrc_to_filter_max_) {
+    // Nothing to change, forward the packet immediately.
+    return test::DirectTransport::SendRtp(packet, length, options);
+  }
 
   RTC_DCHECK_LE(length, IP_PACKET_SIZE);
   uint8_t temp_buffer[IP_PACKET_SIZE];

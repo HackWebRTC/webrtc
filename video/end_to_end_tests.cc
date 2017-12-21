@@ -3413,7 +3413,8 @@ TEST_P(EndToEndTest, GetStats) {
       RTC_DCHECK(send_stream_);
       VideoSendStream::Stats stats = send_stream_->GetStats();
 
-      size_t expected_num_streams = kNumSsrcs + expected_send_ssrcs_.size();
+      size_t expected_num_streams =
+          kNumSimulcastStreams + expected_send_ssrcs_.size();
       send_stats_filled_["NumStreams"] |=
           stats.substreams.size() == expected_num_streams;
 
@@ -3563,7 +3564,7 @@ TEST_P(EndToEndTest, GetStats) {
             kFakeVideoSendPayloadType;
       }
 
-      for (size_t i = 0; i < kNumSsrcs; ++i)
+      for (size_t i = 0; i < kNumSimulcastStreams; ++i)
         send_config->rtp.rtx.ssrcs.push_back(kSendRtxSsrcs[i]);
 
       // Use a delayed encoder to make sure we see CpuOveruseMetrics stats that
@@ -3571,7 +3572,7 @@ TEST_P(EndToEndTest, GetStats) {
       send_config->encoder_settings.encoder = &encoder_;
     }
 
-    size_t GetNumVideoStreams() const override { return kNumSsrcs; }
+    size_t GetNumVideoStreams() const override { return kNumSimulcastStreams; }
 
     void OnVideoStreamsCreated(
         VideoSendStream* send_stream,
@@ -3910,21 +3911,22 @@ TEST_P(EndToEndTest, SendsSetSsrc) {
 }
 
 TEST_P(EndToEndTest, SendsSetSimulcastSsrcs) {
-  TestSendsSetSsrcs(kNumSsrcs, false);
+  TestSendsSetSsrcs(kNumSimulcastStreams, false);
 }
 
 TEST_P(EndToEndTest, CanSwitchToUseAllSsrcs) {
-  TestSendsSetSsrcs(kNumSsrcs, true);
+  TestSendsSetSsrcs(kNumSimulcastStreams, true);
 }
 
 TEST_P(EndToEndTest, DISABLED_RedundantPayloadsTransmittedOnAllSsrcs) {
   class ObserveRedundantPayloads: public test::EndToEndTest {
    public:
     ObserveRedundantPayloads()
-        : EndToEndTest(kDefaultTimeoutMs), ssrcs_to_observe_(kNumSsrcs) {
-          for (size_t i = 0; i < kNumSsrcs; ++i) {
-            registered_rtx_ssrc_[kSendRtxSsrcs[i]] = true;
-          }
+        : EndToEndTest(kDefaultTimeoutMs),
+          ssrcs_to_observe_(kNumSimulcastStreams) {
+      for (size_t i = 0; i < kNumSimulcastStreams; ++i) {
+        registered_rtx_ssrc_[kSendRtxSsrcs[i]] = true;
+      }
         }
 
    private:
@@ -3951,7 +3953,7 @@ TEST_P(EndToEndTest, DISABLED_RedundantPayloadsTransmittedOnAllSsrcs) {
       return SEND_PACKET;
     }
 
-    size_t GetNumVideoStreams() const override { return kNumSsrcs; }
+    size_t GetNumVideoStreams() const override { return kNumSimulcastStreams; }
 
     // This test use other VideoStream settings than the the default settings
     // implemented in DefaultVideoStreamFactory. Therefore  this test implement
@@ -3988,7 +3990,7 @@ TEST_P(EndToEndTest, DISABLED_RedundantPayloadsTransmittedOnAllSsrcs) {
           new rtc::RefCountedObject<VideoStreamFactory>();
       send_config->rtp.rtx.payload_type = kSendRtxPayloadType;
 
-      for (size_t i = 0; i < kNumSsrcs; ++i)
+      for (size_t i = 0; i < kNumSimulcastStreams; ++i)
         send_config->rtp.rtx.ssrcs.push_back(kSendRtxSsrcs[i]);
 
       // Significantly higher than max bitrates for all video streams -> forcing
@@ -4053,8 +4055,8 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx,
    public:
     explicit RtpSequenceObserver(bool use_rtx)
         : test::RtpRtcpObserver(kDefaultTimeoutMs),
-          ssrcs_to_observe_(kNumSsrcs) {
-      for (size_t i = 0; i < kNumSsrcs; ++i) {
+          ssrcs_to_observe_(kNumSimulcastStreams) {
+      for (size_t i = 0; i < kNumSimulcastStreams; ++i) {
         ssrc_is_rtx_[kVideoSendSsrcs[i]] = false;
         if (use_rtx)
           ssrc_is_rtx_[kSendRtxSsrcs[i]] = true;
@@ -4184,10 +4186,10 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx,
     send_transport->SetReceiver(receiver_call_->Receiver());
     receive_transport->SetReceiver(sender_call_->Receiver());
 
-    CreateSendConfig(kNumSsrcs, 0, 0, send_transport.get());
+    CreateSendConfig(kNumSimulcastStreams, 0, 0, send_transport.get());
 
     if (use_rtx) {
-      for (size_t i = 0; i < kNumSsrcs; ++i) {
+      for (size_t i = 0; i < kNumSimulcastStreams; ++i) {
         video_send_config_.rtp.rtx.ssrcs.push_back(kSendRtxSsrcs[i]);
       }
       video_send_config_.rtp.rtx.payload_type = kSendRtxPayloadType;
@@ -4242,7 +4244,7 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx,
     task_queue_.SendTask([this]() {
       video_send_stream_->ReconfigureVideoEncoder(video_encoder_config_.Copy());
     });
-    observer.ResetExpectedSsrcs(kNumSsrcs);
+    observer.ResetExpectedSsrcs(kNumSimulcastStreams);
     EXPECT_TRUE(observer.Wait())
         << "Timed out waiting for all SSRCs to send packets.";
 
@@ -4257,7 +4259,7 @@ void EndToEndTest::TestRtpStatePreservation(bool use_rtx,
     task_queue_.SendTask([this]() {
       video_send_stream_->ReconfigureVideoEncoder(video_encoder_config_.Copy());
     });
-    observer.ResetExpectedSsrcs(kNumSsrcs);
+    observer.ResetExpectedSsrcs(kNumSimulcastStreams);
     EXPECT_TRUE(observer.Wait())
         << "Timed out waiting for all SSRCs to send packets.";
   }

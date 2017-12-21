@@ -38,7 +38,8 @@ class CallTest : public ::testing::Test {
   CallTest();
   virtual ~CallTest();
 
-  static const size_t kNumSsrcs = 3;
+  static constexpr size_t kNumSsrcs = 6;
+  static const int kNumSimulcastStreams = 3;
   static const int kDefaultWidth = 320;
   static const int kDefaultHeight = 180;
   static const int kDefaultFramerate = 30;
@@ -77,11 +78,22 @@ class CallTest : public ::testing::Test {
   void CreateReceiverCall(const Call::Config& config);
   void DestroyCalls();
 
+  void CreateVideoSendConfig(VideoSendStream::Config* video_config,
+                             size_t num_video_streams,
+                             size_t num_used_ssrcs,
+                             Transport* send_transport);
+  void CreateAudioAndFecSendConfigs(size_t num_audio_streams,
+                                    size_t num_flexfec_streams,
+                                    Transport* send_transport);
   void CreateSendConfig(size_t num_video_streams,
                         size_t num_audio_streams,
                         size_t num_flexfec_streams,
                         Transport* send_transport);
 
+  std::vector<VideoReceiveStream::Config> CreateMatchingVideoReceiveConfigs(
+      const VideoSendStream::Config& video_send_config,
+      Transport* rtcp_send_transport);
+  void CreateMatchingAudioAndFecConfigs(Transport* rtcp_send_transport);
   void CreateMatchingReceiveConfigs(Transport* rtcp_send_transport);
 
   void CreateFrameGeneratorCapturerWithDrift(Clock* drift_clock,

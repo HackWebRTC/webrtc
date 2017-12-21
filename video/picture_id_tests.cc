@@ -317,7 +317,7 @@ void PictureIdTest::SetupEncoder(VideoEncoder* encoder,
         test::PacketTransport::kSender, payload_type_map_,
         FakeNetworkPipe::Config()));
 
-    CreateSendConfig(kNumSsrcs, 0, 0, send_transport_.get());
+    CreateSendConfig(kNumSimulcastStreams, 0, 0, send_transport_.get());
     video_send_config_.encoder_settings.encoder = encoder;
     video_send_config_.encoder_settings.payload_name = payload_name;
     video_encoder_config_.video_stream_factory =
