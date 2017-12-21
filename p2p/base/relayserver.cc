@@ -21,6 +21,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/helpers.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/socketadapters.h"
 
 namespace cricket {
@@ -429,7 +430,8 @@ void RelayServer::HandleStunAllocate(
   response.AddAttribute(std::move(magic_cookie_attr));
 
   RTC_DCHECK_GT(external_sockets_.size(), 0);
-  size_t index = random_.Rand(external_sockets_.size() - 1);
+  size_t index = random_.Rand(rtc::dchecked_cast<uint32_t>(
+      external_sockets_.size() - 1));
   rtc::SocketAddress ext_addr =
       external_sockets_[index]->GetLocalAddress();
 

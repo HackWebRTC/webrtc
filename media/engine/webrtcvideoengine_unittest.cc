@@ -183,7 +183,7 @@ class WebRtcVideoEngineTest : public ::testing::Test {
  protected:
   // Find the index of the codec in the engine with the given name. The codec
   // must be present.
-  int GetEngineCodecIndex(const std::string& name) const;
+  size_t GetEngineCodecIndex(const std::string& name) const;
 
   // Find the codec in the engine with the given name. The codec must be
   // present.
@@ -569,7 +569,8 @@ TEST_F(WebRtcVideoEngineTest, PropagatesInputFrameTimestamp) {
   EXPECT_TRUE(channel->RemoveSendStream(kSsrc));
 }
 
-int WebRtcVideoEngineTest::GetEngineCodecIndex(const std::string& name) const {
+size_t WebRtcVideoEngineTest::GetEngineCodecIndex(
+    const std::string& name) const {
   const std::vector<cricket::VideoCodec> codecs = engine_.codecs();
   for (size_t i = 0; i < codecs.size(); ++i) {
     const cricket::VideoCodec engine_codec = codecs[i];
@@ -812,8 +813,8 @@ TEST_F(WebRtcVideoEngineTest, ReportSupportedExternalCodecs) {
   encoder_factory_->AddSupportedVideoCodecType(kFakeExternalCodecName);
 
   // The external codec should appear after the internal codec in the vector.
-  const int vp8_index = GetEngineCodecIndex("VP8");
-  const int fake_external_codec_index =
+  const size_t vp8_index = GetEngineCodecIndex("VP8");
+  const size_t fake_external_codec_index =
       GetEngineCodecIndex(kFakeExternalCodecName);
   EXPECT_LT(vp8_index, fake_external_codec_index);
 }
@@ -836,8 +837,8 @@ TEST_F(WebRtcVideoEngineTest, ReportSupportedExternalCodecsWithAddedCodec) {
 
   // Check that both fake codecs are present and that the second fake codec
   // appears after the first fake codec.
-  const int fake_codec_index1 = GetEngineCodecIndex(kFakeExternalCodecName1);
-  const int fake_codec_index2 = GetEngineCodecIndex(kFakeExternalCodecName2);
+  const size_t fake_codec_index1 = GetEngineCodecIndex(kFakeExternalCodecName1);
+  const size_t fake_codec_index2 = GetEngineCodecIndex(kFakeExternalCodecName2);
   EXPECT_LT(fake_codec_index1, fake_codec_index2);
 }
 

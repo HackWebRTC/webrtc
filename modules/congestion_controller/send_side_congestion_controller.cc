@@ -22,6 +22,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/format_macros.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/ptr_util.h"
 #include "rtc_base/rate_limiter.h"
 #include "rtc_base/socket.h"
@@ -258,7 +259,7 @@ void SendSideCongestionController::SignalNetworkState(NetworkState state) {
 void SendSideCongestionController::SetTransportOverhead(
     size_t transport_overhead_bytes_per_packet) {
   transport_feedback_adapter_.SetTransportOverhead(
-      transport_overhead_bytes_per_packet);
+      rtc::dchecked_cast<int>(transport_overhead_bytes_per_packet));
 }
 
 void SendSideCongestionController::OnSentPacket(
