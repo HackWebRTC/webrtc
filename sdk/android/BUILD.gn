@@ -562,7 +562,7 @@ template("java8_dist_jar") {
 
     foreach(output_jar, _output_jars) {
       args += [
-        "--inputs",
+        "--jars",
         rebase_path(output_jar, root_build_dir),
       ]
     }

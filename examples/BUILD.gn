@@ -702,6 +702,7 @@ if (is_android) {
     output = "${root_out_dir}/lib.java${_target_dir_name}/${target_name}.jar"
     direct_deps_only = true
     use_interface_jars = false
+    use_unprocessed_jars = true
     requires_android = true
     deps = [
       ":webrtc_unity_java",
