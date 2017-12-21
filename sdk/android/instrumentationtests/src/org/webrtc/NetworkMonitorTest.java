@@ -165,9 +165,7 @@ public class NetworkMonitorTest {
    */
   private void createTestMonitor() {
     Context context = InstrumentationRegistry.getTargetContext();
-    NetworkMonitor.resetInstanceForTests();
-    NetworkMonitor.createAutoDetectorForTest();
-    receiver = NetworkMonitor.getAutoDetectorForTest();
+    receiver = NetworkMonitor.getAutoDetectorForTest(context);
     assertNotNull(receiver);
 
     connectivityDelegate = new MockConnectivityManagerDelegate();

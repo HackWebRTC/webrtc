@@ -305,6 +305,9 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
 
     @SuppressLint("NewApi")
     private NetworkInformation networkToInfo(Network network) {
+      if (connectivityManager == null) {
+        return null;
+      }
       LinkProperties linkProperties = connectivityManager.getLinkProperties(network);
       // getLinkProperties will return null if the network is unknown.
       if (linkProperties == null) {
