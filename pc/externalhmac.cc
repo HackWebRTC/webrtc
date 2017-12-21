@@ -111,7 +111,6 @@ srtp_err_status_t external_hmac_init(void* state,
     return srtp_err_status_bad_param;
 
   ExternalHmacContext* context = static_cast<ExternalHmacContext*>(state);
-  memset(context->key, 0, key_len);
   memcpy(context->key, key, key_len);
   context->key_length = key_len;
   return srtp_err_status_ok;
