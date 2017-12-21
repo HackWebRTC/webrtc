@@ -7,7 +7,7 @@ vars = {
   'checkout_configuration': 'default',
   'checkout_instrumented_libraries': 'checkout_linux and checkout_configuration == "default"',
   'webrtc_git': 'https://webrtc.googlesource.com',
-  'chromium_revision': '080b22b4192d83776e75d9217c4ffcf4789276f2',
+  'chromium_revision': '747cb1afa7ec0b160837f87626161d29f97063af',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
@@ -40,7 +40,7 @@ deps = {
   'src/base':
     Var('chromium_git') + '/chromium/src/base' + '@' + '37d45f196a365457b8892de6800899cd076baf40',
   'src/build':
-    Var('chromium_git') + '/chromium/src/build' + '@' + '32275e2734f9c1a9577ceec4080f80cf0bf4ddfc',
+    Var('chromium_git') + '/chromium/src/build' + '@' + '5e68daf0b206ecdd6af92a9af14a855f7982740b',
   'src/buildtools':
     Var('chromium_git') + '/chromium/buildtools.git' + '@' + '1be57dc4c2c68fa564ee258a3af0cf8003007edf',
   # Gradle 4.3-rc4. Used for testing Android Studio project generation for WebRTC.
@@ -56,7 +56,7 @@ deps = {
   'src/testing':
     Var('chromium_git') + '/chromium/src/testing' + '@' + 'f514237b8073309d8886e8ac0c82a5e27b64fa9d',
   'src/third_party':
-    Var('chromium_git') + '/chromium/src/third_party' + '@' + '4bfc29dee9e21b66c9e52bb38d7c50b3f1ab70de',
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + '4ff31643cf6b4b413748372f5b67c359e63b3dda',
   'src/third_party/android_tools': {
     'url': Var('chromium_git') + '/android_tools.git' + '@' + 'a2e9bc7c1b41d983577907df51d339fb1e0fd02f',
     'condition': 'checkout_android',
