@@ -101,10 +101,6 @@ class AudioDeviceModule : public rtc::RefCountInterface {
   virtual int32_t StopRecording() = 0;
   virtual bool Recording() const = 0;
 
-  // TODO(bugs.webrtc.org/7306): deprecated (to be removed).
-  virtual int32_t SetAGC(bool enable) { return -1; }
-  virtual bool AGC() const { return false; }
-
   // Audio mixer initialization
   virtual int32_t InitSpeaker() = 0;
   virtual bool SpeakerIsInitialized() const = 0;

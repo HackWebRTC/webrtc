@@ -69,7 +69,6 @@ class FakeAudioDeviceModule : public AudioDeviceModule {
   bool Playing() const override { return false; }
   int32_t StartRecording() override { return 0; }
   bool Recording() const override { return false; }
-  bool AGC() const override { return true; }
   bool SpeakerIsInitialized() const override { return true; }
   bool MicrophoneIsInitialized() const override { return true; }
   int32_t SpeakerVolumeIsAvailable(bool* available) override { return 0; }
