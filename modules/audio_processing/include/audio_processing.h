@@ -30,6 +30,7 @@
 #include "rtc_base/deprecation.h"
 #include "rtc_base/platform_file.h"
 #include "rtc_base/refcount.h"
+#include "rtc_base/scoped_ref_ptr.h"
 #include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
@@ -317,6 +318,10 @@ class AudioProcessing : public rtc::RefCountInterface {
   // instance for the near-end stream, and additional instances for each far-end
   // stream which requires processing. On the server-side, this would typically
   // be one instance for every incoming stream.
+  // The Create functions are deprecated, please use AudioProcessingBuilder
+  // instead.
+  // TODO(bugs.webrtc.org/8668): Remove these Create functions when all callers
+  // have moved to AudioProcessingBuilder.
   static AudioProcessing* Create();
   // Allows passing in an optional configuration at create-time.
   static AudioProcessing* Create(const webrtc::Config& config);
@@ -642,6 +647,35 @@ class AudioProcessing : public rtc::RefCountInterface {
       kNativeSampleRatesHz[kNumNativeSampleRates - 1];
 
   static const int kChunkSizeMs = 10;
+};
+
+class AudioProcessingBuilder {
+ public:
+  AudioProcessingBuilder();
+  ~AudioProcessingBuilder();
+  // The AudioProcessingBuilder takes ownership of the echo_control_factory.
+  AudioProcessingBuilder& SetEchoControlFactory(
+      std::unique_ptr<EchoControlFactory> echo_control_factory);
+  // The AudioProcessingBuilder takes ownership of the capture_post_processing.
+  AudioProcessingBuilder& SetCapturePostProcessing(
+      std::unique_ptr<CustomProcessing> capture_post_processing);
+  // The AudioProcessingBuilder takes ownership of the render_pre_processing.
+  AudioProcessingBuilder& SetRenderPreProcessing(
+      std::unique_ptr<CustomProcessing> render_pre_processing);
+  // The AudioProcessingBuilder takes ownership of the nonlinear beamformer.
+  AudioProcessingBuilder& SetNonlinearBeamformer(
+      std::unique_ptr<NonlinearBeamformer> nonlinear_beamformer);
+  // This creates an APM instance using the previously set components. Calling
+  // the Create function resets the AudioProcessingBuilder to its initial state.
+  AudioProcessing* Create();
+  AudioProcessing* Create(const webrtc::Config& config);
+
+ private:
+  std::unique_ptr<EchoControlFactory> echo_control_factory_;
+  std::unique_ptr<CustomProcessing> capture_post_processing_;
+  std::unique_ptr<CustomProcessing> render_pre_processing_;
+  std::unique_ptr<NonlinearBeamformer> nonlinear_beamformer_;
+  RTC_DISALLOW_COPY_AND_ASSIGN(AudioProcessingBuilder);
 };
 
 class StreamConfig {

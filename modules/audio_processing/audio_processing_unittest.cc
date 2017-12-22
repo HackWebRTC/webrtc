@@ -2915,8 +2915,10 @@ TEST(ApmConfiguration, EnablePostProcessing) {
       new testing::NiceMock<test::MockCustomProcessing>();
   auto mock_post_processor =
       std::unique_ptr<CustomProcessing>(mock_post_processor_ptr);
-  rtc::scoped_refptr<AudioProcessing> apm = AudioProcessing::Create(
-      webrtc_config, std::move(mock_post_processor), nullptr, nullptr, nullptr);
+  rtc::scoped_refptr<AudioProcessing> apm =
+      AudioProcessingBuilder()
+          .SetCapturePostProcessing(std::move(mock_post_processor))
+          .Create(webrtc_config);
 
   AudioFrame audio;
   audio.num_channels_ = 1;
@@ -2962,8 +2964,9 @@ TEST(ApmConfiguration, EchoControlInjection) {
       new MyEchoControlFactory());
 
   rtc::scoped_refptr<AudioProcessing> apm =
-      AudioProcessing::Create(webrtc_config, nullptr, nullptr,
-                              std::move(echo_control_factory), nullptr);
+      AudioProcessingBuilder()
+          .SetEchoControlFactory(std::move(echo_control_factory))
+          .Create(webrtc_config);
 
   AudioFrame audio;
   audio.num_channels_ = 1;
