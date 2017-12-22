@@ -245,6 +245,7 @@ rtc_static_library("audio_processing") {
     "../../rtc_base:protobuf_utils",
     "../../rtc_base:sanitizer",
     "../../system_wrappers:cpu_features_api",
+    "../../system_wrappers:field_trial_api",
     "../../system_wrappers:metrics_api",
     "../audio_coding:isac",
   ]
