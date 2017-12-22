@@ -257,6 +257,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
       RtcEventLog* event_log,
       const VideoSendStream::Config* config,
       int initial_encoder_max_bitrate,
+      double initial_encoder_bitrate_priority,
       std::map<uint32_t, RtpState> suspended_ssrcs,
       std::map<uint32_t, RtpPayloadState> suspended_payload_states,
       VideoEncoderConfig::ContentType content_type);
@@ -351,6 +352,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   int encoder_min_bitrate_bps_;
   uint32_t encoder_max_bitrate_bps_;
   uint32_t encoder_target_rate_bps_;
+  double encoder_bitrate_priority_;
 
   VideoStreamEncoder* const video_stream_encoder_;
   EncoderRtcpFeedback encoder_feedback_;
@@ -392,6 +394,7 @@ class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
       RtcEventLog* event_log,
       const VideoSendStream::Config* config,
       int initial_encoder_max_bitrate,
+      double initial_encoder_bitrate_priority,
       const std::map<uint32_t, RtpState>& suspended_ssrcs,
       const std::map<uint32_t, RtpPayloadState>& suspended_payload_states,
       VideoEncoderConfig::ContentType content_type)
@@ -406,6 +409,7 @@ class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
         event_log_(event_log),
         config_(config),
         initial_encoder_max_bitrate_(initial_encoder_max_bitrate),
+        initial_encoder_bitrate_priority_(initial_encoder_bitrate_priority),
         suspended_ssrcs_(suspended_ssrcs),
         suspended_payload_states_(suspended_payload_states),
         content_type_(content_type) {}
@@ -418,8 +422,8 @@ class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
         stats_proxy_, rtc::TaskQueue::Current(), call_stats_, transport_,
         bitrate_allocator_, send_delay_stats_, video_stream_encoder_,
         event_log_, config_, initial_encoder_max_bitrate_,
-        std::move(suspended_ssrcs_), std::move(suspended_payload_states_),
-        content_type_));
+        initial_encoder_bitrate_priority_, std::move(suspended_ssrcs_),
+        std::move(suspended_payload_states_), content_type_));
     return true;
   }
 
@@ -434,6 +438,7 @@ class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
   RtcEventLog* const event_log_;
   const VideoSendStream::Config* config_;
   int initial_encoder_max_bitrate_;
+  double initial_encoder_bitrate_priority_;
   std::map<uint32_t, RtpState> suspended_ssrcs_;
   std::map<uint32_t, RtpPayloadState> suspended_payload_states_;
   const VideoEncoderConfig::ContentType content_type_;
@@ -572,8 +577,8 @@ VideoSendStream::VideoSendStream(
       &send_stream_, &thread_sync_event_, &stats_proxy_,
       video_stream_encoder_.get(), module_process_thread, call_stats, transport,
       bitrate_allocator, send_delay_stats, event_log, &config_,
-      encoder_config.max_bitrate_bps, suspended_ssrcs, suspended_payload_states,
-      encoder_config.content_type)));
+      encoder_config.max_bitrate_bps, encoder_config.bitrate_priority,
+      suspended_ssrcs, suspended_payload_states, encoder_config.content_type)));
 
   // Wait for ConstructionTask to complete so that |send_stream_| can be used.
   // |module_process_thread| must be registered and deregistered on the thread
@@ -691,6 +696,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
     RtcEventLog* event_log,
     const VideoSendStream::Config* config,
     int initial_encoder_max_bitrate,
+    double initial_encoder_bitrate_priority,
     std::map<uint32_t, RtpState> suspended_ssrcs,
     std::map<uint32_t, RtpPayloadState> suspended_payload_states,
     VideoEncoderConfig::ContentType content_type)
@@ -710,6 +716,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
       encoder_min_bitrate_bps_(0),
       encoder_max_bitrate_bps_(initial_encoder_max_bitrate),
       encoder_target_rate_bps_(0),
+      encoder_bitrate_priority_(initial_encoder_bitrate_priority),
       video_stream_encoder_(video_stream_encoder),
       encoder_feedback_(Clock::GetRealTimeClock(),
                         config_->rtp.ssrcs,
@@ -746,6 +753,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
   RTC_DCHECK(call_stats_);
   RTC_DCHECK(transport_);
   RTC_DCHECK(transport_->send_side_cc());
+  RTC_DCHECK_GT(encoder_max_bitrate_bps_, 0);
   RTC_CHECK(field_trial::FindFullName(
                 AlrDetector::kStrictPacingAndProbingExperimentName)
                 .empty() ||
@@ -880,7 +888,7 @@ void VideoSendStreamImpl::Start() {
   bitrate_allocator_->AddObserver(
       this, encoder_min_bitrate_bps_, encoder_max_bitrate_bps_,
       max_padding_bitrate_, !config_->suspend_below_min_bitrate,
-      config_->track_id);
+      config_->track_id, encoder_bitrate_priority_);
 
   // Start monitoring encoder activity.
   {
@@ -934,7 +942,7 @@ void VideoSendStreamImpl::SignalEncoderActive() {
   bitrate_allocator_->AddObserver(
       this, encoder_min_bitrate_bps_, encoder_max_bitrate_bps_,
       max_padding_bitrate_, !config_->suspend_below_min_bitrate,
-      config_->track_id);
+      config_->track_id, encoder_bitrate_priority_);
 }
 
 void VideoSendStreamImpl::OnEncoderConfigurationChanged(
@@ -954,8 +962,16 @@ void VideoSendStreamImpl::OnEncoderConfigurationChanged(
   encoder_min_bitrate_bps_ =
       std::max(streams[0].min_bitrate_bps, GetEncoderMinBitrateBps());
   encoder_max_bitrate_bps_ = 0;
-  for (const auto& stream : streams)
+  double stream_bitrate_priority_sum = 0;
+  for (const auto& stream : streams) {
     encoder_max_bitrate_bps_ += stream.max_bitrate_bps;
+    if (stream.bitrate_priority) {
+      RTC_DCHECK_GT(*stream.bitrate_priority, 0);
+      stream_bitrate_priority_sum += *stream.bitrate_priority;
+    }
+  }
+  RTC_DCHECK_GT(stream_bitrate_priority_sum, 0);
+  encoder_bitrate_priority_ = stream_bitrate_priority_sum;
   max_padding_bitrate_ = CalculateMaxPadBitrateBps(
       streams, min_transmit_bitrate_bps, config_->suspend_below_min_bitrate);
 
@@ -976,7 +992,7 @@ void VideoSendStreamImpl::OnEncoderConfigurationChanged(
     bitrate_allocator_->AddObserver(
         this, encoder_min_bitrate_bps_, encoder_max_bitrate_bps_,
         max_padding_bitrate_, !config_->suspend_below_min_bitrate,
-        config_->track_id);
+        config_->track_id, encoder_bitrate_priority_);
   }
 }
 

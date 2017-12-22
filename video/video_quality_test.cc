@@ -118,6 +118,8 @@ class VideoStreamFactory
     std::vector<webrtc::VideoStream> streams = streams_;
     streams[streams_.size() - 1].height = height;
     streams[streams_.size() - 1].width = width;
+
+    streams[0].bitrate_priority = encoder_config.bitrate_priority;
     return streams;
   }
 

@@ -106,7 +106,9 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   static void ReconfigureBitrateObserver(AudioSendStream* stream,
                                          const Config& new_config);
 
-  void ConfigureBitrateObserver(int min_bitrate_bps, int max_bitrate_bps);
+  void ConfigureBitrateObserver(int min_bitrate_bps,
+                                int max_bitrate_bps,
+                                double bitrate_priority);
   void RemoveBitrateObserver();
 
   void RegisterCngPayloadType(int payload_type, int clockrate_hz);
