@@ -28,8 +28,7 @@ namespace internal {
 AudioState::AudioState(const AudioState::Config& config)
     : config_(config),
       audio_transport_(config_.audio_mixer,
-                       config_.audio_processing.get(),
-                       config_.audio_device_module.get()) {
+                       config_.audio_processing.get()) {
   process_thread_checker_.DetachFromThread();
   RTC_DCHECK(config_.audio_mixer);
   RTC_DCHECK(config_.audio_device_module);

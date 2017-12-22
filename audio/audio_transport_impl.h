@@ -31,8 +31,7 @@ class AudioSendStream;
 class AudioTransportImpl : public AudioTransport {
  public:
   AudioTransportImpl(AudioMixer* mixer,
-                     AudioProcessing* audio_processing,
-                     AudioDeviceModule* audio_device_module);
+                     AudioProcessing* audio_processing);
   ~AudioTransportImpl() override;
 
   int32_t RecordedDataIsAvailable(const void* audioSamples,
@@ -82,7 +81,6 @@ class AudioTransportImpl : public AudioTransport {
   size_t send_num_channels_ RTC_GUARDED_BY(capture_lock_) = 1;
   bool typing_noise_detected_ RTC_GUARDED_BY(capture_lock_) = false;
   bool swap_stereo_channels_ RTC_GUARDED_BY(capture_lock_) = false;
-  AudioDeviceModule* audio_device_module_ = nullptr;
   PushResampler<int16_t> capture_resampler_;
   voe::AudioLevel audio_level_;
   TypingDetection typing_detection_;
