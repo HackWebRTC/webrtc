@@ -93,6 +93,21 @@ class PeerConnectionWrapper {
   bool SetRemoteDescription(std::unique_ptr<SessionDescriptionInterface> desc,
                             RTCError* error_out);
 
+  // Does a round of offer/answer with the local PeerConnectionWrapper
+  // generating the offer and the given PeerConnectionWrapper generating the
+  // answer.
+  // Equivalent to:
+  // 1. this->CreateOffer()
+  // 2. this->SetLocalDescription(offer)
+  // 3. answerer->SetRemoteDescription(offer)
+  // 4. answerer->CreateAnswer()
+  // 5. answerer->SetLocalDescription(answer)
+  // 6. this->SetRemoteDescription(answer)
+  // Returns true if all steps succeed, false otherwise.
+  // Suggested usage:
+  //   ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+  bool ExchangeOfferAnswerWith(PeerConnectionWrapper* answerer);
+
   // The following are wrappers for the underlying PeerConnection's
   // AddTransceiver method. They return the result of calling AddTransceiver
   // with the given arguments, DCHECKing if there is an error.

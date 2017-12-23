@@ -12,7 +12,13 @@
 
 #include <string>
 
+#include "pc/rtpmediautils.h"
+
 namespace webrtc {
+
+std::ostream& operator<<(std::ostream& os, RtpTransceiverDirection direction) {
+  return os << RtpTransceiverDirectionToString(direction);
+}
 
 RtpTransceiver::RtpTransceiver(cricket::MediaType media_type)
     : unified_plan_(false), media_type_(media_type) {
@@ -142,6 +148,13 @@ rtc::scoped_refptr<RtpReceiverInterface> RtpTransceiver::receiver() const {
   return receivers_[0];
 }
 
+void RtpTransceiver::set_current_direction(RtpTransceiverDirection direction) {
+  current_direction_ = direction;
+  if (RtpTransceiverDirectionHasSend(*current_direction_)) {
+    has_ever_been_used_to_send_ = true;
+  }
+}
+
 bool RtpTransceiver::stopped() const {
   return stopped_;
 }
@@ -152,7 +165,7 @@ RtpTransceiverDirection RtpTransceiver::direction() const {
 
 void RtpTransceiver::SetDirection(RtpTransceiverDirection new_direction) {
   // TODO(steveanton): This should fire OnNegotiationNeeded.
-  direction_ = new_direction;
+  set_direction(new_direction);
 }
 
 rtc::Optional<RtpTransceiverDirection> RtpTransceiver::current_direction()

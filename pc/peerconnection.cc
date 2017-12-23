@@ -11,6 +11,7 @@
 #include "pc/peerconnection.h"
 
 #include <algorithm>
+#include <queue>
 #include <set>
 #include <utility>
 #include <vector>
@@ -330,6 +331,11 @@ bool MediaSectionsInSameOrder(const SessionDescription* existing_desc,
   }
 
   for (size_t i = 0; i < existing_desc->contents().size(); ++i) {
+    if (existing_desc->contents()[i].rejected) {
+      // If the media section can be recycled, it's valid for the MID and media
+      // type to change.
+      continue;
+    }
     if (new_desc->contents()[i].name != existing_desc->contents()[i].name) {
       return false;
     }
@@ -1637,34 +1643,69 @@ RTCError PeerConnection::ApplyLocalDescription(
     }
   }
 
+  // Take a reference to the old local description since it's used below to
+  // compare against the new local description. When setting the new local
+  // description, grab ownership of the replaced session description in case it
+  // is the same as |old_local_description|, to keep it alive for the duration
+  // of the method.
+  const SessionDescriptionInterface* old_local_description =
+      local_description();
+  std::unique_ptr<SessionDescriptionInterface> replaced_local_description;
   if (type == SdpType::kAnswer) {
+    replaced_local_description = pending_local_description_
+                                     ? std::move(pending_local_description_)
+                                     : std::move(current_local_description_);
     current_local_description_ = std::move(desc);
     pending_local_description_ = nullptr;
     current_remote_description_ = std::move(pending_remote_description_);
   } else {
+    replaced_local_description = std::move(pending_local_description_);
     pending_local_description_ = std::move(desc);
   }
   // The session description to apply now must be accessed by
   // |local_description()|.
   RTC_DCHECK(local_description());
 
-  // Transport and Media channels will be created only when offer is set.
-  if (type == SdpType::kOffer) {
-    // TODO(mallinath) - Handle CreateChannel failure, as new local description
-    // is applied. Restore back to old description.
-    RTCError error = CreateChannels(local_description()->description());
+  if (IsUnifiedPlan()) {
+    RTCError error = UpdateTransceiversAndDataChannels(
+        cricket::CS_LOCAL, old_local_description, *local_description());
     if (!error.ok()) {
       return error;
     }
-  }
+    for (auto transceiver : transceivers_) {
+      const ContentInfo* content =
+          FindMediaSectionForTransceiver(transceiver, local_description());
+      if (!content) {
+        continue;
+      }
+      const MediaContentDescription* media_desc = content->media_description();
+      if (type == SdpType::kPrAnswer || type == SdpType::kAnswer) {
+        transceiver->internal()->set_current_direction(media_desc->direction());
+      }
+      if (content->rejected && !transceiver->stopped()) {
+        transceiver->Stop();
+      }
+    }
+  } else {
+    // Transport and Media channels will be created only when offer is set.
+    if (type == SdpType::kOffer) {
+      // TODO(bugs.webrtc.org/4676) - Handle CreateChannel failure, as new local
+      // description is applied. Restore back to old description.
+      RTCError error = CreateChannels(*local_description()->description());
+      if (!error.ok()) {
+        return error;
+      }
+    }
 
-  // Remove unused channels if MediaContentDescription is rejected.
-  RemoveUnusedChannels(local_description()->description());
+    // Remove unused channels if MediaContentDescription is rejected.
+    RemoveUnusedChannels(local_description()->description());
+  }
 
   error = UpdateSessionState(type, cricket::CS_LOCAL);
   if (!error.ok()) {
     return error;
   }
+
   if (remote_description()) {
     // Now that we have a local description, we can push down remote candidates.
     UseCandidatesInSessionDescription(remote_description());
@@ -1682,29 +1723,31 @@ RTCError PeerConnection::ApplyLocalDescription(
     AllocateSctpSids(role);
   }
 
-  // Update state and SSRC of local MediaStreams and DataChannels based on the
-  // local session description.
-  const cricket::ContentInfo* audio_content =
-      GetFirstAudioContent(local_description()->description());
-  if (audio_content) {
-    if (audio_content->rejected) {
-      RemoveSenders(cricket::MEDIA_TYPE_AUDIO);
-    } else {
-      const cricket::AudioContentDescription* audio_desc =
-          audio_content->media_description()->as_audio();
-      UpdateLocalSenders(audio_desc->streams(), audio_desc->type());
+  if (!IsUnifiedPlan()) {
+    // Update state and SSRC of local MediaStreams and DataChannels based on the
+    // local session description.
+    const cricket::ContentInfo* audio_content =
+        GetFirstAudioContent(local_description()->description());
+    if (audio_content) {
+      if (audio_content->rejected) {
+        RemoveSenders(cricket::MEDIA_TYPE_AUDIO);
+      } else {
+        const cricket::AudioContentDescription* audio_desc =
+            audio_content->media_description()->as_audio();
+        UpdateLocalSenders(audio_desc->streams(), audio_desc->type());
+      }
     }
-  }
 
-  const cricket::ContentInfo* video_content =
-      GetFirstVideoContent(local_description()->description());
-  if (video_content) {
-    if (video_content->rejected) {
-      RemoveSenders(cricket::MEDIA_TYPE_VIDEO);
-    } else {
-      const cricket::VideoContentDescription* video_desc =
-          video_content->media_description()->as_video();
-      UpdateLocalSenders(video_desc->streams(), video_desc->type());
+    const cricket::ContentInfo* video_content =
+        GetFirstVideoContent(local_description()->description());
+    if (video_content) {
+      if (video_content->rejected) {
+        RemoveSenders(cricket::MEDIA_TYPE_VIDEO);
+      } else {
+        const cricket::VideoContentDescription* video_desc =
+            video_content->media_description()->as_video();
+        UpdateLocalSenders(video_desc->streams(), video_desc->type());
+      }
     }
   }
 
@@ -1787,13 +1830,14 @@ RTCError PeerConnection::ApplyRemoteDescription(
   // Update stats here so that we have the most recent stats for tracks and
   // streams that might be removed by updating the session description.
   stats_->UpdateStats(kStatsOutputLevelStandard);
-  // Takes the ownership of |desc|. On success, remote_description() is updated
-  // to reflect the description that was passed in.
 
+  // Take a reference to the old remote description since it's used below to
+  // compare against the new remote description. When setting the new remote
+  // description, grab ownership of the replaced session description in case it
+  // is the same as |old_remote_description|, to keep it alive for the duration
+  // of the method.
   const SessionDescriptionInterface* old_remote_description =
       remote_description();
-  // Grab ownership of the description being replaced for the remainder of this
-  // method, since it's used below as |old_remote_description|.
   std::unique_ptr<SessionDescriptionInterface> replaced_remote_description;
   SdpType type = desc->GetType();
   if (type == SdpType::kAnswer) {
@@ -1812,17 +1856,25 @@ RTCError PeerConnection::ApplyRemoteDescription(
   RTC_DCHECK(remote_description());
 
   // Transport and Media channels will be created only when offer is set.
-  if (type == SdpType::kOffer) {
-    // TODO(mallinath) - Handle CreateChannel failure, as new local description
-    // is applied. Restore back to old description.
-    RTCError error = CreateChannels(remote_description()->description());
+  if (IsUnifiedPlan()) {
+    RTCError error = UpdateTransceiversAndDataChannels(
+        cricket::CS_REMOTE, old_remote_description, *remote_description());
     if (!error.ok()) {
       return error;
     }
-  }
+  } else {
+    if (type == SdpType::kOffer) {
+      // TODO(bugs.webrtc.org/4676) - Handle CreateChannel failure, as new local
+      // description is applied. Restore back to old description.
+      RTCError error = CreateChannels(*remote_description()->description());
+      if (!error.ok()) {
+        return error;
+      }
+    }
 
-  // Remove unused channels if MediaContentDescription is rejected.
-  RemoveUnusedChannels(remote_description()->description());
+    // Remove unused channels if MediaContentDescription is rejected.
+    RemoveUnusedChannels(remote_description()->description());
+  }
 
   // NOTE: Candidates allocation will be initiated only when SetLocalDescription
   // is called.
@@ -1887,6 +1939,43 @@ RTCError PeerConnection::ApplyRemoteDescription(
     AllocateSctpSids(role);
   }
 
+  if (IsUnifiedPlan()) {
+    for (auto transceiver : transceivers_) {
+      const ContentInfo* content =
+          FindMediaSectionForTransceiver(transceiver, remote_description());
+      if (!content) {
+        continue;
+      }
+      const MediaContentDescription* media_desc = content->media_description();
+      RtpTransceiverDirection local_direction =
+          RtpTransceiverDirectionReversed(media_desc->direction());
+      // From the WebRTC specification, steps 2.2.8.5/6 of section 4.4.1.6 "Set
+      // the RTCSessionDescription: If direction is sendrecv or recvonly, and
+      // transceiver's current direction is neither sendrecv nor recvonly,
+      // process the addition of a remote track for the media description.
+      if (RtpTransceiverDirectionHasRecv(local_direction) &&
+          (!transceiver->current_direction() ||
+           !RtpTransceiverDirectionHasRecv(
+               *transceiver->current_direction()))) {
+        // TODO(bugs.webrtc.org/7600): Process the addition of a remote track.
+      }
+      // If direction is sendonly or inactive, and transceiver's current
+      // direction is neither sendonly nor inactive, process the removal of a
+      // remote track for the media description.
+      if (!RtpTransceiverDirectionHasRecv(local_direction) &&
+          (!transceiver->current_direction() ||
+           RtpTransceiverDirectionHasRecv(*transceiver->current_direction()))) {
+        // TODO(bugs.webrtc.org/7600): Process the removal of a remote track.
+      }
+      if (type == SdpType::kPrAnswer || type == SdpType::kAnswer) {
+        transceiver->internal()->set_current_direction(local_direction);
+      }
+      if (content->rejected && !transceiver->stopped()) {
+        transceiver->Stop();
+      }
+    }
+  }
+
   const cricket::ContentInfo* audio_content =
       GetFirstAudioContent(remote_description()->description());
   const cricket::ContentInfo* video_content =
@@ -1910,62 +1999,254 @@ RTCError PeerConnection::ApplyRemoteDescription(
   // since only at that point will new streams have all their tracks.
   rtc::scoped_refptr<StreamCollection> new_streams(StreamCollection::Create());
 
-  // TODO(steveanton): When removing RTP senders/receivers in response to a
-  // rejected media section, there is some cleanup logic that expects the voice/
-  // video channel to still be set. But in this method the voice/video channel
-  // would have been destroyed by the SetRemoteDescription caller above so the
-  // cleanup that relies on them fails to run. The RemoveSenders calls should be
-  // moved to right before the DestroyChannel calls to fix this.
+  if (!IsUnifiedPlan()) {
+    // TODO(steveanton): When removing RTP senders/receivers in response to a
+    // rejected media section, there is some cleanup logic that expects the
+    // voice/ video channel to still be set. But in this method the voice/video
+    // channel would have been destroyed by the SetRemoteDescription caller
+    // above so the cleanup that relies on them fails to run. The RemoveSenders
+    // calls should be moved to right before the DestroyChannel calls to fix
+    // this.
 
-  // Find all audio rtp streams and create corresponding remote AudioTracks
-  // and MediaStreams.
-  if (audio_content) {
-    if (audio_content->rejected) {
-      RemoveSenders(cricket::MEDIA_TYPE_AUDIO);
-    } else {
-      bool default_audio_track_needed =
-          !remote_peer_supports_msid_ &&
-          RtpTransceiverDirectionHasSend(audio_desc->direction());
-      UpdateRemoteSendersList(GetActiveStreams(audio_desc),
-                              default_audio_track_needed, audio_desc->type(),
-                              new_streams);
+    // Find all audio rtp streams and create corresponding remote AudioTracks
+    // and MediaStreams.
+    if (audio_content) {
+      if (audio_content->rejected) {
+        RemoveSenders(cricket::MEDIA_TYPE_AUDIO);
+      } else {
+        bool default_audio_track_needed =
+            !remote_peer_supports_msid_ &&
+            RtpTransceiverDirectionHasSend(audio_desc->direction());
+        UpdateRemoteSendersList(GetActiveStreams(audio_desc),
+                                default_audio_track_needed, audio_desc->type(),
+                                new_streams);
+      }
     }
-  }
 
-  // Find all video rtp streams and create corresponding remote VideoTracks
-  // and MediaStreams.
-  if (video_content) {
-    if (video_content->rejected) {
-      RemoveSenders(cricket::MEDIA_TYPE_VIDEO);
-    } else {
-      bool default_video_track_needed =
-          !remote_peer_supports_msid_ &&
-          RtpTransceiverDirectionHasSend(video_desc->direction());
-      UpdateRemoteSendersList(GetActiveStreams(video_desc),
-                              default_video_track_needed, video_desc->type(),
-                              new_streams);
+    // Find all video rtp streams and create corresponding remote VideoTracks
+    // and MediaStreams.
+    if (video_content) {
+      if (video_content->rejected) {
+        RemoveSenders(cricket::MEDIA_TYPE_VIDEO);
+      } else {
+        bool default_video_track_needed =
+            !remote_peer_supports_msid_ &&
+            RtpTransceiverDirectionHasSend(video_desc->direction());
+        UpdateRemoteSendersList(GetActiveStreams(video_desc),
+                                default_video_track_needed, video_desc->type(),
+                                new_streams);
+      }
     }
-  }
 
-  // Update the DataChannels with the information from the remote peer.
-  if (data_desc) {
-    if (rtc::starts_with(data_desc->protocol().data(),
-                         cricket::kMediaProtocolRtpPrefix)) {
-      UpdateRemoteRtpDataChannels(GetActiveStreams(data_desc));
+    // Update the DataChannels with the information from the remote peer.
+    if (data_desc) {
+      if (rtc::starts_with(data_desc->protocol().data(),
+                           cricket::kMediaProtocolRtpPrefix)) {
+        UpdateRemoteRtpDataChannels(GetActiveStreams(data_desc));
+      }
     }
-  }
 
-  // Iterate new_streams and notify the observer about new MediaStreams.
-  for (size_t i = 0; i < new_streams->count(); ++i) {
-    MediaStreamInterface* new_stream = new_streams->at(i);
-    stats_->AddStream(new_stream);
-    observer_->OnAddStream(
-        rtc::scoped_refptr<MediaStreamInterface>(new_stream));
-  }
+    // Iterate new_streams and notify the observer about new MediaStreams.
+    for (size_t i = 0; i < new_streams->count(); ++i) {
+      MediaStreamInterface* new_stream = new_streams->at(i);
+      stats_->AddStream(new_stream);
+      observer_->OnAddStream(
+          rtc::scoped_refptr<MediaStreamInterface>(new_stream));
+    }
 
-  UpdateEndedRemoteMediaStreams();
+    UpdateEndedRemoteMediaStreams();
+  }
 
   return RTCError::OK();
+}
+
+RTCError PeerConnection::UpdateTransceiversAndDataChannels(
+    cricket::ContentSource source,
+    const SessionDescriptionInterface* old_session,
+    const SessionDescriptionInterface& new_session) {
+  RTC_DCHECK(IsUnifiedPlan());
+
+  auto bundle_group_or_error = GetEarlyBundleGroup(*new_session.description());
+  if (!bundle_group_or_error.ok()) {
+    return bundle_group_or_error.MoveError();
+  }
+  const cricket::ContentGroup* bundle_group = bundle_group_or_error.MoveValue();
+
+  const ContentInfos& old_contents =
+      (old_session ? old_session->description()->contents() : ContentInfos());
+  const ContentInfos& new_contents = new_session.description()->contents();
+
+  for (size_t i = 0; i < new_contents.size(); ++i) {
+    const cricket::ContentInfo& new_content = new_contents[i];
+    const cricket::ContentInfo* old_content =
+        (i < old_contents.size() ? &old_contents[i] : nullptr);
+    cricket::MediaType media_type = new_content.media_description()->type();
+    seen_mids_.insert(new_content.name);
+    if (media_type == cricket::MEDIA_TYPE_AUDIO ||
+        media_type == cricket::MEDIA_TYPE_VIDEO) {
+      auto transceiver_or_error =
+          AssociateTransceiver(source, i, new_content, old_content);
+      if (!transceiver_or_error.ok()) {
+        return transceiver_or_error.MoveError();
+      }
+      auto transceiver = transceiver_or_error.MoveValue();
+      if (source == cricket::CS_LOCAL && transceiver->stopped()) {
+        continue;
+      }
+      RTCError error =
+          UpdateTransceiverChannel(transceiver, new_content, bundle_group);
+      if (!error.ok()) {
+        return error;
+      }
+    } else if (media_type == cricket::MEDIA_TYPE_DATA) {
+      // TODO(bugs.webrtc.org/7600): Add support for data channels with Unified
+      // Plan.
+    } else {
+      LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR,
+                           "Unknown section type.");
+    }
+  }
+
+  return RTCError::OK();
+}
+
+RTCError PeerConnection::UpdateTransceiverChannel(
+    rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
+        transceiver,
+    const cricket::ContentInfo& content,
+    const cricket::ContentGroup* bundle_group) {
+  RTC_DCHECK(IsUnifiedPlan());
+  RTC_DCHECK(transceiver);
+  cricket::BaseChannel* channel = transceiver->internal()->channel();
+  if (content.rejected) {
+    if (channel) {
+      transceiver->internal()->SetChannel(nullptr);
+      DestroyBaseChannel(channel);
+    }
+  } else {
+    if (!channel) {
+      if (transceiver->internal()->media_type() == cricket::MEDIA_TYPE_AUDIO) {
+        channel = CreateVoiceChannel(
+            content.name,
+            GetTransportNameForMediaSection(content.name, bundle_group));
+      } else {
+        RTC_DCHECK_EQ(cricket::MEDIA_TYPE_VIDEO,
+                      transceiver->internal()->media_type());
+        channel = CreateVideoChannel(
+            content.name,
+            GetTransportNameForMediaSection(content.name, bundle_group));
+      }
+      if (!channel) {
+        LOG_AND_RETURN_ERROR(
+            RTCErrorType::INTERNAL_ERROR,
+            "Failed to create channel for mid=" + content.name);
+      }
+      transceiver->internal()->SetChannel(channel);
+    }
+  }
+  return RTCError::OK();
+}
+
+RTCErrorOr<rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
+PeerConnection::AssociateTransceiver(cricket::ContentSource source,
+                                     size_t mline_index,
+                                     const ContentInfo& content,
+                                     const ContentInfo* old_content) {
+  RTC_DCHECK(IsUnifiedPlan());
+  // If the m= section is being recycled (rejected in previous remote
+  // description, not rejected in current description), dissociate the currently
+  // associated RtpTransceiver by setting its mid property to null, and discard
+  // the mapping between the transceiver and its m= section index.
+  if (old_content && old_content->rejected && !content.rejected) {
+    auto old_transceiver = GetAssociatedTransceiver(old_content->name);
+    if (old_transceiver) {
+      old_transceiver->internal()->set_mid(rtc::nullopt);
+      old_transceiver->internal()->set_mline_index(rtc::nullopt);
+    }
+  }
+  const MediaContentDescription* media_desc = content.media_description();
+  auto transceiver = GetAssociatedTransceiver(content.name);
+  if (source == cricket::CS_LOCAL) {
+    // Find the RtpTransceiver that corresponds to this m= section, using the
+    // mapping between transceivers and m= section indices established when
+    // creating the offer.
+    if (!transceiver) {
+      transceiver = GetTransceiverByMLineIndex(mline_index);
+    }
+    if (!transceiver) {
+      LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
+                           "Unknown transceiver");
+    }
+  } else {
+    RTC_DCHECK_EQ(source, cricket::CS_REMOTE);
+    // If the m= section is sendrecv or recvonly, and there are RtpTransceivers
+    // of the same type...
+    if (!transceiver &&
+        RtpTransceiverDirectionHasRecv(media_desc->direction())) {
+      transceiver = FindAvailableTransceiverToReceive(media_desc->type());
+    }
+    // If no RtpTransceiver was found in the previous step, create one with a
+    // recvonly direction.
+    if (!transceiver) {
+      transceiver = CreateTransceiver(media_desc->type());
+      transceiver->internal()->set_direction(
+          RtpTransceiverDirection::kRecvOnly);
+    }
+  }
+  RTC_DCHECK(transceiver);
+  if (transceiver->internal()->media_type() != media_desc->type()) {
+    LOG_AND_RETURN_ERROR(
+        RTCErrorType::INVALID_PARAMETER,
+        "Transceiver type does not match media description type.");
+  }
+  // Associate the found or created RtpTransceiver with the m= section by
+  // setting the value of the RtpTransceiver's mid property to the MID of the m=
+  // section, and establish a mapping between the transceiver and the index of
+  // the m= section.
+  transceiver->internal()->set_mid(content.name);
+  transceiver->internal()->set_mline_index(mline_index);
+  return std::move(transceiver);
+}
+
+rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
+PeerConnection::GetAssociatedTransceiver(const std::string& mid) const {
+  RTC_DCHECK(IsUnifiedPlan());
+  for (auto transceiver : transceivers_) {
+    if (transceiver->mid() == mid) {
+      return transceiver;
+    }
+  }
+  return nullptr;
+}
+
+rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
+PeerConnection::GetTransceiverByMLineIndex(size_t mline_index) const {
+  RTC_DCHECK(IsUnifiedPlan());
+  for (auto transceiver : transceivers_) {
+    if (transceiver->internal()->mline_index() == mline_index) {
+      return transceiver;
+    }
+  }
+  return nullptr;
+}
+
+rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
+PeerConnection::FindAvailableTransceiverToReceive(
+    cricket::MediaType media_type) const {
+  RTC_DCHECK(IsUnifiedPlan());
+  // From JSEP section 5.10 (Applying a Remote Description):
+  // If the m= section is sendrecv or recvonly, and there are RtpTransceivers of
+  // the same type that were added to the PeerConnection by addTrack and are not
+  // associated with any m= section and are not stopped, find the first such
+  // RtpTransceiver.
+  for (auto transceiver : transceivers_) {
+    if (transceiver->internal()->media_type() == media_type &&
+        transceiver->internal()->created_by_addtrack() && !transceiver->mid() &&
+        !transceiver->stopped()) {
+      return transceiver;
+    }
+  }
+  return nullptr;
 }
 
 const cricket::ContentInfo* PeerConnection::FindMediaSectionForTransceiver(
@@ -2655,10 +2936,30 @@ void PeerConnection::PostCreateSessionDescriptionFailure(
 }
 
 void PeerConnection::GetOptionsForOffer(
-    const PeerConnectionInterface::RTCOfferAnswerOptions& rtc_options,
+    const PeerConnectionInterface::RTCOfferAnswerOptions& offer_answer_options,
     cricket::MediaSessionOptions* session_options) {
-  ExtractSharedMediaSessionOptions(rtc_options, session_options);
+  ExtractSharedMediaSessionOptions(offer_answer_options, session_options);
 
+  if (IsUnifiedPlan()) {
+    GetOptionsForUnifiedPlanOffer(offer_answer_options, session_options);
+  } else {
+    GetOptionsForPlanBOffer(offer_answer_options, session_options);
+  }
+
+  // Apply ICE restart flag and renomination flag.
+  for (auto& options : session_options->media_description_options) {
+    options.transport_options.ice_restart = offer_answer_options.ice_restart;
+    options.transport_options.enable_ice_renomination =
+        configuration_.enable_ice_renomination;
+  }
+
+  session_options->rtcp_cname = rtcp_cname_;
+  session_options->crypto_options = factory_->options().crypto_options;
+}
+
+void PeerConnection::GetOptionsForPlanBOffer(
+    const PeerConnectionInterface::RTCOfferAnswerOptions& offer_answer_options,
+    cricket::MediaSessionOptions* session_options) {
   // Figure out transceiver directional preferences.
   bool send_audio = HasRtpSender(cricket::MEDIA_TYPE_AUDIO);
   bool send_video = HasRtpSender(cricket::MEDIA_TYPE_VIDEO);
@@ -2673,15 +2974,19 @@ void PeerConnection::GetOptionsForOffer(
   bool offer_new_data_description = HasDataChannels();
 
   // The "offer_to_receive_X" options allow those defaults to be overridden.
-  if (rtc_options.offer_to_receive_audio != RTCOfferAnswerOptions::kUndefined) {
-    recv_audio = (rtc_options.offer_to_receive_audio > 0);
+  if (offer_answer_options.offer_to_receive_audio !=
+      RTCOfferAnswerOptions::kUndefined) {
+    recv_audio = (offer_answer_options.offer_to_receive_audio > 0);
     offer_new_audio_description =
-        offer_new_audio_description || (rtc_options.offer_to_receive_audio > 0);
+        offer_new_audio_description ||
+        (offer_answer_options.offer_to_receive_audio > 0);
   }
-  if (rtc_options.offer_to_receive_video != RTCOfferAnswerOptions::kUndefined) {
-    recv_video = (rtc_options.offer_to_receive_video > 0);
+  if (offer_answer_options.offer_to_receive_video !=
+      RTCOfferAnswerOptions::kUndefined) {
+    recv_video = (offer_answer_options.offer_to_receive_video > 0);
     offer_new_video_description =
-        offer_new_video_description || (rtc_options.offer_to_receive_video > 0);
+        offer_new_video_description ||
+        (offer_answer_options.offer_to_receive_video > 0);
   }
 
   rtc::Optional<size_t> audio_index;
@@ -2733,13 +3038,6 @@ void PeerConnection::GetOptionsForOffer(
       !data_index ? nullptr
                   : &session_options->media_description_options[*data_index];
 
-  // Apply ICE restart flag and renomination flag.
-  for (auto& options : session_options->media_description_options) {
-    options.transport_options.ice_restart = rtc_options.ice_restart;
-    options.transport_options.enable_ice_renomination =
-        configuration_.enable_ice_renomination;
-  }
-
   AddRtpSenderOptions(GetSendersInternal(), audio_media_description_options,
                       video_media_description_options);
   AddRtpDataChannelOptions(rtp_data_channels_, data_media_description_options);
@@ -2752,16 +3050,162 @@ void PeerConnection::GetOptionsForOffer(
   if (!rtp_data_channels_.empty() || data_channel_type() != cricket::DCT_RTP) {
     session_options->data_channel_type = data_channel_type();
   }
+}
+
+// Find a new MID that is not already in |used_mids|, then add it to |used_mids|
+// and return a reference to it.
+// Generated MIDs should be no more than 3 bytes long to take up less space in
+// the RTP packet.
+static const std::string& AllocateMid(std::set<std::string>* used_mids) {
+  RTC_DCHECK(used_mids);
+  // We're boring: just generate MIDs 0, 1, 2, ...
+  size_t i = 0;
+  std::set<std::string>::iterator it;
+  bool inserted;
+  do {
+    std::string mid = rtc::ToString(i++);
+    auto insert_result = used_mids->insert(mid);
+    it = insert_result.first;
+    inserted = insert_result.second;
+  } while (!inserted);
+  return *it;
+}
+
+static cricket::MediaDescriptionOptions
+GetMediaDescriptionOptionsForTransceiver(
+    rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
+        transceiver,
+    const std::string& mid) {
+  cricket::MediaDescriptionOptions media_description_options(
+      transceiver->internal()->media_type(), mid, transceiver->direction(),
+      transceiver->stopped());
+  cricket::SenderOptions sender_options;
+  sender_options.track_id = transceiver->sender()->id();
+  sender_options.stream_ids = transceiver->sender()->stream_ids();
+  // TODO(bugs.webrtc.org/7600): Set num_sim_layers to the number of encodings
+  // set in the RTP parameters when the transceiver was added.
+  sender_options.num_sim_layers = 1;
+  media_description_options.sender_options.push_back(sender_options);
+  return media_description_options;
+}
+
+void PeerConnection::GetOptionsForUnifiedPlanOffer(
+    const RTCOfferAnswerOptions& offer_answer_options,
+    cricket::MediaSessionOptions* session_options) {
+  // Rules for generating an offer are dictated by JSEP sections 5.2.1 (Initial
+  // Offers) and 5.2.2 (Subsequent Offers).
+  RTC_DCHECK_EQ(session_options->media_description_options.size(), 0);
+  const ContentInfos& local_contents =
+      (local_description() ? local_description()->description()->contents()
+                           : ContentInfos());
+  const ContentInfos& remote_contents =
+      (remote_description() ? remote_description()->description()->contents()
+                            : ContentInfos());
+  // The mline indices that can be recycled. New transceivers should reuse these
+  // slots first.
+  std::queue<size_t> recycleable_mline_indices;
+  // Track the MIDs used in previous offer/answer exchanges and the current
+  // offer so that new, unique MIDs are generated.
+  std::set<std::string> used_mids = seen_mids_;
+  // First, go through each media section that exists in either the local or
+  // remote description and generate a media section in this offer for the
+  // associated transceiver. If a media section can be recycled, generate a
+  // default, rejected media section here that can be later overwritten.
+  for (size_t i = 0;
+       i < std::max(local_contents.size(), remote_contents.size()); ++i) {
+    // Either |local_content| or |remote_content| is non-null.
+    const ContentInfo* local_content =
+        (i < local_contents.size() ? &local_contents[i] : nullptr);
+    const ContentInfo* remote_content =
+        (i < remote_contents.size() ? &remote_contents[i] : nullptr);
+    bool had_been_rejected = (local_content && local_content->rejected) ||
+                             (remote_content && remote_content->rejected);
+    const std::string& mid =
+        (local_content ? local_content->name : remote_content->name);
+    cricket::MediaType media_type =
+        (local_content ? local_content->media_description()->type()
+                       : remote_content->media_description()->type());
+    if (media_type == cricket::MEDIA_TYPE_AUDIO ||
+        media_type == cricket::MEDIA_TYPE_VIDEO) {
+      auto transceiver = GetAssociatedTransceiver(mid);
+      RTC_CHECK(transceiver);
+      // A media section is considered eligible for recycling if it is marked as
+      // rejected in either the local or remote description.
+      if (had_been_rejected) {
+        session_options->media_description_options.push_back(
+            cricket::MediaDescriptionOptions(
+                transceiver->internal()->media_type(), mid,
+                RtpTransceiverDirection::kInactive,
+                /*stopped=*/true));
+        recycleable_mline_indices.push(i);
+      } else {
+        session_options->media_description_options.push_back(
+            GetMediaDescriptionOptionsForTransceiver(transceiver, mid));
+        // CreateOffer shouldn't really cause any state changes in
+        // PeerConnection, but we need a way to match new transceivers to new
+        // media sections in SetLocalDescription and JSEP specifies this is done
+        // by recording the index of the media section generated for the
+        // transceiver in the offer.
+        transceiver->internal()->set_mline_index(i);
+      }
+    } else {
+      RTC_CHECK_EQ(cricket::MEDIA_TYPE_DATA, media_type);
+      // TODO(bugs.webrtc.org/7600): Add support for data channels with Unified
+      // Plan.
+    }
+  }
+  // Next, look for transceivers that are newly added (that is, are not stopped
+  // and not associated). Reuse media sections marked as recyclable first,
+  // otherwise append to the end of the offer. New media sections should be
+  // added in the order they were added to the PeerConnection.
+  for (auto transceiver : transceivers_) {
+    if (transceiver->mid() || transceiver->stopped()) {
+      continue;
+    }
+    size_t mline_index;
+    if (!recycleable_mline_indices.empty()) {
+      mline_index = recycleable_mline_indices.front();
+      recycleable_mline_indices.pop();
+      session_options->media_description_options[mline_index] =
+          GetMediaDescriptionOptionsForTransceiver(transceiver,
+                                                   AllocateMid(&used_mids));
+    } else {
+      mline_index = session_options->media_description_options.size();
+      session_options->media_description_options.push_back(
+          GetMediaDescriptionOptionsForTransceiver(transceiver,
+                                                   AllocateMid(&used_mids)));
+    }
+    // See comment above for why CreateOffer changes the transceiver's state.
+    transceiver->internal()->set_mline_index(mline_index);
+  }
+  // TODO(bugs.webrtc.org/7600): Add support for data channels with Unified
+  // Plan.
+}
+
+void PeerConnection::GetOptionsForAnswer(
+    const RTCOfferAnswerOptions& offer_answer_options,
+    cricket::MediaSessionOptions* session_options) {
+  ExtractSharedMediaSessionOptions(offer_answer_options, session_options);
+
+  if (IsUnifiedPlan()) {
+    GetOptionsForUnifiedPlanAnswer(offer_answer_options, session_options);
+  } else {
+    GetOptionsForPlanBAnswer(offer_answer_options, session_options);
+  }
+
+  // Apply ICE renomination flag.
+  for (auto& options : session_options->media_description_options) {
+    options.transport_options.enable_ice_renomination =
+        configuration_.enable_ice_renomination;
+  }
 
   session_options->rtcp_cname = rtcp_cname_;
   session_options->crypto_options = factory_->options().crypto_options;
 }
 
-void PeerConnection::GetOptionsForAnswer(
-    const RTCOfferAnswerOptions& rtc_options,
+void PeerConnection::GetOptionsForPlanBAnswer(
+    const PeerConnectionInterface::RTCOfferAnswerOptions& offer_answer_options,
     cricket::MediaSessionOptions* session_options) {
-  ExtractSharedMediaSessionOptions(rtc_options, session_options);
-
   // Figure out transceiver directional preferences.
   bool send_audio = HasRtpSender(cricket::MEDIA_TYPE_AUDIO);
   bool send_video = HasRtpSender(cricket::MEDIA_TYPE_VIDEO);
@@ -2772,11 +3216,13 @@ void PeerConnection::GetOptionsForAnswer(
   bool recv_video = true;
 
   // The "offer_to_receive_X" options allow those defaults to be overridden.
-  if (rtc_options.offer_to_receive_audio != RTCOfferAnswerOptions::kUndefined) {
-    recv_audio = (rtc_options.offer_to_receive_audio > 0);
+  if (offer_answer_options.offer_to_receive_audio !=
+      RTCOfferAnswerOptions::kUndefined) {
+    recv_audio = (offer_answer_options.offer_to_receive_audio > 0);
   }
-  if (rtc_options.offer_to_receive_video != RTCOfferAnswerOptions::kUndefined) {
-    recv_video = (rtc_options.offer_to_receive_video > 0);
+  if (offer_answer_options.offer_to_receive_video !=
+      RTCOfferAnswerOptions::kUndefined) {
+    recv_video = (offer_answer_options.offer_to_receive_video > 0);
   }
 
   rtc::Optional<size_t> audio_index;
@@ -2805,12 +3251,6 @@ void PeerConnection::GetOptionsForAnswer(
       !data_index ? nullptr
                   : &session_options->media_description_options[*data_index];
 
-  // Apply ICE renomination flag.
-  for (auto& options : session_options->media_description_options) {
-    options.transport_options.enable_ice_renomination =
-        configuration_.enable_ice_renomination;
-  }
-
   AddRtpSenderOptions(GetSendersInternal(), audio_media_description_options,
                       video_media_description_options);
   AddRtpDataChannelOptions(rtp_data_channels_, data_media_description_options);
@@ -2822,9 +3262,30 @@ void PeerConnection::GetOptionsForAnswer(
   if (!rtp_data_channels_.empty() || data_channel_type() != cricket::DCT_RTP) {
     session_options->data_channel_type = data_channel_type();
   }
+}
 
-  session_options->rtcp_cname = rtcp_cname_;
-  session_options->crypto_options = factory_->options().crypto_options;
+void PeerConnection::GetOptionsForUnifiedPlanAnswer(
+    const PeerConnectionInterface::RTCOfferAnswerOptions& offer_answer_options,
+    cricket::MediaSessionOptions* session_options) {
+  // Rules for generating an answer are dictated by JSEP sections 5.3.1 (Initial
+  // Answers) and 5.3.2 (Subsequent Answers).
+  RTC_DCHECK(remote_description());
+  RTC_DCHECK(remote_description()->GetType() == SdpType::kOffer);
+  for (const ContentInfo& content :
+       remote_description()->description()->contents()) {
+    cricket::MediaType media_type = content.media_description()->type();
+    if (media_type == cricket::MEDIA_TYPE_AUDIO ||
+        media_type == cricket::MEDIA_TYPE_VIDEO) {
+      auto transceiver = GetAssociatedTransceiver(content.name);
+      RTC_CHECK(transceiver);
+      session_options->media_description_options.push_back(
+          GetMediaDescriptionOptionsForTransceiver(transceiver, content.name));
+    } else {
+      RTC_CHECK_EQ(cricket::MEDIA_TYPE_DATA, media_type);
+      // TODO(bugs.webrtc.org/7600): Add support for data channels with Unified
+      // Plan.
+    }
+  }
 }
 
 void PeerConnection::GenerateMediaDescriptionOptions(
@@ -3540,11 +4001,11 @@ void PeerConnection::StopRtcEventLog_w() {
 
 cricket::BaseChannel* PeerConnection::GetChannel(
     const std::string& content_name) {
-  if (voice_channel() && voice_channel()->content_name() == content_name) {
-    return voice_channel();
-  }
-  if (video_channel() && video_channel()->content_name() == content_name) {
-    return video_channel();
+  for (auto transceiver : transceivers_) {
+    cricket::BaseChannel* channel = transceiver->internal()->channel();
+    if (channel && channel->content_name() == content_name) {
+      return channel;
+    }
   }
   if (rtp_data_channel() &&
       rtp_data_channel()->content_name() == content_name) {
@@ -3779,9 +4240,9 @@ RTCError PeerConnection::PushdownTransportDescription(
           tinfo.content_name, tinfo.description, type, &error);
     }
     if (!success) {
-      LOG_AND_RETURN_ERROR(
-          RTCErrorType::INVALID_PARAMETER,
-          "Failed to push down transport description: " + error);
+      LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
+                           "Failed to push down transport description for " +
+                               tinfo.content_name + ": " + error);
     }
   }
 
@@ -4308,22 +4769,30 @@ std::string PeerConnection::GetTransportNameForMediaSection(
   return *first_content_name;
 }
 
-RTCError PeerConnection::CreateChannels(const SessionDescription* desc) {
-  RTC_DCHECK(desc);
-
+RTCErrorOr<const cricket::ContentGroup*> PeerConnection::GetEarlyBundleGroup(
+    const SessionDescription& desc) const {
   const cricket::ContentGroup* bundle_group = nullptr;
   if (configuration_.bundle_policy ==
       PeerConnectionInterface::kBundlePolicyMaxBundle) {
-    bundle_group = desc->GetGroupByName(cricket::GROUP_TYPE_BUNDLE);
+    bundle_group = desc.GetGroupByName(cricket::GROUP_TYPE_BUNDLE);
     if (!bundle_group) {
       LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
                            "max-bundle configured but session description "
                            "has no BUNDLE group");
     }
   }
+  return std::move(bundle_group);
+}
+
+RTCError PeerConnection::CreateChannels(const SessionDescription& desc) {
+  auto bundle_group_or_error = GetEarlyBundleGroup(desc);
+  if (!bundle_group_or_error.ok()) {
+    return bundle_group_or_error.MoveError();
+  }
+  const cricket::ContentGroup* bundle_group = bundle_group_or_error.MoveValue();
 
   // Creating the media channels and transport proxies.
-  const cricket::ContentInfo* voice = cricket::GetFirstAudioContent(desc);
+  const cricket::ContentInfo* voice = cricket::GetFirstAudioContent(&desc);
   if (voice && !voice->rejected &&
       !GetAudioTransceiver()->internal()->channel()) {
     cricket::VoiceChannel* voice_channel = CreateVoiceChannel(
@@ -4336,7 +4805,7 @@ RTCError PeerConnection::CreateChannels(const SessionDescription* desc) {
     GetAudioTransceiver()->internal()->SetChannel(voice_channel);
   }
 
-  const cricket::ContentInfo* video = cricket::GetFirstVideoContent(desc);
+  const cricket::ContentInfo* video = cricket::GetFirstVideoContent(&desc);
   if (video && !video->rejected &&
       !GetVideoTransceiver()->internal()->channel()) {
     cricket::VideoChannel* video_channel = CreateVideoChannel(
@@ -4349,7 +4818,7 @@ RTCError PeerConnection::CreateChannels(const SessionDescription* desc) {
     GetVideoTransceiver()->internal()->SetChannel(video_channel);
   }
 
-  const cricket::ContentInfo* data = cricket::GetFirstDataContent(desc);
+  const cricket::ContentInfo* data = cricket::GetFirstDataContent(&desc);
   if (data_channel_type_ != cricket::DCT_NONE && data && !data->rejected &&
       !rtp_data_channel_ && !sctp_transport_) {
     if (!CreateDataChannel(data->name, GetTransportNameForMediaSection(
