@@ -91,7 +91,7 @@ def ParseCommitPosition(commit_message):
   for line in reversed(commit_message.splitlines()):
     m = COMMIT_POSITION_RE.match(line.strip())
     if m:
-      return m.group(1)
+      return int(m.group(1))
   logging.error('Failed to parse commit position id from:\n%s\n',
                 commit_message)
   sys.exit(-1)
@@ -403,10 +403,10 @@ def _LocalCommit(commit_msg, dry_run):
     _RunCommand(['git', 'commit', '-m', commit_msg])
 
 
-def ShouldUseCQ(skip_cq, cq_over, current_cr_rev, new_cr_rev):
+def ShouldUseCQ(skip_cq, cq_over, current_commit_pos, new_commit_pos):
   if skip_cq:
     return 0
-  if (new_cr_rev - current_cr_rev) < cq_over:
+  if (new_commit_pos - current_commit_pos) < cq_over:
     return 1
   return 2
 
@@ -504,7 +504,7 @@ def main():
   else:
     _LocalCommit(commit_msg, opts.dry_run)
     commit_queue = ShouldUseCQ(opts.skip_cq, opts.cq_over,
-                               current_cr_rev, new_cr_rev)
+                               current_commit_pos, new_commit_pos)
     _UploadCL(opts.dry_run, commit_queue)
   return 0
 
