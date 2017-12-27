@@ -403,13 +403,31 @@ def _LocalCommit(commit_msg, dry_run):
     _RunCommand(['git', 'commit', '-m', commit_msg])
 
 
-def _UploadCL(dry_run, skip_cq=False):
+def ShouldUseCQ(skip_cq, cq_over, current_cr_rev, new_cr_rev):
+  if skip_cq:
+    return 0
+  if (new_cr_rev - current_cr_rev) < cq_over:
+    return 1
+  return 2
+
+
+def _UploadCL(dry_run, commit_queue=2):
+  """Upload the committed changes as a changelist to Gerrit.
+
+  commit_queue:
+    - 2: Submit to commit queue.
+    - 1: Commit queue dry run.
+    - 0: Skip CQ, upload only.
+  """
   logging.info('Uploading CL...')
   if not dry_run:
     cmd = ['git', 'cl', 'upload', '-f', '--gerrit']
-    if not skip_cq:
+    if commit_queue >= 2:
       logging.info('Sending the CL to the CQ...')
       cmd.extend(['--use-commit-queue', '--send-mail'])
+    elif commit_queue >= 1:
+      logging.info('Starting CQ dry run...')
+      cmd.extend(['--cq-dry-run'])
     _RunCommand(cmd, extra_env={'EDITOR': 'true', 'SKIP_GCE_AUTH_FOR_GIT': '1'})
 
 
@@ -432,8 +450,12 @@ def main():
                  default=False,
                  help=('Ignore if the current branch is not master or if there '
                        'are uncommitted changes (default: %(default)s).'))
-  p.add_argument('--skip-cq', action='store_true', default=False,
-                 help='Skip sending the CL to the CQ (default: %(default)s)')
+  grp = p.add_mutually_exclusive_group()
+  grp.add_argument('--skip-cq', action='store_true', default=False,
+                   help='Skip sending the CL to the CQ (default: %(default)s)')
+  grp.add_argument('--cq-over', type=int, default=1,
+                   help=('Commit queue dry run if the revision difference '
+                         'is below this number (default: %(default)s)'))
   p.add_argument('-v', '--verbose', action='store_true', default=False,
                  help='Be extra verbose in printing of log messages.')
   opts = p.parse_args()
@@ -481,7 +503,9 @@ def main():
     logging.info("No DEPS changes detected, skipping CL creation.")
   else:
     _LocalCommit(commit_msg, opts.dry_run)
-    _UploadCL(opts.dry_run, opts.skip_cq)
+    commit_queue = ShouldUseCQ(opts.skip_cq, opts.cq_over,
+                               current_cr_rev, new_cr_rev)
+    _UploadCL(opts.dry_run, commit_queue)
   return 0
 
 
