@@ -944,8 +944,9 @@ TEST_P(DualStreamsTest,
   // Call settings.
   dual_streams.call.send_side_bwe = true;
   dual_streams.call.dual_video = true;
-  dual_streams.analyzer = {"dualstreams_moderately_restricted_screenshare", 0.0,
-                           0.0, kFullStackTestDurationSecs};
+  std::string test_label = "dualstreams_moderately_restricted_screenshare_" +
+                           std::to_string(first_stream);
+  dual_streams.analyzer = {test_label, 0.0, 0.0, kFullStackTestDurationSecs};
   dual_streams.pipe.loss_percent = 1;
   dual_streams.pipe.link_capacity_kbps = 7500;
   dual_streams.pipe.queue_length_packets = 30;
@@ -975,8 +976,9 @@ TEST_P(DualStreamsTest, Conference_Restricted) {
   // Call settings.
   dual_streams.call.send_side_bwe = true;
   dual_streams.call.dual_video = true;
-  dual_streams.analyzer = {"dualstreams_moderately_restricted_screenshare", 0.0,
-                           0.0, kFullStackTestDurationSecs};
+  std::string test_label = "dualstreams_conference_restricted_screenshare_" +
+                           std::to_string(first_stream);
+  dual_streams.analyzer = {test_label, 0.0, 0.0, kFullStackTestDurationSecs};
   dual_streams.pipe.loss_percent = 1;
   dual_streams.pipe.link_capacity_kbps = 5000;
   dual_streams.pipe.queue_length_packets = 30;
