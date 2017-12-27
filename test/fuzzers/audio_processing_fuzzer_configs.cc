@@ -70,7 +70,7 @@ std::unique_ptr<AudioProcessing> CreateAPM(const uint8_t** data,
   config.Set<Intelligibility>(new Intelligibility(*ie));
 
   std::unique_ptr<AudioProcessing> apm(AudioProcessing::Create(
-      config, nullptr, std::move(echo_control_factory), nullptr));
+      config, nullptr, nullptr, std::move(echo_control_factory), nullptr));
 
   webrtc::AudioProcessing::Config apm_config;
   apm_config.residual_echo_detector.enabled = *red;
