@@ -149,7 +149,8 @@ declare_args() {
   # also: |rtc_initialize_ffmpeg|.
   # CHECK THE OPENH264, FFMPEG AND H.264 LICENSES/PATENTS BEFORE BUILDING.
   # http://www.openh264.org, https://www.ffmpeg.org/
-  rtc_use_h264 = proprietary_codecs && !is_android && !is_ios
+  rtc_use_h264 =
+      is_chrome_branded && proprietary_codecs && !is_android && !is_ios
 
   # By default, use normal platform audio support or dummy audio, but don't
   # use file-based audio playout and record.
