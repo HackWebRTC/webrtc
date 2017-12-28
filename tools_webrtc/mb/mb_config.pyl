@@ -74,7 +74,7 @@
       'Win64 Release (Clang)': 'win_clang_release_bot_x64',
       'Win32 ASan': 'win_asan_clang_release_bot_x86',
       'Win32 Release [large tests]': 'release_bot_x86',
-      # TODO(bugs.webrtc.org/757293): remove this duplicate:
+      # TODO(bugs.webrtc.org/8664): remove this duplicate:
       'Win32 Release (MSVC)': 'win_msvc_release_bot_x86',
     },
     'client.webrtc.branches': {
@@ -214,7 +214,7 @@
       'win_experimental': 'release_bot_x86',
       'win_x64_win8': 'debug_bot_x64',
       'win_x64_win10': 'debug_bot_x64',
-      # TODO(bugs.webrtc.org/757293): remove this duplicate:
+      # TODO(bugs.webrtc.org/8664): remove this duplicate:
       'win_msvc_rel': 'win_msvc_release_bot_x86',
     }
   },
