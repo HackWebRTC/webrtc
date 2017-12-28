@@ -59,7 +59,8 @@ class CallPerfTest : public test::CallTest {
                           CreateOrder create_first,
                           float video_ntp_speed,
                           float video_rtp_speed,
-                          float audio_rtp_speed);
+                          float audio_rtp_speed,
+                          const std::string& test_label);
 
   void TestMinTransmitBitrate(bool pad_to_min_bitrate);
 
@@ -83,9 +84,10 @@ class VideoRtcpAndSyncObserver : public test::RtpRtcpObserver,
   static const int kMinRunTimeMs = 30000;
 
  public:
-  explicit VideoRtcpAndSyncObserver(Clock* clock)
+  explicit VideoRtcpAndSyncObserver(Clock* clock, const std::string& test_label)
       : test::RtpRtcpObserver(CallPerfTest::kLongTimeoutMs),
         clock_(clock),
+        test_label_(test_label),
         creation_time_ms_(clock_->TimeInMilliseconds()),
         first_time_in_sync_(-1),
         receive_stream_(nullptr) {}
@@ -109,11 +111,8 @@ class VideoRtcpAndSyncObserver : public test::RtpRtcpObserver,
     if (std::abs(stats.sync_offset_ms) < kInSyncThresholdMs) {
       if (first_time_in_sync_ == -1) {
         first_time_in_sync_ = now_ms;
-        webrtc::test::PrintResult("sync_convergence_time",
-                                  "",
-                                  "synchronization",
-                                  time_since_creation,
-                                  "ms",
+        webrtc::test::PrintResult("sync_convergence_time", test_label_,
+                                  "synchronization", time_since_creation, "ms",
                                   false);
       }
       if (time_since_creation > kMinRunTimeMs)
@@ -129,12 +128,13 @@ class VideoRtcpAndSyncObserver : public test::RtpRtcpObserver,
   }
 
   void PrintResults() {
-    test::PrintResultList("stream_offset", "", "synchronization",
+    test::PrintResultList("stream_offset", test_label_, "synchronization",
                           sync_offset_ms_list_, "ms", false);
   }
 
  private:
   Clock* const clock_;
+  std::string test_label_;
   const int64_t creation_time_ms_;
   int64_t first_time_in_sync_;
   rtc::CriticalSection crit_;
@@ -146,7 +146,8 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
                                       CreateOrder create_first,
                                       float video_ntp_speed,
                                       float video_rtp_speed,
-                                      float audio_rtp_speed) {
+                                      float audio_rtp_speed,
+                                      const std::string& test_label) {
   const char* kSyncGroup = "av_sync";
   const uint32_t kAudioSendSsrc = 1234;
   const uint32_t kAudioRecvSsrc = 5678;
@@ -160,7 +161,7 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
 
   VoiceEngine* voice_engine;
   VoEBase* voe_base;
-  VideoRtcpAndSyncObserver observer(Clock::GetRealTimeClock());
+  VideoRtcpAndSyncObserver observer(Clock::GetRealTimeClock(), test_label);
 
   std::map<uint8_t, MediaType> audio_pt_map;
   std::map<uint8_t, MediaType> video_pt_map;
@@ -323,21 +324,22 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
 TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSyncWithVideoNtpDrift) {
   TestAudioVideoSync(FecMode::kOff, CreateOrder::kAudioFirst,
                      DriftingClock::PercentsFaster(10.0f),
-                     DriftingClock::kNoDrift, DriftingClock::kNoDrift);
+                     DriftingClock::kNoDrift, DriftingClock::kNoDrift,
+                     "_video_ntp_drift");
 }
 
 TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSyncWithAudioFasterThanVideoDrift) {
   TestAudioVideoSync(FecMode::kOff, CreateOrder::kAudioFirst,
                      DriftingClock::kNoDrift,
                      DriftingClock::PercentsSlower(30.0f),
-                     DriftingClock::PercentsFaster(30.0f));
+                     DriftingClock::PercentsFaster(30.0f), "_audio_faster");
 }
 
 TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSyncWithVideoFasterThanAudioDrift) {
   TestAudioVideoSync(FecMode::kOn, CreateOrder::kVideoFirst,
                      DriftingClock::kNoDrift,
                      DriftingClock::PercentsFaster(30.0f),
-                     DriftingClock::PercentsSlower(30.0f));
+                     DriftingClock::PercentsSlower(30.0f), "_video_faster");
 }
 
 void CallPerfTest::TestCaptureNtpTime(const FakeNetworkPipe::Config& net_config,
