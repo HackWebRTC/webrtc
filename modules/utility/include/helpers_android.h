@@ -45,12 +45,6 @@ jobject NewGlobalRef(JNIEnv* jni, jobject o);
 
 void DeleteGlobalRef(JNIEnv* jni, jobject o);
 
-// Return thread ID as a string.
-std::string GetThreadId();
-
-// Return thread ID as string suitable for debug logging.
-std::string GetThreadInfo();
-
 // Attach thread to JVM if necessary and detach at scope end if originally
 // attached.
 class AttachThreadScoped {

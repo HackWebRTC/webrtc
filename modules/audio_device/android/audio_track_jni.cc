@@ -18,6 +18,7 @@
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/format_macros.h"
+#include "rtc_base/platform_thread.h"
 
 #define TAG "AudioTrackJni"
 #define ALOGV(...) __android_log_print(ANDROID_LOG_VERBOSE, TAG, __VA_ARGS__)
@@ -77,7 +78,7 @@ AudioTrackJni::AudioTrackJni(AudioManager* audio_manager)
       initialized_(false),
       playing_(false),
       audio_device_buffer_(nullptr) {
-  ALOGD("ctor%s", GetThreadInfo().c_str());
+  ALOGD("ctor[tid=%d]", rtc::CurrentThreadId());
   RTC_DCHECK(audio_parameters_.is_valid());
   RTC_CHECK(j_environment_);
   JNINativeMethod native_methods[] = {
@@ -99,26 +100,26 @@ AudioTrackJni::AudioTrackJni(AudioManager* audio_manager)
 }
 
 AudioTrackJni::~AudioTrackJni() {
-  ALOGD("~dtor%s", GetThreadInfo().c_str());
+  ALOGD("~dtor[tid=%d]", rtc::CurrentThreadId());
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   Terminate();
 }
 
 int32_t AudioTrackJni::Init() {
-  ALOGD("Init%s", GetThreadInfo().c_str());
+  ALOGD("Init[tid=%d]", rtc::CurrentThreadId());
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return 0;
 }
 
 int32_t AudioTrackJni::Terminate() {
-  ALOGD("Terminate%s", GetThreadInfo().c_str());
+  ALOGD("Terminate[tid=%d]", rtc::CurrentThreadId());
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   StopPlayout();
   return 0;
 }
 
 int32_t AudioTrackJni::InitPlayout() {
-  ALOGD("InitPlayout%s", GetThreadInfo().c_str());
+  ALOGD("InitPlayout[tid=%d]", rtc::CurrentThreadId());
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(!initialized_);
   RTC_DCHECK(!playing_);
@@ -132,7 +133,7 @@ int32_t AudioTrackJni::InitPlayout() {
 }
 
 int32_t AudioTrackJni::StartPlayout() {
-  ALOGD("StartPlayout%s", GetThreadInfo().c_str());
+  ALOGD("StartPlayout[tid=%d]", rtc::CurrentThreadId());
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(initialized_);
   RTC_DCHECK(!playing_);
@@ -145,7 +146,7 @@ int32_t AudioTrackJni::StartPlayout() {
 }
 
 int32_t AudioTrackJni::StopPlayout() {
-  ALOGD("StopPlayout%s", GetThreadInfo().c_str());
+  ALOGD("StopPlayout[tid=%d]", rtc::CurrentThreadId());
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   if (!initialized_ || !playing_) {
     return 0;
@@ -170,27 +171,27 @@ int AudioTrackJni::SpeakerVolumeIsAvailable(bool& available) {
 }
 
 int AudioTrackJni::SetSpeakerVolume(uint32_t volume) {
-  ALOGD("SetSpeakerVolume(%d)%s", volume, GetThreadInfo().c_str());
+  ALOGD("SetSpeakerVolume(%d)[tid=%d]", volume, rtc::CurrentThreadId());
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return j_audio_track_->SetStreamVolume(volume) ? 0 : -1;
 }
 
 int AudioTrackJni::MaxSpeakerVolume(uint32_t& max_volume) const {
-  ALOGD("MaxSpeakerVolume%s", GetThreadInfo().c_str());
+  ALOGD("MaxSpeakerVolume[tid=%d]", rtc::CurrentThreadId());
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   max_volume = j_audio_track_->GetStreamMaxVolume();
   return 0;
 }
 
 int AudioTrackJni::MinSpeakerVolume(uint32_t& min_volume) const {
-  ALOGD("MaxSpeakerVolume%s", GetThreadInfo().c_str());
+  ALOGD("MaxSpeakerVolume[tid=%d]", rtc::CurrentThreadId());
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   min_volume = 0;
   return 0;
 }
 
 int AudioTrackJni::SpeakerVolume(uint32_t& volume) const {
-  ALOGD("SpeakerVolume%s", GetThreadInfo().c_str());
+  ALOGD("SpeakerVolume[tid=%d]", rtc::CurrentThreadId());
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   volume = j_audio_track_->GetStreamVolume();
   return 0;
@@ -198,7 +199,7 @@ int AudioTrackJni::SpeakerVolume(uint32_t& volume) const {
 
 // TODO(henrika): possibly add stereo support.
 void AudioTrackJni::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
-  ALOGD("AttachAudioBuffer%s", GetThreadInfo().c_str());
+  ALOGD("AttachAudioBuffer[tid=%d]", rtc::CurrentThreadId());
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   audio_device_buffer_ = audioBuffer;
   const int sample_rate_hz = audio_parameters_.sample_rate();

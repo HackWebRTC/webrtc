@@ -18,6 +18,7 @@
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/format_macros.h"
+#include "rtc_base/platform_thread.h"
 
 #define TAG "AudioRecordJni"
 #define ALOGV(...) __android_log_print(ANDROID_LOG_VERBOSE, TAG, __VA_ARGS__)
@@ -78,7 +79,7 @@ AudioRecordJni::AudioRecordJni(AudioManager* audio_manager)
       initialized_(false),
       recording_(false),
       audio_device_buffer_(nullptr) {
-  ALOGD("ctor%s", GetThreadInfo().c_str());
+  ALOGD("ctor[tid=%d]", rtc::CurrentThreadId());
   RTC_DCHECK(audio_parameters_.is_valid());
   RTC_CHECK(j_environment_);
   JNINativeMethod native_methods[] = {
@@ -100,26 +101,26 @@ AudioRecordJni::AudioRecordJni(AudioManager* audio_manager)
 }
 
 AudioRecordJni::~AudioRecordJni() {
-  ALOGD("~dtor%s", GetThreadInfo().c_str());
+  ALOGD("~dtor[tid=%d]", rtc::CurrentThreadId());
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   Terminate();
 }
 
 int32_t AudioRecordJni::Init() {
-  ALOGD("Init%s", GetThreadInfo().c_str());
+  ALOGD("Init[tid=%d]", rtc::CurrentThreadId());
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return 0;
 }
 
 int32_t AudioRecordJni::Terminate() {
-  ALOGD("Terminate%s", GetThreadInfo().c_str());
+  ALOGD("Terminate[tid=%d]", rtc::CurrentThreadId());
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   StopRecording();
   return 0;
 }
 
 int32_t AudioRecordJni::InitRecording() {
-  ALOGD("InitRecording%s", GetThreadInfo().c_str());
+  ALOGD("InitRecording[tid=%d]", rtc::CurrentThreadId());
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(!initialized_);
   RTC_DCHECK(!recording_);
@@ -141,7 +142,7 @@ int32_t AudioRecordJni::InitRecording() {
 }
 
 int32_t AudioRecordJni::StartRecording() {
-  ALOGD("StartRecording%s", GetThreadInfo().c_str());
+  ALOGD("StartRecording[tid=%d]", rtc::CurrentThreadId());
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(initialized_);
   RTC_DCHECK(!recording_);
@@ -154,7 +155,7 @@ int32_t AudioRecordJni::StartRecording() {
 }
 
 int32_t AudioRecordJni::StopRecording() {
-  ALOGD("StopRecording%s", GetThreadInfo().c_str());
+  ALOGD("StopRecording[tid=%d]", rtc::CurrentThreadId());
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   if (!initialized_ || !recording_) {
     return 0;
@@ -190,7 +191,7 @@ void AudioRecordJni::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
 }
 
 int32_t AudioRecordJni::EnableBuiltInAEC(bool enable) {
-  ALOGD("EnableBuiltInAEC%s", GetThreadInfo().c_str());
+  ALOGD("EnableBuiltInAEC[tid=%d]", rtc::CurrentThreadId());
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return j_audio_record_->EnableBuiltInAEC(enable) ? 0 : -1;
 }
@@ -202,7 +203,7 @@ int32_t AudioRecordJni::EnableBuiltInAGC(bool enable) {
 }
 
 int32_t AudioRecordJni::EnableBuiltInNS(bool enable) {
-  ALOGD("EnableBuiltInNS%s", GetThreadInfo().c_str());
+  ALOGD("EnableBuiltInNS[tid=%d]", rtc::CurrentThreadId());
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return j_audio_record_->EnableBuiltInNS(enable) ? 0 : -1;
 }
