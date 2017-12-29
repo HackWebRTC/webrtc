@@ -23,7 +23,7 @@
     {
       "include": "real_device_tests.json",
       "device type": "iPhone 7",
-      "os": "11.0"
+      "os": "11.2.1"
     }
   ],
   "expiration_time": 3600
