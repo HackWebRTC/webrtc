@@ -142,6 +142,11 @@ class PeerConnectionWrapper {
       const std::string& track_label,
       std::vector<MediaStreamInterface*> streams = {});
 
+  // Calls the underlying PeerConnection's CreateDataChannel method with default
+  // initialization parameters.
+  rtc::scoped_refptr<DataChannelInterface> CreateDataChannel(
+      const std::string& label);
+
   // Returns the signaling state of the underlying PeerConnection.
   PeerConnectionInterface::SignalingState signaling_state();
 

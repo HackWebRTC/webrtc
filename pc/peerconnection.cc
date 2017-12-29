@@ -2099,8 +2099,14 @@ RTCError PeerConnection::UpdateTransceiversAndDataChannels(
         return error;
       }
     } else if (media_type == cricket::MEDIA_TYPE_DATA) {
-      // TODO(bugs.webrtc.org/7600): Add support for data channels with Unified
-      // Plan.
+      if (GetDataMid() && new_content.name != *GetDataMid()) {
+        // Ignore all but the first data section.
+        continue;
+      }
+      RTCError error = UpdateDataChannel(source, new_content, bundle_group);
+      if (!error.ok()) {
+        return error;
+      }
     } else {
       LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR,
                            "Unknown section type.");
@@ -2142,6 +2148,34 @@ RTCError PeerConnection::UpdateTransceiverChannel(
             "Failed to create channel for mid=" + content.name);
       }
       transceiver->internal()->SetChannel(channel);
+    }
+  }
+  return RTCError::OK();
+}
+
+RTCError PeerConnection::UpdateDataChannel(
+    cricket::ContentSource source,
+    const cricket::ContentInfo& content,
+    const cricket::ContentGroup* bundle_group) {
+  if (data_channel_type_ == cricket::DCT_NONE) {
+    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
+                         "Data channels are not supported.");
+  }
+  if (content.rejected) {
+    DestroyDataChannel();
+  } else {
+    if (!rtp_data_channel_ && !sctp_transport_) {
+      if (!CreateDataChannel(content.name, GetTransportNameForMediaSection(
+                                               content.name, bundle_group))) {
+        LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR,
+                             "Failed to create data channel.");
+      }
+    }
+    if (source == cricket::CS_REMOTE) {
+      const MediaContentDescription* data_desc = content.media_description();
+      if (data_desc && cricket::IsRtpProtocol(data_desc->protocol())) {
+        UpdateRemoteRtpDataChannels(GetActiveStreams(data_desc));
+      }
     }
   }
   return RTCError::OK();
@@ -2946,6 +2980,15 @@ void PeerConnection::GetOptionsForOffer(
     GetOptionsForPlanBOffer(offer_answer_options, session_options);
   }
 
+  // Intentionally unset the data channel type for RTP data channel with the
+  // second condition. Otherwise the RTP data channels would be successfully
+  // negotiated by default and the unit tests in WebRtcDataBrowserTest will fail
+  // when building with chromium. We want to leave RTP data channels broken, so
+  // people won't try to use them.
+  if (!rtp_data_channels_.empty() || data_channel_type() != cricket::DCT_RTP) {
+    session_options->data_channel_type = data_channel_type();
+  }
+
   // Apply ICE restart flag and renomination flag.
   for (auto& options : session_options->media_description_options) {
     options.transport_options.ice_restart = offer_answer_options.ice_restart;
@@ -3022,9 +3065,7 @@ void PeerConnection::GetOptionsForPlanBOffer(
   }
   if (!data_index && offer_new_data_description) {
     session_options->media_description_options.push_back(
-        cricket::MediaDescriptionOptions(
-            cricket::MEDIA_TYPE_DATA, cricket::CN_DATA,
-            RtpTransceiverDirection::kSendRecv, false));
+        GetMediaDescriptionOptionsForActiveData(cricket::CN_DATA));
     data_index = session_options->media_description_options.size() - 1;
   }
 
@@ -3034,22 +3075,9 @@ void PeerConnection::GetOptionsForPlanBOffer(
   cricket::MediaDescriptionOptions* video_media_description_options =
       !video_index ? nullptr
                    : &session_options->media_description_options[*video_index];
-  cricket::MediaDescriptionOptions* data_media_description_options =
-      !data_index ? nullptr
-                  : &session_options->media_description_options[*data_index];
 
   AddRtpSenderOptions(GetSendersInternal(), audio_media_description_options,
                       video_media_description_options);
-  AddRtpDataChannelOptions(rtp_data_channels_, data_media_description_options);
-
-  // Intentionally unset the data channel type for RTP data channel with the
-  // second condition. Otherwise the RTP data channels would be successfully
-  // negotiated by default and the unit tests in WebRtcDataBrowserTest will fail
-  // when building with chromium. We want to leave RTP data channels broken, so
-  // people won't try to use them.
-  if (!rtp_data_channels_.empty() || data_channel_type() != cricket::DCT_RTP) {
-    session_options->data_channel_type = data_channel_type();
-  }
 }
 
 // Find a new MID that is not already in |used_mids|, then add it to |used_mids|
@@ -3150,8 +3178,14 @@ void PeerConnection::GetOptionsForUnifiedPlanOffer(
       }
     } else {
       RTC_CHECK_EQ(cricket::MEDIA_TYPE_DATA, media_type);
-      // TODO(bugs.webrtc.org/7600): Add support for data channels with Unified
-      // Plan.
+      RTC_CHECK(GetDataMid());
+      if (had_been_rejected || mid != *GetDataMid()) {
+        session_options->media_description_options.push_back(
+            GetMediaDescriptionOptionsForRejectedData(mid));
+      } else {
+        session_options->media_description_options.push_back(
+            GetMediaDescriptionOptionsForActiveData(mid));
+      }
     }
   }
   // Next, look for transceivers that are newly added (that is, are not stopped
@@ -3178,8 +3212,12 @@ void PeerConnection::GetOptionsForUnifiedPlanOffer(
     // See comment above for why CreateOffer changes the transceiver's state.
     transceiver->internal()->set_mline_index(mline_index);
   }
-  // TODO(bugs.webrtc.org/7600): Add support for data channels with Unified
-  // Plan.
+  // Lastly, add a m-section if we have local data channels and an m section
+  // does not already exist.
+  if (!GetDataMid() && HasDataChannels()) {
+    session_options->media_description_options.push_back(
+        GetMediaDescriptionOptionsForActiveData(AllocateMid(&used_mids)));
+  }
 }
 
 void PeerConnection::GetOptionsForAnswer(
@@ -3191,6 +3229,14 @@ void PeerConnection::GetOptionsForAnswer(
     GetOptionsForUnifiedPlanAnswer(offer_answer_options, session_options);
   } else {
     GetOptionsForPlanBAnswer(offer_answer_options, session_options);
+  }
+
+  // Intentionally unset the data channel type for RTP data channel. Otherwise
+  // the RTP data channels would be successfully negotiated by default and the
+  // unit tests in WebRtcDataBrowserTest will fail when building with chromium.
+  // We want to leave RTP data channels broken, so people won't try to use them.
+  if (!rtp_data_channels_.empty() || data_channel_type() != cricket::DCT_RTP) {
+    session_options->data_channel_type = data_channel_type();
   }
 
   // Apply ICE renomination flag.
@@ -3247,21 +3293,9 @@ void PeerConnection::GetOptionsForPlanBAnswer(
   cricket::MediaDescriptionOptions* video_media_description_options =
       !video_index ? nullptr
                    : &session_options->media_description_options[*video_index];
-  cricket::MediaDescriptionOptions* data_media_description_options =
-      !data_index ? nullptr
-                  : &session_options->media_description_options[*data_index];
 
   AddRtpSenderOptions(GetSendersInternal(), audio_media_description_options,
                       video_media_description_options);
-  AddRtpDataChannelOptions(rtp_data_channels_, data_media_description_options);
-
-  // Intentionally unset the data channel type for RTP data channel. Otherwise
-  // the RTP data channels would be successfully negotiated by default and the
-  // unit tests in WebRtcDataBrowserTest will fail when building with chromium.
-  // We want to leave RTP data channels broken, so people won't try to use them.
-  if (!rtp_data_channels_.empty() || data_channel_type() != cricket::DCT_RTP) {
-    session_options->data_channel_type = data_channel_type();
-  }
 }
 
 void PeerConnection::GetOptionsForUnifiedPlanAnswer(
@@ -3282,8 +3316,16 @@ void PeerConnection::GetOptionsForUnifiedPlanAnswer(
           GetMediaDescriptionOptionsForTransceiver(transceiver, content.name));
     } else {
       RTC_CHECK_EQ(cricket::MEDIA_TYPE_DATA, media_type);
-      // TODO(bugs.webrtc.org/7600): Add support for data channels with Unified
-      // Plan.
+      RTC_CHECK(GetDataMid());
+      // Always reject a data section if it has already been rejected.
+      // Additionally, reject all data sections except for the first one.
+      if (content.rejected || content.name != *GetDataMid()) {
+        session_options->media_description_options.push_back(
+            GetMediaDescriptionOptionsForRejectedData(content.name));
+      } else {
+        session_options->media_description_options.push_back(
+            GetMediaDescriptionOptionsForActiveData(content.name));
+      }
     }
   }
 }
@@ -3331,19 +3373,49 @@ void PeerConnection::GenerateMediaDescriptionOptions(
       // If we already have an data m= section, reject this extra one.
       if (*data_index) {
         session_options->media_description_options.push_back(
-            cricket::MediaDescriptionOptions(
-                cricket::MEDIA_TYPE_DATA, content.name,
-                RtpTransceiverDirection::kInactive, true));
+            GetMediaDescriptionOptionsForRejectedData(content.name));
       } else {
         session_options->media_description_options.push_back(
-            cricket::MediaDescriptionOptions(
-                cricket::MEDIA_TYPE_DATA, content.name,
-                // Direction for data sections is meaningless, but legacy
-                // endpoints might expect sendrecv.
-                RtpTransceiverDirection::kSendRecv, false));
+            GetMediaDescriptionOptionsForActiveData(content.name));
         *data_index = session_options->media_description_options.size() - 1;
       }
     }
+  }
+}
+
+cricket::MediaDescriptionOptions
+PeerConnection::GetMediaDescriptionOptionsForActiveData(
+    const std::string& mid) const {
+  // Direction for data sections is meaningless, but legacy endpoints might
+  // expect sendrecv.
+  cricket::MediaDescriptionOptions options(cricket::MEDIA_TYPE_DATA, mid,
+                                           RtpTransceiverDirection::kSendRecv,
+                                           /*stopped=*/false);
+  AddRtpDataChannelOptions(rtp_data_channels_, &options);
+  return options;
+}
+
+cricket::MediaDescriptionOptions
+PeerConnection::GetMediaDescriptionOptionsForRejectedData(
+    const std::string& mid) const {
+  cricket::MediaDescriptionOptions options(cricket::MEDIA_TYPE_DATA, mid,
+                                           RtpTransceiverDirection::kInactive,
+                                           /*stopped=*/true);
+  AddRtpDataChannelOptions(rtp_data_channels_, &options);
+  return options;
+}
+
+rtc::Optional<std::string> PeerConnection::GetDataMid() const {
+  switch (data_channel_type_) {
+    case cricket::DCT_RTP:
+      if (!rtp_data_channel_) {
+        return rtc::nullopt;
+      }
+      return rtp_data_channel_->content_name();
+    case cricket::DCT_SCTP:
+      return sctp_content_name_;
+    default:
+      return rtc::nullopt;
   }
 }
 

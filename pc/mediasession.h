@@ -329,6 +329,9 @@ void GetSupportedDataSdesCryptoSuiteNames(
     const rtc::CryptoOptions& crypto_options,
     std::vector<std::string>* crypto_suite_names);
 
+// Returns true if the given media section protocol indicates use of RTP.
+bool IsRtpProtocol(const std::string& protocol);
+
 }  // namespace cricket
 
 #endif  // PC_MEDIASESSION_H_

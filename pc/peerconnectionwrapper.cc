@@ -278,6 +278,11 @@ rtc::scoped_refptr<RtpSenderInterface> PeerConnectionWrapper::AddVideoTrack(
   return pc()->AddTrack(CreateVideoTrack(track_label), std::move(streams));
 }
 
+rtc::scoped_refptr<DataChannelInterface>
+PeerConnectionWrapper::CreateDataChannel(const std::string& label) {
+  return pc()->CreateDataChannel(label, nullptr);
+}
+
 PeerConnectionInterface::SignalingState
 PeerConnectionWrapper::signaling_state() {
   return pc()->signaling_state();

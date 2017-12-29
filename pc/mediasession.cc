@@ -579,7 +579,7 @@ static void PruneCryptos(const CryptoParamsVec& filter,
                         target_cryptos->end());
 }
 
-static bool IsRtpProtocol(const std::string& protocol) {
+bool IsRtpProtocol(const std::string& protocol) {
   return protocol.empty() ||
          (protocol.find(cricket::kMediaProtocolRtpPrefix) != std::string::npos);
 }

@@ -10,13 +10,17 @@
 
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
+#include "media/engine/webrtcmediaengine.h"
+#include "modules/audio_processing/include/audio_processing.h"
 #include "pc/mediasession.h"
+#include "pc/peerconnectionfactory.h"
 #include "pc/peerconnectionwrapper.h"
 #include "pc/sdputils.h"
 #ifdef WEBRTC_ANDROID
 #include "pc/test/androidtestinitializer.h"
 #endif
 #include "pc/test/fakeaudiocapturemodule.h"
+#include "pc/test/fakesctptransport.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/ptr_util.h"
 #include "rtc_base/virtualsocketserver.h"
@@ -36,6 +40,30 @@ using ::testing::Values;
 using ::testing::Combine;
 using ::testing::ElementsAre;
 
+class PeerConnectionFactoryForJsepTest : public PeerConnectionFactory {
+ public:
+  PeerConnectionFactoryForJsepTest()
+      : PeerConnectionFactory(
+            rtc::Thread::Current(),
+            rtc::Thread::Current(),
+            rtc::Thread::Current(),
+            rtc::WrapUnique(cricket::WebRtcMediaEngineFactory::Create(
+                FakeAudioCaptureModule::Create(),
+                CreateBuiltinAudioEncoderFactory(),
+                CreateBuiltinAudioDecoderFactory(),
+                nullptr,
+                nullptr,
+                nullptr,
+                AudioProcessing::Create())),
+            CreateCallFactory(),
+            nullptr) {}
+
+  std::unique_ptr<cricket::SctpTransportInternalFactory>
+  CreateSctpTransportInternalFactory() {
+    return rtc::MakeUnique<FakeSctpTransportFactory>();
+  }
+};
+
 class PeerConnectionJsepTest : public ::testing::Test {
  protected:
   typedef std::unique_ptr<PeerConnectionWrapper> WrapperPtr;
@@ -45,10 +73,6 @@ class PeerConnectionJsepTest : public ::testing::Test {
 #ifdef WEBRTC_ANDROID
     InitializeAndroidObjects();
 #endif
-    pc_factory_ = CreatePeerConnectionFactory(
-        rtc::Thread::Current(), rtc::Thread::Current(), rtc::Thread::Current(),
-        FakeAudioCaptureModule::Create(), CreateBuiltinAudioEncoderFactory(),
-        CreateBuiltinAudioDecoderFactory(), nullptr, nullptr);
   }
 
   WrapperPtr CreatePeerConnection() {
@@ -58,20 +82,22 @@ class PeerConnectionJsepTest : public ::testing::Test {
   }
 
   WrapperPtr CreatePeerConnection(const RTCConfiguration& config) {
+    rtc::scoped_refptr<PeerConnectionFactory> pc_factory(
+        new rtc::RefCountedObject<PeerConnectionFactoryForJsepTest>());
+    RTC_CHECK(pc_factory->Initialize());
     auto observer = rtc::MakeUnique<MockPeerConnectionObserver>();
-    auto pc = pc_factory_->CreatePeerConnection(config, nullptr, nullptr,
-                                                observer.get());
+    auto pc = pc_factory->CreatePeerConnection(config, nullptr, nullptr,
+                                               observer.get());
     if (!pc) {
       return nullptr;
     }
 
-    return rtc::MakeUnique<PeerConnectionWrapper>(pc_factory_, pc,
+    return rtc::MakeUnique<PeerConnectionWrapper>(pc_factory, pc,
                                                   std::move(observer));
   }
 
   std::unique_ptr<rtc::VirtualSocketServer> vss_;
   rtc::AutoSocketServerThread main_;
-  rtc::scoped_refptr<PeerConnectionFactoryInterface> pc_factory_;
 };
 
 // Tests for JSEP initial offer generation.
@@ -80,8 +106,9 @@ class PeerConnectionJsepTest : public ::testing::Test {
 // no media sections.
 TEST_F(PeerConnectionJsepTest, EmptyInitialOffer) {
   auto caller = CreatePeerConnection();
+
   auto offer = caller->CreateOffer();
-  EXPECT_EQ(0u, offer->description()->contents().size());
+  ASSERT_EQ(0u, offer->description()->contents().size());
 }
 
 // Test that an initial offer with one audio track generates one audio media
@@ -89,8 +116,8 @@ TEST_F(PeerConnectionJsepTest, EmptyInitialOffer) {
 TEST_F(PeerConnectionJsepTest, AudioOnlyInitialOffer) {
   auto caller = CreatePeerConnection();
   caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO);
-  auto offer = caller->CreateOffer();
 
+  auto offer = caller->CreateOffer();
   auto contents = offer->description()->contents();
   ASSERT_EQ(1u, contents.size());
   EXPECT_EQ(cricket::MEDIA_TYPE_AUDIO, contents[0].media_description()->type());
@@ -101,11 +128,35 @@ TEST_F(PeerConnectionJsepTest, AudioOnlyInitialOffer) {
 TEST_F(PeerConnectionJsepTest, VideoOnlyInitialOffer) {
   auto caller = CreatePeerConnection();
   caller->AddTransceiver(cricket::MEDIA_TYPE_VIDEO);
-  auto offer = caller->CreateOffer();
 
+  auto offer = caller->CreateOffer();
   auto contents = offer->description()->contents();
   ASSERT_EQ(1u, contents.size());
   EXPECT_EQ(cricket::MEDIA_TYPE_VIDEO, contents[0].media_description()->type());
+}
+
+// Test that an initial offer with one data channel generates one data media
+// section.
+TEST_F(PeerConnectionJsepTest, DataOnlyInitialOffer) {
+  auto caller = CreatePeerConnection();
+  caller->CreateDataChannel("dc");
+
+  auto offer = caller->CreateOffer();
+  auto contents = offer->description()->contents();
+  ASSERT_EQ(1u, contents.size());
+  EXPECT_EQ(cricket::MEDIA_TYPE_DATA, contents[0].media_description()->type());
+}
+
+// Test that creating multiple data channels only results in one data section
+// generated in the offer.
+TEST_F(PeerConnectionJsepTest, MultipleDataChannelsCreateOnlyOneDataSection) {
+  auto caller = CreatePeerConnection();
+  caller->CreateDataChannel("first");
+  caller->CreateDataChannel("second");
+  caller->CreateDataChannel("third");
+
+  auto offer = caller->CreateOffer();
+  ASSERT_EQ(1u, offer->description()->contents().size());
 }
 
 // Test that multiple media sections in the initial offer are ordered in the
@@ -118,8 +169,8 @@ TEST_F(PeerConnectionJsepTest, MediaSectionsInInitialOfferOrderedCorrectly) {
   RtpTransceiverInit init;
   init.direction = RtpTransceiverDirection::kSendOnly;
   caller->AddTransceiver(cricket::MEDIA_TYPE_VIDEO, init);
-  auto offer = caller->CreateOffer();
 
+  auto offer = caller->CreateOffer();
   auto contents = offer->description()->contents();
   ASSERT_EQ(3u, contents.size());
 
@@ -147,12 +198,8 @@ TEST_F(PeerConnectionJsepTest, MediaSectionsInInitialOfferHaveDifferentMids) {
   auto caller = CreatePeerConnection();
   caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO);
   caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO);
+
   auto offer = caller->CreateOffer();
-
-  std::string sdp;
-  offer->ToString(&sdp);
-  RTC_LOG(LS_INFO) << sdp;
-
   auto contents = offer->description()->contents();
   ASSERT_EQ(2u, contents.size());
   EXPECT_NE(contents[0].name, contents[1].name);
@@ -172,6 +219,7 @@ TEST_F(PeerConnectionJsepTest,
 
 TEST_F(PeerConnectionJsepTest, SetLocalEmptyOfferCreatesNoTransceivers) {
   auto caller = CreatePeerConnection();
+
   ASSERT_TRUE(caller->SetLocalDescription(caller->CreateOffer()));
 
   EXPECT_THAT(caller->pc()->GetTransceivers(), ElementsAre());
@@ -348,19 +396,26 @@ TEST_F(PeerConnectionJsepTest, CreateAnswerHasSameMidsAsOffer) {
   auto first_transceiver = caller->AddTransceiver(cricket::MEDIA_TYPE_VIDEO);
   auto second_transceiver = caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO);
   auto third_transceiver = caller->AddTransceiver(cricket::MEDIA_TYPE_VIDEO);
+  caller->CreateDataChannel("dc");
   auto callee = CreatePeerConnection();
 
-  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
+  auto offer = caller->CreateOffer();
+  const auto* offer_data = cricket::GetFirstDataContent(offer->description());
+  ASSERT_TRUE(
+      caller->SetLocalDescription(CloneSessionDescription(offer.get())));
+  ASSERT_TRUE(callee->SetRemoteDescription(std::move(offer)));
 
   auto answer = callee->CreateAnswer();
   auto contents = answer->description()->contents();
-  ASSERT_EQ(3u, contents.size());
+  ASSERT_EQ(4u, contents.size());
   EXPECT_EQ(cricket::MEDIA_TYPE_VIDEO, contents[0].media_description()->type());
-  EXPECT_EQ(*first_transceiver->mid(), contents[0].name);
+  EXPECT_EQ(first_transceiver->mid(), contents[0].name);
   EXPECT_EQ(cricket::MEDIA_TYPE_AUDIO, contents[1].media_description()->type());
-  EXPECT_EQ(*second_transceiver->mid(), contents[1].name);
+  EXPECT_EQ(second_transceiver->mid(), contents[1].name);
   EXPECT_EQ(cricket::MEDIA_TYPE_VIDEO, contents[2].media_description()->type());
-  EXPECT_EQ(*third_transceiver->mid(), contents[2].name);
+  EXPECT_EQ(third_transceiver->mid(), contents[2].name);
+  EXPECT_EQ(cricket::MEDIA_TYPE_DATA, contents[3].media_description()->type());
+  EXPECT_EQ(offer_data->name, contents[3].name);
 }
 
 // Test that an answering media section is marked as rejected if the underlying
@@ -619,6 +674,62 @@ INSTANTIATE_TEST_CASE_P(
     Combine(Values(cricket::MEDIA_TYPE_AUDIO, cricket::MEDIA_TYPE_VIDEO),
             Values(cricket::MEDIA_TYPE_AUDIO, cricket::MEDIA_TYPE_VIDEO)));
 
+// Test that a new data channel section will not reuse a recycleable audio or
+// video media section. Additionally, tests that the new section is added to the
+// end of the session description.
+TEST_F(PeerConnectionJsepTest, DataChannelDoesNotRecycleMediaSection) {
+  auto caller = CreatePeerConnection();
+  auto transceiver = caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO);
+  auto callee = CreatePeerConnection();
+
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+
+  transceiver->Stop();
+
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+
+  caller->CreateDataChannel("dc");
+
+  auto offer = caller->CreateOffer();
+  auto offer_contents = offer->description()->contents();
+  ASSERT_EQ(2u, offer_contents.size());
+  EXPECT_EQ(cricket::MEDIA_TYPE_AUDIO,
+            offer_contents[0].media_description()->type());
+  EXPECT_EQ(cricket::MEDIA_TYPE_DATA,
+            offer_contents[1].media_description()->type());
+
+  ASSERT_TRUE(
+      caller->SetLocalDescription(CloneSessionDescription(offer.get())));
+  ASSERT_TRUE(callee->SetRemoteDescription(std::move(offer)));
+
+  auto answer = callee->CreateAnswer();
+  auto answer_contents = answer->description()->contents();
+  ASSERT_EQ(2u, answer_contents.size());
+  EXPECT_EQ(cricket::MEDIA_TYPE_AUDIO,
+            answer_contents[0].media_description()->type());
+  EXPECT_EQ(cricket::MEDIA_TYPE_DATA,
+            answer_contents[1].media_description()->type());
+}
+
+// Test that if a new track is added to an existing session that has a data,
+// the new section comes at the end of the new offer, after the existing data
+// section.
+TEST_F(PeerConnectionJsepTest, AudioTrackAddedAfterDataSectionInReoffer) {
+  auto caller = CreatePeerConnection();
+  caller->CreateDataChannel("dc");
+  auto callee = CreatePeerConnection();
+
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+
+  caller->AddAudioTrack("a");
+
+  auto offer = caller->CreateOffer();
+  auto contents = offer->description()->contents();
+  ASSERT_EQ(2u, contents.size());
+  EXPECT_EQ(cricket::MEDIA_TYPE_DATA, contents[0].media_description()->type());
+  EXPECT_EQ(cricket::MEDIA_TYPE_AUDIO, contents[1].media_description()->type());
+}
+
 // Tests for MID properties.
 
 static void RenameSection(size_t mline_index,
@@ -709,6 +820,40 @@ TEST_F(PeerConnectionJsepTest, CreateOfferGeneratesUniqueMidIfAlreadyTaken) {
   auto reoffer = caller->CreateOffer();
   auto reoffer_contents = reoffer->description()->contents();
   EXPECT_EQ(default_second_mid, reoffer_contents[0].name);
+  EXPECT_NE(reoffer_contents[0].name, reoffer_contents[1].name);
+}
+
+// Test that if an audio or video section has the default data section MID, then
+// CreateOffer will generate a unique MID for the newly added data section.
+TEST_F(PeerConnectionJsepTest,
+       CreateOfferGeneratesUniqueMidForDataSectionIfAlreadyTaken) {
+  // First, find what the default MID is for the data channel.
+  auto pc = CreatePeerConnection();
+  pc->CreateDataChannel("dc");
+  auto default_offer = pc->CreateOffer();
+  std::string default_data_mid =
+      default_offer->description()->contents()[0].name;
+
+  // Now do an offer/answer with one audio track which has a MID set to the
+  // default data MID.
+  auto caller = CreatePeerConnection();
+  caller->AddAudioTrack("a");
+  auto callee = CreatePeerConnection();
+
+  auto offer = caller->CreateOffer();
+  RenameSection(0, default_data_mid, offer.get());
+
+  ASSERT_TRUE(
+      caller->SetLocalDescription(CloneSessionDescription(offer.get())));
+  ASSERT_TRUE(callee->SetRemoteDescription(std::move(offer)));
+  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
+
+  // Add a data channel and ensure that the MID is different.
+  caller->CreateDataChannel("dc");
+
+  auto reoffer = caller->CreateOffer();
+  auto reoffer_contents = reoffer->description()->contents();
+  EXPECT_EQ(default_data_mid, reoffer_contents[0].name);
   EXPECT_NE(reoffer_contents[0].name, reoffer_contents[1].name);
 }
 

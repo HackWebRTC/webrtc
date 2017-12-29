@@ -428,6 +428,12 @@ class PeerConnection : public PeerConnectionInterface,
       const cricket::ContentInfo& content,
       const cricket::ContentGroup* bundle_group);
 
+  // Either creates or destroys the local data channel according to the given
+  // media section.
+  RTCError UpdateDataChannel(cricket::ContentSource source,
+                             const cricket::ContentInfo& content,
+                             const cricket::ContentGroup* bundle_group);
+
   // Associate the given transceiver according to the JSEP rules.
   RTCErrorOr<
       rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
@@ -500,6 +506,21 @@ class PeerConnection : public PeerConnectionInterface,
       rtc::Optional<size_t>* video_index,
       rtc::Optional<size_t>* data_index,
       cricket::MediaSessionOptions* session_options);
+
+  // Generates the active MediaDescriptionOptions for the local data channel
+  // given the specified MID.
+  cricket::MediaDescriptionOptions GetMediaDescriptionOptionsForActiveData(
+      const std::string& mid) const;
+
+  // Generates the rejected MediaDescriptionOptions for the local data channel
+  // given the specified MID.
+  cricket::MediaDescriptionOptions GetMediaDescriptionOptionsForRejectedData(
+      const std::string& mid) const;
+
+  // Returns the MID for the data section associated with either the
+  // RtpDataChannel or SCTP data channel, if it has been set. If no data
+  // channels are configured this will return nullopt.
+  rtc::Optional<std::string> GetDataMid() const;
 
   // Remove all local and remote senders of type |media_type|.
   // Called when a media type is rejected (m-line set to port 0).
