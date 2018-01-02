@@ -90,6 +90,7 @@ if (rtc_include_tests) {
     deps = [
       ":congestion_controller",
       ":mock_congestion_controller",
+      "../../logging:mocks",
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base",
       "../../rtc_base:rtc_base_approved",

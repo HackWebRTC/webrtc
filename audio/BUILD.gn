@@ -105,6 +105,7 @@ if (rtc_include_tests) {
       "../call:mock_rtp_interfaces",
       "../call:rtp_interfaces",
       "../call:rtp_receiver",
+      "../logging:mocks",
       "../modules/audio_device:mock_audio_device",
       "../modules/audio_mixer:audio_mixer_impl",
       "../modules/audio_processing:audio_processing_statistics",
