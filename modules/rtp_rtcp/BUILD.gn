@@ -412,7 +412,6 @@ if (rtc_include_tests) {
       "../../api:video_frame_api",
       "../../call:rtp_receiver",
       "../../common_video:common_video",
-      "../../logging:mocks",
       "../../logging:rtc_event_log_api",
       "../../rtc_base:checks",
       "../../rtc_base:rate_limiter",
