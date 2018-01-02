@@ -137,6 +137,7 @@ class PeerConnection : public PeerConnectionInterface,
                 webrtc::MediaStreamTrackInterface* track,
                 StatsOutputLevel level) override;
   void GetStats(RTCStatsCollectorCallback* callback) override;
+  void ClearStatsCache() override;
 
   SignalingState signaling_state() override;
 

@@ -58,6 +58,13 @@ class TrackMediaInfoMap {
   const cricket::VideoReceiverInfo* GetVideoReceiverInfo(
       const VideoTrackInterface& remote_video_track) const;
 
+  const cricket::VoiceSenderInfo* GetVoiceSenderInfoBySsrc(uint32_t ssrc) const;
+  const cricket::VoiceReceiverInfo* GetVoiceReceiverInfoBySsrc(
+      uint32_t ssrc) const;
+  const cricket::VideoSenderInfo* GetVideoSenderInfoBySsrc(uint32_t ssrc) const;
+  const cricket::VideoReceiverInfo* GetVideoReceiverInfoBySsrc(
+      uint32_t ssrc) const;
+
   rtc::scoped_refptr<AudioTrackInterface> GetAudioTrack(
       const cricket::VoiceSenderInfo& voice_sender_info) const;
   rtc::scoped_refptr<AudioTrackInterface> GetAudioTrack(
@@ -95,6 +102,11 @@ class TrackMediaInfoMap {
   std::map<const cricket::VideoReceiverInfo*,
            rtc::scoped_refptr<VideoTrackInterface>>
       video_track_by_receiver_info_;
+  // These maps map SSRCs to the corresponding voice or video info objects.
+  std::map<uint32_t, cricket::VoiceSenderInfo*> voice_info_by_sender_ssrc_;
+  std::map<uint32_t, cricket::VoiceReceiverInfo*> voice_info_by_receiver_ssrc_;
+  std::map<uint32_t, cricket::VideoSenderInfo*> video_info_by_sender_ssrc_;
+  std::map<uint32_t, cricket::VideoReceiverInfo*> video_info_by_receiver_ssrc_;
 };
 
 }  // namespace webrtc

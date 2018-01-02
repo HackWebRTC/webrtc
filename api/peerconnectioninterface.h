@@ -734,6 +734,10 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   // break third party projects. As soon as they have been updated this should
   // be changed to "= 0;".
   virtual void GetStats(RTCStatsCollectorCallback* callback) {}
+  // Clear cached stats in the rtcstatscollector.
+  // Exposed for testing while waiting for automatic cache clear to work.
+  // https://bugs.webrtc.org/8693
+  virtual void ClearStatsCache() {}
 
   // Create a data channel with the provided config, or default config if none
   // is provided. Note that an offer/answer negotiation is still necessary

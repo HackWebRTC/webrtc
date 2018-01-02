@@ -386,6 +386,20 @@ TEST_F(TrackMediaInfoMapTest, SingleSenderReceiverPerTrackWithSsrcNotUnique) {
             remote_video_track_.get());
 }
 
+TEST_F(TrackMediaInfoMapTest, SsrcLookupFunction) {
+  AddRtpSenderWithSsrcs({1}, local_audio_track_);
+  AddRtpReceiverWithSsrcs({2}, remote_audio_track_);
+  AddRtpSenderWithSsrcs({3}, local_video_track_);
+  AddRtpReceiverWithSsrcs({4}, remote_video_track_);
+  CreateMap();
+  EXPECT_TRUE(map_->GetVoiceSenderInfoBySsrc(1));
+  EXPECT_TRUE(map_->GetVoiceReceiverInfoBySsrc(2));
+  EXPECT_TRUE(map_->GetVideoSenderInfoBySsrc(3));
+  EXPECT_TRUE(map_->GetVideoReceiverInfoBySsrc(4));
+  EXPECT_FALSE(map_->GetVoiceSenderInfoBySsrc(2));
+  EXPECT_FALSE(map_->GetVoiceSenderInfoBySsrc(1024));
+}
+
 // Death tests.
 // Disabled on Android because death tests misbehave on Android, see
 // base/test/gtest_util.h.

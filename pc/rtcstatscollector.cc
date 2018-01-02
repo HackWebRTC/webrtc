@@ -207,7 +207,7 @@ void SetInboundRTPStreamStatsFromMediaReceiverInfo(
     RTCInboundRTPStreamStats* inbound_stats) {
   RTC_DCHECK(inbound_stats);
   inbound_stats->ssrc = media_receiver_info.ssrc();
-  // TODO(hbos): Support the remote case. crbug.com/657855
+  // TODO(hbos): Support the remote case. https://crbug.com/657855
   inbound_stats->is_remote = false;
   inbound_stats->packets_received =
       static_cast<uint32_t>(media_receiver_info.packets_rcvd);
@@ -265,7 +265,7 @@ void SetOutboundRTPStreamStatsFromMediaSenderInfo(
     RTCOutboundRTPStreamStats* outbound_stats) {
   RTC_DCHECK(outbound_stats);
   outbound_stats->ssrc = media_sender_info.ssrc();
-  // TODO(hbos): Support the remote case. crbug.com/657856
+  // TODO(hbos): Support the remote case. https://crbug.com/657856
   outbound_stats->is_remote = false;
   outbound_stats->packets_sent =
       static_cast<uint32_t>(media_sender_info.packets_sent);
@@ -460,7 +460,7 @@ ProduceMediaStreamTrackStatsFromVideoSenderInfo(
   video_track_stats->frame_height = static_cast<uint32_t>(
       video_sender_info.send_frame_height);
   // TODO(hbos): Will reduce this by frames dropped due to congestion control
-  // when available. crbug.com/659137
+  // when available. https://crbug.com/659137
   video_track_stats->frames_sent = video_sender_info.frames_encoded;
   return video_track_stats;
 }
@@ -492,7 +492,7 @@ ProduceMediaStreamTrackStatsFromVideoReceiverInfo(
   // TODO(hbos): When we support receiving simulcast, this should be the total
   // number of frames correctly decoded, independent of which SSRC it was
   // received from. Since we don't support that, this is correct and is the same
-  // value as "RTCInboundRTPStreamStats.framesDecoded". crbug.com/659137
+  // value as "RTCInboundRTPStreamStats.framesDecoded". https://crbug.com/659137
   video_track_stats->frames_decoded = video_receiver_info.frames_decoded;
   RTC_DCHECK_GE(video_receiver_info.frames_received,
                 video_receiver_info.frames_rendered);
@@ -501,20 +501,99 @@ ProduceMediaStreamTrackStatsFromVideoReceiverInfo(
   return video_track_stats;
 }
 
-void ProduceMediaStreamAndTrackStats(
+void ProduceSenderMediaTrackStats(
+    int64_t timestamp_us,
+    const TrackMediaInfoMap& track_media_info_map,
+    std::vector<rtc::scoped_refptr<RtpSenderInterface>> senders,
+    RTCStatsReport* report) {
+  // This function iterates over the senders to generate outgoing track stats.
+
+  // TODO(hbos): Return stats of detached tracks. We have to perform stats
+  // gathering at the time of detachment to get accurate stats and timestamps.
+  // https://crbug.com/659137
+  for (auto const sender : senders) {
+    // Don't report on tracks before starting to send.
+    // https://bugs.webrtc.org/8673
+    if (sender->ssrc() == 0)
+      continue;
+    if (sender->media_type() == cricket::MEDIA_TYPE_AUDIO) {
+      AudioTrackInterface* track =
+          static_cast<AudioTrackInterface*>(sender->track().get());
+      if (!track)
+        continue;
+      auto voice_sender_info =
+          track_media_info_map.GetVoiceSenderInfoBySsrc(sender->ssrc());
+      RTC_CHECK(voice_sender_info)
+          << "No voice sender info for sender with ssrc " << sender->ssrc();
+      std::unique_ptr<RTCMediaStreamTrackStats> audio_track_stats =
+          ProduceMediaStreamTrackStatsFromVoiceSenderInfo(timestamp_us, *track,
+                                                          *voice_sender_info);
+      report->AddStats(std::move(audio_track_stats));
+    } else if (sender->media_type() == cricket::MEDIA_TYPE_VIDEO) {
+      VideoTrackInterface* track =
+          static_cast<VideoTrackInterface*>(sender->track().get());
+      if (!track)
+        continue;
+      auto video_sender_info =
+          track_media_info_map.GetVideoSenderInfoBySsrc(sender->ssrc());
+      RTC_CHECK(video_sender_info)
+          << "No video sender info for sender with ssrc " << sender->ssrc();
+      std::unique_ptr<RTCMediaStreamTrackStats> video_track_stats =
+          ProduceMediaStreamTrackStatsFromVideoSenderInfo(timestamp_us, *track,
+                                                          *video_sender_info);
+      report->AddStats(std::move(video_track_stats));
+    } else {
+      RTC_NOTREACHED();
+    }
+  }
+}
+
+void ProduceReceiverMediaTrackStats(
+    int64_t timestamp_us,
+    const TrackMediaInfoMap& track_media_info_map,
+    std::vector<rtc::scoped_refptr<RtpReceiverInterface>> receivers,
+    RTCStatsReport* report) {
+  // This function iterates over the receivers to find the remote tracks.
+  for (auto const receiver : receivers) {
+    if (receiver->media_type() == cricket::MEDIA_TYPE_AUDIO) {
+      AudioTrackInterface* track =
+          static_cast<AudioTrackInterface*>(receiver->track().get());
+      const cricket::VoiceReceiverInfo* voice_receiver_info =
+          track_media_info_map.GetVoiceReceiverInfo(*track);
+      if (!voice_receiver_info) {
+        continue;
+      }
+      std::unique_ptr<RTCMediaStreamTrackStats> audio_track_stats =
+          ProduceMediaStreamTrackStatsFromVoiceReceiverInfo(
+              timestamp_us, *track, *voice_receiver_info);
+      report->AddStats(std::move(audio_track_stats));
+    } else if (receiver->media_type() == cricket::MEDIA_TYPE_VIDEO) {
+      VideoTrackInterface* track =
+          static_cast<VideoTrackInterface*>(receiver->track().get());
+      const cricket::VideoReceiverInfo* video_receiver_info =
+          track_media_info_map.GetVideoReceiverInfo(*track);
+      if (!video_receiver_info) {
+        continue;
+      }
+      std::unique_ptr<RTCMediaStreamTrackStats> video_track_stats =
+          ProduceMediaStreamTrackStatsFromVideoReceiverInfo(
+              timestamp_us, *track, *video_receiver_info);
+      report->AddStats(std::move(video_track_stats));
+    } else {
+      RTC_NOTREACHED();
+    }
+  }
+}
+
+void ProduceMediaStreamStats(
     int64_t timestamp_us,
     const TrackMediaInfoMap& track_media_info_map,
     rtc::scoped_refptr<StreamCollectionInterface> streams,
     bool is_local,
     RTCStatsReport* report) {
-  // TODO(hbos): When "AddTrack" is implemented we should iterate tracks to
-  // find which streams exist, not iterate streams to find tracks.
-  // crbug.com/659137
-  // TODO(hbos): Return stats of detached tracks. We have to perform stats
-  // gathering at the time of detachment to get accurate stats and timestamps.
-  // crbug.com/659137
   if (!streams)
     return;
+  // Collect info about streams and which tracks in them are attached to PC.
   for (size_t i = 0; i < streams->count(); ++i) {
     MediaStreamInterface* stream = streams->at(i);
 
@@ -524,70 +603,64 @@ void ProduceMediaStreamAndTrackStats(
             stream->label(), timestamp_us));
     stream_stats->stream_identifier = stream->label();
     stream_stats->track_ids = std::vector<std::string>();
-    // The track stats are per-attachment to the connection. There can be one
-    // for receiving (remote) tracks and multiple attachments for sending
-    // (local) tracks.
+    // Record the IDs of tracks that are currently connected.
+    // Note: Iterating over streams may be iffy with AddTrack.
+    // TODO(hta): Revisit in conjunction with https://bugs.webrtc.org/8674
     if (is_local) {
-      // Local Audio Tracks
-      for (const rtc::scoped_refptr<AudioTrackInterface>& audio_track :
-           stream->GetAudioTracks()) {
-        const std::vector<cricket::VoiceSenderInfo*>* voice_sender_infos =
+      for (auto audio_track : stream->GetAudioTracks()) {
+        auto sender_infos =
             track_media_info_map.GetVoiceSenderInfos(*audio_track);
-        if (!voice_sender_infos) {
+        // There is no map entry on unconnected tracks.
+        // https://bugs.webrtc.org/8673
+        if (!sender_infos)
           continue;
-        }
-        for (const auto& voice_sender_info : *voice_sender_infos) {
-          std::unique_ptr<RTCMediaStreamTrackStats> audio_track_stats =
-              ProduceMediaStreamTrackStatsFromVoiceSenderInfo(
-                  timestamp_us, *audio_track, *voice_sender_info);
-          stream_stats->track_ids->push_back(audio_track_stats->id());
-          report->AddStats(std::move(audio_track_stats));
+        for (const auto& sender_info : *sender_infos) {
+          // In the WebRTC implementation, SSRC 0 means unconnected,
+          // and should not occur in the map.
+          // https://bugs.webrtc.org/8694
+          RTC_DCHECK_NE(0, sender_info->ssrc());
+          stream_stats->track_ids->push_back(
+              RTCMediaStreamTrackStatsIDFromTrackKindIDAndSsrc(
+                  is_local, MediaStreamTrackInterface::kAudioKind,
+                  audio_track->id(), sender_info->ssrc()));
         }
       }
-      // Local Video Tracks
-      for (const rtc::scoped_refptr<VideoTrackInterface>& video_track :
-           stream->GetVideoTracks()) {
-        const std::vector<cricket::VideoSenderInfo*>* video_sender_infos =
+      for (auto video_track : stream->GetVideoTracks()) {
+        auto sender_infos =
             track_media_info_map.GetVideoSenderInfos(*video_track);
-        if (!video_sender_infos) {
+        // There is no map entry on unconnected tracks.
+        // https://bugs.webrtc.org/8673
+        if (!sender_infos)
           continue;
-        }
-        for (const auto& video_sender_info : *video_sender_infos) {
-          std::unique_ptr<RTCMediaStreamTrackStats> video_track_stats =
-              ProduceMediaStreamTrackStatsFromVideoSenderInfo(
-                  timestamp_us, *video_track, *video_sender_info);
-          stream_stats->track_ids->push_back(video_track_stats->id());
-          report->AddStats(std::move(video_track_stats));
+        for (const auto& sender_info : *sender_infos) {
+          // SSRC must not be zero. https://bugs.webrtc.org/8694
+          RTC_DCHECK_NE(0, sender_info->ssrc());
+          stream_stats->track_ids->push_back(
+              RTCMediaStreamTrackStatsIDFromTrackKindIDAndSsrc(
+                  is_local, MediaStreamTrackInterface::kVideoKind,
+                  video_track->id(), sender_info->ssrc()));
         }
       }
     } else {
-      // Remote Audio Tracks
-      for (const rtc::scoped_refptr<AudioTrackInterface>& audio_track :
-           stream->GetAudioTracks()) {
-        const cricket::VoiceReceiverInfo* voice_receiver_info =
+      for (auto audio_track : stream->GetAudioTracks()) {
+        auto receiver_info =
             track_media_info_map.GetVoiceReceiverInfo(*audio_track);
-        if (!voice_receiver_info) {
-          continue;
+        if (receiver_info) {
+          stream_stats->track_ids->push_back(
+              RTCMediaStreamTrackStatsIDFromTrackKindIDAndSsrc(
+                  is_local, MediaStreamTrackInterface::kAudioKind,
+                  audio_track->id(), receiver_info->ssrc()));
         }
-        std::unique_ptr<RTCMediaStreamTrackStats> audio_track_stats =
-            ProduceMediaStreamTrackStatsFromVoiceReceiverInfo(
-                timestamp_us, *audio_track, *voice_receiver_info);
-        stream_stats->track_ids->push_back(audio_track_stats->id());
-        report->AddStats(std::move(audio_track_stats));
       }
-      // Remote Video Tracks
-      for (const rtc::scoped_refptr<VideoTrackInterface>& video_track :
-           stream->GetVideoTracks()) {
-        const cricket::VideoReceiverInfo* video_receiver_info =
+      for (auto video_track : stream->GetVideoTracks()) {
+        auto receiver_info =
             track_media_info_map.GetVideoReceiverInfo(*video_track);
-        if (!video_receiver_info) {
-          continue;
+        if (receiver_info) {
+          stream_stats->track_ids->push_back(
+              RTCMediaStreamTrackStatsIDFromTrackKindIDAndSsrc(
+                  is_local, MediaStreamTrackInterface::kVideoKind,
+                  video_track->id(), receiver_info->ssrc()));
         }
-        std::unique_ptr<RTCMediaStreamTrackStats> video_track_stats =
-            ProduceMediaStreamTrackStatsFromVideoReceiverInfo(
-                timestamp_us, *video_track, *video_receiver_info);
-        stream_stats->track_ids->push_back(video_track_stats->id());
-        report->AddStats(std::move(video_track_stats));
       }
     }
     report->AddStats(std::move(stream_stats));
@@ -897,7 +970,7 @@ void RTCStatsCollector::ProduceIceCandidateAndPairStats_n(
         // TODO(hbos): There could be other candidates that are not paired with
         // anything. We don't have a complete list. Local candidates come from
         // Port objects, and prflx candidates (both local and remote) are only
-        // stored in candidate pairs. crbug.com/632723
+        // stored in candidate pairs. https://crbug.com/632723
         candidate_pair_stats->local_candidate_id = ProduceIceCandidateStats(
             timestamp_us, info.local_candidate, true, transport_id, report);
         candidate_pair_stats->remote_candidate_id = ProduceIceCandidateStats(
@@ -908,7 +981,7 @@ void RTCStatsCollector::ProduceIceCandidateAndPairStats_n(
         candidate_pair_stats->nominated = info.nominated;
         // TODO(hbos): This writable is different than the spec. It goes to
         // false after a certain amount of time without a response passes.
-        // crbug.com/633550
+        // https://crbug.com/633550
         candidate_pair_stats->writable = info.writable;
         candidate_pair_stats->bytes_sent =
             static_cast<uint64_t>(info.sent_total_bytes);
@@ -960,16 +1033,15 @@ void RTCStatsCollector::ProduceMediaStreamAndTrackStats_s(
     int64_t timestamp_us, RTCStatsReport* report) const {
   RTC_DCHECK(signaling_thread_->IsCurrent());
   RTC_DCHECK(track_media_info_map_);
-  ProduceMediaStreamAndTrackStats(timestamp_us,
-                                  *track_media_info_map_,
-                                  pc_->local_streams(),
-                                  true,
-                                  report);
-  ProduceMediaStreamAndTrackStats(timestamp_us,
-                                  *track_media_info_map_,
-                                  pc_->remote_streams(),
-                                  false,
-                                  report);
+  // TODO(bugs.webrtc.org/8674): Use the stream list updated by AddTrack
+  ProduceMediaStreamStats(timestamp_us, *track_media_info_map_,
+                          pc_->local_streams(), true, report);
+  ProduceMediaStreamStats(timestamp_us, *track_media_info_map_,
+                          pc_->remote_streams(), false, report);
+  ProduceSenderMediaTrackStats(timestamp_us, *track_media_info_map_,
+                               pc_->GetSenders(), report);
+  ProduceReceiverMediaTrackStats(timestamp_us, *track_media_info_map_,
+                                 pc_->GetReceivers(), report);
 }
 
 void RTCStatsCollector::ProducePeerConnectionStats_s(
