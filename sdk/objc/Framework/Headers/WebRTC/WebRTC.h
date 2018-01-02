@@ -45,6 +45,7 @@
 #import <WebRTC/RTCMetricsSampleInfo.h>
 #import <WebRTC/RTCPeerConnection.h>
 #import <WebRTC/RTCPeerConnectionFactory.h>
+#import <WebRTC/RTCPeerConnectionFactoryOptions.h>
 #import <WebRTC/RTCRtpCodecParameters.h>
 #import <WebRTC/RTCRtpEncodingParameters.h>
 #import <WebRTC/RTCRtpParameters.h>
