@@ -19,8 +19,8 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PARENT_DIR = os.path.join(SCRIPT_DIR, os.pardir)
 sys.path.append(PARENT_DIR)
 import roll_deps
-from roll_deps import CalculateChangedDeps, GetMatchingDepsEntries, \
-  ParseDepsDict, ParseLocalDepsFile, UpdateDepsFile, ShouldUseCQ
+from roll_deps import CalculateChangedDeps, ChooseCQMode, \
+  GetMatchingDepsEntries, ParseDepsDict, ParseLocalDepsFile, UpdateDepsFile
 
 
 TEST_DATA_VARS = {
@@ -140,15 +140,15 @@ class TestRollChromiumRevision(unittest.TestCase):
     self.assertEquals(changed_deps[1].new_rev, BUILDTOOLS_NEW_REV)
 
 
-class TestShouldUseCQ(unittest.TestCase):
+class TestChooseCQMode(unittest.TestCase):
   def testSkip(self):
-    self.assertEquals(ShouldUseCQ(True, 99, 500000, 500100), 0)
+    self.assertEquals(ChooseCQMode(True, 99, 500000, 500100), 0)
 
   def testDryRun(self):
-    self.assertEquals(ShouldUseCQ(False, 101, 500000, 500100), 1)
+    self.assertEquals(ChooseCQMode(False, 101, 500000, 500100), 1)
 
   def testSubmit(self):
-    self.assertEquals(ShouldUseCQ(False, 100, 500000, 500100), 2)
+    self.assertEquals(ChooseCQMode(False, 100, 500000, 500100), 2)
 
 
 def _SetupGitLsRemoteCall(cmd_fake, url, revision):

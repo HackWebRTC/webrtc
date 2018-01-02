@@ -403,7 +403,7 @@ def _LocalCommit(commit_msg, dry_run):
     _RunCommand(['git', 'commit', '-m', commit_msg])
 
 
-def ShouldUseCQ(skip_cq, cq_over, current_commit_pos, new_commit_pos):
+def ChooseCQMode(skip_cq, cq_over, current_commit_pos, new_commit_pos):
   if skip_cq:
     return 0
   if (new_commit_pos - current_commit_pos) < cq_over:
@@ -411,24 +411,22 @@ def ShouldUseCQ(skip_cq, cq_over, current_commit_pos, new_commit_pos):
   return 2
 
 
-def _UploadCL(dry_run, commit_queue=2):
+def _UploadCL(commit_queue_mode):
   """Upload the committed changes as a changelist to Gerrit.
 
-  commit_queue:
+  commit_queue_mode:
     - 2: Submit to commit queue.
-    - 1: Commit queue dry run.
+    - 1: Run trybots but do not submit to CQ.
     - 0: Skip CQ, upload only.
   """
-  logging.info('Uploading CL...')
-  if not dry_run:
-    cmd = ['git', 'cl', 'upload', '-f', '--gerrit']
-    if commit_queue >= 2:
-      logging.info('Sending the CL to the CQ...')
-      cmd.extend(['--use-commit-queue', '--send-mail'])
-    elif commit_queue >= 1:
-      logging.info('Starting CQ dry run...')
-      cmd.extend(['--cq-dry-run'])
-    _RunCommand(cmd, extra_env={'EDITOR': 'true', 'SKIP_GCE_AUTH_FOR_GIT': '1'})
+  cmd = ['git', 'cl', 'upload', '-f', '--gerrit']
+  if commit_queue_mode >= 2:
+    logging.info('Sending the CL to the CQ...')
+    cmd.extend(['--use-commit-queue', '--send-mail'])
+  elif commit_queue_mode >= 1:
+    logging.info('Starting CQ dry run...')
+    cmd.extend(['--cq-dry-run'])
+  _RunCommand(cmd, extra_env={'EDITOR': 'true', 'SKIP_GCE_AUTH_FOR_GIT': '1'})
 
 
 def main():
@@ -503,9 +501,11 @@ def main():
     logging.info("No DEPS changes detected, skipping CL creation.")
   else:
     _LocalCommit(commit_msg, opts.dry_run)
-    commit_queue = ShouldUseCQ(opts.skip_cq, opts.cq_over,
-                               current_commit_pos, new_commit_pos)
-    _UploadCL(opts.dry_run, commit_queue)
+    commit_queue_mode = ChooseCQMode(opts.skip_cq, opts.cq_over,
+                                     current_commit_pos, new_commit_pos)
+    logging.info('Uploading CL...')
+    if not opts.dry_run:
+      _UploadCL(commit_queue_mode)
   return 0
 
 
