@@ -126,6 +126,7 @@ rtc_source_set("audio_device_generic") {
     "fine_audio_buffer.h",
     "include/audio_device.h",
     "include/audio_device_defines.h",
+    "include/fake_audio_device.h",
   ]
 
   include_dirs = []
@@ -158,6 +159,7 @@ rtc_source_set("audio_device_generic") {
     ]
     if (is_android) {
       sources += [
+        "android/audio_common.h",
         "android/audio_device_template.h",
         "android/audio_manager.cc",
         "android/audio_manager.h",
@@ -288,6 +290,7 @@ rtc_source_set("mock_audio_device") {
   sources = [
     "include/mock_audio_device.h",
     "include/mock_audio_transport.h",
+    "mock_audio_device_buffer.h",
   ]
   deps = [
     ":audio_device",
