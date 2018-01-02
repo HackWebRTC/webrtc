@@ -254,6 +254,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
     rtc_static_library("AppRTCMobile_lib") {
       testonly = true
       sources = [
+        "objc/AppRTCMobile/ios/ARDAppDelegate.h",
         "objc/AppRTCMobile/ios/ARDAppDelegate.m",
         "objc/AppRTCMobile/ios/ARDFileCaptureController.h",
         "objc/AppRTCMobile/ios/ARDFileCaptureController.m",
