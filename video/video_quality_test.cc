@@ -37,6 +37,7 @@
 #include "test/statistics.h"
 #include "test/testsupport/fileutils.h"
 #include "test/testsupport/frame_writer.h"
+#include "test/testsupport/perf_test.h"
 #include "test/testsupport/test_artifacts.h"
 #include "test/vcm_capturer.h"
 #include "test/video_renderer.h"
@@ -793,18 +794,18 @@ class VideoAnalyzer : public PacketReceiver,
     PrintResult("send_bandwidth", send_bandwidth_bps_, " bps");
 
     if (worst_frame_) {
-      printf("RESULT min_psnr: %s = %lf dB\n", test_label_.c_str(),
-             worst_frame_->psnr);
+      test::PrintResult("min_psnr", "", test_label_.c_str(), worst_frame_->psnr,
+                  "dB", false);
     }
 
     if (receive_stream_ != nullptr) {
       PrintResult("decode_time", decode_time_ms_, " ms");
     }
 
-    printf("RESULT dropped_frames: %s = %d frames\n", test_label_.c_str(),
-           dropped_frames_);
-    printf("RESULT cpu_usage: %s = %lf %%\n", test_label_.c_str(),
-           GetCpuUsagePercent());
+    test::PrintResult("dropped_frames", "", test_label_.c_str(),
+                  dropped_frames_, "frames", false);
+    test::PrintResult("cpu_usage", "", test_label_.c_str(),
+                      GetCpuUsagePercent(), "%", false);
 
 #if defined(WEBRTC_WIN)
       // On Linux and Mac in Resident Set some unused pages may be counted.
@@ -893,12 +894,9 @@ class VideoAnalyzer : public PacketReceiver,
   void PrintResult(const char* result_type,
                    test::Statistics stats,
                    const char* unit) {
-    printf("RESULT %s: %s = {%f, %f}%s\n",
-           result_type,
-           test_label_.c_str(),
-           stats.Mean(),
-           stats.StandardDeviation(),
-           unit);
+    test::PrintResultMeanAndError(result_type, "", test_label_.c_str(),
+                                  stats.Mean(), stats.StandardDeviation(), unit,
+                                  false);
   }
 
   void PrintSamplesToFile(void) {
