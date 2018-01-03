@@ -2150,6 +2150,7 @@ if (rtc_include_tests) {
       "../../api/audio_codecs/opus:audio_encoder_opus",
       "../../common_audio",
       "../../common_audio:mock_common_audio",
+      "../../logging:mocks",
       "../../logging:rtc_event_log_api",
       "../../rtc_base:checks",
       "../../rtc_base:protobuf_utils",

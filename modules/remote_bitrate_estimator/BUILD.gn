@@ -143,6 +143,7 @@ if (rtc_include_tests) {
       "../..:webrtc_common",
       "../../:typedefs",
       "../../api:optional",
+      "../../logging:mocks",
       "../../rtc_base:checks",
       "../../rtc_base:gtest_prod",
       "../../rtc_base:rtc_base",
