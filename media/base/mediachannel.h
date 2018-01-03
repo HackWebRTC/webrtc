@@ -982,27 +982,6 @@ struct AudioRecvParameters : RtpParameters<AudioCodec> {
 
 class VoiceMediaChannel : public MediaChannel {
  public:
-  enum Error {
-    ERROR_NONE = 0,                       // No error.
-    ERROR_OTHER,                          // Other errors.
-    ERROR_REC_DEVICE_OPEN_FAILED = 100,   // Could not open mic.
-    ERROR_REC_DEVICE_MUTED,               // Mic was muted by OS.
-    ERROR_REC_DEVICE_SILENT,              // No background noise picked up.
-    ERROR_REC_DEVICE_SATURATION,          // Mic input is clipping.
-    ERROR_REC_DEVICE_REMOVED,             // Mic was removed while active.
-    ERROR_REC_RUNTIME_ERROR,              // Processing is encountering errors.
-    ERROR_REC_SRTP_ERROR,                 // Generic SRTP failure.
-    ERROR_REC_SRTP_AUTH_FAILED,           // Failed to authenticate packets.
-    ERROR_REC_TYPING_NOISE_DETECTED,      // Typing noise is detected.
-    ERROR_PLAY_DEVICE_OPEN_FAILED = 200,  // Could not open playout.
-    ERROR_PLAY_DEVICE_MUTED,              // Playout muted by OS.
-    ERROR_PLAY_DEVICE_REMOVED,            // Playout removed while active.
-    ERROR_PLAY_RUNTIME_ERROR,             // Errors in voice processing.
-    ERROR_PLAY_SRTP_ERROR,                // Generic SRTP failure.
-    ERROR_PLAY_SRTP_AUTH_FAILED,          // Failed to authenticate packets.
-    ERROR_PLAY_SRTP_REPLAY,               // Packet replay detected.
-  };
-
   VoiceMediaChannel() {}
   explicit VoiceMediaChannel(const MediaConfig& config)
       : MediaChannel(config) {}
@@ -1075,21 +1054,6 @@ struct VideoRecvParameters : RtpParameters<VideoCodec> {
 
 class VideoMediaChannel : public MediaChannel {
  public:
-  enum Error {
-    ERROR_NONE = 0,                       // No error.
-    ERROR_OTHER,                          // Other errors.
-    ERROR_REC_DEVICE_OPEN_FAILED = 100,   // Could not open camera.
-    ERROR_REC_DEVICE_NO_DEVICE,           // No camera.
-    ERROR_REC_DEVICE_IN_USE,              // Device is in already use.
-    ERROR_REC_DEVICE_REMOVED,             // Device is removed.
-    ERROR_REC_SRTP_ERROR,                 // Generic sender SRTP failure.
-    ERROR_REC_SRTP_AUTH_FAILED,           // Failed to authenticate packets.
-    ERROR_REC_CPU_MAX_CANT_DOWNGRADE,     // Can't downgrade capture anymore.
-    ERROR_PLAY_SRTP_ERROR = 200,          // Generic receiver SRTP failure.
-    ERROR_PLAY_SRTP_AUTH_FAILED,          // Failed to authenticate packets.
-    ERROR_PLAY_SRTP_REPLAY,               // Packet replay detected.
-  };
-
   VideoMediaChannel() {}
   explicit VideoMediaChannel(const MediaConfig& config)
       : MediaChannel(config) {}
@@ -1222,16 +1186,6 @@ struct DataRecvParameters : RtpParameters<DataCodec> {
 
 class DataMediaChannel : public MediaChannel {
  public:
-  enum Error {
-    ERROR_NONE = 0,                       // No error.
-    ERROR_OTHER,                          // Other errors.
-    ERROR_SEND_SRTP_ERROR = 200,          // Generic SRTP failure.
-    ERROR_SEND_SRTP_AUTH_FAILED,          // Failed to authenticate packets.
-    ERROR_RECV_SRTP_ERROR,                // Generic SRTP failure.
-    ERROR_RECV_SRTP_AUTH_FAILED,          // Failed to authenticate packets.
-    ERROR_RECV_SRTP_REPLAY,               // Packet replay detected.
-  };
-
   DataMediaChannel() {}
   explicit DataMediaChannel(const MediaConfig& config) : MediaChannel(config) {}
   virtual ~DataMediaChannel() {}

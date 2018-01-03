@@ -627,7 +627,6 @@ class VideoChannel : public BaseChannel {
   bool SetRtpReceiveParameters_w(uint32_t ssrc,
                                  webrtc::RtpParameters parameters);
 
-  void OnMessage(rtc::Message* pmsg) override;
   void OnConnectionMonitorUpdate(
       ConnectionMonitor* monitor,
       const std::vector<ConnectionInfo>& infos) override;
@@ -745,7 +744,6 @@ class RtpDataChannel : public BaseChannel {
                             const DataMediaInfo& info);
   void OnDataReceived(
       const ReceiveDataParams& params, const char* data, size_t len);
-  void OnDataChannelError(uint32_t ssrc, DataMediaChannel::Error error);
   void OnDataChannelReadyToSend(bool writable);
 
   std::unique_ptr<DataMediaMonitor> media_monitor_;

@@ -103,20 +103,6 @@ class VideoCapturerListener
   bool resolution_changed_;
 };
 
-class VideoMediaErrorCatcher : public sigslot::has_slots<> {
- public:
-  VideoMediaErrorCatcher() : ssrc_(0), error_(VideoMediaChannel::ERROR_NONE) { }
-  uint32_t ssrc() const { return ssrc_; }
-  VideoMediaChannel::Error error() const { return error_; }
-  void OnError(uint32_t ssrc, VideoMediaChannel::Error error) {
-    ssrc_ = ssrc;
-    error_ = error;
-  }
- private:
-  uint32_t ssrc_;
-  VideoMediaChannel::Error error_;
-};
-
 // Checks whether |codecs| contains |codec|; checks using Codec::Matches().
 template <class C>
 bool ContainsMatchingCodec(const std::vector<C>& codecs, const C& codec) {

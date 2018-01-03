@@ -57,7 +57,6 @@ enum {
   MSG_EARLYMEDIATIMEOUT = 1,
   MSG_SEND_RTP_PACKET,
   MSG_SEND_RTCP_PACKET,
-  MSG_CHANNEL_ERROR,
   MSG_READYTOSENDDATA,
   MSG_DATARECEIVED,
   MSG_FIRSTPACKETRECEIVED,
@@ -68,30 +67,6 @@ static void SafeSetError(const std::string& message, std::string* error_desc) {
     *error_desc = message;
   }
 }
-
-struct VoiceChannelErrorMessageData : public rtc::MessageData {
-  VoiceChannelErrorMessageData(uint32_t in_ssrc,
-                               VoiceMediaChannel::Error in_error)
-      : ssrc(in_ssrc), error(in_error) {}
-  uint32_t ssrc;
-  VoiceMediaChannel::Error error;
-};
-
-struct VideoChannelErrorMessageData : public rtc::MessageData {
-  VideoChannelErrorMessageData(uint32_t in_ssrc,
-                               VideoMediaChannel::Error in_error)
-      : ssrc(in_ssrc), error(in_error) {}
-  uint32_t ssrc;
-  VideoMediaChannel::Error error;
-};
-
-struct DataChannelErrorMessageData : public rtc::MessageData {
-  DataChannelErrorMessageData(uint32_t in_ssrc,
-                              DataMediaChannel::Error in_error)
-      : ssrc(in_ssrc), error(in_error) {}
-  uint32_t ssrc;
-  DataMediaChannel::Error error;
-};
 
 static bool ValidPacket(bool rtcp, const rtc::CopyOnWriteBuffer* packet) {
   // Check the packet size. We could check the header too if needed.
@@ -1538,12 +1513,6 @@ void VoiceChannel::OnMessage(rtc::Message *pmsg) {
     case MSG_EARLYMEDIATIMEOUT:
       HandleEarlyMediaTimeout();
       break;
-    case MSG_CHANNEL_ERROR: {
-      VoiceChannelErrorMessageData* data =
-          static_cast<VoiceChannelErrorMessageData*>(pmsg->pdata);
-      delete data;
-      break;
-    }
     default:
       BaseChannel::OnMessage(pmsg);
       break;
@@ -1799,20 +1768,6 @@ bool VideoChannel::SetRemoteContent_w(const MediaContentDescription* content,
   return true;
 }
 
-void VideoChannel::OnMessage(rtc::Message *pmsg) {
-  switch (pmsg->message_id) {
-    case MSG_CHANNEL_ERROR: {
-      const VideoChannelErrorMessageData* data =
-          static_cast<VideoChannelErrorMessageData*>(pmsg->pdata);
-      delete data;
-      break;
-    }
-    default:
-      BaseChannel::OnMessage(pmsg);
-      break;
-  }
-}
-
 void VideoChannel::OnConnectionMonitorUpdate(
     ConnectionMonitor* monitor, const std::vector<ConnectionInfo> &infos) {
   SignalConnectionMonitor(this, infos);
@@ -2043,12 +1998,6 @@ void RtpDataChannel::OnMessage(rtc::Message* pmsg) {
       delete data;
       break;
     }
-    case MSG_CHANNEL_ERROR: {
-      const DataChannelErrorMessageData* data =
-          static_cast<DataChannelErrorMessageData*>(pmsg->pdata);
-      delete data;
-      break;
-    }
     default:
       BaseChannel::OnMessage(pmsg);
       break;
@@ -2089,13 +2038,6 @@ void RtpDataChannel::OnDataReceived(const ReceiveDataParams& params,
   DataReceivedMessageData* msg = new DataReceivedMessageData(
       params, data, len);
   signaling_thread()->Post(RTC_FROM_HERE, this, MSG_DATARECEIVED, msg);
-}
-
-void RtpDataChannel::OnDataChannelError(uint32_t ssrc,
-                                        DataMediaChannel::Error err) {
-  DataChannelErrorMessageData* data = new DataChannelErrorMessageData(
-      ssrc, err);
-  signaling_thread()->Post(RTC_FROM_HERE, this, MSG_CHANNEL_ERROR, data);
 }
 
 void RtpDataChannel::OnDataChannelReadyToSend(bool writable) {
