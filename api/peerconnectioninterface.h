@@ -886,10 +886,10 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     return false;
   }
 
-  // Register a metric observer (used by chromium).
-  //
-  // There can only be one observer at a time. Before the observer is
-  // destroyed, RegisterUMAOberver(nullptr) should be called.
+  // Register a metric observer (used by chromium). It's reference counted, and
+  // this method takes a reference. RegisterUMAObserver(nullptr) will release
+  // the reference.
+  // TODO(deadbeef): Take argument as scoped_refptr?
   virtual void RegisterUMAObserver(UMAObserver* observer) = 0;
 
   // 0 <= min <= current <= max should hold for set parameters.
