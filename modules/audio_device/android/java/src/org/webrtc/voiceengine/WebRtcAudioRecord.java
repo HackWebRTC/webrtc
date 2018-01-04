@@ -106,7 +106,12 @@ public class WebRtcAudioRecord {
             byteBuffer.clear();
             byteBuffer.put(emptyBytes);
           }
-          nativeDataIsRecorded(bytesRead, nativeAudioRecord);
+          // It's possible we've been shut down during the read, and stopRecording() tried and
+          // failed to join this thread. To be a bit safer, try to avoid calling any native methods
+          // in case they've been unregistered after stopRecording() returned.
+          if (keepAlive) {
+            nativeDataIsRecorded(bytesRead, nativeAudioRecord);
+          }
         } else {
           String errorMessage = "AudioRecord.read failed: " + bytesRead;
           Logging.e(TAG, errorMessage);
