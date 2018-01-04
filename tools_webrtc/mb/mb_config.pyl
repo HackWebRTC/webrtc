@@ -35,7 +35,7 @@
       'Mac64 Release [large tests]': 'release_bot_x64',
 
       # Linux
-      'Linux32 Debug': 'debug_bot_x86',
+      'Linux32 Debug': 'no_h264_debug_bot_x86',
       'Linux32 Release': 'release_bot_x86',
       'Linux32 Debug (ARM)': 'debug_bot_arm',
       'Linux32 Release (ARM)': 'release_bot_arm',
@@ -165,7 +165,7 @@
       'linux_rel': 'release_bot_x64',
       'linux_arm64_dbg': 'debug_bot_arm64',
       'linux_arm64_rel': 'release_bot_arm64',
-      'linux32_dbg': 'debug_bot_x86',
+      'linux32_dbg': 'no_h264_debug_bot_x86',
       'linux32_rel': 'release_bot_x86',
       'linux32_arm_dbg': 'debug_bot_arm',
       'linux32_arm_rel': 'release_bot_arm',
@@ -254,6 +254,9 @@
     ],
     'debug_bot_x86': [
       'gn', 'openh264_debug_bot', 'x86'
+    ],
+    'no_h264_debug_bot_x86': [
+      'gn', 'debug_bot', 'x86'
     ],
     'release_bot_x86': [
       'gn', 'openh264_release_bot', 'x86'
