@@ -10,15 +10,18 @@
 
 #include "modules/audio_device/android/audio_record_jni.h"
 
-#include <utility>
-
 #include <android/log.h>
+
+#include <string>
+#include <utility>
 
 #include "modules/audio_device/android/audio_common.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/format_macros.h"
 #include "rtc_base/platform_thread.h"
+#include "rtc_base/timeutils.h"
+#include "system_wrappers/include/metrics.h"
 
 #define TAG "AudioRecordJni"
 #define ALOGV(...) __android_log_print(ANDROID_LOG_VERBOSE, TAG, __VA_ARGS__)
@@ -28,6 +31,25 @@
 #define ALOGI(...) __android_log_print(ANDROID_LOG_INFO, TAG, __VA_ARGS__)
 
 namespace webrtc {
+
+namespace {
+// Scoped class which logs its time of life as a UMA statistic. It generates
+// a histogram which measures the time it takes for a method/scope to execute.
+class ScopedHistogramTimer {
+ public:
+  explicit ScopedHistogramTimer(const std::string& name)
+      : histogram_name_(name), start_time_ms_(rtc::TimeMillis()) {}
+  ~ScopedHistogramTimer() {
+    const int64_t life_time_ms = rtc::TimeSince(start_time_ms_);
+    RTC_HISTOGRAM_COUNTS_1000(histogram_name_, life_time_ms);
+    ALOGD("%s: %" PRId64, histogram_name_.c_str(), life_time_ms);
+  }
+
+ private:
+  const std::string histogram_name_;
+  int64_t start_time_ms_;
+};
+}  // namespace
 
 // AudioRecordJni::JavaAudioRecord implementation.
 AudioRecordJni::JavaAudioRecord::JavaAudioRecord(
@@ -124,8 +146,9 @@ int32_t AudioRecordJni::InitRecording() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(!initialized_);
   RTC_DCHECK(!recording_);
+  ScopedHistogramTimer timer("WebRTC.Audio.InitRecordingDurationMs");
   int frames_per_buffer = j_audio_record_->InitRecording(
-      audio_parameters_.sample_rate(), audio_parameters_.channels());
+        audio_parameters_.sample_rate(), audio_parameters_.channels());
   if (frames_per_buffer < 0) {
     direct_buffer_address_ = nullptr;
     ALOGE("InitRecording failed!");
@@ -146,6 +169,7 @@ int32_t AudioRecordJni::StartRecording() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(initialized_);
   RTC_DCHECK(!recording_);
+  ScopedHistogramTimer timer("WebRTC.Audio.StartRecordingDurationMs");
   if (!j_audio_record_->StartRecording()) {
     ALOGE("StartRecording failed!");
     return -1;
