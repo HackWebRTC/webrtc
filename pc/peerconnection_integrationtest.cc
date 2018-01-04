@@ -3659,6 +3659,31 @@ TEST_F(PeerConnectionIntegrationTest, DisableAndEnableAudioRecording) {
                                   kMaxWaitForFramesMs);
 }
 
+// Test that after closing PeerConnections, they stop sending any packets (ICE,
+// DTLS, RTP...).
+TEST_F(PeerConnectionIntegrationTest, ClosingConnectionStopsPacketFlow) {
+  // Set up audio/video/data, wait for some frames to be received.
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+  caller()->AddAudioVideoMediaStream();
+#ifdef HAVE_SCTP
+  caller()->CreateDataChannel();
+#endif
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  ExpectNewFramesReceivedWithWait(0, 0, kDefaultExpectedAudioFrameCount,
+                                  kDefaultExpectedAudioFrameCount,
+                                  kMaxWaitForFramesMs);
+  // Close PeerConnections.
+  caller()->pc()->Close();
+  callee()->pc()->Close();
+  // Pump messages for a second, and ensure no new packets end up sent.
+  uint32_t sent_packets_a = virtual_socket_server()->sent_packets();
+  WAIT(false, 1000);
+  uint32_t sent_packets_b = virtual_socket_server()->sent_packets();
+  EXPECT_EQ(sent_packets_a, sent_packets_b);
+}
+
 }  // namespace
 
 #endif  // if !defined(THREAD_SANITIZER)

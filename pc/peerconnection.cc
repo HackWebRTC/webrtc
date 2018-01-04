@@ -5102,6 +5102,8 @@ void PeerConnection::ChangeSctpTransport_n(const std::string& transport_name) {
 void PeerConnection::DestroySctpTransport_n() {
   RTC_DCHECK(network_thread()->IsCurrent());
   sctp_transport_.reset(nullptr);
+  transport_controller_->DestroyDtlsTransport_n(
+      *sctp_transport_name_, cricket::ICE_CANDIDATE_COMPONENT_RTP);
   sctp_content_name_.reset();
   sctp_transport_name_.reset();
   sctp_invoker_.reset(nullptr);
