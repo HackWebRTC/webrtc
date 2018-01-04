@@ -1013,7 +1013,6 @@ rtc::scoped_refptr<RtpSenderInterface> PeerConnection::AddTrack(
   if (!sender_or_error.ok()) {
     return nullptr;
   }
-  stats_->AddTrack(track);
   return sender_or_error.MoveValue();
 }
 
@@ -1059,6 +1058,7 @@ PeerConnection::AddTrackWithStreamLabels(
                        : AddTrackPlanB(track, adjusted_stream_labels));
   if (sender_or_error.ok()) {
     observer_->OnRenegotiationNeeded();
+    stats_->AddTrack(track);
   }
   return sender_or_error;
 }
