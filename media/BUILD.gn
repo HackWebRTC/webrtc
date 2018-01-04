@@ -92,7 +92,6 @@ rtc_static_library("rtc_media_base") {
     "base/videocommon.h",
     "base/videosourcebase.cc",
     "base/videosourcebase.h",
-    "base/videosourceinterface.cc",
     "base/videosourceinterface.h",
   ]
 

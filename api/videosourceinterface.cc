@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2017 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,10 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MEDIA_BASE_VIDEOSOURCEINTERFACE_H_
-#define MEDIA_BASE_VIDEOSOURCEINTERFACE_H_
-
-// TODO(bugs.webrtc.org/6828): remove this file after downstream is updated.
 #include "api/videosourceinterface.h"
 
-#endif  // MEDIA_BASE_VIDEOSOURCEINTERFACE_H_
+namespace rtc {
+
+VideoSinkWants::VideoSinkWants() = default;
+VideoSinkWants::~VideoSinkWants() = default;
+
+}  // namespace rtc

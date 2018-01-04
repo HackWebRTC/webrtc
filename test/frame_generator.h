@@ -15,7 +15,7 @@
 #include <vector>
 
 #include "api/video/video_frame.h"
-#include "media/base/videosourceinterface.h"
+#include "api/videosourceinterface.h"
 #include "rtc_base/criticalsection.h"
 #include "typedefs.h"  // NOLINT(build/include)
 

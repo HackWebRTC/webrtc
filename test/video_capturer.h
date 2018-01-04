@@ -17,8 +17,8 @@
 #include "api/optional.h"
 #include "api/video/i420_buffer.h"
 #include "api/video/video_frame.h"
+#include "api/videosourceinterface.h"
 #include "media/base/videoadapter.h"
-#include "media/base/videosourceinterface.h"
 #include "rtc_base/criticalsection.h"
 
 namespace cricket {

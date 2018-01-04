@@ -73,6 +73,8 @@ rtc_static_library("libjingle_peerconnection_api") {
     "umametrics.cc",
     "umametrics.h",
     "videosinkinterface.h",
+    "videosourceinterface.cc",
+    "videosourceinterface.h",
     "videosourceproxy.h",
   ]
 
