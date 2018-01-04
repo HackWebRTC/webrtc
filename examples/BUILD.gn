@@ -673,6 +673,7 @@ if (is_win || is_android) {
       "../api:video_frame_api",
       "../api/audio_codecs:builtin_audio_decoder_factory",
       "../api/audio_codecs:builtin_audio_encoder_factory",
+      "../common_video",
       "../media:rtc_media",
       "../media:rtc_media_base",
       "../modules/audio_device:audio_device",

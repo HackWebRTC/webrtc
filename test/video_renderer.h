@@ -12,7 +12,7 @@
 
 #include <stddef.h>
 
-#include "media/base/videosinkinterface.h"
+#include "api/videosinkinterface.h"
 
 namespace webrtc {
 class VideoFrame;

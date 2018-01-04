@@ -90,7 +90,6 @@ rtc_static_library("rtc_media_base") {
     "base/videocapturerfactory.h",
     "base/videocommon.cc",
     "base/videocommon.h",
-    "base/videosinkinterface.h",
     "base/videosourcebase.cc",
     "base/videosourcebase.h",
     "base/videosourceinterface.cc",
@@ -112,6 +111,7 @@ rtc_static_library("rtc_media_base") {
     "../api/video_codecs:video_codecs_api",
     "../call:call_interfaces",
     "../call:video_stream_api",
+    "../common_video",
     "../modules/audio_processing:audio_processing_statistics",
     "../p2p",
     "../rtc_base:rtc_base",
@@ -341,8 +341,10 @@ if (rtc_include_tests) {
     include_dirs = []
     public_deps = []
     deps = [
+      "../api:libjingle_peerconnection_api",
       "../api:video_frame_api_i420",
       "../call:video_stream_api",
+      "../common_video:common_video",
       "../modules/audio_coding:rent_a_codec",
       "../modules/audio_processing:audio_processing",
       "../modules/rtp_rtcp:rtp_rtcp_format",

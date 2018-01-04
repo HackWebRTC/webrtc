@@ -11,24 +11,7 @@
 #ifndef MEDIA_BASE_VIDEOSINKINTERFACE_H_
 #define MEDIA_BASE_VIDEOSINKINTERFACE_H_
 
-#include <rtc_base/checks.h>
-// TODO(nisse): Consider moving this interface (and possibly
-// VideoSourceInterface too) from media/base to common_video, to
-// reduce dependency cycles.
-namespace rtc {
-
-template <typename VideoFrameT>
-class VideoSinkInterface {
- public:
-  virtual ~VideoSinkInterface() {}
-
-  virtual void OnFrame(const VideoFrameT& frame) = 0;
-
-  // Should be called by the source when it discards the frame due to rate
-  // limiting.
-  virtual void OnDiscardedFrame() {}
-};
-
-}  // namespace rtc
+// TODO(bugs.webrtc.org/6828): Remove this once downstream is updated.
+#include "api/videosinkinterface.h"
 
 #endif  // MEDIA_BASE_VIDEOSINKINTERFACE_H_

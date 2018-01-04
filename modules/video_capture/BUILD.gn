@@ -29,6 +29,7 @@ rtc_static_library("video_capture_module") {
     "..:module_api",
     "../..:webrtc_common",
     "../../:typedefs",
+    "../../api:libjingle_peerconnection_api",
     "../../api:video_frame_api",
     "../../api:video_frame_api_i420",
     "../../common_video",

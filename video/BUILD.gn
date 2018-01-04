@@ -56,6 +56,7 @@ rtc_static_library("video") {
   deps = [
     "..:webrtc_common",
     "../:typedefs",
+    "../api:libjingle_peerconnection_api",
     "../api:optional",
     "../api:transport_api",
     "../api:video_frame_api",

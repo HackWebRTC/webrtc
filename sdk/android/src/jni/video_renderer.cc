@@ -11,7 +11,7 @@
 #include <jni.h>
 
 #include "api/video/video_frame.h"
-#include "media/base/videosinkinterface.h"
+#include "api/videosinkinterface.h"
 #include "sdk/android/generated_video_jni/jni/VideoRenderer_jni.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 #include "sdk/android/src/jni/videoframe.h"
