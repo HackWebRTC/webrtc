@@ -65,6 +65,7 @@ rtc_static_library("rtc_p2p") {
     "base/tcpport.cc",
     "base/tcpport.h",
     "base/transport.h",
+    "base/transportchannelimpl.h",
     "base/transportdescription.cc",
     "base/transportdescription.h",
     "base/transportdescriptionfactory.cc",
