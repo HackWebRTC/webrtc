@@ -12,8 +12,6 @@
 
 #include <algorithm>
 
-#include "modules/video_coding/internal_defines.h"
-#include "modules/video_coding/jitter_buffer_common.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/metrics.h"
 #include "system_wrappers/include/timestamp_extrapolator.h"
@@ -86,11 +84,6 @@ void VCMTiming::Reset() {
   prev_frame_timestamp_ = 0;
 }
 
-void VCMTiming::ResetDecodeTime() {
-  rtc::CritScope cs(&crit_sect_);
-  codec_timer_.reset(new VCMCodecTimer());
-}
-
 void VCMTiming::set_render_delay(int render_delay_ms) {
   rtc::CritScope cs(&crit_sect_);
   render_delay_ms_ = render_delay_ms;
@@ -155,9 +148,8 @@ void VCMTiming::UpdateCurrentDelay(uint32_t frame_timestamp) {
     }
 
     if (max_change_ms <= 0) {
-      // Any changes less than 1 ms are truncated and
-      // will be postponed. Negative change will be due
-      // to reordering and should be ignored.
+      // Any changes less than 1 ms are truncated and will be postponed.
+      // Negative change will be due to reordering and should be ignored.
       return;
     }
     delay_diff_ms = std::max(delay_diff_ms, -max_change_ms);
@@ -185,10 +177,10 @@ void VCMTiming::UpdateCurrentDelay(int64_t render_time_ms,
   }
 }
 
-int32_t VCMTiming::StopDecodeTimer(uint32_t time_stamp,
-                                   int32_t decode_time_ms,
-                                   int64_t now_ms,
-                                   int64_t render_time_ms) {
+void VCMTiming::StopDecodeTimer(uint32_t time_stamp,
+                                int32_t decode_time_ms,
+                                int64_t now_ms,
+                                int64_t render_time_ms) {
   rtc::CritScope cs(&crit_sect_);
   codec_timer_->AddTiming(decode_time_ms, now_ms);
   assert(decode_time_ms >= 0);
@@ -204,7 +196,6 @@ int32_t VCMTiming::StopDecodeTimer(uint32_t time_stamp,
     sum_missed_render_deadline_ms_ += -time_until_rendering_ms;
     ++num_delayed_decoded_frames_;
   }
-  return 0;
 }
 
 void VCMTiming::IncomingTimestamp(uint32_t time_stamp, int64_t now_ms) {
@@ -228,7 +219,7 @@ int64_t VCMTiming::RenderTimeMsInternal(uint32_t frame_timestamp,
   }
 
   if (min_playout_delay_ms_ == 0 && max_playout_delay_ms_ == 0) {
-    // Render as soon as possible
+    // Render as soon as possible.
     return now_ms;
   }
 
@@ -239,7 +230,6 @@ int64_t VCMTiming::RenderTimeMsInternal(uint32_t frame_timestamp,
   return estimated_complete_time_ms + actual_delay;
 }
 
-// Must be called from inside a critical section.
 int VCMTiming::RequiredDecodeTimeMs() const {
   const int decode_time_ms = codec_timer_->RequiredDecodeTimeMs();
   assert(decode_time_ms >= 0);
@@ -257,24 +247,6 @@ uint32_t VCMTiming::MaxWaitingTime(int64_t render_time_ms,
     return 0;
   }
   return static_cast<uint32_t>(max_wait_time_ms);
-}
-
-bool VCMTiming::EnoughTimeToDecode(
-    uint32_t available_processing_time_ms) const {
-  rtc::CritScope cs(&crit_sect_);
-  int64_t required_decode_time_ms = RequiredDecodeTimeMs();
-  if (required_decode_time_ms < 0) {
-    // Haven't decoded any frames yet, try decoding one to get an estimate
-    // of the decode time.
-    return true;
-  } else if (required_decode_time_ms == 0) {
-    // Decode time is less than 1, set to 1 for now since
-    // we don't have any better precision. Count ticks later?
-    required_decode_time_ms = 1;
-  }
-  return static_cast<int64_t>(available_processing_time_ms) -
-             required_decode_time_ms >
-         0;
 }
 
 int VCMTiming::TargetVideoDelay() const {
