@@ -82,7 +82,7 @@ class PerfResultsLogger {
 
     std::ostringstream json_stream;
     json_stream << '"' << trace_name << R"(":{)";
-    json_stream << R"("type":"list_of_scalars",)";
+    json_stream << R"("type":"list_of_scalar_values",)";
     json_stream << R"("values":[)" << mean << "],";
     json_stream << R"("std":)" << error << ',';
     json_stream << R"("units":")" << units << R"("})";
@@ -104,7 +104,7 @@ class PerfResultsLogger {
 
     std::ostringstream json_stream;
     json_stream << '"' << trace_name << R"(":{)";
-    json_stream << R"("type":"list_of_scalars",)";
+    json_stream << R"("type":"list_of_scalar_values",)";
     json_stream << R"("values":)" << value_stream.str() << ',';
     json_stream << R"("units":")" << units << R"("})";
     rtc::CritScope lock(&crit_);

@@ -26,13 +26,13 @@ const char* kJsonExpected = R"({
         "units":"widgets"
       },
       "baz_me":{
-        "type":"list_of_scalars",
+        "type":"list_of_scalar_values",
         "values":[1],
         "std":2,
         "units":"lemurs"
       },
       "baz_vl":{
-        "type":"list_of_scalars",
+        "type":"list_of_scalar_values",
         "values":[1,2,3],
         "units":"units"
       }
