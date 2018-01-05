@@ -313,15 +313,17 @@ struct ContentInfo {
   const MediaContentDescription* media_description() const {
     return description;
   }
-  void set_media_description(MediaContentDescription* description) {
-    this->description = description;
+  void set_media_description(MediaContentDescription* desc) {
+    description = desc;
   }
 
-  // TODO(bugs.webrtc.org/8520): Rename this to mid.
+  // TODO(bugs.webrtc.org/8620): Rename this to mid.
   std::string name;
   MediaProtocolType type;
   bool rejected = false;
   bool bundle_only = false;
+  // TODO(bugs.webrtc.org/8620): Switch to the getter and setter, and make this
+  // private.
   MediaContentDescription* description = nullptr;
 };
 
