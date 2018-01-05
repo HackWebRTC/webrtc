@@ -719,6 +719,7 @@ if (rtc_include_tests) {
       "../../rtc_base:protobuf_utils",
       "../../rtc_base:rtc_base_approved",
       "../../system_wrappers",
+      "../../test:perf_test",
       "../../test:test_support",
     ]
 

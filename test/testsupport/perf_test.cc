@@ -12,6 +12,7 @@
 #include "rtc_base/criticalsection.h"
 
 #include <stdio.h>
+#include <fstream>
 #include <map>
 #include <sstream>
 #include <vector>
@@ -152,6 +153,13 @@ void ClearPerfResults() {
 
 std::string GetPerfResultsJSON() {
   return GetPerfResultsLogger().ToJSON();
+}
+
+void WritePerfResults(const std::string& output_path) {
+  std::string json_results = GetPerfResultsJSON();
+  std::fstream json_file(output_path, std::fstream::out);
+  json_file << json_results;
+  json_file.close();
 }
 
 void PrintResult(const std::string& measurement,
