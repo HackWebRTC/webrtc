@@ -1260,6 +1260,20 @@ if (rtc_enable_protobuf) {
 }
 
 if (rtc_include_tests) {
+  rtc_source_set("mocks") {
+    testonly = true
+    sources = [
+      "audio_network_adaptor/mock/mock_audio_network_adaptor.h",
+      "audio_network_adaptor/mock/mock_controller.h",
+      "audio_network_adaptor/mock/mock_controller_manager.h",
+      "audio_network_adaptor/mock/mock_debug_dump_writer.h",
+    ]
+    deps = [
+      ":audio_network_adaptor",
+      "../../test:test_support",
+    ]
+  }
+
   group("audio_coding_tests") {
     visibility += [ "*" ]
     testonly = true
@@ -2054,8 +2068,6 @@ if (rtc_include_tests) {
       "audio_network_adaptor/fec_controller_plr_based_unittest.cc",
       "audio_network_adaptor/fec_controller_rplr_based_unittest.cc",
       "audio_network_adaptor/frame_length_controller_unittest.cc",
-      "audio_network_adaptor/mock/mock_controller.h",
-      "audio_network_adaptor/mock/mock_controller_manager.h",
       "audio_network_adaptor/util/threshold_curve_unittest.cc",
       "codecs/builtin_audio_decoder_factory_unittest.cc",
       "codecs/builtin_audio_encoder_factory_unittest.cc",
@@ -2133,6 +2145,7 @@ if (rtc_include_tests) {
       ":isac_c",
       ":isac_fix",
       ":legacy_encoded_audio_frame",
+      ":mocks",
       ":neteq",
       ":neteq_test_support",
       ":neteq_test_tools",
