@@ -62,6 +62,8 @@ if (rtc_include_internal_audio_device && is_ios) {
       "ios/audio_device_ios.mm",
       "ios/audio_device_not_implemented_ios.mm",
       "ios/audio_session_observer.h",
+      "ios/objc/RTCAudioSession.h",
+      "ios/objc/RTCAudioSessionConfiguration.h",
       "ios/objc/RTCAudioSessionDelegateAdapter.h",
       "ios/objc/RTCAudioSessionDelegateAdapter.mm",
       "ios/voice_processing_audio_unit.h",
