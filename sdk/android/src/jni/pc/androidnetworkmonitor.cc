@@ -11,8 +11,10 @@
 #include "sdk/android/src/jni/pc/androidnetworkmonitor.h"
 
 #include <dlfcn.h>
+#ifndef RTLD_NOLOAD
 // This was added in Lollipop to dlfcn.h
 #define RTLD_NOLOAD 4
+#endif
 
 #include "rtc_base/bind.h"
 #include "rtc_base/checks.h"

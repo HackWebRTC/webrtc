@@ -248,7 +248,7 @@ void AudioRecordJni::OnCacheDirectBufferAddress(JNIEnv* env,
   RTC_DCHECK(!direct_buffer_address_);
   direct_buffer_address_ = env->GetDirectBufferAddress(byte_buffer);
   jlong capacity = env->GetDirectBufferCapacity(byte_buffer);
-  ALOGD("direct buffer capacity: %lld", capacity);
+  ALOGD("direct buffer capacity: %ld", static_cast<long>(capacity));
   direct_buffer_capacity_in_bytes_ = static_cast<size_t>(capacity);
 }
 
