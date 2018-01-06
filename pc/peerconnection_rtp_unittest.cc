@@ -101,9 +101,7 @@ TEST_F(PeerConnectionRtpCallbacksTest, AddTrackWithoutStreamFiresOnAddTrack) {
   auto caller = CreatePeerConnection();
   auto callee = CreatePeerConnection();
 
-  rtc::scoped_refptr<AudioTrackInterface> audio_track(
-      pc_factory_->CreateAudioTrack("audio_track", nullptr));
-  EXPECT_TRUE(caller->pc()->AddTrack(audio_track.get(), {}));
+  ASSERT_TRUE(caller->AddTrack(caller->CreateAudioTrack("audio_track")));
   ASSERT_TRUE(
       callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal(),
                                    static_cast<webrtc::RTCError*>(nullptr)));
@@ -121,10 +119,8 @@ TEST_F(PeerConnectionRtpCallbacksTest, AddTrackWithStreamFiresOnAddTrack) {
   auto caller = CreatePeerConnection();
   auto callee = CreatePeerConnection();
 
-  rtc::scoped_refptr<AudioTrackInterface> audio_track(
-      pc_factory_->CreateAudioTrack("audio_track", nullptr));
-  auto stream = MediaStream::Create("audio_stream");
-  EXPECT_TRUE(caller->pc()->AddTrack(audio_track.get(), {stream.get()}));
+  ASSERT_TRUE(caller->AddTrack(caller->CreateAudioTrack("audio_track"),
+                               {"audio_stream"}));
   ASSERT_TRUE(
       callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal(),
                                    static_cast<webrtc::RTCError*>(nullptr)));
@@ -142,9 +138,7 @@ TEST_F(PeerConnectionRtpCallbacksTest,
   auto caller = CreatePeerConnection();
   auto callee = CreatePeerConnection();
 
-  rtc::scoped_refptr<AudioTrackInterface> audio_track(
-      pc_factory_->CreateAudioTrack("audio_track", nullptr));
-  auto sender = caller->pc()->AddTrack(audio_track.get(), {});
+  auto sender = caller->AddTrack(caller->CreateAudioTrack("audio_track"), {});
   ASSERT_TRUE(
       callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal(),
                                    static_cast<webrtc::RTCError*>(nullptr)));
@@ -164,10 +158,8 @@ TEST_F(PeerConnectionRtpCallbacksTest,
   auto caller = CreatePeerConnection();
   auto callee = CreatePeerConnection();
 
-  rtc::scoped_refptr<AudioTrackInterface> audio_track(
-      pc_factory_->CreateAudioTrack("audio_track", nullptr));
-  auto stream = MediaStream::Create("audio_stream");
-  auto sender = caller->pc()->AddTrack(audio_track.get(), {stream.get()});
+  auto sender = caller->AddTrack(caller->CreateAudioTrack("audio_track"),
+                                 {"audio_stream"});
   ASSERT_TRUE(
       callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal(),
                                    static_cast<webrtc::RTCError*>(nullptr)));
@@ -187,14 +179,11 @@ TEST_F(PeerConnectionRtpCallbacksTest,
   auto caller = CreatePeerConnection();
   auto callee = CreatePeerConnection();
 
-  rtc::scoped_refptr<AudioTrackInterface> audio_track1(
-      pc_factory_->CreateAudioTrack("audio_track1", nullptr));
-  rtc::scoped_refptr<AudioTrackInterface> audio_track2(
-      pc_factory_->CreateAudioTrack("audio_track2", nullptr));
-  auto stream = MediaStream::Create("shared_audio_stream");
-  std::vector<MediaStreamInterface*> streams{stream.get()};
-  auto sender1 = caller->pc()->AddTrack(audio_track1.get(), streams);
-  auto sender2 = caller->pc()->AddTrack(audio_track2.get(), streams);
+  const char kSharedStreamLabel[] = "shared_audio_stream";
+  auto sender1 = caller->AddTrack(caller->CreateAudioTrack("audio_track1"),
+                                  {kSharedStreamLabel});
+  auto sender2 = caller->AddTrack(caller->CreateAudioTrack("audio_track2"),
+                                  {kSharedStreamLabel});
   ASSERT_TRUE(
       callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal(),
                                    static_cast<webrtc::RTCError*>(nullptr)));
@@ -230,9 +219,7 @@ TEST_F(PeerConnectionRtpObserverTest, AddSenderWithoutStreamAddsReceiver) {
   auto caller = CreatePeerConnection();
   auto callee = CreatePeerConnection();
 
-  rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
-      pc_factory_->CreateAudioTrack("audio_track", nullptr));
-  EXPECT_TRUE(caller->pc()->AddTrack(audio_track.get(), {}));
+  ASSERT_TRUE(caller->AddTrack(caller->CreateAudioTrack("audio_track"), {}));
   ASSERT_TRUE(
       callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal(),
                                    static_cast<webrtc::RTCError*>(nullptr)));
@@ -250,10 +237,8 @@ TEST_F(PeerConnectionRtpObserverTest, AddSenderWithStreamAddsReceiver) {
   auto caller = CreatePeerConnection();
   auto callee = CreatePeerConnection();
 
-  rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
-      pc_factory_->CreateAudioTrack("audio_track", nullptr));
-  auto stream = webrtc::MediaStream::Create("audio_stream");
-  EXPECT_TRUE(caller->pc()->AddTrack(audio_track.get(), {stream}));
+  ASSERT_TRUE(caller->AddTrack(caller->CreateAudioTrack("audio_track"),
+                               {"audio_stream"}));
   ASSERT_TRUE(
       callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal(),
                                    static_cast<webrtc::RTCError*>(nullptr)));
@@ -271,9 +256,7 @@ TEST_F(PeerConnectionRtpObserverTest,
   auto caller = CreatePeerConnection();
   auto callee = CreatePeerConnection();
 
-  rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
-      pc_factory_->CreateAudioTrack("audio_track", nullptr));
-  auto sender = caller->pc()->AddTrack(audio_track.get(), {});
+  auto sender = caller->AddTrack(caller->CreateAudioTrack("audio_track"), {});
   ASSERT_TRUE(sender);
   ASSERT_TRUE(
       callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal(),
@@ -294,10 +277,8 @@ TEST_F(PeerConnectionRtpObserverTest, RemoveSenderWithStreamRemovesReceiver) {
   auto caller = CreatePeerConnection();
   auto callee = CreatePeerConnection();
 
-  rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
-      pc_factory_->CreateAudioTrack("audio_track", nullptr));
-  auto stream = webrtc::MediaStream::Create("audio_stream");
-  auto sender = caller->pc()->AddTrack(audio_track.get(), {stream});
+  auto sender = caller->AddTrack(caller->CreateAudioTrack("audio_track"),
+                                 {"audio_stream"});
   ASSERT_TRUE(sender);
   ASSERT_TRUE(
       callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal(),
@@ -319,14 +300,11 @@ TEST_F(PeerConnectionRtpObserverTest,
   auto caller = CreatePeerConnection();
   auto callee = CreatePeerConnection();
 
-  rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track1(
-      pc_factory_->CreateAudioTrack("audio_track1", nullptr));
-  rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track2(
-      pc_factory_->CreateAudioTrack("audio_track2", nullptr));
-  auto stream = webrtc::MediaStream::Create("shared_audio_stream");
-  std::vector<webrtc::MediaStreamInterface*> streams{stream.get()};
-  auto sender1 = caller->pc()->AddTrack(audio_track1.get(), streams);
-  auto sender2 = caller->pc()->AddTrack(audio_track2.get(), streams);
+  const char kSharedStreamLabel[] = "shared_audio_stream";
+  auto sender1 = caller->AddTrack(caller->CreateAudioTrack("audio_track1"),
+                                  {kSharedStreamLabel});
+  auto sender2 = caller->AddTrack(caller->CreateAudioTrack("audio_track2"),
+                                  {kSharedStreamLabel});
   ASSERT_TRUE(
       callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal(),
                                    static_cast<webrtc::RTCError*>(nullptr)));
@@ -375,11 +353,9 @@ TEST_F(PeerConnectionRtpObserverTest,
   auto caller = CreatePeerConnection();
   auto callee = CreatePeerConnection();
 
-  rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
-      pc_factory_->CreateAudioTrack("audio_track", nullptr));
   // Create SDP for adding a track and for removing it. This will be used in the
   // first and second SetRemoteDescription() calls.
-  auto sender = caller->pc()->AddTrack(audio_track.get(), {});
+  auto sender = caller->AddTrack(caller->CreateAudioTrack("audio_track"), {});
   auto srd1_sdp = caller->CreateOfferAndSetAsLocal();
   EXPECT_TRUE(caller->pc()->RemoveTrack(sender));
   auto srd2_sdp = caller->CreateOfferAndSetAsLocal();
@@ -612,7 +588,7 @@ TEST_F(PeerConnectionRtpUnifiedPlanTest, AddAudioTrackCreatesAudioSender) {
   auto caller = CreatePeerConnectionWithUnifiedPlan();
 
   auto audio_track = caller->CreateAudioTrack("a");
-  auto sender = caller->pc()->AddTrack(audio_track, {});
+  auto sender = caller->AddTrack(audio_track);
   ASSERT_TRUE(sender);
 
   EXPECT_EQ(cricket::MEDIA_TYPE_AUDIO, sender->media_type());
@@ -625,7 +601,7 @@ TEST_F(PeerConnectionRtpUnifiedPlanTest, AddVideoTrackCreatesVideoSender) {
   auto caller = CreatePeerConnectionWithUnifiedPlan();
 
   auto video_track = caller->CreateVideoTrack("a");
-  auto sender = caller->pc()->AddTrack(video_track, {});
+  auto sender = caller->AddTrack(video_track);
   ASSERT_TRUE(sender);
 
   EXPECT_EQ(cricket::MEDIA_TYPE_VIDEO, sender->media_type());
@@ -654,7 +630,7 @@ TEST_F(PeerConnectionRtpUnifiedPlanTest, AddTrackReusesTransceiver) {
 
   auto transceiver = caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO);
   auto audio_track = caller->CreateAudioTrack("a");
-  auto sender = caller->pc()->AddTrack(audio_track, {});
+  auto sender = caller->AddTrack(audio_track);
   ASSERT_TRUE(sender);
 
   auto transceivers = caller->pc()->GetTransceivers();
@@ -769,7 +745,9 @@ TEST_F(PeerConnectionRtpUnifiedPlanTest, AddTrackErrorIfClosed) {
   caller->pc()->Close();
 
   caller->observer()->clear_negotiation_needed();
-  EXPECT_FALSE(caller->pc()->AddTrack(audio_track, {}));
+  auto result = caller->pc()
+                ->AddTrack(audio_track, std::vector<std::string>());
+  EXPECT_EQ(RTCErrorType::INVALID_STATE, result.error().type());
   EXPECT_FALSE(caller->observer()->negotiation_needed());
 }
 
@@ -777,10 +755,12 @@ TEST_F(PeerConnectionRtpUnifiedPlanTest, AddTrackErrorIfTrackAlreadyHasSender) {
   auto caller = CreatePeerConnectionWithUnifiedPlan();
 
   auto audio_track = caller->CreateAudioTrack("a");
-  ASSERT_TRUE(caller->pc()->AddTrack(audio_track, {}));
+  ASSERT_TRUE(caller->AddTrack(audio_track));
 
   caller->observer()->clear_negotiation_needed();
-  EXPECT_FALSE(caller->pc()->AddTrack(audio_track, {}));
+  auto result = caller->pc()
+                ->AddTrack(audio_track, std::vector<std::string>());
+  EXPECT_EQ(RTCErrorType::INVALID_PARAMETER, result.error().type());
   EXPECT_FALSE(caller->observer()->negotiation_needed());
 }
 

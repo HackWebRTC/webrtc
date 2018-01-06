@@ -29,7 +29,7 @@ BEGIN_SIGNALING_PROXY_MAP(PeerConnection)
   PROXY_METHOD1(bool, AddStream, MediaStreamInterface*)
   PROXY_METHOD1(void, RemoveStream, MediaStreamInterface*)
   PROXY_METHOD2(RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>>,
-                AddTrackWithStreamLabels,
+                AddTrack,
                 rtc::scoped_refptr<MediaStreamTrackInterface>,
                 const std::vector<std::string>&);
   PROXY_METHOD2(rtc::scoped_refptr<RtpSenderInterface>,

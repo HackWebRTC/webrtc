@@ -1009,18 +1009,17 @@ rtc::scoped_refptr<RtpSenderInterface> PeerConnection::AddTrack(
     }
     stream_labels.push_back(stream->label());
   }
-  auto sender_or_error = AddTrackWithStreamLabels(track, stream_labels);
+  auto sender_or_error = AddTrack(track, stream_labels);
   if (!sender_or_error.ok()) {
     return nullptr;
   }
   return sender_or_error.MoveValue();
 }
 
-RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>>
-PeerConnection::AddTrackWithStreamLabels(
+RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>> PeerConnection::AddTrack(
     rtc::scoped_refptr<MediaStreamTrackInterface> track,
     const std::vector<std::string>& stream_labels) {
-  TRACE_EVENT0("webrtc", "PeerConnection::AddTrackWithStreamLabels");
+  TRACE_EVENT0("webrtc", "PeerConnection::AddTrack");
   if (!track) {
     LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER, "Track is null.");
   }

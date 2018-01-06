@@ -88,7 +88,7 @@ class PeerConnection : public PeerConnectionInterface,
   bool AddStream(MediaStreamInterface* local_stream) override;
   void RemoveStream(MediaStreamInterface* local_stream) override;
 
-  RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>> AddTrackWithStreamLabels(
+  RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>> AddTrack(
       rtc::scoped_refptr<MediaStreamTrackInterface> track,
       const std::vector<std::string>& stream_labels) override;
   rtc::scoped_refptr<RtpSenderInterface> AddTrack(

@@ -599,9 +599,9 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   // - INVALID_STATE: The PeerConnection is closed.
   // TODO(steveanton): Remove default implementation once downstream
   // implementations have been updated.
-  virtual RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>>
-  AddTrackWithStreamLabels(rtc::scoped_refptr<MediaStreamTrackInterface> track,
-                           const std::vector<std::string>& stream_labels) {
+  virtual RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>> AddTrack(
+      rtc::scoped_refptr<MediaStreamTrackInterface> track,
+      const std::vector<std::string>& stream_labels) {
     return RTCError(RTCErrorType::UNSUPPORTED_OPERATION, "Not implemented");
   }
   // |streams| indicates which stream labels the track should be associated

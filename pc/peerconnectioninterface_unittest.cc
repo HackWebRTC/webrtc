@@ -1409,11 +1409,6 @@ TEST_F(PeerConnectionInterfaceTest, RemoveStream) {
 // Also tests that RemoveTrack removes the tracks from subsequent offers.
 TEST_F(PeerConnectionInterfaceTest, AddTrackRemoveTrack) {
   CreatePeerConnectionWithoutDtls();
-  // Create a dummy stream, so tracks share a stream label.
-  rtc::scoped_refptr<MediaStreamInterface> stream(
-      pc_factory_->CreateLocalMediaStream(kStreamLabel1));
-  std::vector<MediaStreamInterface*> stream_list;
-  stream_list.push_back(stream.get());
   rtc::scoped_refptr<AudioTrackInterface> audio_track(
       pc_factory_->CreateAudioTrack("audio_track", nullptr));
   rtc::scoped_refptr<VideoTrackInterface> video_track(
@@ -1421,8 +1416,8 @@ TEST_F(PeerConnectionInterfaceTest, AddTrackRemoveTrack) {
           "video_track", pc_factory_->CreateVideoSource(
                              std::unique_ptr<cricket::VideoCapturer>(
                                  new cricket::FakeVideoCapturer()))));
-  auto audio_sender = pc_->AddTrack(audio_track, stream_list);
-  auto video_sender = pc_->AddTrack(video_track, stream_list);
+  auto audio_sender = pc_->AddTrack(audio_track, {kStreamLabel1}).MoveValue();
+  auto video_sender = pc_->AddTrack(video_track, {kStreamLabel1}).MoveValue();
   EXPECT_EQ(1UL, audio_sender->stream_ids().size());
   EXPECT_EQ(kStreamLabel1, audio_sender->stream_ids()[0]);
   EXPECT_EQ("audio_track", audio_sender->id());
@@ -1483,9 +1478,9 @@ TEST_F(PeerConnectionInterfaceTest, AddTrackWithoutStream) {
                              std::unique_ptr<cricket::VideoCapturer>(
                                  new cricket::FakeVideoCapturer()))));
   auto audio_sender =
-      pc_->AddTrack(audio_track, std::vector<MediaStreamInterface*>());
+      pc_->AddTrack(audio_track, std::vector<std::string>()).MoveValue();
   auto video_sender =
-      pc_->AddTrack(video_track, std::vector<MediaStreamInterface*>());
+      pc_->AddTrack(video_track, std::vector<std::string>()).MoveValue();
   EXPECT_EQ("audio_track", audio_sender->id());
   EXPECT_EQ(audio_track, audio_sender->track());
   EXPECT_EQ("video_track", video_sender->id());
@@ -1506,10 +1501,8 @@ TEST_F(PeerConnectionInterfaceTest, AddTrackBeforeConnecting) {
           "video_track", pc_factory_->CreateVideoSource(
                              std::unique_ptr<cricket::VideoCapturer>(
                                  new cricket::FakeVideoCapturer()))));
-  auto audio_sender =
-      pc_->AddTrack(audio_track, std::vector<MediaStreamInterface*>());
-  auto video_sender =
-      pc_->AddTrack(video_track, std::vector<MediaStreamInterface*>());
+  auto audio_sender = pc_->AddTrack(audio_track, std::vector<std::string>());
+  auto video_sender = pc_->AddTrack(video_track, std::vector<std::string>());
   EXPECT_TRUE(DoGetStats(nullptr));
 }
 
