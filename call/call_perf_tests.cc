@@ -894,11 +894,11 @@ void CallPerfTest::TestMinAudioVideoBitrate(
       }
       EXPECT_GT(last_passed_test_bitrate, -1)
           << "Minimum supported bitrate out of the test scope";
-      webrtc::test::PrintResult("min_test_bitrate_",
-                                use_bitrate_allocation_strategy_
-                                    ? "with_allocation_strategy"
-                                    : "no_allocation_strategy",
-                                "", last_passed_test_bitrate, "kbps", false);
+      webrtc::test::PrintResult(
+          "min_test_bitrate_",
+          use_bitrate_allocation_strategy_ ? "with_allocation_strategy"
+                                           : "no_allocation_strategy",
+          "min_bitrate", last_passed_test_bitrate, "kbps", false);
     }
 
     void OnCallsCreated(Call* sender_call, Call* receiver_call) override {
