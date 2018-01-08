@@ -74,6 +74,7 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
       const VideoStreamEncoder::AdaptCounts& cpu_counts,
       const VideoStreamEncoder::AdaptCounts& quality_counts);
   void OnMinPixelLimitReached();
+  void OnInitialQualityResolutionAdaptDown();
 
   void OnSuspendChange(bool is_suspended);
   void OnInactiveSsrc(uint32_t ssrc);
@@ -181,6 +182,10 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
     SampleCounter vp9;   // QP range: 0-255.
     SampleCounter h264;  // QP range: 0-51.
   };
+  struct AdaptChanges {
+    int down = 0;
+    int up = 0;
+  };
 
   // Map holding encoded frames (mapped by timestamp).
   // If simulcast layers are encoded on different threads, there is no guarantee
@@ -215,6 +220,9 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
                      StatsTimer* timer) RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
   void UpdateAdaptationStats(
       const VideoStreamEncoder::AdaptCounts& cpu_counts,
+      const VideoStreamEncoder::AdaptCounts& quality_counts)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  void TryUpdateInitialQualityResolutionAdaptUp(
       const VideoStreamEncoder::AdaptCounts& quality_counts)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
@@ -298,6 +306,7 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
     size_t num_streams_;  // Number of configured streams to encoder.
     size_t num_pixels_highest_stream_;
     EncodedFrameMap encoded_frames_;
+    AdaptChanges initial_quality_changes_;
 
     std::map<int, QpCounters>
         qp_counters_;  // QP counters mapped by spatial idx.

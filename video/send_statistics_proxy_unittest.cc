@@ -513,6 +513,102 @@ TEST_F(SendStatisticsProxyTest, CpuAdaptChangesReported) {
   EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.AdaptChangesPerMinute.Cpu", 6));
 }
 
+TEST_F(SendStatisticsProxyTest, ExcludesInitialQualityAdaptDownChange) {
+  // First RTP packet sent.
+  UpdateDataCounters(kFirstSsrc);
+  // Enable adaptation.
+  VideoStreamEncoder::AdaptCounts cpu_counts;
+  VideoStreamEncoder::AdaptCounts quality_counts;
+  statistics_proxy_->SetAdaptationStats(cpu_counts, quality_counts);
+  // Adapt changes: 1 (1 initial) = 0, elapsed time: 10 sec => 0 per minute.
+  statistics_proxy_->OnQualityAdaptationChanged(cpu_counts, quality_counts);
+  statistics_proxy_->OnInitialQualityResolutionAdaptDown();
+  fake_clock_.AdvanceTimeMilliseconds(10000);
+  statistics_proxy_.reset();
+  EXPECT_EQ(1,
+            metrics::NumSamples("WebRTC.Video.AdaptChangesPerMinute.Quality"));
+  EXPECT_EQ(
+      1, metrics::NumEvents("WebRTC.Video.AdaptChangesPerMinute.Quality", 0));
+}
+
+TEST_F(SendStatisticsProxyTest, ExcludesInitialQualityAdaptDownChanges) {
+  // First RTP packet sent.
+  UpdateDataCounters(kFirstSsrc);
+  // Enable adaptation.
+  VideoStreamEncoder::AdaptCounts cpu_counts;
+  VideoStreamEncoder::AdaptCounts quality_counts;
+  statistics_proxy_->SetAdaptationStats(cpu_counts, quality_counts);
+  // Adapt changes: 3 (2 initial) = 1, elapsed time: 10 sec => 6 per minute.
+  quality_counts.resolution = 1;
+  statistics_proxy_->OnQualityAdaptationChanged(cpu_counts, quality_counts);
+  statistics_proxy_->OnInitialQualityResolutionAdaptDown();
+  quality_counts.resolution = 2;
+  statistics_proxy_->OnQualityAdaptationChanged(cpu_counts, quality_counts);
+  statistics_proxy_->OnInitialQualityResolutionAdaptDown();
+  quality_counts.resolution = 3;
+  statistics_proxy_->OnQualityAdaptationChanged(cpu_counts, quality_counts);
+  fake_clock_.AdvanceTimeMilliseconds(10000);
+  statistics_proxy_.reset();
+  EXPECT_EQ(1,
+            metrics::NumSamples("WebRTC.Video.AdaptChangesPerMinute.Quality"));
+  EXPECT_EQ(
+      1, metrics::NumEvents("WebRTC.Video.AdaptChangesPerMinute.Quality", 6));
+}
+
+TEST_F(SendStatisticsProxyTest, InitialQualityAdaptChangesNotExcludedOnError) {
+  // First RTP packet sent.
+  UpdateDataCounters(kFirstSsrc);
+  // Enable adaptation.
+  VideoStreamEncoder::AdaptCounts cpu_counts;
+  VideoStreamEncoder::AdaptCounts quality_counts;
+  statistics_proxy_->SetAdaptationStats(cpu_counts, quality_counts);
+  // Adapt changes: 1 (2 initial) = 1, elapsed time: 10 sec => 6 per minute.
+  statistics_proxy_->OnQualityAdaptationChanged(cpu_counts, quality_counts);
+  statistics_proxy_->OnInitialQualityResolutionAdaptDown();
+  statistics_proxy_->OnInitialQualityResolutionAdaptDown();
+  fake_clock_.AdvanceTimeMilliseconds(10000);
+  statistics_proxy_.reset();
+  EXPECT_EQ(1,
+            metrics::NumSamples("WebRTC.Video.AdaptChangesPerMinute.Quality"));
+  EXPECT_EQ(
+      1, metrics::NumEvents("WebRTC.Video.AdaptChangesPerMinute.Quality", 6));
+}
+
+TEST_F(SendStatisticsProxyTest, ExcludesInitialQualityAdaptDownAndUpChanges) {
+  // First RTP packet sent.
+  UpdateDataCounters(kFirstSsrc);
+  // Enable adaptation.
+  VideoStreamEncoder::AdaptCounts cpu_counts;
+  VideoStreamEncoder::AdaptCounts quality_counts;
+  statistics_proxy_->SetAdaptationStats(cpu_counts, quality_counts);
+  // Adapt changes: 8 (4 initial) = 4, elapsed time: 10 sec => 24 per minute.
+  quality_counts.resolution = 1;
+  statistics_proxy_->OnQualityAdaptationChanged(cpu_counts, quality_counts);
+  statistics_proxy_->OnInitialQualityResolutionAdaptDown();
+  quality_counts.resolution = 2;
+  statistics_proxy_->OnQualityAdaptationChanged(cpu_counts, quality_counts);
+  statistics_proxy_->OnInitialQualityResolutionAdaptDown();
+  quality_counts.resolution = 3;
+  statistics_proxy_->OnQualityAdaptationChanged(cpu_counts, quality_counts);
+  quality_counts.fps = 1;
+  statistics_proxy_->OnQualityAdaptationChanged(cpu_counts, quality_counts);
+  quality_counts.fps = 0;
+  statistics_proxy_->OnQualityAdaptationChanged(cpu_counts, quality_counts);
+  quality_counts.resolution = 2;  // Initial resolution up.
+  statistics_proxy_->OnQualityAdaptationChanged(cpu_counts, quality_counts);
+  quality_counts.resolution = 1;  // Initial resolution up.
+  statistics_proxy_->OnQualityAdaptationChanged(cpu_counts, quality_counts);
+  quality_counts.resolution = 0;
+  statistics_proxy_->OnQualityAdaptationChanged(cpu_counts, quality_counts);
+
+  fake_clock_.AdvanceTimeMilliseconds(10000);
+  statistics_proxy_.reset();
+  EXPECT_EQ(1,
+            metrics::NumSamples("WebRTC.Video.AdaptChangesPerMinute.Quality"));
+  EXPECT_EQ(
+      1, metrics::NumEvents("WebRTC.Video.AdaptChangesPerMinute.Quality", 24));
+}
+
 TEST_F(SendStatisticsProxyTest, AdaptChangesStatsExcludesDisabledTime) {
   // First RTP packet sent.
   UpdateDataCounters(kFirstSsrc);

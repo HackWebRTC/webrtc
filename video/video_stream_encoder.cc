@@ -767,7 +767,11 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
       video_frame.size() >
           MaximumFrameSizeForBitrate(encoder_start_bitrate_bps_ / 1000)) {
     RTC_LOG(LS_INFO) << "Dropping frame. Too large for target bitrate.";
+    int count = GetConstAdaptCounter().ResolutionCount(kQuality);
     AdaptDown(kQuality);
+    if (GetConstAdaptCounter().ResolutionCount(kQuality) > count) {
+      stats_proxy_->OnInitialQualityResolutionAdaptDown();
+    }
     ++initial_rampup_;
     return;
   }

@@ -439,6 +439,11 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
     if (elapsed_sec >= metrics::kMinRunTimeInSeconds) {
       int quality_changes = current_stats.number_of_quality_adapt_changes -
                             start_stats_.number_of_quality_adapt_changes;
+      // Only base stats on changes during a call, discard initial changes.
+      int initial_changes =
+          initial_quality_changes_.down + initial_quality_changes_.up;
+      if (initial_changes <= quality_changes)
+        quality_changes -= initial_changes;
       RTC_HISTOGRAMS_COUNTS_100(kIndex,
                                 uma_prefix_ + "AdaptChangesPerMinute.Quality",
                                 quality_changes * 60 / elapsed_sec);
@@ -987,6 +992,7 @@ void SendStatisticsProxy::OnQualityAdaptationChanged(
     const VideoStreamEncoder::AdaptCounts& cpu_counts,
     const VideoStreamEncoder::AdaptCounts& quality_counts) {
   rtc::CritScope lock(&crit_);
+  TryUpdateInitialQualityResolutionAdaptUp(quality_counts);
   ++stats_.number_of_quality_adapt_changes;
   UpdateAdaptationStats(cpu_counts, quality_counts);
 }
@@ -1001,6 +1007,27 @@ void SendStatisticsProxy::UpdateAdaptationStats(
   stats_.cpu_limited_framerate = cpu_counts.fps > 0;
   stats_.bw_limited_resolution = quality_counts.resolution > 0;
   stats_.bw_limited_framerate = quality_counts.fps > 0;
+}
+
+// TODO(asapersson): Include fps changes.
+void SendStatisticsProxy::OnInitialQualityResolutionAdaptDown() {
+  rtc::CritScope lock(&crit_);
+  ++uma_container_->initial_quality_changes_.down;
+}
+
+void SendStatisticsProxy::TryUpdateInitialQualityResolutionAdaptUp(
+    const VideoStreamEncoder::AdaptCounts& quality_counts) {
+  if (uma_container_->initial_quality_changes_.down == 0)
+    return;
+
+  if (quality_downscales_ > 0 &&
+      quality_counts.resolution < quality_downscales_) {
+    // Adapting up in quality.
+    if (uma_container_->initial_quality_changes_.down >
+        uma_container_->initial_quality_changes_.up) {
+      ++uma_container_->initial_quality_changes_.up;
+    }
+  }
 }
 
 void SendStatisticsProxy::SetAdaptTimer(
