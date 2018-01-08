@@ -1964,7 +1964,7 @@ TEST_F(VideoSendStreamTest, VideoSendStreamStopSetEncoderRateToZero) {
     int32_t SetRateAllocation(const BitrateAllocation& bitrate,
                               uint32_t framerate) override {
       rtc::CritScope lock(&crit_);
-      bitrate_kbps_ = rtc::Optional<int>(bitrate.get_sum_kbps());
+      bitrate_kbps_ = bitrate.get_sum_kbps();
       bitrate_changed_.Set();
       return FakeEncoder::SetRateAllocation(bitrate, framerate);
     }

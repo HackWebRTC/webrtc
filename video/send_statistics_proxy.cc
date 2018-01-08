@@ -86,7 +86,7 @@ bool IsForcedFallbackPossible(const CodecSpecificInfo* codec_info) {
 
 rtc::Optional<int> GetFallbackMaxPixels(const std::string& group) {
   if (group.empty())
-    return rtc::Optional<int>();
+    return rtc::nullopt;
 
   int min_pixels;
   int max_pixels;
@@ -882,7 +882,7 @@ void SendStatisticsProxy::OnSendEncodedImage(
 
   if (encoded_image.qp_ != -1) {
     if (!stats_.qp_sum)
-      stats_.qp_sum = rtc::Optional<uint64_t>(0);
+      stats_.qp_sum = 0;
     *stats_.qp_sum += encoded_image.qp_;
 
     if (codec_info) {

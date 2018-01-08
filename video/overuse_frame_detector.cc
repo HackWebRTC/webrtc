@@ -546,7 +546,7 @@ void OveruseFrameDetector::StopCheckForOveruse() {
 void OveruseFrameDetector::EncodedFrameTimeMeasured(int encode_duration_ms) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
   if (!metrics_)
-    metrics_ = rtc::Optional<CpuOveruseMetrics>(CpuOveruseMetrics());
+    metrics_ = CpuOveruseMetrics();
   metrics_->encode_usage_percent = usage_->Value();
 
   metrics_observer_->OnEncodedFrameTimeMeasured(encode_duration_ms, *metrics_);
@@ -576,7 +576,7 @@ void OveruseFrameDetector::ResetAll(int num_pixels) {
   usage_->Reset();
   last_capture_time_us_ = -1;
   num_process_times_ = 0;
-  metrics_ = rtc::Optional<CpuOveruseMetrics>();
+  metrics_ = rtc::nullopt;
   OnTargetFramerateUpdated(max_framerate_);
 }
 

@@ -251,7 +251,7 @@ class VideoStreamEncoder::VideoSourceProxy {
     RTC_LOG(LS_INFO) << "Scaling down resolution, max pixels: "
                      << pixels_wanted;
     sink_wants_.max_pixel_count = pixels_wanted;
-    sink_wants_.target_pixel_count = rtc::Optional<int>();
+    sink_wants_.target_pixel_count = rtc::nullopt;
     source_->AddOrUpdateSink(video_stream_encoder_,
                              GetActiveSinkWantsInternal());
     return true;
@@ -290,8 +290,7 @@ class VideoStreamEncoder::VideoSourceProxy {
       // count selected depends on the capabilities of the source. In order to
       // not take a too large step up, we cap the requested pixel count to be at
       // most four time the current number of pixels.
-      sink_wants_.target_pixel_count =
-          rtc::Optional<int>((pixel_count * 5) / 3);
+      sink_wants_.target_pixel_count = (pixel_count * 5) / 3;
     }
     RTC_LOG(LS_INFO) << "Scaling up resolution, max pixels: "
                      << max_pixels_wanted;
@@ -558,8 +557,7 @@ void VideoStreamEncoder::ConfigureEncoderOnTaskQueue(
   if (last_frame_info_) {
     ReconfigureEncoder();
   } else if (settings_.internal_source) {
-    last_frame_info_ =
-        rtc::Optional<VideoFrameInfo>(VideoFrameInfo(176, 144, false));
+    last_frame_info_ = VideoFrameInfo(176, 144, false);
     ReconfigureEncoder();
   }
 }
@@ -757,8 +755,8 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
       video_frame.height() != last_frame_info_->height ||
       video_frame.is_texture() != last_frame_info_->is_texture) {
     pending_encoder_reconfiguration_ = true;
-    last_frame_info_ = rtc::Optional<VideoFrameInfo>(VideoFrameInfo(
-        video_frame.width(), video_frame.height(), video_frame.is_texture()));
+    last_frame_info_ = VideoFrameInfo(video_frame.width(), video_frame.height(),
+                                      video_frame.is_texture());
     RTC_LOG(LS_INFO) << "Video frame parameters changed: dimensions="
                      << last_frame_info_->width << "x"
                      << last_frame_info_->height

@@ -376,7 +376,7 @@ rtc::Optional<Syncable::Info> VideoReceiveStream::GetInfo() const {
   if (!rtp_receiver->GetLatestTimestamps(
           &info.latest_received_capture_timestamp,
           &info.latest_receive_time_ms))
-    return rtc::Optional<Syncable::Info>();
+    return rtc::nullopt;
 
   RtpRtcp* rtp_rtcp = rtp_video_stream_receiver_.rtp_rtcp();
   RTC_DCHECK(rtp_rtcp);
@@ -385,11 +385,11 @@ rtc::Optional<Syncable::Info> VideoReceiveStream::GetInfo() const {
                           nullptr,
                           nullptr,
                           &info.capture_time_source_clock) != 0) {
-    return rtc::Optional<Syncable::Info>();
+    return rtc::nullopt;
   }
 
   info.current_delay_ms = video_receiver_.Delay();
-  return rtc::Optional<Syncable::Info>(info);
+  return info;
 }
 
 uint32_t VideoReceiveStream::GetPlayoutTimestamp() const {

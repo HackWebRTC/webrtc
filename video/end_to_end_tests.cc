@@ -576,8 +576,7 @@ TEST_P(EndToEndTest, ReceivesNackAndRetransmitsAudio) {
       EXPECT_TRUE(parser_->Parse(packet, length, &header));
 
       if (!sequence_number_to_retransmit_) {
-        sequence_number_to_retransmit_ =
-            rtc::Optional<uint16_t>(header.sequenceNumber);
+        sequence_number_to_retransmit_ = header.sequenceNumber;
 
         // Don't ask for retransmission straight away, may be deduped in pacer.
       } else if (header.sequenceNumber == *sequence_number_to_retransmit_) {

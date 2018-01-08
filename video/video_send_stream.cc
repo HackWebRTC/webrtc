@@ -158,25 +158,25 @@ const char kForcedFallbackFieldTrial[] =
 
 rtc::Optional<int> GetFallbackMinBpsFromFieldTrial() {
   if (!webrtc::field_trial::IsEnabled(kForcedFallbackFieldTrial))
-    return rtc::Optional<int>();
+    return rtc::nullopt;
 
   std::string group =
       webrtc::field_trial::FindFullName(kForcedFallbackFieldTrial);
   if (group.empty())
-    return rtc::Optional<int>();
+    return rtc::nullopt;
 
   int min_pixels;
   int max_pixels;
   int min_bps;
   if (sscanf(group.c_str(), "Enabled-%d,%d,%d", &min_pixels, &max_pixels,
              &min_bps) != 3) {
-    return rtc::Optional<int>();
+    return rtc::nullopt;
   }
 
   if (min_bps <= 0)
-    return rtc::Optional<int>();
+    return rtc::nullopt;
 
-  return rtc::Optional<int>(min_bps);
+  return min_bps;
 }
 
 int GetEncoderMinBitrateBps() {

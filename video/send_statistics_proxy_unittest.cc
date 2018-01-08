@@ -344,23 +344,22 @@ TEST_F(SendStatisticsProxyTest, OnSendEncodedImageIncreasesFramesEncoded) {
 TEST_F(SendStatisticsProxyTest, OnSendEncodedImageIncreasesQpSum) {
   EncodedImage encoded_image;
   CodecSpecificInfo codec_info;
-  EXPECT_EQ(rtc::Optional<uint64_t>(), statistics_proxy_->GetStats().qp_sum);
+  EXPECT_EQ(rtc::nullopt, statistics_proxy_->GetStats().qp_sum);
   encoded_image.qp_ = 3;
   statistics_proxy_->OnSendEncodedImage(encoded_image, &codec_info);
-  EXPECT_EQ(rtc::Optional<uint64_t>(3u), statistics_proxy_->GetStats().qp_sum);
+  EXPECT_EQ(3u, statistics_proxy_->GetStats().qp_sum);
   encoded_image.qp_ = 127;
   statistics_proxy_->OnSendEncodedImage(encoded_image, &codec_info);
-  EXPECT_EQ(rtc::Optional<uint64_t>(130u),
-            statistics_proxy_->GetStats().qp_sum);
+  EXPECT_EQ(130u, statistics_proxy_->GetStats().qp_sum);
 }
 
 TEST_F(SendStatisticsProxyTest, OnSendEncodedImageWithoutQpQpSumWontExist) {
   EncodedImage encoded_image;
   CodecSpecificInfo codec_info;
   encoded_image.qp_ = -1;
-  EXPECT_EQ(rtc::Optional<uint64_t>(), statistics_proxy_->GetStats().qp_sum);
+  EXPECT_EQ(rtc::nullopt, statistics_proxy_->GetStats().qp_sum);
   statistics_proxy_->OnSendEncodedImage(encoded_image, &codec_info);
-  EXPECT_EQ(rtc::Optional<uint64_t>(), statistics_proxy_->GetStats().qp_sum);
+  EXPECT_EQ(rtc::nullopt, statistics_proxy_->GetStats().qp_sum);
 }
 
 TEST_F(SendStatisticsProxyTest, GetCpuAdaptationStats) {
