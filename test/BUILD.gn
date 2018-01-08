@@ -596,6 +596,7 @@ rtc_source_set("test_common") {
     "../modules/rtp_rtcp",
     "../modules/rtp_rtcp:mock_rtp_rtcp",
     "../modules/rtp_rtcp:rtp_rtcp_format",
+    "../modules/video_coding:video_codec_interface",
     "../modules/video_coding:video_coding_utility",
     "../modules/video_coding:webrtc_h264",
     "../modules/video_coding:webrtc_vp8",

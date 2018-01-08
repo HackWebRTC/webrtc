@@ -129,7 +129,6 @@ rtc_static_library("rtc_constants") {
   defines = []
   libs = []
   deps = []
-
   sources = [
     "engine/constants.cc",
     "engine/constants.h",
@@ -139,7 +138,9 @@ rtc_static_library("rtc_constants") {
 rtc_static_library("rtc_internal_video_codecs") {
   defines = []
   libs = []
-  deps = []
+  deps = [
+    "../modules/video_coding:video_codec_interface",
+  ]
   sources = [
     "engine/convert_legacy_video_factory.cc",
     "engine/convert_legacy_video_factory.h",
@@ -214,6 +215,7 @@ rtc_static_library("rtc_audio_video") {
   defines = []
   libs = []
   deps = [
+    "../modules/video_coding:video_coding",
     "../rtc_base:checks",
   ]
 
@@ -399,6 +401,7 @@ if (rtc_include_tests) {
       "../modules/audio_coding:rent_a_codec",
       "../modules/audio_processing:audio_processing",
       "../modules/rtp_rtcp:rtp_rtcp_format",
+      "../modules/video_coding:video_codec_interface",
       "../modules/video_coding:video_coding_utility",
       "../p2p:rtc_p2p",
       "../rtc_base:checks",
@@ -494,6 +497,7 @@ if (rtc_include_tests) {
       ":rtc_constants",
       "../api:video_frame_api_i420",
       "../modules/audio_processing:mocks",
+      "../modules/video_coding:video_codec_interface",
       "../pc:rtc_pc",
       "../pc:rtc_pc_base",
       "../rtc_base:checks",

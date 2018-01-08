@@ -255,6 +255,7 @@ rtc_static_library("video_jni") {
     "../../modules:module_api",
     "../../modules/utility:utility",
     "../../modules/video_coding:codec_globals_headers",
+    "../../modules/video_coding:video_codec_interface",
     "../../modules/video_coding:video_coding_utility",
     "../../modules/video_coding:webrtc_vp8",
     "../../modules/video_coding:webrtc_vp9",
