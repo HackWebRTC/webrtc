@@ -88,7 +88,7 @@ int main(int argc, char* argv[]) {
   int exit_code = RUN_ALL_TESTS();
 
   std::string chartjson_result_file = FLAG_chartjson_result_file;
-  if (chartjson_result_file != "") {
+  if (!chartjson_result_file.empty()) {
     webrtc::test::WritePerfResults(chartjson_result_file);
   }
 
