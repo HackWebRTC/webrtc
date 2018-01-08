@@ -26,6 +26,7 @@ namespace webrtc {
 enum { kStartupDelaySamples = 30 };
 enum { kFsAccuStartupSamples = 5 };
 enum { kMaxFramerateEstimate = 200 };
+enum { kNackCountTimeoutMs = 60000 };
 
 VCMJitterEstimator::VCMJitterEstimator(const Clock* clock,
                                        int32_t vcmId,
@@ -102,6 +103,7 @@ void VCMJitterEstimator::Reset() {
   _filterJitterEstimate = 0.0;
   _latestNackTimestamp = 0;
   _nackCount = 0;
+  _latestNackTimestamp = 0;
   _fsSum = 0;
   _fsCount = 0;
   _startupCount = 0;
@@ -193,15 +195,10 @@ void VCMJitterEstimator::UpdateEstimate(int64_t frameDelayMS,
 
 // Updates the nack/packet ratio
 void VCMJitterEstimator::FrameNacked() {
-  // Wait until _nackLimit retransmissions has been received,
-  // then always add ~1 RTT delay.
-  // TODO(holmer): Should we ever remove the additional delay if the
-  // the packet losses seem to have stopped? We could for instance scale
-  // the number of RTTs to add with the amount of retransmissions in a given
-  // time interval, or similar.
   if (_nackCount < _nackLimit) {
     _nackCount++;
   }
+  _latestNackTimestamp = clock_->TimeInMicroseconds();
 }
 
 // Updates Kalman estimate of the channel
@@ -386,6 +383,11 @@ void VCMJitterEstimator::UpdateMaxFrameSize(uint32_t frameSizeBytes) {
 // otherwise tries to calculate an estimate.
 int VCMJitterEstimator::GetJitterEstimate(double rttMultiplier) {
   double jitterMS = CalculateEstimate() + OPERATING_SYSTEM_JITTER;
+  uint64_t now = clock_->TimeInMicroseconds();
+
+  if (now - _latestNackTimestamp > kNackCountTimeoutMs * 1000)
+    _nackCount = 0;
+
   if (_filterJitterEstimate > jitterMS)
     jitterMS = _filterJitterEstimate;
   if (_nackCount >= _nackLimit)
