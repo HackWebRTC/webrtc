@@ -26,7 +26,6 @@
 #include "modules/audio_coding/neteq/tools/audio_loop.h"
 #include "modules/audio_coding/neteq/tools/rtp_file_source.h"
 #include "modules/include/module_common_types.h"
-#include "rtc_base/flags.h"
 #include "rtc_base/ignore_wundef.h"
 #include "rtc_base/messagedigest.h"
 #include "rtc_base/numerics/safe_conversions.h"
@@ -36,6 +35,9 @@
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
 #include "typedefs.h"  // NOLINT(build/include)
+
+// This must come after test/gtest.h
+#include "rtc_base/flags.h"  // NOLINT(build/include)
 
 #ifdef WEBRTC_NETEQ_UNITTEST_BITEXACT
 RTC_PUSH_IGNORING_WUNDEF()
