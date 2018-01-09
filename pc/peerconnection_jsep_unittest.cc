@@ -54,7 +54,7 @@ class PeerConnectionFactoryForJsepTest : public PeerConnectionFactory {
                 nullptr,
                 nullptr,
                 nullptr,
-                AudioProcessing::Create())),
+                AudioProcessingBuilder().Create())),
             CreateCallFactory(),
             nullptr) {}
 

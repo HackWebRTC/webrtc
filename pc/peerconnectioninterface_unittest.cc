@@ -551,7 +551,7 @@ class PeerConnectionFactoryForTest : public webrtc::PeerConnectionFactory {
         cricket::WebRtcMediaEngineFactory::Create(
             FakeAudioCaptureModule::Create(), audio_encoder_factory,
             audio_decoder_factory, nullptr, nullptr, nullptr,
-            webrtc::AudioProcessing::Create()));
+            webrtc::AudioProcessingBuilder().Create()));
 
     std::unique_ptr<webrtc::CallFactoryInterface> call_factory =
         webrtc::CreateCallFactory();

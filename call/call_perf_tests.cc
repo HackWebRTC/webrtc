@@ -193,7 +193,8 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
     AudioState::Config send_audio_state_config;
     send_audio_state_config.voice_engine = voice_engine;
     send_audio_state_config.audio_mixer = AudioMixerImpl::Create();
-    send_audio_state_config.audio_processing = AudioProcessing::Create();
+    send_audio_state_config.audio_processing =
+        AudioProcessingBuilder().Create();
     send_audio_state_config.audio_device_module = fake_audio_device;
     Call::Config sender_config(event_log_.get());
 

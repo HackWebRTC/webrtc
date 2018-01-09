@@ -2096,7 +2096,7 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
       AudioState::Config audio_state_config;
       audio_state_config.voice_engine = voe.voice_engine;
       audio_state_config.audio_mixer = AudioMixerImpl::Create();
-      audio_state_config.audio_processing = AudioProcessing::Create();
+      audio_state_config.audio_processing = AudioProcessingBuilder().Create();
       audio_state_config.audio_device_module = fake_audio_device;
       call_config.audio_state = AudioState::Create(audio_state_config);
       fake_audio_device->RegisterAudioCallback(

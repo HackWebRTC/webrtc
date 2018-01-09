@@ -26,7 +26,7 @@ rtc::scoped_refptr<AudioEncoderFactory> CreateAudioEncoderFactory() {
 }
 
 rtc::scoped_refptr<AudioProcessing> CreateAudioProcessing() {
-  return AudioProcessing::Create();
+  return AudioProcessingBuilder().Create();
 }
 
 }  // namespace jni

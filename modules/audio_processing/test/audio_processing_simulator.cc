@@ -348,8 +348,9 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
     apm_config.residual_echo_detector.enabled = *settings_.use_ed;
   }
 
-  ap_.reset(AudioProcessing::Create(config, nullptr, nullptr,
-                                    std::move(echo_control_factory), nullptr));
+  ap_.reset(AudioProcessingBuilder()
+                .SetEchoControlFactory(std::move(echo_control_factory))
+                .Create(config));
   RTC_CHECK(ap_);
 
   ap_->ApplyConfig(apm_config);

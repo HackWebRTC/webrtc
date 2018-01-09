@@ -112,7 +112,7 @@ struct DelayAgnostic {
 // microphone volume is set too low. The value is clamped to its operating range
 // [12, 255]. Here, 255 maps to 100%.
 //
-// Must be provided through AudioProcessing::Create(Confg&).
+// Must be provided through AudioProcessingBuilder().Create(config).
 #if defined(WEBRTC_CHROMIUM_BUILD)
 static const int kAgcStartupMinVolume = 85;
 #else
@@ -205,7 +205,7 @@ struct Intelligibility {
 // data.
 //
 // Usage example, omitting error checking:
-// AudioProcessing* apm = AudioProcessing::Create(0);
+// AudioProcessing* apm = AudioProcessingBuilder().Create();
 //
 // AudioProcessing::Config config;
 // config.level_controller.enabled = true;

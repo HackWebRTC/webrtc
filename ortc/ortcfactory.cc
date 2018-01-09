@@ -562,7 +562,7 @@ OrtcFactory::CreateMediaEngine_w() {
   return std::unique_ptr<cricket::MediaEngineInterface>(
       cricket::WebRtcMediaEngineFactory::Create(
           adm_, audio_encoder_factory_, audio_decoder_factory_, nullptr,
-          nullptr, nullptr, webrtc::AudioProcessing::Create()));
+          nullptr, nullptr, webrtc::AudioProcessingBuilder().Create()));
 }
 
 }  // namespace webrtc

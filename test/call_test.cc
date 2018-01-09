@@ -65,8 +65,8 @@ void CallTest::RunBaseTest(BaseTest* test) {
       CreateFakeAudioDevices(test->CreateCapturer(), test->CreateRenderer());
       test->OnFakeAudioDevicesCreated(fake_send_audio_device_.get(),
                                       fake_recv_audio_device_.get());
-      apm_send_ = AudioProcessing::Create();
-      apm_recv_ = AudioProcessing::Create();
+      apm_send_ = AudioProcessingBuilder().Create();
+      apm_recv_ = AudioProcessingBuilder().Create();
       CreateVoiceEngines();
       AudioState::Config audio_state_config;
       audio_state_config.voice_engine = voe_send_.voice_engine;

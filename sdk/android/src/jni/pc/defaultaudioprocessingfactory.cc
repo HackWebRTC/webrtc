@@ -25,10 +25,9 @@ static jlong JNI_DefaultAudioProcessingFactory_CreateAudioProcessing(
   std::unique_ptr<CustomProcessing> post_processor(
       reinterpret_cast<CustomProcessing*>(native_post_processor));
   rtc::scoped_refptr<AudioProcessing> audio_processing =
-      AudioProcessing::Create(webrtc::Config(), std::move(post_processor),
-                              nullptr /* render_pre_processing */,
-                              nullptr /* echo_control_factory */,
-                              nullptr /* beamformer */);
+      AudioProcessingBuilder()
+          .SetCapturePostProcessing(std::move(post_processor))
+          .Create();
   return jlongFromPointer(audio_processing.release());
 }
 

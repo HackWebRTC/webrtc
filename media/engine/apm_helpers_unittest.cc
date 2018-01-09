@@ -25,7 +25,8 @@ struct TestHelper {
     // This replicates the conditions from voe_auto_test.
     Config config;
     config.Set<ExperimentalAgc>(new ExperimentalAgc(false));
-    apm_ = rtc::scoped_refptr<AudioProcessing>(AudioProcessing::Create(config));
+    apm_ = rtc::scoped_refptr<AudioProcessing>(
+        AudioProcessingBuilder().Create(config));
     apm_helpers::Init(apm());
   }
 

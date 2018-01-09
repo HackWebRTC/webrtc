@@ -452,7 +452,7 @@ ApmTest::ApmTest()
       out_file_(NULL) {
   Config config;
   config.Set<ExperimentalAgc>(new ExperimentalAgc(false));
-  apm_.reset(AudioProcessing::Create(config));
+  apm_.reset(AudioProcessingBuilder().Create(config));
 }
 
 void ApmTest::SetUp() {
@@ -1318,7 +1318,10 @@ TEST_F(ApmTest, AgcOnlyAdaptsWhenTargetSignalIsPresent) {
   testing::NiceMock<MockNonlinearBeamformer>* beamformer =
       new testing::NiceMock<MockNonlinearBeamformer>(geometry, 1u);
   std::unique_ptr<AudioProcessing> apm(
-      AudioProcessing::Create(config, nullptr, nullptr, nullptr, beamformer));
+      AudioProcessingBuilder()
+          .SetNonlinearBeamformer(
+              std::unique_ptr<webrtc::NonlinearBeamformer>(beamformer))
+          .Create(config));
   EXPECT_EQ(kNoErr, apm->gain_control()->Enable(true));
   ChannelBuffer<float> src_buf(kSamplesPerChannel, kNumInputChannels);
   ChannelBuffer<float> dest_buf(kSamplesPerChannel, kNumOutputChannels);
@@ -1582,7 +1585,7 @@ TEST_F(ApmTest, NoProcessingWhenAllComponentsDisabledFloat) {
   auto src_channels = &src[0];
   auto dest_channels = &dest[0];
 
-  apm_.reset(AudioProcessing::Create());
+  apm_.reset(AudioProcessingBuilder().Create());
   EXPECT_NOERR(apm_->ProcessStream(
       &src_channels, kSamples, sample_rate, LayoutFromChannels(1),
       sample_rate, LayoutFromChannels(1), &dest_channels));
@@ -1962,7 +1965,8 @@ TEST_F(ApmTest, FloatAndIntInterfacesGiveSimilarResults) {
 
   Config config;
   config.Set<ExperimentalAgc>(new ExperimentalAgc(false));
-  std::unique_ptr<AudioProcessing> fapm(AudioProcessing::Create(config));
+  std::unique_ptr<AudioProcessing> fapm(
+      AudioProcessingBuilder().Create(config));
   EnableAllComponents();
   EnableAllAPComponents(fapm.get());
   for (int i = 0; i < ref_data.test_size(); i++) {
@@ -2114,7 +2118,7 @@ TEST_F(ApmTest, Process) {
     config.Set<ExperimentalAgc>(new ExperimentalAgc(false));
     config.Set<ExtendedFilter>(
         new ExtendedFilter(test->use_aec_extended_filter()));
-    apm_.reset(AudioProcessing::Create(config));
+    apm_.reset(AudioProcessingBuilder().Create(config));
 
     EnableAllComponents();
 
@@ -2329,7 +2333,7 @@ TEST_F(ApmTest, NoErrorsWithKeyboardChannel) {
     {AudioProcessing::kStereoAndKeyboard, AudioProcessing::kStereo},
   };
 
-  std::unique_ptr<AudioProcessing> ap(AudioProcessing::Create());
+  std::unique_ptr<AudioProcessing> ap(AudioProcessingBuilder().Create());
   // Enable one component just to ensure some processing takes place.
   ap->noise_suppression()->Enable(true);
   for (size_t i = 0; i < arraysize(cf); ++i) {
@@ -2458,7 +2462,8 @@ class AudioProcessingTest
                             const std::string& output_file_prefix) {
     Config config;
     config.Set<ExperimentalAgc>(new ExperimentalAgc(false));
-    std::unique_ptr<AudioProcessing> ap(AudioProcessing::Create(config));
+    std::unique_ptr<AudioProcessing> ap(
+        AudioProcessingBuilder().Create(config));
     EnableAllAPComponents(ap.get());
 
     ProcessingConfig processing_config = {
@@ -2935,8 +2940,10 @@ TEST(ApmConfiguration, EnablePreProcessing) {
       new testing::NiceMock<test::MockCustomProcessing>();
   auto mock_pre_processor =
       std::unique_ptr<CustomProcessing>(mock_pre_processor_ptr);
-  rtc::scoped_refptr<AudioProcessing> apm = AudioProcessing::Create(
-      webrtc_config, nullptr, std::move(mock_pre_processor), nullptr, nullptr);
+  rtc::scoped_refptr<AudioProcessing> apm =
+      AudioProcessingBuilder()
+          .SetRenderPreProcessing(std::move(mock_pre_processor))
+          .Create(webrtc_config);
 
   AudioFrame audio;
   audio.num_channels_ = 1;
@@ -2982,7 +2989,8 @@ std::unique_ptr<AudioProcessing> CreateApm(bool use_AEC2) {
     old_config.Set<ExtendedFilter>(new ExtendedFilter(true));
     old_config.Set<DelayAgnostic>(new DelayAgnostic(true));
   }
-  std::unique_ptr<AudioProcessing> apm(AudioProcessing::Create(old_config));
+  std::unique_ptr<AudioProcessing> apm(
+      AudioProcessingBuilder().Create(old_config));
   if (!apm) {
     return apm;
   }
