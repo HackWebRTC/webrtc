@@ -750,13 +750,18 @@ def CheckOrphanHeaders(input_api, output_api):
   # eval-ed and thus doesn't have __file__.
   error_msg = """{} should be listed in {}."""
   results = []
+  orphan_blacklist = [
+    os.path.join('tools_webrtc', 'ios', 'SDK'),
+  ]
   with _AddToPath(input_api.os_path.join(
       input_api.PresubmitLocalPath(), 'tools_webrtc', 'presubmit_checks_lib')):
     from check_orphan_headers import GetBuildGnPathFromFilePath
     from check_orphan_headers import IsHeaderInBuildGn
 
-  for f in input_api.AffectedSourceFiles(input_api.FilterSourceFile):
-    if f.LocalPath().endswith('.h') and f.Action() == 'A':
+  source_file_filter = lambda x: input_api.FilterSourceFile(
+      x, black_list=orphan_blacklist)
+  for f in input_api.AffectedSourceFiles(source_file_filter):
+    if f.LocalPath().endswith('.h'):
       file_path = os.path.abspath(f.LocalPath())
       root_dir = os.getcwd()
       gn_file_path = GetBuildGnPathFromFilePath(file_path, os.path.exists,
