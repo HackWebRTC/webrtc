@@ -5,7 +5,7 @@
       "test args": [
         "--save_chartjson_result"
       ],
-      "bot_id": "build15-a7",
+      "bot id": "build15-a7",
       "pool": "WebRTC"
     }
   ]
