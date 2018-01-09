@@ -95,7 +95,6 @@ rtc_static_library("rtc_media_base") {
     "base/videosinkinterface.h",
     "base/videosourcebase.cc",
     "base/videosourcebase.h",
-    "base/videosourceinterface.h",
   ]
 
   if (!build_with_chromium && is_clang) {
