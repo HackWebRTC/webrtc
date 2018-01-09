@@ -254,22 +254,6 @@ class LogMessage {
 // Logging Helpers
 //////////////////////////////////////////////////////////////////////
 
-// TODO(nisse): LogMultiline implementation is deleted, but keep declarations
-// until the copy in chromium's webrtc_overrides is deleted too.
-class LogMultilineState {
- public:
-  size_t unprintable_count_[2];
-  LogMultilineState() {
-    unprintable_count_[0] = unprintable_count_[1] = 0;
-  }
-};
-
-// When possible, pass optional state variable to track various data across
-// multiple calls to LogMultiline.  Otherwise, pass null.
-void LogMultiline(LoggingSeverity level, const char* label, bool input,
-                  const void* data, size_t len, bool hex_mode,
-                  LogMultilineState* state);
-
 // The following non-obvious technique for implementation of a
 // conditional log stream was stolen from google3/base/logging.h.
 
