@@ -116,7 +116,7 @@ Chromium style guide.
 [gn]: https://chromium.googlesource.com/chromium/src/tools/gn/
 [chr-gn-style]: https://chromium.googlesource.com/chromium/src/tools/gn/+/HEAD/docs/style_guide.md
 
-### WebRTC-specific GN templates
+### <a name="webrtc-gn-templates"></a>WebRTC-specific GN templates
 
 Use the following [GN templates][gn-templ] to ensure that all
 our [targets][gn-target] are built with the same configuration:
@@ -131,6 +131,23 @@ instead of       | use
 
 [gn-templ]: https://chromium.googlesource.com/chromium/src/tools/gn/+/HEAD/docs/language.md#Templates
 [gn-target]: https://chromium.googlesource.com/chromium/src/tools/gn/+/HEAD/docs/language.md#Targets
+
+### Target visibility and the native API
+
+The [WebRTC-specific GN templates](#webrtc-gn-templates) declare build
+targets whose default `visibility` allows all other targets in the
+WebRTC tree (and no targets outside the tree) to depend on them.
+
+Prefer to restrict the visibility if possible:
+
+* If a target is used by only one or a tiny number of other targets,
+  prefer to list them explicitly: `visibility = [ ":foo", ":bar" ]`
+* If a target is used only by targets in the same `BUILD.gn` file:
+  `visibility = [ ":*" ]`.
+
+Setting `visibility = [ "*" ]` means that targets outside the WebRTC
+tree can depend on this target; use this only for build targets whose
+headers are part of the [native API](native-api.md).
 
 ### Conditional compilation with the C preprocessor
 

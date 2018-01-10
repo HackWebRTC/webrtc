@@ -107,7 +107,7 @@ rtc_static_library("common_audio") {
 }
 
 rtc_source_set("mock_common_audio") {
-  visibility += [ "*" ]
+  visibility += webrtc_default_visibility
   testonly = true
   sources = [
     "mocks/mock_smoothing_filter.h",
@@ -263,14 +263,14 @@ rtc_source_set("sinc_resampler") {
 }
 
 rtc_source_set("fir_filter") {
-  visibility += [ "*" ]
+  visibility += webrtc_default_visibility
   sources = [
     "fir_filter.h",
   ]
 }
 
 rtc_source_set("fir_filter_factory") {
-  visibility += [ "*" ]
+  visibility += webrtc_default_visibility
   sources = [
     "fir_filter_c.cc",
     "fir_filter_c.h",
@@ -398,7 +398,7 @@ if (rtc_build_with_neon) {
 
 if (rtc_include_tests) {
   rtc_test("common_audio_unittests") {
-    visibility += [ "*" ]
+    visibility += webrtc_default_visibility
     testonly = true
 
     sources = [

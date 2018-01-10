@@ -9,6 +9,7 @@
 import("../../webrtc.gni")
 
 rtc_static_library("video_coding") {
+  visibility = [ "*" ]
   sources = [
     "codec_database.cc",
     "codec_database.h",
@@ -168,6 +169,7 @@ rtc_source_set("codec_globals_headers") {
 }
 
 rtc_source_set("video_coding_utility") {
+  visibility = [ "*" ]
   sources = [
     "codecs/interface/video_codec_interface.h",
     "codecs/interface/video_error_codes.h",
@@ -212,6 +214,7 @@ rtc_source_set("video_coding_utility") {
 }
 
 rtc_static_library("webrtc_h264") {
+  visibility = [ "*" ]
   sources = [
     "codecs/h264/h264.cc",
     "codecs/h264/include/h264.h",
@@ -255,6 +258,7 @@ rtc_static_library("webrtc_h264") {
 }
 
 rtc_static_library("webrtc_i420") {
+  visibility = [ "*" ]
   sources = [
     "codecs/i420/i420.cc",
     "codecs/i420/include/i420.h",
@@ -332,6 +336,7 @@ rtc_source_set("webrtc_vp8_helpers") {
 
 # This target includes the internal SW codec.
 rtc_static_library("webrtc_vp8") {
+  visibility = [ "*" ]
   sources = [
     "codecs/vp8/default_temporal_layers.cc",
     "codecs/vp8/default_temporal_layers.h",
@@ -376,6 +381,7 @@ rtc_static_library("webrtc_vp8") {
 }
 
 rtc_static_library("webrtc_vp9") {
+  visibility = [ "*" ]
   if (rtc_libvpx_build_vp9) {
     sources = [
       "codecs/vp9/include/vp9.h",

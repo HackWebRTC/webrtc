@@ -54,6 +54,7 @@ rtc_source_set("rtp_interfaces") {
 }
 
 rtc_source_set("rtp_receiver") {
+  visibility = [ "*" ]
   sources = [
     "rtcp_demuxer.cc",
     "rtcp_demuxer.h",

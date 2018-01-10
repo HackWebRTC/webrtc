@@ -20,6 +20,7 @@ config("rtc_p2p_inherited_config") {
 }
 
 rtc_static_library("rtc_p2p") {
+  visibility = [ "*" ]
   sources = [
     "base/asyncstuntcpsocket.cc",
     "base/asyncstuntcpsocket.h",
@@ -194,6 +195,7 @@ if (rtc_include_tests) {
 }
 
 rtc_static_library("libstunprober") {
+  visibility = [ "*" ]
   sources = [
     "stunprober/stunprober.cc",
     "stunprober/stunprober.h",

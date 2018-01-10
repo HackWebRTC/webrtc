@@ -9,6 +9,7 @@
 import("../../../webrtc.gni")  # This contains def of 'rtc_enable_protobuf'
 
 rtc_source_set("aec_dump") {
+  visibility = [ "*" ]
   sources = [
     "aec_dump_factory.h",
   ]

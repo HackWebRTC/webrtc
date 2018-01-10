@@ -13,12 +13,14 @@ if (is_android) {
 }
 
 group("api") {
+  visibility = [ "*" ]
   public_deps = [
     ":libjingle_peerconnection_api",
   ]
 }
 
 rtc_source_set("call_api") {
+  visibility = [ "*" ]
   sources = [
     "call/audio_sink.h",
   ]
@@ -34,6 +36,7 @@ rtc_source_set("call_api") {
 }
 
 rtc_static_library("libjingle_peerconnection_api") {
+  visibility = [ "*" ]
   cflags = []
   sources = [
     "candidate.cc",
@@ -114,6 +117,8 @@ rtc_static_library("libjingle_peerconnection_api") {
 }
 
 rtc_source_set("peerconnection_and_implicit_call_api") {
+  visibility = [ "*" ]
+
   # The peerconnectioninterface.h file pulls in call/callfactoryinterface.h
   # and the entire call module with it. We need to either get rid of this
   # dependency or pull most of call/ into the API. For now, silence the warnings
@@ -126,12 +131,14 @@ rtc_source_set("peerconnection_and_implicit_call_api") {
 }
 
 rtc_source_set("libjingle_logging_api") {
+  visibility = [ "*" ]
   sources = [
     "rtceventlogoutput.h",
   ]
 }
 
 rtc_source_set("ortc_api") {
+  visibility = [ "*" ]
   sources = [
     "ortc/mediadescription.cc",
     "ortc/mediadescription.h",
@@ -164,6 +171,7 @@ rtc_source_set("ortc_api") {
 }
 
 rtc_source_set("rtc_stats_api") {
+  visibility = [ "*" ]
   cflags = []
   sources = [
     "stats/rtcstats.h",
@@ -179,6 +187,7 @@ rtc_source_set("rtc_stats_api") {
 }
 
 rtc_source_set("audio_mixer_api") {
+  visibility = [ "*" ]
   sources = [
     "audio/audio_mixer.h",
   ]
@@ -190,12 +199,14 @@ rtc_source_set("audio_mixer_api") {
 }
 
 rtc_source_set("transport_api") {
+  visibility = [ "*" ]
   sources = [
     "call/transport.h",
   ]
 }
 
 rtc_source_set("video_frame_api") {
+  visibility = [ "*" ]
   sources = [
     "video/video_content_type.cc",
     "video/video_content_type.h",
@@ -215,6 +226,7 @@ rtc_source_set("video_frame_api") {
 }
 
 rtc_source_set("video_frame_api_i420") {
+  visibility = [ "*" ]
   sources = [
     "video/i420_buffer.cc",
     "video/i420_buffer.h",
@@ -229,6 +241,7 @@ rtc_source_set("video_frame_api_i420") {
 }
 
 rtc_source_set("array_view") {
+  visibility = [ "*" ]
   sources = [
     "array_view.h",
   ]
@@ -239,6 +252,7 @@ rtc_source_set("array_view") {
 }
 
 rtc_source_set("optional") {
+  visibility = [ "*" ]
   sources = [
     "optional.cc",
     "optional.h",
@@ -251,6 +265,7 @@ rtc_source_set("optional") {
 }
 
 rtc_source_set("refcountedbase") {
+  visibility = [ "*" ]
   sources = [
     "refcountedbase.h",
   ]
@@ -260,6 +275,7 @@ rtc_source_set("refcountedbase") {
 }
 
 rtc_source_set("libjingle_peerconnection_test_api") {
+  visibility = [ "*" ]
   testonly = true
   sources = [
     "test/fakeconstraints.h",
