@@ -239,11 +239,6 @@ rtc_static_library("rtc_audio_video") {
     "engine/webrtcvideoengine.h",
     "engine/webrtcvoiceengine.cc",
     "engine/webrtcvoiceengine.h",
-
-    # TODO(bugs.webrtc.org/7925) Remove these when clients are updated
-    "engine/convert_legacy_video_factory.h",
-    "engine/webrtcvideodecoderfactory.h",
-    "engine/webrtcvideoencoderfactory.h",
   ]
 
   configs += [ ":rtc_media_warnings_config" ]
