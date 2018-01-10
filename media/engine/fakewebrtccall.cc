@@ -98,6 +98,11 @@ bool FakeAudioReceiveStream::DeliverRtp(const uint8_t* packet,
   return true;
 }
 
+void FakeAudioReceiveStream::Reconfigure(
+    const webrtc::AudioReceiveStream::Config& config) {
+  config_ = config;
+}
+
 webrtc::AudioReceiveStream::Stats FakeAudioReceiveStream::GetStats() const {
   return stats_;
 }

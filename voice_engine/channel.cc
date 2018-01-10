@@ -1168,9 +1168,11 @@ void Channel::EnableSendTransportSequenceNumber(int id) {
 void Channel::EnableReceiveTransportSequenceNumber(int id) {
   rtp_header_parser_->DeregisterRtpHeaderExtension(
       kRtpExtensionTransportSequenceNumber);
-  bool ret = rtp_header_parser_->RegisterRtpHeaderExtension(
-      kRtpExtensionTransportSequenceNumber, id);
-  RTC_DCHECK(ret);
+  if (id != 0) {
+    bool ret = rtp_header_parser_->RegisterRtpHeaderExtension(
+        kRtpExtensionTransportSequenceNumber, id);
+    RTC_DCHECK(ret);
+  }
 }
 
 void Channel::RegisterSenderCongestionControlObjects(

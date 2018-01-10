@@ -394,5 +394,46 @@ TEST(AudioReceiveStreamTest, StreamsShouldBeAddedToMixerOnceOnStart) {
   // Stop stream before it is being destructed.
   recv_stream2.Stop();
 }
+
+TEST(AudioReceiveStreamTest, ReconfigureWithSameConfig) {
+  ConfigHelper helper;
+  internal::AudioReceiveStream recv_stream(
+      helper.rtp_stream_receiver_controller(),
+      helper.packet_router(),
+      helper.config(), helper.audio_state(), helper.event_log());
+  recv_stream.Reconfigure(helper.config());
+}
+
+TEST(AudioReceiveStreamTest, ReconfigureWithUpdatedConfig) {
+  ConfigHelper helper;
+  internal::AudioReceiveStream recv_stream(
+      helper.rtp_stream_receiver_controller(),
+      helper.packet_router(),
+      helper.config(), helper.audio_state(), helper.event_log());
+
+  auto new_config = helper.config();
+  new_config.rtp.local_ssrc = kLocalSsrc + 1;
+  new_config.rtp.nack.rtp_history_ms = 300 + 20;
+  new_config.rtp.extensions.clear();
+  new_config.rtp.extensions.push_back(
+        RtpExtension(RtpExtension::kAudioLevelUri, kAudioLevelId + 1));
+  new_config.rtp.extensions.push_back(RtpExtension(
+        RtpExtension::kTransportSequenceNumberUri,
+        kTransportSequenceNumberId + 1));
+  new_config.decoder_map.emplace(1, SdpAudioFormat("foo", 8000, 1));
+
+  MockVoEChannelProxy& channel_proxy = *helper.channel_proxy();
+  EXPECT_CALL(channel_proxy, SetLocalSSRC(kLocalSsrc + 1)).Times(1);
+  EXPECT_CALL(channel_proxy, SetNACKStatus(true, 15 + 1)).Times(1);
+  EXPECT_CALL(channel_proxy, SetReceiveCodecs(new_config.decoder_map));
+  EXPECT_CALL(channel_proxy,
+      SetReceiveAudioLevelIndicationStatus(true, kAudioLevelId + 1))
+          .Times(1);
+  EXPECT_CALL(channel_proxy,
+      EnableReceiveTransportSequenceNumber(kTransportSequenceNumberId + 1))
+          .Times(1);
+
+  recv_stream.Reconfigure(new_config);
+}
 }  // namespace test
 }  // namespace webrtc

@@ -57,7 +57,6 @@ class FakeAudioSendStream final : public webrtc::AudioSendStream {
  private:
   // webrtc::AudioSendStream implementation.
   void Reconfigure(const webrtc::AudioSendStream::Config& config) override;
-
   void Start() override { sending_ = true; }
   void Stop() override { sending_ = false; }
   void SendAudioData(std::unique_ptr<webrtc::AudioFrame> audio_frame) override {
@@ -96,6 +95,7 @@ class FakeAudioReceiveStream final : public webrtc::AudioReceiveStream {
 
  private:
   // webrtc::AudioReceiveStream implementation.
+  void Reconfigure(const webrtc::AudioReceiveStream::Config& config) override;
   void Start() override { started_ = true; }
   void Stop() override { started_ = false; }
 

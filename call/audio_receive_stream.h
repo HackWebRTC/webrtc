@@ -120,6 +120,9 @@ class AudioReceiveStream {
     rtc::scoped_refptr<AudioDecoderFactory> decoder_factory;
   };
 
+  // Reconfigure the stream according to the Configuration.
+  virtual void Reconfigure(const Config& config) = 0;
+
   // Starts stream activity.
   // When a stream is active, it can receive, process and deliver packets.
   virtual void Start() = 0;

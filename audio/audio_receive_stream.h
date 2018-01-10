@@ -48,6 +48,7 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream,
   ~AudioReceiveStream() override;
 
   // webrtc::AudioReceiveStream implementation.
+  void Reconfigure(const webrtc::AudioReceiveStream::Config& config) override;
   void Start() override;
   void Stop() override;
   webrtc::AudioReceiveStream::Stats GetStats() const override;
@@ -80,12 +81,25 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream,
   const webrtc::AudioReceiveStream::Config& config() const;
 
  private:
+  // RFC 5285: Each distinct extension MUST have a unique ID. The value 0 is
+  // reserved for padding and MUST NOT be used as a local identifier.
+  // So it should be safe to use 0 here to indicate "not configured".
+  struct ExtensionIds {
+    int audio_level = 0;
+    int transport_sequence_number = 0;
+  };
+  static ExtensionIds FindExtensionIds(
+      const std::vector<RtpExtension>& extensions);
+  static void ConfigureStream(AudioReceiveStream* stream,
+                              const Config& new_config,
+                              bool first_time);
+
   VoiceEngine* voice_engine() const;
   AudioState* audio_state() const;
 
   rtc::ThreadChecker worker_thread_checker_;
   rtc::ThreadChecker module_process_thread_checker_;
-  const webrtc::AudioReceiveStream::Config config_;
+  webrtc::AudioReceiveStream::Config config_;
   rtc::scoped_refptr<webrtc::AudioState> audio_state_;
   std::unique_ptr<voe::ChannelProxy> channel_proxy_;
 

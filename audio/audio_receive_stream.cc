@@ -68,22 +68,16 @@ AudioReceiveStream::AudioReceiveStream(
     const webrtc::AudioReceiveStream::Config& config,
     const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
     webrtc::RtcEventLog* event_log)
-    : config_(config), audio_state_(audio_state) {
-  RTC_LOG(LS_INFO) << "AudioReceiveStream: " << config_.ToString();
-  RTC_DCHECK_NE(config_.voe_channel_id, -1);
+    : audio_state_(audio_state) {
+  RTC_LOG(LS_INFO) << "AudioReceiveStream: " << config.ToString();
+  RTC_DCHECK_NE(config.voe_channel_id, -1);
   RTC_DCHECK(audio_state_.get());
   RTC_DCHECK(packet_router);
 
   module_process_thread_checker_.DetachFromThread();
 
   VoiceEngineImpl* voe_impl = static_cast<VoiceEngineImpl*>(voice_engine());
-  channel_proxy_ = voe_impl->GetChannelProxy(config_.voe_channel_id);
-  channel_proxy_->SetRtcEventLog(event_log);
-  channel_proxy_->SetLocalSSRC(config.rtp.local_ssrc);
-  // TODO(solenberg): Config NACK history window (which is a packet count),
-  // using the actual packet size for the configured codec.
-  channel_proxy_->SetNACKStatus(config_.rtp.nack.rtp_history_ms != 0,
-                                config_.rtp.nack.rtp_history_ms / 20);
+  channel_proxy_ = voe_impl->GetChannelProxy(config.voe_channel_id);
 
   // TODO(ossu): This is where we'd like to set the decoder factory to
   // use. However, since it needs to be included when constructing Channel, we
@@ -94,25 +88,18 @@ AudioReceiveStream::AudioReceiveStream(
   RTC_CHECK_EQ(config.decoder_factory,
                channel_proxy_->GetAudioDecoderFactory());
 
+  channel_proxy_->SetRtcEventLog(event_log);
   channel_proxy_->RegisterTransport(config.rtcp_send_transport);
-  channel_proxy_->SetReceiveCodecs(config.decoder_map);
 
-  for (const auto& extension : config.rtp.extensions) {
-    if (extension.uri == RtpExtension::kAudioLevelUri) {
-      channel_proxy_->SetReceiveAudioLevelIndicationStatus(true, extension.id);
-    } else if (extension.uri == RtpExtension::kTransportSequenceNumberUri) {
-      channel_proxy_->EnableReceiveTransportSequenceNumber(extension.id);
-    } else {
-      RTC_NOTREACHED() << "Unsupported RTP extension.";
-    }
-  }
   // Configure bandwidth estimation.
   channel_proxy_->RegisterReceiverCongestionControlObjects(packet_router);
 
   // Register with transport.
   rtp_stream_receiver_ =
-      receiver_controller->CreateReceiver(config_.rtp.remote_ssrc,
+      receiver_controller->CreateReceiver(config.rtp.remote_ssrc,
                                           channel_proxy_.get());
+
+  ConfigureStream(this, config, true);
 }
 
 AudioReceiveStream::~AudioReceiveStream() {
@@ -123,6 +110,13 @@ AudioReceiveStream::~AudioReceiveStream() {
   channel_proxy_->RegisterTransport(nullptr);
   channel_proxy_->ResetReceiverCongestionControlObjects();
   channel_proxy_->SetRtcEventLog(nullptr);
+}
+
+void AudioReceiveStream::Reconfigure(
+    const webrtc::AudioReceiveStream::Config& config) {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_LOG(LS_INFO) << "AudioReceiveStream::Reconfigure: " << config_.ToString();
+  ConfigureStream(this, config, false);
 }
 
 void AudioReceiveStream::Start() {
@@ -328,6 +322,68 @@ internal::AudioState* AudioReceiveStream::audio_state() const {
   auto* audio_state = static_cast<internal::AudioState*>(audio_state_.get());
   RTC_DCHECK(audio_state);
   return audio_state;
+}
+
+AudioReceiveStream::ExtensionIds AudioReceiveStream::FindExtensionIds(
+    const std::vector<RtpExtension>& extensions) {
+  ExtensionIds ids;
+  for (const auto& extension : extensions) {
+    if (extension.uri == RtpExtension::kAudioLevelUri) {
+      ids.audio_level = extension.id;
+    } else if (extension.uri == RtpExtension::kTransportSequenceNumberUri) {
+      ids.transport_sequence_number = extension.id;
+    }
+  }
+  return ids;
+}
+
+void AudioReceiveStream::ConfigureStream(AudioReceiveStream* stream,
+                                         const Config& new_config,
+                                         bool first_time) {
+  RTC_DCHECK(stream);
+  const auto& channel_proxy = stream->channel_proxy_;
+  const auto& old_config = stream->config_;
+
+  // Configuration parameters which cannot be changed.
+  RTC_DCHECK(first_time ||
+             old_config.voe_channel_id == new_config.voe_channel_id);
+  RTC_DCHECK(first_time ||
+             old_config.rtp.remote_ssrc == new_config.rtp.remote_ssrc);
+  RTC_DCHECK(first_time ||
+             old_config.rtcp_send_transport == new_config.rtcp_send_transport);
+  // Decoder factory cannot be changed because it is configured at
+  // voe::Channel construction time.
+  RTC_DCHECK(first_time ||
+             old_config.decoder_factory == new_config.decoder_factory);
+
+  if (first_time || old_config.rtp.local_ssrc != new_config.rtp.local_ssrc) {
+    channel_proxy->SetLocalSSRC(new_config.rtp.local_ssrc);
+  }
+  // TODO(solenberg): Config NACK history window (which is a packet count),
+  // using the actual packet size for the configured codec.
+  if (first_time || old_config.rtp.nack.rtp_history_ms !=
+                        new_config.rtp.nack.rtp_history_ms) {
+    channel_proxy->SetNACKStatus(new_config.rtp.nack.rtp_history_ms != 0,
+                                 new_config.rtp.nack.rtp_history_ms / 20);
+  }
+  if (first_time || old_config.decoder_map != new_config.decoder_map) {
+    channel_proxy->SetReceiveCodecs(new_config.decoder_map);
+  }
+
+  // RTP Header Extensions.
+  const ExtensionIds old_ids = FindExtensionIds(old_config.rtp.extensions);
+  const ExtensionIds new_ids = FindExtensionIds(new_config.rtp.extensions);
+  if (first_time || new_ids.audio_level != old_ids.audio_level) {
+    channel_proxy->SetReceiveAudioLevelIndicationStatus(
+        new_ids.audio_level != 0, new_ids.audio_level);
+  }
+  if (first_time || new_ids.transport_sequence_number !=
+                        old_ids.transport_sequence_number) {
+    channel_proxy->EnableReceiveTransportSequenceNumber(
+        new_ids.transport_sequence_number);
+  }
+
+  stream->config_ = new_config;
 }
 }  // namespace internal
 }  // namespace webrtc

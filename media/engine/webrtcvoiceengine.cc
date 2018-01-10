@@ -1185,37 +1185,38 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
     call_->DestroyAudioReceiveStream(stream_);
   }
 
-  void RecreateAudioReceiveStream(uint32_t local_ssrc) {
+  void SetLocalSsrc(uint32_t local_ssrc) {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
     config_.rtp.local_ssrc = local_ssrc;
-    RecreateAudioReceiveStream();
+    ReconfigureAudioReceiveStream();
   }
 
-  void RecreateAudioReceiveStream(bool use_transport_cc, bool use_nack) {
+  void SetUseTransportCc(bool use_transport_cc, bool use_nack) {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
     config_.rtp.transport_cc = use_transport_cc;
     config_.rtp.nack.rtp_history_ms = use_nack ? kNackRtpHistoryMs : 0;
-    RecreateAudioReceiveStream();
+    ReconfigureAudioReceiveStream();
   }
 
-  void RecreateAudioReceiveStream(
-      const std::vector<webrtc::RtpExtension>& extensions) {
+  void SetRtpExtensions(const std::vector<webrtc::RtpExtension>& extensions) {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
     config_.rtp.extensions = extensions;
-    RecreateAudioReceiveStream();
+    ReconfigureAudioReceiveStream();
   }
 
   // Set a new payload type -> decoder map.
-  void RecreateAudioReceiveStream(
-      const std::map<int, webrtc::SdpAudioFormat>& decoder_map) {
+  void SetDecoderMap(const std::map<int, webrtc::SdpAudioFormat>& decoder_map) {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
     config_.decoder_map = decoder_map;
-    RecreateAudioReceiveStream();
+    ReconfigureAudioReceiveStream();
   }
 
   void MaybeRecreateAudioReceiveStream(const std::string& sync_group) {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
     if (config_.sync_group != sync_group) {
+      RTC_LOG(LS_INFO) << "Recreating AudioReceiveStream for SSRC="
+                       << config_.rtp.remote_ssrc
+                       << " because of sync group change.";
       config_.sync_group = sync_group;
       RecreateAudioReceiveStream();
     }
@@ -1276,6 +1277,12 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
     stream_ = call_->CreateAudioReceiveStream(config_);
     RTC_CHECK(stream_);
     SetPlayout(playout_);
+  }
+
+  void ReconfigureAudioReceiveStream() {
+    RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(stream_);
+    stream_->Reconfigure(config_);
   }
 
   rtc::ThreadChecker worker_thread_checker_;
@@ -1373,7 +1380,7 @@ bool WebRtcVoiceMediaChannel::SetRecvParameters(
   if (recv_rtp_extensions_ != filtered_extensions) {
     recv_rtp_extensions_.swap(filtered_extensions);
     for (auto& it : recv_streams_) {
-      it.second->RecreateAudioReceiveStream(recv_rtp_extensions_);
+      it.second->SetRtpExtensions(recv_rtp_extensions_);
     }
   }
   return true;
@@ -1588,7 +1595,7 @@ bool WebRtcVoiceMediaChannel::SetRecvCodecs(
 
   decoder_map_ = std::move(decoder_map);
   for (auto& kv : recv_streams_) {
-    kv.second->RecreateAudioReceiveStream(decoder_map_);
+    kv.second->SetDecoderMap(decoder_map_);
   }
   recv_codecs_ = codecs;
 
@@ -1720,8 +1727,8 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
     recv_transport_cc_enabled_ = send_codec_spec_->transport_cc_enabled;
     recv_nack_enabled_ = send_codec_spec_->nack_enabled;
     for (auto& kv : recv_streams_) {
-      kv.second->RecreateAudioReceiveStream(recv_transport_cc_enabled_,
-                                            recv_nack_enabled_);
+      kv.second->SetUseTransportCc(recv_transport_cc_enabled_,
+                                   recv_nack_enabled_);
     }
   }
 
@@ -1846,8 +1853,8 @@ bool WebRtcVoiceMediaChannel::AddSendStream(const StreamParams& sp) {
     receiver_reports_ssrc_ = ssrc;
     for (const auto& kv : recv_streams_) {
       // TODO(solenberg): Allow applications to set the RTCP SSRC of receive
-      // streams instead, so we can avoid recreating the streams here.
-      kv.second->RecreateAudioReceiveStream(ssrc);
+      // streams instead, so we can avoid reconfiguring the streams here.
+      kv.second->SetLocalSsrc(ssrc);
     }
   }
 
