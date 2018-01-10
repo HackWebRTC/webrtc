@@ -506,31 +506,16 @@ class MediaChannel : public sigslot::has_slots<> {
 // Information about an SSRC.
 // This data may be locally recorded, or received in an RTCP SR or RR.
 struct SsrcSenderInfo {
-  SsrcSenderInfo()
-      : ssrc(0),
-    timestamp(0) {
-  }
-  uint32_t ssrc;
-  double timestamp;  // NTP timestamp, represented as seconds since epoch.
+  uint32_t ssrc = 0;
+  double timestamp = 0.0;  // NTP timestamp, represented as seconds since epoch.
 };
 
 struct SsrcReceiverInfo {
-  SsrcReceiverInfo()
-      : ssrc(0),
-        timestamp(0) {
-  }
-  uint32_t ssrc;
-  double timestamp;
+  uint32_t ssrc = 0;
+  double timestamp = 0.0;
 };
 
 struct MediaSenderInfo {
-  MediaSenderInfo()
-      : bytes_sent(0),
-        packets_sent(0),
-        packets_lost(0),
-        fraction_lost(0.0),
-        rtt_ms(0) {
-  }
   void add_ssrc(const SsrcSenderInfo& stat) {
     local_stats.push_back(stat);
   }
@@ -560,11 +545,11 @@ struct MediaSenderInfo {
       return 0;
     }
   }
-  int64_t bytes_sent;
-  int packets_sent;
-  int packets_lost;
-  float fraction_lost;
-  int64_t rtt_ms;
+  int64_t bytes_sent = 0;
+  int packets_sent = 0;
+  int packets_lost = 0;
+  float fraction_lost = 0.0f;
+  int64_t rtt_ms = 0;
   std::string codec_name;
   rtc::Optional<int> codec_payload_type;
   std::vector<SsrcSenderInfo> local_stats;
@@ -572,12 +557,6 @@ struct MediaSenderInfo {
 };
 
 struct MediaReceiverInfo {
-  MediaReceiverInfo()
-      : bytes_rcvd(0),
-        packets_rcvd(0),
-        packets_lost(0),
-        fraction_lost(0.0) {
-  }
   void add_ssrc(const SsrcReceiverInfo& stat) {
     local_stats.push_back(stat);
   }
@@ -607,10 +586,10 @@ struct MediaReceiverInfo {
     }
   }
 
-  int64_t bytes_rcvd;
-  int packets_rcvd;
-  int packets_lost;
-  float fraction_lost;
+  int64_t bytes_rcvd = 0;
+  int packets_rcvd = 0;
+  int packets_lost = 0;
+  float fraction_lost = 0.0f;
   std::string codec_name;
   rtc::Optional<int> codec_payload_type;
   std::vector<SsrcReceiverInfo> local_stats;
@@ -618,227 +597,140 @@ struct MediaReceiverInfo {
 };
 
 struct VoiceSenderInfo : public MediaSenderInfo {
-  VoiceSenderInfo()
-      : ext_seqnum(0),
-        jitter_ms(0),
-        audio_level(0),
-        total_input_energy(0.0),
-        total_input_duration(0.0),
-        echo_delay_median_ms(0),
-        echo_delay_std_ms(0),
-        echo_return_loss(0),
-        echo_return_loss_enhancement(0),
-        residual_echo_likelihood(0.0f),
-        residual_echo_likelihood_recent_max(0.0f),
-        typing_noise_detected(false) {}
-
-  int ext_seqnum;
-  int jitter_ms;
-  int audio_level;
+  int ext_seqnum = 0;
+  int jitter_ms = 0;
+  int audio_level = 0;
   // See description of "totalAudioEnergy" in the WebRTC stats spec:
   // https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats-totalaudioenergy
-  double total_input_energy;
-  double total_input_duration;
+  double total_input_energy = 0.0;
+  double total_input_duration = 0.0;
   // TODO(bugs.webrtc.org/8572): Remove APM stats from this struct, since they
   // are no longer needed now that we have apm_statistics.
-  int echo_delay_median_ms;
-  int echo_delay_std_ms;
-  int echo_return_loss;
-  int echo_return_loss_enhancement;
-  float residual_echo_likelihood;
-  float residual_echo_likelihood_recent_max;
-  bool typing_noise_detected;
+  int echo_delay_median_ms = 0;
+  int echo_delay_std_ms = 0;
+  int echo_return_loss = 0;
+  int echo_return_loss_enhancement = 0;
+  float residual_echo_likelihood = 0.0f;
+  float residual_echo_likelihood_recent_max = 0.0f;
+  bool typing_noise_detected = false;
   webrtc::ANAStats ana_statistics;
   webrtc::AudioProcessingStats apm_statistics;
 };
 
 struct VoiceReceiverInfo : public MediaReceiverInfo {
-  VoiceReceiverInfo()
-      : ext_seqnum(0),
-        jitter_ms(0),
-        jitter_buffer_ms(0),
-        jitter_buffer_preferred_ms(0),
-        delay_estimate_ms(0),
-        audio_level(0),
-        total_output_energy(0.0),
-        total_samples_received(0),
-        total_output_duration(0.0),
-        concealed_samples(0),
-        concealment_events(0),
-        jitter_buffer_delay_seconds(0),
-        expand_rate(0),
-        speech_expand_rate(0),
-        secondary_decoded_rate(0),
-        secondary_discarded_rate(0),
-        accelerate_rate(0),
-        preemptive_expand_rate(0),
-        decoding_calls_to_silence_generator(0),
-        decoding_calls_to_neteq(0),
-        decoding_normal(0),
-        decoding_plc(0),
-        decoding_cng(0),
-        decoding_plc_cng(0),
-        decoding_muted_output(0),
-        capture_start_ntp_time_ms(-1) {}
-
-  int ext_seqnum;
-  int jitter_ms;
-  int jitter_buffer_ms;
-  int jitter_buffer_preferred_ms;
-  int delay_estimate_ms;
-  int audio_level;
+  int ext_seqnum = 0;
+  int jitter_ms = 0;
+  int jitter_buffer_ms = 0;
+  int jitter_buffer_preferred_ms = 0;
+  int delay_estimate_ms = 0;
+  int audio_level = 0;
   // Stats below correspond to similarly-named fields in the WebRTC stats spec.
   // https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats
-  double total_output_energy;
-  uint64_t total_samples_received;
-  double total_output_duration;
-  uint64_t concealed_samples;
-  uint64_t concealment_events;
-  double jitter_buffer_delay_seconds;
+  double total_output_energy = 0.0;
+  uint64_t total_samples_received = 0;
+  double total_output_duration = 0.0;
+  uint64_t concealed_samples = 0;
+  uint64_t concealment_events = 0;
+  double jitter_buffer_delay_seconds = 0;
   // Stats below DO NOT correspond directly to anything in the WebRTC stats
   // fraction of synthesized audio inserted through expansion.
-  float expand_rate;
+  float expand_rate = 0.0f;
   // fraction of synthesized speech inserted through expansion.
-  float speech_expand_rate;
+  float speech_expand_rate = 0.0f;
   // fraction of data out of secondary decoding, including FEC and RED.
-  float secondary_decoded_rate;
+  float secondary_decoded_rate = 0.0f;
   // Fraction of secondary data, including FEC and RED, that is discarded.
   // Discarding of secondary data can be caused by the reception of the primary
   // data, obsoleting the secondary data. It can also be caused by early
   // or late arrival of secondary data. This metric is the percentage of
   // discarded secondary data since last query of receiver info.
-  float secondary_discarded_rate;
+  float secondary_discarded_rate = 0.0f;
   // Fraction of data removed through time compression.
-  float accelerate_rate;
+  float accelerate_rate = 0.0f;
   // Fraction of data inserted through time stretching.
-  float preemptive_expand_rate;
-  int decoding_calls_to_silence_generator;
-  int decoding_calls_to_neteq;
-  int decoding_normal;
-  int decoding_plc;
-  int decoding_cng;
-  int decoding_plc_cng;
-  int decoding_muted_output;
+  float preemptive_expand_rate = 0.0f;
+  int decoding_calls_to_silence_generator = 0;
+  int decoding_calls_to_neteq = 0;
+  int decoding_normal = 0;
+  int decoding_plc = 0;
+  int decoding_cng = 0;
+  int decoding_plc_cng = 0;
+  int decoding_muted_output = 0;
   // Estimated capture start time in NTP time in ms.
-  int64_t capture_start_ntp_time_ms;
+  int64_t capture_start_ntp_time_ms = -1;
 };
 
 struct VideoSenderInfo : public MediaSenderInfo {
-  VideoSenderInfo()
-      : packets_cached(0),
-        firs_rcvd(0),
-        plis_rcvd(0),
-        nacks_rcvd(0),
-        send_frame_width(0),
-        send_frame_height(0),
-        framerate_input(0),
-        framerate_sent(0),
-        nominal_bitrate(0),
-        preferred_bitrate(0),
-        adapt_reason(0),
-        adapt_changes(0),
-        avg_encode_ms(0),
-        encode_usage_percent(0),
-        frames_encoded(0),
-        has_entered_low_resolution(false),
-        content_type(webrtc::VideoContentType::UNSPECIFIED) {}
-
   std::vector<SsrcGroup> ssrc_groups;
   // TODO(hbos): Move this to |VideoMediaInfo::send_codecs|?
   std::string encoder_implementation_name;
-  int packets_cached;
-  int firs_rcvd;
-  int plis_rcvd;
-  int nacks_rcvd;
-  int send_frame_width;
-  int send_frame_height;
-  int framerate_input;
-  int framerate_sent;
-  int nominal_bitrate;
-  int preferred_bitrate;
-  int adapt_reason;
-  int adapt_changes;
-  int avg_encode_ms;
-  int encode_usage_percent;
-  uint32_t frames_encoded;
-  bool has_entered_low_resolution;
+  int packets_cached = 0;
+  int firs_rcvd = 0;
+  int plis_rcvd = 0;
+  int nacks_rcvd = 0;
+  int send_frame_width = 0;
+  int send_frame_height = 0;
+  int framerate_input = 0;
+  int framerate_sent = 0;
+  int nominal_bitrate = 0;
+  int preferred_bitrate = 0;
+  int adapt_reason = 0;
+  int adapt_changes = 0;
+  int avg_encode_ms = 0;
+  int encode_usage_percent = 0;
+  uint32_t frames_encoded = 0;
+  bool has_entered_low_resolution = false;
   rtc::Optional<uint64_t> qp_sum;
-  webrtc::VideoContentType content_type;
+  webrtc::VideoContentType content_type = webrtc::VideoContentType::UNSPECIFIED;
 };
 
 struct VideoReceiverInfo : public MediaReceiverInfo {
-  VideoReceiverInfo()
-      : packets_concealed(0),
-        firs_sent(0),
-        plis_sent(0),
-        nacks_sent(0),
-        frame_width(0),
-        frame_height(0),
-        framerate_rcvd(0),
-        framerate_decoded(0),
-        framerate_output(0),
-        framerate_render_input(0),
-        framerate_render_output(0),
-        frames_received(0),
-        frames_decoded(0),
-        frames_rendered(0),
-        interframe_delay_max_ms(-1),
-        content_type(webrtc::VideoContentType::UNSPECIFIED),
-        decode_ms(0),
-        max_decode_ms(0),
-        jitter_buffer_ms(0),
-        min_playout_delay_ms(0),
-        render_delay_ms(0),
-        target_delay_ms(0),
-        current_delay_ms(0),
-        capture_start_ntp_time_ms(-1) {}
-
   std::vector<SsrcGroup> ssrc_groups;
   // TODO(hbos): Move this to |VideoMediaInfo::receive_codecs|?
   std::string decoder_implementation_name;
-  int packets_concealed;
-  int firs_sent;
-  int plis_sent;
-  int nacks_sent;
-  int frame_width;
-  int frame_height;
-  int framerate_rcvd;
-  int framerate_decoded;
-  int framerate_output;
+  int packets_concealed = 0;
+  int firs_sent = 0;
+  int plis_sent = 0;
+  int nacks_sent = 0;
+  int frame_width = 0;
+  int frame_height = 0;
+  int framerate_rcvd = 0;
+  int framerate_decoded = 0;
+  int framerate_output = 0;
   // Framerate as sent to the renderer.
-  int framerate_render_input;
+  int framerate_render_input = 0;
   // Framerate that the renderer reports.
-  int framerate_render_output;
-  uint32_t frames_received;
-  uint32_t frames_decoded;
-  uint32_t frames_rendered;
+  int framerate_render_output = 0;
+  uint32_t frames_received = 0;
+  uint32_t frames_decoded = 0;
+  uint32_t frames_rendered = 0;
   rtc::Optional<uint64_t> qp_sum;
-  int64_t interframe_delay_max_ms;
+  int64_t interframe_delay_max_ms = -1;
 
-  webrtc::VideoContentType content_type;
+  webrtc::VideoContentType content_type = webrtc::VideoContentType::UNSPECIFIED;
 
   // All stats below are gathered per-VideoReceiver, but some will be correlated
   // across MediaStreamTracks.  NOTE(hta): when sinking stats into per-SSRC
   // structures, reflect this in the new layout.
 
   // Current frame decode latency.
-  int decode_ms;
+  int decode_ms = 0;
   // Maximum observed frame decode latency.
-  int max_decode_ms;
+  int max_decode_ms = 0;
   // Jitter (network-related) latency.
-  int jitter_buffer_ms;
+  int jitter_buffer_ms = 0;
   // Requested minimum playout latency.
-  int min_playout_delay_ms;
+  int min_playout_delay_ms = 0;
   // Requested latency to account for rendering delay.
-  int render_delay_ms;
+  int render_delay_ms = 0;
   // Target overall delay: network+decode+render, accounting for
   // min_playout_delay_ms.
-  int target_delay_ms;
+  int target_delay_ms = 0;
   // Current overall delay, possibly ramping towards target_delay_ms.
-  int current_delay_ms;
+  int current_delay_ms = 0;
 
   // Estimated capture start time in NTP time in ms.
-  int64_t capture_start_ntp_time_ms;
+  int64_t capture_start_ntp_time_ms = -1;
 
   // Timing frame info: all important timestamps for a full lifetime of a
   // single 'timing frame'.
@@ -846,39 +738,21 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
 };
 
 struct DataSenderInfo : public MediaSenderInfo {
-  DataSenderInfo()
-      : ssrc(0) {
-  }
-
-  uint32_t ssrc;
+  uint32_t ssrc = 0;
 };
 
 struct DataReceiverInfo : public MediaReceiverInfo {
-  DataReceiverInfo()
-      : ssrc(0) {
-  }
-
-  uint32_t ssrc;
+  uint32_t ssrc = 0;
 };
 
 struct BandwidthEstimationInfo {
-  BandwidthEstimationInfo()
-      : available_send_bandwidth(0),
-        available_recv_bandwidth(0),
-        target_enc_bitrate(0),
-        actual_enc_bitrate(0),
-        retransmit_bitrate(0),
-        transmit_bitrate(0),
-        bucket_delay(0) {
-  }
-
-  int available_send_bandwidth;
-  int available_recv_bandwidth;
-  int target_enc_bitrate;
-  int actual_enc_bitrate;
-  int retransmit_bitrate;
-  int transmit_bitrate;
-  int64_t bucket_delay;
+  int available_send_bandwidth = 0;
+  int available_recv_bandwidth = 0;
+  int target_enc_bitrate = 0;
+  int actual_enc_bitrate = 0;
+  int retransmit_bitrate = 0;
+  int transmit_bitrate = 0;
+  int64_t bucket_delay = 0;
 };
 
 // Maps from payload type to |RtpCodecParameters|.
@@ -1120,16 +994,14 @@ struct ReceiveDataParams {
   // RTP data channels use SSRCs, SCTP data channels use SIDs.
   union {
     uint32_t ssrc;
-    int sid;
+    int sid = 0;
   };
   // The type of message (binary, text, or control).
-  DataMessageType type;
+  DataMessageType type = DMT_TEXT;
   // A per-stream value incremented per packet in the stream.
-  int seq_num;
+  int seq_num = 0;
   // A per-stream value monotonically increasing with time.
-  int timestamp;
-
-  ReceiveDataParams() : sid(0), type(DMT_TEXT), seq_num(0), timestamp(0) {}
+  int timestamp = 0;
 };
 
 struct SendDataParams {
@@ -1137,34 +1009,26 @@ struct SendDataParams {
   // RTP data channels use SSRCs, SCTP data channels use SIDs.
   union {
     uint32_t ssrc;
-    int sid;
+    int sid = 0;
   };
   // The type of message (binary, text, or control).
-  DataMessageType type;
+  DataMessageType type = DMT_TEXT;
 
+  // TODO(pthatcher): Make |ordered| and |reliable| true by default?
   // For SCTP, whether to send messages flagged as ordered or not.
   // If false, messages can be received out of order.
-  bool ordered;
+  bool ordered = false;
   // For SCTP, whether the messages are sent reliably or not.
   // If false, messages may be lost.
-  bool reliable;
+  bool reliable = false;
   // For SCTP, if reliable == false, provide partial reliability by
   // resending up to this many times.  Either count or millis
   // is supported, not both at the same time.
-  int max_rtx_count;
+  int max_rtx_count = 0;
   // For SCTP, if reliable == false, provide partial reliability by
   // resending for up to this many milliseconds.  Either count or millis
   // is supported, not both at the same time.
-  int max_rtx_ms;
-
-  SendDataParams()
-      : sid(0),
-        type(DMT_TEXT),
-        // TODO(pthatcher): Make these true by default?
-        ordered(false),
-        reliable(false),
-        max_rtx_count(0),
-        max_rtx_ms(0) {}
+  int max_rtx_ms = 0;
 };
 
 enum SendDataResult { SDR_SUCCESS, SDR_ERROR, SDR_BLOCK };
