@@ -13,6 +13,7 @@ import("../../webrtc.gni")
 # 'video_capture_internal_impl' depending on whether they want to
 # use the internal capturer.
 rtc_static_library("video_capture_module") {
+  visibility = [ "*" ]
   sources = [
     "device_info_impl.cc",
     "device_info_impl.h",
