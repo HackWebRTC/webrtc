@@ -46,16 +46,6 @@ int GetTotalMaxBitrateBps(const std::vector<webrtc::VideoStream>& streams);
 // Get the ssrcs of the SIM group from the stream params.
 void GetSimulcastSsrcs(const StreamParams& sp, std::vector<uint32_t>* ssrcs);
 
-// TODO(shampson): This is a fix to not break downstream tests. Remove this
-// after updating downstream tests.
-std::vector<webrtc::VideoStream> GetSimulcastConfig(size_t max_streams,
-                                                    int width,
-                                                    int height,
-                                                    int max_bitrate_bps,
-                                                    int max_qp,
-                                                    int max_framerate,
-                                                    bool is_screencast = false);
-
 // Get simulcast settings.
 // TODO(sprang): Remove default parameter when it's not longer referenced.
 std::vector<webrtc::VideoStream> GetSimulcastConfig(size_t max_streams,

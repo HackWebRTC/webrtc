@@ -141,19 +141,6 @@ int GetTotalMaxBitrateBps(const std::vector<webrtc::VideoStream>& streams) {
   return total_max_bitrate_bps;
 }
 
-// TODO(shampson): This is a fix to not break downstream tests. Remove this
-// after updating downstream tests.
-std::vector<webrtc::VideoStream> GetSimulcastConfig(size_t max_streams,
-                                                    int width,
-                                                    int height,
-                                                    int max_bitrate_bps,
-                                                    int max_qp,
-                                                    int max_framerate,
-                                                    bool is_screencast) {
-  return GetSimulcastConfig(max_streams, width, height, max_bitrate_bps, 1.0,
-                            max_qp, max_framerate, is_screencast);
-}
-
 std::vector<webrtc::VideoStream> GetSimulcastConfig(size_t max_streams,
                                                     int width,
                                                     int height,
