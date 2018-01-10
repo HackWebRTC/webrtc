@@ -100,23 +100,13 @@ rtc_source_set("base_jni") {
   }
 }
 
-generate_jni("generated_audio_jni") {
-  sources = [
-    "api/org/webrtc/DefaultAudioProcessingFactory.java",
-  ]
-  jni_package = ""
-  jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
-}
-
 rtc_static_library("audio_jni") {
   sources = [
     "src/jni/pc/audio.cc",
-    "src/jni/pc/defaultaudioprocessingfactory.cc",
   ]
 
   deps = [
     ":base_jni",
-    ":generated_audio_jni",
     "../../api/audio_codecs:builtin_audio_decoder_factory",
     "../../api/audio_codecs:builtin_audio_encoder_factory",
     "../../modules/audio_processing:audio_processing",
@@ -601,7 +591,6 @@ rtc_android_library("libjingle_peerconnection_java") {
     "api/org/webrtc/CameraEnumerator.java",
     "api/org/webrtc/CameraVideoCapturer.java",
     "api/org/webrtc/DataChannel.java",
-    "api/org/webrtc/DefaultAudioProcessingFactory.java",
     "api/org/webrtc/DefaultVideoDecoderFactory.java",
     "api/org/webrtc/DefaultVideoEncoderFactory.java",
     "api/org/webrtc/DtmfSender.java",
@@ -629,7 +618,6 @@ rtc_android_library("libjingle_peerconnection_java") {
     "api/org/webrtc/NetworkMonitorAutoDetect.java",
     "api/org/webrtc/PeerConnection.java",
     "api/org/webrtc/PeerConnectionFactory.java",
-    "api/org/webrtc/PostProcessingFactory.java",
     "api/org/webrtc/RendererCommon.java",
     "api/org/webrtc/RTCStats.java",
     "api/org/webrtc/RTCStatsCollectorCallback.java",
@@ -728,7 +716,6 @@ if (rtc_include_tests) {
       "instrumentationtests/src/org/webrtc/Camera1CapturerUsingTextureTest.java",
       "instrumentationtests/src/org/webrtc/Camera2CapturerTest.java",
       "instrumentationtests/src/org/webrtc/CameraVideoCapturerTestFixtures.java",
-      "instrumentationtests/src/org/webrtc/DefaultAudioProcessingFactoryTest.java",
       "instrumentationtests/src/org/webrtc/DefaultVideoEncoderFactoryTest.java",
       "instrumentationtests/src/org/webrtc/EglRendererTest.java",
       "instrumentationtests/src/org/webrtc/FileVideoCapturerTest.java",
