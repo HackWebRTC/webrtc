@@ -116,17 +116,6 @@ const int64_t kNanosecondsPerSecond = 1000000000;
 - (void)startCaptureWithDevice:(AVCaptureDevice *)device
                         format:(AVCaptureDeviceFormat *)format
                            fps:(NSInteger)fps {
-  [self startCaptureWithDevice:device format:format fps:fps completionHandler:nil];
-}
-
-- (void)stopCapture {
-  [self stopCaptureWithCompletionHandler:nil];
-}
-
-- (void)startCaptureWithDevice:(AVCaptureDevice *)device
-                        format:(AVCaptureDeviceFormat *)format
-                           fps:(NSInteger)fps
-             completionHandler:(nullable void (^)(NSError *))completionHandler {
   _willBeRunning = YES;
   [RTCDispatcher
       dispatchAsyncOnType:RTCDispatcherTypeCaptureSession
@@ -141,7 +130,6 @@ const int64_t kNanosecondsPerSecond = 1000000000;
 
                       NSError *error = nil;
                       if (![_currentDevice lockForConfiguration:&error]) {
-                        completionHandler(error);
                         RTCLogError(
                             @"Failed to lock device %@. Error: %@", _currentDevice, error.userInfo);
                         return;
@@ -153,11 +141,10 @@ const int64_t kNanosecondsPerSecond = 1000000000;
                       [_captureSession startRunning];
                       [_currentDevice unlockForConfiguration];
                       _isRunning = YES;
-                      completionHandler(nil);
                     }];
 }
 
-- (void)stopCaptureWithCompletionHandler:(nullable void (^)())completionHandler {
+- (void)stopCapture {
   _willBeRunning = NO;
   [RTCDispatcher
       dispatchAsyncOnType:RTCDispatcherTypeCaptureSession
@@ -173,7 +160,6 @@ const int64_t kNanosecondsPerSecond = 1000000000;
                       [[UIDevice currentDevice] endGeneratingDeviceOrientationNotifications];
 #endif
                       _isRunning = NO;
-                      completionHandler();
                     }];
 }
 
