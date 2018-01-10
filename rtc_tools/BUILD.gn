@@ -371,6 +371,7 @@ if (rtc_include_tests) {
     }  # rtp_analyzer
 
     rtc_executable("unpack_aecdump") {
+      visibility = [ "*" ]
       testonly = true
       sources = [
         "unpack_aecdump/unpack.cc",
