@@ -139,7 +139,6 @@ rtc_static_library("rtc_constants") {
 }
 
 rtc_static_library("rtc_internal_video_codecs") {
-  visibility = [ "*" ]
   defines = []
   libs = []
   deps = [
