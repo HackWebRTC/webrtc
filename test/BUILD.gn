@@ -36,7 +36,6 @@ group("test") {
 }
 
 rtc_source_set("video_test_common") {
-  visibility = [ "*" ]
   testonly = true
   sources = [
     "fake_texture_frame.cc",
@@ -106,7 +105,6 @@ rtc_source_set("rtp_test_utils") {
 }
 
 rtc_source_set("field_trial") {
-  visibility = [ "*" ]
   testonly = true
   sources = [
     "field_trial.cc",
@@ -121,7 +119,6 @@ rtc_source_set("field_trial") {
 }
 
 rtc_source_set("perf_test") {
-  visibility = [ "*" ]
   testonly = true
   sources = [
     "testsupport/perf_test.cc",
@@ -150,7 +147,6 @@ if (is_ios) {
 }
 
 rtc_source_set("test_support") {
-  visibility = [ "*" ]
   testonly = true
 
   sources = [
@@ -200,7 +196,6 @@ rtc_source_set("test_support") {
 
 if (rtc_include_tests) {
   rtc_source_set("test_main") {
-    visibility = [ "*" ]
     testonly = true
     sources = [
       "test_main.cc",
@@ -483,7 +478,6 @@ rtc_source_set("fileutils_unittests") {
 }
 
 rtc_source_set("direct_transport") {
-  visibility = [ "*" ]
   testonly = true
   sources = [
     "direct_transport.cc",
@@ -524,7 +518,6 @@ rtc_source_set("single_threaded_task_queue") {
 }
 
 rtc_source_set("fake_audio_device") {
-  visibility = [ "*" ]
   testonly = true
   sources = [
     "fake_audio_device.cc",

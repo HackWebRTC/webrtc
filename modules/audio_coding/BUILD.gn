@@ -40,7 +40,7 @@ audio_coding_deps = audio_codec_deps + [
                     ]
 
 rtc_static_library("audio_format_conversion") {
-  visibility += webrtc_default_visibility
+  visibility += [ "*" ]
   sources = [
     "codecs/audio_format_conversion.cc",
     "codecs/audio_format_conversion.h",
@@ -57,7 +57,7 @@ rtc_static_library("audio_format_conversion") {
 }
 
 rtc_static_library("rent_a_codec") {
-  visibility += webrtc_default_visibility
+  visibility += [ "*" ]
   sources = [
     "acm2/acm_codec_database.cc",
     "acm2/acm_codec_database.h",
@@ -297,7 +297,7 @@ config("ilbc_config") {
 }
 
 rtc_static_library("ilbc") {
-  visibility += webrtc_default_visibility
+  visibility += [ "*" ]
   sources = [
     "codecs/ilbc/audio_decoder_ilbc.cc",
     "codecs/ilbc/audio_decoder_ilbc.h",
@@ -823,7 +823,7 @@ rtc_source_set("pcm16b_c") {
 }
 
 rtc_static_library("webrtc_opus") {
-  visibility += webrtc_default_visibility
+  visibility += [ "*" ]
   sources = [
     "codecs/opus/audio_decoder_opus.cc",
     "codecs/opus/audio_decoder_opus.h",
@@ -884,7 +884,7 @@ rtc_source_set("webrtc_opus_c") {
 
 if (rtc_enable_protobuf) {
   proto_library("ana_debug_dump_proto") {
-    visibility += webrtc_default_visibility
+    visibility += [ "*" ]
     sources = [
       "audio_network_adaptor/debug_dump.proto",
     ]
@@ -902,7 +902,7 @@ if (rtc_enable_protobuf) {
 }
 
 rtc_static_library("audio_network_adaptor_config") {
-  visibility += webrtc_default_visibility
+  visibility += [ "*" ]
   sources = [
     "audio_network_adaptor/audio_network_adaptor_config.cc",
     "audio_network_adaptor/include/audio_network_adaptor_config.h",
@@ -913,7 +913,7 @@ rtc_static_library("audio_network_adaptor_config") {
 }
 
 rtc_static_library("audio_network_adaptor") {
-  visibility += webrtc_default_visibility
+  visibility += [ "*" ]
   sources = [
     "audio_network_adaptor/audio_network_adaptor_impl.cc",
     "audio_network_adaptor/audio_network_adaptor_impl.h",
@@ -984,7 +984,7 @@ rtc_source_set("neteq_decoder_enum") {
 }
 
 rtc_static_library("neteq") {
-  visibility += webrtc_default_visibility
+  visibility += [ "*" ]
   sources = [
     "neteq/accelerate.cc",
     "neteq/accelerate.h",
@@ -1082,7 +1082,7 @@ rtc_static_library("neteq") {
 # that ultimately are built and run as a part of the Chromium ecosystem, which
 # does not set the rtc_include_tests flag.
 rtc_source_set("neteq_tools_minimal") {
-  visibility += webrtc_default_visibility
+  visibility += [ "*" ]
   sources = [
     "neteq/tools/audio_sink.cc",
     "neteq/tools/audio_sink.h",
@@ -1119,7 +1119,7 @@ rtc_source_set("neteq_tools_minimal") {
 }
 
 rtc_source_set("neteq_test_tools") {
-  visibility += webrtc_default_visibility
+  visibility += [ "*" ]
   testonly = true
   sources = [
     "neteq/tools/audio_checksum.h",
@@ -1178,7 +1178,7 @@ config("neteq_tools_config") {
 }
 
 rtc_source_set("neteq_tools") {
-  visibility += webrtc_default_visibility
+  visibility += [ "*" ]
   sources = [
     "neteq/tools/fake_decode_from_file.cc",
     "neteq/tools/fake_decode_from_file.h",
@@ -1214,7 +1214,7 @@ rtc_source_set("neteq_tools") {
 }
 
 rtc_source_set("neteq_input_audio_tools") {
-  visibility += webrtc_default_visibility
+  visibility += [ "*" ]
   sources = [
     "neteq/tools/input_audio_file.cc",
     "neteq/tools/input_audio_file.h",
@@ -1275,7 +1275,7 @@ if (rtc_include_tests) {
   }
 
   group("audio_coding_tests") {
-    visibility += webrtc_default_visibility
+    visibility += [ "*" ]
     testonly = true
     public_deps = [
       ":acm_receive_test",
@@ -1310,7 +1310,7 @@ if (rtc_include_tests) {
 
   rtc_source_set("audio_coding_modules_tests") {
     testonly = true
-    visibility += webrtc_default_visibility
+    visibility += [ "*" ]
 
     sources = [
       "test/ACMTest.h",
@@ -1374,7 +1374,7 @@ if (rtc_include_tests) {
 
   rtc_source_set("audio_coding_perf_tests") {
     testonly = true
-    visibility += webrtc_default_visibility
+    visibility += [ "*" ]
 
     sources = [
       "codecs/opus/opus_complexity_unittest.cc",
@@ -2053,7 +2053,7 @@ if (rtc_include_tests) {
 
   rtc_source_set("audio_coding_unittests") {
     testonly = true
-    visibility += webrtc_default_visibility
+    visibility += [ "*" ]
 
     sources = [
       "acm2/acm_receiver_unittest.cc",

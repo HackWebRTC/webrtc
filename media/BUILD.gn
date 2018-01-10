@@ -33,7 +33,6 @@ config("rtc_media_warnings_config") {
 }
 
 rtc_source_set("rtc_h264_profile_id") {
-  visibility = [ "*" ]
   sources = [
     "base/h264_profile_level_id.cc",
     "base/h264_profile_level_id.h",
@@ -53,7 +52,6 @@ rtc_source_set("rtc_h264_profile_id") {
 }
 
 rtc_static_library("rtc_media_base") {
-  visibility = [ "*" ]
   defines = []
   libs = []
   deps = [
@@ -215,7 +213,6 @@ rtc_static_library("rtc_internal_video_codecs") {
 }
 
 rtc_static_library("rtc_audio_video") {
-  visibility = [ "*" ]
   defines = []
   libs = []
   deps = [
@@ -376,7 +373,6 @@ rtc_static_library("rtc_data") {
 }
 
 rtc_source_set("rtc_media") {
-  visibility = [ "*" ]
   public_deps = [
     ":rtc_audio_video",
     ":rtc_data",

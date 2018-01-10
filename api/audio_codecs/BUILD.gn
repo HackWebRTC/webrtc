@@ -13,7 +13,6 @@ if (is_android) {
 }
 
 rtc_source_set("audio_codecs_api") {
-  visibility = [ "*" ]
   sources = [
     "audio_decoder.cc",
     "audio_decoder.h",
@@ -39,7 +38,6 @@ rtc_source_set("audio_codecs_api") {
 }
 
 rtc_static_library("builtin_audio_decoder_factory") {
-  visibility = [ "*" ]
   sources = [
     "builtin_audio_decoder_factory.cc",
     "builtin_audio_decoder_factory.h",
@@ -68,7 +66,6 @@ rtc_static_library("builtin_audio_decoder_factory") {
 }
 
 rtc_static_library("builtin_audio_encoder_factory") {
-  visibility = [ "*" ]
   sources = [
     "builtin_audio_encoder_factory.cc",
     "builtin_audio_encoder_factory.h",

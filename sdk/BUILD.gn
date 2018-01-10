@@ -212,7 +212,6 @@ if (is_ios || is_mac) {
     }
 
     rtc_static_library("ui_objc") {
-      visibility = [ "*" ]
       if (is_ios) {
         sources = [
           "objc/Framework/Classes/UI/RTCCameraPreviewView.m",
@@ -274,7 +273,6 @@ if (is_ios || is_mac) {
     }
 
     rtc_static_library("peerconnection_objc") {
-      visibility = [ "*" ]
       sources = [
         "objc/Framework/Classes/PeerConnection/RTCAVFoundationVideoSource+Private.h",
         "objc/Framework/Classes/PeerConnection/RTCAVFoundationVideoSource.mm",
@@ -372,7 +370,6 @@ if (is_ios || is_mac) {
     # The applications which only use WebRTC DataChannel can depend on this
     # target instead of rtc_sdk_objc.
     rtc_static_library("peerconnectionfactory_no_media_objc") {
-      visibility = [ "*" ]
       defines = [ "HAVE_NO_MEDIA" ]
 
       sources = [

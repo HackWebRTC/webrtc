@@ -15,7 +15,6 @@ group("stats") {
 }
 
 rtc_static_library("rtc_stats") {
-  visibility = [ "*" ]
   cflags = []
   sources = [
     "rtcstats.cc",
@@ -30,7 +29,6 @@ rtc_static_library("rtc_stats") {
 }
 
 rtc_source_set("rtc_stats_test_utils") {
-  visibility = [ "*" ]
   cflags = []
   sources = [
     "test/rtcteststats.cc",

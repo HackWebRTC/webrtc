@@ -104,7 +104,7 @@ rtc_static_library("audio_level") {
 
 if (rtc_include_tests) {
   rtc_test("voice_engine_unittests") {
-    visibility += webrtc_default_visibility
+    visibility += [ "*" ]
     deps = [
       ":voice_engine",
       "../api/audio_codecs:builtin_audio_decoder_factory",

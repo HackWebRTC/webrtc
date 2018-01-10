@@ -13,8 +13,6 @@ config("common_video_config") {
 }
 
 rtc_static_library("common_video") {
-  visibility = [ "*" ]
-
   sources = [
     "bitrate_adjuster.cc",
     "h264/h264_bitstream_parser.cc",

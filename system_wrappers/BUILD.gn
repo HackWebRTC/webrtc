@@ -13,7 +13,6 @@ if (is_android) {
 import("../webrtc.gni")
 
 rtc_static_library("system_wrappers") {
-  visibility = [ "*" ]
   sources = [
     "include/aligned_array.h",
     "include/aligned_malloc.h",
@@ -131,7 +130,6 @@ rtc_source_set("field_trial_api") {
 }
 
 rtc_source_set("metrics_api") {
-  visibility = [ "*" ]
   sources = [
     "include/metrics.h",
   ]
@@ -143,7 +141,6 @@ rtc_source_set("metrics_api") {
 }
 
 rtc_source_set("field_trial_default") {
-  visibility = [ "*" ]
   sources = [
     "include/field_trial_default.h",
     "source/field_trial_default.cc",
@@ -154,7 +151,6 @@ rtc_source_set("field_trial_default") {
 }
 
 rtc_source_set("metrics_default") {
-  visibility = [ "*" ]
   sources = [
     "include/metrics_default.h",
     "source/metrics_default.cc",

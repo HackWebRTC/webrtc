@@ -13,7 +13,6 @@ if (is_android) {
 }
 
 rtc_static_library("audio_encoder_opus_config") {
-  visibility = [ "*" ]
   sources = [
     "audio_encoder_opus_config.cc",
     "audio_encoder_opus_config.h",
@@ -31,7 +30,6 @@ rtc_static_library("audio_encoder_opus_config") {
 }
 
 rtc_source_set("audio_encoder_opus") {
-  visibility = [ "*" ]
   public = [
     "audio_encoder_opus.h",
   ]
@@ -52,7 +50,6 @@ rtc_source_set("audio_encoder_opus") {
 }
 
 rtc_static_library("audio_decoder_opus") {
-  visibility = [ "*" ]
   sources = [
     "audio_decoder_opus.cc",
     "audio_decoder_opus.h",

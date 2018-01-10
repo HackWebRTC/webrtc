@@ -63,7 +63,6 @@ generate_jar_jni("generated_external_classes_jni") {
 }
 
 rtc_source_set("base_jni") {
-  visibility = [ "*" ]
   sources = [
     "src/jni/androidhistogram.cc",
     "src/jni/class_loader.cc",
@@ -442,7 +441,6 @@ rtc_static_library("peerconnection_jni") {
 }
 
 rtc_static_library("libjingle_peerconnection_jni") {
-  visibility = [ "*" ]
   public_deps = [
     ":audio_jni",
     ":base_jni",
@@ -462,7 +460,6 @@ generate_jni("generated_metrics_jni") {
 }
 
 rtc_static_library("libjingle_peerconnection_metrics_default_jni") {
-  visibility = [ "*" ]
   sources = [
     "src/jni/androidmetrics.cc",
   ]

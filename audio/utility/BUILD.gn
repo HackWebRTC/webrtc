@@ -14,7 +14,6 @@ group("utility") {
 }
 
 rtc_static_library("audio_frame_operations") {
-  visibility = [ "*" ]
   sources = [
     "audio_frame_operations.cc",
     "audio_frame_operations.h",

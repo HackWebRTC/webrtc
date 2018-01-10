@@ -17,7 +17,6 @@ config("bwe_test_logging") {
 }
 
 rtc_static_library("congestion_controller") {
-  visibility = [ "*" ]
   configs += [ ":bwe_test_logging" ]
   sources = [
     "include/receive_side_congestion_controller.h",

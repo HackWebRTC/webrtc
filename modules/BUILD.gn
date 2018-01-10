@@ -43,7 +43,6 @@ rtc_source_set("module_api_public") {
 }
 
 rtc_source_set("module_api") {
-  visibility = [ "*" ]
   sources = [
     "include/module.h",
     "include/module_common_types.h",
