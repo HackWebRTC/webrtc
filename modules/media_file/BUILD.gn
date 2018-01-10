@@ -13,6 +13,7 @@ config("media_file_config") {
 }
 
 rtc_static_library("media_file") {
+  visibility = [ "*" ]
   sources = [
     "media_file.h",
     "media_file_defines.h",

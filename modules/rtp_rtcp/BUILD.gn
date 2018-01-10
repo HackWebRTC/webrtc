@@ -97,6 +97,7 @@ rtc_source_set("rtp_rtcp_format") {
 }
 
 rtc_static_library("rtp_rtcp") {
+  visibility = [ "*" ]
   sources = [
     "include/flexfec_receiver.h",
     "include/flexfec_sender.h",
@@ -230,6 +231,7 @@ rtc_static_library("rtp_rtcp") {
 }
 
 rtc_source_set("rtcp_transceiver") {
+  visibility = [ "*" ]
   public = [
     "source/rtcp_transceiver.h",
     "source/rtcp_transceiver_config.h",

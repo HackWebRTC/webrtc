@@ -26,6 +26,7 @@ config("apm_debug_dump") {
 }
 
 rtc_static_library("audio_processing") {
+  visibility = [ "*" ]
   configs += [ ":apm_debug_dump" ]
   sources = [
     "aec/aec_resampler.cc",
@@ -290,6 +291,7 @@ rtc_static_library("audio_processing") {
 }
 
 rtc_source_set("audio_processing_statistics") {
+  visibility = [ "*" ]
   sources = [
     "include/audio_processing_statistics.cc",
     "include/audio_processing_statistics.h",
@@ -781,6 +783,7 @@ if (rtc_include_tests) {
   }
 
   rtc_source_set("audioproc_test_utils") {
+    visibility = [ "*" ]
     testonly = true
     sources = [
       "test/audio_buffer_tools.cc",
