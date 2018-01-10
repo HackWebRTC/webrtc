@@ -77,7 +77,7 @@ class Camera1Session implements CameraSession {
 
     try {
       camera.setPreviewTexture(surfaceTextureHelper.getSurfaceTexture());
-    } catch (IOException e) {
+    } catch (IOException | RuntimeException e) {
       camera.release();
       callback.onFailure(FailureType.ERROR, e.getMessage());
       return;
