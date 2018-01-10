@@ -51,7 +51,8 @@ namespace webrtc {
 // AudioRtpSenders, AudioRtpReceivers, and a VoiceChannel. Video RtpTransceivers
 // will have VideoRtpSenders, VideoRtpReceivers, and a VideoChannel.
 class RtpTransceiver final
-    : public rtc::RefCountedObject<RtpTransceiverInterface> {
+    : public rtc::RefCountedObject<RtpTransceiverInterface>,
+      public sigslot::has_slots<> {
  public:
   // Construct a Plan B-style RtpTransceiver with no senders, receivers, or
   // channel set.
@@ -167,6 +168,8 @@ class RtpTransceiver final
   void SetCodecPreferences(rtc::ArrayView<RtpCodecCapability> codecs) override;
 
  private:
+  void OnFirstPacketReceived(cricket::BaseChannel* channel);
+
   const bool unified_plan_;
   const cricket::MediaType media_type_;
   std::vector<rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>>>

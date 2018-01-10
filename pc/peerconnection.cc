@@ -1283,14 +1283,15 @@ PeerConnection::CreateTransceiver(cricket::MediaType media_type) {
     sender = RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
         signaling_thread(), new AudioRtpSender(nullptr, stats_.get()));
     receiver = RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
-        signaling_thread(), new AudioRtpReceiver(receiver_id, {}, 0, nullptr));
+        signaling_thread(),
+        new AudioRtpReceiver(worker_thread(), receiver_id, {}, 0, nullptr));
   } else {
     RTC_DCHECK_EQ(cricket::MEDIA_TYPE_VIDEO, media_type);
     sender = RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
         signaling_thread(), new VideoRtpSender(nullptr));
     receiver = RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
         signaling_thread(),
-        new VideoRtpReceiver(receiver_id, {}, worker_thread(), 0, nullptr));
+        new VideoRtpReceiver(worker_thread(), receiver_id, {}, 0, nullptr));
   }
   rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
       transceiver = RtpTransceiverProxyWithInternal<RtpTransceiver>::Create(
@@ -2713,8 +2714,9 @@ void PeerConnection::CreateAudioReceiver(
   rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
       receiver = RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
           signaling_thread(),
-          new AudioRtpReceiver(remote_sender_info.sender_id, streams,
-                               remote_sender_info.first_ssrc, voice_channel()));
+          new AudioRtpReceiver(worker_thread(), remote_sender_info.sender_id,
+                               streams, remote_sender_info.first_ssrc,
+                               voice_media_channel()));
   stream->AddTrack(
       static_cast<AudioTrackInterface*>(receiver->internal()->track().get()));
   GetAudioTransceiver()->internal()->AddReceiver(receiver);
@@ -2729,9 +2731,9 @@ void PeerConnection::CreateVideoReceiver(
   rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
       receiver = RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
           signaling_thread(),
-          new VideoRtpReceiver(remote_sender_info.sender_id, streams,
-                               worker_thread(), remote_sender_info.first_ssrc,
-                               video_channel()));
+          new VideoRtpReceiver(worker_thread(), remote_sender_info.sender_id,
+                               streams, remote_sender_info.first_ssrc,
+                               video_media_channel()));
   stream->AddTrack(
       static_cast<VideoTrackInterface*>(receiver->internal()->track().get()));
   GetVideoTransceiver()->internal()->AddReceiver(receiver);

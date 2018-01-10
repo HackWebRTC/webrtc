@@ -2399,68 +2399,6 @@ TEST_F(VoiceChannelSingleThreadTest, TestOnTransportReadyToSendWithRtcpMux) {
   Base::TestOnTransportReadyToSendWithRtcpMux();
 }
 
-// Test that we can scale the output volume properly for 1:1 calls.
-TEST_F(VoiceChannelSingleThreadTest, TestScaleVolume1to1Call) {
-  CreateChannels(0, 0);
-  EXPECT_TRUE(SendInitiate());
-  EXPECT_TRUE(SendAccept());
-  double volume;
-
-  // Default is (1.0).
-  EXPECT_TRUE(media_channel1_->GetOutputVolume(0, &volume));
-  EXPECT_DOUBLE_EQ(1.0, volume);
-  // invalid ssrc.
-  EXPECT_FALSE(media_channel1_->GetOutputVolume(3, &volume));
-
-  // Set scale to (1.5).
-  EXPECT_TRUE(channel1_->SetOutputVolume(0, 1.5));
-  EXPECT_TRUE(media_channel1_->GetOutputVolume(0, &volume));
-  EXPECT_DOUBLE_EQ(1.5, volume);
-
-  // Set scale to (0).
-  EXPECT_TRUE(channel1_->SetOutputVolume(0, 0.0));
-  EXPECT_TRUE(media_channel1_->GetOutputVolume(0, &volume));
-  EXPECT_DOUBLE_EQ(0.0, volume);
-}
-
-// Test that we can scale the output volume properly for multiway calls.
-TEST_F(VoiceChannelSingleThreadTest, TestScaleVolumeMultiwayCall) {
-  CreateChannels(0, 0);
-  EXPECT_TRUE(SendInitiate());
-  EXPECT_TRUE(SendAccept());
-  EXPECT_TRUE(AddStream1(1));
-  EXPECT_TRUE(AddStream1(2));
-
-  double volume;
-  // Default is (1.0).
-  EXPECT_TRUE(media_channel1_->GetOutputVolume(0, &volume));
-  EXPECT_DOUBLE_EQ(1.0, volume);
-  EXPECT_TRUE(media_channel1_->GetOutputVolume(1, &volume));
-  EXPECT_DOUBLE_EQ(1.0, volume);
-  EXPECT_TRUE(media_channel1_->GetOutputVolume(2, &volume));
-  EXPECT_DOUBLE_EQ(1.0, volume);
-  // invalid ssrc.
-  EXPECT_FALSE(media_channel1_->GetOutputVolume(3, &volume));
-
-  // Set scale to (1.5) for ssrc = 1.
-  EXPECT_TRUE(channel1_->SetOutputVolume(1, 1.5));
-  EXPECT_TRUE(media_channel1_->GetOutputVolume(1, &volume));
-  EXPECT_DOUBLE_EQ(1.5, volume);
-  EXPECT_TRUE(media_channel1_->GetOutputVolume(2, &volume));
-  EXPECT_DOUBLE_EQ(1.0, volume);
-  EXPECT_TRUE(media_channel1_->GetOutputVolume(0, &volume));
-  EXPECT_DOUBLE_EQ(1.0, volume);
-
-  // Set scale to (0) for all ssrcs.
-  EXPECT_TRUE(channel1_->SetOutputVolume(0,  0.0));
-  EXPECT_TRUE(media_channel1_->GetOutputVolume(0, &volume));
-  EXPECT_DOUBLE_EQ(0.0, volume);
-  EXPECT_TRUE(media_channel1_->GetOutputVolume(1, &volume));
-  EXPECT_DOUBLE_EQ(0.0, volume);
-  EXPECT_TRUE(media_channel1_->GetOutputVolume(2, &volume));
-  EXPECT_DOUBLE_EQ(0.0, volume);
-}
-
 TEST_F(VoiceChannelSingleThreadTest, SendBundleToBundle) {
   Base::SendBundleToBundle(kAudioPts, arraysize(kAudioPts), false, false);
 }
@@ -2748,68 +2686,6 @@ TEST_F(VoiceChannelDoubleThreadTest, TestOnTransportReadyToSend) {
 
 TEST_F(VoiceChannelDoubleThreadTest, TestOnTransportReadyToSendWithRtcpMux) {
   Base::TestOnTransportReadyToSendWithRtcpMux();
-}
-
-// Test that we can scale the output volume properly for 1:1 calls.
-TEST_F(VoiceChannelDoubleThreadTest, TestScaleVolume1to1Call) {
-  CreateChannels(0, 0);
-  EXPECT_TRUE(SendInitiate());
-  EXPECT_TRUE(SendAccept());
-  double volume;
-
-  // Default is (1.0).
-  EXPECT_TRUE(media_channel1_->GetOutputVolume(0, &volume));
-  EXPECT_DOUBLE_EQ(1.0, volume);
-  // invalid ssrc.
-  EXPECT_FALSE(media_channel1_->GetOutputVolume(3, &volume));
-
-  // Set scale to (1.5).
-  EXPECT_TRUE(channel1_->SetOutputVolume(0, 1.5));
-  EXPECT_TRUE(media_channel1_->GetOutputVolume(0, &volume));
-  EXPECT_DOUBLE_EQ(1.5, volume);
-
-  // Set scale to (0).
-  EXPECT_TRUE(channel1_->SetOutputVolume(0, 0.0));
-  EXPECT_TRUE(media_channel1_->GetOutputVolume(0, &volume));
-  EXPECT_DOUBLE_EQ(0.0, volume);
-}
-
-// Test that we can scale the output volume properly for multiway calls.
-TEST_F(VoiceChannelDoubleThreadTest, TestScaleVolumeMultiwayCall) {
-  CreateChannels(0, 0);
-  EXPECT_TRUE(SendInitiate());
-  EXPECT_TRUE(SendAccept());
-  EXPECT_TRUE(AddStream1(1));
-  EXPECT_TRUE(AddStream1(2));
-
-  double volume;
-  // Default is (1.0).
-  EXPECT_TRUE(media_channel1_->GetOutputVolume(0, &volume));
-  EXPECT_DOUBLE_EQ(1.0, volume);
-  EXPECT_TRUE(media_channel1_->GetOutputVolume(1, &volume));
-  EXPECT_DOUBLE_EQ(1.0, volume);
-  EXPECT_TRUE(media_channel1_->GetOutputVolume(2, &volume));
-  EXPECT_DOUBLE_EQ(1.0, volume);
-  // invalid ssrc.
-  EXPECT_FALSE(media_channel1_->GetOutputVolume(3, &volume));
-
-  // Set scale to (1.5) for ssrc = 1.
-  EXPECT_TRUE(channel1_->SetOutputVolume(1, 1.5));
-  EXPECT_TRUE(media_channel1_->GetOutputVolume(1, &volume));
-  EXPECT_DOUBLE_EQ(1.5, volume);
-  EXPECT_TRUE(media_channel1_->GetOutputVolume(2, &volume));
-  EXPECT_DOUBLE_EQ(1.0, volume);
-  EXPECT_TRUE(media_channel1_->GetOutputVolume(0, &volume));
-  EXPECT_DOUBLE_EQ(1.0, volume);
-
-  // Set scale to (0) for all ssrcs.
-  EXPECT_TRUE(channel1_->SetOutputVolume(0, 0.0));
-  EXPECT_TRUE(media_channel1_->GetOutputVolume(0, &volume));
-  EXPECT_DOUBLE_EQ(0.0, volume);
-  EXPECT_TRUE(media_channel1_->GetOutputVolume(1, &volume));
-  EXPECT_DOUBLE_EQ(0.0, volume);
-  EXPECT_TRUE(media_channel1_->GetOutputVolume(2, &volume));
-  EXPECT_DOUBLE_EQ(0.0, volume);
 }
 
 TEST_F(VoiceChannelDoubleThreadTest, SendBundleToBundle) {

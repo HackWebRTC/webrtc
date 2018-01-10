@@ -46,7 +46,18 @@ void RtpTransceiver::SetChannel(cricket::BaseChannel* channel) {
   if (channel) {
     RTC_DCHECK_EQ(media_type(), channel->media_type());
   }
+
+  if (channel_) {
+    channel_->SignalFirstPacketReceived.disconnect(this);
+  }
+
   channel_ = channel;
+
+  if (channel_) {
+    channel_->SignalFirstPacketReceived.connect(
+        this, &RtpTransceiver::OnFirstPacketReceived);
+  }
+
   for (auto sender : senders_) {
     if (media_type() == cricket::MEDIA_TYPE_AUDIO) {
       static_cast<AudioRtpSender*>(sender->internal())
@@ -56,16 +67,21 @@ void RtpTransceiver::SetChannel(cricket::BaseChannel* channel) {
           ->SetChannel(static_cast<cricket::VideoChannel*>(channel));
     }
   }
+
   for (auto receiver : receivers_) {
     if (!channel) {
       receiver->internal()->Stop();
     }
     if (media_type() == cricket::MEDIA_TYPE_AUDIO) {
+      auto* voice_channel = static_cast<cricket::VoiceChannel*>(channel);
       static_cast<AudioRtpReceiver*>(receiver->internal())
-          ->SetChannel(static_cast<cricket::VoiceChannel*>(channel));
+          ->SetMediaChannel(voice_channel ? voice_channel->media_channel()
+                                          : nullptr);
     } else {
+      auto* video_channel = static_cast<cricket::VideoChannel*>(channel);
       static_cast<VideoRtpReceiver*>(receiver->internal())
-          ->SetChannel(static_cast<cricket::VideoChannel*>(channel));
+          ->SetMediaChannel(video_channel ? video_channel->media_channel()
+                                          : nullptr);
     }
   }
 }
@@ -134,6 +150,12 @@ rtc::scoped_refptr<RtpReceiverInternal> RtpTransceiver::receiver_internal()
 
 rtc::Optional<std::string> RtpTransceiver::mid() const {
   return mid_;
+}
+
+void RtpTransceiver::OnFirstPacketReceived(cricket::BaseChannel* channel) {
+  for (auto receiver : receivers_) {
+    receiver->internal()->NotifyFirstPacketReceived();
+  }
 }
 
 rtc::scoped_refptr<RtpSenderInterface> RtpTransceiver::sender() const {

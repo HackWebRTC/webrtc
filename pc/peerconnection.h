@@ -317,6 +317,14 @@ class PeerConnection : public PeerConnectionInterface,
   // Implements MessageHandler.
   void OnMessage(rtc::Message* msg) override;
 
+  cricket::VoiceMediaChannel* voice_media_channel() const {
+    return voice_channel() ? voice_channel()->media_channel() : nullptr;
+  }
+
+  cricket::VideoMediaChannel* video_media_channel() const {
+    return video_channel() ? video_channel()->media_channel() : nullptr;
+  }
+
   std::vector<rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>>>
   GetSendersInternal() const;
   std::vector<
