@@ -329,8 +329,7 @@ static void JNI_PeerConnection_FreePeerConnectionObserver(
     JNIEnv*,
     const JavaParamRef<jclass>&,
     jlong j_p) {
-  PeerConnectionObserverJni* p =
-      reinterpret_cast<PeerConnectionObserverJni*>(j_p);
+  PeerConnectionObserver* p = reinterpret_cast<PeerConnectionObserver*>(j_p);
   delete p;
 }
 

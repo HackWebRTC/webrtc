@@ -67,6 +67,10 @@
 #ifndef API_PEERCONNECTIONINTERFACE_H_
 #define API_PEERCONNECTIONINTERFACE_H_
 
+// TODO(sakal): Remove this define after migration to virtual PeerConnection
+// observer is complete.
+#define VIRTUAL_PEERCONNECTION_OBSERVER_DESTRUCTOR
+
 #include <memory>
 #include <string>
 #include <utility>
@@ -977,6 +981,8 @@ class PeerConnectionObserver {
     kIceState,
   };
 
+  virtual ~PeerConnectionObserver() = default;
+
   // Triggered when the SignalingState changed.
   virtual void OnSignalingChange(
       PeerConnectionInterface::SignalingState new_state) = 0;
@@ -1049,10 +1055,6 @@ class PeerConnectionObserver {
   // TODO(hbos,deadbeef): Make pure virtual when all subclasses implement it.
   virtual void OnRemoveTrack(
       rtc::scoped_refptr<RtpReceiverInterface> receiver) {}
-
- protected:
-  // Dtor protected as objects shouldn't be deleted via this interface.
-  ~PeerConnectionObserver() {}
 };
 
 // PeerConnectionFactoryInterface is the factory interface used for creating
