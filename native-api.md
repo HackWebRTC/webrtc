@@ -14,7 +14,8 @@ legacy API directories&mdash;but see the
 Legacy API directory                       | Including subdirectories?
 -------------------------------------------|--------------------------
 `common_audio/include`                     | No
-`media`                                    | No
+`media/base`                               | No
+`media/engine`                             | No
 `modules/audio_coding/include`             | No
 `modules/audio_device/include`             | No
 `modules/audio_processing/include`         | No

@@ -68,7 +68,8 @@ BLACKLIST_LINT_FILTERS = [
 # 4. (later) The deprecated APIs are removed.
 NATIVE_API_DIRS = (
   'api',  # All subdirectories of api/ are included as well.
-  'media',
+  'media/base',
+  'media/engine',
   'modules/audio_device/include',
   'pc',
 )
