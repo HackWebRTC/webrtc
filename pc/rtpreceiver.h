@@ -107,6 +107,7 @@ class AudioRtpReceiver : public ObserverInterface,
   void SetMediaChannel(cricket::VoiceMediaChannel* media_channel);
 
   std::vector<RtpSource> GetSources() const override;
+  int AttachmentId() const override { return attachment_id_; }
 
  private:
   void Reconfigure();
@@ -123,6 +124,7 @@ class AudioRtpReceiver : public ObserverInterface,
   bool stopped_ = false;
   RtpReceiverObserverInterface* observer_ = nullptr;
   bool received_first_packet_ = false;
+  int attachment_id_ = 0;
 };
 
 class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInternal> {
@@ -192,6 +194,7 @@ class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInternal> {
   bool stopped_ = false;
   RtpReceiverObserverInterface* observer_ = nullptr;
   bool received_first_packet_ = false;
+  int attachment_id_ = 0;
 };
 
 }  // namespace webrtc
