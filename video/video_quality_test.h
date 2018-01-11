@@ -134,9 +134,7 @@ class VideoQualityTest : public test::CallTest {
   void SetupVideo(Transport* send_transport, Transport* recv_transport);
   void SetupThumbnails(Transport* send_transport, Transport* recv_transport);
   void DestroyThumbnailStreams();
-  void SetupAudio(int send_channel_id,
-                  int receive_channel_id,
-                  Transport* transport,
+  void SetupAudio(Transport* transport,
                   AudioReceiveStream** audio_receive_stream);
 
   void StartEncodedFrameLogs(VideoSendStream* stream);

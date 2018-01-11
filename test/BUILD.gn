@@ -568,7 +568,6 @@ rtc_source_set("test_common") {
     "layer_filtering_transport.h",
     "mock_transport.h",
     "mock_voe_channel_proxy.h",
-    "mock_voice_engine.h",
     "null_transport.cc",
     "null_transport.h",
     "rtp_rtcp_observer.h",

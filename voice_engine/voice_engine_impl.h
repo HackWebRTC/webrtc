@@ -18,17 +18,12 @@
 #include "voice_engine/voe_base_impl.h"
 
 namespace webrtc {
-namespace voe {
-class ChannelProxy;
-}  // namespace voe
 
-class VoiceEngineImpl : public voe::SharedData,  // Must be the first base class
-                        public VoiceEngine,
+class VoiceEngineImpl : public VoiceEngine,
                         public VoEBaseImpl {
  public:
   VoiceEngineImpl()
-      : SharedData(),
-        VoEBaseImpl(this),
+      : VoEBaseImpl(),
         _ref_count(0) {}
   ~VoiceEngineImpl() override { assert(_ref_count.Value() == 0); }
 
@@ -36,10 +31,6 @@ class VoiceEngineImpl : public voe::SharedData,  // Must be the first base class
 
   // This implements the Release() method for all the inherited interfaces.
   int Release() override;
-
-  // Backdoor to access a voe::Channel object without a channel ID. This is only
-  // to be used while refactoring the VoE API!
-  virtual std::unique_ptr<voe::ChannelProxy> GetChannelProxy(int channel_id);
 
  // This is *protected* so that FakeVoiceEngine can inherit from the class and
  // manipulate the reference count. See: fake_voice_engine.h.

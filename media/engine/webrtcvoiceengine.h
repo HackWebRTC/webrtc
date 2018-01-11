@@ -22,7 +22,6 @@
 #include "call/call.h"
 #include "media/base/rtputils.h"
 #include "media/engine/apm_helpers.h"
-#include "media/engine/webrtcvoe.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "pc/channel.h"
 #include "rtc_base/buffer.h"
@@ -37,7 +36,6 @@ namespace cricket {
 class AudioDeviceModule;
 class AudioMixer;
 class AudioSource;
-class VoEWrapper;
 class WebRtcVoiceMediaChannel;
 
 // WebRtcVoiceEngine is a class to be used with CompositeMediaEngine.
@@ -51,14 +49,6 @@ class WebRtcVoiceEngine final {
       const rtc::scoped_refptr<webrtc::AudioDecoderFactory>& decoder_factory,
       rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
       rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing);
-  // Dependency injection for testing.
-  WebRtcVoiceEngine(
-      webrtc::AudioDeviceModule* adm,
-      const rtc::scoped_refptr<webrtc::AudioEncoderFactory>& encoder_factory,
-      const rtc::scoped_refptr<webrtc::AudioDecoderFactory>& decoder_factory,
-      rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
-      rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing,
-      VoEWrapper* voe_wrapper);
   ~WebRtcVoiceEngine();
 
   // Does initialization that needs to occur on the worker thread.
@@ -80,8 +70,6 @@ class WebRtcVoiceEngine final {
   // May only be called by WebRtcVoiceMediaChannel.
   void RegisterChannel(WebRtcVoiceMediaChannel* channel);
   void UnregisterChannel(WebRtcVoiceMediaChannel* channel);
-
-  VoEWrapper* voe() { return voe_wrapper_.get(); }
 
   // Starts AEC dump using an existing file. A maximum file size in bytes can be
   // specified. When the maximum file size is reached, logging is stopped and
@@ -125,12 +113,10 @@ class WebRtcVoiceEngine final {
   // The audio processing module.
   rtc::scoped_refptr<webrtc::AudioProcessing> apm_;
   // The primary instance of WebRtc VoiceEngine.
-  std::unique_ptr<VoEWrapper> voe_wrapper_;
   rtc::scoped_refptr<webrtc::AudioState> audio_state_;
   std::vector<AudioCodec> send_codecs_;
   std::vector<AudioCodec> recv_codecs_;
   std::vector<WebRtcVoiceMediaChannel*> channels_;
-  webrtc::VoEBase::ChannelConfig channel_config_;
   bool is_dumping_aec_ = false;
   bool initialized_ = false;
 
@@ -145,6 +131,9 @@ class WebRtcVoiceEngine final {
   rtc::Optional<bool> experimental_ns_;
   rtc::Optional<bool> intelligibility_enhancer_;
   rtc::Optional<bool> level_control_;
+  // Jitter buffer settings for new streams.
+  size_t audio_jitter_buffer_max_packets_ = 50;
+  bool audio_jitter_buffer_fast_accelerate_ = false;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(WebRtcVoiceEngine);
 };
@@ -223,9 +212,6 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
     rtc::CopyOnWriteBuffer packet(data, len, kMaxRtpPacketLen);
     return VoiceMediaChannel::SendRtcp(&packet, rtc::PacketOptions());
   }
-
-  int GetReceiveChannelId(uint32_t ssrc) const;
-  int GetSendChannelId(uint32_t ssrc) const;
 
  private:
   bool SetOptions(const AudioOptions& options);

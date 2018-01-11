@@ -21,19 +21,12 @@ class AudioProcessing;
 class AudioTransport;
 class VoiceEngine;
 
-// WORK IN PROGRESS
-// This class is under development and is not yet intended for for use outside
-// of WebRtc/Libjingle. Please use the VoiceEngine API instead.
-// See: https://bugs.chromium.org/p/webrtc/issues/detail?id=4690
-
 // AudioState holds the state which must be shared between multiple instances of
 // webrtc::Call for audio processing purposes.
 class AudioState : public rtc::RefCountInterface {
  public:
   struct Config {
-    // VoiceEngine used for audio streams and audio/video synchronization.
-    // AudioState will tickle the VoE refcount to keep it alive for as long as
-    // the AudioState itself.
+    // TODO(solenberg): Remove once clients don't use it anymore.
     VoiceEngine* voice_engine = nullptr;
 
     // The audio mixer connected to active receive streams. One per

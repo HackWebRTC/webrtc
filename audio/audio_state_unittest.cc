@@ -16,8 +16,8 @@
 #include "modules/audio_device/include/mock_audio_device.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"
 #include "modules/audio_processing/include/mock_audio_processing.h"
+#include "rtc_base/refcountedobject.h"
 #include "test/gtest.h"
-#include "test/mock_voice_engine.h"
 
 namespace webrtc {
 namespace test {
@@ -28,7 +28,6 @@ constexpr int kNumberOfChannels = 1;
 
 struct ConfigHelper {
   ConfigHelper() : audio_mixer(AudioMixerImpl::Create()) {
-    audio_state_config.voice_engine = &mock_voice_engine;
     audio_state_config.audio_mixer = audio_mixer;
     audio_state_config.audio_processing =
         new rtc::RefCountedObject<testing::NiceMock<MockAudioProcessing>>();
@@ -36,11 +35,9 @@ struct ConfigHelper {
         new rtc::RefCountedObject<MockAudioDeviceModule>();
   }
   AudioState::Config& config() { return audio_state_config; }
-  MockVoiceEngine& voice_engine() { return mock_voice_engine; }
   rtc::scoped_refptr<AudioMixer> mixer() { return audio_mixer; }
 
  private:
-  testing::StrictMock<MockVoiceEngine> mock_voice_engine;
   AudioState::Config audio_state_config;
   rtc::scoped_refptr<AudioMixer> audio_mixer;
 };
@@ -104,13 +101,6 @@ TEST(AudioStateTest, ConstructDestruct) {
   ConfigHelper helper;
   std::unique_ptr<internal::AudioState> audio_state(
       new internal::AudioState(helper.config()));
-}
-
-TEST(AudioStateTest, GetVoiceEngine) {
-  ConfigHelper helper;
-  std::unique_ptr<internal::AudioState> audio_state(
-      new internal::AudioState(helper.config()));
-  EXPECT_EQ(audio_state->voice_engine(), &helper.voice_engine());
 }
 
 TEST(AudioStateTest, RecordedAudioArrivesAtSingleStream) {

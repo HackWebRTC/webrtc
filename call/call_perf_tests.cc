@@ -40,7 +40,6 @@
 #include "test/testsupport/fileutils.h"
 #include "test/testsupport/perf_test.h"
 #include "video/transport_adapter.h"
-#include "voice_engine/include/voe_base.h"
 
 using webrtc::test::DriftingClock;
 using webrtc::test::FakeAudioDevice;
@@ -152,15 +151,10 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
   const uint32_t kAudioSendSsrc = 1234;
   const uint32_t kAudioRecvSsrc = 5678;
 
-  int send_channel_id;
-  int recv_channel_id;
-
   FakeNetworkPipe::Config audio_net_config;
   audio_net_config.queue_delay_ms = 500;
   audio_net_config.loss_percent = 5;
 
-  VoiceEngine* voice_engine;
-  VoEBase* voe_base;
   VideoRtcpAndSyncObserver observer(Clock::GetRealTimeClock(), test_label);
 
   std::map<uint8_t, MediaType> audio_pt_map;
@@ -176,22 +170,13 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
 
   task_queue_.SendTask([&]() {
     metrics::Reset();
-    voice_engine = VoiceEngine::Create();
-    voe_base = VoEBase::GetInterface(voice_engine);
     rtc::scoped_refptr<FakeAudioDevice> fake_audio_device =
         new rtc::RefCountedObject<FakeAudioDevice>(
             FakeAudioDevice::CreatePulsedNoiseCapturer(256, 48000),
             FakeAudioDevice::CreateDiscardRenderer(48000), audio_rtp_speed);
     EXPECT_EQ(0, fake_audio_device->Init());
-    EXPECT_EQ(0, voe_base->Init(fake_audio_device.get(), nullptr,
-                                decoder_factory_));
-    VoEBase::ChannelConfig config;
-    config.enable_voice_pacing = true;
-    send_channel_id = voe_base->CreateChannel(config);
-    recv_channel_id = voe_base->CreateChannel();
 
     AudioState::Config send_audio_state_config;
-    send_audio_state_config.voice_engine = voice_engine;
     send_audio_state_config.audio_mixer = AudioMixerImpl::Create();
     send_audio_state_config.audio_processing =
         AudioProcessingBuilder().Create();
@@ -237,7 +222,6 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
     CreateMatchingReceiveConfigs(receive_transport.get());
 
     AudioSendStream::Config audio_send_config(audio_send_transport.get());
-    audio_send_config.voe_channel_id = send_channel_id;
     audio_send_config.rtp.ssrc = kAudioSendSsrc;
     audio_send_config.send_codec_spec = AudioSendStream::Config::SendCodecSpec(
         kAudioSendPayloadType, {"ISAC", 16000, 1});
@@ -258,7 +242,6 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
     AudioReceiveStream::Config audio_recv_config;
     audio_recv_config.rtp.remote_ssrc = kAudioSendSsrc;
     audio_recv_config.rtp.local_ssrc = kAudioRecvSsrc;
-    audio_recv_config.voe_channel_id = recv_channel_id;
     audio_recv_config.sync_group = kSyncGroup;
     audio_recv_config.decoder_factory = decoder_factory_;
     audio_recv_config.decoder_map = {
@@ -304,13 +287,7 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
     sender_call_->DestroyAudioSendStream(audio_send_stream);
     receiver_call_->DestroyAudioReceiveStream(audio_receive_stream);
 
-    voe_base->DeleteChannel(send_channel_id);
-    voe_base->DeleteChannel(recv_channel_id);
-    voe_base->Release();
-
     DestroyCalls();
-
-    VoiceEngine::Delete(voice_engine);
   });
 
   observer.PrintResults();

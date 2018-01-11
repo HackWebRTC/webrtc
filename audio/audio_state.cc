@@ -27,7 +27,6 @@ namespace internal {
 
 AudioState::AudioState(const AudioState::Config& config)
     : config_(config),
-      voe_base_(config.voice_engine),
       audio_transport_(config_.audio_mixer,
                        config_.audio_processing.get(),
                        config_.audio_device_module.get()) {
@@ -40,11 +39,6 @@ AudioState::~AudioState() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(receiving_streams_.empty());
   RTC_DCHECK(sending_streams_.empty());
-}
-
-VoiceEngine* AudioState::voice_engine() {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  return config_.voice_engine;
 }
 
 bool AudioState::typing_noise_detected() const {

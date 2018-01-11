@@ -29,23 +29,35 @@
 #include "rtc_base/timeutils.h"
 #include "system_wrappers/include/field_trial.h"
 #include "voice_engine/channel_proxy.h"
-#include "voice_engine/voice_engine_impl.h"
 
 namespace webrtc {
-
 namespace internal {
+namespace {
 // TODO(eladalon): Subsequent CL will make these values experiment-dependent.
 constexpr size_t kPacketLossTrackerMaxWindowSizeMs = 15000;
 constexpr size_t kPacketLossRateMinNumAckedPackets = 50;
 constexpr size_t kRecoverablePacketLossRateMinNumAckedPairs = 40;
 
-namespace {
 void CallEncoder(const std::unique_ptr<voe::ChannelProxy>& channel_proxy,
                  rtc::FunctionView<void(AudioEncoder*)> lambda) {
   channel_proxy->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder_ptr) {
     RTC_DCHECK(encoder_ptr);
     lambda(encoder_ptr->get());
   });
+}
+
+std::unique_ptr<voe::ChannelProxy> CreateChannelAndProxy(
+    webrtc::AudioState* audio_state,
+    rtc::TaskQueue* worker_queue,
+    ProcessThread* module_process_thread) {
+  RTC_DCHECK(audio_state);
+  internal::AudioState* internal_audio_state =
+      static_cast<internal::AudioState*>(audio_state);
+  return std::unique_ptr<voe::ChannelProxy>(new voe::ChannelProxy(
+      std::unique_ptr<voe::Channel>(new voe::Channel(
+          worker_queue,
+          module_process_thread,
+          internal_audio_state->audio_device_module()))));
 }
 }  // namespace
 
@@ -77,14 +89,38 @@ AudioSendStream::AudioSendStream(
     const webrtc::AudioSendStream::Config& config,
     const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
     rtc::TaskQueue* worker_queue,
+    ProcessThread* module_process_thread,
     RtpTransportControllerSendInterface* transport,
     BitrateAllocator* bitrate_allocator,
     RtcEventLog* event_log,
     RtcpRttStats* rtcp_rtt_stats,
     const rtc::Optional<RtpState>& suspended_rtp_state)
+    : AudioSendStream(config,
+                      audio_state,
+                      worker_queue,
+                      transport,
+                      bitrate_allocator,
+                      event_log,
+                      rtcp_rtt_stats,
+                      suspended_rtp_state,
+                      CreateChannelAndProxy(audio_state.get(),
+                                            worker_queue,
+                                            module_process_thread)) {}
+
+AudioSendStream::AudioSendStream(
+    const webrtc::AudioSendStream::Config& config,
+    const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
+    rtc::TaskQueue* worker_queue,
+    RtpTransportControllerSendInterface* transport,
+    BitrateAllocator* bitrate_allocator,
+    RtcEventLog* event_log,
+    RtcpRttStats* rtcp_rtt_stats,
+    const rtc::Optional<RtpState>& suspended_rtp_state,
+    std::unique_ptr<voe::ChannelProxy> channel_proxy)
     : worker_queue_(worker_queue),
       config_(Config(nullptr)),
       audio_state_(audio_state),
+      channel_proxy_(std::move(channel_proxy)),
       event_log_(event_log),
       bitrate_allocator_(bitrate_allocator),
       transport_(transport),
@@ -94,13 +130,13 @@ AudioSendStream::AudioSendStream(
       rtp_rtcp_module_(nullptr),
       suspended_rtp_state_(suspended_rtp_state) {
   RTC_LOG(LS_INFO) << "AudioSendStream: " << config.ToString();
-  RTC_DCHECK_NE(config.voe_channel_id, -1);
-  RTC_DCHECK(audio_state_.get());
+  RTC_DCHECK(worker_queue_);
+  RTC_DCHECK(audio_state_);
+  RTC_DCHECK(channel_proxy_);
+  RTC_DCHECK(bitrate_allocator_);
   RTC_DCHECK(transport);
   RTC_DCHECK(transport->send_side_cc());
 
-  VoiceEngineImpl* voe_impl = static_cast<VoiceEngineImpl*>(voice_engine());
-  channel_proxy_ = voe_impl->GetChannelProxy(config.voe_channel_id);
   channel_proxy_->SetRtcEventLog(event_log_);
   channel_proxy_->SetRtcpRttStats(rtcp_rtt_stats);
   channel_proxy_->SetRTCPStatus(true);
@@ -423,6 +459,11 @@ const TimeInterval& AudioSendStream::GetActiveLifetime() const {
   return active_lifetime_;
 }
 
+const voe::ChannelProxy& AudioSendStream::GetChannelProxy() const {
+  RTC_DCHECK(channel_proxy_.get());
+  return *channel_proxy_.get();
+}
+
 internal::AudioState* AudioSendStream::audio_state() {
   internal::AudioState* audio_state =
       static_cast<internal::AudioState*>(audio_state_.get());
@@ -435,14 +476,6 @@ const internal::AudioState* AudioSendStream::audio_state() const {
       static_cast<internal::AudioState*>(audio_state_.get());
   RTC_DCHECK(audio_state);
   return audio_state;
-}
-
-VoiceEngine* AudioSendStream::voice_engine() const {
-  internal::AudioState* audio_state =
-      static_cast<internal::AudioState*>(audio_state_.get());
-  VoiceEngine* voice_engine = audio_state->voice_engine();
-  RTC_DCHECK(voice_engine);
-  return voice_engine;
 }
 
 void AudioSendStream::StoreEncoderProperties(int sample_rate_hz,

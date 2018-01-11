@@ -13,38 +13,24 @@
 
 #include "voice_engine/include/voe_base.h"
 
-#include "modules/include/module_common_types.h"
-#include "rtc_base/criticalsection.h"
-#include "voice_engine/shared_data.h"
-
 namespace webrtc {
-
-class ProcessThread;
 
 class VoEBaseImpl : public VoEBase {
  public:
   int Init(
       AudioDeviceModule* audio_device,
       AudioProcessing* audio_processing,
-      const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory) override;
-  void Terminate() override;
+      const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory) override {
+    return 0;
+  }
+  void Terminate() override {}
 
-  int CreateChannel() override;
-  int CreateChannel(const ChannelConfig& config) override;
-  int DeleteChannel(int channel) override;
+  int CreateChannel(const ChannelConfig& config) override { return 1; }
+  int DeleteChannel(int channel) override { return 0; }
 
  protected:
-  VoEBaseImpl(voe::SharedData* shared);
+  VoEBaseImpl();
   ~VoEBaseImpl() override;
-
- private:
-  void TerminateInternal();
-
-  // Initialize channel by setting Engine Information then initializing
-  // channel.
-  int InitializeChannel(voe::ChannelOwner* channel_owner);
-  rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;
-  voe::SharedData* shared_;
 };
 
 }  // namespace webrtc

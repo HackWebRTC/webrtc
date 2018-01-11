@@ -238,7 +238,6 @@ rtc_static_library("rtc_audio_video") {
     "engine/webrtcvideocapturerfactory.h",
     "engine/webrtcvideoengine.cc",
     "engine/webrtcvideoengine.h",
-    "engine/webrtcvoe.h",
     "engine/webrtcvoiceengine.cc",
     "engine/webrtcvoiceengine.h",
 
@@ -427,7 +426,6 @@ if (rtc_include_tests) {
       "engine/fakewebrtcvcmfactory.h",
       "engine/fakewebrtcvideocapturemodule.h",
       "engine/fakewebrtcvideoengine.h",
-      "engine/fakewebrtcvoiceengine.h",
     ]
 
     configs += [ ":rtc_unittest_main_config" ]

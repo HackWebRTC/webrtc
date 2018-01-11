@@ -574,24 +574,24 @@ int Channel::PreferredSampleRate() const {
                   audio_coding_->PlayoutFrequency());
 }
 
-int32_t Channel::CreateChannel(Channel*& channel,
-                               int32_t channelId,
-                               uint32_t instanceId,
-                               const VoEBase::ChannelConfig& config) {
-  channel = new Channel(channelId, instanceId, config);
-  if (channel == NULL) {
-    RTC_LOG(LS_ERROR) << "unable to allocate memory for new channel";
-    return -1;
-  }
-  return 0;
+Channel::Channel(rtc::TaskQueue* encoder_queue,
+                 ProcessThread* module_process_thread,
+                 AudioDeviceModule* audio_device_module)
+    : Channel(module_process_thread,
+              audio_device_module,
+              0,
+              false,
+              rtc::scoped_refptr<AudioDecoderFactory>()) {
+  RTC_DCHECK(encoder_queue);
+  encoder_queue_ = encoder_queue;
 }
 
-Channel::Channel(int32_t channelId,
-                 uint32_t instanceId,
-                 const VoEBase::ChannelConfig& config)
-    : _instanceId(instanceId),
-      _channelId(channelId),
-      event_log_proxy_(new RtcEventLogProxy()),
+Channel::Channel(ProcessThread* module_process_thread,
+                 AudioDeviceModule* audio_device_module,
+                 size_t jitter_buffer_max_packets,
+                 bool jitter_buffer_fast_playout,
+                 rtc::scoped_refptr<AudioDecoderFactory> decoder_factory)
+    : event_log_proxy_(new RtcEventLogProxy()),
       rtcp_rtt_stats_proxy_(new RtcpRttStatsProxy()),
       rtp_header_parser_(RtpHeaderParser::Create()),
       rtp_payload_registry_(new RTPPayloadRegistry()),
@@ -613,8 +613,8 @@ Channel::Channel(int32_t channelId,
       rtp_ts_wraparound_handler_(new rtc::TimestampWrapAroundHandler()),
       capture_start_rtp_time_stamp_(-1),
       capture_start_ntp_time_ms_(-1),
-      _moduleProcessThreadPtr(NULL),
-      _audioDeviceModulePtr(NULL),
+      _moduleProcessThreadPtr(module_process_thread),
+      _audioDeviceModulePtr(audio_device_module),
       _transportPtr(NULL),
       input_mute_(false),
       previous_frame_muted_(false),
@@ -623,17 +623,20 @@ Channel::Channel(int32_t channelId,
       transport_overhead_per_packet_(0),
       rtp_overhead_per_packet_(0),
       rtcp_observer_(new VoERtcpObserver(this)),
-      associate_send_channel_(ChannelOwner(nullptr)),
-      pacing_enabled_(config.enable_voice_pacing),
+      associated_send_channel_(nullptr),
       feedback_observer_proxy_(new TransportFeedbackProxy()),
       seq_num_allocator_proxy_(new TransportSequenceNumberProxy()),
       rtp_packet_sender_proxy_(new RtpPacketSenderProxy()),
       retransmission_rate_limiter_(new RateLimiter(Clock::GetRealTimeClock(),
                                                    kMaxRetransmissionWindowMs)),
-      decoder_factory_(config.acm_config.decoder_factory),
       use_twcc_plr_for_ana_(
           webrtc::field_trial::FindFullName("UseTwccPlrForAna") == "Enabled") {
-  AudioCodingModule::Config acm_config(config.acm_config);
+  RTC_DCHECK(module_process_thread);
+  RTC_DCHECK(audio_device_module);
+  AudioCodingModule::Config acm_config;
+  acm_config.decoder_factory = decoder_factory;
+  acm_config.neteq_config.max_packets_in_buffer = jitter_buffer_max_packets;
+  acm_config.neteq_config.enable_fast_accelerate = jitter_buffer_fast_playout;
   acm_config.neteq_config.enable_muted_state = true;
   audio_coding_.reset(AudioCodingModule::Create(acm_config));
 
@@ -658,36 +661,25 @@ Channel::Channel(int32_t channelId,
 
   _rtpRtcpModule.reset(RtpRtcp::CreateRtpRtcp(configuration));
   _rtpRtcpModule->SetSendingMediaStatus(false);
+
+  Init();
 }
 
 Channel::~Channel() {
+  Terminate();
   RTC_DCHECK(!channel_state_.Get().sending);
   RTC_DCHECK(!channel_state_.Get().playing);
 }
 
-int32_t Channel::Init() {
-  RTC_DCHECK(construction_thread_.CalledOnValidThread());
-
+void Channel::Init() {
   channel_state_.Reset();
 
-  // --- Initial sanity
-
-  if (_moduleProcessThreadPtr == NULL) {
-    RTC_LOG(LS_ERROR)
-        << "Channel::Init() must call SetEngineInformation() first";
-    return -1;
-  }
-
   // --- Add modules to process thread (for periodic schedulation)
-
   _moduleProcessThreadPtr->RegisterModule(_rtpRtcpModule.get(), RTC_FROM_HERE);
 
   // --- ACM initialization
-
-  if (audio_coding_->InitializeReceiver() == -1) {
-    RTC_LOG(LS_ERROR) << "Channel::Init() unable to initialize the ACM - 1";
-    return -1;
-  }
+  int error = audio_coding_->InitializeReceiver();
+  RTC_DCHECK_EQ(0, error);
 
   // --- RTP/RTCP module initialization
 
@@ -699,13 +691,10 @@ int32_t Channel::Init() {
   telephone_event_handler_->SetTelephoneEventForwardToDecoder(true);
   // RTCP is enabled by default.
   _rtpRtcpModule->SetRTCPStatus(RtcpMode::kCompound);
-  // --- Register all permanent callbacks
-  if (audio_coding_->RegisterTransportCallback(this) == -1) {
-    RTC_LOG(LS_ERROR) << "Channel::Init() callbacks not registered";
-    return -1;
-  }
 
-  return 0;
+  // --- Register all permanent callbacks
+  error = audio_coding_->RegisterTransportCallback(this);
+  RTC_DCHECK_EQ(0, error);
 }
 
 void Channel::Terminate() {
@@ -720,11 +709,8 @@ void Channel::Terminate() {
   // 1. De-register callbacks in modules
   // 2. De-register modules in process thread
   // 3. Destroy modules
-  if (audio_coding_->RegisterTransportCallback(NULL) == -1) {
-    RTC_LOG(LS_WARNING)
-        << "Terminate() failed to de-register transport callback"
-        << " (Audio coding module)";
-  }
+  int error = audio_coding_->RegisterTransportCallback(NULL);
+  RTC_DCHECK_EQ(0, error);
 
   // De-register modules in process thread
   if (_moduleProcessThreadPtr)
@@ -733,25 +719,9 @@ void Channel::Terminate() {
   // End of modules shutdown
 }
 
-int32_t Channel::SetEngineInformation(ProcessThread& moduleProcessThread,
-                                      AudioDeviceModule& audioDeviceModule,
-                                      rtc::TaskQueue* encoder_queue) {
-  RTC_DCHECK(encoder_queue);
-  RTC_DCHECK(!encoder_queue_);
-  _moduleProcessThreadPtr = &moduleProcessThread;
-  _audioDeviceModulePtr = &audioDeviceModule;
-  encoder_queue_ = encoder_queue;
-  return 0;
-}
-
-void Channel::SetSink(std::unique_ptr<AudioSinkInterface> sink) {
+void Channel::SetSink(AudioSinkInterface* sink) {
   rtc::CritScope cs(&_callbackCritSect);
-  audio_sink_ = std::move(sink);
-}
-
-const rtc::scoped_refptr<AudioDecoderFactory>&
-Channel::GetAudioDecoderFactory() const {
-  return decoder_factory_;
+  audio_sink_ = sink;
 }
 
 int32_t Channel::StartPlayout() {
@@ -1387,29 +1357,17 @@ void Channel::ProcessAndEncodeAudioOnTaskQueue(AudioFrame* audio_input) {
   // is done and payload is ready for packetization and transmission.
   // Otherwise, it will return without invoking the callback.
   if (audio_coding_->Add10MsData(*audio_input) < 0) {
-    RTC_LOG(LS_ERROR) << "ACM::Add10MsData() failed for channel " << _channelId;
+    RTC_LOG(LS_ERROR) << "ACM::Add10MsData() failed.";
     return;
   }
 
   _timeStamp += static_cast<uint32_t>(audio_input->samples_per_channel_);
 }
 
-void Channel::set_associate_send_channel(const ChannelOwner& channel) {
-  RTC_DCHECK(!channel.channel() ||
-             channel.channel()->ChannelId() != _channelId);
+void Channel::SetAssociatedSendChannel(Channel* channel) {
+  RTC_DCHECK_NE(this, channel);
   rtc::CritScope lock(&assoc_send_channel_lock_);
-  associate_send_channel_ = channel;
-}
-
-void Channel::DisassociateSendChannel(int channel_id) {
-  rtc::CritScope lock(&assoc_send_channel_lock_);
-  Channel* channel = associate_send_channel_.channel();
-  if (channel && channel->ChannelId() == channel_id) {
-    // If this channel is associated with a send channel of the specified
-    // Channel ID, disassociate with it.
-    ChannelOwner ref(NULL);
-    associate_send_channel_ = ref;
-  }
+  associated_send_channel_ = channel;
 }
 
 void Channel::SetRtcEventLog(RtcEventLog* event_log) {
@@ -1526,25 +1484,6 @@ void Channel::UpdatePlayoutTimestamp(bool rtcp) {
   }
 }
 
-void Channel::RegisterReceiveCodecsToRTPModule() {
-  // TODO(kwiberg): Iterate over the factory's supported codecs instead?
-  const int nSupportedCodecs = AudioCodingModule::NumberOfCodecs();
-  for (int idx = 0; idx < nSupportedCodecs; idx++) {
-    CodecInst codec;
-    if (audio_coding_->Codec(idx, &codec) == -1) {
-      RTC_LOG(LS_WARNING) << "Unable to register codec #" << idx
-                          << " for RTP/RTCP receiver.";
-      continue;
-    }
-    const SdpAudioFormat format = CodecInstToSdp(codec);
-    if (!decoder_factory_->IsSupportedDecoder(format) ||
-        rtp_receiver_->RegisterReceivePayload(codec.pltype, format) == -1) {
-      RTC_LOG(LS_WARNING) << "Unable to register " << format
-                          << " for RTP/RTCP receiver.";
-    }
-  }
-}
-
 int Channel::SetSendRtpHeaderExtension(bool enable,
                                        RTPExtensionType type,
                                        unsigned char id) {
@@ -1579,14 +1518,13 @@ int64_t Channel::GetRTT(bool allow_associate_channel) const {
   if (report_blocks.empty()) {
     if (allow_associate_channel) {
       rtc::CritScope lock(&assoc_send_channel_lock_);
-      Channel* channel = associate_send_channel_.channel();
       // Tries to get RTT from an associated channel. This is important for
       // receive-only channels.
-      if (channel) {
+      if (associated_send_channel_) {
         // To prevent infinite recursion and deadlock, calling GetRTT of
         // associate channel should always use "false" for argument:
         // |allow_associate_channel|.
-        rtt = channel->GetRTT(false);
+        rtt = associated_send_channel_->GetRTT(false);
       }
     }
     return rtt;

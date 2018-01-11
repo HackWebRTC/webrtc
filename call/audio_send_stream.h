@@ -30,11 +30,6 @@ namespace webrtc {
 
 class AudioFrame;
 
-// WORK IN PROGRESS
-// This class is under development and is not yet intended for for use outside
-// of WebRtc/Libjingle. Please use the VoiceEngine API instead.
-// See: https://bugs.chromium.org/p/webrtc/issues/detail?id=4690
-
 class AudioSendStream {
  public:
   struct Stats {
@@ -92,10 +87,7 @@ class AudioSendStream {
     // the entire life of the AudioSendStream and is owned by the API client.
     Transport* send_transport = nullptr;
 
-    // Underlying VoiceEngine handle, used to map AudioSendStream to lower-level
-    // components.
-    // TODO(solenberg): Remove when VoiceEngine channels are created outside
-    // of Call.
+    // TODO(solenberg): Remove once clients don't use it anymore.
     int voe_channel_id = -1;
 
     // Bitrate limits used for variable audio bitrate streams. Set both to -1 to

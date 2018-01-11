@@ -17,13 +17,11 @@
 
 #include "audio/audio_transport_impl.h"
 #include "audio/null_audio_poller.h"
-#include "audio/scoped_voe_interface.h"
 #include "call/audio_state.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/refcount.h"
 #include "rtc_base/thread_checker.h"
-#include "voice_engine/include/voe_base.h"
 
 namespace webrtc {
 
@@ -51,7 +49,11 @@ class AudioState final : public webrtc::AudioState {
   Stats GetAudioInputStats() const override;
   void SetStereoChannelSwapping(bool enable) override;
 
-  VoiceEngine* voice_engine();
+  AudioDeviceModule* audio_device_module() {
+    RTC_DCHECK(config_.audio_device_module);
+    return config_.audio_device_module.get();
+  }
+
   bool typing_noise_detected() const;
 
   void AddReceivingStream(webrtc::AudioReceiveStream* stream);
@@ -73,9 +75,6 @@ class AudioState final : public webrtc::AudioState {
   const webrtc::AudioState::Config config_;
   bool recording_enabled_ = true;
   bool playout_enabled_ = true;
-
-  // We hold one interface pointer to the VoE to make sure it is kept alive.
-  ScopedVoEInterface<VoEBase> voe_base_;
 
   // Reference count; implementation copied from rtc::RefCountedObject.
   // TODO(nisse): Use RefCountedObject or RefCountedBase instead.

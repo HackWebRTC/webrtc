@@ -20,7 +20,6 @@
 #include "audio/audio_receive_stream.h"
 #include "audio/audio_send_stream.h"
 #include "audio/audio_state.h"
-#include "audio/scoped_voe_interface.h"
 #include "audio/time_interval.h"
 #include "call/bitrate_allocator.h"
 #include "call/call.h"
@@ -605,9 +604,9 @@ webrtc::AudioSendStream* Call::CreateAudioSendStream(
   }
 
   AudioSendStream* send_stream = new AudioSendStream(
-      config, config_.audio_state, &worker_queue_, transport_send_.get(),
-      bitrate_allocator_.get(), event_log_, call_stats_->rtcp_rtt_stats(),
-      suspended_rtp_state);
+      config, config_.audio_state, &worker_queue_, module_process_thread_.get(),
+      transport_send_.get(), bitrate_allocator_.get(), event_log_,
+      call_stats_->rtcp_rtt_stats(), suspended_rtp_state);
   {
     WriteLockScoped write_lock(*send_crit_);
     RTC_DCHECK(audio_send_ssrcs_.find(config.rtp.ssrc) ==
@@ -663,8 +662,8 @@ webrtc::AudioReceiveStream* Call::CreateAudioReceiveStream(
   event_log_->Log(rtc::MakeUnique<RtcEventAudioReceiveStreamConfig>(
       CreateRtcLogStreamConfig(config)));
   AudioReceiveStream* receive_stream = new AudioReceiveStream(
-      &audio_receiver_controller_, transport_send_->packet_router(), config,
-      config_.audio_state, event_log_);
+      &audio_receiver_controller_, transport_send_->packet_router(),
+      module_process_thread_.get(), config, config_.audio_state, event_log_);
   {
     WriteLockScoped write_lock(*receive_crit_);
     receive_rtp_config_[config.rtp.remote_ssrc] =

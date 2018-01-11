@@ -27,10 +27,9 @@
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/event.h"
+#include "rtc_base/task_queue.h"
 #include "rtc_base/thread_checker.h"
 #include "voice_engine/audio_level.h"
-#include "voice_engine/include/voe_base.h"
-#include "voice_engine/shared_data.h"
 
 namespace rtc {
 class TimestampWrapAroundHandler;
@@ -142,27 +141,19 @@ class Channel
 
   enum { KNumSocketThreads = 1 };
   enum { KNumberOfSocketBuffers = 8 };
+  // Used for send streams.
+  Channel(rtc::TaskQueue* encoder_queue,
+          ProcessThread* module_process_thread,
+          AudioDeviceModule* audio_device_module);
+  // Used for receive streams.
+  Channel(ProcessThread* module_process_thread,
+          AudioDeviceModule* audio_device_module,
+          size_t jitter_buffer_max_packets,
+          bool jitter_buffer_fast_playout,
+          rtc::scoped_refptr<AudioDecoderFactory> decoder_factory);
   virtual ~Channel();
-  static int32_t CreateChannel(Channel*& channel,
-                               int32_t channelId,
-                               uint32_t instanceId,
-                               const VoEBase::ChannelConfig& config);
-  Channel(int32_t channelId,
-          uint32_t instanceId,
-          const VoEBase::ChannelConfig& config);
-  int32_t Init();
-  void Terminate();
-  int32_t SetEngineInformation(ProcessThread& moduleProcessThread,
-                               AudioDeviceModule& audioDeviceModule,
-                               rtc::TaskQueue* encoder_queue);
 
-  void SetSink(std::unique_ptr<AudioSinkInterface> sink);
-
-  // TODO(ossu): Don't use! It's only here to confirm that the decoder factory
-  // passed into AudioReceiveStream is the same as the one set when creating the
-  // ADM. Once Channel creation is moved into Audio{Send,Receive}Stream this can
-  // go.
-  const rtc::scoped_refptr<AudioDecoderFactory>& GetAudioDecoderFactory() const;
+  void SetSink(AudioSinkInterface* sink);
 
   void SetReceiveCodecs(const std::map<int, SdpAudioFormat>& codecs);
 
@@ -270,8 +261,6 @@ class Channel
 
   int PreferredSampleRate() const;
 
-  uint32_t InstanceId() const { return _instanceId; }
-  int32_t ChannelId() const { return _channelId; }
   bool Playing() const { return channel_state_.Get().playing; }
   bool Sending() const { return channel_state_.Get().sending; }
   RtpRtcp* RtpRtcpModulePtr() const { return _rtpRtcpModule.get(); }
@@ -290,9 +279,7 @@ class Channel
 
   // Associate to a send channel.
   // Used for obtaining RTT for a receive-only channel.
-  void set_associate_send_channel(const ChannelOwner& channel);
-  // Disassociate a send channel if it was associated.
-  void DisassociateSendChannel(int channel_id);
+  void SetAssociatedSendChannel(Channel* channel);
 
   // Set a RtcEventLog logging object.
   void SetRtcEventLog(RtcEventLog* event_log);
@@ -318,6 +305,9 @@ class Channel
  private:
   class ProcessAndEncodeAudioTask;
 
+  void Init();
+  void Terminate();
+
   int GetRemoteSSRC(unsigned int& ssrc);
   void OnUplinkPacketLossRate(float packet_loss_rate);
   bool InputMute() const;
@@ -330,7 +320,6 @@ class Channel
   bool IsPacketRetransmitted(const RTPHeader& header, bool in_order) const;
   int ResendPackets(const uint16_t* sequence_numbers, int length);
   void UpdatePlayoutTimestamp(bool rtcp);
-  void RegisterReceiveCodecsToRTPModule();
 
   int SetSendRtpHeaderExtension(bool enable,
                                 RTPExtensionType type,
@@ -345,9 +334,6 @@ class Channel
   // Called on the encoder task queue when a new input audio frame is ready
   // for encoding.
   void ProcessAndEncodeAudioOnTaskQueue(AudioFrame* audio_input);
-
-  uint32_t _instanceId;
-  int32_t _channelId;
 
   rtc::CriticalSection _callbackCritSect;
   rtc::CriticalSection volume_settings_critsect_;
@@ -364,7 +350,7 @@ class Channel
   TelephoneEventHandler* telephone_event_handler_;
   std::unique_ptr<RtpRtcp> _rtpRtcpModule;
   std::unique_ptr<AudioCodingModule> audio_coding_;
-  std::unique_ptr<AudioSinkInterface> audio_sink_;
+  AudioSinkInterface* audio_sink_ = nullptr;
   AudioLevel _outputAudioLevel;
   uint32_t _timeStamp RTC_ACCESS_ON(encoder_queue_);
 
@@ -407,26 +393,21 @@ class Channel
   std::unique_ptr<VoERtcpObserver> rtcp_observer_;
   // An associated send channel.
   rtc::CriticalSection assoc_send_channel_lock_;
-  ChannelOwner associate_send_channel_ RTC_GUARDED_BY(assoc_send_channel_lock_);
+  Channel* associated_send_channel_ RTC_GUARDED_BY(assoc_send_channel_lock_);
 
-  bool pacing_enabled_;
+  bool pacing_enabled_ = true;
   PacketRouter* packet_router_ = nullptr;
   std::unique_ptr<TransportFeedbackProxy> feedback_observer_proxy_;
   std::unique_ptr<TransportSequenceNumberProxy> seq_num_allocator_proxy_;
   std::unique_ptr<RtpPacketSenderProxy> rtp_packet_sender_proxy_;
   std::unique_ptr<RateLimiter> retransmission_rate_limiter_;
 
-  // TODO(ossu): Remove once GetAudioDecoderFactory() is no longer needed.
-  rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;
-
   rtc::ThreadChecker construction_thread_;
 
   const bool use_twcc_plr_for_ana_;
 
   rtc::CriticalSection encoder_queue_lock_;
-
   bool encoder_queue_is_active_ RTC_GUARDED_BY(encoder_queue_lock_) = false;
-
   rtc::TaskQueue* encoder_queue_ = nullptr;
 };
 

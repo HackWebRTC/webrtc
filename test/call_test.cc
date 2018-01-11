@@ -21,7 +21,6 @@
 #include "rtc_base/event.h"
 #include "rtc_base/ptr_util.h"
 #include "test/testsupport/fileutils.h"
-#include "voice_engine/include/voe_base.h"
 
 namespace webrtc {
 namespace test {
@@ -67,9 +66,9 @@ void CallTest::RunBaseTest(BaseTest* test) {
                                       fake_recv_audio_device_.get());
       apm_send_ = AudioProcessingBuilder().Create();
       apm_recv_ = AudioProcessingBuilder().Create();
-      CreateVoiceEngines();
+      EXPECT_EQ(0, fake_send_audio_device_->Init());
+      EXPECT_EQ(0, fake_recv_audio_device_->Init());
       AudioState::Config audio_state_config;
-      audio_state_config.voice_engine = voe_send_.voice_engine;
       audio_state_config.audio_mixer = AudioMixerImpl::Create();
       audio_state_config.audio_processing = apm_send_;
       audio_state_config.audio_device_module = fake_send_audio_device_;
@@ -86,7 +85,6 @@ void CallTest::RunBaseTest(BaseTest* test) {
       Call::Config recv_config(test->GetReceiverCallConfig());
       if (num_audio_streams_ > 0) {
         AudioState::Config audio_state_config;
-        audio_state_config.voice_engine = voe_recv_.voice_engine;
         audio_state_config.audio_mixer = AudioMixerImpl::Create();
         audio_state_config.audio_processing = apm_recv_;
         audio_state_config.audio_device_module = fake_recv_audio_device_;
@@ -163,8 +161,6 @@ void CallTest::RunBaseTest(BaseTest* test) {
     send_transport_.reset();
     receive_transport_.reset();
     DestroyCalls();
-    if (num_audio_streams_ > 0)
-      DestroyVoiceEngines();
   });
 }
 
@@ -219,10 +215,8 @@ void CallTest::CreateAudioAndFecSendConfigs(size_t num_audio_streams,
                                             Transport* send_transport) {
   RTC_DCHECK_LE(num_audio_streams, 1);
   RTC_DCHECK_LE(num_flexfec_streams, 1);
-  RTC_DCHECK(num_audio_streams == 0 || voe_send_.channel_id >= 0);
   if (num_audio_streams > 0) {
     audio_send_config_ = AudioSendStream::Config(send_transport);
-    audio_send_config_.voe_channel_id = voe_send_.channel_id;
     audio_send_config_.rtp.ssrc = kAudioSendSsrc;
     audio_send_config_.send_codec_spec =
         rtc::Optional<AudioSendStream::Config::SendCodecSpec>(
@@ -281,11 +275,9 @@ void CallTest::CreateMatchingAudioAndFecConfigs(
     Transport* rtcp_send_transport) {
   RTC_DCHECK_GE(1, num_audio_streams_);
   if (num_audio_streams_ == 1) {
-    RTC_DCHECK_LE(0, voe_send_.channel_id);
     AudioReceiveStream::Config audio_config;
     audio_config.rtp.local_ssrc = kReceiverLocalAudioSsrc;
     audio_config.rtcp_send_transport = rtcp_send_transport;
-    audio_config.voe_channel_id = voe_recv_.channel_id;
     audio_config.rtp.remote_ssrc = audio_send_config_.rtp.ssrc;
     audio_config.decoder_factory = decoder_factory_;
     audio_config.decoder_map = {{kAudioSendPayloadType, {"opus", 48000, 2}}};
@@ -455,43 +447,6 @@ void CallTest::DestroyStreams() {
 
 void CallTest::SetFakeVideoCaptureRotation(VideoRotation rotation) {
   frame_generator_capturer_->SetFakeRotation(rotation);
-}
-
-void CallTest::CreateVoiceEngines() {
-  voe_send_.voice_engine = VoiceEngine::Create();
-  voe_send_.base = VoEBase::GetInterface(voe_send_.voice_engine);
-  EXPECT_EQ(0, fake_send_audio_device_->Init());
-  EXPECT_EQ(0, voe_send_.base->Init(fake_send_audio_device_.get(),
-                                    nullptr, decoder_factory_));
-  VoEBase::ChannelConfig config;
-  config.enable_voice_pacing = true;
-  voe_send_.channel_id = voe_send_.base->CreateChannel(config);
-  EXPECT_GE(voe_send_.channel_id, 0);
-
-  voe_recv_.voice_engine = VoiceEngine::Create();
-  voe_recv_.base = VoEBase::GetInterface(voe_recv_.voice_engine);
-  EXPECT_EQ(0, fake_recv_audio_device_->Init());
-  EXPECT_EQ(0, voe_recv_.base->Init(fake_recv_audio_device_.get(),
-                                    nullptr, decoder_factory_));
-  voe_recv_.channel_id = voe_recv_.base->CreateChannel();
-  EXPECT_GE(voe_recv_.channel_id, 0);
-}
-
-void CallTest::DestroyVoiceEngines() {
-  voe_recv_.base->DeleteChannel(voe_recv_.channel_id);
-  voe_recv_.channel_id = -1;
-  voe_recv_.base->Release();
-  voe_recv_.base = nullptr;
-
-  voe_send_.base->DeleteChannel(voe_send_.channel_id);
-  voe_send_.channel_id = -1;
-  voe_send_.base->Release();
-  voe_send_.base = nullptr;
-
-  VoiceEngine::Delete(voe_send_.voice_engine);
-  voe_send_.voice_engine = nullptr;
-  VoiceEngine::Delete(voe_recv_.voice_engine);
-  voe_recv_.voice_engine = nullptr;
 }
 
 constexpr size_t CallTest::kNumSsrcs;

@@ -208,6 +208,7 @@ if (rtc_include_tests) {
       "../api:libjingle_peerconnection_api",
       "../api:mock_audio_mixer",
       "../api/audio_codecs:builtin_audio_decoder_factory",
+      "../audio:audio",
       "../logging:rtc_event_log_api",
       "../modules/audio_device:mock_audio_device",
       "../modules/audio_mixer",

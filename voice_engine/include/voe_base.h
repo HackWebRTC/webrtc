@@ -102,7 +102,6 @@ class WEBRTC_DLLEXPORT VoEBase {
   // decoder_factory member of the ACM config will be ignored (the decoder
   // factory set through Init() will always be used).
   // Returns channel ID or -1 in case of an error.
-  virtual int CreateChannel() = 0;
   virtual int CreateChannel(const ChannelConfig& config) = 0;
 
   // Deletes an existing channel and releases the utilized resources.

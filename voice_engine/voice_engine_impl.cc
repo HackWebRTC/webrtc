@@ -7,16 +7,6 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-
-#if defined(WEBRTC_ANDROID)
-#include "modules/audio_device/android/audio_device_template.h"
-#include "modules/audio_device/android/audio_record_jni.h"
-#include "modules/audio_device/android/audio_track_jni.h"
-#endif
-
-#include "modules/audio_coding/include/audio_coding_module.h"
-#include "rtc_base/checks.h"
-#include "voice_engine/channel_proxy.h"
 #include "voice_engine/voice_engine_impl.h"
 
 namespace webrtc {
@@ -55,14 +45,6 @@ int VoiceEngineImpl::Release() {
   }
 
   return new_ref;
-}
-
-std::unique_ptr<voe::ChannelProxy> VoiceEngineImpl::GetChannelProxy(
-    int channel_id) {
-  RTC_DCHECK(channel_id >= 0);
-  rtc::CritScope cs(crit_sec());
-  return std::unique_ptr<voe::ChannelProxy>(
-      new voe::ChannelProxy(channel_manager().GetChannel(channel_id)));
 }
 
 VoiceEngine* VoiceEngine::Create() {
