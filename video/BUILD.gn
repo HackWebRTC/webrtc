@@ -299,6 +299,7 @@ if (rtc_include_tests) {
       "../call:video_stream_api",
       "../common_video",
       "../logging:rtc_event_log_api",
+      "../media:rtc_audio_video",
       "../media:rtc_internal_video_codecs",
       "../media:rtc_media",
       "../media:rtc_media_base",

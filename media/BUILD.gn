@@ -10,7 +10,7 @@ import("//build/config/linux/pkg_config.gni")
 import("../webrtc.gni")
 
 group("media") {
-  public_deps = [
+  deps = [
     ":rtc_media",
     ":rtc_media_base",
   ]
@@ -61,7 +61,6 @@ rtc_static_library("rtc_media_base") {
     "../rtc_base:sanitizer",
     "../rtc_base:stringutils",
   ]
-  public_deps = []
   sources = [
     "base/adaptedvideotracksource.cc",
     "base/adaptedvideotracksource.h",
@@ -102,6 +101,7 @@ rtc_static_library("rtc_media_base") {
   }
 
   deps += [
+    ":rtc_h264_profile_id",
     "..:webrtc_common",
     "../api:libjingle_peerconnection_api",
     "../api:optional",
@@ -118,8 +118,6 @@ rtc_static_library("rtc_media_base") {
     "../rtc_base:rtc_base_approved",
     "../system_wrappers:field_trial_api",
   ]
-
-  public_deps += [ ":rtc_h264_profile_id" ]
 
   if (is_nacl) {
     deps += [ "//native_client_sdk/src/libraries/nacl_io" ]
@@ -141,6 +139,7 @@ rtc_static_library("rtc_internal_video_codecs") {
   defines = []
   libs = []
   deps = [
+    ":rtc_h264_profile_id",
     "../modules/video_coding:video_codec_interface",
   ]
   sources = [
@@ -375,7 +374,7 @@ rtc_static_library("rtc_data") {
 
 rtc_source_set("rtc_media") {
   visibility = [ "*" ]
-  public_deps = [
+  deps = [
     ":rtc_audio_video",
     ":rtc_data",
   ]
@@ -395,8 +394,8 @@ if (rtc_include_tests) {
     testonly = true
 
     include_dirs = []
-    public_deps = []
     deps = [
+      ":rtc_audio_video",
       "../api:libjingle_peerconnection_api",
       "../api:video_frame_api_i420",
       "../call:video_stream_api",
@@ -448,9 +447,9 @@ if (rtc_include_tests) {
       "../rtc_base:rtc_base_approved",
       "../rtc_base:rtc_base_tests_utils",
       "../test:test_support",
+      "//testing/gmock",
       "//testing/gtest",
     ]
-    public_deps += [ "//testing/gmock" ]
   }
 
   config("rtc_media_unittests_config") {
@@ -496,7 +495,9 @@ if (rtc_include_tests) {
 
     defines = []
     deps = [
+      ":rtc_audio_video",
       ":rtc_constants",
+      ":rtc_data",
       "../api:video_frame_api_i420",
       "../modules/audio_processing:mocks",
       "../modules/video_coding:video_codec_interface",
