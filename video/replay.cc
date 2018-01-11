@@ -22,6 +22,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/flags.h"
 #include "rtc_base/string_to_number.h"
+#include "rtc_base/timeutils.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/sleep.h"
 #include "test/call_test.h"
@@ -289,13 +290,22 @@ void RtpReplay() {
   }
   receive_stream->Start();
 
-  uint32_t last_time_ms = 0;
+  int64_t replay_start_ms = -1;
   int num_packets = 0;
   std::map<uint32_t, int> unknown_packets;
   while (true) {
+    int64_t now_ms = rtc::TimeMillis();
+    if (replay_start_ms == -1)
+      replay_start_ms = now_ms;
+
     test::RtpPacket packet;
     if (!rtp_reader->NextPacket(&packet))
       break;
+
+    int64_t deliver_in_ms = replay_start_ms + packet.time_ms - now_ms;
+    if (deliver_in_ms > 0)
+      SleepMs(deliver_in_ms);
+
     ++num_packets;
     switch (call->Receiver()->DeliverPacket(
         webrtc::MediaType::VIDEO,
@@ -322,10 +332,6 @@ void RtpReplay() {
         break;
       }
     }
-    if (last_time_ms != 0 && last_time_ms != packet.time_ms) {
-      SleepMs(packet.time_ms - last_time_ms);
-    }
-    last_time_ms = packet.time_ms;
   }
   fprintf(stderr, "num_packets: %d\n", num_packets);
 
