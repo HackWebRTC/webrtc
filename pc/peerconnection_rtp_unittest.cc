@@ -736,6 +736,17 @@ TEST_F(PeerConnectionRtpUnifiedPlanTest,
   EXPECT_EQ(RtpTransceiverDirection::kSendRecv, transceiver->direction());
 }
 
+TEST_F(PeerConnectionRtpUnifiedPlanTest, AddTrackCreatesSenderWithTrackId) {
+  const std::string kTrackId = "audio_track";
+
+  auto caller = CreatePeerConnectionWithUnifiedPlan();
+
+  auto audio_track = caller->CreateAudioTrack(kTrackId);
+  auto sender = caller->AddTrack(audio_track);
+
+  EXPECT_EQ(kTrackId, sender->id());
+}
+
 // Unified Plan AddTrack error handling.
 
 TEST_F(PeerConnectionRtpUnifiedPlanTest, AddTrackErrorIfClosed) {

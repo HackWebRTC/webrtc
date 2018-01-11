@@ -242,6 +242,18 @@ TEST_F(PeerConnectionJsepTest, SetLocalOfferSetsTransceiverMid) {
   EXPECT_EQ(video_mid, video_transceiver->mid());
 }
 
+TEST_F(PeerConnectionJsepTest, SetLocalOfferFailsWithNoTrackInMediaSection) {
+  auto caller = CreatePeerConnection();
+  caller->AddAudioTrack("audio");
+
+  auto offer = caller->CreateOffer();
+  auto& contents = offer->description()->contents();
+  ASSERT_EQ(1u, contents.size());
+  contents[0].description->mutable_streams().clear();
+
+  ASSERT_FALSE(caller->SetLocalDescription(std::move(offer)));
+}
+
 // Tests for JSEP SetRemoteDescription with a remote offer.
 
 // Test that setting a remote offer with sendrecv audio and video creates two
@@ -874,6 +886,79 @@ TEST_F(PeerConnectionJsepTest, CalleeDoesReoffer) {
 
   EXPECT_EQ(2u, caller->pc()->GetTransceivers().size());
   EXPECT_EQ(2u, callee->pc()->GetTransceivers().size());
+}
+
+// Tests for MSID properties.
+
+// Test that adding a track with AddTrack results in an offer that signals the
+// track's ID.
+TEST_F(PeerConnectionJsepTest, AddingTrackWithAddTrackSpecifiesTrackId) {
+  const std::string kTrackId = "audio_track";
+
+  auto caller = CreatePeerConnection();
+  caller->AddAudioTrack(kTrackId);
+
+  auto offer = caller->CreateOffer();
+  auto contents = offer->description()->contents();
+  ASSERT_EQ(1u, contents.size());
+  auto streams = contents[0].media_description()->streams();
+  ASSERT_EQ(1u, streams.size());
+  EXPECT_EQ(kTrackId, streams[0].id);
+}
+
+// Test that adding a track by calling AddTransceiver then SetTrack results in
+// an offer that does not signal the track's ID and signals a random ID.
+TEST_F(PeerConnectionJsepTest,
+       AddingTrackWithAddTransceiverSpecifiesRandomTrackId) {
+  const std::string kTrackId = "audio_track";
+
+  auto caller = CreatePeerConnection();
+  auto transceiver = caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO);
+  transceiver->sender()->SetTrack(caller->CreateAudioTrack(kTrackId));
+
+  auto offer = caller->CreateOffer();
+  auto contents = offer->description()->contents();
+  ASSERT_EQ(1u, contents.size());
+  auto streams = contents[0].media_description()->streams();
+  ASSERT_EQ(1u, streams.size());
+  EXPECT_NE(kTrackId, streams[0].id);
+}
+
+// Test that the callee RtpReceiver created by a call to SetRemoteDescription
+// has its ID set to the signaled track ID.
+TEST_F(PeerConnectionJsepTest,
+       RtpReceiverCreatedBySetRemoteDescriptionHasSignaledTrackId) {
+  const std::string kTrackId = "audio_track";
+
+  auto caller = CreatePeerConnection();
+  auto callee = CreatePeerConnection();
+  caller->AddAudioTrack(kTrackId);
+
+  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
+
+  ASSERT_EQ(1u, callee->pc()->GetReceivers().size());
+  auto receiver = callee->pc()->GetReceivers()[0];
+  EXPECT_EQ(kTrackId, receiver->id());
+}
+
+// Test that if the callee RtpReceiver is reused by a call to
+// SetRemoteDescription, its ID does not change.
+TEST_F(PeerConnectionJsepTest,
+       RtpReceiverCreatedBeforeSetRemoteDescriptionKeepsId) {
+  const std::string kTrackId = "audio_track";
+
+  auto caller = CreatePeerConnection();
+  auto callee = CreatePeerConnection();
+  caller->AddAudioTrack(kTrackId);
+  callee->AddAudioTrack("dummy_track");
+
+  ASSERT_EQ(1u, callee->pc()->GetReceivers().size());
+  auto receiver = callee->pc()->GetReceivers()[0];
+  std::string receiver_id = receiver->id();
+
+  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
+
+  EXPECT_EQ(receiver_id, receiver->id());
 }
 
 }  // namespace webrtc

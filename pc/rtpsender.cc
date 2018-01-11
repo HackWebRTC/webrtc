@@ -46,50 +46,28 @@ void LocalAudioSinkAdapter::SetSink(cricket::AudioSource::Sink* sink) {
   sink_ = sink;
 }
 
-AudioRtpSender::AudioRtpSender(rtc::scoped_refptr<AudioTrackInterface> track,
-                               const std::vector<std::string>& stream_ids,
-                               cricket::VoiceChannel* channel,
-                               StatsCollector* stats)
-    : id_(track->id()),
-      stream_ids_(stream_ids),
-      channel_(channel),
-      stats_(stats),
-      track_(track),
-      cached_track_enabled_(track->enabled()),
-      sink_adapter_(new LocalAudioSinkAdapter()) {
-  // TODO(steveanton): Relax this constraint once more Unified Plan work is
-  // done.
-  RTC_CHECK(stream_ids_.size() == 1U);
-  track_->RegisterObserver(this);
-  track_->AddSink(sink_adapter_.get());
-  CreateDtmfSender();
-}
+AudioRtpSender::AudioRtpSender(StatsCollector* stats)
+    : AudioRtpSender(nullptr, {rtc::CreateRandomUuid()}, stats) {}
 
 AudioRtpSender::AudioRtpSender(rtc::scoped_refptr<AudioTrackInterface> track,
-                               cricket::VoiceChannel* channel,
+                               const std::vector<std::string>& stream_labels,
                                StatsCollector* stats)
-    : id_(track->id()),
-      // TODO(steveanton): With Unified Plan this should be empty.
-      stream_ids_({rtc::CreateRandomUuid()}),
-      channel_(channel),
+    : id_(track ? track->id() : rtc::CreateRandomUuid()),
+      stream_ids_(stream_labels),
       stats_(stats),
       track_(track),
-      cached_track_enabled_(track->enabled()),
+      dtmf_sender_proxy_(DtmfSenderProxy::Create(
+          rtc::Thread::Current(),
+          DtmfSender::Create(track_, rtc::Thread::Current(), this))),
+      cached_track_enabled_(track ? track->enabled() : false),
       sink_adapter_(new LocalAudioSinkAdapter()) {
-  track_->RegisterObserver(this);
-  track_->AddSink(sink_adapter_.get());
-  CreateDtmfSender();
-}
-
-AudioRtpSender::AudioRtpSender(cricket::VoiceChannel* channel,
-                               StatsCollector* stats)
-    : id_(rtc::CreateRandomUuid()),
-      // TODO(steveanton): With Unified Plan this should be empty.
-      stream_ids_({rtc::CreateRandomUuid()}),
-      channel_(channel),
-      stats_(stats),
-      sink_adapter_(new LocalAudioSinkAdapter()) {
-  CreateDtmfSender();
+  // TODO(bugs.webrtc.org/7932): Remove once zero or multiple streams are
+  // supported.
+  RTC_DCHECK_EQ(stream_labels.size(), 1u);
+  if (track_) {
+    track_->RegisterObserver(this);
+    track_->AddSink(sink_adapter_.get());
+  }
 }
 
 AudioRtpSender::~AudioRtpSender() {
@@ -289,52 +267,25 @@ void AudioRtpSender::ClearAudioSend() {
   }
 }
 
-void AudioRtpSender::CreateDtmfSender() {
-  // Should be on signaling thread.
-  // TODO(deadbeef): Add thread checking to RtpSender/RtpReceiver
-  // implementations.
-  rtc::scoped_refptr<DtmfSenderInterface> sender(
-      DtmfSender::Create(track_, rtc::Thread::Current(), this));
-  if (!sender.get()) {
-    RTC_LOG(LS_ERROR) << "CreateDtmfSender failed on DtmfSender::Create.";
-    RTC_NOTREACHED();
+VideoRtpSender::VideoRtpSender()
+    : VideoRtpSender(nullptr, {rtc::CreateRandomUuid()}) {}
+
+VideoRtpSender::VideoRtpSender(rtc::scoped_refptr<VideoTrackInterface> track,
+                               const std::vector<std::string>& stream_labels)
+    : id_(track ? track->id() : rtc::CreateRandomUuid()),
+      stream_ids_(stream_labels),
+      track_(track),
+      cached_track_enabled_(track ? track->enabled() : false),
+      cached_track_content_hint_(
+          track ? track->content_hint()
+                : VideoTrackInterface::ContentHint::kNone) {
+  // TODO(bugs.webrtc.org/7932): Remove once zero or multiple streams are
+  // supported.
+  RTC_DCHECK_EQ(stream_labels.size(), 1u);
+  if (track_) {
+    track_->RegisterObserver(this);
   }
-  dtmf_sender_proxy_ =
-      DtmfSenderProxy::Create(rtc::Thread::Current(), sender.get());
 }
-
-VideoRtpSender::VideoRtpSender(rtc::scoped_refptr<VideoTrackInterface> track,
-                               const std::vector<std::string>& stream_ids,
-                               cricket::VideoChannel* channel)
-    : id_(track->id()),
-      stream_ids_({stream_ids}),
-      channel_(channel),
-      track_(track),
-      cached_track_enabled_(track->enabled()),
-      cached_track_content_hint_(track->content_hint()) {
-  // TODO(steveanton): Relax this constraint once more Unified Plan work is
-  // done.
-  RTC_CHECK(stream_ids_.size() == 1U);
-  track_->RegisterObserver(this);
-}
-
-VideoRtpSender::VideoRtpSender(rtc::scoped_refptr<VideoTrackInterface> track,
-                               cricket::VideoChannel* channel)
-    : id_(track->id()),
-      // TODO(steveanton): With Unified Plan this should be empty.
-      stream_ids_({rtc::CreateRandomUuid()}),
-      channel_(channel),
-      track_(track),
-      cached_track_enabled_(track->enabled()),
-      cached_track_content_hint_(track->content_hint()) {
-  track_->RegisterObserver(this);
-}
-
-VideoRtpSender::VideoRtpSender(cricket::VideoChannel* channel)
-    : id_(rtc::CreateRandomUuid()),
-      // TODO(steveanton): With Unified Plan this should be empty.
-      stream_ids_({rtc::CreateRandomUuid()}),
-      channel_(channel) {}
 
 VideoRtpSender::~VideoRtpSender() {
   Stop();

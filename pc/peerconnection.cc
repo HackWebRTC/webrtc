@@ -1066,36 +1066,34 @@ RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>>
 PeerConnection::AddTrackPlanB(
     rtc::scoped_refptr<MediaStreamTrackInterface> track,
     const std::vector<std::string>& stream_labels) {
+  cricket::MediaType media_type =
+      (track->kind() == MediaStreamTrackInterface::kAudioKind
+           ? cricket::MEDIA_TYPE_AUDIO
+           : cricket::MEDIA_TYPE_VIDEO);
+  auto new_sender = CreateSender(media_type, track, stream_labels);
   if (track->kind() == MediaStreamTrackInterface::kAudioKind) {
-    auto new_sender = RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
-        signaling_thread(),
-        new AudioRtpSender(static_cast<AudioTrackInterface*>(track.get()),
-                           voice_channel(), stats_.get()));
+    static_cast<AudioRtpSender*>(new_sender->internal())
+        ->SetChannel(voice_channel());
     GetAudioTransceiver()->internal()->AddSender(new_sender);
-    new_sender->internal()->set_stream_ids(stream_labels);
     const RtpSenderInfo* sender_info =
         FindSenderInfo(local_audio_sender_infos_,
                        new_sender->internal()->stream_id(), track->id());
     if (sender_info) {
       new_sender->internal()->SetSsrc(sender_info->first_ssrc);
     }
-    return rtc::scoped_refptr<RtpSenderInterface>(new_sender);
   } else {
     RTC_DCHECK_EQ(MediaStreamTrackInterface::kVideoKind, track->kind());
-    auto new_sender = RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
-        signaling_thread(),
-        new VideoRtpSender(static_cast<VideoTrackInterface*>(track.get()),
-                           video_channel()));
+    static_cast<VideoRtpSender*>(new_sender->internal())
+        ->SetChannel(video_channel());
     GetVideoTransceiver()->internal()->AddSender(new_sender);
-    new_sender->internal()->set_stream_ids(stream_labels);
     const RtpSenderInfo* sender_info =
         FindSenderInfo(local_video_sender_infos_,
                        new_sender->internal()->stream_id(), track->id());
     if (sender_info) {
       new_sender->internal()->SetSsrc(sender_info->first_ssrc);
     }
-    return rtc::scoped_refptr<RtpSenderInterface>(new_sender);
   }
+  return rtc::scoped_refptr<RtpSenderInterface>(new_sender);
 }
 
 RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>>
@@ -1109,17 +1107,19 @@ PeerConnection::AddTrackUnifiedPlan(
     } else if (transceiver->direction() == RtpTransceiverDirection::kInactive) {
       transceiver->SetDirection(RtpTransceiverDirection::kSendOnly);
     }
+    transceiver->sender()->SetTrack(track);
+    transceiver->internal()->sender_internal()->set_stream_ids(stream_labels);
   } else {
     cricket::MediaType media_type =
         (track->kind() == MediaStreamTrackInterface::kAudioKind
              ? cricket::MEDIA_TYPE_AUDIO
              : cricket::MEDIA_TYPE_VIDEO);
-    transceiver = CreateTransceiver(media_type);
+    auto sender = CreateSender(media_type, track, stream_labels);
+    auto receiver = CreateReceiver(media_type, rtc::CreateRandomUuid());
+    transceiver = CreateAndAddTransceiver(sender, receiver);
     transceiver->internal()->set_created_by_addtrack(true);
     transceiver->SetDirection(RtpTransceiverDirection::kSendRecv);
   }
-  transceiver->sender()->SetTrack(track);
-  transceiver->internal()->sender_internal()->set_stream_ids(stream_labels);
   return transceiver->sender();
 }
 
@@ -1259,43 +1259,76 @@ PeerConnection::AddTransceiver(
 
   // TODO(bugs.webrtc.org/7600): Verify init.
 
-  auto transceiver = CreateTransceiver(media_type);
-  transceiver->SetDirection(init.direction);
-  if (track) {
-    transceiver->sender()->SetTrack(track);
+  if (init.stream_labels.size() > 1u) {
+    LOG_AND_RETURN_ERROR(RTCErrorType::UNSUPPORTED_PARAMETER,
+                         "More than one stream is not yet supported.");
   }
+
+  std::vector<std::string> stream_labels = {!init.stream_labels.empty()
+                                                ? init.stream_labels[0]
+                                                : rtc::CreateRandomUuid()};
+
+  auto sender = CreateSender(media_type, track, stream_labels);
+  auto receiver = CreateReceiver(media_type, rtc::CreateRandomUuid());
+  auto transceiver = CreateAndAddTransceiver(sender, receiver);
+  transceiver->internal()->set_direction(init.direction);
 
   observer_->OnRenegotiationNeeded();
 
   return rtc::scoped_refptr<RtpTransceiverInterface>(transceiver);
 }
 
-rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
-PeerConnection::CreateTransceiver(cricket::MediaType media_type) {
+rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>>
+PeerConnection::CreateSender(
+    cricket::MediaType media_type,
+    rtc::scoped_refptr<MediaStreamTrackInterface> track,
+    const std::vector<std::string>& stream_labels) {
   rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> sender;
+  if (media_type == cricket::MEDIA_TYPE_AUDIO) {
+    RTC_DCHECK(!track ||
+               (track->kind() == MediaStreamTrackInterface::kAudioKind));
+    sender = RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
+        signaling_thread(),
+        new AudioRtpSender(static_cast<AudioTrackInterface*>(track.get()),
+                           stream_labels, stats_.get()));
+  } else {
+    RTC_DCHECK_EQ(media_type, cricket::MEDIA_TYPE_VIDEO);
+    RTC_DCHECK(!track ||
+               (track->kind() == MediaStreamTrackInterface::kVideoKind));
+    sender = RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
+        signaling_thread(),
+        new VideoRtpSender(static_cast<VideoTrackInterface*>(track.get()),
+                           stream_labels));
+  }
+  sender->internal()->set_stream_ids(stream_labels);
+  return sender;
+}
+
+rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
+PeerConnection::CreateReceiver(cricket::MediaType media_type,
+                               const std::string& receiver_id) {
   rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
       receiver;
-  std::string receiver_id = rtc::CreateRandomUuid();
-  // TODO(bugs.webrtc.org/7600): Initializing the sender/receiver with a null
-  // channel prevents users from calling SetParameters on them, which is needed
-  // to be in compliance with the spec.
   if (media_type == cricket::MEDIA_TYPE_AUDIO) {
-    sender = RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
-        signaling_thread(), new AudioRtpSender(nullptr, stats_.get()));
     receiver = RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
         signaling_thread(),
         new AudioRtpReceiver(worker_thread(), receiver_id, {}, 0, nullptr));
   } else {
-    RTC_DCHECK_EQ(cricket::MEDIA_TYPE_VIDEO, media_type);
-    sender = RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
-        signaling_thread(), new VideoRtpSender(nullptr));
+    RTC_DCHECK_EQ(media_type, cricket::MEDIA_TYPE_VIDEO);
     receiver = RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
         signaling_thread(),
         new VideoRtpReceiver(worker_thread(), receiver_id, {}, 0, nullptr));
   }
-  rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
-      transceiver = RtpTransceiverProxyWithInternal<RtpTransceiver>::Create(
-          signaling_thread(), new RtpTransceiver(sender, receiver));
+  return receiver;
+}
+
+rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
+PeerConnection::CreateAndAddTransceiver(
+    rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> sender,
+    rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
+        receiver) {
+  auto transceiver = RtpTransceiverProxyWithInternal<RtpTransceiver>::Create(
+      signaling_thread(), new RtpTransceiver(sender, receiver));
   transceivers_.push_back(transceiver);
   return transceiver;
 }
@@ -1327,23 +1360,29 @@ rtc::scoped_refptr<RtpSenderInterface> PeerConnection::CreateSender(
     return nullptr;
   }
 
+  std::vector<std::string> stream_labels;
+  if (!stream_id.empty()) {
+    stream_labels.push_back(stream_id);
+  }
+
   // TODO(steveanton): Move construction of the RtpSenders to RtpTransceiver.
   rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> new_sender;
   if (kind == MediaStreamTrackInterface::kAudioKind) {
+    auto* audio_sender =
+        new AudioRtpSender(nullptr, stream_labels, stats_.get());
+    audio_sender->SetChannel(voice_channel());
     new_sender = RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
-        signaling_thread(), new AudioRtpSender(voice_channel(), stats_.get()));
+        signaling_thread(), audio_sender);
     GetAudioTransceiver()->internal()->AddSender(new_sender);
   } else if (kind == MediaStreamTrackInterface::kVideoKind) {
+    auto* video_sender = new VideoRtpSender(nullptr, stream_labels);
+    video_sender->SetChannel(video_channel());
     new_sender = RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
-        signaling_thread(), new VideoRtpSender(video_channel()));
+        signaling_thread(), video_sender);
     GetVideoTransceiver()->internal()->AddSender(new_sender);
   } else {
     RTC_LOG(LS_ERROR) << "CreateSender called with invalid kind: " << kind;
     return nullptr;
-  }
-
-  if (!stream_id.empty()) {
-    new_sender->internal()->set_stream_id(stream_id);
   }
 
   return new_sender;
@@ -2223,7 +2262,11 @@ PeerConnection::AssociateTransceiver(cricket::ContentSource source,
     // If no RtpTransceiver was found in the previous step, create one with a
     // recvonly direction.
     if (!transceiver) {
-      transceiver = CreateTransceiver(media_desc->type());
+      auto sender =
+          CreateSender(media_desc->type(), nullptr, {rtc::CreateRandomUuid()});
+      auto receiver =
+          CreateReceiver(media_desc->type(), media_desc->streams()[0].id);
+      transceiver = CreateAndAddTransceiver(sender, receiver);
       transceiver->internal()->set_direction(
           RtpTransceiverDirection::kRecvOnly);
     }
@@ -2770,11 +2813,10 @@ void PeerConnection::AddAudioTrack(AudioTrackInterface* track,
   }
 
   // Normal case; we've never seen this track before.
-  rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> new_sender =
-      RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
-          signaling_thread(),
-          new AudioRtpSender(track, {stream->label()}, voice_channel(),
-                             stats_.get()));
+  auto new_sender =
+      CreateSender(cricket::MEDIA_TYPE_AUDIO, track, {stream->label()});
+  static_cast<AudioRtpSender*>(new_sender->internal())
+      ->SetChannel(voice_channel());
   GetAudioTransceiver()->internal()->AddSender(new_sender);
   // If the sender has already been configured in SDP, we call SetSsrc,
   // which will connect the sender to the underlying transport. This can
@@ -2815,10 +2857,10 @@ void PeerConnection::AddVideoTrack(VideoTrackInterface* track,
   }
 
   // Normal case; we've never seen this track before.
-  rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> new_sender =
-      RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
-          signaling_thread(),
-          new VideoRtpSender(track, {stream->label()}, video_channel()));
+  auto new_sender =
+      CreateSender(cricket::MEDIA_TYPE_VIDEO, track, {stream->label()});
+  static_cast<VideoRtpSender*>(new_sender->internal())
+      ->SetChannel(video_channel());
   GetVideoTransceiver()->internal()->AddSender(new_sender);
   const RtpSenderInfo* sender_info =
       FindSenderInfo(local_video_sender_infos_, stream->label(), track->id());
@@ -5274,6 +5316,30 @@ RTCError PeerConnection::ValidateSessionDescription(
         !MediaSectionsInSameOrder(current_desc, sdesc->description())) {
       LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
                            kMlineMismatchInSubsequentOffer);
+    }
+  }
+
+  // Unified Plan SDP should have exactly one stream per m= section for audio
+  // and video.
+  if (IsUnifiedPlan()) {
+    for (const ContentInfo& content : sdesc->description()->contents()) {
+      if (content.rejected) {
+        continue;
+      }
+      if (content.media_description()) {
+        cricket::MediaType media_type = content.media_description()->type();
+        if (!(media_type == cricket::MEDIA_TYPE_AUDIO ||
+              media_type == cricket::MEDIA_TYPE_VIDEO)) {
+          continue;
+        }
+        const cricket::StreamParamsVec& streams =
+            content.media_description()->streams();
+        if (streams.size() != 1u) {
+          LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
+                               "Unified Plan SDP should have exactly one "
+                               "track per media section for audio and video.");
+        }
+      }
     }
   }
 

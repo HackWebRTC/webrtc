@@ -134,13 +134,18 @@ class RtpSenderReceiverTest : public testing::Test,
       const rtc::scoped_refptr<LocalAudioSource>& source) {
     audio_track_ = AudioTrack::Create(kAudioTrackId, source);
     EXPECT_TRUE(local_stream_->AddTrack(audio_track_));
-    audio_rtp_sender_ =
-        new AudioRtpSender(local_stream_->GetAudioTracks()[0],
-                           {local_stream_->label()}, voice_channel_, nullptr);
+    audio_rtp_sender_ = new AudioRtpSender(local_stream_->GetAudioTracks()[0],
+                                           {local_stream_->label()}, nullptr);
+    audio_rtp_sender_->SetChannel(voice_channel_);
     audio_rtp_sender_->SetSsrc(kAudioSsrc);
     audio_rtp_sender_->GetOnDestroyedSignal()->connect(
         this, &RtpSenderReceiverTest::OnAudioSenderDestroyed);
     VerifyVoiceChannelInput();
+  }
+
+  void CreateAudioRtpSenderWithNoTrack() {
+    audio_rtp_sender_ = new AudioRtpSender(nullptr);
+    audio_rtp_sender_->SetChannel(voice_channel_);
   }
 
   void OnAudioSenderDestroyed() { audio_sender_destroyed_signal_fired_ = true; }
@@ -149,11 +154,16 @@ class RtpSenderReceiverTest : public testing::Test,
 
   void CreateVideoRtpSender(bool is_screencast) {
     AddVideoTrack(is_screencast);
-    video_rtp_sender_ =
-        new VideoRtpSender(local_stream_->GetVideoTracks()[0],
-                           {local_stream_->label()}, video_channel_);
+    video_rtp_sender_ = new VideoRtpSender(local_stream_->GetVideoTracks()[0],
+                                           {local_stream_->label()});
+    video_rtp_sender_->SetChannel(video_channel_);
     video_rtp_sender_->SetSsrc(kVideoSsrc);
     VerifyVideoChannelInput();
+  }
+
+  void CreateVideoRtpSenderWithNoTrack() {
+    video_rtp_sender_ = new VideoRtpSender();
+    video_rtp_sender_->SetChannel(video_channel_);
   }
 
   void DestroyAudioRtpSender() {
@@ -425,7 +435,7 @@ TEST_F(RtpSenderReceiverTest, RemoteAudioTrackSetVolume) {
 // Test that the media channel isn't enabled for sending if the audio sender
 // doesn't have both a track and SSRC.
 TEST_F(RtpSenderReceiverTest, AudioSenderWithoutTrackAndSsrc) {
-  audio_rtp_sender_ = new AudioRtpSender(voice_channel_, nullptr);
+  CreateAudioRtpSenderWithNoTrack();
   rtc::scoped_refptr<AudioTrackInterface> track =
       AudioTrack::Create(kAudioTrackId, nullptr);
 
@@ -442,7 +452,7 @@ TEST_F(RtpSenderReceiverTest, AudioSenderWithoutTrackAndSsrc) {
 // Test that the media channel isn't enabled for sending if the video sender
 // doesn't have both a track and SSRC.
 TEST_F(RtpSenderReceiverTest, VideoSenderWithoutTrackAndSsrc) {
-  video_rtp_sender_ = new VideoRtpSender(video_channel_);
+  CreateVideoRtpSenderWithNoTrack();
 
   // Track but no SSRC.
   EXPECT_TRUE(video_rtp_sender_->SetTrack(video_track_));
@@ -457,7 +467,7 @@ TEST_F(RtpSenderReceiverTest, VideoSenderWithoutTrackAndSsrc) {
 // Test that the media channel is enabled for sending when the audio sender
 // has a track and SSRC, when the SSRC is set first.
 TEST_F(RtpSenderReceiverTest, AudioSenderEarlyWarmupSsrcThenTrack) {
-  audio_rtp_sender_ = new AudioRtpSender(voice_channel_, nullptr);
+  CreateAudioRtpSenderWithNoTrack();
   rtc::scoped_refptr<AudioTrackInterface> track =
       AudioTrack::Create(kAudioTrackId, nullptr);
   audio_rtp_sender_->SetSsrc(kAudioSsrc);
@@ -470,7 +480,7 @@ TEST_F(RtpSenderReceiverTest, AudioSenderEarlyWarmupSsrcThenTrack) {
 // Test that the media channel is enabled for sending when the audio sender
 // has a track and SSRC, when the SSRC is set last.
 TEST_F(RtpSenderReceiverTest, AudioSenderEarlyWarmupTrackThenSsrc) {
-  audio_rtp_sender_ = new AudioRtpSender(voice_channel_, nullptr);
+  CreateAudioRtpSenderWithNoTrack();
   rtc::scoped_refptr<AudioTrackInterface> track =
       AudioTrack::Create(kAudioTrackId, nullptr);
   audio_rtp_sender_->SetTrack(track);
@@ -484,7 +494,7 @@ TEST_F(RtpSenderReceiverTest, AudioSenderEarlyWarmupTrackThenSsrc) {
 // has a track and SSRC, when the SSRC is set first.
 TEST_F(RtpSenderReceiverTest, VideoSenderEarlyWarmupSsrcThenTrack) {
   AddVideoTrack();
-  video_rtp_sender_ = new VideoRtpSender(video_channel_);
+  CreateVideoRtpSenderWithNoTrack();
   video_rtp_sender_->SetSsrc(kVideoSsrc);
   video_rtp_sender_->SetTrack(video_track_);
   VerifyVideoChannelInput();
@@ -496,7 +506,7 @@ TEST_F(RtpSenderReceiverTest, VideoSenderEarlyWarmupSsrcThenTrack) {
 // has a track and SSRC, when the SSRC is set last.
 TEST_F(RtpSenderReceiverTest, VideoSenderEarlyWarmupTrackThenSsrc) {
   AddVideoTrack();
-  video_rtp_sender_ = new VideoRtpSender(video_channel_);
+  CreateVideoRtpSenderWithNoTrack();
   video_rtp_sender_->SetTrack(video_track_);
   video_rtp_sender_->SetSsrc(kVideoSsrc);
   VerifyVideoChannelInput();
@@ -762,9 +772,9 @@ TEST_F(RtpSenderReceiverTest,
   // Setting detailed overrides the default non-screencast mode. This should be
   // applied even if the track is set on construction.
   video_track_->set_content_hint(VideoTrackInterface::ContentHint::kDetailed);
-  video_rtp_sender_ =
-      new VideoRtpSender(local_stream_->GetVideoTracks()[0],
-                         {local_stream_->label()}, video_channel_);
+  video_rtp_sender_ = new VideoRtpSender(local_stream_->GetVideoTracks()[0],
+                                         {local_stream_->label()});
+  video_rtp_sender_->SetChannel(video_channel_);
   video_track_->set_enabled(true);
 
   // Sender is not ready to send (no SSRC) so no option should have been set.
