@@ -417,6 +417,23 @@ def CheckPublicDepsIsNotUsed(gn_files, output_api):
                                                    line_number)))
   return result
 
+def CheckCheckIncludesIsNotUsed(gn_files, output_api):
+  result = []
+  error_msg = ('check_includes overrides are not allowed since it can cause '
+               'incorrect dependencies to form. It effectively means that your '
+               'module can include any .h file without depending on its '
+               'corresponding target. There are some exceptional cases when '
+               'this is allowed: if so, get approval from a .gn owner in the'
+               'root OWNERS file.\n'
+               'Used in: %s (line %d).')
+  for affected_file in gn_files:
+    for (line_number, affected_line) in affected_file.ChangedContents():
+      if 'check_includes' in affected_line:
+        result.append(
+            output_api.PresubmitError(error_msg % (affected_file.LocalPath(),
+                                                   line_number)))
+  return result
+
 def CheckGnChanges(input_api, output_api):
   source_file_filter = lambda x: input_api.FilterSourceFile(
       x, white_list=(r'.+\.(gn|gni)$',),
@@ -433,6 +450,7 @@ def CheckGnChanges(input_api, output_api):
     result.extend(CheckNoPackageBoundaryViolations(input_api, gn_files,
                                                    output_api))
     result.extend(CheckPublicDepsIsNotUsed(gn_files, output_api))
+    result.extend(CheckCheckIncludesIsNotUsed(gn_files, output_api))
   return result
 
 def CheckGnGen(input_api, output_api):
