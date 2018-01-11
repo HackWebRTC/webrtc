@@ -496,7 +496,6 @@ class VoiceChannel : public BaseChannel {
   void StartAudioMonitor(int cms);
   void StopAudioMonitor();
   bool IsAudioMonitorRunning() const;
-  sigslot::signal2<VoiceChannel*, const AudioInfo&> SignalAudioMonitor;
 
   int GetInputLevel_w();
   int GetOutputLevel_w();
@@ -525,7 +524,6 @@ class VoiceChannel : public BaseChannel {
       const std::vector<ConnectionInfo>& infos) override;
   void OnMediaMonitorUpdate(VoiceMediaChannel* media_channel,
                             const VoiceMediaInfo& info);
-  void OnAudioMonitorUpdate(AudioMonitor* monitor, const AudioInfo& info);
 
   static const int kEarlyMediaTimeout = 1000;
   MediaEngineInterface* media_engine_;

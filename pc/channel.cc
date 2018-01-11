@@ -1235,8 +1235,6 @@ void VoiceChannel::StopMediaMonitor() {
 
 void VoiceChannel::StartAudioMonitor(int cms) {
   audio_monitor_.reset(new AudioMonitor(this, rtc::Thread::Current()));
-  audio_monitor_
-    ->SignalUpdate.connect(this, &VoiceChannel::OnAudioMonitorUpdate);
   audio_monitor_->Start(cms);
 }
 
@@ -1425,11 +1423,6 @@ void VoiceChannel::OnMediaMonitorUpdate(
     VoiceMediaChannel* media_channel, const VoiceMediaInfo& info) {
   RTC_DCHECK(media_channel == this->media_channel());
   SignalMediaMonitor(this, info);
-}
-
-void VoiceChannel::OnAudioMonitorUpdate(AudioMonitor* monitor,
-                                        const AudioInfo& info) {
-  SignalAudioMonitor(this, info);
 }
 
 VideoChannel::VideoChannel(rtc::Thread* worker_thread,
