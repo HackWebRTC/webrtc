@@ -30,8 +30,7 @@ class SimulateOutgoingTrafficIn {
   }
 
   SimulateOutgoingTrafficIn& ForTimeMs(int time_ms) {
-    interval_ms_ = rtc::Optional<int>(time_ms);
-    interval_ms_.emplace(time_ms);
+    interval_ms_ = time_ms;
     ProduceTraffic();
     return *this;
   }
