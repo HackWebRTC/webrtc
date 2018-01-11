@@ -94,7 +94,7 @@ void RunFilterUpdateTest(int num_blocks_to_process,
                    [&](float a, float b) { return a - b * kScale; });
     std::for_each(e_shadow.begin(), e_shadow.end(),
                   [](float& a) { a = rtc::SafeClamp(a, -32768.f, 32767.f); });
-    fft.ZeroPaddedFft(e_shadow, &E_shadow);
+    fft.ZeroPaddedFft(e_shadow, Aec3Fft::Window::kRectangular, &E_shadow);
 
     std::array<float, kFftLengthBy2Plus1> render_power;
     render_delay_buffer->GetRenderBuffer()->SpectralSum(

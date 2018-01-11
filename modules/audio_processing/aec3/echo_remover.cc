@@ -157,8 +157,8 @@ void EchoRemoverImpl::ProcessCapture(
   FftData comfort_noise;
   FftData high_band_comfort_noise;
   SubtractorOutput subtractor_output;
-  FftData& E_main = subtractor_output.E_main;
-  auto& E2_main = subtractor_output.E2_main;
+  FftData& E_main_nonwindowed = subtractor_output.E_main_nonwindowed;
+  auto& E2_main = subtractor_output.E2_main_nonwindowed;
   auto& E2_shadow = subtractor_output.E2_shadow;
   auto& e_main = subtractor_output.e_main;
 
@@ -170,8 +170,9 @@ void EchoRemoverImpl::ProcessCapture(
                       &subtractor_output);
 
   // Compute spectra.
-  fft_.ZeroPaddedFft(y0, &Y);
-  LinearEchoPower(E_main, Y, &S2_linear);
+  // fft_.ZeroPaddedFft(y0, Aec3Fft::Window::kHanning, &Y);
+  fft_.ZeroPaddedFft(y0, Aec3Fft::Window::kRectangular, &Y);
+  LinearEchoPower(E_main_nonwindowed, Y, &S2_linear);
   Y.Spectrum(optimization_, Y2);
 
   // Update the AEC state information.

@@ -64,7 +64,7 @@ TEST(TransformDbMetricForReporting, DbFsScaling) {
   std::array<float, kFftLengthBy2Plus1> X2;
   Aec3Fft fft;
   x.fill(1000.f);
-  fft.ZeroPaddedFft(x, &X);
+  fft.ZeroPaddedFft(x, Aec3Fft::Window::kRectangular, &X);
   X.Spectrum(Aec3Optimization::kNone, X2);
 
   float offset = -10.f * log10(32768.f * 32768.f);

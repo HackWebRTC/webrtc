@@ -22,26 +22,10 @@ namespace webrtc {
 
 namespace {
 
-const float kHanning64[64] = {
-    0.f,         0.00248461f, 0.00991376f, 0.0222136f,  0.03926189f,
-    0.06088921f, 0.08688061f, 0.11697778f, 0.15088159f, 0.1882551f,
-    0.22872687f, 0.27189467f, 0.31732949f, 0.36457977f, 0.41317591f,
-    0.46263495f, 0.51246535f, 0.56217185f, 0.61126047f, 0.65924333f,
-    0.70564355f, 0.75f,       0.79187184f, 0.83084292f, 0.86652594f,
-    0.89856625f, 0.92664544f, 0.95048443f, 0.96984631f, 0.98453864f,
-    0.99441541f, 0.99937846f, 0.99937846f, 0.99441541f, 0.98453864f,
-    0.96984631f, 0.95048443f, 0.92664544f, 0.89856625f, 0.86652594f,
-    0.83084292f, 0.79187184f, 0.75f,       0.70564355f, 0.65924333f,
-    0.61126047f, 0.56217185f, 0.51246535f, 0.46263495f, 0.41317591f,
-    0.36457977f, 0.31732949f, 0.27189467f, 0.22872687f, 0.1882551f,
-    0.15088159f, 0.11697778f, 0.08688061f, 0.06088921f, 0.03926189f,
-    0.0222136f,  0.00991376f, 0.00248461f, 0.f};
-
 void PredictionError(const Aec3Fft& fft,
                      const FftData& S,
                      rtc::ArrayView<const float> y,
                      std::array<float, kBlockSize>* e,
-                     FftData* E,
                      std::array<float, kBlockSize>* s) {
   std::array<float, kFftLength> tmp;
   fft.Ifft(S, &tmp);
@@ -57,13 +41,6 @@ void PredictionError(const Aec3Fft& fft,
 
   std::for_each(e->begin(), e->end(),
                 [](float& a) { a = rtc::SafeClamp(a, -32768.f, 32767.f); });
-
-  RTC_DCHECK_EQ(64, e->size());
-  RTC_DCHECK_LE(64, tmp.size());
-  std::transform(e->begin(), e->end(), std::begin(kHanning64), tmp.begin(),
-                 [](float a, float b) { return a * b; });
-
-  fft.ZeroPaddedFft(rtc::ArrayView<const float>(tmp.data(), 64), E);
 }
 
 }  // namespace
@@ -119,6 +96,7 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
   RTC_DCHECK_EQ(kBlockSize, capture.size());
   rtc::ArrayView<const float> y = capture;
   FftData& E_main = output->E_main;
+  FftData& E_main_nonwindowed = output->E_main_nonwindowed;
   FftData E_shadow;
   std::array<float, kBlockSize>& e_main = output->e_main;
   std::array<float, kBlockSize>& e_shadow = output->e_shadow;
@@ -128,11 +106,15 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
 
   // Form the output of the main filter.
   main_filter_.Filter(render_buffer, &S);
-  PredictionError(fft_, S, y, &e_main, &E_main, &output->s_main);
+  PredictionError(fft_, S, y, &e_main, &output->s_main);
+  fft_.ZeroPaddedFft(e_main, Aec3Fft::Window::kHanning, &E_main);
+  fft_.ZeroPaddedFft(e_main, Aec3Fft::Window::kRectangular,
+                     &E_main_nonwindowed);
 
   // Form the output of the shadow filter.
   shadow_filter_.Filter(render_buffer, &S);
-  PredictionError(fft_, S, y, &e_shadow, &E_shadow, nullptr);
+  PredictionError(fft_, S, y, &e_shadow, nullptr);
+  fft_.ZeroPaddedFft(e_shadow, Aec3Fft::Window::kHanning, &E_shadow);
 
   if (!converged_filter_) {
     const auto sum_of_squares = [](float a, float b) { return a + b * b; };
@@ -149,6 +131,7 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
 
   // Compute spectra for future use.
   E_main.Spectrum(optimization_, output->E2_main);
+  E_main_nonwindowed.Spectrum(optimization_, output->E2_main_nonwindowed);
   E_shadow.Spectrum(optimization_, output->E2_shadow);
 
   // Update the main filter.

@@ -376,7 +376,7 @@ TEST(AdaptiveFirFilter, FilterAndAdapt) {
                      [&](float a, float b) { return a - b * kScale; });
       std::for_each(e.begin(), e.end(),
                     [](float& a) { a = rtc::SafeClamp(a, -32768.f, 32767.f); });
-      fft.ZeroPaddedFft(e, &E);
+      fft.ZeroPaddedFft(e, Aec3Fft::Window::kRectangular, &E);
       for (size_t k = 0; k < kBlockSize; ++k) {
         s[k] = kScale * s_scratch[k + kFftLengthBy2];
       }
