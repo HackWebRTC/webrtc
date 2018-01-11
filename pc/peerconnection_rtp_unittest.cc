@@ -866,4 +866,27 @@ TEST_F(PeerConnectionRtpUnifiedPlanTest,
   EXPECT_FALSE(caller->observer()->negotiation_needed());
 }
 
+// Sender setups in a call.
+
+class PeerConnectionSenderTest : public PeerConnectionRtpTest {};
+
+TEST_F(PeerConnectionSenderTest, CreateTwoSendersWithSameTrack) {
+  auto caller = CreatePeerConnection();
+  auto callee = CreatePeerConnection();
+
+  auto track = caller->CreateAudioTrack("audio_track");
+  auto sender1 = caller->AddTrack(track);
+  ASSERT_TRUE(sender1);
+  // We need to temporarily reset the track for the subsequent AddTrack() to
+  // succeed.
+  EXPECT_TRUE(sender1->SetTrack(nullptr));
+  auto sender2 = caller->AddTrack(track);
+  EXPECT_TRUE(sender2);
+  EXPECT_TRUE(sender1->SetTrack(track));
+
+  // TODO(hbos): When https://crbug.com/webrtc/8734 is resolved, this should
+  // return true, and doing |callee->SetRemoteDescription()| should work.
+  EXPECT_FALSE(caller->CreateOfferAndSetAsLocal());
+}
+
 }  // namespace webrtc
