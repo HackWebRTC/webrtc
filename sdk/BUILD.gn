@@ -392,6 +392,7 @@ if (is_ios || is_mac) {
       deps = [
         ":peerconnectionfactory_base_objc",
         "../api:libjingle_peerconnection_api",
+        "../api:peerconnection_and_implicit_call_api",
         "../rtc_base:rtc_base",
       ]
     }

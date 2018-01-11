@@ -562,6 +562,7 @@ if (rtc_include_tests) {
       "../../api:optional",
       "../../api:video_frame_api",
       "../../api:video_frame_api_i420",
+      "../../api/video_codecs:video_codecs_api",
       "../../common_video",
       "../../media:rtc_audio_video",
       "../../media:rtc_internal_video_codecs",

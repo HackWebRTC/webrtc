@@ -509,6 +509,7 @@ if (is_linux || is_win) {
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
     deps = [
+      "../api:libjingle_peerconnection_api",
       "../api:video_frame_api_i420",
       "../rtc_base:checks",
       "../rtc_base:stringutils",
@@ -543,6 +544,7 @@ if (is_linux || is_win) {
 
     deps += [
       "../api:libjingle_peerconnection_test_api",
+      "../api:peerconnection_and_implicit_call_api",
       "../api:video_frame_api",
       "../api/audio_codecs:builtin_audio_decoder_factory",
       "../api/audio_codecs:builtin_audio_encoder_factory",
@@ -669,7 +671,9 @@ if (is_win || is_android) {
       ]
     }
     deps = [
+      "../api:libjingle_peerconnection_api",
       "../api:libjingle_peerconnection_test_api",
+      "../api:peerconnection_and_implicit_call_api",
       "../api:video_frame_api",
       "../api/audio_codecs:builtin_audio_decoder_factory",
       "../api/audio_codecs:builtin_audio_encoder_factory",
