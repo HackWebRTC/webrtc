@@ -39,6 +39,7 @@ using RTCConfiguration = PeerConnectionInterface::RTCConfiguration;
 using ::testing::Values;
 using ::testing::Combine;
 using ::testing::ElementsAre;
+using ::testing::UnorderedElementsAre;
 
 class PeerConnectionFactoryForJsepTest : public PeerConnectionFactory {
  public:
@@ -960,5 +961,83 @@ TEST_F(PeerConnectionJsepTest,
 
   EXPECT_EQ(receiver_id, receiver->id());
 }
+
+// Test that setting a remote offer with one track that has no streams fires off
+// the correct OnAddTrack event.
+TEST_F(PeerConnectionJsepTest,
+       SetRemoteOfferWithOneTrackNoStreamFiresOnAddTrack) {
+  const std::string kTrackLabel = "audio_track";
+
+  auto caller = CreatePeerConnection();
+  auto callee = CreatePeerConnection();
+  ASSERT_TRUE(caller->AddAudioTrack(kTrackLabel));
+
+  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
+
+  ASSERT_EQ(callee->observer()->add_track_events_.size(), 1u);
+  EXPECT_EQ(kTrackLabel,
+            callee->observer()->add_track_events_[0].receiver->track()->id());
+  // TODO(bugs.webrtc.org/7933): Also verify that no stream was added to the
+  // receiver.
+}
+
+// Test that setting a remote offer with one track that has one stream fires off
+// the correct OnAddTrack event.
+TEST_F(PeerConnectionJsepTest,
+       SetRemoteOfferWithOneTrackOneStreamFiresOnAddTrack) {
+  const std::string kTrackLabel = "audio_track";
+  const std::string kStreamLabel = "audio_stream";
+
+  auto caller = CreatePeerConnection();
+  auto callee = CreatePeerConnection();
+  ASSERT_TRUE(caller->AddAudioTrack(kTrackLabel, {kStreamLabel}));
+
+  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
+
+  const auto& track_events = callee->observer()->add_track_events_;
+  ASSERT_EQ(1u, track_events.size());
+  const auto& event = track_events[0];
+  ASSERT_EQ(1u, event.streams.size());
+  auto stream = event.streams[0];
+  EXPECT_EQ(kStreamLabel, stream->label());
+  EXPECT_THAT(track_events[0].snapshotted_stream_tracks.at(stream),
+              ElementsAre(event.receiver->track()));
+  EXPECT_EQ(event.receiver->streams(), track_events[0].streams);
+}
+
+// Test that setting a remote offer with two tracks that share the same stream
+// fires off two OnAddTrack events, both with the same stream that has both
+// tracks present at the time of firing. This is to ensure that track events are
+// not fired until SetRemoteDescription has finished processing all the media
+// sections.
+TEST_F(PeerConnectionJsepTest,
+       SetRemoteOfferWithTwoTracksSameStreamFiresOnAddTrack) {
+  const std::string kTrack1Label = "audio_track1";
+  const std::string kTrack2Label = "audio_track2";
+  const std::string kSharedStreamLabel = "stream";
+
+  auto caller = CreatePeerConnection();
+  auto callee = CreatePeerConnection();
+  ASSERT_TRUE(caller->AddAudioTrack(kTrack1Label, {kSharedStreamLabel}));
+  ASSERT_TRUE(caller->AddAudioTrack(kTrack2Label, {kSharedStreamLabel}));
+
+  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
+
+  const auto& track_events = callee->observer()->add_track_events_;
+  ASSERT_EQ(2u, track_events.size());
+  const auto& event1 = track_events[0];
+  const auto& event2 = track_events[1];
+  ASSERT_EQ(1u, event1.streams.size());
+  auto stream = event1.streams[0];
+  ASSERT_THAT(event2.streams, ElementsAre(stream));
+  auto track1 = event1.receiver->track();
+  auto track2 = event2.receiver->track();
+  EXPECT_THAT(event1.snapshotted_stream_tracks.at(stream),
+              UnorderedElementsAre(track1, track2));
+  EXPECT_THAT(event2.snapshotted_stream_tracks.at(stream),
+              UnorderedElementsAre(track1, track2));
+}
+
+// TODO(bugs.webrtc.org/7932): Also test multi-stream case.
 
 }  // namespace webrtc

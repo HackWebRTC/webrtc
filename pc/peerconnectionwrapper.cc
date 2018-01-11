@@ -277,14 +277,14 @@ rtc::scoped_refptr<RtpSenderInterface> PeerConnectionWrapper::AddTrack(
 
 rtc::scoped_refptr<RtpSenderInterface> PeerConnectionWrapper::AddAudioTrack(
     const std::string& track_label,
-    std::vector<MediaStreamInterface*> streams) {
-  return pc()->AddTrack(CreateAudioTrack(track_label), std::move(streams));
+    const std::vector<std::string>& stream_labels) {
+  return AddTrack(CreateAudioTrack(track_label), stream_labels);
 }
 
 rtc::scoped_refptr<RtpSenderInterface> PeerConnectionWrapper::AddVideoTrack(
     const std::string& track_label,
-    std::vector<MediaStreamInterface*> streams) {
-  return pc()->AddTrack(CreateVideoTrack(track_label), std::move(streams));
+    const std::vector<std::string>& stream_labels) {
+  return AddTrack(CreateVideoTrack(track_label), stream_labels);
 }
 
 rtc::scoped_refptr<DataChannelInterface>

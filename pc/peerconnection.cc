@@ -1980,6 +1980,7 @@ RTCError PeerConnection::ApplyRemoteDescription(
   }
 
   if (IsUnifiedPlan()) {
+    std::vector<TrackEvent> track_events;
     for (auto transceiver : transceivers_) {
       const ContentInfo* content =
           FindMediaSectionForTransceiver(transceiver, remote_description());
@@ -1997,15 +1998,27 @@ RTCError PeerConnection::ApplyRemoteDescription(
           (!transceiver->current_direction() ||
            !RtpTransceiverDirectionHasRecv(
                *transceiver->current_direction()))) {
-        // TODO(bugs.webrtc.org/7600): Process the addition of a remote track.
+        const std::string& sync_label = media_desc->streams()[0].sync_label;
+        rtc::scoped_refptr<MediaStreamInterface> stream =
+            remote_streams_->find(sync_label);
+        if (!stream) {
+          stream = MediaStreamProxy::Create(rtc::Thread::Current(),
+                                            MediaStream::Create(sync_label));
+          remote_streams_->AddStream(stream);
+        }
+        transceiver->internal()->receiver_internal()->SetStreams({stream});
+        TrackEvent track_event;
+        track_event.receiver = transceiver->receiver();
+        track_event.streams = transceiver->receiver()->streams();
+        track_events.push_back(std::move(track_event));
       }
       // If direction is sendonly or inactive, and transceiver's current
       // direction is neither sendonly nor inactive, process the removal of a
       // remote track for the media description.
       if (!RtpTransceiverDirectionHasRecv(local_direction) &&
-          (!transceiver->current_direction() ||
+          (transceiver->current_direction() &&
            RtpTransceiverDirectionHasRecv(*transceiver->current_direction()))) {
-        // TODO(bugs.webrtc.org/7600): Process the removal of a remote track.
+        transceiver->internal()->receiver_internal()->SetStreams({});
       }
       if (type == SdpType::kPrAnswer || type == SdpType::kAnswer) {
         transceiver->internal()->set_current_direction(local_direction);
@@ -2013,6 +2026,9 @@ RTCError PeerConnection::ApplyRemoteDescription(
       if (content->rejected && !transceiver->stopped()) {
         transceiver->Stop();
       }
+    }
+    for (auto event : track_events) {
+      observer_->OnAddTrack(event.receiver, event.streams);
     }
   }
 
@@ -2760,8 +2776,6 @@ void PeerConnection::CreateAudioReceiver(
           new AudioRtpReceiver(worker_thread(), remote_sender_info.sender_id,
                                streams, remote_sender_info.first_ssrc,
                                voice_media_channel()));
-  stream->AddTrack(
-      static_cast<AudioTrackInterface*>(receiver->internal()->track().get()));
   GetAudioTransceiver()->internal()->AddReceiver(receiver);
   observer_->OnAddTrack(receiver, std::move(streams));
 }
@@ -2777,8 +2791,6 @@ void PeerConnection::CreateVideoReceiver(
           new VideoRtpReceiver(worker_thread(), remote_sender_info.sender_id,
                                streams, remote_sender_info.first_ssrc,
                                video_media_channel()));
-  stream->AddTrack(
-      static_cast<VideoTrackInterface*>(receiver->internal()->track().get()));
   GetVideoTransceiver()->internal()->AddReceiver(receiver);
   observer_->OnAddTrack(receiver, std::move(streams));
 }
