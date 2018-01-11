@@ -49,6 +49,7 @@ class ProcessingConfig;
 class EchoCancellation;
 class EchoControlMobile;
 class EchoControlFactory;
+class EchoDetector;
 class GainControl;
 class HighPassFilter;
 class LevelEstimator;
@@ -665,6 +666,9 @@ class AudioProcessingBuilder {
   // The AudioProcessingBuilder takes ownership of the nonlinear beamformer.
   AudioProcessingBuilder& SetNonlinearBeamformer(
       std::unique_ptr<NonlinearBeamformer> nonlinear_beamformer);
+  // The AudioProcessingBuilder takes ownership of the echo_detector.
+  AudioProcessingBuilder& SetEchoDetector(
+      std::unique_ptr<EchoDetector> echo_detector);
   // This creates an APM instance using the previously set components. Calling
   // the Create function resets the AudioProcessingBuilder to its initial state.
   AudioProcessing* Create();
@@ -675,6 +679,7 @@ class AudioProcessingBuilder {
   std::unique_ptr<CustomProcessing> capture_post_processing_;
   std::unique_ptr<CustomProcessing> render_pre_processing_;
   std::unique_ptr<NonlinearBeamformer> nonlinear_beamformer_;
+  std::unique_ptr<EchoDetector> echo_detector_;
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioProcessingBuilder);
 };
 
@@ -1145,6 +1150,34 @@ class CustomProcessing {
   virtual std::string ToString() const = 0;
 
   virtual ~CustomProcessing() {}
+};
+
+// Interface for an echo detector submodule.
+class EchoDetector {
+ public:
+  // (Re-)Initializes the submodule.
+  virtual void Initialize(int sample_rate_hz, int num_channels) = 0;
+
+  // Analysis (not changing) of the render signal.
+  virtual void AnalyzeRenderAudio(rtc::ArrayView<const float> render_audio) = 0;
+
+  // Analysis (not changing) of the capture signal.
+  virtual void AnalyzeCaptureAudio(
+      rtc::ArrayView<const float> capture_audio) = 0;
+
+  // Pack an AudioBuffer into a vector<float>.
+  static void PackRenderAudioBuffer(AudioBuffer* audio,
+                                    std::vector<float>* packed_buffer);
+
+  struct Metrics {
+    double echo_likelihood;
+    double echo_likelihood_recent_max;
+  };
+
+  // Collect current metrics from the echo detector.
+  virtual Metrics GetMetrics() const = 0;
+
+  virtual ~EchoDetector() {}
 };
 
 // The voice activity detection (VAD) component analyzes the stream to
