@@ -21,17 +21,6 @@
 
 namespace webrtc {
 
-namespace {
-
-// This function is only expected to be called on the signalling thread.
-int GenerateUniqueId() {
-  static int g_unique_id = 0;
-
-  return ++g_unique_id;
-}
-
-}  // namespace
-
 AudioRtpReceiver::AudioRtpReceiver(
     rtc::Thread* worker_thread,
     const std::string& receiver_id,
@@ -46,8 +35,7 @@ AudioRtpReceiver::AudioRtpReceiver(
           AudioTrack::Create(
               receiver_id,
               RemoteAudioSource::Create(worker_thread, media_channel, ssrc)))),
-      cached_track_enabled_(track_->enabled()),
-      attachment_id_(GenerateUniqueId()) {
+      cached_track_enabled_(track_->enabled()) {
   RTC_DCHECK(worker_thread_);
   RTC_DCHECK(track_->GetSource()->remote());
   track_->RegisterObserver(this);
@@ -219,8 +207,7 @@ VideoRtpReceiver::VideoRtpReceiver(
               VideoTrackSourceProxy::Create(rtc::Thread::Current(),
                                             worker_thread,
                                             source_),
-              worker_thread))),
-      attachment_id_(GenerateUniqueId()) {
+              worker_thread))) {
   RTC_DCHECK(worker_thread_);
   SetStreams(streams);
   source_->SetState(MediaSourceInterface::kLive);

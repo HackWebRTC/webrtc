@@ -1506,31 +1506,6 @@ TEST_F(PeerConnectionInterfaceTest, AddTrackBeforeConnecting) {
   EXPECT_TRUE(DoGetStats(nullptr));
 }
 
-TEST_F(PeerConnectionInterfaceTest, AttachmentIdIsSetOnAddTrack) {
-  CreatePeerConnectionWithoutDtls();
-  rtc::scoped_refptr<AudioTrackInterface> audio_track(
-      pc_factory_->CreateAudioTrack("audio_track", nullptr));
-  rtc::scoped_refptr<VideoTrackInterface> video_track(
-      pc_factory_->CreateVideoTrack(
-          "video_track", pc_factory_->CreateVideoSource(
-                             std::unique_ptr<cricket::VideoCapturer>(
-                                 new cricket::FakeVideoCapturer()))));
-  auto audio_sender = pc_->AddTrack(audio_track, std::vector<std::string>());
-  auto video_sender = pc_->AddTrack(video_track, std::vector<std::string>());
-  EXPECT_TRUE(audio_sender.ok());
-  EXPECT_TRUE(video_sender.ok());
-  EXPECT_NE(0, video_sender.value()->AttachmentId());
-  EXPECT_NE(0, audio_sender.value()->AttachmentId());
-}
-
-TEST_F(PeerConnectionInterfaceTest, AttachmentIdIsSetOnAddStream) {
-  CreatePeerConnectionWithoutDtls();
-  AddVideoStream(kStreamLabel1);
-  auto senders = pc_->GetSenders();
-  EXPECT_EQ(1u, senders.size());
-  EXPECT_NE(0, senders[0]->AttachmentId());
-}
-
 TEST_F(PeerConnectionInterfaceTest, CreateOfferReceiveAnswer) {
   InitiateCall();
   WaitAndVerifyOnAddStream(kStreamLabel1);

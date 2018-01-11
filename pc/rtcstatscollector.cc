@@ -57,11 +57,8 @@ std::string RTCIceCandidatePairStatsIDFromConnectionInfo(
       info.remote_candidate.id();
 }
 
-std::string RTCMediaStreamTrackStatsIDFromTrackKindIDAndAttachment(
-    bool is_local,
-    const char* kind,
-    const std::string& id,
-    int attachment_id) {
+std::string RTCMediaStreamTrackStatsIDFromTrackKindIDAndSsrc(
+    bool is_local, const char* kind, const std::string& id, uint32_t ssrc) {
   RTC_DCHECK(kind == MediaStreamTrackInterface::kAudioKind ||
              kind == MediaStreamTrackInterface::kVideoKind);
   std::ostringstream oss;
@@ -69,7 +66,7 @@ std::string RTCMediaStreamTrackStatsIDFromTrackKindIDAndAttachment(
                    : "RTCMediaStreamTrack_remote_");
   oss << kind << "_";
   oss << id << "_";
-  oss << attachment_id;
+  oss << ssrc;
   return oss.str();
 }
 
@@ -378,14 +375,14 @@ std::unique_ptr<RTCMediaStreamTrackStats>
 ProduceMediaStreamTrackStatsFromVoiceSenderInfo(
     int64_t timestamp_us,
     const AudioTrackInterface& audio_track,
-    const cricket::VoiceSenderInfo& voice_sender_info,
-    int attachment_id) {
+    const cricket::VoiceSenderInfo& voice_sender_info) {
   std::unique_ptr<RTCMediaStreamTrackStats> audio_track_stats(
       new RTCMediaStreamTrackStats(
-          RTCMediaStreamTrackStatsIDFromTrackKindIDAndAttachment(
+          RTCMediaStreamTrackStatsIDFromTrackKindIDAndSsrc(
               true, MediaStreamTrackInterface::kAudioKind, audio_track.id(),
-              attachment_id),
-          timestamp_us, RTCMediaStreamTrackKind::kAudio));
+              voice_sender_info.ssrc()),
+          timestamp_us,
+          RTCMediaStreamTrackKind::kAudio));
   SetMediaStreamTrackStatsFromMediaStreamTrackInterface(
       audio_track, audio_track_stats.get());
   audio_track_stats->remote_source = false;
@@ -412,16 +409,14 @@ std::unique_ptr<RTCMediaStreamTrackStats>
 ProduceMediaStreamTrackStatsFromVoiceReceiverInfo(
     int64_t timestamp_us,
     const AudioTrackInterface& audio_track,
-    const cricket::VoiceReceiverInfo& voice_receiver_info,
-    int attachment_id) {
-  // Since receiver tracks can't be reattached, we use the SSRC as
-  // an attachment identifier.
+    const cricket::VoiceReceiverInfo& voice_receiver_info) {
   std::unique_ptr<RTCMediaStreamTrackStats> audio_track_stats(
       new RTCMediaStreamTrackStats(
-          RTCMediaStreamTrackStatsIDFromTrackKindIDAndAttachment(
+          RTCMediaStreamTrackStatsIDFromTrackKindIDAndSsrc(
               false, MediaStreamTrackInterface::kAudioKind, audio_track.id(),
-              attachment_id),
-          timestamp_us, RTCMediaStreamTrackKind::kAudio));
+              voice_receiver_info.ssrc()),
+          timestamp_us,
+          RTCMediaStreamTrackKind::kAudio));
   SetMediaStreamTrackStatsFromMediaStreamTrackInterface(
       audio_track, audio_track_stats.get());
   audio_track_stats->remote_source = true;
@@ -448,14 +443,14 @@ std::unique_ptr<RTCMediaStreamTrackStats>
 ProduceMediaStreamTrackStatsFromVideoSenderInfo(
     int64_t timestamp_us,
     const VideoTrackInterface& video_track,
-    const cricket::VideoSenderInfo& video_sender_info,
-    int attachment_id) {
+    const cricket::VideoSenderInfo& video_sender_info) {
   std::unique_ptr<RTCMediaStreamTrackStats> video_track_stats(
       new RTCMediaStreamTrackStats(
-          RTCMediaStreamTrackStatsIDFromTrackKindIDAndAttachment(
+          RTCMediaStreamTrackStatsIDFromTrackKindIDAndSsrc(
               true, MediaStreamTrackInterface::kVideoKind, video_track.id(),
-              attachment_id),
-          timestamp_us, RTCMediaStreamTrackKind::kVideo));
+              video_sender_info.ssrc()),
+          timestamp_us,
+          RTCMediaStreamTrackKind::kVideo));
   SetMediaStreamTrackStatsFromMediaStreamTrackInterface(
       video_track, video_track_stats.get());
   video_track_stats->remote_source = false;
@@ -474,16 +469,14 @@ std::unique_ptr<RTCMediaStreamTrackStats>
 ProduceMediaStreamTrackStatsFromVideoReceiverInfo(
     int64_t timestamp_us,
     const VideoTrackInterface& video_track,
-    const cricket::VideoReceiverInfo& video_receiver_info,
-    int attachment_id) {
-  // Since receiver tracks can't be reattached, we use the SSRC as
-  // attachment ID.
+    const cricket::VideoReceiverInfo& video_receiver_info) {
   std::unique_ptr<RTCMediaStreamTrackStats> video_track_stats(
       new RTCMediaStreamTrackStats(
-          RTCMediaStreamTrackStatsIDFromTrackKindIDAndAttachment(
+          RTCMediaStreamTrackStatsIDFromTrackKindIDAndSsrc(
               false, MediaStreamTrackInterface::kVideoKind, video_track.id(),
-              attachment_id),
-          timestamp_us, RTCMediaStreamTrackKind::kVideo));
+              video_receiver_info.ssrc()),
+          timestamp_us,
+          RTCMediaStreamTrackKind::kVideo));
   SetMediaStreamTrackStatsFromMediaStreamTrackInterface(
       video_track, video_track_stats.get());
   video_track_stats->remote_source = true;
@@ -533,8 +526,8 @@ void ProduceSenderMediaTrackStats(
       RTC_CHECK(voice_sender_info)
           << "No voice sender info for sender with ssrc " << sender->ssrc();
       std::unique_ptr<RTCMediaStreamTrackStats> audio_track_stats =
-          ProduceMediaStreamTrackStatsFromVoiceSenderInfo(
-              timestamp_us, *track, *voice_sender_info, sender->AttachmentId());
+          ProduceMediaStreamTrackStatsFromVoiceSenderInfo(timestamp_us, *track,
+                                                          *voice_sender_info);
       report->AddStats(std::move(audio_track_stats));
     } else if (sender->media_type() == cricket::MEDIA_TYPE_VIDEO) {
       VideoTrackInterface* track =
@@ -546,8 +539,8 @@ void ProduceSenderMediaTrackStats(
       RTC_CHECK(video_sender_info)
           << "No video sender info for sender with ssrc " << sender->ssrc();
       std::unique_ptr<RTCMediaStreamTrackStats> video_track_stats =
-          ProduceMediaStreamTrackStatsFromVideoSenderInfo(
-              timestamp_us, *track, *video_sender_info, sender->AttachmentId());
+          ProduceMediaStreamTrackStatsFromVideoSenderInfo(timestamp_us, *track,
+                                                          *video_sender_info);
       report->AddStats(std::move(video_track_stats));
     } else {
       RTC_NOTREACHED();
@@ -572,8 +565,7 @@ void ProduceReceiverMediaTrackStats(
       }
       std::unique_ptr<RTCMediaStreamTrackStats> audio_track_stats =
           ProduceMediaStreamTrackStatsFromVoiceReceiverInfo(
-              timestamp_us, *track, *voice_receiver_info,
-              receiver->AttachmentId());
+              timestamp_us, *track, *voice_receiver_info);
       report->AddStats(std::move(audio_track_stats));
     } else if (receiver->media_type() == cricket::MEDIA_TYPE_VIDEO) {
       VideoTrackInterface* track =
@@ -585,8 +577,7 @@ void ProduceReceiverMediaTrackStats(
       }
       std::unique_ptr<RTCMediaStreamTrackStats> video_track_stats =
           ProduceMediaStreamTrackStatsFromVideoReceiverInfo(
-              timestamp_us, *track, *video_receiver_info,
-              receiver->AttachmentId());
+              timestamp_us, *track, *video_receiver_info);
       report->AddStats(std::move(video_track_stats));
     } else {
       RTC_NOTREACHED();
@@ -617,37 +608,59 @@ void ProduceMediaStreamStats(
     // TODO(hta): Revisit in conjunction with https://bugs.webrtc.org/8674
     if (is_local) {
       for (auto audio_track : stream->GetAudioTracks()) {
-        stream_stats->track_ids->push_back(
-            RTCMediaStreamTrackStatsIDFromTrackKindIDAndAttachment(
-                is_local, MediaStreamTrackInterface::kAudioKind,
-                audio_track->id(),
-                track_media_info_map.GetAttachmentIdByTrack(audio_track)
-                    .value()));
+        auto sender_infos =
+            track_media_info_map.GetVoiceSenderInfos(*audio_track);
+        // There is no map entry on unconnected tracks.
+        // https://bugs.webrtc.org/8673
+        if (!sender_infos)
+          continue;
+        for (const auto& sender_info : *sender_infos) {
+          // In the WebRTC implementation, SSRC 0 means unconnected,
+          // and should not occur in the map.
+          // https://bugs.webrtc.org/8694
+          RTC_DCHECK_NE(0, sender_info->ssrc());
+          stream_stats->track_ids->push_back(
+              RTCMediaStreamTrackStatsIDFromTrackKindIDAndSsrc(
+                  is_local, MediaStreamTrackInterface::kAudioKind,
+                  audio_track->id(), sender_info->ssrc()));
+        }
       }
       for (auto video_track : stream->GetVideoTracks()) {
-        stream_stats->track_ids->push_back(
-            RTCMediaStreamTrackStatsIDFromTrackKindIDAndAttachment(
-                is_local, MediaStreamTrackInterface::kVideoKind,
-                video_track->id(),
-                track_media_info_map.GetAttachmentIdByTrack(video_track)
-                    .value()));
+        auto sender_infos =
+            track_media_info_map.GetVideoSenderInfos(*video_track);
+        // There is no map entry on unconnected tracks.
+        // https://bugs.webrtc.org/8673
+        if (!sender_infos)
+          continue;
+        for (const auto& sender_info : *sender_infos) {
+          // SSRC must not be zero. https://bugs.webrtc.org/8694
+          RTC_DCHECK_NE(0, sender_info->ssrc());
+          stream_stats->track_ids->push_back(
+              RTCMediaStreamTrackStatsIDFromTrackKindIDAndSsrc(
+                  is_local, MediaStreamTrackInterface::kVideoKind,
+                  video_track->id(), sender_info->ssrc()));
+        }
       }
     } else {
       for (auto audio_track : stream->GetAudioTracks()) {
-        stream_stats->track_ids->push_back(
-            RTCMediaStreamTrackStatsIDFromTrackKindIDAndAttachment(
-                is_local, MediaStreamTrackInterface::kAudioKind,
-                audio_track->id(),
-                track_media_info_map.GetAttachmentIdByTrack(audio_track)
-                    .value()));
+        auto receiver_info =
+            track_media_info_map.GetVoiceReceiverInfo(*audio_track);
+        if (receiver_info) {
+          stream_stats->track_ids->push_back(
+              RTCMediaStreamTrackStatsIDFromTrackKindIDAndSsrc(
+                  is_local, MediaStreamTrackInterface::kAudioKind,
+                  audio_track->id(), receiver_info->ssrc()));
+        }
       }
       for (auto video_track : stream->GetVideoTracks()) {
-        stream_stats->track_ids->push_back(
-            RTCMediaStreamTrackStatsIDFromTrackKindIDAndAttachment(
-                is_local, MediaStreamTrackInterface::kVideoKind,
-                video_track->id(),
-                track_media_info_map.GetAttachmentIdByTrack(video_track)
-                    .value()));
+        auto receiver_info =
+            track_media_info_map.GetVideoReceiverInfo(*video_track);
+        if (receiver_info) {
+          stream_stats->track_ids->push_back(
+              RTCMediaStreamTrackStatsIDFromTrackKindIDAndSsrc(
+                  is_local, MediaStreamTrackInterface::kVideoKind,
+                  video_track->id(), receiver_info->ssrc()));
+        }
       }
     }
     report->AddStats(std::move(stream_stats));
@@ -1064,21 +1077,22 @@ void RTCStatsCollector::ProduceRTPStreamStats_n(
       if (voice_receiver_info.ssrc() == 0)
         continue;
       std::unique_ptr<RTCInboundRTPStreamStats> inbound_audio(
-          new RTCInboundRTPStreamStats(RTCInboundRTPStreamStatsIDFromSSRC(
-                                           true, voice_receiver_info.ssrc()),
-                                       timestamp_us));
+          new RTCInboundRTPStreamStats(
+              RTCInboundRTPStreamStatsIDFromSSRC(
+                  true, voice_receiver_info.ssrc()),
+              timestamp_us));
       SetInboundRTPStreamStatsFromVoiceReceiverInfo(
           voice_receiver_info, inbound_audio.get());
-      // TODO(hta): This lookup should look for the sender, not the track.
       rtc::scoped_refptr<AudioTrackInterface> audio_track =
           track_media_info_map_->GetAudioTrack(voice_receiver_info);
       if (audio_track) {
         RTC_DCHECK(track_to_id_.find(audio_track.get()) != track_to_id_.end());
-        inbound_audio
-            ->track_id = RTCMediaStreamTrackStatsIDFromTrackKindIDAndAttachment(
-            false, MediaStreamTrackInterface::kAudioKind,
-            track_to_id_.find(audio_track.get())->second,
-            track_media_info_map_->GetAttachmentIdByTrack(audio_track).value());
+        inbound_audio->track_id =
+            RTCMediaStreamTrackStatsIDFromTrackKindIDAndSsrc(
+                false,
+                MediaStreamTrackInterface::kAudioKind,
+                track_to_id_.find(audio_track.get())->second,
+                voice_receiver_info.ssrc());
       }
       inbound_audio->transport_id = transport_id;
       report->AddStats(std::move(inbound_audio));
@@ -1101,11 +1115,12 @@ void RTCStatsCollector::ProduceRTPStreamStats_n(
           track_media_info_map_->GetAudioTrack(voice_sender_info);
       if (audio_track) {
         RTC_DCHECK(track_to_id_.find(audio_track.get()) != track_to_id_.end());
-        outbound_audio
-            ->track_id = RTCMediaStreamTrackStatsIDFromTrackKindIDAndAttachment(
-            true, MediaStreamTrackInterface::kAudioKind,
-            track_to_id_.find(audio_track.get())->second,
-            track_media_info_map.GetAttachmentIdByTrack(audio_track).value());
+        outbound_audio->track_id =
+            RTCMediaStreamTrackStatsIDFromTrackKindIDAndSsrc(
+                true,
+                MediaStreamTrackInterface::kAudioKind,
+                track_to_id_.find(audio_track.get())->second,
+                voice_sender_info.ssrc());
       }
       outbound_audio->transport_id = transport_id;
       report->AddStats(std::move(outbound_audio));
@@ -1136,11 +1151,12 @@ void RTCStatsCollector::ProduceRTPStreamStats_n(
           track_media_info_map_->GetVideoTrack(video_receiver_info);
       if (video_track) {
         RTC_DCHECK(track_to_id_.find(video_track.get()) != track_to_id_.end());
-        inbound_video
-            ->track_id = RTCMediaStreamTrackStatsIDFromTrackKindIDAndAttachment(
-            false, MediaStreamTrackInterface::kVideoKind,
-            track_to_id_.find(video_track.get())->second,
-            track_media_info_map_->GetAttachmentIdByTrack(video_track).value());
+        inbound_video->track_id =
+            RTCMediaStreamTrackStatsIDFromTrackKindIDAndSsrc(
+                false,
+                MediaStreamTrackInterface::kVideoKind,
+                track_to_id_.find(video_track.get())->second,
+                video_receiver_info.ssrc());
       }
       inbound_video->transport_id = transport_id;
       report->AddStats(std::move(inbound_video));
@@ -1153,20 +1169,22 @@ void RTCStatsCollector::ProduceRTPStreamStats_n(
       if (video_sender_info.ssrc() == 0)
         continue;
       std::unique_ptr<RTCOutboundRTPStreamStats> outbound_video(
-          new RTCOutboundRTPStreamStats(RTCOutboundRTPStreamStatsIDFromSSRC(
-                                            false, video_sender_info.ssrc()),
-                                        timestamp_us));
+          new RTCOutboundRTPStreamStats(
+              RTCOutboundRTPStreamStatsIDFromSSRC(
+                  false, video_sender_info.ssrc()),
+              timestamp_us));
       SetOutboundRTPStreamStatsFromVideoSenderInfo(
           video_sender_info, outbound_video.get());
       rtc::scoped_refptr<VideoTrackInterface> video_track =
           track_media_info_map_->GetVideoTrack(video_sender_info);
       if (video_track) {
         RTC_DCHECK(track_to_id_.find(video_track.get()) != track_to_id_.end());
-        outbound_video
-            ->track_id = RTCMediaStreamTrackStatsIDFromTrackKindIDAndAttachment(
-            true, MediaStreamTrackInterface::kVideoKind,
-            track_to_id_.find(video_track.get())->second,
-            track_media_info_map_->GetAttachmentIdByTrack(video_track).value());
+        outbound_video->track_id =
+            RTCMediaStreamTrackStatsIDFromTrackKindIDAndSsrc(
+                true,
+                MediaStreamTrackInterface::kVideoKind,
+                track_to_id_.find(video_track.get())->second,
+                video_sender_info.ssrc());
       }
       outbound_video->transport_id = transport_id;
       report->AddStats(std::move(outbound_video));
@@ -1292,9 +1310,6 @@ RTCStatsCollector::PrepareTrackMediaInfoMap_s() const {
 
 std::map<MediaStreamTrackInterface*, std::string>
 RTCStatsCollector::PrepareTrackToID_s() const {
-  // TODO(hta): Remove this method, and vector its callers via
-  // senders / receivers instead.
-  // It ignores tracks that are multiply connected to the PC.
   RTC_DCHECK(signaling_thread_->IsCurrent());
   std::map<MediaStreamTrackInterface*, std::string> track_to_id;
   for (auto sender : pc_->GetSenders()) {

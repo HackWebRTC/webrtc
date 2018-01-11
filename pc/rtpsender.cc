@@ -20,17 +20,6 @@
 
 namespace webrtc {
 
-namespace {
-
-// This function is only expected to be called on the signalling thread.
-int GenerateUniqueId() {
-  static int g_unique_id = 0;
-
-  return ++g_unique_id;
-}
-
-}  // namespace
-
 LocalAudioSinkAdapter::LocalAudioSinkAdapter() : sink_(nullptr) {}
 
 LocalAudioSinkAdapter::~LocalAudioSinkAdapter() {
@@ -71,8 +60,7 @@ AudioRtpSender::AudioRtpSender(rtc::scoped_refptr<AudioTrackInterface> track,
           rtc::Thread::Current(),
           DtmfSender::Create(track_, rtc::Thread::Current(), this))),
       cached_track_enabled_(track ? track->enabled() : false),
-      sink_adapter_(new LocalAudioSinkAdapter()),
-      attachment_id_(track ? GenerateUniqueId() : 0) {
+      sink_adapter_(new LocalAudioSinkAdapter()) {
   // TODO(bugs.webrtc.org/7932): Remove once zero or multiple streams are
   // supported.
   RTC_DCHECK_EQ(stream_labels.size(), 1u);
@@ -177,7 +165,6 @@ bool AudioRtpSender::SetTrack(MediaStreamTrackInterface* track) {
   } else if (prev_can_send_track) {
     ClearAudioSend();
   }
-  attachment_id_ = GenerateUniqueId();
   return true;
 }
 
@@ -289,10 +276,9 @@ VideoRtpSender::VideoRtpSender(rtc::scoped_refptr<VideoTrackInterface> track,
       stream_ids_(stream_labels),
       track_(track),
       cached_track_enabled_(track ? track->enabled() : false),
-      cached_track_content_hint_(track
-                                     ? track->content_hint()
-                                     : VideoTrackInterface::ContentHint::kNone),
-      attachment_id_(track ? GenerateUniqueId() : 0) {
+      cached_track_content_hint_(
+          track ? track->content_hint()
+                : VideoTrackInterface::ContentHint::kNone) {
   // TODO(bugs.webrtc.org/7932): Remove once zero or multiple streams are
   // supported.
   RTC_DCHECK_EQ(stream_labels.size(), 1u);
@@ -354,7 +340,6 @@ bool VideoRtpSender::SetTrack(MediaStreamTrackInterface* track) {
   } else if (prev_can_send_track) {
     ClearVideoSend();
   }
-  attachment_id_ = GenerateUniqueId();
   return true;
 }
 

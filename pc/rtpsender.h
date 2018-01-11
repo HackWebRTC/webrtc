@@ -137,8 +137,6 @@ class AudioRtpSender : public DtmfProviderInterface,
 
   void Stop() override;
 
-  int AttachmentId() const override { return attachment_id_; }
-
   // Does not take ownership.
   // Should call SetChannel(nullptr) before |channel| is destroyed.
   void SetChannel(cricket::VoiceChannel* channel) { channel_ = channel; }
@@ -170,7 +168,6 @@ class AudioRtpSender : public DtmfProviderInterface,
   // Used to pass the data callback from the |track_| to the other end of
   // cricket::AudioSource.
   std::unique_ptr<LocalAudioSinkAdapter> sink_adapter_;
-  int attachment_id_ = 0;
 };
 
 class VideoRtpSender : public ObserverInterface,
@@ -223,7 +220,6 @@ class VideoRtpSender : public ObserverInterface,
   }
 
   void Stop() override;
-  int AttachmentId() const override { return attachment_id_; }
 
   // Does not take ownership.
   // Should call SetChannel(nullptr) before |channel| is destroyed.
@@ -248,7 +244,6 @@ class VideoRtpSender : public ObserverInterface,
   VideoTrackInterface::ContentHint cached_track_content_hint_ =
       VideoTrackInterface::ContentHint::kNone;
   bool stopped_ = false;
-  int attachment_id_ = 0;
 };
 
 }  // namespace webrtc
