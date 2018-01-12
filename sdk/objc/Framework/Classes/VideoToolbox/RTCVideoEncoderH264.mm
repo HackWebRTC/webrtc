@@ -340,7 +340,7 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
 }
 
 - (NSInteger)encode:(RTCVideoFrame *)frame
-    codecSpecificInfo:(id<RTCCodecSpecificInfo>)codecSpecificInfo
+    codecSpecificInfo:(nullable id<RTCCodecSpecificInfo>)codecSpecificInfo
            frameTypes:(NSArray<NSNumber *> *)frameTypes {
   RTC_DCHECK_EQ(frame.width, _width);
   RTC_DCHECK_EQ(frame.height, _height);

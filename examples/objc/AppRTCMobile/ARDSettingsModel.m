@@ -168,8 +168,6 @@ NS_ASSUME_NONNULL_BEGIN
 }
 
 - (void)registerStoreDefaults {
-  NSString *defaultVideoResolutionSetting = [self defaultVideoResolutionSetting];
-
   NSData *codecData = [NSKeyedArchiver archivedDataWithRootObject:[self defaultVideoCodecSetting]];
   [ARDSettingsStore setDefaultsForVideoResolution:[self defaultVideoResolutionSetting]
                                        videoCodec:codecData

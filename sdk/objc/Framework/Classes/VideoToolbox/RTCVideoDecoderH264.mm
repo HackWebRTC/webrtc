@@ -22,6 +22,7 @@
 #import "WebRTC/RTCVideoFrame.h"
 #import "WebRTC/RTCVideoFrameBuffer.h"
 #import "helpers.h"
+#import "scoped_cftyperef.h"
 
 #if defined(WEBRTC_IOS)
 #import "Common/RTCUIApplicationStatusObserver.h"
@@ -99,7 +100,7 @@ void decompressionOutputCallback(void *decoderRef,
 - (NSInteger)decode:(RTCEncodedImage *)inputImage
           missingFrames:(BOOL)missingFrames
     fragmentationHeader:(RTCRtpFragmentationHeader *)fragmentationHeader
-      codecSpecificInfo:(__nullable id<RTCCodecSpecificInfo>)info
+      codecSpecificInfo:(nullable id<RTCCodecSpecificInfo>)info
            renderTimeMs:(int64_t)renderTimeMs {
   RTC_DCHECK(inputImage.buffer);
 
@@ -119,19 +120,22 @@ void decompressionOutputCallback(void *decoderRef,
     return WEBRTC_VIDEO_CODEC_NO_OUTPUT;
   }
 #endif
-  CMVideoFormatDescriptionRef inputFormat = nullptr;
   if (webrtc::H264AnnexBBufferHasVideoFormatDescription((uint8_t *)inputImage.buffer.bytes,
                                                         inputImage.buffer.length)) {
-    inputFormat = webrtc::CreateVideoFormatDescription((uint8_t *)inputImage.buffer.bytes,
-                                                       inputImage.buffer.length);
+    rtc::ScopedCFTypeRef<CMVideoFormatDescriptionRef> inputFormat =
+        rtc::ScopedCF(webrtc::CreateVideoFormatDescription((uint8_t *)inputImage.buffer.bytes,
+                                                           inputImage.buffer.length));
     if (inputFormat) {
       // Check if the video format has changed, and reinitialize decoder if
       // needed.
-      if (!CMFormatDescriptionEqual(inputFormat, _videoFormat)) {
-        [self setVideoFormat:inputFormat];
-        [self resetDecompressionSession];
+      if (!CMFormatDescriptionEqual(inputFormat.get(), _videoFormat)) {
+        [self setVideoFormat:inputFormat.get()];
+
+        int resetDecompressionSessionError = [self resetDecompressionSession];
+        if (resetDecompressionSessionError != WEBRTC_VIDEO_CODEC_OK) {
+          return resetDecompressionSessionError;
+        }
       }
-      CFRelease(inputFormat);
     }
   }
   if (!_videoFormat) {

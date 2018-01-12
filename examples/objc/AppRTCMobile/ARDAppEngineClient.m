@@ -58,7 +58,6 @@ static NSInteger const kARDAppEngineClientErrorBadResponse = -1;
   __weak ARDAppEngineClient *weakSelf = self;
   [NSURLConnection sendAsyncRequest:request
                   completionHandler:^(NSURLResponse *response, NSData *data, NSError *error) {
-                    ARDAppEngineClient *strongSelf = weakSelf;
                     if (error) {
                       if (completionHandler) {
                         completionHandler(nil, error);
@@ -102,7 +101,6 @@ static NSInteger const kARDAppEngineClientErrorBadResponse = -1;
                   completionHandler:^(NSURLResponse *response,
                                       NSData *data,
                                       NSError *error) {
-    ARDAppEngineClient *strongSelf = weakSelf;
     if (error) {
       if (completionHandler) {
         completionHandler(nil, error);

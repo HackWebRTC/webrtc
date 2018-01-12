@@ -21,7 +21,7 @@
 
 - (instancetype)initWithCapturer:(RTCCameraVideoCapturer *)capturer
                         settings:(ARDSettingsModel *)settings {
-  if ([super init]) {
+  if (self = [super init]) {
     _capturer = capturer;
     _settings = settings;
     _usingFrontCamera = YES;
