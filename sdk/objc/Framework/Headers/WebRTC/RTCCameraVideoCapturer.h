@@ -32,18 +32,10 @@ RTC_EXPORT
 // Returns the most efficient supported output pixel format for this capturer.
 - (FourCharCode)preferredOutputPixelFormat;
 
-// Starts the capture session asynchronously and notifies callback on completion.
+// Starts and stops the capture session asynchronously.
 // The device will capture video in the format given in the `format` parameter. If the pixel format
 // in `format` is supported by the WebRTC pipeline, the same pixel format will be used for the
 // output. Otherwise, the format returned by `preferredOutputPixelFormat` will be used.
-- (void)startCaptureWithDevice:(AVCaptureDevice *)device
-                        format:(AVCaptureDeviceFormat *)format
-                           fps:(NSInteger)fps
-             completionHandler:(nullable void (^)(NSError *))completionHandler;
-// Stops the capture session asynchronously and notifies callback on completion.
-- (void)stopCaptureWithCompletionHandler:(nullable void (^)())completionHandler;
-
-// Starts the capture session asynchronously.
 - (void)startCaptureWithDevice:(AVCaptureDevice *)device
                         format:(AVCaptureDeviceFormat *)format
                            fps:(NSInteger)fps;
