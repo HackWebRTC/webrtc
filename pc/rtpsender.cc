@@ -57,13 +57,17 @@ void LocalAudioSinkAdapter::SetSink(cricket::AudioSource::Sink* sink) {
   sink_ = sink;
 }
 
-AudioRtpSender::AudioRtpSender(StatsCollector* stats)
-    : AudioRtpSender(nullptr, {rtc::CreateRandomUuid()}, stats) {}
+AudioRtpSender::AudioRtpSender(rtc::Thread* worker_thread,
+                               StatsCollector* stats)
+    : AudioRtpSender(worker_thread, nullptr, {rtc::CreateRandomUuid()}, stats) {
+}
 
-AudioRtpSender::AudioRtpSender(rtc::scoped_refptr<AudioTrackInterface> track,
+AudioRtpSender::AudioRtpSender(rtc::Thread* worker_thread,
+                               rtc::scoped_refptr<AudioTrackInterface> track,
                                const std::vector<std::string>& stream_labels,
                                StatsCollector* stats)
-    : id_(track ? track->id() : rtc::CreateRandomUuid()),
+    : worker_thread_(worker_thread),
+      id_(track ? track->id() : rtc::CreateRandomUuid()),
       stream_ids_(stream_labels),
       stats_(stats),
       track_(track),
@@ -73,6 +77,7 @@ AudioRtpSender::AudioRtpSender(rtc::scoped_refptr<AudioTrackInterface> track,
       cached_track_enabled_(track ? track->enabled() : false),
       sink_adapter_(new LocalAudioSinkAdapter()),
       attachment_id_(track ? GenerateUniqueId() : 0) {
+  RTC_DCHECK(worker_thread);
   // TODO(bugs.webrtc.org/7932): Remove once zero or multiple streams are
   // supported.
   RTC_DCHECK_EQ(stream_labels.size(), 1u);
@@ -89,7 +94,7 @@ AudioRtpSender::~AudioRtpSender() {
 }
 
 bool AudioRtpSender::CanInsertDtmf() {
-  if (!channel_) {
+  if (!media_channel_) {
     RTC_LOG(LS_ERROR) << "CanInsertDtmf: No audio channel exists.";
     return false;
   }
@@ -99,11 +104,12 @@ bool AudioRtpSender::CanInsertDtmf() {
     RTC_LOG(LS_ERROR) << "CanInsertDtmf: Sender does not have SSRC.";
     return false;
   }
-  return channel_->CanInsertDtmf();
+  return worker_thread_->Invoke<bool>(
+      RTC_FROM_HERE, [&] { return media_channel_->CanInsertDtmf(); });
 }
 
 bool AudioRtpSender::InsertDtmf(int code, int duration) {
-  if (!channel_) {
+  if (!media_channel_) {
     RTC_LOG(LS_ERROR) << "CanInsertDtmf: No audio channel exists.";
     return false;
   }
@@ -111,11 +117,13 @@ bool AudioRtpSender::InsertDtmf(int code, int duration) {
     RTC_LOG(LS_ERROR) << "CanInsertDtmf: Sender does not have SSRC.";
     return false;
   }
-  if (!channel_->InsertDtmf(ssrc_, code, duration)) {
+  bool success = worker_thread_->Invoke<bool>(RTC_FROM_HERE, [&] {
+    return media_channel_->InsertDtmf(ssrc_, code, duration);
+  });
+  if (!success) {
     RTC_LOG(LS_ERROR) << "Failed to insert DTMF to channel.";
-    return false;
   }
-  return true;
+  return success;
 }
 
 sigslot::signal0<>* AudioRtpSender::GetOnDestroyedSignal() {
@@ -182,18 +190,22 @@ bool AudioRtpSender::SetTrack(MediaStreamTrackInterface* track) {
 }
 
 RtpParameters AudioRtpSender::GetParameters() const {
-  if (!channel_ || stopped_) {
+  if (!media_channel_ || stopped_) {
     return RtpParameters();
   }
-  return channel_->GetRtpSendParameters(ssrc_);
+  return worker_thread_->Invoke<RtpParameters>(RTC_FROM_HERE, [&] {
+    return media_channel_->GetRtpSendParameters(ssrc_);
+  });
 }
 
 bool AudioRtpSender::SetParameters(const RtpParameters& parameters) {
   TRACE_EVENT0("webrtc", "AudioRtpSender::SetParameters");
-  if (!channel_ || stopped_) {
+  if (!media_channel_ || stopped_) {
     return false;
   }
-  return channel_->SetRtpSendParameters(ssrc_, parameters);
+  return worker_thread_->Invoke<bool>(RTC_FROM_HERE, [&] {
+    return media_channel_->SetRtpSendParameters(ssrc_, parameters);
+  });
 }
 
 rtc::scoped_refptr<DtmfSenderInterface> AudioRtpSender::GetDtmfSender() const {
@@ -243,7 +255,7 @@ void AudioRtpSender::Stop() {
 void AudioRtpSender::SetAudioSend() {
   RTC_DCHECK(!stopped_);
   RTC_DCHECK(can_send_track());
-  if (!channel_) {
+  if (!media_channel_) {
     RTC_LOG(LS_ERROR) << "SetAudioSend: No audio channel exists.";
     return;
   }
@@ -260,9 +272,14 @@ void AudioRtpSender::SetAudioSend() {
   }
 #endif
 
-  cricket::AudioSource* source = sink_adapter_.get();
-  RTC_DCHECK(source != nullptr);
-  if (!channel_->SetAudioSend(ssrc_, track_->enabled(), &options, source)) {
+  // |track_->enabled()| hops to the signaling thread, so call it before we hop
+  // to the worker thread or else it will deadlock.
+  bool track_enabled = track_->enabled();
+  bool success = worker_thread_->Invoke<bool>(RTC_FROM_HERE, [&] {
+    return media_channel_->SetAudioSend(ssrc_, track_enabled, &options,
+                                        sink_adapter_.get());
+  });
+  if (!success) {
     RTC_LOG(LS_ERROR) << "SetAudioSend: ssrc is incorrect: " << ssrc_;
   }
 }
@@ -270,29 +287,35 @@ void AudioRtpSender::SetAudioSend() {
 void AudioRtpSender::ClearAudioSend() {
   RTC_DCHECK(ssrc_ != 0);
   RTC_DCHECK(!stopped_);
-  if (!channel_) {
+  if (!media_channel_) {
     RTC_LOG(LS_WARNING) << "ClearAudioSend: No audio channel exists.";
     return;
   }
   cricket::AudioOptions options;
-  if (!channel_->SetAudioSend(ssrc_, false, &options, nullptr)) {
+  bool success = worker_thread_->Invoke<bool>(RTC_FROM_HERE, [&] {
+    return media_channel_->SetAudioSend(ssrc_, false, &options, nullptr);
+  });
+  if (!success) {
     RTC_LOG(LS_WARNING) << "ClearAudioSend: ssrc is incorrect: " << ssrc_;
   }
 }
 
-VideoRtpSender::VideoRtpSender()
-    : VideoRtpSender(nullptr, {rtc::CreateRandomUuid()}) {}
+VideoRtpSender::VideoRtpSender(rtc::Thread* worker_thread)
+    : VideoRtpSender(worker_thread, nullptr, {rtc::CreateRandomUuid()}) {}
 
-VideoRtpSender::VideoRtpSender(rtc::scoped_refptr<VideoTrackInterface> track,
+VideoRtpSender::VideoRtpSender(rtc::Thread* worker_thread,
+                               rtc::scoped_refptr<VideoTrackInterface> track,
                                const std::vector<std::string>& stream_labels)
-    : id_(track ? track->id() : rtc::CreateRandomUuid()),
+    : worker_thread_(worker_thread),
+      id_(track ? track->id() : rtc::CreateRandomUuid()),
       stream_ids_(stream_labels),
       track_(track),
       cached_track_enabled_(track ? track->enabled() : false),
-      cached_track_content_hint_(track
-                                     ? track->content_hint()
-                                     : VideoTrackInterface::ContentHint::kNone),
+      cached_track_content_hint_(
+          track ? track->content_hint()
+                : VideoTrackInterface::ContentHint::kNone),
       attachment_id_(track ? GenerateUniqueId() : 0) {
+  RTC_DCHECK(worker_thread);
   // TODO(bugs.webrtc.org/7932): Remove once zero or multiple streams are
   // supported.
   RTC_DCHECK_EQ(stream_labels.size(), 1u);
@@ -359,18 +382,22 @@ bool VideoRtpSender::SetTrack(MediaStreamTrackInterface* track) {
 }
 
 RtpParameters VideoRtpSender::GetParameters() const {
-  if (!channel_ || stopped_) {
+  if (!media_channel_ || stopped_) {
     return RtpParameters();
   }
-  return channel_->GetRtpSendParameters(ssrc_);
+  return worker_thread_->Invoke<RtpParameters>(RTC_FROM_HERE, [&] {
+    return media_channel_->GetRtpSendParameters(ssrc_);
+  });
 }
 
 bool VideoRtpSender::SetParameters(const RtpParameters& parameters) {
   TRACE_EVENT0("webrtc", "VideoRtpSender::SetParameters");
-  if (!channel_ || stopped_) {
+  if (!media_channel_ || stopped_) {
     return false;
   }
-  return channel_->SetRtpSendParameters(ssrc_, parameters);
+  return worker_thread_->Invoke<bool>(RTC_FROM_HERE, [&] {
+    return media_channel_->SetRtpSendParameters(ssrc_, parameters);
+  });
 }
 
 rtc::scoped_refptr<DtmfSenderInterface> VideoRtpSender::GetDtmfSender() const {
@@ -411,7 +438,7 @@ void VideoRtpSender::Stop() {
 void VideoRtpSender::SetVideoSend() {
   RTC_DCHECK(!stopped_);
   RTC_DCHECK(can_send_track());
-  if (!channel_) {
+  if (!media_channel_) {
     RTC_LOG(LS_ERROR) << "SetVideoSend: No video channel exists.";
     return;
   }
@@ -431,22 +458,28 @@ void VideoRtpSender::SetVideoSend() {
       options.is_screencast = true;
       break;
   }
-  if (!channel_->SetVideoSend(ssrc_, track_->enabled(), &options, track_)) {
-    RTC_NOTREACHED();
-  }
+  // |track_->enabled()| hops to the signaling thread, so call it before we hop
+  // to the worker thread or else it will deadlock.
+  bool track_enabled = track_->enabled();
+  bool success = worker_thread_->Invoke<bool>(RTC_FROM_HERE, [&] {
+    return media_channel_->SetVideoSend(ssrc_, track_enabled, &options, track_);
+  });
+  RTC_DCHECK(success);
 }
 
 void VideoRtpSender::ClearVideoSend() {
   RTC_DCHECK(ssrc_ != 0);
   RTC_DCHECK(!stopped_);
-  if (!channel_) {
+  if (!media_channel_) {
     RTC_LOG(LS_WARNING) << "SetVideoSend: No video channel exists.";
     return;
   }
   // Allow SetVideoSend to fail since |enable| is false and |source| is null.
   // This the normal case when the underlying media channel has already been
   // deleted.
-  channel_->SetVideoSend(ssrc_, false, nullptr, nullptr);
+  worker_thread_->Invoke<bool>(RTC_FROM_HERE, [&] {
+    return media_channel_->SetVideoSend(ssrc_, false, nullptr, nullptr);
+  });
 }
 
 }  // namespace webrtc

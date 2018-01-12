@@ -26,7 +26,6 @@
 // Adding 'nogncheck' to disable the gn include headers check to support modular
 // WebRTC build targets.
 #include "media/base/audiosource.h"  // nogncheck
-#include "pc/channel.h"
 #include "pc/dtmfsender.h"
 #include "pc/statscollector.h"
 
@@ -85,11 +84,12 @@ class AudioRtpSender : public DtmfProviderInterface,
 
   // Construct an AudioRtpSender with a null track, a single, randomly generated
   // stream label, and a randomly generated ID.
-  explicit AudioRtpSender(StatsCollector* stats);
+  AudioRtpSender(rtc::Thread* worker_thread, StatsCollector* stats);
 
   // Construct an AudioRtpSender with the given track and stream labels. The
   // sender ID will be set to the track's ID.
-  AudioRtpSender(rtc::scoped_refptr<AudioTrackInterface> track,
+  AudioRtpSender(rtc::Thread* worker_thread,
+                 rtc::scoped_refptr<AudioTrackInterface> track,
                  const std::vector<std::string>& stream_labels,
                  StatsCollector* stats);
 
@@ -140,8 +140,10 @@ class AudioRtpSender : public DtmfProviderInterface,
   int AttachmentId() const override { return attachment_id_; }
 
   // Does not take ownership.
-  // Should call SetChannel(nullptr) before |channel| is destroyed.
-  void SetChannel(cricket::VoiceChannel* channel) { channel_ = channel; }
+  // Should call SetMediaChannel(nullptr) before |media_channel| is destroyed.
+  void SetMediaChannel(cricket::VoiceMediaChannel* media_channel) {
+    media_channel_ = media_channel;
+  }
 
  private:
   // TODO(nisse): Since SSRC == 0 is technically valid, figure out
@@ -155,11 +157,12 @@ class AudioRtpSender : public DtmfProviderInterface,
 
   sigslot::signal0<> SignalDestroyed;
 
+  rtc::Thread* const worker_thread_;
   const std::string id_;
   // TODO(steveanton): Until more Unified Plan work is done, this can only have
   // exactly one element.
   std::vector<std::string> stream_ids_;
-  cricket::VoiceChannel* channel_ = nullptr;
+  cricket::VoiceMediaChannel* media_channel_ = nullptr;
   StatsCollector* stats_;
   rtc::scoped_refptr<AudioTrackInterface> track_;
   rtc::scoped_refptr<DtmfSenderInterface> dtmf_sender_proxy_;
@@ -178,11 +181,12 @@ class VideoRtpSender : public ObserverInterface,
  public:
   // Construct a VideoRtpSender with a null track, a single, randomly generated
   // stream label, and a randomly generated ID.
-  VideoRtpSender();
+  explicit VideoRtpSender(rtc::Thread* worker_thread);
 
   // Construct a VideoRtpSender with the given track and stream labels. The
   // sender ID will be set to the track's ID.
-  VideoRtpSender(rtc::scoped_refptr<VideoTrackInterface> track,
+  VideoRtpSender(rtc::Thread* worker_thread,
+                 rtc::scoped_refptr<VideoTrackInterface> track,
                  const std::vector<std::string>& stream_labels);
 
   virtual ~VideoRtpSender();
@@ -226,8 +230,10 @@ class VideoRtpSender : public ObserverInterface,
   int AttachmentId() const override { return attachment_id_; }
 
   // Does not take ownership.
-  // Should call SetChannel(nullptr) before |channel| is destroyed.
-  void SetChannel(cricket::VideoChannel* channel) { channel_ = channel; }
+  // Should call SetMediaChannel(nullptr) before |media_channel| is destroyed.
+  void SetMediaChannel(cricket::VideoMediaChannel* media_channel) {
+    media_channel_ = media_channel;
+  }
 
  private:
   bool can_send_track() const { return track_ && ssrc_; }
@@ -237,11 +243,12 @@ class VideoRtpSender : public ObserverInterface,
   // Helper function to call SetVideoSend with "stop sending" parameters.
   void ClearVideoSend();
 
+  rtc::Thread* worker_thread_;
   const std::string id_;
   // TODO(steveanton): Until more Unified Plan work is done, this can only have
   // exactly one element.
   std::vector<std::string> stream_ids_;
-  cricket::VideoChannel* channel_ = nullptr;
+  cricket::VideoMediaChannel* media_channel_ = nullptr;
   rtc::scoped_refptr<VideoTrackInterface> track_;
   uint32_t ssrc_ = 0;
   bool cached_track_enabled_ = false;

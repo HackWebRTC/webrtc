@@ -1212,42 +1212,6 @@ void VoiceChannel::SetEarlyMedia(bool enable) {
   }
 }
 
-bool VoiceChannel::CanInsertDtmf() {
-  return InvokeOnWorker<bool>(
-      RTC_FROM_HERE, Bind(&VoiceMediaChannel::CanInsertDtmf, media_channel()));
-}
-
-bool VoiceChannel::InsertDtmf(uint32_t ssrc,
-                              int event_code,
-                              int duration) {
-  return InvokeOnWorker<bool>(
-      RTC_FROM_HERE,
-      Bind(&VoiceChannel::InsertDtmf_w, this, ssrc, event_code, duration));
-}
-
-webrtc::RtpParameters VoiceChannel::GetRtpSendParameters(uint32_t ssrc) const {
-  return worker_thread()->Invoke<webrtc::RtpParameters>(
-      RTC_FROM_HERE, Bind(&VoiceChannel::GetRtpSendParameters_w, this, ssrc));
-}
-
-webrtc::RtpParameters VoiceChannel::GetRtpSendParameters_w(
-    uint32_t ssrc) const {
-  return media_channel()->GetRtpSendParameters(ssrc);
-}
-
-bool VoiceChannel::SetRtpSendParameters(
-    uint32_t ssrc,
-    const webrtc::RtpParameters& parameters) {
-  return InvokeOnWorker<bool>(
-      RTC_FROM_HERE,
-      Bind(&VoiceChannel::SetRtpSendParameters_w, this, ssrc, parameters));
-}
-
-bool VoiceChannel::SetRtpSendParameters_w(uint32_t ssrc,
-                                          webrtc::RtpParameters parameters) {
-  return media_channel()->SetRtpSendParameters(ssrc, parameters);
-}
-
 bool VoiceChannel::GetStats(VoiceMediaInfo* stats) {
   return InvokeOnWorker<bool>(RTC_FROM_HERE, Bind(&VoiceMediaChannel::GetStats,
                                                   media_channel(), stats));
@@ -1441,15 +1405,6 @@ void VoiceChannel::HandleEarlyMediaTimeout() {
   }
 }
 
-bool VoiceChannel::InsertDtmf_w(uint32_t ssrc,
-                                int event,
-                                int duration) {
-  if (!enabled()) {
-    return false;
-  }
-  return media_channel()->InsertDtmf(ssrc, event, duration);
-}
-
 void VoiceChannel::OnMessage(rtc::Message *pmsg) {
   switch (pmsg->message_id) {
     case MSG_EARLYMEDIATIMEOUT:
@@ -1499,39 +1454,6 @@ VideoChannel::~VideoChannel() {
   DisableMedia_w();
 
   Deinit();
-}
-
-bool VideoChannel::SetVideoSend(
-    uint32_t ssrc,
-    bool mute,
-    const VideoOptions* options,
-    rtc::VideoSourceInterface<webrtc::VideoFrame>* source) {
-  return InvokeOnWorker<bool>(
-      RTC_FROM_HERE, Bind(&VideoMediaChannel::SetVideoSend, media_channel(),
-                          ssrc, mute, options, source));
-}
-
-webrtc::RtpParameters VideoChannel::GetRtpSendParameters(uint32_t ssrc) const {
-  return worker_thread()->Invoke<webrtc::RtpParameters>(
-      RTC_FROM_HERE, Bind(&VideoChannel::GetRtpSendParameters_w, this, ssrc));
-}
-
-webrtc::RtpParameters VideoChannel::GetRtpSendParameters_w(
-    uint32_t ssrc) const {
-  return media_channel()->GetRtpSendParameters(ssrc);
-}
-
-bool VideoChannel::SetRtpSendParameters(
-    uint32_t ssrc,
-    const webrtc::RtpParameters& parameters) {
-  return InvokeOnWorker<bool>(
-      RTC_FROM_HERE,
-      Bind(&VideoChannel::SetRtpSendParameters_w, this, ssrc, parameters));
-}
-
-bool VideoChannel::SetRtpSendParameters_w(uint32_t ssrc,
-                                          webrtc::RtpParameters parameters) {
-  return media_channel()->SetRtpSendParameters(ssrc, parameters);
 }
 
 void VideoChannel::UpdateMediaSendRecvState_w() {

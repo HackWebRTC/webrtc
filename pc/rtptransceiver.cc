@@ -60,11 +60,15 @@ void RtpTransceiver::SetChannel(cricket::BaseChannel* channel) {
 
   for (auto sender : senders_) {
     if (media_type() == cricket::MEDIA_TYPE_AUDIO) {
+      auto* voice_channel = static_cast<cricket::VoiceChannel*>(channel);
       static_cast<AudioRtpSender*>(sender->internal())
-          ->SetChannel(static_cast<cricket::VoiceChannel*>(channel));
+          ->SetMediaChannel(voice_channel ? voice_channel->media_channel()
+                                          : nullptr);
     } else {
+      auto* video_channel = static_cast<cricket::VideoChannel*>(channel);
       static_cast<VideoRtpSender*>(sender->internal())
-          ->SetChannel(static_cast<cricket::VideoChannel*>(channel));
+          ->SetMediaChannel(video_channel ? video_channel->media_channel()
+                                          : nullptr);
     }
   }
 

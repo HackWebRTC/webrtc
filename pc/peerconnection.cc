@@ -1073,7 +1073,7 @@ PeerConnection::AddTrackPlanB(
   auto new_sender = CreateSender(media_type, track, stream_labels);
   if (track->kind() == MediaStreamTrackInterface::kAudioKind) {
     static_cast<AudioRtpSender*>(new_sender->internal())
-        ->SetChannel(voice_channel());
+        ->SetMediaChannel(voice_media_channel());
     GetAudioTransceiver()->internal()->AddSender(new_sender);
     const RtpSenderInfo* sender_info =
         FindSenderInfo(local_audio_sender_infos_,
@@ -1084,7 +1084,7 @@ PeerConnection::AddTrackPlanB(
   } else {
     RTC_DCHECK_EQ(MediaStreamTrackInterface::kVideoKind, track->kind());
     static_cast<VideoRtpSender*>(new_sender->internal())
-        ->SetChannel(video_channel());
+        ->SetMediaChannel(video_media_channel());
     GetVideoTransceiver()->internal()->AddSender(new_sender);
     const RtpSenderInfo* sender_info =
         FindSenderInfo(local_video_sender_infos_,
@@ -1289,7 +1289,8 @@ PeerConnection::CreateSender(
                (track->kind() == MediaStreamTrackInterface::kAudioKind));
     sender = RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
         signaling_thread(),
-        new AudioRtpSender(static_cast<AudioTrackInterface*>(track.get()),
+        new AudioRtpSender(worker_thread(),
+                           static_cast<AudioTrackInterface*>(track.get()),
                            stream_labels, stats_.get()));
   } else {
     RTC_DCHECK_EQ(media_type, cricket::MEDIA_TYPE_VIDEO);
@@ -1297,7 +1298,8 @@ PeerConnection::CreateSender(
                (track->kind() == MediaStreamTrackInterface::kVideoKind));
     sender = RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
         signaling_thread(),
-        new VideoRtpSender(static_cast<VideoTrackInterface*>(track.get()),
+        new VideoRtpSender(worker_thread(),
+                           static_cast<VideoTrackInterface*>(track.get()),
                            stream_labels));
   }
   sender->internal()->set_stream_ids(stream_labels);
@@ -1368,15 +1370,16 @@ rtc::scoped_refptr<RtpSenderInterface> PeerConnection::CreateSender(
   // TODO(steveanton): Move construction of the RtpSenders to RtpTransceiver.
   rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> new_sender;
   if (kind == MediaStreamTrackInterface::kAudioKind) {
-    auto* audio_sender =
-        new AudioRtpSender(nullptr, stream_labels, stats_.get());
-    audio_sender->SetChannel(voice_channel());
+    auto* audio_sender = new AudioRtpSender(worker_thread(), nullptr,
+                                            stream_labels, stats_.get());
+    audio_sender->SetMediaChannel(voice_media_channel());
     new_sender = RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
         signaling_thread(), audio_sender);
     GetAudioTransceiver()->internal()->AddSender(new_sender);
   } else if (kind == MediaStreamTrackInterface::kVideoKind) {
-    auto* video_sender = new VideoRtpSender(nullptr, stream_labels);
-    video_sender->SetChannel(video_channel());
+    auto* video_sender =
+        new VideoRtpSender(worker_thread(), nullptr, stream_labels);
+    video_sender->SetMediaChannel(video_media_channel());
     new_sender = RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
         signaling_thread(), video_sender);
     GetVideoTransceiver()->internal()->AddSender(new_sender);
@@ -2828,7 +2831,7 @@ void PeerConnection::AddAudioTrack(AudioTrackInterface* track,
   auto new_sender =
       CreateSender(cricket::MEDIA_TYPE_AUDIO, track, {stream->label()});
   static_cast<AudioRtpSender*>(new_sender->internal())
-      ->SetChannel(voice_channel());
+      ->SetMediaChannel(voice_media_channel());
   GetAudioTransceiver()->internal()->AddSender(new_sender);
   // If the sender has already been configured in SDP, we call SetSsrc,
   // which will connect the sender to the underlying transport. This can
@@ -2872,7 +2875,7 @@ void PeerConnection::AddVideoTrack(VideoTrackInterface* track,
   auto new_sender =
       CreateSender(cricket::MEDIA_TYPE_VIDEO, track, {stream->label()});
   static_cast<VideoRtpSender*>(new_sender->internal())
-      ->SetChannel(video_channel());
+      ->SetMediaChannel(video_media_channel());
   GetVideoTransceiver()->internal()->AddSender(new_sender);
   const RtpSenderInfo* sender_info =
       FindSenderInfo(local_video_sender_infos_, stream->label(), track->id());

@@ -55,13 +55,15 @@ class RtpSenderReceiverTest : public testing::Test,
                               public sigslot::has_slots<> {
  public:
   RtpSenderReceiverTest()
-      :  // Create fake media engine/etc. so we can create channels to use to
-         // test RtpSenders/RtpReceivers.
+      : network_thread_(rtc::Thread::Current()),
+        worker_thread_(rtc::Thread::Current()),
+        // Create fake media engine/etc. so we can create channels to use to
+        // test RtpSenders/RtpReceivers.
         media_engine_(new cricket::FakeMediaEngine()),
         channel_manager_(rtc::WrapUnique(media_engine_),
                          rtc::MakeUnique<cricket::RtpDataEngine>(),
-                         rtc::Thread::Current(),
-                         rtc::Thread::Current()),
+                         worker_thread_,
+                         network_thread_),
         fake_call_(Call::Config(&event_log_)),
         local_stream_(MediaStream::Create(kStreamLabel1)) {
     // Create channels to be used by the RtpSenders and RtpReceivers.
@@ -134,9 +136,10 @@ class RtpSenderReceiverTest : public testing::Test,
       const rtc::scoped_refptr<LocalAudioSource>& source) {
     audio_track_ = AudioTrack::Create(kAudioTrackId, source);
     EXPECT_TRUE(local_stream_->AddTrack(audio_track_));
-    audio_rtp_sender_ = new AudioRtpSender(local_stream_->GetAudioTracks()[0],
-                                           {local_stream_->label()}, nullptr);
-    audio_rtp_sender_->SetChannel(voice_channel_);
+    audio_rtp_sender_ =
+        new AudioRtpSender(worker_thread_, local_stream_->GetAudioTracks()[0],
+                           {local_stream_->label()}, nullptr);
+    audio_rtp_sender_->SetMediaChannel(voice_media_channel_);
     audio_rtp_sender_->SetSsrc(kAudioSsrc);
     audio_rtp_sender_->GetOnDestroyedSignal()->connect(
         this, &RtpSenderReceiverTest::OnAudioSenderDestroyed);
@@ -144,8 +147,8 @@ class RtpSenderReceiverTest : public testing::Test,
   }
 
   void CreateAudioRtpSenderWithNoTrack() {
-    audio_rtp_sender_ = new AudioRtpSender(nullptr);
-    audio_rtp_sender_->SetChannel(voice_channel_);
+    audio_rtp_sender_ = new AudioRtpSender(worker_thread_, nullptr);
+    audio_rtp_sender_->SetMediaChannel(voice_media_channel_);
   }
 
   void OnAudioSenderDestroyed() { audio_sender_destroyed_signal_fired_ = true; }
@@ -154,16 +157,17 @@ class RtpSenderReceiverTest : public testing::Test,
 
   void CreateVideoRtpSender(bool is_screencast) {
     AddVideoTrack(is_screencast);
-    video_rtp_sender_ = new VideoRtpSender(local_stream_->GetVideoTracks()[0],
-                                           {local_stream_->label()});
-    video_rtp_sender_->SetChannel(video_channel_);
+    video_rtp_sender_ =
+        new VideoRtpSender(worker_thread_, local_stream_->GetVideoTracks()[0],
+                           {local_stream_->label()});
+    video_rtp_sender_->SetMediaChannel(video_media_channel_);
     video_rtp_sender_->SetSsrc(kVideoSsrc);
     VerifyVideoChannelInput();
   }
 
   void CreateVideoRtpSenderWithNoTrack() {
-    video_rtp_sender_ = new VideoRtpSender();
-    video_rtp_sender_->SetChannel(video_channel_);
+    video_rtp_sender_ = new VideoRtpSender(worker_thread_);
+    video_rtp_sender_->SetMediaChannel(video_media_channel_);
   }
 
   void DestroyAudioRtpSender() {
@@ -259,6 +263,8 @@ class RtpSenderReceiverTest : public testing::Test,
   }
 
  protected:
+  rtc::Thread* const network_thread_;
+  rtc::Thread* const worker_thread_;
   webrtc::RtcEventLogNullImpl event_log_;
   // |media_engine_| is actually owned by |channel_manager_|.
   cricket::FakeMediaEngine* media_engine_;
@@ -772,9 +778,10 @@ TEST_F(RtpSenderReceiverTest,
   // Setting detailed overrides the default non-screencast mode. This should be
   // applied even if the track is set on construction.
   video_track_->set_content_hint(VideoTrackInterface::ContentHint::kDetailed);
-  video_rtp_sender_ = new VideoRtpSender(local_stream_->GetVideoTracks()[0],
+  video_rtp_sender_ = new VideoRtpSender(worker_thread_,
+                                         local_stream_->GetVideoTracks()[0],
                                          {local_stream_->label()});
-  video_rtp_sender_->SetChannel(video_channel_);
+  video_rtp_sender_->SetMediaChannel(video_media_channel_);
   video_track_->set_enabled(true);
 
   // Sender is not ready to send (no SSRC) so no option should have been set.

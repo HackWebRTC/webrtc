@@ -482,18 +482,6 @@ class VoiceChannel : public BaseChannel {
   // own ringing sound
   sigslot::signal1<VoiceChannel*> SignalEarlyMediaTimeout;
 
-  // Returns if the telephone-event has been negotiated.
-  bool CanInsertDtmf();
-  // Send and/or play a DTMF |event| according to the |flags|.
-  // The DTMF out-of-band signal will be used on sending.
-  // The |ssrc| should be either 0 or a valid send stream ssrc.
-  // The valid value for the |event| are 0 which corresponding to DTMF
-  // event 0-9, *, #, A-D.
-  bool InsertDtmf(uint32_t ssrc, int event_code, int duration);
-  webrtc::RtpParameters GetRtpSendParameters(uint32_t ssrc) const;
-  bool SetRtpSendParameters(uint32_t ssrc,
-                            const webrtc::RtpParameters& parameters);
-
   // Get statistics about the current media session.
   bool GetStats(VoiceMediaInfo* stats);
 
@@ -530,7 +518,6 @@ class VoiceChannel : public BaseChannel {
                           webrtc::SdpType type,
                           std::string* error_desc) override;
   void HandleEarlyMediaTimeout();
-  bool InsertDtmf_w(uint32_t ssrc, int event, int duration);
 
   void OnMessage(rtc::Message* pmsg) override;
   void OnConnectionMonitorUpdate(
@@ -582,15 +569,6 @@ class VideoChannel : public BaseChannel {
   void StopMediaMonitor();
   sigslot::signal2<VideoChannel*, const VideoMediaInfo&> SignalMediaMonitor;
 
-  // Register a source and set options.
-  // The |ssrc| must correspond to a registered send stream.
-  bool SetVideoSend(uint32_t ssrc,
-                    bool enable,
-                    const VideoOptions* options,
-                    rtc::VideoSourceInterface<webrtc::VideoFrame>* source);
-  webrtc::RtpParameters GetRtpSendParameters(uint32_t ssrc) const;
-  bool SetRtpSendParameters(uint32_t ssrc,
-                            const webrtc::RtpParameters& parameters);
   cricket::MediaType media_type() override { return cricket::MEDIA_TYPE_VIDEO; }
 
  private:
@@ -603,8 +581,6 @@ class VideoChannel : public BaseChannel {
                           webrtc::SdpType type,
                           std::string* error_desc) override;
   bool GetStats_w(VideoMediaInfo* stats);
-  webrtc::RtpParameters GetRtpSendParameters_w(uint32_t ssrc) const;
-  bool SetRtpSendParameters_w(uint32_t ssrc, webrtc::RtpParameters parameters);
 
   void OnConnectionMonitorUpdate(
       ConnectionMonitor* monitor,

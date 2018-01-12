@@ -1885,25 +1885,6 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
                      rtc::nullopt);
   }
 
-  void CanChangeMaxBitrate() {
-    CreateChannels(0, 0);
-    EXPECT_TRUE(channel1_->SetLocalContent(&local_media_content1_,
-                                           SdpType::kOffer, NULL));
-
-    EXPECT_TRUE(channel1_->SetRtpSendParameters(
-        kSsrc1, BitrateLimitedParameters(1000)));
-    VerifyMaxBitrate(channel1_->GetRtpSendParameters(kSsrc1), 1000);
-    VerifyMaxBitrate(media_channel1_->GetRtpSendParameters(kSsrc1), 1000);
-    EXPECT_EQ(-1, media_channel1_->max_bps());
-
-    EXPECT_TRUE(channel1_->SetRtpSendParameters(
-        kSsrc1, BitrateLimitedParameters(rtc::nullopt)));
-    VerifyMaxBitrate(channel1_->GetRtpSendParameters(kSsrc1), rtc::nullopt);
-    VerifyMaxBitrate(media_channel1_->GetRtpSendParameters(kSsrc1),
-                     rtc::nullopt);
-    EXPECT_EQ(-1, media_channel1_->max_bps());
-  }
-
   // Test that when a channel gets new transports with a call to
   // |SetTransports|, the socket options from the old transports are merged with
   // the options on the new transport.
@@ -2347,26 +2328,6 @@ TEST_F(VoiceChannelSingleThreadTest, TestMediaMonitor) {
   Base::TestMediaMonitor();
 }
 
-// Test that InsertDtmf properly forwards to the media channel.
-TEST_F(VoiceChannelSingleThreadTest, TestInsertDtmf) {
-  CreateChannels(0, 0);
-  EXPECT_TRUE(SendInitiate());
-  EXPECT_TRUE(SendAccept());
-  EXPECT_EQ(0U, media_channel1_->dtmf_info_queue().size());
-
-  EXPECT_TRUE(channel1_->InsertDtmf(1, 3, 100));
-  EXPECT_TRUE(channel1_->InsertDtmf(2, 5, 110));
-  EXPECT_TRUE(channel1_->InsertDtmf(3, 7, 120));
-
-  ASSERT_EQ(3U, media_channel1_->dtmf_info_queue().size());
-  EXPECT_TRUE(CompareDtmfInfo(media_channel1_->dtmf_info_queue()[0],
-                              1, 3, 100));
-  EXPECT_TRUE(CompareDtmfInfo(media_channel1_->dtmf_info_queue()[1],
-                              2, 5, 110));
-  EXPECT_TRUE(CompareDtmfInfo(media_channel1_->dtmf_info_queue()[2],
-                              3, 7, 120));
-}
-
 TEST_F(VoiceChannelSingleThreadTest, TestSetContentFailure) {
   Base::TestSetContentFailure();
 }
@@ -2417,10 +2378,6 @@ TEST_F(VoiceChannelSingleThreadTest, SendBundleToBundleWithRtcpMuxSecure) {
 
 TEST_F(VoiceChannelSingleThreadTest, DefaultMaxBitrateIsUnlimited) {
   Base::DefaultMaxBitrateIsUnlimited();
-}
-
-TEST_F(VoiceChannelSingleThreadTest, CanChangeMaxBitrate) {
-  Base::CanChangeMaxBitrate();
 }
 
 TEST_F(VoiceChannelSingleThreadTest, SocketOptionsMergedOnSetTransport) {
@@ -2636,26 +2593,6 @@ TEST_F(VoiceChannelDoubleThreadTest, TestMediaMonitor) {
   Base::TestMediaMonitor();
 }
 
-// Test that InsertDtmf properly forwards to the media channel.
-TEST_F(VoiceChannelDoubleThreadTest, TestInsertDtmf) {
-  CreateChannels(0, 0);
-  EXPECT_TRUE(SendInitiate());
-  EXPECT_TRUE(SendAccept());
-  EXPECT_EQ(0U, media_channel1_->dtmf_info_queue().size());
-
-  EXPECT_TRUE(channel1_->InsertDtmf(1, 3, 100));
-  EXPECT_TRUE(channel1_->InsertDtmf(2, 5, 110));
-  EXPECT_TRUE(channel1_->InsertDtmf(3, 7, 120));
-
-  ASSERT_EQ(3U, media_channel1_->dtmf_info_queue().size());
-  EXPECT_TRUE(
-      CompareDtmfInfo(media_channel1_->dtmf_info_queue()[0], 1, 3, 100));
-  EXPECT_TRUE(
-      CompareDtmfInfo(media_channel1_->dtmf_info_queue()[1], 2, 5, 110));
-  EXPECT_TRUE(
-      CompareDtmfInfo(media_channel1_->dtmf_info_queue()[2], 3, 7, 120));
-}
-
 TEST_F(VoiceChannelDoubleThreadTest, TestSetContentFailure) {
   Base::TestSetContentFailure();
 }
@@ -2708,10 +2645,6 @@ TEST_F(VoiceChannelDoubleThreadTest, DefaultMaxBitrateIsUnlimited) {
   Base::DefaultMaxBitrateIsUnlimited();
 }
 
-TEST_F(VoiceChannelDoubleThreadTest, CanChangeMaxBitrate) {
-  Base::CanChangeMaxBitrate();
-}
-
 TEST_F(VoiceChannelDoubleThreadTest, SocketOptionsMergedOnSetTransport) {
   Base::SocketOptionsMergedOnSetTransport();
 }
@@ -2751,26 +2684,6 @@ TEST_F(VideoChannelSingleThreadTest, TestChangeStreamParamsInContent) {
 
 TEST_F(VideoChannelSingleThreadTest, TestPlayoutAndSendingStates) {
   Base::TestPlayoutAndSendingStates();
-}
-
-TEST_F(VideoChannelSingleThreadTest, TestMuteStream) {
-  CreateChannels(0, 0);
-  // Test that we can Mute the default channel even though the sending SSRC
-  // is unknown.
-  EXPECT_FALSE(media_channel1_->IsStreamMuted(0));
-  EXPECT_TRUE(channel1_->SetVideoSend(0, false, nullptr, nullptr));
-  EXPECT_TRUE(media_channel1_->IsStreamMuted(0));
-  EXPECT_TRUE(channel1_->SetVideoSend(0, true, nullptr, nullptr));
-  EXPECT_FALSE(media_channel1_->IsStreamMuted(0));
-  // Test that we can not mute an unknown SSRC.
-  EXPECT_FALSE(channel1_->SetVideoSend(kSsrc1, false, nullptr, nullptr));
-  SendInitiate();
-  // After the local session description has been set, we can mute a stream
-  // with its SSRC.
-  EXPECT_TRUE(channel1_->SetVideoSend(kSsrc1, false, nullptr, nullptr));
-  EXPECT_TRUE(media_channel1_->IsStreamMuted(kSsrc1));
-  EXPECT_TRUE(channel1_->SetVideoSend(kSsrc1, true, nullptr, nullptr));
-  EXPECT_FALSE(media_channel1_->IsStreamMuted(kSsrc1));
 }
 
 TEST_F(VideoChannelSingleThreadTest, TestMediaContentDirection) {
@@ -2931,10 +2844,6 @@ TEST_F(VideoChannelSingleThreadTest, DefaultMaxBitrateIsUnlimited) {
   Base::DefaultMaxBitrateIsUnlimited();
 }
 
-TEST_F(VideoChannelSingleThreadTest, CanChangeMaxBitrate) {
-  Base::CanChangeMaxBitrate();
-}
-
 TEST_F(VideoChannelSingleThreadTest, SocketOptionsMergedOnSetTransport) {
   Base::SocketOptionsMergedOnSetTransport();
 }
@@ -2974,26 +2883,6 @@ TEST_F(VideoChannelDoubleThreadTest, TestChangeStreamParamsInContent) {
 
 TEST_F(VideoChannelDoubleThreadTest, TestPlayoutAndSendingStates) {
   Base::TestPlayoutAndSendingStates();
-}
-
-TEST_F(VideoChannelDoubleThreadTest, TestMuteStream) {
-  CreateChannels(0, 0);
-  // Test that we can Mute the default channel even though the sending SSRC
-  // is unknown.
-  EXPECT_FALSE(media_channel1_->IsStreamMuted(0));
-  EXPECT_TRUE(channel1_->SetVideoSend(0, false, nullptr, nullptr));
-  EXPECT_TRUE(media_channel1_->IsStreamMuted(0));
-  EXPECT_TRUE(channel1_->SetVideoSend(0, true, nullptr, nullptr));
-  EXPECT_FALSE(media_channel1_->IsStreamMuted(0));
-  // Test that we can not mute an unknown SSRC.
-  EXPECT_FALSE(channel1_->SetVideoSend(kSsrc1, false, nullptr, nullptr));
-  SendInitiate();
-  // After the local session description has been set, we can mute a stream
-  // with its SSRC.
-  EXPECT_TRUE(channel1_->SetVideoSend(kSsrc1, false, nullptr, nullptr));
-  EXPECT_TRUE(media_channel1_->IsStreamMuted(kSsrc1));
-  EXPECT_TRUE(channel1_->SetVideoSend(kSsrc1, true, nullptr, nullptr));
-  EXPECT_FALSE(media_channel1_->IsStreamMuted(kSsrc1));
 }
 
 TEST_F(VideoChannelDoubleThreadTest, TestMediaContentDirection) {
@@ -3152,10 +3041,6 @@ TEST_F(VideoChannelDoubleThreadTest, TestOnTransportReadyToSendWithRtcpMux) {
 
 TEST_F(VideoChannelDoubleThreadTest, DefaultMaxBitrateIsUnlimited) {
   Base::DefaultMaxBitrateIsUnlimited();
-}
-
-TEST_F(VideoChannelDoubleThreadTest, CanChangeMaxBitrate) {
-  Base::CanChangeMaxBitrate();
 }
 
 TEST_F(VideoChannelDoubleThreadTest, SocketOptionsMergedOnSetTransport) {
