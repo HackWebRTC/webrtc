@@ -1238,6 +1238,9 @@ struct EchoCanceller3Config {
     size_t num_filters = 4;
     size_t api_call_jitter_blocks = 26;
     size_t min_echo_path_delay_blocks = 5;
+    size_t delay_headroom_blocks = 1;
+    size_t hysteresis_limit_1_blocks = 1;
+    size_t hysteresis_limit_2_blocks = 0;
   } delay;
 
   struct Filter {
