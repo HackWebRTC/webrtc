@@ -10,6 +10,7 @@
 
 #include "modules/pacing/alr_detector.h"
 
+#include "rtc_base/experiments/alr_experiment.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
 
@@ -145,8 +146,8 @@ TEST_F(AlrDetectorTest, BandwidthEstimateChanges) {
 TEST_F(AlrDetectorTest, ParseControlFieldTrial) {
   webrtc::test::ScopedFieldTrials field_trial(
       "WebRTC-ProbingScreenshareBwe/Control/");
-  rtc::Optional<AlrDetector::AlrExperimentSettings> parsed_params =
-      AlrDetector::ParseAlrSettingsFromFieldTrial(
+  rtc::Optional<AlrExperimentSettings> parsed_params =
+      AlrExperimentSettings::CreateFromFieldTrial(
           "WebRTC-ProbingScreenshareBwe");
   EXPECT_FALSE(static_cast<bool>(parsed_params));
 }
@@ -154,8 +155,8 @@ TEST_F(AlrDetectorTest, ParseControlFieldTrial) {
 TEST_F(AlrDetectorTest, ParseActiveFieldTrial) {
   webrtc::test::ScopedFieldTrials field_trial(
       "WebRTC-ProbingScreenshareBwe/1.1,2875,85,20,-20,1/");
-  rtc::Optional<AlrDetector::AlrExperimentSettings> parsed_params =
-      AlrDetector::ParseAlrSettingsFromFieldTrial(
+  rtc::Optional<AlrExperimentSettings> parsed_params =
+      AlrExperimentSettings::CreateFromFieldTrial(
           "WebRTC-ProbingScreenshareBwe");
   ASSERT_TRUE(static_cast<bool>(parsed_params));
   EXPECT_EQ(1.1f, parsed_params->pacing_factor);

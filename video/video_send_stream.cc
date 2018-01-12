@@ -17,17 +17,18 @@
 #include <vector>
 
 #include "call/rtp_transport_controller_send_interface.h"
+#include "call/video_send_stream.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "common_video/include/video_bitrate_allocator.h"
 #include "modules/bitrate_controller/include/bitrate_controller.h"
 #include "modules/congestion_controller/include/send_side_congestion_controller.h"
-#include "modules/pacing/alr_detector.h"
 #include "modules/pacing/packet_router.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/source/rtp_sender.h"
 #include "modules/utility/include/process_thread.h"
 #include "modules/video_coding/utility/ivf_file_writer.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/experiments/alr_experiment.h"
 #include "rtc_base/file.h"
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
@@ -36,7 +37,6 @@
 #include "system_wrappers/include/field_trial.h"
 #include "video/call_stats.h"
 #include "video/payload_router.h"
-#include "call/video_send_stream.h"
 
 namespace webrtc {
 
@@ -754,22 +754,18 @@ VideoSendStreamImpl::VideoSendStreamImpl(
   RTC_DCHECK(transport_);
   RTC_DCHECK(transport_->send_side_cc());
   RTC_DCHECK_GT(encoder_max_bitrate_bps_, 0);
-  RTC_CHECK(field_trial::FindFullName(
-                AlrDetector::kStrictPacingAndProbingExperimentName)
-                .empty() ||
-            field_trial::FindFullName(
-                AlrDetector::kScreenshareProbingBweExperimentName)
-                .empty());
+
+  RTC_CHECK(AlrExperimentSettings::MaxOneFieldTrialEnabled());
   // If send-side BWE is enabled, check if we should apply updated probing and
   // pacing settings.
   if (TransportSeqNumExtensionConfigured(*config_)) {
-    rtc::Optional<AlrDetector::AlrExperimentSettings> alr_settings;
+    rtc::Optional<AlrExperimentSettings> alr_settings;
     if (content_type == VideoEncoderConfig::ContentType::kScreen) {
-      alr_settings = AlrDetector::ParseAlrSettingsFromFieldTrial(
-          AlrDetector::kScreenshareProbingBweExperimentName);
+      alr_settings = AlrExperimentSettings::CreateFromFieldTrial(
+          AlrExperimentSettings::kScreenshareProbingBweExperimentName);
     } else {
-      alr_settings = AlrDetector::ParseAlrSettingsFromFieldTrial(
-          AlrDetector::kStrictPacingAndProbingExperimentName);
+      alr_settings = AlrExperimentSettings::CreateFromFieldTrial(
+          AlrExperimentSettings::kStrictPacingAndProbingExperimentName);
     }
     if (alr_settings) {
       transport->send_side_cc()->EnablePeriodicAlrProbing(true);

@@ -69,6 +69,7 @@ rtc_static_library("video") {
     "../modules/rtp_rtcp:rtp_rtcp_format",
     "../modules/video_coding:video_codec_interface",
     "../rtc_base:checks",
+    "../rtc_base/experiments:alr_experiment",
     "../system_wrappers:field_trial_api",
     "../system_wrappers:metrics_api",
 
@@ -143,6 +144,7 @@ if (rtc_include_tests) {
     deps = [
       ":video_quality_test",
       "../modules/pacing:pacing",
+      "../rtc_base/experiments:alr_experiment",
       "../test:field_trial",
       "../test:test_common",
       "../test:test_support",
@@ -322,6 +324,7 @@ if (rtc_include_tests) {
       "../rtc_base:rtc_base_approved",
       "../rtc_base:rtc_base_tests_utils",
       "../rtc_base:rtc_numerics",
+      "../rtc_base/experiments:alr_experiment",
       "../system_wrappers",
       "../system_wrappers:field_trial_default",
       "../system_wrappers:metrics_api",

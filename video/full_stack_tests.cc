@@ -9,7 +9,7 @@
  */
 #include <stdio.h>
 
-#include "modules/pacing/alr_detector.h"
+#include "rtc_base/experiments/alr_experiment.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
 #include "video/video_quality_test.h"
@@ -30,7 +30,7 @@ class FullStackTest : public VideoQualityTest {
   const std::string kScreenshareSimulcastExperiment =
       "WebRTC-SimulcastScreenshare/Enabled/";
   const std::string kAlrProbingExperiment =
-      std::string(AlrDetector::kScreenshareProbingBweExperimentName) +
+      std::string(AlrExperimentSettings::kScreenshareProbingBweExperimentName) +
       "/1.1,2875,85,20,-20,0/";
   const std::string kRoundRobinPacingQueueExperiment =
       "WebRTC-RoundRobinPacing/Enabled/";

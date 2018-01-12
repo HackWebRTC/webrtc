@@ -15,7 +15,6 @@
 #include <sstream>
 #include <utility>
 
-#include "modules/pacing/alr_detector.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
