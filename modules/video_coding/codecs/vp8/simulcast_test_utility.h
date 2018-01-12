@@ -203,6 +203,7 @@ class TestVp8Simulcast : public ::testing::Test {
     settings->width = kDefaultWidth;
     settings->height = kDefaultHeight;
     settings->numberOfSimulcastStreams = kNumberOfSimulcastStreams;
+    settings->active = true;
     ASSERT_EQ(3, kNumberOfSimulcastStreams);
     settings->timing_frame_thresholds = {kDefaultTimingFramesDelayMs,
                                          kDefaultOutlierFrameSizePercent};
@@ -238,6 +239,7 @@ class TestVp8Simulcast : public ::testing::Test {
     stream->targetBitrate = target_bitrate;
     stream->numberOfTemporalLayers = num_temporal_layers;
     stream->qpMax = 45;
+    stream->active = true;
   }
 
  protected:
@@ -282,10 +284,22 @@ class TestVp8Simulcast : public ::testing::Test {
         rate_allocator_->GetAllocation(bitrate_kbps * 1000, fps), fps);
   }
 
-  void ExpectStreams(FrameType frame_type, int expected_video_streams) {
-    ASSERT_GE(expected_video_streams, 0);
-    ASSERT_LE(expected_video_streams, kNumberOfSimulcastStreams);
-    if (expected_video_streams >= 1) {
+  void UpdateActiveStreams(const std::vector<bool> active_streams) {
+    ASSERT_EQ(static_cast<int>(active_streams.size()),
+              kNumberOfSimulcastStreams);
+    for (size_t i = 0; i < active_streams.size(); ++i) {
+      settings_.simulcastStream[i].active = active_streams[i];
+    }
+    // Re initialize the allocator and encoder with the new settings.
+    SetUpRateAllocator();
+    EXPECT_EQ(0, encoder_->InitEncode(&settings_, 1, 1200));
+  }
+
+  void ExpectStreams(FrameType frame_type,
+                     const std::vector<bool> expected_streams_active) {
+    ASSERT_EQ(static_cast<int>(expected_streams_active.size()),
+              kNumberOfSimulcastStreams);
+    if (expected_streams_active[0]) {
       EXPECT_CALL(
           encoder_callback_,
           OnEncodedImage(
@@ -297,7 +311,7 @@ class TestVp8Simulcast : public ::testing::Test {
           .WillRepeatedly(Return(EncodedImageCallback::Result(
               EncodedImageCallback::Result::OK, 0)));
     }
-    if (expected_video_streams >= 2) {
+    if (expected_streams_active[1]) {
       EXPECT_CALL(
           encoder_callback_,
           OnEncodedImage(
@@ -309,7 +323,7 @@ class TestVp8Simulcast : public ::testing::Test {
           .WillRepeatedly(Return(EncodedImageCallback::Result(
               EncodedImageCallback::Result::OK, 0)));
     }
-    if (expected_video_streams >= 3) {
+    if (expected_streams_active[2]) {
       EXPECT_CALL(
           encoder_callback_,
           OnEncodedImage(
@@ -321,6 +335,16 @@ class TestVp8Simulcast : public ::testing::Test {
           .WillRepeatedly(Return(EncodedImageCallback::Result(
               EncodedImageCallback::Result::OK, 0)));
     }
+  }
+
+  void ExpectStreams(FrameType frame_type, int expected_video_streams) {
+    ASSERT_GE(expected_video_streams, 0);
+    ASSERT_LE(expected_video_streams, kNumberOfSimulcastStreams);
+    std::vector<bool> expected_streams_active(kNumberOfSimulcastStreams, false);
+    for (int i = 0; i < expected_video_streams; ++i) {
+      expected_streams_active[i] = true;
+    }
+    ExpectStreams(frame_type, expected_streams_active);
   }
 
   void VerifyTemporalIdxAndSyncForAllSpatialLayers(
@@ -497,6 +521,43 @@ class TestVp8Simulcast : public ::testing::Test {
     SetRates(kTargetBitrates[0] + kTargetBitrates[1] + kTargetBitrates[2], 30);
     // We get a key frame because a new stream is being enabled.
     ExpectStreams(kVideoFrameKey, 3);
+    input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
+    EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+  }
+
+  void TestActiveStreams() {
+    const int kEnoughBitrateAllStreams =
+        kMaxBitrates[0] + kMaxBitrates[1] + kMaxBitrates[2];
+    std::vector<FrameType> frame_types(kNumberOfSimulcastStreams,
+                                       kVideoFrameDelta);
+    // TODO(shampson): Currently turning off the base stream causes unexpected
+    // behavior in the libvpx encoder. The libvpx encoder labels key frames
+    // based upon the base stream. If the base stream is never enabled, it
+    // will continue to spit out encoded images labeled as key frames for the
+    // other streams that are enabled. Once this is fixed in libvpx, update this
+    // test to reflect that change.
+
+    // Only turn on the the base stream.
+    std::vector<bool> active_streams = {true, false, false};
+    UpdateActiveStreams(active_streams);
+    SetRates(kEnoughBitrateAllStreams, 30);
+    ExpectStreams(kVideoFrameKey, active_streams);
+    input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
+    EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+
+    ExpectStreams(kVideoFrameDelta, active_streams);
+    input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
+    EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+
+    // Turn off only the middle stream.
+    active_streams = {true, false, true};
+    UpdateActiveStreams(active_streams);
+    SetRates(kEnoughBitrateAllStreams, 30);
+    ExpectStreams(kVideoFrameKey, active_streams);
+    input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
+    EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+
+    ExpectStreams(kVideoFrameDelta, active_streams);
     input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
     EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
   }

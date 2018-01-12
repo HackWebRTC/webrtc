@@ -509,6 +509,7 @@ struct SimulcastStream {
   unsigned int targetBitrate;  // kilobits/sec.
   unsigned int minBitrate;     // kilobits/sec.
   unsigned int qpMax;          // minimum quality
+  bool active;                 // encoded and sent.
 };
 
 struct SpatialLayer {
@@ -539,6 +540,10 @@ class VideoCodec {
   unsigned int targetBitrate;  // kilobits/sec.
 
   uint32_t maxFramerate;
+
+  // This enables/disables VP9 and H264 encoding/sending by allocating
+  // 0 bitrate if inactive.
+  bool active;
 
   unsigned int qpMax;
   unsigned char numberOfSimulcastStreams;

@@ -258,8 +258,11 @@ void PayloadRouter::OnBitrateAllocationUpdated(
       // rtp stream, moving over the temporal layer allocation.
       for (size_t si = 0; si < rtp_modules_.size(); ++si) {
         // Don't send empty TargetBitrate messages on streams not being relayed.
-        if (!bitrate.IsSpatialLayerUsed(si))
-          break;
+        if (!bitrate.IsSpatialLayerUsed(si)) {
+          // The next spatial layer could be used if the current one is
+          // inactive.
+          continue;
+        }
 
         BitrateAllocation layer_bitrate;
         for (int tl = 0; tl < kMaxTemporalStreams; ++tl) {

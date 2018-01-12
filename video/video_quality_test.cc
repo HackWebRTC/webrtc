@@ -1200,6 +1200,7 @@ VideoStream VideoQualityTest::DefaultVideoStream(const Params& params,
   stream.target_bitrate_bps = params.video[video_idx].target_bitrate_bps;
   stream.max_bitrate_bps = params.video[video_idx].max_bitrate_bps;
   stream.max_qp = kDefaultMaxQp;
+  stream.active = true;
   // TODO(sprang): Can we make this less of a hack?
   if (params.video[video_idx].num_temporal_layers == 2) {
     stream.temporal_layer_thresholds_bps.push_back(stream.target_bitrate_bps);
