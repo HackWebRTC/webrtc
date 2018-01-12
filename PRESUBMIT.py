@@ -94,7 +94,6 @@ LEGACY_API_DIRS = (
   'modules/video_coding/include',
   'rtc_base',
   'system_wrappers/include',
-  'voice_engine/include',
 )
 
 # NOTE: The set of directories in API_DIRS should be the same as those

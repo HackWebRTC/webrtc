@@ -34,7 +34,6 @@ Legacy API directory                       | Including subdirectories?
 `pc`                                       | No
 `rtc_base`                                 | No
 `system_wrappers/include`                  | No
-`voice_engine/include`                     | No
 
 While the files, types, functions, macros, build targets, etc. in the
 API and legacy API directories will sometimes undergo incompatible

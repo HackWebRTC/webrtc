@@ -17,16 +17,10 @@ rtc_static_library("voice_engine") {
     "channel.h",
     "channel_proxy.cc",
     "channel_proxy.h",
-    "include/voe_base.h",
-    "include/voe_errors.h",
     "transport_feedback_packet_loss_tracker.cc",
     "transport_feedback_packet_loss_tracker.h",
     "utility.cc",
     "utility.h",
-    "voe_base_impl.cc",
-    "voe_base_impl.h",
-    "voice_engine_impl.cc",
-    "voice_engine_impl.h",
   ]
 
   if (is_win) {

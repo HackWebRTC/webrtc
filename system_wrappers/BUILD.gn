@@ -17,7 +17,6 @@ rtc_static_library("system_wrappers") {
   sources = [
     "include/aligned_array.h",
     "include/aligned_malloc.h",
-    "include/atomic32.h",
     "include/clock.h",
     "include/cpu_info.h",
     "include/event_wrapper.h",
@@ -28,7 +27,6 @@ rtc_static_library("system_wrappers") {
     "include/sleep.h",
     "include/timestamp_extrapolator.h",
     "source/aligned_malloc.cc",
-    "source/atomic32.cc",
     "source/clock.cc",
     "source/cpu_features.cc",
     "source/cpu_info.cc",
