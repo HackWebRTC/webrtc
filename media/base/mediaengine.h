@@ -29,10 +29,6 @@
 #include "media/base/videocommon.h"
 #include "rtc_base/platform_file.h"
 
-#if defined(GOOGLE_CHROME_BUILD) || defined(CHROMIUM_BUILD)
-#define DISABLE_MEDIA_ENGINE_FACTORY
-#endif
-
 namespace webrtc {
 class AudioDeviceModule;
 class AudioMixer;
@@ -90,24 +86,6 @@ class MediaEngineInterface {
   virtual void StopAecDump() = 0;
 };
 
-
-#if !defined(DISABLE_MEDIA_ENGINE_FACTORY)
-class MediaEngineFactory {
- public:
-  typedef cricket::MediaEngineInterface* (*MediaEngineCreateFunction)();
-  // Creates a media engine, using either the compiled system default or the
-  // creation function specified in SetCreateFunction, if specified.
-  static MediaEngineInterface* Create();
-  // Sets the function used when calling Create. If unset, the compiled system
-  // default will be used. Returns the old create function, or NULL if one
-  // wasn't set. Likewise, NULL can be used as the |function| parameter to
-  // reset to the default behavior.
-  static MediaEngineCreateFunction SetCreateFunction(
-      MediaEngineCreateFunction function);
- private:
-  static MediaEngineCreateFunction create_function_;
-};
-#endif
 
 // CompositeMediaEngine constructs a MediaEngine from separate
 // voice and video engine classes.

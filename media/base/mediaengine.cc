@@ -10,24 +10,6 @@
 
 #include "media/base/mediaengine.h"
 
-#if !defined(DISABLE_MEDIA_ENGINE_FACTORY)
-
-namespace cricket {
-
-MediaEngineFactory::MediaEngineCreateFunction
-    MediaEngineFactory::create_function_ = NULL;
-
-MediaEngineFactory::MediaEngineCreateFunction
-    MediaEngineFactory::SetCreateFunction(MediaEngineCreateFunction function) {
-  MediaEngineCreateFunction old_function = create_function_;
-  create_function_ = function;
-  return old_function;
-}
-
-};  // namespace cricket
-
-#endif  // DISABLE_MEDIA_ENGINE_FACTORY
-
 namespace cricket {
 
 webrtc::RtpParameters CreateRtpParametersWithOneEncoding() {
