@@ -23,6 +23,8 @@ class MockRtpReceiver : public rtc::RefCountedObject<RtpReceiverInterface> {
  public:
   MOCK_METHOD1(SetTrack, void(MediaStreamTrackInterface*));
   MOCK_CONST_METHOD0(track, rtc::scoped_refptr<MediaStreamTrackInterface>());
+  MOCK_CONST_METHOD0(streams,
+                     std::vector<rtc::scoped_refptr<MediaStreamInterface>>());
   MOCK_CONST_METHOD0(media_type, cricket::MediaType());
   MOCK_CONST_METHOD0(id, std::string());
   MOCK_CONST_METHOD0(GetParameters, RtpParameters());

@@ -995,7 +995,10 @@ TEST_P(TransportControllerRTPTransportTest, DestroyTransportWithReference) {
 }
 
 // Tests the RTP is actually destroyed if there is no reference to it.
-TEST_P(TransportControllerRTPTransportTest, DestroyTransportWithNoReference) {
+// Disabled because of sometimes not working on Windows.
+// https://bugs.webrtc.org/34942
+TEST_P(TransportControllerRTPTransportTest,
+       DISABLED_DestroyTransportWithNoReference) {
   const std::string transport_name = "transport";
   webrtc::RtpTransportInternal* transport1 = CreateRtpTransport(transport_name);
   webrtc::RtpTransportInternal* transport2 = CreateRtpTransport(transport_name);
