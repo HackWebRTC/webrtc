@@ -18,9 +18,9 @@ namespace rtc {
 // SignalThread
 ///////////////////////////////////////////////////////////////////////////////
 
-SignalThread::SignalThread(bool use_socket_server)
+SignalThread::SignalThread()
     : main_(Thread::Current()),
-      worker_(this, use_socket_server),
+      worker_(this),
       state_(kInit),
       refcount_(1) {
   main_->SignalQueueDestroyed.connect(this,

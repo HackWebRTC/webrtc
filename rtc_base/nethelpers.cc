@@ -84,7 +84,7 @@ int ResolveHostname(const std::string& hostname, int family,
 
 // AsyncResolver
 AsyncResolver::AsyncResolver()
-    : SignalThread(false /* use_socket_server */), error_(-1) {}
+    : SignalThread(), error_(-1) {}
 
 AsyncResolver::~AsyncResolver() = default;
 

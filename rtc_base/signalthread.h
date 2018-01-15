@@ -42,7 +42,7 @@ class SignalThread
     : public sigslot::has_slots<>,
       protected MessageHandler {
  public:
-  explicit SignalThread(bool use_socket_server = true);
+  SignalThread();
 
   // Context: Main Thread.  Call before Start to change the worker's name.
   bool SetName(const std::string& name, const void* obj);
@@ -104,10 +104,8 @@ class SignalThread
 
   class Worker : public Thread {
    public:
-    explicit Worker(SignalThread* parent, bool use_socket_server)
-        : Thread(use_socket_server
-                     ? SocketServer::CreateDefault()
-                     : std::unique_ptr<SocketServer>(new NullSocketServer())),
+    explicit Worker(SignalThread* parent)
+        : Thread(std::unique_ptr<SocketServer>(new NullSocketServer())),
           parent_(parent) {}
     ~Worker() override;
     void Run() override;
