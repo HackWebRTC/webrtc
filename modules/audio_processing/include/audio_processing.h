@@ -1244,13 +1244,22 @@ struct EchoCanceller3Config {
   } delay;
 
   struct Filter {
-    size_t length_blocks = 12;
-    float shadow_rate = 0.1f;
-    float leakage_converged = 0.005f;
-    float leakage_diverged = 0.05f;
-    float error_floor = 0.001f;
-    float main_noise_gate = 20075344.f;
-    float shadow_noise_gate = 20075344.f;
+    struct MainConfiguration {
+      size_t length_blocks;
+      float leakage_converged;
+      float leakage_diverged;
+      float error_floor;
+      float noise_gate;
+    };
+
+    struct ShadowConfiguration {
+      size_t length_blocks;
+      float rate;
+      float noise_gate;
+    };
+
+    MainConfiguration main = {12, 0.005f, 0.05f, 0.001f, 20075344.f};
+    ShadowConfiguration shadow = {12, 0.1f, 20075344.f};
   } filter;
 
   struct Erle {

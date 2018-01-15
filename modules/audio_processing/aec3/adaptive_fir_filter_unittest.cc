@@ -307,15 +307,15 @@ TEST(AdaptiveFirFilter, FilterAndAdapt) {
   constexpr size_t kNumBlocksToProcess = 1000;
   ApmDataDumper data_dumper(42);
   EchoCanceller3Config config;
-  AdaptiveFirFilter filter(config.filter.length_blocks, DetectOptimization(),
-                           &data_dumper);
+  AdaptiveFirFilter filter(config.filter.main.length_blocks,
+                           DetectOptimization(), &data_dumper);
   Aec3Fft fft;
   config.delay.min_echo_path_delay_blocks = 0;
   config.delay.default_delay = 1;
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
       RenderDelayBuffer::Create(config, 3));
-  ShadowFilterUpdateGain gain(config.filter.shadow_rate,
-                              config.filter.shadow_noise_gate);
+  ShadowFilterUpdateGain gain(config.filter.shadow.rate,
+                              config.filter.shadow.noise_gate);
   Random random_generator(42U);
   std::vector<std::vector<float>> x(3, std::vector<float>(kBlockSize, 0.f));
   std::vector<float> n(kBlockSize, 0.f);

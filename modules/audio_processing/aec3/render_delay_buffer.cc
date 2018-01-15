@@ -158,7 +158,7 @@ RenderDelayBufferImpl::RenderDelayBufferImpl(const EchoCanceller3Config& config,
                                : kBlockSize)),
       blocks_(GetRenderDelayBufferSize(config.delay.down_sampling_factor,
                                        config.delay.num_filters,
-                                       config.filter.length_blocks),
+                                       config.filter.main.length_blocks),
               num_bands,
               kBlockSize),
       spectra_(blocks_.buffer.size(), kFftLengthBy2Plus1),
@@ -171,7 +171,7 @@ RenderDelayBufferImpl::RenderDelayBufferImpl(const EchoCanceller3Config& config,
       zero_block_(num_bands, std::vector<float>(kBlockSize, 0.f)),
       fft_(),
       render_ds_(sub_block_size_, 0.f),
-      buffer_headroom_(config.filter.length_blocks) {
+      buffer_headroom_(config.filter.main.length_blocks) {
   RTC_DCHECK_EQ(blocks_.buffer.size(), ffts_.buffer.size());
   RTC_DCHECK_EQ(spectra_.buffer.size(), ffts_.buffer.size());
 

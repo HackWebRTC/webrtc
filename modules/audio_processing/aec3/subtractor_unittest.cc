@@ -30,7 +30,8 @@ float RunSubtractorTest(int num_blocks_to_process,
                         const std::vector<int>& blocks_with_echo_path_changes) {
   ApmDataDumper data_dumper(42);
   EchoCanceller3Config config;
-  config.filter.length_blocks = filter_length_blocks;
+  config.filter.main.length_blocks = config.filter.shadow.length_blocks =
+      filter_length_blocks;
   Subtractor subtractor(config, &data_dumper, DetectOptimization());
   std::vector<std::vector<float>> x(3, std::vector<float>(kBlockSize, 0.f));
   std::vector<float> y(kBlockSize, 0.f);

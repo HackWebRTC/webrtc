@@ -77,7 +77,7 @@ void RenderNoisePower(
 }  // namespace
 
 ResidualEchoEstimator::ResidualEchoEstimator(const EchoCanceller3Config& config)
-    : config_(config), S2_old_(config_.filter.length_blocks) {
+    : config_(config), S2_old_(config_.filter.main.length_blocks) {
   Reset();
 }
 
@@ -131,7 +131,8 @@ void ResidualEchoEstimator::Estimate(
     if (aec_state.SaturatedEcho()) {
       // TODO(peah): Modify to make sense theoretically.
       AddEchoReverb(*R2, aec_state.SaturatedEcho(),
-                    config_.filter.length_blocks, aec_state.ReverbDecay(), R2);
+                    config_.filter.main.length_blocks, aec_state.ReverbDecay(),
+                    R2);
     }
   }
 

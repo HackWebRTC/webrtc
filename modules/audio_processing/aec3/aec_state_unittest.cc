@@ -44,7 +44,7 @@ TEST(AecState, NormalUsage) {
   converged_filter_frequency_response[2][0] = 1.f;
 
   std::vector<float> impulse_response(
-      GetTimeDomainLength(config.filter.length_blocks), 0.f);
+      GetTimeDomainLength(config.filter.main.length_blocks), 0.f);
 
   // Verify that linear AEC usability is false when the filter is diverged.
   state.Update(diverged_filter_frequency_response, impulse_response, true,
@@ -190,7 +190,7 @@ TEST(AecState, ConvergedFilterDelay) {
       kFilterLength);
 
   std::vector<float> impulse_response(
-      GetTimeDomainLength(config.filter.length_blocks), 0.f);
+      GetTimeDomainLength(config.filter.main.length_blocks), 0.f);
 
   // Verify that the filter delay for a converged filter is properly identified.
   for (int k = 0; k < kFilterLength; ++k) {

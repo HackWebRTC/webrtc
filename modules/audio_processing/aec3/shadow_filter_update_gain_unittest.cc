@@ -38,10 +38,10 @@ void RunFilterUpdateTest(int num_blocks_to_process,
                          FftData* G_last_block) {
   ApmDataDumper data_dumper(42);
   EchoCanceller3Config config;
-  config.filter.length_blocks = filter_length_blocks;
-  AdaptiveFirFilter main_filter(config.filter.length_blocks,
+  config.filter.main.length_blocks = filter_length_blocks;
+  AdaptiveFirFilter main_filter(config.filter.main.length_blocks,
                                 DetectOptimization(), &data_dumper);
-  AdaptiveFirFilter shadow_filter(config.filter.length_blocks,
+  AdaptiveFirFilter shadow_filter(config.filter.shadow.length_blocks,
                                   DetectOptimization(), &data_dumper);
   Aec3Fft fft;
 
@@ -52,8 +52,8 @@ void RunFilterUpdateTest(int num_blocks_to_process,
 
   std::array<float, kBlockSize> x_old;
   x_old.fill(0.f);
-  ShadowFilterUpdateGain shadow_gain(config.filter.shadow_rate,
-                                     config.filter.shadow_noise_gate);
+  ShadowFilterUpdateGain shadow_gain(config.filter.shadow.rate,
+                                     config.filter.shadow.noise_gate);
   Random random_generator(42U);
   std::vector<std::vector<float>> x(3, std::vector<float>(kBlockSize, 0.f));
   std::vector<float> y(kBlockSize, 0.f);

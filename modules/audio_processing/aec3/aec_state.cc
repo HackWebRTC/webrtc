@@ -56,7 +56,7 @@ AecState::AecState(const EchoCanceller3Config& config)
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
       erle_estimator_(config.erle.min, config.erle.max_l, config.erle.max_h),
       config_(config),
-      max_render_(config_.filter.length_blocks, 0.f),
+      max_render_(config_.filter.main.length_blocks, 0.f),
       reverb_decay_(config_.ep_strength.default_len) {}
 
 AecState::~AecState() = default;
@@ -175,7 +175,8 @@ void AecState::Update(
 
 void AecState::UpdateReverb(const std::vector<float>& impulse_response) {
   if ((!(filter_delay_ && usable_linear_estimate_)) ||
-      (filter_delay_ > static_cast<int>(config_.filter.length_blocks) - 4)) {
+      (filter_delay_ >
+       static_cast<int>(config_.filter.main.length_blocks) - 4)) {
     return;
   }
 
@@ -183,11 +184,11 @@ void AecState::UpdateReverb(const std::vector<float>& impulse_response) {
   // coefficients.
   std::array<float, GetTimeDomainLength(kMaxAdaptiveFilterLength)>
       matching_data_data;
-  RTC_DCHECK_LE(GetTimeDomainLength(config_.filter.length_blocks),
+  RTC_DCHECK_LE(GetTimeDomainLength(config_.filter.main.length_blocks),
                 matching_data_data.size());
   rtc::ArrayView<float> matching_data(
       matching_data_data.data(),
-      GetTimeDomainLength(config_.filter.length_blocks));
+      GetTimeDomainLength(config_.filter.main.length_blocks));
   std::transform(impulse_response.begin(), impulse_response.end(),
                  matching_data.begin(), [](float a) { return a * a; });
 
@@ -195,7 +196,7 @@ void AecState::UpdateReverb(const std::vector<float>& impulse_response) {
   // model noise power.
   constexpr size_t kTailLength = 64;
   const size_t tail_index =
-      GetTimeDomainLength(config_.filter.length_blocks) - kTailLength;
+      GetTimeDomainLength(config_.filter.main.length_blocks) - kTailLength;
   const float tail_power = *std::max_element(matching_data.begin() + tail_index,
                                              matching_data.end());
   std::for_each(matching_data.begin(), matching_data.begin() + tail_index,

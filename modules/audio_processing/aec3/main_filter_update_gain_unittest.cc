@@ -42,19 +42,20 @@ void RunFilterUpdateTest(int num_blocks_to_process,
                          FftData* G_last_block) {
   ApmDataDumper data_dumper(42);
   EchoCanceller3Config config;
-  config.filter.length_blocks = filter_length_blocks;
-  AdaptiveFirFilter main_filter(config.filter.length_blocks,
+  config.filter.main.length_blocks = filter_length_blocks;
+  config.filter.shadow.length_blocks = filter_length_blocks;
+  AdaptiveFirFilter main_filter(config.filter.main.length_blocks,
                                 DetectOptimization(), &data_dumper);
-  AdaptiveFirFilter shadow_filter(config.filter.length_blocks,
+  AdaptiveFirFilter shadow_filter(config.filter.shadow.length_blocks,
                                   DetectOptimization(), &data_dumper);
   Aec3Fft fft;
   std::array<float, kBlockSize> x_old;
   x_old.fill(0.f);
-  ShadowFilterUpdateGain shadow_gain(config.filter.shadow_rate,
-                                     config.filter.shadow_noise_gate);
+  ShadowFilterUpdateGain shadow_gain(config.filter.shadow.rate,
+                                     config.filter.shadow.noise_gate);
   MainFilterUpdateGain main_gain(
-      config.filter.leakage_converged, config.filter.leakage_diverged,
-      config.filter.main_noise_gate, config.filter.error_floor);
+      config.filter.main.leakage_converged, config.filter.main.leakage_diverged,
+      config.filter.main.noise_gate, config.filter.main.error_floor);
   Random random_generator(42U);
   std::vector<std::vector<float>> x(3, std::vector<float>(kBlockSize, 0.f));
   std::vector<float> y(kBlockSize, 0.f);
@@ -189,13 +190,13 @@ std::string ProduceDebugText(size_t delay, int filter_length_blocks) {
 TEST(MainFilterUpdateGain, NullDataOutputGain) {
   ApmDataDumper data_dumper(42);
   EchoCanceller3Config config;
-  AdaptiveFirFilter filter(config.filter.length_blocks, DetectOptimization(),
-                           &data_dumper);
+  AdaptiveFirFilter filter(config.filter.main.length_blocks,
+                           DetectOptimization(), &data_dumper);
   RenderSignalAnalyzer analyzer;
   SubtractorOutput output;
   MainFilterUpdateGain gain(
-      config.filter.leakage_converged, config.filter.leakage_diverged,
-      config.filter.main_noise_gate, config.filter.error_floor);
+      config.filter.main.leakage_converged, config.filter.main.leakage_diverged,
+      config.filter.main.noise_gate, config.filter.main.error_floor);
   std::array<float, kFftLengthBy2Plus1> render_power;
   render_power.fill(0.f);
   EXPECT_DEATH(
