@@ -112,6 +112,7 @@ void UpdateMaxGainIncrease(
     const EchoCanceller3Config& config,
     size_t no_saturation_counter,
     bool low_noise_render,
+    bool initial_state,
     bool linear_echo_estimate,
     const std::array<float, kFftLengthBy2Plus1>& last_echo,
     const std::array<float, kFftLengthBy2Plus1>& echo,
@@ -126,13 +127,20 @@ void UpdateMaxGainIncrease(
   float min_decreasing;
 
   auto& param = config.gain_updates;
-  if (linear_echo_estimate) {
+  if (!linear_echo_estimate) {
     max_increasing = param.nonlinear.max_inc;
     max_decreasing = param.nonlinear.max_dec;
     rate_increasing = param.nonlinear.rate_inc;
     rate_decreasing = param.nonlinear.rate_dec;
     min_increasing = param.nonlinear.min_inc;
     min_decreasing = param.nonlinear.min_dec;
+  } else if (initial_state && no_saturation_counter > 10) {
+    max_increasing = param.initial.max_inc;
+    max_decreasing = param.initial.max_dec;
+    rate_increasing = param.initial.rate_inc;
+    rate_decreasing = param.initial.rate_dec;
+    min_increasing = param.initial.min_inc;
+    min_decreasing = param.initial.min_dec;
   } else if (low_noise_render) {
     max_increasing = param.low_noise.max_inc;
     max_decreasing = param.low_noise.max_dec;
@@ -279,6 +287,7 @@ void SuppressionGain::LowerBandGain(
     const rtc::Optional<int>& narrow_peak_band,
     bool saturated_echo,
     bool saturating_echo_path,
+    bool initial_state,
     bool linear_echo_estimate,
     const std::array<float, kFftLengthBy2Plus1>& nearend,
     const std::array<float, kFftLengthBy2Plus1>& echo,
@@ -338,8 +347,8 @@ void SuppressionGain::LowerBandGain(
 
   // Update the allowed maximum gain increase.
   UpdateMaxGainIncrease(config_, no_saturation_counter_, low_noise_render,
-                        linear_echo_estimate, last_echo_, echo, last_gain_,
-                        *gain, &gain_increase_);
+                        initial_state, linear_echo_estimate, last_echo_, echo,
+                        last_gain_, *gain, &gain_increase_);
 
   // Adjust gain dynamics.
   const float gain_bound =
@@ -380,7 +389,7 @@ void SuppressionGain::GetGain(
   const bool saturating_echo_path = aec_state.SaturatingEchoPath();
   const bool force_zero_gain = aec_state.ForcedZeroGain();
   const bool linear_echo_estimate = aec_state.UsableLinearEstimate();
-
+  const bool initial_state = aec_state.InitialState();
   if (force_zero_gain) {
     last_gain_.fill(0.f);
     std::copy(comfort_noise.begin(), comfort_noise.end(), last_masker_.begin());
@@ -396,8 +405,8 @@ void SuppressionGain::GetGain(
   const rtc::Optional<int> narrow_peak_band =
       render_signal_analyzer.NarrowPeakBand();
   LowerBandGain(low_noise_render, narrow_peak_band, saturated_echo,
-                saturating_echo_path, linear_echo_estimate, nearend, echo,
-                comfort_noise, low_band_gain);
+                saturating_echo_path, initial_state, linear_echo_estimate,
+                nearend, echo, comfort_noise, low_band_gain);
 
   // Compute the gain for the upper bands.
   *high_bands_gain =
