@@ -10,10 +10,13 @@ import("//build/config/linux/pkg_config.gni")
 import("../webrtc.gni")
 
 group("media") {
-  deps = [
-    ":rtc_media",
-    ":rtc_media_base",
-  ]
+  deps = []
+  if (!build_with_mozilla) {
+    deps += [
+      ":rtc_media",
+      ":rtc_media_base",
+    ]
+  }
 }
 
 config("rtc_media_defines_config") {
@@ -113,11 +116,14 @@ rtc_static_library("rtc_media_base") {
     "../call:video_stream_api",
     "../common_video",
     "../modules/audio_processing:audio_processing_statistics",
-    "../p2p",
     "../rtc_base:rtc_base",
     "../rtc_base:rtc_base_approved",
     "../system_wrappers:field_trial_api",
   ]
+
+  if (!build_with_mozilla) {
+    deps += [ "../p2p" ]
+  }
 
   if (is_nacl) {
     deps += [ "//native_client_sdk/src/libraries/nacl_io" ]
