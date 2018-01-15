@@ -342,6 +342,11 @@ public class PeerConnectionFactory {
     nativeInvokeThreadsCallbacks(nativeFactory);
   }
 
+  /** Returns a pointer to the native webrtc::PeerConnectionFactoryInterface. */
+  public long getNativePeerConnectionFactory() {
+    return nativeGetNativePeerConnectionFactory(nativeFactory);
+  }
+
   private static void printStackTrace(Thread thread, String threadName) {
     if (thread != null) {
       StackTraceElement[] stackTraces = thread.getStackTrace();
@@ -415,4 +420,5 @@ public class PeerConnectionFactory {
       long factory, Object localEGLContext, Object remoteEGLContext);
   private static native void nativeInvokeThreadsCallbacks(long factory);
   private static native void nativeFreeFactory(long factory);
+  private static native long nativeGetNativePeerConnectionFactory(long factory);
 }

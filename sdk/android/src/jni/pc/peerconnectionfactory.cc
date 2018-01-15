@@ -490,5 +490,12 @@ static void JNI_PeerConnectionFactory_SetVideoHwAccelerationOptions(
                 remote_egl_context);
 }
 
+static jlong JNI_PeerConnectionFactory_GetNativePeerConnectionFactory(
+    JNIEnv* jni,
+    const JavaParamRef<jclass>&,
+    jlong native_factory) {
+  return jlongFromPointer(factoryFromJava(native_factory));
+}
+
 }  // namespace jni
 }  // namespace webrtc
