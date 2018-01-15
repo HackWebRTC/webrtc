@@ -154,7 +154,7 @@ void AecState::Update(
 
   // TODO(peah): Move?
   filter_has_had_time_to_converge_ =
-      blocks_with_proper_filter_adaptation_ >= 2 * kNumBlocksPerSecond;
+      blocks_with_proper_filter_adaptation_ >= 2.5 * kNumBlocksPerSecond;
 
   initial_state_ =
       blocks_with_proper_filter_adaptation_ < 5 * kNumBlocksPerSecond;
@@ -162,7 +162,7 @@ void AecState::Update(
   // Flag whether the linear filter estimate is usable.
   usable_linear_estimate_ =
       !echo_saturation_ &&
-      (converged_filter || filter_has_had_time_to_converge_) &&
+      (converged_filter && filter_has_had_time_to_converge_) &&
       capture_block_counter_ >= 2 * kNumBlocksPerSecond && !TransparentMode();
 
   // After an amount of active render samples for which an echo should have been
