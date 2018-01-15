@@ -347,6 +347,10 @@ generate_jni("generated_peerconnection_jni") {
 }
 
 rtc_static_library("peerconnection_jni") {
+  # Do not depend on this target externally unless you absolute have to. It is
+  # made public because we don't have a proper NDK yet. Header APIs here are not
+  # considered public and are subject to change.
+  visibility = [ "*" ]
   sources = [
     "src/jni/androidnetworkmonitor_jni.h",
     "src/jni/pc/androidnetworkmonitor.cc",
