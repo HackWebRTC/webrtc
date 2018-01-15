@@ -29,6 +29,7 @@ public class FileVideoCapturer implements VideoCapturer {
   /**
    * Read video data from file for the .y4m container.
    */
+  @SuppressWarnings("StringSplitter")
   private static class VideoReaderY4M implements VideoReader {
     private static final String TAG = "VideoReaderY4M";
     private static final String Y4M_FRAME_DELIMETER = "FRAME";

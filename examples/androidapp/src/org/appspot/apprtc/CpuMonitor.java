@@ -484,6 +484,7 @@ class CpuMonitor {
    * Read the current utilization of all CPUs using the cumulative first line
    * of /proc/stat.
    */
+  @SuppressWarnings("StringSplitter")
   private ProcStat readProcStat() {
     long userTime = 0;
     long systemTime = 0;

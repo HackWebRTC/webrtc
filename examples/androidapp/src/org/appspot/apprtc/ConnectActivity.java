@@ -266,6 +266,7 @@ public class ConnectActivity extends Activity {
     }
   }
 
+  @SuppressWarnings("StringSplitter")
   private void connectToRoom(String roomId, boolean commandLineRun, boolean loopback,
       boolean useValuesFromIntent, int runTimeMs) {
     ConnectActivity.commandLineRun = commandLineRun;

@@ -975,6 +975,7 @@ public class PeerConnectionClient {
     }
   }
 
+  @SuppressWarnings("StringSplitter")
   private static String setStartBitrate(
       String codec, boolean isVideoCodec, String sdpDescription, int bitrateKbps) {
     String[] lines = sdpDescription.split("\r\n");
