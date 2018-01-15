@@ -171,7 +171,7 @@ if (rtc_include_tests) {
         "../resources/voice_engine/audio_tiny48.wav",
         "test/low_bandwidth_audio_test.py",
       ]
-      if (is_linux) {
+      if (is_linux || is_android) {
         data += [
           "../tools_webrtc/audio_quality/linux/PolqaOem64",
           "../tools_webrtc/audio_quality/linux/pesq",

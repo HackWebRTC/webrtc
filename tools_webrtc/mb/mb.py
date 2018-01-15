@@ -1050,14 +1050,14 @@ class MetaBuildWrapper(object):
     cmdline = []
     extra_files = []
 
-    if android:
+    if test_type == 'script':
+      cmdline = ['../../' + self.ToSrcRelPath(isolate_map[target]['script'])]
+    elif android:
       cmdline = ['../../build/android/test_wrapper/logdog_wrapper.py',
                  '--target', target,
                  '--logdog-bin-cmd', '../../bin/logdog_butler',
                  '--logcat-output-file', '${ISOLATED_OUTDIR}/logcats',
                  '--store-tombstones']
-    elif test_type == "script":
-      cmdline = ['../../' + self.ToSrcRelPath(isolate_map[target]['script'])]
     else:
       extra_files = ['../../testing/test_env.py']
 
