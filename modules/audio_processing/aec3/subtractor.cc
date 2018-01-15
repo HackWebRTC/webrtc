@@ -97,11 +97,11 @@ void Subtractor::HandleEchoPathChange(
     G_shadow_.HandleEchoPathChange();
     G_main_.SetConfig(config_.filter.main_initial);
     G_shadow_.SetConfig(config_.filter.shadow_initial);
+    main_filter_converged_ = false;
+    shadow_filter_converged_ = false;
     main_filter_.SetSizePartitions(config_.filter.main_initial.length_blocks);
     shadow_filter_.SetSizePartitions(
         config_.filter.shadow_initial.length_blocks);
-
-    converged_filter_ = false;
   };
 
   // TODO(peah): Add delay-change specific reset behavior.
@@ -147,8 +147,6 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
   bool main_saturation = false;
   PredictionError(fft_, S, y, &e_main, &output->s_main, &main_saturation);
   fft_.ZeroPaddedFft(e_main, Aec3Fft::Window::kHanning, &E_main);
-  fft_.ZeroPaddedFft(e_main, Aec3Fft::Window::kRectangular,
-                     &E_main_nonwindowed);
 
   // Form the output of the shadow filter.
   shadow_filter_.Filter(render_buffer, &S);
@@ -156,23 +154,36 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
   PredictionError(fft_, S, y, &e_shadow, nullptr, &shadow_saturation);
   fft_.ZeroPaddedFft(e_shadow, Aec3Fft::Window::kHanning, &E_shadow);
 
-  if (!converged_filter_) {
+  if (!(main_filter_converged_ || shadow_filter_converged_)) {
     const auto sum_of_squares = [](float a, float b) { return a + b * b; };
-    const float e2_main =
-        std::accumulate(e_main.begin(), e_main.end(), 0.f, sum_of_squares);
-    const float e2_shadow =
-        std::accumulate(e_shadow.begin(), e_shadow.end(), 0.f, sum_of_squares);
     const float y2 = std::accumulate(y.begin(), y.end(), 0.f, sum_of_squares);
 
-    if (y2 > kBlockSize * 50.f * 50.f) {
-      converged_filter_ = (e2_main > 0.3 * y2 || e2_shadow > 0.1 * y2);
+    if (!main_filter_converged_) {
+      const float e2_main =
+          std::accumulate(e_main.begin(), e_main.end(), 0.f, sum_of_squares);
+      main_filter_converged_ = e2_main > 0.1 * y2;
+    }
+
+    if (!shadow_filter_converged_) {
+      const float e2_shadow = std::accumulate(e_shadow.begin(), e_shadow.end(),
+                                              0.f, sum_of_squares);
+      shadow_filter_converged_ = e2_shadow > 0.1 * y2;
     }
   }
 
   // Compute spectra for future use.
-  E_main.Spectrum(optimization_, output->E2_main);
-  E_main_nonwindowed.Spectrum(optimization_, output->E2_main_nonwindowed);
   E_shadow.Spectrum(optimization_, output->E2_shadow);
+  E_main.Spectrum(optimization_, output->E2_main);
+
+  if (main_filter_converged_ || !shadow_filter_converged_) {
+    fft_.ZeroPaddedFft(e_main, Aec3Fft::Window::kRectangular,
+                       &E_main_nonwindowed);
+    E_main_nonwindowed.Spectrum(optimization_, output->E2_main_nonwindowed);
+  } else {
+    fft_.ZeroPaddedFft(e_shadow, Aec3Fft::Window::kRectangular,
+                       &E_main_nonwindowed);
+    E_main_nonwindowed.Spectrum(optimization_, output->E2_main_nonwindowed);
+  }
 
   // Update the main filter.
   std::array<float, kFftLengthBy2Plus1> X2;
