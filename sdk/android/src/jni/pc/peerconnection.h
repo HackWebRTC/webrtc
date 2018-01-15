@@ -61,9 +61,6 @@ class PeerConnectionObserverJni : public PeerConnectionObserver {
                   const std::vector<rtc::scoped_refptr<MediaStreamInterface>>&
                       streams) override;
 
-  void SetConstraints(std::unique_ptr<MediaConstraintsInterface> constraints);
-  const MediaConstraintsInterface* constraints() { return constraints_.get(); }
-
  private:
   typedef std::map<MediaStreamInterface*, JavaMediaStream>
       NativeToJavaStreamsMap;
@@ -86,6 +83,36 @@ class PeerConnectionObserverJni : public PeerConnectionObserver {
   // C++ -> Java remote streams.
   NativeToJavaStreamsMap remote_streams_;
   std::vector<JavaRtpReceiverGlobalOwner> rtp_receivers_;
+};
+
+// PeerConnection doesn't take ownership of the observer. In Java API, we don't
+// want the client to have to manually dispose the observer. To solve this, this
+// wrapper class is used for object ownership.
+//
+// Also stores reference to the deprecated PeerConnection constraints for now.
+class OwnedPeerConnection {
+ public:
+  OwnedPeerConnection(
+      rtc::scoped_refptr<PeerConnectionInterface> peer_connection,
+      std::unique_ptr<PeerConnectionObserver> observer)
+      : OwnedPeerConnection(peer_connection,
+                            std::move(observer),
+                            nullptr /* constraints */) {}
+  // Deprecated. PC constraints are deprecated.
+  OwnedPeerConnection(
+      rtc::scoped_refptr<PeerConnectionInterface> peer_connection,
+      std::unique_ptr<PeerConnectionObserver> observer,
+      std::unique_ptr<MediaConstraintsInterface> constraints);
+  ~OwnedPeerConnection();
+
+  PeerConnectionInterface* pc() const { return peer_connection_.get(); }
+  const MediaConstraintsInterface* constraints() const {
+    return constraints_.get();
+  }
+
+ private:
+  rtc::scoped_refptr<PeerConnectionInterface> peer_connection_;
+  std::unique_ptr<PeerConnectionObserver> observer_;
   std::unique_ptr<MediaConstraintsInterface> constraints_;
 };
 

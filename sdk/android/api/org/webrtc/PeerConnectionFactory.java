@@ -232,7 +232,7 @@ public class PeerConnectionFactory {
     if (nativePeerConnection == 0) {
       return null;
     }
-    return new PeerConnection(nativePeerConnection, nativeObserver);
+    return new PeerConnection(nativePeerConnection);
   }
 
   /**

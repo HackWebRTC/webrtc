@@ -417,6 +417,8 @@ static jlong JNI_PeerConnectionFactory_CreatePeerConnection(
   rtc::scoped_refptr<PeerConnectionFactoryInterface> f(
       reinterpret_cast<PeerConnectionFactoryInterface*>(
           factoryFromJava(factory)));
+  std::unique_ptr<PeerConnectionObserver> observer(
+      reinterpret_cast<PeerConnectionObserver*>(observer_p));
 
   PeerConnectionInterface::RTCConfiguration rtc_config(
       PeerConnectionInterface::RTCConfigurationType::kAggressive);
@@ -436,15 +438,15 @@ static jlong JNI_PeerConnectionFactory_CreatePeerConnection(
     rtc_config.certificates.push_back(certificate);
   }
 
-  PeerConnectionObserverJni* observer =
-      reinterpret_cast<PeerConnectionObserverJni*>(observer_p);
+  std::unique_ptr<MediaConstraintsInterface> constraints;
   if (!j_constraints.is_null()) {
-    observer->SetConstraints(JavaToNativeMediaConstraints(jni, j_constraints));
-    CopyConstraintsIntoRtcConfiguration(observer->constraints(), &rtc_config);
+    constraints = JavaToNativeMediaConstraints(jni, j_constraints);
+    CopyConstraintsIntoRtcConfiguration(constraints.get(), &rtc_config);
   }
   rtc::scoped_refptr<PeerConnectionInterface> pc(
-      f->CreatePeerConnection(rtc_config, nullptr, nullptr, observer));
-  return jlongFromPointer(pc.release());
+      f->CreatePeerConnection(rtc_config, nullptr, nullptr, observer.get()));
+  return jlongFromPointer(
+      new OwnedPeerConnection(pc, std::move(observer), std::move(constraints)));
 }
 
 static jlong JNI_PeerConnectionFactory_CreateVideoSource(

@@ -548,7 +548,6 @@ public class PeerConnection {
 
   private final List<MediaStream> localStreams = new ArrayList<>();
   private final long nativePeerConnection;
-  private final long nativeObserver;
   private List<RtpSender> senders = new ArrayList<>();
   private List<RtpReceiver> receivers = new ArrayList<>();
 
@@ -557,12 +556,11 @@ public class PeerConnection {
    * their PeerConnection creation in JNI.
    */
   public PeerConnection(NativePeerConnectionFactory factory) {
-    this(factory.createNativePeerConnection(), 0 /* nativeObserver */);
+    this(factory.createNativePeerConnection());
   }
 
-  PeerConnection(long nativePeerConnection, long nativeObserver) {
+  PeerConnection(long nativePeerConnection) {
     this.nativePeerConnection = nativePeerConnection;
-    this.nativeObserver = nativeObserver;
   }
 
   // JsepInterface.
@@ -611,7 +609,7 @@ public class PeerConnection {
   }
 
   public boolean setConfiguration(RTCConfiguration config) {
-    return nativeSetConfiguration(config, nativeObserver);
+    return nativeSetConfiguration(config);
   }
 
   public boolean addIceCandidate(IceCandidate candidate) {
@@ -781,14 +779,16 @@ public class PeerConnection {
       receiver.dispose();
     }
     receivers.clear();
-    JniCommon.nativeReleaseRef(nativePeerConnection);
-    if (nativeObserver != 0) {
-      nativeFreePeerConnectionObserver(nativeObserver);
-    }
+    nativeFreeOwnedPeerConnection(nativePeerConnection);
+  }
+
+  /** Returns a pointer to the native webrtc::PeerConnectionInterface. */
+  public long getNativePeerConnection() {
+    return nativeGetNativePeerConnection();
   }
 
   @CalledByNative
-  public long getNativePeerConnection() {
+  long getNativeOwnedPeerConnection() {
     return nativePeerConnection;
   }
 
@@ -796,10 +796,7 @@ public class PeerConnection {
     return nativeCreatePeerConnectionObserver(observer);
   }
 
-  public static void freeNativePeerConnectionObserver(long observer) {
-    nativeFreePeerConnectionObserver(observer);
-  }
-
+  private native long nativeGetNativePeerConnection();
   private native SessionDescription nativeGetLocalDescription();
   private native SessionDescription nativeGetRemoteDescription();
   private native DataChannel nativeCreateDataChannel(String label, DataChannel.Init init);
@@ -815,8 +812,8 @@ public class PeerConnection {
   private native IceGatheringState nativeIceGatheringState();
   private native void nativeClose();
   private static native long nativeCreatePeerConnectionObserver(Observer observer);
-  private static native void nativeFreePeerConnectionObserver(long observer);
-  private native boolean nativeSetConfiguration(RTCConfiguration config, long nativeObserver);
+  private static native void nativeFreeOwnedPeerConnection(long ownedPeerConnection);
+  private native boolean nativeSetConfiguration(RTCConfiguration config);
   private native boolean nativeAddIceCandidate(
       String sdpMid, int sdpMLineIndex, String iceCandidateSdp);
   private native boolean nativeRemoveIceCandidates(final IceCandidate[] candidates);
