@@ -57,11 +57,8 @@ Subtractor::Subtractor(const EchoCanceller3Config& config,
       shadow_filter_(config.filter.shadow.length_blocks,
                      optimization,
                      data_dumper_),
-      G_main_(config.filter.main.leakage_converged,
-              config.filter.main.leakage_diverged,
-              config.filter.main.noise_gate,
-              config.filter.main.error_floor),
-      G_shadow_(config.filter.shadow.rate, config.filter.shadow.noise_gate) {
+      G_main_(config.filter.main),
+      G_shadow_(config.filter.shadow) {
   RTC_DCHECK(data_dumper_);
   // Currently, the rest of AEC3 requires the main and shadow filter lengths to
   // be identical.

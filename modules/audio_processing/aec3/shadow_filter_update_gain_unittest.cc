@@ -52,8 +52,7 @@ void RunFilterUpdateTest(int num_blocks_to_process,
 
   std::array<float, kBlockSize> x_old;
   x_old.fill(0.f);
-  ShadowFilterUpdateGain shadow_gain(config.filter.shadow.rate,
-                                     config.filter.shadow.noise_gate);
+  ShadowFilterUpdateGain shadow_gain(config.filter.shadow);
   Random random_generator(42U);
   std::vector<std::vector<float>> x(3, std::vector<float>(kBlockSize, 0.f));
   std::vector<float> y(kBlockSize, 0.f);
@@ -133,7 +132,9 @@ TEST(ShadowFilterUpdateGain, NullDataOutputGain) {
   FftBuffer fft_buffer(1);
   RenderSignalAnalyzer analyzer;
   FftData E;
-  ShadowFilterUpdateGain gain(0.5f, 220075344.f);
+  const EchoCanceller3Config::Filter::ShadowConfiguration& config = {
+      12, 0.5f, 220075344.f};
+  ShadowFilterUpdateGain gain(config);
   std::array<float, kFftLengthBy2Plus1> render_power;
   render_power.fill(0.f);
   EXPECT_DEATH(gain.Compute(render_power, analyzer, E, 1, false, nullptr), "");

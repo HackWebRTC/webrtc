@@ -17,9 +17,9 @@
 
 namespace webrtc {
 
-ShadowFilterUpdateGain::ShadowFilterUpdateGain(float rate,
-                                               float noise_gate_power)
-    : rate_(rate), noise_gate_power_(noise_gate_power) {}
+ShadowFilterUpdateGain::ShadowFilterUpdateGain(
+    const EchoCanceller3Config::Filter::ShadowConfiguration& config)
+    : config_(config) {}
 
 void ShadowFilterUpdateGain::HandleEchoPathChange() {
   // TODO(peah): Check whether this counter should instead be initialized to a
@@ -54,7 +54,7 @@ void ShadowFilterUpdateGain::Compute(
   std::array<float, kFftLengthBy2Plus1> mu;
   auto X2 = render_power;
   std::transform(X2.begin(), X2.end(), mu.begin(), [&](float a) {
-    return a > noise_gate_power_ ? rate_ / a : 0.f;
+    return a > config_.noise_gate ? config_.rate / a : 0.f;
   });
 
   // Avoid updating the filter close to narrow bands in the render signals.

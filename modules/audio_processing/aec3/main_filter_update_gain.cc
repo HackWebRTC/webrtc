@@ -28,16 +28,11 @@ constexpr int kPoorExcitationCounterInitial = 1000;
 
 int MainFilterUpdateGain::instance_count_ = 0;
 
-MainFilterUpdateGain::MainFilterUpdateGain(float leakage_converged,
-                                           float leakage_diverged,
-                                           float noise_gate_power,
-                                           float error_floor)
+MainFilterUpdateGain::MainFilterUpdateGain(
+    const EchoCanceller3Config::Filter::MainConfiguration& config)
     : data_dumper_(
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
-      leakage_converged_(leakage_converged),
-      leakage_diverged_(leakage_diverged),
-      noise_gate_power_(noise_gate_power),
-      error_floor_(error_floor),
+      config_(config),
       poor_excitation_counter_(kPoorExcitationCounterInitial) {
   H_error_.fill(kHErrorInitial);
 }
@@ -85,7 +80,7 @@ void MainFilterUpdateGain::Compute(
     std::array<float, kFftLengthBy2Plus1> mu;
     // mu = H_error / (0.5* H_error* X2 + n * E2).
     for (size_t k = 0; k < kFftLengthBy2Plus1; ++k) {
-      mu[k] = X2[k] > noise_gate_power_
+      mu[k] = X2[k] > config_.noise_gate
                   ? H_error_[k] / (0.5f * H_error_[k] * X2[k] +
                                    size_partitions * E2_main[k])
                   : 0.f;
@@ -110,13 +105,14 @@ void MainFilterUpdateGain::Compute(
   std::array<float, kFftLengthBy2Plus1> H_error_increase;
   std::transform(E2_shadow.begin(), E2_shadow.end(), E2_main.begin(),
                  H_error_increase.begin(), [&](float a, float b) {
-                   return a >= b ? leakage_converged_ : leakage_diverged_;
+                   return a >= b ? config_.leakage_converged
+                                 : config_.leakage_diverged;
                  });
   std::transform(erl.begin(), erl.end(), H_error_increase.begin(),
                  H_error_increase.begin(), std::multiplies<float>());
   std::transform(H_error_.begin(), H_error_.end(), H_error_increase.begin(),
                  H_error_.begin(), [&](float a, float b) {
-                   return std::max(a + b, error_floor_);
+                   return std::max(a + b, config_.error_floor);
                  });
 
   data_dumper_->DumpRaw("aec3_main_gain_H_error", H_error_);

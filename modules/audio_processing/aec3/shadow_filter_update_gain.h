@@ -14,6 +14,7 @@
 #include "modules/audio_processing/aec3/aec3_common.h"
 #include "modules/audio_processing/aec3/render_buffer.h"
 #include "modules/audio_processing/aec3/render_signal_analyzer.h"
+#include "modules/audio_processing/include/audio_processing.h"
 #include "rtc_base/constructormagic.h"
 
 namespace webrtc {
@@ -21,7 +22,8 @@ namespace webrtc {
 // Provides functionality for computing the fixed gain for the shadow filter.
 class ShadowFilterUpdateGain {
  public:
-  ShadowFilterUpdateGain(float rate, float noise_gate_power);
+  explicit ShadowFilterUpdateGain(
+      const EchoCanceller3Config::Filter::ShadowConfiguration& config);
 
   // Takes action in the case of a known echo path change.
   void HandleEchoPathChange();
@@ -35,8 +37,7 @@ class ShadowFilterUpdateGain {
                FftData* G);
 
  private:
-  const float rate_;
-  const float noise_gate_power_;
+  const EchoCanceller3Config::Filter::ShadowConfiguration config_;
   // TODO(peah): Check whether this counter should instead be initialized to a
   // large value.
   size_t poor_signal_excitation_counter_ = 0;

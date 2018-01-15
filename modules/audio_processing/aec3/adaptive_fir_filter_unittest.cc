@@ -314,8 +314,7 @@ TEST(AdaptiveFirFilter, FilterAndAdapt) {
   config.delay.default_delay = 1;
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
       RenderDelayBuffer::Create(config, 3));
-  ShadowFilterUpdateGain gain(config.filter.shadow.rate,
-                              config.filter.shadow.noise_gate);
+  ShadowFilterUpdateGain gain(config.filter.shadow);
   Random random_generator(42U);
   std::vector<std::vector<float>> x(3, std::vector<float>(kBlockSize, 0.f));
   std::vector<float> n(kBlockSize, 0.f);

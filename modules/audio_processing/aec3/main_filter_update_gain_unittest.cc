@@ -51,11 +51,8 @@ void RunFilterUpdateTest(int num_blocks_to_process,
   Aec3Fft fft;
   std::array<float, kBlockSize> x_old;
   x_old.fill(0.f);
-  ShadowFilterUpdateGain shadow_gain(config.filter.shadow.rate,
-                                     config.filter.shadow.noise_gate);
-  MainFilterUpdateGain main_gain(
-      config.filter.main.leakage_converged, config.filter.main.leakage_diverged,
-      config.filter.main.noise_gate, config.filter.main.error_floor);
+  ShadowFilterUpdateGain shadow_gain(config.filter.shadow);
+  MainFilterUpdateGain main_gain(config.filter.main);
   Random random_generator(42U);
   std::vector<std::vector<float>> x(3, std::vector<float>(kBlockSize, 0.f));
   std::vector<float> y(kBlockSize, 0.f);
@@ -194,9 +191,7 @@ TEST(MainFilterUpdateGain, NullDataOutputGain) {
                            DetectOptimization(), &data_dumper);
   RenderSignalAnalyzer analyzer;
   SubtractorOutput output;
-  MainFilterUpdateGain gain(
-      config.filter.main.leakage_converged, config.filter.main.leakage_diverged,
-      config.filter.main.noise_gate, config.filter.main.error_floor);
+  MainFilterUpdateGain gain(config.filter.main);
   std::array<float, kFftLengthBy2Plus1> render_power;
   render_power.fill(0.f);
   EXPECT_DEATH(
