@@ -128,6 +128,7 @@ rtc_static_library("video_coding") {
 }
 
 rtc_source_set("video_codec_interface") {
+  visibility = [ "*" ]
   sources = [
     "include/video_codec_interface.h",
     "include/video_coding_defines.h",
