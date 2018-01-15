@@ -54,9 +54,6 @@
       "app": "video_engine_tests"
     },
     {
-      "app": "voice_engine_unittests"
-    },
-    {
       "app": "webrtc_nonparallel_tests"
     }
   ]
