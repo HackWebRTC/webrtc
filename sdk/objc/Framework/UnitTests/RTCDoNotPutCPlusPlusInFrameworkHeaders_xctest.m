@@ -12,7 +12,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <WebRTC/WebRTC.h>
+#import <WebRTC.h>
 
 @interface RTCDoNotPutCPlusPlusInFrameworkHeaders : XCTestCase
 @end

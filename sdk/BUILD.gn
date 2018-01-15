@@ -562,6 +562,7 @@ if (is_ios || is_mac) {
           }
           deps = [
             ":common_objc",
+            ":framework_objc",
             ":peerconnection_objc",
             ":peerconnectionfactory_objc",
             ":videotoolbox_objc",
@@ -576,6 +577,7 @@ if (is_ios || is_mac) {
             "//build/config/ios:xctest",
             "//third_party/ocmock",
           ]
+          include_dirs += [ "$root_out_dir/WebRTC.framework/Headers/" ]
         }
 
         bundle_data("sdk_unittests_bundle_data") {
@@ -665,7 +667,7 @@ if (is_ios || is_mac) {
     }
 
     if (is_ios) {
-      ios_framework_bundle("framework_objc") {
+      ios_framework_bundle_with_umbrella_header("framework_objc") {
         info_plist = "objc/Framework/Info.plist"
         output_name = "WebRTC"
 
@@ -723,7 +725,6 @@ if (is_ios || is_mac) {
           "objc/Framework/Headers/WebRTC/RTCVideoTrack.h",
           "objc/Framework/Headers/WebRTC/RTCVideoViewShading.h",
           "objc/Framework/Headers/WebRTC/UIDevice+RTCDevice.h",
-          "objc/Framework/Headers/WebRTC/WebRTC.h",
         ]
         if (rtc_use_metal_rendering) {
           common_objc_headers +=

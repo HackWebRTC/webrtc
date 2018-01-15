@@ -431,6 +431,50 @@ if (is_ios) {
       }
     }
   }
+
+  template("ios_framework_bundle_with_umbrella_header") {
+    forward_variables_from(invoker, [ "output_name" ])
+    umbrella_header_path =
+        "$target_gen_dir/$output_name.framework/Headers/$output_name.h"
+
+    ios_framework_bundle(target_name) {
+      forward_variables_from(invoker, "*", [])
+
+      deps += [ ":copy_umbrella_header_$target_name" ]
+    }
+
+    action("umbrella_header_$target_name") {
+      forward_variables_from(invoker, [ "public_headers" ])
+
+      script = "//tools_webrtc/ios/generate_umbrella_header.py"
+
+      outputs = [
+        umbrella_header_path,
+      ]
+      args = [
+               "--out",
+               rebase_path(umbrella_header_path, root_build_dir),
+               "--sources",
+             ] + rebase_path(public_headers, "objc/Framework/Headers/")
+    }
+
+    copy("copy_umbrella_header_$target_name") {
+      sources = [
+        umbrella_header_path,
+      ]
+      outputs = [
+        "$root_out_dir/$output_name.framework/Headers/$output_name.h",
+      ]
+
+      deps = [
+        ":umbrella_header_$target_name",
+      ]
+    }
+  }
+
+  set_defaults("ios_framework_bundle_with_umbrella_header") {
+    configs = default_shared_library_configs
+  }
 }
 
 if (is_android) {
