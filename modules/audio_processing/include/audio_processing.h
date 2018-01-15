@@ -1260,6 +1260,9 @@ struct EchoCanceller3Config {
 
     MainConfiguration main = {12, 0.005f, 0.05f, 0.001f, 20075344.f};
     ShadowConfiguration shadow = {12, 0.1f, 20075344.f};
+
+    MainConfiguration main_initial = {12, 0.01f, 0.1f, 0.001f, 20075344.f};
+    ShadowConfiguration shadow_initial = {12, 0.7f, 20075344.f};
   } filter;
 
   struct Erle {

@@ -86,6 +86,7 @@ class EchoRemoverImpl final : public EchoRemover {
   bool echo_leakage_detected_ = false;
   AecState aec_state_;
   EchoRemoverMetrics metrics_;
+  bool initial_state_ = true;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(EchoRemoverImpl);
 };
@@ -146,6 +147,7 @@ void EchoRemoverImpl::ProcessCapture(
   if (echo_path_variability.AudioPathChanged()) {
     subtractor_.HandleEchoPathChange(echo_path_variability);
     aec_state_.HandleEchoPathChange(echo_path_variability);
+    initial_state_ = true;
   }
 
   std::array<float, kFftLengthBy2Plus1> Y2;
@@ -166,6 +168,10 @@ void EchoRemoverImpl::ProcessCapture(
   render_signal_analyzer_.Update(*render_buffer, aec_state_.FilterDelay());
 
   // Perform linear echo cancellation.
+  if (initial_state_ && !aec_state_.InitialState()) {
+    subtractor_.ExitInitialState();
+    initial_state_ = false;
+  }
   subtractor_.Process(*render_buffer, y0, render_signal_analyzer_, aec_state_,
                       &subtractor_output);
 

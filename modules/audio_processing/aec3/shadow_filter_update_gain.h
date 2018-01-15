@@ -36,8 +36,14 @@ class ShadowFilterUpdateGain {
                bool saturated_capture_signal,
                FftData* G);
 
+  // Sets a new config.
+  void SetConfig(
+      const EchoCanceller3Config::Filter::ShadowConfiguration& config) {
+    config_ = config;
+  }
+
  private:
-  const EchoCanceller3Config::Filter::ShadowConfiguration config_;
+  EchoCanceller3Config::Filter::ShadowConfiguration config_;
   // TODO(peah): Check whether this counter should instead be initialized to a
   // large value.
   size_t poor_signal_excitation_counter_ = 0;

@@ -91,7 +91,7 @@ void ApplyFilter_SSE2(const RenderBuffer& render_buffer,
 // Provides a frequency domain adaptive filter functionality.
 class AdaptiveFirFilter {
  public:
-  AdaptiveFirFilter(size_t size_partitions,
+  AdaptiveFirFilter(size_t max_size_partitions,
                     Aec3Optimization optimization,
                     ApmDataDumper* data_dumper);
 
@@ -110,6 +110,9 @@ class AdaptiveFirFilter {
   // Returns the filter size.
   size_t SizePartitions() const { return H_.size(); }
 
+  // Sets the filter size.
+  void SetSizePartitions(size_t size);
+
   // Returns the filter based echo return loss.
   const std::array<float, kFftLengthBy2Plus1>& Erl() const { return erl_; }
 
@@ -123,10 +126,13 @@ class AdaptiveFirFilter {
   const std::vector<float>& FilterImpulseResponse() const { return h_; }
 
   void DumpFilter(const char* name) {
+    size_t current_size_partitions = H_.size();
+    H_.resize(max_size_partitions_);
     for (auto& H : H_) {
       data_dumper_->DumpRaw(name, H.re);
       data_dumper_->DumpRaw(name, H.im);
     }
+    H_.resize(current_size_partitions);
   }
 
  private:
@@ -136,6 +142,7 @@ class AdaptiveFirFilter {
   ApmDataDumper* const data_dumper_;
   const Aec3Fft fft_;
   const Aec3Optimization optimization_;
+  const size_t max_size_partitions_;
   std::vector<FftData> H_;
   std::vector<std::array<float, kFftLengthBy2Plus1>> H2_;
   std::vector<float> h_;

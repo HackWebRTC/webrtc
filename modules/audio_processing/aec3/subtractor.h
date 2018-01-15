@@ -47,6 +47,9 @@ class Subtractor {
 
   void HandleEchoPathChange(const EchoPathVariability& echo_path_variability);
 
+  // Exits the initial state.
+  void ExitInitialState();
+
   // Returns the block-wise frequency response for the main adaptive filter.
   const std::vector<std::array<float, kFftLengthBy2Plus1>>&
   FilterFrequencyResponse() const {
@@ -64,6 +67,7 @@ class Subtractor {
   const Aec3Fft fft_;
   ApmDataDumper* data_dumper_;
   const Aec3Optimization optimization_;
+  const EchoCanceller3Config config_;
   AdaptiveFirFilter main_filter_;
   AdaptiveFirFilter shadow_filter_;
   MainFilterUpdateGain G_main_;

@@ -51,19 +51,30 @@ Subtractor::Subtractor(const EchoCanceller3Config& config,
     : fft_(),
       data_dumper_(data_dumper),
       optimization_(optimization),
-      main_filter_(config.filter.main.length_blocks,
+      config_(config),
+      main_filter_(config_.filter.main.length_blocks,
                    optimization,
                    data_dumper_),
-      shadow_filter_(config.filter.shadow.length_blocks,
+      shadow_filter_(config_.filter.shadow.length_blocks,
                      optimization,
                      data_dumper_),
-      G_main_(config.filter.main),
-      G_shadow_(config.filter.shadow) {
+      G_main_(config_.filter.main_initial),
+      G_shadow_(config_.filter.shadow_initial) {
   RTC_DCHECK(data_dumper_);
   // Currently, the rest of AEC3 requires the main and shadow filter lengths to
   // be identical.
-  RTC_DCHECK_EQ(config.filter.main.length_blocks,
-                config.filter.shadow.length_blocks);
+  RTC_DCHECK_EQ(config_.filter.main.length_blocks,
+                config_.filter.shadow.length_blocks);
+  RTC_DCHECK_EQ(config_.filter.main_initial.length_blocks,
+                config_.filter.shadow_initial.length_blocks);
+
+  RTC_DCHECK_GE(config_.filter.main.length_blocks,
+                config_.filter.main_initial.length_blocks);
+  RTC_DCHECK_GE(config_.filter.shadow.length_blocks,
+                config_.filter.shadow_initial.length_blocks);
+
+  main_filter_.SetSizePartitions(config_.filter.main_initial.length_blocks);
+  shadow_filter_.SetSizePartitions(config_.filter.shadow_initial.length_blocks);
 }
 
 Subtractor::~Subtractor() = default;
@@ -75,6 +86,12 @@ void Subtractor::HandleEchoPathChange(
     shadow_filter_.HandleEchoPathChange();
     G_main_.HandleEchoPathChange(echo_path_variability);
     G_shadow_.HandleEchoPathChange();
+    G_main_.SetConfig(config_.filter.main_initial);
+    G_shadow_.SetConfig(config_.filter.shadow_initial);
+    main_filter_.SetSizePartitions(config_.filter.main_initial.length_blocks);
+    shadow_filter_.SetSizePartitions(
+        config_.filter.shadow_initial.length_blocks);
+
     converged_filter_ = false;
   };
 
@@ -91,6 +108,13 @@ void Subtractor::HandleEchoPathChange(
              EchoPathVariability::DelayAdjustment::kBufferReadjustment) {
     full_reset();
   }
+}
+
+void Subtractor::ExitInitialState() {
+  G_main_.SetConfig(config_.filter.main);
+  G_shadow_.SetConfig(config_.filter.shadow);
+  main_filter_.SetSizePartitions(config_.filter.main.length_blocks);
+  shadow_filter_.SetSizePartitions(config_.filter.shadow.length_blocks);
 }
 
 void Subtractor::Process(const RenderBuffer& render_buffer,

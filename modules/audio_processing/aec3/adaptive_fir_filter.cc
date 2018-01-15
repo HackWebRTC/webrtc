@@ -22,6 +22,7 @@
 
 #include "modules/audio_processing/aec3/fft_data.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 
@@ -414,15 +415,16 @@ void ApplyFilter_SSE2(const RenderBuffer& render_buffer,
 
 }  // namespace aec3
 
-AdaptiveFirFilter::AdaptiveFirFilter(size_t size_partitions,
+AdaptiveFirFilter::AdaptiveFirFilter(size_t max_size_partitions,
                                      Aec3Optimization optimization,
                                      ApmDataDumper* data_dumper)
     : data_dumper_(data_dumper),
       fft_(),
       optimization_(optimization),
-      H_(size_partitions),
-      H2_(size_partitions, std::array<float, kFftLengthBy2Plus1>()),
-      h_(GetTimeDomainLength(size_partitions), 0.f) {
+      max_size_partitions_(max_size_partitions),
+      H_(max_size_partitions_),
+      H2_(max_size_partitions_, std::array<float, kFftLengthBy2Plus1>()),
+      h_(GetTimeDomainLength(max_size_partitions_), 0.f) {
   RTC_DCHECK(data_dumper_);
 
   for (auto& H_j : H_) {
@@ -437,14 +439,51 @@ AdaptiveFirFilter::AdaptiveFirFilter(size_t size_partitions,
 AdaptiveFirFilter::~AdaptiveFirFilter() = default;
 
 void AdaptiveFirFilter::HandleEchoPathChange() {
+  size_t current_h_size = h_.size();
+  h_.resize(GetTimeDomainLength(max_size_partitions_));
   std::fill(h_.begin(), h_.end(), 0.f);
+  h_.resize(current_h_size);
+
+  size_t current_size_partitions = H_.size();
+  H_.resize(max_size_partitions_);
   for (auto& H_j : H_) {
     H_j.Clear();
   }
+  H_.resize(current_size_partitions);
+
+  H2_.resize(max_size_partitions_);
   for (auto& H2_k : H2_) {
     H2_k.fill(0.f);
   }
+  H2_.resize(current_size_partitions);
+
   erl_.fill(0.f);
+}
+
+void AdaptiveFirFilter::SetSizePartitions(size_t size) {
+  RTC_DCHECK_EQ(max_size_partitions_, H_.capacity());
+  RTC_DCHECK_EQ(max_size_partitions_, H2_.capacity());
+  RTC_DCHECK_EQ(GetTimeDomainLength(max_size_partitions_), h_.capacity());
+  RTC_DCHECK_EQ(H_.size(), H2_.size());
+  RTC_DCHECK_EQ(h_.size(), GetTimeDomainLength(H_.size()));
+
+  if (size > max_size_partitions_) {
+    RTC_LOG(LS_ERROR) << "Too large adaptive filter size specificed: " << size;
+    size = max_size_partitions_;
+  }
+
+  if (size < H_.size()) {
+    for (size_t k = size; k < H_.size(); ++k) {
+      H_[k].Clear();
+      H2_[k].fill(0.f);
+    }
+
+    std::fill(h_.begin() + GetTimeDomainLength(size), h_.end(), 0.f);
+  }
+
+  H_.resize(size);
+  H2_.resize(size);
+  h_.resize(GetTimeDomainLength(size));
 }
 
 void AdaptiveFirFilter::Filter(const RenderBuffer& render_buffer,

@@ -103,6 +103,9 @@ class AecState {
     return filter_has_had_time_to_converge_;
   }
 
+  // Returns whether the filter adaptation is still in the initial state.
+  bool InitialState() const { return initial_state_; }
+
   // Updates the aec state.
   void Update(const std::vector<std::array<float, kFftLengthBy2Plus1>>&
                   adaptive_filter_frequency_response,
@@ -161,6 +164,7 @@ class AecState {
   float reverb_decay_;
   bool saturating_echo_path_ = false;
   bool filter_has_had_time_to_converge_ = false;
+  bool initial_state_ = true;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(AecState);
 };

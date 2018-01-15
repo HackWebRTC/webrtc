@@ -44,10 +44,16 @@ class MainFilterUpdateGain {
                bool saturated_capture_signal,
                FftData* gain_fft);
 
+  // Sets a new config.
+  void SetConfig(
+      const EchoCanceller3Config::Filter::MainConfiguration& config) {
+    config_ = config;
+  }
+
  private:
   static int instance_count_;
   std::unique_ptr<ApmDataDumper> data_dumper_;
-  const EchoCanceller3Config::Filter::MainConfiguration config_;
+  EchoCanceller3Config::Filter::MainConfiguration config_;
   std::array<float, kFftLengthBy2Plus1> H_error_;
   size_t poor_excitation_counter_;
   size_t call_counter_ = 0;
