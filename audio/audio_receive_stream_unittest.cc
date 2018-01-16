@@ -87,12 +87,6 @@ struct ConfigHelper {
     EXPECT_CALL(*channel_proxy_, SetLocalSSRC(kLocalSsrc)).Times(1);
     EXPECT_CALL(*channel_proxy_, SetNACKStatus(true, 15)).Times(1);
     EXPECT_CALL(*channel_proxy_,
-        SetReceiveAudioLevelIndicationStatus(true, kAudioLevelId))
-            .Times(1);
-    EXPECT_CALL(*channel_proxy_,
-        EnableReceiveTransportSequenceNumber(kTransportSequenceNumberId))
-            .Times(1);
-    EXPECT_CALL(*channel_proxy_,
         RegisterReceiverCongestionControlObjects(&packet_router_))
             .Times(1);
     EXPECT_CALL(*channel_proxy_, ResetReceiverCongestionControlObjects())
@@ -386,12 +380,6 @@ TEST(AudioReceiveStreamTest, ReconfigureWithUpdatedConfig) {
   EXPECT_CALL(channel_proxy, SetLocalSSRC(kLocalSsrc + 1)).Times(1);
   EXPECT_CALL(channel_proxy, SetNACKStatus(true, 15 + 1)).Times(1);
   EXPECT_CALL(channel_proxy, SetReceiveCodecs(new_config.decoder_map));
-  EXPECT_CALL(channel_proxy,
-      SetReceiveAudioLevelIndicationStatus(true, kAudioLevelId + 1))
-          .Times(1);
-  EXPECT_CALL(channel_proxy,
-      EnableReceiveTransportSequenceNumber(kTransportSequenceNumberId + 1))
-          .Times(1);
 
   recv_stream->Reconfigure(new_config);
 }

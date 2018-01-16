@@ -446,21 +446,6 @@ int32_t Channel::OnReceivedPayloadData(const uint8_t* payloadData,
   return 0;
 }
 
-bool Channel::OnRecoveredPacket(const uint8_t* rtp_packet,
-                                size_t rtp_packet_length) {
-  RTPHeader header;
-  if (!rtp_header_parser_->Parse(rtp_packet, rtp_packet_length, &header)) {
-    RTC_LOG(LS_WARNING) << "IncomingPacket invalid RTP header";
-    return false;
-  }
-  header.payload_type_frequency =
-      rtp_payload_registry_->GetPayloadTypeFrequency(header.payloadType);
-  if (header.payload_type_frequency < 0)
-    return false;
-  // TODO(nisse): Pass RtpPacketReceived with |recovered()| true.
-  return ReceivePacket(rtp_packet, rtp_packet_length, header);
-}
-
 AudioMixer::Source::AudioFrameInfo Channel::GetAudioFrameWithInfo(
     int sample_rate_hz,
     AudioFrame* audio_frame) {
@@ -593,7 +578,6 @@ Channel::Channel(ProcessThread* module_process_thread,
                  rtc::scoped_refptr<AudioDecoderFactory> decoder_factory)
     : event_log_proxy_(new RtcEventLogProxy()),
       rtcp_rtt_stats_proxy_(new RtcpRttStatsProxy()),
-      rtp_header_parser_(RtpHeaderParser::Create()),
       rtp_payload_registry_(new RTPPayloadRegistry()),
       rtp_receive_statistics_(
           ReceiveStatistics::Create(Clock::GetRealTimeClock())),
@@ -1118,31 +1102,10 @@ int Channel::SetSendAudioLevelIndicationStatus(bool enable, unsigned char id) {
   return SetSendRtpHeaderExtension(enable, kRtpExtensionAudioLevel, id);
 }
 
-int Channel::SetReceiveAudioLevelIndicationStatus(bool enable,
-                                                  unsigned char id) {
-  rtp_header_parser_->DeregisterRtpHeaderExtension(kRtpExtensionAudioLevel);
-  if (enable &&
-      !rtp_header_parser_->RegisterRtpHeaderExtension(kRtpExtensionAudioLevel,
-                                                      id)) {
-    return -1;
-  }
-  return 0;
-}
-
 void Channel::EnableSendTransportSequenceNumber(int id) {
   int ret =
       SetSendRtpHeaderExtension(true, kRtpExtensionTransportSequenceNumber, id);
   RTC_DCHECK_EQ(0, ret);
-}
-
-void Channel::EnableReceiveTransportSequenceNumber(int id) {
-  rtp_header_parser_->DeregisterRtpHeaderExtension(
-      kRtpExtensionTransportSequenceNumber);
-  if (id != 0) {
-    bool ret = rtp_header_parser_->RegisterRtpHeaderExtension(
-        kRtpExtensionTransportSequenceNumber, id);
-    RTC_DCHECK(ret);
-  }
 }
 
 void Channel::RegisterSenderCongestionControlObjects(

@@ -345,19 +345,6 @@ internal::AudioState* AudioReceiveStream::audio_state() const {
   return audio_state;
 }
 
-AudioReceiveStream::ExtensionIds AudioReceiveStream::FindExtensionIds(
-    const std::vector<RtpExtension>& extensions) {
-  ExtensionIds ids;
-  for (const auto& extension : extensions) {
-    if (extension.uri == RtpExtension::kAudioLevelUri) {
-      ids.audio_level = extension.id;
-    } else if (extension.uri == RtpExtension::kTransportSequenceNumberUri) {
-      ids.transport_sequence_number = extension.id;
-    }
-  }
-  return ids;
-}
-
 void AudioReceiveStream::ConfigureStream(AudioReceiveStream* stream,
                                          const Config& new_config,
                                          bool first_time) {
@@ -387,19 +374,6 @@ void AudioReceiveStream::ConfigureStream(AudioReceiveStream* stream,
   }
   if (first_time || old_config.decoder_map != new_config.decoder_map) {
     channel_proxy->SetReceiveCodecs(new_config.decoder_map);
-  }
-
-  // RTP Header Extensions.
-  const ExtensionIds old_ids = FindExtensionIds(old_config.rtp.extensions);
-  const ExtensionIds new_ids = FindExtensionIds(new_config.rtp.extensions);
-  if (first_time || new_ids.audio_level != old_ids.audio_level) {
-    channel_proxy->SetReceiveAudioLevelIndicationStatus(
-        new_ids.audio_level != 0, new_ids.audio_level);
-  }
-  if (first_time || new_ids.transport_sequence_number !=
-                        old_ids.transport_sequence_number) {
-    channel_proxy->EnableReceiveTransportSequenceNumber(
-        new_ids.transport_sequence_number);
   }
 
   stream->config_ = new_config;

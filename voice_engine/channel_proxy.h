@@ -64,9 +64,7 @@ class ChannelProxy : public RtpPacketSinkInterface {
   virtual void SetRTCP_CNAME(const std::string& c_name);
   virtual void SetNACKStatus(bool enable, int max_packets);
   virtual void SetSendAudioLevelIndicationStatus(bool enable, int id);
-  virtual void SetReceiveAudioLevelIndicationStatus(bool enable, int id);
   virtual void EnableSendTransportSequenceNumber(int id);
-  virtual void EnableReceiveTransportSequenceNumber(int id);
   virtual void RegisterSenderCongestionControlObjects(
       RtpTransportControllerSendInterface* transport,
       RtcpBandwidthObserver* bandwidth_observer);

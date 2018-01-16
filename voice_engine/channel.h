@@ -212,9 +212,7 @@ class Channel
   // RTP+RTCP
   int SetLocalSSRC(unsigned int ssrc);
   int SetSendAudioLevelIndicationStatus(bool enable, unsigned char id);
-  int SetReceiveAudioLevelIndicationStatus(bool enable, unsigned char id);
   void EnableSendTransportSequenceNumber(int id);
-  void EnableReceiveTransportSequenceNumber(int id);
 
   void RegisterSenderCongestionControlObjects(
       RtpTransportControllerSendInterface* transport,
@@ -311,7 +309,6 @@ class Channel
   int GetRemoteSSRC(unsigned int& ssrc);
   void OnUplinkPacketLossRate(float packet_loss_rate);
   bool InputMute() const;
-  bool OnRecoveredPacket(const uint8_t* packet, size_t packet_length);
 
   bool ReceivePacket(const uint8_t* packet,
                      size_t packet_length,
@@ -343,7 +340,6 @@ class Channel
   std::unique_ptr<voe::RtcEventLogProxy> event_log_proxy_;
   std::unique_ptr<voe::RtcpRttStatsProxy> rtcp_rtt_stats_proxy_;
 
-  std::unique_ptr<RtpHeaderParser> rtp_header_parser_;
   std::unique_ptr<RTPPayloadRegistry> rtp_payload_registry_;
   std::unique_ptr<ReceiveStatistics> rtp_receive_statistics_;
   std::unique_ptr<RtpReceiver> rtp_receiver_;

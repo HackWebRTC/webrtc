@@ -91,15 +91,6 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream,
   const AudioSendStream* GetAssociatedSendStreamForTesting() const;
 
  private:
-  // RFC 5285: Each distinct extension MUST have a unique ID. The value 0 is
-  // reserved for padding and MUST NOT be used as a local identifier.
-  // So it should be safe to use 0 here to indicate "not configured".
-  struct ExtensionIds {
-    int audio_level = 0;
-    int transport_sequence_number = 0;
-  };
-  static ExtensionIds FindExtensionIds(
-      const std::vector<RtpExtension>& extensions);
   static void ConfigureStream(AudioReceiveStream* stream,
                               const Config& new_config,
                               bool first_time);
