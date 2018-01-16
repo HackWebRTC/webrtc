@@ -53,6 +53,7 @@ class OwnedFactoryAndThreads {
   ~OwnedFactoryAndThreads();
 
   PeerConnectionFactoryInterface* factory() { return factory_; }
+  Thread* network_thread() { return network_thread_.get(); }
   Thread* signaling_thread() { return signaling_thread_.get(); }
   Thread* worker_thread() { return worker_thread_.get(); }
   WebRtcVideoEncoderFactory* legacy_encoder_factory() {

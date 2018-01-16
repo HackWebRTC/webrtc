@@ -347,6 +347,11 @@ public class PeerConnectionFactory {
     return nativeGetNativePeerConnectionFactory(nativeFactory);
   }
 
+  /** Returns a pointer to the native OwnedFactoryAndThreads object */
+  public long getNativeOwnedFactoryAndThreads() {
+    return nativeFactory;
+  }
+
   private static void printStackTrace(Thread thread, String threadName) {
     if (thread != null) {
       StackTraceElement[] stackTraces = thread.getStackTrace();
