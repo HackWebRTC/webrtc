@@ -1151,17 +1151,19 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
     ReconfigureAudioReceiveStream();
   }
 
-  void SetUseTransportCc(bool use_transport_cc, bool use_nack) {
+  void SetUseTransportCcAndRecreateStream(bool use_transport_cc,
+                                          bool use_nack) {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
     config_.rtp.transport_cc = use_transport_cc;
     config_.rtp.nack.rtp_history_ms = use_nack ? kNackRtpHistoryMs : 0;
     ReconfigureAudioReceiveStream();
   }
 
-  void SetRtpExtensions(const std::vector<webrtc::RtpExtension>& extensions) {
+  void SetRtpExtensionsAndRecreateStream(
+      const std::vector<webrtc::RtpExtension>& extensions) {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
     config_.rtp.extensions = extensions;
-    ReconfigureAudioReceiveStream();
+    RecreateAudioReceiveStream();
   }
 
   // Set a new payload type -> decoder map.
@@ -1336,7 +1338,7 @@ bool WebRtcVoiceMediaChannel::SetRecvParameters(
   if (recv_rtp_extensions_ != filtered_extensions) {
     recv_rtp_extensions_.swap(filtered_extensions);
     for (auto& it : recv_streams_) {
-      it.second->SetRtpExtensions(recv_rtp_extensions_);
+      it.second->SetRtpExtensionsAndRecreateStream(recv_rtp_extensions_);
     }
   }
   return true;
@@ -1683,8 +1685,8 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
     recv_transport_cc_enabled_ = send_codec_spec_->transport_cc_enabled;
     recv_nack_enabled_ = send_codec_spec_->nack_enabled;
     for (auto& kv : recv_streams_) {
-      kv.second->SetUseTransportCc(recv_transport_cc_enabled_,
-                                   recv_nack_enabled_);
+      kv.second->SetUseTransportCcAndRecreateStream(recv_transport_cc_enabled_,
+                                                    recv_nack_enabled_);
     }
   }
 
