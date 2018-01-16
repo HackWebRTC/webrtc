@@ -37,11 +37,6 @@ rtc_static_library("video_coding") {
     "histogram.cc",
     "histogram.h",
     "include/video_codec_initializer.h",
-
-    # TODO(bugs.webrtc.org/7620: remove these when downstream is updated).
-    "include/video_codec_interface.h",
-    "include/video_coding.h",
-    "include/video_error_codes.h",
     "inter_frame_delay.cc",
     "inter_frame_delay.h",
     "internal_defines.h",
