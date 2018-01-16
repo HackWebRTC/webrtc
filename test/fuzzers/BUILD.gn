@@ -421,19 +421,29 @@ webrtc_fuzzer_test("transport_feedback_packet_loss_tracker_fuzzer") {
     "../../voice_engine",
   ]
 }
-
-webrtc_fuzzer_test("audio_processing_fuzzer") {
+rtc_static_library("audio_processing_fuzzer_helper") {
   sources = [
-    "audio_processing_fuzzer.cc",
-    "audio_processing_fuzzer.h",
-    "audio_processing_fuzzer_configs.cc",
+    "audio_processing_fuzzer_helper.cc",
+    "audio_processing_fuzzer_helper.h",
   ]
   deps = [
+    ":fuzz_data_helper",
     "../../api:optional",
     "../../modules:module_api",
     "../../modules/audio_processing",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
+  ]
+}
+
+webrtc_fuzzer_test("audio_processing_fuzzer") {
+  sources = [
+    "audio_processing_configs_fuzzer.cc",
+  ]
+  deps = [
+    ":audio_processing_fuzzer_helper",
+    ":fuzz_data_helper",
+    "../../modules/audio_processing",
   ]
 }
 

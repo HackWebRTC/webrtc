@@ -8,20 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef TEST_FUZZERS_AUDIO_PROCESSING_FUZZER_H_
-#define TEST_FUZZERS_AUDIO_PROCESSING_FUZZER_H_
+#ifndef TEST_FUZZERS_AUDIO_PROCESSING_FUZZER_HELPER_H_
+#define TEST_FUZZERS_AUDIO_PROCESSING_FUZZER_HELPER_H_
 
 #include <memory>
 
 #include "modules/audio_processing/include/audio_processing.h"
+#include "test/fuzzers/fuzz_data_helper.h"
 namespace webrtc {
 
-rtc::Optional<bool> ParseBool(const uint8_t** data, size_t* remaining_size);
-rtc::Optional<uint8_t> ParseByte(const uint8_t** data, size_t* remaining_size);
-
-void FuzzAudioProcessing(const uint8_t* data,
-                         size_t size,
+void FuzzAudioProcessing(test::FuzzDataHelper* fuzz_data,
                          std::unique_ptr<AudioProcessing> apm);
+
 }  // namespace webrtc
 
-#endif  // TEST_FUZZERS_AUDIO_PROCESSING_FUZZER_H_
+#endif  // TEST_FUZZERS_AUDIO_PROCESSING_FUZZER_HELPER_H_
