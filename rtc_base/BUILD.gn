@@ -55,7 +55,7 @@ config("rtc_base_all_dependent_config") {
   }
 }
 
-if (!rtc_build_ssl && !build_with_mozilla) {
+if (!rtc_build_ssl) {
   config("external_ssl_library") {
     assert(rtc_ssl_root != "",
            "You must specify rtc_ssl_root when rtc_build_ssl==0.")
@@ -703,7 +703,7 @@ rtc_static_library("rtc_base_generic") {
 
   if (rtc_build_ssl) {
     deps += [ "//third_party/boringssl" ]
-  } else if (!build_with_mozilla) {
+  } else {
     configs += [ ":external_ssl_library" ]
   }
 
