@@ -3062,7 +3062,7 @@ DWORD AudioDeviceWindowsCore::DoCaptureThreadPollDMO() {
         assert(sizeof(BYTE) == sizeof(int8_t));
         _ptrAudioBuffer->SetRecordedBuffer(reinterpret_cast<int8_t*>(data),
                                            kSamplesProduced);
-        _ptrAudioBuffer->SetVQEData(0, 0, 0);
+        _ptrAudioBuffer->SetVQEData(0, 0);
 
         _UnLock();  // Release lock while making the callback.
         _ptrAudioBuffer->DeliverRecordedData();
@@ -3289,7 +3289,7 @@ DWORD AudioDeviceWindowsCore::DoCaptureThread() {
           if (_ptrAudioBuffer) {
             _ptrAudioBuffer->SetRecordedBuffer((const int8_t*)syncBuffer,
                                                _recBlockSize);
-            _ptrAudioBuffer->SetVQEData(sndCardPlayDelay, sndCardRecDelay, 0);
+            _ptrAudioBuffer->SetVQEData(sndCardPlayDelay, sndCardRecDelay);
 
             _ptrAudioBuffer->SetTypingStatus(KeyPressed());
 

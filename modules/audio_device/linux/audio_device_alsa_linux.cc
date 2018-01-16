@@ -1607,7 +1607,7 @@ bool AudioDeviceLinuxALSA::RecThreadProcess() {
 
       // TODO(xians): Shall we add 10ms buffer delay to the record delay?
       _ptrAudioBuffer->SetVQEData(_playoutDelay * 1000 / _playoutFreq,
-                                  _recordingDelay * 1000 / _recordingFreq, 0);
+                                  _recordingDelay * 1000 / _recordingFreq);
 
       _ptrAudioBuffer->SetTypingStatus(KeyPressed());
 
