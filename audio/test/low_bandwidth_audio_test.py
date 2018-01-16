@@ -63,6 +63,8 @@ def _ParseArgs():
                       type=str, default=None)
   parser.add_argument('--isolated-script-test-perf-output',
                       type=str, default=None)
+  parser.add_argument('--test-launcher-summary-output',
+                      type=str, default=None)
   args = parser.parse_args()
 
   return args
