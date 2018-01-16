@@ -29,6 +29,9 @@
 #include "video/video_stream_encoder.h"
 
 namespace webrtc {
+namespace test {
+class VideoSendStreamPeer;
+}  // namespace test
 
 class CallStats;
 class SendSideCongestionController;
@@ -95,8 +98,12 @@ class VideoSendStream : public webrtc::VideoSendStream {
   void SetTransportOverhead(size_t transport_overhead_per_packet);
 
  private:
+  friend class test::VideoSendStreamPeer;
+
   class ConstructionTask;
   class DestructAndGetRtpStateTask;
+
+  rtc::Optional<float> GetPacingFactorOverride() const;
 
   rtc::ThreadChecker thread_checker_;
   rtc::TaskQueue* const worker_queue_;

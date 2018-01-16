@@ -284,6 +284,8 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
 
   void SetTransportOverhead(size_t transport_overhead_per_packet);
 
+  rtc::Optional<float> configured_pacing_factor_;
+
  private:
   class CheckEncoderActivityTask;
   class EncoderReconfiguredTask;
@@ -645,6 +647,10 @@ VideoSendStream::Stats VideoSendStream::GetStats() {
   return stats_proxy_.GetStats();
 }
 
+rtc::Optional<float> VideoSendStream::GetPacingFactorOverride() const {
+  return send_stream_->configured_pacing_factor_;
+}
+
 void VideoSendStream::SignalNetworkState(NetworkState state) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   VideoSendStreamImpl* send_stream = send_stream_.get();
@@ -770,6 +776,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
     if (alr_settings) {
       transport->send_side_cc()->EnablePeriodicAlrProbing(true);
       transport->pacer()->SetPacingFactor(alr_settings->pacing_factor);
+      configured_pacing_factor_ = alr_settings->pacing_factor;
       transport->pacer()->SetQueueTimeLimit(alr_settings->max_paced_queue_time);
     }
   }

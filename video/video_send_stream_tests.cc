@@ -43,11 +43,26 @@
 #include "test/rtcp_packet_parser.h"
 #include "test/testsupport/perf_test.h"
 
+#include "call/video_send_stream.h"
 #include "video/send_statistics_proxy.h"
 #include "video/transport_adapter.h"
-#include "call/video_send_stream.h"
+#include "video/video_send_stream.h"
 
 namespace webrtc {
+namespace test {
+class VideoSendStreamPeer {
+ public:
+  explicit VideoSendStreamPeer(webrtc::VideoSendStream* base_class_stream)
+      : internal_stream_(
+            static_cast<internal::VideoSendStream*>(base_class_stream)) {}
+  rtc::Optional<float> GetPacingFactorOverride() const {
+    return internal_stream_->GetPacingFactorOverride();
+  }
+
+ private:
+  internal::VideoSendStream const* const internal_stream_;
+};
+}  // namespace test
 
 enum VideoFormat { kGeneric, kVP8, };
 
@@ -3539,80 +3554,82 @@ TEST_F(VideoSendStreamTest, SendsKeepAlive) {
   RunBaseTest(&test);
 }
 
-TEST_F(VideoSendStreamTest, ConfiguresAlrWhenSendSideOn) {
-  const std::string kAlrProbingExperiment =
-      std::string(AlrExperimentSettings::kScreenshareProbingBweExperimentName) +
-      "/1.0,2875,80,40,-60,3/";
-  test::ScopedFieldTrials alr_experiment(kAlrProbingExperiment);
-  class PacingFactorObserver : public test::SendTest {
-   public:
-    PacingFactorObserver(bool configure_send_side, float expected_pacing_factor)
-        : test::SendTest(kDefaultTimeoutMs),
-          configure_send_side_(configure_send_side),
-          expected_pacing_factor_(expected_pacing_factor),
-          paced_sender_(nullptr) {}
+class PacingFactorObserver : public test::SendTest {
+ public:
+  PacingFactorObserver(bool configure_send_side,
+                       rtc::Optional<float> expected_pacing_factor)
+      : test::SendTest(VideoSendStreamTest::kDefaultTimeoutMs),
+        configure_send_side_(configure_send_side),
+        expected_pacing_factor_(expected_pacing_factor) {}
 
-    void ModifyVideoConfigs(
-        VideoSendStream::Config* send_config,
-        std::vector<VideoReceiveStream::Config>* receive_configs,
-        VideoEncoderConfig* encoder_config) override {
-      // Check if send-side bwe extension is already present, and remove it if
-      // it is not desired.
-      bool has_send_side = false;
-      for (auto it = send_config->rtp.extensions.begin();
-           it != send_config->rtp.extensions.end(); ++it) {
-        if (it->uri == RtpExtension::kTransportSequenceNumberUri) {
-          if (configure_send_side_) {
-            has_send_side = true;
-          } else {
-            send_config->rtp.extensions.erase(it);
-          }
-          break;
+  void ModifyVideoConfigs(
+      VideoSendStream::Config* send_config,
+      std::vector<VideoReceiveStream::Config>* receive_configs,
+      VideoEncoderConfig* encoder_config) override {
+    // Check if send-side bwe extension is already present, and remove it if
+    // it is not desired.
+    bool has_send_side = false;
+    for (auto it = send_config->rtp.extensions.begin();
+         it != send_config->rtp.extensions.end(); ++it) {
+      if (it->uri == RtpExtension::kTransportSequenceNumberUri) {
+        if (configure_send_side_) {
+          has_send_side = true;
+        } else {
+          send_config->rtp.extensions.erase(it);
         }
+        break;
       }
-
-      if (configure_send_side_ && !has_send_side) {
-        // Want send side, not present by default, so add it.
-        send_config->rtp.extensions.emplace_back(
-            RtpExtension::kTransportSequenceNumberUri,
-            RtpExtension::kTransportSequenceNumberDefaultId);
-      }
-
-      // ALR only enabled for screenshare.
-      encoder_config->content_type = VideoEncoderConfig::ContentType::kScreen;
     }
 
-    void OnRtpTransportControllerSendCreated(
-        RtpTransportControllerSend* controller) override {
-      // Grab a reference to the pacer.
-      paced_sender_ = controller->pacer();
+    if (configure_send_side_ && !has_send_side) {
+      // Want send side, not present by default, so add it.
+      send_config->rtp.extensions.emplace_back(
+          RtpExtension::kTransportSequenceNumberUri,
+          RtpExtension::kTransportSequenceNumberDefaultId);
     }
 
-    void OnVideoStreamsCreated(
-        VideoSendStream* send_stream,
-        const std::vector<VideoReceiveStream*>& receive_streams) override {
-      // Video streams created, check that pacer is correctly configured.
-      EXPECT_EQ(expected_pacing_factor_, paced_sender_->GetPacingFactor());
-      observation_complete_.Set();
-    }
+    // ALR only enabled for screenshare.
+    encoder_config->content_type = VideoEncoderConfig::ContentType::kScreen;
+  }
 
-    void PerformTest() override {
-      EXPECT_TRUE(Wait()) << "Timed out while waiting for pacer config.";
-    }
+  void OnVideoStreamsCreated(
+      VideoSendStream* send_stream,
+      const std::vector<VideoReceiveStream*>& receive_streams) override {
+    auto internal_send_peer = test::VideoSendStreamPeer(send_stream);
+    // Video streams created, check that pacing factor is correctly configured.
+    EXPECT_EQ(expected_pacing_factor_,
+              internal_send_peer.GetPacingFactorOverride());
+    observation_complete_.Set();
+  }
 
-   private:
-    const bool configure_send_side_;
-    const float expected_pacing_factor_;
-    const PacedSender* paced_sender_;
-  };
+  void PerformTest() override {
+    EXPECT_TRUE(Wait()) << "Timed out while waiting for stream creation.";
+  }
 
+ private:
+  const bool configure_send_side_;
+  const rtc::Optional<float> expected_pacing_factor_;
+};
+
+std::string GetAlrProbingExperimentString() {
+  return std::string(
+             AlrExperimentSettings::kScreenshareProbingBweExperimentName) +
+         "/1.0,2875,80,40,-60,3/";
+}
+const float kAlrProbingExperimentPaceMultiplier = 1.0f;
+
+TEST_F(VideoSendStreamTest, AlrConfiguredWhenSendSideOn) {
+  test::ScopedFieldTrials alr_experiment(GetAlrProbingExperimentString());
   // Send-side bwe on, use pacing factor from |kAlrProbingExperiment| above.
-  PacingFactorObserver test_with_send_side(true, 1.0f);
+  PacingFactorObserver test_with_send_side(true,
+                                           kAlrProbingExperimentPaceMultiplier);
   RunBaseTest(&test_with_send_side);
+}
 
-  // Send-side bwe off, use default pacing factor.
-  PacingFactorObserver test_without_send_side(
-      false, PacedSender::kDefaultPaceMultiplier);
+TEST_F(VideoSendStreamTest, AlrNotConfiguredWhenSendSideOff) {
+  test::ScopedFieldTrials alr_experiment(GetAlrProbingExperimentString());
+  // Send-side bwe off, use configuration should not be overridden.
+  PacingFactorObserver test_without_send_side(false, rtc::nullopt);
   RunBaseTest(&test_without_send_side);
 }
 
