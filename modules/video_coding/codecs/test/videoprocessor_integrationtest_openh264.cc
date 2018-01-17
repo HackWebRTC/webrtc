@@ -49,21 +49,16 @@ class VideoProcessorIntegrationTestOpenH264
   }
 };
 
-// H264: Run with no packet loss and fixed bitrate. Quality should be very high.
-// Note(hbos): The PacketManipulatorImpl code used to simulate packet loss in
-// these unittests appears to drop "packets" in a way that is not compatible
-// with H264. Therefore ProcessXPercentPacketLossH264, X != 0, unittests have
-// not been added.
-TEST_F(VideoProcessorIntegrationTestOpenH264, Process0PercentPacketLoss) {
+TEST_F(VideoProcessorIntegrationTestOpenH264, ConstantHighBitrate) {
   config_.SetCodecSettings(kVideoCodecH264, 1, false, false, true, false,
                            kResilienceOn, kCifWidth, kCifHeight);
 
-  std::vector<RateProfile> rate_profiles = {{500, 30, kNumFrames + 1}};
+  std::vector<RateProfile> rate_profiles = {{500, 30, kNumFrames}};
 
   std::vector<RateControlThresholds> rc_thresholds = {
-      {2, 60, 20, 10, 20, 0, 1}};
+      {5, 1, 0, 0.1, 0.2, 0.1, 0, 1}};
 
-  QualityThresholds quality_thresholds(35.0, 25.0, 0.93, 0.70);
+  std::vector<QualityThresholds> quality_thresholds = {{37, 35, 0.93, 0.91}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
                               &quality_thresholds, nullptr,
@@ -72,22 +67,22 @@ TEST_F(VideoProcessorIntegrationTestOpenH264, Process0PercentPacketLoss) {
 
 // H264: Enable SingleNalUnit packetization mode. Encoder should split
 // large frames into multiple slices and limit length of NAL units.
-TEST_F(VideoProcessorIntegrationTestOpenH264, ProcessNoLossSingleNalUnit) {
+TEST_F(VideoProcessorIntegrationTestOpenH264, SingleNalUnit) {
   config_.h264_codec_settings.packetization_mode =
       H264PacketizationMode::SingleNalUnit;
   config_.networking_config.max_payload_size_in_bytes = 500;
   config_.SetCodecSettings(kVideoCodecH264, 1, false, false, true, false,
                            kResilienceOn, kCifWidth, kCifHeight);
 
-  std::vector<RateProfile> rate_profiles = {{500, 30, kNumFrames + 1}};
+  std::vector<RateProfile> rate_profiles = {{500, 30, kNumFrames}};
 
   std::vector<RateControlThresholds> rc_thresholds = {
-      {2, 60, 30, 10, 20, 0, 1}};
+      {5, 1, 0, 0.1, 0.2, 0.1, 0, 1}};
 
-  QualityThresholds quality_thresholds(35.0, 25.0, 0.93, 0.70);
+  std::vector<QualityThresholds> quality_thresholds = {{37, 35, 0.93, 0.91}};
 
-  BitstreamThresholds bs_thresholds(
-      config_.networking_config.max_payload_size_in_bytes);
+  BitstreamThresholds bs_thresholds = {
+      config_.networking_config.max_payload_size_in_bytes};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
                               &quality_thresholds, &bs_thresholds,

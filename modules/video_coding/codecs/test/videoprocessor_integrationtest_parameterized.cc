@@ -18,13 +18,13 @@ namespace test {
 namespace {
 
 // Loop variables.
-const int kBitrates[] = {500};
+const size_t kBitrates[] = {500};
 const VideoCodecType kVideoCodecType[] = {kVideoCodecVP8};
 const bool kHwCodec[] = {false};
 
 // Codec settings.
-const bool kResilienceOn = false;
 const int kNumTemporalLayers = 1;
+const bool kResilienceOn = kNumTemporalLayers > 1;
 const bool kDenoisingOn = false;
 const bool kErrorConcealmentOn = false;
 const bool kSpatialResizeOn = false;
@@ -46,7 +46,7 @@ const int kNumFrames = 30;
 class VideoProcessorIntegrationTestParameterized
     : public VideoProcessorIntegrationTest,
       public ::testing::WithParamInterface<
-          ::testing::tuple<int, VideoCodecType, bool>> {
+          ::testing::tuple<size_t, VideoCodecType, bool>> {
  protected:
   VideoProcessorIntegrationTestParameterized()
       : bitrate_(::testing::get<0>(GetParam())),
@@ -54,9 +54,9 @@ class VideoProcessorIntegrationTestParameterized
         hw_codec_(::testing::get<2>(GetParam())) {}
   ~VideoProcessorIntegrationTestParameterized() override = default;
 
-  void RunTest(int width,
-               int height,
-               int framerate,
+  void RunTest(size_t width,
+               size_t height,
+               size_t framerate,
                const std::string& filename) {
     config_.filename = filename;
     config_.input_filename = ResourcePath(filename, "yuv");
@@ -72,13 +72,13 @@ class VideoProcessorIntegrationTestParameterized
                              kSpatialResizeOn, kResilienceOn, width, height);
 
     std::vector<RateProfile> rate_profiles = {
-        {bitrate_, framerate, kNumFrames + 1}};
+        {bitrate_, framerate, kNumFrames}};
 
     ProcessFramesAndMaybeVerify(rate_profiles, nullptr, nullptr, nullptr,
                                 &kVisualizationParams);
   }
 
-  const int bitrate_;
+  const size_t bitrate_;
   const VideoCodecType codec_type_;
   const bool hw_codec_;
 };

@@ -75,110 +75,96 @@ class VideoProcessorIntegrationTestLibvpx
 #if !defined(WEBRTC_IOS)
 
 #if !defined(RTC_DISABLE_VP9)
-// VP9: Run with no packet loss and fixed bitrate. Quality should be very high.
-// One key frame (first frame only) in sequence.
-TEST_F(VideoProcessorIntegrationTestLibvpx, Process0PercentPacketLossVP9) {
+TEST_F(VideoProcessorIntegrationTestLibvpx, HighBitrateVP9) {
   config_.SetCodecSettings(kVideoCodecVP9, 1, false, false, true, false,
                            kResilienceOn, kCifWidth, kCifHeight);
   config_.num_frames = kNumFramesShort;
 
-  std::vector<RateProfile> rate_profiles = {{500, 30, kNumFramesShort + 1}};
+  std::vector<RateProfile> rate_profiles = {{500, 30, kNumFramesShort}};
 
   std::vector<RateControlThresholds> rc_thresholds = {
-      {0, 40, 20, 10, 20, 0, 1}};
+      {5, 1, 0, 0.1, 0.3, 0.1, 0, 1}};
 
-  QualityThresholds quality_thresholds(37.0, 36.0, 0.93, 0.92);
+  std::vector<QualityThresholds> quality_thresholds = {{37, 36, 0.94, 0.92}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
                               &quality_thresholds, nullptr,
                               kNoVisualizationParams);
 }
 
-// VP9: Run with no packet loss, with varying bitrate (3 rate updates):
-// low to high to medium. Check that quality and encoder response to the new
-// target rate/per-frame bandwidth (for each rate update) is within limits.
-// One key frame (first frame only) in sequence.
-TEST_F(VideoProcessorIntegrationTestLibvpx, ProcessNoLossChangeBitRateVP9) {
+TEST_F(VideoProcessorIntegrationTestLibvpx, ChangeBitrateVP9) {
   config_.SetCodecSettings(kVideoCodecVP9, 1, false, false, true, false,
                            kResilienceOn, kCifWidth, kCifHeight);
 
   std::vector<RateProfile> rate_profiles = {
       {200, 30, 100},  // target_kbps, input_fps, frame_index_rate_update
       {700, 30, 200},
-      {500, 30, kNumFramesLong + 1}};
+      {500, 30, kNumFramesLong}};
 
-  std::vector<RateControlThresholds> rc_thresholds = {{0, 35, 20, 20, 35, 0, 1},
-                                                      {2, 0, 20, 20, 60, 0, 0},
-                                                      {0, 0, 25, 20, 40, 0, 0}};
+  std::vector<RateControlThresholds> rc_thresholds = {
+      {5, 1, 0, 0.15, 0.5, 0.1, 0, 1},
+      {15, 2, 0, 0.2, 0.5, 0.1, 0, 0},
+      {10, 1, 0, 0.3, 0.5, 0.1, 0, 0}};
 
-  QualityThresholds quality_thresholds(35.5, 30.0, 0.90, 0.85);
+  std::vector<QualityThresholds> quality_thresholds = {
+      {34, 33, 0.90, 0.88}, {38, 35, 0.95, 0.91}, {35, 34, 0.93, 0.90}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
                               &quality_thresholds, nullptr,
                               kNoVisualizationParams);
 }
 
-// VP9: Run with no packet loss, with an update (decrease) in frame rate.
-// Lower frame rate means higher per-frame-bandwidth, so easier to encode.
-// At the low bitrate in this test, this means better rate control after the
-// update(s) to lower frame rate. So expect less frame drops, and max values
-// for the rate control metrics can be lower. One key frame (first frame only).
-// Note: quality after update should be higher but we currently compute quality
-// metrics averaged over whole sequence run.
-TEST_F(VideoProcessorIntegrationTestLibvpx,
-       ProcessNoLossChangeFrameRateFrameDropVP9) {
+TEST_F(VideoProcessorIntegrationTestLibvpx, ChangeFramerateVP9) {
   config_.SetCodecSettings(kVideoCodecVP9, 1, false, false, true, false,
                            kResilienceOn, kCifWidth, kCifHeight);
 
   std::vector<RateProfile> rate_profiles = {
       {100, 24, 100},  // target_kbps, input_fps, frame_index_rate_update
       {100, 15, 200},
-      {100, 10, kNumFramesLong + 1}};
+      {100, 10, kNumFramesLong}};
 
+  // Framerate mismatch should be lower for lower framerate.
   std::vector<RateControlThresholds> rc_thresholds = {
-      {45, 50, 95, 15, 45, 0, 1},
-      {20, 0, 50, 10, 30, 0, 0},
-      {5, 0, 30, 5, 25, 0, 0}};
+      {10, 2, 40, 0.4, 0.5, 0.2, 0, 1},
+      {8, 2, 5, 0.2, 0.5, 0.2, 0, 0},
+      {5, 2, 0, 0.2, 0.5, 0.3, 0, 0}};
 
-  QualityThresholds quality_thresholds(31.5, 18.0, 0.80, 0.43);
+  // Quality should be higher for lower framerates for the same content.
+  std::vector<QualityThresholds> quality_thresholds = {
+      {33, 32, 0.89, 0.87}, {33.5, 32, 0.90, 0.86}, {33.5, 31.5, 0.90, 0.85}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
                               &quality_thresholds, nullptr,
                               kNoVisualizationParams);
 }
 
-// VP9: Run with no packet loss and denoiser on. One key frame (first frame).
-TEST_F(VideoProcessorIntegrationTestLibvpx, ProcessNoLossDenoiserOnVP9) {
+TEST_F(VideoProcessorIntegrationTestLibvpx, DenoiserOnVP9) {
   config_.SetCodecSettings(kVideoCodecVP9, 1, false, true, true, false,
                            kResilienceOn, kCifWidth, kCifHeight);
   config_.num_frames = kNumFramesShort;
 
-  std::vector<RateProfile> rate_profiles = {{500, 30, kNumFramesShort + 1}};
+  std::vector<RateProfile> rate_profiles = {{500, 30, kNumFramesShort}};
 
   std::vector<RateControlThresholds> rc_thresholds = {
-      {0, 40, 20, 10, 20, 0, 1}};
+      {5, 1, 0, 0.1, 0.3, 0.1, 0, 1}};
 
-  QualityThresholds quality_thresholds(36.8, 35.8, 0.92, 0.91);
+  std::vector<QualityThresholds> quality_thresholds = {{37.5, 36, 0.94, 0.93}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
                               &quality_thresholds, nullptr,
                               kNoVisualizationParams);
 }
 
-// Run with no packet loss, at low bitrate.
-// spatial_resize is on, for this low bitrate expect one resize in sequence.
-// Resize happens on delta frame. Expect only one key frame (first frame).
-TEST_F(VideoProcessorIntegrationTestLibvpx,
-       DISABLED_ProcessNoLossSpatialResizeFrameDropVP9) {
+TEST_F(VideoProcessorIntegrationTestLibvpx, VeryLowBitrateVP9) {
   config_.SetCodecSettings(kVideoCodecVP9, 1, false, false, true, true,
                            kResilienceOn, kCifWidth, kCifHeight);
 
-  std::vector<RateProfile> rate_profiles = {{50, 30, kNumFramesLong + 1}};
+  std::vector<RateProfile> rate_profiles = {{50, 30, kNumFramesLong}};
 
   std::vector<RateControlThresholds> rc_thresholds = {
-      {228, 70, 160, 15, 80, 1, 1}};
+      {15, 3, 75, 1.0, 0.5, 0.4, 1, 1}};
 
-  QualityThresholds quality_thresholds(24.0, 13.0, 0.65, 0.37);
+  std::vector<QualityThresholds> quality_thresholds = {{28, 25, 0.80, 0.65}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
                               &quality_thresholds, nullptr,
@@ -190,20 +176,20 @@ TEST_F(VideoProcessorIntegrationTestLibvpx,
 
 #endif  // !defined(RTC_DISABLE_VP9)
 
-// VP8: Run with no packet loss and fixed bitrate. Quality should be very high.
-// One key frame (first frame only) in sequence. Setting |key_frame_interval|
-// to -1 below means no periodic key frames in test.
-TEST_F(VideoProcessorIntegrationTestLibvpx, ProcessZeroPacketLoss) {
+TEST_F(VideoProcessorIntegrationTestLibvpx, HighBitrateVP8) {
   config_.SetCodecSettings(kVideoCodecVP8, 1, false, true, true, false,
                            kResilienceOn, kCifWidth, kCifHeight);
   config_.num_frames = kNumFramesShort;
 
-  std::vector<RateProfile> rate_profiles = {{500, 30, kNumFramesShort + 1}};
+  std::vector<RateProfile> rate_profiles = {{500, 30, kNumFramesShort}};
 
   std::vector<RateControlThresholds> rc_thresholds = {
-      {0, 40, 20, 10, 15, 0, 1}};
+      {5, 1, 0, 0.1, 0.2, 0.1, 0, 1}};
 
-  QualityThresholds quality_thresholds(34.95, 33.0, 0.90, 0.89);
+  // std::vector<QualityThresholds> quality_thresholds = {{37, 35, 0.93, 0.91}};
+  // TODO(webrtc:8757): AMR VP8 encoder's quality is significantly worse
+  // than quality of x86 version. Use lower thresholds for now.
+  std::vector<QualityThresholds> quality_thresholds = {{35, 33, 0.91, 0.89}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
                               &quality_thresholds, nullptr,
@@ -221,10 +207,6 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, ProcessZeroPacketLoss) {
 // disabled on Android. Some quality parameter in the above test has been
 // adjusted to also pass for |cpu_speed| <= 12.
 
-// VP8: Run with no packet loss, with varying bitrate (3 rate updates):
-// low to high to medium. Check that quality and encoder response to the new
-// target rate/per-frame bandwidth (for each rate update) is within limits.
-// One key frame (first frame only) in sequence.
 // Too slow to finish before timeout on iOS. See webrtc:4755.
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
 #define MAYBE_ProcessNoLossChangeBitRateVP8 \
@@ -232,34 +214,32 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, ProcessZeroPacketLoss) {
 #else
 #define MAYBE_ProcessNoLossChangeBitRateVP8 ProcessNoLossChangeBitRateVP8
 #endif
-TEST_F(VideoProcessorIntegrationTestLibvpx,
-       MAYBE_ProcessNoLossChangeBitRateVP8) {
+TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_ChangeBitrateVP8) {
   config_.SetCodecSettings(kVideoCodecVP8, 1, false, true, true, false,
                            kResilienceOn, kCifWidth, kCifHeight);
 
   std::vector<RateProfile> rate_profiles = {
       {200, 30, 100},  // target_kbps, input_fps, frame_index_rate_update
       {800, 30, 200},
-      {500, 30, kNumFramesLong + 1}};
+      {500, 30, kNumFramesLong}};
 
-  std::vector<RateControlThresholds> rc_thresholds = {{0, 45, 20, 10, 15, 0, 1},
-                                                      {0, 0, 25, 20, 10, 0, 0},
-                                                      {0, 0, 25, 15, 10, 0, 0}};
+  std::vector<RateControlThresholds> rc_thresholds = {
+      {5, 1, 0, 0.1, 0.2, 0.1, 0, 1},
+      {15, 1, 0, 0.1, 0.2, 0.1, 0, 0},
+      {15, 1, 0, 0.3, 0.2, 0.1, 0, 0}};
 
-  QualityThresholds quality_thresholds(34.0, 32.0, 0.85, 0.80);
+  // std::vector<QualityThresholds> quality_thresholds = {
+  //     {33, 32, 0.89, 0.88}, {38, 36, 0.94, 0.93}, {35, 34, 0.92, 0.91}};
+  // TODO(webrtc:8757): AMR VP8 encoder's quality is significantly worse
+  // than quality of x86 version. Use lower thresholds for now.
+  std::vector<QualityThresholds> quality_thresholds = {
+      {31.8, 31, 0.86, 0.85}, {36, 34.8, 0.92, 0.90}, {33.5, 32, 0.90, 0.88}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
                               &quality_thresholds, nullptr,
                               kNoVisualizationParams);
 }
 
-// VP8: Run with no packet loss, with an update (decrease) in frame rate.
-// Lower frame rate means higher per-frame-bandwidth, so easier to encode.
-// At the bitrate in this test, this means better rate control after the
-// update(s) to lower frame rate. So expect less frame drops, and max values
-// for the rate control metrics can be lower. One key frame (first frame only).
-// Note: quality after update should be higher but we currently compute quality
-// metrics averaged over whole sequence run.
 // Too slow to finish before timeout on iOS. See webrtc:4755.
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
 #define MAYBE_ProcessNoLossChangeFrameRateFrameDropVP8 \
@@ -268,33 +248,38 @@ TEST_F(VideoProcessorIntegrationTestLibvpx,
 #define MAYBE_ProcessNoLossChangeFrameRateFrameDropVP8 \
   ProcessNoLossChangeFrameRateFrameDropVP8
 #endif
-TEST_F(VideoProcessorIntegrationTestLibvpx,
-       MAYBE_ProcessNoLossChangeFrameRateFrameDropVP8) {
+TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_ChangeFramerateVP8) {
   config_.SetCodecSettings(kVideoCodecVP8, 1, false, true, true, false,
                            kResilienceOn, kCifWidth, kCifHeight);
 
   std::vector<RateProfile> rate_profiles = {
       {80, 24, 100},  // target_kbps, input_fps, frame_index_rate_update
       {80, 15, 200},
-      {80, 10, kNumFramesLong + 1}};
+      {80, 10, kNumFramesLong}};
 
+  // std::vector<RateControlThresholds> rc_thresholds = {
+  //     {10, 2, 20, 0.4, 0.3, 0.1, 0, 1},
+  //     {5, 2, 5, 0.3, 0.3, 0.1, 0, 0},
+  //     {4, 2, 1, 0.2, 0.3, 0.2, 0, 0}};
+  // TODO(webrtc:8757): AMR VP8 drops more frames than x86 version. Use lower
+  // thresholds for now.
   std::vector<RateControlThresholds> rc_thresholds = {
-      {40, 20, 75, 15, 60, 0, 1},
-      {10, 0, 25, 10, 35, 0, 0},
-      {0, 0, 20, 10, 15, 0, 0}};
+      {10, 2, 60, 0.5, 0.3, 0.3, 0, 1},
+      {10, 2, 30, 0.3, 0.3, 0.3, 0, 0},
+      {10, 2, 10, 0.2, 0.3, 0.2, 0, 0}};
 
-  QualityThresholds quality_thresholds(31.0, 22.0, 0.80, 0.65);
+  // std::vector<QualityThresholds> quality_thresholds = {
+  //     {31, 30, 0.87, 0.86}, {32, 31, 0.89, 0.86}, {32, 30, 0.87, 0.82}};
+  // TODO(webrtc:8757): AMR VP8 encoder's quality is significantly worse
+  // than quality of x86 version. Use lower thresholds for now.
+  std::vector<QualityThresholds> quality_thresholds = {
+      {31, 30, 0.85, 0.84}, {31.5, 30.5, 0.86, 0.84}, {30.5, 29, 0.83, 0.78}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
                               &quality_thresholds, nullptr,
                               kNoVisualizationParams);
 }
 
-// VP8: Run with no packet loss, with 3 temporal layers, with a rate update in
-// the middle of the sequence. The max values for the frame size mismatch and
-// encoding rate mismatch are applied to each layer.
-// No dropped frames in this test, and internal spatial resizer is off.
-// One key frame (first frame only) in sequence, so no spatial resizing.
 // Too slow to finish before timeout on iOS. See webrtc:4755.
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
 #define MAYBE_ProcessNoLossTemporalLayersVP8 \
@@ -302,18 +287,27 @@ TEST_F(VideoProcessorIntegrationTestLibvpx,
 #else
 #define MAYBE_ProcessNoLossTemporalLayersVP8 ProcessNoLossTemporalLayersVP8
 #endif
-TEST_F(VideoProcessorIntegrationTestLibvpx,
-       MAYBE_ProcessNoLossTemporalLayersVP8) {
+TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_TemporalLayersVP8) {
   config_.SetCodecSettings(kVideoCodecVP8, 3, false, true, true, false,
                            kResilienceOn, kCifWidth, kCifHeight);
 
   std::vector<RateProfile> rate_profiles = {{200, 30, 150},
-                                            {400, 30, kNumFramesLong + 1}};
+                                            {400, 30, kNumFramesLong}};
 
-  std::vector<RateControlThresholds> rc_thresholds = {{0, 20, 30, 10, 10, 0, 1},
-                                                      {0, 0, 30, 15, 10, 0, 0}};
+  // std::vector<RateControlThresholds> rc_thresholds = {
+  //     {5, 1, 0, 0.1, 0.2, 0.1, 0, 1}, {10, 2, 0, 0.1, 0.2, 0.1, 0, 1}};
+  // TODO(webrtc:8757): AMR VP8 drops more frames than x86 version. Use lower
+  // thresholds for now.
+  std::vector<RateControlThresholds> rc_thresholds = {
+      {10, 1, 2, 0.3, 0.2, 0.1, 0, 1}, {12, 2, 3, 0.1, 0.2, 0.1, 0, 1}};
 
-  QualityThresholds quality_thresholds(32.5, 30.0, 0.85, 0.80);
+  // Min SSIM drops because of high motion scene with complex backgound (trees).
+  // std::vector<QualityThresholds> quality_thresholds = {{32, 30, 0.88, 0.85},
+  //                                                     {33, 30, 0.89, 0.83}};
+  // TODO(webrtc:8757): AMR VP8 encoder's quality is significantly worse
+  // than quality of x86 version. Use lower thresholds for now.
+  std::vector<QualityThresholds> quality_thresholds = {{31, 30, 0.85, 0.84},
+                                                       {31, 28, 0.85, 0.75}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
                               &quality_thresholds, nullptr,

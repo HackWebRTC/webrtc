@@ -24,6 +24,7 @@ EVENT_END = 'OK ] CodecSettings/VideoProcessorIntegrationTestParameterized.'
 
 # Metrics to plot, tuple: (name to parse in file, label to use when plotting).
 BITRATE = ('Target bitrate', 'target bitrate (kbps)')
+FRAMERATE = ('Target framerate', 'fps')
 WIDTH = ('Width', 'width')
 HEIGHT = ('Height', 'height')
 FILENAME = ('Filename', 'clip')
@@ -35,24 +36,22 @@ CORES = ('# CPU cores used', 'CPU cores used')
 DENOISING = ('Denoising', 'denoising')
 RESILIENCE = ('Resilience', 'resilience')
 ERROR_CONCEALMENT = ('Error concealment', 'error concealment')
-QP = ('Average QP', 'avg QP')
+QP = ('QP', 'QP avg')
 CPU_USAGE = ('CPU usage %', 'CPU usage (%)')
-PSNR = ('PSNR avg', 'PSNR (dB)')
-SSIM = ('SSIM avg', 'SSIM')
+PSNR = ('PSNR', 'PSNR (dB)')
+SSIM = ('SSIM', 'SSIM')
 ENC_BITRATE = ('Encoded bitrate', 'encoded bitrate (kbps)')
-FRAMERATE = ('Frame rate', 'fps')
-NUM_FRAMES = ('# processed frames', 'num frames')
+NUM_FRAMES = ('# input frames', 'num frames')
 NUM_DROPPED_FRAMES = ('# dropped frames', 'num dropped frames')
-NUM_FRAMES_TO_TARGET = ('# frames to convergence',
-                        'frames to reach target rate')
+TIME_TO_TARGET = ('Time to reach target bitrate',
+                        'time to reach target rate (sec)')
 ENCODE_TIME = ('Encoding time', 'encode time (us)')
-ENCODE_TIME_AVG = ('Encoding time', 'encode time (us) avg')
+ENCODE_TIME_AVG = ('Frame encoding time', 'encode time (us) avg')
 DECODE_TIME = ('Decoding time', 'decode time (us)')
-DECODE_TIME_AVG = ('Decoding time', 'decode time (us) avg')
-FRAME_SIZE = ('Frame sizes', 'frame size (bytes)')
-FRAME_SIZE_AVG = ('Frame sizes', 'frame size (bytes) avg')
-AVG_KEY_FRAME_SIZE = ('Average key frame size', 'avg key frame size (bytes)')
-AVG_NON_KEY_FRAME_SIZE = ('Average non-key frame size',
+DECODE_TIME_AVG = ('Frame decoding time', 'decode time (us) avg')
+FRAME_SIZE = ('Frame size', 'frame size (bytes)')
+AVG_KEY_FRAME_SIZE = ('Avg key frame size', 'avg key frame size (bytes)')
+AVG_NON_KEY_FRAME_SIZE = ('Avg delta frame size',
                           'avg non-key frame size (bytes)')
 
 # Settings.
@@ -90,7 +89,7 @@ RESULTS = [
   SSIM,
   ENC_BITRATE,
   NUM_DROPPED_FRAMES,
-  NUM_FRAMES_TO_TARGET,
+  TIME_TO_TARGET,
   ENCODE_TIME_AVG,
   DECODE_TIME_AVG,
   QP,
@@ -235,7 +234,7 @@ def TryFindMetric(parsed, line, settings_file):
         found, maximum = GetMetric("Max", settings_file.readline())
         if not found:
           return
-        found, average = GetMetric("Average", settings_file.readline())
+        found, average = GetMetric("Avg", settings_file.readline())
         if not found:
           return
 
