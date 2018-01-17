@@ -39,12 +39,6 @@ class SimulcastRateAllocator : public VideoBitrateAllocator,
   const VideoCodec& GetCodec() const;
 
  private:
-  void DistributeAllocationToSimulcastLayers(
-      uint32_t total_bitrate_bps,
-      BitrateAllocation* allocated_bitrates_bps);
-  void DistributeAllocationToTemporalLayers(
-      uint32_t framerate,
-      BitrateAllocation* allocated_bitrates_bps);
   const VideoCodec codec_;
   std::map<uint32_t, TemporalLayers*> temporal_layers_;
   std::unique_ptr<TemporalLayersFactory> tl_factory_;

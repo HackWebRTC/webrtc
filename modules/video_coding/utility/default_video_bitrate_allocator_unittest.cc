@@ -45,13 +45,6 @@ TEST_F(DefaultVideoBitrateAllocatorTest, ZeroIsOff) {
   EXPECT_EQ(0u, allocation.get_sum_bps());
 }
 
-TEST_F(DefaultVideoBitrateAllocatorTest, Inactive) {
-  codec_.active = false;
-  allocator_.reset(new DefaultVideoBitrateAllocator(codec_));
-  BitrateAllocation allocation = allocator_->GetAllocation(1, kMaxFramerate);
-  EXPECT_EQ(0u, allocation.get_sum_bps());
-}
-
 TEST_F(DefaultVideoBitrateAllocatorTest, CapsToMin) {
   BitrateAllocation allocation = allocator_->GetAllocation(1, kMaxFramerate);
   EXPECT_EQ(kMinBitrateBps, allocation.get_sum_bps());

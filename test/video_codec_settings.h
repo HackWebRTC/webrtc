@@ -43,7 +43,6 @@ static void CodecSettings(VideoCodecType codec_type, VideoCodec* settings) {
       settings->timing_frame_thresholds = {
           kTestTimingFramesDelayMs, kTestOutlierFrameSizePercent,
       };
-      settings->active = true;
       *(settings->VP8()) = VideoEncoder::GetDefaultVp8Settings();
       return;
     case kVideoCodecVP9:
@@ -62,7 +61,6 @@ static void CodecSettings(VideoCodecType codec_type, VideoCodec* settings) {
       settings->timing_frame_thresholds = {
           kTestTimingFramesDelayMs, kTestOutlierFrameSizePercent,
       };
-      settings->active = true;
       *(settings->VP9()) = VideoEncoder::GetDefaultVp9Settings();
       return;
     case kVideoCodecH264:
@@ -81,7 +79,6 @@ static void CodecSettings(VideoCodecType codec_type, VideoCodec* settings) {
       settings->timing_frame_thresholds = {
           kTestTimingFramesDelayMs, kTestOutlierFrameSizePercent,
       };
-      settings->active = true;
       *(settings->H264()) = VideoEncoder::GetDefaultH264Settings();
       return;
     case kVideoCodecI420:
@@ -98,7 +95,6 @@ static void CodecSettings(VideoCodecType codec_type, VideoCodec* settings) {
       settings->height = kTestHeight;
       settings->minBitrate = kTestMinBitrateKbps;
       settings->numberOfSimulcastStreams = 0;
-      settings->active = true;
       return;
     case kVideoCodecRED:
     case kVideoCodecULPFEC:

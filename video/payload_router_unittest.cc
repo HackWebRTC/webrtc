@@ -32,7 +32,6 @@ namespace {
 const int8_t kPayloadType = 96;
 const uint32_t kSsrc1 = 12345;
 const uint32_t kSsrc2 = 23456;
-const uint32_t kSsrc3 = 34567;
 const int16_t kPictureId = 123;
 const int16_t kTl0PicIdx = 20;
 const uint8_t kTemporalIdx = 1;
@@ -187,38 +186,23 @@ TEST(PayloadRouterTest, SimulcastTargetBitrate) {
   payload_router.OnBitrateAllocationUpdated(bitrate);
 }
 
-// If the middle of three streams is inactive the first and last streams should
-// be asked to send the TargetBitrate message.
 TEST(PayloadRouterTest, SimulcastTargetBitrateWithInactiveStream) {
-  // Set up three active rtp modules.
+  // Set up two active rtp modules.
   NiceMock<MockRtpRtcp> rtp_1;
   NiceMock<MockRtpRtcp> rtp_2;
-  NiceMock<MockRtpRtcp> rtp_3;
-  std::vector<RtpRtcp*> modules = {&rtp_1, &rtp_2, &rtp_3};
-  PayloadRouter payload_router(modules, {kSsrc1, kSsrc2, kSsrc3}, kPayloadType,
-                               {});
+  std::vector<RtpRtcp*> modules = {&rtp_1, &rtp_2};
+  PayloadRouter payload_router(modules, {kSsrc1, kSsrc2}, kPayloadType, {});
   payload_router.SetActive(true);
 
-  // Create bitrate allocation with bitrate only for the first and third stream.
+  // Create bitrate allocation with bitrate only for the first stream.
   BitrateAllocation bitrate;
   bitrate.SetBitrate(0, 0, 10000);
   bitrate.SetBitrate(0, 1, 20000);
-  bitrate.SetBitrate(2, 0, 40000);
-  bitrate.SetBitrate(2, 1, 80000);
 
-  BitrateAllocation layer0_bitrate;
-  layer0_bitrate.SetBitrate(0, 0, 10000);
-  layer0_bitrate.SetBitrate(0, 1, 20000);
-
-  BitrateAllocation layer2_bitrate;
-  layer2_bitrate.SetBitrate(0, 0, 40000);
-  layer2_bitrate.SetBitrate(0, 1, 80000);
-
-  // Expect the first and third rtp module to be asked to send a TargetBitrate
+  // Expect only the first rtp module to be asked to send a TargetBitrate
   // message. (No target bitrate with 0bps sent from the second one.)
-  EXPECT_CALL(rtp_1, SetVideoBitrateAllocation(layer0_bitrate)).Times(1);
+  EXPECT_CALL(rtp_1, SetVideoBitrateAllocation(bitrate)).Times(1);
   EXPECT_CALL(rtp_2, SetVideoBitrateAllocation(_)).Times(0);
-  EXPECT_CALL(rtp_3, SetVideoBitrateAllocation(layer2_bitrate)).Times(1);
 
   payload_router.OnBitrateAllocationUpdated(bitrate);
 }

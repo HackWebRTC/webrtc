@@ -50,7 +50,6 @@ std::vector<VideoStream> CreateVideoStreams(
         std::min(bitrate_left_bps,
                  DefaultVideoStreamFactory::kMaxBitratePerStream[i]);
     stream_settings[i].max_qp = 56;
-    stream_settings[i].active = true;
     bitrate_left_bps -= stream_settings[i].target_bitrate_bps;
   }
 
