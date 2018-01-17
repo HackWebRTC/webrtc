@@ -182,13 +182,6 @@ int32_t VideoEncoderSoftwareFallbackWrapper::Encode(
   // If requested, try a software fallback.
   bool fallback_requested = (ret == WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE);
   if (fallback_requested && InitFallbackEncoder()) {
-    if (frame.video_frame_buffer()->type() == VideoFrameBuffer::Type::kNative &&
-        !fallback_encoder_->SupportsNativeHandle()) {
-      RTC_LOG(LS_WARNING) << "Fallback encoder doesn't support native frames, "
-                          << "dropping one frame.";
-      return WEBRTC_VIDEO_CODEC_ERROR;
-    }
-
     // Start using the fallback with this frame.
     return fallback_encoder_->Encode(frame, codec_specific_info, frame_types);
   }
