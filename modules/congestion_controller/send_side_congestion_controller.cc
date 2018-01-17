@@ -28,7 +28,6 @@
 #include "rtc_base/socket.h"
 #include "rtc_base/timeutils.h"
 #include "system_wrappers/include/field_trial.h"
-#include "system_wrappers/include/runtime_enabled_features.h"
 
 namespace webrtc {
 namespace {
@@ -94,13 +93,6 @@ void SortPacketFeedbackVector(
   std::sort(input->begin(), input->end(), PacketFeedbackComparator());
 }
 
-bool IsPacerPushbackExperimentEnabled() {
-  return webrtc::field_trial::IsEnabled(kPacerPushbackExperiment) || (
-      !webrtc::field_trial::IsDisabled(kPacerPushbackExperiment) &&
-      webrtc::runtime_enabled_features::IsFeatureEnabled(
-          webrtc::runtime_enabled_features::kDualStreamModeFeatureName));
-}
-
 }  // namespace
 
 SendSideCongestionController::SendSideCongestionController(
@@ -132,7 +124,7 @@ SendSideCongestionController::SendSideCongestionController(
       accepted_queue_ms_(kDefaultAcceptedQueueMs),
       was_in_alr_(false),
       pacer_pushback_experiment_(
-          IsPacerPushbackExperimentEnabled()) {
+          webrtc::field_trial::IsEnabled(kPacerPushbackExperiment)) {
   delay_based_bwe_->SetMinBitrate(min_bitrate_bps_);
   if (in_cwnd_experiment_ &&
       !ReadCwndExperimentParameter(&accepted_queue_ms_)) {

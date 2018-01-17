@@ -612,7 +612,6 @@ if (rtc_include_tests) {
       "../rtc_base:rtc_base_tests_main",
       "../rtc_base:rtc_base_tests_utils",
       "../system_wrappers:metrics_default",
-      "../system_wrappers:runtime_enabled_features_default",
       "../test:audio_codec_mocks",
       "../test:test_support",
       "../test:video_test_common",

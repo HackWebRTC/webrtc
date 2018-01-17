@@ -751,7 +751,6 @@ if (is_ios || is_mac) {
           "../rtc_base:rtc_base_approved",
           "../system_wrappers:field_trial_default",
           "../system_wrappers:metrics_default",
-          "../system_wrappers:runtime_enabled_features_default",
         ]
 
         libs = [
@@ -780,7 +779,6 @@ if (is_ios || is_mac) {
         ":ui_objc",
         "../system_wrappers:field_trial_default",
         "../system_wrappers:metrics_default",
-        "../system_wrappers:runtime_enabled_features_default",
       ]
     }
 

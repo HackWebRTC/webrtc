@@ -27,7 +27,6 @@
 #include "rtc_base/ptr_util.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/field_trial.h"
-#include "system_wrappers/include/runtime_enabled_features.h"
 
 namespace {
 // Time limit in milliseconds between packet bursts.
@@ -37,15 +36,6 @@ const int64_t kPausedPacketIntervalMs = 500;
 // Upper cap on process interval, in case process has not been called in a long
 // time.
 const int64_t kMaxIntervalTimeMs = 30;
-
-const char kRoundRobinExperimentName[] = "WebRTC-RoundRobinPacing";
-
-bool IsRoundRobinPacingEnabled() {
-  return webrtc::field_trial::IsEnabled(kRoundRobinExperimentName) || (
-      !webrtc::field_trial::IsDisabled(kRoundRobinExperimentName) &&
-      webrtc::runtime_enabled_features::IsFeatureEnabled(
-          webrtc::runtime_enabled_features::kDualStreamModeFeatureName));
-}
 
 }  // namespace
 
@@ -58,7 +48,7 @@ PacedSender::PacedSender(const Clock* clock,
                          PacketSender* packet_sender,
                          RtcEventLog* event_log) :
     PacedSender(clock, packet_sender, event_log,
-                IsRoundRobinPacingEnabled()
+                webrtc::field_trial::IsEnabled("WebRTC-RoundRobinPacing")
                     ? rtc::MakeUnique<PacketQueue2>(clock)
                     : rtc::MakeUnique<PacketQueue>(clock)) {}
 
