@@ -8,9 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VOICE_ENGINE_CHANNEL_PROXY_H_
-#define VOICE_ENGINE_CHANNEL_PROXY_H_
+#ifndef AUDIO_CHANNEL_PROXY_H_
+#define AUDIO_CHANNEL_PROXY_H_
 
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -18,11 +19,11 @@
 #include "api/audio/audio_mixer.h"
 #include "api/audio_codecs/audio_encoder.h"
 #include "api/rtpreceiverinterface.h"
+#include "audio/channel.h"
 #include "call/rtp_packet_sink_interface.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/race_checker.h"
 #include "rtc_base/thread_checker.h"
-#include "voice_engine/channel.h"
 
 namespace webrtc {
 
@@ -141,4 +142,4 @@ class ChannelProxy : public RtpPacketSinkInterface {
 }  // namespace voe
 }  // namespace webrtc
 
-#endif  // VOICE_ENGINE_CHANNEL_PROXY_H_
+#endif  // AUDIO_CHANNEL_PROXY_H_

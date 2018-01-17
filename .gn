@@ -42,7 +42,6 @@ check_targets = [
   "//system_wrappers/*",
   "//test/*",
   "//video/*",
-  "//voice_engine/*",
   "//third_party/libyuv/*",
 ]
 

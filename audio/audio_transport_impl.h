@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "api/audio/audio_mixer.h"
+#include "audio/audio_level.h"
 #include "common_audio/resampler/include/push_resampler.h"
 #include "modules/audio_device/include/audio_device.h"
 #include "modules/audio_processing/include/audio_processing.h"
@@ -22,7 +23,6 @@
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/thread_annotations.h"
-#include "voice_engine/audio_level.h"
 
 namespace webrtc {
 

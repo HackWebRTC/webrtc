@@ -16,6 +16,7 @@
 #include "api/call/audio_sink.h"
 #include "audio/audio_send_stream.h"
 #include "audio/audio_state.h"
+#include "audio/channel_proxy.h"
 #include "audio/conversion.h"
 #include "call/rtp_stream_receiver_controller_interface.h"
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
@@ -24,7 +25,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/timeutils.h"
-#include "voice_engine/channel_proxy.h"
 
 namespace webrtc {
 

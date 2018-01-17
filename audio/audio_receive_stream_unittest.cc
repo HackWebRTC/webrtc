@@ -15,6 +15,7 @@
 #include "api/test/mock_audio_mixer.h"
 #include "audio/audio_receive_stream.h"
 #include "audio/conversion.h"
+#include "audio/mock_voe_channel_proxy.h"
 #include "call/rtp_stream_receiver_controller.h"
 #include "logging/rtc_event_log/mock/mock_rtc_event_log.h"
 #include "modules/audio_device/include/mock_audio_device.h"
@@ -24,7 +25,6 @@
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "test/gtest.h"
 #include "test/mock_audio_decoder_factory.h"
-#include "test/mock_voe_channel_proxy.h"
 
 namespace webrtc {
 namespace test {

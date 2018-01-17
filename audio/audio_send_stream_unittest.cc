@@ -15,6 +15,7 @@
 #include "audio/audio_send_stream.h"
 #include "audio/audio_state.h"
 #include "audio/conversion.h"
+#include "audio/mock_voe_channel_proxy.h"
 #include "call/fake_rtp_transport_controller_send.h"
 #include "call/rtp_transport_controller_send_interface.h"
 #include "logging/rtc_event_log/mock/mock_rtc_event_log.h"
@@ -32,7 +33,6 @@
 #include "test/gtest.h"
 #include "test/mock_audio_encoder.h"
 #include "test/mock_audio_encoder_factory.h"
-#include "test/mock_voe_channel_proxy.h"
 
 namespace webrtc {
 namespace test {

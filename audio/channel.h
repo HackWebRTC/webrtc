@@ -8,16 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VOICE_ENGINE_CHANNEL_H_
-#define VOICE_ENGINE_CHANNEL_H_
+#ifndef AUDIO_CHANNEL_H_
+#define AUDIO_CHANNEL_H_
 
+#include <map>
 #include <memory>
+#include <string>
+#include <vector>
 
 #include "api/audio/audio_mixer.h"
 #include "api/audio_codecs/audio_encoder.h"
 #include "api/call/audio_sink.h"
 #include "api/call/transport.h"
 #include "api/optional.h"
+#include "audio/audio_level.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "modules/audio_processing/rms_level.h"
@@ -29,7 +33,6 @@
 #include "rtc_base/event.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread_checker.h"
-#include "voice_engine/audio_level.h"
 
 namespace rtc {
 class TimestampWrapAroundHandler;
@@ -410,4 +413,4 @@ class Channel
 }  // namespace voe
 }  // namespace webrtc
 
-#endif  // VOICE_ENGINE_CHANNEL_H_
+#endif  // AUDIO_CHANNEL_H_

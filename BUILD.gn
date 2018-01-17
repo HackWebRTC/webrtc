@@ -63,7 +63,6 @@ if (!build_with_chromium) {
         "video:screenshare_loopback",
         "video:sv_loopback",
         "video:video_loopback",
-        "voice_engine:voice_engine_unittests",
       ]
       if (is_android) {
         deps += [
@@ -342,7 +341,6 @@ if (!build_with_chromium) {
       "sdk",
       "system_wrappers:system_wrappers_default",
       "video",
-      "voice_engine",
     ]
 
     if (build_with_mozilla) {

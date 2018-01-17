@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "voice_engine/channel.h"
+#include "audio/channel.h"
 
 #include <algorithm>
 #include <map>
@@ -365,10 +365,7 @@ bool Channel::SendRtp(const uint8_t* data,
     return false;
   }
 
-  uint8_t* bufferToSendPtr = (uint8_t*)data;
-  size_t bufferLength = len;
-
-  if (!_transportPtr->SendRtp(bufferToSendPtr, bufferLength, options)) {
+  if (!_transportPtr->SendRtp(data, len, options)) {
     RTC_LOG(LS_ERROR) << "Channel::SendPacket() RTP transmission failed";
     return false;
   }
@@ -383,10 +380,7 @@ bool Channel::SendRtcp(const uint8_t* data, size_t len) {
     return false;
   }
 
-  uint8_t* bufferToSendPtr = (uint8_t*)data;
-  size_t bufferLength = len;
-
-  int n = _transportPtr->SendRtcp(bufferToSendPtr, bufferLength);
+  int n = _transportPtr->SendRtcp(data, len);
   if (n < 0) {
     RTC_LOG(LS_ERROR) << "Channel::SendRtcp() transmission failed";
     return false;

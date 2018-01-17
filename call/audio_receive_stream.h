@@ -98,9 +98,6 @@ class AudioReceiveStream {
 
     Transport* rtcp_send_transport = nullptr;
 
-    // TODO(solenberg): Remove once clients don't use it anymore.
-    int voe_channel_id = -1;
-
     // NetEq settings.
     size_t jitter_buffer_max_packets = 50;
     bool jitter_buffer_fast_accelerate = false;

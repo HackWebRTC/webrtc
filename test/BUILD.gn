@@ -567,7 +567,6 @@ rtc_source_set("test_common") {
     "layer_filtering_transport.cc",
     "layer_filtering_transport.h",
     "mock_transport.h",
-    "mock_voe_channel_proxy.h",
     "null_transport.cc",
     "null_transport.h",
     "rtp_rtcp_observer.h",
@@ -628,7 +627,6 @@ rtc_source_set("test_common") {
     "../system_wrappers",
     "../system_wrappers:field_trial_api",
     "../video",
-    "../voice_engine",
     "//testing/gmock",
     "//testing/gtest",
   ]

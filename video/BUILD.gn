@@ -94,7 +94,6 @@ rtc_static_library("video") {
     "../rtc_base:sequenced_task_checker",
     "../rtc_base:weak_ptr",
     "../system_wrappers",
-    "../voice_engine",
   ]
 
   if (!build_with_mozilla) {
@@ -130,7 +129,6 @@ if (rtc_include_tests) {
       "../test:test_support_test_artifacts",
       "../test:video_test_common",
       "../test:video_test_support",
-      "../voice_engine",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).

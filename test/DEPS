@@ -16,7 +16,6 @@ include_rules = [
   "+modules/video_coding",
   "+sdk",
   "+system_wrappers",
-  "+voice_engine",
   "+third_party/libyuv",
 ]
 

@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "audio/audio_state.h"
+#include "audio/channel_proxy.h"
 #include "audio/conversion.h"
 #include "call/rtp_transport_controller_send_interface.h"
 #include "modules/audio_coding/codecs/cng/audio_encoder_cng.h"
@@ -28,7 +29,6 @@
 #include "rtc_base/task_queue.h"
 #include "rtc_base/timeutils.h"
 #include "system_wrappers/include/field_trial.h"
-#include "voice_engine/channel_proxy.h"
 
 namespace webrtc {
 namespace internal {

@@ -13,12 +13,12 @@
 #include <numeric>
 #include <vector>
 
+#include "audio/transport_feedback_packet_loss_tracker.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "rtc_base/checks.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
-#include "voice_engine/transport_feedback_packet_loss_tracker.h"
 
 namespace webrtc {
 

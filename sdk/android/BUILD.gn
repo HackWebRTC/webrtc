@@ -111,7 +111,6 @@ rtc_static_library("audio_jni") {
     "../../api/audio_codecs:builtin_audio_encoder_factory",
     "../../modules/audio_processing:audio_processing",
     "../../rtc_base:rtc_base_approved",
-    "../../voice_engine:voice_engine",
   ]
 }
 

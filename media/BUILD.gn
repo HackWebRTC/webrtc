@@ -317,7 +317,6 @@ rtc_static_library("rtc_audio_video") {
     "../system_wrappers",
     "../system_wrappers:field_trial_api",
     "../system_wrappers:metrics_api",
-    "../voice_engine",
   ]
 }
 
@@ -616,7 +615,6 @@ if (rtc_include_tests) {
       "../test:audio_codec_mocks",
       "../test:test_support",
       "../test:video_test_common",
-      "../voice_engine:voice_engine",
     ]
   }
 }

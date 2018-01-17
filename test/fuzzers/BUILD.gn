@@ -416,9 +416,9 @@ webrtc_fuzzer_test("transport_feedback_packet_loss_tracker_fuzzer") {
   ]
   deps = [
     "../../api:array_view",
+    "../../audio",
     "../../modules/rtp_rtcp:rtp_rtcp_format",
     "../../rtc_base:rtc_base_approved",
-    "../../voice_engine",
   ]
 }
 rtc_static_library("audio_processing_fuzzer_helper") {

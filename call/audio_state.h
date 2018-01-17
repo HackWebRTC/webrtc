@@ -19,16 +19,12 @@ namespace webrtc {
 class AudioDeviceModule;
 class AudioProcessing;
 class AudioTransport;
-class VoiceEngine;
 
 // AudioState holds the state which must be shared between multiple instances of
 // webrtc::Call for audio processing purposes.
 class AudioState : public rtc::RefCountInterface {
  public:
   struct Config {
-    // TODO(solenberg): Remove once clients don't use it anymore.
-    VoiceEngine* voice_engine = nullptr;
-
     // The audio mixer connected to active receive streams. One per
     // AudioState.
     rtc::scoped_refptr<AudioMixer> audio_mixer;

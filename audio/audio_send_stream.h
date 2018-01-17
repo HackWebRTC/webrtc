@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "audio/time_interval.h"
+#include "audio/transport_feedback_packet_loss_tracker.h"
 #include "call/audio_send_stream.h"
 #include "call/audio_state.h"
 #include "call/bitrate_allocator.h"
@@ -22,7 +23,6 @@
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/race_checker.h"
 #include "rtc_base/thread_checker.h"
-#include "voice_engine/transport_feedback_packet_loss_tracker.h"
 
 namespace webrtc {
 class RtcEventLog;

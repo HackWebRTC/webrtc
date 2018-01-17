@@ -10,12 +10,12 @@
 
 #include <math.h>
 
+#include "audio/remix_resample.h"
 #include "common_audio/resampler/include/push_resampler.h"
 #include "modules/include/module_common_types.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/format_macros.h"
 #include "test/gtest.h"
-#include "voice_engine/utility.h"
 
 namespace webrtc {
 namespace voe {

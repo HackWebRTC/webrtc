@@ -8,14 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef TEST_MOCK_VOE_CHANNEL_PROXY_H_
-#define TEST_MOCK_VOE_CHANNEL_PROXY_H_
+#ifndef AUDIO_MOCK_VOE_CHANNEL_PROXY_H_
+#define AUDIO_MOCK_VOE_CHANNEL_PROXY_H_
 
+#include <map>
+#include <memory>
 #include <string>
+#include <vector>
 
+#include "audio/channel_proxy.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "test/gmock.h"
-#include "voice_engine/channel_proxy.h"
 
 namespace webrtc {
 namespace test {
@@ -101,4 +104,4 @@ class MockVoEChannelProxy : public voe::ChannelProxy {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // TEST_MOCK_VOE_CHANNEL_PROXY_H_
+#endif  // AUDIO_MOCK_VOE_CHANNEL_PROXY_H_

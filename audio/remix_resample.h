@@ -8,15 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-/*
- *  Contains functions often used by different parts of VoiceEngine.
- */
-
-#ifndef VOICE_ENGINE_UTILITY_H_
-#define VOICE_ENGINE_UTILITY_H_
+#ifndef AUDIO_REMIX_RESAMPLE_H_
+#define AUDIO_REMIX_RESAMPLE_H_
 
 #include "common_audio/resampler/include/push_resampler.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 
@@ -48,4 +43,4 @@ void RemixAndResample(const int16_t* src_data,
 }  // namespace voe
 }  // namespace webrtc
 
-#endif  // VOICE_ENGINE_UTILITY_H_
+#endif  // AUDIO_REMIX_RESAMPLE_H_

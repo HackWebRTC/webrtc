@@ -23,8 +23,7 @@
       'filepath': '^[^/]*$|^webrtc/[^/]*$|^webrtc/build/.*',
     },
     'documented_interfaces': {
-      'filepath': '^webrtc/[^/]*\.h$|'\
-                  'webrtc/voice_engine/include/.*',
+      'filepath': '^webrtc/[^/]*\.h$',
     },
     'build_files': {
       'filepath': '\.gyp$|\.gypi$|Android\.mk$',
@@ -49,9 +48,6 @@
     },
     'video': {
       'filepath': 'webrtc/video/.*',
-    },
-    'voice_engine': {
-      'filepath': 'webrtc/voice_engine/.*',
     },
     'common_audio': {
       'filepath': 'webrtc/common_audio/.*',
@@ -126,20 +122,11 @@
     'call': ['mflodman@webrtc.org',
              'solenberg@webrtc.org',
              'stefan@webrtc.org'],
-    'media_engine': ['solenberg@webrtc.org'],
     'video': ['mflodman@webrtc.org',
               'stefan@webrtc.org',
               'video-team@agora.io',
               'yujie.mao@webrtc.org',
               'zhengzhonghou@agora.io'],
-    'voice_engine': ['alessiob@webrtc.org',
-                     'andrew@webrtc.org',
-                     'audio-team@agora.io',
-                     'henrika@webrtc.org',
-                     'henrik.lundin@webrtc.org',
-                     'minyue@webrtc.org',
-                     'peah@webrtc.org',
-                     'solenberg@webrtc.org'],
     'video_capture': ['mflodman@webrtc.org',
                       'perkj@webrtc.org',
                       'sdk-team@agora.io',
