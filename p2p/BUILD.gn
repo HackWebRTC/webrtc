@@ -79,8 +79,6 @@ rtc_static_library("rtc_p2p") {
     "client/basicportallocator.cc",
     "client/basicportallocator.h",
     "client/relayportfactoryinterface.h",
-    "client/socketmonitor.cc",
-    "client/socketmonitor.h",
     "client/turnportfactory.cc",
     "client/turnportfactory.h",
   ]

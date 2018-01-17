@@ -120,7 +120,6 @@ BaseChannel::~BaseChannel() {
   TRACE_EVENT0("webrtc", "BaseChannel::~BaseChannel");
   RTC_DCHECK_RUN_ON(worker_thread_);
   Deinit();
-  StopConnectionMonitor();
   // Eats any outstanding messages or packets.
   worker_thread_->Clear(&invoker_);
   worker_thread_->Clear(this);
@@ -401,35 +400,6 @@ bool BaseChannel::SetRemoteContent(const MediaContentDescription* content,
   return InvokeOnWorker<bool>(
       RTC_FROM_HERE,
       Bind(&BaseChannel::SetRemoteContent_w, this, content, type, error_desc));
-}
-
-void BaseChannel::StartConnectionMonitor(int cms) {
-  // We pass in the BaseChannel instead of the rtp_dtls_transport_
-  // because if the rtp_dtls_transport_ changes, the ConnectionMonitor
-  // would be pointing to the wrong TransportChannel.
-  // We pass in the network thread because on that thread connection monitor
-  // will call BaseChannel::GetConnectionStats which must be called on the
-  // network thread.
-  connection_monitor_.reset(
-      new ConnectionMonitor(this, network_thread(), rtc::Thread::Current()));
-  connection_monitor_->SignalUpdate.connect(
-      this, &BaseChannel::OnConnectionMonitorUpdate);
-  connection_monitor_->Start(cms);
-}
-
-void BaseChannel::StopConnectionMonitor() {
-  if (connection_monitor_) {
-    connection_monitor_->Stop();
-    connection_monitor_.reset();
-  }
-}
-
-bool BaseChannel::GetConnectionStats(ConnectionInfos* infos) {
-  RTC_DCHECK(network_thread_->IsCurrent());
-  if (!rtp_dtls_transport_) {
-    return false;
-  }
-  return rtp_dtls_transport_->ice_transport()->GetStats(infos);
 }
 
 bool BaseChannel::NeedsRtcpTransport() {
@@ -1397,11 +1367,6 @@ void VoiceChannel::OnMessage(rtc::Message *pmsg) {
   }
 }
 
-void VoiceChannel::OnConnectionMonitorUpdate(
-    ConnectionMonitor* monitor, const std::vector<ConnectionInfo>& infos) {
-  SignalConnectionMonitor(this, infos);
-}
-
 VideoChannel::VideoChannel(rtc::Thread* worker_thread,
                            rtc::Thread* network_thread,
                            rtc::Thread* signaling_thread,
@@ -1551,11 +1516,6 @@ bool VideoChannel::SetRemoteContent_w(const MediaContentDescription* content,
   set_remote_content_direction(content->direction());
   UpdateMediaSendRecvState_w();
   return true;
-}
-
-void VideoChannel::OnConnectionMonitorUpdate(
-    ConnectionMonitor* monitor, const std::vector<ConnectionInfo> &infos) {
-  SignalConnectionMonitor(this, infos);
 }
 
 RtpDataChannel::RtpDataChannel(rtc::Thread* worker_thread,
@@ -1778,12 +1738,6 @@ void RtpDataChannel::OnMessage(rtc::Message* pmsg) {
       BaseChannel::OnMessage(pmsg);
       break;
   }
-}
-
-void RtpDataChannel::OnConnectionMonitorUpdate(
-    ConnectionMonitor* monitor,
-    const std::vector<ConnectionInfo>& infos) {
-  SignalConnectionMonitor(this, infos);
 }
 
 void RtpDataChannel::OnDataReceived(const ReceiveDataParams& params,
