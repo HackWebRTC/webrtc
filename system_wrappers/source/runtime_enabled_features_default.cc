@@ -22,7 +22,7 @@ namespace webrtc {
 namespace runtime_enabled_features {
 
 bool IsFeatureEnabled(std::string feature_name) {
-  if (feature_name == "WebRtcDualStreamMode")
+  if (feature_name == kDualStreamModeFeatureName)
     return flags::FLAG_enable_dual_stream_mode;
   return false;
 }
