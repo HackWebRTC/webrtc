@@ -31,7 +31,6 @@
 #include "p2p/client/socketmonitor.h"
 #include "pc/audiomonitor.h"
 #include "pc/dtlssrtptransport.h"
-#include "pc/mediamonitor.h"
 #include "pc/mediasession.h"
 #include "pc/rtcpmuxfilter.h"
 #include "pc/rtptransport.h"
@@ -489,10 +488,6 @@ class VoiceChannel : public BaseChannel {
   sigslot::signal2<VoiceChannel*, const std::vector<ConnectionInfo>&>
       SignalConnectionMonitor;
 
-  void StartMediaMonitor(int cms);
-  void StopMediaMonitor();
-  sigslot::signal2<VoiceChannel*, const VoiceMediaInfo&> SignalMediaMonitor;
-
   void StartAudioMonitor(int cms);
   void StopAudioMonitor();
   bool IsAudioMonitorRunning() const;
@@ -522,13 +517,10 @@ class VoiceChannel : public BaseChannel {
   void OnConnectionMonitorUpdate(
       ConnectionMonitor* monitor,
       const std::vector<ConnectionInfo>& infos) override;
-  void OnMediaMonitorUpdate(VoiceMediaChannel* media_channel,
-                            const VoiceMediaInfo& info);
 
   static const int kEarlyMediaTimeout = 1000;
   MediaEngineInterface* media_engine_;
   bool received_media_ = false;
-  std::unique_ptr<VoiceMediaMonitor> media_monitor_;
   std::unique_ptr<AudioMonitor> audio_monitor_;
 
   // Last AudioSendParameters sent down to the media_channel() via
@@ -563,10 +555,6 @@ class VideoChannel : public BaseChannel {
   sigslot::signal2<VideoChannel*, const std::vector<ConnectionInfo>&>
       SignalConnectionMonitor;
 
-  void StartMediaMonitor(int cms);
-  void StopMediaMonitor();
-  sigslot::signal2<VideoChannel*, const VideoMediaInfo&> SignalMediaMonitor;
-
   cricket::MediaType media_type() override { return cricket::MEDIA_TYPE_VIDEO; }
 
  private:
@@ -583,10 +571,6 @@ class VideoChannel : public BaseChannel {
   void OnConnectionMonitorUpdate(
       ConnectionMonitor* monitor,
       const std::vector<ConnectionInfo>& infos) override;
-  void OnMediaMonitorUpdate(VideoMediaChannel* media_channel,
-                            const VideoMediaInfo& info);
-
-  std::unique_ptr<VideoMediaMonitor> media_monitor_;
 
   // Last VideoSendParameters sent down to the media_channel() via
   // SetSendParameters.
@@ -619,15 +603,11 @@ class RtpDataChannel : public BaseChannel {
                         const rtc::CopyOnWriteBuffer& payload,
                         SendDataResult* result);
 
-  void StartMediaMonitor(int cms);
-  void StopMediaMonitor();
-
   // Should be called on the signaling thread only.
   bool ready_to_send_data() const {
     return ready_to_send_data_;
   }
 
-  sigslot::signal2<RtpDataChannel*, const DataMediaInfo&> SignalMediaMonitor;
   sigslot::signal2<RtpDataChannel*, const std::vector<ConnectionInfo>&>
       SignalConnectionMonitor;
 
@@ -693,13 +673,10 @@ class RtpDataChannel : public BaseChannel {
   void OnConnectionMonitorUpdate(
       ConnectionMonitor* monitor,
       const std::vector<ConnectionInfo>& infos) override;
-  void OnMediaMonitorUpdate(DataMediaChannel* media_channel,
-                            const DataMediaInfo& info);
   void OnDataReceived(
       const ReceiveDataParams& params, const char* data, size_t len);
   void OnDataChannelReadyToSend(bool writable);
 
-  std::unique_ptr<DataMediaMonitor> media_monitor_;
   bool ready_to_send_data_ = false;
 
   // Last DataSendParameters sent down to the media_channel() via

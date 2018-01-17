@@ -45,8 +45,6 @@ rtc_static_library("rtc_pc_base") {
     "externalhmac.h",
     "jseptransport.cc",
     "jseptransport.h",
-    "mediamonitor.cc",
-    "mediamonitor.h",
     "mediasession.cc",
     "mediasession.h",
     "rtcpmuxfilter.cc",
