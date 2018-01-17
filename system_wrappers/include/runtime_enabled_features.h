@@ -21,8 +21,12 @@
 // TODO(ilnik): Find a more flexible way to use Chrome features.
 // This interface requires manual translation from feature name to
 // Chrome feature class in third_party/webrtc_overrides.
+
 namespace webrtc {
 namespace runtime_enabled_features {
+
+const char kDualStreamModeFeatureName[] = "WebRtcDualStreamMode";
+
 bool IsFeatureEnabled(std::string feature_name);
 
 }  // namespace runtime_enabled_features

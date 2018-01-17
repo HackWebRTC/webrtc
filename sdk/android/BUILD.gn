@@ -471,6 +471,7 @@ rtc_static_library("libjingle_peerconnection_metrics_default_jni") {
     "../../system_wrappers:field_trial_default",
     "../../system_wrappers:metrics_api",
     "../../system_wrappers:metrics_default",
+    "../../system_wrappers:runtime_enabled_features_default",
   ]
 }
 
