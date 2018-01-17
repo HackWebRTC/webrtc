@@ -26,9 +26,6 @@
 #include "rtc_base/networkroute.h"
 #include "rtc_base/ptr_util.h"
 #include "rtc_base/trace_event.h"
-// Adding 'nogncheck' to disable the gn include headers check to support modular
-// WebRTC build targets.
-#include "media/engine/webrtcvoiceengine.h"  // nogncheck
 #include "p2p/base/packettransportinternal.h"
 #include "pc/channelmanager.h"
 #include "pc/rtpmediautils.h"
