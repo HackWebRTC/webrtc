@@ -15,21 +15,28 @@
 namespace webrtc {
 namespace test {
 
+TEST(StatsTest, TestEmptyObject) {
+  Stats stats;
+  stats.PrintSummary();  // Should not crash.
+}
+
 TEST(StatsTest, AddSingleFrame) {
   Stats stats;
   FrameStatistic* frame_stat = stats.AddFrame();
-  EXPECT_EQ(0ull, frame_stat->frame_number);
+  EXPECT_EQ(0, frame_stat->frame_number);
   EXPECT_EQ(1u, stats.size());
 }
 
 TEST(StatsTest, AddMultipleFrames) {
   Stats stats;
-  const size_t kNumFrames = 1000;
-  for (size_t i = 0; i < kNumFrames; ++i) {
+  const int kNumFrames = 1000;
+  for (int i = 0; i < kNumFrames; ++i) {
     FrameStatistic* frame_stat = stats.AddFrame();
     EXPECT_EQ(i, frame_stat->frame_number);
   }
-  EXPECT_EQ(kNumFrames, stats.size());
+  EXPECT_EQ(kNumFrames, static_cast<int>(stats.size()));
+
+  stats.PrintSummary();  // Should not crash.
 }
 
 }  // namespace test

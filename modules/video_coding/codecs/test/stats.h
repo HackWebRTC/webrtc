@@ -11,7 +11,6 @@
 #ifndef MODULES_VIDEO_CODING_CODECS_TEST_STATS_H_
 #define MODULES_VIDEO_CODING_CODECS_TEST_STATS_H_
 
-#include <string>
 #include <vector>
 
 #include "common_types.h"  // NOLINT(build/include)
@@ -21,42 +20,34 @@ namespace test {
 
 // Statistics for one processed frame.
 struct FrameStatistic {
-  explicit FrameStatistic(size_t frame_number) : frame_number(frame_number) {}
-
-  std::string ToString() const;
-
-  size_t frame_number = 0;
-  size_t rtp_timestamp = 0;
+  explicit FrameStatistic(int frame_number) : frame_number(frame_number) {}
+  const int frame_number = 0;
 
   // Encoding.
   int64_t encode_start_ns = 0;
   int encode_return_code = 0;
   bool encoding_successful = false;
-  size_t encode_time_us = 0;
-  size_t target_bitrate_kbps = 0;
+  int encode_time_us = 0;
+  int bitrate_kbps = 0;
   size_t encoded_frame_size_bytes = 0;
   webrtc::FrameType frame_type = kVideoFrameDelta;
 
-  // Layering.
-  size_t temporal_layer_idx = 0;
-  size_t simulcast_svc_idx = 0;
-
   // H264 specific.
-  size_t max_nalu_size_bytes = 0;
+  rtc::Optional<size_t> max_nalu_length;
 
   // Decoding.
   int64_t decode_start_ns = 0;
   int decode_return_code = 0;
   bool decoding_successful = false;
-  size_t decode_time_us = 0;
-  size_t decoded_width = 0;
-  size_t decoded_height = 0;
+  int decode_time_us = 0;
+  int decoded_width = 0;
+  int decoded_height = 0;
 
   // Quantization.
   int qp = -1;
 
   // How many packets were discarded of the encoded frame data (if any).
-  size_t packets_dropped = 0;
+  int packets_dropped = 0;
   size_t total_packets = 0;
   size_t manipulated_length = 0;
 
@@ -75,9 +66,12 @@ class Stats {
   FrameStatistic* AddFrame();
 
   // Returns the FrameStatistic corresponding to |frame_number|.
-  FrameStatistic* GetFrame(size_t frame_number);
+  FrameStatistic* GetFrame(int frame_number);
 
   size_t size() const;
+
+  // TODO(brandtr): Add output as CSV.
+  void PrintSummary() const;
 
  private:
   std::vector<FrameStatistic> stats_;

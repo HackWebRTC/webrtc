@@ -76,7 +76,13 @@ class VideoProcessor {
   void ProcessFrame();
 
   // Updates the encoder with target rates. Must be called at least once.
-  void SetRates(size_t bitrate_kbps, size_t framerate_fps);
+  void SetRates(int bitrate_kbps, int framerate_fps);
+
+  // Returns the number of dropped frames.
+  std::vector<int> NumberDroppedFramesPerRateUpdate() const;
+
+  // Returns the number of spatial resizes.
+  std::vector<int> NumberSpatialResizesPerRateUpdate() const;
 
  private:
   class VideoProcessorEncodeCompleteCallback
@@ -184,7 +190,6 @@ class VideoProcessor {
   webrtc::VideoEncoder* const encoder_;
   webrtc::VideoDecoder* const decoder_;
   const std::unique_ptr<VideoBitrateAllocator> bitrate_allocator_;
-  BitrateAllocation bitrate_allocation_ RTC_GUARDED_BY(sequence_checker_);
 
   // Adapters for the codec callbacks.
   VideoProcessorEncodeCompleteCallback encode_callback_;
@@ -197,7 +202,7 @@ class VideoProcessor {
   // Async codecs might queue frames. To handle that we keep input frame
   // and release it after corresponding coded frame is decoded and quality
   // measurement is done.
-  std::map<size_t, std::unique_ptr<VideoFrame>> input_frames_
+  std::map<int, std::unique_ptr<VideoFrame>> input_frames_
       RTC_GUARDED_BY(sequence_checker_);
 
   // These (mandatory) file manipulators are used for, e.g., objective PSNR and
@@ -212,15 +217,13 @@ class VideoProcessor {
   FrameWriter* const decoded_frame_writer_;
 
   // Keep track of inputed/encoded/decoded frames, so we can detect frame drops.
-  size_t last_inputed_frame_num_ RTC_GUARDED_BY(sequence_checker_);
-  size_t last_encoded_frame_num_ RTC_GUARDED_BY(sequence_checker_);
-  size_t last_decoded_frame_num_ RTC_GUARDED_BY(sequence_checker_);
-  size_t num_encoded_frames_ RTC_GUARDED_BY(sequence_checker_);
-  size_t num_decoded_frames_ RTC_GUARDED_BY(sequence_checker_);
+  int last_inputed_frame_num_ RTC_GUARDED_BY(sequence_checker_);
+  int last_encoded_frame_num_ RTC_GUARDED_BY(sequence_checker_);
+  int last_decoded_frame_num_ RTC_GUARDED_BY(sequence_checker_);
 
   // Store an RTP timestamp -> frame number map, since the timestamps are
   // based off of the frame rate, which can change mid-test.
-  std::map<size_t, size_t> rtp_timestamp_to_frame_num_
+  std::map<uint32_t, int> rtp_timestamp_to_frame_num_
       RTC_GUARDED_BY(sequence_checker_);
 
   // Keep track of if we have excluded the first key frame from packet loss.
@@ -232,6 +235,9 @@ class VideoProcessor {
 
   // Statistics.
   Stats* stats_;
+  std::vector<int> num_dropped_frames_ RTC_GUARDED_BY(sequence_checker_);
+  std::vector<int> num_spatial_resizes_ RTC_GUARDED_BY(sequence_checker_);
+  int rate_update_index_ RTC_GUARDED_BY(sequence_checker_);
 
   rtc::SequencedTaskChecker sequence_checker_;
 

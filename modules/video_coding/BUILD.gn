@@ -517,7 +517,6 @@ if (rtc_include_tests) {
       "../../test:test_support",
       "../../test:video_test_common",
       "../../test:video_test_support",
-      "../rtp_rtcp:rtp_rtcp_format",
     ]
   }
 
@@ -579,7 +578,6 @@ if (rtc_include_tests) {
       "../../rtc_base:rtc_base_tests_utils",
       "../../system_wrappers",
       "../../test:field_trial",
-      "../../test:test_common",
       "../../test:test_support",
       "../../test:video_test_common",
       "../../test:video_test_support",
