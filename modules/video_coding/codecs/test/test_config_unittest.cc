@@ -19,25 +19,25 @@ namespace webrtc {
 namespace test {
 
 namespace {
-const int kNumTemporalLayers = 2;
+const size_t kNumTemporalLayers = 2;
 }  // namespace
 
 TEST(TestConfig, NumberOfCoresWithUseSingleCore) {
   TestConfig config;
   config.use_single_core = true;
-  EXPECT_EQ(1, config.NumberOfCores());
+  EXPECT_EQ(1u, config.NumberOfCores());
 }
 
 TEST(TestConfig, NumberOfCoresWithoutUseSingleCore) {
   TestConfig config;
   config.use_single_core = false;
-  EXPECT_GE(config.NumberOfCores(), 1);
+  EXPECT_GE(config.NumberOfCores(), 1u);
 }
 
 TEST(TestConfig, NumberOfTemporalLayersIsOne) {
   TestConfig config;
   webrtc::test::CodecSettings(kVideoCodecH264, &config.codec_settings);
-  EXPECT_EQ(1, config.NumberOfTemporalLayers());
+  EXPECT_EQ(1u, config.NumberOfTemporalLayers());
 }
 
 TEST(TestConfig, NumberOfTemporalLayers_Vp8) {
@@ -58,33 +58,33 @@ TEST(TestConfig, TemporalLayersForFrame_OneLayer) {
   TestConfig config;
   webrtc::test::CodecSettings(kVideoCodecVP8, &config.codec_settings);
   config.codec_settings.VP8()->numberOfTemporalLayers = 1;
-  EXPECT_EQ(0, config.TemporalLayerForFrame(0));
-  EXPECT_EQ(0, config.TemporalLayerForFrame(1));
-  EXPECT_EQ(0, config.TemporalLayerForFrame(2));
+  EXPECT_EQ(0u, config.TemporalLayerForFrame(0));
+  EXPECT_EQ(0u, config.TemporalLayerForFrame(1));
+  EXPECT_EQ(0u, config.TemporalLayerForFrame(2));
 }
 
 TEST(TestConfig, TemporalLayersForFrame_TwoLayers) {
   TestConfig config;
   webrtc::test::CodecSettings(kVideoCodecVP8, &config.codec_settings);
   config.codec_settings.VP8()->numberOfTemporalLayers = 2;
-  EXPECT_EQ(0, config.TemporalLayerForFrame(0));
-  EXPECT_EQ(1, config.TemporalLayerForFrame(1));
-  EXPECT_EQ(0, config.TemporalLayerForFrame(2));
-  EXPECT_EQ(1, config.TemporalLayerForFrame(3));
+  EXPECT_EQ(0u, config.TemporalLayerForFrame(0));
+  EXPECT_EQ(1u, config.TemporalLayerForFrame(1));
+  EXPECT_EQ(0u, config.TemporalLayerForFrame(2));
+  EXPECT_EQ(1u, config.TemporalLayerForFrame(3));
 }
 
 TEST(TestConfig, TemporalLayersForFrame_ThreeLayers) {
   TestConfig config;
   webrtc::test::CodecSettings(kVideoCodecVP8, &config.codec_settings);
   config.codec_settings.VP8()->numberOfTemporalLayers = 3;
-  EXPECT_EQ(0, config.TemporalLayerForFrame(0));
-  EXPECT_EQ(2, config.TemporalLayerForFrame(1));
-  EXPECT_EQ(1, config.TemporalLayerForFrame(2));
-  EXPECT_EQ(2, config.TemporalLayerForFrame(3));
-  EXPECT_EQ(0, config.TemporalLayerForFrame(4));
-  EXPECT_EQ(2, config.TemporalLayerForFrame(5));
-  EXPECT_EQ(1, config.TemporalLayerForFrame(6));
-  EXPECT_EQ(2, config.TemporalLayerForFrame(7));
+  EXPECT_EQ(0u, config.TemporalLayerForFrame(0));
+  EXPECT_EQ(2u, config.TemporalLayerForFrame(1));
+  EXPECT_EQ(1u, config.TemporalLayerForFrame(2));
+  EXPECT_EQ(2u, config.TemporalLayerForFrame(3));
+  EXPECT_EQ(0u, config.TemporalLayerForFrame(4));
+  EXPECT_EQ(2u, config.TemporalLayerForFrame(5));
+  EXPECT_EQ(1u, config.TemporalLayerForFrame(6));
+  EXPECT_EQ(2u, config.TemporalLayerForFrame(7));
 }
 
 TEST(TestConfig, ForcedKeyFrameIntervalOff) {
@@ -126,26 +126,27 @@ TEST(TestConfig, ToString_Vp8) {
   config.codec_settings.VP8()->keyFrameInterval = 999;
 
   EXPECT_EQ(
-      "\n Filename         : yuvfile"
-      "\n # CPU cores used : 1"
+      "\n Filename             : yuvfile"
+      "\n # CPU cores used     : 1"
       "\n General:"
-      "\n  Codec type        : VP8"
-      "\n  Start bitrate     : 400 kbps"
-      "\n  Max bitrate       : 500 kbps"
-      "\n  Min bitrate       : 70 kbps"
-      "\n  Width             : 320"
-      "\n  Height            : 180"
-      "\n  Max frame rate    : 35"
-      "\n  QPmax             : 66"
+      "\n  Codec type          : VP8"
+      "\n  Start bitrate       : 400 kbps"
+      "\n  Max bitrate         : 500 kbps"
+      "\n  Min bitrate         : 70 kbps"
+      "\n  Width               : 320"
+      "\n  Height              : 180"
+      "\n  Max frame rate      : 35"
+      "\n  QPmax               : 66"
+      "\n  # simulcast streams : 0"
       "\n VP8 specific: "
-      "\n  Complexity        : 0"
-      "\n  Resilience        : 0"
-      "\n  # temporal layers : 2"
-      "\n  Denoising         : 0"
-      "\n  Error concealment : 1"
-      "\n  Automatic resize  : 1"
-      "\n  Frame dropping    : 0"
-      "\n  Key frame interval: 999\n",
+      "\n  Complexity          : 0"
+      "\n  Resilience          : 0"
+      "\n  # temporal layers   : 2"
+      "\n  Denoising           : 0"
+      "\n  Error concealment   : 1"
+      "\n  Automatic resize    : 1"
+      "\n  Frame dropping      : 0"
+      "\n  Key frame interval  : 999\n",
       config.ToString());
 }
 

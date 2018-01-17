@@ -151,10 +151,6 @@ TEST_F(VideoProcessorTest, SetRates) {
                   kFramerateFps))
       .Times(1);
   video_processor_->SetRates(kBitrateKbps, kFramerateFps);
-  EXPECT_THAT(video_processor_->NumberDroppedFramesPerRateUpdate(),
-              ElementsAre(0));
-  EXPECT_THAT(video_processor_->NumberSpatialResizesPerRateUpdate(),
-              ElementsAre(0));
 
   const int kNewBitrateKbps = 456;
   const int kNewFramerateFps = 34;
@@ -164,10 +160,6 @@ TEST_F(VideoProcessorTest, SetRates) {
                   kNewFramerateFps))
       .Times(1);
   video_processor_->SetRates(kNewBitrateKbps, kNewFramerateFps);
-  EXPECT_THAT(video_processor_->NumberDroppedFramesPerRateUpdate(),
-              ElementsAre(0, 0));
-  EXPECT_THAT(video_processor_->NumberSpatialResizesPerRateUpdate(),
-              ElementsAre(0, 0));
 
   ExpectRelease();
 }

@@ -48,12 +48,12 @@ TEST_F(VideoProcessorIntegrationTestVideoToolbox,
   config_.SetCodecSettings(kVideoCodecH264, 1, false, false, false, false,
                            false, 352, 288);
 
-  std::vector<RateProfile> rate_profiles = {{500, 30, kForemanNumFrames + 1}};
+  std::vector<RateProfile> rate_profiles = {{500, 30, kForemanNumFrames}};
 
   std::vector<RateControlThresholds> rc_thresholds = {
-      {20, 95, 60, 60, 10, 0, 1}};
+      {5, 1, 0, 0.1, 0.2, 0.1, 0, 1}};
 
-  QualityThresholds quality_thresholds(30.0, 14.0, 0.86, 0.39);
+  std::vector<QualityThresholds> quality_thresholds = {{37, 35, 0.93, 0.91}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
                               &quality_thresholds, nullptr,
@@ -68,11 +68,12 @@ TEST_F(VideoProcessorIntegrationTestVideoToolbox,
   config_.SetCodecSettings(kVideoCodecH264, 1, false, false, false, false,
                            false, 352, 288);
 
-  std::vector<RateProfile> rate_profiles = {{500, 30, kForemanNumFrames + 1}};
+  std::vector<RateProfile> rate_profiles = {{500, 30, kForemanNumFrames}};
 
-  std::vector<RateControlThresholds> rc_thresholds = {{5, 75, 65, 60, 6, 0, 1}};
+  std::vector<RateControlThresholds> rc_thresholds = {
+      {5, 1, 0, 0.1, 0.2, 0.1, 0, 1}};
 
-  QualityThresholds quality_thresholds(30.0, 14.0, 0.86, 0.39);
+  std::vector<QualityThresholds> quality_thresholds = {{37, 35, 0.93, 0.91}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
                               &quality_thresholds, nullptr,

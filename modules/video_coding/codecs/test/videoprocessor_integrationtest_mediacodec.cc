@@ -44,15 +44,15 @@ TEST_F(VideoProcessorIntegrationTestMediaCodec, ForemanCif500kbpsVp8) {
   config_.SetCodecSettings(kVideoCodecVP8, 1, false, false, false, false, false,
                            352, 288);
 
-  std::vector<RateProfile> rate_profiles = {{500, 30, kForemanNumFrames + 1}};
+  std::vector<RateProfile> rate_profiles = {{500, 30, kForemanNumFrames}};
 
   // The thresholds below may have to be tweaked to let even poor MediaCodec
   // implementations pass. If this test fails on the bots, disable it and
   // ping brandtr@.
   std::vector<RateControlThresholds> rc_thresholds = {
-      {20, 95, 22, 11, 50, 0, 1}};
+      {10, 1, 1, 0.1, 0.2, 0.1, 0, 1}};
 
-  QualityThresholds quality_thresholds(30.0, 14.0, 0.86, 0.39);
+  std::vector<QualityThresholds> quality_thresholds = {{36, 31, 0.92, 0.86}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
                               &quality_thresholds, nullptr,
@@ -64,15 +64,15 @@ TEST_F(VideoProcessorIntegrationTestMediaCodec, ForemanCif500kbpsH264CBP) {
   config_.SetCodecSettings(kVideoCodecH264, 1, false, false, false, false,
                            false, 352, 288);
 
-  std::vector<RateProfile> rate_profiles = {{500, 30, kForemanNumFrames + 1}};
+  std::vector<RateProfile> rate_profiles = {{500, 30, kForemanNumFrames}};
 
   // The thresholds below may have to be tweaked to let even poor MediaCodec
   // implementations pass. If this test fails on the bots, disable it and
   // ping brandtr@.
   std::vector<RateControlThresholds> rc_thresholds = {
-      {20, 95, 22, 11, 20, 0, 1}};
+      {10, 1, 1, 0.1, 0.2, 0.1, 0, 1}};
 
-  QualityThresholds quality_thresholds(30.0, 14.0, 0.86, 0.39);
+  std::vector<QualityThresholds> quality_thresholds = {{36, 31, 0.92, 0.86}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
                               &quality_thresholds, nullptr,
@@ -90,14 +90,15 @@ TEST_F(VideoProcessorIntegrationTestMediaCodec,
   config_.SetCodecSettings(kVideoCodecH264, 1, false, false, false, false,
                            false, 352, 288);
 
-  std::vector<RateProfile> rate_profiles = {{500, 30, kForemanNumFrames + 1}};
+  std::vector<RateProfile> rate_profiles = {{500, 30, kForemanNumFrames}};
 
   // The thresholds below may have to be tweaked to let even poor MediaCodec
   // implementations pass. If this test fails on the bots, disable it and
   // ping brandtr@.
-  std::vector<RateControlThresholds> rc_thresholds = {{5, 60, 20, 5, 15, 0, 1}};
+  std::vector<RateControlThresholds> rc_thresholds = {
+      {5, 1, 0, 0.1, 0.2, 0.1, 0, 1}};
 
-  QualityThresholds quality_thresholds(33.0, 30.0, 0.90, 0.85);
+  std::vector<QualityThresholds> quality_thresholds = {{37, 35, 0.93, 0.91}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
                               &quality_thresholds, nullptr,
