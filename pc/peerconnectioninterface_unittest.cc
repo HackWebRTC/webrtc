@@ -3744,6 +3744,7 @@ TEST_F(PeerConnectionMediaConfigTest, TestDefaults) {
   EXPECT_TRUE(media_config.video.enable_cpu_overuse_detection);
   EXPECT_FALSE(media_config.video.disable_prerenderer_smoothing);
   EXPECT_FALSE(media_config.video.suspend_below_min_bitrate);
+  EXPECT_FALSE(media_config.video.experiment_cpu_load_estimator);
 }
 
 // This test verifies the DSCP constraint is recognized and passed to
@@ -3784,6 +3785,19 @@ TEST_F(PeerConnectionMediaConfigTest, TestDisablePrerendererSmoothingTrue) {
       TestCreatePeerConnection(config, &constraints);
 
   EXPECT_TRUE(media_config.video.disable_prerenderer_smoothing);
+}
+
+// This test verifies that the experiment_cpu_load_estimator flag is
+// propagated from RTCConfiguration to the PeerConnection.
+TEST_F(PeerConnectionMediaConfigTest, TestEnableExperimentCpuLoadEstimator) {
+  PeerConnectionInterface::RTCConfiguration config;
+  FakeConstraints constraints;
+
+  config.set_experiment_cpu_load_estimator(true);
+  const cricket::MediaConfig& media_config =
+      TestCreatePeerConnection(config, &constraints);
+
+  EXPECT_TRUE(media_config.video.experiment_cpu_load_estimator);
 }
 
 // This test verifies the suspend below min bitrate constraint is

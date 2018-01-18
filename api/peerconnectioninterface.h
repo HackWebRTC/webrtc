@@ -301,19 +301,19 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     bool operator==(const RTCConfiguration& o) const;
     bool operator!=(const RTCConfiguration& o) const;
 
-    bool dscp() { return media_config.enable_dscp; }
+    bool dscp() const { return media_config.enable_dscp; }
     void set_dscp(bool enable) { media_config.enable_dscp = enable; }
 
     // TODO(nisse): The corresponding flag in MediaConfig and
     // elsewhere should be renamed enable_cpu_adaptation.
-    bool cpu_adaptation() {
+    bool cpu_adaptation() const {
       return media_config.video.enable_cpu_overuse_detection;
     }
     void set_cpu_adaptation(bool enable) {
       media_config.video.enable_cpu_overuse_detection = enable;
     }
 
-    bool suspend_below_min_bitrate() {
+    bool suspend_below_min_bitrate() const {
       return media_config.video.suspend_below_min_bitrate;
     }
     void set_suspend_below_min_bitrate(bool enable) {
@@ -323,13 +323,19 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     // TODO(nisse): The negation in the corresponding MediaConfig
     // attribute is inconsistent, and it should be renamed at some
     // point.
-    bool prerenderer_smoothing() {
+    bool prerenderer_smoothing() const {
       return !media_config.video.disable_prerenderer_smoothing;
     }
     void set_prerenderer_smoothing(bool enable) {
       media_config.video.disable_prerenderer_smoothing = !enable;
     }
 
+    bool experiment_cpu_load_estimator() const {
+      return media_config.video.experiment_cpu_load_estimator;
+    }
+    void set_experiment_cpu_load_estimator(bool enable) {
+      media_config.video.experiment_cpu_load_estimator = enable;
+    }
     static const int kUndefined = -1;
     // Default maximum number of packets in the audio jitter buffer.
     static const int kAudioJitterBufferMaxPackets = 50;

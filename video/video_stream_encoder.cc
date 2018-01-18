@@ -400,7 +400,7 @@ VideoStreamEncoder::VideoStreamEncoder(
           overuse_detector.get()
               ? overuse_detector.release()
               : new OveruseFrameDetector(
-                    GetCpuOveruseOptions(settings.full_overuse_time),
+                    GetCpuOveruseOptions(settings),
                     this,
                     stats_proxy)),
       stats_proxy_(stats_proxy),
@@ -444,11 +444,14 @@ VideoStreamEncoder::~VideoStreamEncoder() {
 // out). This should effectively turn off CPU adaptations for systems that
 // remotely cope with the load right now.
 CpuOveruseOptions VideoStreamEncoder::GetCpuOveruseOptions(
-    bool full_overuse_time) {
+    const VideoSendStream::Config::EncoderSettings& settings) {
   CpuOveruseOptions options;
-  if (full_overuse_time) {
+  if (settings.full_overuse_time) {
     options.low_encode_usage_threshold_percent = 150;
     options.high_encode_usage_threshold_percent = 200;
+  }
+  if (settings.experiment_cpu_load_estimator) {
+    options.filter_time_ms = 5 * rtc::kNumMillisecsPerSec;
   }
   return options;
 }

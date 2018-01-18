@@ -102,7 +102,7 @@ class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
             nullptr /* pre_encode_callback */,
             std::unique_ptr<OveruseFrameDetector>(
                 overuse_detector_proxy_ = new CpuOveruseDetectorProxy(
-                    GetCpuOveruseOptions(settings.full_overuse_time),
+                    GetCpuOveruseOptions(settings),
                     this,
                     stats_proxy))) {}
 
