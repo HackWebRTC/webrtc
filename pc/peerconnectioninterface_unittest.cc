@@ -3741,8 +3741,8 @@ TEST_F(PeerConnectionMediaConfigTest, TestDefaults) {
       TestCreatePeerConnection(config, &constraints);
 
   EXPECT_FALSE(media_config.enable_dscp);
-  EXPECT_TRUE(media_config.video.enable_cpu_overuse_detection);
-  EXPECT_FALSE(media_config.video.disable_prerenderer_smoothing);
+  EXPECT_TRUE(media_config.video.enable_cpu_adaptation);
+  EXPECT_TRUE(media_config.video.enable_prerenderer_smoothing);
   EXPECT_FALSE(media_config.video.suspend_below_min_bitrate);
   EXPECT_FALSE(media_config.video.experiment_cpu_load_estimator);
 }
@@ -3771,10 +3771,10 @@ TEST_F(PeerConnectionMediaConfigTest, TestCpuOveruseConstraintFalse) {
   const cricket::MediaConfig media_config =
       TestCreatePeerConnection(config, &constraints);
 
-  EXPECT_FALSE(media_config.video.enable_cpu_overuse_detection);
+  EXPECT_FALSE(media_config.video.enable_cpu_adaptation);
 }
 
-// This test verifies that the disable_prerenderer_smoothing flag is
+// This test verifies that the enable_prerenderer_smoothing flag is
 // propagated from RTCConfiguration to the PeerConnection.
 TEST_F(PeerConnectionMediaConfigTest, TestDisablePrerendererSmoothingTrue) {
   PeerConnectionInterface::RTCConfiguration config;
@@ -3784,7 +3784,7 @@ TEST_F(PeerConnectionMediaConfigTest, TestDisablePrerendererSmoothingTrue) {
   const cricket::MediaConfig& media_config =
       TestCreatePeerConnection(config, &constraints);
 
-  EXPECT_TRUE(media_config.video.disable_prerenderer_smoothing);
+  EXPECT_FALSE(media_config.video.enable_prerenderer_smoothing);
 }
 
 // This test verifies that the experiment_cpu_load_estimator flag is

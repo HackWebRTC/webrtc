@@ -99,7 +99,7 @@ struct MediaConfig {
   struct Video {
     // Enable WebRTC CPU Overuse Detection. This flag comes from the
     // PeerConnection constraint 'googCpuOveruseDetection'.
-    bool enable_cpu_overuse_detection = true;
+    bool enable_cpu_adaptation = true;
 
     // Enable WebRTC suspension of video. No video frames will be sent
     // when the bitrate is below the configured minimum bitrate. This
@@ -123,7 +123,7 @@ struct MediaConfig {
     // SmoothsRenderedFrames method. This method is used by the
     // VideoReceiveStream, where the value is passed on to the
     // IncomingVideoStream constructor.
-    bool disable_prerenderer_smoothing = false;
+    bool enable_prerenderer_smoothing = true;
 
     // Enables periodic bandwidth probing in application-limited region.
     bool periodic_alr_bandwidth_probing = false;
@@ -138,12 +138,12 @@ struct MediaConfig {
 
   bool operator==(const MediaConfig& o) const {
     return enable_dscp == o.enable_dscp &&
-           video.enable_cpu_overuse_detection ==
-               o.video.enable_cpu_overuse_detection &&
+           video.enable_cpu_adaptation ==
+               o.video.enable_cpu_adaptation &&
            video.suspend_below_min_bitrate ==
                o.video.suspend_below_min_bitrate &&
-           video.disable_prerenderer_smoothing ==
-               o.video.disable_prerenderer_smoothing &&
+           video.enable_prerenderer_smoothing ==
+               o.video.enable_prerenderer_smoothing &&
            video.periodic_alr_bandwidth_probing ==
                o.video.periodic_alr_bandwidth_probing &&
            video.experiment_cpu_load_estimator ==

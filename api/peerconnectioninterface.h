@@ -305,13 +305,11 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     bool dscp() const { return media_config.enable_dscp; }
     void set_dscp(bool enable) { media_config.enable_dscp = enable; }
 
-    // TODO(nisse): The corresponding flag in MediaConfig and
-    // elsewhere should be renamed enable_cpu_adaptation.
     bool cpu_adaptation() const {
-      return media_config.video.enable_cpu_overuse_detection;
+      return media_config.video.enable_cpu_adaptation;
     }
     void set_cpu_adaptation(bool enable) {
-      media_config.video.enable_cpu_overuse_detection = enable;
+      media_config.video.enable_cpu_adaptation = enable;
     }
 
     bool suspend_below_min_bitrate() const {
@@ -321,14 +319,11 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
       media_config.video.suspend_below_min_bitrate = enable;
     }
 
-    // TODO(nisse): The negation in the corresponding MediaConfig
-    // attribute is inconsistent, and it should be renamed at some
-    // point.
     bool prerenderer_smoothing() const {
-      return !media_config.video.disable_prerenderer_smoothing;
+      return media_config.video.enable_prerenderer_smoothing;
     }
     void set_prerenderer_smoothing(bool enable) {
-      media_config.video.disable_prerenderer_smoothing = !enable;
+      media_config.video.enable_prerenderer_smoothing = enable;
     }
 
     bool experiment_cpu_load_estimator() const {

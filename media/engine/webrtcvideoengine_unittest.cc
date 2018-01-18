@@ -143,7 +143,7 @@ void VerifySendStreamHasRtxTypes(const webrtc::VideoSendStream::Config& config,
 
 cricket::MediaConfig GetMediaConfig() {
   cricket::MediaConfig media_config;
-  media_config.video.enable_cpu_overuse_detection = false;
+  media_config.video.enable_cpu_adaptation = false;
   return media_config;
 }
 
@@ -2404,7 +2404,7 @@ TEST_F(WebRtcVideoChannelTest, PreviousAdaptationDoesNotApplyToScreenshare) {
   parameters.codecs.push_back(codec);
 
   MediaConfig media_config = GetMediaConfig();
-  media_config.video.enable_cpu_overuse_detection = true;
+  media_config.video.enable_cpu_adaptation = true;
   channel_.reset(
       engine_.CreateChannel(fake_call_.get(), media_config, VideoOptions()));
   channel_->OnReadyToSend(true);
@@ -2481,7 +2481,7 @@ void WebRtcVideoChannelTest::TestDegradationPreference(
   parameters.codecs.push_back(codec);
 
   MediaConfig media_config = GetMediaConfig();
-  media_config.video.enable_cpu_overuse_detection = true;
+  media_config.video.enable_cpu_adaptation = true;
   channel_.reset(
       engine_.CreateChannel(fake_call_.get(), media_config, VideoOptions()));
   channel_->OnReadyToSend(true);
@@ -2515,7 +2515,7 @@ void WebRtcVideoChannelTest::TestCpuAdaptation(bool enable_overuse,
 
   MediaConfig media_config = GetMediaConfig();
   if (enable_overuse) {
-    media_config.video.enable_cpu_overuse_detection = true;
+    media_config.video.enable_cpu_adaptation = true;
   }
   channel_.reset(
       engine_.CreateChannel(fake_call_.get(), media_config, VideoOptions()));

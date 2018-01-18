@@ -85,7 +85,7 @@ class VideoMediaChannelTest : public testing::Test,
     // implies DegradationPreference kMaintainResolution. Automatic scaling
     // needs to be disabled, otherwise, tests which check the size of received
     // frames become flaky.
-    media_config.video.enable_cpu_overuse_detection = false;
+    media_config.video.enable_cpu_adaptation = false;
     channel_.reset(engine_.CreateChannel(call_.get(), media_config,
                                          cricket::VideoOptions()));
     channel_->OnReadyToSend(true);

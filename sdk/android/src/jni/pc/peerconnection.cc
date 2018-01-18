@@ -171,7 +171,7 @@ void JavaToNativeRTCConfiguration(
       Java_RTCConfiguration_getDisableIpv6(jni, j_rtc_config);
   rtc_config->media_config.enable_dscp =
       Java_RTCConfiguration_getEnableDscp(jni, j_rtc_config);
-  rtc_config->media_config.video.enable_cpu_overuse_detection =
+  rtc_config->media_config.video.enable_cpu_adaptation =
       Java_RTCConfiguration_getEnableCpuOveruseDetection(jni, j_rtc_config);
   rtc_config->enable_rtp_data_channel =
       Java_RTCConfiguration_getEnableRtpDataChannel(jni, j_rtc_config);
