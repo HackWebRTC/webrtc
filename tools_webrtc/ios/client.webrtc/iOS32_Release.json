@@ -15,7 +15,7 @@
   ],
   "additional_compile_targets": [ "all" ],
   "configuration": "Release",
-  "sdk": "iphoneos10.0",
+  "sdk": "iphoneos10.3",
   "tests": [
   ]
 }

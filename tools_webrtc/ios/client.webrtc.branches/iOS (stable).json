@@ -13,12 +13,12 @@
   ],
   "additional_compile_targets": [ "all" ],
   "configuration": "Debug",
-  "sdk": "iphonesimulator10.0",
+  "sdk": "iphonesimulator10.3",
   "tests": [
     {
       "include": "common_tests.json",
       "device type": "iPhone 6s",
-      "os": "10.0"
+      "os": "10.3"
     }
   ]
 }
