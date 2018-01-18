@@ -29,7 +29,6 @@ CPPLINT_BLACKLIST = [
   'modules/audio_processing',
   'modules/desktop_capture',
   'modules/include/module_common_types.h',
-  'modules/media_file',
   'modules/utility',
   'modules/video_capture',
   'p2p/base/session.cc',
