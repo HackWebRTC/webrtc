@@ -146,6 +146,19 @@ rtc_executable("apm_vad") {
   ]
 }
 
+rtc_executable("sound_level") {
+  sources = [
+    "quality_assessment/sound_level.cc",
+  ]
+  deps = [
+    "../..",
+    "../../../..:webrtc_common",
+    "../../../../common_audio",
+    "../../../../rtc_base:rtc_base_approved",
+    "../../../../system_wrappers:metrics_default",
+  ]
+}
+
 copy("lib_unit_tests") {
   testonly = true
   sources = [
