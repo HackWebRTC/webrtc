@@ -35,17 +35,12 @@ int GenerateUniqueId() {
 AudioRtpReceiver::AudioRtpReceiver(
     rtc::Thread* worker_thread,
     const std::string& receiver_id,
-    const std::vector<rtc::scoped_refptr<MediaStreamInterface>>& streams,
-    uint32_t ssrc,
-    cricket::VoiceMediaChannel* media_channel)
+    const std::vector<rtc::scoped_refptr<MediaStreamInterface>>& streams)
     : worker_thread_(worker_thread),
       id_(receiver_id),
-      ssrc_(ssrc),
-      track_(AudioTrackProxy::Create(
-          rtc::Thread::Current(),
-          AudioTrack::Create(
-              receiver_id,
-              RemoteAudioSource::Create(worker_thread, media_channel, ssrc)))),
+      source_(new rtc::RefCountedObject<RemoteAudioSource>(worker_thread)),
+      track_(AudioTrackProxy::Create(rtc::Thread::Current(),
+                                     AudioTrack::Create(receiver_id, source_))),
       cached_track_enabled_(track_->enabled()),
       attachment_id_(GenerateUniqueId()) {
   RTC_DCHECK(worker_thread_);
@@ -53,8 +48,6 @@ AudioRtpReceiver::AudioRtpReceiver(
   track_->RegisterObserver(this);
   track_->GetSource()->RegisterAudioObserver(this);
   SetStreams(streams);
-  SetMediaChannel(media_channel);
-  Reconfigure();
 }
 
 AudioRtpReceiver::~AudioRtpReceiver() {
@@ -74,8 +67,9 @@ bool AudioRtpReceiver::SetOutputVolume(double volume) {
   RTC_DCHECK_GE(volume, 0.0);
   RTC_DCHECK_LE(volume, 10.0);
   RTC_DCHECK(media_channel_);
+  RTC_DCHECK(ssrc_);
   return worker_thread_->Invoke<bool>(RTC_FROM_HERE, [&] {
-    return media_channel_->SetOutputVolume(ssrc_, volume);
+    return media_channel_->SetOutputVolume(*ssrc_, volume);
   });
 }
 
@@ -83,7 +77,7 @@ void AudioRtpReceiver::OnSetVolume(double volume) {
   RTC_DCHECK_GE(volume, 0);
   RTC_DCHECK_LE(volume, 10);
   cached_volume_ = volume;
-  if (!media_channel_) {
+  if (!media_channel_ || !ssrc_) {
     RTC_LOG(LS_ERROR)
         << "AudioRtpReceiver::OnSetVolume: No audio channel exists.";
     return;
@@ -99,21 +93,21 @@ void AudioRtpReceiver::OnSetVolume(double volume) {
 }
 
 RtpParameters AudioRtpReceiver::GetParameters() const {
-  if (!media_channel_ || stopped_) {
+  if (!media_channel_ || !ssrc_ || stopped_) {
     return RtpParameters();
   }
   return worker_thread_->Invoke<RtpParameters>(RTC_FROM_HERE, [&] {
-    return media_channel_->GetRtpReceiveParameters(ssrc_);
+    return media_channel_->GetRtpReceiveParameters(*ssrc_);
   });
 }
 
 bool AudioRtpReceiver::SetParameters(const RtpParameters& parameters) {
   TRACE_EVENT0("webrtc", "AudioRtpReceiver::SetParameters");
-  if (!media_channel_ || stopped_) {
+  if (!media_channel_ || !ssrc_ || stopped_) {
     return false;
   }
   return worker_thread_->Invoke<bool>(RTC_FROM_HERE, [&] {
-    return media_channel_->SetRtpReceiveParameters(ssrc_, parameters);
+    return media_channel_->SetRtpReceiveParameters(*ssrc_, parameters);
   });
 }
 
@@ -122,12 +116,29 @@ void AudioRtpReceiver::Stop() {
   if (stopped_) {
     return;
   }
-  if (media_channel_) {
+  if (media_channel_ && ssrc_) {
     // Allow that SetOutputVolume fail. This is the normal case when the
     // underlying media channel has already been deleted.
     SetOutputVolume(0.0);
   }
   stopped_ = true;
+}
+
+void AudioRtpReceiver::SetupMediaChannel(uint32_t ssrc) {
+  if (!media_channel_) {
+    RTC_LOG(LS_ERROR)
+        << "AudioRtpReceiver::SetupMediaChannel: No audio channel exists.";
+    return;
+  }
+  if (ssrc_ == ssrc) {
+    return;
+  }
+  if (ssrc_) {
+    source_->Stop(media_channel_, *ssrc_);
+  }
+  ssrc_ = ssrc;
+  source_->Start(media_channel_, *ssrc_);
+  Reconfigure();
 }
 
 void AudioRtpReceiver::SetStreams(
@@ -164,13 +175,16 @@ void AudioRtpReceiver::SetStreams(
 }
 
 std::vector<RtpSource> AudioRtpReceiver::GetSources() const {
+  if (!media_channel_ || !ssrc_ || stopped_) {
+    return {};
+  }
   return worker_thread_->Invoke<std::vector<RtpSource>>(
-      RTC_FROM_HERE, [&] { return media_channel_->GetSources(ssrc_); });
+      RTC_FROM_HERE, [&] { return media_channel_->GetSources(*ssrc_); });
 }
 
 void AudioRtpReceiver::Reconfigure() {
   RTC_DCHECK(!stopped_);
-  if (!media_channel_) {
+  if (!media_channel_ || !ssrc_) {
     RTC_LOG(LS_ERROR)
         << "AudioRtpReceiver::Reconfigure: No audio channel exists.";
     return;
@@ -203,12 +217,9 @@ void AudioRtpReceiver::NotifyFirstPacketReceived() {
 VideoRtpReceiver::VideoRtpReceiver(
     rtc::Thread* worker_thread,
     const std::string& receiver_id,
-    const std::vector<rtc::scoped_refptr<MediaStreamInterface>>& streams,
-    uint32_t ssrc,
-    cricket::VideoMediaChannel* media_channel)
+    const std::vector<rtc::scoped_refptr<MediaStreamInterface>>& streams)
     : worker_thread_(worker_thread),
       id_(receiver_id),
-      ssrc_(ssrc),
       source_(new RefCountedObject<VideoTrackSource>(&broadcaster_,
                                                      true /* remote */)),
       track_(VideoTrackProxy::Create(
@@ -224,7 +235,6 @@ VideoRtpReceiver::VideoRtpReceiver(
   RTC_DCHECK(worker_thread_);
   SetStreams(streams);
   source_->SetState(MediaSourceInterface::kLive);
-  SetMediaChannel(media_channel);
 }
 
 VideoRtpReceiver::~VideoRtpReceiver() {
@@ -235,26 +245,27 @@ VideoRtpReceiver::~VideoRtpReceiver() {
 
 bool VideoRtpReceiver::SetSink(rtc::VideoSinkInterface<VideoFrame>* sink) {
   RTC_DCHECK(media_channel_);
+  RTC_DCHECK(ssrc_);
   return worker_thread_->Invoke<bool>(
-      RTC_FROM_HERE, [&] { return media_channel_->SetSink(ssrc_, sink); });
+      RTC_FROM_HERE, [&] { return media_channel_->SetSink(*ssrc_, sink); });
 }
 
 RtpParameters VideoRtpReceiver::GetParameters() const {
-  if (!media_channel_ || stopped_) {
+  if (!media_channel_ || !ssrc_ || stopped_) {
     return RtpParameters();
   }
   return worker_thread_->Invoke<RtpParameters>(RTC_FROM_HERE, [&] {
-    return media_channel_->GetRtpReceiveParameters(ssrc_);
+    return media_channel_->GetRtpReceiveParameters(*ssrc_);
   });
 }
 
 bool VideoRtpReceiver::SetParameters(const RtpParameters& parameters) {
   TRACE_EVENT0("webrtc", "VideoRtpReceiver::SetParameters");
-  if (!media_channel_ || stopped_) {
+  if (!media_channel_ || !ssrc_ || stopped_) {
     return false;
   }
   return worker_thread_->Invoke<bool>(RTC_FROM_HERE, [&] {
-    return media_channel_->SetRtpReceiveParameters(ssrc_, parameters);
+    return media_channel_->SetRtpReceiveParameters(*ssrc_, parameters);
   });
 }
 
@@ -265,7 +276,7 @@ void VideoRtpReceiver::Stop() {
   }
   source_->SetState(MediaSourceInterface::kEnded);
   source_->OnSourceDestroyed();
-  if (!media_channel_) {
+  if (!media_channel_ || !ssrc_) {
     RTC_LOG(LS_WARNING) << "VideoRtpReceiver::Stop: No video channel exists.";
   } else {
     // Allow that SetSink fail. This is the normal case when the underlying
@@ -273,6 +284,21 @@ void VideoRtpReceiver::Stop() {
     SetSink(nullptr);
   }
   stopped_ = true;
+}
+
+void VideoRtpReceiver::SetupMediaChannel(uint32_t ssrc) {
+  if (!media_channel_) {
+    RTC_LOG(LS_ERROR)
+        << "VideoRtpReceiver::SetupMediaChannel: No video channel exists.";
+  }
+  if (ssrc_ == ssrc) {
+    return;
+  }
+  if (ssrc_) {
+    SetSink(nullptr);
+  }
+  ssrc_ = ssrc;
+  SetSink(&broadcaster_);
 }
 
 void VideoRtpReceiver::SetStreams(
@@ -318,15 +344,7 @@ void VideoRtpReceiver::SetObserver(RtpReceiverObserverInterface* observer) {
 
 void VideoRtpReceiver::SetMediaChannel(
     cricket::VideoMediaChannel* media_channel) {
-  if (media_channel_) {
-    SetSink(nullptr);
-  }
   media_channel_ = media_channel;
-  if (media_channel_) {
-    if (!SetSink(&broadcaster_)) {
-      RTC_NOTREACHED();
-    }
-  }
 }
 
 void VideoRtpReceiver::NotifyFirstPacketReceived() {

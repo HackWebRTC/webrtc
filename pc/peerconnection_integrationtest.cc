@@ -84,6 +84,7 @@ using webrtc::PeerConnectionFactory;
 using webrtc::PeerConnectionProxy;
 using webrtc::RTCErrorType;
 using webrtc::RtpReceiverInterface;
+using webrtc::SdpSemantics;
 using webrtc::SdpType;
 using webrtc::SessionDescriptionInterface;
 using webrtc::StreamCollectionInterface;
@@ -3623,6 +3624,23 @@ TEST_F(PeerConnectionIntegrationTest, ClosingConnectionStopsPacketFlow) {
   WAIT(false, 1000);
   uint32_t sent_packets_b = virtual_socket_server()->sent_packets();
   EXPECT_EQ(sent_packets_a, sent_packets_b);
+}
+
+// Test that a basic 1 audio and 1 video track call works when Unified Plan
+// semantics configured for both sides.
+TEST_F(PeerConnectionIntegrationTest, UnifiedPlanMediaFlows) {
+  PeerConnectionInterface::RTCConfiguration config;
+  config.sdp_semantics = SdpSemantics::kUnifiedPlan;
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithConfig(config, config));
+  ConnectFakeSignaling();
+  caller()->AddAudioVideoTracks();
+  callee()->AddAudioVideoTracks();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  ExpectNewFramesReceivedWithWait(
+      kDefaultExpectedAudioFrameCount, kDefaultExpectedVideoFrameCount,
+      kDefaultExpectedAudioFrameCount, kDefaultExpectedVideoFrameCount,
+      kMaxWaitForFramesMs);
 }
 
 }  // namespace

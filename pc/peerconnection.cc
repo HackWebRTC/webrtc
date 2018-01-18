@@ -1314,12 +1314,12 @@ PeerConnection::CreateReceiver(cricket::MediaType media_type,
   if (media_type == cricket::MEDIA_TYPE_AUDIO) {
     receiver = RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
         signaling_thread(),
-        new AudioRtpReceiver(worker_thread(), receiver_id, {}, 0, nullptr));
+        new AudioRtpReceiver(worker_thread(), receiver_id, {}));
   } else {
     RTC_DCHECK_EQ(media_type, cricket::MEDIA_TYPE_VIDEO);
     receiver = RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
         signaling_thread(),
-        new VideoRtpReceiver(worker_thread(), receiver_id, {}, 0, nullptr));
+        new VideoRtpReceiver(worker_thread(), receiver_id, {}));
   }
   return receiver;
 }
@@ -1766,7 +1766,27 @@ RTCError PeerConnection::ApplyLocalDescription(
     AllocateSctpSids(role);
   }
 
-  if (!IsUnifiedPlan()) {
+  if (IsUnifiedPlan()) {
+    for (auto transceiver : transceivers_) {
+      const ContentInfo* content =
+          FindMediaSectionForTransceiver(transceiver, local_description());
+      if (!content) {
+        continue;
+      }
+      if (content->rejected && !transceiver->stopped()) {
+        transceiver->Stop();
+      }
+      if (!content->rejected) {
+        const auto& stream = content->media_description()->streams()[0];
+        transceiver->internal()->sender_internal()->set_stream_ids(
+            {stream.sync_label});
+        transceiver->internal()->sender_internal()->SetSsrc(
+            stream.first_ssrc());
+      }
+    }
+  } else {
+    // Plan B semantics.
+
     // Update state and SSRC of local MediaStreams and DataChannels based on the
     // local session description.
     const cricket::ContentInfo* audio_content =
@@ -2028,6 +2048,11 @@ RTCError PeerConnection::ApplyRemoteDescription(
       }
       if (content->rejected && !transceiver->stopped()) {
         transceiver->Stop();
+      }
+      if (!content->rejected) {
+        const auto& stream = content->media_description()->streams()[0];
+        transceiver->internal()->receiver_internal()->SetupMediaChannel(
+            stream.first_ssrc());
       }
     }
     for (auto event : track_events) {
@@ -2773,12 +2798,12 @@ void PeerConnection::CreateAudioReceiver(
     const RtpSenderInfo& remote_sender_info) {
   std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams;
   streams.push_back(rtc::scoped_refptr<MediaStreamInterface>(stream));
-  rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
-      receiver = RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
-          signaling_thread(),
-          new AudioRtpReceiver(worker_thread(), remote_sender_info.sender_id,
-                               streams, remote_sender_info.first_ssrc,
-                               voice_media_channel()));
+  auto* audio_receiver = new AudioRtpReceiver(
+      worker_thread(), remote_sender_info.sender_id, streams);
+  audio_receiver->SetMediaChannel(voice_media_channel());
+  audio_receiver->SetupMediaChannel(remote_sender_info.first_ssrc);
+  auto receiver = RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
+      signaling_thread(), audio_receiver);
   GetAudioTransceiver()->internal()->AddReceiver(receiver);
   observer_->OnAddTrack(receiver, std::move(streams));
 }
@@ -2788,12 +2813,12 @@ void PeerConnection::CreateVideoReceiver(
     const RtpSenderInfo& remote_sender_info) {
   std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams;
   streams.push_back(rtc::scoped_refptr<MediaStreamInterface>(stream));
-  rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
-      receiver = RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
-          signaling_thread(),
-          new VideoRtpReceiver(worker_thread(), remote_sender_info.sender_id,
-                               streams, remote_sender_info.first_ssrc,
-                               video_media_channel()));
+  auto* video_receiver = new VideoRtpReceiver(
+      worker_thread(), remote_sender_info.sender_id, streams);
+  video_receiver->SetMediaChannel(video_media_channel());
+  video_receiver->SetupMediaChannel(remote_sender_info.first_ssrc);
+  auto receiver = RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
+      signaling_thread(), video_receiver);
   GetVideoTransceiver()->internal()->AddReceiver(receiver);
   observer_->OnAddTrack(receiver, std::move(streams));
 }
