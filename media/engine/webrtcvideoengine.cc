@@ -1557,7 +1557,7 @@ WebRtcVideoChannel::WebRtcVideoSendStream::WebRtcVideoSendStream(
       stream_(nullptr),
       encoder_sink_(nullptr),
       parameters_(std::move(config), options, max_bitrate_bps, codec_settings),
-      rtp_parameters_(CreateRtpParametersWithOneEncoding()),
+      rtp_parameters_(CreateRtpParametersWithEncodings(sp)),
       sending_(false) {
   parameters_.config.rtp.max_packet_size = kVideoMtu;
   parameters_.conference_mode = send_params.conference_mode;
@@ -1814,9 +1814,9 @@ WebRtcVideoChannel::WebRtcVideoSendStream::GetRtpParameters() const {
 bool WebRtcVideoChannel::WebRtcVideoSendStream::ValidateRtpParameters(
     const webrtc::RtpParameters& rtp_parameters) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
-  if (rtp_parameters.encodings.size() != 1) {
+  if (rtp_parameters.encodings.size() != rtp_parameters_.encodings.size()) {
     RTC_LOG(LS_ERROR)
-        << "Attempted to set RtpParameters without exactly one encoding";
+        << "Attempted to set RtpParameters with different encoding count";
     return false;
   }
   if (rtp_parameters.encodings[0].ssrc != rtp_parameters_.encodings[0].ssrc) {
@@ -1833,8 +1833,7 @@ bool WebRtcVideoChannel::WebRtcVideoSendStream::ValidateRtpParameters(
 
 void WebRtcVideoChannel::WebRtcVideoSendStream::UpdateSendState() {
   RTC_DCHECK_RUN_ON(&thread_checker_);
-  // TODO(deadbeef): Need to handle more than one encoding in the future.
-  RTC_DCHECK(rtp_parameters_.encodings.size() == 1u);
+  // TODO(zstein): Handle multiple encodings.
   if (sending_ && rtp_parameters_.encodings[0].active) {
     RTC_DCHECK(stream_ != nullptr);
     stream_->Start();

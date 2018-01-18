@@ -4364,14 +4364,25 @@ TEST_F(WebRtcVideoChannelTest, CannotSetMaxBitrateForNonexistentStream) {
 
 TEST_F(WebRtcVideoChannelTest,
        CannotSetRtpSendParametersWithIncorrectNumberOfEncodings) {
-  // This test verifies that setting RtpParameters succeeds only if
-  // the structure contains exactly one encoding.
-  // TODO(skvlad): Update this test when we start supporting setting parameters
-  // for each encoding individually.
-
   AddSendStream();
   webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(last_ssrc_);
   // Two or more encodings should result in failure.
+  parameters.encodings.push_back(webrtc::RtpEncodingParameters());
+  EXPECT_FALSE(channel_->SetRtpSendParameters(last_ssrc_, parameters));
+  // Zero encodings should also fail.
+  parameters.encodings.clear();
+  EXPECT_FALSE(channel_->SetRtpSendParameters(last_ssrc_, parameters));
+}
+
+TEST_F(WebRtcVideoChannelTest,
+       CannotSetSimulcastRtpSendParametersWithIncorrectNumberOfEncodings) {
+  std::vector<uint32_t> ssrcs = MAKE_VECTOR(kSsrcs3);
+  StreamParams sp = CreateSimStreamParams("cname", ssrcs);
+  AddSendStream(sp);
+
+  webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(last_ssrc_);
+
+  // Additional encodings should result in failure.
   parameters.encodings.push_back(webrtc::RtpEncodingParameters());
   EXPECT_FALSE(channel_->SetRtpSendParameters(last_ssrc_, parameters));
   // Zero encodings should also fail.
@@ -4464,7 +4475,7 @@ TEST_F(WebRtcVideoChannelTest, SetRtpSendParametersPrioritySimulcastStreams) {
   // Get and set the rtp encoding parameters.
   webrtc::RtpParameters parameters =
       channel_->GetRtpSendParameters(primary_ssrc);
-  EXPECT_EQ(1UL, parameters.encodings.size());
+  EXPECT_EQ(kNumSimulcastStreams, parameters.encodings.size());
   EXPECT_EQ(webrtc::kDefaultBitratePriority,
             parameters.encodings[0].bitrate_priority);
   // Change the value and set it on the VideoChannel.
@@ -4474,7 +4485,7 @@ TEST_F(WebRtcVideoChannelTest, SetRtpSendParametersPrioritySimulcastStreams) {
 
   // Verify that the encoding parameters priority is set on the VideoChannel.
   parameters = channel_->GetRtpSendParameters(primary_ssrc);
-  EXPECT_EQ(1UL, parameters.encodings.size());
+  EXPECT_EQ(kNumSimulcastStreams, parameters.encodings.size());
   EXPECT_EQ(new_bitrate_priority, parameters.encodings[0].bitrate_priority);
 
   // Verify that the new value propagated down to the encoder.
@@ -4505,8 +4516,8 @@ TEST_F(WebRtcVideoChannelTest, SetRtpSendParametersPrioritySimulcastStreams) {
 
 // Test that a stream will not be sending if its encoding is made inactive
 // through SetRtpSendParameters.
-// TODO(deadbeef): Update this test when we start supporting setting parameters
-// for each encoding individually.
+// TODO(bugs.webrtc.org/8653): Update this test when we support active/inactive
+// for individual encodings.
 TEST_F(WebRtcVideoChannelTest, SetRtpSendParametersEncodingsActive) {
   FakeVideoSendStream* stream = AddSendStream();
   EXPECT_TRUE(channel_->SetSend(true));
@@ -4844,6 +4855,9 @@ class WebRtcVideoChannelSimulcastTest : public testing::Test {
                                        cricket::FOURCC_I420)));
     channel_->SetSend(true);
     EXPECT_TRUE(capturer.CaptureFrame());
+
+    auto rtp_parameters = channel_->GetRtpSendParameters(kSsrcs3[0]);
+    EXPECT_EQ(num_configured_streams, rtp_parameters.encodings.size());
 
     std::vector<webrtc::VideoStream> video_streams = stream->GetVideoStreams();
     ASSERT_EQ(expected_num_streams, video_streams.size());
