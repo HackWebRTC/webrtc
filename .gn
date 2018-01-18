@@ -66,6 +66,10 @@ default_args = {
   # http://bugs.webrtc.org/8570
   ios_deployment_target = "9.0"
 
+  # The SDK API level, in contrast, is set by build/android/AndroidManifest.xml.
+  android32_ndk_api_level = 16
+  android64_ndk_api_level = 21
+
   # WebRTC does not want to switch to C++14 yet.
   use_cxx11 = true
 
