@@ -43,6 +43,9 @@
     <!-- We support try-with-resources via desugar. -->
     <ignore regexp="Try-with-resources requires API level 19"/>
     <ignore regexp="Call requires API level 19.*`java.lang.Throwable#addSuppressed`"/>
+    <!-- We support new language features via desugar. -->
+    <ignore regexp="Default method requires API level 24"/>
+    <ignore regexp="Static interface  method requires API level 24"/>
   </issue>
 
 </lint>
