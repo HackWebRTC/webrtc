@@ -1315,4 +1315,8 @@ void RTPSender::SendKeepAlive(uint8_t payload_type) {
                 RtpPacketSender::Priority::kLowPriority);
 }
 
+void RTPSender::SetRtt(int64_t rtt_ms) {
+  packet_history_.SetRtt(rtt_ms);
+  flexfec_packet_history_.SetRtt(rtt_ms);
+}
 }  // namespace webrtc

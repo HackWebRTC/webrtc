@@ -903,6 +903,8 @@ void ModuleRtpRtcpImpl::SetRtcpReceiverSsrcs(uint32_t main_ssrc) {
 void ModuleRtpRtcpImpl::set_rtt_ms(int64_t rtt_ms) {
   rtc::CritScope cs(&critical_section_rtt_);
   rtt_ms_ = rtt_ms;
+  if (rtp_sender_)
+    rtp_sender_->SetRtt(rtt_ms);
 }
 
 int64_t ModuleRtpRtcpImpl::rtt_ms() const {
