@@ -1048,29 +1048,25 @@ void TurnPort::ResetNonce() {
   realm_.clear();
 }
 
-static bool MatchesIP(TurnEntry* e, rtc::IPAddress ipaddr) {
-  return e->address().ipaddr() == ipaddr;
-}
 bool TurnPort::HasPermission(const rtc::IPAddress& ipaddr) const {
   return (std::find_if(entries_.begin(), entries_.end(),
-      std::bind2nd(std::ptr_fun(MatchesIP), ipaddr)) != entries_.end());
+                       [&ipaddr](const TurnEntry* e) {
+                         return e->address().ipaddr() == ipaddr;
+                       }) != entries_.end());
 }
 
-static bool MatchesAddress(TurnEntry* e, rtc::SocketAddress addr) {
-  return e->address() == addr;
-}
 TurnEntry* TurnPort::FindEntry(const rtc::SocketAddress& addr) const {
-  EntryList::const_iterator it = std::find_if(entries_.begin(), entries_.end(),
-      std::bind2nd(std::ptr_fun(MatchesAddress), addr));
+  auto it = std::find_if(
+      entries_.begin(), entries_.end(),
+      [&addr](const TurnEntry* e) { return e->address() == addr; });
   return (it != entries_.end()) ? *it : NULL;
 }
 
-static bool MatchesChannelId(TurnEntry* e, int id) {
-  return e->channel_id() == id;
-}
 TurnEntry* TurnPort::FindEntry(int channel_id) const {
-  EntryList::const_iterator it = std::find_if(entries_.begin(), entries_.end(),
-      std::bind2nd(std::ptr_fun(MatchesChannelId), channel_id));
+  auto it = std::find_if(entries_.begin(), entries_.end(),
+                         [&channel_id](const TurnEntry* e) {
+                           return e->channel_id() == channel_id;
+                         });
   return (it != entries_.end()) ? *it : NULL;
 }
 
