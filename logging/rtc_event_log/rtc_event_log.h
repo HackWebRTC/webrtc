@@ -20,8 +20,6 @@
 
 namespace webrtc {
 
-class Clock;
-
 enum PacketDirection { kIncomingPacket = 0, kOutgoingPacket };
 
 class RtcEventLog {
@@ -38,13 +36,6 @@ class RtcEventLog {
 
   // Factory method to create an RtcEventLog object.
   static std::unique_ptr<RtcEventLog> Create(EncodingType encoding_type);
-  // TODO(nisse): webrtc::Clock is deprecated. Delete this method and
-  // above forward declaration of Clock when
-  // webrtc/system_wrappers/include/clock.h is deleted.
-  static std::unique_ptr<RtcEventLog> Create(const Clock* clock,
-                                             EncodingType encoding_type) {
-    return Create(encoding_type);
-  }
 
   // Create an RtcEventLog object that does nothing.
   static std::unique_ptr<RtcEventLog> CreateNull();

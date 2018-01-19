@@ -1834,10 +1834,8 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   }
 
   if (!params.logging.rtc_event_log_name.empty()) {
-    send_event_log_ =
-        RtcEventLog::Create(clock_, RtcEventLog::EncodingType::Legacy);
-    recv_event_log_ =
-        RtcEventLog::Create(clock_, RtcEventLog::EncodingType::Legacy);
+    send_event_log_ = RtcEventLog::Create(RtcEventLog::EncodingType::Legacy);
+    recv_event_log_ = RtcEventLog::Create(RtcEventLog::EncodingType::Legacy);
     std::unique_ptr<RtcEventLogOutputFile> send_output(
         rtc::MakeUnique<RtcEventLogOutputFile>(
             params.logging.rtc_event_log_name + "_send",
