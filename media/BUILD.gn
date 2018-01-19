@@ -60,6 +60,7 @@ rtc_static_library("rtc_media_base") {
   defines = []
   libs = []
   deps = [
+    "../api:audio_options_api",
     "../rtc_base:checks",
     "../rtc_base:sanitizer",
     "../rtc_base:stringutils",
