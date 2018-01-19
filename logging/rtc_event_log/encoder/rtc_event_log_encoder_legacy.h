@@ -50,8 +50,6 @@ class RtcEventLogEncoderLegacy final : public RtcEventLogEncoder {
  public:
   ~RtcEventLogEncoderLegacy() override = default;
 
-  std::string Encode(const RtcEvent& event) override;
-
   std::string EncodeLogStart(int64_t timestamp_us) override;
   std::string EncodeLogEnd(int64_t timestamp_us) override;
 
@@ -60,6 +58,7 @@ class RtcEventLogEncoderLegacy final : public RtcEventLogEncoder {
       std::deque<std::unique_ptr<RtcEvent>>::const_iterator end) override;
 
  private:
+  std::string Encode(const RtcEvent& event);
   // Encoding entry-point for the various RtcEvent subclasses.
   std::string EncodeAlrState(const RtcEventAlrState& event);
   std::string EncodeAudioNetworkAdaptation(

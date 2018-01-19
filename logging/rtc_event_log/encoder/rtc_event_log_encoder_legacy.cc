@@ -105,7 +105,6 @@ rtclog::VideoReceiveConfig_RtcpMode ConvertRtcpMode(RtcpMode rtcp_mode) {
 }
 }  // namespace
 
-
 std::string RtcEventLogEncoderLegacy::EncodeLogStart(int64_t timestamp_us) {
   rtclog::Event rtclog_event;
   rtclog_event.set_timestamp_us(timestamp_us);
