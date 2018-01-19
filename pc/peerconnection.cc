@@ -2246,8 +2246,9 @@ RTCError PeerConnection::UpdateDataChannel(
     const cricket::ContentInfo& content,
     const cricket::ContentGroup* bundle_group) {
   if (data_channel_type_ == cricket::DCT_NONE) {
-    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
-                         "Data channels are not supported.");
+    // If data channels are disabled, ignore this media section. CreateAnswer
+    // will take care of rejecting it.
+    return RTCError::OK();
   }
   if (content.rejected) {
     DestroyDataChannel();
@@ -3404,10 +3405,11 @@ void PeerConnection::GetOptionsForUnifiedPlanAnswer(
           GetMediaDescriptionOptionsForTransceiver(transceiver, content.name));
     } else {
       RTC_CHECK_EQ(cricket::MEDIA_TYPE_DATA, media_type);
-      RTC_CHECK(GetDataMid());
-      // Always reject a data section if it has already been rejected.
-      // Additionally, reject all data sections except for the first one.
-      if (content.rejected || content.name != *GetDataMid()) {
+      // Reject all data sections if data channels are disabled.
+      // Reject a data section if it has already been rejected.
+      // Reject all data sections except for the first one.
+      if (data_channel_type_ == cricket::DCT_NONE || content.rejected ||
+          content.name != *GetDataMid()) {
         session_options->media_description_options.push_back(
             GetMediaDescriptionOptionsForRejectedData(content.name));
       } else {
