@@ -35,6 +35,7 @@ using RTCConfiguration = PeerConnectionInterface::RTCConfiguration;
 using RTCOfferAnswerOptions = PeerConnectionInterface::RTCOfferAnswerOptions;
 using RtcpMuxPolicy = PeerConnectionInterface::RtcpMuxPolicy;
 using rtc::SocketAddress;
+using ::testing::Combine;
 using ::testing::ElementsAre;
 using ::testing::UnorderedElementsAre;
 using ::testing::Values;
@@ -45,6 +46,7 @@ constexpr int kDefaultTimeout = 10000;
 // RtpSenderInterface/DtlsTransportInterface objects once they're available in
 // the API. The RtpSender can be used to determine which transport a given media
 // will use: https://www.w3.org/TR/webrtc/#dom-rtcrtpsender-transport
+// Should also be able to remove GetTransceiversForTesting at that point.
 
 class PeerConnectionWrapperForBundleTest : public PeerConnectionWrapper {
  public:
@@ -74,7 +76,15 @@ class PeerConnectionWrapperForBundleTest : public PeerConnectionWrapper {
   }
 
   cricket::VoiceChannel* voice_channel() {
-    return GetInternalPeerConnection()->voice_channel();
+    auto transceivers =
+        GetInternalPeerConnection()->GetTransceiversForTesting();
+    for (auto transceiver : transceivers) {
+      if (transceiver->internal()->media_type() == cricket::MEDIA_TYPE_AUDIO) {
+        return static_cast<cricket::VoiceChannel*>(
+            transceiver->internal()->channel());
+      }
+    }
+    return nullptr;
   }
 
   rtc::PacketTransportInternal* video_rtp_transport_channel() {
@@ -86,7 +96,15 @@ class PeerConnectionWrapperForBundleTest : public PeerConnectionWrapper {
   }
 
   cricket::VideoChannel* video_channel() {
-    return GetInternalPeerConnection()->video_channel();
+    auto transceivers =
+        GetInternalPeerConnection()->GetTransceiversForTesting();
+    for (auto transceiver : transceivers) {
+      if (transceiver->internal()->media_type() == cricket::MEDIA_TYPE_VIDEO) {
+        return static_cast<cricket::VideoChannel*>(
+            transceiver->internal()->channel());
+      }
+    }
+    return nullptr;
   }
 
   PeerConnection* GetInternalPeerConnection() {
@@ -135,12 +153,14 @@ class PeerConnectionWrapperForBundleTest : public PeerConnectionWrapper {
   rtc::FakeNetworkManager* network_;
 };
 
-class PeerConnectionBundleTest : public ::testing::Test {
+class PeerConnectionBundleBaseTest : public ::testing::Test {
  protected:
   typedef std::unique_ptr<PeerConnectionWrapperForBundleTest> WrapperPtr;
 
-  PeerConnectionBundleTest()
-      : vss_(new rtc::VirtualSocketServer()), main_(vss_.get()) {
+  explicit PeerConnectionBundleBaseTest(SdpSemantics sdp_semantics)
+      : vss_(new rtc::VirtualSocketServer()),
+        main_(vss_.get()),
+        sdp_semantics_(sdp_semantics) {
 #ifdef WEBRTC_ANDROID
     InitializeAndroidObjects();
 #endif
@@ -162,8 +182,10 @@ class PeerConnectionBundleTest : public ::testing::Test {
                               cricket::PORTALLOCATOR_DISABLE_RELAY);
     port_allocator->set_step_delay(cricket::kMinimumStepDelay);
     auto observer = rtc::MakeUnique<MockPeerConnectionObserver>();
+    RTCConfiguration modified_config = config;
+    modified_config.sdp_semantics = sdp_semantics_;
     auto pc = pc_factory_->CreatePeerConnection(
-        config, std::move(port_allocator), nullptr, observer.get());
+        modified_config, std::move(port_allocator), nullptr, observer.get());
     if (!pc) {
       return nullptr;
     }
@@ -214,6 +236,14 @@ class PeerConnectionBundleTest : public ::testing::Test {
   rtc::AutoSocketServerThread main_;
   rtc::scoped_refptr<PeerConnectionFactoryInterface> pc_factory_;
   std::vector<std::unique_ptr<rtc::FakeNetworkManager>> fake_networks_;
+  const SdpSemantics sdp_semantics_;
+};
+
+class PeerConnectionBundleTest
+    : public PeerConnectionBundleBaseTest,
+      public ::testing::WithParamInterface<SdpSemantics> {
+ protected:
+  PeerConnectionBundleTest() : PeerConnectionBundleBaseTest(GetParam()) {}
 };
 
 SdpContentMutator RemoveRtcpMux() {
@@ -233,7 +263,7 @@ std::vector<int> GetCandidateComponents(
 
 // Test that there are 2 local UDP candidates (1 RTP and 1 RTCP candidate) for
 // each media section when disabling bundling and disabling RTCP multiplexing.
-TEST_F(PeerConnectionBundleTest,
+TEST_P(PeerConnectionBundleTest,
        TwoCandidatesForEachTransportWhenNoBundleNoRtcpMux) {
   const SocketAddress kCallerAddress("1.1.1.1", 0);
   const SocketAddress kCalleeAddress("2.2.2.2", 0);
@@ -279,7 +309,7 @@ TEST_F(PeerConnectionBundleTest,
 
 // Test that there is 1 local UDP candidate for both RTP and RTCP for each media
 // section when disabling bundle but enabling RTCP multiplexing.
-TEST_F(PeerConnectionBundleTest,
+TEST_P(PeerConnectionBundleTest,
        OneCandidateForEachTransportWhenNoBundleButRtcpMux) {
   const SocketAddress kCallerAddress("1.1.1.1", 0);
 
@@ -301,7 +331,7 @@ TEST_F(PeerConnectionBundleTest,
 
 // Test that there is 1 local UDP candidate in only the first media section when
 // bundling and enabling RTCP multiplexing.
-TEST_F(PeerConnectionBundleTest,
+TEST_P(PeerConnectionBundleTest,
        OneCandidateOnlyOnFirstTransportWhenBundleAndRtcpMux) {
   const SocketAddress kCallerAddress("1.1.1.1", 0);
 
@@ -337,15 +367,18 @@ std::ostream& operator<<(std::ostream& out, BundleIncluded value) {
 }
 
 class PeerConnectionBundleMatrixTest
-    : public PeerConnectionBundleTest,
+    : public PeerConnectionBundleBaseTest,
       public ::testing::WithParamInterface<
-          std::tuple<BundlePolicy, BundleIncluded, bool, bool>> {
+          std::tuple<SdpSemantics,
+                     std::tuple<BundlePolicy, BundleIncluded, bool, bool>>> {
  protected:
-  PeerConnectionBundleMatrixTest() {
-    bundle_policy_ = std::get<0>(GetParam());
-    bundle_included_ = std::get<1>(GetParam());
-    expected_same_before_ = std::get<2>(GetParam());
-    expected_same_after_ = std::get<3>(GetParam());
+  PeerConnectionBundleMatrixTest()
+      : PeerConnectionBundleBaseTest(std::get<0>(GetParam())) {
+    auto param = std::get<1>(GetParam());
+    bundle_policy_ = std::get<0>(param);
+    bundle_included_ = std::get<1>(param);
+    expected_same_before_ = std::get<2>(param);
+    expected_same_after_ = std::get<3>(param);
   }
 
   PeerConnectionInterface::BundlePolicy bundle_policy_;
@@ -382,35 +415,36 @@ TEST_P(PeerConnectionBundleMatrixTest,
 INSTANTIATE_TEST_CASE_P(
     PeerConnectionBundleTest,
     PeerConnectionBundleMatrixTest,
-    Values(std::make_tuple(BundlePolicy::kBundlePolicyBalanced,
-                           BundleIncluded::kBundleInAnswer,
-                           false,
-                           true),
-           std::make_tuple(BundlePolicy::kBundlePolicyBalanced,
-                           BundleIncluded::kBundleNotInAnswer,
-                           false,
-                           false),
-           std::make_tuple(BundlePolicy::kBundlePolicyMaxBundle,
-                           BundleIncluded::kBundleInAnswer,
-                           true,
-                           true),
-           std::make_tuple(BundlePolicy::kBundlePolicyMaxBundle,
-                           BundleIncluded::kBundleNotInAnswer,
-                           true,
-                           true),
-           std::make_tuple(BundlePolicy::kBundlePolicyMaxCompat,
-                           BundleIncluded::kBundleInAnswer,
-                           false,
-                           true),
-           std::make_tuple(BundlePolicy::kBundlePolicyMaxCompat,
-                           BundleIncluded::kBundleNotInAnswer,
-                           false,
-                           false)));
+    Combine(Values(SdpSemantics::kPlanB, SdpSemantics::kUnifiedPlan),
+            Values(std::make_tuple(BundlePolicy::kBundlePolicyBalanced,
+                                   BundleIncluded::kBundleInAnswer,
+                                   false,
+                                   true),
+                   std::make_tuple(BundlePolicy::kBundlePolicyBalanced,
+                                   BundleIncluded::kBundleNotInAnswer,
+                                   false,
+                                   false),
+                   std::make_tuple(BundlePolicy::kBundlePolicyMaxBundle,
+                                   BundleIncluded::kBundleInAnswer,
+                                   true,
+                                   true),
+                   std::make_tuple(BundlePolicy::kBundlePolicyMaxBundle,
+                                   BundleIncluded::kBundleNotInAnswer,
+                                   true,
+                                   true),
+                   std::make_tuple(BundlePolicy::kBundlePolicyMaxCompat,
+                                   BundleIncluded::kBundleInAnswer,
+                                   false,
+                                   true),
+                   std::make_tuple(BundlePolicy::kBundlePolicyMaxCompat,
+                                   BundleIncluded::kBundleNotInAnswer,
+                                   false,
+                                   false))));
 
 // Test that the audio/video transports on the callee side are the same before
 // and after setting a local answer when max BUNDLE is enabled and an offer with
 // BUNDLE is received.
-TEST_F(PeerConnectionBundleTest,
+TEST_P(PeerConnectionBundleTest,
        TransportsSameForMaxBundleWithBundleInRemoteOffer) {
   auto caller = CreatePeerConnectionWithAudioVideo();
   RTCConfiguration config;
@@ -431,7 +465,7 @@ TEST_F(PeerConnectionBundleTest,
             callee->video_rtp_transport_channel());
 }
 
-TEST_F(PeerConnectionBundleTest,
+TEST_P(PeerConnectionBundleTest,
        FailToSetRemoteOfferWithNoBundleWhenBundlePolicyMaxBundle) {
   auto caller = CreatePeerConnectionWithAudioVideo();
   RTCConfiguration config;
@@ -449,7 +483,7 @@ TEST_F(PeerConnectionBundleTest,
 // media section.
 // Note: This is currently failing because of the following bug:
 // https://bugs.chromium.org/p/webrtc/issues/detail?id=6280
-TEST_F(PeerConnectionBundleTest,
+TEST_P(PeerConnectionBundleTest,
        DISABLED_SuccessfullyNegotiateMaxBundleIfBundleTransportMediaRejected) {
   RTCConfiguration config;
   config.bundle_policy = BundlePolicy::kBundlePolicyMaxBundle;
@@ -470,7 +504,7 @@ TEST_F(PeerConnectionBundleTest,
 
 // When requiring RTCP multiplexing, the PeerConnection never makes RTCP
 // transport channels.
-TEST_F(PeerConnectionBundleTest, NeverCreateRtcpTransportWithRtcpMuxRequired) {
+TEST_P(PeerConnectionBundleTest, NeverCreateRtcpTransportWithRtcpMuxRequired) {
   RTCConfiguration config;
   config.rtcp_mux_policy = RtcpMuxPolicy::kRtcpMuxPolicyRequire;
   auto caller = CreatePeerConnectionWithAudioVideo(config);
@@ -491,7 +525,7 @@ TEST_F(PeerConnectionBundleTest, NeverCreateRtcpTransportWithRtcpMuxRequired) {
 // When negotiating RTCP multiplexing, the PeerConnection makes RTCP transport
 // channels when the offer is sent, but will destroy them once the remote answer
 // is set.
-TEST_F(PeerConnectionBundleTest,
+TEST_P(PeerConnectionBundleTest,
        CreateRtcpTransportOnlyBeforeAnswerWithRtcpMuxNegotiate) {
   RTCConfiguration config;
   config.rtcp_mux_policy = RtcpMuxPolicy::kRtcpMuxPolicyNegotiate;
@@ -510,7 +544,7 @@ TEST_F(PeerConnectionBundleTest,
   EXPECT_FALSE(caller->video_rtcp_transport_channel());
 }
 
-TEST_F(PeerConnectionBundleTest, FailToSetDescriptionWithBundleAndNoRtcpMux) {
+TEST_P(PeerConnectionBundleTest, FailToSetDescriptionWithBundleAndNoRtcpMux) {
   auto caller = CreatePeerConnectionWithAudioVideo();
   auto callee = CreatePeerConnectionWithAudioVideo();
 
@@ -537,8 +571,14 @@ TEST_F(PeerConnectionBundleTest, FailToSetDescriptionWithBundleAndNoRtcpMux) {
 
 // Test that candidates sent to the "video" transport do not get pushed down to
 // the "audio" transport channel when bundling.
-TEST_F(PeerConnectionBundleTest,
+TEST_P(PeerConnectionBundleTest,
        IgnoreCandidatesForUnusedTransportWhenBundling) {
+  // TODO(bugs.webrtc.org/8764): Re-enable when stats are supported with Unified
+  // Plan.
+  if (sdp_semantics_ == SdpSemantics::kUnifiedPlan) {
+    return;
+  }
+
   const SocketAddress kAudioAddress1("1.1.1.1", 1111);
   const SocketAddress kAudioAddress2("2.2.2.2", 2222);
   const SocketAddress kVideoAddress("3.3.3.3", 3333);
@@ -586,7 +626,7 @@ TEST_F(PeerConnectionBundleTest,
 // Test that the transport used by both audio and video is the transport
 // associated with the first MID in the answer BUNDLE group, even if it's in a
 // different order from the offer.
-TEST_F(PeerConnectionBundleTest, BundleOnFirstMidInAnswer) {
+TEST_P(PeerConnectionBundleTest, BundleOnFirstMidInAnswer) {
   auto caller = CreatePeerConnectionWithAudioVideo();
   auto callee = CreatePeerConnectionWithAudioVideo();
 
@@ -597,13 +637,13 @@ TEST_F(PeerConnectionBundleTest, BundleOnFirstMidInAnswer) {
   auto answer = callee->CreateAnswer();
   auto* old_bundle_group =
       answer->description()->GetGroupByName(cricket::GROUP_TYPE_BUNDLE);
-  ASSERT_THAT(old_bundle_group->content_names(),
-              ElementsAre(cricket::CN_AUDIO, cricket::CN_VIDEO));
+  std::string first_mid = old_bundle_group->content_names()[0];
+  std::string second_mid = old_bundle_group->content_names()[1];
   answer->description()->RemoveGroupByName(cricket::GROUP_TYPE_BUNDLE);
 
   cricket::ContentGroup new_bundle_group(cricket::GROUP_TYPE_BUNDLE);
-  new_bundle_group.AddContentName(cricket::CN_VIDEO);
-  new_bundle_group.AddContentName(cricket::CN_AUDIO);
+  new_bundle_group.AddContentName(second_mid);
+  new_bundle_group.AddContentName(first_mid);
   answer->description()->AddGroup(new_bundle_group);
 
   ASSERT_TRUE(caller->SetRemoteDescription(std::move(answer)));
@@ -612,5 +652,10 @@ TEST_F(PeerConnectionBundleTest, BundleOnFirstMidInAnswer) {
   EXPECT_EQ(caller->voice_rtp_transport_channel(),
             caller->video_rtp_transport_channel());
 }
+
+INSTANTIATE_TEST_CASE_P(PeerConnectionBundleTest,
+                        PeerConnectionBundleTest,
+                        Values(SdpSemantics::kPlanB,
+                               SdpSemantics::kUnifiedPlan));
 
 }  // namespace webrtc

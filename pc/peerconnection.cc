@@ -2150,11 +2150,15 @@ RTCError PeerConnection::UpdateTransceiversAndDataChannels(
     const SessionDescriptionInterface& new_session) {
   RTC_DCHECK(IsUnifiedPlan());
 
-  auto bundle_group_or_error = GetEarlyBundleGroup(*new_session.description());
-  if (!bundle_group_or_error.ok()) {
-    return bundle_group_or_error.MoveError();
+  const cricket::ContentGroup* bundle_group = nullptr;
+  if (new_session.GetType() == SdpType::kOffer) {
+    auto bundle_group_or_error =
+        GetEarlyBundleGroup(*new_session.description());
+    if (!bundle_group_or_error.ok()) {
+      return bundle_group_or_error.MoveError();
+    }
+    bundle_group = bundle_group_or_error.MoveValue();
   }
-  const cricket::ContentGroup* bundle_group = bundle_group_or_error.MoveValue();
 
   const ContentInfos& old_contents =
       (old_session ? old_session->description()->contents() : ContentInfos());

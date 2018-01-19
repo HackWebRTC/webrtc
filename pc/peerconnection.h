@@ -289,6 +289,13 @@ class PeerConnection : public PeerConnectionInterface,
   // factory, it shouldn't really be public).
   bool GetSslRole(const std::string& content_name, rtc::SSLRole* role);
 
+  // Exposed for tests.
+  std::vector<
+      rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
+  GetTransceiversForTesting() const {
+    return transceivers_;
+  }
+
  protected:
   ~PeerConnection() override;
 
