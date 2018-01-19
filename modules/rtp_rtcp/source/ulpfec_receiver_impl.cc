@@ -219,7 +219,19 @@ int32_t UlpfecReceiverImpl::AddReceivedRedPacket(
 // TODO(nisse): Drop always-zero return value.
 int32_t UlpfecReceiverImpl::ProcessReceivedFec() {
   crit_sect_.Enter();
-  for (const auto& received_packet : received_packets_) {
+
+  // If we iterate over |received_packets_| and it contains a packet that cause
+  // us to recurse back to this function (for example a RED packet encapsulating
+  // a RED packet), then we will recurse forever. To avoid this we swap
+  // |received_packets_| with an empty vector so that the next recursive call
+  // wont iterate over the same packet again. This also solves the problem of
+  // not modifying the vector we are currently iterating over (packets are added
+  // in AddReceivedRedPacket).
+  std::vector<std::unique_ptr<ForwardErrorCorrection::ReceivedPacket>>
+    received_packets;
+  received_packets.swap(received_packets_);
+
+  for (const auto& received_packet : received_packets) {
     // Send received media packet to VCM.
     if (!received_packet->is_fec) {
       ForwardErrorCorrection::Packet* packet = received_packet->pkt;
@@ -230,7 +242,6 @@ int32_t UlpfecReceiverImpl::ProcessReceivedFec() {
     }
     fec_->DecodeFec(*received_packet, &recovered_packets_);
   }
-  received_packets_.clear();
 
   // Send any recovered media packets to VCM.
   for (const auto& recovered_packet : recovered_packets_) {
@@ -248,6 +259,7 @@ int32_t UlpfecReceiverImpl::ProcessReceivedFec() {
                                                   packet->length);
     crit_sect_.Enter();
   }
+
   crit_sect_.Leave();
   return 0;
 }

@@ -218,6 +218,25 @@ TEST_F(RtpVideoStreamReceiverTest, GenericKeyFrame) {
                                                     &rtp_header);
 }
 
+TEST_F(RtpVideoStreamReceiverTest, NoInfiniteRecursionOnEncapsulatedRedPacket) {
+  const uint8_t kRedPayloadType = 125;
+  VideoCodec codec;
+  codec.plType = kRedPayloadType;
+  memcpy(codec.plName, "red", sizeof("red"));
+  rtp_video_stream_receiver_->AddReceiveCodec(codec, {});
+  const std::vector<uint8_t> data({0x80,                // RTP version.
+                                   kRedPayloadType,     // Payload type.
+                                   0, 0, 0, 0, 0, 0,    // Don't care.
+                                   0, 0, 0x4, 0x57,     // SSRC
+                                   kRedPayloadType,     // RED header.
+                                   0, 0, 0, 0, 0        // Don't care.
+                                 });
+  RtpPacketReceived packet;
+  EXPECT_TRUE(packet.Parse(data.data(), data.size()));
+  rtp_video_stream_receiver_->StartReceive();
+  rtp_video_stream_receiver_->OnRtpPacket(packet);
+}
+
 TEST_F(RtpVideoStreamReceiverTest, GenericKeyFrameBitstreamError) {
   WebRtcRTPHeader rtp_header;
   const std::vector<uint8_t> data({1, 2, 3, 4});
