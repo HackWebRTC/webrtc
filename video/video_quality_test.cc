@@ -1060,6 +1060,12 @@ VideoQualityTest::VideoQualityTest()
   payload_type_map_[kPayloadTypeVP9] = webrtc::MediaType::VIDEO;
 }
 
+VideoQualityTest::VideoQualityTest(
+    std::unique_ptr<FecController> fec_controller)
+    : VideoQualityTest() {
+  fec_controller_ = std::move(fec_controller);
+}
+
 VideoQualityTest::Params::Params()
     : call({false, Call::Config::BitrateConfig(), 0}),
       video{{false, 640, 480, 30, 50, 800, 800, false, "VP8", 1, -1, 0, false,
@@ -1794,6 +1800,24 @@ void VideoQualityTest::CreateVideoStreams() {
   for (size_t i = 0; i < video_send_configs_.size(); ++i) {
     video_send_streams_.push_back(sender_call_->CreateVideoSendStream(
         video_send_configs_[i].Copy(), video_encoder_configs_[i].Copy()));
+  }
+  for (size_t i = 0; i < video_receive_configs_.size(); ++i) {
+    video_receive_streams_.push_back(receiver_call_->CreateVideoReceiveStream(
+        video_receive_configs_[i].Copy()));
+  }
+
+  AssociateFlexfecStreamsWithVideoStreams();
+}
+
+void VideoQualityTest::CreateVideoStreamsWithProtectionBitrateCalculator(
+    std::unique_ptr<FecController> fec_controller) {
+  RTC_DCHECK(video_send_streams_.empty());
+  RTC_DCHECK(video_receive_streams_.empty());
+  RTC_DCHECK_EQ(video_send_configs_.size(), num_video_streams_);
+  for (size_t i = 0; i < video_send_configs_.size(); ++i) {
+    video_send_streams_.push_back(sender_call_->CreateVideoSendStream(
+        video_send_configs_[i].Copy(), video_encoder_configs_[i].Copy(),
+        std::move(fec_controller)));
   }
   for (size_t i = 0; i < video_receive_configs_.size(); ++i) {
     video_receive_streams_.push_back(receiver_call_->CreateVideoReceiveStream(

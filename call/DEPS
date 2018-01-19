@@ -7,6 +7,7 @@ include_rules = [
   "+modules/audio_processing",
   "+modules/bitrate_controller",
   "+modules/congestion_controller",
+  "+modules/video_coding",
   "+modules/pacing",
   "+modules/rtp_rtcp",
   "+modules/utility",

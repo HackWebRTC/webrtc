@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <set>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -26,6 +27,7 @@
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/source/rtp_sender.h"
 #include "modules/utility/include/process_thread.h"
+#include "modules/video_coding/fec_controller_default.h"
 #include "modules/video_coding/utility/ivf_file_writer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/experiments/alr_experiment.h"
@@ -41,6 +43,8 @@
 namespace webrtc {
 
 static const int kMinSendSidePacketHistorySize = 600;
+static const int kSendSideSeqNumSetMaxSize = 15000;
+
 namespace {
 
 // We don't do MTU discovery, so assume that we have the standard ethernet MTU.
@@ -244,7 +248,8 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
                             public webrtc::OverheadObserver,
                             public webrtc::VCMProtectionCallback,
                             public VideoStreamEncoder::EncoderSink,
-                            public VideoBitrateAllocationObserver {
+                            public VideoBitrateAllocationObserver,
+                            public webrtc::PacketFeedbackObserver {
  public:
   VideoSendStreamImpl(
       SendStatisticsProxy* stats_proxy,
@@ -260,7 +265,8 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
       double initial_encoder_bitrate_priority,
       std::map<uint32_t, RtpState> suspended_ssrcs,
       std::map<uint32_t, RtpPayloadState> suspended_payload_states,
-      VideoEncoderConfig::ContentType content_type);
+      VideoEncoderConfig::ContentType content_type,
+      std::unique_ptr<FecController> fec_controller);
   ~VideoSendStreamImpl() override;
 
   // RegisterProcessThread register |module_process_thread| with those objects
@@ -285,6 +291,11 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   void SetTransportOverhead(size_t transport_overhead_per_packet);
 
   rtc::Optional<float> configured_pacing_factor_;
+
+  // From PacketFeedbackObserver.
+  void OnPacketAdded(uint32_t ssrc, uint16_t seq_num) override;
+  void OnPacketFeedbackVector(
+      const std::vector<PacketFeedback>& packet_feedback_vector) override;
 
  private:
   class CheckEncoderActivityTask;
@@ -331,6 +342,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   const VideoSendStream::Config* const config_;
   std::map<uint32_t, RtpState> suspended_ssrcs_;
 
+  std::unique_ptr<FecController> fec_controller_;
   ProcessThread* module_process_thread_;
   rtc::ThreadChecker module_process_thread_checker_;
   rtc::TaskQueue* const worker_queue_;
@@ -358,7 +370,6 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
 
   VideoStreamEncoder* const video_stream_encoder_;
   EncoderRtcpFeedback encoder_feedback_;
-  ProtectionBitrateCalculator protection_bitrate_calculator_;
 
   RtcpBandwidthObserver* const bandwidth_observer_;
   // RtpRtcp modules, declared here as they use other members on construction.
@@ -377,6 +388,9 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   size_t overhead_bytes_per_packet_
       RTC_GUARDED_BY(overhead_bytes_per_packet_crit_);
   size_t transport_overhead_bytes_per_packet_;
+
+  std::set<uint16_t> feedback_packet_seq_num_set_;
+  std::vector<bool> loss_mask_vector_;
 };
 
 // TODO(tommi): See if there's a more elegant way to create a task that creates
@@ -399,7 +413,8 @@ class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
       double initial_encoder_bitrate_priority,
       const std::map<uint32_t, RtpState>& suspended_ssrcs,
       const std::map<uint32_t, RtpPayloadState>& suspended_payload_states,
-      VideoEncoderConfig::ContentType content_type)
+      VideoEncoderConfig::ContentType content_type,
+      std::unique_ptr<FecController> fec_controller)
       : send_stream_(send_stream),
         done_event_(done_event),
         stats_proxy_(stats_proxy),
@@ -414,7 +429,8 @@ class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
         initial_encoder_bitrate_priority_(initial_encoder_bitrate_priority),
         suspended_ssrcs_(suspended_ssrcs),
         suspended_payload_states_(suspended_payload_states),
-        content_type_(content_type) {}
+        content_type_(content_type),
+        fec_controller_(std::move(fec_controller)) {}
 
   ~ConstructionTask() override { done_event_->Set(); }
 
@@ -425,7 +441,8 @@ class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
         bitrate_allocator_, send_delay_stats_, video_stream_encoder_,
         event_log_, config_, initial_encoder_max_bitrate_,
         initial_encoder_bitrate_priority_, std::move(suspended_ssrcs_),
-        std::move(suspended_payload_states_), content_type_));
+        std::move(suspended_payload_states_), content_type_,
+        std::move(fec_controller_)));
     return true;
   }
 
@@ -444,6 +461,7 @@ class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
   std::map<uint32_t, RtpState> suspended_ssrcs_;
   std::map<uint32_t, RtpPayloadState> suspended_payload_states_;
   const VideoEncoderConfig::ContentType content_type_;
+  std::unique_ptr<FecController> fec_controller_;
 };
 
 class VideoSendStream::DestructAndGetRtpStateTask : public rtc::QueuedTask {
@@ -562,7 +580,8 @@ VideoSendStream::VideoSendStream(
     VideoSendStream::Config config,
     VideoEncoderConfig encoder_config,
     const std::map<uint32_t, RtpState>& suspended_ssrcs,
-    const std::map<uint32_t, RtpPayloadState>& suspended_payload_states)
+    const std::map<uint32_t, RtpPayloadState>& suspended_payload_states,
+    std::unique_ptr<FecController> fec_controller)
     : worker_queue_(worker_queue),
       thread_sync_event_(false /* manual_reset */, false),
       stats_proxy_(Clock::GetRealTimeClock(),
@@ -580,7 +599,8 @@ VideoSendStream::VideoSendStream(
       video_stream_encoder_.get(), module_process_thread, call_stats, transport,
       bitrate_allocator, send_delay_stats, event_log, &config_,
       encoder_config.max_bitrate_bps, encoder_config.bitrate_priority,
-      suspended_ssrcs, suspended_payload_states, encoder_config.content_type)));
+      suspended_ssrcs, suspended_payload_states, encoder_config.content_type,
+      std::move(fec_controller))));
 
   // Wait for ConstructionTask to complete so that |send_stream_| can be used.
   // |module_process_thread| must be registered and deregistered on the thread
@@ -705,12 +725,14 @@ VideoSendStreamImpl::VideoSendStreamImpl(
     double initial_encoder_bitrate_priority,
     std::map<uint32_t, RtpState> suspended_ssrcs,
     std::map<uint32_t, RtpPayloadState> suspended_payload_states,
-    VideoEncoderConfig::ContentType content_type)
+    VideoEncoderConfig::ContentType content_type,
+    std::unique_ptr<FecController> fec_controller)
     : send_side_bwe_with_overhead_(
           webrtc::field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")),
       stats_proxy_(stats_proxy),
       config_(config),
       suspended_ssrcs_(std::move(suspended_ssrcs)),
+      fec_controller_(std::move(fec_controller)),
       module_process_thread_(nullptr),
       worker_queue_(worker_queue),
       check_encoder_activity_task_(nullptr),
@@ -727,7 +749,6 @@ VideoSendStreamImpl::VideoSendStreamImpl(
       encoder_feedback_(Clock::GetRealTimeClock(),
                         config_->rtp.ssrcs,
                         video_stream_encoder),
-      protection_bitrate_calculator_(Clock::GetRealTimeClock(), this),
       bandwidth_observer_(transport->send_side_cc()->GetBandwidthObserver()),
       rtp_rtcp_modules_(CreateRtpRtcpModules(
           config_->send_transport,
@@ -823,6 +844,10 @@ VideoSendStreamImpl::VideoSendStreamImpl(
         config_->encoder_settings.payload_name.c_str());
   }
 
+  fec_controller_->SetProtectionCallback(this);
+  // Signal congestion controller this object is ready for OnPacket* callbacks.
+  transport_->send_side_cc()->RegisterPacketFeedbackObserver(this);
+
   RTC_DCHECK(config_->encoder_settings.encoder);
   RTC_DCHECK_GE(config_->encoder_settings.payload_type, 0);
   RTC_DCHECK_LE(config_->encoder_settings.payload_type, 127);
@@ -865,7 +890,7 @@ VideoSendStreamImpl::~VideoSendStreamImpl() {
   RTC_DCHECK(!payload_router_.IsActive())
       << "VideoSendStreamImpl::Stop not called";
   RTC_LOG(LS_INFO) << "~VideoSendStreamInternal: " << config_->ToString();
-
+  transport_->send_side_cc()->DeRegisterPacketFeedbackObserver(this);
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
     transport_->packet_router()->RemoveSendRtpModule(rtp_rtcp);
     delete rtp_rtcp;
@@ -989,9 +1014,9 @@ void VideoSendStreamImpl::OnEncoderConfigurationChanged(
 
   size_t number_of_temporal_layers =
       streams.back().temporal_layer_thresholds_bps.size() + 1;
-  protection_bitrate_calculator_.SetEncodingData(
-      streams[0].width, streams[0].height, number_of_temporal_layers,
-      config_->rtp.max_packet_size);
+  fec_controller_->SetEncodingData(streams[0].width, streams[0].height,
+                                   number_of_temporal_layers,
+                                   config_->rtp.max_packet_size);
 
   if (payload_router_.IsActive()) {
     // The send stream is started already. Update the allocator with new bitrate
@@ -1025,7 +1050,7 @@ EncodedImageCallback::Result VideoSendStreamImpl::OnEncodedImage(
       check_encoder_activity_task_->UpdateEncoderActivity();
   }
 
-  protection_bitrate_calculator_.UpdateWithEncodedData(encoded_image);
+  fec_controller_->UpdateWithEncodedData(encoded_image);
   EncodedImageCallback::Result result = payload_router_.OnEncodedImage(
       encoded_image, codec_specific_info, fragmentation);
 
@@ -1131,8 +1156,8 @@ void VideoSendStreamImpl::ConfigureProtection() {
 
   // Currently, both ULPFEC and FlexFEC use the same FEC rate calculation logic,
   // so enable that logic if either of those FEC schemes are enabled.
-  protection_bitrate_calculator_.SetProtectionMethod(
-      flexfec_enabled || IsUlpfecEnabled(), nack_enabled);
+  fec_controller_->SetProtectionMethod(flexfec_enabled || IsUlpfecEnabled(),
+                                       nack_enabled);
 }
 
 void VideoSendStreamImpl::ConfigureSsrcs() {
@@ -1239,9 +1264,10 @@ uint32_t VideoSendStreamImpl::OnBitrateUpdated(uint32_t bitrate_bps,
 
   // Get the encoder target rate. It is the estimated network rate -
   // protection overhead.
-  encoder_target_rate_bps_ = protection_bitrate_calculator_.SetTargetRates(
+  encoder_target_rate_bps_ = fec_controller_->UpdateFecRates(
       payload_bitrate_bps, stats_proxy_->GetSendFrameRate(), fraction_loss,
-      rtt);
+      loss_mask_vector_, rtt);
+  loss_mask_vector_.clear();
 
   uint32_t encoder_overhead_rate_bps =
       send_side_bwe_with_overhead_
@@ -1340,5 +1366,47 @@ void VideoSendStreamImpl::SetTransportOverhead(
   }
 }
 
+void VideoSendStreamImpl::OnPacketAdded(uint32_t ssrc, uint16_t seq_num) {
+  if (!worker_queue_->IsCurrent()) {
+    auto ptr = weak_ptr_;
+    worker_queue_->PostTask([=] {
+      if (!ptr.get())
+        return;
+      ptr->OnPacketAdded(ssrc, seq_num);
+    });
+    return;
+  }
+  const auto ssrcs = config_->rtp.ssrcs;
+  if (std::find(ssrcs.begin(), ssrcs.end(), ssrc) != ssrcs.end()) {
+    feedback_packet_seq_num_set_.insert(seq_num);
+    if (feedback_packet_seq_num_set_.size() > kSendSideSeqNumSetMaxSize) {
+      RTC_LOG(LS_WARNING) << "Feedback packet sequence number set exceed it's "
+                             "max size', will get reset.";
+      feedback_packet_seq_num_set_.clear();
+    }
+  }
+}
+
+void VideoSendStreamImpl::OnPacketFeedbackVector(
+    const std::vector<PacketFeedback>& packet_feedback_vector) {
+  if (!worker_queue_->IsCurrent()) {
+    auto ptr = weak_ptr_;
+    worker_queue_->PostTask([=] {
+      if (!ptr.get())
+        return;
+      ptr->OnPacketFeedbackVector(packet_feedback_vector);
+    });
+    return;
+  }
+  // Lost feedbacks are not considered to be lost packets.
+  for (const PacketFeedback& packet : packet_feedback_vector) {
+    if (auto it = feedback_packet_seq_num_set_.find(packet.sequence_number) !=
+                  feedback_packet_seq_num_set_.end()) {
+      const bool lost = packet.arrival_time_ms == PacketFeedback::kNotReceived;
+      loss_mask_vector_.push_back(lost);
+      feedback_packet_seq_num_set_.erase(it);
+    }
+  }
+}
 }  // namespace internal
 }  // namespace webrtc

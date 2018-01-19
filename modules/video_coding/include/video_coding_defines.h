@@ -108,20 +108,6 @@ class VCMReceiveStatisticsCallback {
   virtual ~VCMReceiveStatisticsCallback() {}
 };
 
-// Callback class used for telling the user about how to configure the FEC,
-// and the rates sent the last second is returned to the VCM.
-class VCMProtectionCallback {
- public:
-  virtual int ProtectionRequest(const FecProtectionParams* delta_params,
-                                const FecProtectionParams* key_params,
-                                uint32_t* sent_video_rate_bps,
-                                uint32_t* sent_nack_rate_bps,
-                                uint32_t* sent_fec_rate_bps) = 0;
-
- protected:
-  virtual ~VCMProtectionCallback() {}
-};
-
 // Callback class used for telling the user about what frame type needed to
 // continue decoding.
 // Typically a key frame when the stream has been corrupted in some way.

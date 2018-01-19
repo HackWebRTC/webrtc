@@ -15,11 +15,11 @@
 #include <memory>
 #include <vector>
 
+#include "api/fec_controller.h"
 #include "call/bitrate_allocator.h"
 #include "call/video_receive_stream.h"
 #include "call/video_send_stream.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
-#include "modules/video_coding/protection_bitrate_calculator.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/event.h"
 #include "rtc_base/task_queue.h"
@@ -63,7 +63,8 @@ class VideoSendStream : public webrtc::VideoSendStream {
       VideoSendStream::Config config,
       VideoEncoderConfig encoder_config,
       const std::map<uint32_t, RtpState>& suspended_ssrcs,
-      const std::map<uint32_t, RtpPayloadState>& suspended_payload_states);
+      const std::map<uint32_t, RtpPayloadState>& suspended_payload_states,
+      std::unique_ptr<FecController> fec_controller);
 
   ~VideoSendStream() override;
 

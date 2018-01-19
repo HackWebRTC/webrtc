@@ -21,6 +21,7 @@
 #include <windows.h>
 #endif
 
+#include "api/fec_controller.h"
 #include "api/video/video_frame.h"
 #include "modules/include/module.h"
 #include "modules/include/module_common_types.h"
