@@ -47,12 +47,18 @@ const int64_t kNanosecondsPerSecond = 1000000000;
 @synthesize captureSession = _captureSession;
 
 - (instancetype)initWithDelegate:(__weak id<RTCVideoCapturerDelegate>)delegate {
+  return [self initWithDelegate:delegate captureSession:[[AVCaptureSession alloc] init]];
+}
+
+// This initializer is used for testing.
+- (instancetype)initWithDelegate:(__weak id<RTCVideoCapturerDelegate>)delegate
+                  captureSession:(AVCaptureSession *)captureSession {
   if (self = [super initWithDelegate:delegate]) {
     // Create the capture session and all relevant inputs and outputs. We need
     // to do this in init because the application may want the capture session
     // before we start the capturer for e.g. AVCapturePreviewLayer. All objects
     // created here are retained until dealloc and never recreated.
-    if (![self setupCaptureSession]) {
+    if (![self setupCaptureSession:captureSession]) {
       return nil;
     }
     NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
@@ -146,6 +152,7 @@ const int64_t kNanosecondsPerSecond = 1000000000;
                         if (completionHandler) {
                           completionHandler(error);
                         }
+                        _willBeRunning = NO;
                         return;
                       }
                       [self reconfigureCaptureSessionInput];
@@ -379,9 +386,9 @@ const int64_t kNanosecondsPerSecond = 1000000000;
   return _frameQueue;
 }
 
-- (BOOL)setupCaptureSession {
+- (BOOL)setupCaptureSession:(AVCaptureSession *)captureSession {
   NSAssert(_captureSession == nil, @"Setup capture session called twice.");
-  _captureSession = [[AVCaptureSession alloc] init];
+  _captureSession = captureSession;
 #if defined(WEBRTC_IOS)
   _captureSession.sessionPreset = AVCaptureSessionPresetInputPriority;
   _captureSession.usesApplicationAudioSession = NO;

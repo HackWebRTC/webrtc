@@ -625,10 +625,7 @@ if (is_ios || is_mac) {
           "objc/Framework/UnitTests/objc_video_encoder_factory_tests.mm",
           "objc/Framework/UnitTests/scoped_cftyperef_tests.mm",
         ]
-        if (is_ios &&
-            !(use_ios_simulator &&
-              # The tests crash on these simulator versions:
-              (ios_sdk_version == "10.0" || ios_sdk_version == "10.1"))) {
+        if (is_ios) {
           sources +=
               [ "objc/Framework/UnitTests/RTCCameraVideoCapturerTests.mm" ]
         }
