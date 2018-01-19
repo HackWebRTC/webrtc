@@ -31,6 +31,7 @@
 // is not smart enough to take the #ifdef into account.
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"     // nogncheck
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"     // nogncheck
+#include "media/engine/convert_legacy_video_factory.h"          // nogncheck
 #include "modules/audio_device/include/audio_device.h"          // nogncheck
 #include "modules/audio_processing/include/audio_processing.h"  // nogncheck
 #endif
@@ -43,6 +44,7 @@
 // TODO(zhihuang): Remove nogncheck once MediaEngineInterface is moved to C++
 // API layer.
 #include "media/engine/webrtcmediaengine.h"  // nogncheck
+#include "rtc_base/ptr_util.h"
 
 @implementation RTCPeerConnectionFactory {
   std::unique_ptr<rtc::Thread> _networkThread;
@@ -77,9 +79,17 @@
   std::unique_ptr<webrtc::VideoDecoderFactory> native_decoder_factory;
   if (encoderFactory) {
     native_encoder_factory.reset(new webrtc::ObjCVideoEncoderFactory(encoderFactory));
+  } else {
+    auto legacy_video_encoder_factory =
+        rtc::MakeUnique<webrtc::ObjCVideoEncoderFactory>([[RTCVideoEncoderFactoryH264 alloc] init]);
+    native_encoder_factory = ConvertVideoEncoderFactory(std::move(legacy_video_encoder_factory));
   }
   if (decoderFactory) {
     native_decoder_factory.reset(new webrtc::ObjCVideoDecoderFactory(decoderFactory));
+  } else {
+    auto legacy_video_decoder_factory =
+        rtc::MakeUnique<webrtc::ObjCVideoDecoderFactory>([[RTCVideoDecoderFactoryH264 alloc] init]);
+    native_decoder_factory = ConvertVideoDecoderFactory(std::move(legacy_video_decoder_factory));
   }
   return [self initWithNativeAudioEncoderFactory:webrtc::CreateBuiltinAudioEncoderFactory()
                        nativeAudioDecoderFactory:webrtc::CreateBuiltinAudioDecoderFactory()
