@@ -707,12 +707,6 @@ if (rtc_include_tests) {
     if (rtc_build_libvpx) {
       deps += [ rtc_libvpx_dir ]
     }
-    if (is_win) {
-      cflags = [
-        # TODO(kjellander): bugs.webrtc.org/261: Fix this warning.
-        "/wd4373",  # virtual function override.
-      ]
-    }
 
     # TODO(jschuh): bugs.webrtc.org/1348: fix this warning.
     configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]

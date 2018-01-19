@@ -131,13 +131,6 @@ if (rtc_include_tests) {
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
 
-    if (is_win) {
-      cflags = [
-        # TODO(kjellander): Bug 261: fix this warning.
-        "/wd4373",  # virtual function override.
-      ]
-    }
-
     deps = [
       ":remote_bitrate_estimator",
       "..:module_api",

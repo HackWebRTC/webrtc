@@ -560,7 +560,6 @@ if (rtc_include_tests) {
     if (is_win) {
       cflags = [
         "/wd4245",  # conversion from int to size_t, signed/unsigned mismatch.
-        "/wd4373",  # virtual function override.
         "/wd4389",  # signed/unsigned mismatch.
       ]
     }

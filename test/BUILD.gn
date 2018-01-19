@@ -149,9 +149,22 @@ if (is_ios) {
   }
 }
 
+config("suppress_warning_4373") {
+  if (is_win) {
+    cflags = [
+      # MSVC has a bug which generates this warning when using mocks; see the
+      # section on warning 4373 in he googlemock FAQ. This warning isn't the
+      # least relevant for us, anyway.
+      "/wd4373",
+    ]
+  }
+}
+
 rtc_source_set("test_support") {
   visibility = [ "*" ]
   testonly = true
+
+  all_dependent_configs = [ ":suppress_warning_4373" ]
 
   sources = [
     "gmock.h",
@@ -343,11 +356,6 @@ if (rtc_include_tests) {
 
     # TODO(jschuh): Bug 1348: fix this warning.
     configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
-
-    if (is_win) {
-      # virtual override w/different const/volatile signature.
-      cflags = [ "/wd4373" ]
-    }
 
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).

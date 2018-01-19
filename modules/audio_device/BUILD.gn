@@ -292,17 +292,6 @@ rtc_source_set("mac_portaudio") {
   ]
 }
 
-config("mock_audio_device_config") {
-  if (is_win) {
-    cflags = [
-      # TODO(phoglund): get rid of 4373 supression when
-      # http://code.google.com/p/webrtc/issues/detail?id=261 is solved.
-      # legacy warning for ignoring const / volatile in signatures.
-      "/wd4373",
-    ]
-  }
-}
-
 rtc_source_set("mock_audio_device") {
   testonly = true
   sources = [
@@ -314,7 +303,6 @@ rtc_source_set("mock_audio_device") {
     ":audio_device",
     "../../test:test_support",
   ]
-  all_dependent_configs = [ ":mock_audio_device_config" ]
 }
 
 if (rtc_include_tests) {
