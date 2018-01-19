@@ -218,11 +218,6 @@ class VideoProcessor {
   size_t num_encoded_frames_ RTC_GUARDED_BY(sequence_checker_);
   size_t num_decoded_frames_ RTC_GUARDED_BY(sequence_checker_);
 
-  // Store an RTP timestamp -> frame number map, since the timestamps are
-  // based off of the frame rate, which can change mid-test.
-  std::map<size_t, size_t> rtp_timestamp_to_frame_num_
-      RTC_GUARDED_BY(sequence_checker_);
-
   // Keep track of if we have excluded the first key frame from packet loss.
   bool first_key_frame_has_been_excluded_ RTC_GUARDED_BY(sequence_checker_);
 

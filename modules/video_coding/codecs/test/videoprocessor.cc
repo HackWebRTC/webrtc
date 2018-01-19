@@ -164,11 +164,11 @@ void VideoProcessor::ProcessFrame() {
   // Use the frame number as the basis for timestamp to identify frames. Let the
   // first timestamp be non-zero, to not make the IvfFileWriter believe that we
   // want to use capture timestamps in the IVF files.
+  // TODO(asapersson): Time stamps jump back if framerate increases.
   const size_t rtp_timestamp = (frame_number + 1) * kVideoPayloadTypeFrequency /
                                config_.codec_settings.maxFramerate;
   const int64_t render_time_ms = (frame_number + 1) * rtc::kNumMillisecsPerSec /
                                  config_.codec_settings.maxFramerate;
-  rtp_timestamp_to_frame_num_[rtp_timestamp] = frame_number;
   input_frames_[frame_number] =
       rtc::MakeUnique<VideoFrame>(buffer, static_cast<uint32_t>(rtp_timestamp),
                                   render_time_ms, webrtc::kVideoRotation_0);
@@ -176,8 +176,7 @@ void VideoProcessor::ProcessFrame() {
   std::vector<FrameType> frame_types = config_.FrameTypeForFrame(frame_number);
 
   // Create frame statistics object used for aggregation at end of test run.
-  FrameStatistic* frame_stat = stats_->AddFrame();
-  frame_stat->rtp_timestamp = rtp_timestamp;
+  FrameStatistic* frame_stat = stats_->AddFrame(rtp_timestamp);
 
   // For the highest measurement accuracy of the encode time, the start/stop
   // time recordings should wrap the Encode call as tightly as possible.
@@ -210,10 +209,11 @@ void VideoProcessor::FrameEncoded(webrtc::VideoCodecType codec,
     config_.encoded_frame_checker->CheckEncodedFrame(codec, encoded_image);
   }
 
-  const size_t frame_number =
-      rtp_timestamp_to_frame_num_[encoded_image._timeStamp];
+  FrameStatistic* frame_stat =
+      stats_->GetFrameWithTimestamp(encoded_image._timeStamp);
 
   // Ensure strict monotonicity.
+  const size_t frame_number = frame_stat->frame_number;
   if (num_encoded_frames_ > 0) {
     RTC_CHECK_GT(frame_number, last_encoded_frame_num_);
   }
@@ -228,7 +228,6 @@ void VideoProcessor::FrameEncoded(webrtc::VideoCodecType codec,
   last_encoded_frame_num_ = frame_number;
 
   // Update frame statistics.
-  FrameStatistic* frame_stat = stats_->GetFrame(frame_number);
   frame_stat->encode_time_us =
       GetElapsedTimeMicroseconds(frame_stat->encode_start_ns, encode_stop_ns);
   frame_stat->encoding_successful = true;
@@ -280,9 +279,8 @@ void VideoProcessor::FrameDecoded(const VideoFrame& decoded_frame) {
   int64_t decode_stop_ns = rtc::TimeNanos();
 
   // Update frame statistics.
-  const size_t frame_number =
-      rtp_timestamp_to_frame_num_[decoded_frame.timestamp()];
-  FrameStatistic* frame_stat = stats_->GetFrame(frame_number);
+  FrameStatistic* frame_stat =
+      stats_->GetFrameWithTimestamp(decoded_frame.timestamp());
   frame_stat->decoded_width = decoded_frame.width();
   frame_stat->decoded_height = decoded_frame.height();
   frame_stat->decode_time_us =
@@ -290,6 +288,7 @@ void VideoProcessor::FrameDecoded(const VideoFrame& decoded_frame) {
   frame_stat->decoding_successful = true;
 
   // Ensure strict monotonicity.
+  const size_t frame_number = frame_stat->frame_number;
   if (num_decoded_frames_ > 0) {
     RTC_CHECK_GT(frame_number, last_decoded_frame_num_);
   }

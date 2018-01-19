@@ -574,7 +574,7 @@ void VideoProcessorIntegrationTest::AnalyzeAndPrintStats(
 
   Statistics qp;
 
-  FrameStatistic last_successfully_decoded_frame(0);
+  FrameStatistic last_successfully_decoded_frame(0, 0);
   for (size_t frame_idx = 0; frame_idx < stats.size(); ++frame_idx) {
     const FrameStatistic& frame_stat = stats[frame_idx];
 

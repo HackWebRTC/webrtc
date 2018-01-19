@@ -11,6 +11,7 @@
 #ifndef MODULES_VIDEO_CODING_CODECS_TEST_STATS_H_
 #define MODULES_VIDEO_CODING_CODECS_TEST_STATS_H_
 
+#include <map>
 #include <string>
 #include <vector>
 
@@ -21,7 +22,8 @@ namespace test {
 
 // Statistics for one processed frame.
 struct FrameStatistic {
-  explicit FrameStatistic(size_t frame_number) : frame_number(frame_number) {}
+  FrameStatistic(size_t frame_number, size_t rtp_timestamp)
+      : frame_number(frame_number), rtp_timestamp(rtp_timestamp) {}
 
   std::string ToString() const;
 
@@ -72,15 +74,17 @@ class Stats {
   ~Stats() = default;
 
   // Creates a FrameStatistic for the next frame to be processed.
-  FrameStatistic* AddFrame();
+  FrameStatistic* AddFrame(size_t timestamp);
 
-  // Returns the FrameStatistic corresponding to |frame_number|.
+  // Returns the FrameStatistic corresponding to |frame_number| or |timestamp|.
   FrameStatistic* GetFrame(size_t frame_number);
+  FrameStatistic* GetFrameWithTimestamp(size_t timestamp);
 
   size_t size() const;
 
  private:
   std::vector<FrameStatistic> stats_;
+  std::map<size_t, size_t> rtp_timestamp_to_frame_num_;
 };
 
 }  // namespace test
