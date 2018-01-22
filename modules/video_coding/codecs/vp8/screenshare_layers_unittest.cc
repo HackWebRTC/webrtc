@@ -617,7 +617,7 @@ TEST_F(ScreenshareLayerTest, DropOnTooShortFrameInterval) {
 
   // Frame interval below 90% if desired time is not allowed, try inserting
   // frame just before this limit.
-  const int64_t kMinFrameInterval = (kTimestampDelta5Fps * 9) / 10;
+  const int64_t kMinFrameInterval = (kTimestampDelta5Fps * 85) / 100;
   timestamp_ += kMinFrameInterval - 90;
   EXPECT_TRUE(UpdateLayerConfig(timestamp_).drop_frame);
 

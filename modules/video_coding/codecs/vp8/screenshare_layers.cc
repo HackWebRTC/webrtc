@@ -127,15 +127,25 @@ TemporalLayers::FrameConfig ScreenshareLayers::UpdateLayerConfig(
     // If input frame rate exceeds target frame rate, either over a one second
     // averaging window, or if frame interval is below 90% of desired value,
     // drop frame.
-    // Use real-time clock rather than timestamps, in case there is a
-    // discontinuity in the timestamps sequence.
     if (encode_framerate_.Rate(now_ms).value_or(0) > *target_framerate_)
       return TemporalLayers::FrameConfig(kNone, kNone, kNone);
 
-    int64_t expected_frame_interval_ms = 1000 / *target_framerate_;
-    if (last_frame_time_ms_ != -1 &&
-        now_ms - last_frame_time_ms_ < (9 * expected_frame_interval_ms) / 10) {
-      return TemporalLayers::FrameConfig(kNone, kNone, kNone);
+    // Primarily check if frame interval is too short using frame timestamps,
+    // as if they are correct they won't be affected by queuing in webrtc.
+    const int64_t expected_frame_interval_90khz =
+        kOneSecond90Khz / *target_framerate_;
+    if (last_timestamp_ != -1 && ts_diff > 0) {
+      if (ts_diff < 85 * expected_frame_interval_90khz / 100) {
+        return TemporalLayers::FrameConfig(kNone, kNone, kNone);
+      }
+    } else {
+      // Timestamps looks off, use realtime clock here instead.
+      const int64_t expected_frame_interval_ms = 1000 / *target_framerate_;
+      if (last_frame_time_ms_ != -1 &&
+          now_ms - last_frame_time_ms_ <
+              (85 * expected_frame_interval_ms) / 100) {
+        return TemporalLayers::FrameConfig(kNone, kNone, kNone);
+      }
     }
   }
 
