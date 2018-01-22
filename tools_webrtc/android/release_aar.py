@@ -52,6 +52,8 @@ UPLOAD_TRIES = 3
 UPLOAD_RETRY_BASE_SLEEP_SECONDS = 2.0
 GRADLEW_BIN = os.path.join(CHECKOUT_ROOT,
                            'examples/androidtests/third_party/gradle/gradlew')
+ADB_BIN = os.path.join(CHECKOUT_ROOT,
+                       'third_party/android_tools/sdk/platform-tools/adb')
 AAR_PROJECT_DIR = os.path.join(CHECKOUT_ROOT, 'examples/aarproject')
 AAR_PROJECT_GRADLE = os.path.join(AAR_PROJECT_DIR, 'build.gradle')
 AAR_PROJECT_APP_GRADLE = os.path.join(AAR_PROJECT_DIR, 'app', 'build.gradle')
@@ -167,6 +169,12 @@ def _TestAAR(tmp_dir, username, password, version):
     # Write back.
     with open(AAR_PROJECT_APP_GRADLE, 'w') as gradle_app_file:
       gradle_app_file.write(gradle_app)
+
+    # Uninstall any existing version of AppRTCMobile.
+    logging.info('Uninstalling previous AppRTCMobile versions. It is okay for '
+                 'these commands to fail if AppRTCMobile is not installed.')
+    subprocess.call([ADB_BIN, 'uninstall', 'org.appspot.apprtc'])
+    subprocess.call([ADB_BIN, 'uninstall', 'org.appspot.apprtc.test'])
 
     # Run tests.
     try:
