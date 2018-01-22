@@ -79,17 +79,9 @@
   std::unique_ptr<webrtc::VideoDecoderFactory> native_decoder_factory;
   if (encoderFactory) {
     native_encoder_factory.reset(new webrtc::ObjCVideoEncoderFactory(encoderFactory));
-  } else {
-    auto legacy_video_encoder_factory =
-        rtc::MakeUnique<webrtc::ObjCVideoEncoderFactory>([[RTCVideoEncoderFactoryH264 alloc] init]);
-    native_encoder_factory = ConvertVideoEncoderFactory(std::move(legacy_video_encoder_factory));
   }
   if (decoderFactory) {
     native_decoder_factory.reset(new webrtc::ObjCVideoDecoderFactory(decoderFactory));
-  } else {
-    auto legacy_video_decoder_factory =
-        rtc::MakeUnique<webrtc::ObjCVideoDecoderFactory>([[RTCVideoDecoderFactoryH264 alloc] init]);
-    native_decoder_factory = ConvertVideoDecoderFactory(std::move(legacy_video_decoder_factory));
   }
   return [self initWithNativeAudioEncoderFactory:webrtc::CreateBuiltinAudioEncoderFactory()
                        nativeAudioDecoderFactory:webrtc::CreateBuiltinAudioDecoderFactory()
@@ -147,6 +139,16 @@
   return [self initWithNoMedia];
 #else
   if (self = [self initNative]) {
+    if (!videoEncoderFactory) {
+      auto legacy_video_encoder_factory = rtc::MakeUnique<webrtc::ObjCVideoEncoderFactory>(
+          [[RTCVideoEncoderFactoryH264 alloc] init]);
+      videoEncoderFactory = ConvertVideoEncoderFactory(std::move(legacy_video_encoder_factory));
+    }
+    if (!videoDecoderFactory) {
+      auto legacy_video_decoder_factory = rtc::MakeUnique<webrtc::ObjCVideoDecoderFactory>(
+          [[RTCVideoDecoderFactoryH264 alloc] init]);
+      videoDecoderFactory = ConvertVideoDecoderFactory(std::move(legacy_video_decoder_factory));
+    }
     _nativeFactory = webrtc::CreatePeerConnectionFactory(_networkThread.get(),
                                                          _workerThread.get(),
                                                          _signalingThread.get(),
