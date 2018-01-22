@@ -172,7 +172,7 @@ TEST_F(H264SpsParserTest, TestSyntheticSPSWeirdResolution) {
 }
 
 TEST_F(H264SpsParserTest, TestSampleSPSWithScalingLists) {
-  // SPS from a 1920x1080 video. Contains scaling lists (and veritcal cropping).
+  // SPS from a 1920x1080 video. Contains scaling lists (and vertical cropping).
   const uint8_t buffer[] = {0x64, 0x00, 0x2a, 0xad, 0x84, 0x01, 0x0c, 0x20,
                             0x08, 0x61, 0x00, 0x43, 0x08, 0x02, 0x18, 0x40,
                             0x10, 0xc2, 0x00, 0x84, 0x3b, 0x50, 0x3c, 0x01,
