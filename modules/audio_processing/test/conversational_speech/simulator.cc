@@ -10,6 +10,9 @@
 
 #include "modules/audio_processing/test/conversational_speech/simulator.h"
 
+#include <math.h>
+
+#include <algorithm>
 #include <set>
 #include <utility>
 #include <vector>
@@ -19,6 +22,7 @@
 #include "modules/audio_processing/test/conversational_speech/wavreader_interface.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/pathutils.h"
 #include "rtc_base/ptr_util.h"
 
@@ -158,6 +162,17 @@ void PadRightWrite(WavWriter* wav_writer, size_t pad_samples) {
   }
 }
 
+void ScaleSignal(rtc::ArrayView<const int16_t> source_samples,
+                 int gain,
+                 rtc::ArrayView<int16_t> output_samples) {
+  const float gain_linear = pow(10.0, gain / 20.0);
+  RTC_DCHECK_EQ(source_samples.size(), output_samples.size());
+  std::transform(source_samples.begin(), source_samples.end(),
+                 output_samples.begin(), [gain_linear](int16_t x) -> int16_t {
+                   return rtc::saturated_cast<int16_t>(x * gain_linear);
+                 });
+}
+
 }  // namespace
 
 namespace conversational_speech {
@@ -185,21 +200,23 @@ std::unique_ptr<std::map<std::string, SpeakerOutputFilePaths>> Simulate(
   // Write near-end and far-end output tracks.
   for (const auto& speaking_turn : multiend_call.speaking_turns()) {
     const std::string& active_speaker_name = speaking_turn.speaker_name;
-    auto source_audiotrack = audiotracks->at(
-        speaking_turn.audiotrack_file_name);
+    const auto source_audiotrack =
+        audiotracks->at(speaking_turn.audiotrack_file_name);
+    std::vector<int16_t> scaled_audiotrack(source_audiotrack.size());
+    ScaleSignal(source_audiotrack, speaking_turn.gain, scaled_audiotrack);
 
     // Write active speaker's chunk to active speaker's near-end.
-    PadLeftWriteChunk(source_audiotrack, speaking_turn.begin,
-                      speakers_wav_writers->at(
-                          active_speaker_name).near_end_wav_writer());
+    PadLeftWriteChunk(
+        scaled_audiotrack, speaking_turn.begin,
+        speakers_wav_writers->at(active_speaker_name).near_end_wav_writer());
 
     // Write active speaker's chunk to other participants' far-ends.
     for (const std::string& speaker_name : speaker_names) {
       if (speaker_name == active_speaker_name)
         continue;
-      PadLeftWriteChunk(source_audiotrack, speaking_turn.begin,
-                        speakers_wav_writers->at(
-                            speaker_name).far_end_wav_writer());
+      PadLeftWriteChunk(
+          scaled_audiotrack, speaking_turn.begin,
+          speakers_wav_writers->at(speaker_name).far_end_wav_writer());
     }
   }
 

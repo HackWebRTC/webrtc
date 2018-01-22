@@ -139,9 +139,8 @@ bool MultiEndCall::CheckTiming() {
     }
 
     // Append turn.
-    speaking_turns_.emplace_back(
-        turn.speaker_name, turn.audiotrack_file_name,
-        begin_timestamp, end_timestamp);
+    speaking_turns_.emplace_back(turn.speaker_name, turn.audiotrack_file_name,
+                                 begin_timestamp, end_timestamp, turn.gain);
 
     // Save speaking turn index for self cross-talk detection.
     RTC_DCHECK_EQ(speaking_turns_.size(), turn_index + 1);

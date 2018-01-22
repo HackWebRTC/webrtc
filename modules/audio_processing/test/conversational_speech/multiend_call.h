@@ -35,14 +35,19 @@ class MultiEndCall {
     // Constructor required in order to use std::vector::emplace_back().
     SpeakingTurn(std::string new_speaker_name,
                  std::string new_audiotrack_file_name,
-                 size_t new_begin, size_t new_end)
+                 size_t new_begin,
+                 size_t new_end,
+                 int gain)
         : speaker_name(std::move(new_speaker_name)),
           audiotrack_file_name(std::move(new_audiotrack_file_name)),
-          begin(new_begin), end(new_end) {}
+          begin(new_begin),
+          end(new_end),
+          gain(gain) {}
     std::string speaker_name;
     std::string audiotrack_file_name;
     size_t begin;
     size_t end;
+    int gain;
   };
 
   MultiEndCall(
