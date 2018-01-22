@@ -193,45 +193,60 @@ void VideoEncoderWrapper::OnEncodedFrame(JNIEnv* jni,
   memcpy(buffer_copy.data(), buffer, buffer_size);
   const int qp = JavaToNativeOptionalInt(jni, j_qp).value_or(-1);
 
-  encoder_queue_->PostTask(
-      [
-        this, task_buffer = std::move(buffer_copy), qp, encoded_width,
-        encoded_height, capture_time_ns, frame_type, rotation, complete_frame
-      ]() {
-        FrameExtraInfo frame_extra_info;
-        do {
-          if (frame_extra_infos_.empty()) {
-            RTC_LOG(LS_WARNING)
-                << "Java encoder produced an unexpected frame with timestamp: "
-                << capture_time_ns;
-            return;
-          }
+  struct Lambda {
+    VideoEncoderWrapper* video_encoder_wrapper;
+    std::vector<uint8_t> task_buffer;
+    int qp;
+    jint encoded_width;
+    jint encoded_height;
+    jlong capture_time_ns;
+    jint frame_type;
+    jint rotation;
+    jboolean complete_frame;
+    std::deque<FrameExtraInfo>* frame_extra_infos;
+    EncodedImageCallback* callback;
 
-          frame_extra_info = frame_extra_infos_.front();
-          frame_extra_infos_.pop_front();
-          // The encoder might drop frames so iterate through the queue until
-          // we find a matching timestamp.
-        } while (frame_extra_info.capture_time_ns != capture_time_ns);
-
-        RTPFragmentationHeader header = ParseFragmentationHeader(task_buffer);
-        EncodedImage frame(const_cast<uint8_t*>(task_buffer.data()),
-                           task_buffer.size(), task_buffer.size());
-        frame._encodedWidth = encoded_width;
-        frame._encodedHeight = encoded_height;
-        frame._timeStamp = frame_extra_info.timestamp_rtp;
-        frame.capture_time_ms_ = capture_time_ns / rtc::kNumNanosecsPerMillisec;
-        frame._frameType = (FrameType)frame_type;
-        frame.rotation_ = (VideoRotation)rotation;
-        frame._completeFrame = complete_frame;
-        if (qp == -1) {
-          frame.qp_ = ParseQp(task_buffer);
-        } else {
-          frame.qp_ = qp;
+    void operator()() const {
+      FrameExtraInfo frame_extra_info;
+      do {
+        if (frame_extra_infos->empty()) {
+          RTC_LOG(LS_WARNING)
+              << "Java encoder produced an unexpected frame with timestamp: "
+              << capture_time_ns;
+          return;
         }
+        frame_extra_info = frame_extra_infos->front();
+        frame_extra_infos->pop_front();
+        // The encoder might drop frames so iterate through the queue until
+        // we find a matching timestamp.
+      } while (frame_extra_info.capture_time_ns != capture_time_ns);
 
-        CodecSpecificInfo info(ParseCodecSpecificInfo(frame));
-        callback_->OnEncodedImage(frame, &info, &header);
-      });
+      RTPFragmentationHeader header =
+          video_encoder_wrapper->ParseFragmentationHeader(task_buffer);
+      EncodedImage frame(const_cast<uint8_t*>(task_buffer.data()),
+                         task_buffer.size(), task_buffer.size());
+      frame._encodedWidth = encoded_width;
+      frame._encodedHeight = encoded_height;
+      frame._timeStamp = frame_extra_info.timestamp_rtp;
+      frame.capture_time_ms_ = capture_time_ns / rtc::kNumNanosecsPerMillisec;
+      frame._frameType = (FrameType)frame_type;
+      frame.rotation_ = (VideoRotation)rotation;
+      frame._completeFrame = complete_frame;
+      if (qp == -1) {
+        frame.qp_ = video_encoder_wrapper->ParseQp(task_buffer);
+      } else {
+        frame.qp_ = qp;
+      }
+
+      CodecSpecificInfo info(
+          video_encoder_wrapper->ParseCodecSpecificInfo(frame));
+      callback->OnEncodedImage(frame, &info, &header);
+    }
+  };
+
+  encoder_queue_->PostTask(Lambda{this, std::move(buffer_copy),
+          qp, encoded_width, encoded_height, capture_time_ns, frame_type,
+          rotation, complete_frame, &frame_extra_infos_, callback_});
 }
 
 int32_t VideoEncoderWrapper::HandleReturnCode(JNIEnv* jni,
