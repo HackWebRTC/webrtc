@@ -37,7 +37,7 @@ TEST(MatchedFilterLagAggregator, MostAccurateLagChosen) {
   lag_estimates[1] = MatchedFilter::LagEstimate(0.5f, true, kLag2, true);
 
   for (size_t k = 0; k < kNumLagsBeforeDetection; ++k) {
-    EXPECT_FALSE(aggregator.Aggregate(lag_estimates));
+    EXPECT_TRUE(aggregator.Aggregate(lag_estimates));
   }
 
   rtc::Optional<size_t> aggregated_lag = aggregator.Aggregate(lag_estimates);
@@ -66,9 +66,23 @@ TEST(MatchedFilterLagAggregator,
   ApmDataDumper data_dumper(0);
   std::vector<MatchedFilter::LagEstimate> lag_estimates(1);
   MatchedFilterLagAggregator aggregator(&data_dumper, 100);
+
+  rtc::Optional<size_t> aggregated_lag;
+  for (size_t k = 0; k < kNumLagsBeforeDetection; ++k) {
+    lag_estimates[0] = MatchedFilter::LagEstimate(1.f, true, 10, true);
+    aggregated_lag = aggregator.Aggregate(lag_estimates);
+  }
+  EXPECT_TRUE(aggregated_lag);
+
   for (size_t k = 0; k < kNumLagsBeforeDetection * 100; ++k) {
     lag_estimates[0] = MatchedFilter::LagEstimate(1.f, true, k % 100, true);
-    rtc::Optional<size_t> aggregated_lag = aggregator.Aggregate(lag_estimates);
+    aggregated_lag = aggregator.Aggregate(lag_estimates);
+  }
+  EXPECT_FALSE(aggregated_lag);
+
+  for (size_t k = 0; k < kNumLagsBeforeDetection * 100; ++k) {
+    lag_estimates[0] = MatchedFilter::LagEstimate(1.f, true, k % 100, true);
+    aggregated_lag = aggregator.Aggregate(lag_estimates);
     EXPECT_FALSE(aggregated_lag);
   }
 }

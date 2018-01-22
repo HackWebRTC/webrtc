@@ -40,6 +40,7 @@ class MatchedFilterLagAggregator {
   std::vector<int> histogram_;
   std::array<int, 250> histogram_data_;
   int histogram_data_index_ = 0;
+  bool significant_candidate_found_ = false;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(MatchedFilterLagAggregator);
 };

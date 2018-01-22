@@ -44,7 +44,6 @@ class RenderDelayControllerImpl final : public RenderDelayController {
   const int hysteresis_limit_2_blocks_;
   rtc::Optional<size_t> delay_;
   EchoPathDelayEstimator delay_estimator_;
-  size_t align_call_counter_ = 0;
   std::vector<float> delay_buf_;
   int delay_buf_index_ = 0;
   RenderDelayControllerMetrics metrics_;
@@ -106,7 +105,6 @@ RenderDelayControllerImpl::~RenderDelayControllerImpl() = default;
 
 void RenderDelayControllerImpl::Reset() {
   delay_ = rtc::nullopt;
-  align_call_counter_ = 0;
   std::fill(delay_buf_.begin(), delay_buf_.end(), 0.f);
   delay_estimator_.Reset();
 }
@@ -124,7 +122,6 @@ rtc::Optional<size_t> RenderDelayControllerImpl::GetDelay(
     const DownsampledRenderBuffer& render_buffer,
     rtc::ArrayView<const float> capture) {
   RTC_DCHECK_EQ(kBlockSize, capture.size());
-  ++align_call_counter_;
 
   // Estimate the delay with a delayed capture.
   RTC_DCHECK_LT(delay_buf_index_ + kBlockSize - 1, delay_buf_.size());
@@ -139,11 +136,9 @@ rtc::Optional<size_t> RenderDelayControllerImpl::GetDelay(
 
   if (delay_samples) {
     // Compute and set new render delay buffer delay.
-    if (align_call_counter_ > kNumBlocksPerSecond) {
       delay_ = ComputeNewBufferDelay(
           delay_, delay_headroom_blocks_, hysteresis_limit_1_blocks_,
           hysteresis_limit_2_blocks_, static_cast<int>(*delay_samples));
-    }
 
     metrics_.Update(static_cast<int>(*delay_samples), delay_ ? *delay_ : 0);
   } else {

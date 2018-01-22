@@ -102,28 +102,6 @@ TEST(EchoPathDelayEstimator, DelayEstimation) {
 }
 }
 
-// Verifies that the delay estimator does not produce delay estimates too
-// quickly.
-TEST(EchoPathDelayEstimator, NoInitialDelayestimates) {
-  Random random_generator(42U);
-  EchoCanceller3Config config;
-  std::vector<std::vector<float>> render(3, std::vector<float>(kBlockSize));
-  std::vector<float> capture(kBlockSize);
-  ApmDataDumper data_dumper(0);
-  std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-      RenderDelayBuffer::Create(config, 3));
-
-  EchoPathDelayEstimator estimator(&data_dumper, config);
-  for (size_t k = 0; k < 19; ++k) {
-    RandomizeSampleVector(&random_generator, render[0]);
-    std::copy(render[0].begin(), render[0].end(), capture.begin());
-    render_delay_buffer->Insert(render);
-    render_delay_buffer->PrepareCaptureProcessing();
-    EXPECT_FALSE(estimator.EstimateDelay(
-        render_delay_buffer->GetDownsampledRenderBuffer(), capture));
-  }
-}
-
 // Verifies that the delay estimator does not produce delay estimates for render
 // signals of low level.
 TEST(EchoPathDelayEstimator, NoDelayEstimatesForLowLevelRenderSignals) {
@@ -141,27 +119,6 @@ TEST(EchoPathDelayEstimator, NoDelayEstimatesForLowLevelRenderSignals) {
       render_k *= 100.f / 32767.f;
     }
     std::copy(render[0].begin(), render[0].end(), capture.begin());
-    render_delay_buffer->Insert(render);
-    render_delay_buffer->PrepareCaptureProcessing();
-    EXPECT_FALSE(estimator.EstimateDelay(
-        render_delay_buffer->GetDownsampledRenderBuffer(), capture));
-  }
-}
-
-// Verifies that the delay estimator does not produce delay estimates for
-// uncorrelated signals.
-TEST(EchoPathDelayEstimator, NoDelayEstimatesForUncorrelatedSignals) {
-  Random random_generator(42U);
-  EchoCanceller3Config config;
-  std::vector<std::vector<float>> render(3, std::vector<float>(kBlockSize));
-  std::vector<float> capture(kBlockSize);
-  ApmDataDumper data_dumper(0);
-  EchoPathDelayEstimator estimator(&data_dumper, config);
-  std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-      RenderDelayBuffer::Create(config, 3));
-  for (size_t k = 0; k < 100; ++k) {
-    RandomizeSampleVector(&random_generator, render[0]);
-    RandomizeSampleVector(&random_generator, capture);
     render_delay_buffer->Insert(render);
     render_delay_buffer->PrepareCaptureProcessing();
     EXPECT_FALSE(estimator.EstimateDelay(
