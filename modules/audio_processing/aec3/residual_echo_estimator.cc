@@ -114,7 +114,7 @@ void ResidualEchoEstimator::Estimate(
     // TODO(peah): Add lookahead since that was what was there initially.
     EchoGeneratingPower(
         render_buffer, std::max(0, aec_state.FilterDelay() - 1),
-        std::min(kKnownDelayRenderWindowSize - 1, aec_state.FilterDelay() + 1),
+        std::min(kKnownDelayRenderWindowSize - 1, aec_state.FilterDelay() + 4),
         &X2);
 
     // Subtract the stationary noise power to avoid stationary noise causing
