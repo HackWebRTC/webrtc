@@ -19,7 +19,6 @@
 #include "api/video/video_frame.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/video_coding/codecs/h264/include/h264_globals.h"
-#include "modules/video_coding/codecs/test/packet_manipulator.h"
 #include "modules/video_coding/codecs/test/stats.h"
 #include "modules/video_coding/codecs/test/test_config.h"
 #include "modules/video_coding/include/video_codec_interface.h"
@@ -46,23 +45,12 @@ namespace test {
 // The class processes a frame at the time for the configured input file.
 // It maintains state of where in the source input file the processing is at.
 //
-// Regarding packet loss: Note that keyframes are excluded (first or all
-// depending on the ExcludeFrameTypes setting). This is because if key frames
-// would be altered, all the following delta frames would be pretty much
-// worthless. VP8 has an error-resilience feature that makes it able to handle
-// packet loss in key non-first keyframes, which is why only the first is
-// excluded by default.
-// Packet loss in such important frames is handled on a higher level in the
-// Video Engine, where signaling would request a retransmit of the lost packets,
-// since they're so important.
-//
 // Note this class is not thread safe and is meant for simple testing purposes.
 class VideoProcessor {
  public:
   VideoProcessor(webrtc::VideoEncoder* encoder,
                  webrtc::VideoDecoder* decoder,
                  FrameReader* analysis_frame_reader,
-                 PacketManipulator* packet_manipulator,
                  const TestConfig& config,
                  Stats* stats,
                  IvfFileWriter* encoded_frame_writer,
@@ -177,7 +165,6 @@ class VideoProcessor {
   void FrameDecoded(const webrtc::VideoFrame& image);
 
   void WriteDecodedFrameToFile(rtc::Buffer* buffer);
-  bool ExcludeFrame(const EncodedImage& encoded_image);
 
   TestConfig config_ RTC_GUARDED_BY(sequence_checker_);
 
@@ -189,9 +176,6 @@ class VideoProcessor {
   // Adapters for the codec callbacks.
   VideoProcessorEncodeCompleteCallback encode_callback_;
   VideoProcessorDecodeCompleteCallback decode_callback_;
-
-  // Fake network.
-  PacketManipulator* const packet_manipulator_;
 
   // Input frames. Used as reference at frame quality evaluation.
   // Async codecs might queue frames. To handle that we keep input frame
@@ -217,9 +201,6 @@ class VideoProcessor {
   size_t last_decoded_frame_num_ RTC_GUARDED_BY(sequence_checker_);
   size_t num_encoded_frames_ RTC_GUARDED_BY(sequence_checker_);
   size_t num_decoded_frames_ RTC_GUARDED_BY(sequence_checker_);
-
-  // Keep track of if we have excluded the first key frame from packet loss.
-  bool first_key_frame_has_been_excluded_ RTC_GUARDED_BY(sequence_checker_);
 
   // Keep track of the last successfully decoded frame, since we write that
   // frame to disk when decoding fails.

@@ -40,7 +40,6 @@ class VideoProcessorIntegrationTestOpenH264
     config_.output_filename =
         TempFilename(OutputPath(), "videoprocessor_integrationtest_libvpx");
     config_.num_frames = kNumFrames;
-    config_.networking_config.packet_loss_probability = 0.0;
     // Only allow encoder/decoder to use single core, for predictability.
     config_.use_single_core = true;
     config_.hw_encoder = false;
@@ -70,7 +69,7 @@ TEST_F(VideoProcessorIntegrationTestOpenH264, ConstantHighBitrate) {
 TEST_F(VideoProcessorIntegrationTestOpenH264, SingleNalUnit) {
   config_.h264_codec_settings.packetization_mode =
       H264PacketizationMode::SingleNalUnit;
-  config_.networking_config.max_payload_size_in_bytes = 500;
+  config_.max_payload_size_bytes = 500;
   config_.SetCodecSettings(kVideoCodecH264, 1, false, false, true, false,
                            kResilienceOn, kCifWidth, kCifHeight);
 
@@ -81,8 +80,7 @@ TEST_F(VideoProcessorIntegrationTestOpenH264, SingleNalUnit) {
 
   std::vector<QualityThresholds> quality_thresholds = {{37, 35, 0.93, 0.91}};
 
-  BitstreamThresholds bs_thresholds = {
-      config_.networking_config.max_payload_size_in_bytes};
+  BitstreamThresholds bs_thresholds = {config_.max_payload_size_bytes};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
                               &quality_thresholds, &bs_thresholds,

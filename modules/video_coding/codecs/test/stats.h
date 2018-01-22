@@ -57,11 +57,6 @@ struct FrameStatistic {
   // Quantization.
   int qp = -1;
 
-  // How many packets were discarded of the encoded frame data (if any).
-  size_t packets_dropped = 0;
-  size_t total_packets = 0;
-  size_t manipulated_length = 0;
-
   // Quality.
   float psnr = 0.0;
   float ssim = 0.0;

@@ -16,20 +16,10 @@
 
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/codecs/h264/include/h264_globals.h"
-#include "modules/video_coding/codecs/test/packet_manipulator.h"
+#include "modules/video_coding/include/video_codec_interface.h"
 
 namespace webrtc {
 namespace test {
-
-// Defines which frame types shall be excluded from packet loss and when.
-enum ExcludeFrameTypes {
-  // Will exclude the first keyframe in the video sequence from packet loss.
-  // Following keyframes will be targeted for packet loss.
-  kExcludeOnlyFirstKeyFrame,
-  // Exclude all keyframes from packet loss, no matter where in the video
-  // sequence they occur.
-  kExcludeAllKeyFrames
-};
 
 // Test configuration for a test run.
 struct TestConfig {
@@ -73,12 +63,8 @@ struct TestConfig {
   // Number of frames to process.
   size_t num_frames = 0;
 
-  // Configurations related to networking.
-  NetworkingConfig networking_config;
-
-  // Decides how the packet loss simulations shall exclude certain frames from
-  // packet loss.
-  ExcludeFrameTypes exclude_frame_types = kExcludeOnlyFirstKeyFrame;
+  // Bitstream constraints.
+  size_t max_payload_size_bytes = 1440;
 
   // Force the encoder and decoder to use a single core for processing.
   // Using a single core is necessary to get a deterministic behavior for the

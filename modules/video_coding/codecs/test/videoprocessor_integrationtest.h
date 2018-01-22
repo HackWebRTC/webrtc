@@ -21,7 +21,6 @@
 #include "common_video/h264/h264_common.h"
 #include "media/engine/webrtcvideodecoderfactory.h"
 #include "media/engine/webrtcvideoencoderfactory.h"
-#include "modules/video_coding/codecs/test/packet_manipulator.h"
 #include "modules/video_coding/codecs/test/stats.h"
 #include "modules/video_coding/codecs/test/test_config.h"
 #include "modules/video_coding/codecs/test/videoprocessor.h"
@@ -29,7 +28,6 @@
 #include "test/gtest.h"
 #include "test/testsupport/frame_reader.h"
 #include "test/testsupport/frame_writer.h"
-#include "test/testsupport/packet_reader.h"
 
 namespace webrtc {
 namespace test {
@@ -145,8 +143,6 @@ class VideoProcessorIntegrationTest : public testing::Test {
   std::unique_ptr<FrameWriter> analysis_frame_writer_;
   std::unique_ptr<IvfFileWriter> encoded_frame_writer_;
   std::unique_ptr<FrameWriter> decoded_frame_writer_;
-  PacketReader packet_reader_;
-  std::unique_ptr<PacketManipulator> packet_manipulator_;
   Stats stats_;
   std::unique_ptr<VideoProcessor> processor_;
   std::unique_ptr<CpuProcessTime> cpu_process_time_;

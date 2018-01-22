@@ -480,9 +480,6 @@ if (rtc_include_tests) {
   rtc_source_set("video_codecs_test_framework") {
     testonly = true
     sources = [
-      "codecs/test/mock/mock_packet_manipulator.h",
-      "codecs/test/packet_manipulator.cc",
-      "codecs/test/packet_manipulator.h",
       "codecs/test/stats.cc",
       "codecs/test/stats.h",
       "codecs/test/test_config.cc",
@@ -629,7 +626,6 @@ if (rtc_include_tests) {
     testonly = true
 
     sources = [
-      "codecs/test/packet_manipulator_unittest.cc",
       "codecs/test/stats_unittest.cc",
       "codecs/test/test_config_unittest.cc",
       "codecs/test/videoprocessor_unittest.cc",

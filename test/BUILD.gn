@@ -169,8 +169,6 @@ rtc_source_set("test_support") {
   sources = [
     "gmock.h",
     "gtest.h",
-    "testsupport/packet_reader.cc",
-    "testsupport/packet_reader.h",
     "testsupport/unittest_utils.h",
   ]
 
@@ -346,7 +344,6 @@ if (rtc_include_tests) {
       "single_threaded_task_queue_unittest.cc",
       "testsupport/always_passing_unittest.cc",
       "testsupport/metrics/video_metrics_unittest.cc",
-      "testsupport/packet_reader_unittest.cc",
       "testsupport/perf_test_unittest.cc",
       "testsupport/test_artifacts_unittest.cc",
       "testsupport/y4m_frame_writer_unittest.cc",
