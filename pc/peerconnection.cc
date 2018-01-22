@@ -2190,9 +2190,6 @@ RTCError PeerConnection::UpdateTransceiversAndDataChannels(
         return transceiver_or_error.MoveError();
       }
       auto transceiver = transceiver_or_error.MoveValue();
-      if (source == cricket::CS_LOCAL && transceiver->stopped()) {
-        continue;
-      }
       RTCError error =
           UpdateTransceiverChannel(transceiver, new_content, bundle_group);
       if (!error.ok()) {

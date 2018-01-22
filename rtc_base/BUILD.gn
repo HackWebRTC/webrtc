@@ -832,6 +832,7 @@ rtc_source_set("rtc_base_tests_utils") {
     "fakesslidentity.h",
     "firewallsocketserver.cc",
     "firewallsocketserver.h",
+    "gunit.cc",
     "gunit.h",
     "httpbase.cc",
     "httpbase.h",

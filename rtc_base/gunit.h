@@ -157,4 +157,10 @@
   } else                                                 \
     GTEST_CONCAT_TOKEN_(gunit_label_, __LINE__) : ASSERT_EQ(v1, v2)
 
+// Usage: EXPECT_PRED_FORMAT2(AssertStartsWith, str, "prefix");
+testing::AssertionResult AssertStartsWith(const char* str_expr,
+                                          const char* prefix_expr,
+                                          const std::string& str,
+                                          const std::string& prefix);
+
 #endif  // RTC_BASE_GUNIT_H_

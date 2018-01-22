@@ -287,6 +287,8 @@ const ContentInfo* GetFirstMediaContent(const ContentInfos& contents,
 const ContentInfo* GetFirstAudioContent(const ContentInfos& contents);
 const ContentInfo* GetFirstVideoContent(const ContentInfos& contents);
 const ContentInfo* GetFirstDataContent(const ContentInfos& contents);
+const ContentInfo* GetFirstMediaContent(const SessionDescription* sdesc,
+                                        MediaType media_type);
 const ContentInfo* GetFirstAudioContent(const SessionDescription* sdesc);
 const ContentInfo* GetFirstVideoContent(const SessionDescription* sdesc);
 const ContentInfo* GetFirstDataContent(const SessionDescription* sdesc);
@@ -302,6 +304,8 @@ ContentInfo* GetFirstMediaContent(ContentInfos* contents, MediaType media_type);
 ContentInfo* GetFirstAudioContent(ContentInfos* contents);
 ContentInfo* GetFirstVideoContent(ContentInfos* contents);
 ContentInfo* GetFirstDataContent(ContentInfos* contents);
+ContentInfo* GetFirstMediaContent(SessionDescription* sdesc,
+                                  MediaType media_type);
 ContentInfo* GetFirstAudioContent(SessionDescription* sdesc);
 ContentInfo* GetFirstVideoContent(SessionDescription* sdesc);
 ContentInfo* GetFirstDataContent(SessionDescription* sdesc);

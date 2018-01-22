@@ -2311,8 +2311,8 @@ const ContentInfo* GetFirstDataContent(const ContentInfos& contents) {
   return GetFirstMediaContent(contents, MEDIA_TYPE_DATA);
 }
 
-static const ContentInfo* GetFirstMediaContent(const SessionDescription* sdesc,
-                                               MediaType media_type) {
+const ContentInfo* GetFirstMediaContent(const SessionDescription* sdesc,
+                                        MediaType media_type) {
   if (sdesc == nullptr) {
     return nullptr;
   }
@@ -2382,8 +2382,8 @@ ContentInfo* GetFirstDataContent(ContentInfos* contents) {
   return GetFirstMediaContent(contents, MEDIA_TYPE_DATA);
 }
 
-static ContentInfo* GetFirstMediaContent(SessionDescription* sdesc,
-                                         MediaType media_type) {
+ContentInfo* GetFirstMediaContent(SessionDescription* sdesc,
+                                  MediaType media_type) {
   if (sdesc == nullptr) {
     return nullptr;
   }
