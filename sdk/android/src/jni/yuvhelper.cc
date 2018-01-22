@@ -81,5 +81,41 @@ static void JNI_YuvHelper_I420ToNV12(JNIEnv* jni,
                      width, height);
 }
 
+void JNI_YuvHelper_I420Rotate(JNIEnv* jni,
+                              const JavaParamRef<jclass>&,
+                              const JavaParamRef<jobject>& j_src_y,
+                              jint src_stride_y,
+                              const JavaParamRef<jobject>& j_src_u,
+                              jint src_stride_u,
+                              const JavaParamRef<jobject>& j_src_v,
+                              jint src_stride_v,
+                              const JavaParamRef<jobject>& j_dst_y,
+                              jint dst_stride_y,
+                              const JavaParamRef<jobject>& j_dst_u,
+                              jint dst_stride_u,
+                              const JavaParamRef<jobject>& j_dst_v,
+                              jint dst_stride_v,
+                              jint src_width,
+                              jint src_height,
+                              jint rotation_mode) {
+  const uint8_t* src_y =
+      static_cast<const uint8_t*>(jni->GetDirectBufferAddress(j_src_y.obj()));
+  const uint8_t* src_u =
+      static_cast<const uint8_t*>(jni->GetDirectBufferAddress(j_src_u.obj()));
+  const uint8_t* src_v =
+      static_cast<const uint8_t*>(jni->GetDirectBufferAddress(j_src_v.obj()));
+  uint8_t* dst_y =
+      static_cast<uint8_t*>(jni->GetDirectBufferAddress(j_dst_y.obj()));
+  uint8_t* dst_u =
+      static_cast<uint8_t*>(jni->GetDirectBufferAddress(j_dst_u.obj()));
+  uint8_t* dst_v =
+      static_cast<uint8_t*>(jni->GetDirectBufferAddress(j_dst_v.obj()));
+
+  libyuv::I420Rotate(src_y, src_stride_y, src_u, src_stride_u, src_v,
+                     src_stride_v, dst_y, dst_stride_y, dst_u, dst_stride_u,
+                     dst_v, dst_stride_v, src_width, src_height,
+                     static_cast<libyuv::RotationMode>(rotation_mode));
+}
+
 }  // namespace jni
 }  // namespace webrtc
