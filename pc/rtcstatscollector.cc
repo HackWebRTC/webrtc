@@ -510,17 +510,21 @@ void ProduceSenderMediaTrackStats(
   // gathering at the time of detachment to get accurate stats and timestamps.
   // https://crbug.com/659137
   for (auto const sender : senders) {
-    // Don't report on tracks before starting to send.
-    // https://bugs.webrtc.org/8673
-    if (sender->ssrc() == 0)
-      continue;
     if (sender->media_type() == cricket::MEDIA_TYPE_AUDIO) {
       AudioTrackInterface* track =
           static_cast<AudioTrackInterface*>(sender->track().get());
       if (!track)
         continue;
-      auto voice_sender_info =
-          track_media_info_map.GetVoiceSenderInfoBySsrc(sender->ssrc());
+      cricket::VoiceSenderInfo null_sender_info;
+      const cricket::VoiceSenderInfo* voice_sender_info = &null_sender_info;
+      // TODO(hta): Checking on ssrc is not proper. There should be a way
+      // to see from a sender whether it's connected or not.
+      // Related to https://crbug.com/8694 (using ssrc 0 to indicate "none")
+      if (sender->ssrc()) {
+        voice_sender_info =
+            track_media_info_map.GetVoiceSenderInfoBySsrc(sender->ssrc());
+      }
+
       RTC_CHECK(voice_sender_info)
           << "No voice sender info for sender with ssrc " << sender->ssrc();
       std::unique_ptr<RTCMediaStreamTrackStats> audio_track_stats =
@@ -532,8 +536,13 @@ void ProduceSenderMediaTrackStats(
           static_cast<VideoTrackInterface*>(sender->track().get());
       if (!track)
         continue;
-      auto video_sender_info =
-          track_media_info_map.GetVideoSenderInfoBySsrc(sender->ssrc());
+      cricket::VideoSenderInfo null_sender_info;
+      const cricket::VideoSenderInfo* video_sender_info = &null_sender_info;
+      // TODO(hta): Check on state not ssrc when state is available
+      // Related to https://crbug.com/8694 (using ssrc 0 to indicate "none")
+      if (sender->ssrc())
+        video_sender_info =
+            track_media_info_map.GetVideoSenderInfoBySsrc(sender->ssrc());
       RTC_CHECK(video_sender_info)
           << "No video sender info for sender with ssrc " << sender->ssrc();
       std::unique_ptr<RTCMediaStreamTrackStats> video_track_stats =
@@ -1019,16 +1028,15 @@ void RTCStatsCollector::ProduceRTPStreamStats_n(
     // Inbound
     for (const cricket::VoiceReceiverInfo& voice_receiver_info :
          track_media_info_map.voice_media_info()->receivers) {
-      // TODO(nisse): SSRC == 0 currently means none. Delete check when that
-      // is fixed.
-      if (voice_receiver_info.ssrc() == 0)
+      if (!voice_receiver_info.connected())
         continue;
+
       std::unique_ptr<RTCInboundRTPStreamStats> inbound_audio(
           new RTCInboundRTPStreamStats(RTCInboundRTPStreamStatsIDFromSSRC(
                                            true, voice_receiver_info.ssrc()),
                                        timestamp_us));
-      SetInboundRTPStreamStatsFromVoiceReceiverInfo(
-          voice_receiver_info, inbound_audio.get());
+      SetInboundRTPStreamStatsFromVoiceReceiverInfo(voice_receiver_info,
+                                                    inbound_audio.get());
       // TODO(hta): This lookup should look for the sender, not the track.
       rtc::scoped_refptr<AudioTrackInterface> audio_track =
           track_media_info_map_->GetAudioTrack(voice_receiver_info);
@@ -1045,9 +1053,7 @@ void RTCStatsCollector::ProduceRTPStreamStats_n(
     // Outbound
     for (const cricket::VoiceSenderInfo& voice_sender_info :
          track_media_info_map.voice_media_info()->senders) {
-      // TODO(nisse): SSRC == 0 currently means none. Delete check when that
-      // is fixed.
-      if (voice_sender_info.ssrc() == 0)
+      if (!voice_sender_info.connected())
         continue;
       std::unique_ptr<RTCOutboundRTPStreamStats> outbound_audio(
           new RTCOutboundRTPStreamStats(
@@ -1081,7 +1087,7 @@ void RTCStatsCollector::ProduceRTPStreamStats_n(
          track_media_info_map.video_media_info()->receivers) {
       // TODO(nisse): SSRC == 0 currently means none. Delete check when that
       // is fixed.
-      if (video_receiver_info.ssrc() == 0)
+      if (!video_receiver_info.connected())
         continue;
       std::unique_ptr<RTCInboundRTPStreamStats> inbound_video(
           new RTCInboundRTPStreamStats(
@@ -1105,9 +1111,7 @@ void RTCStatsCollector::ProduceRTPStreamStats_n(
     // Outbound
     for (const cricket::VideoSenderInfo& video_sender_info :
          track_media_info_map.video_media_info()->senders) {
-      // TODO(nisse): SSRC == 0 currently means none. Delete check when that
-      // is fixed.
-      if (video_sender_info.ssrc() == 0)
+      if (!video_sender_info.connected())
         continue;
       std::unique_ptr<RTCOutboundRTPStreamStats> outbound_video(
           new RTCOutboundRTPStreamStats(RTCOutboundRTPStreamStatsIDFromSSRC(

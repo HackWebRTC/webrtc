@@ -2397,8 +2397,8 @@ TEST_F(RTCStatsCollectorTest, CollectNoStreamRTCOutboundRTPStreamStats_Audio) {
 
 // When the PC has not had SetLocalDescription done, tracks all have
 // SSRC 0, meaning "unconnected".
-// We do not report stats on those tracks. https://bugs.webrtc.org/8673
-TEST_F(RTCStatsCollectorTest, StatsNotReportedOnZeroSsrc) {
+// In this state, we report on track stats, but not RTP stats.
+TEST_F(RTCStatsCollectorTest, StatsReportedOnZeroSsrc) {
   rtc::scoped_refptr<MediaStreamTrackInterface> track =
       CreateFakeTrack(cricket::MEDIA_TYPE_AUDIO, "audioTrack",
                       MediaStreamTrackInterface::kLive);
@@ -2410,7 +2410,10 @@ TEST_F(RTCStatsCollectorTest, StatsNotReportedOnZeroSsrc) {
   rtc::scoped_refptr<const RTCStatsReport> report = GetStatsReport();
   std::vector<const RTCMediaStreamTrackStats*> track_stats =
       report->GetStatsOfType<RTCMediaStreamTrackStats>();
-  EXPECT_EQ(0, track_stats.size());
+  EXPECT_EQ(1, track_stats.size());
+  std::vector<const RTCRTPStreamStats*> rtp_stream_stats =
+      report->GetStatsOfType<RTCRTPStreamStats>();
+  EXPECT_EQ(0, rtp_stream_stats.size());
 }
 
 class RTCStatsCollectorTestWithFakeCollector : public testing::Test {

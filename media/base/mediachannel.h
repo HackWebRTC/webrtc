@@ -311,11 +311,15 @@ struct MediaSenderInfo {
     }
     return retval;
   }
+  // Returns true if the media has been connected.
+  bool connected() const { return local_stats.size() > 0; }
   // Utility accessor for clients that make the assumption only one ssrc
   // exists per media.
   // This will eventually go away.
+  // Call sites that compare this to zero should use connected() instead.
+  // https://bugs.webrtc.org/8694
   uint32_t ssrc() const {
-    if (local_stats.size() > 0) {
+    if (connected()) {
       return local_stats[0].ssrc;
     } else {
       return 0;
@@ -351,11 +355,15 @@ struct MediaReceiverInfo {
     }
     return retval;
   }
+  // Returns true if the media has been connected.
+  bool connected() const { return local_stats.size() > 0; }
   // Utility accessor for clients that make the assumption only one ssrc
   // exists per media.
   // This will eventually go away.
+  // Call sites that compare this to zero should use connected();
+  // https://bugs.webrtc.org/8694
   uint32_t ssrc() const {
-    if (local_stats.size() > 0) {
+    if (connected()) {
       return local_stats[0].ssrc;
     } else {
       return 0;
