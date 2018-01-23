@@ -303,6 +303,21 @@ bool IPIsLoopback(const IPAddress& ip) {
   return false;
 }
 
+bool IPIsLinkLocal(const IPAddress& ip) {
+  switch (ip.family()) {
+    case AF_INET: {
+      uint32_t ip_in_host_order = ip.v4AddressAsHostOrderInteger();
+      return (ip_in_host_order >> 16) == ((169 << 8) | 254);
+    }
+    case AF_INET6: {
+      // Can't use the helper because the prefix is 10 bits.
+      in6_addr addr = ip.ipv6_address();
+      return addr.s6_addr[0] == 0xFE && addr.s6_addr[1] == 0x80;
+    }
+  }
+  return false;
+}
+
 bool IPIsPrivate(const IPAddress& ip) {
   switch (ip.family()) {
     case AF_INET: {
@@ -438,12 +453,6 @@ bool IPIs6Bone(const IPAddress& ip) {
 
 bool IPIs6To4(const IPAddress& ip) {
   return IPIsHelper(ip, k6To4Prefix, 16);
-}
-
-bool IPIsLinkLocal(const IPAddress& ip) {
-  // Can't use the helper because the prefix is 10 bits.
-  in6_addr addr = ip.ipv6_address();
-  return addr.s6_addr[0] == 0xFE && addr.s6_addr[1] == 0x80;
 }
 
 // According to http://www.ietf.org/rfc/rfc2373.txt, Appendix A, page 19.  An

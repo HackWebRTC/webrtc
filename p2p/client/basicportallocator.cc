@@ -644,6 +644,13 @@ std::vector<rtc::Network*> BasicPortAllocatorSession::GetNetworks() {
   if (flags() & PORTALLOCATOR_DISABLE_COSTLY_NETWORKS) {
     uint16_t lowest_cost = rtc::kNetworkCostMax;
     for (rtc::Network* network : networks) {
+      // Don't determine the lowest cost from a link-local network.
+      // On iOS, a device connected to the computer will get a link-local
+      // network for communicating with the computer, however this network can't
+      // be used to connect to a peer outside the network.
+      if (rtc::IPIsLinkLocal(network->GetBestIP())) {
+        continue;
+      }
       lowest_cost = std::min<uint16_t>(lowest_cost, network->GetCost());
     }
     networks.erase(std::remove_if(networks.begin(), networks.end(),

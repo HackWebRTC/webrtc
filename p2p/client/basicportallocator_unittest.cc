@@ -849,6 +849,57 @@ TEST_F(BasicPortAllocatorTest,
   EXPECT_PRED4(HasCandidate, candidates_, "local", "udp", cellular);
 }
 
+// Test that if both PORTALLOCATOR_DISABLE_COSTLY_NETWORKS is set, and there is
+// a WiFi network with link-local IP address and a cellular network, then the
+// cellular candidate will still be gathered.
+TEST_F(BasicPortAllocatorTest,
+       CellNotRemovedWhenCostlyNetworksDisabledAndWifiIsLinkLocal) {
+  SocketAddress wifi_link_local("169.254.0.1", 0);
+  SocketAddress cellular(IPAddress(0x12345601U), 0);
+  AddInterface(wifi_link_local, "test_wlan0", rtc::ADAPTER_TYPE_WIFI);
+  AddInterface(cellular, "test_cell0", rtc::ADAPTER_TYPE_CELLULAR);
+
+  allocator().set_flags(cricket::PORTALLOCATOR_DISABLE_STUN |
+                        cricket::PORTALLOCATOR_DISABLE_RELAY |
+                        cricket::PORTALLOCATOR_DISABLE_TCP |
+                        cricket::PORTALLOCATOR_DISABLE_COSTLY_NETWORKS);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+  EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
+                             kDefaultAllocationTimeout, fake_clock);
+  // Make sure we got both wifi and cell candidates.
+  EXPECT_EQ(2U, candidates_.size());
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "udp", wifi_link_local);
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "udp", cellular);
+}
+
+// Test that if both PORTALLOCATOR_DISABLE_COSTLY_NETWORKS is set, and there is
+// a WiFi network with link-local IP address, a WiFi network with a normal IP
+// address and a cellular network, then the cellular candidate will not be
+// gathered.
+TEST_F(BasicPortAllocatorTest,
+       CellRemovedWhenCostlyNetworksDisabledAndBothWifisPresent) {
+  SocketAddress wifi(IPAddress(0x12345600U), 0);
+  SocketAddress wifi_link_local("169.254.0.1", 0);
+  SocketAddress cellular(IPAddress(0x12345601U), 0);
+  AddInterface(wifi, "test_wlan0", rtc::ADAPTER_TYPE_WIFI);
+  AddInterface(wifi_link_local, "test_wlan1", rtc::ADAPTER_TYPE_WIFI);
+  AddInterface(cellular, "test_cell0", rtc::ADAPTER_TYPE_CELLULAR);
+
+  allocator().set_flags(cricket::PORTALLOCATOR_DISABLE_STUN |
+                        cricket::PORTALLOCATOR_DISABLE_RELAY |
+                        cricket::PORTALLOCATOR_DISABLE_TCP |
+                        cricket::PORTALLOCATOR_DISABLE_COSTLY_NETWORKS);
+  EXPECT_TRUE(CreateSession(cricket::ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+  EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
+                             kDefaultAllocationTimeout, fake_clock);
+  // Make sure we got only wifi candidates.
+  EXPECT_EQ(2U, candidates_.size());
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "udp", wifi);
+  EXPECT_PRED4(HasCandidate, candidates_, "local", "udp", wifi_link_local);
+}
+
 // Test that no more than allocator.max_ipv6_networks() IPv6 networks are used
 // to gather candidates.
 TEST_F(BasicPortAllocatorTest, MaxIpv6NetworksLimitEnforced) {
