@@ -43,20 +43,6 @@ class StereoEncoderAdapter::AdapterEncodedImageCallback
   const AlphaCodecStream stream_idx_;
 };
 
-// Holds the encoded image info.
-struct StereoEncoderAdapter::ImageStereoInfo {
-  ImageStereoInfo(uint16_t picture_index, uint8_t frame_count)
-      : picture_index(picture_index),
-        frame_count(frame_count),
-        encoded_count(0) {}
-  uint16_t picture_index;
-  uint8_t frame_count;
-  uint8_t encoded_count;
-
- private:
-  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(ImageStereoInfo);
-};
-
 StereoEncoderAdapter::StereoEncoderAdapter(
     VideoEncoderFactory* factory,
     const SdpVideoFormat& associated_format)
@@ -80,6 +66,26 @@ int StereoEncoderAdapter::InitEncode(const VideoCodec* inst,
   RTC_DCHECK_EQ(kVideoCodecStereo, inst->codecType);
   VideoCodec settings = *inst;
   settings.codecType = PayloadStringToCodecType(associated_format_.name);
+
+  // Take over the key frame interval at adapter level, because we have to
+  // sync the key frames for both sub-encoders.
+  switch (settings.codecType) {
+    case kVideoCodecVP8:
+      key_frame_interval_ = settings.VP8()->keyFrameInterval;
+      settings.VP8()->keyFrameInterval = 0;
+      break;
+    case kVideoCodecVP9:
+      key_frame_interval_ = settings.VP9()->keyFrameInterval;
+      settings.VP9()->keyFrameInterval = 0;
+      break;
+    case kVideoCodecH264:
+      key_frame_interval_ = settings.H264()->keyFrameInterval;
+      settings.H264()->keyFrameInterval = 0;
+      break;
+    default:
+      break;
+  }
+
   for (size_t i = 0; i < kAlphaCodecStreams; ++i) {
     std::unique_ptr<VideoEncoder> encoder =
         factory_->CreateVideoEncoder(associated_format_);
@@ -104,16 +110,24 @@ int StereoEncoderAdapter::Encode(const VideoFrame& input_image,
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
 
+  std::vector<FrameType> adjusted_frame_types;
+  if (key_frame_interval_ > 0 && picture_index_ % key_frame_interval_ == 0) {
+    adjusted_frame_types.push_back(kVideoFrameKey);
+  } else {
+    adjusted_frame_types.push_back(kVideoFrameDelta);
+  }
   const bool has_alpha = input_image.video_frame_buffer()->type() ==
                          VideoFrameBuffer::Type::kI420A;
-  image_stereo_info_.emplace(
+  stashed_images_.emplace(
       std::piecewise_construct, std::forward_as_tuple(input_image.timestamp()),
-      std::forward_as_tuple(picture_index_++,
+      std::forward_as_tuple(picture_index_,
                             has_alpha ? kAlphaCodecStreams : 1));
+
+  ++picture_index_;
 
   // Encode YUV
   int rv = encoders_[kYUVStream]->Encode(input_image, codec_specific_info,
-                                         frame_types);
+                                         &adjusted_frame_types);
   // If we do not receive an alpha frame, we send a single frame for this
   // |picture_index_|. The receiver will receive |frame_count| as 1 which
   // soecifies this case.
@@ -132,7 +146,7 @@ int StereoEncoderAdapter::Encode(const VideoFrame& input_image,
   VideoFrame alpha_image(alpha_buffer, input_image.timestamp(),
                          input_image.render_time_ms(), input_image.rotation());
   rv = encoders_[kAXXStream]->Encode(alpha_image, codec_specific_info,
-                                     frame_types);
+                                     &adjusted_frame_types);
   return rv;
 }
 
@@ -174,6 +188,16 @@ int StereoEncoderAdapter::Release() {
   }
   encoders_.clear();
   adapter_callbacks_.clear();
+  for (auto& stashed_image : stashed_images_) {
+    for (auto& image_component : stashed_image.second.image_components) {
+      delete[] image_component.encoded_image._buffer;
+    }
+  }
+  stashed_images_.clear();
+  if (combined_image_._buffer) {
+    delete[] combined_image_._buffer;
+    combined_image_._buffer = nullptr;
+  }
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
@@ -186,26 +210,47 @@ EncodedImageCallback::Result StereoEncoderAdapter::OnEncodedImage(
     const EncodedImage& encodedImage,
     const CodecSpecificInfo* codecSpecificInfo,
     const RTPFragmentationHeader* fragmentation) {
-  const VideoCodecType associated_codec_type = codecSpecificInfo->codecType;
-  const auto& image_stereo_info_itr =
-      image_stereo_info_.find(encodedImage._timeStamp);
-  RTC_DCHECK(image_stereo_info_itr != image_stereo_info_.end());
-  ImageStereoInfo& image_stereo_info = image_stereo_info_itr->second;
-  const uint8_t frame_count = image_stereo_info.frame_count;
-  const uint16_t picture_index = image_stereo_info.picture_index;
-  if (++image_stereo_info.encoded_count == frame_count)
-    image_stereo_info_.erase(image_stereo_info_itr);
-
   CodecSpecificInfo codec_info = *codecSpecificInfo;
   codec_info.codecType = kVideoCodecStereo;
-  codec_info.codec_name = "stereo";
-  codec_info.codecSpecific.stereo.associated_codec_type = associated_codec_type;
-  codec_info.codecSpecific.stereo.indices.frame_index = stream_idx;
-  codec_info.codecSpecific.stereo.indices.frame_count = frame_count;
-  codec_info.codecSpecific.stereo.indices.picture_index = picture_index;
+  const auto& stashed_image_itr = stashed_images_.find(encodedImage._timeStamp);
+  const auto& stashed_image_next_itr = std::next(stashed_image_itr, 1);
+  RTC_DCHECK(stashed_image_itr != stashed_images_.end());
+  MultiplexImage& stashed_image = stashed_image_itr->second;
+  const uint8_t frame_count = stashed_image.component_count;
 
-  encoded_complete_callback_->OnEncodedImage(encodedImage, &codec_info,
-                                             fragmentation);
+  // Save the image
+  MultiplexImageComponent image_component;
+  image_component.component_index = stream_idx;
+  image_component.codec_type =
+      PayloadStringToCodecType(associated_format_.name);
+  image_component.encoded_image = encodedImage;
+  image_component.encoded_image._buffer = new uint8_t[encodedImage._length];
+  std::memcpy(image_component.encoded_image._buffer, encodedImage._buffer,
+              encodedImage._length);
+
+  stashed_image.image_components.push_back(image_component);
+
+  if (stashed_image.image_components.size() == frame_count) {
+    // Complete case
+    auto iter = stashed_images_.begin();
+    while (iter != stashed_images_.end() && iter != stashed_image_next_itr) {
+      // No image at all, skip.
+      if (iter->second.image_components.size() == 0)
+        continue;
+
+      // We have to send out those stashed frames, otherwise the delta frame
+      // dependency chain is broken.
+      if (combined_image_._buffer)
+        delete[] combined_image_._buffer;
+      combined_image_ =
+          MultiplexEncodedImagePacker::PackAndRelease(iter->second);
+      encoded_complete_callback_->OnEncodedImage(combined_image_, &codec_info,
+                                                 fragmentation);
+      iter++;
+    }
+
+    stashed_images_.erase(stashed_images_.begin(), stashed_image_next_itr);
+  }
   return EncodedImageCallback::Result(EncodedImageCallback::Result::OK);
 }
 

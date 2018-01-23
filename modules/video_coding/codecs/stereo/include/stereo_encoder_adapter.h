@@ -18,6 +18,7 @@
 #include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/video_encoder_factory.h"
+#include "modules/video_coding/codecs/stereo/include/multiplex_encoded_image_packer.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 
 namespace webrtc {
@@ -65,12 +66,13 @@ class StereoEncoderAdapter : public VideoEncoder {
   std::vector<std::unique_ptr<AdapterEncodedImageCallback>> adapter_callbacks_;
   EncodedImageCallback* encoded_complete_callback_;
 
-  // Holds the encoded image info.
-  struct ImageStereoInfo;
-  std::map<uint32_t /* timestamp */, ImageStereoInfo> image_stereo_info_;
+  std::map<uint32_t /* timestamp */, MultiplexImage> stashed_images_;
 
   uint16_t picture_index_ = 0;
   std::vector<uint8_t> stereo_dummy_planes_;
+
+  int key_frame_interval_;
+  EncodedImage combined_image_;
 };
 
 }  // namespace webrtc
