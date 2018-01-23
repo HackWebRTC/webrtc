@@ -103,6 +103,7 @@ rtc_static_library("libjingle_peerconnection_api") {
     # file, really. All these should arguably go away in time.
     "..:typedefs",
     "..:webrtc_common",
+    "../media:rtc_media_config",
     "../modules/audio_processing:audio_processing_statistics",
     "../rtc_base:checks",
     "../rtc_base:deprecation",

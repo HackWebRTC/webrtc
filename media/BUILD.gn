@@ -55,6 +55,13 @@ rtc_source_set("rtc_h264_profile_id") {
   ]
 }
 
+rtc_source_set("rtc_media_config") {
+  visibility = [ "*" ]
+  sources = [
+    "base/mediaconfig.h",
+  ]
+}
+
 rtc_static_library("rtc_media_base") {
   visibility = [ "*" ]
   defines = []
@@ -106,6 +113,7 @@ rtc_static_library("rtc_media_base") {
 
   deps += [
     ":rtc_h264_profile_id",
+    ":rtc_media_config",
     "..:webrtc_common",
     "../api:libjingle_peerconnection_api",
     "../api:optional",
