@@ -74,6 +74,9 @@ class FecController {
 
   // Informs of encoded output.
   virtual void UpdateWithEncodedData(const EncodedImage& encoded_image) = 0;
+
+  // Returns whether this FEC Controller needs Loss Vector Mask as input.
+  virtual bool UseLossVectorMask() = 0;
 };
 
 }  // namespace webrtc

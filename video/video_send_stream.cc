@@ -846,7 +846,9 @@ VideoSendStreamImpl::VideoSendStreamImpl(
 
   fec_controller_->SetProtectionCallback(this);
   // Signal congestion controller this object is ready for OnPacket* callbacks.
-  transport_->send_side_cc()->RegisterPacketFeedbackObserver(this);
+  if (fec_controller_->UseLossVectorMask()) {
+    transport_->send_side_cc()->RegisterPacketFeedbackObserver(this);
+  }
 
   RTC_DCHECK(config_->encoder_settings.encoder);
   RTC_DCHECK_GE(config_->encoder_settings.payload_type, 0);
@@ -890,7 +892,9 @@ VideoSendStreamImpl::~VideoSendStreamImpl() {
   RTC_DCHECK(!payload_router_.IsActive())
       << "VideoSendStreamImpl::Stop not called";
   RTC_LOG(LS_INFO) << "~VideoSendStreamInternal: " << config_->ToString();
-  transport_->send_side_cc()->DeRegisterPacketFeedbackObserver(this);
+  if (fec_controller_->UseLossVectorMask()) {
+    transport_->send_side_cc()->DeRegisterPacketFeedbackObserver(this);
+  }
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
     transport_->packet_router()->RemoveSendRtpModule(rtp_rtcp);
     delete rtp_rtcp;

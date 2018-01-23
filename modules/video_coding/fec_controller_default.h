@@ -40,6 +40,7 @@ class FecControllerDefault : public FecController {
                           std::vector<bool> loss_mask_vector,
                           int64_t round_trip_time_ms) override;
   void UpdateWithEncodedData(const EncodedImage& encoded_image) override;
+  bool UseLossVectorMask() override { return false; }
 
  private:
   enum { kBitrateAverageWinMs = 1000 };
