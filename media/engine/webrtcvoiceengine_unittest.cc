@@ -362,7 +362,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_EQ(1UL, parameters.encodings.size());
 
     parameters.encodings[0].max_bitrate_bps = bitrate;
-    return channel_->SetRtpSendParameters(ssrc, parameters);
+    return channel_->SetRtpSendParameters(ssrc, parameters).ok();
   }
 
   void SetGlobalMaxBitrate(const cricket::AudioCodec& codec, int bitrate) {
@@ -1034,7 +1034,8 @@ TEST_F(WebRtcVoiceEngineTestFake, CannotSetMaxBitrateForNonexistentStream) {
   EXPECT_EQ(0, nonexistent_parameters.encodings.size());
 
   nonexistent_parameters.encodings.push_back(webrtc::RtpEncodingParameters());
-  EXPECT_FALSE(channel_->SetRtpSendParameters(kSsrcX, nonexistent_parameters));
+  EXPECT_FALSE(
+      channel_->SetRtpSendParameters(kSsrcX, nonexistent_parameters).ok());
 }
 
 TEST_F(WebRtcVoiceEngineTestFake,
@@ -1048,10 +1049,10 @@ TEST_F(WebRtcVoiceEngineTestFake,
   webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(kSsrcX);
   // Two or more encodings should result in failure.
   parameters.encodings.push_back(webrtc::RtpEncodingParameters());
-  EXPECT_FALSE(channel_->SetRtpSendParameters(kSsrcX, parameters));
+  EXPECT_FALSE(channel_->SetRtpSendParameters(kSsrcX, parameters).ok());
   // Zero encodings should also fail.
   parameters.encodings.clear();
-  EXPECT_FALSE(channel_->SetRtpSendParameters(kSsrcX, parameters));
+  EXPECT_FALSE(channel_->SetRtpSendParameters(kSsrcX, parameters).ok());
 }
 
 // Changing the SSRC through RtpParameters is not allowed.
@@ -1059,7 +1060,7 @@ TEST_F(WebRtcVoiceEngineTestFake, CannotSetSsrcInRtpSendParameters) {
   EXPECT_TRUE(SetupSendStream());
   webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(kSsrcX);
   parameters.encodings[0].ssrc = 0xdeadbeef;
-  EXPECT_FALSE(channel_->SetRtpSendParameters(kSsrcX, parameters));
+  EXPECT_FALSE(channel_->SetRtpSendParameters(kSsrcX, parameters).ok());
 }
 
 // Test that a stream will not be sending if its encoding is made
@@ -1073,14 +1074,14 @@ TEST_F(WebRtcVoiceEngineTestFake, SetRtpParametersEncodingsActive) {
   ASSERT_EQ(1u, parameters.encodings.size());
   ASSERT_TRUE(parameters.encodings[0].active);
   parameters.encodings[0].active = false;
-  EXPECT_TRUE(channel_->SetRtpSendParameters(kSsrcX, parameters));
+  EXPECT_TRUE(channel_->SetRtpSendParameters(kSsrcX, parameters).ok());
   EXPECT_FALSE(GetSendStream(kSsrcX).IsSending());
 
   // Now change it back to active and verify we resume sending.
   // This should occur even when other parameters are updated.
   parameters.encodings[0].active = true;
   parameters.encodings[0].max_bitrate_bps = rtc::Optional<int>(6000);
-  EXPECT_TRUE(channel_->SetRtpSendParameters(kSsrcX, parameters));
+  EXPECT_TRUE(channel_->SetRtpSendParameters(kSsrcX, parameters).ok());
   EXPECT_TRUE(GetSendStream(kSsrcX).IsSending());
 }
 
@@ -1146,7 +1147,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAndGetRtpSendParameters) {
   webrtc::RtpParameters initial_params = channel_->GetRtpSendParameters(kSsrcX);
 
   // We should be able to set the params we just got.
-  EXPECT_TRUE(channel_->SetRtpSendParameters(kSsrcX, initial_params));
+  EXPECT_TRUE(channel_->SetRtpSendParameters(kSsrcX, initial_params).ok());
 
   // ... And this shouldn't change the params returned by GetRtpSendParameters.
   webrtc::RtpParameters new_params = channel_->GetRtpSendParameters(kSsrcX);
@@ -1169,7 +1170,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetRtpSendParameterUpdatesMaxBitrate) {
 
   constexpr int kMaxBitrateBps = 6000;
   rtp_parameters.encodings[0].max_bitrate_bps = kMaxBitrateBps;
-  EXPECT_TRUE(channel_->SetRtpSendParameters(kSsrcX, rtp_parameters));
+  EXPECT_TRUE(channel_->SetRtpSendParameters(kSsrcX, rtp_parameters).ok());
 
   const int max_bitrate = GetSendStreamConfig(kSsrcX).max_bitrate_bps;
   EXPECT_EQ(max_bitrate, kMaxBitrateBps);
@@ -1185,9 +1186,9 @@ TEST_F(WebRtcVoiceEngineTestFake, SetRtpSendParameterInvalidBitratePriority) {
             rtp_parameters.encodings[0].bitrate_priority);
 
   rtp_parameters.encodings[0].bitrate_priority = 0;
-  EXPECT_FALSE(channel_->SetRtpSendParameters(kSsrcX, rtp_parameters));
+  EXPECT_FALSE(channel_->SetRtpSendParameters(kSsrcX, rtp_parameters).ok());
   rtp_parameters.encodings[0].bitrate_priority = -1.0;
-  EXPECT_FALSE(channel_->SetRtpSendParameters(kSsrcX, rtp_parameters));
+  EXPECT_FALSE(channel_->SetRtpSendParameters(kSsrcX, rtp_parameters).ok());
 }
 
 // Test that the bitrate_priority in the send stream config gets updated when
@@ -1201,7 +1202,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetRtpSendParameterUpdatesBitratePriority) {
             rtp_parameters.encodings[0].bitrate_priority);
   double new_bitrate_priority = 2.0;
   rtp_parameters.encodings[0].bitrate_priority = new_bitrate_priority;
-  EXPECT_TRUE(channel_->SetRtpSendParameters(kSsrcX, rtp_parameters));
+  EXPECT_TRUE(channel_->SetRtpSendParameters(kSsrcX, rtp_parameters).ok());
 
   // The priority should get set for both the audio channel's rtp parameters
   // and the audio send stream's audio config.
@@ -2344,7 +2345,7 @@ TEST_F(WebRtcVoiceEngineWithSendSideBweWithOverheadTest,
 
   constexpr int kMaxBitrateBps = 6000;
   rtp_parameters.encodings[0].max_bitrate_bps = kMaxBitrateBps;
-  EXPECT_TRUE(channel_->SetRtpSendParameters(kSsrcX, rtp_parameters));
+  EXPECT_TRUE(channel_->SetRtpSendParameters(kSsrcX, rtp_parameters).ok());
 
   const int max_bitrate = GetSendStreamConfig(kSsrcX).max_bitrate_bps;
 #if WEBRTC_OPUS_SUPPORT_120MS_PTIME

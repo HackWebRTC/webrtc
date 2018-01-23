@@ -199,12 +199,12 @@ RtpParameters AudioRtpSender::GetParameters() const {
   });
 }
 
-bool AudioRtpSender::SetParameters(const RtpParameters& parameters) {
+RTCError AudioRtpSender::SetParameters(const RtpParameters& parameters) {
   TRACE_EVENT0("webrtc", "AudioRtpSender::SetParameters");
   if (!media_channel_ || stopped_) {
-    return false;
+    return RTCError(RTCErrorType::INVALID_STATE);
   }
-  return worker_thread_->Invoke<bool>(RTC_FROM_HERE, [&] {
+  return worker_thread_->Invoke<RTCError>(RTC_FROM_HERE, [&] {
     return media_channel_->SetRtpSendParameters(ssrc_, parameters);
   });
 }
@@ -391,12 +391,12 @@ RtpParameters VideoRtpSender::GetParameters() const {
   });
 }
 
-bool VideoRtpSender::SetParameters(const RtpParameters& parameters) {
+RTCError VideoRtpSender::SetParameters(const RtpParameters& parameters) {
   TRACE_EVENT0("webrtc", "VideoRtpSender::SetParameters");
   if (!media_channel_ || stopped_) {
-    return false;
+    return RTCError(RTCErrorType::INVALID_STATE);
   }
-  return worker_thread_->Invoke<bool>(RTC_FROM_HERE, [&] {
+  return worker_thread_->Invoke<RTCError>(RTC_FROM_HERE, [&] {
     return media_channel_->SetRtpSendParameters(ssrc_, parameters);
   });
 }

@@ -145,16 +145,17 @@ template <class Base> class RtpHelper : public Base {
     }
     return webrtc::RtpParameters();
   }
-  virtual bool SetRtpSendParameters(uint32_t ssrc,
-                                    const webrtc::RtpParameters& parameters) {
+  virtual webrtc::RTCError SetRtpSendParameters(
+      uint32_t ssrc,
+      const webrtc::RtpParameters& parameters) {
     auto parameters_iterator = rtp_send_parameters_.find(ssrc);
     if (parameters_iterator != rtp_send_parameters_.end()) {
       parameters_iterator->second = parameters;
-      return true;
+      return webrtc::RTCError::OK();
     }
     // Replicate the behavior of the real media channel: return false
     // when setting parameters for unknown SSRCs.
-    return false;
+    return webrtc::RTCError(webrtc::RTCErrorType::INTERNAL_ERROR);
   }
 
   virtual webrtc::RtpParameters GetRtpReceiveParameters(uint32_t ssrc) const {

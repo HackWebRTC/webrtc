@@ -480,7 +480,8 @@ class VoiceChannel : public BaseChannel {
   int GetOutputLevel_w();
   void GetActiveStreams_w(AudioInfo::StreamList* actives);
   webrtc::RtpParameters GetRtpSendParameters_w(uint32_t ssrc) const;
-  bool SetRtpSendParameters_w(uint32_t ssrc, webrtc::RtpParameters parameters);
+  webrtc::RTCError SetRtpSendParameters_w(uint32_t ssrc,
+                                          webrtc::RtpParameters parameters);
   cricket::MediaType media_type() override { return cricket::MEDIA_TYPE_AUDIO; }
 
  private:

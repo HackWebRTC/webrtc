@@ -816,7 +816,7 @@ webrtc::RtpParameters WebRtcVideoChannel::GetRtpSendParameters(
   return rtp_params;
 }
 
-bool WebRtcVideoChannel::SetRtpSendParameters(
+webrtc::RTCError WebRtcVideoChannel::SetRtpSendParameters(
     uint32_t ssrc,
     const webrtc::RtpParameters& parameters) {
   TRACE_EVENT0("webrtc", "WebRtcVideoChannel::SetRtpSendParameters");
@@ -825,7 +825,7 @@ bool WebRtcVideoChannel::SetRtpSendParameters(
   if (it == send_streams_.end()) {
     RTC_LOG(LS_ERROR) << "Attempting to set RTP send parameters for stream "
                       << "with ssrc " << ssrc << " which doesn't exist.";
-    return false;
+    return webrtc::RTCError(webrtc::RTCErrorType::INTERNAL_ERROR);
   }
 
   // TODO(deadbeef): Handle setting parameters with a list of codecs in a
@@ -834,7 +834,7 @@ bool WebRtcVideoChannel::SetRtpSendParameters(
   if (current_parameters.codecs != parameters.codecs) {
     RTC_LOG(LS_ERROR) << "Using SetParameters to change the set of codecs "
                       << "is not currently supported.";
-    return false;
+    return webrtc::RTCError(webrtc::RTCErrorType::INTERNAL_ERROR);
   }
 
   return it->second->SetRtpParameters(parameters);
@@ -1784,11 +1784,12 @@ void WebRtcVideoChannel::WebRtcVideoSendStream::SetSendParameters(
   }
 }
 
-bool WebRtcVideoChannel::WebRtcVideoSendStream::SetRtpParameters(
+webrtc::RTCError WebRtcVideoChannel::WebRtcVideoSendStream::SetRtpParameters(
     const webrtc::RtpParameters& new_parameters) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
-  if (!ValidateRtpParameters(new_parameters)) {
-    return false;
+  webrtc::RTCError error = ValidateRtpParameters(new_parameters);
+  if (!error.ok()) {
+    return error;
   }
 
   bool reconfigure_encoder = (new_parameters.encodings[0].max_bitrate_bps !=
@@ -1803,7 +1804,7 @@ bool WebRtcVideoChannel::WebRtcVideoSendStream::SetRtpParameters(
   }
   // Encoding may have been activated/deactivated.
   UpdateSendState();
-  return true;
+  return webrtc::RTCError::OK();
 }
 
 webrtc::RtpParameters
@@ -1812,24 +1813,26 @@ WebRtcVideoChannel::WebRtcVideoSendStream::GetRtpParameters() const {
   return rtp_parameters_;
 }
 
-bool WebRtcVideoChannel::WebRtcVideoSendStream::ValidateRtpParameters(
+webrtc::RTCError
+WebRtcVideoChannel::WebRtcVideoSendStream::ValidateRtpParameters(
     const webrtc::RtpParameters& rtp_parameters) {
+  using webrtc::RTCErrorType;
   RTC_DCHECK_RUN_ON(&thread_checker_);
   if (rtp_parameters.encodings.size() != rtp_parameters_.encodings.size()) {
-    RTC_LOG(LS_ERROR)
-        << "Attempted to set RtpParameters with different encoding count";
-    return false;
+    LOG_AND_RETURN_ERROR(
+        RTCErrorType::INVALID_MODIFICATION,
+        "Attempted to set RtpParameters with different encoding count");
   }
   if (rtp_parameters.encodings[0].ssrc != rtp_parameters_.encodings[0].ssrc) {
-    RTC_LOG(LS_ERROR) << "Attempted to set RtpParameters with modified SSRC";
-    return false;
+    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_MODIFICATION,
+                         "Attempted to set RtpParameters with modified SSRC");
   }
   if (rtp_parameters.encodings[0].bitrate_priority <= 0) {
-    RTC_LOG(LS_ERROR) << "Attempted to set RtpParameters bitrate_priority to "
-                         "an invalid number. bitrate_priority must be > 0.";
-    return false;
+    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_RANGE,
+                         "Attempted to set RtpParameters bitrate_priority to "
+                         "an invalid number. bitrate_priority must be > 0.");
   }
-  return true;
+  return webrtc::RTCError::OK();
 }
 
 void WebRtcVideoChannel::WebRtcVideoSendStream::UpdateSendState() {

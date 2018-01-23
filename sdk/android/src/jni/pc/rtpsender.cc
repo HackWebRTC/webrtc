@@ -63,7 +63,8 @@ jboolean JNI_RtpSender_SetParameters(
   }
   RtpParameters parameters = JavaToNativeRtpParameters(jni, j_parameters);
   return reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)
-      ->SetParameters(parameters);
+      ->SetParameters(parameters)
+      .ok();
 }
 
 ScopedJavaLocalRef<jobject> JNI_RtpSender_GetParameters(

@@ -34,7 +34,7 @@
 }
 
 - (void)setParameters:(RTCRtpParameters *)parameters {
-  if (!_nativeRtpSender->SetParameters(parameters.nativeParameters)) {
+  if (!_nativeRtpSender->SetParameters(parameters.nativeParameters).ok()) {
     RTCLogError(@"RTCRtpSender(%p): Failed to set parameters: %@", self,
         parameters);
   }

@@ -20,6 +20,7 @@
 #include "api/audio_codecs/audio_encoder.h"
 #include "api/audio_options.h"
 #include "api/optional.h"
+#include "api/rtcerror.h"
 #include "api/rtpparameters.h"
 #include "api/rtpreceiverinterface.h"
 #include "api/video/video_content_type.h"
@@ -647,7 +648,7 @@ class VoiceMediaChannel : public MediaChannel {
   virtual bool SetSendParameters(const AudioSendParameters& params) = 0;
   virtual bool SetRecvParameters(const AudioRecvParameters& params) = 0;
   virtual webrtc::RtpParameters GetRtpSendParameters(uint32_t ssrc) const = 0;
-  virtual bool SetRtpSendParameters(
+  virtual webrtc::RTCError SetRtpSendParameters(
       uint32_t ssrc,
       const webrtc::RtpParameters& parameters) = 0;
   // Get the receive parameters for the incoming stream identified by |ssrc|.
@@ -720,7 +721,7 @@ class VideoMediaChannel : public MediaChannel {
   virtual bool SetSendParameters(const VideoSendParameters& params) = 0;
   virtual bool SetRecvParameters(const VideoRecvParameters& params) = 0;
   virtual webrtc::RtpParameters GetRtpSendParameters(uint32_t ssrc) const = 0;
-  virtual bool SetRtpSendParameters(
+  virtual webrtc::RTCError SetRtpSendParameters(
       uint32_t ssrc,
       const webrtc::RtpParameters& parameters) = 0;
   // Get the receive parameters for the incoming stream identified by |ssrc|.
