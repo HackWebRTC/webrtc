@@ -32,11 +32,12 @@ namespace webrtc {
 using RTCConfiguration = PeerConnectionInterface::RTCConfiguration;
 using RTCOfferAnswerOptions = PeerConnectionInterface::RTCOfferAnswerOptions;
 using rtc::SocketAddress;
+using ::testing::Combine;
 using ::testing::Values;
 
 constexpr int kIceCandidatesTimeout = 10000;
 
-class PeerConnectionWrapperForIceUnitTest : public PeerConnectionWrapper {
+class PeerConnectionWrapperForIceTest : public PeerConnectionWrapper {
  public:
   using PeerConnectionWrapper::PeerConnectionWrapper;
 
@@ -75,12 +76,14 @@ class PeerConnectionWrapperForIceUnitTest : public PeerConnectionWrapper {
   rtc::FakeNetworkManager* network_;
 };
 
-class PeerConnectionIceUnitTest : public ::testing::Test {
+class PeerConnectionIceBaseTest : public ::testing::Test {
  protected:
-  typedef std::unique_ptr<PeerConnectionWrapperForIceUnitTest> WrapperPtr;
+  typedef std::unique_ptr<PeerConnectionWrapperForIceTest> WrapperPtr;
 
-  PeerConnectionIceUnitTest()
-      : vss_(new rtc::VirtualSocketServer()), main_(vss_.get()) {
+  explicit PeerConnectionIceBaseTest(SdpSemantics sdp_semantics)
+      : vss_(new rtc::VirtualSocketServer()),
+        main_(vss_.get()),
+        sdp_semantics_(sdp_semantics) {
 #ifdef WEBRTC_ANDROID
     InitializeAndroidObjects();
 #endif
@@ -101,14 +104,16 @@ class PeerConnectionIceUnitTest : public ::testing::Test {
     port_allocator->set_flags(cricket::PORTALLOCATOR_DISABLE_TCP |
                               cricket::PORTALLOCATOR_DISABLE_RELAY);
     port_allocator->set_step_delay(cricket::kMinimumStepDelay);
+    RTCConfiguration modified_config = config;
+    modified_config.sdp_semantics = sdp_semantics_;
     auto observer = rtc::MakeUnique<MockPeerConnectionObserver>();
     auto pc = pc_factory_->CreatePeerConnection(
-        config, std::move(port_allocator), nullptr, observer.get());
+        modified_config, std::move(port_allocator), nullptr, observer.get());
     if (!pc) {
       return nullptr;
     }
 
-    auto wrapper = rtc::MakeUnique<PeerConnectionWrapperForIceUnitTest>(
+    auto wrapper = rtc::MakeUnique<PeerConnectionWrapperForIceTest>(
         pc_factory_, pc, std::move(observer));
     wrapper->set_network(fake_network);
     return wrapper;
@@ -191,10 +196,16 @@ class PeerConnectionIceUnitTest : public ::testing::Test {
         static_cast<PeerConnectionProxyWithInternal<PeerConnectionInterface>*>(
             pc_wrapper_ptr->pc());
     PeerConnection* pc = static_cast<PeerConnection*>(pc_proxy->internal());
-    return pc->voice_channel()
-        ->rtp_dtls_transport()
-        ->ice_transport()
-        ->GetIceRole();
+    for (auto transceiver : pc->GetTransceiversForTesting()) {
+      if (transceiver->internal()->media_type() == cricket::MEDIA_TYPE_AUDIO) {
+        cricket::BaseChannel* channel = transceiver->internal()->channel();
+        if (channel) {
+          return channel->rtp_dtls_transport()->ice_transport()->GetIceRole();
+        }
+      }
+    }
+    RTC_NOTREACHED();
+    return cricket::ICEROLE_UNKNOWN;
   }
 
   bool AddCandidateToFirstTransport(cricket::Candidate* candidate,
@@ -222,6 +233,14 @@ class PeerConnectionIceUnitTest : public ::testing::Test {
   rtc::AutoSocketServerThread main_;
   rtc::scoped_refptr<PeerConnectionFactoryInterface> pc_factory_;
   std::vector<std::unique_ptr<rtc::FakeNetworkManager>> fake_networks_;
+  const SdpSemantics sdp_semantics_;
+};
+
+class PeerConnectionIceTest
+    : public PeerConnectionIceBaseTest,
+      public ::testing::WithParamInterface<SdpSemantics> {
+ protected:
+  PeerConnectionIceTest() : PeerConnectionIceBaseTest(GetParam()) {}
 };
 
 ::testing::AssertionResult AssertCandidatesEqual(const char* a_expr,
@@ -252,7 +271,7 @@ class PeerConnectionIceUnitTest : public ::testing::Test {
   }
 }
 
-TEST_F(PeerConnectionIceUnitTest, OfferContainsGatheredCandidates) {
+TEST_P(PeerConnectionIceTest, OfferContainsGatheredCandidates) {
   const SocketAddress kLocalAddress("1.1.1.1", 0);
 
   auto caller = CreatePeerConnectionWithAudioVideo();
@@ -272,7 +291,7 @@ TEST_F(PeerConnectionIceUnitTest, OfferContainsGatheredCandidates) {
             offer->candidates(1)->count());
 }
 
-TEST_F(PeerConnectionIceUnitTest, AnswerContainsGatheredCandidates) {
+TEST_P(PeerConnectionIceTest, AnswerContainsGatheredCandidates) {
   const SocketAddress kCallerAddress("1.1.1.1", 0);
 
   auto caller = CreatePeerConnectionWithAudioVideo();
@@ -293,7 +312,7 @@ TEST_F(PeerConnectionIceUnitTest, AnswerContainsGatheredCandidates) {
             answer->candidates(1)->count());
 }
 
-TEST_F(PeerConnectionIceUnitTest,
+TEST_P(PeerConnectionIceTest,
        CanSetRemoteSessionDescriptionWithRemoteCandidates) {
   const SocketAddress kCallerAddress("1.1.1.1", 1111);
 
@@ -311,7 +330,7 @@ TEST_F(PeerConnectionIceUnitTest,
                       remote_candidates[0]->candidate());
 }
 
-TEST_F(PeerConnectionIceUnitTest, SetLocalDescriptionFailsIfNoIceCredentials) {
+TEST_P(PeerConnectionIceTest, SetLocalDescriptionFailsIfNoIceCredentials) {
   auto caller = CreatePeerConnectionWithAudioVideo();
 
   auto offer = caller->CreateOffer();
@@ -320,7 +339,7 @@ TEST_F(PeerConnectionIceUnitTest, SetLocalDescriptionFailsIfNoIceCredentials) {
   EXPECT_FALSE(caller->SetLocalDescription(std::move(offer)));
 }
 
-TEST_F(PeerConnectionIceUnitTest, SetRemoteDescriptionFailsIfNoIceCredentials) {
+TEST_P(PeerConnectionIceTest, SetRemoteDescriptionFailsIfNoIceCredentials) {
   auto caller = CreatePeerConnectionWithAudioVideo();
   auto callee = CreatePeerConnectionWithAudioVideo();
 
@@ -333,7 +352,7 @@ TEST_F(PeerConnectionIceUnitTest, SetRemoteDescriptionFailsIfNoIceCredentials) {
 // The following group tests that ICE candidates are not generated before
 // SetLocalDescription is called on a PeerConnection.
 
-TEST_F(PeerConnectionIceUnitTest, NoIceCandidatesBeforeSetLocalDescription) {
+TEST_P(PeerConnectionIceTest, NoIceCandidatesBeforeSetLocalDescription) {
   const SocketAddress kLocalAddress("1.1.1.1", 0);
 
   auto caller = CreatePeerConnectionWithAudioVideo();
@@ -344,7 +363,7 @@ TEST_F(PeerConnectionIceUnitTest, NoIceCandidatesBeforeSetLocalDescription) {
 
   EXPECT_EQ(0u, caller->observer()->candidates_.size());
 }
-TEST_F(PeerConnectionIceUnitTest,
+TEST_P(PeerConnectionIceTest,
        NoIceCandidatesBeforeAnswerSetAsLocalDescription) {
   const SocketAddress kCallerAddress("1.1.1.1", 1111);
 
@@ -363,8 +382,7 @@ TEST_F(PeerConnectionIceUnitTest,
   EXPECT_EQ(0u, callee->observer()->candidates_.size());
 }
 
-TEST_F(PeerConnectionIceUnitTest,
-       CannotAddCandidateWhenRemoteDescriptionNotSet) {
+TEST_P(PeerConnectionIceTest, CannotAddCandidateWhenRemoteDescriptionNotSet) {
   const SocketAddress kCalleeAddress("1.1.1.1", 1111);
 
   auto caller = CreatePeerConnectionWithAudioVideo();
@@ -378,7 +396,7 @@ TEST_F(PeerConnectionIceUnitTest,
   EXPECT_FALSE(caller->pc()->AddIceCandidate(&jsep_candidate));
 }
 
-TEST_F(PeerConnectionIceUnitTest, DuplicateIceCandidateIgnoredWhenAdded) {
+TEST_P(PeerConnectionIceTest, DuplicateIceCandidateIgnoredWhenAdded) {
   const SocketAddress kCalleeAddress("1.1.1.1", 1111);
 
   auto caller = CreatePeerConnectionWithAudioVideo();
@@ -394,7 +412,7 @@ TEST_F(PeerConnectionIceUnitTest, DuplicateIceCandidateIgnoredWhenAdded) {
   EXPECT_EQ(1u, caller->GetIceCandidatesFromRemoteDescription().size());
 }
 
-TEST_F(PeerConnectionIceUnitTest,
+TEST_P(PeerConnectionIceTest,
        AddRemoveCandidateWithEmptyTransportDoesNotCrash) {
   const SocketAddress kCalleeAddress("1.1.1.1", 1111);
 
@@ -407,12 +425,14 @@ TEST_F(PeerConnectionIceUnitTest,
 
   // |candidate.transport_name()| is empty.
   cricket::Candidate candidate = CreateLocalUdpCandidate(kCalleeAddress);
-  JsepIceCandidate ice_candidate(cricket::CN_AUDIO, 0, candidate);
+  auto* audio_content = cricket::GetFirstAudioContent(
+      caller->pc()->local_description()->description());
+  JsepIceCandidate ice_candidate(audio_content->name, 0, candidate);
   EXPECT_TRUE(caller->pc()->AddIceCandidate(&ice_candidate));
   EXPECT_TRUE(caller->pc()->RemoveIceCandidates({candidate}));
 }
 
-TEST_F(PeerConnectionIceUnitTest, RemoveCandidateRemovesFromRemoteDescription) {
+TEST_P(PeerConnectionIceTest, RemoveCandidateRemovesFromRemoteDescription) {
   const SocketAddress kCalleeAddress("1.1.1.1", 1111);
 
   auto caller = CreatePeerConnectionWithAudioVideo();
@@ -431,7 +451,7 @@ TEST_F(PeerConnectionIceUnitTest, RemoveCandidateRemovesFromRemoteDescription) {
 // Test that if a candidate is added via AddIceCandidate and via an updated
 // remote description, then both candidates appear in the stored remote
 // description.
-TEST_F(PeerConnectionIceUnitTest,
+TEST_P(PeerConnectionIceTest,
        CandidateInSubsequentOfferIsAddedToRemoteDescription) {
   const SocketAddress kCallerAddress1("1.1.1.1", 1111);
   const SocketAddress kCallerAddress2("2.2.2.2", 2222);
@@ -461,7 +481,7 @@ TEST_F(PeerConnectionIceUnitTest,
 // has either ICE ufrag/pwd too short or too long and succeeds otherwise.
 // The standard (https://tools.ietf.org/html/rfc5245#section-15.4) says that
 // pwd must be 22-256 characters and ufrag must be 4-256 characters.
-TEST_F(PeerConnectionIceUnitTest, VerifyUfragPwdLength) {
+TEST_P(PeerConnectionIceTest, VerifyUfragPwdLength) {
   auto caller = CreatePeerConnectionWithAudioVideo();
   auto callee = CreatePeerConnectionWithAudioVideo();
 
@@ -514,7 +534,7 @@ TEST_F(PeerConnectionIceUnitTest, VerifyUfragPwdLength) {
          << " which have the following address hosts:" << candidate_hosts.str();
 }
 
-TEST_F(PeerConnectionIceUnitTest, CandidatesGeneratedForEachLocalInterface) {
+TEST_P(PeerConnectionIceTest, CandidatesGeneratedForEachLocalInterface) {
   const SocketAddress kLocalAddress1("1.1.1.1", 0);
   const SocketAddress kLocalAddress2("2.2.2.2", 0);
 
@@ -530,8 +550,7 @@ TEST_F(PeerConnectionIceUnitTest, CandidatesGeneratedForEachLocalInterface) {
   EXPECT_PRED_FORMAT2(AssertIpInCandidates, kLocalAddress2, candidates);
 }
 
-TEST_F(PeerConnectionIceUnitTest,
-       TrickledSingleCandidateAddedToRemoteDescription) {
+TEST_P(PeerConnectionIceTest, TrickledSingleCandidateAddedToRemoteDescription) {
   const SocketAddress kCallerAddress("1.1.1.1", 1111);
 
   auto caller = CreatePeerConnectionWithAudioVideo();
@@ -547,8 +566,7 @@ TEST_F(PeerConnectionIceUnitTest,
                       candidates[0]->candidate());
 }
 
-TEST_F(PeerConnectionIceUnitTest,
-       TwoTrickledCandidatesAddedToRemoteDescription) {
+TEST_P(PeerConnectionIceTest, TwoTrickledCandidatesAddedToRemoteDescription) {
   const SocketAddress kCalleeAddress1("1.1.1.1", 1111);
   const SocketAddress kCalleeAddress2("2.2.2.2", 2222);
 
@@ -573,8 +591,7 @@ TEST_F(PeerConnectionIceUnitTest,
                       candidates[1]->candidate());
 }
 
-TEST_F(PeerConnectionIceUnitTest,
-       LocalDescriptionUpdatedWhenContinualGathering) {
+TEST_P(PeerConnectionIceTest, LocalDescriptionUpdatedWhenContinualGathering) {
   const SocketAddress kLocalAddress("1.1.1.1", 0);
 
   RTCConfiguration config;
@@ -595,7 +612,7 @@ TEST_F(PeerConnectionIceUnitTest,
 // Test that when continual gathering is enabled, and a network interface goes
 // down, the candidate is signaled as removed and removed from the local
 // description.
-TEST_F(PeerConnectionIceUnitTest,
+TEST_P(PeerConnectionIceTest,
        LocalCandidatesRemovedWhenNetworkDownIfGatheringContinually) {
   const SocketAddress kLocalAddress("1.1.1.1", 0);
 
@@ -621,7 +638,7 @@ TEST_F(PeerConnectionIceUnitTest,
   EXPECT_LT(0, caller->observer()->num_candidates_removed_);
 }
 
-TEST_F(PeerConnectionIceUnitTest,
+TEST_P(PeerConnectionIceTest,
        LocalCandidatesNotRemovedWhenNetworkDownIfGatheringOnce) {
   const SocketAddress kLocalAddress("1.1.1.1", 0);
 
@@ -646,7 +663,7 @@ TEST_F(PeerConnectionIceUnitTest,
 // (indicating an ICE restart) the old candidates are removed and new candidates
 // added to the remote description.
 
-TEST_F(PeerConnectionIceUnitTest, IceRestartOfferClearsExistingCandidate) {
+TEST_P(PeerConnectionIceTest, IceRestartOfferClearsExistingCandidate) {
   const SocketAddress kCallerAddress("1.1.1.1", 1111);
 
   auto caller = CreatePeerConnectionWithAudioVideo();
@@ -664,7 +681,7 @@ TEST_F(PeerConnectionIceUnitTest, IceRestartOfferClearsExistingCandidate) {
 
   EXPECT_EQ(0u, callee->GetIceCandidatesFromRemoteDescription().size());
 }
-TEST_F(PeerConnectionIceUnitTest,
+TEST_P(PeerConnectionIceTest,
        IceRestartOfferCandidateReplacesExistingCandidate) {
   const SocketAddress kFirstCallerAddress("1.1.1.1", 1111);
   const SocketAddress kRestartedCallerAddress("2.2.2.2", 2222);
@@ -696,8 +713,7 @@ TEST_F(PeerConnectionIceUnitTest,
 
 // Test that if there is not an ICE restart (i.e., nothing changes), then the
 // answer to a later offer should have the same ufrag/pwd as the first answer.
-TEST_F(PeerConnectionIceUnitTest,
-       LaterAnswerHasSameIceCredentialsIfNoIceRestart) {
+TEST_P(PeerConnectionIceTest, LaterAnswerHasSameIceCredentialsIfNoIceRestart) {
   auto caller = CreatePeerConnectionWithAudioVideo();
   auto callee = CreatePeerConnectionWithAudioVideo();
 
@@ -724,20 +740,23 @@ TEST_F(PeerConnectionIceUnitTest,
 // a=ice-pwd attributes compared to the previous SDP from the peer, it
 // indicates that ICE is restarting for this media stream."
 
-class PeerConnectionIceUfragPwdAnswerUnitTest
-    : public PeerConnectionIceUnitTest,
-      public ::testing::WithParamInterface<std::pair<bool, bool>> {
+class PeerConnectionIceUfragPwdAnswerTest
+    : public PeerConnectionIceBaseTest,
+      public ::testing::WithParamInterface<
+          std::tuple<SdpSemantics, std::tuple<bool, bool>>> {
  protected:
-  PeerConnectionIceUfragPwdAnswerUnitTest() {
-    offer_new_ufrag_ = GetParam().first;
-    offer_new_pwd_ = GetParam().second;
+  PeerConnectionIceUfragPwdAnswerTest()
+      : PeerConnectionIceBaseTest(std::get<0>(GetParam())) {
+    auto param = std::get<1>(GetParam());
+    offer_new_ufrag_ = std::get<0>(param);
+    offer_new_pwd_ = std::get<1>(param);
   }
 
   bool offer_new_ufrag_;
   bool offer_new_pwd_;
 };
 
-TEST_P(PeerConnectionIceUfragPwdAnswerUnitTest, TestIncludedInAnswer) {
+TEST_P(PeerConnectionIceUfragPwdAnswerTest, TestIncludedInAnswer) {
   auto caller = CreatePeerConnectionWithAudioVideo();
   auto callee = CreatePeerConnectionWithAudioVideo();
 
@@ -766,18 +785,19 @@ TEST_P(PeerConnectionIceUfragPwdAnswerUnitTest, TestIncludedInAnswer) {
 }
 
 INSTANTIATE_TEST_CASE_P(
-    PeerConnectionIceUnitTest,
-    PeerConnectionIceUfragPwdAnswerUnitTest,
-    Values(std::make_pair(true, true),     // Both changed.
-           std::make_pair(true, false),    // Only ufrag changed.
-           std::make_pair(false, true)));  // Only pwd changed.
+    PeerConnectionIceTest,
+    PeerConnectionIceUfragPwdAnswerTest,
+    Combine(Values(SdpSemantics::kPlanB, SdpSemantics::kUnifiedPlan),
+            Values(std::make_pair(true, true),      // Both changed.
+                   std::make_pair(true, false),     // Only ufrag changed.
+                   std::make_pair(false, true))));  // Only pwd changed.
 
 // Test that if an ICE restart is offered on one media section, then the answer
 // will only change ICE ufrag/pwd for that section and keep the other sections
 // the same.
 // Note that this only works if we have disabled BUNDLE, otherwise all media
 // sections will share the same transport.
-TEST_F(PeerConnectionIceUnitTest,
+TEST_P(PeerConnectionIceTest,
        CreateAnswerHasNewUfragPwdForOnlyMediaSectionWhichRestarted) {
   auto caller = CreatePeerConnectionWithAudioVideo();
   auto callee = CreatePeerConnectionWithAudioVideo();
@@ -817,7 +837,7 @@ TEST_F(PeerConnectionIceUnitTest,
 // ICE and the callee uses the full implementation, the caller takes the
 // CONTROLLED role and the callee takes the CONTROLLING role. This is specified
 // in RFC5245 Section 5.1.1.
-TEST_F(PeerConnectionIceUnitTest,
+TEST_P(PeerConnectionIceTest,
        OfferFromLiteIceControlledAndAnswerFromFullIceControlling) {
   auto caller = CreatePeerConnectionWithAudioVideo();
   auto callee = CreatePeerConnectionWithAudioVideo();
@@ -841,7 +861,7 @@ TEST_F(PeerConnectionIceUnitTest,
 // Test that when the caller and the callee both use the lite implementation of
 // ICE, the initial offerer (caller) takes the CONTROLLING role and the callee
 // takes the CONTROLLED role. This is specified in RFC5245 Section 5.1.1.
-TEST_F(PeerConnectionIceUnitTest,
+TEST_P(PeerConnectionIceTest,
        OfferFromLiteIceControllingAndAnswerFromLiteIceControlled) {
   auto caller = CreatePeerConnectionWithAudioVideo();
   auto callee = CreatePeerConnectionWithAudioVideo();
@@ -861,5 +881,10 @@ TEST_F(PeerConnectionIceUnitTest,
   EXPECT_EQ(cricket::ICEROLE_CONTROLLING, GetIceRole(caller));
   EXPECT_EQ(cricket::ICEROLE_CONTROLLED, GetIceRole(callee));
 }
+
+INSTANTIATE_TEST_CASE_P(PeerConnectionIceTest,
+                        PeerConnectionIceTest,
+                        Values(SdpSemantics::kPlanB,
+                               SdpSemantics::kUnifiedPlan));
 
 }  // namespace webrtc
