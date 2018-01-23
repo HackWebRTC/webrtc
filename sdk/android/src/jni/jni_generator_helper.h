@@ -21,6 +21,10 @@
 #include "rtc_base/checks.h"
 #include "sdk/android/src/jni/scoped_java_ref.h"
 
+// TODO(crbug.com/801260): Remove this macro definition as soon as
+// crrev.com/531028 will be reverted.
+#define TRACE_NATIVE_EXECUTION_SCOPED(name)
+
 #define CHECK_CLAZZ(env, jcaller, clazz, ...) RTC_DCHECK(clazz);
 #define CHECK_NATIVE_PTR(env, jcaller, native_ptr, method_name, ...) \
   RTC_DCHECK(native_ptr) << method_name;
