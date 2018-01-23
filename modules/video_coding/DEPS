@@ -13,7 +13,7 @@ specific_include_rules = {
     "+base/android",
     "+sdk",
   ],
-  "(.*test\.cc|.*test\.h|.*test\.mm)": [
+  "(.*test\.cc|.*test\.h|.*test\.mm|test_config.cc)": [
      "+media/base",
      "+media/engine",
      "+sdk",

@@ -32,6 +32,8 @@ struct TestConfig {
   };
 
   void SetCodecSettings(VideoCodecType codec_type,
+                        size_t num_simulcast_streams,
+                        size_t num_spatial_layers,
                         size_t num_temporal_layers,
                         bool error_concealment_on,
                         bool denoising_on,
@@ -41,13 +43,24 @@ struct TestConfig {
                         size_t width,
                         size_t height);
 
+  void ConfigureSimulcast();
+
   size_t NumberOfCores() const;
+
   size_t NumberOfTemporalLayers() const;
+
   size_t NumberOfSpatialLayers() const;
+
+  size_t NumberOfSimulcastStreams() const;
+
   size_t TemporalLayerForFrame(size_t frame_idx) const;
+
   std::vector<FrameType> FrameTypeForFrame(size_t frame_idx) const;
+
   std::string ToString() const;
+
   std::string CodecName() const;
+
   std::string FilenameWithParams() const;
 
   // Plain name of YUV file to process without file extension.

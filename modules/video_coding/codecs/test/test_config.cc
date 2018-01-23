@@ -12,6 +12,7 @@
 
 #include <sstream>
 
+#include "media/engine/simulcast.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "rtc_base/checks.h"
 #include "system_wrappers/include/cpu_info.h"
@@ -22,6 +23,9 @@ namespace test {
 
 namespace {
 const int kBaseKeyFrameInterval = 3000;
+const int kMaxBitrateBps = 5000 * 1000;  // From kSimulcastFormats.
+const int kMaxFramerateFps = 30;
+const int kMaxQp = 56;
 
 std::string CodecSpecificToString(const webrtc::VideoCodec& codec) {
   std::stringstream ss;
@@ -67,6 +71,8 @@ std::string CodecSpecificToString(const webrtc::VideoCodec& codec) {
 }  // namespace
 
 void TestConfig::SetCodecSettings(VideoCodecType codec_type,
+                                  size_t num_simulcast_streams,
+                                  size_t num_spatial_layers,
                                   size_t num_temporal_layers,
                                   bool error_concealment_on,
                                   bool denoising_on,
@@ -81,6 +87,22 @@ void TestConfig::SetCodecSettings(VideoCodecType codec_type,
   // DCHECK that they are set before initializing the codec instead.
   codec_settings.width = static_cast<uint16_t>(width);
   codec_settings.height = static_cast<uint16_t>(height);
+
+  RTC_CHECK(num_simulcast_streams >= 1 &&
+            num_simulcast_streams <= kMaxSimulcastStreams);
+  RTC_CHECK(num_spatial_layers >= 1 && num_spatial_layers <= kMaxSpatialLayers);
+
+  // Simulcast is only available with VP8.
+  RTC_CHECK(num_simulcast_streams < 2 || codec_type == kVideoCodecVP8);
+
+  // Spatial scalability is only available with VP9.
+  RTC_CHECK(num_spatial_layers < 2 || codec_type == kVideoCodecVP9);
+
+  // Some base code requires numberOfSimulcastStreams to be set to zero
+  // when simulcast is not used.
+  codec_settings.numberOfSimulcastStreams =
+      num_simulcast_streams <= 1 ? 0
+                                 : static_cast<uint8_t>(num_simulcast_streams);
 
   switch (codec_settings.codecType) {
     case kVideoCodecVP8:
@@ -102,6 +124,8 @@ void TestConfig::SetCodecSettings(VideoCodecType codec_type,
       codec_settings.VP9()->frameDroppingOn = frame_dropper_on;
       codec_settings.VP9()->keyFrameInterval = kBaseKeyFrameInterval;
       codec_settings.VP9()->automaticResizeOn = spatial_resize_on;
+      codec_settings.VP9()->numberOfSpatialLayers =
+          static_cast<uint8_t>(num_spatial_layers);
       break;
     case kVideoCodecH264:
       codec_settings.H264()->frameDroppingOn = frame_dropper_on;
@@ -110,6 +134,29 @@ void TestConfig::SetCodecSettings(VideoCodecType codec_type,
     default:
       RTC_NOTREACHED();
       break;
+  }
+
+  if (codec_settings.numberOfSimulcastStreams > 1) {
+    ConfigureSimulcast();
+  }
+}
+
+void TestConfig::ConfigureSimulcast() {
+  std::vector<webrtc::VideoStream> stream = cricket::GetSimulcastConfig(
+      codec_settings.numberOfSimulcastStreams, codec_settings.width,
+      codec_settings.height, kMaxBitrateBps, kMaxQp, kMaxFramerateFps, false);
+
+  for (size_t i = 0; i < stream.size(); ++i) {
+    SimulcastStream* ss = &codec_settings.simulcastStream[i];
+    ss->width = static_cast<uint16_t>(stream[i].width);
+    ss->height = static_cast<uint16_t>(stream[i].height);
+    ss->numberOfTemporalLayers = static_cast<unsigned char>(
+        stream[i].temporal_layer_thresholds_bps.size() + 1);
+    ss->maxBitrate = stream[i].max_bitrate_bps / 1000;
+    ss->targetBitrate = stream[i].target_bitrate_bps / 1000;
+    ss->minBitrate = stream[i].min_bitrate_bps / 1000;
+    ss->qpMax = stream[i].max_qp;
+    ss->active = true;
   }
 }
 
@@ -133,6 +180,10 @@ size_t TestConfig::NumberOfSpatialLayers() const {
   } else {
     return 1;
   }
+}
+
+size_t TestConfig::NumberOfSimulcastStreams() const {
+  return codec_settings.numberOfSimulcastStreams;
 }
 
 size_t TestConfig::TemporalLayerForFrame(size_t frame_idx) const {

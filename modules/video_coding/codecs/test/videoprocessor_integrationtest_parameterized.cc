@@ -67,7 +67,7 @@ class VideoProcessorIntegrationTestParameterized
     config_.hw_encoder = hw_codec_;
     config_.hw_decoder = hw_codec_;
     config_.num_frames = kNumFrames;
-    config_.SetCodecSettings(codec_type_, kNumTemporalLayers,
+    config_.SetCodecSettings(codec_type_, 1, 1, kNumTemporalLayers,
                              kErrorConcealmentOn, kDenoisingOn, kFrameDropperOn,
                              kSpatialResizeOn, kResilienceOn, width, height);
 

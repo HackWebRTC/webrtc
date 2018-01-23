@@ -76,7 +76,7 @@ class VideoProcessorIntegrationTestLibvpx
 
 #if !defined(RTC_DISABLE_VP9)
 TEST_F(VideoProcessorIntegrationTestLibvpx, HighBitrateVP9) {
-  config_.SetCodecSettings(kVideoCodecVP9, 1, false, false, true, false,
+  config_.SetCodecSettings(kVideoCodecVP9, 1, 1, 1, false, false, true, false,
                            kResilienceOn, kCifWidth, kCifHeight);
   config_.num_frames = kNumFramesShort;
 
@@ -93,7 +93,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, HighBitrateVP9) {
 }
 
 TEST_F(VideoProcessorIntegrationTestLibvpx, ChangeBitrateVP9) {
-  config_.SetCodecSettings(kVideoCodecVP9, 1, false, false, true, false,
+  config_.SetCodecSettings(kVideoCodecVP9, 1, 1, 1, false, false, true, false,
                            kResilienceOn, kCifWidth, kCifHeight);
 
   std::vector<RateProfile> rate_profiles = {
@@ -115,7 +115,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, ChangeBitrateVP9) {
 }
 
 TEST_F(VideoProcessorIntegrationTestLibvpx, ChangeFramerateVP9) {
-  config_.SetCodecSettings(kVideoCodecVP9, 1, false, false, true, false,
+  config_.SetCodecSettings(kVideoCodecVP9, 1, 1, 1, false, false, true, false,
                            kResilienceOn, kCifWidth, kCifHeight);
 
   std::vector<RateProfile> rate_profiles = {
@@ -139,7 +139,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, ChangeFramerateVP9) {
 }
 
 TEST_F(VideoProcessorIntegrationTestLibvpx, DenoiserOnVP9) {
-  config_.SetCodecSettings(kVideoCodecVP9, 1, false, true, true, false,
+  config_.SetCodecSettings(kVideoCodecVP9, 1, 1, 1, false, true, true, false,
                            kResilienceOn, kCifWidth, kCifHeight);
   config_.num_frames = kNumFramesShort;
 
@@ -156,7 +156,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, DenoiserOnVP9) {
 }
 
 TEST_F(VideoProcessorIntegrationTestLibvpx, VeryLowBitrateVP9) {
-  config_.SetCodecSettings(kVideoCodecVP9, 1, false, false, true, true,
+  config_.SetCodecSettings(kVideoCodecVP9, 1, 1, 1, false, false, true, true,
                            kResilienceOn, kCifWidth, kCifHeight);
 
   std::vector<RateProfile> rate_profiles = {{50, 30, kNumFramesLong}};
@@ -177,7 +177,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, VeryLowBitrateVP9) {
 #endif  // !defined(RTC_DISABLE_VP9)
 
 TEST_F(VideoProcessorIntegrationTestLibvpx, HighBitrateVP8) {
-  config_.SetCodecSettings(kVideoCodecVP8, 1, false, true, true, false,
+  config_.SetCodecSettings(kVideoCodecVP8, 1, 1, 1, false, true, true, false,
                            kResilienceOn, kCifWidth, kCifHeight);
   config_.num_frames = kNumFramesShort;
 
@@ -215,7 +215,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, HighBitrateVP8) {
 #define MAYBE_ProcessNoLossChangeBitRateVP8 ProcessNoLossChangeBitRateVP8
 #endif
 TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_ChangeBitrateVP8) {
-  config_.SetCodecSettings(kVideoCodecVP8, 1, false, true, true, false,
+  config_.SetCodecSettings(kVideoCodecVP8, 1, 1, 1, false, true, true, false,
                            kResilienceOn, kCifWidth, kCifHeight);
 
   std::vector<RateProfile> rate_profiles = {
@@ -249,7 +249,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_ChangeBitrateVP8) {
   ProcessNoLossChangeFrameRateFrameDropVP8
 #endif
 TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_ChangeFramerateVP8) {
-  config_.SetCodecSettings(kVideoCodecVP8, 1, false, true, true, false,
+  config_.SetCodecSettings(kVideoCodecVP8, 1, 1, 1, false, true, true, false,
                            kResilienceOn, kCifWidth, kCifHeight);
 
   std::vector<RateProfile> rate_profiles = {
@@ -288,7 +288,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_ChangeFramerateVP8) {
 #define MAYBE_ProcessNoLossTemporalLayersVP8 ProcessNoLossTemporalLayersVP8
 #endif
 TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_TemporalLayersVP8) {
-  config_.SetCodecSettings(kVideoCodecVP8, 3, false, true, true, false,
+  config_.SetCodecSettings(kVideoCodecVP8, 1, 1, 3, false, true, true, false,
                            kResilienceOn, kCifWidth, kCifHeight);
 
   std::vector<RateProfile> rate_profiles = {{200, 30, 150},

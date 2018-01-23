@@ -508,6 +508,7 @@ if (rtc_include_tests) {
       "../../api:video_frame_api_i420",
       "../../api/video_codecs:video_codecs_api",
       "../../common_video:common_video",
+      "../../media:rtc_internal_video_codecs",
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
       "../../rtc_base:rtc_task_queue",

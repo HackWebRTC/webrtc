@@ -106,50 +106,6 @@ TEST(TestConfig, ForcedKeyFrameIntervalOn) {
   EXPECT_THAT(config.FrameTypeForFrame(5), ElementsAre(kVideoFrameDelta));
 }
 
-TEST(TestConfig, ToString_Vp8) {
-  TestConfig config;
-  config.filename = "yuvfile";
-  config.use_single_core = true;
-
-  config.SetCodecSettings(kVideoCodecVP8, 2, true,  // error_concealment_on,
-                          false,                    // denoising_on,
-                          false,                    // frame_dropper_on,
-                          true,                     // spatial_resize_on,
-                          false,                    // resilience_on,
-                          320, 180);
-  config.codec_settings.startBitrate = 400;
-  config.codec_settings.maxBitrate = 500;
-  config.codec_settings.minBitrate = 70;
-  config.codec_settings.maxFramerate = 35;
-  config.codec_settings.qpMax = 66;
-  config.codec_settings.VP8()->complexity = kComplexityNormal;
-  config.codec_settings.VP8()->keyFrameInterval = 999;
-
-  EXPECT_EQ(
-      "\n Filename             : yuvfile"
-      "\n # CPU cores used     : 1"
-      "\n General:"
-      "\n  Codec type          : VP8"
-      "\n  Start bitrate       : 400 kbps"
-      "\n  Max bitrate         : 500 kbps"
-      "\n  Min bitrate         : 70 kbps"
-      "\n  Width               : 320"
-      "\n  Height              : 180"
-      "\n  Max frame rate      : 35"
-      "\n  QPmax               : 66"
-      "\n  # simulcast streams : 0"
-      "\n VP8 specific: "
-      "\n  Complexity          : 0"
-      "\n  Resilience          : 0"
-      "\n  # temporal layers   : 2"
-      "\n  Denoising           : 0"
-      "\n  Error concealment   : 1"
-      "\n  Automatic resize    : 1"
-      "\n  Frame dropping      : 0"
-      "\n  Key frame interval  : 999\n",
-      config.ToString());
-}
-
 TEST(TestConfig, FilenameWithParams) {
   TestConfig config;
   config.filename = "filename";
