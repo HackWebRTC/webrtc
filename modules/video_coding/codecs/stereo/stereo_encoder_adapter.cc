@@ -212,8 +212,6 @@ EncodedImageCallback::Result StereoEncoderAdapter::OnEncodedImage(
     const EncodedImage& encodedImage,
     const CodecSpecificInfo* codecSpecificInfo,
     const RTPFragmentationHeader* fragmentation) {
-  CodecSpecificInfo codec_info = *codecSpecificInfo;
-  codec_info.codecType = kVideoCodecStereo;
   const auto& stashed_image_itr = stashed_images_.find(encodedImage._timeStamp);
   const auto& stashed_image_next_itr = std::next(stashed_image_itr, 1);
   RTC_DCHECK(stashed_image_itr != stashed_images_.end());
@@ -246,6 +244,10 @@ EncodedImageCallback::Result StereoEncoderAdapter::OnEncodedImage(
         delete[] combined_image_._buffer;
       combined_image_ =
           MultiplexEncodedImagePacker::PackAndRelease(iter->second);
+
+      CodecSpecificInfo codec_info = *codecSpecificInfo;
+      codec_info.codecType = kVideoCodecStereo;
+      codec_info.codecSpecific.generic.simulcast_idx = 0;
       encoded_complete_callback_->OnEncodedImage(combined_image_, &codec_info,
                                                  fragmentation);
       iter++;
