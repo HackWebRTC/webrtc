@@ -222,7 +222,7 @@ TEST_F(RtpPacketHistoryTest, FullExpansion) {
 
 TEST_F(RtpPacketHistoryTest, DontExpandIfPacketIsOldEnough) {
   const size_t kSendSidePacketHistorySize = 600;
-  const int64_t kRttMs = 100;
+  const int64_t kRttMs = 334;
   hist_.SetStorePacketsStatus(true, kSendSidePacketHistorySize);
   hist_.SetRtt(kRttMs);
 
@@ -241,12 +241,12 @@ TEST_F(RtpPacketHistoryTest, DontExpandIfPacketIsOldEnough) {
   std::unique_ptr<RtpPacketToSend> packet =
       CreateRtpPacket(kSeqNum + kSendSidePacketHistorySize);
   hist_.PutRtpPacket(std::move(packet), kAllowRetransmission, true);
-  EXPECT_FALSE(hist_.GetPacketAndSetSendTime(kSeqNum, kRttMs, true));
+  EXPECT_FALSE(hist_.HasRtpPacket(kSeqNum));
 }
 
 TEST_F(RtpPacketHistoryTest, ExpandIfPacketTooRecentlyTransmitted) {
   const size_t kSendSidePacketHistorySize = 600;
-  const int64_t kRttMs = 100;
+  const int64_t kRttMs = 334;
   hist_.SetStorePacketsStatus(true, kSendSidePacketHistorySize);
   hist_.SetRtt(kRttMs);
 
@@ -265,6 +265,31 @@ TEST_F(RtpPacketHistoryTest, ExpandIfPacketTooRecentlyTransmitted) {
   std::unique_ptr<RtpPacketToSend> packet =
       CreateRtpPacket(kSeqNum + kSendSidePacketHistorySize);
   hist_.PutRtpPacket(std::move(packet), kAllowRetransmission, true);
-  EXPECT_TRUE(hist_.GetPacketAndSetSendTime(kSeqNum, kRttMs, true));
+  EXPECT_TRUE(hist_.HasRtpPacket(kSeqNum));
+}
+
+TEST_F(RtpPacketHistoryTest, ExpandIfPacketTooRecentlyTransmittedOnFastLink) {
+  const size_t kSendSidePacketHistorySize = 600;
+  const int64_t kRttMs = 5;
+  hist_.SetStorePacketsStatus(true, kSendSidePacketHistorySize);
+  hist_.SetRtt(kRttMs);
+
+  // Fill up the buffer with packets.
+  for (size_t i = 0; i < kSendSidePacketHistorySize; ++i) {
+    std::unique_ptr<RtpPacketToSend> packet = CreateRtpPacket(kSeqNum + i);
+    hist_.PutRtpPacket(std::move(packet), kAllowRetransmission, false);
+    EXPECT_TRUE(hist_.GetPacketAndSetSendTime(kSeqNum + i, kRttMs, false));
+  }
+
+  // Move clock forward after expiration time based on RTT, but before
+  // expiration time based on absolute time.
+  fake_clock_.AdvanceTimeMilliseconds(999);
+
+  // Insert a new packet and verify that the old one for this index still
+  // exists - ie the buffer has been expanded.
+  std::unique_ptr<RtpPacketToSend> packet =
+      CreateRtpPacket(kSeqNum + kSendSidePacketHistorySize);
+  hist_.PutRtpPacket(std::move(packet), kAllowRetransmission, true);
+  EXPECT_TRUE(hist_.HasRtpPacket(kSeqNum));
 }
 }  // namespace webrtc

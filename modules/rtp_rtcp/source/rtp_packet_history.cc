@@ -22,6 +22,10 @@
 namespace webrtc {
 namespace {
 constexpr size_t kMinPacketRequestBytes = 50;
+// Don't overwrite a packet within one second, or three RTTs, after transmission
+// whichever is larger. Instead try to dynamically expand history.
+constexpr int64_t kMinPacketDurationMs = 1000;
+constexpr int kMinPacketDurationRtt = 3;
 }  // namespace
 constexpr size_t RtpPacketHistory::kMaxCapacity;
 
@@ -85,9 +89,12 @@ void RtpPacketHistory::PutRtpPacket(std::unique_ptr<RtpPacketToSend> packet,
   // less than 3 round trip times ago, expand the buffer to avoid overwriting
   // valid data.
   StoredPacket* stored_packet = &stored_packets_[prev_index_];
+  int64_t packet_duration_ms =
+      std::max(kMinPacketDurationRtt * rtt_ms_, kMinPacketDurationMs);
   if (stored_packet->packet &&
       (stored_packet->send_time == 0 ||
-       (rtt_ms_ >= 0 && now_ms - stored_packet->send_time <= 3 * rtt_ms_))) {
+       (rtt_ms_ >= 0 &&
+        now_ms - stored_packet->send_time <= packet_duration_ms))) {
     size_t current_size = stored_packets_.size();
     if (current_size < kMaxCapacity) {
       size_t expanded_size = std::max(current_size * 3 / 2, current_size + 1);
