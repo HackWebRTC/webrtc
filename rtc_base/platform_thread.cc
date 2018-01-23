@@ -270,7 +270,7 @@ void PlatformThread::Run() {
     SleepEx(0, true);
   } while (!stop_);
 #else
-#if defined(WEBRTC_MAC)
+#if defined(WEBRTC_MAC) || defined(WEBRTC_ANDROID)
     sched_yield();
 #else
     static const struct timespec ts_null = {0};
