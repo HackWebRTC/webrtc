@@ -76,6 +76,51 @@ TEST_F(ReceiveStatisticsProxyTest, OnDecodedFrameIncreasesFramesDecoded) {
   }
 }
 
+TEST_F(ReceiveStatisticsProxyTest, DecodedFpsIsReported) {
+  const int kFps = 20;
+  const int kRequiredSamples = metrics::kMinRunTimeInSeconds * kFps;
+  for (int i = 0; i < kRequiredSamples; ++i) {
+    statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>(),
+                                      VideoContentType::UNSPECIFIED);
+    fake_clock_.AdvanceTimeMilliseconds(1000 / kFps);
+  }
+  statistics_proxy_.reset();
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.DecodedFramesPerSecond"));
+  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.DecodedFramesPerSecond", kFps));
+}
+
+TEST_F(ReceiveStatisticsProxyTest, DecodedFpsIsNotReportedForTooFewSamples) {
+  const int kFps = 20;
+  const int kRequiredSamples = metrics::kMinRunTimeInSeconds * kFps;
+  for (int i = 0; i < kRequiredSamples - 1; ++i) {
+    statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>(),
+                                      VideoContentType::UNSPECIFIED);
+    fake_clock_.AdvanceTimeMilliseconds(1000 / kFps);
+  }
+  statistics_proxy_.reset();
+  EXPECT_EQ(0, metrics::NumSamples("WebRTC.Video.DecodedFramesPerSecond"));
+}
+
+TEST_F(ReceiveStatisticsProxyTest, DecodedFpsIsReportedWithQpReset) {
+  const int kFps1 = 10;
+  for (int i = 0; i < metrics::kMinRunTimeInSeconds * kFps1; ++i) {
+    statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>(),
+                                      VideoContentType::UNSPECIFIED);
+    fake_clock_.AdvanceTimeMilliseconds(1000 / kFps1);
+  }
+  // First QP value received, resets frames decoded.
+  const int kFps2 = 20;
+  for (int i = 0; i < metrics::kMinRunTimeInSeconds * kFps2; ++i) {
+    statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>(1u),
+                                      VideoContentType::UNSPECIFIED);
+    fake_clock_.AdvanceTimeMilliseconds(1000 / kFps2);
+  }
+  statistics_proxy_.reset();
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.DecodedFramesPerSecond"));
+  EXPECT_EQ(1,
+            metrics::NumEvents("WebRTC.Video.DecodedFramesPerSecond", kFps2));
+}
+
 TEST_F(ReceiveStatisticsProxyTest, OnDecodedFrameWithQpResetsFramesDecoded) {
   EXPECT_EQ(0u, statistics_proxy_->GetStats().frames_decoded);
   for (uint32_t i = 1; i <= 3; ++i) {

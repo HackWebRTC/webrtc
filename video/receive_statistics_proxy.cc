@@ -18,6 +18,7 @@
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/timeutils.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/metrics.h"
 
@@ -143,6 +144,18 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
                                fraction_lost);
       RTC_LOG(LS_INFO) << "WebRTC.Video.ReceivedPacketsLostInPercent "
                        << fraction_lost;
+    }
+  }
+
+  if (first_decoded_frame_time_ms_) {
+    const int64_t elapsed_ms =
+        (clock_->TimeInMilliseconds() - *first_decoded_frame_time_ms_);
+    if (elapsed_ms >=
+        metrics::kMinRunTimeInSeconds * rtc::kNumMillisecsPerSec) {
+      RTC_HISTOGRAM_COUNTS_100(
+          "WebRTC.Video.DecodedFramesPerSecond",
+          static_cast<int>((stats_.frames_decoded * 1000.0f / elapsed_ms) +
+                           0.5f));
     }
   }
 
@@ -664,6 +677,8 @@ void ReceiveStatisticsProxy::OnDecodedFrame(rtc::Optional<uint8_t> qp,
         interframe_delay_ms);
     content_specific_stats->flow_duration_ms += interframe_delay_ms;
   }
+  if (stats_.frames_decoded == 1)
+    first_decoded_frame_time_ms_.emplace(now);
   last_decoded_frame_time_ms_.emplace(now);
 }
 
