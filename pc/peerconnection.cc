@@ -364,7 +364,9 @@ bool MediaSectionsHaveSameCount(const SessionDescription* desc1,
 // needs a ufrag and pwd. Mismatches, such as replying with a DTLS fingerprint
 // to SDES keys, will be caught in JsepTransport negotiation, and backstopped
 // by Channel's |srtp_required| check.
-RTCError VerifyCrypto(const SessionDescription* desc, bool dtls_enabled) {
+RTCError VerifyCrypto(const SessionDescription* desc,
+                      bool dtls_enabled,
+                      rtc::scoped_refptr<webrtc::UMAObserver> uma_observer) {
   const cricket::ContentGroup* bundle =
       desc->GetGroupByName(cricket::GROUP_TYPE_BUNDLE);
   for (const cricket::ContentInfo& content_info : desc->contents()) {
@@ -396,11 +398,21 @@ RTCError VerifyCrypto(const SessionDescription* desc, bool dtls_enabled) {
         return RTCError(RTCErrorType::INVALID_PARAMETER,
                         kSdpWithoutDtlsFingerprint);
       }
+      if (uma_observer) {
+        uma_observer->IncrementEnumCounter(webrtc::kEnumCounterKeyProtocol,
+                                           webrtc::kEnumCounterKeyProtocolDtls,
+                                           webrtc::kEnumCounterKeyProtocolMax);
+      }
     } else {
       if (media->cryptos().empty()) {
         RTC_LOG(LS_WARNING)
             << "Session description must have SDES when DTLS disabled.";
         return RTCError(RTCErrorType::INVALID_PARAMETER, kSdpWithoutSdesCrypto);
+      }
+      if (uma_observer) {
+        uma_observer->IncrementEnumCounter(webrtc::kEnumCounterKeyProtocol,
+                                           webrtc::kEnumCounterKeyProtocolSdes,
+                                           webrtc::kEnumCounterKeyProtocolMax);
       }
     }
   }
@@ -5319,7 +5331,8 @@ RTCError PeerConnection::ValidateSessionDescription(
   std::string crypto_error;
   if (webrtc_session_desc_factory_->SdesPolicy() == cricket::SEC_REQUIRED ||
       dtls_enabled_) {
-    RTCError crypto_error = VerifyCrypto(sdesc->description(), dtls_enabled_);
+    RTCError crypto_error =
+        VerifyCrypto(sdesc->description(), dtls_enabled_, uma_observer_);
     if (!crypto_error.ok()) {
       return crypto_error;
     }

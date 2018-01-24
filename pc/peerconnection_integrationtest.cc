@@ -1284,6 +1284,10 @@ TEST_F(PeerConnectionIntegrationTest, DtmfSenderObserver) {
 TEST_F(PeerConnectionIntegrationTest, EndToEndCallWithDtls) {
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
+  rtc::scoped_refptr<webrtc::FakeMetricsObserver> caller_observer =
+      new rtc::RefCountedObject<webrtc::FakeMetricsObserver>();
+  caller()->pc()->RegisterUMAObserver(caller_observer);
+
   // Do normal offer/answer and wait for some frames to be received in each
   // direction.
   caller()->AddAudioVideoTracks();
@@ -1294,6 +1298,12 @@ TEST_F(PeerConnectionIntegrationTest, EndToEndCallWithDtls) {
       kDefaultExpectedAudioFrameCount, kDefaultExpectedVideoFrameCount,
       kDefaultExpectedAudioFrameCount, kDefaultExpectedVideoFrameCount,
       kMaxWaitForFramesMs);
+  EXPECT_LE(
+      1, caller_observer->GetEnumCounter(webrtc::kEnumCounterKeyProtocol,
+                                         webrtc::kEnumCounterKeyProtocolDtls));
+  EXPECT_EQ(
+      0, caller_observer->GetEnumCounter(webrtc::kEnumCounterKeyProtocol,
+                                         webrtc::kEnumCounterKeyProtocolSdes));
 }
 
 // Uses SDES instead of DTLS for key agreement.
@@ -1302,6 +1312,9 @@ TEST_F(PeerConnectionIntegrationTest, EndToEndCallWithSdes) {
   sdes_config.enable_dtls_srtp.emplace(false);
   ASSERT_TRUE(CreatePeerConnectionWrappersWithConfig(sdes_config, sdes_config));
   ConnectFakeSignaling();
+  rtc::scoped_refptr<webrtc::FakeMetricsObserver> caller_observer =
+      new rtc::RefCountedObject<webrtc::FakeMetricsObserver>();
+  caller()->pc()->RegisterUMAObserver(caller_observer);
 
   // Do normal offer/answer and wait for some frames to be received in each
   // direction.
@@ -1313,6 +1326,12 @@ TEST_F(PeerConnectionIntegrationTest, EndToEndCallWithSdes) {
       kDefaultExpectedAudioFrameCount, kDefaultExpectedVideoFrameCount,
       kDefaultExpectedAudioFrameCount, kDefaultExpectedVideoFrameCount,
       kMaxWaitForFramesMs);
+  EXPECT_LE(
+      1, caller_observer->GetEnumCounter(webrtc::kEnumCounterKeyProtocol,
+                                         webrtc::kEnumCounterKeyProtocolSdes));
+  EXPECT_EQ(
+      0, caller_observer->GetEnumCounter(webrtc::kEnumCounterKeyProtocol,
+                                         webrtc::kEnumCounterKeyProtocolDtls));
 }
 
 // Tests that the GetRemoteAudioSSLCertificate method returns the remote DTLS

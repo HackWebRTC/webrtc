@@ -37,6 +37,7 @@ enum PeerConnectionEnumCounterType {
   kEnumCounterDtlsHandshakeError,
   kEnumCounterIceRegathering,
   kEnumCounterIceRestart,
+  kEnumCounterKeyProtocol,
   kPeerConnectionEnumCounterMax
 };
 
@@ -109,6 +110,12 @@ enum IceCandidatePairType {
   kIceCandidatePairHostPublicHostPrivate,
   kIceCandidatePairHostPublicHostPublic,
   kIceCandidatePairMax
+};
+
+enum KeyExchangeProtocolType {
+  kEnumCounterKeyProtocolDtls,
+  kEnumCounterKeyProtocolSdes,
+  kEnumCounterKeyProtocolMax
 };
 
 class MetricsObserverInterface : public rtc::RefCountInterface {
