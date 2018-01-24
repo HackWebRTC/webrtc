@@ -1081,6 +1081,7 @@ void WebRtcNs_AnalyzeCore(NoiseSuppressionC* self, const float* speechFrame) {
     // Depending on the duration of the inactive signal it takes a
     // considerable amount of time for the system to learn what is noise and
     // what is speech.
+    self->signalEnergy = 0;
     return;
   }
 
@@ -1239,7 +1240,7 @@ void WebRtcNs_ProcessCore(NoiseSuppressionC* self,
 
   Windowing(self->window, self->dataBuf, self->anaLen, winData);
   energy1 = Energy(winData, self->anaLen);
-  if (energy1 == 0.0) {
+  if (energy1 == 0.0 || self->signalEnergy == 0) {
     // Synthesize the special case of zero input.
     // Read out fully processed segment.
     for (i = self->windShift; i < self->blockLen + self->windShift; i++) {
@@ -1379,6 +1380,7 @@ void WebRtcNs_ProcessCore(NoiseSuppressionC* self,
       sumMagnAnalyze += self->magnPrevAnalyze[i];
       sumMagnProcess += self->magnPrevProcess[i];
     }
+    RTC_DCHECK_GT(sumMagnAnalyze, 0);
     avgProbSpeechHB *= sumMagnProcess / sumMagnAnalyze;
     // Average filter gain from low band.
     // Average over second half (i.e., 4->8kHz) of frequencies spectrum.

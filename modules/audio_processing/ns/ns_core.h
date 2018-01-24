@@ -110,7 +110,6 @@ typedef struct NoiseSuppressionC_ {
   float speechProb[HALF_ANAL_BLOCKL];  // Final speech/noise prob: prior + LRT.
   // Buffering data for HB.
   float dataBufHB[NUM_HIGH_BANDS_MAX][ANAL_BLOCKL_MAX];
-
 } NoiseSuppressionC;
 
 #ifdef __cplusplus
