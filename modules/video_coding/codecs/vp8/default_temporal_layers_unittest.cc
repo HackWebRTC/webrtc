@@ -13,8 +13,6 @@
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
-#include "vpx/vp8cx.h"
-#include "vpx/vpx_encoder.h"
 
 namespace webrtc {
 namespace test {
@@ -54,7 +52,7 @@ enum {
 TEST(TemporalLayersTest, 2Layers) {
   DefaultTemporalLayers tl(2, 0);
   DefaultTemporalLayersChecker checker(2, 0);
-  vpx_codec_enc_cfg_t cfg;
+  Vp8EncoderConfig cfg;
   CodecSpecificInfoVP8 vp8_info;
   tl.OnRatesUpdated(500, 500, 30);
   tl.UpdateConfiguration(&cfg);
@@ -102,7 +100,7 @@ TEST(TemporalLayersTest, 2Layers) {
 TEST(TemporalLayersTest, 3Layers) {
   DefaultTemporalLayers tl(3, 0);
   DefaultTemporalLayersChecker checker(3, 0);
-  vpx_codec_enc_cfg_t cfg;
+  Vp8EncoderConfig cfg;
   CodecSpecificInfoVP8 vp8_info;
   tl.OnRatesUpdated(500, 500, 30);
   tl.UpdateConfiguration(&cfg);
@@ -151,7 +149,7 @@ TEST(TemporalLayersTest, Alternative3Layers) {
   ScopedFieldTrials field_trial("WebRTC-UseShortVP8TL3Pattern/Enabled/");
   DefaultTemporalLayers tl(3, 0);
   DefaultTemporalLayersChecker checker(3, 0);
-  vpx_codec_enc_cfg_t cfg;
+  Vp8EncoderConfig cfg;
   CodecSpecificInfoVP8 vp8_info;
   tl.OnRatesUpdated(500, 500, 30);
   tl.UpdateConfiguration(&cfg);
@@ -187,7 +185,7 @@ TEST(TemporalLayersTest, Alternative3Layers) {
 TEST(TemporalLayersTest, 4Layers) {
   DefaultTemporalLayers tl(4, 0);
   DefaultTemporalLayersChecker checker(4, 0);
-  vpx_codec_enc_cfg_t cfg;
+  Vp8EncoderConfig cfg;
   CodecSpecificInfoVP8 vp8_info;
   tl.OnRatesUpdated(500, 500, 30);
   tl.UpdateConfiguration(&cfg);
@@ -234,7 +232,7 @@ TEST(TemporalLayersTest, 4Layers) {
 TEST(TemporalLayersTest, KeyFrame) {
   DefaultTemporalLayers tl(3, 0);
   DefaultTemporalLayersChecker checker(3, 0);
-  vpx_codec_enc_cfg_t cfg;
+  Vp8EncoderConfig cfg;
   CodecSpecificInfoVP8 vp8_info;
   tl.OnRatesUpdated(500, 500, 30);
   tl.UpdateConfiguration(&cfg);
@@ -348,7 +346,7 @@ INSTANTIATE_TEST_CASE_P(DefaultTemporalLayersTest,
 TEST_P(TemporalLayersReferenceTest, ValidFrameConfigs) {
   const int num_layers = GetParam();
   DefaultTemporalLayers tl(num_layers, 0);
-  vpx_codec_enc_cfg_t cfg;
+  Vp8EncoderConfig cfg;
   tl.OnRatesUpdated(500, 500, 30);
   tl.UpdateConfiguration(&cfg);
 

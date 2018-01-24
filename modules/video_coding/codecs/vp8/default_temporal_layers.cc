@@ -24,9 +24,6 @@
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/field_trial.h"
 
-#include "vpx/vp8cx.h"
-#include "vpx/vpx_encoder.h"
-
 namespace webrtc {
 
 TemporalLayers::FrameConfig::FrameConfig()
@@ -354,7 +351,7 @@ std::vector<uint32_t> DefaultTemporalLayers::OnRatesUpdated(
   return bitrates;
 }
 
-bool DefaultTemporalLayers::UpdateConfiguration(vpx_codec_enc_cfg_t* cfg) {
+bool DefaultTemporalLayers::UpdateConfiguration(Vp8EncoderConfig* cfg) {
   if (!new_bitrates_kbps_)
     return false;
 

@@ -16,12 +16,24 @@
 #include <memory>
 
 #include "typedefs.h"  // NOLINT(build/include)
-struct vpx_codec_enc_cfg;
-typedef struct vpx_codec_enc_cfg vpx_codec_enc_cfg_t;
+
+#define VP8_TS_MAX_PERIODICITY 16
+#define VP8_TS_MAX_LAYERS 5
 
 namespace webrtc {
 
 struct CodecSpecificInfoVP8;
+
+struct Vp8EncoderConfig {
+  unsigned int ts_number_layers;
+  unsigned int ts_target_bitrate[VP8_TS_MAX_LAYERS];
+  unsigned int ts_rate_decimator[VP8_TS_MAX_LAYERS];
+  unsigned int ts_periodicity;
+  unsigned int ts_layer_id[VP8_TS_MAX_PERIODICITY];
+  unsigned int rc_target_bitrate;
+  unsigned int rc_min_quantizer;
+  unsigned int rc_max_quantizer;
+};
 
 class TemporalLayers {
  public:
@@ -99,7 +111,7 @@ class TemporalLayers {
 
   // Update the encoder configuration with target bitrates or other parameters.
   // Returns true iff the configuration was actually modified.
-  virtual bool UpdateConfiguration(vpx_codec_enc_cfg_t* cfg) = 0;
+  virtual bool UpdateConfiguration(Vp8EncoderConfig* cfg) = 0;
 
   virtual void PopulateCodecSpecific(
       bool is_keyframe,

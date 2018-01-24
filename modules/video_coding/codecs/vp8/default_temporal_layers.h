@@ -37,7 +37,7 @@ class DefaultTemporalLayers : public TemporalLayers {
                                        int max_bitrate_kbps,
                                        int framerate) override;
 
-  bool UpdateConfiguration(vpx_codec_enc_cfg_t* cfg) override;
+  bool UpdateConfiguration(Vp8EncoderConfig* cfg) override;
 
   void PopulateCodecSpecific(bool frame_is_keyframe,
                              const TemporalLayers::FrameConfig& tl_config,

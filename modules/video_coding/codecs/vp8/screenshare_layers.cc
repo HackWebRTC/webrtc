@@ -19,8 +19,6 @@
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/metrics.h"
-#include "vpx/vp8cx.h"
-#include "vpx/vpx_encoder.h"
 
 namespace webrtc {
 
@@ -381,7 +379,7 @@ uint32_t ScreenshareLayers::GetCodecTargetBitrateKbps() const {
   return std::max(layers_[0].target_rate_kbps_, target_bitrate_kbps);
 }
 
-bool ScreenshareLayers::UpdateConfiguration(vpx_codec_enc_cfg_t* cfg) {
+bool ScreenshareLayers::UpdateConfiguration(Vp8EncoderConfig* cfg) {
   bool cfg_updated = false;
   uint32_t target_bitrate_kbps = GetCodecTargetBitrateKbps();
 

@@ -31,7 +31,7 @@ class MockTemporalLayers : public TemporalLayers {
  public:
   MOCK_METHOD1(UpdateLayerConfig, TemporalLayers::FrameConfig(uint32_t));
   MOCK_METHOD3(OnRatesUpdated, std::vector<uint32_t>(int, int, int));
-  MOCK_METHOD1(UpdateConfiguration, bool(vpx_codec_enc_cfg_t*));
+  MOCK_METHOD1(UpdateConfiguration, bool(Vp8EncoderConfig*));
   MOCK_METHOD4(PopulateCodecSpecific,
                void(bool,
                     const TemporalLayers::FrameConfig&,

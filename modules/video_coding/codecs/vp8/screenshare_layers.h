@@ -45,7 +45,7 @@ class ScreenshareLayers : public TemporalLayers {
 
   // Update the encoder configuration with target bitrates or other parameters.
   // Returns true iff the configuration was actually modified.
-  bool UpdateConfiguration(vpx_codec_enc_cfg_t* cfg) override;
+  bool UpdateConfiguration(Vp8EncoderConfig* cfg) override;
 
   void PopulateCodecSpecific(bool base_layer_sync,
                              const TemporalLayers::FrameConfig& tl_config,

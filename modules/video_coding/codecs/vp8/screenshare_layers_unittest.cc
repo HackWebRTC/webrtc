@@ -11,8 +11,6 @@
 #include <memory>
 #include <vector>
 
-#include "vpx/vp8cx.h"
-#include "vpx/vpx_encoder.h"
 #include "modules/video_coding/codecs/vp8/screenshare_layers.h"
 #include "modules/video_coding/codecs/vp8/vp8_impl.h"
 #include "modules/video_coding/include/video_codec_interface.h"
@@ -96,18 +94,18 @@ class ScreenshareLayerTest : public ::testing::Test {
     return ((bitrate_kbps * 1000) / 8) / kFrameRate;
   }
 
-  vpx_codec_enc_cfg_t ConfigureBitrates() {
-    vpx_codec_enc_cfg_t vpx_cfg;
-    memset(&vpx_cfg, 0, sizeof(vpx_codec_enc_cfg_t));
-    vpx_cfg.rc_min_quantizer = min_qp_;
-    vpx_cfg.rc_max_quantizer = max_qp_;
+  Vp8EncoderConfig ConfigureBitrates() {
+    Vp8EncoderConfig vp8_cfg;
+    memset(&vp8_cfg, 0, sizeof(Vp8EncoderConfig));
+    vp8_cfg.rc_min_quantizer = min_qp_;
+    vp8_cfg.rc_max_quantizer = max_qp_;
     EXPECT_THAT(layers_->OnRatesUpdated(kDefaultTl0BitrateKbps,
                                         kDefaultTl1BitrateKbps, kFrameRate),
                 ElementsAre(kDefaultTl0BitrateKbps,
                             kDefaultTl1BitrateKbps - kDefaultTl0BitrateKbps));
-    EXPECT_TRUE(layers_->UpdateConfiguration(&vpx_cfg));
-    frame_size_ = FrameSizeForBitrate(vpx_cfg.rc_target_bitrate);
-    return vpx_cfg;
+    EXPECT_TRUE(layers_->UpdateConfiguration(&vp8_cfg));
+    frame_size_ = FrameSizeForBitrate(vp8_cfg.rc_target_bitrate);
+    return vp8_cfg;
   }
 
   void WithQpLimits(int min_qp, int max_qp) {
@@ -169,7 +167,7 @@ class ScreenshareLayerTest : public ::testing::Test {
 
   uint32_t timestamp_;
   TemporalLayers::FrameConfig tl_config_;
-  vpx_codec_enc_cfg_t cfg_;
+  Vp8EncoderConfig cfg_;
   bool config_updated_;
   CodecSpecificInfoVP8 vp8_info_;
 };
