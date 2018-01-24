@@ -331,20 +331,16 @@ std::vector<FrameStatistic> VideoProcessorIntegrationTest::ExtractLayerStats(
 
   for (size_t frame_number = first_frame_number;
        frame_number <= last_frame_number; ++frame_number) {
-    // TODO(ssilkin): Add layering support
-    // FrameStatistic superframe_stat =
-    // *stats_[target_spatial_layer_number].GetFrame(frame_number);
-    FrameStatistic superframe_stat = *stats_.GetFrame(frame_number);
+    FrameStatistic superframe_stat =
+        *stats_.at(target_spatial_layer_number).GetFrame(frame_number);
     const size_t tl_idx = superframe_stat.temporal_layer_idx;
     if (tl_idx <= target_temporal_layer_number) {
       if (combine_layers_stats) {
         for (size_t spatial_layer_number = 0;
              spatial_layer_number < target_spatial_layer_number;
              ++spatial_layer_number) {
-          // TODO(ssilkin): Add layering support
-          // const FrameStatistic* frame_stat =
-          //    stats_[spatial_layer_number].GetFrame(frame_number);
-          const FrameStatistic* frame_stat = stats_.GetFrame(frame_number);
+          const FrameStatistic* frame_stat =
+              stats_.at(spatial_layer_number).GetFrame(frame_number);
           superframe_stat.encoded_frame_size_bytes +=
               frame_stat->encoded_frame_size_bytes;
           superframe_stat.encode_time_us = std::max(
@@ -428,7 +424,8 @@ void VideoProcessorIntegrationTest::CreateEncoderAndDecoder() {
 
   const SdpVideoFormat format = CreateSdpVideoFormat(config_);
   encoder_ = encoder_factory->CreateVideoEncoder(format);
-  decoder_ = decoder_factory->CreateVideoDecoder(format);
+  decoders_.push_back(std::unique_ptr<VideoDecoder>(
+      decoder_factory->CreateVideoDecoder(format)));
 
   if (config_.sw_fallback_encoder) {
     encoder_ = rtc::MakeUnique<VideoEncoderSoftwareFallbackWrapper>(
@@ -436,18 +433,23 @@ void VideoProcessorIntegrationTest::CreateEncoderAndDecoder() {
         std::move(encoder_));
   }
   if (config_.sw_fallback_decoder) {
-    decoder_ = rtc::MakeUnique<VideoDecoderSoftwareFallbackWrapper>(
-        InternalDecoderFactory().CreateVideoDecoder(format),
-        std::move(decoder_));
+    for (auto& decoder : decoders_) {
+      decoder = rtc::MakeUnique<VideoDecoderSoftwareFallbackWrapper>(
+          InternalDecoderFactory().CreateVideoDecoder(format),
+          std::move(decoder));
+    }
   }
 
   EXPECT_TRUE(encoder_) << "Encoder not successfully created.";
-  EXPECT_TRUE(decoder_) << "Decoder not successfully created.";
+
+  for (const auto& decoder : decoders_) {
+    EXPECT_TRUE(decoder) << "Decoder not successfully created.";
+  }
 }
 
 void VideoProcessorIntegrationTest::DestroyEncoderAndDecoder() {
   encoder_.reset();
-  decoder_.reset();
+  decoders_.clear();
 }
 
 void VideoProcessorIntegrationTest::SetUpAndInitObjects(
@@ -462,39 +464,53 @@ void VideoProcessorIntegrationTest::SetUpAndInitObjects(
   config_.codec_settings.maxFramerate = initial_framerate_fps;
 
   // Create file objects for quality analysis.
-  analysis_frame_reader_.reset(new YuvFrameReaderImpl(
+  source_frame_reader_.reset(new YuvFrameReaderImpl(
       config_.input_filename, config_.codec_settings.width,
       config_.codec_settings.height));
-  analysis_frame_writer_.reset(new YuvFrameWriterImpl(
-      config_.output_filename, config_.codec_settings.width,
-      config_.codec_settings.height));
-  EXPECT_TRUE(analysis_frame_reader_->Init());
-  EXPECT_TRUE(analysis_frame_writer_->Init());
+  EXPECT_TRUE(source_frame_reader_->Init());
+
+  const size_t num_simulcast_or_spatial_layers = std::max(
+      config_.NumberOfSimulcastStreams(), config_.NumberOfSpatialLayers());
 
   if (visualization_params) {
-    const std::string output_filename_base =
-        OutputPath() + config_.FilenameWithParams();
-    if (visualization_params->save_encoded_ivf) {
-      rtc::File post_encode_file =
-          rtc::File::Create(output_filename_base + ".ivf");
-      encoded_frame_writer_ =
-          IvfFileWriter::Wrap(std::move(post_encode_file), 0);
-    }
-    if (visualization_params->save_decoded_y4m) {
-      decoded_frame_writer_.reset(new Y4mFrameWriterImpl(
-          output_filename_base + ".y4m", config_.codec_settings.width,
-          config_.codec_settings.height, initial_framerate_fps));
-      EXPECT_TRUE(decoded_frame_writer_->Init());
+    for (size_t simulcast_svc_idx = 0;
+         simulcast_svc_idx < num_simulcast_or_spatial_layers;
+         ++simulcast_svc_idx) {
+      const std::string output_filename_base =
+          OutputPath() + config_.FilenameWithParams() + "_" +
+          std::to_string(simulcast_svc_idx);
+
+      if (visualization_params->save_encoded_ivf) {
+        rtc::File post_encode_file =
+            rtc::File::Create(output_filename_base + ".ivf");
+        encoded_frame_writers_.push_back(
+            IvfFileWriter::Wrap(std::move(post_encode_file), 0));
+      }
+
+      if (visualization_params->save_decoded_y4m) {
+        FrameWriter* decoded_frame_writer = new Y4mFrameWriterImpl(
+            output_filename_base + ".y4m", config_.codec_settings.width,
+            config_.codec_settings.height, initial_framerate_fps);
+        EXPECT_TRUE(decoded_frame_writer->Init());
+        decoded_frame_writers_.push_back(
+            std::unique_ptr<FrameWriter>(decoded_frame_writer));
+      }
     }
   }
+
+  stats_.resize(num_simulcast_or_spatial_layers);
 
   cpu_process_time_.reset(new CpuProcessTime(config_));
 
   rtc::Event sync_event(false, false);
   task_queue->PostTask([this, &sync_event]() {
     processor_ = rtc::MakeUnique<VideoProcessor>(
-        encoder_.get(), decoder_.get(), analysis_frame_reader_.get(), config_,
-        &stats_, encoded_frame_writer_.get(), decoded_frame_writer_.get());
+        encoder_.get(), decoders_.at(0).get(), source_frame_reader_.get(),
+        config_, &stats_.at(0),
+        encoded_frame_writers_.empty() ? nullptr
+                                       : encoded_frame_writers_.at(0).get(),
+        decoded_frame_writers_.empty() ? nullptr
+                                       : decoded_frame_writers_.at(0).get());
     sync_event.Set();
   });
   sync_event.Wait(rtc::Event::kForever);
@@ -512,27 +528,27 @@ void VideoProcessorIntegrationTest::ReleaseAndCloseObjects(
   // The VideoProcessor must be destroyed before the codecs.
   DestroyEncoderAndDecoder();
 
-  analysis_frame_reader_->Close();
+  source_frame_reader_->Close();
 
   // Close visualization files.
-  if (encoded_frame_writer_) {
-    EXPECT_TRUE(encoded_frame_writer_->Close());
+  for (auto& encoded_frame_writer : encoded_frame_writers_) {
+    EXPECT_TRUE(encoded_frame_writer->Close());
   }
-  if (decoded_frame_writer_) {
-    decoded_frame_writer_->Close();
+  for (auto& decoded_frame_writer : decoded_frame_writers_) {
+    decoded_frame_writer->Close();
   }
 }
 
 void VideoProcessorIntegrationTest::PrintSettings() const {
   printf("VideoProcessor settings\n==\n");
   printf(" Total # of frames      : %d",
-         analysis_frame_reader_->NumberOfFrames());
+         source_frame_reader_->NumberOfFrames());
   printf("%s\n", config_.ToString().c_str());
 
   printf("VideoProcessorIntegrationTest settings\n==\n");
   const char* encoder_name = encoder_->ImplementationName();
   printf(" Encoder implementation name: %s\n", encoder_name);
-  const char* decoder_name = decoder_->ImplementationName();
+  const char* decoder_name = decoders_.at(0)->ImplementationName();
   printf(" Decoder implementation name: %s\n", decoder_name);
   if (strcmp(encoder_name, decoder_name) == 0) {
     printf(" Codec implementation name  : %s_%s\n", config_.CodecName().c_str(),
@@ -719,7 +735,7 @@ void VideoProcessorIntegrationTest::AnalyzeAndPrintStats(
 
 void VideoProcessorIntegrationTest::PrintFrameLevelStats(
     const std::vector<FrameStatistic>& stats) const {
-  for (auto& frame_stat : stats) {
+  for (const auto& frame_stat : stats) {
     printf("%s\n", frame_stat.ToString().c_str());
   }
 }
