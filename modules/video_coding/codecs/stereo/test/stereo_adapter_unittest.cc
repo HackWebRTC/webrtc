@@ -112,12 +112,6 @@ TEST_F(TestStereoAdapter, EncodeDecodeI420Frame) {
   ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
 
   EXPECT_EQ(kVideoCodecStereo, codec_specific_info.codecType);
-  EXPECT_EQ(kStereoAssociatedCodecType,
-            codec_specific_info.codecSpecific.stereo.associated_codec_type);
-  EXPECT_EQ(0, codec_specific_info.codecSpecific.stereo.indices.frame_index);
-  EXPECT_EQ(1, codec_specific_info.codecSpecific.stereo.indices.frame_count);
-  EXPECT_EQ(0ull,
-            codec_specific_info.codecSpecific.stereo.indices.picture_index);
 
   EXPECT_EQ(
       WEBRTC_VIDEO_CODEC_OK,
@@ -131,38 +125,16 @@ TEST_F(TestStereoAdapter, EncodeDecodeI420Frame) {
 
 TEST_F(TestStereoAdapter, EncodeDecodeI420AFrame) {
   std::unique_ptr<VideoFrame> yuva_frame = CreateI420AInputFrame();
-  const size_t expected_num_encoded_frames = 2;
-  SetWaitForEncodedFramesThreshold(expected_num_encoded_frames);
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             encoder_->Encode(*yuva_frame, nullptr, nullptr));
-  std::vector<EncodedImage> encoded_frames;
-  std::vector<CodecSpecificInfo> codec_specific_infos;
-  ASSERT_TRUE(WaitForEncodedFrames(&encoded_frames, &codec_specific_infos));
-  EXPECT_EQ(expected_num_encoded_frames, encoded_frames.size());
-  EXPECT_EQ(expected_num_encoded_frames, codec_specific_infos.size());
+  EncodedImage encoded_frame;
+  CodecSpecificInfo codec_specific_info;
+  ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
 
-  const CodecSpecificInfo& yuv_info = codec_specific_infos[kYUVStream];
-  EXPECT_EQ(kVideoCodecStereo, yuv_info.codecType);
-  EXPECT_EQ(kStereoAssociatedCodecType,
-            yuv_info.codecSpecific.stereo.associated_codec_type);
-  EXPECT_EQ(kYUVStream, yuv_info.codecSpecific.stereo.indices.frame_index);
-  EXPECT_EQ(kAlphaCodecStreams,
-            yuv_info.codecSpecific.stereo.indices.frame_count);
-  EXPECT_EQ(0ull, yuv_info.codecSpecific.stereo.indices.picture_index);
+  EXPECT_EQ(kVideoCodecStereo, codec_specific_info.codecType);
 
-  const CodecSpecificInfo& axx_info = codec_specific_infos[kAXXStream];
-  EXPECT_EQ(kVideoCodecStereo, axx_info.codecType);
-  EXPECT_EQ(kStereoAssociatedCodecType,
-            axx_info.codecSpecific.stereo.associated_codec_type);
-  EXPECT_EQ(kAXXStream, axx_info.codecSpecific.stereo.indices.frame_index);
-  EXPECT_EQ(kAlphaCodecStreams,
-            axx_info.codecSpecific.stereo.indices.frame_count);
-  EXPECT_EQ(0ull, axx_info.codecSpecific.stereo.indices.picture_index);
-
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->Decode(encoded_frames[kYUVStream],
-                                                    false, nullptr, &yuv_info));
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->Decode(encoded_frames[kAXXStream],
-                                                    false, nullptr, &axx_info));
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            decoder_->Decode(encoded_frame, false, nullptr, nullptr));
   std::unique_ptr<VideoFrame> decoded_frame;
   rtc::Optional<uint8_t> decoded_qp;
   ASSERT_TRUE(WaitForDecodedFrame(&decoded_frame, &decoded_qp));
