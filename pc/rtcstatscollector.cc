@@ -629,12 +629,13 @@ void ProduceMediaStreamStats(
 }  // namespace
 
 rtc::scoped_refptr<RTCStatsCollector> RTCStatsCollector::Create(
-    PeerConnection* pc, int64_t cache_lifetime_us) {
+    PeerConnectionInternal* pc,
+    int64_t cache_lifetime_us) {
   return rtc::scoped_refptr<RTCStatsCollector>(
       new rtc::RefCountedObject<RTCStatsCollector>(pc, cache_lifetime_us));
 }
 
-RTCStatsCollector::RTCStatsCollector(PeerConnection* pc,
+RTCStatsCollector::RTCStatsCollector(PeerConnectionInternal* pc,
                                      int64_t cache_lifetime_us)
     : pc_(pc),
       signaling_thread_(pc->signaling_thread()),
@@ -649,7 +650,7 @@ RTCStatsCollector::RTCStatsCollector(PeerConnection* pc,
   RTC_DCHECK(worker_thread_);
   RTC_DCHECK(network_thread_);
   RTC_DCHECK_GE(cache_lifetime_us_, 0);
-  pc_->SignalDataChannelCreated.connect(
+  pc_->SignalDataChannelCreated().connect(
       this, &RTCStatsCollector::OnDataChannelCreated);
 }
 

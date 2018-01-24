@@ -24,6 +24,7 @@
 #include "call/call.h"
 #include "media/base/mediachannel.h"
 #include "pc/datachannel.h"
+#include "pc/peerconnectioninternal.h"
 #include "pc/trackmediainfomap.h"
 #include "rtc_base/asyncinvoker.h"
 #include "rtc_base/refcount.h"
@@ -32,19 +33,7 @@
 #include "rtc_base/sslidentity.h"
 #include "rtc_base/timeutils.h"
 
-namespace cricket {
-class Candidate;
-}  // namespace cricket
-
-namespace rtc {
-class SSLCertificate;
-}  // namespace rtc
-
 namespace webrtc {
-
-class PeerConnection;
-struct SessionStats;
-struct ChannelNamePairs;
 
 // All public methods of the collector are to be called on the signaling thread.
 // Stats are gathered on the signaling, worker and network threads
@@ -54,7 +43,7 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
                           public sigslot::has_slots<> {
  public:
   static rtc::scoped_refptr<RTCStatsCollector> Create(
-      PeerConnection* pc,
+      PeerConnectionInternal* pc,
       int64_t cache_lifetime_us = 50 * rtc::kNumMicrosecsPerMillisec);
 
   // Gets a recent stats report. If there is a report cached that is still fresh
@@ -71,7 +60,7 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
   void WaitForPendingRequest();
 
  protected:
-  RTCStatsCollector(PeerConnection* pc, int64_t cache_lifetime_us);
+  RTCStatsCollector(PeerConnectionInternal* pc, int64_t cache_lifetime_us);
   ~RTCStatsCollector();
 
   // Stats gathering on a particular thread. Calls |AddPartialResults| before
@@ -141,7 +130,7 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
   void OnDataChannelOpened(DataChannel* channel);
   void OnDataChannelClosed(DataChannel* channel);
 
-  PeerConnection* const pc_;
+  PeerConnectionInternal* const pc_;
   rtc::Thread* const signaling_thread_;
   rtc::Thread* const worker_thread_;
   rtc::Thread* const network_thread_;

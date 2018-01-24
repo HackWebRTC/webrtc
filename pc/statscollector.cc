@@ -434,7 +434,7 @@ const char* AdapterTypeToStatsType(rtc::AdapterType type) {
   }
 }
 
-StatsCollector::StatsCollector(PeerConnection* pc)
+StatsCollector::StatsCollector(PeerConnectionInternal* pc)
     : pc_(pc), stats_gathering_started_(0) {
   RTC_DCHECK(pc_);
 }

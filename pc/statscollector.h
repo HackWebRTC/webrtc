@@ -22,10 +22,9 @@
 #include "api/mediastreaminterface.h"
 #include "api/peerconnectioninterface.h"
 #include "api/statstypes.h"
+#include "pc/peerconnectioninternal.h"
 
 namespace webrtc {
-
-class PeerConnection;
 
 // Conversion function to convert candidate type string to the corresponding one
 // from  enum RTCStatsIceCandidateType.
@@ -43,7 +42,7 @@ class StatsCollector {
  public:
   // The caller is responsible for ensuring that the pc outlives the
   // StatsCollector instance.
-  explicit StatsCollector(PeerConnection* pc);
+  explicit StatsCollector(PeerConnectionInternal* pc);
   virtual ~StatsCollector();
 
   // Adds a MediaStream with tracks that can be used as a |selector| in a call
@@ -139,7 +138,7 @@ class StatsCollector {
   StatsCollection reports_;
   TrackIdMap track_ids_;
   // Raw pointer to the peer connection the statistics are gathered from.
-  PeerConnection* const pc_;
+  PeerConnectionInternal* const pc_;
   double stats_gathering_started_;
 
   // TODO(tommi): We appear to be holding on to raw pointers to reference

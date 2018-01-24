@@ -14,6 +14,7 @@
 
 #include "api/mediastreaminterface.h"
 #include "pc/localaudiosource.h"
+#include "pc/statscollector.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/helpers.h"
 #include "rtc_base/trace_event.h"

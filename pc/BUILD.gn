@@ -139,6 +139,7 @@ rtc_static_library("peerconnection") {
     "peerconnection.h",
     "peerconnectionfactory.cc",
     "peerconnectionfactory.h",
+    "peerconnectioninternal.h",
     "remoteaudiosource.cc",
     "remoteaudiosource.h",
     "rtcstatscollector.cc",

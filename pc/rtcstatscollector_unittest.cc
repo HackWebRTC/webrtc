@@ -570,7 +570,7 @@ class FakeRTCStatsCollector : public RTCStatsCollector,
                               public RTCStatsCollectorCallback {
  public:
   static rtc::scoped_refptr<FakeRTCStatsCollector> Create(
-      PeerConnection* pc,
+      PeerConnectionInternal* pc,
       int64_t cache_lifetime_us) {
     return rtc::scoped_refptr<FakeRTCStatsCollector>(
         new rtc::RefCountedObject<FakeRTCStatsCollector>(
@@ -608,7 +608,7 @@ class FakeRTCStatsCollector : public RTCStatsCollector,
   }
 
  protected:
-  FakeRTCStatsCollector(PeerConnection* pc, int64_t cache_lifetime)
+  FakeRTCStatsCollector(PeerConnectionInternal* pc, int64_t cache_lifetime)
       : RTCStatsCollector(pc, cache_lifetime),
         signaling_thread_(pc->signaling_thread()),
         worker_thread_(pc->worker_thread()),
@@ -1461,10 +1461,10 @@ TEST_F(RTCStatsCollectorTest, CollectRTCPeerConnectionStats) {
 
   rtc::scoped_refptr<DataChannel> dummy_channel_a = DataChannel::Create(
       nullptr, cricket::DCT_NONE, "DummyChannelA", InternalDataChannelInit());
-  test_->pc().SignalDataChannelCreated(dummy_channel_a.get());
+  test_->pc().SignalDataChannelCreated()(dummy_channel_a.get());
   rtc::scoped_refptr<DataChannel> dummy_channel_b = DataChannel::Create(
       nullptr, cricket::DCT_NONE, "DummyChannelB", InternalDataChannelInit());
-  test_->pc().SignalDataChannelCreated(dummy_channel_b.get());
+  test_->pc().SignalDataChannelCreated()(dummy_channel_b.get());
 
   dummy_channel_a->SignalOpened(dummy_channel_a.get());
   // Closing a channel that is not opened should not affect the counts.

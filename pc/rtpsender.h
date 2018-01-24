@@ -26,9 +26,10 @@
 #include "media/base/audiosource.h"
 #include "media/base/mediachannel.h"
 #include "pc/dtmfsender.h"
-#include "pc/statscollector.h"
 
 namespace webrtc {
+
+class StatsCollector;
 
 // Internal interface used by PeerConnection.
 class RtpSenderInternal : public RtpSenderInterface {
