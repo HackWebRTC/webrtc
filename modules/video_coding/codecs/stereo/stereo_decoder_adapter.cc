@@ -114,24 +114,21 @@ int32_t StereoDecoderAdapter::Decode(
     const RTPFragmentationHeader* /*fragmentation*/,
     const CodecSpecificInfo* codec_specific_info,
     int64_t render_time_ms) {
-  const MultiplexImage& image =
-      MultiplexEncodedImagePacker::Unpack(input_image);
-
-  if (image.component_count == 1) {
+  const CodecSpecificInfoStereo& stereo_info =
+      codec_specific_info->codecSpecific.stereo;
+  RTC_DCHECK_LT(static_cast<size_t>(stereo_info.indices.frame_index),
+                decoders_.size());
+  if (stereo_info.indices.frame_count == 1) {
+    RTC_DCHECK_EQ(static_cast<int>(stereo_info.indices.frame_index), 0);
     RTC_DCHECK(decoded_data_.find(input_image._timeStamp) ==
                decoded_data_.end());
     decoded_data_.emplace(std::piecewise_construct,
                           std::forward_as_tuple(input_image._timeStamp),
                           std::forward_as_tuple(kAXXStream));
   }
-  int32_t rv = 0;
-  for (size_t i = 0; i < image.image_components.size(); i++) {
-    rv = decoders_[image.image_components[i].component_index]->Decode(
-        image.image_components[i].encoded_image, missing_frames, nullptr,
-        nullptr, render_time_ms);
-    if (rv != WEBRTC_VIDEO_CODEC_OK)
-      return rv;
-  }
+
+  int32_t rv = decoders_[stereo_info.indices.frame_index]->Decode(
+      input_image, missing_frames, nullptr, nullptr, render_time_ms);
   return rv;
 }
 
@@ -177,6 +174,8 @@ void StereoDecoderAdapter::Decoded(AlphaCodecStream stream_idx,
   }
   RTC_DCHECK(decoded_data_.find(decoded_image->timestamp()) ==
              decoded_data_.end());
+  // decoded_data_[decoded_image->timestamp()] =
+  //     DecodedImageData(stream_idx, *decoded_image, decode_time_ms, qp);
   decoded_data_.emplace(
       std::piecewise_construct,
       std::forward_as_tuple(decoded_image->timestamp()),

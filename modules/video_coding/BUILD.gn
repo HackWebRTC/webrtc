@@ -292,10 +292,8 @@ rtc_static_library("webrtc_i420") {
 
 rtc_static_library("webrtc_stereo") {
   sources = [
-    "codecs/stereo/include/multiplex_encoded_image_packer.h",
     "codecs/stereo/include/stereo_decoder_adapter.h",
     "codecs/stereo/include/stereo_encoder_adapter.h",
-    "codecs/stereo/multiplex_encoded_image_packer.cc",
     "codecs/stereo/stereo_decoder_adapter.cc",
     "codecs/stereo/stereo_encoder_adapter.cc",
   ]
@@ -316,7 +314,6 @@ rtc_static_library("webrtc_stereo") {
     "../../common_video:common_video",
     "../../rtc_base:rtc_base",
     "../../system_wrappers",
-    "../rtp_rtcp:rtp_rtcp_format",
   ]
 }
 
