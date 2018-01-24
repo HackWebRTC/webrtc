@@ -60,7 +60,7 @@ class MockPeerConnection
   MOCK_CONST_METHOD0(GetReceivers,
                      std::vector<rtc::scoped_refptr<RtpReceiverInterface>>());
   MOCK_CONST_METHOD0(sctp_data_channels,
-                     const std::vector<rtc::scoped_refptr<DataChannel>>&());
+                     std::vector<rtc::scoped_refptr<DataChannel>>());
   MOCK_CONST_METHOD0(voice_channel, cricket::VoiceChannel*());
   MOCK_CONST_METHOD0(video_channel, cricket::VideoChannel*());
   // Libjingle uses "local" for a outgoing track, and "remote" for a incoming

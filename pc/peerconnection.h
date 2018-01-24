@@ -194,7 +194,7 @@ class PeerConnection : public PeerConnectionInternal,
     return factory_->signaling_thread();
   }
 
-  const std::string& session_id() const override { return session_id_; }
+  std::string session_id() const override { return session_id_; }
 
   bool initial_offerer() const override {
     return initial_offerer_ && *initial_offerer_;
@@ -237,7 +237,7 @@ class PeerConnection : public PeerConnectionInternal,
     return rtp_data_channel_;
   }
 
-  const std::vector<rtc::scoped_refptr<DataChannel>>& sctp_data_channels()
+  std::vector<rtc::scoped_refptr<DataChannel>> sctp_data_channels()
       const override {
     return sctp_data_channels_;
   }

@@ -45,7 +45,6 @@ using testing::_;
 using testing::Invoke;
 using testing::Return;
 using testing::ReturnNull;
-using testing::ReturnRef;
 using testing::SetArgPointee;
 
 namespace webrtc {
@@ -319,8 +318,8 @@ class RTCStatsCollectorTestHelper : public SetSessionDescriptionObserver {
         std::vector<rtc::scoped_refptr<RtpSenderInterface>>()));
     EXPECT_CALL(pc_, GetReceivers()).WillRepeatedly(Return(
         std::vector<rtc::scoped_refptr<RtpReceiverInterface>>()));
-    EXPECT_CALL(pc_, sctp_data_channels()).WillRepeatedly(
-        ReturnRef(data_channels_));
+    EXPECT_CALL(pc_, sctp_data_channels())
+        .WillRepeatedly(Return(data_channels_));
     EXPECT_CALL(pc_, video_channel()).WillRepeatedly(ReturnNull());
     EXPECT_CALL(pc_, voice_channel()).WillRepeatedly(ReturnNull());
     EXPECT_CALL(pc_, GetSessionStats(_)).WillRepeatedly(ReturnNull());
@@ -335,8 +334,11 @@ class RTCStatsCollectorTestHelper : public SetSessionDescriptionObserver {
   rtc::Thread* signaling_thread() { return signaling_thread_; }
   cricket::FakeMediaEngine* media_engine() { return media_engine_; }
   MockPeerConnection& pc() { return pc_; }
-  std::vector<rtc::scoped_refptr<DataChannel>>& data_channels() {
-    return data_channels_;
+
+  void AddDataChannel(rtc::scoped_refptr<DataChannel> data_channel) {
+    data_channels_.push_back(data_channel);
+    EXPECT_CALL(pc_, sctp_data_channels())
+        .WillRepeatedly(Return(data_channels_));
   }
 
   // SetSessionDescriptionObserver overrides.
@@ -1025,10 +1027,9 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCertificateStatsChain) {
 }
 
 TEST_F(RTCStatsCollectorTest, CollectRTCDataChannelStats) {
-  test_->data_channels().push_back(
-      new MockDataChannel(
-          0, "MockDataChannel0", DataChannelInterface::kConnecting, "udp",
-          1, 2, 3, 4));
+  test_->AddDataChannel(new MockDataChannel(0, "MockDataChannel0",
+                                            DataChannelInterface::kConnecting,
+                                            "udp", 1, 2, 3, 4));
   RTCDataChannelStats expected_data_channel0("RTCDataChannel_0", 0);
   expected_data_channel0.label = "MockDataChannel0";
   expected_data_channel0.protocol = "udp";
@@ -1039,10 +1040,8 @@ TEST_F(RTCStatsCollectorTest, CollectRTCDataChannelStats) {
   expected_data_channel0.messages_received = 3;
   expected_data_channel0.bytes_received = 4;
 
-  test_->data_channels().push_back(
-      new MockDataChannel(
-          1, "MockDataChannel1", DataChannelInterface::kOpen, "tcp",
-          5, 6, 7, 8));
+  test_->AddDataChannel(new MockDataChannel(
+      1, "MockDataChannel1", DataChannelInterface::kOpen, "tcp", 5, 6, 7, 8));
   RTCDataChannelStats expected_data_channel1("RTCDataChannel_1", 0);
   expected_data_channel1.label = "MockDataChannel1";
   expected_data_channel1.protocol = "tcp";
@@ -1053,10 +1052,9 @@ TEST_F(RTCStatsCollectorTest, CollectRTCDataChannelStats) {
   expected_data_channel1.messages_received = 7;
   expected_data_channel1.bytes_received = 8;
 
-  test_->data_channels().push_back(
-      new MockDataChannel(
-          2, "MockDataChannel2", DataChannelInterface::kClosing, "udp",
-          9, 10, 11, 12));
+  test_->AddDataChannel(new MockDataChannel(2, "MockDataChannel2",
+                                            DataChannelInterface::kClosing,
+                                            "udp", 9, 10, 11, 12));
   RTCDataChannelStats expected_data_channel2("RTCDataChannel_2", 0);
   expected_data_channel2.label = "MockDataChannel2";
   expected_data_channel2.protocol = "udp";
@@ -1067,10 +1065,9 @@ TEST_F(RTCStatsCollectorTest, CollectRTCDataChannelStats) {
   expected_data_channel2.messages_received = 11;
   expected_data_channel2.bytes_received = 12;
 
-  test_->data_channels().push_back(
-      new MockDataChannel(
-          3, "MockDataChannel3", DataChannelInterface::kClosed, "tcp",
-          13, 14, 15, 16));
+  test_->AddDataChannel(new MockDataChannel(3, "MockDataChannel3",
+                                            DataChannelInterface::kClosed,
+                                            "tcp", 13, 14, 15, 16));
   RTCDataChannelStats expected_data_channel3("RTCDataChannel_3", 0);
   expected_data_channel3.label = "MockDataChannel3";
   expected_data_channel3.protocol = "tcp";

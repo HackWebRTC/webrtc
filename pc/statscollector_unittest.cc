@@ -41,7 +41,6 @@ using testing::Field;
 using testing::Invoke;
 using testing::Return;
 using testing::ReturnNull;
-using testing::ReturnRef;
 using testing::SetArgPointee;
 using webrtc::PeerConnectionInterface;
 using webrtc::StatsReport;
@@ -614,7 +613,7 @@ class StatsCollectorTest : public testing::Test {
     EXPECT_CALL(pc_, video_channel()).WillRepeatedly(ReturnNull());
     EXPECT_CALL(pc_, voice_channel()).WillRepeatedly(ReturnNull());
     EXPECT_CALL(pc_, sctp_data_channels())
-        .WillRepeatedly(ReturnRef(data_channels_));
+        .WillRepeatedly(Return(data_channels_));
     EXPECT_CALL(pc_, GetSenders()).WillRepeatedly(Return(
         std::vector<rtc::scoped_refptr<RtpSenderInterface>>()));
     EXPECT_CALL(pc_, GetReceivers()).WillRepeatedly(Return(
@@ -648,6 +647,8 @@ class StatsCollectorTest : public testing::Test {
 
     data_channels_.push_back(DataChannel::Create(
         &data_channel_provider_, cricket::DCT_SCTP, label, config));
+    EXPECT_CALL(pc_, sctp_data_channels())
+        .WillRepeatedly(Return(data_channels_));
   }
 
   StatsReport* AddCandidateReport(StatsCollector* collector,

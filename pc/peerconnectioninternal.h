@@ -51,7 +51,7 @@ class PeerConnectionInternal : public PeerConnectionInterface {
   virtual rtc::Thread* signaling_thread() const = 0;
 
   // The SDP session ID as defined by RFC 3264.
-  virtual const std::string& session_id() const = 0;
+  virtual std::string session_id() const = 0;
 
   // Returns true if we were the initial offerer.
   virtual bool initial_offerer() const = 0;
@@ -74,8 +74,8 @@ class PeerConnectionInternal : public PeerConnectionInterface {
   // Only valid when using deprecated RTP data channels.
   virtual cricket::RtpDataChannel* rtp_data_channel() const = 0;
 
-  virtual const std::vector<rtc::scoped_refptr<DataChannel>>&
-  sctp_data_channels() const = 0;
+  virtual std::vector<rtc::scoped_refptr<DataChannel>> sctp_data_channels()
+      const = 0;
 
   virtual rtc::Optional<std::string> sctp_content_name() const = 0;
   virtual rtc::Optional<std::string> sctp_transport_name() const = 0;
