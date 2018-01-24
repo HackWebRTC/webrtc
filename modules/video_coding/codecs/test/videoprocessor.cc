@@ -29,6 +29,7 @@ namespace webrtc {
 namespace test {
 
 namespace {
+const int kMsToRtpTimestamp = kVideoPayloadTypeFrequency / 1000;
 
 std::unique_ptr<VideoBitrateAllocator> CreateBitrateAllocator(
     TestConfig* config) {
@@ -156,17 +157,16 @@ void VideoProcessor::ProcessFrame() {
   rtc::scoped_refptr<I420BufferInterface> buffer(
       analysis_frame_reader_->ReadFrame());
   RTC_CHECK(buffer) << "Tried to read too many frames from the file.";
-  // Use the frame number as the basis for timestamp to identify frames. Let the
-  // first timestamp be non-zero, to not make the IvfFileWriter believe that we
-  // want to use capture timestamps in the IVF files.
-  // TODO(asapersson): Time stamps jump back if framerate increases.
-  const size_t rtp_timestamp = (frame_number + 1) * kVideoPayloadTypeFrequency /
-                               config_.codec_settings.maxFramerate;
-  const int64_t render_time_ms = (frame_number + 1) * rtc::kNumMillisecsPerSec /
-                                 config_.codec_settings.maxFramerate;
-  input_frames_[frame_number] =
-      rtc::MakeUnique<VideoFrame>(buffer, static_cast<uint32_t>(rtp_timestamp),
-                                  render_time_ms, webrtc::kVideoRotation_0);
+
+  size_t rtp_timestamp =
+      (frame_number > 0) ? input_frames_[frame_number - 1]->timestamp() : 0;
+  rtp_timestamp +=
+      kVideoPayloadTypeFrequency / config_.codec_settings.maxFramerate;
+
+  input_frames_[frame_number] = rtc::MakeUnique<VideoFrame>(
+      buffer, static_cast<uint32_t>(rtp_timestamp),
+      static_cast<int64_t>(rtp_timestamp / kMsToRtpTimestamp),
+      webrtc::kVideoRotation_0);
 
   std::vector<FrameType> frame_types = config_.FrameTypeForFrame(frame_number);
 

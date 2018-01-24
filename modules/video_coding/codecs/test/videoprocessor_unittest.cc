@@ -19,12 +19,10 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/testsupport/mock/mock_frame_reader.h"
-#include "test/testsupport/unittest_utils.h"
 #include "test/video_codec_settings.h"
 #include "typedefs.h"  // NOLINT(build/include)
 
 using ::testing::_;
-using ::testing::ElementsAre;
 using ::testing::Property;
 using ::testing::Return;
 
@@ -110,6 +108,7 @@ TEST_F(VideoProcessorTest, ProcessFrames_FixedFramerate) {
 TEST_F(VideoProcessorTest, ProcessFrames_VariableFramerate) {
   const int kBitrateKbps = 456;
   const int kStartFramerateFps = 27;
+  const int kStartTimestamp = 90000 / kStartFramerateFps;
   EXPECT_CALL(encoder_mock_, SetRateAllocation(_, kStartFramerateFps))
       .Times(1)
       .WillOnce(Return(0));
@@ -117,9 +116,8 @@ TEST_F(VideoProcessorTest, ProcessFrames_VariableFramerate) {
 
   EXPECT_CALL(frame_reader_mock_, ReadFrame())
       .WillRepeatedly(Return(I420Buffer::Create(kWidth, kHeight)));
-  EXPECT_CALL(encoder_mock_, Encode(Property(&VideoFrame::timestamp,
-                                             1 * 90000 / kStartFramerateFps),
-                                    _, _))
+  EXPECT_CALL(encoder_mock_,
+              Encode(Property(&VideoFrame::timestamp, kStartTimestamp), _, _))
       .Times(1);
   video_processor_->ProcessFrame();
 
@@ -129,9 +127,10 @@ TEST_F(VideoProcessorTest, ProcessFrames_VariableFramerate) {
       .WillOnce(Return(0));
   video_processor_->SetRates(kBitrateKbps, kNewFramerateFps);
 
-  EXPECT_CALL(encoder_mock_, Encode(Property(&VideoFrame::timestamp,
-                                             2 * 90000 / kNewFramerateFps),
-                                    _, _))
+  EXPECT_CALL(encoder_mock_,
+              Encode(Property(&VideoFrame::timestamp,
+                              kStartTimestamp + 90000 / kNewFramerateFps),
+                     _, _))
       .Times(1);
   video_processor_->ProcessFrame();
 
