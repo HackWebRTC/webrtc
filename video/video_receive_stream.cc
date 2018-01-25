@@ -60,11 +60,11 @@ VideoCodec CreateDecoderVideoCodec(const VideoReceiveStream::Decoder& decoder) {
     *(codec.H264()) = VideoEncoder::GetDefaultH264Settings();
     codec.H264()->profile =
         H264::ParseSdpProfileLevelId(decoder.codec_params)->profile;
-  } else if (codec.codecType == kVideoCodecStereo) {
+  } else if (codec.codecType == kVideoCodecMultiplex) {
     VideoReceiveStream::Decoder associated_decoder = decoder;
     associated_decoder.payload_name = CodecTypeToPayloadString(kVideoCodecVP9);
     VideoCodec associated_codec = CreateDecoderVideoCodec(associated_decoder);
-    associated_codec.codecType = kVideoCodecStereo;
+    associated_codec.codecType = kVideoCodecMultiplex;
     strncpy(associated_codec.plName, decoder.payload_name.c_str(),
             sizeof(associated_codec.plName));
     return associated_codec;

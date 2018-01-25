@@ -78,7 +78,7 @@ static const char* kPayloadNameI420 = "I420";
 static const char* kPayloadNameRED = "RED";
 static const char* kPayloadNameULPFEC = "ULPFEC";
 static const char* kPayloadNameGeneric = "Generic";
-static const char* kPayloadNameStereo = "Stereo";
+static const char* kPayloadNameMultiplex = "Multiplex";
 
 static bool CodecNamesEq(const char* name1, const char* name2) {
   return _stricmp(name1, name2) == 0;
@@ -99,7 +99,7 @@ const char* CodecTypeToPayloadString(VideoCodecType type) {
     case kVideoCodecULPFEC:
       return kPayloadNameULPFEC;
     // Other codecs default to generic.
-    case kVideoCodecStereo:
+    case kVideoCodecMultiplex:
     case kVideoCodecFlexfec:
     case kVideoCodecGeneric:
     case kVideoCodecUnknown:
@@ -121,8 +121,8 @@ VideoCodecType PayloadStringToCodecType(const std::string& name) {
     return kVideoCodecRED;
   if (CodecNamesEq(name.c_str(), kPayloadNameULPFEC))
     return kVideoCodecULPFEC;
-  if (CodecNamesEq(name.c_str(), kPayloadNameStereo))
-    return kVideoCodecStereo;
+  if (CodecNamesEq(name.c_str(), kPayloadNameMultiplex))
+    return kVideoCodecMultiplex;
   return kVideoCodecGeneric;
 }
 

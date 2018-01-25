@@ -25,7 +25,7 @@ const float kProcessCpuThreshold = 0.10f;
 const char kRtxCodecName[] = "rtx";
 const char kRedCodecName[] = "red";
 const char kUlpfecCodecName[] = "ulpfec";
-const char kStereoCodecName[] = "stereo";
+const char kMultiplexCodecName[] = "multiplex";
 
 // TODO(brandtr): Change this to 'flexfec' when we are confident that the
 // header format is not changing anymore.
