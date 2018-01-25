@@ -13,6 +13,7 @@
 
 #include "api/array_view.h"
 #include "api/optional.h"
+#include "modules/audio_processing/aec3/delay_estimate.h"
 #include "modules/audio_processing/aec3/downsampled_render_buffer.h"
 #include "modules/audio_processing/aec3/render_delay_buffer.h"
 #include "modules/audio_processing/include/audio_processing.h"
@@ -31,11 +32,8 @@ class RenderDelayController {
   // Resets the delay controller.
   virtual void Reset() = 0;
 
-  // Receives the externally used delay.
-  virtual void SetDelay(size_t render_delay) = 0;
-
   // Aligns the render buffer content with the capture signal.
-  virtual rtc::Optional<size_t> GetDelay(
+  virtual rtc::Optional<DelayEstimate> GetDelay(
       const DownsampledRenderBuffer& render_buffer,
       rtc::ArrayView<const float> capture) = 0;
 };

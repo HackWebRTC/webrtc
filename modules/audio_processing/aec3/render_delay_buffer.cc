@@ -47,7 +47,7 @@ class RenderDelayBufferImpl final : public RenderDelayBuffer {
     return low_rate_;
   }
 
-  bool CausalDelay() const override;
+  bool CausalDelay(size_t delay) const override;
 
  private:
   static int instance_count_;
@@ -304,10 +304,14 @@ bool RenderDelayBufferImpl::SetDelay(size_t delay) {
 }
 
 // Returns whether the specified delay is causal.
-bool RenderDelayBufferImpl::CausalDelay() const {
-  return !internal_delay_ ||
-         *internal_delay_ >=
-             static_cast<int>(config_.delay.min_echo_path_delay_blocks);
+bool RenderDelayBufferImpl::CausalDelay(size_t delay) const {
+  // Compute the internal delay and limit the delay to the allowed range.
+  int internal_delay = MaxExternalDelayToInternalDelay(delay);
+  internal_delay =
+      std::min(MaxDelay(), static_cast<size_t>(std::max(internal_delay, 0)));
+
+  return internal_delay >=
+         static_cast<int>(config_.delay.min_echo_path_delay_blocks);
 }
 
 // Maps the externally computed delay to the delay used internally.

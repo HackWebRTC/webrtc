@@ -165,8 +165,7 @@ TEST(BlockProcessor, DISABLED_SubmoduleIntegration) {
         .Times(kNumBlocks)
         .WillRepeatedly(Return(0));
     EXPECT_CALL(*render_delay_controller_mock, GetDelay(_, _))
-        .Times(kNumBlocks)
-        .WillRepeatedly(Return(9));
+        .Times(kNumBlocks);
     EXPECT_CALL(*echo_remover_mock, ProcessCapture(_, _, _, _))
         .Times(kNumBlocks);
     EXPECT_CALL(*echo_remover_mock, UpdateEchoLeakageStatus(_))

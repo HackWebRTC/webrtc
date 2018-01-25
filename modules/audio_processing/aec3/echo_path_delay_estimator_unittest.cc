@@ -72,7 +72,7 @@ TEST(EchoPathDelayEstimator, DelayEstimation) {
           delay_samples + 2 * config.delay.api_call_jitter_blocks * 64);
       EchoPathDelayEstimator estimator(&data_dumper, config);
 
-      rtc::Optional<size_t> estimated_delay_samples;
+      rtc::Optional<DelayEstimate> estimated_delay_samples;
       for (size_t k = 0; k < (500 + (delay_samples) / kBlockSize); ++k) {
         RandomizeSampleVector(&random_generator, render[0]);
         signal_delay_buffer.Delay(render[0], capture);
@@ -92,7 +92,7 @@ TEST(EchoPathDelayEstimator, DelayEstimation) {
         // Due to the internal down-sampling done inside the delay estimator
         // the estimated delay cannot be expected to be exact to the true delay.
         EXPECT_NEAR(delay_samples,
-                    *estimated_delay_samples -
+                    estimated_delay_samples->delay -
                         (config.delay.api_call_jitter_blocks + 1) * 64,
                     config.delay.down_sampling_factor);
       } else {

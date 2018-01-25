@@ -32,9 +32,9 @@ class RenderDelayControllerImpl final : public RenderDelayController {
                             int sample_rate_hz);
   ~RenderDelayControllerImpl() override;
   void Reset() override;
-  void SetDelay(size_t render_delay) override;
-  rtc::Optional<size_t> GetDelay(const DownsampledRenderBuffer& render_buffer,
-                                 rtc::ArrayView<const float> capture) override;
+  rtc::Optional<DelayEstimate> GetDelay(
+      const DownsampledRenderBuffer& render_buffer,
+      rtc::ArrayView<const float> capture) override;
 
  private:
   static int instance_count_;
@@ -42,7 +42,7 @@ class RenderDelayControllerImpl final : public RenderDelayController {
   const int delay_headroom_blocks_;
   const int hysteresis_limit_1_blocks_;
   const int hysteresis_limit_2_blocks_;
-  rtc::Optional<size_t> delay_;
+  rtc::Optional<DelayEstimate> delay_;
   EchoPathDelayEstimator delay_estimator_;
   std::vector<float> delay_buf_;
   int delay_buf_index_ = 0;
@@ -50,34 +50,40 @@ class RenderDelayControllerImpl final : public RenderDelayController {
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RenderDelayControllerImpl);
 };
 
-size_t ComputeNewBufferDelay(const rtc::Optional<size_t>& current_delay,
-                             int delay_headroom_blocks,
-                             int hysteresis_limit_1_blocks,
-                             int hysteresis_limit_2_blocks,
-                             size_t delay_samples) {
+DelayEstimate ComputeNewBufferDelay(
+    const rtc::Optional<DelayEstimate>& current_delay,
+    int delay_headroom_blocks,
+    int hysteresis_limit_1_blocks,
+    int hysteresis_limit_2_blocks,
+    DelayEstimate estimated_delay) {
   // The below division is not exact and the truncation is intended.
-  const int echo_path_delay_blocks = delay_samples >> kBlockSizeLog2;
+  const int echo_path_delay_blocks = estimated_delay.delay >> kBlockSizeLog2;
 
   // Compute the buffer delay increase required to achieve the desired latency.
-  size_t new_delay =
+  size_t new_delay_blocks =
       std::max(echo_path_delay_blocks - delay_headroom_blocks, 0);
+
+  DelayEstimate new_delay(estimated_delay.quality, new_delay_blocks);
 
   // Add hysteresis.
   if (current_delay) {
-    if (new_delay > *current_delay) {
-      if (new_delay <= *current_delay + hysteresis_limit_1_blocks) {
-        new_delay = *current_delay;
+    size_t current_delay_blocks = current_delay->delay;
+    if (new_delay_blocks > current_delay_blocks) {
+      if (new_delay_blocks <=
+          current_delay_blocks + hysteresis_limit_1_blocks) {
+        new_delay_blocks = current_delay_blocks;
       }
-    } else if (new_delay < *current_delay) {
+    } else if (new_delay_blocks < current_delay_blocks) {
       size_t hysteresis_limit = std::max(
-          static_cast<int>(*current_delay) - hysteresis_limit_2_blocks, 0);
-      if (new_delay >= hysteresis_limit) {
-        new_delay = *current_delay;
+          static_cast<int>(current_delay_blocks) - hysteresis_limit_2_blocks,
+          0);
+      if (new_delay_blocks >= hysteresis_limit) {
+        new_delay_blocks = current_delay_blocks;
       }
     }
   }
 
-  return new_delay;
+  return DelayEstimate(estimated_delay.quality, new_delay_blocks);
 }
 
 int RenderDelayControllerImpl::instance_count_ = 0;
@@ -109,16 +115,7 @@ void RenderDelayControllerImpl::Reset() {
   delay_estimator_.Reset();
 }
 
-void RenderDelayControllerImpl::SetDelay(size_t render_delay) {
-  if (delay_ != render_delay) {
-    // If a the delay set does not match the actual delay, reset the delay
-    // controller.
-    Reset();
-    delay_ = render_delay;
-  }
-}
-
-rtc::Optional<size_t> RenderDelayControllerImpl::GetDelay(
+rtc::Optional<DelayEstimate> RenderDelayControllerImpl::GetDelay(
     const DownsampledRenderBuffer& render_buffer,
     rtc::ArrayView<const float> capture) {
   RTC_DCHECK_EQ(kBlockSize, capture.size());
@@ -136,19 +133,21 @@ rtc::Optional<size_t> RenderDelayControllerImpl::GetDelay(
 
   if (delay_samples) {
     // Compute and set new render delay buffer delay.
-      delay_ = ComputeNewBufferDelay(
-          delay_, delay_headroom_blocks_, hysteresis_limit_1_blocks_,
-          hysteresis_limit_2_blocks_, static_cast<int>(*delay_samples));
 
-    metrics_.Update(static_cast<int>(*delay_samples), delay_ ? *delay_ : 0);
+    delay_ = ComputeNewBufferDelay(delay_, delay_headroom_blocks_,
+                                   hysteresis_limit_1_blocks_,
+                                   hysteresis_limit_2_blocks_, *delay_samples);
+
+    metrics_.Update(static_cast<int>(delay_samples->delay),
+                    delay_ ? delay_->delay : 0);
   } else {
-    metrics_.Update(rtc::nullopt, delay_ ? *delay_ : 0);
+    metrics_.Update(rtc::nullopt, delay_ ? delay_->delay : 0);
   }
 
   data_dumper_->DumpRaw("aec3_render_delay_controller_delay",
-                        delay_samples ? *delay_samples : 0);
+                        delay_samples ? delay_samples->delay : 0);
   data_dumper_->DumpRaw("aec3_render_delay_controller_buffer_delay",
-                        delay_ ? *delay_ : 0);
+                        delay_ ? delay_->delay : 0);
 
   return delay_;
 }

@@ -55,6 +55,7 @@ rtc_static_library("audio_processing") {
     "aec3/comfort_noise_generator.h",
     "aec3/decimator.cc",
     "aec3/decimator.h",
+    "aec3/delay_estimate.h",
     "aec3/downsampled_render_buffer.cc",
     "aec3/downsampled_render_buffer.h",
     "aec3/echo_canceller3.cc",

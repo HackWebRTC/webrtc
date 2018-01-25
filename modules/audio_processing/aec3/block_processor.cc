@@ -56,6 +56,7 @@ class BlockProcessorImpl final : public BlockProcessor {
   BlockProcessorMetrics metrics_;
   RenderDelayBuffer::BufferingEvent render_event_;
   size_t capture_call_counter_ = 0;
+  rtc::Optional<DelayEstimate> estimated_delay_;
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(BlockProcessorImpl);
 };
 
@@ -126,14 +127,17 @@ void BlockProcessorImpl::ProcessCapture(
   RTC_DCHECK(RenderDelayBuffer::BufferingEvent::kRenderOverrun !=
              render_event_);
   if (render_event_ == RenderDelayBuffer::BufferingEvent::kRenderUnderrun) {
-    echo_path_variability.delay_change =
-        EchoPathVariability::DelayAdjustment::kDelayReset;
-    delay_controller_->Reset();
-    capture_properly_started_ = false;
-    render_properly_started_ = false;
+    if (estimated_delay_ &&
+        estimated_delay_->quality == DelayEstimate::Quality::kRefined) {
+      echo_path_variability.delay_change =
+          EchoPathVariability::DelayAdjustment::kDelayReset;
+      delay_controller_->Reset();
+      capture_properly_started_ = false;
+      render_properly_started_ = false;
 
-    RTC_LOG(LS_WARNING) << "Reset due to render buffer underrrun at block "
-                        << capture_call_counter_;
+      RTC_LOG(LS_WARNING) << "Reset due to render buffer underrrun at block "
+                          << capture_call_counter_;
+    }
   } else if (render_event_ == RenderDelayBuffer::BufferingEvent::kApiCallSkew) {
     // There have been too many render calls in a row. Reset to avoid noncausal
     // echo.
@@ -152,22 +156,23 @@ void BlockProcessorImpl::ProcessCapture(
 
   // Compute and and apply the render delay required to achieve proper signal
   // alignment.
-  rtc::Optional<size_t> estimated_delay = delay_controller_->GetDelay(
+  estimated_delay_ = delay_controller_->GetDelay(
       render_buffer_->GetDownsampledRenderBuffer(), (*capture_block)[0]);
 
-  if (estimated_delay) {
-    bool delay_change = render_buffer_->SetDelay(*estimated_delay);
-
-    if (delay_change) {
-      RTC_LOG(LS_WARNING) << "Delay changed to " << *estimated_delay
-                          << " at block " << capture_call_counter_;
-      if (render_buffer_->CausalDelay()) {
+  if (estimated_delay_) {
+    if (render_buffer_->CausalDelay(estimated_delay_->delay)) {
+      bool delay_change = render_buffer_->SetDelay(estimated_delay_->delay);
+      if (delay_change) {
+        RTC_LOG(LS_WARNING) << "Delay changed to " << estimated_delay_->delay
+                            << " at block " << capture_call_counter_;
         echo_path_variability.delay_change =
             EchoPathVariability::DelayAdjustment::kNewDetectedDelay;
-      } else {
-        // A noncausal delay has been detected. This can only happen if there is
-        // clockdrift, an audio pipeline issue has occurred or the specified
-        // minimum delay is too short. Perform a full reset.
+      }
+    } else {
+      // A noncausal delay has been detected. This can only happen if there is
+      // clockdrift, an audio pipeline issue has occurred, an unreliable delay
+      // estimate is used or the specified minimum delay is too short.
+      if (estimated_delay_->quality == DelayEstimate::Quality::kRefined) {
         echo_path_variability.delay_change =
             EchoPathVariability::DelayAdjustment::kDelayReset;
         delay_controller_->Reset();

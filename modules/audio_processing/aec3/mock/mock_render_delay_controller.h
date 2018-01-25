@@ -25,11 +25,10 @@ class MockRenderDelayController : public RenderDelayController {
   virtual ~MockRenderDelayController() = default;
 
   MOCK_METHOD0(Reset, void());
-  MOCK_METHOD1(SetDelay, void(size_t render_delay));
   MOCK_METHOD2(
       GetDelay,
-      rtc::Optional<size_t>(const DownsampledRenderBuffer& render_buffer,
-                            rtc::ArrayView<const float> capture));
+      rtc::Optional<DelayEstimate>(const DownsampledRenderBuffer& render_buffer,
+                                   rtc::ArrayView<const float> capture));
 };
 
 }  // namespace test
