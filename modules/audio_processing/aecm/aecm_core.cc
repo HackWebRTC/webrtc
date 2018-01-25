@@ -928,8 +928,14 @@ void WebRtcAecm_UpdateChannel(AecmCore* aecm,
             {
                 // We need to shift down before multiplication
                 shiftChFar = 32 - zerosCh - zerosFar;
+                // If zerosCh == zerosFar == 0, shiftChFar is 32. A
+                // right shift of 32 is undefined. To avoid that, we
+                // do this check.
                 tmpU32no1 = rtc::dchecked_cast<uint32_t>(
-                    aecm->channelAdapt32[i] >> shiftChFar) * far_spectrum[i];
+                                shiftChFar >= 32
+                                    ? 0
+                                    : aecm->channelAdapt32[i] >> shiftChFar) *
+                            far_spectrum[i];
             }
             // Determine Q-domain of numerator
             zerosNum = WebRtcSpl_NormU32(tmpU32no1);

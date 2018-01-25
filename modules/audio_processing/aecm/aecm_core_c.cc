@@ -491,7 +491,7 @@ WebRtcAecm_ProcessBlock(AecmCore* aecm,
     RTC_DCHECK_GE(zeros16, 0);  // |zeros16| is a norm, hence non-negative.
     dfa_clean_q_domain_diff = aecm->dfaCleanQDomain - aecm->dfaCleanQDomainOld;
     if (zeros16 < dfa_clean_q_domain_diff && aecm->nearFilt[i]) {
-      tmp16no1 = aecm->nearFilt[i] << zeros16;
+      tmp16no1 = aecm->nearFilt[i] * (1 << zeros16);
       qDomainDiff = zeros16 - dfa_clean_q_domain_diff;
       tmp16no2 = ptrDfaClean[i] >> -qDomainDiff;
     } else {
