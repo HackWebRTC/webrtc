@@ -231,7 +231,7 @@ webrtc_fuzzer_test("congestion_controller_feedback_fuzzer") {
   ]
   deps = [
     "../../logging:rtc_event_log_api",
-    "../../logging:rtc_event_log_impl",
+    "../../logging:rtc_event_log_impl_base",
     "../../modules/congestion_controller",
     "../../modules/pacing",
     "../../modules/remote_bitrate_estimator:remote_bitrate_estimator",

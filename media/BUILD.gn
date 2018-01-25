@@ -608,6 +608,7 @@ if (rtc_include_tests) {
       "../call:call_interfaces",
       "../common_video:common_video",
       "../logging:rtc_event_log_api",
+      "../logging:rtc_event_log_impl_base",
       "../modules/audio_device:mock_audio_device",
       "../modules/audio_processing:audio_processing",
       "../modules/video_coding:simulcast_test_utility",
