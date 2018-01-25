@@ -71,7 +71,7 @@ void WritePerfResults(const std::string& output_path);
 
 // By default, perf results are printed to stdout. Set the FILE* to where they
 // should be printing instead.
-void SetPerfResultsOutput(const FILE* output);
+void SetPerfResultsOutput(FILE* output);
 
 // You shouldn't use this function. It's only used to test the functions above.
 void ClearPerfResults();
