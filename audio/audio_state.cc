@@ -51,7 +51,7 @@ void AudioState::AddReceivingStream(webrtc::AudioReceiveStream* stream) {
   receiving_streams_.insert(stream);
   if (!config_.audio_mixer->AddSource(
       static_cast<internal::AudioReceiveStream*>(stream))) {
-    RTC_LOG(LS_ERROR) << "Failed to add source to mixer.";
+    RTC_DLOG(LS_ERROR) << "Failed to add source to mixer.";
   }
 
   // Make sure playback is initialized; start playing if enabled.

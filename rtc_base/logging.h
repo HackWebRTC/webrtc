@@ -279,7 +279,7 @@ class LogMessageVoidify {
     rtc::LogMessage(__FILE__, __LINE__, rtc::sev).stream()
 
 // The _V version is for when a variable is passed in.  It doesn't do the
-// namespace concatination.
+// namespace concatenation.
 #define RTC_LOG_V(sev) \
   RTC_LOG_SEVERITY_PRECONDITION(sev) \
     rtc::LogMessage(__FILE__, __LINE__, sev).stream()
@@ -354,13 +354,13 @@ inline bool LogCheckLevel(LoggingSeverity sev) {
 #define RTC_DLOG_F(sev) RTC_LOG_F(sev)
 #else
 #define RTC_DLOG_EAT_STREAM_PARAMS(sev) \
-  (true ? true : ((void)(rtc::sev), true)) \
-      ? static_cast<void>(0)          \
-      : rtc::LogMessageVoidify() &    \
-        rtc::LogMessage(__FILE__, __LINE__, rtc::sev).stream()
-#define RTC_DLOG(sev) RTC_DLOG_EAT_STREAM_PARAMS(sev)
+  (true ? true : ((void)(sev), true))   \
+      ? static_cast<void>(0)            \
+      : rtc::LogMessageVoidify() &      \
+            rtc::LogMessage(__FILE__, __LINE__, sev).stream()
+#define RTC_DLOG(sev) RTC_DLOG_EAT_STREAM_PARAMS(rtc::sev)
 #define RTC_DLOG_V(sev) RTC_DLOG_EAT_STREAM_PARAMS(sev)
-#define RTC_DLOG_F(sev) RTC_DLOG_EAT_STREAM_PARAMS(sev)
+#define RTC_DLOG_F(sev) RTC_DLOG_EAT_STREAM_PARAMS(rtc::sev)
 #endif
 
 }  // namespace rtc

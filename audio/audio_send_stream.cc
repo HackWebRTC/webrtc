@@ -129,7 +129,7 @@ AudioSendStream::AudioSendStream(
                            kRecoverablePacketLossRateMinNumAckedPairs),
       rtp_rtcp_module_(nullptr),
       suspended_rtp_state_(suspended_rtp_state) {
-  RTC_LOG(LS_INFO) << "AudioSendStream: " << config.ToString();
+  RTC_LOG(LS_INFO) << "AudioSendStream: " << config.rtp.ssrc;
   RTC_DCHECK(worker_queue_);
   RTC_DCHECK(audio_state_);
   RTC_DCHECK(channel_proxy_);
@@ -153,7 +153,7 @@ AudioSendStream::AudioSendStream(
 
 AudioSendStream::~AudioSendStream() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  RTC_LOG(LS_INFO) << "~AudioSendStream: " << config_.ToString();
+  RTC_LOG(LS_INFO) << "~AudioSendStream: " << config_.rtp.ssrc;
   RTC_DCHECK(!sending_);
   transport_->send_side_cc()->DeRegisterPacketFeedbackObserver(this);
   channel_proxy_->RegisterTransport(nullptr);
@@ -190,7 +190,8 @@ void AudioSendStream::ConfigureStream(
     webrtc::internal::AudioSendStream* stream,
     const webrtc::AudioSendStream::Config& new_config,
     bool first_time) {
-  RTC_LOG(LS_INFO) << "AudioSendStream::Configuring: " << new_config.ToString();
+  RTC_LOG(LS_INFO) << "AudioSendStream::ConfigureStream: "
+                   << new_config.ToString();
   const auto& channel_proxy = stream->channel_proxy_;
   const auto& old_config = stream->config_;
 
@@ -501,7 +502,7 @@ bool AudioSendStream::SetupSendCodec(AudioSendStream* stream,
                                                    spec.format);
 
   if (!encoder) {
-    RTC_LOG(LS_ERROR) << "Unable to create encoder for " << spec.format;
+    RTC_DLOG(LS_ERROR) << "Unable to create encoder for " << spec.format;
     return false;
   }
   // If a bitrate has been specified for the codec, use it over the
@@ -514,8 +515,8 @@ bool AudioSendStream::SetupSendCodec(AudioSendStream* stream,
   if (new_config.audio_network_adaptor_config) {
     if (encoder->EnableAudioNetworkAdaptor(
             *new_config.audio_network_adaptor_config, stream->event_log_)) {
-      RTC_LOG(LS_INFO) << "Audio network adaptor enabled on SSRC "
-                       << new_config.rtp.ssrc;
+      RTC_DLOG(LS_INFO) << "Audio network adaptor enabled on SSRC "
+                        << new_config.rtp.ssrc;
     } else {
       RTC_NOTREACHED();
     }
@@ -597,8 +598,8 @@ void AudioSendStream::ReconfigureANA(AudioSendStream* stream,
     CallEncoder(stream->channel_proxy_, [&](AudioEncoder* encoder) {
       if (encoder->EnableAudioNetworkAdaptor(
               *new_config.audio_network_adaptor_config, stream->event_log_)) {
-        RTC_LOG(LS_INFO) << "Audio network adaptor enabled on SSRC "
-                         << new_config.rtp.ssrc;
+        RTC_DLOG(LS_INFO) << "Audio network adaptor enabled on SSRC "
+                          << new_config.rtp.ssrc;
       } else {
         RTC_NOTREACHED();
       }
@@ -607,8 +608,8 @@ void AudioSendStream::ReconfigureANA(AudioSendStream* stream,
     CallEncoder(stream->channel_proxy_, [&](AudioEncoder* encoder) {
       encoder->DisableAudioNetworkAdaptor();
     });
-    RTC_LOG(LS_INFO) << "Audio network adaptor disabled on SSRC "
-                     << new_config.rtp.ssrc;
+    RTC_DLOG(LS_INFO) << "Audio network adaptor disabled on SSRC "
+                      << new_config.rtp.ssrc;
   }
 }
 
@@ -719,8 +720,8 @@ void AudioSendStream::RegisterCngPayloadType(int payload_type,
   if (rtp_rtcp_module_->RegisterSendPayload(codec) != 0) {
     rtp_rtcp_module_->DeRegisterSendPayload(codec.pltype);
     if (rtp_rtcp_module_->RegisterSendPayload(codec) != 0) {
-      RTC_LOG(LS_ERROR) << "RegisterCngPayloadType() failed to register CN to "
-                           "RTP/RTCP module";
+      RTC_DLOG(LS_ERROR) << "RegisterCngPayloadType() failed to register CN to "
+                            "RTP/RTCP module";
     }
   }
 }
