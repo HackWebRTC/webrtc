@@ -1095,6 +1095,7 @@ static void FormSuppressionGain(AecCore* aec,
     } else {
       for (int i = 0; i < PART_LEN1; ++i) {
         hNl[i] = 1 - cohxd[i];
+        hNl[i] = std::max(hNl[i], 0.f);
       }
       hNlFb = hNlXdAvg;
       hNlFbLow = hNlXdAvg;
@@ -1109,6 +1110,7 @@ static void FormSuppressionGain(AecCore* aec,
       aec->echoState = 1;
       for (int i = 0; i < PART_LEN1; ++i) {
         hNl[i] = WEBRTC_SPL_MIN(cohde[i], 1 - cohxd[i]);
+        hNl[i] = std::max(hNl[i], 0.f);
       }
 
       // Select an order statistic from the preferred bands.
