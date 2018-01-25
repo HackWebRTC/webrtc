@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_VIDEO_CODING_CODECS_STEREO_INCLUDE_STEREO_ENCODER_ADAPTER_H_
-#define MODULES_VIDEO_CODING_CODECS_STEREO_INCLUDE_STEREO_ENCODER_ADAPTER_H_
+#ifndef MODULES_VIDEO_CODING_CODECS_MULTIPLEX_INCLUDE_MULTIPLEX_ENCODER_ADAPTER_H_
+#define MODULES_VIDEO_CODING_CODECS_MULTIPLEX_INCLUDE_MULTIPLEX_ENCODER_ADAPTER_H_
 
 #include <map>
 #include <memory>
@@ -18,7 +18,7 @@
 #include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/video_encoder_factory.h"
-#include "modules/video_coding/codecs/stereo/include/multiplex_encoded_image_packer.h"
+#include "modules/video_coding/codecs/multiplex/include/multiplex_encoded_image_packer.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 
 namespace webrtc {
@@ -29,12 +29,12 @@ enum AlphaCodecStream {
   kAlphaCodecStreams = 2,
 };
 
-class StereoEncoderAdapter : public VideoEncoder {
+class MultiplexEncoderAdapter : public VideoEncoder {
  public:
   // |factory| is not owned and expected to outlive this class' lifetime.
-  explicit StereoEncoderAdapter(VideoEncoderFactory* factory,
-                                const SdpVideoFormat& associated_format);
-  virtual ~StereoEncoderAdapter();
+  explicit MultiplexEncoderAdapter(VideoEncoderFactory* factory,
+                                   const SdpVideoFormat& associated_format);
+  virtual ~MultiplexEncoderAdapter();
 
   // Implements VideoEncoder
   int InitEncode(const VideoCodec* inst,
@@ -69,7 +69,7 @@ class StereoEncoderAdapter : public VideoEncoder {
   std::map<uint32_t /* timestamp */, MultiplexImage> stashed_images_;
 
   uint16_t picture_index_ = 0;
-  std::vector<uint8_t> stereo_dummy_planes_;
+  std::vector<uint8_t> multiplex_dummy_planes_;
 
   int key_frame_interval_;
   EncodedImage combined_image_;
@@ -77,4 +77,4 @@ class StereoEncoderAdapter : public VideoEncoder {
 
 }  // namespace webrtc
 
-#endif  // MODULES_VIDEO_CODING_CODECS_STEREO_INCLUDE_STEREO_ENCODER_ADAPTER_H_
+#endif  // MODULES_VIDEO_CODING_CODECS_MULTIPLEX_INCLUDE_MULTIPLEX_ENCODER_ADAPTER_H_

@@ -485,7 +485,7 @@ enum VideoCodecType {
   kVideoCodecULPFEC,
   kVideoCodecFlexfec,
   kVideoCodecGeneric,
-  kVideoCodecStereo,
+  kVideoCodecMultiplex,
   kVideoCodecUnknown
 };
 

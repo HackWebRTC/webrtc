@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_VIDEO_CODING_CODECS_STEREO_INCLUDE_STEREO_DECODER_ADAPTER_H_
-#define MODULES_VIDEO_CODING_CODECS_STEREO_INCLUDE_STEREO_DECODER_ADAPTER_H_
+#ifndef MODULES_VIDEO_CODING_CODECS_MULTIPLEX_INCLUDE_MULTIPLEX_DECODER_ADAPTER_H_
+#define MODULES_VIDEO_CODING_CODECS_MULTIPLEX_INCLUDE_MULTIPLEX_DECODER_ADAPTER_H_
 
 #include <map>
 #include <memory>
@@ -18,16 +18,16 @@
 #include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_decoder.h"
 #include "api/video_codecs/video_decoder_factory.h"
-#include "modules/video_coding/codecs/stereo/include/stereo_encoder_adapter.h"
+#include "modules/video_coding/codecs/multiplex/include/multiplex_encoder_adapter.h"
 
 namespace webrtc {
 
-class StereoDecoderAdapter : public VideoDecoder {
+class MultiplexDecoderAdapter : public VideoDecoder {
  public:
   // |factory| is not owned and expected to outlive this class' lifetime.
-  explicit StereoDecoderAdapter(VideoDecoderFactory* factory,
-                                const SdpVideoFormat& associated_format);
-  virtual ~StereoDecoderAdapter();
+  explicit MultiplexDecoderAdapter(VideoDecoderFactory* factory,
+                                   const SdpVideoFormat& associated_format);
+  virtual ~MultiplexDecoderAdapter();
 
   // Implements VideoDecoder
   int32_t InitDecode(const VideoCodec* codec_settings,
@@ -56,9 +56,9 @@ class StereoDecoderAdapter : public VideoDecoder {
   void MergeAlphaImages(VideoFrame* decoded_image,
                         const rtc::Optional<int32_t>& decode_time_ms,
                         const rtc::Optional<uint8_t>& qp,
-                        VideoFrame* stereo_decoded_image,
-                        const rtc::Optional<int32_t>& stereo_decode_time_ms,
-                        const rtc::Optional<uint8_t>& stereo_qp);
+                        VideoFrame* multiplex_decoded_image,
+                        const rtc::Optional<int32_t>& multiplex_decode_time_ms,
+                        const rtc::Optional<uint8_t>& multiplex_qp);
 
   VideoDecoderFactory* const factory_;
   const SdpVideoFormat associated_format_;
@@ -72,4 +72,4 @@ class StereoDecoderAdapter : public VideoDecoder {
 
 }  // namespace webrtc
 
-#endif  // MODULES_VIDEO_CODING_CODECS_STEREO_INCLUDE_STEREO_DECODER_ADAPTER_H_
+#endif  // MODULES_VIDEO_CODING_CODECS_MULTIPLEX_INCLUDE_MULTIPLEX_DECODER_ADAPTER_H_
