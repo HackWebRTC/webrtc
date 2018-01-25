@@ -19,22 +19,6 @@
 
 namespace {
 
-void PrintResultsImpl(const std::string& graph_name,
-                      const std::string& trace,
-                      const std::string& values,
-                      const std::string& units,
-                      bool important) {
-  // <*>RESULT <graph_name>: <trace_name>= <value> <units>
-  // <*>RESULT <graph_name>: <trace_name>= {<mean>, <std deviation>} <units>
-  // <*>RESULT <graph_name>: <trace_name>= [<value>,value,value,...,] <units>
-
-  if (important) {
-    printf("*");
-  }
-  printf("RESULT %s: %s= %s %s\n", graph_name.c_str(), trace.c_str(),
-         values.c_str(), units.c_str());
-}
-
 template <typename Container>
 void OutputListToStream(std::ostream* ostream, const Container& values) {
   const char* sep = "";
@@ -46,9 +30,14 @@ void OutputListToStream(std::ostream* ostream, const Container& values) {
 
 class PerfResultsLogger {
  public:
+  PerfResultsLogger() : crit_(), output_(stdout), graphs_() {}
   void ClearResults() {
     rtc::CritScope lock(&crit_);
     graphs_.clear();
+  }
+  void SetOutput(FILE* output) {
+    rtc::CritScope lock(&crit_);
+    output_ = output;
   }
   void LogResult(const std::string& graph_name,
                  const std::string& trace_name,
@@ -58,8 +47,8 @@ class PerfResultsLogger {
     std::ostringstream value_stream;
     value_stream.precision(8);
     value_stream << value;
-    PrintResultsImpl(graph_name, trace_name, value_stream.str(), units,
-                     important);
+    LogResultsImpl(graph_name, trace_name, value_stream.str(), units,
+                   important);
 
     std::ostringstream json_stream;
     json_stream << '"' << trace_name << R"(":{)";
@@ -78,8 +67,8 @@ class PerfResultsLogger {
     std::ostringstream value_stream;
     value_stream.precision(8);
     value_stream << '{' << mean << ',' << error << '}';
-    PrintResultsImpl(graph_name, trace_name, value_stream.str(), units,
-                     important);
+    LogResultsImpl(graph_name, trace_name, value_stream.str(), units,
+                   important);
 
     std::ostringstream json_stream;
     json_stream << '"' << trace_name << R"(":{)";
@@ -100,8 +89,8 @@ class PerfResultsLogger {
     value_stream << '[';
     OutputListToStream(&value_stream, values);
     value_stream << ']';
-    PrintResultsImpl(graph_name, trace_name, value_stream.str(), units,
-                     important);
+    LogResultsImpl(graph_name, trace_name, value_stream.str(), units,
+                   important);
 
     std::ostringstream json_stream;
     json_stream << '"' << trace_name << R"(":{)";
@@ -114,7 +103,26 @@ class PerfResultsLogger {
   std::string ToJSON() const;
 
  private:
+  void LogResultsImpl(const std::string& graph_name,
+                      const std::string& trace,
+                      const std::string& values,
+                      const std::string& units,
+                      bool important) {
+    // <*>RESULT <graph_name>: <trace_name>= <value> <units>
+    // <*>RESULT <graph_name>: <trace_name>= {<mean>, <std deviation>} <units>
+    // <*>RESULT <graph_name>: <trace_name>= [<value>,value,value,...,] <units>
+    rtc::CritScope lock(&crit_);
+
+    if (important) {
+      fprintf(output_, "*");
+    }
+    fprintf(output_, "RESULT %s: %s= %s %s\n", graph_name.c_str(),
+            trace.c_str(), values.c_str(), units.c_str());
+  }
+
   rtc::CriticalSection crit_;
+  FILE* output_
+      RTC_GUARDED_BY(&crit_);
   std::map<std::string, std::vector<std::string>> graphs_
       RTC_GUARDED_BY(&crit_);
 };
@@ -149,6 +157,10 @@ namespace test {
 
 void ClearPerfResults() {
   GetPerfResultsLogger().ClearResults();
+}
+
+void SetPerfResultsOutput(FILE* output) {
+  GetPerfResultsLogger().SetOutput(output);
 }
 
 std::string GetPerfResultsJSON() {
