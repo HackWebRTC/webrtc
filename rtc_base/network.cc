@@ -153,6 +153,38 @@ std::string MakeNetworkKey(const std::string& name, const IPAddress& prefix,
   return ost.str();
 }
 
+AdapterType GetAdapterTypeFromName(const char* network_name) {
+  if (strncmp(network_name, "ipsec", 5) == 0 ||
+      strncmp(network_name, "tun", 3) == 0 ||
+      strncmp(network_name, "utun", 4) == 0 ||
+      strncmp(network_name, "tap", 3) == 0) {
+    return ADAPTER_TYPE_VPN;
+  }
+#if defined(WEBRTC_IOS)
+  // Cell networks are pdp_ipN on iOS.
+  if (strncmp(network_name, "pdp_ip", 6) == 0) {
+    return ADAPTER_TYPE_CELLULAR;
+  }
+  if (strncmp(network_name, "en", 2) == 0) {
+    // This may not be most accurate because sometimes Ethernet interface
+    // name also starts with "en" but it is better than showing it as
+    // "unknown" type.
+    // TODO(honghaiz): Write a proper IOS network manager.
+    return ADAPTER_TYPE_WIFI;
+  }
+#elif defined(WEBRTC_ANDROID)
+  if (strncmp(network_name, "rmnet", 5) == 0 ||
+      strncmp(network_name, "v4-rmnet", 8) == 0) {
+    return ADAPTER_TYPE_CELLULAR;
+  }
+  if (strncmp(network_name, "wlan", 4) == 0) {
+    return ADAPTER_TYPE_WIFI;
+  }
+#endif
+
+  return ADAPTER_TYPE_UNKNOWN;
+}
+
 NetworkManager::NetworkManager() {
 }
 
@@ -447,7 +479,14 @@ void BasicNetworkManager::ConvertIfAddrs(struct ifaddrs* interfaces,
     if (cursor->ifa_flags & IFF_LOOPBACK) {
       adapter_type = ADAPTER_TYPE_LOOPBACK;
     } else {
-      adapter_type = GetAdapterTypeFromName(cursor->ifa_name);
+      // If there is a network_monitor, use it to get the adapter type.
+      // Otherwise, get the adapter type based on a few name matching rules.
+      if (network_monitor_) {
+        adapter_type = network_monitor_->GetAdapterType(cursor->ifa_name);
+      }
+      if (adapter_type == ADAPTER_TYPE_UNKNOWN) {
+        adapter_type = GetAdapterTypeFromName(cursor->ifa_name);
+      }
     }
     int prefix_length = CountIPMaskBits(mask);
     prefix = TruncateIP(ip, prefix_length);
@@ -775,44 +814,6 @@ void BasicNetworkManager::OnMessage(Message* msg) {
     default:
       RTC_NOTREACHED();
   }
-}
-
-AdapterType BasicNetworkManager::GetAdapterTypeFromName(
-    const char* network_name) const {
-  // If there is a network_monitor, use it to get the adapter type.
-  // Otherwise, get the adapter type based on a few name matching rules.
-  if (network_monitor_) {
-    AdapterType type = network_monitor_->GetAdapterType(network_name);
-    if (type != ADAPTER_TYPE_UNKNOWN) {
-      return type;
-    }
-  }
-  if (strncmp(network_name, "ipsec", 5) == 0) {
-    return ADAPTER_TYPE_VPN;
-  }
-#if defined(WEBRTC_IOS)
-  // Cell networks are pdp_ipN on iOS.
-  if (strncmp(network_name, "pdp_ip", 6) == 0) {
-    return ADAPTER_TYPE_CELLULAR;
-  }
-  if (strncmp(network_name, "en", 2) == 0) {
-    // This may not be most accurate because sometimes Ethernet interface
-    // name also starts with "en" but it is better than showing it as
-    // "unknown" type.
-    // TODO(honghaiz): Write a proper IOS network manager.
-    return ADAPTER_TYPE_WIFI;
-  }
-#elif defined(WEBRTC_ANDROID)
-  if (strncmp(network_name, "rmnet", 5) == 0 ||
-      strncmp(network_name, "v4-rmnet", 8) == 0) {
-    return ADAPTER_TYPE_CELLULAR;
-  }
-  if (strncmp(network_name, "wlan", 4) == 0) {
-    return ADAPTER_TYPE_WIFI;
-  }
-#endif
-
-  return ADAPTER_TYPE_UNKNOWN;
 }
 
 IPAddress BasicNetworkManager::QueryDefaultLocalAddress(int family) const {

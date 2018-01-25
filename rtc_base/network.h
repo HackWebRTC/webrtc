@@ -47,6 +47,11 @@ const int kDefaultNetworkIgnoreMask = ADAPTER_TYPE_LOOPBACK;
 std::string MakeNetworkKey(const std::string& name, const IPAddress& prefix,
                            int prefix_length);
 
+// Utility function that attempts to determine an adapter type by an interface
+// name (e.g., "wlan0"). Can be used by NetworkManager subclasses when other
+// mechanisms fail to determine the type.
+AdapterType GetAdapterTypeFromName(const char* network_name);
+
 class DefaultLocalAddressProvider {
  public:
   virtual ~DefaultLocalAddressProvider() = default;
@@ -264,8 +269,6 @@ class BasicNetworkManager : public NetworkManagerBase,
   void UpdateNetworksContinually();
   // Only updates the networks; does not reschedule the next update.
   void UpdateNetworksOnce();
-
-  AdapterType GetAdapterTypeFromName(const char* network_name) const;
 
   Thread* thread_;
   bool sent_first_update_;
