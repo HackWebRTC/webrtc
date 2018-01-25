@@ -380,6 +380,10 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     // Can be set to INT_MAX to effectively disable the limit.
     int max_ipv6_networks = cricket::kDefaultMaxIPv6Networks;
 
+    // Exclude link-local network interfaces
+    // from considertaion for gathering ICE candidates.
+    bool disable_link_local_networks = false;
+
     // If set to true, use RTP data channels instead of SCTP.
     // TODO(deadbeef): Remove this. We no longer commit to supporting RTP data
     // channels, though some applications are still working on moving off of

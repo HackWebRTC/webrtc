@@ -155,6 +155,11 @@ bool IPFromString(const std::string& str, int flags,
 bool IPIsAny(const IPAddress& ip);
 bool IPIsLoopback(const IPAddress& ip);
 bool IPIsLinkLocal(const IPAddress& ip);
+// Identify a private network address like "192.168.111.222"
+// (see https://en.wikipedia.org/wiki/Private_network )
+bool IPIsPrivateNetwork(const IPAddress& ip);
+// Identify if an IP is "private", that is a loopback
+// or an address belonging to a link-local or a private network.
 bool IPIsPrivate(const IPAddress& ip);
 bool IPIsUnspec(const IPAddress& ip);
 size_t HashIP(const IPAddress& ip);

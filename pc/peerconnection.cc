@@ -583,6 +583,7 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
     bool disable_ipv6;
     bool disable_ipv6_on_wifi;
     int max_ipv6_networks;
+    bool disable_link_local_networks;
     bool enable_rtp_data_channel;
     rtc::Optional<int> screencast_min_bitrate;
     rtc::Optional<bool> combined_audio_video_bwe;
@@ -628,6 +629,7 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
          media_config == o.media_config && disable_ipv6 == o.disable_ipv6 &&
          disable_ipv6_on_wifi == o.disable_ipv6_on_wifi &&
          max_ipv6_networks == o.max_ipv6_networks &&
+         disable_link_local_networks == o.disable_link_local_networks &&
          enable_rtp_data_channel == o.enable_rtp_data_channel &&
          screencast_min_bitrate == o.screencast_min_bitrate &&
          combined_audio_video_bwe == o.combined_audio_video_bwe &&
@@ -4238,6 +4240,11 @@ bool PeerConnection::InitializePortAllocator_n(
       kCandidateNetworkPolicyLowCost) {
     portallocator_flags |= cricket::PORTALLOCATOR_DISABLE_COSTLY_NETWORKS;
     RTC_LOG(LS_INFO) << "Do not gather candidates on high-cost networks";
+  }
+
+  if (configuration.disable_link_local_networks) {
+    portallocator_flags |= cricket::PORTALLOCATOR_DISABLE_LINK_LOCAL_NETWORKS;
+    RTC_LOG(LS_INFO) << "Disable candidates on link-local network interfaces.";
   }
 
   port_allocator_->set_flags(portallocator_flags);

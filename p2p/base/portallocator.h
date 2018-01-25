@@ -87,6 +87,10 @@ enum {
   // the application to work in a wider variety of environments, at the expense
   // of having to allocate additional candidates.
   PORTALLOCATOR_ENABLE_ANY_ADDRESS_PORTS = 0x8000,
+
+  // Exclude link-local network interfaces
+  // from considertaion after adapter enumeration.
+  PORTALLOCATOR_DISABLE_LINK_LOCAL_NETWORKS = 0x10000,
 };
 
 // Defines various reasons that have caused ICE regathering.

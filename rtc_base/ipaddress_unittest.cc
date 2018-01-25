@@ -17,6 +17,7 @@ static const unsigned int kIPv4AddrSize = 4;
 static const unsigned int kIPv6AddrSize = 16;
 static const unsigned int kIPv4RFC1918Addr = 0xC0A80701;
 static const unsigned int kIPv4PublicAddr = 0x01020304;
+static const unsigned int kIPv4LinkLocalAddr = 0xA9FE10C1; // 169.254.16.193
 static const in6_addr kIPv6LinkLocalAddr = {{{0xfe, 0x80, 0x00, 0x00,
                                               0x00, 0x00, 0x00, 0x00,
                                               0xbe, 0x30, 0x5b, 0xff,
@@ -579,6 +580,28 @@ TEST(IPAddressTest, TestIsLoopback) {
   // 127.0.0.1.
   EXPECT_TRUE(IPIsLoopback(IPAddress(0x7f010203)));
   EXPECT_TRUE(IPIsLoopback(IPAddress(in6addr_loopback)));
+}
+
+TEST(IPAddressTest, TestIsLinkLocal) {
+  // "any" addresses
+  EXPECT_FALSE(IPIsLinkLocal(IPAddress(INADDR_ANY)));
+  EXPECT_FALSE(IPIsLinkLocal(IPAddress(in6addr_any)));
+  // loopback addresses
+  EXPECT_FALSE(IPIsLinkLocal(IPAddress(INADDR_LOOPBACK)));
+  EXPECT_FALSE(IPIsLinkLocal(IPAddress(in6addr_loopback)));
+  // public addresses
+  EXPECT_FALSE(IPIsLinkLocal(IPAddress(kIPv4PublicAddr)));
+  EXPECT_FALSE(IPIsLinkLocal(IPAddress(kIPv6PublicAddr)));
+  // private network addresses
+  EXPECT_FALSE(IPIsLinkLocal(IPAddress(kIPv4RFC1918Addr)));
+  // mapped addresses
+  EXPECT_FALSE(IPIsLinkLocal(IPAddress(kIPv4MappedAnyAddr)));
+  EXPECT_FALSE(IPIsLinkLocal(IPAddress(kIPv4MappedPublicAddr)));
+  EXPECT_FALSE(IPIsLinkLocal(IPAddress(kIPv4MappedRFC1918Addr)));
+
+  // link-local network addresses
+  EXPECT_TRUE(IPIsLinkLocal(IPAddress(kIPv4LinkLocalAddr)));
+  EXPECT_TRUE(IPIsLinkLocal(IPAddress(kIPv6LinkLocalAddr)));
 }
 
 // Verify that IPIsAny catches all cases of "any" address.

@@ -30,6 +30,7 @@
 @synthesize candidateNetworkPolicy = _candidateNetworkPolicy;
 @synthesize continualGatheringPolicy = _continualGatheringPolicy;
 @synthesize maxIPv6Networks = _maxIPv6Networks;
+@synthesize disableLinkLocalNetworks = _disableLinkLocalNetworks;
 @synthesize audioJitterBufferMaxPackets = _audioJitterBufferMaxPackets;
 @synthesize audioJitterBufferFastAccelerate = _audioJitterBufferFastAccelerate;
 @synthesize iceConnectionReceivingTimeout = _iceConnectionReceivingTimeout;
@@ -75,6 +76,7 @@
     _continualGatheringPolicy =
         [[self class] continualGatheringPolicyForNativePolicy:nativePolicy];
     _maxIPv6Networks = config.max_ipv6_networks;
+    _disableLinkLocalNetworks = config.disable_link_local_networks;
     _audioJitterBufferMaxPackets = config.audio_jitter_buffer_max_packets;
     _audioJitterBufferFastAccelerate = config.audio_jitter_buffer_fast_accelerate;
     _iceConnectionReceivingTimeout = config.ice_connection_receiving_timeout;
@@ -100,10 +102,11 @@
 }
 
 - (NSString *)description {
+  static NSString *formatString = @"RTCConfiguration: "
+      @"{\n%@\n%@\n%@\n%@\n%@\n%@\n%@\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%@\n%@\n%d\n%d\n}\n";
+
   return
-      [NSString stringWithFormat:
-                    @"RTCConfiguration: "
-                    @"{\n%@\n%@\n%@\n%@\n%@\n%@\n%@\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%@\n%@\n%d\n}\n",
+      [NSString stringWithFormat:formatString,
                     _iceServers,
                     [[self class] stringForTransportPolicy:_iceTransportPolicy],
                     [[self class] stringForBundlePolicy:_bundlePolicy],
@@ -120,6 +123,7 @@
                     _shouldPresumeWritableWhenFullyRelayed,
                     _iceCheckMinInterval,
                     _iceRegatherIntervalRange,
+                    _disableLinkLocalNetworks,
                     _maxIPv6Networks];
 }
 
@@ -147,6 +151,7 @@
   nativeConfig->continual_gathering_policy = [[self class]
       nativeContinualGatheringPolicyForPolicy:_continualGatheringPolicy];
   nativeConfig->max_ipv6_networks = _maxIPv6Networks;
+  nativeConfig->disable_link_local_networks = _disableLinkLocalNetworks;
   nativeConfig->audio_jitter_buffer_max_packets = _audioJitterBufferMaxPackets;
   nativeConfig->audio_jitter_buffer_fast_accelerate =
       _audioJitterBufferFastAccelerate  ? true : false;

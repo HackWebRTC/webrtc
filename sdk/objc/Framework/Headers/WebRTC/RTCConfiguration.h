@@ -93,6 +93,12 @@ RTC_EXPORT
  */
 @property(nonatomic, assign) int maxIPv6Networks;
 
+/** Exclude link-local network interfaces
+ *  from considertaion for gathering ICE candidates.
+ *  Defaults to NO.
+ */
+@property(nonatomic, assign) BOOL disableLinkLocalNetworks;
+
 @property(nonatomic, assign) int audioJitterBufferMaxPackets;
 @property(nonatomic, assign) BOOL audioJitterBufferFastAccelerate;
 @property(nonatomic, assign) int iceConnectionReceivingTimeout;
