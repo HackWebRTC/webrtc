@@ -31,6 +31,16 @@ bool RtpTransceiverDirectionHasRecv(RtpTransceiverDirection direction);
 RtpTransceiverDirection RtpTransceiverDirectionReversed(
     RtpTransceiverDirection direction);
 
+// Returns the RtpTransceiverDirection with its send component set to |send|.
+RtpTransceiverDirection RtpTransceiverDirectionWithSendSet(
+    RtpTransceiverDirection direction,
+    bool send = true);
+
+// Returns the RtpTransceiverDirection with its recv component set to |recv|.
+RtpTransceiverDirection RtpTransceiverDirectionWithRecvSet(
+    RtpTransceiverDirection direction,
+    bool recv = true);
+
 // Returns an unspecified string representation of the given direction.
 const char* RtpTransceiverDirectionToString(RtpTransceiverDirection direction);
 

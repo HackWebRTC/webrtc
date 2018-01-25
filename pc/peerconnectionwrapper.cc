@@ -24,6 +24,8 @@
 
 namespace webrtc {
 
+using RTCOfferAnswerOptions = PeerConnectionInterface::RTCOfferAnswerOptions;
+
 namespace {
 const uint32_t kDefaultTimeout = 10000U;
 }
@@ -57,7 +59,7 @@ MockPeerConnectionObserver* PeerConnectionWrapper::observer() {
 
 std::unique_ptr<SessionDescriptionInterface>
 PeerConnectionWrapper::CreateOffer() {
-  return CreateOffer(PeerConnectionInterface::RTCOfferAnswerOptions());
+  return CreateOffer(RTCOfferAnswerOptions());
 }
 
 std::unique_ptr<SessionDescriptionInterface> PeerConnectionWrapper::CreateOffer(
@@ -72,8 +74,7 @@ std::unique_ptr<SessionDescriptionInterface> PeerConnectionWrapper::CreateOffer(
 
 std::unique_ptr<SessionDescriptionInterface>
 PeerConnectionWrapper::CreateOfferAndSetAsLocal() {
-  return CreateOfferAndSetAsLocal(
-      PeerConnectionInterface::RTCOfferAnswerOptions());
+  return CreateOfferAndSetAsLocal(RTCOfferAnswerOptions());
 }
 
 std::unique_ptr<SessionDescriptionInterface>
@@ -89,7 +90,7 @@ PeerConnectionWrapper::CreateOfferAndSetAsLocal(
 
 std::unique_ptr<SessionDescriptionInterface>
 PeerConnectionWrapper::CreateAnswer() {
-  return CreateAnswer(PeerConnectionInterface::RTCOfferAnswerOptions());
+  return CreateAnswer(RTCOfferAnswerOptions());
 }
 
 std::unique_ptr<SessionDescriptionInterface>
@@ -105,8 +106,7 @@ PeerConnectionWrapper::CreateAnswer(
 
 std::unique_ptr<SessionDescriptionInterface>
 PeerConnectionWrapper::CreateAnswerAndSetAsLocal() {
-  return CreateAnswerAndSetAsLocal(
-      PeerConnectionInterface::RTCOfferAnswerOptions());
+  return CreateAnswerAndSetAsLocal(RTCOfferAnswerOptions());
 }
 
 std::unique_ptr<SessionDescriptionInterface>
@@ -181,12 +181,20 @@ bool PeerConnectionWrapper::SetSdp(
 
 bool PeerConnectionWrapper::ExchangeOfferAnswerWith(
     PeerConnectionWrapper* answerer) {
+  return ExchangeOfferAnswerWith(answerer, RTCOfferAnswerOptions(),
+                                 RTCOfferAnswerOptions());
+}
+
+bool PeerConnectionWrapper::ExchangeOfferAnswerWith(
+    PeerConnectionWrapper* answerer,
+    const PeerConnectionInterface::RTCOfferAnswerOptions& offer_options,
+    const PeerConnectionInterface::RTCOfferAnswerOptions& answer_options) {
   RTC_DCHECK(answerer);
   if (answerer == this) {
     RTC_LOG(LS_ERROR) << "Cannot exchange offer/answer with ourself!";
     return false;
   }
-  auto offer = CreateOffer();
+  auto offer = CreateOffer(offer_options);
   EXPECT_TRUE(offer);
   if (!offer) {
     return false;
@@ -202,7 +210,7 @@ bool PeerConnectionWrapper::ExchangeOfferAnswerWith(
   if (!set_remote_offer) {
     return false;
   }
-  auto answer = answerer->CreateAnswer();
+  auto answer = answerer->CreateAnswer(answer_options);
   EXPECT_TRUE(answer);
   if (!answer) {
     return false;

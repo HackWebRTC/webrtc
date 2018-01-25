@@ -354,10 +354,13 @@ class PeerConnection : public PeerConnectionInternal,
   rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
   FindTransceiverBySender(rtc::scoped_refptr<RtpSenderInterface> sender);
 
+  // Internal implementation for AddTransceiver family of methods. If
+  // |fire_callback| is set, fires OnRenegotiationNeeded callback if successful.
   RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>> AddTransceiver(
       cricket::MediaType media_type,
       rtc::scoped_refptr<MediaStreamTrackInterface> track,
-      const RtpTransceiverInit& init);
+      const RtpTransceiverInit& init,
+      bool fire_callback = true);
 
   rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>>
   CreateSender(cricket::MediaType media_type,
@@ -481,6 +484,14 @@ class PeerConnection : public PeerConnectionInternal,
       const PeerConnectionInterface::RTCOfferAnswerOptions&
           offer_answer_options,
       cricket::MediaSessionOptions* session_options);
+
+  RTCError HandleLegacyOfferOptions(const RTCOfferAnswerOptions& options);
+  void RemoveRecvDirectionFromReceivingTransceiversOfType(
+      cricket::MediaType media_type);
+  void AddUpToOneReceivingTransceiverOfType(cricket::MediaType media_type);
+  std::vector<
+      rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
+  GetReceivingTransceiversOfType(cricket::MediaType media_type);
 
   // Returns a MediaSessionOptions struct with options decided by
   // |constraints|, the local MediaStreams and DataChannels.

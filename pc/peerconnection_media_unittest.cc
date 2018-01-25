@@ -361,39 +361,38 @@ TEST_P(PeerConnectionMediaTest, NewStreamInRemoteOfferAddsRecvStreams) {
 // Test that a new stream in a subsequent answer causes a new send stream to be
 // created on the callee when added locally.
 TEST_P(PeerConnectionMediaTest, NewStreamInLocalAnswerAddsSendStreams) {
-  // TODO(bugs.webrtc.org/8765): Enable this test under Unified Plan once
-  // offer_to_receive_audio is implemented.
-  if (IsUnifiedPlan()) {
-    return;
-  }
-
   auto caller = CreatePeerConnection();
   auto callee = CreatePeerConnectionWithAudioVideo();
 
-  RTCOfferAnswerOptions options;
-  options.offer_to_receive_audio =
+  RTCOfferAnswerOptions offer_options;
+  offer_options.offer_to_receive_audio =
       RTCOfferAnswerOptions::kOfferToReceiveMediaTrue;
-  options.offer_to_receive_video =
+  offer_options.offer_to_receive_video =
       RTCOfferAnswerOptions::kOfferToReceiveMediaTrue;
+  RTCOfferAnswerOptions answer_options;
 
-  ASSERT_TRUE(
-      callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal(options)));
-  ASSERT_TRUE(
-      caller->SetRemoteDescription(callee->CreateAnswerAndSetAsLocal()));
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get(), offer_options,
+                                              answer_options));
 
   // Add second set of tracks to the callee.
   callee->AddAudioTrack("a2");
   callee->AddVideoTrack("v2");
 
-  ASSERT_TRUE(
-      callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal(options)));
-  ASSERT_TRUE(
-      caller->SetRemoteDescription(callee->CreateAnswerAndSetAsLocal()));
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get(), offer_options,
+                                              answer_options));
 
   auto callee_voice = callee->media_engine()->GetVoiceChannel(0);
-  EXPECT_EQ(2u, callee_voice->send_streams().size());
+  ASSERT_TRUE(callee_voice);
   auto callee_video = callee->media_engine()->GetVideoChannel(0);
-  EXPECT_EQ(2u, callee_video->send_streams().size());
+  ASSERT_TRUE(callee_video);
+
+  if (IsUnifiedPlan()) {
+    EXPECT_EQ(1u, callee_voice->send_streams().size());
+    EXPECT_EQ(1u, callee_video->send_streams().size());
+  } else {
+    EXPECT_EQ(2u, callee_voice->send_streams().size());
+    EXPECT_EQ(2u, callee_video->send_streams().size());
+  }
 }
 
 // A PeerConnection with no local streams and no explicit answer constraints
@@ -438,11 +437,6 @@ class PeerConnectionMediaOfferDirectionTest
 // Tests that the correct direction is set on the media description according
 // to the presence of a local media track and the offer_to_receive setting.
 TEST_P(PeerConnectionMediaOfferDirectionTest, VerifyDirection) {
-  // TODO(bugs.webrtc.org/8765): Enable this test under Unified Plan once
-  // offer_to_receive_audio is implemented.
-  if (IsUnifiedPlan()) {
-    return;
-  }
   auto caller = CreatePeerConnection();
   if (send_media_) {
     caller->AddAudioTrack("a");
@@ -496,11 +490,13 @@ class PeerConnectionMediaAnswerDirectionTest
 // in the offer, the presence of a local media track on the receive side and the
 // offer_to_receive setting.
 TEST_P(PeerConnectionMediaAnswerDirectionTest, VerifyDirection) {
-  // TODO(bugs.webrtc.org/8765): Enable this test under Unified Plan once
-  // offer_to_receive_audio is implemented.
-  if (IsUnifiedPlan()) {
+  if (IsUnifiedPlan() &&
+      offer_to_receive_ != RTCOfferAnswerOptions::kUndefined) {
+    // offer_to_receive_ is not implemented when creating answers with Unified
+    // Plan semantics specified.
     return;
   }
+
   auto caller = CreatePeerConnection();
   caller->AddAudioTrack("a");
 
@@ -544,11 +540,13 @@ TEST_P(PeerConnectionMediaAnswerDirectionTest, VerifyDirection) {
 // local media track and has set offer_to_receive to 0, no matter which
 // direction the caller indicated in the offer.
 TEST_P(PeerConnectionMediaAnswerDirectionTest, VerifyRejected) {
-  // TODO(bugs.webrtc.org/8765): Enable this test under Unified Plan once
-  // offer_to_receive_audio is implemented.
-  if (IsUnifiedPlan()) {
+  if (IsUnifiedPlan() &&
+      offer_to_receive_ != RTCOfferAnswerOptions::kUndefined) {
+    // offer_to_receive_ is not implemented when creating answers with Unified
+    // Plan semantics specified.
     return;
   }
+
   auto caller = CreatePeerConnection();
   caller->AddAudioTrack("a");
 
@@ -587,12 +585,6 @@ INSTANTIATE_TEST_CASE_P(PeerConnectionMediaTest,
                                 Values(-1, 0, 1)));
 
 TEST_P(PeerConnectionMediaTest, OfferHasDifferentDirectionForAudioVideo) {
-  // TODO(bugs.webrtc.org/8765): Enable this test under Unified Plan once
-  // offer_to_receive_audio is implemented.
-  if (IsUnifiedPlan()) {
-    return;
-  }
-
   auto caller = CreatePeerConnection();
   caller->AddVideoTrack("v");
 
@@ -608,9 +600,9 @@ TEST_P(PeerConnectionMediaTest, OfferHasDifferentDirectionForAudioVideo) {
 }
 
 TEST_P(PeerConnectionMediaTest, AnswerHasDifferentDirectionsForAudioVideo) {
-  // TODO(bugs.webrtc.org/8765): Enable this test under Unified Plan once
-  // offer_to_receive_audio is implemented.
   if (IsUnifiedPlan()) {
+    // offer_to_receive_ is not implemented when creating answers with Unified
+    // Plan semantics specified.
     return;
   }
 
@@ -780,9 +772,9 @@ INSTANTIATE_TEST_CASE_P(
 // a series of offer/answers where audio/video are both sent, then audio is
 // rejected, then both audio/video sent again.
 TEST_P(PeerConnectionMediaTest, TestAVOfferWithAudioOnlyAnswer) {
-  // TODO(bugs.webrtc.org/8765): Enable this test under Unified Plan once
-  // offer_to_receive_audio is implemented.
   if (IsUnifiedPlan()) {
+    // offer_to_receive_ is not implemented when creating answers with Unified
+    // Plan semantics specified.
     return;
   }
 
@@ -844,9 +836,9 @@ TEST_P(PeerConnectionMediaTest, TestAVOfferWithAudioOnlyAnswer) {
 // a series of offer/answers where audio/video are both sent, then video is
 // rejected, then both audio/video sent again.
 TEST_P(PeerConnectionMediaTest, TestAVOfferWithVideoOnlyAnswer) {
-  // TODO(bugs.webrtc.org/8765): Enable this test under Unified Plan once
-  // offer_to_receive_audio is implemented.
   if (IsUnifiedPlan()) {
+    // offer_to_receive_ is not implemented when creating answers with Unified
+    // Plan semantics specified.
     return;
   }
 

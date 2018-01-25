@@ -1259,7 +1259,8 @@ RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>>
 PeerConnection::AddTransceiver(
     cricket::MediaType media_type,
     rtc::scoped_refptr<MediaStreamTrackInterface> track,
-    const RtpTransceiverInit& init) {
+    const RtpTransceiverInit& init,
+    bool fire_callback) {
   RTC_DCHECK((media_type == cricket::MEDIA_TYPE_AUDIO ||
               media_type == cricket::MEDIA_TYPE_VIDEO));
   if (track) {
@@ -1285,7 +1286,9 @@ PeerConnection::AddTransceiver(
   auto transceiver = CreateAndAddTransceiver(sender, receiver);
   transceiver->internal()->set_direction(init.direction);
 
-  observer_->OnRenegotiationNeeded();
+  if (fire_callback) {
+    observer_->OnRenegotiationNeeded();
+  }
 
   return rtc::scoped_refptr<RtpTransceiverInterface>(transceiver);
 }
@@ -1565,9 +1568,78 @@ void PeerConnection::CreateOffer(CreateSessionDescriptionObserver* observer,
     return;
   }
 
+  // Legacy handling for offer_to_receive_audio and offer_to_receive_video.
+  // Specified in WebRTC section 4.4.3.2 "Legacy configuration extensions".
+  if (IsUnifiedPlan()) {
+    RTCError error = HandleLegacyOfferOptions(options);
+    if (!error.ok()) {
+      PostCreateSessionDescriptionFailure(observer, error.message());
+      return;
+    }
+  }
+
   cricket::MediaSessionOptions session_options;
   GetOptionsForOffer(options, &session_options);
   webrtc_session_desc_factory_->CreateOffer(observer, options, session_options);
+}
+
+RTCError PeerConnection::HandleLegacyOfferOptions(
+    const RTCOfferAnswerOptions& options) {
+  RTC_DCHECK(IsUnifiedPlan());
+
+  if (options.offer_to_receive_audio == 0) {
+    RemoveRecvDirectionFromReceivingTransceiversOfType(
+        cricket::MEDIA_TYPE_AUDIO);
+  } else if (options.offer_to_receive_audio == 1) {
+    AddUpToOneReceivingTransceiverOfType(cricket::MEDIA_TYPE_AUDIO);
+  } else if (options.offer_to_receive_audio > 1) {
+    LOG_AND_RETURN_ERROR(RTCErrorType::UNSUPPORTED_PARAMETER,
+                         "offer_to_receive_audio > 1 is not supported.");
+  }
+
+  if (options.offer_to_receive_video == 0) {
+    RemoveRecvDirectionFromReceivingTransceiversOfType(
+        cricket::MEDIA_TYPE_VIDEO);
+  } else if (options.offer_to_receive_video == 1) {
+    AddUpToOneReceivingTransceiverOfType(cricket::MEDIA_TYPE_VIDEO);
+  } else if (options.offer_to_receive_video > 1) {
+    LOG_AND_RETURN_ERROR(RTCErrorType::UNSUPPORTED_PARAMETER,
+                         "offer_to_receive_video > 1 is not supported.");
+  }
+
+  return RTCError::OK();
+}
+
+void PeerConnection::RemoveRecvDirectionFromReceivingTransceiversOfType(
+    cricket::MediaType media_type) {
+  for (auto transceiver : GetReceivingTransceiversOfType(media_type)) {
+    transceiver->internal()->set_direction(
+        RtpTransceiverDirectionWithRecvSet(transceiver->direction(), false));
+  }
+}
+
+void PeerConnection::AddUpToOneReceivingTransceiverOfType(
+    cricket::MediaType media_type) {
+  if (GetReceivingTransceiversOfType(media_type).empty()) {
+    RtpTransceiverInit init;
+    init.direction = RtpTransceiverDirection::kRecvOnly;
+    AddTransceiver(media_type, nullptr, init, /*fire_callback=*/false);
+  }
+}
+
+std::vector<rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
+PeerConnection::GetReceivingTransceiversOfType(cricket::MediaType media_type) {
+  std::vector<
+      rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
+      receiving_transceivers;
+  for (auto transceiver : transceivers_) {
+    if (!transceiver->stopped() &&
+        transceiver->internal()->media_type() == media_type &&
+        RtpTransceiverDirectionHasRecv(transceiver->direction())) {
+      receiving_transceivers.push_back(transceiver);
+    }
+  }
+  return receiving_transceivers;
 }
 
 void PeerConnection::CreateAnswer(
@@ -1613,6 +1685,19 @@ void PeerConnection::CreateAnswer(CreateSessionDescriptionObserver* observer,
     RTC_LOG(LS_ERROR) << error;
     PostCreateSessionDescriptionFailure(observer, error);
     return;
+  }
+
+  if (IsUnifiedPlan()) {
+    if (options.offer_to_receive_audio != RTCOfferAnswerOptions::kUndefined) {
+      RTC_LOG(LS_WARNING) << "CreateAnswer: offer_to_receive_audio is not "
+                             "supported with Unified Plan semantics. Use the "
+                             "RtpTransceiver API instead.";
+    }
+    if (options.offer_to_receive_video != RTCOfferAnswerOptions::kUndefined) {
+      RTC_LOG(LS_WARNING) << "CreateAnswer: offer_to_receive_video is not "
+                             "supported with Unified Plan semantics. Use the "
+                             "RtpTransceiver API instead.";
+    }
   }
 
   cricket::MediaSessionOptions session_options;
