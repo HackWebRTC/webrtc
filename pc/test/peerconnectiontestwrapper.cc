@@ -10,6 +10,7 @@
 
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "p2p/base/fakeportallocator.h"
 #include "pc/sdputils.h"
@@ -24,8 +25,10 @@ using webrtc::FakeVideoTrackRenderer;
 using webrtc::IceCandidateInterface;
 using webrtc::MediaConstraintsInterface;
 using webrtc::MediaStreamInterface;
+using webrtc::MediaStreamTrackInterface;
 using webrtc::MockSetSessionDescriptionObserver;
 using webrtc::PeerConnectionInterface;
+using webrtc::RtpReceiverInterface;
 using webrtc::SdpType;
 using webrtc::SessionDescriptionInterface;
 using webrtc::VideoTrackInterface;
@@ -99,12 +102,14 @@ PeerConnectionTestWrapper::CreateDataChannel(
   return peer_connection_->CreateDataChannel(label, &init);
 }
 
-void PeerConnectionTestWrapper::OnAddStream(
-    rtc::scoped_refptr<MediaStreamInterface> stream) {
-  RTC_LOG(LS_INFO) << "PeerConnectionTestWrapper " << name_ << ": OnAddStream";
-  // TODO(ronghuawu): support multiple streams.
-  if (stream->GetVideoTracks().size() > 0) {
-    renderer_.reset(new FakeVideoTrackRenderer(stream->GetVideoTracks()[0]));
+void PeerConnectionTestWrapper::OnAddTrack(
+    rtc::scoped_refptr<RtpReceiverInterface> receiver,
+    const std::vector<rtc::scoped_refptr<MediaStreamInterface>>& streams) {
+  RTC_LOG(LS_INFO) << "PeerConnectionTestWrapper " << name_ << ": OnAddTrack";
+  if (receiver->track()->kind() == MediaStreamTrackInterface::kVideoKind) {
+    auto* video_track =
+        static_cast<VideoTrackInterface*>(receiver->track().get());
+    renderer_ = rtc::MakeUnique<FakeVideoTrackRenderer>(video_track);
   }
 }
 
@@ -244,7 +249,14 @@ void PeerConnectionTestWrapper::GetAndAddUserMedia(
     bool video, const webrtc::FakeConstraints& video_constraints) {
   rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
       GetUserMedia(audio, audio_constraints, video, video_constraints);
-  EXPECT_TRUE(peer_connection_->AddStream(stream));
+  for (auto audio_track : stream->GetAudioTracks()) {
+    EXPECT_TRUE(
+        peer_connection_->AddTrack(audio_track, {stream->label()}).ok());
+  }
+  for (auto video_track : stream->GetVideoTracks()) {
+    EXPECT_TRUE(
+        peer_connection_->AddTrack(video_track, {stream->label()}).ok());
+  }
 }
 
 rtc::scoped_refptr<webrtc::MediaStreamInterface>

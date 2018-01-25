@@ -13,6 +13,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "api/peerconnectioninterface.h"
 #include "api/test/fakeconstraints.h"
@@ -48,10 +49,10 @@ class PeerConnectionTestWrapper
   // Implements PeerConnectionObserver.
   void OnSignalingChange(
      webrtc::PeerConnectionInterface::SignalingState new_state) override {}
-  void OnAddStream(
-      rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override;
-  void OnRemoveStream(
-      rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override {}
+  void OnAddTrack(
+      rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver,
+      const std::vector<rtc::scoped_refptr<webrtc::MediaStreamInterface>>&
+          streams) override;
   void OnDataChannel(
       rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) override;
   void OnRenegotiationNeeded() override {}
