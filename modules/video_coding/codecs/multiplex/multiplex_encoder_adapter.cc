@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/video_coding/codecs/stereo/include/stereo_encoder_adapter.h"
+#include "modules/video_coding/codecs/multiplex/include/multiplex_encoder_adapter.h"
 
 #include <cstring>
 
@@ -23,10 +23,10 @@ namespace webrtc {
 
 // Callback wrapper that helps distinguish returned results from |encoders_|
 // instances.
-class StereoEncoderAdapter::AdapterEncodedImageCallback
+class MultiplexEncoderAdapter::AdapterEncodedImageCallback
     : public webrtc::EncodedImageCallback {
  public:
-  AdapterEncodedImageCallback(webrtc::StereoEncoderAdapter* adapter,
+  AdapterEncodedImageCallback(webrtc::MultiplexEncoderAdapter* adapter,
                               AlphaCodecStream stream_idx)
       : adapter_(adapter), stream_idx_(stream_idx) {}
 
@@ -41,31 +41,32 @@ class StereoEncoderAdapter::AdapterEncodedImageCallback
   }
 
  private:
-  StereoEncoderAdapter* adapter_;
+  MultiplexEncoderAdapter* adapter_;
   const AlphaCodecStream stream_idx_;
 };
 
-StereoEncoderAdapter::StereoEncoderAdapter(
+MultiplexEncoderAdapter::MultiplexEncoderAdapter(
     VideoEncoderFactory* factory,
     const SdpVideoFormat& associated_format)
     : factory_(factory),
       associated_format_(associated_format),
       encoded_complete_callback_(nullptr) {}
 
-StereoEncoderAdapter::~StereoEncoderAdapter() {
+MultiplexEncoderAdapter::~MultiplexEncoderAdapter() {
   Release();
 }
 
-int StereoEncoderAdapter::InitEncode(const VideoCodec* inst,
-                                     int number_of_cores,
-                                     size_t max_payload_size) {
+int MultiplexEncoderAdapter::InitEncode(const VideoCodec* inst,
+                                        int number_of_cores,
+                                        size_t max_payload_size) {
   const size_t buffer_size =
       CalcBufferSize(VideoType::kI420, inst->width, inst->height);
-  stereo_dummy_planes_.resize(buffer_size);
+  multiplex_dummy_planes_.resize(buffer_size);
   // It is more expensive to encode 0x00, so use 0x80 instead.
-  std::fill(stereo_dummy_planes_.begin(), stereo_dummy_planes_.end(), 0x80);
+  std::fill(multiplex_dummy_planes_.begin(), multiplex_dummy_planes_.end(),
+            0x80);
 
-  RTC_DCHECK_EQ(kVideoCodecStereo, inst->codecType);
+  RTC_DCHECK_EQ(kVideoCodecMultiplex, inst->codecType);
   VideoCodec settings = *inst;
   settings.codecType = PayloadStringToCodecType(associated_format_.name);
 
@@ -94,7 +95,7 @@ int StereoEncoderAdapter::InitEncode(const VideoCodec* inst,
     const int rv =
         encoder->InitEncode(&settings, number_of_cores, max_payload_size);
     if (rv) {
-      RTC_LOG(LS_ERROR) << "Failed to create stereo codec index " << i;
+      RTC_LOG(LS_ERROR) << "Failed to create multiplex codec index " << i;
       return rv;
     }
     adapter_callbacks_.emplace_back(new AdapterEncodedImageCallback(
@@ -105,9 +106,10 @@ int StereoEncoderAdapter::InitEncode(const VideoCodec* inst,
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int StereoEncoderAdapter::Encode(const VideoFrame& input_image,
-                                 const CodecSpecificInfo* codec_specific_info,
-                                 const std::vector<FrameType>* frame_types) {
+int MultiplexEncoderAdapter::Encode(
+    const VideoFrame& input_image,
+    const CodecSpecificInfo* codec_specific_info,
+    const std::vector<FrameType>* frame_types) {
   if (!encoded_complete_callback_) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
@@ -142,8 +144,8 @@ int StereoEncoderAdapter::Encode(const VideoFrame& input_image,
   rtc::scoped_refptr<I420BufferInterface> alpha_buffer =
       WrapI420Buffer(input_image.width(), input_image.height(),
                      yuva_buffer->DataA(), yuva_buffer->StrideA(),
-                     stereo_dummy_planes_.data(), yuva_buffer->StrideU(),
-                     stereo_dummy_planes_.data(), yuva_buffer->StrideV(),
+                     multiplex_dummy_planes_.data(), yuva_buffer->StrideU(),
+                     multiplex_dummy_planes_.data(), yuva_buffer->StrideV(),
                      rtc::KeepRefUntilDone(input_image.video_frame_buffer()));
   VideoFrame alpha_image(alpha_buffer, input_image.timestamp(),
                          input_image.render_time_ms(), input_image.rotation());
@@ -152,14 +154,14 @@ int StereoEncoderAdapter::Encode(const VideoFrame& input_image,
   return rv;
 }
 
-int StereoEncoderAdapter::RegisterEncodeCompleteCallback(
+int MultiplexEncoderAdapter::RegisterEncodeCompleteCallback(
     EncodedImageCallback* callback) {
   encoded_complete_callback_ = callback;
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int StereoEncoderAdapter::SetChannelParameters(uint32_t packet_loss,
-                                               int64_t rtt) {
+int MultiplexEncoderAdapter::SetChannelParameters(uint32_t packet_loss,
+                                                  int64_t rtt) {
   for (auto& encoder : encoders_) {
     const int rv = encoder->SetChannelParameters(packet_loss, rtt);
     if (rv)
@@ -168,8 +170,8 @@ int StereoEncoderAdapter::SetChannelParameters(uint32_t packet_loss,
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int StereoEncoderAdapter::SetRateAllocation(const BitrateAllocation& bitrate,
-                                            uint32_t framerate) {
+int MultiplexEncoderAdapter::SetRateAllocation(const BitrateAllocation& bitrate,
+                                               uint32_t framerate) {
   for (auto& encoder : encoders_) {
     // TODO(emircan): |framerate| is used to calculate duration in encoder
     // instances. We report the total frame rate to keep real time for now.
@@ -182,7 +184,7 @@ int StereoEncoderAdapter::SetRateAllocation(const BitrateAllocation& bitrate,
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int StereoEncoderAdapter::Release() {
+int MultiplexEncoderAdapter::Release() {
   for (auto& encoder : encoders_) {
     const int rv = encoder->Release();
     if (rv)
@@ -203,11 +205,11 @@ int StereoEncoderAdapter::Release() {
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-const char* StereoEncoderAdapter::ImplementationName() const {
-  return "StereoEncoderAdapter";
+const char* MultiplexEncoderAdapter::ImplementationName() const {
+  return "MultiplexEncoderAdapter";
 }
 
-EncodedImageCallback::Result StereoEncoderAdapter::OnEncodedImage(
+EncodedImageCallback::Result MultiplexEncoderAdapter::OnEncodedImage(
     AlphaCodecStream stream_idx,
     const EncodedImage& encodedImage,
     const CodecSpecificInfo* codecSpecificInfo,
@@ -246,7 +248,7 @@ EncodedImageCallback::Result StereoEncoderAdapter::OnEncodedImage(
           MultiplexEncodedImagePacker::PackAndRelease(iter->second);
 
       CodecSpecificInfo codec_info = *codecSpecificInfo;
-      codec_info.codecType = kVideoCodecStereo;
+      codec_info.codecType = kVideoCodecMultiplex;
       codec_info.codecSpecific.generic.simulcast_idx = 0;
       encoded_complete_callback_->OnEncodedImage(combined_image_, &codec_info,
                                                  fragmentation);

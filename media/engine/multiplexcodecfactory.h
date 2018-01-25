@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MEDIA_ENGINE_STEREOCODECFACTORY_H_
-#define MEDIA_ENGINE_STEREOCODECFACTORY_H_
+#ifndef MEDIA_ENGINE_MULTIPLEXCODECFACTORY_H_
+#define MEDIA_ENGINE_MULTIPLEXCODECFACTORY_H_
 
 #include <memory>
 #include <vector>
@@ -19,9 +19,10 @@
 
 namespace webrtc {
 
-class StereoEncoderFactory : public VideoEncoderFactory {
+class MultiplexEncoderFactory : public VideoEncoderFactory {
  public:
-  explicit StereoEncoderFactory(std::unique_ptr<VideoEncoderFactory> factory);
+  explicit MultiplexEncoderFactory(
+      std::unique_ptr<VideoEncoderFactory> factory);
 
   std::vector<SdpVideoFormat> GetSupportedFormats() const override;
   CodecInfo QueryVideoEncoder(const SdpVideoFormat& format) const override;
@@ -32,9 +33,10 @@ class StereoEncoderFactory : public VideoEncoderFactory {
   std::unique_ptr<VideoEncoderFactory> factory_;
 };
 
-class StereoDecoderFactory : public VideoDecoderFactory {
+class MultiplexDecoderFactory : public VideoDecoderFactory {
  public:
-  explicit StereoDecoderFactory(std::unique_ptr<VideoDecoderFactory> factory);
+  explicit MultiplexDecoderFactory(
+      std::unique_ptr<VideoDecoderFactory> factory);
 
   std::vector<SdpVideoFormat> GetSupportedFormats() const override;
   std::unique_ptr<VideoDecoder> CreateVideoDecoder(
@@ -46,4 +48,4 @@ class StereoDecoderFactory : public VideoDecoderFactory {
 
 }  // namespace webrtc
 
-#endif  // MEDIA_ENGINE_STEREOCODECFACTORY_H_
+#endif  // MEDIA_ENGINE_MULTIPLEXCODECFACTORY_H_

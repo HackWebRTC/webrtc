@@ -14,8 +14,8 @@
 #include "common_video/include/video_frame_buffer.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "media/base/mediaconstants.h"
-#include "modules/video_coding/codecs/stereo/include/stereo_decoder_adapter.h"
-#include "modules/video_coding/codecs/stereo/include/stereo_encoder_adapter.h"
+#include "modules/video_coding/codecs/multiplex/include/multiplex_decoder_adapter.h"
+#include "modules/video_coding/codecs/multiplex/include/multiplex_encoder_adapter.h"
 #include "modules/video_coding/codecs/test/video_codec_test.h"
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
 #include "rtc_base/keep_ref_until_done.h"
@@ -26,33 +26,33 @@ using testing::Return;
 
 namespace webrtc {
 
-constexpr const char* kStereoAssociatedCodecName = cricket::kVp9CodecName;
-const VideoCodecType kStereoAssociatedCodecType =
-    PayloadStringToCodecType(kStereoAssociatedCodecName);
+constexpr const char* kMultiplexAssociatedCodecName = cricket::kVp9CodecName;
+const VideoCodecType kMultiplexAssociatedCodecType =
+    PayloadStringToCodecType(kMultiplexAssociatedCodecName);
 
-class TestStereoAdapter : public VideoCodecTest {
+class TestMultiplexAdapter : public VideoCodecTest {
  public:
-  TestStereoAdapter()
+  TestMultiplexAdapter()
       : decoder_factory_(new webrtc::MockVideoDecoderFactory),
         encoder_factory_(new webrtc::MockVideoEncoderFactory) {}
 
  protected:
   std::unique_ptr<VideoDecoder> CreateDecoder() override {
-    return rtc::MakeUnique<StereoDecoderAdapter>(
-        decoder_factory_.get(), SdpVideoFormat(kStereoAssociatedCodecName));
+    return rtc::MakeUnique<MultiplexDecoderAdapter>(
+        decoder_factory_.get(), SdpVideoFormat(kMultiplexAssociatedCodecName));
   }
 
   std::unique_ptr<VideoEncoder> CreateEncoder() override {
-    return rtc::MakeUnique<StereoEncoderAdapter>(
-        encoder_factory_.get(), SdpVideoFormat(kStereoAssociatedCodecName));
+    return rtc::MakeUnique<MultiplexEncoderAdapter>(
+        encoder_factory_.get(), SdpVideoFormat(kMultiplexAssociatedCodecName));
   }
 
   VideoCodec codec_settings() override {
     VideoCodec codec_settings;
-    codec_settings.codecType = kStereoAssociatedCodecType;
+    codec_settings.codecType = kMultiplexAssociatedCodecType;
     codec_settings.VP9()->numberOfTemporalLayers = 1;
     codec_settings.VP9()->numberOfSpatialLayers = 1;
-    codec_settings.codecType = webrtc::kVideoCodecStereo;
+    codec_settings.codecType = webrtc::kVideoCodecMultiplex;
     return codec_settings;
   }
 
@@ -96,22 +96,22 @@ class TestStereoAdapter : public VideoCodecTest {
 // TODO(emircan): Currently VideoCodecTest tests do a complete setup
 // step that goes beyond constructing |decoder_|. Simplify these tests to do
 // less.
-TEST_F(TestStereoAdapter, ConstructAndDestructDecoder) {
+TEST_F(TestMultiplexAdapter, ConstructAndDestructDecoder) {
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->Release());
 }
 
-TEST_F(TestStereoAdapter, ConstructAndDestructEncoder) {
+TEST_F(TestMultiplexAdapter, ConstructAndDestructEncoder) {
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Release());
 }
 
-TEST_F(TestStereoAdapter, EncodeDecodeI420Frame) {
+TEST_F(TestMultiplexAdapter, EncodeDecodeI420Frame) {
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             encoder_->Encode(*input_frame_, nullptr, nullptr));
   EncodedImage encoded_frame;
   CodecSpecificInfo codec_specific_info;
   ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
 
-  EXPECT_EQ(kVideoCodecStereo, codec_specific_info.codecType);
+  EXPECT_EQ(kVideoCodecMultiplex, codec_specific_info.codecType);
 
   EXPECT_EQ(
       WEBRTC_VIDEO_CODEC_OK,
@@ -123,7 +123,7 @@ TEST_F(TestStereoAdapter, EncodeDecodeI420Frame) {
   EXPECT_GT(I420PSNR(input_frame_.get(), decoded_frame.get()), 36);
 }
 
-TEST_F(TestStereoAdapter, EncodeDecodeI420AFrame) {
+TEST_F(TestMultiplexAdapter, EncodeDecodeI420AFrame) {
   std::unique_ptr<VideoFrame> yuva_frame = CreateI420AInputFrame();
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             encoder_->Encode(*yuva_frame, nullptr, nullptr));
@@ -131,7 +131,7 @@ TEST_F(TestStereoAdapter, EncodeDecodeI420AFrame) {
   CodecSpecificInfo codec_specific_info;
   ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
 
-  EXPECT_EQ(kVideoCodecStereo, codec_specific_info.codecType);
+  EXPECT_EQ(kVideoCodecMultiplex, codec_specific_info.codecType);
 
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             decoder_->Decode(encoded_frame, false, nullptr, nullptr));

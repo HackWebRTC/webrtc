@@ -79,7 +79,7 @@ class VideoCodecInitializerTest : public ::testing::Test {
           webrtc::VideoEncoderConfig::Vp8EncoderSpecificSettings>(vp8_settings);
       settings_.payload_name = kVp8PayloadName;
       settings_.payload_type = kVp8PayloadType;
-    } else if (type == VideoCodecType::kVideoCodecStereo) {
+    } else if (type == VideoCodecType::kVideoCodecMultiplex) {
     } else {
       ADD_FAILURE() << "Unexpected codec type: " << type;
     }
@@ -94,7 +94,7 @@ class VideoCodecInitializerTest : public ::testing::Test {
                                            &bitrate_allocator_out_)) {
       return false;
     }
-    if (codec_out_.codecType == VideoCodecType::kVideoCodecStereo)
+    if (codec_out_.codecType == VideoCodecType::kVideoCodecMultiplex)
       return true;
     // Make sure temporal layers instances have been created.
     if (codec_out_.codecType == VideoCodecType::kVideoCodecVP8) {
@@ -257,8 +257,8 @@ TEST_F(VideoCodecInitializerTest, HighFpsSimulcastVp8Screenshare) {
             bitrate_allocation.GetBitrate(1, 1));
 }
 
-TEST_F(VideoCodecInitializerTest, SingleStreamStereoCodec) {
-  SetUpFor(VideoCodecType::kVideoCodecStereo, 1, 1, true);
+TEST_F(VideoCodecInitializerTest, SingleStreamMultiplexCodec) {
+  SetUpFor(VideoCodecType::kVideoCodecMultiplex, 1, 1, true);
   streams_.push_back(DefaultStream());
   EXPECT_TRUE(InitializeCodec());
 }
