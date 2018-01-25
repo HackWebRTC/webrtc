@@ -243,18 +243,6 @@ TEST_F(PeerConnectionJsepTest, SetLocalOfferSetsTransceiverMid) {
   EXPECT_EQ(video_mid, video_transceiver->mid());
 }
 
-TEST_F(PeerConnectionJsepTest, SetLocalOfferFailsWithNoTrackInMediaSection) {
-  auto caller = CreatePeerConnection();
-  caller->AddAudioTrack("audio");
-
-  auto offer = caller->CreateOffer();
-  auto& contents = offer->description()->contents();
-  ASSERT_EQ(1u, contents.size());
-  contents[0].description->mutable_streams().clear();
-
-  ASSERT_FALSE(caller->SetLocalDescription(std::move(offer)));
-}
-
 // Tests for JSEP SetRemoteDescription with a remote offer.
 
 // Test that setting a remote offer with sendrecv audio and video creates two

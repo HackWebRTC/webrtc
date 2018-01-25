@@ -80,9 +80,11 @@ using webrtc::MockStatsObserver;
 using webrtc::ObserverInterface;
 using webrtc::PeerConnection;
 using webrtc::PeerConnectionInterface;
+using RTCConfiguration = PeerConnectionInterface::RTCConfiguration;
 using webrtc::PeerConnectionFactory;
 using webrtc::PeerConnectionProxy;
 using webrtc::RTCErrorType;
+using webrtc::RtpSenderInterface;
 using webrtc::RtpReceiverInterface;
 using webrtc::SdpSemantics;
 using webrtc::SdpType;
@@ -309,9 +311,13 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
     AddVideoTrack();
   }
 
-  void AddAudioTrack() { AddTrack(CreateLocalAudioTrack()); }
+  rtc::scoped_refptr<RtpSenderInterface> AddAudioTrack() {
+    return AddTrack(CreateLocalAudioTrack());
+  }
 
-  void AddVideoTrack() { AddTrack(CreateLocalVideoTrack()); }
+  rtc::scoped_refptr<RtpSenderInterface> AddVideoTrack() {
+    return AddTrack(CreateLocalVideoTrack());
+  }
 
   rtc::scoped_refptr<webrtc::AudioTrackInterface> CreateLocalAudioTrack() {
     FakeConstraints constraints;
@@ -340,10 +346,23 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
     return CreateLocalVideoTrackInternal(FakeConstraints(), rotation);
   }
 
-  void AddTrack(rtc::scoped_refptr<MediaStreamTrackInterface> track,
-                const std::vector<std::string>& stream_labels = {}) {
+  rtc::scoped_refptr<RtpSenderInterface> AddTrack(
+      rtc::scoped_refptr<MediaStreamTrackInterface> track,
+      const std::vector<std::string>& stream_labels = {}) {
     auto result = pc()->AddTrack(track, stream_labels);
     EXPECT_EQ(RTCErrorType::NONE, result.error().type());
+    return result.MoveValue();
+  }
+
+  std::vector<rtc::scoped_refptr<RtpReceiverInterface>> GetReceiversOfType(
+      cricket::MediaType media_type) {
+    std::vector<rtc::scoped_refptr<RtpReceiverInterface>> receivers;
+    for (auto receiver : pc()->GetReceivers()) {
+      if (receiver->media_type() == media_type) {
+        receivers.push_back(receiver);
+      }
+    }
+    return receivers;
   }
 
   bool SignalingStateStable() {
@@ -3661,6 +3680,208 @@ TEST_F(PeerConnectionIntegrationTest, UnifiedPlanMediaFlows) {
       kDefaultExpectedAudioFrameCount, kDefaultExpectedVideoFrameCount,
       kMaxWaitForFramesMs);
 }
+
+// Tests that verify interoperability between Plan B and Unified Plan
+// PeerConnections.
+class PeerConnectionIntegrationInteropTest
+    : public PeerConnectionIntegrationTest,
+      public ::testing::WithParamInterface<
+          std::tuple<SdpSemantics, SdpSemantics>> {
+ protected:
+  PeerConnectionIntegrationInteropTest()
+      : caller_semantics_(std::get<0>(GetParam())),
+        callee_semantics_(std::get<1>(GetParam())) {}
+
+  bool CreatePeerConnectionWrappersWithSemantics() {
+    RTCConfiguration caller_config;
+    caller_config.sdp_semantics = caller_semantics_;
+    RTCConfiguration callee_config;
+    callee_config.sdp_semantics = callee_semantics_;
+    return CreatePeerConnectionWrappersWithConfig(caller_config, callee_config);
+  }
+
+  const SdpSemantics caller_semantics_;
+  const SdpSemantics callee_semantics_;
+};
+
+TEST_P(PeerConnectionIntegrationInteropTest, NoMediaLocalToNoMediaRemote) {
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithSemantics());
+  ConnectFakeSignaling();
+
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+}
+
+TEST_P(PeerConnectionIntegrationInteropTest, OneAudioLocalToNoMediaRemote) {
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithSemantics());
+  ConnectFakeSignaling();
+  auto audio_sender = caller()->AddAudioTrack();
+
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  // Verify that one audio receiver has been created on the remote and that it
+  // has the same track ID as the sending track.
+  auto receivers = callee()->pc()->GetReceivers();
+  ASSERT_EQ(1u, receivers.size());
+  EXPECT_EQ(cricket::MEDIA_TYPE_AUDIO, receivers[0]->media_type());
+  EXPECT_EQ(receivers[0]->track()->id(), audio_sender->track()->id());
+
+  // Expect to receive only audio frames on the callee.
+  ExpectNewFramesReceivedWithWait(0, 0, kDefaultExpectedAudioFrameCount, 0,
+                                  kMaxWaitForFramesMs);
+}
+
+TEST_P(PeerConnectionIntegrationInteropTest, OneAudioOneVideoToNoMediaRemote) {
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithSemantics());
+  ConnectFakeSignaling();
+  auto video_sender = caller()->AddVideoTrack();
+  auto audio_sender = caller()->AddAudioTrack();
+
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  // Verify that one audio and one video receiver have been created on the
+  // remote and that they have the same track IDs as the sending tracks.
+  auto audio_receivers =
+      callee()->GetReceiversOfType(cricket::MEDIA_TYPE_AUDIO);
+  ASSERT_EQ(1u, audio_receivers.size());
+  EXPECT_EQ(audio_receivers[0]->track()->id(), audio_sender->track()->id());
+  auto video_receivers =
+      callee()->GetReceiversOfType(cricket::MEDIA_TYPE_VIDEO);
+  ASSERT_EQ(1u, video_receivers.size());
+  EXPECT_EQ(video_receivers[0]->track()->id(), video_sender->track()->id());
+
+  // Expect to receive audio and video frames only on the callee.
+  ExpectNewFramesReceivedWithWait(0, 0, kDefaultExpectedAudioFrameCount,
+                                  kDefaultExpectedVideoFrameCount,
+                                  kMaxWaitForFramesMs);
+}
+
+TEST_P(PeerConnectionIntegrationInteropTest,
+       OneAudioOneVideoLocalToOneAudioOneVideoRemote) {
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithSemantics());
+  ConnectFakeSignaling();
+  caller()->AddAudioVideoTracks();
+  callee()->AddAudioVideoTracks();
+
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  ExpectNewFramesReceivedWithWait(
+      kDefaultExpectedAudioFrameCount, kDefaultExpectedVideoFrameCount,
+      kDefaultExpectedAudioFrameCount, kDefaultExpectedVideoFrameCount,
+      kMaxWaitForFramesMs);
+}
+
+TEST_P(PeerConnectionIntegrationInteropTest,
+       ReverseRolesOneAudioLocalToOneVideoRemote) {
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithSemantics());
+  ConnectFakeSignaling();
+  caller()->AddAudioTrack();
+  callee()->AddVideoTrack();
+
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  // Verify that only the audio track has been negotiated.
+  EXPECT_EQ(0u, caller()->GetReceiversOfType(cricket::MEDIA_TYPE_VIDEO).size());
+  // Might also check that the callee's NegotiationNeeded flag is set.
+
+  // Reverse roles.
+  callee()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  // Expect to receive audio frames on the callee and video frames on the
+  // caller.
+  ExpectNewFramesReceivedWithWait(0, kDefaultExpectedVideoFrameCount,
+                                  kDefaultExpectedAudioFrameCount, 0,
+                                  kMaxWaitForFramesMs);
+}
+
+// Test that if one side offers two video tracks then the other side will only
+// see the first one and ignore the second.
+TEST_P(PeerConnectionIntegrationInteropTest, TwoVideoLocalToNoMediaRemote) {
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithSemantics());
+  ConnectFakeSignaling();
+  auto first_sender = caller()->AddVideoTrack();
+  caller()->AddVideoTrack();
+
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  // Verify that there is only one receiver and it corresponds to the first
+  // added track.
+  auto receivers = callee()->pc()->GetReceivers();
+  ASSERT_EQ(1u, receivers.size());
+  EXPECT_TRUE(receivers[0]->track()->enabled());
+  EXPECT_EQ(first_sender->track()->id(), receivers[0]->track()->id());
+
+  // Expect to receive video frames from the one track.
+  ExpectNewFramesReceivedWithWait(0, 0,
+                                  0, kDefaultExpectedVideoFrameCount,
+                                  kMaxWaitForFramesMs);
+}
+
+// Test that in the multi-track case each endpoint only looks at the first track
+// and ignores the second one.
+TEST_P(PeerConnectionIntegrationInteropTest, TwoVideoLocalToTwoVideoRemote) {
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithSemantics());
+  ConnectFakeSignaling();
+  caller()->AddVideoTrack();
+  caller()->AddVideoTrack();
+  callee()->AddVideoTrack();
+  callee()->AddVideoTrack();
+
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  PeerConnectionWrapper* plan_b =
+      (caller_semantics_ == SdpSemantics::kPlanB ? caller() : callee());
+  PeerConnectionWrapper* unified_plan =
+      (caller_semantics_ == SdpSemantics::kUnifiedPlan ? caller() : callee());
+
+  // Should have two senders each, one for each track.
+  EXPECT_EQ(2u, plan_b->pc()->GetSenders().size());
+  EXPECT_EQ(2u, unified_plan->pc()->GetSenders().size());
+
+  // Plan B will have one receiver since it only looks at the first video
+  // section. The receiver should have the same track ID as the sender's first
+  // track.
+  ASSERT_EQ(1u, plan_b->pc()->GetReceivers().size());
+  EXPECT_EQ(unified_plan->pc()->GetSenders()[0]->track()->id(),
+            plan_b->pc()->GetReceivers()[0]->track()->id());
+
+  // Unified Plan will have two receivers since they were created with the
+  // transceivers when the tracks were added.
+  ASSERT_EQ(2u, unified_plan->pc()->GetReceivers().size());
+
+  if (unified_plan == caller()) {
+    // If the Unified Plan endpoint was the caller, then the Plan B endpoint
+    // would have rejected the second video media section so we would expect the
+    // transceiver to be stopped.
+    EXPECT_FALSE(unified_plan->pc()->GetTransceivers()[0]->stopped());
+    EXPECT_TRUE(unified_plan->pc()->GetTransceivers()[1]->stopped());
+  } else {
+    // If the Unified Plan endpoint was the callee, then the Plan B endpoint
+    // would have offered only one video section so we would expect the first
+    // transceiver to map to the first track and the second transceiver to be
+    // missing a mid.
+    EXPECT_TRUE(unified_plan->pc()->GetTransceivers()[0]->mid());
+    EXPECT_FALSE(unified_plan->pc()->GetTransceivers()[1]->mid());
+  }
+
+  // Should be exchanging video frames for the first tracks on each endpoint.
+  ExpectNewFramesReceivedWithWait(0, kDefaultExpectedVideoFrameCount, 0,
+                                  kDefaultExpectedVideoFrameCount,
+                                  kMaxWaitForFramesMs);
+}
+
+INSTANTIATE_TEST_CASE_P(
+    PeerConnectionIntegrationTest,
+    PeerConnectionIntegrationInteropTest,
+    Values(std::make_tuple(SdpSemantics::kPlanB, SdpSemantics::kUnifiedPlan),
+           std::make_tuple(SdpSemantics::kUnifiedPlan, SdpSemantics::kPlanB)));
 
 }  // namespace
 

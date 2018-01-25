@@ -1788,12 +1788,12 @@ RTCError PeerConnection::ApplyLocalDescription(
       if (content->rejected && !transceiver->stopped()) {
         transceiver->Stop();
       }
-      if (!content->rejected) {
-        const auto& stream = content->media_description()->streams()[0];
+      const auto& streams = content->media_description()->streams();
+      if (!content->rejected && !streams.empty()) {
         transceiver->internal()->sender_internal()->set_stream_ids(
-            {stream.sync_label});
+            {streams[0].sync_label});
         transceiver->internal()->sender_internal()->SetSsrc(
-            stream.first_ssrc());
+            streams[0].first_ssrc());
       }
     }
   } else {
@@ -2032,7 +2032,8 @@ RTCError PeerConnection::ApplyRemoteDescription(
       if (RtpTransceiverDirectionHasRecv(local_direction) &&
           (!transceiver->current_direction() ||
            !RtpTransceiverDirectionHasRecv(
-               *transceiver->current_direction()))) {
+               *transceiver->current_direction())) &&
+          !media_desc->streams().empty()) {
         const std::string& sync_label = media_desc->streams()[0].sync_label;
         rtc::scoped_refptr<MediaStreamInterface> stream =
             remote_streams_->find(sync_label);
@@ -2061,7 +2062,7 @@ RTCError PeerConnection::ApplyRemoteDescription(
       if (content->rejected && !transceiver->stopped()) {
         transceiver->Stop();
       }
-      if (!content->rejected) {
+      if (!content->rejected && !media_desc->streams().empty()) {
         const auto& stream = content->media_description()->streams()[0];
         transceiver->internal()->receiver_internal()->SetupMediaChannel(
             stream.first_ssrc());
@@ -5372,30 +5373,6 @@ RTCError PeerConnection::ValidateSessionDescription(
         !MediaSectionsInSameOrder(current_desc, sdesc->description())) {
       LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
                            kMlineMismatchInSubsequentOffer);
-    }
-  }
-
-  // Unified Plan SDP should have exactly one stream per m= section for audio
-  // and video.
-  if (IsUnifiedPlan()) {
-    for (const ContentInfo& content : sdesc->description()->contents()) {
-      if (content.rejected) {
-        continue;
-      }
-      if (content.media_description()) {
-        cricket::MediaType media_type = content.media_description()->type();
-        if (!(media_type == cricket::MEDIA_TYPE_AUDIO ||
-              media_type == cricket::MEDIA_TYPE_VIDEO)) {
-          continue;
-        }
-        const cricket::StreamParamsVec& streams =
-            content.media_description()->streams();
-        if (streams.size() != 1u) {
-          LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
-                               "Unified Plan SDP should have exactly one "
-                               "track per media section for audio and video.");
-        }
-      }
     }
   }
 
