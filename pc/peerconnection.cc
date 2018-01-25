@@ -1600,20 +1600,17 @@ void PeerConnection::CreateAnswer(CreateSessionDescriptionObserver* observer,
     return;
   }
 
-  if (IsClosed()) {
-    std::string error = "CreateAnswer called when PeerConnection is closed.";
+  if (!(signaling_state_ == kHaveRemoteOffer ||
+        signaling_state_ == kHaveLocalPrAnswer)) {
+    std::string error =
+        "CreateAnswer called when PeerConnection is in a wrong state.";
     RTC_LOG(LS_ERROR) << error;
     PostCreateSessionDescriptionFailure(observer, error);
     return;
   }
 
-  if (remote_description() &&
-      remote_description()->GetType() != SdpType::kOffer) {
-    std::string error = "CreateAnswer called without remote offer.";
-    RTC_LOG(LS_ERROR) << error;
-    PostCreateSessionDescriptionFailure(observer, error);
-    return;
-  }
+  // The remote description should be set if we're in the right state.
+  RTC_DCHECK(remote_description());
 
   cricket::MediaSessionOptions session_options;
   GetOptionsForAnswer(options, &session_options);
@@ -3372,18 +3369,15 @@ void PeerConnection::GetOptionsForPlanBAnswer(
   rtc::Optional<size_t> audio_index;
   rtc::Optional<size_t> video_index;
   rtc::Optional<size_t> data_index;
-  if (remote_description()) {
-    // The pending remote description should be an offer.
-    RTC_DCHECK(remote_description()->GetType() == SdpType::kOffer);
-    // Generate m= sections that match those in the offer.
-    // Note that mediasession.cc will handle intersection our preferred
-    // direction with the offered direction.
-    GenerateMediaDescriptionOptions(
-        remote_description(),
-        RtpTransceiverDirectionFromSendRecv(send_audio, recv_audio),
-        RtpTransceiverDirectionFromSendRecv(send_video, recv_video),
-        &audio_index, &video_index, &data_index, session_options);
-  }
+
+  // Generate m= sections that match those in the offer.
+  // Note that mediasession.cc will handle intersection our preferred
+  // direction with the offered direction.
+  GenerateMediaDescriptionOptions(
+      remote_description(),
+      RtpTransceiverDirectionFromSendRecv(send_audio, recv_audio),
+      RtpTransceiverDirectionFromSendRecv(send_video, recv_video), &audio_index,
+      &video_index, &data_index, session_options);
 
   cricket::MediaDescriptionOptions* audio_media_description_options =
       !audio_index ? nullptr
