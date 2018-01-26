@@ -125,18 +125,6 @@ class CameraVideoCapturerTestFixtures {
     }
 
     @Override
-    public void onByteBufferFrameCaptured(
-        byte[] frame, int width, int height, int rotation, long timeStamp) {
-      throw new RuntimeException("onByteBufferFrameCaptured called");
-    }
-
-    @Override
-    public void onTextureFrameCaptured(int width, int height, int oesTextureId,
-        float[] transformMatrix, int rotation, long timeStamp) {
-      throw new RuntimeException("onTextureFrameCaptured called");
-    }
-
-    @Override
     public void onFrameCaptured(VideoFrame frame) {
       synchronized (frameLock) {
         ++framesCaptured;
@@ -346,8 +334,6 @@ class CameraVideoCapturerTestFixtures {
   CameraVideoCapturerTestFixtures(TestObjectFactory testObjectFactory) {
     PeerConnectionFactory.initialize(
         PeerConnectionFactory.InitializationOptions.builder(testObjectFactory.getAppContext())
-            .setFieldTrials(PeerConnectionFactory.VIDEO_FRAME_EMIT_TRIAL + "/"
-                + PeerConnectionFactory.TRIAL_ENABLED + "/")
             .createInitializationOptions());
 
     this.peerConnectionFactory = new PeerConnectionFactory(null /* options */);

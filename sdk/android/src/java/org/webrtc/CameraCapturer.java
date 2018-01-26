@@ -192,44 +192,6 @@ abstract class CameraCapturer implements CameraVideoCapturer {
         capturerObserver.onFrameCaptured(frame);
       }
     }
-
-    @Override
-    public void onByteBufferFrameCaptured(
-        CameraSession session, byte[] data, int width, int height, int rotation, long timestamp) {
-      checkIsOnCameraThread();
-      synchronized (stateLock) {
-        if (session != currentSession) {
-          Logging.w(TAG, "onByteBufferFrameCaptured from another session.");
-          return;
-        }
-        if (!firstFrameObserved) {
-          eventsHandler.onFirstFrameAvailable();
-          firstFrameObserved = true;
-        }
-        cameraStatistics.addFrame();
-        capturerObserver.onByteBufferFrameCaptured(data, width, height, rotation, timestamp);
-      }
-    }
-
-    @Override
-    public void onTextureFrameCaptured(CameraSession session, int width, int height,
-        int oesTextureId, float[] transformMatrix, int rotation, long timestamp) {
-      checkIsOnCameraThread();
-      synchronized (stateLock) {
-        if (session != currentSession) {
-          Logging.w(TAG, "onTextureFrameCaptured from another session.");
-          surfaceHelper.returnTextureFrame();
-          return;
-        }
-        if (!firstFrameObserved) {
-          eventsHandler.onFirstFrameAvailable();
-          firstFrameObserved = true;
-        }
-        cameraStatistics.addFrame();
-        capturerObserver.onTextureFrameCaptured(
-            width, height, oesTextureId, transformMatrix, rotation, timestamp);
-      }
-    }
   };
 
   private final Runnable openCameraTimeoutRunnable = new Runnable() {

@@ -45,8 +45,6 @@ class Camera2Session implements CameraSession {
 
   private static enum SessionState { RUNNING, STOPPED }
 
-  private final boolean videoFrameEmitTrialEnabled;
-
   private final Handler cameraThreadHandler;
   private final CreateSessionCallback callback;
   private final Events events;
@@ -228,17 +226,12 @@ class Camera2Session implements CameraSession {
               transformMatrix =
                   RendererCommon.rotateTextureMatrix(transformMatrix, -cameraOrientation);
 
-              if (videoFrameEmitTrialEnabled) {
-                VideoFrame.Buffer buffer = surfaceTextureHelper.createTextureBuffer(
-                    captureFormat.width, captureFormat.height,
-                    RendererCommon.convertMatrixToAndroidGraphicsMatrix(transformMatrix));
-                final VideoFrame frame = new VideoFrame(buffer, rotation, timestampNs);
-                events.onFrameCaptured(Camera2Session.this, frame);
-                frame.release();
-              } else {
-                events.onTextureFrameCaptured(Camera2Session.this, captureFormat.width,
-                    captureFormat.height, oesTextureId, transformMatrix, rotation, timestampNs);
-              }
+              VideoFrame.Buffer buffer = surfaceTextureHelper.createTextureBuffer(
+                  captureFormat.width, captureFormat.height,
+                  RendererCommon.convertMatrixToAndroidGraphicsMatrix(transformMatrix));
+              final VideoFrame frame = new VideoFrame(buffer, rotation, timestampNs);
+              events.onFrameCaptured(Camera2Session.this, frame);
+              frame.release();
             }
           });
       Logging.d(TAG, "Camera device successfully started.");
@@ -313,9 +306,6 @@ class Camera2Session implements CameraSession {
       CameraManager cameraManager, SurfaceTextureHelper surfaceTextureHelper,
       MediaRecorder mediaRecorder, String cameraId, int width, int height, int framerate) {
     Logging.d(TAG, "Create new camera2 session on camera " + cameraId);
-    videoFrameEmitTrialEnabled =
-        PeerConnectionFactory.fieldTrialsFindFullName(PeerConnectionFactory.VIDEO_FRAME_EMIT_TRIAL)
-            .equals(PeerConnectionFactory.TRIAL_ENABLED);
 
     constructionTimeNs = System.nanoTime();
 

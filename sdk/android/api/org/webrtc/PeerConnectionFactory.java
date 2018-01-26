@@ -20,7 +20,7 @@ import java.util.List;
 @JNINamespace("webrtc::jni")
 public class PeerConnectionFactory {
   public static final String TRIAL_ENABLED = "Enabled";
-  public static final String VIDEO_FRAME_EMIT_TRIAL = "VideoFrameEmit";
+  @Deprecated public static final String VIDEO_FRAME_EMIT_TRIAL = "VideoFrameEmit";
 
   private static final String TAG = "PeerConnectionFactory";
   private static final String VIDEO_CAPTURER_THREAD_NAME = "VideoCapturerThread";

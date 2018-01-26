@@ -195,8 +195,11 @@ public class ScreenCapturerAndroid
   @Override
   public void onTextureFrameAvailable(int oesTextureId, float[] transformMatrix, long timestampNs) {
     numCapturedFrames++;
-    capturerObserver.onTextureFrameCaptured(
-        width, height, oesTextureId, transformMatrix, 0 /* rotation */, timestampNs);
+    final VideoFrame.Buffer buffer = surfaceTextureHelper.createTextureBuffer(
+        width, height, RendererCommon.convertMatrixToAndroidGraphicsMatrix(transformMatrix));
+    final VideoFrame frame = new VideoFrame(buffer, 0 /* rotation */, timestampNs);
+    capturerObserver.onFrameCaptured(frame);
+    frame.release();
   }
 
   @Override

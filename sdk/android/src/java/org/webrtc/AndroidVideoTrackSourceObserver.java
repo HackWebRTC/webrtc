@@ -31,6 +31,7 @@ class AndroidVideoTrackSourceObserver implements VideoCapturer.CapturerObserver 
   }
 
   @Override
+  @SuppressWarnings("deprecation")
   public void onByteBufferFrameCaptured(
       byte[] data, int width, int height, int rotation, long timeStamp) {
     nativeOnByteBufferFrameCaptured(
@@ -38,6 +39,7 @@ class AndroidVideoTrackSourceObserver implements VideoCapturer.CapturerObserver 
   }
 
   @Override
+  @SuppressWarnings("deprecation")
   public void onTextureFrameCaptured(int width, int height, int oesTextureId,
       float[] transformMatrix, int rotation, long timestamp) {
     nativeOnTextureFrameCaptured(
