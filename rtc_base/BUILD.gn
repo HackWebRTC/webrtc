@@ -496,6 +496,7 @@ rtc_source_set("rtc_json") {
     "json.cc",
     "json.h",
   ]
+  all_dependent_configs = [ "//third_party/jsoncpp:jsoncpp_config" ]
   if (rtc_build_json) {
     public_deps = [
       "//third_party/jsoncpp",
