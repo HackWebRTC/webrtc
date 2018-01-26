@@ -235,7 +235,6 @@ if (rtc_include_tests) {
       "../test:test_common",
       "../test:test_support",
       "../test:video_test_common",
-      "//testing/gmock",
       "//testing/gtest",
     ]
     if (!build_with_chromium && is_clang) {
@@ -296,7 +295,6 @@ if (rtc_include_tests) {
       "../modules/congestion_controller:congestion_controller",
       "../modules/pacing:pacing",
       "../test:test_support",
-      "//testing/gmock",
     ]
   }
 

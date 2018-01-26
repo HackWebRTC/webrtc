@@ -156,7 +156,6 @@ if (rtc_include_tests) {
       "../rtp_rtcp",
       "../rtp_rtcp:rtp_rtcp_format",
       "../video_coding:video_coding_utility",
-      "//testing/gmock",
       "//testing/gtest",
     ]
   }
@@ -213,7 +212,6 @@ if (rtc_include_tests) {
       "../../test:test_support",
       "../pacing:pacing",
       "../rtp_rtcp:rtp_rtcp_format",
-      "//testing/gmock",
     ]
     if (is_win) {
       cflags = [
@@ -239,7 +237,6 @@ if (rtc_include_tests) {
       "../..:webrtc_common",
       "../../rtc_base:rtc_base_approved",
       "../../test:test_main",
-      "//testing/gmock",
       "//testing/gtest",
     ]
     data = [

@@ -322,7 +322,6 @@ if (rtc_include_tests) {
         "../../sdk:audio_objc",
         "../../system_wrappers",
         "../../test:test_support",
-        "//testing/gmock",
         "//third_party/ocmock",
       ]
       if (!build_with_chromium && is_clang) {
@@ -348,7 +347,6 @@ if (rtc_include_tests) {
       "../../system_wrappers",
       "../../test:test_support",
       "../utility:utility",
-      "//testing/gmock",
     ]
     if (is_linux || is_mac || is_win) {
       sources += [ "audio_device_unittest.cc" ]

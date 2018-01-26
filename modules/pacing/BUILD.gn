@@ -76,7 +76,6 @@ if (rtc_include_tests) {
       "../rtp_rtcp",
       "../rtp_rtcp:mock_rtp_rtcp",
       "../rtp_rtcp:rtp_rtcp_format",
-      "//testing/gmock",
     ]
 
     # TODO(jschuh): bugs.webrtc.org/1348: fix this warning.

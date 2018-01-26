@@ -607,7 +607,6 @@ if (rtc_include_tests) {
       "../audio_coding:neteq_input_audio_tools",
       "aec_dump:mock_aec_dump_unittests",
       "test/conversational_speech:unittest",
-      "//testing/gmock",
       "//testing/gtest",
     ]
 

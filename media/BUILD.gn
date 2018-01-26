@@ -457,7 +457,6 @@ if (rtc_include_tests) {
       "../rtc_base:rtc_base_approved",
       "../rtc_base:rtc_base_tests_utils",
       "../test:test_support",
-      "//testing/gmock",
       "//testing/gtest",
     ]
   }

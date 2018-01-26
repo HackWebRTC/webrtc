@@ -703,7 +703,6 @@ if (rtc_include_tests) {
       "../../test:video_test_common",
       "../../test:video_test_support",
       "../rtp_rtcp:rtp_rtcp_format",
-      "//testing/gmock",
     ]
     if (rtc_build_libvpx) {
       deps += [ rtc_libvpx_dir ]

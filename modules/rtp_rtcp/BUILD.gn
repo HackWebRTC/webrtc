@@ -417,7 +417,6 @@ if (rtc_include_tests) {
       "../../test:test_common",
       "../../test:test_support",
       "../audio_coding:audio_format_conversion",
-      "//testing/gmock",
     ]
 
     # TODO(jschuh): bugs.webrtc.org/1348: fix this warning.

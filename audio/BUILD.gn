@@ -152,7 +152,6 @@ if (rtc_include_tests) {
       "../test:test_common",
       "../test:test_support",
       "utility:utility_tests",
-      "//testing/gmock",
       "//testing/gtest",
     ]
 
@@ -183,7 +182,6 @@ if (rtc_include_tests) {
         "../test:fake_audio_device",
         "../test:test_common",
         "../test:test_main",
-        "//testing/gmock",
         "//testing/gtest",
       ]
       if (is_android) {
@@ -237,7 +235,6 @@ if (rtc_include_tests) {
       "../test:single_threaded_task_queue",
       "../test:test_common",
       "../test:test_main",
-      "//testing/gmock",
       "//testing/gtest",
     ]
 

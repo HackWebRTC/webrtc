@@ -75,7 +75,6 @@ if (rtc_include_tests) {
       "../../test:test_support",
       "../pacing:mock_paced_sender",
       "../remote_bitrate_estimator:remote_bitrate_estimator",
-      "//testing/gmock",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).

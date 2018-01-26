@@ -89,7 +89,6 @@ if (rtc_include_tests) {
       "audio_coding:audio_coding_modules_tests",
       "rtp_rtcp:rtp_rtcp_modules_tests",
       "video_coding:video_coding_modules_tests",
-      "//testing/gmock",
       "//testing/gtest",
     ]
 

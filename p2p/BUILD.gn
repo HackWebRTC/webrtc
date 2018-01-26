@@ -141,7 +141,6 @@ if (rtc_include_tests) {
       "../rtc_base:rtc_base_approved",
       "../rtc_base:rtc_base_tests_utils",
       "../test:test_support",
-      "//testing/gmock",
     ]
   }
 
@@ -180,7 +179,6 @@ if (rtc_include_tests) {
       "../rtc_base:rtc_base_tests_utils",
       "../rtc_base:stringutils",
       "../test:test_support",
-      "//testing/gmock",
       "//testing/gtest",
     ]
     if (!build_with_chromium && is_clang) {
@@ -221,7 +219,6 @@ if (rtc_include_tests) {
       "../rtc_base:checks",
       "../rtc_base:rtc_base",
       "../rtc_base:rtc_base_tests_utils",
-      "//testing/gmock",
       "//testing/gtest",
     ]
     defines = [ "GTEST_RELATIVE_PATH" ]

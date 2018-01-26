@@ -198,7 +198,6 @@ if (rtc_enable_protobuf) {
         "../rtc_base:rtc_base_approved",
         "../rtc_base:rtc_base_tests_utils",
         "../test:test_support",
-        "//testing/gmock",
         "//testing/gtest",
       ]
       if (!build_with_chromium && is_clang) {

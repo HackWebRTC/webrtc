@@ -880,7 +880,6 @@ rtc_source_set("rtc_base_tests_utils") {
     "../test:test_support",
   ]
   public_deps = [
-    "//testing/gmock",
     "//testing/gtest",
   ]
 }
@@ -901,7 +900,6 @@ if (rtc_include_tests) {
     ]
 
     public_deps = [
-      "//testing/gmock",
       "//testing/gtest",
     ]
   }

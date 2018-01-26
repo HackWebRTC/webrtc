@@ -322,7 +322,6 @@ if (rtc_include_tests) {
     deps = [
       ":audio_mixer_api",
       "../test:test_support",
-      "//testing/gmock",
     ]
   }
 
@@ -336,7 +335,6 @@ if (rtc_include_tests) {
     deps = [
       ":libjingle_peerconnection_api",
       "../test:test_support",
-      "//testing/gmock",
     ]
   }
 
@@ -350,7 +348,6 @@ if (rtc_include_tests) {
     deps = [
       "../api/video_codecs:video_codecs_api",
       "../test:test_support",
-      "//testing/gmock",
     ]
   }
 

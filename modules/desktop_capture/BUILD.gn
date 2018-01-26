@@ -99,7 +99,6 @@ if (rtc_include_tests) {
       "../../rtc_base:rtc_base_approved",
       "../../system_wrappers:cpu_features_api",
       "../../test:test_support",
-      "//testing/gmock",
     ]
     if (rtc_desktop_capture_supported) {
       sources += [
@@ -146,7 +145,6 @@ if (rtc_include_tests) {
 
     public_deps = [
       ":desktop_capture",
-      "//testing/gmock",
     ]
 
     sources = [
