@@ -330,6 +330,7 @@ if (rtc_include_tests) {
       "test/fakeaudiocapturemodule.h",
       "test/fakedatachannelprovider.h",
       "test/fakepeerconnectionbase.h",
+      "test/fakepeerconnectionforstats.h",
       "test/fakeperiodicvideocapturer.h",
       "test/fakertccertificategenerator.h",
       "test/fakesctptransport.h",
