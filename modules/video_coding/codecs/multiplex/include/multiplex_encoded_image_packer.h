@@ -71,7 +71,7 @@ struct MultiplexImageComponent {
 
   // Identifies which component this frame represent, i.e. YUV frame vs Alpha
   // frame.
-  int component_index;
+  uint8_t component_index;
 
   // Stores the actual frame data of the encoded image.
   EncodedImage encoded_image;
@@ -79,11 +79,11 @@ struct MultiplexImageComponent {
 
 // Struct holding the whole frame bundle of components of an image.
 struct MultiplexImage {
-  int image_index;
-  int component_count;
+  uint16_t image_index;
+  uint8_t component_count;
   std::vector<MultiplexImageComponent> image_components;
 
-  MultiplexImage(int picture_index, int frame_count);
+  MultiplexImage(uint16_t picture_index, uint8_t component_count);
 };
 
 // A utility class providing conversion between two representations of a

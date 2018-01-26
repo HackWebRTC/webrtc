@@ -113,7 +113,7 @@ void PackBitstream(uint8_t* buffer, MultiplexImageComponent image) {
   memcpy(buffer, image.encoded_image._buffer, image.encoded_image._length);
 }
 
-MultiplexImage::MultiplexImage(int picture_index, int frame_count)
+MultiplexImage::MultiplexImage(uint16_t picture_index, uint8_t frame_count)
     : image_index(picture_index), component_count(frame_count) {}
 
 EncodedImage MultiplexEncodedImagePacker::PackAndRelease(
@@ -195,9 +195,7 @@ MultiplexImage MultiplexEncodedImagePacker::Unpack(
   const MultiplexImageHeader& header = UnpackHeader(combined_image._buffer);
 
   MultiplexImage multiplex_image(header.image_index, header.component_count);
-
   std::vector<MultiplexImageComponentHeader> frame_headers;
-
   int header_offset = header.first_component_header_offset;
 
   while (header_offset > 0) {
@@ -213,6 +211,7 @@ MultiplexImage MultiplexEncodedImagePacker::Unpack(
     image_component.codec_type = frame_headers[i].codec_type;
 
     EncodedImage encoded_image = combined_image;
+    encoded_image._timeStamp = combined_image._timeStamp;
     encoded_image._frameType = frame_headers[i].frame_type;
     encoded_image._length = encoded_image._size =
         static_cast<size_t>(frame_headers[i].bitstream_length);
