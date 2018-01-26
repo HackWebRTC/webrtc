@@ -15,7 +15,6 @@
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "media/base/mediaconstants.h"
 #include "modules/video_coding/codecs/multiplex/include/multiplex_decoder_adapter.h"
-#include "modules/video_coding/codecs/multiplex/include/multiplex_encoded_image_packer.h"
 #include "modules/video_coding/codecs/multiplex/include/multiplex_encoder_adapter.h"
 #include "modules/video_coding/codecs/test/video_codec_test.h"
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
@@ -66,21 +65,7 @@ class TestMultiplexAdapter : public VideoCodecTest {
         yuv_buffer->DataV(), yuv_buffer->StrideV(), yuv_buffer->DataY(),
         yuv_buffer->StrideY(), rtc::KeepRefUntilDone(yuv_buffer));
     return rtc::WrapUnique<VideoFrame>(
-        new VideoFrame(yuva_buffer, 123 /* timestamp_us */,
-                       345 /* render_time_ms */, kVideoRotation_0));
-  }
-
-  std::unique_ptr<VideoFrame> ExtractAXXFrame(const VideoFrame& yuva_frame) {
-    const I420ABufferInterface* yuva_buffer =
-        yuva_frame.video_frame_buffer()->GetI420A();
-    rtc::scoped_refptr<I420BufferInterface> axx_buffer = WrapI420Buffer(
-        yuva_buffer->width(), yuva_buffer->height(), yuva_buffer->DataA(),
-        yuva_buffer->StrideA(), yuva_buffer->DataU(), yuva_buffer->StrideU(),
-        yuva_buffer->DataV(), yuva_buffer->StrideV(),
-        rtc::KeepRefUntilDone(yuva_frame.video_frame_buffer()));
-    return rtc::WrapUnique<VideoFrame>(
-        new VideoFrame(axx_buffer, 123 /* timestamp_us */,
-                       345 /* render_time_ms */, kVideoRotation_0));
+        new VideoFrame(yuva_buffer, kVideoRotation_0, 0));
   }
 
  private:
@@ -125,6 +110,7 @@ TEST_F(TestMultiplexAdapter, EncodeDecodeI420Frame) {
   EncodedImage encoded_frame;
   CodecSpecificInfo codec_specific_info;
   ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
+
   EXPECT_EQ(kVideoCodecMultiplex, codec_specific_info.codecType);
 
   EXPECT_EQ(
@@ -144,6 +130,7 @@ TEST_F(TestMultiplexAdapter, EncodeDecodeI420AFrame) {
   EncodedImage encoded_frame;
   CodecSpecificInfo codec_specific_info;
   ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
+
   EXPECT_EQ(kVideoCodecMultiplex, codec_specific_info.codecType);
 
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
@@ -153,72 +140,6 @@ TEST_F(TestMultiplexAdapter, EncodeDecodeI420AFrame) {
   ASSERT_TRUE(WaitForDecodedFrame(&decoded_frame, &decoded_qp));
   ASSERT_TRUE(decoded_frame);
   EXPECT_GT(I420PSNR(yuva_frame.get(), decoded_frame.get()), 36);
-
-  // Find PSNR for AXX bits.
-  std::unique_ptr<VideoFrame> input_axx_frame = ExtractAXXFrame(*yuva_frame);
-  std::unique_ptr<VideoFrame> output_axx_frame =
-      ExtractAXXFrame(*decoded_frame);
-  EXPECT_GT(I420PSNR(input_axx_frame.get(), output_axx_frame.get()), 47);
-}
-
-TEST_F(TestMultiplexAdapter, CheckSingleFrameEncodedBitstream) {
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->Encode(*input_frame_, nullptr, nullptr));
-  EncodedImage encoded_frame;
-  CodecSpecificInfo codec_specific_info;
-  ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
-  EXPECT_EQ(kVideoCodecMultiplex, codec_specific_info.codecType);
-  EXPECT_EQ(0, codec_specific_info.codecSpecific.generic.simulcast_idx);
-
-  const MultiplexImage& unpacked_frame =
-      MultiplexEncodedImagePacker::Unpack(encoded_frame);
-  EXPECT_EQ(0, unpacked_frame.image_index);
-  EXPECT_EQ(1, unpacked_frame.component_count);
-  const MultiplexImageComponent& component = unpacked_frame.image_components[0];
-  EXPECT_EQ(0, component.component_index);
-  EXPECT_NE(nullptr, component.encoded_image._buffer);
-  EXPECT_EQ(kVideoFrameKey, component.encoded_image._frameType);
-}
-
-TEST_F(TestMultiplexAdapter, CheckDoubleFramesEncodedBitstream) {
-  std::unique_ptr<VideoFrame> yuva_frame = CreateI420AInputFrame();
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->Encode(*yuva_frame, nullptr, nullptr));
-  EncodedImage encoded_frame;
-  CodecSpecificInfo codec_specific_info;
-  ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
-  EXPECT_EQ(kVideoCodecMultiplex, codec_specific_info.codecType);
-  EXPECT_EQ(0, codec_specific_info.codecSpecific.generic.simulcast_idx);
-
-  const MultiplexImage& unpacked_frame =
-      MultiplexEncodedImagePacker::Unpack(encoded_frame);
-  EXPECT_EQ(0, unpacked_frame.image_index);
-  EXPECT_EQ(2, unpacked_frame.component_count);
-  EXPECT_EQ(unpacked_frame.image_components.size(),
-            unpacked_frame.component_count);
-  for (int i = 0; i < unpacked_frame.component_count; ++i) {
-    const MultiplexImageComponent& component =
-        unpacked_frame.image_components[i];
-    EXPECT_EQ(i, component.component_index);
-    EXPECT_NE(nullptr, component.encoded_image._buffer);
-    EXPECT_EQ(kVideoFrameKey, component.encoded_image._frameType);
-  }
-}
-
-TEST_F(TestMultiplexAdapter, ImageIndexIncreases) {
-  std::unique_ptr<VideoFrame> yuva_frame = CreateI420AInputFrame();
-  const size_t expected_num_encoded_frames = 3;
-  for (size_t i = 0; i < expected_num_encoded_frames; ++i) {
-    EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-              encoder_->Encode(*yuva_frame, nullptr, nullptr));
-    EncodedImage encoded_frame;
-    CodecSpecificInfo codec_specific_info;
-    ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
-    const MultiplexImage& unpacked_frame =
-        MultiplexEncodedImagePacker::Unpack(encoded_frame);
-    EXPECT_EQ(i, unpacked_frame.image_index);
-    EXPECT_EQ(i ? kVideoFrameDelta : kVideoFrameKey, encoded_frame._frameType);
-  }
 }
 
 }  // namespace webrtc
