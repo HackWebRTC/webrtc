@@ -14,7 +14,7 @@
 #include <deque>
 #include <vector>
 
-#include "modules/remote_bitrate_estimator/include/send_time_history.h"
+#include "modules/congestion_controller/send_time_history.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/thread_checker.h"
@@ -59,9 +59,7 @@ class TransportFeedbackAdapter {
   std::vector<PacketFeedback> GetPacketFeedbackVector(
       const rtcp::TransportFeedback& feedback);
 
-  const bool send_side_bwe_with_overhead_;
   rtc::CriticalSection lock_;
-  int transport_overhead_bytes_per_packet_ RTC_GUARDED_BY(&lock_);
   SendTimeHistory send_time_history_ RTC_GUARDED_BY(&lock_);
   const Clock* const clock_;
   int64_t current_offset_ms_;

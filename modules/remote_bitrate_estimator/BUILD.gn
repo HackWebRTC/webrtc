@@ -16,7 +16,6 @@ rtc_static_library("remote_bitrate_estimator") {
     "bwe_defines.cc",
     "include/bwe_defines.h",
     "include/remote_bitrate_estimator.h",
-    "include/send_time_history.h",
     "inter_arrival.cc",
     "inter_arrival.h",
     "overuse_detector.cc",
@@ -29,7 +28,6 @@ rtc_static_library("remote_bitrate_estimator") {
     "remote_bitrate_estimator_single_stream.h",
     "remote_estimator_proxy.cc",
     "remote_estimator_proxy.h",
-    "send_time_history.cc",
     "test/bwe_test_logging.h",
   ]
 
@@ -152,6 +150,7 @@ if (rtc_include_tests) {
       "../congestion_controller",
       "../congestion_controller:delay_based_bwe",
       "../congestion_controller:estimators",
+      "../congestion_controller:transport_feedback",
       "../pacing",
       "../rtp_rtcp",
       "../rtp_rtcp:rtp_rtcp_format",
@@ -191,7 +190,6 @@ if (rtc_include_tests) {
       "remote_bitrate_estimator_unittest_helper.cc",
       "remote_bitrate_estimator_unittest_helper.h",
       "remote_estimator_proxy_unittest.cc",
-      "send_time_history_unittest.cc",
       "test/bwe_test_framework_unittest.cc",
       "test/bwe_unittest.cc",
       "test/estimators/congestion_window_unittest.cc",

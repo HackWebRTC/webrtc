@@ -132,8 +132,10 @@ SendSideCongestionController::SendSideCongestionController(
       in_cwnd_experiment_(CwndExperimentEnabled()),
       accepted_queue_ms_(kDefaultAcceptedQueueMs),
       was_in_alr_(false),
-      pacer_pushback_experiment_(
-          IsPacerPushbackExperimentEnabled()) {
+      send_side_bwe_with_overhead_(
+          webrtc::field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")),
+      transport_overhead_bytes_per_packet_(0),
+      pacer_pushback_experiment_(IsPacerPushbackExperimentEnabled()) {
   delay_based_bwe_->SetMinBitrate(min_bitrate_bps_);
   if (in_cwnd_experiment_ &&
       !ReadCwndExperimentParameter(&accepted_queue_ms_)) {
@@ -267,8 +269,8 @@ void SendSideCongestionController::SignalNetworkState(NetworkState state) {
 
 void SendSideCongestionController::SetTransportOverhead(
     size_t transport_overhead_bytes_per_packet) {
-  transport_feedback_adapter_.SetTransportOverhead(
-      rtc::dchecked_cast<int>(transport_overhead_bytes_per_packet));
+  rtc::CritScope cs(&bwe_lock_);
+  transport_overhead_bytes_per_packet_ = transport_overhead_bytes_per_packet;
 }
 
 void SendSideCongestionController::OnSentPacket(
@@ -318,6 +320,10 @@ void SendSideCongestionController::AddPacket(
     uint16_t sequence_number,
     size_t length,
     const PacedPacketInfo& pacing_info) {
+  if (send_side_bwe_with_overhead_) {
+    rtc::CritScope cs(&bwe_lock_);
+    length += transport_overhead_bytes_per_packet_;
+  }
   transport_feedback_adapter_.AddPacket(ssrc, sequence_number, length,
                                         pacing_info);
 }

@@ -13,7 +13,7 @@
 #include <random>
 #include <vector>
 
-#include "modules/remote_bitrate_estimator/include/send_time_history.h"
+#include "modules/congestion_controller/send_time_history.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "system_wrappers/include/clock.h"
 #include "test/gtest.h"

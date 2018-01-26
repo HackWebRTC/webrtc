@@ -8,7 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/remote_bitrate_estimator/include/send_time_history.h"
+#include "modules/congestion_controller/send_time_history.h"
+
+#include <algorithm>
+#include <utility>
 
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/checks.h"
