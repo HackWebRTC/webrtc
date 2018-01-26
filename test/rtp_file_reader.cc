@@ -25,7 +25,7 @@
 namespace webrtc {
 namespace test {
 
-static const size_t kFirstLineLength = 40;
+static const size_t kFirstLineLength = 80;
 static uint16_t kPacketHeaderSize = 8;
 
 #define TRY(expr)                           \
