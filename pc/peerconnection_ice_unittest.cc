@@ -303,7 +303,7 @@ TEST_P(PeerConnectionIceTest, AnswerContainsGatheredCandidates) {
 
   EXPECT_TRUE_WAIT(callee->IsIceGatheringDone(), kIceCandidatesTimeout);
 
-  auto* answer = callee->pc()->local_description();
+  auto answer = callee->CreateAnswer();
   EXPECT_LT(0u, caller->observer()->GetCandidatesByMline(0).size());
   EXPECT_EQ(callee->observer()->GetCandidatesByMline(0).size(),
             answer->candidates(0)->count());
