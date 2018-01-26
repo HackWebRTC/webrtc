@@ -264,6 +264,33 @@ TEST_F(RtcpReceiverTest, InjectSrPacketCalculatesNegativeRTTAsOne) {
   EXPECT_EQ(1, rtt_ms);
 }
 
+TEST_F(
+    RtcpReceiverTest,
+    TwoReportBlocksWithLastOneWithoutLastSrCalculatesRttForBandwidthObserver) {
+  const int64_t kRttMs = 120;
+  const uint32_t kDelayNtp = 123000;
+  const int64_t kDelayMs = CompactNtpRttToMs(kDelayNtp);
+
+  uint32_t sent_ntp = CompactNtp(system_clock_.CurrentNtpTime());
+  system_clock_.AdvanceTimeMilliseconds(kRttMs + kDelayMs);
+
+  rtcp::SenderReport sr;
+  sr.SetSenderSsrc(kSenderSsrc);
+  rtcp::ReportBlock block;
+  block.SetMediaSsrc(kReceiverMainSsrc);
+  block.SetLastSr(sent_ntp);
+  block.SetDelayLastSr(kDelayNtp);
+  sr.AddReportBlock(block);
+  block.SetMediaSsrc(kReceiverExtraSsrc);
+  block.SetLastSr(0);
+  sr.AddReportBlock(block);
+
+  EXPECT_CALL(rtp_rtcp_impl_, OnReceivedRtcpReportBlocks(SizeIs(2)));
+  EXPECT_CALL(bandwidth_observer_,
+              OnReceivedRtcpReceiverReport(SizeIs(2), kRttMs, _));
+  InjectRtcpPacket(sr);
+}
+
 TEST_F(RtcpReceiverTest, InjectRrPacket) {
   int64_t now = system_clock_.TimeInMilliseconds();
   rtcp::ReceiverReport rr;

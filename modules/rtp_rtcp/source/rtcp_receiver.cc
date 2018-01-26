@@ -502,12 +502,12 @@ void RTCPReceiver::HandleReportBlock(const ReportBlock& report_block,
     report_block_info->last_rtt_ms = rtt_ms;
     report_block_info->sum_rtt_ms += rtt_ms;
     ++report_block_info->num_rtts;
+
+    packet_information->rtt_ms = rtt_ms;
   }
 
   TRACE_COUNTER_ID1(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "RR_RTT",
                     report_block.source_ssrc(), rtt_ms);
-
-  packet_information->rtt_ms = rtt_ms;
   packet_information->report_blocks.push_back(report_block_info->report_block);
 }
 
