@@ -529,20 +529,6 @@ TEST_F(NetEqDecodingTest, MAYBE_TestOpusBitExactness) {
                    FLAG_gen_ref);
 }
 
-// This test fixture is identical to NetEqDecodingTest, except that it enables
-// the WebRTC-NetEqOpusDtxDelayFix field trial.
-// TODO(bugs.webrtc.org/8488): When the field trial is over and the feature is
-// default enabled, remove this fixture class and let the
-// TestOpusDtxBitExactness test build directly on NetEqDecodingTest.
-class NetEqDecodingTestWithOpusDtxFieldTrial : public NetEqDecodingTest {
- public:
-  NetEqDecodingTestWithOpusDtxFieldTrial()
-      : override_field_trials_("WebRTC-NetEqOpusDtxDelayFix/Enabled/") {}
-
- private:
-  test::ScopedFieldTrials override_field_trials_;
-};
-
 #if !defined(WEBRTC_IOS) &&                                         \
     defined(WEBRTC_NETEQ_UNITTEST_BITEXACT) &&                      \
     defined(WEBRTC_CODEC_OPUS)
@@ -550,7 +536,7 @@ class NetEqDecodingTestWithOpusDtxFieldTrial : public NetEqDecodingTest {
 #else
 #define MAYBE_TestOpusDtxBitExactness DISABLED_TestOpusDtxBitExactness
 #endif
-TEST_F(NetEqDecodingTestWithOpusDtxFieldTrial, MAYBE_TestOpusDtxBitExactness) {
+TEST_F(NetEqDecodingTest, MAYBE_TestOpusDtxBitExactness) {
   const std::string input_rtp_file =
       webrtc::test::ResourcePath("audio_coding/neteq_opus_dtx", "rtp");
 
