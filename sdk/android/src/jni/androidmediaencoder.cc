@@ -366,7 +366,8 @@ int32_t MediaCodecVideoEncoder::InitEncode(const VideoCodec* codec_settings,
 
   return InitEncodeInternal(
       init_width, init_height, codec_settings->startBitrate,
-      codec_settings->maxFramerate, codec_settings->expect_encode_from_texture);
+      codec_settings->maxFramerate,
+      codec_settings->expect_encode_from_texture && (egl_context_ != nullptr));
 }
 
 int32_t MediaCodecVideoEncoder::SetChannelParameters(uint32_t /* packet_loss */,
