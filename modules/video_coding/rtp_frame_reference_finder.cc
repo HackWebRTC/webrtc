@@ -98,7 +98,7 @@ RtpFrameReferenceFinder::ManageFrameInternal(RtpFrameObject* frame) {
     case kVideoCodecUnknown:
     case kVideoCodecH264:
     case kVideoCodecI420:
-    case kVideoCodecMultiplex:
+    case kVideoCodecStereo:
     case kVideoCodecGeneric:
       return ManageFrameGeneric(frame, kNoPictureId);
   }

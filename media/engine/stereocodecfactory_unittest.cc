@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "media/engine/multiplexcodecfactory.h"
+#include "media/engine/stereocodecfactory.h"
 
 #include <utility>
 
@@ -22,24 +22,24 @@
 
 namespace webrtc {
 
-TEST(MultiplexDecoderFactory, CreateVideoDecoder) {
+TEST(StereoDecoderFactory, CreateVideoDecoder) {
   std::unique_ptr<VideoDecoderFactory> internal_factory(
       new InternalDecoderFactory());
-  MultiplexDecoderFactory factory(std::move(internal_factory));
+  StereoDecoderFactory factory(std::move(internal_factory));
   std::unique_ptr<VideoDecoder> decoder =
       factory.CreateVideoDecoder(SdpVideoFormat(
-          cricket::kMultiplexCodecName,
+          cricket::kStereoCodecName,
           {{cricket::kCodecParamAssociatedCodecName, cricket::kVp9CodecName}}));
   EXPECT_TRUE(decoder);
 }
 
-TEST(MultiplexEncoderFactory, CreateVideoEncoder) {
+TEST(StereoEncoderFactory, CreateVideoEncoder) {
   std::unique_ptr<VideoEncoderFactory> internal_factory(
       new InternalEncoderFactory());
-  MultiplexEncoderFactory factory(std::move(internal_factory));
+  StereoEncoderFactory factory(std::move(internal_factory));
   std::unique_ptr<VideoEncoder> encoder =
       factory.CreateVideoEncoder(SdpVideoFormat(
-          cricket::kMultiplexCodecName,
+          cricket::kStereoCodecName,
           {{cricket::kCodecParamAssociatedCodecName, cricket::kVp9CodecName}}));
   EXPECT_TRUE(encoder);
 }

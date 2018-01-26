@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/video_coding/codecs/multiplex/include/multiplex_decoder_adapter.h"
+#include "modules/video_coding/codecs/stereo/include/stereo_decoder_adapter.h"
 
 #include "api/video/i420_buffer.h"
 #include "api/video/video_frame_buffer.h"
@@ -25,10 +25,10 @@ void KeepBufferRefs(rtc::scoped_refptr<webrtc::VideoFrameBuffer>,
 
 namespace webrtc {
 
-class MultiplexDecoderAdapter::AdapterDecodedImageCallback
+class StereoDecoderAdapter::AdapterDecodedImageCallback
     : public webrtc::DecodedImageCallback {
  public:
-  AdapterDecodedImageCallback(webrtc::MultiplexDecoderAdapter* adapter,
+  AdapterDecodedImageCallback(webrtc::StereoDecoderAdapter* adapter,
                               AlphaCodecStream stream_idx)
       : adapter_(adapter), stream_idx_(stream_idx) {}
 
@@ -49,11 +49,11 @@ class MultiplexDecoderAdapter::AdapterDecodedImageCallback
   }
 
  private:
-  MultiplexDecoderAdapter* adapter_;
+  StereoDecoderAdapter* adapter_;
   const AlphaCodecStream stream_idx_;
 };
 
-struct MultiplexDecoderAdapter::DecodedImageData {
+struct StereoDecoderAdapter::DecodedImageData {
   explicit DecodedImageData(AlphaCodecStream stream_idx)
       : stream_idx_(stream_idx),
         decoded_image_(I420Buffer::Create(1 /* width */, 1 /* height */),
@@ -79,18 +79,18 @@ struct MultiplexDecoderAdapter::DecodedImageData {
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(DecodedImageData);
 };
 
-MultiplexDecoderAdapter::MultiplexDecoderAdapter(
+StereoDecoderAdapter::StereoDecoderAdapter(
     VideoDecoderFactory* factory,
     const SdpVideoFormat& associated_format)
     : factory_(factory), associated_format_(associated_format) {}
 
-MultiplexDecoderAdapter::~MultiplexDecoderAdapter() {
+StereoDecoderAdapter::~StereoDecoderAdapter() {
   Release();
 }
 
-int32_t MultiplexDecoderAdapter::InitDecode(const VideoCodec* codec_settings,
-                                            int32_t number_of_cores) {
-  RTC_DCHECK_EQ(kVideoCodecMultiplex, codec_settings->codecType);
+int32_t StereoDecoderAdapter::InitDecode(const VideoCodec* codec_settings,
+                                         int32_t number_of_cores) {
+  RTC_DCHECK_EQ(kVideoCodecStereo, codec_settings->codecType);
   VideoCodec settings = *codec_settings;
   settings.codecType = PayloadStringToCodecType(associated_format_.name);
   for (size_t i = 0; i < kAlphaCodecStreams; ++i) {
@@ -100,7 +100,7 @@ int32_t MultiplexDecoderAdapter::InitDecode(const VideoCodec* codec_settings,
     if (rv)
       return rv;
     adapter_callbacks_.emplace_back(
-        new MultiplexDecoderAdapter::AdapterDecodedImageCallback(
+        new StereoDecoderAdapter::AdapterDecodedImageCallback(
             this, static_cast<AlphaCodecStream>(i)));
     decoder->RegisterDecodeCompleteCallback(adapter_callbacks_.back().get());
     decoders_.emplace_back(std::move(decoder));
@@ -108,7 +108,7 @@ int32_t MultiplexDecoderAdapter::InitDecode(const VideoCodec* codec_settings,
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int32_t MultiplexDecoderAdapter::Decode(
+int32_t StereoDecoderAdapter::Decode(
     const EncodedImage& input_image,
     bool missing_frames,
     const RTPFragmentationHeader* /*fragmentation*/,
@@ -135,13 +135,13 @@ int32_t MultiplexDecoderAdapter::Decode(
   return rv;
 }
 
-int32_t MultiplexDecoderAdapter::RegisterDecodeCompleteCallback(
+int32_t StereoDecoderAdapter::RegisterDecodeCompleteCallback(
     DecodedImageCallback* callback) {
   decoded_complete_callback_ = callback;
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int32_t MultiplexDecoderAdapter::Release() {
+int32_t StereoDecoderAdapter::Release() {
   for (auto& decoder : decoders_) {
     const int32_t rv = decoder->Release();
     if (rv)
@@ -152,10 +152,10 @@ int32_t MultiplexDecoderAdapter::Release() {
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-void MultiplexDecoderAdapter::Decoded(AlphaCodecStream stream_idx,
-                                      VideoFrame* decoded_image,
-                                      rtc::Optional<int32_t> decode_time_ms,
-                                      rtc::Optional<uint8_t> qp) {
+void StereoDecoderAdapter::Decoded(AlphaCodecStream stream_idx,
+                                   VideoFrame* decoded_image,
+                                   rtc::Optional<int32_t> decode_time_ms,
+                                   rtc::Optional<uint8_t> qp) {
   const auto& other_decoded_data_it =
       decoded_data_.find(decoded_image->timestamp());
   if (other_decoded_data_it != decoded_data_.end()) {
@@ -183,7 +183,7 @@ void MultiplexDecoderAdapter::Decoded(AlphaCodecStream stream_idx,
       std::forward_as_tuple(stream_idx, *decoded_image, decode_time_ms, qp));
 }
 
-void MultiplexDecoderAdapter::MergeAlphaImages(
+void StereoDecoderAdapter::MergeAlphaImages(
     VideoFrame* decoded_image,
     const rtc::Optional<int32_t>& decode_time_ms,
     const rtc::Optional<uint8_t>& qp,
