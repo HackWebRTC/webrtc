@@ -141,7 +141,13 @@ class DtlsTransport : public DtlsTransportInternal {
 
   // Once DTLS has been established, this method retrieves the certificate in
   // use by the remote peer, for use in external identity verification.
+  // TODO(zhihuang): Remove all the SSLCertificate versions of these methods,
+  // and replace them with the SSLCertChain versions. Implement the
+  // PeerConnection::GetRemoteSSLCertificate using the SSLCertChain version.
   std::unique_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate() const override;
+
+  // Version of the above method that returns the full certificate chain.
+  std::unique_ptr<rtc::SSLCertChain> GetRemoteSSLCertChain() const override;
 
   // Once DTLS has established (i.e., this ice_transport is writable), this
   // method extracts the keys negotiated during the DTLS handshake, for use in

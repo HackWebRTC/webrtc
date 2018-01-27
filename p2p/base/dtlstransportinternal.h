@@ -82,6 +82,9 @@ class DtlsTransportInternal : public rtc::PacketTransportInternal {
   virtual std::unique_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate()
       const = 0;
 
+  // Gets a copy of the remote side's SSL certificate chain.
+  virtual std::unique_ptr<rtc::SSLCertChain> GetRemoteSSLCertChain() const = 0;
+
   // Allows key material to be extracted for external encryption.
   virtual bool ExportKeyingMaterial(const std::string& label,
                                     const uint8_t* context,

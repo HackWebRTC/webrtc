@@ -93,6 +93,9 @@ class TransportController : public sigslot::has_slots<>,
   // reporting.
   std::unique_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate(
       const std::string& transport_name) const;
+  std::unique_ptr<rtc::SSLCertChain> GetRemoteSSLCertChain(
+      const std::string& transport_name) const;
+
   bool SetLocalTransportDescription(const std::string& transport_name,
                                     const TransportDescription& tdesc,
                                     webrtc::SdpType type,

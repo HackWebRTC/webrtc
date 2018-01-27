@@ -200,6 +200,21 @@ TransportController::GetRemoteSSLCertificate(
                                this, transport_name));
 }
 
+std::unique_ptr<rtc::SSLCertChain> TransportController::GetRemoteSSLCertChain(
+    const std::string& transport_name) const {
+  if (!network_thread_->IsCurrent()) {
+    return network_thread_->Invoke<std::unique_ptr<rtc::SSLCertChain>>(
+        RTC_FROM_HERE, [&] { return GetRemoteSSLCertChain(transport_name); });
+  }
+
+  const RefCountedChannel* ch =
+      GetChannel_n(transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP);
+  if (!ch) {
+    return nullptr;
+  }
+  return ch->dtls()->GetRemoteSSLCertChain();
+}
+
 bool TransportController::SetLocalTransportDescription(
     const std::string& transport_name,
     const TransportDescription& tdesc,

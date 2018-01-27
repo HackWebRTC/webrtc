@@ -2766,6 +2766,16 @@ PeerConnection::GetRemoteAudioSSLCertificate() {
   return GetRemoteSSLCertificate(voice_channel()->transport_name());
 }
 
+std::unique_ptr<rtc::SSLCertChain>
+PeerConnection::GetRemoteAudioSSLCertChain() {
+  if (!voice_channel()) {
+    return nullptr;
+  }
+
+  return transport_controller_->GetRemoteSSLCertChain(
+      voice_channel()->transport_name());
+}
+
 bool PeerConnection::StartRtcEventLog(rtc::PlatformFile file,
                                       int64_t max_size_bytes) {
   // TODO(eladalon): It would be better to not allow negative values into PC.

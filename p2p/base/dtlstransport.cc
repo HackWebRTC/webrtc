@@ -308,6 +308,15 @@ std::unique_ptr<rtc::SSLCertificate> DtlsTransport::GetRemoteSSLCertificate()
   return dtls_->GetPeerCertificate();
 }
 
+std::unique_ptr<rtc::SSLCertChain> DtlsTransport::GetRemoteSSLCertChain()
+    const {
+  if (!dtls_) {
+    return nullptr;
+  }
+
+  return dtls_->GetPeerSSLCertChain();
+}
+
 bool DtlsTransport::ExportKeyingMaterial(const std::string& label,
                                          const uint8_t* context,
                                          size_t context_len,

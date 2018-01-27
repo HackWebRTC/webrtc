@@ -1362,6 +1362,11 @@ TEST_F(PeerConnectionIntegrationTest,
     auto pc = reinterpret_cast<PeerConnection*>(pci->internal());
     return pc->GetRemoteAudioSSLCertificate();
   };
+  auto GetRemoteAudioSSLCertChain = [](PeerConnectionWrapper* wrapper) {
+    auto pci = reinterpret_cast<PeerConnectionProxy*>(wrapper->pc());
+    auto pc = reinterpret_cast<PeerConnection*>(pci->internal());
+    return pc->GetRemoteAudioSSLCertChain();
+  };
 
   auto caller_cert = rtc::RTCCertificate::FromPEM(kRsaPems[0]);
   auto callee_cert = rtc::RTCCertificate::FromPEM(kRsaPems[1]);
@@ -1381,6 +1386,8 @@ TEST_F(PeerConnectionIntegrationTest,
   // calling this method should not crash).
   EXPECT_EQ(nullptr, GetRemoteAudioSSLCertificate(caller()));
   EXPECT_EQ(nullptr, GetRemoteAudioSSLCertificate(callee()));
+  EXPECT_EQ(nullptr, GetRemoteAudioSSLCertChain(caller()));
+  EXPECT_EQ(nullptr, GetRemoteAudioSSLCertChain(callee()));
 
   caller()->AddAudioTrack();
   callee()->AddAudioTrack();
@@ -1400,6 +1407,20 @@ TEST_F(PeerConnectionIntegrationTest,
   ASSERT_TRUE(callee_remote_cert);
   EXPECT_EQ(caller_cert->ssl_certificate().ToPEMString(),
             callee_remote_cert->ToPEMString());
+
+  auto caller_remote_cert_chain = GetRemoteAudioSSLCertChain(caller());
+  ASSERT_TRUE(caller_remote_cert_chain);
+  ASSERT_EQ(1U, caller_remote_cert_chain->GetSize());
+  auto remote_cert = &caller_remote_cert_chain->Get(0);
+  EXPECT_EQ(callee_cert->ssl_certificate().ToPEMString(),
+            remote_cert->ToPEMString());
+
+  auto callee_remote_cert_chain = GetRemoteAudioSSLCertChain(callee());
+  ASSERT_TRUE(callee_remote_cert_chain);
+  ASSERT_EQ(1U, callee_remote_cert_chain->GetSize());
+  remote_cert = &callee_remote_cert_chain->Get(0);
+  EXPECT_EQ(caller_cert->ssl_certificate().ToPEMString(),
+            remote_cert->ToPEMString());
 }
 
 // This test sets up a call between two parties (using DTLS) and tests that we
