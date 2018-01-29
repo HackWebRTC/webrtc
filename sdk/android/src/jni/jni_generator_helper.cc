@@ -11,7 +11,7 @@
 #include "sdk/android/src/jni/jni_generator_helper.h"
 
 #include "rtc_base/atomicops.h"
-#include "sdk/android/src/jni/class_loader.h"
+#include "sdk/android/native_api/jni/class_loader.h"
 
 namespace base {
 namespace android {
@@ -28,8 +28,7 @@ jclass LazyGetClass(JNIEnv* env,
       rtc::AtomicOps::AcquireLoadPtr(atomic_class_id);
   if (value)
     return reinterpret_cast<jclass>(value);
-  webrtc::jni::ScopedJavaGlobalRef<jclass> clazz(
-      webrtc::jni::GetClass(env, class_name));
+  webrtc::ScopedJavaGlobalRef<jclass> clazz(webrtc::GetClass(env, class_name));
   RTC_CHECK(!clazz.is_null()) << class_name;
   base::subtle::AtomicWord null_aw = nullptr;
   base::subtle::AtomicWord cas_result = rtc::AtomicOps::CompareAndSwapPtr(

@@ -598,7 +598,9 @@ if (rtc_include_tests) {
       ]
 
       deps += [
-        "../../sdk/android:libjingle_peerconnection_jni",
+        "../../sdk/android:native_api_base",
+        "../../sdk/android:native_api_codecs",
+        "../../sdk/android:native_api_jni",
         "//base",
       ]
     }

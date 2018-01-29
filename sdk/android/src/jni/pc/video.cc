@@ -24,7 +24,6 @@
 #include "sdk/android/src/jni/androidmediadecoder_jni.h"
 #include "sdk/android/src/jni/androidmediaencoder_jni.h"
 #include "sdk/android/src/jni/androidvideotracksource.h"
-#include "sdk/android/src/jni/pc/ownedfactoryandthreads.h"
 #include "sdk/android/src/jni/surfacetexturehelper.h"
 #include "sdk/android/src/jni/videodecoderfactorywrapper.h"
 #include "sdk/android/src/jni/videoencoderfactorywrapper.h"

@@ -13,6 +13,7 @@
 #include "rtc_base/bind.h"
 #include "rtc_base/logging.h"
 #include "sdk/android/generated_video_jni/jni/SurfaceTextureHelper_jni.h"
+#include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/src/jni/videoframe.h"
 
 namespace webrtc {

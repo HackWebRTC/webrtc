@@ -19,7 +19,7 @@
 #include <jni.h>
 
 #include "rtc_base/checks.h"
-#include "sdk/android/src/jni/scoped_java_ref.h"
+#include "sdk/android/native_api/jni/scoped_java_ref.h"
 
 // TODO(crbug.com/801260): Remove this macro definition as soon as
 // crrev.com/531028 will be reverted.
@@ -61,9 +61,9 @@ typedef void* AtomicWord;
 
 namespace android {
 
-using webrtc::jni::JavaRef;
-using webrtc::jni::ScopedJavaLocalRef;
-using webrtc::jni::JavaParamRef;
+using webrtc::JavaRef;
+using webrtc::ScopedJavaLocalRef;
+using webrtc::JavaParamRef;
 
 // This function will initialize |atomic_class_id| to contain a global ref to
 // the given class, and will return that ref on subsequent calls. The caller is

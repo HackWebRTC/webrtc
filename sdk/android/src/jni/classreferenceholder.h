@@ -13,7 +13,7 @@
 
 // TODO(magjed): Update external clients to call webrtc::jni::InitClassLoader
 // immediately instead.
-#include "sdk/android/src/jni/class_loader.h"
+#include "sdk/android/native_api/jni/class_loader.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {
@@ -21,7 +21,7 @@ namespace jni {
 
 // Deprecated. Call webrtc::jni::InitClassLoader() immediately instead..
 inline void LoadGlobalClassReferenceHolder() {
-  webrtc::jni::InitClassLoader(GetEnv());
+  webrtc::InitClassLoader(GetEnv());
 }
 
 // Deprecated. Do not call at all.

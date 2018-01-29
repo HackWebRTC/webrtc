@@ -23,6 +23,9 @@
 namespace webrtc {
 namespace jni {
 
+// TODO(sakal): Remove once clients have migrated.
+using ::webrtc::JavaParamRef;
+
 class SurfaceTextureHelper;
 
 // Open gl texture matrix, in column-major order. Operations are

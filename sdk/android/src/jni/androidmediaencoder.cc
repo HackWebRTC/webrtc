@@ -38,6 +38,7 @@
 #include "rtc_base/timeutils.h"
 #include "rtc_base/weak_ptr.h"
 #include "sdk/android/generated_video_jni/jni/MediaCodecVideoEncoder_jni.h"
+#include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/src/jni/androidmediacodeccommon.h"
 #include "sdk/android/src/jni/androidmediadecoder_jni.h"
 #include "sdk/android/src/jni/jni_helpers.h"

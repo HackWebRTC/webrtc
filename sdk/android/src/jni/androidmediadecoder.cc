@@ -28,6 +28,7 @@
 #include "rtc_base/thread.h"
 #include "rtc_base/timeutils.h"
 #include "sdk/android/generated_video_jni/jni/MediaCodecVideoDecoder_jni.h"
+#include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/src/jni/androidmediacodeccommon.h"
 #include "sdk/android/src/jni/surfacetexturehelper.h"
 #include "sdk/android/src/jni/videoframe.h"

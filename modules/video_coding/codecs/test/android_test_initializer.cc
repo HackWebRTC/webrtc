@@ -12,8 +12,7 @@
 
 #include "modules/video_coding/codecs/test/android_test_initializer.h"
 #include "rtc_base/ignore_wundef.h"
-#include "sdk/android/src/jni/classreferenceholder.h"
-#include "sdk/android/src/jni/jni_helpers.h"
+#include "sdk/android/native_api/base/init.h"
 
 // Note: this dependency is dangerous since it reaches into Chromium's base.
 // There's a risk of e.g. macro clashes. This file may only be used in tests.
@@ -40,10 +39,7 @@ void EnsureInitializedOnce() {
   JavaVM* jvm = NULL;
   RTC_CHECK_EQ(0, jni->GetJavaVM(&jvm));
 
-  jint ret = jni::InitGlobalJniVariables(jvm);
-  RTC_DCHECK_GE(ret, 0);
-
-  jni::LoadGlobalClassReferenceHolder();
+  InitAndroid(jvm);
 }
 
 }  // namespace

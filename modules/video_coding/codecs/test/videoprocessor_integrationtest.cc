@@ -15,9 +15,10 @@
 
 #if defined(WEBRTC_ANDROID)
 #include "modules/video_coding/codecs/test/android_test_initializer.h"
-#include "sdk/android/src/jni/class_loader.h"
-#include "sdk/android/src/jni/videodecoderfactorywrapper.h"
-#include "sdk/android/src/jni/videoencoderfactorywrapper.h"
+#include "sdk/android/native_api/codecs/wrapper.h"
+#include "sdk/android/native_api/jni/class_loader.h"
+#include "sdk/android/native_api/jni/jvm.h"
+#include "sdk/android/native_api/jni/scoped_java_ref.h"
 #elif defined(WEBRTC_IOS)
 #include "modules/video_coding/codecs/test/objc_codec_h264_test.h"
 #endif
@@ -375,18 +376,18 @@ void VideoProcessorIntegrationTest::CreateEncoderAndDecoder() {
   std::unique_ptr<VideoEncoderFactory> encoder_factory;
   if (config_.hw_encoder) {
 #if defined(WEBRTC_ANDROID)
-    JNIEnv* env = jni::AttachCurrentThreadIfNeeded();
-    jni::ScopedJavaLocalRef<jclass> factory_class =
-        jni::GetClass(env, "org/webrtc/HardwareVideoEncoderFactory");
+    JNIEnv* env = AttachCurrentThreadIfNeeded();
+    ScopedJavaLocalRef<jclass> factory_class =
+        GetClass(env, "org/webrtc/HardwareVideoEncoderFactory");
     jmethodID factory_constructor = env->GetMethodID(
         factory_class.obj(), "<init>", "(Lorg/webrtc/EglBase$Context;ZZ)V");
-    jni::ScopedJavaLocalRef<jobject> factory_object(
+    ScopedJavaLocalRef<jobject> factory_object(
         env, env->NewObject(factory_class.obj(), factory_constructor,
                             nullptr /* shared_context */,
                             false /* enable_intel_vp8_encoder */,
                             true /* enable_h264_high_profile */));
-    encoder_factory = rtc::MakeUnique<webrtc::jni::VideoEncoderFactoryWrapper>(
-        env, factory_object);
+    encoder_factory =
+        JavaToNativeVideoEncoderFactory(env, factory_object.obj());
 #elif defined(WEBRTC_IOS)
     EXPECT_EQ(kVideoCodecH264, config_.codec_settings.codecType)
         << "iOS HW codecs only support H264.";
@@ -401,16 +402,16 @@ void VideoProcessorIntegrationTest::CreateEncoderAndDecoder() {
   std::unique_ptr<VideoDecoderFactory> decoder_factory;
   if (config_.hw_decoder) {
 #if defined(WEBRTC_ANDROID)
-    JNIEnv* env = jni::AttachCurrentThreadIfNeeded();
-    jni::ScopedJavaLocalRef<jclass> factory_class =
-        jni::GetClass(env, "org/webrtc/HardwareVideoDecoderFactory");
+    JNIEnv* env = AttachCurrentThreadIfNeeded();
+    ScopedJavaLocalRef<jclass> factory_class =
+        GetClass(env, "org/webrtc/HardwareVideoDecoderFactory");
     jmethodID factory_constructor = env->GetMethodID(
         factory_class.obj(), "<init>", "(Lorg/webrtc/EglBase$Context;)V");
-    jni::ScopedJavaLocalRef<jobject> factory_object(
+    ScopedJavaLocalRef<jobject> factory_object(
         env, env->NewObject(factory_class.obj(), factory_constructor,
                             nullptr /* shared_context */));
-    decoder_factory = rtc::MakeUnique<webrtc::jni::VideoDecoderFactoryWrapper>(
-        env, factory_object);
+    decoder_factory =
+        JavaToNativeVideoDecoderFactory(env, factory_object.obj());
 #elif defined(WEBRTC_IOS)
     EXPECT_EQ(kVideoCodecH264, config_.codec_settings.codecType)
         << "iOS HW codecs only support H264.";

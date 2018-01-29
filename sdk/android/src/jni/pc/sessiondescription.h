@@ -15,7 +15,7 @@
 #include <memory>
 
 #include "api/jsep.h"
-#include "sdk/android/src/jni/scoped_java_ref.h"
+#include "sdk/android/native_api/jni/scoped_java_ref.h"
 
 namespace webrtc {
 namespace jni {

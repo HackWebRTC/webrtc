@@ -12,6 +12,7 @@
 
 #include "rtc_base/ptr_util.h"
 #include "sdk/android/generated_peerconnection_jni/jni/MediaStream_jni.h"
+#include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {

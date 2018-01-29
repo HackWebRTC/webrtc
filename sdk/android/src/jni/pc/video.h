@@ -15,7 +15,7 @@
 
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/thread.h"
-#include "sdk/android/src/jni/scoped_java_ref.h"
+#include "sdk/android/native_api/jni/scoped_java_ref.h"
 
 namespace cricket {
 class WebRtcVideoEncoderFactory;

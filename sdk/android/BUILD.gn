@@ -17,6 +17,7 @@ group("android") {
       ":libjingle_peerconnection_jni",
       ":libjingle_peerconnection_so",
       ":libwebrtc",
+      ":native_api",
     ]
   }
 }
@@ -37,8 +38,6 @@ generate_jni("generated_base_jni") {
   sources = [
     "src/java/org/webrtc/Histogram.java",
     "src/java/org/webrtc/JniCommon.java",
-    "src/java/org/webrtc/JniHelper.java",
-    "src/java/org/webrtc/WebRtcClassLoader.java",
   ]
   jni_package = ""
   jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
@@ -62,27 +61,46 @@ generate_jar_jni("generated_external_classes_jni") {
   jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
 }
 
+# Internal code that is needed by native_api_jni. The code cannot be placed in
+# base_jni because native_api_jni depends on the code (and base_jni depends on
+# native_api_jni).
+rtc_source_set("internal_jni") {
+  sources = [
+    "src/jni/jvm.cc",
+    "src/jni/jvm.h",
+  ]
+
+  deps = [
+    "../../rtc_base:checks",
+  ]
+
+  if (is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [
+      "//build/config/clang:extra_warnings",
+      "//build/config/clang:find_bad_constructs",
+    ]
+  }
+}
+
 rtc_source_set("base_jni") {
   visibility = [ "*" ]
   sources = [
     "src/jni/androidhistogram.cc",
-    "src/jni/class_loader.cc",
     "src/jni/class_loader.h",
     "src/jni/classreferenceholder.h",
     "src/jni/jni_common.cc",
-    "src/jni/jni_generator_helper.cc",
-    "src/jni/jni_generator_helper.h",
     "src/jni/jni_helpers.cc",
     "src/jni/jni_helpers.h",
     "src/jni/pc/audio.h",
     "src/jni/pc/media.h",
     "src/jni/pc/video.h",
-    "src/jni/scoped_java_ref.h",
   ]
 
   deps = [
     ":generated_base_jni",
-    ":generated_external_classes_jni",
+    ":internal_jni",
+    ":native_api_jni",
     "../../api:libjingle_peerconnection_api",
     "../../api:optional",
     "../../rtc_base:checks",
@@ -231,7 +249,7 @@ rtc_static_library("video_jni") {
   deps = [
     ":base_jni",
     ":generated_video_jni",
-    ":peerconnection_jni",
+    ":native_api_jni",
     "../..:webrtc_common",
     "../../api:libjingle_peerconnection_api",
     "../../api:video_frame_api",
@@ -415,6 +433,7 @@ rtc_static_library("peerconnection_jni") {
     ":base_jni",
     ":generated_external_classes_jni",
     ":generated_peerconnection_jni",
+    ":native_api_jni",
     "../..:webrtc_common",
     "../../api:libjingle_peerconnection_api",
     "../../api:peerconnection_and_implicit_call_api",
@@ -464,6 +483,7 @@ rtc_static_library("libjingle_peerconnection_metrics_default_jni") {
   deps = [
     ":base_jni",
     ":generated_metrics_jni",
+    ":native_api_jni",
     ":peerconnection_jni",
     "../../pc:peerconnection",
     "../../system_wrappers:field_trial_default",
@@ -705,4 +725,96 @@ if (rtc_include_tests) {
 
     shared_libraries = [ "../../sdk/android:libjingle_peerconnection_so" ]
   }
+}
+
+# The native API is currently experimental and may change without notice.
+group("native_api") {
+  deps = [
+    ":native_api_base",
+    ":native_api_codecs",
+    ":native_api_jni",
+  ]
+}
+
+rtc_static_library("native_api_base") {
+  visibility = [ "*" ]
+  sources = [
+    "native_api/base/init.cc",
+    "native_api/base/init.h",
+  ]
+
+  deps = [
+    ":base_jni",
+    ":native_api_jni",
+    "//rtc_base:checks",
+    "//rtc_base:rtc_base",
+  ]
+}
+
+generate_jni("generated_native_api_jni") {
+  sources = [
+    "src/java/org/webrtc/JniHelper.java",
+    "src/java/org/webrtc/WebRtcClassLoader.java",
+  ]
+  jni_package = ""
+  jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
+}
+
+# JNI helpers that are also needed from internal JNI code. Cannot depend on any
+# other JNI targets than internal_jni.
+rtc_static_library("native_api_jni") {
+  visibility = [ "*" ]
+  sources = [
+    "native_api/jni/class_loader.cc",
+    "native_api/jni/class_loader.h",
+    "native_api/jni/java_types.cc",
+    "native_api/jni/java_types.h",
+    "native_api/jni/jvm.cc",
+    "native_api/jni/jvm.h",
+    "native_api/jni/scoped_java_ref.h",
+    "src/jni/jni_generator_helper.cc",
+    "src/jni/jni_generator_helper.h",
+  ]
+
+  public = [
+    "native_api/jni/class_loader.h",
+    "native_api/jni/java_types.h",
+    "native_api/jni/jvm.h",
+    "native_api/jni/scoped_java_ref.h",
+  ]
+
+  deps = [
+    ":generated_external_classes_jni",
+    ":generated_native_api_jni",
+    ":internal_jni",
+    "//api:optional",
+    "//rtc_base:checks",
+    "//rtc_base:rtc_base_approved",
+  ]
+}
+
+# API for wrapping Java VideoDecoderFactory/VideoEncoderFactory classes to C++
+# objects.
+rtc_static_library("native_api_codecs") {
+  visibility = [ "*" ]
+  sources = [
+    "native_api/codecs/wrapper.cc",
+    "native_api/codecs/wrapper.h",
+  ]
+
+  if (is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [
+      "//build/config/clang:extra_warnings",
+      "//build/config/clang:find_bad_constructs",
+    ]
+  }
+
+  deps = [
+    ":base_jni",
+    ":video_jni",
+    "//api/video_codecs:video_codecs_api",
+    "//rtc_base:checks",
+    "//rtc_base:rtc_base_approved",
+  ]
 }

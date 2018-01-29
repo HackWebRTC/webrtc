@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 The WebRTC project authors. All Rights Reserved.
+ *  Copyright 2018 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-// Deprecated: use sdk/android/native_api/jni/class_loader.h instead.
+#include "sdk/android/native_api/base/init.h"
 
-#ifndef SDK_ANDROID_SRC_JNI_CLASS_LOADER_H_
-#define SDK_ANDROID_SRC_JNI_CLASS_LOADER_H_
-
+#include "rtc_base/checks.h"
 #include "sdk/android/native_api/jni/class_loader.h"
+#include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {
-namespace jni {
-using ::webrtc::InitClassLoader;
-}  // namespace jni
-}  // namespace webrtc
 
-#endif  // SDK_ANDROID_SRC_JNI_CLASS_LOADER_H_
+void InitAndroid(JavaVM* jvm) {
+  RTC_CHECK_GE(jni::InitGlobalJniVariables(jvm), 0);
+  InitClassLoader(jni::GetEnv());
+}
+
+}  // namespace webrtc

@@ -11,6 +11,7 @@
 #include <memory>
 
 #include "rtc_base/logging.h"
+#include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {

@@ -11,6 +11,7 @@
 #include "sdk/android/src/jni/videocodecinfo.h"
 
 #include "sdk/android/generated_video_jni/jni/VideoCodecInfo_jni.h"
+#include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {

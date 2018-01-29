@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "sdk/android/src/jni/class_loader.h"
+#include "sdk/android/native_api/jni/class_loader.h"
 
 #include <algorithm>
 #include <string>
 
 #include "rtc_base/checks.h"
-#include "sdk/android/generated_base_jni/jni/WebRtcClassLoader_jni.h"
-#include "sdk/android/src/jni/jni_helpers.h"
-#include "sdk/android/src/jni/scoped_java_ref.h"
+#include "sdk/android/generated_native_api_jni/jni/WebRtcClassLoader_jni.h"
+#include "sdk/android/native_api/jni/java_types.h"
+#include "sdk/android/native_api/jni/scoped_java_ref.h"
 
 // Abort the process if |jni| has a Java exception pending. This macros uses the
 // comma operator to execute ExceptionDescribe and ExceptionClear ignoring their
@@ -26,7 +26,6 @@
       << (jni->ExceptionDescribe(), jni->ExceptionClear(), "")
 
 namespace webrtc {
-namespace jni {
 
 namespace {
 
@@ -78,5 +77,4 @@ ScopedJavaLocalRef<jclass> GetClass(JNIEnv* env, const char* name) {
              : g_class_loader->FindClass(env, name);
 }
 
-}  // namespace jni
 }  // namespace webrtc

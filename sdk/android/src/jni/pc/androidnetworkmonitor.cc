@@ -21,6 +21,7 @@
 #include "rtc_base/ipaddress.h"
 #include "sdk/android/generated_peerconnection_jni/jni/NetworkMonitorAutoDetect_jni.h"
 #include "sdk/android/generated_peerconnection_jni/jni/NetworkMonitor_jni.h"
+#include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {

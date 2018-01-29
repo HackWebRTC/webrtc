@@ -11,18 +11,16 @@
 // Originally these classes are from Chromium.
 // https://cs.chromium.org/chromium/src/base/android/scoped_java_ref.h.
 
-#ifndef SDK_ANDROID_SRC_JNI_SCOPED_JAVA_REF_H_
-#define SDK_ANDROID_SRC_JNI_SCOPED_JAVA_REF_H_
+#ifndef SDK_ANDROID_NATIVE_API_JNI_SCOPED_JAVA_REF_H_
+#define SDK_ANDROID_NATIVE_API_JNI_SCOPED_JAVA_REF_H_
 
 #include <jni.h>
 #include <utility>
 
 #include "rtc_base/constructormagic.h"
+#include "sdk/android/native_api/jni/jvm.h"
 
 namespace webrtc {
-namespace jni {
-
-JNIEnv* AttachCurrentThreadIfNeeded();
 
 // Generic base class for ScopedJavaLocalRef and ScopedJavaGlobalRef. Useful
 // for allowing functions to accept a reference without having to mandate
@@ -199,7 +197,6 @@ class ScopedJavaGlobalRef : public JavaRef<T> {
   RTC_DISALLOW_COPY_AND_ASSIGN(ScopedJavaGlobalRef);
 };
 
-}  // namespace jni
 }  // namespace webrtc
 
-#endif  // SDK_ANDROID_SRC_JNI_SCOPED_JAVA_REF_H_
+#endif  // SDK_ANDROID_NATIVE_API_JNI_SCOPED_JAVA_REF_H_
