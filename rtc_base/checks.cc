@@ -29,6 +29,7 @@
 #elif defined(__native_client__) && __native_client__
 #define LAST_SYSTEM_ERROR (0)
 #elif defined(WEBRTC_POSIX)
+#include <errno.h>
 #define LAST_SYSTEM_ERROR (errno)
 #endif  // WEBRTC_WIN
 
