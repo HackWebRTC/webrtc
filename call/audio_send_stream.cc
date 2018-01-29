@@ -9,8 +9,7 @@
  */
 
 #include "call/audio_send_stream.h"
-
-#include <string>
+#include "rtc_base/stringencode.h"
 
 namespace webrtc {
 
@@ -66,7 +65,7 @@ std::string AudioSendStream::Config::SendCodecSpec::ToString() const {
   ss << "{nack_enabled: " << (nack_enabled ? "true" : "false");
   ss << ", transport_cc_enabled: " << (transport_cc_enabled ? "true" : "false");
   ss << ", cng_payload_type: "
-     << (cng_payload_type ? std::to_string(*cng_payload_type) : "<unset>");
+     << (cng_payload_type ? rtc::ToString(*cng_payload_type) : "<unset>");
   ss << ", payload_type: " << payload_type;
   ss << ", format: " << format;
   ss << '}';
