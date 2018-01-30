@@ -139,6 +139,9 @@ declare_args() {
   # as Chromium, must turn this flag off so that WebRTC does not also
   # initialize.
   rtc_initialize_ffmpeg = !build_with_chromium
+
+  # Disable this to build without support for built-in software codecs.
+  rtc_use_builtin_sw_codecs = true
 }
 
 if (!build_with_mozilla) {

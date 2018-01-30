@@ -12,9 +12,11 @@
 
 #import "WebRTC/RTCVideoCodec.h"
 #import "WebRTC/RTCVideoCodecH264.h"
+#if defined(USE_BUILTIN_SW_CODECS)
 #import "WebRTC/RTCVideoEncoderVP8.h"
 #if !defined(RTC_DISABLE_VP9)
 #import "WebRTC/RTCVideoEncoderVP9.h"
+#endif
 #endif
 
 @implementation RTCDefaultVideoEncoderFactory
@@ -40,29 +42,36 @@
       [[RTCVideoCodecInfo alloc] initWithName:kRTCVideoCodecH264Name
                                    parameters:constrainedBaselineParams];
 
+#if defined(USE_BUILTIN_SW_CODECS)
   RTCVideoCodecInfo *vp8Info = [[RTCVideoCodecInfo alloc] initWithName:kRTCVideoCodecVp8Name];
 
 #if !defined(RTC_DISABLE_VP9)
   RTCVideoCodecInfo *vp9Info = [[RTCVideoCodecInfo alloc] initWithName:kRTCVideoCodecVp9Name];
 #endif
-
-  return @[ constrainedHighInfo,
-            constrainedBaselineInfo,
-            vp8Info,
-#if !defined(RTC_DISABLE_VP9)
-            vp9Info
 #endif
-            ];
+
+  return @[
+    constrainedHighInfo,
+    constrainedBaselineInfo,
+#if defined(USE_BUILTIN_SW_CODECS)
+    vp8Info,
+#if !defined(RTC_DISABLE_VP9)
+    vp9Info,
+#endif
+#endif
+  ];
 }
 
 - (id<RTCVideoEncoder>)createEncoder:(RTCVideoCodecInfo *)info {
   if ([info.name isEqualToString:kRTCVideoCodecH264Name]) {
     return [[RTCVideoEncoderH264 alloc] initWithCodecInfo:info];
+#if defined(USE_BUILTIN_SW_CODECS)
   } else if ([info.name isEqualToString:kRTCVideoCodecVp8Name]) {
     return [RTCVideoEncoderVP8 vp8Encoder];
 #if !defined(RTC_DISABLE_VP9)
   } else if ([info.name isEqualToString:kRTCVideoCodecVp9Name]) {
     return [RTCVideoEncoderVP9 vp9Encoder];
+#endif
 #endif
   }
 

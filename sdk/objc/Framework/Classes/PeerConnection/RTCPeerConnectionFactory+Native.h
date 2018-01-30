@@ -23,12 +23,14 @@ class AudioProcessing;
 
 }  // namespace webrtc
 
+#if defined(USE_BUILTIN_SW_CODECS)
 namespace cricket {
 
 class WebRtcVideoEncoderFactory;
 class WebRtcVideoDecoderFactory;
 
 }  // namespace cricket
+#endif
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -56,6 +58,7 @@ NS_ASSUME_NONNULL_BEGIN
                             audioProcessingModule:
                                 (rtc::scoped_refptr<webrtc::AudioProcessing>)audioProcessingModule;
 
+#if defined(USE_BUILTIN_SW_CODECS)
 /* Initialize object with legacy injectable native audio/video encoder/decoder factories
    TODO(andersc): Remove this when backwards compatiblity is no longer needed.
  */
@@ -67,6 +70,7 @@ NS_ASSUME_NONNULL_BEGIN
       legacyNativeVideoEncoderFactory:(cricket::WebRtcVideoEncoderFactory*)videoEncoderFactory
       legacyNativeVideoDecoderFactory:(cricket::WebRtcVideoDecoderFactory*)videoDecoderFactory
                     audioDeviceModule:(nullable webrtc::AudioDeviceModule *)audioDeviceModule;
+#endif
 
 @end
 

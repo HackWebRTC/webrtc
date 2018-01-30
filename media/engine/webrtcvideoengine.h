@@ -96,11 +96,13 @@ class DefaultUnsignalledSsrcHandler : public UnsignalledSsrcHandler {
 // WebRtcVideoEngine is used for the new native WebRTC Video API (webrtc:1667).
 class WebRtcVideoEngine {
  public:
+#if defined(USE_BUILTIN_SW_CODECS)
   // Internal SW video codecs will be added on top of the external codecs.
   WebRtcVideoEngine(
       std::unique_ptr<WebRtcVideoEncoderFactory> external_video_encoder_factory,
       std::unique_ptr<WebRtcVideoDecoderFactory>
           external_video_decoder_factory);
+#endif
 
   // These video codec factories represents all video codecs, i.e. both software
   // and external hardware codecs.

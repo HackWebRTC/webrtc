@@ -22,6 +22,7 @@
 
 namespace webrtc {
 
+#if defined(USE_BUILTIN_SW_CODECS)
 rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
     rtc::scoped_refptr<AudioEncoderFactory> audio_encoder_factory,
     rtc::scoped_refptr<AudioDecoderFactory> audio_decoder_factory) {
@@ -66,6 +67,7 @@ rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
       network_thread, worker_thread, signaling_thread, std::move(media_engine),
       std::move(call_factory), std::move(event_log_factory));
 }
+#endif
 
 rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
     rtc::Thread* network_thread,
@@ -97,6 +99,7 @@ rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
       std::move(call_factory), std::move(event_log_factory));
 }
 
+#if defined(USE_BUILTIN_SW_CODECS)
 rtc::scoped_refptr<PeerConnectionFactoryInterface>
 CreatePeerConnectionFactoryWithAudioMixer(
     rtc::Thread* network_thread,
@@ -128,5 +131,6 @@ rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
       audio_encoder_factory, audio_decoder_factory, video_encoder_factory,
       video_decoder_factory, nullptr);
 }
+#endif
 
 }  // namespace webrtc

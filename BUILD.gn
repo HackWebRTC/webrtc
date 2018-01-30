@@ -212,6 +212,10 @@ config("common_config") {
     defines += [ "ENABLE_EXTERNAL_AUTH" ]
   }
 
+  if (rtc_use_builtin_sw_codecs) {
+    defines += [ "USE_BUILTIN_SW_CODECS" ]
+  }
+
   if (build_with_chromium) {
     defines += [
       # NOTICE: Since common_inherited_config is used in public_configs for our

@@ -30,6 +30,7 @@ RtcEventLogFactoryInterface* CreateRtcEventLogFactory() {
   return webrtc::CreateRtcEventLogFactory().release();
 }
 
+#if defined(USE_BUILTIN_SW_CODECS)
 cricket::MediaEngineInterface* CreateMediaEngine(
     AudioDeviceModule* adm,
     const rtc::scoped_refptr<AudioEncoderFactory>& audio_encoder_factory,
@@ -42,6 +43,7 @@ cricket::MediaEngineInterface* CreateMediaEngine(
       adm, audio_encoder_factory, audio_decoder_factory, video_encoder_factory,
       video_decoder_factory, audio_mixer, audio_processor);
 }
+#endif
 
 cricket::MediaEngineInterface* CreateMediaEngine(
     rtc::scoped_refptr<AudioDeviceModule> adm,

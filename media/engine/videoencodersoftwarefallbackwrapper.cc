@@ -14,7 +14,6 @@
 #include <utility>
 
 #include "media/base/h264_profile_level_id.h"
-#include "media/engine/internalencoderfactory.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"

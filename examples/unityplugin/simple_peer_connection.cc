@@ -18,7 +18,7 @@
 #include "api/videosourceproxy.h"
 #include "media/engine/internaldecoderfactory.h"
 #include "media/engine/internalencoderfactory.h"
-#include "media/engine/stereocodecfactory.h"
+#include "media/engine/multiplexcodecfactory.h"
 #include "media/engine/webrtcvideocapturerfactory.h"
 #include "media/engine/webrtcvideodecoderfactory.h"
 #include "media/engine/webrtcvideoencoderfactory.h"
@@ -104,10 +104,10 @@ bool SimplePeerConnection::InitializePeerConnection(const char** turn_urls,
         nullptr, webrtc::CreateBuiltinAudioEncoderFactory(),
         webrtc::CreateBuiltinAudioDecoderFactory(),
         std::unique_ptr<webrtc::VideoEncoderFactory>(
-            new webrtc::StereoEncoderFactory(
+            new webrtc::MultiplexEncoderFactory(
                 rtc::MakeUnique<webrtc::InternalEncoderFactory>())),
         std::unique_ptr<webrtc::VideoDecoderFactory>(
-            new webrtc::StereoDecoderFactory(
+            new webrtc::MultiplexDecoderFactory(
                 rtc::MakeUnique<webrtc::InternalDecoderFactory>())),
         nullptr, nullptr);
   }
