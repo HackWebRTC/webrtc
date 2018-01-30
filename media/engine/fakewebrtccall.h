@@ -100,7 +100,6 @@ class FakeAudioReceiveStream final : public webrtc::AudioReceiveStream {
   void Stop() override { started_ = false; }
 
   webrtc::AudioReceiveStream::Stats GetStats() const override;
-  int GetOutputLevel() const override { return 0; }
   void SetSink(webrtc::AudioSinkInterface* sink) override;
   void SetGain(float gain) override;
   std::vector<webrtc::RtpSource> GetSources() const override {

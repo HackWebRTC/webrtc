@@ -149,9 +149,6 @@ AudioState::Stats AudioState::GetAudioInputStats() const {
   result.audio_level = audio_level.LevelFullRange();
   RTC_DCHECK_LE(0, result.audio_level);
   RTC_DCHECK_GE(32767, result.audio_level);
-  result.quantized_audio_level = audio_level.Level();
-  RTC_DCHECK_LE(0, result.quantized_audio_level);
-  RTC_DCHECK_GE(9, result.quantized_audio_level);
   result.total_energy = audio_level.TotalEnergy();
   result.total_duration = audio_level.TotalDuration();
   return result;

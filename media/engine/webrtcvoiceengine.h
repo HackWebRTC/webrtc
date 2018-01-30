@@ -59,8 +59,6 @@ class WebRtcVoiceEngine final {
                                    const MediaConfig& config,
                                    const AudioOptions& options);
 
-  int GetInputLevel();
-
   const std::vector<AudioCodec>& send_codecs() const;
   const std::vector<AudioCodec>& recv_codecs() const;
   RtpCapabilities GetCapabilities() const;
@@ -174,8 +172,6 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   bool RemoveSendStream(uint32_t ssrc) override;
   bool AddRecvStream(const StreamParams& sp) override;
   bool RemoveRecvStream(uint32_t ssrc) override;
-  bool GetActiveStreams(StreamList* actives) override;
-  int GetOutputLevel() override;
   // SSRC=0 will apply the new volume to current and future unsignaled streams.
   bool SetOutputVolume(uint32_t ssrc, double volume) override;
 

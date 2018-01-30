@@ -593,12 +593,6 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   return true;
 }
 
-// TODO(solenberg): Remove, once AudioMonitor is gone.
-int WebRtcVoiceEngine::GetInputLevel() {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  return audio_state()->GetAudioInputStats().quantized_audio_level;
-}
-
 const std::vector<AudioCodec>& WebRtcVoiceEngine::send_codecs() const {
   RTC_DCHECK(signal_thread_checker_.CalledOnValidThread());
   return send_codecs_;
@@ -1191,12 +1185,6 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
     RTC_DCHECK(stream_);
     return stream_->GetStats();
-  }
-
-  int GetOutputLevel() const {
-    RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-    RTC_DCHECK(stream_);
-    return stream_->GetOutputLevel();
   }
 
   void SetRawAudioSink(std::unique_ptr<webrtc::AudioSinkInterface> sink) {
@@ -1921,30 +1909,6 @@ bool WebRtcVoiceMediaChannel::SetLocalSource(uint32_t ssrc,
   }
 
   return true;
-}
-
-// TODO(solenberg): Remove, once AudioMonitor is gone.
-bool WebRtcVoiceMediaChannel::GetActiveStreams(
-    AudioInfo::StreamList* actives) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  actives->clear();
-  for (const auto& ch : recv_streams_) {
-    int level = ch.second->GetOutputLevel();
-    if (level > 0) {
-      actives->push_back(std::make_pair(ch.first, level));
-    }
-  }
-  return true;
-}
-
-// TODO(solenberg): Remove, once AudioMonitor is gone.
-int WebRtcVoiceMediaChannel::GetOutputLevel() {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  int highest = 0;
-  for (const auto& ch : recv_streams_) {
-    highest = std::max(ch.second->GetOutputLevel(), highest);
-  }
-  return highest;
 }
 
 bool WebRtcVoiceMediaChannel::SetOutputVolume(uint32_t ssrc, double volume) {

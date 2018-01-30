@@ -29,7 +29,6 @@ rtc_static_library("rtc_pc_base") {
   visibility = [ "*" ]
   defines = []
   sources = [
-    "audiomonitor.cc",
     "audiomonitor.h",
     "bundlefilter.cc",
     "bundlefilter.h",
@@ -65,7 +64,6 @@ rtc_static_library("rtc_pc_base") {
     "srtptransport.h",
     "transportcontroller.cc",
     "transportcontroller.h",
-    "voicechannel.h",
   ]
 
   deps = [

@@ -234,7 +234,6 @@ TEST(AudioStateTest, InputLevelStats) {
         kNumChannels, kSampleRate, 0, 0, 0, false, new_mic_level);
     auto stats = audio_state->GetAudioInputStats();
     EXPECT_EQ(0, stats.audio_level);
-    EXPECT_EQ(0, stats.quantized_audio_level);
     EXPECT_THAT(stats.total_energy, testing::DoubleEq(0.0));
     EXPECT_THAT(stats.total_duration, testing::DoubleEq(0.01));
   }
@@ -250,7 +249,6 @@ TEST(AudioStateTest, InputLevelStats) {
     }
     auto stats = audio_state->GetAudioInputStats();
     EXPECT_EQ(32767, stats.audio_level);
-    EXPECT_EQ(9, stats.quantized_audio_level);
     EXPECT_THAT(stats.total_energy, testing::DoubleEq(0.01));
     EXPECT_THAT(stats.total_duration, testing::DoubleEq(0.11));
   }

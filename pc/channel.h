@@ -471,14 +471,6 @@ class VoiceChannel : public BaseChannel {
   // Get statistics about the current media session.
   bool GetStats(VoiceMediaInfo* stats);
 
-  // Monitoring functions
-  void StartAudioMonitor(int cms);
-  void StopAudioMonitor();
-  bool IsAudioMonitorRunning() const;
-
-  int GetInputLevel_w();
-  int GetOutputLevel_w();
-  void GetActiveStreams_w(AudioInfo::StreamList* actives);
   webrtc::RtpParameters GetRtpSendParameters_w(uint32_t ssrc) const;
   webrtc::RTCError SetRtpSendParameters_w(uint32_t ssrc,
                                           webrtc::RtpParameters parameters);
@@ -501,9 +493,7 @@ class VoiceChannel : public BaseChannel {
   void OnMessage(rtc::Message* pmsg) override;
 
   static const int kEarlyMediaTimeout = 1000;
-  MediaEngineInterface* media_engine_;
   bool received_media_ = false;
-  std::unique_ptr<AudioMonitor> audio_monitor_;
 
   // Last AudioSendParameters sent down to the media_channel() via
   // SetSendParameters.

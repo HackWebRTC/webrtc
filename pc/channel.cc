@@ -1134,7 +1134,8 @@ void BaseChannel::ActivateRtcpMux() {
 VoiceChannel::VoiceChannel(rtc::Thread* worker_thread,
                            rtc::Thread* network_thread,
                            rtc::Thread* signaling_thread,
-                           MediaEngineInterface* media_engine,
+                           // TODO(nisse): Delete unused argument.
+                           MediaEngineInterface* /* media_engine */,
                            std::unique_ptr<VoiceMediaChannel> media_channel,
                            const std::string& content_name,
                            bool rtcp_mux_required,
@@ -1145,12 +1146,10 @@ VoiceChannel::VoiceChannel(rtc::Thread* worker_thread,
                   std::move(media_channel),
                   content_name,
                   rtcp_mux_required,
-                  srtp_required),
-      media_engine_(media_engine) {}
+                  srtp_required) {}
 
 VoiceChannel::~VoiceChannel() {
   TRACE_EVENT0("webrtc", "VoiceChannel::~VoiceChannel");
-  StopAudioMonitor();
   // this can't be done in the base class, since it calls a virtual
   DisableMedia_w();
   Deinit();
@@ -1184,34 +1183,6 @@ void VoiceChannel::SetEarlyMedia(bool enable) {
 bool VoiceChannel::GetStats(VoiceMediaInfo* stats) {
   return InvokeOnWorker<bool>(RTC_FROM_HERE, Bind(&VoiceMediaChannel::GetStats,
                                                   media_channel(), stats));
-}
-
-void VoiceChannel::StartAudioMonitor(int cms) {
-  audio_monitor_.reset(new AudioMonitor(this, rtc::Thread::Current()));
-  audio_monitor_->Start(cms);
-}
-
-void VoiceChannel::StopAudioMonitor() {
-  if (audio_monitor_) {
-    audio_monitor_->Stop();
-    audio_monitor_.reset();
-  }
-}
-
-bool VoiceChannel::IsAudioMonitorRunning() const {
-  return (audio_monitor_.get() != NULL);
-}
-
-int VoiceChannel::GetInputLevel_w() {
-  return media_engine_->GetInputLevel();
-}
-
-int VoiceChannel::GetOutputLevel_w() {
-  return media_channel()->GetOutputLevel();
-}
-
-void VoiceChannel::GetActiveStreams_w(AudioInfo::StreamList* actives) {
-  media_channel()->GetActiveStreams(actives);
 }
 
 void VoiceChannel::OnPacketReceived(bool rtcp,

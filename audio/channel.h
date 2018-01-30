@@ -34,6 +34,10 @@
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread_checker.h"
 
+// TODO(solenberg, nisse): This file contains a few NOLINT marks, to silence
+// warnings about use of unsigned short, and non-const reference arguments.
+// These need cleanup, in a separate cl.
+
 namespace rtc {
 class TimestampWrapAroundHandler;
 }
@@ -57,7 +61,7 @@ class TelephoneEventHandler;
 struct SenderInfo;
 
 struct CallStatistics {
-  unsigned short fractionLost;
+  unsigned short fractionLost;  // NOLINT
   unsigned int cumulativeLost;
   unsigned int extendedMax;
   unsigned int jitterSamples;
@@ -174,7 +178,7 @@ class Channel
   void StopSend();
 
   // Codecs
-  int32_t GetRecCodec(CodecInst& codec);
+  int32_t GetRecCodec(CodecInst& codec);  // NOLINT
   void SetBitRate(int bitrate_bps, int64_t probing_interval_ms);
   bool EnableAudioNetworkAdaptor(const std::string& config_string);
   void DisableAudioNetworkAdaptor();
@@ -190,7 +194,6 @@ class Channel
   // Muting, Volume and Level.
   void SetInputMute(bool enable);
   void SetChannelOutputVolumeScaling(float scaling);
-  int GetSpeechOutputLevel() const;
   int GetSpeechOutputLevelFullRange() const;
   // See description of "totalAudioEnergy" in the WebRTC stats spec:
   // https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats-totalaudioenergy
@@ -198,14 +201,14 @@ class Channel
   double GetTotalOutputDuration() const;
 
   // Stats.
-  int GetNetworkStatistics(NetworkStatistics& stats);
+  int GetNetworkStatistics(NetworkStatistics& stats);  // NOLINT
   void GetDecodingCallStatistics(AudioDecodingCallStats* stats) const;
   ANAStats GetANAStatistics() const;
 
   // Audio+Video Sync.
   uint32_t GetDelayEstimate() const;
   int SetMinimumPlayoutDelay(int delayMs);
-  int GetPlayoutTimestamp(unsigned int& timestamp);
+  int GetPlayoutTimestamp(unsigned int& timestamp);  // NOLINT
   int GetRtpRtcp(RtpRtcp** rtpRtcpModule, RtpReceiver** rtp_receiver) const;
 
   // DTMF.
@@ -226,7 +229,7 @@ class Channel
   void SetRTCPStatus(bool enable);
   int SetRTCP_CNAME(const char cName[256]);
   int GetRemoteRTCPReportBlocks(std::vector<ReportBlock>* report_blocks);
-  int GetRTPStatistics(CallStatistics& stats);
+  int GetRTPStatistics(CallStatistics& stats);  // NOLINT
   void SetNACKStatus(bool enable, int maxNumberOfPackets);
 
   // From AudioPacketizationCallback in the ACM
@@ -265,7 +268,6 @@ class Channel
   bool Playing() const { return channel_state_.Get().playing; }
   bool Sending() const { return channel_state_.Get().sending; }
   RtpRtcp* RtpRtcpModulePtr() const { return _rtpRtcpModule.get(); }
-  int8_t OutputEnergyLevel() const { return _outputAudioLevel.Level(); }
 
   // ProcessAndEncodeAudio() posts a task on the shared encoder task queue,
   // which in turn calls (on the queue) ProcessAndEncodeAudioOnTaskQueue() where
@@ -309,7 +311,7 @@ class Channel
   void Init();
   void Terminate();
 
-  int GetRemoteSSRC(unsigned int& ssrc);
+  int GetRemoteSSRC(unsigned int& ssrc);  // NOLINT
   void OnUplinkPacketLossRate(float packet_loss_rate);
   bool InputMute() const;
 

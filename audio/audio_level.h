@@ -25,8 +25,7 @@ class AudioLevel {
   ~AudioLevel();
 
   // Called on "API thread(s)" from APIs like VoEBase::CreateChannel(),
-  // VoEBase::StopSend(), VoEVolumeControl::GetSpeechOutputLevel().
-  int8_t Level() const;
+  // VoEBase::StopSend()
   int16_t LevelFullRange() const;
   void Clear();
   // See the description for "totalAudioEnergy" in the WebRTC stats spec
@@ -46,7 +45,6 @@ class AudioLevel {
 
   int16_t abs_max_ RTC_GUARDED_BY(crit_sect_);
   int16_t count_ RTC_GUARDED_BY(crit_sect_);
-  int8_t current_level_ RTC_GUARDED_BY(crit_sect_);
   int16_t current_level_full_range_ RTC_GUARDED_BY(crit_sect_);
 
   double total_energy_ RTC_GUARDED_BY(crit_sect_) = 0.0;

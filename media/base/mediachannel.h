@@ -670,11 +670,6 @@ class VoiceMediaChannel : public MediaChannel {
                             bool enable,
                             const AudioOptions* options,
                             AudioSource* source) = 0;
-  // Gets current energy levels for all incoming streams.
-  typedef std::vector<std::pair<uint32_t, int>> StreamList;
-  virtual bool GetActiveStreams(StreamList* actives) = 0;
-  // Get the current energy level of the stream sent to the speaker.
-  virtual int GetOutputLevel() = 0;
   // Set speaker output volume of the specified ssrc.
   virtual bool SetOutputVolume(uint32_t ssrc, double volume) = 0;
   // Returns if the telephone-event has been negotiated.

@@ -16,24 +16,12 @@
 namespace webrtc {
 namespace voe {
 
-// Number of bars on the indicator.
-// Note that the number of elements is specified because we are indexing it
-// in the range of 0-32
-constexpr int8_t kPermutation[33] = {0, 1, 2, 3, 4, 4, 5, 5, 5, 5, 6,
-                                     6, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8,
-                                     9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9};
-
 AudioLevel::AudioLevel()
-    : abs_max_(0), count_(0), current_level_(0), current_level_full_range_(0) {
+    : abs_max_(0), count_(0), current_level_full_range_(0) {
   WebRtcSpl_Init();
 }
 
 AudioLevel::~AudioLevel() {}
-
-int8_t AudioLevel::Level() const {
-  rtc::CritScope cs(&crit_sect_);
-  return current_level_;
-}
 
 int16_t AudioLevel::LevelFullRange() const {
   rtc::CritScope cs(&crit_sect_);
@@ -44,7 +32,6 @@ void AudioLevel::Clear() {
   rtc::CritScope cs(&crit_sect_);
   abs_max_ = 0;
   count_ = 0;
-  current_level_ = 0;
   current_level_full_range_ = 0;
 }
 
@@ -77,18 +64,6 @@ void AudioLevel::ComputeLevel(const AudioFrame& audioFrame, double duration) {
     current_level_full_range_ = abs_max_;
 
     count_ = 0;
-
-    // Highest value for a int16_t is 0x7fff = 32767
-    // Divide with 1000 to get in the range of 0-32 which is the range of the
-    // permutation vector
-    int32_t position = abs_max_ / 1000;
-
-    // Make it less likely that the bar stays at position 0. I.e. only if it's
-    // in the range 0-250 (instead of 0-1000)
-    if ((position == 0) && (abs_max_ > 250)) {
-      position = 1;
-    }
-    current_level_ = kPermutation[position];
 
     // Decay the absolute maximum (divide by 4)
     abs_max_ >>= 2;

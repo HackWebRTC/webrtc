@@ -1011,10 +1011,6 @@ int32_t Channel::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
   return 0;
 }
 
-int Channel::GetSpeechOutputLevel() const {
-  return _outputAudioLevel.Level();
-}
-
 int Channel::GetSpeechOutputLevelFullRange() const {
   return _outputAudioLevel.LevelFullRange();
 }

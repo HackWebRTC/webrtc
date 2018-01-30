@@ -137,11 +137,6 @@ ANAStats ChannelProxy::GetANAStatistics() const {
   return channel_->GetANAStatistics();
 }
 
-int ChannelProxy::GetSpeechOutputLevel() const {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  return channel_->GetSpeechOutputLevel();
-}
-
 int ChannelProxy::GetSpeechOutputLevelFullRange() const {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   return channel_->GetSpeechOutputLevelFullRange();
