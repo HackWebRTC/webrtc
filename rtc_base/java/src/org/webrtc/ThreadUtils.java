@@ -143,17 +143,6 @@ public class ThreadUtils {
     return result;
   }
 
-  // TODO(sakal): This method is broken. It should be removed: crbug.com/webrtc/8456
-  @SuppressWarnings("WaitNotInLoop")
-  public static void waitUninterruptibly(final Object object) {
-    executeUninterruptibly(new BlockingOperation() {
-      @Override
-      public void run() throws InterruptedException {
-        object.wait();
-      }
-    });
-  }
-
   /**
    * Post |callable| to |handler| and wait for the result.
    */

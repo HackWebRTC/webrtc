@@ -350,7 +350,13 @@ abstract class CameraCapturer implements CameraVideoCapturer {
     synchronized (stateLock) {
       while (sessionOpening) {
         Logging.d(TAG, "Stop capture: Waiting for session to open");
-        ThreadUtils.waitUninterruptibly(stateLock);
+        try {
+          stateLock.wait();
+        } catch (InterruptedException e) {
+          Logging.w(TAG, "Stop capture interrupted while waiting for the session to open.");
+          Thread.currentThread().interrupt();
+          return;
+        }
       }
 
       if (currentSession != null) {
