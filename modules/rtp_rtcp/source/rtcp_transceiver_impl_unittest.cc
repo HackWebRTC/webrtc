@@ -569,6 +569,7 @@ TEST(RtcpTransceiverImplTest,
 
   RtcpTransceiverConfig config;
   config.schedule_periodic_compound_packets = false;
+  config.avoid_zero_last_sr_in_last_report_block = false;
   RtcpPacketParser rtcp_parser;
   RtcpParserTransport transport(&rtcp_parser);
   config.outgoing_transport = &transport;
@@ -576,9 +577,9 @@ TEST(RtcpTransceiverImplTest,
   RtcpTransceiverImpl rtcp_transceiver(config);
 
   const NtpTime kRemoteNtp(0x9876543211);
-  // Receive SenderReport for RemoteSsrc2, but no report for RemoteSsrc1.
+  // Receive SenderReport for RemoteSsrc1, but no report for RemoteSsrc2.
   SenderReport sr;
-  sr.SetSenderSsrc(kRemoteSsrc2);
+  sr.SetSenderSsrc(kRemoteSsrc1);
   sr.SetNtp(kRemoteNtp);
   auto raw_packet = sr.Build();
   rtcp_transceiver.ReceivePacket(raw_packet, /*now_us=*/0);
@@ -593,11 +594,57 @@ TEST(RtcpTransceiverImplTest,
   // match result of ReceiveStatisticsProvider::RtcpReportBlocks callback,
   // but for simplicity of the test asume it is the same.
   ASSERT_EQ(report_blocks[0].source_ssrc(), kRemoteSsrc1);
-  // No matching Sender Report for kRemoteSsrc1, LastSR fields has to be 0.
-  EXPECT_EQ(report_blocks[0].last_sr(), 0u);
+  EXPECT_EQ(report_blocks[0].last_sr(), CompactNtp(kRemoteNtp));
 
   ASSERT_EQ(report_blocks[1].source_ssrc(), kRemoteSsrc2);
-  EXPECT_EQ(report_blocks[1].last_sr(), CompactNtp(kRemoteNtp));
+  // No matching Sender Report for kRemoteSsrc2, LastSR fields has to be 0.
+  EXPECT_EQ(report_blocks[1].last_sr(), 0u);
+}
+
+TEST(RtcpTransceiverImplTest, AvoidLastReportBlockToHaveZeroLastSrField) {
+  const uint32_t kRemoteSsrc1 = 54321;
+  const uint32_t kRemoteSsrc2 = 54323;
+  MockReceiveStatisticsProvider receive_statistics;
+  std::vector<ReportBlock> statistics_report_blocks(2);
+  statistics_report_blocks[0].SetMediaSsrc(kRemoteSsrc1);
+  statistics_report_blocks[1].SetMediaSsrc(kRemoteSsrc2);
+  ON_CALL(receive_statistics, RtcpReportBlocks(_))
+      .WillByDefault(Return(statistics_report_blocks));
+
+  RtcpTransceiverConfig config;
+  config.schedule_periodic_compound_packets = false;
+  config.avoid_zero_last_sr_in_last_report_block = true;
+  RtcpPacketParser rtcp_parser;
+  RtcpParserTransport transport(&rtcp_parser);
+  config.outgoing_transport = &transport;
+  config.receive_statistics = &receive_statistics;
+  RtcpTransceiverImpl rtcp_transceiver(config);
+
+  const NtpTime kRemoteNtp(0x9876543211);
+  // Receive SenderReport for RemoteSsrc1, but no report for RemoteSsrc2.
+  SenderReport sr;
+  sr.SetSenderSsrc(kRemoteSsrc1);
+  sr.SetNtp(kRemoteNtp);
+  auto raw_packet = sr.Build();
+  rtcp_transceiver.ReceivePacket(raw_packet, /*now_us=*/0);
+
+  // Trigger sending ReceiverReport.
+  rtcp_transceiver.SendCompoundPacket();
+
+  EXPECT_GT(rtcp_parser.receiver_report()->num_packets(), 0);
+  const auto& report_blocks = rtcp_parser.receiver_report()->report_blocks();
+  ASSERT_EQ(report_blocks.size(), 2u);
+  // RtcpTransceiverImpl doesn't guarantee order of the report blocks
+  // match result of ReceiveStatisticsProvider::RtcpReportBlocks callback,
+  // but for simplicity of the test asume it is the same.
+  ASSERT_EQ(report_blocks[0].source_ssrc(), kRemoteSsrc1);
+  EXPECT_NE(report_blocks[0].last_sr(), 0u);
+
+  ASSERT_EQ(report_blocks[1].source_ssrc(), kRemoteSsrc2);
+  // No Sender Report for kRemoteSsrc2, use same LastSR as for kRemoteSsrc1
+  EXPECT_EQ(report_blocks[1].last_sr(), report_blocks[0].last_sr());
+  EXPECT_EQ(report_blocks[1].delay_since_last_sr(),
+            report_blocks[0].delay_since_last_sr());
 }
 
 TEST(RtcpTransceiverImplTest,

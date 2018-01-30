@@ -402,15 +402,27 @@ std::vector<rtcp::ReportBlock> RtcpTransceiverImpl::CreateReportBlocks(
   std::vector<rtcp::ReportBlock> report_blocks =
       config_.receive_statistics->RtcpReportBlocks(
           rtcp::ReceiverReport::kMaxNumberOfReportBlocks);
+  uint32_t last_sr = 0;
+  uint32_t last_delay = 0;
   for (rtcp::ReportBlock& report_block : report_blocks) {
     auto it = remote_senders_.find(report_block.source_ssrc());
-    if (it == remote_senders_.end() || !it->second.last_received_sender_report)
+    if (it == remote_senders_.end() ||
+        !it->second.last_received_sender_report) {
+      if (config_.avoid_zero_last_sr_in_last_report_block && last_sr != 0) {
+        // Simulate behaviour of the RtcpSender to avoid hitting bug in
+        // RtcpReceiver.
+        report_block.SetLastSr(last_sr);
+        report_block.SetDelayLastSr(last_delay);
+      }
       continue;
+    }
     const SenderReportTimes& last_sender_report =
         *it->second.last_received_sender_report;
-    report_block.SetLastSr(CompactNtp(last_sender_report.remote_sent_time));
-    report_block.SetDelayLastSr(SaturatedUsToCompactNtp(
-        now_us - last_sender_report.local_received_time_us));
+    last_sr = CompactNtp(last_sender_report.remote_sent_time);
+    last_delay = SaturatedUsToCompactNtp(
+        now_us - last_sender_report.local_received_time_us);
+    report_block.SetLastSr(last_sr);
+    report_block.SetDelayLastSr(last_delay);
   }
   return report_blocks;
 }
