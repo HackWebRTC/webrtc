@@ -497,7 +497,7 @@ public class WebRtcAudioTrack {
   private void reportWebRtcAudioTrackInitError(String errorMessage) {
     Logging.e(TAG, "Init playout error: " + errorMessage);
     WebRtcAudioUtils.logAudioState(TAG);
-    if (errorCallback != null) {
+    if (errorCallbackOld != null) {
       errorCallbackOld.onWebRtcAudioTrackInitError(errorMessage);
     }
     if (errorCallback != null) {
@@ -509,7 +509,7 @@ public class WebRtcAudioTrack {
       AudioTrackStartErrorCode errorCode, String errorMessage) {
     Logging.e(TAG, "Start playout error: "  + errorCode + ". " + errorMessage);
     WebRtcAudioUtils.logAudioState(TAG);
-    if (errorCallback != null) {
+    if (errorCallbackOld != null) {
       errorCallbackOld.onWebRtcAudioTrackStartError(errorMessage);
     }
     if (errorCallback != null) {
@@ -520,7 +520,7 @@ public class WebRtcAudioTrack {
   private void reportWebRtcAudioTrackError(String errorMessage) {
     Logging.e(TAG, "Run-time playback error: " + errorMessage);
     WebRtcAudioUtils.logAudioState(TAG);
-    if (errorCallback != null) {
+    if (errorCallbackOld != null) {
       errorCallbackOld.onWebRtcAudioTrackError(errorMessage);
     }
     if (errorCallback != null) {
