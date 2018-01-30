@@ -2082,10 +2082,12 @@ bool MediaSessionDescriptionFactory::AddAudioContentForAnswer(
                   offer_content->rejected ||
                   !IsMediaProtocolSupported(MEDIA_TYPE_AUDIO,
                                             audio_answer->protocol(), secure);
-  if (!rejected) {
-    AddTransportAnswer(media_description_options.mid, *(audio_transport.get()),
-                       answer);
-  } else {
+  if (!AddTransportAnswer(media_description_options.mid,
+                          *(audio_transport.get()), answer)) {
+    return false;
+  }
+
+  if (rejected) {
     RTC_LOG(LS_INFO) << "Audio m= section '" << media_description_options.mid
                      << "' being rejected in answer.";
   }
@@ -2164,11 +2166,12 @@ bool MediaSessionDescriptionFactory::AddVideoContentForAnswer(
                   offer_content->rejected ||
                   !IsMediaProtocolSupported(MEDIA_TYPE_VIDEO,
                                             video_answer->protocol(), secure);
+  if (!AddTransportAnswer(media_description_options.mid,
+                          *(video_transport.get()), answer)) {
+    return false;
+  }
+
   if (!rejected) {
-    if (!AddTransportAnswer(media_description_options.mid,
-                            *(video_transport.get()), answer)) {
-      return false;
-    }
     video_answer->set_bandwidth(kAutoBandwidth);
   } else {
     RTC_LOG(LS_INFO) << "Video m= section '" << media_description_options.mid
@@ -2228,12 +2231,13 @@ bool MediaSessionDescriptionFactory::AddDataContentForAnswer(
                   offer_content->rejected ||
                   !IsMediaProtocolSupported(MEDIA_TYPE_DATA,
                                             data_answer->protocol(), secure);
+  if (!AddTransportAnswer(media_description_options.mid,
+                          *(data_transport.get()), answer)) {
+    return false;
+  }
+
   if (!rejected) {
     data_answer->set_bandwidth(kDataMaxBandwidth);
-    if (!AddTransportAnswer(media_description_options.mid,
-                            *(data_transport.get()), answer)) {
-      return false;
-    }
   } else {
     // RFC 3264
     // The answer MUST contain the same number of m-lines as the offer.

@@ -3196,6 +3196,10 @@ TEST_F(MediaSessionDescriptionFactoryTest,
   ASSERT_EQ(2u, answer->contents().size());
   EXPECT_FALSE(answer->contents()[0].rejected);
   EXPECT_TRUE(answer->contents()[1].rejected);
+
+  // The TransportInfo of the rejected m= section is expected to be added in the
+  // answer.
+  EXPECT_EQ(offer->transport_infos().size(), answer->transport_infos().size());
 }
 
 // Test the generated media sections has the same order of the
