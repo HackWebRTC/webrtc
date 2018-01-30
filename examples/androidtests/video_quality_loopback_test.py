@@ -86,6 +86,8 @@ def _ParseArgs():
   parser.add_argument('--temp_dir',
       help='A temporary directory to put the output.')
   parser.add_argument('--adb-path', help='Path to adb binary.', default='adb')
+  parser.add_argument('--chartjson-result-file',
+      help='Where to store perf results in chartjson format.', default=None)
 
   args = parser.parse_args()
   return args
@@ -148,7 +150,8 @@ def SetUpTools(android_device, temp_dir, processes):
       '8089']))
 
 
-def RunTest(android_device, adb_path, build_dir, temp_dir):
+def RunTest(android_device, adb_path, build_dir, temp_dir,
+            chartjson_result_file):
   ffmpeg_path = os.path.join(TOOLCHAIN_DIR, 'ffmpeg')
   def ConvertVideo(input_video, output_video):
     _RunCommand([ffmpeg_path, '-y', '-i', input_video, output_video])
@@ -181,8 +184,7 @@ def RunTest(android_device, adb_path, build_dir, temp_dir):
   stats_file_ref = os.path.join(temp_dir, 'stats_ref.txt')
   stats_file_test = os.path.join(temp_dir, 'stats_test.txt')
 
-  _RunCommand([
-      sys.executable, compare_script,
+  args = [
       '--ref_video', reference_video_yuv,
       '--test_video', test_video_yuv,
       '--yuv_frame_width', '640',
@@ -191,7 +193,12 @@ def RunTest(android_device, adb_path, build_dir, temp_dir):
       '--stats_file_test', stats_file_test,
       '--frame_analyzer', frame_analyzer,
       '--ffmpeg_path', ffmpeg_path,
-      '--zxing_path', zxing_path])
+      '--zxing_path', zxing_path,
+  ]
+  if chartjson_result_file:
+    args.extend(['--chartjson_result_file', chartjson_result_file])
+
+  _RunCommand([sys.executable, compare_script] + args)
 
 
 def main():
@@ -208,7 +215,8 @@ def main():
   try:
     android_device = SelectAndroidDevice(adb_path)
     SetUpTools(android_device, temp_dir, processes)
-    RunTest(android_device, adb_path, build_dir, temp_dir)
+    RunTest(android_device, adb_path, build_dir, temp_dir,
+            args.chartjson_result_file)
   finally:
     for process in processes:
       if process:

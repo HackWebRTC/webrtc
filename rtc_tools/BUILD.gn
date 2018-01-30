@@ -66,6 +66,7 @@ rtc_static_library("video_quality_analysis") {
   ]
   deps = [
     "../common_video",
+    "../test:perf_test",
     "//third_party/libyuv",
   ]
 }
@@ -79,6 +80,7 @@ rtc_executable("frame_analyzer") {
   deps = [
     ":command_line_parser",
     ":video_quality_analysis",
+    "../test:perf_test",
     "//build/win:default_exe_manifest",
   ]
 }

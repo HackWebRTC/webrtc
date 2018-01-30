@@ -37,6 +37,11 @@ struct ResultsContainer {
   ~ResultsContainer();
 
   std::vector<AnalysisResult> frames;
+  int max_repeated_frames;
+  int max_skipped_frames;
+  int total_skipped_frames;
+  int decode_errors_ref;
+  int decode_errors_test;
 };
 
 enum VideoAnalysisMetricsType {kPSNR, kSSIM};
@@ -102,15 +107,9 @@ std::vector<std::pair<int, int> > CalculateFrameClusters(
 
 // Calculates max repeated and skipped frames and prints them to stdout in a
 // format that is compatible with Chromium performance numbers.
-void PrintMaxRepeatedAndSkippedFrames(const std::string& label,
-                                      const std::string& stats_file_ref_name,
-                                      const std::string& stats_file_test_name);
-
-// Similar to the above, but will print to the specified file handle.
-void PrintMaxRepeatedAndSkippedFrames(FILE* output,
-                                      const std::string& label,
-                                      const std::string& stats_file_ref_name,
-                                      const std::string& stats_file_test_name);
+void GetMaxRepeatedAndSkippedFrames(const std::string& stats_file_ref_name,
+                                    const std::string& stats_file_test_name,
+                                    ResultsContainer* results);
 
 // Gets the next line from an open stats file.
 bool GetNextStatsLine(FILE* stats_file, char* line);

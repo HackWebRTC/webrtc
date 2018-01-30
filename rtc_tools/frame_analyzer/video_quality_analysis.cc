@@ -18,6 +18,8 @@
 #include <map>
 #include <utility>
 
+#include "test/testsupport/perf_test.h"
+
 #define STATS_LINE_LENGTH 32
 #define Y4M_FILE_HEADER_MAX_SIZE 200
 #define Y4M_FRAME_DELIMITER "FRAME"
@@ -318,13 +320,6 @@ void RunAnalysis(const char* reference_file_name,
   delete[] reference_frame;
 }
 
-void PrintMaxRepeatedAndSkippedFrames(const std::string& label,
-                                      const std::string& stats_file_ref_name,
-                                      const std::string& stats_file_test_name) {
-  PrintMaxRepeatedAndSkippedFrames(stdout, label, stats_file_ref_name,
-                                   stats_file_test_name);
-}
-
 std::vector<std::pair<int, int> > CalculateFrameClusters(
     FILE* file,
     int* num_decode_errors) {
@@ -359,10 +354,9 @@ std::vector<std::pair<int, int> > CalculateFrameClusters(
   return frame_cnt;
 }
 
-void PrintMaxRepeatedAndSkippedFrames(FILE* output,
-                                      const std::string& label,
-                                      const std::string& stats_file_ref_name,
-                                      const std::string& stats_file_test_name) {
+void GetMaxRepeatedAndSkippedFrames(const std::string& stats_file_ref_name,
+                                    const std::string& stats_file_test_name,
+                                    ResultsContainer* results) {
   FILE* stats_file_ref = fopen(stats_file_ref_name.c_str(), "r");
   FILE* stats_file_test = fopen(stats_file_test_name.c_str(), "r");
   if (stats_file_ref == NULL) {
@@ -460,22 +454,17 @@ void PrintMaxRepeatedAndSkippedFrames(FILE* output,
       }
       continue;
     }
-    fprintf(output,
+    fprintf(stdout,
             "Found barcode %d in test video, which is not in reference video\n",
             it_test->first);
     break;
   }
 
-  fprintf(output, "RESULT Max_repeated: %s= %d\n", label.c_str(),
-          max_repeated_frames);
-  fprintf(output, "RESULT Max_skipped: %s= %d\n", label.c_str(),
-          max_skipped_frames);
-  fprintf(output, "RESULT Total_skipped: %s= %d\n", label.c_str(),
-          total_skipped_frames);
-  fprintf(output, "RESULT Decode_errors_reference: %s= %d\n", label.c_str(),
-          decode_errors_ref);
-  fprintf(output, "RESULT Decode_errors_test: %s= %d\n", label.c_str(),
-          decode_errors_test);
+  results->max_repeated_frames = max_repeated_frames;
+  results->max_skipped_frames = max_skipped_frames;
+  results->total_skipped_frames = total_skipped_frames;
+  results->decode_errors_ref = decode_errors_ref;
+  results->decode_errors_test = decode_errors_test;
 }
 
 void PrintAnalysisResults(const std::string& label, ResultsContainer* results) {
@@ -484,26 +473,32 @@ void PrintAnalysisResults(const std::string& label, ResultsContainer* results) {
 
 void PrintAnalysisResults(FILE* output, const std::string& label,
                           ResultsContainer* results) {
-  std::vector<AnalysisResult>::iterator iter;
-
-  fprintf(output, "RESULT Unique_frames_count: %s= %u score\n", label.c_str(),
-          static_cast<unsigned int>(results->frames.size()));
+  SetPerfResultsOutput(output);
 
   if (results->frames.size() > 0u) {
-    fprintf(output, "RESULT PSNR: %s= [", label.c_str());
-    for (iter = results->frames.begin(); iter != results->frames.end() - 1;
-         ++iter) {
-      fprintf(output, "%f,", iter->psnr_value);
-    }
-    fprintf(output, "%f] dB\n", iter->psnr_value);
+    PrintResult("Unique_frames_count", "", label, results->frames.size(),
+                "score", false);
 
-    fprintf(output, "RESULT SSIM: %s= [", label.c_str());
-    for (iter = results->frames.begin(); iter != results->frames.end() - 1;
-         ++iter) {
-      fprintf(output, "%f,", iter->ssim_value);
+    std::vector<double> psnr_values;
+    std::vector<double> ssim_values;
+    for (const auto& frame : results->frames) {
+      psnr_values.push_back(frame.psnr_value);
+      ssim_values.push_back(frame.ssim_value);
     }
-    fprintf(output, "%f] score\n", iter->ssim_value);
+
+    PrintResultList("PSNR", "", label, psnr_values, "dB", false);
+    PrintResultList("SSIM", "", label, ssim_values, "score", false);
   }
+
+  PrintResult("Max_repeated", "", label, results->max_repeated_frames, "",
+              false);
+  PrintResult("Max_skipped", "", label, results->max_skipped_frames, "", false);
+  PrintResult("Total_skipped", "", label, results->total_skipped_frames, "",
+              false);
+  PrintResult("Decode_errors_reference", "", label, results->decode_errors_ref,
+              "", false);
+  PrintResult("Decode_errors_test", "", label, results->decode_errors_test, "",
+              false);
 }
 
 }  // namespace test
