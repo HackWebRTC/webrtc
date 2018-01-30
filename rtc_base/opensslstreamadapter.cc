@@ -181,7 +181,6 @@ static BIO* BIO_new_stream(StreamInterface* stream) {
 static int stream_new(BIO* b) {
   b->shutdown = 0;
   b->init = 1;
-  b->num = 0;  // 1 means end-of-stream
   b->ptr = 0;
   return 1;
 }
@@ -202,8 +201,6 @@ static int stream_read(BIO* b, char* out, int outl) {
   StreamResult result = stream->Read(out, outl, &read, &error);
   if (result == SR_SUCCESS) {
     return checked_cast<int>(read);
-  } else if (result == SR_EOS) {
-    b->num = 1;
   } else if (result == SR_BLOCK) {
     BIO_set_retry_read(b);
   }
@@ -234,8 +231,11 @@ static long stream_ctrl(BIO* b, int cmd, long num, void* ptr) {
   switch (cmd) {
     case BIO_CTRL_RESET:
       return 0;
-    case BIO_CTRL_EOF:
-      return b->num;
+    case BIO_CTRL_EOF: {
+      StreamInterface* stream = static_cast<StreamInterface*>(ptr);
+      // 1 means end-of-stream.
+      return (stream->GetState() == SS_CLOSED) ? 1 : 0;
+    }
     case BIO_CTRL_WPENDING:
     case BIO_CTRL_PENDING:
       return 0;

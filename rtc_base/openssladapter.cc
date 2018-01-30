@@ -94,7 +94,6 @@ static BIO* BIO_new_socket(rtc::AsyncSocket* socket) {
 static int socket_new(BIO* b) {
   b->shutdown = 0;
   b->init = 1;
-  b->num = 0; // 1 means socket closed
   b->ptr = 0;
   return 1;
 }
@@ -113,8 +112,6 @@ static int socket_read(BIO* b, char* out, int outl) {
   int result = socket->Recv(out, outl, nullptr);
   if (result > 0) {
     return result;
-  } else if (result == 0) {
-    b->num = 1;
   } else if (socket->IsBlocking()) {
     BIO_set_retry_read(b);
   }
@@ -143,8 +140,11 @@ static long socket_ctrl(BIO* b, int cmd, long num, void* ptr) {
   switch (cmd) {
   case BIO_CTRL_RESET:
     return 0;
-  case BIO_CTRL_EOF:
-    return b->num;
+  case BIO_CTRL_EOF: {
+    rtc::AsyncSocket* socket = static_cast<rtc::AsyncSocket*>(ptr);
+    // 1 means socket closed.
+    return (socket->GetState() == rtc::AsyncSocket::CS_CLOSED) ? 1 : 0;
+  }
   case BIO_CTRL_WPENDING:
   case BIO_CTRL_PENDING:
     return 0;
