@@ -607,7 +607,7 @@ void VideoStreamEncoder::ReconfigureEncoder() {
     rate_allocator_.reset();
   }
 
-  video_sender_.UpdateChannelParemeters(rate_allocator_.get(),
+  video_sender_.UpdateChannelParameters(rate_allocator_.get(),
                                         bitrate_observer_);
 
   // Get the current actual framerate, as measured by the stats proxy. This is
@@ -786,7 +786,7 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
   } else if (!last_parameters_update_ms_ ||
              now_ms - *last_parameters_update_ms_ >=
                  vcm::VCMProcessTimer::kDefaultProcessIntervalMs) {
-    video_sender_.UpdateChannelParemeters(rate_allocator_.get(),
+    video_sender_.UpdateChannelParameters(rate_allocator_.get(),
                                           bitrate_observer_);
     last_parameters_update_ms_.emplace(now_ms);
   }

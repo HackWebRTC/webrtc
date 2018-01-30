@@ -196,7 +196,7 @@ EncoderParameters VideoSender::UpdateEncoderParameters(
   return new_encoder_params;
 }
 
-void VideoSender::UpdateChannelParemeters(
+void VideoSender::UpdateChannelParameters(
     VideoBitrateAllocator* bitrate_allocator,
     VideoBitrateAllocationObserver* bitrate_updated_callback) {
   BitrateAllocation target_rate;

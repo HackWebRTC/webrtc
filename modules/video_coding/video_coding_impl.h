@@ -94,7 +94,7 @@ class VideoSender {
   // caps may be updated to a change to a new VideoCodec or allocation mode.
   // The new parameters will be stored as pending EncoderParameters, and the
   // encoder will only be updated on the next frame.
-  void UpdateChannelParemeters(
+  void UpdateChannelParameters(
       VideoBitrateAllocator* bitrate_allocator,
       VideoBitrateAllocationObserver* bitrate_updated_callback);
 
