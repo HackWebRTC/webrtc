@@ -2413,6 +2413,23 @@ TEST_F(RTCStatsCollectorTest, StatsReportedOnZeroSsrc) {
   EXPECT_EQ(0, rtp_stream_stats.size());
 }
 
+TEST_F(RTCStatsCollectorTest, DoNotCrashOnSsrcChange) {
+  rtc::scoped_refptr<MediaStreamTrackInterface> track =
+      CreateFakeTrack(cricket::MEDIA_TYPE_AUDIO, "audioTrack",
+                      MediaStreamTrackInterface::kLive);
+  rtc::scoped_refptr<MockRtpSender> sender =
+      CreateMockSender(track, 4711, 49, {});
+  EXPECT_CALL(test_->pc(), GetSenders())
+      .WillRepeatedly(
+          Return(std::vector<rtc::scoped_refptr<RtpSenderInterface>>(
+              {rtc::scoped_refptr<RtpSenderInterface>(sender.get())})));
+  // We do not generate any matching voice_sender_info stats.
+  rtc::scoped_refptr<const RTCStatsReport> report = GetStatsReport();
+  std::vector<const RTCMediaStreamTrackStats*> track_stats =
+      report->GetStatsOfType<RTCMediaStreamTrackStats>();
+  EXPECT_EQ(1, track_stats.size());
+}
+
 class RTCStatsCollectorTestWithFakeCollector : public testing::Test {
  public:
   RTCStatsCollectorTestWithFakeCollector()

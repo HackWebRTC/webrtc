@@ -521,12 +521,19 @@ void ProduceSenderMediaTrackStats(
       // to see from a sender whether it's connected or not.
       // Related to https://crbug.com/8694 (using ssrc 0 to indicate "none")
       if (sender->ssrc()) {
-        voice_sender_info =
+        // When pc.close is called, sender info is discarded, so
+        // we generate zeroes instead. Bug: It should be retained.
+        // https://crbug.com/807174
+        auto sender_info =
             track_media_info_map.GetVoiceSenderInfoBySsrc(sender->ssrc());
+        if (sender_info) {
+          voice_sender_info = sender_info;
+        } else {
+          RTC_LOG(LS_INFO)
+              << "RTCStatsCollector: No voice sender info for sender with ssrc "
+              << sender->ssrc();
+        }
       }
-
-      RTC_CHECK(voice_sender_info)
-          << "No voice sender info for sender with ssrc " << sender->ssrc();
       std::unique_ptr<RTCMediaStreamTrackStats> audio_track_stats =
           ProduceMediaStreamTrackStatsFromVoiceSenderInfo(
               timestamp_us, *track, *voice_sender_info, sender->AttachmentId());
@@ -539,12 +546,21 @@ void ProduceSenderMediaTrackStats(
       cricket::VideoSenderInfo null_sender_info;
       const cricket::VideoSenderInfo* video_sender_info = &null_sender_info;
       // TODO(hta): Check on state not ssrc when state is available
-      // Related to https://crbug.com/8694 (using ssrc 0 to indicate "none")
-      if (sender->ssrc())
-        video_sender_info =
+      // Related to https://bugs.webrtc.org/8694 (using ssrc 0 to indicate
+      // "none")
+      if (sender->ssrc()) {
+        // When pc.close is called, sender info is discarded, so
+        // we generate zeroes instead. Bug: It should be retained.
+        // https://crbug.com/807174
+        auto sender_info =
             track_media_info_map.GetVideoSenderInfoBySsrc(sender->ssrc());
-      RTC_CHECK(video_sender_info)
-          << "No video sender info for sender with ssrc " << sender->ssrc();
+        if (sender_info) {
+          video_sender_info = sender_info;
+        } else {
+          RTC_LOG(LS_INFO) << "No video sender info for sender with ssrc "
+                           << sender->ssrc();
+        }
+      }
       std::unique_ptr<RTCMediaStreamTrackStats> video_track_stats =
           ProduceMediaStreamTrackStatsFromVideoSenderInfo(
               timestamp_us, *track, *video_sender_info, sender->AttachmentId());
