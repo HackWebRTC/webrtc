@@ -10,6 +10,7 @@
 
 #include "rtc_base/flags.h"
 #include "rtc_base/logging.h"
+#include "system_wrappers/include/field_trial_default.h"
 #include "system_wrappers/include/metrics_default.h"
 #include "test/field_trial.h"
 #include "test/gmock.h"
@@ -70,8 +71,10 @@ int main(int argc, char* argv[]) {
   }
 
   webrtc::test::SetExecutablePath(argv[0]);
-  std::string fieldtrials = FLAG_force_fieldtrials;
-  webrtc::test::InitFieldTrialsFromString(fieldtrials);
+  webrtc::test::ValidateFieldTrialsStringOrDie(FLAG_force_fieldtrials);
+  // InitFieldTrialsFromString stores the char*, so the char array must outlive
+  // the application.
+  webrtc::field_trial::InitFieldTrialsFromString(FLAG_force_fieldtrials);
   webrtc::metrics::Enable();
 
 

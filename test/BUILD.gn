@@ -227,6 +227,7 @@ if (rtc_include_tests) {
       ":field_trial",
       ":perf_test",
       "../rtc_base:rtc_base_approved",
+      "../system_wrappers:field_trial_default",
       "../system_wrappers:metrics_default",
       "../system_wrappers:runtime_enabled_features_default",
       "//testing/gtest",

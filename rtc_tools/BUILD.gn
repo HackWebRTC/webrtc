@@ -267,6 +267,7 @@ if (rtc_include_tests) {
         "../logging:rtc_event_log_parser",
         "../rtc_base:protobuf_utils",
         "../rtc_base:rtc_base_approved",
+        "../system_wrappers:field_trial_default",
         "../test:field_trial",
         "../test:test_support",
       ]

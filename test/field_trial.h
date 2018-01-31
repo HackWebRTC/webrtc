@@ -30,7 +30,7 @@ namespace test {
 //
 // Note: This method crashes with an error message if an invalid config is
 // passed to it. That can be used to find out if a binary is parsing the flags.
-void InitFieldTrialsFromString(const std::string& config);
+void ValidateFieldTrialsStringOrDie(const std::string& config);
 
 // This class is used to override field-trial configs within specific tests.
 // After this class goes out of scope previous field trials will be restored.

@@ -26,9 +26,8 @@ bool field_trials_initiated_ = false;
 }  // namespace
 
 namespace test {
-// Note: this code is copied from src/base/metrics/field_trial.cc since the aim
-// is to mimic chromium --force-fieldtrials.
-void InitFieldTrialsFromString(const std::string& trials_string) {
+
+void ValidateFieldTrialsStringOrDie(const std::string& trials_string) {
   static const char kPersistentStringSeparator = '/';
 
   // Catch an error if this is called more than once.
@@ -63,7 +62,7 @@ void InitFieldTrialsFromString(const std::string& trials_string) {
 
     // Successfully parsed all field trials from the string.
     if (next_item == trials_string.length()) {
-      webrtc::field_trial::InitFieldTrialsFromString(trials_string.c_str());
+      // webrtc::field_trial::InitFieldTrialsFromString(trials_string.c_str());
       return;
     }
   }
@@ -79,7 +78,8 @@ ScopedFieldTrials::ScopedFieldTrials(const std::string& config)
   assert(field_trials_initiated_);
   field_trials_initiated_ = false;
   current_field_trials_ = config;
-  InitFieldTrialsFromString(current_field_trials_);
+  ValidateFieldTrialsStringOrDie(current_field_trials_);
+  webrtc::field_trial::InitFieldTrialsFromString(current_field_trials_.c_str());
 }
 
 ScopedFieldTrials::~ScopedFieldTrials() {

@@ -11,6 +11,7 @@
 #include <stdio.h>
 
 #include "rtc_base/flags.h"
+#include "system_wrappers/include/field_trial_default.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
 #include "test/run_test.h"
@@ -328,10 +329,12 @@ int main(int argc, char* argv[]) {
     return 0;
   }
 
-  // InitFieldTrialsFromString needs a reference to an std::string instance,
-  // with a scope that outlives the test.
-  std::string field_trials = webrtc::flags::FLAG_force_fieldtrials;
-  webrtc::test::InitFieldTrialsFromString(field_trials);
+  webrtc::test::ValidateFieldTrialsStringOrDie(
+      webrtc::flags::FLAG_force_fieldtrials);
+  // InitFieldTrialsFromString stores the char*, so the char array must outlive
+  // the application.
+  webrtc::field_trial::InitFieldTrialsFromString(
+      webrtc::flags::FLAG_force_fieldtrials);
 
   webrtc::test::RunTest(webrtc::Loopback);
   return 0;
