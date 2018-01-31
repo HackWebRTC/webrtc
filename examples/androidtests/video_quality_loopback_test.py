@@ -49,19 +49,19 @@ class VideoQualityTestError(Error):
   pass
 
 
-def _RunCommand(argv, cwd=SRC_DIR, **kwargs):
+def _RunCommand(argv, **kwargs):
   logging.info('Running %r', argv)
-  subprocess.check_call(argv, cwd=cwd, **kwargs)
+  subprocess.check_call(argv, **kwargs)
 
 
-def _RunCommandWithOutput(argv, cwd=SRC_DIR, **kwargs):
+def _RunCommandWithOutput(argv, **kwargs):
   logging.info('Running %r', argv)
-  return subprocess.check_output(argv, cwd=cwd, **kwargs)
+  return subprocess.check_output(argv, **kwargs)
 
 
-def _RunBackgroundCommand(argv, cwd=SRC_DIR):
+def _RunBackgroundCommand(argv):
   logging.info('Running %r', argv)
-  process = subprocess.Popen(argv, cwd=cwd)
+  process = subprocess.Popen(argv)
   time.sleep(0.5)
   status = process.poll()
   if status:  # is not None or 0
