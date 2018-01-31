@@ -187,6 +187,7 @@ rtc_static_library("peerconnection") {
     "../api/video_codecs:video_codecs_api",
     "../call:call_interfaces",
     "../common_video:common_video",
+    "../logging:ice_log",
     "../logging:rtc_event_log_api",
     "../logging:rtc_event_log_impl_output",
     "../media:rtc_data",

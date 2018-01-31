@@ -17,6 +17,7 @@
 
 #include "api/candidate.h"
 #include "api/umametrics.h"
+#include "logging/rtc_event_log/icelogger.h"
 #include "p2p/base/candidatepairinterface.h"
 #include "p2p/base/common.h"
 #include "p2p/base/relayport.h"  // For RELAY_PORT_TYPE.
@@ -140,7 +141,8 @@ bool IceCredentialsChanged(const std::string& old_ufrag,
 
 P2PTransportChannel::P2PTransportChannel(const std::string& transport_name,
                                          int component,
-                                         PortAllocator* allocator)
+                                         PortAllocator* allocator,
+                                         webrtc::RtcEventLog* event_log)
     : transport_name_(transport_name),
       component_(component),
       allocator_(allocator),
@@ -169,6 +171,7 @@ P2PTransportChannel::P2PTransportChannel(const std::string& transport_name,
   if (weak_ping_interval) {
     weak_ping_interval_ = static_cast<int>(weak_ping_interval);
   }
+  ice_event_log_.set_event_log(event_log);
 }
 
 P2PTransportChannel::~P2PTransportChannel() {
@@ -215,7 +218,11 @@ void P2PTransportChannel::AddConnection(Connection* connection) {
   connection->SignalDestroyed.connect(
       this, &P2PTransportChannel::OnConnectionDestroyed);
   connection->SignalNominated.connect(this, &P2PTransportChannel::OnNominated);
+
   had_connection_ = true;
+
+  connection->set_ice_event_log(&ice_event_log_);
+  LogCandidatePairEvent(connection, webrtc::IceCandidatePairEventType::kAdded);
 }
 
 // Determines whether we should switch the selected connection to
@@ -383,6 +390,7 @@ IceTransportState P2PTransportChannel::ComputeState() const {
     }
   }
 
+  ice_event_log_.DumpCandidatePairDescriptionToMemoryAsConfigEvents();
   return IceTransportState::STATE_COMPLETED;
 }
 
@@ -1538,6 +1546,7 @@ void P2PTransportChannel::SwitchSelectedConnection(Connection* conn) {
   // destroyed, so don't use it.
   Connection* old_selected_connection = selected_connection_;
   selected_connection_ = conn;
+  LogCandidatePairEvent(conn, webrtc::IceCandidatePairEventType::kSelected);
   network_route_.reset();
   if (selected_connection_) {
     ++nomination_;
@@ -2249,6 +2258,17 @@ int P2PTransportChannel::SampleRegatherAllNetworksInterval() {
   auto interval = config_.regather_all_networks_interval_range;
   RTC_DCHECK(interval);
   return rand_.Rand(interval->min(), interval->max());
+}
+
+void P2PTransportChannel::LogCandidatePairEvent(
+    Connection* conn,
+    webrtc::IceCandidatePairEventType type) {
+  if (conn == nullptr) {
+    return;
+  }
+  auto candidate_pair_id = conn->hash();
+  ice_event_log_.LogCandidatePairEvent(type, candidate_pair_id,
+                                       conn->ToLogDescription());
 }
 
 }  // namespace cricket

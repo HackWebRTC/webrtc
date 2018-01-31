@@ -22,6 +22,7 @@
 #include "api/mediastreamproxy.h"
 #include "api/mediastreamtrackproxy.h"
 #include "call/call.h"
+#include "logging/rtc_event_log/icelogger.h"
 #include "logging/rtc_event_log/output/rtc_event_log_output_file.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "media/sctp/sctptransport.h"
@@ -762,6 +763,7 @@ PeerConnection::~PeerConnection() {
   // call_ and event_log_ must be destroyed on the worker thread.
   worker_thread()->Invoke<void>(RTC_FROM_HERE, [this] {
     call_.reset();
+    // The event log must outlive call (and any other object that uses it).
     event_log_.reset();
   });
 }
@@ -825,7 +827,8 @@ bool PeerConnection::Initialize(
   // LLONG_MAX.
   session_id_ = rtc::ToString(rtc::CreateRandomId64() & LLONG_MAX);
   transport_controller_.reset(factory_->CreateTransportController(
-      port_allocator_.get(), configuration.redetermine_role_on_ice_restart));
+      port_allocator_.get(), configuration.redetermine_role_on_ice_restart,
+      event_log_.get()));
   transport_controller_->SetIceRole(cricket::ICEROLE_CONTROLLED);
   transport_controller_->SignalConnectionState.connect(
       this, &PeerConnection::OnTransportControllerConnectionState);
@@ -2856,6 +2859,14 @@ void PeerConnection::Close() {
     transceiver->Stop();
   }
   DestroyAllChannels();
+
+  // The event log is used in the transport controller, which must be outlived
+  // by the former. CreateOffer by the peer connection is implemented
+  // asynchronously and if the peer connection is closed without resetting the
+  // WebRTC session description factory, the session description factory would
+  // call the transport controller.
+  webrtc_session_desc_factory_.reset();
+  transport_controller_.reset();
 
   network_thread()->Invoke<void>(
       RTC_FROM_HERE,

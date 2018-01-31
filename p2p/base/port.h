@@ -19,6 +19,9 @@
 
 #include "api/candidate.h"
 #include "api/optional.h"
+#include "logging/rtc_event_log/events/rtc_event_ice_candidate_pair.h"
+#include "logging/rtc_event_log/events/rtc_event_ice_candidate_pair_config.h"
+#include "logging/rtc_event_log/icelogger.h"
 #include "p2p/base/candidatepairinterface.h"
 #include "p2p/base/packetlossestimator.h"
 #include "p2p/base/packetsocketfactory.h"
@@ -639,6 +642,13 @@ class Connection : public CandidatePairInterface,
   std::string ToDebugId() const;
   std::string ToString() const;
   std::string ToSensitiveString() const;
+  // Structured description of this candidate pair.
+  const webrtc::IceCandidatePairDescription& ToLogDescription();
+  // Integer typed hash value of this candidate pair.
+  uint32_t hash() { return hash_; }
+  void set_ice_event_log(webrtc::IceEventLog* ice_event_log) {
+    ice_event_log_ = ice_event_log;
+  }
   // Prints pings_since_last_response_ into a string.
   void PrintPingsSinceLastResponse(std::string* pings, size_t max);
 
@@ -728,6 +738,8 @@ class Connection : public CandidatePairInterface,
   void MaybeUpdateLocalCandidate(ConnectionRequest* request,
                                  StunMessage* response);
 
+  void LogCandidatePairEvent(webrtc::IceCandidatePairEventType type);
+
   WriteState write_state_;
   bool receiving_;
   bool connected_;
@@ -774,6 +786,10 @@ class Connection : public CandidatePairInterface,
   int receiving_timeout_;
   int64_t time_created_ms_;
   int num_pings_sent_ = 0;
+
+  rtc::Optional<webrtc::IceCandidatePairDescription> log_description_;
+  uint32_t hash_;
+  webrtc::IceEventLog* ice_event_log_ = nullptr;
 
   friend class Port;
   friend class ConnectionRequest;

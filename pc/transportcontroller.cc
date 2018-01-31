@@ -115,12 +115,14 @@ TransportController::TransportController(
     rtc::Thread* network_thread,
     PortAllocator* port_allocator,
     bool redetermine_role_on_ice_restart,
-    const rtc::CryptoOptions& crypto_options)
+    const rtc::CryptoOptions& crypto_options,
+    webrtc::RtcEventLog* event_log)
     : signaling_thread_(signaling_thread),
       network_thread_(network_thread),
       port_allocator_(port_allocator),
       redetermine_role_on_ice_restart_(redetermine_role_on_ice_restart),
-      crypto_options_(crypto_options) {}
+      crypto_options_(crypto_options),
+      event_log_(event_log) {}
 
 TransportController::~TransportController() {
   // Channel destructors may try to send packets, so this needs to happen on
@@ -541,7 +543,8 @@ DtlsTransportInternal* TransportController::get_channel_for_testing(
 IceTransportInternal* TransportController::CreateIceTransportChannel_n(
     const std::string& transport_name,
     int component) {
-  return new P2PTransportChannel(transport_name, component, port_allocator_);
+  return new P2PTransportChannel(transport_name, component, port_allocator_,
+                                 event_log_);
 }
 
 DtlsTransportInternal* TransportController::CreateDtlsTransportChannel_n(

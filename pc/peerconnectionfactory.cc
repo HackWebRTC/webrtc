@@ -295,11 +295,12 @@ PeerConnectionFactory::CreateAudioTrack(const std::string& id,
 
 cricket::TransportController* PeerConnectionFactory::CreateTransportController(
     cricket::PortAllocator* port_allocator,
-    bool redetermine_role_on_ice_restart) {
+    bool redetermine_role_on_ice_restart,
+    RtcEventLog* event_log) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
   return new cricket::TransportController(
       signaling_thread_, network_thread_, port_allocator,
-      redetermine_role_on_ice_restart, options_.crypto_options);
+      redetermine_role_on_ice_restart, options_.crypto_options, event_log);
 }
 
 std::unique_ptr<cricket::SctpTransportInternalFactory>

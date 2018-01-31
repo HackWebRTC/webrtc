@@ -2109,8 +2109,10 @@ void EventLogAnalyzer::CreateIceCandidatePairConfigGraph(Plot* plot) {
         configs_by_cp_id.end()) {
       const std::string candidate_pair_desc =
           GetCandidatePairLogDescriptionAsString(config);
-      configs_by_cp_id[config.candidate_pair_id] = TimeSeries(
-          candidate_pair_desc, LineStyle::kNone, PointStyle::kHighlight);
+      configs_by_cp_id[config.candidate_pair_id] =
+          TimeSeries("[" + std::to_string(config.candidate_pair_id) + "]" +
+                         candidate_pair_desc,
+                     LineStyle::kNone, PointStyle::kHighlight);
       candidate_pair_desc_by_id_[config.candidate_pair_id] =
           candidate_pair_desc;
     }
@@ -2158,7 +2160,8 @@ void EventLogAnalyzer::CreateIceConnectivityCheckGraph(Plot* plot) {
     if (checks_by_cp_id.find(event.candidate_pair_id) ==
         checks_by_cp_id.end()) {
       checks_by_cp_id[event.candidate_pair_id] = TimeSeries(
-          GetCandidatePairLogDescriptionFromId(event.candidate_pair_id),
+          "[" + std::to_string(event.candidate_pair_id) + "]" +
+              GetCandidatePairLogDescriptionFromId(event.candidate_pair_id),
           LineStyle::kNone, PointStyle::kHighlight);
     }
     float x = ToCallTime(event.timestamp);

@@ -581,10 +581,11 @@ class PeerConnectionFactoryForTest : public webrtc::PeerConnectionFactory {
 
   cricket::TransportController* CreateTransportController(
       cricket::PortAllocator* port_allocator,
-      bool redetermine_role_on_ice_restart) override {
+      bool redetermine_role_on_ice_restart,
+      webrtc::RtcEventLog* event_log = nullptr) override {
     transport_controller = new cricket::TransportController(
         rtc::Thread::Current(), rtc::Thread::Current(), port_allocator,
-        redetermine_role_on_ice_restart, rtc::CryptoOptions());
+        redetermine_role_on_ice_restart, rtc::CryptoOptions(), event_log);
     return transport_controller;
   }
 
@@ -1137,31 +1138,6 @@ class PeerConnectionInterfaceTest : public testing::Test {
   MockPeerConnectionObserver observer_;
   rtc::scoped_refptr<StreamCollection> reference_collection_;
 };
-
-// Test that no callbacks on the PeerConnectionObserver are called after the
-// PeerConnection is closed.
-TEST_F(PeerConnectionInterfaceTest, CloseAndTestCallbackFunctions) {
-  rtc::scoped_refptr<PeerConnectionInterface> pc(
-      pc_factory_for_test_->CreatePeerConnection(
-          PeerConnectionInterface::RTCConfiguration(), nullptr, nullptr,
-          nullptr, &observer_));
-  observer_.SetPeerConnectionInterface(pc.get());
-  pc->Close();
-
-  // No callbacks is expected to be called.
-  observer_.callback_triggered_ = false;
-  std::vector<cricket::Candidate> candidates;
-  pc_factory_for_test_->transport_controller->SignalGatheringState(
-      cricket::IceGatheringState{});
-  pc_factory_for_test_->transport_controller->SignalCandidatesGathered(
-      "", candidates);
-  pc_factory_for_test_->transport_controller->SignalConnectionState(
-      cricket::IceConnectionState{});
-  pc_factory_for_test_->transport_controller->SignalCandidatesRemoved(
-      candidates);
-  pc_factory_for_test_->transport_controller->SignalReceiving(false);
-  EXPECT_FALSE(observer_.callback_triggered_);
-}
 
 // Generate different CNAMEs when PeerConnections are created.
 // The CNAMEs are expected to be generated randomly. It is possible

@@ -89,6 +89,7 @@ rtc_static_library("rtc_p2p") {
     "../api:libjingle_peerconnection_api",
     "../api:optional",
     "../api:ortc_api",
+    "../logging:ice_log",
     "../rtc_base:checks",
     "../rtc_base:rtc_base",
     "../rtc_base:stringutils",

@@ -27,6 +27,8 @@
 #include <vector>
 
 #include "api/candidate.h"
+#include "logging/rtc_event_log/events/rtc_event_ice_candidate_pair_config.h"
+#include "logging/rtc_event_log/icelogger.h"
 #include "p2p/base/candidatepairinterface.h"
 #include "p2p/base/icetransportinternal.h"
 #include "p2p/base/portallocator.h"
@@ -35,6 +37,10 @@
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/random.h"
 #include "rtc_base/sigslot.h"
+
+namespace webrtc {
+class RtcEventLog;
+}  // namespace webrtc
 
 namespace cricket {
 
@@ -72,7 +78,8 @@ class P2PTransportChannel : public IceTransportInternal,
  public:
   P2PTransportChannel(const std::string& transport_name,
                       int component,
-                      PortAllocator* allocator);
+                      PortAllocator* allocator,
+                      webrtc::RtcEventLog* event_log = nullptr);
   ~P2PTransportChannel() override;
 
   // From TransportChannelImpl:
@@ -293,6 +300,9 @@ class P2PTransportChannel : public IceTransportInternal,
   void OnRegatherOnFailedNetworks();
   void OnRegatherOnAllNetworks();
 
+  void LogCandidatePairEvent(Connection* conn,
+                             webrtc::IceCandidatePairEventType type);
+
   uint32_t GetNominationAttr(Connection* conn) const;
   bool GetUseCandidateAttr(Connection* conn, NominationMode mode) const;
 
@@ -413,6 +423,8 @@ class P2PTransportChannel : public IceTransportInternal,
   webrtc::MetricsObserverInterface* metrics_observer_ = nullptr;
 
   rtc::Optional<rtc::NetworkRoute> network_route_;
+
+  webrtc::IceEventLog ice_event_log_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(P2PTransportChannel);
 };

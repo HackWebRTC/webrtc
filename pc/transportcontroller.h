@@ -36,6 +36,7 @@ class PacketTransportInternal;
 
 namespace webrtc {
 class MetricsObserverInterface;
+class RtcEventLog;
 }  // namespace webrtc
 
 namespace cricket {
@@ -53,7 +54,8 @@ class TransportController : public sigslot::has_slots<>,
                       rtc::Thread* network_thread,
                       PortAllocator* port_allocator,
                       bool redetermine_role_on_ice_restart,
-                      const rtc::CryptoOptions& crypto_options);
+                      const rtc::CryptoOptions& crypto_options,
+                      webrtc::RtcEventLog* event_log = nullptr);
 
   virtual ~TransportController();
 
@@ -306,6 +308,8 @@ class TransportController : public sigslot::has_slots<>,
   rtc::AsyncInvoker invoker_;
 
   webrtc::MetricsObserverInterface* metrics_observer_ = nullptr;
+
+  webrtc::RtcEventLog* event_log_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(TransportController);
 };
