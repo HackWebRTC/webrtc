@@ -284,23 +284,6 @@ class TestVp8Simulcast : public ::testing::Test {
         rate_allocator_->GetAllocation(bitrate_kbps * 1000, fps), fps);
   }
 
-  void RunActiveStreamsTest(const std::vector<bool> active_streams) {
-    std::vector<FrameType> frame_types(kNumberOfSimulcastStreams,
-                                       kVideoFrameDelta);
-    UpdateActiveStreams(active_streams);
-    // Set sufficient bitrate for all streams so we can test active without
-    // bitrate being an issue.
-    SetRates(kMaxBitrates[0] + kMaxBitrates[1] + kMaxBitrates[2], 30);
-
-    ExpectStreams(kVideoFrameKey, active_streams);
-    input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
-    EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
-
-    ExpectStreams(kVideoFrameDelta, active_streams);
-    input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
-    EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
-  }
-
   void UpdateActiveStreams(const std::vector<bool> active_streams) {
     ASSERT_EQ(static_cast<int>(active_streams.size()),
               kNumberOfSimulcastStreams);
@@ -308,10 +291,6 @@ class TestVp8Simulcast : public ::testing::Test {
       settings_.simulcastStream[i].active = active_streams[i];
     }
     // Re initialize the allocator and encoder with the new settings.
-    // TODO(bugs.webrtc.org/8807): Currently, we do a full "hard"
-    // reconfiguration of the allocator and encoder. When the video bitrate
-    // allocator has support for updating active streams without a
-    // reinitialization, we can just call that here instead.
     SetUpRateAllocator();
     EXPECT_EQ(0, encoder_->InitEncode(&settings_, 1, 1200));
   }
@@ -547,22 +526,40 @@ class TestVp8Simulcast : public ::testing::Test {
   }
 
   void TestActiveStreams() {
-    // All streams on.
-    RunActiveStreamsTest({true, true, true});
-    // All streams off.
-    RunActiveStreamsTest({false, false, false});
-    // Low stream off.
-    RunActiveStreamsTest({false, true, true});
-    // Middle stream off.
-    RunActiveStreamsTest({true, false, true});
-    // High stream off.
-    RunActiveStreamsTest({true, true, false});
-    // Only low stream turned on.
-    RunActiveStreamsTest({true, false, false});
-    // Only middle stream turned on.
-    RunActiveStreamsTest({false, true, false});
-    // Only high stream turned on.
-    RunActiveStreamsTest({false, false, true});
+    const int kEnoughBitrateAllStreams =
+        kMaxBitrates[0] + kMaxBitrates[1] + kMaxBitrates[2];
+    std::vector<FrameType> frame_types(kNumberOfSimulcastStreams,
+                                       kVideoFrameDelta);
+    // TODO(shampson): Currently turning off the base stream causes unexpected
+    // behavior in the libvpx encoder. The libvpx encoder labels key frames
+    // based upon the base stream. If the base stream is never enabled, it
+    // will continue to spit out encoded images labeled as key frames for the
+    // other streams that are enabled. Once this is fixed in libvpx, update this
+    // test to reflect that change.
+
+    // Only turn on the the base stream.
+    std::vector<bool> active_streams = {true, false, false};
+    UpdateActiveStreams(active_streams);
+    SetRates(kEnoughBitrateAllStreams, 30);
+    ExpectStreams(kVideoFrameKey, active_streams);
+    input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
+    EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+
+    ExpectStreams(kVideoFrameDelta, active_streams);
+    input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
+    EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+
+    // Turn off only the middle stream.
+    active_streams = {true, false, true};
+    UpdateActiveStreams(active_streams);
+    SetRates(kEnoughBitrateAllStreams, 30);
+    ExpectStreams(kVideoFrameKey, active_streams);
+    input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
+    EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+
+    ExpectStreams(kVideoFrameDelta, active_streams);
+    input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
+    EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
   }
 
   void SwitchingToOneStream(int width, int height) {
