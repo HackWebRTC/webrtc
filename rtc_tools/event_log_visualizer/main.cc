@@ -114,6 +114,12 @@ DEFINE_bool(plot_audio_encoder_num_channels,
 DEFINE_bool(plot_audio_jitter_buffer,
             false,
             "Plot the audio jitter buffer delay profile.");
+DEFINE_bool(plot_ice_candidate_pair_config,
+            false,
+            "Plot the ICE candidate pair config events.");
+DEFINE_bool(plot_ice_connectivity_check,
+            false,
+            "Plot the ICE candidate pair connectivity checks.");
 
 DEFINE_string(
     force_fieldtrials,
@@ -314,6 +320,13 @@ int main(int argc, char* argv[]) {
                                           collection->AppendNewPlot());
   }
 
+  if (FLAG_plot_ice_candidate_pair_config) {
+    analyzer.CreateIceCandidatePairConfigGraph(collection->AppendNewPlot());
+  }
+  if (FLAG_plot_ice_connectivity_check) {
+    analyzer.CreateIceConnectivityCheckGraph(collection->AppendNewPlot());
+  }
+
   collection->Draw();
 
   if (FLAG_print_triage_notifications) {
@@ -352,4 +365,6 @@ void SetAllPlotFlags(bool setting) {
   FLAG_plot_audio_encoder_dtx = setting;
   FLAG_plot_audio_encoder_num_channels = setting;
   FLAG_plot_audio_jitter_buffer = setting;
+  FLAG_plot_ice_candidate_pair_config = setting;
+  FLAG_plot_ice_connectivity_check = setting;
 }

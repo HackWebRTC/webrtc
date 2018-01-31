@@ -60,6 +60,7 @@ DEFINE_bool(rtcp, true, "Use --nortcp to exclude RTCP packets.");
 DEFINE_bool(playout, true, "Use --noplayout to exclude audio playout events.");
 DEFINE_bool(ana, true, "Use --noana to exclude ANA events.");
 DEFINE_bool(probe, true, "Use --noprobe to exclude probe events.");
+DEFINE_bool(ice, true, "Use --noice to exclude ICE events.");
 
 DEFINE_bool(print_full_packets,
             false,
@@ -792,6 +793,34 @@ int main(int argc, char* argv[]) {
               parsed_stream.GetAlrState(i);
           std::cout << parsed_stream.GetTimestamp(i) << "\tALR_STATE"
                     << "\tin_alr=" << alr_state.in_alr << std::endl;
+        }
+        event_recognized = true;
+        break;
+      }
+
+      case webrtc::ParsedRtcEventLog::ICE_CANDIDATE_PAIR_CONFIG: {
+        if (FLAG_ice) {
+          webrtc::ParsedRtcEventLog::IceCandidatePairConfig ice_cp_config =
+              parsed_stream.GetIceCandidatePairConfig(i);
+          // TODO(qingsi): convert the numeric representation of states to text
+          std::cout << parsed_stream.GetTimestamp(i)
+                    << "\tICE_CANDIDATE_PAIR_CONFIG"
+                    << "\ttype=" << static_cast<int>(ice_cp_config.type)
+                    << std::endl;
+        }
+        event_recognized = true;
+        break;
+      }
+
+      case webrtc::ParsedRtcEventLog::ICE_CANDIDATE_PAIR_EVENT: {
+        if (FLAG_ice) {
+          webrtc::ParsedRtcEventLog::IceCandidatePairEvent ice_cp_event =
+              parsed_stream.GetIceCandidatePairEvent(i);
+          // TODO(qingsi): convert the numeric representation of states to text
+          std::cout << parsed_stream.GetTimestamp(i)
+                    << "\tICE_CANDIDATE_PAIR_EVENT"
+                    << "\ttype=" << static_cast<int>(ice_cp_event.type)
+                    << std::endl;
         }
         event_recognized = true;
         break;

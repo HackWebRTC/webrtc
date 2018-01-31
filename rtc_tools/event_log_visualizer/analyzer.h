@@ -109,6 +109,9 @@ class EventLogAnalyzer {
                                     int file_sample_rate_hz,
                                     Plot* plot);
 
+  void CreateIceCandidatePairConfigGraph(Plot* plot);
+  void CreateIceConnectivityCheckGraph(Plot* plot);
+
   // Returns a vector of capture and arrival timestamps for the video frames
   // of the stream with the most number of frames.
   std::vector<std::pair<int64_t, int64_t>> GetFrameTimestamps() const;
@@ -159,6 +162,8 @@ class EventLogAnalyzer {
 
   void Notification(std::unique_ptr<TriageNotification> notification);
 
+  std::string GetCandidatePairLogDescriptionFromId(uint32_t candidate_pair_id);
+
   const ParsedRtcEventLog& parsed_log_;
 
   // A list of SSRCs we are interested in analysing.
@@ -203,6 +208,14 @@ class EventLogAnalyzer {
   std::vector<std::unique_ptr<TriageNotification>> notifications_;
 
   std::vector<ParsedRtcEventLog::AlrStateEvent> alr_state_events_;
+
+  std::vector<ParsedRtcEventLog::IceCandidatePairConfig>
+      ice_candidate_pair_configs_;
+
+  std::vector<ParsedRtcEventLog::IceCandidatePairEvent>
+      ice_candidate_pair_events_;
+
+  std::map<uint32_t, std::string> candidate_pair_desc_by_id_;
 
   // Window and step size used for calculating moving averages, e.g. bitrate.
   // The generated data points will be |step_| microseconds apart.
