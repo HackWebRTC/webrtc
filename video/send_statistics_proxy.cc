@@ -878,7 +878,6 @@ void SendStatisticsProxy::OnSendEncodedImage(
   if (!stats)
     return;
 
-  // TODO(ssilkin): Fix stats reporting for spatial layers in SVC.
   stats->width = encoded_image._encodedWidth;
   stats->height = encoded_image._encodedHeight;
   update_times_[ssrc].resolution_update_ms = clock_->TimeInMilliseconds();

@@ -716,10 +716,8 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
     encoded_image_.content_type_ = (codec_.mode == kScreensharing)
                                        ? VideoContentType::SCREENSHARE
                                        : VideoContentType::UNSPECIFIED;
-    encoded_image_._encodedHeight =
-        pkt->data.frame.height[layer_id.spatial_layer_id];
-    encoded_image_._encodedWidth =
-        pkt->data.frame.width[layer_id.spatial_layer_id];
+    encoded_image_._encodedHeight = raw_->d_h;
+    encoded_image_._encodedWidth = raw_->d_w;
     encoded_image_.timing_.flags = TimingFrameFlags::kInvalid;
     int qp = -1;
     vpx_codec_control(encoder_, VP8E_GET_LAST_QUANTIZER, &qp);
