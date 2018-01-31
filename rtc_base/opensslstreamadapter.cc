@@ -42,8 +42,8 @@ namespace {
 
 namespace rtc {
 
-#if (OPENSSL_VERSION_NUMBER < 0x10001000L)
-#error "webrtc requires at least OpenSSL version 1.0.1, to support DTLS-SRTP"
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
+#error "webrtc requires at least OpenSSL version 1.1.0, to support DTLS-SRTP"
 #endif
 
 // SRTP cipher suite table. |internal_name| is used to construct a
@@ -969,35 +969,17 @@ SSL_CTX* OpenSSLStreamAdapter::SetupSSLContext() {
     case SSL_PROTOCOL_TLS_12:
     default:
       if (ssl_mode_ == SSL_MODE_DTLS) {
-#if (OPENSSL_VERSION_NUMBER >= 0x10002000L)
-        // DTLS 1.2 only available starting from OpenSSL 1.0.2
         if (role_ == SSL_CLIENT) {
           method = DTLS_client_method();
         } else {
           method = DTLS_server_method();
         }
-#else
-        if (role_ == SSL_CLIENT) {
-          method = DTLSv1_client_method();
-        } else {
-          method = DTLSv1_server_method();
-        }
-#endif
       } else {
-#if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
-        // New API only available starting from OpenSSL 1.1.0
         if (role_ == SSL_CLIENT) {
           method = TLS_client_method();
         } else {
           method = TLS_server_method();
         }
-#else
-        if (role_ == SSL_CLIENT) {
-          method = SSLv23_client_method();
-        } else {
-          method = SSLv23_server_method();
-        }
-#endif
       }
       break;
   }
