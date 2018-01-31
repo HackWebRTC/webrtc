@@ -234,6 +234,24 @@ int CalculatePacketRate(uint32_t bitrate_bps, size_t packet_size_bytes) {
                           packet_size_bits);
 }
 
+// TODO(pbos): Lower these thresholds (to closer to 100%) when we handle
+// pipelining encoders better (multiple input frames before something comes
+// out). This should effectively turn off CPU adaptations for systems that
+// remotely cope with the load right now.
+CpuOveruseOptions GetCpuOveruseOptions(const VideoSendStream::Config& config) {
+  CpuOveruseOptions options;
+
+  if (config.encoder_settings.full_overuse_time) {
+    options.low_encode_usage_threshold_percent = 150;
+    options.high_encode_usage_threshold_percent = 200;
+  }
+  if (config.encoder_settings.experiment_cpu_load_estimator) {
+    options.filter_time_ms = 5 * rtc::kNumMillisecsPerSec;
+  }
+
+  return options;
+}
+
 }  // namespace
 
 namespace internal {
@@ -597,11 +615,13 @@ VideoSendStream::VideoSendStream(
                    encoder_config.content_type),
       config_(std::move(config)),
       content_type_(encoder_config.content_type) {
-  video_stream_encoder_.reset(
-      new VideoStreamEncoder(num_cpu_cores, &stats_proxy_,
-                             config_.encoder_settings,
-                             config_.pre_encode_callback,
-                             std::unique_ptr<OveruseFrameDetector>()));
+  video_stream_encoder_ = rtc::MakeUnique<VideoStreamEncoder>(
+      num_cpu_cores, &stats_proxy_,
+      config_.encoder_settings,
+      config_.pre_encode_callback,
+      rtc::MakeUnique<OveruseFrameDetector>(
+          GetCpuOveruseOptions(config_), &stats_proxy_));
+
   worker_queue_->PostTask(std::unique_ptr<rtc::QueuedTask>(new ConstructionTask(
       &send_stream_, &thread_sync_event_, &stats_proxy_,
       video_stream_encoder_.get(), module_process_thread, call_stats, transport,

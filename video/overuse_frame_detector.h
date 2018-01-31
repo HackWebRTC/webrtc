@@ -66,12 +66,11 @@ class CpuOveruseMetricsObserver {
 class OveruseFrameDetector {
  public:
   OveruseFrameDetector(const CpuOveruseOptions& options,
-                       AdaptationObserverInterface* overuse_observer,
                        CpuOveruseMetricsObserver* metrics_observer);
   virtual ~OveruseFrameDetector();
 
   // Start to periodically check for overuse.
-  void StartCheckForOveruse();
+  void StartCheckForOveruse(AdaptationObserverInterface* overuse_observer);
 
   // StopCheckForOveruse must be called before destruction if
   // StartCheckForOveruse has been called.
@@ -115,7 +114,8 @@ class OveruseFrameDetector {
   };
 
  protected:
-  void CheckForOveruse();  // Protected for test purposes.
+  // Protected for test purposes.
+  void CheckForOveruse(AdaptationObserverInterface* overuse_observer);
 
  private:
   class CheckOveruseTask;
@@ -137,9 +137,6 @@ class OveruseFrameDetector {
   CheckOveruseTask* check_overuse_task_;
 
   const CpuOveruseOptions options_;
-
-  // Observer getting overuse reports.
-  AdaptationObserverInterface* const observer_;
 
   // Stats metrics.
   CpuOveruseMetricsObserver* const metrics_observer_;

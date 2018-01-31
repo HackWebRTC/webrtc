@@ -396,13 +396,7 @@ VideoStreamEncoder::VideoStreamEncoder(
       settings_(settings),
       codec_type_(PayloadStringToCodecType(settings.payload_name)),
       video_sender_(Clock::GetRealTimeClock(), this),
-      overuse_detector_(
-          overuse_detector.get()
-              ? overuse_detector.release()
-              : new OveruseFrameDetector(
-                    GetCpuOveruseOptions(settings),
-                    this,
-                    stats_proxy)),
+      overuse_detector_(std::move(overuse_detector)),
       stats_proxy_(stats_proxy),
       pre_encode_callback_(pre_encode_callback),
       max_framerate_(-1),
@@ -425,9 +419,10 @@ VideoStreamEncoder::VideoStreamEncoder(
       bitrate_observer_(nullptr),
       encoder_queue_("EncoderQueue") {
   RTC_DCHECK(stats_proxy);
+  RTC_DCHECK(overuse_detector_);
   encoder_queue_.PostTask([this] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
-    overuse_detector_->StartCheckForOveruse();
+    overuse_detector_->StartCheckForOveruse(this);
     video_sender_.RegisterExternalEncoder(
         settings_.encoder, settings_.payload_type, settings_.internal_source);
   });
@@ -437,23 +432,6 @@ VideoStreamEncoder::~VideoStreamEncoder() {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   RTC_DCHECK(shutdown_event_.Wait(0))
       << "Must call ::Stop() before destruction.";
-}
-
-// TODO(pbos): Lower these thresholds (to closer to 100%) when we handle
-// pipelining encoders better (multiple input frames before something comes
-// out). This should effectively turn off CPU adaptations for systems that
-// remotely cope with the load right now.
-CpuOveruseOptions VideoStreamEncoder::GetCpuOveruseOptions(
-    const VideoSendStream::Config::EncoderSettings& settings) {
-  CpuOveruseOptions options;
-  if (settings.full_overuse_time) {
-    options.low_encode_usage_threshold_percent = 150;
-    options.high_encode_usage_threshold_percent = 200;
-  }
-  if (settings.experiment_cpu_load_estimator) {
-    options.filter_time_ms = 5 * rtc::kNumMillisecsPerSec;
-  }
-  return options;
 }
 
 void VideoStreamEncoder::Stop() {

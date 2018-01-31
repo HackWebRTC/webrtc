@@ -117,8 +117,6 @@ class VideoStreamEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   // These methods are protected for easier testing.
   void AdaptUp(AdaptReason reason) override;
   void AdaptDown(AdaptReason reason) override;
-  static CpuOveruseOptions GetCpuOveruseOptions(
-      const VideoSendStream::Config::EncoderSettings& settings);
 
  private:
   class ConfigureEncoderTask;

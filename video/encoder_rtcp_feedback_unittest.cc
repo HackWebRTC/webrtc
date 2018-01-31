@@ -29,7 +29,8 @@ class MockVideoStreamEncoder : public VideoStreamEncoder {
                            VideoSendStream::Config::EncoderSettings("fake", 0,
                                                                     nullptr),
                            nullptr,
-                           std::unique_ptr<OveruseFrameDetector>()) {}
+                           rtc::MakeUnique<OveruseFrameDetector>(
+                               CpuOveruseOptions(), nullptr)) {}
   ~MockVideoStreamEncoder() { Stop(); }
 
   MOCK_METHOD1(OnReceivedIntraFrameRequest, void(size_t));
