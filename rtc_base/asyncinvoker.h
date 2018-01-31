@@ -124,6 +124,11 @@ class AsyncInvoker : public MessageHandler {
   // behavior is desired, call Flush() before destroying this object.
   void Flush(Thread* thread, uint32_t id = MQID_ANY);
 
+  // Cancels any outstanding calls we own that are pending on any thread, and
+  // which have not yet started to execute. This does not wait for any calls
+  // that have already started executing to complete.
+  void Clear();
+
  private:
   void OnMessage(Message* msg) override;
   void DoInvoke(const Location& posted_from,
