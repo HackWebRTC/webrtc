@@ -314,38 +314,6 @@ class AudioProcessing : public rtc::RefCountInterface {
     kStereoAndKeyboard
   };
 
-  // Creates an APM instance. Use one instance for every primary audio stream
-  // requiring processing. On the client-side, this would typically be one
-  // instance for the near-end stream, and additional instances for each far-end
-  // stream which requires processing. On the server-side, this would typically
-  // be one instance for every incoming stream.
-  // The Create functions are deprecated, please use AudioProcessingBuilder
-  // instead.
-  // TODO(bugs.webrtc.org/8668): Remove these Create functions when all callers
-  // have moved to AudioProcessingBuilder.
-  static AudioProcessing* Create();
-  // Allows passing in an optional configuration at create-time.
-  static AudioProcessing* Create(const webrtc::Config& config);
-  // Deprecated. Use the Create below, with nullptr CustomProcessing.
-  RTC_DEPRECATED
-  static AudioProcessing* Create(const webrtc::Config& config,
-                                 NonlinearBeamformer* beamformer);
-
-  // Will be deprecated and removed as part of webrtc:8665. Use the
-  // Create below, with nullptr CustomProcessing.
-  static AudioProcessing* Create(
-      const webrtc::Config& config,
-      std::unique_ptr<CustomProcessing> capture_post_processor,
-      std::unique_ptr<EchoControlFactory> echo_control_factory,
-      NonlinearBeamformer* beamformer);
-
-  // Allows passing in optional user-defined processing modules.
-  static AudioProcessing* Create(
-      const webrtc::Config& config,
-      std::unique_ptr<CustomProcessing> capture_post_processor,
-      std::unique_ptr<CustomProcessing> render_pre_processor,
-      std::unique_ptr<EchoControlFactory> echo_control_factory,
-      NonlinearBeamformer* beamformer);
   ~AudioProcessing() override {}
 
   // Initializes internal states, while retaining all user settings. This
