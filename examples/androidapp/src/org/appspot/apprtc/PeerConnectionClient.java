@@ -659,7 +659,7 @@ public class PeerConnectionClient {
                                           + File.separator + "Download/audio.aecdump"),
                 ParcelFileDescriptor.MODE_READ_WRITE | ParcelFileDescriptor.MODE_CREATE
                     | ParcelFileDescriptor.MODE_TRUNCATE);
-        factory.startAecDump(aecDumpFileDescriptor.getFd(), -1);
+        factory.startAecDump(aecDumpFileDescriptor.detachFd(), -1);
       } catch (IOException e) {
         Log.e(TAG, "Can not open aecdump file", e);
       }
