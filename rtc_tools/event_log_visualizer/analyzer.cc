@@ -62,8 +62,6 @@ namespace plotting {
 
 namespace {
 
-const int kNumMicrosecsPerSec = 1000000;
-
 void SortPacketFeedbackVector(std::vector<PacketFeedback>* vec) {
   auto pred = [](const PacketFeedback& packet_feedback) {
     return packet_feedback.arrival_time_ms == PacketFeedback::kNotReceived;
@@ -90,10 +88,9 @@ bool MatchingSsrc(uint32_t ssrc, const std::vector<uint32_t>& desired_ssrc) {
 double AbsSendTimeToMicroseconds(int64_t abs_send_time) {
   // The timestamp is a fixed point representation with 6 bits for seconds
   // and 18 bits for fractions of a second. Thus, we divide by 2^18 to get the
-  // time in seconds and then multiply by kNumMicrosecsPerSec to convert to
-  // microseconds.
+  // time in seconds and then multiply by 1000000 to convert to microseconds.
   static constexpr double kTimestampToMicroSec =
-      static_cast<double>(kNumMicrosecsPerSec) / static_cast<double>(1ul << 18);
+      1000000.0 / static_cast<double>(1ul << 18);
   return abs_send_time * kTimestampToMicroSec;
 }
 
@@ -196,9 +193,7 @@ rtc::Optional<double> NetworkDelayDiff_CaptureTime(
     RTC_LOG(LS_WARNING) << "New capture time " << new_packet.header.timestamp
                         << ", received time " << new_packet.timestamp;
     RTC_LOG(LS_WARNING) << "Receive time difference " << recv_time_diff << " = "
-                        << static_cast<double>(recv_time_diff) /
-                               kNumMicrosecsPerSec
-                        << "s";
+                        << static_cast<double>(recv_time_diff) / 1000000 << "s";
     RTC_LOG(LS_WARNING) << "Send time difference " << send_time_diff << " = "
                         << static_cast<double>(send_time_diff) /
                                kVideoSampleRate
@@ -216,8 +211,7 @@ void ProcessPoints(
     uint64_t begin_time,
     TimeSeries* result) {
   for (size_t i = 0; i < data.size(); i++) {
-    float x = static_cast<float>(data[i].timestamp - begin_time) /
-              kNumMicrosecsPerSec;
+    float x = static_cast<float>(data[i].timestamp - begin_time) / 1000000;
     rtc::Optional<float> y = get_y(data[i]);
     if (y)
       result->points.emplace_back(x, *y);
@@ -235,8 +229,7 @@ void ProcessPairs(
     uint64_t begin_time,
     TimeSeries* result) {
   for (size_t i = 1; i < data.size(); i++) {
-    float x = static_cast<float>(data[i].timestamp - begin_time) /
-              kNumMicrosecsPerSec;
+    float x = static_cast<float>(data[i].timestamp - begin_time) / 1000000;
     rtc::Optional<ResultType> y = get_y(data[i - 1], data[i]);
     if (y)
       result->points.emplace_back(x, static_cast<float>(*y));
@@ -253,8 +246,7 @@ void AccumulatePoints(
     TimeSeries* result) {
   ResultType sum = 0;
   for (size_t i = 0; i < data.size(); i++) {
-    float x = static_cast<float>(data[i].timestamp - begin_time) /
-              kNumMicrosecsPerSec;
+    float x = static_cast<float>(data[i].timestamp - begin_time) / 1000000;
     rtc::Optional<ResultType> y = extract(data[i]);
     if (y) {
       sum += *y;
@@ -275,8 +267,7 @@ void AccumulatePairs(
     TimeSeries* result) {
   ResultType sum = 0;
   for (size_t i = 1; i < data.size(); i++) {
-    float x = static_cast<float>(data[i].timestamp - begin_time) /
-              kNumMicrosecsPerSec;
+    float x = static_cast<float>(data[i].timestamp - begin_time) / 1000000;
     rtc::Optional<ResultType> y = extract(data[i - 1], data[i]);
     if (y)
       sum += *y;
@@ -316,116 +307,11 @@ void MovingAverage(
         sum_in_window -= *value;
       ++window_index_begin;
     }
-    float window_duration_s =
-        static_cast<float>(window_duration_us) / kNumMicrosecsPerSec;
-    float x = static_cast<float>(t - begin_time) / kNumMicrosecsPerSec;
+    float window_duration_s = static_cast<float>(window_duration_us) / 1000000;
+    float x = static_cast<float>(t - begin_time) / 1000000;
     float y = sum_in_window / window_duration_s;
     result->points.emplace_back(x, y);
   }
-}
-
-const char kUnknownEnumValue[] = "unknown";
-
-const char kIceCandidateTypeLocal[] = "local";
-const char kIceCandidateTypeStun[] = "stun";
-const char kIceCandidateTypePrflx[] = "prflx";
-const char kIceCandidateTypeRelay[] = "relay";
-
-const char kProtocolUdp[] = "udp";
-const char kProtocolTcp[] = "tcp";
-const char kProtocolSsltcp[] = "ssltcp";
-const char kProtocolTls[] = "tls";
-
-const char kAddressFamilyIpv4[] = "ipv4";
-const char kAddressFamilyIpv6[] = "ipv6";
-
-const char kNetworkTypeEthernet[] = "ethernet";
-const char kNetworkTypeLoopback[] = "loopback";
-const char kNetworkTypeWifi[] = "wifi";
-const char kNetworkTypeVpn[] = "vpn";
-const char kNetworkTypeCellular[] = "cellular";
-
-std::string GetIceCandidateTypeAsString(webrtc::IceCandidateType type) {
-  switch (type) {
-    case webrtc::IceCandidateType::kLocal:
-      return kIceCandidateTypeLocal;
-    case webrtc::IceCandidateType::kStun:
-      return kIceCandidateTypeStun;
-    case webrtc::IceCandidateType::kPrflx:
-      return kIceCandidateTypePrflx;
-    case webrtc::IceCandidateType::kRelay:
-      return kIceCandidateTypeRelay;
-    default:
-      return kUnknownEnumValue;
-  }
-}
-
-std::string GetProtocolAsString(webrtc::IceCandidatePairProtocol protocol) {
-  switch (protocol) {
-    case webrtc::IceCandidatePairProtocol::kUdp:
-      return kProtocolUdp;
-    case webrtc::IceCandidatePairProtocol::kTcp:
-      return kProtocolTcp;
-    case webrtc::IceCandidatePairProtocol::kSsltcp:
-      return kProtocolSsltcp;
-    case webrtc::IceCandidatePairProtocol::kTls:
-      return kProtocolTls;
-    default:
-      return kUnknownEnumValue;
-  }
-}
-
-std::string GetAddressFamilyAsString(
-    webrtc::IceCandidatePairAddressFamily family) {
-  switch (family) {
-    case webrtc::IceCandidatePairAddressFamily::kIpv4:
-      return kAddressFamilyIpv4;
-    case webrtc::IceCandidatePairAddressFamily::kIpv6:
-      return kAddressFamilyIpv6;
-    default:
-      return kUnknownEnumValue;
-  }
-}
-
-std::string GetNetworkTypeAsString(webrtc::IceCandidateNetworkType type) {
-  switch (type) {
-    case webrtc::IceCandidateNetworkType::kEthernet:
-      return kNetworkTypeEthernet;
-    case webrtc::IceCandidateNetworkType::kLoopback:
-      return kNetworkTypeLoopback;
-    case webrtc::IceCandidateNetworkType::kWifi:
-      return kNetworkTypeWifi;
-    case webrtc::IceCandidateNetworkType::kVpn:
-      return kNetworkTypeVpn;
-    case webrtc::IceCandidateNetworkType::kCellular:
-      return kNetworkTypeCellular;
-    default:
-      return kUnknownEnumValue;
-  }
-}
-
-std::string GetCandidatePairLogDescriptionAsString(
-    const ParsedRtcEventLog::IceCandidatePairConfig& config) {
-  // Example: stun:wifi->relay(tcp):cellular@udp:ipv4
-  // represents a pair of a local server-reflexive candidate on a WiFi network
-  // and a remote relay candidate using TCP as the relay protocol on a cell
-  // network, when the candidate pair communicates over UDP using IPv4.
-  std::stringstream ss;
-  std::string local_candidate_type =
-      GetIceCandidateTypeAsString(config.local_candidate_type);
-  std::string remote_candidate_type =
-      GetIceCandidateTypeAsString(config.remote_candidate_type);
-  if (config.local_candidate_type == webrtc::IceCandidateType::kRelay) {
-    local_candidate_type +=
-        "(" + GetProtocolAsString(config.local_relay_protocol) + ")";
-  }
-  ss << local_candidate_type << ":"
-     << GetNetworkTypeAsString(config.local_network_type) << ":"
-     << GetAddressFamilyAsString(config.local_address_family) << "->"
-     << remote_candidate_type << ":"
-     << GetAddressFamilyAsString(config.remote_address_family) << "@"
-     << GetProtocolAsString(config.candidate_pair_protocol);
-  return ss.str();
 }
 
 }  // namespace
@@ -640,16 +526,6 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
         alr_state_events_.push_back(parsed_log_.GetAlrState(i));
         break;
       }
-      case ParsedRtcEventLog::ICE_CANDIDATE_PAIR_CONFIG: {
-        ice_candidate_pair_configs_.push_back(
-            parsed_log_.GetIceCandidatePairConfig(i));
-        break;
-      }
-      case ParsedRtcEventLog::ICE_CANDIDATE_PAIR_EVENT: {
-        ice_candidate_pair_events_.push_back(
-            parsed_log_.GetIceCandidatePairEvent(i));
-        break;
-      }
       case ParsedRtcEventLog::UNKNOWN_EVENT: {
         break;
       }
@@ -662,7 +538,7 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
   }
   begin_time_ = first_timestamp;
   end_time_ = last_timestamp;
-  call_duration_s_ = ToCallTime(end_time_);
+  call_duration_s_ = static_cast<float>(end_time_ - begin_time_) / 1000000;
   if (last_log_start) {
     // The log was missing the last LOG_END event. Fake it.
     log_segments_.push_back(std::make_pair(*last_log_start, end_time_));
@@ -749,7 +625,7 @@ rtc::Optional<uint32_t> EventLogAnalyzer::EstimateRtpClockFrequency(
     last_rtp_timestamp = unwrapper.Unwrap(packets[i].header.timestamp);
     last_log_timestamp = packets[i].timestamp;
   }
-  if (last_log_timestamp - first_log_timestamp < kNumMicrosecsPerSec) {
+  if (last_log_timestamp - first_log_timestamp < 1000000) {
     RTC_LOG(LS_WARNING)
         << "Failed to estimate RTP clock frequency: Stream too short. ("
         << packets.size() << " packets, "
@@ -757,8 +633,7 @@ rtc::Optional<uint32_t> EventLogAnalyzer::EstimateRtpClockFrequency(
     return rtc::nullopt;
   }
   double duration =
-      static_cast<double>(last_log_timestamp - first_log_timestamp) /
-      kNumMicrosecsPerSec;
+      static_cast<double>(last_log_timestamp - first_log_timestamp) / 1000000;
   double estimated_frequency =
       (last_rtp_timestamp - first_rtp_timestamp) / duration;
   for (uint32_t f : {8000, 16000, 32000, 48000, 90000}) {
@@ -773,7 +648,7 @@ rtc::Optional<uint32_t> EventLogAnalyzer::EstimateRtpClockFrequency(
 }
 
 float EventLogAnalyzer::ToCallTime(int64_t timestamp) const {
-  return static_cast<float>(timestamp - begin_time_) / kNumMicrosecsPerSec;
+  return static_cast<float>(timestamp - begin_time_) / 1000000;
 }
 
 void EventLogAnalyzer::CreatePacketGraph(PacketDirection desired_direction,
@@ -824,7 +699,8 @@ void EventLogAnalyzer::CreateAccumulatedPacketsTimeSeries(
     std::string label = label_prefix + " " + GetStreamName(stream_id);
     TimeSeries time_series(label, LineStyle::kStep);
     for (size_t i = 0; i < packet_stream.size(); i++) {
-      float x = ToCallTime(packet_stream[i].timestamp);
+      float x = static_cast<float>(packet_stream[i].timestamp - begin_time_) /
+                1000000;
       time_series.points.emplace_back(x, i + 1);
     }
 
@@ -862,7 +738,7 @@ void EventLogAnalyzer::CreatePlayoutGraph(Plot* plot) {
       parsed_log_.GetAudioPlayout(i, &ssrc);
       uint64_t timestamp = parsed_log_.GetTimestamp(i);
       if (MatchingSsrc(ssrc, desired_ssrc_)) {
-        float x = ToCallTime(timestamp);
+        float x = static_cast<float>(timestamp - begin_time_) / 1000000;
         float y = static_cast<float>(timestamp - last_playout[ssrc]) / 1000;
         if (time_series[ssrc].points.size() == 0) {
           // There were no previusly logged playout for this SSRC.
@@ -900,7 +776,7 @@ void EventLogAnalyzer::CreateAudioLevelGraph(Plot* plot) {
     //             streams. Tracking bug: webrtc:6399
     for (auto& packet : packet_stream) {
       if (packet.header.extension.hasAudioLevel) {
-        float x = ToCallTime(packet.timestamp);
+        float x = static_cast<float>(packet.timestamp - begin_time_) / 1000000;
         // The audio level is stored in -dBov (so e.g. -10 dBov is stored as 10)
         // Here we convert it to dBov.
         float y = static_cast<float>(-packet.header.extension.audioLevel);
@@ -991,7 +867,7 @@ void EventLogAnalyzer::CreateIncomingPacketLossGraph(Plot* plot) {
             std::max(highest_prior_seq_number, sequence_number);
         ++window_index_begin;
       }
-      float x = ToCallTime(t);
+      float x = static_cast<float>(t - begin_time_) / 1000000;
       int64_t expected_packets = highest_seq_number - highest_prior_seq_number;
       if (expected_packets > 0) {
         int64_t received_packets = window_index_end - window_index_begin;
@@ -1080,7 +956,7 @@ void EventLogAnalyzer::CreateFractionLossGraph(Plot* plot) {
   TimeSeries time_series("Fraction lost", LineStyle::kLine,
                          PointStyle::kHighlight);
   for (auto& bwe_update : bwe_loss_updates_) {
-    float x = ToCallTime(bwe_update.timestamp);
+    float x = static_cast<float>(bwe_update.timestamp - begin_time_) / 1000000;
     float y = static_cast<float>(bwe_update.fraction_loss) / 255 * 100;
     time_series.points.emplace_back(x, y);
   }
@@ -1140,8 +1016,8 @@ void EventLogAnalyzer::CreateTotalBitrateGraph(
       ++window_index_begin;
     }
     float window_duration_in_seconds =
-        static_cast<float>(window_duration_) / kNumMicrosecsPerSec;
-    float x = ToCallTime(time);
+        static_cast<float>(window_duration_) / 1000000;
+    float x = static_cast<float>(time - begin_time_) / 1000000;
     float y = bytes_in_window * 8 / window_duration_in_seconds / 1000;
     bitrate_series.points.emplace_back(x, y);
   }
@@ -1151,7 +1027,8 @@ void EventLogAnalyzer::CreateTotalBitrateGraph(
   if (desired_direction == kOutgoingPacket) {
     TimeSeries loss_series("Loss-based estimate", LineStyle::kStep);
     for (auto& loss_update : bwe_loss_updates_) {
-      float x = ToCallTime(loss_update.timestamp);
+      float x =
+          static_cast<float>(loss_update.timestamp - begin_time_) / 1000000;
       float y = static_cast<float>(loss_update.new_bitrate) / 1000;
       loss_series.points.emplace_back(x, y);
     }
@@ -1169,7 +1046,8 @@ void EventLogAnalyzer::CreateTotalBitrateGraph(
     BandwidthUsage last_detector_state = BandwidthUsage::kBwNormal;
 
     for (auto& delay_update : bwe_delay_updates_) {
-      float x = ToCallTime(delay_update.timestamp);
+      float x =
+          static_cast<float>(delay_update.timestamp - begin_time_) / 1000000;
       float y = static_cast<float>(delay_update.bitrate_bps) / 1000;
 
       if (last_detector_state != delay_update.detector_state) {
@@ -1201,7 +1079,7 @@ void EventLogAnalyzer::CreateTotalBitrateGraph(
     TimeSeries created_series("Probe cluster created.", LineStyle::kNone,
                               PointStyle::kHighlight);
     for (auto& cluster : bwe_probe_cluster_created_events_) {
-      float x = ToCallTime(cluster.timestamp);
+      float x = static_cast<float>(cluster.timestamp - begin_time_) / 1000000;
       float y = static_cast<float>(cluster.bitrate_bps) / 1000;
       created_series.points.emplace_back(x, y);
     }
@@ -1210,7 +1088,7 @@ void EventLogAnalyzer::CreateTotalBitrateGraph(
                              PointStyle::kHighlight);
     for (auto& result : bwe_probe_result_events_) {
       if (result.bitrate_bps) {
-        float x = ToCallTime(result.timestamp);
+        float x = static_cast<float>(result.timestamp - begin_time_) / 1000000;
         float y = static_cast<float>(*result.bitrate_bps) / 1000;
         result_series.points.emplace_back(x, y);
       }
@@ -1272,7 +1150,7 @@ void EventLogAnalyzer::CreateTotalBitrateGraph(
   for (const auto& kv : remb_packets) {
     const LoggedRtcpPacket* const rtcp = kv.second;
     const rtcp::Remb* const remb = static_cast<rtcp::Remb*>(rtcp->packet.get());
-    float x = ToCallTime(rtcp->timestamp);
+    float x = static_cast<float>(rtcp->timestamp - begin_time_) / 1000000;
     float y = static_cast<float>(remb->bitrate_bps()) / 1000;
     remb_series.points.emplace_back(x, y);
   }
@@ -1412,7 +1290,8 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
             acked_bitrate.Update(packet.payload_size, packet.arrival_time_ms);
           bitrate_bps = acked_bitrate.Rate(feedback.back().arrival_time_ms);
         }
-        float x = ToCallTime(clock.TimeInMicroseconds());
+        float x = static_cast<float>(clock.TimeInMicroseconds() - begin_time_) /
+                  1000000;
         float y = bitrate_bps.value_or(0) / 1000;
         acked_time_series.points.emplace_back(x, y);
 #if !(BWE_TEST_LOGGING_COMPILE_TIME_ENABLE)
@@ -1443,7 +1322,8 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
     if (observer.GetAndResetBitrateUpdated() ||
         time_us - last_update_us >= 1e6) {
       uint32_t y = observer.last_bitrate_bps() / 1000;
-      float x = ToCallTime(clock.TimeInMicroseconds());
+      float x = static_cast<float>(clock.TimeInMicroseconds() - begin_time_) /
+                1000000;
       time_series.points.emplace_back(x, y);
       last_update_us = time_us;
     }
@@ -1516,13 +1396,15 @@ void EventLogAnalyzer::CreateReceiveSideBweSimulationGraph(Plot* plot) {
     rtc::Optional<uint32_t> bitrate_bps = acked_bitrate.Rate(arrival_time_ms);
     if (bitrate_bps) {
       uint32_t y = *bitrate_bps / 1000;
-      float x = ToCallTime(clock.TimeInMicroseconds());
+      float x = static_cast<float>(clock.TimeInMicroseconds() - begin_time_) /
+                1000000;
       acked_time_series.points.emplace_back(x, y);
     }
     if (packet_router.GetAndResetBitrateUpdated() ||
         clock.TimeInMicroseconds() - last_update_us >= 1e6) {
       uint32_t y = packet_router.last_bitrate_bps() / 1000;
-      float x = ToCallTime(clock.TimeInMicroseconds());
+      float x = static_cast<float>(clock.TimeInMicroseconds() - begin_time_) /
+                1000000;
       time_series.points.emplace_back(x, y);
       last_update_us = clock.TimeInMicroseconds();
     }
@@ -1593,7 +1475,9 @@ void EventLogAnalyzer::CreateNetworkDelayFeedbackGraph(Plot* plot) {
             feedback_adapter.GetTransportFeedbackVector();
         SortPacketFeedbackVector(&feedback);
         for (const PacketFeedback& packet : feedback) {
-          float x = ToCallTime(clock.TimeInMicroseconds());
+          float x =
+              static_cast<float>(clock.TimeInMicroseconds() - begin_time_) /
+              1000000;
           if (packet.send_time_ms == PacketFeedback::kNoSendTime) {
             late_feedback_series.points.emplace_back(x, prev_y);
             continue;
@@ -1703,7 +1587,7 @@ void EventLogAnalyzer::CreatePacerDelayGraph(Plot* plot) {
                                *estimated_frequency * 1000;
       double send_time_ms =
           static_cast<double>(packet.timestamp - first_send_timestamp) / 1000;
-      float x = ToCallTime(packet.timestamp);
+      float x = static_cast<float>(packet.timestamp - begin_time_) / 1000000;
       float y = send_time_ms - capture_time_ms;
       pacer_delay_series.points.emplace_back(x, y);
     }
@@ -1725,7 +1609,7 @@ void EventLogAnalyzer::CreateTimestampGraph(Plot* plot) {
       TimeSeries timestamp_data(GetStreamName(stream_id) + " capture-time",
                                 LineStyle::kLine, PointStyle::kHighlight);
       for (LoggedRtpPacket packet : rtp_packets) {
-        float x = ToCallTime(packet.timestamp);
+        float x = static_cast<float>(packet.timestamp - begin_time_) / 1000000;
         float y = packet.header.timestamp;
         timestamp_data.points.emplace_back(x, y);
       }
@@ -1744,7 +1628,7 @@ void EventLogAnalyzer::CreateTimestampGraph(Plot* plot) {
             continue;
           rtcp::SenderReport* sr;
           sr = static_cast<rtcp::SenderReport*>(rtcp.packet.get());
-          float x = ToCallTime(rtcp.timestamp);
+          float x = static_cast<float>(rtcp.timestamp - begin_time_) / 1000000;
           float y = sr->rtp_timestamp();
           timestamp_data.points.emplace_back(x, y);
         }
@@ -2100,81 +1984,6 @@ void EventLogAnalyzer::CreateAudioJitterBufferGraph(
   plot->SetYAxis(min_y_axis, max_y_axis, "Relative delay (ms)", kBottomMargin,
                  kTopMargin);
   plot->SetTitle("NetEq timing");
-}
-
-void EventLogAnalyzer::CreateIceCandidatePairConfigGraph(Plot* plot) {
-  std::map<uint32_t, TimeSeries> configs_by_cp_id;
-  for (const auto& config : ice_candidate_pair_configs_) {
-    if (configs_by_cp_id.find(config.candidate_pair_id) ==
-        configs_by_cp_id.end()) {
-      const std::string candidate_pair_desc =
-          GetCandidatePairLogDescriptionAsString(config);
-      configs_by_cp_id[config.candidate_pair_id] = TimeSeries(
-          candidate_pair_desc, LineStyle::kNone, PointStyle::kHighlight);
-      candidate_pair_desc_by_id_[config.candidate_pair_id] =
-          candidate_pair_desc;
-    }
-    float x = ToCallTime(config.timestamp);
-    float y = static_cast<float>(config.type);
-    configs_by_cp_id[config.candidate_pair_id].points.emplace_back(x, y);
-  }
-
-  // TODO(qingsi): There can be a large number of candidate pairs generated by
-  // certain calls and the frontend cannot render the chart in this case due to
-  // the failure of generating a palette with the same number of colors.
-  for (auto& kv : configs_by_cp_id) {
-    plot->AppendTimeSeries(std::move(kv.second));
-  }
-
-  plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
-  plot->SetSuggestedYAxis(0, 3, "Numeric Config Type", kBottomMargin,
-                          kTopMargin);
-  plot->SetTitle("[IceEventLog] ICE candidate pair configs");
-}
-
-std::string EventLogAnalyzer::GetCandidatePairLogDescriptionFromId(
-    uint32_t candidate_pair_id) {
-  if (candidate_pair_desc_by_id_.find(candidate_pair_id) !=
-      candidate_pair_desc_by_id_.end()) {
-    return candidate_pair_desc_by_id_[candidate_pair_id];
-  }
-  for (const auto& config : ice_candidate_pair_configs_) {
-    // TODO(qingsi): Add the handling of the "Updated" config event after the
-    // visualization of property change for candidate pairs is introduced.
-    if (candidate_pair_desc_by_id_.find(config.candidate_pair_id) ==
-        candidate_pair_desc_by_id_.end()) {
-      const std::string candidate_pair_desc =
-          GetCandidatePairLogDescriptionAsString(config);
-      candidate_pair_desc_by_id_[config.candidate_pair_id] =
-          candidate_pair_desc;
-    }
-  }
-  return candidate_pair_desc_by_id_[candidate_pair_id];
-}
-
-void EventLogAnalyzer::CreateIceConnectivityCheckGraph(Plot* plot) {
-  std::map<uint32_t, TimeSeries> checks_by_cp_id;
-  for (const auto& event : ice_candidate_pair_events_) {
-    if (checks_by_cp_id.find(event.candidate_pair_id) ==
-        checks_by_cp_id.end()) {
-      checks_by_cp_id[event.candidate_pair_id] = TimeSeries(
-          GetCandidatePairLogDescriptionFromId(event.candidate_pair_id),
-          LineStyle::kNone, PointStyle::kHighlight);
-    }
-    float x = ToCallTime(event.timestamp);
-    float y = static_cast<float>(event.type);
-    checks_by_cp_id[event.candidate_pair_id].points.emplace_back(x, y);
-  }
-
-  // TODO(qingsi): The same issue as in CreateIceCandidatePairConfigGraph.
-  for (auto& kv : checks_by_cp_id) {
-    plot->AppendTimeSeries(std::move(kv.second));
-  }
-
-  plot->SetXAxis(0, call_duration_s_, "Time (s)", kLeftMargin, kRightMargin);
-  plot->SetSuggestedYAxis(0, 4, "Numeric Connectivity State", kBottomMargin,
-                          kTopMargin);
-  plot->SetTitle("[IceEventLog] ICE connectivity checks");
 }
 
 void EventLogAnalyzer::Notification(
