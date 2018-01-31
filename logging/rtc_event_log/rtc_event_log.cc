@@ -377,10 +377,4 @@ std::unique_ptr<RtcEventLog> RtcEventLog::CreateNull() {
   return std::unique_ptr<RtcEventLog>(new RtcEventLogNullImpl());
 }
 
-bool RtcEventLogNullImpl::StartLogging(
-    std::unique_ptr<RtcEventLogOutput> output,
-    int64_t output_period_ms) {
-  return false;
-}
-
 }  // namespace webrtc

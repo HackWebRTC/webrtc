@@ -102,7 +102,6 @@ rtc_source_set("estimators") {
 
   deps = [
     "../../api:optional",
-    "../../logging:rtc_event_bwe",
     "../../logging:rtc_event_log_api",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
@@ -123,7 +122,6 @@ rtc_source_set("delay_based_bwe") {
   deps = [
     ":estimators",
     "../../:typedefs",
-    "../../logging:rtc_event_bwe",
     "../../logging:rtc_event_log_api",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
