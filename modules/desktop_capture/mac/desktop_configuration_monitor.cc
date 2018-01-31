@@ -11,7 +11,6 @@
 #include "modules/desktop_capture/mac/desktop_configuration_monitor.h"
 
 #include "modules/desktop_capture/mac/desktop_configuration.h"
-#include "rtc_base/event.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/event_wrapper.h"
 
@@ -42,9 +41,6 @@ DesktopConfigurationMonitor::~DesktopConfigurationMonitor() {
 }
 
 void DesktopConfigurationMonitor::Lock() {
-  // TODO(crbug.com/796889, crbug.com/795340): Fix how synchronization is being
-  // done and avoid blocking waits.
-  rtc::ScopedAllowBaseSyncPrimitives allow_event_wait;
   if (!display_configuration_capture_event_->Wait(
               kDisplayConfigurationEventTimeoutMs)) {
     RTC_LOG_F(LS_ERROR) << "Event wait timed out.";
@@ -74,10 +70,6 @@ void DesktopConfigurationMonitor::DisplaysReconfigured(
       // If this is the first display to start reconfiguring then wait on
       // |display_configuration_capture_event_| to block the capture thread
       // from accessing display memory until the reconfiguration completes.
-
-      // TODO(crbug.com/796889, crbug.com/795340): Fix how synchronization is
-      // being done and avoid blocking waits.
-      rtc::ScopedAllowBaseSyncPrimitives allow_event_wait;
       if (!display_configuration_capture_event_->Wait(
               kDisplayConfigurationEventTimeoutMs)) {
         RTC_LOG_F(LS_ERROR) << "Event wait timed out.";
