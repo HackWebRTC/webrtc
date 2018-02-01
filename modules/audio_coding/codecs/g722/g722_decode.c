@@ -34,7 +34,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "g722_enc_dec.h"
+#include "modules/audio_coding/codecs/g722/g722_enc_dec.h"
 #include "typedefs.h"  // NOLINT(build/include)
 
 #if !defined(FALSE)
