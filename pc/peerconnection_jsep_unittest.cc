@@ -913,6 +913,104 @@ TEST_F(PeerConnectionJsepTest,
   EXPECT_NE(kTrackId, streams[0].id);
 }
 
+// Test that if the transceiver is recvonly or inactive, then no MSID
+// information is included in the offer.
+TEST_F(PeerConnectionJsepTest, NoMsidInOfferIfTransceiverDirectionHasNoSend) {
+  auto caller = CreatePeerConnection();
+
+  RtpTransceiverInit init_recvonly;
+  init_recvonly.direction = RtpTransceiverDirection::kRecvOnly;
+  ASSERT_TRUE(caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO, init_recvonly));
+
+  RtpTransceiverInit init_inactive;
+  init_inactive.direction = RtpTransceiverDirection::kInactive;
+  ASSERT_TRUE(caller->AddTransceiver(cricket::MEDIA_TYPE_VIDEO, init_inactive));
+
+  auto offer = caller->CreateOffer();
+  auto contents = offer->description()->contents();
+  ASSERT_EQ(2u, contents.size());
+  // MSID is specified in the first stream, so no streams means no MSID.
+  EXPECT_EQ(0u, contents[0].media_description()->streams().size());
+  EXPECT_EQ(0u, contents[1].media_description()->streams().size());
+}
+
+// Test that if an answer negotiates transceiver directions of recvonly or
+// inactive, then no MSID information is included in the answer.
+TEST_F(PeerConnectionJsepTest, NoMsidInAnswerIfNoRespondingTracks) {
+  auto caller = CreatePeerConnection();
+  auto callee = CreatePeerConnection();
+
+  // recvonly transceiver will get negotiated to inactive since the callee has
+  // no tracks to send in response.
+  RtpTransceiverInit init_recvonly;
+  init_recvonly.direction = RtpTransceiverDirection::kRecvOnly;
+  caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO, init_recvonly);
+
+  // sendrecv transceiver will get negotiated to recvonly since the callee has
+  // no tracks to send in response.
+  RtpTransceiverInit init_sendrecv;
+  init_sendrecv.direction = RtpTransceiverDirection::kSendRecv;
+  caller->AddTransceiver(cricket::MEDIA_TYPE_VIDEO, init_sendrecv);
+
+  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
+
+  auto answer = callee->CreateAnswer();
+  auto contents = answer->description()->contents();
+  ASSERT_EQ(2u, contents.size());
+  // MSID is specified in the first stream, so no streams means no MSID.
+  EXPECT_EQ(0u, contents[0].media_description()->streams().size());
+  EXPECT_EQ(0u, contents[1].media_description()->streams().size());
+}
+
+// Test that the MSID is included even if the transceiver direction has changed
+// to inactive if the transceiver had previously sent media.
+TEST_F(PeerConnectionJsepTest, IncludeMsidEvenIfDirectionHasChanged) {
+  auto caller = CreatePeerConnection();
+  caller->AddAudioTrack("audio");
+  auto callee = CreatePeerConnection();
+  callee->AddAudioTrack("audio");
+
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+
+  caller->pc()->GetTransceivers()[0]->SetDirection(
+      RtpTransceiverDirection::kInactive);
+
+  // The transceiver direction on both sides will turn to inactive.
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+
+  auto* offer = callee->pc()->remote_description();
+  auto offer_contents = offer->description()->contents();
+  ASSERT_EQ(1u, offer_contents.size());
+  // MSID is specified in the first stream. If it is present, assume that MSID
+  // is there.
+  EXPECT_EQ(1u, offer_contents[0].media_description()->streams().size());
+
+  auto* answer = caller->pc()->remote_description();
+  auto answer_contents = answer->description()->contents();
+  ASSERT_EQ(1u, answer_contents.size());
+  EXPECT_EQ(1u, answer_contents[0].media_description()->streams().size());
+}
+
+// Test that stopping a RtpTransceiver will cause future offers to not include
+// any MSID information for that section.
+TEST_F(PeerConnectionJsepTest, RemoveMsidIfTransceiverStopped) {
+  auto caller = CreatePeerConnection();
+  auto transceiver = caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO);
+  auto callee = CreatePeerConnection();
+
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+
+  transceiver->Stop();
+
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+
+  auto* offer = callee->pc()->remote_description();
+  auto offer_contents = offer->description()->contents();
+  ASSERT_EQ(1u, offer_contents.size());
+  // MSID is specified in the first stream, so no streams means no MSID.
+  EXPECT_EQ(0u, offer_contents[0].media_description()->streams().size());
+}
+
 // Test that the callee RtpReceiver created by a call to SetRemoteDescription
 // has its ID set to the signaled track ID.
 TEST_F(PeerConnectionJsepTest,

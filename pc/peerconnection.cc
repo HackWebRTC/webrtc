@@ -2150,9 +2150,8 @@ RTCError PeerConnection::ApplyRemoteDescription(
         transceiver->Stop();
       }
       if (!content->rejected && !media_desc->streams().empty()) {
-        const auto& stream = content->media_description()->streams()[0];
         transceiver->internal()->receiver_internal()->SetupMediaChannel(
-            stream.first_ssrc());
+            media_desc->streams()[0].first_ssrc());
       }
     }
     for (auto event : track_events) {
@@ -2410,8 +2409,13 @@ PeerConnection::AssociateTransceiver(cricket::ContentSource source,
     if (!transceiver) {
       auto sender =
           CreateSender(media_desc->type(), nullptr, {rtc::CreateRandomUuid()});
-      auto receiver =
-          CreateReceiver(media_desc->type(), media_desc->streams()[0].id);
+      std::string receiver_id;
+      if (!media_desc->streams().empty()) {
+        receiver_id = media_desc->streams()[0].id;
+      } else {
+        receiver_id = rtc::CreateRandomUuid();
+      }
+      auto receiver = CreateReceiver(media_desc->type(), receiver_id);
       transceiver = CreateAndAddTransceiver(sender, receiver);
       transceiver->internal()->set_direction(
           RtpTransceiverDirection::kRecvOnly);
@@ -3304,13 +3308,22 @@ GetMediaDescriptionOptionsForTransceiver(
   cricket::MediaDescriptionOptions media_description_options(
       transceiver->internal()->media_type(), mid, transceiver->direction(),
       transceiver->stopped());
-  cricket::SenderOptions sender_options;
-  sender_options.track_id = transceiver->sender()->id();
-  sender_options.stream_ids = transceiver->sender()->stream_ids();
-  // TODO(bugs.webrtc.org/7600): Set num_sim_layers to the number of encodings
-  // set in the RTP parameters when the transceiver was added.
-  sender_options.num_sim_layers = 1;
-  media_description_options.sender_options.push_back(sender_options);
+  // This behavior is specified in JSEP. The gist is that:
+  // 1. The MSID is included if the RtpTransceiver's direction is sendonly or
+  //    sendrecv.
+  // 2. If the MSID is included, then it must be included in any subsequent
+  //    offer/answer exactly the same until the RtpTransceiver is stopped.
+  if (!transceiver->stopped() &&
+      (RtpTransceiverDirectionHasSend(transceiver->direction()) ||
+       transceiver->internal()->has_ever_been_used_to_send())) {
+    cricket::SenderOptions sender_options;
+    sender_options.track_id = transceiver->sender()->id();
+    sender_options.stream_ids = transceiver->sender()->stream_ids();
+    // TODO(bugs.webrtc.org/7600): Set num_sim_layers to the number of encodings
+    // set in the RTP parameters when the transceiver was added.
+    sender_options.num_sim_layers = 1;
+    media_description_options.sender_options.push_back(sender_options);
+  }
   return media_description_options;
 }
 
