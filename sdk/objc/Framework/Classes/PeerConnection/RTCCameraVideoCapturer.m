@@ -168,7 +168,7 @@ const int64_t kNanosecondsPerSecond = 1000000000;
                     }];
 }
 
-- (void)stopCaptureWithCompletionHandler:(nullable void (^)())completionHandler {
+- (void)stopCaptureWithCompletionHandler:(nullable void (^)(void))completionHandler {
   _willBeRunning = NO;
   [RTCDispatcher
       dispatchAsyncOnType:RTCDispatcherTypeCaptureSession

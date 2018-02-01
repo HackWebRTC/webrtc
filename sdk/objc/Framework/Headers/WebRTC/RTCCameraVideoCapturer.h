@@ -41,7 +41,7 @@ RTC_EXPORT
                            fps:(NSInteger)fps
              completionHandler:(nullable void (^)(NSError *))completionHandler;
 // Stops the capture session asynchronously and notifies callback on completion.
-- (void)stopCaptureWithCompletionHandler:(nullable void (^)())completionHandler;
+- (void)stopCaptureWithCompletionHandler:(nullable void (^)(void))completionHandler;
 
 // Starts the capture session asynchronously.
 - (void)startCaptureWithDevice:(AVCaptureDevice *)device
