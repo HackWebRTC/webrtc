@@ -37,52 +37,9 @@
 
 namespace webrtc {
 
-// Returns true if |obj| == null in Java.
-bool IsNull(JNIEnv* jni, const JavaRef<jobject>& obj);
-
-// Given a (UTF-16) jstring return a new UTF-8 native string.
-std::string JavaToStdString(JNIEnv* jni, const JavaRef<jstring>& j_string);
-
-// Deprecated. Use scoped jobjects instead.
-inline std::string JavaToStdString(JNIEnv* jni, jstring j_string) {
-  return JavaToStdString(jni, JavaParamRef<jstring>(j_string));
-}
-
-// Given a List of (UTF-16) jstrings
-// return a new vector of UTF-8 native strings.
-std::vector<std::string> JavaToStdVectorStrings(JNIEnv* jni,
-                                                const JavaRef<jobject>& list);
-
-rtc::Optional<int32_t> JavaToNativeOptionalInt(JNIEnv* jni,
-                                               const JavaRef<jobject>& integer);
-rtc::Optional<bool> JavaToNativeOptionalBool(JNIEnv* jni,
-                                             const JavaRef<jobject>& boolean);
-int64_t JavaToNativeLong(JNIEnv* env, const JavaRef<jobject>& j_long);
-
-ScopedJavaLocalRef<jobject> NativeToJavaBoolean(JNIEnv* env, bool b);
-ScopedJavaLocalRef<jobject> NativeToJavaInteger(JNIEnv* jni, int32_t i);
-ScopedJavaLocalRef<jobject> NativeToJavaLong(JNIEnv* env, int64_t u);
-ScopedJavaLocalRef<jobject> NativeToJavaDouble(JNIEnv* env, double d);
-ScopedJavaLocalRef<jstring> NativeToJavaString(JNIEnv* jni, const char* str);
-ScopedJavaLocalRef<jstring> NativeToJavaString(JNIEnv* jni,
-                                               const std::string& str);
-ScopedJavaLocalRef<jobject> NativeToJavaInteger(
-    JNIEnv* jni,
-    const rtc::Optional<int32_t>& optional_int);
-
-// Parses Map<String, String> to std::map<std::string, std::string>.
-std::map<std::string, std::string> JavaToStdMapStrings(
-    JNIEnv* jni,
-    const JavaRef<jobject>& j_map);
-
-// Deprecated. Use scoped jobjects instead.
-inline std::map<std::string, std::string> JavaToStdMapStrings(JNIEnv* jni,
-                                                              jobject j_map) {
-  return JavaToStdMapStrings(jni, JavaParamRef<jobject>(j_map));
-}
-
-// Returns the name of a Java enum.
-std::string GetJavaEnumName(JNIEnv* jni, const JavaRef<jobject>& j_enum);
+// ---------------
+// -- Utilities --
+// ---------------
 
 // Provides a convenient way to iterate over a Java Iterable using the
 // C++ range-for loop.
@@ -148,6 +105,58 @@ class Iterable {
   RTC_DISALLOW_COPY_AND_ASSIGN(Iterable);
 };
 
+// Returns true if |obj| == null in Java.
+bool IsNull(JNIEnv* jni, const JavaRef<jobject>& obj);
+
+// Returns the name of a Java enum.
+std::string GetJavaEnumName(JNIEnv* jni, const JavaRef<jobject>& j_enum);
+
+// --------------------------------------------------------
+// -- Methods for converting Java types to native types. --
+// --------------------------------------------------------
+
+int64_t JavaToNativeLong(JNIEnv* env, const JavaRef<jobject>& j_long);
+
+rtc::Optional<bool> JavaToNativeOptionalBool(JNIEnv* jni,
+                                             const JavaRef<jobject>& boolean);
+rtc::Optional<int32_t> JavaToNativeOptionalInt(JNIEnv* jni,
+                                               const JavaRef<jobject>& integer);
+
+// Given a (UTF-16) jstring return a new UTF-8 native string.
+std::string JavaToNativeString(JNIEnv* jni, const JavaRef<jstring>& j_string);
+
+template <typename T, typename Convert>
+std::vector<T> JavaToNativeVector(JNIEnv* env,
+                                  const JavaRef<jobjectArray>& j_container,
+                                  Convert convert) {
+  std::vector<T> container;
+  const size_t size = env->GetArrayLength(j_container.obj());
+  container.reserve(size);
+  for (size_t i = 0; i < size; ++i) {
+    container.emplace_back(convert(
+        env, ScopedJavaLocalRef<jobject>(
+                 env, env->GetObjectArrayElement(j_container.obj(), i))));
+  }
+  CHECK_EXCEPTION(env) << "Error during JavaToNativeVector";
+  return container;
+}
+
+// --------------------------------------------------------
+// -- Methods for converting native types to Java types. --
+// --------------------------------------------------------
+
+ScopedJavaLocalRef<jobject> NativeToJavaBoolean(JNIEnv* env, bool b);
+ScopedJavaLocalRef<jobject> NativeToJavaDouble(JNIEnv* env, double d);
+ScopedJavaLocalRef<jobject> NativeToJavaInteger(JNIEnv* jni, int32_t i);
+ScopedJavaLocalRef<jobject> NativeToJavaLong(JNIEnv* env, int64_t u);
+ScopedJavaLocalRef<jstring> NativeToJavaString(JNIEnv* jni, const char* str);
+ScopedJavaLocalRef<jstring> NativeToJavaString(JNIEnv* jni,
+                                               const std::string& str);
+
+ScopedJavaLocalRef<jobject> NativeToJavaInteger(
+    JNIEnv* jni,
+    const rtc::Optional<int32_t>& optional_int);
+
 // Helper function for converting std::vector<T> into a Java array.
 template <typename T, typename Convert>
 ScopedJavaLocalRef<jobjectArray> NativeToJavaObjectArray(
@@ -166,37 +175,21 @@ ScopedJavaLocalRef<jobjectArray> NativeToJavaObjectArray(
   return j_container;
 }
 
-ScopedJavaLocalRef<jobjectArray> NativeToJavaIntegerArray(
-    JNIEnv* env,
-    const std::vector<int32_t>& container);
 ScopedJavaLocalRef<jobjectArray> NativeToJavaBooleanArray(
     JNIEnv* env,
     const std::vector<bool>& container);
-ScopedJavaLocalRef<jobjectArray> NativeToJavaLongArray(
-    JNIEnv* env,
-    const std::vector<int64_t>& container);
 ScopedJavaLocalRef<jobjectArray> NativeToJavaDoubleArray(
     JNIEnv* env,
     const std::vector<double>& container);
+ScopedJavaLocalRef<jobjectArray> NativeToJavaIntegerArray(
+    JNIEnv* env,
+    const std::vector<int32_t>& container);
+ScopedJavaLocalRef<jobjectArray> NativeToJavaLongArray(
+    JNIEnv* env,
+    const std::vector<int64_t>& container);
 ScopedJavaLocalRef<jobjectArray> NativeToJavaStringArray(
     JNIEnv* env,
     const std::vector<std::string>& container);
-
-template <typename T, typename Convert>
-std::vector<T> JavaToNativeVector(JNIEnv* env,
-                                  const JavaRef<jobjectArray>& j_container,
-                                  Convert convert) {
-  std::vector<T> container;
-  const size_t size = env->GetArrayLength(j_container.obj());
-  container.reserve(size);
-  for (size_t i = 0; i < size; ++i) {
-    container.emplace_back(convert(
-        env, ScopedJavaLocalRef<jobject>(
-                 env, env->GetObjectArrayElement(j_container.obj(), i))));
-  }
-  CHECK_EXCEPTION(env) << "Error during JavaToNativeVector";
-  return container;
-}
 
 // This is a helper class for NativeToJavaList(). Use that function instead of
 // using this class directly.
@@ -246,6 +239,38 @@ ScopedJavaLocalRef<jobject> NativeToJavaMap(JNIEnv* env,
     builder.put(key_value_pair.first, key_value_pair.second);
   }
   return builder.GetJavaMap();
+}
+
+// ------------------------
+// -- Deprecated methods --
+// ------------------------
+
+// Deprecated. Use JavaToNativeString.
+inline std::string JavaToStdString(JNIEnv* jni,
+                                   const JavaRef<jstring>& j_string) {
+  return JavaToNativeString(jni, j_string);
+}
+
+// Deprecated. Use scoped jobjects instead.
+inline std::string JavaToStdString(JNIEnv* jni, jstring j_string) {
+  return JavaToStdString(jni, JavaParamRef<jstring>(j_string));
+}
+
+// Deprecated. Use JavaToNativeVector<std::string> instead.
+// Given a List of (UTF-16) jstrings
+// return a new vector of UTF-8 native strings.
+std::vector<std::string> JavaToStdVectorStrings(JNIEnv* jni,
+                                                const JavaRef<jobject>& list);
+
+// Parses Map<String, String> to std::map<std::string, std::string>.
+std::map<std::string, std::string> JavaToStdMapStrings(
+    JNIEnv* jni,
+    const JavaRef<jobject>& j_map);
+
+// Deprecated. Use scoped jobjects instead.
+inline std::map<std::string, std::string> JavaToStdMapStrings(JNIEnv* jni,
+                                                              jobject j_map) {
+  return JavaToStdMapStrings(jni, JavaParamRef<jobject>(j_map));
 }
 
 }  // namespace webrtc
