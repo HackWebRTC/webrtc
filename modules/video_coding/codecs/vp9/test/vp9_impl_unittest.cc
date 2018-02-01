@@ -9,8 +9,8 @@
  */
 
 #include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "modules/video_coding/codecs/test/video_codec_unittest.h"
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
-#include "modules/video_coding/codecs/test/video_codec_test.h"
 
 namespace webrtc {
 
@@ -18,7 +18,7 @@ namespace {
 constexpr uint32_t kTimestampIncrementPerFrame = 3000;
 }  // namespace
 
-class TestVp9Impl : public VideoCodecTest {
+class TestVp9Impl : public VideoCodecUnitTest {
  protected:
   std::unique_ptr<VideoEncoder> CreateEncoder() override {
     return VP9Encoder::Create();

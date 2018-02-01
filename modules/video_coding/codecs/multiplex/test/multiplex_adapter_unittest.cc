@@ -17,7 +17,7 @@
 #include "modules/video_coding/codecs/multiplex/include/multiplex_decoder_adapter.h"
 #include "modules/video_coding/codecs/multiplex/include/multiplex_encoded_image_packer.h"
 #include "modules/video_coding/codecs/multiplex/include/multiplex_encoder_adapter.h"
-#include "modules/video_coding/codecs/test/video_codec_test.h"
+#include "modules/video_coding/codecs/test/video_codec_unittest.h"
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
 #include "rtc_base/keep_ref_until_done.h"
 #include "rtc_base/ptr_util.h"
@@ -31,7 +31,7 @@ constexpr const char* kMultiplexAssociatedCodecName = cricket::kVp9CodecName;
 const VideoCodecType kMultiplexAssociatedCodecType =
     PayloadStringToCodecType(kMultiplexAssociatedCodecName);
 
-class TestMultiplexAdapter : public VideoCodecTest {
+class TestMultiplexAdapter : public VideoCodecUnitTest {
  public:
   TestMultiplexAdapter()
       : decoder_factory_(new webrtc::MockVideoDecoderFactory),
@@ -101,14 +101,14 @@ class TestMultiplexAdapter : public VideoCodecTest {
         .WillOnce(Return(encoder1))
         .WillOnce(Return(encoder2));
 
-    VideoCodecTest::SetUp();
+    VideoCodecUnitTest::SetUp();
   }
 
   const std::unique_ptr<webrtc::MockVideoDecoderFactory> decoder_factory_;
   const std::unique_ptr<webrtc::MockVideoEncoderFactory> encoder_factory_;
 };
 
-// TODO(emircan): Currently VideoCodecTest tests do a complete setup
+// TODO(emircan): Currently VideoCodecUnitTest tests do a complete setup
 // step that goes beyond constructing |decoder_|. Simplify these tests to do
 // less.
 TEST_F(TestMultiplexAdapter, ConstructAndDestructDecoder) {

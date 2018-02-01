@@ -10,11 +10,11 @@
 
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/video_coding/codecs/h264/include/h264.h"
-#include "modules/video_coding/codecs/test/video_codec_test.h"
+#include "modules/video_coding/codecs/test/video_codec_unittest.h"
 
 namespace webrtc {
 
-class TestH264Impl : public VideoCodecTest {
+class TestH264Impl : public VideoCodecUnitTest {
  protected:
   std::unique_ptr<VideoEncoder> CreateEncoder() override {
     return H264Encoder::Create(cricket::VideoCodec(cricket::kH264CodecName));

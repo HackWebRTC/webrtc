@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/video_coding/codecs/test/video_codec_test.h"
+#include "modules/video_coding/codecs/test/video_codec_unittest.h"
 
 #include "api/video/i420_buffer.h"
 #include "modules/video_coding/include/video_error_codes.h"
@@ -28,7 +28,7 @@ static const int kMaxFramerate = 30;  // Arbitrary value.
 namespace webrtc {
 
 EncodedImageCallback::Result
-VideoCodecTest::FakeEncodeCompleteCallback::OnEncodedImage(
+VideoCodecUnitTest::FakeEncodeCompleteCallback::OnEncodedImage(
     const EncodedImage& frame,
     const CodecSpecificInfo* codec_specific_info,
     const RTPFragmentationHeader* fragmentation) {
@@ -49,7 +49,7 @@ VideoCodecTest::FakeEncodeCompleteCallback::OnEncodedImage(
   return Result(Result::OK);
 }
 
-void VideoCodecTest::FakeDecodeCompleteCallback::Decoded(
+void VideoCodecUnitTest::FakeDecodeCompleteCallback::Decoded(
     VideoFrame& frame,
     rtc::Optional<int32_t> decode_time_ms,
     rtc::Optional<uint8_t> qp) {
@@ -59,7 +59,7 @@ void VideoCodecTest::FakeDecodeCompleteCallback::Decoded(
   test_->decoded_frame_event_.Set();
 }
 
-void VideoCodecTest::SetUp() {
+void VideoCodecUnitTest::SetUp() {
   // Using a QCIF image. Processing only one frame.
   FILE* source_file_ =
       fopen(test::ResourcePath("paris_qcif", "yuv").c_str(), "rb");
@@ -77,7 +77,7 @@ void VideoCodecTest::SetUp() {
   InitCodecs();
 }
 
-bool VideoCodecTest::WaitForEncodedFrame(
+bool VideoCodecUnitTest::WaitForEncodedFrame(
     EncodedImage* frame,
     CodecSpecificInfo* codec_specific_info) {
   std::vector<EncodedImage> frames;
@@ -91,12 +91,12 @@ bool VideoCodecTest::WaitForEncodedFrame(
   return true;
 }
 
-void VideoCodecTest::SetWaitForEncodedFramesThreshold(size_t num_frames) {
+void VideoCodecUnitTest::SetWaitForEncodedFramesThreshold(size_t num_frames) {
   rtc::CritScope lock(&encoded_frame_section_);
   wait_for_encoded_frames_threshold_ = num_frames;
 }
 
-bool VideoCodecTest::WaitForEncodedFrames(
+bool VideoCodecUnitTest::WaitForEncodedFrames(
     std::vector<EncodedImage>* frames,
     std::vector<CodecSpecificInfo>* codec_specific_info) {
   EXPECT_TRUE(encoded_frame_event_.Wait(kEncodeTimeoutMs))
@@ -118,8 +118,8 @@ bool VideoCodecTest::WaitForEncodedFrames(
   }
 }
 
-bool VideoCodecTest::WaitForDecodedFrame(std::unique_ptr<VideoFrame>* frame,
-                                         rtc::Optional<uint8_t>* qp) {
+bool VideoCodecUnitTest::WaitForDecodedFrame(std::unique_ptr<VideoFrame>* frame,
+                                             rtc::Optional<uint8_t>* qp) {
   bool ret = decoded_frame_event_.Wait(kDecodeTimeoutMs);
   EXPECT_TRUE(ret) << "Timed out while waiting for a decoded frame.";
   // This becomes unsafe if there are multiple threads waiting for frames.
@@ -135,7 +135,7 @@ bool VideoCodecTest::WaitForDecodedFrame(std::unique_ptr<VideoFrame>* frame,
   }
 }
 
-void VideoCodecTest::InitCodecs() {
+void VideoCodecUnitTest::InitCodecs() {
   codec_settings_ = codec_settings();
   codec_settings_.startBitrate = kStartBitrate;
   codec_settings_.targetBitrate = kTargetBitrate;

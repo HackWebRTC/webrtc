@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_VIDEO_CODING_CODECS_TEST_VIDEO_CODEC_TEST_H_
-#define MODULES_VIDEO_CODING_CODECS_TEST_VIDEO_CODEC_TEST_H_
+#ifndef MODULES_VIDEO_CODING_CODECS_TEST_VIDEO_CODEC_UNITTEST_H_
+#define MODULES_VIDEO_CODING_CODECS_TEST_VIDEO_CODEC_UNITTEST_H_
 
 #include <memory>
 #include <vector>
@@ -26,9 +26,9 @@
 
 namespace webrtc {
 
-class VideoCodecTest : public ::testing::Test {
+class VideoCodecUnitTest : public ::testing::Test {
  public:
-  VideoCodecTest()
+  VideoCodecUnitTest()
       : encode_complete_callback_(this),
         decode_complete_callback_(this),
         encoded_frame_event_(false /* manual reset */,
@@ -40,19 +40,21 @@ class VideoCodecTest : public ::testing::Test {
  protected:
   class FakeEncodeCompleteCallback : public webrtc::EncodedImageCallback {
    public:
-    explicit FakeEncodeCompleteCallback(VideoCodecTest* test) : test_(test) {}
+    explicit FakeEncodeCompleteCallback(VideoCodecUnitTest* test)
+        : test_(test) {}
 
     Result OnEncodedImage(const EncodedImage& frame,
                           const CodecSpecificInfo* codec_specific_info,
                           const RTPFragmentationHeader* fragmentation);
 
    private:
-    VideoCodecTest* const test_;
+    VideoCodecUnitTest* const test_;
   };
 
   class FakeDecodeCompleteCallback : public webrtc::DecodedImageCallback {
    public:
-    explicit FakeDecodeCompleteCallback(VideoCodecTest* test) : test_(test) {}
+    explicit FakeDecodeCompleteCallback(VideoCodecUnitTest* test)
+        : test_(test) {}
 
     int32_t Decoded(VideoFrame& frame) override {
       RTC_NOTREACHED();
@@ -67,7 +69,7 @@ class VideoCodecTest : public ::testing::Test {
                  rtc::Optional<uint8_t> qp) override;
 
    private:
-    VideoCodecTest* const test_;
+    VideoCodecUnitTest* const test_;
   };
 
   virtual std::unique_ptr<VideoEncoder> CreateEncoder() = 0;
@@ -123,4 +125,4 @@ class VideoCodecTest : public ::testing::Test {
 
 }  // namespace webrtc
 
-#endif  // MODULES_VIDEO_CODING_CODECS_TEST_VIDEO_CODEC_TEST_H_
+#endif  // MODULES_VIDEO_CODING_CODECS_TEST_VIDEO_CODEC_UNITTEST_H_

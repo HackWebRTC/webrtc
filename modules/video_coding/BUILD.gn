@@ -508,8 +508,8 @@ if (rtc_include_tests) {
       "codecs/test/stats.h",
       "codecs/test/test_config.cc",
       "codecs/test/test_config.h",
-      "codecs/test/video_codec_test.cc",
-      "codecs/test/video_codec_test.h",
+      "codecs/test/video_codec_unittest.cc",
+      "codecs/test/video_codec_unittest.h",
       "codecs/test/videoprocessor.cc",
       "codecs/test/videoprocessor.h",
     ]
