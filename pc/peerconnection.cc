@@ -5588,26 +5588,31 @@ void PeerConnection::OnTransportControllerGatheringState(
 }
 
 void PeerConnection::ReportTransportStats() {
-  // Use a set so we don't report the same stats twice if two channels share
-  // a transport.
-  std::set<std::string> transport_names;
-  if (voice_channel()) {
-    transport_names.insert(voice_channel()->transport_name());
-  }
-  if (video_channel()) {
-    transport_names.insert(video_channel()->transport_name());
+  std::map<std::string, std::set<cricket::MediaType>>
+      media_types_by_transport_name;
+  for (auto transceiver : transceivers_) {
+    if (transceiver->internal()->channel()) {
+      const std::string& transport_name =
+          transceiver->internal()->channel()->transport_name();
+      media_types_by_transport_name[transport_name].insert(
+          transceiver->internal()->media_type());
+    }
   }
   if (rtp_data_channel()) {
-    transport_names.insert(rtp_data_channel()->transport_name());
+    media_types_by_transport_name[rtp_data_channel()->transport_name()].insert(
+        cricket::MEDIA_TYPE_DATA);
   }
   if (sctp_transport_name_) {
-    transport_names.insert(*sctp_transport_name_);
+    media_types_by_transport_name[*sctp_transport_name_].insert(
+        cricket::MEDIA_TYPE_DATA);
   }
-  for (const auto& name : transport_names) {
+  for (const auto& entry : media_types_by_transport_name) {
+    const std::string& transport_name = entry.first;
+    const std::set<cricket::MediaType> media_types = entry.second;
     cricket::TransportStats stats;
-    if (transport_controller_->GetStats(name, &stats)) {
+    if (transport_controller_->GetStats(transport_name, &stats)) {
       ReportBestConnectionState(stats);
-      ReportNegotiatedCiphers(stats);
+      ReportNegotiatedCiphers(stats, media_types);
     }
   }
 }
@@ -5616,19 +5621,17 @@ void PeerConnection::ReportTransportStats() {
 void PeerConnection::ReportBestConnectionState(
     const cricket::TransportStats& stats) {
   RTC_DCHECK(metrics_observer());
-  for (cricket::TransportChannelStatsList::const_iterator it =
-           stats.channel_stats.begin();
-       it != stats.channel_stats.end(); ++it) {
-    for (cricket::ConnectionInfos::const_iterator it_info =
-             it->connection_infos.begin();
-         it_info != it->connection_infos.end(); ++it_info) {
-      if (!it_info->best_connection) {
+  for (const cricket::TransportChannelStats& channel_stats :
+       stats.channel_stats) {
+    for (const cricket::ConnectionInfo& connection_info :
+         channel_stats.connection_infos) {
+      if (!connection_info.best_connection) {
         continue;
       }
 
       PeerConnectionEnumCounterType type = kPeerConnectionEnumCounterMax;
-      const cricket::Candidate& local = it_info->local_candidate;
-      const cricket::Candidate& remote = it_info->remote_candidate;
+      const cricket::Candidate& local = connection_info.local_candidate;
+      const cricket::Candidate& remote = connection_info.remote_candidate;
 
       // Increment the counter for IceCandidatePairType.
       if (local.protocol() == cricket::TCP_PROTOCOL_NAME ||
@@ -5664,7 +5667,8 @@ void PeerConnection::ReportBestConnectionState(
 }
 
 void PeerConnection::ReportNegotiatedCiphers(
-    const cricket::TransportStats& stats) {
+    const cricket::TransportStats& stats,
+    const std::set<cricket::MediaType>& media_types) {
   RTC_DCHECK(metrics_observer());
   if (!dtls_enabled_ || stats.channel_stats.empty()) {
     return;
@@ -5677,29 +5681,34 @@ void PeerConnection::ReportNegotiatedCiphers(
     return;
   }
 
-  PeerConnectionEnumCounterType srtp_counter_type;
-  PeerConnectionEnumCounterType ssl_counter_type;
-  if (stats.transport_name == cricket::CN_AUDIO) {
-    srtp_counter_type = kEnumCounterAudioSrtpCipher;
-    ssl_counter_type = kEnumCounterAudioSslCipher;
-  } else if (stats.transport_name == cricket::CN_VIDEO) {
-    srtp_counter_type = kEnumCounterVideoSrtpCipher;
-    ssl_counter_type = kEnumCounterVideoSslCipher;
-  } else if (stats.transport_name == cricket::CN_DATA) {
-    srtp_counter_type = kEnumCounterDataSrtpCipher;
-    ssl_counter_type = kEnumCounterDataSslCipher;
-  } else {
-    RTC_NOTREACHED();
-    return;
-  }
-
-  if (srtp_crypto_suite != rtc::SRTP_INVALID_CRYPTO_SUITE) {
-    metrics_observer()->IncrementSparseEnumCounter(srtp_counter_type,
-                                                   srtp_crypto_suite);
-  }
-  if (ssl_cipher_suite != rtc::TLS_NULL_WITH_NULL_NULL) {
-    metrics_observer()->IncrementSparseEnumCounter(ssl_counter_type,
-                                                   ssl_cipher_suite);
+  for (cricket::MediaType media_type : media_types) {
+    PeerConnectionEnumCounterType srtp_counter_type;
+    PeerConnectionEnumCounterType ssl_counter_type;
+    switch (media_type) {
+      case cricket::MEDIA_TYPE_AUDIO:
+        srtp_counter_type = kEnumCounterAudioSrtpCipher;
+        ssl_counter_type = kEnumCounterAudioSslCipher;
+        break;
+      case cricket::MEDIA_TYPE_VIDEO:
+        srtp_counter_type = kEnumCounterVideoSrtpCipher;
+        ssl_counter_type = kEnumCounterVideoSslCipher;
+        break;
+      case cricket::MEDIA_TYPE_DATA:
+        srtp_counter_type = kEnumCounterDataSrtpCipher;
+        ssl_counter_type = kEnumCounterDataSslCipher;
+        break;
+      default:
+        RTC_NOTREACHED();
+        continue;
+    }
+    if (srtp_crypto_suite != rtc::SRTP_INVALID_CRYPTO_SUITE) {
+      metrics_observer()->IncrementSparseEnumCounter(srtp_counter_type,
+                                                     srtp_crypto_suite);
+    }
+    if (ssl_cipher_suite != rtc::TLS_NULL_WITH_NULL_NULL) {
+      metrics_observer()->IncrementSparseEnumCounter(ssl_counter_type,
+                                                     ssl_cipher_suite);
+    }
   }
 }
 

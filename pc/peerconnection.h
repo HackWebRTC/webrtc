@@ -882,7 +882,8 @@ class PeerConnection : public PeerConnectionInternal,
   // Gather the usage of IPv4/IPv6 as best connection.
   void ReportBestConnectionState(const cricket::TransportStats& stats);
 
-  void ReportNegotiatedCiphers(const cricket::TransportStats& stats);
+  void ReportNegotiatedCiphers(const cricket::TransportStats& stats,
+                               const std::set<cricket::MediaType>& media_types);
 
   void OnSentPacket_w(const rtc::SentPacket& sent_packet);
 
