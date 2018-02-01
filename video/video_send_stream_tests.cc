@@ -893,6 +893,9 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
           test_generic_packetization_(test_generic_packetization),
           use_fec_(use_fec),
           packet_count_(0),
+          packets_lost_(0),
+          last_packet_count_(0),
+          last_packets_lost_(0),
           accumulated_size_(0),
           accumulated_payload_(0),
           fec_packet_received_(false),
@@ -984,11 +987,18 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
     void TriggerLossReport(const RTPHeader& header) {
       // Send lossy receive reports to trigger FEC enabling.
       const int kLossPercent = 5;
-      if (packet_count_++ % (100 / kLossPercent) != 0) {
+      if (++packet_count_ % (100 / kLossPercent) == 0) {
+        packets_lost_++;
+        int loss_delta = packets_lost_ - last_packets_lost_;
+        int packets_delta = packet_count_ - last_packet_count_;
+        last_packet_count_ = packet_count_;
+        last_packets_lost_ = packets_lost_;
+        uint8_t loss_ratio =
+            static_cast<uint8_t>(loss_delta * 255 / packets_delta);
         FakeReceiveStatistics lossy_receive_stats(
             kVideoSendSsrcs[0], header.sequenceNumber,
-            (packet_count_ * (100 - kLossPercent)) / 100,  // Cumulative lost.
-            static_cast<uint8_t>((255 * kLossPercent) / 100));  // Loss percent.
+            packets_lost_,  // Cumulative lost.
+            loss_ratio);    // Loss percent.
         RTCPSender rtcp_sender(false, Clock::GetRealTimeClock(),
                                &lossy_receive_stats, nullptr, nullptr,
                                transport_adapter_.get(), RtcpIntervalConfig{});
@@ -1085,6 +1095,9 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
     const bool use_fec_;
 
     uint32_t packet_count_;
+    uint32_t packets_lost_;
+    uint32_t last_packet_count_;
+    uint32_t last_packets_lost_;
     size_t accumulated_size_;
     size_t accumulated_payload_;
     bool fec_packet_received_;
