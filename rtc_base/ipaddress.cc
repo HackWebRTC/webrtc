@@ -31,7 +31,10 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/nethelpers.h"
 #include "rtc_base/stringutils.h"
+
+#if defined(WEBRTC_WIN)
 #include "rtc_base/win32.h"
+#endif  // WEBRTC_WIN
 
 namespace rtc {
 

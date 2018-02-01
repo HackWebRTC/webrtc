@@ -20,7 +20,10 @@
 #include "rtc_base/timeutils.h"
 
 #include "modules/video_capture/video_capture_factory.h"
+
+#if defined(WEBRTC_WIN)
 #include "rtc_base/win32.h"  // Need this to #include the impl files.
+#endif  // WEBRTC_WIN
 #include "system_wrappers/include/field_trial.h"
 
 namespace cricket {

@@ -12,8 +12,10 @@
 
 #include <memory>
 
+#if defined(WEBRTC_WIN)
 // Must be included first before openssl headers.
 #include "rtc_base/win32.h"  // NOLINT
+#endif  // WEBRTC_WIN
 
 #include <openssl/bio.h>
 #include <openssl/bn.h>

@@ -20,7 +20,9 @@
 #include "examples/peerconnection/client/peer_connection_client.h"
 #include "media/base/mediachannel.h"
 #include "media/base/videocommon.h"
+#if defined(WEBRTC_WIN)
 #include "rtc_base/win32.h"
+#endif  // WEBRTC_WIN
 
 class MainWndCallback {
  public:

@@ -11,7 +11,9 @@
 #ifndef RTC_BASE_WIN32_H_
 #define RTC_BASE_WIN32_H_
 
-#if defined(WEBRTC_WIN)
+#ifndef WEBRTC_WIN
+#error "Only #include this header in Windows builds"
+#endif
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -83,5 +85,4 @@ inline bool IsCurrentProcessLowIntegrity() {
 
 }  // namespace rtc
 
-#endif  // WEBRTC_WIN
 #endif  // RTC_BASE_WIN32_H_
