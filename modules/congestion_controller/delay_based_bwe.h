@@ -15,14 +15,11 @@
 #include <utility>
 #include <vector>
 
-#include "modules/congestion_controller/median_slope_estimator.h"
+#include "modules/congestion_controller/delay_increase_detector_interface.h"
 #include "modules/congestion_controller/probe_bitrate_estimator.h"
-#include "modules/congestion_controller/trendline_estimator.h"
 #include "modules/remote_bitrate_estimator/aimd_rate_control.h"
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "modules/remote_bitrate_estimator/inter_arrival.h"
-#include "modules/remote_bitrate_estimator/overuse_detector.h"
-#include "modules/remote_bitrate_estimator/overuse_estimator.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/race_checker.h"
@@ -73,8 +70,7 @@ class DelayBasedBwe {
   RtcEventLog* const event_log_;
   const Clock* const clock_;
   std::unique_ptr<InterArrival> inter_arrival_;
-  std::unique_ptr<TrendlineEstimator> trendline_estimator_;
-  OveruseDetector detector_;
+  std::unique_ptr<DelayIncreaseDetectorInterface> delay_detector_;
   int64_t last_seen_packet_ms_;
   bool uma_recorded_;
   AimdRateControl rate_control_;
