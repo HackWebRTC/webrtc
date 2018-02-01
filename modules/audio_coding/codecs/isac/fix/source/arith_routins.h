@@ -18,8 +18,7 @@
 #ifndef MODULES_AUDIO_CODING_CODECS_ISAC_FIX_SOURCE_ARITH_ROUTINS_H_
 #define MODULES_AUDIO_CODING_CODECS_ISAC_FIX_SOURCE_ARITH_ROUTINS_H_
 
-#include "structs.h"
-
+#include "modules/audio_coding/codecs/isac/fix/source/structs.h"
 
 /****************************************************************************
  * WebRtcIsacfix_EncLogisticMulti2(...)

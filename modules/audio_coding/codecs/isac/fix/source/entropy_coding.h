@@ -19,7 +19,7 @@
 #ifndef MODULES_AUDIO_CODING_CODECS_ISAC_FIX_SOURCE_ENTROPY_CODING_H_
 #define MODULES_AUDIO_CODING_CODECS_ISAC_FIX_SOURCE_ENTROPY_CODING_H_
 
-#include "structs.h"
+#include "modules/audio_coding/codecs/isac/fix/source/structs.h"
 
 /* decode complex spectrum (return number of bytes in stream) */
 int WebRtcIsacfix_DecodeSpec(Bitstr_dec  *streamdata,

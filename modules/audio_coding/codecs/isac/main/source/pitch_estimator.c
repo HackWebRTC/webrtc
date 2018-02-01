@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pitch_estimator.h"
-
 #include <math.h>
 #include <memory.h>
 #include <string.h>
 #ifdef WEBRTC_ANDROID
 #include <stdlib.h>
 #endif
+
+#include "modules/audio_coding/codecs/isac/main/source/pitch_estimator.h"
 
 static const double kInterpolWin[8] = {-0.00067556028640,  0.02184247643159, -0.12203175715679,  0.60086484101160,
                                        0.60086484101160, -0.12203175715679,  0.02184247643159, -0.00067556028640};

@@ -18,9 +18,9 @@
  *
  */
 
-#include "settings.h"
-#include "filterbank_tables.h"
-#include "codec.h"
+#include "modules/audio_coding/codecs/isac/main/source/settings.h"
+#include "modules/audio_coding/codecs/isac/main/source/filterbank_tables.h"
+#include "modules/audio_coding/codecs/isac/main/source/codec.h"
 
 /* This function performs all-pass filtering--a series of first order all-pass
  * sections are used to filter the input in a cascade manner.

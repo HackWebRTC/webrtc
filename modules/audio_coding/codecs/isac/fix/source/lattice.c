@@ -15,8 +15,8 @@
  *
  */
 
-#include "codec.h"
-#include "settings.h"
+#include "modules/audio_coding/codecs/isac/fix/source/codec.h"
+#include "modules/audio_coding/codecs/isac/fix/source/settings.h"
 #include "rtc_base/sanitizer.h"
 
 #define LATTICE_MUL_32_32_RSFT16(a32a, a32b, b32)                  \

@@ -13,9 +13,9 @@
 #ifdef WEBRTC_ANDROID
 #include <stdlib.h>
 #endif
-#include "pitch_estimator.h"
-#include "lpc_analysis.h"
-#include "codec.h"
+#include "modules/audio_coding/codecs/isac/main/source/pitch_estimator.h"
+#include "modules/audio_coding/codecs/isac/main/source/lpc_analysis.h"
+#include "modules/audio_coding/codecs/isac/main/source/codec.h"
 
 
 

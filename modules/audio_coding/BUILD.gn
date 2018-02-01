@@ -623,14 +623,18 @@ rtc_static_library("isac_fix") {
 rtc_source_set("isac_fix_common") {
   sources = [
     "codecs/isac/fix/source/codec.h",
+    "codecs/isac/fix/source/entropy_coding.h",
     "codecs/isac/fix/source/fft.c",
     "codecs/isac/fix/source/fft.h",
     "codecs/isac/fix/source/filterbank_internal.h",
     "codecs/isac/fix/source/settings.h",
+    "codecs/isac/fix/source/structs.h",
   ]
   public_configs = [ ":isac_fix_config" ]
   deps = [
+    ":isac_common",
     "../..:typedefs",
+    "../../common_audio",
   ]
 }
 
@@ -663,7 +667,6 @@ rtc_source_set("isac_fix_c") {
     "codecs/isac/fix/source/decode_plc.c",
     "codecs/isac/fix/source/encode.c",
     "codecs/isac/fix/source/entropy_coding.c",
-    "codecs/isac/fix/source/entropy_coding.h",
     "codecs/isac/fix/source/filterbank_tables.c",
     "codecs/isac/fix/source/filterbank_tables.h",
     "codecs/isac/fix/source/filterbanks.c",
@@ -688,7 +691,6 @@ rtc_source_set("isac_fix_c") {
     "codecs/isac/fix/source/pitch_lag_tables.h",
     "codecs/isac/fix/source/spectrum_ar_model_tables.c",
     "codecs/isac/fix/source/spectrum_ar_model_tables.h",
-    "codecs/isac/fix/source/structs.h",
     "codecs/isac/fix/source/transform.c",
     "codecs/isac/fix/source/transform_tables.c",
   ]
@@ -2013,6 +2015,7 @@ if (rtc_include_tests) {
     deps = [
       ":isac",
       ":isac_test_util",
+      "../../common_audio",
     ]
 
     include_dirs = [

@@ -26,7 +26,7 @@
 @ r6, r7, r8, r10, r11: scratch
 
 #include "system_wrappers/include/asm_defines.h"
-#include "settings.h"
+#include "modules/audio_coding/codecs/isac/fix/source/settings.h"
 
 GLOBAL_FUNCTION WebRtcIsacfix_FilterArLoop
 .align  2

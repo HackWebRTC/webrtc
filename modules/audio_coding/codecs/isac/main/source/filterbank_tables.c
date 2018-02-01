@@ -11,8 +11,8 @@
 /* filterbank_tables.c*/
 /* This file contains variables that are used in filterbanks.c*/
 
-#include "filterbank_tables.h"
-#include "settings.h"
+#include "modules/audio_coding/codecs/isac/main/source/filterbank_tables.h"
+#include "modules/audio_coding/codecs/isac/main/source/settings.h"
 
 /* The composite all-pass filter factors */
 const float WebRtcIsac_kCompositeApFactorsFloat[4] = {

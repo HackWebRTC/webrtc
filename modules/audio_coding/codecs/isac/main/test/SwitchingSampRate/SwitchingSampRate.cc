@@ -13,9 +13,10 @@
 //
 
 #include <iostream>
-#include "isac.h"
-#include "utility.h"
-#include "signal_processing_library.h"
+
+#include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "modules/audio_coding/codecs/isac/main/include/isac.h"
+#include "modules/audio_coding/codecs/isac/main/util/utility.h"
 
 #define MAX_FILE_NAME  500
 #define MAX_NUM_CLIENTS 2
