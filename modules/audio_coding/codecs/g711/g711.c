@@ -20,7 +20,7 @@
  * -Added option to run encoder bitexact with ITU-T reference implementation
  */
 
-#include "g711.h"
+#include "modules/audio_coding/codecs/g711/g711.h"
 #include "typedefs.h"  // NOLINT(build/include)
 
 /* Copied from the CCITT G.711 specification */
