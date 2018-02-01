@@ -21,7 +21,8 @@ IceConfig::IceConfig(int receiving_timeout_ms,
                      int stable_writable_connection_ping_interval_ms,
                      bool presume_writable_when_fully_relayed,
                      int regather_on_failed_networks_interval_ms,
-                     int receiving_switching_delay_ms)
+                     int receiving_switching_delay_ms,
+                     rtc::Optional<rtc::AdapterType> network_preference)
     : receiving_timeout(receiving_timeout_ms),
       backup_connection_ping_interval(backup_connection_ping_interval),
       continual_gathering_policy(gathering_policy),
@@ -32,7 +33,8 @@ IceConfig::IceConfig(int receiving_timeout_ms,
       presume_writable_when_fully_relayed(presume_writable_when_fully_relayed),
       regather_on_failed_networks_interval(
           regather_on_failed_networks_interval_ms),
-      receiving_switching_delay(receiving_switching_delay_ms) {}
+      receiving_switching_delay(receiving_switching_delay_ms),
+      network_preference(network_preference) {}
 
 IceConfig::~IceConfig() = default;
 

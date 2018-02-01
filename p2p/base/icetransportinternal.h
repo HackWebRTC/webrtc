@@ -115,6 +115,8 @@ struct IceConfig {
   // Measure in milliseconds.
   rtc::Optional<int> ice_check_min_interval;
 
+  rtc::Optional<rtc::AdapterType> network_preference;
+
   IceConfig();
   IceConfig(int receiving_timeout_ms,
             int backup_connection_ping_interval,
@@ -123,7 +125,8 @@ struct IceConfig {
             int stable_writable_connection_ping_interval_ms,
             bool presume_writable_when_fully_relayed,
             int regather_on_failed_networks_interval_ms,
-            int receiving_switching_delay_ms);
+            int receiving_switching_delay_ms,
+            rtc::Optional<rtc::AdapterType> network_preference);
   ~IceConfig();
 };
 

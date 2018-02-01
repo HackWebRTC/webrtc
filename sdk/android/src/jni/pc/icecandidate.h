@@ -75,6 +75,10 @@ PeerConnectionInterface::TlsCertPolicy JavaToNativeTlsCertPolicy(
     JNIEnv* jni,
     const JavaRef<jobject>& j_ice_server_tls_cert_policy);
 
+rtc::Optional<rtc::AdapterType> JavaToNativeNetworkPreference(
+    JNIEnv* jni,
+    const JavaRef<jobject>& j_network_preference);
+
 }  // namespace jni
 }  // namespace webrtc
 

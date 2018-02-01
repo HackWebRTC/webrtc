@@ -121,6 +121,8 @@ void JavaToNativeRTCConfiguration(
       Java_RTCConfiguration_getContinualGatheringPolicy(jni, j_rtc_config);
   ScopedJavaLocalRef<jobject> j_turn_customizer =
       Java_RTCConfiguration_getTurnCustomizer(jni, j_rtc_config);
+  ScopedJavaLocalRef<jobject> j_network_preference =
+      Java_RTCConfiguration_getNetworkPreference(jni, j_rtc_config);
 
   rtc_config->type = JavaToNativeIceTransportsType(jni, j_ice_transports_type);
   rtc_config->bundle_policy = JavaToNativeBundlePolicy(jni, j_bundle_policy);
@@ -184,6 +186,8 @@ void JavaToNativeRTCConfiguration(
       jni, Java_RTCConfiguration_getCombinedAudioVideoBwe(jni, j_rtc_config));
   rtc_config->enable_dtls_srtp = JavaToNativeOptionalBool(
       jni, Java_RTCConfiguration_getEnableDtlsSrtp(jni, j_rtc_config));
+  rtc_config->network_preference =
+      JavaToNativeNetworkPreference(jni, j_network_preference);
 }
 
 rtc::KeyType GetRtcConfigKeyType(JNIEnv* env,

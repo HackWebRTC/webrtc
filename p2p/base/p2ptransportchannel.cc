@@ -61,6 +61,35 @@ cricket::PortInterface::CandidateOrigin GetOrigin(cricket::PortInterface* port,
     return cricket::PortInterface::ORIGIN_OTHER_PORT;
 }
 
+// TODO(qingsi) Use an enum to replace the following constants for all
+// comparision results.
+static constexpr int a_is_better = 1;
+static constexpr int b_is_better = -1;
+static constexpr int a_and_b_equal = 0;
+
+bool LocalCandidateUsesPreferredNetwork(
+    const cricket::Connection* conn,
+    rtc::Optional<rtc::AdapterType> network_preference) {
+  rtc::AdapterType network_type = conn->port()->Network()->type();
+  return network_preference.has_value() && (network_type == network_preference);
+}
+
+int CompareCandidatePairsByNetworkPreference(
+    const cricket::Connection* a,
+    const cricket::Connection* b,
+    rtc::Optional<rtc::AdapterType> network_preference) {
+  bool a_uses_preferred_network =
+      LocalCandidateUsesPreferredNetwork(a, network_preference);
+  bool b_uses_preferred_network =
+      LocalCandidateUsesPreferredNetwork(b, network_preference);
+  if (a_uses_preferred_network && !b_uses_preferred_network) {
+    return a_is_better;
+  } else if (!a_uses_preferred_network && b_uses_preferred_network) {
+    return b_is_better;
+  }
+  return a_and_b_equal;
+}
+
 }  // unnamed namespace
 
 namespace cricket {
@@ -98,9 +127,6 @@ static const int DEFAULT_REGATHER_ON_FAILED_NETWORKS_INTERVAL = 5 * 60 * 1000;
 
 static constexpr int DEFAULT_BACKUP_CONNECTION_PING_INTERVAL = 25 * 1000;
 
-static constexpr int a_is_better = 1;
-static constexpr int b_is_better = -1;
-
 bool IceCredentialsChanged(const std::string& old_ufrag,
                            const std::string& old_pwd,
                            const std::string& new_ufrag,
@@ -135,7 +161,8 @@ P2PTransportChannel::P2PTransportChannel(const std::string& transport_name,
               STRONG_AND_STABLE_WRITABLE_CONNECTION_PING_INTERVAL,
               true /* presume_writable_when_fully_relayed */,
               DEFAULT_REGATHER_ON_FAILED_NETWORKS_INTERVAL,
-              RECEIVING_SWITCHING_DELAY) {
+              RECEIVING_SWITCHING_DELAY,
+              rtc::nullopt) {
   uint32_t weak_ping_interval = ::strtoul(
       webrtc::field_trial::FindFullName("WebRTC-StunInterPacketDelay").c_str(),
       nullptr, 10);
@@ -218,11 +245,12 @@ bool P2PTransportChannel::ShouldSwitchSelectedConnection(
     return true;
   }
 
-  // Do not switch to a connection that is not receiving if it has higher cost
-  // because it may be just spuriously better.
-  if (new_connection->ComputeNetworkCost() >
-          selected_connection_->ComputeNetworkCost() &&
-      !new_connection->receiving()) {
+  // Do not switch to a connection that is not receiving if it is not on a
+  // preferred network or it has higher cost because it may be just spuriously
+  // better.
+  int compare_a_b_by_networks = CompareCandidatePairNetworks(
+      new_connection, selected_connection_, config_.network_preference);
+  if (compare_a_b_by_networks == b_is_better && !new_connection->receiving()) {
     return false;
   }
 
@@ -496,6 +524,14 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
     config_.ice_check_min_interval = config.ice_check_min_interval;
     RTC_LOG(LS_INFO) << "Set min ping interval to "
                      << *config_.ice_check_min_interval;
+  }
+
+  if (config_.network_preference != config.network_preference) {
+    config_.network_preference = config.network_preference;
+    RTC_LOG(LS_INFO) << "Set network preference to "
+                     << (config_.network_preference.has_value()
+                             ? config_.network_preference.value()
+                             : 0);
   }
 }
 
@@ -1150,6 +1186,30 @@ void P2PTransportChannel::MaybeStartPinging() {
   }
 }
 
+int P2PTransportChannel::CompareCandidatePairNetworks(
+    const Connection* a,
+    const Connection* b,
+    rtc::Optional<rtc::AdapterType> network_preference) const {
+  int compare_a_b_by_network_preference =
+      CompareCandidatePairsByNetworkPreference(a, b,
+                                               config_.network_preference);
+  // The network preference has a higher precedence than the network cost.
+  if (compare_a_b_by_network_preference != a_and_b_equal) {
+    return compare_a_b_by_network_preference;
+  }
+
+  uint32_t a_cost = a->ComputeNetworkCost();
+  uint32_t b_cost = b->ComputeNetworkCost();
+  // Prefer lower network cost.
+  if (a_cost < b_cost) {
+    return a_is_better;
+  }
+  if (a_cost > b_cost) {
+    return b_is_better;
+  }
+  return a_and_b_equal;
+}
+
 // Compare two connections based on their writing, receiving, and connected
 // states.
 int P2PTransportChannel::CompareConnectionStates(
@@ -1230,15 +1290,10 @@ int P2PTransportChannel::CompareConnectionStates(
 int P2PTransportChannel::CompareConnectionCandidates(
     const Connection* a,
     const Connection* b) const {
-  // Prefer lower network cost.
-  uint32_t a_cost = a->ComputeNetworkCost();
-  uint32_t b_cost = b->ComputeNetworkCost();
-  // Smaller cost is better.
-  if (a_cost < b_cost) {
-    return a_is_better;
-  }
-  if (a_cost > b_cost) {
-    return b_is_better;
+  int compare_a_b_by_networks =
+      CompareCandidatePairNetworks(a, b, config_.network_preference);
+  if (compare_a_b_by_networks != a_and_b_equal) {
+    return compare_a_b_by_networks;
   }
 
   // Compare connection priority. Lower values get sorted last.

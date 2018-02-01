@@ -603,6 +603,7 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
     rtc::Optional<rtc::IntervalRange> ice_regather_interval_range;
     webrtc::TurnCustomizer* turn_customizer;
     SdpSemantics sdp_semantics;
+    rtc::Optional<rtc::AdapterType> network_preference;
   };
   static_assert(sizeof(stuff_being_tested_for_equality) == sizeof(*this),
                 "Did you add something to RTCConfiguration and forget to "
@@ -639,7 +640,8 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
          ice_check_min_interval == o.ice_check_min_interval &&
          ice_regather_interval_range == o.ice_regather_interval_range &&
          turn_customizer == o.turn_customizer &&
-         sdp_semantics == o.sdp_semantics;
+         sdp_semantics == o.sdp_semantics &&
+         network_preference == o.network_preference;
 }
 
 bool PeerConnectionInterface::RTCConfiguration::operator!=(
@@ -2519,6 +2521,7 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
   modified_config.prune_turn_ports = configuration.prune_turn_ports;
   modified_config.ice_check_min_interval = configuration.ice_check_min_interval;
   modified_config.turn_customizer = configuration.turn_customizer;
+  modified_config.network_preference = configuration.network_preference;
   if (configuration != modified_config) {
     RTC_LOG(LS_ERROR) << "Modifying the configuration in an unsupported way.";
     return SafeSetError(RTCErrorType::INVALID_MODIFICATION, error);
@@ -4613,6 +4616,7 @@ cricket::IceConfig PeerConnection::ParseIceConfig(
       RTC_NOTREACHED();
       gathering_policy = cricket::GATHER_ONCE;
   }
+
   cricket::IceConfig ice_config;
   ice_config.receiving_timeout = config.ice_connection_receiving_timeout;
   ice_config.prioritize_most_likely_candidate_pairs =
@@ -4625,6 +4629,7 @@ cricket::IceConfig PeerConnection::ParseIceConfig(
   ice_config.ice_check_min_interval = config.ice_check_min_interval;
   ice_config.regather_all_networks_interval_range =
       config.ice_regather_interval_range;
+  ice_config.network_preference = config.network_preference;
   return ice_config;
 }
 

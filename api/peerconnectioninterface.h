@@ -491,6 +491,12 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     // called.
     webrtc::TurnCustomizer* turn_customizer = nullptr;
 
+    // Preferred network interface.
+    // A candidate pair on a preferred network has a higher precedence in ICE
+    // than one on an un-preferred network, regardless of priority or network
+    // cost.
+    rtc::Optional<rtc::AdapterType> network_preference;
+
     // Configure the SDP semantics used by this PeerConnection. Note that the
     // WebRTC 1.0 specification requires kUnifiedPlan semantics. The
     // RtpTransceiver API is only available with kUnifiedPlan semantics.

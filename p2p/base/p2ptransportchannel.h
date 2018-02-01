@@ -195,6 +195,11 @@ class P2PTransportChannel : public IceTransportInternal,
   // that's pingable.
   void MaybeStartPinging();
 
+  int CompareCandidatePairNetworks(
+      const Connection* a,
+      const Connection* b,
+      rtc::Optional<rtc::AdapterType> network_preference) const;
+
   // The methods below return a positive value if |a| is preferable to |b|,
   // a negative value if |b| is preferable, and 0 if they're equally preferable.
   // If |receiving_unchanged_threshold| is set, then when |b| is receiving and
