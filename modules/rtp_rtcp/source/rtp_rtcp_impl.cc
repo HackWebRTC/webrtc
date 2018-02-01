@@ -84,7 +84,8 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
                    configuration.receive_statistics,
                    configuration.rtcp_packet_type_counter_observer,
                    configuration.event_log,
-                   configuration.outgoing_transport),
+                   configuration.outgoing_transport,
+                   configuration.rtcp_interval_config),
       rtcp_receiver_(configuration.clock,
                      configuration.receiver_only,
                      configuration.rtcp_packet_type_counter_observer,
@@ -884,9 +885,9 @@ std::vector<rtcp::TmmbItem> ModuleRtpRtcpImpl::BoundingSet(bool* tmmbr_owner) {
 
 int64_t ModuleRtpRtcpImpl::RtcpReportInterval() {
   if (audio_)
-    return RTCP_INTERVAL_AUDIO_MS;
+    return rtcp_sender_.RtcpAudioReportInverval();
   else
-    return RTCP_INTERVAL_VIDEO_MS;
+    return rtcp_sender_.RtcpVideoReportInverval();
 }
 
 void ModuleRtpRtcpImpl::SetRtcpReceiverSsrcs(uint32_t main_ssrc) {

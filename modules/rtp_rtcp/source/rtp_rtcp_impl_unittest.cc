@@ -57,6 +57,7 @@ class SendTransport : public Transport,
         clock_(nullptr),
         delay_ms_(0),
         rtp_packets_sent_(0),
+        rtcp_packets_sent_(0),
         keepalive_payload_type_(0),
         num_keepalive_sent_(0) {}
 
@@ -89,6 +90,7 @@ class SendTransport : public Transport,
     }
     EXPECT_TRUE(receiver_);
     receiver_->IncomingRtcpPacket(data, len);
+    ++rtcp_packets_sent_;
     return true;
   }
   int32_t OnReceivedPayloadData(const uint8_t* payload_data,
@@ -100,10 +102,12 @@ class SendTransport : public Transport,
     keepalive_payload_type_ = payload_type;
   }
   size_t NumKeepaliveSent() { return num_keepalive_sent_; }
+  size_t NumRtcpSent() { return rtcp_packets_sent_; }
   ModuleRtpRtcpImpl* receiver_;
   SimulatedClock* clock_;
   int64_t delay_ms_;
   int rtp_packets_sent_;
+  size_t rtcp_packets_sent_;
   RTPHeader last_rtp_header_;
   std::vector<uint16_t> last_nack_list_;
   uint8_t keepalive_payload_type_;
@@ -130,6 +134,7 @@ class RtpRtcpModule : public RtcpPacketTypeCounterObserver {
   uint32_t remote_ssrc_;
   RateLimiter retransmission_rate_limiter_;
   RtpKeepAliveConfig keepalive_config_;
+  RtcpIntervalConfig rtcp_interval_config_;
 
   void SetRemoteSsrc(uint32_t ssrc) {
     remote_ssrc_ = ssrc;
@@ -166,6 +171,10 @@ class RtpRtcpModule : public RtcpPacketTypeCounterObserver {
     CreateModuleImpl();
     transport_.SetKeepalivePayloadType(config.payload_type);
   }
+  void SetRtcpIntervalConfigAndReset(const RtcpIntervalConfig& config) {
+    rtcp_interval_config_ = config;
+    CreateModuleImpl();
+  }
 
  private:
   void CreateModuleImpl() {
@@ -178,6 +187,7 @@ class RtpRtcpModule : public RtcpPacketTypeCounterObserver {
     config.rtt_stats = &rtt_stats_;
     config.retransmission_rate_limiter = &retransmission_rate_limiter_;
     config.keepalive_config = keepalive_config_;
+    config.rtcp_interval_config = rtcp_interval_config_;
 
     impl_.reset(new ModuleRtpRtcpImpl(config));
     impl_->SetRTCPStatus(RtcpMode::kCompound);
@@ -643,4 +653,56 @@ TEST_F(RtpRtcpImplTest, SendsKeepaliveAfterTimout) {
   sender_.impl_->Process();
   EXPECT_EQ(3U, sender_.transport_.NumKeepaliveSent());
 }
+
+TEST_F(RtpRtcpImplTest, ConfigurableRtcpReportInterval) {
+  const int kVideoReportInterval = 3000;
+
+  RtcpIntervalConfig config;
+  config.video_interval_ms = kVideoReportInterval;
+
+  // Recreate sender impl with new configuration, and redo setup.
+  sender_.SetRtcpIntervalConfigAndReset(config);
+  SetUp();
+
+  SendFrame(&sender_, kBaseLayerTid);
+
+  // Initial state
+  sender_.impl_->Process();
+  EXPECT_EQ(sender_.RtcpSent().first_packet_time_ms, -1);
+  EXPECT_EQ(0u, sender_.transport_.NumRtcpSent());
+
+  // Move ahead to the last ms before a rtcp is expected, no action.
+  clock_.AdvanceTimeMilliseconds(kVideoReportInterval / 2 - 1);
+  sender_.impl_->Process();
+  EXPECT_EQ(sender_.RtcpSent().first_packet_time_ms, -1);
+  EXPECT_EQ(sender_.transport_.NumRtcpSent(), 0u);
+
+  // Move ahead to the first rtcp. Send RTCP.
+  clock_.AdvanceTimeMilliseconds(1);
+  sender_.impl_->Process();
+  EXPECT_GT(sender_.RtcpSent().first_packet_time_ms, -1);
+  EXPECT_EQ(sender_.transport_.NumRtcpSent(), 1u);
+
+  SendFrame(&sender_, kBaseLayerTid);
+
+  // Move ahead to the last possible second before second rtcp is expected.
+  clock_.AdvanceTimeMilliseconds(kVideoReportInterval * 1 / 2 - 1);
+  sender_.impl_->Process();
+  EXPECT_EQ(sender_.transport_.NumRtcpSent(), 1u);
+
+  // Move ahead into the range of second rtcp, the second rtcp may be sent.
+  clock_.AdvanceTimeMilliseconds(1);
+  sender_.impl_->Process();
+  EXPECT_GE(sender_.transport_.NumRtcpSent(), 1u);
+
+  clock_.AdvanceTimeMilliseconds(kVideoReportInterval / 2);
+  sender_.impl_->Process();
+  EXPECT_GE(sender_.transport_.NumRtcpSent(), 1u);
+
+  // Move out the range of second rtcp, the second rtcp must have been sent.
+  clock_.AdvanceTimeMilliseconds(kVideoReportInterval / 2);
+  sender_.impl_->Process();
+  EXPECT_EQ(sender_.transport_.NumRtcpSent(), 2u);
+}
+
 }  // namespace webrtc

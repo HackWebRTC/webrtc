@@ -94,6 +94,7 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
     RateLimiter* retransmission_rate_limiter = nullptr;
     OverheadObserver* overhead_observer = nullptr;
     RtpKeepAliveConfig keepalive_config;
+    RtcpIntervalConfig rtcp_interval_config;
 
    private:
     RTC_DISALLOW_COPY_AND_ASSIGN(Configuration);

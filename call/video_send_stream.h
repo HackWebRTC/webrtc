@@ -201,6 +201,18 @@ class VideoSendStream {
       std::string c_name;
     } rtp;
 
+    struct Rtcp {
+      Rtcp();
+      Rtcp(const Rtcp&);
+      ~Rtcp();
+      std::string ToString() const;
+
+      // Time interval between RTCP report for video
+      int64_t video_report_interval_ms = 1000;
+      // Time interval between RTCP report for audio
+      int64_t audio_report_interval_ms = 5000;
+    } rtcp;
+
     // Transport for outgoing packets.
     Transport* send_transport = nullptr;
 

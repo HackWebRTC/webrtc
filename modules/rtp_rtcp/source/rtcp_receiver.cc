@@ -52,6 +52,8 @@ using rtcp::ReportBlock;
 // The number of RTCP time intervals needed to trigger a timeout.
 const int kRrTimeoutIntervals = 3;
 
+const int64_t kTmmbrTimeoutIntervalMs = 5 * 5000;
+
 const int64_t kMaxWarningLogIntervalMs = 10000;
 const int64_t kRtcpMinFrameLengthMs = 17;
 
@@ -567,8 +569,7 @@ bool RTCPReceiver::UpdateTmmbrTimers() {
   rtc::CritScope lock(&rtcp_receiver_lock_);
 
   int64_t now_ms = clock_->TimeInMilliseconds();
-  // Use audio define since we don't know what interval the remote peer use.
-  int64_t timeout_ms = now_ms - 5 * RTCP_INTERVAL_AUDIO_MS;
+  int64_t timeout_ms = now_ms - kTmmbrTimeoutIntervalMs;
 
   if (oldest_tmmbr_info_ms_ >= timeout_ms)
     return false;
@@ -1032,8 +1033,7 @@ std::vector<rtcp::TmmbItem> RTCPReceiver::TmmbrReceived() {
   std::vector<rtcp::TmmbItem> candidates;
 
   int64_t now_ms = clock_->TimeInMilliseconds();
-  // Use audio define since we don't know what interval the remote peer use.
-  int64_t timeout_ms = now_ms - 5 * RTCP_INTERVAL_AUDIO_MS;
+  int64_t timeout_ms = now_ms - kTmmbrTimeoutIntervalMs;
 
   for (auto& kv : tmmbr_infos_) {
     for (auto it = kv.second.tmmbr.begin(); it != kv.second.tmmbr.end();) {

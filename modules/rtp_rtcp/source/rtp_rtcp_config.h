@@ -19,8 +19,6 @@ enum { kSendSideNackListSizeSanity = 20000 };
 enum { kDefaultMaxReorderingThreshold = 50 };  // In sequence numbers.
 enum { kRtcpMaxNackFields = 253 };
 
-enum { RTCP_INTERVAL_VIDEO_MS = 1000 };
-enum { RTCP_INTERVAL_AUDIO_MS = 5000 };
 enum { RTCP_SEND_BEFORE_KEY_FRAME_MS = 100 };
 enum { RTCP_MAX_REPORT_BLOCKS = 31 };  // RFC 3550 page 37
 enum {

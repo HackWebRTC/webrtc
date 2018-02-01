@@ -63,7 +63,8 @@ std::vector<RtpRtcp*> CreateRtpRtcpModules(
     RateLimiter* retransmission_rate_limiter,
     OverheadObserver* overhead_observer,
     size_t num_modules,
-    RtpKeepAliveConfig keepalive_config) {
+    RtpKeepAliveConfig keepalive_config,
+    RtcpIntervalConfig rtc_interval_config) {
   RTC_DCHECK_GT(num_modules, 0);
   RtpRtcp::Configuration configuration;
   configuration.audio = false;
@@ -763,7 +764,9 @@ VideoSendStreamImpl::VideoSendStreamImpl(
           transport->send_side_cc()->GetRetransmissionRateLimiter(),
           this,
           config_->rtp.ssrcs.size(),
-          transport->keepalive_config())),
+          transport->keepalive_config(),
+          RtcpIntervalConfig{config_->rtcp.video_report_interval_ms,
+                             config_->rtcp.audio_report_interval_ms})),
       payload_router_(rtp_rtcp_modules_,
                       config_->rtp.ssrcs,
                       config_->encoder_settings.payload_type,

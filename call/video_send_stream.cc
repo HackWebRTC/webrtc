@@ -71,6 +71,7 @@ std::string VideoSendStream::Config::ToString() const {
   std::stringstream ss;
   ss << "{encoder_settings: " << encoder_settings.ToString();
   ss << ", rtp: " << rtp.ToString();
+  ss << ", rtcp: " << rtcp.ToString();
   ss << ", pre_encode_callback: "
      << (pre_encode_callback ? "(VideoSinkInterface)" : "nullptr");
   ss << ", post_encode_callback: "
@@ -155,6 +156,18 @@ std::string VideoSendStream::Config::Rtp::Rtx::ToString() const {
   ss << ']';
 
   ss << ", payload_type: " << payload_type;
+  ss << '}';
+  return ss.str();
+}
+
+VideoSendStream::Config::Rtcp::Rtcp() = default;
+VideoSendStream::Config::Rtcp::Rtcp(const Rtcp&) = default;
+VideoSendStream::Config::Rtcp::~Rtcp() = default;
+
+std::string VideoSendStream::Config::Rtcp::ToString() const {
+  std::stringstream ss;
+  ss << "{video_report_interval_ms: " << video_report_interval_ms;
+  ss << ", audio_report_interval_ms: " << audio_report_interval_ms;
   ss << '}';
   return ss.str();
 }
