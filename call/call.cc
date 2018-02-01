@@ -618,7 +618,8 @@ webrtc::AudioSendStream* Call::CreateAudioSendStream(
   AudioSendStream* send_stream = new AudioSendStream(
       config, config_.audio_state, &worker_queue_, module_process_thread_.get(),
       transport_send_.get(), bitrate_allocator_.get(), event_log_,
-      call_stats_->rtcp_rtt_stats(), suspended_rtp_state);
+      call_stats_->rtcp_rtt_stats(), suspended_rtp_state,
+      &sent_rtp_audio_timer_ms_);
   {
     WriteLockScoped write_lock(*send_crit_);
     RTC_DCHECK(audio_send_ssrcs_.find(config.rtp.ssrc) ==
@@ -663,7 +664,6 @@ void Call::DestroyAudioSendStream(webrtc::AudioSendStream* send_stream) {
     }
   }
   UpdateAggregateNetworkState();
-  sent_rtp_audio_timer_ms_.Extend(audio_send_stream->GetActiveLifetime());
   delete send_stream;
 }
 

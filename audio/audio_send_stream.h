@@ -49,7 +49,8 @@ class AudioSendStream final : public webrtc::AudioSendStream,
                   BitrateAllocator* bitrate_allocator,
                   RtcEventLog* event_log,
                   RtcpRttStats* rtcp_rtt_stats,
-                  const rtc::Optional<RtpState>& suspended_rtp_state);
+                  const rtc::Optional<RtpState>& suspended_rtp_state,
+                  TimeInterval* overall_call_lifetime);
   // For unit tests, which need to supply a mock channel proxy.
   AudioSendStream(const webrtc::AudioSendStream::Config& config,
                   const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
@@ -59,6 +60,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
                   RtcEventLog* event_log,
                   RtcpRttStats* rtcp_rtt_stats,
                   const rtc::Optional<RtpState>& suspended_rtp_state,
+                  TimeInterval* overall_call_lifetime,
                   std::unique_ptr<voe::ChannelProxy> channel_proxy);
   ~AudioSendStream() override;
 
@@ -92,7 +94,6 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   void SetTransportOverhead(int transport_overhead_per_packet);
 
   RtpState GetRtpState() const;
-  const TimeInterval& GetActiveLifetime() const;
   const voe::ChannelProxy& GetChannelProxy() const;
 
  private:
@@ -148,6 +149,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
 
   std::unique_ptr<TimedTransport> timed_send_transport_adapter_;
   TimeInterval active_lifetime_;
+  TimeInterval* overall_call_lifetime_ = nullptr;
 
   // RFC 5285: Each distinct extension MUST have a unique ID. The value 0 is
   // reserved for padding and MUST NOT be used as a local identifier.

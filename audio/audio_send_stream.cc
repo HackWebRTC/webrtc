@@ -61,8 +61,7 @@ std::unique_ptr<voe::ChannelProxy> CreateChannelAndProxy(
 }
 }  // namespace
 
-// TODO(saza): Move this declaration further down when we can use
-// std::make_unique.
+// Helper class to track the actively sending lifetime of this stream.
 class AudioSendStream::TimedTransport : public Transport {
  public:
   TimedTransport(Transport* transport, TimeInterval* time_interval)
@@ -94,7 +93,8 @@ AudioSendStream::AudioSendStream(
     BitrateAllocator* bitrate_allocator,
     RtcEventLog* event_log,
     RtcpRttStats* rtcp_rtt_stats,
-    const rtc::Optional<RtpState>& suspended_rtp_state)
+    const rtc::Optional<RtpState>& suspended_rtp_state,
+    TimeInterval* overall_call_lifetime)
     : AudioSendStream(config,
                       audio_state,
                       worker_queue,
@@ -103,6 +103,7 @@ AudioSendStream::AudioSendStream(
                       event_log,
                       rtcp_rtt_stats,
                       suspended_rtp_state,
+                      overall_call_lifetime,
                       CreateChannelAndProxy(audio_state.get(),
                                             worker_queue,
                                             module_process_thread)) {}
@@ -116,6 +117,7 @@ AudioSendStream::AudioSendStream(
     RtcEventLog* event_log,
     RtcpRttStats* rtcp_rtt_stats,
     const rtc::Optional<RtpState>& suspended_rtp_state,
+    TimeInterval* overall_call_lifetime,
     std::unique_ptr<voe::ChannelProxy> channel_proxy)
     : worker_queue_(worker_queue),
       config_(Config(nullptr)),
@@ -128,7 +130,8 @@ AudioSendStream::AudioSendStream(
                            kPacketLossRateMinNumAckedPackets,
                            kRecoverablePacketLossRateMinNumAckedPairs),
       rtp_rtcp_module_(nullptr),
-      suspended_rtp_state_(suspended_rtp_state) {
+      suspended_rtp_state_(suspended_rtp_state),
+      overall_call_lifetime_(overall_call_lifetime) {
   RTC_LOG(LS_INFO) << "AudioSendStream: " << config.rtp.ssrc;
   RTC_DCHECK(worker_queue_);
   RTC_DCHECK(audio_state_);
@@ -136,6 +139,7 @@ AudioSendStream::AudioSendStream(
   RTC_DCHECK(bitrate_allocator_);
   RTC_DCHECK(transport);
   RTC_DCHECK(transport->send_side_cc());
+  RTC_DCHECK(overall_call_lifetime_);
 
   channel_proxy_->SetRtcEventLog(event_log_);
   channel_proxy_->SetRtcpRttStats(rtcp_rtt_stats);
@@ -160,6 +164,10 @@ AudioSendStream::~AudioSendStream() {
   channel_proxy_->ResetSenderCongestionControlObjects();
   channel_proxy_->SetRtcEventLog(nullptr);
   channel_proxy_->SetRtcpRttStats(nullptr);
+  // Lifetime can only be updated after deregistering
+  // |timed_send_transport_adapter_| in the underlying channel object to avoid
+  // data races in |active_lifetime_|.
+  overall_call_lifetime_->Extend(active_lifetime_);
 }
 
 const webrtc::AudioSendStream::Config& AudioSendStream::GetConfig() const {
@@ -454,10 +462,6 @@ void AudioSendStream::SetTransportOverhead(int transport_overhead_per_packet) {
 
 RtpState AudioSendStream::GetRtpState() const {
   return rtp_rtcp_module_->GetRtpState();
-}
-
-const TimeInterval& AudioSendStream::GetActiveLifetime() const {
-  return active_lifetime_;
 }
 
 const voe::ChannelProxy& AudioSendStream::GetChannelProxy() const {

@@ -28,11 +28,14 @@
 #include "modules/pacing/mock/mock_paced_sender.h"
 #include "modules/rtp_rtcp/mocks/mock_rtcp_rtt_stats.h"
 #include "modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
+#include "rtc_base/fakeclock.h"
 #include "rtc_base/ptr_util.h"
 #include "rtc_base/task_queue.h"
+#include "rtc_base/timedelta.h"
 #include "test/gtest.h"
 #include "test/mock_audio_encoder.h"
 #include "test/mock_audio_encoder_factory.h"
+#include "test/mock_transport.h"
 
 namespace webrtc {
 namespace test {
@@ -168,14 +171,9 @@ struct ConfigHelper {
   std::unique_ptr<internal::AudioSendStream> CreateAudioSendStream() {
     return std::unique_ptr<internal::AudioSendStream>(
         new internal::AudioSendStream(
-            stream_config_,
-            audio_state_,
-            &worker_queue_,
-            &fake_transport_,
-            &bitrate_allocator_,
-            &event_log_,
-            &rtcp_rtt_stats_,
-            rtc::nullopt,
+            stream_config_, audio_state_, &worker_queue_, &fake_transport_,
+            &bitrate_allocator_, &event_log_, &rtcp_rtt_stats_, rtc::nullopt,
+            &active_lifetime_,
             std::unique_ptr<voe::ChannelProxy>(channel_proxy_)));
   }
 
@@ -186,6 +184,7 @@ struct ConfigHelper {
   }
   MockVoEChannelProxy* channel_proxy() { return channel_proxy_; }
   RtpTransportControllerSendInterface* transport() { return &fake_transport_; }
+  TimeInterval* active_lifetime() { return &active_lifetime_; }
 
   static void AddBweToConfig(AudioSendStream::Config* config) {
     config->rtp.extensions.push_back(
@@ -223,7 +222,11 @@ struct ConfigHelper {
     }
     EXPECT_CALL(*channel_proxy_, ResetSenderCongestionControlObjects())
         .Times(1);
-    EXPECT_CALL(*channel_proxy_, RegisterTransport(nullptr)).Times(2);
+    {
+      ::testing::InSequence unregister_on_destruction;
+      EXPECT_CALL(*channel_proxy_, RegisterTransport(_)).Times(1);
+      EXPECT_CALL(*channel_proxy_, RegisterTransport(nullptr)).Times(1);
+    }
     EXPECT_CALL(*channel_proxy_, SetRtcEventLog(testing::NotNull())).Times(1);
     EXPECT_CALL(*channel_proxy_, SetRtcEventLog(testing::IsNull()))
         .Times(1);  // Destructor resets the event log
@@ -308,6 +311,7 @@ struct ConfigHelper {
   rtc::scoped_refptr<MockAudioProcessing> audio_processing_;
   AudioProcessingStats audio_processing_stats_;
   SimulatedClock simulated_clock_;
+  TimeInterval active_lifetime_;
   PacketRouter packet_router_;
   testing::NiceMock<MockPacedSender> pacer_;
   std::unique_ptr<SendSideCongestionController> send_side_cc_;
@@ -525,6 +529,35 @@ TEST(AudioSendStreamTest, ReconfigureTransportCcResetsFirst) {
         .Times(1);
   }
   send_stream->Reconfigure(new_config);
+}
+
+// Checks that AudioSendStream logs the times at which RTP packets are sent
+// through its interface.
+TEST(AudioSendStreamTest, UpdateLifetime) {
+  ConfigHelper helper(false, true);
+
+  MockTransport mock_transport;
+  helper.config().send_transport = &mock_transport;
+
+  Transport* registered_transport;
+  ON_CALL(*helper.channel_proxy(), RegisterTransport(_))
+      .WillByDefault(Invoke([&registered_transport](Transport* transport) {
+        registered_transport = transport;
+      }));
+
+  rtc::ScopedFakeClock fake_clock;
+  constexpr int64_t kTimeBetweenSendRtpCallsMs = 100;
+  {
+    auto send_stream = helper.CreateAudioSendStream();
+    EXPECT_CALL(mock_transport, SendRtp(_, _, _)).Times(2);
+    const PacketOptions options;
+    registered_transport->SendRtp(nullptr, 0, options);
+    fake_clock.AdvanceTime(
+        rtc::TimeDelta::FromMilliseconds(kTimeBetweenSendRtpCallsMs));
+    registered_transport->SendRtp(nullptr, 0, options);
+  }
+  EXPECT_TRUE(!helper.active_lifetime()->Empty());
+  EXPECT_EQ(helper.active_lifetime()->Length(), kTimeBetweenSendRtpCallsMs);
 }
 }  // namespace test
 }  // namespace webrtc
