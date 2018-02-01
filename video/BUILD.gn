@@ -111,6 +111,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       "../logging:rtc_event_log_api",
+      "../logging:rtc_event_log_impl_output",
       "../media:rtc_audio_video",
       "../media:rtc_internal_video_codecs",
       "../modules/audio_mixer:audio_mixer_impl",
