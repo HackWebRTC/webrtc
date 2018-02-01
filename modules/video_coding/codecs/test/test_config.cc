@@ -98,6 +98,10 @@ void TestConfig::SetCodecSettings(VideoCodecType codec_type,
   // Spatial scalability is only available with VP9.
   RTC_CHECK(num_spatial_layers < 2 || codec_type == kVideoCodecVP9);
 
+  // Simulcast/SVC is only supposed to work with software codecs.
+  RTC_CHECK((!hw_encoder && !hw_decoder) ||
+            (num_simulcast_streams == 1 && num_spatial_layers == 1));
+
   // Some base code requires numberOfSimulcastStreams to be set to zero
   // when simulcast is not used.
   codec_settings.numberOfSimulcastStreams =
@@ -186,36 +190,6 @@ size_t TestConfig::NumberOfSimulcastStreams() const {
   return codec_settings.numberOfSimulcastStreams;
 }
 
-size_t TestConfig::TemporalLayerForFrame(size_t frame_idx) const {
-  size_t tl = 0;
-  switch (NumberOfTemporalLayers()) {
-    case 1:
-      tl = 0;
-      break;
-    case 2:
-      // temporal layer 1:     1     3
-      // temporal layer 0:  0     2     4 ...
-      tl = (frame_idx % 2 == 0) ? 0 : 1;
-      break;
-    case 3:
-      // temporal layer 2:     1     3     5     7
-      // temporal layer 1:        2           6
-      // temporal layer 0:  0           4           8 ...
-      if (frame_idx % 4 == 0) {
-        tl = 0;
-      } else if ((frame_idx + 2) % 4 == 0) {
-        tl = 1;
-      } else if ((frame_idx + 1) % 2 == 0) {
-        tl = 2;
-      }
-      break;
-    default:
-      RTC_NOTREACHED();
-      break;
-  }
-  return tl;
-}
-
 std::vector<FrameType> TestConfig::FrameTypeForFrame(size_t frame_idx) const {
   if (keyframe_interval > 0 && (frame_idx % keyframe_interval == 0)) {
     return {kVideoFrameKey};
@@ -262,6 +236,10 @@ std::string TestConfig::FilenameWithParams() const {
   std::string implementation_type = hw_encoder ? "hw" : "sw";
   return filename + "_" + CodecName() + "_" + implementation_type + "_" +
          std::to_string(codec_settings.startBitrate);
+}
+
+bool TestConfig::IsAsyncCodec() const {
+  return hw_encoder || hw_decoder;
 }
 
 }  // namespace test

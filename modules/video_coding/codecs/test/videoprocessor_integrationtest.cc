@@ -351,15 +351,10 @@ std::vector<FrameStatistic> VideoProcessorIntegrationTest::ExtractLayerStats(
         }
       }
 
+      // Target bitrate of extracted interval is bitrate of the highest
+      // spatial and temporal layer.
       target_bitrate_kbps =
           std::max(target_bitrate_kbps, superframe_stat.target_bitrate_kbps);
-
-      if (superframe_stat.encoding_successful) {
-        RTC_CHECK(superframe_stat.target_bitrate_kbps <= target_bitrate_kbps ||
-                  tl_idx == target_temporal_layer_number);
-        RTC_CHECK(superframe_stat.target_bitrate_kbps == target_bitrate_kbps ||
-                  tl_idx < target_temporal_layer_number);
-      }
 
       layer_stats.push_back(superframe_stat);
     }
@@ -425,8 +420,14 @@ void VideoProcessorIntegrationTest::CreateEncoderAndDecoder() {
 
   const SdpVideoFormat format = CreateSdpVideoFormat(config_);
   encoder_ = encoder_factory->CreateVideoEncoder(format);
-  decoders_.push_back(std::unique_ptr<VideoDecoder>(
-      decoder_factory->CreateVideoDecoder(format)));
+
+  const size_t num_simulcast_or_spatial_layers = std::max(
+      config_.NumberOfSimulcastStreams(), config_.NumberOfSpatialLayers());
+
+  for (size_t i = 0; i < num_simulcast_or_spatial_layers; ++i) {
+    decoders_.push_back(std::unique_ptr<VideoDecoder>(
+        decoder_factory->CreateVideoDecoder(format)));
+  }
 
   if (config_.sw_fallback_encoder) {
     encoder_ = rtc::MakeUnique<VideoEncoderSoftwareFallbackWrapper>(
@@ -506,12 +507,10 @@ void VideoProcessorIntegrationTest::SetUpAndInitObjects(
   rtc::Event sync_event(false, false);
   task_queue->PostTask([this, &sync_event]() {
     processor_ = rtc::MakeUnique<VideoProcessor>(
-        encoder_.get(), decoders_.at(0).get(), source_frame_reader_.get(),
-        config_, &stats_.at(0),
-        encoded_frame_writers_.empty() ? nullptr
-                                       : encoded_frame_writers_.at(0).get(),
-        decoded_frame_writers_.empty() ? nullptr
-                                       : decoded_frame_writers_.at(0).get());
+        encoder_.get(), &decoders_, source_frame_reader_.get(), config_,
+        &stats_,
+        encoded_frame_writers_.empty() ? nullptr : &encoded_frame_writers_,
+        decoded_frame_writers_.empty() ? nullptr : &decoded_frame_writers_);
     sync_event.Set();
   });
   sync_event.Wait(rtc::Event::kForever);
@@ -673,16 +672,24 @@ void VideoProcessorIntegrationTest::AnalyzeAndPrintStats(
   const float max_delta_frame_delay_sec =
       8 * delta_frame_size_bytes.Max() / 1000 / target_bitrate_kbps;
 
+  printf("Frame width                    : %zu\n",
+         last_successfully_decoded_frame.decoded_width);
+  printf("Frame height                   : %zu\n",
+         last_successfully_decoded_frame.decoded_height);
   printf("Target bitrate                 : %f kbps\n", target_bitrate_kbps);
   printf("Encoded bitrate                : %f kbps\n", encoded_bitrate_kbps);
   printf("Bitrate mismatch               : %f %%\n", bitrate_mismatch_percent);
   printf("Time to reach target bitrate   : %f sec\n",
          time_to_reach_target_bitrate_sec);
   printf("Target framerate               : %f fps\n", target_framerate_fps);
-  printf("Encoding framerate             : %f fps\n", encoded_framerate_fps);
-  printf("Decoding framerate             : %f fps\n", decoded_framerate_fps);
+  printf("Encoded framerate              : %f fps\n", encoded_framerate_fps);
+  printf("Decoded framerate              : %f fps\n", decoded_framerate_fps);
   printf("Frame encoding time            : %f us\n", encoding_time_us.Mean());
   printf("Frame decoding time            : %f us\n", decoding_time_us.Mean());
+  printf("Encoding framerate             : %f fps\n",
+         1000000 / encoding_time_us.Mean());
+  printf("Decoding framerate             : %f fps\n",
+         1000000 / decoding_time_us.Mean());
   printf("Framerate mismatch percent     : %f %%\n",
          framerate_mismatch_percent);
   printf("Avg buffer level               : %f sec\n", buffer_level_sec.Mean());

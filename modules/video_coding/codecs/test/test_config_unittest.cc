@@ -54,39 +54,6 @@ TEST(TestConfig, NumberOfTemporalLayers_Vp9) {
   EXPECT_EQ(kNumTemporalLayers, config.NumberOfTemporalLayers());
 }
 
-TEST(TestConfig, TemporalLayersForFrame_OneLayer) {
-  TestConfig config;
-  webrtc::test::CodecSettings(kVideoCodecVP8, &config.codec_settings);
-  config.codec_settings.VP8()->numberOfTemporalLayers = 1;
-  EXPECT_EQ(0u, config.TemporalLayerForFrame(0));
-  EXPECT_EQ(0u, config.TemporalLayerForFrame(1));
-  EXPECT_EQ(0u, config.TemporalLayerForFrame(2));
-}
-
-TEST(TestConfig, TemporalLayersForFrame_TwoLayers) {
-  TestConfig config;
-  webrtc::test::CodecSettings(kVideoCodecVP8, &config.codec_settings);
-  config.codec_settings.VP8()->numberOfTemporalLayers = 2;
-  EXPECT_EQ(0u, config.TemporalLayerForFrame(0));
-  EXPECT_EQ(1u, config.TemporalLayerForFrame(1));
-  EXPECT_EQ(0u, config.TemporalLayerForFrame(2));
-  EXPECT_EQ(1u, config.TemporalLayerForFrame(3));
-}
-
-TEST(TestConfig, TemporalLayersForFrame_ThreeLayers) {
-  TestConfig config;
-  webrtc::test::CodecSettings(kVideoCodecVP8, &config.codec_settings);
-  config.codec_settings.VP8()->numberOfTemporalLayers = 3;
-  EXPECT_EQ(0u, config.TemporalLayerForFrame(0));
-  EXPECT_EQ(2u, config.TemporalLayerForFrame(1));
-  EXPECT_EQ(1u, config.TemporalLayerForFrame(2));
-  EXPECT_EQ(2u, config.TemporalLayerForFrame(3));
-  EXPECT_EQ(0u, config.TemporalLayerForFrame(4));
-  EXPECT_EQ(2u, config.TemporalLayerForFrame(5));
-  EXPECT_EQ(1u, config.TemporalLayerForFrame(6));
-  EXPECT_EQ(2u, config.TemporalLayerForFrame(7));
-}
-
 TEST(TestConfig, ForcedKeyFrameIntervalOff) {
   TestConfig config;
   config.keyframe_interval = 0;

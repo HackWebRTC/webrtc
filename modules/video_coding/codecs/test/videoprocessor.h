@@ -48,19 +48,23 @@ namespace test {
 // Note this class is not thread safe and is meant for simple testing purposes.
 class VideoProcessor {
  public:
+  using VideoDecoderList = std::vector<std::unique_ptr<VideoDecoder>>;
+  using IvfFileWriterList = std::vector<std::unique_ptr<IvfFileWriter>>;
+  using FrameWriterList = std::vector<std::unique_ptr<FrameWriter>>;
+
   VideoProcessor(webrtc::VideoEncoder* encoder,
-                 webrtc::VideoDecoder* decoder,
-                 FrameReader* analysis_frame_reader,
+                 VideoDecoderList* decoders,
+                 FrameReader* input_frame_reader,
                  const TestConfig& config,
-                 Stats* stats,
-                 IvfFileWriter* encoded_frame_writer,
-                 FrameWriter* decoded_frame_writer);
+                 std::vector<Stats>* stats,
+                 IvfFileWriterList* encoded_frame_writers,
+                 FrameWriterList* decoded_frame_writers);
   ~VideoProcessor();
 
-  // Reads a frame from the analysis frame reader and sends it to the encoder.
-  // When the encode callback is received, the encoded frame is sent to the
-  // decoder. The decoded frame is written to disk by the analysis frame writer.
-  // Objective video quality metrics can thus be calculated after the fact.
+  // Reads a frame and sends it to the encoder. When the encode callback
+  // is received, the encoded frame is buffered. After encoding is finished
+  // buffered frame is sent to decoder. Quality evaluation is done in
+  // the decode callback.
   void ProcessFrame();
 
   // Updates the encoder with target rates. Must be called at least once.
@@ -88,8 +92,7 @@ class VideoProcessor {
         return Result(Result::OK, 0);
       }
 
-      video_processor_->FrameEncoded(codec_specific_info->codecType,
-                                     encoded_image);
+      video_processor_->FrameEncoded(encoded_image, *codec_specific_info);
       return Result(Result::OK, 0);
     }
 
@@ -107,8 +110,7 @@ class VideoProcessor {
       }
 
       bool Run() override {
-        video_processor_->FrameEncoded(codec_specific_info_.codecType,
-                                       encoded_image_);
+        video_processor_->FrameEncoded(encoded_image_, codec_specific_info_);
         return true;
       }
 
@@ -158,18 +160,29 @@ class VideoProcessor {
   };
 
   // Invoked by the callback adapter when a frame has completed encoding.
-  void FrameEncoded(webrtc::VideoCodecType codec,
-                    const webrtc::EncodedImage& encodedImage);
+  void FrameEncoded(const webrtc::EncodedImage& encoded_image,
+                    const webrtc::CodecSpecificInfo& codec_specific);
 
   // Invoked by the callback adapter when a frame has completed decoding.
   void FrameDecoded(const webrtc::VideoFrame& image);
 
-  void WriteDecodedFrameToFile(rtc::Buffer* buffer);
+  void CopyEncodedImage(const EncodedImage& encoded_image,
+                        const VideoCodecType codec,
+                        size_t frame_number,
+                        size_t simulcast_svc_idx);
+
+  void CalculateFrameQuality(const VideoFrame& ref_frame,
+                             const VideoFrame& dec_frame,
+                             FrameStatistic* frame_stat);
+
+  void WriteDecodedFrameToFile(rtc::Buffer* buffer, size_t simulcast_svc_idx);
 
   TestConfig config_ RTC_GUARDED_BY(sequence_checker_);
 
+  const size_t num_simulcast_or_spatial_layers_;
+
   webrtc::VideoEncoder* const encoder_;
-  webrtc::VideoDecoder* const decoder_;
+  VideoDecoderList* const decoders_;
   const std::unique_ptr<VideoBitrateAllocator> bitrate_allocator_;
   BitrateAllocation bitrate_allocation_ RTC_GUARDED_BY(sequence_checker_);
 
@@ -184,30 +197,41 @@ class VideoProcessor {
   std::map<size_t, std::unique_ptr<VideoFrame>> input_frames_
       RTC_GUARDED_BY(sequence_checker_);
 
-  // These (mandatory) file manipulators are used for, e.g., objective PSNR and
-  // SSIM calculations at the end of a test run.
-  FrameReader* const analysis_frame_reader_;
+  FrameReader* const input_frame_reader_;
 
   // These (optional) file writers are used to persistently store the encoded
   // and decoded bitstreams. The purpose is to give the experimenter an option
   // to subjectively evaluate the quality of the processing. Each frame writer
   // is enabled by being non-null.
-  IvfFileWriter* const encoded_frame_writer_;
-  FrameWriter* const decoded_frame_writer_;
+  IvfFileWriterList* const encoded_frame_writers_;
+  FrameWriterList* const decoded_frame_writers_;
 
   // Keep track of inputed/encoded/decoded frames, so we can detect frame drops.
   size_t last_inputed_frame_num_ RTC_GUARDED_BY(sequence_checker_);
   size_t last_encoded_frame_num_ RTC_GUARDED_BY(sequence_checker_);
+  size_t last_encoded_simulcast_svc_idx_ RTC_GUARDED_BY(sequence_checker_);
   size_t last_decoded_frame_num_ RTC_GUARDED_BY(sequence_checker_);
   size_t num_encoded_frames_ RTC_GUARDED_BY(sequence_checker_);
   size_t num_decoded_frames_ RTC_GUARDED_BY(sequence_checker_);
 
+  // Map of frame size (in pixels) to simulcast/spatial layer index.
+  std::map<size_t, size_t> frame_wxh_to_simulcast_svc_idx_
+      RTC_GUARDED_BY(sequence_checker_);
+
+  // Encoder delivers coded frame layer-by-layer. We store coded frames and
+  // then, after all layers are encoded, decode them. Such separation of
+  // frame processing on superframe level simplifies encoding/decoding time
+  // measurement.
+  std::map<size_t, EncodedImage> last_encoded_frames_
+      RTC_GUARDED_BY(sequence_checker_);
+
   // Keep track of the last successfully decoded frame, since we write that
-  // frame to disk when decoding fails.
-  rtc::Buffer last_decoded_frame_buffer_ RTC_GUARDED_BY(sequence_checker_);
+  // frame to disk when frame got dropped or decoding fails.
+  std::map<size_t, rtc::Buffer> last_decoded_frame_buffers_
+      RTC_GUARDED_BY(sequence_checker_);
 
   // Statistics.
-  Stats* stats_;
+  std::vector<Stats>* const stats_;
 
   rtc::SequencedTaskChecker sequence_checker_;
 

@@ -209,10 +209,9 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, HighBitrateVP8) {
 
 // Too slow to finish before timeout on iOS. See webrtc:4755.
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
-#define MAYBE_ProcessNoLossChangeBitRateVP8 \
-  DISABLED_ProcessNoLossChangeBitRateVP8
+#define MAYBE_ChangeBitrateVP8 DISABLED_ChangeBitrateVP8
 #else
-#define MAYBE_ProcessNoLossChangeBitRateVP8 ProcessNoLossChangeBitRateVP8
+#define MAYBE_ChangeBitrateVP8 ChangeBitrateVP8
 #endif
 TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_ChangeBitrateVP8) {
   config_.SetCodecSettings(kVideoCodecVP8, 1, 1, 1, false, true, true, false,
@@ -242,11 +241,9 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_ChangeBitrateVP8) {
 
 // Too slow to finish before timeout on iOS. See webrtc:4755.
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
-#define MAYBE_ProcessNoLossChangeFrameRateFrameDropVP8 \
-  DISABLED_ProcessNoLossChangeFrameRateFrameDropVP8
+#define MAYBE_ChangeFramerateVP8 DISABLED_ChangeFramerateVP8
 #else
-#define MAYBE_ProcessNoLossChangeFrameRateFrameDropVP8 \
-  ProcessNoLossChangeFrameRateFrameDropVP8
+#define MAYBE_ChangeFramerateVP8 ChangeFramerateVP8
 #endif
 TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_ChangeFramerateVP8) {
   config_.SetCodecSettings(kVideoCodecVP8, 1, 1, 1, false, true, true, false,
@@ -282,10 +279,9 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_ChangeFramerateVP8) {
 
 // Too slow to finish before timeout on iOS. See webrtc:4755.
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
-#define MAYBE_ProcessNoLossTemporalLayersVP8 \
-  DISABLED_ProcessNoLossTemporalLayersVP8
+#define MAYBE_TemporalLayersVP8 DISABLED_TemporalLayersVP8
 #else
-#define MAYBE_ProcessNoLossTemporalLayersVP8 ProcessNoLossTemporalLayersVP8
+#define MAYBE_TemporalLayersVP8 TemporalLayersVP8
 #endif
 TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_TemporalLayersVP8) {
   config_.SetCodecSettings(kVideoCodecVP8, 1, 1, 3, false, true, true, false,
@@ -308,6 +304,54 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_TemporalLayersVP8) {
   // than quality of x86 version. Use lower thresholds for now.
   std::vector<QualityThresholds> quality_thresholds = {{31, 30, 0.85, 0.84},
                                                        {31, 28, 0.85, 0.75}};
+
+  ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
+                              &quality_thresholds, nullptr,
+                              kNoVisualizationParams);
+}
+
+// Might be too slow on mobile platforms.
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
+#define MAYBE_SimulcastVP8 DISABLED_SimulcastVP8
+#else
+#define MAYBE_SimulcastVP8 SimulcastVP8
+#endif
+TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_SimulcastVP8) {
+  config_.filename = "ConferenceMotion_1280_720_50";
+  config_.input_filename = ResourcePath(config_.filename, "yuv");
+  config_.num_frames = 100;
+  config_.SetCodecSettings(kVideoCodecVP8, 3, 1, 3, false, true, true, false,
+                           kResilienceOn, 1280, 720);
+
+  std::vector<RateProfile> rate_profiles = {{1500, 30, config_.num_frames}};
+
+  std::vector<RateControlThresholds> rc_thresholds = {
+      {5, 1, 5, 0.2, 0.3, 0.1, 0, 1}};
+  std::vector<QualityThresholds> quality_thresholds = {{34, 32, 0.90, 0.88}};
+
+  ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
+                              &quality_thresholds, nullptr,
+                              kNoVisualizationParams);
+}
+
+// Might be too slow on mobile platforms.
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
+#define MAYBE_SvcVP9 DISABLED_SvcVP9
+#else
+#define MAYBE_SvcVP9 SvcVP9
+#endif
+TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_SvcVP9) {
+  config_.filename = "ConferenceMotion_1280_720_50";
+  config_.input_filename = ResourcePath(config_.filename, "yuv");
+  config_.num_frames = 100;
+  config_.SetCodecSettings(kVideoCodecVP9, 1, 3, 3, false, true, true, false,
+                           kResilienceOn, 1280, 720);
+
+  std::vector<RateProfile> rate_profiles = {{1500, 30, config_.num_frames}};
+
+  std::vector<RateControlThresholds> rc_thresholds = {
+      {5, 1, 5, 0.2, 0.3, 0.1, 0, 1}};
+  std::vector<QualityThresholds> quality_thresholds = {{36, 34, 0.93, 0.91}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
                               &quality_thresholds, nullptr,

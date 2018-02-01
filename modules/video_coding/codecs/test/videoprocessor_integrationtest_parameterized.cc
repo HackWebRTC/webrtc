@@ -23,8 +23,9 @@ const VideoCodecType kVideoCodecType[] = {kVideoCodecVP8};
 const bool kHwCodec[] = {false};
 
 // Codec settings.
+const int kNumSpatialLayers = 1;
 const int kNumTemporalLayers = 1;
-const bool kResilienceOn = kNumTemporalLayers > 1;
+const bool kResilienceOn = kNumSpatialLayers > 1 || kNumTemporalLayers > 1;
 const bool kDenoisingOn = false;
 const bool kErrorConcealmentOn = false;
 const bool kSpatialResizeOn = false;
@@ -67,7 +68,14 @@ class VideoProcessorIntegrationTestParameterized
     config_.hw_encoder = hw_codec_;
     config_.hw_decoder = hw_codec_;
     config_.num_frames = kNumFrames;
-    config_.SetCodecSettings(codec_type_, 1, 1, kNumTemporalLayers,
+
+    const size_t num_simulcast_streams =
+        codec_type_ == kVideoCodecVP8 ? kNumSpatialLayers : 1;
+    const size_t num_spatial_layers =
+        codec_type_ == kVideoCodecVP9 ? kNumSpatialLayers : 1;
+
+    config_.SetCodecSettings(codec_type_, num_simulcast_streams,
+                             num_spatial_layers, kNumTemporalLayers,
                              kErrorConcealmentOn, kDenoisingOn, kFrameDropperOn,
                              kSpatialResizeOn, kResilienceOn, width, height);
 

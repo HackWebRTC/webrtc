@@ -540,6 +540,7 @@ if (rtc_include_tests) {
       "../../test:video_test_common",
       "../../test:video_test_support",
       "../rtp_rtcp:rtp_rtcp_format",
+      "//third_party/libyuv",
     ]
   }
 

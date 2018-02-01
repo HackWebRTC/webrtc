@@ -45,34 +45,40 @@ class VideoProcessorTest : public testing::Test {
     config_.codec_settings.width = kWidth;
     config_.codec_settings.height = kHeight;
 
+    stats_.resize(1);
+
+    decoder_mock_ = new MockVideoDecoder();
+    decoders_.push_back(std::unique_ptr<VideoDecoder>(decoder_mock_));
+
     ExpectInit();
     EXPECT_CALL(frame_reader_mock_, FrameLength())
         .WillRepeatedly(Return(kFrameSize));
     video_processor_ = rtc::MakeUnique<VideoProcessor>(
-        &encoder_mock_, &decoder_mock_, &frame_reader_mock_, config_, &stats_,
+        &encoder_mock_, &decoders_, &frame_reader_mock_, config_, &stats_,
         nullptr /* encoded_frame_writer */, nullptr /* decoded_frame_writer */);
   }
 
   void ExpectInit() {
     EXPECT_CALL(encoder_mock_, InitEncode(_, _, _)).Times(1);
     EXPECT_CALL(encoder_mock_, RegisterEncodeCompleteCallback(_)).Times(1);
-    EXPECT_CALL(decoder_mock_, InitDecode(_, _)).Times(1);
-    EXPECT_CALL(decoder_mock_, RegisterDecodeCompleteCallback(_)).Times(1);
+    EXPECT_CALL(*decoder_mock_, InitDecode(_, _)).Times(1);
+    EXPECT_CALL(*decoder_mock_, RegisterDecodeCompleteCallback(_)).Times(1);
   }
 
   void ExpectRelease() {
     EXPECT_CALL(encoder_mock_, Release()).Times(1);
     EXPECT_CALL(encoder_mock_, RegisterEncodeCompleteCallback(_)).Times(1);
-    EXPECT_CALL(decoder_mock_, Release()).Times(1);
-    EXPECT_CALL(decoder_mock_, RegisterDecodeCompleteCallback(_)).Times(1);
+    EXPECT_CALL(*decoder_mock_, Release()).Times(1);
+    EXPECT_CALL(*decoder_mock_, RegisterDecodeCompleteCallback(_)).Times(1);
   }
 
   TestConfig config_;
 
   MockVideoEncoder encoder_mock_;
-  MockVideoDecoder decoder_mock_;
+  MockVideoDecoder* decoder_mock_;
+  std::vector<std::unique_ptr<VideoDecoder>> decoders_;
   MockFrameReader frame_reader_mock_;
-  Stats stats_;
+  std::vector<Stats> stats_;
   std::unique_ptr<VideoProcessor> video_processor_;
 };
 

@@ -53,8 +53,6 @@ struct TestConfig {
 
   size_t NumberOfSimulcastStreams() const;
 
-  size_t TemporalLayerForFrame(size_t frame_idx) const;
-
   std::vector<FrameType> FrameTypeForFrame(size_t frame_idx) const;
 
   std::string ToString() const;
@@ -62,6 +60,8 @@ struct TestConfig {
   std::string CodecName() const;
 
   std::string FilenameWithParams() const;
+
+  bool IsAsyncCodec() const;
 
   // Plain name of YUV file to process without file extension.
   std::string filename;
