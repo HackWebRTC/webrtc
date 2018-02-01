@@ -19,7 +19,7 @@
 #ifndef MODULES_AUDIO_CODING_CODECS_ILBC_MAIN_SOURCE_CB_SEARCH_CORE_H_
 #define MODULES_AUDIO_CODING_CODECS_ILBC_MAIN_SOURCE_CB_SEARCH_CORE_H_
 
-#include "defines.h"
+#include "modules/audio_coding/codecs/ilbc/defines.h"
 
 void WebRtcIlbcfix_CbSearchCore(
     int32_t *cDot,    /* (i) Cross Correlation */

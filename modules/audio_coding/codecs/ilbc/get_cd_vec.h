@@ -21,7 +21,7 @@
 
 #include <stdbool.h>
 
-#include "defines.h"
+#include "modules/audio_coding/codecs/ilbc/defines.h"
 
 // Returns true on success, false on failure. In case of failure, the decoder
 // state may be corrupted and needs resetting.

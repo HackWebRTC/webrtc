@@ -19,7 +19,7 @@
 #ifndef MODULES_AUDIO_CODING_CODECS_ILBC_MAIN_SOURCE_STATE_SEARCH_H_
 #define MODULES_AUDIO_CODING_CODECS_ILBC_MAIN_SOURCE_STATE_SEARCH_H_
 
-#include "defines.h"
+#include "modules/audio_coding/codecs/ilbc/defines.h"
 
 /*----------------------------------------------------------------*
  *  encoding of start state

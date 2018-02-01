@@ -16,8 +16,8 @@
 
 ******************************************************************/
 
-#include "defines.h"
-#include "constants.h"
+#include "modules/audio_coding/codecs/ilbc/defines.h"
+#include "modules/audio_coding/codecs/ilbc/constants.h"
 
 int32_t WebRtcIlbcfix_Smooth_odata(
     int16_t *odata,

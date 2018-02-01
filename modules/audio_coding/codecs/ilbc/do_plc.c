@@ -16,10 +16,10 @@
 
 ******************************************************************/
 
-#include "defines.h"
-#include "constants.h"
-#include "comp_corr.h"
-#include "bw_expand.h"
+#include "modules/audio_coding/codecs/ilbc/defines.h"
+#include "modules/audio_coding/codecs/ilbc/constants.h"
+#include "modules/audio_coding/codecs/ilbc/comp_corr.h"
+#include "modules/audio_coding/codecs/ilbc/bw_expand.h"
 
 /*----------------------------------------------------------------*
  *  Packet loss concealment routine. Conceals a residual signal

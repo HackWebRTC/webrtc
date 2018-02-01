@@ -19,7 +19,7 @@
 #ifndef MODULES_AUDIO_CODING_CODECS_ILBC_MAIN_SOURCE_INIT_DECODE_H_
 #define MODULES_AUDIO_CODING_CODECS_ILBC_MAIN_SOURCE_INIT_DECODE_H_
 
-#include "defines.h"
+#include "modules/audio_coding/codecs/ilbc/defines.h"
 
 /*----------------------------------------------------------------*
  *  Initiation of decoder instance.

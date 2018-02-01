@@ -16,11 +16,11 @@
 
 ******************************************************************/
 
-#include "cb_construct.h"
+#include "modules/audio_coding/codecs/ilbc/cb_construct.h"
 
-#include "defines.h"
-#include "gain_dequant.h"
-#include "get_cd_vec.h"
+#include "modules/audio_coding/codecs/ilbc/defines.h"
+#include "modules/audio_coding/codecs/ilbc/gain_dequant.h"
+#include "modules/audio_coding/codecs/ilbc/get_cd_vec.h"
 
 /*----------------------------------------------------------------*
  *  Construct decoded vector from codebook and gains.

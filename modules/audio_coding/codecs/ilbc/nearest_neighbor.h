@@ -19,7 +19,7 @@
 #ifndef MODULES_AUDIO_CODING_CODECS_ILBC_MAIN_SOURCE_NEAREST_NEIGHBOR_H_
 #define MODULES_AUDIO_CODING_CODECS_ILBC_MAIN_SOURCE_NEAREST_NEIGHBOR_H_
 
-#include "defines.h"
+#include "modules/audio_coding/codecs/ilbc/defines.h"
 
 /*----------------------------------------------------------------*
  * Find index in array such that the array element with said

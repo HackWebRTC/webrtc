@@ -19,7 +19,7 @@
 #ifndef MODULES_AUDIO_CODING_CODECS_ILBC_MAIN_SOURCE_DECODER_INTERPOLATE_LSF_H_
 #define MODULES_AUDIO_CODING_CODECS_ILBC_MAIN_SOURCE_DECODER_INTERPOLATE_LSF_H_
 
-#include "defines.h"
+#include "modules/audio_coding/codecs/ilbc/defines.h"
 
 /*----------------------------------------------------------------*
  *  obtain synthesis and weighting filters form lsf coefficients
