@@ -55,13 +55,11 @@ def _ParseArgs():
   parser.add_argument('--android', action='store_true',
       help='Perform the test on a connected Android device instead.')
   parser.add_argument('--adb-path', help='Path to adb binary.', default='adb')
-  parser.add_argument('--chartjson-result-file',
+  parser.add_argument('--isolated-script-test-perf-output',
       help='Where to store perf results in chartjson format.', default=None)
 
   # Ignore Chromium-specific flags
   parser.add_argument('--isolated-script-test-output',
-                      type=str, default=None)
-  parser.add_argument('--isolated-script-test-perf-output',
                       type=str, default=None)
   parser.add_argument('--test-launcher-summary-output',
                       type=str, default=None)
@@ -269,8 +267,8 @@ def main():
     finally:
       test_process.terminate()
 
-  if args.chartjson_result_file:
-    with open(args.chartjson_result_file, 'w') as f:
+  if args.isolated_script_test_perf_output:
+    with open(args.isolated_script_test_perf_output, 'w') as f:
       json.dump({"format_version": "1.0", "charts": charts}, f)
 
   return test_process.wait()
