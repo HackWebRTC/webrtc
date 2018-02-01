@@ -15,6 +15,8 @@
 
 #include "api/video/video_frame.h"
 #include "rtc_base/timeutils.h"
+#include "sdk/objc/Framework/Native/api/video_frame_buffer.h"
+#include "sdk/objc/Framework/Native/src/objc_frame_buffer.h"
 
 id<RTCVideoFrameBuffer> nativeToRtcFrameBuffer(
     const rtc::scoped_refptr<webrtc::VideoFrameBuffer> &buffer) {
@@ -104,7 +106,7 @@ id<RTCVideoFrameBuffer> nativeToRtcFrameBuffer(
 
 - (webrtc::VideoFrame)nativeVideoFrame {
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> frameBuffer =
-      new rtc::RefCountedObject<webrtc::ObjCFrameBuffer>(self.buffer);
+      webrtc::ObjCToNativeVideoFrameBuffer(self.buffer);
   webrtc::VideoFrame videoFrame(frameBuffer,
                                 (webrtc::VideoRotation)self.rotation,
                                 self.timeStampNs / rtc::kNumNanosecsPerMicrosec);

@@ -14,7 +14,7 @@
 #import "WebRTC/RTCVideoFrameBuffer.h"
 
 #include "api/video/i420_buffer.h"
-#include "sdk/objc/Framework/Classes/Video/objc_frame_buffer.h"
+#include "sdk/objc/Framework/Native/src/objc_frame_buffer.h"
 
 namespace webrtc {
 

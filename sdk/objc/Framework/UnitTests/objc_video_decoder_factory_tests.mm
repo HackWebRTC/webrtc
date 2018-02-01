@@ -11,7 +11,7 @@
 #import <Foundation/Foundation.h>
 #import <OCMock/OCMock.h>
 
-#include "sdk/objc/Framework/Classes/VideoToolbox/objc_video_decoder_factory.h"
+#include "sdk/objc/Framework/Native/src/objc_video_decoder_factory.h"
 
 #import "WebRTC/RTCVideoCodec.h"
 #import "WebRTC/RTCVideoCodecFactory.h"

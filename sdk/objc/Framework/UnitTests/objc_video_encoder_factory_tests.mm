@@ -11,7 +11,7 @@
 #import <Foundation/Foundation.h>
 #import <OCMock/OCMock.h>
 
-#include "sdk/objc/Framework/Classes/VideoToolbox/objc_video_encoder_factory.h"
+#include "sdk/objc/Framework/Native/src/objc_video_encoder_factory.h"
 
 #import "WebRTC/RTCVideoCodec.h"
 #import "WebRTC/RTCVideoCodecFactory.h"
@@ -20,7 +20,7 @@
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "rtc_base/gunit.h"
-#include "sdk/objc/Framework/Classes/Video/objc_frame_buffer.h"
+#include "sdk/objc/Framework/Native/src/objc_frame_buffer.h"
 
 id<RTCVideoEncoderFactory> CreateEncoderFactoryReturning(int return_code) {
   id encoderMock = OCMProtocolMock(@protocol(RTCVideoEncoder));

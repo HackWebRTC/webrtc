@@ -13,7 +13,6 @@
 #import "WebRTC/RTCVideoFrameBuffer.h"
 
 #include "api/video/video_frame.h"
-#include "sdk/objc/Framework/Classes/Video/objc_frame_buffer.h"
 
 NS_ASSUME_NONNULL_BEGIN
 

@@ -16,7 +16,6 @@
 #import "WebRTC/RTCVideoCodec.h"
 
 #include "rtc_base/timeutils.h"
-#include "sdk/objc/Framework/Classes/Video/objc_frame_buffer.h"
 #include "system_wrappers/include/field_trial.h"
 
 const char kHighProfileExperiment[] = "WebRTC-H264HighProfile";

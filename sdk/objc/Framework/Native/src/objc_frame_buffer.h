@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SDK_OBJC_FRAMEWORK_CLASSES_VIDEO_OBJC_FRAME_BUFFER_H_
-#define SDK_OBJC_FRAMEWORK_CLASSES_VIDEO_OBJC_FRAME_BUFFER_H_
+#ifndef SDK_OBJC_FRAMEWORK_NATIVE_SRC_OBJC_FRAME_BUFFER_H_
+#define SDK_OBJC_FRAMEWORK_NATIVE_SRC_OBJC_FRAME_BUFFER_H_
 
 #import <CoreVideo/CoreVideo.h>
 
@@ -41,4 +41,4 @@ class ObjCFrameBuffer : public VideoFrameBuffer {
 
 }  // namespace webrtc
 
-#endif  // SDK_OBJC_FRAMEWORK_CLASSES_VIDEO_OBJC_FRAME_BUFFER_H_
+#endif  // SDK_OBJC_FRAMEWORK_NATIVE_SRC_OBJC_FRAME_BUFFER_H_

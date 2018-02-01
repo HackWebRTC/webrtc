@@ -13,7 +13,6 @@
 #import "RTCVideoRendererAdapter+Private.h"
 #import "WebRTC/RTCVideoFrame.h"
 #import "WebRTC/RTCVideoFrameBuffer.h"
-#import "objc_frame_buffer.h"
 
 #include <memory>
 
