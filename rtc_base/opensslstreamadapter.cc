@@ -643,7 +643,6 @@ StreamResult OpenSSLStreamAdapter::Read(void* data, size_t data_len,
       return SR_EOS;
       break;
     default:
-      RTC_LOG(LS_VERBOSE) << " -- error " << code;
       Error("SSL_read", (ssl_error ? ssl_error : -1), 0, false);
       if (error)
         *error = ssl_error_code_;
@@ -664,7 +663,7 @@ void OpenSSLStreamAdapter::FlushInput(unsigned int left) {
     RTC_DCHECK(ssl_error == SSL_ERROR_NONE);
 
     if (ssl_error != SSL_ERROR_NONE) {
-      RTC_LOG(LS_VERBOSE) << " -- error " << code;
+      RTC_DLOG(LS_VERBOSE) << " -- error " << code;
       Error("SSL_read", (ssl_error ? ssl_error : -1), 0, false);
       return;
     }

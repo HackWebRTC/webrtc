@@ -268,14 +268,14 @@ bool OpenSSLKeyPair::operator!=(const OpenSSLKeyPair& other) const {
 static void PrintCert(X509* x509) {
   BIO* temp_memory_bio = BIO_new(BIO_s_mem());
   if (!temp_memory_bio) {
-    RTC_LOG_F(LS_ERROR) << "Failed to allocate temporary memory bio";
+    RTC_DLOG_F(LS_ERROR) << "Failed to allocate temporary memory bio";
     return;
   }
   X509_print_ex(temp_memory_bio, x509, XN_FLAG_SEP_CPLUS_SPC, 0);
   BIO_write(temp_memory_bio, "\0", 1);
   char* buffer;
   BIO_get_mem_data(temp_memory_bio, &buffer);
-  RTC_LOG(LS_VERBOSE) << buffer;
+  RTC_DLOG(LS_VERBOSE) << buffer;
   BIO_free(temp_memory_bio);
 }
 #endif

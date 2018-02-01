@@ -582,7 +582,6 @@ int OpenSSLAdapter::DoSslWrite(const void* pv, size_t cb, int* error) {
       SetError(EWOULDBLOCK);
       break;
     case SSL_ERROR_ZERO_RETURN:
-      // RTC_LOG(LS_INFO) << " -- remote side closed";
       SetError(EWOULDBLOCK);
       // do we need to signal closure?
       break;
@@ -591,7 +590,6 @@ int OpenSSLAdapter::DoSslWrite(const void* pv, size_t cb, int* error) {
       Error("SSL_write", ret ? ret : -1, false);
       break;
     default:
-      RTC_LOG(LS_WARNING) << "Unknown error from SSL_write: " << *error;
       Error("SSL_write", ret ? ret : -1, false);
       break;
   }
@@ -604,8 +602,6 @@ int OpenSSLAdapter::DoSslWrite(const void* pv, size_t cb, int* error) {
 //
 
 int OpenSSLAdapter::Send(const void* pv, size_t cb) {
-  // RTC_LOG(LS_INFO) << "OpenSSLAdapter::Send(" << cb << ")";
-
   switch (state_) {
   case SSL_NONE:
     return AsyncSocketAdapter::Send(pv, cb);
@@ -686,7 +682,6 @@ int OpenSSLAdapter::SendTo(const void* pv,
 }
 
 int OpenSSLAdapter::Recv(void* pv, size_t cb, int64_t* timestamp) {
-  // RTC_LOG(LS_INFO) << "OpenSSLAdapter::Recv(" << cb << ")";
   switch (state_) {
 
   case SSL_NONE:
@@ -715,19 +710,15 @@ int OpenSSLAdapter::Recv(void* pv, size_t cb, int64_t* timestamp) {
   int error = SSL_get_error(ssl_, code);
   switch (error) {
     case SSL_ERROR_NONE:
-      // RTC_LOG(LS_INFO) << " -- success";
       return code;
     case SSL_ERROR_WANT_READ:
-      // RTC_LOG(LS_INFO) << " -- error want read";
       SetError(EWOULDBLOCK);
       break;
     case SSL_ERROR_WANT_WRITE:
-      // RTC_LOG(LS_INFO) << " -- error want write";
       ssl_read_needs_write_ = true;
       SetError(EWOULDBLOCK);
       break;
     case SSL_ERROR_ZERO_RETURN:
-      // RTC_LOG(LS_INFO) << " -- remote side closed";
       SetError(EWOULDBLOCK);
       // do we need to signal closure?
       break;
@@ -736,7 +727,6 @@ int OpenSSLAdapter::Recv(void* pv, size_t cb, int64_t* timestamp) {
       Error("SSL_read", (code ? code : -1), false);
       break;
     default:
-      RTC_LOG(LS_WARNING) << "Unknown error from SSL_read: " << error;
       Error("SSL_read", (code ? code : -1), false);
       break;
   }
@@ -804,8 +794,6 @@ void OpenSSLAdapter::OnConnectEvent(AsyncSocket* socket) {
 }
 
 void OpenSSLAdapter::OnReadEvent(AsyncSocket* socket) {
-  // RTC_LOG(LS_INFO) << "OpenSSLAdapter::OnReadEvent";
-
   if (state_ == SSL_NONE) {
     AsyncSocketAdapter::OnReadEvent(socket);
     return;
@@ -824,17 +812,13 @@ void OpenSSLAdapter::OnReadEvent(AsyncSocket* socket) {
   // Don't let ourselves go away during the callbacks
   //PRefPtr<OpenSSLAdapter> lock(this); // TODO: fix this
   if (ssl_write_needs_read_)  {
-    // RTC_LOG(LS_INFO) << " -- onStreamWriteable";
     AsyncSocketAdapter::OnWriteEvent(socket);
   }
 
-  // RTC_LOG(LS_INFO) << " -- onStreamReadable";
   AsyncSocketAdapter::OnReadEvent(socket);
 }
 
 void OpenSSLAdapter::OnWriteEvent(AsyncSocket* socket) {
-  // RTC_LOG(LS_INFO) << "OpenSSLAdapter::OnWriteEvent";
-
   if (state_ == SSL_NONE) {
     AsyncSocketAdapter::OnWriteEvent(socket);
     return;
@@ -854,7 +838,6 @@ void OpenSSLAdapter::OnWriteEvent(AsyncSocket* socket) {
   //PRefPtr<OpenSSLAdapter> lock(this); // TODO: fix this
 
   if (ssl_read_needs_write_)  {
-    // RTC_LOG(LS_INFO) << " -- onStreamReadable";
     AsyncSocketAdapter::OnReadEvent(socket);
   }
 
@@ -868,7 +851,6 @@ void OpenSSLAdapter::OnWriteEvent(AsyncSocket* socket) {
     }
   }
 
-  // RTC_LOG(LS_INFO) << " -- onStreamWriteable";
   AsyncSocketAdapter::OnWriteEvent(socket);
 }
 
@@ -892,18 +874,18 @@ bool OpenSSLAdapter::VerifyServerName(SSL* ssl, const char* host,
   // Logging certificates is extremely verbose. So it is disabled by default.
 #ifdef LOG_CERTIFICATES
   {
-    RTC_LOG(LS_INFO) << "Certificate from server:";
+    RTC_DLOG(LS_INFO) << "Certificate from server:";
     BIO* mem = BIO_new(BIO_s_mem());
     X509_print_ex(mem, certificate, XN_FLAG_SEP_CPLUS_SPC, X509_FLAG_NO_HEADER);
     BIO_write(mem, "\0", 1);
     char* buffer;
     BIO_get_mem_data(mem, &buffer);
-    RTC_LOG(LS_INFO) << buffer;
+    RTC_DLOG(LS_INFO) << buffer;
     BIO_free(mem);
 
     char* cipher_description =
         SSL_CIPHER_description(SSL_get_current_cipher(ssl), nullptr, 128);
-    RTC_LOG(LS_INFO) << "Cipher: " << cipher_description;
+    RTC_DLOG(LS_INFO) << "Cipher: " << cipher_description;
     OPENSSL_free(cipher_description);
   }
 #endif
@@ -944,8 +926,8 @@ bool OpenSSLAdapter::VerifyServerName(SSL* ssl, const char* host,
 
   // This should only ever be turned on for debugging and development.
   if (!ok && ignore_bad_cert) {
-    RTC_LOG(LS_WARNING) << "TLS certificate check FAILED.  "
-                        << "Allowing connection anyway.";
+    RTC_DLOG(LS_WARNING) << "TLS certificate check FAILED.  "
+                         << "Allowing connection anyway.";
     ok = true;
   }
 
@@ -961,7 +943,7 @@ bool OpenSSLAdapter::SSLPostConnectionCheck(SSL* ssl, const char* host) {
   }
 
   if (!ok && ignore_bad_cert_) {
-    RTC_LOG(LS_INFO) << "Other TLS post connection checks failed.";
+    RTC_DLOG(LS_INFO) << "Other TLS post connection checks failed.";
     ok = true;
   }
 
@@ -981,17 +963,17 @@ void OpenSSLAdapter::SSLInfoCallback(const SSL* s, int where, int ret) {
     str = "SSL_accept";
   }
   if (where & SSL_CB_LOOP) {
-    RTC_LOG(LS_INFO) << str << ":" << SSL_state_string_long(s);
+    RTC_DLOG(LS_INFO) << str << ":" << SSL_state_string_long(s);
   } else if (where & SSL_CB_ALERT) {
     str = (where & SSL_CB_READ) ? "read" : "write";
-    RTC_LOG(LS_INFO) << "SSL3 alert " << str << ":"
-                     << SSL_alert_type_string_long(ret) << ":"
-                     << SSL_alert_desc_string_long(ret);
+    RTC_DLOG(LS_INFO) << "SSL3 alert " << str << ":"
+                      << SSL_alert_type_string_long(ret) << ":"
+                      << SSL_alert_desc_string_long(ret);
   } else if (where & SSL_CB_EXIT) {
     if (ret == 0) {
-      RTC_LOG(LS_INFO) << str << ":failed in " << SSL_state_string_long(s);
+      RTC_DLOG(LS_INFO) << str << ":failed in " << SSL_state_string_long(s);
     } else if (ret < 0) {
-      RTC_LOG(LS_INFO) << str << ":error in " << SSL_state_string_long(s);
+      RTC_DLOG(LS_INFO) << str << ":error in " << SSL_state_string_long(s);
     }
   }
 }
@@ -1006,13 +988,13 @@ int OpenSSLAdapter::SSLVerifyCallback(int ok, X509_STORE_CTX* store) {
     int depth = X509_STORE_CTX_get_error_depth(store);
     int err = X509_STORE_CTX_get_error(store);
 
-    RTC_LOG(LS_INFO) << "Error with certificate at depth: " << depth;
+    RTC_DLOG(LS_INFO) << "Error with certificate at depth: " << depth;
     X509_NAME_oneline(X509_get_issuer_name(cert), data, sizeof(data));
-    RTC_LOG(LS_INFO) << "  issuer  = " << data;
+    RTC_DLOG(LS_INFO) << "  issuer  = " << data;
     X509_NAME_oneline(X509_get_subject_name(cert), data, sizeof(data));
-    RTC_LOG(LS_INFO) << "  subject = " << data;
-    RTC_LOG(LS_INFO) << "  err     = " << err << ":"
-                     << X509_verify_cert_error_string(err);
+    RTC_DLOG(LS_INFO) << "  subject = " << data;
+    RTC_DLOG(LS_INFO) << "  err     = " << err << ":"
+                      << X509_verify_cert_error_string(err);
   }
 #endif
 
@@ -1036,7 +1018,7 @@ int OpenSSLAdapter::SSLVerifyCallback(int ok, X509_STORE_CTX* store) {
 
   // Should only be used for debugging and development.
   if (!ok && stream->ignore_bad_cert_) {
-    RTC_LOG(LS_WARNING) << "Ignoring cert error while verifying cert chain";
+    RTC_DLOG(LS_WARNING) << "Ignoring cert error while verifying cert chain";
     ok = 1;
   }
 
