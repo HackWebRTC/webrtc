@@ -94,6 +94,7 @@ struct MediaSessionOptions {
   bool vad_enabled = true;  // When disabled, removes all CN codecs from SDP.
   bool rtcp_mux_enabled = true;
   bool bundle_enabled = false;
+  bool is_unified_plan = false;
   std::string rtcp_cname = kDefaultRtcpCname;
   rtc::CryptoOptions crypto_options;
   // List of media description options in the same order that the media

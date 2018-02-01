@@ -3199,6 +3199,7 @@ void PeerConnection::GetOptionsForOffer(
 
   session_options->rtcp_cname = rtcp_cname_;
   session_options->crypto_options = factory_->options().crypto_options;
+  session_options->is_unified_plan = IsUnifiedPlan();
 }
 
 void PeerConnection::GetOptionsForPlanBOffer(
@@ -3457,6 +3458,7 @@ void PeerConnection::GetOptionsForAnswer(
 
   session_options->rtcp_cname = rtcp_cname_;
   session_options->crypto_options = factory_->options().crypto_options;
+  session_options->is_unified_plan = IsUnifiedPlan();
 }
 
 void PeerConnection::GetOptionsForPlanBAnswer(

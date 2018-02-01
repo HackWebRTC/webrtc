@@ -19,6 +19,7 @@
 #include "pc/mediastream.h"
 #include "pc/mediastreamtrack.h"
 #include "pc/peerconnectionwrapper.h"
+#include "pc/sdputils.h"
 #include "pc/test/fakeaudiocapturemodule.h"
 #include "pc/test/mockpeerconnectionobservers.h"
 #include "rtc_base/checks.h"
@@ -72,6 +73,12 @@ class PeerConnectionRtpTest : public testing::Test {
 
   std::unique_ptr<PeerConnectionWrapper> CreatePeerConnection() {
     return CreatePeerConnection(RTCConfiguration());
+  }
+
+  std::unique_ptr<PeerConnectionWrapper> CreatePeerConnectionWithPlanB() {
+    RTCConfiguration config;
+    config.sdp_semantics = SdpSemantics::kPlanB;
+    return CreatePeerConnection(config);
   }
 
   std::unique_ptr<PeerConnectionWrapper> CreatePeerConnectionWithUnifiedPlan() {
@@ -864,6 +871,75 @@ TEST_F(PeerConnectionRtpUnifiedPlanTest,
   caller->observer()->clear_negotiation_needed();
   EXPECT_TRUE(caller->pc()->RemoveTrack(sender));
   EXPECT_FALSE(caller->observer()->negotiation_needed());
+}
+
+// Test MSID signaling between Unified Plan and Plan B endpoints. There are two
+// options for this kind of signaling: media section based (a=msid) and ssrc
+// based (a=ssrc MSID). While JSEP only specifies media section MSID signaling,
+// we want to ensure compatibility with older Plan B endpoints that might expect
+// ssrc based MSID signaling. Thus we test here that Unified Plan offers both
+// types but answers with the same type as the offer.
+
+class PeerConnectionMsidSignalingTest : public PeerConnectionRtpTest {};
+
+TEST_F(PeerConnectionMsidSignalingTest, UnifiedPlanTalkingToOurself) {
+  auto caller = CreatePeerConnectionWithUnifiedPlan();
+  caller->AddAudioTrack("caller_audio");
+  auto callee = CreatePeerConnectionWithUnifiedPlan();
+  callee->AddAudioTrack("callee_audio");
+
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+
+  // Offer should have had both a=msid and a=ssrc MSID lines.
+  auto* offer = callee->pc()->remote_description();
+  EXPECT_EQ((cricket::kMsidSignalingMediaSection |
+             cricket::kMsidSignalingSsrcAttribute),
+            offer->description()->msid_signaling());
+
+  // Answer should have had only a=msid lines.
+  auto* answer = caller->pc()->remote_description();
+  EXPECT_EQ(cricket::kMsidSignalingMediaSection,
+            answer->description()->msid_signaling());
+}
+
+TEST_F(PeerConnectionMsidSignalingTest, PlanBOfferToUnifiedPlanAnswer) {
+  auto caller = CreatePeerConnectionWithPlanB();
+  caller->AddAudioTrack("caller_audio");
+  auto callee = CreatePeerConnectionWithUnifiedPlan();
+  callee->AddAudioTrack("callee_audio");
+
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+
+  // Offer should have only a=ssrc MSID lines.
+  auto* offer = callee->pc()->remote_description();
+  EXPECT_EQ(cricket::kMsidSignalingSsrcAttribute,
+            offer->description()->msid_signaling());
+
+  // Answer should have only a=ssrc MSID lines to match the offer.
+  auto* answer = caller->pc()->remote_description();
+  EXPECT_EQ(cricket::kMsidSignalingSsrcAttribute,
+            answer->description()->msid_signaling());
+}
+
+TEST_F(PeerConnectionMsidSignalingTest, PureUnifiedPlanToUs) {
+  auto caller = CreatePeerConnectionWithUnifiedPlan();
+  caller->AddAudioTrack("caller_audio");
+  auto callee = CreatePeerConnectionWithUnifiedPlan();
+  callee->AddAudioTrack("callee_audio");
+
+  auto offer = caller->CreateOffer();
+  // Simulate a pure Unified Plan offerer by setting the MSID signaling to media
+  // section only.
+  offer->description()->set_msid_signaling(cricket::kMsidSignalingMediaSection);
+
+  ASSERT_TRUE(
+      caller->SetLocalDescription(CloneSessionDescription(offer.get())));
+  ASSERT_TRUE(callee->SetRemoteDescription(std::move(offer)));
+
+  // Answer should have only a=msid to match the offer.
+  auto answer = callee->CreateAnswer();
+  EXPECT_EQ(cricket::kMsidSignalingMediaSection,
+            answer->description()->msid_signaling());
 }
 
 // Sender setups in a call.

@@ -273,7 +273,7 @@ bool JsepSessionDescription::ToString(std::string* out) const {
   if (!description_ || !out) {
     return false;
   }
-  *out = SdpSerialize(*this, false);
+  *out = SdpSerialize(*this);
   return !out->empty();
 }
 
