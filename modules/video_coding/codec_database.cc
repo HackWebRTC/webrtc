@@ -169,21 +169,6 @@ bool VCMCodecDataBase::SetSendCodec(const VideoCodec* send_codec,
   return true;
 }
 
-bool VCMCodecDataBase::SendCodec(VideoCodec* current_send_codec) const {
-  if (!ptr_encoder_) {
-    return false;
-  }
-  memcpy(current_send_codec, &send_codec_, sizeof(VideoCodec));
-  return true;
-}
-
-VideoCodecType VCMCodecDataBase::SendCodec() const {
-  if (!ptr_encoder_) {
-    return kVideoCodecUnknown;
-  }
-  return send_codec_.codecType;
-}
-
 bool VCMCodecDataBase::DeregisterExternalEncoder(uint8_t payload_type,
                                                  bool* was_send_codec) {
   RTC_DCHECK(was_send_codec);

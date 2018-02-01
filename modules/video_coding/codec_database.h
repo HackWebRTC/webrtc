@@ -54,14 +54,6 @@ class VCMCodecDataBase {
                     int number_of_cores,
                     size_t max_payload_size);
 
-  // Gets the current send codec. Relevant for internal codecs only.
-  // Returns true if there is a send codec, false otherwise.
-  bool SendCodec(VideoCodec* current_send_codec) const;
-
-  // Gets current send side codec type. Relevant for internal codecs only.
-  // Returns kVideoCodecUnknown if there is no send codec.
-  VideoCodecType SendCodec() const;
-
   // Registers and initializes an external encoder object.
   // |internal_source| should be set to true if the codec has an internal
   // video source and doesn't need the user to provide it with frames via
