@@ -76,27 +76,33 @@ static long socket_ctrl(BIO* h, int cmd, long arg1, void* arg2);
 static int socket_new(BIO* h);
 static int socket_free(BIO* data);
 
-// TODO(davidben): This should be const once BoringSSL is assumed.
-static BIO_METHOD methods_socket = {
-    BIO_TYPE_BIO, "socket",   socket_write, socket_read, socket_puts, 0,
-    socket_ctrl,  socket_new, socket_free,  nullptr,
-};
-
-static BIO_METHOD* BIO_s_socket2() { return(&methods_socket); }
+static BIO_METHOD* BIO_socket_method() {
+  static BIO_METHOD* methods = [] {
+    BIO_METHOD* methods = BIO_meth_new(BIO_TYPE_BIO, "socket");
+    BIO_meth_set_write(methods, socket_write);
+    BIO_meth_set_read(methods, socket_read);
+    BIO_meth_set_puts(methods, socket_puts);
+    BIO_meth_set_ctrl(methods, socket_ctrl);
+    BIO_meth_set_create(methods, socket_new);
+    BIO_meth_set_destroy(methods, socket_free);
+    return methods;
+  }();
+  return methods;
+}
 
 static BIO* BIO_new_socket(rtc::AsyncSocket* socket) {
-  BIO* ret = BIO_new(BIO_s_socket2());
+  BIO* ret = BIO_new(BIO_socket_method());
   if (ret == nullptr) {
     return nullptr;
   }
-  ret->ptr = socket;
+  BIO_set_data(ret, socket);
   return ret;
 }
 
 static int socket_new(BIO* b) {
-  b->shutdown = 0;
-  b->init = 1;
-  b->ptr = 0;
+  BIO_set_shutdown(b, 0);
+  BIO_set_init(b, 1);
+  BIO_set_data(b, 0);
   return 1;
 }
 
@@ -109,7 +115,7 @@ static int socket_free(BIO* b) {
 static int socket_read(BIO* b, char* out, int outl) {
   if (!out)
     return -1;
-  rtc::AsyncSocket* socket = static_cast<rtc::AsyncSocket*>(b->ptr);
+  rtc::AsyncSocket* socket = static_cast<rtc::AsyncSocket*>(BIO_get_data(b));
   BIO_clear_retry_flags(b);
   int result = socket->Recv(out, outl, nullptr);
   if (result > 0) {
@@ -123,7 +129,7 @@ static int socket_read(BIO* b, char* out, int outl) {
 static int socket_write(BIO* b, const char* in, int inl) {
   if (!in)
     return -1;
-  rtc::AsyncSocket* socket = static_cast<rtc::AsyncSocket*>(b->ptr);
+  rtc::AsyncSocket* socket = static_cast<rtc::AsyncSocket*>(BIO_get_data(b));
   BIO_clear_retry_flags(b);
   int result = socket->Send(in, inl);
   if (result > 0) {
@@ -178,56 +184,11 @@ static void LogSslError() {
 
 namespace rtc {
 
-#ifndef OPENSSL_IS_BORINGSSL
-
-// This array will store all of the mutexes available to OpenSSL.
-static MUTEX_TYPE* mutex_buf = nullptr;
-
-static void locking_function(int mode, int n, const char * file, int line) {
-  if (mode & CRYPTO_LOCK) {
-    MUTEX_LOCK(mutex_buf[n]);
-  } else {
-    MUTEX_UNLOCK(mutex_buf[n]);
-  }
-}
-
-static unsigned long id_function() {  // NOLINT
-  // Use old-style C cast because THREAD_ID's type varies with the platform,
-  // in some cases requiring static_cast, and in others requiring
-  // reinterpret_cast.
-  return (unsigned long)THREAD_ID; // NOLINT
-}
-
-static CRYPTO_dynlock_value* dyn_create_function(const char* file, int line) {
-  CRYPTO_dynlock_value* value = new CRYPTO_dynlock_value;
-  if (!value)
-    return nullptr;
-  MUTEX_SETUP(value->mutex);
-  return value;
-}
-
-static void dyn_lock_function(int mode, CRYPTO_dynlock_value* l,
-                              const char* file, int line) {
-  if (mode & CRYPTO_LOCK) {
-    MUTEX_LOCK(l->mutex);
-  } else {
-    MUTEX_UNLOCK(l->mutex);
-  }
-}
-
-static void dyn_destroy_function(CRYPTO_dynlock_value* l,
-                                 const char* file, int line) {
-  MUTEX_CLEANUP(l->mutex);
-  delete l;
-}
-
-#endif  // #ifndef OPENSSL_IS_BORINGSSL
-
 VerificationCallback OpenSSLAdapter::custom_verify_callback_ = nullptr;
 
 bool OpenSSLAdapter::InitializeSSL(VerificationCallback callback) {
-  if (!InitializeSSLThread() || !SSL_library_init())
-      return false;
+  if (!SSL_library_init())
+    return false;
 #if !defined(ADDRESS_SANITIZER) || !defined(WEBRTC_MAC) || defined(WEBRTC_IOS)
   // Loading the error strings crashes mac_asan.  Omit this debugging aid there.
   SSL_load_error_strings();
@@ -239,41 +200,7 @@ bool OpenSSLAdapter::InitializeSSL(VerificationCallback callback) {
   return true;
 }
 
-bool OpenSSLAdapter::InitializeSSLThread() {
-  // BoringSSL is doing the locking internally, so the callbacks are not used
-  // in this case (and are no-ops anyways).
-#ifndef OPENSSL_IS_BORINGSSL
-  mutex_buf = new MUTEX_TYPE[CRYPTO_num_locks()];
-  if (!mutex_buf)
-    return false;
-  for (int i = 0; i < CRYPTO_num_locks(); ++i)
-    MUTEX_SETUP(mutex_buf[i]);
-
-  // we need to cast our id_function to return an unsigned long -- pthread_t is
-  // a pointer
-  CRYPTO_set_id_callback(id_function);
-  CRYPTO_set_locking_callback(locking_function);
-  CRYPTO_set_dynlock_create_callback(dyn_create_function);
-  CRYPTO_set_dynlock_lock_callback(dyn_lock_function);
-  CRYPTO_set_dynlock_destroy_callback(dyn_destroy_function);
-#endif  // #ifndef OPENSSL_IS_BORINGSSL
-  return true;
-}
-
 bool OpenSSLAdapter::CleanupSSL() {
-#ifndef OPENSSL_IS_BORINGSSL
-  if (!mutex_buf)
-    return false;
-  CRYPTO_set_id_callback(nullptr);
-  CRYPTO_set_locking_callback(nullptr);
-  CRYPTO_set_dynlock_create_callback(nullptr);
-  CRYPTO_set_dynlock_lock_callback(nullptr);
-  CRYPTO_set_dynlock_destroy_callback(nullptr);
-  for (int i = 0; i < CRYPTO_num_locks(); ++i)
-    MUTEX_CLEANUP(mutex_buf[i]);
-  delete [] mutex_buf;
-  mutex_buf = nullptr;
-#endif  // #ifndef OPENSSL_IS_BORINGSSL
   return true;
 }
 
@@ -439,9 +366,11 @@ int OpenSSLAdapter::BeginSSL() {
     }
   }
 
+#ifdef OPENSSL_IS_BORINGSSL
   // Set a couple common TLS extensions; even though we don't use them yet.
   SSL_enable_ocsp_stapling(ssl_);
   SSL_enable_signed_cert_timestamps(ssl_);
+#endif
 
   if (!alpn_protocols_.empty()) {
     std::string tls_alpn_string = TransformAlpnProtocols(alpn_protocols_);
@@ -896,7 +825,8 @@ bool OpenSSLAdapter::VerifyServerName(SSL* ssl, const char* host,
   GENERAL_NAMES* names = reinterpret_cast<GENERAL_NAMES*>(
       X509_get_ext_d2i(certificate, NID_subject_alt_name, nullptr, nullptr));
   if (names) {
-    for (size_t i = 0; i < sk_GENERAL_NAME_num(names); i++) {
+    for (size_t i = 0; i < static_cast<size_t>(sk_GENERAL_NAME_num(names));
+         i++) {
       const GENERAL_NAME* name = sk_GENERAL_NAME_value(names, i);
       if (name->type != GEN_DNS)
         continue;

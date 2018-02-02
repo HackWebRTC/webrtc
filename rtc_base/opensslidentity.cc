@@ -207,11 +207,7 @@ OpenSSLKeyPair* OpenSSLKeyPair::GetReference() {
 }
 
 void OpenSSLKeyPair::AddReference() {
-#if defined(OPENSSL_IS_BORINGSSL)
   EVP_PKEY_up_ref(pkey_);
-#else
-  CRYPTO_add(&pkey_->references, 1, CRYPTO_LOCK_EVP_PKEY);
-#endif
 }
 
 std::string OpenSSLKeyPair::PrivateKeyToPEMString() const {
@@ -329,7 +325,7 @@ OpenSSLCertificate* OpenSSLCertificate::FromPEMString(
 // and before CleanupSSL.
 bool OpenSSLCertificate::GetSignatureDigestAlgorithm(
     std::string* algorithm) const {
-  int nid = OBJ_obj2nid(x509_->sig_alg->algorithm);
+  int nid = X509_get_signature_nid(x509_);
   switch (nid) {
     case NID_md5WithRSA:
     case NID_md5WithRSAEncryption:
@@ -448,11 +444,7 @@ void OpenSSLCertificate::ToDER(Buffer* der_buffer) const {
 
 void OpenSSLCertificate::AddReference() const {
   RTC_DCHECK(x509_ != nullptr);
-#if defined(OPENSSL_IS_BORINGSSL)
   X509_up_ref(x509_);
-#else
-  CRYPTO_add(&x509_->references, 1, CRYPTO_LOCK_X509);
-#endif
 }
 
 bool OpenSSLCertificate::operator==(const OpenSSLCertificate& other) const {

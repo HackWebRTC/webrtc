@@ -30,10 +30,6 @@ bool InitializeSSL(VerificationCallback callback) {
   return OpenSSLAdapter::InitializeSSL(callback);
 }
 
-bool InitializeSSLThread() {
-  return OpenSSLAdapter::InitializeSSLThread();
-}
-
 bool CleanupSSL() {
   return OpenSSLAdapter::CleanupSSL();
 }

@@ -41,7 +41,7 @@ class OpenSSLDigest : public MessageDigest {
                             size_t* len);
 
  private:
-  EVP_MD_CTX ctx_;
+  EVP_MD_CTX* ctx_ = nullptr;
   const EVP_MD* md_;
 };
 

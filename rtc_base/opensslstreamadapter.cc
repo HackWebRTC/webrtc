@@ -162,26 +162,34 @@ static long stream_ctrl(BIO* h, int cmd, long arg1, void* arg2);
 static int stream_new(BIO* h);
 static int stream_free(BIO* data);
 
-static const BIO_METHOD methods_stream = {
-    BIO_TYPE_BIO, "stream",   stream_write, stream_read, stream_puts, 0,
-    stream_ctrl,  stream_new, stream_free,  nullptr,
-};
+static BIO_METHOD* BIO_stream_method() {
+  static BIO_METHOD* method = [] {
+    BIO_METHOD* method = BIO_meth_new(BIO_TYPE_BIO, "stream");
+    BIO_meth_set_write(method, stream_write);
+    BIO_meth_set_read(method, stream_read);
+    BIO_meth_set_puts(method, stream_puts);
+    BIO_meth_set_ctrl(method, stream_ctrl);
+    BIO_meth_set_create(method, stream_new);
+    BIO_meth_set_destroy(method, stream_free);
+    return method;
+  }();
+  return method;
+}
 
 static BIO* BIO_new_stream(StreamInterface* stream) {
-  // TODO(davidben): Remove the const_cast when BoringSSL is assumed.
-  BIO* ret = BIO_new(const_cast<BIO_METHOD*>(&methods_stream));
+  BIO* ret = BIO_new(BIO_stream_method());
   if (ret == nullptr)
     return nullptr;
-  ret->ptr = stream;
+  BIO_set_data(ret, stream);
   return ret;
 }
 
 // bio methods return 1 (or at least non-zero) on success and 0 on failure.
 
 static int stream_new(BIO* b) {
-  b->shutdown = 0;
-  b->init = 1;
-  b->ptr = 0;
+  BIO_set_shutdown(b, 0);
+  BIO_set_init(b, 1);
+  BIO_set_data(b, 0);
   return 1;
 }
 
@@ -194,7 +202,7 @@ static int stream_free(BIO* b) {
 static int stream_read(BIO* b, char* out, int outl) {
   if (!out)
     return -1;
-  StreamInterface* stream = static_cast<StreamInterface*>(b->ptr);
+  StreamInterface* stream = static_cast<StreamInterface*>(BIO_get_data(b));
   BIO_clear_retry_flags(b);
   size_t read;
   int error;
@@ -210,7 +218,7 @@ static int stream_read(BIO* b, char* out, int outl) {
 static int stream_write(BIO* b, const char* in, int inl) {
   if (!in)
     return -1;
-  StreamInterface* stream = static_cast<StreamInterface*>(b->ptr);
+  StreamInterface* stream = static_cast<StreamInterface*>(BIO_get_data(b));
   BIO_clear_retry_flags(b);
   size_t written;
   int error;
