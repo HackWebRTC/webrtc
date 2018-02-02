@@ -66,8 +66,8 @@ int ProbeBitrateEstimator::HandleProbeAndEstimateBitrate(
 
   EraseOldClusters(packet_feedback.arrival_time_ms - kMaxClusterHistoryMs);
 
-  int payload_size_bits = rtc::dchecked_cast<int>(
-      packet_feedback.payload_size * 8);
+  int payload_size_bits =
+      rtc::dchecked_cast<int>(packet_feedback.payload_size * 8);
   AggregatedCluster* cluster = &clusters_[cluster_id];
 
   if (packet_feedback.send_time_ms < cluster->first_send_ms) {

@@ -10,8 +10,8 @@
 
 #include "modules/congestion_controller/probe_bitrate_estimator.h"
 
-#include <vector>
 #include <utility>
+#include <vector>
 
 #include "modules/remote_bitrate_estimator/aimd_rate_control.h"
 #include "test/gmock.h"

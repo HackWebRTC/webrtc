@@ -231,7 +231,6 @@ if (!build_with_chromium) {
         "../modules/audio_coding:ana_debug_dump_proto",
         "../modules/audio_coding:audio_network_adaptor",
         "../modules/audio_coding:neteq_tools",
-        "../modules/congestion_controller:estimators",
         "../modules/rtp_rtcp:rtp_rtcp_format",
         "../rtc_base:checks",
         "../rtc_base:rtc_base_approved",
@@ -240,6 +239,9 @@ if (!build_with_chromium) {
         # TODO(kwiberg): Remove this dependency.
         "../api/audio_codecs:audio_codecs_api",
         "../modules/congestion_controller",
+        "../modules/congestion_controller:delay_based_bwe",
+        "../modules/congestion_controller:estimators",
+        "../modules/congestion_controller:goog_cc",
         "../modules/pacing",
         "../modules/rtp_rtcp",
         "../system_wrappers:system_wrappers_default",

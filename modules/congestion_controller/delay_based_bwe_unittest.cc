@@ -24,12 +24,13 @@ constexpr int kNumProbesCluster1 = 8;
 const PacedPacketInfo kPacingInfo0(0, kNumProbesCluster0, 2000);
 const PacedPacketInfo kPacingInfo1(1, kNumProbesCluster1, 4000);
 constexpr float kTargetUtilizationFraction = 0.95f;
+constexpr int64_t kDummyTimestamp = 1000;
 }  // namespace
 
 TEST_F(DelayBasedBweTest, NoCrashEmptyFeedback) {
   std::vector<PacketFeedback> packet_feedback_vector;
-  bitrate_estimator_->IncomingPacketFeedbackVector(packet_feedback_vector,
-                                                   rtc::nullopt);
+  bitrate_estimator_->IncomingPacketFeedbackVector(
+      packet_feedback_vector, rtc::nullopt, kDummyTimestamp);
 }
 
 TEST_F(DelayBasedBweTest, NoCrashOnlyLostFeedback) {
@@ -40,8 +41,8 @@ TEST_F(DelayBasedBweTest, NoCrashOnlyLostFeedback) {
   packet_feedback_vector.push_back(PacketFeedback(PacketFeedback::kNotReceived,
                                                   PacketFeedback::kNoSendTime,
                                                   1, 1500, PacedPacketInfo()));
-  bitrate_estimator_->IncomingPacketFeedbackVector(packet_feedback_vector,
-                                                   rtc::nullopt);
+  bitrate_estimator_->IncomingPacketFeedbackVector(
+      packet_feedback_vector, rtc::nullopt, kDummyTimestamp);
 }
 
 TEST_F(DelayBasedBweTest, ProbeDetection) {

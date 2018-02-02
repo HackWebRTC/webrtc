@@ -1,0 +1,40 @@
+# Copyright (c) 2018 The WebRTC project authors. All Rights Reserved.
+#
+# Use of this source code is governed by a BSD-style license
+# that can be found in the LICENSE file in the root of the source
+# tree. An additional intellectual property rights grant can be found
+# in the file PATENTS.  All contributing project authors may
+# be found in the AUTHORS file in the root of the source tree.
+
+import("../../../webrtc.gni")
+
+rtc_static_library("network_control") {
+  sources = [
+    "include/network_control.h",
+    "include/network_types.h",
+    "include/network_units.h",
+    "network_types.cc",
+    "network_units.cc",
+  ]
+
+  deps = [
+    "../../:module_api",
+    "../../../api:optional",
+    "../../../rtc_base:checks",
+    "../../../rtc_base:rtc_base_approved",
+  ]
+}
+
+if (rtc_include_tests) {
+  rtc_source_set("network_control_unittests") {
+    testonly = true
+    sources = [
+      "network_units_unittest.cc",
+    ]
+
+    deps = [
+      ":network_control",
+      "../../../test:test_support",
+    ]
+  }
+}

@@ -18,7 +18,6 @@
 #include <utility>
 
 #include "modules/include/module_common_types.h"
-#include "modules/pacing/alr_detector.h"
 #include "modules/pacing/bitrate_prober.h"
 #include "modules/pacing/interval_budget.h"
 #include "modules/utility/include/process_thread.h"
@@ -52,7 +51,6 @@ bool IsRoundRobinPacingEnabled() {
 namespace webrtc {
 
 const int64_t PacedSender::kMaxQueueLengthMs = 2000;
-const float PacedSender::kDefaultPaceMultiplier = 2.5f;
 
 PacedSender::PacedSender(const Clock* clock,
                          PacketSender* packet_sender,
@@ -68,21 +66,16 @@ PacedSender::PacedSender(const Clock* clock,
                          std::unique_ptr<PacketQueue> packets)
     : clock_(clock),
       packet_sender_(packet_sender),
-      alr_detector_(rtc::MakeUnique<AlrDetector>(event_log)),
       paused_(false),
       media_budget_(rtc::MakeUnique<IntervalBudget>(0)),
       padding_budget_(rtc::MakeUnique<IntervalBudget>(0)),
       prober_(rtc::MakeUnique<BitrateProber>(event_log)),
       probing_send_failure_(false),
-      estimated_bitrate_bps_(0),
-      min_send_bitrate_kbps_(0u),
-      max_padding_bitrate_kbps_(0u),
       pacing_bitrate_kbps_(0),
       time_last_update_us_(clock->TimeInMicroseconds()),
       first_sent_packet_ms_(-1),
       packets_(std::move(packets)),
       packet_counter_(0),
-      pacing_factor_(kDefaultPaceMultiplier),
       queue_time_limit(kMaxQueueLengthMs),
       account_for_audio_(false) {
   UpdateBudgetWithElapsedTime(kMinPacketLimitMs);
@@ -103,6 +96,8 @@ void PacedSender::Pause() {
     paused_ = true;
     packets_->SetPauseState(true, clock_->TimeInMilliseconds());
   }
+
+  rtc::CritScope cs(&process_thread_lock_);
   // Tell the process thread to call our TimeUntilNextProcess() method to get
   // a new (longer) estimate for when to call Process().
   if (process_thread_)
@@ -117,6 +112,7 @@ void PacedSender::Resume() {
     paused_ = false;
     packets_->SetPauseState(false, clock_->TimeInMilliseconds());
   }
+  rtc::CritScope cs(&process_thread_lock_);
   // Tell the process thread to call our TimeUntilNextProcess() method to
   // refresh the estimate for when to call Process().
   if (process_thread_)
@@ -129,29 +125,12 @@ void PacedSender::SetProbingEnabled(bool enabled) {
   prober_->SetEnabled(enabled);
 }
 
-void PacedSender::SetEstimatedBitrate(uint32_t bitrate_bps) {
-  if (bitrate_bps == 0)
-    RTC_LOG(LS_ERROR) << "PacedSender is not designed to handle 0 bitrate.";
+void PacedSender::SetPacingRates(uint32_t pacing_rate_bps,
+                                 uint32_t padding_rate_bps) {
   rtc::CritScope cs(&critsect_);
-  estimated_bitrate_bps_ = bitrate_bps;
-  padding_budget_->set_target_rate_kbps(
-      std::min(estimated_bitrate_bps_ / 1000, max_padding_bitrate_kbps_));
-  pacing_bitrate_kbps_ =
-      std::max(min_send_bitrate_kbps_, estimated_bitrate_bps_ / 1000) *
-      pacing_factor_;
-  alr_detector_->SetEstimatedBitrate(bitrate_bps);
-}
-
-void PacedSender::SetSendBitrateLimits(int min_send_bitrate_bps,
-                                       int padding_bitrate) {
-  rtc::CritScope cs(&critsect_);
-  min_send_bitrate_kbps_ = min_send_bitrate_bps / 1000;
-  pacing_bitrate_kbps_ =
-      std::max(min_send_bitrate_kbps_, estimated_bitrate_bps_ / 1000) *
-      pacing_factor_;
-  max_padding_bitrate_kbps_ = padding_bitrate / 1000;
-  padding_budget_->set_target_rate_kbps(
-      std::min(estimated_bitrate_bps_ / 1000, max_padding_bitrate_kbps_));
+  RTC_DCHECK(pacing_rate_bps > 0);
+  pacing_bitrate_kbps_ = pacing_rate_bps / 1000;
+  padding_budget_->set_target_rate_kbps(padding_rate_bps / 1000);
 }
 
 void PacedSender::InsertPacket(RtpPacketSender::Priority priority,
@@ -161,8 +140,8 @@ void PacedSender::InsertPacket(RtpPacketSender::Priority priority,
                                size_t bytes,
                                bool retransmission) {
   rtc::CritScope cs(&critsect_);
-  RTC_DCHECK(estimated_bitrate_bps_ > 0)
-        << "SetEstimatedBitrate must be called before InsertPacket.";
+  RTC_DCHECK(pacing_bitrate_kbps_ > 0)
+      << "SetPacingRate must be called before InsertPacket.";
 
   int64_t now_ms = clock_->TimeInMilliseconds();
   prober_->OnIncomingPacket(bytes);
@@ -185,12 +164,6 @@ int64_t PacedSender::ExpectedQueueTimeMs() const {
   RTC_DCHECK_GT(pacing_bitrate_kbps_, 0);
   return static_cast<int64_t>(packets_->SizeInBytes() * 8 /
                               pacing_bitrate_kbps_);
-}
-
-rtc::Optional<int64_t> PacedSender::GetApplicationLimitedRegionStartTime()
-    const {
-  rtc::CritScope cs(&critsect_);
-  return alr_detector_->GetApplicationLimitedRegionStartTime();
 }
 
 size_t PacedSender::QueueSizePackets() const {
@@ -244,8 +217,7 @@ void PacedSender::Process() {
     // do, timestamps get messed up.
     if (packet_counter_ == 0)
       return;
-    size_t bytes_sent = SendPadding(1, pacing_info);
-    alr_detector_->OnBytesSent(bytes_sent, elapsed_time_ms);
+    SendPadding(1, pacing_info);
     return;
   }
 
@@ -278,7 +250,7 @@ void PacedSender::Process() {
     pacing_info = prober_->CurrentCluster();
     recommended_probe_size = prober_->RecommendedMinProbeSize();
   }
-  while (!packets_->Empty()) {
+  while (!packets_->Empty() && !paused_) {
     // Since we need to release the lock in order to send, we first pop the
     // element from the priority queue but keep it in storage, so that we can
     // reinsert it if send fails.
@@ -306,8 +278,9 @@ void PacedSender::Process() {
       int padding_needed =
           static_cast<int>(is_probing ? (recommended_probe_size - bytes_sent)
                                       : padding_budget_->bytes_remaining());
-      if (padding_needed > 0)
+      if (padding_needed > 0) {
         bytes_sent += SendPadding(padding_needed, pacing_info);
+      }
     }
   }
   if (is_probing) {
@@ -315,11 +288,11 @@ void PacedSender::Process() {
     if (!probing_send_failure_)
       prober_->ProbeSent(clock_->TimeInMilliseconds(), bytes_sent);
   }
-  alr_detector_->OnBytesSent(bytes_sent, elapsed_time_ms);
 }
 
 void PacedSender::ProcessThreadAttached(ProcessThread* process_thread) {
   RTC_LOG(LS_INFO) << "ProcessThreadAttached 0x" << std::hex << process_thread;
+  rtc::CritScope cs(&process_thread_lock_);
   process_thread_ = process_thread;
 }
 
@@ -373,14 +346,6 @@ void PacedSender::UpdateBudgetWithElapsedTime(int64_t delta_time_ms) {
 void PacedSender::UpdateBudgetWithBytesSent(size_t bytes_sent) {
   media_budget_->UseBudget(bytes_sent);
   padding_budget_->UseBudget(bytes_sent);
-}
-
-void PacedSender::SetPacingFactor(float pacing_factor) {
-  rtc::CritScope cs(&critsect_);
-  pacing_factor_ = pacing_factor;
-  // Make sure new padding factor is applied immediately, otherwise we need to
-  // wait for the send bitrate estimate to be updated before this takes effect.
-  SetEstimatedBitrate(estimated_bitrate_bps_);
 }
 
 void PacedSender::SetQueueTimeLimit(int limit_ms) {

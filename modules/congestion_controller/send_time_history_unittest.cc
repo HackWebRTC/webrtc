@@ -52,8 +52,7 @@ TEST_F(SendTimeHistoryTest, SaveAndRestoreNetworkId) {
   uint16_t sequence_number = 0;
   int64_t now_ms = clock_.TimeInMilliseconds();
   for (int i = 1; i < 5; ++i) {
-    PacketFeedback packet(now_ms, sequence_number, 1000, i, i - 1,
-                          kPacingInfo);
+    PacketFeedback packet(now_ms, sequence_number, 1000, i, i - 1, kPacingInfo);
     history_.AddAndRemoveOld(packet);
     history_.OnSentPacket(sequence_number, now_ms);
     PacketFeedback restored(now_ms, sequence_number);
@@ -80,6 +79,26 @@ TEST_F(SendTimeHistoryTest, AddRemoveOne) {
 
   PacketFeedback received_packet3(0, 0, kSeqNo, 0, kPacingInfo);
   EXPECT_FALSE(history_.GetFeedback(&received_packet3, true));
+}
+
+TEST_F(SendTimeHistoryTest, GetPacketReturnsSentPacket) {
+  const uint16_t kSeqNo = 10;
+  const PacedPacketInfo kPacingInfo(0, 5, 1200);
+  const PacketFeedback kSentPacket(0, -1, 1, kSeqNo, 123, 0, 0, kPacingInfo);
+  AddPacketWithSendTime(kSeqNo, 123, 1, kPacingInfo);
+  auto sent_packet = history_.GetPacket(kSeqNo);
+  EXPECT_EQ(kSentPacket, *sent_packet);
+}
+
+TEST_F(SendTimeHistoryTest, GetPacketEmptyForRemovedPacket) {
+  const uint16_t kSeqNo = 10;
+  const PacedPacketInfo kPacingInfo(0, 5, 1200);
+  AddPacketWithSendTime(kSeqNo, 123, 1, kPacingInfo);
+  auto sent_packet = history_.GetPacket(kSeqNo);
+  PacketFeedback received_packet(0, 0, kSeqNo, 0, kPacingInfo);
+  EXPECT_TRUE(history_.GetFeedback(&received_packet, true));
+  sent_packet = history_.GetPacket(kSeqNo);
+  EXPECT_FALSE(sent_packet.has_value());
 }
 
 TEST_F(SendTimeHistoryTest, PopulatesExpectedFields) {
