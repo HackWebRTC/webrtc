@@ -208,19 +208,29 @@ void VideoEncoderWrapper::OnEncodedFrame(JNIEnv* jni,
     EncodedImageCallback* callback;
 
     void operator()() const {
-      FrameExtraInfo frame_extra_info;
-      do {
-        if (frame_extra_infos->empty()) {
-          RTC_LOG(LS_WARNING)
-              << "Java encoder produced an unexpected frame with timestamp: "
-              << capture_time_ns;
-          return;
-        }
-        frame_extra_info = frame_extra_infos->front();
+      // Encoded frames are delivered in the order received, but some of them
+      // may be dropped, so remove records of frames older than the current one.
+      //
+      // NOTE: if the current frame is associated with Encoder A, in the time
+      // since this frame was received, Encoder A could have been Release()'ed,
+      // Encoder B InitEncode()'ed (due to reuse of Encoder A), and frames
+      // received by Encoder B. Thus there may be frame_extra_infos entries that
+      // don't belong to us, and we need to be careful not to remove them.
+      // Removing only those entries older than the current frame provides this
+      // guarantee.
+      while (!frame_extra_infos->empty() &&
+             frame_extra_infos->front().capture_time_ns < capture_time_ns) {
         frame_extra_infos->pop_front();
-        // The encoder might drop frames so iterate through the queue until
-        // we find a matching timestamp.
-      } while (frame_extra_info.capture_time_ns != capture_time_ns);
+      }
+      if (frame_extra_infos->empty() ||
+          frame_extra_infos->front().capture_time_ns != capture_time_ns) {
+        RTC_LOG(LS_WARNING)
+            << "Java encoder produced an unexpected frame with timestamp: "
+            << capture_time_ns;
+        return;
+      }
+      FrameExtraInfo frame_extra_info = std::move(frame_extra_infos->front());
+      frame_extra_infos->pop_front();
 
       RTPFragmentationHeader header =
           video_encoder_wrapper->ParseFragmentationHeader(task_buffer);
