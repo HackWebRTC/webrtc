@@ -27,7 +27,6 @@ class AcknowledgedBitrateEstimator {
       std::unique_ptr<BitrateEstimator> bitrate_estimator);
 
   AcknowledgedBitrateEstimator();
-  ~AcknowledgedBitrateEstimator();
 
   void IncomingPacketFeedbackVector(
       const std::vector<PacketFeedback>& packet_feedback_vector);

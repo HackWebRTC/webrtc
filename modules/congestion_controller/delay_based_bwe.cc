@@ -85,8 +85,9 @@ DelayBasedBwe::Result::Result(bool probe, uint32_t target_bitrate_bps)
 
 DelayBasedBwe::Result::~Result() {}
 
-DelayBasedBwe::DelayBasedBwe(RtcEventLog* event_log)
+DelayBasedBwe::DelayBasedBwe(RtcEventLog* event_log, const Clock* clock)
     : event_log_(event_log),
+      clock_(clock),
       inter_arrival_(),
       delay_detector_(),
       last_seen_packet_ms_(-1),
@@ -113,8 +114,7 @@ DelayBasedBwe::~DelayBasedBwe() {}
 
 DelayBasedBwe::Result DelayBasedBwe::IncomingPacketFeedbackVector(
     const std::vector<PacketFeedback>& packet_feedback_vector,
-    rtc::Optional<uint32_t> acked_bitrate_bps,
-    int64_t at_time_ms) {
+    rtc::Optional<uint32_t> acked_bitrate_bps) {
   RTC_DCHECK(std::is_sorted(packet_feedback_vector.begin(),
                             packet_feedback_vector.end(),
                             PacketFeedbackComparator()));
@@ -141,7 +141,7 @@ DelayBasedBwe::Result DelayBasedBwe::IncomingPacketFeedbackVector(
     if (packet_feedback.send_time_ms < 0)
       continue;
     delayed_feedback = false;
-    IncomingPacketFeedback(packet_feedback, at_time_ms);
+    IncomingPacketFeedback(packet_feedback);
     if (prev_detector_state == BandwidthUsage::kBwUnderusing &&
         delay_detector_->State() == BandwidthUsage::kBwNormal) {
       recovered_from_overuse = true;
@@ -157,8 +157,7 @@ DelayBasedBwe::Result DelayBasedBwe::IncomingPacketFeedbackVector(
     }
   } else {
     consecutive_delayed_feedbacks_ = 0;
-    return MaybeUpdateEstimate(acked_bitrate_bps, recovered_from_overuse,
-                               at_time_ms);
+    return MaybeUpdateEstimate(acked_bitrate_bps, recovered_from_overuse);
   }
   return Result();
 }
@@ -181,9 +180,8 @@ DelayBasedBwe::Result DelayBasedBwe::OnLongFeedbackDelay(
 }
 
 void DelayBasedBwe::IncomingPacketFeedback(
-    const PacketFeedback& packet_feedback,
-    int64_t at_time_ms) {
-  int64_t now_ms = at_time_ms;
+    const PacketFeedback& packet_feedback) {
+  int64_t now_ms = clock_->TimeInMilliseconds();
   // Reset if the stream has timed out.
   if (last_seen_packet_ms_ == -1 ||
       now_ms - last_seen_packet_ms_ > kStreamTimeOutMs) {
@@ -225,10 +223,9 @@ void DelayBasedBwe::IncomingPacketFeedback(
 
 DelayBasedBwe::Result DelayBasedBwe::MaybeUpdateEstimate(
     rtc::Optional<uint32_t> acked_bitrate_bps,
-    bool recovered_from_overuse,
-    int64_t at_time_ms) {
+    bool recovered_from_overuse) {
   Result result;
-  int64_t now_ms = at_time_ms;
+  int64_t now_ms = clock_->TimeInMilliseconds();
 
   rtc::Optional<int> probe_bitrate_bps =
       probe_bitrate_estimator_.FetchAndResetLastEstimatedBitrateBps();
@@ -292,7 +289,7 @@ bool DelayBasedBwe::UpdateEstimate(int64_t now_ms,
   return rate_control_.ValidEstimate();
 }
 
-void DelayBasedBwe::OnRttUpdate(int64_t avg_rtt_ms) {
+void DelayBasedBwe::OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) {
   rate_control_.SetRtt(avg_rtt_ms);
 }
 
