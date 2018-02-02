@@ -252,6 +252,16 @@ class VideoSendStream {
     Config(const Config&);
   };
 
+  // Updates the sending state for all simulcast layers that the video send
+  // stream owns. This can mean updating the activity one or for multiple
+  // layers. The ordering of active layers is the order in which the
+  // rtp modules are stored in the VideoSendStream.
+  // Note: This starts stream activity if it is inactive and one of the layers
+  // is active. This stops stream activity if it is active and all layers are
+  // inactive.
+  virtual void UpdateActiveSimulcastLayers(
+      const std::vector<bool> active_layers) = 0;
+
   // Starts stream activity.
   // When a stream is active, it can receive, process and deliver packets.
   virtual void Start() = 0;

@@ -564,6 +564,10 @@ void VideoStreamEncoder::ConfigureEncoderOnTaskQueue(
   }
 }
 
+// TODO(bugs.webrtc.org/8807): Currently this always does a hard
+// reconfiguration, but this isn't always necessary. Add in logic to only update
+// the VideoBitrateAllocator and call OnEncoderConfigurationChanged with a
+// "soft" reconfiguration.
 void VideoStreamEncoder::ReconfigureEncoder() {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
   RTC_DCHECK(pending_encoder_reconfiguration_);

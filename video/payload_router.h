@@ -40,6 +40,9 @@ class PayloadRouter : public EncodedImageCallback {
   // PayloadRouter will only route packets if being active, all packets will be
   // dropped otherwise.
   void SetActive(bool active);
+  // Sets the sending status of the rtp modules and appropriately sets the
+  // payload router to active if any rtp modules are active.
+  void SetActiveModules(const std::vector<bool> active_modules);
   bool IsActive();
 
   std::map<uint32_t, RtpPayloadState> GetRtpPayloadStates() const;

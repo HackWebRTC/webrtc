@@ -249,6 +249,17 @@ void FakeVideoSendStream::ReconfigureVideoEncoder(
   ++num_encoder_reconfigurations_;
 }
 
+void FakeVideoSendStream::UpdateActiveSimulcastLayers(
+    const std::vector<bool> active_layers) {
+  sending_ = false;
+  for (const bool active_layer : active_layers) {
+    if (active_layer) {
+      sending_ = true;
+      break;
+    }
+  }
+}
+
 void FakeVideoSendStream::Start() {
   sending_ = true;
 }

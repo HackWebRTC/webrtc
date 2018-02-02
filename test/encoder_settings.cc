@@ -50,7 +50,13 @@ std::vector<VideoStream> CreateVideoStreams(
         std::min(bitrate_left_bps,
                  DefaultVideoStreamFactory::kMaxBitratePerStream[i]);
     stream_settings[i].max_qp = 56;
-    stream_settings[i].active = true;
+    if (i < encoder_config.simulcast_layers.size()) {
+      // Higher level controls are setting the active configuration for the
+      // VideoStream.
+      stream_settings[i].active = encoder_config.simulcast_layers[i].active;
+    } else {
+      stream_settings[i].active = true;
+    }
     bitrate_left_bps -= stream_settings[i].target_bitrate_bps;
   }
 
@@ -78,6 +84,7 @@ void FillEncoderConfiguration(size_t num_streams,
   configuration->video_stream_factory =
       new rtc::RefCountedObject<DefaultVideoStreamFactory>();
   configuration->max_bitrate_bps = 0;
+  configuration->simulcast_layers = std::vector<VideoStream>(num_streams);
   for (size_t i = 0; i < num_streams; ++i) {
     configuration->max_bitrate_bps +=
         DefaultVideoStreamFactory::kMaxBitratePerStream[i];

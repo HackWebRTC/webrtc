@@ -1971,62 +1971,62 @@ TEST_F(VideoSendStreamTest, CanReconfigureToUseStartBitrateAbovePreviousMax) {
   DestroyStreams();
 }
 
+class StartStopBitrateObserver : public test::FakeEncoder {
+ public:
+  StartStopBitrateObserver()
+      : FakeEncoder(Clock::GetRealTimeClock()),
+        encoder_init_(false, false),
+        bitrate_changed_(false, false) {}
+  int32_t InitEncode(const VideoCodec* config,
+                     int32_t number_of_cores,
+                     size_t max_payload_size) override {
+    rtc::CritScope lock(&crit_);
+    encoder_init_.Set();
+    return FakeEncoder::InitEncode(config, number_of_cores, max_payload_size);
+  }
+
+  int32_t SetRateAllocation(const BitrateAllocation& bitrate,
+                            uint32_t framerate) override {
+    rtc::CritScope lock(&crit_);
+    bitrate_kbps_ = bitrate.get_sum_kbps();
+    bitrate_changed_.Set();
+    return FakeEncoder::SetRateAllocation(bitrate, framerate);
+  }
+
+  bool WaitForEncoderInit() {
+    return encoder_init_.Wait(VideoSendStreamTest::kDefaultTimeoutMs);
+  }
+
+  bool WaitBitrateChanged(bool non_zero) {
+    do {
+      rtc::Optional<int> bitrate_kbps;
+      {
+        rtc::CritScope lock(&crit_);
+        bitrate_kbps = bitrate_kbps_;
+      }
+      if (!bitrate_kbps)
+        continue;
+
+      if ((non_zero && *bitrate_kbps > 0) ||
+          (!non_zero && *bitrate_kbps == 0)) {
+        return true;
+      }
+    } while (bitrate_changed_.Wait(VideoSendStreamTest::kDefaultTimeoutMs));
+    return false;
+  }
+
+ private:
+  rtc::CriticalSection crit_;
+  rtc::Event encoder_init_;
+  rtc::Event bitrate_changed_;
+  rtc::Optional<int> bitrate_kbps_ RTC_GUARDED_BY(crit_);
+};
+
 // This test that if the encoder use an internal source, VideoEncoder::SetRates
 // will be called with zero bitrate during initialization and that
 // VideoSendStream::Stop also triggers VideoEncoder::SetRates Start to be called
 // with zero bitrate.
 TEST_F(VideoSendStreamTest, VideoSendStreamStopSetEncoderRateToZero) {
-  class StartStopBitrateObserver : public test::FakeEncoder {
-   public:
-    StartStopBitrateObserver()
-        : FakeEncoder(Clock::GetRealTimeClock()),
-          encoder_init_(false, false),
-          bitrate_changed_(false, false) {}
-    int32_t InitEncode(const VideoCodec* config,
-                       int32_t number_of_cores,
-                       size_t max_payload_size) override {
-      rtc::CritScope lock(&crit_);
-      encoder_init_.Set();
-      return FakeEncoder::InitEncode(config, number_of_cores, max_payload_size);
-    }
-
-    int32_t SetRateAllocation(const BitrateAllocation& bitrate,
-                              uint32_t framerate) override {
-      rtc::CritScope lock(&crit_);
-      bitrate_kbps_ = bitrate.get_sum_kbps();
-      bitrate_changed_.Set();
-      return FakeEncoder::SetRateAllocation(bitrate, framerate);
-    }
-
-    bool WaitForEncoderInit() {
-      return encoder_init_.Wait(VideoSendStreamTest::kDefaultTimeoutMs);
-    }
-
-    bool WaitBitrateChanged(bool non_zero) {
-      do {
-        rtc::Optional<int> bitrate_kbps;
-        {
-          rtc::CritScope lock(&crit_);
-          bitrate_kbps = bitrate_kbps_;
-        }
-        if (!bitrate_kbps)
-          continue;
-
-        if ((non_zero && *bitrate_kbps > 0) ||
-            (!non_zero && *bitrate_kbps == 0)) {
-          return true;
-        }
-      } while (bitrate_changed_.Wait(VideoSendStreamTest::kDefaultTimeoutMs));
-      return false;
-    }
-
-   private:
-    rtc::CriticalSection crit_;
-    rtc::Event encoder_init_;
-    rtc::Event bitrate_changed_;
-    rtc::Optional<int> bitrate_kbps_ RTC_GUARDED_BY(crit_);
-  };
-
   test::NullTransport transport;
   StartStopBitrateObserver encoder;
 
@@ -2065,6 +2065,64 @@ TEST_F(VideoSendStreamTest, VideoSendStreamStopSetEncoderRateToZero) {
   });
 }
 
+// Tests that when the encoder uses an internal source, the VideoEncoder will
+// be updated with a new bitrate when turning the VideoSendStream on/off with
+// VideoSendStream::UpdateActiveSimulcastLayers, and when the VideoStreamEncoder
+// is reconfigured with new active layers.
+TEST_F(VideoSendStreamTest, VideoSendStreamUpdateActiveSimulcastLayers) {
+  test::NullTransport transport;
+  StartStopBitrateObserver encoder;
+
+  task_queue_.SendTask([this, &transport, &encoder]() {
+    CreateSenderCall(Call::Config(event_log_.get()));
+    // Create two simulcast streams.
+    CreateSendConfig(2, 0, 0, &transport);
+
+    sender_call_->SignalChannelNetworkState(MediaType::VIDEO, kNetworkUp);
+
+    video_send_config_.encoder_settings.encoder = &encoder;
+    video_send_config_.encoder_settings.internal_source = true;
+    video_send_config_.encoder_settings.payload_name = "VP8";
+
+    CreateVideoStreams();
+  });
+
+  EXPECT_TRUE(encoder.WaitForEncoderInit());
+
+  // When we turn on the simulcast layers it will update the BitrateAllocator,
+  // which in turn updates the VideoEncoder's bitrate.
+  task_queue_.SendTask([this]() {
+    video_send_stream_->UpdateActiveSimulcastLayers({true, true});
+  });
+  EXPECT_TRUE(encoder.WaitBitrateChanged(true));
+
+  video_encoder_config_.simulcast_layers[0].active = true;
+  video_encoder_config_.simulcast_layers[1].active = false;
+  task_queue_.SendTask([this]() {
+    video_send_stream_->ReconfigureVideoEncoder(video_encoder_config_.Copy());
+  });
+  // TODO(bugs.webrtc.org/8807): Currently we require a hard reconfiguration to
+  // update the VideoBitrateAllocator and BitrateAllocator of which layers are
+  // active. Once the change is made for a "soft" reconfiguration we can remove
+  // the expecation for an encoder init. We can also test that bitrate changes
+  // when just updating individual active layers, which should change the
+  // bitrate set to the video encoder.
+  EXPECT_TRUE(encoder.WaitForEncoderInit());
+  EXPECT_TRUE(encoder.WaitBitrateChanged(true));
+
+  // Turning off both simulcast layers should trigger a bitrate change of 0.
+  video_encoder_config_.simulcast_layers[0].active = false;
+  video_encoder_config_.simulcast_layers[1].active = false;
+  task_queue_.SendTask([this]() {
+    video_send_stream_->UpdateActiveSimulcastLayers({false, false});
+  });
+  EXPECT_TRUE(encoder.WaitBitrateChanged(false));
+
+  task_queue_.SendTask([this]() {
+    DestroyStreams();
+    DestroyCalls();
+  });
+}
 TEST_F(VideoSendStreamTest, CapturesTextureAndVideoFrames) {
   class FrameObserver : public rtc::VideoSinkInterface<VideoFrame> {
    public:
