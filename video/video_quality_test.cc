@@ -1259,6 +1259,7 @@ void VideoQualityTest::FillScalabilitySettings(
         params->video[video_idx].min_transmit_bps;
     encoder_config.number_of_streams = num_streams;
     encoder_config.spatial_layers = params->ss[video_idx].spatial_layers;
+    encoder_config.simulcast_layers = std::vector<VideoStream>(num_streams);
     encoder_config.video_stream_factory =
         new rtc::RefCountedObject<cricket::EncoderStreamFactory>(
             params->video[video_idx].codec, kDefaultMaxQp,
@@ -1412,6 +1413,8 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
           params_.ss[video_idx].streams[i].max_bitrate_bps;
     }
     if (params_.ss[video_idx].infer_streams) {
+      video_encoder_configs_[video_idx].simulcast_layers =
+          std::vector<VideoStream>(params_.ss[video_idx].streams.size());
       video_encoder_configs_[video_idx].video_stream_factory =
           new rtc::RefCountedObject<cricket::EncoderStreamFactory>(
               params_.video[video_idx].codec,
@@ -1613,6 +1616,7 @@ void VideoQualityTest::SetupThumbnails(Transport* send_transport,
       thumbnail_encoder_config.video_stream_factory =
           new rtc::RefCountedObject<VideoStreamFactory>(params_.ss[0].streams);
     } else {
+      thumbnail_encoder_config.simulcast_layers = std::vector<VideoStream>(1);
       thumbnail_encoder_config.video_stream_factory =
           new rtc::RefCountedObject<cricket::EncoderStreamFactory>(
               params_.video[0].codec, params_.ss[0].streams[0].max_qp,
