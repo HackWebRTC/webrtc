@@ -164,6 +164,7 @@ rtc_static_library("rtc_event_log_impl_encoder") {
   defines = []
 
   deps = [
+    ":ice_log",
     ":rtc_event_audio",
     ":rtc_event_bwe",
     ":rtc_event_log_api",
@@ -221,6 +222,7 @@ rtc_static_library("rtc_event_log_impl_base") {
   defines = []
 
   deps = [
+    ":ice_log",
     ":rtc_event_log_api",
     ":rtc_event_log_impl_encoder",
     ":rtc_event_log_impl_output",
@@ -263,6 +265,7 @@ if (rtc_enable_protobuf) {
     ]
 
     deps = [
+      ":ice_log",
       ":rtc_event_bwe",
       ":rtc_event_log2_proto",
       ":rtc_event_log_api",
@@ -397,6 +400,28 @@ if (rtc_enable_protobuf) {
         suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
       }
     }
+  }
+}
+
+rtc_source_set("ice_log") {
+  sources = [
+    "rtc_event_log/events/rtc_event_ice_candidate_pair.cc",
+    "rtc_event_log/events/rtc_event_ice_candidate_pair.h",
+    "rtc_event_log/events/rtc_event_ice_candidate_pair_config.cc",
+    "rtc_event_log/events/rtc_event_ice_candidate_pair_config.h",
+    "rtc_event_log/icelogger.cc",
+    "rtc_event_log/icelogger.h",
+  ]
+
+  deps = [
+    ":rtc_event_log_api",
+    "../api:libjingle_logging_api",
+    "../rtc_base:rtc_base_approved",
+  ]
+
+  if (!build_with_chromium && is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 }
 

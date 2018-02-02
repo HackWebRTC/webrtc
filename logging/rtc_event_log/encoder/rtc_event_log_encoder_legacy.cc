@@ -17,6 +17,8 @@
 #include "logging/rtc_event_log/events/rtc_event_audio_send_stream_config.h"
 #include "logging/rtc_event_log/events/rtc_event_bwe_update_delay_based.h"
 #include "logging/rtc_event_log/events/rtc_event_bwe_update_loss_based.h"
+#include "logging/rtc_event_log/events/rtc_event_ice_candidate_pair.h"
+#include "logging/rtc_event_log/events/rtc_event_ice_candidate_pair_config.h"
 #include "logging/rtc_event_log/events/rtc_event_probe_cluster_created.h"
 #include "logging/rtc_event_log/events/rtc_event_probe_result_failure.h"
 #include "logging/rtc_event_log/events/rtc_event_probe_result_success.h"
@@ -103,6 +105,122 @@ rtclog::VideoReceiveConfig_RtcpMode ConvertRtcpMode(RtcpMode rtcp_mode) {
   RTC_NOTREACHED();
   return rtclog::VideoReceiveConfig::RTCP_COMPOUND;
 }
+
+rtclog::IceCandidatePairConfig::IceCandidatePairConfigType
+ConvertIceCandidatePairConfigType(IceCandidatePairEventType type) {
+  switch (type) {
+    case IceCandidatePairEventType::kAdded:
+      return rtclog::IceCandidatePairConfig::ADDED;
+    case IceCandidatePairEventType::kUpdated:
+      return rtclog::IceCandidatePairConfig::UPDATED;
+    case IceCandidatePairEventType::kDestroyed:
+      return rtclog::IceCandidatePairConfig::DESTROYED;
+    case IceCandidatePairEventType::kSelected:
+      return rtclog::IceCandidatePairConfig::SELECTED;
+    default:
+      RTC_NOTREACHED();
+  }
+  RTC_NOTREACHED();
+  return rtclog::IceCandidatePairConfig::ADDED;
+}
+
+rtclog::IceCandidatePairConfig::IceCandidateType ConvertIceCandidateType(
+    IceCandidateType type) {
+  switch (type) {
+    case IceCandidateType::kLocal:
+      return rtclog::IceCandidatePairConfig::LOCAL;
+    case IceCandidateType::kStun:
+      return rtclog::IceCandidatePairConfig::STUN;
+    case IceCandidateType::kPrflx:
+      return rtclog::IceCandidatePairConfig::PRFLX;
+    case IceCandidateType::kRelay:
+      return rtclog::IceCandidatePairConfig::RELAY;
+    case IceCandidateType::kUnknown:
+      return rtclog::IceCandidatePairConfig::UNKNOWN_CANDIDATE_TYPE;
+    default:
+      RTC_NOTREACHED();
+  }
+  RTC_NOTREACHED();
+  return rtclog::IceCandidatePairConfig::UNKNOWN_CANDIDATE_TYPE;
+}
+
+rtclog::IceCandidatePairConfig::Protocol ConvertIceCandidatePairProtocol(
+    IceCandidatePairProtocol protocol) {
+  switch (protocol) {
+    case IceCandidatePairProtocol::kUdp:
+      return rtclog::IceCandidatePairConfig::UDP;
+    case IceCandidatePairProtocol::kTcp:
+      return rtclog::IceCandidatePairConfig::TCP;
+    case IceCandidatePairProtocol::kSsltcp:
+      return rtclog::IceCandidatePairConfig::SSLTCP;
+    case IceCandidatePairProtocol::kTls:
+      return rtclog::IceCandidatePairConfig::TLS;
+    case IceCandidatePairProtocol::kUnknown:
+      return rtclog::IceCandidatePairConfig::UNKNOWN_PROTOCOL;
+    default:
+      RTC_NOTREACHED();
+  }
+  RTC_NOTREACHED();
+  return rtclog::IceCandidatePairConfig::UNKNOWN_PROTOCOL;
+}
+
+rtclog::IceCandidatePairConfig::AddressFamily
+ConvertIceCandidatePairAddressFamily(
+    IceCandidatePairAddressFamily address_family) {
+  switch (address_family) {
+    case IceCandidatePairAddressFamily::kIpv4:
+      return rtclog::IceCandidatePairConfig::IPV4;
+    case IceCandidatePairAddressFamily::kIpv6:
+      return rtclog::IceCandidatePairConfig::IPV6;
+    case IceCandidatePairAddressFamily::kUnknown:
+      return rtclog::IceCandidatePairConfig::UNKNOWN_ADDRESS_FAMILY;
+    default:
+      RTC_NOTREACHED();
+  }
+  RTC_NOTREACHED();
+  return rtclog::IceCandidatePairConfig::UNKNOWN_ADDRESS_FAMILY;
+}
+
+rtclog::IceCandidatePairConfig::NetworkType ConvertIceCandidateNetworkType(
+    IceCandidateNetworkType network_type) {
+  switch (network_type) {
+    case IceCandidateNetworkType::kEthernet:
+      return rtclog::IceCandidatePairConfig::ETHERNET;
+    case IceCandidateNetworkType::kLoopback:
+      return rtclog::IceCandidatePairConfig::LOOPBACK;
+    case IceCandidateNetworkType::kWifi:
+      return rtclog::IceCandidatePairConfig::WIFI;
+    case IceCandidateNetworkType::kVpn:
+      return rtclog::IceCandidatePairConfig::VPN;
+    case IceCandidateNetworkType::kCellular:
+      return rtclog::IceCandidatePairConfig::CELLULAR;
+    case IceCandidateNetworkType::kUnknown:
+      return rtclog::IceCandidatePairConfig::UNKNOWN_NETWORK_TYPE;
+    default:
+      RTC_NOTREACHED();
+  }
+  RTC_NOTREACHED();
+  return rtclog::IceCandidatePairConfig::UNKNOWN_NETWORK_TYPE;
+}
+
+rtclog::IceCandidatePairEvent::IceCandidatePairEventType
+ConvertIceCandidatePairEventType(IceCandidatePairEventType type) {
+  switch (type) {
+    case IceCandidatePairEventType::kCheckSent:
+      return rtclog::IceCandidatePairEvent::CHECK_SENT;
+    case IceCandidatePairEventType::kCheckReceived:
+      return rtclog::IceCandidatePairEvent::CHECK_RECEIVED;
+    case IceCandidatePairEventType::kCheckResponseSent:
+      return rtclog::IceCandidatePairEvent::CHECK_RESPONSE_SENT;
+    case IceCandidatePairEventType::kCheckResponseReceived:
+      return rtclog::IceCandidatePairEvent::CHECK_RESPONSE_RECEIVED;
+    default:
+      RTC_NOTREACHED();
+  }
+  RTC_NOTREACHED();
+  return rtclog::IceCandidatePairEvent::CHECK_SENT;
+}
+
 }  // namespace
 
 std::string RtcEventLogEncoderLegacy::EncodeLogStart(int64_t timestamp_us) {
@@ -169,6 +287,17 @@ std::string RtcEventLogEncoderLegacy::Encode(const RtcEvent& event) {
     case RtcEvent::Type::BweUpdateLossBased: {
       auto& rtc_event = static_cast<const RtcEventBweUpdateLossBased&>(event);
       return EncodeBweUpdateLossBased(rtc_event);
+    }
+
+    case RtcEvent::Type::IceCandidatePairConfig: {
+      auto& rtc_event =
+          static_cast<const RtcEventIceCandidatePairConfig&>(event);
+      return EncodeIceCandidatePairConfig(rtc_event);
+    }
+
+    case RtcEvent::Type::IceCandidatePairEvent: {
+      auto& rtc_event = static_cast<const RtcEventIceCandidatePair&>(event);
+      return EncodeIceCandidatePairEvent(rtc_event);
     }
 
     case RtcEvent::Type::ProbeClusterCreated: {
@@ -341,6 +470,48 @@ std::string RtcEventLogEncoderLegacy::EncodeBweUpdateLossBased(
   bwe_event->set_total_packets(event.total_packets_);
 
   return Serialize(&rtclog_event);
+}
+
+std::string RtcEventLogEncoderLegacy::EncodeIceCandidatePairConfig(
+    const RtcEventIceCandidatePairConfig& event) {
+  rtclog::Event encoded_rtc_event;
+  encoded_rtc_event.set_timestamp_us(event.timestamp_us_);
+  encoded_rtc_event.set_type(rtclog::Event::ICE_CANDIDATE_PAIR_CONFIG);
+
+  auto encoded_ice_event =
+      encoded_rtc_event.mutable_ice_candidate_pair_config();
+  encoded_ice_event->set_config_type(
+      ConvertIceCandidatePairConfigType(event.type_));
+  encoded_ice_event->set_candidate_pair_id(event.candidate_pair_id_);
+  const auto& desc = event.candidate_pair_desc_;
+  encoded_ice_event->set_local_candidate_type(
+      ConvertIceCandidateType(desc.local_candidate_type));
+  encoded_ice_event->set_local_relay_protocol(
+      ConvertIceCandidatePairProtocol(desc.local_relay_protocol));
+  encoded_ice_event->set_local_network_type(
+      ConvertIceCandidateNetworkType(desc.local_network_type));
+  encoded_ice_event->set_local_address_family(
+      ConvertIceCandidatePairAddressFamily(desc.local_address_family));
+  encoded_ice_event->set_remote_candidate_type(
+      ConvertIceCandidateType(desc.remote_candidate_type));
+  encoded_ice_event->set_remote_address_family(
+      ConvertIceCandidatePairAddressFamily(desc.remote_address_family));
+  encoded_ice_event->set_candidate_pair_protocol(
+      ConvertIceCandidatePairProtocol(desc.candidate_pair_protocol));
+  return Serialize(&encoded_rtc_event);
+}
+
+std::string RtcEventLogEncoderLegacy::EncodeIceCandidatePairEvent(
+    const RtcEventIceCandidatePair& event) {
+  rtclog::Event encoded_rtc_event;
+  encoded_rtc_event.set_timestamp_us(event.timestamp_us_);
+  encoded_rtc_event.set_type(rtclog::Event::ICE_CANDIDATE_PAIR_EVENT);
+
+  auto encoded_ice_event = encoded_rtc_event.mutable_ice_candidate_pair_event();
+  encoded_ice_event->set_event_type(
+      ConvertIceCandidatePairEventType(event.type_));
+  encoded_ice_event->set_candidate_pair_id(event.candidate_pair_id_);
+  return Serialize(&encoded_rtc_event);
 }
 
 std::string RtcEventLogEncoderLegacy::EncodeProbeClusterCreated(
