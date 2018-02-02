@@ -897,7 +897,7 @@ bool MediaCodecVideoEncoder::EncodeJavaFrame(JNIEnv* jni,
                                              int input_buffer_index) {
   bool encode_status = Java_MediaCodecVideoEncoder_encodeFrame(
       jni, j_media_codec_video_encoder_, jlongFromPointer(this), key_frame,
-      frame, input_buffer_index);
+      frame, input_buffer_index, current_timestamp_us_);
   if (CheckException(jni)) {
     ALOGE << "Exception in encode frame.";
     ProcessHWError(true /* reset_if_fallback_unavailable */);

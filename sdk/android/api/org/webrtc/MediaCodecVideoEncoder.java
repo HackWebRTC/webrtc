@@ -634,10 +634,10 @@ public class MediaCodecVideoEncoder {
    * Encodes a new style VideoFrame. |bufferIndex| is -1 if we are not encoding in surface mode.
    */
   @CalledByNativeUnchecked
-  boolean encodeFrame(long nativeEncoder, boolean isKeyframe, VideoFrame frame, int bufferIndex) {
+  boolean encodeFrame(long nativeEncoder, boolean isKeyframe, VideoFrame frame, int bufferIndex,
+      long presentationTimestampUs) {
     checkOnMediaCodecThread();
     try {
-      long presentationTimestampUs = TimeUnit.NANOSECONDS.toMicros(frame.getTimestampNs());
       checkKeyFrameRequired(isKeyframe, presentationTimestampUs);
 
       VideoFrame.Buffer buffer = frame.getBuffer();
@@ -649,7 +649,7 @@ public class MediaCodecVideoEncoder {
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
         VideoFrameDrawer.drawTexture(drawer, textureBuffer, new Matrix() /* renderMatrix */, width,
             height, 0 /* viewportX */, 0 /* viewportY */, width, height);
-        eglBase.swapBuffers(frame.getTimestampNs());
+        eglBase.swapBuffers(TimeUnit.MICROSECONDS.toNanos(presentationTimestampUs));
       } else {
         VideoFrame.I420Buffer i420Buffer = buffer.toI420();
         final int chromaHeight = (height + 1) / 2;
