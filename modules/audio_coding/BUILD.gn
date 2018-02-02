@@ -2235,27 +2235,3 @@ rtc_source_set("audio_encoder_interface") {
     "../../api/audio_codecs:audio_codecs_api",
   ]
 }
-
-# For backwards compatibility only! Use
-# webrtc/api/audio_codecs:builtin_audio_decoder_factory instead.
-# TODO(kwiberg): Remove this.
-rtc_source_set("builtin_audio_decoder_factory") {
-  sources = [
-    "codecs/builtin_audio_decoder_factory.h",
-  ]
-  deps = [
-    "../../api/audio_codecs:builtin_audio_decoder_factory",
-  ]
-}
-
-# For backwards compatibility only! Use
-# webrtc/api/audio_codecs:builtin_audio_decoder_factory instead.
-# TODO(ossu): Remove this.
-rtc_source_set("builtin_audio_encoder_factory") {
-  sources = [
-    "codecs/builtin_audio_encoder_factory.h",
-  ]
-  deps = [
-    "../../api/audio_codecs:builtin_audio_encoder_factory",
-  ]
-}
