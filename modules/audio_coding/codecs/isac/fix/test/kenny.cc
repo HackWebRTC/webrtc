@@ -106,6 +106,8 @@ TEST(IsacFixTest, Kenny) {
   FILE *inp, *outp, *f_bn, *outbits;
   int endfile;
 
+  char chartjson_result_file[100];
+
   size_t i;
   int errtype, h = 0, k, packetLossPercent = 0;
   int16_t CodingMode;
@@ -162,7 +164,7 @@ TEST(IsacFixTest, Kenny) {
   packetLossPercent = 0;
 
   /* Handling wrong input arguments in the command line */
-  if ((argc<3) || (argc>21))  {
+  if ((argc<3) || (argc>22))  {
     printf("\n\nWrong number of arguments or flag values.\n\n");
 
     printf("\n");
@@ -170,7 +172,7 @@ TEST(IsacFixTest, Kenny) {
     printf("iSAC version %s \n\n", version_number);
 
     printf("Usage:\n\n");
-    printf("%s [-F num][-I] bottleneck_value infile outfile \n\n", argv[0]);
+    printf("%s [-I] bottleneck_value infile outfile [-F num]\n\n", argv[0]);
     printf("with:\n");
     printf("[-I]             :if -I option is specified, the coder will use\n");
     printf("                  an instantaneous Bottleneck value. If not, it\n");
@@ -178,6 +180,8 @@ TEST(IsacFixTest, Kenny) {
     printf("bottleneck_value :the value of the bottleneck provided either\n");
     printf("                  as a fixed value (e.g. 25000) or\n");
     printf("                  read from a file (e.g. bottleneck.txt)\n\n");
+    printf("infile           :Normal speech input file\n\n");
+    printf("outfile          :Speech output file\n\n");
     printf("[-INITRATE num]  :Set a new value for initial rate. Note! Only used"
            " in adaptive mode.\n\n");
     printf("[-FL num]        :Set (initial) frame length in msec. Valid length"
@@ -207,28 +211,29 @@ TEST(IsacFixTest, Kenny) {
     printf("                        encoder/decoder instance\n");
     printf("                  F 9 - Call decodeB without calling decodeA\n");
     printf("                  F 10 - Call decodeB with garbage data\n");
-    printf("[-PL num]       : if -PL option is specified 0<num<100 will "
+    printf("[-PL num]        :if -PL option is specified 0<num<100 will "
            "specify the\n");
     printf("                  percentage of packet loss\n\n");
-    printf("[-G file]       : if -G option is specified the file given is"
+    printf("[-G file]        :if -G option is specified the file given is"
            " a .gns file\n");
     printf("                  that represents a network profile\n\n");
-    printf("[-NB num]       : if -NB option, use the narrowband interfaces\n");
+    printf("[-NB num]        :if -NB option, use the narrowband interfaces\n");
     printf("                  num=1 => encode with narrowband encoder"
            " (infile is narrowband)\n");
     printf("                  num=2 => decode with narrowband decoder"
            " (outfile is narrowband)\n\n");
-    printf("[-CE num]       : Test of APIs used by Conference Engine.\n");
+    printf("[-CE num]        :Test of APIs used by Conference Engine.\n");
     printf("                  CE 1 - createInternal, freeInternal,"
            " getNewBitstream \n");
     printf("                  CE 2 - transcode, getBWE \n");
     printf("                  CE 3 - getSendBWE, setSendBWE.  \n\n");
-    printf("[-RTP_INIT num] : if -RTP_INIT option is specified num will be"
+    printf("[-RTP_INIT num]  :if -RTP_INIT option is specified num will be"
            " the initial\n");
     printf("                  value of the rtp sequence number.\n\n");
-    printf("infile          : Normal speech input file\n\n");
-    printf("outfile         : Speech output file\n\n");
-    printf("Example usage   : \n\n");
+    printf("[--chartjson_result_file file]\n");
+    printf("                 :If this option is specified, perf values will be"
+           " written to this file in a JSON format.\n\n");
+    printf("Example usage    :\n\n");
     printf("%s -I bottleneck.txt speechIn.pcm speechOut.pcm\n\n", argv[0]);
     exit(1);
 
@@ -242,14 +247,23 @@ TEST(IsacFixTest, Kenny) {
   CodingMode = 0;
   testNum = 0;
   testCE = 0;
-  for (i = 1; i + 2 < static_cast<size_t>(argc); i++) {
-    /* Instantaneous mode */
-    if (!strcmp ("-I", argv[i])) {
-      printf("\nInstantaneous BottleNeck\n");
-      CodingMode = 1;
-      i++;
-    }
+  i = 1;
 
+  /* Instantaneous mode */
+  if (!strcmp ("-I", argv[i])) {
+    printf("\nInstantaneous BottleNeck\n");
+    CodingMode = 1;
+    i++;
+  }
+
+  /* Bottleneck value is processed after the for */
+  i++;
+
+  /* Get Input and Output files */
+  sscanf(argv[i++], "%s", inname);
+  sscanf(argv[i++], "%s", outname);
+
+  for (; i + 1 < static_cast<size_t>(argc); i++) {
     /* Set (initial) bottleneck value */
     if (!strcmp ("-INITRATE", argv[i])) {
       rateBPS = atoi(argv[i + 1]);
@@ -375,6 +389,11 @@ TEST(IsacFixTest, Kenny) {
     if (!strcmp ("-RTP_INIT", argv[i])) {
       i++;
     }
+
+    if (!strcmp ("--chartjson_result_file", argv[i])) {
+      strncpy(chartjson_result_file, argv[i+1], 50);
+      i++;
+    }
   }
 
   /* Get Bottleneck value                                                   */
@@ -412,10 +431,6 @@ TEST(IsacFixTest, Kenny) {
   if (CodingMode == 0) {
     printf("\nAdaptive BottleNeck\n");
   }
-
-  /* Get Input and Output files */
-  sscanf(argv[argc-2], "%s", inname);
-  sscanf(argv[argc-1], "%s", outname);
 
   /* Add '.bit' to output bitstream file */
   while ((int)outname[h] != 0) {
@@ -825,6 +840,10 @@ TEST(IsacFixTest, Kenny) {
   // Record the results with Perf test tools.
   webrtc::test::PrintResult("isac", "", "time_per_10ms_frame",
                             (runtime * 10000) / length_file, "us", false);
+
+  if (*chartjson_result_file) {
+    webrtc::test::WritePerfResults(chartjson_result_file);
+  }
 
   fclose(inp);
   fclose(outp);
