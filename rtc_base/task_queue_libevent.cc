@@ -231,7 +231,7 @@ class TaskQueue::Impl::PostAndReplyTask : public QueuedTask {
     // PostAndReplyTask(), the reply task may or may not actually run.
     // In either case, it will be deleted.
     char message = kRunReplyTask;
-    write(reply_pipe_, &message, sizeof(message));
+    RTC_UNUSED(write(reply_pipe_, &message, sizeof(message)));
   }
 
  private:
