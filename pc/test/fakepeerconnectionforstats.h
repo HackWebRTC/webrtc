@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "media/base/fakemediaengine.h"
+#include "pc/streamcollection.h"
 #include "pc/test/fakedatachannelprovider.h"
 #include "pc/test/fakepeerconnectionbase.h"
 
@@ -84,12 +85,29 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase {
   FakePeerConnectionForStats()
       : network_thread_(rtc::Thread::Current()),
         worker_thread_(rtc::Thread::Current()),
-        signaling_thread_(rtc::Thread::Current()) {}
+        signaling_thread_(rtc::Thread::Current()),
+        local_streams_(StreamCollection::Create()),
+        remote_streams_(StreamCollection::Create()) {}
+
+  rtc::scoped_refptr<StreamCollection> mutable_local_streams() {
+    return local_streams_;
+  }
+
+  rtc::scoped_refptr<StreamCollection> mutable_remote_streams() {
+    return remote_streams_;
+  }
+
+  void AddSender(rtc::scoped_refptr<RtpSenderInterface> sender) {
+    senders_.push_back(sender);
+  }
+
+  void AddReceiver(rtc::scoped_refptr<RtpReceiverInterface> receiver) {
+    receivers_.push_back(receiver);
+  }
 
   FakeVoiceMediaChannelForStats* AddVoiceChannel(
       const std::string& mid,
-      const std::string& transport_name,
-      const cricket::VoiceMediaInfo& voice_info) {
+      const std::string& transport_name) {
     RTC_DCHECK(!voice_channel_);
     auto voice_media_channel = rtc::MakeUnique<FakeVoiceMediaChannelForStats>();
     auto* voice_media_channel_ptr = voice_media_channel.get();
@@ -98,14 +116,12 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase {
         std::move(voice_media_channel), mid, kDefaultRtcpMuxRequired,
         kDefaultSrtpRequired);
     voice_channel_->set_transport_name_for_testing(transport_name);
-    voice_media_channel_ptr->SetStats(voice_info);
     return voice_media_channel_ptr;
   }
 
   FakeVideoMediaChannelForStats* AddVideoChannel(
       const std::string& mid,
-      const std::string& transport_name,
-      const cricket::VideoMediaInfo& video_stats) {
+      const std::string& transport_name) {
     RTC_DCHECK(!video_channel_);
     auto video_media_channel = rtc::MakeUnique<FakeVideoMediaChannelForStats>();
     auto video_media_channel_ptr = video_media_channel.get();
@@ -114,7 +130,6 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase {
         std::move(video_media_channel), mid, kDefaultRtcpMuxRequired,
         kDefaultSrtpRequired);
     video_channel_->set_transport_name_for_testing(transport_name);
-    video_media_channel_ptr->SetStats(video_stats);
     return video_media_channel_ptr;
   }
 
@@ -132,15 +147,27 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase {
 
   void AddSctpDataChannel(const std::string& label,
                           const InternalDataChannelInit& init) {
-    sctp_data_channels_.push_back(DataChannel::Create(
-        &data_channel_provider_, cricket::DCT_SCTP, label, init));
+    AddSctpDataChannel(DataChannel::Create(&data_channel_provider_,
+                                           cricket::DCT_SCTP, label, init));
+  }
+
+  void AddSctpDataChannel(rtc::scoped_refptr<DataChannel> data_channel) {
+    sctp_data_channels_.push_back(data_channel);
   }
 
   void SetTransportStats(const std::string& transport_name,
                          const cricket::TransportChannelStats& channel_stats) {
+    SetTransportStats(
+        transport_name,
+        std::vector<cricket::TransportChannelStats>{channel_stats});
+  }
+
+  void SetTransportStats(
+      const std::string& transport_name,
+      const std::vector<cricket::TransportChannelStats>& channel_stats_list) {
     cricket::TransportStats transport_stats;
     transport_stats.transport_name = transport_name;
-    transport_stats.channel_stats.push_back(channel_stats);
+    transport_stats.channel_stats = channel_stats_list;
     transport_stats_by_name_[transport_name] = transport_stats;
   }
 
@@ -155,6 +182,26 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase {
   void SetRemoteCertificate(const std::string& transport_name,
                             std::unique_ptr<rtc::SSLCertificate> certificate) {
     remote_certificates_by_transport_[transport_name] = std::move(certificate);
+  }
+
+  // PeerConnectionInterface overrides.
+
+  rtc::scoped_refptr<StreamCollectionInterface> local_streams() override {
+    return local_streams_;
+  }
+
+  rtc::scoped_refptr<StreamCollectionInterface> remote_streams() override {
+    return remote_streams_;
+  }
+
+  std::vector<rtc::scoped_refptr<RtpSenderInterface>> GetSenders()
+      const override {
+    return senders_;
+  }
+
+  std::vector<rtc::scoped_refptr<RtpReceiverInterface>> GetReceivers()
+      const override {
+    return receivers_;
   }
 
   // PeerConnectionInternal overrides.
@@ -268,7 +315,7 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase {
     }
     // Otherwise, generate some dummy stats.
     cricket::TransportChannelStats channel_stats;
-    channel_stats.component = 1;
+    channel_stats.component = cricket::ICE_CANDIDATE_COMPONENT_RTP;
     cricket::TransportStats transport_stats;
     transport_stats.transport_name = transport_name;
     transport_stats.channel_stats.push_back(channel_stats);
@@ -278,6 +325,12 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase {
   rtc::Thread* const network_thread_;
   rtc::Thread* const worker_thread_;
   rtc::Thread* const signaling_thread_;
+
+  rtc::scoped_refptr<StreamCollection> local_streams_;
+  rtc::scoped_refptr<StreamCollection> remote_streams_;
+
+  std::vector<rtc::scoped_refptr<RtpSenderInterface>> senders_;
+  std::vector<rtc::scoped_refptr<RtpReceiverInterface>> receivers_;
 
   FakeDataChannelProvider data_channel_provider_;
 
