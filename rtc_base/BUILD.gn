@@ -39,6 +39,7 @@ config("rtc_base_all_dependent_config") {
   if (is_ios) {
     libs = [
       "CFNetwork.framework",
+      "Foundation.framework",
       "Security.framework",
       "SystemConfiguration.framework",
       "UIKit.framework",
