@@ -213,6 +213,11 @@ static const char* kMediaProtocolsDtls[] = {
     "TCP/TLS/RTP/SAVPF", "TCP/TLS/RTP/SAVP", "UDP/TLS/RTP/SAVPF",
     "UDP/TLS/RTP/SAVP"};
 
+// SRTP cipher name negotiated by the tests. This must be updated if the
+// default changes.
+static const char* kDefaultSrtpCryptoSuite = CS_AES_CM_128_HMAC_SHA1_80;
+static const char* kDefaultSrtpCryptoSuiteGcm = CS_AEAD_AES_256_GCM;
+
 // These constants are used to make the code using "AddMediaSection" more
 // readable.
 static constexpr bool kStopped = true;
@@ -545,7 +550,7 @@ class MediaSessionDescriptionFactoryTest : public testing::Test {
     EXPECT_TRUE(CompareCryptoParams(audio_media_desc->cryptos(),
                                     video_media_desc->cryptos()));
     EXPECT_EQ(1u, audio_media_desc->cryptos().size());
-    EXPECT_EQ(std::string(CS_AES_CM_128_HMAC_SHA1_80),
+    EXPECT_EQ(std::string(kDefaultSrtpCryptoSuite),
               audio_media_desc->cryptos()[0].cipher_suite);
 
     // Verify the selected crypto is one from the reference audio
@@ -636,18 +641,18 @@ class MediaSessionDescriptionFactoryTest : public testing::Test {
     EXPECT_EQ(0U, acd->first_ssrc());             // no sender is attached
     EXPECT_TRUE(acd->rtcp_mux());                 // negotiated rtcp-mux
     if (gcm_offer && gcm_answer) {
-      ASSERT_CRYPTO(acd, 1U, CS_AEAD_AES_256_GCM);
+      ASSERT_CRYPTO(acd, 1U, kDefaultSrtpCryptoSuiteGcm);
     } else {
-      ASSERT_CRYPTO(acd, 1U, CS_AES_CM_128_HMAC_SHA1_32);
+      ASSERT_CRYPTO(acd, 1U, kDefaultSrtpCryptoSuite);
     }
     EXPECT_EQ(MEDIA_TYPE_VIDEO, vcd->type());
     EXPECT_EQ(MAKE_VECTOR(kVideoCodecsAnswer), vcd->codecs());
     EXPECT_EQ(0U, vcd->first_ssrc());             // no sender is attached
     EXPECT_TRUE(vcd->rtcp_mux());                 // negotiated rtcp-mux
     if (gcm_offer && gcm_answer) {
-      ASSERT_CRYPTO(vcd, 1U, CS_AEAD_AES_256_GCM);
+      ASSERT_CRYPTO(vcd, 1U, kDefaultSrtpCryptoSuiteGcm);
     } else {
-      ASSERT_CRYPTO(vcd, 1U, CS_AES_CM_128_HMAC_SHA1_80);
+      ASSERT_CRYPTO(vcd, 1U, kDefaultSrtpCryptoSuite);
     }
     EXPECT_EQ(std::string(cricket::kMediaProtocolSavpf), vcd->protocol());
   }
@@ -676,7 +681,7 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateAudioOffer) {
   EXPECT_EQ(0U, acd->first_ssrc());             // no sender is attached.
   EXPECT_EQ(kAutoBandwidth, acd->bandwidth());  // default bandwidth (auto)
   EXPECT_TRUE(acd->rtcp_mux());                 // rtcp-mux defaults on
-  ASSERT_CRYPTO(acd, 2U, CS_AES_CM_128_HMAC_SHA1_32);
+  ASSERT_CRYPTO(acd, 1U, kDefaultSrtpCryptoSuite);
   EXPECT_EQ(std::string(cricket::kMediaProtocolSavpf), acd->protocol());
 }
 
@@ -700,14 +705,14 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateVideoOffer) {
   EXPECT_EQ(0U, acd->first_ssrc());             // no sender is attached
   EXPECT_EQ(kAutoBandwidth, acd->bandwidth());  // default bandwidth (auto)
   EXPECT_TRUE(acd->rtcp_mux());                 // rtcp-mux defaults on
-  ASSERT_CRYPTO(acd, 2U, CS_AES_CM_128_HMAC_SHA1_32);
+  ASSERT_CRYPTO(acd, 1U, kDefaultSrtpCryptoSuite);
   EXPECT_EQ(std::string(cricket::kMediaProtocolSavpf), acd->protocol());
   EXPECT_EQ(MEDIA_TYPE_VIDEO, vcd->type());
   EXPECT_EQ(f1_.video_codecs(), vcd->codecs());
   EXPECT_EQ(0U, vcd->first_ssrc());             // no sender is attached
   EXPECT_EQ(kAutoBandwidth, vcd->bandwidth());  // default bandwidth (auto)
   EXPECT_TRUE(vcd->rtcp_mux());                 // rtcp-mux defaults on
-  ASSERT_CRYPTO(vcd, 1U, CS_AES_CM_128_HMAC_SHA1_80);
+  ASSERT_CRYPTO(vcd, 1U, kDefaultSrtpCryptoSuite);
   EXPECT_EQ(std::string(cricket::kMediaProtocolSavpf), vcd->protocol());
 }
 
@@ -778,11 +783,11 @@ TEST_F(MediaSessionDescriptionFactoryTest,
   EXPECT_TRUE(NULL != acd);
   EXPECT_TRUE(NULL != dcd);
 
-  ASSERT_CRYPTO(acd, 1U, CS_AES_CM_128_HMAC_SHA1_80);
+  ASSERT_CRYPTO(acd, 1U, kDefaultSrtpCryptoSuite);
   EXPECT_EQ(std::string(cricket::kMediaProtocolSavpf), acd->protocol());
-  ASSERT_CRYPTO(vcd, 1U, CS_AES_CM_128_HMAC_SHA1_80);
+  ASSERT_CRYPTO(vcd, 1U, kDefaultSrtpCryptoSuite);
   EXPECT_EQ(std::string(cricket::kMediaProtocolSavpf), vcd->protocol());
-  ASSERT_CRYPTO(dcd, 1U, CS_AES_CM_128_HMAC_SHA1_80);
+  ASSERT_CRYPTO(dcd, 1U, kDefaultSrtpCryptoSuite);
   EXPECT_EQ(std::string(cricket::kMediaProtocolSavpf), dcd->protocol());
 }
 
@@ -807,7 +812,7 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateRtpDataOffer) {
   EXPECT_EQ(0U, acd->first_ssrc());             // no sender is attched.
   EXPECT_EQ(kAutoBandwidth, acd->bandwidth());  // default bandwidth (auto)
   EXPECT_TRUE(acd->rtcp_mux());                 // rtcp-mux defaults on
-  ASSERT_CRYPTO(acd, 2U, CS_AES_CM_128_HMAC_SHA1_32);
+  ASSERT_CRYPTO(acd, 1U, kDefaultSrtpCryptoSuite);
   EXPECT_EQ(std::string(cricket::kMediaProtocolSavpf), acd->protocol());
   EXPECT_EQ(MEDIA_TYPE_DATA, dcd->type());
   EXPECT_EQ(f1_.data_codecs(), dcd->codecs());
@@ -815,7 +820,7 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateRtpDataOffer) {
   EXPECT_EQ(cricket::kDataMaxBandwidth,
             dcd->bandwidth());                  // default bandwidth (auto)
   EXPECT_TRUE(dcd->rtcp_mux());                 // rtcp-mux defaults on
-  ASSERT_CRYPTO(dcd, 1U, CS_AES_CM_128_HMAC_SHA1_80);
+  ASSERT_CRYPTO(dcd, 1U, kDefaultSrtpCryptoSuite);
   EXPECT_EQ(std::string(cricket::kMediaProtocolSavpf), dcd->protocol());
 }
 
@@ -943,7 +948,7 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateAudioAnswer) {
   EXPECT_EQ(0U, acd->first_ssrc());             // no sender is attached
   EXPECT_EQ(kAutoBandwidth, acd->bandwidth());  // negotiated auto bw
   EXPECT_TRUE(acd->rtcp_mux());                 // negotiated rtcp-mux
-  ASSERT_CRYPTO(acd, 1U, CS_AES_CM_128_HMAC_SHA1_32);
+  ASSERT_CRYPTO(acd, 1U, kDefaultSrtpCryptoSuite);
   EXPECT_EQ(std::string(cricket::kMediaProtocolSavpf), acd->protocol());
 }
 
@@ -969,7 +974,7 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateAudioAnswerGcm) {
   EXPECT_EQ(0U, acd->first_ssrc());             // no sender is attached
   EXPECT_EQ(kAutoBandwidth, acd->bandwidth());  // negotiated auto bw
   EXPECT_TRUE(acd->rtcp_mux());                 // negotiated rtcp-mux
-  ASSERT_CRYPTO(acd, 1U, CS_AEAD_AES_256_GCM);
+  ASSERT_CRYPTO(acd, 1U, kDefaultSrtpCryptoSuiteGcm);
   EXPECT_EQ(std::string(cricket::kMediaProtocolSavpf), acd->protocol());
 }
 
@@ -996,12 +1001,12 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateVideoAnswer) {
   EXPECT_EQ(kAutoBandwidth, acd->bandwidth());  // negotiated auto bw
   EXPECT_EQ(0U, acd->first_ssrc());             // no sender is attached
   EXPECT_TRUE(acd->rtcp_mux());                 // negotiated rtcp-mux
-  ASSERT_CRYPTO(acd, 1U, CS_AES_CM_128_HMAC_SHA1_32);
+  ASSERT_CRYPTO(acd, 1U, kDefaultSrtpCryptoSuite);
   EXPECT_EQ(MEDIA_TYPE_VIDEO, vcd->type());
   EXPECT_EQ(MAKE_VECTOR(kVideoCodecsAnswer), vcd->codecs());
   EXPECT_EQ(0U, vcd->first_ssrc());             // no sender is attached
   EXPECT_TRUE(vcd->rtcp_mux());                 // negotiated rtcp-mux
-  ASSERT_CRYPTO(vcd, 1U, CS_AES_CM_128_HMAC_SHA1_80);
+  ASSERT_CRYPTO(vcd, 1U, kDefaultSrtpCryptoSuite);
   EXPECT_EQ(std::string(cricket::kMediaProtocolSavpf), vcd->protocol());
 }
 
@@ -1045,12 +1050,12 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateDataAnswer) {
   EXPECT_EQ(kAutoBandwidth, acd->bandwidth());  // negotiated auto bw
   EXPECT_EQ(0U, acd->first_ssrc());             // no sender is attached
   EXPECT_TRUE(acd->rtcp_mux());                 // negotiated rtcp-mux
-  ASSERT_CRYPTO(acd, 1U, CS_AES_CM_128_HMAC_SHA1_32);
+  ASSERT_CRYPTO(acd, 1U, kDefaultSrtpCryptoSuite);
   EXPECT_EQ(MEDIA_TYPE_DATA, dcd->type());
   EXPECT_EQ(MAKE_VECTOR(kDataCodecsAnswer), dcd->codecs());
   EXPECT_EQ(0U, dcd->first_ssrc());  // no sender is attached
   EXPECT_TRUE(dcd->rtcp_mux());      // negotiated rtcp-mux
-  ASSERT_CRYPTO(dcd, 1U, CS_AES_CM_128_HMAC_SHA1_80);
+  ASSERT_CRYPTO(dcd, 1U, kDefaultSrtpCryptoSuite);
   EXPECT_EQ(std::string(cricket::kMediaProtocolSavpf), dcd->protocol());
 }
 
@@ -1077,12 +1082,12 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateDataAnswerGcm) {
   EXPECT_EQ(kAutoBandwidth, acd->bandwidth());  // negotiated auto bw
   EXPECT_EQ(0U, acd->first_ssrc());             // no sender is attached
   EXPECT_TRUE(acd->rtcp_mux());                 // negotiated rtcp-mux
-  ASSERT_CRYPTO(acd, 1U, CS_AEAD_AES_256_GCM);
+  ASSERT_CRYPTO(acd, 1U, kDefaultSrtpCryptoSuiteGcm);
   EXPECT_EQ(MEDIA_TYPE_DATA, dcd->type());
   EXPECT_EQ(MAKE_VECTOR(kDataCodecsAnswer), dcd->codecs());
   EXPECT_EQ(0U, dcd->first_ssrc());  // no sender is attached
   EXPECT_TRUE(dcd->rtcp_mux());      // negotiated rtcp-mux
-  ASSERT_CRYPTO(dcd, 1U, CS_AEAD_AES_256_GCM);
+  ASSERT_CRYPTO(dcd, 1U, kDefaultSrtpCryptoSuiteGcm);
   EXPECT_EQ(std::string(cricket::kMediaProtocolSavpf), dcd->protocol());
 }
 
@@ -1643,11 +1648,11 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateMultiStreamVideoOffer) {
 
   EXPECT_EQ(kAutoBandwidth, acd->bandwidth());  // default bandwidth (auto)
   EXPECT_TRUE(acd->rtcp_mux());                 // rtcp-mux defaults on
-  ASSERT_CRYPTO(acd, 2U, CS_AES_CM_128_HMAC_SHA1_32);
+  ASSERT_CRYPTO(acd, 1U, kDefaultSrtpCryptoSuite);
 
   EXPECT_EQ(MEDIA_TYPE_VIDEO, vcd->type());
   EXPECT_EQ(f1_.video_codecs(), vcd->codecs());
-  ASSERT_CRYPTO(vcd, 1U, CS_AES_CM_128_HMAC_SHA1_80);
+  ASSERT_CRYPTO(vcd, 1U, kDefaultSrtpCryptoSuite);
 
   const StreamParamsVec& video_streams = vcd->streams();
   ASSERT_EQ(1U, video_streams.size());
@@ -1658,7 +1663,7 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateMultiStreamVideoOffer) {
 
   EXPECT_EQ(MEDIA_TYPE_DATA, dcd->type());
   EXPECT_EQ(f1_.data_codecs(), dcd->codecs());
-  ASSERT_CRYPTO(dcd, 1U, CS_AES_CM_128_HMAC_SHA1_80);
+  ASSERT_CRYPTO(dcd, 1U, kDefaultSrtpCryptoSuite);
 
   const StreamParamsVec& data_streams = dcd->streams();
   ASSERT_EQ(2U, data_streams.size());
@@ -1673,7 +1678,7 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateMultiStreamVideoOffer) {
   EXPECT_EQ(cricket::kDataMaxBandwidth,
             dcd->bandwidth());                  // default bandwidth (auto)
   EXPECT_TRUE(dcd->rtcp_mux());                 // rtcp-mux defaults on
-  ASSERT_CRYPTO(dcd, 1U, CS_AES_CM_128_HMAC_SHA1_80);
+  ASSERT_CRYPTO(dcd, 1U, kDefaultSrtpCryptoSuite);
 
   // Update the offer. Add a new video track that is not synched to the
   // other tracks and replace audio track 2 with audio track 3.
@@ -1708,11 +1713,11 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateMultiStreamVideoOffer) {
   EXPECT_EQ(vcd->codecs(), updated_vcd->codecs());
   EXPECT_EQ(dcd->type(), updated_dcd->type());
   EXPECT_EQ(dcd->codecs(), updated_dcd->codecs());
-  ASSERT_CRYPTO(updated_acd, 2U, CS_AES_CM_128_HMAC_SHA1_32);
+  ASSERT_CRYPTO(updated_acd, 1U, kDefaultSrtpCryptoSuite);
   EXPECT_TRUE(CompareCryptoParams(acd->cryptos(), updated_acd->cryptos()));
-  ASSERT_CRYPTO(updated_vcd, 1U, CS_AES_CM_128_HMAC_SHA1_80);
+  ASSERT_CRYPTO(updated_vcd, 1U, kDefaultSrtpCryptoSuite);
   EXPECT_TRUE(CompareCryptoParams(vcd->cryptos(), updated_vcd->cryptos()));
-  ASSERT_CRYPTO(updated_dcd, 1U, CS_AES_CM_128_HMAC_SHA1_80);
+  ASSERT_CRYPTO(updated_dcd, 1U, kDefaultSrtpCryptoSuite);
   EXPECT_TRUE(CompareCryptoParams(dcd->cryptos(), updated_dcd->cryptos()));
 
   const StreamParamsVec& updated_audio_streams = updated_acd->streams();
@@ -1821,9 +1826,9 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateMultiStreamVideoAnswer) {
   const AudioContentDescription* acd = ac->media_description()->as_audio();
   const VideoContentDescription* vcd = vc->media_description()->as_video();
   const DataContentDescription* dcd = dc->media_description()->as_data();
-  ASSERT_CRYPTO(acd, 1U, CS_AES_CM_128_HMAC_SHA1_32);
-  ASSERT_CRYPTO(vcd, 1U, CS_AES_CM_128_HMAC_SHA1_80);
-  ASSERT_CRYPTO(dcd, 1U, CS_AES_CM_128_HMAC_SHA1_80);
+  ASSERT_CRYPTO(acd, 1U, kDefaultSrtpCryptoSuite);
+  ASSERT_CRYPTO(vcd, 1U, kDefaultSrtpCryptoSuite);
+  ASSERT_CRYPTO(dcd, 1U, kDefaultSrtpCryptoSuite);
 
   EXPECT_EQ(MEDIA_TYPE_AUDIO, acd->type());
   EXPECT_EQ(MAKE_VECTOR(kAudioCodecsAnswer), acd->codecs());
@@ -1891,11 +1896,11 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateMultiStreamVideoAnswer) {
   const DataContentDescription* updated_dcd =
       dc->media_description()->as_data();
 
-  ASSERT_CRYPTO(updated_acd, 1U, CS_AES_CM_128_HMAC_SHA1_32);
+  ASSERT_CRYPTO(updated_acd, 1U, kDefaultSrtpCryptoSuite);
   EXPECT_TRUE(CompareCryptoParams(acd->cryptos(), updated_acd->cryptos()));
-  ASSERT_CRYPTO(updated_vcd, 1U, CS_AES_CM_128_HMAC_SHA1_80);
+  ASSERT_CRYPTO(updated_vcd, 1U, kDefaultSrtpCryptoSuite);
   EXPECT_TRUE(CompareCryptoParams(vcd->cryptos(), updated_vcd->cryptos()));
-  ASSERT_CRYPTO(updated_dcd, 1U, CS_AES_CM_128_HMAC_SHA1_80);
+  ASSERT_CRYPTO(updated_dcd, 1U, kDefaultSrtpCryptoSuite);
   EXPECT_TRUE(CompareCryptoParams(dcd->cryptos(), updated_dcd->cryptos()));
 
   EXPECT_EQ(acd->type(), updated_acd->type());
@@ -2819,7 +2824,7 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCryptoDtls) {
   ASSERT_TRUE(audio_media_desc != NULL);
   video_media_desc = offer->GetContentDescriptionByName("video");
   ASSERT_TRUE(video_media_desc != NULL);
-  EXPECT_EQ(2u, audio_media_desc->cryptos().size());
+  EXPECT_EQ(1u, audio_media_desc->cryptos().size());
   EXPECT_EQ(1u, video_media_desc->cryptos().size());
 
   audio_trans_desc = offer->GetTransportDescriptionByName("audio");
