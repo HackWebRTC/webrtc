@@ -18,6 +18,7 @@
 #include "modules/remote_bitrate_estimator/test/estimators/send_side.h"
 #include "modules/remote_bitrate_estimator/test/estimators/tcp.h"
 #include "rtc_base/constructormagic.h"
+#include "rtc_base/system/fallthrough.h"
 
 namespace webrtc {
 namespace testing {
@@ -97,7 +98,7 @@ BweSender* CreateBweSender(BandwidthEstimatorType estimator,
     case kBbrEstimator:
       return new BbrBweSender(observer, clock);
     case kTcpEstimator:
-      FALLTHROUGH();
+      RTC_FALLTHROUGH();
     case kNullEstimator:
       return new NullBweSender();
   }

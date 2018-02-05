@@ -34,6 +34,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/system/fallthrough.h"
 #include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/metrics.h"
 #include "system_wrappers/include/timestamp_extrapolator.h"
@@ -253,7 +254,7 @@ int32_t RtpVideoStreamReceiver::OnReceivedPayloadData(
     switch (tracker_.CopyAndFixBitstream(&packet)) {
       case video_coding::H264SpsPpsTracker::kRequestKeyframe:
         keyframe_request_sender_->RequestKeyFrame();
-        FALLTHROUGH();
+        RTC_FALLTHROUGH();
       case video_coding::H264SpsPpsTracker::kDrop:
         return 0;
       case video_coding::H264SpsPpsTracker::kInsert:

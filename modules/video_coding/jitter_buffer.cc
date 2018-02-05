@@ -25,6 +25,7 @@
 #include "modules/video_coding/packet.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/system/fallthrough.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/event_wrapper.h"
@@ -749,7 +750,7 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(const VCMPacket& packet,
           frame_event_->Set();
         }
       }
-      FALLTHROUGH();
+      RTC_FALLTHROUGH();
     }
     // Note: There is no break here - continuing to kDecodableSession.
     case kDecodableSession: {

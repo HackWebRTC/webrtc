@@ -142,6 +142,7 @@ if (rtc_include_tests) {
       "../../rtc_base:rtc_base_approved",
       "../../rtc_base:rtc_numerics",
       "../../rtc_base/experiments:alr_experiment",
+      "../../rtc_base/system:fallthrough",
       "../../system_wrappers",
       "../../system_wrappers:field_trial_api",
       "../../test:perf_test",

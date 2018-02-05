@@ -879,6 +879,7 @@ rtc_source_set("rtc_base_tests_utils") {
     ":stringutils",
     "../test:field_trial",
     "../test:test_support",
+    "system:fallthrough",
   ]
   public_deps = [
     "//testing/gtest",

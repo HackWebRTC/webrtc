@@ -24,6 +24,7 @@
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/system/fallthrough.h"
 #include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
@@ -574,7 +575,7 @@ bool RtpDepacketizerH264::ProcessStapAOrSingleNalu(
       }
       case H264::NaluType::kIdr:
         parsed_payload->frame_type = kVideoFrameKey;
-        FALLTHROUGH();
+        RTC_FALLTHROUGH();
       case H264::NaluType::kSlice: {
         rtc::Optional<uint32_t> pps_id = PpsParser::ParsePpsIdFromSlice(
             &payload_data[start_offset], end_offset - start_offset);

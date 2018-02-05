@@ -21,6 +21,7 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/socket.h"
 #include "rtc_base/stringutils.h"
+#include "rtc_base/system/fallthrough.h"
 #include "rtc_base/thread.h"
 
 namespace rtc {
@@ -537,7 +538,7 @@ bool HttpBase::DoReceiveLoop(HttpError* error) {
       case SR_EOS:
         // Clean close, with no error.
         read_error = 0;
-        FALLTHROUGH();  // Fall through to HandleStreamClose.
+        RTC_FALLTHROUGH();  // Fall through to HandleStreamClose.
       case SR_ERROR:
         *error = HandleStreamClose(read_error);
         return true;

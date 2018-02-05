@@ -82,6 +82,7 @@ if (rtc_include_internal_audio_device && is_ios) {
       "../../rtc_base:checks",
       "../../rtc_base:gtest_prod",
       "../../rtc_base:rtc_base",
+      "../../rtc_base/system:fallthrough",
       "../../sdk:audio_objc",
       "../../sdk:common_objc",
       "../../system_wrappers:metrics_api",

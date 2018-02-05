@@ -1080,6 +1080,7 @@ rtc_static_library("neteq") {
     "../../rtc_base:gtest_prod",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:sanitizer",
+    "../../rtc_base/system:fallthrough",
     "../../system_wrappers:field_trial_api",
     "../../system_wrappers:metrics_api",
   ]

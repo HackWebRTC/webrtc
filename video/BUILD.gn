@@ -71,6 +71,7 @@ rtc_static_library("video") {
     "../modules/video_coding:video_codec_interface",
     "../rtc_base:checks",
     "../rtc_base/experiments:alr_experiment",
+    "../rtc_base/system:fallthrough",
     "../system_wrappers:field_trial_api",
     "../system_wrappers:metrics_api",
 
