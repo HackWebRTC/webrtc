@@ -308,7 +308,10 @@ void FakeVideoSendStream::InjectVideoSinkWants(
 
 FakeVideoReceiveStream::FakeVideoReceiveStream(
     webrtc::VideoReceiveStream::Config config)
-    : config_(std::move(config)), receiving_(false) {}
+    : config_(std::move(config)),
+      receiving_(false),
+      num_added_secondary_sinks_(0),
+      num_removed_secondary_sinks_(0) {}
 
 const webrtc::VideoReceiveStream::Config& FakeVideoReceiveStream::GetConfig()
     const {
@@ -346,10 +349,22 @@ void FakeVideoReceiveStream::EnableEncodedFrameRecording(rtc::PlatformFile file,
 }
 
 void FakeVideoReceiveStream::AddSecondarySink(
-    webrtc::RtpPacketSinkInterface* sink) {}
+    webrtc::RtpPacketSinkInterface* sink) {
+  ++num_added_secondary_sinks_;
+}
 
 void FakeVideoReceiveStream::RemoveSecondarySink(
-    const webrtc::RtpPacketSinkInterface* sink) {}
+    const webrtc::RtpPacketSinkInterface* sink) {
+  ++num_removed_secondary_sinks_;
+}
+
+int FakeVideoReceiveStream::GetNumAddedSecondarySinks() const {
+  return num_added_secondary_sinks_;
+}
+
+int FakeVideoReceiveStream::GetNumRemovedSecondarySinks() const {
+  return num_removed_secondary_sinks_;
+}
 
 FakeFlexfecReceiveStream::FakeFlexfecReceiveStream(
     const webrtc::FlexfecReceiveStream::Config& config)

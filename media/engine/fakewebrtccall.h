@@ -206,6 +206,9 @@ class FakeVideoReceiveStream final : public webrtc::VideoReceiveStream {
   void AddSecondarySink(webrtc::RtpPacketSinkInterface* sink) override;
   void RemoveSecondarySink(const webrtc::RtpPacketSinkInterface* sink) override;
 
+  int GetNumAddedSecondarySinks() const;
+  int GetNumRemovedSecondarySinks() const;
+
  private:
   // webrtc::VideoReceiveStream implementation.
   void Start() override;
@@ -216,6 +219,9 @@ class FakeVideoReceiveStream final : public webrtc::VideoReceiveStream {
   webrtc::VideoReceiveStream::Config config_;
   bool receiving_;
   webrtc::VideoReceiveStream::Stats stats_;
+
+  int num_added_secondary_sinks_;
+  int num_removed_secondary_sinks_;
 };
 
 class FakeFlexfecReceiveStream final : public webrtc::FlexfecReceiveStream {

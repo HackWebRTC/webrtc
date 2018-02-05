@@ -2737,6 +2737,13 @@ TEST_F(WebRtcVideoChannelFlexfecRecvTest, SetDefaultRecvCodecsWithoutSsrc) {
   const std::vector<FakeFlexfecReceiveStream*>& streams =
       fake_call_->GetFlexfecReceiveStreams();
   EXPECT_TRUE(streams.empty());
+
+  const std::vector<FakeVideoReceiveStream*>& video_streams =
+      fake_call_->GetVideoReceiveStreams();
+  ASSERT_EQ(1U, video_streams.size());
+  const FakeVideoReceiveStream& video_stream = *video_streams.front();
+  EXPECT_EQ(0, video_stream.GetNumAddedSecondarySinks());
+  EXPECT_EQ(0, video_stream.GetNumRemovedSecondarySinks());
 }
 
 TEST_F(WebRtcVideoChannelFlexfecRecvTest, SetDefaultRecvCodecsWithSsrc) {
@@ -2756,8 +2763,10 @@ TEST_F(WebRtcVideoChannelFlexfecRecvTest, SetDefaultRecvCodecsWithSsrc) {
   const std::vector<FakeVideoReceiveStream*>& video_streams =
       fake_call_->GetVideoReceiveStreams();
   ASSERT_EQ(1U, video_streams.size());
+  const FakeVideoReceiveStream& video_stream = *video_streams.front();
+  EXPECT_EQ(1, video_stream.GetNumAddedSecondarySinks());
   const webrtc::VideoReceiveStream::Config& video_config =
-      video_streams.front()->GetConfig();
+      video_stream.GetConfig();
   EXPECT_TRUE(video_config.rtp.protected_by_flexfec);
 }
 
@@ -2770,7 +2779,12 @@ TEST_F(WebRtcVideoChannelFlexfecRecvTest,
   AddRecvStream(
       CreatePrimaryWithFecFrStreamParams("cname", kSsrcs1[0], kFlexfecSsrc));
   EXPECT_EQ(1, fake_call_->GetNumCreatedReceiveStreams());
-  EXPECT_EQ(1U, fake_call_->GetVideoReceiveStreams().size());
+  const std::vector<FakeVideoReceiveStream*>& video_streams =
+      fake_call_->GetVideoReceiveStreams();
+  ASSERT_EQ(1U, video_streams.size());
+  const FakeVideoReceiveStream& video_stream = *video_streams.front();
+  EXPECT_EQ(0, video_stream.GetNumAddedSecondarySinks());
+  EXPECT_EQ(0, video_stream.GetNumRemovedSecondarySinks());
 
   // Enable FlexFEC.
   recv_parameters.codecs.push_back(GetEngineCodec("flexfec-03"));
@@ -2781,6 +2795,8 @@ TEST_F(WebRtcVideoChannelFlexfecRecvTest,
       << "Enabling FlexFEC should not create VideoReceiveStream.";
   EXPECT_EQ(1U, fake_call_->GetFlexfecReceiveStreams().size())
       << "Enabling FlexFEC should create a single FlexfecReceiveStream.";
+  EXPECT_EQ(1, video_stream.GetNumAddedSecondarySinks());
+  EXPECT_EQ(0, video_stream.GetNumRemovedSecondarySinks());
 }
 
 TEST_F(WebRtcVideoChannelFlexfecRecvTest,
@@ -2793,8 +2809,13 @@ TEST_F(WebRtcVideoChannelFlexfecRecvTest,
   AddRecvStream(
       CreatePrimaryWithFecFrStreamParams("cname", kSsrcs1[0], kFlexfecSsrc));
   EXPECT_EQ(2, fake_call_->GetNumCreatedReceiveStreams());
-  EXPECT_EQ(1U, fake_call_->GetVideoReceiveStreams().size());
   EXPECT_EQ(1U, fake_call_->GetFlexfecReceiveStreams().size());
+  const std::vector<FakeVideoReceiveStream*>& video_streams =
+      fake_call_->GetVideoReceiveStreams();
+  ASSERT_EQ(1U, video_streams.size());
+  const FakeVideoReceiveStream& video_stream = *video_streams.front();
+  EXPECT_EQ(1, video_stream.GetNumAddedSecondarySinks());
+  EXPECT_EQ(0, video_stream.GetNumRemovedSecondarySinks());
 
   // Disable FlexFEC.
   recv_parameters.codecs.clear();
@@ -2806,6 +2827,8 @@ TEST_F(WebRtcVideoChannelFlexfecRecvTest,
       << "Disabling FlexFEC should not destroy VideoReceiveStream.";
   EXPECT_TRUE(fake_call_->GetFlexfecReceiveStreams().empty())
       << "Disabling FlexFEC should destroy FlexfecReceiveStream.";
+  EXPECT_EQ(1, video_stream.GetNumAddedSecondarySinks());
+  EXPECT_EQ(1, video_stream.GetNumRemovedSecondarySinks());
 }
 
 // TODO(brandtr): When FlexFEC is no longer behind a field trial, merge all
