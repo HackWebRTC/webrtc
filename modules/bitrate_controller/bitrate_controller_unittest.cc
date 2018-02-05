@@ -340,11 +340,11 @@ TEST_F(BitrateControllerTest, OneBitrateObserverMultipleReportBlocks) {
   report_blocks.clear();
 
   // All packets lost on stream with few packets, no back-off.
-  report_blocks.push_back(CreateReportBlock(1, 2, 1, sequence_number[0]));
+  report_blocks.push_back(CreateReportBlock(1, 2, 0, sequence_number[0]));
   report_blocks.push_back(CreateReportBlock(1, 3, 255, sequence_number[1]));
   bandwidth_observer_->OnReceivedRtcpReceiverReport(report_blocks, 50, time_ms);
   EXPECT_EQ(bitrate_observer_.last_bitrate_, last_bitrate);
-  EXPECT_EQ(WeightedLoss(20, 1, 1, 255), bitrate_observer_.last_fraction_loss_);
+  EXPECT_EQ(WeightedLoss(20, 0, 1, 255), bitrate_observer_.last_fraction_loss_);
   EXPECT_EQ(50, bitrate_observer_.last_rtt_);
   last_bitrate = bitrate_observer_.last_bitrate_;
   sequence_number[0] += 20;

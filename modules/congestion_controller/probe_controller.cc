@@ -21,6 +21,12 @@
 namespace webrtc {
 
 namespace {
+// The minimum number probing packets used.
+constexpr int kMinProbePacketsSent = 5;
+
+// The minimum probing duration in ms.
+constexpr int kMinProbeDurationMs = 15;
+
 // Maximum waiting time from the time of initiating probing to getting
 // the measured results back.
 constexpr int64_t kMaxWaitingTimeForProbingResultMs = 1000;
@@ -69,19 +75,20 @@ constexpr char kBweRapidRecoveryExperiment[] =
 
 }  // namespace
 
-ProbeController::ProbeController(PacedSender* pacer, const Clock* clock)
-    : pacer_(pacer), clock_(clock), enable_periodic_alr_probing_(false) {
-  Reset();
+ProbeController::ProbeController(NetworkControllerObserver* observer)
+    : observer_(observer), enable_periodic_alr_probing_(false) {
+  Reset(0);
   in_rapid_recovery_experiment_ = webrtc::field_trial::FindFullName(
                                       kBweRapidRecoveryExperiment) == "Enabled";
 }
 
+ProbeController::~ProbeController() {}
+
 void ProbeController::SetBitrates(int64_t min_bitrate_bps,
                                   int64_t start_bitrate_bps,
-                                  int64_t max_bitrate_bps) {
-  rtc::CritScope cs(&critsect_);
-
-  if (start_bitrate_bps > 0)  {
+                                  int64_t max_bitrate_bps,
+                                  int64_t at_time_ms) {
+  if (start_bitrate_bps > 0) {
     start_bitrate_bps_ = start_bitrate_bps;
     estimated_bitrate_bps_ = start_bitrate_bps;
   } else if (start_bitrate_bps_ == 0) {
@@ -95,8 +102,8 @@ void ProbeController::SetBitrates(int64_t min_bitrate_bps,
 
   switch (state_) {
     case State::kInit:
-      if (network_state_ == kNetworkUp)
-        InitiateExponentialProbing();
+      if (network_available_)
+        InitiateExponentialProbing(at_time_ms);
       break;
 
     case State::kWaitingForProbingResult:
@@ -119,33 +126,32 @@ void ProbeController::SetBitrates(int64_t min_bitrate_bps,
         RTC_HISTOGRAM_COUNTS_10000("WebRTC.BWE.MidCallProbing.Initiated",
                                    max_bitrate_bps_ / 1000);
 
-        InitiateProbing(clock_->TimeInMilliseconds(), {max_bitrate_bps}, false);
+        InitiateProbing(at_time_ms, {max_bitrate_bps}, false);
       }
       break;
   }
 }
 
-void ProbeController::OnNetworkStateChanged(NetworkState network_state) {
-  rtc::CritScope cs(&critsect_);
-  network_state_ = network_state;
-  if (network_state_ == kNetworkUp && state_ == State::kInit)
-    InitiateExponentialProbing();
+void ProbeController::OnNetworkAvailability(NetworkAvailability msg) {
+  network_available_ = msg.network_available;
+  if (network_available_ && state_ == State::kInit && start_bitrate_bps_ > 0)
+    InitiateExponentialProbing(msg.at_time.ms());
 }
 
-void ProbeController::InitiateExponentialProbing() {
-  RTC_DCHECK(network_state_ == kNetworkUp);
+void ProbeController::InitiateExponentialProbing(int64_t at_time_ms) {
+  RTC_DCHECK(network_available_);
   RTC_DCHECK(state_ == State::kInit);
   RTC_DCHECK_GT(start_bitrate_bps_, 0);
 
   // When probing at 1.8 Mbps ( 6x 300), this represents a threshold of
   // 1.2 Mbps to continue probing.
-  InitiateProbing(clock_->TimeInMilliseconds(),
-                  {3 * start_bitrate_bps_, 6 * start_bitrate_bps_}, true);
+  InitiateProbing(at_time_ms, {3 * start_bitrate_bps_, 6 * start_bitrate_bps_},
+                  true);
 }
 
-void ProbeController::SetEstimatedBitrate(int64_t bitrate_bps) {
-  rtc::CritScope cs(&critsect_);
-  int64_t now_ms = clock_->TimeInMilliseconds();
+void ProbeController::SetEstimatedBitrate(int64_t bitrate_bps,
+                                          int64_t at_time_ms) {
+  int64_t now_ms = at_time_ms;
 
   if (mid_call_probing_waiting_for_result_ &&
       bitrate_bps >= mid_call_probing_succcess_threshold_) {
@@ -179,36 +185,36 @@ void ProbeController::SetEstimatedBitrate(int64_t bitrate_bps) {
 }
 
 void ProbeController::EnablePeriodicAlrProbing(bool enable) {
-  rtc::CritScope cs(&critsect_);
   enable_periodic_alr_probing_ = enable;
 }
 
+void ProbeController::SetAlrStartTimeMs(
+    rtc::Optional<int64_t> alr_start_time_ms) {
+  alr_start_time_ms_ = alr_start_time_ms;
+}
 void ProbeController::SetAlrEndedTimeMs(int64_t alr_end_time_ms) {
-  rtc::CritScope cs(&critsect_);
   alr_end_time_ms_.emplace(alr_end_time_ms);
 }
 
-void ProbeController::RequestProbe() {
-  int64_t now_ms = clock_->TimeInMilliseconds();
-  rtc::CritScope cs(&critsect_);
+void ProbeController::RequestProbe(int64_t at_time_ms) {
   // Called once we have returned to normal state after a large drop in
   // estimated bandwidth. The current response is to initiate a single probe
   // session (if not already probing) at the previous bitrate.
   //
   // If the probe session fails, the assumption is that this drop was a
   // real one from a competing flow or a network change.
-  bool in_alr = pacer_->GetApplicationLimitedRegionStartTime().has_value();
+  bool in_alr = alr_start_time_ms_.has_value();
   bool alr_ended_recently =
       (alr_end_time_ms_.has_value() &&
-       now_ms - alr_end_time_ms_.value() < kAlrEndedTimeoutMs);
+       at_time_ms - alr_end_time_ms_.value() < kAlrEndedTimeoutMs);
   if (in_alr || alr_ended_recently || in_rapid_recovery_experiment_) {
     if (state_ == State::kProbingComplete) {
       uint32_t suggested_probe_bps =
           kProbeFractionAfterDrop * bitrate_before_last_large_drop_bps_;
       uint32_t min_expected_probe_result_bps =
           (1 - kProbeUncertainty) * suggested_probe_bps;
-      int64_t time_since_drop_ms = now_ms - time_of_last_large_drop_ms_;
-      int64_t time_since_probe_ms = now_ms - last_bwe_drop_probing_time_ms_;
+      int64_t time_since_drop_ms = at_time_ms - time_of_last_large_drop_ms_;
+      int64_t time_since_probe_ms = at_time_ms - last_bwe_drop_probing_time_ms_;
       if (min_expected_probe_result_bps > estimated_bitrate_bps_ &&
           time_since_drop_ms < kBitrateDropTimeoutMs &&
           time_since_probe_ms > kMinTimeBetweenAlrProbesMs) {
@@ -216,24 +222,23 @@ void ProbeController::RequestProbe() {
         // Track how often we probe in response to bandwidth drop in ALR.
         RTC_HISTOGRAM_COUNTS_10000(
             "WebRTC.BWE.BweDropProbingIntervalInS",
-            (now_ms - last_bwe_drop_probing_time_ms_) / 1000);
-        InitiateProbing(now_ms, {suggested_probe_bps}, false);
-        last_bwe_drop_probing_time_ms_ = now_ms;
+            (at_time_ms - last_bwe_drop_probing_time_ms_) / 1000);
+        InitiateProbing(at_time_ms, {suggested_probe_bps}, false);
+        last_bwe_drop_probing_time_ms_ = at_time_ms;
       }
     }
   }
 }
 
-void ProbeController::Reset() {
-  rtc::CritScope cs(&critsect_);
-  network_state_ = kNetworkUp;
+void ProbeController::Reset(int64_t at_time_ms) {
+  network_available_ = true;
   state_ = State::kInit;
   min_bitrate_to_probe_further_bps_ = kExponentialProbingDisabled;
   time_last_probing_initiated_ms_ = 0;
   estimated_bitrate_bps_ = 0;
   start_bitrate_bps_ = 0;
   max_bitrate_bps_ = 0;
-  int64_t now_ms = clock_->TimeInMilliseconds();
+  int64_t now_ms = at_time_ms;
   last_bwe_drop_probing_time_ms_ = now_ms;
   alr_end_time_ms_.reset();
   mid_call_probing_waiting_for_result_ = false;
@@ -241,10 +246,8 @@ void ProbeController::Reset() {
   bitrate_before_last_large_drop_bps_ = 0;
 }
 
-void ProbeController::Process() {
-  rtc::CritScope cs(&critsect_);
-
-  int64_t now_ms = clock_->TimeInMilliseconds();
+void ProbeController::Process(int64_t at_time_ms) {
+  int64_t now_ms = at_time_ms;
 
   if (now_ms - time_last_probing_initiated_ms_ >
       kMaxWaitingTimeForProbingResultMs) {
@@ -261,11 +264,9 @@ void ProbeController::Process() {
     return;
 
   // Probe bandwidth periodically when in ALR state.
-  rtc::Optional<int64_t> alr_start_time =
-      pacer_->GetApplicationLimitedRegionStartTime();
-  if (alr_start_time && estimated_bitrate_bps_ > 0) {
+  if (alr_start_time_ms_ && estimated_bitrate_bps_ > 0) {
     int64_t next_probe_time_ms =
-        std::max(*alr_start_time, time_last_probing_initiated_ms_) +
+        std::max(*alr_start_time_ms_, time_last_probing_initiated_ms_) +
         kAlrPeriodicProbingIntervalMs;
     if (now_ms >= next_probe_time_ms) {
       InitiateProbing(now_ms, {estimated_bitrate_bps_ * 2}, true);
@@ -285,7 +286,13 @@ void ProbeController::InitiateProbing(
       bitrate = max_probe_bitrate_bps;
       probe_further = false;
     }
-    pacer_->CreateProbeCluster(rtc::dchecked_cast<int>(bitrate));
+
+    ProbeClusterConfig config;
+    config.at_time = Timestamp::ms(now_ms);
+    config.target_data_rate = DataRate::bps(rtc::dchecked_cast<int>(bitrate));
+    config.target_duration = TimeDelta::ms(kMinProbeDurationMs);
+    config.target_probe_count = kMinProbePacketsSent;
+    observer_->OnProbeClusterConfig(config);
   }
   time_last_probing_initiated_ms_ = now_ms;
   if (probe_further) {

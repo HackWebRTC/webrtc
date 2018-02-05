@@ -27,6 +27,8 @@ bool IsInSendTimeHistory(const PacketFeedback& packet) {
 AcknowledgedBitrateEstimator::AcknowledgedBitrateEstimator()
     : AcknowledgedBitrateEstimator(rtc::MakeUnique<BitrateEstimator>()) {}
 
+AcknowledgedBitrateEstimator::~AcknowledgedBitrateEstimator() {}
+
 AcknowledgedBitrateEstimator::AcknowledgedBitrateEstimator(
     std::unique_ptr<BitrateEstimator> bitrate_estimator)
     : bitrate_estimator_(std::move(bitrate_estimator)) {}
