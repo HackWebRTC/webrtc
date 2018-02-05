@@ -60,6 +60,7 @@ rtc_static_library("common_audio") {
   ]
 
   deps = [
+    ":common_audio_c",
     ":sinc_resampler",
     "..:webrtc_common",
     "../:typedefs",
@@ -69,9 +70,6 @@ rtc_static_library("common_audio") {
     "../rtc_base:rtc_base_approved",
     "../system_wrappers",
     "../system_wrappers:cpu_features_api",
-  ]
-  public_deps = [
-    ":common_audio_c",
   ]
 
   defines = []
@@ -136,6 +134,7 @@ rtc_source_set("common_audio_c_arm_asm") {
 }
 
 rtc_source_set("common_audio_c") {
+  visibility += webrtc_default_visibility
   sources = [
     "fft4g.c",
     "fft4g.h",
@@ -348,19 +347,17 @@ if (rtc_build_with_neon) {
     }
 
     deps = [
+      ":common_audio_neon_c",
       ":fir_filter",
       ":sinc_resampler",
       "../rtc_base:checks",
       "../rtc_base:rtc_base_approved",
       "../system_wrappers",
     ]
-
-    public_deps = [
-      ":common_audio_neon_c",
-    ]
   }
 
   rtc_source_set("common_audio_neon_c") {
+    visibility += webrtc_default_visibility
     sources = [
       "signal_processing/cross_correlation_neon.c",
       "signal_processing/downsample_fast_neon.c",
@@ -447,6 +444,7 @@ if (rtc_include_tests) {
 
     deps = [
       ":common_audio",
+      ":common_audio_c",
       ":fir_filter",
       ":fir_filter_factory",
       ":sinc_resampler",

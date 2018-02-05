@@ -136,6 +136,7 @@ rtc_static_library("audio_coding") {
   }
 
   deps = audio_coding_deps + [
+           "../../common_audio:common_audio_c",
            "../..:typedefs",
            "../../rtc_base:deprecation",
            "../../rtc_base:checks",
@@ -187,6 +188,7 @@ rtc_static_library("cng") {
     "../../api:array_view",
     "../../api/audio_codecs:audio_codecs_api",
     "../../common_audio",
+    "../../common_audio:common_audio_c",
     "../../rtc_base:rtc_base_approved",
   ]
 }
@@ -473,6 +475,7 @@ rtc_source_set("ilbc_c") {
     "../..:webrtc_common",
     "../../api/audio_codecs:audio_codecs_api",
     "../../common_audio",
+    "../../common_audio:common_audio_c",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:sanitizer",
@@ -586,6 +589,7 @@ rtc_static_library("isac_c") {
     "../..:typedefs",
     "../..:webrtc_common",
     "../../common_audio",
+    "../../common_audio:common_audio_c",
     "../../rtc_base:checks",
     "../../rtc_base:compile_assert_c",
     "../../rtc_base:rtc_base_approved",
@@ -635,6 +639,7 @@ rtc_source_set("isac_fix_common") {
     ":isac_common",
     "../..:typedefs",
     "../../common_audio",
+    "../../common_audio:common_audio_c",
   ]
 }
 
@@ -703,6 +708,7 @@ rtc_source_set("isac_fix_c") {
     "../..:webrtc_common",
     "../../api/audio_codecs:audio_codecs_api",
     "../../common_audio",
+    "../../common_audio:common_audio_c",
     "../../rtc_base:checks",
     "../../rtc_base:compile_assert_c",
     "../../rtc_base:rtc_base_approved",
@@ -781,6 +787,7 @@ if (rtc_build_with_neon) {
     deps = [
       ":isac_fix_common",
       "../../common_audio",
+      "../../common_audio:common_audio_c",
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
     ]
@@ -1076,6 +1083,7 @@ rtc_static_library("neteq") {
     "../../api:optional",
     "../../api/audio_codecs:audio_codecs_api",
     "../../common_audio",
+    "../../common_audio:common_audio_c",
     "../../rtc_base:checks",
     "../../rtc_base:gtest_prod",
     "../../rtc_base:rtc_base_approved",
@@ -2037,6 +2045,7 @@ if (rtc_include_tests) {
       ":isac",
       ":isac_test_util",
       "../../common_audio",
+      "../../common_audio:common_audio_c",
     ]
 
     include_dirs = [
@@ -2193,6 +2202,7 @@ if (rtc_include_tests) {
       "../../api/audio_codecs/opus:audio_decoder_opus",
       "../../api/audio_codecs/opus:audio_encoder_opus",
       "../../common_audio",
+      "../../common_audio:common_audio_c",
       "../../common_audio:mock_common_audio",
       "../../logging:mocks",
       "../../logging:rtc_event_audio",
