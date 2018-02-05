@@ -177,7 +177,7 @@ public class MediaCodecVideoEncoder {
   private static final MediaCodecProperties exynosH264HwProperties = new MediaCodecProperties(
       "OMX.Exynos.", Build.VERSION_CODES.LOLLIPOP, BitrateAdjustmentType.FRAMERATE_ADJUSTMENT);
   private static final MediaCodecProperties mediatekH264HwProperties = new MediaCodecProperties(
-      "OMX.MTK.", Build.VERSION_CODES.O, BitrateAdjustmentType.FRAMERATE_ADJUSTMENT);
+      "OMX.MTK.", Build.VERSION_CODES.O_MR1, BitrateAdjustmentType.FRAMERATE_ADJUSTMENT);
   private static final MediaCodecProperties[] h264HwList() {
     final ArrayList<MediaCodecProperties> supported_codecs = new ArrayList<MediaCodecProperties>();
     supported_codecs.add(qcomH264HwProperties);

@@ -104,7 +104,7 @@ public class MediaCodecVideoDecoder {
     supportedPrefixes.add("OMX.Intel.");
     supportedPrefixes.add("OMX.Exynos.");
     if (PeerConnectionFactory.fieldTrialsFindFullName("WebRTC-MediaTekH264").equals("Enabled")
-        && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
       supportedPrefixes.add("OMX.MTK.");
     }
     return supportedPrefixes.toArray(new String[supportedPrefixes.size()]);
@@ -210,9 +210,9 @@ public class MediaCodecVideoDecoder {
             != null) {
       return true;
     }
-    // Support H.264 HP decoding on MediaTek chips for Android O and above
+    // Support H.264 HP decoding on MediaTek chips for Android O_MR1 and above
     if (PeerConnectionFactory.fieldTrialsFindFullName("WebRTC-MediaTekH264").equals("Enabled")
-        && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+        && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1
         && findDecoder(H264_MIME_TYPE, new String[] {supportedMediaTekH264HighProfileHwCodecPrefix})
             != null) {
       return true;
