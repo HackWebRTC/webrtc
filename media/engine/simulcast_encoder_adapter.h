@@ -35,8 +35,6 @@ class VideoEncoderFactory;
 class SimulcastEncoderAdapter : public VP8Encoder {
  public:
   explicit SimulcastEncoderAdapter(VideoEncoderFactory* factory);
-  // Deprecated - use webrtc::VideoEncoderFactory instead.
-  explicit SimulcastEncoderAdapter(cricket::WebRtcVideoEncoderFactory* factory);
   virtual ~SimulcastEncoderAdapter();
 
   // Implements VideoEncoder.
@@ -100,7 +98,6 @@ class SimulcastEncoderAdapter : public VP8Encoder {
 
   volatile int inited_;  // Accessed atomically.
   VideoEncoderFactory* const factory_;
-  cricket::WebRtcVideoEncoderFactory* const cricket_factory_;
   VideoCodec codec_;
   std::vector<StreamInfo> streaminfos_;
   EncodedImageCallback* encoded_complete_callback_;

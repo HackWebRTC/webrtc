@@ -137,23 +137,10 @@ namespace webrtc {
 SimulcastEncoderAdapter::SimulcastEncoderAdapter(VideoEncoderFactory* factory)
     : inited_(0),
       factory_(factory),
-      cricket_factory_(nullptr),
       encoded_complete_callback_(nullptr),
       implementation_name_("SimulcastEncoderAdapter") {
-  // The adapter is typically created on the worker thread, but operated on
-  // the encoder task queue.
-  encoder_queue_.Detach();
+  RTC_DCHECK(factory_);
 
-  memset(&codec_, 0, sizeof(webrtc::VideoCodec));
-}
-
-SimulcastEncoderAdapter::SimulcastEncoderAdapter(
-    cricket::WebRtcVideoEncoderFactory* factory)
-    : inited_(0),
-      factory_(nullptr),
-      cricket_factory_(factory),
-      encoded_complete_callback_(nullptr),
-      implementation_name_("SimulcastEncoderAdapter") {
   // The adapter is typically created on the worker thread, but operated on
   // the encoder task queue.
   encoder_queue_.Detach();
@@ -260,9 +247,7 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
       encoder = std::move(stored_encoders_.top());
       stored_encoders_.pop();
     } else {
-      encoder = factory_ ? factory_->CreateVideoEncoder(SdpVideoFormat("VP8"))
-                         : CreateScopedVideoEncoder(cricket_factory_,
-                                                    cricket::VideoCodec("VP8"));
+      encoder = factory_->CreateVideoEncoder(SdpVideoFormat("VP8"));
     }
 
     ret = encoder->InitEncode(&stream_codec, number_of_cores, max_payload_size);
