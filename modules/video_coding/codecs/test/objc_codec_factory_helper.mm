@@ -8,13 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/video_coding/codecs/test/objc_codec_h264_test.h"
+#include "modules/video_coding/codecs/test/objc_codec_factory_helper.h"
 
 #import "WebRTC/RTCVideoCodecH264.h"
 #include "sdk/objc/Framework/Native/api/video_decoder_factory.h"
 #include "sdk/objc/Framework/Native/api/video_encoder_factory.h"
 
 namespace webrtc {
+namespace test {
 
 std::unique_ptr<VideoEncoderFactory> CreateObjCEncoderFactory() {
   return ObjCToNativeVideoEncoderFactory([[RTCVideoEncoderFactoryH264 alloc] init]);
@@ -24,4 +25,5 @@ std::unique_ptr<VideoDecoderFactory> CreateObjCDecoderFactory() {
   return ObjCToNativeVideoDecoderFactory([[RTCVideoDecoderFactoryH264 alloc] init]);
 }
 
+}  // namespace test
 }  // namespace webrtc

@@ -18,8 +18,6 @@
 namespace webrtc {
 namespace test {
 
-#if defined(WEBRTC_IOS)
-
 namespace {
 const int kForemanNumFrames = 300;
 const std::nullptr_t kNoVisualizationParams = nullptr;
@@ -79,8 +77,6 @@ TEST_F(VideoProcessorIntegrationTestVideoToolbox,
                               &quality_thresholds, nullptr,
                               kNoVisualizationParams);
 }
-
-#endif  // defined(WEBRTC_IOS)
 
 }  // namespace test
 }  // namespace webrtc

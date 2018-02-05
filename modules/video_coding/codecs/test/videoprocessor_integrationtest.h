@@ -19,8 +19,6 @@
 
 #include "common_types.h"  // NOLINT(build/include)
 #include "common_video/h264/h264_common.h"
-#include "media/engine/webrtcvideodecoderfactory.h"
-#include "media/engine/webrtcvideoencoderfactory.h"
 #include "modules/video_coding/codecs/test/stats.h"
 #include "modules/video_coding/codecs/test/test_config.h"
 #include "modules/video_coding/codecs/test/videoprocessor.h"

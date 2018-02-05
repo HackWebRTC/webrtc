@@ -19,8 +19,6 @@
 namespace webrtc {
 namespace test {
 
-#if defined(WEBRTC_ANDROID)
-
 namespace {
 const int kForemanNumFrames = 300;
 const std::nullptr_t kNoVisualizationParams = nullptr;
@@ -104,8 +102,6 @@ TEST_F(VideoProcessorIntegrationTestMediaCodec,
                               &quality_thresholds, nullptr,
                               kNoVisualizationParams);
 }
-
-#endif  // defined(WEBRTC_ANDROID)
 
 }  // namespace test
 }  // namespace webrtc
