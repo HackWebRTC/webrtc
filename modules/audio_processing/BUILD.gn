@@ -155,6 +155,7 @@ rtc_static_library("audio_processing") {
     "include/audio_processing.h",
     "include/config.cc",
     "include/config.h",
+    "include/echo_control.h",
     "level_controller/biquad_filter.cc",
     "level_controller/biquad_filter.h",
     "level_controller/down_sampler.cc",

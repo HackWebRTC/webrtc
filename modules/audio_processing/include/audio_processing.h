@@ -26,6 +26,7 @@
 #include "modules/audio_processing/beamformer/array_util.h"
 #include "modules/audio_processing/include/audio_processing_statistics.h"
 #include "modules/audio_processing/include/config.h"
+#include "modules/audio_processing/include/echo_control.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/deprecation.h"
 #include "rtc_base/platform_file.h"
@@ -48,7 +49,6 @@ class ProcessingConfig;
 
 class EchoCancellation;
 class EchoControlMobile;
-class EchoControlFactory;
 class EchoDetector;
 class GainControl;
 class HighPassFilter;
@@ -911,37 +911,6 @@ class EchoControlMobile {
 
  protected:
   virtual ~EchoControlMobile() {}
-};
-
-// Interface for an acoustic echo cancellation (AEC) submodule.
-class EchoControl {
- public:
-  // Analysis (not changing) of the render signal.
-  virtual void AnalyzeRender(AudioBuffer* render) = 0;
-
-  // Analysis (not changing) of the capture signal.
-  virtual void AnalyzeCapture(AudioBuffer* capture) = 0;
-
-  // Processes the capture signal in order to remove the echo.
-  virtual void ProcessCapture(AudioBuffer* capture, bool echo_path_change) = 0;
-
-  struct Metrics {
-    double echo_return_loss;
-    double echo_return_loss_enhancement;
-    int delay_ms;
-  };
-
-  // Collect current metrics from the echo controller.
-  virtual Metrics GetMetrics() const = 0;
-
-  virtual ~EchoControl() {}
-};
-
-// Interface for a factory that creates EchoControllers.
-class EchoControlFactory {
- public:
-  virtual std::unique_ptr<EchoControl> Create(int sample_rate_hz) = 0;
-  virtual ~EchoControlFactory() = default;
 };
 
 // The automatic gain control (AGC) component brings the signal to an
