@@ -61,14 +61,6 @@ static const int
     kDefaultConferenceNumberOfTemporalLayers[webrtc::kMaxSimulcastStreams] =
     {3, 3, 3, 3};
 
-void GetSimulcastSsrcs(const StreamParams& sp, std::vector<uint32_t>* ssrcs) {
-  const SsrcGroup* sim_group = sp.get_ssrc_group(kSimSsrcGroupSemantics);
-  if (sim_group) {
-    ssrcs->insert(
-        ssrcs->end(), sim_group->ssrcs.begin(), sim_group->ssrcs.end());
-  }
-}
-
 int FindSimulcastFormatIndex(int width, int height) {
   RTC_DCHECK_GE(width, 0);
   RTC_DCHECK_GE(height, 0);

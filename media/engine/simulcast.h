@@ -43,9 +43,6 @@ struct ScreenshareLayerConfig {
 
 int GetTotalMaxBitrateBps(const std::vector<webrtc::VideoStream>& streams);
 
-// Get the ssrcs of the SIM group from the stream params.
-void GetSimulcastSsrcs(const StreamParams& sp, std::vector<uint32_t>* ssrcs);
-
 // Get simulcast settings.
 // TODO(sprang): Remove default parameter when it's not longer referenced.
 std::vector<webrtc::VideoStream> GetSimulcastConfig(size_t max_streams,
