@@ -289,6 +289,7 @@ if (rtc_include_tests) {
     deps = [
       "../modules:module_api",
       "../modules/audio_processing",
+      "../modules/audio_processing/vad",
       "../rtc_base:rtc_base_approved",
       "../system_wrappers:metrics_default",
       "../test:test_support",

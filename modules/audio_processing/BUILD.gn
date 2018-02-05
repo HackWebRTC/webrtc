@@ -206,26 +206,6 @@ rtc_static_library("audio_processing") {
     "transient/wpd_tree.h",
     "typing_detection.cc",
     "typing_detection.h",
-    "vad/common.h",
-    "vad/gmm.cc",
-    "vad/gmm.h",
-    "vad/noise_gmm_tables.h",
-    "vad/pitch_based_vad.cc",
-    "vad/pitch_based_vad.h",
-    "vad/pitch_internal.cc",
-    "vad/pitch_internal.h",
-    "vad/pole_zero_filter.cc",
-    "vad/pole_zero_filter.h",
-    "vad/standalone_vad.cc",
-    "vad/standalone_vad.h",
-    "vad/vad_audio_proc.cc",
-    "vad/vad_audio_proc.h",
-    "vad/vad_audio_proc_internal.h",
-    "vad/vad_circular_buffer.cc",
-    "vad/vad_circular_buffer.h",
-    "vad/voice_activity_detector.cc",
-    "vad/voice_activity_detector.h",
-    "vad/voice_gmm_tables.h",
     "voice_detection_impl.cc",
     "voice_detection_impl.h",
   ]
@@ -251,7 +231,7 @@ rtc_static_library("audio_processing") {
     "../../system_wrappers:cpu_features_api",
     "../../system_wrappers:field_trial_api",
     "../../system_wrappers:metrics_api",
-    "../audio_coding:isac",
+    "vad",
   ]
 
   if (aec_untrusted_delay_for_testing) {
@@ -573,14 +553,6 @@ if (rtc_include_tests) {
       "transient/wpd_tree_unittest.cc",
       "utility/block_mean_calculator_unittest.cc",
       "utility/delay_estimator_unittest.cc",
-      "vad/gmm_unittest.cc",
-      "vad/pitch_based_vad_unittest.cc",
-      "vad/pitch_internal_unittest.cc",
-      "vad/pole_zero_filter_unittest.cc",
-      "vad/standalone_vad_unittest.cc",
-      "vad/vad_audio_proc_unittest.cc",
-      "vad/vad_circular_buffer_unittest.cc",
-      "vad/voice_activity_detector_unittest.cc",
     ]
 
     deps = [
@@ -607,6 +579,7 @@ if (rtc_include_tests) {
       "../audio_coding:neteq_input_audio_tools",
       "aec_dump:mock_aec_dump_unittests",
       "test/conversational_speech:unittest",
+      "vad:vad_unittests",
       "//testing/gtest",
     ]
 
@@ -876,6 +849,7 @@ if (rtc_include_tests) {
       deps = [
         ":audio_processing",
         ":audioproc_test_utils",
+        "../../common_audio",
         "../../rtc_base:rtc_base_approved",
         "../../system_wrappers:metrics_default",
         "../../test:test_support",
