@@ -240,8 +240,6 @@ if (rtc_include_tests) {
     sources = [
       "testsupport/frame_reader.h",
       "testsupport/frame_writer.h",
-      "testsupport/metrics/video_metrics.cc",
-      "testsupport/metrics/video_metrics.h",
       "testsupport/mock/mock_frame_reader.h",
       "testsupport/y4m_frame_writer.cc",
       "testsupport/yuv_frame_reader.cc",
@@ -344,7 +342,6 @@ if (rtc_include_tests) {
       "rtp_file_writer_unittest.cc",
       "single_threaded_task_queue_unittest.cc",
       "testsupport/always_passing_unittest.cc",
-      "testsupport/metrics/video_metrics_unittest.cc",
       "testsupport/perf_test_unittest.cc",
       "testsupport/test_artifacts_unittest.cc",
       "testsupport/y4m_frame_writer_unittest.cc",

@@ -36,7 +36,6 @@
 #include "rtc_base/ptr_util.h"
 #include "system_wrappers/include/sleep.h"
 #include "test/testsupport/fileutils.h"
-#include "test/testsupport/metrics/video_metrics.h"
 
 namespace webrtc {
 namespace test {
