@@ -499,6 +499,7 @@ if (rtc_include_tests) {
       "../rtc_base:rtc_base_approved",
       "../rtc_base:rtc_base_tests_main",
       "../rtc_base:rtc_base_tests_utils",
+      "../rtc_base:rtc_task_queue_api",
       "../system_wrappers:metrics_default",
       "../system_wrappers:runtime_enabled_features_default",
       "../test:audio_codec_mocks",
