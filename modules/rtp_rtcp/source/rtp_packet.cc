@@ -499,11 +499,15 @@ bool RtpPacket::ParseBuffer(const uint8_t* buffer, size_t size) {
               << "Duplicate rtp header extension id " << id << ". Overwriting.";
         }
 
-        extensions_size_ += kOneByteHeaderSize;
-        extension_entries_[idx].offset =
-            rtc::dchecked_cast<uint16_t>(extension_offset + extensions_size_);
-        extension_entries_[idx].length = rtc::dchecked_cast<uint16_t>(length);
-        extensions_size_ += length;
+        size_t offset =
+            extension_offset + extensions_size_ + kOneByteHeaderSize;
+        if (!rtc::IsValueInRangeForNumericType<uint16_t>(offset)) {
+          RTC_DLOG(LS_WARNING) << "Oversized rtp header extension.";
+          break;
+        }
+        extension_entries_[idx].offset = static_cast<uint16_t>(offset);
+        extension_entries_[idx].length = length;
+        extensions_size_ += kOneByteHeaderSize + length;
       }
     }
     payload_offset_ = extension_offset + extensions_capacity;
