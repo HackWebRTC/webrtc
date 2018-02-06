@@ -1797,9 +1797,20 @@ void VideoQualityTest::CreateVideoStreams() {
   RTC_DCHECK(video_send_streams_.empty());
   RTC_DCHECK(video_receive_streams_.empty());
   RTC_DCHECK_EQ(video_send_configs_.size(), num_video_streams_);
+  // We currently only support testing external fec controllers with a single
+  // VideoSendStream.
+  if (fec_controller_.get()) {
+    RTC_DCHECK_LE(video_send_configs_.size(), 1);
+  }
   for (size_t i = 0; i < video_send_configs_.size(); ++i) {
-    video_send_streams_.push_back(sender_call_->CreateVideoSendStream(
-        video_send_configs_[i].Copy(), video_encoder_configs_[i].Copy()));
+    if (fec_controller_.get()) {
+      video_send_streams_.push_back(sender_call_->CreateVideoSendStream(
+          video_send_configs_[i].Copy(), video_encoder_configs_[i].Copy(),
+          std::move(fec_controller_)));
+    } else {
+      video_send_streams_.push_back(sender_call_->CreateVideoSendStream(
+          video_send_configs_[i].Copy(), video_encoder_configs_[i].Copy()));
+    }
   }
   for (size_t i = 0; i < video_receive_configs_.size(); ++i) {
     video_receive_streams_.push_back(receiver_call_->CreateVideoReceiveStream(
