@@ -366,6 +366,14 @@ struct RtpEncodingParameters {
   // of the rtp parameters).
   double bitrate_priority = kDefaultBitratePriority;
 
+  // Indicates the preferred duration of media represented by a packet in
+  // milliseconds for this encoding. If set, this will take precedence over the
+  // ptime set in the RtpCodecParameters. This could happen if SDP negotiation
+  // creates a ptime for a specific codec, which is later changed in the
+  // RtpEncodingParameters by the application.
+  // TODO(bugs.webrtc.org/8819): Not implemented.
+  rtc::Optional<int> ptime;
+
   // If set, this represents the Transport Independent Application Specific
   // maximum bandwidth defined in RFC3890. If unset, there is no maximum
   // bitrate.
@@ -390,9 +398,9 @@ struct RtpEncodingParameters {
   double scale_framerate_down_by = 1.0;
 
   // For an RtpSender, set to true to cause this encoding to be sent, and false
-  // for it not to be sent. For an RtpReceiver, set to true to cause the
-  // encoding to be decoded, and false for it to be ignored.
-  // TODO(deadbeef): Not implemented for PeerConnection RtpReceivers.
+  // for it not to be sent.
+  // TODO(bugs.webrtc.org/8653): Currently this is implemented per sender.
+  // Implement per-encoding.
   bool active = true;
 
   // Value to use for RID RTP header extension.
@@ -408,7 +416,7 @@ struct RtpEncodingParameters {
   bool operator==(const RtpEncodingParameters& o) const {
     return ssrc == o.ssrc && codec_payload_type == o.codec_payload_type &&
            fec == o.fec && rtx == o.rtx && dtx == o.dtx &&
-           bitrate_priority == o.bitrate_priority &&
+           bitrate_priority == o.bitrate_priority && ptime == o.ptime &&
            max_bitrate_bps == o.max_bitrate_bps &&
            max_framerate == o.max_framerate &&
            scale_resolution_down_by == o.scale_resolution_down_by &&
