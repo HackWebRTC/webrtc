@@ -400,13 +400,6 @@ class FileStream : public StreamInterface {
 
   bool Flush() override;
 
-#if defined(WEBRTC_POSIX) && !defined(__native_client__)
-  // Tries to aquire an exclusive lock on the file.
-  // Use OpenShare(...) on win32 to get similar functionality.
-  bool TryLock();
-  bool Unlock();
-#endif
-
  protected:
   virtual void DoClose();
 

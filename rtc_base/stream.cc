@@ -481,30 +481,6 @@ bool FileStream::Flush() {
   return false;
 }
 
-#if defined(WEBRTC_POSIX) && !defined(__native_client__)
-
-bool FileStream::TryLock() {
-  if (file_ == nullptr) {
-    // Stream not open.
-    RTC_NOTREACHED();
-    return false;
-  }
-
-  return flock(fileno(file_), LOCK_EX|LOCK_NB) == 0;
-}
-
-bool FileStream::Unlock() {
-  if (file_ == nullptr) {
-    // Stream not open.
-    RTC_NOTREACHED();
-    return false;
-  }
-
-  return flock(fileno(file_), LOCK_UN) == 0;
-}
-
-#endif
-
 void FileStream::DoClose() {
   fclose(file_);
 }

@@ -297,8 +297,8 @@ bool PlatformThread::SetPriority(ThreadPriority priority) {
 
 #if defined(WEBRTC_WIN)
   return SetThreadPriority(thread_, priority) != FALSE;
-#elif defined(__native_client__)
-  // Setting thread priorities is not supported in NaCl.
+#elif defined(__native_client__) || defined(WEBRTC_FUCHSIA)
+  // Setting thread priorities is not supported in NaCl or Fuchsia.
   return true;
 #elif defined(WEBRTC_CHROMIUM_BUILD) && defined(WEBRTC_LINUX)
   // TODO(tommi): Switch to the same mechanism as Chromium uses for changing
