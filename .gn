@@ -42,7 +42,9 @@ check_targets = [
   "//system_wrappers/*",
   "//test/*",
   "//video/*",
-  "//third_party/libyuv/*",
+
+  # TODO(mbonadei): re-enable when libyuv 'gn check' will be fixed.
+  # "//third_party/libyuv/*",
 ]
 
 # These are the list of GN files that run exec_script. This whitelist exists
