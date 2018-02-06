@@ -10,6 +10,7 @@
 
 #include "pc/trackmediainfomap.h"
 
+#include <string>
 #include <utility>
 
 namespace webrtc {

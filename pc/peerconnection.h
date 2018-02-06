@@ -253,9 +253,9 @@ class PeerConnection : public PeerConnectionInternal,
     return sctp_transport_name_;
   }
 
-  std::unique_ptr<SessionStats> GetSessionStats_s() override;
-  std::unique_ptr<SessionStats> GetSessionStats(
-      const ChannelNamePairs& channel_name_pairs) override;
+  std::map<std::string, std::string> GetTransportNamesByMid() const override;
+  std::map<std::string, cricket::TransportStats> GetTransportStatsByNames(
+      const std::set<std::string>& transport_names) override;
   Call::Stats GetCallStats() override;
 
   bool GetLocalCertificate(
@@ -811,9 +811,6 @@ class PeerConnection : public PeerConnectionInternal,
                                             const std::string& transport_name);
   bool CreateDataChannel(const std::string& mid,
                          const std::string& transport_name);
-
-  std::unique_ptr<SessionStats> GetSessionStats_n(
-      const ChannelNamePairs& channel_name_pairs);
 
   bool CreateSctpTransport_n(const std::string& content_name,
                              const std::string& transport_name);

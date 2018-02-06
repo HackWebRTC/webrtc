@@ -11,7 +11,9 @@
 #ifndef PC_TEST_FAKEPEERCONNECTIONBASE_H_
 #define PC_TEST_FAKEPEERCONNECTIONBASE_H_
 
+#include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -277,11 +279,13 @@ class FakePeerConnectionBase : public PeerConnectionInternal {
     return rtc::nullopt;
   }
 
-  std::unique_ptr<SessionStats> GetSessionStats_s() override { return nullptr; }
+  std::map<std::string, std::string> GetTransportNamesByMid() const override {
+    return {};
+  }
 
-  std::unique_ptr<SessionStats> GetSessionStats(
-      const ChannelNamePairs& channel_name_pairs) override {
-    return nullptr;
+  std::map<std::string, cricket::TransportStats> GetTransportStatsByNames(
+      const std::set<std::string>& transport_names) override {
+    return {};
   }
 
   Call::Stats GetCallStats() override { return Call::Stats(); }

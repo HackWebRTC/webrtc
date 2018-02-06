@@ -13,6 +13,7 @@
 
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -21,27 +22,6 @@
 #include "pc/rtptransceiver.h"
 
 namespace webrtc {
-
-// Statistics for all the transports of the session.
-// TODO(pthatcher): Think of a better name for this.  We already have
-// a TransportStats in transport.h.  Perhaps TransportsStats?
-struct SessionStats {
-  std::map<std::string, cricket::TransportStats> transport_stats;
-};
-
-struct ChannelNamePair {
-  ChannelNamePair(const std::string& content_name,
-                  const std::string& transport_name)
-      : content_name(content_name), transport_name(transport_name) {}
-  std::string content_name;
-  std::string transport_name;
-};
-
-struct ChannelNamePairs {
-  rtc::Optional<ChannelNamePair> voice;
-  rtc::Optional<ChannelNamePair> video;
-  rtc::Optional<ChannelNamePair> data;
-};
 
 // Internal interface for extra PeerConnection methods.
 class PeerConnectionInternal : public PeerConnectionInterface {
@@ -80,16 +60,13 @@ class PeerConnectionInternal : public PeerConnectionInterface {
   virtual rtc::Optional<std::string> sctp_content_name() const = 0;
   virtual rtc::Optional<std::string> sctp_transport_name() const = 0;
 
-  // Returns stats for all channels of all transports.
-  // This avoids exposing the internal structures used to track them.
-  // The parameterless version creates |ChannelNamePairs| from |voice_channel|,
-  // |video_channel| and |voice_channel| if available - this requires it to be
-  // called on the signaling thread - and invokes the other |GetStats|. The
-  // other |GetStats| can be invoked on any thread; if not invoked on the
-  // network thread a thread hop will happen.
-  virtual std::unique_ptr<SessionStats> GetSessionStats_s() = 0;
-  virtual std::unique_ptr<SessionStats> GetSessionStats(
-      const ChannelNamePairs& channel_name_pairs) = 0;
+  // Returns a map from MID to transport name for all active media sections.
+  virtual std::map<std::string, std::string> GetTransportNamesByMid() const = 0;
+
+  // Returns a map from transport name to transport stats for all given
+  // transport names.
+  virtual std::map<std::string, cricket::TransportStats>
+  GetTransportStatsByNames(const std::set<std::string>& transport_names) = 0;
 
   virtual Call::Stats GetCallStats() = 0;
 

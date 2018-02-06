@@ -245,30 +245,27 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase {
     return sctp_data_channels_;
   }
 
-  std::unique_ptr<SessionStats> GetSessionStats_s() override {
-    std::set<std::string> transport_names;
+  std::map<std::string, std::string> GetTransportNamesByMid() const override {
+    std::map<std::string, std::string> transport_names_by_mid;
     if (voice_channel_) {
-      transport_names.insert(voice_channel_->transport_name());
+      transport_names_by_mid[voice_channel_->content_name()] =
+          voice_channel_->transport_name();
     }
     if (video_channel_) {
-      transport_names.insert(video_channel_->transport_name());
+      transport_names_by_mid[video_channel_->content_name()] =
+          video_channel_->transport_name();
     }
-    return GetSessionStatsForTransports(transport_names);
+    return transport_names_by_mid;
   }
 
-  std::unique_ptr<SessionStats> GetSessionStats(
-      const ChannelNamePairs& channel_name_pairs) override {
-    std::set<std::string> transport_names;
-    if (channel_name_pairs.voice) {
-      transport_names.insert(channel_name_pairs.voice.value().transport_name);
+  std::map<std::string, cricket::TransportStats> GetTransportStatsByNames(
+      const std::set<std::string>& transport_names) override {
+    std::map<std::string, cricket::TransportStats> transport_stats_by_name;
+    for (const std::string& transport_name : transport_names) {
+      transport_stats_by_name[transport_name] =
+          GetTransportStatsByName(transport_name);
     }
-    if (channel_name_pairs.video) {
-      transport_names.insert(channel_name_pairs.video.value().transport_name);
-    }
-    if (channel_name_pairs.data) {
-      transport_names.insert(channel_name_pairs.data.value().transport_name);
-    }
-    return GetSessionStatsForTransports(transport_names);
+    return transport_stats_by_name;
   }
 
   Call::Stats GetCallStats() override { return call_stats_; }
@@ -296,16 +293,6 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase {
   }
 
  private:
-  std::unique_ptr<SessionStats> GetSessionStatsForTransports(
-      const std::set<std::string>& transport_names) {
-    auto stats = rtc::MakeUnique<SessionStats>();
-    for (const std::string& transport_name : transport_names) {
-      stats->transport_stats[transport_name] =
-          GetTransportStatsByName(transport_name);
-    }
-    return stats;
-  }
-
   cricket::TransportStats GetTransportStatsByName(
       const std::string& transport_name) {
     auto it = transport_stats_by_name_.find(transport_name);

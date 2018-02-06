@@ -11,6 +11,7 @@
 #include "pc/statscollector.h"
 
 #include <memory>
+#include <set>
 #include <utility>
 #include <vector>
 
@@ -745,36 +746,41 @@ void StatsCollector::ExtractSessionInfo() {
   report->AddBoolean(StatsReport::kStatsValueNameInitiator,
                      pc_->initial_offerer());
 
-  std::unique_ptr<SessionStats> stats = pc_->GetSessionStats_s();
-  if (!stats) {
-    return;
+  std::set<std::string> transport_names;
+  for (const auto& entry : pc_->GetTransportNamesByMid()) {
+    transport_names.insert(entry.second);
   }
 
-  for (const auto& transport_iter : stats->transport_stats) {
+  std::map<std::string, cricket::TransportStats> transport_stats_by_name =
+      pc_->GetTransportStatsByNames(transport_names);
+
+  for (const auto& entry : transport_stats_by_name) {
+    const std::string& transport_name = entry.first;
+    const cricket::TransportStats& transport_stats = entry.second;
+
     // Attempt to get a copy of the certificates from the transport and
     // expose them in stats reports.  All channels in a transport share the
     // same local and remote certificates.
     //
     StatsReport::Id local_cert_report_id, remote_cert_report_id;
     rtc::scoped_refptr<rtc::RTCCertificate> certificate;
-    if (pc_->GetLocalCertificate(transport_iter.second.transport_name,
-                                 &certificate)) {
+    if (pc_->GetLocalCertificate(transport_name, &certificate)) {
       StatsReport* r = AddCertificateReports(&(certificate->ssl_certificate()));
       if (r)
         local_cert_report_id = r->id();
     }
 
     std::unique_ptr<rtc::SSLCertificate> cert =
-        pc_->GetRemoteSSLCertificate(transport_iter.second.transport_name);
+        pc_->GetRemoteSSLCertificate(transport_name);
     if (cert) {
       StatsReport* r = AddCertificateReports(cert.get());
       if (r)
         remote_cert_report_id = r->id();
     }
 
-    for (const auto& channel_iter : transport_iter.second.channel_stats) {
-      StatsReport::Id id(StatsReport::NewComponentId(
-          transport_iter.second.transport_name, channel_iter.component));
+    for (const auto& channel_iter : transport_stats.channel_stats) {
+      StatsReport::Id id(
+          StatsReport::NewComponentId(transport_name, channel_iter.component));
       StatsReport* channel_report = reports_.ReplaceOrAddNew(id);
       channel_report->set_timestamp(stats_gathering_started_);
       channel_report->AddInt(StatsReport::kStatsValueNameComponent,
@@ -807,7 +813,7 @@ void StatsCollector::ExtractSessionInfo() {
       for (const cricket::ConnectionInfo& info :
                channel_iter.connection_infos) {
         StatsReport* connection_report = AddConnectionInfoReport(
-            transport_iter.first, channel_iter.component, connection_id++,
+            transport_name, channel_iter.component, connection_id++,
             channel_report->id(), info);
         if (info.best_connection) {
           channel_report->AddId(

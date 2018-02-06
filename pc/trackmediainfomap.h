@@ -13,6 +13,7 @@
 
 #include <map>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "api/mediastreaminterface.h"
@@ -82,6 +83,8 @@ class TrackMediaInfoMap {
       const MediaStreamTrackInterface* track) const;
 
  private:
+  rtc::Optional<std::string> voice_mid_;
+  rtc::Optional<std::string> video_mid_;
   std::unique_ptr<cricket::VoiceMediaInfo> voice_media_info_;
   std::unique_ptr<cricket::VideoMediaInfo> video_media_info_;
   // These maps map tracks (identified by a pointer) to their corresponding info

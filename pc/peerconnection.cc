@@ -4760,39 +4760,48 @@ bool PeerConnection::ReadyToSendData() const {
          sctp_ready_to_send_data_;
 }
 
-std::unique_ptr<SessionStats> PeerConnection::GetSessionStats_s() {
-  RTC_DCHECK(signaling_thread()->IsCurrent());
-  ChannelNamePairs channel_name_pairs;
-  if (voice_channel()) {
-    channel_name_pairs.voice = ChannelNamePair(
-        voice_channel()->content_name(), voice_channel()->transport_name());
+std::map<std::string, std::string> PeerConnection::GetTransportNamesByMid()
+    const {
+  std::map<std::string, std::string> transport_names_by_mid;
+  for (auto transceiver : transceivers_) {
+    cricket::BaseChannel* channel = transceiver->internal()->channel();
+    if (channel) {
+      transport_names_by_mid[channel->content_name()] =
+          channel->transport_name();
+    }
   }
-  if (video_channel()) {
-    channel_name_pairs.video = ChannelNamePair(
-        video_channel()->content_name(), video_channel()->transport_name());
-  }
-  if (rtp_data_channel()) {
-    channel_name_pairs.data =
-        ChannelNamePair(rtp_data_channel()->content_name(),
-                        rtp_data_channel()->transport_name());
+  if (rtp_data_channel_) {
+    transport_names_by_mid[rtp_data_channel_->content_name()] =
+        rtp_data_channel_->transport_name();
   }
   if (sctp_transport_) {
-    RTC_DCHECK(sctp_content_name_);
-    RTC_DCHECK(sctp_transport_name_);
-    channel_name_pairs.data =
-        ChannelNamePair(*sctp_content_name_, *sctp_transport_name_);
+    transport_names_by_mid[*sctp_content_name_] = *sctp_transport_name_;
   }
-  return GetSessionStats(channel_name_pairs);
+  return transport_names_by_mid;
 }
 
-std::unique_ptr<SessionStats> PeerConnection::GetSessionStats(
-    const ChannelNamePairs& channel_name_pairs) {
-  if (network_thread()->IsCurrent()) {
-    return GetSessionStats_n(channel_name_pairs);
+std::map<std::string, cricket::TransportStats>
+PeerConnection::GetTransportStatsByNames(
+    const std::set<std::string>& transport_names) {
+  if (!network_thread()->IsCurrent()) {
+    return network_thread()
+        ->Invoke<std::map<std::string, cricket::TransportStats>>(
+            RTC_FROM_HERE,
+            [&] { return GetTransportStatsByNames(transport_names); });
   }
-  return network_thread()->Invoke<std::unique_ptr<SessionStats>>(
-      RTC_FROM_HERE,
-      rtc::Bind(&PeerConnection::GetSessionStats_n, this, channel_name_pairs));
+  std::map<std::string, cricket::TransportStats> transport_stats_by_name;
+  for (const std::string& transport_name : transport_names) {
+    cricket::TransportStats transport_stats;
+    bool success =
+        transport_controller_->GetStats(transport_name, &transport_stats);
+    if (success) {
+      transport_stats_by_name[transport_name] = std::move(transport_stats);
+    } else {
+      RTC_LOG(LS_ERROR) << "Failed to get transport stats for transport_name="
+                        << transport_name;
+    }
+  }
+  return transport_stats_by_name;
 }
 
 bool PeerConnection::GetLocalCertificate(
@@ -5268,26 +5277,6 @@ Call::Stats PeerConnection::GetCallStats() {
   } else {
     return Call::Stats();
   }
-}
-
-std::unique_ptr<SessionStats> PeerConnection::GetSessionStats_n(
-    const ChannelNamePairs& channel_name_pairs) {
-  RTC_DCHECK(network_thread()->IsCurrent());
-  std::unique_ptr<SessionStats> session_stats(new SessionStats());
-  for (const auto channel_name_pair :
-       {&channel_name_pairs.voice, &channel_name_pairs.video,
-        &channel_name_pairs.data}) {
-    if (*channel_name_pair) {
-      cricket::TransportStats transport_stats;
-      if (!transport_controller_->GetStats((*channel_name_pair)->transport_name,
-                                           &transport_stats)) {
-        return nullptr;
-      }
-      session_stats->transport_stats[(*channel_name_pair)->transport_name] =
-          std::move(transport_stats);
-    }
-  }
-  return session_stats;
 }
 
 bool PeerConnection::CreateSctpTransport_n(const std::string& content_name,

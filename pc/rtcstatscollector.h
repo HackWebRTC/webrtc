@@ -96,7 +96,8 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
   // Produces |RTCIceCandidatePairStats| and |RTCIceCandidateStats|.
   void ProduceIceCandidateAndPairStats_n(
       int64_t timestamp_us,
-      const SessionStats& session_stats,
+      const std::map<std::string, cricket::TransportStats>&
+          transport_stats_by_name,
       const cricket::VideoMediaInfo* video_media_info,
       const Call::Stats& call_stats,
       RTCStatsReport* report) const;
@@ -107,20 +108,24 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
   void ProducePeerConnectionStats_s(
       int64_t timestamp_us, RTCStatsReport* report) const;
   // Produces |RTCInboundRTPStreamStats| and |RTCOutboundRTPStreamStats|.
-  void ProduceRTPStreamStats_n(int64_t timestamp_us,
-                               const SessionStats& session_stats,
-                               const ChannelNamePairs& channel_name_pairs,
-                               const TrackMediaInfoMap& track_media_info_map,
-                               RTCStatsReport* report) const;
+  void ProduceRTPStreamStats_n(
+      int64_t timestamp_us,
+      const std::map<std::string, std::string>& transport_names_by_mid,
+      const TrackMediaInfoMap& track_media_info_map,
+      RTCStatsReport* report) const;
   // Produces |RTCTransportStats|.
   void ProduceTransportStats_n(
-      int64_t timestamp_us, const SessionStats& session_stats,
+      int64_t timestamp_us,
+      const std::map<std::string, cricket::TransportStats>&
+          transport_stats_by_name,
       const std::map<std::string, CertificateStatsPair>& transport_cert_stats,
       RTCStatsReport* report) const;
 
   // Helper function to stats-producing functions.
   std::map<std::string, CertificateStatsPair>
-  PrepareTransportCertificateStats_n(const SessionStats& session_stats) const;
+  PrepareTransportCertificateStats_n(
+      const std::map<std::string, cricket::TransportStats>&
+          transport_stats_by_name) const;
   std::unique_ptr<TrackMediaInfoMap> PrepareTrackMediaInfoMap_s() const;
   std::map<MediaStreamTrackInterface*, std::string> PrepareTrackToID_s() const;
 
@@ -145,9 +150,12 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
   // |ProducePartialResultsOnSignalingThread|, reset after work is complete. Not
   // passed as arguments to avoid copies. This is thread safe - when we
   // set/reset we know there are no pending stats requests in progress.
-  std::unique_ptr<ChannelNamePairs> channel_name_pairs_;
+  std::map<std::string, std::string> transport_names_by_mid_;
   std::unique_ptr<TrackMediaInfoMap> track_media_info_map_;
   std::map<MediaStreamTrackInterface*, std::string> track_to_id_;
+
+  rtc::Optional<std::string> voice_mid_;
+  rtc::Optional<std::string> video_mid_;
 
   Call::Stats call_stats_;
 

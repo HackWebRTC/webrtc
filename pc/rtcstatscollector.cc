@@ -699,28 +699,9 @@ void RTCStatsCollector::GetStatsReport(
     num_pending_partial_reports_ = 2;
     partial_report_timestamp_us_ = cache_now_us;
 
-    // Prepare |channel_name_pairs_| for use in
+    // Prepare |transport_name_by_mid_| for use in
     // |ProducePartialResultsOnNetworkThread|.
-    channel_name_pairs_.reset(new ChannelNamePairs());
-    if (pc_->voice_channel()) {
-      channel_name_pairs_->voice =
-          ChannelNamePair(pc_->voice_channel()->content_name(),
-                          pc_->voice_channel()->transport_name());
-    }
-    if (pc_->video_channel()) {
-      channel_name_pairs_->video =
-          ChannelNamePair(pc_->video_channel()->content_name(),
-                          pc_->video_channel()->transport_name());
-    }
-    if (pc_->rtp_data_channel()) {
-      channel_name_pairs_->data =
-          ChannelNamePair(pc_->rtp_data_channel()->content_name(),
-                          pc_->rtp_data_channel()->transport_name());
-    }
-    if (pc_->sctp_content_name()) {
-      channel_name_pairs_->data = ChannelNamePair(*pc_->sctp_content_name(),
-                                                  *pc_->sctp_transport_name());
-    }
+    transport_names_by_mid_ = pc_->GetTransportNamesByMid();
     // Prepare |track_media_info_map_| for use in
     // |ProducePartialResultsOnNetworkThread| and
     // |ProducePartialResultsOnSignalingThread|.
@@ -729,6 +710,16 @@ void RTCStatsCollector::GetStatsReport(
     // This avoids a possible deadlock if |MediaStreamTrackInterface::id| is
     // implemented to invoke on the signaling thread.
     track_to_id_ = PrepareTrackToID_s();
+
+    voice_mid_.reset();
+    if (pc_->voice_channel()) {
+      voice_mid_ = pc_->voice_channel()->content_name();
+    }
+
+    video_mid_.reset();
+    if (pc_->video_channel()) {
+      video_mid_ = pc_->video_channel()->content_name();
+    }
 
     // Prepare |call_stats_| here since GetCallStats() will hop to the worker
     // thread.
@@ -779,24 +770,25 @@ void RTCStatsCollector::ProducePartialResultsOnNetworkThread(
   rtc::scoped_refptr<RTCStatsReport> report = RTCStatsReport::Create(
       timestamp_us);
 
-  std::unique_ptr<SessionStats> session_stats =
-      pc_->GetSessionStats(*channel_name_pairs_);
-  if (session_stats) {
-    std::map<std::string, CertificateStatsPair> transport_cert_stats =
-        PrepareTransportCertificateStats_n(*session_stats);
-
-    ProduceCertificateStats_n(
-        timestamp_us, transport_cert_stats, report.get());
-    ProduceCodecStats_n(
-        timestamp_us, *track_media_info_map_, report.get());
-    ProduceIceCandidateAndPairStats_n(timestamp_us, *session_stats,
-                                      track_media_info_map_->video_media_info(),
-                                      call_stats_, report.get());
-    ProduceRTPStreamStats_n(timestamp_us, *session_stats, *channel_name_pairs_,
-                            *track_media_info_map_, report.get());
-    ProduceTransportStats_n(
-        timestamp_us, *session_stats, transport_cert_stats, report.get());
+  std::set<std::string> transport_names;
+  for (const auto& entry : transport_names_by_mid_) {
+    transport_names.insert(entry.second);
   }
+  std::map<std::string, cricket::TransportStats> transport_stats_by_name =
+      pc_->GetTransportStatsByNames(transport_names);
+
+  std::map<std::string, CertificateStatsPair> transport_cert_stats =
+      PrepareTransportCertificateStats_n(transport_stats_by_name);
+
+  ProduceCertificateStats_n(timestamp_us, transport_cert_stats, report.get());
+  ProduceCodecStats_n(timestamp_us, *track_media_info_map_, report.get());
+  ProduceIceCandidateAndPairStats_n(timestamp_us, transport_stats_by_name,
+                                    track_media_info_map_->video_media_info(),
+                                    call_stats_, report.get());
+  ProduceRTPStreamStats_n(timestamp_us, transport_names_by_mid_,
+                          *track_media_info_map_, report.get());
+  ProduceTransportStats_n(timestamp_us, transport_stats_by_name,
+                          transport_cert_stats, report.get());
 
   AddPartialResults(report);
 }
@@ -826,7 +818,7 @@ void RTCStatsCollector::AddPartialResults_s(
     cache_timestamp_us_ = partial_report_timestamp_us_;
     cached_report_ = partial_report_;
     partial_report_ = nullptr;
-    channel_name_pairs_.reset();
+    transport_names_by_mid_.clear();
     track_media_info_map_.reset();
     track_to_id_.clear();
     // Trace WebRTC Stats when getStats is called on Javascript.
@@ -926,15 +918,18 @@ void RTCStatsCollector::ProduceDataChannelStats_s(
 
 void RTCStatsCollector::ProduceIceCandidateAndPairStats_n(
     int64_t timestamp_us,
-    const SessionStats& session_stats,
+    const std::map<std::string, cricket::TransportStats>&
+        transport_stats_by_name,
     const cricket::VideoMediaInfo* video_media_info,
     const Call::Stats& call_stats,
     RTCStatsReport* report) const {
   RTC_DCHECK(network_thread_->IsCurrent());
-  for (const auto& transport_stats : session_stats.transport_stats) {
-    for (const auto& channel_stats : transport_stats.second.channel_stats) {
+  for (const auto& entry : transport_stats_by_name) {
+    const std::string& transport_name = entry.first;
+    const cricket::TransportStats& transport_stats = entry.second;
+    for (const auto& channel_stats : transport_stats.channel_stats) {
       std::string transport_id = RTCTransportStatsIDFromTransportChannel(
-          transport_stats.second.transport_name, channel_stats.component);
+          transport_name, channel_stats.component);
       for (const cricket::ConnectionInfo& info :
            channel_stats.connection_infos) {
         std::unique_ptr<RTCIceCandidatePairStats> candidate_pair_stats(
@@ -1029,17 +1024,15 @@ void RTCStatsCollector::ProducePeerConnectionStats_s(
 
 void RTCStatsCollector::ProduceRTPStreamStats_n(
     int64_t timestamp_us,
-    const SessionStats& session_stats,
-    const ChannelNamePairs& channel_name_pairs,
+    const std::map<std::string, std::string>& transport_names_by_mid,
     const TrackMediaInfoMap& track_media_info_map,
     RTCStatsReport* report) const {
   RTC_DCHECK(network_thread_->IsCurrent());
 
   // Audio
   if (track_media_info_map.voice_media_info()) {
-    RTC_DCHECK(channel_name_pairs.voice);
-    const std::string& transport_name =
-        (*channel_name_pairs.voice).transport_name;
+    RTC_DCHECK(voice_mid_);
+    const std::string& transport_name = transport_names_by_mid.at(*voice_mid_);
     std::string transport_id = RTCTransportStatsIDFromTransportChannel(
         transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP);
     // Inbound
@@ -1094,9 +1087,8 @@ void RTCStatsCollector::ProduceRTPStreamStats_n(
   }
   // Video
   if (track_media_info_map.video_media_info()) {
-    RTC_DCHECK(channel_name_pairs.video);
-    const std::string& transport_name =
-        (*channel_name_pairs.video).transport_name;
+    RTC_DCHECK(video_mid_);
+    const std::string& transport_name = transport_names_by_mid.at(*video_mid_);
     std::string transport_id = RTCTransportStatsIDFromTransportChannel(
         transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP);
     // Inbound
@@ -1152,26 +1144,32 @@ void RTCStatsCollector::ProduceRTPStreamStats_n(
 }
 
 void RTCStatsCollector::ProduceTransportStats_n(
-    int64_t timestamp_us, const SessionStats& session_stats,
+    int64_t timestamp_us,
+    const std::map<std::string, cricket::TransportStats>&
+        transport_stats_by_name,
     const std::map<std::string, CertificateStatsPair>& transport_cert_stats,
     RTCStatsReport* report) const {
   RTC_DCHECK(network_thread_->IsCurrent());
-  for (const auto& transport : session_stats.transport_stats) {
+  for (const auto& entry : transport_stats_by_name) {
+    const std::string& transport_name = entry.first;
+    const cricket::TransportStats& transport_stats = entry.second;
+
     // Get reference to RTCP channel, if it exists.
     std::string rtcp_transport_stats_id;
-    for (const auto& channel_stats : transport.second.channel_stats) {
+    for (const cricket::TransportChannelStats& channel_stats :
+         transport_stats.channel_stats) {
       if (channel_stats.component ==
           cricket::ICE_CANDIDATE_COMPONENT_RTCP) {
         rtcp_transport_stats_id = RTCTransportStatsIDFromTransportChannel(
-            transport.second.transport_name, channel_stats.component);
+            transport_name, channel_stats.component);
         break;
       }
     }
 
     // Get reference to local and remote certificates of this transport, if they
     // exist.
-    const auto& certificate_stats_it = transport_cert_stats.find(
-        transport.second.transport_name);
+    const auto& certificate_stats_it =
+        transport_cert_stats.find(transport_name);
     RTC_DCHECK(certificate_stats_it != transport_cert_stats.cend());
     std::string local_certificate_id;
     if (certificate_stats_it->second.local) {
@@ -1185,12 +1183,12 @@ void RTCStatsCollector::ProduceTransportStats_n(
     }
 
     // There is one transport stats for each channel.
-    for (const auto& channel_stats : transport.second.channel_stats) {
+    for (const cricket::TransportChannelStats& channel_stats :
+         transport_stats.channel_stats) {
       std::unique_ptr<RTCTransportStats> transport_stats(
-          new RTCTransportStats(
-              RTCTransportStatsIDFromTransportChannel(
-                  transport.second.transport_name, channel_stats.component),
-              timestamp_us));
+          new RTCTransportStats(RTCTransportStatsIDFromTransportChannel(
+                                    transport_name, channel_stats.component),
+                                timestamp_us));
       transport_stats->bytes_sent = 0;
       transport_stats->bytes_received = 0;
       transport_stats->dtls_state = DtlsTransportStateToRTCDtlsTransportState(
@@ -1219,25 +1217,28 @@ void RTCStatsCollector::ProduceTransportStats_n(
 
 std::map<std::string, RTCStatsCollector::CertificateStatsPair>
 RTCStatsCollector::PrepareTransportCertificateStats_n(
-    const SessionStats& session_stats) const {
+    const std::map<std::string, cricket::TransportStats>&
+        transport_stats_by_name) const {
   RTC_DCHECK(network_thread_->IsCurrent());
   std::map<std::string, CertificateStatsPair> transport_cert_stats;
-  for (const auto& transport_stats : session_stats.transport_stats) {
+  for (const auto& entry : transport_stats_by_name) {
+    const std::string& transport_name = entry.first;
+
     CertificateStatsPair certificate_stats_pair;
     rtc::scoped_refptr<rtc::RTCCertificate> local_certificate;
-    if (pc_->GetLocalCertificate(transport_stats.second.transport_name,
-                                 &local_certificate)) {
+    if (pc_->GetLocalCertificate(transport_name, &local_certificate)) {
       certificate_stats_pair.local =
           local_certificate->ssl_certificate().GetStats();
     }
+
     std::unique_ptr<rtc::SSLCertificate> remote_certificate =
-        pc_->GetRemoteSSLCertificate(transport_stats.second.transport_name);
+        pc_->GetRemoteSSLCertificate(transport_name);
     if (remote_certificate) {
       certificate_stats_pair.remote = remote_certificate->GetStats();
     }
+
     transport_cert_stats.insert(
-        std::make_pair(transport_stats.second.transport_name,
-                       std::move(certificate_stats_pair)));
+        std::make_pair(transport_name, std::move(certificate_stats_pair)));
   }
   return transport_cert_stats;
 }
@@ -1259,11 +1260,9 @@ RTCStatsCollector::PrepareTrackMediaInfoMap_s() const {
       video_media_info.reset();
     }
   }
-  std::unique_ptr<TrackMediaInfoMap> track_media_info_map(
-      new TrackMediaInfoMap(std::move(voice_media_info),
-                            std::move(video_media_info),
-                            pc_->GetSenders(),
-                            pc_->GetReceivers()));
+  std::unique_ptr<TrackMediaInfoMap> track_media_info_map(new TrackMediaInfoMap(
+      std::move(voice_media_info), std::move(video_media_info),
+      pc_->GetSenders(), pc_->GetReceivers()));
   return track_media_info_map;
 }
 
