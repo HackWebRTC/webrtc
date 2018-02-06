@@ -12,10 +12,13 @@
 #define SDK_ANDROID_SRC_JNI_VIDEODECODERWRAPPER_H_
 
 #include <jni.h>
+#include <atomic>
 #include <deque>
 
 #include "api/video_codecs/video_decoder.h"
 #include "common_video/h264/h264_bitstream_parser.h"
+#include "rtc_base/race_checker.h"
+#include "rtc_base/thread_checker.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {
@@ -38,7 +41,10 @@ class VideoDecoderWrapper : public VideoDecoder {
   int32_t RegisterDecodeCompleteCallback(
       DecodedImageCallback* callback) override;
 
-  int32_t Release() override;
+  // TODO(sakal): This is not always called on the correct thread. It is called
+  // from VCMGenericDecoder destructor which is on a different thread but is
+  // still safe and synchronous.
+  int32_t Release() override RTC_NO_THREAD_SAFETY_ANALYSIS;
 
   // Returns true if the decoder prefer to decode frames late.
   // That is, it can not decode infinite number of frames before the decoded
@@ -63,26 +69,39 @@ class VideoDecoderWrapper : public VideoDecoder {
     rtc::Optional<uint8_t> qp;
   };
 
-  int32_t InitDecodeInternal(JNIEnv* jni);
+  int32_t InitDecodeInternal(JNIEnv* jni) RTC_RUN_ON(decoder_thread_checker_);
 
   // Takes Java VideoCodecStatus, handles it and returns WEBRTC_VIDEO_CODEC_*
   // status code.
-  int32_t HandleReturnCode(JNIEnv* jni, const JavaRef<jobject>& code);
+  int32_t HandleReturnCode(JNIEnv* jni, const JavaRef<jobject>& code)
+      RTC_RUN_ON(decoder_thread_checker_);
 
-  rtc::Optional<uint8_t> ParseQP(const EncodedImage& input_image);
-
-  VideoCodec codec_settings_;
-  int32_t number_of_cores_;
-
-  bool initialized_;
-  std::deque<FrameExtraInfo> frame_extra_infos_;
-  bool qp_parsing_enabled_;
-  H264BitstreamParser h264_bitstream_parser_;
-  std::string implementation_name_;
-
-  DecodedImageCallback* callback_;
+  rtc::Optional<uint8_t> ParseQP(const EncodedImage& input_image)
+      RTC_RUN_ON(decoder_thread_checker_);
 
   const ScopedJavaGlobalRef<jobject> decoder_;
+  const std::string implementation_name_;
+
+  rtc::ThreadChecker decoder_thread_checker_;
+  // Callbacks must be executed sequentially on an arbitrary thread. We do not
+  // own this thread so a thread checker cannot be used.
+  rtc::RaceChecker callback_race_checker_;
+
+  // Initialized on InitDecode and immutable after that.
+  VideoCodec codec_settings_ RTC_ACCESS_ON(decoder_thread_checker_);
+  int32_t number_of_cores_ RTC_ACCESS_ON(decoder_thread_checker_);
+
+  bool initialized_ RTC_ACCESS_ON(decoder_thread_checker_);
+  H264BitstreamParser h264_bitstream_parser_
+      RTC_ACCESS_ON(decoder_thread_checker_);
+
+  DecodedImageCallback* callback_ RTC_ACCESS_ON(callback_race_checker_);
+
+  // Accessed both on the decoder thread and the callback thread.
+  std::atomic<bool> qp_parsing_enabled_;
+  rtc::CriticalSection frame_extra_infos_lock_;
+  std::deque<FrameExtraInfo> frame_extra_infos_
+      RTC_ACCESS_ON(frame_extra_infos_lock_);
 };
 
 }  // namespace jni
