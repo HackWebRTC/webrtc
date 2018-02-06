@@ -195,6 +195,7 @@ OrtcFactory::OrtcFactory(
   // The worker thread is created internally because it's an implementation
   // detail, and consumers of the API don't need to really know about it.
   worker_thread_ = rtc::Thread::Create();
+  worker_thread_->SetName("ORTC-worker", this);
   worker_thread_->Start();
 
   if (signaling_thread_) {
@@ -208,6 +209,11 @@ OrtcFactory::OrtcFactory(
       wraps_signaling_thread_ = true;
     }
   }
+
+  if (signaling_thread_->name().empty()) {
+    signaling_thread_->SetName("ORTC-signaling", this);
+  }
+
   if (!network_manager_) {
     owned_network_manager_.reset(new rtc::BasicNetworkManager());
     network_manager_ = owned_network_manager_.get();
