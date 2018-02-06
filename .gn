@@ -28,7 +28,9 @@ check_targets = [
   "//call/*",
   "//common_audio/*",
   "//common_video/*",
-  "//examples/*",
+
+  # TODO(bugs.webrtc.org/8850): re-enable when 'gn check' will be fixed.
+  # "//examples/*",
   "//logging/*",
   "//media/*",
   "//modules/*",
