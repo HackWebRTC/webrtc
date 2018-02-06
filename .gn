@@ -37,13 +37,15 @@ check_targets = [
   "//pc/*",
   "//rtc_base/*",
   "//rtc_tools/*",
-  "//sdk/*",
+
+  # TODO(bugs.webrtc.org/8850): Remove "/android" to re-enable on objc.
+  "//sdk/android/*",
   "//stats/*",
   "//system_wrappers/*",
   "//test/*",
   "//video/*",
 
-  # TODO(mbonadei): re-enable when libyuv 'gn check' will be fixed.
+  # TODO(bugs.webrtc.org/8850): re-enable when libyuv 'gn check' will be fixed.
   # "//third_party/libyuv/*",
 ]
 
