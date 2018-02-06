@@ -163,6 +163,8 @@ rtc_source_set("audio_device_generic") {
     defines += [ "AUDIO_DEVICE_PLAYS_SINUS_TONE" ]
   }
   if (rtc_include_internal_audio_device) {
+    # TODO(bugs.webrtc.org/8850): remove this when the circular dependency will be fixed.
+    check_includes = false
     sources += [
       "audio_device_data_observer.cc",
       "audio_device_impl.cc",
