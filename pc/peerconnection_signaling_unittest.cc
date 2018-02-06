@@ -229,18 +229,9 @@ TEST_P(PeerConnectionSignalingStateTest, CreateAnswer) {
   } else {
     std::string error;
     ASSERT_FALSE(wrapper->CreateAnswer(RTCOfferAnswerOptions(), &error));
-    if (wrapper->signaling_state() == SignalingState::kClosed) {
-      EXPECT_PRED_FORMAT2(AssertStartsWith, error,
-                          "CreateAnswer called when PeerConnection is closed.");
-    } else if (wrapper->signaling_state() ==
-               SignalingState::kHaveRemotePrAnswer) {
-      EXPECT_PRED_FORMAT2(AssertStartsWith, error,
-                          "CreateAnswer called without remote offer.");
-    } else {
-      EXPECT_PRED_FORMAT2(
-          AssertStartsWith, error,
-          "CreateAnswer can't be called before SetRemoteDescription.");
-    }
+    EXPECT_EQ(error,
+              "PeerConnection cannot create an answer in a state other than "
+              "have-remote-offer or have-local-pranswer.");
   }
 }
 
@@ -369,32 +360,19 @@ INSTANTIATE_TEST_CASE_P(PeerConnectionSignalingTest,
                                        SignalingState::kHaveRemotePrAnswer),
                                 Bool()));
 
-TEST_F(PeerConnectionSignalingTest,
-       CreateAnswerSucceedsIfStableAndRemoteDescriptionIsOffer) {
+// Test that CreateAnswer fails if a round of offer/answer has been done and
+// the PeerConnection is in the stable state.
+TEST_F(PeerConnectionSignalingTest, CreateAnswerFailsIfStable) {
   auto caller = CreatePeerConnection();
   auto callee = CreatePeerConnection();
 
-  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
-  ASSERT_TRUE(
-      caller->SetRemoteDescription(callee->CreateAnswerAndSetAsLocal()));
-
-  ASSERT_EQ(SignalingState::kStable, callee->signaling_state());
-  EXPECT_TRUE(callee->CreateAnswer());
-}
-
-TEST_F(PeerConnectionSignalingTest,
-       CreateAnswerFailsIfStableButRemoteDescriptionIsAnswer) {
-  auto caller = CreatePeerConnection();
-  auto callee = CreatePeerConnection();
-
-  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
-  ASSERT_TRUE(
-      caller->SetRemoteDescription(callee->CreateAnswerAndSetAsLocal()));
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
 
   ASSERT_EQ(SignalingState::kStable, caller->signaling_state());
-  std::string error;
-  ASSERT_FALSE(caller->CreateAnswer(RTCOfferAnswerOptions(), &error));
-  EXPECT_EQ("CreateAnswer called without remote offer.", error);
+  EXPECT_FALSE(caller->CreateAnswer());
+
+  ASSERT_EQ(SignalingState::kStable, callee->signaling_state());
+  EXPECT_FALSE(callee->CreateAnswer());
 }
 
 // According to https://tools.ietf.org/html/rfc3264#section-8, the session id
@@ -429,7 +407,7 @@ TEST_F(PeerConnectionSignalingTest,
 
   ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
 
-  auto original_answer = callee->CreateAnswerAndSetAsLocal();
+  auto original_answer = callee->CreateAnswer();
   const std::string original_id = original_answer->session_id();
   const std::string original_version = original_answer->session_version();
 
