@@ -20,6 +20,8 @@
 #include "api/video/video_frame.h"
 #include "media/base/videocapturer.h"
 #include "media/base/videocommon.h"
+#include "rtc_base/event.h"
+#include "rtc_base/task_queue.h"
 #include "rtc_base/timeutils.h"
 
 namespace cricket {
@@ -27,117 +29,30 @@ namespace cricket {
 // Fake video capturer that allows the test to manually pump in frames.
 class FakeVideoCapturer : public cricket::VideoCapturer {
  public:
-  explicit FakeVideoCapturer(bool is_screencast)
-      : running_(false),
-        initial_timestamp_(rtc::TimeNanos()),
-        next_timestamp_(rtc::kNumNanosecsPerMillisec),
-        is_screencast_(is_screencast),
-        rotation_(webrtc::kVideoRotation_0) {
-    // Default supported formats. Use ResetSupportedFormats to over write.
-    std::vector<cricket::VideoFormat> formats;
-    formats.push_back(cricket::VideoFormat(1280, 720,
-        cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420));
-    formats.push_back(cricket::VideoFormat(640, 480,
-        cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420));
-    formats.push_back(cricket::VideoFormat(320, 240,
-        cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420));
-    formats.push_back(cricket::VideoFormat(160, 120,
-        cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420));
-    formats.push_back(cricket::VideoFormat(1280, 720,
-        cricket::VideoFormat::FpsToInterval(60), cricket::FOURCC_I420));
-    ResetSupportedFormats(formats);
-  }
-  FakeVideoCapturer() : FakeVideoCapturer(false) {}
+  explicit FakeVideoCapturer(bool is_screencast);
+  FakeVideoCapturer();
 
-  ~FakeVideoCapturer() {
-    SignalDestroyed(this);
-  }
+  ~FakeVideoCapturer() override;
 
-  void ResetSupportedFormats(const std::vector<cricket::VideoFormat>& formats) {
-    SetSupportedFormats(formats);
-  }
-  bool CaptureFrame() {
-    if (!GetCaptureFormat()) {
-      return false;
-    }
-    return CaptureCustomFrame(GetCaptureFormat()->width,
-                              GetCaptureFormat()->height,
-                              GetCaptureFormat()->interval,
-                              GetCaptureFormat()->fourcc);
-  }
-  bool CaptureCustomFrame(int width, int height, uint32_t fourcc) {
-    // Default to 30fps.
-    return CaptureCustomFrame(width, height, rtc::kNumNanosecsPerSec / 30,
-                              fourcc);
-  }
-  bool CaptureCustomFrame(int width,
-                          int height,
-                          int64_t timestamp_interval,
-                          uint32_t fourcc) {
-    if (!running_) {
-      return false;
-    }
-    RTC_CHECK(fourcc == FOURCC_I420);
-    RTC_CHECK(width > 0);
-    RTC_CHECK(height > 0);
-
-    int adapted_width;
-    int adapted_height;
-    int crop_width;
-    int crop_height;
-    int crop_x;
-    int crop_y;
-
-    // TODO(nisse): It's a bit silly to have this logic in a fake
-    // class. Child classes of VideoCapturer are expected to call
-    // AdaptFrame, and the test case
-    // VideoCapturerTest.SinkWantsMaxPixelAndMaxPixelCountStepUp
-    // depends on this.
-    if (AdaptFrame(width, height,
-                   next_timestamp_ / rtc::kNumNanosecsPerMicrosec,
-                   next_timestamp_ / rtc::kNumNanosecsPerMicrosec,
-                   &adapted_width, &adapted_height, &crop_width, &crop_height,
-                   &crop_x, &crop_y, nullptr)) {
-      rtc::scoped_refptr<webrtc::I420Buffer> buffer(
-          webrtc::I420Buffer::Create(adapted_width, adapted_height));
-      buffer->InitializeData();
-
-      OnFrame(webrtc::VideoFrame(
-                  buffer, rotation_,
-                  next_timestamp_ / rtc::kNumNanosecsPerMicrosec),
-              width, height);
-    }
-    next_timestamp_ += timestamp_interval;
-
-    return true;
-  }
+  void ResetSupportedFormats(const std::vector<cricket::VideoFormat>& formats);
+  virtual bool CaptureFrame();
+  virtual bool CaptureCustomFrame(int width, int height, uint32_t fourcc);
+  virtual bool CaptureCustomFrame(int width,
+                                  int height,
+                                  int64_t timestamp_interval,
+                                  uint32_t fourcc);
 
   sigslot::signal1<FakeVideoCapturer*> SignalDestroyed;
 
-  cricket::CaptureState Start(const cricket::VideoFormat& format) override {
-    SetCaptureFormat(&format);
-    running_ = true;
-    SetCaptureState(cricket::CS_RUNNING);
-    return cricket::CS_RUNNING;
-  }
-  void Stop() override {
-    running_ = false;
-    SetCaptureFormat(NULL);
-    SetCaptureState(cricket::CS_STOPPED);
-  }
-  bool IsRunning() override { return running_; }
-  bool IsScreencast() const override { return is_screencast_; }
-  bool GetPreferredFourccs(std::vector<uint32_t>* fourccs) override {
-    fourccs->push_back(cricket::FOURCC_I420);
-    fourccs->push_back(cricket::FOURCC_MJPG);
-    return true;
-  }
+  cricket::CaptureState Start(const cricket::VideoFormat& format) override;
+  void Stop() override;
+  bool IsRunning() override;
+  bool IsScreencast() const override;
+  bool GetPreferredFourccs(std::vector<uint32_t>* fourccs) override;
 
-  void SetRotation(webrtc::VideoRotation rotation) {
-    rotation_ = rotation;
-  }
+  void SetRotation(webrtc::VideoRotation rotation);
 
-  webrtc::VideoRotation GetRotation() { return rotation_; }
+  webrtc::VideoRotation GetRotation();
 
  private:
   bool running_;
@@ -145,6 +60,38 @@ class FakeVideoCapturer : public cricket::VideoCapturer {
   int64_t next_timestamp_;
   const bool is_screencast_;
   webrtc::VideoRotation rotation_;
+};
+
+// Inherits from FakeVideoCapturer but adds a TaskQueue so that frames can be
+// delivered on a TaskQueue as expected by VideoSinkInterface implementations.
+class FakeVideoCapturerWithTaskQueue : public FakeVideoCapturer {
+ public:
+  explicit FakeVideoCapturerWithTaskQueue(bool is_screencast);
+  FakeVideoCapturerWithTaskQueue();
+
+  bool CaptureFrame() override;
+  bool CaptureCustomFrame(int width, int height, uint32_t fourcc) override;
+  bool CaptureCustomFrame(int width,
+                          int height,
+                          int64_t timestamp_interval,
+                          uint32_t fourcc) override;
+
+ protected:
+  template <class Closure>
+  void RunSynchronouslyOnTaskQueue(Closure&& closure) {
+    if (task_queue_.IsCurrent()) {
+      closure();
+      return;
+    }
+    rtc::Event event(false, false);
+    task_queue_.PostTask([&closure, &event]() {
+      closure();
+      event.Set();
+    });
+    event.Wait(rtc::Event::kForever);
+  }
+
+  rtc::TaskQueue task_queue_{"FakeVideoCapturerWithTaskQueue"};
 };
 
 }  // namespace cricket

@@ -341,7 +341,8 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingIPLiteralAddress) {
 // This test verifies the captured stream is rendered locally using a
 // local video track.
 TEST_F(PeerConnectionFactoryTest, LocalRendering) {
-  cricket::FakeVideoCapturer* capturer = new cricket::FakeVideoCapturer();
+  cricket::FakeVideoCapturerWithTaskQueue* capturer =
+      new cricket::FakeVideoCapturerWithTaskQueue();
   // The source takes ownership of |capturer|, but we keep a raw pointer to
   // inject fake frames.
   rtc::scoped_refptr<VideoTrackSourceInterface> source(

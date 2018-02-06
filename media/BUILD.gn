@@ -69,7 +69,9 @@ rtc_static_library("rtc_media_base") {
   deps = [
     "../api:audio_options_api",
     "../rtc_base:checks",
+    "../rtc_base:rtc_task_queue_api",
     "../rtc_base:sanitizer",
+    "../rtc_base:sequenced_task_checker",
     "../rtc_base:stringutils",
   ]
   sources = [
@@ -446,6 +448,7 @@ if (rtc_include_tests) {
       "../modules/video_coding:video_coding_utility",
       "../p2p:rtc_p2p",
       "../rtc_base:checks",
+      "../rtc_base:rtc_task_queue_api",
       "../rtc_base:stringutils",
     ]
     sources = [
@@ -453,6 +456,7 @@ if (rtc_include_tests) {
       "base/fakenetworkinterface.h",
       "base/fakertp.cc",
       "base/fakertp.h",
+      "base/fakevideocapturer.cc",
       "base/fakevideocapturer.h",
       "base/fakevideorenderer.h",
       "base/test/mock_mediachannel.h",
@@ -542,6 +546,7 @@ if (rtc_include_tests) {
       "../pc:rtc_pc",
       "../pc:rtc_pc_base",
       "../rtc_base:checks",
+      "../rtc_base:rtc_task_queue_api",
       "../rtc_base:stringutils",
       "../test:field_trial",
     ]
