@@ -307,7 +307,6 @@ if (is_ios || is_mac) {
 
       deps = [
         ":common_objc",
-        ":corevideoframebuffer_objc",
         ":peerconnectionfactory_objc",
         ":video_objc",
         "../api:video_frame_api",
@@ -341,7 +340,6 @@ if (is_ios || is_mac) {
 
       deps += [
         ":common_objc",
-        ":corevideoframebuffer_objc",
         ":default_codec_factory_objc",
         ":native_api",
         ":native_video",
@@ -576,7 +574,6 @@ if (is_ios || is_mac) {
 
       deps = [
         ":common_objc",
-        ":corevideoframebuffer_objc",
         ":native_api",
         ":native_video",
         ":videotracksource_objc",
@@ -913,29 +910,6 @@ if (is_ios || is_mac) {
         "../system_wrappers:metrics_default",
         "../system_wrappers:runtime_enabled_features_default",
       ]
-    }
-
-    rtc_static_library("corevideoframebuffer_objc") {
-      sources = [
-        "objc/Framework/Classes/Video/corevideo_frame_buffer.cc",
-        "objc/Framework/Classes/Video/corevideo_frame_buffer.h",
-      ]
-
-      deps = [
-        "../api:video_frame_api_i420",
-        "../common_video",
-        "../rtc_base:checks",
-        "../rtc_base:rtc_base_approved",
-        "//third_party/libyuv",
-      ]
-
-      if (!build_with_chromium && is_clang) {
-        # Suppress warnings from the Chromium Clang plugin
-        # (bugs.webrtc.org/163).
-        suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-      }
-
-      libs = [ "CoreVideo.framework" ]
     }
 
     rtc_static_library("video_toolbox_cc") {
