@@ -655,7 +655,7 @@ void ForwardErrorCorrection::AttemptRecovery(
         continue;
       }
 
-      auto recovered_packet_ptr = recovered_packet.get();
+      auto* recovered_packet_ptr = recovered_packet.get();
       // Add recovered packet to the list of recovered packets and update any
       // FEC packets covering this packet with a pointer to the data.
       // TODO(holmer): Consider replacing this with a binary search for the

@@ -45,7 +45,7 @@ class RtpPacketizerVp8 : public RtpPacketizer {
                    size_t max_payload_len,
                    size_t last_packet_reduction_len);
 
-  virtual ~RtpPacketizerVp8();
+  ~RtpPacketizerVp8() override;
 
   size_t SetPayloadData(const uint8_t* payload_data,
                         size_t payload_size,
@@ -159,7 +159,7 @@ class RtpPacketizerVp8 : public RtpPacketizer {
 // Depacketizer for VP8.
 class RtpDepacketizerVp8 : public RtpDepacketizer {
  public:
-  virtual ~RtpDepacketizerVp8() {}
+  ~RtpDepacketizerVp8() override = default;
 
   bool Parse(ParsedPayload* parsed_payload,
              const uint8_t* payload_data,

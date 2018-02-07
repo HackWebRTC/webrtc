@@ -29,6 +29,12 @@ constexpr int kMinPacketDurationRtt = 3;
 }  // namespace
 constexpr size_t RtpPacketHistory::kMaxCapacity;
 
+RtpPacketHistory::StoredPacket::StoredPacket() = default;
+RtpPacketHistory::StoredPacket::StoredPacket(StoredPacket&&) = default;
+RtpPacketHistory::StoredPacket& RtpPacketHistory::StoredPacket::operator=(
+    RtpPacketHistory::StoredPacket&&) = default;
+RtpPacketHistory::StoredPacket::~StoredPacket() = default;
+
 RtpPacketHistory::RtpPacketHistory(Clock* clock)
     : clock_(clock), store_(false), prev_index_(0), rtt_ms_(-1) {}
 

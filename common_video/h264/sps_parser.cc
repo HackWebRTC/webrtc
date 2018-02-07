@@ -26,6 +26,8 @@ typedef rtc::Optional<webrtc::SpsParser::SpsState> OptionalSps;
 
 namespace webrtc {
 
+SpsParser::SpsState::SpsState() = default;
+
 // General note: this is based off the 02/2014 version of the H.264 standard.
 // You can find it on this page:
 // http://www.itu.int/rec/T-REC-H.264

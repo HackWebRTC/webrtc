@@ -95,6 +95,8 @@ RtpPacketizerH264::RtpPacketizerH264(size_t max_payload_len,
 RtpPacketizerH264::~RtpPacketizerH264() {
 }
 
+RtpPacketizerH264::Fragment::~Fragment() = default;
+
 RtpPacketizerH264::Fragment::Fragment(const uint8_t* buffer, size_t length)
     : buffer(buffer), length(length) {}
 RtpPacketizerH264::Fragment::Fragment(const Fragment& fragment)

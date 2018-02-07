@@ -36,6 +36,7 @@ rtc_source_set("rtc_event_log_api") {
   sources = [
     "rtc_event_log/encoder/rtc_event_log_encoder.h",
     "rtc_event_log/events/rtc_event.h",
+    "rtc_event_log/rtc_event_log.cc",
     "rtc_event_log/rtc_event_log.h",
     "rtc_event_log/rtc_event_log_factory_interface.h",
   ]

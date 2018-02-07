@@ -31,7 +31,7 @@ class RtpPacketizerGeneric : public RtpPacketizer {
                        size_t max_payload_len,
                        size_t last_packet_reduction_len);
 
-  virtual ~RtpPacketizerGeneric();
+  ~RtpPacketizerGeneric() override;
 
   // Returns total number of packets to be generated.
   size_t SetPayloadData(const uint8_t* payload_data,
@@ -64,7 +64,7 @@ class RtpPacketizerGeneric : public RtpPacketizer {
 // Depacketizer for generic codec.
 class RtpDepacketizerGeneric : public RtpDepacketizer {
  public:
-  virtual ~RtpDepacketizerGeneric() {}
+  ~RtpDepacketizerGeneric() override;
 
   bool Parse(ParsedPayload* parsed_payload,
              const uint8_t* payload_data,

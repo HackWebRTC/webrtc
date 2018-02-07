@@ -57,9 +57,7 @@ class RtcEventLog {
 class RtcEventLogNullImpl : public RtcEventLog {
  public:
   bool StartLogging(std::unique_ptr<RtcEventLogOutput> output,
-                    int64_t output_period_ms) override {
-    return false;
-  }
+                    int64_t output_period_ms) override;
   void StopLogging() override {}
   void Log(std::unique_ptr<RtcEvent> event) override {}
 };

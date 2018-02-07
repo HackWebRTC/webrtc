@@ -331,12 +331,15 @@ class Logging {
     bool enabled;
   };
   struct ThreadState {
+    ThreadState();
+    ~ThreadState();
     State global_state;
     std::stack<State> stack;
   };
   typedef std::map<uint32_t, ThreadState> ThreadMap;
 
   Logging();
+  ~Logging();
   void PushState(const std::string& append_to_tag, int64_t timestamp_ms,
                  bool enabled);
   void PopState();

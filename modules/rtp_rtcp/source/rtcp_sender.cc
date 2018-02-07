@@ -92,7 +92,7 @@ class PacketContainer : public rtcp::CompoundPacket {
  public:
   PacketContainer(Transport* transport, RtcEventLog* event_log)
       : transport_(transport), event_log_(event_log) {}
-  virtual ~PacketContainer() {
+  ~PacketContainer() override {
     for (RtcpPacket* packet : appended_packets_)
       delete packet;
   }

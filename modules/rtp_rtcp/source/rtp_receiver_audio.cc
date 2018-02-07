@@ -38,6 +38,8 @@ RTPReceiverAudio::RTPReceiverAudio(RtpData* data_callback)
   memset(current_remote_energy_, 0, sizeof(current_remote_energy_));
 }
 
+RTPReceiverAudio::~RTPReceiverAudio() = default;
+
 // Outband TelephoneEvent(DTMF) detection
 void RTPReceiverAudio::SetTelephoneEventForwardToDecoder(
     bool forward_to_decoder) {
@@ -55,6 +57,10 @@ bool RTPReceiverAudio::TelephoneEventPayloadType(
     int8_t payload_type) const {
   rtc::CritScope lock(&crit_sect_);
   return telephone_event_payload_type_ == payload_type;
+}
+
+TelephoneEventHandler* RTPReceiverAudio::GetTelephoneEventHandler() {
+  return this;
 }
 
 bool RTPReceiverAudio::CNGPayloadType(int8_t payload_type) {

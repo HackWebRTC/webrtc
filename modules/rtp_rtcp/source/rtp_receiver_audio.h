@@ -27,7 +27,7 @@ class RTPReceiverAudio : public RTPReceiverStrategy,
                          public TelephoneEventHandler {
  public:
   explicit RTPReceiverAudio(RtpData* data_callback);
-  virtual ~RTPReceiverAudio() {}
+  ~RTPReceiverAudio() override;
 
   // The following three methods implement the TelephoneEventHandler interface.
   // Forward DTMFs to decoder for playout.
@@ -39,7 +39,7 @@ class RTPReceiverAudio : public RTPReceiverStrategy,
   // Is TelephoneEvent configured with |payload_type|.
   bool TelephoneEventPayloadType(const int8_t payload_type) const override;
 
-  TelephoneEventHandler* GetTelephoneEventHandler() override { return this; }
+  TelephoneEventHandler* GetTelephoneEventHandler() override;
 
   // Returns true if CNG is configured with |payload_type|.
   bool CNGPayloadType(const int8_t payload_type);

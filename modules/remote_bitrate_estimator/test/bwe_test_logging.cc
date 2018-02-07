@@ -34,6 +34,9 @@ static std::string ToString(uint32_t v) {
   return ss.str();
 }
 
+Logging::ThreadState::ThreadState() = default;
+Logging::ThreadState::~ThreadState() = default;
+
 Logging::Context::Context(uint32_t name, int64_t timestamp_ms, bool enabled) {
   Logging::GetInstance()->PushState(ToString(name), timestamp_ms, enabled);
 }
@@ -204,6 +207,8 @@ void Logging::PlotLabel(int figure,
 Logging::Logging()
     : thread_map_() {
 }
+
+Logging::~Logging() = default;
 
 Logging::State::State() : tag(""), timestamp_ms(0), enabled(true) {}
 

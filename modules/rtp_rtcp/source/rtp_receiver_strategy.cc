@@ -17,6 +17,8 @@ namespace webrtc {
 RTPReceiverStrategy::RTPReceiverStrategy(RtpData* data_callback)
     : data_callback_(data_callback) {}
 
+RTPReceiverStrategy::~RTPReceiverStrategy() = default;
+
 void RTPReceiverStrategy::GetLastMediaSpecificPayload(
     PayloadUnion* payload) const {
   rtc::CritScope cs(&crit_sect_);

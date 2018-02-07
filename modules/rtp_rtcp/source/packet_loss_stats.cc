@@ -26,6 +26,8 @@ PacketLossStats::PacketLossStats()
       multiple_loss_historic_packet_count_(0) {
 }
 
+PacketLossStats::~PacketLossStats() = default;
+
 void PacketLossStats::AddLostPacket(uint16_t sequence_number) {
   // Detect sequence number wrap around.
   if (!lost_packets_buffer_.empty() &&
@@ -77,7 +79,7 @@ void PacketLossStats::ComputeLossCounts(
   std::vector<const std::set<uint16_t>*> buffers;
   buffers.push_back(&lost_packets_buffer_);
   buffers.push_back(&lost_packets_wrapped_buffer_);
-  for (auto buffer : buffers) {
+  for (const auto* buffer : buffers) {
     for (auto it = buffer->begin(); it != buffer->end(); ++it) {
       uint16_t current_num = *it;
       if (sequential_count > 0 && current_num != ((last_num + 1) & 0xFFFF)) {

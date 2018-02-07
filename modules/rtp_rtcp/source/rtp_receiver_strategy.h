@@ -30,7 +30,7 @@ class RTPReceiverStrategy {
   static RTPReceiverStrategy* CreateVideoStrategy(RtpData* data_callback);
   static RTPReceiverStrategy* CreateAudioStrategy(RtpData* data_callback);
 
-  virtual ~RTPReceiverStrategy() {}
+  virtual ~RTPReceiverStrategy();
 
   // Parses the RTP packet and calls the data callback with the payload data.
   // Implementations are encouraged to use the provided packet buffer and RTP

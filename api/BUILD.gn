@@ -69,6 +69,7 @@ rtc_static_library("libjingle_peerconnection_api") {
     "rtp_headers.h",
     "rtpparameters.cc",
     "rtpparameters.h",
+    "rtpreceiverinterface.cc",
     "rtpreceiverinterface.h",
     "rtpsenderinterface.h",
     "rtptransceiverinterface.h",

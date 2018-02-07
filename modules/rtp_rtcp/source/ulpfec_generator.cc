@@ -62,6 +62,8 @@ constexpr uint32_t kUnknownSsrc = 0;
 RedPacket::RedPacket(size_t length)
     : data_(new uint8_t[length]), length_(length), header_length_(0) {}
 
+RedPacket::~RedPacket() = default;
+
 void RedPacket::CreateHeader(const uint8_t* rtp_header,
                              size_t header_length,
                              int red_payload_type,
@@ -213,7 +215,7 @@ std::vector<std::unique_ptr<RedPacket>> UlpfecGenerator::GetUlpfecPacketsAsRed(
   ForwardErrorCorrection::Packet* last_media_packet =
       media_packets_.back().get();
   uint16_t seq_num = first_seq_num;
-  for (const auto& fec_packet : generated_fec_packets_) {
+  for (const auto* fec_packet : generated_fec_packets_) {
     // Wrap FEC packet (including FEC headers) in a RED packet. Since the
     // FEC packets in |generated_fec_packets_| don't have RTP headers, we
     // reuse the header from the last media packet.

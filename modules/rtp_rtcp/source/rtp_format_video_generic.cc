@@ -112,6 +112,8 @@ std::string RtpPacketizerGeneric::ToString() {
   return "RtpPacketizerGeneric";
 }
 
+RtpDepacketizerGeneric::~RtpDepacketizerGeneric() = default;
+
 bool RtpDepacketizerGeneric::Parse(ParsedPayload* parsed_payload,
                                    const uint8_t* payload_data,
                                    size_t payload_data_length) {

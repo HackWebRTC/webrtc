@@ -114,7 +114,7 @@ bool FlexfecSender::FecAvailable() const {
 std::vector<std::unique_ptr<RtpPacketToSend>> FlexfecSender::GetFecPackets() {
   std::vector<std::unique_ptr<RtpPacketToSend>> fec_packets_to_send;
   fec_packets_to_send.reserve(ulpfec_generator_.generated_fec_packets_.size());
-  for (const auto& fec_packet : ulpfec_generator_.generated_fec_packets_) {
+  for (const auto* fec_packet : ulpfec_generator_.generated_fec_packets_) {
     std::unique_ptr<RtpPacketToSend> fec_packet_to_send(
         new RtpPacketToSend(&rtp_header_extension_map_));
 

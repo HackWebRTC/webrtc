@@ -142,6 +142,8 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
   SetMaxRtpPacketSize(IP_PACKET_SIZE - kTcpOverIpv4HeaderSize);
 }
 
+ModuleRtpRtcpImpl::~ModuleRtpRtcpImpl() = default;
+
 // Returns the number of milliseconds until the module want a worker thread
 // to call Process.
 int64_t ModuleRtpRtcpImpl::TimeUntilNextProcess() {

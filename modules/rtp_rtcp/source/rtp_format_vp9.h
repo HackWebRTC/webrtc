@@ -37,7 +37,7 @@ class RtpPacketizerVp9 : public RtpPacketizer {
                    size_t max_payload_length,
                    size_t last_packet_reduction_len);
 
-  virtual ~RtpPacketizerVp9();
+  ~RtpPacketizerVp9() override;
 
   std::string ToString() override;
 
@@ -90,7 +90,7 @@ class RtpPacketizerVp9 : public RtpPacketizer {
 
 class RtpDepacketizerVp9 : public RtpDepacketizer {
  public:
-  virtual ~RtpDepacketizerVp9() {}
+  ~RtpDepacketizerVp9() override = default;
 
   bool Parse(ParsedPayload* parsed_payload,
              const uint8_t* payload,

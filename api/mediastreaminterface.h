@@ -72,7 +72,7 @@ class MediaSourceInterface : public rtc::RefCountInterface,
   virtual bool remote() const = 0;
 
  protected:
-  virtual ~MediaSourceInterface() {}
+  ~MediaSourceInterface() override = default;
 };
 
 // C++ version of MediaStreamTrack.
@@ -106,7 +106,7 @@ class MediaStreamTrackInterface : public rtc::RefCountInterface,
   virtual TrackState state() const = 0;
 
  protected:
-  virtual ~MediaStreamTrackInterface() {}
+  ~MediaStreamTrackInterface() override = default;
 };
 
 // VideoTrackSourceInterface is a reference counted source used for
@@ -147,7 +147,7 @@ class VideoTrackSourceInterface
   virtual bool GetStats(Stats* stats) = 0;
 
  protected:
-  virtual ~VideoTrackSourceInterface() {}
+  ~VideoTrackSourceInterface() override = default;
 };
 
 // VideoTrackInterface is designed to be invoked on the signaling thread except
@@ -173,11 +173,11 @@ class VideoTrackInterface
 
   virtual VideoTrackSourceInterface* GetSource() const = 0;
 
-  virtual ContentHint content_hint() const { return ContentHint::kNone; }
+  virtual ContentHint content_hint() const;
   virtual void set_content_hint(ContentHint hint) {}
 
  protected:
-  virtual ~VideoTrackInterface() {}
+  ~VideoTrackInterface() override = default;
 };
 
 // Interface for receiving audio data from a AudioTrack.
@@ -269,7 +269,7 @@ class AudioProcessorInterface : public rtc::RefCountInterface {
   virtual AudioProcessorStatistics GetStats(bool has_remote_tracks);
 
  protected:
-  virtual ~AudioProcessorInterface() {}
+  ~AudioProcessorInterface() override = default;
 };
 
 class AudioTrackInterface : public MediaStreamTrackInterface {
@@ -286,17 +286,15 @@ class AudioTrackInterface : public MediaStreamTrackInterface {
   // Return true on success, otherwise false.
   // TODO(deadbeef): Change the interface to int GetSignalLevel() and pure
   // virtual after it's implemented in chromium.
-  virtual bool GetSignalLevel(int* level) { return false; }
+  virtual bool GetSignalLevel(int* level);
 
   // Get the audio processor used by the audio track. Return null if the track
   // does not have any processor.
   // TODO(deadbeef): Make the interface pure virtual.
-  virtual rtc::scoped_refptr<AudioProcessorInterface> GetAudioProcessor() {
-    return nullptr;
-  }
+  virtual rtc::scoped_refptr<AudioProcessorInterface> GetAudioProcessor();
 
  protected:
-  virtual ~AudioTrackInterface() {}
+  ~AudioTrackInterface() override = default;
 };
 
 typedef std::vector<rtc::scoped_refptr<AudioTrackInterface> >
@@ -331,7 +329,7 @@ class MediaStreamInterface : public rtc::RefCountInterface,
   virtual bool RemoveTrack(VideoTrackInterface* track) = 0;
 
  protected:
-  virtual ~MediaStreamInterface() {}
+  ~MediaStreamInterface() override = default;
 };
 
 }  // namespace webrtc

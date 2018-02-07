@@ -23,7 +23,7 @@ class RTPReceiverVideo : public RTPReceiverStrategy {
  public:
   explicit RTPReceiverVideo(RtpData* data_callback);
 
-  virtual ~RTPReceiverVideo();
+  ~RTPReceiverVideo() override;
 
   int32_t ParseRtpPacket(WebRtcRTPHeader* rtp_header,
                          const PayloadUnion& specific_payload,
@@ -32,7 +32,7 @@ class RTPReceiverVideo : public RTPReceiverStrategy {
                          size_t packet_length,
                          int64_t timestamp) override;
 
-  TelephoneEventHandler* GetTelephoneEventHandler() override { return NULL; }
+  TelephoneEventHandler* GetTelephoneEventHandler() override;
 
   RTPAliveType ProcessDeadOrAlive(uint16_t last_payload_length) const override;
 

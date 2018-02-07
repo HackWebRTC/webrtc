@@ -52,6 +52,8 @@ StreamStatisticianImpl::StreamStatisticianImpl(
       rtcp_callback_(rtcp_callback),
       rtp_callback_(rtp_callback) {}
 
+StreamStatisticianImpl::~StreamStatisticianImpl() = default;
+
 void StreamStatisticianImpl::IncomingPacket(const RTPHeader& header,
                                             size_t packet_length,
                                             bool retransmitted) {

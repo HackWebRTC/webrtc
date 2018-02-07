@@ -185,11 +185,6 @@ rtc_static_library("rtp_rtcp") {
     defines = [ "BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=0" ]
   }
 
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-
   deps = [
     ":rtp_rtcp_format",
     "..:module_api",

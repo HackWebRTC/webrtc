@@ -119,6 +119,10 @@ int32_t RTPReceiverVideo::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
              : -1;
 }
 
+TelephoneEventHandler* RTPReceiverVideo::GetTelephoneEventHandler() {
+  return nullptr;
+}
+
 RTPAliveType RTPReceiverVideo::ProcessDeadOrAlive(
     uint16_t last_payload_length) const {
   return kRtpDead;

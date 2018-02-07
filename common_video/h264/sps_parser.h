@@ -25,7 +25,7 @@ class SpsParser {
   // The parsed state of the SPS. Only some select values are stored.
   // Add more as they are actually needed.
   struct SpsState {
-    SpsState() = default;
+    SpsState();
 
     uint32_t width = 0;
     uint32_t height = 0;
