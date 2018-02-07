@@ -122,7 +122,10 @@ public interface VideoEncoder {
   }
 
   public interface Callback {
-    /** Call to return an encoded frame. */
+    /**
+     * Call to return an encoded frame. It is safe to assume the byte buffer held by |frame| is not
+     * accessed after the call to this method returns.
+     */
     void onEncodedFrame(EncodedImage frame, CodecSpecificInfo info);
   }
 
