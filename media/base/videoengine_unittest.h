@@ -105,8 +105,8 @@ class VideoMediaChannelTest : public testing::Test,
         channel_->SetVideoSend(kSsrc, true, nullptr, video_capturer_.get()));
   }
 
-  virtual cricket::FakeVideoCapturer* CreateFakeVideoCapturer() {
-    return new cricket::FakeVideoCapturer();
+  virtual cricket::FakeVideoCapturerWithTaskQueue* CreateFakeVideoCapturer() {
+    return new cricket::FakeVideoCapturerWithTaskQueue();
   }
 
   // Utility method to setup an additional stream to send and receive video.
@@ -192,8 +192,7 @@ class VideoMediaChannelTest : public testing::Test,
     if (video_capturer_2_) {
       video_capturer_2_->CaptureFrame();
     }
-    return video_capturer_.get() &&
-        video_capturer_->CaptureFrame();
+    return video_capturer_.get() && video_capturer_->CaptureFrame();
   }
   bool WaitAndSendFrame(int wait_ms) {
     bool ret = rtc::Thread::Current()->ProcessMessages(wait_ms);
@@ -543,7 +542,7 @@ class VideoMediaChannelTest : public testing::Test,
 
     // Add an additional capturer, and hook up a renderer to receive it.
     cricket::FakeVideoRenderer renderer2;
-    std::unique_ptr<cricket::FakeVideoCapturer> capturer(
+    std::unique_ptr<cricket::FakeVideoCapturerWithTaskQueue> capturer(
         CreateFakeVideoCapturer());
     const int kTestWidth = 160;
     const int kTestHeight = 120;
@@ -557,8 +556,8 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(channel_->AddRecvStream(
         cricket::StreamParams::CreateLegacy(5678)));
     EXPECT_TRUE(channel_->SetSink(5678, &renderer2));
-    EXPECT_TRUE(capturer->CaptureCustomFrame(
-        kTestWidth, kTestHeight, cricket::FOURCC_I420));
+    EXPECT_TRUE(capturer->CaptureCustomFrame(kTestWidth, kTestHeight,
+                                             cricket::FOURCC_I420));
     EXPECT_FRAME_ON_RENDERER_WAIT(
         renderer2, 1, kTestWidth, kTestHeight, kTimeout);
 
@@ -745,41 +744,43 @@ class VideoMediaChannelTest : public testing::Test,
 
   // Tests that we can add and remove capturers and frames are sent out properly
   void AddRemoveCapturer() {
-    cricket::VideoCodec codec = DefaultCodec();
-    const int time_between_send_ms =
-        cricket::VideoFormat::FpsToInterval(kFramerate);
+    using cricket::VideoCodec;
+    using cricket::VideoOptions;
+    using cricket::VideoFormat;
+    using cricket::FOURCC_I420;
+
+    VideoCodec codec = DefaultCodec();
+    const int time_between_send_ms = VideoFormat::FpsToInterval(kFramerate);
     EXPECT_TRUE(SetOneCodec(codec));
     EXPECT_TRUE(SetSend(true));
     EXPECT_TRUE(channel_->SetSink(kDefaultReceiveSsrc, &renderer_));
     EXPECT_EQ(0, renderer_.num_rendered_frames());
     EXPECT_TRUE(SendFrame());
     EXPECT_FRAME_WAIT(1, kVideoWidth, kVideoHeight, kTimeout);
-    std::unique_ptr<cricket::FakeVideoCapturer> capturer(
+    std::unique_ptr<cricket::FakeVideoCapturerWithTaskQueue> capturer(
         CreateFakeVideoCapturer());
 
     // TODO(nisse): This testcase fails if we don't configure
     // screencast. It's unclear why, I see nothing obvious in this
     // test which is related to screencast logic.
-    cricket::VideoOptions video_options;
+    VideoOptions video_options;
     video_options.is_screencast = true;
     channel_->SetVideoSend(kSsrc, true, &video_options, nullptr);
 
-    cricket::VideoFormat format(480, 360,
-                                cricket::VideoFormat::FpsToInterval(30),
-                                cricket::FOURCC_I420);
+    VideoFormat format(480, 360, VideoFormat::FpsToInterval(30), FOURCC_I420);
     EXPECT_EQ(cricket::CS_RUNNING, capturer->Start(format));
     // All capturers start generating frames with the same timestamp. ViE does
     // not allow the same timestamp to be used. Capture one frame before
     // associating the capturer with the channel.
-    EXPECT_TRUE(capturer->CaptureCustomFrame(format.width, format.height,
-                                             cricket::FOURCC_I420));
+    EXPECT_TRUE(
+        capturer->CaptureCustomFrame(format.width, format.height, FOURCC_I420));
 
     int captured_frames = 1;
     for (int iterations = 0; iterations < 2; ++iterations) {
       EXPECT_TRUE(channel_->SetVideoSend(kSsrc, true, nullptr, capturer.get()));
       rtc::Thread::Current()->ProcessMessages(time_between_send_ms);
       EXPECT_TRUE(capturer->CaptureCustomFrame(format.width, format.height,
-                                               cricket::FOURCC_I420));
+                                               FOURCC_I420));
       ++captured_frames;
       // Wait until frame of right size is captured.
       EXPECT_TRUE_WAIT(renderer_.num_rendered_frames() >= captured_frames &&
@@ -809,7 +810,7 @@ class VideoMediaChannelTest : public testing::Test,
       // not render a frame with the same timestamp so capture another frame
       // with the frame capturer to increment the next frame's timestamp.
       EXPECT_TRUE(capturer->CaptureCustomFrame(format.width, format.height,
-                                               cricket::FOURCC_I420));
+                                               FOURCC_I420));
     }
   }
 
@@ -856,7 +857,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(channel_->SetSink(1, &renderer1));
     EXPECT_TRUE(channel_->AddSendStream(
         cricket::StreamParams::CreateLegacy(1)));
-    std::unique_ptr<cricket::FakeVideoCapturer> capturer1(
+    std::unique_ptr<cricket::FakeVideoCapturerWithTaskQueue> capturer1(
         CreateFakeVideoCapturer());
     EXPECT_EQ(cricket::CS_RUNNING, capturer1->Start(capture_format));
     // Set up additional stream 2.
@@ -867,7 +868,7 @@ class VideoMediaChannelTest : public testing::Test,
     EXPECT_TRUE(channel_->SetSink(2, &renderer2));
     EXPECT_TRUE(channel_->AddSendStream(
         cricket::StreamParams::CreateLegacy(2)));
-    std::unique_ptr<cricket::FakeVideoCapturer> capturer2(
+    std::unique_ptr<cricket::FakeVideoCapturerWithTaskQueue> capturer2(
         CreateFakeVideoCapturer());
     EXPECT_EQ(cricket::CS_RUNNING, capturer2->Start(capture_format));
     // State for all the streams.
@@ -881,13 +882,13 @@ class VideoMediaChannelTest : public testing::Test,
     // Test capturer associated with engine.
     const int kTestWidth = 160;
     const int kTestHeight = 120;
-    EXPECT_TRUE(capturer1->CaptureCustomFrame(
-        kTestWidth, kTestHeight, cricket::FOURCC_I420));
+    EXPECT_TRUE(capturer1->CaptureCustomFrame(kTestWidth, kTestHeight,
+                                              cricket::FOURCC_I420));
     EXPECT_FRAME_ON_RENDERER_WAIT(
         renderer1, 1, kTestWidth, kTestHeight, kTimeout);
     // Capture a frame with additional capturer2, frames should be received
-    EXPECT_TRUE(capturer2->CaptureCustomFrame(
-        kTestWidth, kTestHeight, cricket::FOURCC_I420));
+    EXPECT_TRUE(capturer2->CaptureCustomFrame(kTestWidth, kTestHeight,
+                                              cricket::FOURCC_I420));
     EXPECT_FRAME_ON_RENDERER_WAIT(
         renderer2, 1, kTestWidth, kTestHeight, kTimeout);
     // Successfully remove the capturer.
@@ -931,8 +932,8 @@ class VideoMediaChannelTest : public testing::Test,
   webrtc::RtcEventLogNullImpl event_log_;
   const std::unique_ptr<webrtc::Call> call_;
   E engine_;
-  std::unique_ptr<cricket::FakeVideoCapturer> video_capturer_;
-  std::unique_ptr<cricket::FakeVideoCapturer> video_capturer_2_;
+  std::unique_ptr<cricket::FakeVideoCapturerWithTaskQueue> video_capturer_;
+  std::unique_ptr<cricket::FakeVideoCapturerWithTaskQueue> video_capturer_2_;
   std::unique_ptr<C> channel_;
   cricket::FakeNetworkInterface network_interface_;
   cricket::FakeVideoRenderer renderer_;

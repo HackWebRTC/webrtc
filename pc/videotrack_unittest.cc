@@ -39,7 +39,7 @@ class VideoTrackTest : public testing::Test {
   }
 
  protected:
-  cricket::FakeVideoCapturer capturer_;
+  cricket::FakeVideoCapturerWithTaskQueue capturer_;
   rtc::scoped_refptr<VideoTrackSource> video_track_source_;
   rtc::scoped_refptr<VideoTrackInterface> video_track_;
 };

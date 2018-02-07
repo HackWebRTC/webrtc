@@ -41,6 +41,7 @@
 #include "test/field_trial.h"
 #include "test/gmock.h"
 
+using cricket::FakeVideoCapturerWithTaskQueue;
 using webrtc::RtpExtension;
 
 namespace {
@@ -293,7 +294,7 @@ TEST_F(WebRtcVideoEngineTest, SupportsVideoRotationHeaderExtension) {
 TEST_F(WebRtcVideoEngineTest, CVOSetHeaderExtensionBeforeCapturer) {
   // Allocate the capturer first to prevent early destruction before channel's
   // dtor is called.
-  cricket::FakeVideoCapturer capturer;
+  FakeVideoCapturerWithTaskQueue capturer;
 
   encoder_factory_->AddSupportedVideoCodecType("VP8");
 
@@ -323,7 +324,7 @@ TEST_F(WebRtcVideoEngineTest, CVOSetHeaderExtensionBeforeCapturer) {
 TEST_F(WebRtcVideoEngineTest, CVOSetHeaderExtensionBeforeAddSendStream) {
   // Allocate the capturer first to prevent early destruction before channel's
   // dtor is called.
-  cricket::FakeVideoCapturer capturer;
+  FakeVideoCapturerWithTaskQueue capturer;
 
   encoder_factory_->AddSupportedVideoCodecType("VP8");
 
@@ -345,7 +346,7 @@ TEST_F(WebRtcVideoEngineTest, CVOSetHeaderExtensionBeforeAddSendStream) {
 }
 
 TEST_F(WebRtcVideoEngineTest, CVOSetHeaderExtensionAfterCapturer) {
-  cricket::FakeVideoCapturer capturer;
+  FakeVideoCapturerWithTaskQueue capturer;
 
   encoder_factory_->AddSupportedVideoCodecType("VP8");
   encoder_factory_->AddSupportedVideoCodecType("VP9");
@@ -409,7 +410,7 @@ TEST_F(WebRtcVideoEngineTest, UseExternalFactoryForVp8WhenSupported) {
       channel->AddSendStream(cricket::StreamParams::CreateLegacy(kSsrc)));
   EXPECT_EQ(0, encoder_factory_->GetNumCreatedEncoders());
   EXPECT_TRUE(channel->SetSend(true));
-  cricket::FakeVideoCapturer capturer;
+  FakeVideoCapturerWithTaskQueue capturer;
   EXPECT_TRUE(channel->SetVideoSend(kSsrc, true, nullptr, &capturer));
   EXPECT_EQ(cricket::CS_RUNNING,
             capturer.Start(capturer.GetSupportedFormats()->front()));
@@ -525,7 +526,7 @@ TEST_F(WebRtcVideoEngineTest, PropagatesInputFrameTimestamp) {
   EXPECT_TRUE(
       channel->AddSendStream(cricket::StreamParams::CreateLegacy(kSsrc)));
 
-  FakeVideoCapturer capturer;
+  FakeVideoCapturerWithTaskQueue capturer;
   EXPECT_TRUE(channel->SetVideoSend(kSsrc, true, nullptr, &capturer));
   capturer.Start(cricket::VideoFormat(1280, 720,
                                       cricket::VideoFormat::FpsToInterval(60),
@@ -634,7 +635,7 @@ TEST_F(WebRtcVideoEngineTest, UsesSimulcastAdapterForVp8Factories) {
       channel->AddSendStream(CreateSimStreamParams("cname", ssrcs)));
   EXPECT_TRUE(channel->SetSend(true));
 
-  cricket::FakeVideoCapturer capturer;
+  FakeVideoCapturerWithTaskQueue capturer;
   EXPECT_TRUE(channel->SetVideoSend(ssrcs.front(), true, nullptr, &capturer));
   EXPECT_EQ(cricket::CS_RUNNING,
             capturer.Start(capturer.GetSupportedFormats()->front()));
@@ -711,7 +712,7 @@ TEST_F(WebRtcVideoEngineTest,
   // Send a fake frame, or else the media engine will configure the simulcast
   // encoder adapter at a low-enough size that it'll only create a single
   // encoder layer.
-  cricket::FakeVideoCapturer capturer;
+  FakeVideoCapturerWithTaskQueue capturer;
   EXPECT_TRUE(channel->SetVideoSend(ssrcs.front(), true, nullptr, &capturer));
   EXPECT_EQ(cricket::CS_RUNNING,
             capturer.Start(capturer.GetSupportedFormats()->front()));
@@ -745,7 +746,7 @@ TEST_F(WebRtcVideoEngineTest,
   // Send a frame of 720p. This should trigger a "real" encoder initialization.
   cricket::VideoFormat format(
       1280, 720, cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420);
-  cricket::FakeVideoCapturer capturer;
+  FakeVideoCapturerWithTaskQueue capturer;
   EXPECT_TRUE(channel->SetVideoSend(kSsrc, true, nullptr, &capturer));
   EXPECT_EQ(cricket::CS_RUNNING, capturer.Start(format));
   EXPECT_TRUE(capturer.CaptureFrame());
@@ -770,7 +771,7 @@ TEST_F(WebRtcVideoEngineTest, SimulcastDisabledForH264) {
   // Send a frame of 720p. This should trigger a "real" encoder initialization.
   cricket::VideoFormat format(
       1280, 720, cricket::VideoFormat::FpsToInterval(30), cricket::FOURCC_I420);
-  cricket::FakeVideoCapturer capturer;
+  FakeVideoCapturerWithTaskQueue capturer;
   EXPECT_TRUE(channel->SetVideoSend(ssrcs[0], true, nullptr, &capturer));
   EXPECT_EQ(cricket::CS_RUNNING, capturer.Start(format));
   EXPECT_TRUE(capturer.CaptureFrame());
@@ -1094,7 +1095,7 @@ TEST_F(WebRtcVideoEngineTest, DISABLED_RecreatesEncoderOnContentTypeChange) {
   channel->SetSend(true);
   ASSERT_TRUE(channel->SetSendParameters(parameters));
 
-  cricket::FakeVideoCapturer capturer;
+  FakeVideoCapturerWithTaskQueue capturer;
   VideoOptions options;
   EXPECT_TRUE(channel->SetVideoSend(kSsrc, true, &options, &capturer));
 
@@ -1399,7 +1400,7 @@ class WebRtcVideoChannelTest : public WebRtcVideoEngineTest {
 
   FakeVideoSendStream* SetDenoisingOption(
       uint32_t ssrc,
-      cricket::FakeVideoCapturer* capturer,
+      FakeVideoCapturerWithTaskQueue* capturer,
       bool enabled) {
     cricket::VideoOptions options;
     options.video_noise_reduction = enabled;
@@ -1879,7 +1880,7 @@ TEST_F(WebRtcVideoChannelTest, ReconfiguresEncodersWhenNotSending) {
   EXPECT_EQ(0u, streams[0].width);
   EXPECT_EQ(0u, streams[0].height);
 
-  cricket::FakeVideoCapturer capturer;
+  FakeVideoCapturerWithTaskQueue capturer;
   EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, true, nullptr, &capturer));
   VideoFormat capture_format = capturer.GetSupportedFormats()->front();
   EXPECT_EQ(cricket::CS_RUNNING, capturer.Start(capture_format));
@@ -1901,7 +1902,7 @@ TEST_F(WebRtcVideoChannelTest, UsesCorrectSettingsForScreencast) {
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
   AddSendStream();
 
-  cricket::FakeVideoCapturer capturer;
+  FakeVideoCapturerWithTaskQueue capturer;
   VideoOptions min_bitrate_options;
   min_bitrate_options.screencast_min_bitrate_kbps = kScreenshareMinBitrateKbps;
   EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, true, &min_bitrate_options,
@@ -1967,7 +1968,7 @@ TEST_F(WebRtcVideoChannelTest,
   AddSendStream();
   VideoOptions options;
   options.is_screencast = true;
-  cricket::FakeVideoCapturer capturer;
+  FakeVideoCapturerWithTaskQueue capturer;
   EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, true, &options, &capturer));
   cricket::VideoFormat capture_format_hd =
       capturer.GetSupportedFormats()->front();
@@ -2042,7 +2043,7 @@ TEST_F(WebRtcVideoChannelTest, VerifyVp8SpecificSettings) {
   // both RTX and regular SSRCs).
   FakeVideoSendStream* stream = SetUpSimulcast(false, true);
 
-  cricket::FakeVideoCapturer capturer;
+  FakeVideoCapturerWithTaskQueue capturer;
   EXPECT_EQ(cricket::CS_RUNNING,
             capturer.Start(capturer.GetSupportedFormats()->front()));
   EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, true, nullptr, &capturer));
@@ -2109,7 +2110,7 @@ TEST_F(WebRtcVideoChannelTest, VerifyVp8SpecificSettings) {
 // reconfigured.
 TEST_F(WebRtcVideoChannelTest, SetIdenticalOptionsDoesntReconfigureEncoder) {
   VideoOptions options;
-  cricket::FakeVideoCapturer capturer;
+  FakeVideoCapturerWithTaskQueue capturer;
 
   AddSendStream();
   EXPECT_EQ(cricket::CS_RUNNING,
@@ -2161,7 +2162,7 @@ TEST_F(Vp9SettingsTest, VerifyVp9SpecificSettings) {
 
   FakeVideoSendStream* stream = SetUpSimulcast(false, false);
 
-  cricket::FakeVideoCapturer capturer;
+  FakeVideoCapturerWithTaskQueue capturer;
   EXPECT_EQ(cricket::CS_RUNNING,
             capturer.Start(capturer.GetSupportedFormats()->front()));
   EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, true, nullptr, &capturer));
@@ -2221,7 +2222,7 @@ class Vp9SettingsTestWithFieldTrial : public Vp9SettingsTest {
 
     FakeVideoSendStream* stream = SetUpSimulcast(false, false);
 
-    cricket::FakeVideoCapturer capturer;
+    FakeVideoCapturerWithTaskQueue capturer;
     EXPECT_EQ(cricket::CS_RUNNING,
               capturer.Start(capturer.GetSupportedFormats()->front()));
     EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, true, nullptr, &capturer));
@@ -2331,7 +2332,7 @@ TEST_F(WebRtcVideoChannelTest, AdaptsOnOveruseAndChangeResolution) {
 
   AddSendStream();
 
-  cricket::FakeVideoCapturer capturer;
+  FakeVideoCapturerWithTaskQueue capturer;
   ASSERT_TRUE(channel_->SetVideoSend(last_ssrc_, true, nullptr, &capturer));
   ASSERT_EQ(cricket::CS_RUNNING,
             capturer.Start(capturer.GetSupportedFormats()->front()));
@@ -2412,7 +2413,7 @@ TEST_F(WebRtcVideoChannelTest, PreviousAdaptationDoesNotApplyToScreenshare) {
 
   AddSendStream();
 
-  cricket::FakeVideoCapturer capturer;
+  FakeVideoCapturerWithTaskQueue capturer;
   ASSERT_EQ(cricket::CS_RUNNING,
             capturer.Start(capturer.GetSupportedFormats()->front()));
   ASSERT_TRUE(channel_->SetSend(true));
@@ -2440,7 +2441,7 @@ TEST_F(WebRtcVideoChannelTest, PreviousAdaptationDoesNotApplyToScreenshare) {
   EXPECT_EQ(720 * 3 / 4, send_stream->GetLastHeight());
 
   // Switch to screen share. Expect no CPU adaptation.
-  cricket::FakeVideoCapturer screen_share(true);
+  FakeVideoCapturerWithTaskQueue screen_share(true);
   ASSERT_EQ(cricket::CS_RUNNING,
             screen_share.Start(screen_share.GetSupportedFormats()->front()));
   cricket::VideoOptions screenshare_options;
@@ -2490,7 +2491,7 @@ void WebRtcVideoChannelTest::TestDegradationPreference(
 
   AddSendStream();
 
-  cricket::FakeVideoCapturer capturer;
+  FakeVideoCapturerWithTaskQueue capturer;
   VideoOptions options;
   EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, true, &options, &capturer));
   cricket::VideoFormat capture_format = capturer.GetSupportedFormats()->front();
@@ -2525,7 +2526,7 @@ void WebRtcVideoChannelTest::TestCpuAdaptation(bool enable_overuse,
 
   AddSendStream();
 
-  cricket::FakeVideoCapturer capturer;
+  FakeVideoCapturerWithTaskQueue capturer;
   VideoOptions options;
   options.is_screencast = is_screenshare;
   EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, true, &options, &capturer));
@@ -3064,7 +3065,7 @@ TEST_F(WebRtcVideoChannelTest, SetSendCodecsChangesExistingStreams) {
   channel_->SetSend(true);
 
   FakeVideoSendStream* stream = AddSendStream();
-  cricket::FakeVideoCapturer capturer;
+  FakeVideoCapturerWithTaskQueue capturer;
   EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, true, nullptr, &capturer));
 
   std::vector<webrtc::VideoStream> streams = stream->GetVideoStreams();
@@ -3194,7 +3195,7 @@ TEST_F(WebRtcVideoChannelTest, SetMaxSendBitrateCanIncreaseSenderBitrate) {
 
   FakeVideoSendStream* stream = AddSendStream();
 
-  cricket::FakeVideoCapturer capturer;
+  FakeVideoCapturerWithTaskQueue capturer;
   EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, true, nullptr, &capturer));
   EXPECT_EQ(cricket::CS_RUNNING,
             capturer.Start(capturer.GetSupportedFormats()->front()));
@@ -3223,7 +3224,7 @@ TEST_F(WebRtcVideoChannelTest,
       cricket::CreateSimStreamParams("cname", MAKE_VECTOR(kSsrcs3)));
 
   // Send a frame to make sure this scales up to >1 stream (simulcast).
-  cricket::FakeVideoCapturer capturer;
+  FakeVideoCapturerWithTaskQueue capturer;
   EXPECT_TRUE(channel_->SetVideoSend(kSsrcs3[0], true, nullptr, &capturer));
   EXPECT_EQ(cricket::CS_RUNNING,
             capturer.Start(capturer.GetSupportedFormats()->front()));
@@ -4323,7 +4324,7 @@ TEST_F(WebRtcVideoChannelTest,
 TEST_F(WebRtcVideoChannelTest, CanSentMaxBitrateForExistingStream) {
   AddSendStream();
 
-  cricket::FakeVideoCapturer capturer;
+  FakeVideoCapturerWithTaskQueue capturer;
   EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, true, nullptr, &capturer));
   cricket::VideoFormat capture_format_hd =
       capturer.GetSupportedFormats()->front();
@@ -4460,10 +4461,10 @@ TEST_F(WebRtcVideoChannelTest, SetRtpSendParametersPrioritySimulcastStreams) {
   AddSendStream(stream_params);
   uint32_t primary_ssrc = stream_params.first_ssrc();
 
-  // Using the FakeVideoCapturer, we manually send a full size frame. This
-  // creates multiple VideoStreams for all simulcast layers when reconfiguring,
-  // and allows us to test this behavior.
-  cricket::FakeVideoCapturer capturer;
+  // Using the FakeVideoCapturerWithTaskQueue, we manually send a full size
+  // frame. This creates multiple VideoStreams for all simulcast layers when
+  // reconfiguring, and allows us to test this behavior.
+  FakeVideoCapturerWithTaskQueue capturer;
   VideoOptions options;
   EXPECT_TRUE(channel_->SetVideoSend(primary_ssrc, true, &options, &capturer));
   EXPECT_EQ(cricket::CS_RUNNING,
@@ -4546,9 +4547,10 @@ TEST_F(WebRtcVideoChannelTest, SetRtpSendParametersMultipleEncodingsActive) {
   FakeVideoSendStream* fake_video_send_stream = AddSendStream(stream_params);
   uint32_t primary_ssrc = stream_params.first_ssrc();
 
-  // Using the FakeVideoCapturer, we manually send a full size frame. This
-  // allows us to test that ReconfigureEncoder is called appropriately.
-  cricket::FakeVideoCapturer capturer;
+  // Using the FakeVideoCapturerWithTaskQueue, we manually send a full size
+  // frame. This allows us to test that ReconfigureEncoder is called
+  // appropriately.
+  cricket::FakeVideoCapturerWithTaskQueue capturer;
   VideoOptions options;
   EXPECT_TRUE(channel_->SetVideoSend(primary_ssrc, true, &options, &capturer));
   EXPECT_EQ(cricket::CS_RUNNING,
@@ -4913,7 +4915,7 @@ class WebRtcVideoChannelSimulcastTest : public testing::Test {
     AddSendStream(CreateSimStreamParams("cname", ssrcs));
     // Send a full-size frame to trigger a stream reconfiguration to use all
     // expected simulcast layers.
-    cricket::FakeVideoCapturer capturer;
+    FakeVideoCapturerWithTaskQueue capturer;
     VideoOptions options;
     if (screenshare)
       options.is_screencast = screenshare;

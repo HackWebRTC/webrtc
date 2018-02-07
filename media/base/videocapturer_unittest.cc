@@ -21,7 +21,7 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/thread.h"
 
-using cricket::FakeVideoCapturer;
+using cricket::FakeVideoCapturerWithTaskQueue;
 
 namespace {
 
@@ -42,8 +42,8 @@ class VideoCapturerTest
 
  protected:
   void InitCapturer(bool is_screencast) {
-    capturer_ = std::unique_ptr<FakeVideoCapturer>(
-        new FakeVideoCapturer(is_screencast));
+    capturer_ = std::unique_ptr<FakeVideoCapturerWithTaskQueue>(
+        new FakeVideoCapturerWithTaskQueue(is_screencast));
     capturer_->SignalStateChange.connect(this,
                                          &VideoCapturerTest::OnStateChange);
     capturer_->AddOrUpdateSink(&renderer_, rtc::VideoSinkWants());
@@ -58,7 +58,7 @@ class VideoCapturerTest
   cricket::CaptureState capture_state() { return capture_state_; }
   int num_state_changes() { return num_state_changes_; }
 
-  std::unique_ptr<cricket::FakeVideoCapturer> capturer_;
+  std::unique_ptr<FakeVideoCapturerWithTaskQueue> capturer_;
   cricket::CaptureState capture_state_;
   int num_state_changes_;
   cricket::FakeVideoRenderer renderer_;

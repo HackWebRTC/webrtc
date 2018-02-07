@@ -29,8 +29,8 @@ const int kDefaultFps = 30;
 
 class VideoAdapterTest : public testing::Test {
  public:
-  virtual void SetUp() {
-    capturer_.reset(new FakeVideoCapturer);
+  void SetUp() override {
+    capturer_.reset(new FakeVideoCapturerWithTaskQueue());
     capture_format_ = capturer_->GetSupportedFormats()->at(0);
     capture_format_.interval = VideoFormat::FpsToInterval(kDefaultFps);
 
@@ -38,7 +38,7 @@ class VideoAdapterTest : public testing::Test {
     capturer_->AddOrUpdateSink(listener_.get(), rtc::VideoSinkWants());
   }
 
-  virtual void TearDown() {
+  void TearDown() override {
     // Explicitly disconnect the VideoCapturer before to avoid data races
     // (frames delivered to VideoCapturerListener while it's being destructed).
     capturer_->RemoveSink(listener_.get());
@@ -69,7 +69,7 @@ class VideoAdapterTest : public testing::Test {
           dropped_frames_(0),
           last_adapt_was_no_op_(false) {}
 
-    void OnFrame(const webrtc::VideoFrame& frame) {
+    void OnFrame(const webrtc::VideoFrame& frame) override {
       rtc::CritScope lock(&crit_);
       const int in_width = frame.width();
       const int in_height = frame.height();
@@ -131,7 +131,7 @@ class VideoAdapterTest : public testing::Test {
     EXPECT_EQ(out_height, stats.out_height);
   }
 
-  std::unique_ptr<FakeVideoCapturer> capturer_;
+  std::unique_ptr<FakeVideoCapturerWithTaskQueue> capturer_;
   VideoAdapter adapter_;
   int cropped_width_;
   int cropped_height_;
