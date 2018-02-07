@@ -506,11 +506,11 @@ class HardwareVideoEncoder implements VideoEncoder {
           frameBuffer = ByteBuffer.allocateDirect(info.size + configBuffer.capacity());
           configBuffer.rewind();
           frameBuffer.put(configBuffer);
+          frameBuffer.put(codecOutputBuffer);
+          frameBuffer.rewind();
         } else {
-          frameBuffer = ByteBuffer.allocateDirect(info.size);
+          frameBuffer = codecOutputBuffer.slice();
         }
-        frameBuffer.put(codecOutputBuffer);
-        frameBuffer.rewind();
 
         final EncodedImage.FrameType frameType = isKeyFrame
             ? EncodedImage.FrameType.VideoFrameKey

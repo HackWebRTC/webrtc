@@ -87,7 +87,22 @@ public class HardwareVideoEncoderTest {
     public void onEncodedFrame(EncodedImage frame, VideoEncoder.CodecSpecificInfo info) {
       assertNotNull(frame);
       assertNotNull(info);
-      frameQueue.offer(frame);
+
+      // Make a copy because keeping a reference to the buffer is not allowed.
+      final ByteBuffer bufferCopy = ByteBuffer.allocateDirect(frame.buffer.remaining());
+      bufferCopy.put(frame.buffer);
+      bufferCopy.rewind();
+
+      frameQueue.offer(EncodedImage.builder()
+                           .setBuffer(bufferCopy)
+                           .setEncodedWidth(frame.encodedWidth)
+                           .setEncodedHeight(frame.encodedHeight)
+                           .setCaptureTimeNs(frame.captureTimeNs)
+                           .setFrameType(frame.frameType)
+                           .setRotation(frame.rotation)
+                           .setCompleteFrame(frame.completeFrame)
+                           .setQp(frame.qp)
+                           .createEncodedImage());
     }
 
     public EncodedImage poll() {
