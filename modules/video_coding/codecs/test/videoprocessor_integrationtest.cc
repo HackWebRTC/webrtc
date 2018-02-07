@@ -180,7 +180,7 @@ void VideoProcessorIntegrationTest::ProcessFramesAndMaybeVerify(
   SetUpAndInitObjects(
       &task_queue, static_cast<const int>(rate_profiles[0].target_kbps),
       static_cast<const int>(rate_profiles[0].input_fps), visualization_params);
-  PrintSettings();
+  PrintSettings(&task_queue);
 
   ProcessAllFrames(&task_queue, rate_profiles);
 
@@ -516,20 +516,28 @@ void VideoProcessorIntegrationTest::ReleaseAndCloseObjects(
   }
 }
 
-void VideoProcessorIntegrationTest::PrintSettings() const {
+void VideoProcessorIntegrationTest::PrintSettings(
+    rtc::TaskQueue* task_queue) const {
   printf("VideoProcessor settings\n==\n");
   printf(" Total # of frames      : %d",
          source_frame_reader_->NumberOfFrames());
   printf("%s\n", config_.ToString().c_str());
 
   printf("VideoProcessorIntegrationTest settings\n==\n");
-  const char* encoder_name = encoder_->ImplementationName();
-  printf(" Encoder implementation name: %s\n", encoder_name);
-  const char* decoder_name = decoders_.at(0)->ImplementationName();
-  printf(" Decoder implementation name: %s\n", decoder_name);
-  if (strcmp(encoder_name, decoder_name) == 0) {
+  std::string encoder_name;
+  std::string decoder_name;
+  rtc::Event sync_event(false, false);
+  task_queue->PostTask([this, &encoder_name, &decoder_name, &sync_event] {
+    encoder_name = encoder_->ImplementationName();
+    decoder_name = decoders_.at(0)->ImplementationName();
+    sync_event.Set();
+  });
+  sync_event.Wait(rtc::Event::kForever);
+  printf(" Encoder implementation name: %s\n", encoder_name.c_str());
+  printf(" Decoder implementation name: %s\n", decoder_name.c_str());
+  if (encoder_name == decoder_name) {
     printf(" Codec implementation name  : %s_%s\n", config_.CodecName().c_str(),
-           encoder_name);
+           encoder_name.c_str());
   }
   printf("\n");
 }

@@ -130,7 +130,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
                             const BitstreamThresholds* bs_thresholds);
   void PrintFrameLevelStats(const std::vector<FrameStatistic>& stats) const;
 
-  void PrintSettings() const;
+  void PrintSettings(rtc::TaskQueue* task_queue) const;
 
   // Codecs.
   std::unique_ptr<VideoEncoder> encoder_;
