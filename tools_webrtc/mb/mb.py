@@ -1042,7 +1042,7 @@ class MetaBuildWrapper(object):
       self.WriteFailureAndRaise('We should not be isolating %s.' % target,
                                 output_path=None)
     if test_type not in ('console_test_launcher', 'windowed_test_launcher',
-                         'non_parallel_console_test_launcher',
+                         'non_parallel_console_test_launcher', 'raw',
                          'additional_compile_target', 'junit_test', 'script'):
       self.WriteFailureAndRaise('No command line for %s found (test type %s).'
                                 % (target, test_type), output_path=None)
@@ -1071,21 +1071,23 @@ class MetaBuildWrapper(object):
             '../../testing/xvfb.py',
         ]
 
-      # Memcheck is only supported for linux. Ignore in other platforms.
-      memcheck = is_linux and 'rtc_use_memcheck=true' in vals['gn_args']
-      memcheck_cmdline = [
-          'bash',
-          '../../tools_webrtc/valgrind/webrtc_tests.sh',
-          '--tool',
-          'memcheck',
-          '--target',
-          'Release',
-          '--build-dir',
-          '..',
-          '--test',
-      ]
+      cmdline = (['../../testing/xvfb.py'] if xvfb else
+                 ['../../testing/test_env.py'])
 
-      if not memcheck:
+      # Memcheck is only supported for linux. Ignore in other platforms.
+      if is_linux and 'rtc_use_memcheck=true' in vals['gn_args']:
+        cmdline += [
+            'bash',
+            '../../tools_webrtc/valgrind/webrtc_tests.sh',
+            '--tool',
+            'memcheck',
+            '--target',
+            'Release',
+            '--build-dir',
+            '..',
+            '--test',
+        ]
+      elif test_type != 'raw':
         extra_files += [
             '../../third_party/gtest-parallel/gtest-parallel',
             '../../third_party/gtest-parallel/gtest_parallel.py',
@@ -1094,7 +1096,7 @@ class MetaBuildWrapper(object):
         sep = '\\' if self.platform == 'win32' else '/'
         output_dir = '${ISOLATED_OUTDIR}' + sep + 'test_logs'
         timeout = isolate_map[target].get('timeout', 900)
-        gtest_parallel_wrapper = [
+        cmdline += [
             '../../tools_webrtc/gtest-parallel-wrapper.py',
             '--output_dir=%s' % output_dir,
             '--gtest_color=no',
@@ -1104,27 +1106,25 @@ class MetaBuildWrapper(object):
             '--timeout=%s' % timeout,
             '--retry_failed=3',
         ]
+        if test_type == 'non_parallel_console_test_launcher':
+          # Still use the gtest-parallel-wrapper.py script since we need it to
+          # run tests on swarming, but don't execute tests in parallel.
+          cmdline.append('--workers=1')
+
+      executable_prefix = '.\\' if self.platform == 'win32' else './'
+      executable_suffix = '.exe' if self.platform == 'win32' else ''
+      executable = executable_prefix + target + executable_suffix
+
+      cmdline.append(executable)
+      if test_type != 'raw':
+        cmdline.append('--')
 
       asan = 'is_asan=true' in vals['gn_args']
       lsan = 'is_lsan=true' in vals['gn_args']
       msan = 'is_msan=true' in vals['gn_args']
       tsan = 'is_tsan=true' in vals['gn_args']
 
-      executable_prefix = '.\\' if self.platform == 'win32' else './'
-      executable_suffix = '.exe' if self.platform == 'win32' else ''
-      executable = executable_prefix + target + executable_suffix
-
-      cmdline = (['../../testing/xvfb.py'] if xvfb else
-                 ['../../testing/test_env.py'])
-      cmdline += memcheck_cmdline if memcheck else gtest_parallel_wrapper
-      cmdline.append(executable)
-      if test_type == 'non_parallel_console_test_launcher' and not memcheck:
-        # Still use the gtest-parallel-wrapper.py script since we need it to
-        # run tests on swarming, but don't execute tests in parallel.
-        cmdline.append('--workers=1')
-
       cmdline.extend([
-          '--',
           '--asan=%d' % asan,
           '--lsan=%d' % lsan,
           '--msan=%d' % msan,
