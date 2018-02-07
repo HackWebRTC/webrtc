@@ -122,6 +122,8 @@ VideoProcessor::VideoProcessor(webrtc::VideoEncoder* encoder,
       num_encoded_frames_(0),
       num_decoded_frames_(0),
       stats_(stats) {
+  RTC_CHECK(rtc::TaskQueue::Current())
+      << "VideoProcessor must be run on a task queue.";
   RTC_CHECK(encoder);
   RTC_CHECK(decoders && decoders->size() == num_simulcast_or_spatial_layers_);
   RTC_CHECK(input_frame_reader);

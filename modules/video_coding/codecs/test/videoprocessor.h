@@ -77,7 +77,9 @@ class VideoProcessor {
     explicit VideoProcessorEncodeCompleteCallback(
         VideoProcessor* video_processor)
         : video_processor_(video_processor),
-          task_queue_(rtc::TaskQueue::Current()) {}
+          task_queue_(rtc::TaskQueue::Current()) {
+      RTC_DCHECK(task_queue_);
+    }
 
     Result OnEncodedImage(
         const webrtc::EncodedImage& encoded_image,
@@ -85,7 +87,8 @@ class VideoProcessor {
         const webrtc::RTPFragmentationHeader* fragmentation) override {
       RTC_CHECK(codec_specific_info);
 
-      if (task_queue_ && !task_queue_->IsCurrent()) {
+      // Post the callback to the right task queue, if needed.
+      if (!task_queue_->IsCurrent()) {
         task_queue_->PostTask(
             std::unique_ptr<rtc::QueuedTask>(new EncodeCallbackTask(
                 video_processor_, encoded_image, codec_specific_info)));
@@ -131,10 +134,13 @@ class VideoProcessor {
     explicit VideoProcessorDecodeCompleteCallback(
         VideoProcessor* video_processor)
         : video_processor_(video_processor),
-          task_queue_(rtc::TaskQueue::Current()) {}
+          task_queue_(rtc::TaskQueue::Current()) {
+      RTC_DCHECK(task_queue_);
+    }
 
     int32_t Decoded(webrtc::VideoFrame& image) override {
-      if (task_queue_ && !task_queue_->IsCurrent()) {
+      // Post the callback to the right task queue, if needed.
+      if (!task_queue_->IsCurrent()) {
         task_queue_->PostTask(
             [this, image]() { video_processor_->FrameDecoded(image); });
         return 0;
