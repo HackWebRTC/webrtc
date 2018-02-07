@@ -892,3 +892,41 @@ rtc_static_library("native_api_codecs") {
     "//rtc_base:rtc_base_approved",
   ]
 }
+
+generate_jni("generated_native_unittests_jni") {
+  testonly = true
+
+  sources = [
+    "native_unittests/org/webrtc/JavaTypesTestHelper.java",
+  ]
+  jni_package = ""
+  jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
+}
+
+rtc_android_library("native_unittests_java") {
+  testonly = true
+
+  java_files = [ "native_unittests/org/webrtc/JavaTypesTestHelper.java" ]
+
+  deps = [
+    ":libjingle_peerconnection_java",
+  ]
+}
+
+rtc_source_set("native_unittests") {
+  testonly = true
+
+  sources = [
+    "native_unittests/java_types_unittest.cc",
+    "native_unittests/test_jni_onload.cc",
+  ]
+
+  deps = [
+    ":generated_native_unittests_jni",
+    ":native_api_base",
+    ":native_api_jni",
+    "//rtc_base:checks",
+    "//test:test_support",
+    "//testing/gtest",
+  ]
+}

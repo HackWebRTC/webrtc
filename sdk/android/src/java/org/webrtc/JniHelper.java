@@ -36,13 +36,13 @@ class JniHelper {
 
   // TODO(bugs.webrtc.org/8606): Remove.
   @CalledByNative
-  static String getKey(Map.Entry<String, String> entry) {
+  static Object getKey(Map.Entry entry) {
     return entry.getKey();
   }
 
   // TODO(bugs.webrtc.org/8606): Remove.
   @CalledByNative
-  static String getValue(Map.Entry<String, String> entry) {
+  static Object getValue(Map.Entry entry) {
     return entry.getValue();
   }
 }

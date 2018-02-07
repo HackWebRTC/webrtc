@@ -446,7 +446,14 @@ if (rtc_include_tests) {
     }
 
     if (is_android) {
-      deps += [ "//testing/android/native_test:native_test_support" ]
+      # Do not use Chromium's launcher. native_unittests defines its own JNI_OnLoad.
+      use_default_launcher = false
+
+      deps += [
+        "sdk/android:native_unittests",
+        "sdk/android:native_unittests_java",
+        "//testing/android/native_test:native_test_support",
+      ]
       shard_timeout = 900
     }
 

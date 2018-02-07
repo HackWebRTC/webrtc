@@ -197,6 +197,13 @@ class ScopedJavaGlobalRef : public JavaRef<T> {
   RTC_DISALLOW_COPY_AND_ASSIGN(ScopedJavaGlobalRef);
 };
 
+template <typename T>
+inline ScopedJavaLocalRef<T> static_java_ref_cast(JNIEnv* env,
+                                                  JavaRef<jobject> const& ref) {
+  ScopedJavaLocalRef<jobject> owned_ref(env, ref);
+  return ScopedJavaLocalRef<T>(env, static_cast<T>(owned_ref.Release()));
+}
+
 }  // namespace webrtc
 
 #endif  // SDK_ANDROID_NATIVE_API_JNI_SCOPED_JAVA_REF_H_

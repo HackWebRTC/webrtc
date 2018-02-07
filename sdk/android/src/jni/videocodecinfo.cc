@@ -20,8 +20,8 @@ namespace jni {
 SdpVideoFormat VideoCodecInfoToSdpVideoFormat(JNIEnv* jni,
                                               const JavaRef<jobject>& j_info) {
   return SdpVideoFormat(
-      JavaToStdString(jni, Java_VideoCodecInfo_getName(jni, j_info)),
-      JavaToStdMapStrings(jni, Java_VideoCodecInfo_getParams(jni, j_info)));
+      JavaToNativeString(jni, Java_VideoCodecInfo_getName(jni, j_info)),
+      JavaToNativeStringMap(jni, Java_VideoCodecInfo_getParams(jni, j_info)));
 }
 
 ScopedJavaLocalRef<jobject> SdpVideoFormatToVideoCodecInfo(

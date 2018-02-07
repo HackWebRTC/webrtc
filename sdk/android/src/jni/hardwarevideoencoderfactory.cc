@@ -23,8 +23,8 @@ static jboolean JNI_HardwareVideoEncoderFactory_IsSameH264Profile(
     const JavaParamRef<jclass>&,
     const JavaParamRef<jobject>& params1,
     const JavaParamRef<jobject>& params2) {
-  return H264::IsSameH264Profile(JavaToStdMapStrings(jni, params1),
-                                 JavaToStdMapStrings(jni, params2));
+  return H264::IsSameH264Profile(JavaToNativeStringMap(jni, params1),
+                                 JavaToNativeStringMap(jni, params2));
 }
 
 }  // namespace jni

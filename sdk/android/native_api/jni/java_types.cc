@@ -30,6 +30,8 @@ namespace webrtc {
 Iterable::Iterable(JNIEnv* jni, const JavaRef<jobject>& iterable)
     : jni_(jni), iterable_(jni, iterable) {}
 
+Iterable::Iterable(Iterable&& other) = default;
+
 Iterable::~Iterable() = default;
 
 // Creates an iterator representing the end of any collection.
@@ -103,6 +105,22 @@ std::string GetJavaEnumName(JNIEnv* jni, const JavaRef<jobject>& j_enum) {
   return JavaToStdString(jni, JNI_Enum::Java_Enum_name(jni, j_enum));
 }
 
+Iterable GetJavaMapEntrySet(JNIEnv* jni, const JavaRef<jobject>& j_map) {
+  return Iterable(jni, JNI_Map::Java_Map_entrySet(jni, j_map));
+}
+
+ScopedJavaLocalRef<jobject> GetJavaMapEntryKey(
+    JNIEnv* jni,
+    const JavaRef<jobject>& j_entry) {
+  return Java_JniHelper_getKey(jni, j_entry);
+}
+
+ScopedJavaLocalRef<jobject> GetJavaMapEntryValue(
+    JNIEnv* jni,
+    const JavaRef<jobject>& j_entry) {
+  return Java_JniHelper_getValue(jni, j_entry);
+}
+
 int64_t JavaToNativeLong(JNIEnv* env, const JavaRef<jobject>& j_long) {
   return JNI_Long::Java_Long_longValue(env, j_long);
 }
@@ -134,6 +152,19 @@ std::string JavaToNativeString(JNIEnv* jni, const JavaRef<jstring>& j_string) {
                           reinterpret_cast<jbyte*>(&str[0]));
   CHECK_EXCEPTION(jni) << "error during GetByteArrayRegion";
   return str;
+}
+
+std::map<std::string, std::string> JavaToNativeStringMap(
+    JNIEnv* jni,
+    const JavaRef<jobject>& j_map) {
+  return JavaToNativeMap<std::string, std::string>(
+      jni, j_map,
+      [](JNIEnv* env, JavaRef<jobject> const& key,
+         JavaRef<jobject> const& value) {
+        return std::make_pair(
+            JavaToNativeString(env, static_java_ref_cast<jstring>(env, key)),
+            JavaToNativeString(env, static_java_ref_cast<jstring>(env, value)));
+      });
 }
 
 ScopedJavaLocalRef<jobject> NativeToJavaBoolean(JNIEnv* env, bool b) {
@@ -240,20 +271,6 @@ std::vector<std::string> JavaToStdVectorStrings(JNIEnv* jni,
     }
   }
   return converted_list;
-}
-
-std::map<std::string, std::string> JavaToStdMapStrings(
-    JNIEnv* jni,
-    const JavaRef<jobject>& j_map) {
-  const JavaRef<jobject>& j_entry_set = JNI_Map::Java_Map_entrySet(jni, j_map);
-  std::map<std::string, std::string> result;
-  for (const JavaRef<jobject>& j_entry : Iterable(jni, j_entry_set)) {
-    result.insert(std::make_pair(
-        JavaToStdString(jni, Java_JniHelper_getKey(jni, j_entry)),
-        JavaToStdString(jni, Java_JniHelper_getValue(jni, j_entry))));
-  }
-
-  return result;
 }
 
 }  // namespace webrtc

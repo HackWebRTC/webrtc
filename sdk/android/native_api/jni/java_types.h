@@ -50,6 +50,8 @@ namespace webrtc {
 class Iterable {
  public:
   Iterable(JNIEnv* jni, const JavaRef<jobject>& iterable);
+  Iterable(Iterable&& other);
+
   ~Iterable();
 
   class Iterator {
@@ -111,6 +113,13 @@ bool IsNull(JNIEnv* jni, const JavaRef<jobject>& obj);
 // Returns the name of a Java enum.
 std::string GetJavaEnumName(JNIEnv* jni, const JavaRef<jobject>& j_enum);
 
+Iterable GetJavaMapEntrySet(JNIEnv* jni, const JavaRef<jobject>& j_map);
+ScopedJavaLocalRef<jobject> GetJavaMapEntryKey(JNIEnv* jni,
+                                               const JavaRef<jobject>& j_entry);
+ScopedJavaLocalRef<jobject> GetJavaMapEntryValue(
+    JNIEnv* jni,
+    const JavaRef<jobject>& j_entry);
+
 // --------------------------------------------------------
 // -- Methods for converting Java types to native types. --
 // --------------------------------------------------------
@@ -140,6 +149,23 @@ std::vector<T> JavaToNativeVector(JNIEnv* env,
   CHECK_EXCEPTION(env) << "Error during JavaToNativeVector";
   return container;
 }
+
+template <typename Key, typename T, typename Convert>
+std::map<Key, T> JavaToNativeMap(JNIEnv* env,
+                                 const JavaRef<jobject>& j_map,
+                                 Convert convert) {
+  std::map<Key, T> container;
+  for (auto const& j_entry : GetJavaMapEntrySet(env, j_map)) {
+    container.emplace(convert(env, GetJavaMapEntryKey(env, j_entry),
+                              GetJavaMapEntryValue(env, j_entry)));
+  }
+  return container;
+}
+
+// Converts Map<String, String> to std::map<std::string, std::string>.
+std::map<std::string, std::string> JavaToNativeStringMap(
+    JNIEnv* env,
+    const JavaRef<jobject>& j_map);
 
 // --------------------------------------------------------
 // -- Methods for converting native types to Java types. --
@@ -262,10 +288,13 @@ inline std::string JavaToStdString(JNIEnv* jni, jstring j_string) {
 std::vector<std::string> JavaToStdVectorStrings(JNIEnv* jni,
                                                 const JavaRef<jobject>& list);
 
+// Deprecated. Use JavaToNativeStringMap instead.
 // Parses Map<String, String> to std::map<std::string, std::string>.
-std::map<std::string, std::string> JavaToStdMapStrings(
+inline std::map<std::string, std::string> JavaToStdMapStrings(
     JNIEnv* jni,
-    const JavaRef<jobject>& j_map);
+    const JavaRef<jobject>& j_map) {
+  return JavaToNativeStringMap(jni, j_map);
+}
 
 // Deprecated. Use scoped jobjects instead.
 inline std::map<std::string, std::string> JavaToStdMapStrings(JNIEnv* jni,
