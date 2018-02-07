@@ -173,13 +173,14 @@ class StatisticsCalculator {
   // If the correction is negative, it is cached and will be subtracted against
   // future additions to the counter. This is meant to be called from
   // Expanded{Voice,Noise}Samples{Correction}.
-  void ConcealedSamplesCorrection(int num_samples);
+  void ConcealedSamplesCorrection(int num_samples, bool is_voice);
 
   // Calculates numerator / denominator, and returns the value in Q14.
   static uint16_t CalculateQ14Ratio(size_t numerator, uint32_t denominator);
 
   NetEqLifetimeStatistics lifetime_stats_;
   size_t concealed_samples_correction_ = 0;
+  size_t voice_concealed_samples_correction_ = 0;
   size_t preemptive_samples_;
   size_t accelerate_samples_;
   size_t added_zero_samples_;

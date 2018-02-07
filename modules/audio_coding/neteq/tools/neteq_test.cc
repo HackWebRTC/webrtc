@@ -111,6 +111,10 @@ NetEqNetworkStatistics NetEqTest::SimulationStats() {
   return stats;
 }
 
+NetEqLifetimeStatistics NetEqTest::LifetimeStats() const {
+  return neteq_->GetLifetimeStatistics();
+}
+
 void NetEqTest::RegisterDecoders(const DecoderMap& codecs) {
   for (const auto& c : codecs) {
     RTC_CHECK_EQ(

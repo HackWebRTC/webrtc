@@ -129,6 +129,7 @@ DEFINE_bool(pythonplot,
             false,
             "Generates a python script for plotting the delay profile");
 DEFINE_bool(help, false, "Prints this message");
+DEFINE_bool(concealment_events, false, "Prints concealment events");
 
 // Maps a codec type to a printable name string.
 std::string CodecName(NetEqDecoder codec) {
@@ -331,6 +332,21 @@ class StatsGetter : public NetEqGetAudioCallback {
     double max_waiting_time_ms = 0.0;
   };
 
+  struct ConcealmentEvent {
+    uint64_t duration_ms;
+    size_t concealment_event_number;
+    int64_t time_from_previous_event_end_ms;
+
+    friend std::ostream& operator<<(std::ostream& stream,
+                                    const ConcealmentEvent& concealment_event) {
+      stream << "ConcealmentEvent duration_ms:" << concealment_event.duration_ms
+             << " event_number:" << concealment_event.concealment_event_number
+             << " time_from_previous_event_end_ms:"
+             << concealment_event.time_from_previous_event_end_ms << "\n";
+      return stream;
+    }
+  };
+
   // Takes a pointer to another callback object, which will be invoked after
   // this object finishes. This does not transfer ownership, and null is a
   // valid value.
@@ -353,6 +369,31 @@ class StatsGetter : public NetEqGetAudioCallback {
       RTC_CHECK_EQ(neteq->NetworkStatistics(&stats), 0);
       stats_.push_back(stats);
     }
+    const auto lifetime_stat = neteq->GetLifetimeStatistics();
+    if (current_concealment_event_ != lifetime_stat.concealment_events) {
+      if (last_event_end_time_ms_ > 0) {
+        // Do not account for the first event to avoid start of the call
+        // skewing.
+        ConcealmentEvent concealment_event;
+        uint64_t last_event_voice_concealed_samples =
+            lifetime_stat.voice_concealed_samples -
+            voice_concealed_samples_until_last_event_;
+        RTC_CHECK_GT(last_event_voice_concealed_samples, 0);
+        concealment_event.duration_ms = last_event_voice_concealed_samples /
+                                        (audio_frame.sample_rate_hz_ / 1000);
+        concealment_event.concealment_event_number = current_concealment_event_;
+        concealment_event.time_from_previous_event_end_ms =
+            time_now_ms - last_event_end_time_ms_;
+        concealment_events_.emplace_back(concealment_event);
+        voice_concealed_samples_until_last_event_ =
+            lifetime_stat.voice_concealed_samples;
+      }
+      last_event_end_time_ms_ = time_now_ms;
+      voice_concealed_samples_until_last_event_ =
+          lifetime_stat.voice_concealed_samples;
+      current_concealment_event_ = lifetime_stat.concealment_events;
+    }
+
     if (other_callback_) {
       other_callback_->AfterGetAudio(time_now_ms, audio_frame, muted, neteq);
     }
@@ -365,6 +406,12 @@ class StatsGetter : public NetEqGetAudioCallback {
                           return a + static_cast<double>(b.speech_expand_rate);
                         });
     return sum_speech_expand / 16384.0 / stats_.size();
+  }
+
+  const std::vector<ConcealmentEvent>& concealment_events() {
+    // Do not account for the last concealment event to avoid potential end
+    // call skewing.
+    return concealment_events_;
   }
 
   Stats AverageStats() const {
@@ -416,6 +463,10 @@ class StatsGetter : public NetEqGetAudioCallback {
   NetEqGetAudioCallback* other_callback_;
   size_t counter_ = 0;
   std::vector<NetEqNetworkStatistics> stats_;
+  size_t current_concealment_event_ = 1;
+  uint64_t voice_concealed_samples_until_last_event_ = 0;
+  std::vector<ConcealmentEvent> concealment_events_;
+  int64_t last_event_end_time_ms_ = 0;
 };
 
 int RunTest(int argc, char* argv[]) {
@@ -668,7 +719,13 @@ int RunTest(int argc, char* argv[]) {
   printf("  max_waiting_time_ms: %f ms\n", stats.max_waiting_time_ms);
   printf("  current_buffer_size_ms: %f ms\n", stats.current_buffer_size_ms);
   printf("  preferred_buffer_size_ms: %f ms\n", stats.preferred_buffer_size_ms);
-
+  if (FLAG_concealment_events) {
+    std::cout << " concealment_events_ms:"
+              << "\n";
+    for (auto concealment_event : stats_getter.concealment_events())
+      std::cout << concealment_event;
+    std::cout << " end of concealment_events_ms\n";
+  }
   return 0;
 }
 

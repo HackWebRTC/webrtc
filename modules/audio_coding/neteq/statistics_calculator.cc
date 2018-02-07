@@ -153,34 +153,38 @@ void StatisticsCalculator::ResetMcu() {
 void StatisticsCalculator::ExpandedVoiceSamples(size_t num_samples,
                                                 bool is_new_concealment_event) {
   expanded_speech_samples_ += num_samples;
-  ConcealedSamplesCorrection(rtc::dchecked_cast<int>(num_samples));
+  ConcealedSamplesCorrection(rtc::dchecked_cast<int>(num_samples), true);
   lifetime_stats_.concealment_events += is_new_concealment_event;
 }
 
 void StatisticsCalculator::ExpandedNoiseSamples(size_t num_samples,
                                                 bool is_new_concealment_event) {
   expanded_noise_samples_ += num_samples;
-  ConcealedSamplesCorrection(rtc::dchecked_cast<int>(num_samples));
+  ConcealedSamplesCorrection(rtc::dchecked_cast<int>(num_samples), false);
   lifetime_stats_.concealment_events += is_new_concealment_event;
 }
 
 void StatisticsCalculator::ExpandedVoiceSamplesCorrection(int num_samples) {
   expanded_speech_samples_ =
       AddIntToSizeTWithLowerCap(num_samples, expanded_speech_samples_);
-  ConcealedSamplesCorrection(num_samples);
+  ConcealedSamplesCorrection(num_samples, true);
 }
 
 void StatisticsCalculator::ExpandedNoiseSamplesCorrection(int num_samples) {
   expanded_noise_samples_ =
       AddIntToSizeTWithLowerCap(num_samples, expanded_noise_samples_);
-  ConcealedSamplesCorrection(num_samples);
+  ConcealedSamplesCorrection(num_samples, false);
 }
 
-void StatisticsCalculator::ConcealedSamplesCorrection(int num_samples) {
+void StatisticsCalculator::ConcealedSamplesCorrection(int num_samples,
+                                                      bool is_voice) {
   if (num_samples < 0) {
     // Store negative correction to subtract from future positive additions.
     // See also the function comment in the header file.
     concealed_samples_correction_ -= num_samples;
+    if (is_voice) {
+      voice_concealed_samples_correction_ -= num_samples;
+    }
     return;
   }
 
@@ -188,6 +192,13 @@ void StatisticsCalculator::ConcealedSamplesCorrection(int num_samples) {
       std::min(static_cast<size_t>(num_samples), concealed_samples_correction_);
   concealed_samples_correction_ -= canceled_out;
   lifetime_stats_.concealed_samples += num_samples - canceled_out;
+
+  if (is_voice) {
+    const size_t voice_canceled_out = std::min(
+        static_cast<size_t>(num_samples), voice_concealed_samples_correction_);
+    voice_concealed_samples_correction_ -= voice_canceled_out;
+    lifetime_stats_.voice_concealed_samples += num_samples - voice_canceled_out;
+  }
 }
 
 void StatisticsCalculator::PreemptiveExpandedSamples(size_t num_samples) {
