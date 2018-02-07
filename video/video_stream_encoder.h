@@ -141,7 +141,7 @@ class VideoStreamEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   void ConfigureEncoderOnTaskQueue(VideoEncoderConfig config,
                                    size_t max_data_payload_length,
                                    bool nack_enabled);
-  void ReconfigureEncoder();
+  void ReconfigureEncoder() RTC_RUN_ON(&encoder_queue_);
 
   void ConfigureQualityScaler();
 
@@ -218,10 +218,11 @@ class VideoStreamEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   const VideoCodecType codec_type_;
 
   vcm::VideoSender video_sender_ RTC_GUARDED_BY(&encoder_queue_);
-  std::unique_ptr<OveruseFrameDetector> overuse_detector_
-      RTC_GUARDED_BY(&encoder_queue_);
+  const std::unique_ptr<OveruseFrameDetector> overuse_detector_
+      RTC_PT_GUARDED_BY(&encoder_queue_);
   std::unique_ptr<QualityScaler> quality_scaler_
-      RTC_GUARDED_BY(&encoder_queue_);
+      RTC_GUARDED_BY(&encoder_queue_)
+      RTC_PT_GUARDED_BY(&encoder_queue_);
 
   SendStatisticsProxy* const stats_proxy_;
   rtc::VideoSinkInterface<VideoFrame>* const pre_encode_callback_;
@@ -231,7 +232,8 @@ class VideoStreamEncoder : public rtc::VideoSinkInterface<VideoFrame>,
 
   VideoEncoderConfig encoder_config_ RTC_GUARDED_BY(&encoder_queue_);
   std::unique_ptr<VideoBitrateAllocator> rate_allocator_
-      RTC_GUARDED_BY(&encoder_queue_);
+      RTC_GUARDED_BY(&encoder_queue_)
+      RTC_PT_GUARDED_BY(&encoder_queue_);
   // The maximum frame rate of the current codec configuration, as determined
   // at the last ReconfigureEncoder() call.
   int max_framerate_ RTC_GUARDED_BY(&encoder_queue_);
