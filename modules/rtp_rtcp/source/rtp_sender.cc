@@ -96,7 +96,8 @@ RTPSender::RTPSender(
     RtcEventLog* event_log,
     SendPacketObserver* send_packet_observer,
     RateLimiter* retransmission_rate_limiter,
-    OverheadObserver* overhead_observer)
+    OverheadObserver* overhead_observer,
+    bool populate_network2_timestamp)
     : clock_(clock),
       // TODO(holmer): Remove this conversion?
       clock_delta_ms_(clock_->TimeInMilliseconds() - rtc::TimeMillis()),
@@ -139,6 +140,7 @@ RTPSender::RTPSender(
       rtp_overhead_bytes_per_packet_(0),
       retransmission_rate_limiter_(retransmission_rate_limiter),
       overhead_observer_(overhead_observer),
+      populate_network2_timestamp_(populate_network2_timestamp),
       send_side_bwe_with_overhead_(
           webrtc::field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")) {
   // This random initialization is not intended to be cryptographic strong.
@@ -767,8 +769,13 @@ bool RTPSender::PrepareAndSendPacket(std::unique_ptr<RtpPacketToSend> packet,
   packet_to_send->SetExtension<AbsoluteSendTime>(
       AbsoluteSendTime::MsTo24Bits(now_ms));
 
-  if (packet_to_send->HasExtension<VideoTimingExtension>())
-    packet_to_send->set_pacer_exit_time_ms(now_ms);
+  if (packet_to_send->HasExtension<VideoTimingExtension>()) {
+    if (populate_network2_timestamp_) {
+      packet_to_send->set_network2_time_ms(now_ms);
+    } else {
+      packet_to_send->set_pacer_exit_time_ms(now_ms);
+    }
+  }
 
   PacketOptions options;
   if (UpdateTransportSequenceNumber(packet_to_send, &options.packet_id)) {
@@ -857,8 +864,6 @@ bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
   if (packet->capture_time_ms() > 0) {
     packet->SetExtension<TransmissionOffset>(
         kTimestampTicksPerMs * (now_ms - packet->capture_time_ms()));
-    if (packet->HasExtension<VideoTimingExtension>())
-      packet->set_pacer_exit_time_ms(now_ms);
   }
   packet->SetExtension<AbsoluteSendTime>(AbsoluteSendTime::MsTo24Bits(now_ms));
 

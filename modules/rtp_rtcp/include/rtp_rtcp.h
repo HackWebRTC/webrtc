@@ -96,6 +96,9 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
     RtpKeepAliveConfig keepalive_config;
     RtcpIntervalConfig rtcp_interval_config;
 
+    // Update network2 instead of pacer_exit field of video timing extension.
+    bool populate_network2_timestamp = false;
+
    private:
     RTC_DISALLOW_COPY_AND_ASSIGN(Configuration);
   };

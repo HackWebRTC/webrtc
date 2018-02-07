@@ -112,20 +112,18 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
       rtt_ms_(0) {
   if (!configuration.receiver_only) {
     rtp_sender_.reset(new RTPSender(
-        configuration.audio,
-        configuration.clock,
-        configuration.outgoing_transport,
-        configuration.paced_sender,
+        configuration.audio, configuration.clock,
+        configuration.outgoing_transport, configuration.paced_sender,
         configuration.flexfec_sender,
         configuration.transport_sequence_number_allocator,
         configuration.transport_feedback_callback,
         configuration.send_bitrate_observer,
         configuration.send_frame_count_observer,
-        configuration.send_side_delay_observer,
-        configuration.event_log,
+        configuration.send_side_delay_observer, configuration.event_log,
         configuration.send_packet_observer,
         configuration.retransmission_rate_limiter,
-        configuration.overhead_observer));
+        configuration.overhead_observer,
+        configuration.populate_network2_timestamp));
     // Make sure rtcp sender use same timestamp offset as rtp sender.
     rtcp_sender_.SetTimestampOffset(rtp_sender_->TimestampOffset());
 
