@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/congestion_controller/delay_based_bwe.h"
+#include "modules/congestion_controller/goog_cc/delay_based_bwe.h"
 
 #include <algorithm>
 #include <cmath>
@@ -17,7 +17,7 @@
 
 #include "logging/rtc_event_log/events/rtc_event_bwe_update_delay_based.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
-#include "modules/congestion_controller/trendline_estimator.h"
+#include "modules/congestion_controller/goog_cc/trendline_estimator.h"
 #include "modules/pacing/paced_sender.h"
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "modules/remote_bitrate_estimator/test/bwe_test_logging.h"

@@ -15,7 +15,7 @@
 #include <vector>
 
 #include "logging/rtc_event_log/mock/mock_rtc_event_log.h"
-#include "modules/congestion_controller/acknowledged_bitrate_estimator.h"
+#include "modules/congestion_controller/goog_cc/acknowledged_bitrate_estimator.h"
 #include "modules/congestion_controller/send_time_history.h"
 #include "modules/remote_bitrate_estimator/test/bwe.h"
 

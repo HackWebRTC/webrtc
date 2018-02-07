@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_CONGESTION_CONTROLLER_GOOG_CC_NETWORK_CONTROL_H_
-#define MODULES_CONGESTION_CONTROLLER_GOOG_CC_NETWORK_CONTROL_H_
+#ifndef MODULES_CONGESTION_CONTROLLER_GOOG_CC_GOOG_CC_NETWORK_CONTROL_H_
+#define MODULES_CONGESTION_CONTROLLER_GOOG_CC_GOOG_CC_NETWORK_CONTROL_H_
 
 #include <stdint.h>
 #include <deque>
@@ -19,11 +19,11 @@
 #include "api/optional.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/bitrate_controller/send_side_bandwidth_estimation.h"
-#include "modules/congestion_controller/acknowledged_bitrate_estimator.h"
-#include "modules/congestion_controller/alr_detector.h"
-#include "modules/congestion_controller/delay_based_bwe.h"
+#include "modules/congestion_controller/goog_cc/acknowledged_bitrate_estimator.h"
+#include "modules/congestion_controller/goog_cc/alr_detector.h"
+#include "modules/congestion_controller/goog_cc/delay_based_bwe.h"
+#include "modules/congestion_controller/goog_cc/probe_controller.h"
 #include "modules/congestion_controller/network_control/include/network_control.h"
-#include "modules/congestion_controller/probe_controller.h"
 #include "rtc_base/constructormagic.h"
 
 namespace webrtc {
@@ -89,4 +89,4 @@ class GoogCcNetworkController : public NetworkControllerInterface {
 
 }  // namespace webrtc
 
-#endif  // MODULES_CONGESTION_CONTROLLER_GOOG_CC_NETWORK_CONTROL_H_
+#endif  // MODULES_CONGESTION_CONTROLLER_GOOG_CC_GOOG_CC_NETWORK_CONTROL_H_

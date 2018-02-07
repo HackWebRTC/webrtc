@@ -7,8 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef MODULES_CONGESTION_CONTROLLER_TRENDLINE_ESTIMATOR_H_
-#define MODULES_CONGESTION_CONTROLLER_TRENDLINE_ESTIMATOR_H_
+#ifndef MODULES_CONGESTION_CONTROLLER_GOOG_CC_TRENDLINE_ESTIMATOR_H_
+#define MODULES_CONGESTION_CONTROLLER_GOOG_CC_TRENDLINE_ESTIMATOR_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -16,7 +16,7 @@
 #include <deque>
 #include <utility>
 
-#include "modules/congestion_controller/delay_increase_detector_interface.h"
+#include "modules/congestion_controller/goog_cc/delay_increase_detector_interface.h"
 #include "rtc_base/constructormagic.h"
 
 namespace webrtc {
@@ -89,4 +89,4 @@ class TrendlineEstimator : public DelayIncreaseDetectorInterface {
 };
 }  // namespace webrtc
 
-#endif  // MODULES_CONGESTION_CONTROLLER_TRENDLINE_ESTIMATOR_H_
+#endif  // MODULES_CONGESTION_CONTROLLER_GOOG_CC_TRENDLINE_ESTIMATOR_H_
