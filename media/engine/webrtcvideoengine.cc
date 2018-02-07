@@ -1896,8 +1896,8 @@ WebRtcVideoChannel::WebRtcVideoSendStream::CreateVideoEncoderConfig(
   // configure a single stream.
   encoder_config.number_of_streams = parameters_.config.rtp.ssrcs.size();
   if (IsCodecBlacklistedForSimulcast(codec.name) ||
-      (is_screencast &&
-       (!UseSimulcastScreenshare() || !parameters_.conference_mode))) {
+      (is_screencast && (!ScreenshareSimulcastFieldTrialEnabled() ||
+                         !parameters_.conference_mode))) {
     encoder_config.number_of_streams = 1;
   }
 
@@ -2614,23 +2614,31 @@ WebRtcVideoChannel::MapCodecs(const std::vector<VideoCodec>& codecs) {
   return video_codecs;
 }
 
-EncoderStreamFactory::EncoderStreamFactory(std::string codec_name,
-                                           int max_qp,
-                                           int max_framerate,
-                                           bool is_screencast,
-                                           bool conference_mode)
+// TODO(bugs.webrtc.org/8785): Consider removing max_qp and max_framerate
+// as members of EncoderStreamFactory and instead set these values individually
+// for each stream in the VideoEncoderConfig.simulcast_layers.
+EncoderStreamFactory::EncoderStreamFactory(
+    std::string codec_name,
+    int max_qp,
+    int max_framerate,
+    bool is_screenshare,
+    bool screenshare_config_explicitly_enabled)
+
     : codec_name_(codec_name),
       max_qp_(max_qp),
       max_framerate_(max_framerate),
-      is_screencast_(is_screencast),
-      conference_mode_(conference_mode) {}
+      is_screenshare_(is_screenshare),
+      screenshare_config_explicitly_enabled_(
+          screenshare_config_explicitly_enabled) {}
 
 std::vector<webrtc::VideoStream> EncoderStreamFactory::CreateEncoderStreams(
     int width,
     int height,
     const webrtc::VideoEncoderConfig& encoder_config) {
-  if (is_screencast_ &&
-      (!conference_mode_ || !cricket::UseSimulcastScreenshare())) {
+  bool screenshare_simulcast_enabled =
+      screenshare_config_explicitly_enabled_ &&
+      cricket::ScreenshareSimulcastFieldTrialEnabled();
+  if (is_screenshare_ && !screenshare_simulcast_enabled) {
     RTC_DCHECK_EQ(1, encoder_config.number_of_streams);
   }
   RTC_DCHECK_EQ(encoder_config.simulcast_layers.size(),
@@ -2638,12 +2646,12 @@ std::vector<webrtc::VideoStream> EncoderStreamFactory::CreateEncoderStreams(
   std::vector<webrtc::VideoStream> layers;
 
   if (encoder_config.number_of_streams > 1 ||
-      (CodecNamesEq(codec_name_, kVp8CodecName) && is_screencast_ &&
-       conference_mode_)) {
+      (CodecNamesEq(codec_name_, kVp8CodecName) && is_screenshare_ &&
+       screenshare_config_explicitly_enabled_)) {
     layers = GetSimulcastConfig(encoder_config.number_of_streams, width, height,
                                 encoder_config.max_bitrate_bps,
                                 encoder_config.bitrate_priority, max_qp_,
-                                max_framerate_, is_screencast_);
+                                max_framerate_, is_screenshare_);
     // Update the active simulcast layers.
     for (size_t i = 0; i < layers.size(); ++i) {
       layers[i].active = encoder_config.simulcast_layers[i].active;
@@ -2666,7 +2674,7 @@ std::vector<webrtc::VideoStream> EncoderStreamFactory::CreateEncoderStreams(
   layer.max_qp = max_qp_;
   layer.bitrate_priority = encoder_config.bitrate_priority;
 
-  if (CodecNamesEq(codec_name_, kVp9CodecName) && !is_screencast_) {
+  if (CodecNamesEq(codec_name_, kVp9CodecName) && !is_screenshare_) {
     layer.temporal_layer_thresholds_bps.resize(GetDefaultVp9TemporalLayers() -
                                                1);
   }
