@@ -20,6 +20,8 @@
 #include "modules/include/module_common_types.h"
 #include "modules/pacing/bitrate_prober.h"
 #include "modules/pacing/interval_budget.h"
+#include "modules/pacing/packet_queue.h"
+#include "modules/pacing/round_robin_packet_queue.h"
 #include "modules/utility/include/process_thread.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -52,18 +54,29 @@ namespace webrtc {
 
 const int64_t PacedSender::kMaxQueueLengthMs = 2000;
 
+namespace {
+std::unique_ptr<PacketQueueInterface> CreatePacketQueue(const Clock* clock,
+                                                        bool round_robin) {
+  if (round_robin) {
+    return rtc::MakeUnique<RoundRobinPacketQueue>(clock);
+  } else {
+    return rtc::MakeUnique<PacketQueue>(clock);
+  }
+}
+}  // namespace
+
 PacedSender::PacedSender(const Clock* clock,
                          PacketSender* packet_sender,
-                         RtcEventLog* event_log) :
-    PacedSender(clock, packet_sender, event_log,
-                IsRoundRobinPacingEnabled()
-                    ? rtc::MakeUnique<PacketQueue2>(clock)
-                    : rtc::MakeUnique<PacketQueue>(clock)) {}
+                         RtcEventLog* event_log)
+    : PacedSender(clock,
+                  packet_sender,
+                  event_log,
+                  CreatePacketQueue(clock, IsRoundRobinPacingEnabled())) {}
 
 PacedSender::PacedSender(const Clock* clock,
                          PacketSender* packet_sender,
                          RtcEventLog* event_log,
-                         std::unique_ptr<PacketQueue> packets)
+                         std::unique_ptr<PacketQueueInterface> packets)
     : clock_(clock),
       packet_sender_(packet_sender),
       paused_(false),

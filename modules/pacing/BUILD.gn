@@ -19,10 +19,12 @@ rtc_static_library("pacing") {
     "pacer.h",
     "packet_queue.cc",
     "packet_queue.h",
-    "packet_queue2.cc",
-    "packet_queue2.h",
+    "packet_queue_interface.cc",
+    "packet_queue_interface.h",
     "packet_router.cc",
     "packet_router.h",
+    "round_robin_packet_queue.cc",
+    "round_robin_packet_queue.h",
   ]
 
   if (!build_with_chromium && is_clang) {

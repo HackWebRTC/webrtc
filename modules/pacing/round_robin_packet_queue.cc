@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/pacing/packet_queue2.h"
+#include "modules/pacing/round_robin_packet_queue.h"
 
 #include <algorithm>
 
@@ -17,17 +17,15 @@
 
 namespace webrtc {
 
-PacketQueue2::Stream::Stream() : bytes(0) {}
-PacketQueue2::Stream::~Stream() {}
+RoundRobinPacketQueue::Stream::Stream() : bytes(0) {}
+RoundRobinPacketQueue::Stream::~Stream() {}
 
-PacketQueue2::PacketQueue2(const Clock* clock)
-    : PacketQueue(clock),
-      clock_(clock),
-      time_last_updated_(clock_->TimeInMilliseconds()) {}
+RoundRobinPacketQueue::RoundRobinPacketQueue(const Clock* clock)
+    : clock_(clock), time_last_updated_(clock_->TimeInMilliseconds()) {}
 
-PacketQueue2::~PacketQueue2() {}
+RoundRobinPacketQueue::~RoundRobinPacketQueue() {}
 
-void PacketQueue2::Push(const Packet& packet_to_insert) {
+void RoundRobinPacketQueue::Push(const Packet& packet_to_insert) {
   Packet packet(packet_to_insert);
 
   auto stream_info_it = streams_.find(packet.ssrc);
@@ -70,7 +68,7 @@ void PacketQueue2::Push(const Packet& packet_to_insert) {
   size_bytes_ += packet.bytes;
 }
 
-const PacketQueue2::Packet& PacketQueue2::BeginPop() {
+const PacketQueueInterface::Packet& RoundRobinPacketQueue::BeginPop() {
   RTC_CHECK(!pop_packet_ && !pop_stream_);
 
   Stream* stream = GetHighestPriorityStream();
@@ -81,14 +79,14 @@ const PacketQueue2::Packet& PacketQueue2::BeginPop() {
   return *pop_packet_;
 }
 
-void PacketQueue2::CancelPop(const Packet& packet) {
+void RoundRobinPacketQueue::CancelPop(const Packet& packet) {
   RTC_CHECK(pop_packet_ && pop_stream_);
   (*pop_stream_)->packet_queue.push(*pop_packet_);
   pop_packet_.reset();
   pop_stream_.reset();
 }
 
-void PacketQueue2::FinalizePop(const Packet& packet) {
+void RoundRobinPacketQueue::FinalizePop(const Packet& packet) {
   RTC_CHECK(!paused_);
   if (!Empty()) {
     RTC_CHECK(pop_packet_ && pop_stream_);
@@ -137,28 +135,28 @@ void PacketQueue2::FinalizePop(const Packet& packet) {
   }
 }
 
-bool PacketQueue2::Empty() const {
+bool RoundRobinPacketQueue::Empty() const {
   RTC_CHECK((!stream_priorities_.empty() && size_packets_ > 0) ||
             (stream_priorities_.empty() && size_packets_ == 0));
   return stream_priorities_.empty();
 }
 
-size_t PacketQueue2::SizeInPackets() const {
+size_t RoundRobinPacketQueue::SizeInPackets() const {
   return size_packets_;
 }
 
-uint64_t PacketQueue2::SizeInBytes() const {
+uint64_t RoundRobinPacketQueue::SizeInBytes() const {
   return size_bytes_;
 }
 
-int64_t PacketQueue2::OldestEnqueueTimeMs() const {
+int64_t RoundRobinPacketQueue::OldestEnqueueTimeMs() const {
   if (Empty())
     return 0;
   RTC_CHECK(!enqueue_times_.empty());
   return *enqueue_times_.begin();
 }
 
-void PacketQueue2::UpdateQueueTime(int64_t timestamp_ms) {
+void RoundRobinPacketQueue::UpdateQueueTime(int64_t timestamp_ms) {
   RTC_CHECK_GE(timestamp_ms, time_last_updated_);
   if (timestamp_ms == time_last_updated_)
     return;
@@ -174,20 +172,21 @@ void PacketQueue2::UpdateQueueTime(int64_t timestamp_ms) {
   time_last_updated_ = timestamp_ms;
 }
 
-void PacketQueue2::SetPauseState(bool paused, int64_t timestamp_ms) {
+void RoundRobinPacketQueue::SetPauseState(bool paused, int64_t timestamp_ms) {
   if (paused_ == paused)
     return;
   UpdateQueueTime(timestamp_ms);
   paused_ = paused;
 }
 
-int64_t PacketQueue2::AverageQueueTimeMs() const {
+int64_t RoundRobinPacketQueue::AverageQueueTimeMs() const {
   if (Empty())
     return 0;
   return queue_time_sum_ms_ / size_packets_;
 }
 
-PacketQueue2::Stream* PacketQueue2::GetHighestPriorityStream() {
+RoundRobinPacketQueue::Stream*
+RoundRobinPacketQueue::GetHighestPriorityStream() {
   RTC_CHECK(!stream_priorities_.empty());
   uint32_t ssrc = stream_priorities_.begin()->second;
 
@@ -198,7 +197,7 @@ PacketQueue2::Stream* PacketQueue2::GetHighestPriorityStream() {
   return &stream_info_it->second;
 }
 
-bool PacketQueue2::IsSsrcScheduled(uint32_t ssrc) const {
+bool RoundRobinPacketQueue::IsSsrcScheduled(uint32_t ssrc) const {
   for (const auto& scheduled_stream : stream_priorities_) {
     if (scheduled_stream.second == ssrc)
       return true;

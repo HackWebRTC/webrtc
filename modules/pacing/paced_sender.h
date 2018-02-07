@@ -15,7 +15,7 @@
 
 #include "api/optional.h"
 #include "modules/pacing/pacer.h"
-#include "modules/pacing/packet_queue2.h"
+#include "modules/pacing/packet_queue_interface.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/thread_annotations.h"
 #include "typedefs.h"  // NOLINT(build/include)
@@ -62,7 +62,7 @@ class PacedSender : public Pacer {
   PacedSender(const Clock* clock,
               PacketSender* packet_sender,
               RtcEventLog* event_log,
-              std::unique_ptr<PacketQueue> packets);
+              std::unique_ptr<PacketQueueInterface> packets);
 
   ~PacedSender() override;
 
@@ -129,7 +129,7 @@ class PacedSender : public Pacer {
   void UpdateBudgetWithBytesSent(size_t bytes)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
-  bool SendPacket(const PacketQueue::Packet& packet,
+  bool SendPacket(const PacketQueueInterface::Packet& packet,
                   const PacedPacketInfo& cluster_info)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
   size_t SendPadding(size_t padding_needed, const PacedPacketInfo& cluster_info)
@@ -159,7 +159,8 @@ class PacedSender : public Pacer {
   int64_t time_last_update_us_ RTC_GUARDED_BY(critsect_);
   int64_t first_sent_packet_ms_ RTC_GUARDED_BY(critsect_);
 
-  const std::unique_ptr<PacketQueue> packets_ RTC_PT_GUARDED_BY(critsect_);
+  const std::unique_ptr<PacketQueueInterface> packets_
+      RTC_PT_GUARDED_BY(critsect_);
   uint64_t packet_counter_ RTC_GUARDED_BY(critsect_);
 
   // Lock to avoid race when attaching process thread. This can happen due to
