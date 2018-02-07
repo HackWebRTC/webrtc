@@ -70,6 +70,8 @@ DEFINE_int(burst_length, 30,
 
 DEFINE_float(drift_factor, 0.0, "Time drift factor.");
 
+DEFINE_int(preload_packets, 0, "Preload the buffer with this many packets.");
+
 // ProbTrans00Solver() is to calculate the transition probability from no-loss
 // state to itself in a modified Gilbert Elliot packet loss model. The result is
 // to achieve the target packet loss rate |loss_rate|, when a packet is not
@@ -164,6 +166,9 @@ NetEqQualityTest::NetEqQualityTest(int block_duration_ms,
 
   RTC_CHECK_GT(FLAG_drift_factor, -0.1)
       << "Invalid drift factor, should be greater than -0.1.";
+
+  RTC_CHECK_GE(FLAG_preload_packets, 0)
+      << "Invalid number of packets to preload; must be non-negative.";
 
   const std::string out_filename = FLAG_out_filename;
   const std::string log_filename = out_filename + ".log";
@@ -352,8 +357,9 @@ void NetEqQualityTest::Simulate() {
   int audio_size_samples;
 
   while (decoded_time_ms_ < FLAG_runtime_ms) {
-    // Assume 10 packets in packets buffer.
-    while (decodable_time_ms_ - 10 * block_duration_ms_ < decoded_time_ms_) {
+    // Preload the buffer if needed.
+    while (decodable_time_ms_ - FLAG_preload_packets * block_duration_ms_ <
+           decoded_time_ms_) {
       ASSERT_TRUE(in_file_->Read(in_size_samples_ * channels_, &in_data_[0]));
       payload_.Clear();
       payload_size_bytes_ = EncodeBlock(&in_data_[0],
