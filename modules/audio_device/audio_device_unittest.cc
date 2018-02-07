@@ -295,8 +295,8 @@ class LatencyAudioStream : public AudioStream {
 
   rtc::Optional<int64_t> pulse_time_ RTC_GUARDED_BY(lock_);
   std::vector<int> latencies_ RTC_GUARDED_BY(race_checker_);
-  size_t read_count_ RTC_ACCESS_ON(read_thread_checker_) = 0;
-  size_t write_count_ RTC_ACCESS_ON(write_thread_checker_) = 0;
+  size_t read_count_ RTC_GUARDED_BY(read_thread_checker_) = 0;
+  size_t write_count_ RTC_GUARDED_BY(write_thread_checker_) = 0;
 };
 
 // Mocks the AudioTransport object and proxies actions for the two callbacks

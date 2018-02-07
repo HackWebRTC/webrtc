@@ -248,9 +248,9 @@ class ThreadAnnotateTest {
   rtc::ThreadChecker checker_;
   rtc::TaskQueue* queue_;
 
-  int var_thread_ RTC_ACCESS_ON(thread_);
+  int var_thread_ RTC_GUARDED_BY(thread_);
   int var_checker_ RTC_GUARDED_BY(checker_);
-  int var_queue_ RTC_ACCESS_ON(queue_);
+  int var_queue_ RTC_GUARDED_BY(queue_);
 };
 
 // Just in case we ever get lumped together with other compilation units.

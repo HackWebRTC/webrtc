@@ -88,20 +88,20 @@ class VideoDecoderWrapper : public VideoDecoder {
   rtc::RaceChecker callback_race_checker_;
 
   // Initialized on InitDecode and immutable after that.
-  VideoCodec codec_settings_ RTC_ACCESS_ON(decoder_thread_checker_);
-  int32_t number_of_cores_ RTC_ACCESS_ON(decoder_thread_checker_);
+  VideoCodec codec_settings_ RTC_GUARDED_BY(decoder_thread_checker_);
+  int32_t number_of_cores_ RTC_GUARDED_BY(decoder_thread_checker_);
 
-  bool initialized_ RTC_ACCESS_ON(decoder_thread_checker_);
+  bool initialized_ RTC_GUARDED_BY(decoder_thread_checker_);
   H264BitstreamParser h264_bitstream_parser_
-      RTC_ACCESS_ON(decoder_thread_checker_);
+      RTC_GUARDED_BY(decoder_thread_checker_);
 
-  DecodedImageCallback* callback_ RTC_ACCESS_ON(callback_race_checker_);
+  DecodedImageCallback* callback_ RTC_GUARDED_BY(callback_race_checker_);
 
   // Accessed both on the decoder thread and the callback thread.
   std::atomic<bool> qp_parsing_enabled_;
   rtc::CriticalSection frame_extra_infos_lock_;
   std::deque<FrameExtraInfo> frame_extra_infos_
-      RTC_ACCESS_ON(frame_extra_infos_lock_);
+      RTC_GUARDED_BY(frame_extra_infos_lock_);
 };
 
 }  // namespace jni

@@ -353,7 +353,7 @@ class Channel
   std::unique_ptr<AudioCodingModule> audio_coding_;
   AudioSinkInterface* audio_sink_ = nullptr;
   AudioLevel _outputAudioLevel;
-  uint32_t _timeStamp RTC_ACCESS_ON(encoder_queue_);
+  uint32_t _timeStamp RTC_GUARDED_BY(encoder_queue_);
 
   RemoteNtpTimeEstimator ntp_estimator_ RTC_GUARDED_BY(ts_stats_lock_);
 
@@ -378,9 +378,9 @@ class Channel
   ProcessThread* _moduleProcessThreadPtr;
   AudioDeviceModule* _audioDeviceModulePtr;
   Transport* _transportPtr;  // WebRtc socket or external transport
-  RmsLevel rms_level_ RTC_ACCESS_ON(encoder_queue_);
+  RmsLevel rms_level_ RTC_GUARDED_BY(encoder_queue_);
   bool input_mute_ RTC_GUARDED_BY(volume_settings_critsect_);
-  bool previous_frame_muted_ RTC_ACCESS_ON(encoder_queue_);
+  bool previous_frame_muted_ RTC_GUARDED_BY(encoder_queue_);
   float _outputGain RTC_GUARDED_BY(volume_settings_critsect_);
   // VoeRTP_RTCP
   // TODO(henrika): can today be accessed on the main thread and on the

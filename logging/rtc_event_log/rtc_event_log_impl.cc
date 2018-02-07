@@ -113,21 +113,22 @@ class RtcEventLogImpl final : public RtcEventLog {
 
   // History containing all past configuration events.
   std::deque<std::unique_ptr<RtcEvent>> config_history_
-      RTC_ACCESS_ON(task_queue_);
+      RTC_GUARDED_BY(task_queue_);
 
   // History containing the most recent (non-configuration) events (~10s).
-  std::deque<std::unique_ptr<RtcEvent>> history_ RTC_ACCESS_ON(task_queue_);
+  std::deque<std::unique_ptr<RtcEvent>> history_ RTC_GUARDED_BY(task_queue_);
 
-  size_t max_size_bytes_ RTC_ACCESS_ON(task_queue_);
-  size_t written_bytes_ RTC_ACCESS_ON(task_queue_);
+  size_t max_size_bytes_ RTC_GUARDED_BY(task_queue_);
+  size_t written_bytes_ RTC_GUARDED_BY(task_queue_);
 
-  std::unique_ptr<RtcEventLogEncoder> event_encoder_ RTC_ACCESS_ON(task_queue_);
-  std::unique_ptr<RtcEventLogOutput> event_output_ RTC_ACCESS_ON(task_queue_);
+  std::unique_ptr<RtcEventLogEncoder> event_encoder_
+      RTC_GUARDED_BY(task_queue_);
+  std::unique_ptr<RtcEventLogOutput> event_output_ RTC_GUARDED_BY(task_queue_);
 
-  size_t num_config_events_written_ RTC_ACCESS_ON(task_queue_);
-  int64_t output_period_ms_ RTC_ACCESS_ON(task_queue_);
-  int64_t last_output_ms_ RTC_ACCESS_ON(task_queue_);
-  bool output_scheduled_ RTC_ACCESS_ON(task_queue_);
+  size_t num_config_events_written_ RTC_GUARDED_BY(task_queue_);
+  int64_t output_period_ms_ RTC_GUARDED_BY(task_queue_);
+  int64_t last_output_ms_ RTC_GUARDED_BY(task_queue_);
+  bool output_scheduled_ RTC_GUARDED_BY(task_queue_);
 
   // Since we are posting tasks bound to |this|,  it is critical that the event
   // log and it's members outlive the |task_queue_|. Keep the "task_queue_|

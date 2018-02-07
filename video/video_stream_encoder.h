@@ -217,10 +217,11 @@ class VideoStreamEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   const VideoSendStream::Config::EncoderSettings settings_;
   const VideoCodecType codec_type_;
 
-  vcm::VideoSender video_sender_ RTC_ACCESS_ON(&encoder_queue_);
+  vcm::VideoSender video_sender_ RTC_GUARDED_BY(&encoder_queue_);
   std::unique_ptr<OveruseFrameDetector> overuse_detector_
-      RTC_ACCESS_ON(&encoder_queue_);
-  std::unique_ptr<QualityScaler> quality_scaler_ RTC_ACCESS_ON(&encoder_queue_);
+      RTC_GUARDED_BY(&encoder_queue_);
+  std::unique_ptr<QualityScaler> quality_scaler_
+      RTC_GUARDED_BY(&encoder_queue_);
 
   SendStatisticsProxy* const stats_proxy_;
   rtc::VideoSinkInterface<VideoFrame>* const pre_encode_callback_;
@@ -228,24 +229,25 @@ class VideoStreamEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   // of VideoStreamEncoder are called on the same thread.
   rtc::ThreadChecker thread_checker_;
 
-  VideoEncoderConfig encoder_config_ RTC_ACCESS_ON(&encoder_queue_);
+  VideoEncoderConfig encoder_config_ RTC_GUARDED_BY(&encoder_queue_);
   std::unique_ptr<VideoBitrateAllocator> rate_allocator_
-      RTC_ACCESS_ON(&encoder_queue_);
+      RTC_GUARDED_BY(&encoder_queue_);
   // The maximum frame rate of the current codec configuration, as determined
   // at the last ReconfigureEncoder() call.
-  int max_framerate_ RTC_ACCESS_ON(&encoder_queue_);
+  int max_framerate_ RTC_GUARDED_BY(&encoder_queue_);
 
   // Set when ConfigureEncoder has been called in order to lazy reconfigure the
   // encoder on the next frame.
-  bool pending_encoder_reconfiguration_ RTC_ACCESS_ON(&encoder_queue_);
-  rtc::Optional<VideoFrameInfo> last_frame_info_ RTC_ACCESS_ON(&encoder_queue_);
-  int crop_width_ RTC_ACCESS_ON(&encoder_queue_);
-  int crop_height_ RTC_ACCESS_ON(&encoder_queue_);
-  uint32_t encoder_start_bitrate_bps_ RTC_ACCESS_ON(&encoder_queue_);
-  size_t max_data_payload_length_ RTC_ACCESS_ON(&encoder_queue_);
-  bool nack_enabled_ RTC_ACCESS_ON(&encoder_queue_);
-  uint32_t last_observed_bitrate_bps_ RTC_ACCESS_ON(&encoder_queue_);
-  bool encoder_paused_and_dropped_frame_ RTC_ACCESS_ON(&encoder_queue_);
+  bool pending_encoder_reconfiguration_ RTC_GUARDED_BY(&encoder_queue_);
+  rtc::Optional<VideoFrameInfo> last_frame_info_
+      RTC_GUARDED_BY(&encoder_queue_);
+  int crop_width_ RTC_GUARDED_BY(&encoder_queue_);
+  int crop_height_ RTC_GUARDED_BY(&encoder_queue_);
+  uint32_t encoder_start_bitrate_bps_ RTC_GUARDED_BY(&encoder_queue_);
+  size_t max_data_payload_length_ RTC_GUARDED_BY(&encoder_queue_);
+  bool nack_enabled_ RTC_GUARDED_BY(&encoder_queue_);
+  uint32_t last_observed_bitrate_bps_ RTC_GUARDED_BY(&encoder_queue_);
+  bool encoder_paused_and_dropped_frame_ RTC_GUARDED_BY(&encoder_queue_);
   Clock* const clock_;
   // Counters used for deciding if the video resolution or framerate is
   // currently restricted, and if so, why, on a per degradation preference
@@ -253,10 +255,10 @@ class VideoStreamEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   // TODO(sprang): Replace this with a state holding a relative overuse measure
   // instead, that can be translated into suitable down-scale or fps limit.
   std::map<const VideoSendStream::DegradationPreference, AdaptCounter>
-      adapt_counters_ RTC_ACCESS_ON(&encoder_queue_);
+      adapt_counters_ RTC_GUARDED_BY(&encoder_queue_);
   // Set depending on degradation preferences.
   VideoSendStream::DegradationPreference degradation_preference_
-      RTC_ACCESS_ON(&encoder_queue_);
+      RTC_GUARDED_BY(&encoder_queue_);
 
   struct AdaptationRequest {
     // The pixel count produced by the source at the time of the adaptation.
@@ -269,7 +271,7 @@ class VideoStreamEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   // Stores a snapshot of the last adaptation request triggered by an AdaptUp
   // or AdaptDown signal.
   rtc::Optional<AdaptationRequest> last_adaptation_request_
-      RTC_ACCESS_ON(&encoder_queue_);
+      RTC_GUARDED_BY(&encoder_queue_);
 
   rtc::RaceChecker incoming_frame_race_checker_
       RTC_GUARDED_BY(incoming_frame_race_checker_);
@@ -281,13 +283,13 @@ class VideoStreamEncoder : public rtc::VideoSinkInterface<VideoFrame>,
       RTC_GUARDED_BY(incoming_frame_race_checker_);
 
   int64_t last_frame_log_ms_ RTC_GUARDED_BY(incoming_frame_race_checker_);
-  int captured_frame_count_ RTC_ACCESS_ON(&encoder_queue_);
-  int dropped_frame_count_ RTC_ACCESS_ON(&encoder_queue_);
+  int captured_frame_count_ RTC_GUARDED_BY(&encoder_queue_);
+  int dropped_frame_count_ RTC_GUARDED_BY(&encoder_queue_);
 
   VideoBitrateAllocationObserver* bitrate_observer_
-      RTC_ACCESS_ON(&encoder_queue_);
+      RTC_GUARDED_BY(&encoder_queue_);
   rtc::Optional<int64_t> last_parameters_update_ms_
-      RTC_ACCESS_ON(&encoder_queue_);
+      RTC_GUARDED_BY(&encoder_queue_);
 
   // All public methods are proxied to |encoder_queue_|. It must must be
   // destroyed first to make sure no tasks are run that use other members.

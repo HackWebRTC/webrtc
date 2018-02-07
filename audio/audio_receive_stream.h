@@ -103,7 +103,7 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream,
   std::unique_ptr<voe::ChannelProxy> channel_proxy_;
   AudioSendStream* associated_send_stream_ = nullptr;
 
-  bool playing_ RTC_ACCESS_ON(worker_thread_checker_) = false;
+  bool playing_ RTC_GUARDED_BY(worker_thread_checker_) = false;
 
   std::unique_ptr<RtpStreamReceiverInterface> rtp_stream_receiver_;
 
