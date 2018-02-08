@@ -159,8 +159,12 @@ int32_t AudioRecordJni::InitRecording() {
 int32_t AudioRecordJni::StartRecording() {
   RTC_LOG(INFO) << "StartRecording";
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  RTC_DCHECK(initialized_);
   RTC_DCHECK(!recording_);
+  if (!initialized_) {
+    RTC_DLOG(LS_WARNING)
+        << "Recording can not start since InitRecording must succeed first";
+    return 0;
+  }
   ScopedHistogramTimer timer("WebRTC.Audio.StartRecordingDurationMs");
   if (!j_audio_record_->StartRecording()) {
     RTC_LOG(LS_ERROR) << "StartRecording failed";

@@ -127,8 +127,12 @@ int32_t AudioTrackJni::InitPlayout() {
 int32_t AudioTrackJni::StartPlayout() {
   RTC_LOG(INFO) << "StartPlayout";
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  RTC_DCHECK(initialized_);
   RTC_DCHECK(!playing_);
+  if (!initialized_) {
+    RTC_DLOG(LS_WARNING)
+        << "Playout can not start since InitPlayout must succeed first";
+    return 0;
+  }
   if (!j_audio_track_->StartPlayout()) {
     RTC_LOG(LS_ERROR) << "StartPlayout failed";
     return -1;
