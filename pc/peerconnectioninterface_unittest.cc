@@ -320,7 +320,7 @@ static const char kDtlsSdesFallbackSdp[] =
     "a=fingerprint:sha-1 "
     "4A:AD:B9:B1:3F:82:18:3B:54:02:12:DF:3E:5D:49:6B:19:E5:7C:AB\r\n"
     "a=setup:actpass\r\n"
-    "a=crypto:0 AES_CM_128_HMAC_SHA1_32 "
+    "a=crypto:1 AES_CM_128_HMAC_SHA1_32 "
     "inline:NzB4d1BINUAvLEw6UzF3WSJ+PSdFcGdUJShpX1Zj|2^20|1:32 "
     "dummy_session_params\r\n";
 

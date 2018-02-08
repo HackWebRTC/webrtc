@@ -80,12 +80,6 @@ struct CryptoOptions {
   // if both sides enable it.
   bool enable_gcm_crypto_suites = false;
 
-  // If set to true, the (potentially insecure) crypto cipher
-  // SRTP_AES128_CM_SHA1_32 will be included in the list of supported ciphers
-  // during negotiation. It will only be used if both peers support it and no
-  // other ciphers get preferred.
-  bool enable_aes128_sha1_32_crypto_cipher = false;
-
   // If set to true, encrypted RTP header extensions as defined in RFC 6904
   // will be negotiated. They will only be used if both peers support them.
   bool enable_encrypted_rtp_header_extensions = false;
