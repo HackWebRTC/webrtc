@@ -157,8 +157,6 @@ if (is_ios || is_mac) {
       sources = [
         "objc/Framework/Classes/Video/AVCaptureSession+DevicePosition.h",
         "objc/Framework/Classes/Video/AVCaptureSession+DevicePosition.mm",
-        "objc/Framework/Classes/Video/RTCAVFoundationVideoCapturerInternal.h",
-        "objc/Framework/Classes/Video/RTCAVFoundationVideoCapturerInternal.mm",
         "objc/Framework/Classes/Video/RTCDefaultShader.h",
         "objc/Framework/Classes/Video/RTCDefaultShader.mm",
         "objc/Framework/Classes/Video/RTCI420TextureCache.h",
@@ -166,10 +164,6 @@ if (is_ios || is_mac) {
         "objc/Framework/Classes/Video/RTCOpenGLDefines.h",
         "objc/Framework/Classes/Video/RTCShader.h",
         "objc/Framework/Classes/Video/RTCShader.mm",
-        "objc/Framework/Classes/Video/avfoundationformatmapper.h",
-        "objc/Framework/Classes/Video/avfoundationformatmapper.mm",
-        "objc/Framework/Classes/Video/avfoundationvideocapturer.h",
-        "objc/Framework/Classes/Video/avfoundationvideocapturer.mm",
       ]
       libs = []
       if (is_ios) {
@@ -278,8 +272,6 @@ if (is_ios || is_mac) {
     rtc_static_library("peerconnection_objc") {
       visibility = [ "*" ]
       sources = [
-        "objc/Framework/Classes/PeerConnection/RTCAVFoundationVideoSource+Private.h",
-        "objc/Framework/Classes/PeerConnection/RTCAVFoundationVideoSource.mm",
         "objc/Framework/Classes/PeerConnection/RTCCameraVideoCapturer.m",
         "objc/Framework/Headers/WebRTC/RTCCameraVideoCapturer.h",
       ]
@@ -525,7 +517,6 @@ if (is_ios || is_mac) {
         "objc/Framework/Classes/PeerConnection/RTCWrappedNativeVideoDecoder.mm",
         "objc/Framework/Classes/PeerConnection/RTCWrappedNativeVideoEncoder.h",
         "objc/Framework/Classes/PeerConnection/RTCWrappedNativeVideoEncoder.mm",
-        "objc/Framework/Headers/WebRTC/RTCAVFoundationVideoSource.h",
         "objc/Framework/Headers/WebRTC/RTCAudioSource.h",
         "objc/Framework/Headers/WebRTC/RTCAudioTrack.h",
         "objc/Framework/Headers/WebRTC/RTCConfiguration.h",
@@ -676,7 +667,6 @@ if (is_ios || is_mac) {
           "objc/Framework/UnitTests/RTCPeerConnectionTest.mm",
           "objc/Framework/UnitTests/RTCSessionDescriptionTest.mm",
           "objc/Framework/UnitTests/RTCTracingTest.mm",
-          "objc/Framework/UnitTests/avformatmappertests.mm",
           "objc/Framework/UnitTests/objc_video_decoder_factory_tests.mm",
           "objc/Framework/UnitTests/objc_video_encoder_factory_tests.mm",
           "objc/Framework/UnitTests/scoped_cftyperef_tests.mm",
@@ -730,7 +720,6 @@ if (is_ios || is_mac) {
           "objc/Framework/Headers/WebRTC/RTCVideoCodec.h",
           "objc/Framework/Headers/WebRTC/RTCVideoCodecFactory.h",
           "objc/Framework/Headers/WebRTC/RTCAudioSessionConfiguration.h",
-          "objc/Framework/Headers/WebRTC/RTCAVFoundationVideoSource.h",
           "objc/Framework/Headers/WebRTC/RTCAudioSource.h",
           "objc/Framework/Headers/WebRTC/RTCAudioTrack.h",
           "objc/Framework/Headers/WebRTC/RTCCameraVideoCapturer.h",

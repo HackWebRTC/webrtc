@@ -14,7 +14,6 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class RTCAVFoundationVideoSource;
 @class RTCAudioSource;
 @class RTCAudioTrack;
 @class RTCConfiguration;
@@ -49,10 +48,6 @@ RTC_EXPORT
 /** Initialize an RTCAudioTrack with a source and an id. */
 - (RTCAudioTrack *)audioTrackWithSource:(RTCAudioSource *)source
                                 trackId:(NSString *)trackId;
-
-/** Initialize an RTCAVFoundationVideoSource with constraints. */
-- (RTCAVFoundationVideoSource *)avFoundationVideoSourceWithConstraints:
-    (nullable RTCMediaConstraints *)constraints;
 
 /** Initialize a generic RTCVideoSource. The RTCVideoSource should be passed to a RTCVideoCapturer
  *  implementation, e.g. RTCCameraVideoCapturer, in order to produce frames.

@@ -18,7 +18,6 @@
 #import "ARDFileCaptureController.h"
 #import "ARDSettingsModel.h"
 #import "ARDVideoCallView.h"
-#import "WebRTC/RTCAVFoundationVideoSource.h"
 #import "WebRTC/RTCDispatcher.h"
 #import "WebRTC/RTCLogging.h"
 #import "WebRTC/RTCMediaConstraints.h"

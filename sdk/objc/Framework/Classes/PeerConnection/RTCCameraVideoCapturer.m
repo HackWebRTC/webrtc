@@ -379,7 +379,7 @@ const int64_t kNanosecondsPerSecond = 1000000000;
 - (dispatch_queue_t)frameQueue {
   if (!_frameQueue) {
     _frameQueue =
-        dispatch_queue_create("org.webrtc.avfoundationvideocapturer.video", DISPATCH_QUEUE_SERIAL);
+        dispatch_queue_create("org.webrtc.cameravideocapturer.video", DISPATCH_QUEUE_SERIAL);
     dispatch_set_target_queue(_frameQueue,
                               dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0));
   }

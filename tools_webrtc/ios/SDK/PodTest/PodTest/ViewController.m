@@ -13,7 +13,6 @@
 
 @interface ViewController ()
 @property (nonatomic, strong) RTCPeerConnectionFactory *factory;
-@property (nonatomic, strong) RTCAVFoundationVideoSource *videoSource;
 @end
 
 @implementation ViewController
@@ -21,7 +20,6 @@
 - (void)viewDidLoad {
   [super viewDidLoad];
   self.factory = [[RTCPeerConnectionFactory alloc] init];
-  self.videoSource = [self.factory avFoundationVideoSourceWithConstraints:nil];
 }
 
 @end

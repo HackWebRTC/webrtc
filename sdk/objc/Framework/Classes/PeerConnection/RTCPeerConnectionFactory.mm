@@ -13,7 +13,6 @@
 #import "RTCPeerConnectionFactoryOptions+Private.h"
 
 #import "NSString+StdString.h"
-#import "RTCAVFoundationVideoSource+Private.h"
 #import "RTCAudioSource+Private.h"
 #import "RTCAudioTrack+Private.h"
 #import "RTCMediaConstraints+Private.h"
@@ -230,15 +229,6 @@
   return [[RTCAudioTrack alloc] initWithFactory:self
                                          source:source
                                         trackId:trackId];
-}
-
-- (RTCAVFoundationVideoSource *)avFoundationVideoSourceWithConstraints:
-    (nullable RTCMediaConstraints *)constraints {
-#ifdef HAVE_NO_MEDIA
-  return nil;
-#else
-  return [[RTCAVFoundationVideoSource alloc] initWithFactory:self constraints:constraints];
-#endif
 }
 
 - (RTCVideoSource *)videoSource {

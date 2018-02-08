@@ -10,7 +10,6 @@
 
 #import "ARDAppClient+Internal.h"
 
-#import "WebRTC/RTCAVFoundationVideoSource.h"
 #import "WebRTC/RTCAudioTrack.h"
 #import "WebRTC/RTCCameraVideoCapturer.h"
 #import "WebRTC/RTCConfiguration.h"
@@ -24,6 +23,7 @@
 #import "WebRTC/RTCRtpSender.h"
 #import "WebRTC/RTCTracing.h"
 #import "WebRTC/RTCVideoCodecFactory.h"
+#import "WebRTC/RTCVideoSource.h"
 #import "WebRTC/RTCVideoTrack.h"
 
 #import "ARDAppEngineClient.h"
