@@ -20,7 +20,6 @@ namespace test {
 
 namespace {
 const int kForemanNumFrames = 300;
-const std::nullptr_t kNoVisualizationParams = nullptr;
 }  // namespace
 
 class VideoProcessorIntegrationTestVideoToolbox
@@ -52,8 +51,7 @@ TEST_F(VideoProcessorIntegrationTestVideoToolbox,
   std::vector<QualityThresholds> quality_thresholds = {{37, 35, 0.93, 0.91}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
-                              &quality_thresholds, nullptr,
-                              kNoVisualizationParams);
+                              &quality_thresholds, nullptr, nullptr);
 }
 
 TEST_F(VideoProcessorIntegrationTestVideoToolbox,
@@ -72,8 +70,7 @@ TEST_F(VideoProcessorIntegrationTestVideoToolbox,
   std::vector<QualityThresholds> quality_thresholds = {{37, 35, 0.93, 0.91}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
-                              &quality_thresholds, nullptr,
-                              kNoVisualizationParams);
+                              &quality_thresholds, nullptr, nullptr);
 }
 
 }  // namespace test

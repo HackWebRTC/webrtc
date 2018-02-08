@@ -20,15 +20,11 @@ namespace test {
 #if defined(WEBRTC_USE_H264)
 
 namespace {
-
 // Codec settings.
 const bool kResilienceOn = true;
 const int kCifWidth = 352;
 const int kCifHeight = 288;
 const int kNumFrames = 100;
-
-const std::nullptr_t kNoVisualizationParams = nullptr;
-
 }  // namespace
 
 class VideoProcessorIntegrationTestOpenH264
@@ -58,8 +54,7 @@ TEST_F(VideoProcessorIntegrationTestOpenH264, ConstantHighBitrate) {
   std::vector<QualityThresholds> quality_thresholds = {{37, 35, 0.93, 0.91}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
-                              &quality_thresholds, nullptr,
-                              kNoVisualizationParams);
+                              &quality_thresholds, nullptr, nullptr);
 }
 
 // H264: Enable SingleNalUnit packetization mode. Encoder should split
@@ -81,8 +76,7 @@ TEST_F(VideoProcessorIntegrationTestOpenH264, SingleNalUnit) {
   BitstreamThresholds bs_thresholds = {config_.max_payload_size_bytes};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
-                              &quality_thresholds, &bs_thresholds,
-                              kNoVisualizationParams);
+                              &quality_thresholds, &bs_thresholds, nullptr);
 }
 
 #endif  // defined(WEBRTC_USE_H264)

@@ -20,7 +20,6 @@ namespace webrtc {
 namespace test {
 
 namespace {
-
 // Codec settings.
 const bool kResilienceOn = true;
 const int kCifWidth = 352;
@@ -29,9 +28,6 @@ const int kCifHeight = 288;
 const int kNumFramesShort = 100;
 #endif
 const int kNumFramesLong = 300;
-
-const std::nullptr_t kNoVisualizationParams = nullptr;
-
 }  // namespace
 
 class VideoProcessorIntegrationTestLibvpx
@@ -86,8 +82,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, HighBitrateVP9) {
   std::vector<QualityThresholds> quality_thresholds = {{37, 36, 0.94, 0.92}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
-                              &quality_thresholds, nullptr,
-                              kNoVisualizationParams);
+                              &quality_thresholds, nullptr, nullptr);
 }
 
 TEST_F(VideoProcessorIntegrationTestLibvpx, ChangeBitrateVP9) {
@@ -108,8 +103,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, ChangeBitrateVP9) {
       {34, 33, 0.90, 0.88}, {38, 35, 0.95, 0.91}, {35, 34, 0.93, 0.90}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
-                              &quality_thresholds, nullptr,
-                              kNoVisualizationParams);
+                              &quality_thresholds, nullptr, nullptr);
 }
 
 TEST_F(VideoProcessorIntegrationTestLibvpx, ChangeFramerateVP9) {
@@ -132,8 +126,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, ChangeFramerateVP9) {
       {33, 32, 0.89, 0.87}, {33.5, 32, 0.90, 0.86}, {33.5, 31.5, 0.90, 0.85}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
-                              &quality_thresholds, nullptr,
-                              kNoVisualizationParams);
+                              &quality_thresholds, nullptr, nullptr);
 }
 
 TEST_F(VideoProcessorIntegrationTestLibvpx, DenoiserOnVP9) {
@@ -149,8 +142,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, DenoiserOnVP9) {
   std::vector<QualityThresholds> quality_thresholds = {{37.5, 36, 0.94, 0.93}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
-                              &quality_thresholds, nullptr,
-                              kNoVisualizationParams);
+                              &quality_thresholds, nullptr, nullptr);
 }
 
 TEST_F(VideoProcessorIntegrationTestLibvpx, VeryLowBitrateVP9) {
@@ -165,8 +157,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, VeryLowBitrateVP9) {
   std::vector<QualityThresholds> quality_thresholds = {{28, 25, 0.80, 0.65}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
-                              &quality_thresholds, nullptr,
-                              kNoVisualizationParams);
+                              &quality_thresholds, nullptr, nullptr);
 }
 
 // TODO(marpan): Add temporal layer test for VP9, once changes are in
@@ -190,8 +181,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, HighBitrateVP8) {
   std::vector<QualityThresholds> quality_thresholds = {{35, 33, 0.91, 0.89}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
-                              &quality_thresholds, nullptr,
-                              kNoVisualizationParams);
+                              &quality_thresholds, nullptr, nullptr);
 }
 
 #endif  // !defined(WEBRTC_IOS)
@@ -233,8 +223,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_ChangeBitrateVP8) {
       {31.8, 31, 0.86, 0.85}, {36, 34.8, 0.92, 0.90}, {33.5, 32, 0.90, 0.88}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
-                              &quality_thresholds, nullptr,
-                              kNoVisualizationParams);
+                              &quality_thresholds, nullptr, nullptr);
 }
 
 // Too slow to finish before timeout on iOS. See webrtc:4755.
@@ -271,8 +260,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_ChangeFramerateVP8) {
       {31, 30, 0.85, 0.84}, {31.5, 30.5, 0.86, 0.84}, {30.5, 29, 0.83, 0.78}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
-                              &quality_thresholds, nullptr,
-                              kNoVisualizationParams);
+                              &quality_thresholds, nullptr, nullptr);
 }
 
 // Too slow to finish before timeout on iOS. See webrtc:4755.
@@ -304,8 +292,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_TemporalLayersVP8) {
                                                        {31, 28, 0.85, 0.75}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
-                              &quality_thresholds, nullptr,
-                              kNoVisualizationParams);
+                              &quality_thresholds, nullptr, nullptr);
 }
 
 // Might be too slow on mobile platforms.
@@ -328,8 +315,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_SimulcastVP8) {
   std::vector<QualityThresholds> quality_thresholds = {{34, 32, 0.90, 0.88}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
-                              &quality_thresholds, nullptr,
-                              kNoVisualizationParams);
+                              &quality_thresholds, nullptr, nullptr);
 }
 
 // Might be too slow on mobile platforms.
@@ -352,8 +338,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_SvcVP9) {
   std::vector<QualityThresholds> quality_thresholds = {{36, 34, 0.93, 0.91}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
-                              &quality_thresholds, nullptr,
-                              kNoVisualizationParams);
+                              &quality_thresholds, nullptr, nullptr);
 }
 
 }  // namespace test

@@ -21,7 +21,6 @@ namespace test {
 
 namespace {
 const int kForemanNumFrames = 300;
-const std::nullptr_t kNoVisualizationParams = nullptr;
 }  // namespace
 
 class VideoProcessorIntegrationTestMediaCodec
@@ -51,8 +50,7 @@ TEST_F(VideoProcessorIntegrationTestMediaCodec, ForemanCif500kbpsVp8) {
   std::vector<QualityThresholds> quality_thresholds = {{36, 31, 0.92, 0.86}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
-                              &quality_thresholds, nullptr,
-                              kNoVisualizationParams);
+                              &quality_thresholds, nullptr, nullptr);
 }
 
 TEST_F(VideoProcessorIntegrationTestMediaCodec, ForemanCif500kbpsH264CBP) {
@@ -71,8 +69,7 @@ TEST_F(VideoProcessorIntegrationTestMediaCodec, ForemanCif500kbpsH264CBP) {
   std::vector<QualityThresholds> quality_thresholds = {{36, 31, 0.92, 0.86}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
-                              &quality_thresholds, nullptr,
-                              kNoVisualizationParams);
+                              &quality_thresholds, nullptr, nullptr);
 }
 
 // TODO(brandtr): Enable this test when we have trybots/buildbots with
@@ -97,8 +94,7 @@ TEST_F(VideoProcessorIntegrationTestMediaCodec,
   std::vector<QualityThresholds> quality_thresholds = {{37, 35, 0.93, 0.91}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
-                              &quality_thresholds, nullptr,
-                              kNoVisualizationParams);
+                              &quality_thresholds, nullptr, nullptr);
 }
 
 }  // namespace test
