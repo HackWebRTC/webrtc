@@ -29,8 +29,6 @@ class VideoProcessorIntegrationTestVideoToolbox
   VideoProcessorIntegrationTestVideoToolbox() {
     config_.filename = "foreman_cif";
     config_.input_filename = ResourcePath(config_.filename, "yuv");
-    config_.output_filename = TempFilename(
-        OutputPath(), "videoprocessor_integrationtest_videotoolbox");
     config_.num_frames = kForemanNumFrames;
     config_.hw_encoder = true;
     config_.hw_decoder = true;

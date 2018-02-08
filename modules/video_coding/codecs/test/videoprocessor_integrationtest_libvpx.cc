@@ -40,8 +40,6 @@ class VideoProcessorIntegrationTestLibvpx
   VideoProcessorIntegrationTestLibvpx() {
     config_.filename = "foreman_cif";
     config_.input_filename = ResourcePath(config_.filename, "yuv");
-    config_.output_filename =
-        TempFilename(OutputPath(), "videoprocessor_integrationtest_libvpx");
     config_.num_frames = kNumFramesLong;
     // Only allow encoder/decoder to use single core, for predictability.
     config_.use_single_core = true;

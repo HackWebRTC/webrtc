@@ -61,8 +61,6 @@ class VideoProcessorIntegrationTestParameterized
                const std::string& filename) {
     config_.filename = filename;
     config_.input_filename = ResourcePath(filename, "yuv");
-    config_.output_filename =
-        TempFilename(OutputPath(), "plot_videoprocessor_integrationtest");
     config_.use_single_core = kUseSingleCore;
     config_.measure_cpu = kMeasureCpu;
     config_.hw_encoder = hw_codec_;

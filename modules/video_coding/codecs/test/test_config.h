@@ -46,21 +46,14 @@ struct TestConfig {
   void ConfigureSimulcast();
 
   size_t NumberOfCores() const;
-
   size_t NumberOfTemporalLayers() const;
-
   size_t NumberOfSpatialLayers() const;
-
   size_t NumberOfSimulcastStreams() const;
 
   std::vector<FrameType> FrameTypeForFrame(size_t frame_idx) const;
-
   std::string ToString() const;
-
   std::string CodecName() const;
-
   std::string FilenameWithParams() const;
-
   bool IsAsyncCodec() const;
 
   // Plain name of YUV file to process without file extension.
@@ -68,10 +61,6 @@ struct TestConfig {
 
   // File to process. This must be a video file in the YUV format.
   std::string input_filename;
-
-  // File to write to during processing for the test. Will be a video file in
-  // the YUV format.
-  std::string output_filename;
 
   // Number of frames to process.
   size_t num_frames = 0;
