@@ -230,7 +230,7 @@ TEST(IsacFixTest, Kenny) {
     printf("[-RTP_INIT num]  :if -RTP_INIT option is specified num will be"
            " the initial\n");
     printf("                  value of the rtp sequence number.\n\n");
-    printf("[--chartjson_result_file file]\n");
+    printf("[--isolated-script-test-perf-output file]\n");
     printf("                 :If this option is specified, perf values will be"
            " written to this file in a JSON format.\n\n");
     printf("Example usage    :\n\n");
@@ -390,7 +390,7 @@ TEST(IsacFixTest, Kenny) {
       i++;
     }
 
-    if (!strcmp ("--chartjson_result_file", argv[i])) {
+    if (!strcmp ("--isolated-script-test-perf-output", argv[i])) {
       strncpy(chartjson_result_file, argv[i+1], 50);
       i++;
     }

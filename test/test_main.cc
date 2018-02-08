@@ -36,7 +36,12 @@ DEFINE_bool(
 #else
 
 DEFINE_string(
-    chartjson_result_file,
+    isolated_script_test_output,
+    "",
+    "Intentionally ignored flag intended for Chromium.");
+
+DEFINE_string(
+    isolated_script_test_perf_output,
     "",
     "Path where the perf results should be stored in the JSON format described "
     "by "
@@ -90,7 +95,7 @@ int main(int argc, char* argv[]) {
 
   int exit_code = RUN_ALL_TESTS();
 
-  std::string chartjson_result_file = FLAG_chartjson_result_file;
+  std::string chartjson_result_file = FLAG_isolated_script_test_perf_output;
   if (!chartjson_result_file.empty()) {
     webrtc::test::WritePerfResults(chartjson_result_file);
   }

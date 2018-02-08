@@ -107,11 +107,6 @@ def _ParseArgs():
   parser.add_argument('--store-test-artifacts', action='store_true',
                       default=False)
 
-  # Used to store results of perf tests. See
-  # https://chromium.googlesource.com/external/github.com/catapult-project/catapult/+/HEAD/dashboard/docs/data-format.md
-  parser.add_argument('--isolated-script-test-perf-output', type=str,
-                      default=None)
-
   # No-sandbox is a Chromium-specific flag, ignore it.
   # TODO(oprypin): Remove (bugs.webrtc.org/8115)
   parser.add_argument('--no-sandbox', action='store_true', default=False)
@@ -143,13 +138,6 @@ def _ParseArgs():
     executable_args += [
         '--test_artifacts_dir',
         test_artifacts_dir,
-    ]
-
-  # The corresponding flag in WebRTC is called 'chartjson_result_file'.
-  if options.isolated_script_test_perf_output:
-    executable_args += [
-        '--chartjson_result_file',
-        options.isolated_script_test_perf_output,
     ]
 
   # GTEST_SHARD_INDEX and GTEST_TOTAL_SHARDS must be removed from the
