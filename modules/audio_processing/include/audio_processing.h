@@ -1168,10 +1168,10 @@ struct EchoCanceller3Config {
     size_t down_sampling_factor = 4;
     size_t num_filters = 4;
     size_t api_call_jitter_blocks = 26;
-    size_t min_echo_path_delay_blocks = 5;
-    size_t delay_headroom_blocks = 1;
+    size_t min_echo_path_delay_blocks = 0;
+    size_t delay_headroom_blocks = 2;
     size_t hysteresis_limit_1_blocks = 1;
-    size_t hysteresis_limit_2_blocks = 0;
+    size_t hysteresis_limit_2_blocks = 1;
   } delay;
 
   struct Filter {
@@ -1189,8 +1189,8 @@ struct EchoCanceller3Config {
       float noise_gate;
     };
 
-    MainConfiguration main = {12, 0.005f, 0.1f, 0.001f, 20075344.f};
-    ShadowConfiguration shadow = {12, 0.7f, 20075344.f};
+    MainConfiguration main = {13, 0.005f, 0.1f, 0.001f, 20075344.f};
+    ShadowConfiguration shadow = {13, 0.7f, 20075344.f};
 
     MainConfiguration main_initial = {12, 0.05f, 5.f, 0.001f, 20075344.f};
     ShadowConfiguration shadow_initial = {12, 0.9f, 20075344.f};
