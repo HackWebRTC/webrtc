@@ -415,7 +415,18 @@ class HardwareVideoEncoder implements VideoEncoder {
   @Override
   public ScalingSettings getScalingSettings() {
     encodeThreadChecker.checkIsOnValidThread();
-    return new ScalingSettings(automaticResizeOn);
+    if (automaticResizeOn) {
+      if (codecType == VideoCodecType.VP8) {
+        final int kLowVp8QpThreshold = 29;
+        final int kHighVp8QpThreshold = 95;
+        return new ScalingSettings(kLowVp8QpThreshold, kHighVp8QpThreshold);
+      } else if (codecType == VideoCodecType.H264) {
+        final int kLowH264QpThreshold = 24;
+        final int kHighH264QpThreshold = 37;
+        return new ScalingSettings(kLowH264QpThreshold, kHighH264QpThreshold);
+      }
+    }
+    return ScalingSettings.OFF;
   }
 
   @Override
