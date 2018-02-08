@@ -44,12 +44,6 @@ class WebRtcVideoDecoderFactory;
   EXPECT_EQ((h), (r).height()); \
   EXPECT_EQ(0, (r).errors()); \
 
-#define EXPECT_GT_FRAME_ON_RENDERER_WAIT(r, c, w, h, t) \
-  EXPECT_TRUE_WAIT((r).num_rendered_frames() >= (c) && \
-                   (w) == (r).width() && \
-                   (h) == (r).height(), (t)); \
-  EXPECT_EQ(0, (r).errors());
-
 static const uint32_t kTimeout = 5000U;
 static const uint32_t kDefaultReceiveSsrc = 0;
 static const uint32_t kSsrc = 1234u;
@@ -58,11 +52,6 @@ static const uint32_t kSsrcs4[] = {1, 2, 3, 4};
 static const int kVideoWidth = 640;
 static const int kVideoHeight = 360;
 static const int kFramerate = 30;
-
-inline bool IsEqualCodec(const cricket::VideoCodec& a,
-                         const cricket::VideoCodec& b) {
-  return a.id == b.id && a.name == b.name;
-}
 
 template<class E, class C>
 class VideoMediaChannelTest : public testing::Test,
@@ -149,9 +138,6 @@ class VideoMediaChannelTest : public testing::Test,
     return SetOneCodec(DefaultCodec());
   }
 
-  bool SetOneCodec(int pt, const char* name) {
-    return SetOneCodec(cricket::VideoCodec(pt, name));
-  }
   bool SetOneCodec(const cricket::VideoCodec& codec) {
     cricket::VideoFormat capture_format(
         kVideoWidth, kVideoHeight,
@@ -179,15 +165,6 @@ class VideoMediaChannelTest : public testing::Test,
   bool SetSend(bool send) {
     return channel_->SetSend(send);
   }
-  int DrainOutgoingPackets() {
-    int packets = 0;
-    do {
-      packets = NumRtpPackets();
-      // 100 ms should be long enough.
-      rtc::Thread::Current()->ProcessMessages(100);
-    } while (NumRtpPackets() > packets);
-    return NumRtpPackets();
-  }
   bool SendFrame() {
     if (video_capturer_2_) {
       video_capturer_2_->CaptureFrame();
@@ -198,27 +175,6 @@ class VideoMediaChannelTest : public testing::Test,
     bool ret = rtc::Thread::Current()->ProcessMessages(wait_ms);
     ret &= SendFrame();
     return ret;
-  }
-  // Sends frames and waits for the decoder to be fully initialized.
-  // Returns the number of frames that were sent.
-  int WaitForDecoder() {
-#if defined(HAVE_OPENMAX)
-    // Send enough frames for the OpenMAX decoder to continue processing, and
-    // return the number of frames sent.
-    // Send frames for a full kTimeout's worth of 15fps video.
-    int frame_count = 0;
-    while (frame_count < static_cast<int>(kTimeout) / 66) {
-      EXPECT_TRUE(WaitAndSendFrame(66));
-      ++frame_count;
-    }
-    return frame_count;
-#else
-    return 0;
-#endif
-  }
-  bool SendCustomVideoFrame(int w, int h) {
-    if (!video_capturer_.get()) return false;
-    return video_capturer_->CaptureCustomFrame(w, h, cricket::FOURCC_I420);
   }
   int NumRtpBytes() {
     return network_interface_.NumRtpBytes();
@@ -237,12 +193,6 @@ class VideoMediaChannelTest : public testing::Test,
   }
   const rtc::CopyOnWriteBuffer* GetRtpPacket(int index) {
     return network_interface_.GetRtpPacket(index);
-  }
-  int NumRtcpPackets() {
-    return network_interface_.NumRtcpPackets();
-  }
-  const rtc::CopyOnWriteBuffer* GetRtcpPacket(int index) {
-    return network_interface_.GetRtcpPacket(index);
   }
   static int GetPayloadType(const rtc::CopyOnWriteBuffer* p) {
     int pt = -1;
@@ -305,39 +255,6 @@ class VideoMediaChannelTest : public testing::Test,
 
     if (payload) {
       return buf.ReadString(payload, buf.Length());
-    }
-    return true;
-  }
-
-  // Parse all RTCP packet, from start_index to stop_index, and count how many
-  // FIR (PT=206 and FMT=4 according to RFC 5104). If successful, set the count
-  // and return true.
-  bool CountRtcpFir(int start_index, int stop_index, int* fir_count) {
-    int count = 0;
-    for (int i = start_index; i < stop_index; ++i) {
-      std::unique_ptr<const rtc::CopyOnWriteBuffer> p(GetRtcpPacket(i));
-      rtc::ByteBufferReader buf(p->data<char>(), p->size());
-      size_t total_len = 0;
-      // The packet may be a compound RTCP packet.
-      while (total_len < p->size()) {
-        // Read FMT, type and length.
-        uint8_t fmt = 0;
-        uint8_t type = 0;
-        uint16_t length = 0;
-        if (!buf.ReadUInt8(&fmt)) return false;
-        fmt &= 0x1F;
-        if (!buf.ReadUInt8(&type)) return false;
-        if (!buf.ReadUInt16(&length)) return false;
-        buf.Consume(length * 4);  // Skip RTCP data.
-        total_len += (length + 1) * 4;
-        if ((192 == type) || ((206 == type) && (4 == fmt))) {
-          ++count;
-        }
-      }
-    }
-
-    if (fir_count) {
-      *fir_count = count;
     }
     return true;
   }
