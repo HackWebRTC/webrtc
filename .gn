@@ -46,9 +46,7 @@ check_targets = [
   "//system_wrappers/*",
   "//test/*",
   "//video/*",
-
-  # TODO(bugs.webrtc.org/8850): re-enable when libyuv 'gn check' will be fixed.
-  # "//third_party/libyuv/*",
+  "//third_party/libyuv/*",
 ]
 
 # These are the list of GN files that run exec_script. This whitelist exists
