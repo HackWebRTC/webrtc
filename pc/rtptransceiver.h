@@ -68,8 +68,6 @@ class RtpTransceiver final
           receiver);
   ~RtpTransceiver() override;
 
-  cricket::MediaType media_type() const { return media_type_; }
-
   // Returns the Voice/VideoChannel set for this transceiver. May be null if
   // the transceiver is not in the currently set local/remote description.
   cricket::BaseChannel* channel() const { return channel_; }
@@ -157,6 +155,7 @@ class RtpTransceiver final
   }
 
   // RtpTransceiverInterface implementation.
+  cricket::MediaType media_type() const override;
   rtc::Optional<std::string> mid() const override;
   rtc::scoped_refptr<RtpSenderInterface> sender() const override;
   rtc::scoped_refptr<RtpReceiverInterface> receiver() const override;
@@ -191,6 +190,7 @@ class RtpTransceiver final
 
 BEGIN_SIGNALING_PROXY_MAP(RtpTransceiver)
 PROXY_SIGNALING_THREAD_DESTRUCTOR()
+PROXY_CONSTMETHOD0(cricket::MediaType, media_type);
 PROXY_CONSTMETHOD0(rtc::Optional<std::string>, mid);
 PROXY_CONSTMETHOD0(rtc::scoped_refptr<RtpSenderInterface>, sender);
 PROXY_CONSTMETHOD0(rtc::scoped_refptr<RtpReceiverInterface>, receiver);

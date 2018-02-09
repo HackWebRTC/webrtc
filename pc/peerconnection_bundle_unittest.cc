@@ -79,7 +79,7 @@ class PeerConnectionWrapperForBundleTest : public PeerConnectionWrapper {
     auto transceivers =
         GetInternalPeerConnection()->GetTransceiversForTesting();
     for (auto transceiver : transceivers) {
-      if (transceiver->internal()->media_type() == cricket::MEDIA_TYPE_AUDIO) {
+      if (transceiver->media_type() == cricket::MEDIA_TYPE_AUDIO) {
         return static_cast<cricket::VoiceChannel*>(
             transceiver->internal()->channel());
       }
@@ -99,7 +99,7 @@ class PeerConnectionWrapperForBundleTest : public PeerConnectionWrapper {
     auto transceivers =
         GetInternalPeerConnection()->GetTransceiversForTesting();
     for (auto transceiver : transceivers) {
-      if (transceiver->internal()->media_type() == cricket::MEDIA_TYPE_VIDEO) {
+      if (transceiver->media_type() == cricket::MEDIA_TYPE_VIDEO) {
         return static_cast<cricket::VideoChannel*>(
             transceiver->internal()->channel());
       }

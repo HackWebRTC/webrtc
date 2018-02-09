@@ -462,6 +462,7 @@ TEST_F(PeerConnectionRtpTest,
   auto caller = CreatePeerConnectionWithUnifiedPlan();
 
   auto transceiver = caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO);
+  EXPECT_EQ(cricket::MEDIA_TYPE_AUDIO, transceiver->media_type());
 
   ASSERT_TRUE(transceiver->sender());
   EXPECT_EQ(cricket::MEDIA_TYPE_AUDIO, transceiver->sender()->media_type());
@@ -482,6 +483,7 @@ TEST_F(PeerConnectionRtpTest,
   auto caller = CreatePeerConnectionWithUnifiedPlan();
 
   auto transceiver = caller->AddTransceiver(cricket::MEDIA_TYPE_VIDEO);
+  EXPECT_EQ(cricket::MEDIA_TYPE_VIDEO, transceiver->media_type());
 
   ASSERT_TRUE(transceiver->sender());
   EXPECT_EQ(cricket::MEDIA_TYPE_VIDEO, transceiver->sender()->media_type());

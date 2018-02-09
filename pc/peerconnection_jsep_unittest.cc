@@ -257,12 +257,10 @@ TEST_F(PeerConnectionJsepTest, SetRemoteOfferCreatesTransceivers) {
 
   auto transceivers = callee->pc()->GetTransceivers();
   ASSERT_EQ(2u, transceivers.size());
-  EXPECT_EQ(cricket::MEDIA_TYPE_AUDIO,
-            transceivers[0]->receiver()->media_type());
+  EXPECT_EQ(cricket::MEDIA_TYPE_AUDIO, transceivers[0]->media_type());
   EXPECT_EQ(caller_audio->mid(), transceivers[0]->mid());
   EXPECT_EQ(RtpTransceiverDirection::kRecvOnly, transceivers[0]->direction());
-  EXPECT_EQ(cricket::MEDIA_TYPE_VIDEO,
-            transceivers[1]->receiver()->media_type());
+  EXPECT_EQ(cricket::MEDIA_TYPE_VIDEO, transceivers[1]->media_type());
   EXPECT_EQ(caller_video->mid(), transceivers[1]->mid());
   EXPECT_EQ(RtpTransceiverDirection::kRecvOnly, transceivers[1]->direction());
 }
@@ -645,9 +643,9 @@ TEST_P(RecycleMediaSectionTest, VerifyOfferAnswerAndTransceivers) {
   auto callee_transceivers = callee->pc()->GetTransceivers();
   ASSERT_EQ(2u, callee_transceivers.size());
   EXPECT_EQ(rtc::nullopt, callee_transceivers[0]->mid());
-  EXPECT_EQ(first_type_, callee_transceivers[0]->receiver()->media_type());
+  EXPECT_EQ(first_type_, callee_transceivers[0]->media_type());
   EXPECT_EQ(second_mid, callee_transceivers[1]->mid());
-  EXPECT_EQ(second_type_, callee_transceivers[1]->receiver()->media_type());
+  EXPECT_EQ(second_type_, callee_transceivers[1]->media_type());
 
   // The answer should have only one media section for the new transceiver.
   auto answer = callee->CreateAnswer();

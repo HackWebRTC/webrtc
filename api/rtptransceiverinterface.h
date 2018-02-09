@@ -63,6 +63,10 @@ struct RtpTransceiverInit final {
 // https://w3c.github.io/webrtc-pc/#dom-rtcrtptransceiver
 class RtpTransceiverInterface : public rtc::RefCountInterface {
  public:
+  // Media type of the transceiver. Any sender(s)/receiver(s) will have this
+  // type as well.
+  virtual cricket::MediaType media_type() const = 0;
+
   // The mid attribute is the mid negotiated and present in the local and
   // remote descriptions. Before negotiation is complete, the mid value may be
   // null. After rollbacks, the value may change from a non-null value to null.

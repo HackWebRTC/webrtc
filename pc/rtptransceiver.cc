@@ -94,7 +94,7 @@ void RtpTransceiver::AddSender(
     rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> sender) {
   RTC_DCHECK(!unified_plan_);
   RTC_DCHECK(sender);
-  RTC_DCHECK_EQ(media_type(), sender->internal()->media_type());
+  RTC_DCHECK_EQ(media_type(), sender->media_type());
   RTC_DCHECK(std::find(senders_.begin(), senders_.end(), sender) ==
              senders_.end());
   senders_.push_back(sender);
@@ -119,7 +119,7 @@ void RtpTransceiver::AddReceiver(
         receiver) {
   RTC_DCHECK(!unified_plan_);
   RTC_DCHECK(receiver);
-  RTC_DCHECK_EQ(media_type(), receiver->internal()->media_type());
+  RTC_DCHECK_EQ(media_type(), receiver->media_type());
   RTC_DCHECK(std::find(receivers_.begin(), receivers_.end(), receiver) ==
              receivers_.end());
   receivers_.push_back(receiver);
@@ -150,6 +150,10 @@ rtc::scoped_refptr<RtpReceiverInternal> RtpTransceiver::receiver_internal()
   RTC_DCHECK(unified_plan_);
   RTC_CHECK_EQ(1u, receivers_.size());
   return receivers_[0]->internal();
+}
+
+cricket::MediaType RtpTransceiver::media_type() const {
+  return media_type_;
 }
 
 rtc::Optional<std::string> RtpTransceiver::mid() const {

@@ -774,12 +774,12 @@ void PeerConnection::DestroyAllChannels() {
   // Destroy video channels first since they may have a pointer to a voice
   // channel.
   for (auto transceiver : transceivers_) {
-    if (transceiver->internal()->media_type() == cricket::MEDIA_TYPE_VIDEO) {
+    if (transceiver->media_type() == cricket::MEDIA_TYPE_VIDEO) {
       DestroyTransceiverChannel(transceiver);
     }
   }
   for (auto transceiver : transceivers_) {
-    if (transceiver->internal()->media_type() == cricket::MEDIA_TYPE_AUDIO) {
+    if (transceiver->media_type() == cricket::MEDIA_TYPE_AUDIO) {
       DestroyTransceiverChannel(transceiver);
     }
   }
@@ -1148,7 +1148,7 @@ PeerConnection::FindFirstTransceiverForAddedTrack(
   RTC_DCHECK(track);
   for (auto transceiver : transceivers_) {
     if (!transceiver->sender()->track() &&
-        cricket::MediaTypeToString(transceiver->internal()->media_type()) ==
+        cricket::MediaTypeToString(transceiver->media_type()) ==
             track->kind() &&
         !transceiver->internal()->has_ever_been_used_to_send()) {
       return transceiver;
@@ -1640,8 +1640,7 @@ PeerConnection::GetReceivingTransceiversOfType(cricket::MediaType media_type) {
       rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
       receiving_transceivers;
   for (auto transceiver : transceivers_) {
-    if (!transceiver->stopped() &&
-        transceiver->internal()->media_type() == media_type &&
+    if (!transceiver->stopped() && transceiver->media_type() == media_type &&
         RtpTransceiverDirectionHasRecv(transceiver->direction())) {
       receiving_transceivers.push_back(transceiver);
     }
@@ -2318,13 +2317,12 @@ RTCError PeerConnection::UpdateTransceiverChannel(
     }
   } else {
     if (!channel) {
-      if (transceiver->internal()->media_type() == cricket::MEDIA_TYPE_AUDIO) {
+      if (transceiver->media_type() == cricket::MEDIA_TYPE_AUDIO) {
         channel = CreateVoiceChannel(
             content.name,
             GetTransportNameForMediaSection(content.name, bundle_group));
       } else {
-        RTC_DCHECK_EQ(cricket::MEDIA_TYPE_VIDEO,
-                      transceiver->internal()->media_type());
+        RTC_DCHECK_EQ(cricket::MEDIA_TYPE_VIDEO, transceiver->media_type());
         channel = CreateVideoChannel(
             content.name,
             GetTransportNameForMediaSection(content.name, bundle_group));
@@ -2425,7 +2423,7 @@ PeerConnection::AssociateTransceiver(cricket::ContentSource source,
     }
   }
   RTC_DCHECK(transceiver);
-  if (transceiver->internal()->media_type() != media_desc->type()) {
+  if (transceiver->media_type() != media_desc->type()) {
     LOG_AND_RETURN_ERROR(
         RTCErrorType::INVALID_PARAMETER,
         "Transceiver type does not match media description type.");
@@ -2471,7 +2469,7 @@ PeerConnection::FindAvailableTransceiverToReceive(
   // associated with any m= section and are not stopped, find the first such
   // RtpTransceiver.
   for (auto transceiver : transceivers_) {
-    if (transceiver->internal()->media_type() == media_type &&
+    if (transceiver->media_type() == media_type &&
         transceiver->internal()->created_by_addtrack() && !transceiver->mid() &&
         !transceiver->stopped()) {
       return transceiver;
@@ -2497,7 +2495,7 @@ const cricket::ContentInfo* PeerConnection::FindMediaSectionForTransceiver(
     // Plan B only allows at most one audio and one video section, so use the
     // first media section of that type.
     return cricket::GetFirstMediaContent(sdesc->description()->contents(),
-                                         transceiver->internal()->media_type());
+                                         transceiver->media_type());
   }
 }
 
@@ -3318,7 +3316,7 @@ GetMediaDescriptionOptionsForTransceiver(
         transceiver,
     const std::string& mid) {
   cricket::MediaDescriptionOptions media_description_options(
-      transceiver->internal()->media_type(), mid, transceiver->direction(),
+      transceiver->media_type(), mid, transceiver->direction(),
       transceiver->stopped());
   // This behavior is specified in JSEP. The gist is that:
   // 1. The MSID is included if the RtpTransceiver's direction is sendonly or
@@ -3383,10 +3381,9 @@ void PeerConnection::GetOptionsForUnifiedPlanOffer(
       // rejected in either the local or remote description.
       if (had_been_rejected) {
         session_options->media_description_options.push_back(
-            cricket::MediaDescriptionOptions(
-                transceiver->internal()->media_type(), mid,
-                RtpTransceiverDirection::kInactive,
-                /*stopped=*/true));
+            cricket::MediaDescriptionOptions(transceiver->media_type(), mid,
+                                             RtpTransceiverDirection::kInactive,
+                                             /*stopped=*/true));
         recycleable_mline_indices.push(i);
       } else {
         session_options->media_description_options.push_back(
@@ -4083,7 +4080,7 @@ PeerConnection::GetAudioTransceiver() const {
   // audio/video transceiver.
   RTC_DCHECK(!IsUnifiedPlan());
   for (auto transceiver : transceivers_) {
-    if (transceiver->internal()->media_type() == cricket::MEDIA_TYPE_AUDIO) {
+    if (transceiver->media_type() == cricket::MEDIA_TYPE_AUDIO) {
       return transceiver;
     }
   }
@@ -4097,7 +4094,7 @@ PeerConnection::GetVideoTransceiver() const {
   // audio/video transceiver.
   RTC_DCHECK(!IsUnifiedPlan());
   for (auto transceiver : transceivers_) {
-    if (transceiver->internal()->media_type() == cricket::MEDIA_TYPE_VIDEO) {
+    if (transceiver->media_type() == cricket::MEDIA_TYPE_VIDEO) {
       return transceiver;
     }
   }
@@ -5603,7 +5600,7 @@ void PeerConnection::ReportTransportStats() {
       const std::string& transport_name =
           transceiver->internal()->channel()->transport_name();
       media_types_by_transport_name[transport_name].insert(
-          transceiver->internal()->media_type());
+          transceiver->media_type());
     }
   }
   if (rtp_data_channel()) {

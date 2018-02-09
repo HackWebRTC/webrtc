@@ -197,7 +197,7 @@ class PeerConnectionIceBaseTest : public ::testing::Test {
             pc_wrapper_ptr->pc());
     PeerConnection* pc = static_cast<PeerConnection*>(pc_proxy->internal());
     for (auto transceiver : pc->GetTransceiversForTesting()) {
-      if (transceiver->internal()->media_type() == cricket::MEDIA_TYPE_AUDIO) {
+      if (transceiver->media_type() == cricket::MEDIA_TYPE_AUDIO) {
         cricket::BaseChannel* channel = transceiver->internal()->channel();
         if (channel) {
           return channel->rtp_dtls_transport()->ice_transport()->GetIceRole();
