@@ -135,6 +135,8 @@ class VideoAnalyzer : public PacketReceiver,
         dropped_frames_before_first_encode_(0),
         dropped_frames_before_rendering_(0),
         last_render_time_(0),
+        last_render_delta_ms_(0),
+        last_unfreeze_time_ms_(0),
         rtp_timestamp_delta_(0),
         total_media_bytes_(0),
         first_sending_time_(0),
@@ -740,6 +742,10 @@ class VideoAnalyzer : public PacketReceiver,
   void PrintResults() {
     StopMeasuringCpuProcessTime();
     rtc::CritScope crit(&comparison_lock_);
+    // Record the time from the last freeze until the last rendered frame to
+    // ensure we cover the full timespan of the session. Otherwise the metric
+    // would penalize an early freeze followed by no freezes until the end.
+    time_between_freezes_.AddSample(last_render_time_ - last_unfreeze_time_ms_);
     PrintResult("psnr", psnr_, " dB");
     PrintResult("ssim", ssim_, " score");
     PrintResult("sender_time", sender_time_, " ms");
@@ -751,6 +757,7 @@ class VideoAnalyzer : public PacketReceiver,
     PrintResult("media_bitrate", media_bitrate_bps_, " bps");
     PrintResult("fec_bitrate", fec_bitrate_bps_, " bps");
     PrintResult("send_bandwidth", send_bandwidth_bps_, " bps");
+    PrintResult("time_between_freezes", time_between_freezes_, " ms");
 
     if (worst_frame_) {
       test::PrintResult("min_psnr", "", test_label_.c_str(), worst_frame_->psnr,
@@ -825,8 +832,20 @@ class VideoAnalyzer : public PacketReceiver,
       ++dropped_frames_;
       return;
     }
-    if (last_render_time_ != 0)
-      rendered_delta_.AddSample(comparison.render_time_ms - last_render_time_);
+    if (last_unfreeze_time_ms_ == 0)
+      last_unfreeze_time_ms_ = comparison.render_time_ms;
+    if (last_render_time_ != 0) {
+      const int64_t render_delta_ms =
+          comparison.render_time_ms - last_render_time_;
+      rendered_delta_.AddSample(render_delta_ms);
+      if (last_render_delta_ms_ != 0 &&
+          render_delta_ms - last_render_delta_ms_ > 150) {
+        time_between_freezes_.AddSample(last_render_time_ -
+                                        last_unfreeze_time_ms_);
+        last_unfreeze_time_ms_ = comparison.render_time_ms;
+      }
+      last_render_delta_ms_ = render_delta_ms;
+    }
     last_render_time_ = comparison.render_time_ms;
 
     sender_time_.AddSample(comparison.send_time_ms - comparison.input_time_ms);
@@ -994,6 +1013,7 @@ class VideoAnalyzer : public PacketReceiver,
   test::Statistics fec_bitrate_bps_ RTC_GUARDED_BY(comparison_lock_);
   test::Statistics send_bandwidth_bps_ RTC_GUARDED_BY(comparison_lock_);
   test::Statistics memory_usage_ RTC_GUARDED_BY(comparison_lock_);
+  test::Statistics time_between_freezes_ RTC_GUARDED_BY(comparison_lock_);
 
   struct FrameWithPsnr {
     double psnr;
@@ -1012,6 +1032,8 @@ class VideoAnalyzer : public PacketReceiver,
   int dropped_frames_before_first_encode_;
   int dropped_frames_before_rendering_;
   int64_t last_render_time_;
+  int64_t last_render_delta_ms_;
+  int64_t last_unfreeze_time_ms_;
   uint32_t rtp_timestamp_delta_;
   int64_t total_media_bytes_;
   int64_t first_sending_time_;
