@@ -27,7 +27,6 @@ const int kNumSpatialLayers = 1;
 const int kNumTemporalLayers = 1;
 const bool kResilienceOn = kNumSpatialLayers > 1 || kNumTemporalLayers > 1;
 const bool kDenoisingOn = false;
-const bool kErrorConcealmentOn = false;
 const bool kSpatialResizeOn = false;
 const bool kFrameDropperOn = false;
 
@@ -74,8 +73,8 @@ class VideoProcessorIntegrationTestParameterized
 
     config_.SetCodecSettings(codec_type_, num_simulcast_streams,
                              num_spatial_layers, kNumTemporalLayers,
-                             kErrorConcealmentOn, kDenoisingOn, kFrameDropperOn,
-                             kSpatialResizeOn, kResilienceOn, width, height);
+                             kDenoisingOn, kFrameDropperOn, kSpatialResizeOn,
+                             kResilienceOn, width, height);
 
     std::vector<RateProfile> rate_profiles = {
         {bitrate_, framerate, kNumFrames}};

@@ -35,7 +35,6 @@ struct TestConfig {
                         size_t num_simulcast_streams,
                         size_t num_spatial_layers,
                         size_t num_temporal_layers,
-                        bool error_concealment_on,
                         bool denoising_on,
                         bool frame_dropper_on,
                         bool spatial_resize_on,

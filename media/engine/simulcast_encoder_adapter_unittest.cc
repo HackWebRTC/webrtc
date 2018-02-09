@@ -332,14 +332,11 @@ class TestSimulcastEncoderAdapterFake : public ::testing::Test,
     EXPECT_EQ(ref.maxBitrate, target.maxBitrate);
     EXPECT_EQ(ref.minBitrate, target.minBitrate);
     EXPECT_EQ(ref.maxFramerate, target.maxFramerate);
-    EXPECT_EQ(ref.VP8().pictureLossIndicationOn,
-              target.VP8().pictureLossIndicationOn);
     EXPECT_EQ(ref.VP8().complexity, target.VP8().complexity);
     EXPECT_EQ(ref.VP8().resilience, target.VP8().resilience);
     EXPECT_EQ(ref.VP8().numberOfTemporalLayers,
               target.VP8().numberOfTemporalLayers);
     EXPECT_EQ(ref.VP8().denoisingOn, target.VP8().denoisingOn);
-    EXPECT_EQ(ref.VP8().errorConcealmentOn, target.VP8().errorConcealmentOn);
     EXPECT_EQ(ref.VP8().automaticResizeOn, target.VP8().automaticResizeOn);
     EXPECT_EQ(ref.VP8().frameDroppingOn, target.VP8().frameDroppingOn);
     EXPECT_EQ(ref.VP8().keyFrameInterval, target.VP8().keyFrameInterval);

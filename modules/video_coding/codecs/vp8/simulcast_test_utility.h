@@ -218,7 +218,6 @@ class TestVp8Simulcast : public ::testing::Test {
                     &settings->simulcastStream[2], temporal_layer_profile[2]);
     settings->VP8()->resilience = kResilientStream;
     settings->VP8()->denoisingOn = true;
-    settings->VP8()->errorConcealmentOn = false;
     settings->VP8()->automaticResizeOn = false;
     settings->VP8()->frameDroppingOn = true;
     settings->VP8()->keyFrameInterval = 3000;

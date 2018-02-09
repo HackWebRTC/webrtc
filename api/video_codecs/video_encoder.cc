@@ -20,7 +20,6 @@ VideoCodecVP8 VideoEncoder::GetDefaultVp8Settings() {
   vp8_settings.resilience = kResilientStream;
   vp8_settings.numberOfTemporalLayers = 1;
   vp8_settings.denoisingOn = true;
-  vp8_settings.errorConcealmentOn = false;
   vp8_settings.automaticResizeOn = false;
   vp8_settings.frameDroppingOn = true;
   vp8_settings.keyFrameInterval = 3000;

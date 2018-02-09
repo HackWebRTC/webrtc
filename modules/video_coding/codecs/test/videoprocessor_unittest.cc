@@ -52,7 +52,7 @@ class VideoProcessorTest : public testing::Test {
  protected:
   VideoProcessorTest() : q_("VP queue") {
     config_.SetCodecSettings(kVideoCodecVP8, 1, 1, 1, false, false, false,
-                             false, false, kWidth, kHeight);
+                             false, kWidth, kHeight);
 
     stats_.resize(1);
 

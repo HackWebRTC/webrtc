@@ -36,7 +36,6 @@ std::string CodecSpecificToString(const webrtc::VideoCodec& codec) {
       ss << "\n  # temporal layers   : "
          << static_cast<int>(codec.VP8().numberOfTemporalLayers);
       ss << "\n  Denoising           : " << codec.VP8().denoisingOn;
-      ss << "\n  Error concealment   : " << codec.VP8().errorConcealmentOn;
       ss << "\n  Automatic resize    : " << codec.VP8().automaticResizeOn;
       ss << "\n  Frame dropping      : " << codec.VP8().frameDroppingOn;
       ss << "\n  Key frame interval  : " << codec.VP8().keyFrameInterval;
@@ -74,7 +73,6 @@ void TestConfig::SetCodecSettings(VideoCodecType codec_type,
                                   size_t num_simulcast_streams,
                                   size_t num_spatial_layers,
                                   size_t num_temporal_layers,
-                                  bool error_concealment_on,
                                   bool denoising_on,
                                   bool frame_dropper_on,
                                   bool spatial_resize_on,
@@ -115,7 +113,6 @@ void TestConfig::SetCodecSettings(VideoCodecType codec_type,
       codec_settings.VP8()->numberOfTemporalLayers =
           static_cast<uint8_t>(num_temporal_layers);
       codec_settings.VP8()->denoisingOn = denoising_on;
-      codec_settings.VP8()->errorConcealmentOn = error_concealment_on;
       codec_settings.VP8()->automaticResizeOn = spatial_resize_on;
       codec_settings.VP8()->frameDroppingOn = frame_dropper_on;
       codec_settings.VP8()->keyFrameInterval = kBaseKeyFrameInterval;
