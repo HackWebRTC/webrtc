@@ -750,6 +750,7 @@ class VideoAnalyzer : public PacketReceiver,
     PrintResult("ssim", ssim_, " score");
     PrintResult("sender_time", sender_time_, " ms");
     PrintResult("receiver_time", receiver_time_, " ms");
+    PrintResult("network_time", network_time_, " ms");
     PrintResult("total_delay_incl_network", end_to_end_, " ms");
     PrintResult("time_between_rendered_frames", rendered_delta_, " ms");
     PrintResult("encode_frame_rate", encode_frame_rate_, " fps");
@@ -864,6 +865,8 @@ class VideoAnalyzer : public PacketReceiver,
       // recv_time_ms != 0, even though the media packets were lost.
       receiver_time_.AddSample(comparison.render_time_ms -
                                comparison.recv_time_ms);
+      network_time_.AddSample(comparison.recv_time_ms -
+                              comparison.send_time_ms);
     }
     end_to_end_.AddSample(comparison.render_time_ms - comparison.input_time_ms);
     encoded_frame_size_.AddSample(comparison.encoded_frame_size);
@@ -999,6 +1002,7 @@ class VideoAnalyzer : public PacketReceiver,
   std::vector<Sample> samples_ RTC_GUARDED_BY(comparison_lock_);
   test::Statistics sender_time_ RTC_GUARDED_BY(comparison_lock_);
   test::Statistics receiver_time_ RTC_GUARDED_BY(comparison_lock_);
+  test::Statistics network_time_ RTC_GUARDED_BY(comparison_lock_);
   test::Statistics psnr_ RTC_GUARDED_BY(comparison_lock_);
   test::Statistics ssim_ RTC_GUARDED_BY(comparison_lock_);
   test::Statistics end_to_end_ RTC_GUARDED_BY(comparison_lock_);
