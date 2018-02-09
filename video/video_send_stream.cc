@@ -63,7 +63,7 @@ std::vector<RtpRtcp*> CreateRtpRtcpModules(
     OverheadObserver* overhead_observer,
     size_t num_modules,
     RtpKeepAliveConfig keepalive_config,
-    RtcpIntervalConfig rtc_interval_config) {
+    RtcpIntervalConfig rtcp_interval_config) {
   RTC_DCHECK_GT(num_modules, 0);
   RtpRtcp::Configuration configuration;
   configuration.audio = false;
@@ -87,6 +87,7 @@ std::vector<RtpRtcp*> CreateRtpRtcpModules(
   configuration.retransmission_rate_limiter = retransmission_rate_limiter;
   configuration.overhead_observer = overhead_observer;
   configuration.keepalive_config = keepalive_config;
+  configuration.rtcp_interval_config = rtcp_interval_config;
   std::vector<RtpRtcp*> modules;
   for (size_t i = 0; i < num_modules; ++i) {
     RtpRtcp* rtp_rtcp = RtpRtcp::CreateRtpRtcp(configuration);
