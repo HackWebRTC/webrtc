@@ -172,9 +172,6 @@ void AecState::Update(
       !converged_filter &&
       (blocks_with_active_render_ == 0 ||
        blocks_with_proper_filter_adaptation_ >= 5 * kNumBlocksPerSecond);
-
-  // Update the room reverb estimate.
-  UpdateReverb(adaptive_filter_impulse_response);
 }
 
 void AecState::UpdateReverb(const std::vector<float>& impulse_response) {
