@@ -17,6 +17,7 @@ import android.media.MediaRecorder.AudioSource;
 import android.os.Process;
 import java.lang.System;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import org.webrtc.Logging;
 import org.webrtc.ThreadUtils;
@@ -80,6 +81,55 @@ public class WebRtcAudioRecord {
   }
 
   /**
+   * Contains audio sample information. Object is passed using {@link
+   * WebRtcAudioRecord.WebRtcAudioRecordSamplesReadyCallback}
+   */
+  public static class AudioSamples {
+    /** See {@link AudioRecord#getAudioFormat()} */
+    private final int audioFormat;
+    /** See {@link AudioRecord#getChannelCount()} */
+    private final int channelCount;
+    /** See {@link AudioRecord#getSampleRate()} */
+    private final int sampleRate;
+
+    private final byte[] data;
+
+    private AudioSamples(AudioRecord audioRecord, byte[] data) {
+      this.audioFormat = audioRecord.getAudioFormat();
+      this.channelCount = audioRecord.getChannelCount();
+      this.sampleRate = audioRecord.getSampleRate();
+      this.data = data;
+    }
+
+    public int getAudioFormat() {
+      return audioFormat;
+    }
+
+    public int getChannelCount() {
+      return channelCount;
+    }
+
+    public int getSampleRate() {
+      return sampleRate;
+    }
+
+    public byte[] getData() {
+      return data;
+    }
+  }
+
+  /** Called when new audio samples are ready. This should only be set for debug purposes */
+  public static interface WebRtcAudioRecordSamplesReadyCallback {
+    void onWebRtcAudioRecordSamplesReady(AudioSamples samples);
+  }
+
+  private static WebRtcAudioRecordSamplesReadyCallback audioSamplesReadyCallback = null;
+
+  public static void setOnAudioSamplesReady(WebRtcAudioRecordSamplesReadyCallback callback) {
+    audioSamplesReadyCallback = callback;
+  }
+
+  /**
    * Audio thread which keeps calling ByteBuffer.read() waiting for audio
    * to be recorded. Feeds recorded data to the native counterpart as a
    * periodic sequence of callbacks using DataIsRecorded().
@@ -111,6 +161,13 @@ public class WebRtcAudioRecord {
           // in case they've been unregistered after stopRecording() returned.
           if (keepAlive) {
             nativeDataIsRecorded(bytesRead, nativeAudioRecord);
+          }
+          if (audioSamplesReadyCallback != null) {
+            // Copy the entire byte buffer array.  Assume that the start of the byteBuffer is
+            // at index 0.
+            byte[] data = Arrays.copyOf(byteBuffer.array(), byteBuffer.capacity());
+            audioSamplesReadyCallback.onWebRtcAudioRecordSamplesReady(
+                new AudioSamples(audioRecord, data));
           }
         } else {
           String errorMessage = "AudioRecord.read failed: " + bytesRead;
