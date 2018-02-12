@@ -213,4 +213,8 @@
     <string name="pref_tracing_title">Debug performance tracing.</string>
     <string name="pref_tracing_dlg">Debug performance tracing.</string>
     <string name="pref_tracing_default" translatable="false">false</string>
+
+    <string name="pref_enable_rtceventlog_key">enable_rtceventlog_key</string>
+    <string name="pref_enable_rtceventlog_title">Enable RtcEventLog.</string>
+    <string name="pref_enable_rtceventlog_default">false</string>
 </resources>

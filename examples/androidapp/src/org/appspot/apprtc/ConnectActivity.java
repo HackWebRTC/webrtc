@@ -430,6 +430,11 @@ public class ConnectActivity extends Activity {
     boolean tracing = sharedPrefGetBoolean(R.string.pref_tracing_key, CallActivity.EXTRA_TRACING,
         R.string.pref_tracing_default, useValuesFromIntent);
 
+    // Check Enable RtcEventLog.
+    boolean rtcEventLogEnabled = sharedPrefGetBoolean(R.string.pref_enable_rtceventlog_key,
+        CallActivity.EXTRA_ENABLE_RTCEVENTLOG, R.string.pref_enable_rtceventlog_default,
+        useValuesFromIntent);
+
     // Get datachannel options
     boolean dataChannelEnabled = sharedPrefGetBoolean(R.string.pref_enable_datachannel_key,
         CallActivity.EXTRA_DATA_CHANNEL_ENABLED, R.string.pref_enable_datachannel_default,
@@ -481,6 +486,7 @@ public class ConnectActivity extends Activity {
       intent.putExtra(CallActivity.EXTRA_AUDIOCODEC, audioCodec);
       intent.putExtra(CallActivity.EXTRA_DISPLAY_HUD, displayHud);
       intent.putExtra(CallActivity.EXTRA_TRACING, tracing);
+      intent.putExtra(CallActivity.EXTRA_ENABLE_RTCEVENTLOG, rtcEventLogEnabled);
       intent.putExtra(CallActivity.EXTRA_CMDLINE, commandLineRun);
       intent.putExtra(CallActivity.EXTRA_RUNTIME, runTimeMs);
 

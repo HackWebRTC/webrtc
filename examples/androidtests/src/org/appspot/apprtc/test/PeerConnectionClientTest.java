@@ -315,13 +315,13 @@ public class PeerConnectionClientTest implements PeerConnectionEvents {
             null, null, null, // clientId, wssUrl, wssPostUrl.
             null, null); // offerSdp, iceCandidates.
 
-    PeerConnectionClient client = new PeerConnectionClient();
+    PeerConnectionClient client =
+        new PeerConnectionClient(InstrumentationRegistry.getTargetContext());
     PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
     options.networkIgnoreMask = 0;
     options.disableNetworkMonitor = true;
     client.setPeerConnectionFactoryOptions(options);
-    client.createPeerConnectionFactory(
-        InstrumentationRegistry.getTargetContext(), peerConnectionParameters, this);
+    client.createPeerConnectionFactory(peerConnectionParameters, this);
     client.createPeerConnection(localRenderer, remoteRenderer, videoCapturer, signalingParameters);
     client.createOffer();
     return client;
@@ -345,7 +345,8 @@ public class PeerConnectionClientTest implements PeerConnectionEvents {
         false, /* noAudioProcessing */
         false, /* aecDump */
         false /* useOpenSLES */, false /* disableBuiltInAEC */, false /* disableBuiltInAGC */,
-        false /* disableBuiltInNS */, false /* enableLevelControl */, false /* disableWebRtcAGC */);
+        false /* disableBuiltInNS */, false /* enableLevelControl */, false /* disableWebRtcAGC */,
+        false /* enableRtcEventLog */);
   }
 
   private VideoCapturer createCameraCapturer(boolean captureToTexture) {
@@ -380,7 +381,8 @@ public class PeerConnectionClientTest implements PeerConnectionEvents {
         false, /* noAudioProcessing */
         false, /* aecDump */
         false /* useOpenSLES */, false /* disableBuiltInAEC */, false /* disableBuiltInAGC */,
-        false /* disableBuiltInNS */, false /* enableLevelControl */, false /* disableWebRtcAGC */);
+        false /* disableBuiltInNS */, false /* enableLevelControl */, false /* disableWebRtcAGC */,
+        false /* enableRtcEventLog */);
   }
 
   @Before

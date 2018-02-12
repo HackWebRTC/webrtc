@@ -117,6 +117,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   public static final String EXTRA_PROTOCOL = "org.appspot.apprtc.PROTOCOL";
   public static final String EXTRA_NEGOTIATED = "org.appspot.apprtc.NEGOTIATED";
   public static final String EXTRA_ID = "org.appspot.apprtc.ID";
+  public static final String EXTRA_ENABLE_RTCEVENTLOG = "org.appspot.apprtc.ENABLE_RTCEVENTLOG";
 
   private static final int CAPTURE_PERMISSION_REQUEST_CODE = 1;
 
@@ -242,7 +243,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
     final Intent intent = getIntent();
 
     // Create peer connection client.
-    peerConnectionClient = new PeerConnectionClient();
+    peerConnectionClient = new PeerConnectionClient(getApplicationContext());
 
     // Create video renderers.
     pipRenderer.init(peerConnectionClient.getRenderContext(), null);
@@ -335,7 +336,8 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
             intent.getBooleanExtra(EXTRA_DISABLE_BUILT_IN_AGC, false),
             intent.getBooleanExtra(EXTRA_DISABLE_BUILT_IN_NS, false),
             intent.getBooleanExtra(EXTRA_ENABLE_LEVEL_CONTROL, false),
-            intent.getBooleanExtra(EXTRA_DISABLE_WEBRTC_AGC_AND_HPF, false), dataChannelParameters);
+            intent.getBooleanExtra(EXTRA_DISABLE_WEBRTC_AGC_AND_HPF, false),
+            intent.getBooleanExtra(EXTRA_ENABLE_RTCEVENTLOG, false), dataChannelParameters);
     commandLineRun = intent.getBooleanExtra(EXTRA_CMDLINE, false);
     int runTimeMs = intent.getIntExtra(EXTRA_RUNTIME, 0);
 
@@ -384,8 +386,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
       options.networkIgnoreMask = 0;
       peerConnectionClient.setPeerConnectionFactoryOptions(options);
     }
-    peerConnectionClient.createPeerConnectionFactory(
-        getApplicationContext(), peerConnectionParameters, CallActivity.this);
+    peerConnectionClient.createPeerConnectionFactory(peerConnectionParameters, CallActivity.this);
 
     if (screencaptureEnabled) {
       startScreenCapture();

@@ -53,6 +53,7 @@ public class SettingsActivity extends Activity implements OnSharedPreferenceChan
   private String keyPrefRoomServerUrl;
   private String keyPrefDisplayHud;
   private String keyPrefTracing;
+  private String keyprefEnabledRtcEventLog;
 
   private String keyprefEnableDataChannel;
   private String keyprefOrdered;
@@ -102,6 +103,7 @@ public class SettingsActivity extends Activity implements OnSharedPreferenceChan
     keyPrefRoomServerUrl = getString(R.string.pref_room_server_url_key);
     keyPrefDisplayHud = getString(R.string.pref_displayhud_key);
     keyPrefTracing = getString(R.string.pref_tracing_key);
+    keyprefEnabledRtcEventLog = getString(R.string.pref_enable_rtceventlog_key);
 
     // Display the fragment as the main content.
     settingsFragment = new SettingsFragment();
@@ -158,6 +160,7 @@ public class SettingsActivity extends Activity implements OnSharedPreferenceChan
     updateSummary(sharedPreferences, keyPrefRoomServerUrl);
     updateSummaryB(sharedPreferences, keyPrefDisplayHud);
     updateSummaryB(sharedPreferences, keyPrefTracing);
+    updateSummaryB(sharedPreferences, keyprefEnabledRtcEventLog);
 
     if (!Camera2Enumerator.isSupported(this)) {
       Preference camera2Preference = settingsFragment.findPreference(keyprefCamera2);
@@ -241,7 +244,8 @@ public class SettingsActivity extends Activity implements OnSharedPreferenceChan
         || key.equals(keyPrefDisplayHud)
         || key.equals(keyprefEnableDataChannel)
         || key.equals(keyprefOrdered)
-        || key.equals(keyprefNegotiated)) {
+        || key.equals(keyprefNegotiated)
+        || key.equals(keyprefEnabledRtcEventLog)) {
       updateSummaryB(sharedPreferences, key);
     } else if (key.equals(keyprefSpeakerphone)) {
       updateSummaryList(sharedPreferences, key);
