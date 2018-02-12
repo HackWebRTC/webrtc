@@ -28,6 +28,7 @@
 #include "modules/audio_processing/echo_control_mobile_impl.h"
 #include "modules/audio_processing/gain_control_for_experimental_agc.h"
 #include "modules/audio_processing/gain_control_impl.h"
+#include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_file.h"
@@ -44,6 +45,7 @@
 #include "modules/audio_processing/transient/transient_suppressor.h"
 #include "modules/audio_processing/voice_detection_impl.h"
 #include "modules/include/module_common_types.h"
+#include "rtc_base/atomicops.h"
 #include "system_wrappers/include/file_wrapper.h"
 #include "system_wrappers/include/metrics.h"
 
@@ -373,6 +375,8 @@ AudioProcessingImpl::AudioProcessingImpl(const webrtc::Config& config)
     : AudioProcessingImpl(config, nullptr, nullptr, nullptr, nullptr, nullptr) {
 }
 
+int AudioProcessingImpl::instance_count_ = 0;
+
 AudioProcessingImpl::AudioProcessingImpl(
     const webrtc::Config& config,
     std::unique_ptr<CustomProcessing> capture_post_processor,
@@ -380,7 +384,9 @@ AudioProcessingImpl::AudioProcessingImpl(
     std::unique_ptr<EchoControlFactory> echo_control_factory,
     std::unique_ptr<EchoDetector> echo_detector,
     NonlinearBeamformer* beamformer)
-    : high_pass_filter_impl_(new HighPassFilterImpl(this)),
+    : data_dumper_(
+          new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
+      high_pass_filter_impl_(new HighPassFilterImpl(this)),
       echo_control_factory_(std::move(echo_control_factory)),
       submodule_states_(!!capture_post_processor, !!render_pre_processor),
       public_submodules_(new ApmPublicSubmodules()),
@@ -1239,6 +1245,8 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
   }
 
   if (private_submodules_->echo_controller) {
+    data_dumper_->DumpRaw("stream_delay", stream_delay_ms());
+
     private_submodules_->echo_controller->ProcessCapture(
         capture_buffer, capture_.echo_path_gain_change);
   } else {

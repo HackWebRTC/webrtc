@@ -31,6 +31,7 @@
 
 namespace webrtc {
 
+class ApmDataDumper;
 class AudioConverter;
 class NonlinearBeamformer;
 
@@ -141,6 +142,9 @@ class AudioProcessingImpl : public AudioProcessing {
   FRIEND_TEST_ALL_PREFIXES(ApmConfiguration, InValidConfigBehavior);
   struct ApmPublicSubmodules;
   struct ApmPrivateSubmodules;
+
+  std::unique_ptr<ApmDataDumper> data_dumper_;
+  static int instance_count_;
 
   // Submodule interface implementations.
   std::unique_ptr<HighPassFilter> high_pass_filter_impl_;
