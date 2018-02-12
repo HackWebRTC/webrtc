@@ -10,7 +10,14 @@
 
 #include "rtc_base/task_queue.h"
 
-#include <mmsystem.h>
+// Include winsock2.h before including <windows.h> to maintain consistency with
+// win32.h.  We can't include win32.h directly here since it pulls in
+// headers such as basictypes.h which causes problems in Chromium where webrtc
+// exists as two separate projects, webrtc and libjingle.
+#include <winsock2.h>
+#include <windows.h>
+#include <sal.h>  // Must come after windows headers.
+#include <mmsystem.h>  // Must come after windows headers.
 #include <string.h>
 
 #include <algorithm>
@@ -19,6 +26,7 @@
 
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/criticalsection.h"
 #include "rtc_base/event.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"

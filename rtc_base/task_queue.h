@@ -11,16 +11,14 @@
 #ifndef RTC_BASE_TASK_QUEUE_H_
 #define RTC_BASE_TASK_QUEUE_H_
 
-#include <list>
 #include <memory>
-#include <queue>
 #include <type_traits>
 #include <utility>
 
 #include "rtc_base/constructormagic.h"
-#include "rtc_base/criticalsection.h"
 #include "rtc_base/ptr_util.h"
 #include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/thread_annotations.h"
 
 namespace rtc {
 

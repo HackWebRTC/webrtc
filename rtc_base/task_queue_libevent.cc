@@ -14,9 +14,11 @@
 #include <signal.h>
 #include <string.h>
 #include <unistd.h>
+#include <list>
 
 #include "base/third_party/libevent/event.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/criticalsection.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/platform_thread.h"
