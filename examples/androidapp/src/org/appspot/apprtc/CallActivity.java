@@ -355,7 +355,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
         new RoomConnectionParameters(roomUri.toString(), roomId, loopback, urlParameters);
 
     // Create CPU monitor
-    if (cpuMonitor.isSupported()) {
+    if (CpuMonitor.isSupported()) {
       cpuMonitor = new CpuMonitor(this);
       hudFragment.setCpuMonitor(cpuMonitor);
     }
