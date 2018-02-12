@@ -16,8 +16,6 @@ namespace cricket {
 
 FakeVideoCapturer::FakeVideoCapturer(bool is_screencast)
     : running_(false),
-      initial_timestamp_(rtc::TimeNanos()),
-      next_timestamp_(rtc::kNumNanosecsPerMillisec),
       is_screencast_(is_screencast),
       rotation_(webrtc::kVideoRotation_0) {
   // Default supported formats. Use ResetSupportedFormats to over write.
@@ -47,29 +45,22 @@ bool FakeVideoCapturer::CaptureFrame() {
   if (!GetCaptureFormat()) {
     return false;
   }
-  return CaptureCustomFrame(
-      GetCaptureFormat()->width, GetCaptureFormat()->height,
-      GetCaptureFormat()->interval, GetCaptureFormat()->fourcc);
+  RTC_CHECK_EQ(GetCaptureFormat()->fourcc, FOURCC_I420);
+  return CaptureFrame(frame_source_->GetFrame());
 }
 
-bool FakeVideoCapturer::CaptureCustomFrame(int width,
-                                           int height,
-                                           uint32_t fourcc) {
+bool FakeVideoCapturer::CaptureCustomFrame(int width, int height) {
   // Default to 30fps.
-  return CaptureCustomFrame(width, height, rtc::kNumNanosecsPerSec / 30,
-                            fourcc);
+  // TODO(nisse): Would anything break if we always stick to
+  // the configure frame interval?
+  return CaptureFrame(
+      frame_source_->GetFrame(width, height, rtc::kNumMicrosecsPerSec / 30));
 }
 
-bool FakeVideoCapturer::CaptureCustomFrame(int width,
-                                           int height,
-                                           int64_t timestamp_interval,
-                                           uint32_t fourcc) {
+bool FakeVideoCapturer::CaptureFrame(const webrtc::VideoFrame& frame) {
   if (!running_) {
     return false;
   }
-  RTC_CHECK(fourcc == FOURCC_I420);
-  RTC_CHECK(width > 0);
-  RTC_CHECK(height > 0);
 
   int adapted_width;
   int adapted_height;
@@ -83,19 +74,16 @@ bool FakeVideoCapturer::CaptureCustomFrame(int width,
   // AdaptFrame, and the test case
   // VideoCapturerTest.SinkWantsMaxPixelAndMaxPixelCountStepUp
   // depends on this.
-  if (AdaptFrame(width, height, next_timestamp_ / rtc::kNumNanosecsPerMicrosec,
-                 next_timestamp_ / rtc::kNumNanosecsPerMicrosec, &adapted_width,
-                 &adapted_height, &crop_width, &crop_height, &crop_x, &crop_y,
-                 nullptr)) {
+  if (AdaptFrame(frame.width(), frame.height(), frame.timestamp_us(),
+                 frame.timestamp_us(), &adapted_width, &adapted_height,
+                 &crop_width, &crop_height, &crop_x, &crop_y, nullptr)) {
     rtc::scoped_refptr<webrtc::I420Buffer> buffer(
         webrtc::I420Buffer::Create(adapted_width, adapted_height));
     buffer->InitializeData();
 
-    OnFrame(webrtc::VideoFrame(buffer, rotation_,
-                               next_timestamp_ / rtc::kNumNanosecsPerMicrosec),
-            width, height);
+    OnFrame(webrtc::VideoFrame(buffer, frame.rotation(), frame.timestamp_us()),
+            frame.width(), frame.height());
   }
-  next_timestamp_ += timestamp_interval;
 
   return true;
 }
@@ -105,6 +93,10 @@ cricket::CaptureState FakeVideoCapturer::Start(
   SetCaptureFormat(&format);
   running_ = true;
   SetCaptureState(cricket::CS_RUNNING);
+  frame_source_ = rtc::MakeUnique<FakeFrameSource>(
+      format.width, format.height,
+      format.interval / rtc::kNumNanosecsPerMicrosec);
+  frame_source_->SetRotation(rotation_);
   return cricket::CS_RUNNING;
 }
 
@@ -130,6 +122,8 @@ bool FakeVideoCapturer::GetPreferredFourccs(std::vector<uint32_t>* fourccs) {
 
 void FakeVideoCapturer::SetRotation(webrtc::VideoRotation rotation) {
   rotation_ = rotation;
+  if (frame_source_)
+    frame_source_->SetRotation(rotation_);
 }
 
 webrtc::VideoRotation FakeVideoCapturer::GetRotation() {
@@ -149,27 +143,11 @@ bool FakeVideoCapturerWithTaskQueue::CaptureFrame() {
   return ret;
 }
 
-bool FakeVideoCapturerWithTaskQueue::CaptureCustomFrame(int width,
-                                                        int height,
-                                                        uint32_t fourcc) {
+bool FakeVideoCapturerWithTaskQueue::CaptureCustomFrame(int width, int height) {
   bool ret = false;
-  RunSynchronouslyOnTaskQueue([this, &ret, width, height, fourcc]() {
-    ret = FakeVideoCapturer::CaptureCustomFrame(width, height, fourcc);
+  RunSynchronouslyOnTaskQueue([this, &ret, width, height]() {
+    ret = FakeVideoCapturer::CaptureCustomFrame(width, height);
   });
-  return ret;
-}
-
-bool FakeVideoCapturerWithTaskQueue::CaptureCustomFrame(
-    int width,
-    int height,
-    int64_t timestamp_interval,
-    uint32_t fourcc) {
-  bool ret = false;
-  RunSynchronouslyOnTaskQueue(
-      [this, &ret, width, height, timestamp_interval, fourcc]() {
-        ret = FakeVideoCapturer::CaptureCustomFrame(width, height,
-                                                    timestamp_interval, fourcc);
-      });
   return ret;
 }
 

@@ -18,6 +18,7 @@
 
 #include "api/video/i420_buffer.h"
 #include "api/video/video_frame.h"
+#include "media/base/fakeframesource.h"
 #include "media/base/videocapturer.h"
 #include "media/base/videocommon.h"
 #include "rtc_base/event.h"
@@ -36,11 +37,7 @@ class FakeVideoCapturer : public cricket::VideoCapturer {
 
   void ResetSupportedFormats(const std::vector<cricket::VideoFormat>& formats);
   virtual bool CaptureFrame();
-  virtual bool CaptureCustomFrame(int width, int height, uint32_t fourcc);
-  virtual bool CaptureCustomFrame(int width,
-                                  int height,
-                                  int64_t timestamp_interval,
-                                  uint32_t fourcc);
+  virtual bool CaptureCustomFrame(int width, int height);
 
   sigslot::signal1<FakeVideoCapturer*> SignalDestroyed;
 
@@ -55,11 +52,14 @@ class FakeVideoCapturer : public cricket::VideoCapturer {
   webrtc::VideoRotation GetRotation();
 
  private:
+  bool CaptureFrame(const webrtc::VideoFrame& frame);
+
   bool running_;
-  int64_t initial_timestamp_;
-  int64_t next_timestamp_;
   const bool is_screencast_;
+  // Duplicates FakeFrameSource::rotation_, but needed to support
+  // SetRotation before Start.
   webrtc::VideoRotation rotation_;
+  std::unique_ptr<FakeFrameSource> frame_source_;
 };
 
 // Inherits from FakeVideoCapturer but adds a TaskQueue so that frames can be
@@ -70,11 +70,7 @@ class FakeVideoCapturerWithTaskQueue : public FakeVideoCapturer {
   FakeVideoCapturerWithTaskQueue();
 
   bool CaptureFrame() override;
-  bool CaptureCustomFrame(int width, int height, uint32_t fourcc) override;
-  bool CaptureCustomFrame(int width,
-                          int height,
-                          int64_t timestamp_interval,
-                          uint32_t fourcc) override;
+  bool CaptureCustomFrame(int width, int height) override;
 
  protected:
   template <class Closure>

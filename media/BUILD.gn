@@ -452,6 +452,8 @@ if (rtc_include_tests) {
       "../rtc_base:stringutils",
     ]
     sources = [
+      "base/fakeframesource.cc",
+      "base/fakeframesource.h",
       "base/fakemediaengine.h",
       "base/fakenetworkinterface.h",
       "base/fakertp.cc",
