@@ -598,7 +598,15 @@ TEST_F(RampUpTest, DISABLED_UpDownUpTransportSequenceNumberPacketLoss) {
   RunBaseTest(&test);
 }
 
-TEST_F(RampUpTest, UpDownUpAudioVideoTransportSequenceNumberRtx) {
+// TODO(bugs.webrtc.org/8878)
+#if defined(WEBRTC_MAC)
+#define MAYBE_UpDownUpAudioVideoTransportSequenceNumberRtx \
+  DISABLED_UpDownUpAudioVideoTransportSequenceNumberRtx
+#else
+#define MAYBE_UpDownUpAudioVideoTransportSequenceNumberRtx \
+  UpDownUpAudioVideoTransportSequenceNumberRtx
+#endif
+TEST_F(RampUpTest, MAYBE_UpDownUpAudioVideoTransportSequenceNumberRtx) {
   std::vector<int> loss_rates = {0, 0, 0, 0};
   RampUpDownUpTester test(3, 1, 0, kStartBitrateBps,
                           RtpExtension::kTransportSequenceNumberUri, true,
@@ -650,7 +658,13 @@ TEST_F(RampUpTest, TransportSequenceNumberSimulcastRedRtx) {
   RunBaseTest(&test);
 }
 
-TEST_F(RampUpTest, AudioTransportSequenceNumber) {
+// TODO(bugs.webrtc.org/8878)
+#if defined(WEBRTC_MAC)
+#define MAYBE_AudioTransportSequenceNumber DISABLED_AudioTransportSequenceNumber
+#else
+#define MAYBE_AudioTransportSequenceNumber AudioTransportSequenceNumber
+#endif
+TEST_F(RampUpTest, MAYBE_AudioTransportSequenceNumber) {
   RampUpTester test(0, 1, 0, 300000, 10000,
                     RtpExtension::kTransportSequenceNumberUri, false, false,
                     false);
