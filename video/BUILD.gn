@@ -341,6 +341,7 @@ if (rtc_include_tests) {
       "../modules/video_coding:video_codec_interface",
       "../modules/video_coding:video_coding_utility",
       "../modules/video_coding:webrtc_h264",
+      "../modules/video_coding:webrtc_multiplex",
       "../modules/video_coding:webrtc_vp8_helpers",
       "../modules/video_coding:webrtc_vp9",
       "../rtc_base:checks",
