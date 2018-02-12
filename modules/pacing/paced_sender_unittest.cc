@@ -23,6 +23,8 @@ using testing::_;
 using testing::Field;
 using testing::Return;
 
+namespace webrtc {
+namespace test {
 namespace {
 constexpr unsigned kFirstClusterBps = 900000;
 constexpr unsigned kSecondClusterBps = 1800000;
@@ -33,12 +35,11 @@ constexpr unsigned kSecondClusterBps = 1800000;
 constexpr int kBitrateProbingError = 150000;
 
 const float kPaceMultiplier = 2.5f;
+const int kTargetBitrateBps = 800000;
+
+const int kPacingRateBps = kTargetBitrateBps * kPaceMultiplier;
+const int kPaddingRateBps = kTargetBitrateBps;
 }  // namespace
-
-namespace webrtc {
-namespace test {
-
-static const int kTargetBitrateBps = 800000;
 
 class MockPacedSenderCallback : public PacedSender::PacketSender {
  public:
@@ -118,9 +119,17 @@ class PacedSenderTest : public testing::TestWithParam<std::string> {
     // have to enable probing, either by creating a new PacedSender instance or
     // by calling SetProbingEnabled(true).
     send_bucket_->SetProbingEnabled(false);
-    send_bucket_->SetPacingRates(kTargetBitrateBps * kPaceMultiplier, 0);
+    send_bucket_->SetPacingRates(kPacingRateBps, 0);
 
     clock_.AdvanceTimeMilliseconds(send_bucket_->TimeUntilNextProcess());
+  }
+
+  size_t PacketsSentPerInterval(size_t packet_size) const {
+    // The pacer can send 5 packets during a send interval when using the
+    // default testing pacing rate and packet_size = 250.
+    const size_t kBitsPerByte = 8;
+    const size_t kIntervalsPerSecond = 200;
+    return kPacingRateBps / (kBitsPerByte * packet_size * kIntervalsPerSecond);
   }
 
   void SendAndExpectPacket(PacedSender::Priority priority,
@@ -169,11 +178,7 @@ TEST_P(PacedSenderTest, FirstSentPacketTimeIsSet) {
 TEST_P(PacedSenderTest, QueuePacket) {
   uint32_t ssrc = 12345;
   uint16_t sequence_number = 1234;
-  // Due to the multiplicative factor we can send 5 packets during a send
-  // interval. (network capacity * multiplier / (8 bits per byte *
-  // (packet size * #send intervals per second)
-  const size_t packets_to_send =
-      kTargetBitrateBps * kPaceMultiplier / (8 * 250 * 200);
+  const size_t packets_to_send = PacketsSentPerInterval(250);
   for (size_t i = 0; i < packets_to_send; ++i) {
     SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
                         clock_.TimeInMilliseconds(), 250, false);
@@ -218,11 +223,7 @@ TEST_P(PacedSenderTest, PaceQueuedPackets) {
   uint32_t ssrc = 12345;
   uint16_t sequence_number = 1234;
 
-  // Due to the multiplicative factor we can send 5 packets during a send
-  // interval. (network capacity * multiplier / (8 bits per byte *
-  // (packet size * #send intervals per second)
-  const size_t packets_to_send_per_interval =
-      kTargetBitrateBps * kPaceMultiplier / (8 * 250 * 200);
+  const size_t packets_to_send_per_interval = PacketsSentPerInterval(250);
   for (size_t i = 0; i < packets_to_send_per_interval; ++i) {
     SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
                         clock_.TimeInMilliseconds(), 250, false);
@@ -307,14 +308,9 @@ TEST_P(PacedSenderTest, Padding) {
   uint32_t ssrc = 12345;
   uint16_t sequence_number = 1234;
 
-  send_bucket_->SetPacingRates(kTargetBitrateBps * kPaceMultiplier,
-                               kTargetBitrateBps);
+  send_bucket_->SetPacingRates(kPacingRateBps, kPaddingRateBps);
 
-  // Due to the multiplicative factor we can send 5 packets during a send
-  // interval. (network capacity * multiplier / (8 bits per byte *
-  // (packet size * #send intervals per second)
-  const size_t packets_to_send_per_interval =
-      kTargetBitrateBps * kPaceMultiplier / (8 * 250 * 200);
+  const size_t packets_to_send_per_interval = PacketsSentPerInterval(250);
   for (size_t i = 0; i < packets_to_send_per_interval; ++i) {
     SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
                         clock_.TimeInMilliseconds(), 250, false);
@@ -344,8 +340,7 @@ TEST_P(PacedSenderTest, Padding) {
 }
 
 TEST_P(PacedSenderTest, NoPaddingBeforeNormalPacket) {
-  send_bucket_->SetPacingRates(kTargetBitrateBps * kPaceMultiplier,
-                               kTargetBitrateBps);
+  send_bucket_->SetPacingRates(kPacingRateBps, kPaddingRateBps);
 
   EXPECT_CALL(callback_, TimeToSendPadding(_, _)).Times(0);
   send_bucket_->Process();
@@ -372,8 +367,7 @@ TEST_P(PacedSenderTest, VerifyPaddingUpToBitrate) {
   int64_t capture_time_ms = 56789;
   const int kTimeStep = 5;
   const int64_t kBitrateWindow = 100;
-  send_bucket_->SetPacingRates(kTargetBitrateBps * kPaceMultiplier,
-                               kTargetBitrateBps);
+  send_bucket_->SetPacingRates(kPacingRateBps, kPaddingRateBps);
 
   int64_t start_time = clock_.TimeInMilliseconds();
   while (clock_.TimeInMilliseconds() - start_time < kBitrateWindow) {
@@ -400,8 +394,7 @@ TEST_P(PacedSenderTest, VerifyAverageBitrateVaryingMediaPayload) {
   PacedSenderPadding callback;
   send_bucket_.reset(new PacedSender(&clock_, &callback, nullptr));
   send_bucket_->SetProbingEnabled(false);
-  send_bucket_->SetPacingRates(kTargetBitrateBps * kPaceMultiplier,
-                               kTargetBitrateBps);
+  send_bucket_->SetPacingRates(kPacingRateBps, kPaddingRateBps);
 
   int64_t start_time = clock_.TimeInMilliseconds();
   size_t media_bytes = 0;
@@ -415,7 +408,7 @@ TEST_P(PacedSenderTest, VerifyAverageBitrateVaryingMediaPayload) {
     clock_.AdvanceTimeMilliseconds(kTimeStep);
     send_bucket_->Process();
   }
-  EXPECT_NEAR(kTargetBitrateBps / 1000,
+  EXPECT_NEAR(kPaddingRateBps / 1000,
               static_cast<int>(8 * (media_bytes + callback.padding_sent()) /
                                kBitrateWindow),
               1);
@@ -428,11 +421,7 @@ TEST_P(PacedSenderTest, Priority) {
   int64_t capture_time_ms = 56789;
   int64_t capture_time_ms_low_priority = 1234567;
 
-  // Due to the multiplicative factor we can send 5 packets during a send
-  // interval. (network capacity * multiplier / (8 bits per byte *
-  // (packet size * #send intervals per second)
-  const size_t packets_to_send_per_interval =
-      kTargetBitrateBps * kPaceMultiplier / (8 * 250 * 200);
+  const size_t packets_to_send_per_interval = PacketsSentPerInterval(250);
   for (size_t i = 0; i < packets_to_send_per_interval; ++i) {
     SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
                         clock_.TimeInMilliseconds(), 250, false);
@@ -482,11 +471,7 @@ TEST_P(PacedSenderTest, RetransmissionPriority) {
   int64_t capture_time_ms = 45678;
   int64_t capture_time_ms_retransmission = 56789;
 
-  // Due to the multiplicative factor we can send 5 packets during a send
-  // interval. (network capacity * multiplier / (8 bits per byte *
-  // (packet size * #send intervals per second)
-  const size_t packets_to_send_per_interval =
-      kTargetBitrateBps * kPaceMultiplier / (8 * 250 * 200);
+  const size_t packets_to_send_per_interval = PacketsSentPerInterval(250);
   send_bucket_->Process();
   EXPECT_EQ(0u, send_bucket_->QueueSizePackets());
 
@@ -543,11 +528,7 @@ TEST_P(PacedSenderTest, HighPrioDoesntAffectBudget) {
   }
   send_bucket_->Process();
   // Low prio packets does affect the budget.
-  // Due to the multiplicative factor we can send 5 packets during a send
-  // interval. (network capacity * multiplier / (8 bits per byte *
-  // (packet size * #send intervals per second)
-  const size_t packets_to_send_per_interval =
-      kTargetBitrateBps * kPaceMultiplier / (8 * 250 * 200);
+  const size_t packets_to_send_per_interval = PacketsSentPerInterval(250);
   for (size_t i = 0; i < packets_to_send_per_interval; ++i) {
     SendAndExpectPacket(PacedSender::kLowPriority, ssrc, sequence_number++,
                         clock_.TimeInMilliseconds(), 250, false);
@@ -577,11 +558,7 @@ TEST_P(PacedSenderTest, Pause) {
 
   EXPECT_EQ(0, send_bucket_->QueueInMs());
 
-  // Due to the multiplicative factor we can send 5 packets during a send
-  // interval. (network capacity * multiplier / (8 bits per byte *
-  // (packet size * #send intervals per second)
-  const size_t packets_to_send_per_interval =
-      kTargetBitrateBps * kPaceMultiplier / (8 * 250 * 200);
+  const size_t packets_to_send_per_interval = PacketsSentPerInterval(250);
   for (size_t i = 0; i < packets_to_send_per_interval; ++i) {
     SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
                         clock_.TimeInMilliseconds(), 250, false);
@@ -1006,8 +983,7 @@ TEST_P(PacedSenderTest, ProbeClusterId) {
   uint16_t sequence_number = 1234;
   const size_t kPacketSize = 1200;
 
-  send_bucket_->SetPacingRates(kTargetBitrateBps * kPaceMultiplier,
-                               kTargetBitrateBps);
+  send_bucket_->SetPacingRates(kPacingRateBps, kPaddingRateBps);
   send_bucket_->SetProbingEnabled(true);
   for (int i = 0; i < 10; ++i) {
     send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
@@ -1053,8 +1029,7 @@ TEST_P(PacedSenderTest, AvoidBusyLoopOnSendFailure) {
   uint16_t sequence_number = 1234;
   const size_t kPacketSize = kFirstClusterBps / (8000 / 10);
 
-  send_bucket_->SetPacingRates(kTargetBitrateBps * kPaceMultiplier,
-                               kTargetBitrateBps);
+  send_bucket_->SetPacingRates(kPacingRateBps, kPaddingRateBps);
   send_bucket_->SetProbingEnabled(true);
   send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
                              sequence_number, clock_.TimeInMilliseconds(),
