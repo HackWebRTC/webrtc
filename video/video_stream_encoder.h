@@ -48,8 +48,9 @@ class VideoBitrateAllocationObserver;
 //  Call ConfigureEncoder with the codec settings.
 //  Call Stop() when done.
 class VideoStreamEncoder : public rtc::VideoSinkInterface<VideoFrame>,
-                           public EncodedImageCallback,
-                           public AdaptationObserverInterface {
+                           private EncodedImageCallback,
+                           // Protected only to provide access to tests.
+                           protected AdaptationObserverInterface {
  public:
   // Interface for receiving encoded video frames and notifications about
   // configuration changes.
