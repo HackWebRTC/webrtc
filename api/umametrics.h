@@ -38,6 +38,8 @@ enum PeerConnectionEnumCounterType {
   kEnumCounterIceRegathering,
   kEnumCounterIceRestart,
   kEnumCounterKeyProtocol,
+  kEnumCounterSdpSemanticRequested,
+  kEnumCounterSdpSemanticNegotiated,
   kPeerConnectionEnumCounterMax
 };
 
@@ -116,6 +118,21 @@ enum KeyExchangeProtocolType {
   kEnumCounterKeyProtocolDtls,
   kEnumCounterKeyProtocolSdes,
   kEnumCounterKeyProtocolMax
+};
+
+enum SdpSemanticRequested {
+  kSdpSemanticRequestDefault,
+  kSdpSemanticRequestPlanB,
+  kSdpSemanticRequestUnifiedPlan,
+  kSdpSemanticRequestMax
+};
+
+enum SdpSemanticNegotiated {
+  kSdpSemanticNegotiatedNone,
+  kSdpSemanticNegotiatedPlanB,
+  kSdpSemanticNegotiatedUnifiedPlan,
+  kSdpSemanticNegotiatedMixed,
+  kSdpSemanticNegotiatedMax
 };
 
 class MetricsObserverInterface : public rtc::RefCountInterface {

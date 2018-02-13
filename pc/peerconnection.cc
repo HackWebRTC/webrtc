@@ -1976,6 +1976,34 @@ void PeerConnection::SetRemoteDescription(
     network_thread()->Invoke<void>(
         RTC_FROM_HERE, rtc::Bind(&cricket::PortAllocator::DiscardCandidatePool,
                                  port_allocator_.get()));
+    // Make UMA notes about what was agreed to.
+    if (uma_observer_) {
+      switch (remote_description()->description()->msid_signaling()) {
+        case 0:
+          uma_observer_->IncrementEnumCounter(kEnumCounterSdpSemanticNegotiated,
+                                              kSdpSemanticNegotiatedNone,
+                                              kSdpSemanticNegotiatedMax);
+          break;
+        case cricket::kMsidSignalingMediaSection:
+          uma_observer_->IncrementEnumCounter(kEnumCounterSdpSemanticNegotiated,
+                                              kSdpSemanticNegotiatedUnifiedPlan,
+                                              kSdpSemanticNegotiatedMax);
+          break;
+        case cricket::kMsidSignalingSsrcAttribute:
+          uma_observer_->IncrementEnumCounter(kEnumCounterSdpSemanticNegotiated,
+                                              kSdpSemanticNegotiatedPlanB,
+                                              kSdpSemanticNegotiatedMax);
+          break;
+        case cricket::kMsidSignalingMediaSection |
+            cricket::kMsidSignalingSsrcAttribute:
+          uma_observer_->IncrementEnumCounter(kEnumCounterSdpSemanticNegotiated,
+                                              kSdpSemanticNegotiatedMixed,
+                                              kSdpSemanticNegotiatedMax);
+          break;
+        default:
+          RTC_NOTREACHED();
+      }
+    }
   }
 
   observer->OnSetRemoteDescriptionComplete(RTCError::OK());
@@ -2674,6 +2702,27 @@ void PeerConnection::RegisterUMAObserver(UMAObserver* observer) {
       uma_observer_->IncrementEnumCounter(
           kEnumCounterAddressFamily, kPeerConnection_IPv4,
           kPeerConnectionAddressFamilyCounter_Max);
+    }
+    // Send information about the requested SDP semantics.
+    switch (configuration_.sdp_semantics) {
+      case SdpSemantics::kDefault:
+        uma_observer_->IncrementEnumCounter(kEnumCounterSdpSemanticRequested,
+                                            kSdpSemanticRequestDefault,
+                                            kSdpSemanticRequestMax);
+
+        break;
+      case SdpSemantics::kPlanB:
+        uma_observer_->IncrementEnumCounter(kEnumCounterSdpSemanticRequested,
+                                            kSdpSemanticRequestPlanB,
+                                            kSdpSemanticRequestMax);
+        break;
+      case SdpSemantics::kUnifiedPlan:
+        uma_observer_->IncrementEnumCounter(kEnumCounterSdpSemanticRequested,
+                                            kSdpSemanticRequestUnifiedPlan,
+                                            kSdpSemanticRequestMax);
+        break;
+      default:
+        RTC_NOTREACHED();
     }
   }
 }

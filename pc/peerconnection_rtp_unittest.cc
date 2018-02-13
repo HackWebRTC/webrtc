@@ -13,6 +13,7 @@
 
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
+#include "api/fakemetricsobserver.h"
 #include "api/jsep.h"
 #include "api/mediastreaminterface.h"
 #include "api/peerconnectioninterface.h"
@@ -889,6 +890,9 @@ TEST_F(PeerConnectionMsidSignalingTest, UnifiedPlanTalkingToOurself) {
   caller->AddAudioTrack("caller_audio");
   auto callee = CreatePeerConnectionWithUnifiedPlan();
   callee->AddAudioTrack("callee_audio");
+  auto caller_observer =
+      new rtc::RefCountedObject<webrtc::FakeMetricsObserver>();
+  caller->pc()->RegisterUMAObserver(caller_observer);
 
   ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
 
@@ -902,6 +906,19 @@ TEST_F(PeerConnectionMsidSignalingTest, UnifiedPlanTalkingToOurself) {
   auto* answer = caller->pc()->remote_description();
   EXPECT_EQ(cricket::kMsidSignalingMediaSection,
             answer->description()->msid_signaling());
+  // Check that this is counted correctly
+  EXPECT_EQ(1, caller_observer->GetEnumCounter(
+                   webrtc::kEnumCounterSdpSemanticNegotiated,
+                   webrtc::kSdpSemanticNegotiatedUnifiedPlan));
+  EXPECT_EQ(0, caller_observer->GetEnumCounter(
+                   webrtc::kEnumCounterSdpSemanticNegotiated,
+                   webrtc::kSdpSemanticNegotiatedNone));
+  EXPECT_EQ(0, caller_observer->GetEnumCounter(
+                   webrtc::kEnumCounterSdpSemanticNegotiated,
+                   webrtc::kSdpSemanticNegotiatedPlanB));
+  EXPECT_EQ(0, caller_observer->GetEnumCounter(
+                   webrtc::kEnumCounterSdpSemanticNegotiated,
+                   webrtc::kSdpSemanticNegotiatedMixed));
 }
 
 TEST_F(PeerConnectionMsidSignalingTest, PlanBOfferToUnifiedPlanAnswer) {
