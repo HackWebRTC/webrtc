@@ -491,6 +491,7 @@ if (rtc_include_tests) {
       "../rtc_base:rtc_base",
       "../rtc_base:rtc_base_approved",
       "../rtc_base:rtc_base_tests_utils",
+      "../rtc_base:rtc_task_queue_for_test",
       "../test:test_support",
       "//testing/gtest",
     ]

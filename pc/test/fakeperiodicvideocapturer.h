@@ -52,7 +52,7 @@ class FakePeriodicVideoCapturer
   // So, in order to allow tests to stop frame delivery directly from the
   // test thread, we expose this method publicly.
   void StopFrameDelivery() {
-    RunSynchronouslyOnTaskQueue([this]() {
+    task_queue_.SendTask([this]() {
       RTC_DCHECK_RUN_ON(&task_queue_);
       deliver_frames_ = false;
     });

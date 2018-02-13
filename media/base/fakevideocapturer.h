@@ -21,8 +21,7 @@
 #include "media/base/fakeframesource.h"
 #include "media/base/videocapturer.h"
 #include "media/base/videocommon.h"
-#include "rtc_base/event.h"
-#include "rtc_base/task_queue.h"
+#include "rtc_base/task_queue_for_test.h"
 #include "rtc_base/timeutils.h"
 
 namespace cricket {
@@ -73,21 +72,7 @@ class FakeVideoCapturerWithTaskQueue : public FakeVideoCapturer {
   bool CaptureCustomFrame(int width, int height) override;
 
  protected:
-  template <class Closure>
-  void RunSynchronouslyOnTaskQueue(Closure&& closure) {
-    if (task_queue_.IsCurrent()) {
-      closure();
-      return;
-    }
-    rtc::Event event(false, false);
-    task_queue_.PostTask([&closure, &event]() {
-      closure();
-      event.Set();
-    });
-    event.Wait(rtc::Event::kForever);
-  }
-
-  rtc::TaskQueue task_queue_{"FakeVideoCapturerWithTaskQueue"};
+  rtc::test::TaskQueueForTest task_queue_{"FakeVideoCapturerWithTaskQueue"};
 };
 
 }  // namespace cricket

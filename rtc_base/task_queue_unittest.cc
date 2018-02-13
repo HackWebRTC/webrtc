@@ -21,10 +21,13 @@
 #include "rtc_base/bind.h"
 #include "rtc_base/event.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/task_queue.h"
+#include "rtc_base/task_queue_for_test.h"
 #include "rtc_base/timeutils.h"
 
+using rtc::test::TaskQueueForTest;
+
 namespace rtc {
+
 namespace {
 // Noop on all platforms except Windows, where it turns on high precision
 // multimedia timers which increases the precision of TimeMillis() while in
@@ -44,9 +47,7 @@ class EnableHighResTimers {
   const bool enabled_;
 #endif
 };
-}
 
-namespace {
 void CheckCurrent(Event* signal, TaskQueue* queue) {
   EXPECT_TRUE(queue->IsCurrent());
   if (signal)
@@ -76,34 +77,31 @@ TEST(TaskQueueTest, PostAndCheckCurrent) {
 
 TEST(TaskQueueTest, PostCustomTask) {
   static const char kQueueName[] = "PostCustomImplementation";
-  Event event(false, false);
-  TaskQueue queue(kQueueName);
+  TaskQueueForTest queue(kQueueName);
 
   class CustomTask : public QueuedTask {
    public:
-    explicit CustomTask(Event* event) : event_(event) {}
+    CustomTask() {}
+    bool ran() const { return ran_; }
 
    private:
     bool Run() override {
-      event_->Set();
-      return false;  // Never allows the task to be deleted by the queue.
+      ran_ = true;
+      return false;  // Never allow the task to be deleted by the queue.
     }
 
-    Event* const event_;
-  } my_task(&event);
+    bool ran_ = false;
+  } my_task;
 
-  // Please don't do this in production code! :)
-  queue.PostTask(std::unique_ptr<QueuedTask>(&my_task));
-  EXPECT_TRUE(event.Wait(1000));
+  queue.SendTask(&my_task);
+  EXPECT_TRUE(my_task.ran());
 }
 
 TEST(TaskQueueTest, PostLambda) {
-  static const char kQueueName[] = "PostLambda";
-  Event event(false, false);
-  TaskQueue queue(kQueueName);
-
-  queue.PostTask([&event]() { event.Set(); });
-  EXPECT_TRUE(event.Wait(1000));
+  TaskQueueForTest queue("PostLambda");
+  bool ran = false;
+  queue.SendTask([&ran]() { ran = true; });
+  EXPECT_TRUE(ran);
 }
 
 TEST(TaskQueueTest, PostDelayedZero) {
