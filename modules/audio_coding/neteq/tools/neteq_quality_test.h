@@ -27,21 +27,29 @@
 namespace webrtc {
 namespace test {
 
+enum LossModes {
+  kNoLoss,
+  kUniformLoss,
+  kGilbertElliotLoss,
+  kFixedLoss,
+  kLastLossMode
+};
+
 class LossModel {
  public:
   virtual ~LossModel() {};
-  virtual bool Lost() = 0;
+  virtual bool Lost(int now_ms) = 0;
 };
 
 class NoLoss : public LossModel {
  public:
-  bool Lost() override;
+  bool Lost(int now_ms) override;
 };
 
 class UniformLoss : public LossModel {
  public:
   UniformLoss(double loss_rate);
-  bool Lost() override;
+  bool Lost(int now_ms) override;
   void set_loss_rate(double loss_rate) { loss_rate_ = loss_rate; }
 
  private:
@@ -52,7 +60,7 @@ class GilbertElliotLoss : public LossModel {
  public:
   GilbertElliotLoss(double prob_trans_11, double prob_trans_01);
   ~GilbertElliotLoss() override;
-  bool Lost() override;
+  bool Lost(int now_ms) override;
 
  private:
   // Prob. of losing current packet, when previous packet is lost.
@@ -61,6 +69,31 @@ class GilbertElliotLoss : public LossModel {
   double prob_trans_01_;
   bool lost_last_;
   std::unique_ptr<UniformLoss> uniform_loss_model_;
+};
+
+struct FixedLossEvent {
+  int start_ms;
+  int duration_ms;
+  FixedLossEvent(int start_ms, int duration_ms)
+      : start_ms(start_ms), duration_ms(duration_ms) {}
+};
+
+struct FixedLossEventCmp {
+  bool operator()(const FixedLossEvent& l_event,
+                  const FixedLossEvent& r_event) const {
+    return l_event.start_ms < r_event.start_ms;
+  }
+};
+
+class FixedLossModel : public LossModel {
+ public:
+  FixedLossModel(std::set<FixedLossEvent, FixedLossEventCmp> loss_events);
+  ~FixedLossModel() override;
+  bool Lost(int now_ms) override;
+
+ private:
+  std::set<FixedLossEvent, FixedLossEventCmp> loss_events_;
+  std::set<FixedLossEvent, FixedLossEventCmp>::iterator loss_events_it_;
 };
 
 class NetEqQualityTest : public ::testing::Test {
