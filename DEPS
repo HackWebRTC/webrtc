@@ -248,7 +248,8 @@ hooks = [
     # Update the Windows toolchain if necessary. Must run before 'clang' below.
     'name': 'win_toolchain',
     'pattern': '.',
-    'action': ['python', 'src/build/vs_toolchain.py', 'update'],
+    'condition': 'checkout_win',
+    'action': ['python', 'src/build/vs_toolchain.py', 'update', '--force'],
   },
   {
     # Update the Mac toolchain if necessary.
