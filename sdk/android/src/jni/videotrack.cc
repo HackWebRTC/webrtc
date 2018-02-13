@@ -11,37 +11,12 @@
 #include <jni.h>
 
 #include "api/mediastreaminterface.h"
-#include "rtc_base/logging.h"
-#include "sdk/android/generated_video_jni/jni/VideoSink_jni.h"
 #include "sdk/android/generated_video_jni/jni/VideoTrack_jni.h"
 #include "sdk/android/src/jni/jni_helpers.h"
-#include "sdk/android/src/jni/videoframe.h"
+#include "sdk/android/src/jni/videosink.h"
 
 namespace webrtc {
 namespace jni {
-
-namespace {
-
-class VideoSinkWrapper : public rtc::VideoSinkInterface<VideoFrame> {
- public:
-  VideoSinkWrapper(JNIEnv* jni, const JavaRef<jobject>& j_sink);
-  ~VideoSinkWrapper() override {}
-
- private:
-  void OnFrame(const VideoFrame& frame) override;
-
-  const ScopedJavaGlobalRef<jobject> j_sink_;
-};
-
-VideoSinkWrapper::VideoSinkWrapper(JNIEnv* jni, const JavaRef<jobject>& j_sink)
-    : j_sink_(jni, j_sink) {}
-
-void VideoSinkWrapper::OnFrame(const VideoFrame& frame) {
-  JNIEnv* jni = AttachCurrentThreadIfNeeded();
-  Java_VideoSink_onFrame(jni, j_sink_, NativeToJavaFrame(jni, frame));
-}
-
-}  // namespace
 
 static void JNI_VideoTrack_AddSink(JNIEnv* jni,
                                    const JavaParamRef<jclass>&,

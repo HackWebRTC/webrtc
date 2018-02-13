@@ -59,7 +59,7 @@ class SurfaceTextureHelper : public rtc::RefCountInterface {
   void ReturnTextureFrame() const;
 
  protected:
-  ~SurfaceTextureHelper();
+  ~SurfaceTextureHelper() override;
   SurfaceTextureHelper(JNIEnv* jni,
                        const JavaRef<jobject>& j_surface_texture_helper);
 

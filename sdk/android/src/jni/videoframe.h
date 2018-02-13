@@ -84,7 +84,7 @@ class AndroidTextureBuffer : public AndroidVideoFrameBuffer {
       int height,
       const NativeHandleImpl& native_handle,
       const rtc::scoped_refptr<SurfaceTextureHelper>& surface_texture_helper);
-  ~AndroidTextureBuffer();
+  ~AndroidTextureBuffer() override;
 
   NativeHandleImpl native_handle_impl() const;
 
@@ -95,7 +95,7 @@ class AndroidTextureBuffer : public AndroidVideoFrameBuffer {
 
   rtc::scoped_refptr<I420BufferInterface> ToI420() override;
 
-  AndroidType android_type() override { return AndroidType::kTextureBuffer; }
+  AndroidType android_type() override;
 
   const int width_;
   const int height_;
@@ -143,7 +143,7 @@ class AndroidVideoBuffer : public AndroidVideoFrameBuffer {
 
   rtc::scoped_refptr<I420BufferInterface> ToI420() override;
 
-  AndroidType android_type() override { return AndroidType::kJavaBuffer; }
+  AndroidType android_type() override;
 
   const int width_;
   const int height_;

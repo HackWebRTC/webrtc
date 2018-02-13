@@ -285,6 +285,10 @@ rtc::scoped_refptr<I420BufferInterface> AndroidTextureBuffer::ToI420() {
   return copy;
 }
 
+AndroidVideoFrameBuffer::AndroidType AndroidTextureBuffer::android_type() {
+  return AndroidType::kTextureBuffer;
+}
+
 rtc::scoped_refptr<AndroidVideoBuffer> AndroidVideoBuffer::Adopt(
     JNIEnv* jni,
     const JavaRef<jobject>& j_video_frame_buffer) {
@@ -349,6 +353,10 @@ rtc::scoped_refptr<I420BufferInterface> AndroidVideoBuffer::ToI420() {
   // We don't need to retain the buffer because toI420 returns a new object that
   // we are assumed to take the ownership of.
   return AndroidVideoI420Buffer::Adopt(jni, width_, height_, j_i420_buffer);
+}
+
+AndroidVideoFrameBuffer::AndroidType AndroidVideoBuffer::android_type() {
+  return AndroidType::kJavaBuffer;
 }
 
 VideoFrame JavaToNativeFrame(JNIEnv* jni,

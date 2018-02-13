@@ -212,6 +212,8 @@ rtc_static_library("video_jni") {
     "src/jni/videoencoderwrapper.h",
     "src/jni/videoframe.cc",
     "src/jni/videoframe.h",
+    "src/jni/videosink.cc",
+    "src/jni/videosink.h",
     "src/jni/videotrack.cc",
     "src/jni/wrapped_native_i420_buffer.cc",
     "src/jni/wrapped_native_i420_buffer.h",
@@ -807,6 +809,7 @@ group("native_api") {
     ":native_api_base",
     ":native_api_codecs",
     ":native_api_jni",
+    ":native_api_video",
   ]
 }
 
@@ -889,6 +892,23 @@ rtc_static_library("native_api_codecs") {
     ":video_jni",
     "//api/video_codecs:video_codecs_api",
     "//rtc_base:checks",
+    "//rtc_base:rtc_base_approved",
+  ]
+}
+
+# API for creating C++ wrapper implementations of api/mediastreaminterface.h
+# video interfaces from their Java equivalents.
+rtc_static_library("native_api_video") {
+  visibility = [ "*" ]
+  sources = [
+    "native_api/video/wrapper.cc",
+    "native_api/video/wrapper.h",
+  ]
+  deps = [
+    ":native_api_jni",
+    ":video_jni",
+    "//api:libjingle_peerconnection_api",
+    "//api:video_frame_api",
     "//rtc_base:rtc_base_approved",
   ]
 }
