@@ -33,8 +33,9 @@ class EchoPathDelayEstimator {
                          const EchoCanceller3Config& config);
   ~EchoPathDelayEstimator();
 
-  // Resets the estimation.
-  void Reset();
+  // Resets the estimation. If the soft-reset is specified, only  the matched
+  // filters are reset.
+  void Reset(bool soft_reset);
 
   // Produce a delay estimate if such is avaliable.
   rtc::Optional<DelayEstimate> EstimateDelay(

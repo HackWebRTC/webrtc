@@ -25,6 +25,7 @@ class MockRenderDelayController : public RenderDelayController {
   virtual ~MockRenderDelayController() = default;
 
   MOCK_METHOD0(Reset, void());
+  MOCK_METHOD0(LogRenderCall, void());
   MOCK_METHOD2(
       GetDelay,
       rtc::Optional<DelayEstimate>(const DownsampledRenderBuffer& render_buffer,

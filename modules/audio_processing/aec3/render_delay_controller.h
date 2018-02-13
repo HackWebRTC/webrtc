@@ -32,6 +32,9 @@ class RenderDelayController {
   // Resets the delay controller.
   virtual void Reset() = 0;
 
+  // Logs a render call.
+  virtual void LogRenderCall() = 0;
+
   // Aligns the render buffer content with the capture signal.
   virtual rtc::Optional<DelayEstimate> GetDelay(
       const DownsampledRenderBuffer& render_buffer,

@@ -43,8 +43,10 @@ EchoPathDelayEstimator::EchoPathDelayEstimator(
 
 EchoPathDelayEstimator::~EchoPathDelayEstimator() = default;
 
-void EchoPathDelayEstimator::Reset() {
-  matched_filter_lag_aggregator_.Reset();
+void EchoPathDelayEstimator::Reset(bool soft_reset) {
+  if (!soft_reset) {
+    matched_filter_lag_aggregator_.Reset();
+  }
   matched_filter_.Reset();
 }
 

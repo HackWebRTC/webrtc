@@ -101,6 +101,7 @@ void BlockProcessorImpl::ProcessCapture(
     if (!capture_properly_started_) {
       capture_properly_started_ = true;
       render_buffer_->Reset();
+      delay_controller_->Reset();
     }
   } else {
     // If no render data has yet arrived, do not process the capture signal.
@@ -213,6 +214,7 @@ void BlockProcessorImpl::BufferRender(
                         RenderDelayBuffer::BufferingEvent::kNone);
 
   render_properly_started_ = true;
+  delay_controller_->LogRenderCall();
 }
 
 void BlockProcessorImpl::UpdateEchoLeakageStatus(bool leakage_detected) {
