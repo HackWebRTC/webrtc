@@ -318,45 +318,68 @@ IceCandidatePairType GetIceCandidatePairCounter(
   return kIceCandidatePairMax;
 }
 
+// Logic to decide if an m= section can be recycled. This means that the new
+// m= section is not rejected, but the old local or remote m= section is
+// rejected. |old_content_one| and |old_content_two| refer to the m= section
+// of the old remote and old local descriptions in no particular order.
+// We need to check both the old local and remote because either
+// could be the most current from the latest negotation.
+bool IsMediaSectionBeingRecycled(SdpType type,
+                                 const ContentInfo& content,
+                                 const ContentInfo* old_content_one,
+                                 const ContentInfo* old_content_two) {
+  return type == SdpType::kOffer && !content.rejected &&
+         ((old_content_one && old_content_one->rejected) ||
+          (old_content_two && old_content_two->rejected));
+}
+
 // Verify that the order of media sections in |new_desc| matches
-// |existing_desc|. The number of m= sections in |new_desc| should be no less
-// than |existing_desc|.
-bool MediaSectionsInSameOrder(const SessionDescription* existing_desc,
-                              const SessionDescription* new_desc) {
-  if (!existing_desc || !new_desc) {
+// |current_desc|. The number of m= sections in |new_desc| should be no
+// less than |current_desc|. In the case of checking an answer's
+// |new_desc|, the |current_desc| is the last offer that was set as the
+// local or remote. In the case of checking an offer's |new_desc| we
+// check against the local and remote descriptions stored from the last
+// negotiation, because either of these could be the most up to date for
+// possible rejected m sections. These are the |current_desc| and
+// |secondary_current_desc|.
+bool MediaSectionsInSameOrder(const SessionDescription& current_desc,
+                              const SessionDescription* secondary_current_desc,
+                              const SessionDescription& new_desc,
+                              const SdpType type) {
+  if (current_desc.contents().size() > new_desc.contents().size()) {
     return false;
   }
 
-  if (existing_desc->contents().size() > new_desc->contents().size()) {
-    return false;
-  }
-
-  for (size_t i = 0; i < existing_desc->contents().size(); ++i) {
-    if (existing_desc->contents()[i].rejected) {
-      // If the media section can be recycled, it's valid for the MID and media
-      // type to change.
+  for (size_t i = 0; i < current_desc.contents().size(); ++i) {
+    const cricket::ContentInfo* secondary_content_info = nullptr;
+    if (secondary_current_desc &&
+        i < secondary_current_desc->contents().size()) {
+      secondary_content_info = &secondary_current_desc->contents()[i];
+    }
+    if (IsMediaSectionBeingRecycled(type, new_desc.contents()[i],
+                                    &current_desc.contents()[i],
+                                    secondary_content_info)) {
+      // For new offer descriptions, if the media section can be recycled, it's
+      // valid for the MID and media type to change.
       continue;
     }
-    if (new_desc->contents()[i].name != existing_desc->contents()[i].name) {
+    if (new_desc.contents()[i].name != current_desc.contents()[i].name) {
       return false;
     }
     const MediaContentDescription* new_desc_mdesc =
-        new_desc->contents()[i].media_description();
-    const MediaContentDescription* existing_desc_mdesc =
-        existing_desc->contents()[i].media_description();
-    if (new_desc_mdesc->type() != existing_desc_mdesc->type()) {
+        new_desc.contents()[i].media_description();
+    const MediaContentDescription* current_desc_mdesc =
+        current_desc.contents()[i].media_description();
+    if (new_desc_mdesc->type() != current_desc_mdesc->type()) {
       return false;
     }
   }
   return true;
 }
 
-bool MediaSectionsHaveSameCount(const SessionDescription* desc1,
-                                const SessionDescription* desc2) {
-  if (!desc1 || !desc2) {
-    return false;
-  }
-  return desc1->contents().size() == desc2->contents().size();
+bool MediaSectionsHaveSameCount(const SessionDescription& desc1,
+                                const SessionDescription& desc2) {
+  return desc1.contents().size() == desc2.contents().size();
 }
 
 // Checks that each non-rejected content has SDES crypto keys or a DTLS
@@ -1812,7 +1835,8 @@ RTCError PeerConnection::ApplyLocalDescription(
 
   if (IsUnifiedPlan()) {
     RTCError error = UpdateTransceiversAndDataChannels(
-        cricket::CS_LOCAL, old_local_description, *local_description());
+        cricket::CS_LOCAL, *local_description(), old_local_description,
+        remote_description());
     if (!error.ok()) {
       return error;
     }
@@ -2050,7 +2074,8 @@ RTCError PeerConnection::ApplyRemoteDescription(
   // Transport and Media channels will be created only when offer is set.
   if (IsUnifiedPlan()) {
     RTCError error = UpdateTransceiversAndDataChannels(
-        cricket::CS_REMOTE, old_remote_description, *remote_description());
+        cricket::CS_REMOTE, *remote_description(), local_description(),
+        old_remote_description);
     if (!error.ok()) {
       return error;
     }
@@ -2275,8 +2300,9 @@ RTCError PeerConnection::ApplyRemoteDescription(
 
 RTCError PeerConnection::UpdateTransceiversAndDataChannels(
     cricket::ContentSource source,
-    const SessionDescriptionInterface* old_session,
-    const SessionDescriptionInterface& new_session) {
+    const SessionDescriptionInterface& new_session,
+    const SessionDescriptionInterface* old_local_description,
+    const SessionDescriptionInterface* old_remote_description) {
   RTC_DCHECK(IsUnifiedPlan());
 
   const cricket::ContentGroup* bundle_group = nullptr;
@@ -2289,20 +2315,28 @@ RTCError PeerConnection::UpdateTransceiversAndDataChannels(
     bundle_group = bundle_group_or_error.MoveValue();
   }
 
-  const ContentInfos& old_contents =
-      (old_session ? old_session->description()->contents() : ContentInfos());
   const ContentInfos& new_contents = new_session.description()->contents();
-
   for (size_t i = 0; i < new_contents.size(); ++i) {
     const cricket::ContentInfo& new_content = new_contents[i];
-    const cricket::ContentInfo* old_content =
-        (i < old_contents.size() ? &old_contents[i] : nullptr);
     cricket::MediaType media_type = new_content.media_description()->type();
     seen_mids_.insert(new_content.name);
     if (media_type == cricket::MEDIA_TYPE_AUDIO ||
         media_type == cricket::MEDIA_TYPE_VIDEO) {
+      const cricket::ContentInfo* old_local_content = nullptr;
+      if (old_local_description &&
+          i < old_local_description->description()->contents().size()) {
+        old_local_content =
+            &old_local_description->description()->contents()[i];
+      }
+      const cricket::ContentInfo* old_remote_content = nullptr;
+      if (old_remote_description &&
+          i < old_remote_description->description()->contents().size()) {
+        old_remote_content =
+            &old_remote_description->description()->contents()[i];
+      }
       auto transceiver_or_error =
-          AssociateTransceiver(source, i, new_content, old_content);
+          AssociateTransceiver(source, new_session.GetType(), i, new_content,
+                               old_local_content, old_remote_content);
       if (!transceiver_or_error.ok()) {
         return transceiver_or_error.MoveError();
       }
@@ -2397,16 +2431,25 @@ RTCError PeerConnection::UpdateDataChannel(
 
 RTCErrorOr<rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
 PeerConnection::AssociateTransceiver(cricket::ContentSource source,
+                                     SdpType type,
                                      size_t mline_index,
                                      const ContentInfo& content,
-                                     const ContentInfo* old_content) {
+                                     const ContentInfo* old_local_content,
+                                     const ContentInfo* old_remote_content) {
   RTC_DCHECK(IsUnifiedPlan());
-  // If the m= section is being recycled (rejected in previous remote
-  // description, not rejected in current description), dissociate the currently
-  // associated RtpTransceiver by setting its mid property to null, and discard
-  // the mapping between the transceiver and its m= section index.
-  if (old_content && old_content->rejected && !content.rejected) {
-    auto old_transceiver = GetAssociatedTransceiver(old_content->name);
+  // If this is an offer then the m= section might be recycled. If the m=
+  // section is being recycled (defined as: rejected in the current local or
+  // remote description and not rejected in new description), dissociate the
+  // currently associated RtpTransceiver by setting its mid property to null,
+  // and discard the mapping between the transceiver and its m= section index.
+  if (IsMediaSectionBeingRecycled(type, content, old_local_content,
+                                  old_remote_content)) {
+    // We want to dissociate the transceiver that has the rejected mid.
+    const std::string& old_mid =
+        (old_local_content && old_local_content->rejected)
+            ? old_local_content->name
+            : old_remote_content->name;
+    auto old_transceiver = GetAssociatedTransceiver(old_mid);
     if (old_transceiver) {
       old_transceiver->internal()->set_mid(rtc::nullopt);
       old_transceiver->internal()->set_mline_index(rtc::nullopt);
@@ -3429,7 +3472,7 @@ void PeerConnection::GetOptionsForUnifiedPlanOffer(
       RTC_CHECK(transceiver);
       // A media section is considered eligible for recycling if it is marked as
       // rejected in either the local or remote description.
-      if (had_been_rejected) {
+      if (had_been_rejected && transceiver->stopped()) {
         session_options->media_description_options.push_back(
             cricket::MediaDescriptionOptions(transceiver->media_type(), mid,
                                              RtpTransceiverDirection::kInactive,
@@ -5499,25 +5542,38 @@ RTCError PeerConnection::ValidateSessionDescription(
 
   // Verify m-lines in Answer when compared against Offer.
   if (type == SdpType::kPrAnswer || type == SdpType::kAnswer) {
+    // With an answer we want to compare the new answer session description with
+    // the offer's session description from the current negotiation.
     const cricket::SessionDescription* offer_desc =
         (source == cricket::CS_LOCAL) ? remote_description()->description()
                                       : local_description()->description();
-    if (!MediaSectionsHaveSameCount(offer_desc, sdesc->description()) ||
-        !MediaSectionsInSameOrder(offer_desc, sdesc->description())) {
+    if (!MediaSectionsHaveSameCount(*offer_desc, *sdesc->description()) ||
+        !MediaSectionsInSameOrder(*offer_desc, nullptr, *sdesc->description(),
+                                  type)) {
       LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
                            kMlineMismatchInAnswer);
     }
   } else {
-    const cricket::SessionDescription* current_desc = nullptr;
-    if (source == cricket::CS_LOCAL && local_description()) {
-      current_desc = local_description()->description();
-    } else if (source == cricket::CS_REMOTE && remote_description()) {
-      current_desc = remote_description()->description();
-    }
     // The re-offers should respect the order of m= sections in current
     // description. See RFC3264 Section 8 paragraph 4 for more details.
+    // With a re-offer, either the current local or current remote descriptions
+    // could be the most up to date, so we would like to check against both of
+    // them if they exist. It could be the case that one of them has a 0 port
+    // for a media section, but the other does not. This is important to check
+    // against in the case that we are recycling an m= section.
+    const cricket::SessionDescription* current_desc = nullptr;
+    const cricket::SessionDescription* secondary_current_desc = nullptr;
+    if (local_description()) {
+      current_desc = local_description()->description();
+      if (remote_description()) {
+        secondary_current_desc = remote_description()->description();
+      }
+    } else if (remote_description()) {
+      current_desc = remote_description()->description();
+    }
     if (current_desc &&
-        !MediaSectionsInSameOrder(current_desc, sdesc->description())) {
+        !MediaSectionsInSameOrder(*current_desc, secondary_current_desc,
+                                  *sdesc->description(), type)) {
       LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
                            kMlineMismatchInSubsequentOffer);
     }

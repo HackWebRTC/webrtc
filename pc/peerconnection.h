@@ -422,8 +422,9 @@ class PeerConnection : public PeerConnectionInternal,
   // part of setting the local/remote description.
   RTCError UpdateTransceiversAndDataChannels(
       cricket::ContentSource source,
-      const SessionDescriptionInterface* old_session,
-      const SessionDescriptionInterface& new_session);
+      const SessionDescriptionInterface& new_session,
+      const SessionDescriptionInterface* old_local_description,
+      const SessionDescriptionInterface* old_remote_description);
 
   // Either creates or destroys the transceiver's BaseChannel according to the
   // given media section.
@@ -443,9 +444,11 @@ class PeerConnection : public PeerConnectionInternal,
   RTCErrorOr<
       rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
   AssociateTransceiver(cricket::ContentSource source,
+                       SdpType type,
                        size_t mline_index,
                        const cricket::ContentInfo& content,
-                       const cricket::ContentInfo* old_content);
+                       const cricket::ContentInfo* old_local_content,
+                       const cricket::ContentInfo* old_remote_content);
 
   // Returns the RtpTransceiver, if found, that is associated to the given MID.
   rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
