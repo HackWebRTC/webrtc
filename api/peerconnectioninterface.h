@@ -76,6 +76,7 @@
 #include <utility>
 #include <vector>
 
+#include "api/audio/audio_mixer.h"
 #include "api/audio_codecs/audio_decoder_factory.h"
 #include "api/audio_codecs/audio_encoder_factory.h"
 #include "api/audio_options.h"
