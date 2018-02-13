@@ -111,10 +111,8 @@ class StatsCollector {
   void ExtractDataInfo();
   void ExtractSessionInfo();
   void ExtractBweInfo();
-  void ExtractVoiceInfo();
-  void ExtractVideoInfo(PeerConnectionInterface::StatsOutputLevel level);
+  void ExtractMediaInfo();
   void ExtractSenderInfo();
-  void BuildSsrcToTransportId();
   webrtc::StatsReport* GetReport(const StatsReport::StatsType& type,
                                  const std::string& id,
                                  StatsReport::Direction direction);

@@ -36,14 +36,13 @@ class PeerConnectionInternal : public PeerConnectionInterface {
   // Returns true if we were the initial offerer.
   virtual bool initial_offerer() const = 0;
 
-  // TODO(steveanton): Remove these.
+  // TODO(steveanton): Remove these and replace with GetTransceiversInternal.
   virtual cricket::VoiceChannel* voice_channel() const = 0;
   virtual cricket::VideoChannel* video_channel() const = 0;
 
-  // Exposed for tests.
   virtual std::vector<
       rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
-  GetTransceiversForTesting() const = 0;
+  GetTransceiversInternal() const = 0;
 
   // Get the id used as a media stream track's "id" field from ssrc.
   virtual bool GetLocalTrackIdBySsrc(uint32_t ssrc, std::string* track_id) = 0;

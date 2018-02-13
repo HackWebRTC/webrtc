@@ -225,7 +225,7 @@ class PeerConnection : public PeerConnectionInternal,
 
   std::vector<
       rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
-  GetTransceiversForTesting() const override {
+  GetTransceiversInternal() const override {
     return transceivers_;
   }
 
@@ -722,9 +722,6 @@ class PeerConnection : public PeerConnectionInternal,
   cricket::TransportController* transport_controller() const {
     return transport_controller_.get();
   }
-
-  // Return all managed, non-null channels.
-  std::vector<cricket::BaseChannel*> Channels() const;
 
   // Non-const versions of local_description()/remote_description(), for use
   // internally.

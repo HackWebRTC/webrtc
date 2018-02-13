@@ -4388,23 +4388,6 @@ bool PeerConnection::GetSslRole(const std::string& content_name,
                                            role);
 }
 
-// TODO(steveanton): Eventually it'd be nice to store the channels as a single
-// vector of BaseChannel pointers instead of separate voice and video channel
-// vectors. At that point, this will become a simple getter.
-std::vector<cricket::BaseChannel*> PeerConnection::Channels() const {
-  std::vector<cricket::BaseChannel*> channels;
-  if (voice_channel()) {
-    channels.push_back(voice_channel());
-  }
-  if (video_channel()) {
-    channels.push_back(video_channel());
-  }
-  if (rtp_data_channel_) {
-    channels.push_back(rtp_data_channel_);
-  }
-  return channels;
-}
-
 void PeerConnection::SetSessionError(SessionError error,
                                      const std::string& error_desc) {
   RTC_DCHECK_RUN_ON(signaling_thread());

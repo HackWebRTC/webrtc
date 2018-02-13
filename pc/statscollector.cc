@@ -569,8 +569,7 @@ StatsCollector::UpdateStats(PeerConnectionInterface::StatsOutputLevel level) {
   // the same thread (this class has no locks right now).
   ExtractSessionInfo();
   ExtractBweInfo();
-  ExtractVoiceInfo();
-  ExtractVideoInfo(level);
+  ExtractMediaInfo();
   ExtractSenderInfo();
   ExtractDataInfo();
   UpdateTrackReports();
@@ -846,59 +845,100 @@ void StatsCollector::ExtractBweInfo() {
   ExtractStats(bwe_info, stats_gathering_started_, report);
 }
 
-void StatsCollector::ExtractVoiceInfo() {
-  RTC_DCHECK(pc_->signaling_thread()->IsCurrent());
+namespace {
 
-  if (!pc_->voice_channel()) {
-    return;
-  }
-  cricket::VoiceMediaInfo voice_info;
-  if (!pc_->voice_channel()->GetStats(&voice_info)) {
-    RTC_LOG(LS_ERROR) << "Failed to get voice channel stats.";
-    return;
+struct VoiceChannelStatsInfo {
+  std::string transport_name;
+  cricket::VoiceMediaChannel* voice_media_channel;
+  cricket::VoiceMediaInfo voice_media_info;
+};
+
+struct VideoChannelStatsInfo {
+  std::string transport_name;
+  cricket::VideoMediaChannel* video_media_channel;
+  cricket::VideoMediaInfo video_media_info;
+};
+
+}  // namespace
+
+void StatsCollector::ExtractMediaInfo() {
+  RTC_DCHECK_RUN_ON(pc_->signaling_thread());
+
+  std::vector<VoiceChannelStatsInfo> voice_channel_infos;
+  std::vector<VideoChannelStatsInfo> video_channel_infos;
+
+  {
+    rtc::Thread::ScopedDisallowBlockingCalls no_blocking_calls;
+    for (auto transceiver : pc_->GetTransceiversInternal()) {
+      if (!transceiver->internal()->channel()) {
+        continue;
+      }
+      cricket::MediaType media_type = transceiver->internal()->media_type();
+      if (media_type == cricket::MEDIA_TYPE_AUDIO) {
+        auto* voice_channel = static_cast<cricket::VoiceChannel*>(
+            transceiver->internal()->channel());
+        voice_channel_infos.emplace_back();
+        VoiceChannelStatsInfo& info = voice_channel_infos.back();
+        info.transport_name = voice_channel->transport_name();
+        info.voice_media_channel = voice_channel->media_channel();
+      } else {
+        RTC_DCHECK_EQ(media_type, cricket::MEDIA_TYPE_VIDEO);
+        auto* video_channel = static_cast<cricket::VideoChannel*>(
+            transceiver->internal()->channel());
+        video_channel_infos.emplace_back();
+        VideoChannelStatsInfo& info = video_channel_infos.back();
+        info.transport_name = video_channel->transport_name();
+        info.video_media_channel = video_channel->media_channel();
+      }
+    }
   }
 
-  // TODO(tommi): The above code should run on the worker thread and post the
-  // results back to the signaling thread, where we can add data to the reports.
+  pc_->worker_thread()->Invoke<void>(RTC_FROM_HERE, [&] {
+    rtc::Thread::ScopedDisallowBlockingCalls no_blocking_calls;
+    for (auto it = voice_channel_infos.begin(); it != voice_channel_infos.end();
+         /* incremented manually */) {
+      if (!it->voice_media_channel->GetStats(&it->voice_media_info)) {
+        RTC_LOG(LS_ERROR) << "Failed to get voice channel stats";
+        it = voice_channel_infos.erase(it);
+        continue;
+      }
+      ++it;
+    }
+    for (auto it = video_channel_infos.begin(); it != video_channel_infos.end();
+         /* incremented manually */) {
+      if (!it->video_media_channel->GetStats(&it->video_media_info)) {
+        RTC_LOG(LS_ERROR) << "Failed to get video channel stats";
+        it = video_channel_infos.erase(it);
+        continue;
+      }
+      ++it;
+    }
+  });
+
   rtc::Thread::ScopedDisallowBlockingCalls no_blocking_calls;
 
-  StatsReport::Id transport_id =
-      StatsReport::NewComponentId(pc_->voice_channel()->transport_name(),
-                                  cricket::ICE_CANDIDATE_COMPONENT_RTP);
-
-  ExtractStatsFromList(voice_info.receivers, transport_id, this,
-      StatsReport::kReceive);
-  ExtractStatsFromList(voice_info.senders, transport_id, this,
-      StatsReport::kSend);
-
-  UpdateStatsFromExistingLocalAudioTracks(voice_info.receivers.size() > 0);
-}
-
-void StatsCollector::ExtractVideoInfo(
-    PeerConnectionInterface::StatsOutputLevel level) {
-  RTC_DCHECK(pc_->signaling_thread()->IsCurrent());
-
-  if (!pc_->video_channel()) {
-    return;
+  bool has_remote_audio = false;
+  for (const auto& info : voice_channel_infos) {
+    StatsReport::Id transport_id = StatsReport::NewComponentId(
+        info.transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP);
+    ExtractStatsFromList(info.voice_media_info.receivers, transport_id, this,
+                         StatsReport::kReceive);
+    ExtractStatsFromList(info.voice_media_info.senders, transport_id, this,
+                         StatsReport::kSend);
+    if (!info.voice_media_info.receivers.empty()) {
+      has_remote_audio = true;
+    }
   }
-  cricket::VideoMediaInfo video_info;
-  if (!pc_->video_channel()->GetStats(&video_info)) {
-    RTC_LOG(LS_ERROR) << "Failed to get video channel stats.";
-    return;
+  for (const auto& info : video_channel_infos) {
+    StatsReport::Id transport_id = StatsReport::NewComponentId(
+        info.transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP);
+    ExtractStatsFromList(info.video_media_info.receivers, transport_id, this,
+                         StatsReport::kReceive);
+    ExtractStatsFromList(info.video_media_info.senders, transport_id, this,
+                         StatsReport::kSend);
   }
 
-  // TODO(tommi): The above code should run on the worker thread and post the
-  // results back to the signaling thread, where we can add data to the reports.
-  rtc::Thread::ScopedDisallowBlockingCalls no_blocking_calls;
-
-  StatsReport::Id transport_id =
-      StatsReport::NewComponentId(pc_->video_channel()->transport_name(),
-                                  cricket::ICE_CANDIDATE_COMPONENT_RTP);
-
-  ExtractStatsFromList(video_info.receivers, transport_id, this,
-      StatsReport::kReceive);
-  ExtractStatsFromList(video_info.senders, transport_id, this,
-      StatsReport::kSend);
+  UpdateStatsFromExistingLocalAudioTracks(has_remote_audio);
 }
 
 void StatsCollector::ExtractSenderInfo() {

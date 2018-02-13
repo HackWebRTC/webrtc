@@ -249,7 +249,7 @@ class FakePeerConnectionBase : public PeerConnectionInternal {
 
   std::vector<
       rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
-  GetTransceiversForTesting() const override {
+  GetTransceiversInternal() const override {
     return {};
   }
 
