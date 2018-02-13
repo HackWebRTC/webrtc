@@ -213,9 +213,7 @@ rtc::Optional<DelayEstimate> RenderDelayControllerImpl::GetDelay(
       delay_samples_->quality == DelayEstimate::Quality::kRefined) {
     // Compute the skew offset and add a margin.
     offset_blocks = *skew_ - *skew;
-    if (abs(offset_blocks) <= 1) {
-      offset_blocks = 0;
-    } else if (soft_reset_counter_ > 10 * kNumBlocksPerSecond) {
+    if (offset_blocks != 0 && soft_reset_counter_ > 10 * kNumBlocksPerSecond) {
       // Soft reset the delay estimator if there is a significant offset
       // detected.
       delay_estimator_.Reset(true);
