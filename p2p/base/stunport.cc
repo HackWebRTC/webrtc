@@ -517,7 +517,7 @@ void UDPPort::OnSendPacket(const void* data, size_t size, StunRequest* req) {
   StunBindingRequest* sreq = static_cast<StunBindingRequest*>(req);
   rtc::PacketOptions options(DefaultDscpValue());
   if (socket_->SendTo(data, size, sreq->server_addr(), options) < 0)
-    RTC_PLOG(LERROR, socket_->GetError()) << "sendto";
+    RTC_LOG_ERR_EX(LERROR, socket_->GetError()) << "sendto";
 }
 
 bool UDPPort::HasCandidateWithAddress(const rtc::SocketAddress& addr) const {

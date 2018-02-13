@@ -678,7 +678,7 @@ void RelayEntry::OnSocketConnect(rtc::AsyncPacketSocket* socket) {
 
 void RelayEntry::OnSocketClose(rtc::AsyncPacketSocket* socket,
                                int error) {
-  RTC_PLOG(LERROR, error) << "Relay connection failed: socket closed";
+  RTC_LOG_ERR_EX(LERROR, error) << "Relay connection failed: socket closed";
   HandleConnectFailure(socket);
 }
 

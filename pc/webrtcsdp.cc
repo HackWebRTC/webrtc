@@ -1483,7 +1483,7 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
     } else if (streams.size() > 1u) {
       RTC_LOG(LS_WARNING)
           << "Trying to serialize Unified Plan SDP with more than "
-          << "one track in a media section. Omitting 'a=msid'.";
+             "one track in a media section. Omitting 'a=msid'.";
     }
   }
 
@@ -2459,8 +2459,8 @@ bool ParseMediaDescription(const std::string& message,
         bundle_only = false;
         RTC_LOG(LS_WARNING)
             << "a=bundle-only attribute observed with a nonzero "
-            << "port; this usage is unspecified so the attribute is being "
-            << "ignored.";
+               "port; this usage is unspecified so the attribute is being "
+               "ignored.";
       }
     } else {
       // If not using bundle-only, interpret port 0 in the normal way; the m=
@@ -3176,7 +3176,8 @@ bool ParseRtpmapAttribute(const std::string& line,
   if (std::find(payload_types.begin(), payload_types.end(), payload_type) ==
       payload_types.end()) {
     RTC_LOG(LS_WARNING) << "Ignore rtpmap line that did not appear in the "
-                        << "<fmt> of the m-line: " << line;
+                           "<fmt> of the m-line: "
+                        << line;
     return true;
   }
   const std::string& encoder = fields[1];

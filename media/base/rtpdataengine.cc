@@ -202,18 +202,11 @@ void RtpDataMediaChannel::OnPacketReceived(
     rtc::CopyOnWriteBuffer* packet, const rtc::PacketTime& packet_time) {
   RtpHeader header;
   if (!GetRtpHeader(packet->cdata(), packet->size(), &header)) {
-    // Don't want to log for every corrupt packet.
-    // RTC_LOG(LS_WARNING) << "Could not read rtp header from packet of length "
-    //                 << packet->length() << ".";
     return;
   }
 
   size_t header_length;
   if (!GetRtpHeaderLen(packet->cdata(), packet->size(), &header_length)) {
-    // Don't want to log for every corrupt packet.
-    // RTC_LOG(LS_WARNING) << "Could not read rtp header"
-    //                 << length from packet of length "
-    //                 << packet->length() << ".";
     return;
   }
   const char* data =
@@ -227,12 +220,6 @@ void RtpDataMediaChannel::OnPacketReceived(
   }
 
   if (!FindCodecById(recv_codecs_, header.payload_type)) {
-    // For bundling, this will be logged for every message.
-    // So disable this logging.
-    // RTC_LOG(LS_WARNING) << "Not receiving packet "
-    //                << header.ssrc << ":" << header.seq_num
-    //                << " (" << data_len << ")"
-    //                << " because unknown payload id: " << header.payload_type;
     return;
   }
 

@@ -170,8 +170,8 @@ WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
 
     rtc::KeyParams key_params = rtc::KeyParams();
     RTC_LOG(LS_VERBOSE)
-        << "DTLS-SRTP enabled; sending DTLS identity request (key "
-        << "type: " << key_params.type() << ").";
+        << "DTLS-SRTP enabled; sending DTLS identity request (key type: "
+        << key_params.type() << ").";
 
     // Request certificate. This happens asynchronously, so that the caller gets
     // a chance to connect to |SignalCertificateReady|.

@@ -41,7 +41,6 @@
 // RTC_LOG_CHECK_LEVEL(sev) (and RTC_LOG_CHECK_LEVEL_V(sev)) can be used as a
 //     test before performing expensive or sensitive operations whose sole
 //     purpose is to output logging data at the desired level.
-// Lastly, RTC_PLOG(sev, err) is an alias for RTC_LOG_ERR_EX.
 
 #ifndef RTC_BASE_LOGGING_H_
 #define RTC_BASE_LOGGING_H_
@@ -342,9 +341,6 @@ inline bool LogCheckLevel(LoggingSeverity sev) {
 #define RTC_LOG_TAG(sev, tag)        \
   RTC_LOG_SEVERITY_PRECONDITION(sev) \
   rtc::LogMessage(nullptr, 0, sev, tag).stream()
-
-#define RTC_PLOG(sev, err) \
-  RTC_LOG_ERR_EX(sev, err)
 
 // The RTC_DLOG macros are equivalent to their RTC_LOG counterparts except that
 // they only generate code in debug builds.

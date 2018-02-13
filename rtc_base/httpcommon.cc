@@ -863,8 +863,6 @@ HttpAuthResult HttpAuthenticate(
         in_buf_desc.pBuffers  = &in_sec;
 
         ret = InitializeSecurityContextA(&neg->cred, &neg->ctx, spn, flags, 0, SECURITY_NATIVE_DREP, &in_buf_desc, 0, &neg->ctx, &out_buf_desc, &ret_flags, &lifetime);
-        // RTC_LOG(INFO) << "$$$ InitializeSecurityContext @ " <<
-        // TimeSince(now);
         if (FAILED(ret)) {
           RTC_LOG(LS_ERROR) << "InitializeSecurityContext returned: "
                             << ErrorName(ret, SECURITY_ERRORS);
@@ -931,7 +929,6 @@ HttpAuthResult HttpAuthenticate(
       ret = AcquireCredentialsHandleA(
           0, const_cast<char*>(want_negotiate ? NEGOSSP_NAME_A : NTLMSP_NAME_A),
           SECPKG_CRED_OUTBOUND, 0, pauth_id, 0, 0, &cred, &lifetime);
-      // RTC_LOG(INFO) << "$$$ AcquireCredentialsHandle @ " << TimeSince(now);
       if (ret != SEC_E_OK) {
         RTC_LOG(LS_ERROR) << "AcquireCredentialsHandle error: "
                           << ErrorName(ret, SECURITY_ERRORS);
@@ -942,7 +939,6 @@ HttpAuthResult HttpAuthenticate(
 
       CtxtHandle ctx;
       ret = InitializeSecurityContextA(&cred, 0, spn, flags, 0, SECURITY_NATIVE_DREP, 0, 0, &ctx, &out_buf_desc, &ret_flags, &lifetime);
-      // RTC_LOG(INFO) << "$$$ InitializeSecurityContext @ " << TimeSince(now);
       if (FAILED(ret)) {
         RTC_LOG(LS_ERROR) << "InitializeSecurityContext returned: "
                           << ErrorName(ret, SECURITY_ERRORS);
@@ -958,15 +954,12 @@ HttpAuthResult HttpAuthenticate(
 
     if ((ret == SEC_I_COMPLETE_NEEDED) || (ret == SEC_I_COMPLETE_AND_CONTINUE)) {
       ret = CompleteAuthToken(&neg->ctx, &out_buf_desc);
-      // RTC_LOG(INFO) << "$$$ CompleteAuthToken @ " << TimeSince(now);
       RTC_LOG(LS_VERBOSE) << "CompleteAuthToken returned: "
                           << ErrorName(ret, SECURITY_ERRORS);
       if (FAILED(ret)) {
         return HAR_ERROR;
       }
     }
-
-    // RTC_LOG(INFO) << "$$$ NEGOTIATE took " << TimeSince(now) << "ms";
 
     std::string decoded(out_buf, out_buf + out_sec.cbBuffer);
     response = auth_method;

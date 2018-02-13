@@ -2237,8 +2237,7 @@ void P2PTransportChannel::set_writable(bool writable) {
   if (writable_ == writable) {
     return;
   }
-  LOG_J(LS_VERBOSE, this) << "set_writable from:" << writable_ << " to "
-                          << writable;
+  LOG_J(LS_VERBOSE, this) << "Changed writable_ to " << writable;
   writable_ = writable;
   if (writable_) {
     SignalReadyToSend(this);

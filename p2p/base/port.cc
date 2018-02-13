@@ -1107,8 +1107,7 @@ void Connection::set_connected(bool value) {
   bool old_value = connected_;
   connected_ = value;
   if (value != old_value) {
-    LOG_J(LS_VERBOSE, this) << "set_connected from: " << old_value << " to "
-                            << value;
+    LOG_J(LS_VERBOSE, this) << "Change connected_ to " << value;
     SignalStateChange(this);
   }
 }

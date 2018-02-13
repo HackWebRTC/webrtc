@@ -468,8 +468,8 @@ static bool AddStreamParams(
         } else if (!ssrcs.empty()) {
           RTC_LOG(LS_WARNING)
               << "Our FlexFEC implementation only supports protecting "
-              << "a single media streams. This session has multiple "
-              << "media streams however, so no FlexFEC SSRC will be generated.";
+                 "a single media streams. This session has multiple "
+                 "media streams however, so no FlexFEC SSRC will be generated.";
         }
       }
       stream_param.cname = rtcp_cname;

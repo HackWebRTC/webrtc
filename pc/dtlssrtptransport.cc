@@ -62,7 +62,7 @@ void DtlsSrtpTransport::SetDtlsTransports(
   // allowed according to the BUNDLE spec.
   RTC_CHECK(!(IsActive()))
       << "Setting RTCP for DTLS/SRTP after the DTLS is active "
-      << "should never happen.";
+         "should never happen.";
 
   RTC_LOG(LS_INFO) << "Setting RTCP Transport on " << transport_name
                    << " transport " << rtcp_dtls_transport;

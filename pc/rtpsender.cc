@@ -111,11 +111,11 @@ bool AudioRtpSender::CanInsertDtmf() {
 
 bool AudioRtpSender::InsertDtmf(int code, int duration) {
   if (!media_channel_) {
-    RTC_LOG(LS_ERROR) << "CanInsertDtmf: No audio channel exists.";
+    RTC_LOG(LS_ERROR) << "InsertDtmf: No audio channel exists.";
     return false;
   }
   if (!ssrc_) {
-    RTC_LOG(LS_ERROR) << "CanInsertDtmf: Sender does not have SSRC.";
+    RTC_LOG(LS_ERROR) << "InsertDtmf: Sender does not have SSRC.";
     return false;
   }
   bool success = worker_thread_->Invoke<bool>(RTC_FROM_HERE, [&] {

@@ -120,9 +120,10 @@ bool DtmfSender::InsertDtmf(const std::string& tones, int duration,
       inter_tone_gap < kDtmfMinGapMs) {
     RTC_LOG(LS_ERROR)
         << "InsertDtmf is called with invalid duration or tones gap. "
-        << "The duration cannot be more than " << kDtmfMaxDurationMs
-        << "ms or less than " << kDtmfMinDurationMs << "ms. "
-        << "The gap between tones must be at least " << kDtmfMinGapMs << "ms.";
+           "The duration cannot be more than "
+        << kDtmfMaxDurationMs << "ms or less than " << kDtmfMinDurationMs
+        << "ms. The gap between tones must be at least "
+        << kDtmfMinGapMs << "ms.";
     return false;
   }
 

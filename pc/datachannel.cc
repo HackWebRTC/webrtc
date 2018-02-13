@@ -151,7 +151,7 @@ bool DataChannel::Init(const InternalDataChannelInit& config) {
         config.maxRetransmits != -1 ||
         config.maxRetransmitTime != -1) {
       RTC_LOG(LS_ERROR) << "Failed to initialize the RTP data channel due to "
-                        << "invalid DataChannelInit.";
+                           "invalid DataChannelInit.";
       return false;
     }
     handshake_state_ = kHandshakeReady;
@@ -160,7 +160,7 @@ bool DataChannel::Init(const InternalDataChannelInit& config) {
         config.maxRetransmits < -1 ||
         config.maxRetransmitTime < -1) {
       RTC_LOG(LS_ERROR) << "Failed to initialize the SCTP data channel due to "
-                        << "invalid DataChannelInit.";
+                           "invalid DataChannelInit.";
       return false;
     }
     if (config.maxRetransmits != -1 && config.maxRetransmitTime != -1) {
@@ -344,8 +344,9 @@ void DataChannel::OnDataReceived(const cricket::ReceiveDataParams& params,
     RTC_DCHECK(data_channel_type_ == cricket::DCT_SCTP);
     if (handshake_state_ != kHandshakeWaitingForAck) {
       // Ignore it if we are not expecting an ACK message.
-      RTC_LOG(LS_WARNING) << "DataChannel received unexpected CONTROL message, "
-                          << "sid = " << params.sid;
+      RTC_LOG(LS_WARNING)
+          << "DataChannel received unexpected CONTROL message, sid = "
+          << params.sid;
       return;
     }
     if (ParseDataChannelOpenAckMessage(payload)) {
@@ -551,7 +552,7 @@ bool DataChannel::SendDataMessage(const DataBuffer& buffer,
       send_params.ordered = true;
       RTC_LOG(LS_VERBOSE)
           << "Sending data as ordered for unordered DataChannel "
-          << "because the OPEN_ACK message has not been received.";
+             "because the OPEN_ACK message has not been received.";
     }
 
     send_params.max_rtx_count = config_.maxRetransmits;
@@ -583,7 +584,8 @@ bool DataChannel::SendDataMessage(const DataBuffer& buffer,
   // Close the channel if the error is not SDR_BLOCK, or if queuing the
   // message failed.
   RTC_LOG(LS_ERROR) << "Closing the DataChannel due to a failure to send data, "
-                    << "send_result = " << send_result;
+                       "send_result = "
+                    << send_result;
   Close();
 
   return false;
@@ -649,7 +651,8 @@ bool DataChannel::SendControlMessage(const rtc::CopyOnWriteBuffer& buffer) {
     QueueControlMessage(buffer);
   } else {
     RTC_LOG(LS_ERROR) << "Closing the DataChannel due to a failure to send"
-                      << " the CONTROL message, send_result = " << send_result;
+                         " the CONTROL message, send_result = "
+                      << send_result;
     Close();
   }
   return retval;

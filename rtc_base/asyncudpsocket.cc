@@ -112,8 +112,8 @@ void AsyncUDPSocket::OnReadEvent(AsyncSocket* socket) {
     // TODO: Do something better like forwarding the error to the user.
     SocketAddress local_addr = socket_->GetLocalAddress();
     RTC_LOG(LS_INFO) << "AsyncUDPSocket[" << local_addr.ToSensitiveString()
-                     << "] "
-                     << "receive failed with error " << socket_->GetError();
+                     << "] receive failed with error "
+                     << socket_->GetError();
     return;
   }
 
