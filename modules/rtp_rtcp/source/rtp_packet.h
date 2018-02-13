@@ -157,7 +157,7 @@ class RtpPacket {
   size_t payload_size_;
 
   ExtensionInfo extension_entries_[kMaxExtensionHeaders];
-  uint16_t extensions_size_ = 0;  // Unaligned.
+  size_t extensions_size_ = 0;  // Unaligned.
   rtc::CopyOnWriteBuffer buffer_;
 };
 
