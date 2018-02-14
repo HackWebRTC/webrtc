@@ -477,47 +477,47 @@ TEST_P(BweSimulation, Evaluation8) {
   RunPauseResumeFlows(GetParam());
 }
 
-// Following test cases begin with "GoogCcComparison" run the
-// evaluation test cases for both GoogCc and other calling RMCAT.
+// Following test cases begin with "GccComparison" run the
+// evaluation test cases for both GCC and other calling RMCAT.
 
-TEST_P(BweSimulation, GoogCcComparison1) {
+TEST_P(BweSimulation, GccComparison1) {
   RunVariableCapacity1SingleFlow(GetParam());
-  BweTest goog_cc_test(false);
-  goog_cc_test.RunVariableCapacity1SingleFlow(kSendSideEstimator);
+  BweTest gcc_test(false);
+  gcc_test.RunVariableCapacity1SingleFlow(kSendSideEstimator);
 }
 
-TEST_P(BweSimulation, GoogCcComparison2) {
+TEST_P(BweSimulation, GccComparison2) {
   const size_t kNumFlows = 2;
   RunVariableCapacity2MultipleFlows(GetParam(), kNumFlows);
-  BweTest goog_cc_test(false);
-  goog_cc_test.RunVariableCapacity2MultipleFlows(kSendSideEstimator, kNumFlows);
+  BweTest gcc_test(false);
+  gcc_test.RunVariableCapacity2MultipleFlows(kSendSideEstimator, kNumFlows);
 }
 
-TEST_P(BweSimulation, GoogCcComparison3) {
+TEST_P(BweSimulation, GccComparison3) {
   RunBidirectionalFlow(GetParam());
-  BweTest goog_cc_test(false);
-  goog_cc_test.RunBidirectionalFlow(kSendSideEstimator);
+  BweTest gcc_test(false);
+  gcc_test.RunBidirectionalFlow(kSendSideEstimator);
 }
 
-TEST_P(BweSimulation, GoogCcComparison4) {
+TEST_P(BweSimulation, GccComparison4) {
   RunSelfFairness(GetParam());
-  BweTest goog_cc_test(false);
-  goog_cc_test.RunSelfFairness(GetParam());
+  BweTest gcc_test(false);
+  gcc_test.RunSelfFairness(GetParam());
 }
 
-TEST_P(BweSimulation, GoogCcComparison5) {
+TEST_P(BweSimulation, GccComparison5) {
   RunRoundTripTimeFairness(GetParam());
-  BweTest goog_cc_test(false);
-  goog_cc_test.RunRoundTripTimeFairness(kSendSideEstimator);
+  BweTest gcc_test(false);
+  gcc_test.RunRoundTripTimeFairness(kSendSideEstimator);
 }
 
-TEST_P(BweSimulation, GoogCcComparison6) {
+TEST_P(BweSimulation, GccComparison6) {
   RunLongTcpFairness(GetParam());
-  BweTest goog_cc_test(false);
-  goog_cc_test.RunLongTcpFairness(kSendSideEstimator);
+  BweTest gcc_test(false);
+  gcc_test.RunLongTcpFairness(kSendSideEstimator);
 }
 
-TEST_P(BweSimulation, GoogCcComparison7) {
+TEST_P(BweSimulation, GccComparison7) {
   const int kNumTcpFiles = 10;
 
   std::vector<int> tcp_file_sizes_bytes =
@@ -528,24 +528,24 @@ TEST_P(BweSimulation, GoogCcComparison7) {
   RunMultipleShortTcpFairness(GetParam(), tcp_file_sizes_bytes,
                               tcp_starting_times_ms);
 
-  BweTest goog_cc_test(false);
-  goog_cc_test.RunMultipleShortTcpFairness(
-      kSendSideEstimator, tcp_file_sizes_bytes, tcp_starting_times_ms);
+  BweTest gcc_test(false);
+  gcc_test.RunMultipleShortTcpFairness(kSendSideEstimator, tcp_file_sizes_bytes,
+                                       tcp_starting_times_ms);
 }
 
-TEST_P(BweSimulation, GoogCcComparison8) {
+TEST_P(BweSimulation, GccComparison8) {
   RunPauseResumeFlows(GetParam());
-  BweTest goog_cc_test(false);
-  goog_cc_test.RunPauseResumeFlows(kSendSideEstimator);
+  BweTest gcc_test(false);
+  gcc_test.RunPauseResumeFlows(kSendSideEstimator);
 }
 
-TEST_P(BweSimulation, GoogCcComparisonChoke) {
+TEST_P(BweSimulation, GccComparisonChoke) {
   int array[] = {1000, 500, 1000};
   std::vector<int> capacities_kbps(array, array + 3);
   RunChoke(GetParam(), capacities_kbps);
 
-  BweTest goog_cc_test(false);
-  goog_cc_test.RunChoke(kSendSideEstimator, capacities_kbps);
+  BweTest gcc_test(false);
+  gcc_test.RunChoke(kSendSideEstimator, capacities_kbps);
 }
 
 }  // namespace bwe
