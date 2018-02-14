@@ -277,7 +277,6 @@ std::vector<webrtc::VideoStream> GetScreenshareLayers(
     layers[1].max_bitrate_bps = max_bitrate_bps;
   }
 
-  BoostMaxSimulcastLayer(max_bitrate_bps, &layers);
   // The bitrate priority currently implemented on a per-sender level, so we
   // just set it for the first simulcast layer.
   layers[0].bitrate_priority = bitrate_priority;
