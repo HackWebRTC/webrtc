@@ -82,6 +82,12 @@ void TransportFeedbackAdapter::OnSentPacket(uint16_t sequence_number,
   send_time_history_.OnSentPacket(sequence_number, send_time_ms);
 }
 
+rtc::Optional<PacketFeedback> TransportFeedbackAdapter::GetPacket(
+    uint16_t sequence_number) const {
+  rtc::CritScope cs(&lock_);
+  return send_time_history_.GetPacket(sequence_number);
+}
+
 void TransportFeedbackAdapter::SetNetworkIds(uint16_t local_id,
                                              uint16_t remote_id) {
   rtc::CritScope cs(&lock_);
@@ -118,7 +124,6 @@ std::vector<PacketFeedback> TransportFeedbackAdapter::GetPacketFeedbackVector(
     return packet_feedback_vector;
   }
   packet_feedback_vector.reserve(feedback.GetPacketStatusCount());
-  int64_t feedback_rtt = -1;
   {
     rtc::CritScope cs(&lock_);
     size_t failed_lookups = 0;
@@ -148,12 +153,6 @@ std::vector<PacketFeedback> TransportFeedbackAdapter::GetPacketFeedbackVector(
         ++failed_lookups;
       if (packet_feedback.local_net_id == local_net_id_ &&
           packet_feedback.remote_net_id == remote_net_id_) {
-        if (packet_feedback.send_time_ms >= 0) {
-          int64_t rtt = now_ms - packet_feedback.send_time_ms;
-          // max() is used to account for feedback being delayed by the
-          // receiver.
-          feedback_rtt = std::max(rtt, feedback_rtt);
-        }
         packet_feedback_vector.push_back(packet_feedback);
       }
 
@@ -164,14 +163,6 @@ std::vector<PacketFeedback> TransportFeedbackAdapter::GetPacketFeedbackVector(
       RTC_LOG(LS_WARNING) << "Failed to lookup send time for " << failed_lookups
                           << " packet" << (failed_lookups > 1 ? "s" : "")
                           << ". Send time history too small?";
-    }
-    if (feedback_rtt > -1) {
-      feedback_rtts_.push_back(feedback_rtt);
-      const size_t kFeedbackRttWindow = 32;
-      if (feedback_rtts_.size() > kFeedbackRttWindow)
-        feedback_rtts_.pop_front();
-      min_feedback_rtt_.emplace(
-          *std::min_element(feedback_rtts_.begin(), feedback_rtts_.end()));
     }
   }
   return packet_feedback_vector;
@@ -191,11 +182,6 @@ void TransportFeedbackAdapter::OnTransportFeedback(
 std::vector<PacketFeedback>
 TransportFeedbackAdapter::GetTransportFeedbackVector() const {
   return last_packet_feedback_vector_;
-}
-
-rtc::Optional<int64_t> TransportFeedbackAdapter::GetMinFeedbackLoopRtt() const {
-  rtc::CritScope cs(&lock_);
-  return min_feedback_rtt_;
 }
 
 size_t TransportFeedbackAdapter::GetOutstandingBytes() const {

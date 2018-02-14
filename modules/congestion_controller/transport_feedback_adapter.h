@@ -47,7 +47,7 @@ class TransportFeedbackAdapter {
   // to the CongestionController interface.
   void OnTransportFeedback(const rtcp::TransportFeedback& feedback);
   std::vector<PacketFeedback> GetTransportFeedbackVector() const;
-  rtc::Optional<int64_t> GetMinFeedbackLoopRtt() const;
+  rtc::Optional<PacketFeedback> GetPacket(uint16_t sequence_number) const;
 
   void SetTransportOverhead(int transport_overhead_bytes_per_packet);
 
@@ -67,8 +67,6 @@ class TransportFeedbackAdapter {
   std::vector<PacketFeedback> last_packet_feedback_vector_;
   uint16_t local_net_id_ RTC_GUARDED_BY(&lock_);
   uint16_t remote_net_id_ RTC_GUARDED_BY(&lock_);
-  std::deque<int64_t> feedback_rtts_ RTC_GUARDED_BY(&lock_);
-  rtc::Optional<int64_t> min_feedback_rtt_ RTC_GUARDED_BY(&lock_);
 
   rtc::CriticalSection observers_lock_;
   std::vector<PacketFeedbackObserver*> observers_

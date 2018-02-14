@@ -152,7 +152,7 @@ DelayBasedBweTest::DelayBasedBweTest()
     : clock_(100000000),
       acknowledged_bitrate_estimator_(
           rtc::MakeUnique<AcknowledgedBitrateEstimator>()),
-      bitrate_estimator_(new DelayBasedBwe(nullptr, &clock_)),
+      bitrate_estimator_(new DelayBasedBwe(nullptr)),
       stream_generator_(new test::StreamGenerator(1e6,  // Capacity.
                                                   clock_.TimeInMicroseconds())),
       arrival_time_offset_ms_(0),
@@ -187,7 +187,8 @@ void DelayBasedBweTest::IncomingFeedback(int64_t arrival_time_ms,
   acknowledged_bitrate_estimator_->IncomingPacketFeedbackVector(packets);
   DelayBasedBwe::Result result =
       bitrate_estimator_->IncomingPacketFeedbackVector(
-          packets, acknowledged_bitrate_estimator_->bitrate_bps());
+          packets, acknowledged_bitrate_estimator_->bitrate_bps(),
+          clock_.TimeInMilliseconds());
   const uint32_t kDummySsrc = 0;
   if (result.updated) {
     bitrate_observer_.OnReceiveBitrateChanged({kDummySsrc},
@@ -222,7 +223,8 @@ bool DelayBasedBweTest::GenerateAndProcessFrame(uint32_t ssrc,
   acknowledged_bitrate_estimator_->IncomingPacketFeedbackVector(packets);
   DelayBasedBwe::Result result =
       bitrate_estimator_->IncomingPacketFeedbackVector(
-          packets, acknowledged_bitrate_estimator_->bitrate_bps());
+          packets, acknowledged_bitrate_estimator_->bitrate_bps(),
+          clock_.TimeInMilliseconds());
   const uint32_t kDummySsrc = 0;
   if (result.updated) {
     bitrate_observer_.OnReceiveBitrateChanged({kDummySsrc},

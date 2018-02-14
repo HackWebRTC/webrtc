@@ -839,7 +839,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
     }
     if (alr_settings) {
       transport->send_side_cc()->EnablePeriodicAlrProbing(true);
-      transport->pacer()->SetPacingFactor(alr_settings->pacing_factor);
+      transport->send_side_cc()->SetPacingFactor(alr_settings->pacing_factor);
       configured_pacing_factor_ = alr_settings->pacing_factor;
       transport->pacer()->SetQueueTimeLimit(alr_settings->max_paced_queue_time);
     }

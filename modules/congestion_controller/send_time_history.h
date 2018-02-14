@@ -33,6 +33,9 @@ class SendTimeHistory {
   // Return false if not found.
   bool OnSentPacket(uint16_t sequence_number, int64_t send_time_ms);
 
+  // Retrieves packet info identified by |sequence_number|.
+  rtc::Optional<PacketFeedback> GetPacket(uint16_t sequence_number) const;
+
   // Look up PacketFeedback for a sent packet, based on the sequence number, and
   // populate all fields except for arrival_time. The packet parameter must
   // thus be non-null and have the sequence_number field set.

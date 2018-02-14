@@ -15,7 +15,6 @@
 #include <vector>
 
 #include "modules/include/module_common_types.h"
-#include "modules/pacing/alr_detector.h"
 #include "modules/pacing/bitrate_prober.h"
 #include "modules/pacing/interval_budget.h"
 #include "modules/utility/include/process_thread.h"
