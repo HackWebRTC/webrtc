@@ -376,7 +376,7 @@ class UnitTest(unittest.TestCase):
     files = isolate_file_contents['variables']['files']
     command = isolate_file_contents['variables']['command']
 
-    self.assertEqual(files, ['base_unittests'])
+    self.assertEqual(files, ['../../.vpython', 'base_unittests'])
     self.assertEqual(command, [
         '../../build/android/test_wrapper/logdog_wrapper.py',
         '--target', 'base_unittests',
@@ -409,7 +409,7 @@ class UnitTest(unittest.TestCase):
     files = isolate_file_contents['variables']['files']
     command = isolate_file_contents['variables']['command']
 
-    self.assertEqual(files, ['base_unittests'])
+    self.assertEqual(files, ['../../.vpython', 'base_unittests'])
     self.assertEqual(command, [
         '../../build/android/test_wrapper/logdog_wrapper.py',
         '--target', 'base_unittests',
@@ -494,6 +494,7 @@ class UnitTest(unittest.TestCase):
     command = isolate_file_contents['variables']['command']
 
     self.assertEqual(files, [
+        '../../.vpython',
         'base_unittests',
         'base_unittests_script.py',
     ])

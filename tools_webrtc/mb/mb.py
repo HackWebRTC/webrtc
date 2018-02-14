@@ -1048,7 +1048,7 @@ class MetaBuildWrapper(object):
                                 % (target, test_type), output_path=None)
 
     cmdline = []
-    extra_files = []
+    extra_files = ['../../.vpython']
 
     if test_type == 'script':
       cmdline = ['../../' + self.ToSrcRelPath(isolate_map[target]['script'])]
