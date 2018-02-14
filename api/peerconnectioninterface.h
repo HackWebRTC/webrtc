@@ -1007,8 +1007,6 @@ class PeerConnectionObserver {
       PeerConnectionInterface::SignalingState new_state) = 0;
 
   // Triggered when media is received on a new stream from remote peer.
-  // Deprecated: This callback will no longer be fired with Unified Plan
-  // semantics. Consider switching to OnAddTrack.
   virtual void OnAddStream(rtc::scoped_refptr<MediaStreamInterface> stream) {}
 
   // Triggered when a remote peer close a stream.

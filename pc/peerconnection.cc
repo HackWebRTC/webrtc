@@ -2158,6 +2158,7 @@ RTCError PeerConnection::ApplyRemoteDescription(
 
   if (IsUnifiedPlan()) {
     std::vector<TrackEvent> track_events;
+    std::vector<rtc::scoped_refptr<MediaStreamInterface>> added_streams;
     for (auto transceiver : transceivers_) {
       const ContentInfo* content =
           FindMediaSectionForTransceiver(transceiver, remote_description());
@@ -2183,6 +2184,7 @@ RTCError PeerConnection::ApplyRemoteDescription(
           stream = MediaStreamProxy::Create(rtc::Thread::Current(),
                                             MediaStream::Create(sync_label));
           remote_streams_->AddStream(stream);
+          added_streams.push_back(stream);
         }
         transceiver->internal()->receiver_internal()->SetStreams({stream});
         TrackEvent track_event;
@@ -2209,8 +2211,12 @@ RTCError PeerConnection::ApplyRemoteDescription(
             media_desc->streams()[0].first_ssrc());
       }
     }
+    // Once all processing has finished, fire off callbacks.
     for (auto event : track_events) {
       observer_->OnAddTrack(event.receiver, event.streams);
+    }
+    for (auto stream : added_streams) {
+      observer_->OnAddStream(stream);
     }
   }
 
