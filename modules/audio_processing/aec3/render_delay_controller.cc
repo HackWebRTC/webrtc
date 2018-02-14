@@ -15,10 +15,10 @@
 #include <string>
 #include <vector>
 
+#include "api/audio/echo_canceller3_config.h"
 #include "modules/audio_processing/aec3/aec3_common.h"
 #include "modules/audio_processing/aec3/echo_path_delay_estimator.h"
 #include "modules/audio_processing/aec3/render_delay_controller_metrics.h"
-#include "modules/audio_processing/include/audio_processing.h"
 #include "rtc_base/atomicops.h"
 #include "rtc_base/constructormagic.h"
 

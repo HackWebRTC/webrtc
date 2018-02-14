@@ -12,11 +12,11 @@
 #define MODULES_AUDIO_PROCESSING_AEC3_RENDER_DELAY_CONTROLLER_H_
 
 #include "api/array_view.h"
+#include "api/audio/echo_canceller3_config.h"
 #include "api/optional.h"
 #include "modules/audio_processing/aec3/delay_estimate.h"
 #include "modules/audio_processing/aec3/downsampled_render_buffer.h"
 #include "modules/audio_processing/aec3/render_delay_buffer.h"
-#include "modules/audio_processing/include/audio_processing.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 
 namespace webrtc {

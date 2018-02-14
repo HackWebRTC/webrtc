@@ -570,6 +570,7 @@ if (rtc_include_tests) {
       "..:module_api",
       "../..:webrtc_common",
       "../../:typedefs",
+      "../../api:aec3_config",
       "../../api:array_view",
       "../../api:optional",
       "../../common_audio:common_audio",

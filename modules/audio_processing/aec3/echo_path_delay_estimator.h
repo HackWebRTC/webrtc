@@ -13,13 +13,13 @@
 
 #include <vector>
 
+#include "api/audio/echo_canceller3_config.h"
 #include "api/optional.h"
 #include "modules/audio_processing/aec3/decimator.h"
 #include "modules/audio_processing/aec3/delay_estimate.h"
 #include "modules/audio_processing/aec3/downsampled_render_buffer.h"
 #include "modules/audio_processing/aec3/matched_filter.h"
 #include "modules/audio_processing/aec3/matched_filter_lag_aggregator.h"
-#include "modules/audio_processing/include/audio_processing.h"
 #include "rtc_base/constructormagic.h"
 
 namespace webrtc {

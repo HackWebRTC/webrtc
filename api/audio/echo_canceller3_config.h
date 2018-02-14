@@ -11,6 +11,8 @@
 #ifndef API_AUDIO_ECHO_CANCELLER3_CONFIG_H_
 #define API_AUDIO_ECHO_CANCELLER3_CONFIG_H_
 
+#include <stddef.h>  // size_t
+
 namespace webrtc {
 
 // Configuration struct for EchoCanceller3

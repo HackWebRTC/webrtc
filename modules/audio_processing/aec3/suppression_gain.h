@@ -14,10 +14,10 @@
 #include <array>
 #include <vector>
 
+#include "api/audio/echo_canceller3_config.h"
 #include "modules/audio_processing/aec3/aec3_common.h"
 #include "modules/audio_processing/aec3/aec_state.h"
 #include "modules/audio_processing/aec3/render_signal_analyzer.h"
-#include "modules/audio_processing/include/audio_processing.h"
 #include "rtc_base/constructormagic.h"
 
 namespace webrtc {
