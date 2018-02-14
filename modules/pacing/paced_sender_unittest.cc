@@ -599,17 +599,16 @@ TEST_P(PacedSenderTest, Pause) {
   send_bucket_->Process();
 
   int64_t expected_time_until_send = 500;
-  EXPECT_CALL(callback_, TimeToSendPadding(_, _)).Times(0);
-  while (expected_time_until_send >= 5) {
-    send_bucket_->Process();
+  EXPECT_CALL(callback_, TimeToSendPadding(1, _)).Times(1);
+  while (expected_time_until_send >= 0) {
+    // TimeUntilNextProcess must not return 0 when paused.  If it does,
+    // we risk running a busy loop, so ideally it should return a large value.
+    EXPECT_EQ(expected_time_until_send, send_bucket_->TimeUntilNextProcess());
+    if (expected_time_until_send == 0)
+      send_bucket_->Process();
     clock_.AdvanceTimeMilliseconds(5);
     expected_time_until_send -= 5;
   }
-  testing::Mock::VerifyAndClearExpectations(&callback_);
-  EXPECT_CALL(callback_, TimeToSendPadding(1, _)).Times(1);
-  clock_.AdvanceTimeMilliseconds(5);
-  send_bucket_->Process();
-  testing::Mock::VerifyAndClearExpectations(&callback_);
 
   // Expect high prio packets to come out first followed by normal
   // prio packets and low prio packets (all in capture order).
@@ -649,11 +648,6 @@ TEST_P(PacedSenderTest, Pause) {
     }
   }
   send_bucket_->Resume();
-
-  // The pacer was resumed directly after the previous process call finished. It
-  // will therefore wait 5 ms until next process.
-  EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
-  clock_.AdvanceTimeMilliseconds(5);
 
   for (size_t i = 0; i < 4; i++) {
     EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());

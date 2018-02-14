@@ -85,8 +85,7 @@ PacedSender::PacedSender(const Clock* clock,
       prober_(rtc::MakeUnique<BitrateProber>(event_log)),
       probing_send_failure_(false),
       pacing_bitrate_kbps_(0),
-      time_last_process_us_(clock->TimeInMicroseconds()),
-      last_send_time_us_(clock->TimeInMicroseconds()),
+      time_last_update_us_(clock->TimeInMicroseconds()),
       first_sent_packet_ms_(-1),
       packets_(std::move(packets)),
       packet_counter_(0),
@@ -201,8 +200,7 @@ int64_t PacedSender::QueueInMs() const {
 
 int64_t PacedSender::TimeUntilNextProcess() {
   rtc::CritScope cs(&critsect_);
-  int64_t elapsed_time_us =
-      clock_->TimeInMicroseconds() - time_last_process_us_;
+  int64_t elapsed_time_us = clock_->TimeInMicroseconds() - time_last_update_us_;
   int64_t elapsed_time_ms = (elapsed_time_us + 500) / 1000;
   // When paused we wake up every 500 ms to send a padding packet to ensure
   // we won't get stuck in the paused state due to no feedback being received.
@@ -220,23 +218,21 @@ int64_t PacedSender::TimeUntilNextProcess() {
 void PacedSender::Process() {
   int64_t now_us = clock_->TimeInMicroseconds();
   rtc::CritScope cs(&critsect_);
-  time_last_process_us_ = now_us;
-  int64_t elapsed_time_ms = (now_us - last_send_time_us_ + 500) / 1000;
+  int64_t elapsed_time_ms = std::min(
+      kMaxIntervalTimeMs, (now_us - time_last_update_us_ + 500) / 1000);
+  int target_bitrate_kbps = pacing_bitrate_kbps_;
 
-  // When paused we send a padding packet every 500 ms to ensure we won't get
-  // stuck in the paused state due to no feedback being received.
   if (paused_) {
+    PacedPacketInfo pacing_info;
+    time_last_update_us_ = now_us;
     // We can not send padding unless a normal packet has first been sent. If we
     // do, timestamps get messed up.
-    if (elapsed_time_ms >= kPausedPacketIntervalMs && packet_counter_ > 0) {
-      PacedPacketInfo pacing_info;
-      SendPadding(1, pacing_info);
-      last_send_time_us_ = clock_->TimeInMicroseconds();
-    }
+    if (packet_counter_ == 0)
+      return;
+    SendPadding(1, pacing_info);
     return;
   }
 
-  int target_bitrate_kbps = pacing_bitrate_kbps_;
   if (elapsed_time_ms > 0) {
     size_t queue_size_bytes = packets_->SizeInBytes();
     if (queue_size_bytes > 0) {
@@ -256,7 +252,7 @@ void PacedSender::Process() {
     UpdateBudgetWithElapsedTime(elapsed_time_ms);
   }
 
-  last_send_time_us_ = clock_->TimeInMicroseconds();
+  time_last_update_us_ = now_us;
 
   bool is_probing = prober_->IsProbing();
   PacedPacketInfo pacing_info;
@@ -266,8 +262,6 @@ void PacedSender::Process() {
     pacing_info = prober_->CurrentCluster();
     recommended_probe_size = prober_->RecommendedMinProbeSize();
   }
-  // The paused state is checked in the loop since SendPacket leaves the
-  // critical section allowing the paused state to be changed from other code.
   while (!packets_->Empty() && !paused_) {
     // Since we need to release the lock in order to send, we first pop the
     // element from the priority queue but keep it in storage, so that we can
@@ -275,8 +269,10 @@ void PacedSender::Process() {
     const PacketQueue::Packet& packet = packets_->BeginPop();
 
     if (SendPacket(packet, pacing_info)) {
-      bytes_sent += packet.bytes;
       // Send succeeded, remove it from the queue.
+      if (first_sent_packet_ms_ == -1)
+        first_sent_packet_ms_ = clock_->TimeInMilliseconds();
+      bytes_sent += packet.bytes;
       packets_->FinalizePop(packet);
       if (is_probing && bytes_sent > recommended_probe_size)
         break;
@@ -327,8 +323,6 @@ bool PacedSender::SendPacket(const PacketQueue::Packet& packet,
   critsect_.Enter();
 
   if (success) {
-    if (first_sent_packet_ms_ == -1)
-      first_sent_packet_ms_ = clock_->TimeInMilliseconds();
     if (packet.priority != kHighPriority || account_for_audio_) {
       // Update media bytes sent.
       // TODO(eladalon): TimeToSendPacket() can also return |true| in some
@@ -357,7 +351,6 @@ size_t PacedSender::SendPadding(size_t padding_needed,
 }
 
 void PacedSender::UpdateBudgetWithElapsedTime(int64_t delta_time_ms) {
-  delta_time_ms = std::min(kMaxIntervalTimeMs, delta_time_ms);
   media_budget_->IncreaseBudget(delta_time_ms);
   padding_budget_->IncreaseBudget(delta_time_ms);
 }
