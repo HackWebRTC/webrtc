@@ -2279,7 +2279,7 @@ void WebRtcVideoChannel::WebRtcVideoReceiveStream::SetLocalSsrc(
   // should not be able to create a sender with the same SSRC as a receiver, but
   // right now this can't be done due to unittests depending on receiving what
   // they are sending from the same MediaChannel.
-  if (local_ssrc == config_.rtp.remote_ssrc) {
+  if (local_ssrc == config_.rtp.local_ssrc) {
     RTC_LOG(LS_INFO) << "Ignoring call to SetLocalSsrc because parameters are "
                         "unchanged; local_ssrc="
                      << local_ssrc;
