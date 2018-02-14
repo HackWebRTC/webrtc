@@ -8,14 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef CALL_CALLFACTORYINTERFACE_H_
-#define CALL_CALLFACTORYINTERFACE_H_
+#ifndef API_CALL_CALLFACTORYINTERFACE_H_
+#define API_CALL_CALLFACTORYINTERFACE_H_
 
 #include <memory>
 
-#include "call/call.h"
-
 namespace webrtc {
+
+// These classes are not part of the API, and are treated as opaque pointers.
+class Call;
+struct CallConfig;
 
 // This interface exists to allow webrtc to be optionally built without media
 // support (i.e., if only being used for data channels). PeerConnectionFactory
@@ -24,11 +26,11 @@ class CallFactoryInterface {
  public:
   virtual ~CallFactoryInterface() {}
 
-  virtual Call* CreateCall(const Call::Config& config) = 0;
+  virtual Call* CreateCall(const CallConfig& config) = 0;
 };
 
 std::unique_ptr<CallFactoryInterface> CreateCallFactory();
 
 }  // namespace webrtc
 
-#endif  // CALL_CALLFACTORYINTERFACE_H_
+#endif  // API_CALL_CALLFACTORYINTERFACE_H_

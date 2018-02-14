@@ -12,6 +12,8 @@
 
 #include <memory>
 
+#include "call/call.h"
+
 namespace webrtc {
 
 Call* CallFactory::CreateCall(const Call::Config& config) {

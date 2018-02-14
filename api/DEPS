@@ -4,6 +4,7 @@ include_rules = [
   "+media",
   "+p2p",
   "+pc",
+  "+logging/rtc_event_log/rtc_event_log_factory_interface.h",
 ]
 
 specific_include_rules = {

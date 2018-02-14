@@ -80,6 +80,7 @@
 #include "api/audio_codecs/audio_decoder_factory.h"
 #include "api/audio_codecs/audio_encoder_factory.h"
 #include "api/audio_options.h"
+#include "api/call/callfactoryinterface.h"
 #include "api/datachannelinterface.h"
 #include "api/dtmfsenderinterface.h"
 #include "api/jsep.h"
@@ -94,12 +95,19 @@
 #include "api/statstypes.h"
 #include "api/turncustomizer.h"
 #include "api/umametrics.h"
-#include "call/callfactoryinterface.h"
 #include "logging/rtc_event_log/rtc_event_log_factory_interface.h"
 #include "media/base/mediaconfig.h"
-#include "media/base/videocapturer.h"
-#include "p2p/base/portallocator.h"
+// TODO(bugs.webrtc.org/6353): cricket::VideoCapturer is deprecated and should
+// be deleted from the PeerConnection api.
+#include "media/base/videocapturer.h"  // nogncheck
+// TODO(bugs.webrtc.org/7447): We plan to provide a way to let applications
+// inject a PacketSocketFactory and/or NetworkManager, and not expose
+// PortAllocator in the PeerConnection api.
+#include "p2p/base/portallocator.h"  // nogncheck
+// TODO(nisse): The interface for bitrate allocation strategy belongs in api/.
+#include "rtc_base/bitrateallocationstrategy.h"
 #include "rtc_base/network.h"
+#include "rtc_base/platform_file.h"
 #include "rtc_base/rtccertificate.h"
 #include "rtc_base/rtccertificategenerator.h"
 #include "rtc_base/socketaddress.h"
@@ -119,7 +127,7 @@ class WebRtcVideoEncoderFactory;
 namespace webrtc {
 class AudioDeviceModule;
 class AudioMixer;
-class CallFactoryInterface;
+class AudioProcessing;
 class MediaConstraintsInterface;
 class VideoDecoderFactory;
 class VideoEncoderFactory;

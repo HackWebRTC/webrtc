@@ -340,7 +340,6 @@ if (is_ios || is_mac) {
         ":videotoolbox_objc",
         ":videotracksource_objc",
         "../api:libjingle_peerconnection_api",
-        "../api:peerconnection_and_implicit_call_api",
         "../api:video_frame_api",
         "../api/audio_codecs:builtin_audio_decoder_factory",
         "../api/audio_codecs:builtin_audio_encoder_factory",
@@ -438,7 +437,6 @@ if (is_ios || is_mac) {
         ":native_video",
         ":peerconnectionfactory_base_objc",
         "../api:libjingle_peerconnection_api",
-        "../api:peerconnection_and_implicit_call_api",
         "../rtc_base:rtc_base",
       ]
     }
@@ -569,7 +567,6 @@ if (is_ios || is_mac) {
         ":native_video",
         ":videotracksource_objc",
         "../api:libjingle_peerconnection_api",
-        "../api:peerconnection_and_implicit_call_api",
         "../api:video_frame_api",
         "../api/video_codecs:video_codecs_api",
         "../common_video",
