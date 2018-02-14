@@ -221,6 +221,7 @@ rtc_static_library("audio_processing") {
     "..:module_api",
     "../..:webrtc_common",
     "../../:typedefs",
+    "../../api:aec3_config",
     "../../api:array_view",
     "../../api:optional",
     "../../audio/utility:audio_frame_operations",
