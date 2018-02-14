@@ -181,8 +181,7 @@ enum BandwidthEstimatorType {
   kBbrEstimator
 };
 
-const char* const bwe_names[] = {"Null",   "NADA", "REMB",
-                                 "GoogCc", "TCP",  "BBR"};
+const char* const bwe_names[] = {"Null", "NADA", "REMB", "GCC", "TCP", "BBR"};
 
 int64_t GetAbsSendTimeInMs(uint32_t abs_send_time);
 

@@ -42,17 +42,9 @@ class SendSideBandwidthEstimation {
 
   // Call when we receive a RTCP message with a ReceiveBlock.
   void UpdateReceiverBlock(uint8_t fraction_loss,
-                           int64_t rtt_ms,
+                           int64_t rtt,
                            int number_of_packets,
                            int64_t now_ms);
-
-  // Call when we receive a RTCP message with a ReceiveBlock.
-  void UpdatePacketsLost(int packets_lost,
-                         int number_of_packets,
-                         int64_t now_ms);
-
-  // Call when we receive a RTCP message with a ReceiveBlock.
-  void UpdateRtt(int64_t rtt, int64_t now_ms);
 
   void SetBitrates(int send_bitrate,
                    int min_bitrate,
@@ -66,7 +58,7 @@ class SendSideBandwidthEstimation {
 
   bool IsInStartPhase(int64_t now_ms) const;
 
-  void UpdateUmaStatsPacketsLost(int64_t now_ms, int packets_lost);
+  void UpdateUmaStats(int64_t now_ms, int64_t rtt, int lost_packets);
 
   // Updates history of min bitrates.
   // After this method returns min_bitrate_history_.front().second contains the
@@ -80,7 +72,7 @@ class SendSideBandwidthEstimation {
   std::deque<std::pair<int64_t, uint32_t> > min_bitrate_history_;
 
   // incoming filters
-  int lost_packets_since_last_loss_update_;
+  int lost_packets_since_last_loss_update_Q8_;
   int expected_packets_since_last_loss_update_;
 
   uint32_t current_bitrate_bps_;
@@ -103,7 +95,6 @@ class SendSideBandwidthEstimation {
   int initially_lost_packets_;
   int bitrate_at_2_seconds_kbps_;
   UmaState uma_update_state_;
-  UmaState uma_rtt_state_;
   std::vector<bool> rampup_uma_stats_updated_;
   RtcEventLog* event_log_;
   int64_t last_rtc_event_log_ms_;

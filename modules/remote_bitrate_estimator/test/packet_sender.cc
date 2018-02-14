@@ -24,9 +24,6 @@
 namespace webrtc {
 namespace testing {
 namespace bwe {
-namespace {
-const float kPaceMultiplier = 2.5f;
-}
 
 void PacketSender::Pause() {
   running_ = false;
@@ -167,7 +164,7 @@ PacedVideoSender::PacedVideoSender(PacketProcessorListener* listener,
               ? static_cast<Pacer*>(new BbrPacedSender(&clock_, this, nullptr))
               : static_cast<Pacer*>(new PacedSender(&clock_, this, nullptr))) {
   modules_.push_back(pacer_.get());
-  pacer_->SetPacingRates(source->bits_per_second() * kPaceMultiplier, 0);
+  pacer_->SetEstimatedBitrate(source->bits_per_second());
 }
 
 PacedVideoSender::~PacedVideoSender() {
@@ -315,7 +312,7 @@ void PacedVideoSender::OnNetworkChanged(uint32_t target_bitrate_bps,
                                         uint8_t fraction_lost,
                                         int64_t rtt) {
   VideoSender::OnNetworkChanged(target_bitrate_bps, fraction_lost, rtt);
-  pacer_->SetPacingRates(target_bitrate_bps * kPaceMultiplier, 0);
+  pacer_->SetEstimatedBitrate(target_bitrate_bps);
 }
 
 void PacedVideoSender::OnNetworkChanged(uint32_t bitrate_for_encoder_bps,

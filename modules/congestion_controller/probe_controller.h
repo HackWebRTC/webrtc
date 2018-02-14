@@ -11,12 +11,11 @@
 #ifndef MODULES_CONGESTION_CONTROLLER_PROBE_CONTROLLER_H_
 #define MODULES_CONGESTION_CONTROLLER_PROBE_CONTROLLER_H_
 
-#include <stdint.h>
-
 #include <initializer_list>
 
-#include "api/optional.h"
-#include "modules/congestion_controller/network_control/include/network_control.h"
+#include "common_types.h"  // NOLINT(build/include)
+#include "modules/pacing/paced_sender.h"
+#include "rtc_base/criticalsection.h"
 
 namespace webrtc {
 
@@ -27,30 +26,27 @@ class Clock;
 // bitrate is adjusted by an application.
 class ProbeController {
  public:
-  explicit ProbeController(NetworkControllerObserver* observer);
-  ~ProbeController();
+  ProbeController(PacedSender* pacer, const Clock* clock);
 
   void SetBitrates(int64_t min_bitrate_bps,
                    int64_t start_bitrate_bps,
-                   int64_t max_bitrate_bps,
-                   int64_t at_time_ms);
+                   int64_t max_bitrate_bps);
 
-  void OnNetworkAvailability(NetworkAvailability msg);
+  void OnNetworkStateChanged(NetworkState state);
 
-  void SetEstimatedBitrate(int64_t bitrate_bps, int64_t at_time_ms);
+  void SetEstimatedBitrate(int64_t bitrate_bps);
 
   void EnablePeriodicAlrProbing(bool enable);
 
-  void SetAlrStartTimeMs(rtc::Optional<int64_t> alr_start_time);
   void SetAlrEndedTimeMs(int64_t alr_end_time);
 
-  void RequestProbe(int64_t at_time_ms);
+  void RequestProbe();
 
   // Resets the ProbeController to a state equivalent to as if it was just
   // created EXCEPT for |enable_periodic_alr_probing_|.
-  void Reset(int64_t at_time_ms);
+  void Reset();
 
-  void Process(int64_t at_time_ms);
+  void Process();
 
  private:
   enum class State {
@@ -62,32 +58,33 @@ class ProbeController {
     kProbingComplete,
   };
 
-  void InitiateExponentialProbing(int64_t at_time_ms);
+  void InitiateExponentialProbing() RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
   void InitiateProbing(int64_t now_ms,
                        std::initializer_list<int64_t> bitrates_to_probe,
-                       bool probe_further);
+                       bool probe_further)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
-  NetworkControllerObserver* const observer_;
+  rtc::CriticalSection critsect_;
+  PacedSender* const pacer_;
+  const Clock* const clock_;
+  NetworkState network_state_ RTC_GUARDED_BY(critsect_);
+  State state_ RTC_GUARDED_BY(critsect_);
+  int64_t min_bitrate_to_probe_further_bps_ RTC_GUARDED_BY(critsect_);
+  int64_t time_last_probing_initiated_ms_ RTC_GUARDED_BY(critsect_);
+  int64_t estimated_bitrate_bps_ RTC_GUARDED_BY(critsect_);
+  int64_t start_bitrate_bps_ RTC_GUARDED_BY(critsect_);
+  int64_t max_bitrate_bps_ RTC_GUARDED_BY(critsect_);
+  int64_t last_bwe_drop_probing_time_ms_ RTC_GUARDED_BY(critsect_);
+  rtc::Optional<int64_t> alr_end_time_ms_ RTC_GUARDED_BY(critsect_);
+  bool enable_periodic_alr_probing_ RTC_GUARDED_BY(critsect_);
+  int64_t time_of_last_large_drop_ms_ RTC_GUARDED_BY(critsect_);
+  int64_t bitrate_before_last_large_drop_bps_ RTC_GUARDED_BY(critsect_);
 
-  bool network_available_;
-  State state_;
-  int64_t min_bitrate_to_probe_further_bps_;
-  int64_t time_last_probing_initiated_ms_;
-  int64_t estimated_bitrate_bps_;
-  int64_t start_bitrate_bps_;
-  int64_t max_bitrate_bps_;
-  int64_t last_bwe_drop_probing_time_ms_;
-  rtc::Optional<int64_t> alr_start_time_ms_;
-  rtc::Optional<int64_t> alr_end_time_ms_;
-  bool enable_periodic_alr_probing_;
-  int64_t time_of_last_large_drop_ms_;
-  int64_t bitrate_before_last_large_drop_bps_;
-
-  bool in_rapid_recovery_experiment_;
+  bool in_rapid_recovery_experiment_ RTC_GUARDED_BY(critsect_);
   // For WebRTC.BWE.MidCallProbing.* metric.
-  bool mid_call_probing_waiting_for_result_;
-  int64_t mid_call_probing_bitrate_bps_;
-  int64_t mid_call_probing_succcess_threshold_;
+  bool mid_call_probing_waiting_for_result_ RTC_GUARDED_BY(&critsect_);
+  int64_t mid_call_probing_bitrate_bps_ RTC_GUARDED_BY(&critsect_);
+  int64_t mid_call_probing_succcess_threshold_ RTC_GUARDED_BY(&critsect_);
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(ProbeController);
 };
