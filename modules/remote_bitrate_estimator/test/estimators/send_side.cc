@@ -12,7 +12,7 @@
 
 #include <algorithm>
 
-#include "modules/congestion_controller/goog_cc/delay_based_bwe.h"
+#include "modules/congestion_controller/delay_based_bwe.h"
 #include "modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/ptr_util.h"

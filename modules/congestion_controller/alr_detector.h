@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_CONGESTION_CONTROLLER_GOOG_CC_ALR_DETECTOR_H_
-#define MODULES_CONGESTION_CONTROLLER_GOOG_CC_ALR_DETECTOR_H_
+#ifndef MODULES_CONGESTION_CONTROLLER_ALR_DETECTOR_H_
+#define MODULES_CONGESTION_CONTROLLER_ALR_DETECTOR_H_
 
 #include "api/optional.h"
 #include "common_types.h"  // NOLINT(build/include)
@@ -71,4 +71,4 @@ class AlrDetector {
 
 }  // namespace webrtc
 
-#endif  // MODULES_CONGESTION_CONTROLLER_GOOG_CC_ALR_DETECTOR_H_
+#endif  // MODULES_CONGESTION_CONTROLLER_ALR_DETECTOR_H_

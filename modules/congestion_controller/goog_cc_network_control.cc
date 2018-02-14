@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/congestion_controller/goog_cc/goog_cc_network_control.h"
+#include "modules/congestion_controller/goog_cc_network_control.h"
 
 #include <algorithm>
 #include <functional>
@@ -18,10 +18,10 @@
 #include <utility>
 #include <vector>
 
-#include "modules/congestion_controller/goog_cc/acknowledged_bitrate_estimator.h"
-#include "modules/congestion_controller/goog_cc/alr_detector.h"
-#include "modules/congestion_controller/goog_cc/include/goog_cc_factory.h"
-#include "modules/congestion_controller/goog_cc/probe_controller.h"
+#include "modules/congestion_controller/acknowledged_bitrate_estimator.h"
+#include "modules/congestion_controller/alr_detector.h"
+#include "modules/congestion_controller/include/goog_cc_factory.h"
+#include "modules/congestion_controller/probe_controller.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 #include "rtc_base/checks.h"

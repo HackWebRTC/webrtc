@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_CONGESTION_CONTROLLER_GOOG_CC_ACKNOWLEDGED_BITRATE_ESTIMATOR_H_
-#define MODULES_CONGESTION_CONTROLLER_GOOG_CC_ACKNOWLEDGED_BITRATE_ESTIMATOR_H_
+#ifndef MODULES_CONGESTION_CONTROLLER_ACKNOWLEDGED_BITRATE_ESTIMATOR_H_
+#define MODULES_CONGESTION_CONTROLLER_ACKNOWLEDGED_BITRATE_ESTIMATOR_H_
 
 #include <memory>
 #include <vector>
 
 #include "api/optional.h"
-#include "modules/congestion_controller/goog_cc/bitrate_estimator.h"
+#include "modules/congestion_controller/bitrate_estimator.h"
 
 namespace webrtc {
 
@@ -42,4 +42,4 @@ class AcknowledgedBitrateEstimator {
 
 }  // namespace webrtc
 
-#endif  // MODULES_CONGESTION_CONTROLLER_GOOG_CC_ACKNOWLEDGED_BITRATE_ESTIMATOR_H_
+#endif  // MODULES_CONGESTION_CONTROLLER_ACKNOWLEDGED_BITRATE_ESTIMATOR_H_

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/congestion_controller/goog_cc/delay_based_bwe.h"
-#include "modules/congestion_controller/goog_cc/delay_based_bwe_unittest_helper.h"
+#include "modules/congestion_controller/delay_based_bwe.h"
+#include "modules/congestion_controller/delay_based_bwe_unittest_helper.h"
 #include "modules/pacing/paced_sender.h"
 #include "rtc_base/constructormagic.h"
 #include "system_wrappers/include/clock.h"
