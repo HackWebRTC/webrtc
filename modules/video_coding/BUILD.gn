@@ -151,7 +151,6 @@ rtc_source_set("video_codec_interface") {
 rtc_source_set("mock_headers") {
   testonly = true
   sources = [
-    "codecs/interface/mock/mock_video_codec_interface.h",
     "include/mock/mock_video_codec_interface.h",
   ]
   deps = [
@@ -175,8 +174,6 @@ rtc_source_set("codec_globals_headers") {
 rtc_source_set("video_coding_utility") {
   visibility = [ "*" ]
   sources = [
-    "codecs/interface/video_codec_interface.h",
-    "codecs/interface/video_error_codes.h",
     "utility/default_video_bitrate_allocator.cc",
     "utility/default_video_bitrate_allocator.h",
     "utility/frame_dropper.cc",
