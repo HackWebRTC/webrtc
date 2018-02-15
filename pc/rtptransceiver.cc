@@ -61,12 +61,14 @@ void RtpTransceiver::SetChannel(cricket::BaseChannel* channel) {
   for (auto sender : senders_) {
     if (media_type() == cricket::MEDIA_TYPE_AUDIO) {
       auto* voice_channel = static_cast<cricket::VoiceChannel*>(channel);
-      sender->internal()->SetVoiceMediaChannel(
-          voice_channel ? voice_channel->media_channel() : nullptr);
+      static_cast<AudioRtpSender*>(sender->internal())
+          ->SetMediaChannel(voice_channel ? voice_channel->media_channel()
+                                          : nullptr);
     } else {
       auto* video_channel = static_cast<cricket::VideoChannel*>(channel);
-      sender->internal()->SetVideoMediaChannel(
-          video_channel ? video_channel->media_channel() : nullptr);
+      static_cast<VideoRtpSender*>(sender->internal())
+          ->SetMediaChannel(video_channel ? video_channel->media_channel()
+                                          : nullptr);
     }
   }
 
@@ -76,12 +78,14 @@ void RtpTransceiver::SetChannel(cricket::BaseChannel* channel) {
     }
     if (media_type() == cricket::MEDIA_TYPE_AUDIO) {
       auto* voice_channel = static_cast<cricket::VoiceChannel*>(channel);
-      receiver->internal()->SetVoiceMediaChannel(
-          voice_channel ? voice_channel->media_channel() : nullptr);
+      static_cast<AudioRtpReceiver*>(receiver->internal())
+          ->SetMediaChannel(voice_channel ? voice_channel->media_channel()
+                                          : nullptr);
     } else {
       auto* video_channel = static_cast<cricket::VideoChannel*>(channel);
-      receiver->internal()->SetVideoMediaChannel(
-          video_channel ? video_channel->media_channel() : nullptr);
+      static_cast<VideoRtpReceiver*>(receiver->internal())
+          ->SetMediaChannel(video_channel ? video_channel->media_channel()
+                                          : nullptr);
     }
   }
 }

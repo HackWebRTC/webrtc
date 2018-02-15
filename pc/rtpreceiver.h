@@ -34,16 +34,6 @@ class RtpReceiverInternal : public RtpReceiverInterface {
  public:
   virtual void Stop() = 0;
 
-  // Sets the underlying MediaEngine channel associated with this RtpSender.
-  // SetVoiceMediaChannel should be used for audio RtpSenders and
-  // SetVideoMediaChannel should be used for video RtpSenders. Must call the
-  // appropriate SetXxxMediaChannel(nullptr) before the media channel is
-  // destroyed.
-  virtual void SetVoiceMediaChannel(
-      cricket::VoiceMediaChannel* voice_media_channel) = 0;
-  virtual void SetVideoMediaChannel(
-      cricket::VideoMediaChannel* video_media_channel) = 0;
-
   // Configures the RtpReceiver with the underlying media channel, with the
   // given SSRC as the stream identifier. If |ssrc| is 0, the receiver will
   // receive packets on unsignaled SSRCs.
@@ -62,11 +52,6 @@ class RtpReceiverInternal : public RtpReceiverInterface {
   // any new streams.
   virtual void SetStreams(
       const std::vector<rtc::scoped_refptr<MediaStreamInterface>>& streams) = 0;
-
-  // Returns an ID that changes if the attached track changes, but
-  // otherwise remains constant. Used to generate IDs for stats.
-  // The special value zero means that no track is attached.
-  virtual int AttachmentId() const = 0;
 };
 
 class AudioRtpReceiver : public ObserverInterface,
@@ -117,14 +102,9 @@ class AudioRtpReceiver : public ObserverInterface,
 
   void SetObserver(RtpReceiverObserverInterface* observer) override;
 
-  void SetVoiceMediaChannel(
-      cricket::VoiceMediaChannel* voice_media_channel) override {
-    media_channel_ = voice_media_channel;
-  }
-  void SetVideoMediaChannel(
-      cricket::VideoMediaChannel* video_media_channel) override {
-    RTC_NOTREACHED();
-  }
+  // Does not take ownership.
+  // Should call SetMediaChannel(nullptr) before |media_channel| is destroyed.
+  void SetMediaChannel(cricket::VoiceMediaChannel* media_channel);
 
   std::vector<RtpSource> GetSources() const override;
   int AttachmentId() const override { return attachment_id_; }
@@ -191,16 +171,9 @@ class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInternal> {
 
   void SetObserver(RtpReceiverObserverInterface* observer) override;
 
-  void SetVoiceMediaChannel(
-      cricket::VoiceMediaChannel* voice_media_channel) override {
-    RTC_NOTREACHED();
-  }
-  void SetVideoMediaChannel(
-      cricket::VideoMediaChannel* video_media_channel) override {
-    media_channel_ = video_media_channel;
-  }
-
-  int AttachmentId() const override { return attachment_id_; }
+  // Does not take ownership.
+  // Should call SetMediaChannel(nullptr) before |media_channel| is destroyed.
+  void SetMediaChannel(cricket::VideoMediaChannel* media_channel);
 
  private:
   bool SetSink(rtc::VideoSinkInterface<VideoFrame>* sink);
