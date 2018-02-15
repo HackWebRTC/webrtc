@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <string.h>
+
 #include "api/audio/audio_frame.h"
 
 #include "rtc_base/checks.h"
