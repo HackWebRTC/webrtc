@@ -217,6 +217,7 @@ rtc_source_set("rtc_base_approved_generic") {
     "platform_file.h",
     "platform_thread.cc",
     "platform_thread.h",
+    "platform_thread_types.cc",
     "platform_thread_types.h",
     "ptr_util.h",
     "race_checker.cc",
