@@ -49,7 +49,7 @@ class TransportFeedbackAdapter {
   std::vector<PacketFeedback> GetTransportFeedbackVector() const;
   rtc::Optional<int64_t> GetMinFeedbackLoopRtt() const;
 
-  void SetTransportOverhead(int transport_overhead_bytes_per_packet);
+  void SetTransportOverhead(size_t transport_overhead_bytes_per_packet);
 
   void SetNetworkIds(uint16_t local_id, uint16_t remote_id);
 

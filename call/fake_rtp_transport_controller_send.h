@@ -33,10 +33,6 @@ class FakeRtpTransportControllerSend
 
   PacketRouter* packet_router() override { return packet_router_; }
 
-  SendSideCongestionController* send_side_cc() override {
-    return send_side_cc_;
-  }
-
   TransportFeedbackObserver* transport_feedback_observer() override {
     return send_side_cc_;
   }
@@ -54,6 +50,65 @@ class FakeRtpTransportControllerSend
 
   void set_keepalive_config(const RtpKeepAliveConfig& keepalive_config) {
     keepalive_ = keepalive_config;
+  }
+
+  Module* GetModule() override { return send_side_cc_; }
+  CallStatsObserver* GetCallStatsObserver() override { return send_side_cc_; }
+  void RegisterPacketFeedbackObserver(
+      PacketFeedbackObserver* observer) override {
+    send_side_cc_->RegisterPacketFeedbackObserver(observer);
+  }
+  void DeRegisterPacketFeedbackObserver(
+      PacketFeedbackObserver* observer) override {
+    send_side_cc_->DeRegisterPacketFeedbackObserver(observer);
+  }
+  void RegisterNetworkObserver(NetworkChangedObserver* observer) override {
+    send_side_cc_->RegisterNetworkObserver(observer);
+  }
+  void DeRegisterNetworkObserver(NetworkChangedObserver* observer) override {
+    send_side_cc_->RegisterNetworkObserver(observer);
+  }
+  void SetBweBitrates(int min_bitrate_bps,
+                      int start_bitrate_bps,
+                      int max_bitrate_bps) override {
+    send_side_cc_->SetBweBitrates(min_bitrate_bps, start_bitrate_bps,
+                                  max_bitrate_bps);
+  }
+  void OnNetworkRouteChanged(const rtc::NetworkRoute& network_route,
+                             int start_bitrate_bps,
+                             int min_bitrate_bps,
+                             int max_bitrate_bps) override {
+    send_side_cc_->OnNetworkRouteChanged(network_route, start_bitrate_bps,
+                                         min_bitrate_bps, max_bitrate_bps);
+  }
+  void OnNetworkAvailability(bool network_available) override {
+    send_side_cc_->SignalNetworkState(network_available ? kNetworkUp
+                                                        : kNetworkDown);
+  }
+  void SetTransportOverhead(
+      size_t transport_overhead_bytes_per_packet) override {
+    send_side_cc_->SetTransportOverhead(transport_overhead_bytes_per_packet);
+  }
+  RtcpBandwidthObserver* GetBandwidthObserver() override {
+    return send_side_cc_->GetBandwidthObserver();
+  }
+  bool AvailableBandwidth(uint32_t* bandwidth) const override {
+    return send_side_cc_->AvailableBandwidth(bandwidth);
+  }
+  int64_t GetPacerQueuingDelayMs() const override {
+    return send_side_cc_->GetPacerQueuingDelayMs();
+  }
+  int64_t GetFirstPacketTimeMs() const override {
+    return send_side_cc_->GetFirstPacketTimeMs();
+  }
+  RateLimiter* GetRetransmissionRateLimiter() override {
+    return send_side_cc_->GetRetransmissionRateLimiter();
+  }
+  void EnablePeriodicAlrProbing(bool enable) override {
+    send_side_cc_->EnablePeriodicAlrProbing(enable);
+  }
+  void OnSentPacket(const rtc::SentPacket& sent_packet) override {
+    send_side_cc_->OnSentPacket(sent_packet);
   }
 
  private:

@@ -35,7 +35,6 @@ class RtpTransportControllerSend : public RtpTransportControllerSendInterface {
   // In addition the PacedSender should be driven by this class, either
   // by owning the process thread, or later by using a task queue.
   PacedSender* pacer() override;
-  SendSideCongestionController* send_side_cc() override;
   TransportFeedbackObserver* transport_feedback_observer() override;
   RtpPacketSender* packet_sender() override;
   const RtpKeepAliveConfig& keepalive_config() const override;
@@ -44,6 +43,31 @@ class RtpTransportControllerSend : public RtpTransportControllerSendInterface {
                                      int max_padding_bitrate_bps) override;
 
   void SetKeepAliveConfig(const RtpKeepAliveConfig& config);
+  Module* GetModule() override;
+  CallStatsObserver* GetCallStatsObserver() override;
+  void RegisterPacketFeedbackObserver(
+      PacketFeedbackObserver* observer) override;
+  void DeRegisterPacketFeedbackObserver(
+      PacketFeedbackObserver* observer) override;
+  void RegisterNetworkObserver(NetworkChangedObserver* observer) override;
+  void DeRegisterNetworkObserver(NetworkChangedObserver* observer) override;
+  void SetBweBitrates(int min_bitrate_bps,
+                      int start_bitrate_bps,
+                      int max_bitrate_bps) override;
+  void OnNetworkRouteChanged(const rtc::NetworkRoute& network_route,
+                             int start_bitrate_bps,
+                             int min_bitrate_bps,
+                             int max_bitrate_bps) override;
+  void OnNetworkAvailability(bool network_available) override;
+  void SetTransportOverhead(
+      size_t transport_overhead_bytes_per_packet) override;
+  RtcpBandwidthObserver* GetBandwidthObserver() override;
+  bool AvailableBandwidth(uint32_t* bandwidth) const override;
+  int64_t GetPacerQueuingDelayMs() const override;
+  int64_t GetFirstPacketTimeMs() const override;
+  RateLimiter* GetRetransmissionRateLimiter() override;
+  void EnablePeriodicAlrProbing(bool enable) override;
+  void OnSentPacket(const rtc::SentPacket& sent_packet) override;
 
  private:
   PacketRouter packet_router_;

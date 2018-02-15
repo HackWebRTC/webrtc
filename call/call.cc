@@ -35,6 +35,7 @@
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "logging/rtc_event_log/rtc_stream_config.h"
 #include "modules/bitrate_controller/include/bitrate_controller.h"
+#include "modules/congestion_controller/include/network_changed_observer.h"
 #include "modules/congestion_controller/include/receive_side_congestion_controller.h"
 #include "modules/rtp_rtcp/include/flexfec_receiver.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
@@ -163,7 +164,7 @@ namespace internal {
 class Call : public webrtc::Call,
              public PacketReceiver,
              public RecoveredPacketReceiver,
-             public SendSideCongestionController::Observer,
+             public NetworkChangedObserver,
              public BitrateAllocator::LimitObserver {
  public:
   Call(const Call::Config& config,
@@ -451,15 +452,14 @@ Call::Call(const Call::Config& config,
     RTC_DCHECK_GE(config.bitrate_config.max_bitrate_bps,
                   config.bitrate_config.start_bitrate_bps);
   }
-  transport_send->send_side_cc()->RegisterNetworkObserver(this);
+  transport_send->RegisterNetworkObserver(this);
   transport_send_ = std::move(transport_send);
-  transport_send_->send_side_cc()->SignalNetworkState(kNetworkDown);
-  transport_send_->send_side_cc()->SetBweBitrates(
-      config_.bitrate_config.min_bitrate_bps,
-      config_.bitrate_config.start_bitrate_bps,
-      config_.bitrate_config.max_bitrate_bps);
+  transport_send_->OnNetworkAvailability(false);
+  transport_send_->SetBweBitrates(config_.bitrate_config.min_bitrate_bps,
+                                  config_.bitrate_config.start_bitrate_bps,
+                                  config_.bitrate_config.max_bitrate_bps);
   call_stats_->RegisterStatsObserver(&receive_side_cc_);
-  call_stats_->RegisterStatsObserver(transport_send_->send_side_cc());
+  call_stats_->RegisterStatsObserver(transport_send_->GetCallStatsObserver());
 
   // We have to attach the pacer to the pacer thread before starting the
   // module process thread to avoid a race accessing the process thread
@@ -471,7 +471,7 @@ Call::Call(const Call::Config& config,
 
   module_process_thread_->RegisterModule(call_stats_.get(), RTC_FROM_HERE);
   module_process_thread_->RegisterModule(&receive_side_cc_, RTC_FROM_HERE);
-  module_process_thread_->RegisterModule(transport_send_->send_side_cc(),
+  module_process_thread_->RegisterModule(transport_send_->GetModule(),
                                          RTC_FROM_HERE);
   module_process_thread_->Start();
 }
@@ -489,7 +489,7 @@ Call::~Call() {
   // the pacer thread being stopped to avoid a race when accessing the
   // pacer thread object on the module process thread at the same time as
   // the pacer thread is stopped.
-  module_process_thread_->DeRegisterModule(transport_send_->send_side_cc());
+  module_process_thread_->DeRegisterModule(transport_send_->GetModule());
   pacer_thread_->Stop();
   pacer_thread_->DeRegisterModule(transport_send_->pacer());
   pacer_thread_->DeRegisterModule(
@@ -498,10 +498,9 @@ Call::~Call() {
   module_process_thread_->DeRegisterModule(call_stats_.get());
   module_process_thread_->Stop();
   call_stats_->DeregisterStatsObserver(&receive_side_cc_);
-  call_stats_->DeregisterStatsObserver(transport_send_->send_side_cc());
+  call_stats_->DeregisterStatsObserver(transport_send_->GetCallStatsObserver());
 
-  int64_t first_sent_packet_ms =
-      transport_send_->send_side_cc()->GetFirstPacketTimeMs();
+  int64_t first_sent_packet_ms = transport_send_->GetFirstPacketTimeMs();
   // Only update histograms after process threads have been shut down, so that
   // they won't try to concurrently update stats.
   {
@@ -930,15 +929,14 @@ Call::Stats Call::GetStats() const {
   Stats stats;
   // Fetch available send/receive bitrates.
   uint32_t send_bandwidth = 0;
-  transport_send_->send_side_cc()->AvailableBandwidth(&send_bandwidth);
+  transport_send_->AvailableBandwidth(&send_bandwidth);
   std::vector<unsigned int> ssrcs;
   uint32_t recv_bandwidth = 0;
   receive_side_cc_.GetRemoteBitrateEstimator(false)->LatestEstimate(
       &ssrcs, &recv_bandwidth);
   stats.send_bandwidth_bps = send_bandwidth;
   stats.recv_bandwidth_bps = recv_bandwidth;
-  stats.pacer_delay_ms =
-      transport_send_->send_side_cc()->GetPacerQueuingDelayMs();
+  stats.pacer_delay_ms = transport_send_->GetPacerQueuingDelayMs();
   stats.rtt_ms = call_stats_->rtcp_rtt_stats()->LastProcessedRtt();
   {
     rtc::CritScope cs(&bitrate_crit_);
@@ -1019,9 +1017,9 @@ void Call::UpdateCurrentBitrateConfig(const rtc::Optional<int>& new_start) {
                 << "calling SetBweBitrates with args ("
                 << updated.min_bitrate_bps << ", " << updated.start_bitrate_bps
                 << ", " << updated.max_bitrate_bps << ")";
-  transport_send_->send_side_cc()->SetBweBitrates(updated.min_bitrate_bps,
-                                                  updated.start_bitrate_bps,
-                                                  updated.max_bitrate_bps);
+  transport_send_->SetBweBitrates(updated.min_bitrate_bps,
+                                  updated.start_bitrate_bps,
+                                  updated.max_bitrate_bps);
   if (!new_start) {
     updated.start_bitrate_bps = config_.bitrate_config.start_bitrate_bps;
   }
@@ -1138,7 +1136,7 @@ void Call::OnNetworkRouteChanged(const std::string& transport_name,
         << " bps,  max: " << config_.bitrate_config.start_bitrate_bps
         << " bps.";
     RTC_DCHECK_GT(config_.bitrate_config.start_bitrate_bps, 0);
-    transport_send_->send_side_cc()->OnNetworkRouteChanged(
+    transport_send_->OnNetworkRouteChanged(
         network_route, config_.bitrate_config.start_bitrate_bps,
         config_.bitrate_config.min_bitrate_bps,
         config_.bitrate_config.max_bitrate_bps);
@@ -1174,13 +1172,13 @@ void Call::UpdateAggregateNetworkState() {
   RTC_LOG(LS_INFO) << "UpdateAggregateNetworkState: aggregate_state="
                    << (aggregate_state == kNetworkUp ? "up" : "down");
 
-  transport_send_->send_side_cc()->SignalNetworkState(aggregate_state);
+  transport_send_->OnNetworkAvailability(aggregate_state == kNetworkUp);
 }
 
 void Call::OnSentPacket(const rtc::SentPacket& sent_packet) {
   video_send_delay_stats_->OnSentPacket(sent_packet.packet_id,
                                         clock_->TimeInMilliseconds());
-  transport_send_->send_side_cc()->OnSentPacket(sent_packet);
+  transport_send_->OnSentPacket(sent_packet);
 }
 
 void Call::OnNetworkChanged(uint32_t target_bitrate_bps,

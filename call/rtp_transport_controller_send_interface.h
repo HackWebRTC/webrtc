@@ -10,14 +10,25 @@
 
 #ifndef CALL_RTP_TRANSPORT_CONTROLLER_SEND_INTERFACE_H_
 #define CALL_RTP_TRANSPORT_CONTROLLER_SEND_INTERFACE_H_
+#include <stddef.h>
+#include <stdint.h>
 
+namespace rtc {
+struct SentPacket;
+struct NetworkRoute;
+}  // namespace rtc
 namespace webrtc {
 
+class CallStatsObserver;
+class NetworkChangedObserver;
+class Module;
 class PacedSender;
+class PacketFeedbackObserver;
 class PacketRouter;
+class RateLimiter;
+class RtcpBandwidthObserver;
 class RtpPacketSender;
 struct RtpKeepAliveConfig;
-class SendSideCongestionController;
 class TransportFeedbackObserver;
 
 // An RtpTransportController should own everything related to the RTP
@@ -48,8 +59,6 @@ class RtpTransportControllerSendInterface {
   virtual ~RtpTransportControllerSendInterface() {}
   virtual PacketRouter* packet_router() = 0;
   virtual PacedSender* pacer() = 0;
-  // Currently returning the same pointer, but with different types.
-  virtual SendSideCongestionController* send_side_cc() = 0;
   virtual TransportFeedbackObserver* transport_feedback_observer() = 0;
 
   virtual RtpPacketSender* packet_sender() = 0;
@@ -66,6 +75,33 @@ class RtpTransportControllerSendInterface {
   // pad unless there is real packets to send.
   virtual void SetAllocatedSendBitrateLimits(int min_send_bitrate_bps,
                                              int max_padding_bitrate_bps) = 0;
+
+  virtual Module* GetModule() = 0;
+  virtual CallStatsObserver* GetCallStatsObserver() = 0;
+
+  virtual void RegisterPacketFeedbackObserver(
+      PacketFeedbackObserver* observer) = 0;
+  virtual void DeRegisterPacketFeedbackObserver(
+      PacketFeedbackObserver* observer) = 0;
+  virtual void RegisterNetworkObserver(NetworkChangedObserver* observer) = 0;
+  virtual void DeRegisterNetworkObserver(NetworkChangedObserver* observer) = 0;
+  virtual void SetBweBitrates(int min_bitrate_bps,
+                              int start_bitrate_bps,
+                              int max_bitrate_bps) = 0;
+  virtual void OnNetworkRouteChanged(const rtc::NetworkRoute& network_route,
+                                     int start_bitrate_bps,
+                                     int min_bitrate_bps,
+                                     int max_bitrate_bps) = 0;
+  virtual void OnNetworkAvailability(bool network_available) = 0;
+  virtual void SetTransportOverhead(
+      size_t transport_overhead_bytes_per_packet) = 0;
+  virtual RtcpBandwidthObserver* GetBandwidthObserver() = 0;
+  virtual bool AvailableBandwidth(uint32_t* bandwidth) const = 0;
+  virtual int64_t GetPacerQueuingDelayMs() const = 0;
+  virtual int64_t GetFirstPacketTimeMs() const = 0;
+  virtual RateLimiter* GetRetransmissionRateLimiter() = 0;
+  virtual void EnablePeriodicAlrProbing(bool enable) = 0;
+  virtual void OnSentPacket(const rtc::SentPacket& sent_packet) = 0;
 };
 
 }  // namespace webrtc

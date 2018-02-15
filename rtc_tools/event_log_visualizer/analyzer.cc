@@ -671,7 +671,7 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
                << " (LOG_START, LOG_END) segments in log.";
 }
 
-class BitrateObserver : public SendSideCongestionController::Observer,
+class BitrateObserver : public NetworkChangedObserver,
                         public RemoteBitrateObserver {
  public:
   BitrateObserver() : last_bitrate_bps_(0), bitrate_updated_(false) {}

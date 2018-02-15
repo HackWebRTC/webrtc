@@ -85,7 +85,7 @@ class SendSideCongestionControllerTest : public ::testing::Test {
 
   // Allows us to track the target bitrate, without prescribing the exact
   // iterations when this would hapen, like a mock would.
-  class TargetBitrateObserver : public SendSideCongestionController::Observer {
+  class TargetBitrateObserver : public NetworkChangedObserver {
    public:
     explicit TargetBitrateObserver(SendSideCongestionControllerTest* owner)
         : owner_(owner) {}

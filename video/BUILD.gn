@@ -81,7 +81,6 @@ rtc_static_library("video") {
     "../logging:rtc_event_log_api",
     "../modules:module_api",
     "../modules/bitrate_controller",
-    "../modules/congestion_controller",
     "../modules/pacing",
     "../modules/remote_bitrate_estimator",
     "../modules/rtp_rtcp",

@@ -22,7 +22,6 @@
 #include "common_types.h"  // NOLINT(build/include)
 #include "common_video/include/video_bitrate_allocator.h"
 #include "modules/bitrate_controller/include/bitrate_controller.h"
-#include "modules/congestion_controller/include/send_side_congestion_controller.h"
 #include "modules/pacing/packet_router.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/source/rtp_sender.h"
@@ -790,7 +789,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
       encoder_feedback_(Clock::GetRealTimeClock(),
                         config_->rtp.ssrcs,
                         video_stream_encoder),
-      bandwidth_observer_(transport->send_side_cc()->GetBandwidthObserver()),
+      bandwidth_observer_(transport->GetBandwidthObserver()),
       rtp_rtcp_modules_(CreateRtpRtcpModules(
           config_->send_transport,
           &encoder_feedback_,
@@ -801,7 +800,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
           stats_proxy_,
           send_delay_stats,
           event_log,
-          transport->send_side_cc()->GetRetransmissionRateLimiter(),
+          transport->GetRetransmissionRateLimiter(),
           this,
           config_->rtp.ssrcs.size(),
           transport->keepalive_config(),
@@ -822,7 +821,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
   RTC_DCHECK(!config_->rtp.ssrcs.empty());
   RTC_DCHECK(call_stats_);
   RTC_DCHECK(transport_);
-  RTC_DCHECK(transport_->send_side_cc());
+  RTC_DCHECK(transport_);
   RTC_DCHECK_GT(encoder_max_bitrate_bps_, 0);
 
   RTC_CHECK(AlrExperimentSettings::MaxOneFieldTrialEnabled());
@@ -838,7 +837,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
           AlrExperimentSettings::kStrictPacingAndProbingExperimentName);
     }
     if (alr_settings) {
-      transport->send_side_cc()->EnablePeriodicAlrProbing(true);
+      transport->EnablePeriodicAlrProbing(true);
       transport->pacer()->SetPacingFactor(alr_settings->pacing_factor);
       configured_pacing_factor_ = alr_settings->pacing_factor;
       transport->pacer()->SetQueueTimeLimit(alr_settings->max_paced_queue_time);
@@ -846,7 +845,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
   }
 
   if (config_->periodic_alr_bandwidth_probing) {
-    transport->send_side_cc()->EnablePeriodicAlrProbing(true);
+    transport->EnablePeriodicAlrProbing(true);
   }
 
   // RTP/RTCP initialization.
@@ -890,7 +889,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
   fec_controller_->SetProtectionCallback(this);
   // Signal congestion controller this object is ready for OnPacket* callbacks.
   if (fec_controller_->UseLossVectorMask()) {
-    transport_->send_side_cc()->RegisterPacketFeedbackObserver(this);
+    transport_->RegisterPacketFeedbackObserver(this);
   }
 
   RTC_DCHECK(config_->encoder_settings.encoder);
@@ -936,7 +935,7 @@ VideoSendStreamImpl::~VideoSendStreamImpl() {
       << "VideoSendStreamImpl::Stop not called";
   RTC_LOG(LS_INFO) << "~VideoSendStreamInternal: " << config_->ToString();
   if (fec_controller_->UseLossVectorMask()) {
-    transport_->send_side_cc()->DeRegisterPacketFeedbackObserver(this);
+    transport_->DeRegisterPacketFeedbackObserver(this);
   }
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
     transport_->packet_router()->RemoveSendRtpModule(rtp_rtcp);
@@ -1424,8 +1423,7 @@ void VideoSendStreamImpl::SetTransportOverhead(
 
   transport_overhead_bytes_per_packet_ = transport_overhead_bytes_per_packet;
 
-  transport_->send_side_cc()->SetTransportOverhead(
-      transport_overhead_bytes_per_packet_);
+  transport_->SetTransportOverhead(transport_overhead_bytes_per_packet_);
 
   size_t rtp_packet_size =
       std::min(config_->rtp.max_packet_size,
