@@ -11,11 +11,10 @@
 #ifndef API_FEC_CONTROLLER_H_
 #define API_FEC_CONTROLLER_H_
 
-#include <memory>
 #include <vector>
 
-#include "common_types.h"  // NOLINT(build/include)
-#include "modules/include/module_fec_types.h"
+#include "common_video/include/video_frame.h"
+#include "modules/include/module_common_types.h"
 
 namespace webrtc {
 // TODO(yinwa): work in progress. API in class FecController should not be
@@ -74,17 +73,10 @@ class FecController {
                                   int64_t round_trip_time_ms) = 0;
 
   // Informs of encoded output.
-  virtual void UpdateWithEncodedData(size_t encoded_image_length,
-                                     FrameType encoded_image_frametype) = 0;
+  virtual void UpdateWithEncodedData(const EncodedImage& encoded_image) = 0;
 
   // Returns whether this FEC Controller needs Loss Vector Mask as input.
   virtual bool UseLossVectorMask() = 0;
-};
-
-class FecControllerFactoryInterface {
- public:
-  virtual std::unique_ptr<FecController> CreateFecController() = 0;
-  virtual ~FecControllerFactoryInterface() = default;
 };
 
 }  // namespace webrtc

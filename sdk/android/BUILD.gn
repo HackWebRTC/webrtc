@@ -641,7 +641,6 @@ rtc_android_library("libjingle_peerconnection_java") {
     "api/org/webrtc/EglBase.java",
     "api/org/webrtc/EglRenderer.java",
     "api/org/webrtc/EncodedImage.java",
-    "api/org/webrtc/FecControllerFactoryFactoryInterface.java",
     "api/org/webrtc/FileVideoCapturer.java",
     "api/org/webrtc/GlRectDrawer.java",
     "api/org/webrtc/GlShader.java",

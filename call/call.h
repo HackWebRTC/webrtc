@@ -109,9 +109,6 @@ struct CallConfig {
   // RtcEventLog to use for this call. Required.
   // Use webrtc::RtcEventLog::CreateNull() for a null implementation.
   RtcEventLog* event_log = nullptr;
-
-  // FecController to use for this call.
-  FecControllerFactoryInterface* fec_controller_factory = nullptr;
 };
 
 // A Call instance can contain several send and/or receive streams. All streams

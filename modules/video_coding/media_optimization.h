@@ -51,8 +51,7 @@ class MediaOptimization {
   // Informs Media Optimization of encoded output.
   // TODO(perkj): Deprecate SetEncodingData once its not used for stats in
   // VideoStreamEncoder.
-  void UpdateWithEncodedData(const size_t encoded_image_length,
-                             const FrameType encoded_image_frametype);
+  void UpdateWithEncodedData(const EncodedImage& encoded_image);
 
   // InputFrameRate 0 = no frame rate estimate available.
   uint32_t InputFrameRate();

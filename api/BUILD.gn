@@ -103,7 +103,6 @@ rtc_static_library("libjingle_peerconnection_api") {
     ":audio_mixer_api",
     ":audio_options_api",
     ":callfactory_api",
-    ":fec_controller_api",
     ":libjingle_logging_api",
     ":optional",
     ":rtc_stats_api",
@@ -264,8 +263,8 @@ rtc_source_set("fec_controller_api") {
   ]
 
   deps = [
-    "..:webrtc_common",
-    "../modules:module_fec_api",
+    "../common_video:common_video",
+    "../modules:module_api",
   ]
 }
 

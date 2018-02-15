@@ -412,8 +412,7 @@ EncodedImageCallback::Result VCMEncodedFrameCallback::OnEncodedImage(
     return result;
 
   if (media_opt_) {
-    media_opt_->UpdateWithEncodedData(image_copy._length,
-                                      image_copy._frameType);
+    media_opt_->UpdateWithEncodedData(image_copy);
     if (internal_source_) {
       // Signal to encoder to drop next frame.
       result.drop_next_frame = media_opt_->DropFrame();

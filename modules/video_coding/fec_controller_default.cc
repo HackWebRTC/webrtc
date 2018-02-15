@@ -145,12 +145,11 @@ void FecControllerDefault::SetProtectionMethod(bool enable_fec,
   loss_prot_logic_->SetMethod(method);
 }
 void FecControllerDefault::UpdateWithEncodedData(
-    const size_t encoded_image_length,
-    const FrameType encoded_image_frametype) {
-  const size_t encoded_length = encoded_image_length;
+    const EncodedImage& encoded_image) {
+  const size_t encoded_length = encoded_image._length;
   CritScope lock(&crit_sect_);
   if (encoded_length > 0) {
-    const bool delta_frame = encoded_image_frametype != kVideoFrameKey;
+    const bool delta_frame = encoded_image._frameType != kVideoFrameKey;
     if (max_payload_size_ > 0 && encoded_length > 0) {
       const float min_packets_per_frame =
           encoded_length / static_cast<float>(max_payload_size_);
