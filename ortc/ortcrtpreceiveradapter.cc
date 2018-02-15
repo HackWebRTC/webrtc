@@ -156,7 +156,7 @@ void OrtcRtpReceiverAdapter::MaybeRecreateInternalReceiver() {
                                rtc::CreateRandomUuid(), {});
       auto* voice_channel = rtp_transport_controller_->voice_channel();
       RTC_DCHECK(voice_channel);
-      audio_receiver->SetMediaChannel(voice_channel->media_channel());
+      audio_receiver->SetVoiceMediaChannel(voice_channel->media_channel());
       internal_receiver_ = audio_receiver;
       break;
     }
@@ -166,7 +166,7 @@ void OrtcRtpReceiverAdapter::MaybeRecreateInternalReceiver() {
                                rtc::CreateRandomUuid(), {});
       auto* video_channel = rtp_transport_controller_->video_channel();
       RTC_DCHECK(video_channel);
-      video_receiver->SetMediaChannel(video_channel->media_channel());
+      video_receiver->SetVideoMediaChannel(video_channel->media_channel());
       internal_receiver_ = video_receiver;
       break;
     }

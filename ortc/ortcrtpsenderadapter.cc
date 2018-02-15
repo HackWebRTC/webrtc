@@ -160,7 +160,7 @@ void OrtcRtpSenderAdapter::CreateInternalSender() {
           rtp_transport_controller_->worker_thread(), nullptr);
       auto* voice_channel = rtp_transport_controller_->voice_channel();
       RTC_DCHECK(voice_channel);
-      audio_sender->SetMediaChannel(voice_channel->media_channel());
+      audio_sender->SetVoiceMediaChannel(voice_channel->media_channel());
       internal_sender_ = audio_sender;
       break;
     }
@@ -169,7 +169,7 @@ void OrtcRtpSenderAdapter::CreateInternalSender() {
           new VideoRtpSender(rtp_transport_controller_->worker_thread());
       auto* video_channel = rtp_transport_controller_->video_channel();
       RTC_DCHECK(video_channel);
-      video_sender->SetMediaChannel(video_channel->media_channel());
+      video_sender->SetVideoMediaChannel(video_channel->media_channel());
       internal_sender_ = video_sender;
       break;
     }
