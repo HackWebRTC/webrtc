@@ -42,6 +42,7 @@ class FakePeriodicVideoCapturer
 
   ~FakePeriodicVideoCapturer() override {
     RTC_DCHECK(main_thread_checker_.CalledOnValidThread());
+    StopFrameDelivery();
   }
 
   // Workaround method for tests to allow stopping frame delivery directly.
