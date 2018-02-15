@@ -2646,10 +2646,7 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
     transport_controller_->SetNeedsIceRestartFlag();
   }
 
-  if (modified_config.ice_check_min_interval !=
-      configuration_.ice_check_min_interval) {
-    transport_controller_->SetIceConfig(ParseIceConfig(modified_config));
-  }
+  transport_controller_->SetIceConfig(ParseIceConfig(modified_config));
 
   configuration_ = modified_config;
   return SafeSetError(RTCErrorType::NONE, error);
