@@ -2634,6 +2634,10 @@ int32_t AudioDeviceWindowsCore::PlayoutDelay(uint16_t& delayMS) const {
   return 0;
 }
 
+bool AudioDeviceWindowsCore::BuiltInAECIsAvailable() const {
+  return _dmo != nullptr;
+}
+
 // ----------------------------------------------------------------------------
 //  Playing
 // ----------------------------------------------------------------------------
