@@ -77,7 +77,7 @@ class AgcManagerDirectTest : public ::testing::Test {
 
   void CallProcess(int num_calls) {
     for (int i = 0; i < num_calls; ++i) {
-      EXPECT_CALL(*agc_, Process(_, _, _)).WillOnce(Return(0));
+      EXPECT_CALL(*agc_, Process(_, _, _)).WillOnce(Return());
       manager_.Process(nullptr, kSamplesPerChannel, kSampleRateHz);
     }
   }

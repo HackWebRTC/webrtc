@@ -353,9 +353,9 @@ void EchoControlMobileImpl::Initialize(int sample_rate_hz,
     return;
   }
 
-  if (stream_properties_->sample_rate_hz > AudioProcessing::kSampleRate16kHz) {
-    RTC_LOG(LS_ERROR) << "AECM only supports 16 kHz or lower sample rates";
-  }
+  // AECM only supports 16 kHz or lower sample rates.
+  RTC_DCHECK_LE(stream_properties_->sample_rate_hz,
+                AudioProcessing::kSampleRate16kHz);
 
   cancellers_.resize(
       NumCancellersRequired(stream_properties_->num_output_channels,

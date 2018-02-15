@@ -194,11 +194,9 @@ void void_main() {
                      detection_buffer.get(),
                      reference_file,
                      reference_buffer.get())) {
-    ASSERT_EQ(0,
-              agc.Process(audio_buffer_i.get(),
-                          static_cast<int>(audio_buffer_size),
-                          FLAG_sample_rate_hz))
-        << "The AGC could not process the frame";
+    agc.Process(audio_buffer_i.get(),
+                static_cast<int>(audio_buffer_size),
+                FLAG_sample_rate_hz);
 
     for (size_t i = 0; i < FLAG_num_channels * audio_buffer_size; ++i) {
       audio_buffer_f[i] = audio_buffer_i[i];

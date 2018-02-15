@@ -449,9 +449,8 @@ AudioProcessingImpl::AudioProcessingImpl(
     private_submodules_->gain_controller2.reset(new GainController2());
 
     RTC_LOG(LS_INFO) << "Capture post processor activated: "
-                     << !!private_submodules_->capture_post_processor;
-
-    RTC_LOG(LS_INFO) << "Render pre processor activated: "
+                     << !!private_submodules_->capture_post_processor
+                     << "\nRender pre processor activated: "
                      << !!private_submodules_->render_pre_processor;
   }
 
@@ -709,11 +708,10 @@ void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
 
   bool config_ok = LevelController::Validate(config_.level_controller);
   if (!config_ok) {
-    RTC_LOG(LS_ERROR) << "AudioProcessing module config error" << std::endl
-                      << "level_controller: "
+    RTC_LOG(LS_ERROR) << "AudioProcessing module config error\n"
+                         "level_controller: "
                       << LevelController::ToString(config_.level_controller)
-                      << std::endl
-                      << "Reverting to default parameter set";
+                      << "\nReverting to default parameter set";
     config_.level_controller = AudioProcessing::Config::LevelController();
   }
 
@@ -743,11 +741,10 @@ void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
 
   config_ok = GainController2::Validate(config_.gain_controller2);
   if (!config_ok) {
-    RTC_LOG(LS_ERROR) << "AudioProcessing module config error" << std::endl
-                      << "Gain Controller 2: "
+    RTC_LOG(LS_ERROR) << "AudioProcessing module config error\n"
+                         "Gain Controller 2: "
                       << GainController2::ToString(config_.gain_controller2)
-                      << std::endl
-                      << "Reverting to default parameter set";
+                      << "\nReverting to default parameter set";
     config_.gain_controller2 = AudioProcessing::Config::GainController2();
   }
   InitializeGainController2();

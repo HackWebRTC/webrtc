@@ -216,8 +216,8 @@ void AgcManagerDirect::AnalyzePreProcess(int16_t* audio,
   // gain is increased, through SetMaxLevel().
   float clipped_ratio = agc_->AnalyzePreproc(audio, length);
   if (clipped_ratio > kClippedRatioThreshold) {
-    RTC_LOG(LS_INFO) << "[agc] Clipping detected. clipped_ratio="
-                     << clipped_ratio;
+    RTC_DLOG(LS_INFO) << "[agc] Clipping detected. clipped_ratio="
+                      << clipped_ratio;
     // Always decrease the maximum level, even if the current level is below
     // threshold.
     SetMaxLevel(std::max(clipped_level_min_, max_level_ - kClippedLevelStep));
@@ -249,10 +249,7 @@ void AgcManagerDirect::Process(const int16_t* audio,
     CheckVolumeAndReset();
   }
 
-  if (agc_->Process(audio, length, sample_rate_hz) != 0) {
-    RTC_LOG(LS_ERROR) << "Agc::Process failed";
-    RTC_NOTREACHED();
-  }
+  agc_->Process(audio, length, sample_rate_hz);
 
   UpdateGain();
   UpdateCompressor();
@@ -262,15 +259,12 @@ void AgcManagerDirect::Process(const int16_t* audio,
 
 void AgcManagerDirect::SetLevel(int new_level) {
   int voe_level = volume_callbacks_->GetMicVolume();
-  if (voe_level < 0) {
-    return;
-  }
   if (voe_level == 0) {
-    RTC_LOG(LS_INFO)
+    RTC_DLOG(LS_INFO)
         << "[agc] VolumeCallbacks returned level=0, taking no action.";
     return;
   }
-  if (voe_level > kMaxMicLevel) {
+  if (voe_level < 0 || voe_level > kMaxMicLevel) {
     RTC_LOG(LS_ERROR) << "VolumeCallbacks returned an invalid level="
                       << voe_level;
     return;
@@ -278,8 +272,8 @@ void AgcManagerDirect::SetLevel(int new_level) {
 
   if (voe_level > level_ + kLevelQuantizationSlack ||
       voe_level < level_ - kLevelQuantizationSlack) {
-    RTC_LOG(LS_INFO) << "[agc] Mic volume was manually adjusted. Updating "
-                     << "stored level from " << level_ << " to " << voe_level;
+    RTC_DLOG(LS_INFO) << "[agc] Mic volume was manually adjusted. Updating "
+                         "stored level from " << level_ << " to " << voe_level;
     level_ = voe_level;
     // Always allow the user to increase the volume.
     if (level_ > max_level_) {
@@ -298,9 +292,9 @@ void AgcManagerDirect::SetLevel(int new_level) {
   }
 
   volume_callbacks_->SetMicVolume(new_level);
-  RTC_LOG(LS_INFO) << "[agc] voe_level=" << voe_level << ", "
-                   << "level_=" << level_ << ", "
-                   << "new_level=" << new_level;
+  RTC_DLOG(LS_INFO) << "[agc] voe_level=" << voe_level << ", "
+                    << "level_=" << level_ << ", "
+                    << "new_level=" << new_level;
   level_ = new_level;
 }
 
@@ -314,8 +308,8 @@ void AgcManagerDirect::SetMaxLevel(int level) {
                                            (kMaxMicLevel - clipped_level_min_) *
                                            kSurplusCompressionGain +
                                        0.5f);
-  RTC_LOG(LS_INFO) << "[agc] max_level_=" << max_level_
-                   << ", max_compression_gain_=" << max_compression_gain_;
+  RTC_DLOG(LS_INFO) << "[agc] max_level_=" << max_level_
+                    << ", max_compression_gain_=" << max_compression_gain_;
 }
 
 void AgcManagerDirect::SetCaptureMuted(bool muted) {
@@ -336,28 +330,26 @@ float AgcManagerDirect::voice_probability() {
 
 int AgcManagerDirect::CheckVolumeAndReset() {
   int level = volume_callbacks_->GetMicVolume();
-  if (level < 0) {
-    return -1;
-  }
   // Reasons for taking action at startup:
   // 1) A person starting a call is expected to be heard.
   // 2) Independent of interpretation of |level| == 0 we should raise it so the
   // AGC can do its job properly.
   if (level == 0 && !startup_) {
-    RTC_LOG(LS_INFO)
+    RTC_DLOG(LS_INFO)
         << "[agc] VolumeCallbacks returned level=0, taking no action.";
     return 0;
   }
-  if (level > kMaxMicLevel) {
-    RTC_LOG(LS_ERROR) << "VolumeCallbacks returned an invalid level=" << level;
+  if (level < 0 || level > kMaxMicLevel) {
+    RTC_LOG(LS_ERROR) << "[agc] VolumeCallbacks returned an invalid level="
+                      << level;
     return -1;
   }
-  RTC_LOG(LS_INFO) << "[agc] Initial GetMicVolume()=" << level;
+  RTC_DLOG(LS_INFO) << "[agc] Initial GetMicVolume()=" << level;
 
   int minLevel = startup_ ? startup_min_level_ : kMinMicLevel;
   if (level < minLevel) {
     level = minLevel;
-    RTC_LOG(LS_INFO) << "[agc] Initial volume too low, raising to " << level;
+    RTC_DLOG(LS_INFO) << "[agc] Initial volume too low, raising to " << level;
     volume_callbacks_->SetMicVolume(level);
   }
   agc_->Reset();
@@ -409,9 +401,9 @@ void AgcManagerDirect::UpdateGain() {
   const int residual_gain =
       rtc::SafeClamp(rms_error - raw_compression, -kMaxResidualGainChange,
                      kMaxResidualGainChange);
-  RTC_LOG(LS_INFO) << "[agc] rms_error=" << rms_error << ", "
-                   << "target_compression=" << target_compression_ << ", "
-                   << "residual_gain=" << residual_gain;
+  RTC_DLOG(LS_INFO) << "[agc] rms_error=" << rms_error
+                    << ", target_compression=" << target_compression_
+                    << ", residual_gain=" << residual_gain;
   if (residual_gain == 0)
     return;
 

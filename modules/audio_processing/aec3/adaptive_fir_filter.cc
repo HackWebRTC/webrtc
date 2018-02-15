@@ -466,9 +466,9 @@ void AdaptiveFirFilter::SetSizePartitions(size_t size) {
   RTC_DCHECK_EQ(GetTimeDomainLength(max_size_partitions_), h_.capacity());
   RTC_DCHECK_EQ(H_.size(), H2_.size());
   RTC_DCHECK_EQ(h_.size(), GetTimeDomainLength(H_.size()));
+  RTC_DCHECK_LE(size, max_size_partitions_);
 
   if (size > max_size_partitions_) {
-    RTC_LOG(LS_ERROR) << "Too large adaptive filter size specificed: " << size;
     size = max_size_partitions_;
   }
 
