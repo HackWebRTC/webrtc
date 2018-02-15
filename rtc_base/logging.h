@@ -158,7 +158,7 @@ class LogMessage {
 
   ~LogMessage();
 
-  static inline bool Loggable(LoggingSeverity sev) { return (sev >= min_sev_); }
+  static bool Loggable(LoggingSeverity sev);
   std::ostream& stream() { return print_stream_; }
 
   // Returns the time at which this function was called for the first time.
@@ -181,7 +181,7 @@ class LogMessage {
   // These are the available logging channels
   //  Debug: Debug console on Windows, otherwise stderr
   static void LogToDebug(LoggingSeverity min_sev);
-  static LoggingSeverity GetLogToDebug() { return dbg_sev_; }
+  static LoggingSeverity GetLogToDebug();
 
   // Sets whether logs will be directed to stderr in debug mode.
   static void SetLogToStderr(bool log_to_stderr);
@@ -199,7 +199,7 @@ class LogMessage {
 
   // Testing against MinLogSeverity allows code to avoid potentially expensive
   // logging operations by pre-checking the logging level.
-  static int GetMinLogSeverity() { return min_sev_; }
+  static int GetMinLogSeverity();
 
   // Parses the provided parameter stream to configure the options above.
   // Useful for configuring logging from the command line.
@@ -229,13 +229,6 @@ class LogMessage {
   // String data generated in the constructor, that should be appended to
   // the message before output.
   std::string extra_;
-
-  // dbg_sev_ is the thresholds for those output targets
-  // min_sev_ is the minimum (most verbose) of those levels, and is used
-  //  as a short-circuit in the logging macros to identify messages that won't
-  //  be logged.
-  // ctx_sev_ is the minimum level at which file context is displayed
-  static LoggingSeverity min_sev_, dbg_sev_, ctx_sev_;
 
   // The output streams and their associated severities
   static StreamList streams_;

@@ -48,6 +48,14 @@ static const char kLibjingle[] = "libjingle";
 
 namespace rtc {
 namespace {
+// By default, release builds don't log, debug builds at info level
+#if !defined(NDEBUG)
+static LoggingSeverity g_min_sev = LS_INFO;
+static LoggingSeverity g_dbg_sev = LS_INFO;
+#else
+static LoggingSeverity g_min_sev = LS_NONE;
+static LoggingSeverity g_dbg_sev = LS_NONE;
+#endif
 
 // Return the filename portion of the string (that following the last slash).
 const char* FilenameFromPath(const char* file) {
@@ -59,6 +67,8 @@ const char* FilenameFromPath(const char* file) {
     return (end1 > end2) ? end1 + 1 : end2 + 1;
 }
 
+// Global lock for log subsystem, only needed to serialize access to streams_.
+CriticalSection g_log_crit;
 }  // namespace
 
 /////////////////////////////////////////////////////////////////////////////
@@ -92,20 +102,7 @@ std::string ErrorName(int err, const ConstantLabel* err_table) {
 // LogMessage
 /////////////////////////////////////////////////////////////////////////////
 
-// By default, release builds don't log, debug builds at info level
-#if !defined(NDEBUG)
-LoggingSeverity LogMessage::min_sev_ = LS_INFO;
-LoggingSeverity LogMessage::dbg_sev_ = LS_INFO;
-#else
-LoggingSeverity LogMessage::min_sev_ = LS_NONE;
-LoggingSeverity LogMessage::dbg_sev_ = LS_NONE;
-#endif
 bool LogMessage::log_to_stderr_ = true;
-
-namespace {
-// Global lock for log subsystem, only needed to serialize access to streams_.
-CriticalSection g_log_crit;
-}  // namespace
 
 // The list of logging streams currently configured.
 // Note: we explicitly do not clean this up, because of the uncertain ordering
@@ -203,7 +200,7 @@ LogMessage::~LogMessage() {
   print_stream_ << std::endl;
 
   const std::string& str = print_stream_.str();
-  if (severity_ >= dbg_sev_) {
+  if (severity_ >= g_dbg_sev) {
     OutputToDebug(str, severity_, tag_);
   }
 
@@ -215,6 +212,17 @@ LogMessage::~LogMessage() {
   }
 }
 
+bool LogMessage::Loggable(LoggingSeverity sev) {
+  return sev >= g_min_sev;
+}
+
+int LogMessage::GetMinLogSeverity() {
+  return g_min_sev;
+}
+
+LoggingSeverity LogMessage::GetLogToDebug() {
+  return g_dbg_sev;
+}
 int64_t LogMessage::LogStartTime() {
   static const int64_t g_start = SystemTimeMillis();
   return g_start;
@@ -234,7 +242,7 @@ void LogMessage::LogTimestamps(bool on) {
 }
 
 void LogMessage::LogToDebug(LoggingSeverity min_sev) {
-  dbg_sev_ = min_sev;
+  g_dbg_sev = min_sev;
   CritScope cs(&g_log_crit);
   UpdateMinLogSeverity();
 }
@@ -335,11 +343,11 @@ void LogMessage::ConfigureLogging(const char* params) {
 
 void LogMessage::UpdateMinLogSeverity()
     RTC_EXCLUSIVE_LOCKS_REQUIRED(g_log_crit) {
-  LoggingSeverity min_sev = dbg_sev_;
+  LoggingSeverity min_sev = g_dbg_sev;
   for (auto& kv : streams_) {
-    min_sev = std::min(dbg_sev_, kv.second);
+    min_sev = std::min(g_dbg_sev, kv.second);
   }
-  min_sev_ = min_sev;
+  g_min_sev = min_sev;
 }
 
 void LogMessage::OutputToDebug(const std::string& str,
