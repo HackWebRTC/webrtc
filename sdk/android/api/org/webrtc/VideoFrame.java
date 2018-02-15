@@ -177,6 +177,7 @@ public class VideoFrame {
     buffer.retain();
   }
 
+  @CalledByNative
   public void release() {
     buffer.release();
   }

@@ -26,7 +26,8 @@ std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>> JavaToNativeVideoSink(
     JNIEnv* jni,
     jobject video_sink);
 
-// Creates a Java VideoFrame object from a native VideoFrame.
+// Creates a Java VideoFrame object from a native VideoFrame. The returned
+// object has to be released by calling release.
 ScopedJavaLocalRef<jobject> NativeToJavaVideoFrame(JNIEnv* jni,
                                                    const VideoFrame& frame);
 

@@ -128,8 +128,10 @@ int32_t VideoEncoderWrapper::Encode(
   info.timestamp_rtp = frame.timestamp();
   frame_extra_infos_.push_back(info);
 
-  ScopedJavaLocalRef<jobject> ret = Java_VideoEncoder_encode(
-      jni, encoder_, NativeToJavaFrame(jni, frame), encode_info);
+  ScopedJavaLocalRef<jobject> j_frame = NativeToJavaVideoFrame(jni, frame);
+  ScopedJavaLocalRef<jobject> ret =
+      Java_VideoEncoder_encode(jni, encoder_, j_frame, encode_info);
+  ReleaseJavaVideoFrame(jni, j_frame);
   return HandleReturnCode(jni, ret);
 }
 

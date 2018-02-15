@@ -728,11 +728,14 @@ int32_t MediaCodecVideoEncoder::Encode(
       case AndroidVideoFrameBuffer::AndroidType::kTextureBuffer:
         encode_status = EncodeTexture(jni, key_frame, input_frame);
         break;
-      case AndroidVideoFrameBuffer::AndroidType::kJavaBuffer:
+      case AndroidVideoFrameBuffer::AndroidType::kJavaBuffer: {
+        ScopedJavaLocalRef<jobject> j_frame =
+            NativeToJavaVideoFrame(jni, frame);
         encode_status =
-            EncodeJavaFrame(jni, key_frame, NativeToJavaFrame(jni, input_frame),
-                            j_input_buffer_index);
+            EncodeJavaFrame(jni, key_frame, j_frame, j_input_buffer_index);
+        ReleaseJavaVideoFrame(jni, j_frame);
         break;
+      }
       default:
         RTC_NOTREACHED();
         return WEBRTC_VIDEO_CODEC_ERROR;

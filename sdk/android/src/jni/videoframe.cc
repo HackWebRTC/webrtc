@@ -383,8 +383,8 @@ static bool IsJavaVideoBuffer(rtc::scoped_refptr<VideoFrameBuffer> buffer) {
          AndroidVideoFrameBuffer::AndroidType::kJavaBuffer;
 }
 
-ScopedJavaLocalRef<jobject> NativeToJavaFrame(JNIEnv* jni,
-                                              const VideoFrame& frame) {
+ScopedJavaLocalRef<jobject> NativeToJavaVideoFrame(JNIEnv* jni,
+                                                   const VideoFrame& frame) {
   rtc::scoped_refptr<VideoFrameBuffer> buffer = frame.video_frame_buffer();
 
   if (IsJavaVideoBuffer(buffer)) {
@@ -396,9 +396,11 @@ ScopedJavaLocalRef<jobject> NativeToJavaFrame(JNIEnv* jni,
     AndroidVideoBuffer* android_video_buffer =
         static_cast<AndroidVideoBuffer*>(android_buffer);
 
+    ScopedJavaLocalRef<jobject> j_video_frame_buffer(
+        jni, android_video_buffer->video_frame_buffer());
+    Java_Buffer_retain(jni, j_video_frame_buffer);
     return Java_VideoFrame_Constructor(
-        jni, android_video_buffer->video_frame_buffer(),
-        static_cast<jint>(frame.rotation()),
+        jni, j_video_frame_buffer, static_cast<jint>(frame.rotation()),
         static_cast<jlong>(frame.timestamp_us() *
                            rtc::kNumNanosecsPerMicrosec));
   } else {
@@ -408,6 +410,10 @@ ScopedJavaLocalRef<jobject> NativeToJavaFrame(JNIEnv* jni,
         static_cast<jlong>(frame.timestamp_us() *
                            rtc::kNumNanosecsPerMicrosec));
   }
+}
+
+void ReleaseJavaVideoFrame(JNIEnv* jni, const JavaRef<jobject>& j_video_frame) {
+  Java_VideoFrame_release(jni, j_video_frame);
 }
 
 static void JNI_VideoFrame_CropAndScaleI420(

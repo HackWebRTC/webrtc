@@ -155,8 +155,11 @@ VideoFrame JavaToNativeFrame(JNIEnv* jni,
                              const JavaRef<jobject>& j_video_frame,
                              uint32_t timestamp_rtp);
 
-ScopedJavaLocalRef<jobject> NativeToJavaFrame(JNIEnv* jni,
-                                              const VideoFrame& frame);
+// NOTE: Returns a new video frame that has to be released by calling
+// ReleaseJavaVideoFrame.
+ScopedJavaLocalRef<jobject> NativeToJavaVideoFrame(JNIEnv* jni,
+                                                   const VideoFrame& frame);
+void ReleaseJavaVideoFrame(JNIEnv* jni, const JavaRef<jobject>& j_video_frame);
 
 int64_t GetJavaVideoFrameTimestampNs(JNIEnv* jni,
                                      const JavaRef<jobject>& j_video_frame);

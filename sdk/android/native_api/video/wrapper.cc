@@ -26,7 +26,7 @@ std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>> JavaToNativeVideoSink(
 
 ScopedJavaLocalRef<jobject> NativeToJavaVideoFrame(JNIEnv* jni,
                                                    const VideoFrame& frame) {
-  return jni::NativeToJavaFrame(jni, frame);
+  return jni::NativeToJavaVideoFrame(jni, frame);
 }
 
 }  // namespace webrtc
