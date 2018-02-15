@@ -139,7 +139,7 @@ class RtpSenderReceiverTest : public testing::Test,
     audio_rtp_sender_ =
         new AudioRtpSender(worker_thread_, local_stream_->GetAudioTracks()[0],
                            {local_stream_->label()}, nullptr);
-    audio_rtp_sender_->SetMediaChannel(voice_media_channel_);
+    audio_rtp_sender_->SetVoiceMediaChannel(voice_media_channel_);
     audio_rtp_sender_->SetSsrc(kAudioSsrc);
     audio_rtp_sender_->GetOnDestroyedSignal()->connect(
         this, &RtpSenderReceiverTest::OnAudioSenderDestroyed);
@@ -148,7 +148,7 @@ class RtpSenderReceiverTest : public testing::Test,
 
   void CreateAudioRtpSenderWithNoTrack() {
     audio_rtp_sender_ = new AudioRtpSender(worker_thread_, nullptr);
-    audio_rtp_sender_->SetMediaChannel(voice_media_channel_);
+    audio_rtp_sender_->SetVoiceMediaChannel(voice_media_channel_);
   }
 
   void OnAudioSenderDestroyed() { audio_sender_destroyed_signal_fired_ = true; }
@@ -160,14 +160,14 @@ class RtpSenderReceiverTest : public testing::Test,
     video_rtp_sender_ =
         new VideoRtpSender(worker_thread_, local_stream_->GetVideoTracks()[0],
                            {local_stream_->label()});
-    video_rtp_sender_->SetMediaChannel(video_media_channel_);
+    video_rtp_sender_->SetVideoMediaChannel(video_media_channel_);
     video_rtp_sender_->SetSsrc(kVideoSsrc);
     VerifyVideoChannelInput();
   }
 
   void CreateVideoRtpSenderWithNoTrack() {
     video_rtp_sender_ = new VideoRtpSender(worker_thread_);
-    video_rtp_sender_->SetMediaChannel(video_media_channel_);
+    video_rtp_sender_->SetVideoMediaChannel(video_media_channel_);
   }
 
   void DestroyAudioRtpSender() {
@@ -184,7 +184,7 @@ class RtpSenderReceiverTest : public testing::Test,
       std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams = {}) {
     audio_rtp_receiver_ = new AudioRtpReceiver(
         rtc::Thread::Current(), kAudioTrackId, std::move(streams));
-    audio_rtp_receiver_->SetMediaChannel(voice_media_channel_);
+    audio_rtp_receiver_->SetVoiceMediaChannel(voice_media_channel_);
     audio_rtp_receiver_->SetupMediaChannel(kAudioSsrc);
     audio_track_ = audio_rtp_receiver_->audio_track();
     VerifyVoiceChannelOutput();
@@ -194,7 +194,7 @@ class RtpSenderReceiverTest : public testing::Test,
       std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams = {}) {
     video_rtp_receiver_ = new VideoRtpReceiver(
         rtc::Thread::Current(), kVideoTrackId, std::move(streams));
-    video_rtp_receiver_->SetMediaChannel(video_media_channel_);
+    video_rtp_receiver_->SetVideoMediaChannel(video_media_channel_);
     video_rtp_receiver_->SetupMediaChannel(kVideoSsrc);
     video_track_ = video_rtp_receiver_->video_track();
     VerifyVideoChannelOutput();
@@ -783,7 +783,7 @@ TEST_F(RtpSenderReceiverTest,
   video_rtp_sender_ = new VideoRtpSender(worker_thread_,
                                          local_stream_->GetVideoTracks()[0],
                                          {local_stream_->label()});
-  video_rtp_sender_->SetMediaChannel(video_media_channel_);
+  video_rtp_sender_->SetVideoMediaChannel(video_media_channel_);
   video_track_->set_enabled(true);
 
   // Sender is not ready to send (no SSRC) so no option should have been set.

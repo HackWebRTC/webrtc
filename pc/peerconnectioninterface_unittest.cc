@@ -32,6 +32,7 @@
 #include "pc/mediasession.h"
 #include "pc/mediastream.h"
 #include "pc/peerconnection.h"
+#include "pc/rtpsender.h"
 #include "pc/streamcollection.h"
 #include "pc/test/fakeaudiocapturemodule.h"
 #include "pc/test/fakertccertificategenerator.h"
@@ -350,6 +351,8 @@ using webrtc::RTCError;
 using webrtc::RTCErrorType;
 using webrtc::RtpReceiverInterface;
 using webrtc::RtpSenderInterface;
+using webrtc::RtpSenderProxyWithInternal;
+using webrtc::RtpSenderInternal;
 using webrtc::RtpTransceiverDirection;
 using webrtc::SdpParseError;
 using webrtc::SdpType;
@@ -1492,19 +1495,29 @@ TEST_F(PeerConnectionInterfaceTest, AttachmentIdIsSetOnAddTrack) {
                              std::unique_ptr<cricket::VideoCapturer>(
                                  new cricket::FakeVideoCapturer()))));
   auto audio_sender = pc_->AddTrack(audio_track, std::vector<std::string>());
+  ASSERT_TRUE(audio_sender.ok());
+  auto* audio_sender_proxy =
+      static_cast<RtpSenderProxyWithInternal<RtpSenderInternal>*>(
+          audio_sender.value().get());
+  EXPECT_NE(0, audio_sender_proxy->internal()->AttachmentId());
+
   auto video_sender = pc_->AddTrack(video_track, std::vector<std::string>());
-  EXPECT_TRUE(audio_sender.ok());
-  EXPECT_TRUE(video_sender.ok());
-  EXPECT_NE(0, video_sender.value()->AttachmentId());
-  EXPECT_NE(0, audio_sender.value()->AttachmentId());
+  ASSERT_TRUE(video_sender.ok());
+  auto* video_sender_proxy =
+      static_cast<RtpSenderProxyWithInternal<RtpSenderInternal>*>(
+          video_sender.value().get());
+  EXPECT_NE(0, video_sender_proxy->internal()->AttachmentId());
 }
 
 TEST_F(PeerConnectionInterfaceTest, AttachmentIdIsSetOnAddStream) {
   CreatePeerConnectionWithoutDtls();
   AddVideoStream(kStreamLabel1);
   auto senders = pc_->GetSenders();
-  EXPECT_EQ(1u, senders.size());
-  EXPECT_NE(0, senders[0]->AttachmentId());
+  ASSERT_EQ(1u, senders.size());
+  auto* sender_proxy =
+      static_cast<RtpSenderProxyWithInternal<RtpSenderInternal>*>(
+          senders[0].get());
+  EXPECT_NE(0, sender_proxy->internal()->AttachmentId());
 }
 
 TEST_F(PeerConnectionInterfaceTest, CreateOfferReceiveAnswer) {

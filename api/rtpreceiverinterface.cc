@@ -41,8 +41,4 @@ std::vector<RtpSource> RtpReceiverInterface::GetSources() const {
   return {};
 }
 
-int RtpReceiverInterface::AttachmentId() const {
-  return 0;
-}
-
 }  // namespace webrtc

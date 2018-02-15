@@ -97,12 +97,23 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase {
     return remote_streams_;
   }
 
-  void AddSender(rtc::scoped_refptr<RtpSenderInterface> sender) {
-    senders_.push_back(sender);
+  void AddSender(rtc::scoped_refptr<RtpSenderInternal> sender) {
+    // TODO(steveanton): Switch tests to use RtpTransceivers directly.
+    auto sender_proxy = RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
+        signaling_thread_, sender);
+    GetOrCreateFirstTransceiverOfType(sender->media_type())
+        ->internal()
+        ->AddSender(sender_proxy);
   }
 
-  void AddReceiver(rtc::scoped_refptr<RtpReceiverInterface> receiver) {
-    receivers_.push_back(receiver);
+  void AddReceiver(rtc::scoped_refptr<RtpReceiverInternal> receiver) {
+    // TODO(steveanton): Switch tests to use RtpTransceivers directly.
+    auto receiver_proxy =
+        RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
+            signaling_thread_, receiver);
+    GetOrCreateFirstTransceiverOfType(receiver->media_type())
+        ->internal()
+        ->AddReceiver(receiver_proxy);
   }
 
   FakeVoiceMediaChannelForStats* AddVoiceChannel(
@@ -116,10 +127,9 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase {
         std::move(voice_media_channel), mid, kDefaultRtcpMuxRequired,
         kDefaultSrtpRequired);
     voice_channel_->set_transport_name_for_testing(transport_name);
-    auto transceiver = RtpTransceiverProxyWithInternal<RtpTransceiver>::Create(
-        signaling_thread_, new RtpTransceiver(cricket::MEDIA_TYPE_AUDIO));
-    transceiver->internal()->SetChannel(voice_channel_.get());
-    transceivers_.push_back(transceiver);
+    GetOrCreateFirstTransceiverOfType(cricket::MEDIA_TYPE_AUDIO)
+        ->internal()
+        ->SetChannel(voice_channel_.get());
     return voice_media_channel_ptr;
   }
 
@@ -134,10 +144,9 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase {
         std::move(video_media_channel), mid, kDefaultRtcpMuxRequired,
         kDefaultSrtpRequired);
     video_channel_->set_transport_name_for_testing(transport_name);
-    auto transceiver = RtpTransceiverProxyWithInternal<RtpTransceiver>::Create(
-        signaling_thread_, new RtpTransceiver(cricket::MEDIA_TYPE_VIDEO));
-    transceiver->internal()->SetChannel(video_channel_.get());
-    transceivers_.push_back(transceiver);
+    GetOrCreateFirstTransceiverOfType(cricket::MEDIA_TYPE_VIDEO)
+        ->internal()
+        ->SetChannel(video_channel_.get());
     return video_media_channel_ptr;
   }
 
@@ -204,12 +213,24 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase {
 
   std::vector<rtc::scoped_refptr<RtpSenderInterface>> GetSenders()
       const override {
-    return senders_;
+    std::vector<rtc::scoped_refptr<RtpSenderInterface>> senders;
+    for (auto transceiver : transceivers_) {
+      for (auto sender : transceiver->internal()->senders()) {
+        senders.push_back(sender);
+      }
+    }
+    return senders;
   }
 
   std::vector<rtc::scoped_refptr<RtpReceiverInterface>> GetReceivers()
       const override {
-    return receivers_;
+    std::vector<rtc::scoped_refptr<RtpReceiverInterface>> receivers;
+    for (auto transceiver : transceivers_) {
+      for (auto receiver : transceiver->internal()->receivers()) {
+        receivers.push_back(receiver);
+      }
+    }
+    return receivers;
   }
 
   // PeerConnectionInternal overrides.
@@ -323,6 +344,19 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase {
     return transport_stats;
   }
 
+  rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
+  GetOrCreateFirstTransceiverOfType(cricket::MediaType media_type) {
+    for (auto transceiver : transceivers_) {
+      if (transceiver->internal()->media_type() == media_type) {
+        return transceiver;
+      }
+    }
+    auto transceiver = RtpTransceiverProxyWithInternal<RtpTransceiver>::Create(
+        signaling_thread_, new RtpTransceiver(media_type));
+    transceivers_.push_back(transceiver);
+    return transceiver;
+  }
+
   rtc::Thread* const network_thread_;
   rtc::Thread* const worker_thread_;
   rtc::Thread* const signaling_thread_;
@@ -333,8 +367,6 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase {
   std::vector<
       rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
       transceivers_;
-  std::vector<rtc::scoped_refptr<RtpSenderInterface>> senders_;
-  std::vector<rtc::scoped_refptr<RtpReceiverInterface>> receivers_;
 
   FakeDataChannelProvider data_channel_provider_;
 

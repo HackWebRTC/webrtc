@@ -8,19 +8,21 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef API_TEST_MOCK_RTPSENDER_H_
-#define API_TEST_MOCK_RTPSENDER_H_
+#ifndef PC_TEST_MOCK_RTPSENDERINTERNAL_H_
+#define PC_TEST_MOCK_RTPSENDERINTERNAL_H_
 
 #include <string>
 #include <vector>
 
-#include "api/rtpsenderinterface.h"
+#include "pc/rtpsender.h"
 #include "test/gmock.h"
 
 namespace webrtc {
 
-class MockRtpSender : public rtc::RefCountedObject<RtpSenderInterface> {
+// The definition of MockRtpSender is copied in to avoid multiple inheritance.
+class MockRtpSenderInternal : public RtpSenderInternal {
  public:
+  // RtpSenderInterface methods.
   MOCK_METHOD1(SetTrack, bool(MediaStreamTrackInterface*));
   MOCK_CONST_METHOD0(track, rtc::scoped_refptr<MediaStreamTrackInterface>());
   MOCK_CONST_METHOD0(ssrc, uint32_t());
@@ -30,8 +32,18 @@ class MockRtpSender : public rtc::RefCountedObject<RtpSenderInterface> {
   MOCK_CONST_METHOD0(GetParameters, RtpParameters());
   MOCK_METHOD1(SetParameters, RTCError(const RtpParameters&));
   MOCK_CONST_METHOD0(GetDtmfSender, rtc::scoped_refptr<DtmfSenderInterface>());
+
+  // RtpSenderInternal methods.
+  MOCK_METHOD1(SetVoiceMediaChannel, void(cricket::VoiceMediaChannel*));
+  MOCK_METHOD1(SetVideoMediaChannel, void(cricket::VideoMediaChannel*));
+  MOCK_METHOD1(SetSsrc, void(uint32_t));
+  MOCK_METHOD1(set_stream_id, void(const std::string&));
+  MOCK_CONST_METHOD0(stream_id, std::string());
+  MOCK_METHOD1(set_stream_ids, void(const std::vector<std::string>&));
+  MOCK_METHOD0(Stop, void());
+  MOCK_CONST_METHOD0(AttachmentId, int());
 };
 
 }  // namespace webrtc
 
-#endif  // API_TEST_MOCK_RTPSENDER_H_
+#endif  // PC_TEST_MOCK_RTPSENDERINTERNAL_H_

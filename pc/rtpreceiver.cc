@@ -202,11 +202,6 @@ void AudioRtpReceiver::SetObserver(RtpReceiverObserverInterface* observer) {
   }
 }
 
-void AudioRtpReceiver::SetMediaChannel(
-    cricket::VoiceMediaChannel* media_channel) {
-  media_channel_ = media_channel;
-}
-
 void AudioRtpReceiver::NotifyFirstPacketReceived() {
   if (observer_) {
     observer_->OnFirstPacketReceived(media_type());
@@ -340,11 +335,6 @@ void VideoRtpReceiver::SetObserver(RtpReceiverObserverInterface* observer) {
   if (received_first_packet_ && observer_) {
     observer_->OnFirstPacketReceived(media_type());
   }
-}
-
-void VideoRtpReceiver::SetMediaChannel(
-    cricket::VideoMediaChannel* media_channel) {
-  media_channel_ = media_channel;
 }
 
 void VideoRtpReceiver::NotifyFirstPacketReceived() {
