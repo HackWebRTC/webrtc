@@ -1120,7 +1120,8 @@ EncodedImageCallback::Result VideoSendStreamImpl::OnEncodedImage(
       check_encoder_activity_task_->UpdateEncoderActivity();
   }
 
-  fec_controller_->UpdateWithEncodedData(encoded_image);
+  fec_controller_->UpdateWithEncodedData(encoded_image._length,
+                                         encoded_image._frameType);
   EncodedImageCallback::Result result = payload_router_.OnEncodedImage(
       encoded_image, codec_specific_info, fragmentation);
 

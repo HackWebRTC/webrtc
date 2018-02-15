@@ -25,6 +25,7 @@
 #include "api/video/video_rotation.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/include/module_common_types_public.h"
+#include "modules/include/module_fec_types.h"
 #include "modules/video_coding/codecs/h264/include/h264_globals.h"
 #include "modules/video_coding/codecs/vp8/include/vp8_globals.h"
 #include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
@@ -263,22 +264,6 @@ struct RTCPVoIPMetric {
   uint16_t JBnominal;
   uint16_t JBmax;
   uint16_t JBabsMax;
-};
-
-// Types for the FEC packet masks. The type |kFecMaskRandom| is based on a
-// random loss model. The type |kFecMaskBursty| is based on a bursty/consecutive
-// loss model. The packet masks are defined in
-// modules/rtp_rtcp/fec_private_tables_random(bursty).h
-enum FecMaskType {
-  kFecMaskRandom,
-  kFecMaskBursty,
-};
-
-// Struct containing forward error correction settings.
-struct FecProtectionParams {
-  int fec_rate;
-  int max_fec_frames;
-  FecMaskType fec_mask_type;
 };
 
 // Interface used by the CallStats class to distribute call statistics.

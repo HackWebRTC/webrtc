@@ -407,6 +407,9 @@ Call* Call::Create(
   return new internal::Call(config, std::move(transport_send));
 }
 
+// This method here to avoid subclasses has to implement this method.
+// Call perf test will use Internal::Call::CreateVideoSendStream() to inject
+// FecController.
 VideoSendStream* Call::CreateVideoSendStream(
     VideoSendStream::Config config,
     VideoEncoderConfig encoder_config,
@@ -723,14 +726,7 @@ void Call::DestroyAudioReceiveStream(
   delete audio_receive_stream;
 }
 
-webrtc::VideoSendStream* Call::CreateVideoSendStream(
-    webrtc::VideoSendStream::Config config,
-    VideoEncoderConfig encoder_config) {
-  return CreateVideoSendStream(
-      std::move(config), std::move(encoder_config),
-      rtc::MakeUnique<FecControllerDefault>(Clock::GetRealTimeClock()));
-}
-
+// This method can be used for Call tests with external fec controller factory.
 webrtc::VideoSendStream* Call::CreateVideoSendStream(
     webrtc::VideoSendStream::Config config,
     VideoEncoderConfig encoder_config,
@@ -749,6 +745,7 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
   // the call has already started.
   // Copy ssrcs from |config| since |config| is moved.
   std::vector<uint32_t> ssrcs = config.rtp.ssrcs;
+
   VideoSendStream* send_stream = new VideoSendStream(
       num_cpu_cores_, module_process_thread_.get(), &worker_queue_,
       call_stats_.get(), transport_send_.get(), bitrate_allocator_.get(),
@@ -768,6 +765,17 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
   UpdateAggregateNetworkState();
 
   return send_stream;
+}
+
+webrtc::VideoSendStream* Call::CreateVideoSendStream(
+    webrtc::VideoSendStream::Config config,
+    VideoEncoderConfig encoder_config) {
+  std::unique_ptr<FecController> fec_controller =
+      config_.fec_controller_factory
+          ? config_.fec_controller_factory->CreateFecController()
+          : rtc::MakeUnique<FecControllerDefault>(Clock::GetRealTimeClock());
+  return CreateVideoSendStream(std::move(config), std::move(encoder_config),
+                               std::move(fec_controller));
 }
 
 void Call::DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) {

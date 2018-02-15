@@ -172,7 +172,8 @@ jlong CreatePeerConnectionFactoryForJava(
     const JavaParamRef<jobject>& joptions,
     const JavaParamRef<jobject>& jencoder_factory,
     const JavaParamRef<jobject>& jdecoder_factory,
-    rtc::scoped_refptr<AudioProcessing> audio_processor) {
+    rtc::scoped_refptr<AudioProcessing> audio_processor,
+    std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory) {
   // talk/ assumes pretty widely that the current Thread is ThreadManager'd, but
   // ThreadManager only WrapCurrentThread()s the thread where it is first
   // created.  Since the semantics around when auto-wrapping happens in
@@ -269,7 +270,7 @@ jlong CreatePeerConnectionFactoryForJava(
       CreateModularPeerConnectionFactory(
           network_thread.get(), worker_thread.get(), signaling_thread.get(),
           std::move(media_engine), std::move(call_factory),
-          std::move(rtc_event_log_factory)));
+          std::move(rtc_event_log_factory), std::move(fec_controller_factory)));
   RTC_CHECK(factory) << "Failed to create the peer connection factory; "
                      << "WebRTC/libjingle init likely failed on this device";
   // TODO(honghaiz): Maybe put the options as the argument of
@@ -290,25 +291,18 @@ static jlong JNI_PeerConnectionFactory_CreatePeerConnectionFactory(
     const JavaParamRef<jclass>&,
     const JavaParamRef<jobject>& joptions,
     const JavaParamRef<jobject>& jencoder_factory,
-    const JavaParamRef<jobject>& jdecoder_factory) {
-  return CreatePeerConnectionFactoryForJava(jni, joptions, jencoder_factory,
-                                            jdecoder_factory,
-                                            CreateAudioProcessing());
-}
-
-static jlong
-JNI_PeerConnectionFactory_CreatePeerConnectionFactoryWithAudioProcessing(
-    JNIEnv* jni,
-    const JavaParamRef<jclass>&,
-    const JavaParamRef<jobject>& joptions,
-    const JavaParamRef<jobject>& jencoder_factory,
     const JavaParamRef<jobject>& jdecoder_factory,
-    jlong native_audio_processor) {
+    jlong native_audio_processor,
+    jlong native_fec_controller_factory) {
   rtc::scoped_refptr<AudioProcessing> audio_processor =
       reinterpret_cast<AudioProcessing*>(native_audio_processor);
-  RTC_DCHECK(audio_processor);
-  return CreatePeerConnectionFactoryForJava(jni, joptions, jencoder_factory,
-                                            jdecoder_factory, audio_processor);
+  std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory(
+      reinterpret_cast<FecControllerFactoryInterface*>(
+          native_fec_controller_factory));
+  return CreatePeerConnectionFactoryForJava(
+      jni, joptions, jencoder_factory, jdecoder_factory,
+      audio_processor ? audio_processor : CreateAudioProcessing(),
+      std::move(fec_controller_factory));
 }
 
 static void JNI_PeerConnectionFactory_FreeFactory(JNIEnv*,
