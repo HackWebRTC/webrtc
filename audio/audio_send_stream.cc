@@ -19,7 +19,6 @@
 #include "audio/conversion.h"
 #include "call/rtp_transport_controller_send_interface.h"
 #include "modules/audio_coding/codecs/cng/audio_encoder_cng.h"
-#include "modules/pacing/paced_sender.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/event.h"
 #include "rtc_base/function_view.h"

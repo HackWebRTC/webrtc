@@ -18,7 +18,6 @@
 #include "api/video/i420_buffer.h"
 #include "common_video/include/video_bitrate_allocator.h"
 #include "common_video/include/video_frame.h"
-#include "modules/pacing/paced_sender.h"
 #include "modules/video_coding/include/video_codec_initializer.h"
 #include "modules/video_coding/include/video_coding.h"
 #include "modules/video_coding/include/video_coding_defines.h"

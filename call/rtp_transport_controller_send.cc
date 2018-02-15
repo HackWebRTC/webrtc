@@ -22,10 +22,6 @@ PacketRouter* RtpTransportControllerSend::packet_router() {
   return &packet_router_;
 }
 
-PacedSender* RtpTransportControllerSend::pacer() {
-  return &pacer_;
-}
-
 TransportFeedbackObserver*
 RtpTransportControllerSend::transport_feedback_observer() {
   return &send_side_cc_;
@@ -48,6 +44,15 @@ void RtpTransportControllerSend::SetAllocatedSendBitrateLimits(
 void RtpTransportControllerSend::SetKeepAliveConfig(
     const RtpKeepAliveConfig& config) {
   keepalive_ = config;
+}
+Module* RtpTransportControllerSend::GetPacerModule() {
+  return &pacer_;
+}
+void RtpTransportControllerSend::SetPacingFactor(float pacing_factor) {
+  pacer_.SetPacingFactor(pacing_factor);
+}
+void RtpTransportControllerSend::SetQueueTimeLimit(int limit_ms) {
+  pacer_.SetQueueTimeLimit(limit_ms);
 }
 Module* RtpTransportControllerSend::GetModule() {
   return &send_side_cc_;

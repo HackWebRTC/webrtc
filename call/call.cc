@@ -464,7 +464,8 @@ Call::Call(const Call::Config& config,
   // We have to attach the pacer to the pacer thread before starting the
   // module process thread to avoid a race accessing the process thread
   // both from the process thread and the pacer thread.
-  pacer_thread_->RegisterModule(transport_send_->pacer(), RTC_FROM_HERE);
+  pacer_thread_->RegisterModule(transport_send_->GetPacerModule(),
+                                RTC_FROM_HERE);
   pacer_thread_->RegisterModule(
       receive_side_cc_.GetRemoteBitrateEstimator(true), RTC_FROM_HERE);
   pacer_thread_->Start();
@@ -491,7 +492,7 @@ Call::~Call() {
   // the pacer thread is stopped.
   module_process_thread_->DeRegisterModule(transport_send_->GetModule());
   pacer_thread_->Stop();
-  pacer_thread_->DeRegisterModule(transport_send_->pacer());
+  pacer_thread_->DeRegisterModule(transport_send_->GetPacerModule());
   pacer_thread_->DeRegisterModule(
       receive_side_cc_.GetRemoteBitrateEstimator(true));
   module_process_thread_->DeRegisterModule(&receive_side_cc_);

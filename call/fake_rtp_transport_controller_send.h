@@ -37,8 +37,6 @@ class FakeRtpTransportControllerSend
     return send_side_cc_;
   }
 
-  PacedSender* pacer() override { return paced_sender_; }
-
   RtpPacketSender* packet_sender() override { return paced_sender_; }
 
   const RtpKeepAliveConfig& keepalive_config() const override {
@@ -52,6 +50,13 @@ class FakeRtpTransportControllerSend
     keepalive_ = keepalive_config;
   }
 
+  Module* GetPacerModule() override { return paced_sender_; }
+  void SetPacingFactor(float pacing_factor) override {
+    paced_sender_->SetPacingFactor(pacing_factor);
+  }
+  void SetQueueTimeLimit(int limit_ms) override {
+    paced_sender_->SetQueueTimeLimit(limit_ms);
+  }
   Module* GetModule() override { return send_side_cc_; }
   CallStatsObserver* GetCallStatsObserver() override { return send_side_cc_; }
   void RegisterPacketFeedbackObserver(
