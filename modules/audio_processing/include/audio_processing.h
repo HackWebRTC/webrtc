@@ -23,11 +23,11 @@
 #include <vector>
 
 #include "api/audio/echo_canceller3_config.h"
+#include "api/audio/echo_control.h"
 #include "api/optional.h"
 #include "modules/audio_processing/beamformer/array_util.h"
 #include "modules/audio_processing/include/audio_processing_statistics.h"
 #include "modules/audio_processing/include/config.h"
-#include "modules/audio_processing/include/echo_control.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/deprecation.h"
 #include "rtc_base/platform_file.h"

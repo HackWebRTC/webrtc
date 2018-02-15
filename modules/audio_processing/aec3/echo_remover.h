@@ -14,10 +14,10 @@
 #include <vector>
 
 #include "api/audio/echo_canceller3_config.h"
+#include "api/audio/echo_control.h"
 #include "api/optional.h"
 #include "modules/audio_processing/aec3/echo_path_variability.h"
 #include "modules/audio_processing/aec3/render_buffer.h"
-#include "modules/audio_processing/include/audio_processing.h"
 
 namespace webrtc {
 

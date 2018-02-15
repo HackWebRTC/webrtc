@@ -228,6 +228,15 @@ rtc_source_set("aec3_config") {
   deps = []
 }
 
+rtc_source_set("echo_control") {
+  visibility = [ "*" ]
+  sources = [
+    "audio/echo_control.h",
+  ]
+
+  deps = []
+}
+
 rtc_source_set("audio_options_api") {
   visibility = [ "*" ]
   sources = [

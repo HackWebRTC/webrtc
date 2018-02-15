@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_AUDIO_PROCESSING_INCLUDE_ECHO_CONTROL_H_
-#define MODULES_AUDIO_PROCESSING_INCLUDE_ECHO_CONTROL_H_
+#ifndef API_AUDIO_ECHO_CONTROL_H_
+#define API_AUDIO_ECHO_CONTROL_H_
 
 #include <memory>
 
@@ -49,4 +49,4 @@ class EchoControlFactory {
 };
 }  // namespace webrtc
 
-#endif  // MODULES_AUDIO_PROCESSING_INCLUDE_ECHO_CONTROL_H_
+#endif  // API_AUDIO_ECHO_CONTROL_H_
