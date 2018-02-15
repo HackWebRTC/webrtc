@@ -26,6 +26,11 @@ class RTPFragmentationHeader;
 class RtpRtcp;
 struct RTPVideoHeader;
 
+// Currently only VP8/VP9 specific.
+struct RtpPayloadState {
+  int16_t picture_id = -1;
+};
+
 // PayloadRouter routes outgoing data to the correct sending RTP module, based
 // on the simulcast layer in RTPVideoHeader.
 class PayloadRouter : public EncodedImageCallback {

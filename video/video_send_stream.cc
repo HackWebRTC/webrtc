@@ -37,7 +37,6 @@
 #include "rtc_base/weak_ptr.h"
 #include "system_wrappers/include/field_trial.h"
 #include "video/call_stats.h"
-#include "video/payload_router.h"
 
 namespace webrtc {
 

@@ -87,7 +87,6 @@ rtc_static_library("libjingle_peerconnection_api") {
     "turncustomizer.h",
     "umametrics.cc",
     "umametrics.h",
-    "videosinkinterface.h",
     "videosourceinterface.cc",
     "videosourceinterface.h",
     "videosourceproxy.h",
@@ -229,6 +228,7 @@ rtc_source_set("video_frame_api") {
     "video/video_rotation.h",
     "video/video_timing.cc",
     "video/video_timing.h",
+    "videosinkinterface.h",
   ]
 
   deps = [

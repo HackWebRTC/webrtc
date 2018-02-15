@@ -16,7 +16,9 @@
 // to refactor and clean up related interfaces, at which point it
 // should be moved to somewhere under api/.
 
-#include "api/rtp_headers.h"
+#include "api/video/video_content_type.h"
+#include "api/video/video_rotation.h"
+#include "api/video/video_timing.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "typedefs.h"  // NOLINT(build/include)
 
