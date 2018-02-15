@@ -561,6 +561,17 @@ bool CheckForRemoteIceRestart(const SessionDescriptionInterface* old_desc,
   return false;
 }
 
+// Generates a string error message for SetLocalDescription/SetRemoteDescription
+// from an RTCError.
+std::string GetSetDescriptionErrorMessage(cricket::ContentSource source,
+                                          SdpType type,
+                                          const RTCError& error) {
+  std::ostringstream oss;
+  oss << "Failed to set " << (source == cricket::CS_LOCAL ? "local" : "remote")
+      << " " << SdpTypeToString(type) << " sdp: " << error.message();
+  return oss.str();
+}
+
 }  // namespace
 
 // Upon completion, posts a task to execute the callback of the
@@ -1735,8 +1746,14 @@ void PeerConnection::CreateAnswer(CreateSessionDescriptionObserver* observer,
 
 void PeerConnection::SetLocalDescription(
     SetSessionDescriptionObserver* observer,
-    SessionDescriptionInterface* desc) {
+    SessionDescriptionInterface* desc_ptr) {
   TRACE_EVENT0("webrtc", "PeerConnection::SetLocalDescription");
+
+  // The SetLocalDescription contract is that we take ownership of the session
+  // description regardless of the outcome, so wrap it in a unique_ptr right
+  // away. Ideally, SetLocalDescription's signature will be changed to take the
+  // description as a unique_ptr argument to formalize this agreement.
+  std::unique_ptr<SessionDescriptionInterface> desc(desc_ptr);
 
   if (!observer) {
     RTC_LOG(LS_ERROR) << "SetLocalDescription - observer is NULL.";
@@ -1748,17 +1765,39 @@ void PeerConnection::SetLocalDescription(
     return;
   }
 
-  SdpType type = desc->GetType();
+  // If a session error has occurred the PeerConnection is in a possibly
+  // inconsistent state so fail right away.
+  if (session_error() != SessionError::kNone) {
+    std::string error_message = GetSessionErrorMsg();
+    RTC_LOG(LS_ERROR) << "SetLocalDescription: " << error_message;
+    PostSetSessionDescriptionFailure(observer, std::move(error_message));
+    return;
+  }
 
-  RTCError error = ApplyLocalDescription(rtc::WrapUnique(desc));
+  RTCError error = ValidateSessionDescription(desc.get(), cricket::CS_LOCAL);
+  if (!error.ok()) {
+    std::string error_message = GetSetDescriptionErrorMessage(
+        cricket::CS_LOCAL, desc->GetType(), error);
+    RTC_LOG(LS_ERROR) << error_message;
+    PostSetSessionDescriptionFailure(observer, std::move(error_message));
+    return;
+  }
+
+  // Grab the description type before moving ownership to ApplyLocalDescription,
+  // which may destroy it before returning.
+  const SdpType type = desc->GetType();
+
+  error = ApplyLocalDescription(std::move(desc));
   // |desc| may be destroyed at this point.
 
   if (!error.ok()) {
-    std::ostringstream oss;
-    oss << "Failed to set local " << SdpTypeToString(type)
-        << " sdp: " << error.message();
-    std::string error_message = oss.str();
-    RTC_LOG(LS_ERROR) << error_message << " (" << error.type() << ")";
+    // If ApplyLocalDescription fails, the PeerConnection could be in an
+    // inconsistent state, so act conservatively here and set the session error
+    // so that future calls to SetLocalDescription/SetRemoteDescription fail.
+    SetSessionError(SessionError::kContent, error.message());
+    std::string error_message =
+        GetSetDescriptionErrorMessage(cricket::CS_LOCAL, type, error);
+    RTC_LOG(LS_ERROR) << error_message;
     PostSetSessionDescriptionFailure(observer, std::move(error_message));
     return;
   }
@@ -1789,11 +1828,6 @@ RTCError PeerConnection::ApplyLocalDescription(
     std::unique_ptr<SessionDescriptionInterface> desc) {
   RTC_DCHECK_RUN_ON(signaling_thread());
   RTC_DCHECK(desc);
-
-  RTCError error = ValidateSessionDescription(desc.get(), cricket::CS_LOCAL);
-  if (!error.ok()) {
-    return error;
-  }
 
   // Update stats here so that we have the most recent stats for tracks and
   // streams that might be removed by updating the session description.
@@ -1869,7 +1903,7 @@ RTCError PeerConnection::ApplyLocalDescription(
     RemoveUnusedChannels(local_description()->description());
   }
 
-  error = UpdateSessionState(type, cricket::CS_LOCAL);
+  RTCError error = UpdateSessionState(type, cricket::CS_LOCAL);
   if (!error.ok()) {
     return error;
   }
@@ -1978,23 +2012,48 @@ void PeerConnection::SetRemoteDescription(
     return;
   }
 
-  const SdpType type = desc->GetType();
+  // If a session error has occurred the PeerConnection is in a possibly
+  // inconsistent state so fail right away.
+  if (session_error() != SessionError::kNone) {
+    std::string error_message = GetSessionErrorMsg();
+    RTC_LOG(LS_ERROR) << "SetRemoteDescription: " << error_message;
+    observer->OnSetRemoteDescriptionComplete(
+        RTCError(RTCErrorType::INTERNAL_ERROR, std::move(error_message)));
+    return;
+  }
 
-  RTCError error = ApplyRemoteDescription(std::move(desc));
-  // |desc| may be destroyed at this point.
-
+  RTCError error = ValidateSessionDescription(desc.get(), cricket::CS_REMOTE);
   if (!error.ok()) {
-    std::ostringstream oss;
-    oss << "Failed to set remote " << SdpTypeToString(type)
-        << " sdp: " << error.message();
-    std::string error_message = oss.str();
-    RTC_LOG(LS_ERROR) << error_message << " (" << error.type() << ")";
+    std::string error_message = GetSetDescriptionErrorMessage(
+        cricket::CS_REMOTE, desc->GetType(), error);
+    RTC_LOG(LS_ERROR) << error_message;
     observer->OnSetRemoteDescriptionComplete(
         RTCError(error.type(), std::move(error_message)));
     return;
   }
 
-  if (remote_description()->GetType() == SdpType::kAnswer) {
+  // Grab the description type before moving ownership to
+  // ApplyRemoteDescription, which may destroy it before returning.
+  const SdpType type = desc->GetType();
+
+  error = ApplyRemoteDescription(std::move(desc));
+  // |desc| may be destroyed at this point.
+
+  if (!error.ok()) {
+    // If ApplyRemoteDescription fails, the PeerConnection could be in an
+    // inconsistent state, so act conservatively here and set the session error
+    // so that future calls to SetLocalDescription/SetRemoteDescription fail.
+    SetSessionError(SessionError::kContent, error.message());
+    std::string error_message =
+        GetSetDescriptionErrorMessage(cricket::CS_REMOTE, type, error);
+    RTC_LOG(LS_ERROR) << error_message;
+    observer->OnSetRemoteDescriptionComplete(
+        RTCError(error.type(), std::move(error_message)));
+    return;
+  }
+  RTC_DCHECK(remote_description());
+
+  if (type == SdpType::kAnswer) {
     // TODO(deadbeef): We already had to hop to the network thread for
     // MaybeStartGathering...
     network_thread()->Invoke<void>(
@@ -2037,11 +2096,6 @@ RTCError PeerConnection::ApplyRemoteDescription(
     std::unique_ptr<SessionDescriptionInterface> desc) {
   RTC_DCHECK_RUN_ON(signaling_thread());
   RTC_DCHECK(desc);
-
-  RTCError error = ValidateSessionDescription(desc.get(), cricket::CS_REMOTE);
-  if (!error.ok()) {
-    return error;
-  }
 
   // Update stats here so that we have the most recent stats for tracks and
   // streams that might be removed by updating the session description.
@@ -2095,7 +2149,7 @@ RTCError PeerConnection::ApplyRemoteDescription(
 
   // NOTE: Candidates allocation will be initiated only when SetLocalDescription
   // is called.
-  error = UpdateSessionState(type, cricket::CS_REMOTE);
+  RTCError error = UpdateSessionState(type, cricket::CS_REMOTE);
   if (!error.ok()) {
     return error;
   }
@@ -4503,10 +4557,7 @@ RTCError PeerConnection::UpdateSessionState(SdpType type,
   // descriptions.
   error = PushdownMediaDescription(type, source);
   if (!error.ok()) {
-    SetSessionError(SessionError::kContent, error.message());
-  }
-  if (session_error() != SessionError::kNone) {
-    LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR, GetSessionErrorMsg());
+    return error;
   }
 
   return RTCError::OK();

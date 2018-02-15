@@ -482,23 +482,22 @@ TEST_P(PeerConnectionIceTest,
 // The standard (https://tools.ietf.org/html/rfc5245#section-15.4) says that
 // pwd must be 22-256 characters and ufrag must be 4-256 characters.
 TEST_P(PeerConnectionIceTest, VerifyUfragPwdLength) {
-  auto caller = CreatePeerConnectionWithAudioVideo();
-  auto callee = CreatePeerConnectionWithAudioVideo();
-
   auto set_local_description_with_ufrag_pwd_length =
-      [this, &caller](int ufrag_len, int pwd_len) {
-        auto offer = caller->CreateOffer();
+      [this](int ufrag_len, int pwd_len) {
+        auto pc = CreatePeerConnectionWithAudioVideo();
+        auto offer = pc->CreateOffer();
         SetIceUfragPwd(offer.get(), std::string(ufrag_len, 'x'),
                        std::string(pwd_len, 'x'));
-        return caller->SetLocalDescription(std::move(offer));
+        return pc->SetLocalDescription(std::move(offer));
       };
 
   auto set_remote_description_with_ufrag_pwd_length =
-      [this, &caller, &callee](int ufrag_len, int pwd_len) {
-        auto offer = caller->CreateOffer();
+      [this](int ufrag_len, int pwd_len) {
+        auto pc = CreatePeerConnectionWithAudioVideo();
+        auto offer = pc->CreateOffer();
         SetIceUfragPwd(offer.get(), std::string(ufrag_len, 'x'),
                        std::string(pwd_len, 'x'));
-        return callee->SetRemoteDescription(std::move(offer));
+        return pc->SetRemoteDescription(std::move(offer));
       };
 
   EXPECT_FALSE(set_local_description_with_ufrag_pwd_length(3, 22));
