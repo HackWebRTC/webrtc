@@ -26,16 +26,3 @@
            << prefix_expr << "\nwhich is\n\"" << prefix << "\"";
   }
 }
-
-::testing::AssertionResult AssertStringContains(const char* str_expr,
-                                                const char* substr_expr,
-                                                const std::string& str,
-                                                const std::string& substr) {
-  if (str.find(substr) != std::string::npos) {
-    return ::testing::AssertionSuccess();
-  } else {
-    return ::testing::AssertionFailure()
-           << str_expr << "\nwhich is\n\"" << str << "\"\ndoes not contain\n"
-           << substr_expr << "\nwhich is\n\"" << substr << "\"";
-  }
-}
