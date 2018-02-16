@@ -259,6 +259,7 @@ if (is_ios || is_mac) {
 
     if (rtc_use_metal_rendering) {
       rtc_static_library("metal_objc") {
+        visibility = [ "*" ]
         sources = [
           "objc/Framework/Classes/Metal/RTCMTLI420Renderer.h",
           "objc/Framework/Classes/Metal/RTCMTLI420Renderer.mm",
