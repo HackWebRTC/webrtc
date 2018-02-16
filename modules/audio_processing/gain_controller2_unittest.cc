@@ -11,8 +11,8 @@
 #include <algorithm>
 
 #include "api/array_view.h"
-#include "modules/audio_processing/agc2/gain_controller2.h"
 #include "modules/audio_processing/audio_buffer.h"
+#include "modules/audio_processing/gain_controller2.h"
 #include "rtc_base/checks.h"
 #include "test/gtest.h"
 
@@ -61,11 +61,12 @@ TEST(GainController2, ToString) {
   config.fixed_gain_db = 5.f;
 
   config.enabled = false;
-  EXPECT_EQ("{enabled: false, fixed_gain_dB: 5}",
+  config.enable_limiter = true;
+  EXPECT_EQ("{enabled: false, fixed_gain_dB: 5, enable_limiter: true}",
             GainController2::ToString(config));
 
   config.enabled = true;
-  EXPECT_EQ("{enabled: true, fixed_gain_dB: 5}",
+  EXPECT_EQ("{enabled: true, fixed_gain_dB: 5, enable_limiter: true}",
             GainController2::ToString(config));
 }
 
@@ -81,7 +82,7 @@ TEST(GainController2, Usage) {
   AudioProcessing::Config::GainController2 config;
 
   // Check that samples are not modified when the fixed gain is 0 dB.
-  ASSERT_EQ(config.fixed_gain_db, 0.f);
+  config.fixed_gain_db = 0.f;
   gain_controller2->ApplyConfig(config);
   gain_controller2->Process(&ab);
   EXPECT_EQ(ab.channels_f()[0][0], sample_value);

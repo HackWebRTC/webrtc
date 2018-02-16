@@ -20,7 +20,6 @@
 #include "common_audio/signal_processing/include/signal_processing_library.h"
 #include "modules/audio_processing/aec/aec_core.h"
 #include "modules/audio_processing/agc/agc_manager_direct.h"
-#include "modules/audio_processing/agc2/gain_controller2.h"
 #include "modules/audio_processing/audio_buffer.h"
 #include "modules/audio_processing/beamformer/nonlinear_beamformer.h"
 #include "modules/audio_processing/common.h"
@@ -28,6 +27,7 @@
 #include "modules/audio_processing/echo_control_mobile_impl.h"
 #include "modules/audio_processing/gain_control_for_experimental_agc.h"
 #include "modules/audio_processing/gain_control_impl.h"
+#include "modules/audio_processing/gain_controller2.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -1425,7 +1425,7 @@ int AudioProcessingImpl::AnalyzeReverseStreamLocked(
     const size_t num_channels =
         formats_.api_format.reverse_input_stream().num_channels();
     aec_dump_->WriteRenderStreamMessage(
-        FloatAudioFrame(src, num_channels, channel_size));
+        AudioFrameView<const float>(src, num_channels, channel_size));
   }
   render_.render_audio->CopyFrom(src,
                                  formats_.api_format.reverse_input_stream());
@@ -1993,7 +1993,7 @@ void AudioProcessingImpl::RecordUnprocessedCaptureStream(
   const size_t channel_size = formats_.api_format.input_stream().num_frames();
   const size_t num_channels = formats_.api_format.input_stream().num_channels();
   aec_dump_->AddCaptureStreamInput(
-      FloatAudioFrame(src, num_channels, channel_size));
+      AudioFrameView<const float>(src, num_channels, channel_size));
   RecordAudioProcessingState();
 }
 
@@ -2013,8 +2013,8 @@ void AudioProcessingImpl::RecordProcessedCaptureStream(
   const size_t channel_size = formats_.api_format.output_stream().num_frames();
   const size_t num_channels =
       formats_.api_format.output_stream().num_channels();
-  aec_dump_->AddCaptureStreamOutput(
-      FloatAudioFrame(processed_capture_stream, num_channels, channel_size));
+  aec_dump_->AddCaptureStreamOutput(AudioFrameView<const float>(
+      processed_capture_stream, num_channels, channel_size));
   aec_dump_->WriteCaptureStreamMessage();
 }
 

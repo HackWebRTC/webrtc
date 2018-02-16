@@ -8,12 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_AUDIO_PROCESSING_AGC2_GAIN_CONTROLLER2_H_
-#define MODULES_AUDIO_PROCESSING_AGC2_GAIN_CONTROLLER2_H_
+#ifndef MODULES_AUDIO_PROCESSING_GAIN_CONTROLLER2_H_
+#define MODULES_AUDIO_PROCESSING_GAIN_CONTROLLER2_H_
 
 #include <memory>
 #include <string>
 
+#include "modules/audio_processing/agc2/fixed_gain_controller.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "rtc_base/constructormagic.h"
 
@@ -24,8 +25,6 @@ class AudioBuffer;
 
 // Gain Controller 2 aims to automatically adjust levels by acting on the
 // microphone gain and/or applying digital gain.
-//
-// Temporarily implements a fixed gain mode with hard-clipping.
 class GainController2 {
  public:
   GainController2();
@@ -42,12 +41,12 @@ class GainController2 {
  private:
   static int instance_count_;
   std::unique_ptr<ApmDataDumper> data_dumper_;
-  int sample_rate_hz_;
-  float fixed_gain_;
+  FixedGainController gain_controller_;
+  AudioProcessing::Config::GainController2 config_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(GainController2);
 };
 
 }  // namespace webrtc
 
-#endif  // MODULES_AUDIO_PROCESSING_AGC2_GAIN_CONTROLLER2_H_
+#endif  // MODULES_AUDIO_PROCESSING_GAIN_CONTROLLER2_H_

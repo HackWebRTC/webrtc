@@ -54,15 +54,16 @@ class AecDumpImpl : public AecDump {
 
   void WriteInitMessage(const InternalAPMStreamsConfig& api_format) override;
 
-  void AddCaptureStreamInput(const FloatAudioFrame& src) override;
-  void AddCaptureStreamOutput(const FloatAudioFrame& src) override;
+  void AddCaptureStreamInput(const AudioFrameView<const float>& src) override;
+  void AddCaptureStreamOutput(const AudioFrameView<const float>& src) override;
   void AddCaptureStreamInput(const AudioFrame& frame) override;
   void AddCaptureStreamOutput(const AudioFrame& frame) override;
   void AddAudioProcessingState(const AudioProcessingState& state) override;
   void WriteCaptureStreamMessage() override;
 
   void WriteRenderStreamMessage(const AudioFrame& frame) override;
-  void WriteRenderStreamMessage(const FloatAudioFrame& src) override;
+  void WriteRenderStreamMessage(
+      const AudioFrameView<const float>& src) override;
 
   void WriteConfig(const InternalAPMConfig& config) override;
 

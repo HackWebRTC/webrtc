@@ -29,8 +29,10 @@ class MockAecDump : public AecDump {
   MOCK_METHOD1(WriteInitMessage,
                void(const InternalAPMStreamsConfig& streams_config));
 
-  MOCK_METHOD1(AddCaptureStreamInput, void(const FloatAudioFrame& src));
-  MOCK_METHOD1(AddCaptureStreamOutput, void(const FloatAudioFrame& src));
+  MOCK_METHOD1(AddCaptureStreamInput,
+               void(const AudioFrameView<const float>& src));
+  MOCK_METHOD1(AddCaptureStreamOutput,
+               void(const AudioFrameView<const float>& src));
   MOCK_METHOD1(AddCaptureStreamInput, void(const AudioFrame& frame));
   MOCK_METHOD1(AddCaptureStreamOutput, void(const AudioFrame& frame));
   MOCK_METHOD1(AddAudioProcessingState,
@@ -38,7 +40,8 @@ class MockAecDump : public AecDump {
   MOCK_METHOD0(WriteCaptureStreamMessage, void());
 
   MOCK_METHOD1(WriteRenderStreamMessage, void(const AudioFrame& frame));
-  MOCK_METHOD1(WriteRenderStreamMessage, void(const FloatAudioFrame& src));
+  MOCK_METHOD1(WriteRenderStreamMessage,
+               void(const AudioFrameView<const float>& src));
 
   MOCK_METHOD1(WriteConfig, void(const InternalAPMConfig& config));
 };
