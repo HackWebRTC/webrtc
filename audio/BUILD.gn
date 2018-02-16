@@ -47,11 +47,11 @@ rtc_static_library("audio") {
   deps = [
     "..:webrtc_common",
     "../api:array_view",
-    "../api:audio_mixer_api",
     "../api:call_api",
     "../api:libjingle_peerconnection_api",
     "../api:optional",
     "../api:transport_api",
+    "../api/audio:audio_mixer_api",
     "../api/audio_codecs:audio_codecs_api",
     "../api/audio_codecs:builtin_audio_encoder_factory",
     "../call:bitrate_allocator",

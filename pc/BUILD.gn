@@ -214,9 +214,9 @@ rtc_static_library("create_pc_factory") {
   ]
 
   deps = [
-    "../api:audio_mixer_api",
     "../api:callfactory_api",
     "../api:libjingle_peerconnection_api",
+    "../api/audio:audio_mixer_api",
     "../api/audio_codecs:audio_codecs_api",
     "../api/video_codecs:video_codecs_api",
     "../call",
