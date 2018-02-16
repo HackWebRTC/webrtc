@@ -39,7 +39,7 @@ TEST(AudioFrameTest, ConstructFromAudioBuffer) {
   AudioFrameView<const float> other_const_view = non_const_view;
   static_cast<void>(other_const_view);
 
-  // But not the other way.
+  // But not the other way. The following will fail:
   // non_const_view = other_const_view;
 
   AudioFrameView<int16_t> non_const_int16_view(

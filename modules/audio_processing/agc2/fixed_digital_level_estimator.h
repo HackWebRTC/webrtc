@@ -26,13 +26,18 @@ class ApmDataDumper;
 // filtering.
 class FixedDigitalLevelEstimator {
  public:
+  // Sample rates are allowed if the number of samples in a frame
+  // (sample_rate_hz * kFrameDurationMs / 1000) is divisible by
+  // kSubFramesInSample. For kFrameDurationMs=10 and
+  // kSubFramesInSample=20, this means that sample_rate_hz has to be
+  // divisible by 2000.
   FixedDigitalLevelEstimator(size_t sample_rate_hz,
                              ApmDataDumper* apm_data_dumper);
 
   // The input is assumed to be in FloatS16 format. Scaled input will
-  // produce similarly scaled output. A frame of
-  // length kFrameDurationMs=10 ms produces kSubFramesInFrame=20 level
-  // estimates in the same scale.
+  // produce similarly scaled output. A frame of with kFrameDurationMs
+  // ms of audio produces a level estimates in the same scale. The
+  // level estimate contains kSubFramesInFrame values.
   std::array<float, kSubFramesInFrame> ComputeLevel(
       const AudioFrameView<const float>& float_frame);
 
@@ -43,7 +48,7 @@ class FixedDigitalLevelEstimator {
  private:
   void CheckParameterCombination();
 
-  ApmDataDumper* const apm_data_dumper_;
+  ApmDataDumper* const apm_data_dumper_ = nullptr;
   float filter_state_level_ = 0.f;
   size_t samples_in_frame_;
   size_t samples_in_sub_frame_;
