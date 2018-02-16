@@ -487,8 +487,7 @@ if (rtc_include_tests) {
         "../../rtc_base:rtc_base_approved",
         "../../sdk:common_objc",
         "../../sdk:native_api",
-        "../../sdk:peerconnection_objc",
-        "../../sdk:peerconnectionfactory_objc",
+        "../../sdk:peerconnectionfactory_base_objc",
         "../../sdk:videotoolbox_objc",
         "../../sdk:videotracksource_objc",
       ]

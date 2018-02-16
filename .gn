@@ -39,9 +39,7 @@ check_targets = [
   "//pc/*",
   "//rtc_base/*",
   "//rtc_tools/*",
-
-  # TODO(bugs.webrtc.org/8850): Remove "/android" to re-enable on objc.
-  "//sdk/android/*",
+  "//sdk/*",
   "//stats/*",
   "//system_wrappers/*",
   "//test/*",
