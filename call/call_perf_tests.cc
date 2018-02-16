@@ -647,7 +647,15 @@ TEST_F(CallPerfTest, NoPadWithoutMinTransmitBitrate) {
   TestMinTransmitBitrate(false);
 }
 
-TEST_F(CallPerfTest, KeepsHighBitrateWhenReconfiguringSender) {
+// TODO(bugs.webrtc.org/8878)
+#if defined(WEBRTC_MAC)
+#define MAYBE_KeepsHighBitrateWhenReconfiguringSender \
+  DISABLED_KeepsHighBitrateWhenReconfiguringSender
+#else
+#define MAYBE_KeepsHighBitrateWhenReconfiguringSender \
+  KeepsHighBitrateWhenReconfiguringSender
+#endif
+TEST_F(CallPerfTest, MAYBE_KeepsHighBitrateWhenReconfiguringSender) {
   static const uint32_t kInitialBitrateKbps = 400;
   static const uint32_t kReconfigureThresholdKbps = 600;
   static const uint32_t kPermittedReconfiguredBitrateDiffKbps = 100;
@@ -926,7 +934,15 @@ void CallPerfTest::TestMinAudioVideoBitrate(
   RunBaseTest(&test);
 }
 
-TEST_F(CallPerfTest, MinVideoAndAudioBitrate) {
+// TODO(bugs.webrtc.org/8878)
+#if defined(WEBRTC_MAC)
+#define MAYBE_MinVideoAndAudioBitrate \
+  DISABLED_MinVideoAndAudioBitrate
+#else
+#define MAYBE_MinVideoAndAudioBitrate \
+  MinVideoAndAudioBitrate
+#endif
+TEST_F(CallPerfTest, MAYBE_MinVideoAndAudioBitrate) {
   TestMinAudioVideoBitrate(false, 110, 40, -10, 10000, 70000, 200000);
 }
 TEST_F(CallPerfTest, MinVideoAndAudioBitrateWStrategy) {
