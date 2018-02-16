@@ -190,8 +190,6 @@ declare_args() {
   # build environments, even if available for Chromium builds.
   rtc_use_gtk = !build_with_chromium && !build_with_mozilla
 
-  rtc_restrict_logging = build_with_chromium || build_with_mozilla
-
   # Excluded in Chromium since its prerequisites don't require Pulse Audio.
   rtc_include_pulse_audio = !build_with_chromium
 

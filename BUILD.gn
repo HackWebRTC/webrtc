@@ -181,10 +181,6 @@ config("common_config") {
     defines += [ "WEBRTC_ENABLE_PROTOBUF=0" ]
   }
 
-  if (rtc_restrict_logging) {
-    defines += [ "WEBRTC_RESTRICT_LOGGING" ]
-  }
-
   if (rtc_include_internal_audio_device) {
     defines += [ "WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE" ]
   }
@@ -214,7 +210,6 @@ config("common_config") {
       "HAVE_WEBRTC_VIDEO",
       "HAVE_WEBRTC_VOICE",
       "LOGGING_INSIDE_WEBRTC",
-      "USE_WEBRTC_DEV_BRANCH",
     ]
   } else {
     if (is_posix) {
