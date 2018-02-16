@@ -168,17 +168,6 @@ config("common_inherited_config") {
   if (is_ubsan) {
     cflags += [ "-fsanitize=float-cast-overflow" ]
   }
-
-  # TODO(GYP): Support these in GN.
-  # if (is_bsd) {
-  #   defines += [ "BSD" ]
-  # }
-  # if (is_openbsd) {
-  #   defines += [ "OPENBSD" ]
-  # }
-  # if (is_freebsd) {
-  #   defines += [ "FREEBSD" ]
-  # }
 }
 
 config("common_config") {
