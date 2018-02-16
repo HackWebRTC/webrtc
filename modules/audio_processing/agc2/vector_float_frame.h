@@ -25,6 +25,9 @@ class VectorFloatFrame {
                    int samples_per_channel,
                    float start_value);
   const AudioFrameView<float>& float_frame_view() { return float_frame_view_; }
+  AudioFrameView<const float> float_frame_view() const {
+    return float_frame_view_;
+  }
 
   ~VectorFloatFrame();
 

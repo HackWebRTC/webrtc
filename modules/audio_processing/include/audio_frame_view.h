@@ -27,6 +27,14 @@ class AudioFrameView {
         num_channels_(num_channels),
         channel_size_(channel_size) {}
 
+  // Implicit cast to allow converting Frame<float> to
+  // Frame<const float>.
+  template <class U>
+  AudioFrameView(AudioFrameView<U> other)
+      : audio_samples_(other.data()),
+        num_channels_(other.num_channels()),
+        channel_size_(other.samples_per_channel()) {}
+
   AudioFrameView() = delete;
 
   size_t num_channels() const { return num_channels_; }
@@ -44,6 +52,8 @@ class AudioFrameView {
     RTC_DCHECK_LE(idx, num_channels_);
     return rtc::ArrayView<const T>(audio_samples_[idx], channel_size_);
   }
+
+  T* const* data() { return audio_samples_; }
 
  private:
   T* const* audio_samples_;

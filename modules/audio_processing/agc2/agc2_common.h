@@ -11,10 +11,25 @@
 #ifndef MODULES_AUDIO_PROCESSING_AGC2_AGC2_COMMON_H_
 #define MODULES_AUDIO_PROCESSING_AGC2_AGC2_COMMON_H_
 
+#include "rtc_base/basictypes.h"
+
 namespace webrtc {
 
 constexpr float kMinSampleValue = -32768.f;
 constexpr float kMaxSampleValue = 32767.f;
+
+constexpr size_t kFrameDurationMs = 10;
+constexpr size_t kSubFramesInFrame = 20;
+
+constexpr float kAttackFilterConstant = 0.f;
+
+constexpr size_t kMaximalNumberOfSamplesPerChannel = 480;
+
+// This is computed from kDecayMs by
+// 10 ** (-1/20 * subframe_duration / kDecayMs).
+// |subframe_duration| is |kFrameDurationMs / kSubFramesInFrame|.
+// kDecayMs is defined in agc2_testing_common.h
+constexpr float kDecayFilterConstant = 0.9998848773724686f;
 
 // TODO(aleloi): add the other constants as more AGC2 components are
 // added.
