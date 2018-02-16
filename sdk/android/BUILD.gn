@@ -36,6 +36,8 @@ config("libjingle_peerconnection_jni_warnings_config") {
 
 generate_jni("generated_base_jni") {
   sources = [
+    "api/org/webrtc/NetworkMonitor.java",
+    "api/org/webrtc/NetworkMonitorAutoDetect.java",
     "src/java/org/webrtc/Histogram.java",
     "src/java/org/webrtc/JniCommon.java",
   ]
@@ -87,6 +89,8 @@ rtc_source_set("base_jni") {
   visibility = [ "*" ]
   sources = [
     "src/jni/androidhistogram.cc",
+    "src/jni/androidnetworkmonitor.cc",
+    "src/jni/androidnetworkmonitor.h",
     "src/jni/class_loader.h",
     "src/jni/classreferenceholder.h",
     "src/jni/jni_common.cc",
@@ -411,8 +415,6 @@ generate_jni("generated_peerconnection_jni") {
     "api/org/webrtc/MediaSource.java",
     "api/org/webrtc/MediaStream.java",
     "api/org/webrtc/MediaStreamTrack.java",
-    "api/org/webrtc/NetworkMonitor.java",
-    "api/org/webrtc/NetworkMonitorAutoDetect.java",
     "api/org/webrtc/PeerConnection.java",
     "api/org/webrtc/PeerConnectionFactory.java",
     "api/org/webrtc/RTCStats.java",
@@ -439,7 +441,6 @@ rtc_static_library("peerconnection_jni") {
 
   sources = [
     "src/jni/androidnetworkmonitor_jni.h",
-    "src/jni/pc/androidnetworkmonitor.cc",
     "src/jni/pc/androidnetworkmonitor.h",
     "src/jni/pc/audiotrack.cc",
     "src/jni/pc/callsessionfilerotatinglogsink.cc",
@@ -818,6 +819,8 @@ rtc_static_library("native_api_base") {
   sources = [
     "native_api/base/init.cc",
     "native_api/base/init.h",
+    "native_api/base/networkmonitor.cc",
+    "native_api/base/networkmonitor.h",
   ]
 
   deps = [

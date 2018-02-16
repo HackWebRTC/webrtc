@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "sdk/android/src/jni/pc/androidnetworkmonitor.h"
+#include "sdk/android/src/jni/androidnetworkmonitor.h"
 
 #include <dlfcn.h>
 #ifndef RTLD_NOLOAD
@@ -19,8 +19,8 @@
 #include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/ipaddress.h"
-#include "sdk/android/generated_peerconnection_jni/jni/NetworkMonitorAutoDetect_jni.h"
-#include "sdk/android/generated_peerconnection_jni/jni/NetworkMonitor_jni.h"
+#include "sdk/android/generated_base_jni/jni/NetworkMonitorAutoDetect_jni.h"
+#include "sdk/android/generated_base_jni/jni/NetworkMonitor_jni.h"
 #include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 
@@ -130,6 +130,10 @@ static NetworkInformation GetNetworkInformationFromJava(
   return network_info;
 }
 
+NetworkInformation::NetworkInformation() = default;
+
+NetworkInformation::~NetworkInformation() = default;
+
 std::string NetworkInformation::ToString() const {
   std::stringstream ss;
   ss << "NetInfo[name " << interface_name << "; handle " << handle << "; type "
@@ -144,6 +148,8 @@ std::string NetworkInformation::ToString() const {
 AndroidNetworkMonitor::AndroidNetworkMonitor(JNIEnv* env)
     : android_sdk_int_(Java_NetworkMonitor_androidSdkInt(env)),
       j_network_monitor_(env, Java_NetworkMonitor_getInstance(env)) {}
+
+AndroidNetworkMonitor::~AndroidNetworkMonitor() = default;
 
 void AndroidNetworkMonitor::Start() {
   RTC_CHECK(thread_checker_.CalledOnValidThread());
