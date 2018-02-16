@@ -11,6 +11,7 @@
 #include <cmath>
 #include <fstream>
 
+#include "common_audio/include/audio_util.h"
 #include "common_audio/wav_file.h"
 #include "rtc_base/flags.h"
 #include "rtc_base/logging.h"
@@ -23,7 +24,7 @@ constexpr int kMaxSampleRate = 48000;
 constexpr uint8_t kMaxFrameLenMs = 30;
 constexpr size_t kMaxFrameLen = kMaxFrameLenMs * kMaxSampleRate / 1000;
 
-const double kOneDbReduction = std::pow(10.0, -1.0 / 20.0);
+const double kOneDbReduction = DbToRatio(-1.0);
 
 DEFINE_string(i, "", "Input wav file");
 DEFINE_string(oc, "", "Config output file");

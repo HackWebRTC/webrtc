@@ -12,6 +12,7 @@
 
 #include <cmath>
 
+#include "common_audio/include/audio_util.h"
 #include "modules/audio_processing/audio_buffer.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/atomicops.h"
@@ -56,7 +57,7 @@ void GainController2::Process(AudioBuffer* audio) {
 void GainController2::ApplyConfig(
     const AudioProcessing::Config::GainController2& config) {
   RTC_DCHECK(Validate(config));
-  fixed_gain_ = std::pow(10.f, config.fixed_gain_db / 20.f);
+  fixed_gain_ = DbToRatio(config.fixed_gain_db);
 }
 
 bool GainController2::Validate(

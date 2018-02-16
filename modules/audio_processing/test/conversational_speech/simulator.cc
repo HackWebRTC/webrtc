@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "api/array_view.h"
+#include "common_audio/include/audio_util.h"
 #include "common_audio/wav_file.h"
 #include "modules/audio_processing/test/conversational_speech/wavreader_interface.h"
 #include "rtc_base/constructormagic.h"
@@ -165,7 +166,7 @@ void PadRightWrite(WavWriter* wav_writer, size_t pad_samples) {
 void ScaleSignal(rtc::ArrayView<const int16_t> source_samples,
                  int gain,
                  rtc::ArrayView<int16_t> output_samples) {
-  const float gain_linear = pow(10.0, gain / 20.0);
+  const float gain_linear = DbToRatio(gain);
   RTC_DCHECK_EQ(source_samples.size(), output_samples.size());
   std::transform(source_samples.begin(), source_samples.end(),
                  output_samples.begin(), [gain_linear](int16_t x) -> int16_t {

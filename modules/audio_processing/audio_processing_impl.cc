@@ -1262,7 +1262,7 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
     int gain_db = public_submodules_->gain_control->is_enabled() ?
                   public_submodules_->gain_control->compression_gain_db() :
                   0;
-    float gain = std::pow(10.f, gain_db / 20.f);
+    float gain = DbToRatio(gain_db);
     gain *= capture_nonlocked_.level_controller_enabled ?
             private_submodules_->level_controller->GetLastGain() :
             1.f;
