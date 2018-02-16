@@ -107,7 +107,6 @@ config("common_inherited_config") {
     defines += [
       # TODO(kjellander): Cleanup unused ones and move defines closer to
       # the source when webrtc:4256 is completed.
-      "FEATURE_ENABLE_VOICEMAIL",
       "GTEST_RELATIVE_PATH",
       "WEBRTC_CHROMIUM_BUILD",
     ]
