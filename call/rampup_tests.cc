@@ -578,7 +578,15 @@ TEST_F(RampUpTest, UpDownUpAbsSendTimeSimulcastRedRtx) {
   RunBaseTest(&test);
 }
 
-TEST_F(RampUpTest, UpDownUpTransportSequenceNumberRtx) {
+// TODO(bugs.webrtc.org/8878)
+#if defined(WEBRTC_MAC)
+#define MAYBE_UpDownUpTransportSequenceNumberRtx \
+  DISABLED_UpDownUpTransportSequenceNumberRtx
+#else
+#define MAYBE_UpDownUpTransportSequenceNumberRtx \
+  UpDownUpTransportSequenceNumberRtx
+#endif
+TEST_F(RampUpTest, MAYBE_UpDownUpTransportSequenceNumberRtx) {
   std::vector<int> loss_rates = {0, 0, 0, 0};
   RampUpDownUpTester test(3, 0, 0, kStartBitrateBps,
                           RtpExtension::kTransportSequenceNumberUri, true,
