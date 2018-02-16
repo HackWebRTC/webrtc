@@ -60,7 +60,8 @@ void EncoderRtcpFeedback::OnReceivedIntraFrameRequest(uint32_t ssrc) {
     time_last_intra_request_ms_[index] = now_ms;
   }
 
-  video_stream_encoder_->OnReceivedIntraFrameRequest(index);
+  // Always produce key frame for all streams.
+  video_stream_encoder_->SendKeyFrame();
 }
 
 }  // namespace webrtc

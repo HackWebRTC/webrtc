@@ -815,6 +815,7 @@ void VideoStreamEncoder::SendKeyFrame() {
     return;
   }
   RTC_DCHECK_RUN_ON(&encoder_queue_);
+  TRACE_EVENT0("webrtc", "OnKeyFrameRequest");
   video_sender_.IntraFrameRequest(0);
 }
 
@@ -871,18 +872,6 @@ void VideoStreamEncoder::OnDroppedFrame(DropReason reason) {
       stats_proxy_->OnFrameDroppedByEncoder();
       break;
   }
-}
-
-void VideoStreamEncoder::OnReceivedIntraFrameRequest(size_t stream_index) {
-  if (!encoder_queue_.IsCurrent()) {
-    encoder_queue_.PostTask(
-        [this, stream_index] { OnReceivedIntraFrameRequest(stream_index); });
-    return;
-  }
-  RTC_DCHECK_RUN_ON(&encoder_queue_);
-  // Key frame request from remote side, signal to VCM.
-  TRACE_EVENT0("webrtc", "OnKeyFrameRequest");
-  video_sender_.IntraFrameRequest(stream_index);
 }
 
 void VideoStreamEncoder::OnBitrateUpdated(uint32_t bitrate_bps,

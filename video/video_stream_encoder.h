@@ -99,10 +99,8 @@ class VideoStreamEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   // guaranteed that no encoded frames will be delivered to the sink.
   void Stop();
 
-  void SendKeyFrame();
-
-  // virtual to test EncoderStateFeedback with mocks.
-  virtual void OnReceivedIntraFrameRequest(size_t stream_index);
+  // virtual to test EncoderRtcpFeedback with mocks.
+  virtual void SendKeyFrame();
 
   void OnBitrateUpdated(uint32_t bitrate_bps,
                         uint8_t fraction_lost,
