@@ -224,8 +224,19 @@ rtc_source_set("aec3_config") {
   sources = [
     "audio/echo_canceller3_config.h",
   ]
+}
 
-  deps = []
+rtc_source_set("aec3_factory") {
+  visibility = [ "*" ]
+  sources = [
+    "audio/echo_canceller3_factory.cc",
+    "audio/echo_canceller3_factory.h",
+  ]
+
+  deps = [
+    ":aec3_config",
+    ":echo_control",
+  ]
 }
 
 rtc_source_set("echo_control") {
@@ -233,8 +244,6 @@ rtc_source_set("echo_control") {
   sources = [
     "audio/echo_control.h",
   ]
-
-  deps = []
 }
 
 rtc_source_set("audio_options_api") {
