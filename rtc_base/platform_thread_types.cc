@@ -37,7 +37,7 @@ PlatformThreadId CurrentThreadId() {
 }
 
 PlatformThreadRef CurrentThreadRef() {
-#if defined(WEBRTC_WIN)
+#if defined(WEBRTC_WIN) || defined(WEBRTC_FUCHSIA)
   return GetCurrentThreadId();
 #elif defined(WEBRTC_POSIX)
   return pthread_self();
@@ -45,7 +45,7 @@ PlatformThreadRef CurrentThreadRef() {
 }
 
 bool IsThreadRefEqual(const PlatformThreadRef& a, const PlatformThreadRef& b) {
-#if defined(WEBRTC_WIN)
+#if defined(WEBRTC_WIN) || defined(WEBRTC_FUCHSIA)
   return a == b;
 #elif defined(WEBRTC_POSIX)
   return pthread_equal(a, b);
