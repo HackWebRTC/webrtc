@@ -292,11 +292,6 @@ class PeerConnection : public PeerConnectionInternal,
     uint32_t first_ssrc;
   };
 
-  struct TrackEvent {
-    rtc::scoped_refptr<RtpReceiverInterface> receiver;
-    std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams;
-  };
-
   // Implements MessageHandler.
   void OnMessage(rtc::Message* msg) override;
 

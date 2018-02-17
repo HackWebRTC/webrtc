@@ -219,6 +219,106 @@ TEST_F(PeerConnectionRtpCallbacksTest,
             callee->observer()->remove_track_events_);
 }
 
+// Tests that setting a remote description with sending transceivers will fire
+// the OnTrack callback for each transceiver and setting a remote description
+// with receive only transceivers will not call OnTrack.
+TEST_F(PeerConnectionRtpCallbacksTest, UnifiedPlanAddTransceiverCallsOnTrack) {
+  auto caller = CreatePeerConnectionWithUnifiedPlan();
+  auto callee = CreatePeerConnectionWithUnifiedPlan();
+
+  auto audio_transceiver = caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO);
+  auto video_transceiver = caller->AddTransceiver(cricket::MEDIA_TYPE_VIDEO);
+
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+
+  ASSERT_EQ(0u, caller->observer()->on_track_transceivers_.size());
+  ASSERT_EQ(2u, callee->observer()->on_track_transceivers_.size());
+  EXPECT_EQ(audio_transceiver->mid(),
+            callee->pc()->GetTransceivers()[0]->mid());
+  EXPECT_EQ(video_transceiver->mid(),
+            callee->pc()->GetTransceivers()[1]->mid());
+}
+
+// Test that doing additional offer/answer exchanges with no changes to tracks
+// will cause no additional OnTrack calls after the tracks have been negotiated.
+TEST_F(PeerConnectionRtpCallbacksTest, UnifiedPlanReofferDoesNotCallOnTrack) {
+  auto caller = CreatePeerConnectionWithUnifiedPlan();
+  auto callee = CreatePeerConnectionWithUnifiedPlan();
+
+  caller->AddAudioTrack("audio");
+  callee->AddAudioTrack("audio");
+
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+  EXPECT_EQ(1u, caller->observer()->on_track_transceivers_.size());
+  EXPECT_EQ(1u, callee->observer()->on_track_transceivers_.size());
+
+  // If caller reoffers with no changes expect no additional OnTrack calls.
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+  EXPECT_EQ(1u, caller->observer()->on_track_transceivers_.size());
+  EXPECT_EQ(1u, callee->observer()->on_track_transceivers_.size());
+
+  // Also if callee reoffers with no changes expect no additional OnTrack calls.
+  ASSERT_TRUE(callee->ExchangeOfferAnswerWith(caller.get()));
+  EXPECT_EQ(1u, caller->observer()->on_track_transceivers_.size());
+  EXPECT_EQ(1u, callee->observer()->on_track_transceivers_.size());
+}
+
+// Test that OnTrack is called when the transceiver direction changes to send
+// the track.
+TEST_F(PeerConnectionRtpCallbacksTest, UnifiedPlanSetDirectionCallsOnTrack) {
+  auto caller = CreatePeerConnectionWithUnifiedPlan();
+  auto callee = CreatePeerConnectionWithUnifiedPlan();
+
+  auto transceiver = caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO);
+  transceiver->SetDirection(RtpTransceiverDirection::kInactive);
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+  EXPECT_EQ(0u, caller->observer()->on_track_transceivers_.size());
+  EXPECT_EQ(0u, callee->observer()->on_track_transceivers_.size());
+
+  transceiver->SetDirection(RtpTransceiverDirection::kSendOnly);
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+  EXPECT_EQ(0u, caller->observer()->on_track_transceivers_.size());
+  EXPECT_EQ(1u, callee->observer()->on_track_transceivers_.size());
+
+  // If the direction changes but it is still receiving on the remote side, then
+  // OnTrack should not be fired again.
+  transceiver->SetDirection(RtpTransceiverDirection::kSendRecv);
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+  EXPECT_EQ(0u, caller->observer()->on_track_transceivers_.size());
+  EXPECT_EQ(1u, callee->observer()->on_track_transceivers_.size());
+}
+
+// Test that OnTrack is called twice when a sendrecv call is started, the callee
+// changes the direction to inactive, then changes it back to sendrecv.
+TEST_F(PeerConnectionRtpCallbacksTest,
+       UnifiedPlanSetDirectionHoldCallsOnTrackTwice) {
+  auto caller = CreatePeerConnectionWithUnifiedPlan();
+  auto callee = CreatePeerConnectionWithUnifiedPlan();
+
+  auto transceiver = caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO);
+
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+  EXPECT_EQ(0u, caller->observer()->on_track_transceivers_.size());
+  EXPECT_EQ(1u, callee->observer()->on_track_transceivers_.size());
+
+  // Put the call on hold by no longer receiving the track.
+  callee->pc()->GetTransceivers()[0]->SetDirection(
+      RtpTransceiverDirection::kInactive);
+
+  ASSERT_TRUE(callee->ExchangeOfferAnswerWith(caller.get()));
+  EXPECT_EQ(0u, caller->observer()->on_track_transceivers_.size());
+  EXPECT_EQ(1u, callee->observer()->on_track_transceivers_.size());
+
+  // Resume the call by changing the direction to recvonly. This should call
+  // OnTrack again on the callee side.
+  callee->pc()->GetTransceivers()[0]->SetDirection(
+      RtpTransceiverDirection::kRecvOnly);
+
+  ASSERT_TRUE(callee->ExchangeOfferAnswerWith(caller.get()));
+  EXPECT_EQ(0u, caller->observer()->on_track_transceivers_.size());
+  EXPECT_EQ(2u, callee->observer()->on_track_transceivers_.size());
+}
+
 // These tests examine the state of the peer connection as a result of
 // performing SetRemoteDescription().
 class PeerConnectionRtpObserverTest : public PeerConnectionRtpTest {};

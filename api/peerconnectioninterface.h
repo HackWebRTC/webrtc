@@ -1050,9 +1050,24 @@ class PeerConnectionObserver {
 
   // This is called when a receiver and its track is created.
   // TODO(zhihuang): Make this pure virtual when all subclasses implement it.
+  // Note: This is called with both Plan B and Unified Plan semantics. Unified
+  // Plan users should prefer OnTrack, OnAddTrack is only called as backwards
+  // compatibility (and is called in the exact same situations as OnTrack).
   virtual void OnAddTrack(
       rtc::scoped_refptr<RtpReceiverInterface> receiver,
       const std::vector<rtc::scoped_refptr<MediaStreamInterface>>& streams) {}
+
+  // This is called when signaling indicates a transceiver will be receiving
+  // media from the remote endpoint. This is fired during a call to
+  // SetRemoteDescription. The receiving track can be accessed by:
+  // |transceiver->receiver()->track()| and its associated streams by
+  // |transceiver->receiver()->streams()|.
+  // Note: This will only be called if Unified Plan semantics are specified.
+  // This behavior is specified in section 2.2.8.2.5 of the "Set the
+  // RTCSessionDescription" algorithm:
+  // https://w3c.github.io/webrtc-pc/#set-description
+  virtual void OnTrack(
+      rtc::scoped_refptr<RtpTransceiverInterface> transceiver) {}
 
   // TODO(hbos,deadbeef): Add |OnAssociatedStreamsUpdated| with |receiver| and
   // |streams| as arguments. This should be called when an existing receiver its
@@ -1065,7 +1080,7 @@ class PeerConnectionObserver {
   // behavior that occurs when processing the removal of a remote track, and is
   // called when the receiver is removed and the track is muted. When Unified
   // Plan SDP is supported, transceivers can change direction (and receivers
-  // stopped) but receivers are never removed.
+  // stopped) but receivers are never removed, so this is never called.
   // https://w3c.github.io/webrtc-pc/#process-remote-track-removal
   // TODO(hbos,deadbeef): When Unified Plan SDP is supported and receivers are
   // no longer removed, deprecate and remove this callback.
