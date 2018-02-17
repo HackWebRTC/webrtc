@@ -145,6 +145,23 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
     return receivers;
   }
 
+  int CountAddTrackEventsForStream(const std::string& stream_label) {
+    int found_tracks = 0;
+    for (const AddTrackEvent& event : add_track_events_) {
+      bool has_stream_label = false;
+      for (auto stream : event.streams) {
+        if (stream->label() == stream_label) {
+          has_stream_label = true;
+          break;
+        }
+      }
+      if (has_stream_label) {
+        ++found_tracks;
+      }
+    }
+    return found_tracks;
+  }
+
   // Returns the label of the last added stream.
   // Empty string if no stream have been added.
   std::string GetLastAddedStreamLabel() {
