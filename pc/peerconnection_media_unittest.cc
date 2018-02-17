@@ -918,9 +918,8 @@ TEST_P(PeerConnectionMediaTest, MediaEngineErrorPropagatedToClients) {
   ASSERT_FALSE(caller->SetRemoteDescription(callee->CreateAnswerAndSetAsLocal(),
                                             &error));
   EXPECT_EQ(
-      "Failed to set remote answer sdp: Session error code: ERROR_CONTENT. "
-      "Session error description: Failed to set remote video description send "
-      "parameters..",
+      "Failed to set remote answer sdp: Failed to set remote video description "
+      "send parameters.",
       error);
 }
 

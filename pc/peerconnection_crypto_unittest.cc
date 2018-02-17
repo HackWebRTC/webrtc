@@ -672,6 +672,49 @@ TEST_P(PeerConnectionCryptoTest, CreateAnswerWithDifferentSslRoles) {
   ASSERT_TRUE(callee->SetRemoteDescription(std::move(answer)));
 }
 
+// Tests that if the DTLS fingerprint is invalid then all future calls to
+// SetLocalDescription and SetRemoteDescription will fail due to a session
+// error.
+// This is a regression test for crbug.com/800775
+TEST_P(PeerConnectionCryptoTest, SessionErrorIfFingerprintInvalid) {
+  auto callee_certificate = rtc::RTCCertificate::FromPEM(kRsaPems[0]);
+  auto other_certificate = rtc::RTCCertificate::FromPEM(kRsaPems[1]);
+
+  auto caller = CreatePeerConnectionWithAudioVideo();
+  RTCConfiguration callee_config;
+  callee_config.enable_dtls_srtp.emplace(true);
+  callee_config.certificates.push_back(callee_certificate);
+  auto callee = CreatePeerConnectionWithAudioVideo(callee_config);
+
+  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
+
+  // Create an invalid answer with the other certificate's fingerprint.
+  auto invalid_answer = callee->CreateAnswer();
+  auto* audio_content =
+      cricket::GetFirstAudioContent(invalid_answer->description());
+  ASSERT_TRUE(audio_content);
+  auto* audio_transport_info =
+      invalid_answer->description()->GetTransportInfoByName(
+          audio_content->name);
+  ASSERT_TRUE(audio_transport_info);
+  audio_transport_info->description.identity_fingerprint.reset(
+      rtc::SSLFingerprint::CreateFromCertificate(other_certificate));
+
+  // Set the invalid answer and expect a fingerprint error.
+  std::string error;
+  ASSERT_FALSE(callee->SetLocalDescription(std::move(invalid_answer), &error));
+  EXPECT_PRED_FORMAT2(AssertStringContains, error,
+                      "Local fingerprint does not match identity.");
+
+  // Make sure that setting a valid remote offer or local answer also fails now.
+  ASSERT_FALSE(callee->SetRemoteDescription(caller->CreateOffer(), &error));
+  EXPECT_PRED_FORMAT2(AssertStringContains, error,
+                      "Session error code: ERROR_CONTENT.");
+  ASSERT_FALSE(callee->SetLocalDescription(callee->CreateAnswer(), &error));
+  EXPECT_PRED_FORMAT2(AssertStringContains, error,
+                      "Session error code: ERROR_CONTENT.");
+}
+
 INSTANTIATE_TEST_CASE_P(PeerConnectionCryptoTest,
                         PeerConnectionCryptoTest,
                         Values(SdpSemantics::kPlanB,
