@@ -37,8 +37,10 @@ PlatformThreadId CurrentThreadId() {
 }
 
 PlatformThreadRef CurrentThreadRef() {
-#if defined(WEBRTC_WIN) || defined(WEBRTC_FUCHSIA)
+#if defined(WEBRTC_WIN)
   return GetCurrentThreadId();
+#elif defined(WEBRTC_FUCHSIA)
+  return zx_thread_self();
 #elif defined(WEBRTC_POSIX)
   return pthread_self();
 #endif
