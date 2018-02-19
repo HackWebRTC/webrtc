@@ -49,7 +49,7 @@ namespace {
 const size_t kPathMTU = 1500;
 
 std::vector<RtpRtcp*> CreateRtpRtcpModules(
-    Transport* outgoing_transport,
+    const VideoSendStream::Config& config,
     RtcpIntraFrameObserver* intra_frame_callback,
     RtcpBandwidthObserver* bandwidth_callback,
     RtpTransportControllerSendInterface* transport,
@@ -60,15 +60,12 @@ std::vector<RtpRtcp*> CreateRtpRtcpModules(
     RtcEventLog* event_log,
     RateLimiter* retransmission_rate_limiter,
     OverheadObserver* overhead_observer,
-    size_t num_modules,
-    RtpKeepAliveConfig keepalive_config,
-    RtcpIntervalConfig rtcp_interval_config) {
-  RTC_DCHECK_GT(num_modules, 0);
+    RtpKeepAliveConfig keepalive_config) {
+  RTC_DCHECK_GT(config.rtp.ssrcs.size(), 0);
   RtpRtcp::Configuration configuration;
   configuration.audio = false;
   configuration.receiver_only = false;
-  configuration.flexfec_sender = flexfec_sender;
-  configuration.outgoing_transport = outgoing_transport;
+  configuration.outgoing_transport = config.send_transport;
   configuration.intra_frame_callback = intra_frame_callback;
   configuration.bandwidth_callback = bandwidth_callback;
   configuration.transport_feedback_callback =
@@ -86,9 +83,19 @@ std::vector<RtpRtcp*> CreateRtpRtcpModules(
   configuration.retransmission_rate_limiter = retransmission_rate_limiter;
   configuration.overhead_observer = overhead_observer;
   configuration.keepalive_config = keepalive_config;
-  configuration.rtcp_interval_config = rtcp_interval_config;
+  configuration.rtcp_interval_config.video_interval_ms =
+      config.rtcp.video_report_interval_ms;
+  configuration.rtcp_interval_config.audio_interval_ms =
+      config.rtcp.audio_report_interval_ms;
   std::vector<RtpRtcp*> modules;
-  for (size_t i = 0; i < num_modules; ++i) {
+  const std::vector<uint32_t>& flexfec_protected_ssrcs =
+      config.rtp.flexfec.protected_media_ssrcs;
+  for (uint32_t ssrc : config.rtp.ssrcs) {
+    bool enable_flexfec = flexfec_sender != nullptr &&
+                          std::find(flexfec_protected_ssrcs.begin(),
+                                    flexfec_protected_ssrcs.end(),
+                                    ssrc) != flexfec_protected_ssrcs.end();
+    configuration.flexfec_sender = enable_flexfec ? flexfec_sender : nullptr;
     RtpRtcp* rtp_rtcp = RtpRtcp::CreateRtpRtcp(configuration);
     rtp_rtcp->SetSendingStatus(false);
     rtp_rtcp->SetSendingMediaStatus(false);
@@ -116,14 +123,6 @@ std::unique_ptr<FlexfecSender> MaybeCreateFlexfecSender(
     RTC_LOG(LS_WARNING)
         << "FlexFEC is enabled, but no protected media SSRC given. "
            "Therefore disabling FlexFEC.";
-    return nullptr;
-  }
-
-  if (config.rtp.ssrcs.size() > 1) {
-    RTC_LOG(LS_WARNING)
-        << "Both FlexFEC and simulcast are enabled. This "
-           "combination is however not supported by our current "
-           "FlexFEC implementation. Therefore disabling FlexFEC.";
     return nullptr;
   }
 
@@ -791,7 +790,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
                         video_stream_encoder),
       bandwidth_observer_(transport->GetBandwidthObserver()),
       rtp_rtcp_modules_(CreateRtpRtcpModules(
-          config_->send_transport,
+          *config_,
           &encoder_feedback_,
           bandwidth_observer_,
           transport,
@@ -802,10 +801,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
           event_log,
           transport->GetRetransmissionRateLimiter(),
           this,
-          config_->rtp.ssrcs.size(),
-          transport->keepalive_config(),
-          RtcpIntervalConfig{config_->rtcp.video_report_interval_ms,
-                             config_->rtcp.audio_report_interval_ms})),
+          transport->keepalive_config())),
       payload_router_(rtp_rtcp_modules_,
                       config_->rtp.ssrcs,
                       config_->encoder_settings.payload_type,

@@ -38,6 +38,7 @@
 #include "test/frame_generator.h"
 #include "test/frame_generator_capturer.h"
 #include "test/frame_utils.h"
+#include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/null_transport.h"
 #include "test/rtcp_packet_parser.h"
@@ -634,16 +635,19 @@ class FlexfecObserver : public test::EndToEndTest {
   FlexfecObserver(bool header_extensions_enabled,
                   bool use_nack,
                   const std::string& codec,
-                  VideoEncoder* encoder)
+                  VideoEncoder* encoder,
+                  size_t num_video_streams)
       : EndToEndTest(VideoSendStreamTest::kDefaultTimeoutMs),
         encoder_(encoder),
         payload_name_(codec),
         use_nack_(use_nack),
         sent_media_(false),
         sent_flexfec_(false),
-        header_extensions_enabled_(header_extensions_enabled) {}
+        header_extensions_enabled_(header_extensions_enabled),
+        num_video_streams_(num_video_streams) {}
 
   size_t GetNumFlexfecStreams() const override { return 1; }
+  size_t GetNumVideoStreams() const override { return num_video_streams_; }
 
  private:
   Action OnSendRtp(const uint8_t* packet, size_t length) override {
@@ -656,7 +660,9 @@ class FlexfecObserver : public test::EndToEndTest {
     } else {
       EXPECT_EQ(VideoSendStreamTest::kFakeVideoSendPayloadType,
                 header.payloadType);
-      EXPECT_EQ(VideoSendStreamTest::kVideoSendSsrcs[0], header.ssrc);
+      EXPECT_THAT(testing::make_tuple(VideoSendStreamTest::kVideoSendSsrcs,
+                                      num_video_streams_),
+                  testing::Contains(header.ssrc));
       sent_media_ = true;
     }
 
@@ -718,37 +724,44 @@ class FlexfecObserver : public test::EndToEndTest {
   const bool use_nack_;
   bool sent_media_;
   bool sent_flexfec_;
-  bool header_extensions_enabled_;
+  const bool header_extensions_enabled_;
+  const size_t num_video_streams_;
 };
 
 TEST_F(VideoSendStreamTest, SupportsFlexfecVp8) {
   std::unique_ptr<VideoEncoder> encoder(VP8Encoder::Create());
-  FlexfecObserver test(false, false, "VP8", encoder.get());
+  FlexfecObserver test(false, false, "VP8", encoder.get(), 1);
+  RunBaseTest(&test);
+}
+
+TEST_F(VideoSendStreamTest, SupportsFlexfecSimulcastVp8) {
+  std::unique_ptr<VideoEncoder> encoder(VP8Encoder::Create());
+  FlexfecObserver test(false, false, "VP8", encoder.get(), 2);
   RunBaseTest(&test);
 }
 
 TEST_F(VideoSendStreamTest, SupportsFlexfecWithNackVp8) {
   std::unique_ptr<VideoEncoder> encoder(VP8Encoder::Create());
-  FlexfecObserver test(false, true, "VP8", encoder.get());
+  FlexfecObserver test(false, true, "VP8", encoder.get(), 1);
   RunBaseTest(&test);
 }
 
 TEST_F(VideoSendStreamTest, SupportsFlexfecWithRtpExtensionsVp8) {
   std::unique_ptr<VideoEncoder> encoder(VP8Encoder::Create());
-  FlexfecObserver test(true, false, "VP8", encoder.get());
+  FlexfecObserver test(true, false, "VP8", encoder.get(), 1);
   RunBaseTest(&test);
 }
 
 #if !defined(RTC_DISABLE_VP9)
 TEST_F(VideoSendStreamTest, SupportsFlexfecVp9) {
   std::unique_ptr<VideoEncoder> encoder(VP9Encoder::Create());
-  FlexfecObserver test(false, false, "VP9", encoder.get());
+  FlexfecObserver test(false, false, "VP9", encoder.get(), 1);
   RunBaseTest(&test);
 }
 
 TEST_F(VideoSendStreamTest, SupportsFlexfecWithNackVp9) {
   std::unique_ptr<VideoEncoder> encoder(VP9Encoder::Create());
-  FlexfecObserver test(false, true, "VP9", encoder.get());
+  FlexfecObserver test(false, true, "VP9", encoder.get(), 1);
   RunBaseTest(&test);
 }
 #endif  // defined(RTC_DISABLE_VP9)
@@ -756,21 +769,21 @@ TEST_F(VideoSendStreamTest, SupportsFlexfecWithNackVp9) {
 TEST_F(VideoSendStreamTest, SupportsFlexfecH264) {
   std::unique_ptr<VideoEncoder> encoder(
       new test::FakeH264Encoder(Clock::GetRealTimeClock()));
-  FlexfecObserver test(false, false, "H264", encoder.get());
+  FlexfecObserver test(false, false, "H264", encoder.get(), 1);
   RunBaseTest(&test);
 }
 
 TEST_F(VideoSendStreamTest, SupportsFlexfecWithNackH264) {
   std::unique_ptr<VideoEncoder> encoder(
       new test::FakeH264Encoder(Clock::GetRealTimeClock()));
-  FlexfecObserver test(false, true, "H264", encoder.get());
+  FlexfecObserver test(false, true, "H264", encoder.get(), 1);
   RunBaseTest(&test);
 }
 
 TEST_F(VideoSendStreamTest, SupportsFlexfecWithMultithreadedH264) {
   std::unique_ptr<VideoEncoder> encoder(
       new test::MultithreadedFakeH264Encoder(Clock::GetRealTimeClock()));
-  FlexfecObserver test(false, false, "H264", encoder.get());
+  FlexfecObserver test(false, false, "H264", encoder.get(), 1);
   RunBaseTest(&test);
 }
 
