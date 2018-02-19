@@ -841,8 +841,6 @@ rtc_source_set("rtc_base_tests_utils") {
     "httpbase.h",
     "httpserver.cc",
     "httpserver.h",
-    "md5digest.cc",
-    "md5digest.h",
     "memory_usage.cc",
     "memory_usage.h",
     "natserver.cc",
@@ -854,8 +852,6 @@ rtc_source_set("rtc_base_tests_utils") {
     "proxyserver.cc",
     "proxyserver.h",
     "refcount.h",
-    "sha1digest.cc",
-    "sha1digest.h",
     "sigslottester.h",
     "sigslottester.h.pump",
     "testbase64.h",
@@ -882,14 +878,6 @@ rtc_source_set("rtc_base_tests_utils") {
   public_deps = [
     "//testing/gtest",
   ]
-
-  # TODO(jbauch): Remove once "md5digest" and "sha1digest" files have been
-  # removed.
-  if (rtc_build_ssl) {
-    deps += [ "//third_party/boringssl" ]
-  } else {
-    configs += [ ":external_ssl_library" ]
-  }
 }
 
 rtc_source_set("rtc_task_queue_for_test") {
@@ -975,7 +963,6 @@ if (rtc_include_tests) {
       "file_unittest.cc",
       "function_view_unittest.cc",
       "logging_unittest.cc",
-      "md5digest_unittest.cc",
       "numerics/histogram_percentile_counter_unittest.cc",
       "numerics/mod_ops_unittest.cc",
       "numerics/moving_max_counter_unittest.cc",
@@ -1014,14 +1001,6 @@ if (rtc_include_tests) {
       "../system_wrappers:system_wrappers",
       "../test:test_support",
     ]
-
-    # TODO(jbauch): Remove once "md5digest" and "sha1digest" files have been
-    # removed.
-    if (rtc_build_ssl) {
-      deps += [ "//third_party/boringssl" ]
-    } else {
-      configs += [ ":external_ssl_library" ]
-    }
   }
 
   rtc_source_set("rtc_task_queue_unittests") {
@@ -1118,7 +1097,6 @@ if (rtc_include_tests) {
       "rollingaccumulator_unittest.cc",
       "rtccertificate_unittest.cc",
       "rtccertificategenerator_unittest.cc",
-      "sha1digest_unittest.cc",
       "signalthread_unittest.cc",
       "sigslot_unittest.cc",
       "sigslottester_unittest.cc",
