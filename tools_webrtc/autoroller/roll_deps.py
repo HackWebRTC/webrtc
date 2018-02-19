@@ -208,9 +208,13 @@ def BuildDepsentryDict(deps_dict):
   """Builds a dict of paths to DepsEntry objects from a raw parsed deps dict."""
   result = {}
   def AddDepsEntries(deps_subdict):
-    for path, deps_url in deps_subdict.iteritems():
-      if isinstance(deps_url, dict):
-        deps_url = deps_url['url']
+    for path, dep in deps_subdict.iteritems():
+      if isinstance(dep, dict):
+        if dep.get('dep_type') == 'cipd':
+          continue
+        deps_url = dep['url']
+      else:
+        deps_url = dep
       if not result.has_key(path):
         url, revision = deps_url.split('@') if deps_url else (None, None)
         result[path] = DepsEntry(path, url, revision)
