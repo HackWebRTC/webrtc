@@ -169,6 +169,9 @@ def main():
       gtest_parallel_path,
   ] + args.gtest_parallel_args
 
+  if args.output_dir and not os.path.isdir(args.output_dir):
+    os.makedirs(args.output_dir)
+
   print 'gtest-parallel-wrapper: Executing command %s' % ' '.join(command)
   sys.stdout.flush()
 
