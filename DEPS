@@ -164,6 +164,204 @@ deps = {
     Var('chromium_git') + '/external/gyp.git' + '@' + 'd61a9397e668fa9843c4aa7da9e79460fe590bfb',
   'src/tools/swarming_client':
     Var('chromium_git') + '/infra/luci/client-py.git' + '@' +  Var('swarming_revision'),
+
+  'src/third_party/accessibility_test_framework': {
+      'packages': [
+          {
+              'package': 'chromium/third_party/accessibility-test-framework',
+              'version': 'version:2.1-cr0',
+          },
+      ],
+      'condition': 'checkout_android',
+      'dep_type': 'cipd',
+  },
+
+  'src/third_party/android_support_test_runner': {
+      'packages': [
+          {
+              'package': 'chromium/third_party/android_support_test_runner',
+              'version': 'version:0.5-cr0',
+          },
+      ],
+      'condition': 'checkout_android',
+      'dep_type': 'cipd',
+  },
+
+  'src/third_party/apk-patch-size-estimator': {
+      'packages': [
+          {
+              'package': 'chromium/third_party/apk-patch-size-estimator',
+              'version': 'version:0.2-cr0',
+          },
+      ],
+      'condition': 'checkout_android',
+      'dep_type': 'cipd',
+  },
+
+  'src/third_party/bazel': {
+      'packages': [
+          {
+              'package': 'chromium/third_party/bazel',
+              'version': 'version:0.10.0',
+          },
+      ],
+      'condition': 'checkout_android',
+      'dep_type': 'cipd',
+  },
+
+  'src/third_party/bouncycastle': {
+      'packages': [
+          {
+              'package': 'chromium/third_party/bouncycastle',
+              'version': 'version:1.46-cr0',
+          },
+      ],
+      'condition': 'checkout_android',
+      'dep_type': 'cipd',
+  },
+
+  'src/third_party/byte_buddy': {
+      'packages': [
+          {
+              'package': 'chromium/third_party/byte_buddy',
+              'version': 'version:1.4.17-cr0',
+          },
+      ],
+      'condition': 'checkout_android',
+      'dep_type': 'cipd',
+  },
+
+  'src/third_party/espresso': {
+      'packages': [
+          {
+              'package': 'chromium/third_party/espresso',
+              'version': 'version:2.2.1-cr0',
+          },
+      ],
+      'condition': 'checkout_android',
+      'dep_type': 'cipd',
+  },
+
+  'src/third_party/gson': {
+      'packages': [
+          {
+              'package': 'chromium/third_party/gson',
+              'version': 'version:2.8.0-cr0',
+          },
+      ],
+      'condition': 'checkout_android',
+      'dep_type': 'cipd',
+  },
+
+  'src/third_party/guava': {
+      'packages': [
+          {
+              'package': 'chromium/third_party/guava',
+              'version': 'version:23.0-cr0',
+          },
+      ],
+      'condition': 'checkout_android',
+      'dep_type': 'cipd',
+  },
+
+  'src/third_party/hamcrest': {
+      'packages': [
+          {
+              'package': 'chromium/third_party/hamcrest',
+              'version': 'version:1.3-cr0',
+          },
+      ],
+      'condition': 'checkout_android',
+      'dep_type': 'cipd',
+  },
+
+  'src/third_party/icu4j': {
+      'packages': [
+          {
+              'package': 'chromium/third_party/icu4j',
+              'version': 'version:53.1-cr0',
+          },
+      ],
+      'condition': 'checkout_android',
+      'dep_type': 'cipd',
+  },
+
+  'src/third_party/intellij': {
+      'packages': [
+          {
+              'package': 'chromium/third_party/intellij',
+              'version': 'version:12.0-cr0',
+          },
+      ],
+      'condition': 'checkout_android',
+      'dep_type': 'cipd',
+  },
+
+  'src/third_party/javax_inject': {
+      'packages': [
+          {
+              'package': 'chromium/third_party/javax_inject',
+              'version': 'version:1-cr0',
+          },
+      ],
+      'condition': 'checkout_android',
+      'dep_type': 'cipd',
+  },
+
+  'src/third_party/objenesis': {
+      'packages': [
+          {
+              'package': 'chromium/third_party/objenesis',
+              'version': 'version:2.4-cr0',
+          },
+      ],
+      'condition': 'checkout_android',
+      'dep_type': 'cipd',
+  },
+
+  'src/third_party/ow2_asm': {
+      'packages': [
+          {
+              'package': 'chromium/third_party/ow2_asm',
+              'version': 'version:5.0.1-cr0',
+          },
+      ],
+      'condition': 'checkout_android',
+      'dep_type': 'cipd',
+  },
+
+  'src/third_party/robolectric': {
+      'packages': [
+          {
+              'package': 'chromium/third_party/robolectric',
+              'version': 'version:3.5.1',
+          },
+      ],
+      'condition': 'checkout_android',
+      'dep_type': 'cipd',
+  },
+
+  'src/third_party/sqlite4java': {
+      'packages': [
+          {
+              'package': 'chromium/third_party/sqlite4java',
+              'version': 'version:0.282-cr0',
+          },
+      ],
+      'condition': 'checkout_android',
+      'dep_type': 'cipd',
+  },
+
+  'src/third_party/xstream': {
+      'packages': [
+          {
+              'package': 'chromium/third_party/xstream',
+              'version': 'version:1.4.8-cr0',
+          },
+      ],
+      'condition': 'checkout_android',
+      'dep_type': 'cipd',
+  },
 }
 
 hooks = [
@@ -478,15 +676,6 @@ hooks = [
                '--quiet',
                '--bucket', 'chromium-webrtc-resources',
                'src/resources'],
-  },
-  {
-    'name': 'Android CIPD Ensure',
-    'pattern': '.',
-    'condition': 'checkout_android',
-    'action': ['src/build/cipd/cipd_wrapper.py',
-               '--chromium-root', 'src',
-               '--ensure-file', 'src/build/cipd/android/android.ensure',
-    ],
   },
   {
     # This downloads SDK extras and puts them in the
