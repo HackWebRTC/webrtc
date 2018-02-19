@@ -1195,6 +1195,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
 
   void SetOutputVolume(double volume) {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+    output_volume_ = volume;
     stream_->SetGain(volume);
   }
 
@@ -1223,6 +1224,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
     }
     stream_ = call_->CreateAudioReceiveStream(config_);
     RTC_CHECK(stream_);
+    stream_->SetGain(output_volume_);
     SetPlayout(playout_);
     stream_->SetSink(raw_audio_sink_.get());
   }
@@ -1240,6 +1242,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
   // configuration changes.
   webrtc::AudioReceiveStream* stream_ = nullptr;
   bool playout_ = false;
+  float output_volume_ = 1.0;
   std::unique_ptr<webrtc::AudioSinkInterface> raw_audio_sink_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(WebRtcAudioReceiveStream);
