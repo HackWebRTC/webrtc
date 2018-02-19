@@ -13,9 +13,9 @@
 #import "WebRTC/RTCVideoCodec.h"
 #import "WebRTC/RTCVideoCodecH264.h"
 #if defined(USE_BUILTIN_SW_CODECS)
-#import "WebRTC/RTCVideoEncoderVP8.h"
+#import "WebRTC/RTCVideoEncoderVP8.h"  // nogncheck
 #if !defined(RTC_DISABLE_VP9)
-#import "WebRTC/RTCVideoEncoderVP9.h"
+#import "WebRTC/RTCVideoEncoderVP9.h"  // nogncheck
 #endif
 #endif
 
