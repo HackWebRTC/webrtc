@@ -888,6 +888,21 @@ rtc_source_set("rtc_base_tests_utils") {
   ]
 }
 
+rtc_source_set("rtc_task_queue_for_test") {
+  visibility = [ "*" ]
+  testonly = true
+
+  sources = [
+    "task_queue_for_test.cc",
+    "task_queue_for_test.h",
+  ]
+  deps = [
+    ":checks",
+    ":rtc_base_approved",
+    ":rtc_task_queue",
+  ]
+}
+
 if (rtc_include_tests) {
   rtc_source_set("rtc_base_tests_main") {
     testonly = true
@@ -994,21 +1009,6 @@ if (rtc_include_tests) {
       "../api:array_view",
       "../system_wrappers:system_wrappers",
       "../test:test_support",
-    ]
-  }
-
-  rtc_source_set("rtc_task_queue_for_test") {
-    visibility = [ "*" ]
-    testonly = true
-
-    sources = [
-      "task_queue_for_test.cc",
-      "task_queue_for_test.h",
-    ]
-    deps = [
-      ":checks",
-      ":rtc_base_approved",
-      ":rtc_task_queue",
     ]
   }
 
