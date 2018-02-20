@@ -18,7 +18,8 @@
 #include <vector>
 
 #include "common_video/include/frame_callback.h"
-#include "modules/video_coding/codec_database.h"
+#include "modules/video_coding/decoder_database.h"
+#include "modules/video_coding/encoder_database.h"
 #include "modules/video_coding/frame_buffer.h"
 #include "modules/video_coding/generic_decoder.h"
 #include "modules/video_coding/generic_encoder.h"
@@ -121,7 +122,7 @@ class VideoSender {
   media_optimization::MediaOptimization _mediaOpt;
   VCMEncodedFrameCallback _encodedFrameCallback RTC_GUARDED_BY(encoder_crit_);
   EncodedImageCallback* const post_encode_callback_;
-  VCMCodecDataBase _codecDataBase RTC_GUARDED_BY(encoder_crit_);
+  VCMEncoderDataBase _codecDataBase RTC_GUARDED_BY(encoder_crit_);
   bool frame_dropper_enabled_ RTC_GUARDED_BY(encoder_crit_);
 
   // Must be accessed on the construction thread of VideoSender.
@@ -214,7 +215,7 @@ class VideoReceiver : public Module {
   bool drop_frames_until_keyframe_ RTC_GUARDED_BY(process_crit_);
   size_t max_nack_list_size_ RTC_GUARDED_BY(process_crit_);
 
-  VCMCodecDataBase _codecDataBase RTC_GUARDED_BY(receive_crit_);
+  VCMDecoderDataBase _codecDataBase RTC_GUARDED_BY(receive_crit_);
   EncodedImageCallback* pre_decode_image_callback_;
 
   VCMProcessTimer _receiveStatsTimer;

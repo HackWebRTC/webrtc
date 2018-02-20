@@ -13,14 +13,16 @@ rtc_static_library("video_coding") {
   deps = []
 
   sources = [
-    "codec_database.cc",
-    "codec_database.h",
     "codec_timer.cc",
     "codec_timer.h",
+    "decoder_database.cc",
+    "decoder_database.h",
     "decoding_state.cc",
     "decoding_state.h",
     "encoded_frame.cc",
     "encoded_frame.h",
+    "encoder_database.cc",
+    "encoder_database.h",
     "fec_controller_default.cc",
     "fec_controller_default.h",
     "fec_rate_table.h",
