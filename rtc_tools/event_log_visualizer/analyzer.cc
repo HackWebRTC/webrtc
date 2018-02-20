@@ -33,6 +33,7 @@
 #include "modules/audio_coding/neteq/tools/resample_input_audio_file.h"
 #include "modules/congestion_controller/acknowledged_bitrate_estimator.h"
 #include "modules/congestion_controller/bitrate_estimator.h"
+#include "modules/congestion_controller/delay_based_bwe.h"
 #include "modules/congestion_controller/include/receive_side_congestion_controller.h"
 #include "modules/congestion_controller/include/send_side_congestion_controller.h"
 #include "modules/include/module_common_types.h"

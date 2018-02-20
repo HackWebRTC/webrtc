@@ -116,6 +116,7 @@ void PacedSender::Pause() {
     paused_ = true;
     packets_->SetPauseState(true, clock_->TimeInMilliseconds());
   }
+  rtc::CritScope cs(&process_thread_lock_);
   // Tell the process thread to call our TimeUntilNextProcess() method to get
   // a new (longer) estimate for when to call Process().
   if (process_thread_)
@@ -130,6 +131,7 @@ void PacedSender::Resume() {
     paused_ = false;
     packets_->SetPauseState(false, clock_->TimeInMilliseconds());
   }
+  rtc::CritScope cs(&process_thread_lock_);
   // Tell the process thread to call our TimeUntilNextProcess() method to
   // refresh the estimate for when to call Process().
   if (process_thread_)
@@ -167,6 +169,14 @@ void PacedSender::SetSendBitrateLimits(int min_send_bitrate_bps,
       std::min(estimated_bitrate_bps_ / 1000, max_padding_bitrate_kbps_));
 }
 
+void PacedSender::SetPacingRates(uint32_t pacing_rate_bps,
+                                 uint32_t padding_rate_bps) {
+  rtc::CritScope cs(&critsect_);
+  RTC_DCHECK(pacing_rate_bps > 0);
+  pacing_bitrate_kbps_ = pacing_rate_bps / 1000;
+  padding_budget_->set_target_rate_kbps(padding_rate_bps / 1000);
+}
+
 void PacedSender::InsertPacket(RtpPacketSender::Priority priority,
                                uint32_t ssrc,
                                uint16_t sequence_number,
@@ -174,8 +184,8 @@ void PacedSender::InsertPacket(RtpPacketSender::Priority priority,
                                size_t bytes,
                                bool retransmission) {
   rtc::CritScope cs(&critsect_);
-  RTC_DCHECK(estimated_bitrate_bps_ > 0)
-        << "SetEstimatedBitrate must be called before InsertPacket.";
+  RTC_DCHECK(pacing_bitrate_kbps_ > 0)
+      << "SetPacingRate must be called before InsertPacket.";
 
   int64_t now_ms = clock_->TimeInMilliseconds();
   prober_->OnIncomingPacket(bytes);
@@ -291,7 +301,7 @@ void PacedSender::Process() {
     pacing_info = prober_->CurrentCluster();
     recommended_probe_size = prober_->RecommendedMinProbeSize();
   }
-  while (!packets_->Empty()) {
+  while (!packets_->Empty() && !paused_) {
     // Since we need to release the lock in order to send, we first pop the
     // element from the priority queue but keep it in storage, so that we can
     // reinsert it if send fails.
@@ -319,8 +329,9 @@ void PacedSender::Process() {
       int padding_needed =
           static_cast<int>(is_probing ? (recommended_probe_size - bytes_sent)
                                       : padding_budget_->bytes_remaining());
-      if (padding_needed > 0)
+      if (padding_needed > 0) {
         bytes_sent += SendPadding(padding_needed, pacing_info);
+      }
     }
   }
   if (is_probing) {
@@ -333,6 +344,7 @@ void PacedSender::Process() {
 
 void PacedSender::ProcessThreadAttached(ProcessThread* process_thread) {
   RTC_LOG(LS_INFO) << "ProcessThreadAttached 0x" << std::hex << process_thread;
+  rtc::CritScope cs(&process_thread_lock_);
   process_thread_ = process_thread;
 }
 
