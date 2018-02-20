@@ -190,8 +190,14 @@ RtpTransceiverDirection RtpTransceiver::direction() const {
 }
 
 void RtpTransceiver::SetDirection(RtpTransceiverDirection new_direction) {
-  // TODO(steveanton): This should fire OnNegotiationNeeded.
-  set_direction(new_direction);
+  if (stopped()) {
+    return;
+  }
+  if (new_direction == direction_) {
+    return;
+  }
+  direction_ = new_direction;
+  SignalNegotiationNeeded();
 }
 
 rtc::Optional<RtpTransceiverDirection> RtpTransceiver::current_direction()

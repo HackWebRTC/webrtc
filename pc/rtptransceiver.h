@@ -154,6 +154,10 @@ class RtpTransceiver final
     return has_ever_been_used_to_send_;
   }
 
+  // Fired when the RtpTransceiver state changes such that negotiation is now
+  // needed (e.g., in response to a direction change).
+  sigslot::signal0<> SignalNegotiationNeeded;
+
   // RtpTransceiverInterface implementation.
   cricket::MediaType media_type() const override;
   rtc::Optional<std::string> mid() const override;

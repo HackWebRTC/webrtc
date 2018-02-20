@@ -976,6 +976,46 @@ TEST_F(PeerConnectionRtpUnifiedPlanTest,
   EXPECT_FALSE(caller->observer()->negotiation_needed());
 }
 
+// Test that OnRenegotiationNeeded is fired if SetDirection is called on an
+// active RtpTransceiver with a new direction.
+TEST_F(PeerConnectionRtpUnifiedPlanTest,
+       RenegotiationNeededAfterTransceiverSetDirection) {
+  auto caller = CreatePeerConnectionWithUnifiedPlan();
+
+  auto transceiver = caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO);
+
+  caller->observer()->clear_negotiation_needed();
+  transceiver->SetDirection(RtpTransceiverDirection::kInactive);
+  EXPECT_TRUE(caller->observer()->negotiation_needed());
+}
+
+// Test that OnRenegotiationNeeded is not fired if SetDirection is called on an
+// active RtpTransceiver with current direction.
+TEST_F(PeerConnectionRtpUnifiedPlanTest,
+       NoRenegotiationNeededAfterTransceiverSetSameDirection) {
+  auto caller = CreatePeerConnectionWithUnifiedPlan();
+
+  auto transceiver = caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO);
+
+  caller->observer()->clear_negotiation_needed();
+  transceiver->SetDirection(transceiver->direction());
+  EXPECT_FALSE(caller->observer()->negotiation_needed());
+}
+
+// Test that OnRenegotiationNeeded is not fired if SetDirection is called on a
+// stopped RtpTransceiver.
+TEST_F(PeerConnectionRtpUnifiedPlanTest,
+       NoRenegotiationNeededAfterSetDirectionOnStoppedTransceiver) {
+  auto caller = CreatePeerConnectionWithUnifiedPlan();
+
+  auto transceiver = caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO);
+  transceiver->Stop();
+
+  caller->observer()->clear_negotiation_needed();
+  transceiver->SetDirection(RtpTransceiverDirection::kInactive);
+  EXPECT_FALSE(caller->observer()->negotiation_needed());
+}
+
 // Test MSID signaling between Unified Plan and Plan B endpoints. There are two
 // options for this kind of signaling: media section based (a=msid) and ssrc
 // based (a=ssrc MSID). While JSEP only specifies media section MSID signaling,
