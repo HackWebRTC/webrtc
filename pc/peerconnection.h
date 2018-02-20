@@ -203,26 +203,6 @@ class PeerConnection : public PeerConnectionInternal,
     return initial_offerer_ && *initial_offerer_;
   }
 
-  cricket::VoiceChannel* voice_channel() const override {
-    if (IsUnifiedPlan()) {
-      // TODO(bugs.webrtc.org/8764): Change stats collection to work with
-      // transceivers.
-      return nullptr;
-    }
-    return static_cast<cricket::VoiceChannel*>(
-        GetAudioTransceiver()->internal()->channel());
-  }
-
-  cricket::VideoChannel* video_channel() const override {
-    if (IsUnifiedPlan()) {
-      // TODO(bugs.webrtc.org/8764): Change stats collection to work with
-      // transceivers.
-      return nullptr;
-    }
-    return static_cast<cricket::VideoChannel*>(
-        GetVideoTransceiver()->internal()->channel());
-  }
-
   std::vector<
       rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
   GetTransceiversInternal() const override {
@@ -295,13 +275,10 @@ class PeerConnection : public PeerConnectionInternal,
   // Implements MessageHandler.
   void OnMessage(rtc::Message* msg) override;
 
-  cricket::VoiceMediaChannel* voice_media_channel() const {
-    return voice_channel() ? voice_channel()->media_channel() : nullptr;
-  }
-
-  cricket::VideoMediaChannel* video_media_channel() const {
-    return video_channel() ? video_channel()->media_channel() : nullptr;
-  }
+  // Plan B helpers for getting the voice/video media channels for the single
+  // audio/video transceiver, if it exists.
+  cricket::VoiceMediaChannel* voice_media_channel() const;
+  cricket::VideoMediaChannel* video_media_channel() const;
 
   std::vector<rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>>>
   GetSendersInternal() const;
@@ -313,6 +290,9 @@ class PeerConnection : public PeerConnectionInternal,
   GetAudioTransceiver() const;
   rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
   GetVideoTransceiver() const;
+
+  rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
+  GetFirstAudioTransceiver() const;
 
   void CreateAudioReceiver(MediaStreamInterface* stream,
                            const RtpSenderInfo& remote_sender_info);

@@ -2922,20 +2922,32 @@ void PeerConnection::SetAudioRecording(bool recording) {
 
 std::unique_ptr<rtc::SSLCertificate>
 PeerConnection::GetRemoteAudioSSLCertificate() {
-  if (!voice_channel()) {
+  auto audio_transceiver = GetFirstAudioTransceiver();
+  if (!audio_transceiver || !audio_transceiver->internal()->channel()) {
     return nullptr;
   }
-  return GetRemoteSSLCertificate(voice_channel()->transport_name());
+  return GetRemoteSSLCertificate(
+      audio_transceiver->internal()->channel()->transport_name());
 }
 
 std::unique_ptr<rtc::SSLCertChain>
 PeerConnection::GetRemoteAudioSSLCertChain() {
-  if (!voice_channel()) {
+  auto audio_transceiver = GetFirstAudioTransceiver();
+  if (!audio_transceiver || !audio_transceiver->internal()->channel()) {
     return nullptr;
   }
-
   return transport_controller_->GetRemoteSSLCertChain(
-      voice_channel()->transport_name());
+      audio_transceiver->internal()->channel()->transport_name());
+}
+
+rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
+PeerConnection::GetFirstAudioTransceiver() const {
+  for (auto transceiver : transceivers_) {
+    if (transceiver->media_type() == cricket::MEDIA_TYPE_AUDIO) {
+      return transceiver;
+    }
+  }
+  return nullptr;
 }
 
 bool PeerConnection::StartRtcEventLog(rtc::PlatformFile file,
@@ -3070,6 +3082,28 @@ void PeerConnection::OnMessage(rtc::Message* msg) {
     default:
       RTC_NOTREACHED() << "Not implemented";
       break;
+  }
+}
+
+cricket::VoiceMediaChannel* PeerConnection::voice_media_channel() const {
+  RTC_DCHECK(!IsUnifiedPlan());
+  auto* voice_channel = static_cast<cricket::VoiceChannel*>(
+      GetAudioTransceiver()->internal()->channel());
+  if (voice_channel) {
+    return voice_channel->media_channel();
+  } else {
+    return nullptr;
+  }
+}
+
+cricket::VideoMediaChannel* PeerConnection::video_media_channel() const {
+  RTC_DCHECK(!IsUnifiedPlan());
+  auto* video_channel = static_cast<cricket::VideoChannel*>(
+      GetVideoTransceiver()->internal()->channel());
+  if (video_channel) {
+    return video_channel->media_channel();
+  } else {
+    return nullptr;
   }
 }
 

@@ -835,11 +835,21 @@ void StatsCollector::ExtractBweInfo() {
   bwe_info.available_send_bandwidth = call_stats.send_bandwidth_bps;
   bwe_info.available_recv_bandwidth = call_stats.recv_bandwidth_bps;
   bwe_info.bucket_delay = call_stats.pacer_delay_ms;
+
   // Fill in target encoder bitrate, actual encoder bitrate, rtx bitrate, etc.
   // TODO(holmer): Also fill this in for audio.
-  if (pc_->video_channel()) {
-    pc_->video_channel()->FillBitrateInfo(&bwe_info);
+  for (auto transceiver : pc_->GetTransceiversInternal()) {
+    if (transceiver->media_type() != cricket::MEDIA_TYPE_VIDEO) {
+      continue;
+    }
+    auto* video_channel =
+        static_cast<cricket::VideoChannel*>(transceiver->internal()->channel());
+    if (!video_channel) {
+      continue;
+    }
+    video_channel->FillBitrateInfo(&bwe_info);
   }
+
   StatsReport::Id report_id(StatsReport::NewBandwidthEstimationId());
   StatsReport* report = reports_.FindOrAddNew(report_id);
   ExtractStats(bwe_info, stats_gathering_started_, report);

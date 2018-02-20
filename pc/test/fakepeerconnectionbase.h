@@ -243,10 +243,6 @@ class FakePeerConnectionBase : public PeerConnectionInternal {
 
   bool initial_offerer() const override { return false; }
 
-  cricket::VoiceChannel* voice_channel() const override { return nullptr; }
-
-  cricket::VideoChannel* video_channel() const override { return nullptr; }
-
   std::vector<
       rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
   GetTransceiversInternal() const override {

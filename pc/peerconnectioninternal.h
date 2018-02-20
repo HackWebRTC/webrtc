@@ -37,10 +37,6 @@ class PeerConnectionInternal : public PeerConnectionInterface {
   // Returns true if we were the initial offerer.
   virtual bool initial_offerer() const = 0;
 
-  // TODO(steveanton): Remove these and replace with GetTransceiversInternal.
-  virtual cricket::VoiceChannel* voice_channel() const = 0;
-  virtual cricket::VideoChannel* video_channel() const = 0;
-
   virtual std::vector<
       rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
   GetTransceiversInternal() const = 0;

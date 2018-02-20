@@ -241,14 +241,6 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase {
 
   rtc::Thread* signaling_thread() const override { return signaling_thread_; }
 
-  cricket::VoiceChannel* voice_channel() const override {
-    return voice_channel_.get();
-  }
-
-  cricket::VideoChannel* video_channel() const override {
-    return video_channel_.get();
-  }
-
   std::vector<
       rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
   GetTransceiversInternal() const override {
