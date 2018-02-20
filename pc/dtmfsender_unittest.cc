@@ -331,7 +331,7 @@ TEST_F(DtmfSenderTest, InsertDtmfWithInvalidDurationOrGap) {
 
   EXPECT_FALSE(dtmf_->InsertDtmf(tones, 6001, inter_tone_gap));
   EXPECT_FALSE(dtmf_->InsertDtmf(tones, 39, inter_tone_gap));
-  EXPECT_FALSE(dtmf_->InsertDtmf(tones, duration, 49));
+  EXPECT_FALSE(dtmf_->InsertDtmf(tones, duration, 29));
 
   EXPECT_TRUE(dtmf_->InsertDtmf(tones, duration, inter_tone_gap));
 }
