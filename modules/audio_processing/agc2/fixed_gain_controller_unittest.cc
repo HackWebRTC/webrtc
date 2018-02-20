@@ -11,9 +11,11 @@
 #include "modules/audio_processing/agc2/fixed_gain_controller.h"
 
 #include "api/array_view.h"
+#include "modules/audio_processing/agc2/agc2_testing_common.h"
 #include "modules/audio_processing/agc2/vector_float_frame.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/gunit.h"
+#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 namespace {
@@ -45,13 +47,15 @@ float RunFixedGainControllerWithConstantInput(FixedGainController* fixed_gc,
 }
 ApmDataDumper test_data_dumper(0);
 
-FixedGainController CreateFixedGainController(float gain_to_apply,
-                                              size_t rate,
-                                              bool enable_limiter) {
-  FixedGainController fgc(&test_data_dumper);
-  fgc.SetGain(gain_to_apply);
-  fgc.SetSampleRate(gain_to_apply);
-  fgc.EnableLimiter(enable_limiter);
+std::unique_ptr<FixedGainController> CreateFixedGainController(
+    float gain_to_apply,
+    size_t rate,
+    bool enable_limiter) {
+  std::unique_ptr<FixedGainController> fgc =
+      rtc::MakeUnique<FixedGainController>(&test_data_dumper);
+  fgc->SetGain(gain_to_apply);
+  fgc->SetSampleRate(rate);
+  fgc->EnableLimiter(enable_limiter);
   return fgc;
 }
 
@@ -59,51 +63,128 @@ FixedGainController CreateFixedGainController(float gain_to_apply,
 
 TEST(AutomaticGainController2FixedDigital, CreateUseWithoutLimiter) {
   const int kSampleRate = 48000;
-  FixedGainController fixed_gc =
+  std::unique_ptr<FixedGainController> fixed_gc =
       CreateFixedGainController(kGainToApplyDb, kSampleRate, false);
   VectorFloatFrame vectors_with_float_frame(
       1, rtc::CheckedDivExact(kSampleRate, 100), kInputLevelLinear);
   auto float_frame = vectors_with_float_frame.float_frame_view();
-  fixed_gc.Process(float_frame);
+  fixed_gc->Process(float_frame);
   const auto channel = float_frame.channel(0);
   EXPECT_LT(kInputLevelLinear, channel[0]);
 }
 
 TEST(AutomaticGainController2FixedDigital, CreateUseWithLimiter) {
   const int kSampleRate = 44000;
-  FixedGainController fixed_gc =
+  std::unique_ptr<FixedGainController> fixed_gc =
       CreateFixedGainController(kGainToApplyDb, kSampleRate, true);
   VectorFloatFrame vectors_with_float_frame(
       1, rtc::CheckedDivExact(kSampleRate, 100), kInputLevelLinear);
   auto float_frame = vectors_with_float_frame.float_frame_view();
-  fixed_gc.Process(float_frame);
+  fixed_gc->Process(float_frame);
   const auto channel = float_frame.channel(0);
   EXPECT_LT(kInputLevelLinear, channel[0]);
 }
 
-TEST(AutomaticGainController2FixedDigital, GainShouldChangeOnSetGain) {
-  constexpr float input_level = 1000.f;
-  constexpr size_t num_frames = 5;
-  constexpr size_t kSampleRate = 8000;
-  constexpr float gain_db_no_change = 0.f;
-  constexpr float gain_db_factor_10 = 20.f;
+TEST(AutomaticGainController2FixedDigital, CheckSaturationBehaviorWithLimiter) {
+  const float kInputLevel = 32767.f;
+  const size_t kNumFrames = 5;
+  const size_t kSampleRate = 42000;
 
-  FixedGainController fixed_gc_no_saturation =
-      CreateFixedGainController(gain_db_no_change, kSampleRate, false);
+  const auto gains_no_saturation =
+      test::LinSpace(0.1, test::kLimiterMaxInputLevelDbFs - 0.01, 10);
+  for (const auto gain_db : gains_no_saturation) {
+    // Since |test::kLimiterMaxInputLevelDbFs| > |gain_db|, the
+    // limiter will not saturate the signal.
+    std::unique_ptr<FixedGainController> fixed_gc_no_saturation =
+        CreateFixedGainController(gain_db, kSampleRate, true);
+
+    // Saturation not expected.
+    SCOPED_TRACE(std::to_string(gain_db));
+    EXPECT_LT(
+        RunFixedGainControllerWithConstantInput(
+            fixed_gc_no_saturation.get(), kInputLevel, kNumFrames, kSampleRate),
+        32767.f);
+  }
+
+  const auto gains_saturation =
+      test::LinSpace(test::kLimiterMaxInputLevelDbFs + 0.01, 10, 10);
+  for (const auto gain_db : gains_saturation) {
+    // Since |test::kLimiterMaxInputLevelDbFs| < |gain|, the limiter
+    // will saturate the signal.
+    std::unique_ptr<FixedGainController> fixed_gc_saturation =
+        CreateFixedGainController(gain_db, kSampleRate, true);
+
+    // Saturation expected.
+    SCOPED_TRACE(std::to_string(gain_db));
+    EXPECT_FLOAT_EQ(
+        RunFixedGainControllerWithConstantInput(
+            fixed_gc_saturation.get(), kInputLevel, kNumFrames, kSampleRate),
+        32767.f);
+  }
+}
+
+TEST(AutomaticGainController2FixedDigital,
+     CheckSaturationBehaviorWithLimiterSingleSample) {
+  const float kInputLevel = 32767.f;
+  const size_t kNumFrames = 5;
+  const size_t kSampleRate = 8000;
+
+  const auto gains_no_saturation =
+      test::LinSpace(0.1, test::kLimiterMaxInputLevelDbFs - 0.01, 10);
+  for (const auto gain_db : gains_no_saturation) {
+    // Since |gain| > |test::kLimiterMaxInputLevelDbFs|, the limiter will
+    // not saturate the signal.
+    std::unique_ptr<FixedGainController> fixed_gc_no_saturation =
+        CreateFixedGainController(gain_db, kSampleRate, true);
+
+    // Saturation not expected.
+    SCOPED_TRACE(std::to_string(gain_db));
+    EXPECT_LT(
+        RunFixedGainControllerWithConstantInput(
+            fixed_gc_no_saturation.get(), kInputLevel, kNumFrames, kSampleRate),
+        32767.f);
+  }
+
+  const auto gains_saturation =
+      test::LinSpace(test::kLimiterMaxInputLevelDbFs + 0.01, 10, 10);
+  for (const auto gain_db : gains_saturation) {
+    // Singe |gain| < |test::kLimiterMaxInputLevelDbFs|, the limiter will
+    // saturate the signal.
+    std::unique_ptr<FixedGainController> fixed_gc_saturation =
+        CreateFixedGainController(gain_db, kSampleRate, true);
+
+    // Saturation expected.
+    SCOPED_TRACE(std::to_string(gain_db));
+    EXPECT_FLOAT_EQ(
+        RunFixedGainControllerWithConstantInput(
+            fixed_gc_saturation.get(), kInputLevel, kNumFrames, kSampleRate),
+        32767.f);
+  }
+}
+
+TEST(AutomaticGainController2FixedDigital, GainShouldChangeOnSetGain) {
+  constexpr float kInputLevel = 1000.f;
+  constexpr size_t kNumFrames = 5;
+  constexpr size_t kSampleRate = 8000;
+  constexpr float kGainDbNoChange = 0.f;
+  constexpr float kGainDbFactor10 = 20.f;
+
+  std::unique_ptr<FixedGainController> fixed_gc_no_saturation =
+      CreateFixedGainController(kGainDbNoChange, kSampleRate, false);
 
   // Signal level is unchanged with 0 db gain.
   EXPECT_FLOAT_EQ(
       RunFixedGainControllerWithConstantInput(
-          &fixed_gc_no_saturation, input_level, num_frames, kSampleRate),
-      input_level);
+          fixed_gc_no_saturation.get(), kInputLevel, kNumFrames, kSampleRate),
+      kInputLevel);
 
-  fixed_gc_no_saturation.SetGain(gain_db_factor_10);
+  fixed_gc_no_saturation->SetGain(kGainDbFactor10);
 
   // +20db should increase signal by a factor of 10.
   EXPECT_FLOAT_EQ(
       RunFixedGainControllerWithConstantInput(
-          &fixed_gc_no_saturation, input_level, num_frames, kSampleRate),
-      input_level * 10);
+          fixed_gc_no_saturation.get(), kInputLevel, kNumFrames, kSampleRate),
+      kInputLevel * 10);
 }
 
 }  // namespace webrtc

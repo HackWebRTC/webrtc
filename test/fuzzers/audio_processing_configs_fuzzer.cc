@@ -9,6 +9,7 @@
  */
 
 #include "modules/audio_processing/include/audio_processing.h"
+#include "rtc_base/numerics/safe_minmax.h"
 #include "test/fuzzers/audio_processing_fuzzer_helper.h"
 #include "test/fuzzers/fuzz_data_helper.h"
 
@@ -36,6 +37,7 @@ std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data) {
   bool use_le = fuzz_data->ReadOrDefaultValue(true);
   bool use_vad = fuzz_data->ReadOrDefaultValue(true);
   bool use_agc_limiter = fuzz_data->ReadOrDefaultValue(true);
+  bool use_agc2_limiter = fuzz_data->ReadOrDefaultValue(true);
 
   // Filter out incompatible settings that lead to CHECK failures.
   if (use_aecm && use_aec) {
@@ -70,6 +72,12 @@ std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data) {
   apm_config.residual_echo_detector.enabled = red;
   apm_config.level_controller.enabled = lc;
   apm_config.high_pass_filter.enabled = hpf;
+  apm_config.gain_controller2.enabled = use_agc2_limiter;
+
+  // Read an int8 value, but don't let it be too large or small.
+  const float gain_db =
+      rtc::SafeClamp<int>(fuzz_data->ReadOrDefaultValue<int8_t>(0), -50, 50);
+  apm_config.gain_controller2.fixed_gain_db = gain_db;
 
   apm->ApplyConfig(apm_config);
 

@@ -16,6 +16,7 @@
 #include "api/array_view.h"
 #include "common_audio/include/audio_util.h"
 #include "modules/audio_processing/agc2/agc2_common.h"
+#include "modules/audio_processing/agc2/interpolated_gain_curve.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -27,27 +28,30 @@ namespace {
 // Returns true when the gain factor is so close to 1 that it would
 // not affect int16 samples.
 bool CloseToOne(float gain_factor) {
-  return 1.f - 1.f / kMaxSampleValue <= gain_factor &&
-         gain_factor <= 1.f + 1.f / kMaxSampleValue;
+  return 1.f - 1.f / kMaxFloatS16Value <= gain_factor &&
+         gain_factor <= 1.f + 1.f / kMaxFloatS16Value;
 }
 }  // namespace
 
 FixedGainController::FixedGainController(ApmDataDumper* apm_data_dumper)
-    : apm_data_dumper_(apm_data_dumper) {
-  RTC_DCHECK_LT(0.f, gain_to_apply_);
-  RTC_DLOG(LS_INFO) << "Gain to apply: " << gain_to_apply_;
-}
+    : apm_data_dumper_(apm_data_dumper),
+      gain_curve_applier_(48000, apm_data_dumper_) {}
 
 void FixedGainController::SetGain(float gain_to_apply_db) {
   // Changes in gain_to_apply_ cause discontinuities. We assume
   // gain_to_apply_ is set in the beginning of the call. If it is
   // frequently changed, we should add interpolation between the
   // values.
+  // The gain
+  RTC_DCHECK_LE(-50.f, gain_to_apply_db);
+  RTC_DCHECK_LE(gain_to_apply_db, 50.f);
   gain_to_apply_ = DbToRatio(gain_to_apply_db);
+  RTC_DCHECK_LT(0.f, gain_to_apply_);
+  RTC_DLOG(LS_INFO) << "Gain to apply: " << gain_to_apply_db << " db.";
 }
 
 void FixedGainController::SetSampleRate(size_t sample_rate_hz) {
-  // TODO(aleloi): propagate the new sample rate to the GainCurveApplier.
+  gain_curve_applier_.SetSampleRate(sample_rate_hz);
 }
 
 void FixedGainController::EnableLimiter(bool enable_limiter) {
@@ -70,8 +74,7 @@ void FixedGainController::Process(AudioFrameView<float> signal) {
 
   // Use the limiter (if configured to).
   if (enable_limiter_) {
-    // TODO(aleloi): Process the signal with the
-    // GainCurveApplier. This will be done in the upcoming CLs.
+    gain_curve_applier_.Process(signal);
 
     // Dump data for debug.
     const auto channel_view = signal.channel(0);
@@ -83,7 +86,7 @@ void FixedGainController::Process(AudioFrameView<float> signal) {
   for (size_t k = 0; k < signal.num_channels(); ++k) {
     rtc::ArrayView<float> channel_view = signal.channel(k);
     for (auto& sample : channel_view) {
-      sample = rtc::SafeClamp(sample, kMinSampleValue, kMaxSampleValue);
+      sample = rtc::SafeClamp(sample, kMinFloatS16Value, kMaxFloatS16Value);
     }
   }
 }

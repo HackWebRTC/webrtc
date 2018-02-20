@@ -122,7 +122,7 @@ TEST(AutomaticGainController2LevelEstimator,
 TEST(AutomaticGainController2LevelEstimator, TimeToDecreaseForLowLevel) {
   constexpr float kLevelReductionDb = 25;
   constexpr float kInitialLowLevel = -40;
-  constexpr float kExpectedTime = kLevelReductionDb * kDecayMs;
+  constexpr float kExpectedTime = kLevelReductionDb * test::kDecayMs;
 
   const float time_to_decrease =
       TimeMsToDecreaseLevel(22000, 1, kInitialLowLevel, kLevelReductionDb);
@@ -133,7 +133,7 @@ TEST(AutomaticGainController2LevelEstimator, TimeToDecreaseForLowLevel) {
 
 TEST(AutomaticGainController2LevelEstimator, TimeToDecreaseForFullScaleLevel) {
   constexpr float kLevelReductionDb = 25;
-  constexpr float kExpectedTime = kLevelReductionDb * kDecayMs;
+  constexpr float kExpectedTime = kLevelReductionDb * test::kDecayMs;
 
   const float time_to_decrease =
       TimeMsToDecreaseLevel(26000, 1, 0, kLevelReductionDb);
@@ -145,7 +145,7 @@ TEST(AutomaticGainController2LevelEstimator, TimeToDecreaseForFullScaleLevel) {
 TEST(AutomaticGainController2LevelEstimator,
      TimeToDecreaseForMultipleChannels) {
   constexpr float kLevelReductionDb = 25;
-  constexpr float kExpectedTime = kLevelReductionDb * kDecayMs;
+  constexpr float kExpectedTime = kLevelReductionDb * test::kDecayMs;
   constexpr size_t kNumChannels = 10;
 
   const float time_to_decrease =
