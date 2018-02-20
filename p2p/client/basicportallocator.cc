@@ -429,6 +429,17 @@ void BasicPortAllocatorSession::Regather(
   }
 }
 
+void BasicPortAllocatorSession::SetStunKeepaliveIntervalForReadyPorts(
+    const rtc::Optional<int>& stun_keepalive_interval) {
+  auto ports = ReadyPorts();
+  for (PortInterface* port : ports) {
+    if (port->Type() == STUN_PORT_TYPE) {
+      static_cast<UDPPort*>(port)->set_stun_keepalive_delay(
+          stun_keepalive_interval);
+    }
+  }
+}
+
 std::vector<PortInterface*> BasicPortAllocatorSession::ReadyPorts() const {
   std::vector<PortInterface*> ret;
   for (const PortData& data : ports_) {
@@ -1357,6 +1368,8 @@ void AllocationSequence::CreateStunPorts() {
       session_->username(), session_->password(), config_->StunServers(),
       session_->allocator()->origin());
   if (port) {
+    port->set_stun_keepalive_delay(
+        session_->allocator()->stun_candidate_keepalive_interval());
     session_->AddAllocatedPort(port, this, true);
     // Since StunPort is not created using shared socket, |port| will not be
     // added to the dequeue.

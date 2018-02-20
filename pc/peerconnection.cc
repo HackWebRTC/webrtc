@@ -636,6 +636,7 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
     bool enable_ice_renomination;
     bool redetermine_role_on_ice_restart;
     rtc::Optional<int> ice_check_min_interval;
+    rtc::Optional<int> stun_candidate_keepalive_interval;
     rtc::Optional<rtc::IntervalRange> ice_regather_interval_range;
     webrtc::TurnCustomizer* turn_customizer;
     SdpSemantics sdp_semantics;
@@ -675,6 +676,8 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
          enable_ice_renomination == o.enable_ice_renomination &&
          redetermine_role_on_ice_restart == o.redetermine_role_on_ice_restart &&
          ice_check_min_interval == o.ice_check_min_interval &&
+         stun_candidate_keepalive_interval ==
+             o.stun_candidate_keepalive_interval &&
          ice_regather_interval_range == o.ice_regather_interval_range &&
          turn_customizer == o.turn_customizer &&
          sdp_semantics == o.sdp_semantics &&
@@ -2654,6 +2657,8 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
       configuration.ice_candidate_pool_size;
   modified_config.prune_turn_ports = configuration.prune_turn_ports;
   modified_config.ice_check_min_interval = configuration.ice_check_min_interval;
+  modified_config.stun_candidate_keepalive_interval =
+      configuration.stun_candidate_keepalive_interval;
   modified_config.turn_customizer = configuration.turn_customizer;
   modified_config.network_preference = configuration.network_preference;
   if (configuration != modified_config) {
@@ -2690,7 +2695,8 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
                     stun_servers, turn_servers, modified_config.type,
                     modified_config.ice_candidate_pool_size,
                     modified_config.prune_turn_ports,
-                    modified_config.turn_customizer))) {
+                    modified_config.turn_customizer,
+                    modified_config.stun_candidate_keepalive_interval))) {
     RTC_LOG(LS_ERROR) << "Failed to apply configuration to PortAllocator.";
     return SafeSetError(RTCErrorType::INTERNAL_ERROR, error);
   }
@@ -4394,10 +4400,10 @@ bool PeerConnection::InitializePortAllocator_n(
 
   // Call this last since it may create pooled allocator sessions using the
   // properties set above.
-  port_allocator_->SetConfiguration(stun_servers, turn_servers,
-                                    configuration.ice_candidate_pool_size,
-                                    configuration.prune_turn_ports,
-                                    configuration.turn_customizer);
+  port_allocator_->SetConfiguration(
+      stun_servers, turn_servers, configuration.ice_candidate_pool_size,
+      configuration.prune_turn_ports, configuration.turn_customizer,
+      configuration.stun_candidate_keepalive_interval);
   return true;
 }
 
@@ -4407,14 +4413,15 @@ bool PeerConnection::ReconfigurePortAllocator_n(
     IceTransportsType type,
     int candidate_pool_size,
     bool prune_turn_ports,
-    webrtc::TurnCustomizer* turn_customizer) {
+    webrtc::TurnCustomizer* turn_customizer,
+    rtc::Optional<int> stun_candidate_keepalive_interval) {
   port_allocator_->set_candidate_filter(
       ConvertIceTransportTypeToCandidateFilter(type));
   // Call this last since it may create pooled allocator sessions using the
   // candidate filter set above.
   return port_allocator_->SetConfiguration(
       stun_servers, turn_servers, candidate_pool_size, prune_turn_ports,
-      turn_customizer);
+      turn_customizer, stun_candidate_keepalive_interval);
 }
 
 cricket::ChannelManager* PeerConnection::channel_manager() const {
@@ -4778,6 +4785,7 @@ cricket::IceConfig PeerConnection::ParseIceConfig(
   ice_config.presume_writable_when_fully_relayed =
       config.presume_writable_when_fully_relayed;
   ice_config.ice_check_min_interval = config.ice_check_min_interval;
+  ice_config.stun_keepalive_interval = config.stun_candidate_keepalive_interval;
   ice_config.regather_all_networks_interval_range =
       config.ice_regather_interval_range;
   ice_config.network_preference = config.network_preference;

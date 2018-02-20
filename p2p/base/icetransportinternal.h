@@ -114,6 +114,9 @@ struct IceConfig {
   // than this, no matter what other settings there are.
   // Measure in milliseconds.
   rtc::Optional<int> ice_check_min_interval;
+  // The interval in milliseconds at which STUN candidates will resend STUN
+  // binding requests to keep NAT bindings open.
+  rtc::Optional<int> stun_keepalive_interval;
 
   rtc::Optional<rtc::AdapterType> network_preference;
 

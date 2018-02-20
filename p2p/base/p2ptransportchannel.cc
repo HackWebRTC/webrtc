@@ -541,6 +541,18 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
                              ? config_.network_preference.value()
                              : 0);
   }
+
+  // TODO(qingsi): Resolve the naming conflict of stun_keepalive_delay in
+  // UDPPort and stun_keepalive_interval.
+  if (config_.stun_keepalive_interval != config.stun_keepalive_interval) {
+    config_.stun_keepalive_interval = config.stun_keepalive_interval;
+    allocator_session()->SetStunKeepaliveIntervalForReadyPorts(
+        config_.stun_keepalive_interval);
+    RTC_LOG(LS_INFO) << "Set STUN keepalive interval to "
+                     << (config.stun_keepalive_interval.has_value()
+                             ? config_.stun_keepalive_interval.value()
+                             : -1);
+  }
 }
 
 const IceConfig& P2PTransportChannel::config() const {

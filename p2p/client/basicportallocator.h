@@ -127,6 +127,8 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
   bool CandidatesAllocationDone() const override;
   void RegatherOnFailedNetworks() override;
   void RegatherOnAllNetworks() override;
+  void SetStunKeepaliveIntervalForReadyPorts(
+      const rtc::Optional<int>& stun_keepalive_interval) override;
   void PruneAllPorts() override;
 
  protected:

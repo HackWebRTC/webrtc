@@ -244,7 +244,12 @@ class PortAllocatorSession : public sigslot::has_slots<> {
   virtual void RegatherOnFailedNetworks() {}
   // Re-gathers candidates on all networks.
   virtual void RegatherOnAllNetworks() {}
-
+  // Set the interval at which STUN candidates will resend STUN binding requests
+  // on the underlying ports to keep NAT bindings open.
+  // The default value of the interval in implementation is restored if a null
+  // optional value is passed.
+  virtual void SetStunKeepaliveIntervalForReadyPorts(
+      const rtc::Optional<int>& stun_keepalive_interval) {}
   // Another way of getting the information provided by the signals below.
   //
   // Ports and candidates are not guaranteed to be in the same order as the
@@ -347,7 +352,9 @@ class PortAllocator : public sigslot::has_slots<> {
                         const std::vector<RelayServerConfig>& turn_servers,
                         int candidate_pool_size,
                         bool prune_turn_ports,
-                        webrtc::TurnCustomizer* turn_customizer = nullptr);
+                        webrtc::TurnCustomizer* turn_customizer = nullptr,
+                        const rtc::Optional<int>&
+                            stun_candidate_keepalive_interval = rtc::nullopt);
 
   const ServerAddresses& stun_servers() const { return stun_servers_; }
 
@@ -356,6 +363,9 @@ class PortAllocator : public sigslot::has_slots<> {
   }
 
   int candidate_pool_size() const { return candidate_pool_size_; }
+  const rtc::Optional<int>& stun_candidate_keepalive_interval() const {
+    return stun_candidate_keepalive_interval_;
+  }
 
   // Sets the network types to ignore.
   // Values are defined by the AdapterType enum.
@@ -506,6 +516,8 @@ class PortAllocator : public sigslot::has_slots<> {
   // The instance is owned by application and will be shared among
   // all TurnPort(s) created.
   webrtc::TurnCustomizer* turn_customizer_ = nullptr;
+
+  rtc::Optional<int> stun_candidate_keepalive_interval_;
 };
 
 }  // namespace cricket

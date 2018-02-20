@@ -101,9 +101,7 @@ class UDPPort : public Port {
   bool SupportsProtocol(const std::string& protocol) const override;
   ProtocolType GetProtocol() const override;
 
-  void set_stun_keepalive_delay(int delay) {
-    stun_keepalive_delay_ = delay;
-  }
+  void set_stun_keepalive_delay(const rtc::Optional<int>& delay);
   int stun_keepalive_delay() const {
     return stun_keepalive_delay_;
   }

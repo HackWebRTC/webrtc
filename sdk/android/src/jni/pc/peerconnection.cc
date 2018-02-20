@@ -156,6 +156,11 @@ void JavaToNativeRTCConfiguration(
       Java_RTCConfiguration_getIceCheckMinInterval(jni, j_rtc_config);
   rtc_config->ice_check_min_interval =
       JavaToNativeOptionalInt(jni, j_ice_check_min_interval);
+  ScopedJavaLocalRef<jobject> j_stun_candidate_keepalive_interval =
+      Java_RTCConfiguration_getStunCandidateKeepaliveInterval(jni,
+                                                              j_rtc_config);
+  rtc_config->stun_candidate_keepalive_interval =
+      JavaToNativeOptionalInt(jni, j_stun_candidate_keepalive_interval);
   rtc_config->disable_ipv6_on_wifi =
       Java_RTCConfiguration_getDisableIPv6OnWifi(jni, j_rtc_config);
   rtc_config->max_ipv6_networks =

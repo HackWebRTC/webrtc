@@ -342,6 +342,7 @@ public class PeerConnection {
   }
 
   /** Java version of PeerConnectionInterface.RTCConfiguration */
+  // TODO(qingsi): Resolve the naming inconsistency of fields with/without units.
   public static class RTCConfiguration {
     public IceTransportsType iceTransportsType;
     public List<IceServer> iceServers;
@@ -359,6 +360,10 @@ public class PeerConnection {
     public boolean pruneTurnPorts;
     public boolean presumeWritableWhenFullyRelayed;
     public Integer iceCheckMinInterval;
+    // The interval in milliseconds at which STUN candidates will resend STUN binding requests
+    // to keep NAT bindings open.
+    // The default value in the implementation is used if this field is null.
+    public Integer stunCandidateKeepaliveIntervalMs;
     public boolean disableIPv6OnWifi;
     // By default, PeerConnection will use a limited number of IPv6 network
     // interfaces, in order to avoid too many ICE candidate pairs being created
@@ -405,6 +410,7 @@ public class PeerConnection {
       pruneTurnPorts = false;
       presumeWritableWhenFullyRelayed = false;
       iceCheckMinInterval = null;
+      stunCandidateKeepaliveIntervalMs = null;
       disableIPv6OnWifi = false;
       maxIPv6Networks = 5;
       iceRegatherIntervalRange = null;
@@ -497,6 +503,11 @@ public class PeerConnection {
     @CalledByNative("RTCConfiguration")
     Integer getIceCheckMinInterval() {
       return iceCheckMinInterval;
+    }
+
+    @CalledByNative("RTCConfiguration")
+    Integer getStunCandidateKeepaliveInterval() {
+      return stunCandidateKeepaliveIntervalMs;
     }
 
     @CalledByNative("RTCConfiguration")

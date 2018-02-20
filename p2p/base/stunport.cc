@@ -317,6 +317,10 @@ ProtocolType UDPPort::GetProtocol() const {
   return PROTO_UDP;
 }
 
+void UDPPort::set_stun_keepalive_delay(const rtc::Optional<int>& delay) {
+  stun_keepalive_delay_ = (delay.has_value() ? delay.value() : KEEPALIVE_DELAY);
+}
+
 void UDPPort::OnLocalAddressReady(rtc::AsyncPacketSocket* socket,
                                   const rtc::SocketAddress& address) {
   // When adapter enumeration is disabled and binding to the any address, the

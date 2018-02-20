@@ -493,6 +493,10 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     // (STUN pings), in milliseconds.
     rtc::Optional<int> ice_check_min_interval;
 
+    // The interval in milliseconds at which STUN candidates will resend STUN
+    // binding requests to keep NAT bindings open.
+    rtc::Optional<int> stun_candidate_keepalive_interval;
+
     // ICE Periodic Regathering
     // If set, WebRTC will periodically create and propose candidates without
     // starting a new ICE generation. The regathering happens continuously with
