@@ -556,6 +556,7 @@ if (rtc_include_tests) {
       "../../rtc_base:rtc_task_queue",
       "../../rtc_base:sequenced_task_checker",
       "../../system_wrappers",
+      "../../test:test_common",
       "../../test:test_support",
       "../../test:video_test_common",
       "../../test:video_test_support",
@@ -569,6 +570,7 @@ if (rtc_include_tests) {
     "../../resources/foreman_160x120.yuv",
     "../../resources/foreman_176x144.yuv",
     "../../resources/foreman_320x240.yuv",
+    "../../resources/FourPeople_1280x720_30.yuv",
   ]
 
   if (is_ios || is_mac) {
@@ -622,7 +624,6 @@ if (rtc_include_tests) {
       "../../rtc_base:rtc_base_tests_utils",
       "../../system_wrappers",
       "../../test:field_trial",
-      "../../test:test_common",
       "../../test:test_support",
       "../../test:video_test_common",
       "../../test:video_test_support",

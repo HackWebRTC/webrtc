@@ -59,7 +59,7 @@ struct TestConfig {
   std::string filename;
 
   // File to process. This must be a video file in the YUV format.
-  std::string input_filename;
+  std::string filepath;
 
   // Number of frames to process.
   size_t num_frames = 0;

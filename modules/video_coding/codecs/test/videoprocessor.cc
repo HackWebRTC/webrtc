@@ -100,7 +100,7 @@ VideoProcessor::VideoProcessor(webrtc::VideoEncoder* encoder,
                                VideoDecoderList* decoders,
                                FrameReader* input_frame_reader,
                                const TestConfig& config,
-                               std::vector<Stats>* stats,
+                               Stats* stats,
                                IvfFileWriterList* encoded_frame_writers,
                                FrameWriterList* decoded_frame_writers)
     : config_(config),
@@ -190,7 +190,7 @@ void VideoProcessor::ProcessFrame() {
   for (size_t simulcast_svc_idx = 0;
        simulcast_svc_idx < num_simulcast_or_spatial_layers_;
        ++simulcast_svc_idx) {
-    stats_->at(simulcast_svc_idx).AddFrame(rtp_timestamp);
+    stats_->AddFrame(rtp_timestamp, simulcast_svc_idx);
   }
 
   // For the highest measurement accuracy of the encode time, the start/stop
@@ -199,8 +199,8 @@ void VideoProcessor::ProcessFrame() {
   for (size_t simulcast_svc_idx = 0;
        simulcast_svc_idx < num_simulcast_or_spatial_layers_;
        ++simulcast_svc_idx) {
-    FrameStatistic* frame_stat =
-        stats_->at(simulcast_svc_idx).GetFrame(frame_number);
+    FrameStatistics* frame_stat =
+        stats_->GetFrame(frame_number, simulcast_svc_idx);
     frame_stat->encode_start_ns = encode_start_ns;
   }
 
@@ -210,8 +210,8 @@ void VideoProcessor::ProcessFrame() {
   for (size_t simulcast_svc_idx = 0;
        simulcast_svc_idx < num_simulcast_or_spatial_layers_;
        ++simulcast_svc_idx) {
-    FrameStatistic* frame_stat =
-        stats_->at(simulcast_svc_idx).GetFrame(frame_number);
+    FrameStatistics* frame_stat =
+        stats_->GetFrame(frame_number, simulcast_svc_idx);
     frame_stat->encode_return_code = encode_return_code;
   }
 
@@ -224,8 +224,8 @@ void VideoProcessor::ProcessFrame() {
           last_encoded_frames_.end()) {
         EncodedImage& encoded_image = last_encoded_frames_[simulcast_svc_idx];
 
-        FrameStatistic* frame_stat =
-            stats_->at(simulcast_svc_idx).GetFrame(frame_number);
+        FrameStatistics* frame_stat =
+            stats_->GetFrame(frame_number, simulcast_svc_idx);
 
         if (encoded_frame_writers_) {
           RTC_CHECK(encoded_frame_writers_->at(simulcast_svc_idx)
@@ -300,9 +300,8 @@ void VideoProcessor::FrameEncoded(
       encoded_image._encodedWidth * encoded_image._encodedHeight;
   frame_wxh_to_simulcast_svc_idx_[frame_wxh] = simulcast_svc_idx;
 
-  FrameStatistic* frame_stat =
-      stats_->at(simulcast_svc_idx)
-          .GetFrameWithTimestamp(encoded_image._timeStamp);
+  FrameStatistics* frame_stat = stats_->GetFrameWithTimestamp(
+      encoded_image._timeStamp, simulcast_svc_idx);
   const size_t frame_number = frame_stat->frame_number;
 
   // Reordering is unexpected. Frames of different layers have the same value
@@ -324,13 +323,21 @@ void VideoProcessor::FrameEncoded(
   frame_stat->encode_time_us =
       GetElapsedTimeMicroseconds(frame_stat->encode_start_ns, encode_stop_ns);
 
-  // TODO(ssilkin): Implement bitrate allocation for VP9 SVC. For now set
-  // target for base layers equal to total target to avoid devision by zero
-  // at analysis.
-  frame_stat->target_bitrate_kbps =
-      bitrate_allocation_.GetSpatialLayerSum(
-          codec == kVideoCodecVP9 ? 0 : simulcast_svc_idx) /
-      1000;
+  if (codec == kVideoCodecVP9) {
+    const CodecSpecificInfoVP9& vp9_info = codec_specific.codecSpecific.VP9;
+    frame_stat->inter_layer_predicted = vp9_info.inter_layer_predicted;
+
+    // TODO(ssilkin): Implement bitrate allocation for VP9 SVC. For now set
+    // target for base layers equal to total target to avoid devision by zero
+    // at analysis.
+    frame_stat->target_bitrate_kbps = bitrate_allocation_.get_sum_kbps();
+  } else {
+    frame_stat->target_bitrate_kbps =
+        (bitrate_allocation_.GetBitrate(simulcast_svc_idx, temporal_idx) +
+         500) /
+        1000;
+  }
+
   frame_stat->encoded_frame_size_bytes = encoded_image._length;
   frame_stat->frame_type = encoded_image._frameType;
   frame_stat->temporal_layer_idx = temporal_idx;
@@ -365,9 +372,8 @@ void VideoProcessor::FrameDecoded(const VideoFrame& decoded_frame) {
   const size_t simulcast_svc_idx =
       frame_wxh_to_simulcast_svc_idx_[decoded_frame.size()];
 
-  FrameStatistic* frame_stat =
-      stats_->at(simulcast_svc_idx)
-          .GetFrameWithTimestamp(decoded_frame.timestamp());
+  FrameStatistics* frame_stat = stats_->GetFrameWithTimestamp(
+      decoded_frame.timestamp(), simulcast_svc_idx);
   const size_t frame_number = frame_stat->frame_number;
 
   // Reordering is unexpected. Frames of different layers have the same value
@@ -379,9 +385,8 @@ void VideoProcessor::FrameDecoded(const VideoFrame& decoded_frame) {
     // a freeze at playback.
     for (size_t num_dropped_frames = 0; num_dropped_frames < frame_number;
          ++num_dropped_frames) {
-      const FrameStatistic* prev_frame_stat =
-          stats_->at(simulcast_svc_idx)
-              .GetFrame(frame_number - num_dropped_frames - 1);
+      const FrameStatistics* prev_frame_stat = stats_->GetFrame(
+          frame_number - num_dropped_frames - 1, simulcast_svc_idx);
       if (prev_frame_stat->decoding_successful) {
         break;
       }
@@ -465,7 +470,7 @@ void VideoProcessor::CopyEncodedImage(const EncodedImage& encoded_image,
 
 void VideoProcessor::CalculateFrameQuality(const VideoFrame& ref_frame,
                                            const VideoFrame& dec_frame,
-                                           FrameStatistic* frame_stat) {
+                                           FrameStatistics* frame_stat) {
   if (ref_frame.width() == dec_frame.width() ||
       ref_frame.height() == dec_frame.height()) {
     frame_stat->psnr = I420PSNR(&ref_frame, &dec_frame);
@@ -487,7 +492,7 @@ void VideoProcessor::CalculateFrameQuality(const VideoFrame& ref_frame,
               scaled_buffer->MutableDataU(), scaled_buffer->StrideU(),
               scaled_buffer->MutableDataV(), scaled_buffer->StrideV(),
               scaled_buffer->width(), scaled_buffer->height(),
-              libyuv::kFilterBilinear);
+              libyuv::kFilterBox);
     frame_stat->psnr =
         I420PSNR(*scaled_buffer, *dec_frame.video_frame_buffer()->ToI420());
     frame_stat->ssim =

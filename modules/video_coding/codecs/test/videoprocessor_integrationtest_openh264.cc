@@ -32,7 +32,7 @@ class VideoProcessorIntegrationTestOpenH264
  protected:
   VideoProcessorIntegrationTestOpenH264() {
     config_.filename = "foreman_cif";
-    config_.input_filename = ResourcePath(config_.filename, "yuv");
+    config_.filepath = ResourcePath(config_.filename, "yuv");
     config_.num_frames = kNumFrames;
     // Only allow encoder/decoder to use single core, for predictability.
     config_.use_single_core = true;

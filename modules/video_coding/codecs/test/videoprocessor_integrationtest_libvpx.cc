@@ -28,6 +28,7 @@ const int kCifHeight = 288;
 const int kNumFramesShort = 100;
 #endif
 const int kNumFramesLong = 300;
+const size_t kBitrateRdPerfKbps[] = {300, 600, 800, 1250, 1750, 2500};
 }  // namespace
 
 class VideoProcessorIntegrationTestLibvpx
@@ -35,13 +36,29 @@ class VideoProcessorIntegrationTestLibvpx
  protected:
   VideoProcessorIntegrationTestLibvpx() {
     config_.filename = "foreman_cif";
-    config_.input_filename = ResourcePath(config_.filename, "yuv");
+    config_.filepath = ResourcePath(config_.filename, "yuv");
     config_.num_frames = kNumFramesLong;
     // Only allow encoder/decoder to use single core, for predictability.
     config_.use_single_core = true;
     config_.hw_encoder = false;
     config_.hw_decoder = false;
     config_.encoded_frame_checker = &qp_frame_checker_;
+  }
+
+  void PrintRdPerf(std::map<size_t, std::vector<VideoStatistics>> rd_stats) {
+    printf("\n%13s %7s %7s %13s %13s %7s %13s %13s\n", "uplink_kbps", "width",
+           "height", "downlink_kbps", "framerate_fps", "psnr", "enc_speed_fps",
+           "dec_speed_fps");
+    for (const auto& rd_stat : rd_stats) {
+      const size_t bitrate_kbps = rd_stat.first;
+      for (const auto& layer_stat : rd_stat.second) {
+        printf("%13zu %7zu %7zu %13zu %13.2f %7.2f %13.2f %13.2f\n",
+               bitrate_kbps, layer_stat.width, layer_stat.height,
+               layer_stat.bitrate_kbps, layer_stat.framerate_fps,
+               layer_stat.avg_psnr, layer_stat.enc_speed_fps,
+               layer_stat.dec_speed_fps);
+      }
+    }
   }
 
  private:
@@ -303,7 +320,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_TemporalLayersVP8) {
 #endif
 TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_SimulcastVP8) {
   config_.filename = "ConferenceMotion_1280_720_50";
-  config_.input_filename = ResourcePath(config_.filename, "yuv");
+  config_.filepath = ResourcePath(config_.filename, "yuv");
   config_.num_frames = 100;
   config_.SetCodecSettings(kVideoCodecVP8, 3, 1, 3, true, true, false,
                            kResilienceOn, 1280, 720);
@@ -326,7 +343,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_SimulcastVP8) {
 #endif
 TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_SvcVP9) {
   config_.filename = "ConferenceMotion_1280_720_50";
-  config_.input_filename = ResourcePath(config_.filename, "yuv");
+  config_.filepath = ResourcePath(config_.filename, "yuv");
   config_.num_frames = 100;
   config_.SetCodecSettings(kVideoCodecVP9, 1, 3, 3, true, true, false,
                            kResilienceOn, 1280, 720);
@@ -339,6 +356,50 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_SvcVP9) {
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
                               &quality_thresholds, nullptr, nullptr);
+}
+
+TEST_F(VideoProcessorIntegrationTestLibvpx, DISABLED_SimulcastVP8RdPerf) {
+  config_.filename = "FourPeople_1280x720_30";
+  config_.filepath = ResourcePath(config_.filename, "yuv");
+  config_.num_frames = 300;
+  config_.SetCodecSettings(kVideoCodecVP8, 3, 1, 3, true, true, false,
+                           kResilienceOn, 1280, 720);
+
+  std::map<size_t, std::vector<VideoStatistics>> rd_stats;
+  for (size_t bitrate_kbps : kBitrateRdPerfKbps) {
+    std::vector<RateProfile> rate_profiles = {
+        {bitrate_kbps, 30, config_.num_frames}};
+
+    ProcessFramesAndMaybeVerify(rate_profiles, nullptr, nullptr, nullptr,
+                                nullptr);
+
+    rd_stats[bitrate_kbps] =
+        stats_.SliceAndCalcLayerVideoStatistic(0, config_.num_frames - 1);
+  }
+
+  PrintRdPerf(rd_stats);
+}
+
+TEST_F(VideoProcessorIntegrationTestLibvpx, DISABLED_SvcVP9RdPerf) {
+  config_.filename = "FourPeople_1280x720_30";
+  config_.filepath = ResourcePath(config_.filename, "yuv");
+  config_.num_frames = 300;
+  config_.SetCodecSettings(kVideoCodecVP9, 1, 3, 3, true, true, false,
+                           kResilienceOn, 1280, 720);
+
+  std::map<size_t, std::vector<VideoStatistics>> rd_stats;
+  for (size_t bitrate_kbps : kBitrateRdPerfKbps) {
+    std::vector<RateProfile> rate_profiles = {
+        {bitrate_kbps, 30, config_.num_frames}};
+
+    ProcessFramesAndMaybeVerify(rate_profiles, nullptr, nullptr, nullptr,
+                                nullptr);
+
+    rd_stats[bitrate_kbps] =
+        stats_.SliceAndCalcLayerVideoStatistic(0, config_.num_frames - 1);
+  }
+
+  PrintRdPerf(rd_stats);
 }
 
 }  // namespace test

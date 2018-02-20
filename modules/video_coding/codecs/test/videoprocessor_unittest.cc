@@ -54,8 +54,6 @@ class VideoProcessorTest : public testing::Test {
     config_.SetCodecSettings(kVideoCodecVP8, 1, 1, 1, false, false, false,
                              false, kWidth, kHeight);
 
-    stats_.resize(1);
-
     decoder_mock_ = new MockVideoDecoder();
     decoders_.push_back(std::unique_ptr<VideoDecoder>(decoder_mock_));
 
@@ -96,7 +94,7 @@ class VideoProcessorTest : public testing::Test {
   MockVideoDecoder* decoder_mock_;
   std::vector<std::unique_ptr<VideoDecoder>> decoders_;
   MockFrameReader frame_reader_mock_;
-  std::vector<Stats> stats_;
+  Stats stats_;
   std::unique_ptr<VideoProcessor> video_processor_;
 };
 
