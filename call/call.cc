@@ -213,10 +213,10 @@ class Call : public webrtc::Call,
   void OnRecoveredPacket(const uint8_t* packet, size_t length) override;
 
   void SetBitrateConfig(
-      const webrtc::BitrateConstraints& bitrate_config) override;
+      const webrtc::Call::Config::BitrateConfig& bitrate_config) override;
 
   void SetBitrateConfigMask(
-      const webrtc::BitrateConstraintsMask& bitrate_config) override;
+      const webrtc::Call::Config::BitrateConfigMask& bitrate_config) override;
 
   void SetBitrateAllocationStrategy(
       std::unique_ptr<rtc::BitrateAllocationStrategy>
@@ -261,7 +261,7 @@ class Call : public webrtc::Call,
   void UpdateHistograms();
   void UpdateAggregateNetworkState();
 
-  // Applies update to the BitrateConstraints cached in |config_|, restarting
+  // Applies update to the BitrateConfig cached in |config_|, restarting
   // bandwidth estimation from |new_start| if set.
   void UpdateCurrentBitrateConfig(const rtc::Optional<int>& new_start);
 
@@ -374,11 +374,11 @@ class Call : public webrtc::Call,
 
   // The config mask set by SetBitrateConfigMask.
   // 0 <= min <= start <= max
-  BitrateConstraintsMask bitrate_config_mask_;
+  Config::BitrateConfigMask bitrate_config_mask_;
 
   // The config set by SetBitrateConfig.
   // min >= 0, start != 0, max == -1 || max > 0
-  BitrateConstraints base_bitrate_config_;
+  Config::BitrateConfig base_bitrate_config_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(Call);
 };
@@ -954,7 +954,8 @@ Call::Stats Call::GetStats() const {
   return stats;
 }
 
-void Call::SetBitrateConfig(const BitrateConstraints& bitrate_config) {
+void Call::SetBitrateConfig(
+    const webrtc::Call::Config::BitrateConfig& bitrate_config) {
   TRACE_EVENT0("webrtc", "Call::SetBitrateConfig");
   RTC_DCHECK_CALLED_SEQUENTIALLY(&configuration_sequence_checker_);
   RTC_DCHECK_GE(bitrate_config.min_bitrate_bps, 0);
@@ -977,7 +978,8 @@ void Call::SetBitrateConfig(const BitrateConstraints& bitrate_config) {
   UpdateCurrentBitrateConfig(new_start);
 }
 
-void Call::SetBitrateConfigMask(const BitrateConstraintsMask& mask) {
+void Call::SetBitrateConfigMask(
+    const webrtc::Call::Config::BitrateConfigMask& mask) {
   TRACE_EVENT0("webrtc", "Call::SetBitrateConfigMask");
   RTC_DCHECK_CALLED_SEQUENTIALLY(&configuration_sequence_checker_);
 
@@ -986,7 +988,7 @@ void Call::SetBitrateConfigMask(const BitrateConstraintsMask& mask) {
 }
 
 void Call::UpdateCurrentBitrateConfig(const rtc::Optional<int>& new_start) {
-  BitrateConstraints updated;
+  Config::BitrateConfig updated;
   updated.min_bitrate_bps =
       std::max(bitrate_config_mask_.min_bitrate_bps.value_or(0),
                base_bitrate_config_.min_bitrate_bps);

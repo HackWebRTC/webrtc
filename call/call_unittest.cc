@@ -254,9 +254,9 @@ TEST(CallTest, MultipleFlexfecReceiveStreamsProtectingSingleVideoStream) {
 
 namespace {
 struct CallBitrateHelper {
-  CallBitrateHelper() : CallBitrateHelper(BitrateConstraints()) {}
+  CallBitrateHelper() : CallBitrateHelper(Call::Config::BitrateConfig()) {}
 
-  explicit CallBitrateHelper(const BitrateConstraints& bitrate_config)
+  explicit CallBitrateHelper(const Call::Config::BitrateConfig& bitrate_config)
       : mock_cc_(Clock::GetRealTimeClock(), &event_log_, &pacer_) {
     Call::Config config(&event_log_);
     config.bitrate_config = bitrate_config;
@@ -282,7 +282,7 @@ struct CallBitrateHelper {
 TEST(CallBitrateTest, SetBitrateConfigWithValidConfigCallsSetBweBitrates) {
   CallBitrateHelper call;
 
-  BitrateConstraints bitrate_config;
+  Call::Config::BitrateConfig bitrate_config;
   bitrate_config.min_bitrate_bps = 1;
   bitrate_config.start_bitrate_bps = 2;
   bitrate_config.max_bitrate_bps = 3;
@@ -294,7 +294,7 @@ TEST(CallBitrateTest, SetBitrateConfigWithValidConfigCallsSetBweBitrates) {
 TEST(CallBitrateTest, SetBitrateConfigWithDifferentMinCallsSetBweBitrates) {
   CallBitrateHelper call;
 
-  BitrateConstraints bitrate_config;
+  Call::Config::BitrateConfig bitrate_config;
   bitrate_config.min_bitrate_bps = 10;
   bitrate_config.start_bitrate_bps = 20;
   bitrate_config.max_bitrate_bps = 30;
@@ -308,7 +308,7 @@ TEST(CallBitrateTest, SetBitrateConfigWithDifferentMinCallsSetBweBitrates) {
 TEST(CallBitrateTest, SetBitrateConfigWithDifferentStartCallsSetBweBitrates) {
   CallBitrateHelper call;
 
-  BitrateConstraints bitrate_config;
+  Call::Config::BitrateConfig bitrate_config;
   bitrate_config.min_bitrate_bps = 10;
   bitrate_config.start_bitrate_bps = 20;
   bitrate_config.max_bitrate_bps = 30;
@@ -322,7 +322,7 @@ TEST(CallBitrateTest, SetBitrateConfigWithDifferentStartCallsSetBweBitrates) {
 TEST(CallBitrateTest, SetBitrateConfigWithDifferentMaxCallsSetBweBitrates) {
   CallBitrateHelper call;
 
-  BitrateConstraints bitrate_config;
+  Call::Config::BitrateConfig bitrate_config;
   bitrate_config.min_bitrate_bps = 10;
   bitrate_config.start_bitrate_bps = 20;
   bitrate_config.max_bitrate_bps = 30;
@@ -335,7 +335,7 @@ TEST(CallBitrateTest, SetBitrateConfigWithDifferentMaxCallsSetBweBitrates) {
 
 TEST(CallBitrateTest, SetBitrateConfigWithSameConfigElidesSecondCall) {
   CallBitrateHelper call;
-  BitrateConstraints bitrate_config;
+  Call::Config::BitrateConfig bitrate_config;
   bitrate_config.min_bitrate_bps = 1;
   bitrate_config.start_bitrate_bps = 2;
   bitrate_config.max_bitrate_bps = 3;
@@ -349,7 +349,7 @@ TEST(CallBitrateTest,
      SetBitrateConfigWithSameMinMaxAndNegativeStartElidesSecondCall) {
   CallBitrateHelper call;
 
-  BitrateConstraints bitrate_config;
+  Call::Config::BitrateConfig bitrate_config;
   bitrate_config.min_bitrate_bps = 1;
   bitrate_config.start_bitrate_bps = 2;
   bitrate_config.max_bitrate_bps = 3;
@@ -389,7 +389,7 @@ TEST(CallTest, RecreatingAudioStreamWithSameSsrcReusesRtpState) {
 
 TEST(CallBitrateTest, BiggerMaskMinUsed) {
   CallBitrateHelper call;
-  BitrateConstraintsMask mask;
+  Call::Config::BitrateConfigMask mask;
   mask.min_bitrate_bps = 1234;
 
   EXPECT_CALL(call.mock_cc(),
@@ -399,12 +399,12 @@ TEST(CallBitrateTest, BiggerMaskMinUsed) {
 
 TEST(CallBitrateTest, BiggerConfigMinUsed) {
   CallBitrateHelper call;
-  BitrateConstraintsMask mask;
+  Call::Config::BitrateConfigMask mask;
   mask.min_bitrate_bps = 1000;
   EXPECT_CALL(call.mock_cc(), SetBweBitrates(1000, testing::_, testing::_));
   call->SetBitrateConfigMask(mask);
 
-  BitrateConstraints config;
+  Call::Config::BitrateConfig config;
   config.min_bitrate_bps = 1234;
 
   EXPECT_CALL(call.mock_cc(), SetBweBitrates(1234, testing::_, testing::_));
@@ -414,14 +414,14 @@ TEST(CallBitrateTest, BiggerConfigMinUsed) {
 // The last call to set start should be used.
 TEST(CallBitrateTest, LatestStartMaskPreferred) {
   CallBitrateHelper call;
-  BitrateConstraintsMask mask;
+  Call::Config::BitrateConfigMask mask;
   mask.start_bitrate_bps = 1300;
 
   EXPECT_CALL(call.mock_cc(),
               SetBweBitrates(testing::_, *mask.start_bitrate_bps, testing::_));
   call->SetBitrateConfigMask(mask);
 
-  BitrateConstraints bitrate_config;
+  Call::Config::BitrateConfig bitrate_config;
   bitrate_config.start_bitrate_bps = 1200;
 
   EXPECT_CALL(
@@ -431,11 +431,11 @@ TEST(CallBitrateTest, LatestStartMaskPreferred) {
 }
 
 TEST(CallBitrateTest, SmallerMaskMaxUsed) {
-  BitrateConstraints bitrate_config;
+  Call::Config::BitrateConfig bitrate_config;
   bitrate_config.max_bitrate_bps = bitrate_config.start_bitrate_bps + 2000;
   CallBitrateHelper call(bitrate_config);
 
-  BitrateConstraintsMask mask;
+  Call::Config::BitrateConfigMask mask;
   mask.max_bitrate_bps = bitrate_config.start_bitrate_bps + 1000;
 
   EXPECT_CALL(call.mock_cc(),
@@ -444,11 +444,11 @@ TEST(CallBitrateTest, SmallerMaskMaxUsed) {
 }
 
 TEST(CallBitrateTest, SmallerConfigMaxUsed) {
-  BitrateConstraints bitrate_config;
+  Call::Config::BitrateConfig bitrate_config;
   bitrate_config.max_bitrate_bps = bitrate_config.start_bitrate_bps + 1000;
   CallBitrateHelper call(bitrate_config);
 
-  BitrateConstraintsMask mask;
+  Call::Config::BitrateConfigMask mask;
   mask.max_bitrate_bps = bitrate_config.start_bitrate_bps + 2000;
 
   // Expect no calls because nothing changes
@@ -459,11 +459,11 @@ TEST(CallBitrateTest, SmallerConfigMaxUsed) {
 }
 
 TEST(CallBitrateTest, MaskStartLessThanConfigMinClamped) {
-  BitrateConstraints bitrate_config;
+  Call::Config::BitrateConfig bitrate_config;
   bitrate_config.min_bitrate_bps = 2000;
   CallBitrateHelper call(bitrate_config);
 
-  BitrateConstraintsMask mask;
+  Call::Config::BitrateConfigMask mask;
   mask.start_bitrate_bps = 1000;
 
   EXPECT_CALL(call.mock_cc(), SetBweBitrates(2000, 2000, testing::_));
@@ -471,11 +471,11 @@ TEST(CallBitrateTest, MaskStartLessThanConfigMinClamped) {
 }
 
 TEST(CallBitrateTest, MaskStartGreaterThanConfigMaxClamped) {
-  BitrateConstraints bitrate_config;
+  Call::Config::BitrateConfig bitrate_config;
   bitrate_config.start_bitrate_bps = 2000;
   CallBitrateHelper call(bitrate_config);
 
-  BitrateConstraintsMask mask;
+  Call::Config::BitrateConfigMask mask;
   mask.max_bitrate_bps = 1000;
 
   EXPECT_CALL(call.mock_cc(), SetBweBitrates(testing::_, -1, 1000));
@@ -483,11 +483,11 @@ TEST(CallBitrateTest, MaskStartGreaterThanConfigMaxClamped) {
 }
 
 TEST(CallBitrateTest, MaskMinGreaterThanConfigMaxClamped) {
-  BitrateConstraints bitrate_config;
+  Call::Config::BitrateConfig bitrate_config;
   bitrate_config.min_bitrate_bps = 2000;
   CallBitrateHelper call(bitrate_config);
 
-  BitrateConstraintsMask mask;
+  Call::Config::BitrateConfigMask mask;
   mask.max_bitrate_bps = 1000;
 
   EXPECT_CALL(call.mock_cc(), SetBweBitrates(1000, testing::_, 1000));
@@ -497,7 +497,7 @@ TEST(CallBitrateTest, MaskMinGreaterThanConfigMaxClamped) {
 TEST(CallBitrateTest, SettingMaskStartForcesUpdate) {
   CallBitrateHelper call;
 
-  BitrateConstraintsMask mask;
+  Call::Config::BitrateConfigMask mask;
   mask.start_bitrate_bps = 1000;
 
   // SetBweBitrates should be called twice with the same params since
@@ -511,12 +511,12 @@ TEST(CallBitrateTest, SettingMaskStartForcesUpdate) {
 TEST(CallBitrateTest, SetBitrateConfigWithNoChangesDoesNotCallSetBweBitrates) {
   CallBitrateHelper call;
 
-  BitrateConstraints config1;
+  Call::Config::BitrateConfig config1;
   config1.min_bitrate_bps = 0;
   config1.start_bitrate_bps = 1000;
   config1.max_bitrate_bps = -1;
 
-  BitrateConstraints config2;
+  Call::Config::BitrateConfig config2;
   config2.min_bitrate_bps = 0;
   config2.start_bitrate_bps = -1;
   config2.max_bitrate_bps = -1;
@@ -534,7 +534,7 @@ TEST(CallBitrateTest, SetBitrateConfigWithNoChangesDoesNotCallSetBweBitrates) {
 TEST(CallBitrateTest, SetBweBitratesNotCalledWhenEffectiveMaxUnchanged) {
   CallBitrateHelper call;
 
-  BitrateConstraints config;
+  Call::Config::BitrateConfig config;
   config.min_bitrate_bps = 0;
   config.start_bitrate_bps = -1;
   config.max_bitrate_bps = 2000;
@@ -542,7 +542,7 @@ TEST(CallBitrateTest, SetBweBitratesNotCalledWhenEffectiveMaxUnchanged) {
   call->SetBitrateConfig(config);
 
   // Reduce effective max to 1000 with the mask.
-  BitrateConstraintsMask mask;
+  Call::Config::BitrateConfigMask mask;
   mask.max_bitrate_bps = 1000;
   EXPECT_CALL(call.mock_cc(), SetBweBitrates(testing::_, testing::_, 1000));
   call->SetBitrateConfigMask(mask);
@@ -558,7 +558,7 @@ TEST(CallBitrateTest, SetBweBitratesNotCalledWhenEffectiveMaxUnchanged) {
 TEST(CallBitrateTest, SetBweBitratesNotCalledWhenStartMaskRemoved) {
   CallBitrateHelper call;
 
-  BitrateConstraintsMask mask;
+  Call::Config::BitrateConfigMask mask;
   mask.start_bitrate_bps = 1000;
   EXPECT_CALL(call.mock_cc(), SetBweBitrates(0, 1000, -1));
   call->SetBitrateConfigMask(mask);
@@ -573,12 +573,12 @@ TEST(CallBitrateTest, SetBweBitratesNotCalledWhenStartMaskRemoved) {
 TEST(CallBitrateTest, SetBitrateConfigAfterSetBitrateConfigMaskWithStart) {
   CallBitrateHelper call;
 
-  BitrateConstraintsMask mask;
+  Call::Config::BitrateConfigMask mask;
   mask.start_bitrate_bps = 1000;
   EXPECT_CALL(call.mock_cc(), SetBweBitrates(0, 1000, -1));
   call->SetBitrateConfigMask(mask);
 
-  BitrateConstraints config;
+  Call::Config::BitrateConfig config;
   config.min_bitrate_bps = 0;
   config.start_bitrate_bps = -1;
   config.max_bitrate_bps = 5000;
@@ -589,13 +589,13 @@ TEST(CallBitrateTest, SetBitrateConfigAfterSetBitrateConfigMaskWithStart) {
 }
 
 TEST(CallBitrateTest, SetBweBitratesNotCalledWhenClampedMinUnchanged) {
-  BitrateConstraints bitrate_config;
+  Call::Config::BitrateConfig bitrate_config;
   bitrate_config.start_bitrate_bps = 500;
   bitrate_config.max_bitrate_bps = 1000;
   CallBitrateHelper call(bitrate_config);
 
   // Set min to 2000; it is clamped to the max (1000).
-  BitrateConstraintsMask mask;
+  Call::Config::BitrateConfigMask mask;
   mask.min_bitrate_bps = 2000;
   EXPECT_CALL(call.mock_cc(), SetBweBitrates(1000, -1, 1000));
   call->SetBitrateConfigMask(mask);

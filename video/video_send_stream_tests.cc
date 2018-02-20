@@ -1590,7 +1590,7 @@ TEST_F(VideoSendStreamTest, ChangingNetworkRoute) {
 
     void PerformTest() override {
       rtc::NetworkRoute new_route(true, 10, 20, -1);
-      BitrateConstraints bitrate_config;
+      Call::Config::BitrateConfig bitrate_config;
 
       task_queue_->SendTask([this, &new_route, &bitrate_config]() {
         call_->OnNetworkRouteChanged("transport", new_route);
@@ -1955,7 +1955,7 @@ TEST_F(VideoSendStreamTest, CanReconfigureToUseStartBitrateAbovePreviousMax) {
   test::NullTransport transport;
   CreateSendConfig(1, 0, 0, &transport);
 
-  BitrateConstraints bitrate_config;
+  Call::Config::BitrateConfig bitrate_config;
   bitrate_config.start_bitrate_bps = 2 * video_encoder_config_.max_bitrate_bps;
   sender_call_->SetBitrateConfig(bitrate_config);
 
@@ -2864,7 +2864,7 @@ TEST_F(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
           init_encode_event_.Wait(VideoSendStreamTest::kDefaultTimeoutMs))
           << "Timed out while waiting for encoder to be configured.";
       WaitForSetRates(kStartBitrateKbps);
-      BitrateConstraints bitrate_config;
+      Call::Config::BitrateConfig bitrate_config;
       bitrate_config.start_bitrate_bps = kIncreasedStartBitrateKbps * 1000;
       bitrate_config.max_bitrate_bps = kIncreasedMaxBitrateKbps * 1000;
       task_queue_->SendTask([this, &bitrate_config]() {
@@ -3560,7 +3560,7 @@ TEST_F(VideoSendStreamTest, RemoveOverheadFromBandwidth) {
     }
 
     void PerformTest() override {
-      BitrateConstraints bitrate_config;
+      Call::Config::BitrateConfig bitrate_config;
       constexpr int kStartBitrateBps = 60000;
       constexpr int kMaxBitrateBps = 60000;
       constexpr int kMinBitrateBps = 10000;

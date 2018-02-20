@@ -771,7 +771,7 @@ bool WebRtcVideoChannel::SetSendParameters(const VideoSendParameters& params) {
       // codec target bitrate.
       // TODO(pbos): Figure out whether b=AS means max bitrate for this
       // WebRtcVideoChannel (in which case we're good), or per sender (SSRC),
-      // in which case this should not set a BitrateConstraints but rather
+      // in which case this should not set a Call::BitrateConfig but rather
       // reconfigure all senders.
       bitrate_config_.max_bitrate_bps =
           params.max_bandwidth_bps == 0 ? -1 : params.max_bandwidth_bps;
