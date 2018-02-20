@@ -176,7 +176,7 @@ class HardwareVideoEncoder implements VideoEncoder {
       codec = MediaCodec.createByCodecName(codecName);
     } catch (IOException | IllegalArgumentException e) {
       Logging.e(TAG, "Cannot create media encoder " + codecName);
-      return VideoCodecStatus.ERROR;
+      return VideoCodecStatus.FALLBACK_SOFTWARE;
     }
 
     final int colorFormat = useSurfaceMode ? surfaceColorFormat : yuvColorFormat;
@@ -218,7 +218,7 @@ class HardwareVideoEncoder implements VideoEncoder {
     } catch (IllegalStateException e) {
       Logging.e(TAG, "initEncodeInternal failed", e);
       release();
-      return VideoCodecStatus.ERROR;
+      return VideoCodecStatus.FALLBACK_SOFTWARE;
     }
 
     running = true;

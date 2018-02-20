@@ -31,8 +31,6 @@
 namespace webrtc {
 namespace jni {
 
-static const int kMaxJavaEncoderResets = 3;
-
 VideoEncoderWrapper::VideoEncoderWrapper(JNIEnv* jni,
                                          const JavaRef<jobject>& j_encoder)
     : encoder_(jni, j_encoder), int_array_class_(GetClass(jni, "[I")) {
@@ -81,14 +79,14 @@ int32_t VideoEncoderWrapper::InitEncodeInternal(JNIEnv* jni) {
       Java_VideoEncoderWrapper_createEncoderCallback(jni,
                                                      jlongFromPointer(this));
 
-  ScopedJavaLocalRef<jobject> ret =
-      Java_VideoEncoder_initEncode(jni, encoder_, settings, callback);
+  int32_t status = JavaToNativeVideoCodecStatus(
+      jni, Java_VideoEncoder_initEncode(jni, encoder_, settings, callback));
+  RTC_LOG(LS_INFO) << "initEncode: " << status;
 
-  if (JavaToNativeVideoCodecStatus(jni, ret) == WEBRTC_VIDEO_CODEC_OK) {
+  if (status == WEBRTC_VIDEO_CODEC_OK) {
     initialized_ = true;
   }
-
-  return HandleReturnCode(jni, ret);
+  return status;
 }
 
 int32_t VideoEncoderWrapper::RegisterEncodeCompleteCallback(
@@ -99,11 +97,15 @@ int32_t VideoEncoderWrapper::RegisterEncodeCompleteCallback(
 
 int32_t VideoEncoderWrapper::Release() {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
-  ScopedJavaLocalRef<jobject> ret = Java_VideoEncoder_release(jni, encoder_);
+
+  int32_t status = JavaToNativeVideoCodecStatus(
+      jni, Java_VideoEncoder_release(jni, encoder_));
+  RTC_LOG(LS_INFO) << "release: " << status;
   frame_extra_infos_.clear();
   initialized_ = false;
   encoder_queue_ = nullptr;
-  return HandleReturnCode(jni, ret);
+
+  return status;
 }
 
 int32_t VideoEncoderWrapper::Encode(
@@ -132,7 +134,7 @@ int32_t VideoEncoderWrapper::Encode(
   ScopedJavaLocalRef<jobject> ret =
       Java_VideoEncoder_encode(jni, encoder_, j_frame, encode_info);
   ReleaseJavaVideoFrame(jni, j_frame);
-  return HandleReturnCode(jni, ret);
+  return HandleReturnCode(jni, ret, "encode");
 }
 
 int32_t VideoEncoderWrapper::SetChannelParameters(uint32_t packet_loss,
@@ -140,7 +142,7 @@ int32_t VideoEncoderWrapper::SetChannelParameters(uint32_t packet_loss,
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedJavaLocalRef<jobject> ret = Java_VideoEncoder_setChannelParameters(
       jni, encoder_, (jshort)packet_loss, (jlong)rtt);
-  return HandleReturnCode(jni, ret);
+  return HandleReturnCode(jni, ret, "setChannelParameters");
 }
 
 int32_t VideoEncoderWrapper::SetRateAllocation(
@@ -152,7 +154,7 @@ int32_t VideoEncoderWrapper::SetRateAllocation(
       ToJavaBitrateAllocation(jni, allocation);
   ScopedJavaLocalRef<jobject> ret = Java_VideoEncoder_setRateAllocation(
       jni, encoder_, j_bitrate_allocation, (jint)framerate);
-  return HandleReturnCode(jni, ret);
+  return HandleReturnCode(jni, ret, "setRateAllocation");
 }
 
 VideoEncoderWrapper::ScalingSettings VideoEncoderWrapper::GetScalingSettings()
@@ -263,21 +265,29 @@ void VideoEncoderWrapper::OnEncodedFrame(JNIEnv* jni,
 }
 
 int32_t VideoEncoderWrapper::HandleReturnCode(JNIEnv* jni,
-                                              const JavaRef<jobject>& code) {
-  int32_t value = JavaToNativeVideoCodecStatus(jni, code);
-  if (value < 0) {  // Any errors are represented by negative values.
-    // Try resetting the codec.
-    if (++num_resets_ <= kMaxJavaEncoderResets &&
-        Release() == WEBRTC_VIDEO_CODEC_OK) {
-      RTC_LOG(LS_WARNING) << "Reset Java encoder: " << num_resets_;
-      return InitEncodeInternal(jni);
-    }
-
-    RTC_LOG(LS_WARNING) << "Falling back to software decoder.";
-    return WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE;
-  } else {
+                                              const JavaRef<jobject>& j_value,
+                                              const char* method_name) {
+  int32_t value = JavaToNativeVideoCodecStatus(jni, j_value);
+  if (value >= 0) {  // OK or NO_OUTPUT
     return value;
   }
+
+  RTC_LOG(LS_WARNING) << method_name << ": " << value;
+  if (value == WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE ||
+      value == WEBRTC_VIDEO_CODEC_UNINITIALIZED) {  // Critical error.
+    RTC_LOG(LS_WARNING) << "Java encoder requested software fallback.";
+    return WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE;
+  }
+
+  // Try resetting the codec.
+  if (Release() == WEBRTC_VIDEO_CODEC_OK &&
+      InitEncodeInternal(jni) == WEBRTC_VIDEO_CODEC_OK) {
+    RTC_LOG(LS_WARNING) << "Reset Java encoder.";
+    return WEBRTC_VIDEO_CODEC_ERROR;
+  }
+
+  RTC_LOG(LS_WARNING) << "Unable to reset Java encoder.";
+  return WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE;
 }
 
 RTPFragmentationHeader VideoEncoderWrapper::ParseFragmentationHeader(

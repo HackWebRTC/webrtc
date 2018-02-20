@@ -78,7 +78,9 @@ class VideoEncoderWrapper : public VideoEncoder {
 
   // Takes Java VideoCodecStatus, handles it and returns WEBRTC_VIDEO_CODEC_*
   // status code.
-  int32_t HandleReturnCode(JNIEnv* jni, const JavaRef<jobject>& code);
+  int32_t HandleReturnCode(JNIEnv* jni,
+                           const JavaRef<jobject>& j_value,
+                           const char* method_name);
 
   RTPFragmentationHeader ParseFragmentationHeader(
       const std::vector<uint8_t>& buffer);

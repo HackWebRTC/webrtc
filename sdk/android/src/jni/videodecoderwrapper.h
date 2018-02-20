@@ -73,7 +73,9 @@ class VideoDecoderWrapper : public VideoDecoder {
 
   // Takes Java VideoCodecStatus, handles it and returns WEBRTC_VIDEO_CODEC_*
   // status code.
-  int32_t HandleReturnCode(JNIEnv* jni, const JavaRef<jobject>& code)
+  int32_t HandleReturnCode(JNIEnv* jni,
+                           const JavaRef<jobject>& j_value,
+                           const char* method_name)
       RTC_RUN_ON(decoder_thread_checker_);
 
   rtc::Optional<uint8_t> ParseQP(const EncodedImage& input_image)
