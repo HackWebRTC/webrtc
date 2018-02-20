@@ -96,7 +96,8 @@ class VideoQualityTest : public test::CallTest {
   };
 
   VideoQualityTest();
-  explicit VideoQualityTest(std::unique_ptr<FecController> fec_controller);
+  explicit VideoQualityTest(
+      std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory);
   void RunWithAnalyzer(const Params& params);
   void RunWithRenderers(const Params& params);
 
@@ -112,7 +113,7 @@ class VideoQualityTest : public test::CallTest {
 
  protected:
   std::map<uint8_t, webrtc::MediaType> payload_type_map_;
-  std::unique_ptr<FecController> fec_controller_;
+  std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory_;
 
   // No-op implementation to be able to instantiate this class from non-TEST_F
   // locations.
@@ -129,8 +130,6 @@ class VideoQualityTest : public test::CallTest {
 
   // Helper methods for setting up the call.
   void CreateVideoStreams();
-  void CreateVideoStreamsWithProtectionBitrateCalculator(
-      std::unique_ptr<FecController> fec_controller);
   void DestroyStreams();
   void CreateCapturers();
   std::unique_ptr<test::FrameGenerator> CreateFrameGenerator(size_t video_idx);

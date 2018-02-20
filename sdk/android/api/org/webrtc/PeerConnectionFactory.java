@@ -124,6 +124,55 @@ public class PeerConnectionFactory {
     }
   }
 
+  public static class Builder {
+    private Options options;
+    private VideoEncoderFactory encoderFactory;
+    private VideoDecoderFactory decoderFactory;
+    private AudioProcessingFactory audioProcessingFactory;
+    private FecControllerFactoryFactoryInterface fecControllerFactoryFactory;
+
+    private Builder() {}
+
+    public Builder setOptions(Options options) {
+      this.options = options;
+      return this;
+    }
+
+    public Builder setVideoEncoderFactory(VideoEncoderFactory encoderFactory) {
+      this.encoderFactory = encoderFactory;
+      return this;
+    }
+
+    public Builder setVideoDecoderFactory(VideoDecoderFactory decoderFactory) {
+      this.decoderFactory = decoderFactory;
+      return this;
+    }
+
+    public Builder setAudioProcessingFactory(AudioProcessingFactory audioProcessingFactory) {
+      if (audioProcessingFactory == null) {
+        throw new NullPointerException(
+            "PeerConnectionFactory builder does not accept a null AudioProcessingFactory.");
+      }
+      this.audioProcessingFactory = audioProcessingFactory;
+      return this;
+    }
+
+    public Builder setFecControllerFactoryFactoryInterface(
+        FecControllerFactoryFactoryInterface fecControllerFactoryFactory) {
+      this.fecControllerFactoryFactory = fecControllerFactoryFactory;
+      return this;
+    }
+
+    public PeerConnectionFactory createPeerConnectionFactory() {
+      return new PeerConnectionFactory(options, encoderFactory, decoderFactory,
+          audioProcessingFactory, fecControllerFactoryFactory);
+    }
+  }
+
+  public static Builder builder() {
+    return new Builder();
+  }
+
   /**
    * Loads and initializes WebRTC. This must be called at least once before creating a
    * PeerConnectionFactory. Replaces all the old initialization methods. Must not be called while
@@ -191,28 +240,36 @@ public class PeerConnectionFactory {
 
   // Note: initializeAndroidGlobals must be called at least once before
   // constructing a PeerConnectionFactory.
+  @Deprecated
   public PeerConnectionFactory(Options options) {
     this(options, null /* encoderFactory */, null /* decoderFactory */);
   }
 
+  @Deprecated
   public PeerConnectionFactory(
       Options options, VideoEncoderFactory encoderFactory, VideoDecoderFactory decoderFactory) {
     checkInitializeHasBeenCalled();
-    nativeFactory = nativeCreatePeerConnectionFactory(options, encoderFactory, decoderFactory);
+    nativeFactory =
+        nativeCreatePeerConnectionFactory(options, encoderFactory, decoderFactory, 0, 0);
     if (nativeFactory == 0) {
       throw new RuntimeException("Failed to initialize PeerConnectionFactory!");
     }
   }
 
+  @Deprecated
   public PeerConnectionFactory(Options options, VideoEncoderFactory encoderFactory,
       VideoDecoderFactory decoderFactory, AudioProcessingFactory audioProcessingFactory) {
+    this(options, encoderFactory, decoderFactory, audioProcessingFactory,
+        null /* fecControllerFactoryFactory */);
+  }
+
+  private PeerConnectionFactory(Options options, VideoEncoderFactory encoderFactory,
+      VideoDecoderFactory decoderFactory, AudioProcessingFactory audioProcessingFactory,
+      FecControllerFactoryFactoryInterface fecControllerFactoryFactory) {
     checkInitializeHasBeenCalled();
-    if (audioProcessingFactory == null) {
-      throw new NullPointerException(
-          "PeerConnectionFactory constructor does not accept a null AudioProcessingFactory.");
-    }
-    nativeFactory = nativeCreatePeerConnectionFactoryWithAudioProcessing(
-        options, encoderFactory, decoderFactory, audioProcessingFactory.createNative());
+    nativeFactory = nativeCreatePeerConnectionFactory(options, encoderFactory, decoderFactory,
+        audioProcessingFactory == null ? 0 : audioProcessingFactory.createNative(),
+        fecControllerFactoryFactory == null ? 0 : fecControllerFactoryFactory.createNative());
     if (nativeFactory == 0) {
       throw new RuntimeException("Failed to initialize PeerConnectionFactory!");
     }
@@ -405,11 +462,9 @@ public class PeerConnectionFactory {
   private static native void nativeShutdownInternalTracer();
   private static native boolean nativeStartInternalTracingCapture(String tracingFilename);
   private static native void nativeStopInternalTracingCapture();
-  private static native long nativeCreatePeerConnectionFactory(
-      Options options, VideoEncoderFactory encoderFactory, VideoDecoderFactory decoderFactory);
-  private static native long nativeCreatePeerConnectionFactoryWithAudioProcessing(Options options,
+  private static native long nativeCreatePeerConnectionFactory(Options options,
       VideoEncoderFactory encoderFactory, VideoDecoderFactory decoderFactory,
-      long nativeAudioProcessor);
+      long nativeAudioProcessor, long nativeFecControllerFactory);
   private static native long nativeCreatePeerConnection(long factory,
       PeerConnection.RTCConfiguration rtcConfig, MediaConstraints constraints, long nativeObserver);
   private static native long nativeCreateLocalMediaStream(long factory, String label);

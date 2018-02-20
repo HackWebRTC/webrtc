@@ -1087,9 +1087,9 @@ VideoQualityTest::VideoQualityTest()
 }
 
 VideoQualityTest::VideoQualityTest(
-    std::unique_ptr<FecController> fec_controller)
+    std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory)
     : VideoQualityTest() {
-  fec_controller_ = std::move(fec_controller);
+  fec_controller_factory_ = std::move(fec_controller_factory);
 }
 
 VideoQualityTest::Params::Params()
@@ -1827,38 +1827,21 @@ void VideoQualityTest::CreateVideoStreams() {
   RTC_DCHECK(video_send_streams_.empty());
   RTC_DCHECK(video_receive_streams_.empty());
   RTC_DCHECK_EQ(video_send_configs_.size(), num_video_streams_);
+
   // We currently only support testing external fec controllers with a single
   // VideoSendStream.
-  if (fec_controller_.get()) {
+  if (fec_controller_factory_.get()) {
     RTC_DCHECK_LE(video_send_configs_.size(), 1);
   }
   for (size_t i = 0; i < video_send_configs_.size(); ++i) {
-    if (fec_controller_.get()) {
+    if (fec_controller_factory_.get()) {
       video_send_streams_.push_back(sender_call_->CreateVideoSendStream(
           video_send_configs_[i].Copy(), video_encoder_configs_[i].Copy(),
-          std::move(fec_controller_)));
+          fec_controller_factory_->CreateFecController()));
     } else {
       video_send_streams_.push_back(sender_call_->CreateVideoSendStream(
           video_send_configs_[i].Copy(), video_encoder_configs_[i].Copy()));
     }
-  }
-  for (size_t i = 0; i < video_receive_configs_.size(); ++i) {
-    video_receive_streams_.push_back(receiver_call_->CreateVideoReceiveStream(
-        video_receive_configs_[i].Copy()));
-  }
-
-  AssociateFlexfecStreamsWithVideoStreams();
-}
-
-void VideoQualityTest::CreateVideoStreamsWithProtectionBitrateCalculator(
-    std::unique_ptr<FecController> fec_controller) {
-  RTC_DCHECK(video_send_streams_.empty());
-  RTC_DCHECK(video_receive_streams_.empty());
-  RTC_DCHECK_EQ(video_send_configs_.size(), num_video_streams_);
-  for (size_t i = 0; i < video_send_configs_.size(); ++i) {
-    video_send_streams_.push_back(sender_call_->CreateVideoSendStream(
-        video_send_configs_[i].Copy(), video_encoder_configs_[i].Copy(),
-        std::move(fec_controller)));
   }
   for (size_t i = 0; i < video_receive_configs_.size(); ++i) {
     video_receive_streams_.push_back(receiver_call_->CreateVideoReceiveStream(
