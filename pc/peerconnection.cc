@@ -1185,7 +1185,8 @@ PeerConnection::FindFirstTransceiverForAddedTrack(
     if (!transceiver->sender()->track() &&
         cricket::MediaTypeToString(transceiver->media_type()) ==
             track->kind() &&
-        !transceiver->internal()->has_ever_been_used_to_send()) {
+        !transceiver->internal()->has_ever_been_used_to_send() &&
+        !transceiver->stopped()) {
       return transceiver;
     }
   }
@@ -2228,12 +2229,16 @@ RTCError PeerConnection::ApplyRemoteDescription(
       // the RTCSessionDescription: If direction is sendrecv or recvonly, and
       // transceiver's current direction is neither sendrecv nor recvonly,
       // process the addition of a remote track for the media description.
+      //
+      // Create a sync label in the case of an unsignalled msid.
+      std::string sync_label = rtc::CreateRandomUuid();
+      if (!media_desc->streams().empty()) {
+        sync_label = media_desc->streams()[0].sync_label;
+      }
       if (RtpTransceiverDirectionHasRecv(local_direction) &&
           (!transceiver->current_direction() ||
            !RtpTransceiverDirectionHasRecv(
-               *transceiver->current_direction())) &&
-          !media_desc->streams().empty()) {
-        const std::string& sync_label = media_desc->streams()[0].sync_label;
+               *transceiver->current_direction()))) {
         rtc::scoped_refptr<MediaStreamInterface> stream =
             remote_streams_->find(sync_label);
         if (!stream) {
@@ -2259,9 +2264,14 @@ RTCError PeerConnection::ApplyRemoteDescription(
       if (content->rejected && !transceiver->stopped()) {
         transceiver->Stop();
       }
-      if (!content->rejected && !media_desc->streams().empty()) {
-        transceiver->internal()->receiver_internal()->SetupMediaChannel(
-            media_desc->streams()[0].first_ssrc());
+      if (!content->rejected &&
+          RtpTransceiverDirectionHasRecv(local_direction)) {
+        // Set ssrc to 0 in the case of an unsignalled ssrc.
+        uint32_t ssrc = 0;
+        if (!media_desc->streams().empty()) {
+          ssrc = media_desc->streams()[0].first_ssrc();
+        }
+        transceiver->internal()->receiver_internal()->SetupMediaChannel(ssrc);
       }
     }
     // Once all processing has finished, fire off callbacks.
