@@ -38,6 +38,7 @@ rtc_source_set("audio_mixer_api") {
 rtc_source_set("aec3_config") {
   visibility = [ "*" ]
   sources = [
+    "echo_canceller3_config.cc",
     "echo_canceller3_config.h",
   ]
 }

@@ -47,6 +47,11 @@ int EstimateFilterDelay(
                        std::max_element(delays.begin(), delays.end()));
 }
 
+float ComputeGainRampupIncrease(const EchoCanceller3Config& config) {
+  const auto& c = config.echo_removal_control.gain_rampup;
+  return powf(1.f / c.first_non_zero_gain, 1.f / c.non_zero_gain_blocks);
+}
+
 }  // namespace
 
 int AecState::instance_count_ = 0;
@@ -57,7 +62,8 @@ AecState::AecState(const EchoCanceller3Config& config)
       erle_estimator_(config.erle.min, config.erle.max_l, config.erle.max_h),
       config_(config),
       max_render_(config_.filter.main.length_blocks, 0.f),
-      reverb_decay_(config_.ep_strength.default_len) {}
+      reverb_decay_(config_.ep_strength.default_len),
+      gain_rampup_increase_(ComputeGainRampupIncrease(config_)) {}
 
 AecState::~AecState() = default;
 
@@ -71,12 +77,10 @@ void AecState::HandleEchoPathChange(
     echo_saturation_ = false;
     previous_max_sample_ = 0.f;
     std::fill(max_render_.begin(), max_render_.end(), 0.f);
-    force_zero_gain_counter_ = 0;
     blocks_with_proper_filter_adaptation_ = 0;
     capture_block_counter_ = 0;
     filter_has_had_time_to_converge_ = false;
     render_received_ = false;
-    force_zero_gain_ = true;
     blocks_with_active_render_ = 0;
     initial_state_ = true;
   };
@@ -92,8 +96,8 @@ void AecState::HandleEchoPathChange(
     full_reset();
   } else if (echo_path_variability.delay_change !=
              EchoPathVariability::DelayAdjustment::kBufferFlush) {
+    active_render_seen_ = false;
     full_reset();
-
   } else if (echo_path_variability.delay_change !=
              EchoPathVariability::DelayAdjustment::kDelayReset) {
     full_reset();
@@ -129,11 +133,9 @@ void AecState::Update(
   blocks_with_proper_filter_adaptation_ +=
       active_render_block && !SaturatedCapture() ? 1 : 0;
 
-  // Force zero echo suppression gain after an echo path change to allow at
-  // least some render data to be collected in order to avoid an initial echo
-  // burst.
-  force_zero_gain_ = ++force_zero_gain_counter_ < kNumBlocksPerSecond / 5;
-
+  // Update the limit on the echo suppression after an echo path change to avoid
+  // an initial echo burst.
+  UpdateSuppressorGainLimit(render_buffer.GetRenderActivity());
 
   // Update the ERL and ERLE measures.
   if (converged_filter && capture_block_counter_ >= 2 * kNumBlocksPerSecond) {
@@ -262,6 +264,37 @@ bool AecState::DetectActiveRender(rtc::ArrayView<const float> x) const {
   return x_energy > (config_.render_levels.active_render_limit *
                      config_.render_levels.active_render_limit) *
                         kFftLengthBy2;
+}
+
+// Updates the suppressor gain limit.
+void AecState::UpdateSuppressorGainLimit(bool render_activity) {
+  const auto& rampup_conf = config_.echo_removal_control.gain_rampup;
+  if (!active_render_seen_ && render_activity) {
+    active_render_seen_ = true;
+    realignment_counter_ = rampup_conf.full_gain_blocks;
+  } else if (realignment_counter_ > 0) {
+    --realignment_counter_;
+  }
+
+  if (realignment_counter_ <= 0) {
+    suppressor_gain_limit_ = 1.f;
+    return;
+  }
+
+  if (realignment_counter_ > rampup_conf.non_zero_gain_blocks) {
+    suppressor_gain_limit_ = 0.f;
+    return;
+  }
+
+  if (realignment_counter_ == rampup_conf.non_zero_gain_blocks) {
+    suppressor_gain_limit_ = rampup_conf.first_non_zero_gain;
+    return;
+  }
+
+  RTC_DCHECK_LT(0.f, suppressor_gain_limit_);
+  suppressor_gain_limit_ =
+      std::min(1.f, suppressor_gain_limit_ * gain_rampup_increase_);
+  RTC_DCHECK_GE(1.f, suppressor_gain_limit_);
 }
 
 bool AecState::DetectEchoSaturation(rtc::ArrayView<const float> x) {

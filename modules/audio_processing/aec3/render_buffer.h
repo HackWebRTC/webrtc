@@ -61,10 +61,17 @@ class RenderBuffer {
   void SpectralSum(size_t num_spectra,
                    std::array<float, kFftLengthBy2Plus1>* X2) const;
 
+  // Gets the recent activity seen in the render signal.
+  bool GetRenderActivity() const { return render_activity_; }
+
+  // Specifies the recent activity seen in the render signal.
+  void SetRenderActivity(bool activity) { render_activity_ = activity; }
+
  private:
   const MatrixBuffer* const block_buffer_;
   const VectorBuffer* const spectrum_buffer_;
   const FftBuffer* const fft_buffer_;
+  bool render_activity_ = false;
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RenderBuffer);
 };
 

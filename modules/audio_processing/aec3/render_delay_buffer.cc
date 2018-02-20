@@ -12,6 +12,7 @@
 
 #include <string.h>
 #include <algorithm>
+#include <numeric>
 
 #include "modules/audio_processing/aec3/aec3_common.h"
 #include "modules/audio_processing/aec3/aec3_fft.h"
@@ -72,12 +73,15 @@ class RenderDelayBufferImpl final : public RenderDelayBuffer {
   int max_observed_jitter_ = 1;
   size_t capture_call_counter_ = 0;
   size_t render_call_counter_ = 0;
+  bool render_activity_ = false;
+  size_t render_activity_counter_ = 0;
 
   int LowRateBufferOffset() const { return DelayEstimatorOffset(config_) >> 1; }
   int MaxExternalDelayToInternalDelay(size_t delay) const;
   void ApplyDelay(int delay);
   void InsertBlock(const std::vector<std::vector<float>>& block,
                    int previous_write);
+  bool DetectActiveRender(rtc::ArrayView<const float> x) const;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RenderDelayBufferImpl);
 };
@@ -230,6 +234,12 @@ RenderDelayBuffer::BufferingEvent RenderDelayBufferImpl::Insert(
                              ? BufferingEvent::kRenderOverrun
                              : BufferingEvent::kNone;
 
+  // Detect and update render activity.
+  if (!render_activity_) {
+    render_activity_counter_ += DetectActiveRender(block[0]) ? 1 : 0;
+    render_activity_ = render_activity_counter_ >= 20;
+  }
+
   // Insert the new render block into the specified position.
   InsertBlock(block, previous_write);
 
@@ -281,6 +291,12 @@ RenderDelayBufferImpl::PrepareCaptureProcessing() {
 
   if (event != BufferingEvent::kNone) {
     Reset();
+  }
+
+  echo_remover_buffer_.SetRenderActivity(render_activity_);
+  if (render_activity_) {
+    render_activity_counter_ = 0;
+    render_activity_ = false;
   }
 
   return event;
@@ -351,6 +367,14 @@ void RenderDelayBufferImpl::InsertBlock(
   std::copy(ds.rbegin(), ds.rend(), lr.buffer.begin() + lr.write);
   fft_.PaddedFft(block[0], b.buffer[previous_write][0], &f.buffer[f.write]);
   f.buffer[f.write].Spectrum(optimization_, s.buffer[s.write]);
+}
+
+bool RenderDelayBufferImpl::DetectActiveRender(
+    rtc::ArrayView<const float> x) const {
+  const float x_energy = std::inner_product(x.begin(), x.end(), x.begin(), 0.f);
+  return x_energy > (config_.render_levels.active_render_limit *
+                     config_.render_levels.active_render_limit) *
+                        kFftLengthBy2;
 }
 
 }  // namespace

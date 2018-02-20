@@ -64,25 +64,13 @@ TEST(SuppressionGain, BasicGainComputation) {
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
       RenderDelayBuffer::Create(config, 3));
 
-  // Verify the functionality for forcing a zero gain.
-  E2.fill(1000000000.f);
-  R2.fill(10000000000000.f);
-  N2.fill(0.f);
-  s.fill(10.f);
-  aec_state.Update(subtractor.FilterFrequencyResponse(),
-                   subtractor.FilterImpulseResponse(),
-                   subtractor.ConvergedFilter(),
-                   *render_delay_buffer->GetRenderBuffer(), E2, Y2, s, false);
-  suppression_gain.GetGain(E2, R2, N2, analyzer, aec_state, x, &high_bands_gain,
-                           &g);
-  std::for_each(g.begin(), g.end(), [](float a) { EXPECT_FLOAT_EQ(0.f, a); });
-  EXPECT_FLOAT_EQ(0.f, high_bands_gain);
-
   // Ensure that a strong noise is detected to mask any echoes.
   E2.fill(10.f);
   Y2.fill(10.f);
   R2.fill(0.1f);
   N2.fill(100.f);
+  s.fill(10.f);
+
   // Ensure that the gain is no longer forced to zero.
   for (int k = 0; k <= kNumBlocksPerSecond / 5 + 1; ++k) {
     aec_state.Update(subtractor.FilterFrequencyResponse(),

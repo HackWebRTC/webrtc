@@ -387,17 +387,9 @@ void SuppressionGain::GetGain(
 
   const bool saturated_echo = aec_state.SaturatedEcho();
   const bool saturating_echo_path = aec_state.SaturatingEchoPath();
-  const bool force_zero_gain = aec_state.ForcedZeroGain();
+  const float gain_upper_bound = aec_state.SuppressionGainLimit();
   const bool linear_echo_estimate = aec_state.UsableLinearEstimate();
   const bool initial_state = aec_state.InitialState();
-  if (force_zero_gain) {
-    last_gain_.fill(0.f);
-    std::copy(comfort_noise.begin(), comfort_noise.end(), last_masker_.begin());
-    low_band_gain->fill(0.f);
-    gain_increase_.fill(1.f);
-    *high_bands_gain = 0.f;
-    return;
-  }
 
   bool low_noise_render = low_render_detector_.Detect(render);
 
@@ -407,6 +399,12 @@ void SuppressionGain::GetGain(
   LowerBandGain(low_noise_render, narrow_peak_band, saturated_echo,
                 saturating_echo_path, initial_state, linear_echo_estimate,
                 nearend, echo, comfort_noise, low_band_gain);
+
+  if (gain_upper_bound < 1.f) {
+    for (size_t k = 0; k < low_band_gain->size(); ++k) {
+      (*low_band_gain)[k] = std::min((*low_band_gain)[k], gain_upper_bound);
+    }
+  }
 
   // Compute the gain for the upper bands.
   *high_bands_gain =

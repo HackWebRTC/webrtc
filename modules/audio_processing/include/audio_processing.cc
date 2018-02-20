@@ -32,4 +32,5 @@ Beamforming::Beamforming(bool enabled,
       target_direction(target_direction) {}
 
 Beamforming::~Beamforming() {}
+
 }  // namespace webrtc

@@ -17,6 +17,8 @@ namespace webrtc {
 
 // Configuration struct for EchoCanceller3
 struct EchoCanceller3Config {
+  EchoCanceller3Config();
+
   struct Delay {
     size_t default_delay = 5;
     size_t down_sampling_factor = 4;
@@ -105,6 +107,14 @@ struct EchoCanceller3Config {
 
     float floor_first_increase = 0.00001f;
   } gain_updates;
+
+  struct EchoRemovalControl {
+    struct GainRampup {
+      float first_non_zero_gain = 0.001f;
+      int non_zero_gain_blocks = 187;
+      int full_gain_blocks = 312;
+    } gain_rampup;
+  } echo_removal_control;
 };
 }  // namespace webrtc
 
