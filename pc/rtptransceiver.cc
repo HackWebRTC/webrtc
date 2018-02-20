@@ -207,6 +207,7 @@ void RtpTransceiver::Stop() {
     receiver->internal()->Stop();
   }
   stopped_ = true;
+  current_direction_ = rtc::nullopt;
 }
 
 void RtpTransceiver::SetCodecPreferences(

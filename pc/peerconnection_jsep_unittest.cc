@@ -1228,4 +1228,19 @@ TEST_F(PeerConnectionJsepTest,
 
 // TODO(bugs.webrtc.org/7932): Also test multi-stream case.
 
+// Test that if an RtpTransceiver with a current_direction set is stopped, then
+// current_direction is changed to null.
+TEST_F(PeerConnectionJsepTest, CurrentDirectionResetWhenRtpTransceiverStopped) {
+  auto caller = CreatePeerConnection();
+  auto callee = CreatePeerConnection();
+
+  auto transceiver = caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO);
+
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+
+  ASSERT_TRUE(transceiver->current_direction());
+  transceiver->Stop();
+  EXPECT_FALSE(transceiver->current_direction());
+}
+
 }  // namespace webrtc
