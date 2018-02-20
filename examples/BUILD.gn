@@ -528,13 +528,6 @@ if (is_linux || is_win) {
         "-Wno-sentinel",
       ]
     }
-
-    if (is_clang) {
-      # TODO(ehmaldonado): Make peerconnection_client compile with the standard
-      # set of warnings.
-      # See https://bugs.chromium.org/p/webrtc/issues/detail?id=6306
-      cflags += [ "-Wno-inconsistent-missing-override" ]
-    }
   }
 
   rtc_executable("peerconnection_client") {

@@ -32,7 +32,7 @@ class CustomSocketServer : public rtc::PhysicalSocketServer {
   void set_conductor(Conductor* conductor) { conductor_ = conductor; }
 
   // Override so that we can also pump the GTK message loop.
-  virtual bool Wait(int cms, bool process_io) {
+  bool Wait(int cms, bool process_io) override {
     // Pump GTK events.
     // TODO(henrike): We really should move either the socket server or UI to a
     // different thread.  Alternatively we could look at merging the two loops

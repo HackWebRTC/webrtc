@@ -48,7 +48,7 @@ class Conductor
 
   bool connection_active() const;
 
-  virtual void Close();
+  void Close() override;
 
  protected:
   ~Conductor();
