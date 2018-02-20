@@ -571,12 +571,6 @@ TEST_P(PeerConnectionBundleTest, FailToSetDescriptionWithBundleAndNoRtcpMux) {
 // the "audio" transport channel when bundling.
 TEST_P(PeerConnectionBundleTest,
        IgnoreCandidatesForUnusedTransportWhenBundling) {
-  // TODO(bugs.webrtc.org/8764): Re-enable when stats are supported with Unified
-  // Plan.
-  if (sdp_semantics_ == SdpSemantics::kUnifiedPlan) {
-    return;
-  }
-
   const SocketAddress kAudioAddress1("1.1.1.1", 1111);
   const SocketAddress kAudioAddress2("2.2.2.2", 2222);
   const SocketAddress kVideoAddress("3.3.3.3", 3333);

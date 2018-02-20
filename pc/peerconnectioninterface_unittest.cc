@@ -1908,12 +1908,6 @@ TEST_F(PeerConnectionInterfaceTestPlanB, CreateSenderWithStream) {
 
 // Test that we can specify a certain track that we want statistics about.
 TEST_P(PeerConnectionInterfaceTest, GetStatsForSpecificTrack) {
-  if (sdp_semantics_ == SdpSemantics::kUnifiedPlan) {
-    // TODO(bugs.webrtc.org/8764): Re-enable when stats are supported with
-    // Unified Plan.
-    return;
-  }
-
   InitiateCall();
   ASSERT_LT(0u, pc_->GetSenders().size());
   ASSERT_LT(0u, pc_->GetReceivers().size());
@@ -1934,12 +1928,6 @@ TEST_P(PeerConnectionInterfaceTest, GetStatsForSpecificTrack) {
 
 // Test that we can get stats on a video track.
 TEST_P(PeerConnectionInterfaceTest, GetStatsForVideoTrack) {
-  if (sdp_semantics_ == SdpSemantics::kUnifiedPlan) {
-    // TODO(bugs.webrtc.org/8764): Re-enable when stats are supported with
-    // Unified Plan.
-    return;
-  }
-
   InitiateCall();
   auto video_receiver = GetFirstReceiverOfType(cricket::MEDIA_TYPE_VIDEO);
   ASSERT_TRUE(video_receiver);
@@ -1948,12 +1936,6 @@ TEST_P(PeerConnectionInterfaceTest, GetStatsForVideoTrack) {
 
 // Test that we don't get statistics for an invalid track.
 TEST_P(PeerConnectionInterfaceTest, GetStatsForInvalidTrack) {
-  if (sdp_semantics_ == SdpSemantics::kUnifiedPlan) {
-    // TODO(bugs.webrtc.org/8764): Re-enable when stats are supported with
-    // Unified Plan.
-    return;
-  }
-
   InitiateCall();
   rtc::scoped_refptr<AudioTrackInterface> unknown_audio_track(
       pc_factory_->CreateAudioTrack("unknown track", NULL));
@@ -1961,12 +1943,6 @@ TEST_P(PeerConnectionInterfaceTest, GetStatsForInvalidTrack) {
 }
 
 TEST_P(PeerConnectionInterfaceTest, GetRTCStatsBeforeAndAfterCalling) {
-  if (sdp_semantics_ == SdpSemantics::kUnifiedPlan) {
-    // TODO(bugs.webrtc.org/8764): Re-enable when stats are supported with
-    // Unified Plan.
-    return;
-  }
-
   CreatePeerConnectionWithoutDtls();
   EXPECT_TRUE(DoGetRTCStats());
   // Clearing stats cache is needed now, but should be temporary.
