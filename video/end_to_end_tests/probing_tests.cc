@@ -137,7 +137,7 @@ TEST_P(ProbingEndToEndTest, TriggerMidCallProbing) {
         switch (state_) {
           case 0:
             if (stats.send_bandwidth_bps > 5 * 300000) {
-              Call::Config::BitrateConfig bitrate_config;
+              BitrateConstraints bitrate_config;
               bitrate_config.max_bitrate_bps = 100000;
               task_queue_->SendTask([this, &bitrate_config]() {
                 sender_call_->SetBitrateConfig(bitrate_config);
@@ -147,7 +147,7 @@ TEST_P(ProbingEndToEndTest, TriggerMidCallProbing) {
             break;
           case 1:
             if (stats.send_bandwidth_bps < 110000) {
-              Call::Config::BitrateConfig bitrate_config;
+              BitrateConstraints bitrate_config;
               bitrate_config.max_bitrate_bps = 2500000;
               task_queue_->SendTask([this, &bitrate_config]() {
                 sender_call_->SetBitrateConfig(bitrate_config);

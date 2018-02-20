@@ -618,12 +618,12 @@ webrtc::Call::Stats FakeCall::GetStats() const {
 }
 
 void FakeCall::SetBitrateConfig(
-    const webrtc::Call::Config::BitrateConfig& bitrate_config) {
+    const webrtc::BitrateConstraints& bitrate_config) {
   config_.bitrate_config = bitrate_config;
 }
 
 void FakeCall::SetBitrateConfigMask(
-    const webrtc::Call::Config::BitrateConfigMask& mask) {
+    const webrtc::BitrateConstraintsMask& mask) {
   // TODO(zstein): not implemented
 }
 

@@ -888,7 +888,7 @@ void CallPerfTest::TestMinAudioVideoBitrate(
 
     void OnCallsCreated(Call* sender_call, Call* receiver_call) override {
       sender_call_ = sender_call;
-      Call::Config::BitrateConfig bitrate_config;
+      BitrateConstraints bitrate_config;
       bitrate_config.min_bitrate_bps = min_bwe_;
       bitrate_config.start_bitrate_bps = start_bwe_;
       bitrate_config.max_bitrate_bps = max_bwe_;
