@@ -192,7 +192,6 @@ if (rtc_include_tests) {
     testonly = true
     sources = [
       "include/mock/mock_congestion_observer.h",
-      "include/mock/mock_send_side_congestion_controller.h",
     ]
     deps = [
       ":congestion_controller",

@@ -242,7 +242,6 @@ if (rtc_include_tests) {
       "../modules/audio_processing:mocks",
       "../modules/bitrate_controller",
       "../modules/congestion_controller",
-      "../modules/congestion_controller:mock_congestion_controller",
       "../modules/pacing",
       "../modules/pacing:mock_paced_sender",
       "../modules/rtp_rtcp",
@@ -308,14 +307,10 @@ if (rtc_include_tests) {
     testonly = true
 
     sources = [
-      "fake_rtp_transport_controller_send.h",
       "test/mock_rtp_packet_sink_interface.h",
     ]
     deps = [
       ":rtp_interfaces",
-      "..:webrtc_common",
-      "../modules/congestion_controller:congestion_controller",
-      "../modules/pacing:pacing",
       "../test:test_support",
     ]
   }
