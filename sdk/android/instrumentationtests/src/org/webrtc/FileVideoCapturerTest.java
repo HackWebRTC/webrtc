@@ -21,6 +21,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import org.chromium.base.test.BaseJUnit4ClassRunner;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -56,6 +57,11 @@ public class FileVideoCapturerTest {
       }
       return new ArrayList<VideoFrame>(frames);
     }
+  }
+
+  @Before
+  public void setUp() {
+    NativeLibrary.initialize(new NativeLibrary.DefaultLoader());
   }
 
   @Test

@@ -85,7 +85,8 @@ public class JavaI420Buffer implements VideoFrame.I420Buffer {
     int uPos = yPos + width * height;
     int vPos = uPos + strideUV * chromaHeight;
 
-    ByteBuffer buffer = ByteBuffer.allocateDirect(width * height + 2 * strideUV * chromaHeight);
+    ByteBuffer buffer =
+        JniCommon.nativeAllocateByteBuffer(width * height + 2 * strideUV * chromaHeight);
 
     buffer.position(yPos);
     buffer.limit(uPos);
@@ -99,8 +100,8 @@ public class JavaI420Buffer implements VideoFrame.I420Buffer {
     buffer.limit(vPos + strideUV * chromaHeight);
     ByteBuffer dataV = buffer.slice();
 
-    return new JavaI420Buffer(
-        width, height, dataY, width, dataU, strideUV, dataV, strideUV, null /* releaseCallback */);
+    return new JavaI420Buffer(width, height, dataY, width, dataU, strideUV, dataV, strideUV,
+        () -> { JniCommon.nativeFreeByteBuffer(buffer); });
   }
 
   @Override

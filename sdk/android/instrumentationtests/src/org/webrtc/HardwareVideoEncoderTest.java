@@ -211,7 +211,6 @@ public class HardwareVideoEncoderTest {
 
     public MockI420Buffer(int width, int height, Runnable releaseCallback) {
       super(width, height, releaseCallback);
-      // We never release this but it is not a problem in practice because the release is a no-op.
       realBuffer = JavaI420Buffer.allocate(width, height);
     }
 
@@ -249,6 +248,18 @@ public class HardwareVideoEncoderTest {
     public VideoFrame.I420Buffer toI420() {
       retain();
       return this;
+    }
+
+    @Override
+    public void retain() {
+      super.retain();
+      realBuffer.retain();
+    }
+
+    @Override
+    public void release() {
+      super.release();
+      realBuffer.release();
     }
 
     @Override

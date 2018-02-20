@@ -59,7 +59,7 @@ public final class HardwareVideoDecoderTest {
   private static final int TEST_FRAME_COUNT = 10;
   private static final int TEST_FRAME_WIDTH = 640;
   private static final int TEST_FRAME_HEIGHT = 360;
-  private static final VideoFrame.I420Buffer[] TEST_FRAMES = generateTestFrames();
+  private VideoFrame.I420Buffer[] TEST_FRAMES;
 
   private static final boolean ENABLE_INTEL_VP8_ENCODER = true;
   private static final boolean ENABLE_H264_HIGH_PROFILE = true;
@@ -149,6 +149,8 @@ public final class HardwareVideoDecoderTest {
   @Before
   public void setUp() {
     NativeLibrary.initialize(new NativeLibrary.DefaultLoader());
+
+    TEST_FRAMES = generateTestFrames();
 
     eglBase = new EglBase14(null, EglBase.CONFIG_PLAIN);
     eglBase.createDummyPbufferSurface();
