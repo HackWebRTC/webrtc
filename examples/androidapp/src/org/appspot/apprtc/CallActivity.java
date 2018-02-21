@@ -90,6 +90,8 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   public static final String EXTRA_NOAUDIOPROCESSING_ENABLED =
       "org.appspot.apprtc.NOAUDIOPROCESSING";
   public static final String EXTRA_AECDUMP_ENABLED = "org.appspot.apprtc.AECDUMP";
+  public static final String EXTRA_SAVE_INPUT_AUDIO_TO_FILE_ENABLED =
+      "org.appspot.apprtc.SAVE_INPUT_AUDIO_TO_FILE";
   public static final String EXTRA_OPENSLES_ENABLED = "org.appspot.apprtc.OPENSLES";
   public static final String EXTRA_DISABLE_BUILT_IN_AEC = "org.appspot.apprtc.DISABLE_BUILT_IN_AEC";
   public static final String EXTRA_DISABLE_BUILT_IN_AGC = "org.appspot.apprtc.DISABLE_BUILT_IN_AGC";
@@ -331,6 +333,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
             intent.getIntExtra(EXTRA_AUDIO_BITRATE, 0), intent.getStringExtra(EXTRA_AUDIOCODEC),
             intent.getBooleanExtra(EXTRA_NOAUDIOPROCESSING_ENABLED, false),
             intent.getBooleanExtra(EXTRA_AECDUMP_ENABLED, false),
+            intent.getBooleanExtra(EXTRA_SAVE_INPUT_AUDIO_TO_FILE_ENABLED, false),
             intent.getBooleanExtra(EXTRA_OPENSLES_ENABLED, false),
             intent.getBooleanExtra(EXTRA_DISABLE_BUILT_IN_AEC, false),
             intent.getBooleanExtra(EXTRA_DISABLE_BUILT_IN_AGC, false),

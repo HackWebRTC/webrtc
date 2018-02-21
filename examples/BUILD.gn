@@ -84,6 +84,7 @@ if (is_android) {
       "androidapp/src/org/appspot/apprtc/PeerConnectionClient.java",
       "androidapp/src/org/appspot/apprtc/RoomParametersFetcher.java",
       "androidapp/src/org/appspot/apprtc/RtcEventLog.java",
+      "androidapp/src/org/appspot/apprtc/RecordedAudioToFileController.java",
       "androidapp/src/org/appspot/apprtc/SettingsActivity.java",
       "androidapp/src/org/appspot/apprtc/SettingsFragment.java",
       "androidapp/src/org/appspot/apprtc/TCPChannelClient.java",

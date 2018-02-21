@@ -35,6 +35,7 @@ import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.appspot.apprtc.AppRTCClient.SignalingParameters;
+import org.appspot.apprtc.RecordedAudioToFileController;
 import org.webrtc.AudioSource;
 import org.webrtc.AudioTrack;
 import org.webrtc.CameraVideoCapturer;
@@ -163,6 +164,9 @@ public class PeerConnectionClient {
   private boolean dataChannelEnabled;
   // Enable RtcEventLog.
   private RtcEventLog rtcEventLog;
+  // Implements the WebRtcAudioRecordSamplesReadyCallback interface and writes
+  // recorded audio samples to an output file.
+  private RecordedAudioToFileController saveRecordedAudioToFile = null;
 
   /**
    * Peer connection parameters.
@@ -204,6 +208,7 @@ public class PeerConnectionClient {
     public final String audioCodec;
     public final boolean noAudioProcessing;
     public final boolean aecDump;
+    public final boolean saveInputAudioToFile;
     public final boolean useOpenSLES;
     public final boolean disableBuiltInAEC;
     public final boolean disableBuiltInAGC;
@@ -216,22 +221,10 @@ public class PeerConnectionClient {
     public PeerConnectionParameters(boolean videoCallEnabled, boolean loopback, boolean tracing,
         int videoWidth, int videoHeight, int videoFps, int videoMaxBitrate, String videoCodec,
         boolean videoCodecHwAcceleration, boolean videoFlexfecEnabled, int audioStartBitrate,
-        String audioCodec, boolean noAudioProcessing, boolean aecDump, boolean useOpenSLES,
-        boolean disableBuiltInAEC, boolean disableBuiltInAGC, boolean disableBuiltInNS,
-        boolean enableLevelControl, boolean disableWebRtcAGCAndHPF, boolean enableRtcEventLog) {
-      this(videoCallEnabled, loopback, tracing, videoWidth, videoHeight, videoFps, videoMaxBitrate,
-          videoCodec, videoCodecHwAcceleration, videoFlexfecEnabled, audioStartBitrate, audioCodec,
-          noAudioProcessing, aecDump, useOpenSLES, disableBuiltInAEC, disableBuiltInAGC,
-          disableBuiltInNS, enableLevelControl, disableWebRtcAGCAndHPF, enableRtcEventLog, null);
-    }
-
-    public PeerConnectionParameters(boolean videoCallEnabled, boolean loopback, boolean tracing,
-        int videoWidth, int videoHeight, int videoFps, int videoMaxBitrate, String videoCodec,
-        boolean videoCodecHwAcceleration, boolean videoFlexfecEnabled, int audioStartBitrate,
-        String audioCodec, boolean noAudioProcessing, boolean aecDump, boolean useOpenSLES,
-        boolean disableBuiltInAEC, boolean disableBuiltInAGC, boolean disableBuiltInNS,
-        boolean enableLevelControl, boolean disableWebRtcAGCAndHPF, boolean enableRtcEventLog,
-        DataChannelParameters dataChannelParameters) {
+        String audioCodec, boolean noAudioProcessing, boolean aecDump, boolean saveInputAudioToFile,
+        boolean useOpenSLES, boolean disableBuiltInAEC, boolean disableBuiltInAGC,
+        boolean disableBuiltInNS, boolean enableLevelControl, boolean disableWebRtcAGCAndHPF,
+        boolean enableRtcEventLog, DataChannelParameters dataChannelParameters) {
       this.videoCallEnabled = videoCallEnabled;
       this.loopback = loopback;
       this.tracing = tracing;
@@ -246,6 +239,7 @@ public class PeerConnectionClient {
       this.audioCodec = audioCodec;
       this.noAudioProcessing = noAudioProcessing;
       this.aecDump = aecDump;
+      this.saveInputAudioToFile = saveInputAudioToFile;
       this.useOpenSLES = useOpenSLES;
       this.disableBuiltInAEC = disableBuiltInAEC;
       this.disableBuiltInAGC = disableBuiltInAGC;
@@ -508,6 +502,22 @@ public class PeerConnectionClient {
       }
     });
 
+    // It is possible to save a copy in raw PCM format on a file by checking
+    // the "Save input audio to file" checkbox in the Settings UI. A callback
+    // interface is set when this flag is enabled. As a result, a copy of recorded
+    // audio samples are provided to this client directly from the native audio
+    // layer in Java.
+    if (peerConnectionParameters.saveInputAudioToFile) {
+      if (!peerConnectionParameters.useOpenSLES) {
+        Log.d(TAG, "Enable recording of microphone input audio to file");
+        saveRecordedAudioToFile = new RecordedAudioToFileController(executor);
+      } else {
+        // TODO(henrika): ensure that the UI reflects that if OpenSL ES is selected,
+        // then the "Save inut audio to file" option shall be grayed out.
+        Log.e(TAG, "Recording of input audio is not supported for OpenSL ES");
+      }
+    }
+
     WebRtcAudioTrack.setErrorCallback(new WebRtcAudioTrack.ErrorCallback() {
       @Override
       public void onWebRtcAudioTrackInitError(String errorMessage) {
@@ -677,6 +687,11 @@ public class PeerConnectionClient {
       }
     }
 
+    if (saveRecordedAudioToFile != null) {
+      if (saveRecordedAudioToFile.start()) {
+        Log.d(TAG, "Recording input audio to file is activated");
+      }
+    }
     Log.d(TAG, "Peer connection created.");
   }
 
@@ -739,6 +754,11 @@ public class PeerConnectionClient {
     if (videoSource != null) {
       videoSource.dispose();
       videoSource = null;
+    }
+    if (saveRecordedAudioToFile != null) {
+      Log.d(TAG, "Closing audio file for recorded input audio.");
+      saveRecordedAudioToFile.stop();
+      saveRecordedAudioToFile = null;
     }
     localRender = null;
     remoteRenders = null;

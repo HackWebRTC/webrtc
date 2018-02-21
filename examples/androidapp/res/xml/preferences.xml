@@ -124,6 +124,12 @@
             android:defaultValue="@string/pref_aecdump_default" />
 
         <CheckBoxPreference
+            android:key="@string/pref_enable_save_input_audio_to_file_key"
+            android:title="@string/pref_enable_save_input_audio_to_file_title"
+            android:dialogTitle="@string/pref_enable_save_input_audio_to_file_dlg"
+            android:defaultValue="@string/pref_enable_save_input_audio_to_file_default" />
+
+        <CheckBoxPreference
             android:key="@string/pref_opensles_key"
             android:title="@string/pref_opensles_title"
             android:dialogTitle="@string/pref_opensles_dlg"

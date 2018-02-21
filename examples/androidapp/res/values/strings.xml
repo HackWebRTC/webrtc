@@ -125,6 +125,11 @@
     <string name="pref_aecdump_dlg">Enable diagnostic audio recordings.</string>
     <string name="pref_aecdump_default">false</string>
 
+    <string name="pref_enable_save_input_audio_to_file_key">enable_key</string>
+    <string name="pref_enable_save_input_audio_to_file_title">Save input audio to file.</string>
+    <string name="pref_enable_save_input_audio_to_file_dlg">Save input audio to file.</string>
+    <string name="pref_enable_save_input_audio_to_file_default">false</string>
+
     <string name="pref_opensles_key">opensles_preference</string>
     <string name="pref_opensles_title">Use OpenSL ES for audio playback.</string>
     <string name="pref_opensles_dlg">Use OpenSL ES for audio playback.</string>

@@ -42,6 +42,7 @@ public class SettingsActivity extends Activity implements OnSharedPreferenceChan
   private String keyPrefAudioCodec;
   private String keyprefNoAudioProcessing;
   private String keyprefAecDump;
+  private String keyprefEnableSaveInputAudioToFile;
   private String keyprefOpenSLES;
   private String keyprefDisableBuiltInAEC;
   private String keyprefDisableBuiltInAGC;
@@ -84,6 +85,8 @@ public class SettingsActivity extends Activity implements OnSharedPreferenceChan
     keyPrefAudioCodec = getString(R.string.pref_audiocodec_key);
     keyprefNoAudioProcessing = getString(R.string.pref_noaudioprocessing_key);
     keyprefAecDump = getString(R.string.pref_aecdump_key);
+    keyprefEnableSaveInputAudioToFile =
+        getString(R.string.pref_enable_save_input_audio_to_file_key);
     keyprefOpenSLES = getString(R.string.pref_opensles_key);
     keyprefDisableBuiltInAEC = getString(R.string.pref_disable_built_in_aec_key);
     keyprefDisableBuiltInAGC = getString(R.string.pref_disable_built_in_agc_key);
@@ -140,6 +143,7 @@ public class SettingsActivity extends Activity implements OnSharedPreferenceChan
     updateSummary(sharedPreferences, keyPrefAudioCodec);
     updateSummaryB(sharedPreferences, keyprefNoAudioProcessing);
     updateSummaryB(sharedPreferences, keyprefAecDump);
+    updateSummaryB(sharedPreferences, keyprefEnableSaveInputAudioToFile);
     updateSummaryB(sharedPreferences, keyprefOpenSLES);
     updateSummaryB(sharedPreferences, keyprefDisableBuiltInAEC);
     updateSummaryB(sharedPreferences, keyprefDisableBuiltInAGC);
@@ -235,6 +239,7 @@ public class SettingsActivity extends Activity implements OnSharedPreferenceChan
         || key.equals(keyprefFlexfec)
         || key.equals(keyprefNoAudioProcessing)
         || key.equals(keyprefAecDump)
+        || key.equals(keyprefEnableSaveInputAudioToFile)
         || key.equals(keyprefOpenSLES)
         || key.equals(keyprefDisableBuiltInAEC)
         || key.equals(keyprefDisableBuiltInAGC)
