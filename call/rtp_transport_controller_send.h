@@ -11,6 +11,7 @@
 #ifndef CALL_RTP_TRANSPORT_CONTROLLER_SEND_H_
 #define CALL_RTP_TRANSPORT_CONTROLLER_SEND_H_
 
+#include <map>
 #include <string>
 
 #include "call/rtp_bitrate_configurator.h"
@@ -19,6 +20,7 @@
 #include "modules/congestion_controller/include/send_side_congestion_controller.h"
 #include "modules/pacing/packet_router.h"
 #include "rtc_base/constructormagic.h"
+#include "rtc_base/networkroute.h"
 
 namespace webrtc {
 class Clock;
@@ -78,6 +80,7 @@ class RtpTransportControllerSend : public RtpTransportControllerSendInterface {
   SendSideCongestionController send_side_cc_;
   RtpKeepAliveConfig keepalive_;
   RtpBitrateConfigurator bitrate_configurator_;
+  std::map<std::string, rtc::NetworkRoute> network_routes_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(RtpTransportControllerSend);
 };

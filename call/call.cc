@@ -356,8 +356,6 @@ class Call : public webrtc::Call,
       RTC_GUARDED_BY(&bitrate_crit_);
   AvgCounter pacer_bitrate_kbps_counter_ RTC_GUARDED_BY(&bitrate_crit_);
 
-  std::map<std::string, rtc::NetworkRoute> network_routes_;
-
   std::unique_ptr<RtpTransportControllerSendInterface> transport_send_;
   ReceiveSideCongestionController receive_side_cc_;
   const std::unique_ptr<SendDelayStats> video_send_delay_stats_;
@@ -1026,27 +1024,7 @@ void Call::OnTransportOverheadChanged(MediaType media,
 void Call::OnNetworkRouteChanged(const std::string& transport_name,
                                  const rtc::NetworkRoute& network_route) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&configuration_sequence_checker_);
-  // Check if the network route is connected.
-  if (!network_route.connected) {
-    RTC_LOG(LS_INFO) << "Transport " << transport_name << " is disconnected";
-    // TODO(honghaiz): Perhaps handle this in SignalChannelNetworkState and
-    // consider merging these two methods.
-    return;
-  }
-
-  // Check whether the network route has changed on each transport.
-  auto result =
-      network_routes_.insert(std::make_pair(transport_name, network_route));
-  auto kv = result.first;
-  bool inserted = result.second;
-  if (inserted) {
-    // No need to reset BWE if this is the first time the network connects.
-    return;
-  }
-  if (kv->second != network_route) {
-    kv->second = network_route;
-    transport_send_->OnNetworkRouteChanged(transport_name, network_route);
-  }
+  transport_send_->OnNetworkRouteChanged(transport_name, network_route);
 }
 
 void Call::UpdateAggregateNetworkState() {
