@@ -1591,10 +1591,6 @@ TEST_P(PeerConnectionIntegrationTest, EndToEndCallWithSdes) {
 // certificate once the DTLS handshake has finished.
 TEST_P(PeerConnectionIntegrationTest,
        GetRemoteAudioSSLCertificateReturnsExchangedCertificate) {
-  // TODO(bugs.webrtc.org/8764): Enable for Unified Plan once stats work.
-  if (sdp_semantics_ == SdpSemantics::kUnifiedPlan) {
-    return;
-  }
   auto GetRemoteAudioSSLCertificate = [](PeerConnectionWrapper* wrapper) {
     auto pci = reinterpret_cast<PeerConnectionProxy*>(wrapper->pc());
     auto pc = reinterpret_cast<PeerConnection*>(pci->internal());
