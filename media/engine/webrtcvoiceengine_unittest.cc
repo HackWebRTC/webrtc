@@ -1775,7 +1775,24 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsDTMFOnTop) {
   const auto& spec = *GetSendStreamConfig(kSsrcX).send_codec_spec;
   EXPECT_EQ(96, spec.payload_type);
   EXPECT_STRCASEEQ("ISAC", spec.format.name.c_str());
+  SetSend(true);
   EXPECT_TRUE(channel_->CanInsertDtmf());
+}
+
+// Test that CanInsertDtmf() is governed by the send flag
+TEST_F(WebRtcVoiceEngineTestFake, DTMFControlledBySendFlag) {
+  EXPECT_TRUE(SetupSendStream());
+  cricket::AudioSendParameters parameters;
+  parameters.codecs.push_back(kTelephoneEventCodec1);
+  parameters.codecs.push_back(kPcmuCodec);
+  parameters.codecs[0].id = 98;  // DTMF
+  parameters.codecs[1].id = 96;
+  SetSendParameters(parameters);
+  EXPECT_FALSE(channel_->CanInsertDtmf());
+  SetSend(true);
+  EXPECT_TRUE(channel_->CanInsertDtmf());
+  SetSend(false);
+  EXPECT_FALSE(channel_->CanInsertDtmf());
 }
 
 // Test that payload type range is limited for telephone-event codec.
@@ -1787,6 +1804,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsDTMFPayloadTypeOutOfRange) {
   parameters.codecs[0].id = 0;  // DTMF
   parameters.codecs[1].id = 96;
   SetSendParameters(parameters);
+  SetSend(true);
   EXPECT_TRUE(channel_->CanInsertDtmf());
   parameters.codecs[0].id = 128;  // DTMF
   EXPECT_FALSE(channel_->SetSendParameters(parameters));
@@ -1835,6 +1853,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsCNandDTMFAsCaller) {
   EXPECT_STRCASEEQ("ISAC", send_codec_spec.format.name.c_str());
   EXPECT_EQ(1, send_codec_spec.format.num_channels);
   EXPECT_EQ(97, send_codec_spec.cng_payload_type);
+  SetSend(true);
   EXPECT_TRUE(channel_->CanInsertDtmf());
 }
 
@@ -1860,6 +1879,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsCNandDTMFAsCallee) {
   EXPECT_STRCASEEQ("ISAC", send_codec_spec.format.name.c_str());
   EXPECT_EQ(1, send_codec_spec.format.num_channels);
   EXPECT_EQ(97, send_codec_spec.cng_payload_type);
+  SetSend(true);
   EXPECT_TRUE(channel_->CanInsertDtmf());
 }
 
@@ -1925,6 +1945,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsCaseInsensitive) {
   EXPECT_STRCASEEQ("ISAC", send_codec_spec.format.name.c_str());
   EXPECT_EQ(1, send_codec_spec.format.num_channels);
   EXPECT_EQ(97, send_codec_spec.cng_payload_type);
+  SetSend(true);
   EXPECT_TRUE(channel_->CanInsertDtmf());
 }
 

@@ -1933,14 +1933,14 @@ bool WebRtcVoiceMediaChannel::SetOutputVolume(uint32_t ssrc, double volume) {
 }
 
 bool WebRtcVoiceMediaChannel::CanInsertDtmf() {
-  return dtmf_payload_type_ ? true : false;
+  return dtmf_payload_type_.has_value() && send_;
 }
 
 bool WebRtcVoiceMediaChannel::InsertDtmf(uint32_t ssrc, int event,
                                          int duration) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   RTC_LOG(LS_INFO) << "WebRtcVoiceMediaChannel::InsertDtmf";
-  if (!dtmf_payload_type_) {
+  if (!CanInsertDtmf()) {
     return false;
   }
 
