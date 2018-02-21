@@ -1030,8 +1030,10 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     static constexpr int kLastPacketId = 100;
     // Ipv4(20) + UDP(8).
     static constexpr int kTransportOverheadPerPacket = 28;
+    static constexpr int kSrtpOverheadPerPacket = 10;
 
-    CreateChannels(0, 0);
+    CreateChannels(DTLS, DTLS);
+    SendInitiate();
 
     typename T::MediaChannel* media_channel1 =
         static_cast<typename T::MediaChannel*>(channel1_->media_channel());
@@ -1073,7 +1075,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_EQ(expected_network_route, media_channel1->last_network_route());
     EXPECT_EQ(kLastPacketId,
               media_channel1->last_network_route().last_sent_packet_id);
-    EXPECT_EQ(kTransportOverheadPerPacket,
+    EXPECT_EQ(kTransportOverheadPerPacket + kSrtpOverheadPerPacket,
               media_channel1->transport_overhead_per_packet());
   }
 

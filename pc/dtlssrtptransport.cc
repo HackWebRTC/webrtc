@@ -33,6 +33,8 @@ DtlsSrtpTransport::DtlsSrtpTransport(
       this, &DtlsSrtpTransport::OnPacketReceived);
   srtp_transport_->SignalReadyToSend.connect(this,
                                              &DtlsSrtpTransport::OnReadyToSend);
+  srtp_transport_->SignalNetworkRouteChanged.connect(
+      this, &DtlsSrtpTransport::OnNetworkRouteChanged);
   srtp_transport_->SignalWritableState.connect(
       this, &DtlsSrtpTransport::OnWritableState);
   srtp_transport_->SignalSentPacket.connect(this,
@@ -354,6 +356,11 @@ void DtlsSrtpTransport::OnPacketReceived(bool rtcp,
 
 void DtlsSrtpTransport::OnReadyToSend(bool ready) {
   SignalReadyToSend(ready);
+}
+
+void DtlsSrtpTransport::OnNetworkRouteChanged(
+    rtc::Optional<rtc::NetworkRoute> network_route) {
+  SignalNetworkRouteChanged(network_route);
 }
 
 }  // namespace webrtc

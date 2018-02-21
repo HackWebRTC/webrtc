@@ -88,6 +88,7 @@ class DtlsSrtpTransport : public RtpTransportInternalAdapter {
                         rtc::CopyOnWriteBuffer* packet,
                         const rtc::PacketTime& packet_time);
   void OnReadyToSend(bool ready);
+  void OnNetworkRouteChanged(rtc::Optional<rtc::NetworkRoute> network_route);
 
   bool writable_ = false;
   std::unique_ptr<SrtpTransport> srtp_transport_;
