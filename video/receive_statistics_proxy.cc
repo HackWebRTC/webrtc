@@ -136,6 +136,16 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
               << stream_duration_sec << "\n";
   }
 
+  RTC_LOG(LS_INFO) << "Frames decoded " << stats_.frames_decoded;
+
+  if (num_unique_frames_) {
+    int num_dropped_frames = *num_unique_frames_ - stats_.frames_decoded;
+    RTC_HISTOGRAM_COUNTS_1000("WebRTC.Video.DroppedFrames.Receiver",
+                              num_dropped_frames);
+    RTC_LOG(LS_INFO) << "WebRTC.Video.DroppedFrames.Receiver "
+                     << num_dropped_frames;
+  }
+
   if (first_report_block_time_ms_ != -1 &&
       ((clock_->TimeInMilliseconds() - first_report_block_time_ms_) / 1000) >=
           metrics::kMinRunTimeInSeconds) {
@@ -577,6 +587,11 @@ void ReceiveStatisticsProxy::OnFrameBufferTimingsUpdated(
   // Network delay (rtt/2) + target_delay_ms (jitter delay + decode time +
   // render delay).
   delay_counter_.Add(target_delay_ms + avg_rtt_ms_ / 2);
+}
+
+void ReceiveStatisticsProxy::OnUniqueFramesCounted(int num_unique_frames) {
+  rtc::CritScope lock(&crit_);
+  num_unique_frames_.emplace(num_unique_frames);
 }
 
 void ReceiveStatisticsProxy::OnTimingFrameInfoUpdated(

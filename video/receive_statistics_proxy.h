@@ -60,6 +60,8 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   void OnPreDecode(const EncodedImage& encoded_image,
                    const CodecSpecificInfo* codec_specific_info);
 
+  void OnUniqueFramesCounted(int num_unique_frames);
+
   // Indicates video stream has been paused (no incoming packets).
   void OnStreamInactive();
 
@@ -188,6 +190,7 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   // called from const GetStats().
   mutable rtc::MovingMaxCounter<TimingFrameInfo> timing_frame_info_counter_
       RTC_GUARDED_BY(&crit_);
+  rtc::Optional<int> num_unique_frames_ RTC_GUARDED_BY(crit_);
 };
 
 }  // namespace webrtc

@@ -589,6 +589,10 @@ void RtpVideoStreamReceiver::SignalNetworkState(NetworkState state) {
                                                : RtcpMode::kOff);
 }
 
+int RtpVideoStreamReceiver::GetUniqueFramesSeen() const {
+  return packet_buffer_->GetUniqueFramesSeen();
+}
+
 void RtpVideoStreamReceiver::StartReceive() {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_task_checker_);
   receiving_ = true;

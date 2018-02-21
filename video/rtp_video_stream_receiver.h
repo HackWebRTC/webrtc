@@ -97,6 +97,9 @@ class RtpVideoStreamReceiver : public RtpData,
 
   void SignalNetworkState(NetworkState state);
 
+  // Returns number of different frames seen in the packet buffer.
+  int GetUniqueFramesSeen() const;
+
   // Implements RtpPacketSinkInterface.
   void OnRtpPacket(const RtpPacketReceived& packet) override;
 

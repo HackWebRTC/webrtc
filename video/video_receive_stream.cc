@@ -234,6 +234,9 @@ void VideoReceiveStream::Stop() {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_sequence_checker_);
   rtp_video_stream_receiver_.StopReceive();
 
+  stats_proxy_.OnUniqueFramesCounted(
+      rtp_video_stream_receiver_.GetUniqueFramesSeen());
+
   frame_buffer_->Stop();
   call_stats_->DeregisterStatsObserver(this);
   call_stats_->DeregisterStatsObserver(&rtp_video_stream_receiver_);
