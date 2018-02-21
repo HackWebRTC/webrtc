@@ -238,6 +238,17 @@ rtc_source_set("video_frame_api") {
   ]
 }
 
+rtc_source_set("encoded_frame_api") {
+  visibility = [ "*" ]
+  sources = [
+    "video/encoded_frame.h",
+  ]
+
+  deps = [
+    "../modules/video_coding:encoded_frame",
+  ]
+}
+
 rtc_source_set("video_frame_api_i420") {
   visibility = [ "*" ]
   sources = [

@@ -8,6 +8,34 @@
 
 import("../../webrtc.gni")
 
+rtc_static_library("encoded_frame") {
+  visibility = [ "*" ]
+  sources = [
+    "encoded_frame.cc",
+    "encoded_frame.h",
+  ]
+  deps = [
+    ":video_codec_interface",
+    "../../:webrtc_common",
+    "../../api:optional",
+    "../../api:video_frame_api_i420",
+    "../../common_video:common_video",
+    "../../modules:module_api",
+    "../../modules:module_api_public",
+    "../../modules/video_coding:video_coding_utility",
+    "../../rtc_base:checks",
+    "../../rtc_base:rtc_base_approved",
+    "../../rtc_base/experiments:alr_experiment",
+    "../../system_wrappers:field_trial_api",
+    "../../system_wrappers:system_wrappers",
+  ]
+
+  if (!build_with_chromium && is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+  }
+}
+
 rtc_static_library("video_coding") {
   visibility = [ "*" ]
   deps = []
@@ -19,8 +47,6 @@ rtc_static_library("video_coding") {
     "decoder_database.h",
     "decoding_state.cc",
     "decoding_state.h",
-    "encoded_frame.cc",
-    "encoded_frame.h",
     "encoder_database.cc",
     "encoder_database.h",
     "fec_controller_default.cc",
@@ -110,6 +136,7 @@ rtc_static_library("video_coding") {
 
   deps += [
     ":codec_globals_headers",
+    ":encoded_frame",
     ":video_codec_interface",
     ":video_coding_utility",
     ":webrtc_h264",
@@ -118,6 +145,7 @@ rtc_static_library("video_coding") {
     "..:module_api_public",
     "../..:webrtc_common",
     "../../:typedefs",
+    "../../api:encoded_frame_api",
     "../../api:fec_controller_api",
     "../../api:optional",
     "../../api:video_frame_api",
@@ -715,6 +743,7 @@ if (rtc_include_tests) {
       sources += [ "codecs/h264/h264_encoder_impl_unittest.cc" ]
     }
     deps = [
+      ":encoded_frame",
       ":mock_headers",
       ":simulcast_test_utility",
       ":video_codec_interface",
