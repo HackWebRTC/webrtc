@@ -24,19 +24,19 @@ class RtpBitrateConfigurator {
   ~RtpBitrateConfigurator();
   BitrateConstraints GetConfig() const;
 
-  // The greater min and smaller max set by this and SetBitrateConfigMask will
-  // be used. The latest non-negative start value from either call will be used.
-  // Specifying a start bitrate (>0) will reset the current bitrate estimate.
-  // This is due to how the 'x-google-start-bitrate' flag is currently
+  // The greater min and smaller max set by this and SetClientBitratePreferences
+  // will be used. The latest non-negative start value from either call will be
+  // used. Specifying a start bitrate (>0) will reset the current bitrate
+  // estimate. This is due to how the 'x-google-start-bitrate' flag is currently
   // implemented. Passing -1 leaves the start bitrate unchanged. Behavior is not
   // guaranteed for other negative values or 0.
   // The optional return value is set with new configuration if it was updated.
   rtc::Optional<BitrateConstraints> UpdateWithSdpParameters(
       const BitrateConstraints& bitrate_config_);
 
-  // The greater min and smaller max set by this and SetBitrateConfig will be
-  // used. The latest non-negative start value form either call will be used.
-  // Specifying a start bitrate will reset the current bitrate estimate.
+  // The greater min and smaller max set by this and SetSdpBitrateParameters
+  // will be used. The latest non-negative start value form either call will be
+  // used. Specifying a start bitrate will reset the current bitrate estimate.
   // Assumes 0 <= min <= start <= max holds for set parameters.
   // Update the bitrate configuration
   // The optional return value is set with new configuration if it was updated.
@@ -53,11 +53,11 @@ class RtpBitrateConfigurator {
   // used to cap total bitrate used. This comes from the remote connection.
   BitrateConstraints bitrate_config_;
 
-  // The config mask set by SetBitrateConfigMask.
+  // The config mask set by SetClientBitratePreferences.
   // 0 <= min <= start <= max
   BitrateConstraintsMask bitrate_config_mask_;
 
-  // The config set by SetBitrateConfig.
+  // The config set by SetSdpBitrateParameters.
   // min >= 0, start != 0, max == -1 || max > 0
   BitrateConstraints base_bitrate_config_;
 

@@ -140,7 +140,8 @@ TEST_P(ProbingEndToEndTest, TriggerMidCallProbing) {
               BitrateConstraints bitrate_config;
               bitrate_config.max_bitrate_bps = 100000;
               task_queue_->SendTask([this, &bitrate_config]() {
-                sender_call_->SetBitrateConfig(bitrate_config);
+                sender_call_->GetTransportControllerSend()
+                    ->SetSdpBitrateParameters(bitrate_config);
               });
               ++state_;
             }
@@ -150,7 +151,8 @@ TEST_P(ProbingEndToEndTest, TriggerMidCallProbing) {
               BitrateConstraints bitrate_config;
               bitrate_config.max_bitrate_bps = 2500000;
               task_queue_->SendTask([this, &bitrate_config]() {
-                sender_call_->SetBitrateConfig(bitrate_config);
+                sender_call_->GetTransportControllerSend()
+                    ->SetSdpBitrateParameters(bitrate_config);
               });
               ++state_;
             }

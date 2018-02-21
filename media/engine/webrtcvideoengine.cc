@@ -776,7 +776,8 @@ bool WebRtcVideoChannel::SetSendParameters(const VideoSendParameters& params) {
       bitrate_config_.max_bitrate_bps =
           params.max_bandwidth_bps == 0 ? -1 : params.max_bandwidth_bps;
     }
-    call_->SetBitrateConfig(bitrate_config_);
+    call_->GetTransportControllerSend()->SetSdpBitrateParameters(
+        bitrate_config_);
   }
 
   {
@@ -1481,8 +1482,8 @@ void WebRtcVideoChannel::OnReadyToSend(bool ready) {
 void WebRtcVideoChannel::OnNetworkRouteChanged(
     const std::string& transport_name,
     const rtc::NetworkRoute& network_route) {
-  // TODO(zhihaung): Merge these two callbacks.
-  call_->OnNetworkRouteChanged(transport_name, network_route);
+  call_->GetTransportControllerSend()->OnNetworkRouteChanged(transport_name,
+                                                             network_route);
   call_->OnTransportOverheadChanged(webrtc::MediaType::VIDEO,
                                     network_route.packet_overhead);
 }

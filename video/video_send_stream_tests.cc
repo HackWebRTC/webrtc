@@ -1593,9 +1593,11 @@ TEST_F(VideoSendStreamTest, ChangingNetworkRoute) {
       BitrateConstraints bitrate_config;
 
       task_queue_->SendTask([this, &new_route, &bitrate_config]() {
-        call_->OnNetworkRouteChanged("transport", new_route);
+        call_->GetTransportControllerSend()->OnNetworkRouteChanged("transport",
+                                                                   new_route);
         bitrate_config.start_bitrate_bps = kStartBitrateBps;
-        call_->SetBitrateConfig(bitrate_config);
+        call_->GetTransportControllerSend()->SetSdpBitrateParameters(
+            bitrate_config);
       });
 
       EXPECT_TRUE(Wait())
@@ -1604,11 +1606,13 @@ TEST_F(VideoSendStreamTest, ChangingNetworkRoute) {
       task_queue_->SendTask([this, &new_route, &bitrate_config]() {
         bitrate_config.start_bitrate_bps = -1;
         bitrate_config.max_bitrate_bps = kNewMaxBitrateBps;
-        call_->SetBitrateConfig(bitrate_config);
+        call_->GetTransportControllerSend()->SetSdpBitrateParameters(
+            bitrate_config);
         // TODO(holmer): We should set the last sent packet id here and verify
         // that we correctly ignore any packet loss reported prior to that id.
         ++new_route.local_network_id;
-        call_->OnNetworkRouteChanged("transport", new_route);
+        call_->GetTransportControllerSend()->OnNetworkRouteChanged("transport",
+                                                                   new_route);
         EXPECT_GE(call_->GetStats().send_bandwidth_bps, kStartBitrateBps);
       });
     }
@@ -1957,7 +1961,8 @@ TEST_F(VideoSendStreamTest, CanReconfigureToUseStartBitrateAbovePreviousMax) {
 
   BitrateConstraints bitrate_config;
   bitrate_config.start_bitrate_bps = 2 * video_encoder_config_.max_bitrate_bps;
-  sender_call_->SetBitrateConfig(bitrate_config);
+  sender_call_->GetTransportControllerSend()->SetSdpBitrateParameters(
+      bitrate_config);
 
   StartBitrateObserver encoder;
   video_send_config_.encoder_settings.encoder = &encoder;
@@ -2868,7 +2873,8 @@ TEST_F(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
       bitrate_config.start_bitrate_bps = kIncreasedStartBitrateKbps * 1000;
       bitrate_config.max_bitrate_bps = kIncreasedMaxBitrateKbps * 1000;
       task_queue_->SendTask([this, &bitrate_config]() {
-        call_->SetBitrateConfig(bitrate_config);
+        call_->GetTransportControllerSend()->SetSdpBitrateParameters(
+            bitrate_config);
       });
       // Encoder rate is capped by EncoderConfig max_bitrate_bps.
       WaitForSetRates(kMaxBitrateKbps);
@@ -2887,7 +2893,7 @@ TEST_F(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
       EXPECT_EQ(3, num_initializations_)
           << "Encoder should have been reconfigured with the new value.";
       // Expected target bitrate is the start bitrate set in the call to
-      // call_->SetBitrateConfig.
+      // call_->GetTransportControllerSend()->SetSdpBitrateParameters.
       WaitForSetRates(kIncreasedStartBitrateKbps);
     }
 
@@ -3568,7 +3574,8 @@ TEST_F(VideoSendStreamTest, RemoveOverheadFromBandwidth) {
       bitrate_config.max_bitrate_bps = kMaxBitrateBps;
       bitrate_config.min_bitrate_bps = kMinBitrateBps;
       task_queue_->SendTask([this, &bitrate_config]() {
-        call_->SetBitrateConfig(bitrate_config);
+        call_->GetTransportControllerSend()->SetSdpBitrateParameters(
+            bitrate_config);
         call_->OnTransportOverheadChanged(webrtc::MediaType::VIDEO, 40);
       });
 

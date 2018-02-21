@@ -64,7 +64,7 @@ class RtpSenderReceiverTest : public testing::Test,
                          rtc::MakeUnique<cricket::RtpDataEngine>(),
                          worker_thread_,
                          network_thread_),
-        fake_call_(Call::Config(&event_log_)),
+        fake_call_(),
         local_stream_(MediaStream::Create(kStreamLabel1)) {
     // Create channels to be used by the RtpSenders and RtpReceivers.
     channel_manager_.Init();

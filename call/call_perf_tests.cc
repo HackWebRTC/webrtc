@@ -892,7 +892,8 @@ void CallPerfTest::TestMinAudioVideoBitrate(
       bitrate_config.min_bitrate_bps = min_bwe_;
       bitrate_config.start_bitrate_bps = start_bwe_;
       bitrate_config.max_bitrate_bps = max_bwe_;
-      sender_call->SetBitrateConfig(bitrate_config);
+      sender_call->GetTransportControllerSend()->SetSdpBitrateParameters(
+          bitrate_config);
       if (use_bitrate_allocation_strategy_) {
         sender_call->SetBitrateAllocationStrategy(
             std::move(allocation_strategy_));

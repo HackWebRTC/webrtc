@@ -1665,7 +1665,7 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
     // "unchanged" so that BWE isn't affected.
     bitrate_config.start_bitrate_bps = -1;
   }
-  call_->SetBitrateConfig(bitrate_config);
+  call_->GetTransportControllerSend()->SetSdpBitrateParameters(bitrate_config);
 
   // Check if the transport cc feedback or NACK status has changed on the
   // preferred send codec, and in that case reconfigure all receive streams.
@@ -2040,8 +2040,8 @@ void WebRtcVoiceMediaChannel::OnNetworkRouteChanged(
     const std::string& transport_name,
     const rtc::NetworkRoute& network_route) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  // TODO(zhihaung): Merge these two callbacks.
-  call_->OnNetworkRouteChanged(transport_name, network_route);
+  call_->GetTransportControllerSend()->OnNetworkRouteChanged(transport_name,
+                                                             network_route);
   call_->OnTransportOverheadChanged(webrtc::MediaType::AUDIO,
                                     network_route.packet_overhead);
 }

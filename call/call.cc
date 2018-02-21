@@ -202,6 +202,8 @@ class Call : public webrtc::Call,
   void DestroyFlexfecReceiveStream(
       FlexfecReceiveStream* receive_stream) override;
 
+  RtpTransportControllerSendInterface* GetTransportControllerSend() override;
+
   Stats GetStats() const override;
 
   // Implements PacketReceiver.
@@ -212,12 +214,6 @@ class Call : public webrtc::Call,
   // Implements RecoveredPacketReceiver.
   void OnRecoveredPacket(const uint8_t* packet, size_t length) override;
 
-  void SetBitrateConfig(
-      const webrtc::BitrateConstraints& bitrate_config) override;
-
-  void SetBitrateConfigMask(
-      const webrtc::BitrateConstraintsMask& bitrate_config) override;
-
   void SetBitrateAllocationStrategy(
       std::unique_ptr<rtc::BitrateAllocationStrategy>
           bitrate_allocation_strategy) override;
@@ -226,9 +222,6 @@ class Call : public webrtc::Call,
 
   void OnTransportOverheadChanged(MediaType media,
                                   int transport_overhead_per_packet) override;
-
-  void OnNetworkRouteChanged(const std::string& transport_name,
-                             const rtc::NetworkRoute& network_route) override;
 
   void OnSentPacket(const rtc::SentPacket& sent_packet) override;
 
@@ -907,6 +900,10 @@ void Call::DestroyFlexfecReceiveStream(FlexfecReceiveStream* receive_stream) {
   delete receive_stream;
 }
 
+RtpTransportControllerSendInterface* Call::GetTransportControllerSend() {
+  return transport_send_.get();
+}
+
 Call::Stats Call::GetStats() const {
   // TODO(solenberg): Some test cases in EndToEndTest use this from a different
   // thread. Re-enable once that is fixed.
@@ -928,18 +925,6 @@ Call::Stats Call::GetStats() const {
     stats.max_padding_bitrate_bps = configured_max_padding_bitrate_bps_;
   }
   return stats;
-}
-
-void Call::SetBitrateConfig(const BitrateConstraints& bitrate_config) {
-  TRACE_EVENT0("webrtc", "Call::SetBitrateConfig");
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&configuration_sequence_checker_);
-  transport_send_->SetSdpBitrateParameters(bitrate_config);
-}
-
-void Call::SetBitrateConfigMask(const webrtc::BitrateConstraintsMask& mask) {
-  TRACE_EVENT0("webrtc", "Call::SetBitrateConfigMask");
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&configuration_sequence_checker_);
-  transport_send_->SetClientBitratePreferences(mask);
 }
 
 void Call::SetBitrateAllocationStrategy(
@@ -1018,13 +1003,6 @@ void Call::OnTransportOverheadChanged(MediaType media,
       RTC_NOTREACHED();
       break;
   }
-}
-
-// TODO(honghaiz): Add tests for this method.
-void Call::OnNetworkRouteChanged(const std::string& transport_name,
-                                 const rtc::NetworkRoute& network_route) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&configuration_sequence_checker_);
-  transport_send_->OnNetworkRouteChanged(transport_name, network_route);
 }
 
 void Call::UpdateAggregateNetworkState() {

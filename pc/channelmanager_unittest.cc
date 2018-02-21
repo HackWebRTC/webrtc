@@ -11,7 +11,6 @@
 #include <memory>
 #include <utility>
 
-#include "logging/rtc_event_log/rtc_event_log.h"
 #include "media/base/fakemediaengine.h"
 #include "media/base/fakevideocapturer.h"
 #include "media/base/testutils.h"
@@ -48,14 +47,13 @@ class ChannelManagerTest : public testing::Test {
             std::unique_ptr<DataEngineInterface>(fdme_),
             rtc::Thread::Current(),
             rtc::Thread::Current())),
-        fake_call_(webrtc::Call::Config(&event_log_)),
+        fake_call_(),
         transport_controller_(
             new cricket::FakeTransportController(ICEROLE_CONTROLLING)) {
     fme_->SetAudioCodecs(MAKE_VECTOR(kAudioCodecs));
     fme_->SetVideoCodecs(MAKE_VECTOR(kVideoCodecs));
   }
 
-  webrtc::RtcEventLogNullImpl event_log_;
   std::unique_ptr<rtc::Thread> network_;
   std::unique_ptr<rtc::Thread> worker_;
   // |fme_| and |fdme_| are actually owned by |cm_|.

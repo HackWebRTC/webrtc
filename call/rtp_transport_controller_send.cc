@@ -166,7 +166,7 @@ void RtpTransportControllerSend::SetSdpBitrateParameters(
                                  updated->max_bitrate_bps);
   } else {
     RTC_LOG(LS_VERBOSE)
-        << "WebRTC.RtpTransportControllerSend.SetBitrateConfig: "
+        << "WebRTC.RtpTransportControllerSend.SetSdpBitrateParameters: "
         << "nothing to update";
   }
 }
@@ -181,7 +181,7 @@ void RtpTransportControllerSend::SetClientBitratePreferences(
                                  updated->max_bitrate_bps);
   } else {
     RTC_LOG(LS_VERBOSE)
-        << "WebRTC.RtpTransportControllerSend.SetBitrateConfigMask: "
+        << "WebRTC.RtpTransportControllerSend.SetClientBitratePreferences: "
         << "nothing to update";
   }
 }

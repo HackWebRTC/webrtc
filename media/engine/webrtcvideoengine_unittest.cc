@@ -42,7 +42,9 @@
 #include "test/gmock.h"
 
 using cricket::FakeVideoCapturerWithTaskQueue;
+using webrtc::BitrateConstraints;
 using webrtc::RtpExtension;
+using testing::Field;
 
 namespace {
 static const int kDefaultQpMax = 56;
@@ -475,7 +477,7 @@ TEST_F(WebRtcVideoEngineTest, RtxCodecAddedForExternalCodec) {
 void WebRtcVideoEngineTest::TestExtendedEncoderOveruse(
     bool use_external_encoder) {
   std::unique_ptr<VideoMediaChannel> channel;
-  FakeCall* fake_call = new FakeCall(webrtc::Call::Config(&event_log_));
+  FakeCall* fake_call = new FakeCall();
   call_.reset(fake_call);
   if (use_external_encoder) {
     encoder_factory_->AddSupportedVideoCodecType("VP8");
@@ -519,7 +521,7 @@ TEST_F(WebRtcVideoEngineTest, CanConstructDecoderForVp9EncoderFactory) {
 
 TEST_F(WebRtcVideoEngineTest, PropagatesInputFrameTimestamp) {
   encoder_factory_->AddSupportedVideoCodecType("VP8");
-  FakeCall* fake_call = new FakeCall(webrtc::Call::Config(&event_log_));
+  FakeCall* fake_call = new FakeCall();
   call_.reset(fake_call);
   std::unique_ptr<VideoMediaChannel> channel(SetUpForExternalEncoderFactory());
 
@@ -1083,8 +1085,7 @@ TEST_F(WebRtcVideoEngineTest, StreamParamsIdPassedToDecoderFactory) {
 
 TEST_F(WebRtcVideoEngineTest, DISABLED_RecreatesEncoderOnContentTypeChange) {
   encoder_factory_->AddSupportedVideoCodecType("VP8");
-  std::unique_ptr<FakeCall> fake_call(
-      new FakeCall(webrtc::Call::Config(&event_log_)));
+  std::unique_ptr<FakeCall> fake_call(new FakeCall());
   std::unique_ptr<VideoMediaChannel> channel(SetUpForExternalEncoderFactory());
   ASSERT_TRUE(
       channel->AddSendStream(cricket::StreamParams::CreateLegacy(kSsrc)));
@@ -1231,7 +1232,7 @@ class WebRtcVideoChannelTest : public WebRtcVideoEngineTest {
   explicit WebRtcVideoChannelTest(const char* field_trials)
       : WebRtcVideoEngineTest(field_trials), last_ssrc_(0) {}
   void SetUp() override {
-    fake_call_.reset(new FakeCall(webrtc::Call::Config(&event_log_)));
+    fake_call_.reset(new FakeCall());
     channel_.reset(engine_.CreateChannel(fake_call_.get(), GetMediaConfig(),
                                          VideoOptions()));
     channel_->OnReadyToSend(true);
@@ -1278,6 +1279,9 @@ class WebRtcVideoChannelTest : public WebRtcVideoEngineTest {
                                           int expected_start_bitrate_bps,
                                           const char* max_bitrate_kbps,
                                           int expected_max_bitrate_bps) {
+    ExpectSetBitrateParameters(expected_min_bitrate_bps,
+                               expected_start_bitrate_bps,
+                               expected_max_bitrate_bps);
     auto& codecs = send_parameters_.codecs;
     codecs.clear();
     codecs.push_back(GetEngineCodec("VP8"));
@@ -1285,13 +1289,23 @@ class WebRtcVideoChannelTest : public WebRtcVideoEngineTest {
     codecs[0].params[kCodecParamStartBitrate] = start_bitrate_kbps;
     codecs[0].params[kCodecParamMaxBitrate] = max_bitrate_kbps;
     EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
+  }
 
-    EXPECT_EQ(expected_min_bitrate_bps,
-              fake_call_->GetConfig().bitrate_config.min_bitrate_bps);
-    EXPECT_EQ(expected_start_bitrate_bps,
-              fake_call_->GetConfig().bitrate_config.start_bitrate_bps);
-    EXPECT_EQ(expected_max_bitrate_bps,
-              fake_call_->GetConfig().bitrate_config.max_bitrate_bps);
+  void ExpectSetBitrateParameters(int min_bitrate_bps,
+                                  int start_bitrate_bps,
+                                  int max_bitrate_bps) {
+    EXPECT_CALL(
+        *fake_call_->GetMockTransportControllerSend(),
+        SetSdpBitrateParameters(AllOf(
+            Field(&BitrateConstraints::min_bitrate_bps, min_bitrate_bps),
+            Field(&BitrateConstraints::start_bitrate_bps, start_bitrate_bps),
+            Field(&BitrateConstraints::max_bitrate_bps, max_bitrate_bps))));
+  }
+
+  void ExpectSetMaxBitrate(int max_bitrate_bps) {
+    EXPECT_CALL(*fake_call_->GetMockTransportControllerSend(),
+                SetSdpBitrateParameters(Field(
+                    &BitrateConstraints::max_bitrate_bps, max_bitrate_bps)));
   }
 
   void TestSetSendRtpHeaderExtensions(const std::string& ext_uri) {
@@ -3117,8 +3131,7 @@ TEST_F(WebRtcVideoChannelTest, SetSendCodecsWithHighMaxBitrate) {
 
 TEST_F(WebRtcVideoChannelTest,
        SetSendCodecsWithoutBitratesUsesCorrectDefaults) {
-  SetSendCodecsShouldWorkForBitrates(
-      "", 0, "", -1, "", -1);
+  SetSendCodecsShouldWorkForBitrates("", 0, "", -1, "", -1);
 }
 
 TEST_F(WebRtcVideoChannelTest, SetSendCodecsCapsMinAndStartBitrate) {
@@ -3138,34 +3151,26 @@ TEST_F(WebRtcVideoChannelTest, SetSendCodecsWithBitratesAndMaxSendBandwidth) {
   send_parameters_.codecs[0].params[kCodecParamStartBitrate] = "200";
   send_parameters_.codecs[0].params[kCodecParamMaxBitrate] = "300";
   send_parameters_.max_bandwidth_bps = 400000;
-  EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
-  EXPECT_EQ(100000, fake_call_->GetConfig().bitrate_config.min_bitrate_bps);
-  EXPECT_EQ(200000, fake_call_->GetConfig().bitrate_config.start_bitrate_bps);
   // We expect max_bandwidth_bps to take priority, if set.
-  EXPECT_EQ(400000, fake_call_->GetConfig().bitrate_config.max_bitrate_bps);
+  ExpectSetBitrateParameters(100000, 200000, 400000);
+  EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
+  // Since the codec isn't changing, start_bitrate_bps should be -1.
+  ExpectSetBitrateParameters(100000, -1, 350000);
 
   // Decrease max_bandwidth_bps.
   send_parameters_.max_bandwidth_bps = 350000;
   EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
-  EXPECT_EQ(100000, fake_call_->GetConfig().bitrate_config.min_bitrate_bps);
-  // Since the codec isn't changing, start_bitrate_bps should be -1.
-  EXPECT_EQ(-1, fake_call_->GetConfig().bitrate_config.start_bitrate_bps);
-  EXPECT_EQ(350000, fake_call_->GetConfig().bitrate_config.max_bitrate_bps);
 
   // Now try again with the values flipped around.
   send_parameters_.codecs[0].params[kCodecParamMaxBitrate] = "400";
   send_parameters_.max_bandwidth_bps = 300000;
+  ExpectSetBitrateParameters(100000, 200000, 300000);
   EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
-  EXPECT_EQ(100000, fake_call_->GetConfig().bitrate_config.min_bitrate_bps);
-  EXPECT_EQ(200000, fake_call_->GetConfig().bitrate_config.start_bitrate_bps);
-  EXPECT_EQ(300000, fake_call_->GetConfig().bitrate_config.max_bitrate_bps);
 
   // If we change the codec max, max_bandwidth_bps should still apply.
   send_parameters_.codecs[0].params[kCodecParamMaxBitrate] = "350";
+  ExpectSetBitrateParameters(100000, 200000, 300000);
   EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
-  EXPECT_EQ(100000, fake_call_->GetConfig().bitrate_config.min_bitrate_bps);
-  EXPECT_EQ(200000, fake_call_->GetConfig().bitrate_config.start_bitrate_bps);
-  EXPECT_EQ(300000, fake_call_->GetConfig().bitrate_config.max_bitrate_bps);
 }
 
 TEST_F(WebRtcVideoChannelTest,
@@ -3173,39 +3178,34 @@ TEST_F(WebRtcVideoChannelTest,
   SetSendCodecsShouldWorkForBitrates("100", 100000, "150", 150000, "200",
                                      200000);
   send_parameters_.max_bandwidth_bps = 300000;
+  // Setting max bitrate should keep previous min bitrate.
+  // Setting max bitrate should not reset start bitrate.
+  ExpectSetBitrateParameters(100000, -1, 300000);
   EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
-  EXPECT_EQ(100000, fake_call_->GetConfig().bitrate_config.min_bitrate_bps)
-      << "Setting max bitrate should keep previous min bitrate.";
-  EXPECT_EQ(-1, fake_call_->GetConfig().bitrate_config.start_bitrate_bps)
-      << "Setting max bitrate should not reset start bitrate.";
-  EXPECT_EQ(300000, fake_call_->GetConfig().bitrate_config.max_bitrate_bps);
 }
 
 TEST_F(WebRtcVideoChannelTest, SetMaxSendBandwidthShouldBeRemovable) {
   send_parameters_.max_bandwidth_bps = 300000;
+  ExpectSetMaxBitrate(300000);
   EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
-  EXPECT_EQ(300000, fake_call_->GetConfig().bitrate_config.max_bitrate_bps);
   // -1 means to disable max bitrate (set infinite).
   send_parameters_.max_bandwidth_bps = -1;
+  ExpectSetMaxBitrate(-1);
   EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
-  EXPECT_EQ(-1, fake_call_->GetConfig().bitrate_config.max_bitrate_bps)
-      << "Setting zero max bitrate did not reset start bitrate.";
 }
 
 TEST_F(WebRtcVideoChannelTest, SetMaxSendBandwidthAndAddSendStream) {
   send_parameters_.max_bandwidth_bps = 99999;
   FakeVideoSendStream* stream = AddSendStream();
+  ExpectSetMaxBitrate(send_parameters_.max_bandwidth_bps);
   ASSERT_TRUE(channel_->SetSendParameters(send_parameters_));
-  EXPECT_EQ(send_parameters_.max_bandwidth_bps,
-            fake_call_->GetConfig().bitrate_config.max_bitrate_bps);
   ASSERT_EQ(1u, stream->GetVideoStreams().size());
   EXPECT_EQ(send_parameters_.max_bandwidth_bps,
             stream->GetVideoStreams()[0].max_bitrate_bps);
 
   send_parameters_.max_bandwidth_bps = 77777;
+  ExpectSetMaxBitrate(send_parameters_.max_bandwidth_bps);
   ASSERT_TRUE(channel_->SetSendParameters(send_parameters_));
-  EXPECT_EQ(send_parameters_.max_bandwidth_bps,
-            fake_call_->GetConfig().bitrate_config.max_bitrate_bps);
   EXPECT_EQ(send_parameters_.max_bandwidth_bps,
             stream->GetVideoStreams()[0].max_bitrate_bps);
 }
@@ -4902,7 +4902,7 @@ TEST_F(WebRtcVideoChannelTest, ConfiguresLocalSsrcOnExistingReceivers) {
 class WebRtcVideoChannelSimulcastTest : public testing::Test {
  public:
   WebRtcVideoChannelSimulcastTest()
-      : fake_call_(webrtc::Call::Config(&event_log_)),
+      : fake_call_(),
         encoder_factory_(new cricket::FakeWebRtcVideoEncoderFactory),
         decoder_factory_(new cricket::FakeWebRtcVideoDecoderFactory),
         engine_(std::unique_ptr<cricket::WebRtcVideoEncoderFactory>(

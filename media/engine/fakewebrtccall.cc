@@ -384,9 +384,8 @@ void FakeFlexfecReceiveStream::OnRtpPacket(const webrtc::RtpPacketReceived&) {
   RTC_NOTREACHED() << "Not implemented.";
 }
 
-FakeCall::FakeCall(const webrtc::Call::Config& config)
-    : config_(config),
-      audio_network_state_(webrtc::kNetworkUp),
+FakeCall::FakeCall()
+    : audio_network_state_(webrtc::kNetworkUp),
       video_network_state_(webrtc::kNetworkUp),
       num_created_send_streams_(0),
       num_created_receive_streams_(0),
@@ -398,10 +397,6 @@ FakeCall::~FakeCall() {
   EXPECT_EQ(0u, audio_send_streams_.size());
   EXPECT_EQ(0u, video_receive_streams_.size());
   EXPECT_EQ(0u, audio_receive_streams_.size());
-}
-
-webrtc::Call::Config FakeCall::GetConfig() const {
-  return config_;
 }
 
 const std::vector<FakeVideoSendStream*>& FakeCall::GetVideoSendStreams() {
@@ -615,16 +610,6 @@ int FakeCall::GetNumCreatedReceiveStreams() const {
 
 webrtc::Call::Stats FakeCall::GetStats() const {
   return stats_;
-}
-
-void FakeCall::SetBitrateConfig(
-    const webrtc::BitrateConstraints& bitrate_config) {
-  config_.bitrate_config = bitrate_config;
-}
-
-void FakeCall::SetBitrateConfigMask(
-    const webrtc::BitrateConstraintsMask& mask) {
-  // TODO(zstein): not implemented
 }
 
 void FakeCall::SetBitrateAllocationStrategy(
