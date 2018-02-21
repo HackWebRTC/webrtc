@@ -19,6 +19,7 @@
 #include "modules/audio_processing/aec3/aec3_common.h"
 #include "modules/audio_processing/aec3/echo_path_delay_estimator.h"
 #include "modules/audio_processing/aec3/render_delay_controller_metrics.h"
+#include "modules/audio_processing/aec3/skew_estimator.h"
 #include "rtc_base/atomicops.h"
 #include "rtc_base/constructormagic.h"
 
@@ -27,45 +28,6 @@ namespace webrtc {
 namespace {
 
 constexpr int kSkewHistorySizeLog2 = 8;
-
-// Estimator of API call skew between render and capture.
-class SkewEstimator {
- public:
-  // Resets the estimation.
-  void Reset() {
-    skew_ = 0;
-    next_index_ = 0;
-    sufficient_skew_stored_ = false;
-  }
-
-  // Updates the skew data for a render call.
-  void LogRenderCall() { ++skew_; }
-
-  // Updates and computes the skew at a capture call. Returns an optional which
-  // is non-null if a reliable skew has been found.
-  rtc::Optional<int> GetSkewFromCapture() {
-    --skew_;
-
-    skew_history_[next_index_] = skew_;
-    if (++next_index_ == skew_history_.size()) {
-      next_index_ = 0;
-      sufficient_skew_stored_ = true;
-    }
-
-    if (!sufficient_skew_stored_) {
-      return rtc::nullopt;
-    }
-
-    return std::accumulate(skew_history_.begin(), skew_history_.end(), 0) >>
-           kSkewHistorySizeLog2;
-  }
-
- private:
-  int skew_ = 0;
-  std::array<int, 1 << kSkewHistorySizeLog2> skew_history_;
-  size_t next_index_ = 0;
-  bool sufficient_skew_stored_ = false;
-};
 
 class RenderDelayControllerImpl final : public RenderDelayController {
  public:
@@ -150,7 +112,8 @@ RenderDelayControllerImpl::RenderDelayControllerImpl(
       hysteresis_limit_2_blocks_(
           static_cast<int>(config.delay.hysteresis_limit_2_blocks)),
       delay_estimator_(data_dumper_.get(), config),
-      delay_buf_(kBlockSize * non_causal_offset, 0.f) {
+      delay_buf_(kBlockSize * non_causal_offset, 0.f),
+      skew_estimator_(kSkewHistorySizeLog2) {
   RTC_DCHECK(ValidFullBandRate(sample_rate_hz));
   delay_estimator_.LogDelayEstimationProperties(sample_rate_hz,
                                                 delay_buf_.size());
