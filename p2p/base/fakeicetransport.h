@@ -146,10 +146,14 @@ class FakeIceTransport : public IceTransportInternal {
   }
   void RemoveRemoteCandidate(const Candidate& candidate) override {}
 
-  bool GetStats(ConnectionInfos* infos) override {
-    ConnectionInfo info;
-    infos->clear();
-    infos->push_back(info);
+  bool GetStats(ConnectionInfos* candidate_pair_stats_list,
+                CandidateStatsList* candidate_stats_list) override {
+    CandidateStats candidate_stats;
+    ConnectionInfo candidate_pair_stats;
+    candidate_stats_list->clear();
+    candidate_stats_list->push_back(candidate_stats);
+    candidate_pair_stats_list->clear();
+    candidate_pair_stats_list->push_back(candidate_pair_stats);
     return true;
   }
 

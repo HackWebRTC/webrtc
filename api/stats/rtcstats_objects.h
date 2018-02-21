@@ -183,6 +183,8 @@ class RTCIceCandidatePairStats final : public RTCStats {
 // TODO(hbos): |RTCStatsCollector| only collects candidates that are part of
 // ice candidate pairs, but there could be candidates not paired with anything.
 // crbug.com/632723
+// TODO(qingsi): Add the stats of STUN binding requests (keepalives) and collect
+// them in the new PeerConnection::GetStats.
 class RTCIceCandidateStats : public RTCStats {
  public:
   WEBRTC_RTCSTATS_DECL();

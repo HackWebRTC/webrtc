@@ -4937,6 +4937,12 @@ bool PeerConnection::ReadyToSendData() const {
          sctp_ready_to_send_data_;
 }
 
+cricket::CandidateStatsList PeerConnection::GetPooledCandidateStats() const {
+  cricket::CandidateStatsList candidate_states_list;
+  port_allocator_->GetCandidateStatsFromPooledSessions(&candidate_states_list);
+  return candidate_states_list;
+}
+
 std::map<std::string, std::string> PeerConnection::GetTransportNamesByMid()
     const {
   std::map<std::string, std::string> transport_names_by_mid;

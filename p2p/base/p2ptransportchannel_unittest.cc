@@ -1176,8 +1176,10 @@ TEST_F(P2PTransportChannelTest, GetStats) {
                              kMediumTimeout, clock);
   TestSendRecv(&clock);
   ConnectionInfos infos;
-  ASSERT_TRUE(ep1_ch1()->GetStats(&infos));
+  CandidateStatsList candidate_stats_list;
+  ASSERT_TRUE(ep1_ch1()->GetStats(&infos, &candidate_stats_list));
   ASSERT_GE(infos.size(), 1u);
+  ASSERT_GE(candidate_stats_list.size(), 1u);
   ConnectionInfo* best_conn_info = nullptr;
   for (ConnectionInfo& info : infos) {
     if (info.best_connection) {

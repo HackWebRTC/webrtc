@@ -272,6 +272,10 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase {
     return sctp_data_channels_;
   }
 
+  cricket::CandidateStatsList GetPooledCandidateStats() const override {
+    return {};
+  }
+
   std::map<std::string, std::string> GetTransportNamesByMid() const override {
     std::map<std::string, std::string> transport_names_by_mid;
     if (voice_channel_) {

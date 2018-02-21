@@ -118,7 +118,8 @@ class P2PTransportChannel : public IceTransportInternal,
   int SetOption(rtc::Socket::Option opt, int value) override;
   bool GetOption(rtc::Socket::Option opt, int* value) override;
   int GetError() override;
-  bool GetStats(std::vector<ConnectionInfo>* stats) override;
+  bool GetStats(std::vector<ConnectionInfo>* candidate_pair_stats_list,
+                std::vector<CandidateStats>* candidate_stats_list) override;
   rtc::Optional<int> GetRttEstimate() override;
 
   // TODO(honghaiz): Remove this method once the reference of it in

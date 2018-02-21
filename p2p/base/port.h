@@ -106,6 +106,36 @@ enum class IceCandidatePairState {
   // frozen because we have not implemented ICE freezing logic.
 };
 
+// Stats that we can return about the port of a connection.
+class StunStats {
+ public:
+  StunStats() = default;
+  StunStats(const StunStats&) = default;
+  ~StunStats() = default;
+
+  StunStats& operator=(const StunStats& other) = default;
+
+  int stun_binding_requests_sent = 0;
+  int stun_binding_responses_received = 0;
+  double stun_binding_rtt_ms_total = 0;
+  double stun_binding_rtt_ms_squared_total = 0;
+};
+
+// Stats that we can return about a candidate.
+class CandidateStats {
+ public:
+  CandidateStats();
+  explicit CandidateStats(Candidate candidate);
+  CandidateStats(const CandidateStats&);
+  ~CandidateStats();
+
+  Candidate candidate;
+  // STUN port stats if this candidate is a STUN candidate.
+  rtc::Optional<StunStats> stun_stats;
+};
+
+typedef std::vector<CandidateStats> CandidateStatsList;
+
 // Stats that we can return about the connections for a transport channel.
 // TODO(hta): Rename to ConnectionStats
 struct ConnectionInfo {
@@ -149,7 +179,7 @@ struct ConnectionInfo {
   rtc::Optional<uint32_t> current_round_trip_time_ms;
 };
 
-// Information about all the connections of a channel.
+// Information about all the candidate pairs of a channel.
 typedef std::vector<ConnectionInfo> ConnectionInfos;
 
 const char* ProtoToString(ProtocolType proto);
@@ -367,6 +397,8 @@ class Port : public PortInterface, public rtc::MessageHandler,
   size_t AddPrflxCandidate(const Candidate& local);
 
   int16_t network_cost() const { return network_cost_; }
+
+  void GetStunStats(rtc::Optional<StunStats>* stats) override{};
 
  protected:
   enum { MSG_DESTROY_IF_DEAD = 0, MSG_FIRST_AVAILABLE };

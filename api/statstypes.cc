@@ -430,7 +430,9 @@ const char* StatsReport::Value::display_name() const {
     case kStatsValueNameBandwidthLimitedResolution:
       return "googBandwidthLimitedResolution";
     // STUN ping related attributes.
+    //
     // TODO(zhihuang) Rename these stats to follow the standards.
+    // Connectivity checks.
     case kStatsValueNameSentPingRequestsTotal:
       return "requestsSent";
     case kStatsValueNameSentPingRequestsBeforeFirstResponse:
@@ -441,6 +443,15 @@ const char* StatsReport::Value::display_name() const {
       return "requestsReceived";
     case kStatsValueNameRecvPingResponses:
       return "responsesReceived";
+    // STUN Keepalive pings.
+    case kStatsValueNameSentStunKeepaliveRequests:
+      return "stunKeepaliveRequestsSent";
+    case kStatsValueNameRecvStunKeepaliveResponses:
+      return "stunKeepaliveResponsesReceived";
+    case kStatsValueNameStunKeepaliveRttTotal:
+      return "stunKeepaliveRttTotal";
+    case kStatsValueNameStunKeepaliveRttSquaredTotal:
+      return "stunKeepaliveRttSquaredTotal";
 
     // Candidate related attributes. Values are taken from
     // http://w3c.github.io/webrtc-stats/#rtcstatstype-enum*.

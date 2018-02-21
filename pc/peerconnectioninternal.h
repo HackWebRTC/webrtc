@@ -56,6 +56,8 @@ class PeerConnectionInternal : public PeerConnectionInterface {
   virtual rtc::Optional<std::string> sctp_content_name() const = 0;
   virtual rtc::Optional<std::string> sctp_transport_name() const = 0;
 
+  virtual cricket::CandidateStatsList GetPooledCandidateStats() const = 0;
+
   // Returns a map from MID to transport name for all active media sections.
   virtual std::map<std::string, std::string> GetTransportNamesByMid() const = 0;
 

@@ -193,6 +193,16 @@ static std::string ComputeFoundation(const std::string& type,
   return rtc::ToString<uint32_t>(rtc::ComputeCrc32(ost.str()));
 }
 
+CandidateStats::CandidateStats() = default;
+
+CandidateStats::CandidateStats(const CandidateStats&) = default;
+
+CandidateStats::CandidateStats(Candidate candidate) {
+  this->candidate = candidate;
+}
+
+CandidateStats::~CandidateStats() = default;
+
 ConnectionInfo::ConnectionInfo()
     : best_connection(false),
       writable(false),
@@ -1428,7 +1438,7 @@ void Connection::ReceivedPingResponse(int rtt, const std::string& request_id) {
   set_write_state(STATE_WRITABLE);
   set_state(IceCandidatePairState::SUCCEEDED);
   if (rtt_samples_ > 0) {
-    rtt_ = (RTT_RATIO * rtt_ + rtt) / (RTT_RATIO + 1);
+    rtt_ = rtc::GetNextMovingAverage(rtt_, rtt, RTT_RATIO);
   } else {
     rtt_ = rtt;
   }

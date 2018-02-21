@@ -79,6 +79,19 @@ bool PortAllocatorSession::IsStopped() const {
   return false;
 }
 
+void PortAllocatorSession::GetCandidateStatsFromReadyPorts(
+    CandidateStatsList* candidate_stats_list) const {
+  auto ports = ReadyPorts();
+  for (auto* port : ports) {
+    auto candidates = port->Candidates();
+    for (const auto& candidate : candidates) {
+      CandidateStats candidate_stats(candidate);
+      port->GetStunStats(&candidate_stats.stun_stats);
+      candidate_stats_list->push_back(std::move(candidate_stats));
+    }
+  }
+}
+
 uint32_t PortAllocatorSession::generation() {
   return generation_;
 }
@@ -208,6 +221,13 @@ void PortAllocator::FreezeCandidatePool() {
 
 void PortAllocator::DiscardCandidatePool() {
   pooled_sessions_.clear();
+}
+
+void PortAllocator::GetCandidateStatsFromPooledSessions(
+    CandidateStatsList* candidate_stats_list) {
+  for (const auto& session : pooled_sessions()) {
+    session->GetCandidateStatsFromReadyPorts(candidate_stats_list);
+  }
 }
 
 }  // namespace cricket

@@ -201,7 +201,8 @@ class IceTransportInternal : public rtc::PacketTransportInternal {
   virtual IceGatheringState gathering_state() const = 0;
 
   // Returns the current stats for this connection.
-  virtual bool GetStats(ConnectionInfos* infos) = 0;
+  virtual bool GetStats(ConnectionInfos* candidate_pair_stats_list,
+                        CandidateStatsList* candidate_stats_list) = 0;
 
   // Returns RTT estimate over the currently active connection, or an empty
   // rtc::Optional if there is none.

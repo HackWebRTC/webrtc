@@ -233,6 +233,7 @@ class PeerConnection : public PeerConnectionInternal,
     return sctp_transport_name_;
   }
 
+  cricket::CandidateStatsList GetPooledCandidateStats() const override;
   std::map<std::string, std::string> GetTransportNamesByMid() const override;
   std::map<std::string, cricket::TransportStats> GetTransportStatsByNames(
       const std::set<std::string>& transport_names) override;

@@ -39,6 +39,7 @@ struct TransportChannelStats {
   ~TransportChannelStats();
 
   int component = 0;
+  CandidateStatsList candidate_stats_list;
   ConnectionInfos connection_infos;
   int srtp_crypto_suite = rtc::SRTP_INVALID_CRYPTO_SUITE;
   int ssl_cipher_suite = rtc::TLS_NULL_WITH_NULL_NULL;

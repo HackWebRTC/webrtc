@@ -1136,15 +1136,22 @@ int P2PTransportChannel::SendPacket(const char *data, size_t len,
   return sent;
 }
 
-bool P2PTransportChannel::GetStats(ConnectionInfos *infos) {
+bool P2PTransportChannel::GetStats(ConnectionInfos* candidate_pair_stats_list,
+                                   CandidateStatsList* candidate_stats_list) {
   RTC_DCHECK(network_thread_ == rtc::Thread::Current());
-  // Gather connection infos.
-  infos->clear();
+  // Gather candidate and candidate pair stats.
+  candidate_stats_list->clear();
+  candidate_pair_stats_list->clear();
 
+  if (!allocator_sessions_.empty()) {
+    allocator_session()->GetCandidateStatsFromReadyPorts(candidate_stats_list);
+  }
+
+  // TODO(qingsi): Remove naming inconsistency for candidate pair/connection.
   for (Connection* connection : connections_) {
-    ConnectionInfo info = connection->stats();
-    info.best_connection = (selected_connection_ == connection);
-    infos->push_back(std::move(info));
+    ConnectionInfo candidate_pair_stats = connection->stats();
+    candidate_pair_stats.best_connection = (selected_connection_ == connection);
+    candidate_pair_stats_list->push_back(std::move(candidate_pair_stats));
     connection->set_reported(true);
   }
 

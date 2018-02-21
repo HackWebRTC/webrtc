@@ -244,6 +244,10 @@ class PortAllocatorSession : public sigslot::has_slots<> {
   virtual void RegatherOnFailedNetworks() {}
   // Re-gathers candidates on all networks.
   virtual void RegatherOnAllNetworks() {}
+  // Get candidate-level stats from all candidates on the ready ports and return
+  // the stats to the given list.
+  virtual void GetCandidateStatsFromReadyPorts(
+      CandidateStatsList* candidate_stats_list) const;
   // Set the interval at which STUN candidates will resend STUN binding requests
   // on the underlying ports to keep NAT bindings open.
   // The default value of the interval in implementation is restored if a null
@@ -475,6 +479,14 @@ class PortAllocator : public sigslot::has_slots<> {
   webrtc::TurnCustomizer* turn_customizer() {
     return turn_customizer_;
   }
+
+  // Collect candidate stats from pooled allocator sessions. This can be used to
+  // collect candidate stats without creating an offer/answer or setting local
+  // description. After the local description is set, the ownership of the
+  // pooled session is taken by P2PTransportChannel, and the
+  // candidate stats can be collected from P2PTransportChannel::GetStats.
+  virtual void GetCandidateStatsFromPooledSessions(
+      CandidateStatsList* candidate_stats_list);
 
  protected:
   virtual PortAllocatorSession* CreateSessionInternal(

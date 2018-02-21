@@ -52,7 +52,7 @@ class StunBindingRequest : public StunRequest {
       RTC_LOG(LS_ERROR) << "Binding address has bad family";
     } else {
       rtc::SocketAddress addr(addr_attr->ipaddr(), addr_attr->port());
-      port_->OnStunBindingRequestSucceeded(server_addr_, addr);
+      port_->OnStunBindingRequestSucceeded(this->Elapsed(), server_addr_, addr);
     }
 
     // The keep-alive requests will be stopped after its lifetime has passed.
@@ -317,6 +317,10 @@ ProtocolType UDPPort::GetProtocol() const {
   return PROTO_UDP;
 }
 
+void UDPPort::GetStunStats(rtc::Optional<StunStats>* stats) {
+  *stats = stats_;
+}
+
 void UDPPort::set_stun_keepalive_delay(const rtc::Optional<int>& delay) {
   stun_keepalive_delay_ = (delay.has_value() ? delay.value() : KEEPALIVE_DELAY);
 }
@@ -450,6 +454,7 @@ bool UDPPort::MaybeSetDefaultLocalAddress(rtc::SocketAddress* addr) const {
 }
 
 void UDPPort::OnStunBindingRequestSucceeded(
+    int rtt_ms,
     const rtc::SocketAddress& stun_server_addr,
     const rtc::SocketAddress& stun_reflected_addr) {
   if (bind_request_succeeded_servers_.find(stun_server_addr) !=
@@ -458,6 +463,11 @@ void UDPPort::OnStunBindingRequestSucceeded(
   }
   bind_request_succeeded_servers_.insert(stun_server_addr);
 
+  RTC_DCHECK(stats_.stun_binding_responses_received <
+             stats_.stun_binding_requests_sent);
+  stats_.stun_binding_responses_received++;
+  stats_.stun_binding_rtt_ms_total += rtt_ms;
+  stats_.stun_binding_rtt_ms_squared_total += rtt_ms * rtt_ms;
   // If socket is shared and |stun_reflected_addr| is equal to local socket
   // address, or if the same address has been added by another STUN server,
   // then discarding the stun address.
@@ -520,8 +530,10 @@ void UDPPort::MaybeSetPortCompleteOrError() {
 void UDPPort::OnSendPacket(const void* data, size_t size, StunRequest* req) {
   StunBindingRequest* sreq = static_cast<StunBindingRequest*>(req);
   rtc::PacketOptions options(DefaultDscpValue());
-  if (socket_->SendTo(data, size, sreq->server_addr(), options) < 0)
+  if (socket_->SendTo(data, size, sreq->server_addr(), options) < 0) {
     RTC_LOG_ERR_EX(LERROR, socket_->GetError()) << "sendto";
+  }
+  stats_.stun_binding_requests_sent++;
 }
 
 bool UDPPort::HasCandidateWithAddress(const rtc::SocketAddress& addr) const {
