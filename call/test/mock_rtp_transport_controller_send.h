@@ -13,7 +13,13 @@
 
 #include <string>
 
+#include "call/bitrate_constraints.h"
 #include "call/rtp_transport_controller_send_interface.h"
+#include "modules/congestion_controller/include/network_changed_observer.h"
+#include "modules/pacing/packet_router.h"
+#include "rtc_base/networkroute.h"
+#include "rtc_base/rate_limiter.h"
+#include "rtc_base/socket.h"
 #include "test/gmock.h"
 
 namespace webrtc {
