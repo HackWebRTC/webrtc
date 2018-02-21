@@ -20,6 +20,7 @@
 #include "call/audio_receive_stream.h"
 #include "call/audio_send_stream.h"
 #include "call/audio_state.h"
+#include "call/bitrate_constraints.h"
 #include "call/flexfec_receive_stream.h"
 #include "call/rtp_transport_controller_send_interface.h"
 #include "call/video_receive_stream.h"
@@ -43,19 +44,6 @@ enum class MediaType {
   DATA
 };
 
-// Like std::min, but considers non-positive values to be unset.
-// TODO(zstein): Remove once all callers use rtc::Optional.
-template <typename T>
-static T MinPositive(T a, T b) {
-  if (a <= 0) {
-    return b;
-  }
-  if (b <= 0) {
-    return a;
-  }
-  return std::min(a, b);
-}
-
 class PacketReceiver {
  public:
   enum DeliveryStatus {
@@ -77,26 +65,11 @@ struct CallConfig {
     RTC_DCHECK(event_log);
   }
 
-  static constexpr int kDefaultStartBitrateBps = 300000;
+  RTC_DEPRECATED static constexpr int kDefaultStartBitrateBps = 300000;
 
   // Bitrate config used until valid bitrate estimates are calculated. Also
   // used to cap total bitrate used. This comes from the remote connection.
-  struct BitrateConfig {
-    int min_bitrate_bps = 0;
-    int start_bitrate_bps = kDefaultStartBitrateBps;
-    int max_bitrate_bps = -1;
-  } bitrate_config;
-
-  // The local client's bitrate preferences. The actual configuration used
-  // is a combination of this and |bitrate_config|. The combination is
-  // currently more complicated than a simple mask operation (see
-  // SetBitrateConfig and SetBitrateConfigMask). Assumes that 0 <= min <=
-  // start <= max holds for set parameters.
-  struct BitrateConfigMask {
-    rtc::Optional<int> min_bitrate_bps;
-    rtc::Optional<int> start_bitrate_bps;
-    rtc::Optional<int> max_bitrate_bps;
-  };
+  BitrateConstraints bitrate_config;
 
   // AudioState which is possibly shared between multiple calls.
   // TODO(solenberg): Change this to a shared_ptr once we can use C++11.
@@ -184,15 +157,14 @@ class Call {
   // This is due to how the 'x-google-start-bitrate' flag is currently
   // implemented. Passing -1 leaves the start bitrate unchanged. Behavior is not
   // guaranteed for other negative values or 0.
-  virtual void SetBitrateConfig(
-      const Config::BitrateConfig& bitrate_config) = 0;
+  virtual void SetBitrateConfig(const BitrateConstraints& bitrate_config) = 0;
 
   // The greater min and smaller max set by this and SetBitrateConfig will be
   // used. The latest non-negative start value form either call will be used.
   // Specifying a start bitrate will reset the current bitrate estimate.
   // Assumes 0 <= min <= start <= max holds for set parameters.
   virtual void SetBitrateConfigMask(
-      const Config::BitrateConfigMask& bitrate_mask) = 0;
+      const BitrateConstraintsMask& bitrate_mask) = 0;
 
   virtual void SetBitrateAllocationStrategy(
       std::unique_ptr<rtc::BitrateAllocationStrategy>

@@ -42,6 +42,8 @@ rtc_source_set("call_interfaces") {
 # when interfaces have stabilized. See also TODO for |mock_rtp_interfaces|.
 rtc_source_set("rtp_interfaces") {
   sources = [
+    "bitrate_constraints.cc",
+    "bitrate_constraints.h",
     "rtcp_packet_sink_interface.h",
     "rtp_config.cc",
     "rtp_config.h",
@@ -51,6 +53,7 @@ rtc_source_set("rtp_interfaces") {
   ]
   deps = [
     "../api:array_view",
+    "../api:optional",
     "../rtc_base:rtc_base_approved",
   ]
 }

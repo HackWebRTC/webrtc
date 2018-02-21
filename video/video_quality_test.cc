@@ -1093,7 +1093,7 @@ VideoQualityTest::VideoQualityTest(
 }
 
 VideoQualityTest::Params::Params()
-    : call({false, Call::Config::BitrateConfig(), 0}),
+    : call({false, BitrateConstraints(), 0}),
       video{{false, 640, 480, 30, 50, 800, 800, false, "VP8", 1, -1, 0, false,
              false, ""},
             {false, 640, 480, 30, 50, 800, 800, false, "VP8", 1, -1, 0, false,

@@ -501,7 +501,7 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
   // See reason for keeping track of the FlexFEC payload type separately in
   // comment in WebRtcVideoChannel::ChangedRecvParameters.
   int recv_flexfec_payload_type_;
-  webrtc::Call::Config::BitrateConfig bitrate_config_;
+  webrtc::BitrateConstraints bitrate_config_;
   // TODO(deadbeef): Don't duplicate information between
   // send_params/recv_params, rtp_extensions, options, etc.
   VideoSendParameters send_params_;

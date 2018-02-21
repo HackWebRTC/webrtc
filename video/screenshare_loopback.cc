@@ -42,9 +42,7 @@ int MinBitrateKbps() {
   return static_cast<int>(FLAG_min_bitrate);
 }
 
-DEFINE_int(start_bitrate,
-           Call::Config::kDefaultStartBitrateBps / 1000,
-           "Call start bitrate in kbps.");
+DEFINE_int(start_bitrate, 300, "Call start bitrate in kbps.");
 int StartBitrateKbps() {
   return static_cast<int>(FLAG_start_bitrate);
 }
@@ -267,7 +265,7 @@ void Loopback() {
   pipe_config.delay_standard_deviation_ms = flags::StdPropagationDelayMs();
   pipe_config.allow_reordering = flags::FLAG_allow_reordering;
 
-  Call::Config::BitrateConfig call_bitrate_config;
+  BitrateConstraints call_bitrate_config;
   call_bitrate_config.min_bitrate_bps = flags::MinBitrateKbps() * 1000;
   call_bitrate_config.start_bitrate_bps = flags::StartBitrateKbps() * 1000;
   call_bitrate_config.max_bitrate_bps = flags::MaxBitrateKbps() * 1000;
