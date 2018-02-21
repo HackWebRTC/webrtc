@@ -377,6 +377,8 @@ TEST_P(TransportFeedbackEndToEndTest,
           ++media_sent_before_;
           EXPECT_LT(media_sent_, 40)
               << "Media sent without feedback when congestion window is full.";
+        } else if (media_sent_ > media_sent_before_) {
+          observation_complete_.Set();
         }
       }
       return SEND_PACKET;
@@ -390,11 +392,11 @@ TEST_P(TransportFeedbackEndToEndTest,
       // therefore filling up the congestion window. In the congested state, the
       // pacer should send padding packets to trigger feedback in case all
       // feedback of previous traffic was lost. This test listens for the
-      // padding packets and when 3 padding packets has been received feedback
+      // padding packets and when 2 padding packets have been received, feedback
       // will be let trough again. This should cause the pacer to continue
       // sending meadia yet again.
       if (media_sent_ > 20 && HasTransportFeedback(data, length) &&
-          padding_sent_ < 3) {
+          padding_sent_ < 2) {
         return DROP_PACKET;
       }
       return SEND_PACKET;
@@ -413,13 +415,9 @@ TEST_P(TransportFeedbackEndToEndTest,
     }
 
     void PerformTest() override {
-      const int64_t kDisabledFeedbackTimeoutMs = 3000;
-      observation_complete_.Wait(kDisabledFeedbackTimeoutMs);
-      {
-        rtc::CritScope lock(&crit_);
-        EXPECT_GT(media_sent_, media_sent_before_)
-            << "Stream not continued after congestion window full.";
-      }
+      const int64_t kFailureTimeoutMs = 10000;
+      EXPECT_TRUE(observation_complete_.Wait(kFailureTimeoutMs))
+          << "Stream not continued after congestion window full.";
     }
 
     size_t GetNumVideoStreams() const override { return num_video_streams_; }
