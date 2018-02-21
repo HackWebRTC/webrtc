@@ -9,14 +9,23 @@
  */
 
 #include "call/rtp_transport_controller_send.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 
 RtpTransportControllerSend::RtpTransportControllerSend(
     Clock* clock,
-    webrtc::RtcEventLog* event_log)
+    webrtc::RtcEventLog* event_log,
+    const BitrateConstraints& bitrate_config)
     : pacer_(clock, &packet_router_, event_log),
-      send_side_cc_(clock, nullptr /* observer */, event_log, &pacer_) {}
+      send_side_cc_(clock, nullptr /* observer */, event_log, &pacer_),
+      bitrate_configurator_(bitrate_config) {
+  send_side_cc_.SignalNetworkState(kNetworkDown);
+  send_side_cc_.SetBweBitrates(bitrate_config.min_bitrate_bps,
+                               bitrate_config.start_bitrate_bps,
+                               bitrate_config.max_bitrate_bps);
+}
+RtpTransportControllerSend::~RtpTransportControllerSend() = default;
 
 PacketRouter* RtpTransportControllerSend::packet_router() {
   return &packet_router_;
@@ -76,19 +85,24 @@ void RtpTransportControllerSend::DeRegisterNetworkObserver(
     NetworkChangedObserver* observer) {
   send_side_cc_.DeRegisterNetworkObserver(observer);
 }
-void RtpTransportControllerSend::SetBweBitrates(int min_bitrate_bps,
-                                                int start_bitrate_bps,
-                                                int max_bitrate_bps) {
-  send_side_cc_.SetBweBitrates(min_bitrate_bps, start_bitrate_bps,
-                               max_bitrate_bps);
-}
 void RtpTransportControllerSend::OnNetworkRouteChanged(
-    const rtc::NetworkRoute& network_route,
-    int start_bitrate_bps,
-    int min_bitrate_bps,
-    int max_bitrate_bps) {
-  send_side_cc_.OnNetworkRouteChanged(network_route, start_bitrate_bps,
-                                      min_bitrate_bps, max_bitrate_bps);
+    const std::string& transport_name,
+    const rtc::NetworkRoute& network_route) {
+  BitrateConstraints bitrate_config = bitrate_configurator_.GetConfig();
+  RTC_LOG(LS_INFO) << "Network route changed on transport " << transport_name
+                   << ": new local network id "
+                   << network_route.local_network_id
+                   << " new remote network id "
+                   << network_route.remote_network_id
+                   << " Reset bitrates to min: "
+                   << bitrate_config.min_bitrate_bps
+                   << " bps, start: " << bitrate_config.start_bitrate_bps
+                   << " bps,  max: " << bitrate_config.max_bitrate_bps
+                   << " bps.";
+  RTC_DCHECK_GT(bitrate_config.start_bitrate_bps, 0);
+  send_side_cc_.OnNetworkRouteChanged(
+      network_route, bitrate_config.start_bitrate_bps,
+      bitrate_config.min_bitrate_bps, bitrate_config.max_bitrate_bps);
 }
 void RtpTransportControllerSend::OnNetworkAvailability(bool network_available) {
   send_side_cc_.SignalNetworkState(network_available ? kNetworkUp
@@ -121,4 +135,33 @@ void RtpTransportControllerSend::OnSentPacket(
   send_side_cc_.OnSentPacket(sent_packet);
 }
 
+void RtpTransportControllerSend::SetSdpBitrateParameters(
+    const BitrateConstraints& constraints) {
+  rtc::Optional<BitrateConstraints> updated =
+      bitrate_configurator_.UpdateWithSdpParameters(constraints);
+  if (updated.has_value()) {
+    send_side_cc_.SetBweBitrates(updated->min_bitrate_bps,
+                                 updated->start_bitrate_bps,
+                                 updated->max_bitrate_bps);
+  } else {
+    RTC_LOG(LS_VERBOSE)
+        << "WebRTC.RtpTransportControllerSend.SetBitrateConfig: "
+        << "nothing to update";
+  }
+}
+
+void RtpTransportControllerSend::SetClientBitratePreferences(
+    const BitrateConstraintsMask& preferences) {
+  rtc::Optional<BitrateConstraints> updated =
+      bitrate_configurator_.UpdateWithClientPreferences(preferences);
+  if (updated.has_value()) {
+    send_side_cc_.SetBweBitrates(updated->min_bitrate_bps,
+                                 updated->start_bitrate_bps,
+                                 updated->max_bitrate_bps);
+  } else {
+    RTC_LOG(LS_VERBOSE)
+        << "WebRTC.RtpTransportControllerSend.SetBitrateConfigMask: "
+        << "nothing to update";
+  }
+}
 }  // namespace webrtc

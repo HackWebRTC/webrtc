@@ -126,7 +126,7 @@ struct ConfigHelper {
       : stream_config_(nullptr),
         audio_processing_(new rtc::RefCountedObject<MockAudioProcessing>()),
         simulated_clock_(123456),
-        rtp_transport_(&simulated_clock_, &event_log_),
+        rtp_transport_(&simulated_clock_, &event_log_, BitrateConstraints()),
         bitrate_allocator_(&limit_observer_),
         worker_queue_("ConfigHelper_worker_queue"),
         audio_encoder_(nullptr) {

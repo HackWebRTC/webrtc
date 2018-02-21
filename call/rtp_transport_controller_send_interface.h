@@ -13,6 +13,11 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <string>
+
+#include "api/optional.h"
+#include "call/bitrate_constraints.h"
+
 namespace rtc {
 struct SentPacket;
 struct NetworkRoute;
@@ -88,13 +93,9 @@ class RtpTransportControllerSendInterface {
       PacketFeedbackObserver* observer) = 0;
   virtual void RegisterNetworkObserver(NetworkChangedObserver* observer) = 0;
   virtual void DeRegisterNetworkObserver(NetworkChangedObserver* observer) = 0;
-  virtual void SetBweBitrates(int min_bitrate_bps,
-                              int start_bitrate_bps,
-                              int max_bitrate_bps) = 0;
-  virtual void OnNetworkRouteChanged(const rtc::NetworkRoute& network_route,
-                                     int start_bitrate_bps,
-                                     int min_bitrate_bps,
-                                     int max_bitrate_bps) = 0;
+  virtual void OnNetworkRouteChanged(
+      const std::string& transport_name,
+      const rtc::NetworkRoute& network_route) = 0;
   virtual void OnNetworkAvailability(bool network_available) = 0;
   virtual void SetTransportOverhead(
       size_t transport_overhead_bytes_per_packet) = 0;
@@ -105,6 +106,11 @@ class RtpTransportControllerSendInterface {
   virtual RateLimiter* GetRetransmissionRateLimiter() = 0;
   virtual void EnablePeriodicAlrProbing(bool enable) = 0;
   virtual void OnSentPacket(const rtc::SentPacket& sent_packet) = 0;
+
+  virtual void SetSdpBitrateParameters(
+      const BitrateConstraints& constraints) = 0;
+  virtual void SetClientBitratePreferences(
+      const BitrateConstraintsMask& preferences) = 0;
 };
 
 }  // namespace webrtc
