@@ -143,7 +143,7 @@ class VideoReceiver : public Module {
                 VCMTiming* timing,
                 NackSender* nack_sender = nullptr,
                 KeyFrameRequestSender* keyframe_request_sender = nullptr);
-  ~VideoReceiver();
+  ~VideoReceiver() override;
 
   int32_t RegisterReceiveCodec(const VideoCodec* receiveCodec,
                                int32_t numberOfCores,
@@ -160,9 +160,6 @@ class VideoReceiver : public Module {
   int32_t Decode(uint16_t maxWaitTimeMs);
 
   int32_t Decode(const webrtc::VCMEncodedFrame* frame);
-
-  // Called on the decoder thread when thread is exiting.
-  void DecodingStopped();
 
   int32_t IncomingPacket(const uint8_t* incomingPayload,
                          size_t payloadLength,
@@ -188,41 +185,72 @@ class VideoReceiver : public Module {
 
   int64_t TimeUntilNextProcess() override;
   void Process() override;
+  void ProcessThreadAttached(ProcessThread* process_thread) override;
 
   void TriggerDecoderShutdown();
 
+  // Notification methods that are used to check our internal state and validate
+  // threading assumptions. These are called by VideoReceiveStream.
+  // See |IsDecoderThreadRunning()| for more details.
+  void DecoderThreadStarting();
+  void DecoderThreadStopped();
+
  protected:
-  int32_t Decode(const webrtc::VCMEncodedFrame& frame)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(receive_crit_);
+  int32_t Decode(const webrtc::VCMEncodedFrame& frame);
   int32_t RequestKeyFrame();
 
  private:
-  rtc::ThreadChecker construction_thread_;
+  // Used for DCHECKing thread correctness.
+  // In build where DCHECKs are enabled, will return false before
+  // DecoderThreadStarting is called, then true until DecoderThreadStopped
+  // is called.
+  // In builds where DCHECKs aren't enabled, it will return true.
+  bool IsDecoderThreadRunning();
+
+  rtc::ThreadChecker construction_thread_checker_;
+  rtc::ThreadChecker decoder_thread_checker_;
+  rtc::ThreadChecker module_thread_checker_;
   Clock* const clock_;
   rtc::CriticalSection process_crit_;
-  rtc::CriticalSection receive_crit_;
   VCMTiming* _timing;
   VCMReceiver _receiver;
   VCMDecodedFrameCallback _decodedFrameCallback;
-  VCMFrameTypeCallback* _frameTypeCallback RTC_GUARDED_BY(process_crit_);
-  VCMReceiveStatisticsCallback* _receiveStatsCallback
-      RTC_GUARDED_BY(process_crit_);
-  VCMPacketRequestCallback* _packetRequestCallback
-      RTC_GUARDED_BY(process_crit_);
 
-  VCMFrameBuffer _frameFromFile;
+  // These callbacks are set on the construction thread before being attached
+  // to the module thread or decoding started, so a lock is not required.
+  VCMFrameTypeCallback* _frameTypeCallback;
+  VCMReceiveStatisticsCallback* _receiveStatsCallback;
+  VCMPacketRequestCallback* _packetRequestCallback;
+
+  // Used on both the module and decoder thread.
   bool _scheduleKeyRequest RTC_GUARDED_BY(process_crit_);
   bool drop_frames_until_keyframe_ RTC_GUARDED_BY(process_crit_);
-  size_t max_nack_list_size_ RTC_GUARDED_BY(process_crit_);
 
-  VCMDecoderDataBase _codecDataBase RTC_GUARDED_BY(receive_crit_);
-  EncodedImageCallback* pre_decode_image_callback_;
+  // Modified on the construction thread while not attached to the process
+  // thread.  Once attached to the process thread, its value is only read
+  // so a lock is not required.
+  size_t max_nack_list_size_;
 
-  VCMProcessTimer _receiveStatsTimer;
-  VCMProcessTimer _retransmissionTimer;
-  VCMProcessTimer _keyRequestTimer;
-  QpParser qp_parser_;
-  ThreadUnsafeOneTimeEvent first_frame_received_;
+  // Callbacks are set before the decoder thread starts.
+  // Once the decoder thread has been started, usage of |_codecDataBase| moves
+  // over to the decoder thread.
+  VCMDecoderDataBase _codecDataBase;
+  EncodedImageCallback* const pre_decode_image_callback_;
+
+  VCMProcessTimer _receiveStatsTimer RTC_GUARDED_BY(module_thread_checker_);
+  VCMProcessTimer _retransmissionTimer RTC_GUARDED_BY(module_thread_checker_);
+  VCMProcessTimer _keyRequestTimer RTC_GUARDED_BY(module_thread_checker_);
+  QpParser qp_parser_ RTC_GUARDED_BY(decoder_thread_checker_);
+  ThreadUnsafeOneTimeEvent first_frame_received_
+      RTC_GUARDED_BY(decoder_thread_checker_);
+  // Modified on the construction thread. Can be read without a lock and assumed
+  // to be non-null on the module and decoder threads.
+  ProcessThread* process_thread_ = nullptr;
+  bool is_attached_to_process_thread_
+      RTC_GUARDED_BY(construction_thread_checker_) = false;
+#if RTC_DCHECK_IS_ON
+  bool decoder_thread_is_running_ = false;
+#endif
 };
 
 }  // namespace vcm
