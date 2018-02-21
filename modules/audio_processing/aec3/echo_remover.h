@@ -16,6 +16,7 @@
 #include "api/audio/echo_canceller3_config.h"
 #include "api/audio/echo_control.h"
 #include "api/optional.h"
+#include "modules/audio_processing/aec3/delay_estimate.h"
 #include "modules/audio_processing/aec3/echo_path_variability.h"
 #include "modules/audio_processing/aec3/render_buffer.h"
 
@@ -37,6 +38,7 @@ class EchoRemover {
   virtual void ProcessCapture(
       const EchoPathVariability& echo_path_variability,
       bool capture_signal_saturation,
+      const rtc::Optional<DelayEstimate>& delay_estimate,
       RenderBuffer* render_buffer,
       std::vector<std::vector<float>>* capture) = 0;
 

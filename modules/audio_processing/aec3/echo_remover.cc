@@ -60,6 +60,7 @@ class EchoRemoverImpl final : public EchoRemover {
   // signal.
   void ProcessCapture(const EchoPathVariability& echo_path_variability,
                       bool capture_signal_saturation,
+                      const rtc::Optional<DelayEstimate>& delay_estimate,
                       RenderBuffer* render_buffer,
                       std::vector<std::vector<float>>* capture) override;
 
@@ -122,6 +123,7 @@ void EchoRemoverImpl::GetMetrics(EchoControl::Metrics* metrics) const {
 void EchoRemoverImpl::ProcessCapture(
     const EchoPathVariability& echo_path_variability,
     bool capture_signal_saturation,
+    const rtc::Optional<DelayEstimate>& delay_estimate,
     RenderBuffer* render_buffer,
     std::vector<std::vector<float>>* capture) {
   const std::vector<std::vector<float>>& x = render_buffer->Block(0);
@@ -182,7 +184,7 @@ void EchoRemoverImpl::ProcessCapture(
   Y.Spectrum(optimization_, Y2);
 
   // Update the AEC state information.
-  aec_state_.Update(subtractor_.FilterFrequencyResponse(),
+  aec_state_.Update(delay_estimate, subtractor_.FilterFrequencyResponse(),
                     subtractor_.FilterImpulseResponse(),
                     subtractor_.ConvergedFilter(), *render_buffer, E2_main, Y2,
                     subtractor_output.s_main, echo_leakage_detected_);

@@ -321,6 +321,7 @@ TEST(AdaptiveFirFilter, FilterAndAdapt) {
   std::vector<float> y(kBlockSize, 0.f);
   AecState aec_state(EchoCanceller3Config{});
   RenderSignalAnalyzer render_signal_analyzer;
+  rtc::Optional<DelayEstimate> delay_estimate;
   std::vector<float> e(kBlockSize, 0.f);
   std::array<float, kFftLength> s_scratch;
   std::array<float, kBlockSize> s;
@@ -387,7 +388,7 @@ TEST(AdaptiveFirFilter, FilterAndAdapt) {
       filter.Adapt(*render_buffer, G);
       aec_state.HandleEchoPathChange(EchoPathVariability(
           false, EchoPathVariability::DelayAdjustment::kNone, false));
-      aec_state.Update(filter.FilterFrequencyResponse(),
+      aec_state.Update(delay_estimate, filter.FilterFrequencyResponse(),
                        filter.FilterImpulseResponse(), true, *render_buffer,
                        E2_main, Y2, s, false);
     }

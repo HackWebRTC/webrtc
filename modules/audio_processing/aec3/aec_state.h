@@ -19,6 +19,7 @@
 #include "api/audio/echo_canceller3_config.h"
 #include "api/optional.h"
 #include "modules/audio_processing/aec3/aec3_common.h"
+#include "modules/audio_processing/aec3/delay_estimate.h"
 #include "modules/audio_processing/aec3/echo_path_variability.h"
 #include "modules/audio_processing/aec3/erl_estimator.h"
 #include "modules/audio_processing/aec3/erle_estimator.h"
@@ -107,7 +108,8 @@ class AecState {
   bool InitialState() const { return initial_state_; }
 
   // Updates the aec state.
-  void Update(const std::vector<std::array<float, kFftLengthBy2Plus1>>&
+  void Update(const rtc::Optional<DelayEstimate>& delay_estimate,
+              const std::vector<std::array<float, kFftLengthBy2Plus1>>&
                   adaptive_filter_frequency_response,
               const std::vector<float>& adaptive_filter_impulse_response,
               bool converged_filter,

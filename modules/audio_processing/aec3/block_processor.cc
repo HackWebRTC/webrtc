@@ -188,7 +188,7 @@ void BlockProcessorImpl::ProcessCapture(
 
   // Remove the echo from the capture signal.
   echo_remover_->ProcessCapture(
-      echo_path_variability, capture_signal_saturation,
+      echo_path_variability, capture_signal_saturation, estimated_delay_,
       render_buffer_->GetRenderBuffer(), capture_block);
 
   // Update the metrics.

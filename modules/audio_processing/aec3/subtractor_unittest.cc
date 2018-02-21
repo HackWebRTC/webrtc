@@ -33,6 +33,7 @@ float RunSubtractorTest(int num_blocks_to_process,
   config.filter.main.length_blocks = config.filter.shadow.length_blocks =
       filter_length_blocks;
   Subtractor subtractor(config, &data_dumper, DetectOptimization());
+  rtc::Optional<DelayEstimate> delay_estimate;
   std::vector<std::vector<float>> x(3, std::vector<float>(kBlockSize, 0.f));
   std::vector<float> y(kBlockSize, 0.f);
   std::array<float, kBlockSize> x_old;
@@ -82,7 +83,7 @@ float RunSubtractorTest(int num_blocks_to_process,
 
     aec_state.HandleEchoPathChange(EchoPathVariability(
         false, EchoPathVariability::DelayAdjustment::kNone, false));
-    aec_state.Update(subtractor.FilterFrequencyResponse(),
+    aec_state.Update(delay_estimate, subtractor.FilterFrequencyResponse(),
                      subtractor.FilterImpulseResponse(),
                      subtractor.ConvergedFilter(),
                      *render_delay_buffer->GetRenderBuffer(), E2_main, Y2,

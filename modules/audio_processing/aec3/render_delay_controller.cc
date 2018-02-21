@@ -130,7 +130,9 @@ DelayEstimate ComputeBufferDelay(
     }
   }
 
-  return DelayEstimate(estimated_delay.quality, new_delay_blocks);
+  DelayEstimate new_delay = estimated_delay;
+  new_delay.delay = new_delay_blocks;
+  return new_delay;
 }
 
 int RenderDelayControllerImpl::instance_count_ = 0;
@@ -194,7 +196,22 @@ rtc::Optional<DelayEstimate> RenderDelayControllerImpl::GetDelay(
     if (!delay_samples_ || delay_samples->delay != delay_samples_->delay) {
       delay_change_counter_ = 0;
     }
-    delay_samples_ = delay_samples;
+    if (delay_samples_) {
+      delay_samples_->blocks_since_last_change =
+          delay_samples_->delay == delay_samples->delay
+              ? delay_samples_->blocks_since_last_change + 1
+              : 0;
+      delay_samples_->blocks_since_last_update = 0;
+      delay_samples_->delay = delay_samples->delay;
+      delay_samples_->quality = delay_samples->quality;
+    } else {
+      delay_samples_ = delay_samples;
+    }
+  } else {
+    if (delay_samples_) {
+      ++delay_samples_->blocks_since_last_change;
+      ++delay_samples_->blocks_since_last_update;
+    }
   }
 
   if (delay_change_counter_ < 2 * kNumBlocksPerSecond) {

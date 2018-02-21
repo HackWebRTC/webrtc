@@ -110,6 +110,7 @@ void AecState::HandleEchoPathChange(
 }
 
 void AecState::Update(
+    const rtc::Optional<DelayEstimate>& delay_estimate,
     const std::vector<std::array<float, kFftLengthBy2Plus1>>&
         adaptive_filter_frequency_response,
     const std::vector<float>& adaptive_filter_impulse_response,
