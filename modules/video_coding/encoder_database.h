@@ -46,13 +46,6 @@ class VCMEncoderDataBase {
 
   bool SetPeriodicKeyFrames(bool enable);
 
-  // Deregisters an external decoder object specified by |payload_type|.
-  bool DeregisterExternalDecoder(uint8_t payload_type);
-
-  // Registers an external decoder object to the payload type |payload_type|.
-  void RegisterExternalDecoder(VideoDecoder* external_decoder,
-                               uint8_t payload_type);
-
   bool MatchesCurrentResolution(int width, int height) const;
 
  private:
