@@ -18,11 +18,9 @@
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/timestamp_map.h"
 #include "modules/video_coding/timing.h"
+#include "rtc_base/criticalsection.h"
 #include "rtc_base/thread_checker.h"
 
-#if defined(WEBRTC_ANDROID)
-#include "modules/video_coding/generic_decoder_android.h"  // NOLINT
-#else
 namespace webrtc {
 
 class VCMReceiveCallback;
@@ -42,7 +40,6 @@ class VCMDecodedFrameCallback : public DecodedImageCallback {
  public:
   VCMDecodedFrameCallback(VCMTiming* timing, Clock* clock);
   ~VCMDecodedFrameCallback() override;
-
   void SetUserReceiveCallback(VCMReceiveCallback* receiveCallback);
   VCMReceiveCallback* UserReceiveCallback();
 
@@ -62,7 +59,7 @@ class VCMDecodedFrameCallback : public DecodedImageCallback {
 
  private:
   rtc::ThreadChecker construction_thread_;
-  rtc::ThreadChecker decoder_thread_;
+  // Protect |_timestampMap|.
   Clock* const _clock;
   // This callback must be set before the decoder thread starts running
   // and must only be unset when external threads (e.g decoder thread)
@@ -70,9 +67,10 @@ class VCMDecodedFrameCallback : public DecodedImageCallback {
   // while there are more than one threads involved, it must be set
   // from the same thread, and therfore a lock is not required to access it.
   VCMReceiveCallback* _receiveCallback = nullptr;
-  VCMTiming* _timing RTC_GUARDED_BY(decoder_thread_);
-  VCMTimestampMap _timestampMap RTC_GUARDED_BY(decoder_thread_);
-  uint64_t _lastReceivedPictureID RTC_GUARDED_BY(decoder_thread_);
+  VCMTiming* _timing;
+  rtc::CriticalSection lock_;
+  VCMTimestampMap _timestampMap RTC_GUARDED_BY(lock_);
+  uint64_t _lastReceivedPictureID;
   int64_t ntp_offset_;
 };
 
@@ -99,24 +97,22 @@ class VCMGenericDecoder {
   */
   int32_t RegisterDecodeCompleteCallback(VCMDecodedFrameCallback* callback);
 
+  bool External() const;
   bool PrefersLateDecoding() const;
   bool IsSameDecoder(VideoDecoder* decoder) const {
     return decoder_.get() == decoder;
   }
 
  private:
-  rtc::ThreadChecker decoder_thread_;
-  VCMDecodedFrameCallback* _callback RTC_GUARDED_BY(decoder_thread_);
-  VCMFrameInformation _frameInfos[kDecoderFrameMemoryLength] RTC_GUARDED_BY(
-      decoder_thread_);
-  uint32_t _nextFrameInfoIdx RTC_GUARDED_BY(decoder_thread_);
+  VCMDecodedFrameCallback* _callback;
+  VCMFrameInformation _frameInfos[kDecoderFrameMemoryLength];
+  uint32_t _nextFrameInfoIdx;
   std::unique_ptr<VideoDecoder> decoder_;
-  VideoCodecType _codecType RTC_GUARDED_BY(decoder_thread_);
+  VideoCodecType _codecType;
   const bool _isExternal;
   VideoContentType _last_keyframe_content_type;
 };
 
 }  // namespace webrtc
 
-#endif  // defined(WEBRTC_ANDROID)
 #endif  // MODULES_VIDEO_CODING_GENERIC_DECODER_H_
