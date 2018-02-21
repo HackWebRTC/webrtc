@@ -120,21 +120,17 @@ void decompressionOutputCallback(void *decoderRef,
     return WEBRTC_VIDEO_CODEC_NO_OUTPUT;
   }
 #endif
-  if (webrtc::H264AnnexBBufferHasVideoFormatDescription((uint8_t *)inputImage.buffer.bytes,
-                                                        inputImage.buffer.length)) {
-    rtc::ScopedCFTypeRef<CMVideoFormatDescriptionRef> inputFormat =
-        rtc::ScopedCF(webrtc::CreateVideoFormatDescription((uint8_t *)inputImage.buffer.bytes,
-                                                           inputImage.buffer.length));
-    if (inputFormat) {
-      // Check if the video format has changed, and reinitialize decoder if
-      // needed.
-      if (!CMFormatDescriptionEqual(inputFormat.get(), _videoFormat)) {
-        [self setVideoFormat:inputFormat.get()];
-
-        int resetDecompressionSessionError = [self resetDecompressionSession];
-        if (resetDecompressionSessionError != WEBRTC_VIDEO_CODEC_OK) {
-          return resetDecompressionSessionError;
-        }
+  rtc::ScopedCFTypeRef<CMVideoFormatDescriptionRef> inputFormat =
+      rtc::ScopedCF(webrtc::CreateVideoFormatDescription((uint8_t *)inputImage.buffer.bytes,
+                                                         inputImage.buffer.length));
+  if (inputFormat) {
+    // Check if the video format has changed, and reinitialize decoder if
+    // needed.
+    if (!CMFormatDescriptionEqual(inputFormat.get(), _videoFormat)) {
+      [self setVideoFormat:inputFormat.get()];
+      int resetDecompressionSessionError = [self resetDecompressionSession];
+      if (resetDecompressionSessionError != WEBRTC_VIDEO_CODEC_OK) {
+        return resetDecompressionSessionError;
       }
     }
   }
