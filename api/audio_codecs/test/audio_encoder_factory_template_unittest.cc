@@ -65,7 +65,6 @@ struct AudioEncoderFakeApi {
     auto enc = rtc::MakeUnique<testing::StrictMock<MockAudioEncoder>>();
     EXPECT_CALL(*enc, SampleRateHz())
         .WillOnce(testing::Return(Params::CodecInfo().sample_rate_hz));
-    EXPECT_CALL(*enc, Die());
     return std::move(enc);
   }
 };

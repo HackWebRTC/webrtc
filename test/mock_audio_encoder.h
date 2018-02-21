@@ -27,7 +27,6 @@ class MockAudioEncoder : public AudioEncoder {
   // http://crbug.com/428099.
   MockAudioEncoder();
   ~MockAudioEncoder();
-  MOCK_METHOD0(Die, void());
   MOCK_METHOD1(Mark, void(std::string desc));
   MOCK_CONST_METHOD0(SampleRateHz, int());
   MOCK_CONST_METHOD0(NumChannels, size_t());

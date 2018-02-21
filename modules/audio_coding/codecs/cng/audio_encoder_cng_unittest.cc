@@ -43,7 +43,6 @@ class AudioEncoderCngTest : public ::testing::Test {
         sample_rate_hz_(8000) {
     memset(audio_, 0, kMaxNumSamples * 2);
     EXPECT_CALL(*mock_encoder_, NumChannels()).WillRepeatedly(Return(1));
-    EXPECT_CALL(*mock_encoder_, Die()).Times(1);
   }
 
   void TearDown() override {

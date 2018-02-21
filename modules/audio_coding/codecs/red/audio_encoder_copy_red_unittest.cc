@@ -49,7 +49,6 @@ class AudioEncoderCopyRedTest : public ::testing::Test {
   }
 
   void TearDown() override {
-    EXPECT_CALL(*mock_encoder_, Die()).Times(1);
     red_.reset();
   }
 

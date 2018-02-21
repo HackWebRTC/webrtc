@@ -137,7 +137,6 @@ TEST(RentACodecTest, ExternalEncoder) {
         .WillOnce(Return(info));
     EXPECT_CALL(marker, Mark("A"));
     EXPECT_CALL(marker, Mark("B"));
-    EXPECT_CALL(*external_encoder, Die());
     EXPECT_CALL(marker, Mark("C"));
   }
 
@@ -180,11 +179,9 @@ void TestCngAndRedResetSpeechEncoder(bool use_cng, bool use_red) {
   {
     ::testing::InSequence s;
     EXPECT_CALL(marker, Mark("disabled"));
-    EXPECT_CALL(*speech_encoder1, Die());
     EXPECT_CALL(marker, Mark("enabled"));
     if (use_cng || use_red)
       EXPECT_CALL(*speech_encoder2, Reset());
-    EXPECT_CALL(*speech_encoder2, Die());
   }
 
   RentACodec::StackParameters param1, param2;

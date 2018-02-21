@@ -1811,7 +1811,6 @@ TEST_F(AcmSenderBitExactnessOldApi, External_Pcmu_20ms) {
   MockAudioEncoder mock_encoder;
   // Set expectations on the mock encoder and also delegate the calls to the
   // real encoder.
-  EXPECT_CALL(mock_encoder, Die());
   EXPECT_CALL(mock_encoder, SampleRateHz())
       .Times(AtLeast(1))
       .WillRepeatedly(Invoke(&encoder, &AudioEncoderPcmU::SampleRateHz));
