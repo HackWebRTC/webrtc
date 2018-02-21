@@ -34,7 +34,8 @@ VCMDecodedFrameCallback::VCMDecodedFrameCallback(VCMTiming* timing,
 }
 
 VCMDecodedFrameCallback::~VCMDecodedFrameCallback() {
-  RTC_DCHECK(construction_thread_.CalledOnValidThread());
+  // TODO(tommi): Re-enable this DCHECK once downstream issues have been fixed.
+  // RTC_DCHECK(construction_thread_.CalledOnValidThread());
 }
 
 void VCMDecodedFrameCallback::SetUserReceiveCallback(
