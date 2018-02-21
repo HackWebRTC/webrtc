@@ -30,7 +30,6 @@ rtc_static_library("video_coding") {
     "frame_buffer2.h",
     "frame_object.cc",
     "frame_object.h",
-    "generic_decoder.cc",
     "generic_decoder.h",
     "generic_encoder.cc",
     "generic_encoder.h",
@@ -81,6 +80,15 @@ rtc_static_library("video_coding") {
     "video_receiver.cc",
     "video_sender.cc",
   ]
+
+  if (is_android) {
+    sources += [
+      "generic_decoder_android.cc",
+      "generic_decoder_android.h",
+    ]
+  } else {
+    sources += [ "generic_decoder.cc" ]
+  }
 
   # TODO(jschuh): Bug 1348: fix this warning.
   configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
