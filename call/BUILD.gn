@@ -97,6 +97,7 @@ rtc_source_set("rtp_sender") {
     "..:webrtc_common",
     "../modules/congestion_controller",
     "../modules/pacing",
+    "../modules/utility",
     "../rtc_base:rtc_base",
     "../rtc_base:rtc_base_approved",
   ]

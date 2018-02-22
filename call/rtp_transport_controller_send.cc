@@ -10,6 +10,7 @@
 #include <utility>
 
 #include "call/rtp_transport_controller_send.h"
+#include "rtc_base/location.h"
 #include "rtc_base/logging.h"
 
 namespace webrtc {
@@ -20,13 +21,23 @@ RtpTransportControllerSend::RtpTransportControllerSend(
     const BitrateConstraints& bitrate_config)
     : pacer_(clock, &packet_router_, event_log),
       send_side_cc_(clock, nullptr /* observer */, event_log, &pacer_),
-      bitrate_configurator_(bitrate_config) {
+      bitrate_configurator_(bitrate_config),
+      process_thread_(ProcessThread::Create("SendControllerThread")) {
   send_side_cc_.SignalNetworkState(kNetworkDown);
   send_side_cc_.SetBweBitrates(bitrate_config.min_bitrate_bps,
                                bitrate_config.start_bitrate_bps,
                                bitrate_config.max_bitrate_bps);
+
+  process_thread_->RegisterModule(&pacer_, RTC_FROM_HERE);
+  process_thread_->RegisterModule(&send_side_cc_, RTC_FROM_HERE);
+  process_thread_->Start();
 }
-RtpTransportControllerSend::~RtpTransportControllerSend() = default;
+
+RtpTransportControllerSend::~RtpTransportControllerSend() {
+  process_thread_->Stop();
+  process_thread_->DeRegisterModule(&send_side_cc_);
+  process_thread_->DeRegisterModule(&pacer_);
+}
 
 PacketRouter* RtpTransportControllerSend::packet_router() {
   return &packet_router_;
@@ -55,17 +66,11 @@ void RtpTransportControllerSend::SetKeepAliveConfig(
     const RtpKeepAliveConfig& config) {
   keepalive_ = config;
 }
-Module* RtpTransportControllerSend::GetPacerModule() {
-  return &pacer_;
-}
 void RtpTransportControllerSend::SetPacingFactor(float pacing_factor) {
   pacer_.SetPacingFactor(pacing_factor);
 }
 void RtpTransportControllerSend::SetQueueTimeLimit(int limit_ms) {
   pacer_.SetQueueTimeLimit(limit_ms);
-}
-Module* RtpTransportControllerSend::GetModule() {
-  return &send_side_cc_;
 }
 CallStatsObserver* RtpTransportControllerSend::GetCallStatsObserver() {
   return &send_side_cc_;

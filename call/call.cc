@@ -258,7 +258,6 @@ class Call : public webrtc::Call,
 
   const int num_cpu_cores_;
   const std::unique_ptr<ProcessThread> module_process_thread_;
-  const std::unique_ptr<ProcessThread> pacer_thread_;
   const std::unique_ptr<CallStats> call_stats_;
   const std::unique_ptr<BitrateAllocator> bitrate_allocator_;
   Call::Config config_;
@@ -405,7 +404,6 @@ Call::Call(const Call::Config& config,
     : clock_(Clock::GetRealTimeClock()),
       num_cpu_cores_(CpuInfo::DetectNumberOfCores()),
       module_process_thread_(ProcessThread::Create("ModuleProcessThread")),
-      pacer_thread_(ProcessThread::Create("PacerThread")),
       call_stats_(new CallStats(clock_)),
       bitrate_allocator_(new BitrateAllocator(this)),
       config_(config),
@@ -433,19 +431,10 @@ Call::Call(const Call::Config& config,
   call_stats_->RegisterStatsObserver(&receive_side_cc_);
   call_stats_->RegisterStatsObserver(transport_send_->GetCallStatsObserver());
 
-  // We have to attach the pacer to the pacer thread before starting the
-  // module process thread to avoid a race accessing the process thread
-  // both from the process thread and the pacer thread.
-  pacer_thread_->RegisterModule(transport_send_->GetPacerModule(),
-                                RTC_FROM_HERE);
-  pacer_thread_->RegisterModule(
+  module_process_thread_->RegisterModule(
       receive_side_cc_.GetRemoteBitrateEstimator(true), RTC_FROM_HERE);
-  pacer_thread_->Start();
-
   module_process_thread_->RegisterModule(call_stats_.get(), RTC_FROM_HERE);
   module_process_thread_->RegisterModule(&receive_side_cc_, RTC_FROM_HERE);
-  module_process_thread_->RegisterModule(transport_send_->GetModule(),
-                                         RTC_FROM_HERE);
   module_process_thread_->Start();
 }
 
@@ -458,14 +447,7 @@ Call::~Call() {
   RTC_CHECK(audio_receive_streams_.empty());
   RTC_CHECK(video_receive_streams_.empty());
 
-  // The send-side congestion controller must be de-registered prior to
-  // the pacer thread being stopped to avoid a race when accessing the
-  // pacer thread object on the module process thread at the same time as
-  // the pacer thread is stopped.
-  module_process_thread_->DeRegisterModule(transport_send_->GetModule());
-  pacer_thread_->Stop();
-  pacer_thread_->DeRegisterModule(transport_send_->GetPacerModule());
-  pacer_thread_->DeRegisterModule(
+  module_process_thread_->DeRegisterModule(
       receive_side_cc_.GetRemoteBitrateEstimator(true));
   module_process_thread_->DeRegisterModule(&receive_side_cc_);
   module_process_thread_->DeRegisterModule(call_stats_.get());

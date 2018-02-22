@@ -80,11 +80,9 @@ class RtpTransportControllerSendInterface {
   virtual void SetAllocatedSendBitrateLimits(int min_send_bitrate_bps,
                                              int max_padding_bitrate_bps) = 0;
 
-  virtual Module* GetPacerModule() = 0;
   virtual void SetPacingFactor(float pacing_factor) = 0;
   virtual void SetQueueTimeLimit(int limit_ms) = 0;
 
-  virtual Module* GetModule() = 0;
   virtual CallStatsObserver* GetCallStatsObserver() = 0;
 
   virtual void RegisterPacketFeedbackObserver(

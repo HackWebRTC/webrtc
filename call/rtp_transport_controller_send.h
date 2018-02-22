@@ -12,6 +12,7 @@
 #define CALL_RTP_TRANSPORT_CONTROLLER_SEND_H_
 
 #include <map>
+#include <memory>
 #include <string>
 
 #include "call/rtp_bitrate_configurator.h"
@@ -19,6 +20,7 @@
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/congestion_controller/include/send_side_congestion_controller.h"
 #include "modules/pacing/packet_router.h"
+#include "modules/utility/include/process_thread.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/networkroute.h"
 
@@ -46,10 +48,8 @@ class RtpTransportControllerSend : public RtpTransportControllerSendInterface {
                                      int max_padding_bitrate_bps) override;
 
   void SetKeepAliveConfig(const RtpKeepAliveConfig& config);
-  Module* GetPacerModule() override;
   void SetPacingFactor(float pacing_factor) override;
   void SetQueueTimeLimit(int limit_ms) override;
-  Module* GetModule() override;
   CallStatsObserver* GetCallStatsObserver() override;
   void RegisterPacketFeedbackObserver(
       PacketFeedbackObserver* observer) override;
@@ -81,6 +81,7 @@ class RtpTransportControllerSend : public RtpTransportControllerSendInterface {
   RtpKeepAliveConfig keepalive_;
   RtpBitrateConfigurator bitrate_configurator_;
   std::map<std::string, rtc::NetworkRoute> network_routes_;
+  const std::unique_ptr<ProcessThread> process_thread_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(RtpTransportControllerSend);
 };
