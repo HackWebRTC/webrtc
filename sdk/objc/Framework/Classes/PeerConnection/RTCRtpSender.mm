@@ -44,7 +44,7 @@
   rtc::scoped_refptr<webrtc::MediaStreamTrackInterface> nativeTrack(
     _nativeRtpSender->track());
   if (nativeTrack) {
-    return [[RTCMediaStreamTrack alloc] initWithNativeTrack:nativeTrack];
+    return [RTCMediaStreamTrack mediaTrackForNativeTrack:nativeTrack];
   }
   return nil;
 }

@@ -8,7 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#import "RTCAudioTrack+Private.h"
 #import "RTCMediaStreamTrack+Private.h"
+#import "RTCVideoTrack+Private.h"
 
 #import "NSString+StdString.h"
 
@@ -131,6 +133,20 @@ NSString * const kRTCMediaStreamTrackKindVideo =
       return @"Live";
     case RTCMediaStreamTrackStateEnded:
       return @"Ended";
+  }
+}
+
++ (RTCMediaStreamTrack *)mediaTrackForNativeTrack:
+        (rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)nativeTrack {
+  NSParameterAssert(nativeTrack);
+  if (nativeTrack->kind() == webrtc::MediaStreamTrackInterface::kAudioKind) {
+    return
+        [[RTCAudioTrack alloc] initWithNativeTrack:nativeTrack type:RTCMediaStreamTrackTypeAudio];
+  } else if (nativeTrack->kind() == webrtc::MediaStreamTrackInterface::kVideoKind) {
+    return
+        [[RTCVideoTrack alloc] initWithNativeTrack:nativeTrack type:RTCMediaStreamTrackTypeVideo];
+  } else {
+    return [[RTCMediaStreamTrack alloc] initWithNativeTrack:nativeTrack];
   }
 }
 

@@ -49,6 +49,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (NSString *)stringForState:(RTCMediaStreamTrackState)state;
 
++ (RTCMediaStreamTrack *)mediaTrackForNativeTrack:
+        (rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)nativeTrack;
+
 @end
 
 NS_ASSUME_NONNULL_END
