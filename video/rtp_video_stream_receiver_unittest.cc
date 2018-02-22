@@ -61,14 +61,14 @@ class MockOnCompleteFrameCallback
  public:
   MockOnCompleteFrameCallback() : buffer_(rtc::ByteBuffer::ORDER_NETWORK) {}
 
-  MOCK_METHOD1(DoOnCompleteFrame, void(video_coding::FrameObject* frame));
+  MOCK_METHOD1(DoOnCompleteFrame, void(video_coding::EncodedFrame* frame));
   MOCK_METHOD1(DoOnCompleteFrameFailNullptr,
-               void(video_coding::FrameObject* frame));
+               void(video_coding::EncodedFrame* frame));
   MOCK_METHOD1(DoOnCompleteFrameFailLength,
-               void(video_coding::FrameObject* frame));
+               void(video_coding::EncodedFrame* frame));
   MOCK_METHOD1(DoOnCompleteFrameFailBitstream,
-               void(video_coding::FrameObject* frame));
-  void OnCompleteFrame(std::unique_ptr<video_coding::FrameObject> frame) {
+               void(video_coding::EncodedFrame* frame));
+  void OnCompleteFrame(std::unique_ptr<video_coding::EncodedFrame> frame) {
     if (!frame) {
       DoOnCompleteFrameFailNullptr(nullptr);
       return;

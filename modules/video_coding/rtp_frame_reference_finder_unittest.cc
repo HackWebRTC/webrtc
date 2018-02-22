@@ -64,7 +64,7 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
 
   uint16_t Rand() { return rand_.Rand<uint16_t>(); }
 
-  void OnCompleteFrame(std::unique_ptr<FrameObject> frame) override {
+  void OnCompleteFrame(std::unique_ptr<EncodedFrame> frame) override {
     int64_t pid = frame->picture_id;
     uint16_t sidx = frame->spatial_layer;
     auto frame_it = frames_from_callback_.find(std::make_pair(pid, sidx));
@@ -260,8 +260,9 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
       return f1.first < f2.first;
     }
   };
-  std::map<std::pair<int64_t, uint8_t>, std::unique_ptr<FrameObject>, FrameComp>
-      frames_from_callback_;
+  std::
+      map<std::pair<int64_t, uint8_t>, std::unique_ptr<EncodedFrame>, FrameComp>
+          frames_from_callback_;
 };
 
 TEST_F(TestRtpFrameReferenceFinder, PaddingPackets) {

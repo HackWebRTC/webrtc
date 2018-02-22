@@ -30,7 +30,6 @@ class Clock;
 
 namespace video_coding {
 
-class FrameObject;
 class RtpFrameObject;
 
 // A received frame is a frame which has received all its packets.

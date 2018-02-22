@@ -21,7 +21,7 @@ namespace video_coding {
 
 class PacketBuffer;
 
-class RtpFrameObject : public FrameObject {
+class RtpFrameObject : public EncodedFrame {
  public:
   RtpFrameObject(PacketBuffer* packet_buffer,
                  uint16_t first_seq_num,

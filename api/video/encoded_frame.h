@@ -16,14 +16,13 @@
 namespace webrtc {
 namespace video_coding {
 
-// TODO(philipel): Rename FrameObject to EncodedFrame.
 // TODO(philipel): Remove webrtc::VCMEncodedFrame inheritance.
-class FrameObject : public webrtc::VCMEncodedFrame {
+class EncodedFrame : public webrtc::VCMEncodedFrame {
  public:
   static const uint8_t kMaxFrameReferences = 5;
 
-  FrameObject() = default;
-  virtual ~FrameObject() {}
+  EncodedFrame() = default;
+  virtual ~EncodedFrame() {}
 
   virtual bool GetBitstream(uint8_t* destination) const = 0;
 
@@ -58,6 +57,9 @@ class FrameObject : public webrtc::VCMEncodedFrame {
   int64_t references[kMaxFrameReferences];
   bool inter_layer_predicted = false;
 };
+
+// TODO(philipel): Remove this when downstream projects have been updated.
+using FrameObject = EncodedFrame;
 
 }  // namespace video_coding
 }  // namespace webrtc

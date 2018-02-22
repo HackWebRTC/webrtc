@@ -86,7 +86,7 @@ class VCMJitterEstimatorMock : public VCMJitterEstimator {
   MOCK_METHOD1(GetJitterEstimate, int(double rttMultiplier));
 };
 
-class FrameObjectFake : public FrameObject {
+class FrameObjectFake : public EncodedFrame {
  public:
   bool GetBitstream(uint8_t* destination) const override { return true; }
 
@@ -155,7 +155,7 @@ class TestFrameBuffer2 : public ::testing::Test {
                   bool inter_layer_predicted,
                   T... refs) {
     static_assert(sizeof...(refs) <= kMaxReferences,
-                  "To many references specified for FrameObject.");
+                  "To many references specified for EncodedFrame.");
     std::array<uint16_t, sizeof...(refs)> references = {
         {rtc::checked_cast<uint16_t>(refs)...}};
 
@@ -174,7 +174,7 @@ class TestFrameBuffer2 : public ::testing::Test {
   void ExtractFrame(int64_t max_wait_time = 0, bool keyframe_required = false) {
     crit_.Enter();
     if (max_wait_time == 0) {
-      std::unique_ptr<FrameObject> frame;
+      std::unique_ptr<EncodedFrame> frame;
       FrameBuffer::ReturnReason res =
           buffer_.NextFrame(0, &frame, keyframe_required);
       if (res != FrameBuffer::ReturnReason::kStopped)
@@ -213,7 +213,7 @@ class TestFrameBuffer2 : public ::testing::Test {
         if (tfb->tear_down_)
           return;
 
-        std::unique_ptr<FrameObject> frame;
+        std::unique_ptr<EncodedFrame> frame;
         FrameBuffer::ReturnReason res =
             tfb->buffer_.NextFrame(tfb->max_wait_time_, &frame);
         if (res != FrameBuffer::ReturnReason::kStopped)
@@ -228,7 +228,7 @@ class TestFrameBuffer2 : public ::testing::Test {
   VCMTimingFake timing_;
   ::testing::NiceMock<VCMJitterEstimatorMock> jitter_estimator_;
   FrameBuffer buffer_;
-  std::vector<std::unique_ptr<FrameObject>> frames_;
+  std::vector<std::unique_ptr<EncodedFrame>> frames_;
   Random rand_;
   ::testing::NiceMock<VCMReceiveStatisticsCallbackMock> stats_callback_;
 

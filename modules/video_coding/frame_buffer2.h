@@ -16,7 +16,7 @@
 #include <memory>
 #include <utility>
 
-#include "modules/video_coding/frame_object.h"
+#include "api/video/encoded_frame.h"
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "modules/video_coding/inter_frame_delay.h"
 #include "rtc_base/constructormagic.h"
@@ -47,7 +47,7 @@ class FrameBuffer {
 
   // Insert a frame into the frame buffer. Returns the picture id
   // of the last continuous frame or -1 if there is no continuous frame.
-  int64_t InsertFrame(std::unique_ptr<FrameObject> frame);
+  int64_t InsertFrame(std::unique_ptr<EncodedFrame> frame);
 
   // Get the next frame for decoding. Will return at latest after
   // |max_wait_time_ms|.
@@ -57,7 +57,7 @@ class FrameBuffer {
   //    kTimeout.
   //  - If the FrameBuffer is stopped then it will return kStopped.
   ReturnReason NextFrame(int64_t max_wait_time_ms,
-                         std::unique_ptr<FrameObject>* frame_out,
+                         std::unique_ptr<EncodedFrame>* frame_out,
                          bool keyframe_required = false);
 
   // Tells the FrameBuffer which protection mode that is in use. Affects
@@ -120,18 +120,18 @@ class FrameBuffer {
     // If this frame is continuous or not.
     bool continuous = false;
 
-    // The actual FrameObject.
-    std::unique_ptr<FrameObject> frame;
+    // The actual EncodedFrame.
+    std::unique_ptr<EncodedFrame> frame;
   };
 
   using FrameMap = std::map<FrameKey, FrameInfo>;
 
   // Check that the references of |frame| are valid.
-  bool ValidReferences(const FrameObject& frame) const;
+  bool ValidReferences(const EncodedFrame& frame) const;
 
   // Updates the minimal and maximal playout delays
   // depending on the frame.
-  void UpdatePlayoutDelays(const FrameObject& frame)
+  void UpdatePlayoutDelays(const EncodedFrame& frame)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Update all directly dependent and indirectly dependent frames and mark
@@ -151,7 +151,7 @@ class FrameBuffer {
   // Update the corresponding FrameInfo of |frame| and all FrameInfos that
   // |frame| references.
   // Return false if |frame| will never be decodable, true otherwise.
-  bool UpdateFrameInfoWithIncomingFrame(const FrameObject& frame,
+  bool UpdateFrameInfoWithIncomingFrame(const EncodedFrame& frame,
                                         FrameMap::iterator info)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
@@ -161,7 +161,7 @@ class FrameBuffer {
 
   void ClearFramesAndHistory() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
-  bool HasBadRenderTiming(const FrameObject& frame, int64_t now_ms)
+  bool HasBadRenderTiming(const EncodedFrame& frame, int64_t now_ms)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   FrameMap frames_ RTC_GUARDED_BY(crit_);

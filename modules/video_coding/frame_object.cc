@@ -32,11 +32,11 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
   VCMPacket* first_packet = packet_buffer_->GetPacket(first_seq_num);
   RTC_CHECK(first_packet);
 
-  // RtpFrameObject members
+  // EncodedFrame members
   frame_type_ = first_packet->frameType;
   codec_type_ = first_packet->codec;
 
-  // TODO(philipel): Remove when encoded image is replaced by FrameObject.
+  // TODO(philipel): Remove when encoded image is replaced by EncodedFrame.
   // VCMEncodedFrame members
   CopyCodecSpecific(&first_packet->video_header);
   _completeFrame = true;
@@ -68,7 +68,7 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
   _encodedWidth = first_packet->width;
   _encodedHeight = first_packet->height;
 
-  // FrameObject members
+  // EncodedFrame members
   timestamp = first_packet->timestamp;
 
   VCMPacket* last_packet = packet_buffer_->GetPacket(last_seq_num);

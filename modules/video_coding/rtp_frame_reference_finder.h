@@ -26,7 +26,7 @@
 namespace webrtc {
 namespace video_coding {
 
-class FrameObject;
+class EncodedFrame;
 class RtpFrameObject;
 
 // A complete frame is a frame which has received all its packets and all its
@@ -34,7 +34,7 @@ class RtpFrameObject;
 class OnCompleteFrameCallback {
  public:
   virtual ~OnCompleteFrameCallback() {}
-  virtual void OnCompleteFrame(std::unique_ptr<FrameObject> frame) = 0;
+  virtual void OnCompleteFrame(std::unique_ptr<EncodedFrame> frame) = 0;
 };
 
 class RtpFrameReferenceFinder {
