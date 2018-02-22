@@ -212,7 +212,6 @@ class VideoStreamEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   const std::unique_ptr<VideoSourceProxy> source_proxy_;
   EncoderSink* sink_;
   const VideoSendStream::Config::EncoderSettings settings_;
-  const VideoCodecType codec_type_;
 
   vcm::VideoSender video_sender_ RTC_GUARDED_BY(&encoder_queue_);
   const std::unique_ptr<OveruseFrameDetector> overuse_detector_

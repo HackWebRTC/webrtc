@@ -42,6 +42,11 @@ namespace {
 const char kVp8PostProcArmFieldTrial[] = "WebRTC-VP8-Postproc-Config-Arm";
 const char kVp8GfBoostFieldTrial[] = "WebRTC-VP8-GfBoost";
 
+// QP is obtained from VP8-bitstream for HW, so the QP corresponds to the
+// bitstream range of [0, 127] and not the user-level range of [0,63].
+static const int kLowVp8QpThreshold = 29;
+static const int kHighVp8QpThreshold = 95;
+
 const int kTokenPartitions = VP8_ONE_TOKENPARTITION;
 enum { kVp8ErrorPropagationTh = 30 };
 enum { kVp832ByteAlign = 32 };
@@ -1010,7 +1015,9 @@ VideoEncoder::ScalingSettings VP8EncoderImpl::GetScalingSettings() const {
   const bool enable_scaling = encoders_.size() == 1 &&
                               configurations_[0].rc_dropframe_thresh > 0 &&
                               codec_.VP8().automaticResizeOn;
-  return VideoEncoder::ScalingSettings(enable_scaling);
+  return enable_scaling ? VideoEncoder::ScalingSettings(kLowVp8QpThreshold,
+                                                        kHighVp8QpThreshold)
+                        : VideoEncoder::ScalingSettings::kOff;
 }
 
 int VP8EncoderImpl::SetChannelParameters(uint32_t packetLoss, int64_t rtt) {

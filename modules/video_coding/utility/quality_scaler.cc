@@ -28,46 +28,13 @@
 namespace webrtc {
 
 namespace {
+// TODO(nisse): Delete, delegate to encoders.
 // Threshold constant used until first downscale (to permit fast rampup).
 static const int kMeasureMs = 2000;
 static const float kSamplePeriodScaleFactor = 2.5;
 static const int kFramedropPercentThreshold = 60;
-// QP scaling threshold defaults:
-static const int kLowH264QpThreshold = 24;
-static const int kHighH264QpThreshold = 37;
-// QP is obtained from VP8-bitstream for HW, so the QP corresponds to the
-// bitstream range of [0, 127] and not the user-level range of [0,63].
-static const int kLowVp8QpThreshold = 29;
-static const int kHighVp8QpThreshold = 95;
-// QP is obtained from VP9-bitstream for HW, so the QP corresponds to the
-// bitstream range of [0, 255] and not the user-level range of [0,63].
-// Current VP9 settings are mapped from VP8 thresholds above.
-static const int kLowVp9QpThreshold = 96;
-static const int kHighVp9QpThreshold = 185;
 static const int kMinFramesNeededToScale = 2 * 30;
 
-static VideoEncoder::QpThresholds CodecTypeToDefaultThresholds(
-    VideoCodecType codec_type) {
-  int low = -1;
-  int high = -1;
-  switch (codec_type) {
-    case kVideoCodecH264:
-      low = kLowH264QpThreshold;
-      high = kHighH264QpThreshold;
-      break;
-    case kVideoCodecVP8:
-      low = kLowVp8QpThreshold;
-      high = kHighVp8QpThreshold;
-      break;
-    case kVideoCodecVP9:
-      low = kLowVp9QpThreshold;
-      high = kHighVp9QpThreshold;
-      break;
-    default:
-      RTC_NOTREACHED() << "Invalid codec type for QualityScaler.";
-  }
-  return VideoEncoder::QpThresholds(low, high);
-}
 }  // namespace
 
 class QualityScaler::CheckQPTask : public rtc::QueuedTask {
@@ -98,10 +65,6 @@ class QualityScaler::CheckQPTask : public rtc::QueuedTask {
   bool stop_ = false;
   rtc::SequencedTaskChecker task_checker_;
 };
-
-QualityScaler::QualityScaler(AdaptationObserverInterface* observer,
-                             VideoCodecType codec_type)
-    : QualityScaler(observer, CodecTypeToDefaultThresholds(codec_type)) {}
 
 QualityScaler::QualityScaler(AdaptationObserverInterface* observer,
                              VideoEncoder::QpThresholds thresholds)

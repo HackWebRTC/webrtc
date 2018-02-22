@@ -535,7 +535,7 @@ VideoEncoder::ScalingSettings SimulcastEncoderAdapter::GetScalingSettings()
   // RTC_DCHECK_CALLED_SEQUENTIALLY(&encoder_queue_);
   // Turn off quality scaling for simulcast.
   if (!Initialized() || NumberOfStreams(codec_) != 1) {
-    return VideoEncoder::ScalingSettings(false);
+    return VideoEncoder::ScalingSettings::kOff;
   }
   return streaminfos_[0].encoder->GetScalingSettings();
 }

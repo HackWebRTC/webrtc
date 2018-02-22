@@ -220,19 +220,14 @@ bool VideoEncoderSoftwareFallbackWrapper::SupportsNativeHandle() const {
 VideoEncoder::ScalingSettings
 VideoEncoderSoftwareFallbackWrapper::GetScalingSettings() const {
   if (forced_fallback_possible_) {
-    if (forced_fallback_.active_) {
-      return VideoEncoder::ScalingSettings(
-          codec_settings_.VP8().automaticResizeOn,
-          forced_fallback_.min_pixels_);
-    }
-    const auto settings = encoder_->GetScalingSettings();
-    if (settings.thresholds) {
-      return VideoEncoder::ScalingSettings(
-          settings.enabled, settings.thresholds->low, settings.thresholds->high,
-          forced_fallback_.min_pixels_);
-    }
-    return VideoEncoder::ScalingSettings(settings.enabled,
-                                         forced_fallback_.min_pixels_);
+    const auto settings = forced_fallback_.active_
+                              ? fallback_encoder_->GetScalingSettings()
+                              : encoder_->GetScalingSettings();
+    return settings.thresholds
+               ? VideoEncoder::ScalingSettings(settings.thresholds->low,
+                                               settings.thresholds->high,
+                                               forced_fallback_.min_pixels_)
+               : VideoEncoder::ScalingSettings::kOff;
   }
   return encoder_->GetScalingSettings();
 }

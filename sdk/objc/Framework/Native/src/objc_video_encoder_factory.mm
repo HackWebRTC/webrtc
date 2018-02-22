@@ -107,9 +107,8 @@ class ObjCVideoEncoder : public VideoEncoder {
 
   VideoEncoder::ScalingSettings GetScalingSettings() const {
     RTCVideoEncoderQpThresholds *qp_thresholds = [encoder_ scalingSettings];
-    return qp_thresholds ?
-        ScalingSettings(true /* enabled */, qp_thresholds.low, qp_thresholds.high) :
-        ScalingSettings(false /* enabled */);
+    return qp_thresholds ? ScalingSettings(qp_thresholds.low, qp_thresholds.high) :
+                           ScalingSettings::kOff;
   }
 
   const char *ImplementationName() const { return implementation_name_.c_str(); }

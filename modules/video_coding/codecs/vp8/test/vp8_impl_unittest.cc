@@ -487,7 +487,7 @@ TEST_F(TestVp8Impl, ScalingDisabledIfAutomaticResizeOff) {
             encoder_->InitEncode(&codec_settings_, kNumCores, kMaxPayloadSize));
 
   VideoEncoder::ScalingSettings settings = encoder_->GetScalingSettings();
-  EXPECT_FALSE(settings.enabled);
+  EXPECT_FALSE(settings.thresholds.has_value());
 }
 
 TEST_F(TestVp8Impl, ScalingEnabledIfAutomaticResizeOn) {
@@ -497,7 +497,7 @@ TEST_F(TestVp8Impl, ScalingEnabledIfAutomaticResizeOn) {
             encoder_->InitEncode(&codec_settings_, kNumCores, kMaxPayloadSize));
 
   VideoEncoder::ScalingSettings settings = encoder_->GetScalingSettings();
-  EXPECT_TRUE(settings.enabled);
+  EXPECT_TRUE(settings.thresholds.has_value());
   EXPECT_EQ(kDefaultMinPixelsPerFrame, settings.min_pixels_per_frame);
 }
 

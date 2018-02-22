@@ -31,6 +31,10 @@ namespace {
 
 const bool kOpenH264EncoderDetailedLogging = false;
 
+// QP scaling thresholds.
+static const int kLowH264QpThreshold = 24;
+static const int kHighH264QpThreshold = 37;
+
 // Used by histograms. Values of entries should not be changed.
 enum H264EncoderImplEvent {
   kH264EncoderEventInit = 0,
@@ -503,7 +507,8 @@ int32_t H264EncoderImpl::SetPeriodicKeyFrames(bool enable) {
 }
 
 VideoEncoder::ScalingSettings H264EncoderImpl::GetScalingSettings() const {
-  return VideoEncoder::ScalingSettings(true);
+  return VideoEncoder::ScalingSettings(kLowH264QpThreshold,
+                                       kHighH264QpThreshold);
 }
 
 }  // namespace webrtc

@@ -165,6 +165,9 @@ VideoEncoderWrapper::ScalingSettings VideoEncoderWrapper::GetScalingSettings()
   bool isOn =
       Java_VideoEncoderWrapper_getScalingSettingsOn(jni, j_scaling_settings);
 
+  if (!isOn)
+    return ScalingSettings::kOff;
+
   rtc::Optional<int> low = JavaToNativeOptionalInt(
       jni,
       Java_VideoEncoderWrapper_getScalingSettingsLow(jni, j_scaling_settings));
@@ -172,8 +175,36 @@ VideoEncoderWrapper::ScalingSettings VideoEncoderWrapper::GetScalingSettings()
       jni,
       Java_VideoEncoderWrapper_getScalingSettingsHigh(jni, j_scaling_settings));
 
-  return (low && high) ? ScalingSettings(isOn, *low, *high)
-                       : ScalingSettings(isOn);
+  if (low && high)
+    return ScalingSettings(*low, *high);
+
+  switch (codec_settings_.codecType) {
+    case kVideoCodecVP8: {
+      // Same as in vp8_impl.cc.
+      static const int kLowVp8QpThreshold = 29;
+      static const int kHighVp8QpThreshold = 95;
+      return ScalingSettings(low.value_or(kLowVp8QpThreshold),
+                             high.value_or(kHighVp8QpThreshold));
+    }
+    case kVideoCodecVP9: {
+      // QP is obtained from VP9-bitstream, so the QP corresponds to the
+      // bitstream range of [0, 255] and not the user-level range of [0,63].
+      static const int kLowVp9QpThreshold = 96;
+      static const int kHighVp9QpThreshold = 185;
+
+      return VideoEncoder::ScalingSettings(kLowVp9QpThreshold,
+                                           kHighVp9QpThreshold);
+    }
+    case kVideoCodecH264: {
+      // Same as in h264_encoder_impl.cc.
+      static const int kLowH264QpThreshold = 24;
+      static const int kHighH264QpThreshold = 37;
+      return ScalingSettings(low.value_or(kLowH264QpThreshold),
+                             high.value_or(kHighH264QpThreshold));
+    }
+    default:
+      return ScalingSettings::kOff;
+  }
 }
 
 const char* VideoEncoderWrapper::ImplementationName() const {

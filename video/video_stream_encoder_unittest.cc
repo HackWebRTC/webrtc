@@ -502,8 +502,8 @@ class VideoStreamEncoderTest : public ::testing::Test {
     VideoEncoder::ScalingSettings GetScalingSettings() const override {
       rtc::CritScope lock(&local_crit_sect_);
       if (quality_scaling_)
-        return VideoEncoder::ScalingSettings(true, 1, 2, kMinPixelsPerFrame);
-      return VideoEncoder::ScalingSettings(false);
+        return VideoEncoder::ScalingSettings(1, 2, kMinPixelsPerFrame);
+      return VideoEncoder::ScalingSettings::kOff;
     }
 
     void ContinueEncode() { continue_encode_event_.Set(); }

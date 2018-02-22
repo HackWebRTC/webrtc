@@ -100,7 +100,7 @@ class VideoEncoderSoftwareFallbackWrapperTest : public ::testing::Test {
     }
 
     VideoEncoder::ScalingSettings GetScalingSettings() const override {
-      return VideoEncoder::ScalingSettings(true, kLowThreshold, kHighThreshold);
+      return VideoEncoder::ScalingSettings(kLowThreshold, kHighThreshold);
     }
 
     int init_encode_count_ = 0;
@@ -501,7 +501,7 @@ TEST_F(ForcedFallbackTestDisabled, GetScaleSettings) {
 
   // Default min pixels per frame should be used.
   const auto settings = fallback_wrapper_.GetScalingSettings();
-  EXPECT_TRUE(settings.enabled);
+  EXPECT_TRUE(settings.thresholds.has_value());
   EXPECT_EQ(kDefaultMinPixelsPerFrame, settings.min_pixels_per_frame);
 }
 
@@ -512,7 +512,6 @@ TEST_F(ForcedFallbackTestEnabled, GetScaleSettingsWithNoFallback) {
 
   // Configured min pixels per frame should be used.
   const auto settings = fallback_wrapper_.GetScalingSettings();
-  EXPECT_TRUE(settings.enabled);
   EXPECT_EQ(kMinPixelsPerFrame, settings.min_pixels_per_frame);
   ASSERT_TRUE(settings.thresholds);
   EXPECT_EQ(kLowThreshold, settings.thresholds->low);
@@ -526,7 +525,7 @@ TEST_F(ForcedFallbackTestEnabled, GetScaleSettingsWithFallback) {
 
   // Configured min pixels per frame should be used.
   const auto settings = fallback_wrapper_.GetScalingSettings();
-  EXPECT_TRUE(settings.enabled);
+  EXPECT_TRUE(settings.thresholds.has_value());
   EXPECT_EQ(kMinPixelsPerFrame, settings.min_pixels_per_frame);
 }
 
@@ -538,7 +537,7 @@ TEST_F(ForcedFallbackTestEnabled, ScalingDisabledIfResizeOff) {
 
   // Should be disabled for automatic resize off.
   const auto settings = fallback_wrapper_.GetScalingSettings();
-  EXPECT_FALSE(settings.enabled);
+  EXPECT_FALSE(settings.thresholds.has_value());
 }
 
 }  // namespace webrtc
