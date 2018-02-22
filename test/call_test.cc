@@ -171,12 +171,11 @@ void CallTest::CreateCalls(const Call::Config& sender_config,
 }
 
 void CallTest::CreateSenderCall(const Call::Config& config) {
-  sender_call_transport_controller_ = new RtpTransportControllerSend(
-      Clock::GetRealTimeClock(), config.event_log, config.bitrate_config);
-
-  sender_call_.reset(
-      Call::Create(config, std::unique_ptr<RtpTransportControllerSend>(
-                               sender_call_transport_controller_)));
+  std::unique_ptr<RtpTransportControllerSend> controller_send =
+      rtc::MakeUnique<RtpTransportControllerSend>(
+          Clock::GetRealTimeClock(), config.event_log, config.bitrate_config);
+  sender_call_transport_controller_ = controller_send.get();
+  sender_call_.reset(Call::Create(config, std::move(controller_send)));
 }
 
 void CallTest::CreateReceiverCall(const Call::Config& config) {
