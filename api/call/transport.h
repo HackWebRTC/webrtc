@@ -13,15 +13,22 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <vector>
 
 namespace webrtc {
 
 // TODO(holmer): Look into unifying this with the PacketOptions in
 // asyncpacketsocket.h.
 struct PacketOptions {
+  PacketOptions();
+  ~PacketOptions();
+
   // A 16 bits positive id. Negative ids are invalid and should be interpreted
   // as packet_id not being set.
   int packet_id = -1;
+  // Additional data bound to the RTP packet for use in application code,
+  // outside of WebRTC.
+  std::vector<uint8_t> application_data;
 };
 
 class Transport {

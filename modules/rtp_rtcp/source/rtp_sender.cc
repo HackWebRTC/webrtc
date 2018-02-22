@@ -782,6 +782,8 @@ bool RTPSender::PrepareAndSendPacket(std::unique_ptr<RtpPacketToSend> packet,
     AddPacketToTransportFeedback(options.packet_id, *packet_to_send,
                                  pacing_info);
   }
+  options.application_data.assign(packet_to_send->application_data().begin(),
+                                  packet_to_send->application_data().end());
 
   if (!is_retransmit && !send_over_rtx) {
     UpdateDelayStatistics(packet->capture_time_ms(), now_ms);
@@ -914,6 +916,8 @@ bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
     AddPacketToTransportFeedback(options.packet_id, *packet.get(),
                                  PacedPacketInfo());
   }
+  options.application_data.assign(packet->application_data().begin(),
+                                  packet->application_data().end());
 
   UpdateDelayStatistics(packet->capture_time_ms(), now_ms);
   UpdateOnSendPacket(options.packet_id, packet->capture_time_ms(),
@@ -1210,6 +1214,9 @@ std::unique_ptr<RtpPacketToSend> RTPSender::BuildRtxPacket(
   // Add original payload data.
   auto payload = packet.payload();
   memcpy(rtx_payload + kRtxHeaderSize, payload.data(), payload.size());
+
+  // Add original application data.
+  rtx_packet->set_application_data(packet.application_data());
 
   return rtx_packet;
 }

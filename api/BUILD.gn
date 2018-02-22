@@ -201,6 +201,7 @@ rtc_source_set("audio_options_api") {
 rtc_source_set("transport_api") {
   visibility = [ "*" ]
   sources = [
+    "call/transport.cc",
     "call/transport.h",
   ]
 }

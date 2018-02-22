@@ -77,6 +77,7 @@ rtc_source_set("rtp_rtcp_format") {
     "source/rtp_header_extensions.cc",
     "source/rtp_packet.cc",
     "source/rtp_packet_received.cc",
+    "source/rtp_packet_to_send.cc",
   ]
 
   deps = [
