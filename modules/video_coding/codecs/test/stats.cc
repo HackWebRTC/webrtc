@@ -46,7 +46,7 @@ std::string FrameStatistics::ToString() const {
 
 std::string VideoStatistics::ToString(std::string prefix) const {
   std::stringstream ss;
-  ss << "\n" << prefix << "target_bitrate_kbps: " << target_bitrate_kbps;
+  ss << prefix << "target_bitrate_kbps: " << target_bitrate_kbps;
   ss << "\n" << prefix << "input_framerate_fps: " << input_framerate_fps;
   ss << "\n" << prefix << "spatial_layer_idx: " << spatial_layer_idx;
   ss << "\n" << prefix << "temporal_layer_idx: " << temporal_layer_idx;

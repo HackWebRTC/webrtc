@@ -31,7 +31,7 @@ std::string CodecSpecificToString(const webrtc::VideoCodec& codec) {
   std::stringstream ss;
   switch (codec.codecType) {
     case kVideoCodecVP8:
-      ss << "\ncomplexity: " << codec.VP8().complexity;
+      ss << "complexity: " << codec.VP8().complexity;
       ss << "\nresilience: " << codec.VP8().resilience;
       ss << "\nnum_temporal_layers: "
          << static_cast<int>(codec.VP8().numberOfTemporalLayers);
@@ -41,7 +41,7 @@ std::string CodecSpecificToString(const webrtc::VideoCodec& codec) {
       ss << "\nkey_frame_interval: " << codec.VP8().keyFrameInterval;
       break;
     case kVideoCodecVP9:
-      ss << "\ncomplexity: " << codec.VP9().complexity;
+      ss << "complexity: " << codec.VP9().complexity;
       ss << "\nresilience: " << codec.VP9().resilienceOn;
       ss << "\nnum_temporal_layers: "
          << static_cast<int>(codec.VP9().numberOfTemporalLayers);
@@ -55,7 +55,7 @@ std::string CodecSpecificToString(const webrtc::VideoCodec& codec) {
       ss << "\nflexible_mode: " << codec.VP9().flexibleMode;
       break;
     case kVideoCodecH264:
-      ss << "\nframe_dropping: " << codec.H264().frameDroppingOn;
+      ss << "frame_dropping: " << codec.H264().frameDroppingOn;
       ss << "\nkey_frame_interval: " << codec.H264().keyFrameInterval;
       ss << "\nprofile: " << codec.H264().profile;
       break;
@@ -195,12 +195,13 @@ std::vector<FrameType> TestConfig::FrameTypeForFrame(size_t frame_idx) const {
 std::string TestConfig::ToString() const {
   std::string codec_type = CodecTypeToPayloadString(codec_settings.codecType);
   std::stringstream ss;
-  ss << "\nfilename: " << filename;
-  ss << "\nwidth: " << codec_settings.width;
-  ss << "\nheight: " << codec_settings.height;
+  ss << "filename: " << filename;
   ss << "\nnum_frames: " << num_frames;
   ss << "\nnum_cores: " << NumberOfCores();
   ss << "\ncodec_type: " << codec_type;
+  ss << "\n--> codec_settings";
+  ss << "\nwidth: " << codec_settings.width;
+  ss << "\nheight: " << codec_settings.height;
   ss << "\nmax_framerate_fps: " << codec_settings.maxFramerate;
   ss << "\nstart_bitrate_kbps: " << codec_settings.startBitrate;
   ss << "\nmax_bitrate_kbps: " << codec_settings.maxBitrate;
@@ -208,7 +209,8 @@ std::string TestConfig::ToString() const {
   ss << "\nmax_qp: " << codec_settings.qpMax;
   ss << "\nnum_simulcast_streams : "
      << static_cast<int>(codec_settings.numberOfSimulcastStreams);
-  ss << "\n" << codec_type << " specific: ";
+  ss << "\n"
+     << "--> codec_settings." << codec_type << "\n";
   ss << CodecSpecificToString(codec_settings);
   return ss.str();
 }

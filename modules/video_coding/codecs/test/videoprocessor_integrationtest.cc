@@ -253,12 +253,14 @@ void VideoProcessorIntegrationTest::AnalyzeAllFrames(
 
     std::vector<VideoStatistics> layer_stats =
         stats_.SliceAndCalcLayerVideoStatistic(first_frame_num, last_frame_num);
+    printf("==> Receive stats\n");
     for (const auto& layer_stat : layer_stats) {
-      printf("%s\n", layer_stat.ToString("recv_").c_str());
+      printf("%s\n\n", layer_stat.ToString("recv_").c_str());
     }
 
     VideoStatistics send_stat = stats_.SliceAndCalcAggregatedVideoStatistic(
         first_frame_num, last_frame_num);
+    printf("==> Send stats\n");
     printf("%s\n", send_stat.ToString("send_").c_str());
 
     const RateControlThresholds* rc_threshold =
@@ -273,6 +275,7 @@ void VideoProcessorIntegrationTest::AnalyzeAllFrames(
   }
 
   cpu_process_time_->Print();
+  printf("\n");
 }
 
 void VideoProcessorIntegrationTest::VerifyVideoStatistic(
@@ -473,10 +476,10 @@ void VideoProcessorIntegrationTest::ReleaseAndCloseObjects(
 
 void VideoProcessorIntegrationTest::PrintSettings(
     rtc::TaskQueue* task_queue) const {
-  printf("VideoProcessor settings\n==\n");
+  printf("==> TestConfig\n");
   printf("%s\n", config_.ToString().c_str());
 
-  printf("VideoProcessorIntegrationTest settings\n==\n");
+  printf("==> Codec names\n");
   std::string encoder_name;
   std::string decoder_name;
   rtc::Event sync_event(false, false);

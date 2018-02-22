@@ -46,7 +46,8 @@ class VideoProcessorIntegrationTestLibvpx
   }
 
   void PrintRdPerf(std::map<size_t, std::vector<VideoStatistics>> rd_stats) {
-    printf("\n%13s %7s %7s %13s %13s %7s %13s %13s\n", "uplink_kbps", "width",
+    printf("--> Summary\n");
+    printf("%13s %7s %7s %13s %13s %7s %13s %13s\n", "uplink_kbps", "width",
            "height", "downlink_kbps", "framerate_fps", "psnr", "enc_speed_fps",
            "dec_speed_fps");
     for (const auto& rd_stat : rd_stats) {
