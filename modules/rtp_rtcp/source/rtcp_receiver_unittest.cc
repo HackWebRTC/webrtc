@@ -13,6 +13,7 @@
 #include "api/array_view.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "common_video/include/video_bitrate_allocator.h"
+#include "modules/rtp_rtcp/mocks/mock_rtcp_bandwidth_observer.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "modules/rtp_rtcp/source/rtcp_packet.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/app.h"
@@ -78,13 +79,6 @@ class MockTransportFeedbackObserver : public TransportFeedbackObserver {
                void(uint32_t, uint16_t, size_t, const PacedPacketInfo&));
   MOCK_METHOD1(OnTransportFeedback, void(const rtcp::TransportFeedback&));
   MOCK_CONST_METHOD0(GetTransportFeedbackVector, std::vector<PacketFeedback>());
-};
-
-class MockRtcpBandwidthObserver : public RtcpBandwidthObserver {
- public:
-  MOCK_METHOD1(OnReceivedEstimatedBitrate, void(uint32_t));
-  MOCK_METHOD3(OnReceivedRtcpReceiverReport,
-               void(const ReportBlockList&, int64_t, int64_t));
 };
 
 class MockModuleRtpRtcp : public RTCPReceiver::ModuleRtpRtcp {

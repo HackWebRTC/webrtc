@@ -16,12 +16,13 @@
 #include "audio/audio_state.h"
 #include "audio/conversion.h"
 #include "audio/mock_voe_channel_proxy.h"
-#include "call/rtp_transport_controller_send.h"
+#include "call/test/mock_rtp_transport_controller_send.h"
 #include "logging/rtc_event_log/mock/mock_rtc_event_log.h"
 #include "modules/audio_device/include/mock_audio_device.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"
 #include "modules/audio_processing/include/audio_processing_statistics.h"
 #include "modules/audio_processing/include/mock_audio_processing.h"
+#include "modules/rtp_rtcp/mocks/mock_rtcp_bandwidth_observer.h"
 #include "modules/rtp_rtcp/mocks/mock_rtcp_rtt_stats.h"
 #include "modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
 #include "rtc_base/fakeclock.h"
@@ -126,8 +127,6 @@ struct ConfigHelper {
   ConfigHelper(bool audio_bwe_enabled, bool expect_set_encoder_call)
       : stream_config_(nullptr),
         audio_processing_(new rtc::RefCountedObject<MockAudioProcessing>()),
-        simulated_clock_(123456),
-        rtp_transport_(&simulated_clock_, &event_log_, BitrateConstraints()),
         bitrate_allocator_(&limit_observer_),
         worker_queue_("ConfigHelper_worker_queue"),
         audio_encoder_(nullptr) {
@@ -201,12 +200,15 @@ struct ConfigHelper {
     EXPECT_CALL(*channel_proxy_,
                 SetSendAudioLevelIndicationStatus(true, kAudioLevelId))
         .Times(1);
+    EXPECT_CALL(rtp_transport_, GetBandwidthObserver())
+        .WillRepeatedly(Return(&bandwidth_observer_));
     if (audio_bwe_enabled) {
       EXPECT_CALL(*channel_proxy_,
                   EnableSendTransportSequenceNumber(kTransportSequenceNumberId))
           .Times(1);
-      EXPECT_CALL(*channel_proxy_, RegisterSenderCongestionControlObjects(
-                                       &rtp_transport_, Ne(nullptr)))
+      EXPECT_CALL(*channel_proxy_,
+                  RegisterSenderCongestionControlObjects(
+                      &rtp_transport_, Eq(&bandwidth_observer_)))
           .Times(1);
     } else {
       EXPECT_CALL(*channel_proxy_, RegisterSenderCongestionControlObjects(
@@ -303,10 +305,10 @@ struct ConfigHelper {
   testing::StrictMock<MockVoEChannelProxy>* channel_proxy_ = nullptr;
   rtc::scoped_refptr<MockAudioProcessing> audio_processing_;
   AudioProcessingStats audio_processing_stats_;
-  SimulatedClock simulated_clock_;
   TimeInterval active_lifetime_;
+  testing::StrictMock<MockRtcpBandwidthObserver> bandwidth_observer_;
   testing::NiceMock<MockRtcEventLog> event_log_;
-  RtpTransportControllerSend rtp_transport_;
+  testing::NiceMock<MockRtpTransportControllerSend> rtp_transport_;
   testing::NiceMock<MockRtpRtcp> rtp_rtcp_;
   MockRtcpRttStats rtcp_rtt_stats_;
   testing::NiceMock<MockLimitObserver> limit_observer_;
