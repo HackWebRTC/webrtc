@@ -36,10 +36,16 @@ enum class DelayChangesCategory {
   kNumCategories
 };
 
+constexpr int kMaxSkewShiftCount = 20;
+
 }  // namespace
 
-void RenderDelayControllerMetrics::Update(rtc::Optional<size_t> delay_samples,
-                                          size_t buffer_delay_blocks) {
+RenderDelayControllerMetrics::RenderDelayControllerMetrics() = default;
+
+void RenderDelayControllerMetrics::Update(
+    rtc::Optional<size_t> delay_samples,
+    size_t buffer_delay_blocks,
+    rtc::Optional<int> skew_shift_blocks) {
   ++call_counter_;
 
   if (!initial_update) {
@@ -51,6 +57,10 @@ void RenderDelayControllerMetrics::Update(rtc::Optional<size_t> delay_samples,
         ++delay_change_counter_;
         delay_blocks_ = delay_blocks;
       }
+    }
+
+    if (skew_shift_blocks) {
+      skew_shift_count_ = std::min(kMaxSkewShiftCount, skew_shift_count_);
     }
   } else if (++initial_call_counter_ == 5 * kNumBlocksPerSecond) {
     initial_update = false;
@@ -106,6 +116,15 @@ void RenderDelayControllerMetrics::Update(rtc::Optional<size_t> delay_samples,
     ResetMetrics();
   } else {
     metrics_reported_ = false;
+  }
+
+  if (!initial_update && ++skew_report_timer_ == 60 * kNumBlocksPerSecond) {
+    RTC_HISTOGRAM_COUNTS_LINEAR("WebRTC.Audio.EchoCanceller.MaxSkewShiftCount",
+                                skew_shift_count_, 0, kMaxSkewShiftCount,
+                                kMaxSkewShiftCount + 1);
+
+    skew_shift_count_ = 0;
+    skew_report_timer_ = 0;
   }
 }
 

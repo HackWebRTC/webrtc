@@ -22,6 +22,7 @@
 #include "modules/audio_processing/aec3/skew_estimator.h"
 #include "rtc_base/atomicops.h"
 #include "rtc_base/constructormagic.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 
@@ -55,6 +56,9 @@ class RenderDelayControllerImpl final : public RenderDelayController {
   SkewEstimator skew_estimator_;
   rtc::Optional<DelayEstimate> delay_samples_;
   rtc::Optional<int> skew_;
+  int previous_offset_blocks_ = 0;
+  int skew_shift_reporting_counter_ = 0;
+  size_t capture_call_counter_ = 0;
   int delay_change_counter_ = 0;
   size_t soft_reset_counter_ = 0;
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RenderDelayControllerImpl);
@@ -125,6 +129,7 @@ void RenderDelayControllerImpl::Reset() {
   delay_ = rtc::nullopt;
   delay_samples_ = rtc::nullopt;
   skew_ = rtc::nullopt;
+  previous_offset_blocks_ = 0;
   std::fill(delay_buf_.begin(), delay_buf_.end(), 0.f);
   delay_estimator_.Reset(false);
   skew_estimator_.Reset();
@@ -140,6 +145,7 @@ rtc::Optional<DelayEstimate> RenderDelayControllerImpl::GetDelay(
     const DownsampledRenderBuffer& render_buffer,
     rtc::ArrayView<const float> capture) {
   RTC_DCHECK_EQ(kBlockSize, capture.size());
+  ++capture_call_counter_;
 
   // Estimate the delay with a delayed capture.
   RTC_DCHECK_LT(delay_buf_index_ + kBlockSize - 1, delay_buf_.size());
@@ -201,6 +207,22 @@ rtc::Optional<DelayEstimate> RenderDelayControllerImpl::GetDelay(
     }
   }
 
+  // Log any changes in the skew.
+  skew_shift_reporting_counter_ =
+      std::max(0, skew_shift_reporting_counter_ - 1);
+  rtc::Optional<int> skew_shift =
+      skew_shift_reporting_counter_ == 0 &&
+              previous_offset_blocks_ != offset_blocks
+          ? rtc::Optional<int>(offset_blocks - previous_offset_blocks_)
+          : rtc::nullopt;
+  previous_offset_blocks_ = offset_blocks;
+  if (skew_shift) {
+    RTC_LOG(LS_WARNING) << "API call skew shift of " << *skew_shift
+                        << " blocks detected at capture block "
+                        << capture_call_counter_;
+    skew_shift_reporting_counter_ = 3 * kNumBlocksPerSecond;
+  }
+
   if (delay_samples_) {
     // Compute the render delay buffer delay.
     delay_ = ComputeBufferDelay(
@@ -210,7 +232,7 @@ rtc::Optional<DelayEstimate> RenderDelayControllerImpl::GetDelay(
 
   metrics_.Update(delay_samples_ ? rtc::Optional<size_t>(delay_samples_->delay)
                                  : rtc::nullopt,
-                  delay_ ? delay_->delay : 0);
+                  delay_ ? delay_->delay : 0, skew_shift);
 
   data_dumper_->DumpRaw("aec3_render_delay_controller_delay",
                         delay_samples ? delay_samples->delay : 0);
