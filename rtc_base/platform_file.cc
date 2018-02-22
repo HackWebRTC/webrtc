@@ -63,7 +63,7 @@ FILE* FdopenPlatformFileForWriting(PlatformFile file) {
 }
 
 bool ClosePlatformFile(PlatformFile file) {
-  return close(file);
+  return close(file) == 0;
 }
 
 bool RemoveFile(const std::string& path) {

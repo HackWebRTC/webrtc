@@ -35,7 +35,7 @@ extern const PlatformFile kInvalidPlatformFileValue;
 // the PlatformFile should no longer be used.
 FILE* FdopenPlatformFileForWriting(PlatformFile file);
 
-// Closes a PlatformFile.
+// Closes a PlatformFile. Returns true on success, false on failure.
 // Don't use ClosePlatformFile to close a file opened with FdopenPlatformFile.
 // Use fclose instead.
 bool ClosePlatformFile(PlatformFile file);
