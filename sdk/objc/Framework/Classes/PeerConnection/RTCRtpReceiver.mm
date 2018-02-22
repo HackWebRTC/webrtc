@@ -72,6 +72,12 @@ void RtpReceiverDelegateAdapter::OnFirstPacketReceived(
       self.receiverId];
 }
 
+- (void)dealloc {
+  if (_nativeRtpReceiver) {
+    _nativeRtpReceiver->SetObserver(nullptr);
+  }
+}
+
 - (BOOL)isEqual:(id)object {
   if (self == object) {
     return YES;
