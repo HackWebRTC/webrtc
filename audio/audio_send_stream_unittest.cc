@@ -84,7 +84,8 @@ std::unique_ptr<MockAudioEncoder> SetupAudioEncoderMock(
     const SdpAudioFormat& format) {
   for (const auto& spec : kCodecSpecs) {
     if (format == spec.format) {
-      std::unique_ptr<MockAudioEncoder> encoder(new MockAudioEncoder);
+      std::unique_ptr<MockAudioEncoder> encoder(
+          new testing::NiceMock<MockAudioEncoder>());
       ON_CALL(*encoder.get(), SampleRateHz())
           .WillByDefault(Return(spec.info.sample_rate_hz));
       ON_CALL(*encoder.get(), NumChannels())
@@ -185,6 +186,7 @@ struct ConfigHelper {
   }
 
   void SetupDefaultChannelProxy(bool audio_bwe_enabled) {
+    EXPECT_TRUE(channel_proxy_ == nullptr);
     channel_proxy_ = new testing::StrictMock<MockVoEChannelProxy>();
     EXPECT_CALL(*channel_proxy_, GetRtpRtcp(_, _))
         .WillRepeatedly(Invoke(
@@ -303,9 +305,9 @@ struct ConfigHelper {
   AudioProcessingStats audio_processing_stats_;
   SimulatedClock simulated_clock_;
   TimeInterval active_lifetime_;
-  MockRtcEventLog event_log_;
+  testing::NiceMock<MockRtcEventLog> event_log_;
   RtpTransportControllerSend rtp_transport_;
-  MockRtpRtcp rtp_rtcp_;
+  testing::NiceMock<MockRtpRtcp> rtp_rtcp_;
   MockRtcpRttStats rtcp_rtt_stats_;
   testing::NiceMock<MockLimitObserver> limit_observer_;
   BitrateAllocator bitrate_allocator_;

@@ -15,12 +15,13 @@
 #include <vector>
 
 #include "api/audio_codecs/audio_encoder_factory.h"
+#include "rtc_base/refcountedobject.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "test/gmock.h"
 
 namespace webrtc {
 
-class MockAudioEncoderFactory : public AudioEncoderFactory {
+class MockAudioEncoderFactory : public testing::NiceMock<AudioEncoderFactory> {
  public:
   MOCK_METHOD0(GetSupportedEncoders, std::vector<AudioCodecSpec>());
   MOCK_METHOD1(QueryAudioEncoder,

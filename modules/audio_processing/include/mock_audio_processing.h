@@ -136,7 +136,7 @@ class MockVoiceDetection : public VoiceDetection {
   MOCK_CONST_METHOD0(frame_size_ms, int());
 };
 
-class MockAudioProcessing : public AudioProcessing {
+class MockAudioProcessing : public testing::NiceMock<AudioProcessing> {
  public:
   MockAudioProcessing()
       : echo_cancellation_(new testing::NiceMock<MockEchoCancellation>()),
