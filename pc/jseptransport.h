@@ -23,6 +23,7 @@
 #include "p2p/base/p2pconstants.h"
 #include "p2p/base/transportinfo.h"
 #include "pc/sessiondescription.h"
+#include "pc/transportstats.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/messagequeue.h"
 #include "rtc_base/rtccertificate.h"
@@ -32,34 +33,6 @@
 namespace cricket {
 
 class DtlsTransportInternal;
-
-struct TransportChannelStats {
-  TransportChannelStats();
-  TransportChannelStats(const TransportChannelStats&);
-  ~TransportChannelStats();
-
-  int component = 0;
-  CandidateStatsList candidate_stats_list;
-  ConnectionInfos connection_infos;
-  int srtp_crypto_suite = rtc::SRTP_INVALID_CRYPTO_SUITE;
-  int ssl_cipher_suite = rtc::TLS_NULL_WITH_NULL_NULL;
-  DtlsTransportState dtls_state = DTLS_TRANSPORT_NEW;
-};
-
-// Information about all the channels of a transport.
-// TODO(hta): Consider if a simple vector is as good as a map.
-typedef std::vector<TransportChannelStats> TransportChannelStatsList;
-
-// Information about the stats of a transport.
-struct TransportStats {
-  TransportStats();
-  ~TransportStats();
-
-  std::string transport_name;
-  TransportChannelStatsList channel_stats;
-};
-
-bool BadTransportDescription(const std::string& desc, std::string* err_desc);
 
 // Helper class used by TransportController that processes
 // TransportDescriptions. A TransportDescription represents the

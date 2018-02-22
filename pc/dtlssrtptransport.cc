@@ -263,8 +263,8 @@ bool DtlsSrtpTransport::ExtractParams(
   memcpy(&server_write_key[key_len], &dtls_buffer[offset], salt_len);
 
   rtc::SSLRole role;
-  if (!dtls_transport->GetSslRole(&role)) {
-    RTC_LOG(LS_WARNING) << "GetSslRole failed";
+  if (!dtls_transport->GetDtlsRole(&role)) {
+    RTC_LOG(LS_WARNING) << "Failed to get the DTLS role.";
     return false;
   }
 

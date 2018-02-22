@@ -353,10 +353,10 @@ class DtlsTransportTestBase {
   void Negotiate(bool client1_server = true) {
     client1_.SetupTransports(ICEROLE_CONTROLLING);
     client2_.SetupTransports(ICEROLE_CONTROLLED);
-    client1_.dtls_transport()->SetSslRole(client1_server ? rtc::SSL_SERVER
-                                                         : rtc::SSL_CLIENT);
-    client2_.dtls_transport()->SetSslRole(client1_server ? rtc::SSL_CLIENT
-                                                         : rtc::SSL_SERVER);
+    client1_.dtls_transport()->SetDtlsRole(client1_server ? rtc::SSL_SERVER
+                                                          : rtc::SSL_CLIENT);
+    client2_.dtls_transport()->SetDtlsRole(client1_server ? rtc::SSL_CLIENT
+                                                          : rtc::SSL_SERVER);
     if (client2_.certificate()) {
       SetRemoteFingerprintFromCert(client1_.dtls_transport(),
                                    client2_.certificate());
@@ -627,8 +627,8 @@ class DtlsEventOrderingTest
     client1_.SetupTransports(ICEROLE_CONTROLLING, simulated_delay_ms);
     client2_.SetupTransports(ICEROLE_CONTROLLED, simulated_delay_ms);
     // Similar to how NegotiateOrdering works.
-    client1_.dtls_transport()->SetSslRole(rtc::SSL_SERVER);
-    client2_.dtls_transport()->SetSslRole(rtc::SSL_CLIENT);
+    client1_.dtls_transport()->SetDtlsRole(rtc::SSL_SERVER);
+    client2_.dtls_transport()->SetDtlsRole(rtc::SSL_CLIENT);
     SetRemoteFingerprintFromCert(client2_.dtls_transport(),
                                  client1_.certificate());
 

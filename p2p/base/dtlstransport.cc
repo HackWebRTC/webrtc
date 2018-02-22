@@ -121,20 +121,26 @@ DtlsTransport::DtlsTransport(IceTransportInternal* ice_transport,
       ice_transport_(ice_transport),
       downward_(NULL),
       srtp_ciphers_(GetSupportedDtlsSrtpCryptoSuites(crypto_options)),
-      ssl_role_(rtc::SSL_CLIENT),
       ssl_max_version_(rtc::SSL_PROTOCOL_DTLS_12),
       crypto_options_(crypto_options) {
   RTC_DCHECK(ice_transport_);
-  ice_transport_->SignalWritableState.connect(this,
-                                              &DtlsTransport::OnWritableState);
-  ice_transport_->SignalReadPacket.connect(this, &DtlsTransport::OnReadPacket);
-  ice_transport_->SignalSentPacket.connect(this, &DtlsTransport::OnSentPacket);
-  ice_transport_->SignalReadyToSend.connect(this,
-                                            &DtlsTransport::OnReadyToSend);
-  ice_transport_->SignalReceivingState.connect(
-      this, &DtlsTransport::OnReceivingState);
-  ice_transport_->SignalNetworkRouteChanged.connect(
-      this, &DtlsTransport::OnNetworkRouteChanged);
+  ConnectToIceTransport();
+}
+
+DtlsTransport::DtlsTransport(
+    std::unique_ptr<IceTransportInternal> ice_transport,
+    const rtc::CryptoOptions& crypto_options)
+    : transport_name_(ice_transport->transport_name()),
+      component_(ice_transport->component()),
+      network_thread_(rtc::Thread::Current()),
+      ice_transport_(ice_transport.get()),
+      owned_ice_transport_(std::move(ice_transport)),
+      downward_(NULL),
+      srtp_ciphers_(GetSupportedDtlsSrtpCryptoSuites(crypto_options)),
+      ssl_max_version_(rtc::SSL_PROTOCOL_DTLS_12),
+      crypto_options_(crypto_options) {
+  RTC_DCHECK(owned_ice_transport_);
+  ConnectToIceTransport();
 }
 
 DtlsTransport::~DtlsTransport() = default;
@@ -198,9 +204,10 @@ bool DtlsTransport::SetSslMaxProtocolVersion(rtc::SSLProtocolVersion version) {
   return true;
 }
 
-bool DtlsTransport::SetSslRole(rtc::SSLRole role) {
+bool DtlsTransport::SetDtlsRole(rtc::SSLRole role) {
   if (dtls_) {
-    if (ssl_role_ != role) {
+    RTC_DCHECK(dtls_role_);
+    if (*dtls_role_ != role) {
       RTC_LOG(LS_ERROR)
           << "SSL Role can't be reversed after the session is setup.";
       return false;
@@ -208,12 +215,15 @@ bool DtlsTransport::SetSslRole(rtc::SSLRole role) {
     return true;
   }
 
-  ssl_role_ = role;
+  dtls_role_ = std::move(role);
   return true;
 }
 
-bool DtlsTransport::GetSslRole(rtc::SSLRole* role) const {
-  *role = ssl_role_;
+bool DtlsTransport::GetDtlsRole(rtc::SSLRole* role) const {
+  if (!dtls_role_) {
+    return false;
+  }
+  *role = *dtls_role_;
   return true;
 }
 
@@ -330,6 +340,7 @@ bool DtlsTransport::ExportKeyingMaterial(const std::string& label,
 }
 
 bool DtlsTransport::SetupDtls() {
+  RTC_DCHECK(dtls_role_);
   StreamInterfaceChannel* downward = new StreamInterfaceChannel(ice_transport_);
 
   dtls_.reset(rtc::SSLStreamAdapter::Create(downward));
@@ -344,7 +355,7 @@ bool DtlsTransport::SetupDtls() {
   dtls_->SetIdentity(local_certificate_->identity()->GetReference());
   dtls_->SetMode(rtc::SSL_MODE_DTLS);
   dtls_->SetMaxProtocolVersion(ssl_max_version_);
-  dtls_->SetServerRole(ssl_role_);
+  dtls_->SetServerRole(*dtls_role_);
   dtls_->SignalEvent.connect(this, &DtlsTransport::OnDtlsEvent);
   dtls_->SignalSSLHandshakeError.connect(this,
                                          &DtlsTransport::OnDtlsHandshakeError);
@@ -456,6 +467,20 @@ int DtlsTransport::SetOption(rtc::Socket::Option opt, int value) {
   return ice_transport_->SetOption(opt, value);
 }
 
+void DtlsTransport::ConnectToIceTransport() {
+  RTC_DCHECK(ice_transport_);
+  ice_transport_->SignalWritableState.connect(this,
+                                              &DtlsTransport::OnWritableState);
+  ice_transport_->SignalReadPacket.connect(this, &DtlsTransport::OnReadPacket);
+  ice_transport_->SignalSentPacket.connect(this, &DtlsTransport::OnSentPacket);
+  ice_transport_->SignalReadyToSend.connect(this,
+                                            &DtlsTransport::OnReadyToSend);
+  ice_transport_->SignalReceivingState.connect(
+      this, &DtlsTransport::OnReceivingState);
+  ice_transport_->SignalNetworkRouteChanged.connect(
+      this, &DtlsTransport::OnNetworkRouteChanged);
+}
+
 // The state transition logic here is as follows:
 // (1) If we're not doing DTLS-SRTP, then the state is just the
 //     state of the underlying impl()
@@ -543,7 +568,7 @@ void DtlsTransport::OnReadPacket(rtc::PacketTransportInternal* transport,
         // the peer has chosen the client role, and proceed with the handshake.
         // The fingerprint will be verified when it's set.
         if (!dtls_ && local_certificate_) {
-          SetSslRole(rtc::SSL_SERVER);
+          SetDtlsRole(rtc::SSL_SERVER);
           SetupDtls();
         }
       } else {
@@ -677,7 +702,7 @@ void DtlsTransport::MaybeStartDtls() {
     // Now that the handshake has started, we can process a cached ClientHello
     // (if one exists).
     if (cached_client_hello_.size()) {
-      if (ssl_role_ == rtc::SSL_SERVER) {
+      if (*dtls_role_ == rtc::SSL_SERVER) {
         LOG_J(LS_INFO, this) << "Handling cached DTLS ClientHello packet.";
         if (!HandleDtlsPacket(cached_client_hello_.data<char>(),
                               cached_client_hello_.size())) {

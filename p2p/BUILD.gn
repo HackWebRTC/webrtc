@@ -66,6 +66,7 @@ rtc_static_library("rtc_p2p") {
     "base/transportdescription.h",
     "base/transportdescriptionfactory.cc",
     "base/transportdescriptionfactory.h",
+    "base/transportfactoryinterface.h",
     "base/transportinfo.h",
     "base/turnport.cc",
     "base/turnport.h",

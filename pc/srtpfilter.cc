@@ -11,8 +11,8 @@
 #include "pc/srtpfilter.h"
 
 #include <string.h>
-
 #include <algorithm>
+#include <utility>
 
 #include "media/base/rtputils.h"
 #include "pc/srtpsession.h"
@@ -33,6 +33,31 @@ SrtpFilter::~SrtpFilter() {
 
 bool SrtpFilter::IsActive() const {
   return state_ >= ST_ACTIVE;
+}
+
+bool SrtpFilter::Process(const std::vector<CryptoParams>& cryptos,
+                         webrtc::SdpType type,
+                         ContentSource source) {
+  bool ret = false;
+  switch (type) {
+    case webrtc::SdpType::kOffer:
+      ret = SetOffer(cryptos, source);
+      break;
+    case webrtc::SdpType::kPrAnswer:
+      ret = SetProvisionalAnswer(cryptos, source);
+      break;
+    case webrtc::SdpType::kAnswer:
+      ret = SetAnswer(cryptos, source);
+      break;
+    default:
+      break;
+  }
+
+  if (!ret) {
+    return false;
+  }
+
+  return true;
 }
 
 bool SrtpFilter::SetOffer(const std::vector<CryptoParams>& offer_params,

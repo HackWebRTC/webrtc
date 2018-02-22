@@ -44,6 +44,10 @@ rtc_static_library("rtc_pc_base") {
     "externalhmac.h",
     "jseptransport.cc",
     "jseptransport.h",
+    "jseptransport2.cc",
+    "jseptransport2.h",
+    "jseptransportcontroller.cc",
+    "jseptransportcontroller.h",
     "mediasession.cc",
     "mediasession.h",
     "rtcpmuxfilter.cc",
@@ -64,6 +68,8 @@ rtc_static_library("rtc_pc_base") {
     "srtptransport.h",
     "transportcontroller.cc",
     "transportcontroller.h",
+    "transportstats.cc",
+    "transportstats.h",
   ]
 
   deps = [
@@ -270,7 +276,9 @@ if (rtc_include_tests) {
       "channelmanager_unittest.cc",
       "currentspeakermonitor_unittest.cc",
       "dtlssrtptransport_unittest.cc",
+      "jseptransport2_unittest.cc",
       "jseptransport_unittest.cc",
+      "jseptransportcontroller_unittest.cc",
       "mediasession_unittest.cc",
       "rtcpmuxfilter_unittest.cc",
       "rtptransport_unittest.cc",

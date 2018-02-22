@@ -144,7 +144,16 @@ class FakeIceTransport : public IceTransportInternal {
   void AddRemoteCandidate(const Candidate& candidate) override {
     remote_candidates_.push_back(candidate);
   }
-  void RemoveRemoteCandidate(const Candidate& candidate) override {}
+  void RemoveRemoteCandidate(const Candidate& candidate) override {
+    auto it = std::find(remote_candidates_.begin(), remote_candidates_.end(),
+                        candidate);
+    if (it == remote_candidates_.end()) {
+      RTC_LOG(LS_INFO) << "Trying to remove a candidate which doesn't exist.";
+      return;
+    }
+
+    remote_candidates_.erase(it);
+  }
 
   bool GetStats(ConnectionInfos* candidate_pair_stats_list,
                 CandidateStatsList* candidate_stats_list) override {

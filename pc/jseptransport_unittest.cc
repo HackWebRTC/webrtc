@@ -119,7 +119,7 @@ TEST_F(JsepTransportTest, TestDtlsTransportParameters) {
   // Verify that SSL role and remote fingerprint were set correctly based on
   // transport descriptions.
   rtc::SSLRole role;
-  EXPECT_TRUE(fake_dtls_transports_[0]->GetSslRole(&role));
+  EXPECT_TRUE(fake_dtls_transports_[0]->GetDtlsRole(&role));
   EXPECT_EQ(rtc::SSL_SERVER, role);  // Because remote description was "active".
   EXPECT_EQ(remote_desc.identity_fingerprint->ToString(),
             fake_dtls_transports_[0]->dtls_fingerprint().ToString());
@@ -152,7 +152,7 @@ TEST_F(JsepTransportTest, TestDtlsTransportParametersWithPassiveAnswer) {
   // Verify that SSL role and remote fingerprint were set correctly based on
   // transport descriptions.
   rtc::SSLRole role;
-  EXPECT_TRUE(fake_dtls_transports_[0]->GetSslRole(&role));
+  EXPECT_TRUE(fake_dtls_transports_[0]->GetDtlsRole(&role));
   EXPECT_EQ(rtc::SSL_CLIENT,
             role);  // Because remote description was "passive".
   EXPECT_EQ(remote_desc.identity_fingerprint->ToString(),
@@ -194,7 +194,7 @@ TEST_F(JsepTransportTest, TestTransportParametersAppliedToTwoComponents) {
     EXPECT_EQ(kIcePwd2, fake_ice_transports_[i]->remote_ice_pwd());
     // Verify parameters of DTLS transports.
     rtc::SSLRole role;
-    EXPECT_TRUE(fake_dtls_transports_[i]->GetSslRole(&role));
+    EXPECT_TRUE(fake_dtls_transports_[i]->GetDtlsRole(&role));
     EXPECT_EQ(rtc::SSL_SERVER,
               role);  // Because remote description was "active".
     EXPECT_EQ(remote_desc.identity_fingerprint->ToString(),
