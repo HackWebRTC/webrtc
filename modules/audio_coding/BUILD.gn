@@ -651,6 +651,7 @@ rtc_source_set("isac_fix_c_arm_asm") {
       "codecs/isac/fix/source/pitch_filter_armv6.S",
     ]
     deps = [
+      ":isac_fix_common",
       "../../system_wrappers:asm_defines",
     ]
   }

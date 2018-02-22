@@ -119,6 +119,7 @@ rtc_source_set("mock_common_audio") {
 
 rtc_source_set("common_audio_c_arm_asm") {
   sources = []
+  deps = []
   if (current_cpu == "arm") {
     sources += [
       "signal_processing/complex_bit_reverse_arm.S",
@@ -130,6 +131,7 @@ rtc_source_set("common_audio_c_arm_asm") {
     } else {
       sources += [ "signal_processing/filter_ar_fast_q12.c" ]
     }
+    deps += [ "../system_wrappers:asm_defines" ]
   }
 }
 
