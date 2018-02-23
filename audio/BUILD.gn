@@ -51,6 +51,7 @@ rtc_static_library("audio") {
     "../api:libjingle_peerconnection_api",
     "../api:optional",
     "../api:transport_api",
+    "../api/audio:aec3_factory",
     "../api/audio:audio_mixer_api",
     "../api/audio_codecs:audio_codecs_api",
     "../api/audio_codecs:builtin_audio_encoder_factory",

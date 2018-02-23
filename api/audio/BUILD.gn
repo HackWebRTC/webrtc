@@ -53,6 +53,7 @@ rtc_source_set("aec3_factory") {
   deps = [
     ":aec3_config",
     ":echo_control",
+    "../../modules/audio_processing/aec3",
   ]
 }
 

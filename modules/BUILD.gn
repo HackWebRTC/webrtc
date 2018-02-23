@@ -258,6 +258,7 @@ if (rtc_include_tests) {
       "audio_device:audio_device_unittests",
       "audio_mixer:audio_mixer_unittests",
       "audio_processing:audio_processing_unittests",
+      "audio_processing/aec3:aec3_unittests",
       "bitrate_controller:bitrate_controller_unittests",
       "congestion_controller:congestion_controller_unittests",
       "pacing:pacing_unittests",
