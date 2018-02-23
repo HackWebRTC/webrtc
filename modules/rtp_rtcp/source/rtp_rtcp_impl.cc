@@ -17,7 +17,6 @@
 #include <string>
 
 #include "api/rtpparameters.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 
@@ -281,11 +280,6 @@ int32_t ModuleRtpRtcpImpl::RegisterSendPayload(
   return rtp_sender_->RegisterPayload(
       voice_codec.plname, voice_codec.pltype, voice_codec.plfreq,
       voice_codec.channels, (voice_codec.rate < 0) ? 0 : voice_codec.rate);
-}
-
-int32_t ModuleRtpRtcpImpl::RegisterSendPayload(const VideoCodec& video_codec) {
-  return rtp_sender_->RegisterPayload(video_codec.plName, video_codec.plType,
-                                     90000, 0, 0);
 }
 
 void ModuleRtpRtcpImpl::RegisterVideoSendPayload(int payload_type,

@@ -42,8 +42,6 @@ bool VideoCodecInitializer::SetupCodec(
       return false;
     }
     codec->codecType = kVideoCodecMultiplex;
-    strncpy(codec->plName, settings.payload_name.c_str(),
-            sizeof(codec->plName));
     return true;
   }
 
@@ -185,8 +183,6 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
       break;
   }
 
-  strncpy(video_codec.plName, payload_name.c_str(), kPayloadNameSize - 1);
-  video_codec.plName[kPayloadNameSize - 1] = '\0';
   video_codec.plType = payload_type;
   video_codec.numberOfSimulcastStreams =
       static_cast<unsigned char>(streams.size());

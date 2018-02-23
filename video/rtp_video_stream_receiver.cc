@@ -146,7 +146,6 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
   if (IsUlpfecEnabled()) {
     VideoCodec ulpfec_codec = {};
     ulpfec_codec.codecType = kVideoCodecULPFEC;
-    strncpy(ulpfec_codec.plName, "ulpfec", sizeof(ulpfec_codec.plName));
     ulpfec_codec.plType = config_.rtp.ulpfec_payload_type;
     RTC_CHECK(AddReceiveCodec(ulpfec_codec));
   }
@@ -154,7 +153,6 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
   if (IsRedEnabled()) {
     VideoCodec red_codec = {};
     red_codec.codecType = kVideoCodecRED;
-    strncpy(red_codec.plName, "red", sizeof(red_codec.plName));
     red_codec.plType = config_.rtp.red_payload_type;
     RTC_CHECK(AddReceiveCodec(red_codec));
   }

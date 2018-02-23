@@ -218,7 +218,6 @@ TEST_F(RtpVideoStreamReceiverTest, NoInfiniteRecursionOnEncapsulatedRedPacket) {
   const uint8_t kRedPayloadType = 125;
   VideoCodec codec;
   codec.plType = kRedPayloadType;
-  memcpy(codec.plName, "red", sizeof("red"));
   rtp_video_stream_receiver_->AddReceiveCodec(codec, {});
   const std::vector<uint8_t> data({0x80,                // RTP version.
                                    kRedPayloadType,     // Payload type.

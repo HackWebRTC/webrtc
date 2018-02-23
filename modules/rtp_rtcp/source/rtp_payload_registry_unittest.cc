@@ -30,7 +30,6 @@ TEST(RtpPayloadRegistryTest,
   const uint8_t payload_type = 97;
   VideoCodec video_codec;
   video_codec.codecType = kVideoCodecVP8;
-  strncpy(video_codec.plName, "VP8", RTP_PAYLOAD_NAME_SIZE);
   video_codec.plType = payload_type;
 
   EXPECT_EQ(0, rtp_payload_registry.RegisterReceivePayload(video_codec));

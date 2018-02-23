@@ -68,8 +68,9 @@ int32_t VCMGenericEncoder::InitEncode(const VideoCodec* settings,
 
   if (encoder_->InitEncode(settings, number_of_cores, max_payload_size) != 0) {
     RTC_LOG(LS_ERROR) << "Failed to initialize the encoder associated with "
-                         "payload name: "
-                      << settings->plName;
+                         "codec type: "
+                      << CodecTypeToPayloadString(settings->codecType)
+                      << " (" << settings->codecType <<")";
     return -1;
   }
   vcm_encoded_frame_callback_->Reset();

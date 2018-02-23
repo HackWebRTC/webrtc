@@ -130,9 +130,6 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
   // Sets codec name and payload type. Returns -1 on failure else 0.
   virtual int32_t RegisterSendPayload(const CodecInst& voice_codec) = 0;
 
-  // Sets codec name and payload type. Return -1 on failure else 0.
-  virtual int32_t RegisterSendPayload(const VideoCodec& video_codec) = 0;
-
   virtual void RegisterVideoSendPayload(int payload_type,
                                         const char* payload_name) = 0;
 

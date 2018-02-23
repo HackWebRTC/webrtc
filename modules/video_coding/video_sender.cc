@@ -68,8 +68,8 @@ int32_t VideoSender::RegisterSendCodec(const VideoCodec* sendCodec,
   current_codec_ = *sendCodec;
 
   if (!ret) {
-    RTC_LOG(LS_ERROR) << "Failed to initialize set encoder with payload name '"
-                      << sendCodec->plName << "'.";
+    RTC_LOG(LS_ERROR) << "Failed to initialize set encoder with codec type '"
+                      << sendCodec->codecType << "'.";
     return VCM_CODEC_ERROR;
   }
 

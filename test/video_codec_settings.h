@@ -50,23 +50,19 @@ static void CodecSettings(VideoCodecType codec_type, VideoCodec* settings) {
 
   switch (codec_type) {
     case kVideoCodecVP8:
-      strncpy(settings->plName, "VP8", 4);
       settings->codecType = kVideoCodecVP8;
       *(settings->VP8()) = VideoEncoder::GetDefaultVp8Settings();
       return;
     case kVideoCodecVP9:
-      strncpy(settings->plName, "VP9", 4);
       settings->codecType = kVideoCodecVP9;
       *(settings->VP9()) = VideoEncoder::GetDefaultVp9Settings();
       return;
     case kVideoCodecH264:
-      strncpy(settings->plName, "H264", 5);
       settings->codecType = kVideoCodecH264;
       // TODO(brandtr): Set |qpMax| here, when the OpenH264 wrapper supports it.
       *(settings->H264()) = VideoEncoder::GetDefaultH264Settings();
       return;
     case kVideoCodecI420:
-      strncpy(settings->plName, "I420", 5);
       settings->codecType = kVideoCodecI420;
       // Bitrate needed for this size and framerate.
       settings->startBitrate =

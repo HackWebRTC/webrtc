@@ -142,7 +142,6 @@ bool VCMEncoderDataBase::RequiresEncoderReset(
 
   // Does not check startBitrate or maxFramerate
   if (new_send_codec.codecType != send_codec_.codecType ||
-      strcmp(new_send_codec.plName, send_codec_.plName) != 0 ||
       new_send_codec.plType != send_codec_.plType ||
       new_send_codec.width != send_codec_.width ||
       new_send_codec.height != send_codec_.height ||

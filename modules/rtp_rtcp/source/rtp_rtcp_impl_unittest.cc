@@ -214,10 +214,9 @@ class RtpRtcpImplTest : public ::testing::Test {
 
     memset(&codec_, 0, sizeof(VideoCodec));
     codec_.plType = 100;
-    strncpy(codec_.plName, "VP8", 3);
     codec_.width = 320;
     codec_.height = 180;
-    EXPECT_EQ(0, sender_.impl_->RegisterSendPayload(codec_));
+    sender_.impl_->RegisterVideoSendPayload(codec_.plType, "VP8");
 
     // Receive module.
     EXPECT_EQ(0, receiver_.impl_->SetSendingStatus(false));

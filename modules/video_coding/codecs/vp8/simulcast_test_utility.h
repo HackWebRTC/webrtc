@@ -192,7 +192,6 @@ class TestVp8Simulcast : public ::testing::Test {
                               const int* temporal_layer_profile) {
     RTC_CHECK(settings);
     memset(settings, 0, sizeof(VideoCodec));
-    strncpy(settings->plName, "VP8", 4);
     settings->codecType = kVideoCodecVP8;
     // 96 to 127 dynamic payload types for video codecs
     settings->plType = 120;

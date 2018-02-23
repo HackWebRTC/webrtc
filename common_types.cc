@@ -22,7 +22,6 @@ namespace webrtc {
 
 VideoCodec::VideoCodec()
     : codecType(kVideoCodecUnknown),
-      plName(),
       plType(0),
       width(0),
       height(0),
