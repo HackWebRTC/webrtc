@@ -67,10 +67,6 @@ class SSLCertificate {
 
   std::unique_ptr<SSLCertificate> GetUniqueReference() const;
 
-  // Returns null. This is deprecated. Please use
-  // SSLStreamAdapter::GetPeerSSLCertChain
-  virtual std::unique_ptr<SSLCertChain> GetChain() const = 0;
-
   // Returns a PEM encoded string representation of the certificate.
   virtual std::string ToPEMString() const = 0;
 
@@ -91,14 +87,10 @@ class SSLCertificate {
   // or -1 if an expiration time could not be retrieved.
   virtual int64_t CertificateExpirationTime() const = 0;
 
-  // Gets information (fingerprint, etc.) about this certificate and its chain
-  // (if it has a certificate chain). This is used for certificate stats, see
+  // Gets information (fingerprint, etc.) about this certificate. This is used
+  // for certificate stats, see
   // https://w3c.github.io/webrtc-stats/#certificatestats-dict*.
   std::unique_ptr<SSLCertificateStats> GetStats() const;
-
- private:
-  std::unique_ptr<SSLCertificateStats> GetStats(
-      std::unique_ptr<SSLCertificateStats> issuer) const;
 };
 
 // SSLCertChain is a simple wrapper for a vector of SSLCertificates. It serves
@@ -122,6 +114,13 @@ class SSLCertChain {
   // Returns a new SSLCertChain object instance wrapping the same underlying
   // certificate chain.  Caller is responsible for freeing the returned object.
   SSLCertChain* Copy() const;
+  // Same as above, but returning a unique_ptr for convenience.
+  std::unique_ptr<SSLCertChain> UniqueCopy() const;
+
+  // Gets information (fingerprint, etc.) about this certificate chain. This is
+  // used for certificate stats, see
+  // https://w3c.github.io/webrtc-stats/#certificatestats-dict*.
+  std::unique_ptr<SSLCertificateStats> GetStats() const;
 
  private:
   std::vector<std::unique_ptr<SSLCertificate>> certs_;
@@ -241,8 +240,10 @@ class SSLIdentity {
   // TODO(hbos,torbjorng): Rename to a less confusing name.
   virtual SSLIdentity* GetReference() const = 0;
 
-  // Returns a temporary reference to the certificate.
+  // Returns a temporary reference to the end-entity (leaf) certificate.
   virtual const SSLCertificate& certificate() const = 0;
+  // Returns a temporary reference to the entire certificate chain.
+  virtual const SSLCertChain& cert_chain() const = 0;
   virtual std::string PrivateKeyToPEMString() const = 0;
   virtual std::string PublicKeyToPEMString() const = 0;
 

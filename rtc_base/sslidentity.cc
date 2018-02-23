@@ -43,30 +43,6 @@ SSLCertificateStats::~SSLCertificateStats() {
 }
 
 std::unique_ptr<SSLCertificateStats> SSLCertificate::GetStats() const {
-  // We have a certificate and optionally a chain of certificates. This forms a
-  // linked list, starting with |this|, then the first element of |chain| and
-  // ending with the last element of |chain|. The "issuer" of a certificate is
-  // the next certificate in the chain. Stats are produced for each certificate
-  // in the list. Here, the "issuer" is the issuer's stats.
-  std::unique_ptr<SSLCertChain> chain = GetChain();
-  std::unique_ptr<SSLCertificateStats> issuer;
-  if (chain) {
-    // The loop runs in reverse so that the |issuer| is known before the
-    // |cert|'s stats.
-    for (ptrdiff_t i = chain->GetSize() - 1; i >= 0; --i) {
-      const SSLCertificate* cert = &chain->Get(i);
-      issuer = cert->GetStats(std::move(issuer));
-    }
-  }
-  return GetStats(std::move(issuer));
-}
-
-std::unique_ptr<SSLCertificate> SSLCertificate::GetUniqueReference() const {
-  return WrapUnique(GetReference());
-}
-
-std::unique_ptr<SSLCertificateStats> SSLCertificate::GetStats(
-    std::unique_ptr<SSLCertificateStats> issuer) const {
   // TODO(bemasc): Move this computation to a helper class that caches these
   // values to reduce CPU use in |StatsCollector::GetStats|. This will require
   // adding a fast |SSLCertificate::Equals| to detect certificate changes.
@@ -89,11 +65,13 @@ std::unique_ptr<SSLCertificateStats> SSLCertificate::GetStats(
   std::string der_base64;
   Base64::EncodeFromArray(der_buffer.data(), der_buffer.size(), &der_base64);
 
-  return std::unique_ptr<SSLCertificateStats>(new SSLCertificateStats(
-      std::move(fingerprint),
-      std::move(digest_algorithm),
-      std::move(der_base64),
-      std::move(issuer)));
+  return rtc::MakeUnique<SSLCertificateStats>(std::move(fingerprint),
+                                              std::move(digest_algorithm),
+                                              std::move(der_base64), nullptr);
+}
+
+std::unique_ptr<SSLCertificate> SSLCertificate::GetUniqueReference() const {
+  return WrapUnique(GetReference());
 }
 
 KeyParams::KeyParams(KeyType key_type) {
@@ -226,6 +204,28 @@ SSLCertChain* SSLCertChain::Copy() const {
                    return cert->GetUniqueReference();
                  });
   return new SSLCertChain(std::move(new_certs));
+}
+
+std::unique_ptr<SSLCertChain> SSLCertChain::UniqueCopy() const {
+  return WrapUnique(Copy());
+}
+
+std::unique_ptr<SSLCertificateStats> SSLCertChain::GetStats() const {
+  // We have a linked list of certificates, starting with the first element of
+  // |certs_| and ending with the last element of |certs_|. The "issuer" of a
+  // certificate is the next certificate in the chain. Stats are produced for
+  // each certificate in the list. Here, the "issuer" is the issuer's stats.
+  std::unique_ptr<SSLCertificateStats> issuer;
+  // The loop runs in reverse so that the |issuer| is known before the
+  // certificate issued by |issuer|.
+  for (ptrdiff_t i = certs_.size() - 1; i >= 0; --i) {
+    std::unique_ptr<SSLCertificateStats> new_stats = certs_[i]->GetStats();
+    if (new_stats) {
+      new_stats->issuer = std::move(issuer);
+    }
+    issuer = std::move(new_stats);
+  }
+  return issuer;
 }
 
 // static

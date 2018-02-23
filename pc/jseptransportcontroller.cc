@@ -243,12 +243,12 @@ JsepTransportController::GetLocalCertificate(
   return t->GetLocalCertificate();
 }
 
-std::unique_ptr<rtc::SSLCertificate>
-JsepTransportController::GetRemoteSSLCertificate(
+std::unique_ptr<rtc::SSLCertChain>
+JsepTransportController::GetRemoteSSLCertChain(
     const std::string& transport_name) const {
   if (!network_thread_->IsCurrent()) {
-    return network_thread_->Invoke<std::unique_ptr<rtc::SSLCertificate>>(
-        RTC_FROM_HERE, [&] { return GetRemoteSSLCertificate(transport_name); });
+    return network_thread_->Invoke<std::unique_ptr<rtc::SSLCertChain>>(
+        RTC_FROM_HERE, [&] { return GetRemoteSSLCertChain(transport_name); });
   }
 
   // Get the certificate from the RTP channel's DTLS handshake. Should be
@@ -259,7 +259,7 @@ JsepTransportController::GetRemoteSSLCertificate(
     return nullptr;
   }
 
-  return dtls->GetRemoteSSLCertificate();
+  return dtls->GetRemoteSSLCertChain();
 }
 
 void JsepTransportController::MaybeStartGathering() {

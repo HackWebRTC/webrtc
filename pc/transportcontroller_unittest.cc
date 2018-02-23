@@ -348,21 +348,21 @@ TEST_F(TransportControllerTest, TestSetAndGetLocalCertificate) {
   EXPECT_FALSE(transport_controller_->SetLocalCertificate(certificate2));
 }
 
-TEST_F(TransportControllerTest, TestGetRemoteSSLCertificate) {
+TEST_F(TransportControllerTest, TestGetRemoteSSLCertChain) {
   rtc::FakeSSLCertificate fake_certificate("fake_data");
 
   FakeDtlsTransport* transport = CreateFakeDtlsTransport("audio", 1);
   ASSERT_NE(nullptr, transport);
 
   transport->SetRemoteSSLCertificate(&fake_certificate);
-  std::unique_ptr<rtc::SSLCertificate> returned_certificate =
-      transport_controller_->GetRemoteSSLCertificate("audio");
-  EXPECT_TRUE(returned_certificate);
+  std::unique_ptr<rtc::SSLCertChain> returned_cert_chain =
+      transport_controller_->GetRemoteSSLCertChain("audio");
+  EXPECT_TRUE(returned_cert_chain);
   EXPECT_EQ(fake_certificate.ToPEMString(),
-            returned_certificate->ToPEMString());
+            returned_cert_chain->Get(0).ToPEMString());
 
   // Should fail if called for a nonexistant transport.
-  EXPECT_FALSE(transport_controller_->GetRemoteSSLCertificate("video"));
+  EXPECT_FALSE(transport_controller_->GetRemoteSSLCertChain("video"));
 }
 
 TEST_F(TransportControllerTest, TestSetLocalTransportDescription) {

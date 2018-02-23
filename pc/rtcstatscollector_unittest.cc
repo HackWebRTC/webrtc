@@ -133,7 +133,7 @@ std::unique_ptr<CertificateInfo> CreateFakeCertificateAndInfoFromDers(
   }
   info->certificate =
       rtc::RTCCertificate::Create(std::unique_ptr<rtc::FakeSSLIdentity>(
-          new rtc::FakeSSLIdentity(rtc::FakeSSLCertificate(info->pems))));
+          new rtc::FakeSSLIdentity(info->pems)));
   // Strip header/footer and newline characters of PEM strings.
   for (size_t i = 0; i < info->pems.size(); ++i) {
     rtc::replace_substrs("-----BEGIN CERTIFICATE-----", 27,
@@ -143,21 +143,14 @@ std::unique_ptr<CertificateInfo> CreateFakeCertificateAndInfoFromDers(
     rtc::replace_substrs("\n", 1,
                          "", 0, &info->pems[i]);
   }
-  // Fingerprint of leaf certificate.
-  std::unique_ptr<rtc::SSLFingerprint> fp(
-      rtc::SSLFingerprint::Create("sha-1",
-                                  &info->certificate->ssl_certificate()));
-  EXPECT_TRUE(fp);
-  info->fingerprints.push_back(fp->GetRfc4572Fingerprint());
-  // Fingerprints of the rest of the chain.
-  std::unique_ptr<rtc::SSLCertChain> chain =
-      info->certificate->ssl_certificate().GetChain();
-  if (chain) {
-    for (size_t i = 0; i < chain->GetSize(); i++) {
-      fp.reset(rtc::SSLFingerprint::Create("sha-1", &chain->Get(i)));
-      EXPECT_TRUE(fp);
-      info->fingerprints.push_back(fp->GetRfc4572Fingerprint());
-    }
+  // Fingerprints for the whole certificate chain, starting with leaf
+  // certificate.
+  const rtc::SSLCertChain& chain = info->certificate->ssl_cert_chain();
+  std::unique_ptr<rtc::SSLFingerprint> fp;
+  for (size_t i = 0; i < chain.GetSize(); i++) {
+    fp.reset(rtc::SSLFingerprint::Create("sha-1", &chain.Get(i)));
+    EXPECT_TRUE(fp);
+    info->fingerprints.push_back(fp->GetRfc4572Fingerprint());
   }
   EXPECT_EQ(info->ders.size(), info->fingerprints.size());
   return info;
@@ -579,9 +572,9 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCertificateStatsSingle) {
   std::unique_ptr<CertificateInfo> remote_certinfo =
       CreateFakeCertificateAndInfoFromDers(
           std::vector<std::string>({ "(remote) single certificate" }));
-  pc_->SetRemoteCertificate(
+  pc_->SetRemoteCertChain(
       kTransportName,
-      remote_certinfo->certificate->ssl_certificate().GetUniqueReference());
+      remote_certinfo->certificate->ssl_cert_chain().UniqueCopy());
 
   rtc::scoped_refptr<const RTCStatsReport> report = stats_->GetStatsReport();
 
@@ -693,9 +686,9 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCertificateStatsMultiple) {
   std::unique_ptr<CertificateInfo> audio_remote_certinfo =
       CreateFakeCertificateAndInfoFromDers(
           std::vector<std::string>({ "(remote) audio" }));
-  pc_->SetRemoteCertificate(
-      kAudioTransport, audio_remote_certinfo->certificate->ssl_certificate()
-                           .GetUniqueReference());
+  pc_->SetRemoteCertChain(
+      kAudioTransport,
+      audio_remote_certinfo->certificate->ssl_cert_chain().UniqueCopy());
 
   pc_->AddVideoChannel("video", kVideoTransport);
   std::unique_ptr<CertificateInfo> video_local_certinfo =
@@ -705,9 +698,9 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCertificateStatsMultiple) {
   std::unique_ptr<CertificateInfo> video_remote_certinfo =
       CreateFakeCertificateAndInfoFromDers(
           std::vector<std::string>({ "(remote) video" }));
-  pc_->SetRemoteCertificate(
-      kVideoTransport, video_remote_certinfo->certificate->ssl_certificate()
-                           .GetUniqueReference());
+  pc_->SetRemoteCertChain(
+      kVideoTransport,
+      video_remote_certinfo->certificate->ssl_cert_chain().UniqueCopy());
 
   rtc::scoped_refptr<const RTCStatsReport> report = stats_->GetStatsReport();
   ExpectReportContainsCertificateInfo(report, *audio_local_certinfo);
@@ -730,9 +723,9 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCertificateStatsChain) {
       CreateFakeCertificateAndInfoFromDers({"(remote) this", "(remote) is",
                                             "(remote) another",
                                             "(remote) chain"});
-  pc_->SetRemoteCertificate(
+  pc_->SetRemoteCertChain(
       kTransportName,
-      remote_certinfo->certificate->ssl_certificate().GetUniqueReference());
+      remote_certinfo->certificate->ssl_cert_chain().UniqueCopy());
 
   rtc::scoped_refptr<const RTCStatsReport> report = stats_->GetStatsReport();
   ExpectReportContainsCertificateInfo(report, *local_certinfo);
@@ -1805,9 +1798,9 @@ TEST_F(RTCStatsCollectorTest, CollectRTCTransportStats) {
   std::unique_ptr<CertificateInfo> remote_certinfo =
       CreateFakeCertificateAndInfoFromDers(
           {"(remote) local", "(remote) chain"});
-  pc_->SetRemoteCertificate(
+  pc_->SetRemoteCertChain(
       kTransportName,
-      remote_certinfo->certificate->ssl_certificate().GetUniqueReference());
+      remote_certinfo->certificate->ssl_cert_chain().UniqueCopy());
 
   report = stats_->GetFreshStatsReport();
 

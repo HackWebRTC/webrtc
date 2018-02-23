@@ -309,15 +309,6 @@ bool DtlsTransport::SetRemoteFingerprint(const std::string& digest_alg,
   return true;
 }
 
-std::unique_ptr<rtc::SSLCertificate> DtlsTransport::GetRemoteSSLCertificate()
-    const {
-  if (!dtls_) {
-    return nullptr;
-  }
-
-  return dtls_->GetPeerCertificate();
-}
-
 std::unique_ptr<rtc::SSLCertChain> DtlsTransport::GetRemoteSSLCertChain()
     const {
   if (!dtls_) {

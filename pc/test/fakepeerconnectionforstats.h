@@ -196,9 +196,9 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase {
     local_certificates_by_transport_[transport_name] = certificate;
   }
 
-  void SetRemoteCertificate(const std::string& transport_name,
-                            std::unique_ptr<rtc::SSLCertificate> certificate) {
-    remote_certificates_by_transport_[transport_name] = std::move(certificate);
+  void SetRemoteCertChain(const std::string& transport_name,
+                          std::unique_ptr<rtc::SSLCertChain> chain) {
+    remote_cert_chains_by_transport_[transport_name] = std::move(chain);
   }
 
   // PeerConnectionInterface overrides.
@@ -313,11 +313,11 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase {
     }
   }
 
-  std::unique_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate(
+  std::unique_ptr<rtc::SSLCertChain> GetRemoteSSLCertChain(
       const std::string& transport_name) override {
-    auto it = remote_certificates_by_transport_.find(transport_name);
-    if (it != remote_certificates_by_transport_.end()) {
-      return it->second->GetUniqueReference();
+    auto it = remote_cert_chains_by_transport_.find(transport_name);
+    if (it != remote_cert_chains_by_transport_.end()) {
+      return it->second->UniqueCopy();
     } else {
       return nullptr;
     }
@@ -379,8 +379,8 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase {
 
   std::map<std::string, rtc::scoped_refptr<rtc::RTCCertificate>>
       local_certificates_by_transport_;
-  std::map<std::string, std::unique_ptr<rtc::SSLCertificate>>
-      remote_certificates_by_transport_;
+  std::map<std::string, std::unique_ptr<rtc::SSLCertChain>>
+      remote_cert_chains_by_transport_;
 };
 
 }  // namespace webrtc

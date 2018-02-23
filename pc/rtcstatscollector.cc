@@ -1234,13 +1234,13 @@ RTCStatsCollector::PrepareTransportCertificateStats_n(
     rtc::scoped_refptr<rtc::RTCCertificate> local_certificate;
     if (pc_->GetLocalCertificate(transport_name, &local_certificate)) {
       certificate_stats_pair.local =
-          local_certificate->ssl_certificate().GetStats();
+          local_certificate->ssl_cert_chain().GetStats();
     }
 
-    std::unique_ptr<rtc::SSLCertificate> remote_certificate =
-        pc_->GetRemoteSSLCertificate(transport_name);
-    if (remote_certificate) {
-      certificate_stats_pair.remote = remote_certificate->GetStats();
+    std::unique_ptr<rtc::SSLCertChain> remote_cert_chain =
+        pc_->GetRemoteSSLCertChain(transport_name);
+    if (remote_cert_chain) {
+      certificate_stats_pair.remote = remote_cert_chain->GetStats();
     }
 
     transport_cert_stats.insert(

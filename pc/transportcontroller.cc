@@ -191,17 +191,6 @@ bool TransportController::GetLocalCertificate(
                                this, transport_name, certificate));
 }
 
-std::unique_ptr<rtc::SSLCertificate>
-TransportController::GetRemoteSSLCertificate(
-    const std::string& transport_name) const {
-  if (network_thread_->IsCurrent()) {
-    return GetRemoteSSLCertificate_n(transport_name);
-  }
-  return network_thread_->Invoke<std::unique_ptr<rtc::SSLCertificate>>(
-      RTC_FROM_HERE, rtc::Bind(&TransportController::GetRemoteSSLCertificate_n,
-                               this, transport_name));
-}
-
 std::unique_ptr<rtc::SSLCertChain> TransportController::GetRemoteSSLCertChain(
     const std::string& transport_name) const {
   if (!network_thread_->IsCurrent()) {
@@ -209,6 +198,9 @@ std::unique_ptr<rtc::SSLCertChain> TransportController::GetRemoteSSLCertChain(
         RTC_FROM_HERE, [&] { return GetRemoteSSLCertChain(transport_name); });
   }
 
+  // Get the certificate from the RTP channel's DTLS handshake. Should be
+  // identical to the RTCP channel's, since they were given the same remote
+  // fingerprint.
   const RefCountedChannel* ch =
       GetChannel_n(transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP);
   if (!ch) {
@@ -760,21 +752,6 @@ bool TransportController::GetLocalCertificate_n(
     return false;
   }
   return t->GetLocalCertificate(certificate);
-}
-
-std::unique_ptr<rtc::SSLCertificate>
-TransportController::GetRemoteSSLCertificate_n(
-    const std::string& transport_name) const {
-  RTC_DCHECK(network_thread_->IsCurrent());
-
-  // Get the certificate from the RTP channel's DTLS handshake. Should be
-  // identical to the RTCP channel's, since they were given the same remote
-  // fingerprint.
-  const RefCountedChannel* ch = GetChannel_n(transport_name, 1);
-  if (!ch) {
-    return nullptr;
-  }
-  return ch->dtls()->GetRemoteSSLCertificate();
 }
 
 bool TransportController::SetLocalTransportDescription_n(

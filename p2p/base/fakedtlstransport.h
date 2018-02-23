@@ -178,14 +178,9 @@ class FakeDtlsTransport : public DtlsTransportInternal {
   rtc::scoped_refptr<rtc::RTCCertificate> GetLocalCertificate() const override {
     return local_cert_;
   }
-  std::unique_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate()
-      const override {
-    return remote_cert_ ? std::unique_ptr<rtc::SSLCertificate>(
-                              remote_cert_->GetReference())
-                        : nullptr;
-  }
   std::unique_ptr<rtc::SSLCertChain> GetRemoteSSLCertChain() const override {
-    return nullptr;
+    return remote_cert_ ? rtc::MakeUnique<rtc::SSLCertChain>(remote_cert_)
+                        : nullptr;
   }
   bool ExportKeyingMaterial(const std::string& label,
                             const uint8_t* context,

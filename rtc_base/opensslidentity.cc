@@ -366,10 +366,6 @@ bool OpenSSLCertificate::GetSignatureDigestAlgorithm(
   return true;
 }
 
-std::unique_ptr<SSLCertChain> OpenSSLCertificate::GetChain() const {
-  return nullptr;
-}
-
 bool OpenSSLCertificate::ComputeDigest(const std::string& algorithm,
                                        unsigned char* digest,
                                        size_t size,
@@ -588,6 +584,10 @@ SSLIdentity* OpenSSLIdentity::FromPEMChainStrings(
 
 const OpenSSLCertificate& OpenSSLIdentity::certificate() const {
   return *static_cast<const OpenSSLCertificate*>(&cert_chain_->Get(0));
+}
+
+const SSLCertChain& OpenSSLIdentity::cert_chain() const {
+  return *cert_chain_.get();
 }
 
 OpenSSLIdentity* OpenSSLIdentity::GetReference() const {

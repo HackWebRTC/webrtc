@@ -122,9 +122,9 @@ class JsepTransportController : public sigslot::has_slots<>,
       const rtc::scoped_refptr<rtc::RTCCertificate>& certificate);
   rtc::scoped_refptr<rtc::RTCCertificate> GetLocalCertificate(
       const std::string& mid) const;
-  // Caller owns returned certificate. This method mainly exists for stats
-  // reporting.
-  std::unique_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate(
+  // Caller owns returned certificate chain. This method mainly exists for
+  // stats reporting.
+  std::unique_ptr<rtc::SSLCertChain> GetRemoteSSLCertChain(
       const std::string& mid) const;
   // Get negotiated role, if one has been negotiated.
   rtc::Optional<rtc::SSLRole> GetDtlsRole(const std::string& mid) const;

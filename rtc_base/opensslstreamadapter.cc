@@ -288,13 +288,6 @@ void OpenSSLStreamAdapter::SetServerRole(SSLRole role) {
   role_ = role;
 }
 
-std::unique_ptr<SSLCertificate> OpenSSLStreamAdapter::GetPeerCertificate()
-    const {
-  return peer_certificate_ ? std::unique_ptr<SSLCertificate>(
-                                 peer_certificate_->GetReference())
-                           : nullptr;
-}
-
 bool OpenSSLStreamAdapter::SetPeerCertificateDigest(
     const std::string& digest_alg,
     const unsigned char* digest_val,
@@ -324,7 +317,7 @@ bool OpenSSLStreamAdapter::SetPeerCertificateDigest(
   peer_certificate_digest_value_.SetData(digest_val, digest_len);
   peer_certificate_digest_algorithm_ = digest_alg;
 
-  if (!peer_certificate_) {
+  if (!peer_cert_chain_) {
     // Normal case, where the digest is set before we obtain the certificate
     // from the handshake.
     return true;
@@ -831,7 +824,7 @@ int OpenSSLStreamAdapter::ContinueSSL() {
       RTC_LOG(LS_VERBOSE) << " -- success";
       // By this point, OpenSSL should have given us a certificate, or errored
       // out if one was missing.
-      RTC_DCHECK(peer_certificate_ || !client_auth_enabled());
+      RTC_DCHECK(peer_cert_chain_ || !client_auth_enabled());
 
       state_ = SSL_CONNECTED;
       if (!waiting_to_verify_peer_certificate()) {
@@ -928,7 +921,7 @@ void OpenSSLStreamAdapter::Cleanup(uint8_t alert) {
     ssl_ctx_ = nullptr;
   }
   identity_.reset();
-  peer_certificate_.reset();
+  peer_cert_chain_.reset();
 
   // Clear the DTLS timer
   Thread::Current()->Clear(this, MSG_TIMEOUT);
@@ -1062,15 +1055,18 @@ SSL_CTX* OpenSSLStreamAdapter::SetupSSLContext() {
 }
 
 bool OpenSSLStreamAdapter::VerifyPeerCertificate() {
-  if (!has_peer_certificate_digest() || !peer_certificate_) {
+  if (!has_peer_certificate_digest() || !peer_cert_chain_ ||
+      !peer_cert_chain_->GetSize()) {
     RTC_LOG(LS_WARNING) << "Missing digest or peer certificate.";
     return false;
   }
+  const OpenSSLCertificate* leaf_cert =
+      static_cast<const OpenSSLCertificate*>(&peer_cert_chain_->Get(0));
 
   unsigned char digest[EVP_MAX_MD_SIZE];
   size_t digest_length;
   if (!OpenSSLCertificate::ComputeDigest(
-          peer_certificate_->x509(), peer_certificate_digest_algorithm_, digest,
+          leaf_cert->x509(), peer_certificate_digest_algorithm_, digest,
           sizeof(digest), &digest_length)) {
     RTC_LOG(LS_WARNING) << "Failed to compute peer cert digest.";
     return false;
@@ -1092,7 +1088,7 @@ bool OpenSSLStreamAdapter::VerifyPeerCertificate() {
 
 std::unique_ptr<SSLCertChain> OpenSSLStreamAdapter::GetPeerSSLCertChain()
     const {
-  return std::unique_ptr<SSLCertChain>(peer_cert_chain_->Copy());
+  return peer_cert_chain_ ? peer_cert_chain_->UniqueCopy() : nullptr;
 }
 
 int OpenSSLStreamAdapter::SSLVerifyCallback(X509_STORE_CTX* store, void* arg) {
@@ -1104,9 +1100,6 @@ int OpenSSLStreamAdapter::SSLVerifyCallback(X509_STORE_CTX* store, void* arg) {
 
 #if defined(OPENSSL_IS_BORINGSSL)
   STACK_OF(X509)* chain = SSL_get_peer_full_cert_chain(ssl);
-  // Creates certificate.
-  stream->peer_certificate_.reset(
-      new OpenSSLCertificate(sk_X509_value(chain, 0)));
   // Creates certificate chain.
   std::vector<std::unique_ptr<SSLCertificate>> cert_chain;
   for (X509* cert : chain) {
@@ -1116,7 +1109,8 @@ int OpenSSLStreamAdapter::SSLVerifyCallback(X509_STORE_CTX* store, void* arg) {
 #else
   // Record the peer's certificate.
   X509* cert = SSL_get_peer_certificate(ssl);
-  stream->peer_certificate_.reset(new OpenSSLCertificate(cert));
+  stream->peer_cert_chain_.reset(
+      new SSLCertChain(new OpenSSLCertificate(cert)));
   X509_free(cert);
 #endif
 

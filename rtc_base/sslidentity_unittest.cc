@@ -175,8 +175,7 @@ IdentityAndInfo CreateFakeIdentityAndInfoFromDers(
         reinterpret_cast<const unsigned char*>(der.c_str()),
         der.length()));
   }
-  info.identity.reset(
-      new rtc::FakeSSLIdentity(rtc::FakeSSLCertificate(info.pems)));
+  info.identity.reset(new rtc::FakeSSLIdentity(info.pems));
   // Strip header/footer and newline characters of PEM strings.
   for (size_t i = 0; i < info.pems.size(); ++i) {
     rtc::replace_substrs("-----BEGIN CERTIFICATE-----", 27,
@@ -186,20 +185,14 @@ IdentityAndInfo CreateFakeIdentityAndInfoFromDers(
     rtc::replace_substrs("\n", 1,
                          "", 0, &info.pems[i]);
   }
-  // Fingerprint of leaf certificate.
-  std::unique_ptr<rtc::SSLFingerprint> fp(
-      rtc::SSLFingerprint::Create("sha-1", &info.identity->certificate()));
-  EXPECT_TRUE(fp);
-  info.fingerprints.push_back(fp->GetRfc4572Fingerprint());
-  // Fingerprints of the rest of the chain.
-  std::unique_ptr<rtc::SSLCertChain> chain =
-      info.identity->certificate().GetChain();
-  if (chain) {
-    for (size_t i = 0; i < chain->GetSize(); i++) {
-      fp.reset(rtc::SSLFingerprint::Create("sha-1", &chain->Get(i)));
-      EXPECT_TRUE(fp);
-      info.fingerprints.push_back(fp->GetRfc4572Fingerprint());
-    }
+  // Fingerprints for the whole certificate chain, starting with leaf
+  // certificate.
+  const rtc::SSLCertChain& chain = info.identity->cert_chain();
+  std::unique_ptr<rtc::SSLFingerprint> fp;
+  for (size_t i = 0; i < chain.GetSize(); i++) {
+    fp.reset(rtc::SSLFingerprint::Create("sha-1", &chain.Get(i)));
+    EXPECT_TRUE(fp);
+    info.fingerprints.push_back(fp->GetRfc4572Fingerprint());
   }
   EXPECT_EQ(info.ders.size(), info.fingerprints.size());
   return info;
@@ -477,7 +470,7 @@ TEST_F(SSLIdentityTest, SSLCertificateGetStatsWithChain) {
   EXPECT_EQ(info.fingerprints.size(), info.ders.size());
 
   std::unique_ptr<rtc::SSLCertificateStats> first_stats =
-      info.identity->certificate().GetStats();
+      info.identity->cert_chain().GetStats();
   rtc::SSLCertificateStats* cert_stats = first_stats.get();
   for (size_t i = 0; i < info.ders.size(); ++i) {
     EXPECT_EQ(cert_stats->fingerprint, info.fingerprints[i]);

@@ -515,8 +515,8 @@ TEST_F(DtlsTransportTest, TestCertificatesBeforeConnect) {
   auto certificate2 = client2_.dtls_transport()->GetLocalCertificate();
   ASSERT_NE(certificate1->ssl_certificate().ToPEMString(),
             certificate2->ssl_certificate().ToPEMString());
-  ASSERT_FALSE(client1_.dtls_transport()->GetRemoteSSLCertificate());
-  ASSERT_FALSE(client2_.dtls_transport()->GetRemoteSSLCertificate());
+  ASSERT_FALSE(client1_.dtls_transport()->GetRemoteSSLCertChain());
+  ASSERT_FALSE(client2_.dtls_transport()->GetRemoteSSLCertChain());
 }
 
 // Test Certificates state after connection.
@@ -531,15 +531,17 @@ TEST_F(DtlsTransportTest, TestCertificatesAfterConnect) {
             certificate2->ssl_certificate().ToPEMString());
 
   // Each side's remote certificate is the other side's local certificate.
-  std::unique_ptr<rtc::SSLCertificate> remote_cert1 =
-      client1_.dtls_transport()->GetRemoteSSLCertificate();
+  std::unique_ptr<rtc::SSLCertChain> remote_cert1 =
+      client1_.dtls_transport()->GetRemoteSSLCertChain();
   ASSERT_TRUE(remote_cert1);
-  ASSERT_EQ(remote_cert1->ToPEMString(),
+  ASSERT_EQ(1u, remote_cert1->GetSize());
+  ASSERT_EQ(remote_cert1->Get(0).ToPEMString(),
             certificate2->ssl_certificate().ToPEMString());
-  std::unique_ptr<rtc::SSLCertificate> remote_cert2 =
-      client2_.dtls_transport()->GetRemoteSSLCertificate();
+  std::unique_ptr<rtc::SSLCertChain> remote_cert2 =
+      client2_.dtls_transport()->GetRemoteSSLCertChain();
   ASSERT_TRUE(remote_cert2);
-  ASSERT_EQ(remote_cert2->ToPEMString(),
+  ASSERT_EQ(1u, remote_cert2->GetSize());
+  ASSERT_EQ(remote_cert2->Get(0).ToPEMString(),
             certificate1->ssl_certificate().ToPEMString());
 }
 

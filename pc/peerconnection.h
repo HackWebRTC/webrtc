@@ -242,7 +242,7 @@ class PeerConnection : public PeerConnectionInternal,
   bool GetLocalCertificate(
       const std::string& transport_name,
       rtc::scoped_refptr<rtc::RTCCertificate>* certificate) override;
-  std::unique_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate(
+  std::unique_ptr<rtc::SSLCertChain> GetRemoteSSLCertChain(
       const std::string& transport_name) override;
   bool IceRestartPending(const std::string& content_name) const override;
   bool NeedsIceRestart(const std::string& content_name) const override;

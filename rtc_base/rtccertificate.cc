@@ -46,6 +46,10 @@ const SSLCertificate& RTCCertificate::ssl_certificate() const {
   return identity_->certificate();
 }
 
+const SSLCertChain& RTCCertificate::ssl_cert_chain() const {
+  return identity_->cert_chain();
+}
+
 RTCCertificatePEM RTCCertificate::ToPEM() const {
   return RTCCertificatePEM(identity_->PrivateKeyToPEMString(),
                            ssl_certificate().ToPEMString());

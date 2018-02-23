@@ -2945,12 +2945,11 @@ void PeerConnection::SetAudioRecording(bool recording) {
 
 std::unique_ptr<rtc::SSLCertificate>
 PeerConnection::GetRemoteAudioSSLCertificate() {
-  auto audio_transceiver = GetFirstAudioTransceiver();
-  if (!audio_transceiver || !audio_transceiver->internal()->channel()) {
+  std::unique_ptr<rtc::SSLCertChain> chain = GetRemoteAudioSSLCertChain();
+  if (!chain || !chain->GetSize()) {
     return nullptr;
   }
-  return GetRemoteSSLCertificate(
-      audio_transceiver->internal()->channel()->transport_name());
+  return chain->Get(0).GetUniqueReference();
 }
 
 std::unique_ptr<rtc::SSLCertChain>
@@ -5007,9 +5006,9 @@ bool PeerConnection::GetLocalCertificate(
                                                     certificate);
 }
 
-std::unique_ptr<rtc::SSLCertificate> PeerConnection::GetRemoteSSLCertificate(
+std::unique_ptr<rtc::SSLCertChain> PeerConnection::GetRemoteSSLCertChain(
     const std::string& transport_name) {
-  return transport_controller_->GetRemoteSSLCertificate(transport_name);
+  return transport_controller_->GetRemoteSSLCertChain(transport_name);
 }
 
 cricket::DataChannelType PeerConnection::data_channel_type() const {

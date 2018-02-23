@@ -636,11 +636,10 @@ class StatsCollectorTest : public testing::Test {
     }
   }
 
-  void TestCertificateReports(
-      const rtc::FakeSSLCertificate& local_cert,
-      const std::vector<std::string>& local_ders,
-      std::unique_ptr<rtc::FakeSSLCertificate> remote_cert,
-      const std::vector<std::string>& remote_ders) {
+  void TestCertificateReports(const rtc::FakeSSLIdentity& local_identity,
+                              const std::vector<std::string>& local_ders,
+                              const rtc::FakeSSLIdentity& remote_identity,
+                              const std::vector<std::string>& remote_ders) {
     const std::string kTransportName = "transport";
 
     auto pc = CreatePeerConnection();
@@ -656,12 +655,13 @@ class StatsCollectorTest : public testing::Test {
         internal::TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA;
     pc->SetTransportStats(kTransportName, channel_stats);
 
-    // Fake certificate to report
+    // Fake certificate to report.
     rtc::scoped_refptr<rtc::RTCCertificate> local_certificate(
         rtc::RTCCertificate::Create(
-            rtc::MakeUnique<rtc::FakeSSLIdentity>(local_cert)));
+            std::unique_ptr<rtc::SSLIdentity>(local_identity.GetReference())));
     pc->SetLocalCertificate(kTransportName, local_certificate);
-    pc->SetRemoteCertificate(kTransportName, std::move(remote_cert));
+    pc->SetRemoteCertChain(kTransportName,
+                           remote_identity.cert_chain().UniqueCopy());
 
     stats->UpdateStats(PeerConnectionInterface::kStatsOutputLevelStandard);
 
@@ -1329,7 +1329,7 @@ TEST_F(StatsCollectorTest, ChainedCertificateReportsCreated) {
   local_ders[2] = "some";
   local_ders[3] = "der";
   local_ders[4] = "values";
-  rtc::FakeSSLCertificate local_cert(DersToPems(local_ders));
+  rtc::FakeSSLIdentity local_identity(DersToPems(local_ders));
 
   // Build remote certificate chain
   std::vector<std::string> remote_ders(4);
@@ -1337,10 +1337,9 @@ TEST_F(StatsCollectorTest, ChainedCertificateReportsCreated) {
   remote_ders[1] = "non-";
   remote_ders[2] = "intersecting";
   remote_ders[3] = "set";
-  std::unique_ptr<rtc::FakeSSLCertificate> remote_cert(
-      new rtc::FakeSSLCertificate(DersToPems(remote_ders)));
+  rtc::FakeSSLIdentity remote_identity(DersToPems(remote_ders));
 
-  TestCertificateReports(local_cert, local_ders, std::move(remote_cert),
+  TestCertificateReports(local_identity, local_ders, remote_identity,
                          remote_ders);
 }
 
@@ -1349,15 +1348,14 @@ TEST_F(StatsCollectorTest, ChainedCertificateReportsCreated) {
 TEST_F(StatsCollectorTest, ChainlessCertificateReportsCreated) {
   // Build local certificate.
   std::string local_der = "This is the local der.";
-  rtc::FakeSSLCertificate local_cert(DerToPem(local_der));
+  rtc::FakeSSLIdentity local_identity(DerToPem(local_der));
 
   // Build remote certificate.
   std::string remote_der = "This is somebody else's der.";
-  std::unique_ptr<rtc::FakeSSLCertificate> remote_cert(
-      new rtc::FakeSSLCertificate(DerToPem(remote_der)));
+  rtc::FakeSSLIdentity remote_identity(DerToPem(remote_der));
 
-  TestCertificateReports(local_cert, std::vector<std::string>(1, local_der),
-                         std::move(remote_cert),
+  TestCertificateReports(local_identity, std::vector<std::string>(1, local_der),
+                         remote_identity,
                          std::vector<std::string>(1, remote_der));
 }
 
@@ -1405,16 +1403,16 @@ TEST_F(StatsCollectorTest, NoTransport) {
 TEST_F(StatsCollectorTest, UnsupportedDigestIgnored) {
   // Build a local certificate.
   std::string local_der = "This is the local der.";
-  rtc::FakeSSLCertificate local_cert(DerToPem(local_der));
+  rtc::FakeSSLIdentity local_identity(DerToPem(local_der));
 
   // Build a remote certificate with an unsupported digest algorithm.
   std::string remote_der = "This is somebody else's der.";
-  std::unique_ptr<rtc::FakeSSLCertificate> remote_cert(
-      new rtc::FakeSSLCertificate(DerToPem(remote_der)));
-  remote_cert->set_digest_algorithm("foobar");
+  rtc::FakeSSLCertificate remote_cert(DerToPem(remote_der));
+  remote_cert.set_digest_algorithm("foobar");
+  rtc::FakeSSLIdentity remote_identity(remote_cert);
 
-  TestCertificateReports(local_cert, std::vector<std::string>(1, local_der),
-                         std::move(remote_cert), std::vector<std::string>());
+  TestCertificateReports(local_identity, std::vector<std::string>(1, local_der),
+                         remote_identity, std::vector<std::string>());
 }
 
 // This test verifies that the audio/video related stats which are -1 initially

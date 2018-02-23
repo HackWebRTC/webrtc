@@ -91,10 +91,8 @@ class TransportController : public sigslot::has_slots<>,
   bool GetLocalCertificate(
       const std::string& transport_name,
       rtc::scoped_refptr<rtc::RTCCertificate>* certificate) const;
-  // Caller owns returned certificate. This method mainly exists for stats
-  // reporting.
-  std::unique_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate(
-      const std::string& transport_name) const;
+  // Caller owns returned certificate chain. This method mainly exists for
+  // stats reporting.
   std::unique_ptr<rtc::SSLCertChain> GetRemoteSSLCertChain(
       const std::string& transport_name) const;
 
@@ -249,8 +247,6 @@ class TransportController : public sigslot::has_slots<>,
   bool GetLocalCertificate_n(
       const std::string& transport_name,
       rtc::scoped_refptr<rtc::RTCCertificate>* certificate) const;
-  std::unique_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate_n(
-      const std::string& transport_name) const;
   bool SetLocalTransportDescription_n(const std::string& transport_name,
                                       const TransportDescription& tdesc,
                                       webrtc::SdpType type,

@@ -71,7 +71,7 @@ class PeerConnectionInternal : public PeerConnectionInterface {
   virtual bool GetLocalCertificate(
       const std::string& transport_name,
       rtc::scoped_refptr<rtc::RTCCertificate>* certificate) = 0;
-  virtual std::unique_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate(
+  virtual std::unique_ptr<rtc::SSLCertChain> GetRemoteSSLCertChain(
       const std::string& transport_name) = 0;
 
   // Returns true if there was an ICE restart initiated by the remote offer.

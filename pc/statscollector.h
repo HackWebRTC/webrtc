@@ -15,6 +15,7 @@
 #define PC_STATSCOLLECTOR_H_
 
 #include <map>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -101,8 +102,9 @@ class StatsCollector {
       bool local);
 
   // Adds a report for this certificate and every certificate in its chain, and
-  // returns the leaf certificate's report (|cert|'s report).
-  StatsReport* AddCertificateReports(const rtc::SSLCertificate* cert);
+  // returns the leaf certificate's report (|cert_stats|'s report).
+  StatsReport* AddCertificateReports(
+      std::unique_ptr<rtc::SSLCertificateStats> cert_stats);
 
   StatsReport* AddConnectionInfoReport(const std::string& content_name,
       int component, int connection_id,

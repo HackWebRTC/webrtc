@@ -597,10 +597,13 @@ class SSLStreamAdapterTestBase : public testing::Test,
   }
 
   std::unique_ptr<rtc::SSLCertificate> GetPeerCertificate(bool client) {
+    std::unique_ptr<rtc::SSLCertChain> chain;
     if (client)
-      return client_ssl_->GetPeerCertificate();
+      chain = client_ssl_->GetPeerSSLCertChain();
     else
-      return server_ssl_->GetPeerCertificate();
+      chain = server_ssl_->GetPeerSSLCertChain();
+    return (chain && chain->GetSize()) ? chain->Get(0).GetUniqueReference()
+                                       : nullptr;
   }
 
   bool GetSslCipherSuite(bool client, int* retval) {
@@ -971,11 +974,10 @@ TEST_P(SSLStreamAdapterTestTLS, GetPeerCertChainWithOneCertificate) {
   TestHandshake();
   std::unique_ptr<rtc::SSLCertChain> cert_chain =
       client_ssl_->GetPeerSSLCertChain();
-  std::unique_ptr<rtc::SSLCertificate> certificate =
-      client_ssl_->GetPeerCertificate();
   ASSERT_NE(nullptr, cert_chain);
   EXPECT_EQ(1u, cert_chain->GetSize());
-  EXPECT_EQ(cert_chain->Get(0).ToPEMString(), certificate->ToPEMString());
+  EXPECT_EQ(cert_chain->Get(0).ToPEMString(),
+            server_identity_->certificate().ToPEMString());
 }
 
 TEST_F(SSLStreamAdapterTestDTLSCertChain, TwoCertHandshake) {
@@ -1388,9 +1390,6 @@ TEST_F(SSLStreamAdapterTestDTLSFromPEMStrings, TestDTLSGetPeerCertificate) {
   std::string client_peer_string = client_peer_cert->ToPEMString();
   ASSERT_NE(kCERT_PEM, client_peer_string);
 
-  // It must not have a chain, because the test certs are self-signed.
-  ASSERT_FALSE(client_peer_cert->GetChain());
-
   // The server should have a peer certificate after the handshake.
   std::unique_ptr<rtc::SSLCertificate> server_peer_cert =
       GetPeerCertificate(false);
@@ -1398,9 +1397,6 @@ TEST_F(SSLStreamAdapterTestDTLSFromPEMStrings, TestDTLSGetPeerCertificate) {
 
   // It's kCERT_PEM
   ASSERT_EQ(kCERT_PEM, server_peer_cert->ToPEMString());
-
-  // It must not have a chain, because the test certs are self-signed.
-  ASSERT_FALSE(server_peer_cert->GetChain());
 }
 
 // Test getting the used DTLS ciphers.

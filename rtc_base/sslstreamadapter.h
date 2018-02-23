@@ -201,11 +201,7 @@ class SSLStreamAdapter : public StreamAdapterInterface {
       size_t digest_len,
       SSLPeerCertificateDigestError* error = nullptr) = 0;
 
-  // Retrieves the peer's X.509 certificate, if a connection has been
-  // established.
-  virtual std::unique_ptr<SSLCertificate> GetPeerCertificate() const = 0;
-
-  // Retrieves the peer's certificate chain including leaf, if a
+  // Retrieves the peer's certificate chain including leaf certificate, if a
   // connection has been established.
   virtual std::unique_ptr<SSLCertChain> GetPeerSSLCertChain() const = 0;
 

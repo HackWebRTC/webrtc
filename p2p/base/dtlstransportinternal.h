@@ -78,10 +78,6 @@ class DtlsTransportInternal : public rtc::PacketTransportInternal {
   virtual bool SetLocalCertificate(
       const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) = 0;
 
-  // Gets a copy of the remote side's SSL certificate.
-  virtual std::unique_ptr<rtc::SSLCertificate> GetRemoteSSLCertificate()
-      const = 0;
-
   // Gets a copy of the remote side's SSL certificate chain.
   virtual std::unique_ptr<rtc::SSLCertChain> GetRemoteSSLCertChain() const = 0;
 

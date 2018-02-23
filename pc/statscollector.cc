@@ -623,14 +623,12 @@ bool StatsCollector::IsValidTrack(const std::string& track_id) {
 }
 
 StatsReport* StatsCollector::AddCertificateReports(
-    const rtc::SSLCertificate* cert) {
+    std::unique_ptr<rtc::SSLCertificateStats> cert_stats) {
   RTC_DCHECK(pc_->signaling_thread()->IsCurrent());
-  RTC_DCHECK(cert != NULL);
 
-  std::unique_ptr<rtc::SSLCertificateStats> first_stats = cert->GetStats();
   StatsReport* first_report = nullptr;
   StatsReport* prev_report = nullptr;
-  for (rtc::SSLCertificateStats* stats = first_stats.get(); stats;
+  for (rtc::SSLCertificateStats* stats = cert_stats.get(); stats;
        stats = stats->issuer.get()) {
     StatsReport::Id id(StatsReport::NewTypedId(
         StatsReport::kStatsReportTypeCertificate, stats->fingerprint));
@@ -786,15 +784,16 @@ void StatsCollector::ExtractSessionInfo() {
     StatsReport::Id local_cert_report_id, remote_cert_report_id;
     rtc::scoped_refptr<rtc::RTCCertificate> certificate;
     if (pc_->GetLocalCertificate(transport_name, &certificate)) {
-      StatsReport* r = AddCertificateReports(&(certificate->ssl_certificate()));
+      StatsReport* r =
+          AddCertificateReports(certificate->ssl_cert_chain().GetStats());
       if (r)
         local_cert_report_id = r->id();
     }
 
-    std::unique_ptr<rtc::SSLCertificate> cert =
-        pc_->GetRemoteSSLCertificate(transport_name);
-    if (cert) {
-      StatsReport* r = AddCertificateReports(cert.get());
+    std::unique_ptr<rtc::SSLCertChain> remote_cert_chain =
+        pc_->GetRemoteSSLCertChain(transport_name);
+    if (remote_cert_chain) {
+      StatsReport* r = AddCertificateReports(remote_cert_chain->GetStats());
       if (r)
         remote_cert_report_id = r->id();
     }
