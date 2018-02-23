@@ -1835,6 +1835,8 @@ void PeerConnection::SetLocalDescription(
     network_thread()->Invoke<void>(
         RTC_FROM_HERE, rtc::Bind(&cricket::PortAllocator::DiscardCandidatePool,
                                  port_allocator_.get()));
+    // Make UMA notes about what was agreed to.
+    ReportNegotiatedSdpSemantics(*local_description());
   }
 }
 
@@ -2074,33 +2076,7 @@ void PeerConnection::SetRemoteDescription(
         RTC_FROM_HERE, rtc::Bind(&cricket::PortAllocator::DiscardCandidatePool,
                                  port_allocator_.get()));
     // Make UMA notes about what was agreed to.
-    if (uma_observer_) {
-      switch (remote_description()->description()->msid_signaling()) {
-        case 0:
-          uma_observer_->IncrementEnumCounter(kEnumCounterSdpSemanticNegotiated,
-                                              kSdpSemanticNegotiatedNone,
-                                              kSdpSemanticNegotiatedMax);
-          break;
-        case cricket::kMsidSignalingMediaSection:
-          uma_observer_->IncrementEnumCounter(kEnumCounterSdpSemanticNegotiated,
-                                              kSdpSemanticNegotiatedUnifiedPlan,
-                                              kSdpSemanticNegotiatedMax);
-          break;
-        case cricket::kMsidSignalingSsrcAttribute:
-          uma_observer_->IncrementEnumCounter(kEnumCounterSdpSemanticNegotiated,
-                                              kSdpSemanticNegotiatedPlanB,
-                                              kSdpSemanticNegotiatedMax);
-          break;
-        case cricket::kMsidSignalingMediaSection |
-            cricket::kMsidSignalingSsrcAttribute:
-          uma_observer_->IncrementEnumCounter(kEnumCounterSdpSemanticNegotiated,
-                                              kSdpSemanticNegotiatedMixed,
-                                              kSdpSemanticNegotiatedMax);
-          break;
-        default:
-          RTC_NOTREACHED();
-      }
-    }
+    ReportNegotiatedSdpSemantics(*remote_description());
   }
 
   observer->OnSetRemoteDescriptionComplete(RTCError::OK());
@@ -5744,6 +5720,38 @@ std::string PeerConnection::GetSessionErrorMsg() {
   desc << kSessionError << SessionErrorToString(session_error()) << ". ";
   desc << kSessionErrorDesc << session_error_desc() << ".";
   return desc.str();
+}
+
+void PeerConnection::ReportNegotiatedSdpSemantics(
+    const SessionDescriptionInterface& answer) {
+  if (!uma_observer_) {
+    return;
+  }
+  switch (answer.description()->msid_signaling()) {
+    case 0:
+      uma_observer_->IncrementEnumCounter(kEnumCounterSdpSemanticNegotiated,
+                                          kSdpSemanticNegotiatedNone,
+                                          kSdpSemanticNegotiatedMax);
+      break;
+    case cricket::kMsidSignalingMediaSection:
+      uma_observer_->IncrementEnumCounter(kEnumCounterSdpSemanticNegotiated,
+                                          kSdpSemanticNegotiatedUnifiedPlan,
+                                          kSdpSemanticNegotiatedMax);
+      break;
+    case cricket::kMsidSignalingSsrcAttribute:
+      uma_observer_->IncrementEnumCounter(kEnumCounterSdpSemanticNegotiated,
+                                          kSdpSemanticNegotiatedPlanB,
+                                          kSdpSemanticNegotiatedMax);
+      break;
+    case cricket::kMsidSignalingMediaSection |
+        cricket::kMsidSignalingSsrcAttribute:
+      uma_observer_->IncrementEnumCounter(kEnumCounterSdpSemanticNegotiated,
+                                          kSdpSemanticNegotiatedMixed,
+                                          kSdpSemanticNegotiatedMax);
+      break;
+    default:
+      RTC_NOTREACHED();
+  }
 }
 
 // We need to check the local/remote description for the Transport instead of

@@ -851,6 +851,10 @@ class PeerConnection : public PeerConnectionInternal,
   const char* SessionErrorToString(SessionError error) const;
   std::string GetSessionErrorMsg();
 
+  // Report inferred negotiated SDP semantics from a local/remote answer to the
+  // UMA observer.
+  void ReportNegotiatedSdpSemantics(const SessionDescriptionInterface& answer);
+
   // Invoked when TransportController connection completion is signaled.
   // Reports stats for all transports in use.
   void ReportTransportStats();
