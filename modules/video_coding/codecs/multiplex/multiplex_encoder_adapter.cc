@@ -234,8 +234,9 @@ EncodedImageCallback::Result MultiplexEncoderAdapter::OnEncodedImage(
 
   if (stashed_image.image_components.size() == frame_count) {
     // Complete case
-    auto iter = stashed_images_.begin();
-    while (iter != stashed_images_.end() && iter != stashed_image_next_itr) {
+    for (auto iter = stashed_images_.begin();
+         iter != stashed_images_.end() && iter != stashed_image_next_itr;
+         iter++) {
       // No image at all, skip.
       if (iter->second.image_components.size() == 0)
         continue;
@@ -252,7 +253,6 @@ EncodedImageCallback::Result MultiplexEncoderAdapter::OnEncodedImage(
       codec_info.codecSpecific.generic.simulcast_idx = 0;
       encoded_complete_callback_->OnEncodedImage(combined_image_, &codec_info,
                                                  fragmentation);
-      iter++;
     }
 
     stashed_images_.erase(stashed_images_.begin(), stashed_image_next_itr);
