@@ -204,7 +204,6 @@ class VideoEncoder {
   // quality scaler must implement this method.
   virtual ScalingSettings GetScalingSettings() const;
 
-  virtual int32_t SetPeriodicKeyFrames(bool enable);
   virtual bool SupportsNativeHandle() const;
   virtual const char* ImplementationName() const;
 };

@@ -95,10 +95,6 @@ VideoEncoder::ScalingSettings VideoEncoder::GetScalingSettings() const {
   return ScalingSettings::kOff;
 }
 
-int32_t VideoEncoder::SetPeriodicKeyFrames(bool enable) {
-  return -1;
-}
-
 bool VideoEncoder::SupportsNativeHandle() const {
   return false;
 }

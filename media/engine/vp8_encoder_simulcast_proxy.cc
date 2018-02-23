@@ -69,10 +69,6 @@ VideoEncoder::ScalingSettings VP8EncoderSimulcastProxy::GetScalingSettings()
   return encoder_->GetScalingSettings();
 }
 
-int32_t VP8EncoderSimulcastProxy::SetPeriodicKeyFrames(bool enable) {
-  return encoder_->SetPeriodicKeyFrames(enable);
-}
-
 bool VP8EncoderSimulcastProxy::SupportsNativeHandle() const {
   return encoder_->SupportsNativeHandle();
 }

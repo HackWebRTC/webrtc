@@ -59,7 +59,6 @@ class H264EncoderImpl : public H264Encoder {
 
   // Unsupported / Do nothing.
   int32_t SetChannelParameters(uint32_t packet_loss, int64_t rtt) override;
-  int32_t SetPeriodicKeyFrames(bool enable) override;
 
   // Exposed for testing.
   H264PacketizationMode PacketizationModeForTesting() const {

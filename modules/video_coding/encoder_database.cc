@@ -23,7 +23,6 @@ VCMEncoderDataBase::VCMEncoderDataBase(
     VCMEncodedFrameCallback* encoded_frame_callback)
     : number_of_cores_(0),
       max_payload_size_(kDefaultPayloadSize),
-      periodic_key_frames_(false),
       pending_encoder_reset_(true),
       send_codec_(),
       encoder_payload_type_(0),
@@ -100,11 +99,6 @@ bool VCMEncoderDataBase::SetSendCodec(const VideoCodec* send_codec,
     DeleteEncoder();
     return false;
   }
-
-  // Intentionally don't check return value since the encoder registration
-  // shouldn't fail because the codec doesn't support changing the periodic key
-  // frame setting.
-  ptr_encoder_->SetPeriodicKeyFrames(periodic_key_frames_);
 
   pending_encoder_reset_ = false;
 
@@ -209,14 +203,6 @@ bool VCMEncoderDataBase::RequiresEncoderReset(
 
 VCMGenericEncoder* VCMEncoderDataBase::GetEncoder() {
   return ptr_encoder_.get();
-}
-
-bool VCMEncoderDataBase::SetPeriodicKeyFrames(bool enable) {
-  periodic_key_frames_ = enable;
-  if (ptr_encoder_) {
-    return (ptr_encoder_->SetPeriodicKeyFrames(periodic_key_frames_) == 0);
-  }
-  return true;
 }
 
 void VCMEncoderDataBase::DeleteEncoder() {

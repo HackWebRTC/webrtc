@@ -42,8 +42,6 @@ class ConfigurableFrameSizeEncoder : public VideoEncoder {
   int32_t SetRateAllocation(const BitrateAllocation& allocation,
                             uint32_t framerate) override;
 
-  int32_t SetPeriodicKeyFrames(bool enable) override;
-
   int32_t SetFrameSize(size_t size);
 
  private:

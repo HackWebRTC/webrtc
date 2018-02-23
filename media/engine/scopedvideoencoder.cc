@@ -37,7 +37,6 @@ class ScopedVideoEncoder : public webrtc::VideoEncoder {
   int32_t SetRateAllocation(const webrtc::BitrateAllocation& allocation,
                             uint32_t framerate) override;
   ScalingSettings GetScalingSettings() const override;
-  int32_t SetPeriodicKeyFrames(bool enable) override;
   bool SupportsNativeHandle() const override;
   const char* ImplementationName() const override;
 
@@ -93,10 +92,6 @@ int32_t ScopedVideoEncoder::SetRateAllocation(
 webrtc::VideoEncoder::ScalingSettings ScopedVideoEncoder::GetScalingSettings()
     const {
   return encoder_->GetScalingSettings();
-}
-
-int32_t ScopedVideoEncoder::SetPeriodicKeyFrames(bool enable) {
-  return encoder_->SetPeriodicKeyFrames(enable);
 }
 
 bool ScopedVideoEncoder::SupportsNativeHandle() const {

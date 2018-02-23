@@ -79,10 +79,6 @@ int32_t ConfigurableFrameSizeEncoder::SetRateAllocation(
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int32_t ConfigurableFrameSizeEncoder::SetPeriodicKeyFrames(bool enable) {
-  return WEBRTC_VIDEO_CODEC_OK;
-}
-
 int32_t ConfigurableFrameSizeEncoder::SetFrameSize(size_t size) {
   RTC_DCHECK_LE(size, max_frame_size_);
   current_frame_size_ = size;

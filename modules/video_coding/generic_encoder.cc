@@ -151,11 +151,6 @@ EncoderParameters VCMGenericEncoder::GetEncoderParameters() const {
   return encoder_params_;
 }
 
-int32_t VCMGenericEncoder::SetPeriodicKeyFrames(bool enable) {
-  RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
-  return encoder_->SetPeriodicKeyFrames(enable);
-}
-
 int32_t VCMGenericEncoder::RequestFrame(
     const std::vector<FrameType>& frame_types) {
   RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);

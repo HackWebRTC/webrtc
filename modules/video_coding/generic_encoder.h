@@ -134,7 +134,6 @@ class VCMGenericEncoder {
   void SetEncoderParameters(const EncoderParameters& params);
   EncoderParameters GetEncoderParameters() const;
 
-  int32_t SetPeriodicKeyFrames(bool enable);
   int32_t RequestFrame(const std::vector<FrameType>& frame_types);
   bool InternalSource() const;
   bool SupportsNativeHandle() const;

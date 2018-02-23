@@ -44,8 +44,6 @@ class VCMEncoderDataBase {
 
   VCMGenericEncoder* GetEncoder();
 
-  bool SetPeriodicKeyFrames(bool enable);
-
   bool MatchesCurrentResolution(int width, int height) const;
 
  private:
@@ -57,7 +55,6 @@ class VCMEncoderDataBase {
 
   int number_of_cores_;
   size_t max_payload_size_;
-  bool periodic_key_frames_;
   bool pending_encoder_reset_;
   VideoCodec send_codec_;
   uint8_t encoder_payload_type_;
