@@ -24,7 +24,9 @@ static const int64_t kPollIntervalMs = 20;
 static const int kExpectedHighVideoBitrateBps = 80000;
 static const int kExpectedHighAudioBitrateBps = 30000;
 static const int kLowBandwidthLimitBps = 20000;
-static const int kExpectedLowBitrateBps = 20000;
+// Set target detected bitrate to slightly larger than the target bitrate to
+// avoid flakiness.
+static const int kLowBitrateMarginBps = 2000;
 
 std::vector<uint32_t> GenerateSsrcs(size_t num_streams, uint32_t ssrc_offset) {
   std::vector<uint32_t> ssrcs;
@@ -510,7 +512,7 @@ void RampUpDownUpTester::EvolveTestState(int bitrate_bps, bool suspended) {
     case kLowRate: {
       // Audio streams are never suspended.
       bool check_suspend_state = num_video_streams_ > 0;
-      if (bitrate_bps < kExpectedLowBitrateBps &&
+      if (bitrate_bps < kLowBandwidthLimitBps + kLowBitrateMarginBps &&
           suspended == check_suspend_state) {
         if (report_perf_stats_) {
           webrtc::test::PrintResult("ramp_up_down_up", GetModifierString(),
