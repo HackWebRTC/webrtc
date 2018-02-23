@@ -11,6 +11,10 @@
 #ifndef COMMON_AUDIO_REAL_FOURIER_OPENMAX_H_
 #define COMMON_AUDIO_REAL_FOURIER_OPENMAX_H_
 
+#ifndef RTC_USE_OPENMAX_DL
+#error "Only include this header if RTC_USE_OPENMAX_DL is defined."
+#endif
+
 #include <complex>
 
 #include "common_audio/real_fourier.h"
@@ -41,4 +45,3 @@ class RealFourierOpenmax : public RealFourier {
 }  // namespace webrtc
 
 #endif  // COMMON_AUDIO_REAL_FOURIER_OPENMAX_H_
-

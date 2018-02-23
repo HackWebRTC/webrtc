@@ -11,9 +11,12 @@
 #include "common_audio/real_fourier.h"
 
 #include "common_audio/real_fourier_ooura.h"
-#include "common_audio/real_fourier_openmax.h"
 #include "common_audio/signal_processing/include/signal_processing_library.h"
 #include "rtc_base/checks.h"
+
+#ifdef RTC_USE_OPENMAX_DL
+#include "common_audio/real_fourier_openmax.h"
+#endif
 
 namespace webrtc {
 
@@ -54,4 +57,3 @@ RealFourier::fft_cplx_scoper RealFourier::AllocCplxBuffer(int count) {
 }
 
 }  // namespace webrtc
-
