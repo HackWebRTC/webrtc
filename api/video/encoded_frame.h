@@ -58,9 +58,6 @@ class EncodedFrame : public webrtc::VCMEncodedFrame {
   bool inter_layer_predicted = false;
 };
 
-// TODO(philipel): Remove this when downstream projects have been updated.
-using FrameObject = EncodedFrame;
-
 }  // namespace video_coding
 }  // namespace webrtc
 
