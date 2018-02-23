@@ -95,8 +95,6 @@ class RtpTransportControllerSendInterface {
       const std::string& transport_name,
       const rtc::NetworkRoute& network_route) = 0;
   virtual void OnNetworkAvailability(bool network_available) = 0;
-  virtual void SetTransportOverhead(
-      size_t transport_overhead_bytes_per_packet) = 0;
   virtual RtcpBandwidthObserver* GetBandwidthObserver() = 0;
   virtual bool AvailableBandwidth(uint32_t* bandwidth) const = 0;
   virtual int64_t GetPacerQueuingDelayMs() const = 0;

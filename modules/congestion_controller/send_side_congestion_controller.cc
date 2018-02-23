@@ -207,6 +207,7 @@ void SendSideCongestionController::OnNetworkRouteChanged(
                                             network_route.remote_network_id);
   {
     rtc::CritScope cs(&bwe_lock_);
+    transport_overhead_bytes_per_packet_ = network_route.packet_overhead;
     min_bitrate_bps_ = min_bitrate_bps;
     delay_based_bwe_.reset(new DelayBasedBwe(event_log_, clock_));
     acknowledged_bitrate_estimator_.reset(new AcknowledgedBitrateEstimator());

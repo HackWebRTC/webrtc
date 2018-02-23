@@ -1357,8 +1357,6 @@ void VideoSendStreamImpl::SetTransportOverhead(
 
   transport_overhead_bytes_per_packet_ = transport_overhead_bytes_per_packet;
 
-  transport_->SetTransportOverhead(transport_overhead_bytes_per_packet_);
-
   size_t rtp_packet_size =
       std::min(config_->rtp.max_packet_size,
                kPathMTU - transport_overhead_bytes_per_packet_);

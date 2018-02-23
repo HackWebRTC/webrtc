@@ -134,10 +134,6 @@ void RtpTransportControllerSend::OnNetworkAvailability(bool network_available) {
   send_side_cc_.SignalNetworkState(network_available ? kNetworkUp
                                                      : kNetworkDown);
 }
-void RtpTransportControllerSend::SetTransportOverhead(
-    size_t transport_overhead_bytes_per_packet) {
-  send_side_cc_.SetTransportOverhead(transport_overhead_bytes_per_packet);
-}
 RtcpBandwidthObserver* RtpTransportControllerSend::GetBandwidthObserver() {
   return send_side_cc_.GetBandwidthObserver();
 }

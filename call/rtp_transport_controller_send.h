@@ -60,8 +60,6 @@ class RtpTransportControllerSend : public RtpTransportControllerSendInterface {
   void OnNetworkRouteChanged(const std::string& transport_name,
                              const rtc::NetworkRoute& network_route) override;
   void OnNetworkAvailability(bool network_available) override;
-  void SetTransportOverhead(
-      size_t transport_overhead_bytes_per_packet) override;
   RtcpBandwidthObserver* GetBandwidthObserver() override;
   bool AvailableBandwidth(uint32_t* bandwidth) const override;
   int64_t GetPacerQueuingDelayMs() const override;

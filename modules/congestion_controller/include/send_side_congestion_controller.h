@@ -73,7 +73,9 @@ class SendSideCongestionController
                              int min_bitrate_bps,
                              int max_bitrate_bps) override;
   void SignalNetworkState(NetworkState state) override;
-  void SetTransportOverhead(
+
+  // Deprecated: Is updated by OnNetworkRouteChanged
+  RTC_DEPRECATED void SetTransportOverhead(
       size_t transport_overhead_bytes_per_packet) override;
 
   // Deprecated: Use GetBandwidthObserver instead.
