@@ -113,6 +113,8 @@ ReceiveStatisticsProxy::ReceiveStatisticsProxy(
       avg_rtt_ms_(0),
       last_content_type_(VideoContentType::UNSPECIFIED),
       timing_frame_info_counter_(kMovingMaxWindowMs) {
+  decode_thread_.DetachFromThread();
+  network_thread_.DetachFromThread();
   stats_.ssrc = config_.rtp.remote_ssrc;
   // TODO(brandtr): Replace |rtx_stats_| with a single instance of
   // StreamDataCounters.
@@ -122,10 +124,19 @@ ReceiveStatisticsProxy::ReceiveStatisticsProxy(
 }
 
 ReceiveStatisticsProxy::~ReceiveStatisticsProxy() {
+  RTC_DCHECK_RUN_ON(&main_thread_);
+  // In case you're reading this wondering "hmm... we're on the main thread but
+  // calling a method that needs to be called on the decoder thread...", then
+  // here's what's going on:
+  // - The decoder thread has been stopped and DecoderThreadStopped() has been
+  //   called.
+  // - The decode_thread_ thread checker has been detached, and will now become
+  //   attached to the current thread, which is OK since we're in the dtor.
   UpdateHistograms();
 }
 
 void ReceiveStatisticsProxy::UpdateHistograms() {
+  RTC_DCHECK_RUN_ON(&decode_thread_);
   std::ostringstream logStream;
   int stream_duration_sec = (clock_->TimeInMilliseconds() - start_ms_) / 1000;
   if (stats_.frame_counts.key_frames > 0 ||
@@ -450,6 +461,8 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
 }
 
 void ReceiveStatisticsProxy::QualitySample() {
+  RTC_DCHECK_RUN_ON(&network_thread_);
+
   int64_t now = clock_->TimeInMilliseconds();
   if (last_sample_time_ + kMinSampleLengthMs > now)
     return;
@@ -559,6 +572,7 @@ void ReceiveStatisticsProxy::OnDecoderImplementationName(
 }
 void ReceiveStatisticsProxy::OnIncomingRate(unsigned int framerate,
                                             unsigned int bitrate_bps) {
+  RTC_DCHECK_RUN_ON(&network_thread_);
   rtc::CritScope lock(&crit_);
   if (stats_.rtp_stats.first_packet_time_ms != -1)
     QualitySample();
@@ -783,6 +797,7 @@ void ReceiveStatisticsProxy::OnDiscardedPacketsUpdated(int discarded_packets) {
 void ReceiveStatisticsProxy::OnPreDecode(
     const EncodedImage& encoded_image,
     const CodecSpecificInfo* codec_specific_info) {
+  RTC_DCHECK_RUN_ON(&decode_thread_);
   if (!codec_specific_info || encoded_image.qp_ == -1) {
     return;
   }
@@ -837,6 +852,15 @@ void ReceiveStatisticsProxy::OnRttUpdate(int64_t avg_rtt_ms,
                                          int64_t max_rtt_ms) {
   rtc::CritScope lock(&crit_);
   avg_rtt_ms_ = avg_rtt_ms;
+}
+
+void ReceiveStatisticsProxy::DecoderThreadStarting() {
+  RTC_DCHECK_RUN_ON(&main_thread_);
+}
+
+void ReceiveStatisticsProxy::DecoderThreadStopped() {
+  RTC_DCHECK_RUN_ON(&main_thread_);
+  decode_thread_.DetachFromThread();
 }
 
 ReceiveStatisticsProxy::ContentSpecificStats::ContentSpecificStats()

@@ -227,6 +227,7 @@ void VideoReceiveStream::Start() {
 
   // Start the decode thread
   video_receiver_.DecoderThreadStarting();
+  stats_proxy_.DecoderThreadStarting();
   decode_thread_.Start();
   rtp_video_stream_receiver_.StartReceive();
 }
@@ -251,6 +252,7 @@ void VideoReceiveStream::Stop() {
 
     decode_thread_.Stop();
     video_receiver_.DecoderThreadStopped();
+    stats_proxy_.DecoderThreadStopped();
     // Deregister external decoders so they are no longer running during
     // destruction. This effectively stops the VCM since the decoder thread is
     // stopped, the VCM is deregistered and no asynchronous decoder threads are
