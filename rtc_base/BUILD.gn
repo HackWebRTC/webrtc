@@ -764,7 +764,6 @@ rtc_static_library("rtc_base_generic") {
       "win32.h",
       "win32filesystem.cc",
       "win32filesystem.h",
-      "win32securityerrors.cc",
       "win32window.cc",
       "win32window.h",
     ]
