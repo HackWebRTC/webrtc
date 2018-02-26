@@ -244,11 +244,29 @@ bool VideoCodec::operator==(const VideoCodec& c) const {
   return Codec::operator==(c);
 }
 
+static bool IsSameH264PacketizationMode(const CodecParameterMap& ours,
+                                        const CodecParameterMap& theirs) {
+  // If packetization-mode is not present, default to "0".
+  // https://tools.ietf.org/html/rfc6184#section-6.2
+  std::string our_packetization_mode = "0";
+  std::string their_packetization_mode = "0";
+  auto ours_it = ours.find(kH264FmtpPacketizationMode);
+  if (ours_it != ours.end()) {
+    our_packetization_mode = ours_it->second;
+  }
+  auto theirs_it = theirs.find(kH264FmtpPacketizationMode);
+  if (theirs_it != theirs.end()) {
+    their_packetization_mode = theirs_it->second;
+  }
+  return our_packetization_mode == their_packetization_mode;
+}
+
 bool VideoCodec::Matches(const VideoCodec& other) const {
   if (!Codec::Matches(other))
     return false;
   if (CodecNamesEq(name.c_str(), kH264CodecName))
-    return webrtc::H264::IsSameH264Profile(params, other.params);
+    return webrtc::H264::IsSameH264Profile(params, other.params) &&
+           IsSameH264PacketizationMode(params, other.params);
   return true;
 }
 

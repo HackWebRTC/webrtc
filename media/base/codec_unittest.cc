@@ -186,6 +186,45 @@ TEST(CodecTest, TestVideoCodecMatches) {
   EXPECT_FALSE(c1.Matches(VideoCodec(95, "V")));
 }
 
+// Matching H264 codecs also need to have matching profile-level-id and
+// packetization-mode.
+TEST(CodecTest, TestH264CodecMatches) {
+  const char kProfileLevelId1[] = "42e01f";
+  const char kProfileLevelId2[] = "42a01e";
+
+  VideoCodec pli_1_pm_0(95, "H264");
+  pli_1_pm_0.params[cricket::kH264FmtpProfileLevelId] = kProfileLevelId1;
+  pli_1_pm_0.params[cricket::kH264FmtpPacketizationMode] = "0";
+
+  {
+    VideoCodec pli_1_pm_blank(95, "H264");
+    pli_1_pm_blank.params[cricket::kH264FmtpProfileLevelId] = kProfileLevelId1;
+    pli_1_pm_blank.params.erase(
+        pli_1_pm_blank.params.find(cricket::kH264FmtpPacketizationMode));
+
+    // Matches since if packetization-mode is not specified it defaults to "0".
+    EXPECT_TRUE(pli_1_pm_0.Matches(pli_1_pm_blank));
+  }
+
+  {
+    VideoCodec pli_1_pm_1(95, "H264");
+    pli_1_pm_1.params[cricket::kH264FmtpProfileLevelId] = kProfileLevelId1;
+    pli_1_pm_1.params[cricket::kH264FmtpPacketizationMode] = "1";
+
+    // Does not match since packetization-mode is different.
+    EXPECT_FALSE(pli_1_pm_0.Matches(pli_1_pm_1));
+  }
+
+  {
+    VideoCodec pli_2_pm_0(95, "H264");
+    pli_2_pm_0.params[cricket::kH264FmtpProfileLevelId] = kProfileLevelId2;
+    pli_2_pm_0.params[cricket::kH264FmtpPacketizationMode] = "0";
+
+    // Does not match since profile-level-id is different.
+    EXPECT_FALSE(pli_1_pm_0.Matches(pli_2_pm_0));
+  }
+}
+
 TEST(CodecTest, TestDataCodecMatches) {
   // Test a codec with a static payload type.
   DataCodec c0(95, "D");
