@@ -29,6 +29,8 @@
 static const int kMaxLogLineSize = 1024 - 60;
 #endif  // WEBRTC_MAC && !defined(WEBRTC_IOS) || WEBRTC_ANDROID
 
+static const char kLibjingle[] = "libjingle";
+
 #include <time.h>
 #include <limits.h>
 
@@ -39,7 +41,7 @@ static const int kMaxLogLineSize = 1024 - 60;
 
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/platform_thread_types.h"
+#include "rtc_base/platform_thread.h"
 #include "rtc_base/stringencode.h"
 #include "rtc_base/stringutils.h"
 #include "rtc_base/timeutils.h"
@@ -69,6 +71,32 @@ const char* FilenameFromPath(const char* file) {
 CriticalSection g_log_crit;
 }  // namespace
 
+/////////////////////////////////////////////////////////////////////////////
+// Constant Labels
+/////////////////////////////////////////////////////////////////////////////
+
+const char* FindLabel(int value, const ConstantLabel entries[]) {
+  for (int i = 0; entries[i].label; ++i) {
+    if (value == entries[i].value) {
+      return entries[i].label;
+    }
+  }
+  return 0;
+}
+
+std::string ErrorName(int err, const ConstantLabel* err_table) {
+  if (err == 0)
+    return "No error";
+
+  if (err_table != 0) {
+    if (const char* value = FindLabel(err, err_table))
+      return value;
+  }
+
+  char buffer[16];
+  snprintf(buffer, sizeof(buffer), "0x%08x", err);
+  return buffer;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // LogMessage
@@ -89,8 +117,9 @@ LogMessage::LogMessage(const char* file,
                        int line,
                        LoggingSeverity sev,
                        LogErrorContext err_ctx,
-                       int err)
-    : severity_(sev) {
+                       int err,
+                       const char* module)
+    : severity_(sev), tag_(kLibjingle) {
   if (timestamp_) {
     // Use SystemTimeMillis so that even if tests use fake clocks, the timestamp
     // in log messages represents the real system time.
@@ -121,10 +150,12 @@ LogMessage::LogMessage(const char* file,
 #ifdef WEBRTC_WIN
       case ERRCTX_HRESULT: {
         char msgbuf[256];
-        DWORD flags = FORMAT_MESSAGE_FROM_SYSTEM |
-                      FORMAT_MESSAGE_IGNORE_INSERTS;
+        DWORD flags = FORMAT_MESSAGE_FROM_SYSTEM;
+        HMODULE hmod = GetModuleHandleA(module);
+        if (hmod)
+          flags |= FORMAT_MESSAGE_FROM_HMODULE;
         if (DWORD len = FormatMessageA(
-                flags, nullptr, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                flags, hmod, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                 msgbuf, sizeof(msgbuf) / sizeof(msgbuf[0]), nullptr)) {
           while ((len > 0) &&
               isspace(static_cast<unsigned char>(msgbuf[len-1]))) {
@@ -149,20 +180,19 @@ LogMessage::LogMessage(const char* file,
   }
 }
 
-#if defined(WEBRTC_ANDROID)
 LogMessage::LogMessage(const char* file,
                        int line,
                        LoggingSeverity sev,
-                       const char* tag)
+                       const std::string& tag)
     : LogMessage(file,
                  line,
                  sev,
                  ERRCTX_NONE,
-                 0 /* err */) {
+                 0 /* err */,
+                 nullptr /* module */) {
   tag_ = tag;
   print_stream_ << tag << ": ";
 }
-#endif
 
 LogMessage::~LogMessage() {
   if (!extra_.empty())
@@ -171,11 +201,7 @@ LogMessage::~LogMessage() {
 
   const std::string& str = print_stream_.str();
   if (severity_ >= g_dbg_sev) {
-#if defined(WEBRTC_ANDROID)
     OutputToDebug(str, severity_, tag_);
-#else
-    OutputToDebug(str, severity_);
-#endif
   }
 
   CritScope cs(&g_log_crit);
@@ -296,8 +322,19 @@ void LogMessage::ConfigureLogging(const char* params) {
     // from the command line, we'll see the output there.  Otherwise, create
     // our own console window.
     // Note: These methods fail if a console already exists, which is fine.
-    if (!AttachConsole(ATTACH_PARENT_PROCESS))
+    bool success = false;
+    typedef BOOL (WINAPI* PFN_AttachConsole)(DWORD);
+    if (HINSTANCE kernel32 = ::LoadLibrary(L"kernel32.dll")) {
+      // AttachConsole is defined on WinXP+.
+      if (PFN_AttachConsole attach_console = reinterpret_cast<PFN_AttachConsole>
+            (::GetProcAddress(kernel32, "AttachConsole"))) {
+        success = (FALSE != attach_console(ATTACH_PARENT_PROCESS));
+      }
+      ::FreeLibrary(kernel32);
+    }
+    if (!success) {
       ::AllocConsole();
+    }
   }
 #endif  // WEBRTC_WIN
 
@@ -313,14 +350,9 @@ void LogMessage::UpdateMinLogSeverity()
   g_min_sev = min_sev;
 }
 
-#if defined(WEBRTC_ANDROID)
 void LogMessage::OutputToDebug(const std::string& str,
                                LoggingSeverity severity,
-                               const char* tag) {
-#else
-void LogMessage::OutputToDebug(const std::string& str,
-                               LoggingSeverity severity) {
-#endif
+                               const std::string& tag) {
   bool log_to_stderr = log_to_stderr_;
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS) && defined(NDEBUG)
   // On the Mac, all stderr output goes to the Console log and causes clutter.
@@ -341,8 +373,7 @@ void LogMessage::OutputToDebug(const std::string& str,
   if (key != nullptr) {
     CFRelease(key);
   }
-#endif  // defined(WEBRTC_MAC) && !defined(WEBRTC_IOS) && defined(NDEBUG)
-
+#endif
 #if defined(WEBRTC_WIN)
   // Always log to the debugger.
   // Perhaps stderr should be controlled by a preference, as on Mac?
@@ -357,7 +388,6 @@ void LogMessage::OutputToDebug(const std::string& str,
     }
   }
 #endif  // WEBRTC_WIN
-
 #if defined(WEBRTC_ANDROID)
   // Android's logging facility uses severity to log messages but we
   // need to map libjingle's severity levels to Android ones first.
@@ -366,7 +396,7 @@ void LogMessage::OutputToDebug(const std::string& str,
   int prio;
   switch (severity) {
     case LS_SENSITIVE:
-      __android_log_write(ANDROID_LOG_INFO, tag, "SENSITIVE");
+      __android_log_write(ANDROID_LOG_INFO, tag.c_str(), "SENSITIVE");
       if (log_to_stderr) {
         fprintf(stderr, "SENSITIVE");
         fflush(stderr);
@@ -393,14 +423,15 @@ void LogMessage::OutputToDebug(const std::string& str,
   int idx = 0;
   const int max_lines = size / kMaxLogLineSize + 1;
   if (max_lines == 1) {
-    __android_log_print(prio, tag, "%.*s", size, str.c_str());
+    __android_log_print(prio, tag.c_str(), "%.*s", size, str.c_str());
   } else {
     while (size > 0) {
       const int len = std::min(size, kMaxLogLineSize);
       // Use the size of the string in the format (str may have \0 in the
       // middle).
-      __android_log_print(prio, tag, "[%d/%d] %.*s", line + 1, max_lines, len,
-                          str.c_str() + idx);
+      __android_log_print(prio, tag.c_str(), "[%d/%d] %.*s",
+                          line + 1, max_lines,
+                          len, str.c_str() + idx);
       idx += len;
       size -= len;
       ++line;

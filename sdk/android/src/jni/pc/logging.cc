@@ -51,8 +51,7 @@ JNI_FUNCTION_DECLARATION(void,
                          jstring j_message) {
   std::string message = JavaToStdString(jni, JavaParamRef<jstring>(j_message));
   std::string tag = JavaToStdString(jni, JavaParamRef<jstring>(j_tag));
-  RTC_LOG_TAG(static_cast<rtc::LoggingSeverity>(j_severity), tag.c_str())
-      << message;
+  RTC_LOG_TAG(static_cast<rtc::LoggingSeverity>(j_severity), tag) << message;
 }
 
 }  // namespace jni

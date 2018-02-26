@@ -26,8 +26,9 @@
 // RTC_LOG_F(sev) Like RTC_LOG(), but includes the name of the current function.
 // RTC_LOG_T(sev) Like RTC_LOG(), but includes the this pointer.
 // RTC_LOG_T_F(sev) Like RTC_LOG_F(), but includes the this pointer.
-// RTC_LOG_GLE(sev [, mod]) attempt to add a string description of the
-//     HRESULT returned by GetLastError.
+// RTC_LOG_GLE(M)(sev [, mod]) attempt to add a string description of the
+//     HRESULT returned by GetLastError.  The "M" variant allows searching of a
+//     DLL's string table for the error description.
 // RTC_LOG_ERRNO(sev) attempts to add a string description of an errno-derived
 //     error. errno and associated facilities exist on both Windows and POSIX,
 //     but on Windows they only apply to the C/C++ runtime.
@@ -66,6 +67,29 @@
 #endif
 
 namespace rtc {
+
+///////////////////////////////////////////////////////////////////////////////
+// ConstantLabel can be used to easily generate string names from constant
+// values.  This can be useful for logging descriptive names of error messages.
+// Usage:
+//   const ConstantLabel LIBRARY_ERRORS[] = {
+//     KLABEL(SOME_ERROR),
+//     KLABEL(SOME_OTHER_ERROR),
+//     ...
+//     LASTLABEL
+//   }
+//
+//   int err = LibraryFunc();
+//   LOG(LS_ERROR) << "LibraryFunc returned: "
+//                 << ErrorName(err, LIBRARY_ERRORS);
+
+struct ConstantLabel { int value; const char * label; };
+#define KLABEL(x) { x, #x }
+#define TLABEL(x, y) { x, y }
+#define LASTLABEL { 0, 0 }
+
+const char* FindLabel(int value, const ConstantLabel entries[]);
+std::string ErrorName(int err, const ConstantLabel* err_table);
 
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
 // Returns a UTF8 description from an OS X Status error.
@@ -124,11 +148,13 @@ class LogMessage {
              int line,
              LoggingSeverity sev,
              LogErrorContext err_ctx = ERRCTX_NONE,
-             int err = 0);
+             int err = 0,
+             const char* module = nullptr);
 
-#if defined(WEBRTC_ANDROID)
-  LogMessage(const char* file, int line, LoggingSeverity sev, const char* tag);
-#endif
+  LogMessage(const char* file,
+             int line,
+             LoggingSeverity sev,
+             const std::string& tag);
 
   ~LogMessage();
 
@@ -187,13 +213,9 @@ class LogMessage {
   static void UpdateMinLogSeverity();
 
   // These write out the actual log messages.
-#if defined(WEBRTC_ANDROID)
   static void OutputToDebug(const std::string& msg,
                             LoggingSeverity severity,
-                            const char* tag);
-#else
-  static void OutputToDebug(const std::string& msg, LoggingSeverity severity);
-#endif
+                            const std::string& tag);
 
   // The ostream that buffers the formatted message before output
   std::ostringstream print_stream_;
@@ -201,10 +223,8 @@ class LogMessage {
   // The severity level of this message
   LoggingSeverity severity_;
 
-#if defined(WEBRTC_ANDROID)
   // The Android debug output tag.
-  const char* tag_ = "libjingle";
-#endif
+  std::string tag_;
 
   // String data generated in the constructor, that should be appended to
   // the message before output.
@@ -293,6 +313,8 @@ inline bool LogCheckLevel(LoggingSeverity sev) {
   RTC_LOG_E(sev, HRESULT, err)
 #define RTC_LOG_GLE(sev) \
   RTC_LOG_GLE_EX(sev, GetLastError())
+#define RTC_LOG_GLEM(sev, mod) \
+  RTC_LOG_E(sev, HRESULT, GetLastError(), mod)
 #define RTC_LOG_ERR_EX(sev, err) \
   RTC_LOG_GLE_EX(sev, err)
 #define RTC_LOG_ERR(sev) \
@@ -309,11 +331,9 @@ inline bool LogCheckLevel(LoggingSeverity sev) {
   RTC_LOG_ERRNO(sev)
 #endif  // WEBRTC_WIN
 
-#if defined(WEBRTC_ANDROID)
 #define RTC_LOG_TAG(sev, tag)        \
   RTC_LOG_SEVERITY_PRECONDITION(sev) \
   rtc::LogMessage(nullptr, 0, sev, tag).stream()
-#endif
 
 // The RTC_DLOG macros are equivalent to their RTC_LOG counterparts except that
 // they only generate code in debug builds.

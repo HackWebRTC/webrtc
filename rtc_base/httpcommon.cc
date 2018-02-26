@@ -11,6 +11,7 @@
 #include <time.h>
 
 #if defined(WEBRTC_WIN)
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -30,80 +31,10 @@
 #include "rtc_base/socketaddress.h"
 
 namespace rtc {
-namespace {
+
 #if defined(WEBRTC_WIN)
-///////////////////////////////////////////////////////////////////////////////
-// ConstantToLabel can be used to easily generate string names from constant
-// values.  This can be useful for logging descriptive names of error messages.
-// Usage:
-//   const ConstantToLabel LIBRARY_ERRORS[] = {
-//     KLABEL(SOME_ERROR),
-//     KLABEL(SOME_OTHER_ERROR),
-//     ...
-//     LASTLABEL
-//   }
-//
-//   int err = LibraryFunc();
-//   LOG(LS_ERROR) << "LibraryFunc returned: "
-//                 << GetErrorName(err, LIBRARY_ERRORS);
-struct ConstantToLabel { int value; const char * label; };
-
-const char* LookupLabel(int value, const ConstantToLabel entries[]) {
-  for (int i = 0; entries[i].label; ++i) {
-    if (value == entries[i].value) {
-      return entries[i].label;
-    }
-  }
-  return 0;
-}
-
-std::string GetErrorName(int err, const ConstantToLabel* err_table) {
-  if (err == 0)
-    return "No error";
-
-  if (err_table != 0) {
-    if (const char* value = LookupLabel(err, err_table))
-      return value;
-  }
-
-  char buffer[16];
-  snprintf(buffer, sizeof(buffer), "0x%08x", err);
-  return buffer;
-}
-
-#define KLABEL(x) { x, #x }
-#define LASTLABEL { 0, 0 }
-
-const ConstantToLabel SECURITY_ERRORS[] = {
-  KLABEL(SEC_I_COMPLETE_AND_CONTINUE),
-  KLABEL(SEC_I_COMPLETE_NEEDED),
-  KLABEL(SEC_I_CONTEXT_EXPIRED),
-  KLABEL(SEC_I_CONTINUE_NEEDED),
-  KLABEL(SEC_I_INCOMPLETE_CREDENTIALS),
-  KLABEL(SEC_I_RENEGOTIATE),
-  KLABEL(SEC_E_CERT_EXPIRED),
-  KLABEL(SEC_E_INCOMPLETE_MESSAGE),
-  KLABEL(SEC_E_INSUFFICIENT_MEMORY),
-  KLABEL(SEC_E_INTERNAL_ERROR),
-  KLABEL(SEC_E_INVALID_HANDLE),
-  KLABEL(SEC_E_INVALID_TOKEN),
-  KLABEL(SEC_E_LOGON_DENIED),
-  KLABEL(SEC_E_NO_AUTHENTICATING_AUTHORITY),
-  KLABEL(SEC_E_NO_CREDENTIALS),
-  KLABEL(SEC_E_NOT_OWNER),
-  KLABEL(SEC_E_OK),
-  KLABEL(SEC_E_SECPKG_NOT_FOUND),
-  KLABEL(SEC_E_TARGET_UNKNOWN),
-  KLABEL(SEC_E_UNKNOWN_CREDENTIALS),
-  KLABEL(SEC_E_UNSUPPORTED_FUNCTION),
-  KLABEL(SEC_E_UNTRUSTED_ROOT),
-  KLABEL(SEC_E_WRONG_PRINCIPAL),
-  LASTLABEL
-};
-#undef KLABEL
-#undef LASTLABEL
-#endif  // defined(WEBRTC_WIN)
-}  // namespace
+extern const ConstantLabel SECURITY_ERRORS[];
+#endif
 
 //////////////////////////////////////////////////////////////////////
 // Enum - TODO: expose globally later?
@@ -934,7 +865,7 @@ HttpAuthResult HttpAuthenticate(
         ret = InitializeSecurityContextA(&neg->cred, &neg->ctx, spn, flags, 0, SECURITY_NATIVE_DREP, &in_buf_desc, 0, &neg->ctx, &out_buf_desc, &ret_flags, &lifetime);
         if (FAILED(ret)) {
           RTC_LOG(LS_ERROR) << "InitializeSecurityContext returned: "
-                            << GetErrorName(ret, SECURITY_ERRORS);
+                            << ErrorName(ret, SECURITY_ERRORS);
           return HAR_ERROR;
         }
       } else if (neg->specified_credentials) {
@@ -1000,7 +931,7 @@ HttpAuthResult HttpAuthenticate(
           SECPKG_CRED_OUTBOUND, 0, pauth_id, 0, 0, &cred, &lifetime);
       if (ret != SEC_E_OK) {
         RTC_LOG(LS_ERROR) << "AcquireCredentialsHandle error: "
-                          << GetErrorName(ret, SECURITY_ERRORS);
+                          << ErrorName(ret, SECURITY_ERRORS);
         return HAR_IGNORE;
       }
 
@@ -1010,7 +941,7 @@ HttpAuthResult HttpAuthenticate(
       ret = InitializeSecurityContextA(&cred, 0, spn, flags, 0, SECURITY_NATIVE_DREP, 0, 0, &ctx, &out_buf_desc, &ret_flags, &lifetime);
       if (FAILED(ret)) {
         RTC_LOG(LS_ERROR) << "InitializeSecurityContext returned: "
-                          << GetErrorName(ret, SECURITY_ERRORS);
+                          << ErrorName(ret, SECURITY_ERRORS);
         FreeCredentialsHandle(&cred);
         return HAR_IGNORE;
       }
@@ -1024,7 +955,7 @@ HttpAuthResult HttpAuthenticate(
     if ((ret == SEC_I_COMPLETE_NEEDED) || (ret == SEC_I_COMPLETE_AND_CONTINUE)) {
       ret = CompleteAuthToken(&neg->ctx, &out_buf_desc);
       RTC_LOG(LS_VERBOSE) << "CompleteAuthToken returned: "
-                          << GetErrorName(ret, SECURITY_ERRORS);
+                          << ErrorName(ret, SECURITY_ERRORS);
       if (FAILED(ret)) {
         return HAR_ERROR;
       }
