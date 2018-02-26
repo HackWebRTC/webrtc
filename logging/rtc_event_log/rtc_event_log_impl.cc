@@ -216,7 +216,7 @@ void RtcEventLogImpl::StopLogging() {
 }
 
 void RtcEventLogImpl::Log(std::unique_ptr<RtcEvent> event) {
-  RTC_DCHECK(event);
+  RTC_CHECK(event);
 
   // Binding to |this| is safe because |this| outlives the |task_queue_|.
   auto event_handler = [this](std::unique_ptr<RtcEvent> unencoded_event) {

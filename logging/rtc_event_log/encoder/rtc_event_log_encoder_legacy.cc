@@ -244,6 +244,7 @@ std::string RtcEventLogEncoderLegacy::EncodeBatch(
   for (auto it = begin; it != end; ++it) {
     // TODO(terelius): Can we avoid the slight inefficiency of reallocating the
     // string?
+    RTC_CHECK(it->get() != nullptr);
     encoded_output += Encode(**it);
   }
   return encoded_output;
