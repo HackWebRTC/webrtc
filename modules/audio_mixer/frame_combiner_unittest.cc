@@ -36,16 +36,13 @@ std::string ProduceDebugText(int sample_rate_hz,
 std::string ProduceDebugText(int sample_rate_hz,
                              int number_of_channels,
                              int number_of_sources,
-                             FrameCombiner::LimiterType limiter_type,
+                             bool limiter_active,
                              float wave_frequency) {
   std::ostringstream ss;
   ss << "Sample rate: " << sample_rate_hz << " ,";
   ss << "number of channels: " << number_of_channels << " ,";
   ss << "number of sources: " << number_of_sources << " ,";
-  ss << "limiter active: "
-     << (limiter_type == FrameCombiner::LimiterType::kNoLimiter ? "false"
-                                                                : "true")
-     << " ,";
+  ss << "limiter active: " << (limiter_active ? "true" : "false") << " ,";
   ss << "wave frequency: " << wave_frequency << " ,";
   return ss.str();
 }
@@ -64,7 +61,7 @@ void SetUpFrames(int sample_rate_hz, int number_of_channels) {
 }  // namespace
 
 TEST(FrameCombiner, BasicApiCallsLimiter) {
-  FrameCombiner combiner(FrameCombiner::LimiterType::kApmAgcLimiter);
+  FrameCombiner combiner(true);
   for (const int rate : {8000, 16000, 32000, 48000}) {
     for (const int number_of_channels : {1, 2}) {
       const std::vector<AudioFrame*> all_frames = {&frame1, &frame2};
@@ -86,7 +83,7 @@ TEST(FrameCombiner, BasicApiCallsLimiter) {
 // on rate. The rate has to be divisible by 100 since we use
 // 10 ms frames, though.
 TEST(FrameCombiner, BasicApiCallsNoLimiter) {
-  FrameCombiner combiner(FrameCombiner::LimiterType::kNoLimiter);
+  FrameCombiner combiner(false);
   for (const int rate : {8000, 10000, 11000, 32000, 44100}) {
     for (const int number_of_channels : {1, 2}) {
       const std::vector<AudioFrame*> all_frames = {&frame1, &frame2};
@@ -105,7 +102,7 @@ TEST(FrameCombiner, BasicApiCallsNoLimiter) {
 }
 
 TEST(FrameCombiner, CombiningZeroFramesShouldProduceSilence) {
-  FrameCombiner combiner(FrameCombiner::LimiterType::kNoLimiter);
+  FrameCombiner combiner(false);
   for (const int rate : {8000, 10000, 11000, 32000, 44100}) {
     for (const int number_of_channels : {1, 2}) {
       SCOPED_TRACE(ProduceDebugText(rate, number_of_channels, 0));
@@ -127,7 +124,7 @@ TEST(FrameCombiner, CombiningZeroFramesShouldProduceSilence) {
 }
 
 TEST(FrameCombiner, CombiningOneFrameShouldNotChangeFrame) {
-  FrameCombiner combiner(FrameCombiner::LimiterType::kNoLimiter);
+  FrameCombiner combiner(false);
   for (const int rate : {8000, 10000, 11000, 32000, 44100}) {
     for (const int number_of_channels : {1, 2}) {
       SCOPED_TRACE(ProduceDebugText(rate, number_of_channels, 1));
@@ -162,17 +159,14 @@ TEST(FrameCombiner, GainCurveIsSmoothForAlternatingNumberOfStreams) {
   //
   // TODO(aleloi): Add more rates when APM limiter doesn't use band
   // split.
-  using LimiterType = FrameCombiner::LimiterType;
-  for (const LimiterType limiter_type :
-       {LimiterType::kNoLimiter, LimiterType::kApmAgcLimiter,
-        LimiterType::kApmAgc2Limiter}) {
+  for (const bool use_limiter : {true, false}) {
     for (const int rate : {8000, 16000}) {
       constexpr int number_of_channels = 2;
       for (const float wave_frequency : {50, 400, 3200}) {
-        SCOPED_TRACE(ProduceDebugText(rate, number_of_channels, 1, limiter_type,
+        SCOPED_TRACE(ProduceDebugText(rate, number_of_channels, 1, use_limiter,
                                       wave_frequency));
 
-        FrameCombiner combiner(limiter_type);
+        FrameCombiner combiner(use_limiter);
 
         constexpr int16_t wave_amplitude = 30000;
         SineWaveGenerator wave_generator(wave_frequency, wave_amplitude);
