@@ -291,7 +291,12 @@ void Merge::Downsample(const int16_t* input, size_t input_length,
                            decimation_factor, kCompensateDelay);
   if (input_length <= length_limit) {
     // Not quite long enough, so we have to cheat a bit.
-    size_t temp_len = input_length - signal_offset;
+    // If the input is really short, we'll just use the input length as is, and
+    // won't bother with correcting for the offset. This is clearly a
+    // pathological case, and the signal quality will suffer.
+    const size_t temp_len = input_length > signal_offset
+                                ? input_length - signal_offset
+                                : input_length;
     // TODO(hlundin): Should |downsamp_temp_len| be corrected for round-off
     // errors? I.e., (temp_len + decimation_factor - 1) / decimation_factor?
     size_t downsamp_temp_len = temp_len / decimation_factor;
