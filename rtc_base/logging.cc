@@ -43,6 +43,7 @@ static const char kLibjingle[] = "libjingle";
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/stringencode.h"
+#include "rtc_base/strings/string_builder.h"
 #include "rtc_base/stringutils.h"
 #include "rtc_base/timeutils.h"
 
@@ -65,6 +66,16 @@ const char* FilenameFromPath(const char* file) {
     return file;
   else
     return (end1 > end2) ? end1 + 1 : end2 + 1;
+}
+
+std::ostream& GetNoopStream() {
+  class NoopStreamBuf : public std::streambuf {
+   public:
+    int overflow(int c) override { return c; }
+  };
+  static NoopStreamBuf noop_buffer;
+  static std::ostream noop_stream(&noop_buffer);
+  return noop_stream;
 }
 
 // Global lock for log subsystem, only needed to serialize access to streams_.
@@ -119,7 +130,11 @@ LogMessage::LogMessage(const char* file,
                        LogErrorContext err_ctx,
                        int err,
                        const char* module)
-    : severity_(sev), tag_(kLibjingle) {
+    : severity_(sev), tag_(kLibjingle), is_noop_(IsNoop(sev)) {
+  // If there's no need to do any work, let's not :)
+  if (is_noop_)
+    return;
+
   if (timestamp_) {
     // Use SystemTimeMillis so that even if tests use fake clocks, the timestamp
     // in log messages represents the real system time.
@@ -141,8 +156,8 @@ LogMessage::LogMessage(const char* file,
     print_stream_ << "(" << FilenameFromPath(file)  << ":" << line << "): ";
 
   if (err_ctx != ERRCTX_NONE) {
-    std::ostringstream tmp;
-    tmp << "[0x" << std::setfill('0') << std::hex << std::setw(8) << err << "]";
+    SimpleStringBuilder<1024> tmp;
+    tmp.AppendFormat("[0x%08X]", err);
     switch (err_ctx) {
       case ERRCTX_ERRNO:
         tmp << " " << strerror(err);
@@ -190,16 +205,24 @@ LogMessage::LogMessage(const char* file,
                  ERRCTX_NONE,
                  0 /* err */,
                  nullptr /* module */) {
-  tag_ = tag;
-  print_stream_ << tag << ": ";
+  if (!is_noop_) {
+    tag_ = tag;
+    print_stream_ << tag << ": ";
+  }
 }
 
 LogMessage::~LogMessage() {
-  if (!extra_.empty())
-    print_stream_ << " : " << extra_;
-  print_stream_ << std::endl;
+  if (is_noop_)
+    return;
 
-  const std::string& str = print_stream_.str();
+  FinishPrintStream();
+
+  // TODO(tommi): Unfortunately |ostringstream::str()| always returns a copy
+  // of the constructed string. This means that we always end up creating
+  // two copies here (one owned by the stream, one by the return value of
+  // |str()|). It would be nice to switch to something else.
+  const std::string str = print_stream_.str();
+
   if (severity_ >= g_dbg_sev) {
     OutputToDebug(str, severity_, tag_);
   }
@@ -210,6 +233,10 @@ LogMessage::~LogMessage() {
       kv.first->OnLogMessage(str);
     }
   }
+}
+
+std::ostream& LogMessage::stream() {
+  return is_noop_ ? GetNoopStream() : print_stream_;
 }
 
 bool LogMessage::Loggable(LoggingSeverity sev) {
@@ -442,6 +469,26 @@ void LogMessage::OutputToDebug(const std::string& str,
     fprintf(stderr, "%s", str.c_str());
     fflush(stderr);
   }
+}
+
+// static
+bool LogMessage::IsNoop(LoggingSeverity severity) {
+  if (severity >= g_dbg_sev)
+    return false;
+
+  // TODO(tommi): We're grabbing this lock for every LogMessage instance that
+  // is going to be logged. This introduces unnecessary synchronization for
+  // a feature that's mostly used for testing.
+  CritScope cs(&g_log_crit);
+  return streams_.size() == 0;
+}
+
+void LogMessage::FinishPrintStream() {
+  if (is_noop_)
+    return;
+  if (!extra_.empty())
+    print_stream_ << " : " << extra_;
+  print_stream_ << std::endl;
 }
 
 //////////////////////////////////////////////////////////////////////

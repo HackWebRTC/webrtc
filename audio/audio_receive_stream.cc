@@ -24,12 +24,13 @@
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/strings/string_builder.h"
 #include "rtc_base/timeutils.h"
 
 namespace webrtc {
 
 std::string AudioReceiveStream::Config::Rtp::ToString() const {
-  std::stringstream ss;
+  rtc::SimpleStringBuilder<1024> ss;
   ss << "{remote_ssrc: " << remote_ssrc;
   ss << ", local_ssrc: " << local_ssrc;
   ss << ", transport_cc: " << (transport_cc ? "on" : "off");
@@ -47,7 +48,7 @@ std::string AudioReceiveStream::Config::Rtp::ToString() const {
 }
 
 std::string AudioReceiveStream::Config::ToString() const {
-  std::stringstream ss;
+  rtc::SimpleStringBuilder<1024> ss;
   ss << "{rtp: " << rtp.ToString();
   ss << ", rtcp_send_transport: "
      << (rtcp_send_transport ? "(Transport)" : "null");

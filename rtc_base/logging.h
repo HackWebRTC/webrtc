@@ -159,7 +159,7 @@ class LogMessage {
   ~LogMessage();
 
   static bool Loggable(LoggingSeverity sev);
-  std::ostream& stream() { return print_stream_; }
+  std::ostream& stream();
 
   // Returns the time at which this function was called for the first time.
   // The time will be used as the logging start time.
@@ -206,6 +206,7 @@ class LogMessage {
   static void ConfigureLogging(const char* params);
 
  private:
+  friend class LogMessageForTesting;
   typedef std::pair<LogSink*, LoggingSeverity> StreamAndSeverity;
   typedef std::list<StreamAndSeverity> StreamList;
 
@@ -216,6 +217,16 @@ class LogMessage {
   static void OutputToDebug(const std::string& msg,
                             LoggingSeverity severity,
                             const std::string& tag);
+
+  // Checks the current global debug severity and if the |streams_| collection
+  // is empty. If |severity| is smaller than the global severity and if the
+  // |streams_| collection is empty, the LogMessage will be considered a noop
+  // LogMessage.
+  static bool IsNoop(LoggingSeverity severity);
+
+  // Called from the dtor (or from a test) to append optional extra error
+  // information to the log stream and a newline character.
+  void FinishPrintStream();
 
   // The ostream that buffers the formatted message before output
   std::ostringstream print_stream_;
@@ -229,6 +240,8 @@ class LogMessage {
   // String data generated in the constructor, that should be appended to
   // the message before output.
   std::string extra_;
+
+  const bool is_noop_;
 
   // The output streams and their associated severities
   static StreamList streams_;

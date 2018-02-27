@@ -70,6 +70,7 @@ rtc_static_library("video") {
     "../modules/rtp_rtcp:rtp_rtcp_format",
     "../modules/video_coding:video_codec_interface",
     "../rtc_base:checks",
+    "../rtc_base:stringutils",
     "../rtc_base/experiments:alr_experiment",
     "../rtc_base/system:fallthrough",
     "../system_wrappers:field_trial_api",

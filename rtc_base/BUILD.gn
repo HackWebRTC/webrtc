@@ -131,6 +131,7 @@ rtc_source_set("safe_compare") {
 
 rtc_source_set("stringutils") {
   sources = [
+    "strings/string_builder.h",
     "stringutils.cc",
     "stringutils.h",
   ]
@@ -979,6 +980,7 @@ if (rtc_include_tests) {
       "string_to_number_unittest.cc",
       "stringencode_unittest.cc",
       "stringize_macros_unittest.cc",
+      "strings/string_builder_unittest.cc",
       "stringutils_unittest.cc",
       "swap_queue_unittest.cc",
       "thread_annotations_unittest.cc",

@@ -8,11 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/gunit.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/nullsocketserver.h"
+#include "rtc_base/arraysize.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/event.h"
+#include "rtc_base/gunit.h"
+#include "rtc_base/platform_thread.h"
 #include "rtc_base/stream.h"
-#include "rtc_base/thread.h"
 #include "test/testsupport/fileutils.h"
 
 namespace rtc {
@@ -32,6 +34,36 @@ class LogSinkImpl
     static_cast<Base*>(this)->WriteAll(
         message.data(), message.size(), nullptr, nullptr);
   }
+};
+
+class LogMessageForTesting : public LogMessage {
+ public:
+  LogMessageForTesting(const char* file,
+                       int line,
+                       LoggingSeverity sev,
+                       LogErrorContext err_ctx = ERRCTX_NONE,
+                       int err = 0)
+      : LogMessage(file, line, sev, err_ctx, err) {}
+
+  const std::string& get_extra() const { return extra_; }
+  bool is_noop() const { return is_noop_; }
+
+  // Returns the contents of the internal log stream.
+  // Note that parts of the stream won't (as is) be available until *after* the
+  // dtor of the parent class has run. So, as is, this only represents a
+  // partially built stream.
+  std::string GetPrintStream() {
+    RTC_DCHECK(!is_finished_);
+    is_finished_ = true;
+    FinishPrintStream();
+    std::string ret = print_stream_.str();
+    // Just to make an error even more clear if the stream gets used after this.
+    print_stream_.clear();
+    return ret;
+  }
+
+ private:
+  bool is_finished_ = false;
 };
 
 // Test basic logging operation. We should get the INFO log but not the VERBOSE.
@@ -84,23 +116,30 @@ TEST(LogTest, MultipleStreams) {
   EXPECT_EQ(sev, LogMessage::GetLogToStream(nullptr));
 }
 
-// Ensure we don't crash when adding/removing streams while threads are going.
-// We should restore the correct global state at the end.
-class LogThread : public Thread {
+class LogThread {
  public:
-  LogThread() : Thread(std::unique_ptr<SocketServer>(new NullSocketServer())) {}
+  LogThread() : thread_(&ThreadEntry, this, "LogThread") {}
+  ~LogThread() { thread_.Stop(); }
 
-  ~LogThread() override {
-    Stop();
-  }
+  void Start() { thread_.Start(); }
 
  private:
-  void Run() override {
-    // LS_SENSITIVE to avoid cluttering up any real logging going on
+  void Run() {
+    // LS_SENSITIVE by default to avoid cluttering up any real logging going on.
     RTC_LOG(LS_SENSITIVE) << "RTC_LOG";
   }
+
+  static void ThreadEntry(void* p) { static_cast<LogThread*>(p)->Run(); }
+
+  PlatformThread thread_;
+  Event event_{false, false};
 };
 
+// Ensure we don't crash when adding/removing streams while threads are going.
+// We should restore the correct global state at the end.
+// This test also makes sure that the 'noop' stream() singleton object, can be
+// safely used from mutiple threads since the threads log at LS_SENSITIVE
+// (by default 'noop' entries).
 TEST(LogTest, MultipleThreads) {
   int sev = LogMessage::GetLogToStream(nullptr);
 
@@ -129,35 +168,75 @@ TEST(LogTest, WallClockStartTime) {
   EXPECT_GT(time, 1325376000u);
 }
 
-// Test the time required to write 1000 80-character logs to an unbuffered file.
-#if defined (WEBRTC_ANDROID)
-// Fails on Android: https://bugs.chromium.org/p/webrtc/issues/detail?id=4364.
-#define MAYBE_Perf DISABLED_Perf
-#else
-#define MAYBE_Perf Perf
-#endif
+TEST(LogTest, CheckExtraErrorField) {
+  LogMessageForTesting log_msg("some/path/myfile.cc", 100, LS_WARNING,
+                               ERRCTX_ERRNO, 0xD);
+  ASSERT_FALSE(log_msg.is_noop());
+  log_msg.stream() << "This gets added at dtor time";
 
-TEST(LogTest, MAYBE_Perf) {
-  std::string path =
-      webrtc::test::TempFilename(webrtc::test::OutputPath(), "ut");
+  const std::string& extra = log_msg.get_extra();
+  const size_t length_to_check = arraysize("[0x12345678]") - 1;
+  ASSERT_GE(extra.length(), length_to_check);
+  EXPECT_EQ(std::string("[0x0000000D]"), extra.substr(0, length_to_check));
+}
 
-  LogSinkImpl<FileStream> stream;
-  EXPECT_TRUE(stream.Open(path, "wb", nullptr));
-  stream.DisableBuffering();
+TEST(LogTest, CheckFilePathParsed) {
+  LogMessageForTesting log_msg("some/path/myfile.cc", 100, LS_INFO);
+  ASSERT_FALSE(log_msg.is_noop());
+  log_msg.stream() << "<- Does this look right?";
+
+  const std::string stream = log_msg.GetPrintStream();
+  EXPECT_NE(std::string::npos, stream.find("(myfile.cc:100)"));
+}
+
+TEST(LogTest, CheckNoopLogEntry) {
+  if (LogMessage::GetLogToDebug() <= LS_SENSITIVE) {
+    printf("CheckNoopLogEntry: skipping. Global severity is being overridden.");
+    return;
+  }
+
+  // Logging at LS_SENSITIVE severity, is by default turned off, so this should
+  // be treated as a noop message.
+  LogMessageForTesting log_msg("some/path/myfile.cc", 100, LS_SENSITIVE);
+  log_msg.stream() << "Should be logged to nowhere.";
+  EXPECT_TRUE(log_msg.is_noop());
+  const std::string stream = log_msg.GetPrintStream();
+  EXPECT_TRUE(stream.empty());
+}
+
+// Test the time required to write 1000 80-character logs to a string.
+TEST(LogTest, Perf) {
+  std::string str;
+  LogSinkImpl<StringStream> stream(&str);
   LogMessage::AddLogToStream(&stream, LS_SENSITIVE);
 
+  const std::string message(80, 'X');
+  {
+    // Just to be sure that we're not measuring the performance of logging
+    // noop log messages.
+    LogMessageForTesting sanity_check_msg(__FILE__, __LINE__, LS_SENSITIVE);
+    ASSERT_FALSE(sanity_check_msg.is_noop());
+  }
+
+  // We now know how many bytes the logging framework will tag onto every msg.
+  const size_t logging_overhead = str.size();
+  // Reset the stream to 0 size.
+  str.clear();
+  str.reserve(120000);
+  static const int kRepetitions = 1000;
+
   int64_t start = TimeMillis(), finish;
-  std::string message('X', 80);
-  for (int i = 0; i < 1000; ++i) {
-    RTC_LOG(LS_SENSITIVE) << message;
+  for (int i = 0; i < kRepetitions; ++i) {
+    LogMessageForTesting(__FILE__, __LINE__, LS_SENSITIVE).stream() << message;
   }
   finish = TimeMillis();
 
   LogMessage::RemoveLogToStream(&stream);
   stream.Close();
-  webrtc::test::RemoveFile(path);
 
-  RTC_LOG(LS_INFO) << "Average log time: " << TimeDiff(finish, start) << " ms";
+  EXPECT_EQ(str.size(), (message.size() + logging_overhead) * kRepetitions);
+  RTC_LOG(LS_INFO) << "Total log time: " << TimeDiff(finish, start) << " ms "
+                   << " total bytes logged: " << str.size();
 }
 
 }  // namespace rtc
