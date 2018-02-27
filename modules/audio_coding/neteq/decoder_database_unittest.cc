@@ -89,8 +89,9 @@ TEST(DecoderDatabase, GetDecoderInfo) {
         return true;
       }));
   auto* decoder = new MockAudioDecoder;
-  EXPECT_CALL(*factory, MakeAudioDecoderMock(_, _))
+  EXPECT_CALL(*factory, MakeAudioDecoderMock(_, _, _))
       .WillOnce(Invoke([decoder](const SdpAudioFormat& format,
+                                 rtc::Optional<AudioCodecPairId> codec_pair_id,
                                  std::unique_ptr<AudioDecoder>* dec) {
         EXPECT_EQ("pcmu", format.name);
         dec->reset(decoder);

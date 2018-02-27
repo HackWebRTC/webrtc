@@ -261,13 +261,15 @@ CreateForwardingMockDecoderFactory(
           Invoke([real_decoder_factory](const webrtc::SdpAudioFormat& format) {
             return real_decoder_factory->IsSupportedDecoder(format);
           }));
-  EXPECT_CALL(*mock_decoder_factory, MakeAudioDecoderMock(_, _))
+  EXPECT_CALL(*mock_decoder_factory, MakeAudioDecoderMock(_, _, _))
       .Times(AtLeast(2))
       .WillRepeatedly(
           Invoke([real_decoder_factory](
                      const webrtc::SdpAudioFormat& format,
+                     rtc::Optional<webrtc::AudioCodecPairId> codec_pair_id,
                      std::unique_ptr<webrtc::AudioDecoder>* return_value) {
-            auto real_decoder = real_decoder_factory->MakeAudioDecoder(format);
+            auto real_decoder =
+                real_decoder_factory->MakeAudioDecoder(format, codec_pair_id);
             *return_value =
                 real_decoder
                     ? CreateForwardingMockDecoder(std::move(real_decoder))

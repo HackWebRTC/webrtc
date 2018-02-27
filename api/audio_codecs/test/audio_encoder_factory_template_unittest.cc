@@ -79,7 +79,8 @@ TEST(AudioEncoderFactoryTemplateTest, NoEncoderTypes) {
           audio_encoder_factory_template_impl::AudioEncoderFactoryT<>>());
   EXPECT_THAT(factory->GetSupportedEncoders(), testing::IsEmpty());
   EXPECT_EQ(rtc::nullopt, factory->QueryAudioEncoder({"foo", 8000, 1}));
-  EXPECT_EQ(nullptr, factory->MakeAudioEncoder(17, {"bar", 16000, 1}));
+  EXPECT_EQ(nullptr,
+            factory->MakeAudioEncoder(17, {"bar", 16000, 1}, rtc::nullopt));
 }
 
 TEST(AudioEncoderFactoryTemplateTest, OneEncoderType) {
@@ -90,8 +91,9 @@ TEST(AudioEncoderFactoryTemplateTest, OneEncoderType) {
   EXPECT_EQ(rtc::nullopt, factory->QueryAudioEncoder({"foo", 8000, 1}));
   EXPECT_EQ(AudioCodecInfo(8000, 1, 12345),
             factory->QueryAudioEncoder({"bogus", 8000, 1}));
-  EXPECT_EQ(nullptr, factory->MakeAudioEncoder(17, {"bar", 16000, 1}));
-  auto enc = factory->MakeAudioEncoder(17, {"bogus", 8000, 1});
+  EXPECT_EQ(nullptr,
+            factory->MakeAudioEncoder(17, {"bar", 16000, 1}, rtc::nullopt));
+  auto enc = factory->MakeAudioEncoder(17, {"bogus", 8000, 1}, rtc::nullopt);
   ASSERT_NE(nullptr, enc);
   EXPECT_EQ(8000, enc->SampleRateHz());
 }
@@ -110,13 +112,15 @@ TEST(AudioEncoderFactoryTemplateTest, TwoEncoderTypes) {
   EXPECT_EQ(
       AudioCodecInfo(16000, 2, 23456),
       factory->QueryAudioEncoder({"sham", 16000, 2, {{"param", "value"}}}));
-  EXPECT_EQ(nullptr, factory->MakeAudioEncoder(17, {"bar", 16000, 1}));
-  auto enc1 = factory->MakeAudioEncoder(17, {"bogus", 8000, 1});
+  EXPECT_EQ(nullptr,
+            factory->MakeAudioEncoder(17, {"bar", 16000, 1}, rtc::nullopt));
+  auto enc1 = factory->MakeAudioEncoder(17, {"bogus", 8000, 1}, rtc::nullopt);
   ASSERT_NE(nullptr, enc1);
   EXPECT_EQ(8000, enc1->SampleRateHz());
-  EXPECT_EQ(nullptr, factory->MakeAudioEncoder(17, {"sham", 16000, 2}));
-  auto enc2 =
-      factory->MakeAudioEncoder(17, {"sham", 16000, 2, {{"param", "value"}}});
+  EXPECT_EQ(nullptr,
+            factory->MakeAudioEncoder(17, {"sham", 16000, 2}, rtc::nullopt));
+  auto enc2 = factory->MakeAudioEncoder(
+      17, {"sham", 16000, 2, {{"param", "value"}}}, rtc::nullopt);
   ASSERT_NE(nullptr, enc2);
   EXPECT_EQ(16000, enc2->SampleRateHz());
 }
@@ -130,11 +134,12 @@ TEST(AudioEncoderFactoryTemplateTest, G711) {
   EXPECT_EQ(rtc::nullopt, factory->QueryAudioEncoder({"PCMA", 16000, 1}));
   EXPECT_EQ(AudioCodecInfo(8000, 1, 64000),
             factory->QueryAudioEncoder({"PCMA", 8000, 1}));
-  EXPECT_EQ(nullptr, factory->MakeAudioEncoder(17, {"PCMU", 16000, 1}));
-  auto enc1 = factory->MakeAudioEncoder(17, {"PCMU", 8000, 1});
+  EXPECT_EQ(nullptr,
+            factory->MakeAudioEncoder(17, {"PCMU", 16000, 1}, rtc::nullopt));
+  auto enc1 = factory->MakeAudioEncoder(17, {"PCMU", 8000, 1}, rtc::nullopt);
   ASSERT_NE(nullptr, enc1);
   EXPECT_EQ(8000, enc1->SampleRateHz());
-  auto enc2 = factory->MakeAudioEncoder(17, {"PCMA", 8000, 1});
+  auto enc2 = factory->MakeAudioEncoder(17, {"PCMA", 8000, 1}, rtc::nullopt);
   ASSERT_NE(nullptr, enc2);
   EXPECT_EQ(8000, enc2->SampleRateHz());
 }
@@ -147,8 +152,9 @@ TEST(AudioEncoderFactoryTemplateTest, G722) {
   EXPECT_EQ(rtc::nullopt, factory->QueryAudioEncoder({"foo", 8000, 1}));
   EXPECT_EQ(AudioCodecInfo(16000, 1, 64000),
             factory->QueryAudioEncoder({"G722", 8000, 1}));
-  EXPECT_EQ(nullptr, factory->MakeAudioEncoder(17, {"bar", 16000, 1}));
-  auto enc = factory->MakeAudioEncoder(17, {"G722", 8000, 1});
+  EXPECT_EQ(nullptr,
+            factory->MakeAudioEncoder(17, {"bar", 16000, 1}, rtc::nullopt));
+  auto enc = factory->MakeAudioEncoder(17, {"G722", 8000, 1}, rtc::nullopt);
   ASSERT_NE(nullptr, enc);
   EXPECT_EQ(16000, enc->SampleRateHz());
 }
@@ -161,8 +167,9 @@ TEST(AudioEncoderFactoryTemplateTest, Ilbc) {
   EXPECT_EQ(rtc::nullopt, factory->QueryAudioEncoder({"foo", 8000, 1}));
   EXPECT_EQ(AudioCodecInfo(8000, 1, 13333),
             factory->QueryAudioEncoder({"ilbc", 8000, 1}));
-  EXPECT_EQ(nullptr, factory->MakeAudioEncoder(17, {"bar", 8000, 1}));
-  auto enc = factory->MakeAudioEncoder(17, {"ilbc", 8000, 1});
+  EXPECT_EQ(nullptr,
+            factory->MakeAudioEncoder(17, {"bar", 8000, 1}, rtc::nullopt));
+  auto enc = factory->MakeAudioEncoder(17, {"ilbc", 8000, 1}, rtc::nullopt);
   ASSERT_NE(nullptr, enc);
   EXPECT_EQ(8000, enc->SampleRateHz());
 }
@@ -176,13 +183,14 @@ TEST(AudioEncoderFactoryTemplateTest, IsacFix) {
   EXPECT_EQ(AudioCodecInfo(16000, 1, 32000, 10000, 32000),
             factory->QueryAudioEncoder({"isac", 16000, 1}));
   EXPECT_EQ(rtc::nullopt, factory->QueryAudioEncoder({"isac", 32000, 1}));
-  EXPECT_EQ(nullptr, factory->MakeAudioEncoder(17, {"isac", 8000, 1}));
-  auto enc1 = factory->MakeAudioEncoder(17, {"isac", 16000, 1});
+  EXPECT_EQ(nullptr,
+            factory->MakeAudioEncoder(17, {"isac", 8000, 1}, rtc::nullopt));
+  auto enc1 = factory->MakeAudioEncoder(17, {"isac", 16000, 1}, rtc::nullopt);
   ASSERT_NE(nullptr, enc1);
   EXPECT_EQ(16000, enc1->SampleRateHz());
   EXPECT_EQ(3u, enc1->Num10MsFramesInNextPacket());
-  auto enc2 =
-      factory->MakeAudioEncoder(17, {"isac", 16000, 1, {{"ptime", "60"}}});
+  auto enc2 = factory->MakeAudioEncoder(
+      17, {"isac", 16000, 1, {{"ptime", "60"}}}, rtc::nullopt);
   ASSERT_NE(nullptr, enc2);
   EXPECT_EQ(6u, enc2->Num10MsFramesInNextPacket());
 }
@@ -199,11 +207,12 @@ TEST(AudioEncoderFactoryTemplateTest, IsacFloat) {
             factory->QueryAudioEncoder({"isac", 16000, 1}));
   EXPECT_EQ(AudioCodecInfo(32000, 1, 56000, 10000, 56000),
             factory->QueryAudioEncoder({"isac", 32000, 1}));
-  EXPECT_EQ(nullptr, factory->MakeAudioEncoder(17, {"isac", 8000, 1}));
-  auto enc1 = factory->MakeAudioEncoder(17, {"isac", 16000, 1});
+  EXPECT_EQ(nullptr,
+            factory->MakeAudioEncoder(17, {"isac", 8000, 1}, rtc::nullopt));
+  auto enc1 = factory->MakeAudioEncoder(17, {"isac", 16000, 1}, rtc::nullopt);
   ASSERT_NE(nullptr, enc1);
   EXPECT_EQ(16000, enc1->SampleRateHz());
-  auto enc2 = factory->MakeAudioEncoder(17, {"isac", 32000, 1});
+  auto enc2 = factory->MakeAudioEncoder(17, {"isac", 32000, 1}, rtc::nullopt);
   ASSERT_NE(nullptr, enc2);
   EXPECT_EQ(32000, enc2->SampleRateHz());
 }
@@ -222,8 +231,9 @@ TEST(AudioEncoderFactoryTemplateTest, L16) {
   EXPECT_EQ(rtc::nullopt, factory->QueryAudioEncoder({"L16", 8000, 0}));
   EXPECT_EQ(AudioCodecInfo(48000, 1, 48000 * 16),
             factory->QueryAudioEncoder({"L16", 48000, 1}));
-  EXPECT_EQ(nullptr, factory->MakeAudioEncoder(17, {"L16", 8000, 0}));
-  auto enc = factory->MakeAudioEncoder(17, {"L16", 48000, 2});
+  EXPECT_EQ(nullptr,
+            factory->MakeAudioEncoder(17, {"L16", 8000, 0}, rtc::nullopt));
+  auto enc = factory->MakeAudioEncoder(17, {"L16", 48000, 2}, rtc::nullopt);
   ASSERT_NE(nullptr, enc);
   EXPECT_EQ(48000, enc->SampleRateHz());
 }
@@ -243,8 +253,9 @@ TEST(AudioEncoderFactoryTemplateTest, Opus) {
       info,
       factory->QueryAudioEncoder(
           {"opus", 48000, 2, {{"minptime", "10"}, {"useinbandfec", "1"}}}));
-  EXPECT_EQ(nullptr, factory->MakeAudioEncoder(17, {"bar", 16000, 1}));
-  auto enc = factory->MakeAudioEncoder(17, {"opus", 48000, 2});
+  EXPECT_EQ(nullptr,
+            factory->MakeAudioEncoder(17, {"bar", 16000, 1}, rtc::nullopt));
+  auto enc = factory->MakeAudioEncoder(17, {"opus", 48000, 2}, rtc::nullopt);
   ASSERT_NE(nullptr, enc);
   EXPECT_EQ(48000, enc->SampleRateHz());
 }
