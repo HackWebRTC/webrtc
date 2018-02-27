@@ -600,8 +600,12 @@ if (rtc_include_tests) {
     "../../resources/foreman_160x120.yuv",
     "../../resources/foreman_176x144.yuv",
     "../../resources/foreman_320x240.yuv",
-    "../../resources/FourPeople_1280x720_30.yuv",
   ]
+
+  if (!(is_ios || is_android)) {
+    video_coding_modules_tests_resources +=
+        [ "../../resources/FourPeople_1280x720_30.yuv" ]
+  }
 
   if (is_ios || is_mac) {
     bundle_data("video_coding_modules_tests_resources_bundle_data") {
