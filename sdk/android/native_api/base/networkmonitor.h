@@ -11,6 +11,8 @@
 #ifndef SDK_ANDROID_NATIVE_API_BASE_NETWORKMONITOR_H_
 #define SDK_ANDROID_NATIVE_API_BASE_NETWORKMONITOR_H_
 
+#include <jni.h>
+
 #include <memory>
 
 #include "rtc_base/networkmonitor.h"
@@ -21,6 +23,11 @@ namespace webrtc {
 // network changes as soon as they occur, requesting a cellular interface
 // (dependent on permissions), and binding sockets to network interfaces (more
 // reliable than binding to IP addresses on Android).
+std::unique_ptr<rtc::NetworkMonitorFactory> CreateAndroidNetworkMonitorFactory(
+    JNIEnv* env,
+    jobject application_context);
+
+// Deprecated. Pass in application context instead.
 std::unique_ptr<rtc::NetworkMonitorFactory>
 CreateAndroidNetworkMonitorFactory();
 

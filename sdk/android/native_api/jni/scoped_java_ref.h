@@ -46,7 +46,7 @@ class JavaRef<jobject> {
   }
 
  protected:
-  JavaRef() : obj_(nullptr) {}
+  constexpr JavaRef() : obj_(nullptr) {}
   explicit JavaRef(jobject obj) : obj_(obj) {}
   jobject obj_;
 
@@ -172,6 +172,7 @@ class ScopedJavaGlobalRef : public JavaRef<T> {
  public:
   using JavaRef<T>::obj_;
 
+  explicit constexpr ScopedJavaGlobalRef(std::nullptr_t) {}
   ScopedJavaGlobalRef(JNIEnv* env, const JavaRef<T>& other)
       : JavaRef<T>(static_cast<T>(env->NewGlobalRef(other.obj()))) {}
   explicit ScopedJavaGlobalRef(const ScopedJavaLocalRef<T>& other)

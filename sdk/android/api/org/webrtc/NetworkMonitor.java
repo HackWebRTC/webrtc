@@ -83,15 +83,21 @@ public class NetworkMonitor {
    * multi-networking. This requires the embedding app have the platform ACCESS_NETWORK_STATE and
    * CHANGE_NETWORK_STATE permission.
    */
-  public void startMonitoring() {
+  public void startMonitoring(Context applicationContext) {
     synchronized (autoDetectorLock) {
       ++numMonitors;
       if (autoDetector == null) {
-        autoDetector = createAutoDetector(ContextUtils.getApplicationContext());
+        autoDetector = createAutoDetector(applicationContext);
       }
       currentConnectionType =
           NetworkMonitorAutoDetect.getConnectionType(autoDetector.getCurrentNetworkState());
     }
+  }
+
+  /** Deprecated, pass in application context in startMonitoring instead. */
+  @Deprecated
+  public void startMonitoring() {
+    startMonitoring(ContextUtils.getApplicationContext());
   }
 
   /**
@@ -100,7 +106,7 @@ public class NetworkMonitor {
    * CHANGE_NETWORK_STATE permission.
    */
   @CalledByNative
-  private void startMonitoring(long nativeObserver) {
+  private void startMonitoring(Context applicationContext, long nativeObserver) {
     Logging.d(TAG, "Start monitoring with native observer " + nativeObserver);
 
     startMonitoring();
@@ -213,21 +219,31 @@ public class NetworkMonitor {
     nativeNotifyOfActiveNetworkList(nativeObserver, networkInfos);
   }
 
-  /** Adds an observer for any connection type changes. */
+  /**
+   * Adds an observer for any connection type changes.
+   *
+   * @deprecated Use getInstance(appContext).addObserver instead.
+   */
+  @Deprecated
   public static void addNetworkObserver(NetworkObserver observer) {
-    getInstance().addNetworkObserverInternal(observer);
+    getInstance().addObserver(observer);
   }
 
-  private void addNetworkObserverInternal(NetworkObserver observer) {
+  public void addObserver(NetworkObserver observer) {
     networkObservers.add(observer);
   }
 
-  /** Removes an observer for any connection type changes. */
+  /**
+   * Removes an observer for any connection type changes.
+   *
+   * @deprecated Use getInstance(appContext).removeObserver instead.
+   */
+  @Deprecated
   public static void removeNetworkObserver(NetworkObserver observer) {
-    getInstance().removeNetworkObserverInternal(observer);
+    getInstance().removeObserver(observer);
   }
 
-  private void removeNetworkObserverInternal(NetworkObserver observer) {
+  public void removeObserver(NetworkObserver observer) {
     networkObservers.remove(observer);
   }
 

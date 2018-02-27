@@ -145,8 +145,11 @@ std::string NetworkInformation::ToString() const {
   return ss.str();
 }
 
-AndroidNetworkMonitor::AndroidNetworkMonitor(JNIEnv* env)
+AndroidNetworkMonitor::AndroidNetworkMonitor(
+    JNIEnv* env,
+    const JavaRef<jobject>& j_application_context)
     : android_sdk_int_(Java_NetworkMonitor_androidSdkInt(env)),
+      j_application_context_(env, j_application_context),
       j_network_monitor_(env, Java_NetworkMonitor_getInstance(env)) {}
 
 AndroidNetworkMonitor::~AndroidNetworkMonitor() = default;
@@ -164,8 +167,8 @@ void AndroidNetworkMonitor::Start() {
   worker_thread()->socketserver()->set_network_binder(this);
 
   JNIEnv* env = AttachCurrentThreadIfNeeded();
-  Java_NetworkMonitor_startMonitoring(env, j_network_monitor_,
-                                      jlongFromPointer(this));
+  Java_NetworkMonitor_startMonitoring(
+      env, j_network_monitor_, j_application_context_, jlongFromPointer(this));
 }
 
 void AndroidNetworkMonitor::Stop() {
@@ -350,9 +353,20 @@ rtc::AdapterType AndroidNetworkMonitor::GetAdapterType(
   return type;
 }
 
+AndroidNetworkMonitorFactory::AndroidNetworkMonitorFactory()
+    : j_application_context_(nullptr) {}
+
+AndroidNetworkMonitorFactory::AndroidNetworkMonitorFactory(
+    JNIEnv* env,
+    const JavaRef<jobject>& j_application_context)
+    : j_application_context_(env, j_application_context) {}
+
+AndroidNetworkMonitorFactory::~AndroidNetworkMonitorFactory() = default;
+
 rtc::NetworkMonitorInterface*
 AndroidNetworkMonitorFactory::CreateNetworkMonitor() {
-  return new AndroidNetworkMonitor(AttachCurrentThreadIfNeeded());
+  return new AndroidNetworkMonitor(AttachCurrentThreadIfNeeded(),
+                                   j_application_context_);
 }
 
 void AndroidNetworkMonitor::NotifyConnectionTypeChanged(
