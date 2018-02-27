@@ -181,7 +181,7 @@ TEST(RtcpTransceiverImplTest, PeriodicallySendsPackets) {
   int64_t time_just_after_2nd_packet_ms = rtc::TimeMillis();
 
   EXPECT_GE(time_just_after_2nd_packet_ms - time_just_before_1st_packet_ms,
-            config.report_period_ms);
+            config.report_period_ms - 1);
 
   // Cleanup.
   rtc::Event done(false, false);
@@ -226,7 +226,7 @@ TEST(RtcpTransceiverImplTest, SendCompoundPacketDelaysPeriodicSendPackets) {
   int64_t time_of_last_periodic_packet_ms = rtc::TimeMillis();
 
   EXPECT_GE(time_of_last_periodic_packet_ms - time_of_non_periodic_packet_ms,
-            config.report_period_ms);
+            config.report_period_ms - 1);
 
   // Cleanup.
   rtc::Event done(false, false);
