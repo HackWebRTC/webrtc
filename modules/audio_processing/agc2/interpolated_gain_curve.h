@@ -14,8 +14,8 @@
 #include <array>
 
 #include "modules/audio_processing/agc2/agc2_common.h"
-#include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/basictypes.h"
+#include "rtc_base/constructormagic.h"
 #include "rtc_base/gtest_prod_util.h"
 
 namespace webrtc {
@@ -114,7 +114,7 @@ class InterpolatedGainCurve {
   // Stats.
   mutable Stats stats_;
 
-  // RTC_DISALLOW_COPY_AND_ASSIGN(InterpolatedGainCurve);
+  RTC_DISALLOW_COPY_AND_ASSIGN(InterpolatedGainCurve);
 };
 
 }  // namespace webrtc

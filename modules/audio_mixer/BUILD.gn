@@ -32,6 +32,8 @@ rtc_static_library("audio_mixer_impl") {
     "frame_combiner.h",
   ]
 
+  configs += [ "../audio_processing:apm_debug_dump" ]
+
   deps = [
     ":audio_frame_manipulator",
     "..:module_api",
@@ -40,10 +42,15 @@ rtc_static_library("audio_mixer_impl") {
     "../../api:array_view",
     "../../api/audio:audio_mixer_api",
     "../../audio/utility:audio_frame_operations",
+    "../../common_audio",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
     "../../system_wrappers",
+    "../../system_wrappers:field_trial_api",
     "../audio_processing",
+    "../audio_processing:apm_logging",
+    "../audio_processing:audio_frame_view",
+    "../audio_processing/agc2:agc2",
   ]
 }
 
@@ -79,6 +86,7 @@ if (rtc_include_tests) {
       "sine_wave_generator.cc",
       "sine_wave_generator.h",
     ]
+
     deps = [
       ":audio_frame_manipulator",
       ":audio_mixer_impl",
