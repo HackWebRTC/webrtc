@@ -197,6 +197,16 @@ FrameCombiner::FrameCombiner(bool use_limiter)
 
 FrameCombiner::~FrameCombiner() = default;
 
+void FrameCombiner::SetLimiterType(LimiterType limiter_type) {
+  // TODO(aleloi): remove this method and make limiter_type_ const
+  // when we have finished moved to APM-AGC2.
+  limiter_type_ = limiter_type;
+  if (limiter_type_ == LimiterType::kApmAgcLimiter &&
+      apm_agc_limiter_ == nullptr) {
+    apm_agc_limiter_ = CreateLimiter();
+  }
+}
+
 void FrameCombiner::Combine(const std::vector<AudioFrame*>& mix_list,
                             size_t number_of_channels,
                             int sample_rate,

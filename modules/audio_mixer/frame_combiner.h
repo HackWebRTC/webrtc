@@ -29,6 +29,8 @@ class FrameCombiner {
   explicit FrameCombiner(bool use_limiter);
   ~FrameCombiner();
 
+  void SetLimiterType(LimiterType limiter_type);
+
   // Combine several frames into one. Assumes sample_rate,
   // samples_per_channel of the input frames match the parameters. The
   // parameters 'number_of_channels' and 'sample_rate' are needed
@@ -42,7 +44,7 @@ class FrameCombiner {
                AudioFrame* audio_frame_for_mixing);
 
  private:
-  const LimiterType limiter_type_;
+  LimiterType limiter_type_;
   std::unique_ptr<AudioProcessing> apm_agc_limiter_;
   std::unique_ptr<ApmDataDumper> data_dumper_;
   FixedGainController apm_agc2_limiter_;

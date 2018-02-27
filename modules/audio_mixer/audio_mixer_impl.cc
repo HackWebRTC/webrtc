@@ -127,6 +127,11 @@ rtc::scoped_refptr<AudioMixerImpl> AudioMixerImpl::Create(
           std::move(output_rate_calculator), use_limiter));
 }
 
+void AudioMixerImpl::SetLimiterType(FrameCombiner::LimiterType limiter_type) {
+  RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
+  frame_combiner_.SetLimiterType(limiter_type);
+}
+
 void AudioMixerImpl::Mix(size_t number_of_channels,
                          AudioFrame* audio_frame_for_mixing) {
   RTC_DCHECK(number_of_channels == 1 || number_of_channels == 2);
