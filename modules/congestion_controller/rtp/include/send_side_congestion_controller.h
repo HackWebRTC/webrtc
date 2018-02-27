@@ -42,6 +42,8 @@ class Clock;
 class RateLimiter;
 class RtcEventLog;
 
+namespace webrtc_cc {
+
 namespace send_side_cc_internal {
 // This is used to observe the network controller state and route calls to
 // the proper handler. It also keeps cached values for safe asynchronous use.
@@ -191,6 +193,7 @@ class SendSideCongestionController : public CallStatsObserver,
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(SendSideCongestionController);
 };
+}  // namespace webrtc_cc
 }  // namespace webrtc
 
 #endif  // MODULES_CONGESTION_CONTROLLER_RTP_INCLUDE_SEND_SIDE_CONGESTION_CONTROLLER_H_

@@ -18,6 +18,7 @@
 
 namespace webrtc {
 class RtcEventLog;
+namespace webrtc_cc {
 
 class ProbeBitrateEstimator {
  public:
@@ -50,6 +51,7 @@ class ProbeBitrateEstimator {
   rtc::Optional<int> estimated_bitrate_bps_;
 };
 
+}  // namespace webrtc_cc
 }  // namespace webrtc
 
 #endif  // MODULES_CONGESTION_CONTROLLER_RTP_PROBE_BITRATE_ESTIMATOR_H_

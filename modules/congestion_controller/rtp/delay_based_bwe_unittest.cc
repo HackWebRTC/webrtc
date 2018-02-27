@@ -17,6 +17,7 @@
 #include "test/gtest.h"
 
 namespace webrtc {
+namespace webrtc_cc {
 
 namespace {
 constexpr int kNumProbesCluster0 = 5;
@@ -234,4 +235,5 @@ TEST_F(DelayBasedBweTest, TestInitialOveruse) {
   EXPECT_NEAR(bitrate_observer_.latest_bitrate(), kStartBitrate / 2, 15000);
 }
 
+}  // namespace webrtc_cc
 }  // namespace webrtc

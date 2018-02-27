@@ -16,6 +16,7 @@
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
 namespace webrtc {
+namespace webrtc_cc {
 
 namespace {
 constexpr int kInitialRateWindowMs = 500;
@@ -104,4 +105,5 @@ void BitrateEstimator::ExpectFastRateChange() {
   bitrate_estimate_var_ += 200;
 }
 
+}  // namespace webrtc_cc
 }  // namespace webrtc

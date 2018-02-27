@@ -34,6 +34,7 @@
 using rtc::MakeUnique;
 
 namespace webrtc {
+namespace webrtc_cc {
 namespace {
 
 static const int64_t kRetransmitWindowSizeMs = 500;
@@ -658,4 +659,5 @@ void SendSideCongestionController::OnReceivedRtcpReceiverReportBlocks(
       [this, msg]() { controller_->OnTransportLossReport(msg); });
   last_report_block_time_ = now;
 }
+}  // namespace webrtc_cc
 }  // namespace webrtc

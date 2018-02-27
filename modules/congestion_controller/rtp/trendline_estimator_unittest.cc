@@ -13,6 +13,7 @@
 #include "test/gtest.h"
 
 namespace webrtc {
+namespace webrtc_cc {
 
 namespace {
 constexpr size_t kWindowSize = 20;
@@ -70,4 +71,5 @@ TEST(TrendlineEstimator, JitteryLineSlopeZero) {
   TestEstimator(0, kAvgTimeBetweenPackets / 3.0, 0.02);
 }
 
+}  // namespace webrtc_cc
 }  // namespace webrtc

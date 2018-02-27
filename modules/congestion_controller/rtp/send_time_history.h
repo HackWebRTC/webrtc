@@ -20,6 +20,7 @@
 namespace webrtc {
 class Clock;
 struct PacketFeedback;
+namespace webrtc_cc {
 
 class SendTimeHistory {
  public:
@@ -54,5 +55,6 @@ class SendTimeHistory {
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(SendTimeHistory);
 };
 
+}  // namespace webrtc_cc
 }  // namespace webrtc
 #endif  // MODULES_CONGESTION_CONTROLLER_RTP_SEND_TIME_HISTORY_H_

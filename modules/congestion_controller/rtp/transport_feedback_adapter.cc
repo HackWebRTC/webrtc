@@ -19,6 +19,7 @@
 #include "rtc_base/numerics/mod_ops.h"
 
 namespace webrtc {
+namespace webrtc_cc {
 
 const int64_t kNoTimestamp = -1;
 const int64_t kSendTimeHistoryWindowMs = 60000;
@@ -188,4 +189,5 @@ size_t TransportFeedbackAdapter::GetOutstandingBytes() const {
   rtc::CritScope cs(&lock_);
   return send_time_history_.GetOutstandingBytes(local_net_id_, remote_net_id_);
 }
+}  // namespace webrtc_cc
 }  // namespace webrtc

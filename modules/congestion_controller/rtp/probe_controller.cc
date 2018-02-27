@@ -19,6 +19,7 @@
 #include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
+namespace webrtc_cc {
 
 namespace {
 // The minimum number probing packets used.
@@ -305,4 +306,5 @@ void ProbeController::InitiateProbing(
   }
 }
 
+}  // namespace webrtc_cc
 }  // namespace webrtc

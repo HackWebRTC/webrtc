@@ -70,6 +70,7 @@ size_t ReadTrendlineFilterWindowSize() {
 }  // namespace
 
 namespace webrtc {
+namespace webrtc_cc {
 
 DelayBasedBwe::Result::Result()
     : updated(false),
@@ -326,4 +327,5 @@ void DelayBasedBwe::SetMinBitrate(int min_bitrate_bps) {
 int64_t DelayBasedBwe::GetExpectedBwePeriodMs() const {
   return rate_control_.GetExpectedBandwidthPeriodMs();
 }
+}  // namespace webrtc_cc
 }  // namespace webrtc

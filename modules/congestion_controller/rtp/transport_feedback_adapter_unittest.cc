@@ -27,6 +27,7 @@ using ::testing::_;
 using ::testing::Invoke;
 
 namespace webrtc {
+namespace webrtc_cc {
 
 namespace {
 const PacedPacketInfo kPacingInfo0(0, 5, 2000);
@@ -388,4 +389,5 @@ TEST_F(TransportFeedbackAdapterTest, TimestampDeltas) {
   }
 }
 }  // namespace test
+}  // namespace webrtc_cc
 }  // namespace webrtc

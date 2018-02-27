@@ -32,6 +32,7 @@ using testing::SaveArg;
 using testing::StrictMock;
 
 namespace webrtc {
+namespace webrtc_cc {
 namespace test {
 
 namespace {
@@ -515,4 +516,5 @@ TEST_F(SendSideCongestionControllerTest, PacerQueueEncodeRatePushback) {
 }
 
 }  // namespace test
+}  // namespace webrtc_cc
 }  // namespace webrtc

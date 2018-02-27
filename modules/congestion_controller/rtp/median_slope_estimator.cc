@@ -18,6 +18,7 @@
 #include "rtc_base/logging.h"
 
 namespace webrtc {
+namespace webrtc_cc {
 
 constexpr unsigned int kDeltaCounterMax = 1000;
 
@@ -90,4 +91,5 @@ void MedianSlopeEstimator::Update(double recv_delta_ms,
   BWE_TEST_LOGGING_PLOT(1, "trendline_slope", arrival_time_ms, trendline_);
 }
 
+}  // namespace webrtc_cc
 }  // namespace webrtc

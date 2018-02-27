@@ -28,6 +28,7 @@ namespace rtcp {
 class TransportFeedback;
 }  // namespace rtcp
 
+namespace webrtc_cc {
 class TransportFeedbackAdapter {
  public:
   explicit TransportFeedbackAdapter(const Clock* clock);
@@ -73,6 +74,7 @@ class TransportFeedbackAdapter {
       RTC_GUARDED_BY(&observers_lock_);
 };
 
+}  // namespace webrtc_cc
 }  // namespace webrtc
 
 #endif  // MODULES_CONGESTION_CONTROLLER_RTP_TRANSPORT_FEEDBACK_ADAPTER_H_

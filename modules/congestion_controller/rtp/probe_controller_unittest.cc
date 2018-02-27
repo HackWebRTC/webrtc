@@ -26,6 +26,7 @@ using testing::Return;
 using webrtc::ProbeClusterConfig;
 
 namespace webrtc {
+namespace webrtc_cc {
 namespace test {
 
 namespace {
@@ -289,4 +290,5 @@ TEST_F(ProbeControllerTest, TestExponentialProbingOverflow) {
 }
 
 }  // namespace test
+}  // namespace webrtc_cc
 }  // namespace webrtc

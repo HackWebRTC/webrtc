@@ -22,6 +22,8 @@ namespace webrtc {
 
 class Clock;
 
+namespace webrtc_cc {
+
 // This class controls initiation of probing to estimate initial channel
 // capacity. There is also support for probing during a session when max
 // bitrate is adjusted by an application.
@@ -92,6 +94,7 @@ class ProbeController {
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(ProbeController);
 };
 
+}  // namespace webrtc_cc
 }  // namespace webrtc
 
 #endif  // MODULES_CONGESTION_CONTROLLER_RTP_PROBE_CONTROLLER_H_

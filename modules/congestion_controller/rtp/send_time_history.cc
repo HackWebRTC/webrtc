@@ -18,6 +18,7 @@
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc {
+namespace webrtc_cc {
 
 SendTimeHistory::SendTimeHistory(const Clock* clock,
                                  int64_t packet_age_limit_ms)
@@ -100,4 +101,5 @@ size_t SendTimeHistory::GetOutstandingBytes(uint16_t local_net_id,
   return outstanding_bytes;
 }
 
+}  // namespace webrtc_cc
 }  // namespace webrtc

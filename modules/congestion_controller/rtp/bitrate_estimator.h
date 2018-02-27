@@ -16,6 +16,7 @@
 #include "api/optional.h"
 
 namespace webrtc {
+namespace webrtc_cc {
 
 // Computes a bayesian estimate of the throughput given acks containing
 // the arrival time and payload size. Samples which are far from the current
@@ -41,6 +42,7 @@ class BitrateEstimator {
   float bitrate_estimate_var_;
 };
 
+}  // namespace webrtc_cc
 }  // namespace webrtc
 
 #endif  // MODULES_CONGESTION_CONTROLLER_RTP_BITRATE_ESTIMATOR_H_

@@ -20,6 +20,7 @@
 #include "rtc_base/numerics/safe_minmax.h"
 
 namespace webrtc {
+namespace webrtc_cc {
 
 namespace {
 rtc::Optional<double> LinearFitSlope(
@@ -180,4 +181,5 @@ void TrendlineEstimator::UpdateThreshold(double modified_offset,
   last_update_ms_ = now_ms;
 }
 
+}  // namespace webrtc_cc
 }  // namespace webrtc
