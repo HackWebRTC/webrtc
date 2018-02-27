@@ -33,6 +33,8 @@ class PeerConnectionDelegateAdapter : public PeerConnectionObserver {
 
   void OnRemoveStream(rtc::scoped_refptr<MediaStreamInterface> stream) override;
 
+  void OnTrack(rtc::scoped_refptr<RtpTransceiverInterface> transceiver) override;
+
   void OnDataChannel(
       rtc::scoped_refptr<DataChannelInterface> data_channel) override;
 

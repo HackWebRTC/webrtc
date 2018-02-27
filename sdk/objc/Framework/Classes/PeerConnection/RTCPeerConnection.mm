@@ -17,10 +17,12 @@
 #import "RTCLegacyStatsReport+Private.h"
 #import "RTCMediaConstraints+Private.h"
 #import "RTCMediaStream+Private.h"
+#import "RTCMediaStreamTrack+Private.h"
 #import "RTCPeerConnection+Native.h"
 #import "RTCPeerConnectionFactory+Private.h"
 #import "RTCRtpReceiver+Private.h"
 #import "RTCRtpSender+Private.h"
+#import "RTCRtpTransceiver+Private.h"
 #import "RTCSessionDescription+Private.h"
 #import "WebRTC/RTCLogging.h"
 
@@ -142,6 +144,18 @@ void PeerConnectionDelegateAdapter::OnRemoveStream(
   RTCPeerConnection *peer_connection = peer_connection_;
   [peer_connection.delegate peerConnection:peer_connection
                            didRemoveStream:mediaStream];
+}
+
+void PeerConnectionDelegateAdapter::OnTrack(
+    rtc::scoped_refptr<RtpTransceiverInterface> nativeTransceiver) {
+  RTCRtpTransceiver *transceiver =
+      [[RTCRtpTransceiver alloc] initWithNativeRtpTransceiver:nativeTransceiver];
+  RTCPeerConnection *peer_connection = peer_connection_;
+  if ([peer_connection.delegate
+          respondsToSelector:@selector(peerConnection:didStartReceivingOnTransceiver:)]) {
+    [peer_connection.delegate peerConnection:peer_connection
+              didStartReceivingOnTransceiver:transceiver];
+  }
 }
 
 void PeerConnectionDelegateAdapter::OnDataChannel(
@@ -334,6 +348,65 @@ void PeerConnectionDelegateAdapter::OnIceCandidatesRemoved(
   [_localStreams removeObject:stream];
 }
 
+- (RTCRtpSender *)addTrack:(RTCMediaStreamTrack *)track
+              streamLabels:(NSArray<NSString *> *)streamLabels {
+  std::vector<std::string> nativeStreamLabels;
+  for (NSString *label in streamLabels) {
+    nativeStreamLabels.push_back([label UTF8String]);
+  }
+  webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpSenderInterface>> nativeSenderOrError =
+      _peerConnection->AddTrack(track.nativeTrack, nativeStreamLabels);
+  if (!nativeSenderOrError.ok()) {
+    RTCLogError(@"Failed to add track %@: %s", track, nativeSenderOrError.error().message());
+    return nil;
+  }
+  return [[RTCRtpSender alloc] initWithNativeRtpSender:nativeSenderOrError.MoveValue()];
+}
+
+- (BOOL)removeTrack:(RTCRtpSender *)sender {
+  bool result = _peerConnection->RemoveTrack(sender.nativeRtpSender);
+  if (!result) {
+    RTCLogError(@"Failed to remote track %@", sender);
+  }
+  return result;
+}
+
+- (RTCRtpTransceiver *)addTransceiverWithTrack:(RTCMediaStreamTrack *)track {
+  return [self addTransceiverWithTrack:track init:[[RTCRtpTransceiverInit alloc] init]];
+}
+
+- (RTCRtpTransceiver *)addTransceiverWithTrack:(RTCMediaStreamTrack *)track
+                                          init:(RTCRtpTransceiverInit *)init {
+  webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpTransceiverInterface>> nativeTransceiverOrError =
+      _peerConnection->AddTransceiver(track.nativeTrack, init.nativeInit);
+  if (!nativeTransceiverOrError.ok()) {
+    RTCLogError(
+        @"Failed to add transceiver %@: %s", track, nativeTransceiverOrError.error().message());
+    return nil;
+  }
+  return
+      [[RTCRtpTransceiver alloc] initWithNativeRtpTransceiver:nativeTransceiverOrError.MoveValue()];
+}
+
+- (RTCRtpTransceiver *)addTransceiverOfType:(RTCRtpMediaType)mediaType {
+  return [self addTransceiverOfType:mediaType init:[[RTCRtpTransceiverInit alloc] init]];
+}
+
+- (RTCRtpTransceiver *)addTransceiverOfType:(RTCRtpMediaType)mediaType
+                                       init:(RTCRtpTransceiverInit *)init {
+  webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpTransceiverInterface>> nativeTransceiverOrError =
+      _peerConnection->AddTransceiver([RTCRtpReceiver nativeMediaTypeForMediaType:mediaType],
+                                      init.nativeInit);
+  if (!nativeTransceiverOrError.ok()) {
+    RTCLogError(@"Failed to add transceiver %@: %s",
+                [RTCRtpReceiver stringForMediaType:mediaType],
+                nativeTransceiverOrError.error().message());
+    return nil;
+  }
+  return
+      [[RTCRtpTransceiver alloc] initWithNativeRtpTransceiver:nativeTransceiverOrError.MoveValue()];
+}
+
 - (void)offerForConstraints:(RTCMediaConstraints *)constraints
           completionHandler:
     (void (^)(RTCSessionDescription *sessionDescription,
@@ -449,6 +522,18 @@ void PeerConnectionDelegateAdapter::OnIceCandidatesRemoved(
     [receivers addObject:receiver];
   }
   return receivers;
+}
+
+- (NSArray<RTCRtpTransceiver *> *)transceivers {
+  std::vector<rtc::scoped_refptr<webrtc::RtpTransceiverInterface>> nativeTransceivers(
+      _peerConnection->GetTransceivers());
+  NSMutableArray *transceivers = [[NSMutableArray alloc] init];
+  for (auto nativeTransceiver : nativeTransceivers) {
+    RTCRtpTransceiver *transceiver =
+        [[RTCRtpTransceiver alloc] initWithNativeRtpTransceiver:nativeTransceiver];
+    [transceivers addObject:transceiver];
+  }
+  return transceivers;
 }
 
 #pragma mark - Private

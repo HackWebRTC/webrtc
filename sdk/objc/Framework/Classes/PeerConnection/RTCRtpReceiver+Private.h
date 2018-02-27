@@ -40,6 +40,10 @@ class RtpReceiverDelegateAdapter : public RtpReceiverObserverInterface {
 
 + (RTCRtpMediaType)mediaTypeForNativeMediaType:(cricket::MediaType)nativeMediaType;
 
++ (cricket::MediaType)nativeMediaTypeForMediaType:(RTCRtpMediaType)mediaType;
+
++ (NSString*)stringForMediaType:(RTCRtpMediaType)mediaType;
+
 @end
 
 NS_ASSUME_NONNULL_END

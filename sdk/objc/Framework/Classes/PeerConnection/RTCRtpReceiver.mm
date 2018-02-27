@@ -126,4 +126,26 @@ void RtpReceiverDelegateAdapter::OnFirstPacketReceived(
   }
 }
 
++ (cricket::MediaType)nativeMediaTypeForMediaType:(RTCRtpMediaType)mediaType {
+  switch (mediaType) {
+    case RTCRtpMediaTypeAudio:
+      return cricket::MEDIA_TYPE_AUDIO;
+    case RTCRtpMediaTypeVideo:
+      return cricket::MEDIA_TYPE_VIDEO;
+    case RTCRtpMediaTypeData:
+      return cricket::MEDIA_TYPE_DATA;
+  }
+}
+
++ (NSString *)stringForMediaType:(RTCRtpMediaType)mediaType {
+  switch (mediaType) {
+    case RTCRtpMediaTypeAudio:
+      return @"AUDIO";
+    case RTCRtpMediaTypeVideo:
+      return @"VIDEO";
+    case RTCRtpMediaTypeData:
+      return @"DATA";
+  }
+}
+
 @end
