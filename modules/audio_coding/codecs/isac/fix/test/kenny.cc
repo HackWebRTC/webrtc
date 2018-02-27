@@ -106,9 +106,9 @@ TEST(IsacFixTest, Kenny) {
   FILE *inp, *outp, *f_bn, *outbits;
   int endfile;
 
-  char chartjson_result_file[100];
+  const char* chartjson_result_file = NULL;
 
-  size_t i;
+  int i;
   int errtype, h = 0, k, packetLossPercent = 0;
   int16_t CodingMode;
   int16_t bottleneck;
@@ -230,7 +230,7 @@ TEST(IsacFixTest, Kenny) {
     printf("[-RTP_INIT num]  :if -RTP_INIT option is specified num will be"
            " the initial\n");
     printf("                  value of the rtp sequence number.\n\n");
-    printf("[--isolated-script-test-perf-output file]\n");
+    printf("[--isolated-script-test-perf-output=file]\n");
     printf("                 :If this option is specified, perf values will be"
            " written to this file in a JSON format.\n\n");
     printf("Example usage    :\n\n");
@@ -263,9 +263,13 @@ TEST(IsacFixTest, Kenny) {
   sscanf(argv[i++], "%s", inname);
   sscanf(argv[i++], "%s", outname);
 
-  for (; i + 1 < static_cast<size_t>(argc); i++) {
+  for (; i < argc; i++) {
     /* Set (initial) bottleneck value */
     if (!strcmp ("-INITRATE", argv[i])) {
+      if (i + 1 >= argc) {
+        printf("-INITRATE requires a parameter.\n");
+        exit(1);
+      }
       rateBPS = atoi(argv[i + 1]);
       setControlBWE = 1;
       if ((rateBPS < 10000) || (rateBPS > 32000)) {
@@ -279,6 +283,10 @@ TEST(IsacFixTest, Kenny) {
 
     /* Set (initial) framelength */
     if (!strcmp ("-FL", argv[i])) {
+      if (i + 1 >= argc) {
+        printf("-FL requires a parameter.\n");
+        exit(1);
+      }
       framesize = atoi(argv[i + 1]);
       if ((framesize != 30) && (framesize != 60)) {
         printf("\n%d is not a valid frame length. "
@@ -297,6 +305,10 @@ TEST(IsacFixTest, Kenny) {
 
     /* Set maximum allowed payload size in bytes */
     if (!strcmp ("-MAX", argv[i])) {
+      if (i + 1 >= argc) {
+        printf("-MAX requires a parameter.\n");
+        exit(1);
+      }
       payloadSize = atoi(argv[i + 1]);
       printf("Maximum Payload Size: %d\n", payloadSize);
       i++;
@@ -304,6 +316,10 @@ TEST(IsacFixTest, Kenny) {
 
     /* Set maximum rate in bytes */
     if (!strcmp ("-MAXRATE", argv[i])) {
+      if (i + 1 >= argc) {
+        printf("-MAXRATE requires a parameter.\n");
+        exit(1);
+      }
       payloadRate = atoi(argv[i + 1]);
       printf("Maximum Rate in kbps: %d\n", payloadRate);
       i++;
@@ -311,6 +327,10 @@ TEST(IsacFixTest, Kenny) {
 
     /* Test of fault scenarious */
     if (!strcmp ("-F", argv[i])) {
+      if (i + 1 >= argc) {
+        printf("-F requires a parameter.");
+        exit(1);
+      }
       testNum = atoi(argv[i + 1]);
       printf("\nFault test: %d\n", testNum);
       if (testNum < 1 || testNum > 10) {
@@ -323,6 +343,10 @@ TEST(IsacFixTest, Kenny) {
 
     /* Packet loss test */
     if (!strcmp ("-PL", argv[i])) {
+      if (i + 1 >= argc) {
+        printf("-PL requires a parameter.\n");
+        exit(1);
+      }
       if( isdigit( *argv[i+1] ) ) {
         packetLossPercent = atoi( argv[i+1] );
         if( (packetLossPercent < 0) | (packetLossPercent > 100) ) {
@@ -356,6 +380,10 @@ TEST(IsacFixTest, Kenny) {
 
     /* Use gns file */
     if (!strcmp ("-G", argv[i])) {
+      if (i + 1 >= argc) {
+        printf("-G requires a parameter.\n");
+        exit(1);
+      }
       sscanf(argv[i + 1], "%s", gns_file);
       fp_gns = fopen(gns_file, "rb");
       if (fp_gns  == NULL) {
@@ -367,12 +395,20 @@ TEST(IsacFixTest, Kenny) {
 
     /* Run Narrowband interfaces (either encoder or decoder) */
     if (!strcmp ("-NB", argv[i])) {
+      if (i + 1 >= argc) {
+        printf("-NB requires a parameter.\n");
+        exit(1);
+      }
       nbTest = atoi(argv[i + 1]);
       i++;
     }
 
     /* Run Conference Engine APIs */
     if (!strcmp ("-CE", argv[i])) {
+      if (i + 1 >= argc) {
+        printf("-CE requires a parameter.\n");
+        exit(1);
+      }
       testCE = atoi(argv[i + 1]);
       if (testCE==1 || testCE==2) {
         i++;
@@ -387,12 +423,20 @@ TEST(IsacFixTest, Kenny) {
 
     /* Set initial RTP number */
     if (!strcmp ("-RTP_INIT", argv[i])) {
+      if (i + 1 >= argc) {
+        printf("-RTP_INIT requires a parameter.\n");
+        exit(1);
+      }
       i++;
     }
 
-    if (!strcmp ("--isolated-script-test-perf-output", argv[i])) {
-      strncpy(chartjson_result_file, argv[i+1], 50);
-      i++;
+    if (strstr(argv[i], "--isolated-script-test-perf-output") == argv[i]) {
+      const char* filename_start = strstr(argv[i], "=");
+      if (!filename_start || strlen(filename_start) < 2) {
+        printf("Expected --isolated-script-test-perf-output=/some/filename\n");
+        exit(1);
+      }
+      chartjson_result_file = filename_start + 1;
     }
   }
 
@@ -678,7 +722,7 @@ TEST(IsacFixTest, Kenny) {
 
     if (testNum == 6) {
       srand(time(NULL));
-      for (i = 0; i < stream_len; i++ ) {
+      for (i = 0; i < static_cast<int>(stream_len); i++ ) {
         streamdata[i] = rand();
       }
     }
@@ -708,7 +752,7 @@ TEST(IsacFixTest, Kenny) {
 
       /* Error test number 10, garbage data */
       if (testNum == 10) {
-        for ( i = 0; i < stream_len; i++) {
+        for ( i = 0; i < static_cast<int>(stream_len); i++) {
           streamdata[i] = (short) (streamdata[i] + (short) rand());
         }
       }
@@ -841,7 +885,7 @@ TEST(IsacFixTest, Kenny) {
   webrtc::test::PrintResult("isac", "", "time_per_10ms_frame",
                             (runtime * 10000) / length_file, "us", false);
 
-  if (*chartjson_result_file) {
+  if (chartjson_result_file) {
     webrtc::test::WritePerfResults(chartjson_result_file);
   }
 
