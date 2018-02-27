@@ -106,7 +106,7 @@ enum class IceCandidatePairState {
   // frozen because we have not implemented ICE freezing logic.
 };
 
-// Stats that we can return about the port of a connection.
+// Stats that we can return about the port of a STUN candidate.
 class StunStats {
  public:
   StunStats() = default;
