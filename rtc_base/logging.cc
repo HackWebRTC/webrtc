@@ -29,8 +29,6 @@
 static const int kMaxLogLineSize = 1024 - 60;
 #endif  // WEBRTC_MAC && !defined(WEBRTC_IOS) || WEBRTC_ANDROID
 
-static const char kLibjingle[] = "libjingle";
-
 #include <time.h>
 #include <limits.h>
 
@@ -41,7 +39,7 @@ static const char kLibjingle[] = "libjingle";
 
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/platform_thread.h"
+#include "rtc_base/platform_thread_types.h"
 #include "rtc_base/stringencode.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/stringutils.h"
@@ -82,32 +80,6 @@ std::ostream& GetNoopStream() {
 CriticalSection g_log_crit;
 }  // namespace
 
-/////////////////////////////////////////////////////////////////////////////
-// Constant Labels
-/////////////////////////////////////////////////////////////////////////////
-
-const char* FindLabel(int value, const ConstantLabel entries[]) {
-  for (int i = 0; entries[i].label; ++i) {
-    if (value == entries[i].value) {
-      return entries[i].label;
-    }
-  }
-  return 0;
-}
-
-std::string ErrorName(int err, const ConstantLabel* err_table) {
-  if (err == 0)
-    return "No error";
-
-  if (err_table != 0) {
-    if (const char* value = FindLabel(err, err_table))
-      return value;
-  }
-
-  char buffer[16];
-  snprintf(buffer, sizeof(buffer), "0x%08x", err);
-  return buffer;
-}
 
 /////////////////////////////////////////////////////////////////////////////
 // LogMessage
@@ -128,9 +100,8 @@ LogMessage::LogMessage(const char* file,
                        int line,
                        LoggingSeverity sev,
                        LogErrorContext err_ctx,
-                       int err,
-                       const char* module)
-    : severity_(sev), tag_(kLibjingle), is_noop_(IsNoop(sev)) {
+                       int err)
+    : severity_(sev), is_noop_(IsNoop(sev)) {
   // If there's no need to do any work, let's not :)
   if (is_noop_)
     return;
@@ -165,12 +136,10 @@ LogMessage::LogMessage(const char* file,
 #ifdef WEBRTC_WIN
       case ERRCTX_HRESULT: {
         char msgbuf[256];
-        DWORD flags = FORMAT_MESSAGE_FROM_SYSTEM;
-        HMODULE hmod = GetModuleHandleA(module);
-        if (hmod)
-          flags |= FORMAT_MESSAGE_FROM_HMODULE;
+        DWORD flags = FORMAT_MESSAGE_FROM_SYSTEM |
+                      FORMAT_MESSAGE_IGNORE_INSERTS;
         if (DWORD len = FormatMessageA(
-                flags, hmod, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                flags, nullptr, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                 msgbuf, sizeof(msgbuf) / sizeof(msgbuf[0]), nullptr)) {
           while ((len > 0) &&
               isspace(static_cast<unsigned char>(msgbuf[len-1]))) {
@@ -195,20 +164,31 @@ LogMessage::LogMessage(const char* file,
   }
 }
 
+#if defined(WEBRTC_ANDROID)
 LogMessage::LogMessage(const char* file,
                        int line,
                        LoggingSeverity sev,
-                       const std::string& tag)
+                       const char* tag)
     : LogMessage(file,
                  line,
                  sev,
                  ERRCTX_NONE,
-                 0 /* err */,
-                 nullptr /* module */) {
+                 0 /* err */) {
   if (!is_noop_) {
     tag_ = tag;
     print_stream_ << tag << ": ";
   }
+}
+#endif
+
+// DEPRECATED. Currently only used by downstream projects that use
+// implementation details of logging.h. Work is ongoing to remove those
+// dependencies.
+LogMessage::LogMessage(const char* file, int line, LoggingSeverity sev,
+                       const std::string& tag)
+    : LogMessage(file, line, sev) {
+  if (!is_noop_)
+    print_stream_ << tag << ": ";
 }
 
 LogMessage::~LogMessage() {
@@ -224,7 +204,11 @@ LogMessage::~LogMessage() {
   const std::string str = print_stream_.str();
 
   if (severity_ >= g_dbg_sev) {
+#if defined(WEBRTC_ANDROID)
     OutputToDebug(str, severity_, tag_);
+#else
+    OutputToDebug(str, severity_);
+#endif
   }
 
   CritScope cs(&g_log_crit);
@@ -349,19 +333,8 @@ void LogMessage::ConfigureLogging(const char* params) {
     // from the command line, we'll see the output there.  Otherwise, create
     // our own console window.
     // Note: These methods fail if a console already exists, which is fine.
-    bool success = false;
-    typedef BOOL (WINAPI* PFN_AttachConsole)(DWORD);
-    if (HINSTANCE kernel32 = ::LoadLibrary(L"kernel32.dll")) {
-      // AttachConsole is defined on WinXP+.
-      if (PFN_AttachConsole attach_console = reinterpret_cast<PFN_AttachConsole>
-            (::GetProcAddress(kernel32, "AttachConsole"))) {
-        success = (FALSE != attach_console(ATTACH_PARENT_PROCESS));
-      }
-      ::FreeLibrary(kernel32);
-    }
-    if (!success) {
+    if (!AttachConsole(ATTACH_PARENT_PROCESS))
       ::AllocConsole();
-    }
   }
 #endif  // WEBRTC_WIN
 
@@ -377,9 +350,14 @@ void LogMessage::UpdateMinLogSeverity()
   g_min_sev = min_sev;
 }
 
+#if defined(WEBRTC_ANDROID)
 void LogMessage::OutputToDebug(const std::string& str,
                                LoggingSeverity severity,
-                               const std::string& tag) {
+                               const char* tag) {
+#else
+void LogMessage::OutputToDebug(const std::string& str,
+                               LoggingSeverity severity) {
+#endif
   bool log_to_stderr = log_to_stderr_;
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS) && defined(NDEBUG)
   // On the Mac, all stderr output goes to the Console log and causes clutter.
@@ -400,7 +378,8 @@ void LogMessage::OutputToDebug(const std::string& str,
   if (key != nullptr) {
     CFRelease(key);
   }
-#endif
+#endif  // defined(WEBRTC_MAC) && !defined(WEBRTC_IOS) && defined(NDEBUG)
+
 #if defined(WEBRTC_WIN)
   // Always log to the debugger.
   // Perhaps stderr should be controlled by a preference, as on Mac?
@@ -415,6 +394,7 @@ void LogMessage::OutputToDebug(const std::string& str,
     }
   }
 #endif  // WEBRTC_WIN
+
 #if defined(WEBRTC_ANDROID)
   // Android's logging facility uses severity to log messages but we
   // need to map libjingle's severity levels to Android ones first.
@@ -423,7 +403,7 @@ void LogMessage::OutputToDebug(const std::string& str,
   int prio;
   switch (severity) {
     case LS_SENSITIVE:
-      __android_log_write(ANDROID_LOG_INFO, tag.c_str(), "SENSITIVE");
+      __android_log_write(ANDROID_LOG_INFO, tag, "SENSITIVE");
       if (log_to_stderr) {
         fprintf(stderr, "SENSITIVE");
         fflush(stderr);
@@ -450,15 +430,14 @@ void LogMessage::OutputToDebug(const std::string& str,
   int idx = 0;
   const int max_lines = size / kMaxLogLineSize + 1;
   if (max_lines == 1) {
-    __android_log_print(prio, tag.c_str(), "%.*s", size, str.c_str());
+    __android_log_print(prio, tag, "%.*s", size, str.c_str());
   } else {
     while (size > 0) {
       const int len = std::min(size, kMaxLogLineSize);
       // Use the size of the string in the format (str may have \0 in the
       // middle).
-      __android_log_print(prio, tag.c_str(), "[%d/%d] %.*s",
-                          line + 1, max_lines,
-                          len, str.c_str() + idx);
+      __android_log_print(prio, tag, "[%d/%d] %.*s", line + 1, max_lines, len,
+                          str.c_str() + idx);
       idx += len;
       size -= len;
       ++line;

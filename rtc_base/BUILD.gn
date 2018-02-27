@@ -285,6 +285,10 @@ rtc_source_set("rtc_base_approved_generic") {
       "logging.cc",
       "logging.h",
     ]
+
+    # logging.h needs the deprecation header while downstream projects are
+    # removing code that depends on logging implementation details.
+    deps += [ ":deprecation" ]
   }
   if (is_component_build && is_win) {
     # Copy the VS runtime DLLs into the isolate so that they don't have to be
@@ -765,7 +769,6 @@ rtc_static_library("rtc_base_generic") {
       "win32.h",
       "win32filesystem.cc",
       "win32filesystem.h",
-      "win32securityerrors.cc",
       "win32window.cc",
       "win32window.h",
     ]
