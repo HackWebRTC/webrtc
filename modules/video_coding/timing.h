@@ -78,7 +78,7 @@ class VCMTiming {
 
   // Returns the maximum time in ms that we can wait for a frame to become
   // complete before we must pass it to the decoder.
-  virtual uint32_t MaxWaitingTime(int64_t render_time_ms, int64_t now_ms) const;
+  virtual int64_t MaxWaitingTime(int64_t render_time_ms, int64_t now_ms) const;
 
   // Returns the current target delay which is required delay + decode time +
   // render delay.

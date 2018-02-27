@@ -234,17 +234,14 @@ int VCMTiming::RequiredDecodeTimeMs() const {
   return decode_time_ms;
 }
 
-uint32_t VCMTiming::MaxWaitingTime(int64_t render_time_ms,
-                                   int64_t now_ms) const {
+int64_t VCMTiming::MaxWaitingTime(int64_t render_time_ms,
+                                  int64_t now_ms) const {
   rtc::CritScope cs(&crit_sect_);
 
   const int64_t max_wait_time_ms =
       render_time_ms - now_ms - RequiredDecodeTimeMs() - render_delay_ms_;
 
-  if (max_wait_time_ms < 0) {
-    return 0;
-  }
-  return static_cast<uint32_t>(max_wait_time_ms);
+  return max_wait_time_ms;
 }
 
 int VCMTiming::TargetVideoDelay() const {

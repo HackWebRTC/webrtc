@@ -34,6 +34,10 @@ constexpr int kMaxFramesBuffered = 600;
 // Max number of decoded frame info that will be saved.
 constexpr int kMaxFramesHistory = 50;
 
+// The time it's allowed for a frame to be late to its rendering prediction and
+// still be rendered.
+constexpr int kMaxAllowedFrameDalayMs = 5;
+
 constexpr int64_t kLogNonDecodedIntervalMs = 5000;
 }  // namespace
 
@@ -119,7 +123,9 @@ FrameBuffer::ReturnReason FrameBuffer::NextFrame(
         // This will cause the frame buffer to prefer high framerate rather
         // than high resolution in the case of the decoder not decoding fast
         // enough and the stream has multiple spatial and temporal layers.
-        if (wait_ms == 0)
+        // For multiple temporal layers it may cause non-base layer frames to be
+        // skipped if they are late.
+        if (wait_ms < -kMaxAllowedFrameDalayMs)
           continue;
 
         break;

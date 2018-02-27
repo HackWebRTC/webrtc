@@ -52,9 +52,9 @@ class VCMTimingFake : public VCMTiming {
     return last_ms_;
   }
 
-  uint32_t MaxWaitingTime(int64_t render_time_ms,
-                          int64_t now_ms) const override {
-    return std::max<int>(0, render_time_ms - now_ms - kDecodeTime);
+  int64_t MaxWaitingTime(int64_t render_time_ms,
+                         int64_t now_ms) const override {
+    return render_time_ms - now_ms - kDecodeTime;
   }
 
   bool GetTimings(int* decode_ms,
@@ -359,7 +359,7 @@ TEST_F(TestFrameBuffer2, DropTemporalLayerSlowDecoder) {
 
   for (int i = 0; i < 10; ++i) {
     ExtractFrame();
-    clock_.AdvanceTimeMilliseconds(60);
+    clock_.AdvanceTimeMilliseconds(70);
   }
 
   CheckFrame(0, pid, 0);
@@ -388,10 +388,10 @@ TEST_F(TestFrameBuffer2, DropSpatialLayerSlowDecoder) {
 
   ExtractFrame();
   ExtractFrame();
-  clock_.AdvanceTimeMilliseconds(55);
+  clock_.AdvanceTimeMilliseconds(57);
   for (int i = 2; i < 12; ++i) {
     ExtractFrame();
-    clock_.AdvanceTimeMilliseconds(55);
+    clock_.AdvanceTimeMilliseconds(57);
   }
 
   CheckFrame(0, pid, 0);
