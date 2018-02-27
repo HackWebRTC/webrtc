@@ -114,6 +114,8 @@ struct EchoCanceller3Config {
       int non_zero_gain_blocks = 187;
       int full_gain_blocks = 312;
     } gain_rampup;
+
+    bool has_clock_drift = false;
   } echo_removal_control;
 };
 }  // namespace webrtc
