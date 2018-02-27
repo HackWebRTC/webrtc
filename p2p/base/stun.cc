@@ -49,7 +49,8 @@ const uint32_t STUN_FINGERPRINT_XOR_VALUE = 0x5354554E;
 StunMessage::StunMessage()
     : type_(0),
       length_(0),
-      transaction_id_(EMPTY_TRANSACTION_ID) {
+      transaction_id_(EMPTY_TRANSACTION_ID),
+      stun_magic_cookie_(kStunMagicCookie) {
   RTC_DCHECK(IsValidTransactionId(transaction_id_));
 }
 
@@ -394,7 +395,7 @@ bool StunMessage::Write(ByteBufferWriter* buf) const {
   buf->WriteUInt16(type_);
   buf->WriteUInt16(length_);
   if (!IsLegacy())
-    buf->WriteUInt32(kStunMagicCookie);
+    buf->WriteUInt32(stun_magic_cookie_);
   buf->WriteString(transaction_id_);
 
   for (const auto& attr : attrs_) {
@@ -410,6 +411,10 @@ bool StunMessage::Write(ByteBufferWriter* buf) const {
 
 StunMessage* StunMessage::CreateNew() const {
   return new StunMessage();
+}
+
+void StunMessage::SetStunMagicCookie(uint32_t val) {
+  stun_magic_cookie_ = val;
 }
 
 StunAttributeValueType StunMessage::GetAttributeValueType(int type) const {
