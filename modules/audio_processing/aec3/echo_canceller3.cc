@@ -338,10 +338,6 @@ EchoControl::Metrics EchoCanceller3::GetMetrics() const {
   return metrics;
 }
 
-bool EchoCanceller3::Validate(const EchoCanceller3Config& config) {
-  return true;
-}
-
 void EchoCanceller3::EmptyRenderQueue() {
   RTC_DCHECK_RUNS_SERIALIZED(&capture_race_checker_);
   bool frame_to_buffer =
@@ -363,20 +359,4 @@ void EchoCanceller3::EmptyRenderQueue() {
         render_transfer_queue_.Remove(&render_queue_output_frame_);
   }
 }
-
-EchoCanceller3Factory::EchoCanceller3Factory() {}
-
-EchoCanceller3Factory::EchoCanceller3Factory(const EchoCanceller3Config& config)
-    : config_(config) {
-  // Revert to default configuration if needed.
-  if (!EchoCanceller3::Validate(config_)) {
-    config_ = EchoCanceller3Config();
-  }
-}
-
-std::unique_ptr<EchoControl> EchoCanceller3Factory::Create(int sample_rate_hz) {
-  return std::unique_ptr<EchoControl>(
-      new EchoCanceller3(config_, sample_rate_hz, true));
-}
-
 }  // namespace webrtc

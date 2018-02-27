@@ -681,11 +681,6 @@ TEST(EchoCanceller3Messaging, EchoLeakage) {
   }
 }
 
-TEST(EchoCanceller3, ConfigValidation) {
-  EchoCanceller3Config config;
-  EXPECT_TRUE(EchoCanceller3::Validate(config));
-}
-
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 
 TEST(EchoCanceller3InputCheck, WrongCaptureNumBandsCheckVerification) {

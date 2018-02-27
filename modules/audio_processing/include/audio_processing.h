@@ -1162,16 +1162,6 @@ class VoiceDetection {
  protected:
   virtual ~VoiceDetection() {}
 };
-
-class EchoCanceller3Factory : public EchoControlFactory {
- public:
-  EchoCanceller3Factory();
-  EchoCanceller3Factory(const EchoCanceller3Config& config);
-  std::unique_ptr<EchoControl> Create(int sample_rate_hz) override;
-
- private:
-  EchoCanceller3Config config_;
-};
 }  // namespace webrtc
 
 #endif  // MODULES_AUDIO_PROCESSING_INCLUDE_AUDIO_PROCESSING_H_

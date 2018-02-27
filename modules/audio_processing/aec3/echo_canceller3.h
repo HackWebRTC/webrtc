@@ -92,9 +92,6 @@ class EchoCanceller3 : public EchoControl {
     block_processor_->UpdateEchoLeakageStatus(leakage_detected);
   }
 
-  // Validates a config.
-  static bool Validate(const EchoCanceller3Config& config);
-
  private:
   class RenderWriter;
 

@@ -21,6 +21,7 @@ specific_include_rules = {
   # since no one #includes them.
   ".*\.cc": [
     "+modules/audio_coding",
+    "+modules/audio_processing",
   ],
 
   ".*i420_buffer\.h": [

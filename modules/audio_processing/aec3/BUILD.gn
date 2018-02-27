@@ -9,17 +9,9 @@
 import("//build/config/arm.gni")
 import("../../../webrtc.gni")
 
-config("apm_debug_dump") {
-  if (apm_debug_dump) {
-    defines = [ "WEBRTC_APM_DEBUG_DUMP=1" ]
-  } else {
-    defines = [ "WEBRTC_APM_DEBUG_DUMP=0" ]
-  }
-}
-
 rtc_static_library("aec3") {
   visibility = [ "*" ]
-  configs += [ ":apm_debug_dump" ]
+  configs += [ "..:apm_debug_dump" ]
   sources = [
     "adaptive_fir_filter.cc",
     "adaptive_fir_filter.h",
@@ -125,7 +117,7 @@ if (rtc_include_tests) {
   rtc_source_set("aec3_unittests") {
     testonly = true
 
-    configs += [ ":apm_debug_dump" ]
+    configs += [ "..:apm_debug_dump" ]
     sources = [
       "mock/mock_block_processor.h",
       "mock/mock_echo_remover.h",

@@ -17,6 +17,7 @@
 #include <utility>
 #include <vector>
 
+#include "api/audio/echo_canceller3_factory.h"
 #include "common_audio/include/audio_util.h"
 #include "modules/audio_processing/aec_dump/aec_dump_factory.h"
 #include "modules/audio_processing/include/audio_processing.h"

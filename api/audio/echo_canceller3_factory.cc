@@ -9,4 +9,19 @@
  */
 #include "api/audio/echo_canceller3_factory.h"
 
-// TODO(bugs.webrtc.org/8844): EchoCanceller3Factory will be moved here.
+#include <memory>
+
+#include "modules/audio_processing/aec3/echo_canceller3.h"
+#include "rtc_base/ptr_util.h"
+
+namespace webrtc {
+
+EchoCanceller3Factory::EchoCanceller3Factory() {}
+
+EchoCanceller3Factory::EchoCanceller3Factory(const EchoCanceller3Config& config)
+    : config_(config) {}
+
+std::unique_ptr<EchoControl> EchoCanceller3Factory::Create(int sample_rate_hz) {
+  return rtc::MakeUnique<EchoCanceller3>(config_, sample_rate_hz, true);
+}
+}  // namespace webrtc

@@ -444,6 +444,7 @@ webrtc_fuzzer_test("audio_processing_fuzzer") {
   deps = [
     ":audio_processing_fuzzer_helper",
     ":fuzz_data_helper",
+    "../../api/audio:aec3_factory",
     "../../modules/audio_processing",
     "../../modules/audio_processing/aec3",
     "../../rtc_base:rtc_base_approved",
