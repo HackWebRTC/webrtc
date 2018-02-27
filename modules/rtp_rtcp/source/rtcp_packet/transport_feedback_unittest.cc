@@ -12,6 +12,7 @@
 
 #include <limits>
 #include <memory>
+#include <utility>
 
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "test/gmock.h"
@@ -464,6 +465,32 @@ TEST(RtcpPacketTest, TransportFeedback_CorrectlySplitsVectorChunks) {
                                      serialized_packet.size());
     EXPECT_TRUE(deserialized_packet.get() != nullptr);
   }
+}
+
+TEST(RtcpPacketTest, TransportFeedback_MoveConstructor) {
+  const int kSamples = 100;
+  const int64_t kDelta = TransportFeedback::kDeltaScaleFactor;
+  const uint16_t kBaseSeqNo = 7531;
+  const int64_t kBaseTimestampUs = 123456789;
+  const uint8_t kFeedbackSeqNo = 90;
+
+  TransportFeedback feedback;
+  feedback.SetBase(kBaseSeqNo, kBaseTimestampUs);
+  feedback.SetFeedbackSequenceNumber(kFeedbackSeqNo);
+  for (int i = 0; i < kSamples; ++i) {
+    feedback.AddReceivedPacket(kBaseSeqNo + i, kBaseTimestampUs + i * kDelta);
+  }
+  EXPECT_TRUE(feedback.IsConsistent());
+
+  TransportFeedback feedback_copy(feedback);
+  EXPECT_TRUE(feedback_copy.IsConsistent());
+  EXPECT_TRUE(feedback.IsConsistent());
+  EXPECT_EQ(feedback_copy.Build(), feedback.Build());
+
+  TransportFeedback moved(std::move(feedback));
+  EXPECT_TRUE(moved.IsConsistent());
+  EXPECT_TRUE(feedback.IsConsistent());
+  EXPECT_EQ(moved.Build(), feedback_copy.Build());
 }
 
 }  // namespace
