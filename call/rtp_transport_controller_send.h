@@ -18,7 +18,7 @@
 #include "call/rtp_bitrate_configurator.h"
 #include "call/rtp_transport_controller_send_interface.h"
 #include "common_types.h"  // NOLINT(build/include)
-#include "modules/congestion_controller/include/send_side_congestion_controller.h"
+#include "modules/congestion_controller/include/send_side_congestion_controller_interface.h"
 #include "modules/pacing/packet_router.h"
 #include "modules/utility/include/process_thread.h"
 #include "rtc_base/constructormagic.h"
@@ -75,7 +75,7 @@ class RtpTransportControllerSend : public RtpTransportControllerSendInterface {
  private:
   PacketRouter packet_router_;
   PacedSender pacer_;
-  SendSideCongestionController send_side_cc_;
+  const std::unique_ptr<SendSideCongestionControllerInterface> send_side_cc_;
   RtpKeepAliveConfig keepalive_;
   RtpBitrateConfigurator bitrate_configurator_;
   std::map<std::string, rtc::NetworkRoute> network_routes_;
