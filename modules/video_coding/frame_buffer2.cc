@@ -36,7 +36,7 @@ constexpr int kMaxFramesHistory = 50;
 
 // The time it's allowed for a frame to be late to its rendering prediction and
 // still be rendered.
-constexpr int kMaxAllowedFrameDalayMs = 5;
+constexpr int kMaxAllowedFrameDelayMs = 5;
 
 constexpr int64_t kLogNonDecodedIntervalMs = 5000;
 }  // namespace
@@ -125,7 +125,7 @@ FrameBuffer::ReturnReason FrameBuffer::NextFrame(
         // enough and the stream has multiple spatial and temporal layers.
         // For multiple temporal layers it may cause non-base layer frames to be
         // skipped if they are late.
-        if (wait_ms < -kMaxAllowedFrameDalayMs)
+        if (wait_ms < -kMaxAllowedFrameDelayMs)
           continue;
 
         break;
