@@ -120,6 +120,12 @@ RTC_EXPORT
 - (void)peerConnection:(RTCPeerConnection *)peerConnection
     didStartReceivingOnTransceiver:(RTCRtpTransceiver *)transceiver;
 
+/** Called when a receiver and its track are created. */
+@optional
+- (void)peerConnection:(RTCPeerConnection *)peerConnection
+        didAddReceiver:(RTCRtpReceiver *)rtpReceiver
+               streams:(NSArray<RTCMediaStream *> *)mediaStreams;
+
 @end
 
 RTC_EXPORT
