@@ -19,10 +19,10 @@
 #include "api/optional.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/bitrate_controller/send_side_bandwidth_estimation.h"
+#include "modules/congestion_controller/network_control/include/network_control.h"
 #include "modules/congestion_controller/rtp/acknowledged_bitrate_estimator.h"
 #include "modules/congestion_controller/rtp/alr_detector.h"
 #include "modules/congestion_controller/rtp/delay_based_bwe.h"
-#include "modules/congestion_controller/rtp/network_control/include/network_control.h"
 #include "modules/congestion_controller/rtp/probe_controller.h"
 #include "rtc_base/constructormagic.h"
 

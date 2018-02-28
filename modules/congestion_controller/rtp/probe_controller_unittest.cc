@@ -9,7 +9,7 @@
  */
 #include <memory>
 
-#include "modules/congestion_controller/rtp/network_control/include/network_types.h"
+#include "modules/congestion_controller/network_control/include/network_types.h"
 #include "modules/congestion_controller/rtp/probe_controller.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/clock.h"

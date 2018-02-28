@@ -6,7 +6,7 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-import("../../../../webrtc.gni")
+import("../../../webrtc.gni")
 
 rtc_static_library("network_control") {
   sources = [
@@ -18,10 +18,10 @@ rtc_static_library("network_control") {
   ]
 
   deps = [
-    "../../../:module_api",
-    "../../../../api:optional",
-    "../../../../rtc_base:checks",
-    "../../../../rtc_base:rtc_base_approved",
+    "../../:module_api",
+    "../../../api:optional",
+    "../../../rtc_base:checks",
+    "../../../rtc_base:rtc_base_approved",
   ]
 }
 
@@ -34,7 +34,7 @@ if (rtc_include_tests) {
 
     deps = [
       ":network_control",
-      "../../../../test:test_support",
+      "../../../test:test_support",
     ]
   }
 }

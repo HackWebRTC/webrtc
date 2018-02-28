@@ -14,9 +14,9 @@
 #include <functional>
 #include <memory>
 #include <vector>
+#include "modules/congestion_controller/network_control/include/network_types.h"
+#include "modules/congestion_controller/network_control/include/network_units.h"
 #include "modules/congestion_controller/rtp/include/goog_cc_factory.h"
-#include "modules/congestion_controller/rtp/network_control/include/network_types.h"
-#include "modules/congestion_controller/rtp/network_control/include/network_units.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/format_macros.h"

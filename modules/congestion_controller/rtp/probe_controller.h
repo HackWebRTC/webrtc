@@ -16,7 +16,7 @@
 #include <initializer_list>
 
 #include "api/optional.h"
-#include "modules/congestion_controller/rtp/network_control/include/network_control.h"
+#include "modules/congestion_controller/network_control/include/network_control.h"
 
 namespace webrtc {
 

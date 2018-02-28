@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_CONGESTION_CONTROLLER_RTP_NETWORK_CONTROL_INCLUDE_NETWORK_TYPES_H_
-#define MODULES_CONGESTION_CONTROLLER_RTP_NETWORK_CONTROL_INCLUDE_NETWORK_TYPES_H_
+#ifndef MODULES_CONGESTION_CONTROLLER_NETWORK_CONTROL_INCLUDE_NETWORK_TYPES_H_
+#define MODULES_CONGESTION_CONTROLLER_NETWORK_CONTROL_INCLUDE_NETWORK_TYPES_H_
 #include <stdint.h>
 #include <ostream>
 #include <vector>
-#include "modules/congestion_controller/rtp/network_control/include/network_units.h"
+#include "modules/congestion_controller/network_control/include/network_units.h"
 #include "modules/include/module_common_types.h"
 #include "rtc_base/constructormagic.h"
 
@@ -169,4 +169,4 @@ struct ProcessInterval {
 ::std::ostream& operator<<(::std::ostream& os, const PacerConfig& config);
 }  // namespace webrtc
 
-#endif  // MODULES_CONGESTION_CONTROLLER_RTP_NETWORK_CONTROL_INCLUDE_NETWORK_TYPES_H_
+#endif  // MODULES_CONGESTION_CONTROLLER_NETWORK_CONTROL_INCLUDE_NETWORK_TYPES_H_

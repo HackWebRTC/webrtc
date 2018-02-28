@@ -13,7 +13,7 @@
 
 #include <memory>
 
-#include "modules/congestion_controller/rtp/network_control/include/network_types.h"
+#include "modules/congestion_controller/network_control/include/network_types.h"
 #include "modules/pacing/paced_sender.h"
 #include "rtc_base/sequenced_task_checker.h"
 
