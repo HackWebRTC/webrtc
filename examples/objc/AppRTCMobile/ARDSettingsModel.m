@@ -109,14 +109,6 @@ NS_ASSUME_NONNULL_BEGIN
   [[self settingsStore] setCreateAecDump:createAecDump];
 }
 
-- (BOOL)currentUseLevelControllerSettingFromStore {
-  return [[self settingsStore] useLevelController];
-}
-
-- (void)storeUseLevelControllerSetting:(BOOL)useLevelController {
-  [[self settingsStore] setUseLevelController:useLevelController];
-}
-
 - (BOOL)currentUseManualAudioConfigSettingFromStore {
   return [[self settingsStore] useManualAudioConfig];
 }
@@ -174,7 +166,6 @@ NS_ASSUME_NONNULL_BEGIN
                                           bitrate:nil
                                         audioOnly:NO
                                     createAecDump:NO
-                               useLevelController:NO
                              useManualAudioConfig:YES];
 }
 

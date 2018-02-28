@@ -754,10 +754,7 @@ static int const kKbpsMultiplier = 1000;
 #pragma mark - Defaults
 
  - (RTCMediaConstraints *)defaultMediaAudioConstraints {
-   NSString *valueLevelControl = [_settings currentUseLevelControllerSettingFromStore] ?
-       kRTCMediaConstraintsValueTrue :
-       kRTCMediaConstraintsValueFalse;
-   NSDictionary *mandatoryConstraints = @{ kRTCMediaConstraintsLevelControl : valueLevelControl };
+   NSDictionary *mandatoryConstraints = @{};
    RTCMediaConstraints *constraints =
        [[RTCMediaConstraints alloc] initWithMandatoryConstraints:mandatoryConstraints
                                              optionalConstraints:nil];
