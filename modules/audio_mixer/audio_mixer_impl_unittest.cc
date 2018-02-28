@@ -61,7 +61,7 @@ AudioFrame frame_for_mixing;
 
 }  // namespace
 
-class MockMixerAudioSource : public AudioMixer::Source {
+class MockMixerAudioSource : public testing::NiceMock<AudioMixer::Source> {
  public:
   MockMixerAudioSource()
       : fake_audio_frame_info_(AudioMixer::Source::AudioFrameInfo::kNormal) {
