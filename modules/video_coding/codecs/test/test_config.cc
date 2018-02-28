@@ -149,8 +149,8 @@ void TestConfig::ConfigureSimulcast() {
     SimulcastStream* ss = &codec_settings.simulcastStream[i];
     ss->width = static_cast<uint16_t>(stream[i].width);
     ss->height = static_cast<uint16_t>(stream[i].height);
-    ss->numberOfTemporalLayers = static_cast<unsigned char>(
-        stream[i].temporal_layer_thresholds_bps.size() + 1);
+    ss->numberOfTemporalLayers =
+        static_cast<unsigned char>(*stream[i].num_temporal_layers);
     ss->maxBitrate = stream[i].max_bitrate_bps / 1000;
     ss->targetBitrate = stream[i].target_bitrate_bps / 1000;
     ss->minBitrate = stream[i].min_bitrate_bps / 1000;

@@ -23,15 +23,6 @@
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc {
-namespace {
-bool TemporalLayersConfigured(const std::vector<VideoStream>& streams) {
-  for (const VideoStream& stream : streams) {
-    if (stream.temporal_layer_thresholds_bps.size() > 0)
-      return true;
-  }
-  return false;
-}
-}  // namespace
 
 bool VideoCodecInitializer::SetupCodec(
     const VideoEncoderConfig& config,
@@ -129,10 +120,8 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
       break;
     case VideoEncoderConfig::ContentType::kScreen:
       video_codec.mode = kScreensharing;
-      if (!streams.empty() &&
-          streams[0].temporal_layer_thresholds_bps.size() == 1) {
-        video_codec.targetBitrate =
-            streams[0].temporal_layer_thresholds_bps[0] / 1000;
+      if (!streams.empty() && streams[0].num_temporal_layers == 2) {
+        video_codec.targetBitrate = streams[0].target_bitrate_bps / 1000;
       }
       break;
   }
@@ -142,12 +131,16 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
 
   switch (video_codec.codecType) {
     case kVideoCodecVP8: {
-      if (!config.encoder_specific_settings)
+      if (!config.encoder_specific_settings) {
         *video_codec.VP8() = VideoEncoder::GetDefaultVp8Settings();
-      video_codec.VP8()->numberOfTemporalLayers = static_cast<unsigned char>(
-          streams.back().temporal_layer_thresholds_bps.size() + 1);
+      }
 
-      if (nack_enabled && !TemporalLayersConfigured(streams)) {
+      video_codec.VP8()->numberOfTemporalLayers = static_cast<unsigned char>(
+          streams.back().num_temporal_layers.value_or(
+              video_codec.VP8()->numberOfTemporalLayers));
+      RTC_DCHECK_GE(video_codec.VP8()->numberOfTemporalLayers, 1);
+
+      if (nack_enabled && video_codec.VP8()->numberOfTemporalLayers == 1) {
         RTC_LOG(LS_INFO)
             << "No temporal layers and nack enabled -> resilience off";
         video_codec.VP8()->resilience = kResilienceOff;
@@ -155,8 +148,10 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
       break;
     }
     case kVideoCodecVP9: {
-      if (!config.encoder_specific_settings)
+      if (!config.encoder_specific_settings) {
         *video_codec.VP9() = VideoEncoder::GetDefaultVp9Settings();
+      }
+
       if (video_codec.mode == kScreensharing &&
           config.encoder_specific_settings) {
         video_codec.VP9()->flexibleMode = true;
@@ -164,10 +159,13 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
         RTC_DCHECK_EQ(1, video_codec.VP9()->numberOfTemporalLayers);
         RTC_DCHECK_EQ(2, video_codec.VP9()->numberOfSpatialLayers);
       }
-      video_codec.VP9()->numberOfTemporalLayers = static_cast<unsigned char>(
-          streams.back().temporal_layer_thresholds_bps.size() + 1);
 
-      if (nack_enabled && !TemporalLayersConfigured(streams) &&
+      video_codec.VP9()->numberOfTemporalLayers = static_cast<unsigned char>(
+          streams.back().num_temporal_layers.value_or(
+              video_codec.VP9()->numberOfTemporalLayers));
+      RTC_DCHECK_GE(video_codec.VP9()->numberOfTemporalLayers, 1);
+
+      if (nack_enabled && video_codec.VP9()->numberOfTemporalLayers == 1 &&
           video_codec.VP9()->numberOfSpatialLayers == 1) {
         RTC_LOG(LS_INFO) << "No temporal or spatial layers and nack enabled -> "
                          << "resilience off";
@@ -239,8 +237,8 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
     sim_stream->targetBitrate = streams[i].target_bitrate_bps / 1000;
     sim_stream->maxBitrate = streams[i].max_bitrate_bps / 1000;
     sim_stream->qpMax = streams[i].max_qp;
-    sim_stream->numberOfTemporalLayers = static_cast<unsigned char>(
-        streams[i].temporal_layer_thresholds_bps.size() + 1);
+    sim_stream->numberOfTemporalLayers =
+        static_cast<unsigned char>(streams[i].num_temporal_layers.value_or(1));
     sim_stream->active = streams[i].active;
 
     video_codec.width =
