@@ -417,77 +417,6 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   std::vector<bool> loss_mask_vector_;
 };
 
-// TODO(tommi): See if there's a more elegant way to create a task that creates
-// an object on the correct task queue.
-class VideoSendStream::ConstructionTask : public rtc::QueuedTask {
- public:
-  ConstructionTask(
-      std::unique_ptr<VideoSendStreamImpl>* send_stream,
-      rtc::Event* done_event,
-      SendStatisticsProxy* stats_proxy,
-      VideoStreamEncoder* video_stream_encoder,
-      ProcessThread* module_process_thread,
-      CallStats* call_stats,
-      RtpTransportControllerSendInterface* transport,
-      BitrateAllocator* bitrate_allocator,
-      SendDelayStats* send_delay_stats,
-      RtcEventLog* event_log,
-      const VideoSendStream::Config* config,
-      int initial_encoder_max_bitrate,
-      double initial_encoder_bitrate_priority,
-      const std::map<uint32_t, RtpState>& suspended_ssrcs,
-      const std::map<uint32_t, RtpPayloadState>& suspended_payload_states,
-      VideoEncoderConfig::ContentType content_type,
-      std::unique_ptr<FecController> fec_controller)
-      : send_stream_(send_stream),
-        done_event_(done_event),
-        stats_proxy_(stats_proxy),
-        video_stream_encoder_(video_stream_encoder),
-        call_stats_(call_stats),
-        transport_(transport),
-        bitrate_allocator_(bitrate_allocator),
-        send_delay_stats_(send_delay_stats),
-        event_log_(event_log),
-        config_(config),
-        initial_encoder_max_bitrate_(initial_encoder_max_bitrate),
-        initial_encoder_bitrate_priority_(initial_encoder_bitrate_priority),
-        suspended_ssrcs_(suspended_ssrcs),
-        suspended_payload_states_(suspended_payload_states),
-        content_type_(content_type),
-        fec_controller_(std::move(fec_controller)) {}
-
-  ~ConstructionTask() override { done_event_->Set(); }
-
- private:
-  bool Run() override {
-    send_stream_->reset(new VideoSendStreamImpl(
-        stats_proxy_, rtc::TaskQueue::Current(), call_stats_, transport_,
-        bitrate_allocator_, send_delay_stats_, video_stream_encoder_,
-        event_log_, config_, initial_encoder_max_bitrate_,
-        initial_encoder_bitrate_priority_, std::move(suspended_ssrcs_),
-        std::move(suspended_payload_states_), content_type_,
-        std::move(fec_controller_)));
-    return true;
-  }
-
-  std::unique_ptr<VideoSendStreamImpl>* const send_stream_;
-  rtc::Event* const done_event_;
-  SendStatisticsProxy* const stats_proxy_;
-  VideoStreamEncoder* const video_stream_encoder_;
-  CallStats* const call_stats_;
-  RtpTransportControllerSendInterface* const transport_;
-  BitrateAllocator* const bitrate_allocator_;
-  SendDelayStats* const send_delay_stats_;
-  RtcEventLog* const event_log_;
-  const VideoSendStream::Config* config_;
-  int initial_encoder_max_bitrate_;
-  double initial_encoder_bitrate_priority_;
-  std::map<uint32_t, RtpState> suspended_ssrcs_;
-  std::map<uint32_t, RtpPayloadState> suspended_payload_states_;
-  const VideoEncoderConfig::ContentType content_type_;
-  std::unique_ptr<FecController> fec_controller_;
-};
-
 class VideoSendStream::DestructAndGetRtpStateTask : public rtc::QueuedTask {
  public:
   DestructAndGetRtpStateTask(
@@ -619,14 +548,22 @@ VideoSendStream::VideoSendStream(
       config_.pre_encode_callback,
       rtc::MakeUnique<OveruseFrameDetector>(
           GetCpuOveruseOptions(config_), &stats_proxy_));
-
-  worker_queue_->PostTask(std::unique_ptr<rtc::QueuedTask>(new ConstructionTask(
-      &send_stream_, &thread_sync_event_, &stats_proxy_,
-      video_stream_encoder_.get(), module_process_thread, call_stats, transport,
-      bitrate_allocator, send_delay_stats, event_log, &config_,
-      encoder_config.max_bitrate_bps, encoder_config.bitrate_priority,
-      suspended_ssrcs, suspended_payload_states, encoder_config.content_type,
-      std::move(fec_controller))));
+  // TODO(srte): Initialization should not be done posted on a task queue.
+  // Note that the posted task must not outlive this scope since the closure
+  // references local variables.
+  worker_queue_->PostTask(rtc::NewClosure(
+      [this, call_stats, transport, bitrate_allocator, send_delay_stats,
+       event_log, &suspended_ssrcs, &encoder_config, &suspended_payload_states,
+       &fec_controller]() {
+        send_stream_.reset(new VideoSendStreamImpl(
+            &stats_proxy_, worker_queue_, call_stats, transport,
+            bitrate_allocator, send_delay_stats, video_stream_encoder_.get(),
+            event_log, &config_, encoder_config.max_bitrate_bps,
+            encoder_config.bitrate_priority, suspended_ssrcs,
+            suspended_payload_states, encoder_config.content_type,
+            std::move(fec_controller)));
+      },
+      [this]() { thread_sync_event_.Set(); }));
 
   // Wait for ConstructionTask to complete so that |send_stream_| can be used.
   // |module_process_thread| must be registered and deregistered on the thread
