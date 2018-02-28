@@ -91,6 +91,7 @@ class VideoSendStream {
     std::map<uint32_t, StreamStats> substreams;
     webrtc::VideoContentType content_type =
         webrtc::VideoContentType::UNSPECIFIED;
+    uint32_t huge_frames_sent = 0;
   };
 
   struct Config {

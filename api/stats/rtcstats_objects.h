@@ -279,6 +279,7 @@ class RTCMediaStreamTrackStats final : public RTCStats {
   // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/659137
   RTCStatsMember<double> frames_per_second;
   RTCStatsMember<uint32_t> frames_sent;
+  RTCStatsMember<uint32_t> huge_frames_sent;
   RTCStatsMember<uint32_t> frames_received;
   RTCStatsMember<uint32_t> frames_decoded;
   RTCStatsMember<uint32_t> frames_dropped;
