@@ -1078,8 +1078,8 @@ void Call::OnNetworkChanged(uint32_t target_bitrate_bps,
 void Call::OnAllocationLimitsChanged(uint32_t min_send_bitrate_bps,
                                      uint32_t max_padding_bitrate_bps,
                                      uint32_t total_bitrate_bps) {
-  transport_send_->SetAllocatedSendBitrateLimits(min_send_bitrate_bps,
-                                                 max_padding_bitrate_bps);
+  transport_send_->SetAllocatedSendBitrateLimits(
+      min_send_bitrate_bps, max_padding_bitrate_bps, total_bitrate_bps);
   rtc::CritScope lock(&bitrate_crit_);
   min_allocated_send_bitrate_bps_ = min_send_bitrate_bps;
   configured_max_padding_bitrate_bps_ = max_padding_bitrate_bps;
