@@ -103,20 +103,6 @@ std::vector<PacketFeedback> ReceivedPacketsFeedbackAsRtp(
 
 }  // namespace
 
-GoogCcNetworkControllerFactory::GoogCcNetworkControllerFactory(
-    RtcEventLog* event_log)
-    : event_log_(event_log) {}
-
-NetworkControllerInterface::uptr GoogCcNetworkControllerFactory::Create(
-    NetworkControllerObserver* observer) {
-  return rtc::MakeUnique<GoogCcNetworkController>(event_log_, observer);
-}
-
-TimeDelta GoogCcNetworkControllerFactory::GetProcessInterval() const {
-  const int64_t kUpdateIntervalMs = 25;
-  return TimeDelta::ms(kUpdateIntervalMs);
-}
-
 GoogCcNetworkController::GoogCcNetworkController(
     RtcEventLog* event_log,
     NetworkControllerObserver* observer)

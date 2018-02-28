@@ -68,7 +68,8 @@ std::vector<PacketFeedback> CreateFeedbackVector() {
 
 }  // anonymous namespace
 
-TEST(TestAcknowledgedBitrateEstimator, DontAddPacketsWhichAreNotInSendHistory) {
+TEST(LegacyTestAcknowledgedBitrateEstimator,
+     DontAddPacketsWhichAreNotInSendHistory) {
   auto states = CreateTestStates();
   std::vector<PacketFeedback> packet_feedback_vector;
   packet_feedback_vector.push_back(
@@ -78,7 +79,7 @@ TEST(TestAcknowledgedBitrateEstimator, DontAddPacketsWhichAreNotInSendHistory) {
       packet_feedback_vector);
 }
 
-TEST(TestAcknowledgedBitrateEstimator, UpdateBandwith) {
+TEST(LegacyTestAcknowledgedBitrateEstimator, UpdateBandwith) {
   auto states = CreateTestStates();
   auto packet_feedback_vector = CreateFeedbackVector();
   {
@@ -98,7 +99,7 @@ TEST(TestAcknowledgedBitrateEstimator, UpdateBandwith) {
       packet_feedback_vector);
 }
 
-TEST(TestAcknowledgedBitrateEstimator, ExpectFastRateChangeWhenLeftAlr) {
+TEST(LegacyTestAcknowledgedBitrateEstimator, ExpectFastRateChangeWhenLeftAlr) {
   auto states = CreateTestStates();
   auto packet_feedback_vector = CreateFeedbackVector();
   {
@@ -122,7 +123,7 @@ TEST(TestAcknowledgedBitrateEstimator, ExpectFastRateChangeWhenLeftAlr) {
       packet_feedback_vector);
 }
 
-TEST(TestAcknowledgedBitrateEstimator, ReturnBitrate) {
+TEST(LegacyTestAcknowledgedBitrateEstimator, ReturnBitrate) {
   auto states = CreateTestStates();
   rtc::Optional<uint32_t> return_value(42);
   EXPECT_CALL(*states.mock_bitrate_estimator, bitrate_bps())

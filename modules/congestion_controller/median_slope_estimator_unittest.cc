@@ -45,27 +45,27 @@ void TestEstimator(double slope, double jitter_stddev, double tolerance) {
 }
 }  // namespace
 
-TEST(MedianSlopeEstimator, PerfectLineSlopeOneHalf) {
+TEST(DeprecatedMedianSlopeEstimator, PerfectLineSlopeOneHalf) {
   TestEstimator(0.5, 0, 0.001);
 }
 
-TEST(MedianSlopeEstimator, PerfectLineSlopeMinusOne) {
+TEST(DeprecatedMedianSlopeEstimator, PerfectLineSlopeMinusOne) {
   TestEstimator(-1, 0, 0.001);
 }
 
-TEST(MedianSlopeEstimator, PerfectLineSlopeZero) {
+TEST(DeprecatedMedianSlopeEstimator, PerfectLineSlopeZero) {
   TestEstimator(0, 0, 0.001);
 }
 
-TEST(MedianSlopeEstimator, JitteryLineSlopeOneHalf) {
+TEST(DeprecatedMedianSlopeEstimator, JitteryLineSlopeOneHalf) {
   TestEstimator(0.5, kAvgTimeBetweenPackets / 3.0, 0.01);
 }
 
-TEST(MedianSlopeEstimator, JitteryLineSlopeMinusOne) {
+TEST(DeprecatedMedianSlopeEstimator, JitteryLineSlopeMinusOne) {
   TestEstimator(-1, kAvgTimeBetweenPackets / 3.0, 0.05);
 }
 
-TEST(MedianSlopeEstimator, JitteryLineSlopeZero) {
+TEST(DeprecatedMedianSlopeEstimator, JitteryLineSlopeZero) {
   TestEstimator(0, kAvgTimeBetweenPackets / 3.0, 0.02);
 }
 

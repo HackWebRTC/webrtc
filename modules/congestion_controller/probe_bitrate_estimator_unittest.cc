@@ -26,9 +26,9 @@ constexpr int kDefaultMinBytes = 5000;
 constexpr float kTargetUtilizationFraction = 0.95f;
 }  // anonymous namespace
 
-class TestProbeBitrateEstimator : public ::testing::Test {
+class LegacyTestProbeBitrateEstimator : public ::testing::Test {
  public:
-  TestProbeBitrateEstimator() : probe_bitrate_estimator_(nullptr) {}
+  LegacyTestProbeBitrateEstimator() : probe_bitrate_estimator_(nullptr) {}
 
   // TODO(philipel): Use PacedPacketInfo when ProbeBitrateEstimator is rewritten
   //                 to use that information.
@@ -50,7 +50,7 @@ class TestProbeBitrateEstimator : public ::testing::Test {
   ProbeBitrateEstimator probe_bitrate_estimator_;
 };
 
-TEST_F(TestProbeBitrateEstimator, OneCluster) {
+TEST_F(LegacyTestProbeBitrateEstimator, OneCluster) {
   AddPacketFeedback(0, 1000, 0, 10);
   AddPacketFeedback(0, 1000, 10, 20);
   AddPacketFeedback(0, 1000, 20, 30);
@@ -59,7 +59,7 @@ TEST_F(TestProbeBitrateEstimator, OneCluster) {
   EXPECT_NEAR(measured_bps_, 800000, 10);
 }
 
-TEST_F(TestProbeBitrateEstimator, OneClusterTooFewProbes) {
+TEST_F(LegacyTestProbeBitrateEstimator, OneClusterTooFewProbes) {
   AddPacketFeedback(0, 2000, 0, 10);
   AddPacketFeedback(0, 2000, 10, 20);
   AddPacketFeedback(0, 2000, 20, 30);
@@ -67,7 +67,7 @@ TEST_F(TestProbeBitrateEstimator, OneClusterTooFewProbes) {
   EXPECT_EQ(kInvalidBitrate, measured_bps_);
 }
 
-TEST_F(TestProbeBitrateEstimator, OneClusterTooFewBytes) {
+TEST_F(LegacyTestProbeBitrateEstimator, OneClusterTooFewBytes) {
   const int kMinBytes = 6000;
   AddPacketFeedback(0, 800, 0, 10, kDefaultMinProbes, kMinBytes);
   AddPacketFeedback(0, 800, 10, 20, kDefaultMinProbes, kMinBytes);
@@ -78,7 +78,7 @@ TEST_F(TestProbeBitrateEstimator, OneClusterTooFewBytes) {
   EXPECT_EQ(kInvalidBitrate, measured_bps_);
 }
 
-TEST_F(TestProbeBitrateEstimator, SmallCluster) {
+TEST_F(LegacyTestProbeBitrateEstimator, SmallCluster) {
   const int kMinBytes = 1000;
   AddPacketFeedback(0, 150, 0, 10, kDefaultMinProbes, kMinBytes);
   AddPacketFeedback(0, 150, 10, 20, kDefaultMinProbes, kMinBytes);
@@ -89,7 +89,7 @@ TEST_F(TestProbeBitrateEstimator, SmallCluster) {
   EXPECT_NEAR(measured_bps_, 120000, 10);
 }
 
-TEST_F(TestProbeBitrateEstimator, LargeCluster) {
+TEST_F(LegacyTestProbeBitrateEstimator, LargeCluster) {
   const int kMinProbes = 30;
   const int kMinBytes = 312500;
 
@@ -103,7 +103,7 @@ TEST_F(TestProbeBitrateEstimator, LargeCluster) {
   EXPECT_NEAR(measured_bps_, 100000000, 10);
 }
 
-TEST_F(TestProbeBitrateEstimator, FastReceive) {
+TEST_F(LegacyTestProbeBitrateEstimator, FastReceive) {
   AddPacketFeedback(0, 1000, 0, 15);
   AddPacketFeedback(0, 1000, 10, 30);
   AddPacketFeedback(0, 1000, 20, 35);
@@ -112,7 +112,7 @@ TEST_F(TestProbeBitrateEstimator, FastReceive) {
   EXPECT_NEAR(measured_bps_, 800000, 10);
 }
 
-TEST_F(TestProbeBitrateEstimator, TooFastReceive) {
+TEST_F(LegacyTestProbeBitrateEstimator, TooFastReceive) {
   AddPacketFeedback(0, 1000, 0, 19);
   AddPacketFeedback(0, 1000, 10, 22);
   AddPacketFeedback(0, 1000, 20, 25);
@@ -121,7 +121,7 @@ TEST_F(TestProbeBitrateEstimator, TooFastReceive) {
   EXPECT_EQ(measured_bps_, kInvalidBitrate);
 }
 
-TEST_F(TestProbeBitrateEstimator, SlowReceive) {
+TEST_F(LegacyTestProbeBitrateEstimator, SlowReceive) {
   AddPacketFeedback(0, 1000, 0, 10);
   AddPacketFeedback(0, 1000, 10, 40);
   AddPacketFeedback(0, 1000, 20, 70);
@@ -131,7 +131,7 @@ TEST_F(TestProbeBitrateEstimator, SlowReceive) {
   EXPECT_NEAR(measured_bps_, kTargetUtilizationFraction * 320000, 10);
 }
 
-TEST_F(TestProbeBitrateEstimator, BurstReceive) {
+TEST_F(LegacyTestProbeBitrateEstimator, BurstReceive) {
   AddPacketFeedback(0, 1000, 0, 50);
   AddPacketFeedback(0, 1000, 10, 50);
   AddPacketFeedback(0, 1000, 20, 50);
@@ -140,7 +140,7 @@ TEST_F(TestProbeBitrateEstimator, BurstReceive) {
   EXPECT_EQ(measured_bps_, kInvalidBitrate);
 }
 
-TEST_F(TestProbeBitrateEstimator, MultipleClusters) {
+TEST_F(LegacyTestProbeBitrateEstimator, MultipleClusters) {
   AddPacketFeedback(0, 1000, 0, 10);
   AddPacketFeedback(0, 1000, 10, 20);
   AddPacketFeedback(0, 1000, 20, 30);
@@ -161,7 +161,7 @@ TEST_F(TestProbeBitrateEstimator, MultipleClusters) {
   EXPECT_NEAR(measured_bps_, kTargetUtilizationFraction * 1200000, 10);
 }
 
-TEST_F(TestProbeBitrateEstimator, IgnoreOldClusters) {
+TEST_F(LegacyTestProbeBitrateEstimator, IgnoreOldClusters) {
   AddPacketFeedback(0, 1000, 0, 10);
   AddPacketFeedback(0, 1000, 10, 20);
   AddPacketFeedback(0, 1000, 20, 30);
@@ -180,7 +180,7 @@ TEST_F(TestProbeBitrateEstimator, IgnoreOldClusters) {
   EXPECT_EQ(measured_bps_, kInvalidBitrate);
 }
 
-TEST_F(TestProbeBitrateEstimator, IgnoreSizeLastSendPacket) {
+TEST_F(LegacyTestProbeBitrateEstimator, IgnoreSizeLastSendPacket) {
   AddPacketFeedback(0, 1000, 0, 10);
   AddPacketFeedback(0, 1000, 10, 20);
   AddPacketFeedback(0, 1000, 20, 30);
@@ -191,7 +191,7 @@ TEST_F(TestProbeBitrateEstimator, IgnoreSizeLastSendPacket) {
   EXPECT_NEAR(measured_bps_, 800000, 10);
 }
 
-TEST_F(TestProbeBitrateEstimator, IgnoreSizeFirstReceivePacket) {
+TEST_F(LegacyTestProbeBitrateEstimator, IgnoreSizeFirstReceivePacket) {
   AddPacketFeedback(0, 1500, 0, 10);
   AddPacketFeedback(0, 1000, 10, 20);
   AddPacketFeedback(0, 1000, 20, 30);
@@ -201,11 +201,11 @@ TEST_F(TestProbeBitrateEstimator, IgnoreSizeFirstReceivePacket) {
   EXPECT_NEAR(measured_bps_, kTargetUtilizationFraction * 800000, 10);
 }
 
-TEST_F(TestProbeBitrateEstimator, NoLastEstimatedBitrateBps) {
+TEST_F(LegacyTestProbeBitrateEstimator, NoLastEstimatedBitrateBps) {
   EXPECT_FALSE(probe_bitrate_estimator_.FetchAndResetLastEstimatedBitrateBps());
 }
 
-TEST_F(TestProbeBitrateEstimator, FetchLastEstimatedBitrateBps) {
+TEST_F(LegacyTestProbeBitrateEstimator, FetchLastEstimatedBitrateBps) {
   AddPacketFeedback(0, 1000, 0, 10);
   AddPacketFeedback(0, 1000, 10, 20);
   AddPacketFeedback(0, 1000, 20, 30);

@@ -182,6 +182,7 @@ if (rtc_include_tests) {
       "../pacing:pacing",
       "../remote_bitrate_estimator:remote_bitrate_estimator",
       "../rtp_rtcp:rtp_rtcp_format",
+      "rtp:congestion_controller_unittests",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).

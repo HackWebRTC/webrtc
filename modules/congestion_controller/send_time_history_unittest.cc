@@ -23,11 +23,11 @@ namespace test {
 
 static const int kDefaultHistoryLengthMs = 1000;
 
-class SendTimeHistoryTest : public ::testing::Test {
+class LegacySendTimeHistoryTest : public ::testing::Test {
  protected:
-  SendTimeHistoryTest()
+  LegacySendTimeHistoryTest()
       : clock_(0), history_(&clock_, kDefaultHistoryLengthMs) {}
-  ~SendTimeHistoryTest() {}
+  ~LegacySendTimeHistoryTest() {}
 
   virtual void SetUp() {}
 
@@ -47,7 +47,7 @@ class SendTimeHistoryTest : public ::testing::Test {
   SendTimeHistory history_;
 };
 
-TEST_F(SendTimeHistoryTest, SaveAndRestoreNetworkId) {
+TEST_F(LegacySendTimeHistoryTest, SaveAndRestoreNetworkId) {
   const PacedPacketInfo kPacingInfo(0, 5, 1200);
   uint16_t sequence_number = 0;
   int64_t now_ms = clock_.TimeInMilliseconds();
@@ -63,7 +63,7 @@ TEST_F(SendTimeHistoryTest, SaveAndRestoreNetworkId) {
   }
 }
 
-TEST_F(SendTimeHistoryTest, AddRemoveOne) {
+TEST_F(LegacySendTimeHistoryTest, AddRemoveOne) {
   const uint16_t kSeqNo = 10;
   // TODO(philipel): Fix PacedPacketInfo constructor?
   const PacedPacketInfo kPacingInfo(0, 5, 1200);
@@ -82,7 +82,7 @@ TEST_F(SendTimeHistoryTest, AddRemoveOne) {
   EXPECT_FALSE(history_.GetFeedback(&received_packet3, true));
 }
 
-TEST_F(SendTimeHistoryTest, PopulatesExpectedFields) {
+TEST_F(LegacySendTimeHistoryTest, PopulatesExpectedFields) {
   const uint16_t kSeqNo = 10;
   const int64_t kSendTime = 1000;
   const int64_t kReceiveTime = 2000;
@@ -100,7 +100,7 @@ TEST_F(SendTimeHistoryTest, PopulatesExpectedFields) {
   EXPECT_EQ(kPacingInfo, packet_feedback.pacing_info);
 }
 
-TEST_F(SendTimeHistoryTest, AddThenRemoveOutOfOrder) {
+TEST_F(LegacySendTimeHistoryTest, AddThenRemoveOutOfOrder) {
   std::vector<PacketFeedback> sent_packets;
   std::vector<PacketFeedback> received_packets;
   const size_t num_items = 100;
@@ -138,7 +138,7 @@ TEST_F(SendTimeHistoryTest, AddThenRemoveOutOfOrder) {
     EXPECT_FALSE(history_.GetFeedback(&packet, false));
 }
 
-TEST_F(SendTimeHistoryTest, HistorySize) {
+TEST_F(LegacySendTimeHistoryTest, HistorySize) {
   const int kItems = kDefaultHistoryLengthMs / 100;
   for (int i = 0; i < kItems; ++i) {
     clock_.AdvanceTimeMilliseconds(100);
@@ -162,7 +162,7 @@ TEST_F(SendTimeHistoryTest, HistorySize) {
   }
 }
 
-TEST_F(SendTimeHistoryTest, HistorySizeWithWraparound) {
+TEST_F(LegacySendTimeHistoryTest, HistorySizeWithWraparound) {
   const uint16_t kMaxSeqNo = std::numeric_limits<uint16_t>::max();
   AddPacketWithSendTime(kMaxSeqNo - 2, 0, 0, PacedPacketInfo());
 
@@ -203,7 +203,7 @@ TEST_F(SendTimeHistoryTest, HistorySizeWithWraparound) {
   EXPECT_TRUE(history_.GetFeedback(&packet10, false));
 }
 
-TEST_F(SendTimeHistoryTest, InterlievedGetAndRemove) {
+TEST_F(LegacySendTimeHistoryTest, InterlievedGetAndRemove) {
   const uint16_t kSeqNo = 1;
   const int64_t kTimestamp = 2;
   const PacedPacketInfo kPacingInfo1(1, 1, 100);

@@ -38,25 +38,25 @@ constexpr int kBitrateDropTimeoutMs = 5000;
 
 }  // namespace
 
-class ProbeControllerTest : public ::testing::Test {
+class LegacyProbeControllerTest : public ::testing::Test {
  protected:
-  ProbeControllerTest() : clock_(100000000L) {
+  LegacyProbeControllerTest() : clock_(100000000L) {
     probe_controller_.reset(new ProbeController(&pacer_, &clock_));
   }
-  ~ProbeControllerTest() override {}
+  ~LegacyProbeControllerTest() override {}
 
   SimulatedClock clock_;
   NiceMock<MockPacedSender> pacer_;
   std::unique_ptr<ProbeController> probe_controller_;
 };
 
-TEST_F(ProbeControllerTest, InitiatesProbingAtStart) {
+TEST_F(LegacyProbeControllerTest, InitiatesProbingAtStart) {
   EXPECT_CALL(pacer_, CreateProbeCluster(_)).Times(AtLeast(2));
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
                                  kMaxBitrateBps);
 }
 
-TEST_F(ProbeControllerTest, ProbeOnlyWhenNetworkIsUp) {
+TEST_F(LegacyProbeControllerTest, ProbeOnlyWhenNetworkIsUp) {
   probe_controller_->OnNetworkStateChanged(kNetworkDown);
   EXPECT_CALL(pacer_, CreateProbeCluster(_)).Times(0);
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
@@ -67,7 +67,7 @@ TEST_F(ProbeControllerTest, ProbeOnlyWhenNetworkIsUp) {
   probe_controller_->OnNetworkStateChanged(kNetworkUp);
 }
 
-TEST_F(ProbeControllerTest, InitiatesProbingOnMaxBitrateIncrease) {
+TEST_F(LegacyProbeControllerTest, InitiatesProbingOnMaxBitrateIncrease) {
   EXPECT_CALL(pacer_, CreateProbeCluster(_)).Times(AtLeast(2));
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
                                  kMaxBitrateBps);
@@ -81,7 +81,8 @@ TEST_F(ProbeControllerTest, InitiatesProbingOnMaxBitrateIncrease) {
                                  kMaxBitrateBps + 100);
 }
 
-TEST_F(ProbeControllerTest, InitiatesProbingOnMaxBitrateIncreaseAtMaxBitrate) {
+TEST_F(LegacyProbeControllerTest,
+       InitiatesProbingOnMaxBitrateIncreaseAtMaxBitrate) {
   EXPECT_CALL(pacer_, CreateProbeCluster(_)).Times(AtLeast(2));
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
                                  kMaxBitrateBps);
@@ -96,7 +97,7 @@ TEST_F(ProbeControllerTest, InitiatesProbingOnMaxBitrateIncreaseAtMaxBitrate) {
                                  kMaxBitrateBps + 100);
 }
 
-TEST_F(ProbeControllerTest, TestExponentialProbing) {
+TEST_F(LegacyProbeControllerTest, TestExponentialProbing) {
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
                                  kMaxBitrateBps);
 
@@ -110,7 +111,7 @@ TEST_F(ProbeControllerTest, TestExponentialProbing) {
   probe_controller_->SetEstimatedBitrate(1800);
 }
 
-TEST_F(ProbeControllerTest, TestExponentialProbingTimeout) {
+TEST_F(LegacyProbeControllerTest, TestExponentialProbingTimeout) {
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
                                  kMaxBitrateBps);
 
@@ -122,7 +123,7 @@ TEST_F(ProbeControllerTest, TestExponentialProbingTimeout) {
   probe_controller_->SetEstimatedBitrate(1800);
 }
 
-TEST_F(ProbeControllerTest, RequestProbeInAlr) {
+TEST_F(LegacyProbeControllerTest, RequestProbeInAlr) {
   EXPECT_CALL(pacer_, CreateProbeCluster(_)).Times(2);
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
                                  kMaxBitrateBps);
@@ -137,7 +138,7 @@ TEST_F(ProbeControllerTest, RequestProbeInAlr) {
   probe_controller_->RequestProbe();
 }
 
-TEST_F(ProbeControllerTest, RequestProbeWhenAlrEndedRecently) {
+TEST_F(LegacyProbeControllerTest, RequestProbeWhenAlrEndedRecently) {
   EXPECT_CALL(pacer_, CreateProbeCluster(_)).Times(2);
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
                                  kMaxBitrateBps);
@@ -154,7 +155,7 @@ TEST_F(ProbeControllerTest, RequestProbeWhenAlrEndedRecently) {
   probe_controller_->RequestProbe();
 }
 
-TEST_F(ProbeControllerTest, RequestProbeWhenAlrNotEndedRecently) {
+TEST_F(LegacyProbeControllerTest, RequestProbeWhenAlrNotEndedRecently) {
   EXPECT_CALL(pacer_, CreateProbeCluster(_)).Times(2);
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
                                  kMaxBitrateBps);
@@ -171,7 +172,7 @@ TEST_F(ProbeControllerTest, RequestProbeWhenAlrNotEndedRecently) {
   probe_controller_->RequestProbe();
 }
 
-TEST_F(ProbeControllerTest, RequestProbeWhenBweDropNotRecent) {
+TEST_F(LegacyProbeControllerTest, RequestProbeWhenBweDropNotRecent) {
   EXPECT_CALL(pacer_, CreateProbeCluster(_)).Times(2);
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
                                  kMaxBitrateBps);
@@ -187,7 +188,7 @@ TEST_F(ProbeControllerTest, RequestProbeWhenBweDropNotRecent) {
   probe_controller_->RequestProbe();
 }
 
-TEST_F(ProbeControllerTest, PeriodicProbing) {
+TEST_F(LegacyProbeControllerTest, PeriodicProbing) {
   EXPECT_CALL(pacer_, CreateProbeCluster(_)).Times(2);
   probe_controller_->EnablePeriodicAlrProbing(true);
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
@@ -224,7 +225,7 @@ TEST_F(ProbeControllerTest, PeriodicProbing) {
   testing::Mock::VerifyAndClearExpectations(&pacer_);
 }
 
-TEST_F(ProbeControllerTest, PeriodicProbingAfterReset) {
+TEST_F(LegacyProbeControllerTest, PeriodicProbingAfterReset) {
   testing::StrictMock<MockPacedSender> local_pacer;
   probe_controller_.reset(new ProbeController(&local_pacer, &clock_));
   int64_t alr_start_time = clock_.TimeInMilliseconds();
@@ -251,7 +252,7 @@ TEST_F(ProbeControllerTest, PeriodicProbingAfterReset) {
   probe_controller_->Process();
 }
 
-TEST_F(ProbeControllerTest, TestExponentialProbingOverflow) {
+TEST_F(LegacyProbeControllerTest, TestExponentialProbingOverflow) {
   const int64_t kMbpsMultiplier = 1000000;
   probe_controller_->SetBitrates(kMinBitrateBps, 10 * kMbpsMultiplier,
                                  100 * kMbpsMultiplier);

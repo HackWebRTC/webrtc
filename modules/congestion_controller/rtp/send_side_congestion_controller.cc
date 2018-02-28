@@ -116,10 +116,8 @@ class ControlHandler : public NetworkControllerObserver {
   void OnNetworkAvailability(NetworkAvailability msg);
   void OnPacerQueueUpdate(PacerQueueUpdate msg);
 
-  void RegisterNetworkObserver(
-      SendSideCongestionController::Observer* observer);
-  void DeRegisterNetworkObserver(
-      SendSideCongestionController::Observer* observer);
+  void RegisterNetworkObserver(NetworkChangedObserver* observer);
+  void DeRegisterNetworkObserver(NetworkChangedObserver* observer);
 
   rtc::Optional<TargetTransferRate> last_transfer_rate();
   bool pacer_configured();
@@ -142,7 +140,7 @@ class ControlHandler : public NetworkControllerObserver {
       RTC_GUARDED_BY(state_lock_);
   bool pacer_configured_ RTC_GUARDED_BY(state_lock_) = false;
 
-  SendSideCongestionController::Observer* observer_ = nullptr;
+  NetworkChangedObserver* observer_ = nullptr;
   rtc::Optional<TargetTransferRate> current_target_rate_msg_;
   bool network_available_ = true;
   int64_t last_reported_target_bitrate_bps_ = 0;
@@ -204,15 +202,14 @@ void ControlHandler::OnPacerQueueUpdate(PacerQueueUpdate msg) {
   OnNetworkInvalidation();
 }
 
-void ControlHandler::RegisterNetworkObserver(
-    SendSideCongestionController::Observer* observer) {
+void ControlHandler::RegisterNetworkObserver(NetworkChangedObserver* observer) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
   RTC_DCHECK(observer_ == nullptr);
   observer_ = observer;
 }
 
 void ControlHandler::DeRegisterNetworkObserver(
-    SendSideCongestionController::Observer* observer) {
+    NetworkChangedObserver* observer) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
   RTC_DCHECK_EQ(observer_, observer);
   observer_ = nullptr;
@@ -301,7 +298,7 @@ RateLimiter* ControlHandler::retransmission_rate_limiter() {
 
 SendSideCongestionController::SendSideCongestionController(
     const Clock* clock,
-    Observer* observer,
+    NetworkChangedObserver* observer,
     RtcEventLog* event_log,
     PacedSender* pacer)
     : SendSideCongestionController(clock,
@@ -347,14 +344,15 @@ void SendSideCongestionController::DeRegisterPacketFeedbackObserver(
   transport_feedback_adapter_.DeRegisterPacketFeedbackObserver(observer);
 }
 
-void SendSideCongestionController::RegisterNetworkObserver(Observer* observer) {
+void SendSideCongestionController::RegisterNetworkObserver(
+    NetworkChangedObserver* observer) {
   WaitOnTask([this, observer]() {
     control_handler->RegisterNetworkObserver(observer);
   });
 }
 
 void SendSideCongestionController::DeRegisterNetworkObserver(
-    Observer* observer) {
+    NetworkChangedObserver* observer) {
   WaitOnTask([this, observer]() {
     control_handler->DeRegisterNetworkObserver(observer);
   });

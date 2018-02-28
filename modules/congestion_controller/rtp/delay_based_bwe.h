@@ -25,7 +25,6 @@
 #include "rtc_base/race_checker.h"
 
 namespace webrtc {
-
 class RtcEventLog;
 
 namespace webrtc_cc {

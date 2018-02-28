@@ -26,13 +26,13 @@ const PacedPacketInfo kPacingInfo1(1, kNumProbesCluster1, 4000);
 constexpr float kTargetUtilizationFraction = 0.95f;
 }  // namespace
 
-TEST_F(DelayBasedBweTest, NoCrashEmptyFeedback) {
+TEST_F(LegacyDelayBasedBweTest, NoCrashEmptyFeedback) {
   std::vector<PacketFeedback> packet_feedback_vector;
   bitrate_estimator_->IncomingPacketFeedbackVector(packet_feedback_vector,
                                                    rtc::nullopt);
 }
 
-TEST_F(DelayBasedBweTest, NoCrashOnlyLostFeedback) {
+TEST_F(LegacyDelayBasedBweTest, NoCrashOnlyLostFeedback) {
   std::vector<PacketFeedback> packet_feedback_vector;
   packet_feedback_vector.push_back(PacketFeedback(PacketFeedback::kNotReceived,
                                                   PacketFeedback::kNoSendTime,
@@ -44,7 +44,7 @@ TEST_F(DelayBasedBweTest, NoCrashOnlyLostFeedback) {
                                                    rtc::nullopt);
 }
 
-TEST_F(DelayBasedBweTest, ProbeDetection) {
+TEST_F(LegacyDelayBasedBweTest, ProbeDetection) {
   int64_t now_ms = clock_.TimeInMilliseconds();
   uint16_t seq_num = 0;
 
@@ -67,7 +67,7 @@ TEST_F(DelayBasedBweTest, ProbeDetection) {
   EXPECT_GT(bitrate_observer_.latest_bitrate(), 1500000u);
 }
 
-TEST_F(DelayBasedBweTest, ProbeDetectionNonPacedPackets) {
+TEST_F(LegacyDelayBasedBweTest, ProbeDetectionNonPacedPackets) {
   int64_t now_ms = clock_.TimeInMilliseconds();
   uint16_t seq_num = 0;
   // First burst sent at 8 * 1000 / 10 = 800 kbps, but with every other packet
@@ -85,7 +85,7 @@ TEST_F(DelayBasedBweTest, ProbeDetectionNonPacedPackets) {
   EXPECT_GT(bitrate_observer_.latest_bitrate(), 800000u);
 }
 
-TEST_F(DelayBasedBweTest, ProbeDetectionFasterArrival) {
+TEST_F(LegacyDelayBasedBweTest, ProbeDetectionFasterArrival) {
   int64_t now_ms = clock_.TimeInMilliseconds();
   uint16_t seq_num = 0;
   // First burst sent at 8 * 1000 / 10 = 800 kbps.
@@ -101,7 +101,7 @@ TEST_F(DelayBasedBweTest, ProbeDetectionFasterArrival) {
   EXPECT_FALSE(bitrate_observer_.updated());
 }
 
-TEST_F(DelayBasedBweTest, ProbeDetectionSlowerArrival) {
+TEST_F(LegacyDelayBasedBweTest, ProbeDetectionSlowerArrival) {
   int64_t now_ms = clock_.TimeInMilliseconds();
   uint16_t seq_num = 0;
   // First burst sent at 8 * 1000 / 5 = 1600 kbps.
@@ -121,7 +121,7 @@ TEST_F(DelayBasedBweTest, ProbeDetectionSlowerArrival) {
               kTargetUtilizationFraction * 1140000u, 10000u);
 }
 
-TEST_F(DelayBasedBweTest, ProbeDetectionSlowerArrivalHighBitrate) {
+TEST_F(LegacyDelayBasedBweTest, ProbeDetectionSlowerArrivalHighBitrate) {
   int64_t now_ms = clock_.TimeInMilliseconds();
   uint16_t seq_num = 0;
   // Burst sent at 8 * 1000 / 1 = 8000 kbps.
@@ -141,7 +141,7 @@ TEST_F(DelayBasedBweTest, ProbeDetectionSlowerArrivalHighBitrate) {
               kTargetUtilizationFraction * 4000000u, 10000u);
 }
 
-TEST_F(DelayBasedBweTest, GetExpectedBwePeriodMs) {
+TEST_F(LegacyDelayBasedBweTest, GetExpectedBwePeriodMs) {
   int64_t default_interval_ms = bitrate_estimator_->GetExpectedBwePeriodMs();
   EXPECT_GT(default_interval_ms, 0);
   CapacityDropTestHelper(1, true, 333, 0);
@@ -150,45 +150,45 @@ TEST_F(DelayBasedBweTest, GetExpectedBwePeriodMs) {
   EXPECT_NE(interval_ms, default_interval_ms);
 }
 
-TEST_F(DelayBasedBweTest, InitialBehavior) {
+TEST_F(LegacyDelayBasedBweTest, InitialBehavior) {
   InitialBehaviorTestHelper(730000);
 }
 
-TEST_F(DelayBasedBweTest, RateIncreaseReordering) {
+TEST_F(LegacyDelayBasedBweTest, RateIncreaseReordering) {
   RateIncreaseReorderingTestHelper(730000);
 }
-TEST_F(DelayBasedBweTest, RateIncreaseRtpTimestamps) {
+TEST_F(LegacyDelayBasedBweTest, RateIncreaseRtpTimestamps) {
   RateIncreaseRtpTimestampsTestHelper(627);
 }
 
-TEST_F(DelayBasedBweTest, CapacityDropOneStream) {
+TEST_F(LegacyDelayBasedBweTest, CapacityDropOneStream) {
   CapacityDropTestHelper(1, false, 300, 0);
 }
 
-TEST_F(DelayBasedBweTest, CapacityDropPosOffsetChange) {
+TEST_F(LegacyDelayBasedBweTest, CapacityDropPosOffsetChange) {
   CapacityDropTestHelper(1, false, 867, 30000);
 }
 
-TEST_F(DelayBasedBweTest, CapacityDropNegOffsetChange) {
+TEST_F(LegacyDelayBasedBweTest, CapacityDropNegOffsetChange) {
   CapacityDropTestHelper(1, false, 933, -30000);
 }
 
-TEST_F(DelayBasedBweTest, CapacityDropOneStreamWrap) {
+TEST_F(LegacyDelayBasedBweTest, CapacityDropOneStreamWrap) {
   CapacityDropTestHelper(1, true, 333, 0);
 }
 
-TEST_F(DelayBasedBweTest, TestTimestampGrouping) {
+TEST_F(LegacyDelayBasedBweTest, TestTimestampGrouping) {
   TestTimestampGroupingTestHelper();
 }
 
-TEST_F(DelayBasedBweTest, TestShortTimeoutAndWrap) {
+TEST_F(LegacyDelayBasedBweTest, TestShortTimeoutAndWrap) {
   // Simulate a client leaving and rejoining the call after 35 seconds. This
   // will make abs send time wrap, so if streams aren't timed out properly
   // the next 30 seconds of packets will be out of order.
   TestWrappingHelper(35);
 }
 
-TEST_F(DelayBasedBweTest, TestLongTimeoutAndWrap) {
+TEST_F(LegacyDelayBasedBweTest, TestLongTimeoutAndWrap) {
   // Simulate a client leaving and rejoining the call after some multiple of
   // 64 seconds later. This will cause a zero difference in abs send times due
   // to the wrap, but a big difference in arrival time, if streams aren't
@@ -196,7 +196,7 @@ TEST_F(DelayBasedBweTest, TestLongTimeoutAndWrap) {
   TestWrappingHelper(10 * 64);
 }
 
-TEST_F(DelayBasedBweTest, TestInitialOveruse) {
+TEST_F(LegacyDelayBasedBweTest, TestInitialOveruse) {
   const uint32_t kStartBitrate = 300e3;
   const uint32_t kInitialCapacityBps = 200e3;
   const uint32_t kDummySsrc = 0;

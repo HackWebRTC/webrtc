@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "common_types.h"  // NOLINT(build/include)
+#include "modules/congestion_controller/include/network_changed_observer.h"
 #include "modules/congestion_controller/rtp/network_control/include/network_control.h"
 #include "modules/congestion_controller/rtp/network_control/include/network_types.h"
 #include "modules/congestion_controller/rtp/pacer_controller.h"
@@ -58,23 +59,8 @@ class SendSideCongestionController : public CallStatsObserver,
                                      public TransportFeedbackObserver,
                                      public RtcpBandwidthObserver {
  public:
-  // Observer class for bitrate changes announced due to change in bandwidth
-  // estimate or due to that the send pacer is full. Fraction loss and rtt is
-  // also part of this callback to allow the observer to optimize its settings
-  // for different types of network environments. The bitrate does not include
-  // packet headers and is measured in bits per second.
-  class Observer {
-   public:
-    virtual void OnNetworkChanged(uint32_t bitrate_bps,
-                                  uint8_t fraction_loss,  // 0 - 255.
-                                  int64_t rtt_ms,
-                                  int64_t probing_interval_ms) = 0;
-
-   protected:
-    virtual ~Observer() {}
-  };
   SendSideCongestionController(const Clock* clock,
-                               Observer* observer,
+                               NetworkChangedObserver* observer,
                                RtcEventLog* event_log,
                                PacedSender* pacer);
   ~SendSideCongestionController() override;
@@ -88,8 +74,8 @@ class SendSideCongestionController : public CallStatsObserver,
   // reference to Call, which then registers itself as the observer. We should
   // try to break this circular chain of references, and make the observer a
   // construction time constant.
-  void RegisterNetworkObserver(Observer* observer);
-  void DeRegisterNetworkObserver(Observer* observer);
+  void RegisterNetworkObserver(NetworkChangedObserver* observer);
+  void DeRegisterNetworkObserver(NetworkChangedObserver* observer);
 
   virtual void SetBweBitrates(int min_bitrate_bps,
                               int start_bitrate_bps,

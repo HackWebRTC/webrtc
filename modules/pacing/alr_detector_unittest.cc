@@ -65,7 +65,7 @@ class SimulateOutgoingTrafficIn {
 };
 }  // namespace
 
-class AlrDetectorTest : public testing::Test {
+class LegacyAlrDetectorTest : public testing::Test {
  public:
   void SetUp() override {
     alr_detector_.SetEstimatedBitrate(kEstimatedBitrateBps);
@@ -75,7 +75,7 @@ class AlrDetectorTest : public testing::Test {
   AlrDetector alr_detector_;
 };
 
-TEST_F(AlrDetectorTest, AlrDetection) {
+TEST_F(LegacyAlrDetectorTest, AlrDetection) {
   // Start in non-ALR state.
   EXPECT_FALSE(alr_detector_.GetApplicationLimitedRegionStartTime());
 
@@ -98,7 +98,7 @@ TEST_F(AlrDetectorTest, AlrDetection) {
   EXPECT_FALSE(alr_detector_.GetApplicationLimitedRegionStartTime());
 }
 
-TEST_F(AlrDetectorTest, ShortSpike) {
+TEST_F(LegacyAlrDetectorTest, ShortSpike) {
   // Start in non-ALR state.
   EXPECT_FALSE(alr_detector_.GetApplicationLimitedRegionStartTime());
 
@@ -121,7 +121,7 @@ TEST_F(AlrDetectorTest, ShortSpike) {
   EXPECT_FALSE(alr_detector_.GetApplicationLimitedRegionStartTime());
 }
 
-TEST_F(AlrDetectorTest, BandwidthEstimateChanges) {
+TEST_F(LegacyAlrDetectorTest, BandwidthEstimateChanges) {
   // Start in non-ALR state.
   EXPECT_FALSE(alr_detector_.GetApplicationLimitedRegionStartTime());
 
@@ -143,7 +143,7 @@ TEST_F(AlrDetectorTest, BandwidthEstimateChanges) {
   EXPECT_FALSE(alr_detector_.GetApplicationLimitedRegionStartTime());
 }
 
-TEST_F(AlrDetectorTest, ParseControlFieldTrial) {
+TEST_F(LegacyAlrDetectorTest, ParseControlFieldTrial) {
   webrtc::test::ScopedFieldTrials field_trial(
       "WebRTC-ProbingScreenshareBwe/Control/");
   rtc::Optional<AlrExperimentSettings> parsed_params =
@@ -152,7 +152,7 @@ TEST_F(AlrDetectorTest, ParseControlFieldTrial) {
   EXPECT_FALSE(static_cast<bool>(parsed_params));
 }
 
-TEST_F(AlrDetectorTest, ParseActiveFieldTrial) {
+TEST_F(LegacyAlrDetectorTest, ParseActiveFieldTrial) {
   webrtc::test::ScopedFieldTrials field_trial(
       "WebRTC-ProbingScreenshareBwe/1.1,2875,85,20,-20,1/");
   rtc::Optional<AlrExperimentSettings> parsed_params =

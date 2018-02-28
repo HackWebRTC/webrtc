@@ -46,27 +46,27 @@ void TestEstimator(double slope, double jitter_stddev, double tolerance) {
 }
 }  // namespace
 
-TEST(TrendlineEstimator, PerfectLineSlopeOneHalf) {
+TEST(LegacyTrendlineEstimator, PerfectLineSlopeOneHalf) {
   TestEstimator(0.5, 0, 0.001);
 }
 
-TEST(TrendlineEstimator, PerfectLineSlopeMinusOne) {
+TEST(LegacyTrendlineEstimator, PerfectLineSlopeMinusOne) {
   TestEstimator(-1, 0, 0.001);
 }
 
-TEST(TrendlineEstimator, PerfectLineSlopeZero) {
+TEST(LegacyTrendlineEstimator, PerfectLineSlopeZero) {
   TestEstimator(0, 0, 0.001);
 }
 
-TEST(TrendlineEstimator, JitteryLineSlopeOneHalf) {
+TEST(LegacyTrendlineEstimator, JitteryLineSlopeOneHalf) {
   TestEstimator(0.5, kAvgTimeBetweenPackets / 3.0, 0.01);
 }
 
-TEST(TrendlineEstimator, JitteryLineSlopeMinusOne) {
+TEST(LegacyTrendlineEstimator, JitteryLineSlopeMinusOne) {
   TestEstimator(-1, kAvgTimeBetweenPackets / 3.0, 0.075);
 }
 
-TEST(TrendlineEstimator, JitteryLineSlopeZero) {
+TEST(LegacyTrendlineEstimator, JitteryLineSlopeZero) {
   TestEstimator(0, kAvgTimeBetweenPackets / 3.0, 0.02);
 }
 

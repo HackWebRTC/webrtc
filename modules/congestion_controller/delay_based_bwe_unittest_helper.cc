@@ -148,7 +148,7 @@ int64_t StreamGenerator::GenerateFrame(std::vector<PacketFeedback>* packets,
 }
 }  // namespace test
 
-DelayBasedBweTest::DelayBasedBweTest()
+LegacyDelayBasedBweTest::LegacyDelayBasedBweTest()
     : clock_(100000000),
       acknowledged_bitrate_estimator_(
           rtc::MakeUnique<AcknowledgedBitrateEstimator>()),
@@ -158,27 +158,28 @@ DelayBasedBweTest::DelayBasedBweTest()
       arrival_time_offset_ms_(0),
       first_update_(true) {}
 
-DelayBasedBweTest::~DelayBasedBweTest() {}
+LegacyDelayBasedBweTest::~LegacyDelayBasedBweTest() {}
 
-void DelayBasedBweTest::AddDefaultStream() {
+void LegacyDelayBasedBweTest::AddDefaultStream() {
   stream_generator_->AddStream(new test::RtpStream(30, 3e5));
 }
 
-const uint32_t DelayBasedBweTest::kDefaultSsrc = 0;
+const uint32_t LegacyDelayBasedBweTest::kDefaultSsrc = 0;
 
-void DelayBasedBweTest::IncomingFeedback(int64_t arrival_time_ms,
-                                         int64_t send_time_ms,
-                                         uint16_t sequence_number,
-                                         size_t payload_size) {
+void LegacyDelayBasedBweTest::IncomingFeedback(int64_t arrival_time_ms,
+                                               int64_t send_time_ms,
+                                               uint16_t sequence_number,
+                                               size_t payload_size) {
   IncomingFeedback(arrival_time_ms, send_time_ms, sequence_number, payload_size,
                    PacedPacketInfo());
 }
 
-void DelayBasedBweTest::IncomingFeedback(int64_t arrival_time_ms,
-                                         int64_t send_time_ms,
-                                         uint16_t sequence_number,
-                                         size_t payload_size,
-                                         const PacedPacketInfo& pacing_info) {
+void LegacyDelayBasedBweTest::IncomingFeedback(
+    int64_t arrival_time_ms,
+    int64_t send_time_ms,
+    uint16_t sequence_number,
+    size_t payload_size,
+    const PacedPacketInfo& pacing_info) {
   RTC_CHECK_GE(arrival_time_ms + arrival_time_offset_ms_, 0);
   PacketFeedback packet(arrival_time_ms + arrival_time_offset_ms_, send_time_ms,
                         sequence_number, payload_size, pacing_info);
@@ -201,8 +202,8 @@ void DelayBasedBweTest::IncomingFeedback(int64_t arrival_time_ms,
 // Returns true if an over-use was seen, false otherwise.
 // The StreamGenerator::updated() should be used to check for any changes in
 // target bitrate after the call to this function.
-bool DelayBasedBweTest::GenerateAndProcessFrame(uint32_t ssrc,
-                                                uint32_t bitrate_bps) {
+bool LegacyDelayBasedBweTest::GenerateAndProcessFrame(uint32_t ssrc,
+                                                      uint32_t bitrate_bps) {
   stream_generator_->SetBitrateBps(bitrate_bps);
   std::vector<PacketFeedback> packets;
   int64_t next_time_us =
@@ -240,12 +241,12 @@ bool DelayBasedBweTest::GenerateAndProcessFrame(uint32_t ssrc,
 // until it reaches |target_bitrate|.
 // Can for instance be used to run the estimator for some time to get it
 // into a steady state.
-uint32_t DelayBasedBweTest::SteadyStateRun(uint32_t ssrc,
-                                           int max_number_of_frames,
-                                           uint32_t start_bitrate,
-                                           uint32_t min_bitrate,
-                                           uint32_t max_bitrate,
-                                           uint32_t target_bitrate) {
+uint32_t LegacyDelayBasedBweTest::SteadyStateRun(uint32_t ssrc,
+                                                 int max_number_of_frames,
+                                                 uint32_t start_bitrate,
+                                                 uint32_t min_bitrate,
+                                                 uint32_t max_bitrate,
+                                                 uint32_t target_bitrate) {
   uint32_t bitrate_bps = start_bitrate;
   bool bitrate_update_seen = false;
   // Produce |number_of_frames| frames and give them to the estimator.
@@ -268,7 +269,7 @@ uint32_t DelayBasedBweTest::SteadyStateRun(uint32_t ssrc,
   return bitrate_bps;
 }
 
-void DelayBasedBweTest::InitialBehaviorTestHelper(
+void LegacyDelayBasedBweTest::InitialBehaviorTestHelper(
     uint32_t expected_converge_bitrate) {
   const int kFramerate = 50;  // 50 fps to avoid rounding errors.
   const int kFrameIntervalMs = 1000 / kFramerate;
@@ -311,7 +312,7 @@ void DelayBasedBweTest::InitialBehaviorTestHelper(
   EXPECT_EQ(bitrate_observer_.latest_bitrate(), bitrate_bps);
 }
 
-void DelayBasedBweTest::RateIncreaseReorderingTestHelper(
+void LegacyDelayBasedBweTest::RateIncreaseReorderingTestHelper(
     uint32_t expected_bitrate_bps) {
   const int kFramerate = 50;  // 50 fps to avoid rounding errors.
   const int kFrameIntervalMs = 1000 / kFramerate;
@@ -356,7 +357,7 @@ void DelayBasedBweTest::RateIncreaseReorderingTestHelper(
 }
 
 // Make sure we initially increase the bitrate as expected.
-void DelayBasedBweTest::RateIncreaseRtpTimestampsTestHelper(
+void LegacyDelayBasedBweTest::RateIncreaseRtpTimestampsTestHelper(
     int expected_iterations) {
   // This threshold corresponds approximately to increasing linearly with
   // bitrate(i) = 1.04 * bitrate(i-1) + 1000
@@ -381,7 +382,7 @@ void DelayBasedBweTest::RateIncreaseRtpTimestampsTestHelper(
   ASSERT_EQ(expected_iterations, iterations);
 }
 
-void DelayBasedBweTest::CapacityDropTestHelper(
+void LegacyDelayBasedBweTest::CapacityDropTestHelper(
     int number_of_streams,
     bool wrap_time_stamp,
     uint32_t expected_bitrate_drop_delta,
@@ -443,7 +444,7 @@ void DelayBasedBweTest::CapacityDropTestHelper(
               bitrate_drop_time - overuse_start_time, 33);
 }
 
-void DelayBasedBweTest::TestTimestampGroupingTestHelper() {
+void LegacyDelayBasedBweTest::TestTimestampGroupingTestHelper() {
   const int kFramerate = 50;  // 50 fps to avoid rounding errors.
   const int kFrameIntervalMs = 1000 / kFramerate;
   int64_t send_time_ms = 0;
@@ -481,7 +482,7 @@ void DelayBasedBweTest::TestTimestampGroupingTestHelper() {
   EXPECT_LT(bitrate_observer_.latest_bitrate(), 400000u);
 }
 
-void DelayBasedBweTest::TestWrappingHelper(int silence_time_s) {
+void LegacyDelayBasedBweTest::TestWrappingHelper(int silence_time_s) {
   const int kFramerate = 100;
   const int kFrameIntervalMs = 1000 / kFramerate;
   int64_t send_time_ms = 0;

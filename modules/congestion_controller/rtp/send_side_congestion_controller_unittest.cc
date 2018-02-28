@@ -10,8 +10,9 @@
 
 #include "modules/congestion_controller/rtp/include/send_side_congestion_controller.h"
 #include "logging/rtc_event_log/mock/mock_rtc_event_log.h"
+#include "modules/congestion_controller/include/mock/mock_congestion_observer.h"
+#include "modules/congestion_controller/include/network_changed_observer.h"
 #include "modules/congestion_controller/rtp/congestion_controller_unittests_helper.h"
-#include "modules/congestion_controller/rtp/include/mock/mock_congestion_observer.h"
 #include "modules/pacing/mock/mock_paced_sender.h"
 #include "modules/pacing/packet_router.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
@@ -36,6 +37,7 @@ namespace webrtc_cc {
 namespace test {
 
 namespace {
+using webrtc::test::MockCongestionObserver;
 const webrtc::PacedPacketInfo kPacingInfo0(0, 5, 2000);
 const webrtc::PacedPacketInfo kPacingInfo1(1, 8, 4000);
 
@@ -46,7 +48,7 @@ class SendSideCongestionControllerForTest
     : public SendSideCongestionController {
  public:
   SendSideCongestionControllerForTest(const Clock* clock,
-                                      Observer* observer,
+                                      NetworkChangedObserver* observer,
                                       RtcEventLog* event_log,
                                       PacedSender* pacer)
       : SendSideCongestionController(clock, observer, event_log, pacer) {}
@@ -57,7 +59,6 @@ class SendSideCongestionControllerForTest
   }
 };
 }  // namespace
-
 
 class SendSideCongestionControllerTest : public ::testing::Test {
  protected:
@@ -102,7 +103,7 @@ class SendSideCongestionControllerTest : public ::testing::Test {
 
   // Allows us to track the target bitrate, without prescribing the exact
   // iterations when this would hapen, like a mock would.
-  class TargetBitrateObserver : public SendSideCongestionController::Observer {
+  class TargetBitrateObserver : public NetworkChangedObserver {
    public:
     explicit TargetBitrateObserver(SendSideCongestionControllerTest* owner)
         : owner_(owner) {}
@@ -478,7 +479,7 @@ TEST_F(SendSideCongestionControllerTest, UpdatesDelayBasedEstimate) {
 }
 
 TEST_F(SendSideCongestionControllerTest, PacerQueueEncodeRatePushback) {
-  ScopedFieldTrials pushback_field_trial(
+  ::webrtc::test::ScopedFieldTrials pushback_field_trial(
       "WebRTC-PacerPushbackExperiment/Enabled/");
   SetUp();
 
