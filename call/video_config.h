@@ -36,14 +36,24 @@ struct VideoStream {
   int min_bitrate_bps;
   int target_bitrate_bps;
   int max_bitrate_bps;
-  int max_qp;
-
-  rtc::Optional<size_t> num_temporal_layers;
-
   rtc::Optional<double> bitrate_priority;
+
+  int max_qp;
 
   // TODO(bugs.webrtc.org/8653): Support active per-simulcast layer.
   bool active;
+
+  // Bitrate thresholds for enabling additional temporal layers. Since these are
+  // thresholds in between layers, we have one additional layer. One threshold
+  // gives two temporal layers, one below the threshold and one above, two give
+  // three, and so on.
+  // The VideoEncoder may redistribute bitrates over the temporal layers so a
+  // bitrate threshold of 100k and an estimate of 105k does not imply that we
+  // get 100k in one temporal layer and 5k in the other, just that the bitrate
+  // in the first temporal layer should not exceed 100k.
+  // TODO(kthelgason): Apart from a special case for two-layer screencast these
+  // thresholds are not propagated to the VideoEncoder. To be implemented.
+  std::vector<int> temporal_layer_thresholds_bps;
 };
 
 class VideoEncoderConfig {

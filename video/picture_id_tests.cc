@@ -285,7 +285,8 @@ class VideoStreamFactory
       streams[i].min_bitrate_bps = encoder_stream_bps;
       streams[i].target_bitrate_bps = encoder_stream_bps;
       streams[i].max_bitrate_bps = encoder_stream_bps;
-      streams[i].num_temporal_layers = num_of_temporal_layers_;
+      streams[i].temporal_layer_thresholds_bps.resize(num_of_temporal_layers_ -
+                                                      1);
       // test::CreateVideoStreams does not return frame sizes for the lower
       // streams that are accepted by VP8Impl::InitEncode.
       // TODO(brandtr): Fix the problem in test::CreateVideoStreams, rather

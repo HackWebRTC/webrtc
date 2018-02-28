@@ -1082,7 +1082,8 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
           std::vector<VideoStream> streams =
               test::CreateVideoStreams(width, height, encoder_config);
           for (VideoStream& stream : streams) {
-            stream.num_temporal_layers = num_temporal_layers_;
+            stream.temporal_layer_thresholds_bps.resize(num_temporal_layers_ -
+                                                        1);
           }
           return streams;
         }
@@ -2461,8 +2462,8 @@ class VideoCodecConfigObserver : public test::SendTest,
       std::vector<VideoStream> streams =
           test::CreateVideoStreams(width, height, encoder_config);
       for (size_t i = 0; i < streams.size(); ++i) {
-        streams[i].num_temporal_layers =
-            kVideoCodecConfigObserverNumberOfTemporalLayers;
+        streams[i].temporal_layer_thresholds_bps.resize(
+            kVideoCodecConfigObserverNumberOfTemporalLayers - 1);
       }
       return streams;
     }
@@ -2672,7 +2673,7 @@ TEST_F(VideoSendStreamTest, RtcpSenderReportContainsMediaBytesSent) {
 }
 
 TEST_F(VideoSendStreamTest, TranslatesTwoLayerScreencastToTargetBitrate) {
-  static const int kScreencastMaxTargetBitrateDeltaKbps = 1;
+  static const int kScreencastTargetBitrateKbps = 200;
 
   class VideoStreamFactory
       : public VideoEncoderConfig::VideoStreamFactoryInterface {
@@ -2686,13 +2687,9 @@ TEST_F(VideoSendStreamTest, TranslatesTwoLayerScreencastToTargetBitrate) {
         const VideoEncoderConfig& encoder_config) override {
       std::vector<VideoStream> streams =
           test::CreateVideoStreams(width, height, encoder_config);
-      EXPECT_FALSE(streams[0].num_temporal_layers.has_value());
-      streams[0].num_temporal_layers = 2;
-      RTC_CHECK_GT(streams[0].max_bitrate_bps,
-                   kScreencastMaxTargetBitrateDeltaKbps);
-      streams[0].target_bitrate_bps =
-          streams[0].max_bitrate_bps -
-          kScreencastMaxTargetBitrateDeltaKbps * 1000;
+      EXPECT_TRUE(streams[0].temporal_layer_thresholds_bps.empty());
+      streams[0].temporal_layer_thresholds_bps.push_back(
+          kScreencastTargetBitrateKbps * 1000);
       return streams;
     }
   };
@@ -2708,8 +2705,8 @@ TEST_F(VideoSendStreamTest, TranslatesTwoLayerScreencastToTargetBitrate) {
     int32_t InitEncode(const VideoCodec* config,
                        int32_t number_of_cores,
                        size_t max_payload_size) override {
-      EXPECT_EQ(static_cast<unsigned int>(kScreencastMaxTargetBitrateDeltaKbps),
-                config->maxBitrate - config->targetBitrate);
+      EXPECT_EQ(static_cast<unsigned int>(kScreencastTargetBitrateKbps),
+                config->targetBitrate);
       observation_complete_.Set();
       return test::FakeEncoder::InitEncode(
           config, number_of_cores, max_payload_size);
@@ -3037,7 +3034,8 @@ class Vp9HeaderObserver : public test::SendTest {
         const VideoEncoderConfig& encoder_config) override {
       std::vector<VideoStream> streams =
           test::CreateVideoStreams(width, height, encoder_config);
-      streams.back().num_temporal_layers = number_of_temporal_layers_;
+      streams[0].temporal_layer_thresholds_bps.resize(
+          number_of_temporal_layers_ - 1);
       return streams;
     }
 
