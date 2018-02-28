@@ -455,6 +455,7 @@ ProduceMediaStreamTrackStatsFromVideoSenderInfo(
   // TODO(hbos): Will reduce this by frames dropped due to congestion control
   // when available. https://crbug.com/659137
   video_track_stats->frames_sent = video_sender_info.frames_encoded;
+  video_track_stats->huge_frames_sent = video_sender_info.huge_frames_sent;
   return video_track_stats;
 }
 

@@ -249,6 +249,8 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   rtc::RateTracker media_byte_rate_tracker_ RTC_GUARDED_BY(crit_);
   rtc::RateTracker encoded_frame_rate_tracker_ RTC_GUARDED_BY(crit_);
 
+  rtc::Optional<int64_t> last_outlier_timestamp_ RTC_GUARDED_BY(crit_);
+
   // Contains stats used for UMA histograms. These stats will be reset if
   // content type changes between real-time video and screenshare, since these
   // will be reported separately.

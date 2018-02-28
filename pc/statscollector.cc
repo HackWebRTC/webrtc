@@ -313,20 +313,21 @@ void ExtractStats(const cricket::VideoSenderInfo& info, StatsReport* report) {
     report->AddInt(StatsReport::kStatsValueNameQpSum, *info.qp_sum);
 
   const IntForAdd ints[] = {
-    { StatsReport::kStatsValueNameAdaptationChanges, info.adapt_changes },
-    { StatsReport::kStatsValueNameAvgEncodeMs, info.avg_encode_ms },
-    { StatsReport::kStatsValueNameEncodeUsagePercent,
-      info.encode_usage_percent },
-    { StatsReport::kStatsValueNameFirsReceived, info.firs_rcvd },
-    { StatsReport::kStatsValueNameFrameHeightSent, info.send_frame_height },
-    { StatsReport::kStatsValueNameFrameRateInput, info.framerate_input },
-    { StatsReport::kStatsValueNameFrameRateSent, info.framerate_sent },
-    { StatsReport::kStatsValueNameFrameWidthSent, info.send_frame_width },
-    { StatsReport::kStatsValueNameNacksReceived, info.nacks_rcvd },
-    { StatsReport::kStatsValueNamePacketsLost, info.packets_lost },
-    { StatsReport::kStatsValueNamePacketsSent, info.packets_sent },
-    { StatsReport::kStatsValueNamePlisReceived, info.plis_rcvd },
-    { StatsReport::kStatsValueNameFramesEncoded, info.frames_encoded },
+      {StatsReport::kStatsValueNameAdaptationChanges, info.adapt_changes},
+      {StatsReport::kStatsValueNameAvgEncodeMs, info.avg_encode_ms},
+      {StatsReport::kStatsValueNameEncodeUsagePercent,
+       info.encode_usage_percent},
+      {StatsReport::kStatsValueNameFirsReceived, info.firs_rcvd},
+      {StatsReport::kStatsValueNameFrameHeightSent, info.send_frame_height},
+      {StatsReport::kStatsValueNameFrameRateInput, info.framerate_input},
+      {StatsReport::kStatsValueNameFrameRateSent, info.framerate_sent},
+      {StatsReport::kStatsValueNameFrameWidthSent, info.send_frame_width},
+      {StatsReport::kStatsValueNameNacksReceived, info.nacks_rcvd},
+      {StatsReport::kStatsValueNamePacketsLost, info.packets_lost},
+      {StatsReport::kStatsValueNamePacketsSent, info.packets_sent},
+      {StatsReport::kStatsValueNamePlisReceived, info.plis_rcvd},
+      {StatsReport::kStatsValueNameFramesEncoded, info.frames_encoded},
+      {StatsReport::kStatsValueNameHugeFramesSent, info.huge_frames_sent},
   };
 
   for (const auto& i : ints)

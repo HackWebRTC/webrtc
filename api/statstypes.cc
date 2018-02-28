@@ -558,6 +558,8 @@ const char* StatsReport::Value::display_name() const {
       return "googFrameWidthSent";
     case kStatsValueNameHasEnteredLowResolution:
       return "googHasEnteredLowResolution";
+    case kStatsValueNameHugeFramesSent:
+      return "hugeFramesSent";
     case kStatsValueNameInitiator:
       return "googInitiator";
     case kStatsValueNameInterframeDelayMaxMs:
