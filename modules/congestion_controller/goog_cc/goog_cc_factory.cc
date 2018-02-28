@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/congestion_controller/rtp/include/goog_cc_factory.h"
+#include "modules/congestion_controller/goog_cc/include/goog_cc_factory.h"
 
-#include "modules/congestion_controller/rtp/goog_cc_network_control.h"
+#include "modules/congestion_controller/goog_cc/goog_cc_network_control.h"
 #include "rtc_base/ptr_util.h"
 namespace webrtc {
 GoogCcNetworkControllerFactory::GoogCcNetworkControllerFactory(

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/congestion_controller/rtp/trendline_estimator.h"
+#include "modules/congestion_controller/goog_cc/trendline_estimator.h"
 #include "rtc_base/random.h"
 #include "test/gtest.h"
 
