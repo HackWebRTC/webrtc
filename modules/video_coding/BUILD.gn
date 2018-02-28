@@ -581,6 +581,8 @@ if (rtc_include_tests) {
       "../../api/video_codecs:video_codecs_api",
       "../../common_video:common_video",
       "../../media:rtc_audio_video",
+      "../../media:rtc_h264_profile_id",
+      "../../media:rtc_media_base",
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
       "../../rtc_base:rtc_task_queue",

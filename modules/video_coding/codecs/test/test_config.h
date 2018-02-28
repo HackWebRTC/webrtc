@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 
+#include "api/video_codecs/sdp_video_format.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/codecs/h264/include/h264_globals.h"
 #include "modules/video_coding/include/video_codec_interface.h"
@@ -21,7 +22,6 @@
 namespace webrtc {
 namespace test {
 
-// Test configuration for a test run.
 struct TestConfig {
   class EncodedFrameChecker {
    public:
@@ -42,8 +42,6 @@ struct TestConfig {
                         size_t width,
                         size_t height);
 
-  void ConfigureSimulcast();
-
   size_t NumberOfCores() const;
   size_t NumberOfTemporalLayers() const;
   size_t NumberOfSpatialLayers() const;
@@ -51,6 +49,7 @@ struct TestConfig {
 
   std::vector<FrameType> FrameTypeForFrame(size_t frame_idx) const;
   std::string ToString() const;
+  SdpVideoFormat ToSdpVideoFormat() const;
   std::string CodecName() const;
   std::string FilenameWithParams() const;
   bool IsAsyncCodec() const;
@@ -68,11 +67,6 @@ struct TestConfig {
   size_t max_payload_size_bytes = 1440;
 
   // Force the encoder and decoder to use a single core for processing.
-  // Using a single core is necessary to get a deterministic behavior for the
-  // encoded frames - using multiple cores will produce different encoded frames
-  // since multiple cores are competing to consume the byte budget for each
-  // frame in parallel.
-  // If set to false, the maximum number of available cores will be used.
   bool use_single_core = false;
 
   // Should cpu usage be measured?
@@ -80,10 +74,6 @@ struct TestConfig {
   bool measure_cpu = false;
 
   // If > 0: forces the encoder to create a keyframe every Nth frame.
-  // Note that the encoder may create a keyframe in other locations in addition
-  // to this setting. Forcing key frames may also affect encoder planning
-  // optimizations in a negative way, since it will suddenly be forced to
-  // produce an expensive key frame.
   size_t keyframe_interval = 0;
 
   // Codec settings to use.

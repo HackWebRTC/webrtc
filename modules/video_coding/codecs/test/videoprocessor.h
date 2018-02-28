@@ -17,16 +17,10 @@
 #include <vector>
 
 #include "api/video/video_frame.h"
-#include "common_video/libyuv/include/webrtc_libyuv.h"
-#include "modules/video_coding/codecs/h264/include/h264_globals.h"
 #include "modules/video_coding/codecs/test/stats.h"
 #include "modules/video_coding/codecs/test/test_config.h"
-#include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/utility/ivf_file_writer.h"
-#include "modules/video_coding/utility/vp8_header_parser.h"
-#include "modules/video_coding/utility/vp9_uncompressed_header_parser.h"
 #include "rtc_base/buffer.h"
-#include "rtc_base/checks.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/sequenced_task_checker.h"
 #include "rtc_base/task_queue.h"
@@ -78,6 +72,7 @@ class VideoProcessor {
         VideoProcessor* video_processor)
         : video_processor_(video_processor),
           task_queue_(rtc::TaskQueue::Current()) {
+      RTC_DCHECK(video_processor_);
       RTC_DCHECK(task_queue_);
     }
 
@@ -135,6 +130,7 @@ class VideoProcessor {
         VideoProcessor* video_processor)
         : video_processor_(video_processor),
           task_queue_(rtc::TaskQueue::Current()) {
+      RTC_DCHECK(video_processor_);
       RTC_DCHECK(task_queue_);
     }
 
@@ -181,8 +177,6 @@ class VideoProcessor {
                              const VideoFrame& dec_frame,
                              FrameStatistics* frame_stat);
 
-  void WriteDecodedFrameToFile(rtc::Buffer* buffer, size_t simulcast_svc_idx);
-
   TestConfig config_ RTC_GUARDED_BY(sequence_checker_);
 
   const size_t num_simulcast_or_spatial_layers_;
@@ -213,12 +207,11 @@ class VideoProcessor {
   FrameWriterList* const decoded_frame_writers_;
 
   // Keep track of inputed/encoded/decoded frames, so we can detect frame drops.
+  bool first_encoded_frame;
   size_t last_inputed_frame_num_ RTC_GUARDED_BY(sequence_checker_);
   size_t last_encoded_frame_num_ RTC_GUARDED_BY(sequence_checker_);
   size_t last_encoded_simulcast_svc_idx_ RTC_GUARDED_BY(sequence_checker_);
   size_t last_decoded_frame_num_ RTC_GUARDED_BY(sequence_checker_);
-  size_t num_encoded_frames_ RTC_GUARDED_BY(sequence_checker_);
-  size_t num_decoded_frames_ RTC_GUARDED_BY(sequence_checker_);
 
   // Map of frame size (in pixels) to simulcast/spatial layer index.
   std::map<size_t, size_t> frame_wxh_to_simulcast_svc_idx_
@@ -231,10 +224,7 @@ class VideoProcessor {
   std::map<size_t, EncodedImage> last_encoded_frames_
       RTC_GUARDED_BY(sequence_checker_);
 
-  // Keep track of the last successfully decoded frame, since we write that
-  // frame to disk when frame got dropped or decoding fails.
-  std::map<size_t, rtc::Buffer> last_decoded_frame_buffers_
-      RTC_GUARDED_BY(sequence_checker_);
+  rtc::Buffer tmp_planar_i420_buffer_;
 
   // Statistics.
   Stats* const stats_;

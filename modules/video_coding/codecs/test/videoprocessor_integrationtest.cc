@@ -20,8 +20,8 @@
 #include "modules/video_coding/codecs/test/objc_codec_factory_helper.h"
 #endif
 
+#include "api/video_codecs/sdp_video_format.h"
 #include "common_types.h"  // NOLINT(build/include)
-#include "media/base/h264_profile_level_id.h"
 #include "media/engine/internaldecoderfactory.h"
 #include "media/engine/internalencoderfactory.h"
 #include "media/engine/videodecodersoftwarefallbackwrapper.h"
@@ -53,33 +53,6 @@ bool RunEncodeInRealTime(const TestConfig& config) {
 #else
   return false;
 #endif
-}
-
-SdpVideoFormat CreateSdpVideoFormat(const TestConfig& config) {
-  switch (config.codec_settings.codecType) {
-    case kVideoCodecVP8:
-      return SdpVideoFormat(cricket::kVp8CodecName);
-
-    case kVideoCodecVP9:
-      return SdpVideoFormat(cricket::kVp9CodecName);
-
-    case kVideoCodecH264: {
-      const char* packetization_mode =
-          config.h264_codec_settings.packetization_mode ==
-                  H264PacketizationMode::NonInterleaved
-              ? "1"
-              : "0";
-      return SdpVideoFormat(
-          cricket::kH264CodecName,
-          {{cricket::kH264FmtpProfileLevelId,
-            *H264::ProfileLevelIdToString(H264::ProfileLevelId(
-                config.h264_codec_settings.profile, H264::kLevel3_1))},
-           {cricket::kH264FmtpPacketizationMode, packetization_mode}});
-    }
-    default:
-      RTC_NOTREACHED();
-      return SdpVideoFormat("");
-  }
 }
 
 }  // namespace
@@ -169,6 +142,7 @@ void VideoProcessorIntegrationTest::ProcessFramesAndMaybeVerify(
     const BitstreamThresholds* bs_thresholds,
     const VisualizationParams* visualization_params) {
   RTC_DCHECK(!rate_profiles.empty());
+
   // The Android HW codec needs to be run on a task queue, so we simply always
   // run the test on a task queue.
   rtc::TaskQueue task_queue("VidProc TQ");
@@ -177,9 +151,7 @@ void VideoProcessorIntegrationTest::ProcessFramesAndMaybeVerify(
       &task_queue, static_cast<const int>(rate_profiles[0].target_kbps),
       static_cast<const int>(rate_profiles[0].input_fps), visualization_params);
   PrintSettings(&task_queue);
-
   ProcessAllFrames(&task_queue, rate_profiles);
-
   ReleaseAndCloseObjects(&task_queue);
 
   AnalyzeAllFrames(rate_profiles, rc_thresholds, quality_thresholds,
@@ -217,7 +189,7 @@ void VideoProcessorIntegrationTest::ProcessAllFrames(
 
     if (RunEncodeInRealTime(config_)) {
       // Roughly pace the frames.
-      size_t frame_duration_ms =
+      const size_t frame_duration_ms =
           rtc::kNumMillisecsPerSec / rate_profiles[rate_update_index].input_fps;
       SleepMs(static_cast<int>(frame_duration_ms));
     }
@@ -229,7 +201,7 @@ void VideoProcessorIntegrationTest::ProcessAllFrames(
 
   // Give the VideoProcessor pipeline some time to process the last frame,
   // and then release the codecs.
-  if (config_.hw_encoder || config_.hw_decoder) {
+  if (config_.IsAsyncCodec()) {
     SleepMs(1 * rtc::kNumMillisecsPerSec);
   }
 
@@ -353,7 +325,7 @@ void VideoProcessorIntegrationTest::CreateEncoderAndDecoder() {
     decoder_factory = rtc::MakeUnique<InternalDecoderFactory>();
   }
 
-  const SdpVideoFormat format = CreateSdpVideoFormat(config_);
+  const SdpVideoFormat format = config_.ToSdpVideoFormat();
   encoder_ = encoder_factory->CreateVideoEncoder(format);
 
   const size_t num_simulcast_or_spatial_layers = std::max(
@@ -391,8 +363,8 @@ void VideoProcessorIntegrationTest::DestroyEncoderAndDecoder() {
 
 void VideoProcessorIntegrationTest::SetUpAndInitObjects(
     rtc::TaskQueue* task_queue,
-    const int initial_bitrate_kbps,
-    const int initial_framerate_fps,
+    int initial_bitrate_kbps,
+    int initial_framerate_fps,
     const VisualizationParams* visualization_params) {
   CreateEncoderAndDecoder();
 

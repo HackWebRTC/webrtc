@@ -103,8 +103,8 @@ class VideoProcessorIntegrationTest : public testing::Test {
   void CreateEncoderAndDecoder();
   void DestroyEncoderAndDecoder();
   void SetUpAndInitObjects(rtc::TaskQueue* task_queue,
-                           const int initial_bitrate_kbps,
-                           const int initial_framerate_fps,
+                           int initial_bitrate_kbps,
+                           int initial_framerate_fps,
                            const VisualizationParams* visualization_params);
   void ReleaseAndCloseObjects(rtc::TaskQueue* task_queue);
 
@@ -127,12 +127,12 @@ class VideoProcessorIntegrationTest : public testing::Test {
 
   // Codecs.
   std::unique_ptr<VideoEncoder> encoder_;
-  std::vector<std::unique_ptr<VideoDecoder>> decoders_;
+  VideoProcessor::VideoDecoderList decoders_;
 
   // Helper objects.
   std::unique_ptr<FrameReader> source_frame_reader_;
-  std::vector<std::unique_ptr<IvfFileWriter>> encoded_frame_writers_;
-  std::vector<std::unique_ptr<FrameWriter>> decoded_frame_writers_;
+  VideoProcessor::IvfFileWriterList encoded_frame_writers_;
+  VideoProcessor::FrameWriterList decoded_frame_writers_;
   std::unique_ptr<VideoProcessor> processor_;
   std::unique_ptr<CpuProcessTime> cpu_process_time_;
 };
