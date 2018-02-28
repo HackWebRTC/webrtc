@@ -48,6 +48,7 @@ class RenderDelayControllerImpl final : public RenderDelayController {
   const int delay_headroom_blocks_;
   const int hysteresis_limit_1_blocks_;
   const int hysteresis_limit_2_blocks_;
+  const int skew_hysteresis_blocks_;
   rtc::Optional<DelayEstimate> delay_;
   EchoPathDelayEstimator delay_estimator_;
   std::vector<float> delay_buf_;
@@ -115,6 +116,8 @@ RenderDelayControllerImpl::RenderDelayControllerImpl(
           static_cast<int>(config.delay.hysteresis_limit_1_blocks)),
       hysteresis_limit_2_blocks_(
           static_cast<int>(config.delay.hysteresis_limit_2_blocks)),
+      skew_hysteresis_blocks_(
+          static_cast<int>(config.delay.skew_hysteresis_blocks)),
       delay_estimator_(data_dumper_.get(), config),
       delay_buf_(kBlockSize * non_causal_offset, 0.f),
       skew_estimator_(kSkewHistorySizeLog2) {
@@ -199,7 +202,9 @@ rtc::Optional<DelayEstimate> RenderDelayControllerImpl::GetDelay(
       delay_samples_->quality == DelayEstimate::Quality::kRefined) {
     // Compute the skew offset and add a margin.
     offset_blocks = *skew_ - *skew;
-    if (offset_blocks != 0 && soft_reset_counter_ > 10 * kNumBlocksPerSecond) {
+    if (abs(offset_blocks) <= skew_hysteresis_blocks_) {
+      offset_blocks = 0;
+    } else if (soft_reset_counter_ > 10 * kNumBlocksPerSecond) {
       // Soft reset the delay estimator if there is a significant offset
       // detected.
       delay_estimator_.Reset(true);
