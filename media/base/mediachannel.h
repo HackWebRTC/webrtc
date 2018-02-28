@@ -46,7 +46,6 @@
 
 
 namespace rtc {
-class RateLimiter;
 class Timing;
 }
 

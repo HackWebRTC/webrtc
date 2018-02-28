@@ -20,6 +20,10 @@
 #include "media/base/mediaconstants.h"
 #include "media/base/mediaengine.h"
 
+namespace rtc {
+class DataRateLimiter;
+}
+
 namespace cricket {
 
 struct DataCodec;
@@ -103,7 +107,7 @@ class RtpDataMediaChannel : public DataMediaChannel {
   std::vector<StreamParams> send_streams_;
   std::vector<StreamParams> recv_streams_;
   std::map<uint32_t, RtpClock*> rtp_clock_by_send_ssrc_;
-  std::unique_ptr<rtc::RateLimiter> send_limiter_;
+  std::unique_ptr<rtc::DataRateLimiter> send_limiter_;
 };
 
 }  // namespace cricket

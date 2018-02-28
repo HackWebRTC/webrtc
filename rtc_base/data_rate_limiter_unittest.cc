@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/ratelimiter.h"
+#include "rtc_base/data_rate_limiter.h"
 #include "rtc_base/gunit.h"
 
 namespace rtc {
 
 TEST(RateLimiterTest, TestCanUse) {
   // Diet: Can eat 2,000 calories per day.
-  RateLimiter limiter = RateLimiter(2000, 1.0);
+  DataRateLimiter limiter = DataRateLimiter(2000, 1.0);
 
   double monday = 1.0;
   double tuesday = 2.0;

@@ -17,9 +17,9 @@
 #include "media/base/rtputils.h"
 #include "media/base/streamparams.h"
 #include "rtc_base/copyonwritebuffer.h"
+#include "rtc_base/data_rate_limiter.h"
 #include "rtc_base/helpers.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ratelimiter.h"
 #include "rtc_base/sanitizer.h"
 #include "rtc_base/stringutils.h"
 
@@ -64,7 +64,7 @@ RtpDataMediaChannel::RtpDataMediaChannel(const MediaConfig& config)
 void RtpDataMediaChannel::Construct() {
   sending_ = false;
   receiving_ = false;
-  send_limiter_.reset(new rtc::RateLimiter(kDataMaxBandwidth / 8, 1.0));
+  send_limiter_.reset(new rtc::DataRateLimiter(kDataMaxBandwidth / 8, 1.0));
 }
 
 
@@ -248,7 +248,7 @@ bool RtpDataMediaChannel::SetMaxSendBandwidth(int bps) {
   if (bps <= 0) {
     bps = kDataMaxBandwidth;
   }
-  send_limiter_.reset(new rtc::RateLimiter(bps / 8, 1.0));
+  send_limiter_.reset(new rtc::DataRateLimiter(bps / 8, 1.0));
   RTC_LOG(LS_INFO) << "RtpDataMediaChannel::SetSendBandwidth to " << bps
                    << "bps.";
   return true;

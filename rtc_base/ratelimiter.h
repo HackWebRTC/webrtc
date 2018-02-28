@@ -1,5 +1,5 @@
 /*
- *  Copyright 2012 The WebRTC Project Authors. All rights reserved.
+ *  Copyright 2018 The WebRTC Project Authors. All rights reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -11,52 +11,14 @@
 #ifndef RTC_BASE_RATELIMITER_H_
 #define RTC_BASE_RATELIMITER_H_
 
-#include <stddef.h>
+#include "rtc_base/data_rate_limiter.h"
 
 namespace rtc {
-
-// Limits the rate of use to a certain maximum quantity per period of
-// time.  Use, for example, for simple bandwidth throttling.
-//
-// It's implemented like a diet plan: You have so many calories per
-// day.  If you hit the limit, you can't eat any more until the next
-// day.
-class RateLimiter {
+// Deprecated, use DataRateLimiter instead
+class RateLimiter : public DataRateLimiter {
  public:
-  // For example, 100kb per second.
-  RateLimiter(size_t max, double period)
-      : max_per_period_(max),
-        period_length_(period),
-        used_in_period_(0),
-        period_start_(0.0),
-        period_end_(period) {
-  }
-  virtual ~RateLimiter() {}
-
-  // Returns true if if the desired quantity is available in the
-  // current period (< (max - used)).  Once the given time passes the
-  // end of the period, used is set to zero and more use is available.
-  bool CanUse(size_t desired, double time);
-  // Increment the quantity used this period.  If past the end of a
-  // period, a new period is started.
-  void Use(size_t used, double time);
-
-  size_t used_in_period() const {
-    return used_in_period_;
-  }
-
-  size_t max_per_period() const {
-    return max_per_period_;
-  }
-
- private:
-  size_t max_per_period_;
-  double period_length_;
-  size_t used_in_period_;
-  double period_start_;
-  double period_end_;
+  using DataRateLimiter::DataRateLimiter;
 };
-
 }  // namespace rtc
 
 #endif  // RTC_BASE_RATELIMITER_H_
