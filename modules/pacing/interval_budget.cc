@@ -8,9 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/pacing/interval_budget.h"
-
 #include <algorithm>
+
+#include "modules/pacing/interval_budget.h"
+#include "rtc_base/numerics/safe_conversions.h"
 
 namespace webrtc {
 namespace {
@@ -34,7 +35,7 @@ void IntervalBudget::set_target_rate_kbps(int target_rate_kbps) {
 }
 
 void IntervalBudget::IncreaseBudget(int64_t delta_time_ms) {
-  int bytes = target_rate_kbps_ * delta_time_ms / 8;
+  int bytes = rtc::dchecked_cast<int>(target_rate_kbps_ * delta_time_ms / 8);
   if (bytes_remaining_ < 0 || can_build_up_underuse_) {
     // We overused last interval, compensate this interval.
     bytes_remaining_ = std::min(bytes_remaining_ + bytes, max_bytes_in_budget_);
@@ -56,7 +57,8 @@ size_t IntervalBudget::bytes_remaining() const {
 int IntervalBudget::budget_level_percent() const {
   if (max_bytes_in_budget_ == 0)
     return 0;
-  return bytes_remaining_ * 100 / max_bytes_in_budget_;
+  return rtc::dchecked_cast<int>(int64_t{bytes_remaining_} * 100 /
+                                 max_bytes_in_budget_);
 }
 
 int IntervalBudget::target_rate_kbps() const {

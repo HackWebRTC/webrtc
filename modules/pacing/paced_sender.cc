@@ -35,6 +35,7 @@ namespace {
 // Time limit in milliseconds between packet bursts.
 const int64_t kMinPacketLimitMs = 5;
 const int64_t kPausedPacketIntervalMs = 500;
+const int64_t kMaxElapsedTimeMs = 2000;
 
 // Upper cap on process interval, in case process has not been called in a long
 // time.
@@ -260,7 +261,12 @@ void PacedSender::Process() {
   rtc::CritScope cs(&critsect_);
   time_last_process_us_ = now_us;
   int64_t elapsed_time_ms = (now_us - last_send_time_us_ + 500) / 1000;
-
+  if (elapsed_time_ms > kMaxElapsedTimeMs) {
+    RTC_LOG(LS_WARNING) << "Elapsed time (" << elapsed_time_ms
+                        << " ms) longer than expected, limiting to "
+                        << kMaxElapsedTimeMs << " ms";
+    elapsed_time_ms = kMaxElapsedTimeMs;
+  }
   // When paused we send a padding packet every 500 ms to ensure we won't get
   // stuck in the paused state due to no feedback being received.
   if (paused_) {
