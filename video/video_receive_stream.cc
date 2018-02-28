@@ -110,10 +110,9 @@ VideoReceiveStream::VideoReceiveStream(
                                  rtp_receive_statistics_.get(),
                                  &stats_proxy_,
                                  process_thread_,
-                                 this,  // NackSender
-                                 this,  // KeyFrameRequestSender
-                                 this,  // OnCompleteFrameCallback
-                                 timing_.get()),
+                                 this,   // NackSender
+                                 this,   // KeyFrameRequestSender
+                                 this),  // OnCompleteFrameCallback
       rtp_stream_sync_(this) {
   RTC_LOG(LS_INFO) << "VideoReceiveStream: " << config_.ToString();
 

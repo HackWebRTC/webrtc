@@ -20,7 +20,6 @@
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "modules/video_coding/packet.h"
 #include "modules/video_coding/rtp_frame_reference_finder.h"
-#include "modules/video_coding/timing.h"
 #include "rtc_base/bytebuffer.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/ptr_util.h"
@@ -122,7 +121,6 @@ class RtpVideoStreamReceiverTest : public testing::Test {
   explicit RtpVideoStreamReceiverTest(std::string field_trials)
       : override_field_trials_(field_trials),
         config_(CreateConfig()),
-        timing_(Clock::GetRealTimeClock()),
         process_thread_(ProcessThread::Create("TestThread")) {}
 
   void SetUp() {
@@ -132,8 +130,7 @@ class RtpVideoStreamReceiverTest : public testing::Test {
         &mock_transport_, nullptr, &packet_router_, &config_,
         rtp_receive_statistics_.get(), nullptr, process_thread_.get(),
         &mock_nack_sender_,
-        &mock_key_frame_request_sender_, &mock_on_complete_frame_callback_,
-        &timing_);
+        &mock_key_frame_request_sender_, &mock_on_complete_frame_callback_);
   }
 
   WebRtcRTPHeader GetDefaultPacket() {
@@ -196,7 +193,6 @@ class RtpVideoStreamReceiverTest : public testing::Test {
   MockTransport mock_transport_;
   MockOnCompleteFrameCallback mock_on_complete_frame_callback_;
   PacketRouter packet_router_;
-  VCMTiming timing_;
   std::unique_ptr<ProcessThread> process_thread_;
   std::unique_ptr<ReceiveStatistics> rtp_receive_statistics_;
   std::unique_ptr<RtpVideoStreamReceiver> rtp_video_stream_receiver_;

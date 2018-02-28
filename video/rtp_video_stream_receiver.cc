@@ -91,8 +91,7 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
     ProcessThread* process_thread,
     NackSender* nack_sender,
     KeyFrameRequestSender* keyframe_request_sender,
-    video_coding::OnCompleteFrameCallback* complete_frame_callback,
-    VCMTiming* timing)
+    video_coding::OnCompleteFrameCallback* complete_frame_callback)
     : clock_(Clock::GetRealTimeClock()),
       config_(*config),
       packet_router_(packet_router),
@@ -114,7 +113,6 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
                                     packet_router)),
       complete_frame_callback_(complete_frame_callback),
       keyframe_request_sender_(keyframe_request_sender),
-      timing_(timing),
       has_received_frame_(false) {
   constexpr bool remb_candidate = true;
   packet_router_->AddReceiveRtpModule(rtp_rtcp_.get(), remb_candidate);
@@ -389,8 +387,6 @@ void RtpVideoStreamReceiver::OnReceivedFrame(
       keyframe_request_sender_->RequestKeyFrame();
   }
 
-  if (!frame->delayed_by_retransmission())
-    timing_->IncomingTimestamp(frame->timestamp, clock_->TimeInMilliseconds());
   reference_finder_->ManageFrame(std::move(frame));
 }
 

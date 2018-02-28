@@ -48,7 +48,6 @@ class RtpPacketReceived;
 class RtpReceiver;
 class Transport;
 class UlpfecReceiver;
-class VCMTiming;
 
 namespace vcm {
 class VideoReceiver;
@@ -74,8 +73,7 @@ class RtpVideoStreamReceiver : public RtpData,
       ProcessThread* process_thread,
       NackSender* nack_sender,
       KeyFrameRequestSender* keyframe_request_sender,
-      video_coding::OnCompleteFrameCallback* complete_frame_callback,
-      VCMTiming* timing);
+      video_coding::OnCompleteFrameCallback* complete_frame_callback);
   ~RtpVideoStreamReceiver();
 
   bool AddReceiveCodec(const VideoCodec& video_codec,
@@ -189,7 +187,6 @@ class RtpVideoStreamReceiver : public RtpData,
   // Members for the new jitter buffer experiment.
   video_coding::OnCompleteFrameCallback* complete_frame_callback_;
   KeyFrameRequestSender* keyframe_request_sender_;
-  VCMTiming* timing_;
   std::unique_ptr<NackModule> nack_module_;
   rtc::scoped_refptr<video_coding::PacketBuffer> packet_buffer_;
   std::unique_ptr<video_coding::RtpFrameReferenceFinder> reference_finder_;
