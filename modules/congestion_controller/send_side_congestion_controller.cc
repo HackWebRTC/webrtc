@@ -230,6 +230,10 @@ bool SendSideCongestionController::AvailableBandwidth(
   return bitrate_controller_->AvailableBandwidth(bandwidth);
 }
 
+RtcpBandwidthObserver* SendSideCongestionController::GetBandwidthObserver() {
+  return bitrate_controller_.get();
+}
+
 RtcpBandwidthObserver* SendSideCongestionController::GetBandwidthObserver()
     const {
   return bitrate_controller_.get();

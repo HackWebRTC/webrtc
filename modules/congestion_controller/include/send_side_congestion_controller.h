@@ -81,7 +81,8 @@ class SendSideCongestionController
   // Deprecated: Use GetBandwidthObserver instead.
   RTC_DEPRECATED virtual BitrateController* GetBitrateController() const;
 
-  RtcpBandwidthObserver* GetBandwidthObserver() const override;
+  RtcpBandwidthObserver* GetBandwidthObserver() override;
+  RTC_DEPRECATED RtcpBandwidthObserver* GetBandwidthObserver() const;
 
   bool AvailableBandwidth(uint32_t* bandwidth) const override;
   int64_t GetPacerQueuingDelayMs() const override;

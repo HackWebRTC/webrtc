@@ -11,7 +11,6 @@
 #include "modules/congestion_controller/rtp/include/send_side_congestion_controller.h"
 #include "logging/rtc_event_log/mock/mock_rtc_event_log.h"
 #include "modules/congestion_controller/include/mock/mock_congestion_observer.h"
-#include "modules/congestion_controller/include/network_changed_observer.h"
 #include "modules/congestion_controller/rtp/congestion_controller_unittests_helper.h"
 #include "modules/pacing/mock/mock_paced_sender.h"
 #include "modules/pacing/packet_router.h"

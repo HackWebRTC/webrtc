@@ -18,7 +18,7 @@
 #include <vector>
 
 #include "common_types.h"  // NOLINT(build/include)
-#include "modules/congestion_controller/include/network_changed_observer.h"
+#include "modules/congestion_controller/include/send_side_congestion_controller_interface.h"
 #include "modules/congestion_controller/rtp/network_control/include/network_control.h"
 #include "modules/congestion_controller/rtp/network_control/include/network_types.h"
 #include "modules/congestion_controller/rtp/pacer_controller.h"
@@ -54,10 +54,9 @@ namespace send_side_cc_internal {
 class ControlHandler;
 }  // namespace send_side_cc_internal
 
-class SendSideCongestionController : public CallStatsObserver,
-                                     public Module,
-                                     public TransportFeedbackObserver,
-                                     public RtcpBandwidthObserver {
+class SendSideCongestionController
+    : public SendSideCongestionControllerInterface,
+      public RtcpBandwidthObserver {
  public:
   SendSideCongestionController(const Clock* clock,
                                NetworkChangedObserver* observer,
@@ -65,8 +64,10 @@ class SendSideCongestionController : public CallStatsObserver,
                                PacedSender* pacer);
   ~SendSideCongestionController() override;
 
-  void RegisterPacketFeedbackObserver(PacketFeedbackObserver* observer);
-  void DeRegisterPacketFeedbackObserver(PacketFeedbackObserver* observer);
+  void RegisterPacketFeedbackObserver(
+      PacketFeedbackObserver* observer) override;
+  void DeRegisterPacketFeedbackObserver(
+      PacketFeedbackObserver* observer) override;
 
   // Currently, there can be at most one observer.
   // TODO(nisse): The RegisterNetworkObserver method is needed because we first
@@ -74,32 +75,33 @@ class SendSideCongestionController : public CallStatsObserver,
   // reference to Call, which then registers itself as the observer. We should
   // try to break this circular chain of references, and make the observer a
   // construction time constant.
-  void RegisterNetworkObserver(NetworkChangedObserver* observer);
-  void DeRegisterNetworkObserver(NetworkChangedObserver* observer);
+  void RegisterNetworkObserver(NetworkChangedObserver* observer) override;
+  void DeRegisterNetworkObserver(NetworkChangedObserver* observer) override;
 
-  virtual void SetBweBitrates(int min_bitrate_bps,
-                              int start_bitrate_bps,
-                              int max_bitrate_bps);
+  void SetBweBitrates(int min_bitrate_bps,
+                      int start_bitrate_bps,
+                      int max_bitrate_bps) override;
   // Resets the BWE state. Note the first argument is the bitrate_bps.
-  virtual void OnNetworkRouteChanged(const rtc::NetworkRoute& network_route,
-                                     int bitrate_bps,
-                                     int min_bitrate_bps,
-                                     int max_bitrate_bps);
-  virtual void SignalNetworkState(NetworkState state);
-  virtual void SetTransportOverhead(size_t transport_overhead_bytes_per_packet);
+  void OnNetworkRouteChanged(const rtc::NetworkRoute& network_route,
+                             int bitrate_bps,
+                             int min_bitrate_bps,
+                             int max_bitrate_bps) override;
+  void SignalNetworkState(NetworkState state) override;
+  void SetTransportOverhead(
+      size_t transport_overhead_bytes_per_packet) override;
 
-  virtual RtcpBandwidthObserver* GetBandwidthObserver();
+  RtcpBandwidthObserver* GetBandwidthObserver() override;
 
-  virtual bool AvailableBandwidth(uint32_t* bandwidth) const;
-  virtual int64_t GetPacerQueuingDelayMs() const;
-  virtual int64_t GetFirstPacketTimeMs() const;
+  bool AvailableBandwidth(uint32_t* bandwidth) const override;
+  int64_t GetPacerQueuingDelayMs() const override;
+  int64_t GetFirstPacketTimeMs() const override;
 
-  virtual TransportFeedbackObserver* GetTransportFeedbackObserver();
+  TransportFeedbackObserver* GetTransportFeedbackObserver() override;
 
-  RateLimiter* GetRetransmissionRateLimiter();
-  void EnablePeriodicAlrProbing(bool enable);
+  RateLimiter* GetRetransmissionRateLimiter() override;
+  void EnablePeriodicAlrProbing(bool enable) override;
 
-  virtual void OnSentPacket(const rtc::SentPacket& sent_packet);
+  void OnSentPacket(const rtc::SentPacket& sent_packet) override;
 
   // Implements RtcpBandwidthObserver
   void OnReceivedEstimatedBitrate(uint32_t bitrate) override;
