@@ -69,14 +69,10 @@ struct StreamParams {
   }
 
   bool operator==(const StreamParams& other) const {
-    return (groupid == other.groupid &&
-            id == other.id &&
-            ssrcs == other.ssrcs &&
-            ssrc_groups == other.ssrc_groups &&
-            type == other.type &&
-            display == other.display &&
-            cname == other.cname &&
-            sync_label == other.sync_label);
+    return (groupid == other.groupid && id == other.id &&
+            ssrcs == other.ssrcs && ssrc_groups == other.ssrc_groups &&
+            type == other.type && display == other.display &&
+            cname == other.cname && sync_label == other.sync_label);
   }
   bool operator!=(const StreamParams &other) const {
     return !(*this == other);
@@ -149,6 +145,10 @@ struct StreamParams {
   // Stream labels serialized to SDP.
   std::vector<std::string> stream_labels() const;
   void set_stream_labels(const std::vector<std::string>& stream_labels);
+
+  // Returns the first stream label or "" if none exist. This method exists only
+  // as temporary backwards compatibility with the old sync_label.
+  std::string first_stream_label() const;
 
   std::string ToString() const;
 

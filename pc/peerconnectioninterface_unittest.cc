@@ -495,7 +495,7 @@ bool ContainsTrack(const std::vector<cricket::StreamParams>& streams,
                    const std::string& stream_label,
                    const std::string& track_id) {
   for (const cricket::StreamParams& params : streams) {
-    if (params.sync_label == stream_label && params.id == track_id) {
+    if (params.first_stream_label() == stream_label && params.id == track_id) {
       return true;
     }
   }
@@ -1903,7 +1903,7 @@ TEST_F(PeerConnectionInterfaceTestPlanB, CreateSenderWithStream) {
       cricket::GetFirstVideoContentDescription(offer->description());
   ASSERT_TRUE(video_desc != nullptr);
   ASSERT_EQ(1u, video_desc->streams().size());
-  EXPECT_EQ(kStreamLabel1, video_desc->streams()[0].sync_label);
+  EXPECT_EQ(kStreamLabel1, video_desc->streams()[0].first_stream_label());
 }
 
 // Test that we can specify a certain track that we want statistics about.

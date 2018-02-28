@@ -215,6 +215,10 @@ void StreamParams::set_stream_labels(
   sync_label = (stream_labels.empty() ? "" : stream_labels[0]);
 }
 
+std::string StreamParams::first_stream_label() const {
+  return sync_label;
+}
+
 bool IsOneSsrcStream(const StreamParams& sp) {
   if (sp.ssrcs.size() == 1 && sp.ssrc_groups.empty()) {
     return true;

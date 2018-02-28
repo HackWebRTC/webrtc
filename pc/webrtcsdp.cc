@@ -634,7 +634,7 @@ void CreateTracksFromSsrcInfos(const SsrcInfoVec& ssrc_infos,
     }
     track->add_ssrc(ssrc_info->ssrc_id);
     track->cname = ssrc_info->cname;
-    track->sync_label = stream_id;
+    track->set_stream_labels({stream_id});
     track->id = track_id;
   }
 }
@@ -643,7 +643,9 @@ void GetMediaStreamLabels(const ContentInfo* content,
                           std::set<std::string>* labels) {
   for (const StreamParams& stream_params :
        content->media_description()->streams()) {
-    labels->insert(stream_params.sync_label);
+    for (const std::string& stream_label : stream_params.stream_labels()) {
+      labels->insert(stream_label);
+    }
   }
 }
 
@@ -1476,7 +1478,9 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
     const StreamParamsVec& streams = media_desc->streams();
     if (streams.size() == 1u) {
       const StreamParams& track = streams[0];
-      const std::string& stream_id = track.sync_label;
+      // TODO(bugs.webrtc.org/7932): Support serializing more than one stream
+      // label.
+      const std::string& stream_id = track.first_stream_label();
       InitAttrLine(kAttributeMsid, &os);
       os << kSdpDelimiterColon << stream_id << kSdpDelimiterSpace << track.id;
       AddLine(os.str(), message);
@@ -1528,11 +1532,12 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
 
   for (StreamParamsVec::const_iterator track = media_desc->streams().begin();
        track != media_desc->streams().end(); ++track) {
-    // Require that the track belongs to a media stream,
-    // ie the sync_label is set. This extra check is necessary since the
-    // MediaContentDescription always contains a streamparam with an ssrc even
-    // if no track or media stream have been created.
-    if (track->sync_label.empty()) continue;
+    // Require that the track belongs to a media stream. This extra check is
+    // necessary since the MediaContentDescription always contains a
+    // StreamParams with an ssrc even if no track or media stream have been
+    // created.
+    if (track->stream_labels().empty())
+      continue;
 
     // Build the ssrc-group lines.
     for (size_t i = 0; i < track->ssrc_groups.size(); ++i) {
@@ -1563,7 +1568,9 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
         // a=ssrc:<ssrc-id> msid:identifier [appdata]
         // The appdata consists of the "id" attribute of a MediaStreamTrack,
         // which corresponds to the "id" attribute of StreamParams.
-        const std::string& stream_id = track->sync_label;
+        // TODO(bugs.webrtc.org/7932): Support serializing more than one stream
+        // label.
+        const std::string& stream_id = track->first_stream_label();
         InitAttrLine(kAttributeSsrc, &os);
         os << kSdpDelimiterColon << ssrc << kSdpDelimiterSpace
            << kSsrcAttributeMsid << kSdpDelimiterColon << stream_id
@@ -1576,7 +1583,8 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
         // a=ssrc:<ssrc-id> mslabel:<value>
         // The label isn't yet defined.
         // a=ssrc:<ssrc-id> label:<value>
-        AddSsrcLine(ssrc, kSsrcAttributeMslabel, track->sync_label, message);
+        AddSsrcLine(ssrc, kSsrcAttributeMslabel, track->first_stream_label(),
+                    message);
         AddSsrcLine(ssrc, kSSrcAttributeLabel, track->id, message);
       }
     }

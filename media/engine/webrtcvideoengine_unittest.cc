@@ -1485,7 +1485,7 @@ TEST_F(WebRtcVideoChannelTest, SetsSyncGroupFromSyncLabel) {
   const std::string kSyncLabel = "AvSyncLabel";
 
   cricket::StreamParams sp = cricket::StreamParams::CreateLegacy(kVideoSsrc);
-  sp.sync_label = kSyncLabel;
+  sp.set_stream_labels({kSyncLabel});
   EXPECT_TRUE(channel_->AddRecvStream(sp));
 
   EXPECT_EQ(1, fake_call_->GetVideoReceiveStreams().size());

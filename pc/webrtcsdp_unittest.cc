@@ -874,7 +874,7 @@ class WebRtcSdpTest : public testing::Test {
     StreamParams audio_stream;
     audio_stream.id = kAudioTrackId1;
     audio_stream.cname = kStream1Cname;
-    audio_stream.sync_label = kStreamLabel1;
+    audio_stream.set_stream_labels({kStreamLabel1});
     audio_stream.ssrcs.push_back(kAudioTrack1Ssrc);
     audio_desc_->AddStream(audio_stream);
     rtc::SocketAddress audio_addr("74.125.127.126", 2345);
@@ -886,7 +886,7 @@ class WebRtcSdpTest : public testing::Test {
     StreamParams video_stream;
     video_stream.id = kVideoTrackId1;
     video_stream.cname = kStream1Cname;
-    video_stream.sync_label = kStreamLabel1;
+    video_stream.set_stream_labels({kStreamLabel1});
     video_stream.ssrcs.push_back(kVideoTrack1Ssrc1);
     video_stream.ssrcs.push_back(kVideoTrack1Ssrc2);
     cricket::SsrcGroup ssrc_group(kFecSsrcGroupSemantics, video_stream.ssrcs);
@@ -1055,21 +1055,21 @@ class WebRtcSdpTest : public testing::Test {
     StreamParams audio_track_2;
     audio_track_2.id = kAudioTrackId2;
     audio_track_2.cname = kStream2Cname;
-    audio_track_2.sync_label = kStreamLabel2;
+    audio_track_2.set_stream_labels({kStreamLabel2});
     audio_track_2.ssrcs.push_back(kAudioTrack2Ssrc);
     audio_desc_->AddStream(audio_track_2);
 
     StreamParams video_track_2;
     video_track_2.id = kVideoTrackId2;
     video_track_2.cname = kStream2Cname;
-    video_track_2.sync_label = kStreamLabel2;
+    video_track_2.set_stream_labels({kStreamLabel2});
     video_track_2.ssrcs.push_back(kVideoTrack2Ssrc);
     video_desc_->AddStream(video_track_2);
 
     StreamParams video_track_3;
     video_track_3.id = kVideoTrackId3;
     video_track_3.cname = kStream2Cname;
-    video_track_3.sync_label = kStreamLabel2;
+    video_track_3.set_stream_labels({kStreamLabel2});
     video_track_3.ssrcs.push_back(kVideoTrack3Ssrc);
     video_desc_->AddStream(video_track_3);
 
@@ -1090,7 +1090,7 @@ class WebRtcSdpTest : public testing::Test {
     StreamParams audio_track_2;
     audio_track_2.id = kAudioTrackId2;
     audio_track_2.cname = kStream2Cname;
-    audio_track_2.sync_label = kStreamLabel2;
+    audio_track_2.set_stream_labels({kStreamLabel2});
     audio_track_2.ssrcs.push_back(kAudioTrack2Ssrc);
     audio_desc_2->AddStream(audio_track_2);
     desc_.AddContent(kAudioContentName2, MediaProtocolType::kRtp, audio_desc_2);
@@ -1101,7 +1101,7 @@ class WebRtcSdpTest : public testing::Test {
     StreamParams video_track_2;
     video_track_2.id = kVideoTrackId2;
     video_track_2.cname = kStream2Cname;
-    video_track_2.sync_label = kStreamLabel2;
+    video_track_2.set_stream_labels({kStreamLabel2});
     video_track_2.ssrcs.push_back(kVideoTrack2Ssrc);
     video_desc_2->AddStream(video_track_2);
     desc_.AddContent(kVideoContentName2, MediaProtocolType::kRtp, video_desc_2);
@@ -1113,7 +1113,7 @@ class WebRtcSdpTest : public testing::Test {
     StreamParams video_track_3;
     video_track_3.id = kVideoTrackId3;
     video_track_3.cname = kStream2Cname;
-    video_track_3.sync_label = kStreamLabel2;
+    video_track_3.set_stream_labels({kStreamLabel2});
     video_track_3.ssrcs.push_back(kVideoTrack3Ssrc);
     video_desc_3->AddStream(video_track_3);
     desc_.AddContent(kVideoContentName3, MediaProtocolType::kRtp, video_desc_3);
@@ -1518,7 +1518,7 @@ class WebRtcSdpTest : public testing::Test {
     StreamParams data_stream;
     data_stream.id = kDataChannelMsid;
     data_stream.cname = kDataChannelCname;
-    data_stream.sync_label = kDataChannelLabel;
+    data_stream.set_stream_labels({kDataChannelLabel});
     data_stream.ssrcs.push_back(kDataChannelSsrc);
     data_desc_->AddStream(data_stream);
     data_desc_->AddCrypto(CryptoParams(
