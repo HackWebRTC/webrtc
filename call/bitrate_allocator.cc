@@ -179,6 +179,7 @@ void BitrateAllocator::UpdateAllocationLimits() {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
   uint32_t total_requested_padding_bitrate = 0;
   uint32_t total_requested_min_bitrate = 0;
+  uint32_t total_requested_bitrate = 0;
 
   for (const auto& config : bitrate_observer_configs_) {
     uint32_t stream_padding = config.pad_up_bitrate_bps;
@@ -189,6 +190,7 @@ void BitrateAllocator::UpdateAllocationLimits() {
           std::max(config.MinBitrateWithHysteresis(), stream_padding);
     }
     total_requested_padding_bitrate += stream_padding;
+    total_requested_bitrate += config.max_bitrate_bps;
   }
 
   if (total_requested_padding_bitrate == total_requested_padding_bitrate_ &&
@@ -204,7 +206,8 @@ void BitrateAllocator::UpdateAllocationLimits() {
                    << "bps, total_requested_padding_bitrate: "
                    << total_requested_padding_bitrate << "bps";
   limit_observer_->OnAllocationLimitsChanged(total_requested_min_bitrate,
-                                             total_requested_padding_bitrate);
+                                             total_requested_padding_bitrate,
+                                             total_requested_bitrate);
 }
 
 void BitrateAllocator::RemoveObserver(BitrateAllocatorObserver* observer) {

@@ -75,9 +75,10 @@ const AudioCodecSpec kCodecSpecs[] = {
 
 class MockLimitObserver : public BitrateAllocator::LimitObserver {
  public:
-  MOCK_METHOD2(OnAllocationLimitsChanged,
+  MOCK_METHOD3(OnAllocationLimitsChanged,
                void(uint32_t min_send_bitrate_bps,
-                    uint32_t max_padding_bitrate_bps));
+                    uint32_t max_padding_bitrate_bps,
+                    uint32_t total_bitrate_bps));
 };
 
 std::unique_ptr<MockAudioEncoder> SetupAudioEncoderMock(

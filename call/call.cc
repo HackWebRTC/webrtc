@@ -233,7 +233,8 @@ class Call : public webrtc::Call,
 
   // Implements BitrateAllocator::LimitObserver.
   void OnAllocationLimitsChanged(uint32_t min_send_bitrate_bps,
-                                 uint32_t max_padding_bitrate_bps) override;
+                                 uint32_t max_padding_bitrate_bps,
+                                 uint32_t total_bitrate_bps) override;
 
  private:
   DeliveryStatus DeliverRtcp(MediaType media_type, const uint8_t* packet,
@@ -1074,7 +1075,8 @@ void Call::OnNetworkChanged(uint32_t target_bitrate_bps,
 }
 
 void Call::OnAllocationLimitsChanged(uint32_t min_send_bitrate_bps,
-                                     uint32_t max_padding_bitrate_bps) {
+                                     uint32_t max_padding_bitrate_bps,
+                                     uint32_t total_bitrate_bps) {
   transport_send_->SetAllocatedSendBitrateLimits(min_send_bitrate_bps,
                                                  max_padding_bitrate_bps);
   rtc::CritScope lock(&bitrate_crit_);
