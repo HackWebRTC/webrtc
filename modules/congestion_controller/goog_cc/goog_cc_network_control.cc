@@ -137,13 +137,8 @@ void GoogCcNetworkController::OnNetworkAvailability(NetworkAvailability msg) {
 
 void GoogCcNetworkController::OnNetworkRouteChange(NetworkRouteChange msg) {
   int64_t min_bitrate_bps = msg.constraints.min_data_rate.bps();
-  int64_t max_bitrate_bps = -1;
-  int64_t start_bitrate_bps = -1;
-
-  if (msg.constraints.max_data_rate.IsFinite())
-    max_bitrate_bps = msg.constraints.max_data_rate.bps();
-  if (msg.constraints.starting_rate.IsFinite())
-    start_bitrate_bps = msg.constraints.starting_rate.bps();
+  int64_t max_bitrate_bps = msg.constraints.max_data_rate.bps_or(-1);
+  int64_t start_bitrate_bps = msg.constraints.starting_rate.bps_or(-1);
 
   ClampBitrates(&start_bitrate_bps, &min_bitrate_bps, &max_bitrate_bps);
 
@@ -216,13 +211,8 @@ void GoogCcNetworkController::OnStreamsConfig(StreamsConfig msg) {
 void GoogCcNetworkController::OnTargetRateConstraints(
     TargetRateConstraints constraints) {
   int64_t min_bitrate_bps = constraints.min_data_rate.bps();
-  int64_t max_bitrate_bps = -1;
-  int64_t start_bitrate_bps = -1;
-
-  if (constraints.max_data_rate.IsFinite())
-    max_bitrate_bps = constraints.max_data_rate.bps();
-  if (constraints.starting_rate.IsFinite())
-    start_bitrate_bps = constraints.starting_rate.bps();
+  int64_t max_bitrate_bps = constraints.max_data_rate.bps_or(-1);
+  int64_t start_bitrate_bps = constraints.starting_rate.bps_or(-1);
 
   ClampBitrates(&start_bitrate_bps, &min_bitrate_bps, &max_bitrate_bps);
 

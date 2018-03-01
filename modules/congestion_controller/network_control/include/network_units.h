@@ -285,6 +285,9 @@ class DataRate {
   }
   int64_t bytes_per_second() const { return bits_per_second() / 8; }
   int64_t bps() const { return bits_per_second(); }
+  int64_t bps_or(int64_t fallback) const {
+    return IsFinite() ? bits_per_second() : fallback;
+  }
   int64_t kbps() const { return units_internal::DivideAndRound(bps(), 1000); }
   bool IsZero() const { return bits_per_sec_ == 0; }
   bool IsInfinite() const {
