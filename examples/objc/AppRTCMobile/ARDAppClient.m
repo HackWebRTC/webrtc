@@ -21,6 +21,7 @@
 #import "WebRTC/RTCMediaStream.h"
 #import "WebRTC/RTCPeerConnectionFactory.h"
 #import "WebRTC/RTCRtpSender.h"
+#import "WebRTC/RTCRtpTransceiver.h"
 #import "WebRTC/RTCTracing.h"
 #import "WebRTC/RTCVideoCodecFactory.h"
 #import "WebRTC/RTCVideoSource.h"
@@ -371,15 +372,15 @@ static int const kKbpsMultiplier = 1000;
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection
           didAddStream:(RTCMediaStream *)stream {
-  dispatch_async(dispatch_get_main_queue(), ^{
-    RTCLog(@"Received %lu video tracks and %lu audio tracks",
-        (unsigned long)stream.videoTracks.count,
-        (unsigned long)stream.audioTracks.count);
-    if (stream.videoTracks.count) {
-      RTCVideoTrack *videoTrack = stream.videoTracks[0];
-      [_delegate appClient:self didReceiveRemoteVideoTrack:videoTrack];
-    }
-  });
+  RTCLog(@"Stream with %lu video tracks and %lu audio tracks was added.",
+         (unsigned long)stream.videoTracks.count,
+         (unsigned long)stream.audioTracks.count);
+}
+
+- (void)peerConnection:(RTCPeerConnection *)peerConnection
+    didStartReceivingOnTransceiver:(RTCRtpTransceiver *)transceiver {
+  RTCMediaStreamTrack *track = transceiver.receiver.track;
+  RTCLog(@"Now receiving %@ on track %@.", track.kind, track.trackId);
 }
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection
@@ -530,6 +531,7 @@ static int const kKbpsMultiplier = 1000;
   RTCMediaConstraints *constraints = [self defaultPeerConnectionConstraints];
   RTCConfiguration *config = [[RTCConfiguration alloc] init];
   config.iceServers = _iceServers;
+  config.sdpSemantics = RTCSdpSemanticsUnifiedPlan;
   _peerConnection = [_factory peerConnectionWithConfiguration:config
                                                   constraints:constraints
                                                      delegate:self];
@@ -676,18 +678,30 @@ static int const kKbpsMultiplier = 1000;
   [sender setParameters:parametersToModify];
 }
 
+- (RTCRtpTransceiver *)videoTransceiver {
+  for (RTCRtpTransceiver *transceiver in _peerConnection.transceivers) {
+    if (transceiver.mediaType == RTCRtpMediaTypeVideo) {
+      return transceiver;
+    }
+  }
+  return nil;
+}
+
 - (void)createMediaSenders {
   RTCMediaConstraints *constraints = [self defaultMediaAudioConstraints];
   RTCAudioSource *source = [_factory audioSourceWithConstraints:constraints];
   RTCAudioTrack *track = [_factory audioTrackWithSource:source
                                                 trackId:kARDAudioTrackId];
-  RTCMediaStream *stream = [_factory mediaStreamWithStreamId:kARDMediaStreamId];
-  [stream addAudioTrack:track];
+  [_peerConnection addTrack:track streamLabels:@[ kARDMediaStreamId ]];
   _localVideoTrack = [self createLocalVideoTrack];
   if (_localVideoTrack) {
-    [stream addVideoTrack:_localVideoTrack];
+    [_peerConnection addTrack:_localVideoTrack streamLabels:@[ kARDMediaStreamId ]];
+    // We can set up rendering for the remote track right away since the transceiver already has an
+    // RTCRtpReceiver with a track. The track will automatically get unmuted and produce frames
+    // once RTP is received.
+    RTCVideoTrack *track = (RTCVideoTrack *)([self videoTransceiver].receiver.track);
+    [_delegate appClient:self didReceiveRemoteVideoTrack:track];
   }
-  [_peerConnection addStream:stream];
 }
 
 - (RTCVideoTrack *)createLocalVideoTrack {
