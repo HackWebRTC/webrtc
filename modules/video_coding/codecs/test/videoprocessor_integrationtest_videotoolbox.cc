@@ -35,27 +35,30 @@ class VideoProcessorIntegrationTestVideoToolbox
   }
 };
 
-// Since we don't currently run the iOS tests on physical devices on the bots,
-// the tests are disabled.
+// HW codecs don't work on simulators. Only run these tests on device.
+#if TARGET_OS_IPHONE && !TARGET_IPHONE_SIMULATOR
+#define MAYBE_TEST_F TEST_F
+#else
+#define MAYBE_TEST_F(s, name) TEST_F(s, DISABLED_##name)
+#endif
 
-TEST_F(VideoProcessorIntegrationTestVideoToolbox,
-       DISABLED_ForemanCif500kbpsH264CBP) {
+// TODO(kthelgason): Use RC Thresholds when the internal bitrateAdjuster is no
+// longer in use.
+MAYBE_TEST_F(VideoProcessorIntegrationTestVideoToolbox,
+       ForemanCif500kbpsH264CBP) {
   config_.SetCodecSettings(kVideoCodecH264, 1, 1, 1, false, false, false, false,
                            352, 288);
 
   std::vector<RateProfile> rate_profiles = {{500, 30, kForemanNumFrames}};
 
-  std::vector<RateControlThresholds> rc_thresholds = {
-      {5, 1, 0, 0.1, 0.2, 0.1, 0, 1}};
+  std::vector<QualityThresholds> quality_thresholds = {{33, 29, 0.9, 0.82}};
 
-  std::vector<QualityThresholds> quality_thresholds = {{37, 35, 0.93, 0.91}};
-
-  ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
+  ProcessFramesAndMaybeVerify(rate_profiles, nullptr,
                               &quality_thresholds, nullptr, nullptr);
 }
 
-TEST_F(VideoProcessorIntegrationTestVideoToolbox,
-       DISABLED_ForemanCif500kbpsH264CHP) {
+MAYBE_TEST_F(VideoProcessorIntegrationTestVideoToolbox,
+       ForemanCif500kbpsH264CHP) {
   ScopedFieldTrials override_field_trials("WebRTC-H264HighProfile/Enabled/");
 
   config_.h264_codec_settings.profile = H264::kProfileConstrainedHigh;
@@ -64,12 +67,9 @@ TEST_F(VideoProcessorIntegrationTestVideoToolbox,
 
   std::vector<RateProfile> rate_profiles = {{500, 30, kForemanNumFrames}};
 
-  std::vector<RateControlThresholds> rc_thresholds = {
-      {5, 1, 0, 0.1, 0.2, 0.1, 0, 1}};
+  std::vector<QualityThresholds> quality_thresholds = {{33, 30, 0.91, 0.83}};
 
-  std::vector<QualityThresholds> quality_thresholds = {{37, 35, 0.93, 0.91}};
-
-  ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
+  ProcessFramesAndMaybeVerify(rate_profiles, nullptr,
                               &quality_thresholds, nullptr, nullptr);
 }
 
