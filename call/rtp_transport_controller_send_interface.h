@@ -90,7 +90,6 @@ class RtpTransportControllerSendInterface {
   virtual void DeRegisterPacketFeedbackObserver(
       PacketFeedbackObserver* observer) = 0;
   virtual void RegisterNetworkObserver(NetworkChangedObserver* observer) = 0;
-  virtual void DeRegisterNetworkObserver(NetworkChangedObserver* observer) = 0;
   virtual void OnNetworkRouteChanged(
       const std::string& transport_name,
       const rtc::NetworkRoute& network_route) = 0;

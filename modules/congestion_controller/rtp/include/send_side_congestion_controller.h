@@ -76,7 +76,6 @@ class SendSideCongestionController
   // try to break this circular chain of references, and make the observer a
   // construction time constant.
   void RegisterNetworkObserver(NetworkChangedObserver* observer) override;
-  void DeRegisterNetworkObserver(NetworkChangedObserver* observer) override;
 
   void SetBweBitrates(int min_bitrate_bps,
                       int start_bitrate_bps,

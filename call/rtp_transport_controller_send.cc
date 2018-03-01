@@ -93,10 +93,6 @@ void RtpTransportControllerSend::RegisterNetworkObserver(
     NetworkChangedObserver* observer) {
   send_side_cc_->RegisterNetworkObserver(observer);
 }
-void RtpTransportControllerSend::DeRegisterNetworkObserver(
-    NetworkChangedObserver* observer) {
-  send_side_cc_->DeRegisterNetworkObserver(observer);
-}
 void RtpTransportControllerSend::OnNetworkRouteChanged(
     const std::string& transport_name,
     const rtc::NetworkRoute& network_route) {

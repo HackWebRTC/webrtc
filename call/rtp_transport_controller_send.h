@@ -56,7 +56,6 @@ class RtpTransportControllerSend : public RtpTransportControllerSendInterface {
   void DeRegisterPacketFeedbackObserver(
       PacketFeedbackObserver* observer) override;
   void RegisterNetworkObserver(NetworkChangedObserver* observer) override;
-  void DeRegisterNetworkObserver(NetworkChangedObserver* observer) override;
   void OnNetworkRouteChanged(const std::string& transport_name,
                              const rtc::NetworkRoute& network_route) override;
   void OnNetworkAvailability(bool network_available) override;
