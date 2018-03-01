@@ -149,9 +149,6 @@ int64_t RtpTransportControllerSend::GetPacerQueuingDelayMs() const {
 int64_t RtpTransportControllerSend::GetFirstPacketTimeMs() const {
   return send_side_cc_->GetFirstPacketTimeMs();
 }
-RateLimiter* RtpTransportControllerSend::GetRetransmissionRateLimiter() {
-  return send_side_cc_->GetRetransmissionRateLimiter();
-}
 void RtpTransportControllerSend::EnablePeriodicAlrProbing(bool enable) {
   send_side_cc_->EnablePeriodicAlrProbing(enable);
 }

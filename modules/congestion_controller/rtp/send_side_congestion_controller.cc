@@ -37,8 +37,6 @@ namespace webrtc {
 namespace webrtc_cc {
 namespace {
 
-static const int64_t kRetransmitWindowSizeMs = 500;
-
 const char kPacerPushbackExperiment[] = "WebRTC-PacerPushbackExperiment";
 
 bool IsPacerPushbackExperimentEnabled() {
@@ -120,7 +118,6 @@ class ControlHandler : public NetworkControllerObserver {
 
   rtc::Optional<TargetTransferRate> last_transfer_rate();
   bool pacer_configured();
-  RateLimiter* retransmission_rate_limiter();
 
  private:
   void OnNetworkInvalidation();
@@ -132,7 +129,6 @@ class ControlHandler : public NetworkControllerObserver {
                                            uint8_t fraction_loss,
                                            int64_t rtt);
   PacerController* pacer_controller_;
-  RateLimiter retransmission_rate_limiter_;
 
   rtc::CriticalSection state_lock_;
   rtc::Optional<TargetTransferRate> last_target_rate_
@@ -156,7 +152,6 @@ class ControlHandler : public NetworkControllerObserver {
 ControlHandler::ControlHandler(PacerController* pacer_controller,
                                const Clock* clock)
     : pacer_controller_(pacer_controller),
-      retransmission_rate_limiter_(clock, kRetransmitWindowSizeMs),
       pacer_pushback_experiment_(IsPacerPushbackExperimentEnabled()) {
   sequenced_checker_.Detach();
 }
@@ -180,9 +175,6 @@ void ControlHandler::OnProbeClusterConfig(ProbeClusterConfig config) {
 
 void ControlHandler::OnTargetTransferRate(TargetTransferRate target_rate) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
-  retransmission_rate_limiter_.SetMaxRate(
-      target_rate.network_estimate.bandwidth.bps());
-
   current_target_rate_msg_ = target_rate;
   OnNetworkInvalidation();
   rtc::CritScope cs(&state_lock_);
@@ -281,10 +273,6 @@ rtc::Optional<TargetTransferRate> ControlHandler::last_transfer_rate() {
 bool ControlHandler::pacer_configured() {
   rtc::CritScope cs(&state_lock_);
   return pacer_configured_;
-}
-
-RateLimiter* ControlHandler::retransmission_rate_limiter() {
-  return &retransmission_rate_limiter_;
 }
 }  // namespace send_side_cc_internal
 
@@ -386,10 +374,6 @@ bool SendSideCongestionController::AvailableBandwidth(
 
 RtcpBandwidthObserver* SendSideCongestionController::GetBandwidthObserver() {
   return this;
-}
-
-RateLimiter* SendSideCongestionController::GetRetransmissionRateLimiter() {
-  return control_handler->retransmission_rate_limiter();
 }
 
 void SendSideCongestionController::EnablePeriodicAlrProbing(bool enable) {

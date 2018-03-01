@@ -90,7 +90,7 @@ class SendSideCongestionController
 
   TransportFeedbackObserver* GetTransportFeedbackObserver() override;
 
-  RateLimiter* GetRetransmissionRateLimiter() override;
+  RTC_DEPRECATED virtual RateLimiter* GetRetransmissionRateLimiter();
   void EnablePeriodicAlrProbing(bool enable) override;
 
   void OnSentPacket(const rtc::SentPacket& sent_packet) override;

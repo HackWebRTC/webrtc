@@ -173,6 +173,7 @@ rtc_static_library("call") {
     "../modules/utility",
     "../modules/video_coding:video_coding",
     "../rtc_base:checks",
+    "../rtc_base:rate_limiter",
     "../rtc_base:rtc_base_approved",
     "../rtc_base:rtc_task_queue",
     "../rtc_base:sequenced_task_checker",

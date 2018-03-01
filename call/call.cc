@@ -50,6 +50,7 @@
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/ptr_util.h"
+#include "rtc_base/rate_limiter.h"
 #include "rtc_base/sequenced_task_checker.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread_annotations.h"
@@ -67,6 +68,7 @@
 namespace webrtc {
 
 namespace {
+static const int64_t kRetransmitWindowSizeMs = 500;
 
 // TODO(nisse): This really begs for a shared context struct.
 bool UseSendSideBwe(const std::vector<RtpExtension>& extensions,
@@ -349,6 +351,7 @@ class Call : public webrtc::Call,
       RTC_GUARDED_BY(&bitrate_crit_);
   AvgCounter pacer_bitrate_kbps_counter_ RTC_GUARDED_BY(&bitrate_crit_);
 
+  RateLimiter retransmission_rate_limiter_;
   std::unique_ptr<RtpTransportControllerSendInterface> transport_send_;
   ReceiveSideCongestionController receive_side_cc_;
   const std::unique_ptr<SendDelayStats> video_send_delay_stats_;
@@ -421,6 +424,7 @@ Call::Call(const Call::Config& config,
       configured_max_padding_bitrate_bps_(0),
       estimated_send_bitrate_kbps_counter_(clock_, nullptr, true),
       pacer_bitrate_kbps_counter_(clock_, nullptr, true),
+      retransmission_rate_limiter_(clock_, kRetransmitWindowSizeMs),
       receive_side_cc_(clock_, transport_send->packet_router()),
       video_send_delay_stats_(new SendDelayStats(clock_)),
       start_ms_(clock_->TimeInMilliseconds()),
@@ -704,7 +708,7 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
       video_send_delay_stats_.get(), event_log_, std::move(config),
       std::move(encoder_config), suspended_video_send_ssrcs_,
       suspended_video_payload_states_, std::move(fec_controller),
-      transport_send_->GetRetransmissionRateLimiter());
+      &retransmission_rate_limiter_);
 
   {
     WriteLockScoped write_lock(*send_crit_);
@@ -1042,6 +1046,11 @@ void Call::OnNetworkChanged(uint32_t target_bitrate_bps,
     return;
   }
   RTC_DCHECK_RUN_ON(&worker_queue_);
+  // TODO(srte): communicate bandwidth in the OnNetworkChanged event, or
+  // evaluate the feasability of using target bitrate _bps instead.
+  uint32_t bandwidth_bps;
+  if (transport_send_->AvailableBandwidth(&bandwidth_bps))
+    retransmission_rate_limiter_.SetMaxRate(bandwidth_bps);
   // For controlling the rate of feedback messages.
   receive_side_cc_.OnBitrateChanged(target_bitrate_bps);
   bitrate_allocator_->OnNetworkChanged(target_bitrate_bps, fraction_loss,
