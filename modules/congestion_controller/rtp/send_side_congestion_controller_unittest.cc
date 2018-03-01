@@ -46,12 +46,9 @@ const float kDefaultPacingRate = 2.5f;
 class SendSideCongestionControllerForTest
     : public SendSideCongestionController {
  public:
-  SendSideCongestionControllerForTest(const Clock* clock,
-                                      NetworkChangedObserver* observer,
-                                      RtcEventLog* event_log,
-                                      PacedSender* pacer)
-      : SendSideCongestionController(clock, observer, event_log, pacer) {}
+  using SendSideCongestionController::SendSideCongestionController;
   ~SendSideCongestionControllerForTest() {}
+  using SendSideCongestionController::WaitOnTasks;
   void Process() override {
     SendSideCongestionController::Process();
     SendSideCongestionController::WaitOnTasks();
@@ -79,8 +76,11 @@ class SendSideCongestionControllerTest : public ::testing::Test {
     EXPECT_CALL(*pacer_, CreateProbeCluster(kInitialBitrateBps * 3));
     EXPECT_CALL(*pacer_, CreateProbeCluster(kInitialBitrateBps * 5));
     controller_->SetBweBitrates(0, kInitialBitrateBps, 5 * kInitialBitrateBps);
+    testing::Mock::VerifyAndClearExpectations(pacer_.get());
+    testing::Mock::VerifyAndClearExpectations(&observer_);
   }
 
+  void TearDown() override { controller_->WaitOnTasks(); }
   // Custom setup - use an observer that tracks the target bitrate, without
   // prescribing on which iterations it must change (like a mock would).
   void TargetBitrateTrackingSetup() {
@@ -222,9 +222,11 @@ TEST_F(SendSideCongestionControllerTest, OnSendQueueFullAndEstimateChange) {
 TEST_F(SendSideCongestionControllerTest, SignalNetworkState) {
   EXPECT_CALL(observer_, OnNetworkChanged(0, _, _, _));
   controller_->SignalNetworkState(kNetworkDown);
+  controller_->WaitOnTasks();
 
   EXPECT_CALL(observer_, OnNetworkChanged(kInitialBitrateBps, _, _, _));
   controller_->SignalNetworkState(kNetworkUp);
+  controller_->WaitOnTasks();
 
   EXPECT_CALL(observer_, OnNetworkChanged(0, _, _, _));
   controller_->SignalNetworkState(kNetworkDown);
@@ -232,13 +234,15 @@ TEST_F(SendSideCongestionControllerTest, SignalNetworkState) {
 
 TEST_F(SendSideCongestionControllerTest, OnNetworkRouteChanged) {
   int new_bitrate = 200000;
-  testing::Mock::VerifyAndClearExpectations(pacer_.get());
   EXPECT_CALL(observer_, OnNetworkChanged(new_bitrate, _, _, _));
   EXPECT_CALL(*pacer_, SetPacingRates(new_bitrate * kDefaultPacingRate, _));
   rtc::NetworkRoute route;
   route.local_network_id = 1;
   controller_->OnNetworkRouteChanged(route, new_bitrate, -1, -1);
+  controller_->WaitOnTasks();
 
+  testing::Mock::VerifyAndClearExpectations(pacer_.get());
+  testing::Mock::VerifyAndClearExpectations(&observer_);
   // If the bitrate is reset to -1, the new starting bitrate will be
   // the minimum default bitrate kMinBitrateBps.
   EXPECT_CALL(
@@ -355,7 +359,6 @@ TEST_F(SendSideCongestionControllerTest, GetProbingInterval) {
 }
 
 TEST_F(SendSideCongestionControllerTest, ProbeOnRouteChange) {
-  testing::Mock::VerifyAndClearExpectations(pacer_.get());
   EXPECT_CALL(*pacer_, CreateProbeCluster(kInitialBitrateBps * 6));
   EXPECT_CALL(*pacer_, CreateProbeCluster(kInitialBitrateBps * 12));
   EXPECT_CALL(observer_, OnNetworkChanged(kInitialBitrateBps * 2, _, _, _));
