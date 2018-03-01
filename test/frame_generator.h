@@ -58,13 +58,14 @@ class FrameGenerator {
     RTC_NOTREACHED();
   }
 
+  enum class OutputType { I420, I420A };
   // Creates a frame generator that produces frames with small squares that
   // move randomly towards the lower right corner.
-  static std::unique_ptr<FrameGenerator> CreateSquareGenerator(int width,
-                                                               int height);
-  static std::unique_ptr<FrameGenerator> CreateSquareGenerator(int width,
-                                                               int height,
-                                                               int num_squares);
+  static std::unique_ptr<FrameGenerator> CreateSquareGenerator(
+      int width,
+      int height,
+      rtc::Optional<OutputType> type,
+      rtc::Optional<int> num_squares);
 
   // Creates a frame generator that repeatedly plays a set of yuv files.
   // The frame_repeat_count determines how many times each frame is shown,
