@@ -31,7 +31,8 @@ AudioCodecInfo AudioEncoderOpus::QueryAudioEncoder(
 
 std::unique_ptr<AudioEncoder> AudioEncoderOpus::MakeAudioEncoder(
     const AudioEncoderOpusConfig& config,
-    int payload_type) {
+    int payload_type,
+    rtc::Optional<AudioCodecPairId> /*codec_pair_id*/) {
   return AudioEncoderOpusImpl::MakeAudioEncoder(config, payload_type);
 }
 

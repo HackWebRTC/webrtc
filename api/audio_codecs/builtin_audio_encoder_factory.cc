@@ -42,9 +42,11 @@ struct NotAdvertised {
   static AudioCodecInfo QueryAudioEncoder(const Config& config) {
     return T::QueryAudioEncoder(config);
   }
-  static std::unique_ptr<AudioEncoder> MakeAudioEncoder(const Config& config,
-                                                        int payload_type) {
-    return T::MakeAudioEncoder(config, payload_type);
+  static std::unique_ptr<AudioEncoder> MakeAudioEncoder(
+      const Config& config,
+      int payload_type,
+      rtc::Optional<AudioCodecPairId> codec_pair_id = rtc::nullopt) {
+    return T::MakeAudioEncoder(config, payload_type, codec_pair_id);
   }
 };
 

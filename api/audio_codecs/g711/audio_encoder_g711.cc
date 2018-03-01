@@ -61,7 +61,8 @@ AudioCodecInfo AudioEncoderG711::QueryAudioEncoder(const Config& config) {
 
 std::unique_ptr<AudioEncoder> AudioEncoderG711::MakeAudioEncoder(
     const Config& config,
-    int payload_type) {
+    int payload_type,
+    rtc::Optional<AudioCodecPairId> /*codec_pair_id*/) {
   RTC_DCHECK(config.IsOk());
   switch (config.type) {
     case Config::Type::kPcmU: {

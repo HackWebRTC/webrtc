@@ -14,6 +14,7 @@
 #include <memory>
 #include <vector>
 
+#include "api/audio_codecs/audio_codec_pair_id.h"
 #include "api/audio_codecs/audio_encoder.h"
 #include "api/audio_codecs/audio_format.h"
 #include "api/audio_codecs/opus/audio_encoder_opus_config.h"
@@ -32,8 +33,9 @@ struct AudioEncoderOpus {
   static void AppendSupportedEncoders(std::vector<AudioCodecSpec>* specs);
   static AudioCodecInfo QueryAudioEncoder(const AudioEncoderOpusConfig& config);
   static std::unique_ptr<AudioEncoder> MakeAudioEncoder(
-      const AudioEncoderOpusConfig&,
-      int payload_type);
+      const AudioEncoderOpusConfig& config,
+      int payload_type,
+      rtc::Optional<AudioCodecPairId> codec_pair_id = rtc::nullopt);
 };
 
 }  // namespace webrtc

@@ -36,7 +36,8 @@ void AudioDecoderG722::AppendSupportedDecoders(
 }
 
 std::unique_ptr<AudioDecoder> AudioDecoderG722::MakeAudioDecoder(
-    Config config) {
+    Config config,
+    rtc::Optional<AudioCodecPairId> /*codec_pair_id*/) {
   switch (config.num_channels) {
     case 1:
       return rtc::MakeUnique<AudioDecoderG722Impl>();

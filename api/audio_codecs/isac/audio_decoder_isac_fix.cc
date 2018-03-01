@@ -30,7 +30,8 @@ void AudioDecoderIsacFix::AppendSupportedDecoders(
 }
 
 std::unique_ptr<AudioDecoder> AudioDecoderIsacFix::MakeAudioDecoder(
-    Config config) {
+    Config config,
+    rtc::Optional<AudioCodecPairId> /*codec_pair_id*/) {
   return rtc::MakeUnique<AudioDecoderIsacFixImpl>(16000);
 }
 

@@ -44,7 +44,8 @@ void AudioDecoderG711::AppendSupportedDecoders(
 }
 
 std::unique_ptr<AudioDecoder> AudioDecoderG711::MakeAudioDecoder(
-    const Config& config) {
+    const Config& config,
+    rtc::Optional<AudioCodecPairId> /*codec_pair_id*/) {
   RTC_DCHECK(config.IsOk());
   switch (config.type) {
     case Config::Type::kPcmU:

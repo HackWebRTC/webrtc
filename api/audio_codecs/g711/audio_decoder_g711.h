@@ -14,6 +14,7 @@
 #include <memory>
 #include <vector>
 
+#include "api/audio_codecs/audio_codec_pair_id.h"
 #include "api/audio_codecs/audio_decoder.h"
 #include "api/audio_codecs/audio_format.h"
 #include "api/optional.h"
@@ -35,7 +36,9 @@ struct AudioDecoderG711 {
   };
   static rtc::Optional<Config> SdpToConfig(const SdpAudioFormat& audio_format);
   static void AppendSupportedDecoders(std::vector<AudioCodecSpec>* specs);
-  static std::unique_ptr<AudioDecoder> MakeAudioDecoder(const Config& config);
+  static std::unique_ptr<AudioDecoder> MakeAudioDecoder(
+      const Config& config,
+      rtc::Optional<AudioCodecPairId> codec_pair_id = rtc::nullopt);
 };
 
 }  // namespace webrtc

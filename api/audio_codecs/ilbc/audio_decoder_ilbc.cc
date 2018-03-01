@@ -33,7 +33,8 @@ void AudioDecoderIlbc::AppendSupportedDecoders(
 }
 
 std::unique_ptr<AudioDecoder> AudioDecoderIlbc::MakeAudioDecoder(
-    Config config) {
+    Config config,
+    rtc::Optional<AudioCodecPairId> /*codec_pair_id*/) {
   return rtc::MakeUnique<AudioDecoderIlbcImpl>();
 }
 

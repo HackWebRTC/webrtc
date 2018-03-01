@@ -12,6 +12,7 @@
 
 #include "api/audio_codecs/L16/audio_decoder_L16.h"
 #include "api/audio_codecs/L16/audio_encoder_L16.h"
+#include "api/audio_codecs/audio_codec_pair_id.h"
 #include "api/audio_codecs/audio_decoder_factory_template.h"
 #include "api/audio_codecs/audio_encoder_factory_template.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
@@ -305,8 +306,10 @@ struct AudioEncoderUnicornSparklesRainbow {
   }
   static std::unique_ptr<webrtc::AudioEncoder> MakeAudioEncoder(
       const Config& config,
-      int payload_type) {
-    return webrtc::AudioEncoderL16::MakeAudioEncoder(config, payload_type);
+      int payload_type,
+      rtc::Optional<webrtc::AudioCodecPairId> codec_pair_id = rtc::nullopt) {
+    return webrtc::AudioEncoderL16::MakeAudioEncoder(config, payload_type,
+                                                     codec_pair_id);
   }
 };
 
@@ -336,8 +339,9 @@ struct AudioDecoderUnicornSparklesRainbow {
     }
   }
   static std::unique_ptr<webrtc::AudioDecoder> MakeAudioDecoder(
-      const Config& config) {
-    return webrtc::AudioDecoderL16::MakeAudioDecoder(config);
+      const Config& config,
+      rtc::Optional<webrtc::AudioCodecPairId> codec_pair_id = rtc::nullopt) {
+    return webrtc::AudioDecoderL16::MakeAudioDecoder(config, codec_pair_id);
   }
 };
 

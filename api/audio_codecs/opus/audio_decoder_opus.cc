@@ -55,7 +55,8 @@ void AudioDecoderOpus::AppendSupportedDecoders(
 }
 
 std::unique_ptr<AudioDecoder> AudioDecoderOpus::MakeAudioDecoder(
-    Config config) {
+    Config config,
+    rtc::Optional<AudioCodecPairId> /*codec_pair_id*/) {
   return rtc::MakeUnique<AudioDecoderOpusImpl>(config.num_channels);
 }
 
