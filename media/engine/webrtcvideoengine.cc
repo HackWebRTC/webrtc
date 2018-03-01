@@ -462,9 +462,12 @@ WebRtcVideoChannel::WebRtcVideoSendStream::ConfigureVideoEncoderSettings(
       // TODO(asapersson): Set to 2 for now since there is a DCHECK in
       // VideoSendStream::ReconfigureVideoEncoder.
       vp9_settings.numberOfSpatialLayers = 2;
+      vp9_settings.numberOfTemporalLayers = 1;
     } else {
       vp9_settings.numberOfSpatialLayers = GetDefaultVp9SpatialLayers();
+      vp9_settings.numberOfTemporalLayers = GetDefaultVp9TemporalLayers();
     }
+
     // VP9 denoising is disabled by default.
     vp9_settings.denoisingOn = codec_default_denoising ? true : denoising;
     vp9_settings.frameDroppingOn = frame_dropping;
@@ -2675,9 +2678,13 @@ std::vector<webrtc::VideoStream> EncoderStreamFactory::CreateEncoderStreams(
   layer.max_qp = max_qp_;
   layer.bitrate_priority = encoder_config.bitrate_priority;
 
-  if (CodecNamesEq(codec_name_, kVp9CodecName) && !is_screenshare_) {
-    layer.temporal_layer_thresholds_bps.resize(GetDefaultVp9TemporalLayers() -
-                                               1);
+  if (CodecNamesEq(codec_name_, kVp9CodecName)) {
+    RTC_DCHECK(encoder_config.encoder_specific_settings);
+    // Use VP9 SVC layering from codec settings which might be initialized
+    // though field trial in ConfigureVideoEncoderSettings.
+    webrtc::VideoCodecVP9 vp9_settings;
+    encoder_config.encoder_specific_settings->FillVideoCodecVp9(&vp9_settings);
+    layer.num_temporal_layers = vp9_settings.numberOfTemporalLayers;
   }
 
   layers.push_back(layer);

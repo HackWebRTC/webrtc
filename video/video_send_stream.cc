@@ -1021,10 +1021,10 @@ void VideoSendStreamImpl::OnEncoderConfigurationChanged(
     stats_proxy_->OnInactiveSsrc(config_->rtp.ssrcs[i]);
   }
 
-  size_t number_of_temporal_layers =
-      streams.back().temporal_layer_thresholds_bps.size() + 1;
+  const size_t num_temporal_layers =
+      streams.back().num_temporal_layers.value_or(1);
   fec_controller_->SetEncodingData(streams[0].width, streams[0].height,
-                                   number_of_temporal_layers,
+                                   num_temporal_layers,
                                    config_->rtp.max_packet_size);
 
   if (payload_router_.IsActive()) {

@@ -103,7 +103,7 @@ class VideoCodecInitializerTest : public ::testing::Test {
 
       for (int i = 0; i < codec_out_.numberOfSimulcastStreams; ++i) {
         temporal_layers_.emplace_back(codec_out_.VP8()->tl_factory->Create(
-            i, streams_[i].temporal_layer_thresholds_bps.size() + 1, 0));
+            i, *streams_[i].num_temporal_layers, 0));
       }
     }
     return true;
@@ -118,6 +118,7 @@ class VideoCodecInitializerTest : public ::testing::Test {
     stream.target_bitrate_bps = kDefaultTargetBitrateBps;
     stream.max_bitrate_bps = kDefaultMaxBitrateBps;
     stream.max_qp = kDefaultMaxQp;
+    stream.num_temporal_layers = 1;
     stream.active = true;
     return stream;
   }
@@ -128,7 +129,7 @@ class VideoCodecInitializerTest : public ::testing::Test {
     stream.target_bitrate_bps = kScreenshareTl0BitrateBps;
     stream.max_bitrate_bps = 1000000;
     stream.max_framerate = kScreenshareDefaultFramerate;
-    stream.temporal_layer_thresholds_bps.push_back(kScreenshareTl0BitrateBps);
+    stream.num_temporal_layers = 2;
     stream.active = true;
     return stream;
   }
@@ -236,8 +237,7 @@ TEST_F(VideoCodecInitializerTest, HighFpsSimulcastVp8Screenshare) {
   SetUpFor(VideoCodecType::kVideoCodecVP8, 2, 3, true);
   streams_.push_back(DefaultScreenshareStream());
   VideoStream video_stream = DefaultStream();
-  video_stream.temporal_layer_thresholds_bps.push_back(kHighScreenshareTl0Bps);
-  video_stream.temporal_layer_thresholds_bps.push_back(kHighScreenshareTl1Bps);
+  video_stream.num_temporal_layers = 3;
   streams_.push_back(video_stream);
   EXPECT_TRUE(InitializeCodec());
 

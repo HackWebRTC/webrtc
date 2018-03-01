@@ -150,7 +150,7 @@ class VideoStreamFactory
     std::vector<VideoStream> streams =
         test::CreateVideoStreams(width, height, encoder_config);
     for (VideoStream& stream : streams) {
-      stream.temporal_layer_thresholds_bps.resize(num_temporal_layers_ - 1);
+      stream.num_temporal_layers = num_temporal_layers_;
       stream.max_framerate = framerate_;
     }
     return streams;
@@ -3166,7 +3166,7 @@ TEST_F(VideoStreamEncoderTest, AcceptsFullHdAdaptedDownSimulcastFrames) {
           test::CreateVideoStreams(width - width % 4, height - height % 4,
                                    encoder_config);
       for (VideoStream& stream : streams) {
-        stream.temporal_layer_thresholds_bps.resize(num_temporal_layers_ - 1);
+        stream.num_temporal_layers = num_temporal_layers_;
         stream.max_framerate = framerate_;
       }
       return streams;

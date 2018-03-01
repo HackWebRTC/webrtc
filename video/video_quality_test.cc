@@ -1232,21 +1232,8 @@ VideoStream VideoQualityTest::DefaultVideoStream(const Params& params,
   stream.target_bitrate_bps = params.video[video_idx].target_bitrate_bps;
   stream.max_bitrate_bps = params.video[video_idx].max_bitrate_bps;
   stream.max_qp = kDefaultMaxQp;
+  stream.num_temporal_layers = params.video[video_idx].num_temporal_layers;
   stream.active = true;
-  // TODO(sprang): Can we make this less of a hack?
-  if (params.video[video_idx].num_temporal_layers == 2) {
-    stream.temporal_layer_thresholds_bps.push_back(stream.target_bitrate_bps);
-  } else if (params.video[video_idx].num_temporal_layers == 3) {
-    stream.temporal_layer_thresholds_bps.push_back(stream.max_bitrate_bps / 4);
-    stream.temporal_layer_thresholds_bps.push_back(stream.target_bitrate_bps);
-  } else {
-    RTC_CHECK_LE(params.video[video_idx].num_temporal_layers,
-                 kMaxTemporalStreams);
-    for (int i = 0; i < params.video[video_idx].num_temporal_layers - 1; ++i) {
-      stream.temporal_layer_thresholds_bps.push_back(static_cast<int>(
-          stream.max_bitrate_bps * kVp8LayerRateAlloction[0][i] + 0.5));
-    }
-  }
   return stream;
 }
 
@@ -1320,10 +1307,8 @@ void VideoQualityTest::FillScalabilitySettings(
         stream.max_bitrate_bps = v[5];
       if (v.size() > 6 && v[6] != -1)
         stream.max_qp = v[6];
-      if (v.size() > 7) {
-        stream.temporal_layer_thresholds_bps.clear();
-        stream.temporal_layer_thresholds_bps.insert(
-            stream.temporal_layer_thresholds_bps.end(), v.begin() + 7, v.end());
+      if (v.size() > 7 && v[7] != -1) {
+        stream.num_temporal_layers = v[7];
       } else {
         // Automatic TL thresholds for more than two layers not supported.
         RTC_CHECK_LE(params->video[video_idx].num_temporal_layers, 2);
