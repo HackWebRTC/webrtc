@@ -122,10 +122,14 @@ int MultiplexEncoderAdapter::Encode(
   }
   const bool has_alpha = input_image.video_frame_buffer()->type() ==
                          VideoFrameBuffer::Type::kI420A;
-  stashed_images_.emplace(
-      std::piecewise_construct, std::forward_as_tuple(input_image.timestamp()),
-      std::forward_as_tuple(picture_index_,
-                            has_alpha ? kAlphaCodecStreams : 1));
+  {
+    rtc::CritScope cs(&crit_);
+    stashed_images_.emplace(
+        std::piecewise_construct,
+        std::forward_as_tuple(input_image.timestamp()),
+        std::forward_as_tuple(picture_index_,
+                              has_alpha ? kAlphaCodecStreams : 1));
+  }
 
   ++picture_index_;
 
@@ -192,6 +196,7 @@ int MultiplexEncoderAdapter::Release() {
   }
   encoders_.clear();
   adapter_callbacks_.clear();
+  rtc::CritScope cs(&crit_);
   for (auto& stashed_image : stashed_images_) {
     for (auto& image_component : stashed_image.second.image_components) {
       delete[] image_component.encoded_image._buffer;
@@ -214,12 +219,6 @@ EncodedImageCallback::Result MultiplexEncoderAdapter::OnEncodedImage(
     const EncodedImage& encodedImage,
     const CodecSpecificInfo* codecSpecificInfo,
     const RTPFragmentationHeader* fragmentation) {
-  const auto& stashed_image_itr = stashed_images_.find(encodedImage._timeStamp);
-  const auto& stashed_image_next_itr = std::next(stashed_image_itr, 1);
-  RTC_DCHECK(stashed_image_itr != stashed_images_.end());
-  MultiplexImage& stashed_image = stashed_image_itr->second;
-  const uint8_t frame_count = stashed_image.component_count;
-
   // Save the image
   MultiplexImageComponent image_component;
   image_component.component_index = stream_idx;
@@ -229,6 +228,13 @@ EncodedImageCallback::Result MultiplexEncoderAdapter::OnEncodedImage(
   image_component.encoded_image._buffer = new uint8_t[encodedImage._length];
   std::memcpy(image_component.encoded_image._buffer, encodedImage._buffer,
               encodedImage._length);
+
+  rtc::CritScope cs(&crit_);
+  const auto& stashed_image_itr = stashed_images_.find(encodedImage._timeStamp);
+  const auto& stashed_image_next_itr = std::next(stashed_image_itr, 1);
+  RTC_DCHECK(stashed_image_itr != stashed_images_.end());
+  MultiplexImage& stashed_image = stashed_image_itr->second;
+  const uint8_t frame_count = stashed_image.component_count;
 
   stashed_image.image_components.push_back(image_component);
 
