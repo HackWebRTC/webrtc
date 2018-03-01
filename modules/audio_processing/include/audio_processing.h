@@ -1162,6 +1162,7 @@ class VoiceDetection {
  protected:
   virtual ~VoiceDetection() {}
 };
+
 }  // namespace webrtc
 
 #endif  // MODULES_AUDIO_PROCESSING_INCLUDE_AUDIO_PROCESSING_H_

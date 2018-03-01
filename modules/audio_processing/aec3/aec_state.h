@@ -11,6 +11,8 @@
 #ifndef MODULES_AUDIO_PROCESSING_AEC3_AEC_STATE_H_
 #define MODULES_AUDIO_PROCESSING_AEC3_AEC_STATE_H_
 
+#include <math.h>
+
 #include <algorithm>
 #include <memory>
 #include <vector>
@@ -159,13 +161,20 @@ class AecState {
   bool active_render_seen_ = false;
   int filter_delay_ = 0;
   size_t blocks_since_last_saturation_ = 1000;
-  float reverb_decay_to_test_ = 0.9f;
-  float reverb_decay_candidate_ = 0.f;
-  float reverb_decay_candidate_residual_ = -1.f;
+  float tail_energy_ = 0.f;
+  float accumulated_nz_ = 0.f;
+  float accumulated_nn_ = 0.f;
+  float accumulated_count_ = 0.f;
+  size_t current_reverb_decay_section_ = 0;
+  size_t num_reverb_decay_sections_ = 0;
+  size_t num_reverb_decay_sections_next_ = 0;
+  bool found_end_of_reverb_decay_ = false;
+  bool main_filter_is_adapting_ = true;
+  std::array<float, kMaxAdaptiveFilterLength> block_energies_;
   EchoAudibility echo_audibility_;
   const EchoCanceller3Config config_;
   std::vector<float> max_render_;
-  float reverb_decay_;
+  float reverb_decay_ = fabsf(config_.ep_strength.default_len);
   bool saturating_echo_path_ = false;
   bool filter_has_had_time_to_converge_ = false;
   bool initial_state_ = true;
