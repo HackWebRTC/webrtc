@@ -283,7 +283,8 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
       std::map<uint32_t, RtpState> suspended_ssrcs,
       std::map<uint32_t, RtpPayloadState> suspended_payload_states,
       VideoEncoderConfig::ContentType content_type,
-      std::unique_ptr<FecController> fec_controller);
+      std::unique_ptr<FecController> fec_controller,
+      RateLimiter* retransmission_limiter);
   ~VideoSendStreamImpl() override;
 
   // RegisterProcessThread register |module_process_thread| with those objects
@@ -534,7 +535,8 @@ VideoSendStream::VideoSendStream(
     VideoEncoderConfig encoder_config,
     const std::map<uint32_t, RtpState>& suspended_ssrcs,
     const std::map<uint32_t, RtpPayloadState>& suspended_payload_states,
-    std::unique_ptr<FecController> fec_controller)
+    std::unique_ptr<FecController> fec_controller,
+    RateLimiter* retransmission_limiter)
     : worker_queue_(worker_queue),
       thread_sync_event_(false /* manual_reset */, false),
       stats_proxy_(Clock::GetRealTimeClock(),
@@ -554,14 +556,14 @@ VideoSendStream::VideoSendStream(
   worker_queue_->PostTask(rtc::NewClosure(
       [this, call_stats, transport, bitrate_allocator, send_delay_stats,
        event_log, &suspended_ssrcs, &encoder_config, &suspended_payload_states,
-       &fec_controller]() {
+       &fec_controller, retransmission_limiter]() {
         send_stream_.reset(new VideoSendStreamImpl(
             &stats_proxy_, worker_queue_, call_stats, transport,
             bitrate_allocator, send_delay_stats, video_stream_encoder_.get(),
             event_log, &config_, encoder_config.max_bitrate_bps,
             encoder_config.bitrate_priority, suspended_ssrcs,
             suspended_payload_states, encoder_config.content_type,
-            std::move(fec_controller)));
+            std::move(fec_controller), retransmission_limiter));
       },
       [this]() { thread_sync_event_.Set(); }));
 
@@ -702,7 +704,8 @@ VideoSendStreamImpl::VideoSendStreamImpl(
     std::map<uint32_t, RtpState> suspended_ssrcs,
     std::map<uint32_t, RtpPayloadState> suspended_payload_states,
     VideoEncoderConfig::ContentType content_type,
-    std::unique_ptr<FecController> fec_controller)
+    std::unique_ptr<FecController> fec_controller,
+    RateLimiter* retransmission_limiter)
     : send_side_bwe_with_overhead_(
           webrtc::field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")),
       stats_proxy_(stats_proxy),
@@ -726,19 +729,18 @@ VideoSendStreamImpl::VideoSendStreamImpl(
                         config_->rtp.ssrcs,
                         video_stream_encoder),
       bandwidth_observer_(transport->GetBandwidthObserver()),
-      rtp_rtcp_modules_(CreateRtpRtcpModules(
-          *config_,
-          &encoder_feedback_,
-          bandwidth_observer_,
-          transport,
-          call_stats_->rtcp_rtt_stats(),
-          flexfec_sender_.get(),
-          stats_proxy_,
-          send_delay_stats,
-          event_log,
-          transport->GetRetransmissionRateLimiter(),
-          this,
-          transport->keepalive_config())),
+      rtp_rtcp_modules_(CreateRtpRtcpModules(*config_,
+                                             &encoder_feedback_,
+                                             bandwidth_observer_,
+                                             transport,
+                                             call_stats_->rtcp_rtt_stats(),
+                                             flexfec_sender_.get(),
+                                             stats_proxy_,
+                                             send_delay_stats,
+                                             event_log,
+                                             retransmission_limiter,
+                                             this,
+                                             transport->keepalive_config())),
       payload_router_(rtp_rtcp_modules_,
                       config_->rtp.ssrcs,
                       config_->encoder_settings.payload_type,

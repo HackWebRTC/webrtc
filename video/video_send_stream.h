@@ -65,7 +65,8 @@ class VideoSendStream : public webrtc::VideoSendStream {
       VideoEncoderConfig encoder_config,
       const std::map<uint32_t, RtpState>& suspended_ssrcs,
       const std::map<uint32_t, RtpPayloadState>& suspended_payload_states,
-      std::unique_ptr<FecController> fec_controller);
+      std::unique_ptr<FecController> fec_controller,
+      RateLimiter* retransmission_limiter);
 
   ~VideoSendStream() override;
 
