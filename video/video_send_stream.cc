@@ -322,7 +322,6 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
 
  private:
   class CheckEncoderActivityTask;
-  class EncoderReconfiguredTask;
 
   // Implements BitrateAllocatorObserver.
   uint32_t OnBitrateUpdated(uint32_t bitrate_bps,
@@ -502,28 +501,6 @@ class VideoSendStreamImpl::CheckEncoderActivityTask : public rtc::QueuedTask {
   rtc::SequencedTaskChecker task_checker_;
   rtc::WeakPtr<VideoSendStreamImpl> send_stream_;
   bool timed_out_;
-};
-
-class VideoSendStreamImpl::EncoderReconfiguredTask : public rtc::QueuedTask {
- public:
-  EncoderReconfiguredTask(const rtc::WeakPtr<VideoSendStreamImpl>& send_stream,
-                          std::vector<VideoStream> streams,
-                          int min_transmit_bitrate_bps)
-      : send_stream_(std::move(send_stream)),
-        streams_(std::move(streams)),
-        min_transmit_bitrate_bps_(min_transmit_bitrate_bps) {}
-
- private:
-  bool Run() override {
-    if (send_stream_)
-      send_stream_->OnEncoderConfigurationChanged(std::move(streams_),
-                                                  min_transmit_bitrate_bps_);
-    return true;
-  }
-
-  rtc::WeakPtr<VideoSendStreamImpl> send_stream_;
-  std::vector<VideoStream> streams_;
-  int min_transmit_bitrate_bps_;
 };
 
 VideoSendStream::VideoSendStream(
@@ -990,9 +967,12 @@ void VideoSendStreamImpl::OnEncoderConfigurationChanged(
     std::vector<VideoStream> streams,
     int min_transmit_bitrate_bps) {
   if (!worker_queue_->IsCurrent()) {
-    worker_queue_->PostTask(
-        std::unique_ptr<rtc::QueuedTask>(new EncoderReconfiguredTask(
-            weak_ptr_, std::move(streams), min_transmit_bitrate_bps)));
+    rtc::WeakPtr<VideoSendStreamImpl> send_stream = weak_ptr_;
+    worker_queue_->PostTask([send_stream, streams, min_transmit_bitrate_bps]() {
+      if (send_stream)
+        send_stream->OnEncoderConfigurationChanged(std::move(streams),
+                                                   min_transmit_bitrate_bps);
+    });
     return;
   }
   RTC_DCHECK_GE(config_->rtp.ssrcs.size(), streams.size());
