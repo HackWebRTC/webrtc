@@ -20,12 +20,12 @@ import org.webrtc.NetworkMonitorAutoDetect.ConnectionType;
 import org.webrtc.NetworkMonitorAutoDetect.NetworkInformation;
 
 /**
- * Borrowed from Chromium's
- * src/net/android/java/src/org/chromium/net/NetworkChangeNotifier.java
+ * Borrowed from Chromium's src/net/android/java/src/org/chromium/net/NetworkChangeNotifier.java
  *
  * <p>Triggers updates to the underlying network state from OS networking events.
  *
- * <p>This class is thread-safe.
+ * <p>Thread-safety is ensured for methods that may be called from both native code and java code,
+ * including getInstance(), startMonitoring(), and stopMonitoring().
  */
 public class NetworkMonitor {
   /**
@@ -54,13 +54,12 @@ public class NetworkMonitor {
   // Also guarded by autoDetectorLock.
   private int numMonitors;
 
-  private volatile ConnectionType currentConnectionType;
+  private ConnectionType currentConnectionType = ConnectionType.CONNECTION_UNKNOWN;
 
   private NetworkMonitor() {
     nativeNetworkObservers = new ArrayList<Long>();
     networkObservers = new ArrayList<NetworkObserver>();
     numMonitors = 0;
-    currentConnectionType = ConnectionType.CONNECTION_UNKNOWN;
   }
 
   // TODO(sakal): Remove once downstream dependencies have been updated.
@@ -112,9 +111,7 @@ public class NetworkMonitor {
 
     startMonitoring();
     // The native observers expect a network list update after they call startMonitoring.
-    synchronized (nativeNetworkObservers) {
-      nativeNetworkObservers.add(nativeObserver);
-    }
+    nativeNetworkObservers.add(nativeObserver);
     updateObserverActiveNetworkList(nativeObserver);
     // currentConnectionType was updated in startMonitoring().
     // Need to notify the native observers here.
@@ -135,9 +132,7 @@ public class NetworkMonitor {
   private void stopMonitoring(long nativeObserver) {
     Logging.d(TAG, "Stop monitoring with native observer " + nativeObserver);
     stopMonitoring();
-    synchronized (nativeNetworkObservers) {
-      nativeNetworkObservers.remove(nativeObserver);
-    }
+    nativeNetworkObservers.remove(nativeObserver);
   }
 
   // Returns true if network binding is supported on this platform.
@@ -190,35 +185,23 @@ public class NetworkMonitor {
 
   /** Alerts all observers of a connection change. */
   private void notifyObserversOfConnectionTypeChange(ConnectionType newConnectionType) {
-    synchronized (nativeNetworkObservers) {
-      for (Long nativeObserver : nativeNetworkObservers) {
-        nativeNotifyConnectionTypeChanged(nativeObserver);
-      }
+    for (long nativeObserver : nativeNetworkObservers) {
+      nativeNotifyConnectionTypeChanged(nativeObserver);
     }
-    // This avoids calling external methods while locking on an object.
-    NetworkObserver[] javaObservers;
-    synchronized (networkObservers) {
-      javaObservers = new NetworkObserver[networkObservers.size()];
-      javaObservers = networkObservers.toArray(javaObservers);
-    }
-    for (NetworkObserver observer : javaObservers) {
+    for (NetworkObserver observer : networkObservers) {
       observer.onConnectionTypeChanged(newConnectionType);
     }
   }
 
   private void notifyObserversOfNetworkConnect(NetworkInformation networkInfo) {
-    synchronized (nativeNetworkObservers) {
-      for (Long nativeObserver : nativeNetworkObservers) {
-        nativeNotifyOfNetworkConnect(nativeObserver, networkInfo);
-      }
+    for (long nativeObserver : nativeNetworkObservers) {
+      nativeNotifyOfNetworkConnect(nativeObserver, networkInfo);
     }
   }
 
   private void notifyObserversOfNetworkDisconnect(long networkHandle) {
-    synchronized (nativeNetworkObservers) {
-      for (Long nativeObserver : nativeNetworkObservers) {
-        nativeNotifyOfNetworkDisconnect(nativeObserver, networkHandle);
-      }
+    for (long nativeObserver : nativeNetworkObservers) {
+      nativeNotifyOfNetworkDisconnect(nativeObserver, networkHandle);
     }
   }
 
@@ -247,9 +230,7 @@ public class NetworkMonitor {
   }
 
   public void addObserver(NetworkObserver observer) {
-    synchronized (networkObservers) {
-      networkObservers.add(observer);
-    }
+    networkObservers.add(observer);
   }
 
   /**
@@ -263,9 +244,7 @@ public class NetworkMonitor {
   }
 
   public void removeObserver(NetworkObserver observer) {
-    synchronized (networkObservers) {
-      networkObservers.remove(observer);
-    }
+    networkObservers.remove(observer);
   }
 
   /** Checks if there currently is connectivity. */
