@@ -270,7 +270,7 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
 
     pipRenderer.setZOrderMediaOverlay(true);
     pipRenderer.setEnableHardwareScaler(true /* enabled */);
-    fullscreenRenderer.setEnableHardwareScaler(true /* enabled */);
+    fullscreenRenderer.setEnableHardwareScaler(false /* enabled */);
     // Start with local feed in fullscreen and swap it to the pip when the call is connected.
     setSwappedFeeds(true /* isSwappedFeeds */);
 
