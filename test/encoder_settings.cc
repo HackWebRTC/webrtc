@@ -12,7 +12,9 @@
 #include <algorithm>
 #include <string>
 
+#include "media/engine/internaldecoderfactory.h"
 #include "modules/video_coding/codecs/h264/include/h264.h"
+#include "modules/video_coding/codecs/multiplex/include/multiplex_decoder_adapter.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
 #include "rtc_base/refcountedobject.h"
@@ -102,6 +104,9 @@ VideoReceiveStream::Decoder CreateMatchingDecoder(
     decoder.decoder = VP8Decoder::Create().release();
   } else if (encoder_settings.payload_name == "VP9") {
     decoder.decoder = VP9Decoder::Create().release();
+  } else if (encoder_settings.payload_name == "multiplex") {
+    decoder.decoder = new MultiplexDecoderAdapter(
+        new InternalDecoderFactory(), SdpVideoFormat(cricket::kVp9CodecName));
   } else {
     decoder.decoder = new FakeDecoder();
   }

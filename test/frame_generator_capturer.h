@@ -16,6 +16,7 @@
 #include "api/video/video_frame.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/task_queue.h"
+#include "test/frame_generator.h"
 #include "test/video_capturer.h"
 #include "typedefs.h"  // NOLINT(build/include)
 
@@ -40,16 +41,13 @@ class FrameGeneratorCapturer : public VideoCapturer {
     virtual ~SinkWantsObserver() {}
   };
 
-  static FrameGeneratorCapturer* Create(int width,
-                                        int height,
-                                        int target_fps,
-                                        Clock* clock);
-
-  static FrameGeneratorCapturer* Create(int width,
-                                        int height,
-                                        int num_squares,
-                                        int target_fps,
-                                        Clock* clock);
+  static FrameGeneratorCapturer* Create(
+      int width,
+      int height,
+      rtc::Optional<FrameGenerator::OutputType> type,
+      rtc::Optional<int> num_squares,
+      int target_fps,
+      Clock* clock);
 
   static FrameGeneratorCapturer* CreateFromYuvFile(const std::string& file_name,
                                                    size_t width,

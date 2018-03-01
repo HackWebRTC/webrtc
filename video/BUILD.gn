@@ -118,6 +118,7 @@ if (rtc_include_tests) {
       "../modules/audio_mixer:audio_mixer_impl",
       "../modules/rtp_rtcp",
       "../modules/video_coding:webrtc_h264",
+      "../modules/video_coding:webrtc_multiplex",
       "../modules/video_coding:webrtc_vp8",
       "../modules/video_coding:webrtc_vp9",
       "../rtc_base:rtc_base_approved",
