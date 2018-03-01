@@ -154,11 +154,6 @@
             android:defaultValue="@string/pref_disable_built_in_ns_default" />
 
         <CheckBoxPreference
-            android:key="@string/pref_enable_level_control_key"
-            android:title="@string/pref_enable_level_control_title"
-            android:defaultValue="@string/pref_enable_level_control_default" />
-
-        <CheckBoxPreference
             android:key="@string/pref_disable_webrtc_agc_and_hpf_key"
             android:title="@string/pref_disable_webrtc_agc_and_hpf_title"
             android:defaultValue="@string/pref_disable_webrtc_agc_default" />

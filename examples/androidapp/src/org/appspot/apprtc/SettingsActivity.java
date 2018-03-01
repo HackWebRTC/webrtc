@@ -47,7 +47,6 @@ public class SettingsActivity extends Activity implements OnSharedPreferenceChan
   private String keyprefDisableBuiltInAEC;
   private String keyprefDisableBuiltInAGC;
   private String keyprefDisableBuiltInNS;
-  private String keyprefEnableLevelControl;
   private String keyprefDisableWebRtcAGCAndHPF;
   private String keyprefSpeakerphone;
 
@@ -91,7 +90,6 @@ public class SettingsActivity extends Activity implements OnSharedPreferenceChan
     keyprefDisableBuiltInAEC = getString(R.string.pref_disable_built_in_aec_key);
     keyprefDisableBuiltInAGC = getString(R.string.pref_disable_built_in_agc_key);
     keyprefDisableBuiltInNS = getString(R.string.pref_disable_built_in_ns_key);
-    keyprefEnableLevelControl = getString(R.string.pref_enable_level_control_key);
     keyprefDisableWebRtcAGCAndHPF = getString(R.string.pref_disable_webrtc_agc_and_hpf_key);
     keyprefSpeakerphone = getString(R.string.pref_speakerphone_key);
 
@@ -148,7 +146,6 @@ public class SettingsActivity extends Activity implements OnSharedPreferenceChan
     updateSummaryB(sharedPreferences, keyprefDisableBuiltInAEC);
     updateSummaryB(sharedPreferences, keyprefDisableBuiltInAGC);
     updateSummaryB(sharedPreferences, keyprefDisableBuiltInNS);
-    updateSummaryB(sharedPreferences, keyprefEnableLevelControl);
     updateSummaryB(sharedPreferences, keyprefDisableWebRtcAGCAndHPF);
     updateSummaryList(sharedPreferences, keyprefSpeakerphone);
 
@@ -244,7 +241,6 @@ public class SettingsActivity extends Activity implements OnSharedPreferenceChan
         || key.equals(keyprefDisableBuiltInAEC)
         || key.equals(keyprefDisableBuiltInAGC)
         || key.equals(keyprefDisableBuiltInNS)
-        || key.equals(keyprefEnableLevelControl)
         || key.equals(keyprefDisableWebRtcAGCAndHPF)
         || key.equals(keyPrefDisplayHud)
         || key.equals(keyprefEnableDataChannel)

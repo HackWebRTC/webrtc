@@ -106,7 +106,6 @@ public class PeerConnectionClient {
   private static final String AUDIO_AUTO_GAIN_CONTROL_CONSTRAINT = "googAutoGainControl";
   private static final String AUDIO_HIGH_PASS_FILTER_CONSTRAINT = "googHighpassFilter";
   private static final String AUDIO_NOISE_SUPPRESSION_CONSTRAINT = "googNoiseSuppression";
-  private static final String AUDIO_LEVEL_CONTROL_CONSTRAINT = "levelControl";
   private static final String DTLS_SRTP_KEY_AGREEMENT_CONSTRAINT = "DtlsSrtpKeyAgreement";
   private static final int HD_VIDEO_WIDTH = 1280;
   private static final int HD_VIDEO_HEIGHT = 720;
@@ -213,7 +212,6 @@ public class PeerConnectionClient {
     public final boolean disableBuiltInAEC;
     public final boolean disableBuiltInAGC;
     public final boolean disableBuiltInNS;
-    public final boolean enableLevelControl;
     public final boolean disableWebRtcAGCAndHPF;
     public final boolean enableRtcEventLog;
     private final DataChannelParameters dataChannelParameters;
@@ -223,8 +221,8 @@ public class PeerConnectionClient {
         boolean videoCodecHwAcceleration, boolean videoFlexfecEnabled, int audioStartBitrate,
         String audioCodec, boolean noAudioProcessing, boolean aecDump, boolean saveInputAudioToFile,
         boolean useOpenSLES, boolean disableBuiltInAEC, boolean disableBuiltInAGC,
-        boolean disableBuiltInNS, boolean enableLevelControl, boolean disableWebRtcAGCAndHPF,
-        boolean enableRtcEventLog, DataChannelParameters dataChannelParameters) {
+        boolean disableBuiltInNS, boolean disableWebRtcAGCAndHPF, boolean enableRtcEventLog,
+        DataChannelParameters dataChannelParameters) {
       this.videoCallEnabled = videoCallEnabled;
       this.loopback = loopback;
       this.tracing = tracing;
@@ -244,7 +242,6 @@ public class PeerConnectionClient {
       this.disableBuiltInAEC = disableBuiltInAEC;
       this.disableBuiltInAGC = disableBuiltInAGC;
       this.disableBuiltInNS = disableBuiltInNS;
-      this.enableLevelControl = enableLevelControl;
       this.disableWebRtcAGCAndHPF = disableWebRtcAGCAndHPF;
       this.enableRtcEventLog = enableRtcEventLog;
       this.dataChannelParameters = dataChannelParameters;
@@ -599,11 +596,6 @@ public class PeerConnectionClient {
           new MediaConstraints.KeyValuePair(AUDIO_HIGH_PASS_FILTER_CONSTRAINT, "false"));
       audioConstraints.mandatory.add(
           new MediaConstraints.KeyValuePair(AUDIO_NOISE_SUPPRESSION_CONSTRAINT, "false"));
-    }
-    if (peerConnectionParameters.enableLevelControl) {
-      Log.d(TAG, "Enabling level control.");
-      audioConstraints.mandatory.add(
-          new MediaConstraints.KeyValuePair(AUDIO_LEVEL_CONTROL_CONSTRAINT, "true"));
     }
     // Create SDP constraints.
     sdpMediaConstraints = new MediaConstraints();
