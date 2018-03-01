@@ -986,15 +986,23 @@ RTCError PeerConnection::ValidateConfiguration(
 
 rtc::scoped_refptr<StreamCollectionInterface>
 PeerConnection::local_streams() {
+  RTC_CHECK(!IsUnifiedPlan()) << "local_streams is not available with Unified "
+                                 "Plan SdpSemantics. Please use GetSenders "
+                                 "instead.";
   return local_streams_;
 }
 
 rtc::scoped_refptr<StreamCollectionInterface>
 PeerConnection::remote_streams() {
+  RTC_CHECK(!IsUnifiedPlan()) << "remote_streams is not available with Unified "
+                                 "Plan SdpSemantics. Please use GetReceivers "
+                                 "instead.";
   return remote_streams_;
 }
 
 bool PeerConnection::AddStream(MediaStreamInterface* local_stream) {
+  RTC_CHECK(!IsUnifiedPlan()) << "AddStream is not available with Unified Plan "
+                                 "SdpSemantics. Please use AddTrack instead.";
   TRACE_EVENT0("webrtc", "PeerConnection::AddStream");
   if (IsClosed()) {
     return false;
@@ -1028,6 +1036,9 @@ bool PeerConnection::AddStream(MediaStreamInterface* local_stream) {
 }
 
 void PeerConnection::RemoveStream(MediaStreamInterface* local_stream) {
+  RTC_CHECK(!IsUnifiedPlan()) << "RemoveStream is not available with Unified "
+                                 "Plan SdpSemantics. Please use RemoveTrack "
+                                 "instead.";
   TRACE_EVENT0("webrtc", "PeerConnection::RemoveStream");
   if (!IsClosed()) {
     for (const auto& track : local_stream->GetAudioTracks()) {
@@ -1261,11 +1272,8 @@ RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>>
 PeerConnection::AddTransceiver(
     rtc::scoped_refptr<MediaStreamTrackInterface> track,
     const RtpTransceiverInit& init) {
-  if (!IsUnifiedPlan()) {
-    LOG_AND_RETURN_ERROR(
-        RTCErrorType::INTERNAL_ERROR,
-        "AddTransceiver only supported when Unified Plan is enabled.");
-  }
+  RTC_CHECK(IsUnifiedPlan())
+      << "AddTransceiver is only available with Unified Plan SdpSemantics";
   if (!track) {
     LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER, "track is null");
   }
@@ -1289,11 +1297,8 @@ PeerConnection::AddTransceiver(cricket::MediaType media_type) {
 RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>>
 PeerConnection::AddTransceiver(cricket::MediaType media_type,
                                const RtpTransceiverInit& init) {
-  if (!IsUnifiedPlan()) {
-    LOG_AND_RETURN_ERROR(
-        RTCErrorType::INTERNAL_ERROR,
-        "AddTransceiver only supported when Unified Plan is enabled.");
-  }
+  RTC_CHECK(IsUnifiedPlan())
+      << "AddTransceiver is only available with Unified Plan SdpSemantics";
   if (!(media_type == cricket::MEDIA_TYPE_AUDIO ||
         media_type == cricket::MEDIA_TYPE_VIDEO)) {
     LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
@@ -1427,6 +1432,9 @@ rtc::scoped_refptr<DtmfSenderInterface> PeerConnection::CreateDtmfSender(
 rtc::scoped_refptr<RtpSenderInterface> PeerConnection::CreateSender(
     const std::string& kind,
     const std::string& stream_id) {
+  RTC_CHECK(!IsUnifiedPlan()) << "CreateSender is not available with Unified "
+                                 "Plan SdpSemantics. Please use AddTransceiver "
+                                 "instead.";
   TRACE_EVENT0("webrtc", "PeerConnection::CreateSender");
   if (IsClosed()) {
     return nullptr;
@@ -1506,7 +1514,8 @@ PeerConnection::GetReceiversInternal() const {
 
 std::vector<rtc::scoped_refptr<RtpTransceiverInterface>>
 PeerConnection::GetTransceivers() const {
-  RTC_DCHECK(IsUnifiedPlan());
+  RTC_CHECK(IsUnifiedPlan())
+      << "GetTransceivers is only supported with Unified Plan SdpSemantics.";
   std::vector<rtc::scoped_refptr<RtpTransceiverInterface>> all_transceivers;
   for (auto transceiver : transceivers_) {
     all_transceivers.push_back(transceiver);

@@ -263,9 +263,8 @@ rtc::scoped_refptr<webrtc::MediaStreamInterface>
     PeerConnectionTestWrapper::GetUserMedia(
         bool audio, const webrtc::FakeConstraints& audio_constraints,
         bool video, const webrtc::FakeConstraints& video_constraints) {
-  std::string label = kStreamLabelBase +
-      rtc::ToString<int>(
-          static_cast<int>(peer_connection_->local_streams()->count()));
+  std::string label =
+      kStreamLabelBase + rtc::ToString(num_get_user_media_calls_++);
   rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
       peer_connection_factory_->CreateLocalMediaStream(label);
 

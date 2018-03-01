@@ -2326,11 +2326,9 @@ TEST_P(PeerConnectionIntegrationTest, GetCaptureStartNtpTimeWithOldStatsApi) {
 
   // Get the remote audio track created on the receiver, so they can be used as
   // GetStats filters.
-  StreamCollectionInterface* remote_streams = callee()->remote_streams();
-  ASSERT_EQ(1u, remote_streams->count());
-  ASSERT_EQ(1u, remote_streams->at(0)->GetAudioTracks().size());
-  MediaStreamTrackInterface* remote_audio_track =
-      remote_streams->at(0)->GetAudioTracks()[0];
+  auto receivers = callee()->pc()->GetReceivers();
+  ASSERT_EQ(1u, receivers.size());
+  auto remote_audio_track = receivers[0]->track();
 
   // Get the audio output level stats. Note that the level is not available
   // until an RTCP packet has been received.
