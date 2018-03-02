@@ -382,6 +382,39 @@ bool MediaSectionsHaveSameCount(const SessionDescription& desc1,
   return desc1.contents().size() == desc2.contents().size();
 }
 
+void NoteKeyProtocolAndMedia(
+    KeyExchangeProtocolType protocol_type,
+    cricket::MediaType media_type,
+    rtc::scoped_refptr<webrtc::UMAObserver> uma_observer) {
+  if (!uma_observer)
+    return;
+  uma_observer->IncrementEnumCounter(webrtc::kEnumCounterKeyProtocol,
+                                     protocol_type,
+                                     webrtc::kEnumCounterKeyProtocolMax);
+  static const std::map<std::pair<KeyExchangeProtocolType, cricket::MediaType>,
+                        KeyExchangeProtocolMedia>
+      proto_media_counter_map = {
+          {{kEnumCounterKeyProtocolDtls, cricket::MEDIA_TYPE_AUDIO},
+           kEnumCounterKeyProtocolMediaTypeDtlsAudio},
+          {{kEnumCounterKeyProtocolDtls, cricket::MEDIA_TYPE_VIDEO},
+           kEnumCounterKeyProtocolMediaTypeDtlsVideo},
+          {{kEnumCounterKeyProtocolDtls, cricket::MEDIA_TYPE_DATA},
+           kEnumCounterKeyProtocolMediaTypeDtlsData},
+          {{kEnumCounterKeyProtocolSdes, cricket::MEDIA_TYPE_AUDIO},
+           kEnumCounterKeyProtocolMediaTypeSdesAudio},
+          {{kEnumCounterKeyProtocolSdes, cricket::MEDIA_TYPE_VIDEO},
+           kEnumCounterKeyProtocolMediaTypeSdesVideo},
+          {{kEnumCounterKeyProtocolSdes, cricket::MEDIA_TYPE_DATA},
+           kEnumCounterKeyProtocolMediaTypeSdesData}};
+
+  auto it = proto_media_counter_map.find({protocol_type, media_type});
+  if (it != proto_media_counter_map.end()) {
+    uma_observer->IncrementEnumCounter(webrtc::kEnumCounterKeyProtocolMediaType,
+                                       it->second,
+                                       kEnumCounterKeyProtocolMediaTypeMax);
+  }
+}
+
 // Checks that each non-rejected content has SDES crypto keys or a DTLS
 // fingerprint, unless it's in a BUNDLE group, in which case only the
 // BUNDLE-tag section (first media section/description in the BUNDLE group)
@@ -422,22 +455,16 @@ RTCError VerifyCrypto(const SessionDescription* desc,
         return RTCError(RTCErrorType::INVALID_PARAMETER,
                         kSdpWithoutDtlsFingerprint);
       }
-      if (uma_observer) {
-        uma_observer->IncrementEnumCounter(webrtc::kEnumCounterKeyProtocol,
-                                           webrtc::kEnumCounterKeyProtocolDtls,
-                                           webrtc::kEnumCounterKeyProtocolMax);
-      }
+      NoteKeyProtocolAndMedia(webrtc::kEnumCounterKeyProtocolDtls,
+                              media->type(), uma_observer);
     } else {
       if (media->cryptos().empty()) {
         RTC_LOG(LS_WARNING)
             << "Session description must have SDES when DTLS disabled.";
         return RTCError(RTCErrorType::INVALID_PARAMETER, kSdpWithoutSdesCrypto);
       }
-      if (uma_observer) {
-        uma_observer->IncrementEnumCounter(webrtc::kEnumCounterKeyProtocol,
-                                           webrtc::kEnumCounterKeyProtocolSdes,
-                                           webrtc::kEnumCounterKeyProtocolMax);
-      }
+      NoteKeyProtocolAndMedia(webrtc::kEnumCounterKeyProtocolSdes,
+                              media->type(), uma_observer);
     }
   }
   return RTCError::OK();

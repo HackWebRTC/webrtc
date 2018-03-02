@@ -40,6 +40,7 @@ enum PeerConnectionEnumCounterType {
   kEnumCounterKeyProtocol,
   kEnumCounterSdpSemanticRequested,
   kEnumCounterSdpSemanticNegotiated,
+  kEnumCounterKeyProtocolMediaType,
   kPeerConnectionEnumCounterMax
 };
 
@@ -118,6 +119,16 @@ enum KeyExchangeProtocolType {
   kEnumCounterKeyProtocolDtls,
   kEnumCounterKeyProtocolSdes,
   kEnumCounterKeyProtocolMax
+};
+
+enum KeyExchangeProtocolMedia {
+  kEnumCounterKeyProtocolMediaTypeDtlsAudio,
+  kEnumCounterKeyProtocolMediaTypeDtlsVideo,
+  kEnumCounterKeyProtocolMediaTypeDtlsData,
+  kEnumCounterKeyProtocolMediaTypeSdesAudio,
+  kEnumCounterKeyProtocolMediaTypeSdesVideo,
+  kEnumCounterKeyProtocolMediaTypeSdesData,
+  kEnumCounterKeyProtocolMediaTypeMax
 };
 
 enum SdpSemanticRequested {
