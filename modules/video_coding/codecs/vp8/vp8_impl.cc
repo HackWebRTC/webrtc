@@ -1291,16 +1291,18 @@ int VP8DecoderImpl::RegisterDecodeCompleteCallback(
 }
 
 int VP8DecoderImpl::Release() {
+  int ret_val = WEBRTC_VIDEO_CODEC_OK;
+
   if (decoder_ != NULL) {
     if (vpx_codec_destroy(decoder_)) {
-      return WEBRTC_VIDEO_CODEC_MEMORY;
+      ret_val = WEBRTC_VIDEO_CODEC_MEMORY;
     }
     delete decoder_;
     decoder_ = NULL;
   }
   buffer_pool_.Release();
   inited_ = false;
-  return WEBRTC_VIDEO_CODEC_OK;
+  return ret_val;
 }
 
 const char* VP8DecoderImpl::ImplementationName() const {

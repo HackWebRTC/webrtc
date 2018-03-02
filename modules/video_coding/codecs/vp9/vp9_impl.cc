@@ -94,13 +94,15 @@ VP9EncoderImpl::~VP9EncoderImpl() {
 }
 
 int VP9EncoderImpl::Release() {
+  int ret_val = WEBRTC_VIDEO_CODEC_OK;
+
   if (encoded_image_._buffer != nullptr) {
     delete[] encoded_image_._buffer;
     encoded_image_._buffer = nullptr;
   }
   if (encoder_ != nullptr) {
     if (vpx_codec_destroy(encoder_)) {
-      return WEBRTC_VIDEO_CODEC_MEMORY;
+      ret_val = WEBRTC_VIDEO_CODEC_MEMORY;
     }
     delete encoder_;
     encoder_ = nullptr;
@@ -114,7 +116,7 @@ int VP9EncoderImpl::Release() {
     raw_ = nullptr;
   }
   inited_ = false;
-  return WEBRTC_VIDEO_CODEC_OK;
+  return ret_val;
 }
 
 bool VP9EncoderImpl::ExplicitlyConfiguredSpatialLayers() const {
@@ -1003,11 +1005,13 @@ int VP9DecoderImpl::RegisterDecodeCompleteCallback(
 }
 
 int VP9DecoderImpl::Release() {
+  int ret_val = WEBRTC_VIDEO_CODEC_OK;
+
   if (decoder_ != nullptr) {
     // When a codec is destroyed libvpx will release any buffers of
     // |frame_buffer_pool_| it is currently using.
     if (vpx_codec_destroy(decoder_)) {
-      return WEBRTC_VIDEO_CODEC_MEMORY;
+      ret_val = WEBRTC_VIDEO_CODEC_MEMORY;
     }
     delete decoder_;
     decoder_ = nullptr;
@@ -1017,7 +1021,7 @@ int VP9DecoderImpl::Release() {
   // to the pool.
   frame_buffer_pool_.ClearPool();
   inited_ = false;
-  return WEBRTC_VIDEO_CODEC_OK;
+  return ret_val;
 }
 
 const char* VP9DecoderImpl::ImplementationName() const {
