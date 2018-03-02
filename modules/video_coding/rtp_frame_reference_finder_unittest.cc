@@ -1321,5 +1321,15 @@ TEST_F(TestRtpFrameReferenceFinder, WrappingFlexReference) {
   CheckReferencesVp9(1, 0, 0);
 }
 
+TEST_F(TestRtpFrameReferenceFinder, Vp9GofPidJump) {
+  uint16_t pid = Rand();
+  uint16_t sn = Rand();
+  GofInfoVP9 ss;
+  ss.SetGofInfoVP9(kTemporalStructureMode3);
+
+  InsertVp9Gof(sn, sn, true, pid, 0, 0, 0, false, &ss);
+  InsertVp9Gof(sn + 1, sn + 1, false, pid + 1000, 0, 0, 1);
+}
+
 }  // namespace video_coding
 }  // namespace webrtc

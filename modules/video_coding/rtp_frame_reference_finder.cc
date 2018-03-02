@@ -554,6 +554,7 @@ bool RtpFrameReferenceFinder::MissingRequiredFrameVp9(uint16_t picture_id,
 void RtpFrameReferenceFinder::FrameReceivedVp9(uint16_t picture_id,
                                                GofInfo* info) {
   int last_picture_id = info->last_picture_id;
+  size_t gof_size = std::min(info->gof->num_frames_in_gof, kMaxVp9FramesInGof);
 
   // If there is a gap, find which temporal layer the missing frames
   // belong to and add the frame as missing for that temporal layer.
@@ -561,22 +562,38 @@ void RtpFrameReferenceFinder::FrameReceivedVp9(uint16_t picture_id,
   if (AheadOf<uint16_t, kPicIdLength>(picture_id, last_picture_id)) {
     size_t diff = ForwardDiff<uint16_t, kPicIdLength>(info->gof->pid_start,
                                                       last_picture_id);
-    size_t gof_idx = diff % info->gof->num_frames_in_gof;
+    size_t gof_idx = diff % gof_size;
 
     last_picture_id = Add<kPicIdLength>(last_picture_id, 1);
     while (last_picture_id != picture_id) {
-      ++gof_idx;
-      RTC_DCHECK_NE(0ul, gof_idx % info->gof->num_frames_in_gof);
+      gof_idx = (gof_idx  + 1) % gof_size;
+      RTC_CHECK(gof_idx < kMaxVp9FramesInGof);
+
       size_t temporal_idx = info->gof->temporal_idx[gof_idx];
+      if (temporal_idx >= kMaxTemporalLayers) {
+        RTC_LOG(LS_WARNING) << "At most " << kMaxTemporalLayers << " temporal "
+                            << "layers are supported.";
+        return;
+      }
+
       missing_frames_for_layer_[temporal_idx].insert(last_picture_id);
       last_picture_id = Add<kPicIdLength>(last_picture_id, 1);
     }
+
     info->last_picture_id = last_picture_id;
   } else {
     size_t diff =
         ForwardDiff<uint16_t, kPicIdLength>(info->gof->pid_start, picture_id);
-    size_t gof_idx = diff % info->gof->num_frames_in_gof;
+    size_t gof_idx = diff % gof_size;
+    RTC_CHECK(gof_idx < kMaxVp9FramesInGof);
+
     size_t temporal_idx = info->gof->temporal_idx[gof_idx];
+    if (temporal_idx >= kMaxTemporalLayers) {
+      RTC_LOG(LS_WARNING) << "At most " << kMaxTemporalLayers << " temporal "
+                          << "layers are supported.";
+      return;
+    }
+
     missing_frames_for_layer_[temporal_idx].erase(picture_id);
   }
 }
