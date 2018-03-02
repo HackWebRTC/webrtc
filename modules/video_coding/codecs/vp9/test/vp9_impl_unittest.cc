@@ -202,4 +202,41 @@ TEST_F(TestVp9Impl, EncoderRetainsRtpStateAfterRelease) {
                   1);
 }
 
+TEST_F(TestVp9Impl, EncoderExplicitLayering) {
+  // Override default settings.
+  codec_settings_.VP9()->numberOfTemporalLayers = 1;
+  codec_settings_.VP9()->numberOfSpatialLayers = 2;
+
+  codec_settings_.width = 960;
+  codec_settings_.height = 540;
+  codec_settings_.spatialLayers[0].targetBitrate = 500;
+  codec_settings_.spatialLayers[1].targetBitrate = 1000;
+
+  codec_settings_.spatialLayers[0].width = codec_settings_.width / 2;
+  codec_settings_.spatialLayers[0].height = codec_settings_.height / 2;
+  codec_settings_.spatialLayers[1].width = codec_settings_.width;
+  codec_settings_.spatialLayers[1].height = codec_settings_.height;
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->InitEncode(&codec_settings_, 1 /* number of cores */,
+                                 0 /* max payload size (unused) */));
+
+  // Ensure it fails if scaling factors in horz/vert dimentions are different.
+  codec_settings_.spatialLayers[0].width = codec_settings_.width;
+  codec_settings_.spatialLayers[0].height = codec_settings_.height / 2;
+  codec_settings_.spatialLayers[1].width = codec_settings_.width;
+  codec_settings_.spatialLayers[1].height = codec_settings_.height;
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_ERR_PARAMETER,
+            encoder_->InitEncode(&codec_settings_, 1 /* number of cores */,
+                                 0 /* max payload size (unused) */));
+
+  // Ensure it fails if scaling factor is not power of two.
+  codec_settings_.spatialLayers[0].width = codec_settings_.width / 3;
+  codec_settings_.spatialLayers[0].height = codec_settings_.height / 3;
+  codec_settings_.spatialLayers[1].width = codec_settings_.width;
+  codec_settings_.spatialLayers[1].height = codec_settings_.height;
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_ERR_PARAMETER,
+            encoder_->InitEncode(&codec_settings_, 1 /* number of cores */,
+                                 0 /* max payload size (unused) */));
+}
+
 }  // namespace webrtc

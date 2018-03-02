@@ -496,9 +496,7 @@ union VideoCodecUnion {
   VideoCodecH264 H264;
 };
 
-// Simulcast is when the same stream is encoded multiple times with different
-// settings such as resolution.
-struct SimulcastStream {
+struct SpatialLayer {
   unsigned short width;
   unsigned short height;
   unsigned char numberOfTemporalLayers;
@@ -509,12 +507,9 @@ struct SimulcastStream {
   bool active;                 // encoded and sent.
 };
 
-struct SpatialLayer {
-  int scaling_factor_num;
-  int scaling_factor_den;
-  int target_bitrate_bps;
-  // TODO(ivica): Add max_quantizer and min_quantizer?
-};
+// Simulcast is when the same stream is encoded multiple times with different
+// settings such as resolution.
+typedef SpatialLayer SimulcastStream;
 
 enum VideoCodecMode { kRealtimeVideo, kScreensharing };
 
