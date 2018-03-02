@@ -93,7 +93,7 @@ const char kEnableBundleFailed[] = "Failed to enable BUNDLE.";
 
 namespace {
 
-static const char kDefaultStreamLabel[] = "default";
+static const char kDefaultStreamId[] = "default";
 static const char kDefaultAudioSenderId[] = "defaulta0";
 static const char kDefaultVideoSenderId[] = "defaultv0";
 
@@ -1068,15 +1068,15 @@ rtc::scoped_refptr<RtpSenderInterface> PeerConnection::AddTrack(
     MediaStreamTrackInterface* track,
     std::vector<MediaStreamInterface*> streams) {
   TRACE_EVENT0("webrtc", "PeerConnection::AddTrack");
-  std::vector<std::string> stream_labels;
+  std::vector<std::string> stream_ids;
   for (auto* stream : streams) {
     if (!stream) {
       RTC_LOG(LS_ERROR) << "Stream list has null element.";
       return nullptr;
     }
-    stream_labels.push_back(stream->label());
+    stream_ids.push_back(stream->label());
   }
-  auto sender_or_error = AddTrack(track, stream_labels);
+  auto sender_or_error = AddTrack(track, stream_ids);
   if (!sender_or_error.ok()) {
     return nullptr;
   }
@@ -1085,7 +1085,7 @@ rtc::scoped_refptr<RtpSenderInterface> PeerConnection::AddTrack(
 
 RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>> PeerConnection::AddTrack(
     rtc::scoped_refptr<MediaStreamTrackInterface> track,
-    const std::vector<std::string>& stream_labels) {
+    const std::vector<std::string>& stream_ids) {
   TRACE_EVENT0("webrtc", "PeerConnection::AddTrack");
   if (!track) {
     LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER, "Track is null.");
@@ -1096,7 +1096,7 @@ RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>> PeerConnection::AddTrack(
                          "Track has invalid kind: " + track->kind());
   }
   // TODO(bugs.webrtc.org/7932): Support adding a track to multiple streams.
-  if (stream_labels.size() > 1u) {
+  if (stream_ids.size() > 1u) {
     LOG_AND_RETURN_ERROR(
         RTCErrorType::UNSUPPORTED_OPERATION,
         "AddTrack with more than one stream is not currently supported.");
@@ -1113,15 +1113,15 @@ RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>> PeerConnection::AddTrack(
   // TODO(bugs.webrtc.org/7933): MediaSession expects the sender to have exactly
   // one stream. AddTrackInternal will return an error if there is more than one
   // stream, but if the caller specifies none then we need to generate a random
-  // stream label.
-  std::vector<std::string> adjusted_stream_labels = stream_labels;
-  if (stream_labels.empty()) {
-    adjusted_stream_labels.push_back(rtc::CreateRandomUuid());
+  // stream id.
+  std::vector<std::string> adjusted_stream_ids = stream_ids;
+  if (stream_ids.empty()) {
+    adjusted_stream_ids.push_back(rtc::CreateRandomUuid());
   }
-  RTC_DCHECK_EQ(1, adjusted_stream_labels.size());
+  RTC_DCHECK_EQ(1, adjusted_stream_ids.size());
   auto sender_or_error =
-      (IsUnifiedPlan() ? AddTrackUnifiedPlan(track, adjusted_stream_labels)
-                       : AddTrackPlanB(track, adjusted_stream_labels));
+      (IsUnifiedPlan() ? AddTrackUnifiedPlan(track, adjusted_stream_ids)
+                       : AddTrackPlanB(track, adjusted_stream_ids));
   if (sender_or_error.ok()) {
     observer_->OnRenegotiationNeeded();
     stats_->AddTrack(track);
@@ -1132,12 +1132,12 @@ RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>> PeerConnection::AddTrack(
 RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>>
 PeerConnection::AddTrackPlanB(
     rtc::scoped_refptr<MediaStreamTrackInterface> track,
-    const std::vector<std::string>& stream_labels) {
+    const std::vector<std::string>& stream_ids) {
   cricket::MediaType media_type =
       (track->kind() == MediaStreamTrackInterface::kAudioKind
            ? cricket::MEDIA_TYPE_AUDIO
            : cricket::MEDIA_TYPE_VIDEO);
-  auto new_sender = CreateSender(media_type, track, stream_labels);
+  auto new_sender = CreateSender(media_type, track, stream_ids);
   if (track->kind() == MediaStreamTrackInterface::kAudioKind) {
     new_sender->internal()->SetVoiceMediaChannel(voice_media_channel());
     GetAudioTransceiver()->internal()->AddSender(new_sender);
@@ -1164,7 +1164,7 @@ PeerConnection::AddTrackPlanB(
 RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>>
 PeerConnection::AddTrackUnifiedPlan(
     rtc::scoped_refptr<MediaStreamTrackInterface> track,
-    const std::vector<std::string>& stream_labels) {
+    const std::vector<std::string>& stream_ids) {
   auto transceiver = FindFirstTransceiverForAddedTrack(track);
   if (transceiver) {
     if (transceiver->direction() == RtpTransceiverDirection::kRecvOnly) {
@@ -1175,13 +1175,13 @@ PeerConnection::AddTrackUnifiedPlan(
           RtpTransceiverDirection::kSendOnly);
     }
     transceiver->sender()->SetTrack(track);
-    transceiver->internal()->sender_internal()->set_stream_ids(stream_labels);
+    transceiver->internal()->sender_internal()->set_stream_ids(stream_ids);
   } else {
     cricket::MediaType media_type =
         (track->kind() == MediaStreamTrackInterface::kAudioKind
              ? cricket::MEDIA_TYPE_AUDIO
              : cricket::MEDIA_TYPE_VIDEO);
-    auto sender = CreateSender(media_type, track, stream_labels);
+    auto sender = CreateSender(media_type, track, stream_ids);
     auto receiver = CreateReceiver(media_type, rtc::CreateRandomUuid());
     transceiver = CreateAndAddTransceiver(sender, receiver);
     transceiver->internal()->set_created_by_addtrack(true);
@@ -1329,11 +1329,11 @@ PeerConnection::AddTransceiver(
                          "More than one stream is not yet supported.");
   }
 
-  std::vector<std::string> stream_labels = {!init.stream_labels.empty()
-                                                ? init.stream_labels[0]
-                                                : rtc::CreateRandomUuid()};
+  std::vector<std::string> stream_ids = {!init.stream_labels.empty()
+                                             ? init.stream_labels[0]
+                                             : rtc::CreateRandomUuid()};
 
-  auto sender = CreateSender(media_type, track, stream_labels);
+  auto sender = CreateSender(media_type, track, stream_ids);
   auto receiver = CreateReceiver(media_type, rtc::CreateRandomUuid());
   auto transceiver = CreateAndAddTransceiver(sender, receiver);
   transceiver->internal()->set_direction(init.direction);
@@ -1349,7 +1349,7 @@ rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>>
 PeerConnection::CreateSender(
     cricket::MediaType media_type,
     rtc::scoped_refptr<MediaStreamTrackInterface> track,
-    const std::vector<std::string>& stream_labels) {
+    const std::vector<std::string>& stream_ids) {
   rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> sender;
   if (media_type == cricket::MEDIA_TYPE_AUDIO) {
     RTC_DCHECK(!track ||
@@ -1358,7 +1358,7 @@ PeerConnection::CreateSender(
         signaling_thread(),
         new AudioRtpSender(worker_thread(),
                            static_cast<AudioTrackInterface*>(track.get()),
-                           stream_labels, stats_.get()));
+                           stream_ids, stats_.get()));
   } else {
     RTC_DCHECK_EQ(media_type, cricket::MEDIA_TYPE_VIDEO);
     RTC_DCHECK(!track ||
@@ -1367,9 +1367,9 @@ PeerConnection::CreateSender(
         signaling_thread(),
         new VideoRtpSender(worker_thread(),
                            static_cast<VideoTrackInterface*>(track.get()),
-                           stream_labels));
+                           stream_ids));
   }
-  sender->internal()->set_stream_ids(stream_labels);
+  sender->internal()->set_stream_ids(stream_ids);
   return sender;
 }
 
@@ -1440,23 +1440,23 @@ rtc::scoped_refptr<RtpSenderInterface> PeerConnection::CreateSender(
     return nullptr;
   }
 
-  std::vector<std::string> stream_labels;
+  std::vector<std::string> stream_ids;
   if (!stream_id.empty()) {
-    stream_labels.push_back(stream_id);
+    stream_ids.push_back(stream_id);
   }
 
   // TODO(steveanton): Move construction of the RtpSenders to RtpTransceiver.
   rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> new_sender;
   if (kind == MediaStreamTrackInterface::kAudioKind) {
-    auto* audio_sender = new AudioRtpSender(worker_thread(), nullptr,
-                                            stream_labels, stats_.get());
+    auto* audio_sender =
+        new AudioRtpSender(worker_thread(), nullptr, stream_ids, stats_.get());
     audio_sender->SetVoiceMediaChannel(voice_media_channel());
     new_sender = RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
         signaling_thread(), audio_sender);
     GetAudioTransceiver()->internal()->AddSender(new_sender);
   } else if (kind == MediaStreamTrackInterface::kVideoKind) {
     auto* video_sender =
-        new VideoRtpSender(worker_thread(), nullptr, stream_labels);
+        new VideoRtpSender(worker_thread(), nullptr, stream_ids);
     video_sender->SetVideoMediaChannel(video_media_channel());
     new_sender = RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
         signaling_thread(), video_sender);
@@ -1963,7 +1963,7 @@ RTCError PeerConnection::ApplyLocalDescription(
       const auto& streams = content->media_description()->streams();
       if (!content->rejected && !streams.empty()) {
         transceiver->internal()->sender_internal()->set_stream_ids(
-            streams[0].stream_labels());
+            streams[0].stream_ids());
         transceiver->internal()->sender_internal()->SetSsrc(
             streams[0].first_ssrc());
       }
@@ -2231,8 +2231,8 @@ RTCError PeerConnection::ApplyRemoteDescription(
       std::string sync_label = rtc::CreateRandomUuid();
       if (!media_desc->streams().empty()) {
         const cricket::StreamParams& stream_params = media_desc->streams()[0];
-        if (!stream_params.stream_labels().empty()) {
-          sync_label = stream_params.stream_labels()[0];
+        if (!stream_params.stream_ids().empty()) {
+          sync_label = stream_params.stream_ids()[0];
         }
       }
       if (RtpTransceiverDirectionHasRecv(local_direction) &&
@@ -3857,7 +3857,7 @@ void PeerConnection::UpdateRemoteSendersList(
         cricket::GetStreamBySsrc(streams, info.first_ssrc);
     bool sender_exists = params && params->id == info.sender_id;
     // If this is a default track, and we still need it, don't remove it.
-    if ((info.stream_label == kDefaultStreamLabel && default_sender_needed) ||
+    if ((info.stream_id == kDefaultStreamId && default_sender_needed) ||
         sender_exists) {
       ++sender_it;
     } else {
@@ -3868,28 +3868,28 @@ void PeerConnection::UpdateRemoteSendersList(
 
   // Find new and active senders.
   for (const cricket::StreamParams& params : streams) {
-    // The sync_label is the MediaStream label and the |stream.id| is the
-    // sender id.
-    // TODO(bugs.webrtc.org/7932): Add support for multiple stream labels.
-    const std::string& stream_label =
-        (!params.stream_labels().empty() ? params.stream_labels()[0] : "");
+    // |params.id| is the sender id and the stream id uses the first of
+    // |params.stream_ids|.
+    // TODO(bugs.webrtc.org/7932): Add support for multiple stream ids.
+    const std::string& stream_id =
+        (!params.stream_ids().empty() ? params.stream_ids()[0] : "");
     const std::string& sender_id = params.id;
     uint32_t ssrc = params.first_ssrc();
 
     rtc::scoped_refptr<MediaStreamInterface> stream =
-        remote_streams_->find(stream_label);
+        remote_streams_->find(stream_id);
     if (!stream) {
       // This is a new MediaStream. Create a new remote MediaStream.
       stream = MediaStreamProxy::Create(rtc::Thread::Current(),
-                                        MediaStream::Create(stream_label));
+                                        MediaStream::Create(stream_id));
       remote_streams_->AddStream(stream);
       new_streams->AddStream(stream);
     }
 
     const RtpSenderInfo* sender_info =
-        FindSenderInfo(*current_senders, stream_label, sender_id);
+        FindSenderInfo(*current_senders, stream_id, sender_id);
     if (!sender_info) {
-      current_senders->push_back(RtpSenderInfo(stream_label, sender_id, ssrc));
+      current_senders->push_back(RtpSenderInfo(stream_id, sender_id, ssrc));
       OnRemoteSenderAdded(current_senders->back(), media_type);
     }
   }
@@ -3897,22 +3897,22 @@ void PeerConnection::UpdateRemoteSendersList(
   // Add default sender if necessary.
   if (default_sender_needed) {
     rtc::scoped_refptr<MediaStreamInterface> default_stream =
-        remote_streams_->find(kDefaultStreamLabel);
+        remote_streams_->find(kDefaultStreamId);
     if (!default_stream) {
       // Create the new default MediaStream.
       default_stream = MediaStreamProxy::Create(
-          rtc::Thread::Current(), MediaStream::Create(kDefaultStreamLabel));
+          rtc::Thread::Current(), MediaStream::Create(kDefaultStreamId));
       remote_streams_->AddStream(default_stream);
       new_streams->AddStream(default_stream);
     }
     std::string default_sender_id = (media_type == cricket::MEDIA_TYPE_AUDIO)
                                         ? kDefaultAudioSenderId
                                         : kDefaultVideoSenderId;
-    const RtpSenderInfo* default_sender_info = FindSenderInfo(
-        *current_senders, kDefaultStreamLabel, default_sender_id);
+    const RtpSenderInfo* default_sender_info =
+        FindSenderInfo(*current_senders, kDefaultStreamId, default_sender_id);
     if (!default_sender_info) {
       current_senders->push_back(
-          RtpSenderInfo(kDefaultStreamLabel, default_sender_id, 0));
+          RtpSenderInfo(kDefaultStreamId, default_sender_id, 0));
       OnRemoteSenderAdded(current_senders->back(), media_type);
     }
   }
@@ -3920,8 +3920,7 @@ void PeerConnection::UpdateRemoteSendersList(
 
 void PeerConnection::OnRemoteSenderAdded(const RtpSenderInfo& sender_info,
                                          cricket::MediaType media_type) {
-  MediaStreamInterface* stream =
-      remote_streams_->find(sender_info.stream_label);
+  MediaStreamInterface* stream = remote_streams_->find(sender_info.stream_id);
 
   if (media_type == cricket::MEDIA_TYPE_AUDIO) {
     CreateAudioReceiver(stream, sender_info);
@@ -3934,8 +3933,7 @@ void PeerConnection::OnRemoteSenderAdded(const RtpSenderInfo& sender_info,
 
 void PeerConnection::OnRemoteSenderRemoved(const RtpSenderInfo& sender_info,
                                            cricket::MediaType media_type) {
-  MediaStreamInterface* stream =
-      remote_streams_->find(sender_info.stream_label);
+  MediaStreamInterface* stream = remote_streams_->find(sender_info.stream_id);
 
   rtc::scoped_refptr<RtpReceiverInterface> receiver;
   if (media_type == cricket::MEDIA_TYPE_AUDIO) {
@@ -3986,7 +3984,7 @@ void PeerConnection::UpdateLocalSenders(
     cricket::MediaType media_type) {
   std::vector<RtpSenderInfo>* current_senders = GetLocalSenderInfos(media_type);
 
-  // Find removed tracks. I.e., tracks where the track id, stream label or ssrc
+  // Find removed tracks. I.e., tracks where the track id, stream id or ssrc
   // don't match the new StreamParam.
   for (auto sender_it = current_senders->begin();
        sender_it != current_senders->end();
@@ -3995,7 +3993,7 @@ void PeerConnection::UpdateLocalSenders(
     const cricket::StreamParams* params =
         cricket::GetStreamBySsrc(streams, info.first_ssrc);
     if (!params || params->id != info.sender_id ||
-        params->first_stream_label() != info.stream_label) {
+        params->first_stream_id() != info.stream_id) {
       OnLocalSenderRemoved(info, media_type);
       sender_it = current_senders->erase(sender_it);
     } else {
@@ -4007,13 +4005,13 @@ void PeerConnection::UpdateLocalSenders(
   for (const cricket::StreamParams& params : streams) {
     // The sync_label is the MediaStream label and the |stream.id| is the
     // sender id.
-    const std::string& stream_label = params.first_stream_label();
+    const std::string& stream_id = params.first_stream_id();
     const std::string& sender_id = params.id;
     uint32_t ssrc = params.first_ssrc();
     const RtpSenderInfo* sender_info =
-        FindSenderInfo(*current_senders, stream_label, sender_id);
+        FindSenderInfo(*current_senders, stream_id, sender_id);
     if (!sender_info) {
-      current_senders->push_back(RtpSenderInfo(stream_label, sender_id, ssrc));
+      current_senders->push_back(RtpSenderInfo(stream_id, sender_id, ssrc));
       OnLocalSenderAdded(current_senders->back(), media_type);
     }
   }
@@ -4035,7 +4033,7 @@ void PeerConnection::OnLocalSenderAdded(const RtpSenderInfo& sender_info,
     return;
   }
 
-  sender->internal()->set_stream_id(sender_info.stream_label);
+  sender->internal()->set_stream_id(sender_info.stream_id);
   sender->internal()->SetSsrc(sender_info.first_ssrc);
 }
 
@@ -4071,7 +4069,7 @@ void PeerConnection::UpdateLocalRtpDataChannels(
     // MediaStreams and Tracks.
     // For MediaStreams, the sync_label is the MediaStream label and the
     // track label is the same as |streamid|.
-    const std::string& channel_label = params.first_stream_label();
+    const std::string& channel_label = params.first_stream_id();
     auto data_channel_it = rtp_data_channels_.find(channel_label);
     if (data_channel_it == rtp_data_channels_.end()) {
       RTC_LOG(LS_ERROR) << "channel label not found";
@@ -4093,9 +4091,9 @@ void PeerConnection::UpdateRemoteRtpDataChannels(
   for (const cricket::StreamParams& params : streams) {
     // The data channel label is either the mslabel or the SSRC if the mslabel
     // does not exist. Ex a=ssrc:444330170 mslabel:test1.
-    std::string label = params.first_stream_label().empty()
+    std::string label = params.first_stream_id().empty()
                             ? rtc::ToString(params.first_ssrc())
-                            : params.first_stream_label();
+                            : params.first_stream_id();
     auto data_channel_it = rtp_data_channels_.find(label);
     if (data_channel_it == rtp_data_channels_.end()) {
       // This is a new data channel.
@@ -4370,10 +4368,10 @@ std::vector<PeerConnection::RtpSenderInfo>* PeerConnection::GetLocalSenderInfos(
 
 const PeerConnection::RtpSenderInfo* PeerConnection::FindSenderInfo(
     const std::vector<PeerConnection::RtpSenderInfo>& infos,
-    const std::string& stream_label,
+    const std::string& stream_id,
     const std::string sender_id) const {
   for (const RtpSenderInfo& sender_info : infos) {
-    if (sender_info.stream_label == stream_label &&
+    if (sender_info.stream_id == stream_id &&
         sender_info.sender_id == sender_id) {
       return &sender_info;
     }

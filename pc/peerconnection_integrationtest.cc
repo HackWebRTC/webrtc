@@ -313,8 +313,8 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
 
   rtc::scoped_refptr<RtpSenderInterface> AddTrack(
       rtc::scoped_refptr<MediaStreamTrackInterface> track,
-      const std::vector<std::string>& stream_labels = {}) {
-    auto result = pc()->AddTrack(track, stream_labels);
+      const std::vector<std::string>& stream_ids = {}) {
+    auto result = pc()->AddTrack(track, stream_ids);
     EXPECT_EQ(RTCErrorType::NONE, result.error().type());
     return result.MoveValue();
   }

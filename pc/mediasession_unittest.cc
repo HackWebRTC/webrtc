@@ -375,7 +375,7 @@ class MediaSessionDescriptionFactoryTest : public testing::Test {
     simulcast_params.ssrcs = MAKE_VECTOR(kSimulcastParamsSsrc);
     simulcast_params.ssrc_groups = ssrc_groups;
     simulcast_params.cname = "Video_SIM_FEC";
-    simulcast_params.set_stream_labels({kMediaStream1});
+    simulcast_params.set_stream_ids({kMediaStream1});
 
     StreamParamsVec video_streams;
     video_streams.push_back(simulcast_params);

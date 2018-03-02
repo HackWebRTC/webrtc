@@ -98,14 +98,14 @@ class AudioRtpSender : public DtmfProviderInterface,
   // at the appropriate times.
 
   // Construct an AudioRtpSender with a null track, a single, randomly generated
-  // stream label, and a randomly generated ID.
+  // stream id, and a randomly generated ID.
   AudioRtpSender(rtc::Thread* worker_thread, StatsCollector* stats);
 
-  // Construct an AudioRtpSender with the given track and stream labels. The
+  // Construct an AudioRtpSender with the given track and stream ids. The
   // sender ID will be set to the track's ID.
   AudioRtpSender(rtc::Thread* worker_thread,
                  rtc::scoped_refptr<AudioTrackInterface> track,
-                 const std::vector<std::string>& stream_labels,
+                 const std::vector<std::string>& stream_ids,
                  StatsCollector* stats);
 
   virtual ~AudioRtpSender();
@@ -198,14 +198,14 @@ class VideoRtpSender : public ObserverInterface,
                        public rtc::RefCountedObject<RtpSenderInternal> {
  public:
   // Construct a VideoRtpSender with a null track, a single, randomly generated
-  // stream label, and a randomly generated ID.
+  // stream id, and a randomly generated ID.
   explicit VideoRtpSender(rtc::Thread* worker_thread);
 
-  // Construct a VideoRtpSender with the given track and stream labels. The
+  // Construct a VideoRtpSender with the given track and stream ids. The
   // sender ID will be set to the track's ID.
   VideoRtpSender(rtc::Thread* worker_thread,
                  rtc::scoped_refptr<VideoTrackInterface> track,
-                 const std::vector<std::string>& stream_labels);
+                 const std::vector<std::string>& stream_ids);
 
   virtual ~VideoRtpSender();
 

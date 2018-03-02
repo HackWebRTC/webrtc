@@ -40,6 +40,8 @@ struct RtpTransceiverInit final {
   RtpTransceiverDirection direction = RtpTransceiverDirection::kSendRecv;
 
   // The added RtpTransceiver will be added to these streams.
+  // TODO(shampson): Change name to stream_id & update native wrapper's naming
+  // as well.
   // TODO(bugs.webrtc.org/7600): Not implemented.
   std::vector<std::string> stream_labels;
 

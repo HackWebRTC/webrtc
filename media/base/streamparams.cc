@@ -199,23 +199,22 @@ bool StreamParams::GetSecondarySsrc(const std::string& semantics,
   return false;
 }
 
-std::vector<std::string> StreamParams::stream_labels() const {
+std::vector<std::string> StreamParams::stream_ids() const {
   if (sync_label.empty()) {
     return {};
   }
   return {sync_label};
 }
 
-void StreamParams::set_stream_labels(
-    const std::vector<std::string>& stream_labels) {
-  // TODO(steveanton): Support an arbitrary number of stream labels.
-  RTC_DCHECK_LE(stream_labels.size(), 1) << "set_stream_labels currently only "
-                                            "supports exactly 0 or 1 stream "
-                                            "label.";
-  sync_label = (stream_labels.empty() ? "" : stream_labels[0]);
+void StreamParams::set_stream_ids(const std::vector<std::string>& stream_ids) {
+  // TODO(bugs.webrtc.org/7932): Support an arbitrary number of stream ids.
+  RTC_DCHECK_LE(stream_ids.size(), 1) << "set_stream_ids currently only "
+                                         "supports exactly 0 or 1 stream "
+                                         "id.";
+  sync_label = (stream_ids.empty() ? "" : stream_ids[0]);
 }
 
-std::string StreamParams::first_stream_label() const {
+std::string StreamParams::first_stream_id() const {
   return sync_label;
 }
 

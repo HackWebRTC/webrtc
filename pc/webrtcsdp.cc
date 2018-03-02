@@ -634,17 +634,17 @@ void CreateTracksFromSsrcInfos(const SsrcInfoVec& ssrc_infos,
     }
     track->add_ssrc(ssrc_info->ssrc_id);
     track->cname = ssrc_info->cname;
-    track->set_stream_labels({stream_id});
+    track->set_stream_ids({stream_id});
     track->id = track_id;
   }
 }
 
-void GetMediaStreamLabels(const ContentInfo* content,
-                          std::set<std::string>* labels) {
+void GetMediaStreamIds(const ContentInfo* content,
+                       std::set<std::string>* labels) {
   for (const StreamParams& stream_params :
        content->media_description()->streams()) {
-    for (const std::string& stream_label : stream_params.stream_labels()) {
-      labels->insert(stream_label);
+    for (const std::string& stream_id : stream_params.stream_ids()) {
+      labels->insert(stream_id);
     }
   }
 }
@@ -809,17 +809,17 @@ std::string SdpSerialize(const JsepSessionDescription& jdesc) {
   InitAttrLine(kAttributeMsidSemantics, &os);
   os << kSdpDelimiterColon << " " << kMediaStreamSemantic;
 
-  std::set<std::string> media_stream_labels;
+  std::set<std::string> media_stream_ids;
   const ContentInfo* audio_content = GetFirstAudioContent(desc);
   if (audio_content)
-    GetMediaStreamLabels(audio_content, &media_stream_labels);
+    GetMediaStreamIds(audio_content, &media_stream_ids);
 
   const ContentInfo* video_content = GetFirstVideoContent(desc);
   if (video_content)
-    GetMediaStreamLabels(video_content, &media_stream_labels);
+    GetMediaStreamIds(video_content, &media_stream_ids);
 
-  for (std::set<std::string>::const_iterator it =
-      media_stream_labels.begin(); it != media_stream_labels.end(); ++it) {
+  for (std::set<std::string>::const_iterator it = media_stream_ids.begin();
+       it != media_stream_ids.end(); ++it) {
     os << " " << *it;
   }
   AddLine(os.str(), &message);
@@ -1480,7 +1480,7 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
       const StreamParams& track = streams[0];
       // TODO(bugs.webrtc.org/7932): Support serializing more than one stream
       // label.
-      const std::string& stream_id = track.first_stream_label();
+      const std::string& stream_id = track.first_stream_id();
       InitAttrLine(kAttributeMsid, &os);
       os << kSdpDelimiterColon << stream_id << kSdpDelimiterSpace << track.id;
       AddLine(os.str(), message);
@@ -1536,7 +1536,7 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
     // necessary since the MediaContentDescription always contains a
     // StreamParams with an ssrc even if no track or media stream have been
     // created.
-    if (track->stream_labels().empty())
+    if (track->stream_ids().empty())
       continue;
 
     // Build the ssrc-group lines.
@@ -1570,7 +1570,7 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
         // which corresponds to the "id" attribute of StreamParams.
         // TODO(bugs.webrtc.org/7932): Support serializing more than one stream
         // label.
-        const std::string& stream_id = track->first_stream_label();
+        const std::string& stream_id = track->first_stream_id();
         InitAttrLine(kAttributeSsrc, &os);
         os << kSdpDelimiterColon << ssrc << kSdpDelimiterSpace
            << kSsrcAttributeMsid << kSdpDelimiterColon << stream_id
@@ -1583,7 +1583,7 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
         // a=ssrc:<ssrc-id> mslabel:<value>
         // The label isn't yet defined.
         // a=ssrc:<ssrc-id> label:<value>
-        AddSsrcLine(ssrc, kSsrcAttributeMslabel, track->first_stream_label(),
+        AddSsrcLine(ssrc, kSsrcAttributeMslabel, track->first_stream_id(),
                     message);
         AddSsrcLine(ssrc, kSSrcAttributeLabel, track->id, message);
       }

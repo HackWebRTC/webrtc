@@ -19,7 +19,7 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 
-static const char kStreamLabel1[] = "local_stream_1";
+static const char kStreamId1[] = "local_stream_1";
 static const char kVideoTrackId[] = "dummy_video_cam_1";
 static const char kAudioTrackId[] = "dummy_microphone_1";
 
@@ -53,7 +53,7 @@ class MockObserver : public ObserverInterface {
 class MediaStreamTest: public testing::Test {
  protected:
   virtual void SetUp() {
-    stream_ = MediaStream::Create(kStreamLabel1);
+    stream_ = MediaStream::Create(kStreamId1);
     ASSERT_TRUE(stream_.get() != NULL);
 
     video_track_ = VideoTrack::Create(

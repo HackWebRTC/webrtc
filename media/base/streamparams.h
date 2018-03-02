@@ -142,13 +142,13 @@ struct StreamParams {
   void GetFidSsrcs(const std::vector<uint32_t>& primary_ssrcs,
                    std::vector<uint32_t>* fid_ssrcs) const;
 
-  // Stream labels serialized to SDP.
-  std::vector<std::string> stream_labels() const;
-  void set_stream_labels(const std::vector<std::string>& stream_labels);
+  // Stream ids serialized to SDP.
+  std::vector<std::string> stream_ids() const;
+  void set_stream_ids(const std::vector<std::string>& stream_ids);
 
-  // Returns the first stream label or "" if none exist. This method exists only
+  // Returns the first stream id or "" if none exist. This method exists only
   // as temporary backwards compatibility with the old sync_label.
-  std::string first_stream_label() const;
+  std::string first_stream_id() const;
 
   std::string ToString() const;
 
@@ -165,7 +165,7 @@ struct StreamParams {
   // Friendly name describing stream
   std::string display;
   std::string cname;  // RTCP CNAME
-  // TODO(steveanton): Move callers to |stream_labels()| and make private.
+  // TODO(shampson): Move callers to |stream_ids()| and make private.
   std::string sync_label;  // Friendly name of cname.
 
  private:

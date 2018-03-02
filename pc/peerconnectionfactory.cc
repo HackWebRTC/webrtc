@@ -302,10 +302,10 @@ PeerConnectionFactory::CreatePeerConnection(
 }
 
 rtc::scoped_refptr<MediaStreamInterface>
-PeerConnectionFactory::CreateLocalMediaStream(const std::string& label) {
+PeerConnectionFactory::CreateLocalMediaStream(const std::string& stream_id) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
   return MediaStreamProxy::Create(signaling_thread_,
-                                  MediaStream::Create(label));
+                                  MediaStream::Create(stream_id));
 }
 
 rtc::scoped_refptr<VideoTrackInterface> PeerConnectionFactory::CreateVideoTrack(

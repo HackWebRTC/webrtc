@@ -23,6 +23,7 @@ namespace webrtc {
 BEGIN_SIGNALING_PROXY_MAP(MediaStream)
   PROXY_SIGNALING_THREAD_DESTRUCTOR()
   PROXY_CONSTMETHOD0(std::string, label)
+  PROXY_CONSTMETHOD0(std::string, id)
   PROXY_METHOD0(AudioTrackVector, GetAudioTracks)
   PROXY_METHOD0(VideoTrackVector, GetVideoTracks)
   PROXY_METHOD1(rtc::scoped_refptr<AudioTrackInterface>,

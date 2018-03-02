@@ -39,7 +39,7 @@ using ::testing::Return;
 
 namespace {
 
-static const char kStreamLabel1[] = "local_stream_1";
+static const char kStreamId1[] = "local_stream_1";
 static const char kVideoTrackId[] = "video_1";
 static const char kAudioTrackId[] = "audio_1";
 static const uint32_t kVideoSsrc = 98;
@@ -65,7 +65,7 @@ class RtpSenderReceiverTest : public testing::Test,
                          worker_thread_,
                          network_thread_),
         fake_call_(),
-        local_stream_(MediaStream::Create(kStreamLabel1)) {
+        local_stream_(MediaStream::Create(kStreamId1)) {
     // Create channels to be used by the RtpSenders and RtpReceivers.
     channel_manager_.Init();
     bool srtp_required = true;

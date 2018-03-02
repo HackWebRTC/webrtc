@@ -25,7 +25,8 @@ class MediaStream : public Notifier<MediaStreamInterface> {
  public:
   static rtc::scoped_refptr<MediaStream> Create(const std::string& label);
 
-  std::string label() const override { return label_; }
+  std::string label() const override { return id_; }
+  std::string id() const override { return id_; }
 
   bool AddTrack(AudioTrackInterface* track) override;
   bool AddTrack(VideoTrackInterface* track) override;
@@ -48,7 +49,7 @@ class MediaStream : public Notifier<MediaStreamInterface> {
   template <typename TrackVector>
   bool RemoveTrack(TrackVector* Tracks, MediaStreamTrackInterface* track);
 
-  std::string label_;
+  std::string id_;
   AudioTrackVector audio_tracks_;
   VideoTrackVector video_tracks_;
 };

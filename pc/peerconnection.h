@@ -70,7 +70,7 @@ class PeerConnection : public PeerConnectionInternal,
 
   RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>> AddTrack(
       rtc::scoped_refptr<MediaStreamTrackInterface> track,
-      const std::vector<std::string>& stream_labels) override;
+      const std::vector<std::string>& stream_ids) override;
   rtc::scoped_refptr<RtpSenderInterface> AddTrack(
       MediaStreamTrackInterface* track,
       std::vector<MediaStreamInterface*> streams) override;
@@ -257,16 +257,16 @@ class PeerConnection : public PeerConnectionInternal,
 
   struct RtpSenderInfo {
     RtpSenderInfo() : first_ssrc(0) {}
-    RtpSenderInfo(const std::string& stream_label,
+    RtpSenderInfo(const std::string& stream_id,
                   const std::string sender_id,
                   uint32_t ssrc)
-        : stream_label(stream_label), sender_id(sender_id), first_ssrc(ssrc) {}
+        : stream_id(stream_id), sender_id(sender_id), first_ssrc(ssrc) {}
     bool operator==(const RtpSenderInfo& other) {
-      return this->stream_label == other.stream_label &&
+      return this->stream_id == other.stream_id &&
              this->sender_id == other.sender_id &&
              this->first_ssrc == other.first_ssrc;
     }
-    std::string stream_label;
+    std::string stream_id;
     std::string sender_id;
     // An RtpSender can have many SSRCs. The first one is used as a sort of ID
     // for communicating with the lower layers.
@@ -315,11 +315,11 @@ class PeerConnection : public PeerConnectionInternal,
   // AddTrack implementation when Unified Plan is specified.
   RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>> AddTrackUnifiedPlan(
       rtc::scoped_refptr<MediaStreamTrackInterface> track,
-      const std::vector<std::string>& stream_labels);
+      const std::vector<std::string>& stream_ids);
   // AddTrack implementation when Plan B is specified.
   RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>> AddTrackPlanB(
       rtc::scoped_refptr<MediaStreamTrackInterface> track,
-      const std::vector<std::string>& stream_labels);
+      const std::vector<std::string>& stream_ids);
 
   // Returns the first RtpTransceiver suitable for a newly added track, if such
   // transceiver is available.
@@ -344,7 +344,7 @@ class PeerConnection : public PeerConnectionInternal,
   rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>>
   CreateSender(cricket::MediaType media_type,
                rtc::scoped_refptr<MediaStreamTrackInterface> track,
-               const std::vector<std::string>& stream_labels);
+               const std::vector<std::string>& stream_ids);
 
   rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
   CreateReceiver(cricket::MediaType media_type, const std::string& receiver_id);
@@ -627,7 +627,7 @@ class PeerConnection : public PeerConnectionInternal,
   std::vector<RtpSenderInfo>* GetLocalSenderInfos(
       cricket::MediaType media_type);
   const RtpSenderInfo* FindSenderInfo(const std::vector<RtpSenderInfo>& infos,
-                                      const std::string& stream_label,
+                                      const std::string& stream_id,
                                       const std::string sender_id) const;
 
   // Returns the specified SCTP DataChannel in sctp_data_channels_,

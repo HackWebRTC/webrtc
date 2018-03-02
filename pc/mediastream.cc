@@ -28,14 +28,14 @@ static typename V::iterator FindTrack(V* vector,
 }
 
 rtc::scoped_refptr<MediaStream> MediaStream::Create(
-    const std::string& label) {
+    const std::string& id) {
   rtc::RefCountedObject<MediaStream>* stream =
-      new rtc::RefCountedObject<MediaStream>(label);
+      new rtc::RefCountedObject<MediaStream>(id);
   return stream;
 }
 
-MediaStream::MediaStream(const std::string& label)
-    : label_(label) {
+MediaStream::MediaStream(const std::string& id)
+    : id_(id) {
 }
 
 bool MediaStream::AddTrack(AudioTrackInterface* track) {

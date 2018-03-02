@@ -276,23 +276,23 @@ rtc::scoped_refptr<VideoTrackInterface> PeerConnectionWrapper::CreateVideoTrack(
 
 rtc::scoped_refptr<RtpSenderInterface> PeerConnectionWrapper::AddTrack(
     rtc::scoped_refptr<MediaStreamTrackInterface> track,
-    const std::vector<std::string>& stream_labels) {
+    const std::vector<std::string>& stream_ids) {
   RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>> result =
-      pc()->AddTrack(track, stream_labels);
+      pc()->AddTrack(track, stream_ids);
   EXPECT_EQ(RTCErrorType::NONE, result.error().type());
   return result.MoveValue();
 }
 
 rtc::scoped_refptr<RtpSenderInterface> PeerConnectionWrapper::AddAudioTrack(
     const std::string& track_label,
-    const std::vector<std::string>& stream_labels) {
-  return AddTrack(CreateAudioTrack(track_label), stream_labels);
+    const std::vector<std::string>& stream_ids) {
+  return AddTrack(CreateAudioTrack(track_label), stream_ids);
 }
 
 rtc::scoped_refptr<RtpSenderInterface> PeerConnectionWrapper::AddVideoTrack(
     const std::string& track_label,
-    const std::vector<std::string>& stream_labels) {
-  return AddTrack(CreateVideoTrack(track_label), stream_labels);
+    const std::vector<std::string>& stream_ids) {
+  return AddTrack(CreateVideoTrack(track_label), stream_ids);
 }
 
 rtc::scoped_refptr<DataChannelInterface>

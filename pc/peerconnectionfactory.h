@@ -1,3 +1,4 @@
+
 /*
  *  Copyright 2011 The WebRTC project authors. All Rights Reserved.
  *
@@ -57,8 +58,8 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
 
   bool Initialize();
 
-  rtc::scoped_refptr<MediaStreamInterface>
-      CreateLocalMediaStream(const std::string& label) override;
+  rtc::scoped_refptr<MediaStreamInterface> CreateLocalMediaStream(
+      const std::string& stream_id) override;
 
   rtc::scoped_refptr<AudioSourceInterface> CreateAudioSource(
       const cricket::AudioOptions& options) override;

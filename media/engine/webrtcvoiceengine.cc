@@ -1113,7 +1113,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
       uint32_t local_ssrc,
       bool use_transport_cc,
       bool use_nack,
-      const std::vector<std::string>& stream_labels,
+      const std::vector<std::string>& stream_ids,
       const std::vector<webrtc::RtpExtension>& extensions,
       webrtc::Call* call,
       webrtc::Transport* rtcp_send_transport,
@@ -1131,8 +1131,8 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
     config_.rtcp_send_transport = rtcp_send_transport;
     config_.jitter_buffer_max_packets = jitter_buffer_max_packets;
     config_.jitter_buffer_fast_accelerate = jitter_buffer_fast_accelerate;
-    if (!stream_labels.empty()) {
-      config_.sync_group = stream_labels[0];
+    if (!stream_ids.empty()) {
+      config_.sync_group = stream_ids[0];
     }
     config_.decoder_factory = decoder_factory;
     config_.decoder_map = decoder_map;
@@ -1173,11 +1173,11 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
   }
 
   void MaybeRecreateAudioReceiveStream(
-      const std::vector<std::string>& stream_labels) {
+      const std::vector<std::string>& stream_ids) {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
     std::string sync_group;
-    if (!stream_labels.empty()) {
-      sync_group = stream_labels[0];
+    if (!stream_ids.empty()) {
+      sync_group = stream_ids[0];
     }
     if (config_.sync_group != sync_group) {
       RTC_LOG(LS_INFO) << "Recreating AudioReceiveStream for SSRC="
@@ -1846,9 +1846,9 @@ bool WebRtcVoiceMediaChannel::AddRecvStream(const StreamParams& sp) {
   }
 
   // If this stream was previously received unsignaled, we promote it, possibly
-  // recreating the AudioReceiveStream, if stream labels have changed.
+  // recreating the AudioReceiveStream, if stream ids have changed.
   if (MaybeDeregisterUnsignaledRecvStream(ssrc)) {
-    recv_streams_[ssrc]->MaybeRecreateAudioReceiveStream(sp.stream_labels());
+    recv_streams_[ssrc]->MaybeRecreateAudioReceiveStream(sp.stream_ids());
     return true;
   }
 
@@ -1861,7 +1861,7 @@ bool WebRtcVoiceMediaChannel::AddRecvStream(const StreamParams& sp) {
   recv_streams_.insert(std::make_pair(
       ssrc, new WebRtcAudioReceiveStream(
                 ssrc, receiver_reports_ssrc_, recv_transport_cc_enabled_,
-                recv_nack_enabled_, sp.stream_labels(), recv_rtp_extensions_,
+                recv_nack_enabled_, sp.stream_ids(), recv_rtp_extensions_,
                 call_, this, engine()->decoder_factory_, decoder_map_,
                 engine()->audio_jitter_buffer_max_packets_,
                 engine()->audio_jitter_buffer_fast_accelerate_)));

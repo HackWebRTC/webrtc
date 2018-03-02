@@ -52,9 +52,9 @@
 #include "pc/test/androidtestinitializer.h"
 #endif
 
-static const char kStreamLabel1[] = "local_stream_1";
-static const char kStreamLabel2[] = "local_stream_2";
-static const char kStreamLabel3[] = "local_stream_3";
+static const char kStreamId1[] = "local_stream_1";
+static const char kStreamId2[] = "local_stream_2";
+static const char kStreamId3[] = "local_stream_3";
 static const int kDefaultStunPort = 3478;
 static const char kStunAddressOnly[] = "stun:address";
 static const char kStunInvalidPort[] = "stun:address:-1";
@@ -492,10 +492,10 @@ void SetSsrcToZero(std::string* sdp) {
 
 // Check if |streams| contains the specified track.
 bool ContainsTrack(const std::vector<cricket::StreamParams>& streams,
-                   const std::string& stream_label,
+                   const std::string& stream_id,
                    const std::string& track_id) {
   for (const cricket::StreamParams& params : streams) {
-    if (params.first_stream_label() == stream_label && params.id == track_id) {
+    if (params.first_stream_id() == stream_id && params.id == track_id) {
       return true;
     }
   }
@@ -832,9 +832,9 @@ class PeerConnectionInterfaceBaseTest : public testing::Test {
   }
 
   void AddVideoTrack(const std::string& track_label,
-                     const std::vector<std::string>& stream_labels = {}) {
+                     const std::vector<std::string>& stream_ids = {}) {
     auto sender_or_error =
-        pc_->AddTrack(CreateVideoTrack(track_label), stream_labels);
+        pc_->AddTrack(CreateVideoTrack(track_label), stream_ids);
     ASSERT_EQ(RTCErrorType::NONE, sender_or_error.error().type());
     EXPECT_TRUE_WAIT(observer_.renegotiation_needed_, kTimeout);
     observer_.renegotiation_needed_ = false;
@@ -855,9 +855,9 @@ class PeerConnectionInterfaceBaseTest : public testing::Test {
   }
 
   void AddAudioTrack(const std::string& track_label,
-                     const std::vector<std::string>& stream_labels = {}) {
+                     const std::vector<std::string>& stream_ids = {}) {
     auto sender_or_error =
-        pc_->AddTrack(CreateAudioTrack(track_label), stream_labels);
+        pc_->AddTrack(CreateAudioTrack(track_label), stream_ids);
     ASSERT_EQ(RTCErrorType::NONE, sender_or_error.error().type());
     EXPECT_TRUE_WAIT(observer_.renegotiation_needed_, kTimeout);
     observer_.renegotiation_needed_ = false;
@@ -872,12 +872,12 @@ class PeerConnectionInterfaceBaseTest : public testing::Test {
     observer_.renegotiation_needed_ = false;
   }
 
-  void AddAudioVideoStream(const std::string& stream_label,
+  void AddAudioVideoStream(const std::string& stream_id,
                            const std::string& audio_track_label,
                            const std::string& video_track_label) {
     // Create a local stream.
     rtc::scoped_refptr<MediaStreamInterface> stream(
-        pc_factory_->CreateLocalMediaStream(stream_label));
+        pc_factory_->CreateLocalMediaStream(stream_id));
     stream->AddTrack(CreateAudioTrack(audio_track_label));
     stream->AddTrack(CreateVideoTrack(video_track_label));
     ASSERT_TRUE(pc_->AddStream(stream));
@@ -974,12 +974,12 @@ class PeerConnectionInterfaceBaseTest : public testing::Test {
     CreatePeerConnectionWithoutDtls();
     // Create a local stream with audio&video tracks.
     if (sdp_semantics_ == SdpSemantics::kPlanB) {
-      AddAudioVideoStream(kStreamLabel1, "audio_track", "video_track");
+      AddAudioVideoStream(kStreamId1, "audio_track", "video_track");
     } else {
       // Unified Plan does not support AddStream, so just add an audio and video
       // track.
-      AddAudioTrack(kAudioTracks[0], {kStreamLabel1});
-      AddVideoTrack(kVideoTracks[0], {kStreamLabel1});
+      AddAudioTrack(kAudioTracks[0], {kStreamId1});
+      AddVideoTrack(kVideoTracks[0], {kStreamId1});
     }
     CreateOfferReceiveAnswer();
   }
@@ -1096,16 +1096,15 @@ class PeerConnectionInterfaceBaseTest : public testing::Test {
     EXPECT_EQ(PeerConnectionInterface::kStable, observer_.state_);
   }
 
-  // Waits until a remote stream with the given label is signaled. This helper
+  // Waits until a remote stream with the given id is signaled. This helper
   // function will verify both OnAddTrack and OnAddStream (Plan B only) are
-  // called with the given stream label and expected number of tracks.
-  void WaitAndVerifyOnAddStream(const std::string& stream_label,
+  // called with the given stream id and expected number of tracks.
+  void WaitAndVerifyOnAddStream(const std::string& stream_id,
                                 int expected_num_tracks) {
     // Verify that both OnAddStream and OnAddTrack are called.
-    EXPECT_EQ_WAIT(stream_label, observer_.GetLastAddedStreamLabel(), kTimeout);
+    EXPECT_EQ_WAIT(stream_id, observer_.GetLastAddedStreamId(), kTimeout);
     EXPECT_EQ_WAIT(expected_num_tracks,
-                   observer_.CountAddTrackEventsForStream(stream_label),
-                   kTimeout);
+                   observer_.CountAddTrackEventsForStream(stream_id), kTimeout);
   }
 
   // Creates an offer and applies it as a local session description.
@@ -1133,10 +1132,10 @@ class PeerConnectionInterfaceBaseTest : public testing::Test {
     reference_collection_ = StreamCollection::Create();
     std::string sdp_ms1 = std::string(kSdpStringInit);
 
-    std::string mediastream_label = kStreams[0];
+    std::string mediastream_id = kStreams[0];
 
     rtc::scoped_refptr<webrtc::MediaStreamInterface> stream(
-        webrtc::MediaStream::Create(mediastream_label));
+        webrtc::MediaStream::Create(mediastream_id));
     reference_collection_->AddStream(stream);
 
     if (number_of_audio_tracks > 0) {
@@ -1189,7 +1188,7 @@ class PeerConnectionInterfaceBaseTest : public testing::Test {
 
   std::unique_ptr<SessionDescriptionInterface> CreateOfferWithOneAudioStream() {
     CreatePeerConnectionWithoutDtls();
-    AddAudioStream(kStreamLabel1);
+    AddAudioStream(kStreamId1);
     std::unique_ptr<SessionDescriptionInterface> offer;
     EXPECT_TRUE(DoCreateOffer(&offer, nullptr));
     return offer;
@@ -1479,15 +1478,15 @@ TEST_P(PeerConnectionInterfaceTest, GetConfigurationAfterSetConfiguration) {
 
 TEST_F(PeerConnectionInterfaceTestPlanB, AddStreams) {
   CreatePeerConnectionWithoutDtls();
-  AddVideoStream(kStreamLabel1);
-  AddAudioStream(kStreamLabel2);
+  AddVideoStream(kStreamId1);
+  AddAudioStream(kStreamId2);
   ASSERT_EQ(2u, pc_->local_streams()->count());
 
   // Test we can add multiple local streams to one peerconnection.
   rtc::scoped_refptr<MediaStreamInterface> stream(
-      pc_factory_->CreateLocalMediaStream(kStreamLabel3));
+      pc_factory_->CreateLocalMediaStream(kStreamId3));
   rtc::scoped_refptr<AudioTrackInterface> audio_track(
-      pc_factory_->CreateAudioTrack(kStreamLabel3,
+      pc_factory_->CreateAudioTrack(kStreamId3,
                                     static_cast<AudioSourceInterface*>(NULL)));
   stream->AddTrack(audio_track.get());
   EXPECT_TRUE(pc_->AddStream(stream));
@@ -1510,42 +1509,36 @@ TEST_F(PeerConnectionInterfaceTestPlanB, AddStreams) {
 // Don't run under Unified Plan since the stream API is not available.
 TEST_F(PeerConnectionInterfaceTestPlanB, AddedStreamsPresentInOffer) {
   CreatePeerConnectionWithoutDtls();
-  AddAudioVideoStream(kStreamLabel1, "audio_track", "video_track");
+  AddAudioVideoStream(kStreamId1, "audio_track", "video_track");
   std::unique_ptr<SessionDescriptionInterface> offer;
   ASSERT_TRUE(DoCreateOffer(&offer, nullptr));
 
   const cricket::AudioContentDescription* audio_desc =
       cricket::GetFirstAudioContentDescription(offer->description());
-  EXPECT_TRUE(
-      ContainsTrack(audio_desc->streams(), kStreamLabel1, "audio_track"));
+  EXPECT_TRUE(ContainsTrack(audio_desc->streams(), kStreamId1, "audio_track"));
 
   const cricket::VideoContentDescription* video_desc =
       cricket::GetFirstVideoContentDescription(offer->description());
-  EXPECT_TRUE(
-      ContainsTrack(video_desc->streams(), kStreamLabel1, "video_track"));
+  EXPECT_TRUE(ContainsTrack(video_desc->streams(), kStreamId1, "video_track"));
 
   // Add another stream and ensure the offer includes both the old and new
   // streams.
-  AddAudioVideoStream(kStreamLabel2, "audio_track2", "video_track2");
+  AddAudioVideoStream(kStreamId2, "audio_track2", "video_track2");
   ASSERT_TRUE(DoCreateOffer(&offer, nullptr));
 
   audio_desc = cricket::GetFirstAudioContentDescription(offer->description());
-  EXPECT_TRUE(
-      ContainsTrack(audio_desc->streams(), kStreamLabel1, "audio_track"));
-  EXPECT_TRUE(
-      ContainsTrack(audio_desc->streams(), kStreamLabel2, "audio_track2"));
+  EXPECT_TRUE(ContainsTrack(audio_desc->streams(), kStreamId1, "audio_track"));
+  EXPECT_TRUE(ContainsTrack(audio_desc->streams(), kStreamId2, "audio_track2"));
 
   video_desc = cricket::GetFirstVideoContentDescription(offer->description());
-  EXPECT_TRUE(
-      ContainsTrack(video_desc->streams(), kStreamLabel1, "video_track"));
-  EXPECT_TRUE(
-      ContainsTrack(video_desc->streams(), kStreamLabel2, "video_track2"));
+  EXPECT_TRUE(ContainsTrack(video_desc->streams(), kStreamId1, "video_track"));
+  EXPECT_TRUE(ContainsTrack(video_desc->streams(), kStreamId2, "video_track2"));
 }
 
 // Don't run under Unified Plan since the stream API is not available.
 TEST_F(PeerConnectionInterfaceTestPlanB, RemoveStream) {
   CreatePeerConnectionWithoutDtls();
-  AddVideoStream(kStreamLabel1);
+  AddVideoStream(kStreamId1);
   ASSERT_EQ(1u, pc_->local_streams()->count());
   pc_->RemoveStream(pc_->local_streams()->at(0));
   EXPECT_EQ(0u, pc_->local_streams()->count());
@@ -1566,14 +1559,14 @@ TEST_F(PeerConnectionInterfaceTestPlanB, AddTrackRemoveTrack) {
           "video_track", pc_factory_->CreateVideoSource(
                              std::unique_ptr<cricket::VideoCapturer>(
                                  new cricket::FakeVideoCapturer()))));
-  auto audio_sender = pc_->AddTrack(audio_track, {kStreamLabel1}).MoveValue();
-  auto video_sender = pc_->AddTrack(video_track, {kStreamLabel1}).MoveValue();
+  auto audio_sender = pc_->AddTrack(audio_track, {kStreamId1}).MoveValue();
+  auto video_sender = pc_->AddTrack(video_track, {kStreamId1}).MoveValue();
   EXPECT_EQ(1UL, audio_sender->stream_ids().size());
-  EXPECT_EQ(kStreamLabel1, audio_sender->stream_ids()[0]);
+  EXPECT_EQ(kStreamId1, audio_sender->stream_ids()[0]);
   EXPECT_EQ("audio_track", audio_sender->id());
   EXPECT_EQ(audio_track, audio_sender->track());
   EXPECT_EQ(1UL, video_sender->stream_ids().size());
-  EXPECT_EQ(kStreamLabel1, video_sender->stream_ids()[0]);
+  EXPECT_EQ(kStreamId1, video_sender->stream_ids()[0]);
   EXPECT_EQ("video_track", video_sender->id());
   EXPECT_EQ(video_track, video_sender->track());
 
@@ -1584,12 +1577,12 @@ TEST_F(PeerConnectionInterfaceTestPlanB, AddTrackRemoveTrack) {
   const cricket::ContentInfo* audio_content =
       cricket::GetFirstAudioContent(offer->description());
   EXPECT_TRUE(ContainsTrack(audio_content->media_description()->streams(),
-                            kStreamLabel1, "audio_track"));
+                            kStreamId1, "audio_track"));
 
   const cricket::ContentInfo* video_content =
       cricket::GetFirstVideoContent(offer->description());
   EXPECT_TRUE(ContainsTrack(video_content->media_description()->streams(),
-                            kStreamLabel1, "video_track"));
+                            kStreamId1, "video_track"));
 
   EXPECT_TRUE(DoSetLocalDescription(std::move(offer)));
 
@@ -1602,11 +1595,11 @@ TEST_F(PeerConnectionInterfaceTestPlanB, AddTrackRemoveTrack) {
 
   audio_content = cricket::GetFirstAudioContent(offer->description());
   EXPECT_FALSE(ContainsTrack(audio_content->media_description()->streams(),
-                             kStreamLabel1, "audio_track"));
+                             kStreamId1, "audio_track"));
 
   video_content = cricket::GetFirstVideoContent(offer->description());
   EXPECT_FALSE(ContainsTrack(video_content->media_description()->streams(),
-                             kStreamLabel1, "video_track"));
+                             kStreamId1, "video_track"));
 
   EXPECT_TRUE(DoSetLocalDescription(std::move(offer)));
 
@@ -1683,7 +1676,7 @@ TEST_P(PeerConnectionInterfaceTest, AttachmentIdIsSetOnAddTrack) {
 // Don't run under Unified Plan since the stream API is not available.
 TEST_F(PeerConnectionInterfaceTestPlanB, AttachmentIdIsSetOnAddStream) {
   CreatePeerConnectionWithoutDtls();
-  AddVideoStream(kStreamLabel1);
+  AddVideoStream(kStreamId1);
   auto senders = pc_->GetSenders();
   ASSERT_EQ(1u, senders.size());
   auto* sender_proxy =
@@ -1694,39 +1687,39 @@ TEST_F(PeerConnectionInterfaceTestPlanB, AttachmentIdIsSetOnAddStream) {
 
 TEST_P(PeerConnectionInterfaceTest, CreateOfferReceiveAnswer) {
   InitiateCall();
-  WaitAndVerifyOnAddStream(kStreamLabel1, 2);
+  WaitAndVerifyOnAddStream(kStreamId1, 2);
   VerifyRemoteRtpHeaderExtensions();
 }
 
 TEST_P(PeerConnectionInterfaceTest, CreateOfferReceivePrAnswerAndAnswer) {
   CreatePeerConnectionWithoutDtls();
-  AddVideoTrack(kVideoTracks[0], {kStreamLabel1});
+  AddVideoTrack(kVideoTracks[0], {kStreamId1});
   CreateOfferAsLocalDescription();
   std::string offer;
   EXPECT_TRUE(pc_->local_description()->ToString(&offer));
   CreatePrAnswerAndAnswerAsRemoteDescription(offer);
-  WaitAndVerifyOnAddStream(kStreamLabel1, 1);
+  WaitAndVerifyOnAddStream(kStreamId1, 1);
 }
 
 TEST_P(PeerConnectionInterfaceTest, ReceiveOfferCreateAnswer) {
   CreatePeerConnectionWithoutDtls();
-  AddVideoTrack(kVideoTracks[0], {kStreamLabel1});
+  AddVideoTrack(kVideoTracks[0], {kStreamId1});
 
   CreateOfferAsRemoteDescription();
   CreateAnswerAsLocalDescription();
 
-  WaitAndVerifyOnAddStream(kStreamLabel1, 1);
+  WaitAndVerifyOnAddStream(kStreamId1, 1);
 }
 
 TEST_P(PeerConnectionInterfaceTest, ReceiveOfferCreatePrAnswerAndAnswer) {
   CreatePeerConnectionWithoutDtls();
-  AddVideoTrack(kVideoTracks[0], {kStreamLabel1});
+  AddVideoTrack(kVideoTracks[0], {kStreamId1});
 
   CreateOfferAsRemoteDescription();
   CreatePrAnswerAsLocalDescription();
   CreateAnswerAsLocalDescription();
 
-  WaitAndVerifyOnAddStream(kStreamLabel1, 1);
+  WaitAndVerifyOnAddStream(kStreamId1, 1);
 }
 
 // Don't run under Unified Plan since the stream API is not available.
@@ -1736,7 +1729,7 @@ TEST_F(PeerConnectionInterfaceTestPlanB, Renegotiate) {
   pc_->RemoveStream(pc_->local_streams()->at(0));
   CreateOfferReceiveAnswer();
   EXPECT_EQ(0u, pc_->remote_streams()->count());
-  AddVideoStream(kStreamLabel1);
+  AddVideoStream(kStreamId1);
   CreateOfferReceiveAnswer();
 }
 
@@ -1744,7 +1737,7 @@ TEST_F(PeerConnectionInterfaceTestPlanB, Renegotiate) {
 // renegotiation that removes the audio stream.
 TEST_F(PeerConnectionInterfaceTestPlanB, RenegotiateAudioOnly) {
   CreatePeerConnectionWithoutDtls();
-  AddAudioStream(kStreamLabel1);
+  AddAudioStream(kStreamId1);
   CreateOfferAsRemoteDescription();
   CreateAnswerAsLocalDescription();
 
@@ -1787,8 +1780,8 @@ TEST_P(PeerConnectionInterfaceTest, CreateOfferAnswerWithInvalidStream) {
   offer.reset();
 
   // Create a local stream with audio&video tracks having same label.
-  AddAudioTrack("track_label", {kStreamLabel1});
-  AddVideoTrack("track_label", {kStreamLabel1});
+  AddAudioTrack("track_label", {kStreamId1});
+  AddVideoTrack("track_label", {kStreamId1});
 
   // Test CreateOffer
   EXPECT_FALSE(DoCreateOffer(&offer, nullptr));
@@ -1803,8 +1796,8 @@ TEST_P(PeerConnectionInterfaceTest, CreateOfferAnswerWithInvalidStream) {
 TEST_P(PeerConnectionInterfaceTest, SsrcInOfferAnswer) {
   CreatePeerConnectionWithoutDtls();
   // Create a local stream with audio&video tracks having different labels.
-  AddAudioTrack(kAudioTracks[0], {kStreamLabel1});
-  AddVideoTrack(kVideoTracks[0], {kStreamLabel1});
+  AddAudioTrack(kAudioTracks[0], {kStreamId1});
+  AddVideoTrack(kVideoTracks[0], {kStreamId1});
 
   // Test CreateOffer
   std::unique_ptr<SessionDescriptionInterface> offer;
@@ -1837,7 +1830,7 @@ TEST_P(PeerConnectionInterfaceTest, SsrcInOfferAnswer) {
 TEST_F(PeerConnectionInterfaceTestPlanB, AddTrackAfterAddStream) {
   CreatePeerConnectionWithoutDtls();
   // Create audio stream and add to PeerConnection.
-  AddAudioStream(kStreamLabel1);
+  AddAudioStream(kStreamId1);
   MediaStreamInterface* stream = pc_->local_streams()->at(0);
 
   // Add video track to the audio-only stream.
@@ -1863,7 +1856,7 @@ TEST_F(PeerConnectionInterfaceTestPlanB, AddTrackAfterAddStream) {
 TEST_F(PeerConnectionInterfaceTestPlanB, RemoveTrackAfterAddStream) {
   CreatePeerConnectionWithoutDtls();
   // Create audio/video stream and add to PeerConnection.
-  AddAudioVideoStream(kStreamLabel1, "audio_label", "video_label");
+  AddAudioVideoStream(kStreamId1, "audio_label", "video_label");
   MediaStreamInterface* stream = pc_->local_streams()->at(0);
 
   // Remove the video track.
@@ -1894,7 +1887,7 @@ TEST_P(PeerConnectionInterfaceTest, CreateDtmfSenderWithInvalidParams) {
 // Don't run under Unified Plan since the stream API is not available.
 TEST_F(PeerConnectionInterfaceTestPlanB, CreateSenderWithStream) {
   CreatePeerConnectionWithoutDtls();
-  pc_->CreateSender("video", kStreamLabel1);
+  pc_->CreateSender("video", kStreamId1);
 
   std::unique_ptr<SessionDescriptionInterface> offer;
   ASSERT_TRUE(DoCreateOffer(&offer, nullptr));
@@ -1903,7 +1896,7 @@ TEST_F(PeerConnectionInterfaceTestPlanB, CreateSenderWithStream) {
       cricket::GetFirstVideoContentDescription(offer->description());
   ASSERT_TRUE(video_desc != nullptr);
   ASSERT_EQ(1u, video_desc->streams().size());
-  EXPECT_EQ(kStreamLabel1, video_desc->streams()[0].first_stream_label());
+  EXPECT_EQ(kStreamId1, video_desc->streams()[0].first_stream_id());
 }
 
 // Test that we can specify a certain track that we want statistics about.
@@ -1948,8 +1941,8 @@ TEST_P(PeerConnectionInterfaceTest, GetRTCStatsBeforeAndAfterCalling) {
   // Clearing stats cache is needed now, but should be temporary.
   // https://bugs.chromium.org/p/webrtc/issues/detail?id=8693
   pc_->ClearStatsCache();
-  AddAudioTrack(kAudioTracks[0], {kStreamLabel1});
-  AddVideoTrack(kVideoTracks[0], {kStreamLabel1});
+  AddAudioTrack(kAudioTracks[0], {kStreamId1});
+  AddVideoTrack(kVideoTracks[0], {kStreamId1});
   EXPECT_TRUE(DoGetRTCStats());
   pc_->ClearStatsCache();
   CreateOfferReceiveAnswer();
@@ -2704,7 +2697,7 @@ TEST_P(PeerConnectionInterfaceTest, CloseAndTestStreamsAndStates) {
 // Don't run under Unified Plan since the stream API is not available.
 TEST_F(PeerConnectionInterfaceTestPlanB, CloseAndTestMethods) {
   CreatePeerConnectionWithoutDtls();
-  AddAudioVideoStream(kStreamLabel1, "audio_label", "video_label");
+  AddAudioVideoStream(kStreamId1, "audio_label", "video_label");
   CreateOfferAsRemoteDescription();
   CreateAnswerAsLocalDescription();
 
@@ -3258,8 +3251,8 @@ TEST_P(PeerConnectionInterfaceTest, SetConfigurationCausingIceRestart) {
   FakeConstraints default_constraints;
   CreatePeerConnection(config, &default_constraints);
   config = pc_->GetConfiguration();
-  AddAudioTrack(kAudioTracks[0], {kStreamLabel1});
-  AddVideoTrack(kVideoTracks[0], {kStreamLabel1});
+  AddAudioTrack(kAudioTracks[0], {kStreamId1});
+  AddVideoTrack(kVideoTracks[0], {kStreamId1});
 
   // Do initial offer/answer so there's something to restart.
   CreateOfferAsLocalDescription();
@@ -3330,8 +3323,8 @@ TEST_P(PeerConnectionInterfaceTest, SetConfigurationCausingPartialIceRestart) {
   FakeConstraints default_constraints;
   CreatePeerConnection(config, &default_constraints);
   config = pc_->GetConfiguration();
-  AddAudioTrack(kAudioTracks[0], {kStreamLabel1});
-  AddVideoTrack(kVideoTracks[0], {kStreamLabel1});
+  AddAudioTrack(kAudioTracks[0], {kStreamId1});
+  AddVideoTrack(kVideoTracks[0], {kStreamId1});
 
   // Do initial offer/answer so there's something to restart.
   CreateOfferAsLocalDescription();
@@ -3873,7 +3866,7 @@ TEST_F(PeerConnectionInterfaceTestPlanB,
        MediaStreamAddTrackRemoveTrackRenegotiate) {
   CreatePeerConnectionWithoutDtls();
   rtc::scoped_refptr<MediaStreamInterface> stream(
-      pc_factory_->CreateLocalMediaStream(kStreamLabel1));
+      pc_factory_->CreateLocalMediaStream(kStreamId1));
   pc_->AddStream(stream);
   rtc::scoped_refptr<AudioTrackInterface> audio_track(
       pc_factory_->CreateAudioTrack("audio_track", nullptr));

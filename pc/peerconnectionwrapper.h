@@ -138,19 +138,19 @@ class PeerConnectionWrapper {
   // AddTrack fails.
   rtc::scoped_refptr<RtpSenderInterface> AddTrack(
       rtc::scoped_refptr<MediaStreamTrackInterface> track,
-      const std::vector<std::string>& stream_labels = {});
+      const std::vector<std::string>& stream_ids = {});
 
   // Calls the underlying PeerConnection's AddTrack method with an audio media
   // stream track not bound to any source.
   rtc::scoped_refptr<RtpSenderInterface> AddAudioTrack(
       const std::string& track_label,
-      const std::vector<std::string>& stream_labels = {});
+      const std::vector<std::string>& stream_ids = {});
 
   // Calls the underlying PeerConnection's AddTrack method with a video media
   // stream track fed by a fake video capturer.
   rtc::scoped_refptr<RtpSenderInterface> AddVideoTrack(
       const std::string& track_label,
-      const std::vector<std::string>& stream_labels = {});
+      const std::vector<std::string>& stream_ids = {});
 
   // Calls the underlying PeerConnection's CreateDataChannel method with default
   // initialization parameters.

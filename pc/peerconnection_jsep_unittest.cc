@@ -1174,11 +1174,11 @@ TEST_F(PeerConnectionJsepTest,
 TEST_F(PeerConnectionJsepTest,
        SetRemoteOfferWithOneTrackOneStreamFiresOnAddTrack) {
   const std::string kTrackLabel = "audio_track";
-  const std::string kStreamLabel = "audio_stream";
+  const std::string kStreamId = "audio_stream";
 
   auto caller = CreatePeerConnection();
   auto callee = CreatePeerConnection();
-  ASSERT_TRUE(caller->AddAudioTrack(kTrackLabel, {kStreamLabel}));
+  ASSERT_TRUE(caller->AddAudioTrack(kTrackLabel, {kStreamId}));
 
   ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
 
@@ -1187,7 +1187,7 @@ TEST_F(PeerConnectionJsepTest,
   const auto& event = track_events[0];
   ASSERT_EQ(1u, event.streams.size());
   auto stream = event.streams[0];
-  EXPECT_EQ(kStreamLabel, stream->label());
+  EXPECT_EQ(kStreamId, stream->label());
   EXPECT_THAT(track_events[0].snapshotted_stream_tracks.at(stream),
               ElementsAre(event.receiver->track()));
   EXPECT_EQ(event.receiver->streams(), track_events[0].streams);
@@ -1202,12 +1202,12 @@ TEST_F(PeerConnectionJsepTest,
        SetRemoteOfferWithTwoTracksSameStreamFiresOnAddTrack) {
   const std::string kTrack1Label = "audio_track1";
   const std::string kTrack2Label = "audio_track2";
-  const std::string kSharedStreamLabel = "stream";
+  const std::string kSharedStreamId = "stream";
 
   auto caller = CreatePeerConnection();
   auto callee = CreatePeerConnection();
-  ASSERT_TRUE(caller->AddAudioTrack(kTrack1Label, {kSharedStreamLabel}));
-  ASSERT_TRUE(caller->AddAudioTrack(kTrack2Label, {kSharedStreamLabel}));
+  ASSERT_TRUE(caller->AddAudioTrack(kTrack1Label, {kSharedStreamId}));
+  ASSERT_TRUE(caller->AddAudioTrack(kTrack2Label, {kSharedStreamId}));
 
   ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
 

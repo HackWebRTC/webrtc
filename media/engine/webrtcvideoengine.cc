@@ -1224,8 +1224,8 @@ bool WebRtcVideoChannel::AddRecvStream(const StreamParams& sp,
   // TODO(nisse): Rename config variable to avoid negation.
   config.disable_prerenderer_smoothing =
       !video_config_.enable_prerenderer_smoothing;
-  if (!sp.stream_labels().empty()) {
-    config.sync_group = sp.stream_labels()[0];
+  if (!sp.stream_ids().empty()) {
+    config.sync_group = sp.stream_ids()[0];
   }
 
   receive_streams_[ssrc] = new WebRtcVideoReceiveStream(

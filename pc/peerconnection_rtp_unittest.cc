@@ -187,11 +187,11 @@ TEST_F(PeerConnectionRtpCallbacksTest,
   auto caller = CreatePeerConnection();
   auto callee = CreatePeerConnection();
 
-  const char kSharedStreamLabel[] = "shared_audio_stream";
+  const char kSharedStreamId[] = "shared_audio_stream";
   auto sender1 = caller->AddTrack(caller->CreateAudioTrack("audio_track1"),
-                                  {kSharedStreamLabel});
+                                  {kSharedStreamId});
   auto sender2 = caller->AddTrack(caller->CreateAudioTrack("audio_track2"),
-                                  {kSharedStreamLabel});
+                                  {kSharedStreamId});
   ASSERT_TRUE(
       callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal(),
                                    static_cast<webrtc::RTCError*>(nullptr)));
@@ -408,11 +408,11 @@ TEST_F(PeerConnectionRtpObserverTest,
   auto caller = CreatePeerConnection();
   auto callee = CreatePeerConnection();
 
-  const char kSharedStreamLabel[] = "shared_audio_stream";
+  const char kSharedStreamId[] = "shared_audio_stream";
   auto sender1 = caller->AddTrack(caller->CreateAudioTrack("audio_track1"),
-                                  {kSharedStreamLabel});
+                                  {kSharedStreamId});
   auto sender2 = caller->AddTrack(caller->CreateAudioTrack("audio_track2"),
-                                  {kSharedStreamLabel});
+                                  {kSharedStreamId});
   ASSERT_TRUE(
       callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal(),
                                    static_cast<webrtc::RTCError*>(nullptr)));

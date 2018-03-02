@@ -725,7 +725,7 @@ class StatsCollectorTrackTest : public StatsCollectorTest,
                                 rtc::Thread::Current());
     if (GetParam()) {
       if (!stream_)
-        stream_ = MediaStream::Create("streamlabel");
+        stream_ = MediaStream::Create("streamid");
       stream_->AddTrack(track_);
       stats->AddStream(stream_);
     } else {
@@ -740,7 +740,7 @@ class StatsCollectorTrackTest : public StatsCollectorTest,
     track_ = VideoTrack::Create(kRemoteTrackId, FakeVideoTrackSource::Create(),
                                 rtc::Thread::Current());
     if (GetParam()) {
-      stream_ = MediaStream::Create("streamlabel");
+      stream_ = MediaStream::Create("streamid");
       stream_->AddTrack(track_);
       stats->AddStream(stream_);
     } else {
@@ -758,7 +758,7 @@ class StatsCollectorTrackTest : public StatsCollectorTest,
     audio_track_ = new rtc::RefCountedObject<FakeAudioTrack>(kLocalTrackId);
     if (GetParam()) {
       if (!stream_)
-        stream_ = MediaStream::Create("streamlabel");
+        stream_ = MediaStream::Create("streamid");
       stream_->AddTrack(audio_track_);
       stats->AddStream(stream_);
     } else {
@@ -773,7 +773,7 @@ class StatsCollectorTrackTest : public StatsCollectorTest,
     audio_track_ = new rtc::RefCountedObject<FakeAudioTrack>(kRemoteTrackId);
     if (GetParam()) {
       if (stream_ == NULL)
-        stream_ = MediaStream::Create("streamlabel");
+        stream_ = MediaStream::Create("streamid");
       stream_->AddTrack(audio_track_);
       stats->AddStream(stream_);
     } else {
@@ -1427,7 +1427,7 @@ TEST_P(StatsCollectorTrackTest, FilterOutNegativeInitialValues) {
   auto stats = CreateStatsCollector(pc);
 
   // Create a local stream with a local audio track and adds it to the stats.
-  stream_ = MediaStream::Create("streamlabel");
+  stream_ = MediaStream::Create("streamid");
   rtc::scoped_refptr<FakeAudioTrackWithInitValue> local_track(
       new rtc::RefCountedObject<FakeAudioTrackWithInitValue>(kLocalTrackId));
   stream_->AddTrack(local_track);
@@ -1439,7 +1439,7 @@ TEST_P(StatsCollectorTrackTest, FilterOutNegativeInitialValues) {
 
   // Create a remote stream with a remote audio track and adds it to the stats.
   rtc::scoped_refptr<MediaStream> remote_stream(
-      MediaStream::Create("remotestreamlabel"));
+      MediaStream::Create("remotestreamid"));
   rtc::scoped_refptr<FakeAudioTrackWithInitValue> remote_track(
       new rtc::RefCountedObject<FakeAudioTrackWithInitValue>(kRemoteTrackId));
   remote_stream->AddTrack(remote_track);
@@ -1609,7 +1609,7 @@ TEST_P(StatsCollectorTrackTest, LocalAndRemoteTracksWithSameSsrc) {
 
   // Create a remote stream with a remote audio track and adds it to the stats.
   rtc::scoped_refptr<MediaStream> remote_stream(
-      MediaStream::Create("remotestreamlabel"));
+      MediaStream::Create("remotestreamid"));
   rtc::scoped_refptr<FakeAudioTrack> remote_track(
       new rtc::RefCountedObject<FakeAudioTrack>(kRemoteTrackId));
   pc->AddRemoteTrack(kSsrcOfTrack, kRemoteTrackId);

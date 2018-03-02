@@ -321,7 +321,7 @@ class RTCStatsCollectorWrapper {
                                 bool add_stream) {
     rtc::scoped_refptr<MediaStream> local_stream;
     if (add_stream) {
-      local_stream = MediaStream::Create("LocalStreamLabel");
+      local_stream = MediaStream::Create("LocalStreamId");
       pc_->mutable_local_streams()->AddStream(local_stream);
     }
 
@@ -349,7 +349,7 @@ class RTCStatsCollectorWrapper {
                                    const std::string& track_id,
                                    uint32_t ssrc) {
     rtc::scoped_refptr<MediaStream> remote_stream =
-        MediaStream::Create("RemoteStreamLabel");
+        MediaStream::Create("RemoteStreamId");
     pc_->mutable_remote_streams()->AddStream(remote_stream);
 
     rtc::scoped_refptr<MediaStreamTrackInterface> track;
@@ -1195,7 +1195,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCPeerConnectionStats) {
 TEST_F(RTCStatsCollectorTest,
        CollectLocalRTCMediaStreamStatsAndRTCMediaStreamTrackStats_Audio) {
   rtc::scoped_refptr<MediaStream> local_stream =
-      MediaStream::Create("LocalStreamLabel");
+      MediaStream::Create("LocalStreamId");
   pc_->mutable_local_streams()->AddStream(local_stream);
 
   // Local audio track
@@ -1255,7 +1255,7 @@ TEST_F(RTCStatsCollectorTest,
 TEST_F(RTCStatsCollectorTest,
        CollectRemoteRTCMediaStreamStatsAndRTCMediaStreamTrackStats_Audio) {
   rtc::scoped_refptr<MediaStream> remote_stream =
-      MediaStream::Create("RemoteStreamLabel");
+      MediaStream::Create("RemoteStreamId");
   pc_->mutable_remote_streams()->AddStream(remote_stream);
 
   // Remote audio track
@@ -1317,7 +1317,7 @@ TEST_F(RTCStatsCollectorTest,
 TEST_F(RTCStatsCollectorTest,
        CollectLocalRTCMediaStreamStatsAndRTCMediaStreamTrackStats_Video) {
   rtc::scoped_refptr<MediaStream> local_stream =
-      MediaStream::Create("LocalStreamLabel");
+      MediaStream::Create("LocalStreamId");
   pc_->mutable_local_streams()->AddStream(local_stream);
 
   // Local video track
@@ -1376,7 +1376,7 @@ TEST_F(RTCStatsCollectorTest,
 TEST_F(RTCStatsCollectorTest,
        CollectRemoteRTCMediaStreamStatsAndRTCMediaStreamTrackStats_Video) {
   rtc::scoped_refptr<MediaStream> remote_stream =
-      MediaStream::Create("RemoteStreamLabel");
+      MediaStream::Create("RemoteStreamId");
   pc_->mutable_remote_streams()->AddStream(remote_stream);
 
   // Remote video track with values
