@@ -48,7 +48,7 @@ class VideoAdapter {
   // requested aspect ratio is orientation agnostic and will be adjusted to
   // maintain the input orientation, so it doesn't matter if e.g. 1280x720 or
   // 720x1280 is requested.
-  void OnOutputFormatRequest(const VideoFormat& format);
+  void OnOutputFormatRequest(const rtc::Optional<VideoFormat>& format);
 
   // Requests the output frame size from |AdaptFrameResolution| to have as close
   // as possible to |target_pixel_count| pixels (if set) but no more than

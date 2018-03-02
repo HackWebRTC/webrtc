@@ -255,7 +255,8 @@ bool VideoAdapter::AdaptFrameResolution(int in_width,
   return true;
 }
 
-void VideoAdapter::OnOutputFormatRequest(const VideoFormat& format) {
+void VideoAdapter::OnOutputFormatRequest(
+    const rtc::Optional<VideoFormat>& format) {
   rtc::CritScope cs(&critical_section_);
   requested_format_ = format;
   next_frame_timestamp_ns_ = rtc::nullopt;
