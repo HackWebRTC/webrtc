@@ -321,9 +321,9 @@ class TurnPortTest : public testing::Test,
   void CreateUdpPort() { CreateUdpPort(kLocalAddr2); }
 
   void CreateUdpPort(const SocketAddress& address) {
-    udp_port_.reset(UDPPort::Create(&main_, &socket_factory_,
-                                    MakeNetwork(address), 0, 0, kIceUfrag2,
-                                    kIcePwd2, std::string(), false));
+    udp_port_.reset(UDPPort::Create(
+        &main_, &socket_factory_, MakeNetwork(address), 0, 0, kIceUfrag2,
+        kIcePwd2, std::string(), false, rtc::nullopt));
     // UDP port will be controlled.
     udp_port_->SetIceRole(ICEROLE_CONTROLLED);
     udp_port_->SignalPortComplete.connect(

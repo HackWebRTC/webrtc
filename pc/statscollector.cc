@@ -719,18 +719,6 @@ StatsReport* StatsCollector::AddCandidateReport(
     if (local) {
       report->AddString(StatsReport::kStatsValueNameCandidateNetworkType,
                         AdapterTypeToStatsType(candidate.network_type()));
-      if (candidate_stats.stun_stats.has_value()) {
-        const auto& stun_stats = candidate_stats.stun_stats.value();
-        report->AddInt64(StatsReport::kStatsValueNameSentStunKeepaliveRequests,
-                         stun_stats.stun_binding_requests_sent);
-        report->AddInt64(StatsReport::kStatsValueNameRecvStunKeepaliveResponses,
-                         stun_stats.stun_binding_responses_received);
-        report->AddFloat(StatsReport::kStatsValueNameStunKeepaliveRttTotal,
-                         stun_stats.stun_binding_rtt_ms_total);
-        report->AddFloat(
-            StatsReport::kStatsValueNameStunKeepaliveRttSquaredTotal,
-            stun_stats.stun_binding_rtt_ms_squared_total);
-      }
     }
     report->AddString(StatsReport::kStatsValueNameCandidateIPAddress,
                       candidate.address().ipaddr().ToString());
@@ -742,6 +730,18 @@ StatsReport* StatsCollector::AddCandidateReport(
                       IceCandidateTypeToStatsType(candidate.type()));
     report->AddString(StatsReport::kStatsValueNameCandidateTransportType,
                       candidate.protocol());
+  }
+
+  if (local && candidate_stats.stun_stats.has_value()) {
+    const auto& stun_stats = candidate_stats.stun_stats.value();
+    report->AddInt64(StatsReport::kStatsValueNameSentStunKeepaliveRequests,
+                     stun_stats.stun_binding_requests_sent);
+    report->AddInt64(StatsReport::kStatsValueNameRecvStunKeepaliveResponses,
+                     stun_stats.stun_binding_responses_received);
+    report->AddFloat(StatsReport::kStatsValueNameStunKeepaliveRttTotal,
+                     stun_stats.stun_binding_rtt_ms_total);
+    report->AddFloat(StatsReport::kStatsValueNameStunKeepaliveRttSquaredTotal,
+                     stun_stats.stun_binding_rtt_ms_squared_total);
   }
 
   return report;

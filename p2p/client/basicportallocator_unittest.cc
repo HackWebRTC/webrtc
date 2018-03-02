@@ -14,6 +14,7 @@
 #include "p2p/base/basicpacketsocketfactory.h"
 #include "p2p/base/p2pconstants.h"
 #include "p2p/base/p2ptransportchannel.h"
+#include "p2p/base/stunport.h"
 #include "p2p/base/testrelayserver.h"
 #include "p2p/base/teststunserver.h"
 #include "p2p/base/testturnserver.h"
@@ -96,6 +97,25 @@ static const char kTurnPassword[] = "test";
 // STUN timeout (with all retries) is cricket::STUN_TOTAL_TIMEOUT.
 // Add some margin of error for slow bots.
 static const int kStunTimeoutMs = cricket::STUN_TOTAL_TIMEOUT;
+
+namespace {
+
+void CheckStunKeepaliveIntervalOfAllReadyPorts(
+    const cricket::PortAllocatorSession* allocator_session,
+    int expected) {
+  auto ready_ports = allocator_session->ReadyPorts();
+  for (const auto* port : ready_ports) {
+    if (port->Type() == cricket::STUN_PORT_TYPE ||
+        (port->Type() == cricket::LOCAL_PORT_TYPE &&
+         port->GetProtocol() == cricket::PROTO_UDP)) {
+      EXPECT_EQ(
+          static_cast<const cricket::UDPPort*>(port)->stun_keepalive_delay(),
+          expected);
+    }
+  }
+}
+
+}  // namespace
 
 namespace cricket {
 
@@ -2098,6 +2118,76 @@ TEST_F(BasicPortAllocatorTest, TestSetCandidateFilterAfterCandidatesGathered) {
     EXPECT_EQ(candidate.related_address(),
               rtc::EmptySocketAddressWithFamily(candidate.address().family()));
   }
+}
+
+TEST_F(BasicPortAllocatorTest, SetStunKeepaliveIntervalForPorts) {
+  const int pool_size = 1;
+  const int expected_stun_keepalive_interval = 123;
+  AddInterface(kClientAddr);
+  allocator_->SetConfiguration(allocator_->stun_servers(),
+                               allocator_->turn_servers(), pool_size, false,
+                               nullptr, expected_stun_keepalive_interval);
+  auto* pooled_session = allocator_->GetPooledSession();
+  ASSERT_NE(nullptr, pooled_session);
+  EXPECT_EQ_SIMULATED_WAIT(true, pooled_session->CandidatesAllocationDone(),
+                           kDefaultAllocationTimeout, fake_clock);
+  CheckStunKeepaliveIntervalOfAllReadyPorts(pooled_session,
+                                            expected_stun_keepalive_interval);
+}
+
+TEST_F(BasicPortAllocatorTest,
+       ChangeStunKeepaliveIntervalForPortsAfterInitialConfig) {
+  const int pool_size = 1;
+  AddInterface(kClientAddr);
+  allocator_->SetConfiguration(allocator_->stun_servers(),
+                               allocator_->turn_servers(), pool_size, false,
+                               nullptr, 123 /* stun keepalive interval */);
+  auto* pooled_session = allocator_->GetPooledSession();
+  ASSERT_NE(nullptr, pooled_session);
+  EXPECT_EQ_SIMULATED_WAIT(true, pooled_session->CandidatesAllocationDone(),
+                           kDefaultAllocationTimeout, fake_clock);
+  const int expected_stun_keepalive_interval = 321;
+  allocator_->SetConfiguration(allocator_->stun_servers(),
+                               allocator_->turn_servers(), pool_size, false,
+                               nullptr, expected_stun_keepalive_interval);
+  CheckStunKeepaliveIntervalOfAllReadyPorts(pooled_session,
+                                            expected_stun_keepalive_interval);
+}
+
+TEST_F(BasicPortAllocatorTest,
+       SetStunKeepaliveIntervalForPortsWithSharedSocket) {
+  const int pool_size = 1;
+  const int expected_stun_keepalive_interval = 123;
+  AddInterface(kClientAddr);
+  allocator_->set_flags(allocator().flags() |
+                        PORTALLOCATOR_ENABLE_SHARED_SOCKET);
+  allocator_->SetConfiguration(allocator_->stun_servers(),
+                               allocator_->turn_servers(), pool_size, false,
+                               nullptr, expected_stun_keepalive_interval);
+  EXPECT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+  EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
+                             kDefaultAllocationTimeout, fake_clock);
+  CheckStunKeepaliveIntervalOfAllReadyPorts(session_.get(),
+                                            expected_stun_keepalive_interval);
+}
+
+TEST_F(BasicPortAllocatorTest,
+       SetStunKeepaliveIntervalForPortsWithoutSharedSocket) {
+  const int pool_size = 1;
+  const int expected_stun_keepalive_interval = 123;
+  AddInterface(kClientAddr);
+  allocator_->set_flags(allocator().flags() &
+                        ~(PORTALLOCATOR_ENABLE_SHARED_SOCKET));
+  allocator_->SetConfiguration(allocator_->stun_servers(),
+                               allocator_->turn_servers(), pool_size, false,
+                               nullptr, expected_stun_keepalive_interval);
+  EXPECT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+  EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
+                             kDefaultAllocationTimeout, fake_clock);
+  CheckStunKeepaliveIntervalOfAllReadyPorts(session_.get(),
+                                            expected_stun_keepalive_interval);
 }
 
 }  // namespace cricket

@@ -457,17 +457,16 @@ void UDPPort::OnStunBindingRequestSucceeded(
     int rtt_ms,
     const rtc::SocketAddress& stun_server_addr,
     const rtc::SocketAddress& stun_reflected_addr) {
-  if (bind_request_succeeded_servers_.find(stun_server_addr) !=
-          bind_request_succeeded_servers_.end()) {
-    return;
-  }
-  bind_request_succeeded_servers_.insert(stun_server_addr);
-
   RTC_DCHECK(stats_.stun_binding_responses_received <
              stats_.stun_binding_requests_sent);
   stats_.stun_binding_responses_received++;
   stats_.stun_binding_rtt_ms_total += rtt_ms;
   stats_.stun_binding_rtt_ms_squared_total += rtt_ms * rtt_ms;
+  if (bind_request_succeeded_servers_.find(stun_server_addr) !=
+      bind_request_succeeded_servers_.end()) {
+    return;
+  }
+  bind_request_succeeded_servers_.insert(stun_server_addr);
   // If socket is shared and |stun_reflected_addr| is equal to local socket
   // address, or if the same address has been added by another STUN server,
   // then discarding the stun address.
@@ -554,9 +553,11 @@ StunPort* StunPort::Create(rtc::Thread* thread,
                            const std::string& username,
                            const std::string& password,
                            const ServerAddresses& servers,
-                           const std::string& origin) {
+                           const std::string& origin,
+                           rtc::Optional<int> stun_keepalive_interval) {
   StunPort* port = new StunPort(thread, factory, network, min_port, max_port,
                                 username, password, servers, origin);
+  port->set_stun_keepalive_delay(stun_keepalive_interval);
   if (!port->Init()) {
     delete port;
     port = NULL;

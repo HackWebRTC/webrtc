@@ -236,6 +236,11 @@ class Port : public PortInterface, public rtc::MessageHandler,
        const std::string& password);
   ~Port() override;
 
+  // Note that the port type does NOT uniquely identify different subclasses of
+  // Port. Use the 2-tuple of the port type AND the protocol (GetProtocol()) to
+  // uniquely identify subclasses. Whenever a new subclass of Port introduces a
+  // conflit in the value of the 2-tuple, make sure that the implementation that
+  // relies on this 2-tuple for RTTI is properly changed.
   const std::string& Type() const override;
   rtc::Network* Network() const override;
 

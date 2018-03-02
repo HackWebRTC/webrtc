@@ -886,4 +886,48 @@ INSTANTIATE_TEST_CASE_P(PeerConnectionIceTest,
                         Values(SdpSemantics::kPlanB,
                                SdpSemantics::kUnifiedPlan));
 
+class PeerConnectionIceConfigTest : public testing::Test {
+ protected:
+  void SetUp() override {
+    pc_factory_ = CreatePeerConnectionFactory(
+        rtc::Thread::Current(), rtc::Thread::Current(), rtc::Thread::Current(),
+        FakeAudioCaptureModule::Create(), CreateBuiltinAudioEncoderFactory(),
+        CreateBuiltinAudioDecoderFactory(), nullptr, nullptr);
+  }
+  void CreatePeerConnection(const RTCConfiguration& config) {
+    std::unique_ptr<cricket::FakePortAllocator> port_allocator(
+        new cricket::FakePortAllocator(rtc::Thread::Current(), nullptr));
+    port_allocator_ = port_allocator.get();
+    rtc::scoped_refptr<PeerConnectionInterface> pc(
+        pc_factory_->CreatePeerConnection(
+            config, nullptr /* constraint */, std::move(port_allocator),
+            nullptr /* cert_generator */, &observer_));
+    EXPECT_TRUE(pc.get());
+    pc_ = std::move(pc.get());
+  }
+
+  rtc::scoped_refptr<PeerConnectionFactoryInterface> pc_factory_ = nullptr;
+  rtc::scoped_refptr<PeerConnectionInterface> pc_ = nullptr;
+  cricket::FakePortAllocator* port_allocator_ = nullptr;
+
+  MockPeerConnectionObserver observer_;
+};
+
+TEST_F(PeerConnectionIceConfigTest, SetStunCandidateKeepaliveInterval) {
+  RTCConfiguration config;
+  config.stun_candidate_keepalive_interval = 123;
+  config.ice_candidate_pool_size = 1;
+  CreatePeerConnection(config);
+  ASSERT_NE(port_allocator_, nullptr);
+  rtc::Optional<int> actual_stun_keepalive_interval =
+      port_allocator_->stun_candidate_keepalive_interval();
+  EXPECT_EQ(actual_stun_keepalive_interval.value_or(-1), 123);
+  config.stun_candidate_keepalive_interval = 321;
+  RTCError error;
+  pc_->SetConfiguration(config, &error);
+  actual_stun_keepalive_interval =
+      port_allocator_->stun_candidate_keepalive_interval();
+  EXPECT_EQ(actual_stun_keepalive_interval.value_or(-1), 321);
+}
+
 }  // namespace webrtc

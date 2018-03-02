@@ -42,9 +42,11 @@ class UDPPort : public Port {
                          const std::string& username,
                          const std::string& password,
                          const std::string& origin,
-                         bool emit_local_for_anyaddress) {
+                         bool emit_local_for_anyaddress,
+                         rtc::Optional<int> stun_keepalive_interval) {
     UDPPort* port = new UDPPort(thread, factory, network, socket, username,
                                 password, origin, emit_local_for_anyaddress);
+    port->set_stun_keepalive_delay(stun_keepalive_interval);
     if (!port->Init()) {
       delete port;
       port = NULL;
@@ -60,10 +62,12 @@ class UDPPort : public Port {
                          const std::string& username,
                          const std::string& password,
                          const std::string& origin,
-                         bool emit_local_for_anyaddress) {
+                         bool emit_local_for_anyaddress,
+                         rtc::Optional<int> stun_keepalive_interval) {
     UDPPort* port =
         new UDPPort(thread, factory, network, min_port, max_port, username,
                     password, origin, emit_local_for_anyaddress);
+    port->set_stun_keepalive_delay(stun_keepalive_interval);
     if (!port->Init()) {
       delete port;
       port = NULL;
@@ -262,7 +266,8 @@ class StunPort : public UDPPort {
                           const std::string& username,
                           const std::string& password,
                           const ServerAddresses& servers,
-                          const std::string& origin);
+                          const std::string& origin,
+                          rtc::Optional<int> stun_keepalive_interval);
 
   void PrepareAddress() override;
 
