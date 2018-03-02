@@ -61,7 +61,6 @@
       'Android32 Builder x86': 'android_release_bot_x86',
       'Android32 Builder x86 (dbg)': 'android_debug_static_bot_x86',
       'Android64 Builder x64 (dbg)': 'android_debug_static_bot_x64',
-      'Android32 Builder MIPS (dbg)': 'android_debug_static_bot_mipsel',
 
       # Windows
       'Win32 Debug': 'win_msvc_debug_bot_x86',
