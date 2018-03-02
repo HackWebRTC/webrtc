@@ -449,6 +449,7 @@ webrtc_fuzzer_test("audio_processing_fuzzer") {
     "../../modules/audio_processing/aec3",
     "../../rtc_base:rtc_base_approved",
   ]
+  seed_corpus = "corpora/audio_processing-corpus"
 }
 
 webrtc_fuzzer_test("comfort_noise_decoder_fuzzer") {

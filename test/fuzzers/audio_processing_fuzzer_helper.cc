@@ -50,7 +50,7 @@ void GenerateFixedFrame(test::FuzzDataHelper* fuzz_data,
   RTC_DCHECK_LE(samples_per_input_channel * num_channels,
                 AudioFrame::kMaxDataSizeSamples);
   for (size_t i = 0; i < samples_per_input_channel * num_channels; ++i) {
-    fixed_frame->mutable_data()[i] = fuzz_data->ReadOrDefaultValue(0);
+    fixed_frame->mutable_data()[i] = fuzz_data->ReadOrDefaultValue<int16_t>(0);
   }
 }
 }  // namespace
@@ -81,7 +81,7 @@ void FuzzAudioProcessing(test::FuzzDataHelper* fuzz_data,
         static_cast<size_t>(fuzz_data->SelectOneOf(rate_kinds));
 
     const bool num_channels = fuzz_data->ReadOrDefaultValue(true) ? 2 : 1;
-    const uint8_t stream_delay = fuzz_data->ReadOrDefaultValue(0);
+    const uint8_t stream_delay = fuzz_data->ReadOrDefaultValue<uint8_t>(0);
 
     // API call needed for AEC-2 and AEC-m to run.
     apm->set_stream_delay_ms(stream_delay);

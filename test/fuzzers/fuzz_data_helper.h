@@ -79,6 +79,8 @@ class FuzzDataHelper {
     return data_.subview(index_to_return, bytes);
   }
 
+  size_t BytesRead() const { return data_ix_; }
+
  private:
   rtc::ArrayView<const uint8_t> data_;
   size_t data_ix_ = 0;
