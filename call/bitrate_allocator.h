@@ -188,6 +188,13 @@ class BitrateAllocator {
       const ObserverAllocation& observers_capacities,
       ObserverAllocation* allocation);
 
+  // Allow packets to be transmitted in up to 2 times max video bitrate if the
+  // bandwidth estimate allows it.
+  // TODO(bugs.webrtc.org/8541): May be worth to refactor to keep this logic in
+  // video send stream. Similar logic is implemented in
+  // AudioPriorityBitrateAllocationStrategy.
+  uint8_t GetTransmissionMaxBitrateMultiplier();
+
   rtc::SequencedTaskChecker sequenced_checker_;
   LimitObserver* const limit_observer_ RTC_GUARDED_BY(&sequenced_checker_);
   // Stored in a list to keep track of the insertion order.
@@ -205,6 +212,7 @@ class BitrateAllocator {
   uint32_t total_requested_min_bitrate_ RTC_GUARDED_BY(&sequenced_checker_);
   std::unique_ptr<rtc::BitrateAllocationStrategy> bitrate_allocation_strategy_
       RTC_GUARDED_BY(&sequenced_checker_);
+  uint8_t transmission_max_bitrate_multiplier_;
 };
 
 }  // namespace webrtc

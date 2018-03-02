@@ -20,16 +20,14 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/clock.h"
+#include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
 
 // Allow packets to be transmitted in up to 2 times max video bitrate if the
 // bandwidth estimate allows it.
-// TODO(bugs.webrtc.org/8541): May be worth to refactor to keep this logic in
-// video send stream. Similar logic is implemented in
-// AudioPriorityBitrateAllocationStrategy.
-const int kTransmissionMaxBitrateMultiplier = 2;
+const uint8_t kTransmissionMaxBitrateMultiplier = 2;
 const int kDefaultBitrateBps = 300000;
 
 // Require a bitrate increase of max(10%, 20kbps) to resume paused streams.
@@ -61,13 +59,26 @@ BitrateAllocator::BitrateAllocator(LimitObserver* limit_observer)
       last_bwe_log_time_(0),
       total_requested_padding_bitrate_(0),
       total_requested_min_bitrate_(0),
-      bitrate_allocation_strategy_(nullptr) {
+      bitrate_allocation_strategy_(nullptr),
+      transmission_max_bitrate_multiplier_(
+          GetTransmissionMaxBitrateMultiplier()) {
   sequenced_checker_.Detach();
 }
 
 BitrateAllocator::~BitrateAllocator() {
   RTC_HISTOGRAM_COUNTS_100("WebRTC.Call.NumberOfPauseEvents",
                            num_pause_events_);
+}
+
+uint8_t BitrateAllocator::GetTransmissionMaxBitrateMultiplier() {
+  uint64_t multiplier = strtoul(webrtc::field_trial::FindFullName(
+                                    "WebRTC-TransmissionMaxBitrateMultiplier")
+                                    .c_str(),
+                                nullptr, 10);
+  if (multiplier > 0 && multiplier <= kTransmissionMaxBitrateMultiplier) {
+    return static_cast<uint8_t>(multiplier);
+  }
+  return kTransmissionMaxBitrateMultiplier;
 }
 
 void BitrateAllocator::OnNetworkChanged(uint32_t target_bitrate_bps,
@@ -302,7 +313,7 @@ BitrateAllocator::ObserverAllocation BitrateAllocator::AllocateBitrates(
   if (bitrate <= sum_max_bitrates)
     return NormalRateAllocation(bitrate, sum_min_bitrates);
 
-  // All observers will get up to kTransmissionMaxBitrateMultiplier x max.
+  // All observers will get up to transmission_max_bitrate_multiplier_ x max.
   return MaxRateAllocation(bitrate, sum_max_bitrates);
 }
 
@@ -406,7 +417,7 @@ BitrateAllocator::ObserverAllocation BitrateAllocator::MaxRateAllocation(
     allocation[observer_config.observer] = observer_config.max_bitrate_bps;
     bitrate -= observer_config.max_bitrate_bps;
   }
-  DistributeBitrateEvenly(bitrate, true, kTransmissionMaxBitrateMultiplier,
+  DistributeBitrateEvenly(bitrate, true, transmission_max_bitrate_multiplier_,
                           &allocation);
   return allocation;
 }
