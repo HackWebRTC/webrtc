@@ -101,8 +101,10 @@ int VP9EncoderImpl::Release() {
     encoded_image_._buffer = nullptr;
   }
   if (encoder_ != nullptr) {
-    if (vpx_codec_destroy(encoder_)) {
-      ret_val = WEBRTC_VIDEO_CODEC_MEMORY;
+    if (inited_) {
+      if (vpx_codec_destroy(encoder_)) {
+        ret_val = WEBRTC_VIDEO_CODEC_MEMORY;
+      }
     }
     delete encoder_;
     encoder_ = nullptr;
@@ -1008,10 +1010,12 @@ int VP9DecoderImpl::Release() {
   int ret_val = WEBRTC_VIDEO_CODEC_OK;
 
   if (decoder_ != nullptr) {
-    // When a codec is destroyed libvpx will release any buffers of
-    // |frame_buffer_pool_| it is currently using.
-    if (vpx_codec_destroy(decoder_)) {
-      ret_val = WEBRTC_VIDEO_CODEC_MEMORY;
+    if (inited_) {
+      // When a codec is destroyed libvpx will release any buffers of
+      // |frame_buffer_pool_| it is currently using.
+      if (vpx_codec_destroy(decoder_)) {
+        ret_val = WEBRTC_VIDEO_CODEC_MEMORY;
+      }
     }
     delete decoder_;
     decoder_ = nullptr;
