@@ -124,15 +124,25 @@ Thread::ScopedDisallowBlockingCalls::~ScopedDisallowBlockingCalls() {
 // DEPRECATED.
 Thread::Thread() : Thread(SocketServer::CreateDefault()) {}
 
-Thread::Thread(SocketServer* ss) : MessageQueue(ss, false) {
-  SetName("Thread", this);  // default name
-  DoInit();
-}
+Thread::Thread(SocketServer* ss) : Thread(ss, /*do_init=*/true) {}
 
 Thread::Thread(std::unique_ptr<SocketServer> ss)
+    : Thread(std::move(ss), /*do_init=*/true) {}
+
+Thread::Thread(SocketServer* ss, bool do_init)
+    : MessageQueue(ss, /*do_init=*/false) {
+  SetName("Thread", this);  // default name
+  if (do_init) {
+    DoInit();
+  }
+}
+
+Thread::Thread(std::unique_ptr<SocketServer> ss, bool do_init)
     : MessageQueue(std::move(ss), false) {
   SetName("Thread", this);  // default name
-  DoInit();
+  if (do_init) {
+    DoInit();
+  }
 }
 
 Thread::~Thread() {
@@ -524,7 +534,9 @@ bool Thread::IsRunning() {
 #endif
 }
 
-AutoThread::AutoThread() : Thread(SocketServer::CreateDefault()) {
+AutoThread::AutoThread()
+    : Thread(SocketServer::CreateDefault(), /*do_init=*/false) {
+  DoInit();
   if (!ThreadManager::Instance()->CurrentThread()) {
     ThreadManager::Instance()->SetCurrentThread(this);
   }
@@ -539,7 +551,8 @@ AutoThread::~AutoThread() {
 }
 
 AutoSocketServerThread::AutoSocketServerThread(SocketServer* ss)
-    : Thread(ss) {
+    : Thread(ss, /*do_init=*/false) {
+  DoInit();
   old_thread_ = ThreadManager::Instance()->CurrentThread();
   // Temporarily set the current thread to nullptr so that we can keep checks
   // around that catch unintentional pointer overwrites.

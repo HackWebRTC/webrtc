@@ -11,6 +11,7 @@
 #include "rtc_base/signalthread.h"
 
 #include "rtc_base/checks.h"
+#include "rtc_base/ptr_util.h"
 
 namespace rtc {
 
@@ -122,6 +123,12 @@ void SignalThread::OnMessage(Message *msg) {
       refcount_--;
     }
   }
+}
+
+SignalThread::Worker::Worker(SignalThread* parent)
+    : Thread(MakeUnique<NullSocketServer>(), /*do_init=*/false),
+      parent_(parent) {
+  DoInit();
 }
 
 SignalThread::Worker::~Worker() {
