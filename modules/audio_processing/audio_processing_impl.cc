@@ -1588,6 +1588,17 @@ void AudioProcessingImpl::DetachAecDump() {
   }
 }
 
+void AudioProcessingImpl::AttachPlayoutAudioGenerator(
+    std::unique_ptr<AudioGenerator> audio_generator) {
+  // TODO(bugs.webrtc.org/8882) Stub.
+  // Reset internal audio generator with audio_generator.
+}
+
+void AudioProcessingImpl::DetachPlayoutAudioGenerator() {
+  // TODO(bugs.webrtc.org/8882) Stub.
+  // Delete audio generator, if one is attached.
+}
+
 AudioProcessing::AudioProcessingStatistics::AudioProcessingStatistics() {
   residual_echo_return_loss.Set(-100.0f, -100.0f, -100.0f, -100.0f);
   echo_return_loss.Set(-100.0f, -100.0f, -100.0f, -100.0f);

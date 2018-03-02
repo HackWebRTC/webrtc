@@ -26,6 +26,7 @@
 #include "api/audio/echo_control.h"
 #include "api/optional.h"
 #include "modules/audio_processing/beamformer/array_util.h"
+#include "modules/audio_processing/include/audio_generator.h"
 #include "modules/audio_processing/include/audio_processing_statistics.h"
 #include "modules/audio_processing/include/config.h"
 #include "rtc_base/arraysize.h"
@@ -479,6 +480,16 @@ class AudioProcessing : public rtc::RefCountInterface {
   // attached, it's destructor is called. The d-tor may block until
   // all pending logging tasks are completed.
   virtual void DetachAecDump() = 0;
+
+  // Attaches provided webrtc::AudioGenerator for modifying playout audio.
+  // Calling this method when another AudioGenerator is attached replaces the
+  // active AudioGenerator with a new one.
+  virtual void AttachPlayoutAudioGenerator(
+      std::unique_ptr<AudioGenerator> audio_generator) = 0;
+
+  // If no AudioGenerator is attached, this has no effect. If an AecDump is
+  // attached, its destructor is called.
+  virtual void DetachPlayoutAudioGenerator() = 0;
 
   // Use to send UMA histograms at end of a call. Note that all histogram
   // specific member variables are reset.

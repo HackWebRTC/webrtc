@@ -62,6 +62,9 @@ class AudioProcessingImpl : public AudioProcessing {
   void UpdateHistogramsOnCallEnd() override;
   void AttachAecDump(std::unique_ptr<AecDump> aec_dump) override;
   void DetachAecDump() override;
+  void AttachPlayoutAudioGenerator(
+      std::unique_ptr<AudioGenerator> audio_generator) override;
+  void DetachPlayoutAudioGenerator() override;
 
   // Capture-side exclusive methods possibly running APM in a
   // multi-threaded manner. Acquire the capture lock.
