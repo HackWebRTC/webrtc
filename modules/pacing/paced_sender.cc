@@ -21,7 +21,6 @@
 #include "modules/pacing/alr_detector.h"
 #include "modules/pacing/bitrate_prober.h"
 #include "modules/pacing/interval_budget.h"
-#include "modules/pacing/packet_queue.h"
 #include "modules/pacing/round_robin_packet_queue.h"
 #include "modules/utility/include/process_thread.h"
 #include "rtc_base/checks.h"
@@ -41,15 +40,6 @@ const int64_t kMaxElapsedTimeMs = 2000;
 // time.
 const int64_t kMaxIntervalTimeMs = 30;
 
-const char kRoundRobinExperimentName[] = "WebRTC-RoundRobinPacing";
-
-bool IsRoundRobinPacingEnabled() {
-  return webrtc::field_trial::IsEnabled(kRoundRobinExperimentName) || (
-      !webrtc::field_trial::IsDisabled(kRoundRobinExperimentName) &&
-      webrtc::runtime_enabled_features::IsFeatureEnabled(
-          webrtc::runtime_enabled_features::kDualStreamModeFeatureName));
-}
-
 }  // namespace
 
 namespace webrtc {
@@ -57,24 +47,13 @@ namespace webrtc {
 const int64_t PacedSender::kMaxQueueLengthMs = 2000;
 const float PacedSender::kDefaultPaceMultiplier = 2.5f;
 
-namespace {
-std::unique_ptr<PacketQueueInterface> CreatePacketQueue(const Clock* clock,
-                                                        bool round_robin) {
-  if (round_robin) {
-    return rtc::MakeUnique<RoundRobinPacketQueue>(clock);
-  } else {
-    return rtc::MakeUnique<PacketQueue>(clock);
-  }
-}
-}  // namespace
-
 PacedSender::PacedSender(const Clock* clock,
                          PacketSender* packet_sender,
                          RtcEventLog* event_log)
     : PacedSender(clock,
                   packet_sender,
                   event_log,
-                  CreatePacketQueue(clock, IsRoundRobinPacingEnabled())) {}
+                  rtc::MakeUnique<RoundRobinPacketQueue>(clock)) {}
 
 PacedSender::PacedSender(const Clock* clock,
                          PacketSender* packet_sender,
@@ -195,7 +174,7 @@ void PacedSender::InsertPacket(RtpPacketSender::Priority priority,
   if (capture_time_ms < 0)
     capture_time_ms = now_ms;
 
-  packets_->Push(PacketQueue::Packet(priority, ssrc, sequence_number,
+  packets_->Push(PacketQueueInterface::Packet(priority, ssrc, sequence_number,
                                      capture_time_ms, now_ms, bytes,
                                      retransmission, packet_counter_++));
 }
@@ -317,7 +296,7 @@ void PacedSender::Process() {
     // Since we need to release the lock in order to send, we first pop the
     // element from the priority queue but keep it in storage, so that we can
     // reinsert it if send fails.
-    const PacketQueue::Packet& packet = packets_->BeginPop();
+    const PacketQueueInterface::Packet& packet = packets_->BeginPop();
 
     if (SendPacket(packet, pacing_info)) {
       bytes_sent += packet.bytes;
@@ -358,7 +337,7 @@ void PacedSender::ProcessThreadAttached(ProcessThread* process_thread) {
   process_thread_ = process_thread;
 }
 
-bool PacedSender::SendPacket(const PacketQueue::Packet& packet,
+bool PacedSender::SendPacket(const PacketQueueInterface::Packet& packet,
                              const PacedPacketInfo& pacing_info) {
   RTC_DCHECK(!paused_);
   if (media_budget_->bytes_remaining() == 0 &&
