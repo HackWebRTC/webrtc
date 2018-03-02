@@ -1824,14 +1824,30 @@ void VideoQualityTest::CreateVideoStreams() {
   if (fec_controller_factory_.get()) {
     RTC_DCHECK_LE(video_send_configs_.size(), 1);
   }
+
+  // TODO(http://crbug/818127):
+  // Remove this workaround when ALR is not screenshare-specific.
+  std::list<size_t> streams_creation_order;
   for (size_t i = 0; i < video_send_configs_.size(); ++i) {
-    if (fec_controller_factory_.get()) {
-      video_send_streams_.push_back(sender_call_->CreateVideoSendStream(
-          video_send_configs_[i].Copy(), video_encoder_configs_[i].Copy(),
-          fec_controller_factory_->CreateFecController()));
+    // If dual streams are created, add the screenshare stream last.
+    if (video_encoder_configs_[i].content_type ==
+        VideoEncoderConfig::ContentType::kScreen) {
+      streams_creation_order.push_back(i);
     } else {
-      video_send_streams_.push_back(sender_call_->CreateVideoSendStream(
-          video_send_configs_[i].Copy(), video_encoder_configs_[i].Copy()));
+      streams_creation_order.push_front(i);
+    }
+  }
+
+  video_send_streams_.resize(video_send_configs_.size(), nullptr);
+
+  for (size_t i : streams_creation_order) {
+    if (fec_controller_factory_.get()) {
+      video_send_streams_[i] = sender_call_->CreateVideoSendStream(
+          video_send_configs_[i].Copy(), video_encoder_configs_[i].Copy(),
+          fec_controller_factory_->CreateFecController());
+    } else {
+      video_send_streams_[i] = sender_call_->CreateVideoSendStream(
+          video_send_configs_[i].Copy(), video_encoder_configs_[i].Copy());
     }
   }
   for (size_t i = 0; i < video_receive_configs_.size(); ++i) {
