@@ -319,12 +319,21 @@ int64_t FrameBuffer::InsertFrame(std::unique_ptr<EncodedFrame> frame) {
   }
 
   if (num_frames_buffered_ >= kMaxFramesBuffered) {
-    RTC_LOG(LS_WARNING) << "Frame with (picture_id:spatial_id) ("
-                        << key.picture_id << ":"
-                        << static_cast<int>(key.spatial_layer)
-                        << ") could not be inserted due to the frame "
-                        << "buffer being full, dropping frame.";
-    return last_continuous_picture_id;
+    if (frame->is_keyframe()) {
+      RTC_LOG(LS_WARNING) << "Inserting keyframe (picture_id:spatial_id) ("
+                          << key.picture_id << ":"
+                          << static_cast<int>(key.spatial_layer)
+                          << ") but buffer is full, clearing"
+                          << " buffer and inserting the frame.";
+      ClearFramesAndHistory();
+    } else {
+      RTC_LOG(LS_WARNING) << "Frame with (picture_id:spatial_id) ("
+                          << key.picture_id << ":"
+                          << static_cast<int>(key.spatial_layer)
+                          << ") could not be inserted due to the frame "
+                          << "buffer being full, dropping frame.";
+      return last_continuous_picture_id;
+    }
   }
 
   if (last_decoded_frame_it_ != frames_.end() &&

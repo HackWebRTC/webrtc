@@ -559,5 +559,20 @@ TEST_F(TestFrameBuffer2, KeyframeRequired) {
   CheckNoFrame(2);
 }
 
+TEST_F(TestFrameBuffer2, KeyframeClearsFullBuffer) {
+  const int kMaxBufferSize = 600;
+
+  for (int i = 1; i <= kMaxBufferSize; ++i)
+    EXPECT_EQ(-1, InsertFrame(i, 0, i * 1000, false, i - 1));
+  ExtractFrame();
+  CheckNoFrame(0);
+
+  EXPECT_EQ(
+      kMaxBufferSize + 1,
+      InsertFrame(kMaxBufferSize + 1, 0, (kMaxBufferSize + 1) * 1000, false));
+  ExtractFrame();
+  CheckFrame(1, kMaxBufferSize + 1, 0);
+}
+
 }  // namespace video_coding
 }  // namespace webrtc
