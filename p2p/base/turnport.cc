@@ -441,21 +441,21 @@ void TurnPort::OnSocketConnect(rtc::AsyncPacketSocket* socket) {
     if (socket->GetLocalAddress().IsLoopbackIP()) {
       RTC_LOG(LS_WARNING) << "Socket is bound to the address:"
                           << socket_address.ipaddr().ToString()
-                          << ", rather then an address associated with network:"
+                          << ", rather than an address associated with network:"
                           << Network()->ToString()
                           << ". Still allowing it since it's localhost.";
     } else if (IPIsAny(Network()->GetBestIP())) {
       RTC_LOG(LS_WARNING)
           << "Socket is bound to the address:"
           << socket_address.ipaddr().ToString()
-          << ", rather then an address associated with network:"
+          << ", rather than an address associated with network:"
           << Network()->ToString()
           << ". Still allowing it since it's the 'any' address"
           << ", possibly caused by multiple_routes being disabled.";
     } else {
       RTC_LOG(LS_WARNING) << "Socket is bound to the address:"
                           << socket_address.ipaddr().ToString()
-                          << ", rather then an address associated with network:"
+                          << ", rather than an address associated with network:"
                           << Network()->ToString() << ". Discarding TURN port.";
       OnAllocateError();
       return;

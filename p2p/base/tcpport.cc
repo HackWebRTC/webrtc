@@ -433,21 +433,21 @@ void TCPConnection::OnConnect(rtc::AsyncPacketSocket* socket) {
     if (socket->GetLocalAddress().IsLoopbackIP()) {
       RTC_LOG(LS_WARNING) << "Socket is bound to the address:"
                           << socket_address.ipaddr().ToString()
-                          << ", rather then an address associated with network:"
+                          << ", rather than an address associated with network:"
                           << port_->Network()->ToString()
                           << ". Still allowing it since it's localhost.";
     } else if (IPIsAny(port_->Network()->GetBestIP())) {
       RTC_LOG(LS_WARNING)
           << "Socket is bound to the address:"
           << socket_address.ipaddr().ToString()
-          << ", rather then an address associated with network:"
+          << ", rather than an address associated with network:"
           << port_->Network()->ToString()
           << ". Still allowing it since it's the 'any' address"
           << ", possibly caused by multiple_routes being disabled.";
     } else {
       RTC_LOG(LS_WARNING) << "Dropping connection as TCP socket bound to IP "
                           << socket_address.ipaddr().ToString()
-                          << ", rather then an address associated with network:"
+                          << ", rather than an address associated with network:"
                           << port_->Network()->ToString();
       OnClose(socket, 0);
       return;
