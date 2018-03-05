@@ -11,9 +11,9 @@
 
 #include <algorithm>
 #include <cmath>
-#include <set>
 #include <sstream>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -41,7 +41,11 @@
 namespace webrtc {
 
 static const int kMinSendSidePacketHistorySize = 600;
-static const int kSendSideSeqNumSetMaxSize = 15000;
+
+// Assume an average video stream has around 3 packets per frame (1 mbps / 30
+// fps / 1400B) A sequence number set with size 5500 will be able to store
+// packet sequence number for at least last 60 seconds.
+static const int kSendSideSeqNumSetMaxSize = 5500;
 
 namespace {
 
@@ -414,7 +418,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
       RTC_GUARDED_BY(overhead_bytes_per_packet_crit_);
   size_t transport_overhead_bytes_per_packet_;
 
-  std::set<uint16_t> feedback_packet_seq_num_set_;
+  std::unordered_set<uint16_t> feedback_packet_seq_num_set_;
   std::vector<bool> loss_mask_vector_;
 };
 
