@@ -47,8 +47,7 @@ struct SendPacketMessageData : public rtc::MessageData {
 }  // namespace
 
 enum {
-  MSG_EARLYMEDIATIMEOUT = 1,
-  MSG_SEND_RTP_PACKET,
+  MSG_SEND_RTP_PACKET = 1,
   MSG_SEND_RTCP_PACKET,
   MSG_READYTOSENDDATA,
   MSG_DATARECEIVED,
@@ -1155,47 +1154,6 @@ VoiceChannel::~VoiceChannel() {
   Deinit();
 }
 
-bool VoiceChannel::SetAudioSend(uint32_t ssrc,
-                                bool enable,
-                                const AudioOptions* options,
-                                AudioSource* source) {
-  return InvokeOnWorker<bool>(
-      RTC_FROM_HERE, Bind(&VoiceMediaChannel::SetAudioSend, media_channel(),
-                          ssrc, enable, options, source));
-}
-
-// TODO(juberti): Handle early media the right way. We should get an explicit
-// ringing message telling us to start playing local ringback, which we cancel
-// if any early media actually arrives. For now, we do the opposite, which is
-// to wait 1 second for early media, and start playing local ringback if none
-// arrives.
-void VoiceChannel::SetEarlyMedia(bool enable) {
-  if (enable) {
-    // Start the early media timeout
-    worker_thread()->PostDelayed(RTC_FROM_HERE, kEarlyMediaTimeout, this,
-                                 MSG_EARLYMEDIATIMEOUT);
-  } else {
-    // Stop the timeout if currently going.
-    worker_thread()->Clear(this, MSG_EARLYMEDIATIMEOUT);
-  }
-}
-
-bool VoiceChannel::GetStats(VoiceMediaInfo* stats) {
-  return InvokeOnWorker<bool>(RTC_FROM_HERE, Bind(&VoiceMediaChannel::GetStats,
-                                                  media_channel(), stats));
-}
-
-void VoiceChannel::OnPacketReceived(bool rtcp,
-                                    rtc::CopyOnWriteBuffer* packet,
-                                    const rtc::PacketTime& packet_time) {
-  BaseChannel::OnPacketReceived(rtcp, packet, packet_time);
-  // Set a flag when we've received an RTP packet. If we're waiting for early
-  // media, this will disable the timeout.
-  if (!received_media_ && !rtcp) {
-    received_media_ = true;
-  }
-}
-
 void BaseChannel::UpdateMediaSendRecvState() {
   RTC_DCHECK(network_thread_->IsCurrent());
   invoker_.AsyncInvoke<void>(
@@ -1319,25 +1277,6 @@ bool VoiceChannel::SetRemoteContent_w(const MediaContentDescription* content,
   return true;
 }
 
-void VoiceChannel::HandleEarlyMediaTimeout() {
-  // This occurs on the main thread, not the worker thread.
-  if (!received_media_) {
-    RTC_LOG(LS_INFO) << "No early media received before timeout";
-    SignalEarlyMediaTimeout(this);
-  }
-}
-
-void VoiceChannel::OnMessage(rtc::Message *pmsg) {
-  switch (pmsg->message_id) {
-    case MSG_EARLYMEDIATIMEOUT:
-      HandleEarlyMediaTimeout();
-      break;
-    default:
-      BaseChannel::OnMessage(pmsg);
-      break;
-  }
-}
-
 VideoChannel::VideoChannel(rtc::Thread* worker_thread,
                            rtc::Thread* network_thread,
                            rtc::Thread* signaling_thread,
@@ -1376,11 +1315,6 @@ void VideoChannel::UpdateMediaSendRecvState_w() {
 void VideoChannel::FillBitrateInfo(BandwidthEstimationInfo* bwe_info) {
   InvokeOnWorker<void>(RTC_FROM_HERE, Bind(&VideoMediaChannel::FillBitrateInfo,
                                            media_channel(), bwe_info));
-}
-
-bool VideoChannel::GetStats(VideoMediaInfo* stats) {
-  return InvokeOnWorker<bool>(RTC_FROM_HERE, Bind(&VideoMediaChannel::GetStats,
-                                                  media_channel(), stats));
 }
 
 bool VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
