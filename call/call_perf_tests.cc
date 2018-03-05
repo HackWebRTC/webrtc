@@ -18,6 +18,7 @@
 #include "call/video_config.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
+#include "modules/audio_device/include/test_audio_device.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"
 #include "modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "rtc_base/bitrateallocationstrategy.h"
@@ -29,7 +30,6 @@
 #include "test/direct_transport.h"
 #include "test/drifting_clock.h"
 #include "test/encoder_settings.h"
-#include "test/fake_audio_device.h"
 #include "test/fake_encoder.h"
 #include "test/field_trial.h"
 #include "test/frame_generator.h"
@@ -42,7 +42,6 @@
 #include "video/transport_adapter.h"
 
 using webrtc::test::DriftingClock;
-using webrtc::test::FakeAudioDevice;
 
 namespace webrtc {
 
@@ -170,10 +169,11 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
 
   task_queue_.SendTask([&]() {
     metrics::Reset();
-    rtc::scoped_refptr<FakeAudioDevice> fake_audio_device =
-        new rtc::RefCountedObject<FakeAudioDevice>(
-            FakeAudioDevice::CreatePulsedNoiseCapturer(256, 48000),
-            FakeAudioDevice::CreateDiscardRenderer(48000), audio_rtp_speed);
+    rtc::scoped_refptr<TestAudioDeviceModule> fake_audio_device =
+        TestAudioDeviceModule::CreateTestAudioDeviceModule(
+            TestAudioDeviceModule::CreatePulsedNoiseCapturer(256, 48000),
+            TestAudioDeviceModule::CreateDiscardRenderer(48000),
+            audio_rtp_speed);
     EXPECT_EQ(0, fake_audio_device->Init());
 
     AudioState::Config send_audio_state_config;

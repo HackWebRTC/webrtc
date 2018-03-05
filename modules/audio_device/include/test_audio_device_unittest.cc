@@ -13,12 +13,11 @@
 
 #include "common_audio/wav_file.h"
 #include "common_audio/wav_header.h"
-#include "test/fake_audio_device.h"
+#include "modules/audio_device/include/test_audio_device.h"
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
 
 namespace webrtc {
-namespace test {
 
 namespace {
 void RunTest(const std::vector<int16_t>& input_samples,
@@ -28,15 +27,17 @@ void RunTest(const std::vector<int16_t>& input_samples,
       ::testing::UnitTest::GetInstance()->current_test_info();
 
   const std::string output_filename = test::OutputPath() +
-      "BoundedWavFileWriterTest_" + test_info->name() + ".wav";
+                                      "BoundedWavFileWriterTest_" +
+                                      test_info->name() + ".wav";
 
   static const size_t kSamplesPerFrame = 8;
   static const int kSampleRate = kSamplesPerFrame * 100;
-  EXPECT_EQ(FakeAudioDevice::SamplesPerFrame(kSampleRate), kSamplesPerFrame);
+  EXPECT_EQ(TestAudioDeviceModule::SamplesPerFrame(kSampleRate),
+            kSamplesPerFrame);
 
   {
-    std::unique_ptr<FakeAudioDevice::Renderer> writer =
-        FakeAudioDevice::CreateBoundedWavFileWriter(output_filename, 800);
+    std::unique_ptr<TestAudioDeviceModule::Renderer> writer =
+        TestAudioDeviceModule::CreateBoundedWavFileWriter(output_filename, 800);
 
     for (size_t i = 0; i < input_samples.size(); i += kSamplesPerFrame) {
       EXPECT_TRUE(writer->Render(rtc::ArrayView<const int16_t>(
@@ -61,18 +62,15 @@ void RunTest(const std::vector<int16_t>& input_samples,
 
 TEST(BoundedWavFileWriterTest, NoSilence) {
   static const std::vector<int16_t> kInputSamples = {
-      75, 1234, 243, -1231, -22222, 0, 3, 88,
-      1222, -1213, -13222, -7, -3525, 5787, -25247, 8
-  };
+      75,   1234,  243,    -1231, -22222, 0,    3,      88,
+      1222, -1213, -13222, -7,    -3525,  5787, -25247, 8};
   static const std::vector<int16_t> kExpectedSamples = kInputSamples;
   RunTest(kInputSamples, kExpectedSamples, 8);
 }
 
 TEST(BoundedWavFileWriterTest, SomeStartSilence) {
   static const std::vector<int16_t> kInputSamples = {
-      0, 0, 0, 0, 3, 0, 0, 0,
-      0, 3, -13222, -7, -3525, 5787, -25247, 8
-  };
+      0, 0, 0, 0, 3, 0, 0, 0, 0, 3, -13222, -7, -3525, 5787, -25247, 8};
   static const std::vector<int16_t> kExpectedSamples(kInputSamples.begin() + 10,
                                                      kInputSamples.end());
   RunTest(kInputSamples, kExpectedSamples, 8);
@@ -80,9 +78,7 @@ TEST(BoundedWavFileWriterTest, SomeStartSilence) {
 
 TEST(BoundedWavFileWriterTest, NegativeStartSilence) {
   static const std::vector<int16_t> kInputSamples = {
-      0, -4, -6, 0, 3, 0, 0, 0,
-      0, 3, -13222, -7, -3525, 5787, -25247, 8
-  };
+      0, -4, -6, 0, 3, 0, 0, 0, 0, 3, -13222, -7, -3525, 5787, -25247, 8};
   static const std::vector<int16_t> kExpectedSamples(kInputSamples.begin() + 2,
                                                      kInputSamples.end());
   RunTest(kInputSamples, kExpectedSamples, 8);
@@ -90,9 +86,7 @@ TEST(BoundedWavFileWriterTest, NegativeStartSilence) {
 
 TEST(BoundedWavFileWriterTest, SomeEndSilence) {
   static const std::vector<int16_t> kInputSamples = {
-      75, 1234, 243, -1231, -22222, 0, 1, 0,
-      0, 0, 0, 0, 0, 0, 0, 0
-  };
+      75, 1234, 243, -1231, -22222, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   static const std::vector<int16_t> kExpectedSamples(kInputSamples.begin(),
                                                      kInputSamples.end() - 9);
   RunTest(kInputSamples, kExpectedSamples, 8);
@@ -100,18 +94,16 @@ TEST(BoundedWavFileWriterTest, SomeEndSilence) {
 
 TEST(BoundedWavFileWriterTest, DoubleEndSilence) {
   static const std::vector<int16_t> kInputSamples = {
-      75, 1234, 243, -1231, -22222, 0, 0, 0,
-      0, -1213, -13222, -7, -3525, 5787, 0, 0
-  };
+      75, 1234,  243,    -1231, -22222, 0,    0, 0,
+      0,  -1213, -13222, -7,    -3525,  5787, 0, 0};
   static const std::vector<int16_t> kExpectedSamples(kInputSamples.begin(),
                                                      kInputSamples.end() - 2);
   RunTest(kInputSamples, kExpectedSamples, 8);
 }
 
 TEST(BoundedWavFileWriterTest, DoubleSilence) {
-  static const std::vector<int16_t> kInputSamples = {
-      0, -1213, -13222, -7, -3525, 5787, 0, 0
-  };
+  static const std::vector<int16_t> kInputSamples = {0,     -1213, -13222, -7,
+                                                     -3525, 5787,  0,      0};
   static const std::vector<int16_t> kExpectedSamples(kInputSamples.begin() + 1,
                                                      kInputSamples.end() - 2);
   RunTest(kInputSamples, kExpectedSamples, 8);
@@ -119,9 +111,7 @@ TEST(BoundedWavFileWriterTest, DoubleSilence) {
 
 TEST(BoundedWavFileWriterTest, EndSilenceCutoff) {
   static const std::vector<int16_t> kInputSamples = {
-      75, 1234, 243, -1231, -22222, 0, 1, 0,
-      0, 0, 0
-  };
+      75, 1234, 243, -1231, -22222, 0, 1, 0, 0, 0, 0};
   static const std::vector<int16_t> kExpectedSamples(kInputSamples.begin(),
                                                      kInputSamples.end() - 4);
   RunTest(kInputSamples, kExpectedSamples, 8);
@@ -129,8 +119,8 @@ TEST(BoundedWavFileWriterTest, EndSilenceCutoff) {
 
 TEST(PulsedNoiseCapturerTest, SetMaxAmplitude) {
   const int16_t kAmplitude = 50;
-  std::unique_ptr<FakeAudioDevice::PulsedNoiseCapturer> capturer =
-      FakeAudioDevice::CreatePulsedNoiseCapturer(
+  std::unique_ptr<TestAudioDeviceModule::PulsedNoiseCapturer> capturer =
+      TestAudioDeviceModule::CreatePulsedNoiseCapturer(
           kAmplitude, /*sampling_frequency_in_hz=*/8000);
   rtc::BufferT<int16_t> recording_buffer;
 
@@ -153,5 +143,4 @@ TEST(PulsedNoiseCapturerTest, SetMaxAmplitude) {
   EXPECT_GT(max_sample, kAmplitude);
 }
 
-}  // namespace test
 }  // namespace webrtc

@@ -2092,11 +2092,10 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
     Call::Config call_config(event_log_.get());
     call_config.bitrate_config = params_.call.call_bitrate_config;
 
-    rtc::scoped_refptr<test::FakeAudioDevice> fake_audio_device =
-        new rtc::RefCountedObject<test::FakeAudioDevice>(
-            test::FakeAudioDevice::CreatePulsedNoiseCapturer(32000, 48000),
-            test::FakeAudioDevice::CreateDiscardRenderer(48000),
-            1.f);
+    rtc::scoped_refptr<TestAudioDeviceModule> fake_audio_device =
+        TestAudioDeviceModule::CreateTestAudioDeviceModule(
+            TestAudioDeviceModule::CreatePulsedNoiseCapturer(32000, 48000),
+            TestAudioDeviceModule::CreateDiscardRenderer(48000), 1.f);
 
     if (params_.audio.enabled) {
       AudioState::Config audio_state_config;

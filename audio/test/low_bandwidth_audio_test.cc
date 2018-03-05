@@ -45,12 +45,12 @@ class AudioQualityTest : public AudioEndToEndTest {
         "_" + FileSampleRateSuffix() + ".wav";
   }
 
-  std::unique_ptr<test::FakeAudioDevice::Capturer> CreateCapturer() override {
-    return test::FakeAudioDevice::CreateWavFileReader(AudioInputFile());
+  std::unique_ptr<TestAudioDeviceModule::Capturer> CreateCapturer() override {
+    return TestAudioDeviceModule::CreateWavFileReader(AudioInputFile());
   }
 
-  std::unique_ptr<test::FakeAudioDevice::Renderer> CreateRenderer() override {
-    return test::FakeAudioDevice::CreateBoundedWavFileWriter(
+  std::unique_ptr<TestAudioDeviceModule::Renderer> CreateRenderer() override {
+    return TestAudioDeviceModule::CreateBoundedWavFileWriter(
         AudioOutputFile(), FLAG_sample_rate_hz);
   }
 
