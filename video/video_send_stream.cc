@@ -421,36 +421,6 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   std::vector<bool> loss_mask_vector_;
 };
 
-class VideoSendStream::DestructAndGetRtpStateTask : public rtc::QueuedTask {
- public:
-  DestructAndGetRtpStateTask(
-      VideoSendStream::RtpStateMap* state_map,
-      VideoSendStream::RtpPayloadStateMap* payload_state_map,
-      std::unique_ptr<VideoSendStreamImpl> send_stream,
-      rtc::Event* done_event)
-      : state_map_(state_map),
-        payload_state_map_(payload_state_map),
-        send_stream_(std::move(send_stream)),
-        done_event_(done_event) {}
-
-  ~DestructAndGetRtpStateTask() override { RTC_CHECK(!send_stream_); }
-
- private:
-  bool Run() override {
-    send_stream_->Stop();
-    *state_map_ = send_stream_->GetRtpStates();
-    *payload_state_map_ = send_stream_->GetRtpPayloadStates();
-    send_stream_.reset();
-    done_event_->Set();
-    return true;
-  }
-
-  VideoSendStream::RtpStateMap* state_map_;
-  VideoSendStream::RtpPayloadStateMap* payload_state_map_;
-  std::unique_ptr<VideoSendStreamImpl> send_stream_;
-  rtc::Event* done_event_;
-};
-
 // CheckEncoderActivityTask is used for tracking when the encoder last produced
 // and encoded video frame. If the encoder has not produced anything the last
 // kEncoderTimeOutMs we also want to stop sending padding.
@@ -643,10 +613,13 @@ void VideoSendStream::StopPermanentlyAndGetRtpStates(
   RTC_DCHECK_RUN_ON(&thread_checker_);
   video_stream_encoder_->Stop();
   send_stream_->DeRegisterProcessThread();
-  worker_queue_->PostTask(
-      std::unique_ptr<rtc::QueuedTask>(new DestructAndGetRtpStateTask(
-          rtp_state_map, payload_state_map, std::move(send_stream_),
-          &thread_sync_event_)));
+  worker_queue_->PostTask([this, rtp_state_map, payload_state_map]() {
+    send_stream_->Stop();
+    *rtp_state_map = send_stream_->GetRtpStates();
+    *payload_state_map = send_stream_->GetRtpPayloadStates();
+    send_stream_.reset();
+    thread_sync_event_.Set();
+  });
   thread_sync_event_.Wait(rtc::Event::kForever);
 }
 
