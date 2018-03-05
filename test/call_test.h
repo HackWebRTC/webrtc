@@ -16,8 +16,8 @@
 #include "call/call.h"
 #include "call/rtp_transport_controller_send.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
-#include "modules/audio_device/include/test_audio_device.h"
 #include "test/encoder_settings.h"
+#include "test/fake_audio_device.h"
 #include "test/fake_decoder.h"
 #include "test/fake_encoder.h"
 #include "test/fake_videorenderer.h"
@@ -99,8 +99,8 @@ class CallTest : public ::testing::Test {
                                              int height);
   void CreateFrameGeneratorCapturer(int framerate, int width, int height);
   void CreateFakeAudioDevices(
-      std::unique_ptr<TestAudioDeviceModule::Capturer> capturer,
-      std::unique_ptr<TestAudioDeviceModule::Renderer> renderer);
+      std::unique_ptr<FakeAudioDevice::Capturer> capturer,
+      std::unique_ptr<FakeAudioDevice::Renderer> renderer);
 
   void CreateVideoStreams();
   void CreateAudioStreams();
@@ -150,8 +150,8 @@ class CallTest : public ::testing::Test {
  private:
   rtc::scoped_refptr<AudioProcessing> apm_send_;
   rtc::scoped_refptr<AudioProcessing> apm_recv_;
-  rtc::scoped_refptr<TestAudioDeviceModule> fake_send_audio_device_;
-  rtc::scoped_refptr<TestAudioDeviceModule> fake_recv_audio_device_;
+  rtc::scoped_refptr<test::FakeAudioDevice> fake_send_audio_device_;
+  rtc::scoped_refptr<test::FakeAudioDevice> fake_recv_audio_device_;
 };
 
 class BaseTest : public RtpRtcpObserver {
@@ -167,11 +167,10 @@ class BaseTest : public RtpRtcpObserver {
   virtual size_t GetNumAudioStreams() const;
   virtual size_t GetNumFlexfecStreams() const;
 
-  virtual std::unique_ptr<TestAudioDeviceModule::Capturer> CreateCapturer();
-  virtual std::unique_ptr<TestAudioDeviceModule::Renderer> CreateRenderer();
-  virtual void OnFakeAudioDevicesCreated(
-      TestAudioDeviceModule* send_audio_device,
-      TestAudioDeviceModule* recv_audio_device);
+  virtual std::unique_ptr<FakeAudioDevice::Capturer> CreateCapturer();
+  virtual std::unique_ptr<FakeAudioDevice::Renderer> CreateRenderer();
+  virtual void OnFakeAudioDevicesCreated(FakeAudioDevice* send_audio_device,
+                                         FakeAudioDevice* recv_audio_device);
 
   virtual Call::Config GetSenderCallConfig();
   virtual Call::Config GetReceiverCallConfig();

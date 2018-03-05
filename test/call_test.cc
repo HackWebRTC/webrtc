@@ -333,11 +333,11 @@ void CallTest::CreateFrameGeneratorCapturer(int framerate,
 }
 
 void CallTest::CreateFakeAudioDevices(
-    std::unique_ptr<TestAudioDeviceModule::Capturer> capturer,
-    std::unique_ptr<TestAudioDeviceModule::Renderer> renderer) {
-  fake_send_audio_device_ = TestAudioDeviceModule::CreateTestAudioDeviceModule(
+    std::unique_ptr<FakeAudioDevice::Capturer> capturer,
+    std::unique_ptr<FakeAudioDevice::Renderer> renderer) {
+  fake_send_audio_device_ = new rtc::RefCountedObject<FakeAudioDevice>(
       std::move(capturer), nullptr, 1.f);
-  fake_recv_audio_device_ = TestAudioDeviceModule::CreateTestAudioDeviceModule(
+  fake_recv_audio_device_ = new rtc::RefCountedObject<FakeAudioDevice>(
       nullptr, std::move(renderer), 1.f);
 }
 
@@ -496,17 +496,17 @@ BaseTest::BaseTest(unsigned int timeout_ms)
 BaseTest::~BaseTest() {
 }
 
-std::unique_ptr<TestAudioDeviceModule::Capturer> BaseTest::CreateCapturer() {
-  return TestAudioDeviceModule::CreatePulsedNoiseCapturer(256, 48000);
+std::unique_ptr<FakeAudioDevice::Capturer> BaseTest::CreateCapturer() {
+  return FakeAudioDevice::CreatePulsedNoiseCapturer(256, 48000);
 }
 
-std::unique_ptr<TestAudioDeviceModule::Renderer> BaseTest::CreateRenderer() {
-  return TestAudioDeviceModule::CreateDiscardRenderer(48000);
+std::unique_ptr<FakeAudioDevice::Renderer> BaseTest::CreateRenderer() {
+  return FakeAudioDevice::CreateDiscardRenderer(48000);
 }
 
-void BaseTest::OnFakeAudioDevicesCreated(
-    TestAudioDeviceModule* send_audio_device,
-    TestAudioDeviceModule* recv_audio_device) {}
+void BaseTest::OnFakeAudioDevicesCreated(FakeAudioDevice* send_audio_device,
+                                         FakeAudioDevice* recv_audio_device) {
+}
 
 Call::Config BaseTest::GetSenderCallConfig() {
   return Call::Config(event_log_.get());

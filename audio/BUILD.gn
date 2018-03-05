@@ -98,6 +98,7 @@ if (rtc_include_tests) {
     deps = [
       ":audio",
       "../system_wrappers:system_wrappers",
+      "../test:fake_audio_device",
       "../test:test_common",
       "../test:test_support",
     ]
@@ -178,6 +179,7 @@ if (rtc_include_tests) {
         "../common_audio",
         "../rtc_base:rtc_base_approved",
         "../system_wrappers",
+        "../test:fake_audio_device",
         "../test:test_common",
         "../test:test_main",
         "//testing/gtest",
@@ -228,6 +230,7 @@ if (rtc_include_tests) {
       "../common_audio",
       "../rtc_base:rtc_base_approved",
       "../system_wrappers",
+      "../test:fake_audio_device",
       "../test:field_trial",
       "../test:single_threaded_task_queue",
       "../test:test_common",

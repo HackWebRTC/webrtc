@@ -37,14 +37,14 @@ size_t AudioBweTest::GetNumFlexfecStreams() const {
   return 0;
 }
 
-std::unique_ptr<TestAudioDeviceModule::Capturer>
+std::unique_ptr<test::FakeAudioDevice::Capturer>
 AudioBweTest::CreateCapturer() {
-  return TestAudioDeviceModule::CreateWavFileReader(AudioInputFile());
+  return test::FakeAudioDevice::CreateWavFileReader(AudioInputFile());
 }
 
 void AudioBweTest::OnFakeAudioDevicesCreated(
-    TestAudioDeviceModule* send_audio_device,
-    TestAudioDeviceModule* recv_audio_device) {
+    test::FakeAudioDevice* send_audio_device,
+    test::FakeAudioDevice* recv_audio_device) {
   send_audio_device_ = send_audio_device;
 }
 
