@@ -727,6 +727,9 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
 webrtc::VideoSendStream* Call::CreateVideoSendStream(
     webrtc::VideoSendStream::Config config,
     VideoEncoderConfig encoder_config) {
+  if (config_.fec_controller_factory) {
+    RTC_LOG(LS_INFO) << "External FEC Controller will be used.";
+  }
   std::unique_ptr<FecController> fec_controller =
       config_.fec_controller_factory
           ? config_.fec_controller_factory->CreateFecController()

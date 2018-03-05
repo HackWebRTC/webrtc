@@ -76,6 +76,8 @@ uint8_t BitrateAllocator::GetTransmissionMaxBitrateMultiplier() {
                                     .c_str(),
                                 nullptr, 10);
   if (multiplier > 0 && multiplier <= kTransmissionMaxBitrateMultiplier) {
+    RTC_LOG(LS_INFO) << "TransmissionMaxBitrateMultiplier is set to "
+                     << multiplier;
     return static_cast<uint8_t>(multiplier);
   }
   return kTransmissionMaxBitrateMultiplier;
