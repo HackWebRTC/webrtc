@@ -159,8 +159,9 @@ bool RtpHeaderParser::ParseRtcp(RTPHeader* header) const {
   return true;
 }
 
-bool RtpHeaderParser::Parse(RTPHeader* header,
-                            RtpHeaderExtensionMap* ptrExtensionMap) const {
+bool RtpHeaderParser::Parse(
+    RTPHeader* header,
+    const RtpHeaderExtensionMap* ptrExtensionMap) const {
   const ptrdiff_t length = _ptrRTPDataEnd - _ptrRTPDataBegin;
   if (length < kRtpMinParseLength) {
     return false;
