@@ -107,9 +107,6 @@ const char MediaConstraintsInterface::kExperimentalNoiseSuppression[] =
     "googNoiseSuppression2";
 const char MediaConstraintsInterface::kIntelligibilityEnhancer[] =
     "intelligibilityEnhancer";
-const char MediaConstraintsInterface::kLevelControl[] = "levelControl";
-const char MediaConstraintsInterface::kLevelControlInitialPeakLevelDBFS[] =
-    "levelControlInitialPeakLevelDBFS";
 const char MediaConstraintsInterface::kHighpassFilter[] =
     "googHighpassFilter";
 const char MediaConstraintsInterface::kTypingNoiseDetection[] =
@@ -248,9 +245,6 @@ void CopyConstraintsIntoAudioOptions(
       constraints, MediaConstraintsInterface::kIntelligibilityEnhancer,
       &options->intelligibility_enhancer);
   ConstraintToOptional<bool>(constraints,
-                             MediaConstraintsInterface::kLevelControl,
-                             &options->level_control);
-  ConstraintToOptional<bool>(constraints,
                              MediaConstraintsInterface::kHighpassFilter,
                              &options->highpass_filter);
   ConstraintToOptional<bool>(constraints,
@@ -259,9 +253,6 @@ void CopyConstraintsIntoAudioOptions(
   ConstraintToOptional<bool>(constraints,
                              MediaConstraintsInterface::kAudioMirroring,
                              &options->stereo_swapping);
-  ConstraintToOptional<float>(
-      constraints, MediaConstraintsInterface::kLevelControlInitialPeakLevelDBFS,
-      &options->level_control_initial_peak_level_dbfs);
   ConstraintToOptional<std::string>(
       constraints, MediaConstraintsInterface::kAudioNetworkAdaptorConfig,
       &options->audio_network_adaptor_config);

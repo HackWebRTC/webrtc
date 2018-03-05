@@ -37,7 +37,6 @@
 #if WEBRTC_INTELLIGIBILITY_ENHANCER
 #include "modules/audio_processing/intelligibility/intelligibility_enhancer.h"
 #endif
-#include "modules/audio_processing/level_controller/level_controller.h"
 #include "modules/audio_processing/level_estimator_impl.h"
 #include "modules/audio_processing/low_cut_filter.h"
 #include "modules/audio_processing/noise_suppression_impl.h"
@@ -188,7 +187,6 @@ bool AudioProcessingImpl::ApmSubmoduleStates::Update(
     bool beamformer_enabled,
     bool adaptive_gain_controller_enabled,
     bool gain_controller2_enabled,
-    bool level_controller_enabled,
     bool echo_controller_enabled,
     bool voice_activity_detector_enabled,
     bool level_estimator_enabled,
@@ -208,7 +206,6 @@ bool AudioProcessingImpl::ApmSubmoduleStates::Update(
       (adaptive_gain_controller_enabled != adaptive_gain_controller_enabled_);
   changed |=
       (gain_controller2_enabled != gain_controller2_enabled_);
-  changed |= (level_controller_enabled != level_controller_enabled_);
   changed |= (echo_controller_enabled != echo_controller_enabled_);
   changed |= (level_estimator_enabled != level_estimator_enabled_);
   changed |=
@@ -224,7 +221,6 @@ bool AudioProcessingImpl::ApmSubmoduleStates::Update(
     beamformer_enabled_ = beamformer_enabled;
     adaptive_gain_controller_enabled_ = adaptive_gain_controller_enabled;
     gain_controller2_enabled_ = gain_controller2_enabled;
-    level_controller_enabled_ = level_controller_enabled;
     echo_controller_enabled_ = echo_controller_enabled;
     level_estimator_enabled_ = level_estimator_enabled;
     voice_activity_detector_enabled_ = voice_activity_detector_enabled;
@@ -256,8 +252,7 @@ bool AudioProcessingImpl::ApmSubmoduleStates::CaptureMultiBandProcessingActive()
 
 bool AudioProcessingImpl::ApmSubmoduleStates::CaptureFullBandProcessingActive()
     const {
-  return level_controller_enabled_ || gain_controller2_enabled_ ||
-         capture_post_processor_enabled_;
+  return gain_controller2_enabled_ || capture_post_processor_enabled_;
 }
 
 bool AudioProcessingImpl::ApmSubmoduleStates::RenderMultiBandSubModulesActive()
@@ -314,7 +309,6 @@ struct AudioProcessingImpl::ApmPrivateSubmodules {
   std::unique_ptr<AgcManagerDirect> agc_manager;
   std::unique_ptr<GainController2> gain_controller2;
   std::unique_ptr<LowCutFilter> low_cut_filter;
-  std::unique_ptr<LevelController> level_controller;
   std::unique_ptr<EchoDetector> echo_detector;
   std::unique_ptr<EchoControl> echo_controller;
   std::unique_ptr<CustomProcessing> capture_post_processor;
@@ -439,10 +433,6 @@ AudioProcessingImpl::AudioProcessingImpl(
     if (!private_submodules_->echo_detector) {
       private_submodules_->echo_detector.reset(new ResidualEchoDetector());
     }
-
-    // TODO(peah): Move this creation to happen only when the level controller
-    // is enabled.
-    private_submodules_->level_controller.reset(new LevelController());
 
     // TODO(alessiob): Move the injected gain controller once injection is
     // implemented.
@@ -602,7 +592,6 @@ int AudioProcessingImpl::InitializeLocked() {
                                                     proc_sample_rate_hz());
   public_submodules_->voice_detection->Initialize(proc_split_sample_rate_hz());
   public_submodules_->level_estimator->Initialize();
-  InitializeLevelController();
   InitializeResidualEchoDetector();
   InitializeEchoController();
   InitializeGainController2();
@@ -706,40 +695,16 @@ int AudioProcessingImpl::InitializeLocked(const ProcessingConfig& config) {
 void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
   config_ = config;
 
-  bool config_ok = LevelController::Validate(config_.level_controller);
-  if (!config_ok) {
-    RTC_LOG(LS_ERROR) << "AudioProcessing module config error\n"
-                         "level_controller: "
-                      << LevelController::ToString(config_.level_controller)
-                      << "\nReverting to default parameter set";
-    config_.level_controller = AudioProcessing::Config::LevelController();
-  }
-
   // Run in a single-threaded manner when applying the settings.
   rtc::CritScope cs_render(&crit_render_);
   rtc::CritScope cs_capture(&crit_capture_);
-
-  // TODO(peah): Replace the use of capture_nonlocked_.level_controller_enabled
-  // with the value in config_ everywhere in the code.
-  if (capture_nonlocked_.level_controller_enabled !=
-      config_.level_controller.enabled) {
-    capture_nonlocked_.level_controller_enabled =
-        config_.level_controller.enabled;
-    // TODO(peah): Remove the conditional initialization to always initialize
-    // the level controller regardless of whether it is enabled or not.
-    InitializeLevelController();
-  }
-  RTC_LOG(LS_INFO) << "Level controller activated: "
-                   << capture_nonlocked_.level_controller_enabled;
-
-  private_submodules_->level_controller->ApplyConfig(config_.level_controller);
 
   InitializeLowCutFilter();
 
   RTC_LOG(LS_INFO) << "Highpass filter activated: "
                    << config_.high_pass_filter.enabled;
 
-  config_ok = GainController2::Validate(config_.gain_controller2);
+  const bool config_ok = GainController2::Validate(config_.gain_controller2);
   if (!config_ok) {
     RTC_LOG(LS_ERROR) << "AudioProcessing module config error\n"
                          "Gain Controller 2: "
@@ -1259,13 +1224,11 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
 #if WEBRTC_INTELLIGIBILITY_ENHANCER
   if (capture_nonlocked_.intelligibility_enabled) {
     RTC_DCHECK(public_submodules_->noise_suppression->is_enabled());
-    int gain_db = public_submodules_->gain_control->is_enabled() ?
-                  public_submodules_->gain_control->compression_gain_db() :
-                  0;
-    float gain = DbToRatio(gain_db);
-    gain *= capture_nonlocked_.level_controller_enabled ?
-            private_submodules_->level_controller->GetLastGain() :
-            1.f;
+    const int gain_db =
+        public_submodules_->gain_control->is_enabled()
+            ? public_submodules_->gain_control->compression_gain_db()
+            : 0;
+    const float gain = DbToRatio(gain_db);
     public_submodules_->intelligibility_enhancer->SetCaptureNoiseEstimate(
         public_submodules_->noise_suppression->NoiseEstimate(), gain);
   }
@@ -1333,10 +1296,6 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
 
   if (config_.gain_controller2.enabled) {
     private_submodules_->gain_controller2->Process(capture_buffer);
-  }
-
-  if (capture_nonlocked_.level_controller_enabled) {
-    private_submodules_->level_controller->Process(capture_buffer);
   }
 
   if (private_submodules_->capture_post_processor) {
@@ -1766,7 +1725,6 @@ bool AudioProcessingImpl::UpdateActiveSubmoduleStates() {
       capture_nonlocked_.beamformer_enabled,
       public_submodules_->gain_control->is_enabled(),
       config_.gain_controller2.enabled,
-      capture_nonlocked_.level_controller_enabled,
       capture_nonlocked_.echo_controller_enabled,
       public_submodules_->voice_detection->is_enabled(),
       public_submodules_->level_estimator->is_enabled(),
@@ -1830,10 +1788,6 @@ void AudioProcessingImpl::InitializeGainController2() {
   if (config_.gain_controller2.enabled) {
     private_submodules_->gain_controller2->Initialize(proc_sample_rate_hz());
   }
-}
-
-void AudioProcessingImpl::InitializeLevelController() {
-  private_submodules_->level_controller->Initialize(proc_sample_rate_hz());
 }
 
 void AudioProcessingImpl::InitializeResidualEchoDetector() {
@@ -1938,9 +1892,6 @@ void AudioProcessingImpl::WriteAecDumpConfigMessage(bool forced) {
       public_submodules_->echo_cancellation->GetExperimentsDescription();
   // TODO(peah): Add semicolon-separated concatenations of experiment
   // descriptions for other submodules.
-  if (capture_nonlocked_.level_controller_enabled) {
-    experiments_description += "LevelController;";
-  }
   if (constants_.agc_clipped_level_min != kClippedLevelMin) {
     experiments_description += "AgcClippingLevelExperiment;";
   }

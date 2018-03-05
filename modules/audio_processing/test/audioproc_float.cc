@@ -121,9 +121,6 @@ DEFINE_int(drift_compensation,
 DEFINE_int(aec3,
            kParameterNotSpecifiedValue,
            "Activate (1) or deactivate(0) the experimental AEC mode AEC3");
-DEFINE_int(lc,
-           kParameterNotSpecifiedValue,
-           "Activate (1) or deactivate(0) the level control");
 DEFINE_int(experimental_agc,
            kParameterNotSpecifiedValue,
            "Activate (1) or deactivate(0) the experimental AGC");
@@ -264,7 +261,6 @@ SimulationSettings CreateSettings() {
                       &settings.use_refined_adaptive_filter);
 
   SetSettingIfFlagSet(FLAG_aec3, &settings.use_aec3);
-  SetSettingIfFlagSet(FLAG_lc, &settings.use_lc);
   SetSettingIfFlagSet(FLAG_experimental_agc, &settings.use_experimental_agc);
   SetSettingIfSpecified(FLAG_aecm_routing_mode, &settings.aecm_routing_mode);
   SetSettingIfFlagSet(FLAG_aecm_comfort_noise,
