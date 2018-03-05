@@ -295,7 +295,6 @@ void WebRtcVoiceEngine::Init() {
     options.delay_agnostic_aec = false;
     options.experimental_ns = false;
     options.intelligibility_enhancer = false;
-    options.level_control = false;
     options.residual_echo_detector = true;
     bool error = ApplyOptions(options);
     RTC_DCHECK(error);
@@ -564,21 +563,7 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
         new webrtc::Intelligibility(*intelligibility_enhancer_));
   }
 
-  if (options.level_control) {
-    level_control_ = options.level_control;
-  }
-
   webrtc::AudioProcessing::Config apm_config = apm()->GetConfig();
-
-  RTC_LOG(LS_INFO) << "Level control: "
-                   << (!!level_control_ ? *level_control_ : -1);
-  if (level_control_) {
-    apm_config.level_controller.enabled = *level_control_;
-    if (options.level_control_initial_peak_level_dbfs) {
-      apm_config.level_controller.initial_peak_level_dbfs =
-          *options.level_control_initial_peak_level_dbfs;
-    }
-  }
 
   if (options.highpass_filter) {
     apm_config.high_pass_filter.enabled = *options.highpass_filter;

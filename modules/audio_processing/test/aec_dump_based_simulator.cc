@@ -473,10 +473,6 @@ void AecDumpBasedSimulator::HandleMessage(
           new RefinedAdaptiveFilter(*settings_.use_refined_adaptive_filter));
     }
 
-    if (settings_.use_lc) {
-      apm_config.level_controller.enabled = *settings_.use_lc;
-    }
-
     if (settings_.use_ed) {
       apm_config.residual_echo_detector.enabled = *settings_.use_ed;
     }

@@ -66,7 +66,6 @@ struct SimulationSettings {
   rtc::Optional<bool> use_extended_filter;
   rtc::Optional<bool> use_drift_compensation;
   rtc::Optional<bool> use_aec3;
-  rtc::Optional<bool> use_lc;
   rtc::Optional<bool> use_experimental_agc;
   rtc::Optional<int> aecm_routing_mode;
   rtc::Optional<bool> use_aecm_comfort_noise;

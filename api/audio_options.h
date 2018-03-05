@@ -43,7 +43,6 @@ struct AudioOptions {
     SetFrom(&delay_agnostic_aec, change.delay_agnostic_aec);
     SetFrom(&experimental_ns, change.experimental_ns);
     SetFrom(&intelligibility_enhancer, change.intelligibility_enhancer);
-    SetFrom(&level_control, change.level_control);
     SetFrom(&residual_echo_detector, change.residual_echo_detector);
     SetFrom(&tx_agc_target_dbov, change.tx_agc_target_dbov);
     SetFrom(&tx_agc_digital_compression_gain,
@@ -52,8 +51,6 @@ struct AudioOptions {
     SetFrom(&combined_audio_video_bwe, change.combined_audio_video_bwe);
     SetFrom(&audio_network_adaptor, change.audio_network_adaptor);
     SetFrom(&audio_network_adaptor_config, change.audio_network_adaptor_config);
-    SetFrom(&level_control_initial_peak_level_dbfs,
-            change.level_control_initial_peak_level_dbfs);
   }
 
   bool operator==(const AudioOptions& o) const {
@@ -76,7 +73,6 @@ struct AudioOptions {
            delay_agnostic_aec == o.delay_agnostic_aec &&
            experimental_ns == o.experimental_ns &&
            intelligibility_enhancer == o.intelligibility_enhancer &&
-           level_control == o.level_control &&
            residual_echo_detector == o.residual_echo_detector &&
            tx_agc_target_dbov == o.tx_agc_target_dbov &&
            tx_agc_digital_compression_gain ==
@@ -84,9 +80,7 @@ struct AudioOptions {
            tx_agc_limiter == o.tx_agc_limiter &&
            combined_audio_video_bwe == o.combined_audio_video_bwe &&
            audio_network_adaptor == o.audio_network_adaptor &&
-           audio_network_adaptor_config == o.audio_network_adaptor_config &&
-           level_control_initial_peak_level_dbfs ==
-               o.level_control_initial_peak_level_dbfs;
+           audio_network_adaptor_config == o.audio_network_adaptor_config;
   }
   bool operator!=(const AudioOptions& o) const { return !(*this == o); }
 
@@ -113,9 +107,6 @@ struct AudioOptions {
     ost << ToStringIfSet("delay_agnostic_aec", delay_agnostic_aec);
     ost << ToStringIfSet("experimental_ns", experimental_ns);
     ost << ToStringIfSet("intelligibility_enhancer", intelligibility_enhancer);
-    ost << ToStringIfSet("level_control", level_control);
-    ost << ToStringIfSet("level_control_initial_peak_level_dbfs",
-                         level_control_initial_peak_level_dbfs);
     ost << ToStringIfSet("residual_echo_detector", residual_echo_detector);
     ost << ToStringIfSet("tx_agc_target_dbov", tx_agc_target_dbov);
     ost << ToStringIfSet("tx_agc_digital_compression_gain",
@@ -161,9 +152,6 @@ struct AudioOptions {
   rtc::Optional<bool> delay_agnostic_aec;
   rtc::Optional<bool> experimental_ns;
   rtc::Optional<bool> intelligibility_enhancer;
-  rtc::Optional<bool> level_control;
-  // Specifies an optional initialization value for the level controller.
-  rtc::Optional<float> level_control_initial_peak_level_dbfs;
   // Note that tx_agc_* only applies to non-experimental AGC.
   rtc::Optional<bool> residual_echo_detector;
   rtc::Optional<uint16_t> tx_agc_target_dbov;

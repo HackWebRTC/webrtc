@@ -120,7 +120,7 @@ class WebRtcVoiceEngine final {
 
   webrtc::AgcConfig default_agc_config_;
   // Cache received extended_filter_aec, delay_agnostic_aec, experimental_ns
-  // level controller, and intelligibility_enhancer values, and apply them
+  // and intelligibility_enhancer values, and apply them
   // in case they are missing in the audio options. We need to do this because
   // SetExtraOptions() will revert to defaults for options which are not
   // provided.
@@ -128,7 +128,6 @@ class WebRtcVoiceEngine final {
   rtc::Optional<bool> delay_agnostic_aec_;
   rtc::Optional<bool> experimental_ns_;
   rtc::Optional<bool> intelligibility_enhancer_;
-  rtc::Optional<bool> level_control_;
   // Jitter buffer settings for new streams.
   size_t audio_jitter_buffer_max_packets_ = 50;
   bool audio_jitter_buffer_fast_accelerate_ = false;

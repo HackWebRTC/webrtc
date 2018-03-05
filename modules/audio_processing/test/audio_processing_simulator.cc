@@ -328,9 +328,6 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
   if (settings_.use_aec3 && *settings_.use_aec3) {
     echo_control_factory.reset(new EchoCanceller3Factory());
   }
-  if (settings_.use_lc) {
-    apm_config.level_controller.enabled = *settings_.use_lc;
-  }
   if (settings_.use_hpf) {
     apm_config.high_pass_filter.enabled = *settings_.use_hpf;
   }
