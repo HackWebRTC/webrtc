@@ -192,7 +192,6 @@ rtc_static_library("video_jni") {
     "src/jni/androidvideotracksource.h",
     "src/jni/encodedimage.cc",
     "src/jni/encodedimage.h",
-    "src/jni/hardwarevideoencoderfactory.cc",
     "src/jni/jni_generator_helper.h",
     "src/jni/nv12buffer.cc",
     "src/jni/nv21buffer.cc",
@@ -253,6 +252,7 @@ rtc_static_library("video_jni") {
       "src/jni/androidmediadecoder_jni.h",
       "src/jni/androidmediaencoder.cc",
       "src/jni/androidmediaencoder_jni.h",
+      "src/jni/hardwarevideoencoderfactory.cc",
     ]
 
     deps += [
