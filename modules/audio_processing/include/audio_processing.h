@@ -211,8 +211,8 @@ struct Intelligibility {
 // AudioProcessing* apm = AudioProcessingBuilder().Create();
 //
 // AudioProcessing::Config config;
+// config.level_controller.enabled = true;
 // config.high_pass_filter.enabled = true;
-// config.gain_controller2.enabled = true;
 // apm->ApplyConfig(config)
 //
 // apm->echo_cancellation()->enable_drift_compensation(false);
@@ -262,6 +262,14 @@ class AudioProcessing : public rtc::RefCountInterface {
   // by changing the default values in the AudioProcessing::Config struct.
   // The config is applied by passing the struct to the ApplyConfig method.
   struct Config {
+    struct LevelController {
+      bool enabled = false;
+
+      // Sets the initial peak level to use inside the level controller in order
+      // to compute the signal gain. The unit for the peak level is dBFS and
+      // the allowed range is [-100, 0].
+      float initial_peak_level_dbfs = -6.0206f;
+    } level_controller;
     struct ResidualEchoDetector {
       bool enabled = true;
     } residual_echo_detector;
