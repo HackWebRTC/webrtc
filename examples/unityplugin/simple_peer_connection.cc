@@ -33,10 +33,10 @@
 #include "sdk/android/src/jni/jni_helpers.h"
 #endif
 
-// Names used for media stream labels.
+// Names used for media stream ids.
 const char kAudioLabel[] = "audio_label";
 const char kVideoLabel[] = "video_label";
-const char kStreamLabel[] = "stream_label";
+const char kStreamId[] = "stream_id";
 
 namespace {
 static int g_peer_count = 0;
@@ -418,11 +418,11 @@ SimplePeerConnection::OpenVideoCaptureDevice() {
 }
 
 void SimplePeerConnection::AddStreams(bool audio_only) {
-  if (active_streams_.find(kStreamLabel) != active_streams_.end())
+  if (active_streams_.find(kStreamId) != active_streams_.end())
     return;  // Already added.
 
   rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
-      g_peer_connection_factory->CreateLocalMediaStream(kStreamLabel);
+      g_peer_connection_factory->CreateLocalMediaStream(kStreamId);
 
   rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
       g_peer_connection_factory->CreateAudioTrack(

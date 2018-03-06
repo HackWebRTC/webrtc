@@ -43,7 +43,7 @@
 }
 
 - (NSString *)streamId {
-  return [NSString stringForStdString:_nativeMediaStream->label()];
+  return [NSString stringForStdString:_nativeMediaStream->id()];
 }
 
 - (void)addAudioTrack:(RTCAudioTrack *)audioTrack {

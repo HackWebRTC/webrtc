@@ -1351,14 +1351,13 @@ PeerConnection::AddTransceiver(
 
   // TODO(bugs.webrtc.org/7600): Verify init.
 
-  if (init.stream_labels.size() > 1u) {
+  if (init.stream_ids.size() > 1u) {
     LOG_AND_RETURN_ERROR(RTCErrorType::UNSUPPORTED_PARAMETER,
                          "More than one stream is not yet supported.");
   }
 
-  std::vector<std::string> stream_ids = {!init.stream_labels.empty()
-                                             ? init.stream_labels[0]
-                                             : rtc::CreateRandomUuid()};
+  std::vector<std::string> stream_ids = {
+      !init.stream_ids.empty() ? init.stream_ids[0] : rtc::CreateRandomUuid()};
 
   auto sender = CreateSender(media_type, track, stream_ids);
   auto receiver = CreateReceiver(media_type, rtc::CreateRandomUuid());

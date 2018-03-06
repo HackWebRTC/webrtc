@@ -201,14 +201,13 @@ RTC_EXPORT
 
 /** Add a new media stream track to be sent on this peer connection, and return
  *  the newly created RTCRtpSender. The RTCRtpSender will be associated with
- *  the streams specified in the |streamLabels| list.
+ *  the streams specified in the |streamIds| list.
  *
  *  Errors: If an error occurs, returns nil. An error can occur if:
  *  - A sender already exists for the track.
  *  - The peer connection is closed.
  */
-- (RTCRtpSender *)addTrack:(RTCMediaStreamTrack *)track
-              streamLabels:(NSArray<NSString *> *)streamLabels;
+- (RTCRtpSender *)addTrack:(RTCMediaStreamTrack *)track streamIds:(NSArray<NSString *> *)streamIds;
 
 /** With PlanB semantics, removes an RTCRtpSender from this peer connection.
  *

@@ -20,7 +20,7 @@
 @implementation RTCRtpTransceiverInit
 
 @synthesize direction = _direction;
-@synthesize streamLabels = _streamLabels;
+@synthesize streamIds = _streamIds;
 @synthesize sendEncodings = _sendEncodings;
 
 - (instancetype)init {
@@ -33,8 +33,8 @@
 - (webrtc::RtpTransceiverInit)nativeInit {
   webrtc::RtpTransceiverInit init;
   init.direction = [RTCRtpTransceiver nativeRtpTransceiverDirectionFromDirection:_direction];
-  for (NSString *streamLabel in _streamLabels) {
-    init.stream_labels.push_back([streamLabel UTF8String]);
+  for (NSString *streamId in _streamIds) {
+    init.stream_ids.push_back([streamId UTF8String]);
   }
   for (RTCRtpEncodingParameters *sendEncoding in _sendEncodings) {
     init.send_encodings.push_back(sendEncoding.nativeParameters);

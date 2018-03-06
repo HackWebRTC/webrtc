@@ -408,7 +408,7 @@ std::unique_ptr<cricket::VideoCapturer> Conductor::OpenVideoCaptureDevice() {
 }
 
 void Conductor::AddStreams() {
-  if (active_streams_.find(kStreamLabel) != active_streams_.end())
+  if (active_streams_.find(kStreamId) != active_streams_.end())
     return;  // Already added.
 
   rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
@@ -429,7 +429,7 @@ void Conductor::AddStreams() {
   }
 
   rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
-      peer_connection_factory_->CreateLocalMediaStream(kStreamLabel);
+      peer_connection_factory_->CreateLocalMediaStream(kStreamId);
 
   stream->AddTrack(audio_track);
   if (video_track)

@@ -367,14 +367,13 @@ void PeerConnectionDelegateAdapter::OnAddTrack(
   [_localStreams removeObject:stream];
 }
 
-- (RTCRtpSender *)addTrack:(RTCMediaStreamTrack *)track
-              streamLabels:(NSArray<NSString *> *)streamLabels {
-  std::vector<std::string> nativeStreamLabels;
-  for (NSString *label in streamLabels) {
-    nativeStreamLabels.push_back([label UTF8String]);
+- (RTCRtpSender *)addTrack:(RTCMediaStreamTrack *)track streamIds:(NSArray<NSString *> *)streamIds {
+  std::vector<std::string> nativeStreamIds;
+  for (NSString *streamId in streamIds) {
+    nativeStreamIds.push_back([streamId UTF8String]);
   }
   webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpSenderInterface>> nativeSenderOrError =
-      _peerConnection->AddTrack(track.nativeTrack, nativeStreamLabels);
+      _peerConnection->AddTrack(track.nativeTrack, nativeStreamIds);
   if (!nativeSenderOrError.ok()) {
     RTCLogError(@"Failed to add track %@: %s", track, nativeSenderOrError.error().message());
     return nil;

@@ -34,7 +34,7 @@ typedef NS_ENUM(NSInteger, RTCRtpTransceiverDirection) {
 @property(nonatomic) RTCRtpTransceiverDirection direction;
 
 /** The added RTCRtpTransceiver will be added to these streams. */
-@property(nonatomic) NSArray<NSString *> *streamLabels;
+@property(nonatomic) NSArray<NSString *> *streamIds;
 
 /** TODO(bugs.webrtc.org/7600): Not implemented. */
 @property(nonatomic) NSArray<RTCRtpEncodingParameters *> *sendEncodings;

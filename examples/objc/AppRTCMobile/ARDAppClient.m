@@ -692,10 +692,10 @@ static int const kKbpsMultiplier = 1000;
   RTCAudioSource *source = [_factory audioSourceWithConstraints:constraints];
   RTCAudioTrack *track = [_factory audioTrackWithSource:source
                                                 trackId:kARDAudioTrackId];
-  [_peerConnection addTrack:track streamLabels:@[ kARDMediaStreamId ]];
+  [_peerConnection addTrack:track streamIds:@[ kARDMediaStreamId ]];
   _localVideoTrack = [self createLocalVideoTrack];
   if (_localVideoTrack) {
-    [_peerConnection addTrack:_localVideoTrack streamLabels:@[ kARDMediaStreamId ]];
+    [_peerConnection addTrack:_localVideoTrack streamIds:@[ kARDMediaStreamId ]];
     // We can set up rendering for the remote track right away since the transceiver already has an
     // RTCRtpReceiver with a track. The track will automatically get unmuted and produce frames
     // once RTP is received.
