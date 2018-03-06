@@ -13,10 +13,10 @@
 
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
-#include "api/fakemetricsobserver.h"
 #include "api/jsep.h"
 #include "api/mediastreaminterface.h"
 #include "api/peerconnectioninterface.h"
+#include "api/umametrics.h"
 #include "pc/mediastream.h"
 #include "pc/mediastreamtrack.h"
 #include "pc/peerconnectionwrapper.h"
@@ -1030,9 +1030,7 @@ TEST_F(PeerConnectionMsidSignalingTest, UnifiedPlanTalkingToOurself) {
   caller->AddAudioTrack("caller_audio");
   auto callee = CreatePeerConnectionWithUnifiedPlan();
   callee->AddAudioTrack("callee_audio");
-  auto caller_observer =
-      new rtc::RefCountedObject<webrtc::FakeMetricsObserver>();
-  caller->pc()->RegisterUMAObserver(caller_observer);
+  auto caller_observer = caller->RegisterFakeMetricsObserver();
 
   ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
 
@@ -1047,18 +1045,8 @@ TEST_F(PeerConnectionMsidSignalingTest, UnifiedPlanTalkingToOurself) {
   EXPECT_EQ(cricket::kMsidSignalingMediaSection,
             answer->description()->msid_signaling());
   // Check that this is counted correctly
-  EXPECT_EQ(1, caller_observer->GetEnumCounter(
-                   webrtc::kEnumCounterSdpSemanticNegotiated,
-                   webrtc::kSdpSemanticNegotiatedUnifiedPlan));
-  EXPECT_EQ(0, caller_observer->GetEnumCounter(
-                   webrtc::kEnumCounterSdpSemanticNegotiated,
-                   webrtc::kSdpSemanticNegotiatedNone));
-  EXPECT_EQ(0, caller_observer->GetEnumCounter(
-                   webrtc::kEnumCounterSdpSemanticNegotiated,
-                   webrtc::kSdpSemanticNegotiatedPlanB));
-  EXPECT_EQ(0, caller_observer->GetEnumCounter(
-                   webrtc::kEnumCounterSdpSemanticNegotiated,
-                   webrtc::kSdpSemanticNegotiatedMixed));
+  EXPECT_TRUE(caller_observer->ExpectOnlySingleEnumCount(
+      kEnumCounterSdpSemanticNegotiated, kSdpSemanticNegotiatedUnifiedPlan));
 }
 
 TEST_F(PeerConnectionMsidSignalingTest, PlanBOfferToUnifiedPlanAnswer) {
@@ -1099,6 +1087,76 @@ TEST_F(PeerConnectionMsidSignalingTest, PureUnifiedPlanToUs) {
   auto answer = callee->CreateAnswer();
   EXPECT_EQ(cricket::kMsidSignalingMediaSection,
             answer->description()->msid_signaling());
+}
+
+// Test that the correct UMA metrics are reported for simple/complex SDP.
+
+class SdpFormatReceivedTest : public PeerConnectionRtpTest {};
+
+#ifdef HAVE_SCTP
+TEST_F(SdpFormatReceivedTest, DataChannelOnlyIsReportedAsNoTracks) {
+  auto caller = CreatePeerConnectionWithUnifiedPlan();
+  caller->CreateDataChannel("dc");
+  auto callee = CreatePeerConnectionWithUnifiedPlan();
+  auto callee_metrics = callee->RegisterFakeMetricsObserver();
+
+  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOffer()));
+
+  EXPECT_TRUE(callee_metrics->ExpectOnlySingleEnumCount(
+      kEnumCounterSdpFormatReceived, kSdpFormatReceivedNoTracks));
+}
+#endif  // HAVE_SCTP
+
+TEST_F(SdpFormatReceivedTest, SimpleUnifiedPlanIsReportedAsSimple) {
+  auto caller = CreatePeerConnectionWithUnifiedPlan();
+  caller->AddAudioTrack("audio");
+  caller->AddVideoTrack("video");
+  auto callee = CreatePeerConnectionWithPlanB();
+  auto callee_metrics = callee->RegisterFakeMetricsObserver();
+
+  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOffer()));
+
+  EXPECT_TRUE(callee_metrics->ExpectOnlySingleEnumCount(
+      kEnumCounterSdpFormatReceived, kSdpFormatReceivedSimple));
+}
+
+TEST_F(SdpFormatReceivedTest, SimplePlanBIsReportedAsSimple) {
+  auto caller = CreatePeerConnectionWithPlanB();
+  caller->AddVideoTrack("video");  // Video only.
+  auto callee = CreatePeerConnectionWithUnifiedPlan();
+  auto callee_metrics = callee->RegisterFakeMetricsObserver();
+
+  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOffer()));
+
+  EXPECT_TRUE(callee_metrics->ExpectOnlySingleEnumCount(
+      kEnumCounterSdpFormatReceived, kSdpFormatReceivedSimple));
+}
+
+TEST_F(SdpFormatReceivedTest, ComplexUnifiedIsReportedAsComplexUnifiedPlan) {
+  auto caller = CreatePeerConnectionWithUnifiedPlan();
+  caller->AddAudioTrack("audio1");
+  caller->AddAudioTrack("audio2");
+  caller->AddVideoTrack("video");
+  auto callee = CreatePeerConnectionWithPlanB();
+  auto callee_metrics = callee->RegisterFakeMetricsObserver();
+
+  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOffer()));
+
+  EXPECT_TRUE(callee_metrics->ExpectOnlySingleEnumCount(
+      kEnumCounterSdpFormatReceived, kSdpFormatReceivedComplexUnifiedPlan));
+}
+
+TEST_F(SdpFormatReceivedTest, ComplexPlanBIsReportedAsComplexPlanB) {
+  auto caller = CreatePeerConnectionWithPlanB();
+  caller->AddVideoTrack("video1");
+  caller->AddVideoTrack("video2");
+  auto callee = CreatePeerConnectionWithUnifiedPlan();
+  auto callee_metrics = callee->RegisterFakeMetricsObserver();
+
+  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOffer()));
+
+  EXPECT_TRUE(callee_metrics->ExpectOnlySingleEnumCount(
+      kEnumCounterSdpFormatReceived, kSdpFormatReceivedComplexPlanB));
 }
 
 // Sender setups in a call.

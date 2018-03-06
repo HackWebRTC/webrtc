@@ -41,6 +41,7 @@ enum PeerConnectionEnumCounterType {
   kEnumCounterSdpSemanticRequested,
   kEnumCounterSdpSemanticNegotiated,
   kEnumCounterKeyProtocolMediaType,
+  kEnumCounterSdpFormatReceived,
   kPeerConnectionEnumCounterMax
 };
 
@@ -144,6 +145,24 @@ enum SdpSemanticNegotiated {
   kSdpSemanticNegotiatedUnifiedPlan,
   kSdpSemanticNegotiatedMixed,
   kSdpSemanticNegotiatedMax
+};
+
+// Metric which records the format of the received SDP for tracking how much the
+// difference between Plan B and Unified Plan affect users.
+enum SdpFormatReceived {
+  // No audio or video tracks. This is worth special casing since it seems to be
+  // the most common scenario (data-channel only).
+  kSdpFormatReceivedNoTracks,
+  // No more than one audio and one video track. Should be compatible with both
+  // Plan B and Unified Plan endpoints.
+  kSdpFormatReceivedSimple,
+  // More than one audio track or more than one video track in the Plan B format
+  // (e.g., one audio media section with multiple streams).
+  kSdpFormatReceivedComplexPlanB,
+  // More than one audio track or more than one video track in the Unified Plan
+  // format (e.g., two audio media sections).
+  kSdpFormatReceivedComplexUnifiedPlan,
+  kSdpFormatReceivedMax
 };
 
 class MetricsObserverInterface : public rtc::RefCountInterface {

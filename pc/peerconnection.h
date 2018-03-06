@@ -851,6 +851,9 @@ class PeerConnection : public PeerConnectionInternal,
   const char* SessionErrorToString(SessionError error) const;
   std::string GetSessionErrorMsg();
 
+  // Report the UMA metric SdpFormatReceived for the given remote offer.
+  void ReportSdpFormatReceived(const SessionDescriptionInterface& remote_offer);
+
   // Report inferred negotiated SDP semantics from a local/remote answer to the
   // UMA observer.
   void ReportNegotiatedSdpSemantics(const SessionDescriptionInterface& answer);

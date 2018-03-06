@@ -61,4 +61,27 @@ int FakeMetricsObserver::GetHistogramSample(
   return histogram_samples_[type];
 }
 
+bool FakeMetricsObserver::ExpectOnlySingleEnumCount(
+    PeerConnectionEnumCounterType type,
+    int counter) const {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  if (counters_.size() <= static_cast<size_t>(type)) {
+    // If a counter has not been allocated then there has been no call to
+    // |IncrementEnumCounter| so all the values are 0.
+    return false;
+  }
+  bool pass = true;
+  if (GetEnumCounter(type, counter) != 1) {
+    RTC_LOG(LS_ERROR) << "Expected single count for counter: " << counter;
+    pass = false;
+  }
+  for (const auto& entry : counters_[type]) {
+    if (entry.first != counter && entry.second > 0) {
+      RTC_LOG(LS_ERROR) << "Expected no count for counter: " << entry.first;
+      pass = false;
+    }
+  }
+  return pass;
+}
+
 }  // namespace webrtc

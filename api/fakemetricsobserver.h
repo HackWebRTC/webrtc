@@ -35,6 +35,11 @@ class FakeMetricsObserver : public MetricsObserverInterface {
   int GetEnumCounter(PeerConnectionEnumCounterType type, int counter) const;
   int GetHistogramSample(PeerConnectionMetricsName type) const;
 
+  // Returns true if and only if there is a count of 1 for the given counter and
+  // a count of 0 for all other counters of the given enum type.
+  bool ExpectOnlySingleEnumCount(PeerConnectionEnumCounterType type,
+                                 int counter) const;
+
  protected:
   ~FakeMetricsObserver() {}
 
