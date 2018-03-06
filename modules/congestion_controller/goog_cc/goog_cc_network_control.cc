@@ -190,7 +190,12 @@ void GoogCcNetworkController::OnSentPacket(SentPacket sent_packet) {
 
 void GoogCcNetworkController::OnStreamsConfig(StreamsConfig msg) {
   probe_controller_->EnablePeriodicAlrProbing(msg.requests_alr_probing);
-
+  if (msg.max_total_allocated_bitrate &&
+      *msg.max_total_allocated_bitrate != max_total_allocated_bitrate_) {
+    probe_controller_->OnMaxTotalAllocatedBitrate(
+        msg.max_total_allocated_bitrate->bps(), msg.at_time.ms());
+    max_total_allocated_bitrate_ = *msg.max_total_allocated_bitrate;
+  }
   bool pacing_changed = false;
   if (msg.pacing_factor && *msg.pacing_factor != pacing_factor_) {
     pacing_factor_ = *msg.pacing_factor;

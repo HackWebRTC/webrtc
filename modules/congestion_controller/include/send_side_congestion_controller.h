@@ -67,6 +67,9 @@ class SendSideCongestionController
   void SetBweBitrates(int min_bitrate_bps,
                       int start_bitrate_bps,
                       int max_bitrate_bps) override;
+
+  void SetMaxTotalAllocatedBitrate(int max_total_allocated_bitrate) override;
+
   // Resets the BWE state. Note the first argument is the bitrate_bps.
   void OnNetworkRouteChanged(const rtc::NetworkRoute& network_route,
                              int bitrate_bps,

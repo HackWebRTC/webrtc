@@ -80,6 +80,7 @@ class GoogCcNetworkController : public NetworkControllerInterface {
   double pacing_factor_;
   DataRate min_pacing_rate_;
   DataRate max_padding_rate_;
+  DataRate max_total_allocated_bitrate_;
 
   bool in_cwnd_experiment_;
   int64_t accepted_queue_ms_;

@@ -33,6 +33,7 @@ struct StreamsConfig {
   rtc::Optional<double> pacing_factor;
   rtc::Optional<DataRate> min_pacing_rate;
   rtc::Optional<DataRate> max_padding_rate;
+  rtc::Optional<DataRate> max_total_allocated_bitrate;
 };
 
 struct TargetRateConstraints {

@@ -46,7 +46,7 @@ class RtpTransportControllerSend : public RtpTransportControllerSendInterface {
 
   void SetAllocatedSendBitrateLimits(int min_send_bitrate_bps,
                                      int max_padding_bitrate_bps,
-                                     int total_bitrate_bps) override;
+                                     int max_total_bitrate_bps) override;
 
   void SetKeepAliveConfig(const RtpKeepAliveConfig& config);
   void SetPacingFactor(float pacing_factor) override;

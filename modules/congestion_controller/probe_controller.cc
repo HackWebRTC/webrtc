@@ -125,6 +125,19 @@ void ProbeController::SetBitrates(int64_t min_bitrate_bps,
   }
 }
 
+void ProbeController::OnMaxTotalAllocatedBitrate(
+    int64_t max_total_allocated_bitrate) {
+  rtc::CritScope cs(&critsect_);
+  // TODO(philipel): Should |max_total_allocated_bitrate| be used as a limit for
+  //                 ALR probing?
+  if (estimated_bitrate_bps_ != 0 &&
+      estimated_bitrate_bps_ < max_bitrate_bps_ &&
+      estimated_bitrate_bps_ < max_total_allocated_bitrate) {
+    InitiateProbing(clock_->TimeInMilliseconds(), {max_total_allocated_bitrate},
+                    false);
+  }
+}
+
 void ProbeController::OnNetworkStateChanged(NetworkState network_state) {
   rtc::CritScope cs(&critsect_);
   network_state_ = network_state;

@@ -49,6 +49,7 @@ class SendSideCongestionControllerInterface : public CallStatsObserver,
   virtual void SetBweBitrates(int min_bitrate_bps,
                               int start_bitrate_bps,
                               int max_bitrate_bps) = 0;
+  virtual void SetMaxTotalAllocatedBitrate(int total_bitrate_bps) = 0;
   virtual void OnNetworkRouteChanged(const rtc::NetworkRoute& network_route,
                                      int bitrate_bps,
                                      int min_bitrate_bps,

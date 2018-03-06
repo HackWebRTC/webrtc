@@ -45,6 +45,7 @@ class LegacyProbeControllerTest : public ::testing::Test {
   }
   ~LegacyProbeControllerTest() override {}
 
+  const int64_t kMbpsMultiplier = 1000000;
   SimulatedClock clock_;
   NiceMock<MockPacedSender> pacer_;
   std::unique_ptr<ProbeController> probe_controller_;
@@ -253,7 +254,6 @@ TEST_F(LegacyProbeControllerTest, PeriodicProbingAfterReset) {
 }
 
 TEST_F(LegacyProbeControllerTest, TestExponentialProbingOverflow) {
-  const int64_t kMbpsMultiplier = 1000000;
   probe_controller_->SetBitrates(kMinBitrateBps, 10 * kMbpsMultiplier,
                                  100 * kMbpsMultiplier);
 
@@ -265,6 +265,24 @@ TEST_F(LegacyProbeControllerTest, TestExponentialProbingOverflow) {
   // Verify that repeated probes aren't sent.
   EXPECT_CALL(pacer_, CreateProbeCluster(_)).Times(0);
   probe_controller_->SetEstimatedBitrate(100 * kMbpsMultiplier);
+}
+
+TEST_F(LegacyProbeControllerTest, TotalBitrateProbing) {
+  probe_controller_->SetBitrates(kMinBitrateBps, 1 * kMbpsMultiplier,
+                                 2 * kMbpsMultiplier);
+
+  EXPECT_CALL(pacer_, CreateProbeCluster(1 * kMbpsMultiplier));
+  probe_controller_->SetEstimatedBitrate(500000);
+  probe_controller_->OnMaxTotalAllocatedBitrate(1 * kMbpsMultiplier);
+}
+
+TEST_F(LegacyProbeControllerTest, TotalBitrateNoProbing) {
+  probe_controller_->SetBitrates(kMinBitrateBps, 1 * kMbpsMultiplier,
+                                 2 * kMbpsMultiplier);
+
+  EXPECT_CALL(pacer_, CreateProbeCluster(_)).Times(0);
+  probe_controller_->SetEstimatedBitrate(500000);
+  probe_controller_->OnMaxTotalAllocatedBitrate(250000);
 }
 
 }  // namespace test
