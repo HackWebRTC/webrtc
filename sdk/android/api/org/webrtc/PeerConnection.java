@@ -341,6 +341,33 @@ public class PeerConnection {
     }
   }
 
+  /**
+   * Java version of webrtc::SdpSemantics.
+   *
+   * Configure the SDP semantics used by this PeerConnection. Note that the
+   * WebRTC 1.0 specification requires UNIFIED_PLAN semantics. The
+   * RtpTransceiver API is only available with UNIFIED_PLAN semantics.
+   *
+   * <p>PLAN_B will cause PeerConnection to create offers and answers with at
+   * most one audio and one video m= section with multiple RtpSenders and
+   * RtpReceivers specified as multiple a=ssrc lines within the section. This
+   * will also cause PeerConnection to ignore all but the first m= section of
+   * the same media type.
+   *
+   * <p>UNIFIED_PLAN will cause PeerConnection to create offers and answers with
+   * multiple m= sections where each m= section maps to one RtpSender and one
+   * RtpReceiver (an RtpTransceiver), either both audio or both video. This
+   * will also cause PeerConnection to ignore all but the first a=ssrc lines
+   * that form a Plan B stream.
+   *
+   * <p>For users who wish to send multiple audio/video streams and need to stay
+   * interoperable with legacy WebRTC implementations, specify PLAN_B.
+   *
+   * <p>For users who wish to send multiple audio/video streams and/or wish to
+   * use the new RtpTransceiver API, specify UNIFIED_PLAN.
+   */
+  public enum SdpSemantics { PLAN_B, UNIFIED_PLAN }
+
   /** Java version of PeerConnectionInterface.RTCConfiguration */
   // TODO(qingsi): Resolve the naming inconsistency of fields with/without units.
   public static class RTCConfiguration {
@@ -386,6 +413,7 @@ public class PeerConnection {
     // Use "Unknown" to represent no preference of adapter types, not the
     // preference of adapters of unknown types.
     public AdapterType networkPreference;
+    public SdpSemantics sdpSemantics;
 
     // This is an optional wrapper for the C++ webrtc::TurnCustomizer.
     public TurnCustomizer turnCustomizer;
@@ -423,6 +451,7 @@ public class PeerConnection {
       combinedAudioVideoBwe = null;
       enableDtlsSrtp = null;
       networkPreference = AdapterType.UNKNOWN;
+      sdpSemantics = SdpSemantics.PLAN_B;
     }
 
     @CalledByNative("RTCConfiguration")
@@ -574,12 +603,18 @@ public class PeerConnection {
     AdapterType getNetworkPreference() {
       return networkPreference;
     }
+
+    @CalledByNative("RTCConfiguration")
+    SdpSemantics getSdpSemantics() {
+      return sdpSemantics;
+    }
   };
 
   private final List<MediaStream> localStreams = new ArrayList<>();
   private final long nativePeerConnection;
   private List<RtpSender> senders = new ArrayList<>();
   private List<RtpReceiver> receivers = new ArrayList<>();
+  private List<RtpTransceiver> transceivers = new ArrayList<>();
 
   /**
    * Wraps a PeerConnection created by the factory. Can be used by clients that want to implement
@@ -622,18 +657,24 @@ public class PeerConnection {
     nativeSetRemoteDescription(observer, sdp);
   }
 
-  // True if remote audio should be played out. Defaults to true.
-  // Note that even if playout is enabled, streams will only be played out if
-  // the appropriate SDP is also applied. The main purpose of this API is to
-  // be able to control the exact time when audio playout starts.
+  /**
+   * Enables/disables playout of received audio streams. Enabled by default.
+   *
+   * Note that even if playout is enabled, streams will only be played out if
+   * the appropriate SDP is also applied. The main purpose of this API is to
+   * be able to control the exact time when audio playout starts.
+   */
   public void setAudioPlayout(boolean playout) {
     nativeSetAudioPlayout(playout);
   }
 
-  // True if local audio shall be recorded. Defaults to true.
-  // Note that even if recording is enabled, streams will only be recorded if
-  // the appropriate SDP is also applied. The main purpose of this API is to
-  // be able to control the exact time when audio recording starts.
+  /**
+   * Enables/disables recording of transmitted audio streams. Enabled by default.
+   *
+   * Note that even if recording is enabled, streams will only be recorded if
+   * the appropriate SDP is also applied. The main purpose of this API is to
+   * be able to control the exact time when audio recording starts.
+   */
   public void setAudioRecording(boolean recording) {
     nativeSetAudioRecording(recording);
   }
@@ -650,6 +691,11 @@ public class PeerConnection {
     return nativeRemoveIceCandidates(candidates);
   }
 
+  /**
+   * Adds a new MediaStream to be sent on this peer connection.
+   * Note: This method is not supported with SdpSemantics.UNIFIED_PLAN. Please
+   * use addTrack instead.
+   */
   public boolean addStream(MediaStream stream) {
     boolean ret = nativeAddLocalStream(stream.nativeStream);
     if (!ret) {
@@ -659,6 +705,11 @@ public class PeerConnection {
     return true;
   }
 
+  /**
+   * Removes the given media stream from this peer connection.
+   * This method is not supported with SdpSemantics.UNIFIED_PLAN. Please use
+   * removeTrack instead.
+   */
   public void removeStream(MediaStream stream) {
     nativeRemoveLocalStream(stream.nativeStream);
     localStreams.remove(stream);
@@ -666,15 +717,15 @@ public class PeerConnection {
 
   /**
    * Creates an RtpSender without a track.
-   * <p>
-   * This method allows an application to cause the PeerConnection to negotiate
+   *
+   * <p>This method allows an application to cause the PeerConnection to negotiate
    * sending/receiving a specific media type, but without having a track to
    * send yet.
-   * <p>
-   * When the application does want to begin sending a track, it can call
+   *
+   * <p>When the application does want to begin sending a track, it can call
    * RtpSender.setTrack, which doesn't require any additional SDP negotiation.
-   * <p>
-   * Example use:
+   *
+   * <p>Example use:
    * <pre>
    * {@code
    * audioSender = pc.createSender("audio", "stream1");
@@ -686,11 +737,14 @@ public class PeerConnection {
    * videoSender.setTrack(videoTrack, false);
    * }
    * </pre>
-   * Note: This corresponds most closely to "addTransceiver" in the official
+   * <p>Note: This corresponds most closely to "addTransceiver" in the official
    * WebRTC API, in that it creates a sender without a track. It was
    * implemented before addTransceiver because it provides useful
    * functionality, and properly implementing transceivers would have required
    * a great deal more work.
+   *
+   * <p>Note: This is only available with SdpSemantics.PLAN_B specified. Please use
+   * addTransceiver instead.
    *
    * @param kind      Corresponds to MediaStreamTrack kinds (must be "audio" or
    *                  "video").
@@ -702,15 +756,18 @@ public class PeerConnection {
    * @return          A new RtpSender object if successful, or null otherwise.
    */
   public RtpSender createSender(String kind, String stream_id) {
-    RtpSender new_sender = nativeCreateSender(kind, stream_id);
-    if (new_sender != null) {
-      senders.add(new_sender);
+    RtpSender newSender = nativeCreateSender(kind, stream_id);
+    if (newSender != null) {
+      senders.add(newSender);
     }
-    return new_sender;
+    return newSender;
   }
 
-  // Note that calling getSenders will dispose of the senders previously
-  // returned (and same goes for getReceivers).
+  /**
+   * Gets all RtpSenders associated with this peer connection.
+   * Note that calling getSenders will dispose of the senders previously
+   * returned.
+   */
   public List<RtpSender> getSenders() {
     for (RtpSender sender : senders) {
       sender.dispose();
@@ -719,6 +776,11 @@ public class PeerConnection {
     return Collections.unmodifiableList(senders);
   }
 
+  /**
+   * Gets all RtpReceivers associated with this peer connection.
+   * Note that calling getReceivers will dispose of the receivers previously
+   * returned.
+   */
   public List<RtpReceiver> getReceivers() {
     for (RtpReceiver receiver : receivers) {
       receiver.dispose();
@@ -727,35 +789,162 @@ public class PeerConnection {
     return Collections.unmodifiableList(receivers);
   }
 
+  /**
+   * Gets all RtpTransceivers associated with this peer connection.
+   * Note that calling getTransceivers will dispose of the transceivers previously
+   * returned.
+   * Note: This is only available with SdpSemantics.UNIFIED_PLAN specified.
+   */
+  public List<RtpTransceiver> getTransceivers() {
+    for (RtpTransceiver transceiver : transceivers) {
+      transceiver.dispose();
+    }
+    transceivers = nativeGetTransceivers();
+    return Collections.unmodifiableList(transceivers);
+  }
+
+  /**
+   * Adds a new media stream track to be sent on this peer connection, and returns
+   * the newly created RtpSender. If streamIds are specified, the RtpSender will
+   * be associated with the streams specified in the streamIds list.
+   *
+   * @throws IllegalStateException if an error accors in C++ addTrack.
+   *         An error can occur if:
+   *           - A sender already exists for the track.
+   *           - The peer connection is closed.
+   */
+  public RtpSender addTrack(MediaStreamTrack track) {
+    return addTrack(track, Collections.emptyList());
+  }
+
+  public RtpSender addTrack(MediaStreamTrack track, List<String> streamIds) {
+    if (track == null || streamIds == null) {
+      throw new NullPointerException("No MediaStreamTrack specified in addTrack.");
+    }
+    RtpSender newSender = nativeAddTrack(track.nativeTrack, streamIds);
+    if (newSender == null) {
+      throw new IllegalStateException("C++ addTrack failed.");
+    }
+    senders.add(newSender);
+    return newSender;
+  }
+
+  /**
+   * Stops sending media from sender. The sender will still appear in getSenders. Future
+   * calls to createOffer will mark the m section for the corresponding transceiver as
+   * receive only or inactive, as defined in JSEP. Returns true on success.
+   */
+  public boolean removeTrack(RtpSender sender) {
+    if (sender == null) {
+      throw new NullPointerException("No RtpSender specified for removeTrack.");
+    }
+    return nativeRemoveTrack(sender.nativeRtpSender);
+  }
+
+  /**
+   * Creates a new RtpTransceiver and adds it to the set of transceivers. Adding a
+   * transceiver will cause future calls to CreateOffer to add a media description
+   * for the corresponding transceiver.
+   *
+   * <p>The initial value of |mid| in the returned transceiver is null. Setting a
+   * new session description may change it to a non-null value.
+   *
+   * <p>https://w3c.github.io/webrtc-pc/#dom-rtcpeerconnection-addtransceiver
+   *
+   * <p>If a MediaStreamTrack is specified then a transceiver will be added with a
+   * sender set to transmit the given track. The kind
+   * of the transceiver (and sender/receiver) will be derived from the kind of
+   * the track.
+   *
+   * <p>If MediaType is specified then a transceiver will be added based upon that type.
+   * This can be either MEDIA_TYPE_AUDIO or MEDIA_TYPE_VIDEO.
+   *
+   * <p>Optionally, an RtpTransceiverInit structure can be specified to configure
+   * the transceiver from construction. If not specified, the transceiver will
+   * default to having a direction of kSendRecv and not be part of any streams.
+   *
+   * <p>Note: These methods are only available with SdpSemantics.UNIFIED_PLAN specified.
+   * @throws IllegalStateException if an error accors in C++ addTransceiver
+   */
+  public RtpTransceiver addTransceiver(MediaStreamTrack track) {
+    return addTransceiver(track, new RtpTransceiver.RtpTransceiverInit());
+  }
+
+  public RtpTransceiver addTransceiver(
+      MediaStreamTrack track, RtpTransceiver.RtpTransceiverInit init) {
+    if (track == null) {
+      throw new NullPointerException("No MediaStreamTrack specified for addTransceiver.");
+    }
+    if (init == null) {
+      init = new RtpTransceiver.RtpTransceiverInit();
+    }
+    RtpTransceiver newTransceiver = nativeAddTransceiverWithTrack(track.nativeTrack, init);
+    if (newTransceiver == null) {
+      throw new IllegalStateException("C++ addTransceiver failed.");
+    }
+    transceivers.add(newTransceiver);
+    return newTransceiver;
+  }
+
+  public RtpTransceiver addTransceiver(MediaStreamTrack.MediaType mediaType) {
+    return addTransceiver(mediaType, new RtpTransceiver.RtpTransceiverInit());
+  }
+
+  public RtpTransceiver addTransceiver(
+      MediaStreamTrack.MediaType mediaType, RtpTransceiver.RtpTransceiverInit init) {
+    if (mediaType == null) {
+      throw new NullPointerException("No MediaType specified for addTransceiver.");
+    }
+    if (init == null) {
+      init = new RtpTransceiver.RtpTransceiverInit();
+    }
+    RtpTransceiver newTransceiver = nativeAddTransceiverOfType(mediaType, init);
+    if (newTransceiver == null) {
+      throw new IllegalStateException("C++ addTransceiver failed.");
+    }
+    transceivers.add(newTransceiver);
+    return newTransceiver;
+  }
+
   // Older, non-standard implementation of getStats.
   @Deprecated
   public boolean getStats(StatsObserver observer, MediaStreamTrack track) {
     return nativeOldGetStats(observer, (track == null) ? 0 : track.nativeTrack);
   }
 
-  // Gets stats using the new stats collection API, see webrtc/api/stats/. These
-  // will replace old stats collection API when the new API has matured enough.
+  /**
+   * Gets stats using the new stats collection API, see webrtc/api/stats/. These
+   * will replace old stats collection API when the new API has matured enough.
+   */
   public void getStats(RTCStatsCollectorCallback callback) {
     nativeNewGetStats(callback);
   }
 
-  // Limits the bandwidth allocated for all RTP streams sent by this
-  // PeerConnection. Pass null to leave a value unchanged.
+  /**
+   * Limits the bandwidth allocated for all RTP streams sent by this
+   * PeerConnection. Pass null to leave a value unchanged.
+   */
   public boolean setBitrate(Integer min, Integer current, Integer max) {
     return nativeSetBitrate(min, current, max);
   }
 
-  // Starts recording an RTC event log. Ownership of the file is transfered to
-  // the native code. If an RTC event log is already being recorded, it will be
-  // stopped and a new one will start using the provided file. Logging will
-  // continue until the stopRtcEventLog function is called. The max_size_bytes
-  // argument is ignored, it is added for future use.
+  /**
+   * Starts recording an RTC event log.
+   *
+   * Ownership of the file is transfered to the native code. If an RTC event
+   * log is already being recorded, it will be stopped and a new one will start
+   * using the provided file. Logging will continue until the stopRtcEventLog
+   * function is called. The max_size_bytes argument is ignored, it is added
+   * for future use.
+   */
   public boolean startRtcEventLog(int file_descriptor, int max_size_bytes) {
     return nativeStartRtcEventLog(file_descriptor, max_size_bytes);
   }
 
-  // Stops recording an RTC event log. If no RTC event log is currently being
-  // recorded, this call will have no effect.
+  /**
+   * Stops recording an RTC event log. If no RTC event log is currently being
+   * recorded, this call will have no effect.
+   */
   public void stopRtcEventLog() {
     nativeStopRtcEventLog();
   }
@@ -780,14 +969,14 @@ public class PeerConnection {
 
   /**
    * Free native resources associated with this PeerConnection instance.
-   * <p>
+   *
    * This method removes a reference count from the C++ PeerConnection object,
    * which should result in it being destroyed. It also calls equivalent
    * "dispose" methods on the Java objects attached to this PeerConnection
    * (streams, senders, receivers), such that their associated C++ objects
    * will also be destroyed.
-   * <p>
-   * Note that this method cannot be safely called from an observer callback
+   *
+   * <p>Note that this method cannot be safely called from an observer callback
    * (PeerConnection.Observer, DataChannel.Observer, etc.). If you want to, for
    * example, destroy the PeerConnection after an "ICE failed" callback, you
    * must do this asynchronously (in other words, unwind the stack first). See
@@ -808,6 +997,10 @@ public class PeerConnection {
     for (RtpReceiver receiver : receivers) {
       receiver.dispose();
     }
+    for (RtpTransceiver transceiver : transceivers) {
+      transceiver.dispose();
+    }
+    transceivers.clear();
     receivers.clear();
     nativeFreeOwnedPeerConnection(nativePeerConnection);
   }
@@ -854,6 +1047,13 @@ public class PeerConnection {
   private native RtpSender nativeCreateSender(String kind, String stream_id);
   private native List<RtpSender> nativeGetSenders();
   private native List<RtpReceiver> nativeGetReceivers();
+  private native List<RtpTransceiver> nativeGetTransceivers();
+  private native RtpSender nativeAddTrack(long track, List<String> streamIds);
+  private native boolean nativeRemoveTrack(long sender);
+  private native RtpTransceiver nativeAddTransceiverWithTrack(
+      long track, RtpTransceiver.RtpTransceiverInit init);
+  private native RtpTransceiver nativeAddTransceiverOfType(
+      MediaStreamTrack.MediaType mediaType, RtpTransceiver.RtpTransceiverInit init);
   private native boolean nativeStartRtcEventLog(int file_descriptor, int max_size_bytes);
   private native void nativeStopRtcEventLog();
 }

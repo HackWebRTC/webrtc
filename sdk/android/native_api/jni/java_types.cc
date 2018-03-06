@@ -200,6 +200,12 @@ ScopedJavaLocalRef<jobject> NativeToJavaInteger(
   return optional_int ? NativeToJavaInteger(jni, *optional_int) : nullptr;
 }
 
+ScopedJavaLocalRef<jstring> NativeToJavaString(
+    JNIEnv* jni,
+    const rtc::Optional<std::string>& str) {
+  return str ? NativeToJavaString(jni, *str) : nullptr;
+}
+
 ScopedJavaLocalRef<jobjectArray> NativeToJavaBooleanArray(
     JNIEnv* env,
     const std::vector<bool>& container) {

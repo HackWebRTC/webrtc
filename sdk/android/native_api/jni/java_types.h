@@ -150,6 +150,21 @@ std::vector<T> JavaToNativeVector(JNIEnv* env,
   return container;
 }
 
+template <typename T, typename Java_T = jobject, typename Convert>
+std::vector<T> JavaListToNativeVector(JNIEnv* env,
+                                      const JavaRef<jobject>& j_list,
+                                      Convert convert) {
+  std::vector<T> native_list;
+  if (!j_list.is_null()) {
+    for (ScopedJavaLocalRef<jobject>& j_item : Iterable(env, j_list)) {
+      native_list.emplace_back(
+          convert(env, static_java_ref_cast<Java_T>(env, j_item)));
+    }
+    CHECK_EXCEPTION(env) << "Error during JavaListToNativeVector";
+  }
+  return native_list;
+}
+
 template <typename Key, typename T, typename Convert>
 std::map<Key, T> JavaToNativeMap(JNIEnv* env,
                                  const JavaRef<jobject>& j_map,
@@ -182,6 +197,9 @@ ScopedJavaLocalRef<jstring> NativeToJavaString(JNIEnv* jni,
 ScopedJavaLocalRef<jobject> NativeToJavaInteger(
     JNIEnv* jni,
     const rtc::Optional<int32_t>& optional_int);
+ScopedJavaLocalRef<jstring> NativeToJavaString(
+    JNIEnv* jni,
+    const rtc::Optional<std::string>& str);
 
 // Helper function for converting std::vector<T> into a Java array.
 template <typename T, typename Convert>
@@ -282,7 +300,7 @@ inline std::string JavaToStdString(JNIEnv* jni, jstring j_string) {
   return JavaToStdString(jni, JavaParamRef<jstring>(j_string));
 }
 
-// Deprecated. Use JavaToNativeVector<std::string> instead.
+// Deprecated. Use JavaListToNativeVector<std::string, jstring> instead.
 // Given a List of (UTF-16) jstrings
 // return a new vector of UTF-8 native strings.
 std::vector<std::string> JavaToStdVectorStrings(JNIEnv* jni,

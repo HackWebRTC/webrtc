@@ -135,9 +135,9 @@ static jboolean JNI_MediaStream_RemoveVideoTrack(JNIEnv* jni,
 }
 
 static ScopedJavaLocalRef<jstring>
-JNI_MediaStream_GetLabel(JNIEnv* jni, const JavaParamRef<jclass>&, jlong j_p) {
-  return NativeToJavaString(
-      jni, reinterpret_cast<MediaStreamInterface*>(j_p)->label());
+JNI_MediaStream_GetId(JNIEnv* jni, const JavaParamRef<jclass>&, jlong j_p) {
+  return NativeToJavaString(jni,
+                            reinterpret_cast<MediaStreamInterface*>(j_p)->id());
 }
 
 }  // namespace jni
