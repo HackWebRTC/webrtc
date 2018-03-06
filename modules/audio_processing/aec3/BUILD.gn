@@ -88,6 +88,8 @@ rtc_static_library("aec3") {
     "suppression_filter.h",
     "suppression_gain.cc",
     "suppression_gain.h",
+    "suppression_gain_limiter.cc",
+    "suppression_gain_limiter.h",
     "vector_buffer.cc",
     "vector_buffer.h",
     "vector_math.h",

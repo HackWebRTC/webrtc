@@ -63,7 +63,8 @@ AecState::AecState(const EchoCanceller3Config& config)
       config_(config),
       max_render_(config_.filter.main.length_blocks, 0.f),
       reverb_decay_(fabsf(config_.ep_strength.default_len)),
-      gain_rampup_increase_(ComputeGainRampupIncrease(config_)) {}
+      gain_rampup_increase_(ComputeGainRampupIncrease(config_)),
+      suppression_gain_limiter_(config_) {}
 
 AecState::~AecState() = default;
 
@@ -83,6 +84,7 @@ void AecState::HandleEchoPathChange(
     render_received_ = false;
     blocks_with_active_render_ = 0;
     initial_state_ = true;
+    suppression_gain_limiter_.Reset();
   };
 
   // TODO(peah): Refine the reset scheme according to the type of gain and
@@ -96,7 +98,6 @@ void AecState::HandleEchoPathChange(
     full_reset();
   } else if (echo_path_variability.delay_change !=
              EchoPathVariability::DelayAdjustment::kBufferFlush) {
-    active_render_seen_ = false;
     full_reset();
   } else if (echo_path_variability.delay_change !=
              EchoPathVariability::DelayAdjustment::kDelayReset) {
@@ -136,7 +137,7 @@ void AecState::Update(
 
   // Update the limit on the echo suppression after an echo path change to avoid
   // an initial echo burst.
-  UpdateSuppressorGainLimit(render_buffer.GetRenderActivity());
+  suppression_gain_limiter_.Update(render_buffer.GetRenderActivity());
 
   // Update the ERL and ERLE measures.
   if (converged_filter && capture_block_counter_ >= 2 * kNumBlocksPerSecond) {
@@ -360,6 +361,7 @@ void AecState::UpdateReverb(const std::vector<float>& impulse_response) {
 
   data_dumper_->DumpRaw("aec3_reverb_decay", reverb_decay_);
   data_dumper_->DumpRaw("aec3_reverb_tail_energy", tail_energy_);
+  data_dumper_->DumpRaw("aec3_suppression_gain_limit", SuppressionGainLimit());
 }
 
 bool AecState::DetectActiveRender(rtc::ArrayView<const float> x) const {
@@ -367,37 +369,6 @@ bool AecState::DetectActiveRender(rtc::ArrayView<const float> x) const {
   return x_energy > (config_.render_levels.active_render_limit *
                      config_.render_levels.active_render_limit) *
                         kFftLengthBy2;
-}
-
-// Updates the suppressor gain limit.
-void AecState::UpdateSuppressorGainLimit(bool render_activity) {
-  const auto& rampup_conf = config_.echo_removal_control.gain_rampup;
-  if (!active_render_seen_ && render_activity) {
-    active_render_seen_ = true;
-    realignment_counter_ = rampup_conf.full_gain_blocks;
-  } else if (realignment_counter_ > 0) {
-    --realignment_counter_;
-  }
-
-  if (realignment_counter_ <= 0) {
-    suppressor_gain_limit_ = 1.f;
-    return;
-  }
-
-  if (realignment_counter_ > rampup_conf.non_zero_gain_blocks) {
-    suppressor_gain_limit_ = 0.f;
-    return;
-  }
-
-  if (realignment_counter_ == rampup_conf.non_zero_gain_blocks) {
-    suppressor_gain_limit_ = rampup_conf.first_non_zero_gain;
-    return;
-  }
-
-  RTC_DCHECK_LT(0.f, suppressor_gain_limit_);
-  suppressor_gain_limit_ =
-      std::min(1.f, suppressor_gain_limit_ * gain_rampup_increase_);
-  RTC_DCHECK_GE(1.f, suppressor_gain_limit_);
 }
 
 bool AecState::DetectEchoSaturation(rtc::ArrayView<const float> x) {
