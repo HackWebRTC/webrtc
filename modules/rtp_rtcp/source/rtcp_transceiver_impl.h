@@ -43,6 +43,8 @@ class RtcpTransceiverImpl {
   void RemoveMediaReceiverRtcpObserver(uint32_t remote_ssrc,
                                        MediaReceiverRtcpObserver* observer);
 
+  void SetReadyToSend(bool ready);
+
   void ReceivePacket(rtc::ArrayView<const uint8_t> packet, int64_t now_us);
 
   void SendCompoundPacket();
@@ -88,6 +90,7 @@ class RtcpTransceiverImpl {
 
   const RtcpTransceiverConfig config_;
 
+  bool ready_to_send_;
   rtc::Optional<rtcp::Remb> remb_;
   // TODO(danilchap): Remove entries from remote_senders_ that are no longer
   // needed.

@@ -130,6 +130,8 @@ RtcpTransceiverConfig DefaultTestConfig() {
   RtcpTransceiverConfig config;
   config.outgoing_transport = &null_transport;
   config.schedule_periodic_compound_packets = false;
+  config.initial_report_delay_ms = 10;
+  config.report_period_ms = kReportPeriodMs;
   return config;
 }
 
@@ -225,6 +227,71 @@ TEST(RtcpTransceiverImplTest, SendCompoundPacketDelaysPeriodicSendPackets) {
 
   EXPECT_GE(time_of_last_periodic_packet_ms - time_of_non_periodic_packet_ms,
             config.report_period_ms);
+
+  // Cleanup.
+  rtc::Event done(false, false);
+  queue.PostTask([&] {
+    rtcp_transceiver.reset();
+    done.Set();
+  });
+  ASSERT_TRUE(done.Wait(kAlmostForeverMs));
+}
+
+TEST(RtcpTransceiverImplTest, SendsNoRtcpWhenNetworkStateIsDown) {
+  MockTransport mock_transport;
+  RtcpTransceiverConfig config = DefaultTestConfig();
+  config.initial_ready_to_send = false;
+  config.outgoing_transport = &mock_transport;
+  RtcpTransceiverImpl rtcp_transceiver(config);
+
+
+  EXPECT_CALL(mock_transport, SendRtcp(_, _)).Times(0);
+
+  const uint8_t raw[] = {1, 2, 3, 4};
+  const std::vector<uint16_t> sequence_numbers = {45, 57};
+  const uint32_t ssrcs[] = {123};
+  rtcp_transceiver.SendCompoundPacket();
+  rtcp_transceiver.SendRawPacket(raw);
+  rtcp_transceiver.SendNack(ssrcs[0], sequence_numbers);
+  rtcp_transceiver.SendPictureLossIndication(ssrcs[0]);
+  rtcp_transceiver.SendFullIntraRequest(ssrcs);
+}
+
+TEST(RtcpTransceiverImplTest, SendsRtcpWhenNetworkStateIsUp) {
+  MockTransport mock_transport;
+  RtcpTransceiverConfig config = DefaultTestConfig();
+  config.initial_ready_to_send = false;
+  config.outgoing_transport = &mock_transport;
+  RtcpTransceiverImpl rtcp_transceiver(config);
+
+  rtcp_transceiver.SetReadyToSend(true);
+
+  EXPECT_CALL(mock_transport, SendRtcp(_, _)).Times(5);
+
+  const uint8_t raw[] = {1, 2, 3, 4};
+  const std::vector<uint16_t> sequence_numbers = {45, 57};
+  const uint32_t ssrcs[] = {123};
+  rtcp_transceiver.SendCompoundPacket();
+  rtcp_transceiver.SendRawPacket(raw);
+  rtcp_transceiver.SendNack(ssrcs[0], sequence_numbers);
+  rtcp_transceiver.SendPictureLossIndication(ssrcs[0]);
+  rtcp_transceiver.SendFullIntraRequest(ssrcs);
+}
+
+TEST(RtcpTransceiverImplTest, SendsPeriodicRtcpWhenNetworkStateIsUp) {
+  rtc::TaskQueue queue("rtcp");
+  FakeRtcpTransport transport;
+  RtcpTransceiverConfig config = DefaultTestConfig();
+  config.schedule_periodic_compound_packets = true;
+  config.initial_ready_to_send = false;
+  config.outgoing_transport = &transport;
+  config.task_queue = &queue;
+  rtc::Optional<RtcpTransceiverImpl> rtcp_transceiver;
+  rtcp_transceiver.emplace(config);
+
+  rtcp_transceiver->SetReadyToSend(true);
+
+  EXPECT_TRUE(transport.WaitPacket());
 
   // Cleanup.
   rtc::Event done(false, false);
