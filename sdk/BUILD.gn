@@ -431,8 +431,7 @@ if (is_ios || is_mac) {
     # these objects are just thin wrappers of native C++ interfaces required
     # when implementing webrtc::PeerConnectionFactoryInterface and
     # webrtc::PeerConnectionInterface.
-    # The applications which only use WebRTC DataChannel can depend on this
-    # target instead of rtc_sdk_objc.
+    # The applications which only use WebRTC DataChannel can depend on this.
     rtc_static_library("peerconnectionfactory_no_media_objc") {
       visibility = [ "*" ]
       defines = [ "HAVE_NO_MEDIA" ]
@@ -924,17 +923,6 @@ if (is_ios || is_mac) {
         "../modules/video_coding:video_codec_interface",
         "../rtc_base:checks",
         "../rtc_base:rtc_base",
-      ]
-    }
-
-    rtc_static_library("rtc_sdk_objc") {
-      complete_static_lib = true
-      deps = [
-        ":ui_objc",
-        ":videocapture_objc",
-        "../system_wrappers:field_trial_default",
-        "../system_wrappers:metrics_default",
-        "../system_wrappers:runtime_enabled_features_default",
       ]
     }
 
