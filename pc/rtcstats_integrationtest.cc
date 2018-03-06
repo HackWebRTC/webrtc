@@ -515,7 +515,6 @@ class RTCStatsReportVerifier {
       verifier.TestMemberIsUndefined(media_stream_track.frames_per_second);
       if (*media_stream_track.remote_source) {
         verifier.TestMemberIsUndefined(media_stream_track.frames_sent);
-        verifier.TestMemberIsUndefined(media_stream_track.huge_frames_sent);
         verifier.TestMemberIsNonNegative<uint32_t>(
             media_stream_track.frames_received);
         verifier.TestMemberIsNonNegative<uint32_t>(
@@ -525,8 +524,6 @@ class RTCStatsReportVerifier {
       } else {
         verifier.TestMemberIsNonNegative<uint32_t>(
             media_stream_track.frames_sent);
-        verifier.TestMemberIsNonNegative<uint32_t>(
-            media_stream_track.huge_frames_sent);
         verifier.TestMemberIsUndefined(media_stream_track.frames_received);
         verifier.TestMemberIsUndefined(media_stream_track.frames_decoded);
         verifier.TestMemberIsUndefined(media_stream_track.frames_dropped);
@@ -549,7 +546,6 @@ class RTCStatsReportVerifier {
       verifier.TestMemberIsUndefined(media_stream_track.frame_height);
       verifier.TestMemberIsUndefined(media_stream_track.frames_per_second);
       verifier.TestMemberIsUndefined(media_stream_track.frames_sent);
-      verifier.TestMemberIsUndefined(media_stream_track.huge_frames_sent);
       verifier.TestMemberIsUndefined(media_stream_track.frames_received);
       verifier.TestMemberIsUndefined(media_stream_track.frames_decoded);
       verifier.TestMemberIsUndefined(media_stream_track.frames_dropped);
