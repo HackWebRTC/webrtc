@@ -335,3 +335,15 @@ TEST_F(DtmfSenderTest, InsertDtmfWithInvalidDurationOrGap) {
 
   EXPECT_TRUE(dtmf_->InsertDtmf(tones, duration, inter_tone_gap));
 }
+
+TEST_F(DtmfSenderTest, InsertDtmfSendsAfterWait) {
+  std::string tones = "ABC";
+  int duration = 100;
+  int inter_tone_gap = 50;
+  EXPECT_TRUE(dtmf_->InsertDtmf(tones, duration, inter_tone_gap));
+  VerifyExpectedState(track_, "ABC", duration, inter_tone_gap);
+  // Wait until the first tone got sent.
+  EXPECT_TRUE_SIMULATED_WAIT(observer_->tones().size() == 1, kMaxWaitMs,
+                             fake_clock_);
+  VerifyExpectedState(track_, "BC", duration, inter_tone_gap);
+}
