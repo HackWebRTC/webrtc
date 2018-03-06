@@ -1910,6 +1910,37 @@ TEST_F(RTCStatsCollectorTest, DoNotCrashOnSsrcChange) {
   EXPECT_EQ(1, track_stats.size());
 }
 
+// Used for test below, to test calling GetStatsReport during a callback.
+class ReentrantCallback : public RTCStatsCollectorCallback {
+ public:
+  explicit ReentrantCallback(RTCStatsCollectorWrapper* stats) : stats_(stats) {}
+
+  void OnStatsDelivered(
+      const rtc::scoped_refptr<const RTCStatsReport>& report) override {
+    stats_->GetStatsReport();
+    called_ = true;
+  }
+
+  bool called() const { return called_; }
+
+ private:
+  RTCStatsCollectorWrapper* stats_;
+  bool called_ = false;
+};
+
+// Test that nothing bad happens if a callback causes GetStatsReport to be
+// called again recursively. Regression test for crbug.com/webrtc/8973.
+TEST_F(RTCStatsCollectorTest, DoNotCrashOnReentrantInvocation) {
+  rtc::scoped_refptr<ReentrantCallback> callback1(
+      new rtc::RefCountedObject<ReentrantCallback>(stats_.get()));
+  rtc::scoped_refptr<ReentrantCallback> callback2(
+      new rtc::RefCountedObject<ReentrantCallback>(stats_.get()));
+  stats_->stats_collector()->GetStatsReport(callback1);
+  stats_->stats_collector()->GetStatsReport(callback2);
+  EXPECT_TRUE_WAIT(callback1->called(), kGetStatsReportTimeoutMs);
+  EXPECT_TRUE_WAIT(callback2->called(), kGetStatsReportTimeoutMs);
+}
+
 class RTCTestStats : public RTCStats {
  public:
   WEBRTC_RTCSTATS_DECL();

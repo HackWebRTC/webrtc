@@ -780,11 +780,16 @@ void RTCStatsCollector::DeliverCachedReport() {
   RTC_DCHECK(signaling_thread_->IsCurrent());
   RTC_DCHECK(!callbacks_.empty());
   RTC_DCHECK(cached_report_);
+
+  // Swap the list of callbacks, in case one of them recursively calls
+  // GetStatsReport again and modifies the callback list.
+  std::vector<rtc::scoped_refptr<RTCStatsCollectorCallback>> callbacks;
+  callbacks.swap(callbacks_);
+
   for (const rtc::scoped_refptr<RTCStatsCollectorCallback>& callback :
-       callbacks_) {
+       callbacks) {
     callback->OnStatsDelivered(cached_report_);
   }
-  callbacks_.clear();
 }
 
 void RTCStatsCollector::ProduceCertificateStats_n(
