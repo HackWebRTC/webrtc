@@ -268,6 +268,8 @@ class Call : public webrtc::Call,
 
   NetworkState audio_network_state_;
   NetworkState video_network_state_;
+  rtc::CriticalSection aggregate_network_up_crit_;
+  bool aggregate_network_up_ RTC_GUARDED_BY(aggregate_network_up_crit_);
 
   std::unique_ptr<RWLockWrapper> receive_crit_;
   // Audio, Video, and FlexFEC receive streams are owned by the client that
@@ -413,6 +415,7 @@ Call::Call(const Call::Config& config,
       config_(config),
       audio_network_state_(kNetworkDown),
       video_network_state_(kNetworkDown),
+      aggregate_network_up_(false),
       receive_crit_(RWLockWrapper::CreateRWLock()),
       send_crit_(RWLockWrapper::CreateRWLock()),
       event_log_(config.event_log),
@@ -909,7 +912,14 @@ Call::Stats Call::GetStats() const {
       &ssrcs, &recv_bandwidth);
   stats.send_bandwidth_bps = send_bandwidth;
   stats.recv_bandwidth_bps = recv_bandwidth;
-  stats.pacer_delay_ms = transport_send_->GetPacerQueuingDelayMs();
+  // TODO(srte): It is unclear if we only want to report queues if network is
+  // available.
+  {
+    rtc::CritScope cs(&aggregate_network_up_crit_);
+    stats.pacer_delay_ms =
+        aggregate_network_up_ ? transport_send_->GetPacerQueuingDelayMs() : 0;
+  }
+
   stats.rtt_ms = call_stats_->rtcp_rtt_stats()->LastProcessedRtt();
   {
     rtc::CritScope cs(&bitrate_crit_);
@@ -1016,16 +1026,17 @@ void Call::UpdateAggregateNetworkState() {
       have_video = true;
   }
 
-  NetworkState aggregate_state = kNetworkDown;
-  if ((have_video && video_network_state_ == kNetworkUp) ||
-      (have_audio && audio_network_state_ == kNetworkUp)) {
-    aggregate_state = kNetworkUp;
-  }
+  bool aggregate_network_up =
+      ((have_video && video_network_state_ == kNetworkUp) ||
+       (have_audio && audio_network_state_ == kNetworkUp));
 
   RTC_LOG(LS_INFO) << "UpdateAggregateNetworkState: aggregate_state="
-                   << (aggregate_state == kNetworkUp ? "up" : "down");
-
-  transport_send_->OnNetworkAvailability(aggregate_state == kNetworkUp);
+                   << (aggregate_network_up ? "up" : "down");
+  {
+    rtc::CritScope cs(&aggregate_network_up_crit_);
+    aggregate_network_up_ = aggregate_network_up;
+  }
+  transport_send_->OnNetworkAvailability(aggregate_network_up);
 }
 
 void Call::OnSentPacket(const rtc::SentPacket& sent_packet) {

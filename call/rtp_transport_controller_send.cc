@@ -145,10 +145,10 @@ bool RtpTransportControllerSend::AvailableBandwidth(uint32_t* bandwidth) const {
   return send_side_cc_->AvailableBandwidth(bandwidth);
 }
 int64_t RtpTransportControllerSend::GetPacerQueuingDelayMs() const {
-  return send_side_cc_->GetPacerQueuingDelayMs();
+  return pacer_.QueueInMs();
 }
 int64_t RtpTransportControllerSend::GetFirstPacketTimeMs() const {
-  return send_side_cc_->GetFirstPacketTimeMs();
+  return pacer_.FirstSentPacketTimeMs();
 }
 void RtpTransportControllerSend::EnablePeriodicAlrProbing(bool enable) {
   send_side_cc_->EnablePeriodicAlrProbing(enable);

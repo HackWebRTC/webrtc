@@ -88,8 +88,8 @@ class SendSideCongestionController
   RTC_DEPRECATED RtcpBandwidthObserver* GetBandwidthObserver() const;
 
   bool AvailableBandwidth(uint32_t* bandwidth) const override;
-  int64_t GetPacerQueuingDelayMs() const override;
-  int64_t GetFirstPacketTimeMs() const override;
+  virtual int64_t GetPacerQueuingDelayMs() const;
+  virtual int64_t GetFirstPacketTimeMs() const;
 
   TransportFeedbackObserver* GetTransportFeedbackObserver() override;
 

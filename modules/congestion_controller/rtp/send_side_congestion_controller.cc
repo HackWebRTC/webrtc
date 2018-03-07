@@ -398,17 +398,6 @@ void SendSideCongestionController::UpdateStreamsConfig() {
   controller_->OnStreamsConfig(streams_config_);
 }
 
-int64_t SendSideCongestionController::GetPacerQueuingDelayMs() const {
-  // TODO(srte): This should be made less synchronous. Now it grabs a lock in
-  // the pacer just for stats usage. Some kind of push interface might make
-  // sense.
-  return network_available_ ? pacer_->QueueInMs() : 0;
-}
-
-int64_t SendSideCongestionController::GetFirstPacketTimeMs() const {
-  return pacer_->FirstSentPacketTimeMs();
-}
-
 TransportFeedbackObserver*
 SendSideCongestionController::GetTransportFeedbackObserver() {
   return this;

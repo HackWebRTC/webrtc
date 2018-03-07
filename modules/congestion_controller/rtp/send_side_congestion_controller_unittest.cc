@@ -331,22 +331,6 @@ TEST_F(SendSideCongestionControllerTest,
   controller_->Process();
 }
 
-TEST_F(SendSideCongestionControllerTest, GetPacerQueuingDelayMs) {
-  EXPECT_CALL(observer_, OnNetworkChanged(_, _, _, _)).Times(AtLeast(1));
-
-  const int64_t kQueueTimeMs = 123;
-  EXPECT_CALL(*pacer_, QueueInMs()).WillRepeatedly(Return(kQueueTimeMs));
-  EXPECT_EQ(kQueueTimeMs, controller_->GetPacerQueuingDelayMs());
-
-  // Expect zero pacer delay when network is down.
-  controller_->SignalNetworkState(kNetworkDown);
-  EXPECT_EQ(0, controller_->GetPacerQueuingDelayMs());
-
-  // Network is up, pacer delay should be reported.
-  controller_->SignalNetworkState(kNetworkUp);
-  EXPECT_EQ(kQueueTimeMs, controller_->GetPacerQueuingDelayMs());
-}
-
 TEST_F(SendSideCongestionControllerTest, GetProbingInterval) {
   clock_.AdvanceTimeMilliseconds(25);
   controller_->Process();
