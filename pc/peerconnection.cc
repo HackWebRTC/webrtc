@@ -430,6 +430,11 @@ RTCError VerifyCrypto(const SessionDescription* desc,
     if (content_info.rejected) {
       continue;
     }
+    // Note what media is used with each crypto protocol, for all sections.
+    NoteKeyProtocolAndMedia(dtls_enabled ? webrtc::kEnumCounterKeyProtocolDtls
+                                         : webrtc::kEnumCounterKeyProtocolSdes,
+                            content_info.media_description()->type(),
+                            uma_observer);
     const std::string& mid = content_info.name;
     if (bundle && bundle->HasContentName(mid) &&
         mid != *(bundle->FirstContentName())) {
@@ -455,16 +460,12 @@ RTCError VerifyCrypto(const SessionDescription* desc,
         return RTCError(RTCErrorType::INVALID_PARAMETER,
                         kSdpWithoutDtlsFingerprint);
       }
-      NoteKeyProtocolAndMedia(webrtc::kEnumCounterKeyProtocolDtls,
-                              media->type(), uma_observer);
     } else {
       if (media->cryptos().empty()) {
         RTC_LOG(LS_WARNING)
             << "Session description must have SDES when DTLS disabled.";
         return RTCError(RTCErrorType::INVALID_PARAMETER, kSdpWithoutSdesCrypto);
       }
-      NoteKeyProtocolAndMedia(webrtc::kEnumCounterKeyProtocolSdes,
-                              media->type(), uma_observer);
     }
   }
   return RTCError::OK();
