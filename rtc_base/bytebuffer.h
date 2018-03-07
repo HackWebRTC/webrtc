@@ -47,6 +47,7 @@ class ByteBufferWriter : public ByteBuffer {
   ~ByteBufferWriter();
 
   const char* Data() const { return bytes_; }
+  char* MutableData() { return bytes_; }
   size_t Length() const { return end_; }
   size_t Capacity() const { return size_; }
 

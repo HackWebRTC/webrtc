@@ -74,6 +74,7 @@ rtc_static_library("rtc_pc_base") {
 
   deps = [
     "..:webrtc_common",
+    "../api:array_view",
     "../api:call_api",
     "../api:libjingle_peerconnection_api",
     "../api:optional",

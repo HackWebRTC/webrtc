@@ -71,11 +71,17 @@ class SrtpFilterTest : public testing::Test {
     EXPECT_TRUE(f2_.IsActive());
   }
 
+  void VerifyKeysAreEqual(ArrayView<const uint8_t> key1,
+                          ArrayView<const uint8_t> key2) {
+    EXPECT_EQ(key1.size(), key2.size());
+    EXPECT_EQ(0, memcmp(key1.data(), key2.data(), key1.size()));
+  }
+
   void VerifyCryptoParamsMatch(const std::string& cs1, const std::string& cs2) {
     EXPECT_EQ(rtc::SrtpCryptoSuiteFromName(cs1), f1_.send_cipher_suite());
     EXPECT_EQ(rtc::SrtpCryptoSuiteFromName(cs2), f2_.send_cipher_suite());
-    EXPECT_TRUE(f1_.send_key() == f2_.recv_key());
-    EXPECT_TRUE(f2_.send_key() == f1_.recv_key());
+    VerifyKeysAreEqual(f1_.send_key(), f2_.recv_key());
+    VerifyKeysAreEqual(f2_.send_key(), f1_.recv_key());
   }
 
   cricket::SrtpFilter f1_;

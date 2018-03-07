@@ -28,6 +28,7 @@
 #include "rtc_base/httpcommon.h"
 #include "rtc_base/messagedigest.h"
 #include "rtc_base/socketaddress.h"
+#include "rtc_base/zero_memory.h"
 
 namespace rtc {
 namespace {
@@ -775,8 +776,10 @@ HttpAuthResult HttpAuthenticate(
 
     context = new HttpAuthContext(auth_method);
 
-    // TODO: convert sensitive to a secure buffer that gets securely deleted
-    //std::string decoded = username + ":" + password;
+    // TODO(bugs.webrtc.org/8905): Convert sensitive to a CryptString and also
+    // return response as CryptString so contents get securely deleted
+    // automatically.
+    // std::string decoded = username + ":" + password;
     size_t len = username.size() + password.GetLength() + 2;
     char * sensitive = new char[len];
     size_t pos = strcpyn(sensitive, len, username.data(), username.size());
@@ -787,7 +790,7 @@ HttpAuthResult HttpAuthenticate(
     response.append(" ");
     // TODO: create a sensitive-source version of Base64::encode
     response.append(Base64::Encode(sensitive));
-    memset(sensitive, 0, len);
+    ExplicitZeroMemory(sensitive, len);
     delete [] sensitive;
     return HAR_RESPONSE;
   }
@@ -813,8 +816,10 @@ HttpAuthResult HttpAuthenticate(
     bool has_qop = HttpHasAttribute(args, "qop", &qop);
     bool has_opaque = HttpHasAttribute(args, "opaque", &opaque);
 
-    // TODO: convert sensitive to be secure buffer
-    //std::string A1 = username + ":" + realm + ":" + password;
+    // TODO(bugs.webrtc.org/8905): Convert sensitive to a CryptString and also
+    // return response as CryptString so contents get securely deleted
+    // automatically.
+    // std::string A1 = username + ":" + realm + ":" + password;
     size_t len = username.size() + realm.size() + password.GetLength() + 3;
     char * sensitive = new char[len];  // A1
     size_t pos = strcpyn(sensitive, len, username.data(), username.size());
@@ -832,7 +837,7 @@ HttpAuthResult HttpAuthenticate(
       middle = nonce;
     }
     std::string HA1 = MD5(sensitive);
-    memset(sensitive, 0, len);
+    ExplicitZeroMemory(sensitive, len);
     delete [] sensitive;
     std::string HA2 = MD5(A2);
     std::string dig_response = MD5(HA1 + ":" + middle + ":" + HA2);
@@ -981,7 +986,7 @@ HttpAuthResult HttpAuthenticate(
           memcpy(passbuf, sensitive, auth_id.PasswordLength);
           passbuf[auth_id.PasswordLength] = 0;
         }
-        memset(sensitive, 0, len);
+        ExplicitZeroMemory(sensitive, len);
         delete [] sensitive;
         auth_id.User = userbuf;
         auth_id.Domain = domainbuf;

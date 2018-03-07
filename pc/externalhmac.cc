@@ -13,6 +13,7 @@
 #include <stdlib.h>  // For malloc/free.
 
 #include "rtc_base/logging.h"
+#include "rtc_base/zero_memory.h"
 
 #include "third_party/libsrtp/crypto/include/crypto_kernel.h"
 #include "third_party/libsrtp/include/srtp.h"
@@ -94,9 +95,7 @@ srtp_err_status_t external_hmac_alloc(srtp_auth_t** a,
 }
 
 srtp_err_status_t external_hmac_dealloc(srtp_auth_t* a) {
-  // Zeroize entire state
-  memset(reinterpret_cast<uint8_t*>(a), 0,
-         sizeof(ExternalHmacContext) + sizeof(srtp_auth_t));
+  rtc::ExplicitZeroMemory(a, sizeof(ExternalHmacContext) + sizeof(srtp_auth_t));
 
   // Free memory
   delete[] a;

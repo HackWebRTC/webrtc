@@ -20,7 +20,7 @@
 namespace rtc {
 
 class CryptStringImpl {
-public:
+ public:
   virtual ~CryptStringImpl() {}
   virtual size_t GetLength() const = 0;
   virtual void CopyTo(char * dest, bool nullterminate) const = 0;
@@ -30,7 +30,7 @@ public:
 };
 
 class EmptyCryptStringImpl : public CryptStringImpl {
-public:
+ public:
   ~EmptyCryptStringImpl() override {}
   size_t GetLength() const override;
   void CopyTo(char* dest, bool nullterminate) const override;
@@ -43,7 +43,9 @@ class CryptString {
  public:
   CryptString();
   size_t GetLength() const { return impl_->GetLength(); }
-  void CopyTo(char * dest, bool nullterminate) const { impl_->CopyTo(dest, nullterminate); }
+  void CopyTo(char* dest, bool nullterminate) const {
+    impl_->CopyTo(dest, nullterminate);
+  }
   CryptString(const CryptString& other);
   explicit CryptString(const CryptStringImpl& impl);
   ~CryptString();
@@ -63,89 +65,6 @@ class CryptString {
   std::unique_ptr<const CryptStringImpl> impl_;
 };
 
-
-// Used for constructing strings where a password is involved and we
-// need to ensure that we zero memory afterwards
-class FormatCryptString {
-public:
-  FormatCryptString() {
-    storage_ = new char[32];
-    capacity_ = 32;
-    length_ = 0;
-    storage_[0] = 0;
-  }
-
-  void Append(const std::string & text) {
-    Append(text.data(), text.length());
-  }
-
-  void Append(const char * data, size_t length) {
-    EnsureStorage(length_ + length + 1);
-    memcpy(storage_ + length_, data, length);
-    length_ += length;
-    storage_[length_] = '\0';
-  }
-
-  void Append(const CryptString * password) {
-    size_t len = password->GetLength();
-    EnsureStorage(length_ + len + 1);
-    password->CopyTo(storage_ + length_, true);
-    length_ += len;
-  }
-
-  size_t GetLength() {
-    return length_;
-  }
-
-  const char * GetData() {
-    return storage_;
-  }
-
-
-  // Ensures storage of at least n bytes
-  void EnsureStorage(size_t n) {
-    if (capacity_ >= n) {
-      return;
-    }
-
-    size_t old_capacity = capacity_;
-    char * old_storage = storage_;
-
-    for (;;) {
-      capacity_ *= 2;
-      if (capacity_ >= n)
-        break;
-    }
-
-    storage_ = new char[capacity_];
-
-    if (old_capacity) {
-      memcpy(storage_, old_storage, length_);
-
-      // zero memory in a way that an optimizer won't optimize it out
-      old_storage[0] = 0;
-      for (size_t i = 1; i < old_capacity; i++) {
-        old_storage[i] = old_storage[i - 1];
-      }
-      delete[] old_storage;
-    }
-  }
-
-  ~FormatCryptString() {
-    if (capacity_) {
-      storage_[0] = 0;
-      for (size_t i = 1; i < capacity_; i++) {
-        storage_[i] = storage_[i - 1];
-      }
-    }
-    delete[] storage_;
-  }
-private:
-  char * storage_;
-  size_t capacity_;
-  size_t length_;
-};
-
 class InsecureCryptStringImpl : public CryptStringImpl {
  public:
   std::string& password() { return password_; }
@@ -162,6 +81,6 @@ class InsecureCryptStringImpl : public CryptStringImpl {
   std::string password_;
 };
 
-}
+}  // namespace rtc
 
 #endif  // RTC_BASE_CRYPTSTRING_H_

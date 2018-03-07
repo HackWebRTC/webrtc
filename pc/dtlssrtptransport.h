@@ -18,6 +18,7 @@
 #include "p2p/base/dtlstransportinternal.h"
 #include "pc/rtptransportinternaladapter.h"
 #include "pc/srtptransport.h"
+#include "rtc_base/buffer.h"
 
 namespace webrtc {
 
@@ -68,8 +69,8 @@ class DtlsSrtpTransport : public RtpTransportInternalAdapter {
   void SetupRtcpDtlsSrtp();
   bool ExtractParams(cricket::DtlsTransportInternal* dtls_transport,
                      int* selected_crypto_suite,
-                     std::vector<unsigned char>* send_key,
-                     std::vector<unsigned char>* recv_key);
+                     rtc::ZeroOnFreeBuffer<unsigned char>* send_key,
+                     rtc::ZeroOnFreeBuffer<unsigned char>* recv_key);
   void SetDtlsTransport(cricket::DtlsTransportInternal* new_dtls_transport,
                         cricket::DtlsTransportInternal** old_dtls_transport);
   void SetRtpDtlsTransport(cricket::DtlsTransportInternal* rtp_dtls_transport);

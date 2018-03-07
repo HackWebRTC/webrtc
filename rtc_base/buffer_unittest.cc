@@ -434,4 +434,81 @@ TEST(BufferTest, TestStruct) {
   EXPECT_EQ(kObsidian, buf[2].stone);
 }
 
+TEST(ZeroOnFreeBufferTest, TestZeroOnSetData) {
+  ZeroOnFreeBuffer<uint8_t> buf(kTestData, 7);
+  const uint8_t* old_data = buf.data();
+  const size_t old_capacity = buf.capacity();
+  const size_t old_size = buf.size();
+  constexpr size_t offset = 1;
+  buf.SetData(kTestData + offset, 2);
+  // Sanity checks to make sure the underlying heap memory was not reallocated.
+  EXPECT_EQ(old_data, buf.data());
+  EXPECT_EQ(old_capacity, buf.capacity());
+  // The first two elements have been overwritten, and the remaining five have
+  // been zeroed.
+  EXPECT_EQ(kTestData[offset], buf[0]);
+  EXPECT_EQ(kTestData[offset + 1], buf[1]);
+  for (size_t i = 2; i < old_size; i++) {
+    EXPECT_EQ(0, old_data[i]);
+  }
+}
+
+TEST(ZeroOnFreeBufferTest, TestZeroOnSetDataFromSetter) {
+  static constexpr size_t offset = 1;
+  const auto setter = [](rtc::ArrayView<uint8_t> av) {
+    for (int i = 0; i != 2; ++i)
+      av[i] = kTestData[offset + i];
+    return 2;
+  };
+
+  ZeroOnFreeBuffer<uint8_t> buf(kTestData, 7);
+  const uint8_t* old_data = buf.data();
+  const size_t old_capacity = buf.capacity();
+  const size_t old_size = buf.size();
+  buf.SetData(2, setter);
+  // Sanity checks to make sure the underlying heap memory was not reallocated.
+  EXPECT_EQ(old_data, buf.data());
+  EXPECT_EQ(old_capacity, buf.capacity());
+  // The first two elements have been overwritten, and the remaining five have
+  // been zeroed.
+  EXPECT_EQ(kTestData[offset], buf[0]);
+  EXPECT_EQ(kTestData[offset + 1], buf[1]);
+  for (size_t i = 2; i < old_size; i++) {
+    EXPECT_EQ(0, old_data[i]);
+  }
+}
+
+TEST(ZeroOnFreeBufferTest, TestZeroOnSetSize) {
+  ZeroOnFreeBuffer<uint8_t> buf(kTestData, 7);
+  const uint8_t* old_data = buf.data();
+  const size_t old_capacity = buf.capacity();
+  const size_t old_size = buf.size();
+  buf.SetSize(2);
+  // Sanity checks to make sure the underlying heap memory was not reallocated.
+  EXPECT_EQ(old_data, buf.data());
+  EXPECT_EQ(old_capacity, buf.capacity());
+  // The first two elements have not been modified and the remaining five have
+  // been zeroed.
+  EXPECT_EQ(kTestData[0], buf[0]);
+  EXPECT_EQ(kTestData[1], buf[1]);
+  for (size_t i = 2; i < old_size; i++) {
+    EXPECT_EQ(0, old_data[i]);
+  }
+}
+
+TEST(ZeroOnFreeBufferTest, TestZeroOnClear) {
+  ZeroOnFreeBuffer<uint8_t> buf(kTestData, 7);
+  const uint8_t* old_data = buf.data();
+  const size_t old_capacity = buf.capacity();
+  const size_t old_size = buf.size();
+  buf.Clear();
+  // Sanity checks to make sure the underlying heap memory was not reallocated.
+  EXPECT_EQ(old_data, buf.data());
+  EXPECT_EQ(old_capacity, buf.capacity());
+  // The underlying memory was not released but cleared.
+  for (size_t i = 0; i < old_size; i++) {
+    EXPECT_EQ(0, old_data[i]);
+  }
+}
+
 }  // namespace rtc

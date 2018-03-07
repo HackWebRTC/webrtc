@@ -22,6 +22,7 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/stringencode.h"
 #include "rtc_base/timeutils.h"
+#include "rtc_base/zero_memory.h"
 
 namespace cricket {
 
@@ -223,7 +224,7 @@ bool SrtpFilter::ApplySendParams(const CryptoParams& send_params) {
     return false;
   }
 
-  send_key_ = rtc::Buffer(send_key_len + send_salt_len);
+  send_key_ = rtc::ZeroOnFreeBuffer<uint8_t>(send_key_len + send_salt_len);
   return ParseKeyParams(send_params.key_params, send_key_.data(),
                         send_key_.size());
 }
@@ -254,7 +255,7 @@ bool SrtpFilter::ApplyRecvParams(const CryptoParams& recv_params) {
     return false;
   }
 
-  recv_key_ = rtc::Buffer(recv_key_len + recv_salt_len);
+  recv_key_ = rtc::ZeroOnFreeBuffer<uint8_t>(recv_key_len + recv_salt_len);
   return ParseKeyParams(recv_params.key_params, recv_key_.data(),
                         recv_key_.size());
 }
@@ -278,6 +279,9 @@ bool SrtpFilter::ParseKeyParams(const std::string& key_params,
   }
 
   memcpy(key, key_str.c_str(), len);
+  // TODO(bugs.webrtc.org/8905): Switch to ZeroOnFreeBuffer for storing
+  // sensitive data.
+  rtc::ExplicitZeroMemory(&key_str[0], key_str.size());
   return true;
 }
 
