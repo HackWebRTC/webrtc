@@ -61,4 +61,9 @@ public class UnityUtility {
     camera.stopCapture();
     camera.dispose();
   }
+
+  public static void InitializePeerConncectionFactory(Context context) throws InterruptedException {
+    PeerConnectionFactory.initialize(
+        PeerConnectionFactory.InitializationOptions.builder(context).createInitializationOptions());
+  }
 }

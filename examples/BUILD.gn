@@ -27,6 +27,7 @@ group("examples") {
       ":AppRTCMobile",
       ":AppRTCMobileTest",
       ":AppRTCMobileTestStubbedVideoIO",
+      ":libwebrtc_unity",
     ]
   }
 
@@ -46,6 +47,10 @@ group("examples") {
       ":stunserver",
       ":turnserver",
     ]
+  }
+
+  if (is_android || is_win) {
+    deps += [ ":webrtc_unity_plugin" ]
   }
 }
 
@@ -733,7 +738,10 @@ if (is_win || is_android) {
       "../system_wrappers:runtime_enabled_features_default",
     ]
     if (is_android) {
-      deps += [ "../sdk/android:libjingle_peerconnection_jni" ]
+      deps += [
+        "../modules/utility:utility",
+        "../sdk/android:libjingle_peerconnection_jni",
+      ]
     }
   }
 }
@@ -750,9 +758,9 @@ if (is_android) {
   dist_jar("libwebrtc_unity") {
     _target_dir_name = get_label_info(":$target_name", "dir")
     output = "${root_out_dir}/lib.java${_target_dir_name}/${target_name}.jar"
-    direct_deps_only = true
+    direct_deps_only = false
     use_interface_jars = false
-    use_unprocessed_jars = true
+    use_unprocessed_jars = false
     requires_android = true
     deps = [
       ":webrtc_unity_java",

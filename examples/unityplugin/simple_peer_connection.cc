@@ -29,6 +29,7 @@
 
 #if defined(WEBRTC_ANDROID)
 #include "examples/unityplugin/classreferenceholder.h"
+#include "modules/utility/include/helpers_android.h"
 #include "sdk/android/src/jni/androidvideotracksource.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 #endif
@@ -180,7 +181,7 @@ void SimplePeerConnection::DeletePeerConnection() {
     JNIEnv* env = webrtc::jni::GetEnv();
     jclass pc_factory_class =
         unity_plugin::FindClass(env, "org/webrtc/UnityUtility");
-    jmethodID stop_camera_method = webrtc::jni::GetStaticMethodID(
+    jmethodID stop_camera_method = webrtc::GetStaticMethodID(
         env, pc_factory_class, "StopCamera", "(Lorg/webrtc/VideoCapturer;)V");
 
     env->CallStaticVoidMethod(pc_factory_class, stop_camera_method, g_camera);
@@ -435,7 +436,7 @@ void SimplePeerConnection::AddStreams(bool audio_only) {
     JNIEnv* env = webrtc::jni::GetEnv();
     jclass pc_factory_class =
         unity_plugin::FindClass(env, "org/webrtc/UnityUtility");
-    jmethodID load_texture_helper_method = webrtc::jni::GetStaticMethodID(
+    jmethodID load_texture_helper_method = webrtc::GetStaticMethodID(
         env, pc_factory_class, "LoadSurfaceTextureHelper",
         "()Lorg/webrtc/SurfaceTextureHelper;");
     jobject texture_helper = env->CallStaticObjectMethod(
@@ -446,13 +447,14 @@ void SimplePeerConnection::AddStreams(bool audio_only) {
 
     rtc::scoped_refptr<webrtc::jni::AndroidVideoTrackSource> source(
         new rtc::RefCountedObject<webrtc::jni::AndroidVideoTrackSource>(
-            g_signaling_thread.get(), env, texture_helper, false));
+            g_signaling_thread.get(), env,
+            webrtc::JavaParamRef<jobject>(texture_helper), false));
     rtc::scoped_refptr<webrtc::VideoTrackSourceProxy> proxy_source =
         webrtc::VideoTrackSourceProxy::Create(g_signaling_thread.get(),
                                               g_worker_thread.get(), source);
 
     // link with VideoCapturer (Camera);
-    jmethodID link_camera_method = webrtc::jni::GetStaticMethodID(
+    jmethodID link_camera_method = webrtc::GetStaticMethodID(
         env, pc_factory_class, "LinkCamera",
         "(JLorg/webrtc/SurfaceTextureHelper;)Lorg/webrtc/VideoCapturer;");
     jobject camera_tmp =
