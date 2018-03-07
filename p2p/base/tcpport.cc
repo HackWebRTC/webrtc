@@ -347,9 +347,11 @@ TCPConnection::TCPConnection(TCPPort* port,
         << ", port() Network:" << port->Network()->ToString();
     const std::vector<rtc::InterfaceAddress>& desired_addresses =
         port_->Network()->GetIPs();
-    RTC_DCHECK(std::find(desired_addresses.begin(), desired_addresses.end(),
-                         socket_->GetLocalAddress().ipaddr()) !=
-               desired_addresses.end());
+    RTC_DCHECK(std::find_if(desired_addresses.begin(), desired_addresses.end(),
+                            [this](const rtc::InterfaceAddress& addr) {
+                              return socket_->GetLocalAddress().ipaddr() ==
+                                     addr;
+                            }) != desired_addresses.end());
     ConnectSocketSignals(socket);
   }
 }
@@ -429,8 +431,10 @@ void TCPConnection::OnConnect(rtc::AsyncPacketSocket* socket) {
   const rtc::SocketAddress& socket_address = socket->GetLocalAddress();
   const std::vector<rtc::InterfaceAddress>& desired_addresses =
       port_->Network()->GetIPs();
-  if (std::find(desired_addresses.begin(), desired_addresses.end(),
-                socket_address.ipaddr()) != desired_addresses.end()) {
+  if (std::find_if(desired_addresses.begin(), desired_addresses.end(),
+                   [socket_address](const rtc::InterfaceAddress& addr) {
+                     return socket_address.ipaddr() == addr;
+                   }) != desired_addresses.end()) {
     LOG_J(LS_VERBOSE, this) << "Connection established to "
                             << socket->GetRemoteAddress().ToSensitiveString();
   } else {

@@ -840,6 +840,28 @@ TEST_F(TurnPortTest, TurnTcpAllocationNotDiscardedIfNotBoundToBestIP) {
             turn_port_->Candidates()[0].related_address().ipaddr());
 }
 
+// Regression test for crbug.com/webrtc/8972, caused by buggy comparison
+// between rtc::IPAddress and rtc::InterfaceAddress.
+TEST_F(TurnPortTest, TCPPortNotDiscardedIfBoundToTemporaryIP) {
+  networks_.emplace_back("unittest", "unittest", kLocalIPv6Addr.ipaddr(), 32);
+  networks_.back().AddIP(rtc::InterfaceAddress(
+      kLocalIPv6Addr.ipaddr(), rtc::IPV6_ADDRESS_FLAG_TEMPORARY));
+
+  // Set up TURN server to use TCP (this logic only exists for TCP).
+  turn_server_.AddInternalSocket(kTurnIPv6IntAddr, PROTO_TCP);
+
+  // Create TURN port using our special Network, and tell it to start
+  // allocation.
+  CreateTurnPortWithNetwork(
+      &networks_.back(), kTurnUsername, kTurnPassword,
+      cricket::ProtocolAddress(kTurnIPv6IntAddr, PROTO_TCP));
+  turn_port_->PrepareAddress();
+
+  // Candidate should be gathered as normally.
+  EXPECT_TRUE_SIMULATED_WAIT(turn_ready_, kSimulatedRtt * 3, fake_clock_);
+  ASSERT_EQ(1U, turn_port_->Candidates().size());
+}
+
 // Testing turn port will attempt to create TCP socket on address resolution
 // failure.
 TEST_F(TurnPortTest, TestTurnTcpOnAddressResolveFailure) {

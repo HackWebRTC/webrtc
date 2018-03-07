@@ -633,7 +633,7 @@ bool BasicNetworkManager::CreateNetworks(bool include_ignored,
               scope_id = v6_addr->sin6_scope_id;
               ip = IPAddress(v6_addr->sin6_addr);
 
-              if (IsIgnoredIPv6(ip)) {
+              if (IsIgnoredIPv6(InterfaceAddress(ip))) {
                 continue;
               }
 

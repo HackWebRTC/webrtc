@@ -436,8 +436,10 @@ void TurnPort::OnSocketConnect(rtc::AsyncPacketSocket* socket) {
   const rtc::SocketAddress& socket_address = socket->GetLocalAddress();
   const std::vector<rtc::InterfaceAddress>& desired_addresses =
       Network()->GetIPs();
-  if (std::find(desired_addresses.begin(), desired_addresses.end(),
-                socket_address.ipaddr()) == desired_addresses.end()) {
+  if (std::find_if(desired_addresses.begin(), desired_addresses.end(),
+                   [socket_address](const rtc::InterfaceAddress& addr) {
+                     return socket_address.ipaddr() == addr;
+                   }) == desired_addresses.end()) {
     if (socket->GetLocalAddress().IsLoopbackIP()) {
       RTC_LOG(LS_WARNING) << "Socket is bound to the address:"
                           << socket_address.ipaddr().ToString()

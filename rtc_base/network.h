@@ -346,6 +346,7 @@ class Network {
 
   // Adds an active IP address to this network. Does not check for duplicates.
   void AddIP(const InterfaceAddress& ip) { ips_.push_back(ip); }
+  void AddIP(const IPAddress& ip) { ips_.push_back(rtc::InterfaceAddress(ip)); }
 
   // Sets the network's IP address list. Returns true if new IP addresses were
   // detected. Passing true to already_changed skips this check.

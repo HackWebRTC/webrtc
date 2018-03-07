@@ -126,8 +126,8 @@ class InterfaceAddress : public IPAddress {
  public:
   InterfaceAddress() : ipv6_flags_(IPV6_ADDRESS_FLAG_NONE) {}
 
-  InterfaceAddress(IPAddress ip)
-    : IPAddress(ip), ipv6_flags_(IPV6_ADDRESS_FLAG_NONE) {}
+  explicit InterfaceAddress(IPAddress ip)
+      : IPAddress(ip), ipv6_flags_(IPV6_ADDRESS_FLAG_NONE) {}
 
   InterfaceAddress(IPAddress addr, int ipv6_flags)
     : IPAddress(addr), ipv6_flags_(ipv6_flags) {}
