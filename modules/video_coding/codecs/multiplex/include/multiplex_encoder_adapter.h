@@ -33,8 +33,8 @@ enum AlphaCodecStream {
 class MultiplexEncoderAdapter : public VideoEncoder {
  public:
   // |factory| is not owned and expected to outlive this class' lifetime.
-  explicit MultiplexEncoderAdapter(VideoEncoderFactory* factory,
-                                   const SdpVideoFormat& associated_format);
+  MultiplexEncoderAdapter(VideoEncoderFactory* factory,
+                          const SdpVideoFormat& associated_format);
   virtual ~MultiplexEncoderAdapter();
 
   // Implements VideoEncoder
