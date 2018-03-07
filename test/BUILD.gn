@@ -324,13 +324,13 @@ if (rtc_include_tests) {
 
   rtc_test("test_support_unittests") {
     deps = [
-      ":fake_audio_device",
       ":perf_test",
       ":rtp_test_utils",
       "../api:video_frame_api",
       "../api:video_frame_api_i420",
       "../call:call_interfaces",
       "../common_audio",
+      "../modules/audio_device",
       "../modules/rtp_rtcp",
       "../rtc_base:rtc_base_approved",
       "../system_wrappers",
@@ -590,7 +590,6 @@ rtc_source_set("test_common") {
 
   deps = [
     ":direct_transport",
-    ":fake_audio_device",
     ":rtp_test_utils",
     ":test_support",
     ":video_test_common",
@@ -613,6 +612,7 @@ rtc_source_set("test_common") {
     "../logging:rtc_event_log_impl_base",
     "../media:rtc_internal_video_codecs",
     "../media:rtc_media_base",
+    "../modules/audio_device",
     "../modules/audio_device:mock_audio_device",
     "../modules/audio_mixer:audio_mixer_impl",
     "../modules/audio_processing",
