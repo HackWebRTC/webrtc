@@ -665,7 +665,7 @@ void AsyncSocksProxySocket::SendHello() {
 }
 
 void AsyncSocksProxySocket::SendAuth() {
-  ByteBufferWriter request;
+  ByteBufferWriterT<ZeroOnFreeBuffer<char>> request;
   request.WriteUInt8(1);           // Negotiation Version
   request.WriteUInt8(static_cast<uint8_t>(user_.size()));
   request.WriteString(user_);      // Username
@@ -673,14 +673,10 @@ void AsyncSocksProxySocket::SendAuth() {
   size_t len = pass_.GetLength() + 1;
   char * sensitive = new char[len];
   pass_.CopyTo(sensitive, true);
-  // Don't write anything to |request| afterwards to avoid potential
-  // reallocations where the old memory (containing the password) will not
-  // be cleared securely.
   request.WriteBytes(sensitive, pass_.GetLength());  // Password
   ExplicitZeroMemory(sensitive, len);
   delete [] sensitive;
   DirectSend(request.Data(), request.Length());
-  ExplicitZeroMemory(request.MutableData(), request.Length());
   state_ = SS_AUTH;
 }
 
