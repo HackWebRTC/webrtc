@@ -108,6 +108,7 @@ rtc_static_library("aec3") {
     "../../../common_audio:common_audio_c",
     "../../../rtc_base:checks",
     "../../../rtc_base:rtc_base_approved",
+    "../../../rtc_base:safe_minmax",
     "../../../system_wrappers:cpu_features_api",
     "../../../system_wrappers:metrics_api",
   ]
@@ -138,6 +139,7 @@ if (rtc_include_tests) {
       "../../../api/audio:aec3_config",
       "../../../rtc_base:checks",
       "../../../rtc_base:rtc_base_approved",
+      "../../../rtc_base:safe_minmax",
       "../../../system_wrappers:cpu_features_api",
       "../../../test:test_support",
     ]

@@ -129,6 +129,17 @@ rtc_source_set("safe_compare") {
   ]
 }
 
+rtc_source_set("safe_minmax") {
+  sources = [
+    "numerics/safe_minmax.h",
+  ]
+  deps = [
+    ":checks",
+    ":safe_compare",
+    ":type_traits",
+  ]
+}
+
 rtc_source_set("stringutils") {
   sources = [
     "strings/string_builder.h",
@@ -210,7 +221,6 @@ rtc_source_set("rtc_base_approved_generic") {
     "numerics/moving_max_counter.h",
     "numerics/safe_conversions.h",
     "numerics/safe_conversions_impl.h",
-    "numerics/safe_minmax.h",
     "onetimeevent.h",
     "pathutils.cc",
     "pathutils.h",
@@ -1002,6 +1012,7 @@ if (rtc_include_tests) {
       ":rtc_base_tests_utils",
       ":rtc_task_queue",
       ":safe_compare",
+      ":safe_minmax",
       ":stringutils",
       "../api:array_view",
       "../system_wrappers:system_wrappers",

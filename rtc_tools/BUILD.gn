@@ -292,6 +292,7 @@ if (rtc_include_tests) {
       "../modules/audio_processing",
       "../modules/audio_processing/vad",
       "../rtc_base:rtc_base_approved",
+      "../rtc_base:safe_minmax",
       "../system_wrappers:metrics_default",
       "../test:test_support",
       "//build/win:default_exe_manifest",

@@ -856,6 +856,7 @@ rtc_static_library("webrtc_opus") {
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:rtc_numerics",
+    "../../rtc_base:safe_minmax",
     "../../system_wrappers:field_trial_api",
   ]
   public_deps = [
@@ -1088,6 +1089,7 @@ rtc_static_library("neteq") {
     "../../rtc_base:checks",
     "../../rtc_base:gtest_prod",
     "../../rtc_base:rtc_base_approved",
+    "../../rtc_base:safe_minmax",
     "../../rtc_base:sanitizer",
     "../../rtc_base/system:fallthrough",
     "../../system_wrappers:field_trial_api",
