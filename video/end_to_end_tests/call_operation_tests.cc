@@ -131,8 +131,7 @@ TEST_P(CallOperationEndToEndTest, RendersSingleDelayedFrame) {
     // Create frames that are smaller than the send width/height, this is done
     // to check that the callbacks are done after processing video.
     std::unique_ptr<test::FrameGenerator> frame_generator(
-        test::FrameGenerator::CreateSquareGenerator(
-            kWidth, kHeight, rtc::nullopt, rtc::nullopt));
+        test::FrameGenerator::CreateSquareGenerator(kWidth, kHeight));
     video_send_stream_->SetSource(
         &frame_forwarder,
         VideoSendStream::DegradationPreference::kMaintainFramerate);
@@ -189,7 +188,7 @@ TEST_P(CallOperationEndToEndTest, TransmitsFirstFrame) {
     Start();
 
     frame_generator = test::FrameGenerator::CreateSquareGenerator(
-        kDefaultWidth, kDefaultHeight, rtc::nullopt, rtc::nullopt);
+        kDefaultWidth, kDefaultHeight);
     video_send_stream_->SetSource(
         &frame_forwarder,
         VideoSendStream::DegradationPreference::kMaintainFramerate);
@@ -268,7 +267,7 @@ TEST_P(CallOperationEndToEndTest, ObserversEncodedFrames) {
     Start();
 
     frame_generator = test::FrameGenerator::CreateSquareGenerator(
-        kDefaultWidth, kDefaultHeight, rtc::nullopt, rtc::nullopt);
+        kDefaultWidth, kDefaultHeight);
     video_send_stream_->SetSource(
         &forwarder, VideoSendStream::DegradationPreference::kMaintainFramerate);
     forwarder.IncomingCapturedFrame(*frame_generator->NextFrame());
