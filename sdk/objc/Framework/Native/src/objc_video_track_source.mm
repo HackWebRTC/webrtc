@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "sdk/objc/Framework/Classes/Video/objcvideotracksource.h"
+#include "sdk/objc/Framework/Native/src/objc_video_track_source.h"
 
 #import "WebRTC/RTCVideoFrame.h"
 #import "WebRTC/RTCVideoFrameBuffer.h"
@@ -18,14 +18,14 @@
 
 namespace webrtc {
 
-ObjcVideoTrackSource::ObjcVideoTrackSource() {}
+ObjCVideoTrackSource::ObjCVideoTrackSource() {}
 
-void ObjcVideoTrackSource::OnOutputFormatRequest(int width, int height, int fps) {
+void ObjCVideoTrackSource::OnOutputFormatRequest(int width, int height, int fps) {
   cricket::VideoFormat format(width, height, cricket::VideoFormat::FpsToInterval(fps), 0);
   video_adapter()->OnOutputFormatRequest(format);
 }
 
-void ObjcVideoTrackSource::OnCapturedFrame(RTCVideoFrame* frame) {
+void ObjCVideoTrackSource::OnCapturedFrame(RTCVideoFrame *frame) {
   const int64_t timestamp_us = frame.timeStampNs / rtc::kNumNanosecsPerMicrosec;
   const int64_t translated_timestamp_us =
       timestamp_aligner_.TranslateTimestamp(timestamp_us, rtc::TimeMicros());
@@ -36,8 +36,15 @@ void ObjcVideoTrackSource::OnCapturedFrame(RTCVideoFrame* frame) {
   int crop_height;
   int crop_x;
   int crop_y;
-  if (!AdaptFrame(frame.width, frame.height, timestamp_us, &adapted_width, &adapted_height,
-                  &crop_width, &crop_height, &crop_x, &crop_y)) {
+  if (!AdaptFrame(frame.width,
+                  frame.height,
+                  timestamp_us,
+                  &adapted_width,
+                  &adapted_height,
+                  &crop_width,
+                  &crop_height,
+                  &crop_x,
+                  &crop_y)) {
     return;
   }
 
@@ -67,13 +74,13 @@ void ObjcVideoTrackSource::OnCapturedFrame(RTCVideoFrame* frame) {
 
   // Applying rotation is only supported for legacy reasons and performance is
   // not critical here.
-  webrtc::VideoRotation rotation = static_cast<webrtc::VideoRotation>(frame.rotation);
+  VideoRotation rotation = static_cast<VideoRotation>(frame.rotation);
   if (apply_rotation() && rotation != kVideoRotation_0) {
     buffer = I420Buffer::Rotate(*buffer->ToI420(), rotation);
     rotation = kVideoRotation_0;
   }
 
-  OnFrame(webrtc::VideoFrame(buffer, rotation, translated_timestamp_us));
+  OnFrame(VideoFrame(buffer, rotation, translated_timestamp_us));
 }
 
 }  // namespace webrtc

@@ -35,6 +35,9 @@ NS_ASSUME_NONNULL_BEGIN
     (rtc::scoped_refptr<webrtc::MediaSourceInterface>)nativeMediaSource
                                      type:(RTCMediaSourceType)type NS_UNAVAILABLE;
 
+- (instancetype)initWithSignalingThread:(rtc::Thread *)signalingThread
+                           workerThread:(rtc::Thread *)workerThread;
+
 @end
 
 NS_ASSUME_NONNULL_END

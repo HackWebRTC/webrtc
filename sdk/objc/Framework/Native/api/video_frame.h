@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 The WebRTC project authors. All Rights Reserved.
+ *  Copyright 2018 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,19 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#import "RTCI420Buffer+Private.h"
+#ifndef SDK_OBJC_FRAMEWORK_NATIVE_API_VIDEO_FRAME_H_
+#define SDK_OBJC_FRAMEWORK_NATIVE_API_VIDEO_FRAME_H_
+
 #import "WebRTC/RTCVideoFrame.h"
-#import "WebRTC/RTCVideoFrameBuffer.h"
 
 #include "api/video/video_frame.h"
 
-NS_ASSUME_NONNULL_BEGIN
+namespace webrtc {
 
-@interface RTCVideoFrame ()
+RTCVideoFrame* NativeToObjCVideoFrame(const VideoFrame& frame);
 
-- (instancetype)initWithNativeVideoFrame:(const webrtc::VideoFrame &)frame;
-- (webrtc::VideoFrame)nativeVideoFrame;
+}  // namespace webrtc
 
-@end
-
-NS_ASSUME_NONNULL_END
+#endif  // SDK_OBJC_FRAMEWORK_NATIVE_API_VIDEO_FRAME_H_

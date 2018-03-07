@@ -39,6 +39,9 @@ class ObjCFrameBuffer : public VideoFrameBuffer {
   int height_;
 };
 
+id<RTCVideoFrameBuffer> ToObjCVideoFrameBuffer(
+    const rtc::scoped_refptr<VideoFrameBuffer>& buffer);
+
 }  // namespace webrtc
 
 #endif  // SDK_OBJC_FRAMEWORK_NATIVE_SRC_OBJC_FRAME_BUFFER_H_

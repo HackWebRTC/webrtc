@@ -36,10 +36,9 @@ class ObjCVideoEncoderFactory : public VideoEncoderFactory,
   CodecInfo QueryVideoEncoder(const SdpVideoFormat& format) const override;
 
   // Needed for WebRtcVideoEncoderFactory interface.
-  webrtc::VideoEncoder* CreateVideoEncoder(
-      const cricket::VideoCodec& codec) override;
+  VideoEncoder* CreateVideoEncoder(const cricket::VideoCodec& codec) override;
   const std::vector<cricket::VideoCodec>& supported_codecs() const override;
-  void DestroyVideoEncoder(webrtc::VideoEncoder* encoder) override;
+  void DestroyVideoEncoder(VideoEncoder* encoder) override;
 
  private:
   id<RTCVideoEncoderFactory> encoder_factory_;

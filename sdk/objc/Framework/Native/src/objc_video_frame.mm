@@ -8,20 +8,21 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "sdk/objc/Framework/Native/api/video_frame_buffer.h"
+#include "sdk/objc/Framework/Native/src/objc_video_frame.h"
 
+#include "rtc_base/timeutils.h"
 #include "sdk/objc/Framework/Native/src/objc_frame_buffer.h"
 
 namespace webrtc {
 
-rtc::scoped_refptr<VideoFrameBuffer> ObjCToNativeVideoFrameBuffer(
-    id<RTCVideoFrameBuffer> objc_video_frame_buffer) {
-  return new rtc::RefCountedObject<ObjCFrameBuffer>(objc_video_frame_buffer);
-}
+RTCVideoFrame *ToObjCVideoFrame(const VideoFrame &frame) {
+  RTCVideoFrame *videoFrame =
+      [[RTCVideoFrame alloc] initWithBuffer:ToObjCVideoFrameBuffer(frame.video_frame_buffer())
+                                   rotation:RTCVideoRotation(frame.rotation())
+                                timeStampNs:frame.timestamp_us() * rtc::kNumNanosecsPerMicrosec];
+  videoFrame.timeStamp = frame.timestamp();
 
-id<RTCVideoFrameBuffer> NativeToObjCVideoFrameBuffer(
-    const rtc::scoped_refptr<VideoFrameBuffer> &buffer) {
-  return ToObjCVideoFrameBuffer(buffer);
+  return videoFrame;
 }
 
 }  // namespace webrtc

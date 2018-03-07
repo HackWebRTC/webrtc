@@ -12,16 +12,13 @@
 
 #include <string>
 
-#import "NSString+StdString.h"
-#import "RTCI420Buffer+Private.h"
-#import "RTCVideoCodec+Private.h"
-#import "RTCVideoFrame+Private.h"
-#import "RTCWrappedNativeVideoEncoder.h"
 #import "WebRTC/RTCVideoCodec.h"
 #import "WebRTC/RTCVideoCodecFactory.h"
 #import "WebRTC/RTCVideoCodecH264.h"
-#import "WebRTC/RTCVideoFrame.h"
-#import "WebRTC/RTCVideoFrameBuffer.h"
+#import "sdk/objc/Framework/Classes/Common/NSString+StdString.h"
+#import "sdk/objc/Framework/Classes/PeerConnection/RTCVideoCodec+Private.h"
+#import "sdk/objc/Framework/Classes/PeerConnection/RTCWrappedNativeVideoEncoder.h"
+#import "sdk/objc/Framework/Classes/Video/RTCI420Buffer+Private.h"
 
 #include "api/video/video_frame.h"
 #include "api/video_codecs/sdp_video_format.h"
@@ -31,6 +28,7 @@
 #include "modules/video_coding/include/video_error_codes.h"
 #include "rtc_base/logging.h"
 #include "sdk/objc/Framework/Classes/Common/helpers.h"
+#include "sdk/objc/Framework/Native/src/objc_video_frame.h"
 
 namespace webrtc {
 
@@ -92,7 +90,7 @@ class ObjCVideoEncoder : public VideoEncoder {
       [rtcFrameTypes addObject:@(RTCFrameType(frame_types->at(i)))];
     }
 
-    return [encoder_ encode:[[RTCVideoFrame alloc] initWithNativeVideoFrame:frame]
+    return [encoder_ encode:ToObjCVideoFrame(frame)
           codecSpecificInfo:rtcCodecSpecificInfo
                  frameTypes:rtcFrameTypes];
   }

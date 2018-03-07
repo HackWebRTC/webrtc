@@ -38,8 +38,6 @@
 #include "sdk/objc/Framework/Native/src/objc_video_encoder_factory.h"
 #endif
 
-#include "Video/objcvideotracksource.h"
-#include "api/videosourceproxy.h"
 // Adding the nogncheck to disable the including header check.
 // The no-media version PeerConnectionFactory doesn't depend on media related
 // C++ target.
@@ -232,12 +230,8 @@
 }
 
 - (RTCVideoSource *)videoSource {
-  rtc::scoped_refptr<webrtc::ObjcVideoTrackSource> objcVideoTrackSource(
-      new rtc::RefCountedObject<webrtc::ObjcVideoTrackSource>());
-  return [[RTCVideoSource alloc]
-      initWithNativeVideoSource:webrtc::VideoTrackSourceProxy::Create(_signalingThread.get(),
-                                                                      _workerThread.get(),
-                                                                      objcVideoTrackSource)];
+  return [[RTCVideoSource alloc] initWithSignalingThread:_signalingThread.get()
+                                            workerThread:_workerThread.get()];
 }
 
 - (RTCVideoTrack *)videoTrackWithSource:(RTCVideoSource *)source

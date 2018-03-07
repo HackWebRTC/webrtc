@@ -34,12 +34,11 @@ class ObjCVideoDecoderFactory : public VideoDecoderFactory,
       const SdpVideoFormat& format) override;
 
   // Needed for WebRtcVideoDecoderFactory interface.
-  webrtc::VideoDecoder* CreateVideoDecoderWithParams(
+  VideoDecoder* CreateVideoDecoderWithParams(
       const cricket::VideoCodec& codec,
       cricket::VideoDecoderParams params) override;
-  webrtc::VideoDecoder* CreateVideoDecoder(
-      webrtc::VideoCodecType type) override;
-  void DestroyVideoDecoder(webrtc::VideoDecoder* decoder) override;
+  VideoDecoder* CreateVideoDecoder(VideoCodecType type) override;
+  void DestroyVideoDecoder(VideoDecoder* decoder) override;
 
  private:
   id<RTCVideoDecoderFactory> decoder_factory_;

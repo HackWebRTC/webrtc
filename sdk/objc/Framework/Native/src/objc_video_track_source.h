@@ -19,9 +19,9 @@ RTC_FWD_DECL_OBJC_CLASS(RTCVideoFrame);
 
 namespace webrtc {
 
-class ObjcVideoTrackSource : public rtc::AdaptedVideoTrackSource {
+class ObjCVideoTrackSource : public rtc::AdaptedVideoTrackSource {
  public:
-  ObjcVideoTrackSource();
+  ObjCVideoTrackSource();
 
   // This class can not be used for implementing screen casting. Hopefully, this
   // function will be removed before we add that to iOS/Mac.

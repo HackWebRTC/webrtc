@@ -12,16 +12,16 @@
 
 #include "api/videosourceproxy.h"
 #include "rtc_base/checks.h"
-#include "sdk/objc/Framework/Classes/Video/objcvideotracksource.h"
+#include "sdk/objc/Framework/Native/src/objc_video_track_source.h"
 
-static webrtc::ObjcVideoTrackSource *getObjcVideoSource(
+static webrtc::ObjCVideoTrackSource *getObjCVideoSource(
     const rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> nativeSource) {
   webrtc::VideoTrackSourceProxy *proxy_source =
       static_cast<webrtc::VideoTrackSourceProxy *>(nativeSource.get());
-  return static_cast<webrtc::ObjcVideoTrackSource *>(proxy_source->internal());
+  return static_cast<webrtc::ObjCVideoTrackSource *>(proxy_source->internal());
 }
 
-// TODO(magjed): Refactor this class and target ObjcVideoTrackSource only once
+// TODO(magjed): Refactor this class and target ObjCVideoTrackSource only once
 // RTCAVFoundationVideoSource is gone. See http://crbug/webrtc/7177 for more
 // info.
 @implementation RTCVideoSource {
@@ -45,17 +45,26 @@ static webrtc::ObjcVideoTrackSource *getObjcVideoSource(
   return nil;
 }
 
+- (instancetype)initWithSignalingThread:(rtc::Thread *)signalingThread
+                           workerThread:(rtc::Thread *)workerThread {
+  rtc::scoped_refptr<webrtc::ObjCVideoTrackSource> objCVideoTrackSource(
+      new rtc::RefCountedObject<webrtc::ObjCVideoTrackSource>());
+
+  return [self initWithNativeVideoSource:webrtc::VideoTrackSourceProxy::Create(
+                                             signalingThread, workerThread, objCVideoTrackSource)];
+}
+
 - (NSString *)description {
   NSString *stateString = [[self class] stringForState:self.state];
   return [NSString stringWithFormat:@"RTCVideoSource( %p ): %@", self, stateString];
 }
 
 - (void)capturer:(RTCVideoCapturer *)capturer didCaptureVideoFrame:(RTCVideoFrame *)frame {
-  getObjcVideoSource(_nativeVideoSource)->OnCapturedFrame(frame);
+  getObjCVideoSource(_nativeVideoSource)->OnCapturedFrame(frame);
 }
 
 - (void)adaptOutputFormatToWidth:(int)width height:(int)height fps:(int)fps {
-  getObjcVideoSource(_nativeVideoSource)->OnOutputFormatRequest(width, height, fps);
+  getObjCVideoSource(_nativeVideoSource)->OnOutputFormatRequest(width, height, fps);
 }
 
 #pragma mark - Private

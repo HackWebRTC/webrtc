@@ -514,8 +514,8 @@ if (rtc_include_tests) {
         "../../sdk:native_api",
         "../../sdk:peerconnectionfactory_base_objc",
         "../../sdk:videocodec_objc",
+        "../../sdk:videosource_objc",
         "../../sdk:videotoolbox_objc",
-        "../../sdk:videotracksource_objc",
       ]
 
       if (!build_with_chromium && is_clang) {

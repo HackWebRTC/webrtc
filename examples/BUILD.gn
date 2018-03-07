@@ -274,6 +274,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
         "../sdk:peerconnectionfactory_base_objc",
         "../sdk:videocapture_objc",
         "../sdk:videocodec_objc",
+        "../sdk:videosource_objc",
       ]
     }
     libs = [ "QuartzCore.framework" ]

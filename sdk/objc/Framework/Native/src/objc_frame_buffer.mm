@@ -11,6 +11,7 @@
 #include "sdk/objc/Framework/Native/src/objc_frame_buffer.h"
 
 #import "WebRTC/RTCVideoFrameBuffer.h"
+#import "sdk/objc/Framework/Classes/Video/RTCI420Buffer+Private.h"
 
 namespace webrtc {
 
@@ -73,6 +74,14 @@ rtc::scoped_refptr<I420BufferInterface> ObjCFrameBuffer::ToI420() {
 
 id<RTCVideoFrameBuffer> ObjCFrameBuffer::wrapped_frame_buffer() const {
   return frame_buffer_;
+}
+
+id<RTCVideoFrameBuffer> ToObjCVideoFrameBuffer(const rtc::scoped_refptr<VideoFrameBuffer>& buffer) {
+  if (buffer->type() == VideoFrameBuffer::Type::kNative) {
+    return static_cast<ObjCFrameBuffer*>(buffer.get())->wrapped_frame_buffer();
+  } else {
+    return [[RTCI420Buffer alloc] initWithFrameBuffer:buffer->ToI420()];
+  }
 }
 
 }  // namespace webrtc

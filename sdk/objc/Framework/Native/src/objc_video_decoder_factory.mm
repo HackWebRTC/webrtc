@@ -10,14 +10,14 @@
 
 #include "sdk/objc/Framework/Native/src/objc_video_decoder_factory.h"
 
-#import "NSString+StdString.h"
-#import "RTCVideoCodec+Private.h"
-#import "RTCWrappedNativeVideoDecoder.h"
 #import "WebRTC/RTCVideoCodec.h"
 #import "WebRTC/RTCVideoCodecFactory.h"
 #import "WebRTC/RTCVideoCodecH264.h"
 #import "WebRTC/RTCVideoFrame.h"
 #import "WebRTC/RTCVideoFrameBuffer.h"
+#import "sdk/objc/Framework/Classes/Common/NSString+StdString.h"
+#import "sdk/objc/Framework/Classes/PeerConnection/RTCVideoCodec+Private.h"
+#import "sdk/objc/Framework/Classes/PeerConnection/RTCWrappedNativeVideoDecoder.h"
 
 #include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_decoder.h"
