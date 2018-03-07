@@ -67,6 +67,8 @@ JavaRtpReceiverGlobalOwner::~JavaRtpReceiverGlobalOwner() {
 static jlong JNI_RtpReceiver_GetTrack(JNIEnv* jni,
                                       const JavaParamRef<jclass>&,
                                       jlong j_rtp_receiver_pointer) {
+  // MediaStreamTrack will have shared ownership by the MediaStreamTrack Java
+  // object.
   return jlongFromPointer(
       reinterpret_cast<RtpReceiverInterface*>(j_rtp_receiver_pointer)
           ->track()

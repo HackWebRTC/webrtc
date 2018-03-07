@@ -30,9 +30,8 @@ public class RtpReceiver {
   @CalledByNative
   public RtpReceiver(long nativeRtpReceiver) {
     this.nativeRtpReceiver = nativeRtpReceiver;
-    long track = nativeGetTrack(nativeRtpReceiver);
-    // We can assume that an RtpReceiver always has an associated track.
-    cachedTrack = new MediaStreamTrack(track);
+    long nativeTrack = nativeGetTrack(nativeRtpReceiver);
+    cachedTrack = MediaStreamTrack.createMediaStreamTrack(nativeTrack);
   }
 
   public MediaStreamTrack track() {

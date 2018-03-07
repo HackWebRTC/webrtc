@@ -23,9 +23,8 @@ public class RtpSender {
   @CalledByNative
   public RtpSender(long nativeRtpSender) {
     this.nativeRtpSender = nativeRtpSender;
-    long track = nativeGetTrack(nativeRtpSender);
-    // It may be possible for an RtpSender to be created without a track.
-    cachedTrack = (track != 0) ? new MediaStreamTrack(track) : null;
+    long nativeTrack = nativeGetTrack(nativeRtpSender);
+    cachedTrack = MediaStreamTrack.createMediaStreamTrack(nativeTrack);
 
     long nativeDtmfSender = nativeGetDtmfSender(nativeRtpSender);
     dtmfSender = (nativeDtmfSender != 0) ? new DtmfSender(nativeDtmfSender) : null;

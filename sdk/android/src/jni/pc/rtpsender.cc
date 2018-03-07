@@ -39,6 +39,8 @@ static jboolean JNI_RtpSender_SetTrack(JNIEnv* jni,
 jlong JNI_RtpSender_GetTrack(JNIEnv* jni,
                              const JavaParamRef<jclass>&,
                              jlong j_rtp_sender_pointer) {
+  // MediaStreamTrack will have shared ownership by the MediaStreamTrack Java
+  // object.
   return jlongFromPointer(
       reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)
           ->track()
