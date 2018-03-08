@@ -40,8 +40,12 @@ void RunFilterUpdateTest(int num_blocks_to_process,
   EchoCanceller3Config config;
   config.filter.main.length_blocks = filter_length_blocks;
   AdaptiveFirFilter main_filter(config.filter.main.length_blocks,
+                                config.filter.main.length_blocks,
+                                config.filter.config_change_duration_blocks,
                                 DetectOptimization(), &data_dumper);
   AdaptiveFirFilter shadow_filter(config.filter.shadow.length_blocks,
+                                  config.filter.shadow.length_blocks,
+                                  config.filter.config_change_duration_blocks,
                                   DetectOptimization(), &data_dumper);
   Aec3Fft fft;
 
@@ -52,7 +56,8 @@ void RunFilterUpdateTest(int num_blocks_to_process,
 
   std::array<float, kBlockSize> x_old;
   x_old.fill(0.f);
-  ShadowFilterUpdateGain shadow_gain(config.filter.shadow);
+  ShadowFilterUpdateGain shadow_gain(
+      config.filter.shadow, config.filter.config_change_duration_blocks);
   Random random_generator(42U);
   std::vector<std::vector<float>> x(3, std::vector<float>(kBlockSize, 0.f));
   std::vector<float> y(kBlockSize, 0.f);
@@ -134,7 +139,7 @@ TEST(ShadowFilterUpdateGain, NullDataOutputGain) {
   FftData E;
   const EchoCanceller3Config::Filter::ShadowConfiguration& config = {
       12, 0.5f, 220075344.f};
-  ShadowFilterUpdateGain gain(config);
+  ShadowFilterUpdateGain gain(config, 250);
   std::array<float, kFftLengthBy2Plus1> render_power;
   render_power.fill(0.f);
   EXPECT_DEATH(gain.Compute(render_power, analyzer, E, 1, false, nullptr), "");

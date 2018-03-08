@@ -150,6 +150,7 @@ void EchoRemoverImpl::ProcessCapture(
   if (echo_path_variability.AudioPathChanged()) {
     subtractor_.HandleEchoPathChange(echo_path_variability);
     aec_state_.HandleEchoPathChange(echo_path_variability);
+    suppression_gain_.SetInitialState(true);
     initial_state_ = true;
   }
 
@@ -173,6 +174,7 @@ void EchoRemoverImpl::ProcessCapture(
   // Perform linear echo cancellation.
   if (initial_state_ && !aec_state_.InitialState()) {
     subtractor_.ExitInitialState();
+    suppression_gain_.SetInitialState(false);
     initial_state_ = false;
   }
   subtractor_.Process(*render_buffer, y0, render_signal_analyzer_, aec_state_,

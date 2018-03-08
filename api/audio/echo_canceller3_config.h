@@ -51,6 +51,8 @@ struct EchoCanceller3Config {
 
     MainConfiguration main_initial = {12, 0.05f, 5.f, 0.001f, 20075344.f};
     ShadowConfiguration shadow_initial = {12, 0.9f, 20075344.f};
+
+    size_t config_change_duration_blocks = 250;
   } filter;
 
   struct Erle {

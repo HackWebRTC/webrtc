@@ -107,78 +107,6 @@ float UpperBandsGain(
   return std::min(gain_below_8_khz, anti_howling_gain);
 }
 
-// Limits the gain increase.
-void UpdateMaxGainIncrease(
-    const EchoCanceller3Config& config,
-    size_t no_saturation_counter,
-    bool low_noise_render,
-    bool initial_state,
-    bool linear_echo_estimate,
-    const std::array<float, kFftLengthBy2Plus1>& last_echo,
-    const std::array<float, kFftLengthBy2Plus1>& echo,
-    const std::array<float, kFftLengthBy2Plus1>& last_gain,
-    const std::array<float, kFftLengthBy2Plus1>& new_gain,
-    std::array<float, kFftLengthBy2Plus1>* gain_increase) {
-  float max_increasing;
-  float max_decreasing;
-  float rate_increasing;
-  float rate_decreasing;
-  float min_increasing;
-  float min_decreasing;
-
-  auto& param = config.gain_updates;
-  if (!linear_echo_estimate) {
-    max_increasing = param.nonlinear.max_inc;
-    max_decreasing = param.nonlinear.max_dec;
-    rate_increasing = param.nonlinear.rate_inc;
-    rate_decreasing = param.nonlinear.rate_dec;
-    min_increasing = param.nonlinear.min_inc;
-    min_decreasing = param.nonlinear.min_dec;
-  } else if (initial_state && no_saturation_counter > 10) {
-    max_increasing = param.initial.max_inc;
-    max_decreasing = param.initial.max_dec;
-    rate_increasing = param.initial.rate_inc;
-    rate_decreasing = param.initial.rate_dec;
-    min_increasing = param.initial.min_inc;
-    min_decreasing = param.initial.min_dec;
-  } else if (low_noise_render) {
-    max_increasing = param.low_noise.max_inc;
-    max_decreasing = param.low_noise.max_dec;
-    rate_increasing = param.low_noise.rate_inc;
-    rate_decreasing = param.low_noise.rate_dec;
-    min_increasing = param.low_noise.min_inc;
-    min_decreasing = param.low_noise.min_dec;
-  } else if (no_saturation_counter > 10) {
-    max_increasing = param.normal.max_inc;
-    max_decreasing = param.normal.max_dec;
-    rate_increasing = param.normal.rate_inc;
-    rate_decreasing = param.normal.rate_dec;
-    min_increasing = param.normal.min_inc;
-    min_decreasing = param.normal.min_dec;
-  } else {
-    max_increasing = param.saturation.max_inc;
-    max_decreasing = param.saturation.max_dec;
-    rate_increasing = param.saturation.rate_inc;
-    rate_decreasing = param.saturation.rate_dec;
-    min_increasing = param.saturation.min_inc;
-    min_decreasing = param.saturation.min_dec;
-  }
-
-  for (size_t k = 0; k < new_gain.size(); ++k) {
-    if (echo[k] > last_echo[k]) {
-      (*gain_increase)[k] =
-          new_gain[k] > last_gain[k]
-              ? std::min(max_increasing, (*gain_increase)[k] * rate_increasing)
-              : min_increasing;
-    } else {
-      (*gain_increase)[k] =
-          new_gain[k] > last_gain[k]
-              ? std::min(max_decreasing, (*gain_increase)[k] * rate_decreasing)
-              : min_decreasing;
-    }
-  }
-}
-
 // Computes the gain to reduce the echo to a non audible level.
 void GainToNoAudibleEcho(
     const EchoCanceller3Config& config,
@@ -285,14 +213,15 @@ void AdjustNonConvergedFrequencies(
 void SuppressionGain::LowerBandGain(
     bool low_noise_render,
     const rtc::Optional<int>& narrow_peak_band,
-    bool saturated_echo,
-    bool saturating_echo_path,
-    bool initial_state,
-    bool linear_echo_estimate,
+    const AecState& aec_state,
     const std::array<float, kFftLengthBy2Plus1>& nearend,
     const std::array<float, kFftLengthBy2Plus1>& echo,
     const std::array<float, kFftLengthBy2Plus1>& comfort_noise,
     std::array<float, kFftLengthBy2Plus1>* gain) {
+  const bool saturated_echo = aec_state.SaturatedEcho();
+  const bool saturating_echo_path = aec_state.SaturatingEchoPath();
+  const bool linear_echo_estimate = aec_state.UsableLinearEstimate();
+
   // Count the number of blocks since saturation.
   no_saturation_counter_ = saturated_echo ? 0 : no_saturation_counter_ + 1;
 
@@ -346,9 +275,7 @@ void SuppressionGain::LowerBandGain(
   AdjustNonConvergedFrequencies(gain);
 
   // Update the allowed maximum gain increase.
-  UpdateMaxGainIncrease(config_, no_saturation_counter_, low_noise_render,
-                        initial_state, linear_echo_estimate, last_echo_, echo,
-                        last_gain_, *gain, &gain_increase_);
+  UpdateGainIncrease(low_noise_render, linear_echo_estimate, echo, *gain);
 
   // Adjust gain dynamics.
   const float gain_bound =
@@ -366,7 +293,12 @@ void SuppressionGain::LowerBandGain(
 
 SuppressionGain::SuppressionGain(const EchoCanceller3Config& config,
                                  Aec3Optimization optimization)
-    : optimization_(optimization), config_(config) {
+    : optimization_(optimization),
+      config_(config),
+      state_change_duration_blocks_(
+          static_cast<int>(config_.filter.config_change_duration_blocks)) {
+  RTC_DCHECK_LT(0, state_change_duration_blocks_);
+  one_by_state_change_duration_blocks_ = 1.f / state_change_duration_blocks_;
   last_gain_.fill(1.f);
   last_masker_.fill(0.f);
   gain_increase_.fill(1.f);
@@ -385,21 +317,14 @@ void SuppressionGain::GetGain(
   RTC_DCHECK(high_bands_gain);
   RTC_DCHECK(low_band_gain);
 
-  const bool saturated_echo = aec_state.SaturatedEcho();
-  const bool saturating_echo_path = aec_state.SaturatingEchoPath();
-  const float gain_upper_bound = aec_state.SuppressionGainLimit();
-  const bool linear_echo_estimate = aec_state.UsableLinearEstimate();
-  const bool initial_state = aec_state.InitialState();
-
-  bool low_noise_render = low_render_detector_.Detect(render);
-
   // Compute gain for the lower band.
+  bool low_noise_render = low_render_detector_.Detect(render);
   const rtc::Optional<int> narrow_peak_band =
       render_signal_analyzer.NarrowPeakBand();
-  LowerBandGain(low_noise_render, narrow_peak_band, saturated_echo,
-                saturating_echo_path, initial_state, linear_echo_estimate,
-                nearend, echo, comfort_noise, low_band_gain);
+  LowerBandGain(low_noise_render, narrow_peak_band, aec_state, nearend, echo,
+                comfort_noise, low_band_gain);
 
+  const float gain_upper_bound = aec_state.SuppressionGainLimit();
   if (gain_upper_bound < 1.f) {
     for (size_t k = 0; k < low_band_gain->size(); ++k) {
       (*low_band_gain)[k] = std::min((*low_band_gain)[k], gain_upper_bound);
@@ -407,8 +332,112 @@ void SuppressionGain::GetGain(
   }
 
   // Compute the gain for the upper bands.
-  *high_bands_gain =
-      UpperBandsGain(narrow_peak_band, saturated_echo, render, *low_band_gain);
+  *high_bands_gain = UpperBandsGain(narrow_peak_band, aec_state.SaturatedEcho(),
+                                    render, *low_band_gain);
+}
+
+void SuppressionGain::SetInitialState(bool state) {
+  initial_state_ = state;
+  if (state) {
+    initial_state_change_counter_ = state_change_duration_blocks_;
+  } else {
+    initial_state_change_counter_ = 0;
+  }
+}
+
+void SuppressionGain::UpdateGainIncrease(
+    bool low_noise_render,
+    bool linear_echo_estimate,
+    const std::array<float, kFftLengthBy2Plus1>& echo,
+    const std::array<float, kFftLengthBy2Plus1>& new_gain) {
+  float max_inc;
+  float max_dec;
+  float rate_inc;
+  float rate_dec;
+  float min_inc;
+  float min_dec;
+
+  RTC_DCHECK_GE(state_change_duration_blocks_, initial_state_change_counter_);
+  if (initial_state_change_counter_ > 0) {
+    if (--initial_state_change_counter_ == 0) {
+      initial_state_ = false;
+    }
+  }
+  RTC_DCHECK_LE(0, initial_state_change_counter_);
+
+  // EchoCanceller3Config::GainUpdates
+  auto& p = config_.gain_updates;
+  if (!linear_echo_estimate) {
+    max_inc = p.nonlinear.max_inc;
+    max_dec = p.nonlinear.max_dec;
+    rate_inc = p.nonlinear.rate_inc;
+    rate_dec = p.nonlinear.rate_dec;
+    min_inc = p.nonlinear.min_inc;
+    min_dec = p.nonlinear.min_dec;
+  } else if (initial_state_ && no_saturation_counter_ > 10) {
+    if (initial_state_change_counter_ > 0) {
+      float change_factor =
+          initial_state_change_counter_ * one_by_state_change_duration_blocks_;
+
+      auto average = [](float from, float to, float from_weight) {
+        return from * from_weight + to * (1.f - from_weight);
+      };
+
+      max_inc = average(p.initial.max_inc, p.normal.max_inc, change_factor);
+      max_dec = average(p.initial.max_dec, p.normal.max_dec, change_factor);
+      rate_inc = average(p.initial.rate_inc, p.normal.rate_inc, change_factor);
+      rate_dec = average(p.initial.rate_dec, p.normal.rate_dec, change_factor);
+      min_inc = average(p.initial.min_inc, p.normal.min_inc, change_factor);
+      min_dec = average(p.initial.min_dec, p.normal.min_dec, change_factor);
+    } else {
+      max_inc = p.initial.max_inc;
+      max_dec = p.initial.max_dec;
+      rate_inc = p.initial.rate_inc;
+      rate_dec = p.initial.rate_dec;
+      min_inc = p.initial.min_inc;
+      min_dec = p.initial.min_dec;
+    }
+  } else if (low_noise_render) {
+    max_inc = p.low_noise.max_inc;
+    max_dec = p.low_noise.max_dec;
+    rate_inc = p.low_noise.rate_inc;
+    rate_dec = p.low_noise.rate_dec;
+    min_inc = p.low_noise.min_inc;
+    min_dec = p.low_noise.min_dec;
+  } else if (no_saturation_counter_ > 10) {
+    max_inc = p.normal.max_inc;
+    max_dec = p.normal.max_dec;
+    rate_inc = p.normal.rate_inc;
+    rate_dec = p.normal.rate_dec;
+    min_inc = p.normal.min_inc;
+    min_dec = p.normal.min_dec;
+  } else {
+    max_inc = p.saturation.max_inc;
+    max_dec = p.saturation.max_dec;
+    rate_inc = p.saturation.rate_inc;
+    rate_dec = p.saturation.rate_dec;
+    min_inc = p.saturation.min_inc;
+    min_dec = p.saturation.min_dec;
+  }
+
+  for (size_t k = 0; k < new_gain.size(); ++k) {
+    auto increase_update = [](float new_gain, float last_gain,
+                              float current_inc, float max_inc, float min_inc,
+                              float change_rate) {
+      return new_gain > last_gain ? std::min(max_inc, current_inc * change_rate)
+                                  : min_inc;
+    };
+
+    if (echo[k] > last_echo_[k]) {
+      gain_increase_[k] =
+          increase_update(new_gain[k], last_gain_[k], gain_increase_[k],
+                          max_inc, min_inc, rate_inc);
+    } else {
+      gain_increase_[k] =
+          increase_update(new_gain[k], last_gain_[k], gain_increase_[k],
+                          max_dec, min_dec, rate_dec);
+    }
+  }
 }
 
 // Detects when the render signal can be considered to have low power and

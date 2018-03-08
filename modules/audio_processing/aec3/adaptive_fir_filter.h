@@ -92,6 +92,8 @@ void ApplyFilter_SSE2(const RenderBuffer& render_buffer,
 class AdaptiveFirFilter {
  public:
   AdaptiveFirFilter(size_t max_size_partitions,
+                    size_t initial_size_partitions,
+                    size_t size_change_duration_blocks,
                     Aec3Optimization optimization,
                     ApmDataDumper* data_dumper);
 
@@ -111,7 +113,7 @@ class AdaptiveFirFilter {
   size_t SizePartitions() const { return H_.size(); }
 
   // Sets the filter size.
-  void SetSizePartitions(size_t size);
+  void SetSizePartitions(size_t size, bool immediate_effect);
 
   // Returns the filter based echo return loss.
   const std::array<float, kFftLengthBy2Plus1>& Erl() const { return erl_; }
@@ -145,10 +147,22 @@ class AdaptiveFirFilter {
   // Constrain the filter partitions in a cyclic manner.
   void Constrain();
 
+  // Resets the filter buffers to use the current size.
+  void ResetFilterBuffersToCurrentSize();
+
+  // Gradually Updates the current filter size towards the target size.
+  void UpdateSize();
+
   ApmDataDumper* const data_dumper_;
   const Aec3Fft fft_;
   const Aec3Optimization optimization_;
   const size_t max_size_partitions_;
+  const int size_change_duration_blocks_;
+  float one_by_size_change_duration_blocks_;
+  size_t current_size_partitions_;
+  size_t target_size_partitions_;
+  size_t old_target_size_partitions_;
+  int size_change_counter_ = 0;
   std::vector<FftData> H_;
   std::vector<std::array<float, kFftLengthBy2Plus1>> H2_;
   std::vector<float> h_;

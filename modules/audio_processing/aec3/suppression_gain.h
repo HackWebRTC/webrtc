@@ -35,17 +35,24 @@ class SuppressionGain {
                float* high_bands_gain,
                std::array<float, kFftLengthBy2Plus1>* low_band_gain);
 
+  // Toggles the usage of the initial state.
+  void SetInitialState(bool state);
+
  private:
   void LowerBandGain(bool stationary_with_low_power,
                      const rtc::Optional<int>& narrow_peak_band,
-                     bool saturated_echo,
-                     bool saturating_echo_path,
-                     bool initial_state,
-                     bool linear_echo_estimate,
+                     const AecState& aec_state,
                      const std::array<float, kFftLengthBy2Plus1>& nearend,
                      const std::array<float, kFftLengthBy2Plus1>& echo,
                      const std::array<float, kFftLengthBy2Plus1>& comfort_noise,
                      std::array<float, kFftLengthBy2Plus1>* gain);
+
+  // Limits the gain increase.
+  void UpdateGainIncrease(
+      bool low_noise_render,
+      bool linear_echo_estimate,
+      const std::array<float, kFftLengthBy2Plus1>& echo,
+      const std::array<float, kFftLengthBy2Plus1>& new_gain);
 
   class LowNoiseRenderDetector {
    public:
@@ -56,6 +63,9 @@ class SuppressionGain {
   };
 
   const Aec3Optimization optimization_;
+  const EchoCanceller3Config config_;
+  const int state_change_duration_blocks_;
+  float one_by_state_change_duration_blocks_;
   std::array<float, kFftLengthBy2Plus1> last_gain_;
   std::array<float, kFftLengthBy2Plus1> last_masker_;
   std::array<float, kFftLengthBy2Plus1> gain_increase_;
@@ -63,7 +73,8 @@ class SuppressionGain {
 
   LowNoiseRenderDetector low_render_detector_;
   size_t no_saturation_counter_ = 0;
-  const EchoCanceller3Config config_;
+  bool initial_state_ = true;
+  int initial_state_change_counter_ = 0;
   RTC_DISALLOW_COPY_AND_ASSIGN(SuppressionGain);
 };
 

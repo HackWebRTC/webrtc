@@ -23,7 +23,8 @@ namespace webrtc {
 class ShadowFilterUpdateGain {
  public:
   explicit ShadowFilterUpdateGain(
-      const EchoCanceller3Config::Filter::ShadowConfiguration& config);
+      const EchoCanceller3Config::Filter::ShadowConfiguration& config,
+      size_t config_change_duration_blocks);
 
   // Takes action in the case of a known echo path change.
   void HandleEchoPathChange();
@@ -38,16 +39,31 @@ class ShadowFilterUpdateGain {
 
   // Sets a new config.
   void SetConfig(
-      const EchoCanceller3Config::Filter::ShadowConfiguration& config) {
-    config_ = config;
+      const EchoCanceller3Config::Filter::ShadowConfiguration& config,
+      bool immediate_effect) {
+    if (immediate_effect) {
+      old_target_config_ = current_config_ = target_config_ = config;
+      config_change_counter_ = 0;
+    } else {
+      old_target_config_ = current_config_;
+      target_config_ = config;
+      config_change_counter_ = config_change_duration_blocks_;
+    }
   }
 
  private:
-  EchoCanceller3Config::Filter::ShadowConfiguration config_;
+  EchoCanceller3Config::Filter::ShadowConfiguration current_config_;
+  EchoCanceller3Config::Filter::ShadowConfiguration target_config_;
+  EchoCanceller3Config::Filter::ShadowConfiguration old_target_config_;
+  const int config_change_duration_blocks_;
+  float one_by_config_change_duration_blocks_;
   // TODO(peah): Check whether this counter should instead be initialized to a
   // large value.
   size_t poor_signal_excitation_counter_ = 0;
   size_t call_counter_ = 0;
+  int config_change_counter_ = 0;
+
+  void UpdateCurrentConfig();
 };
 
 }  // namespace webrtc

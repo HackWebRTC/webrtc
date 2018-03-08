@@ -62,13 +62,19 @@ Subtractor::Subtractor(const EchoCanceller3Config& config,
       optimization_(optimization),
       config_(config),
       main_filter_(config_.filter.main.length_blocks,
+                   config_.filter.main_initial.length_blocks,
+                   config.filter.config_change_duration_blocks,
                    optimization,
                    data_dumper_),
       shadow_filter_(config_.filter.shadow.length_blocks,
+                     config_.filter.shadow_initial.length_blocks,
+                     config.filter.config_change_duration_blocks,
                      optimization,
                      data_dumper_),
-      G_main_(config_.filter.main_initial),
-      G_shadow_(config_.filter.shadow_initial) {
+      G_main_(config_.filter.main_initial,
+              config_.filter.config_change_duration_blocks),
+      G_shadow_(config_.filter.shadow_initial,
+                config.filter.config_change_duration_blocks) {
   RTC_DCHECK(data_dumper_);
   // Currently, the rest of AEC3 requires the main and shadow filter lengths to
   // be identical.
@@ -76,14 +82,6 @@ Subtractor::Subtractor(const EchoCanceller3Config& config,
                 config_.filter.shadow.length_blocks);
   RTC_DCHECK_EQ(config_.filter.main_initial.length_blocks,
                 config_.filter.shadow_initial.length_blocks);
-
-  RTC_DCHECK_GE(config_.filter.main.length_blocks,
-                config_.filter.main_initial.length_blocks);
-  RTC_DCHECK_GE(config_.filter.shadow.length_blocks,
-                config_.filter.shadow_initial.length_blocks);
-
-  main_filter_.SetSizePartitions(config_.filter.main_initial.length_blocks);
-  shadow_filter_.SetSizePartitions(config_.filter.shadow_initial.length_blocks);
 }
 
 Subtractor::~Subtractor() = default;
@@ -95,13 +93,14 @@ void Subtractor::HandleEchoPathChange(
     shadow_filter_.HandleEchoPathChange();
     G_main_.HandleEchoPathChange(echo_path_variability);
     G_shadow_.HandleEchoPathChange();
-    G_main_.SetConfig(config_.filter.main_initial);
-    G_shadow_.SetConfig(config_.filter.shadow_initial);
+    G_main_.SetConfig(config_.filter.main_initial, true);
+    G_shadow_.SetConfig(config_.filter.shadow_initial, true);
     main_filter_converged_ = false;
     shadow_filter_converged_ = false;
-    main_filter_.SetSizePartitions(config_.filter.main_initial.length_blocks);
+    main_filter_.SetSizePartitions(config_.filter.main_initial.length_blocks,
+                                   true);
     shadow_filter_.SetSizePartitions(
-        config_.filter.shadow_initial.length_blocks);
+        config_.filter.shadow_initial.length_blocks, true);
   };
 
   // TODO(peah): Add delay-change specific reset behavior.
@@ -120,10 +119,10 @@ void Subtractor::HandleEchoPathChange(
 }
 
 void Subtractor::ExitInitialState() {
-  G_main_.SetConfig(config_.filter.main);
-  G_shadow_.SetConfig(config_.filter.shadow);
-  main_filter_.SetSizePartitions(config_.filter.main.length_blocks);
-  shadow_filter_.SetSizePartitions(config_.filter.shadow.length_blocks);
+  G_main_.SetConfig(config_.filter.main, false);
+  G_shadow_.SetConfig(config_.filter.shadow, false);
+  main_filter_.SetSizePartitions(config_.filter.main.length_blocks, false);
+  shadow_filter_.SetSizePartitions(config_.filter.shadow.length_blocks, false);
 }
 
 void Subtractor::Process(const RenderBuffer& render_buffer,

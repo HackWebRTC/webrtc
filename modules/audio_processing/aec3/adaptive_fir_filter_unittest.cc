@@ -268,13 +268,13 @@ TEST(AdaptiveFirFilter, UpdateErlSse2Optimization) {
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 // Verifies that the check for non-null data dumper works.
 TEST(AdaptiveFirFilter, NullDataDumper) {
-  EXPECT_DEATH(AdaptiveFirFilter(9, DetectOptimization(), nullptr), "");
+  EXPECT_DEATH(AdaptiveFirFilter(9, 9, 250, DetectOptimization(), nullptr), "");
 }
 
 // Verifies that the check for non-null filter output works.
 TEST(AdaptiveFirFilter, NullFilterOutput) {
   ApmDataDumper data_dumper(42);
-  AdaptiveFirFilter filter(9, DetectOptimization(), &data_dumper);
+  AdaptiveFirFilter filter(9, 9, 250, DetectOptimization(), &data_dumper);
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
       RenderDelayBuffer::Create(EchoCanceller3Config(), 3));
   EXPECT_DEATH(filter.Filter(*render_delay_buffer->GetRenderBuffer(), nullptr),
@@ -287,7 +287,7 @@ TEST(AdaptiveFirFilter, NullFilterOutput) {
 // are turned on.
 TEST(AdaptiveFirFilter, FilterStatisticsAccess) {
   ApmDataDumper data_dumper(42);
-  AdaptiveFirFilter filter(9, DetectOptimization(), &data_dumper);
+  AdaptiveFirFilter filter(9, 9, 250, DetectOptimization(), &data_dumper);
   filter.Erl();
   filter.FilterFrequencyResponse();
 }
@@ -296,7 +296,8 @@ TEST(AdaptiveFirFilter, FilterStatisticsAccess) {
 TEST(AdaptiveFirFilter, FilterSize) {
   ApmDataDumper data_dumper(42);
   for (size_t filter_size = 1; filter_size < 5; ++filter_size) {
-    AdaptiveFirFilter filter(filter_size, DetectOptimization(), &data_dumper);
+    AdaptiveFirFilter filter(filter_size, filter_size, 250,
+                             DetectOptimization(), &data_dumper);
     EXPECT_EQ(filter_size, filter.SizePartitions());
   }
 }
@@ -308,13 +309,16 @@ TEST(AdaptiveFirFilter, FilterAndAdapt) {
   ApmDataDumper data_dumper(42);
   EchoCanceller3Config config;
   AdaptiveFirFilter filter(config.filter.main.length_blocks,
+                           config.filter.main.length_blocks,
+                           config.filter.config_change_duration_blocks,
                            DetectOptimization(), &data_dumper);
   Aec3Fft fft;
   config.delay.min_echo_path_delay_blocks = 0;
   config.delay.default_delay = 1;
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
       RenderDelayBuffer::Create(config, 3));
-  ShadowFilterUpdateGain gain(config.filter.shadow);
+  ShadowFilterUpdateGain gain(config.filter.shadow,
+                              config.filter.config_change_duration_blocks);
   Random random_generator(42U);
   std::vector<std::vector<float>> x(3, std::vector<float>(kBlockSize, 0.f));
   std::vector<float> n(kBlockSize, 0.f);
