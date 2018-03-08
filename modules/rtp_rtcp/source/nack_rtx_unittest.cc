@@ -126,7 +126,7 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
         payload_data_length(sizeof(payload_data)),
         fake_clock(123456),
         retransmission_rate_limiter_(&fake_clock, kMaxRttMs) {}
-  ~RtpRtcpRtxNackTest() {}
+  ~RtpRtcpRtxNackTest() override {}
 
   void SetUp() override {
     RtpRtcp::Configuration configuration;

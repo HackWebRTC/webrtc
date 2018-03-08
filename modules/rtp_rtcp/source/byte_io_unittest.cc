@@ -18,8 +18,8 @@ namespace {
 
 class ByteIoTest : public ::testing::Test {
  protected:
-  ByteIoTest() {}
-  virtual ~ByteIoTest() {}
+  ByteIoTest() = default;
+  ~ByteIoTest() override = default;
 
   enum { kAlignments = sizeof(uint64_t) - 1 };
 
