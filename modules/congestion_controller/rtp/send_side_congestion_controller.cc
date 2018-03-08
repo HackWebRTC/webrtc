@@ -278,36 +278,29 @@ bool ControlHandler::pacer_configured() {
 
 SendSideCongestionController::SendSideCongestionController(
     const Clock* clock,
-    NetworkChangedObserver* observer,
-    RtcEventLog* event_log,
-    PacedSender* pacer)
-    : SendSideCongestionController(clock,
-                                   event_log,
-                                   pacer,
-                                   ControllerFactory(event_log)) {
-  if (observer != nullptr)
-    RegisterNetworkObserver(observer);
-}
-
-SendSideCongestionController::SendSideCongestionController(
-    const Clock* clock,
     RtcEventLog* event_log,
     PacedSender* pacer,
-    NetworkControllerFactoryInterface::uptr controller_factory)
+    int start_bitrate_bps,
+    int min_bitrate_bps,
+    int max_bitrate_bps)
     : clock_(clock),
       pacer_(pacer),
       transport_feedback_adapter_(clock_),
+      controller_factory_(ControllerFactory(event_log)),
       pacer_controller_(MakeUnique<PacerController>(pacer_)),
       control_handler(MakeUnique<send_side_cc_internal::ControlHandler>(
           pacer_controller_.get(),
           clock_)),
-      controller_(controller_factory->Create(control_handler.get())),
-      process_interval_(controller_factory->GetProcessInterval()),
+      controller_(controller_factory_->Create(control_handler.get())),
+      process_interval_(controller_factory_->GetProcessInterval()),
       send_side_bwe_with_overhead_(
           webrtc::field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")),
       transport_overhead_bytes_per_packet_(0),
-      network_available_(true),
-      task_queue_(MakeUnique<rtc::TaskQueue>("SendSideCCQueue")) {}
+      network_available_(false),
+      task_queue_(MakeUnique<rtc::TaskQueue>("SendSideCCQueue")) {
+  SignalNetworkState(NetworkState::kNetworkDown);
+  SetBweBitrates(min_bitrate_bps, start_bitrate_bps, max_bitrate_bps);
+}
 
 SendSideCongestionController::~SendSideCongestionController() {
   // Must be destructed before any objects used by calls on the task queue.

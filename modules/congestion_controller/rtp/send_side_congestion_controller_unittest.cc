@@ -66,10 +66,6 @@ class SendSideCongestionControllerTest : public ::testing::Test {
 
   void SetUp() override {
     pacer_.reset(new NiceMock<MockPacedSender>());
-    controller_.reset(new SendSideCongestionControllerForTest(
-        &clock_, &observer_, &event_log_, pacer_.get()));
-    bandwidth_observer_ = controller_->GetBandwidthObserver();
-
     // Set the initial bitrate estimate and expect the |observer| and |pacer_|
     // to be updated.
     EXPECT_CALL(observer_, OnNetworkChanged(kInitialBitrateBps, _, _, _));
@@ -77,20 +73,29 @@ class SendSideCongestionControllerTest : public ::testing::Test {
                 SetPacingRates(kInitialBitrateBps * kDefaultPacingRate, _));
     EXPECT_CALL(*pacer_, CreateProbeCluster(kInitialBitrateBps * 3));
     EXPECT_CALL(*pacer_, CreateProbeCluster(kInitialBitrateBps * 5));
-    controller_->SetBweBitrates(0, kInitialBitrateBps, 5 * kInitialBitrateBps);
+
+    controller_.reset(new SendSideCongestionControllerForTest(
+        &clock_, &event_log_, pacer_.get(), kInitialBitrateBps, 0,
+        5 * kInitialBitrateBps));
+    controller_->RegisterNetworkObserver(&observer_);
+    controller_->SignalNetworkState(NetworkState::kNetworkUp);
+    bandwidth_observer_ = controller_->GetBandwidthObserver();
     testing::Mock::VerifyAndClearExpectations(pacer_.get());
     testing::Mock::VerifyAndClearExpectations(&observer_);
   }
 
   void TearDown() override { controller_->WaitOnTasks(); }
+
   // Custom setup - use an observer that tracks the target bitrate, without
   // prescribing on which iterations it must change (like a mock would).
   void TargetBitrateTrackingSetup() {
     bandwidth_observer_ = nullptr;
     pacer_.reset(new NiceMock<MockPacedSender>());
     controller_.reset(new SendSideCongestionControllerForTest(
-        &clock_, &target_bitrate_observer_, &event_log_, pacer_.get()));
-    controller_->SetBweBitrates(0, kInitialBitrateBps, 5 * kInitialBitrateBps);
+        &clock_, &event_log_, pacer_.get(), kInitialBitrateBps, 0,
+        5 * kInitialBitrateBps));
+    controller_->RegisterNetworkObserver(&target_bitrate_observer_);
+    controller_->SignalNetworkState(NetworkState::kNetworkUp);
   }
 
   void OnSentPacket(const PacketFeedback& packet_feedback) {

@@ -59,9 +59,11 @@ class SendSideCongestionController
       public RtcpBandwidthObserver {
  public:
   SendSideCongestionController(const Clock* clock,
-                               NetworkChangedObserver* observer,
                                RtcEventLog* event_log,
-                               PacedSender* pacer);
+                               PacedSender* pacer,
+                               int start_bitrate_bps,
+                               int min_bitrate_bps,
+                               int max_bitrate_bps);
   ~SendSideCongestionController() override;
 
   void RegisterPacketFeedbackObserver(
@@ -139,12 +141,6 @@ class SendSideCongestionController
   void WaitOnTasks();
 
  private:
-  SendSideCongestionController(
-      const Clock* clock,
-      RtcEventLog* event_log,
-      PacedSender* pacer,
-      NetworkControllerFactoryInterface::uptr controller_factory);
-
   void UpdateStreamsConfig();
   void WaitOnTask(std::function<void()> closure);
   void MaybeUpdateOutstandingData();
@@ -155,6 +151,7 @@ class SendSideCongestionController
   PacedSender* const pacer_;
   TransportFeedbackAdapter transport_feedback_adapter_;
 
+  const std::unique_ptr<NetworkControllerFactoryInterface> controller_factory_;
   const std::unique_ptr<PacerController> pacer_controller_;
   const std::unique_ptr<send_side_cc_internal::ControlHandler> control_handler;
   const std::unique_ptr<NetworkControllerInterface> controller_;
