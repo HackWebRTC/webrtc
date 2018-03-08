@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "api/video/video_frame.h"
+#include "common_video/include/video_bitrate_allocator.h"
 #include "modules/video_coding/codecs/test/stats.h"
 #include "modules/video_coding/codecs/test/test_config.h"
 #include "modules/video_coding/utility/ivf_file_writer.h"
@@ -28,9 +29,6 @@
 #include "test/testsupport/frame_writer.h"
 
 namespace webrtc {
-
-class VideoBitrateAllocator;
-
 namespace test {
 
 // Handles encoding/decoding of video using the VideoEncoder/VideoDecoder
@@ -38,8 +36,6 @@ namespace test {
 // measure times properly.
 // The class processes a frame at the time for the configured input file.
 // It maintains state of where in the source input file the processing is at.
-//
-// Note this class is not thread safe and is meant for simple testing purposes.
 class VideoProcessor {
  public:
   using VideoDecoderList = std::vector<std::unique_ptr<VideoDecoder>>;
@@ -173,49 +169,31 @@ class VideoProcessor {
                         size_t frame_number,
                         size_t simulcast_svc_idx);
 
-  void CalculateFrameQuality(const VideoFrame& ref_frame,
-                             const VideoFrame& dec_frame,
-                             FrameStatistics* frame_stat);
-
+  // Test input/output.
   TestConfig config_ RTC_GUARDED_BY(sequence_checker_);
-
   const size_t num_simulcast_or_spatial_layers_;
+  Stats* const stats_;
 
+  // Codecs.
   webrtc::VideoEncoder* const encoder_;
   VideoDecoderList* const decoders_;
   const std::unique_ptr<VideoBitrateAllocator> bitrate_allocator_;
   BitrateAllocation bitrate_allocation_ RTC_GUARDED_BY(sequence_checker_);
+  uint32_t framerate_fps_ RTC_GUARDED_BY(sequence_checker_);
 
   // Adapters for the codec callbacks.
   VideoProcessorEncodeCompleteCallback encode_callback_;
   VideoProcessorDecodeCompleteCallback decode_callback_;
 
-  // Input frames. Used as reference at frame quality evaluation.
+  // Each call to ProcessFrame() will read one frame from |input_frame_reader_|.
+  FrameReader* const input_frame_reader_;
+
+  // Input frames are used as reference for frame quality evaluations.
   // Async codecs might queue frames. To handle that we keep input frame
   // and release it after corresponding coded frame is decoded and quality
   // measurement is done.
-  std::map<size_t, std::unique_ptr<VideoFrame>> input_frames_
-      RTC_GUARDED_BY(sequence_checker_);
-
-  FrameReader* const input_frame_reader_;
-
-  // These (optional) file writers are used to persistently store the encoded
-  // and decoded bitstreams. The purpose is to give the experimenter an option
-  // to subjectively evaluate the quality of the processing. Each frame writer
-  // is enabled by being non-null.
-  IvfFileWriterList* const encoded_frame_writers_;
-  FrameWriterList* const decoded_frame_writers_;
-
-  // Keep track of inputed/encoded/decoded frames, so we can detect frame drops.
-  bool first_encoded_frame;
-  size_t last_inputed_frame_num_ RTC_GUARDED_BY(sequence_checker_);
-  size_t last_encoded_frame_num_ RTC_GUARDED_BY(sequence_checker_);
-  size_t last_encoded_simulcast_svc_idx_ RTC_GUARDED_BY(sequence_checker_);
-  size_t last_decoded_frame_num_ RTC_GUARDED_BY(sequence_checker_);
-
-  // Map of frame size (in pixels) to simulcast/spatial layer index.
-  std::map<size_t, size_t> frame_wxh_to_simulcast_svc_idx_
-      RTC_GUARDED_BY(sequence_checker_);
+  // frame_number -> frame.
+  std::map<size_t, VideoFrame> input_frames_ RTC_GUARDED_BY(sequence_checker_);
 
   // Encoder delivers coded frame layer-by-layer. We store coded frames and
   // then, after all layers are encoded, decode them. Such separation of
@@ -224,11 +202,26 @@ class VideoProcessor {
   std::map<size_t, EncodedImage> last_encoded_frames_
       RTC_GUARDED_BY(sequence_checker_);
 
-  rtc::Buffer tmp_planar_i420_buffer_;
+  // These (optional) file writers are used to persistently store the encoded
+  // and decoded bitstreams. Each frame writer is enabled by being non-null.
+  IvfFileWriterList* const encoded_frame_writers_;
+  FrameWriterList* const decoded_frame_writers_;
+  rtc::Buffer tmp_i420_buffer_;  // Temp storage for format conversion.
 
-  // Statistics.
-  Stats* const stats_;
+  // Metadata of inputed/encoded/decoded frames. Used for frame drop detection
+  // and other purposes.
+  size_t last_inputed_frame_num_ RTC_GUARDED_BY(sequence_checker_);
+  size_t last_inputed_timestamp_ RTC_GUARDED_BY(sequence_checker_);
+  bool first_encoded_frame RTC_GUARDED_BY(sequence_checker_);
+  size_t last_encoded_frame_num_ RTC_GUARDED_BY(sequence_checker_);
+  size_t last_encoded_simulcast_svc_idx_ RTC_GUARDED_BY(sequence_checker_);
+  size_t last_decoded_frame_num_ RTC_GUARDED_BY(sequence_checker_);
 
+  // Map of frame size (in pixels) to simulcast/spatial layer index.
+  std::map<size_t, size_t> frame_wxh_to_simulcast_svc_idx_
+      RTC_GUARDED_BY(sequence_checker_);
+
+  // This class must be operated on a TaskQueue.
   rtc::SequencedTaskChecker sequence_checker_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(VideoProcessor);

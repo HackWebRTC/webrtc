@@ -12,7 +12,7 @@ specific_include_rules = {
   "android_codec_factory_helper\.cc": [
     "+base/android",
   ],
-  "test_config.cc": [
+  ".*test.*\.cc": [
      "+media/base",
      "+media/engine",
   ],

@@ -24,6 +24,7 @@
 #include "common_types.h"  // NOLINT(build/include)
 #include "media/engine/internaldecoderfactory.h"
 #include "media/engine/internalencoderfactory.h"
+#include "media/engine/simulcast_encoder_adapter.h"
 #include "media/engine/videodecodersoftwarefallbackwrapper.h"
 #include "media/engine/videoencodersoftwarefallbackwrapper.h"
 #include "modules/video_coding/codecs/vp8/include/vp8_common_types.h"
@@ -294,19 +295,18 @@ void VideoProcessorIntegrationTest::VerifyVideoStatistic(
 }
 
 void VideoProcessorIntegrationTest::CreateEncoderAndDecoder() {
-  std::unique_ptr<VideoEncoderFactory> encoder_factory;
   if (config_.hw_encoder) {
 #if defined(WEBRTC_ANDROID)
-    encoder_factory = CreateAndroidEncoderFactory();
+    encoder_factory_ = CreateAndroidEncoderFactory();
 #elif defined(WEBRTC_IOS)
     EXPECT_EQ(kVideoCodecH264, config_.codec_settings.codecType)
         << "iOS HW codecs only support H264.";
-    encoder_factory = CreateObjCEncoderFactory();
+    encoder_factory_ = CreateObjCEncoderFactory();
 #else
     RTC_NOTREACHED() << "Only support HW encoder on Android and iOS.";
 #endif
   } else {
-    encoder_factory = rtc::MakeUnique<InternalEncoderFactory>();
+    encoder_factory_ = rtc::MakeUnique<InternalEncoderFactory>();
   }
 
   std::unique_ptr<VideoDecoderFactory> decoder_factory;
@@ -325,7 +325,12 @@ void VideoProcessorIntegrationTest::CreateEncoderAndDecoder() {
   }
 
   const SdpVideoFormat format = config_.ToSdpVideoFormat();
-  encoder_ = encoder_factory->CreateVideoEncoder(format);
+  if (config_.simulcast_adapted_encoder) {
+    EXPECT_EQ("VP8", format.name);
+    encoder_.reset(new SimulcastEncoderAdapter(encoder_factory_.get()));
+  } else {
+    encoder_ = encoder_factory_->CreateVideoEncoder(format);
+  }
 
   const size_t num_simulcast_or_spatial_layers = std::max(
       config_.NumberOfSimulcastStreams(), config_.NumberOfSpatialLayers());
@@ -336,6 +341,9 @@ void VideoProcessorIntegrationTest::CreateEncoderAndDecoder() {
   }
 
   if (config_.sw_fallback_encoder) {
+    EXPECT_FALSE(config_.simulcast_adapted_encoder)
+        << "SimulcastEncoderAdapter and VideoEncoderSoftwareFallbackWrapper "
+           "are not jointly supported.";
     encoder_ = rtc::MakeUnique<VideoEncoderSoftwareFallbackWrapper>(
         InternalEncoderFactory().CreateVideoEncoder(format),
         std::move(encoder_));
@@ -356,8 +364,9 @@ void VideoProcessorIntegrationTest::CreateEncoderAndDecoder() {
 }
 
 void VideoProcessorIntegrationTest::DestroyEncoderAndDecoder() {
-  encoder_.reset();
   decoders_.clear();
+  encoder_.reset();
+  encoder_factory_.reset();
 }
 
 void VideoProcessorIntegrationTest::SetUpAndInitObjects(

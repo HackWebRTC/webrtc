@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 
+#include "api/video_codecs/video_encoder_factory.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "common_video/h264/h264_common.h"
 #include "modules/video_coding/codecs/test/stats.h"
@@ -126,6 +127,7 @@ class VideoProcessorIntegrationTest : public testing::Test {
   void PrintSettings(rtc::TaskQueue* task_queue) const;
 
   // Codecs.
+  std::unique_ptr<VideoEncoderFactory> encoder_factory_;
   std::unique_ptr<VideoEncoder> encoder_;
   VideoProcessor::VideoDecoderList decoders_;
 
