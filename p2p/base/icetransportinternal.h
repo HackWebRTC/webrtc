@@ -110,9 +110,23 @@ struct IceConfig {
   // Default nomination mode if the remote does not support renomination.
   NominationMode default_nomination_mode = NominationMode::SEMI_AGGRESSIVE;
 
+  // The interval in milliseconds at which ICE checks (STUN pings) will be sent
+  // for a candidate pair when it is both writable and receiving (strong
+  // connectivity). This parameter overrides the default value given by
+  // |STRONG_PING_INTERVAL| in p2ptransport.h if set.
+  rtc::Optional<int> ice_check_interval_strong_connectivity;
+  // The interval in milliseconds at which ICE checks (STUN pings) will be sent
+  // for a candidate pair when it is either not writable or not receiving (weak
+  // connectivity). This parameter overrides the default value given by
+  // |WEAK_PING_INTERVAL| in p2ptransport.h if set.
+  rtc::Optional<int> ice_check_interval_weak_connectivity;
   // ICE checks (STUN pings) will not be sent at higher rate (lower interval)
   // than this, no matter what other settings there are.
   // Measure in milliseconds.
+  //
+  // Note that this parameter overrides both the above check intervals for
+  // candidate pairs with strong or weak connectivity, if either of the above
+  // interval is shorter than the min interval.
   rtc::Optional<int> ice_check_min_interval;
   // The interval in milliseconds at which STUN candidates will resend STUN
   // binding requests to keep NAT bindings open.

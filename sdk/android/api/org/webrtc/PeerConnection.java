@@ -386,6 +386,28 @@ public class PeerConnection {
     public int iceCandidatePoolSize;
     public boolean pruneTurnPorts;
     public boolean presumeWritableWhenFullyRelayed;
+    // The following fields define intervals in milliseconds at which ICE
+    // connectivity checks are sent.
+    //
+    // We consider ICE is "strongly connected" for an agent when there is at
+    // least one candidate pair that currently succeeds in connectivity check
+    // from its direction i.e. sending a ping and receives a ping response, AND
+    // all candidate pairs have sent a minimum number of pings for connectivity
+    // (this number is implementation-specific). Otherwise, ICE is considered in
+    // "weak connectivity".
+    //
+    // Note that the above notion of strong and weak connectivity is not defined
+    // in RFC 5245, and they apply to our current ICE implementation only.
+    //
+    // 1) iceCheckIntervalStrongConnectivityMs defines the interval applied to
+    // ALL candidate pairs when ICE is strongly connected,
+    // 2) iceCheckIntervalWeakConnectivityMs defines the counterpart for ALL
+    // pairs when ICE is weakly connected, and
+    // 3) iceCheckMinInterval defines the minimal interval (equivalently the
+    // maximum rate) that overrides the above two intervals when either of them
+    // is less.
+    public Integer iceCheckIntervalStrongConnectivityMs;
+    public Integer iceCheckIntervalWeakConnectivityMs;
     public Integer iceCheckMinInterval;
     // The interval in milliseconds at which STUN candidates will resend STUN binding requests
     // to keep NAT bindings open.
@@ -437,6 +459,8 @@ public class PeerConnection {
       iceCandidatePoolSize = 0;
       pruneTurnPorts = false;
       presumeWritableWhenFullyRelayed = false;
+      iceCheckIntervalStrongConnectivityMs = null;
+      iceCheckIntervalWeakConnectivityMs = null;
       iceCheckMinInterval = null;
       stunCandidateKeepaliveIntervalMs = null;
       disableIPv6OnWifi = false;
@@ -527,6 +551,16 @@ public class PeerConnection {
     @CalledByNative("RTCConfiguration")
     boolean getPresumeWritableWhenFullyRelayed() {
       return presumeWritableWhenFullyRelayed;
+    }
+
+    @CalledByNative("RTCConfiguration")
+    Integer getIceCheckIntervalStrongConnectivity() {
+      return iceCheckIntervalStrongConnectivityMs;
+    }
+
+    @CalledByNative("RTCConfiguration")
+    Integer getIceCheckIntervalWeakConnectivity() {
+      return iceCheckIntervalWeakConnectivityMs;
     }
 
     @CalledByNative("RTCConfiguration")

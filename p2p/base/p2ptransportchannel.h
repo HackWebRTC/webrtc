@@ -20,6 +20,7 @@
 #ifndef P2P_BASE_P2PTRANSPORTCHANNEL_H_
 #define P2P_BASE_P2PTRANSPORTCHANNEL_H_
 
+#include <algorithm>
 #include <map>
 #include <memory>
 #include <set>
@@ -180,19 +181,15 @@ class P2PTransportChannel : public IceTransportInternal,
   bool weak() const;
 
   int weak_ping_interval() const {
-    if (config_.ice_check_min_interval &&
-        weak_ping_interval_ < *config_.ice_check_min_interval) {
-      return *config_.ice_check_min_interval;
-    }
-    return weak_ping_interval_;
+    return std::max(config_.ice_check_interval_weak_connectivity.value_or(
+                        weak_ping_interval_),
+                    config_.ice_check_min_interval.value_or(-1));
   }
 
   int strong_ping_interval() const {
-    if (config_.ice_check_min_interval &&
-        STRONG_PING_INTERVAL < *config_.ice_check_min_interval) {
-      return *config_.ice_check_min_interval;
-    }
-    return STRONG_PING_INTERVAL;
+    return std::max(config_.ice_check_interval_strong_connectivity.value_or(
+                        STRONG_PING_INTERVAL),
+                    config_.ice_check_min_interval.value_or(-1));
   }
 
   // Returns true if it's possible to send packets on |connection|.

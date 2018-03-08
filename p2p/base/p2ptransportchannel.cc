@@ -105,9 +105,15 @@ static const int PING_PACKET_SIZE = 60 * 8;
 // The next two ping intervals are at the channel level.
 // STRONG_PING_INTERVAL (480ms) is applied when the selected connection is both
 // writable and receiving.
+//
+// This constant is the default value of ice_check_interval_strong_connectivity
+// in IceConfig if not set.
 const int STRONG_PING_INTERVAL = 1000 * PING_PACKET_SIZE / 1000;
 // WEAK_PING_INTERVAL (48ms) is applied when the selected connection is either
 // not writable or not receiving.
+//
+// This constant is the default value of ice_check_interval_weak_connectivity in
+// IceConfig if not set.
 const int WEAK_PING_INTERVAL = 1000 * PING_PACKET_SIZE / 10000;
 
 // The next two ping intervals are at the connection level.
@@ -438,6 +444,11 @@ void P2PTransportChannel::SetRemoteIceMode(IceMode mode) {
   remote_ice_mode_ = mode;
 }
 
+// TODO(qingsi): We apply the convention that setting a rtc::Optional parameter
+// to null restores its default value in the implementation. However, some
+// rtc::Optional parameters are only processed below if non-null, e.g.,
+// regather_on_failed_networks_interval, and thus there is no way to restore the
+// defaults. Fix this issue later for consistency.
 void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
   if (config_.continual_gathering_policy != config.continual_gathering_policy) {
     if (!allocator_sessions_.empty()) {
@@ -504,7 +515,8 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
     config_.regather_on_failed_networks_interval =
         config.regather_on_failed_networks_interval;
     RTC_LOG(LS_INFO) << "Set regather_on_failed_networks_interval to "
-                     << *config_.regather_on_failed_networks_interval;
+                     << config_.regather_on_failed_networks_interval.value_or(
+                            -1);
   }
 
   if (config.regather_all_networks_interval_range) {
@@ -513,13 +525,15 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
     config_.regather_all_networks_interval_range =
         config.regather_all_networks_interval_range;
     RTC_LOG(LS_INFO) << "Set regather_all_networks_interval_range to "
-                     << config.regather_all_networks_interval_range->ToString();
+                     << config.regather_all_networks_interval_range
+                            .value_or(rtc::IntervalRange(-1, 0))
+                            .ToString();
   }
 
   if (config.receiving_switching_delay) {
     config_.receiving_switching_delay = config.receiving_switching_delay;
     RTC_LOG(LS_INFO) << "Set receiving_switching_delay to"
-                     << *config_.receiving_switching_delay;
+                     << config_.receiving_switching_delay.value_or(-1);
   }
 
   if (config_.default_nomination_mode != config.default_nomination_mode) {
@@ -528,10 +542,28 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
                      << static_cast<int>(config_.default_nomination_mode);
   }
 
+  if (config_.ice_check_interval_strong_connectivity !=
+      config.ice_check_interval_strong_connectivity) {
+    config_.ice_check_interval_strong_connectivity =
+        config.ice_check_interval_strong_connectivity;
+    RTC_LOG(LS_INFO) << "Set strong ping interval to "
+                     << config_.ice_check_interval_strong_connectivity.value_or(
+                            -1);
+  }
+
+  if (config_.ice_check_interval_weak_connectivity !=
+      config.ice_check_interval_weak_connectivity) {
+    config_.ice_check_interval_weak_connectivity =
+        config.ice_check_interval_weak_connectivity;
+    RTC_LOG(LS_INFO) << "Set weak ping interval to "
+                     << config_.ice_check_interval_weak_connectivity.value_or(
+                            -1);
+  }
+
   if (config_.ice_check_min_interval != config.ice_check_min_interval) {
     config_.ice_check_min_interval = config.ice_check_min_interval;
     RTC_LOG(LS_INFO) << "Set min ping interval to "
-                     << *config_.ice_check_min_interval;
+                     << config_.ice_check_min_interval.value_or(-1);
   }
 
   if (config_.network_preference != config.network_preference) {
@@ -540,7 +572,8 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
     RTC_LOG(LS_INFO) << "Set network preference to "
                      << (config_.network_preference.has_value()
                              ? config_.network_preference.value()
-                             : 0);
+                             : -1);  // network_preference cannot be bound to
+                                     // int with value_or.
   }
 
   // TODO(qingsi): Resolve the naming conflict of stun_keepalive_delay in
@@ -550,9 +583,7 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
     allocator_session()->SetStunKeepaliveIntervalForReadyPorts(
         config_.stun_keepalive_interval);
     RTC_LOG(LS_INFO) << "Set STUN keepalive interval to "
-                     << (config.stun_keepalive_interval.has_value()
-                             ? config_.stun_keepalive_interval.value()
-                             : -1);
+                     << config.stun_keepalive_interval.value_or(-1);
   }
 }
 

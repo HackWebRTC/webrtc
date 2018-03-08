@@ -173,6 +173,16 @@ void JavaToNativeRTCConfiguration(
   rtc_config->presume_writable_when_fully_relayed =
       Java_RTCConfiguration_getPresumeWritableWhenFullyRelayed(jni,
                                                                j_rtc_config);
+  ScopedJavaLocalRef<jobject> j_ice_check_interval_strong_connectivity =
+      Java_RTCConfiguration_getIceCheckIntervalStrongConnectivity(jni,
+                                                                  j_rtc_config);
+  rtc_config->ice_check_interval_strong_connectivity =
+      JavaToNativeOptionalInt(jni, j_ice_check_interval_strong_connectivity);
+  ScopedJavaLocalRef<jobject> j_ice_check_interval_weak_connectivity =
+      Java_RTCConfiguration_getIceCheckIntervalWeakConnectivity(jni,
+                                                                j_rtc_config);
+  rtc_config->ice_check_interval_weak_connectivity =
+      JavaToNativeOptionalInt(jni, j_ice_check_interval_weak_connectivity);
   ScopedJavaLocalRef<jobject> j_ice_check_min_interval =
       Java_RTCConfiguration_getIceCheckMinInterval(jni, j_rtc_config);
   rtc_config->ice_check_min_interval =

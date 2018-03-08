@@ -663,6 +663,8 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
     bool presume_writable_when_fully_relayed;
     bool enable_ice_renomination;
     bool redetermine_role_on_ice_restart;
+    rtc::Optional<int> ice_check_interval_strong_connectivity;
+    rtc::Optional<int> ice_check_interval_weak_connectivity;
     rtc::Optional<int> ice_check_min_interval;
     rtc::Optional<int> stun_candidate_keepalive_interval;
     rtc::Optional<rtc::IntervalRange> ice_regather_interval_range;
@@ -703,6 +705,10 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
              o.presume_writable_when_fully_relayed &&
          enable_ice_renomination == o.enable_ice_renomination &&
          redetermine_role_on_ice_restart == o.redetermine_role_on_ice_restart &&
+         ice_check_interval_strong_connectivity ==
+             o.ice_check_interval_strong_connectivity &&
+         ice_check_interval_weak_connectivity ==
+             o.ice_check_interval_weak_connectivity &&
          ice_check_min_interval == o.ice_check_min_interval &&
          stun_candidate_keepalive_interval ==
              o.stun_candidate_keepalive_interval &&
@@ -2700,6 +2706,10 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
       configuration.ice_candidate_pool_size;
   modified_config.prune_turn_ports = configuration.prune_turn_ports;
   modified_config.ice_check_min_interval = configuration.ice_check_min_interval;
+  modified_config.ice_check_interval_strong_connectivity =
+      configuration.ice_check_interval_strong_connectivity;
+  modified_config.ice_check_interval_weak_connectivity =
+      configuration.ice_check_interval_weak_connectivity;
   modified_config.stun_candidate_keepalive_interval =
       configuration.stun_candidate_keepalive_interval;
   modified_config.turn_customizer = configuration.turn_customizer;
@@ -4860,6 +4870,10 @@ cricket::IceConfig PeerConnection::ParseIceConfig(
   ice_config.continual_gathering_policy = gathering_policy;
   ice_config.presume_writable_when_fully_relayed =
       config.presume_writable_when_fully_relayed;
+  ice_config.ice_check_interval_strong_connectivity =
+      config.ice_check_interval_strong_connectivity;
+  ice_config.ice_check_interval_weak_connectivity =
+      config.ice_check_interval_weak_connectivity;
   ice_config.ice_check_min_interval = config.ice_check_min_interval;
   ice_config.stun_keepalive_interval = config.stun_candidate_keepalive_interval;
   ice_config.regather_all_networks_interval_range =
