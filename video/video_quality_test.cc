@@ -24,7 +24,6 @@
 #include "modules/rtp_rtcp/source/rtp_format.h"
 #include "modules/rtp_rtcp/source/rtp_utility.h"
 #include "modules/video_coding/codecs/h264/include/h264.h"
-#include "modules/video_coding/codecs/multiplex/include/multiplex_encoder_adapter.h"
 #include "modules/video_coding/codecs/vp8/include/vp8_common_types.h"
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
 #include "rtc_base/cpu_time.h"
@@ -1387,10 +1386,6 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
     } else if (params_.video[video_idx].codec == "VP9") {
       video_encoders_[video_idx] = VP9Encoder::Create();
       payload_type = kPayloadTypeVP9;
-    } else if (params_.video[video_idx].codec == "multiplex") {
-      video_encoders_[video_idx] = rtc::MakeUnique<MultiplexEncoderAdapter>(
-          new InternalEncoderFactory(), SdpVideoFormat(cricket::kVp9CodecName));
-      payload_type = kPayloadTypeVP9;
     } else {
       RTC_NOTREACHED() << "Codec not supported!";
       return;
@@ -1706,7 +1701,7 @@ void VideoQualityTest::SetupThumbnailCapturers(size_t num_thumbnail_streams) {
   for (size_t i = 0; i < num_thumbnail_streams; ++i) {
     thumbnail_capturers_.emplace_back(test::FrameGeneratorCapturer::Create(
         static_cast<int>(thumbnail.width), static_cast<int>(thumbnail.height),
-        rtc::nullopt, rtc::nullopt, thumbnail.max_framerate, clock_));
+        thumbnail.max_framerate, clock_));
     RTC_DCHECK(thumbnail_capturers_.back());
   }
 }
@@ -1772,13 +1767,7 @@ void VideoQualityTest::CreateCapturers() {
       if (params_.video[video_idx].clip_name == "Generator") {
         video_capturers_[video_idx].reset(test::FrameGeneratorCapturer::Create(
             static_cast<int>(params_.video[video_idx].width),
-            static_cast<int>(params_.video[video_idx].height), rtc::nullopt,
-            rtc::nullopt, params_.video[video_idx].fps, clock_));
-      } else if (params_.video[video_idx].clip_name == "GeneratorI420A") {
-        video_capturers_[video_idx].reset(test::FrameGeneratorCapturer::Create(
-            static_cast<int>(params_.video[video_idx].width),
             static_cast<int>(params_.video[video_idx].height),
-            test::FrameGenerator::OutputType::I420A, rtc::nullopt,
             params_.video[video_idx].fps, clock_));
       } else if (params_.video[video_idx].clip_name.empty()) {
         video_capturers_[video_idx].reset(test::VcmCapturer::Create(
@@ -1791,8 +1780,7 @@ void VideoQualityTest::CreateCapturers() {
               test::FrameGeneratorCapturer::Create(
                   static_cast<int>(params_.video[video_idx].width),
                   static_cast<int>(params_.video[video_idx].height),
-                  rtc::nullopt, rtc::nullopt, params_.video[video_idx].fps,
-                  clock_));
+                  params_.video[video_idx].fps, clock_));
         }
       } else {
         video_capturers_[video_idx].reset(

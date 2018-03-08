@@ -19,6 +19,7 @@
 #include "rtc_base/task_queue.h"
 #include "rtc_base/timeutils.h"
 #include "system_wrappers/include/clock.h"
+#include "test/frame_generator.h"
 #include "call/video_send_stream.h"
 
 namespace webrtc {
@@ -84,16 +85,25 @@ class FrameGeneratorCapturer::InsertFrameTask : public rtc::QueuedTask {
   int64_t intended_run_time_ms_;
 };
 
-FrameGeneratorCapturer* FrameGeneratorCapturer::Create(
-    int width,
-    int height,
-    rtc::Optional<FrameGenerator::OutputType> type,
-    rtc::Optional<int> num_squares,
-    int target_fps,
-    Clock* clock) {
+FrameGeneratorCapturer* FrameGeneratorCapturer::Create(int width,
+                                                       int height,
+                                                       int target_fps,
+                                                       Clock* clock) {
   std::unique_ptr<FrameGeneratorCapturer> capturer(new FrameGeneratorCapturer(
-      clock,
-      FrameGenerator::CreateSquareGenerator(width, height, type, num_squares),
+      clock, FrameGenerator::CreateSquareGenerator(width, height), target_fps));
+  if (!capturer->Init())
+    return nullptr;
+
+  return capturer.release();
+}
+
+FrameGeneratorCapturer* FrameGeneratorCapturer::Create(int width,
+                                                       int height,
+                                                       int num_squares,
+                                                       int target_fps,
+                                                       Clock* clock) {
+  std::unique_ptr<FrameGeneratorCapturer> capturer(new FrameGeneratorCapturer(
+      clock, FrameGenerator::CreateSquareGenerator(width, height, num_squares),
       target_fps));
   if (!capturer->Init())
     return nullptr;
