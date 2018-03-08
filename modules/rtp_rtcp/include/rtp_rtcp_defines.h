@@ -412,8 +412,6 @@ class TransportFeedbackObserver {
                          const PacedPacketInfo& pacing_info) = 0;
 
   virtual void OnTransportFeedback(const rtcp::TransportFeedback& feedback) = 0;
-
-  virtual std::vector<PacketFeedback> GetTransportFeedbackVector() const = 0;
 };
 
 // Interface for PacketRouter to send rtcp feedback on behalf of

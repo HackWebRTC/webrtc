@@ -111,7 +111,8 @@ class SendSideCongestionController
                  size_t length,
                  const PacedPacketInfo& pacing_info) override;
   void OnTransportFeedback(const rtcp::TransportFeedback& feedback) override;
-  std::vector<PacketFeedback> GetTransportFeedbackVector() const override;
+
+  std::vector<PacketFeedback> GetTransportFeedbackVector() const;
 
  private:
   void MaybeTriggerOnNetworkChanged();

@@ -47,7 +47,9 @@ namespace test {
 class LegacySendSideCongestionControllerTest : public ::testing::Test {
  protected:
   LegacySendSideCongestionControllerTest()
-      : clock_(123456), target_bitrate_observer_(this) {}
+      : clock_(123456),
+        target_bitrate_observer_(this),
+        bandwidth_observer_(nullptr) {}
   ~LegacySendSideCongestionControllerTest() override {}
 
   void SetUp() override {

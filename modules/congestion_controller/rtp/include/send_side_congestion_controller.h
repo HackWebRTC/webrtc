@@ -120,7 +120,8 @@ class SendSideCongestionController
                  size_t length,
                  const PacedPacketInfo& pacing_info) override;
   void OnTransportFeedback(const rtcp::TransportFeedback& feedback) override;
-  std::vector<PacketFeedback> GetTransportFeedbackVector() const override;
+
+  std::vector<PacketFeedback> GetTransportFeedbackVector() const;
 
   // Sets the minimum send bitrate and maximum padding bitrate requested by send
   // streams.
