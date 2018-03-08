@@ -181,6 +181,9 @@ DEFINE_bool(store_intermediate_output,
             false,
             "Creates new output files after each init");
 DEFINE_string(custom_call_order_file, "", "Custom process API call order file");
+DEFINE_string(aec3_settings,
+              "",
+              "File in JSON-format with custom AEC3 settings");
 DEFINE_bool(help, false, "Print this message");
 
 void SetSettingIfSpecified(const std::string& value,
@@ -279,6 +282,7 @@ SimulationSettings CreateSettings() {
                         &settings.stream_drift_samples);
   SetSettingIfSpecified(FLAG_custom_call_order_file,
                         &settings.custom_call_order_filename);
+  SetSettingIfSpecified(FLAG_aec3_settings, &settings.aec3_settings_filename);
   settings.initial_mic_level = FLAG_initial_mic_level;
   settings.simulate_mic_gain = FLAG_simulate_mic_gain;
   SetSettingIfSpecified(FLAG_simulated_mic_kind, &settings.simulated_mic_kind);
