@@ -142,12 +142,15 @@ rtc_source_set("safe_minmax") {
 
 rtc_source_set("stringutils") {
   sources = [
+    "strings/string_builder.cc",
     "strings/string_builder.h",
     "stringutils.cc",
     "stringutils.h",
   ]
   deps = [
     ":checks",
+    ":safe_minmax",
+    "../api:array_view",
   ]
 }
 

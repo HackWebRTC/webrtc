@@ -64,7 +64,8 @@ const char* UmaPrefixForContentType(VideoContentType content_type) {
 }
 
 std::string UmaSuffixForContentType(VideoContentType content_type) {
-  rtc::SimpleStringBuilder<1024> ss;
+  char ss_buf[1024];
+  rtc::SimpleStringBuilder ss(ss_buf);
   int simulcast_id = videocontenttypehelpers::GetSimulcastId(content_type);
   if (simulcast_id > 0) {
     ss << ".S" << simulcast_id - 1;
@@ -135,7 +136,8 @@ ReceiveStatisticsProxy::~ReceiveStatisticsProxy() {
 
 void ReceiveStatisticsProxy::UpdateHistograms() {
   RTC_DCHECK_RUN_ON(&decode_thread_);
-  rtc::SimpleStringBuilder<8 * 1024> log_stream;
+  char log_stream_buf[8 * 1024];
+  rtc::SimpleStringBuilder log_stream(log_stream_buf);
   int stream_duration_sec = (clock_->TimeInMilliseconds() - start_ms_) / 1000;
   if (stats_.frame_counts.key_frames > 0 ||
       stats_.frame_counts.delta_frames > 0) {
