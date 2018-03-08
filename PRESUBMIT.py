@@ -403,6 +403,48 @@ def CheckNoPackageBoundaryViolations(input_api, gn_files, output_api):
         long_text='\n\n'.join(str(err) for err in errors))]
   return []
 
+
+def _ReportErrorFileAndLineNumber(filename, line_num):
+  """Default error formatter for _FindNewViolationsOfRule."""
+  return '%s (line %s)' % (filename, line_num)
+
+
+def CheckNoStreamUsageIsAdded(input_api, output_api,
+                              error_formatter=_ReportErrorFileAndLineNumber):
+  """Make sure that no more dependencies on stringstream are added."""
+  error_msg = ('Usage of <sstream>, <istream> and <ostream> in WebRTC is '
+               'deprecated.\n'
+               'This includes the following types:\n'
+               'std::istringstream, std::ostringstream, std::wistringstream, '
+               'std::wostringstream,\n'
+               'std::wstringstream, std::ostream, std::wostream, std::istream,'
+               'std::wistream,\n'
+               'std::iostream, std::wiostream.\n'
+               'If you are not adding this code (e.g. you are just moving '
+               'existing code),\n'
+               'you can add a comment on the line that causes the problem:\n\n'
+               '#include <sstream>  // no-presubmit-check TODO(webrtc:8982)\n'
+               'std::ostream& F() {  // no-presubmit-check TODO(webrtc:8982)\n'
+               '\n'
+               'If you are adding new code, please consider using '
+               'rtc::SimpleStringBuilder (rtc_base/string/string_builder.h).\n'
+               'Affected files:\n')
+  errors = []  # 2-element tuples with (file, line number)
+  include_re = input_api.re.compile(r'#include <(i|o|s)stream>')
+  usage_re = input_api.re.compile(r'std::(w|i|o|io|wi|wo|wio)(string)*stream')
+  no_presubmit_re = input_api.re.compile(
+      r'  // no-presubmit-check TODO\(webrtc:8982\)')
+  for f in input_api.AffectedSourceFiles(input_api.FilterSourceFile):
+    if f.LocalPath() == 'PRESUBMIT.py':
+      continue
+    for line_num, line in f.ChangedContents():
+      if ((include_re.search(line) or usage_re.search(line))
+          and not no_presubmit_re.search(line)):
+        errors.append(error_formatter(f.LocalPath(), line_num))
+  if errors:
+    return [output_api.PresubmitError(error_msg, errors)]
+  return []
+
 def CheckPublicDepsIsNotUsed(gn_files, output_api):
   result = []
   error_msg = ('public_deps is not allowed in WebRTC BUILD.gn files because '
@@ -732,6 +774,7 @@ def CommonChecks(input_api, output_api):
   results.extend(CheckUsageOfGoogleProtobufNamespace(input_api, output_api))
   results.extend(CheckOrphanHeaders(input_api, output_api))
   results.extend(CheckNewlineAtTheEndOfProtoFiles(input_api, output_api))
+  results.extend(CheckNoStreamUsageIsAdded(input_api, output_api))
   return results
 
 
