@@ -266,6 +266,17 @@ void JavaMapBuilder::put(const JavaRef<jobject>& key,
   JNI_Map::Java_Map_put(env_, j_map_, key, value);
 }
 
+jlong NativeToJavaPointer(void* ptr) {
+  static_assert(sizeof(intptr_t) <= sizeof(jlong),
+                "Time to rethink the use of jlongs");
+  // Going through intptr_t to be obvious about the definedness of the
+  // conversion from pointer to integral type.  intptr_t to jlong is a standard
+  // widening by the static_assert above.
+  jlong ret = reinterpret_cast<intptr_t>(ptr);
+  RTC_DCHECK(reinterpret_cast<void*>(ret) == ptr);
+  return ret;
+}
+
 // Given a list of jstrings, reinterprets it to a new vector of native strings.
 std::vector<std::string> JavaToStdVectorStrings(JNIEnv* jni,
                                                 const JavaRef<jobject>& list) {

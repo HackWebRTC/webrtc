@@ -29,6 +29,12 @@ group("examples") {
       ":AppRTCMobileTestStubbedVideoIO",
       ":libwebrtc_unity",
     ]
+
+    # TODO(sakal): We include some code from the tests. Remove this dependency
+    # and remove this if-clause.
+    if (rtc_include_tests) {
+      deps += [ "androidnativeapi:androidnativeapi" ]
+    }
   }
 
   if (!build_with_chromium) {

@@ -16,20 +16,6 @@
 namespace webrtc {
 namespace jni {
 
-// Return a |jlong| that will correctly convert back to |ptr|.  This is needed
-// because the alternative (of silently passing a 32-bit pointer to a vararg
-// function expecting a 64-bit param) picks up garbage in the high 32 bits.
-jlong jlongFromPointer(void* ptr) {
-  static_assert(sizeof(intptr_t) <= sizeof(jlong),
-                "Time to rethink the use of jlongs");
-  // Going through intptr_t to be obvious about the definedness of the
-  // conversion from pointer to integral type.  intptr_t to jlong is a standard
-  // widening by the static_assert above.
-  jlong ret = reinterpret_cast<intptr_t>(ptr);
-  RTC_DCHECK(reinterpret_cast<void*>(ret) == ptr);
-  return ret;
-}
-
 ScopedJavaLocalRef<jobject> NewDirectByteBuffer(JNIEnv* env,
                                                 void* address,
                                                 jlong capacity) {

@@ -32,10 +32,10 @@ namespace jni {
 // TODO(sakal): Remove once clients have migrated.
 using ::webrtc::JavaToStdMapStrings;
 
-// Return a |jlong| that will correctly convert back to |ptr|.  This is needed
-// because the alternative (of silently passing a 32-bit pointer to a vararg
-// function expecting a 64-bit param) picks up garbage in the high 32 bits.
-jlong jlongFromPointer(void* ptr);
+// Deprecated, use NativeToJavaPointer.
+inline long jlongFromPointer(void* ptr) {
+  return NativeToJavaPointer(ptr);
+}
 
 ScopedJavaLocalRef<jobject> NewDirectByteBuffer(JNIEnv* env,
                                                 void* address,
