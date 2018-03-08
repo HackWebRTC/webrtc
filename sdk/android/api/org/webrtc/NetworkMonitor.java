@@ -110,7 +110,8 @@ public class NetworkMonitor {
   private void startMonitoring(Context applicationContext, long nativeObserver) {
     Logging.d(TAG, "Start monitoring with native observer " + nativeObserver);
 
-    startMonitoring(ContextUtils.getApplicationContext());
+    startMonitoring(
+        applicationContext != null ? applicationContext : ContextUtils.getApplicationContext());
     // The native observers expect a network list update after they call startMonitoring.
     synchronized (nativeNetworkObservers) {
       nativeNetworkObservers.add(nativeObserver);
