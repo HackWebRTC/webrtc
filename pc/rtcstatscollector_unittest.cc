@@ -1911,9 +1911,9 @@ TEST_F(RTCStatsCollectorTest, DoNotCrashOnSsrcChange) {
 }
 
 // Used for test below, to test calling GetStatsReport during a callback.
-class ReentrantCallback : public RTCStatsCollectorCallback {
+class RecursiveCallback : public RTCStatsCollectorCallback {
  public:
-  explicit ReentrantCallback(RTCStatsCollectorWrapper* stats) : stats_(stats) {}
+  explicit RecursiveCallback(RTCStatsCollectorWrapper* stats) : stats_(stats) {}
 
   void OnStatsDelivered(
       const rtc::scoped_refptr<const RTCStatsReport>& report) override {
@@ -1930,11 +1930,11 @@ class ReentrantCallback : public RTCStatsCollectorCallback {
 
 // Test that nothing bad happens if a callback causes GetStatsReport to be
 // called again recursively. Regression test for crbug.com/webrtc/8973.
-TEST_F(RTCStatsCollectorTest, DoNotCrashOnReentrantInvocation) {
-  rtc::scoped_refptr<ReentrantCallback> callback1(
-      new rtc::RefCountedObject<ReentrantCallback>(stats_.get()));
-  rtc::scoped_refptr<ReentrantCallback> callback2(
-      new rtc::RefCountedObject<ReentrantCallback>(stats_.get()));
+TEST_F(RTCStatsCollectorTest, DoNotCrashWhenGetStatsCalledDuringCallback) {
+  rtc::scoped_refptr<RecursiveCallback> callback1(
+      new rtc::RefCountedObject<RecursiveCallback>(stats_.get()));
+  rtc::scoped_refptr<RecursiveCallback> callback2(
+      new rtc::RefCountedObject<RecursiveCallback>(stats_.get()));
   stats_->stats_collector()->GetStatsReport(callback1);
   stats_->stats_collector()->GetStatsReport(callback2);
   EXPECT_TRUE_WAIT(callback1->called(), kGetStatsReportTimeoutMs);

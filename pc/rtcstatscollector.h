@@ -94,7 +94,9 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
   };
 
   void AddPartialResults_s(rtc::scoped_refptr<RTCStatsReport> partial_report);
-  void DeliverCachedReport();
+  void DeliverCachedReport(
+      rtc::scoped_refptr<const RTCStatsReport> cached_report,
+      std::vector<rtc::scoped_refptr<RTCStatsCollectorCallback>> callbacks);
 
   // Produces |RTCCertificateStats|.
   void ProduceCertificateStats_n(

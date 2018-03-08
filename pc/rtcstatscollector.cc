@@ -648,8 +648,16 @@ void RTCStatsCollector::GetStatsReport(
   int64_t cache_now_us = rtc::TimeMicros();
   if (cached_report_ &&
       cache_now_us - cache_timestamp_us_ <= cache_lifetime_us_) {
-    // We have a fresh cached report to deliver.
-    DeliverCachedReport();
+    // We have a fresh cached report to deliver. Deliver asynchronously, since
+    // the caller may not be expecting a synchronous callback, and it avoids
+    // reentrancy problems.
+    std::vector<rtc::scoped_refptr<RTCStatsCollectorCallback>> callbacks;
+    callbacks.swap(callbacks_);
+    invoker_.AsyncInvoke<void>(
+        RTC_FROM_HERE, signaling_thread_,
+        rtc::Bind(&RTCStatsCollector::DeliverCachedReport, this, cached_report_,
+                  std::move(callbacks)));
+    callbacks_.clear();
   } else if (!num_pending_partial_reports_) {
     // Only start gathering stats if we're not already gathering stats. In the
     // case of already gathering stats, |callback_| will be invoked when there
@@ -772,23 +780,25 @@ void RTCStatsCollector::AddPartialResults_s(
     // select the "webrtc_stats" category when recording traces.
     TRACE_EVENT_INSTANT1("webrtc_stats", "webrtc_stats", "report",
                          cached_report_->ToJson());
-    DeliverCachedReport();
+
+    // Swap the list of callbacks, in case one of them recursively calls
+    // GetStatsReport again and modifies the callback list.
+    std::vector<rtc::scoped_refptr<RTCStatsCollectorCallback>> callbacks;
+    callbacks.swap(callbacks_);
+    DeliverCachedReport(cached_report_, std::move(callbacks));
   }
 }
 
-void RTCStatsCollector::DeliverCachedReport() {
+void RTCStatsCollector::DeliverCachedReport(
+    rtc::scoped_refptr<const RTCStatsReport> cached_report,
+    std::vector<rtc::scoped_refptr<RTCStatsCollectorCallback>> callbacks) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
-  RTC_DCHECK(!callbacks_.empty());
-  RTC_DCHECK(cached_report_);
-
-  // Swap the list of callbacks, in case one of them recursively calls
-  // GetStatsReport again and modifies the callback list.
-  std::vector<rtc::scoped_refptr<RTCStatsCollectorCallback>> callbacks;
-  callbacks.swap(callbacks_);
+  RTC_DCHECK(!callbacks.empty());
+  RTC_DCHECK(cached_report);
 
   for (const rtc::scoped_refptr<RTCStatsCollectorCallback>& callback :
        callbacks) {
-    callback->OnStatsDelivered(cached_report_);
+    callback->OnStatsDelivered(cached_report);
   }
 }
 
