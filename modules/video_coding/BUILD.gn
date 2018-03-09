@@ -597,16 +597,13 @@ if (rtc_include_tests) {
     ]
   }
 
-  video_coding_modules_tests_resources = [
-    "../../resources/foreman_128x96.yuv",
-    "../../resources/foreman_160x120.yuv",
-    "../../resources/foreman_176x144.yuv",
-    "../../resources/foreman_320x240.yuv",
-  ]
+  video_coding_modules_tests_resources = [ "../../resources/paris_qcif.yuv" ]
 
   if (!(is_ios || is_android)) {
-    video_coding_modules_tests_resources +=
-        [ "../../resources/FourPeople_1280x720_30.yuv" ]
+    video_coding_modules_tests_resources += [
+      "../../resources/FourPeople_1280x720_30.yuv",
+      "../../resources/ConferenceMotion_1280_720_50.yuv",
+    ]
   }
 
   if (is_ios || is_mac) {
