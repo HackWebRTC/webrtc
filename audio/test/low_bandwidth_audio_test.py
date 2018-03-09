@@ -55,6 +55,8 @@ def _ParseArgs():
   parser.add_argument('--android', action='store_true',
       help='Perform the test on a connected Android device instead.')
   parser.add_argument('--adb-path', help='Path to adb binary.', default='adb')
+  parser.add_argument('--num-retries', default=0,
+                      help='Number of times to retry the test on Android.')
   parser.add_argument('--isolated-script-test-perf-output',
       help='Where to store perf results in chartjson format.', default=None)
 
@@ -221,7 +223,8 @@ def main():
   out_dir = os.path.join(args.build_dir, '..')
   if args.android:
     test_command = [os.path.join(args.build_dir, 'bin',
-                                 'run_low_bandwidth_audio_test'), '-v']
+                                 'run_low_bandwidth_audio_test'),
+                    '-v', '--num-retries', args.num_retries]
   else:
     test_command = [os.path.join(args.build_dir, 'low_bandwidth_audio_test')]
 
