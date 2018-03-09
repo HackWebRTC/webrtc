@@ -38,13 +38,10 @@ class PacerController {
   void OnProbeClusterConfig(ProbeClusterConfig msg);
 
  private:
-  void UpdatePacerState();
   void SetPacerState(bool paused);
   PacedSender* const pacer_;
 
   rtc::Optional<PacerConfig> current_pacer_config_;
-  rtc::Optional<CongestionWindow> congestion_window_;
-  bool congested_ = false;
   bool pacer_paused_ = false;
   bool network_available_ = true;
 

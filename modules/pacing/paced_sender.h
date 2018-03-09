@@ -49,6 +49,7 @@ class PacedSender : public Pacer {
    protected:
     virtual ~PacketSender() {}
   };
+  static constexpr int64_t kNoCongestionWindow = -1;
 
   // Expected max pacer delay in ms. If ExpectedQueueTimeMs() is higher than
   // this value, the packet producers should wait (eg drop frames rather than
@@ -80,6 +81,9 @@ class PacedSender : public Pacer {
 
   // Resume sending packets.
   void Resume();
+
+  void SetCongestionWindow(int64_t congestion_window_bytes);
+  void UpdateOutstandingData(int64_t outstanding_bytes);
 
   // Enable bitrate probing. Enabled by default, mostly here to simplify
   // testing. Must be called before any packets are being sent to have an
@@ -153,6 +157,9 @@ class PacedSender : public Pacer {
   size_t SendPadding(size_t padding_needed, const PacedPacketInfo& cluster_info)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
+  void OnBytesSent(size_t bytes_sent) RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
+  bool Congested() const RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
+
   const Clock* const clock_;
   PacketSender* const packet_sender_;
   const std::unique_ptr<AlrDetector> alr_detector_ RTC_PT_GUARDED_BY(critsect_);
@@ -186,6 +193,9 @@ class PacedSender : public Pacer {
       RTC_PT_GUARDED_BY(critsect_);
   uint64_t packet_counter_ RTC_GUARDED_BY(critsect_);
 
+  int64_t congestion_window_bytes_ RTC_GUARDED_BY(critsect_) =
+      kNoCongestionWindow;
+  int64_t outstanding_bytes_ RTC_GUARDED_BY(critsect_) = 0;
   float pacing_factor_ RTC_GUARDED_BY(critsect_);
   // Lock to avoid race when attaching process thread. This can happen due to
   // the Call class setting network state on SendSideCongestionController, which

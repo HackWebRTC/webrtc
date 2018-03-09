@@ -562,6 +562,103 @@ TEST_F(PacedSenderTest, HighPrioDoesntAffectBudget) {
   EXPECT_EQ(0u, send_bucket_->QueueSizePackets());
 }
 
+TEST_F(PacedSenderTest, SendsOnlyPaddingWhenCongested) {
+  uint32_t ssrc = 202020;
+  uint16_t sequence_number = 1000;
+  int kPacketSize = 250;
+  int kCongestionWindow = kPacketSize * 10;
+
+  send_bucket_->UpdateOutstandingData(0);
+  send_bucket_->SetCongestionWindow(kCongestionWindow);
+  int sent_data = 0;
+  while (sent_data < kCongestionWindow) {
+    sent_data += kPacketSize;
+    SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
+                        clock_.TimeInMilliseconds(), kPacketSize, false);
+    clock_.AdvanceTimeMilliseconds(5);
+    send_bucket_->Process();
+  }
+  testing::Mock::VerifyAndClearExpectations(&callback_);
+  EXPECT_CALL(callback_, TimeToSendPacket(_, _, _, _, _)).Times(0);
+  EXPECT_CALL(callback_, TimeToSendPadding(_, _)).Times(0);
+
+  size_t blocked_packets = 0;
+  int64_t expected_time_until_padding = 500;
+  while (expected_time_until_padding > 5) {
+    send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
+                               sequence_number++, clock_.TimeInMilliseconds(),
+                               kPacketSize, false);
+    blocked_packets++;
+    clock_.AdvanceTimeMilliseconds(5);
+    send_bucket_->Process();
+    expected_time_until_padding -= 5;
+  }
+  testing::Mock::VerifyAndClearExpectations(&callback_);
+  EXPECT_CALL(callback_, TimeToSendPadding(1, _)).Times(1);
+  clock_.AdvanceTimeMilliseconds(5);
+  send_bucket_->Process();
+  EXPECT_EQ(blocked_packets, send_bucket_->QueueSizePackets());
+}
+
+TEST_F(PacedSenderTest, ResumesSendingWhenCongestionEnds) {
+  uint32_t ssrc = 202020;
+  uint16_t sequence_number = 1000;
+  int64_t kPacketSize = 250;
+  int64_t kCongestionCount = 10;
+  int64_t kCongestionWindow = kPacketSize * kCongestionCount;
+  int64_t kCongestionTimeMs = 1000;
+
+  send_bucket_->UpdateOutstandingData(0);
+  send_bucket_->SetCongestionWindow(kCongestionWindow);
+  int sent_data = 0;
+  while (sent_data < kCongestionWindow) {
+    sent_data += kPacketSize;
+    SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
+                        clock_.TimeInMilliseconds(), kPacketSize, false);
+    clock_.AdvanceTimeMilliseconds(5);
+    send_bucket_->Process();
+  }
+  testing::Mock::VerifyAndClearExpectations(&callback_);
+  EXPECT_CALL(callback_, TimeToSendPacket(_, _, _, _, _)).Times(0);
+  int unacked_packets = 0;
+  for (int duration = 0; duration < kCongestionTimeMs; duration += 5) {
+    send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
+                               sequence_number++, clock_.TimeInMilliseconds(),
+                               kPacketSize, false);
+    unacked_packets++;
+    clock_.AdvanceTimeMilliseconds(5);
+    send_bucket_->Process();
+  }
+  testing::Mock::VerifyAndClearExpectations(&callback_);
+
+  // First mark half of the congested packets as cleared and make sure that just
+  // as many are sent
+  int ack_count = kCongestionCount / 2;
+  EXPECT_CALL(callback_, TimeToSendPacket(ssrc, _, _, false, _))
+      .Times(ack_count)
+      .WillRepeatedly(Return(true));
+  send_bucket_->UpdateOutstandingData(kCongestionWindow -
+                                      kPacketSize * ack_count);
+
+  for (int duration = 0; duration < kCongestionTimeMs; duration += 5) {
+    clock_.AdvanceTimeMilliseconds(5);
+    send_bucket_->Process();
+  }
+  unacked_packets -= ack_count;
+  testing::Mock::VerifyAndClearExpectations(&callback_);
+
+  // Second make sure all packets are sent if sent packets are continuously
+  // marked as acked.
+  EXPECT_CALL(callback_, TimeToSendPacket(ssrc, _, _, false, _))
+      .Times(unacked_packets)
+      .WillRepeatedly(Return(true));
+  for (int duration = 0; duration < kCongestionTimeMs; duration += 5) {
+    send_bucket_->UpdateOutstandingData(0);
+    clock_.AdvanceTimeMilliseconds(5);
+    send_bucket_->Process();
+  }
+}
+
 TEST_F(PacedSenderTest, Pause) {
   uint32_t ssrc_low_priority = 12345;
   uint32_t ssrc = 12346;
