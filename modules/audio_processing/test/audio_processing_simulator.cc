@@ -156,8 +156,8 @@ EchoCanceller3Config ParseAec3Parameters(const std::string& filename) {
   while (std::getline(f, s)) {
     json_string += s;
   }
-  bool failed = Json::Reader().parse(json_string, root);
-  if (failed) {
+  bool success = Json::Reader().parse(json_string, root);
+  if (!success) {
     std::cout << "Incorrect JSON format:" << std::endl;
     std::cout << json_string << std::endl;
     RTC_CHECK(false);
@@ -179,6 +179,8 @@ EchoCanceller3Config ParseAec3Parameters(const std::string& filename) {
               &cfg.delay.hysteresis_limit_1_blocks);
     ReadParam(section, "hysteresis_limit_2_blocks",
               &cfg.delay.hysteresis_limit_2_blocks);
+    ReadParam(section, "skew_hysteresis_blocks",
+              &cfg.delay.skew_hysteresis_blocks);
   }
 
   if (rtc::GetValueFromJsonObject(root, "filter", &section)) {
@@ -235,11 +237,11 @@ EchoCanceller3Config ParseAec3Parameters(const std::string& filename) {
   if (rtc::GetValueFromJsonObject(root, "echo_removal_control", &section)) {
     Json::Value subsection;
     if (rtc::GetValueFromJsonObject(section, "gain_rampup", &subsection)) {
-      ReadParam(section, "first_non_zero_gain",
+      ReadParam(subsection, "first_non_zero_gain",
                 &cfg.echo_removal_control.gain_rampup.first_non_zero_gain);
-      ReadParam(section, "non_zero_gain_blocks",
+      ReadParam(subsection, "non_zero_gain_blocks",
                 &cfg.echo_removal_control.gain_rampup.non_zero_gain_blocks);
-      ReadParam(section, "full_gain_blocks",
+      ReadParam(subsection, "full_gain_blocks",
                 &cfg.echo_removal_control.gain_rampup.full_gain_blocks);
     }
     ReadParam(section, "has_clock_drift",
