@@ -1196,7 +1196,7 @@ TEST_P(RtpSenderTest, FrameCountCallbacks) {
   class TestCallback : public FrameCountObserver {
    public:
     TestCallback() : FrameCountObserver(), num_calls_(0), ssrc_(0) {}
-    virtual ~TestCallback() {}
+    ~TestCallback() override = default;
 
     void FrameCountUpdated(const FrameCounts& frame_counts,
                            uint32_t ssrc) override {
@@ -1256,7 +1256,7 @@ TEST_P(RtpSenderTest, BitrateCallbacks) {
           ssrc_(0),
           total_bitrate_(0),
           retransmit_bitrate_(0) {}
-    virtual ~TestCallback() {}
+    ~TestCallback() override = default;
 
     void Notify(uint32_t total_bitrate,
                 uint32_t retransmit_bitrate,
@@ -1344,7 +1344,7 @@ TEST_P(RtpSenderTestWithoutPacer, StreamDataCountersCallbacks) {
   class TestCallback : public StreamDataCountersCallback {
    public:
     TestCallback() : StreamDataCountersCallback(), ssrc_(0), counters_() {}
-    virtual ~TestCallback() {}
+    ~TestCallback() override = default;
 
     void DataCountersUpdated(const StreamDataCounters& counters,
                              uint32_t ssrc) override {

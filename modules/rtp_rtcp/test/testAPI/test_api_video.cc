@@ -40,9 +40,9 @@ class RtpRtcpVideoTest : public ::testing::Test {
         test_sequence_number_(2345),
         fake_clock(123456),
         retransmission_rate_limiter_(&fake_clock, 1000) {}
-  ~RtpRtcpVideoTest() {}
+  ~RtpRtcpVideoTest() override = default;
 
-  virtual void SetUp() {
+  void SetUp() override {
     transport_ = new LoopBackTransport();
     receiver_ = new TestRtpReceiver();
     receive_statistics_.reset(ReceiveStatistics::Create(&fake_clock));
@@ -118,7 +118,7 @@ class RtpRtcpVideoTest : public ::testing::Test {
     return padding_bytes_in_packet + header_length;
   }
 
-  virtual void TearDown() {
+  void TearDown() override {
     delete video_module_;
     delete transport_;
     delete receiver_;

@@ -127,9 +127,7 @@ class RtpPacketizerVp9Test : public ::testing::Test {
   static constexpr size_t kMaxPacketSize = 1200;
 
   RtpPacketizerVp9Test() : packet_(kNoExtensions, kMaxPacketSize) {}
-  virtual void SetUp() {
-    expected_.InitRTPVideoHeaderVP9();
-  }
+  void SetUp() override { expected_.InitRTPVideoHeaderVP9(); }
 
   RtpPacketToSend packet_;
   std::unique_ptr<uint8_t[]> payload_;
@@ -584,9 +582,7 @@ class RtpDepacketizerVp9Test : public ::testing::Test {
   RtpDepacketizerVp9Test()
       : depacketizer_(new RtpDepacketizerVp9()) {}
 
-  virtual void SetUp() {
-    expected_.InitRTPVideoHeaderVP9();
-  }
+  void SetUp() override { expected_.InitRTPVideoHeaderVP9(); }
 
   RTPVideoHeaderVP9 expected_;
   std::unique_ptr<RtpDepacketizer> depacketizer_;

@@ -30,6 +30,17 @@ constexpr uint8_t kVp8PayloadType = 120;
 constexpr int kPacketTimestampIncrement = 3000;
 }  // namespace
 
+MediaPacketGenerator::MediaPacketGenerator(uint32_t min_packet_size,
+                                           uint32_t max_packet_size,
+                                           uint32_t ssrc,
+                                           Random* random)
+    : min_packet_size_(min_packet_size),
+      max_packet_size_(max_packet_size),
+      ssrc_(ssrc),
+      random_(random) {}
+
+MediaPacketGenerator::~MediaPacketGenerator() = default;
+
 ForwardErrorCorrection::PacketList MediaPacketGenerator::ConstructMediaPackets(
     int num_media_packets,
     uint16_t start_seq_num) {
