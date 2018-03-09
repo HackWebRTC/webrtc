@@ -32,7 +32,7 @@ class RemoteNtpTimeEstimatorTest : public ::testing::Test {
       : local_clock_(kLocalClockInitialTimeMs * 1000),
         remote_clock_(kRemoteClockInitialTimeMs * 1000),
         estimator_(new RemoteNtpTimeEstimator(&local_clock_)) {}
-  ~RemoteNtpTimeEstimatorTest() override = default;
+  ~RemoteNtpTimeEstimatorTest() {}
 
   void AdvanceTimeMilliseconds(int64_t ms) {
     local_clock_.AdvanceTimeMilliseconds(ms);

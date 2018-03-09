@@ -42,7 +42,7 @@ const int64_t kMaxRttMs = 1000;
 class RtcpRttStatsTestImpl : public RtcpRttStats {
  public:
   RtcpRttStatsTestImpl() : rtt_ms_(0) {}
-  ~RtcpRttStatsTestImpl() override = default;
+  virtual ~RtcpRttStatsTestImpl() {}
 
   void OnRttUpdate(int64_t rtt_ms) override { rtt_ms_ = rtt_ms; }
   int64_t LastProcessedRtt() const override { return rtt_ms_; }

@@ -195,7 +195,7 @@ TEST_F(ReceiveStatisticsTest, RtcpCallbacks) {
    public:
     TestCallback()
         : RtcpStatisticsCallback(), num_calls_(0), ssrc_(0), stats_() {}
-    ~TestCallback() override {}
+    virtual ~TestCallback() {}
 
     void StatisticsUpdated(const RtcpStatistics& statistics,
                            uint32_t ssrc) override {
@@ -283,10 +283,10 @@ class RtpTestCallback : public StreamDataCountersCallback {
  public:
   RtpTestCallback()
       : StreamDataCountersCallback(), num_calls_(0), ssrc_(0), stats_() {}
-  ~RtpTestCallback() override = default;
+  virtual ~RtpTestCallback() {}
 
-  void DataCountersUpdated(const StreamDataCounters& counters,
-                           uint32_t ssrc) override {
+  virtual void DataCountersUpdated(const StreamDataCounters& counters,
+                                   uint32_t ssrc) {
     ssrc_ = ssrc;
     stats_ = counters;
     ++num_calls_;

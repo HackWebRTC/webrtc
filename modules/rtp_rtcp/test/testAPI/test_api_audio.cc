@@ -91,7 +91,7 @@ class RtpRtcpAudioTest : public ::testing::Test {
     test_timestamp = 4567;
     test_sequence_number = 2345;
   }
-  ~RtpRtcpAudioTest() override = default;
+  ~RtpRtcpAudioTest() {}
 
   void SetUp() override {
     receive_statistics1_.reset(ReceiveStatistics::Create(&fake_clock));

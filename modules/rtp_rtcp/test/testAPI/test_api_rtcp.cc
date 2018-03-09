@@ -35,7 +35,7 @@ class RtcpCallback : public RtcpIntraFrameObserver {
   }
   virtual void OnLipSyncUpdate(const int32_t id,
                                const int32_t audioVideoOffset) {}
-  void OnReceivedIntraFrameRequest(uint32_t ssrc) override {}
+  virtual void OnReceivedIntraFrameRequest(uint32_t ssrc) {}
 
  private:
   RtpRtcp* _rtpRtcpModule;
@@ -44,7 +44,7 @@ class RtcpCallback : public RtcpIntraFrameObserver {
 class TestRtpFeedback : public NullRtpFeedback {
  public:
   explicit TestRtpFeedback(RtpRtcp* rtp_rtcp) : rtp_rtcp_(rtp_rtcp) {}
-  ~TestRtpFeedback() override = default;
+  virtual ~TestRtpFeedback() {}
 
   void OnIncomingSSRCChanged(uint32_t ssrc) override {
     rtp_rtcp_->SetRemoteSSRC(ssrc);
@@ -64,9 +64,9 @@ class RtpRtcpRtcpTest : public ::testing::Test {
     test_timestamp = 4567;
     test_sequence_number = 2345;
   }
-  ~RtpRtcpRtcpTest() override = default;
+  ~RtpRtcpRtcpTest() {}
 
-  void SetUp() override {
+  virtual void SetUp() {
     receiver = new TestRtpReceiver();
     transport1 = new LoopBackTransport();
     transport2 = new LoopBackTransport();
@@ -149,7 +149,7 @@ class RtpRtcpRtcpTest : public ::testing::Test {
                                         test, 8, nullptr, nullptr, nullptr));
   }
 
-  void TearDown() override {
+  virtual void TearDown() {
     delete module1;
     delete module2;
     delete myRTCPFeedback1;

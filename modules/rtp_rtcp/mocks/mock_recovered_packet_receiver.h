@@ -19,8 +19,6 @@ namespace webrtc {
 
 class MockRecoveredPacketReceiver : public RecoveredPacketReceiver {
  public:
-  MockRecoveredPacketReceiver();
-  ~MockRecoveredPacketReceiver();
   MOCK_METHOD2(OnRecoveredPacket, void(const uint8_t* packet, size_t length));
 };
 

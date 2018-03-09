@@ -87,7 +87,7 @@ class RtpRtcpAPITest : public ::testing::Test {
     test_timestamp_ = 4567;
     test_sequence_number_ = 2345;
   }
-  ~RtpRtcpAPITest() override = default;
+  ~RtpRtcpAPITest() {}
 
   const uint32_t initial_ssrc = 8888;
 

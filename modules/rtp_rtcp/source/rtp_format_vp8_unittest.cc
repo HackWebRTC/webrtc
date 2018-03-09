@@ -82,7 +82,7 @@ void VerifyExtensions(RTPTypeHeader* type,
 class RtpPacketizerVp8Test : public ::testing::Test {
  protected:
   RtpPacketizerVp8Test() : helper_(NULL) {}
-  void TearDown() override { delete helper_; }
+  virtual void TearDown() { delete helper_; }
   bool Init(const size_t* partition_sizes, size_t num_partitions) {
     hdr_info_.pictureId = kNoPictureId;
     hdr_info_.nonReference = false;

@@ -211,7 +211,7 @@ TEST_F(FlexfecReceiverTest, ReceivesMultiplePackets) {
   }
 
   // Receive FEC packet.
-  auto* fec_packet = fec_packets.front();
+  auto fec_packet = fec_packets.front();
   std::unique_ptr<Packet> packet_with_rtp_header =
       packet_generator_.BuildFlexfecPacket(*fec_packet);
   std::unique_ptr<ForwardErrorCorrection::ReceivedPacket> received_packet =
@@ -354,7 +354,7 @@ TEST_F(FlexfecReceiverTest, RecoversFrom50PercentLoss) {
 
   // Receive all FEC packets.
   media_it = media_packets.begin();
-  for (const auto* fec_packet : fec_packets) {
+  for (const auto& fec_packet : fec_packets) {
     std::unique_ptr<Packet> fec_packet_with_rtp_header =
         packet_generator_.BuildFlexfecPacket(*fec_packet);
     ++media_it;
@@ -453,7 +453,7 @@ TEST_F(FlexfecReceiverTest, SurvivesOldRecoveredPacketBeingReinserted) {
     void SetReceiver(FlexfecReceiver* receiver) { receiver_ = receiver; }
 
     // Implements RecoveredPacketReceiver.
-    void OnRecoveredPacket(const uint8_t* packet, size_t length) override {
+    void OnRecoveredPacket(const uint8_t* packet, size_t length) {
       RtpPacketReceived parsed_packet;
       EXPECT_TRUE(parsed_packet.Parse(packet, length));
       parsed_packet.set_recovered(true);
@@ -567,7 +567,7 @@ TEST_F(FlexfecReceiverTest, RecoveryCallbackDoesNotLoopInfinitely) {
     bool DeepRecursion() const { return deep_recursion_; }
 
     // Implements RecoveredPacketReceiver.
-    void OnRecoveredPacket(const uint8_t* packet, size_t length) override {
+    void OnRecoveredPacket(const uint8_t* packet, size_t length) {
       RtpPacketReceived parsed_packet;
       EXPECT_TRUE(parsed_packet.Parse(packet, length));
 

@@ -264,17 +264,15 @@ rtc_source_set("fec_test_helper") {
 
   # TODO(jschuh): bugs.webrtc.org/1348: fix this warning.
   configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
+  if (!build_with_chromium && is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+  }
 }
 
 rtc_source_set("mock_rtp_rtcp") {
   testonly = true
   sources = [
-    "mocks/mock_recovered_packet_receiver.cc",
-    "mocks/mock_rtcp_bandwidth_observer.cc",
-    "mocks/mock_rtcp_rtt_stats.cc",
-    "mocks/mock_rtp_rtcp.cc",
-  ]
-  public = [
     "mocks/mock_recovered_packet_receiver.h",
     "mocks/mock_rtcp_bandwidth_observer.h",
     "mocks/mock_rtcp_rtt_stats.h",
@@ -319,6 +317,10 @@ if (rtc_include_tests) {
       "../../rtc_base:rtc_base_approved",
       "../../test:test_support",
     ]
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
   }
 
   rtc_source_set("rtp_rtcp_unittests") {
@@ -420,5 +422,9 @@ if (rtc_include_tests) {
 
     # TODO(jschuh): bugs.webrtc.org/1348: fix this warning.
     configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
   }
 }

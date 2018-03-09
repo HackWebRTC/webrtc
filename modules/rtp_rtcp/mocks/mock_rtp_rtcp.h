@@ -27,9 +27,6 @@ namespace webrtc {
 
 class MockRtpData : public RtpData {
  public:
-  MockRtpData();
-  ~MockRtpData();
-
   MOCK_METHOD3(OnReceivedPayloadData,
                int32_t(const uint8_t* payload_data,
                        size_t payload_size,
@@ -38,9 +35,6 @@ class MockRtpData : public RtpData {
 
 class MockRtpRtcp : public RtpRtcp {
  public:
-  MockRtpRtcp();
-  ~MockRtpRtcp();
-
   MOCK_METHOD1(RegisterDefaultModule, int32_t(RtpRtcp* module));
   MOCK_METHOD0(DeRegisterDefaultModule, int32_t());
   MOCK_METHOD0(DefaultModuleRegistered, bool());

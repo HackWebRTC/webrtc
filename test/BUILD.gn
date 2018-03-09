@@ -567,7 +567,6 @@ rtc_source_set("test_common") {
     "fake_videorenderer.h",
     "layer_filtering_transport.cc",
     "layer_filtering_transport.h",
-    "mock_transport.cc",
     "mock_transport.h",
     "null_transport.cc",
     "null_transport.h",
