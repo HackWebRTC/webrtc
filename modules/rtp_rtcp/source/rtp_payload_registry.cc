@@ -103,8 +103,7 @@ bool IsPayloadTypeValid(int8_t payload_type) {
 }  // namespace
 
 RTPPayloadRegistry::RTPPayloadRegistry()
-    : incoming_payload_type_(-1),
-      last_received_payload_type_(-1),
+    : last_received_payload_type_(-1),
       last_received_media_payload_type_(-1),
       rtx_(false),
       ssrc_rtx_(0) {}
@@ -267,10 +266,6 @@ bool RTPPayloadRegistry::RtxEnabled() const {
   return rtx_;
 }
 
-bool RTPPayloadRegistry::IsRtxInternal(const RTPHeader& header) const {
-  return rtx_ && ssrc_rtx_ == header.ssrc;
-}
-
 void RTPPayloadRegistry::SetRtxSsrc(uint32_t ssrc) {
   rtc::CritScope cs(&crit_sect_);
   ssrc_rtx_ = ssrc;
@@ -308,12 +303,6 @@ rtc::Optional<RtpUtility::Payload> RTPPayloadRegistry::PayloadTypeToPayload(
   return it == payload_type_map_.end()
              ? rtc::nullopt
              : rtc::Optional<RtpUtility::Payload>(it->second);
-}
-
-void RTPPayloadRegistry::SetIncomingPayloadType(const RTPHeader& header) {
-  rtc::CritScope cs(&crit_sect_);
-  if (!IsRtxInternal(header))
-    incoming_payload_type_ = header.payloadType;
 }
 
 bool RTPPayloadRegistry::ReportMediaPayloadType(uint8_t media_payload_type) {

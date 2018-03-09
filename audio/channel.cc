@@ -922,7 +922,6 @@ void Channel::OnRtpPacket(const RtpPacketReceived& packet) {
     bool in_order = IsPacketInOrder(header);
     rtp_receive_statistics_->IncomingPacket(
         header, packet.size(), IsPacketRetransmitted(header, in_order));
-    rtp_payload_registry_->SetIncomingPayloadType(header);
 
     ReceivePacket(packet.data(), packet.size(), header);
   }

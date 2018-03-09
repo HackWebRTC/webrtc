@@ -331,10 +331,7 @@ void RtpVideoStreamReceiver::OnRtpPacket(const RtpPacketReceived& packet) {
   header.payload_type_frequency = kVideoPayloadTypeFrequency;
 
   bool in_order = IsPacketInOrder(header);
-  if (!packet.recovered()) {
-    // TODO(nisse): Why isn't this done for recovered packets?
-    rtp_payload_registry_.SetIncomingPayloadType(header);
-  }
+
   ReceivePacket(packet.data(), packet.size(), header);
   // Update receive statistics after ReceivePacket.
   // Receive statistics will be reset if the payload type changes (make sure
