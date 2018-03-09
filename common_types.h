@@ -397,6 +397,8 @@ enum class VideoType {
 };
 
 // Video codec
+// TODO(nisse): Delete together with VideoCodec::plName, below.
+enum { kPayloadNameSize = 32 };
 enum { kMaxSimulcastStreams = 4 };
 enum { kMaxSpatialLayers = 5 };
 enum { kMaxTemporalStreams = 4 };
@@ -519,6 +521,9 @@ class VideoCodec {
 
   // Public variables. TODO(hta): Make them private with accessors.
   VideoCodecType codecType;
+  // TODO(nisse): Unused in webrtc, delete as soon as downstream
+  // applications are updated to not use it.
+  char plName[kPayloadNameSize];
   unsigned char plType;
 
   unsigned short width;
