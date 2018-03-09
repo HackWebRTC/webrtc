@@ -36,7 +36,7 @@ struct FrameStatistics {
   bool encoding_successful = false;
   size_t encode_time_us = 0;
   size_t target_bitrate_kbps = 0;
-  size_t encoded_frame_size_bytes = 0;
+  size_t length_bytes = 0;
   webrtc::FrameType frame_type = kVideoFrameDelta;
 
   // Layering.
@@ -125,6 +125,8 @@ class Stats {
   VideoStatistics SliceAndCalcAggregatedVideoStatistic(size_t first_frame_num,
                                                        size_t last_frame_num);
 
+  void PrintFrameStatistics();
+
   size_t Size(size_t spatial_layer_idx);
 
   void Clear();
@@ -151,7 +153,9 @@ class Stats {
                                 size_t* num_encoded_spatial_layers,
                                 size_t* num_encoded_temporal_layers);
 
-  std::map<size_t, std::vector<FrameStatistics>> layer_idx_to_stats_;
+  // layer_idx -> stats.
+  std::map<size_t, std::vector<FrameStatistics>> layer_stats_;
+  // layer_idx -> rtp_timestamp -> frame_num.
   std::map<size_t, std::map<size_t, size_t>> rtp_timestamp_to_frame_num_;
 };
 

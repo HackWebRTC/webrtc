@@ -33,7 +33,7 @@ std::string FrameStatistics::ToString() const {
   ss << " simulcast_svc_idx " << simulcast_svc_idx;
   ss << " temporal_layer_idx " << temporal_layer_idx;
   ss << " frame_type " << frame_type;
-  ss << " encoded_frame_size_bytes " << encoded_frame_size_bytes;
+  ss << " length_bytes " << length_bytes;
   ss << " qp " << qp;
   ss << " psnr " << psnr;
   ss << " ssim " << ssim;
@@ -89,15 +89,15 @@ std::string VideoStatistics::ToString(std::string prefix) const {
 FrameStatistics* Stats::AddFrame(size_t timestamp, size_t layer_idx) {
   RTC_DCHECK(rtp_timestamp_to_frame_num_[layer_idx].find(timestamp) ==
              rtp_timestamp_to_frame_num_[layer_idx].end());
-  const size_t frame_num = layer_idx_to_stats_[layer_idx].size();
+  const size_t frame_num = layer_stats_[layer_idx].size();
   rtp_timestamp_to_frame_num_[layer_idx][timestamp] = frame_num;
-  layer_idx_to_stats_[layer_idx].emplace_back(frame_num, timestamp);
-  return &layer_idx_to_stats_[layer_idx].back();
+  layer_stats_[layer_idx].emplace_back(frame_num, timestamp);
+  return &layer_stats_[layer_idx].back();
 }
 
 FrameStatistics* Stats::GetFrame(size_t frame_num, size_t layer_idx) {
-  RTC_CHECK_LT(frame_num, layer_idx_to_stats_[layer_idx].size());
-  return &layer_idx_to_stats_[layer_idx][frame_num];
+  RTC_CHECK_LT(frame_num, layer_stats_[layer_idx].size());
+  return &layer_stats_[layer_idx][frame_num];
 }
 
 FrameStatistics* Stats::GetFrameWithTimestamp(size_t timestamp,
@@ -149,12 +149,21 @@ VideoStatistics Stats::SliceAndCalcAggregatedVideoStatistic(
                                     num_temporal_layers - 1, true);
 }
 
+void Stats::PrintFrameStatistics() {
+  for (size_t frame_num = 0; frame_num < layer_stats_[0].size(); ++frame_num) {
+    for (const auto& it : layer_stats_) {
+      const FrameStatistics& frame_stat = it.second[frame_num];
+      printf("\n%s", frame_stat.ToString().c_str());
+    }
+  }
+}
+
 size_t Stats::Size(size_t spatial_layer_idx) {
-  return layer_idx_to_stats_[spatial_layer_idx].size();
+  return layer_stats_[spatial_layer_idx].size();
 }
 
 void Stats::Clear() {
-  layer_idx_to_stats_.clear();
+  layer_stats_.clear();
   rtp_timestamp_to_frame_num_.clear();
 }
 
@@ -167,8 +176,7 @@ FrameStatistics Stats::AggregateFrameStatistic(
   while (spatial_layer_idx-- > 0) {
     if (aggregate_independent_layers || inter_layer_predicted) {
       FrameStatistics* base_frame_stat = GetFrame(frame_num, spatial_layer_idx);
-      frame_stat.encoded_frame_size_bytes +=
-          base_frame_stat->encoded_frame_size_bytes;
+      frame_stat.length_bytes += base_frame_stat->length_bytes;
       frame_stat.target_bitrate_kbps += base_frame_stat->target_bitrate_kbps;
 
       inter_layer_predicted = base_frame_stat->inter_layer_predicted;
@@ -253,20 +261,20 @@ VideoStatistics Stats::SliceAndCalcVideoStatistic(
 
     buffer_level_bits -= time_since_prev_frame_sec * 1000 * target_bitrate_kbps;
     buffer_level_bits = std::max(0.0f, buffer_level_bits);
-    buffer_level_bits += 8.0 * frame_stat.encoded_frame_size_bytes;
+    buffer_level_bits += 8.0 * frame_stat.length_bytes;
     buffer_level_sec.AddSample(buffer_level_bits /
                                (1000 * target_bitrate_kbps));
 
-    video_stat.length_bytes += frame_stat.encoded_frame_size_bytes;
+    video_stat.length_bytes += frame_stat.length_bytes;
 
     if (frame_stat.encoding_successful) {
       ++video_stat.num_encoded_frames;
 
       if (frame_stat.frame_type == kVideoFrameKey) {
-        key_frame_size_bytes.AddSample(frame_stat.encoded_frame_size_bytes);
+        key_frame_size_bytes.AddSample(frame_stat.length_bytes);
         ++video_stat.num_key_frames;
       } else {
-        delta_frame_size_bytes.AddSample(frame_stat.encoded_frame_size_bytes);
+        delta_frame_size_bytes.AddSample(frame_stat.length_bytes);
       }
 
       frame_encoding_time_us.AddSample(frame_stat.encode_time_us);
@@ -366,7 +374,7 @@ void Stats::GetNumberOfEncodedLayers(size_t first_frame_num,
   *num_encoded_spatial_layers = 0;
   *num_encoded_temporal_layers = 0;
 
-  const size_t num_spatial_layers = layer_idx_to_stats_.size();
+  const size_t num_spatial_layers = layer_stats_.size();
 
   for (size_t frame_num = first_frame_num; frame_num <= last_frame_num;
        ++frame_num) {

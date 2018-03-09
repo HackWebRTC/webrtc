@@ -374,7 +374,7 @@ void VideoProcessor::FrameEncoded(
         1000;
   }
 
-  frame_stat->encoded_frame_size_bytes = encoded_image._length;
+  frame_stat->length_bytes = encoded_image._length;
   frame_stat->frame_type = encoded_image._frameType;
   frame_stat->temporal_layer_idx = temporal_idx;
   frame_stat->simulcast_svc_idx = simulcast_svc_idx;

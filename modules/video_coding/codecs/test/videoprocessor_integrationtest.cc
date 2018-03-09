@@ -246,6 +246,10 @@ void VideoProcessorIntegrationTest::AnalyzeAllFrames(
                          rate_profiles[rate_update_idx].input_fps);
   }
 
+  if (config_.print_frame_level_stats) {
+    stats_.PrintFrameStatistics();
+  }
+
   cpu_process_time_->Print();
   printf("\n");
 }
