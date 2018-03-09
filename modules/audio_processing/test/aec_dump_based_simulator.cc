@@ -62,8 +62,10 @@ bool VerifyFloatBitExactness(const webrtc::audioproc::Stream& msg,
 
 }  // namespace
 
-AecDumpBasedSimulator::AecDumpBasedSimulator(const SimulationSettings& settings)
-    : AudioProcessingSimulator(settings) {}
+AecDumpBasedSimulator::AecDumpBasedSimulator(
+    const SimulationSettings& settings,
+    std::unique_ptr<AudioProcessingBuilder> ap_builder)
+    : AudioProcessingSimulator(settings, std::move(ap_builder)) {}
 
 AecDumpBasedSimulator::~AecDumpBasedSimulator() = default;
 

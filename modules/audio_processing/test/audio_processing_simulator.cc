@@ -26,6 +26,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/json.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/ptr_util.h"
 #include "rtc_base/stringutils.h"
 
 namespace webrtc {
@@ -303,8 +304,11 @@ void CopyToAudioFrame(const ChannelBuffer<float>& src, AudioFrame* dest) {
 }
 
 AudioProcessingSimulator::AudioProcessingSimulator(
-    const SimulationSettings& settings)
+    const SimulationSettings& settings,
+    std::unique_ptr<AudioProcessingBuilder> ap_builder)
     : settings_(settings),
+      ap_builder_(ap_builder ? std::move(ap_builder)
+                             : rtc::MakeUnique<AudioProcessingBuilder>()),
       analog_mic_level_(settings.initial_mic_level),
       fake_recording_device_(
           settings.initial_mic_level,
@@ -569,7 +573,8 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
     apm_config.residual_echo_detector.enabled = *settings_.use_ed;
   }
 
-  ap_.reset(AudioProcessingBuilder()
+  RTC_CHECK(ap_builder_);
+  ap_.reset((*ap_builder_)
                 .SetEchoControlFactory(std::move(echo_control_factory))
                 .Create(config));
   RTC_CHECK(ap_);

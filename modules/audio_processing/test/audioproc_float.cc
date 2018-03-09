@@ -16,6 +16,7 @@
 #include "modules/audio_processing/include/audio_processing.h"
 #include "modules/audio_processing/test/aec_dump_based_simulator.h"
 #include "modules/audio_processing/test/audio_processing_simulator.h"
+#include "modules/audio_processing/test/audioproc_float.h"
 #include "modules/audio_processing/test/wav_based_simulator.h"
 #include "rtc_base/flags.h"
 
@@ -460,7 +461,9 @@ void PerformBasicParameterSanityChecks(const SimulationSettings& settings) {
 
 }  // namespace
 
-int main(int argc, char* argv[]) {
+int audioproc_f(std::unique_ptr<AudioProcessingBuilder> ap_builder,
+                int argc,
+                char* argv[]) {
   if (rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true) ||
       FLAG_help || argc != 1) {
     printf("%s", kUsageDescription);
@@ -476,9 +479,9 @@ int main(int argc, char* argv[]) {
   std::unique_ptr<AudioProcessingSimulator> processor;
 
   if (settings.aec_dump_input_filename) {
-    processor.reset(new AecDumpBasedSimulator(settings));
+    processor.reset(new AecDumpBasedSimulator(settings, std::move(ap_builder)));
   } else {
-    processor.reset(new WavBasedSimulator(settings));
+    processor.reset(new WavBasedSimulator(settings, std::move(ap_builder)));
   }
 
   processor->Process();
@@ -511,7 +514,3 @@ int main(int argc, char* argv[]) {
 
 }  // namespace test
 }  // namespace webrtc
-
-int main(int argc, char* argv[]) {
-  return webrtc::test::main(argc, argv);
-}
