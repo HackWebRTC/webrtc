@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <algorithm>
+
 #include "api/array_view.h"
 #include "modules/audio_coding/codecs/cng/webrtc_cng.h"
 #include "rtc_base/buffer.h"
@@ -35,7 +37,8 @@ void FuzzOneInputTest(rtc::ArrayView<const uint8_t> data) {
     const bool new_period = fuzz_data.SelectOneOf(kTrueOrFalse);
     constexpr size_t kOutputSizes[] = {80, 160, 320, 480};
     const size_t output_size = fuzz_data.SelectOneOf(kOutputSizes);
-    const size_t num_generate_calls = fuzz_data.Read<uint8_t>();
+    const size_t num_generate_calls =
+        std::min(fuzz_data.Read<uint8_t>(), static_cast<uint8_t>(17));
     rtc::BufferT<int16_t> output(output_size);
     for (size_t i = 0; i < num_generate_calls; ++i) {
       cng_decoder.Generate(output, new_period);
