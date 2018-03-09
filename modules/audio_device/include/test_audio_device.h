@@ -35,6 +35,8 @@ class TestAudioDeviceModule : public AudioDeviceModule {
     // Returns the sampling frequency in Hz of the audio data that this
     // capturer produces.
     virtual int SamplingFrequency() const = 0;
+    // Returns the number of channels of captured audio data.
+    virtual int NumChannels() const = 0;
     // Replaces the contents of |buffer| with 10ms of captured audio data
     // (see TestAudioDeviceModule::SamplesPerFrame). Returns true if the
     // capturer can keep producing data, or false when the capture finishes.
@@ -47,6 +49,8 @@ class TestAudioDeviceModule : public AudioDeviceModule {
     // Returns the sampling frequency in Hz of the audio data that this
     // renderer receives.
     virtual int SamplingFrequency() const = 0;
+    // Returns the number of channels of audio data to be required.
+    virtual int NumChannels() const = 0;
     // Renders the passed audio data and returns true if the renderer wants
     // to keep receiving data, or false otherwise.
     virtual bool Render(rtc::ArrayView<const int16_t> data) = 0;
@@ -75,14 +79,28 @@ class TestAudioDeviceModule : public AudioDeviceModule {
       std::unique_ptr<Renderer> renderer,
       float speed = 1);
 
-  // Returns a Capturer instance that generates a signal where every second
-  // frame is zero and every second frame is evenly distributed random noise
-  // with max amplitude |max_amplitude|.
+  // Returns a Capturer instance that generates a signal of |num_channels|
+  // channels where every second frame is zero and every second frame is evenly
+  // distributed random noise with max amplitude |max_amplitude|.
+  static std::unique_ptr<PulsedNoiseCapturer> CreatePulsedNoiseCapturer(
+      int16_t max_amplitude,
+      int sampling_frequency_in_hz,
+      int num_channels);
+
+  // Same as calling CreatePulsedNoiseCapturer(max_amplitude,
+  // sampling_frequency_in_hz, 1).
   static std::unique_ptr<PulsedNoiseCapturer> CreatePulsedNoiseCapturer(
       int16_t max_amplitude,
       int sampling_frequency_in_hz);
 
-  // Returns a Capturer instance that gets its data from a file.
+  // Returns a Capturer instance that gets its data from a file. The sample rate
+  // and channels will be check against the Wav file.
+  static std::unique_ptr<Capturer> CreateWavFileReader(
+      std::string filename,
+      int sampling_frequency_in_hz,
+      int num_channels);
+
+  // Same as calling CreateWavFileReader(filename, sampling_frequency_in_hz, 1).
   static std::unique_ptr<Capturer> CreateWavFileReader(
       std::string filename,
       int sampling_frequency_in_hz);
@@ -94,6 +112,12 @@ class TestAudioDeviceModule : public AudioDeviceModule {
   // Returns a Renderer instance that writes its data to a file.
   static std::unique_ptr<Renderer> CreateWavFileWriter(
       std::string filename,
+      int sampling_frequency_in_hz,
+      int num_channels);
+
+  // Same as calling CreateWavFileWriter(filename, sampling_frequency_in_hz, 1).
+  static std::unique_ptr<Renderer> CreateWavFileWriter(
+      std::string filename,
       int sampling_frequency_in_hz);
 
   // Returns a Renderer instance that writes its data to a WAV file, cutting
@@ -101,9 +125,21 @@ class TestAudioDeviceModule : public AudioDeviceModule {
   // kAmplitudeThreshold) and at the end (only actual 0 samples in this case).
   static std::unique_ptr<Renderer> CreateBoundedWavFileWriter(
       std::string filename,
+      int sampling_frequency_in_hz,
+      int num_channels);
+
+  // Same as calling CreateBounderWavFileWriter(filename,
+  // sampling_frequency_in_hz, 1).
+  static std::unique_ptr<Renderer> CreateBoundedWavFileWriter(
+      std::string filename,
       int sampling_frequency_in_hz);
 
   // Returns a Renderer instance that does nothing with the audio data.
+  static std::unique_ptr<Renderer> CreateDiscardRenderer(
+      int sampling_frequency_in_hz,
+      int num_channels);
+
+  // Same as calling CreateDiscardRenderer(sampling_frequency_in_hz, 1).
   static std::unique_ptr<Renderer> CreateDiscardRenderer(
       int sampling_frequency_in_hz);
 
