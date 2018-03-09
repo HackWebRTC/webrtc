@@ -52,8 +52,6 @@ class RTPPayloadRegistry {
 
   bool GetRtxSsrc(uint32_t* ssrc) const;
 
-  void SetRtxPayloadType(int payload_type, int associated_payload_type);
-
   bool IsRed(const RTPHeader& header) const;
 
   int GetPayloadTypeFrequency(uint8_t payload_type) const;
@@ -109,8 +107,6 @@ class RTPPayloadRegistry {
   int8_t last_received_payload_type_;
   int8_t last_received_media_payload_type_;
   bool rtx_;
-  // Mapping rtx_payload_type_map_[rtx] = associated.
-  std::map<int, int> rtx_payload_type_map_;
   uint32_t ssrc_rtx_;
   // Only warn once per payload type, if an RTX packet is received but
   // no associated payload type found in |rtx_payload_type_map_|.

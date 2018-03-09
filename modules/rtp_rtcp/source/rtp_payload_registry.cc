@@ -283,18 +283,6 @@ bool RTPPayloadRegistry::GetRtxSsrc(uint32_t* ssrc) const {
   return rtx_;
 }
 
-void RTPPayloadRegistry::SetRtxPayloadType(int payload_type,
-                                           int associated_payload_type) {
-  rtc::CritScope cs(&crit_sect_);
-  if (payload_type < 0) {
-    RTC_LOG(LS_ERROR) << "Invalid RTX payload type: " << payload_type;
-    return;
-  }
-
-  rtx_payload_type_map_[payload_type] = associated_payload_type;
-  rtx_ = true;
-}
-
 bool RTPPayloadRegistry::IsRed(const RTPHeader& header) const {
   rtc::CritScope cs(&crit_sect_);
   auto it = payload_type_map_.find(header.payloadType);
