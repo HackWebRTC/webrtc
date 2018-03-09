@@ -101,9 +101,9 @@ public class VideoFileRenderer implements VideoRenderer.Callbacks, VideoSink {
     int cropWidth = buffer.getWidth();
     int cropHeight = buffer.getHeight();
     if (fileAspectRatio > frameAspectRatio) {
-      cropHeight *= frameAspectRatio / fileAspectRatio;
+      cropHeight = (int) (cropHeight * (frameAspectRatio / fileAspectRatio));
     } else {
-      cropWidth *= fileAspectRatio / frameAspectRatio;
+      cropWidth = (int) (cropWidth * (fileAspectRatio / frameAspectRatio));
     }
 
     final int cropX = (buffer.getWidth() - cropWidth) / 2;
