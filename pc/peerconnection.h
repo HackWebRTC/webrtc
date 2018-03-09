@@ -382,10 +382,10 @@ class PeerConnection : public PeerConnectionInternal,
   void PostSetSessionDescriptionSuccess(
       SetSessionDescriptionObserver* observer);
   void PostSetSessionDescriptionFailure(SetSessionDescriptionObserver* observer,
-                                        const std::string& error);
+                                        RTCError&& error);
   void PostCreateSessionDescriptionFailure(
       CreateSessionDescriptionObserver* observer,
-      const std::string& error);
+      RTCError error);
 
   // Synchronous implementations of SetLocalDescription/SetRemoteDescription
   // that return an RTCError instead of invoking a callback.

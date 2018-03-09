@@ -115,7 +115,7 @@ struct SetSessionDescriptionMsg : public rtc::MessageData {
   }
 
   rtc::scoped_refptr<webrtc::SetSessionDescriptionObserver> observer;
-  std::string error;
+  RTCError error;
 };
 
 struct CreateSessionDescriptionMsg : public rtc::MessageData {
@@ -124,7 +124,7 @@ struct CreateSessionDescriptionMsg : public rtc::MessageData {
       : observer(observer) {}
 
   rtc::scoped_refptr<webrtc::CreateSessionDescriptionObserver> observer;
-  std::string error;
+  RTCError error;
 };
 
 struct GetStatsMsg : public rtc::MessageData {
@@ -623,7 +623,7 @@ class PeerConnection::SetRemoteDescriptionObserverAdapter
     if (error.ok())
       pc_->PostSetSessionDescriptionSuccess(wrapper_);
     else
-      pc_->PostSetSessionDescriptionFailure(wrapper_, error.message());
+      pc_->PostSetSessionDescriptionFailure(wrapper_, std::move(error));
   }
 
  private:
@@ -1654,14 +1654,16 @@ void PeerConnection::CreateOffer(CreateSessionDescriptionObserver* observer,
   if (IsClosed()) {
     std::string error = "CreateOffer called when PeerConnection is closed.";
     RTC_LOG(LS_ERROR) << error;
-    PostCreateSessionDescriptionFailure(observer, error);
+    PostCreateSessionDescriptionFailure(
+        observer, RTCError(RTCErrorType::INTERNAL_ERROR, std::move(error)));
     return;
   }
 
   if (!ValidateOfferAnswerOptions(options)) {
     std::string error = "CreateOffer called with invalid options.";
     RTC_LOG(LS_ERROR) << error;
-    PostCreateSessionDescriptionFailure(observer, error);
+    PostCreateSessionDescriptionFailure(
+        observer, RTCError(RTCErrorType::INTERNAL_ERROR, std::move(error)));
     return;
   }
 
@@ -1670,7 +1672,7 @@ void PeerConnection::CreateOffer(CreateSessionDescriptionObserver* observer,
   if (IsUnifiedPlan()) {
     RTCError error = HandleLegacyOfferOptions(options);
     if (!error.ok()) {
-      PostCreateSessionDescriptionFailure(observer, error.message());
+      PostCreateSessionDescriptionFailure(observer, std::move(error));
       return;
     }
   }
@@ -1753,7 +1755,8 @@ void PeerConnection::CreateAnswer(
                                               &offer_answer_options)) {
     std::string error = "CreateAnswer called with invalid constraints.";
     RTC_LOG(LS_ERROR) << error;
-    PostCreateSessionDescriptionFailure(observer, error);
+    PostCreateSessionDescriptionFailure(
+        observer, RTCError(RTCErrorType::INTERNAL_ERROR, std::move(error)));
     return;
   }
 
@@ -1774,7 +1777,8 @@ void PeerConnection::CreateAnswer(CreateSessionDescriptionObserver* observer,
         "PeerConnection cannot create an answer in a state other than "
         "have-remote-offer or have-local-pranswer.";
     RTC_LOG(LS_ERROR) << error;
-    PostCreateSessionDescriptionFailure(observer, error);
+    PostCreateSessionDescriptionFailure(
+        observer, RTCError(RTCErrorType::INTERNAL_ERROR, std::move(error)));
     return;
   }
 
@@ -1817,7 +1821,9 @@ void PeerConnection::SetLocalDescription(
   }
 
   if (!desc) {
-    PostSetSessionDescriptionFailure(observer, "SessionDescription is NULL.");
+    PostSetSessionDescriptionFailure(
+        observer,
+        RTCError(RTCErrorType::INTERNAL_ERROR, "SessionDescription is NULL."));
     return;
   }
 
@@ -1826,7 +1832,9 @@ void PeerConnection::SetLocalDescription(
   if (session_error() != SessionError::kNone) {
     std::string error_message = GetSessionErrorMsg();
     RTC_LOG(LS_ERROR) << "SetLocalDescription: " << error_message;
-    PostSetSessionDescriptionFailure(observer, std::move(error_message));
+    PostSetSessionDescriptionFailure(
+        observer,
+        RTCError(RTCErrorType::INTERNAL_ERROR, std::move(error_message)));
     return;
   }
 
@@ -1835,7 +1843,9 @@ void PeerConnection::SetLocalDescription(
     std::string error_message = GetSetDescriptionErrorMessage(
         cricket::CS_LOCAL, desc->GetType(), error);
     RTC_LOG(LS_ERROR) << error_message;
-    PostSetSessionDescriptionFailure(observer, std::move(error_message));
+    PostSetSessionDescriptionFailure(
+        observer,
+        RTCError(RTCErrorType::INTERNAL_ERROR, std::move(error_message)));
     return;
   }
 
@@ -1854,7 +1864,9 @@ void PeerConnection::SetLocalDescription(
     std::string error_message =
         GetSetDescriptionErrorMessage(cricket::CS_LOCAL, type, error);
     RTC_LOG(LS_ERROR) << error_message;
-    PostSetSessionDescriptionFailure(observer, std::move(error_message));
+    PostSetSessionDescriptionFailure(
+        observer,
+        RTCError(RTCErrorType::INTERNAL_ERROR, std::move(error_message)));
     return;
   }
   RTC_DCHECK(local_description());
@@ -3108,14 +3120,14 @@ void PeerConnection::OnMessage(rtc::Message* msg) {
     case MSG_SET_SESSIONDESCRIPTION_FAILED: {
       SetSessionDescriptionMsg* param =
           static_cast<SetSessionDescriptionMsg*>(msg->pdata);
-      param->observer->OnFailure(param->error);
+      param->observer->OnFailure(std::move(param->error));
       delete param;
       break;
     }
     case MSG_CREATE_SESSIONDESCRIPTION_FAILED: {
       CreateSessionDescriptionMsg* param =
           static_cast<CreateSessionDescriptionMsg*>(msg->pdata);
-      param->observer->OnFailure(param->error);
+      param->observer->OnFailure(std::move(param->error));
       delete param;
       break;
     }
@@ -3401,18 +3413,20 @@ void PeerConnection::PostSetSessionDescriptionSuccess(
 
 void PeerConnection::PostSetSessionDescriptionFailure(
     SetSessionDescriptionObserver* observer,
-    const std::string& error) {
+    RTCError&& error) {
+  RTC_DCHECK(!error.ok());
   SetSessionDescriptionMsg* msg = new SetSessionDescriptionMsg(observer);
-  msg->error = error;
+  msg->error = std::move(error);
   signaling_thread()->Post(RTC_FROM_HERE, this,
                            MSG_SET_SESSIONDESCRIPTION_FAILED, msg);
 }
 
 void PeerConnection::PostCreateSessionDescriptionFailure(
     CreateSessionDescriptionObserver* observer,
-    const std::string& error) {
+    RTCError error) {
+  RTC_DCHECK(!error.ok());
   CreateSessionDescriptionMsg* msg = new CreateSessionDescriptionMsg(observer);
-  msg->error = error;
+  msg->error = std::move(error);
   signaling_thread()->Post(RTC_FROM_HERE, this,
                            MSG_CREATE_SESSIONDESCRIPTION_FAILED, msg);
 }
@@ -5665,7 +5679,7 @@ RTCError PeerConnection::ValidateSessionDescription(
   if ((source == cricket::CS_LOCAL && !ExpectSetLocalDescription(type)) ||
       (source == cricket::CS_REMOTE && !ExpectSetRemoteDescription(type))) {
     LOG_AND_RETURN_ERROR(
-        RTCErrorType::INVALID_PARAMETER,
+        RTCErrorType::INVALID_STATE,
         "Called in wrong state: " + GetSignalingStateString(signaling_state()));
   }
 

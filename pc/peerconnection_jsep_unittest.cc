@@ -1243,4 +1243,18 @@ TEST_F(PeerConnectionJsepTest, CurrentDirectionResetWhenRtpTransceiverStopped) {
   EXPECT_FALSE(transceiver->current_direction());
 }
 
+// Tests that you can't set an answer on a PeerConnection before setting
+// the offer.
+TEST_F(PeerConnectionJsepTest, AnswerBeforeOfferFails) {
+  auto caller = CreatePeerConnection();
+  auto callee = CreatePeerConnection();
+  RTCError error_out;
+  caller->AddAudioTrack("audio");
+  auto offer = caller->CreateOffer();
+  callee->SetRemoteDescription(std::move(offer), &error_out);
+  auto answer = callee->CreateAnswer();
+  EXPECT_FALSE(caller->SetRemoteDescription(std::move(answer), &error_out));
+  EXPECT_EQ(RTCErrorType::INVALID_STATE, error_out.type());
+}
+
 }  // namespace webrtc

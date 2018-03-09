@@ -27,6 +27,7 @@
 #include <vector>
 
 #include "api/optional.h"
+#include "api/rtcerror.h"
 #include "rtc_base/refcount.h"
 
 namespace cricket {
@@ -197,7 +198,19 @@ class CreateSessionDescriptionObserver : public rtc::RefCountInterface {
   // TODO(deadbeef): Make this take an std::unique_ptr<> to avoid confusion
   // around ownership.
   virtual void OnSuccess(SessionDescriptionInterface* desc) = 0;
-  virtual void OnFailure(const std::string& error) = 0;
+  // The OnFailure callback takes an RTCError, which consists of an
+  // error code and a string.
+  // RTCError is non-copyable, so it must be passed using std::move.
+  // Earlier versions of the API used a string argument. This version
+  // is deprecated; in order to let clients remove the old version, it has a
+  // default implementation. If both versions are unimplemented, the
+  // result will be a runtime error (stack overflow). This is intentional.
+  virtual void OnFailure(RTCError error) {
+    OnFailure(error.message());
+  }
+  virtual void OnFailure(const std::string& error) {
+    OnFailure(RTCError(RTCErrorType::INTERNAL_ERROR, std::string(error)));
+  }
 
  protected:
   ~CreateSessionDescriptionObserver() override = default;
@@ -207,7 +220,14 @@ class CreateSessionDescriptionObserver : public rtc::RefCountInterface {
 class SetSessionDescriptionObserver : public rtc::RefCountInterface {
  public:
   virtual void OnSuccess() = 0;
-  virtual void OnFailure(const std::string& error) = 0;
+  // See description in CreateSessionDescriptionObserver for OnFailure.
+  virtual void OnFailure(RTCError error) {
+    std::string message(error.message());
+    OnFailure(message);
+  }
+  virtual void OnFailure(const std::string& error) {
+    OnFailure(RTCError(RTCErrorType::INTERNAL_ERROR, std::string(error)));
+  }
 
  protected:
   ~SetSessionDescriptionObserver() override = default;

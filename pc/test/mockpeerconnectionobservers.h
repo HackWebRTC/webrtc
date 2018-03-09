@@ -230,14 +230,14 @@ class MockCreateSessionDescriptionObserver
       : called_(false),
         error_("MockCreateSessionDescriptionObserver not called") {}
   virtual ~MockCreateSessionDescriptionObserver() {}
-  virtual void OnSuccess(SessionDescriptionInterface* desc) {
+  void OnSuccess(SessionDescriptionInterface* desc) override {
     called_ = true;
     error_ = "";
     desc_.reset(desc);
   }
-  virtual void OnFailure(const std::string& error) {
+  void OnFailure(webrtc::RTCError error) override {
     called_ = true;
-    error_ = error;
+    error_ = error.message();
   }
   bool called() const { return called_; }
   bool result() const { return error_.empty(); }
@@ -263,10 +263,11 @@ class MockSetSessionDescriptionObserver
     called_ = true;
     error_ = "";
   }
-  void OnFailure(const std::string& error) override {
+  void OnFailure(webrtc::RTCError error) override {
     called_ = true;
-    error_ = error;
+    error_ = error.message();
   }
+
   bool called() const { return called_; }
   bool result() const { return error_.empty(); }
   const std::string& error() const { return error_; }

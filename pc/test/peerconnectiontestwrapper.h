@@ -64,7 +64,7 @@ class PeerConnectionTestWrapper
 
   // Implements CreateSessionDescriptionObserver.
   void OnSuccess(webrtc::SessionDescriptionInterface* desc) override;
-  void OnFailure(const std::string& error) override {}
+  void OnFailure(webrtc::RTCError) override {}
 
   void CreateOffer(const webrtc::MediaConstraintsInterface* constraints);
   void CreateAnswer(const webrtc::MediaConstraintsInterface* constraints);
