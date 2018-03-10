@@ -31,8 +31,6 @@ CPPLINT_BLACKLIST = [
   'modules/include/module_common_types.h',
   'modules/utility',
   'modules/video_capture',
-  'p2p/base/session.cc',
-  'p2p/base/session.h',
   'p2p/base/pseudotcp.cc',
   'p2p/base/pseudotcp.h',
   'rtc_base',
