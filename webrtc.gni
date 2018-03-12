@@ -495,7 +495,6 @@ if (is_android) {
       # Treat warnings as errors.
       javac_args = [ "-Werror" ]
 
-      # TODO(sakal): Fix build hooks crbug.com/webrtc/8168
       no_build_hooks = true
     }
   }
@@ -514,7 +513,6 @@ if (is_android) {
       # Treat warnings as errors.
       javac_args = [ "-Werror" ]
 
-      # TODO(sakal): Fix build hooks crbug.com/webrtc/8168
       no_build_hooks = true
     }
   }
@@ -533,7 +531,6 @@ if (is_android) {
       # Treat warnings as errors.
       javac_args = [ "-Werror" ]
 
-      # TODO(sakal): Fix build hooks crbug.com/webrtc/8168
       no_build_hooks = true
     }
   }

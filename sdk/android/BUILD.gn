@@ -617,6 +617,7 @@ dist_jar("libwebrtc") {
   direct_deps_only = true
   use_unprocessed_jars = true
   requires_android = true
+  no_build_hooks = true
 
   deps = [
     ":libjingle_peerconnection_java",
