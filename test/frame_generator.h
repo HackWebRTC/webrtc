@@ -59,8 +59,11 @@ class FrameGenerator {
   }
 
   enum class OutputType { I420, I420A };
+
   // Creates a frame generator that produces frames with small squares that
   // move randomly towards the lower right corner.
+  // |type| has the default value OutputType::I420. |num_squares| has the
+  // default value 10.
   static std::unique_ptr<FrameGenerator> CreateSquareGenerator(
       int width,
       int height,

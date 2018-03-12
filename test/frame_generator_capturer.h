@@ -41,6 +41,8 @@ class FrameGeneratorCapturer : public VideoCapturer {
     virtual ~SinkWantsObserver() {}
   };
 
+  // |type| has the default value OutputType::I420. |num_squares| has the
+  // default value 10.
   static FrameGeneratorCapturer* Create(
       int width,
       int height,
@@ -48,14 +50,6 @@ class FrameGeneratorCapturer : public VideoCapturer {
       rtc::Optional<int> num_squares,
       int target_fps,
       Clock* clock);
-
-  // TODO(emircan): Update all clients and delete this function in favor of the
-  // above Create() signature.
-  static FrameGeneratorCapturer* Create(int width,
-                                        int height,
-                                        int num_squares,
-                                        int target_fps,
-                                        Clock* clock);
 
   static FrameGeneratorCapturer* CreateFromYuvFile(const std::string& file_name,
                                                    size_t width,
