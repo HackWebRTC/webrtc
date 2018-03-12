@@ -525,28 +525,6 @@ rtc_source_set("single_threaded_task_queue") {
   ]
 }
 
-rtc_source_set("fake_audio_device") {
-  visibility = [ "*" ]
-  testonly = true
-  sources = [
-    "fake_audio_device.h",
-  ]
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-  deps = [
-    "..:webrtc_common",
-    "../:typedefs",
-    "../api:array_view",
-    "../common_audio:common_audio",
-    "../modules/audio_device",
-    "../rtc_base:checks",
-    "../rtc_base:rtc_base_approved",
-    "../system_wrappers",
-  ]
-}
-
 rtc_source_set("test_common") {
   testonly = true
   sources = [
