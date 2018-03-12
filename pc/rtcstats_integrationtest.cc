@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <algorithm>
 #include <set>
 #include <vector>
 
@@ -17,6 +18,7 @@
 #include "api/peerconnectioninterface.h"
 #include "api/stats/rtcstats_objects.h"
 #include "api/stats/rtcstatsreport.h"
+#include "pc/rtcstatstraversal.h"
 #include "pc/test/peerconnectiontestwrapper.h"
 #include "pc/test/rtcstatsobtainer.h"
 #include "rtc_base/checks.h"
@@ -24,6 +26,7 @@
 #include "rtc_base/gunit.h"
 #include "rtc_base/refcountedobject.h"
 #include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/stringutils.h"
 #include "rtc_base/trace_event.h"
 #include "rtc_base/virtualsocketserver.h"
 
@@ -740,6 +743,52 @@ TEST_F(RTCStatsIntegrationTest, GetsStatsWhileDestroyingPeerConnections) {
   EXPECT_TRUE(stats_obtainer->report());
   EXPECT_EQ(stats_obtainer->report()->ToJson(),
             RTCStatsReportTraceListener::last_trace());
+}
+
+// GetStatsReferencedIds() is optimized to recognize what is or isn't a
+// referenced ID based on dictionary type information and knowing what members
+// are used as references, as opposed to iterating all members to find the ones
+// with the "Id" or "Ids" suffix. As such, GetStatsReferencedIds() is tested as
+// an integration test instead of a unit test in order to guard against adding
+// new references and forgetting to update GetStatsReferencedIds().
+TEST_F(RTCStatsIntegrationTest, GetStatsReferencedIds) {
+  StartCall();
+
+  rtc::scoped_refptr<const RTCStatsReport> report = GetStatsFromCallee();
+  for (const RTCStats& stats : *report) {
+    // Find all references by looking at all string members with the "Id" or
+    // "Ids" suffix.
+    std::set<const std::string*> expected_ids;
+    for (const auto* member : stats.Members()) {
+      if (!member->is_defined())
+        continue;
+      if (member->type() == RTCStatsMemberInterface::kString) {
+        if (rtc::ends_with(member->name(), "Id")) {
+          const auto& id = member->cast_to<const RTCStatsMember<std::string>>();
+          expected_ids.insert(&(*id));
+        }
+      } else if (member->type() == RTCStatsMemberInterface::kSequenceString) {
+        if (rtc::ends_with(member->name(), "Ids")) {
+          const auto& ids =
+              member->cast_to<const RTCStatsMember<std::vector<std::string>>>();
+          for (const std::string& id : *ids)
+            expected_ids.insert(&id);
+        }
+      }
+    }
+
+    std::vector<const std::string*> neighbor_ids = GetStatsReferencedIds(stats);
+    EXPECT_EQ(neighbor_ids.size(), expected_ids.size());
+    for (const std::string* neighbor_id : neighbor_ids) {
+      EXPECT_TRUE(expected_ids.find(neighbor_id) != expected_ids.end())
+          << "Unexpected neighbor ID: " << *neighbor_id;
+    }
+    for (const std::string* expected_id : expected_ids) {
+      EXPECT_TRUE(std::find(neighbor_ids.begin(), neighbor_ids.end(),
+                            expected_id) != neighbor_ids.end())
+          << "Missing expected neighbor ID: " << *expected_id;
+    }
+  }
 }
 #endif  // HAVE_SCTP
 

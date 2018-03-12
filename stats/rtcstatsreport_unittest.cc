@@ -110,6 +110,19 @@ TEST(RTCStatsReport, StatsOrder) {
   EXPECT_EQ(i, static_cast<int64_t>(7));
 }
 
+TEST(RTCStatsReport, Take) {
+  rtc::scoped_refptr<RTCStatsReport> report = RTCStatsReport::Create(0);
+  report->AddStats(std::unique_ptr<RTCStats>(new RTCTestStats1("A", 1)));
+  report->AddStats(std::unique_ptr<RTCStats>(new RTCTestStats1("B", 2)));
+  EXPECT_TRUE(report->Get("A"));
+  EXPECT_EQ(report->size(), 2u);
+  auto a = report->Take("A");
+  EXPECT_TRUE(a);
+  EXPECT_EQ(report->size(), 1u);
+  EXPECT_FALSE(report->Get("A"));
+  EXPECT_FALSE(report->Take("A"));
+}
+
 TEST(RTCStatsReport, TakeMembersFrom) {
   rtc::scoped_refptr<RTCStatsReport> a = RTCStatsReport::Create(1337);
   EXPECT_EQ(a->timestamp_us(), 1337u);

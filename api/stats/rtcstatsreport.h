@@ -63,6 +63,9 @@ class RTCStatsReport : public rtc::RefCountInterface {
   const RTCStats* Get(const std::string& id) const;
   size_t size() const { return stats_.size(); }
 
+  // Removes the stats object from the report, returning ownership of it or null
+  // if there is no object with |id|.
+  std::unique_ptr<const RTCStats> Take(const std::string& id);
   // Takes ownership of all the stats in |victim|, leaving it empty.
   void TakeMembersFrom(rtc::scoped_refptr<RTCStatsReport> victim);
 
