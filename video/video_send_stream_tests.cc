@@ -324,7 +324,8 @@ TEST_F(VideoSendStreamTest, SupportsVideoRotation) {
 TEST_F(VideoSendStreamTest, SupportsVideoContentType) {
   class VideoContentTypeObserver : public test::SendTest {
    public:
-    VideoContentTypeObserver() : SendTest(kDefaultTimeoutMs) {
+    VideoContentTypeObserver()
+        : SendTest(kDefaultTimeoutMs), first_frame_sent_(false) {
       EXPECT_TRUE(parser_->RegisterRtpHeaderExtension(
           kRtpExtensionVideoContentType, test::kVideoContentTypeExtensionId));
     }
@@ -332,9 +333,11 @@ TEST_F(VideoSendStreamTest, SupportsVideoContentType) {
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
       RTPHeader header;
       EXPECT_TRUE(parser_->Parse(packet, length, &header));
-      // Only the last packet of the frame must have extension.
-      if (!header.markerBit)
+      // Only the last packet of the key-frame must have extension.
+      if (!header.markerBit || first_frame_sent_)
         return SEND_PACKET;
+      // First marker bit seen means that the first frame is sent.
+      first_frame_sent_ = true;
       EXPECT_TRUE(header.extension.hasVideoContentType);
       EXPECT_TRUE(videocontenttypehelpers::IsScreenshare(
           header.extension.videoContentType));
@@ -356,6 +359,9 @@ TEST_F(VideoSendStreamTest, SupportsVideoContentType) {
     void PerformTest() override {
       EXPECT_TRUE(Wait()) << "Timed out while waiting for single RTP packet.";
     }
+
+   private:
+    bool first_frame_sent_;
   } test;
 
   RunBaseTest(&test);
