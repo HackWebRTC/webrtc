@@ -196,7 +196,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, HighBitrateVP8) {
       {5, 1, 0, 0.1, 0.2, 0.1, 0, 1}};
 
   // std::vector<QualityThresholds> quality_thresholds = {{37, 35, 0.93, 0.91}};
-  // TODO(webrtc:8757): AMR VP8 encoder's quality is significantly worse
+  // TODO(webrtc:8757): ARM VP8 encoder's quality is significantly worse
   // than quality of x86 version. Use lower thresholds for now.
   std::vector<QualityThresholds> quality_thresholds = {{35, 33, 0.91, 0.89}};
 
@@ -237,7 +237,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_ChangeBitrateVP8) {
 
   // std::vector<QualityThresholds> quality_thresholds = {
   //     {33, 32, 0.89, 0.88}, {38, 36, 0.94, 0.93}, {35, 34, 0.92, 0.91}};
-  // TODO(webrtc:8757): AMR VP8 encoder's quality is significantly worse
+  // TODO(webrtc:8757): ARM VP8 encoder's quality is significantly worse
   // than quality of x86 version. Use lower thresholds for now.
   std::vector<QualityThresholds> quality_thresholds = {
       {31.8, 31, 0.86, 0.85}, {36, 34.8, 0.92, 0.90}, {33.5, 32, 0.90, 0.88}};
@@ -265,7 +265,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_ChangeFramerateVP8) {
   //     {10, 2, 20, 0.4, 0.3, 0.1, 0, 1},
   //     {5, 2, 5, 0.3, 0.3, 0.1, 0, 0},
   //     {4, 2, 1, 0.2, 0.3, 0.2, 0, 0}};
-  // TODO(webrtc:8757): AMR VP8 drops more frames than x86 version. Use lower
+  // TODO(webrtc:8757): ARM VP8 drops more frames than x86 version. Use lower
   // thresholds for now.
   std::vector<RateControlThresholds> rc_thresholds = {
       {10, 2, 60, 0.5, 0.3, 0.3, 0, 1},
@@ -274,7 +274,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_ChangeFramerateVP8) {
 
   // std::vector<QualityThresholds> quality_thresholds = {
   //     {31, 30, 0.87, 0.86}, {32, 31, 0.89, 0.86}, {32, 30, 0.87, 0.82}};
-  // TODO(webrtc:8757): AMR VP8 encoder's quality is significantly worse
+  // TODO(webrtc:8757): ARM VP8 encoder's quality is significantly worse
   // than quality of x86 version. Use lower thresholds for now.
   std::vector<QualityThresholds> quality_thresholds = {
       {31, 30, 0.85, 0.84}, {31.5, 30.5, 0.86, 0.84}, {30.5, 29, 0.83, 0.78}};
@@ -298,7 +298,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_TemporalLayersVP8) {
 
   // std::vector<RateControlThresholds> rc_thresholds = {
   //     {5, 1, 0, 0.1, 0.2, 0.1, 0, 1}, {10, 2, 0, 0.1, 0.2, 0.1, 0, 1}};
-  // TODO(webrtc:8757): AMR VP8 drops more frames than x86 version. Use lower
+  // TODO(webrtc:8757): ARM VP8 drops more frames than x86 version. Use lower
   // thresholds for now.
   std::vector<RateControlThresholds> rc_thresholds = {
       {10, 1, 2, 0.3, 0.2, 0.1, 0, 1}, {12, 2, 3, 0.1, 0.2, 0.1, 0, 1}};
@@ -306,10 +306,33 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_TemporalLayersVP8) {
   // Min SSIM drops because of high motion scene with complex backgound (trees).
   // std::vector<QualityThresholds> quality_thresholds = {{32, 30, 0.88, 0.85},
   //                                                     {33, 30, 0.89, 0.83}};
-  // TODO(webrtc:8757): AMR VP8 encoder's quality is significantly worse
+  // TODO(webrtc:8757): ARM VP8 encoder's quality is significantly worse
   // than quality of x86 version. Use lower thresholds for now.
   std::vector<QualityThresholds> quality_thresholds = {{31, 30, 0.85, 0.84},
                                                        {31, 28, 0.85, 0.75}};
+
+  ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
+                              &quality_thresholds, nullptr, nullptr);
+}
+
+// Might be too slow on mobile platforms.
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
+#define MAYBE_MultiresVP8 DISABLED_MultiresVP8
+#else
+#define MAYBE_MultiresVP8 MultiresVP8
+#endif
+TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_MultiresVP8) {
+  config_.filename = "ConferenceMotion_1280_720_50";
+  config_.filepath = ResourcePath(config_.filename, "yuv");
+  config_.num_frames = 100;
+  config_.SetCodecSettings(kVideoCodecVP8, 3, 1, 3, true, true, false,
+                           kResilienceOn, 1280, 720);
+
+  std::vector<RateProfile> rate_profiles = {{1500, 30, config_.num_frames}};
+
+  std::vector<RateControlThresholds> rc_thresholds = {
+      {5, 1, 5, 0.2, 0.3, 0.1, 0, 1}};
+  std::vector<QualityThresholds> quality_thresholds = {{34, 32, 0.90, 0.88}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
                               &quality_thresholds, nullptr, nullptr);
@@ -325,13 +348,14 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_SimulcastVP8) {
   config_.filename = "ConferenceMotion_1280_720_50";
   config_.filepath = ResourcePath(config_.filename, "yuv");
   config_.num_frames = 100;
+  config_.simulcast_adapted_encoder = true;
   config_.SetCodecSettings(kVideoCodecVP8, 3, 1, 3, true, true, false,
                            kResilienceOn, 1280, 720);
 
   std::vector<RateProfile> rate_profiles = {{1500, 30, config_.num_frames}};
 
   std::vector<RateControlThresholds> rc_thresholds = {
-      {5, 1, 5, 0.2, 0.3, 0.1, 0, 1}};
+      {20, 5, 90, 0.75, 0.5, 0.3, 0, 1}};
   std::vector<QualityThresholds> quality_thresholds = {{34, 32, 0.90, 0.88}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
@@ -361,7 +385,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_SvcVP9) {
                               &quality_thresholds, nullptr, nullptr);
 }
 
-TEST_F(VideoProcessorIntegrationTestLibvpx, DISABLED_SimulcastVP8RdPerf) {
+TEST_F(VideoProcessorIntegrationTestLibvpx, DISABLED_MultiresVP8RdPerf) {
   config_.filename = "FourPeople_1280x720_30";
   config_.filepath = ResourcePath(config_.filename, "yuv");
   config_.num_frames = 300;

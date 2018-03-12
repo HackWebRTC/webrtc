@@ -164,10 +164,13 @@ class VideoProcessor {
   // Invoked by the callback adapter when a frame has completed decoding.
   void FrameDecoded(const webrtc::VideoFrame& image);
 
-  void CopyEncodedImage(const EncodedImage& encoded_image,
-                        const VideoCodecType codec,
-                        size_t frame_number,
-                        size_t simulcast_svc_idx);
+  // In order to supply the SVC decoders with super frames containing all
+  // lower layer frames, we merge and store the layer frames in this method.
+  const webrtc::EncodedImage* MergeAndStoreEncodedImageForSvcDecoding(
+      const EncodedImage& encoded_image,
+      const VideoCodecType codec,
+      size_t frame_number,
+      size_t simulcast_svc_idx) RTC_RUN_ON(sequence_checker_);
 
   // Test input/output.
   TestConfig config_ RTC_GUARDED_BY(sequence_checker_);
@@ -199,7 +202,8 @@ class VideoProcessor {
   // then, after all layers are encoded, decode them. Such separation of
   // frame processing on superframe level simplifies encoding/decoding time
   // measurement.
-  std::map<size_t, EncodedImage> last_encoded_frames_
+  // simulcast_svc_idx -> merged SVC encoded frame.
+  std::vector<EncodedImage> merged_encoded_frames_
       RTC_GUARDED_BY(sequence_checker_);
 
   // These (optional) file writers are used to persistently store the encoded
@@ -208,16 +212,21 @@ class VideoProcessor {
   FrameWriterList* const decoded_frame_writers_;
   rtc::Buffer tmp_i420_buffer_;  // Temp storage for format conversion.
 
-  // Metadata of inputed/encoded/decoded frames. Used for frame drop detection
-  // and other purposes.
+  // Metadata for inputed/encoded/decoded frames. Used for frame identification,
+  // frame drop detection, etc. We assume that encoded/decoded frames are
+  // ordered within each simulcast/spatial layer, but we do not make any
+  // assumptions of frame ordering between layers.
   size_t last_inputed_frame_num_ RTC_GUARDED_BY(sequence_checker_);
   size_t last_inputed_timestamp_ RTC_GUARDED_BY(sequence_checker_);
-  bool first_encoded_frame RTC_GUARDED_BY(sequence_checker_);
-  size_t last_encoded_frame_num_ RTC_GUARDED_BY(sequence_checker_);
-  size_t last_encoded_simulcast_svc_idx_ RTC_GUARDED_BY(sequence_checker_);
-  size_t last_decoded_frame_num_ RTC_GUARDED_BY(sequence_checker_);
-
-  // Map of frame size (in pixels) to simulcast/spatial layer index.
+  // simulcast_svc_idx -> encode status.
+  std::vector<bool> first_encoded_frame_ RTC_GUARDED_BY(sequence_checker_);
+  // simulcast_svc_idx -> frame_number.
+  std::vector<size_t> last_encoded_frame_num_ RTC_GUARDED_BY(sequence_checker_);
+  // simulcast_svc_idx -> decode status.
+  std::vector<bool> first_decoded_frame_ RTC_GUARDED_BY(sequence_checker_);
+  // simulcast_svc_idx -> frame_number.
+  std::vector<size_t> last_decoded_frame_num_ RTC_GUARDED_BY(sequence_checker_);
+  // frame size (pixels) -> simulcast_svc_idx.
   std::map<size_t, size_t> frame_wxh_to_simulcast_svc_idx_
       RTC_GUARDED_BY(sequence_checker_);
 

@@ -119,10 +119,6 @@ void TestConfig::SetCodecSettings(VideoCodecType codec_type,
   // Spatial scalability is only available with VP9.
   RTC_CHECK(num_spatial_layers < 2 || codec_type == kVideoCodecVP9);
 
-  // Simulcast/SVC is only supposed to work with software codecs.
-  RTC_CHECK((!hw_encoder && !hw_decoder) ||
-            (num_simulcast_streams == 1 && num_spatial_layers == 1));
-
   // Some base code requires numberOfSimulcastStreams to be set to zero
   // when simulcast is not used.
   codec_settings.numberOfSimulcastStreams =
