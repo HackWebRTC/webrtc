@@ -18,10 +18,20 @@
 
 namespace webrtc {
 
+class TargetTransferRateObserver {
+ public:
+  // Called to indicate target transfer rate as well as giving information about
+  // the current estimate of network parameters.
+  virtual void OnTargetTransferRate(TargetTransferRate) = 0;
+
+ protected:
+  virtual ~TargetTransferRateObserver() = default;
+};
+
 // NetworkControllerObserver is an interface implemented by observers of network
 // controllers. It contains declarations of the possible configuration messages
 // that can be sent from a network controller implementation.
-class NetworkControllerObserver {
+class NetworkControllerObserver : public TargetTransferRateObserver {
  public:
   // Called when congestion window configutation is changed.
   virtual void OnCongestionWindow(CongestionWindow) = 0;
@@ -29,12 +39,6 @@ class NetworkControllerObserver {
   virtual void OnPacerConfig(PacerConfig) = 0;
   // Called to indicate that a new probe should be sent.
   virtual void OnProbeClusterConfig(ProbeClusterConfig) = 0;
-  // Called to indicate target transfer rate as well as giving information about
-  // the current estimate of network parameters.
-  virtual void OnTargetTransferRate(TargetTransferRate) = 0;
-
- protected:
-  virtual ~NetworkControllerObserver() = default;
 };
 
 // NetworkControllerInterface is implemented by network controllers. A network

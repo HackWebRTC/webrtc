@@ -25,7 +25,7 @@ struct NetworkRoute;
 namespace webrtc {
 
 class CallStatsObserver;
-class NetworkChangedObserver;
+class TargetTransferRateObserver;
 class Module;
 class PacedSender;
 class PacketFeedbackObserver;
@@ -90,13 +90,13 @@ class RtpTransportControllerSendInterface {
       PacketFeedbackObserver* observer) = 0;
   virtual void DeRegisterPacketFeedbackObserver(
       PacketFeedbackObserver* observer) = 0;
-  virtual void RegisterNetworkObserver(NetworkChangedObserver* observer) = 0;
+  virtual void RegisterTargetTransferRateObserver(
+      TargetTransferRateObserver* observer) = 0;
   virtual void OnNetworkRouteChanged(
       const std::string& transport_name,
       const rtc::NetworkRoute& network_route) = 0;
   virtual void OnNetworkAvailability(bool network_available) = 0;
   virtual RtcpBandwidthObserver* GetBandwidthObserver() = 0;
-  virtual bool AvailableBandwidth(uint32_t* bandwidth) const = 0;
   virtual int64_t GetPacerQueuingDelayMs() const = 0;
   virtual int64_t GetFirstPacketTimeMs() const = 0;
   virtual void EnablePeriodicAlrProbing(bool enable) = 0;

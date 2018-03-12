@@ -15,11 +15,18 @@
 
 namespace webrtc {
 
+// Note: This interface will be deprecated in favor of the
+// TargetTransferRateObserver interface. The new interface provides more
+// information about the network connection and uses structs to make it easier
+// to add fields.
+
 // Observer class for bitrate changes announced due to change in bandwidth
 // estimate or due to that the send pacer is full. Fraction loss and rtt is
 // also part of this callback to allow the observer to optimize its settings
 // for different types of network environments. The bitrate does not include
 // packet headers and is measured in bits per second.
+// TODO(srte): Deprecate and remove this class when SendSideCongestionController
+// is no longer using this as part of our public API.
 class NetworkChangedObserver {
  public:
   virtual void OnNetworkChanged(uint32_t bitrate_bps,

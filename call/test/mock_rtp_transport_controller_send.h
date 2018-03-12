@@ -39,7 +39,8 @@ class MockRtpTransportControllerSend
   MOCK_METHOD0(GetCallStatsObserver, CallStatsObserver*());
   MOCK_METHOD1(RegisterPacketFeedbackObserver, void(PacketFeedbackObserver*));
   MOCK_METHOD1(DeRegisterPacketFeedbackObserver, void(PacketFeedbackObserver*));
-  MOCK_METHOD1(RegisterNetworkObserver, void(NetworkChangedObserver*));
+  MOCK_METHOD1(RegisterTargetTransferRateObserver,
+               void(TargetTransferRateObserver*));
   MOCK_METHOD2(OnNetworkRouteChanged,
                void(const std::string&, const rtc::NetworkRoute&));
   MOCK_METHOD1(OnNetworkAvailability, void(bool));

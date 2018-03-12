@@ -31,12 +31,20 @@ class RtcEventLog;
 // TODO(nisse): When we get the underlying transports here, we should
 // have one object implementing RtpTransportControllerSendInterface
 // per transport, sharing the same congestion controller.
-class RtpTransportControllerSend : public RtpTransportControllerSendInterface {
+class RtpTransportControllerSend : public RtpTransportControllerSendInterface,
+                                   public NetworkChangedObserver {
  public:
   RtpTransportControllerSend(Clock* clock,
                              RtcEventLog* event_log,
                              const BitrateConstraints& bitrate_config);
   ~RtpTransportControllerSend() override;
+
+  // Implements NetworkChangedObserver interface.
+  void OnNetworkChanged(uint32_t bitrate_bps,
+                        uint8_t fraction_loss,
+                        int64_t rtt_ms,
+                        int64_t probing_interval_ms) override;
+
   // Implements RtpTransportControllerSendInterface
   PacketRouter* packet_router() override;
 
@@ -56,12 +64,12 @@ class RtpTransportControllerSend : public RtpTransportControllerSendInterface {
       PacketFeedbackObserver* observer) override;
   void DeRegisterPacketFeedbackObserver(
       PacketFeedbackObserver* observer) override;
-  void RegisterNetworkObserver(NetworkChangedObserver* observer) override;
+  void RegisterTargetTransferRateObserver(
+      TargetTransferRateObserver* observer) override;
   void OnNetworkRouteChanged(const std::string& transport_name,
                              const rtc::NetworkRoute& network_route) override;
   void OnNetworkAvailability(bool network_available) override;
   RtcpBandwidthObserver* GetBandwidthObserver() override;
-  bool AvailableBandwidth(uint32_t* bandwidth) const override;
   int64_t GetPacerQueuingDelayMs() const override;
   int64_t GetFirstPacketTimeMs() const override;
   void EnablePeriodicAlrProbing(bool enable) override;
@@ -72,6 +80,7 @@ class RtpTransportControllerSend : public RtpTransportControllerSendInterface {
       const BitrateConstraintsMask& preferences) override;
 
  private:
+  const Clock* const clock_;
   PacketRouter packet_router_;
   PacedSender pacer_;
   const std::unique_ptr<SendSideCongestionControllerInterface> send_side_cc_;
@@ -79,6 +88,8 @@ class RtpTransportControllerSend : public RtpTransportControllerSendInterface {
   RtpBitrateConfigurator bitrate_configurator_;
   std::map<std::string, rtc::NetworkRoute> network_routes_;
   const std::unique_ptr<ProcessThread> process_thread_;
+  rtc::CriticalSection observer_crit_;
+  TargetTransferRateObserver* observer_ RTC_GUARDED_BY(observer_crit_);
 
   RTC_DISALLOW_COPY_AND_ASSIGN(RtpTransportControllerSend);
 };

@@ -11,6 +11,7 @@
 
 #include "call/rtp_transport_controller_send.h"
 #include "modules/congestion_controller/include/send_side_congestion_controller.h"
+#include "modules/congestion_controller/network_control/include/network_control.h"
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/ptr_util.h"
@@ -21,14 +22,16 @@ RtpTransportControllerSend::RtpTransportControllerSend(
     Clock* clock,
     webrtc::RtcEventLog* event_log,
     const BitrateConstraints& bitrate_config)
-    : pacer_(clock, &packet_router_, event_log),
+    : clock_(clock),
+      pacer_(clock, &packet_router_, event_log),
       send_side_cc_(
           rtc::MakeUnique<SendSideCongestionController>(clock,
                                                         nullptr /* observer */,
                                                         event_log,
                                                         &pacer_)),
       bitrate_configurator_(bitrate_config),
-      process_thread_(ProcessThread::Create("SendControllerThread")) {
+      process_thread_(ProcessThread::Create("SendControllerThread")),
+      observer_(nullptr) {
   send_side_cc_->SignalNetworkState(kNetworkDown);
   send_side_cc_->SetBweBitrates(bitrate_config.min_bitrate_bps,
                                 bitrate_config.start_bitrate_bps,
@@ -43,6 +46,28 @@ RtpTransportControllerSend::~RtpTransportControllerSend() {
   process_thread_->Stop();
   process_thread_->DeRegisterModule(send_side_cc_.get());
   process_thread_->DeRegisterModule(&pacer_);
+}
+
+void RtpTransportControllerSend::OnNetworkChanged(uint32_t bitrate_bps,
+                                                  uint8_t fraction_loss,
+                                                  int64_t rtt_ms,
+                                                  int64_t probing_interval_ms) {
+  // TODO(srte): Skip this step when old SendSideCongestionController is
+  // deprecated.
+  TargetTransferRate msg;
+  msg.at_time = Timestamp::ms(clock_->TimeInMilliseconds());
+  msg.target_rate = DataRate::bps(bitrate_bps);
+  msg.network_estimate.at_time = msg.at_time;
+  msg.network_estimate.bwe_period = TimeDelta::ms(probing_interval_ms);
+  uint32_t bandwidth_bps;
+  if (send_side_cc_->AvailableBandwidth(&bandwidth_bps))
+    msg.network_estimate.bandwidth = DataRate::bps(bandwidth_bps);
+  msg.network_estimate.loss_rate_ratio = fraction_loss / 255.0;
+  msg.network_estimate.round_trip_time = TimeDelta::ms(rtt_ms);
+  rtc::CritScope cs(&observer_crit_);
+  // We wont register as observer until we have an observer.
+  RTC_DCHECK(observer_ != nullptr);
+  observer_->OnTargetTransferRate(msg);
 }
 
 PacketRouter* RtpTransportControllerSend::packet_router() {
@@ -91,9 +116,15 @@ void RtpTransportControllerSend::DeRegisterPacketFeedbackObserver(
     PacketFeedbackObserver* observer) {
   send_side_cc_->DeRegisterPacketFeedbackObserver(observer);
 }
-void RtpTransportControllerSend::RegisterNetworkObserver(
-    NetworkChangedObserver* observer) {
-  send_side_cc_->RegisterNetworkObserver(observer);
+
+void RtpTransportControllerSend::RegisterTargetTransferRateObserver(
+    TargetTransferRateObserver* observer) {
+  {
+    rtc::CritScope cs(&observer_crit_);
+    RTC_DCHECK(observer_ == nullptr);
+    observer_ = observer;
+  }
+  send_side_cc_->RegisterNetworkObserver(this);
 }
 void RtpTransportControllerSend::OnNetworkRouteChanged(
     const std::string& transport_name,
@@ -140,9 +171,6 @@ void RtpTransportControllerSend::OnNetworkAvailability(bool network_available) {
 }
 RtcpBandwidthObserver* RtpTransportControllerSend::GetBandwidthObserver() {
   return send_side_cc_->GetBandwidthObserver();
-}
-bool RtpTransportControllerSend::AvailableBandwidth(uint32_t* bandwidth) const {
-  return send_side_cc_->AvailableBandwidth(bandwidth);
 }
 int64_t RtpTransportControllerSend::GetPacerQueuingDelayMs() const {
   return pacer_.QueueInMs();

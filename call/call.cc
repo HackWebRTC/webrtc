@@ -35,8 +35,8 @@
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "logging/rtc_event_log/rtc_stream_config.h"
 #include "modules/bitrate_controller/include/bitrate_controller.h"
-#include "modules/congestion_controller/include/network_changed_observer.h"
 #include "modules/congestion_controller/include/receive_side_congestion_controller.h"
+#include "modules/congestion_controller/network_control/include/network_control.h"
 #include "modules/rtp_rtcp/include/flexfec_receiver.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/include/rtp_header_parser.h"
@@ -49,6 +49,7 @@
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/numerics/safe_minmax.h"
 #include "rtc_base/ptr_util.h"
 #include "rtc_base/rate_limiter.h"
 #include "rtc_base/sequenced_task_checker.h"
@@ -166,7 +167,7 @@ namespace internal {
 class Call : public webrtc::Call,
              public PacketReceiver,
              public RecoveredPacketReceiver,
-             public NetworkChangedObserver,
+             public TargetTransferRateObserver,
              public BitrateAllocator::LimitObserver {
  public:
   Call(const Call::Config& config,
@@ -227,11 +228,8 @@ class Call : public webrtc::Call,
 
   void OnSentPacket(const rtc::SentPacket& sent_packet) override;
 
-  // Implements BitrateObserver.
-  void OnNetworkChanged(uint32_t bitrate_bps,
-                        uint8_t fraction_loss,
-                        int64_t rtt_ms,
-                        int64_t probing_interval_ms) override;
+  // Implements TargetTransferRateObserver,
+  void OnTargetTransferRate(TargetTransferRate msg) override;
 
   // Implements BitrateAllocator::LimitObserver.
   void OnAllocationLimitsChanged(uint32_t min_send_bitrate_bps,
@@ -344,6 +342,8 @@ class Call : public webrtc::Call,
   rtc::Optional<int64_t> last_received_rtp_video_ms_;
   TimeInterval sent_rtp_audio_timer_ms_;
 
+  rtc::CriticalSection last_bandwidth_bps_crit_;
+  uint32_t last_bandwidth_bps_ RTC_GUARDED_BY(&last_bandwidth_bps_crit_);
   // TODO(holmer): Remove this lock once BitrateController no longer calls
   // OnNetworkChanged from multiple threads.
   rtc::CriticalSection bitrate_crit_;
@@ -423,6 +423,7 @@ Call::Call(const Call::Config& config,
       received_audio_bytes_per_second_counter_(clock_, nullptr, true),
       received_video_bytes_per_second_counter_(clock_, nullptr, true),
       received_rtcp_bytes_per_second_counter_(clock_, nullptr, true),
+      last_bandwidth_bps_(0),
       min_allocated_send_bitrate_bps_(0),
       configured_max_padding_bitrate_bps_(0),
       estimated_send_bitrate_kbps_counter_(clock_, nullptr, true),
@@ -433,7 +434,7 @@ Call::Call(const Call::Config& config,
       start_ms_(clock_->TimeInMilliseconds()),
       worker_queue_("call_worker_queue") {
   RTC_DCHECK(config.event_log != nullptr);
-  transport_send->RegisterNetworkObserver(this);
+  transport_send->RegisterTargetTransferRateObserver(this);
   transport_send_ = std::move(transport_send);
 
   call_stats_->RegisterStatsObserver(&receive_side_cc_);
@@ -904,13 +905,15 @@ Call::Stats Call::GetStats() const {
   // RTC_DCHECK_CALLED_SEQUENTIALLY(&configuration_sequence_checker_);
   Stats stats;
   // Fetch available send/receive bitrates.
-  uint32_t send_bandwidth = 0;
-  transport_send_->AvailableBandwidth(&send_bandwidth);
   std::vector<unsigned int> ssrcs;
   uint32_t recv_bandwidth = 0;
   receive_side_cc_.GetRemoteBitrateEstimator(false)->LatestEstimate(
       &ssrcs, &recv_bandwidth);
-  stats.send_bandwidth_bps = send_bandwidth;
+
+  {
+    rtc::CritScope cs(&last_bandwidth_bps_crit_);
+    stats.send_bandwidth_bps = last_bandwidth_bps_;
+  }
   stats.recv_bandwidth_bps = recv_bandwidth;
   // TODO(srte): It is unclear if we only want to report queues if network is
   // available.
@@ -1045,26 +1048,26 @@ void Call::OnSentPacket(const rtc::SentPacket& sent_packet) {
   transport_send_->OnSentPacket(sent_packet);
 }
 
-void Call::OnNetworkChanged(uint32_t target_bitrate_bps,
-                            uint8_t fraction_loss,
-                            int64_t rtt_ms,
-                            int64_t probing_interval_ms) {
+void Call::OnTargetTransferRate(TargetTransferRate msg) {
   // TODO(perkj): Consider making sure CongestionController operates on
   // |worker_queue_|.
   if (!worker_queue_.IsCurrent()) {
-    worker_queue_.PostTask(
-        [this, target_bitrate_bps, fraction_loss, rtt_ms, probing_interval_ms] {
-          OnNetworkChanged(target_bitrate_bps, fraction_loss, rtt_ms,
-                           probing_interval_ms);
-        });
+    worker_queue_.PostTask([this, msg] { OnTargetTransferRate(msg); });
     return;
   }
   RTC_DCHECK_RUN_ON(&worker_queue_);
-  // TODO(srte): communicate bandwidth in the OnNetworkChanged event, or
-  // evaluate the feasability of using target bitrate _bps instead.
-  uint32_t bandwidth_bps;
-  if (transport_send_->AvailableBandwidth(&bandwidth_bps))
-    retransmission_rate_limiter_.SetMaxRate(bandwidth_bps);
+  uint32_t target_bitrate_bps = msg.target_rate.bps();
+  int loss_ratio_255 = msg.network_estimate.loss_rate_ratio * 255;
+  uint8_t fraction_loss =
+      rtc::dchecked_cast<uint8_t>(rtc::SafeClamp(loss_ratio_255, 0, 255));
+  int64_t rtt_ms = msg.network_estimate.round_trip_time.ms();
+  int64_t probing_interval_ms = msg.network_estimate.bwe_period.ms();
+  uint32_t bandwidth_bps = msg.network_estimate.bandwidth.bps();
+  {
+    rtc::CritScope cs(&last_bandwidth_bps_crit_);
+    last_bandwidth_bps_ = bandwidth_bps;
+  }
+  retransmission_rate_limiter_.SetMaxRate(bandwidth_bps);
   // For controlling the rate of feedback messages.
   receive_side_cc_.OnBitrateChanged(target_bitrate_bps);
   bitrate_allocator_->OnNetworkChanged(target_bitrate_bps, fraction_loss,
