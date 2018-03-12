@@ -104,9 +104,7 @@ bool IsPayloadTypeValid(int8_t payload_type) {
 
 RTPPayloadRegistry::RTPPayloadRegistry()
     : last_received_payload_type_(-1),
-      last_received_media_payload_type_(-1),
-      rtx_(false),
-      ssrc_rtx_(0) {}
+      last_received_media_payload_type_(-1) {}
 
 RTPPayloadRegistry::~RTPPayloadRegistry() = default;
 
@@ -259,23 +257,6 @@ int32_t RTPPayloadRegistry::ReceivePayloadType(const VideoCodec& video_codec,
     }
   }
   return -1;
-}
-
-bool RTPPayloadRegistry::RtxEnabled() const {
-  rtc::CritScope cs(&crit_sect_);
-  return rtx_;
-}
-
-void RTPPayloadRegistry::SetRtxSsrc(uint32_t ssrc) {
-  rtc::CritScope cs(&crit_sect_);
-  ssrc_rtx_ = ssrc;
-  rtx_ = true;
-}
-
-bool RTPPayloadRegistry::GetRtxSsrc(uint32_t* ssrc) const {
-  rtc::CritScope cs(&crit_sect_);
-  *ssrc = ssrc_rtx_;
-  return rtx_;
 }
 
 bool RTPPayloadRegistry::IsRed(const RTPHeader& header) const {

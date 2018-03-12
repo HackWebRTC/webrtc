@@ -46,12 +46,6 @@ class RTPPayloadRegistry {
   int32_t ReceivePayloadType(const VideoCodec& video_codec,
                              int8_t* payload_type) const;
 
-  bool RtxEnabled() const;
-
-  void SetRtxSsrc(uint32_t ssrc);
-
-  bool GetRtxSsrc(uint32_t* ssrc) const;
-
   bool IsRed(const RTPHeader& header) const;
 
   int GetPayloadTypeFrequency(uint8_t payload_type) const;
@@ -100,12 +94,6 @@ class RTPPayloadRegistry {
   std::map<int, RtpUtility::Payload> payload_type_map_;
   int8_t last_received_payload_type_;
   int8_t last_received_media_payload_type_;
-  bool rtx_;
-  uint32_t ssrc_rtx_;
-  // Only warn once per payload type, if an RTX packet is received but
-  // no associated payload type found in |rtx_payload_type_map_|.
-  std::set<int> payload_types_with_suppressed_warnings_
-      RTC_GUARDED_BY(crit_sect_);
 
   // As a first step in splitting this class up in separate cases for audio and
   // video, DCHECK that no instance is used for both audio and video.

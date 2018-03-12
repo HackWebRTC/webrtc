@@ -138,11 +138,6 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
                                            : kDefaultMaxReorderingThreshold;
   rtp_receive_statistics_->SetMaxReorderingThreshold(max_reordering_threshold);
 
-  if (config_.rtp.rtx_ssrc) {
-    // Needed for rtp_payload_registry_.RtxEnabled().
-    rtp_payload_registry_.SetRtxSsrc(config_.rtp.rtx_ssrc);
-  }
-
   if (IsUlpfecEnabled()) {
     VideoCodec ulpfec_codec = {};
     ulpfec_codec.codecType = kVideoCodecULPFEC;
@@ -605,7 +600,7 @@ bool RtpVideoStreamReceiver::IsPacketInOrder(const RTPHeader& header) const {
 bool RtpVideoStreamReceiver::IsPacketRetransmitted(const RTPHeader& header,
                                                    bool in_order) const {
   // Retransmissions are handled separately if RTX is enabled.
-  if (rtp_payload_registry_.RtxEnabled())
+  if (config_.rtp.rtx_ssrc != 0)
     return false;
   StreamStatistician* statistician =
       rtp_receive_statistics_->GetStatistician(header.ssrc);
