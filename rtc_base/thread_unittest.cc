@@ -186,6 +186,16 @@ struct FunctorC {
     return 24;
   }
 };
+struct FunctorD {
+ public:
+  explicit FunctorD(AtomicBool* flag) : flag_(flag) {}
+  FunctorD(FunctorD&&) = default;
+  FunctorD& operator=(FunctorD&&) = default;
+  void operator()() { if (flag_) *flag_ = true; }
+ private:
+  AtomicBool* flag_;
+  RTC_DISALLOW_COPY_AND_ASSIGN(FunctorD);
+};
 
 // See: https://code.google.com/p/webrtc/issues/detail?id=2409
 TEST(ThreadTest, DISABLED_Main) {
@@ -441,6 +451,18 @@ TEST_F(AsyncInvokeTest, FireAndForget) {
   thread->Stop();
 }
 
+TEST_F(AsyncInvokeTest, NonCopyableFunctor) {
+  AsyncInvoker invoker;
+  // Create and start the thread.
+  auto thread = Thread::CreateWithSocketServer();
+  thread->Start();
+  // Try calling functor.
+  AtomicBool called;
+  invoker.AsyncInvoke<void>(RTC_FROM_HERE, thread.get(), FunctorD(&called));
+  EXPECT_TRUE_WAIT(called.get(), kWaitTimeout);
+  thread->Stop();
+}
+
 TEST_F(AsyncInvokeTest, KillInvokerDuringExecute) {
   // Use these events to get in a state where the functor is in the middle of
   // executing, and then to wait for it to finish, ensuring the "EXPECT_FALSE"
@@ -599,6 +621,14 @@ TEST_F(GuardedAsyncInvokeTest, FireAndForget) {
   // Try calling functor.
   AtomicBool called;
   EXPECT_TRUE(invoker.AsyncInvoke<void>(RTC_FROM_HERE, FunctorB(&called)));
+  EXPECT_TRUE_WAIT(called.get(), kWaitTimeout);
+}
+
+TEST_F(GuardedAsyncInvokeTest, NonCopyableFunctor) {
+  GuardedAsyncInvoker invoker;
+  // Try calling functor.
+  AtomicBool called;
+  EXPECT_TRUE(invoker.AsyncInvoke<void>(RTC_FROM_HERE, FunctorD(&called)));
   EXPECT_TRUE_WAIT(called.get(), kWaitTimeout);
 }
 

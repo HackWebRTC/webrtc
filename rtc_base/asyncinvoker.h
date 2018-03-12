@@ -97,10 +97,11 @@ class AsyncInvoker : public MessageHandler {
   template <class ReturnT, class FunctorT>
   void AsyncInvoke(const Location& posted_from,
                    Thread* thread,
-                   const FunctorT& functor,
+                   FunctorT&& functor,
                    uint32_t id = 0) {
     std::unique_ptr<AsyncClosure> closure(
-        new FireAndForgetAsyncClosure<FunctorT>(this, functor));
+        new FireAndForgetAsyncClosure<FunctorT>(
+            this, std::forward<FunctorT>(functor)));
     DoInvoke(posted_from, thread, std::move(closure), id);
   }
 
@@ -109,11 +110,12 @@ class AsyncInvoker : public MessageHandler {
   template <class ReturnT, class FunctorT>
   void AsyncInvokeDelayed(const Location& posted_from,
                           Thread* thread,
-                          const FunctorT& functor,
+                          FunctorT&& functor,
                           uint32_t delay_ms,
                           uint32_t id = 0) {
     std::unique_ptr<AsyncClosure> closure(
-        new FireAndForgetAsyncClosure<FunctorT>(this, functor));
+        new FireAndForgetAsyncClosure<FunctorT>(
+            this, std::forward<FunctorT>(functor)));
     DoInvokeDelayed(posted_from, thread, std::move(closure), delay_ms, id);
   }
 
@@ -188,12 +190,13 @@ class GuardedAsyncInvoker : public sigslot::has_slots<> {
   // immediately. Returns false if the thread has died.
   template <class ReturnT, class FunctorT>
   bool AsyncInvoke(const Location& posted_from,
-                   const FunctorT& functor,
+                   FunctorT&& functor,
                    uint32_t id = 0) {
     CritScope cs(&crit_);
     if (thread_ == nullptr)
       return false;
-    invoker_.AsyncInvoke<ReturnT, FunctorT>(posted_from, thread_, functor, id);
+    invoker_.AsyncInvoke<ReturnT, FunctorT>(
+        posted_from, thread_, std::forward<FunctorT>(functor), id);
     return true;
   }
 
@@ -201,14 +204,14 @@ class GuardedAsyncInvoker : public sigslot::has_slots<> {
   // completion. Returns immediately. Returns false if the thread has died.
   template <class ReturnT, class FunctorT>
   bool AsyncInvokeDelayed(const Location& posted_from,
-                          const FunctorT& functor,
+                          FunctorT&& functor,
                           uint32_t delay_ms,
                           uint32_t id = 0) {
     CritScope cs(&crit_);
     if (thread_ == nullptr)
       return false;
-    invoker_.AsyncInvokeDelayed<ReturnT, FunctorT>(posted_from, thread_,
-                                                   functor, delay_ms, id);
+    invoker_.AsyncInvokeDelayed<ReturnT, FunctorT>(
+        posted_from, thread_, std::forward<FunctorT>(functor), delay_ms, id);
     return true;
   }
 
@@ -217,7 +220,7 @@ class GuardedAsyncInvoker : public sigslot::has_slots<> {
   template <class ReturnT, class FunctorT, class HostT>
   bool AsyncInvoke(const Location& posted_from,
                    const Location& callback_posted_from,
-                   const FunctorT& functor,
+                   FunctorT&& functor,
                    void (HostT::*callback)(ReturnT),
                    HostT* callback_host,
                    uint32_t id = 0) {
@@ -225,8 +228,8 @@ class GuardedAsyncInvoker : public sigslot::has_slots<> {
     if (thread_ == nullptr)
       return false;
     invoker_.AsyncInvoke<ReturnT, FunctorT, HostT>(
-        posted_from, callback_posted_from, thread_, functor, callback,
-        callback_host, id);
+        posted_from, callback_posted_from, thread_,
+        std::forward<FunctorT>(functor), callback, callback_host, id);
     return true;
   }
 
@@ -235,7 +238,7 @@ class GuardedAsyncInvoker : public sigslot::has_slots<> {
   template <class ReturnT, class FunctorT, class HostT>
   bool AsyncInvoke(const Location& posted_from,
                    const Location& callback_posted_from,
-                   const FunctorT& functor,
+                   FunctorT&& functor,
                    void (HostT::*callback)(),
                    HostT* callback_host,
                    uint32_t id = 0) {
@@ -243,8 +246,8 @@ class GuardedAsyncInvoker : public sigslot::has_slots<> {
     if (thread_ == nullptr)
       return false;
     invoker_.AsyncInvoke<ReturnT, FunctorT, HostT>(
-        posted_from, callback_posted_from, thread_, functor, callback,
-        callback_host, id);
+        posted_from, callback_posted_from, thread_,
+        std::forward<FunctorT>(functor), callback, callback_host, id);
     return true;
   }
 
