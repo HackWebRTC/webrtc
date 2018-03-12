@@ -86,7 +86,7 @@ def _ParseArgs():
   parser.add_argument('--temp_dir',
       help='A temporary directory to put the output.')
   parser.add_argument('--adb-path', help='Path to adb binary.', default='adb')
-  parser.add_argument('--num-retries', default=0,
+  parser.add_argument('--num-retries', default='0',
                       help='Number of times to retry the test on Android.')
   parser.add_argument('--isolated-script-test-perf-output',
       help='Where to store perf results in chartjson format.', default=None)
