@@ -11,12 +11,42 @@
 
 #include "call/rtp_transport_controller_send.h"
 #include "modules/congestion_controller/include/send_side_congestion_controller.h"
-#include "modules/congestion_controller/network_control/include/network_control.h"
+#include "modules/congestion_controller/rtp/include/send_side_congestion_controller.h"
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/ptr_util.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
+namespace {
+const char kTaskQueueExperiment[] = "WebRTC-TaskQueueCongestionControl";
+using TaskQueueController = webrtc::webrtc_cc::SendSideCongestionController;
+
+bool TaskQueueExperimentEnabled() {
+  std::string trial = webrtc::field_trial::FindFullName(kTaskQueueExperiment);
+  return trial.find("Enable") == 0;
+}
+
+std::unique_ptr<SendSideCongestionControllerInterface> CreateController(
+    Clock* clock,
+    webrtc::RtcEventLog* event_log,
+    PacedSender* pacer,
+    const BitrateConstraints& bitrate_config,
+    bool task_queue_controller) {
+  if (task_queue_controller) {
+    return rtc::MakeUnique<webrtc::webrtc_cc::SendSideCongestionController>(
+        clock, event_log, pacer, bitrate_config.start_bitrate_bps,
+        bitrate_config.min_bitrate_bps, bitrate_config.max_bitrate_bps);
+  }
+  auto cc = rtc::MakeUnique<webrtc::SendSideCongestionController>(
+      clock, nullptr /* observer */, event_log, pacer);
+  cc->SignalNetworkState(kNetworkDown);
+  cc->SetBweBitrates(bitrate_config.min_bitrate_bps,
+                     bitrate_config.start_bitrate_bps,
+                     bitrate_config.max_bitrate_bps);
+  return std::move(cc);
+}
+}  // namespace
 
 RtpTransportControllerSend::RtpTransportControllerSend(
     Clock* clock,
@@ -24,19 +54,14 @@ RtpTransportControllerSend::RtpTransportControllerSend(
     const BitrateConstraints& bitrate_config)
     : clock_(clock),
       pacer_(clock, &packet_router_, event_log),
-      send_side_cc_(
-          rtc::MakeUnique<SendSideCongestionController>(clock,
-                                                        nullptr /* observer */,
-                                                        event_log,
-                                                        &pacer_)),
+      send_side_cc_(CreateController(clock,
+                                     event_log,
+                                     &pacer_,
+                                     bitrate_config,
+                                     TaskQueueExperimentEnabled())),
       bitrate_configurator_(bitrate_config),
       process_thread_(ProcessThread::Create("SendControllerThread")),
       observer_(nullptr) {
-  send_side_cc_->SignalNetworkState(kNetworkDown);
-  send_side_cc_->SetBweBitrates(bitrate_config.min_bitrate_bps,
-                                bitrate_config.start_bitrate_bps,
-                                bitrate_config.max_bitrate_bps);
-
   process_thread_->RegisterModule(&pacer_, RTC_FROM_HERE);
   process_thread_->RegisterModule(send_side_cc_.get(), RTC_FROM_HERE);
   process_thread_->Start();
