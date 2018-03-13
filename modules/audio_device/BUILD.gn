@@ -133,9 +133,8 @@ rtc_source_set("audio_device_generic") {
     "include/audio_device_default.h",
     "include/audio_device_defines.h",
     "include/fake_audio_device.h",
+    "include/test_audio_device.cc",
     "include/test_audio_device.h",
-    "include/test_audio_device_impl.cc",
-    "include/test_audio_device_impl.h",
   ]
 
   if (build_with_mozilla) {
@@ -344,7 +343,7 @@ if (rtc_include_tests) {
 
     sources = [
       "fine_audio_buffer_unittest.cc",
-      "include/test_audio_device_impl_unittest.cc",
+      "include/test_audio_device_unittest.cc",
     ]
     deps = [
       ":audio_device",
