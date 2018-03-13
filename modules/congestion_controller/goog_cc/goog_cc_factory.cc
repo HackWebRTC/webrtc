@@ -18,9 +18,10 @@ GoogCcNetworkControllerFactory::GoogCcNetworkControllerFactory(
     : event_log_(event_log) {}
 
 NetworkControllerInterface::uptr GoogCcNetworkControllerFactory::Create(
-    NetworkControllerObserver* observer) {
+    NetworkControllerObserver* observer,
+    NetworkControllerConfig config) {
   return rtc::MakeUnique<webrtc_cc::GoogCcNetworkController>(event_log_,
-                                                             observer);
+                                                             observer, config);
 }
 
 TimeDelta GoogCcNetworkControllerFactory::GetProcessInterval() const {

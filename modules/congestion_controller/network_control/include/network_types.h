@@ -38,7 +38,6 @@ struct StreamsConfig {
 
 struct TargetRateConstraints {
   Timestamp at_time;
-  DataRate starting_rate;
   DataRate min_data_rate;
   DataRate max_data_rate;
 };
@@ -55,6 +54,7 @@ struct NetworkRouteChange {
   // The TargetRateConstraints are set here so they can be changed synchronously
   // when network route changes.
   TargetRateConstraints constraints;
+  DataRate starting_rate;
 };
 
 struct SentPacket {

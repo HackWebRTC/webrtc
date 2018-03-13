@@ -105,7 +105,8 @@ std::vector<PacketFeedback> ReceivedPacketsFeedbackAsRtp(
 
 GoogCcNetworkController::GoogCcNetworkController(
     RtcEventLog* event_log,
-    NetworkControllerObserver* observer)
+    NetworkControllerObserver* observer,
+    NetworkControllerConfig config)
     : event_log_(event_log),
       observer_(observer),
       probe_controller_(new ProbeController(observer_)),
@@ -121,6 +122,8 @@ GoogCcNetworkController::GoogCcNetworkController(
       in_cwnd_experiment_(CwndExperimentEnabled()),
       accepted_queue_ms_(kDefaultAcceptedQueueMs) {
   delay_based_bwe_->SetMinBitrate(congestion_controller::GetMinBitrateBps());
+  UpdateBitrateConstraints(config.constraints, config.starting_bandwidth);
+  OnStreamsConfig(config.stream_based_config);
   if (in_cwnd_experiment_ &&
       !ReadCwndExperimentParameter(&accepted_queue_ms_)) {
     RTC_LOG(LS_WARNING) << "Failed to parse parameters for CwndExperiment "
@@ -136,9 +139,9 @@ void GoogCcNetworkController::OnNetworkAvailability(NetworkAvailability msg) {
 }
 
 void GoogCcNetworkController::OnNetworkRouteChange(NetworkRouteChange msg) {
-  int64_t min_bitrate_bps = msg.constraints.min_data_rate.bps();
+  int64_t min_bitrate_bps = msg.constraints.min_data_rate.bps_or(-1);
   int64_t max_bitrate_bps = msg.constraints.max_data_rate.bps_or(-1);
-  int64_t start_bitrate_bps = msg.constraints.starting_rate.bps_or(-1);
+  int64_t start_bitrate_bps = msg.starting_rate.bps_or(-1);
 
   ClampBitrates(&start_bitrate_bps, &min_bitrate_bps, &max_bitrate_bps);
 
@@ -215,9 +218,15 @@ void GoogCcNetworkController::OnStreamsConfig(StreamsConfig msg) {
 
 void GoogCcNetworkController::OnTargetRateConstraints(
     TargetRateConstraints constraints) {
-  int64_t min_bitrate_bps = constraints.min_data_rate.bps();
+  UpdateBitrateConstraints(constraints, DataRate::kNotInitialized);
+}
+
+void GoogCcNetworkController::UpdateBitrateConstraints(
+    TargetRateConstraints constraints,
+    DataRate starting_rate) {
+  int64_t min_bitrate_bps = constraints.min_data_rate.bps_or(0);
   int64_t max_bitrate_bps = constraints.max_data_rate.bps_or(-1);
-  int64_t start_bitrate_bps = constraints.starting_rate.bps_or(-1);
+  int64_t start_bitrate_bps = starting_rate.bps_or(-1);
 
   ClampBitrates(&start_bitrate_bps, &min_bitrate_bps, &max_bitrate_bps);
 

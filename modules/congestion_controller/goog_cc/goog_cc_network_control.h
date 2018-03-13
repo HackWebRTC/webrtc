@@ -32,7 +32,8 @@ namespace webrtc_cc {
 class GoogCcNetworkController : public NetworkControllerInterface {
  public:
   GoogCcNetworkController(RtcEventLog* event_log,
-                          NetworkControllerObserver* observer);
+                          NetworkControllerObserver* observer,
+                          NetworkControllerConfig config);
   ~GoogCcNetworkController() override;
 
   // NetworkControllerInterface
@@ -48,6 +49,8 @@ class GoogCcNetworkController : public NetworkControllerInterface {
   void OnTransportPacketsFeedback(TransportPacketsFeedback msg) override;
 
  private:
+  void UpdateBitrateConstraints(TargetRateConstraints constraints,
+                                DataRate starting_rate);
   void MaybeUpdateCongestionWindow();
   void MaybeTriggerOnNetworkChanged(Timestamp at_time);
   bool GetNetworkParameters(int32_t* estimated_bitrate_bps,

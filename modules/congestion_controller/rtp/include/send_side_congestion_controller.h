@@ -141,32 +141,54 @@ class SendSideCongestionController
   void WaitOnTasks();
 
  private:
-  void UpdateStreamsConfig();
-  void WaitOnTask(std::function<void()> closure);
+  void MaybeCreateControllers();
+
+  void UpdateStreamsConfig() RTC_RUN_ON(task_queue_);
   void MaybeUpdateOutstandingData();
   void OnReceivedRtcpReceiverReportBlocks(const ReportBlockList& report_blocks,
-                                          int64_t now_ms);
+                                          int64_t now_ms)
+      RTC_RUN_ON(task_queue_);
 
   const Clock* const clock_;
+  // PacedSender is thread safe and doesn't need protection here.
   PacedSender* const pacer_;
+  // TODO(srte): Move all access to feedback adapter to task queue.
   TransportFeedbackAdapter transport_feedback_adapter_;
 
   const std::unique_ptr<NetworkControllerFactoryInterface> controller_factory_;
-  const std::unique_ptr<PacerController> pacer_controller_;
-  const std::unique_ptr<send_side_cc_internal::ControlHandler> control_handler;
-  const std::unique_ptr<NetworkControllerInterface> controller_;
 
+  const std::unique_ptr<PacerController> pacer_controller_
+      RTC_GUARDED_BY(task_queue_);
+
+  std::unique_ptr<send_side_cc_internal::ControlHandler> control_handler_
+      RTC_GUARDED_BY(task_queue_);
+
+  std::unique_ptr<NetworkControllerInterface> controller_
+      RTC_GUARDED_BY(task_queue_);
+
+  // TODO(srte): Review access constraints of these when introducing delayed
+  // tasks. Only accessed from process threads.
   TimeDelta process_interval_;
+  // Only accessed from process threads.
   int64_t last_process_update_ms_ = 0;
 
-  std::map<uint32_t, RTCPReportBlock> last_report_blocks_;
-  Timestamp last_report_block_time_;
+  std::map<uint32_t, RTCPReportBlock> last_report_blocks_
+      RTC_GUARDED_BY(task_queue_);
+  Timestamp last_report_block_time_ RTC_GUARDED_BY(task_queue_);
 
-  StreamsConfig streams_config_;
+  NetworkChangedObserver* observer_ RTC_GUARDED_BY(task_queue_);
+  NetworkControllerConfig initial_config_ RTC_GUARDED_BY(task_queue_);
+  StreamsConfig streams_config_ RTC_GUARDED_BY(task_queue_);
+
   const bool send_side_bwe_with_overhead_;
+  // Transport overhead is written by OnNetworkRouteChanged and read by
+  // AddPacket.
+  // TODO(srte): Remove atomic when feedback adapter runs on task queue.
   std::atomic<size_t> transport_overhead_bytes_per_packet_;
-  std::atomic<bool> network_available_;
+  bool network_available_ RTC_GUARDED_BY(task_queue_);
 
+  // Protects access to last_packet_feedback_vector_ in feedback adapter.
+  // TODO(srte): Remove this checker when feedback adapter runs on task queue.
   rtc::RaceChecker worker_race_;
 
   // Note that moving ownership of the task queue makes it neccessary to make

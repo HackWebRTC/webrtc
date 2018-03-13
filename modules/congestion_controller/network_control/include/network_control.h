@@ -41,6 +41,21 @@ class NetworkControllerObserver : public TargetTransferRateObserver {
   virtual void OnProbeClusterConfig(ProbeClusterConfig) = 0;
 };
 
+// Configuration sent to factory create function. The parameters here are
+// optional to use for a network controller implementation.
+struct NetworkControllerConfig {
+  // The initial constraints to start with, these can be changed at any later
+  // time by calls to OnTargetRateConstraints.
+  TargetRateConstraints constraints;
+  // Initial stream specific configuration, these are changed at any later time
+  // by calls to OnStreamsConfig.
+  StreamsConfig stream_based_config;
+  // The initial bandwidth estimate to base target rate on. This should be used
+  // as the basis for initial OnTargetTransferRate and OnPacerConfig callbacks.
+  // Note that starting rate is only provided on construction.
+  DataRate starting_bandwidth;
+};
+
 // NetworkControllerInterface is implemented by network controllers. A network
 // controller is a class that uses information about network state and traffic
 // to estimate network parameters such as round trip time and bandwidth. Network
@@ -82,7 +97,8 @@ class NetworkControllerFactoryInterface {
   // Used to create a new network controller, requires an observer to be
   // provided to handle callbacks.
   virtual NetworkControllerInterface::uptr Create(
-      NetworkControllerObserver* observer) = 0;
+      NetworkControllerObserver* observer,
+      NetworkControllerConfig config) = 0;
   // Returns the interval by which the network controller expects
   // OnProcessInterval calls.
   virtual TimeDelta GetProcessInterval() const = 0;
