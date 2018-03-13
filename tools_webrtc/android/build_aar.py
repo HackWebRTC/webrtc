@@ -66,7 +66,9 @@ def _ParseArgs():
   parser.add_argument('--verbose', action='store_true', default=False,
       help='Debug logging.')
   parser.add_argument('--extra-gn-args', default=[], nargs='*',
-      help='Additional GN args to be used during Ninja generation.')
+      help="""Additional GN arguments to be used during Ninja generation.
+              These are applied after any other arguments and will
+              override any values defined by the script.""")
   return parser.parse_args()
 
 
