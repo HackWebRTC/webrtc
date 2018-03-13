@@ -162,13 +162,13 @@ void Conductor::EnsureStreamingUI() {
 // Called when a remote stream is added
 void Conductor::OnAddStream(
     rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
-  RTC_LOG(INFO) << __FUNCTION__ << " " << stream->label();
+  RTC_LOG(INFO) << __FUNCTION__ << " " << stream->id();
   main_wnd_->QueueUIThreadCallback(NEW_STREAM_ADDED, stream.release());
 }
 
 void Conductor::OnRemoveStream(
     rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
-  RTC_LOG(INFO) << __FUNCTION__ << " " << stream->label();
+  RTC_LOG(INFO) << __FUNCTION__ << " " << stream->id();
   main_wnd_->QueueUIThreadCallback(STREAM_REMOVED, stream.release());
 }
 
@@ -441,7 +441,7 @@ void Conductor::AddStreams() {
   typedef std::pair<std::string,
                     rtc::scoped_refptr<webrtc::MediaStreamInterface> >
       MediaStreamPair;
-  active_streams_.insert(MediaStreamPair(stream->label(), stream));
+  active_streams_.insert(MediaStreamPair(stream->id(), stream));
   main_wnd_->SwitchToStreamingUI();
 }
 

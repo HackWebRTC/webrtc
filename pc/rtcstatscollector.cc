@@ -987,7 +987,7 @@ void RTCStatsCollector::ProduceMediaStreamStats_s(
           RTCMediaStreamTrackStatsIDFromDirectionAndAttachment(
               kReceiver, receiver->internal()->AttachmentId());
       for (auto& stream : receiver->streams()) {
-        track_ids[stream->label()].push_back(track_id);
+        track_ids[stream->id()].push_back(track_id);
       }
     }
   }

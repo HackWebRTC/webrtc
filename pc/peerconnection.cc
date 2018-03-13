@@ -142,8 +142,8 @@ bool CanAddLocalMediaStream(webrtc::StreamCollectionInterface* current_streams,
   if (!new_stream || !current_streams) {
     return false;
   }
-  if (current_streams->find(new_stream->label()) != nullptr) {
-    RTC_LOG(LS_ERROR) << "MediaStream with label " << new_stream->label()
+  if (current_streams->find(new_stream->id()) != nullptr) {
+    RTC_LOG(LS_ERROR) << "MediaStream with ID " << new_stream->id()
                       << " is already added.";
     return false;
   }
@@ -1091,8 +1091,7 @@ void PeerConnection::RemoveStream(MediaStreamInterface* local_stream) {
       std::remove_if(
           stream_observers_.begin(), stream_observers_.end(),
           [local_stream](const std::unique_ptr<MediaStreamObserver>& observer) {
-            return observer->stream()->label().compare(local_stream->label()) ==
-                   0;
+            return observer->stream()->id().compare(local_stream->id()) == 0;
           }),
       stream_observers_.end());
 
@@ -1112,7 +1111,7 @@ rtc::scoped_refptr<RtpSenderInterface> PeerConnection::AddTrack(
       RTC_LOG(LS_ERROR) << "Stream list has null element.";
       return nullptr;
     }
-    stream_ids.push_back(stream->label());
+    stream_ids.push_back(stream->id());
   }
   auto sender_or_error = AddTrack(track, stream_ids);
   if (!sender_or_error.ok()) {
@@ -3233,13 +3232,13 @@ void PeerConnection::AddAudioTrack(AudioTrackInterface* track,
   if (sender) {
     // We already have a sender for this track, so just change the stream_id
     // so that it's correct in the next call to CreateOffer.
-    sender->internal()->set_stream_id(stream->label());
+    sender->internal()->set_stream_id(stream->id());
     return;
   }
 
   // Normal case; we've never seen this track before.
   auto new_sender =
-      CreateSender(cricket::MEDIA_TYPE_AUDIO, track, {stream->label()});
+      CreateSender(cricket::MEDIA_TYPE_AUDIO, track, {stream->id()});
   new_sender->internal()->SetVoiceMediaChannel(voice_media_channel());
   GetAudioTransceiver()->internal()->AddSender(new_sender);
   // If the sender has already been configured in SDP, we call SetSsrc,
@@ -3249,7 +3248,7 @@ void PeerConnection::AddAudioTrack(AudioTrackInterface* track,
   // session description is not changed and RemoveStream is called, and
   // later AddStream is called again with the same stream.
   const RtpSenderInfo* sender_info =
-      FindSenderInfo(local_audio_sender_infos_, stream->label(), track->id());
+      FindSenderInfo(local_audio_sender_infos_, stream->id(), track->id());
   if (sender_info) {
     new_sender->internal()->SetSsrc(sender_info->first_ssrc);
   }
@@ -3276,17 +3275,17 @@ void PeerConnection::AddVideoTrack(VideoTrackInterface* track,
   if (sender) {
     // We already have a sender for this track, so just change the stream_id
     // so that it's correct in the next call to CreateOffer.
-    sender->internal()->set_stream_id(stream->label());
+    sender->internal()->set_stream_id(stream->id());
     return;
   }
 
   // Normal case; we've never seen this track before.
   auto new_sender =
-      CreateSender(cricket::MEDIA_TYPE_VIDEO, track, {stream->label()});
+      CreateSender(cricket::MEDIA_TYPE_VIDEO, track, {stream->id()});
   new_sender->internal()->SetVideoMediaChannel(video_media_channel());
   GetVideoTransceiver()->internal()->AddSender(new_sender);
   const RtpSenderInfo* sender_info =
-      FindSenderInfo(local_video_sender_infos_, stream->label(), track->id());
+      FindSenderInfo(local_video_sender_infos_, stream->id(), track->id());
   if (sender_info) {
     new_sender->internal()->SetSsrc(sender_info->first_ssrc);
   }

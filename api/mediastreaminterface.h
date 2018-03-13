@@ -313,10 +313,7 @@ typedef std::vector<rtc::scoped_refptr<VideoTrackInterface> >
 class MediaStreamInterface : public rtc::RefCountInterface,
                              public NotifierInterface {
  public:
-  // TODO(shampson): Remove once downstreams are updated to use id().
-  virtual std::string label() const;
-  // TODO(shampson): Make pure virtual once downstreams have implemented.
-  virtual std::string id() const;
+  virtual std::string id() const = 0;
 
   virtual AudioTrackVector GetAudioTracks() = 0;
   virtual VideoTrackVector GetVideoTracks() = 0;

@@ -138,7 +138,7 @@ class RtpSenderReceiverTest : public testing::Test,
     EXPECT_TRUE(local_stream_->AddTrack(audio_track_));
     audio_rtp_sender_ =
         new AudioRtpSender(worker_thread_, local_stream_->GetAudioTracks()[0],
-                           {local_stream_->label()}, nullptr);
+                           {local_stream_->id()}, nullptr);
     audio_rtp_sender_->SetVoiceMediaChannel(voice_media_channel_);
     audio_rtp_sender_->SetSsrc(kAudioSsrc);
     audio_rtp_sender_->GetOnDestroyedSignal()->connect(
@@ -159,7 +159,7 @@ class RtpSenderReceiverTest : public testing::Test,
     AddVideoTrack(is_screencast);
     video_rtp_sender_ =
         new VideoRtpSender(worker_thread_, local_stream_->GetVideoTracks()[0],
-                           {local_stream_->label()});
+                           {local_stream_->id()});
     video_rtp_sender_->SetVideoMediaChannel(video_media_channel_);
     video_rtp_sender_->SetSsrc(kVideoSsrc);
     VerifyVideoChannelInput();
@@ -780,9 +780,9 @@ TEST_F(RtpSenderReceiverTest,
   // Setting detailed overrides the default non-screencast mode. This should be
   // applied even if the track is set on construction.
   video_track_->set_content_hint(VideoTrackInterface::ContentHint::kDetailed);
-  video_rtp_sender_ = new VideoRtpSender(worker_thread_,
-                                         local_stream_->GetVideoTracks()[0],
-                                         {local_stream_->label()});
+  video_rtp_sender_ =
+      new VideoRtpSender(worker_thread_, local_stream_->GetVideoTracks()[0],
+                         {local_stream_->id()});
   video_rtp_sender_->SetVideoMediaChannel(video_media_channel_);
   video_track_->set_enabled(true);
 

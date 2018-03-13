@@ -136,7 +136,7 @@ TEST_F(PeerConnectionRtpCallbacksTest, AddTrackWithStreamFiresOnAddTrack) {
   ASSERT_EQ(callee->observer()->add_track_events_.size(), 1u);
   auto& add_track_event = callee->observer()->add_track_events_[0];
   ASSERT_EQ(add_track_event.streams.size(), 1u);
-  EXPECT_EQ("audio_stream", add_track_event.streams[0]->label());
+  EXPECT_EQ("audio_stream", add_track_event.streams[0]->id());
   EXPECT_TRUE(add_track_event.streams[0]->FindAudioTrack("audio_track"));
   EXPECT_EQ(add_track_event.streams, add_track_event.receiver->streams());
 }
@@ -355,7 +355,7 @@ TEST_F(PeerConnectionRtpObserverTest, AddSenderWithStreamAddsReceiver) {
   auto receiver_added = callee->pc()->GetReceivers()[0];
   EXPECT_EQ("audio_track", receiver_added->track()->id());
   EXPECT_EQ(receiver_added->streams().size(), 1u);
-  EXPECT_EQ("audio_stream", receiver_added->streams()[0]->label());
+  EXPECT_EQ("audio_stream", receiver_added->streams()[0]->id());
   EXPECT_TRUE(receiver_added->streams()[0]->FindAudioTrack("audio_track"));
 }
 

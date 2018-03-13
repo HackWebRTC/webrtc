@@ -147,7 +147,7 @@ void AudioRtpReceiver::SetStreams(
   for (auto existing_stream : streams_) {
     bool removed = true;
     for (auto stream : streams) {
-      if (existing_stream->label() == stream->label()) {
+      if (existing_stream->id() == stream->id()) {
         RTC_DCHECK_EQ(existing_stream.get(), stream.get());
         removed = false;
         break;
@@ -161,7 +161,7 @@ void AudioRtpReceiver::SetStreams(
   for (auto stream : streams) {
     bool added = true;
     for (auto existing_stream : streams_) {
-      if (stream->label() == existing_stream->label()) {
+      if (stream->id() == existing_stream->id()) {
         RTC_DCHECK_EQ(stream.get(), existing_stream.get());
         added = false;
         break;
@@ -302,7 +302,7 @@ void VideoRtpReceiver::SetStreams(
   for (auto existing_stream : streams_) {
     bool removed = true;
     for (auto stream : streams) {
-      if (existing_stream->label() == stream->label()) {
+      if (existing_stream->id() == stream->id()) {
         RTC_DCHECK_EQ(existing_stream.get(), stream.get());
         removed = false;
         break;
@@ -316,7 +316,7 @@ void VideoRtpReceiver::SetStreams(
   for (auto stream : streams) {
     bool added = true;
     for (auto existing_stream : streams_) {
-      if (stream->label() == existing_stream->label()) {
+      if (stream->id() == existing_stream->id()) {
         RTC_DCHECK_EQ(stream.get(), existing_stream.get());
         added = false;
         break;

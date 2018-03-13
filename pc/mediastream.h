@@ -25,7 +25,6 @@ class MediaStream : public Notifier<MediaStreamInterface> {
  public:
   static rtc::scoped_refptr<MediaStream> Create(const std::string& label);
 
-  std::string label() const override { return id_; }
   std::string id() const override { return id_; }
 
   bool AddTrack(AudioTrackInterface* track) override;

@@ -569,7 +569,7 @@ bool CompareStreamCollections(StreamCollectionInterface* s1,
   }
 
   for (size_t i = 0; i != s1->count(); ++i) {
-    if (s1->at(i)->label() != s2->at(i)->label()) {
+    if (s1->at(i)->id() != s2->at(i)->id()) {
       return false;
     }
     webrtc::AudioTrackVector audio_tracks1 = s1->at(i)->GetAudioTracks();
@@ -2930,7 +2930,7 @@ TEST_F(PeerConnectionInterfaceTestPlanB, SdpWithoutMsidCreatesDefaultStream) {
 
   EXPECT_EQ(1u, remote_stream->GetAudioTracks().size());
   EXPECT_EQ(0u, remote_stream->GetVideoTracks().size());
-  EXPECT_EQ("default", remote_stream->label());
+  EXPECT_EQ("default", remote_stream->id());
 
   CreateAndSetRemoteOffer(kSdpStringWithoutStreams);
   ASSERT_EQ(1u, observer_.remote_streams()->count());
@@ -2960,7 +2960,7 @@ TEST_F(PeerConnectionInterfaceTestPlanB,
 
   EXPECT_EQ(1u, remote_stream->GetAudioTracks().size());
   EXPECT_EQ(1u, remote_stream->GetVideoTracks().size());
-  EXPECT_EQ("default", remote_stream->label());
+  EXPECT_EQ("default", remote_stream->id());
 }
 
 // This tests that it won't crash when PeerConnection tries to remove

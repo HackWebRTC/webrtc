@@ -378,7 +378,7 @@ void SimplePeerConnection::SetAudioControl() {
 
 void SimplePeerConnection::OnAddStream(
     rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) {
-  RTC_LOG(INFO) << __FUNCTION__ << " " << stream->label();
+  RTC_LOG(INFO) << __FUNCTION__ << " " << stream->id();
   remote_stream_ = stream;
   if (remote_video_observer_ && !remote_stream_->GetVideoTracks().empty()) {
     remote_stream_->GetVideoTracks()[0]->AddOrUpdateSink(
@@ -491,7 +491,7 @@ void SimplePeerConnection::AddStreams(bool audio_only) {
   typedef std::pair<std::string,
                     rtc::scoped_refptr<webrtc::MediaStreamInterface>>
       MediaStreamPair;
-  active_streams_.insert(MediaStreamPair(stream->label(), stream));
+  active_streams_.insert(MediaStreamPair(stream->id(), stream));
 }
 
 bool SimplePeerConnection::CreateDataChannel() {

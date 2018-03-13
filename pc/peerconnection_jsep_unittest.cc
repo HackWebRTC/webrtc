@@ -1187,7 +1187,7 @@ TEST_F(PeerConnectionJsepTest,
   const auto& event = track_events[0];
   ASSERT_EQ(1u, event.streams.size());
   auto stream = event.streams[0];
-  EXPECT_EQ(kStreamId, stream->label());
+  EXPECT_EQ(kStreamId, stream->id());
   EXPECT_THAT(track_events[0].snapshotted_stream_tracks.at(stream),
               ElementsAre(event.receiver->track()));
   EXPECT_EQ(event.receiver->streams(), track_events[0].streams);

@@ -1216,13 +1216,13 @@ TEST_F(RTCStatsCollectorTest,
 
   stats_->CreateMockRtpSendersReceiversAndChannels(
       {std::make_pair(local_audio_track.get(), voice_sender_info_ssrc1)}, {},
-      {}, {}, {local_stream->label()}, {});
+      {}, {}, {local_stream->id()}, {});
 
   rtc::scoped_refptr<const RTCStatsReport> report = stats_->GetStatsReport();
 
   RTCMediaStreamStats expected_local_stream(
       IdForType<RTCMediaStreamStats>(report), report->timestamp_us());
-  expected_local_stream.stream_identifier = local_stream->label();
+  expected_local_stream.stream_identifier = local_stream->id();
   expected_local_stream.track_ids = {
       IdForType<RTCMediaStreamTrackStats>(report)};
   ASSERT_TRUE(report->Get(expected_local_stream.id()))
@@ -1284,7 +1284,7 @@ TEST_F(RTCStatsCollectorTest,
 
   RTCMediaStreamStats expected_remote_stream(
       IdForType<RTCMediaStreamStats>(report), report->timestamp_us());
-  expected_remote_stream.stream_identifier = remote_stream->label();
+  expected_remote_stream.stream_identifier = remote_stream->id();
   expected_remote_stream.track_ids =
       std::vector<std::string>({IdForType<RTCMediaStreamTrackStats>(report)});
   ASSERT_TRUE(report->Get(expected_remote_stream.id()))
@@ -1338,7 +1338,7 @@ TEST_F(RTCStatsCollectorTest,
   stats_->CreateMockRtpSendersReceiversAndChannels(
       {}, {},
       {std::make_pair(local_video_track.get(), video_sender_info_ssrc1)}, {},
-      {local_stream->label()}, {});
+      {local_stream->id()}, {});
 
   rtc::scoped_refptr<const RTCStatsReport> report = stats_->GetStatsReport();
 
@@ -1350,7 +1350,7 @@ TEST_F(RTCStatsCollectorTest,
 
   RTCMediaStreamStats expected_local_stream(stats_of_my_type[0]->id(),
                                             report->timestamp_us());
-  expected_local_stream.stream_identifier = local_stream->label();
+  expected_local_stream.stream_identifier = local_stream->id();
   expected_local_stream.track_ids =
       std::vector<std::string>({stats_of_track_type[0]->id()});
   ASSERT_TRUE(report->Get(expected_local_stream.id()));
@@ -1414,7 +1414,7 @@ TEST_F(RTCStatsCollectorTest,
 
   RTCMediaStreamStats expected_remote_stream(stats_of_my_type[0]->id(),
                                              report->timestamp_us());
-  expected_remote_stream.stream_identifier = remote_stream->label();
+  expected_remote_stream.stream_identifier = remote_stream->id();
   expected_remote_stream.track_ids =
       std::vector<std::string>({stats_of_track_type[0]->id()});
   ASSERT_TRUE(report->Get(expected_remote_stream.id()));

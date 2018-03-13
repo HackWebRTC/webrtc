@@ -42,10 +42,10 @@ class StreamCollection : public StreamCollectionInterface {
     return media_streams_.at(index);
   }
 
-  virtual MediaStreamInterface* find(const std::string& label) {
+  virtual MediaStreamInterface* find(const std::string& id) {
     for (StreamVector::iterator it = media_streams_.begin();
          it != media_streams_.end(); ++it) {
-      if ((*it)->label().compare(label) == 0) {
+      if ((*it)->id().compare(id) == 0) {
         return (*it);
       }
     }
@@ -77,7 +77,7 @@ class StreamCollection : public StreamCollectionInterface {
   void AddStream(MediaStreamInterface* stream) {
     for (StreamVector::iterator it = media_streams_.begin();
          it != media_streams_.end(); ++it) {
-      if ((*it)->label().compare(stream->label()) == 0)
+      if ((*it)->id().compare(stream->id()) == 0)
         return;
     }
     media_streams_.push_back(stream);
@@ -86,7 +86,7 @@ class StreamCollection : public StreamCollectionInterface {
   void RemoveStream(MediaStreamInterface* remove_stream) {
     for (StreamVector::iterator it = media_streams_.begin();
          it != media_streams_.end(); ++it) {
-      if ((*it)->label().compare(remove_stream->label()) == 0) {
+      if ((*it)->id().compare(remove_stream->id()) == 0) {
         media_streams_.erase(it);
         break;
       }
