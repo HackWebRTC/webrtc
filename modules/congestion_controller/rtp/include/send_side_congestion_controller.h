@@ -137,11 +137,21 @@ class SendSideCongestionController
   void SetPacingFactor(float pacing_factor);
 
  protected:
-  // Waits long enough that any outstanding tasks should be finished.
-  void WaitOnTasks();
+  // TODO(srte): The tests should be rewritten to not depend on internals and
+  // these functions should be removed.
+  // Post tasks that are normally delayed. This allows unit tests to trigger
+  // process updates immediately.
+  void PostDelayedTasksForTest();
+  // Waits for outstanding tasks to be finished. This allos unit tests to ensure
+  // that expected callbacks has be called.
+  void WaitOnTasksForTest();
 
  private:
   void MaybeCreateControllers();
+  void StartProcess() RTC_RUN_ON(task_queue_);
+  void ProcessTask();
+  void StartPacerQueueUpdate();
+  void PacerQueueUpdateTask();
 
   void UpdateStreamsConfig() RTC_RUN_ON(task_queue_);
   void MaybeUpdateOutstandingData();
@@ -166,11 +176,7 @@ class SendSideCongestionController
   std::unique_ptr<NetworkControllerInterface> controller_
       RTC_GUARDED_BY(task_queue_);
 
-  // TODO(srte): Review access constraints of these when introducing delayed
-  // tasks. Only accessed from process threads.
-  TimeDelta process_interval_;
-  // Only accessed from process threads.
-  int64_t last_process_update_ms_ = 0;
+  TimeDelta process_interval_ RTC_GUARDED_BY(task_queue_);
 
   std::map<uint32_t, RTCPReportBlock> last_report_blocks_
       RTC_GUARDED_BY(task_queue_);

@@ -48,10 +48,10 @@ class SendSideCongestionControllerForTest
  public:
   using SendSideCongestionController::SendSideCongestionController;
   ~SendSideCongestionControllerForTest() {}
-  using SendSideCongestionController::WaitOnTasks;
+  void WaitOnTasks() { SendSideCongestionController::WaitOnTasksForTest(); }
   void Process() override {
-    SendSideCongestionController::Process();
-    SendSideCongestionController::WaitOnTasks();
+    SendSideCongestionController::PostDelayedTasksForTest();
+    SendSideCongestionController::WaitOnTasksForTest();
   }
 };
 }  // namespace

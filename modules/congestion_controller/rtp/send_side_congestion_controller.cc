@@ -314,6 +314,7 @@ void SendSideCongestionController::MaybeCreateControllers() {
   controller_ =
       controller_factory_->Create(control_handler_.get(), initial_config_);
   UpdateStreamsConfig();
+  StartProcess();
 }
 
 SendSideCongestionController::~SendSideCongestionController() {
@@ -498,33 +499,40 @@ void SendSideCongestionController::OnRttUpdate(int64_t avg_rtt_ms,
 }
 
 int64_t SendSideCongestionController::TimeUntilNextProcess() {
-  const int kMaxProcessInterval = 60 * 1000;
-  if (process_interval_.IsInfinite())
-    return kMaxProcessInterval;
-  int64_t next_process_ms = last_process_update_ms_ + process_interval_.ms();
-  int64_t time_until_next_process =
-      next_process_ms - clock_->TimeInMilliseconds();
-  return std::max<int64_t>(time_until_next_process, 0);
+  // Using task queue to process, just sleep long to avoid wasting resources.
+  return 60 * 1000;
 }
 
 void SendSideCongestionController::Process() {
-  int64_t now_ms = clock_->TimeInMilliseconds();
-  last_process_update_ms_ = now_ms;
-  {
+  // Ignored, using task queue to process.
+}
+
+void SendSideCongestionController::StartProcess() {
+  task_queue_->PostDelayedTask(
+      [this]() {
+        RTC_DCHECK_RUN_ON(task_queue_.get());
+        ProcessTask();
+        StartProcess();
+      },
+      process_interval_.ms());
+}
+
+void SendSideCongestionController::ProcessTask() {
+  RTC_DCHECK_RUN_ON(task_queue_.get());
+  if (controller_) {
     ProcessInterval msg;
-    msg.at_time = Timestamp::ms(now_ms);
-    task_queue_->PostTask([this, msg]() {
-      RTC_DCHECK_RUN_ON(task_queue_.get());
-      if (controller_)
-        controller_->OnProcessInterval(msg);
-    });
+    msg.at_time = Timestamp::ms(clock_->TimeInMilliseconds());
+    controller_->OnProcessInterval(msg);
   }
-  task_queue_->PostTask([this]() {
-    RTC_DCHECK_RUN_ON(task_queue_.get());
+}
+
+void SendSideCongestionController::PacerQueueUpdateTask() {
+  RTC_DCHECK_RUN_ON(task_queue_.get());
+  if (control_handler_) {
     PacerQueueUpdate msg;
     msg.expected_queue_time = TimeDelta::ms(pacer_->ExpectedQueueTimeMs());
     control_handler_->OnPacerQueueUpdate(msg);
-  });
+  }
 }
 
 void SendSideCongestionController::AddPacket(
@@ -584,7 +592,14 @@ SendSideCongestionController::GetTransportFeedbackVector() const {
   return transport_feedback_adapter_.GetTransportFeedbackVector();
 }
 
-void SendSideCongestionController::WaitOnTasks() {
+void SendSideCongestionController::PostDelayedTasksForTest() {
+  task_queue_->PostTask([this]() {
+    ProcessTask();
+    PacerQueueUpdateTask();
+  });
+}
+
+void SendSideCongestionController::WaitOnTasksForTest() {
   rtc::Event event(false, false);
   task_queue_->PostTask([&event]() { event.Set(); });
   event.Wait(rtc::Event::kForever);
