@@ -68,7 +68,9 @@ class SendSideCongestionController
                       int start_bitrate_bps,
                       int max_bitrate_bps) override;
 
-  void SetMaxTotalAllocatedBitrate(int max_total_allocated_bitrate) override;
+  void SetAllocatedSendBitrateLimits(int64_t min_send_bitrate_bps,
+                                     int64_t max_padding_bitrate_bps,
+                                     int64_t max_total_bitrate_bps) override;
 
   // Resets the BWE state. Note the first argument is the bitrate_bps.
   void OnNetworkRouteChanged(const rtc::NetworkRoute& network_route,
@@ -113,6 +115,8 @@ class SendSideCongestionController
   void OnTransportFeedback(const rtcp::TransportFeedback& feedback) override;
 
   std::vector<PacketFeedback> GetTransportFeedbackVector() const;
+
+  void SetPacingFactor(float pacing_factor) override;
 
  private:
   void MaybeTriggerOnNetworkChanged();

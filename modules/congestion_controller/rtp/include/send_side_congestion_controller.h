@@ -83,7 +83,9 @@ class SendSideCongestionController
                       int start_bitrate_bps,
                       int max_bitrate_bps) override;
 
-  void SetMaxTotalAllocatedBitrate(int max_total_allocated_bitrate) override;
+  void SetAllocatedSendBitrateLimits(int64_t min_send_bitrate_bps,
+                                     int64_t max_padding_bitrate_bps,
+                                     int64_t max_total_bitrate_bps) override;
 
   // Resets the BWE state. Note the first argument is the bitrate_bps.
   void OnNetworkRouteChanged(const rtc::NetworkRoute& network_route,
@@ -125,16 +127,7 @@ class SendSideCongestionController
 
   std::vector<PacketFeedback> GetTransportFeedbackVector() const;
 
-  // Sets the minimum send bitrate and maximum padding bitrate requested by send
-  // streams.
-  // |min_send_bitrate_bps| might be higher that the estimated available network
-  // bitrate and if so, the pacer will send with |min_send_bitrate_bps|.
-  // |max_padding_bitrate_bps| might be higher than the estimate available
-  // network bitrate and if so, the pacer will send padding packets to reach
-  // the min of the estimated available bitrate and |max_padding_bitrate_bps|.
-  void SetSendBitrateLimits(int64_t min_send_bitrate_bps,
-                            int64_t max_padding_bitrate_bps);
-  void SetPacingFactor(float pacing_factor);
+  void SetPacingFactor(float pacing_factor) override;
 
  protected:
   // TODO(srte): The tests should be rewritten to not depend on internals and

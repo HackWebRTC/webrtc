@@ -91,8 +91,8 @@ void RtpTransportControllerSend::SetAllocatedSendBitrateLimits(
     int min_send_bitrate_bps,
     int max_padding_bitrate_bps,
     int max_total_bitrate_bps) {
-  pacer_.SetSendBitrateLimits(min_send_bitrate_bps, max_padding_bitrate_bps);
-  send_side_cc_->SetMaxTotalAllocatedBitrate(max_total_bitrate_bps);
+  send_side_cc_->SetAllocatedSendBitrateLimits(
+      min_send_bitrate_bps, max_padding_bitrate_bps, max_total_bitrate_bps);
 }
 
 void RtpTransportControllerSend::SetKeepAliveConfig(
@@ -100,7 +100,7 @@ void RtpTransportControllerSend::SetKeepAliveConfig(
   keepalive_ = config;
 }
 void RtpTransportControllerSend::SetPacingFactor(float pacing_factor) {
-  pacer_.SetPacingFactor(pacing_factor);
+  send_side_cc_->SetPacingFactor(pacing_factor);
 }
 void RtpTransportControllerSend::SetQueueTimeLimit(int limit_ms) {
   pacer_.SetQueueTimeLimit(limit_ms);
