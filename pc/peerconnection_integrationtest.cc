@@ -1087,6 +1087,8 @@ class PeerConnectionIntegrationBaseTest : public testing::Test {
         fss_(new rtc::FirewallSocketServer(ss_.get())),
         network_thread_(new rtc::Thread(fss_.get())),
         worker_thread_(rtc::Thread::Create()) {
+    network_thread_->SetName("PCNetworkThread", this);
+    worker_thread_->SetName("PCWorkerThread", this);
     RTC_CHECK(network_thread_->Start());
     RTC_CHECK(worker_thread_->Start());
   }
