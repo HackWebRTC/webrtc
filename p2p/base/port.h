@@ -575,6 +575,18 @@ class Connection : public CandidatePairInterface,
   // Estimate of the round-trip time over this connection.
   int rtt() const { return rtt_; }
 
+  int unwritable_timeout() const;
+  void set_unwritable_timeout(const rtc::Optional<int>& value_ms) {
+    // TODO(qingsi): Validate configuration parameters in
+    // PeerConnection::ValidateConfiguration.
+    RTC_CHECK_LT(value_ms.value_or(-1), CONNECTION_WRITE_TIMEOUT);
+    unwritable_timeout_ = value_ms;
+  }
+  int unwritable_min_checks() const;
+  void set_unwritable_min_checks(const rtc::Optional<int>& value) {
+    unwritable_min_checks_ = value;
+  }
+
   // Gets the |ConnectionInfo| stats, where |best_connection| has not been
   // populated (default value false).
   ConnectionInfo stats();
@@ -816,6 +828,9 @@ class Connection : public CandidatePairInterface,
   std::vector<SentPing> pings_since_last_response_;
 
   PacketLossEstimator packet_loss_estimator_;
+
+  rtc::Optional<int> unwritable_timeout_;
+  rtc::Optional<int> unwritable_min_checks_;
 
   bool reported_;
   IceCandidatePairState state_;

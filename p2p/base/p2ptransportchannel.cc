@@ -215,6 +215,8 @@ void P2PTransportChannel::AddConnection(Connection* connection) {
   unpinged_connections_.insert(connection);
   connection->set_remote_ice_mode(remote_ice_mode_);
   connection->set_receiving_timeout(config_.receiving_timeout);
+  connection->set_unwritable_timeout(config_.ice_unwritable_timeout);
+  connection->set_unwritable_min_checks(config_.ice_unwritable_min_checks);
   connection->SignalReadPacket.connect(
       this, &P2PTransportChannel::OnReadPacket);
   connection->SignalReadyToSend.connect(
@@ -564,6 +566,24 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
     config_.ice_check_min_interval = config.ice_check_min_interval;
     RTC_LOG(LS_INFO) << "Set min ping interval to "
                      << config_.ice_check_min_interval.value_or(-1);
+  }
+
+  if (config_.ice_unwritable_timeout != config.ice_unwritable_timeout) {
+    config_.ice_unwritable_timeout = config.ice_unwritable_timeout;
+    for (Connection* conn : connections_) {
+      conn->set_unwritable_timeout(config_.ice_unwritable_timeout);
+    }
+    RTC_LOG(LS_INFO) << "Set unwritable timeout to "
+                     << config_.ice_unwritable_timeout.value_or(-1);
+  }
+
+  if (config_.ice_unwritable_min_checks != config.ice_unwritable_min_checks) {
+    config_.ice_unwritable_min_checks = config.ice_unwritable_min_checks;
+    for (Connection* conn : connections_) {
+      conn->set_unwritable_min_checks(config_.ice_unwritable_min_checks);
+    }
+    RTC_LOG(LS_INFO) << "Set unwritable min checks to "
+                     << config_.ice_unwritable_min_checks.value_or(-1);
   }
 
   if (config_.network_preference != config.network_preference) {

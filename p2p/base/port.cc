@@ -1126,6 +1126,14 @@ void Connection::set_use_candidate_attr(bool enable) {
   use_candidate_attr_ = enable;
 }
 
+int Connection::unwritable_timeout() const {
+  return unwritable_timeout_.value_or(CONNECTION_WRITE_CONNECT_TIMEOUT);
+}
+
+int Connection::unwritable_min_checks() const {
+  return unwritable_min_checks_.value_or(CONNECTION_WRITE_CONNECT_FAILURES);
+}
+
 void Connection::OnSendStunPacket(const void* data, size_t size,
                                   StunRequest* req) {
   rtc::PacketOptions options(port_->DefaultDscpValue());
@@ -1351,14 +1359,11 @@ void Connection::UpdateState(int64_t now) {
   // allow for changes in network conditions.
 
   if ((write_state_ == STATE_WRITABLE) &&
-      TooManyFailures(pings_since_last_response_,
-                      CONNECTION_WRITE_CONNECT_FAILURES,
-                      rtt,
+      TooManyFailures(pings_since_last_response_, unwritable_min_checks(), rtt,
                       now) &&
-      TooLongWithoutResponse(pings_since_last_response_,
-                             CONNECTION_WRITE_CONNECT_TIMEOUT,
+      TooLongWithoutResponse(pings_since_last_response_, unwritable_timeout(),
                              now)) {
-    uint32_t max_pings = CONNECTION_WRITE_CONNECT_FAILURES;
+    uint32_t max_pings = unwritable_min_checks();
     LOG_J(LS_INFO, this) << "Unwritable after " << max_pings
                          << " ping failures and "
                          << now - pings_since_last_response_[0].sent_time

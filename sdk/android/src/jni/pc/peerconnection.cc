@@ -187,6 +187,14 @@ void JavaToNativeRTCConfiguration(
       Java_RTCConfiguration_getIceCheckMinInterval(jni, j_rtc_config);
   rtc_config->ice_check_min_interval =
       JavaToNativeOptionalInt(jni, j_ice_check_min_interval);
+  ScopedJavaLocalRef<jobject> j_ice_unwritable_timeout =
+      Java_RTCConfiguration_getIceUnwritableTimeout(jni, j_rtc_config);
+  rtc_config->ice_unwritable_timeout =
+      JavaToNativeOptionalInt(jni, j_ice_unwritable_timeout);
+  ScopedJavaLocalRef<jobject> j_ice_unwritable_min_checks =
+      Java_RTCConfiguration_getIceUnwritableMinChecks(jni, j_rtc_config);
+  rtc_config->ice_unwritable_min_checks =
+      JavaToNativeOptionalInt(jni, j_ice_unwritable_min_checks);
   ScopedJavaLocalRef<jobject> j_stun_candidate_keepalive_interval =
       Java_RTCConfiguration_getStunCandidateKeepaliveInterval(jni,
                                                               j_rtc_config);

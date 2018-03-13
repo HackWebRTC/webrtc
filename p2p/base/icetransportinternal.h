@@ -128,6 +128,17 @@ struct IceConfig {
   // candidate pairs with strong or weak connectivity, if either of the above
   // interval is shorter than the min interval.
   rtc::Optional<int> ice_check_min_interval;
+  // The min time period for which a candidate pair must wait for response to
+  // connectivity checks before it becomes unwritable. This parameter
+  // overrides the default value given by |CONNECTION_WRITE_CONNECT_TIMEOUT|
+  // in port.h if set, when determining the writability of a candidate pair.
+  rtc::Optional<int> ice_unwritable_timeout;
+
+  // The min number of connectivity checks that a candidate pair must sent
+  // without receiving response before it becomes unwritable. This parameter
+  // overrides the default value given by |CONNECTION_WRITE_CONNECT_FAILURES| in
+  // port.h if set, when determining the writability of a candidate pair.
+  rtc::Optional<int> ice_unwritable_min_checks;
   // The interval in milliseconds at which STUN candidates will resend STUN
   // binding requests to keep NAT bindings open.
   rtc::Optional<int> stun_keepalive_interval;

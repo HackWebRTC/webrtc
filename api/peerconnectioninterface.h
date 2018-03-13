@@ -515,6 +515,16 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     rtc::Optional<int> ice_check_interval_weak_connectivity;
     rtc::Optional<int> ice_check_min_interval;
 
+    // The min time period for which a candidate pair must wait for response to
+    // connectivity checks before it becomes unwritable. This parameter
+    // overrides the default value in the ICE implementation if set.
+    rtc::Optional<int> ice_unwritable_timeout;
+
+    // The min number of connectivity checks that a candidate pair must sent
+    // without receiving response before it becomes unwritable. This parameter
+    // overrides the default value in the ICE implementation if set.
+    rtc::Optional<int> ice_unwritable_min_checks;
+
     // The interval in milliseconds at which STUN candidates will resend STUN
     // binding requests to keep NAT bindings open.
     rtc::Optional<int> stun_candidate_keepalive_interval;

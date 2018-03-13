@@ -323,6 +323,10 @@ void TCPPort::OnAddressReady(rtc::AsyncPacketSocket* socket,
              0, "", true);
 }
 
+// TODO(qingsi): |CONNECTION_WRITE_CONNECT_TIMEOUT| is overriden by
+// |ice_unwritable_timeout| in IceConfig when determining the writability state.
+// Replace this constant with the config parameter assuming the default value if
+// we decide it is also applicable here.
 TCPConnection::TCPConnection(TCPPort* port,
                              const Candidate& candidate,
                              rtc::AsyncPacketSocket* socket)

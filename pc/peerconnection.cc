@@ -666,6 +666,8 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
     rtc::Optional<int> ice_check_interval_strong_connectivity;
     rtc::Optional<int> ice_check_interval_weak_connectivity;
     rtc::Optional<int> ice_check_min_interval;
+    rtc::Optional<int> ice_unwritable_timeout;
+    rtc::Optional<int> ice_unwritable_min_checks;
     rtc::Optional<int> stun_candidate_keepalive_interval;
     rtc::Optional<rtc::IntervalRange> ice_regather_interval_range;
     webrtc::TurnCustomizer* turn_customizer;
@@ -710,6 +712,8 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
          ice_check_interval_weak_connectivity ==
              o.ice_check_interval_weak_connectivity &&
          ice_check_min_interval == o.ice_check_min_interval &&
+         ice_unwritable_timeout == o.ice_unwritable_timeout &&
+         ice_unwritable_min_checks == o.ice_unwritable_min_checks &&
          stun_candidate_keepalive_interval ==
              o.stun_candidate_keepalive_interval &&
          ice_regather_interval_range == o.ice_regather_interval_range &&
@@ -2722,6 +2726,9 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
       configuration.ice_check_interval_strong_connectivity;
   modified_config.ice_check_interval_weak_connectivity =
       configuration.ice_check_interval_weak_connectivity;
+  modified_config.ice_unwritable_timeout = configuration.ice_unwritable_timeout;
+  modified_config.ice_unwritable_min_checks =
+      configuration.ice_unwritable_min_checks;
   modified_config.stun_candidate_keepalive_interval =
       configuration.stun_candidate_keepalive_interval;
   modified_config.turn_customizer = configuration.turn_customizer;
