@@ -461,12 +461,6 @@ void SendSideCongestionController::SignalNetworkState(NetworkState state) {
   });
 }
 
-void SendSideCongestionController::SetTransportOverhead(
-    size_t transport_overhead_bytes_per_packet) {
-  // TODO(srte): Remove this method from SendSideCongestionControllerInterface
-  RTC_NOTREACHED();
-}
-
 void SendSideCongestionController::OnSentPacket(
     const rtc::SentPacket& sent_packet) {
   // We're not interested in packets without an id, which may be stun packets,

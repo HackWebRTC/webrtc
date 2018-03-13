@@ -57,8 +57,6 @@ class SendSideCongestionControllerInterface : public CallStatsObserver,
                                      int min_bitrate_bps,
                                      int max_bitrate_bps) = 0;
   virtual void SignalNetworkState(NetworkState state) = 0;
-  virtual void SetTransportOverhead(
-      size_t transport_overhead_bytes_per_packet) = 0;
   virtual RtcpBandwidthObserver* GetBandwidthObserver() = 0;
   virtual bool AvailableBandwidth(uint32_t* bandwidth) const = 0;
   virtual TransportFeedbackObserver* GetTransportFeedbackObserver() = 0;

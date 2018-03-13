@@ -93,8 +93,6 @@ class SendSideCongestionController
                              int min_bitrate_bps,
                              int max_bitrate_bps) override;
   void SignalNetworkState(NetworkState state) override;
-  void SetTransportOverhead(
-      size_t transport_overhead_bytes_per_packet) override;
 
   RtcpBandwidthObserver* GetBandwidthObserver() override;
 

@@ -80,8 +80,8 @@ class SendSideCongestionController
   void SignalNetworkState(NetworkState state) override;
 
   // Deprecated: Is updated by OnNetworkRouteChanged
-  RTC_DEPRECATED void SetTransportOverhead(
-      size_t transport_overhead_bytes_per_packet) override;
+  RTC_DEPRECATED virtual void SetTransportOverhead(
+      size_t transport_overhead_bytes_per_packet);
 
   // Deprecated: Use GetBandwidthObserver instead.
   RTC_DEPRECATED virtual BitrateController* GetBitrateController() const;
