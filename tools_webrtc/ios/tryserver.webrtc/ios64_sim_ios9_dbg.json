@@ -2,7 +2,7 @@
   "comments": [
     "Tests for 64-bit iOS simulators."
   ],
-  "xcode version": "9.0",
+  "xcode build version": "9C40b",
   "gn_args": [
     "goma_dir=\"$(goma_dir)\"",
     "is_component_build=false",
