@@ -10,12 +10,12 @@
 #ifndef TEST_LAYER_FILTERING_TRANSPORT_H_
 #define TEST_LAYER_FILTERING_TRANSPORT_H_
 
-#include "call/call.h"
-#include "test/direct_transport.h"
-#include "test/fake_network_pipe.h"
-#include "test/single_threaded_task_queue.h"
-
 #include <map>
+
+#include "call/call.h"
+#include "call/fake_network_pipe.h"
+#include "test/direct_transport.h"
+#include "test/single_threaded_task_queue.h"
 
 namespace webrtc {
 
