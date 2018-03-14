@@ -424,8 +424,9 @@ def CheckNoStreamUsageIsAdded(input_api, output_api,
                '#include <sstream>  // no-presubmit-check TODO(webrtc:8982)\n'
                'std::ostream& F() {  // no-presubmit-check TODO(webrtc:8982)\n'
                '\n'
-               'If you are adding new code, please consider using '
-               'rtc::SimpleStringBuilder (rtc_base/string/string_builder.h).\n'
+               'If you are adding new code, consider using '
+               'rtc::SimpleStringBuilder\n'
+               '(in rtc_base/strings/string_builder.h).\n'
                'Affected files:\n')
   errors = []  # 2-element tuples with (file, line number)
   include_re = input_api.re.compile(r'#include <(i|o|s)stream>')
