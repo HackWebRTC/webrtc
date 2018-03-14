@@ -267,8 +267,7 @@ std::vector<webrtc::VideoStream> GetScreenshareLayers(
     layers[1].height = height;
     layers[1].max_qp = max_qp;
     layers[1].max_framerate = max_framerate;
-    // Three temporal layers means two thresholds.
-    layers[1].num_temporal_layers = 2;
+    layers[1].num_temporal_layers = 3;
     layers[1].min_bitrate_bps = layers[0].target_bitrate_bps * 2;
     layers[1].target_bitrate_bps = max_bitrate_bps;
     layers[1].max_bitrate_bps = max_bitrate_bps;
