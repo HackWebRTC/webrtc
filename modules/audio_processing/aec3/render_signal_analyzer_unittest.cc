@@ -46,7 +46,7 @@ void ProduceSinusoid(int sample_rate_hz,
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 // Verifies that the check for non-null output parameter works.
 TEST(RenderSignalAnalyzer, NullMaskOutput) {
-  RenderSignalAnalyzer analyzer;
+  RenderSignalAnalyzer analyzer(EchoCanceller3Config{});
   EXPECT_DEATH(analyzer.MaskRegionsAroundNarrowBands(nullptr), "");
 }
 
@@ -54,7 +54,7 @@ TEST(RenderSignalAnalyzer, NullMaskOutput) {
 
 // Verify that no narrow bands are detected in a Gaussian noise signal.
 TEST(RenderSignalAnalyzer, NoFalseDetectionOfNarrowBands) {
-  RenderSignalAnalyzer analyzer;
+  RenderSignalAnalyzer analyzer(EchoCanceller3Config{});
   Random random_generator(42U);
   std::vector<std::vector<float>> x(3, std::vector<float>(kBlockSize, 0.f));
   std::array<float, kBlockSize> x_old;
@@ -85,7 +85,7 @@ TEST(RenderSignalAnalyzer, NoFalseDetectionOfNarrowBands) {
 
 // Verify that a sinusiod signal is detected as narrow bands.
 TEST(RenderSignalAnalyzer, NarrowBandDetection) {
-  RenderSignalAnalyzer analyzer;
+  RenderSignalAnalyzer analyzer(EchoCanceller3Config{});
   Random random_generator(42U);
   std::vector<std::vector<float>> x(3, std::vector<float>(kBlockSize, 0.f));
   std::array<float, kBlockSize> x_old;

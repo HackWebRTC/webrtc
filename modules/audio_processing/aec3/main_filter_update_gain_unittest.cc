@@ -61,7 +61,7 @@ void RunFilterUpdateTest(int num_blocks_to_process,
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
       RenderDelayBuffer::Create(config, 3));
   AecState aec_state(config);
-  RenderSignalAnalyzer render_signal_analyzer;
+  RenderSignalAnalyzer render_signal_analyzer(config);
   rtc::Optional<DelayEstimate> delay_estimate;
   std::array<float, kFftLength> s_scratch;
   std::array<float, kBlockSize> s;
@@ -190,7 +190,7 @@ TEST(MainFilterUpdateGain, NullDataOutputGain) {
   EchoCanceller3Config config;
   AdaptiveFirFilter filter(config.filter.main.length_blocks,
                            DetectOptimization(), &data_dumper);
-  RenderSignalAnalyzer analyzer;
+  RenderSignalAnalyzer analyzer(EchoCanceller3Config{});
   SubtractorOutput output;
   MainFilterUpdateGain gain(config.filter.main);
   std::array<float, kFftLengthBy2Plus1> render_power;

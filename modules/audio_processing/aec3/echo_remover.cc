@@ -106,6 +106,7 @@ EchoRemoverImpl::EchoRemoverImpl(const EchoCanceller3Config& config,
       suppression_gain_(config_, optimization_),
       cng_(optimization_),
       suppression_filter_(sample_rate_hz_),
+      render_signal_analyzer_(config_),
       residual_echo_estimator_(config_),
       aec_state_(config_) {
   RTC_DCHECK(ValidFullBandRate(sample_rate_hz));
