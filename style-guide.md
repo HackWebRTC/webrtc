@@ -34,7 +34,7 @@ instead of                          | use
 `const T* ptr, size_t num_elements` | `ArrayView<const T>`
 `T* ptr, size_t num_elements`       | `ArrayView<T>`
 
-See [the source](webrtc/api/array_view.h) for more detailed docs.
+See [the source](api/array_view.h) for more detailed docs.
 
 ### sigslot
 
