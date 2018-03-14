@@ -153,7 +153,8 @@ RTPSender::RTPSender(
   // be found when paced.
   if (flexfec_sender) {
     flexfec_packet_history_.SetStorePacketsStatus(
-        true, kMinFlexfecPacketsToStoreForPacing);
+        RtpPacketHistory::StorageMode::kStore,
+        kMinFlexfecPacketsToStoreForPacing);
   }
 }
 
@@ -600,43 +601,60 @@ size_t RTPSender::SendPadData(size_t bytes,
 }
 
 void RTPSender::SetStorePacketsStatus(bool enable, uint16_t number_to_store) {
-  packet_history_.SetStorePacketsStatus(enable, number_to_store);
+  RtpPacketHistory::StorageMode mode =
+      enable ? RtpPacketHistory::StorageMode::kStore
+             : RtpPacketHistory::StorageMode::kDisabled;
+  packet_history_.SetStorePacketsStatus(mode, number_to_store);
 }
 
 bool RTPSender::StorePackets() const {
-  return packet_history_.StorePackets();
+  return packet_history_.GetStorageMode() !=
+         RtpPacketHistory::StorageMode::kDisabled;
 }
 
-int32_t RTPSender::ReSendPacket(uint16_t packet_id, int64_t min_resend_time) {
-  std::unique_ptr<RtpPacketToSend> packet =
-      packet_history_.GetPacketAndSetSendTime(packet_id, min_resend_time, true);
-  if (!packet) {
+int32_t RTPSender::ReSendPacket(uint16_t packet_id) {
+  // Try to find packet in RTP packet history. Also verify RTT here, so that we
+  // don't retransmit too often.
+  rtc::Optional<RtpPacketHistory::PacketState> stored_packet =
+      packet_history_.GetPacketState(packet_id, true);
+  if (!stored_packet) {
     // Packet not found.
     return 0;
   }
 
+  const int32_t packet_size = static_cast<int32_t>(stored_packet->payload_size);
+
+  RTC_DCHECK(retransmission_rate_limiter_);
   // Check if we're overusing retransmission bitrate.
   // TODO(sprang): Add histograms for nack success or failure reasons.
-  RTC_DCHECK(retransmission_rate_limiter_);
-  if (!retransmission_rate_limiter_->TryUseRate(packet->size()))
+  if (!retransmission_rate_limiter_->TryUseRate(packet_size)) {
     return -1;
+  }
 
   if (paced_sender_) {
     // Convert from TickTime to Clock since capture_time_ms is based on
     // TickTime.
     int64_t corrected_capture_tims_ms =
-        packet->capture_time_ms() + clock_delta_ms_;
-    paced_sender_->InsertPacket(RtpPacketSender::kNormalPriority,
-                                packet->Ssrc(), packet->SequenceNumber(),
-                                corrected_capture_tims_ms,
-                                packet->payload_size(), true);
+        stored_packet->capture_time_ms + clock_delta_ms_;
+    paced_sender_->InsertPacket(
+        RtpPacketSender::kNormalPriority, stored_packet->ssrc,
+        stored_packet->rtp_sequence_number, corrected_capture_tims_ms,
+        stored_packet->payload_size, true);
 
-    return packet->size();
+    return packet_size;
   }
-  bool rtx = (RtxStatus() & kRtxRetransmitted) > 0;
-  int32_t packet_size = static_cast<int32_t>(packet->size());
+
+  std::unique_ptr<RtpPacketToSend> packet =
+      packet_history_.GetPacketAndSetSendTime(packet_id, true);
+  if (!packet) {
+    // Packet could theoretically time out between the first check and this one.
+    return 0;
+  }
+
+  const bool rtx = (RtxStatus() & kRtxRetransmitted) > 0;
   if (!PrepareAndSendPacket(std::move(packet), rtx, true, PacedPacketInfo()))
     return -1;
+
   return packet_size;
 }
 
@@ -684,8 +702,9 @@ void RTPSender::OnReceivedNack(
   TRACE_EVENT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
                "RTPSender::OnReceivedNACK", "num_seqnum",
                nack_sequence_numbers.size(), "avg_rtt", avg_rtt);
+  packet_history_.SetRtt(5 + avg_rtt);
   for (uint16_t seq_no : nack_sequence_numbers) {
-    const int32_t bytes_sent = ReSendPacket(seq_no, 5 + avg_rtt);
+    const int32_t bytes_sent = ReSendPacket(seq_no);
     if (bytes_sent < 0) {
       // Failed to send one Sequence number. Give up the rest in this nack.
       RTC_LOG(LS_WARNING) << "Failed resending RTP packet " << seq_no
@@ -710,12 +729,13 @@ bool RTPSender::TimeToSendPacket(uint32_t ssrc,
     return true;
 
   std::unique_ptr<RtpPacketToSend> packet;
+  // No need to verify RTT here, it has already been checked before putting the
+  // packet into the pacer. But _do_ update the send time.
   if (ssrc == SSRC()) {
-    packet = packet_history_.GetPacketAndSetSendTime(sequence_number, 0,
-                                                     retransmission);
+    packet = packet_history_.GetPacketAndSetSendTime(sequence_number, false);
   } else if (ssrc == FlexfecSsrc()) {
-    packet = flexfec_packet_history_.GetPacketAndSetSendTime(sequence_number, 0,
-                                                             retransmission);
+    packet =
+        flexfec_packet_history_.GetPacketAndSetSendTime(sequence_number, false);
   }
 
   if (!packet) {
@@ -894,9 +914,10 @@ bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
     if (ssrc == flexfec_ssrc) {
       // Store FlexFEC packets in the history here, so they can be found
       // when the pacer calls TimeToSendPacket.
-      flexfec_packet_history_.PutRtpPacket(std::move(packet), storage, false);
+      flexfec_packet_history_.PutRtpPacket(std::move(packet), storage,
+                                           rtc::nullopt);
     } else {
-      packet_history_.PutRtpPacket(std::move(packet), storage, false);
+      packet_history_.PutRtpPacket(std::move(packet), storage, rtc::nullopt);
     }
 
     paced_sender_->InsertPacket(priority, ssrc, seq_no, corrected_time_ms,
@@ -937,7 +958,7 @@ bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
   // packet history (even if send failed).
   if (storage == kAllowRetransmission) {
     RTC_DCHECK_EQ(ssrc, SSRC());
-    packet_history_.PutRtpPacket(std::move(packet), storage, true);
+    packet_history_.PutRtpPacket(std::move(packet), storage, now_ms);
   }
 
   return sent;

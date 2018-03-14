@@ -134,7 +134,7 @@ class RTPSender {
 
   bool StorePackets() const;
 
-  int32_t ReSendPacket(uint16_t packet_id, int64_t min_resend_time = 0);
+  int32_t ReSendPacket(uint16_t packet_id);
 
   // Feedback to decide when to stop sending playout delay.
   void OnReceivedRtcpReportBlocks(const ReportBlockList& report_blocks);

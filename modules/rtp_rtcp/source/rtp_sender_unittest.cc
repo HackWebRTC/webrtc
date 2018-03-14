@@ -1401,7 +1401,7 @@ TEST_P(RtpSenderTestWithoutPacer, StreamDataCountersCallbacks) {
 
   // Retransmit a frame.
   uint16_t seqno = rtp_sender_->SequenceNumber() - 1;
-  rtp_sender_->ReSendPacket(seqno, 0);
+  rtp_sender_->ReSendPacket(seqno);
   expected.transmitted.payload_bytes = 12;
   expected.transmitted.header_bytes = 24;
   expected.transmitted.packets = 2;
