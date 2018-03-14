@@ -33,6 +33,13 @@ constexpr float kMaxInputLevelLinear = static_cast<float>(36766.300710566735);
 // estimates of the gain to apply given an estimated input level.
 class InterpolatedGainCurve {
  public:
+  enum class GainCurveRegion {
+    kIdentity = 0,
+    kKnee = 1,
+    kLimiter = 2,
+    kSaturation = 3
+  };
+
   struct Stats {
     // Region in which the output level equals the input one.
     size_t look_ups_identity_region = 0;
@@ -45,6 +52,11 @@ class InterpolatedGainCurve {
     size_t look_ups_saturation_region = 0;
     // True if stats have been populated.
     bool available = false;
+
+    // The current region, and for how many frames the level has been
+    // in that region.
+    GainCurveRegion region = GainCurveRegion::kIdentity;
+    int64_t region_duration_frames = 0;
   };
 
   // InterpolatedGainCurve(InterpolatedGainCurve&&);

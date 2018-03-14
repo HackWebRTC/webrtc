@@ -14,8 +14,27 @@
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
+namespace {
+void LogRegionStats(const InterpolatedGainCurve::Stats& stats) {
+  using Region = InterpolatedGainCurve::GainCurveRegion;
+
+  std::string histogram_name = "WebRTC.Audio.AGC2.FixedDigitalGainCurveRegion.";
+  if (stats.region == Region::kIdentity) {
+    histogram_name += "Identity";
+  } else if (stats.region == Region::kKnee) {
+    histogram_name += "Knee";
+  } else if (stats.region == Region::kLimiter) {
+    histogram_name += "Limiter";
+  } else {
+    histogram_name += "Saturation";
+  }
+  RTC_HISTOGRAM_COUNTS_10000(histogram_name,
+                             stats.region_duration_frames / 100);
+}
+}  // namespace
 
 constexpr std::array<float, kInterpolatedGainCurveTotalPoints>
     InterpolatedGainCurve::approximation_params_x_;
@@ -31,7 +50,6 @@ InterpolatedGainCurve::InterpolatedGainCurve(ApmDataDumper* apm_data_dumper)
 
 InterpolatedGainCurve::~InterpolatedGainCurve() {
   if (stats_.available) {
-    // TODO(alessiob): We might want to add these stats as RTC metrics.
     RTC_DCHECK(apm_data_dumper_);
     apm_data_dumper_->DumpRaw("agc2_interp_gain_curve_lookups_identity",
                               stats_.look_ups_identity_region);
@@ -41,21 +59,37 @@ InterpolatedGainCurve::~InterpolatedGainCurve() {
                               stats_.look_ups_limiter_region);
     apm_data_dumper_->DumpRaw("agc2_interp_gain_curve_lookups_saturation",
                               stats_.look_ups_saturation_region);
+    LogRegionStats(stats_);
   }
 }
 
 void InterpolatedGainCurve::UpdateStats(float input_level) const {
   stats_.available = true;
 
+  GainCurveRegion region;
+
   if (input_level < approximation_params_x_[0]) {
     stats_.look_ups_identity_region++;
+    region = GainCurveRegion::kIdentity;
   } else if (input_level <
              approximation_params_x_[kInterpolatedGainCurveKneePoints - 1]) {
     stats_.look_ups_knee_region++;
+    region = GainCurveRegion::kKnee;
   } else if (input_level < kMaxInputLevelLinear) {
     stats_.look_ups_limiter_region++;
+    region = GainCurveRegion::kLimiter;
   } else {
     stats_.look_ups_saturation_region++;
+    region = GainCurveRegion::kSaturation;
+  }
+
+  if (region == stats_.region) {
+    ++stats_.region_duration_frames;
+  } else {
+    LogRegionStats(stats_);
+
+    stats_.region_duration_frames = 0;
+    stats_.region = region;
   }
 }
 

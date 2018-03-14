@@ -32,6 +32,7 @@ rtc_source_set("agc2") {
     "../../../rtc_base:gtest_prod",
     "../../../rtc_base:rtc_base_approved",
     "../../../rtc_base:safe_minmax",
+    "../../../system_wrappers:metrics_api",
   ]
 }
 

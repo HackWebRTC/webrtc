@@ -44,10 +44,15 @@ class FrameCombiner {
                AudioFrame* audio_frame_for_mixing);
 
  private:
+  void LogMixingStats(const std::vector<AudioFrame*>& mix_list,
+                      int sample_rate,
+                      size_t number_of_streams) const;
+
   LimiterType limiter_type_;
   std::unique_ptr<AudioProcessing> apm_agc_limiter_;
   std::unique_ptr<ApmDataDumper> data_dumper_;
   FixedGainController apm_agc2_limiter_;
+  mutable int uma_logging_counter_ = 0;
 };
 }  // namespace webrtc
 
