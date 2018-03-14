@@ -336,6 +336,7 @@ if (rtc_include_tests) {
       "../system_wrappers",
     ]
     sources = [
+      "fake_network_pipe_unittest.cc",
       "frame_generator_unittest.cc",
       "rtp_file_reader_unittest.cc",
       "rtp_file_writer_unittest.cc",
@@ -489,6 +490,8 @@ rtc_source_set("direct_transport") {
   sources = [
     "direct_transport.cc",
     "direct_transport.h",
+    "fake_network_pipe.cc",
+    "fake_network_pipe.h",
   ]
   if (!build_with_chromium && is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -498,6 +501,7 @@ rtc_source_set("direct_transport") {
     "..:webrtc_common",
     "../:typedefs",
     "../api:transport_api",
+    "../call",
     "../call:call_interfaces",
     "../modules/rtp_rtcp",
     "../rtc_base:rtc_base_approved",
@@ -506,7 +510,6 @@ rtc_source_set("direct_transport") {
   ]
   public_deps = [
     ":single_threaded_task_queue",
-    "../call:fake_network",
   ]
 }
 

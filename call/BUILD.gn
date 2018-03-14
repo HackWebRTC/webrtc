@@ -143,8 +143,6 @@ rtc_static_library("call") {
     "call.cc",
     "callfactory.cc",
     "callfactory.h",
-    "degraded_call.cc",
-    "degraded_call.h",
     "flexfec_receive_stream_impl.cc",
     "flexfec_receive_stream_impl.h",
   ]
@@ -157,7 +155,6 @@ rtc_static_library("call") {
   deps = [
     ":bitrate_allocator",
     ":call_interfaces",
-    ":fake_network",
     ":rtp_interfaces",
     ":rtp_receiver",
     ":rtp_sender",
@@ -187,7 +184,6 @@ rtc_static_library("call") {
     "../rtc_base:safe_minmax",
     "../rtc_base:sequenced_task_checker",
     "../system_wrappers",
-    "../system_wrappers:field_trial_api",
     "../system_wrappers:metrics_api",
     "../video",
   ]
@@ -215,29 +211,6 @@ rtc_source_set("video_stream_api") {
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
   ]
-}
-
-rtc_source_set("fake_network") {
-  sources = [
-    "fake_network_pipe.cc",
-    "fake_network_pipe.h",
-  ]
-  deps = [
-    ":call_interfaces",
-    "..:typedefs",
-    "..:webrtc_common",
-    "../api:transport_api",
-    "../modules:module_api",
-    "../modules/rtp_rtcp",
-    "../rtc_base:rtc_base_approved",
-    "../rtc_base:sequenced_task_checker",
-    "../system_wrappers",
-  ]
-
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
 }
 
 if (rtc_include_tests) {
@@ -366,25 +339,5 @@ if (rtc_include_tests) {
       ":call_interfaces",
       "//test:test_support",
     ]
-  }
-
-  rtc_test("fake_network_unittests") {
-    deps = [
-      ":call_interfaces",
-      ":fake_network",
-      "../modules/rtp_rtcp",
-      "../rtc_base:rtc_base_approved",
-      "../system_wrappers",
-      "../test:test_common",
-      "../test:test_main",
-      "//testing/gtest",
-    ]
-    sources = [
-      "test/fake_network_pipe_unittest.cc",
-    ]
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
   }
 }

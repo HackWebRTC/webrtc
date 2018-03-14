@@ -16,9 +16,9 @@
 
 #include "api/call/transport.h"
 #include "call/call.h"
-#include "call/fake_network_pipe.h"
 #include "rtc_base/sequenced_task_checker.h"
 #include "rtc_base/thread_annotations.h"
+#include "test/fake_network_pipe.h"
 #include "test/single_threaded_task_queue.h"
 
 namespace webrtc {

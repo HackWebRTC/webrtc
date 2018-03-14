@@ -292,24 +292,19 @@ class Call : public webrtc::Call,
   // single mapping from ssrc to a more abstract receive stream, with
   // accessor methods for all configuration we need at this level.
   struct ReceiveRtpConfig {
-    explicit ReceiveRtpConfig(const webrtc::AudioReceiveStream::Config& config)
-        : extensions(config.rtp.extensions),
-          use_send_side_bwe(UseSendSideBwe(config)) {}
-    explicit ReceiveRtpConfig(const webrtc::VideoReceiveStream::Config& config)
-        : extensions(config.rtp.extensions),
-          use_send_side_bwe(UseSendSideBwe(config)) {}
-    explicit ReceiveRtpConfig(const FlexfecReceiveStream::Config& config)
-        : extensions(config.rtp_header_extensions),
-          use_send_side_bwe(UseSendSideBwe(config)) {}
+    ReceiveRtpConfig() = default;  // Needed by std::map
+    ReceiveRtpConfig(const std::vector<RtpExtension>& extensions,
+                     bool use_send_side_bwe)
+        : extensions(extensions), use_send_side_bwe(use_send_side_bwe) {}
 
     // Registered RTP header extensions for each stream. Note that RTP header
     // extensions are negotiated per track ("m= line") in the SDP, but we have
     // no notion of tracks at the Call level. We therefore store the RTP header
     // extensions per SSRC instead, which leads to some storage overhead.
-    const RtpHeaderExtensionMap extensions;
+    RtpHeaderExtensionMap extensions;
     // Set if both RTP extension the RTCP feedback message needed for
     // send side BWE are negotiated.
-    const bool use_send_side_bwe;
+    bool use_send_side_bwe = false;
   };
   std::map<uint32_t, ReceiveRtpConfig> receive_rtp_config_
       RTC_GUARDED_BY(receive_crit_);
@@ -646,7 +641,8 @@ webrtc::AudioReceiveStream* Call::CreateAudioReceiveStream(
       module_process_thread_.get(), config, config_.audio_state, event_log_);
   {
     WriteLockScoped write_lock(*receive_crit_);
-    receive_rtp_config_.emplace(config.rtp.remote_ssrc, config);
+    receive_rtp_config_[config.rtp.remote_ssrc] =
+        ReceiveRtpConfig(config.rtp.extensions, UseSendSideBwe(config));
     audio_receive_streams_.insert(receive_stream);
 
     ConfigureSync(config.sync_group);
@@ -795,6 +791,8 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
       module_process_thread_.get(), call_stats_.get());
 
   const webrtc::VideoReceiveStream::Config& config = receive_stream->config();
+  ReceiveRtpConfig receive_config(config.rtp.extensions,
+                                  UseSendSideBwe(config));
   {
     WriteLockScoped write_lock(*receive_crit_);
     if (config.rtp.rtx_ssrc) {
@@ -802,9 +800,9 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
       // stream. Since the transport_send_cc negotiation is per payload
       // type, we may get an incorrect value for the rtx stream, but
       // that is unlikely to matter in practice.
-      receive_rtp_config_.emplace(config.rtp.rtx_ssrc, config);
+      receive_rtp_config_[config.rtp.rtx_ssrc] = receive_config;
     }
-    receive_rtp_config_.emplace(config.rtp.remote_ssrc, config);
+    receive_rtp_config_[config.rtp.remote_ssrc] = receive_config;
     video_receive_streams_.insert(receive_stream);
     ConfigureSync(config.sync_group);
   }
@@ -867,7 +865,8 @@ FlexfecReceiveStream* Call::CreateFlexfecReceiveStream(
 
     RTC_DCHECK(receive_rtp_config_.find(config.remote_ssrc) ==
                receive_rtp_config_.end());
-    receive_rtp_config_.emplace(config.remote_ssrc, config);
+    receive_rtp_config_[config.remote_ssrc] =
+        ReceiveRtpConfig(config.rtp_header_extensions, UseSendSideBwe(config));
   }
 
   // TODO(brandtr): Store config in RtcEventLog here.
@@ -1313,7 +1312,7 @@ void Call::OnRecoveredPacket(const uint8_t* packet, size_t length) {
     // deregistering in the |receive_rtp_config_| map is protected by that lock.
     // So by not passing the packet on to demuxing in this case, we prevent
     // incoming packets to be passed on via the demuxer to a receive stream
-    // which is being torn down.
+    // which is being torned down.
     return;
   }
   parsed_packet.IdentifyExtensions(it->second.extensions);
