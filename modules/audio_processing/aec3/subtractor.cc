@@ -206,8 +206,9 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
   data_dumper_->DumpRaw("aec3_subtractor_G_shadow", G.re);
   data_dumper_->DumpRaw("aec3_subtractor_G_shadow", G.im);
 
-  main_filter_.DumpFilter("aec3_subtractor_H_main");
-  shadow_filter_.DumpFilter("aec3_subtractor_H_shadow");
+  main_filter_.DumpFilter("aec3_subtractor_H_main", "aec3_subtractor_h_main");
+  shadow_filter_.DumpFilter("aec3_subtractor_H_shadow",
+                            "aec3_subtractor_h_shadow");
 }
 
 }  // namespace webrtc

@@ -125,14 +125,20 @@ class AdaptiveFirFilter {
   // Returns the estimate of the impulse response.
   const std::vector<float>& FilterImpulseResponse() const { return h_; }
 
-  void DumpFilter(const char* name) {
-    size_t current_size_partitions = H_.size();
+  void DumpFilter(const char* name_frequency_domain,
+                  const char* name_time_domain) {
+    size_t current_size = H_.size();
     H_.resize(max_size_partitions_);
     for (auto& H : H_) {
-      data_dumper_->DumpRaw(name, H.re);
-      data_dumper_->DumpRaw(name, H.im);
+      data_dumper_->DumpRaw(name_frequency_domain, H.re);
+      data_dumper_->DumpRaw(name_frequency_domain, H.im);
     }
-    H_.resize(current_size_partitions);
+    H_.resize(current_size);
+
+    current_size = h_.size();
+    h_.resize(GetTimeDomainLength(max_size_partitions_));
+    data_dumper_->DumpRaw(name_time_domain, h_);
+    h_.resize(current_size);
   }
 
  private:
