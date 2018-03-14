@@ -11,8 +11,8 @@
 #include <memory>
 #include <vector>
 
+#include "modules/video_coding/codecs/vp8/libvpx_vp8_encoder.h"
 #include "modules/video_coding/codecs/vp8/screenshare_layers.h"
-#include "modules/video_coding/codecs/vp8/vp8_impl.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/utility/mock/mock_frame_dropper.h"
 #include "system_wrappers/include/clock.h"
@@ -77,7 +77,7 @@ class ScreenshareLayerTest : public ::testing::Test {
       return -1;
     }
     config_updated_ = layers_->UpdateConfiguration(&cfg_);
-    int flags = VP8EncoderImpl::EncodeFlags(tl_config_);
+    int flags = LibvpxVp8Encoder::EncodeFlags(tl_config_);
     layers_->PopulateCodecSpecific(key_frame, tl_config_, &vp8_info_,
                                    timestamp_);
     EXPECT_NE(-1, frame_size_);
@@ -436,7 +436,7 @@ TEST_F(ScreenshareLayerTest, RespectsMaxIntervalBetweenFrames) {
   layers_->UpdateConfiguration(&cfg_);
 
   EXPECT_EQ(kTl0Flags,
-            VP8EncoderImpl::EncodeFlags(UpdateLayerConfig(kStartTimestamp)));
+            LibvpxVp8Encoder::EncodeFlags(UpdateLayerConfig(kStartTimestamp)));
   layers_->FrameEncoded(kLargeFrameSizeBytes, kDefaultQp);
 
   const uint32_t kTwoSecondsLater =
@@ -454,7 +454,7 @@ TEST_F(ScreenshareLayerTest, RespectsMaxIntervalBetweenFrames) {
 
   // More than two seconds has passed since last frame, one should be emitted
   // even if bitrate target is then exceeded.
-  EXPECT_EQ(kTl0Flags, VP8EncoderImpl::EncodeFlags(
+  EXPECT_EQ(kTl0Flags, LibvpxVp8Encoder::EncodeFlags(
                            UpdateLayerConfig(kTwoSecondsLater + 90)));
 }
 
@@ -473,7 +473,7 @@ TEST_F(ScreenshareLayerTest, UpdatesHistograms) {
       dropped_frame = true;
       continue;
     }
-    int flags = VP8EncoderImpl::EncodeFlags(tl_config_);
+    int flags = LibvpxVp8Encoder::EncodeFlags(tl_config_);
     if (flags != -1)
       layers_->UpdateConfiguration(&cfg_);
 
@@ -597,7 +597,7 @@ TEST_F(ScreenshareLayerTest, 2LayersSyncAtOvershootDrop) {
   layers_->FrameEncoded(0, -1);
 
   config_updated_ = layers_->UpdateConfiguration(&cfg_);
-  EXPECT_EQ(kTl1SyncFlags, VP8EncoderImpl::EncodeFlags(tl_config_));
+  EXPECT_EQ(kTl1SyncFlags, LibvpxVp8Encoder::EncodeFlags(tl_config_));
 
   CodecSpecificInfoVP8 new_vp8_info;
   layers_->PopulateCodecSpecific(false, tl_config_, &new_vp8_info, timestamp_);

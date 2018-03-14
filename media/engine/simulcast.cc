@@ -238,7 +238,7 @@ std::vector<webrtc::VideoStream> GetScreenshareLayers(
   ScreenshareLayerConfig config = ScreenshareLayerConfig::GetDefault();
   // For legacy screenshare in conference mode, tl0 and tl1 bitrates are
   // piggybacked on the VideoCodec struct as target and max bitrates,
-  // respectively. See eg. webrtc::VP8EncoderImpl::SetRates().
+  // respectively. See eg. webrtc::LibvpxVp8Encoder::SetRates().
   layers[0].width = width;
   layers[0].height = height;
   layers[0].max_qp = max_qp;

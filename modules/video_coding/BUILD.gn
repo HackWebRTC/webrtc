@@ -403,8 +403,10 @@ rtc_static_library("webrtc_vp8") {
   sources = [
     "codecs/vp8/include/vp8.h",
     "codecs/vp8/include/vp8_common_types.h",
-    "codecs/vp8/vp8_impl.cc",
-    "codecs/vp8/vp8_impl.h",
+    "codecs/vp8/libvpx_vp8_decoder.cc",
+    "codecs/vp8/libvpx_vp8_decoder.h",
+    "codecs/vp8/libvpx_vp8_encoder.cc",
+    "codecs/vp8/libvpx_vp8_encoder.h",
   ]
 
   # TODO(jschuh): Bug 1348: fix this warning.

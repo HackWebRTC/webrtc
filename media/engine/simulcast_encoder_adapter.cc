@@ -234,7 +234,7 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
                                                     *codec_.VP8()->tl_factory);
     stream_codec.VP8()->tl_factory = &tl_factory_adapter;
 
-    // TODO(ronghuawu): Remove once this is handled in VP8EncoderImpl.
+    // TODO(ronghuawu): Remove once this is handled in LibvpxVp8Encoder.
     if (stream_codec.qpMax < kDefaultMinQp) {
       stream_codec.qpMax = kDefaultMaxQp;
     }
