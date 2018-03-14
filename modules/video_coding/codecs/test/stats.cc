@@ -230,6 +230,9 @@ VideoStatistics Stats::SliceAndCalcVideoStatistic(
   Statistics frame_encoding_time_us;
   Statistics frame_decoding_time_us;
 
+  Statistics psnr_y;
+  Statistics psnr_u;
+  Statistics psnr_v;
   Statistics psnr;
   Statistics ssim;
   Statistics qp;
@@ -290,6 +293,9 @@ VideoStatistics Stats::SliceAndCalcVideoStatistic(
       video_stat.width = frame_stat.decoded_width;
       video_stat.height = frame_stat.decoded_height;
 
+      psnr_y.AddSample(frame_stat.psnr_y);
+      psnr_u.AddSample(frame_stat.psnr_u);
+      psnr_v.AddSample(frame_stat.psnr_v);
       psnr.AddSample(frame_stat.psnr);
       ssim.AddSample(frame_stat.ssim);
 
@@ -359,6 +365,9 @@ VideoStatistics Stats::SliceAndCalcVideoStatistic(
   video_stat.avg_delta_frame_size_bytes = delta_frame_size_bytes.Mean();
   video_stat.avg_qp = qp.Mean();
 
+  video_stat.avg_psnr_y = psnr_y.Mean();
+  video_stat.avg_psnr_u = psnr_u.Mean();
+  video_stat.avg_psnr_v = psnr_v.Mean();
   video_stat.avg_psnr = psnr.Mean();
   video_stat.min_psnr = psnr.Min();
   video_stat.avg_ssim = ssim.Mean();

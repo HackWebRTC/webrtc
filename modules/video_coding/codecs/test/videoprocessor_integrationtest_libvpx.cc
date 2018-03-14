@@ -49,17 +49,20 @@ class VideoProcessorIntegrationTestLibvpx
 
   void PrintRdPerf(std::map<size_t, std::vector<VideoStatistics>> rd_stats) {
     printf("--> Summary\n");
-    printf("%13s %7s %7s %13s %13s %7s %13s %13s\n", "uplink_kbps", "width",
-           "height", "downlink_kbps", "framerate_fps", "psnr", "enc_speed_fps",
-           "dec_speed_fps");
+    printf("%11s %5s %6s %13s %13s %5s %7s %7s %7s %13s %13s\n", "uplink_kbps",
+           "width", "height", "downlink_kbps", "framerate_fps", "psnr",
+           "psnr_y", "psnr_u", "psnr_v", "enc_speed_fps", "dec_speed_fps");
     for (const auto& rd_stat : rd_stats) {
       const size_t bitrate_kbps = rd_stat.first;
       for (const auto& layer_stat : rd_stat.second) {
-        printf("%13zu %7zu %7zu %13zu %13.2f %7.2f %13.2f %13.2f\n",
-               bitrate_kbps, layer_stat.width, layer_stat.height,
-               layer_stat.bitrate_kbps, layer_stat.framerate_fps,
-               layer_stat.avg_psnr, layer_stat.enc_speed_fps,
-               layer_stat.dec_speed_fps);
+        printf(
+            "%11zu %5zu %6zu %13zu %13.2f %5.2f %7.2f %7.2f %7.2f %13.2f "
+            "%13.2f\n",
+            bitrate_kbps, layer_stat.width, layer_stat.height,
+            layer_stat.bitrate_kbps, layer_stat.framerate_fps,
+            layer_stat.avg_psnr, layer_stat.avg_psnr_y, layer_stat.avg_psnr_u,
+            layer_stat.avg_psnr_v, layer_stat.enc_speed_fps,
+            layer_stat.dec_speed_fps);
       }
     }
   }

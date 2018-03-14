@@ -25,6 +25,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/timeutils.h"
 #include "test/gtest.h"
+#include "third_party/libyuv/include/libyuv/compare.h"
 #include "third_party/libyuv/include/libyuv/scale.h"
 
 namespace webrtc {
@@ -115,23 +116,16 @@ void ExtractI420BufferWithSize(const VideoFrame& image,
   RTC_CHECK_NE(ExtractBuffer(image, length, buffer->data()), -1);
 }
 
-void CalculateFrameQuality(const VideoFrame& ref_frame,
-                           const VideoFrame& dec_frame,
+void CalculateFrameQuality(const I420BufferInterface& ref_buffer,
+                           const I420BufferInterface& dec_buffer,
                            FrameStatistics* frame_stat) {
-  if (ref_frame.width() == dec_frame.width() ||
-      ref_frame.height() == dec_frame.height()) {
-    frame_stat->psnr = I420PSNR(&ref_frame, &dec_frame);
-    frame_stat->ssim = I420SSIM(&ref_frame, &dec_frame);
-  } else {
-    RTC_CHECK_GE(ref_frame.width(), dec_frame.width());
-    RTC_CHECK_GE(ref_frame.height(), dec_frame.height());
-    // Downscale reference frame. Use bilinear interpolation since it is used
-    // to get lowres inputs for encoder at simulcasting.
-    // TODO(ssilkin): Sync with VP9 SVC which uses 8-taps polyphase.
+  if (ref_buffer.width() != dec_buffer.width() ||
+      ref_buffer.height() != dec_buffer.height()) {
+    RTC_CHECK_GE(ref_buffer.width(), dec_buffer.width());
+    RTC_CHECK_GE(ref_buffer.height(), dec_buffer.height());
+    // Downscale reference frame.
     rtc::scoped_refptr<I420Buffer> scaled_buffer =
-        I420Buffer::Create(dec_frame.width(), dec_frame.height());
-    const I420BufferInterface& ref_buffer =
-        *ref_frame.video_frame_buffer()->ToI420();
+        I420Buffer::Create(dec_buffer.width(), dec_buffer.height());
     I420Scale(ref_buffer.DataY(), ref_buffer.StrideY(), ref_buffer.DataU(),
               ref_buffer.StrideU(), ref_buffer.DataV(), ref_buffer.StrideV(),
               ref_buffer.width(), ref_buffer.height(),
@@ -140,10 +134,31 @@ void CalculateFrameQuality(const VideoFrame& ref_frame,
               scaled_buffer->MutableDataV(), scaled_buffer->StrideV(),
               scaled_buffer->width(), scaled_buffer->height(),
               libyuv::kFilterBox);
-    frame_stat->psnr =
-        I420PSNR(*scaled_buffer, *dec_frame.video_frame_buffer()->ToI420());
-    frame_stat->ssim =
-        I420SSIM(*scaled_buffer, *dec_frame.video_frame_buffer()->ToI420());
+
+    CalculateFrameQuality(*scaled_buffer, dec_buffer, frame_stat);
+  } else {
+    const uint64_t sse_y = libyuv::ComputeSumSquareErrorPlane(
+        dec_buffer.DataY(), dec_buffer.StrideY(), ref_buffer.DataY(),
+        ref_buffer.StrideY(), dec_buffer.width(), dec_buffer.height());
+
+    const uint64_t sse_u = libyuv::ComputeSumSquareErrorPlane(
+        dec_buffer.DataU(), dec_buffer.StrideU(), ref_buffer.DataU(),
+        ref_buffer.StrideU(), dec_buffer.width() / 2, dec_buffer.height() / 2);
+
+    const uint64_t sse_v = libyuv::ComputeSumSquareErrorPlane(
+        dec_buffer.DataV(), dec_buffer.StrideV(), ref_buffer.DataV(),
+        ref_buffer.StrideV(), dec_buffer.width() / 2, dec_buffer.height() / 2);
+
+    const size_t num_y_samples = dec_buffer.width() * dec_buffer.height();
+    const size_t num_u_samples =
+        dec_buffer.width() / 2 * dec_buffer.height() / 2;
+
+    frame_stat->psnr_y = libyuv::SumSquareErrorToPsnr(sse_y, num_y_samples);
+    frame_stat->psnr_u = libyuv::SumSquareErrorToPsnr(sse_u, num_u_samples);
+    frame_stat->psnr_v = libyuv::SumSquareErrorToPsnr(sse_v, num_u_samples);
+    frame_stat->psnr = libyuv::SumSquareErrorToPsnr(
+        sse_y + sse_u + sse_v, num_y_samples + 2 * num_u_samples);
+    frame_stat->ssim = I420SSIM(ref_buffer, dec_buffer);
   }
 }
 
@@ -411,7 +426,9 @@ void VideoProcessor::FrameDecoded(const VideoFrame& decoded_frame) {
     RTC_CHECK(reference_frame != input_frames_.cend())
         << "The codecs are either buffering too much, dropping too much, or "
            "being too slow relative the input frame rate.";
-    CalculateFrameQuality(reference_frame->second, decoded_frame, frame_stat);
+    CalculateFrameQuality(
+        *reference_frame->second.video_frame_buffer()->ToI420(),
+        *decoded_frame.video_frame_buffer()->ToI420(), frame_stat);
   }
 
   // Erase all buffered input frames that we have moved past for all
