@@ -21,6 +21,7 @@
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/video_coding/codecs/vp8/simulcast_rate_allocator.h"
 #include "modules/video_coding/include/video_codec_initializer.h"
+#include "modules/video_coding/include/video_error_codes.h"
 #include "modules/video_coding/utility/default_video_bitrate_allocator.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/timeutils.h"
@@ -235,6 +236,10 @@ VideoProcessor::~VideoProcessor() {
     decoder->RegisterDecodeCompleteCallback(nullptr);
   }
 
+  // Sanity check.
+  RTC_CHECK_LE(input_frames_.size(), kMaxBufferedInputFrames);
+
+  // Deal with manual memory management of EncodedImage's.
   for (size_t simulcast_svc_idx = 0;
        simulcast_svc_idx < num_simulcast_or_spatial_layers_;
        ++simulcast_svc_idx) {
@@ -258,7 +263,10 @@ void VideoProcessor::ProcessFrame() {
   VideoFrame input_frame(buffer, static_cast<uint32_t>(timestamp),
                          static_cast<int64_t>(timestamp / kMsToRtpTimestamp),
                          webrtc::kVideoRotation_0);
-  input_frames_.emplace(frame_number, input_frame);
+  // Store input frame as a reference for quality calculations.
+  if (config_.decode && !config_.measure_cpu) {
+    input_frames_.emplace(frame_number, input_frame);
+  }
   last_inputed_timestamp_ = timestamp;
 
   // Create frame statistics object for all simulcast/spatial layers.
@@ -374,16 +382,19 @@ void VideoProcessor::FrameEncoded(
   frame_stat->max_nalu_size_bytes = GetMaxNaluSizeBytes(encoded_image, config_);
   frame_stat->qp = encoded_image.qp_;
 
-  // Decode.
-  const webrtc::EncodedImage* encoded_image_for_decode = &encoded_image;
-  if (config_.NumberOfSpatialLayers() > 1) {
-    encoded_image_for_decode = MergeAndStoreEncodedImageForSvcDecoding(
-        encoded_image, codec_type, frame_number, simulcast_svc_idx);
+  if (config_.decode) {
+    const webrtc::EncodedImage* encoded_image_for_decode = &encoded_image;
+    if (config_.NumberOfSpatialLayers() > 1) {
+      encoded_image_for_decode = MergeAndStoreEncodedImageForSvcDecoding(
+          encoded_image, codec_type, frame_number, simulcast_svc_idx);
+    }
+    frame_stat->decode_start_ns = rtc::TimeNanos();
+    frame_stat->decode_return_code =
+        decoders_->at(simulcast_svc_idx)
+            ->Decode(*encoded_image_for_decode, false, nullptr);
+  } else {
+    frame_stat->decode_return_code = WEBRTC_VIDEO_CODEC_NO_OUTPUT;
   }
-  frame_stat->decode_start_ns = rtc::TimeNanos();
-  frame_stat->decode_return_code =
-      decoders_->at(simulcast_svc_idx)
-          ->Decode(*encoded_image_for_decode, false, nullptr);
 
   if (encoded_frame_writers_) {
     RTC_CHECK(
@@ -429,20 +440,20 @@ void VideoProcessor::FrameDecoded(const VideoFrame& decoded_frame) {
     CalculateFrameQuality(
         *reference_frame->second.video_frame_buffer()->ToI420(),
         *decoded_frame.video_frame_buffer()->ToI420(), frame_stat);
-  }
 
-  // Erase all buffered input frames that we have moved past for all
-  // simulcast/spatial layers. Never buffer more than |kMaxBufferedInputFrames|
-  // frames, to protect against long runs of consecutive frame drops for a
-  // particular layer.
-  const auto min_last_decoded_frame_num = std::min_element(
-      last_decoded_frame_num_.cbegin(), last_decoded_frame_num_.cend());
-  const size_t min_buffered_frame_num =
-      std::max(0, static_cast<int>(frame_number) - kMaxBufferedInputFrames + 1);
-  RTC_CHECK(min_last_decoded_frame_num != last_decoded_frame_num_.cend());
-  const auto input_frames_erase_before = input_frames_.lower_bound(
-      std::max(*min_last_decoded_frame_num, min_buffered_frame_num));
-  input_frames_.erase(input_frames_.cbegin(), input_frames_erase_before);
+    // Erase all buffered input frames that we have moved past for all
+    // simulcast/spatial layers. Never buffer more than
+    // |kMaxBufferedInputFrames| frames, to protect against long runs of
+    // consecutive frame drops for a particular layer.
+    const auto min_last_decoded_frame_num = std::min_element(
+        last_decoded_frame_num_.cbegin(), last_decoded_frame_num_.cend());
+    const size_t min_buffered_frame_num = std::max(
+        0, static_cast<int>(frame_number) - kMaxBufferedInputFrames + 1);
+    RTC_CHECK(min_last_decoded_frame_num != last_decoded_frame_num_.cend());
+    const auto input_frames_erase_before = input_frames_.lower_bound(
+        std::max(*min_last_decoded_frame_num, min_buffered_frame_num));
+    input_frames_.erase(input_frames_.cbegin(), input_frames_erase_before);
+  }
 
   if (decoded_frame_writers_) {
     ExtractI420BufferWithSize(decoded_frame, config_.codec_settings.width,

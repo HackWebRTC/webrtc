@@ -66,6 +66,9 @@ struct TestConfig {
   // Bitstream constraints.
   size_t max_payload_size_bytes = 1440;
 
+  // Should we decode the encoded frames?
+  bool decode = true;
+
   // Force the encoder and decoder to use a single core for processing.
   bool use_single_core = false;
 

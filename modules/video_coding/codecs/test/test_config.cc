@@ -198,7 +198,12 @@ std::string TestConfig::ToString() const {
   std::stringstream ss;
   ss << "filename: " << filename;
   ss << "\nnum_frames: " << num_frames;
+  ss << "\nmax_payload_size_bytes: " << max_payload_size_bytes;
+  ss << "\ndecode: " << decode;
+  ss << "\nuse_single_core: " << use_single_core;
+  ss << "\nmeasure_cpu: " << measure_cpu;
   ss << "\nnum_cores: " << NumberOfCores();
+  ss << "\nkeyframe_interval: " << keyframe_interval;
   ss << "\ncodec_type: " << codec_type;
   ss << "\n--> codec_settings";
   ss << "\nwidth: " << codec_settings.width;
