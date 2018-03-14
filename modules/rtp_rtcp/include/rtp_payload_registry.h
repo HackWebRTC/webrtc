@@ -63,9 +63,7 @@ class RTPPayloadRegistry {
   bool ReportMediaPayloadType(uint8_t media_payload_type);
 
   int8_t red_payload_type() const { return GetPayloadTypeWithName("red"); }
-  int8_t ulpfec_payload_type() const {
-    return GetPayloadTypeWithName("ulpfec");
-  }
+
   int8_t last_received_payload_type() const {
     rtc::CritScope cs(&crit_sect_);
     return last_received_payload_type_;

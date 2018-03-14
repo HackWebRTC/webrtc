@@ -138,13 +138,6 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
                                            : kDefaultMaxReorderingThreshold;
   rtp_receive_statistics_->SetMaxReorderingThreshold(max_reordering_threshold);
 
-  if (IsUlpfecEnabled()) {
-    VideoCodec ulpfec_codec = {};
-    ulpfec_codec.codecType = kVideoCodecULPFEC;
-    ulpfec_codec.plType = config_.rtp.ulpfec_payload_type;
-    RTC_CHECK(AddReceiveCodec(ulpfec_codec));
-  }
-
   if (IsRedEnabled()) {
     VideoCodec red_codec = {};
     red_codec.codecType = kVideoCodecRED;
@@ -449,15 +442,15 @@ void RtpVideoStreamReceiver::ParseAndHandleEncapsulatingHeader(
     const uint8_t* packet, size_t packet_length, const RTPHeader& header) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_task_checker_);
   if (rtp_payload_registry_.IsRed(header)) {
-    int8_t ulpfec_pt = rtp_payload_registry_.ulpfec_payload_type();
-    if (packet[header.headerLength] == ulpfec_pt) {
+    if (packet[header.headerLength] == config_.rtp.ulpfec_payload_type) {
       rtp_receive_statistics_->FecPacketReceived(header, packet_length);
       // Notify video_receiver about received FEC packets to avoid NACKing these
       // packets.
       NotifyReceiverOfFecPacket(header);
     }
-    if (ulpfec_receiver_->AddReceivedRedPacket(header, packet, packet_length,
-                                               ulpfec_pt) != 0) {
+    if (ulpfec_receiver_->AddReceivedRedPacket(
+            header, packet, packet_length,
+            config_.rtp.ulpfec_payload_type) != 0) {
       return;
     }
     ulpfec_receiver_->ProcessReceivedFec();
