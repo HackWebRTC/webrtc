@@ -134,6 +134,10 @@ extern const char kH264FmtpSpropParameterSets[];
 extern const char kH264ProfileLevelConstrainedBaseline[];
 
 extern const int kDefaultVideoMaxFramerate;
+
+extern const size_t kConferenceMaxNumSpatialLayers;
+extern const size_t kConferenceMaxNumTemporalLayers;
+extern const size_t kConferenceDefaultNumTemporalLayers;
 }  // namespace cricket
 
 #endif  // MEDIA_BASE_MEDIACONSTANTS_H_
