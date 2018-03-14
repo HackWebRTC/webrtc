@@ -46,8 +46,6 @@ class RTPPayloadRegistry {
   int32_t ReceivePayloadType(const VideoCodec& video_codec,
                              int8_t* payload_type) const;
 
-  bool IsRed(const RTPHeader& header) const;
-
   int GetPayloadTypeFrequency(uint8_t payload_type) const;
 
   rtc::Optional<RtpUtility::Payload> PayloadTypeToPayload(

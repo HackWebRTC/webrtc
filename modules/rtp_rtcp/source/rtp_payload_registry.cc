@@ -259,12 +259,6 @@ int32_t RTPPayloadRegistry::ReceivePayloadType(const VideoCodec& video_codec,
   return -1;
 }
 
-bool RTPPayloadRegistry::IsRed(const RTPHeader& header) const {
-  rtc::CritScope cs(&crit_sect_);
-  auto it = payload_type_map_.find(header.payloadType);
-  return it != payload_type_map_.end() && _stricmp(it->second.name, "red") == 0;
-}
-
 int RTPPayloadRegistry::GetPayloadTypeFrequency(
     uint8_t payload_type) const {
   const auto payload = PayloadTypeToPayload(payload_type);
