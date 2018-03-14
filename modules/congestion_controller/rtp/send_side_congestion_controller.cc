@@ -172,8 +172,8 @@ void ControlHandler::OnProbeClusterConfig(ProbeClusterConfig config) {
 void ControlHandler::OnTargetTransferRate(TargetTransferRate target_rate) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
   current_target_rate_msg_ = target_rate;
-  OnNetworkInvalidation();
   last_target_rate_ = target_rate;
+  OnNetworkInvalidation();
 }
 
 void ControlHandler::OnNetworkAvailability(NetworkAvailability msg) {
