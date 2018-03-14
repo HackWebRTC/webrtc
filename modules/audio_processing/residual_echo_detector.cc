@@ -177,8 +177,10 @@ void ResidualEchoDetector::AnalyzeCaptureAudio(
                               : 0;
 }
 
-void ResidualEchoDetector::Initialize(int /*sample_rate_hz*/,
-                                      int /*num_channels*/) {
+void ResidualEchoDetector::Initialize(int /*capture_sample_rate_hz*/,
+                                      int /*num_capture_channels*/,
+                                      int /*render_sample_rate_hz*/,
+                                      int /*num_render_channels*/) {
   render_buffer_.Clear();
   std::fill(render_power_.begin(), render_power_.end(), 0.f);
   std::fill(render_power_mean_.begin(), render_power_mean_.end(), 0.f);

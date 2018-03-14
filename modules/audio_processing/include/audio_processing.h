@@ -1092,7 +1092,10 @@ class CustomProcessing {
 class EchoDetector {
  public:
   // (Re-)Initializes the submodule.
-  virtual void Initialize(int sample_rate_hz, int num_channels) = 0;
+  virtual void Initialize(int capture_sample_rate_hz,
+                          int num_capture_channels,
+                          int render_sample_rate_hz,
+                          int num_render_channels) = 0;
 
   // Analysis (not changing) of the render signal.
   virtual void AnalyzeRenderAudio(rtc::ArrayView<const float> render_audio) = 0;

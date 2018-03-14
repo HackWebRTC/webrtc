@@ -1792,8 +1792,10 @@ void AudioProcessingImpl::InitializeGainController2() {
 
 void AudioProcessingImpl::InitializeResidualEchoDetector() {
   RTC_DCHECK(private_submodules_->echo_detector);
-  private_submodules_->echo_detector->Initialize(proc_sample_rate_hz(),
-                                                 num_proc_channels());
+  private_submodules_->echo_detector->Initialize(
+      proc_sample_rate_hz(), num_proc_channels(),
+      formats_.render_processing_format.sample_rate_hz(),
+      formats_.render_processing_format.num_channels());
 }
 
 void AudioProcessingImpl::InitializePostProcessor() {
