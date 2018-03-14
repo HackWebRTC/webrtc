@@ -52,7 +52,6 @@ int32_t RTPReceiverVideo::OnNewPayloadTypeCreated(
 
 int32_t RTPReceiverVideo::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
                                          const PayloadUnion& specific_payload,
-                                         bool is_red,
                                          const uint8_t* payload,
                                          size_t payload_length,
                                          int64_t timestamp_ms) {

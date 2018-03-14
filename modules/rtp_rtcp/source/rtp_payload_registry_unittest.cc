@@ -75,23 +75,6 @@ TEST(RtpPayloadRegistryTest,
   EXPECT_FALSE(rtp_payload_registry.PayloadTypeToPayload(payload_type));
 }
 
-TEST(RtpPayloadRegistryTest, AudioRedWorkProperly) {
-  RTPPayloadRegistry rtp_payload_registry;
-  bool new_payload_created = false;
-  const SdpAudioFormat red_format("red", 8000, 1);
-
-  EXPECT_EQ(0, rtp_payload_registry.RegisterReceivePayload(
-                   127, red_format, &new_payload_created));
-  EXPECT_TRUE(new_payload_created);
-
-  EXPECT_EQ(127, rtp_payload_registry.red_payload_type());
-
-  const auto retrieved_payload = rtp_payload_registry.PayloadTypeToPayload(127);
-  EXPECT_TRUE(retrieved_payload);
-  EXPECT_TRUE(retrieved_payload->typeSpecific.is_audio());
-  EXPECT_EQ(red_format, retrieved_payload->typeSpecific.audio_payload().format);
-}
-
 TEST(RtpPayloadRegistryTest,
      DoesNotAcceptSamePayloadTypeTwiceExceptIfPayloadIsCompatible) {
   constexpr int payload_type = 97;

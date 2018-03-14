@@ -137,7 +137,6 @@ int32_t RTPReceiverAudio::OnNewPayloadTypeCreated(
 
 int32_t RTPReceiverAudio::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
                                          const PayloadUnion& specific_payload,
-                                         bool is_red,
                                          const uint8_t* payload,
                                          size_t payload_length,
                                          int64_t timestamp_ms) {
@@ -158,7 +157,7 @@ int32_t RTPReceiverAudio::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
   }
 
   return ParseAudioCodecSpecific(rtp_header, payload, payload_length,
-                                 specific_payload.audio_payload(), is_red);
+                                 specific_payload.audio_payload());
 }
 
 RTPAliveType RTPReceiverAudio::ProcessDeadOrAlive(
@@ -211,8 +210,7 @@ int32_t RTPReceiverAudio::ParseAudioCodecSpecific(
     WebRtcRTPHeader* rtp_header,
     const uint8_t* payload_data,
     size_t payload_length,
-    const AudioPayload& audio_specific,
-    bool is_red) {
+    const AudioPayload& audio_specific) {
   RTC_DCHECK_GE(payload_length, rtp_header->header.paddingLength);
   const size_t payload_data_length =
       payload_length - rtp_header->header.paddingLength;
@@ -295,16 +293,6 @@ int32_t RTPReceiverAudio::ParseAudioCodecSpecific(
         return 0;
       }
     }
-  }
-  // TODO(holmer): Break this out to have RED parsing handled generically.
-  RTC_DCHECK_GT(payload_data_length, 0);
-  if (is_red && !(payload_data[0] & 0x80)) {
-    // we recive only one frame packed in a RED packet remove the RED wrapper
-    rtp_header->header.payloadType = payload_data[0];
-
-    // only one frame in the RED strip the one byte to help NetEq
-    return data_callback_->OnReceivedPayloadData(
-        payload_data + 1, payload_data_length - 1, rtp_header);
   }
 
   rtp_header->type.Audio.channel = audio_specific.format.num_channels;

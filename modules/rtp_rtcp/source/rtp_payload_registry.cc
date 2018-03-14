@@ -290,15 +290,4 @@ bool RTPPayloadRegistry::ReportMediaPayloadType(uint8_t media_payload_type) {
   return false;
 }
 
-// Returns -1 if a payload with name |payload_name| is not registered.
-int8_t RTPPayloadRegistry::GetPayloadTypeWithName(
-    const char* payload_name) const {
-  rtc::CritScope cs(&crit_sect_);
-  for (const auto& it : payload_type_map_) {
-    if (_stricmp(it.second.name, payload_name) == 0)
-      return it.first;
-  }
-  return -1;
-}
-
 }  // namespace webrtc

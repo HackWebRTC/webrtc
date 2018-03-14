@@ -60,8 +60,6 @@ class RTPPayloadRegistry {
   // Returns true if the new media payload type has not changed.
   bool ReportMediaPayloadType(uint8_t media_payload_type);
 
-  int8_t red_payload_type() const { return GetPayloadTypeWithName("red"); }
-
   int8_t last_received_payload_type() const {
     rtc::CritScope cs(&crit_sect_);
     return last_received_payload_type_;
@@ -80,11 +78,6 @@ class RTPPayloadRegistry {
   // Prunes the payload type map of the specific payload type, if it exists.
   void DeregisterAudioCodecOrRedTypeRegardlessOfPayloadType(
       const SdpAudioFormat& audio_format);
-
-  bool IsRtxInternal(const RTPHeader& header) const;
-  // Returns the payload type for the payload with name |payload_name|, or -1 if
-  // no such payload is registered.
-  int8_t GetPayloadTypeWithName(const char* payload_name) const;
 
   rtc::CriticalSection crit_sect_;
   std::map<int, RtpUtility::Payload> payload_type_map_;

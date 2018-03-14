@@ -27,7 +27,6 @@ class RTPReceiverVideo : public RTPReceiverStrategy {
 
   int32_t ParseRtpPacket(WebRtcRTPHeader* rtp_header,
                          const PayloadUnion& specific_payload,
-                         bool is_red,
                          const uint8_t* packet,
                          size_t packet_length,
                          int64_t timestamp) override;

@@ -171,9 +171,8 @@ bool RtpReceiverImpl::IncomingRtpPacket(const RTPHeader& rtp_header,
   CheckSSRCChanged(rtp_header);
 
   int8_t first_payload_byte = payload_length > 0 ? payload[0] : 0;
-  bool is_red = false;
 
-  if (CheckPayloadChanged(rtp_header, first_payload_byte, &is_red,
+  if (CheckPayloadChanged(rtp_header, first_payload_byte,
                           &payload_specific) == -1) {
     if (payload_length == 0) {
       // OK, keep-alive packet.
@@ -195,7 +194,7 @@ bool RtpReceiverImpl::IncomingRtpPacket(const RTPHeader& rtp_header,
   UpdateSources(audio_level);
 
   int32_t ret_val = rtp_media_receiver_->ParseRtpPacket(
-      &webrtc_rtp_header, payload_specific, is_red, payload, payload_length,
+      &webrtc_rtp_header, payload_specific, payload, payload_length,
       clock_->TimeInMilliseconds());
 
   if (ret_val < 0) {
@@ -335,7 +334,6 @@ void RtpReceiverImpl::CheckSSRCChanged(const RTPHeader& rtp_header) {
 // last known payload).
 int32_t RtpReceiverImpl::CheckPayloadChanged(const RTPHeader& rtp_header,
                                              const int8_t first_payload_byte,
-                                             bool* is_red,
                                              PayloadUnion* specific_payload) {
   bool re_initialize_decoder = false;
 
@@ -350,24 +348,6 @@ int32_t RtpReceiverImpl::CheckPayloadChanged(const RTPHeader& rtp_header,
     // TODO(holmer): Remove this code when RED parsing has been broken out from
     // RtpReceiverAudio.
     if (payload_type != last_received_payload_type) {
-      if (rtp_payload_registry_->red_payload_type() == payload_type) {
-        // Get the real codec payload type.
-        payload_type = first_payload_byte & 0x7f;
-        *is_red = true;
-
-        if (rtp_payload_registry_->red_payload_type() == payload_type) {
-          // Invalid payload type, traced by caller. If we proceeded here,
-          // this would be set as |_last_received_payload_type|, and we would no
-          // longer catch corrupt packets at this level.
-          return -1;
-        }
-
-        // When we receive RED we need to check the real payload type.
-        if (payload_type == last_received_payload_type) {
-          rtp_media_receiver_->GetLastMediaSpecificPayload(specific_payload);
-          return 0;
-        }
-      }
       bool should_discard_changes = false;
 
       rtp_media_receiver_->CheckPayloadChanged(
@@ -375,7 +355,6 @@ int32_t RtpReceiverImpl::CheckPayloadChanged(const RTPHeader& rtp_header,
         &should_discard_changes);
 
       if (should_discard_changes) {
-        *is_red = false;
         return 0;
       }
 
@@ -405,7 +384,6 @@ int32_t RtpReceiverImpl::CheckPayloadChanged(const RTPHeader& rtp_header,
       }
     } else {
       rtp_media_receiver_->GetLastMediaSpecificPayload(specific_payload);
-      *is_red = false;
     }
   }  // End critsect.
 

@@ -46,7 +46,6 @@ class RTPReceiverAudio : public RTPReceiverStrategy,
 
   int32_t ParseRtpPacket(WebRtcRTPHeader* rtp_header,
                          const PayloadUnion& specific_payload,
-                         bool is_red,
                          const uint8_t* packet,
                          size_t payload_length,
                          int64_t timestamp_ms) override;
@@ -76,8 +75,7 @@ class RTPReceiverAudio : public RTPReceiverStrategy,
   int32_t ParseAudioCodecSpecific(WebRtcRTPHeader* rtp_header,
                                   const uint8_t* payload_data,
                                   size_t payload_length,
-                                  const AudioPayload& audio_specific,
-                                  bool is_red);
+                                  const AudioPayload& audio_specific);
 
   bool telephone_event_forward_to_decoder_;
   int8_t telephone_event_payload_type_;
