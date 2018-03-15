@@ -20,6 +20,17 @@ both.
 [chr-style]: https://chromium.googlesource.com/chromium/src/+/HEAD/styleguide/c++/c++.md
 [goog-style]: https://google.github.io/styleguide/cppguide.html
 
+### C++ version
+
+WebRTC is written in C++11, but with some restrictions:
+
+* We only allow the subset of C++11 (language and library) in the
+  “allowed” section of [this Chromium page][chromium-cpp11].
+* We only allow the subset of C++11 that is also valid C++14;
+  otherwise, users would not be able to compile WebRTC in C++14 mode.
+
+[chromium-cpp11]: https://chromium-cpp.appspot.com/
+
 ### <a name="h-cc-pairs"></a>`.h` and `.cc` files come in pairs
 
 `.h` and `.cc` files should come in pairs, with the same name (except
