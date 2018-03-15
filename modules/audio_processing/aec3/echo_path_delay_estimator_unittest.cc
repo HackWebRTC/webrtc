@@ -84,8 +84,12 @@ TEST(EchoPathDelayEstimator, DelayEstimation) {
 
         render_delay_buffer->PrepareCaptureProcessing();
 
-        estimated_delay_samples = estimator.EstimateDelay(
+        auto estimate = estimator.EstimateDelay(
             render_delay_buffer->GetDownsampledRenderBuffer(), capture);
+
+        if (estimate) {
+          estimated_delay_samples = estimate;
+        }
       }
 
       if (estimated_delay_samples) {

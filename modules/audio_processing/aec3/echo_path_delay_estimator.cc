@@ -48,6 +48,8 @@ void EchoPathDelayEstimator::Reset(bool soft_reset) {
     matched_filter_lag_aggregator_.Reset();
   }
   matched_filter_.Reset();
+  old_aggregated_lag_ = rtc::nullopt;
+  consistent_estimate_counter_ = 0;
 }
 
 rtc::Optional<DelayEstimate> EchoPathDelayEstimator::EstimateDelay(
@@ -84,6 +86,19 @@ rtc::Optional<DelayEstimate> EchoPathDelayEstimator::EstimateDelay(
   if (aggregated_matched_filter_lag) {
     aggregated_matched_filter_lag->delay *= down_sampling_factor_;
   }
+
+  if (old_aggregated_lag_ && aggregated_matched_filter_lag &&
+      old_aggregated_lag_->delay == aggregated_matched_filter_lag->delay) {
+    ++consistent_estimate_counter_;
+  } else {
+    consistent_estimate_counter_ = 0;
+  }
+  old_aggregated_lag_ = aggregated_matched_filter_lag;
+  constexpr size_t kNumBlocksPerSecondBy2 = kNumBlocksPerSecond / 2;
+  if (consistent_estimate_counter_ > kNumBlocksPerSecondBy2) {
+    Reset(true);
+  }
+
   return aggregated_matched_filter_lag;
 }
 

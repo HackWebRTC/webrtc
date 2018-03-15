@@ -55,6 +55,8 @@ class EchoPathDelayEstimator {
   Decimator capture_decimator_;
   MatchedFilter matched_filter_;
   MatchedFilterLagAggregator matched_filter_lag_aggregator_;
+  rtc::Optional<DelayEstimate> old_aggregated_lag_;
+  size_t consistent_estimate_counter_ = 0;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(EchoPathDelayEstimator);
 };
