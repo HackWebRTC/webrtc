@@ -38,6 +38,8 @@ const int16_t kTl0PicIdx = 20;
 const uint8_t kTemporalIdx = 1;
 const int16_t kInitialPictureId1 = 222;
 const int16_t kInitialPictureId2 = 44;
+const int16_t kInitialTl0PicIdx1 = 99;
+const int16_t kInitialTl0PicIdx2 = 199;
 }  // namespace
 
 TEST(PayloadRouterTest, SendOnOneModule) {
@@ -307,7 +309,12 @@ TEST(PayloadRouterTest, InfoMappedToRtpVideoHeader_Vp8) {
   NiceMock<MockRtpRtcp> rtp1;
   NiceMock<MockRtpRtcp> rtp2;
   std::vector<RtpRtcp*> modules = {&rtp1, &rtp2};
-  PayloadRouter payload_router(modules, {kSsrc1, kSsrc2}, kPayloadType, {});
+  RtpPayloadState state2;
+  state2.picture_id = kPictureId;
+  state2.tl0_pic_idx = kTl0PicIdx;
+  std::map<uint32_t, RtpPayloadState> states = {{kSsrc2, state2}};
+
+  PayloadRouter payload_router(modules, {kSsrc1, kSsrc2}, kPayloadType, states);
   payload_router.SetActive(true);
 
   EncodedImage encoded_image;
@@ -318,9 +325,8 @@ TEST(PayloadRouterTest, InfoMappedToRtpVideoHeader_Vp8) {
   memset(&codec_info, 0, sizeof(CodecSpecificInfo));
   codec_info.codecType = kVideoCodecVP8;
   codec_info.codecSpecific.VP8.simulcastIdx = 1;
-  codec_info.codecSpecific.VP8.pictureId = kPictureId;
+  codec_info.codecSpecific.VP8.pictureId = -1;
   codec_info.codecSpecific.VP8.temporalIdx = kTemporalIdx;
-  codec_info.codecSpecific.VP8.tl0PicIdx = kTl0PicIdx;
   codec_info.codecSpecific.VP8.keyIdx = kNoKeyIdx;
   codec_info.codecSpecific.VP8.layerSync = true;
   codec_info.codecSpecific.VP8.nonReference = true;
@@ -333,7 +339,7 @@ TEST(PayloadRouterTest, InfoMappedToRtpVideoHeader_Vp8) {
         EXPECT_EQ(VideoContentType::SCREENSHARE, header->content_type);
         EXPECT_EQ(1, header->simulcastIdx);
         EXPECT_EQ(kRtpVideoVp8, header->codec);
-        EXPECT_EQ(kPictureId, header->codecHeader.VP8.pictureId);
+        EXPECT_EQ(kPictureId + 1, header->codecHeader.VP8.pictureId);
         EXPECT_EQ(kTemporalIdx, header->codecHeader.VP8.temporalIdx);
         EXPECT_EQ(kTl0PicIdx, header->codecHeader.VP8.tl0PicIdx);
         EXPECT_EQ(kNoKeyIdx, header->codecHeader.VP8.keyIdx);
@@ -393,8 +399,10 @@ TEST(PayloadRouterTest, CreateWithNoPreviousStates) {
 TEST(PayloadRouterTest, CreateWithPreviousStates) {
   RtpPayloadState state1;
   state1.picture_id = kInitialPictureId1;
+  state1.tl0_pic_idx = kInitialTl0PicIdx1;
   RtpPayloadState state2;
   state2.picture_id = kInitialPictureId2;
+  state2.tl0_pic_idx = kInitialTl0PicIdx2;
   std::map<uint32_t, RtpPayloadState> states = {{kSsrc1, state1},
                                                 {kSsrc2, state2}};
 
@@ -408,63 +416,18 @@ TEST(PayloadRouterTest, CreateWithPreviousStates) {
       payload_router.GetRtpPayloadStates();
   EXPECT_EQ(2u, initial_states.size());
   EXPECT_EQ(kInitialPictureId1, initial_states[kSsrc1].picture_id);
+  EXPECT_EQ(kInitialTl0PicIdx1, initial_states[kSsrc1].tl0_pic_idx);
   EXPECT_EQ(kInitialPictureId2, initial_states[kSsrc2].picture_id);
+  EXPECT_EQ(kInitialTl0PicIdx2, initial_states[kSsrc2].tl0_pic_idx);
 }
 
-class PayloadRouterTest : public ::testing::Test {
- public:
-  explicit PayloadRouterTest(const std::string& field_trials)
-      : override_field_trials_(field_trials) {}
-  virtual ~PayloadRouterTest() {}
-
- protected:
-  virtual void SetUp() { memset(&codec_info_, 0, sizeof(CodecSpecificInfo)); }
-
-  test::ScopedFieldTrials override_field_trials_;
-  EncodedImage image_;
-  CodecSpecificInfo codec_info_;
-};
-
-class TestWithForcedFallbackDisabled : public PayloadRouterTest {
- public:
-  TestWithForcedFallbackDisabled()
-      : PayloadRouterTest("WebRTC-VP8-Forced-Fallback-Encoder-v2/Disabled/") {}
-};
-
-class TestWithForcedFallbackEnabled : public PayloadRouterTest {
- public:
-  TestWithForcedFallbackEnabled()
-      : PayloadRouterTest(
-            "WebRTC-VP8-Forced-Fallback-Encoder-v2/Enabled-1,2,3/") {}
-};
-
-TEST_F(TestWithForcedFallbackDisabled, PictureIdIsNotChangedForVp8) {
-  NiceMock<MockRtpRtcp> rtp;
-  std::vector<RtpRtcp*> modules = {&rtp};
-  PayloadRouter router(modules, {kSsrc1}, kPayloadType, {});
-  router.SetActive(true);
-
-  codec_info_.codecType = kVideoCodecVP8;
-  codec_info_.codecSpecific.VP8.pictureId = kPictureId;
-
-  EXPECT_CALL(rtp, SendOutgoingData(_, _, _, _, _, _, nullptr, _, _))
-      .WillOnce(Invoke([](Unused, Unused, Unused, Unused, Unused, Unused,
-                          Unused, const RTPVideoHeader* header, Unused) {
-        EXPECT_EQ(kRtpVideoVp8, header->codec);
-        EXPECT_EQ(kPictureId, header->codecHeader.VP8.pictureId);
-        return true;
-      }));
-  EXPECT_CALL(rtp, Sending()).WillOnce(Return(true));
-
-  EXPECT_EQ(EncodedImageCallback::Result::OK,
-            router.OnEncodedImage(image_, &codec_info_, nullptr).error);
-}
-
-TEST_F(TestWithForcedFallbackEnabled, PictureIdIsSetForVp8) {
+TEST(PayloadRouterTest, PictureIdIsSetForVp8) {
   RtpPayloadState state1;
   state1.picture_id = kInitialPictureId1;
+  state1.tl0_pic_idx = kInitialTl0PicIdx1;
   RtpPayloadState state2;
   state2.picture_id = kInitialPictureId2;
+  state2.tl0_pic_idx = kInitialTl0PicIdx2;
   std::map<uint32_t, RtpPayloadState> states = {{kSsrc1, state1},
                                                 {kSsrc2, state2}};
 
@@ -474,119 +437,210 @@ TEST_F(TestWithForcedFallbackEnabled, PictureIdIsSetForVp8) {
   PayloadRouter router(modules, {kSsrc1, kSsrc2}, kPayloadType, states);
   router.SetActive(true);
 
+  EncodedImage encoded_image;
   // Modules are sending for this test.
   // OnEncodedImage, simulcastIdx: 0.
-  codec_info_.codecType = kVideoCodecVP8;
-  codec_info_.codecSpecific.VP8.pictureId = kPictureId;
-  codec_info_.codecSpecific.VP8.simulcastIdx = 0;
+  CodecSpecificInfo codec_info;
+  memset(&codec_info, 0, sizeof(CodecSpecificInfo));
+  codec_info.codecType = kVideoCodecVP8;
+  codec_info.codecSpecific.VP8.simulcastIdx = 0;
 
   EXPECT_CALL(rtp1, SendOutgoingData(_, _, _, _, _, _, nullptr, _, _))
       .WillOnce(Invoke([](Unused, Unused, Unused, Unused, Unused, Unused,
                           Unused, const RTPVideoHeader* header, Unused) {
         EXPECT_EQ(kRtpVideoVp8, header->codec);
-        EXPECT_EQ(kInitialPictureId1, header->codecHeader.VP8.pictureId);
+        EXPECT_EQ(kInitialPictureId1 + 1, header->codecHeader.VP8.pictureId);
         return true;
       }));
   EXPECT_CALL(rtp1, Sending()).WillOnce(Return(true));
 
   EXPECT_EQ(EncodedImageCallback::Result::OK,
-            router.OnEncodedImage(image_, &codec_info_, nullptr).error);
+            router.OnEncodedImage(encoded_image, &codec_info, nullptr).error);
 
   // OnEncodedImage, simulcastIdx: 1.
-  codec_info_.codecSpecific.VP8.pictureId = kPictureId;
-  codec_info_.codecSpecific.VP8.simulcastIdx = 1;
+  codec_info.codecSpecific.VP8.simulcastIdx = 1;
 
   EXPECT_CALL(rtp2, SendOutgoingData(_, _, _, _, _, _, nullptr, _, _))
       .WillOnce(Invoke([](Unused, Unused, Unused, Unused, Unused, Unused,
                           Unused, const RTPVideoHeader* header, Unused) {
         EXPECT_EQ(kRtpVideoVp8, header->codec);
-        EXPECT_EQ(kInitialPictureId2, header->codecHeader.VP8.pictureId);
+        EXPECT_EQ(kInitialPictureId2 + 1, header->codecHeader.VP8.pictureId);
         return true;
       }));
   EXPECT_CALL(rtp2, Sending()).WillOnce(Return(true));
 
   EXPECT_EQ(EncodedImageCallback::Result::OK,
-            router.OnEncodedImage(image_, &codec_info_, nullptr).error);
+            router.OnEncodedImage(encoded_image, &codec_info, nullptr).error);
 
-  // State should hold next picture id to use.
+  // State should hold latest used picture id and tl0_pic_idx.
   states = router.GetRtpPayloadStates();
   EXPECT_EQ(2u, states.size());
   EXPECT_EQ(kInitialPictureId1 + 1, states[kSsrc1].picture_id);
+  EXPECT_EQ(kInitialTl0PicIdx1 + 1, states[kSsrc1].tl0_pic_idx);
   EXPECT_EQ(kInitialPictureId2 + 1, states[kSsrc2].picture_id);
+  EXPECT_EQ(kInitialTl0PicIdx2 + 1, states[kSsrc2].tl0_pic_idx);
 }
 
-TEST_F(TestWithForcedFallbackEnabled, PictureIdWraps) {
+TEST(PayloadRouterTest, PictureIdWraps) {
   RtpPayloadState state1;
   state1.picture_id = kMaxTwoBytePictureId;
+  state1.tl0_pic_idx = kInitialTl0PicIdx1;
 
   NiceMock<MockRtpRtcp> rtp;
   std::vector<RtpRtcp*> modules = {&rtp};
   PayloadRouter router(modules, {kSsrc1}, kPayloadType, {{kSsrc1, state1}});
   router.SetActive(true);
 
-  codec_info_.codecType = kVideoCodecVP8;
-  codec_info_.codecSpecific.VP8.pictureId = kPictureId;
+  EncodedImage encoded_image;
+  CodecSpecificInfo codec_info;
+  memset(&codec_info, 0, sizeof(CodecSpecificInfo));
+  codec_info.codecType = kVideoCodecVP8;
+  codec_info.codecSpecific.VP8.temporalIdx = kNoTemporalIdx;
 
   EXPECT_CALL(rtp, SendOutgoingData(_, _, _, _, _, _, nullptr, _, _))
       .WillOnce(Invoke([](Unused, Unused, Unused, Unused, Unused, Unused,
                           Unused, const RTPVideoHeader* header, Unused) {
         EXPECT_EQ(kRtpVideoVp8, header->codec);
-        EXPECT_EQ(kMaxTwoBytePictureId, header->codecHeader.VP8.pictureId);
+        EXPECT_EQ(0, header->codecHeader.VP8.pictureId);
         return true;
       }));
   EXPECT_CALL(rtp, Sending()).WillOnce(Return(true));
 
   EXPECT_EQ(EncodedImageCallback::Result::OK,
-            router.OnEncodedImage(image_, &codec_info_, nullptr).error);
+            router.OnEncodedImage(encoded_image, &codec_info, nullptr).error);
 
-  // State should hold next picture id to use.
+  // State should hold latest used picture id and tl0_pic_idx.
   std::map<uint32_t, RtpPayloadState> states = router.GetRtpPayloadStates();
   EXPECT_EQ(1u, states.size());
   EXPECT_EQ(0, states[kSsrc1].picture_id);  // Wrapped.
+  EXPECT_EQ(kInitialTl0PicIdx1, states[kSsrc1].tl0_pic_idx);
 }
 
-TEST_F(TestWithForcedFallbackEnabled, PictureIdIsNotSetIfNoPictureId) {
+TEST(PayloadRouterTest, Tl0PicIdxUpdatedForVp8) {
+  RtpPayloadState state;
+  state.picture_id = kInitialPictureId1;
+  state.tl0_pic_idx = kInitialTl0PicIdx1;
+  std::map<uint32_t, RtpPayloadState> states = {{kSsrc1, state}};
+
   NiceMock<MockRtpRtcp> rtp;
   std::vector<RtpRtcp*> modules = {&rtp};
-  PayloadRouter router(modules, {kSsrc1}, kPayloadType, {});
+  PayloadRouter router(modules, {kSsrc1}, kPayloadType, states);
   router.SetActive(true);
 
-  codec_info_.codecType = kVideoCodecVP8;
-  codec_info_.codecSpecific.VP8.pictureId = kNoPictureId;
+  EncodedImage encoded_image;
+  // Modules are sending for this test.
+  // OnEncodedImage, temporalIdx: 1.
+  CodecSpecificInfo codec_info;
+  memset(&codec_info, 0, sizeof(CodecSpecificInfo));
+  codec_info.codecType = kVideoCodecVP8;
+  codec_info.codecSpecific.VP8.temporalIdx = 1;
 
   EXPECT_CALL(rtp, SendOutgoingData(_, _, _, _, _, _, nullptr, _, _))
       .WillOnce(Invoke([](Unused, Unused, Unused, Unused, Unused, Unused,
                           Unused, const RTPVideoHeader* header, Unused) {
         EXPECT_EQ(kRtpVideoVp8, header->codec);
-        EXPECT_EQ(kNoPictureId, header->codecHeader.VP8.pictureId);
+        EXPECT_EQ(kInitialPictureId1 + 1, header->codecHeader.VP8.pictureId);
+        EXPECT_EQ(kInitialTl0PicIdx1, header->codecHeader.VP8.tl0PicIdx);
         return true;
       }));
   EXPECT_CALL(rtp, Sending()).WillOnce(Return(true));
 
   EXPECT_EQ(EncodedImageCallback::Result::OK,
-            router.OnEncodedImage(image_, &codec_info_, nullptr).error);
+            router.OnEncodedImage(encoded_image, &codec_info, nullptr).error);
+
+  // OnEncodedImage, temporalIdx: 0.
+  codec_info.codecSpecific.VP8.temporalIdx = 0;
+
+  EXPECT_CALL(rtp, SendOutgoingData(_, _, _, _, _, _, nullptr, _, _))
+      .WillOnce(Invoke([](Unused, Unused, Unused, Unused, Unused, Unused,
+                          Unused, const RTPVideoHeader* header, Unused) {
+        EXPECT_EQ(kRtpVideoVp8, header->codec);
+        EXPECT_EQ(kInitialPictureId1 + 2, header->codecHeader.VP8.pictureId);
+        EXPECT_EQ(kInitialTl0PicIdx1 + 1, header->codecHeader.VP8.tl0PicIdx);
+        return true;
+      }));
+  EXPECT_CALL(rtp, Sending()).WillOnce(Return(true));
+
+  EXPECT_EQ(EncodedImageCallback::Result::OK,
+            router.OnEncodedImage(encoded_image, &codec_info, nullptr).error);
+
+  // State should hold latest used picture id and tl0_pic_idx.
+  states = router.GetRtpPayloadStates();
+  EXPECT_EQ(1u, states.size());
+  EXPECT_EQ(kInitialPictureId1 + 2, states[kSsrc1].picture_id);
+  EXPECT_EQ(kInitialTl0PicIdx1 + 1, states[kSsrc1].tl0_pic_idx);
 }
 
-TEST_F(TestWithForcedFallbackEnabled, PictureIdIsNotSetForVp9) {
+TEST(PayloadRouterTest, Tl0PicIdxUpdatedForVp9) {
+  RtpPayloadState state;
+  state.picture_id = kInitialPictureId1;
+  state.tl0_pic_idx = kInitialTl0PicIdx1;
+  std::map<uint32_t, RtpPayloadState> states = {{kSsrc1, state}};
+
   NiceMock<MockRtpRtcp> rtp;
   std::vector<RtpRtcp*> modules = {&rtp};
-  PayloadRouter router(modules, {kSsrc1}, kPayloadType, {});
+  PayloadRouter router(modules, {kSsrc1}, kPayloadType, states);
   router.SetActive(true);
 
-  codec_info_.codecType = kVideoCodecVP9;
-  codec_info_.codecSpecific.VP9.picture_id = kPictureId;
+  EncodedImage encoded_image;
+  // Modules are sending for this test.
+  // OnEncodedImage, temporalIdx: 1.
+  CodecSpecificInfo codec_info;
+  memset(&codec_info, 0, sizeof(CodecSpecificInfo));
+  codec_info.codecType = kVideoCodecVP9;
+  codec_info.codecSpecific.VP9.temporal_idx = 1;
+  codec_info.codecSpecific.VP9.first_frame_in_picture = true;
 
   EXPECT_CALL(rtp, SendOutgoingData(_, _, _, _, _, _, nullptr, _, _))
       .WillOnce(Invoke([](Unused, Unused, Unused, Unused, Unused, Unused,
                           Unused, const RTPVideoHeader* header, Unused) {
         EXPECT_EQ(kRtpVideoVp9, header->codec);
-        EXPECT_EQ(kPictureId, header->codecHeader.VP9.picture_id);
+        EXPECT_EQ(kInitialPictureId1 + 1, header->codecHeader.VP9.picture_id);
+        EXPECT_EQ(kInitialTl0PicIdx1, header->codecHeader.VP9.tl0_pic_idx);
         return true;
       }));
   EXPECT_CALL(rtp, Sending()).WillOnce(Return(true));
 
   EXPECT_EQ(EncodedImageCallback::Result::OK,
-            router.OnEncodedImage(image_, &codec_info_, nullptr).error);
+            router.OnEncodedImage(encoded_image, &codec_info, nullptr).error);
+
+  // OnEncodedImage, temporalIdx: 0.
+  codec_info.codecSpecific.VP9.temporal_idx = 0;
+
+  EXPECT_CALL(rtp, SendOutgoingData(_, _, _, _, _, _, nullptr, _, _))
+      .WillOnce(Invoke([](Unused, Unused, Unused, Unused, Unused, Unused,
+                          Unused, const RTPVideoHeader* header, Unused) {
+        EXPECT_EQ(kRtpVideoVp9, header->codec);
+        EXPECT_EQ(kInitialPictureId1 + 2, header->codecHeader.VP9.picture_id);
+        EXPECT_EQ(kInitialTl0PicIdx1 + 1, header->codecHeader.VP9.tl0_pic_idx);
+        return true;
+      }));
+  EXPECT_CALL(rtp, Sending()).WillOnce(Return(true));
+
+  EXPECT_EQ(EncodedImageCallback::Result::OK,
+            router.OnEncodedImage(encoded_image, &codec_info, nullptr).error);
+
+  // OnEncodedImage, first_frame_in_picture = false
+  codec_info.codecSpecific.VP9.first_frame_in_picture = false;
+
+  EXPECT_CALL(rtp, SendOutgoingData(_, _, _, _, _, _, nullptr, _, _))
+      .WillOnce(Invoke([](Unused, Unused, Unused, Unused, Unused, Unused,
+                          Unused, const RTPVideoHeader* header, Unused) {
+        EXPECT_EQ(kRtpVideoVp9, header->codec);
+        EXPECT_EQ(kInitialPictureId1 + 2, header->codecHeader.VP9.picture_id);
+        EXPECT_EQ(kInitialTl0PicIdx1 + 1, header->codecHeader.VP9.tl0_pic_idx);
+        return true;
+      }));
+  EXPECT_CALL(rtp, Sending()).WillOnce(Return(true));
+
+  EXPECT_EQ(EncodedImageCallback::Result::OK,
+            router.OnEncodedImage(encoded_image, &codec_info, nullptr).error);
+
+  // State should hold latest used picture id and tl0_pic_idx.
+  states = router.GetRtpPayloadStates();
+  EXPECT_EQ(1u, states.size());
+  EXPECT_EQ(kInitialPictureId1 + 2, states[kSsrc1].picture_id);
+  EXPECT_EQ(kInitialTl0PicIdx1 + 1, states[kSsrc1].tl0_pic_idx);
 }
 
 }  // namespace webrtc

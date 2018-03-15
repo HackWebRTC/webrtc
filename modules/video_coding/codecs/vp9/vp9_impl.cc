@@ -646,6 +646,8 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
     vp9_info->inter_layer_predicted = true;
   }
 
+  vp9_info->first_frame_in_picture = is_first_frame;
+
   if (pkt.data.frame.flags & VPX_FRAME_IS_KEY) {
     frames_since_kf_ = 0;
   }

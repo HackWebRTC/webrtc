@@ -29,6 +29,7 @@ struct RTPVideoHeader;
 // Currently only VP8/VP9 specific.
 struct RtpPayloadState {
   int16_t picture_id = -1;
+  uint8_t tl0_pic_idx = 0;
 };
 
 // PayloadRouter routes outgoing data to the correct sending RTP module, based
@@ -73,7 +74,6 @@ class PayloadRouter : public EncodedImageCallback {
   const std::vector<RtpRtcp*> rtp_modules_;
   const int payload_type_;
 
-  const bool forced_fallback_enabled_;
   std::vector<RtpPayloadParams> params_ RTC_GUARDED_BY(crit_);
 
   RTC_DISALLOW_COPY_AND_ASSIGN(PayloadRouter);
