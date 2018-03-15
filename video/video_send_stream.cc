@@ -255,6 +255,37 @@ CpuOveruseOptions GetCpuOveruseOptions(const VideoSendStream::Config& config) {
   return options;
 }
 
+size_t CalculateMaxHeaderSize(const VideoSendStream::Config::Rtp& config) {
+  size_t header_size = kRtpHeaderSize;
+  size_t extensions_size = 0;
+  size_t fec_extensions_size = 0;
+  if (config.extensions.size() > 0) {
+    RtpHeaderExtensionMap extensions_map(config.extensions);
+    extensions_size =
+        extensions_map.GetTotalLengthInBytes(RTPSender::VideoExtensionSizes());
+    fec_extensions_size =
+        extensions_map.GetTotalLengthInBytes(RTPSender::FecExtensionSizes());
+  }
+  header_size += extensions_size;
+  if (config.flexfec.payload_type >= 0) {
+    // All FEC extensions again plus maximum FlexFec overhead.
+    header_size += fec_extensions_size + 32;
+  } else {
+    if (config.ulpfec.ulpfec_payload_type >= 0) {
+      // Header with all the FEC extensions will be repeated plus maximum
+      // UlpFec overhead.
+      header_size += fec_extensions_size + 18;
+    }
+    if (config.ulpfec.red_payload_type >= 0) {
+      header_size += 1;  // RED header.
+    }
+  }
+  // Additional room for Rtx.
+  if (config.rtx.payload_type >= 0)
+    header_size += kRtxHeaderSize;
+  return header_size;
+}
+
 }  // namespace
 
 namespace internal {
@@ -585,9 +616,10 @@ void VideoSendStream::ReconfigureVideoEncoder(VideoEncoderConfig config) {
   // ReconfigureVideoEncoder from the network thread.
   // RTC_DCHECK_RUN_ON(&thread_checker_);
   RTC_DCHECK(content_type_ == config.content_type);
-  video_stream_encoder_->ConfigureEncoder(std::move(config),
-                                          config_.rtp.max_packet_size,
-                                          config_.rtp.nack.rtp_history_ms > 0);
+  video_stream_encoder_->ConfigureEncoder(
+      std::move(config),
+      config_.rtp.max_packet_size - CalculateMaxHeaderSize(config_.rtp),
+      config_.rtp.nack.rtp_history_ms > 0);
 }
 
 VideoSendStream::Stats VideoSendStream::GetStats() {

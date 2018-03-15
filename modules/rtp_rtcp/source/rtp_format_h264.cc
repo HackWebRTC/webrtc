@@ -170,15 +170,25 @@ size_t RtpPacketizerH264::SetPayloadData(
     if (!updated_sps)
       input_fragments_.push_back(Fragment(buffer, length));
   }
-  GeneratePackets();
+  if (!GeneratePackets()) {
+    // If failed to generate all the packets, discard already generated
+    // packets in case the caller would ignore return value and still try to
+    // call NextPacket().
+    num_packets_left_ = 0;
+    while (!packets_.empty()) {
+      packets_.pop();
+    }
+    return 0;
+  }
   return num_packets_left_;
 }
 
-void RtpPacketizerH264::GeneratePackets() {
+bool RtpPacketizerH264::GeneratePackets() {
   for (size_t i = 0; i < input_fragments_.size();) {
     switch (packetization_mode_) {
       case H264PacketizationMode::SingleNalUnit:
-        PacketizeSingleNalu(i);
+        if (!PacketizeSingleNalu(i))
+          return false;
         ++i;
         break;
       case H264PacketizationMode::NonInterleaved:
@@ -197,6 +207,7 @@ void RtpPacketizerH264::GeneratePackets() {
         break;
     }
   }
+  return true;
 }
 
 void RtpPacketizerH264::PacketizeFuA(size_t fragment_index) {
@@ -290,19 +301,25 @@ size_t RtpPacketizerH264::PacketizeStapA(size_t fragment_index) {
   return fragment_index;
 }
 
-void RtpPacketizerH264::PacketizeSingleNalu(size_t fragment_index) {
+bool RtpPacketizerH264::PacketizeSingleNalu(size_t fragment_index) {
   // Add a single NALU to the queue, no aggregation.
   size_t payload_size_left = max_payload_len_;
   if (fragment_index + 1 == input_fragments_.size())
     payload_size_left -= last_packet_reduction_len_;
   const Fragment* fragment = &input_fragments_[fragment_index];
-  RTC_CHECK_GE(payload_size_left, fragment->length)
-      << "Payload size left " << payload_size_left << ", fragment length "
-      << fragment->length << ", packetization mode " << packetization_mode_;
+  if (payload_size_left < fragment->length) {
+    RTC_LOG(LS_ERROR) << "Failed to fit a fragment to packet in SingleNalu "
+                         "packetization mode. Payload size left "
+                      << payload_size_left << ", fragment length "
+                      << fragment->length << ", packet capacity "
+                      << max_payload_len_;
+    return false;
+  }
   RTC_CHECK_GT(fragment->length, 0u);
   packets_.push(PacketUnit(*fragment, true /* first */, true /* last */,
                            false /* aggregated */, fragment->buffer[0]));
   ++num_packets_left_;
+  return true;
 }
 
 bool RtpPacketizerH264::NextPacket(RtpPacketToSend* rtp_packet) {

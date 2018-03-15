@@ -80,10 +80,10 @@ class RtpPacketizerH264 : public RtpPacketizer {
     uint8_t header;
   };
 
-  void GeneratePackets();
+  bool GeneratePackets();
   void PacketizeFuA(size_t fragment_index);
   size_t PacketizeStapA(size_t fragment_index);
-  void PacketizeSingleNalu(size_t fragment_index);
+  bool PacketizeSingleNalu(size_t fragment_index);
   void NextAggregatePacket(RtpPacketToSend* rtp_packet, bool last);
   void NextFragmentPacket(RtpPacketToSend* rtp_packet);
 

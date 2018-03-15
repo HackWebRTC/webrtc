@@ -468,9 +468,7 @@ TEST(RtpPacketizerH264Test, TestFUABig) {
                               sizeof(kExpectedPayloadSizes) / sizeof(size_t)));
 }
 
-#if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
-
-TEST(RtpPacketizerH264DeathTest, SendOverlongDataInPacketizationMode0) {
+TEST(RtpPacketizerH264Test, SendOverlongDataInPacketizationMode0) {
   const size_t kFrameSize = kMaxPayloadSize + 1;
   uint8_t frame[kFrameSize] = {0};
   for (size_t i = 0; i < kFrameSize; ++i)
@@ -484,11 +482,8 @@ TEST(RtpPacketizerH264DeathTest, SendOverlongDataInPacketizationMode0) {
 
   std::unique_ptr<RtpPacketizer> packetizer(CreateH264Packetizer(
       H264PacketizationMode::SingleNalUnit, kMaxPayloadSize, 0));
-  EXPECT_DEATH(packetizer->SetPayloadData(frame, kFrameSize, &fragmentation),
-               "payload_size");
+  EXPECT_EQ(0u, packetizer->SetPayloadData(frame, kFrameSize, &fragmentation));
 }
-
-#endif  // RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 
 namespace {
 const uint8_t kStartSequence[] = {0x00, 0x00, 0x00, 0x01};

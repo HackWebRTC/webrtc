@@ -151,6 +151,9 @@ class RTPSender {
   // Size info for header extensions used by FEC packets.
   static rtc::ArrayView<const RtpExtensionSize> FecExtensionSizes();
 
+  // Size info for header extensions used by video packets.
+  static rtc::ArrayView<const RtpExtensionSize> VideoExtensionSizes();
+
   // Create empty packet, fills ssrc, csrcs and reserve place for header
   // extensions RtpSender updates before sending.
   std::unique_ptr<RtpPacketToSend> AllocatePacket() const;

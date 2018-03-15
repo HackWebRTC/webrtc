@@ -54,11 +54,22 @@ constexpr RtpExtensionSize CreateExtensionSize() {
 }
 
 // Size info for header extensions that might be used in padding or FEC packets.
-constexpr RtpExtensionSize kExtensionSizes[] = {
+constexpr RtpExtensionSize kFecOrPaddingExtensionSizes[] = {
     CreateExtensionSize<AbsoluteSendTime>(),
     CreateExtensionSize<TransmissionOffset>(),
     CreateExtensionSize<TransportSequenceNumber>(),
     CreateExtensionSize<PlayoutDelayLimits>(),
+};
+
+// Size info for header extensions that might be used in video packets.
+constexpr RtpExtensionSize kVideoExtensionSizes[] = {
+    CreateExtensionSize<AbsoluteSendTime>(),
+    CreateExtensionSize<TransmissionOffset>(),
+    CreateExtensionSize<TransportSequenceNumber>(),
+    CreateExtensionSize<PlayoutDelayLimits>(),
+    CreateExtensionSize<VideoOrientation>(),
+    CreateExtensionSize<VideoContentTypeExtension>(),
+    CreateExtensionSize<VideoTimingExtension>(),
 };
 
 const char* FrameTypeToString(FrameType frame_type) {
@@ -177,7 +188,13 @@ RTPSender::~RTPSender() {
 }
 
 rtc::ArrayView<const RtpExtensionSize> RTPSender::FecExtensionSizes() {
-  return rtc::MakeArrayView(kExtensionSizes, arraysize(kExtensionSizes));
+  return rtc::MakeArrayView(kFecOrPaddingExtensionSizes,
+                            arraysize(kFecOrPaddingExtensionSizes));
+}
+
+rtc::ArrayView<const RtpExtensionSize> RTPSender::VideoExtensionSizes() {
+  return rtc::MakeArrayView(kVideoExtensionSizes,
+                            arraysize(kVideoExtensionSizes));
 }
 
 uint16_t RTPSender::ActualSendBitrateKbit() const {
@@ -1029,8 +1046,8 @@ size_t RTPSender::RtpHeaderLength() const {
   rtc::CritScope lock(&send_critsect_);
   size_t rtp_header_length = kRtpHeaderLength;
   rtp_header_length += sizeof(uint32_t) * csrcs_.size();
-  rtp_header_length +=
-      rtp_header_extension_map_.GetTotalLengthInBytes(kExtensionSizes);
+  rtp_header_length += rtp_header_extension_map_.GetTotalLengthInBytes(
+      kFecOrPaddingExtensionSizes);
   return rtp_header_length;
 }
 

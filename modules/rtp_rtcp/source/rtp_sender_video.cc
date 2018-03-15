@@ -373,7 +373,6 @@ bool RTPSenderVideo::SendVideo(RtpVideoCodecTypes video_type,
       video_header ? GetTemporalId(*video_header) : kNoTemporalIdx;
   StorageType storage = GetStorageType(temporal_id, retransmission_settings,
                                        expected_retransmission_time_ms);
-
   size_t num_packets =
       packetizer->SetPayloadData(payload_data, payload_size, fragmentation);
 
