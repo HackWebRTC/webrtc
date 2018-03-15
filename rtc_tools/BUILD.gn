@@ -186,6 +186,7 @@ if (!build_with_chromium) {
 
       deps = [
         "../modules/audio_device",
+        "../modules/audio_device:audio_device_impl",
         "../system_wrappers:system_wrappers_default",
         "//build/win:default_exe_manifest",
       ]

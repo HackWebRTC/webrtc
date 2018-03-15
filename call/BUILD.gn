@@ -316,6 +316,7 @@ if (rtc_include_tests) {
       "../logging:rtc_event_log_api",
       "../modules/audio_coding",
       "../modules/audio_device",
+      "../modules/audio_device:audio_device_impl",
       "../modules/audio_mixer:audio_mixer_impl",
       "../modules/rtp_rtcp",
       "../rtc_base:checks",

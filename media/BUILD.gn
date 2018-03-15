@@ -348,6 +348,7 @@ rtc_static_library("rtc_audio_video") {
     "../call:video_stream_api",
     "../common_video:common_video",
     "../modules/audio_device:audio_device",
+    "../modules/audio_device:audio_device_impl",
     "../modules/audio_mixer:audio_mixer_impl",
     "../modules/audio_processing:audio_processing",
     "../modules/video_capture:video_capture_module",
