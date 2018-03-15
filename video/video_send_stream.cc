@@ -33,6 +33,7 @@
 #include "rtc_base/file.h"
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/trace_event.h"
 #include "rtc_base/weak_ptr.h"
 #include "system_wrappers/include/field_trial.h"
@@ -675,7 +676,6 @@ VideoSendStreamImpl::VideoSendStreamImpl(
       flexfec_sender_(MaybeCreateFlexfecSender(*config_, suspended_ssrcs_)),
       max_padding_bitrate_(0),
       encoder_min_bitrate_bps_(0),
-      encoder_max_bitrate_bps_(initial_encoder_max_bitrate),
       encoder_target_rate_bps_(0),
       encoder_bitrate_priority_(initial_encoder_bitrate_priority),
       video_stream_encoder_(video_stream_encoder),
@@ -710,8 +710,24 @@ VideoSendStreamImpl::VideoSendStreamImpl(
   RTC_DCHECK(!config_->rtp.ssrcs.empty());
   RTC_DCHECK(call_stats_);
   RTC_DCHECK(transport_);
-  RTC_DCHECK(transport_);
-  RTC_DCHECK_GT(encoder_max_bitrate_bps_, 0);
+  RTC_DCHECK_NE(initial_encoder_max_bitrate, 0);
+
+  if (initial_encoder_max_bitrate > 0) {
+    encoder_max_bitrate_bps_ =
+        rtc::dchecked_cast<uint32_t>(initial_encoder_max_bitrate);
+  } else {
+    // TODO(srte): Make sure max bitrate is not set to negative values. We don't
+    // have any way to handle unset values in downstream code, such as the
+    // bitrate allocator. Previously -1 was implicitly casted to UINT32_MAX, a
+    // behaviour that is not safe. Converting to 10 Mbps should be safe for
+    // reasonable use cases as it allows adding the max of multiple streams
+    // without wrappping around.
+    const int kFallbackMaxBitrateBps = 10000000;
+    RTC_DLOG(LS_ERROR) << "ERROR: Initial encoder max bitrate = "
+                       << initial_encoder_max_bitrate << " which is <= 0!";
+    RTC_DLOG(LS_INFO) << "Using default encoder max bitrate = 10 Mbps";
+    encoder_max_bitrate_bps_ = kFallbackMaxBitrateBps;
+  }
 
   RTC_CHECK(AlrExperimentSettings::MaxOneFieldTrialEnabled());
   // If send-side BWE is enabled, check if we should apply updated probing and
