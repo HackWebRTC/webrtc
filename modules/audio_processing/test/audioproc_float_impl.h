@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_AUDIO_PROCESSING_TEST_AUDIOPROC_FLOAT_H_
-#define MODULES_AUDIO_PROCESSING_TEST_AUDIOPROC_FLOAT_H_
+#ifndef MODULES_AUDIO_PROCESSING_TEST_AUDIOPROC_FLOAT_IMPL_H_
+#define MODULES_AUDIO_PROCESSING_TEST_AUDIOPROC_FLOAT_IMPL_H_
 
 #include <memory>
 
@@ -19,11 +19,11 @@ namespace webrtc {
 namespace test {
 
 // This function implements the audio processing simulation utility.
-int audioproc_f(std::unique_ptr<AudioProcessingBuilder> ap_builder,
-                int argc,
-                char* argv[]);
+int AudioprocFloatImpl(std::unique_ptr<AudioProcessingBuilder> ap_builder,
+                       int argc,
+                       char* argv[]);
 
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // MODULES_AUDIO_PROCESSING_TEST_AUDIOPROC_FLOAT_H_
+#endif  // MODULES_AUDIO_PROCESSING_TEST_AUDIOPROC_FLOAT_IMPL_H_

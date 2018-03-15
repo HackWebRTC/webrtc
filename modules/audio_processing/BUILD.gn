@@ -676,8 +676,8 @@ if (rtc_include_tests) {
         "test/aec_dump_based_simulator.h",
         "test/audio_processing_simulator.cc",
         "test/audio_processing_simulator.h",
-        "test/audioproc_float.cc",
-        "test/audioproc_float.h",
+        "test/audioproc_float_impl.cc",
+        "test/audioproc_float_impl.h",
         "test/wav_based_simulator.cc",
         "test/wav_based_simulator.h",
       ]
@@ -712,7 +712,7 @@ if (rtc_include_tests) {
       ]
       deps = [
         ":audio_processing",
-        ":audioproc_f_impl",
+        "../../api:audioproc_f_api",
         "../../rtc_base:rtc_base_approved",
       ]
     }  # audioproc_f

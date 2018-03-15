@@ -9,10 +9,19 @@
  */
 
 #include "api/test/audioproc_float.h"
-#include "modules/audio_processing/include/audio_processing.h"
-#include "rtc_base/ptr_util.h"
 
-int main(int argc, char* argv[]) {
-  return webrtc::test::AudioprocFloat(
-      rtc::MakeUnique<webrtc::AudioProcessingBuilder>(), argc, argv);
+#include <utility>
+
+#include "modules/audio_processing/test/audioproc_float_impl.h"
+
+namespace webrtc {
+namespace test {
+
+int AudioprocFloat(std::unique_ptr<AudioProcessingBuilder> ap_builder,
+                   int argc,
+                   char* argv[]) {
+  return AudioprocFloatImpl(std::move(ap_builder), argc, argv);
 }
+
+}  // namespace test
+}  // namespace webrtc

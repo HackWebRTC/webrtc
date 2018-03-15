@@ -8,15 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <string.h>
+
 #include <iostream>
 #include <memory>
-
-#include <string.h>
+#include <string>
+#include <utility>
 
 #include "modules/audio_processing/include/audio_processing.h"
 #include "modules/audio_processing/test/aec_dump_based_simulator.h"
 #include "modules/audio_processing/test/audio_processing_simulator.h"
-#include "modules/audio_processing/test/audioproc_float.h"
+#include "modules/audio_processing/test/audioproc_float_impl.h"
 #include "modules/audio_processing/test/wav_based_simulator.h"
 #include "rtc_base/flags.h"
 
@@ -461,9 +463,9 @@ void PerformBasicParameterSanityChecks(const SimulationSettings& settings) {
 
 }  // namespace
 
-int audioproc_f(std::unique_ptr<AudioProcessingBuilder> ap_builder,
-                int argc,
-                char* argv[]) {
+int AudioprocFloatImpl(std::unique_ptr<AudioProcessingBuilder> ap_builder,
+                       int argc,
+                       char* argv[]) {
   if (rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true) ||
       FLAG_help || argc != 1) {
     printf("%s", kUsageDescription);
