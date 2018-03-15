@@ -272,6 +272,7 @@ if (rtc_include_tests) {
         "../rtc_base:rtc_base_approved",
         "../system_wrappers:field_trial_default",
         "../test:field_trial",
+        "../test:fileutils",
         "../test:test_support",
       ]
     }
@@ -344,6 +345,7 @@ if (rtc_include_tests) {
       "../common_video:common_video",
       "../rtc_base",
       "../rtc_base:checks",
+      "../test:fileutils",
       "../test:test_main",
       "//testing/gtest",
     ]

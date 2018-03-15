@@ -479,6 +479,7 @@ if (rtc_include_tests) {
       "../api:mock_rtp",
       "../rtc_base:checks",
       "../rtc_base:stringutils",
+      "../test:fileutils",
     ]
     if (is_android) {
       deps += [ ":android_black_magic" ]

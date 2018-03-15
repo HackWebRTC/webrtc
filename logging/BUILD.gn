@@ -316,6 +316,7 @@ if (rtc_enable_protobuf) {
         "../rtc_base:checks",
         "../rtc_base:rtc_base_approved",
         "../rtc_base:rtc_base_tests_utils",
+        "../test:fileutils",
         "../test:test_support",
         "//testing/gtest",
       ]

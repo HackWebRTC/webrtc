@@ -400,6 +400,7 @@ if (rtc_include_tests) {
         "../../rtc_base:rtc_base_approved",
         "../../sdk:audio_objc",
         "../../system_wrappers",
+        "../../test:fileutils",
         "../../test:test_support",
         "//third_party/ocmock",
       ]
@@ -428,6 +429,7 @@ if (rtc_include_tests) {
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
       "../../system_wrappers",
+      "../../test:fileutils",
       "../../test:test_support",
       "../utility:utility",
     ]

@@ -147,6 +147,7 @@ if (rtc_include_tests) {
       "../../rtc_base/system:fallthrough",
       "../../system_wrappers",
       "../../system_wrappers:field_trial_api",
+      "../../test:fileutils",
       "../../test:perf_test",
       "../../test:test_support",
       "../bitrate_controller",
@@ -173,6 +174,7 @@ if (rtc_include_tests) {
       ":remote_bitrate_estimator",
       "../../rtc_base:rtc_base_approved",
       "../../test:field_trial",
+      "../../test:fileutils",
       "../../test:test_support",
     ]
     if (!build_with_chromium && is_clang) {
@@ -210,6 +212,7 @@ if (rtc_include_tests) {
       "../../rtc_base:rtc_base_approved",
       "../../system_wrappers",
       "../../test:field_trial",
+      "../../test:fileutils",
       "../../test:test_support",
       "../pacing:pacing",
       "../rtp_rtcp:rtp_rtcp_format",
@@ -237,6 +240,7 @@ if (rtc_include_tests) {
       ":remote_bitrate_estimator",
       "../..:webrtc_common",
       "../../rtc_base:rtc_base_approved",
+      "../../test:fileutils",
       "../../test:test_main",
       "//testing/gtest",
     ]

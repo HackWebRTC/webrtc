@@ -81,6 +81,7 @@ if (rtc_enable_protobuf) {
     deps = [
       ":network_tester",
       "../../rtc_base:rtc_base_tests_utils",
+      "../../test:fileutils",
       "../../test:test_support",
       "//testing/gtest",
     ]

@@ -175,9 +175,7 @@ rtc_source_set("test_support") {
     "testsupport/unittest_utils.h",
   ]
 
-  public_deps = [
-    ":fileutils",
-  ]
+  public_deps = []
   if (is_ios) {
     public_deps += [ ":test_support_objc" ]
   }
@@ -221,6 +219,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":field_trial",
+      ":fileutils",
       ":perf_test",
       "../rtc_base:rtc_base_approved",
       "../system_wrappers:field_trial_default",
@@ -243,6 +242,7 @@ if (rtc_include_tests) {
     ]
 
     deps = [
+      ":fileutils",
       ":test_support",
       ":video_test_common",
       "..:webrtc_common",
@@ -263,10 +263,6 @@ if (rtc_include_tests) {
     } else {
       sources += [ "testsupport/jpeg_frame_writer_ios.cc" ]
     }
-
-    public_deps = [
-      ":fileutils",
-    ]
 
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -320,6 +316,7 @@ if (rtc_include_tests) {
 
   rtc_test("test_support_unittests") {
     deps = [
+      ":fileutils",
       ":perf_test",
       ":rtp_test_utils",
       "../api:video_frame_api",
@@ -395,12 +392,7 @@ if (is_ios) {
 
 rtc_source_set("fileutils") {
   testonly = true
-  visibility = [
-    ":fileutils_unittests",
-    ":test_support_test_artifacts",
-    ":test_support",
-    ":video_test_support",
-  ]
+  visibility = [ "*" ]
   sources = [
     "testsupport/fileutils.cc",
     "testsupport/fileutils.h",
@@ -561,6 +553,7 @@ rtc_source_set("test_common") {
 
   deps = [
     ":direct_transport",
+    ":fileutils",
     ":rtp_test_utils",
     ":test_support",
     ":video_test_common",

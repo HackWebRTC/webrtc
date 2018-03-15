@@ -302,6 +302,7 @@ if (rtc_include_tests) {
 
     deps = [
       ":rtp_rtcp",
+      "../../test:fileutils",
       "../../test:test_main",
       "//testing/gtest",
     ]
@@ -317,6 +318,7 @@ if (rtc_include_tests) {
       ":rtp_rtcp",
       ":rtp_rtcp_format",
       "../../rtc_base:rtc_base_approved",
+      "../../test:fileutils",
       "../../test:test_support",
     ]
   }

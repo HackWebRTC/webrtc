@@ -541,6 +541,7 @@ if (rtc_include_tests) {
       "../../rtc_base:safe_minmax",
       "../../system_wrappers",
       "../../system_wrappers:cpu_features_api",
+      "../../test:fileutils",
       "../../test:test_support",
       "../audio_coding:neteq_input_audio_tools",
       "aec_dump:mock_aec_dump_unittests",
@@ -650,6 +651,7 @@ if (rtc_include_tests) {
       ":audio_processing",
       ":file_audio_generator",
       "../../rtc_base:rtc_base_approved",
+      "../../test:fileutils",
       "../../test:test_support",
     ]
   }
@@ -743,6 +745,7 @@ if (rtc_include_tests) {
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
       "../../system_wrappers",
+      "../../test:fileutils",
       "../../test:test_support",
       "../audio_coding:neteq_input_audio_tools",
       "//testing/gtest",
@@ -765,6 +768,7 @@ if (rtc_include_tests) {
       "../../rtc_base:rtc_base_approved",
       "../../system_wrappers",
       "../../system_wrappers:metrics_default",
+      "../../test:fileutils",
       "../../test:test_support",
       "//testing/gtest",
     ]

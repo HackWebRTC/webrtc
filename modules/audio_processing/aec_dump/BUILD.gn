@@ -84,6 +84,7 @@ if (rtc_enable_protobuf) {
       "..:audioproc_debug_proto",
       "../../../modules:module_api",
       "../../../rtc_base:rtc_task_queue",
+      "../../../test:fileutils",
       "../../../test:test_support",
       "//testing/gtest",
     ]
