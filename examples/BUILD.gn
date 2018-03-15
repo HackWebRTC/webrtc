@@ -392,6 +392,66 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
         "{{bundle_resources_dir}}/{{source_file_part}}",
       ]
     }
+
+    rtc_static_library("ObjCNativeAPIDemo_lib") {
+      testonly = true
+      sources = [
+        "objcnativeapi/objc/NADAppDelegate.h",
+        "objcnativeapi/objc/NADAppDelegate.m",
+        "objcnativeapi/objc/NADViewController.h",
+        "objcnativeapi/objc/NADViewController.mm",
+        "objcnativeapi/objc/objccallclient.h",
+        "objcnativeapi/objc/objccallclient.mm",
+      ]
+
+      if (!build_with_chromium && is_clang) {
+        # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+        suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+      }
+
+      deps = [
+        "../api:libjingle_peerconnection_api",
+        "../api/audio_codecs:builtin_audio_decoder_factory",
+        "../api/audio_codecs:builtin_audio_encoder_factory",
+        "../logging:rtc_event_log_impl_base",
+        "../media:rtc_audio_video",
+        "../modules/audio_processing:audio_processing",
+        "../pc:libjingle_peerconnection",
+        "../rtc_base:rtc_base",
+        "../sdk:default_codec_factory_objc",
+        "../sdk:framework_objc",
+        "../sdk:native_api",
+        "../sdk:ui_objc",
+        "../sdk:videotoolbox_objc",
+        "../system_wrappers:field_trial_default",
+        "../system_wrappers:metrics_default",
+        "../system_wrappers:runtime_enabled_features_default",
+      ]
+
+      if (current_cpu == "arm64") {
+        deps += [ "../sdk:metal_objc" ]
+      }
+    }
+
+    ios_app_bundle("ObjCNativeAPIDemo") {
+      testonly = true
+      sources = [
+        "objcnativeapi/objc/main.m",
+      ]
+
+      info_plist = "objcnativeapi/Info.plist"
+
+      configs += [ "..:common_config" ]
+      public_configs = [ "..:common_inherited_config" ]
+
+      deps = [
+        ":ObjCNativeAPIDemo_lib",
+      ]
+
+      if (target_cpu == "x86") {
+        deps += [ "//testing/iossim:iossim" ]
+      }
+    }
   }
 
   if (is_mac) {

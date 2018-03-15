@@ -16,9 +16,27 @@
 #include "api/video/i420_buffer.h"
 #include "sdk/objc/Framework/Native/src/objc_frame_buffer.h"
 
+@interface RTCObjCVideoSourceAdapter ()
+@property(nonatomic) webrtc::ObjCVideoTrackSource *objCVideoTrackSource;
+@end
+
+@implementation RTCObjCVideoSourceAdapter
+
+@synthesize objCVideoTrackSource = _objCVideoTrackSource;
+
+- (void)capturer:(RTCVideoCapturer *)capturer didCaptureVideoFrame:(RTCVideoFrame *)frame {
+  _objCVideoTrackSource->OnCapturedFrame(frame);
+}
+
+@end
+
 namespace webrtc {
 
 ObjCVideoTrackSource::ObjCVideoTrackSource() {}
+
+ObjCVideoTrackSource::ObjCVideoTrackSource(RTCObjCVideoSourceAdapter *adapter) : adapter_(adapter) {
+  adapter_.objCVideoTrackSource = this;
+}
 
 void ObjCVideoTrackSource::OnOutputFormatRequest(int width, int height, int fps) {
   cricket::VideoFormat format(width, height, cricket::VideoFormat::FpsToInterval(fps), 0);

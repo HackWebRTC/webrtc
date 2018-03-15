@@ -8,5 +8,6 @@ include_rules = [
   "+modules/audio_processing",
   "+p2p",
   "+pc",
+  "+sdk/objc/Framework/Native/api",
   "+third_party/libyuv",
 ]

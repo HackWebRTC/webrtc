@@ -296,13 +296,29 @@ if (is_ios || is_mac) {
       }
     }
 
+    rtc_static_library("videocapturebase_objc") {
+      visibility = [ "*" ]
+      sources = [
+        "objc/Framework/Classes/PeerConnection/RTCVideoCapturer.m",
+        "objc/Framework/Headers/WebRTC/RTCVideoCapturer.h",
+      ]
+      libs = [ "AVFoundation.framework" ]
+
+      configs += [ "..:common_objc" ]
+
+      public_configs = [ ":common_config_objc" ]
+
+      deps = [
+        ":common_objc",
+        ":videoframebuffer_objc",
+      ]
+    }
+
     rtc_static_library("videocapture_objc") {
       visibility = [ "*" ]
       sources = [
         "objc/Framework/Classes/PeerConnection/RTCCameraVideoCapturer.m",
-        "objc/Framework/Classes/PeerConnection/RTCVideoCapturer.m",
         "objc/Framework/Headers/WebRTC/RTCCameraVideoCapturer.h",
-        "objc/Framework/Headers/WebRTC/RTCVideoCapturer.h",
       ]
       if (is_ios) {
         sources += [
@@ -325,6 +341,7 @@ if (is_ios || is_mac) {
       deps = [
         ":common_objc",
         ":video_objc",
+        ":videocapturebase_objc",
         ":videoframebuffer_objc",
       ]
     }
@@ -922,6 +939,8 @@ if (is_ios || is_mac) {
     rtc_static_library("native_api") {
       visibility = [ "*" ]
       sources = [
+        "objc/Framework/Native/api/video_capturer.h",
+        "objc/Framework/Native/api/video_capturer.mm",
         "objc/Framework/Native/api/video_decoder_factory.h",
         "objc/Framework/Native/api/video_decoder_factory.mm",
         "objc/Framework/Native/api/video_encoder_factory.h",
@@ -946,9 +965,11 @@ if (is_ios || is_mac) {
 
       deps = [
         ":native_video",
+        ":videocapturebase_objc",
         ":videocodec_objc",
         ":videoframebuffer_objc",
         ":videorenderer_objc",
+        "../api:libjingle_peerconnection_api",
         "../api:video_frame_api",
         "../api/video_codecs:video_codecs_api",
         "../common_video",
@@ -984,6 +1005,7 @@ if (is_ios || is_mac) {
 
       deps = [
         ":common_objc",
+        ":videocapturebase_objc",
         ":videocodec_objc",
         ":videoframebuffer_objc",
         ":videorenderer_objc",

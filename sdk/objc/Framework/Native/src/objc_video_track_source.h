@@ -11,17 +11,23 @@
 #ifndef SDK_OBJC_FRAMEWORK_CLASSES_VIDEO_OBJCVIDEOTRACKSOURCE_H_
 #define SDK_OBJC_FRAMEWORK_CLASSES_VIDEO_OBJCVIDEOTRACKSOURCE_H_
 
+#import "WebRTC/RTCVideoCapturer.h"
+
 #include "WebRTC/RTCMacros.h"
 #include "media/base/adaptedvideotracksource.h"
 #include "rtc_base/timestampaligner.h"
 
 RTC_FWD_DECL_OBJC_CLASS(RTCVideoFrame);
 
+@interface RTCObjCVideoSourceAdapter : NSObject<RTCVideoCapturerDelegate>
+@end
+
 namespace webrtc {
 
 class ObjCVideoTrackSource : public rtc::AdaptedVideoTrackSource {
  public:
   ObjCVideoTrackSource();
+  explicit ObjCVideoTrackSource(RTCObjCVideoSourceAdapter* adapter);
 
   // This class can not be used for implementing screen casting. Hopefully, this
   // function will be removed before we add that to iOS/Mac.
@@ -36,13 +42,16 @@ class ObjCVideoTrackSource : public rtc::AdaptedVideoTrackSource {
 
   bool remote() const override { return false; }
 
-  // Called by RTCVideoSource.
   void OnCapturedFrame(RTCVideoFrame* frame);
+
+  // Called by RTCVideoSource.
   void OnOutputFormatRequest(int width, int height, int fps);
 
  private:
   rtc::VideoBroadcaster broadcaster_;
   rtc::TimestampAligner timestamp_aligner_;
+
+  RTCObjCVideoSourceAdapter* adapter_;
 };
 
 }  // namespace webrtc
