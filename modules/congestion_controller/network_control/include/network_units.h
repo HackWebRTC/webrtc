@@ -76,9 +76,15 @@ class TimeDelta {
   TimeDelta operator-(const TimeDelta& other) const {
     return TimeDelta::us(us() - other.us());
   }
-  TimeDelta operator*(double scalar) const {
-    return TimeDelta::us(us() * scalar);
+  TimeDelta& operator-=(const TimeDelta& other) {
+    microseconds_ -= other.us();
+    return *this;
   }
+  TimeDelta& operator+=(const TimeDelta& other) {
+    microseconds_ += other.us();
+    return *this;
+  }
+  TimeDelta operator*(double scalar) const;
   TimeDelta operator*(int64_t scalar) const {
     return TimeDelta::us(us() * scalar);
   }
@@ -121,16 +127,22 @@ inline TimeDelta operator*(const int32_t& scalar, const TimeDelta& delta) {
 // Timestamp represents the time that has passed since some unspecified epoch.
 // The epoch is assumed to be before any represented timestamps, this means that
 // negative values are not valid. The most notable feature is that the
-// difference of of two Timestamps results in a TimeDelta.
+// difference of two Timestamps results in a TimeDelta.
 class Timestamp {
  public:
   static const Timestamp kPlusInfinity;
   static const Timestamp kNotInitialized;
   Timestamp() : Timestamp(kNotInitialized) {}
   static Timestamp Infinity() { return kPlusInfinity; }
-  static Timestamp s(int64_t seconds) { return Timestamp(seconds * 1000000); }
-  static Timestamp ms(int64_t millis) { return Timestamp(millis * 1000); }
-  static Timestamp us(int64_t micros) { return Timestamp(micros); }
+  static Timestamp seconds(int64_t seconds) { return Timestamp::s(seconds); }
+  static Timestamp s(int64_t seconds) {
+    return Timestamp::us(seconds * 1000000);
+  }
+  static Timestamp ms(int64_t millis) { return Timestamp::us(millis * 1000); }
+  static Timestamp us(int64_t micros) {
+    RTC_DCHECK_GE(micros, 0);
+    return Timestamp(micros);
+  }
   int64_t s() const { return units_internal::DivideAndRound(us(), 1000000); }
   int64_t ms() const { return units_internal::DivideAndRound(us(), 1000); }
   int64_t us() const {
@@ -152,6 +164,14 @@ class Timestamp {
   }
   Timestamp operator+(const TimeDelta& delta) const {
     return Timestamp::us(us() + delta.us());
+  }
+  Timestamp& operator-=(const TimeDelta& other) {
+    microseconds_ -= other.us();
+    return *this;
+  }
+  Timestamp& operator+=(const TimeDelta& other) {
+    microseconds_ += other.us();
+    return *this;
   }
   bool operator==(const Timestamp& other) const {
     return microseconds_ == other.microseconds_;
@@ -181,8 +201,14 @@ class DataSize {
   DataSize() : DataSize(kNotInitialized) {}
   static DataSize Zero() { return kZero; }
   static DataSize Infinity() { return kPlusInfinity; }
-  static DataSize bytes(int64_t bytes) { return DataSize(bytes); }
-  static DataSize bits(int64_t bits) { return DataSize(bits / 8); }
+  static DataSize bytes(int64_t bytes) {
+    RTC_DCHECK_GE(bytes, 0);
+    return DataSize(bytes);
+  }
+  static DataSize bits(int64_t bits) {
+    RTC_DCHECK_GE(bits, 0);
+    return DataSize(bits / 8);
+  }
   int64_t bytes() const {
     RTC_DCHECK(IsFinite());
     return bytes_;
@@ -204,9 +230,7 @@ class DataSize {
   DataSize operator+(const DataSize& other) const {
     return DataSize::bytes(bytes() + other.bytes());
   }
-  DataSize operator*(double scalar) const {
-    return DataSize::bytes(bytes() * scalar);
-  }
+  DataSize operator*(double scalar) const;
   DataSize operator*(int64_t scalar) const {
     return DataSize::bytes(bytes() * scalar);
   }
@@ -268,9 +292,11 @@ class DataRate {
   static DataRate Zero() { return kZero; }
   static DataRate Infinity() { return kPlusInfinity; }
   static DataRate bytes_per_second(int64_t bytes_per_sec) {
+    RTC_DCHECK_GE(bytes_per_sec, 0);
     return DataRate(bytes_per_sec * 8);
   }
   static DataRate bits_per_second(int64_t bits_per_sec) {
+    RTC_DCHECK_GE(bits_per_sec, 0);
     return DataRate(bits_per_sec);
   }
   static DataRate bps(int64_t bits_per_sec) {
@@ -297,9 +323,7 @@ class DataRate {
     return bits_per_sec_ != kNotInitialized.bits_per_sec_;
   }
   bool IsFinite() const { return IsInitialized() && !IsInfinite(); }
-  DataRate operator*(double scalar) const {
-    return DataRate::bytes_per_second(bytes_per_second() * scalar);
-  }
+  DataRate operator*(double scalar) const;
   DataRate operator*(int64_t scalar) const {
     return DataRate::bytes_per_second(bytes_per_second() * scalar);
   }

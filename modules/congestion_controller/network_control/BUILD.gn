@@ -26,12 +26,21 @@ rtc_static_library("network_control") {
 }
 
 if (rtc_include_tests) {
+  rtc_source_set("network_control_test") {
+    testonly = true
+    sources = [
+      "test/network_ostream_operators.cc",
+      "test/network_ostream_operators.h",
+    ]
+    deps = [
+      ":network_control",
+    ]
+  }
   rtc_source_set("network_control_unittests") {
     testonly = true
     sources = [
       "network_units_unittest.cc",
     ]
-
     deps = [
       ":network_control",
       "../../../test:test_support",

@@ -51,13 +51,4 @@ std::vector<PacketResult> TransportPacketsFeedback::PacketsWithFeedback()
   return packet_feedbacks;
 }
 
-::std::ostream& operator<<(::std::ostream& os,
-                           const ProbeClusterConfig& config) {
-  return os << "ProbeClusterConfig(...)";
-}
-
-::std::ostream& operator<<(::std::ostream& os, const PacerConfig& config) {
-  return os << "PacerConfig(...)";
-}
-
 }  // namespace webrtc

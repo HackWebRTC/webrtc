@@ -11,7 +11,6 @@
 #ifndef MODULES_CONGESTION_CONTROLLER_NETWORK_CONTROL_INCLUDE_NETWORK_TYPES_H_
 #define MODULES_CONGESTION_CONTROLLER_NETWORK_CONTROL_INCLUDE_NETWORK_TYPES_H_
 #include <stdint.h>
-#include <ostream>
 #include <vector>
 #include "modules/congestion_controller/network_control/include/network_units.h"
 #include "modules/include/module_common_types.h"
@@ -144,6 +143,7 @@ struct PacerConfig {
   // Pacer should send at least pad_window data over time_window duration.
   DataSize pad_window;
   DataRate data_rate() const { return data_window / time_window; }
+  DataRate pad_rate() const { return pad_window / time_window; }
 };
 
 struct ProbeClusterConfig {
@@ -164,10 +164,6 @@ struct TargetTransferRate {
 struct ProcessInterval {
   Timestamp at_time;
 };
-
-::std::ostream& operator<<(::std::ostream& os,
-                           const ProbeClusterConfig& config);
-::std::ostream& operator<<(::std::ostream& os, const PacerConfig& config);
 }  // namespace webrtc
 
 #endif  // MODULES_CONGESTION_CONTROLLER_NETWORK_CONTROL_INCLUDE_NETWORK_TYPES_H_

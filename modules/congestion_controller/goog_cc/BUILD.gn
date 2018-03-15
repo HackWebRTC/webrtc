@@ -155,6 +155,7 @@ if (rtc_include_tests) {
       "../../remote_bitrate_estimator",
       "../../rtp_rtcp:rtp_rtcp_format",
       "../network_control",
+      "../network_control:network_control_test",
       "//testing/gmock",
     ]
     if (!build_with_chromium && is_clang) {
