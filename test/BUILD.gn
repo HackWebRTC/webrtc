@@ -199,6 +199,10 @@ rtc_source_set("test_support") {
     suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 
+  if (is_android) {
+    deps += [ "//base:base" ]
+  }
+
   if (is_ios && !build_with_chromium) {
     deps += [ "../sdk:common_objc" ]
   }
