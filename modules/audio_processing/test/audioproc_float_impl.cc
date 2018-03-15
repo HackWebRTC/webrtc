@@ -61,10 +61,10 @@ DEFINE_string(mic_positions,
               "Space delimited cartesian coordinates of microphones in "
               "meters. The coordinates of each point are contiguous. For a "
               "two element array: \"x1 y1 z1 x2 y2 z2\"");
-DEFINE_int(target_angle_degrees,
-           90,
-           "The azimuth of the target in degrees (0-359). Only applies to "
-           "beamforming.");
+DEFINE_float(target_angle_degrees,
+             90.f,
+             "The azimuth of the target in degrees (0-360). Only applies to "
+             "beamforming.");
 DEFINE_bool(fixed_interface,
             false,
             "Use the fixed interface when operating on wav files");
@@ -357,8 +357,9 @@ void PerformBasicParameterSanityChecks(const SimulationSettings& settings) {
       "activated.\n");
 
   ReportConditionalErrorAndExit(
-      settings.target_angle_degrees < 0 || settings.target_angle_degrees > 359,
-      "Error: -target_angle_degrees must be specified between 0 and 359.\n");
+      settings.target_angle_degrees < 0.f ||
+          settings.target_angle_degrees >= 360.f,
+      "Error: -target_angle_degrees must be specified between 0 and 360.\n");
 
   ReportConditionalErrorAndExit(
       settings.aec_suppression_level &&

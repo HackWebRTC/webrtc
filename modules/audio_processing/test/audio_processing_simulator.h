@@ -41,7 +41,7 @@ struct SimulationSettings {
   rtc::Optional<int> reverse_output_sample_rate_hz;
   rtc::Optional<int> reverse_output_num_channels;
   rtc::Optional<std::string> microphone_positions;
-  int target_angle_degrees = 90;
+  float target_angle_degrees = 90.f;
   rtc::Optional<std::string> output_filename;
   rtc::Optional<std::string> reverse_output_filename;
   rtc::Optional<std::string> input_filename;
