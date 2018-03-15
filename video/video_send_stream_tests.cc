@@ -3745,4 +3745,155 @@ TEST_F(VideoSendStreamTest, AlrNotConfiguredWhenSendSideOff) {
   RunBaseTest(&test_without_send_side);
 }
 
+// Test class takes as argument a function pointer to reset the send
+// stream and call OnVideoStreamsCreated. This is necessary since you cannot
+// change the content type of a VideoSendStream, you need to recreate it.
+// Stopping and recreating the stream can only be done on the main thread and in
+// the context of VideoSendStreamTest (not BaseTest). The test switches from
+// realtime to screenshare and back.
+template <typename T>
+class ContentSwitchTest : public test::SendTest {
+ public:
+  enum class StreamState {
+    kBeforeSwitch = 0,
+    kInScreenshare = 1,
+    kAfterSwitchBack = 2,
+  };
+  static const uint32_t kMinPacketsToSend = 50;
+
+  explicit ContentSwitchTest(T* stream_reset_fun)
+      : SendTest(test::CallTest::kDefaultTimeoutMs),
+        content_switch_event_(false, false),
+        call_(nullptr),
+        state_(StreamState::kBeforeSwitch),
+        send_stream_(nullptr),
+        send_stream_config_(nullptr),
+        packets_sent_(0),
+        stream_resetter_(stream_reset_fun) {
+    RTC_DCHECK(stream_resetter_);
+  }
+
+  void OnVideoStreamsCreated(
+      VideoSendStream* send_stream,
+      const std::vector<VideoReceiveStream*>& receive_streams) override {
+    rtc::CritScope lock(&crit_);
+    send_stream_ = send_stream;
+  }
+
+  void ModifyVideoConfigs(
+      VideoSendStream::Config* send_config,
+      std::vector<VideoReceiveStream::Config>* receive_configs,
+      VideoEncoderConfig* encoder_config) override {
+    RTC_DCHECK_EQ(1, encoder_config->number_of_streams);
+    encoder_config->min_transmit_bitrate_bps = 0;
+    encoder_config->content_type =
+        VideoEncoderConfig::ContentType::kRealtimeVideo;
+    send_stream_config_ = send_config->Copy();
+    encoder_config_ = encoder_config->Copy();
+  }
+
+  void OnCallsCreated(Call* sender_call, Call* receiver_call) override {
+    call_ = sender_call;
+  }
+
+  Action OnSendRtp(const uint8_t* packet, size_t length) override {
+    rtc::CritScope lock(&crit_);
+
+    auto internal_send_peer = test::VideoSendStreamPeer(send_stream_);
+    float pacing_factor =
+        internal_send_peer.GetPacingFactorOverride().value_or(0.0f);
+    float expected_pacing_factor = PacedSender::kDefaultPaceMultiplier;
+    if (send_stream_->GetStats().content_type ==
+        webrtc::VideoContentType::SCREENSHARE) {
+      expected_pacing_factor = 1.0f;  // Currently used pacing factor in ALR.
+    }
+
+    EXPECT_NEAR(expected_pacing_factor, pacing_factor, 1e-6);
+
+    // Wait until at least kMinPacketsToSend packets to be sent, so that
+    // some frames would be encoded.
+    if (++packets_sent_ < kMinPacketsToSend)
+      return SEND_PACKET;
+
+    if (state_ != StreamState::kAfterSwitchBack) {
+      // We've sent kMinPacketsToSend packets, switch the content type and move
+      // move to the next state.
+      // Note that we need to recreate the stream if changing content type.
+      packets_sent_ = 0;
+      if (encoder_config_.content_type ==
+          VideoEncoderConfig::ContentType::kRealtimeVideo) {
+        encoder_config_.content_type = VideoEncoderConfig::ContentType::kScreen;
+      } else {
+        encoder_config_.content_type =
+            VideoEncoderConfig::ContentType::kRealtimeVideo;
+      }
+      switch (state_) {
+        case StreamState::kBeforeSwitch:
+          state_ = StreamState::kInScreenshare;
+          break;
+        case StreamState::kInScreenshare:
+          state_ = StreamState::kAfterSwitchBack;
+          break;
+        case StreamState::kAfterSwitchBack:
+          RTC_NOTREACHED();
+          break;
+      }
+      content_switch_event_.Set();
+      return SEND_PACKET;
+    }
+
+    observation_complete_.Set();
+    return SEND_PACKET;
+  }
+
+  void PerformTest() override {
+    while (GetStreamState() != StreamState::kAfterSwitchBack) {
+      ASSERT_TRUE(
+          content_switch_event_.Wait(test::CallTest::kDefaultTimeoutMs));
+      (*stream_resetter_)(send_stream_config_, encoder_config_, this);
+    }
+
+    ASSERT_TRUE(Wait())
+        << "Timed out waiting for a frame sent after switch back";
+  }
+
+ private:
+  StreamState GetStreamState() {
+    rtc::CritScope lock(&crit_);
+    return state_;
+  }
+
+  rtc::CriticalSection crit_;
+  rtc::Event content_switch_event_;
+  Call* call_;
+  StreamState state_ RTC_GUARDED_BY(crit_);
+  VideoSendStream* send_stream_ RTC_GUARDED_BY(crit_);
+  VideoSendStream::Config send_stream_config_;
+  VideoEncoderConfig encoder_config_;
+  uint32_t packets_sent_ RTC_GUARDED_BY(crit_);
+  T* stream_resetter_;
+};
+
+TEST_F(VideoSendStreamTest, SwitchesToScreenshareAndBack) {
+  auto reset_fun = [this](const VideoSendStream::Config& send_stream_config,
+                          const VideoEncoderConfig& encoder_config,
+                          test::BaseTest* test) {
+    task_queue_.SendTask([this, &send_stream_config, &encoder_config, &test]() {
+      Stop();
+      sender_call_->DestroyVideoSendStream(video_send_stream_);
+      video_send_config_ = send_stream_config.Copy();
+      video_encoder_config_ = encoder_config.Copy();
+      video_send_stream_ = sender_call_->CreateVideoSendStream(
+          video_send_config_.Copy(), video_encoder_config_.Copy());
+      video_send_stream_->SetSource(
+          frame_generator_capturer_.get(),
+          VideoSendStream::DegradationPreference::kMaintainResolution);
+      test->OnVideoStreamsCreated(video_send_stream_, video_receive_streams_);
+      Start();
+    });
+  };
+  ContentSwitchTest<decltype(reset_fun)> test(&reset_fun);
+  RunBaseTest(&test);
+}
+
 }  // namespace webrtc
