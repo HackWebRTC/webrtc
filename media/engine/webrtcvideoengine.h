@@ -312,8 +312,7 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
 
     rtc::scoped_refptr<webrtc::VideoEncoderConfig::EncoderSpecificSettings>
     ConfigureVideoEncoderSettings(const VideoCodec& codec);
-    void SetCodec(const VideoCodecSettings& codec,
-                  bool force_encoder_allocation);
+    void SetCodec(const VideoCodecSettings& codec);
     void RecreateWebRtcStream();
     webrtc::VideoEncoderConfig CreateVideoEncoderConfig(
         const VideoCodec& codec) const;
@@ -355,7 +354,6 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
     webrtc::RtpParameters rtp_parameters_ RTC_GUARDED_BY(&thread_checker_);
     std::unique_ptr<webrtc::VideoEncoder> allocated_encoder_
         RTC_GUARDED_BY(&thread_checker_);
-    VideoCodec allocated_codec_ RTC_GUARDED_BY(&thread_checker_);
 
     bool sending_ RTC_GUARDED_BY(&thread_checker_);
   };

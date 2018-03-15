@@ -1619,8 +1619,7 @@ WebRtcVideoChannel::WebRtcVideoSendStream::WebRtcVideoSendStream(
                                          ? webrtc::RtcpMode::kReducedSize
                                          : webrtc::RtcpMode::kCompound;
   if (codec_settings) {
-    bool force_encoder_allocation = false;
-    SetCodec(*codec_settings, force_encoder_allocation);
+    SetCodec(*codec_settings);
   }
 }
 
@@ -1651,8 +1650,7 @@ bool WebRtcVideoChannel::WebRtcVideoSendStream::SetVideoSend(
       // If screen content settings change, we may need to recreate the codec
       // instance so that the correct type is used.
 
-      bool force_encoder_allocation = true;
-      SetCodec(*parameters_.codec_settings, force_encoder_allocation);
+      SetCodec(*parameters_.codec_settings);
       // Mark screenshare parameter as being updated, then test for any other
       // changes that may require codec reconfiguration.
       old_options.is_screencast = options->is_screencast;
@@ -1701,33 +1699,27 @@ WebRtcVideoChannel::WebRtcVideoSendStream::GetSsrcs() const {
 }
 
 void WebRtcVideoChannel::WebRtcVideoSendStream::SetCodec(
-    const VideoCodecSettings& codec_settings,
-    bool force_encoder_allocation) {
+    const VideoCodecSettings& codec_settings) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   parameters_.encoder_config = CreateVideoEncoderConfig(codec_settings.codec);
   RTC_DCHECK_GT(parameters_.encoder_config.number_of_streams, 0);
 
-  // Do not re-create encoders of the same type. We can't overwrite
-  // |allocated_encoder_| immediately, because we need to release it after the
-  // RecreateWebRtcStream() call.
-  std::unique_ptr<webrtc::VideoEncoder> new_encoder;
-  if (force_encoder_allocation || !allocated_encoder_ ||
-      allocated_codec_ != codec_settings.codec) {
-    const webrtc::SdpVideoFormat format(codec_settings.codec.name,
-                                        codec_settings.codec.params);
-    new_encoder = encoder_factory_->CreateVideoEncoder(format);
+  const webrtc::SdpVideoFormat format(codec_settings.codec.name,
+                                      codec_settings.codec.params);
+  // We can't overwrite |allocated_encoder_| immediately, because we
+  // need to release it after the RecreateWebRtcStream() call.
+  std::unique_ptr<webrtc::VideoEncoder> new_encoder =
+      encoder_factory_->CreateVideoEncoder(format);
 
-    parameters_.config.encoder_settings.encoder = new_encoder.get();
+  parameters_.config.encoder_settings.encoder = new_encoder.get();
 
-    const webrtc::VideoEncoderFactory::CodecInfo info =
-        encoder_factory_->QueryVideoEncoder(format);
-    parameters_.config.encoder_settings.full_overuse_time =
-        info.is_hardware_accelerated;
-    parameters_.config.encoder_settings.internal_source =
-        info.has_internal_source;
-  } else {
-    new_encoder = std::move(allocated_encoder_);
-  }
+  const webrtc::VideoEncoderFactory::CodecInfo info =
+      encoder_factory_->QueryVideoEncoder(format);
+  parameters_.config.encoder_settings.full_overuse_time =
+      info.is_hardware_accelerated;
+  parameters_.config.encoder_settings.internal_source =
+      info.has_internal_source;
+
   parameters_.config.encoder_settings.payload_name = codec_settings.codec.name;
   parameters_.config.encoder_settings.payload_type = codec_settings.codec.id;
   parameters_.config.rtp.ulpfec = codec_settings.ulpfec;
@@ -1754,7 +1746,6 @@ void WebRtcVideoChannel::WebRtcVideoSendStream::SetCodec(
   RTC_LOG(LS_INFO) << "RecreateWebRtcStream (send) because of SetCodec.";
   RecreateWebRtcStream();
   allocated_encoder_ = std::move(new_encoder);
-  allocated_codec_ = codec_settings.codec;
 }
 
 void WebRtcVideoChannel::WebRtcVideoSendStream::SetSendParameters(
@@ -1781,12 +1772,10 @@ void WebRtcVideoChannel::WebRtcVideoSendStream::SetSendParameters(
 
   // Set codecs and options.
   if (params.codec) {
-    bool force_encoder_allocation = false;
-    SetCodec(*params.codec, force_encoder_allocation);
+    SetCodec(*params.codec);
     recreate_stream = false;  // SetCodec has already recreated the stream.
   } else if (params.conference_mode && parameters_.codec_settings) {
-    bool force_encoder_allocation = false;
-    SetCodec(*parameters_.codec_settings, force_encoder_allocation);
+    SetCodec(*parameters_.codec_settings);
     recreate_stream = false;  // SetCodec has already recreated the stream.
   }
   if (recreate_stream) {
