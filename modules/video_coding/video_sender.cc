@@ -144,31 +144,6 @@ void VideoSender::RegisterExternalEncoder(VideoEncoder* externalEncoder,
                                          internalSource);
 }
 
-// Get encode bitrate
-int VideoSender::Bitrate(unsigned int* bitrate) const {
-  RTC_DCHECK(sequenced_checker_.CalledSequentially());
-  // Since we're running on the thread that's the only thread known to modify
-  // the value of _encoder, we don't need to grab the lock here.
-
-  if (!_encoder)
-    return VCM_UNINITIALIZED;
-  *bitrate = _encoder->GetEncoderParameters().target_bitrate.get_sum_bps();
-  return 0;
-}
-
-// Get encode frame rate
-int VideoSender::FrameRate(unsigned int* framerate) const {
-  RTC_DCHECK(sequenced_checker_.CalledSequentially());
-  // Since we're running on the thread that's the only thread known to modify
-  // the value of _encoder, we don't need to grab the lock here.
-
-  if (!_encoder)
-    return VCM_UNINITIALIZED;
-
-  *framerate = _encoder->GetEncoderParameters().input_frame_rate;
-  return 0;
-}
-
 EncoderParameters VideoSender::UpdateEncoderParameters(
     const EncoderParameters& params,
     VideoBitrateAllocator* bitrate_allocator,
@@ -265,17 +240,6 @@ void VideoSender::SetEncoderParameters(EncoderParameters params,
   }
   if (_encoder != nullptr)
     _encoder->SetEncoderParameters(params);
-}
-
-// Deprecated:
-// TODO(perkj): Remove once no projects call this method. It currently do
-// nothing.
-int32_t VideoSender::RegisterProtectionCallback(
-    VCMProtectionCallback* protection_callback) {
-  // Deprecated:
-  // TODO(perkj): Remove once no projects call this method. It currently do
-  // nothing.
-  return VCM_OK;
 }
 
 // Add one raw video frame to the encoder, blocking.

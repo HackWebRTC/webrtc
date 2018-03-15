@@ -133,24 +133,11 @@ class VideoCodingModuleImpl : public VideoCodingModule {
     return 0;
   }
 
-  int Bitrate(unsigned int* bitrate) const override {
-    return sender_.Bitrate(bitrate);
-  }
-
-  int FrameRate(unsigned int* framerate) const override {
-    return sender_.FrameRate(framerate);
-  }
-
   int32_t SetChannelParameters(uint32_t target_bitrate,  // bits/s.
                                uint8_t lossRate,
                                int64_t rtt) override {
     return sender_.SetChannelParameters(target_bitrate, lossRate, rtt,
                                         rate_allocator_.get(), nullptr);
-  }
-
-  int32_t RegisterProtectionCallback(
-      VCMProtectionCallback* protection) override {
-    return sender_.RegisterProtectionCallback(protection);
   }
 
   int32_t SetVideoProtection(VCMVideoProtection videoProtection,
@@ -179,20 +166,10 @@ class VideoCodingModuleImpl : public VideoCodingModule {
                                           requireKeyFrame);
   }
 
-  void RegisterExternalDecoder(VideoDecoder* externalDecoder,
-                               uint8_t payloadType) override {
-    receiver_.RegisterExternalDecoder(externalDecoder, payloadType);
-  }
-
   int32_t RegisterReceiveCallback(
       VCMReceiveCallback* receiveCallback) override {
     RTC_DCHECK(construction_thread_.CalledOnValidThread());
     return receiver_.RegisterReceiveCallback(receiveCallback);
-  }
-
-  int32_t RegisterReceiveStatisticsCallback(
-      VCMReceiveStatisticsCallback* receiveStats) override {
-    return receiver_.RegisterReceiveStatisticsCallback(receiveStats);
   }
 
   int32_t RegisterFrameTypeCallback(
@@ -216,16 +193,6 @@ class VideoCodingModuleImpl : public VideoCodingModule {
     return receiver_.IncomingPacket(incomingPayload, payloadLength, rtpInfo);
   }
 
-  int32_t SetMinimumPlayoutDelay(uint32_t minPlayoutDelayMs) override {
-    return receiver_.SetMinimumPlayoutDelay(minPlayoutDelayMs);
-  }
-
-  int32_t SetRenderDelay(uint32_t timeMS) override {
-    return receiver_.SetRenderDelay(timeMS);
-  }
-
-  int32_t Delay() const override { return receiver_.Delay(); }
-
   int SetReceiverRobustnessMode(ReceiverRobustness robustnessMode,
                                 VCMDecodeErrorMode errorMode) override {
     return receiver_.SetReceiverRobustnessMode(robustnessMode, errorMode);
@@ -238,24 +205,10 @@ class VideoCodingModuleImpl : public VideoCodingModule {
                                      max_incomplete_time_ms);
   }
 
-  void SetDecodeErrorMode(VCMDecodeErrorMode decode_error_mode) override {
-    return receiver_.SetDecodeErrorMode(decode_error_mode);
-  }
-
-  int SetMinReceiverDelay(int desired_delay_ms) override {
-    return receiver_.SetMinReceiverDelay(desired_delay_ms);
-  }
-
-  int32_t SetReceiveChannelParameters(int64_t rtt) override {
-    return receiver_.SetReceiveChannelParameters(rtt);
-  }
-
   void RegisterPostEncodeImageCallback(
       EncodedImageCallback* observer) override {
     post_encode_callback_.Register(observer);
   }
-
-  void TriggerDecoderShutdown() override { receiver_.TriggerDecoderShutdown(); }
 
  private:
   rtc::ThreadChecker construction_thread_;

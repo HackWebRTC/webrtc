@@ -78,9 +78,6 @@ class VideoSender {
                                uint8_t payloadType,
                                bool internalSource);
 
-  int Bitrate(unsigned int* bitrate) const;
-  int FrameRate(unsigned int* framerate) const;
-
   // Update the channel parameters based on new rates and rtt. This will also
   // cause an immediate call to VideoEncoder::SetRateAllocation().
   int32_t SetChannelParameters(
@@ -98,10 +95,6 @@ class VideoSender {
   void UpdateChannelParameters(
       VideoBitrateAllocator* bitrate_allocator,
       VideoBitrateAllocationObserver* bitrate_updated_callback);
-
-  // Deprecated:
-  // TODO(perkj): Remove once no projects use it.
-  int32_t RegisterProtectionCallback(VCMProtectionCallback* protection);
 
   int32_t AddVideoFrame(const VideoFrame& videoFrame,
                         const CodecSpecificInfo* codecSpecificInfo);
