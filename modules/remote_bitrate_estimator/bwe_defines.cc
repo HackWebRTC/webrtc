@@ -19,7 +19,8 @@ namespace congestion_controller {
 int GetMinBitrateBps() {
   constexpr int kAudioMinBitrateBps = 5000;
   constexpr int kMinBitrateBps = 10000;
-  if (webrtc::field_trial::IsEnabled("WebRTC-Audio-SendSideBwe")) {
+  if (webrtc::field_trial::IsEnabled("WebRTC-Audio-SendSideBwe") &&
+      !webrtc::field_trial::IsEnabled("WebRTC-Audio-SendSideBwe-For-Video")) {
     return kAudioMinBitrateBps;
   }
   return kMinBitrateBps;
