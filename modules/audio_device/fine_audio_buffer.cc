@@ -29,7 +29,7 @@ FineAudioBuffer::FineAudioBuffer(AudioDeviceBuffer* device_buffer,
       bytes_per_10_ms_(samples_per_10_ms_ * sizeof(int16_t)),
       playout_buffer_(0, capacity),
       record_buffer_(0, capacity) {
-  RTC_LOG(INFO) << "samples_per_10_ms_:" << samples_per_10_ms_;
+  RTC_LOG(INFO) << "samples_per_10_ms_: " << samples_per_10_ms_;
 }
 
 FineAudioBuffer::~FineAudioBuffer() {}
@@ -42,7 +42,8 @@ void FineAudioBuffer::ResetRecord() {
   record_buffer_.Clear();
 }
 
-void FineAudioBuffer::GetPlayoutData(rtc::ArrayView<int8_t> audio_buffer) {
+void FineAudioBuffer::GetPlayoutData(rtc::ArrayView<int8_t> audio_buffer,
+                                     int playout_delay_ms) {
   // Ask WebRTC for new data in chunks of 10ms until we have enough to
   // fulfill the request. It is possible that the buffer already contains
   // enough samples from the last round.
@@ -67,11 +68,12 @@ void FineAudioBuffer::GetPlayoutData(rtc::ArrayView<int8_t> audio_buffer) {
   memmove(playout_buffer_.data(), playout_buffer_.data() + num_bytes,
           playout_buffer_.size() - num_bytes);
   playout_buffer_.SetSize(playout_buffer_.size() - num_bytes);
+  // Cache playout latency for usage in DeliverRecordedData();
+  playout_delay_ms_ = playout_delay_ms;
 }
 
 void FineAudioBuffer::DeliverRecordedData(
     rtc::ArrayView<const int8_t> audio_buffer,
-    int playout_delay_ms,
     int record_delay_ms) {
   // Always append new data and grow the buffer if needed.
   record_buffer_.AppendData(audio_buffer.data(), audio_buffer.size());
@@ -81,7 +83,7 @@ void FineAudioBuffer::DeliverRecordedData(
   while (record_buffer_.size() >= bytes_per_10_ms_) {
     device_buffer_->SetRecordedBuffer(record_buffer_.data(),
                                       samples_per_10_ms_);
-    device_buffer_->SetVQEData(playout_delay_ms, record_delay_ms);
+    device_buffer_->SetVQEData(playout_delay_ms_, record_delay_ms);
     device_buffer_->DeliverRecordedData();
     memmove(record_buffer_.data(), record_buffer_.data() + bytes_per_10_ms_,
             record_buffer_.size() - bytes_per_10_ms_);

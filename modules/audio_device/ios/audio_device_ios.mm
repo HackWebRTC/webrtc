@@ -394,8 +394,7 @@ OSStatus AudioDeviceIOS::OnDeliverRecordedData(AudioUnitRenderActionFlags* flags
   // Get a pointer to the recorded audio and send it to the WebRTC ADB.
   // Use the FineAudioBuffer instance to convert between native buffer size
   // and the 10ms buffer size used by WebRTC.
-  fine_audio_buffer_->DeliverRecordedData(
-      record_audio_buffer_, kFixedPlayoutDelayEstimate, kFixedRecordDelayEstimate);
+  fine_audio_buffer_->DeliverRecordedData(record_audio_buffer_, kFixedRecordDelayEstimate);
   return noErr;
 }
 
@@ -455,7 +454,8 @@ OSStatus AudioDeviceIOS::OnGetPlayoutData(AudioUnitRenderActionFlags* flags,
   // Read decoded 16-bit PCM samples from WebRTC (using a size that matches
   // the native I/O audio unit) and copy the result to the audio buffer in the
   // |io_data| destination.
-  fine_audio_buffer_->GetPlayoutData(rtc::ArrayView<int8_t>(destination, size_in_bytes));
+  fine_audio_buffer_->GetPlayoutData(rtc::ArrayView<int8_t>(destination, size_in_bytes),
+                                     kFixedPlayoutDelayEstimate);
   return noErr;
 }
 
@@ -500,7 +500,8 @@ void AudioDeviceIOS::HandleInterruptionBegin() {
       io_thread_checker_.DetachFromThread();
       // The audio device buffer must also be informed about the interrupted
       // state so it can detach its thread checkers as well.
-      audio_device_buffer_->NativeAudioInterrupted();
+      audio_device_buffer_->NativeAudioPlayoutInterrupted();
+      audio_device_buffer_->NativeAudioRecordingInterrupted();
     }
   }
   is_interrupted_ = true;

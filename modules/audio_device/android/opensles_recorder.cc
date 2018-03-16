@@ -379,7 +379,7 @@ void OpenSLESRecorder::ReadBufferQueue() {
   const int8_t* data =
       static_cast<const int8_t*>(audio_buffers_[buffer_index_].get());
   fine_audio_buffer_->DeliverRecordedData(
-      rtc::ArrayView<const int8_t>(data, size_in_bytes), 25, 25);
+      rtc::ArrayView<const int8_t>(data, size_in_bytes), 25);
   // Enqueue the utilized audio buffer and use if for recording again.
   EnqueueAudioBuffer();
 }

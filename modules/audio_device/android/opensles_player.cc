@@ -404,9 +404,12 @@ void OpenSLESPlayer::EnqueuePlayoutData(bool silence) {
     RTC_DCHECK(thread_checker_opensles_.CalledOnValidThread());
     // Read audio data from the WebRTC source using the FineAudioBuffer object
     // to adjust for differences in buffer size between WebRTC (10ms) and native
-    // OpenSL ES.
-    fine_audio_buffer_->GetPlayoutData(rtc::ArrayView<SLint8>(
-        audio_ptr, audio_parameters_.GetBytesPerBuffer()));
+    // OpenSL ES. Use hardcoded delay estimate since OpenSL ES does not support
+    // delay estimation.
+    fine_audio_buffer_->GetPlayoutData(
+        rtc::ArrayView<SLint8>(audio_ptr,
+                               audio_parameters_.GetBytesPerBuffer()),
+        25);
   }
   // Enqueue the decoded audio buffer for playback.
   SLresult err = (*simple_buffer_queue_)

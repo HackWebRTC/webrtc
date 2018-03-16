@@ -49,19 +49,22 @@ class FineAudioBuffer {
   // Copies audio samples into |audio_buffer| where number of requested
   // elements is specified by |audio_buffer.size()|. The producer will always
   // fill up the audio buffer and if no audio exists, the buffer will contain
-  // silence instead.
-  void GetPlayoutData(rtc::ArrayView<int8_t> audio_buffer);
+  // silence instead. The provided delay estimate in |playout_delay_ms| should
+  // contain an estime of the latency between when an audio frame is read from
+  // WebRTC and when it is played out on the speaker.
+  void GetPlayoutData(rtc::ArrayView<int8_t> audio_buffer,
+                      int playout_delay_ms);
 
   // Consumes the audio data in |audio_buffer| and sends it to the WebRTC layer
-  // in chunks of 10ms. The provided delay estimates in |playout_delay_ms| and
-  // |record_delay_ms| are given to the AEC in the audio processing module.
+  // in chunks of 10ms. The sum of the provided delay estimate in
+  // |record_delay_ms| and the latest |playout_delay_ms| in GetPlayoutData()
+  // are given to the AEC in the audio processing module.
   // They can be fixed values on most platforms and they are ignored if an
   // external (hardware/built-in) AEC is used.
   // Example: buffer size is 5ms => call #1 stores 5ms of data, call #2 stores
   // 5ms of data and sends a total of 10ms to WebRTC and clears the intenal
   // cache. Call #3 restarts the scheme above.
   void DeliverRecordedData(rtc::ArrayView<const int8_t> audio_buffer,
-                           int playout_delay_ms,
                            int record_delay_ms);
 
  private:
@@ -84,6 +87,8 @@ class FineAudioBuffer {
   // Storage for input samples that are about to be delivered to the WebRTC
   // ADB or remains from the last successful delivery of a 10ms audio buffer.
   rtc::BufferT<int8_t> record_buffer_;
+  // Contains latest delay estimate given to GetPlayoutData().
+  int playout_delay_ms_ = 0;
 };
 
 }  // namespace webrtc

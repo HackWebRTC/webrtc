@@ -71,7 +71,7 @@ AudioManager::AudioManager()
   RTC_LOG(INFO) << "ctor";
   RTC_CHECK(j_environment_);
   JNINativeMethod native_methods[] = {
-      {"nativeCacheAudioParameters", "(IIIZZZZZZIIJ)V",
+      {"nativeCacheAudioParameters", "(IIIZZZZZZZIIJ)V",
        reinterpret_cast<void*>(&webrtc::AudioManager::CacheAudioParameters)}};
   j_native_registration_ = j_environment_->RegisterNatives(
       "org/webrtc/voiceengine/WebRtcAudioManager", native_methods,
@@ -213,6 +213,15 @@ bool AudioManager::IsProAudioSupported() const {
   return pro_audio_;
 }
 
+// TODO(henrika): improve comments...
+bool AudioManager::IsAAudioSupported() const {
+#if defined(AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO)
+  return a_audio_;
+#else
+  return false;
+#endif
+}
+
 bool AudioManager::IsStereoPlayoutSupported() const {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return (playout_parameters_.channels() == 2);
@@ -238,6 +247,7 @@ void JNICALL AudioManager::CacheAudioParameters(JNIEnv* env,
                                                 jboolean low_latency_output,
                                                 jboolean low_latency_input,
                                                 jboolean pro_audio,
+                                                jboolean a_audio,
                                                 jint output_buffer_size,
                                                 jint input_buffer_size,
                                                 jlong native_audio_manager) {
@@ -246,7 +256,7 @@ void JNICALL AudioManager::CacheAudioParameters(JNIEnv* env,
   this_object->OnCacheAudioParameters(
       env, sample_rate, output_channels, input_channels, hardware_aec,
       hardware_agc, hardware_ns, low_latency_output, low_latency_input,
-      pro_audio, output_buffer_size, input_buffer_size);
+      pro_audio, a_audio, output_buffer_size, input_buffer_size);
 }
 
 void AudioManager::OnCacheAudioParameters(JNIEnv* env,
@@ -259,6 +269,7 @@ void AudioManager::OnCacheAudioParameters(JNIEnv* env,
                                           jboolean low_latency_output,
                                           jboolean low_latency_input,
                                           jboolean pro_audio,
+                                          jboolean a_audio,
                                           jint output_buffer_size,
                                           jint input_buffer_size) {
   RTC_LOG(INFO)
@@ -269,6 +280,7 @@ void AudioManager::OnCacheAudioParameters(JNIEnv* env,
       << ", low_latency_output: " << static_cast<bool>(low_latency_output)
       << ", low_latency_input: " << static_cast<bool>(low_latency_input)
       << ", pro_audio: " << static_cast<bool>(pro_audio)
+      << ", a_audio: " << static_cast<bool>(a_audio)
       << ", sample_rate: " << static_cast<int>(sample_rate)
       << ", output_channels: " << static_cast<int>(output_channels)
       << ", input_channels: " << static_cast<int>(input_channels)
@@ -281,6 +293,7 @@ void AudioManager::OnCacheAudioParameters(JNIEnv* env,
   low_latency_playout_ = low_latency_output;
   low_latency_record_ = low_latency_input;
   pro_audio_ = pro_audio;
+  a_audio_ = a_audio;
   playout_parameters_.reset(sample_rate, static_cast<size_t>(output_channels),
                             static_cast<size_t>(output_buffer_size));
   record_parameters_.reset(sample_rate, static_cast<size_t>(input_channels),

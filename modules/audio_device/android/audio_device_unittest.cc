@@ -405,7 +405,7 @@ class MockAudioTransportAndroid : public test::MockAudioTransport {
                                       const int32_t clockDrift,
                                       const uint32_t currentMicLevel,
                                       const bool keyPressed,
-                                      uint32_t& newMicLevel) {
+                                      uint32_t& newMicLevel) {  // NOLINT
     EXPECT_TRUE(rec_mode()) << "No test is expecting these callbacks.";
     rec_count_++;
     // Process the recorded audio stream if an AudioStreamInterface
@@ -424,7 +424,7 @@ class MockAudioTransportAndroid : public test::MockAudioTransport {
                                const size_t nChannels,
                                const uint32_t samplesPerSec,
                                void* audioSamples,
-                               size_t& nSamplesOut,
+                               size_t& nSamplesOut,  // NOLINT
                                int64_t* elapsed_time_ms,
                                int64_t* ntp_time_ms) {
     EXPECT_TRUE(play_mode()) << "No test is expecting these callbacks.";
@@ -684,8 +684,11 @@ TEST_F(AudioDeviceTest, VerifyDefaultAudioLayer) {
   const AudioDeviceModule::AudioLayer audio_layer = GetActiveAudioLayer();
   bool low_latency_output = audio_manager()->IsLowLatencyPlayoutSupported();
   bool low_latency_input = audio_manager()->IsLowLatencyRecordSupported();
+  bool aaudio = audio_manager()->IsAAudioSupported();
   AudioDeviceModule::AudioLayer expected_audio_layer;
-  if (low_latency_output && low_latency_input) {
+  if (aaudio) {
+    expected_audio_layer = AudioDeviceModule::kAndroidAAudioAudio;
+  } else if (low_latency_output && low_latency_input) {
     expected_audio_layer = AudioDeviceModule::kAndroidOpenSLESAudio;
   } else if (low_latency_output && !low_latency_input) {
     expected_audio_layer =
@@ -718,6 +721,40 @@ TEST_F(AudioDeviceTest, CorrectAudioLayerIsUsedForJavaInBothDirections) {
 TEST_F(AudioDeviceTest, CorrectAudioLayerIsUsedForOpenSLInBothDirections) {
   AudioDeviceModule::AudioLayer expected_layer =
       AudioDeviceModule::kAndroidOpenSLESAudio;
+  AudioDeviceModule::AudioLayer active_layer =
+      TestActiveAudioLayer(expected_layer);
+  EXPECT_EQ(expected_layer, active_layer);
+}
+
+// TODO(bugs.webrtc.org/8914)
+#if !defined(AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO)
+#define MAYBE_CorrectAudioLayerIsUsedForAAudioInBothDirections \
+  DISABLED_CorrectAudioLayerIsUsedForAAudioInBothDirections
+#else
+#define MAYBE_CorrectAudioLayerIsUsedForAAudioInBothDirections \
+  CorrectAudioLayerIsUsedForAAudioInBothDirections
+#endif
+TEST_F(AudioDeviceTest,
+       MAYBE_CorrectAudioLayerIsUsedForAAudioInBothDirections) {
+  AudioDeviceModule::AudioLayer expected_layer =
+      AudioDeviceModule::kAndroidAAudioAudio;
+  AudioDeviceModule::AudioLayer active_layer =
+      TestActiveAudioLayer(expected_layer);
+  EXPECT_EQ(expected_layer, active_layer);
+}
+
+// TODO(bugs.webrtc.org/8914)
+#if !defined(AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO)
+#define MAYBE_CorrectAudioLayerIsUsedForCombinedJavaAAudioCombo \
+  DISABLED_CorrectAudioLayerIsUsedForCombinedJavaAAudioCombo
+#else
+#define MAYBE_CorrectAudioLayerIsUsedForCombinedJavaAAudioCombo \
+  CorrectAudioLayerIsUsedForCombinedJavaAAudioCombo
+#endif
+TEST_F(AudioDeviceTest,
+       MAYBE_CorrectAudioLayerIsUsedForCombinedJavaAAudioCombo) {
+  AudioDeviceModule::AudioLayer expected_layer =
+      AudioDeviceModule::kAndroidJavaInputAndAAudioOutputAudio;
   AudioDeviceModule::AudioLayer active_layer =
       TestActiveAudioLayer(expected_layer);
   EXPECT_EQ(expected_layer, active_layer);
@@ -873,19 +910,15 @@ TEST_F(AudioDeviceTest, StartPlayoutVerifyCallbacks) {
 
 // Start recording and verify that the native audio layer starts feeding real
 // audio samples via the RecordedDataIsAvailable callback.
+// TODO(henrika): investigate if it is possible to perform a sanity check of
+// delay estimates as well (argument #6).
 TEST_F(AudioDeviceTest, StartRecordingVerifyCallbacks) {
   MockAudioTransportAndroid mock(kRecording);
   mock.HandleCallbacks(test_is_done_.get(), nullptr, kNumCallbacks);
-  EXPECT_CALL(mock, RecordedDataIsAvailable(NotNull(),
-                                            record_frames_per_10ms_buffer(),
-                                            kBytesPerSample,
-                                            record_channels(),
-                                            record_sample_rate(),
-                                            total_delay_ms(),
-                                            0,
-                                            0,
-                                            false,
-                                            _))
+  EXPECT_CALL(
+      mock, RecordedDataIsAvailable(NotNull(), record_frames_per_10ms_buffer(),
+                                    kBytesPerSample, record_channels(),
+                                    record_sample_rate(), _, 0, 0, false, _))
       .Times(AtLeast(kNumCallbacks));
 
   EXPECT_EQ(0, audio_device()->RegisterAudioCallback(&mock));
@@ -907,16 +940,10 @@ TEST_F(AudioDeviceTest, StartPlayoutAndRecordingVerifyCallbacks) {
                                      NotNull(),
                                      _, _, _))
       .Times(AtLeast(kNumCallbacks));
-  EXPECT_CALL(mock, RecordedDataIsAvailable(NotNull(),
-                                            record_frames_per_10ms_buffer(),
-                                            kBytesPerSample,
-                                            record_channels(),
-                                            record_sample_rate(),
-                                            total_delay_ms(),
-                                            0,
-                                            0,
-                                            false,
-                                            _))
+  EXPECT_CALL(
+      mock, RecordedDataIsAvailable(NotNull(), record_frames_per_10ms_buffer(),
+                                    kBytesPerSample, record_channels(),
+                                    record_sample_rate(), _, 0, 0, false, _))
       .Times(AtLeast(kNumCallbacks));
   EXPECT_EQ(0, audio_device()->RegisterAudioCallback(&mock));
   StartPlayout();
