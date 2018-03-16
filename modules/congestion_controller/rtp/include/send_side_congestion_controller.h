@@ -130,19 +130,18 @@ class SendSideCongestionController
  protected:
   // TODO(srte): The tests should be rewritten to not depend on internals and
   // these functions should be removed.
-  // Post tasks that are normally delayed. This allows unit tests to trigger
-  // process updates immediately.
-  void PostDelayedTasksForTest();
+  // Post periodic tasks just once. This allows unit tests to trigger process
+  // updates immediately.
+  void PostPeriodicTasksForTest();
   // Waits for outstanding tasks to be finished. This allos unit tests to ensure
-  // that expected callbacks has be called.
+  // that expected callbacks has been called.
   void WaitOnTasksForTest();
 
  private:
   void MaybeCreateControllers();
-  void StartProcess() RTC_RUN_ON(task_queue_);
-  void ProcessTask();
-  void StartPacerQueueUpdate();
-  void PacerQueueUpdateTask();
+  void StartProcessPeriodicTasks() RTC_RUN_ON(task_queue_);
+  void UpdateControllerWithTimeInterval() RTC_RUN_ON(task_queue_);
+  void UpdatePacerQueue() RTC_RUN_ON(task_queue_);
 
   void UpdateStreamsConfig() RTC_RUN_ON(task_queue_);
   void MaybeUpdateOutstandingData();

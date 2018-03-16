@@ -54,14 +54,14 @@ RtpTransportControllerSend::RtpTransportControllerSend(
     const BitrateConstraints& bitrate_config)
     : clock_(clock),
       pacer_(clock, &packet_router_, event_log),
+      bitrate_configurator_(bitrate_config),
+      process_thread_(ProcessThread::Create("SendControllerThread")),
+      observer_(nullptr),
       send_side_cc_(CreateController(clock,
                                      event_log,
                                      &pacer_,
                                      bitrate_config,
-                                     TaskQueueExperimentEnabled())),
-      bitrate_configurator_(bitrate_config),
-      process_thread_(ProcessThread::Create("SendControllerThread")),
-      observer_(nullptr) {
+                                     TaskQueueExperimentEnabled())) {
   process_thread_->RegisterModule(&pacer_, RTC_FROM_HERE);
   process_thread_->RegisterModule(send_side_cc_.get(), RTC_FROM_HERE);
   process_thread_->Start();

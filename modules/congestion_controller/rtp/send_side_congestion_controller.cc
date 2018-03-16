@@ -18,6 +18,7 @@
 #include "modules/congestion_controller/network_control/include/network_types.h"
 #include "modules/congestion_controller/network_control/include/network_units.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
+#include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/format_macros.h"
 #include "rtc_base/logging.h"
@@ -38,6 +39,7 @@ namespace webrtc_cc {
 namespace {
 
 const char kPacerPushbackExperiment[] = "WebRTC-PacerPushbackExperiment";
+const int64_t PacerQueueUpdateIntervalMs = 25;
 
 bool IsPacerPushbackExperimentEnabled() {
   return webrtc::field_trial::IsEnabled(kPacerPushbackExperiment) ||
@@ -96,6 +98,37 @@ TargetRateConstraints ConvertConstraints(int min_bitrate_bps,
                                           : DataRate::Infinity();
   return msg;
 }
+
+// TODO(srte): Make sure this is reusable and move it to task_queue.h
+// The template closure pattern is based on rtc::ClosureTask.
+template <class Closure>
+class PeriodicTask : public rtc::QueuedTask {
+ public:
+  PeriodicTask(Closure&& closure, int64_t period_ms)
+      : closure_(std::forward<Closure>(closure)), period_ms_(period_ms) {}
+  bool Run() override {
+    closure_();
+    // WrapUnique lets us repost this task on the TaskQueue.
+    rtc::TaskQueue::Current()->PostDelayedTask(rtc::WrapUnique(this),
+                                               period_ms_);
+    // Return false to tell TaskQueue to not destruct this object, since we have
+    // taken ownership with WrapUnique.
+    return false;
+  }
+
+ private:
+  typename std::remove_const<
+      typename std::remove_reference<Closure>::type>::type closure_;
+  const int64_t period_ms_;
+};
+
+template <class Closure>
+static std::unique_ptr<rtc::QueuedTask> NewPeriodicTask(Closure&& closure,
+                                                        int64_t period_ms) {
+  return rtc::MakeUnique<PeriodicTask<Closure>>(std::forward<Closure>(closure),
+                                                period_ms);
+}
+
 }  // namespace
 
 namespace send_side_cc_internal {
@@ -314,7 +347,7 @@ void SendSideCongestionController::MaybeCreateControllers() {
   controller_ =
       controller_factory_->Create(control_handler_.get(), initial_config_);
   UpdateStreamsConfig();
-  StartProcess();
+  StartProcessPeriodicTasks();
 }
 
 SendSideCongestionController::~SendSideCongestionController() {
@@ -506,18 +539,23 @@ void SendSideCongestionController::Process() {
   // Ignored, using task queue to process.
 }
 
-void SendSideCongestionController::StartProcess() {
+void SendSideCongestionController::StartProcessPeriodicTasks() {
   task_queue_->PostDelayedTask(
-      [this]() {
-        RTC_DCHECK_RUN_ON(task_queue_.get());
-        ProcessTask();
-        StartProcess();
-      },
+      NewPeriodicTask(
+          rtc::Bind(
+              &SendSideCongestionController::UpdateControllerWithTimeInterval,
+              this),
+          process_interval_.ms()),
       process_interval_.ms());
+
+  task_queue_->PostDelayedTask(
+      NewPeriodicTask(
+          rtc::Bind(&SendSideCongestionController::UpdatePacerQueue, this),
+          PacerQueueUpdateIntervalMs),
+      PacerQueueUpdateIntervalMs);
 }
 
-void SendSideCongestionController::ProcessTask() {
-  RTC_DCHECK_RUN_ON(task_queue_.get());
+void SendSideCongestionController::UpdateControllerWithTimeInterval() {
   if (controller_) {
     ProcessInterval msg;
     msg.at_time = Timestamp::ms(clock_->TimeInMilliseconds());
@@ -525,8 +563,7 @@ void SendSideCongestionController::ProcessTask() {
   }
 }
 
-void SendSideCongestionController::PacerQueueUpdateTask() {
-  RTC_DCHECK_RUN_ON(task_queue_.get());
+void SendSideCongestionController::UpdatePacerQueue() {
   if (control_handler_) {
     PacerQueueUpdate msg;
     msg.expected_queue_time = TimeDelta::ms(pacer_->ExpectedQueueTimeMs());
@@ -591,10 +628,11 @@ SendSideCongestionController::GetTransportFeedbackVector() const {
   return transport_feedback_adapter_.GetTransportFeedbackVector();
 }
 
-void SendSideCongestionController::PostDelayedTasksForTest() {
+void SendSideCongestionController::PostPeriodicTasksForTest() {
   task_queue_->PostTask([this]() {
-    ProcessTask();
-    PacerQueueUpdateTask();
+    RTC_DCHECK_RUN_ON(task_queue_.get());
+    UpdateControllerWithTimeInterval();
+    UpdatePacerQueue();
   });
 }
 

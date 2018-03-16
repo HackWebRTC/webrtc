@@ -31,8 +31,9 @@ class RtcEventLog;
 // TODO(nisse): When we get the underlying transports here, we should
 // have one object implementing RtpTransportControllerSendInterface
 // per transport, sharing the same congestion controller.
-class RtpTransportControllerSend : public RtpTransportControllerSendInterface,
-                                   public NetworkChangedObserver {
+class RtpTransportControllerSend final
+    : public RtpTransportControllerSendInterface,
+      public NetworkChangedObserver {
  public:
   RtpTransportControllerSend(Clock* clock,
                              RtcEventLog* event_log,
@@ -83,14 +84,15 @@ class RtpTransportControllerSend : public RtpTransportControllerSendInterface,
   const Clock* const clock_;
   PacketRouter packet_router_;
   PacedSender pacer_;
-  const std::unique_ptr<SendSideCongestionControllerInterface> send_side_cc_;
   RtpKeepAliveConfig keepalive_;
   RtpBitrateConfigurator bitrate_configurator_;
   std::map<std::string, rtc::NetworkRoute> network_routes_;
   const std::unique_ptr<ProcessThread> process_thread_;
   rtc::CriticalSection observer_crit_;
   TargetTransferRateObserver* observer_ RTC_GUARDED_BY(observer_crit_);
-
+  // Declared last since it will issue callbacks from a task queue. Declaring it
+  // last ensures that it is destroyed first.
+  const std::unique_ptr<SendSideCongestionControllerInterface> send_side_cc_;
   RTC_DISALLOW_COPY_AND_ASSIGN(RtpTransportControllerSend);
 };
 
