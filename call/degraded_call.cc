@@ -94,6 +94,7 @@ VideoSendStream* DegradedCall::CreateVideoSendStream(
 }
 
 void DegradedCall::DestroyVideoSendStream(VideoSendStream* send_stream) {
+  call_->DestroyVideoSendStream(send_stream);
   if (send_pipe_ && num_send_streams_ > 0) {
     --num_send_streams_;
     if (num_send_streams_ == 0) {
@@ -101,7 +102,6 @@ void DegradedCall::DestroyVideoSendStream(VideoSendStream* send_stream) {
       send_pipe_.reset();
     }
   }
-  call_->DestroyVideoSendStream(send_stream);
 }
 
 VideoReceiveStream* DegradedCall::CreateVideoReceiveStream(
