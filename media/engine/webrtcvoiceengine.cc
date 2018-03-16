@@ -1181,8 +1181,10 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
 
   void SetRawAudioSink(std::unique_ptr<webrtc::AudioSinkInterface> sink) {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+    // Need to update the stream's sink first; once raw_audio_sink_ is
+    // reassigned, whatever was in there before is destroyed.
+    stream_->SetSink(sink.get());
     raw_audio_sink_ = std::move(sink);
-    stream_->SetSink(raw_audio_sink_.get());
   }
 
   void SetOutputVolume(double volume) {
