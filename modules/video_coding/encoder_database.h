@@ -34,13 +34,10 @@ class VCMEncoderDataBase {
   // video source and doesn't need the user to provide it with frames via
   // the Encode() method.
   void RegisterExternalEncoder(VideoEncoder* external_encoder,
-                               uint8_t payload_type,
                                bool internal_source);
 
-  // Deregisters an external encoder. Returns true if the encoder was
-  // found and deregistered, false otherwise. |was_send_codec| is set to true
-  // if the external encoder was the send codec before being deregistered.
-  bool DeregisterExternalEncoder(uint8_t payload_type, bool* was_send_codec);
+  // Deregisters any external encoder.
+  void DeregisterExternalEncoder();
 
   VCMGenericEncoder* GetEncoder();
 
@@ -57,7 +54,6 @@ class VCMEncoderDataBase {
   size_t max_payload_size_;
   bool pending_encoder_reset_;
   VideoCodec send_codec_;
-  uint8_t encoder_payload_type_;
   VideoEncoder* external_encoder_;
   bool internal_source_;
   VCMEncodedFrameCallback* const encoded_frame_callback_;

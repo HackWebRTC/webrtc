@@ -75,7 +75,6 @@ class VideoSender {
                             uint32_t maxPayloadSize);
 
   void RegisterExternalEncoder(VideoEncoder* externalEncoder,
-                               uint8_t payloadType,
                                bool internalSource);
 
   // Update the channel parameters based on new rates and rtt. This will also

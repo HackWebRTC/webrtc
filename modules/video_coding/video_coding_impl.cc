@@ -126,9 +126,9 @@ class VideoCodingModuleImpl : public VideoCodingModule {
   }
 
   int32_t RegisterExternalEncoder(VideoEncoder* externalEncoder,
-                                  uint8_t payloadType,
+                                  uint8_t /* payloadType */,
                                   bool internalSource) override {
-    sender_.RegisterExternalEncoder(externalEncoder, payloadType,
+    sender_.RegisterExternalEncoder(externalEncoder,
                                     internalSource);
     return 0;
   }

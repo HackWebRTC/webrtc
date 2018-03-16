@@ -422,7 +422,7 @@ VideoStreamEncoder::VideoStreamEncoder(
     RTC_DCHECK_RUN_ON(&encoder_queue_);
     overuse_detector_->StartCheckForOveruse(this);
     video_sender_.RegisterExternalEncoder(
-        settings_.encoder, settings_.payload_type, settings_.internal_source);
+        settings_.encoder, settings_.internal_source);
   });
 }
 
@@ -440,8 +440,7 @@ void VideoStreamEncoder::Stop() {
     overuse_detector_->StopCheckForOveruse();
     rate_allocator_.reset();
     bitrate_observer_ = nullptr;
-    video_sender_.RegisterExternalEncoder(nullptr, settings_.payload_type,
-                                          false);
+    video_sender_.RegisterExternalEncoder(nullptr, false);
     quality_scaler_ = nullptr;
     shutdown_event_.Set();
   });

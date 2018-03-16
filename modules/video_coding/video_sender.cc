@@ -122,17 +122,14 @@ int32_t VideoSender::RegisterSendCodec(const VideoCodec* sendCodec,
 // Register an external decoder object.
 // This can not be used together with external decoder callbacks.
 void VideoSender::RegisterExternalEncoder(VideoEncoder* externalEncoder,
-                                          uint8_t payloadType,
                                           bool internalSource /*= false*/) {
   RTC_DCHECK(sequenced_checker_.CalledSequentially());
 
   rtc::CritScope lock(&encoder_crit_);
 
   if (externalEncoder == nullptr) {
-    bool wasSendCodec = false;
-    RTC_CHECK(
-        _codecDataBase.DeregisterExternalEncoder(payloadType, &wasSendCodec));
-    if (wasSendCodec) {
+    _codecDataBase.DeregisterExternalEncoder();
+    {
       // Make sure the VCM doesn't use the de-registered codec
       rtc::CritScope params_lock(&params_crit_);
       _encoder = nullptr;
@@ -140,7 +137,7 @@ void VideoSender::RegisterExternalEncoder(VideoEncoder* externalEncoder,
     }
     return;
   }
-  _codecDataBase.RegisterExternalEncoder(externalEncoder, payloadType,
+  _codecDataBase.RegisterExternalEncoder(externalEncoder,
                                          internalSource);
 }
 

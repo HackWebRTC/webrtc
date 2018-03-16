@@ -25,7 +25,6 @@ VCMEncoderDataBase::VCMEncoderDataBase(
       max_payload_size_(kDefaultPayloadSize),
       pending_encoder_reset_(true),
       send_codec_(),
-      encoder_payload_type_(0),
       external_encoder_(nullptr),
       internal_source_(false),
       encoded_frame_callback_(encoded_frame_callback) {}
@@ -43,7 +42,6 @@ bool VCMEncoderDataBase::SetSendCodec(const VideoCodec* send_codec,
     max_payload_size = kDefaultPayloadSize;
   }
   RTC_DCHECK_GE(number_of_cores, 1);
-  RTC_DCHECK_GE(send_codec->plType, 1);
   // Make sure the start bit rate is sane...
   RTC_DCHECK_LE(send_codec->startBitrate, 1000000);
   RTC_DCHECK(send_codec->codecType != kVideoCodecUnknown);
@@ -88,8 +86,6 @@ bool VCMEncoderDataBase::SetSendCodec(const VideoCodec* send_codec,
 
   // If encoder exists, will destroy it and create new one.
   DeleteEncoder();
-  RTC_DCHECK_EQ(encoder_payload_type_, send_codec_.plType)
-      << "Encoder not registered for payload type " << send_codec_.plType;
   ptr_encoder_.reset(new VCMGenericEncoder(
       external_encoder_, encoded_frame_callback_, internal_source_));
   encoded_frame_callback_->SetInternalSource(internal_source_);
@@ -105,32 +101,19 @@ bool VCMEncoderDataBase::SetSendCodec(const VideoCodec* send_codec,
   return true;
 }
 
-bool VCMEncoderDataBase::DeregisterExternalEncoder(uint8_t payload_type,
-                                                   bool* was_send_codec) {
-  RTC_DCHECK(was_send_codec);
-  *was_send_codec = false;
-  if (encoder_payload_type_ != payload_type) {
-    return false;
-  }
-  if (send_codec_.plType == payload_type) {
-    // De-register as send codec if needed.
-    DeleteEncoder();
-    memset(&send_codec_, 0, sizeof(VideoCodec));
-    *was_send_codec = true;
-  }
-  encoder_payload_type_ = 0;
+void VCMEncoderDataBase::DeregisterExternalEncoder() {
+  DeleteEncoder();
+  memset(&send_codec_, 0, sizeof(VideoCodec));
   external_encoder_ = nullptr;
   internal_source_ = false;
-  return true;
 }
 
 void VCMEncoderDataBase::RegisterExternalEncoder(VideoEncoder* external_encoder,
-                                                 uint8_t payload_type,
                                                  bool internal_source) {
   // Since only one encoder can be used at a given time, only one external
   // encoder can be registered/used.
+  RTC_CHECK(external_encoder_ == nullptr);
   external_encoder_ = external_encoder;
-  encoder_payload_type_ = payload_type;
   internal_source_ = internal_source;
   pending_encoder_reset_ = true;
 }
@@ -140,9 +123,8 @@ bool VCMEncoderDataBase::RequiresEncoderReset(
   if (!ptr_encoder_)
     return true;
 
-  // Does not check startBitrate or maxFramerate
+  // Does not check startBitrate, maxFramerate or plType
   if (new_send_codec.codecType != send_codec_.codecType ||
-      new_send_codec.plType != send_codec_.plType ||
       new_send_codec.width != send_codec_.width ||
       new_send_codec.height != send_codec_.height ||
       new_send_codec.maxBitrate != send_codec_.maxBitrate ||

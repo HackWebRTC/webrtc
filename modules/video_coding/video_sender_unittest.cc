@@ -206,7 +206,7 @@ class TestVideoSenderWithMockEncoder : public TestVideoSender {
  protected:
   void SetUp() override {
     TestVideoSender::SetUp();
-    sender_->RegisterExternalEncoder(&encoder_, kUnusedPayloadType, false);
+    sender_->RegisterExternalEncoder(&encoder_, false);
     webrtc::test::CodecSettings(kVideoCodecVP8, &settings_);
     settings_.numberOfSimulcastStreams = kNumberOfStreams;
     ConfigureStream(kDefaultWidth / 4, kDefaultHeight / 4, 100,
@@ -325,9 +325,9 @@ TEST_F(TestVideoSenderWithMockEncoder, TestSetRate) {
 
 TEST_F(TestVideoSenderWithMockEncoder, TestIntraRequestsInternalCapture) {
   // De-register current external encoder.
-  sender_->RegisterExternalEncoder(nullptr, kUnusedPayloadType, false);
+  sender_->RegisterExternalEncoder(nullptr, false);
   // Register encoder with internal capture.
-  sender_->RegisterExternalEncoder(&encoder_, kUnusedPayloadType, true);
+  sender_->RegisterExternalEncoder(&encoder_, true);
   EXPECT_EQ(0, sender_->RegisterSendCodec(&settings_, 1, 1200));
   // Initial request should be all keyframes.
   ExpectInitialKeyFrames();
@@ -344,9 +344,9 @@ TEST_F(TestVideoSenderWithMockEncoder, TestIntraRequestsInternalCapture) {
 
 TEST_F(TestVideoSenderWithMockEncoder, TestEncoderParametersForInternalSource) {
   // De-register current external encoder.
-  sender_->RegisterExternalEncoder(nullptr, kUnusedPayloadType, false);
+  sender_->RegisterExternalEncoder(nullptr, false);
   // Register encoder with internal capture.
-  sender_->RegisterExternalEncoder(&encoder_, kUnusedPayloadType, true);
+  sender_->RegisterExternalEncoder(&encoder_, true);
   EXPECT_EQ(0, sender_->RegisterSendCodec(&settings_, 1, 1200));
   // Update encoder bitrate parameters. We expect that to immediately call
   // SetRates on the encoder without waiting for AddFrame processing.
@@ -419,7 +419,7 @@ class TestVideoSenderWithVp8 : public TestVideoSender {
     codec_.VP8()->tl_factory = tl_factory;
 
     encoder_ = VP8Encoder::Create();
-    sender_->RegisterExternalEncoder(encoder_.get(), codec_.plType, false);
+    sender_->RegisterExternalEncoder(encoder_.get(), false);
     EXPECT_EQ(0, sender_->RegisterSendCodec(&codec_, 1, 1200));
   }
 
