@@ -42,17 +42,19 @@ class CallTest : public ::testing::Test {
   static const int kDefaultFramerate = 30;
   static const int kDefaultTimeoutMs;
   static const int kLongTimeoutMs;
-  static const uint8_t kVideoSendPayloadType;
-  static const uint8_t kSendRtxPayloadType;
-  static const uint8_t kFakeVideoSendPayloadType;
-  static const uint8_t kRedPayloadType;
-  static const uint8_t kRtxRedPayloadType;
-  static const uint8_t kUlpfecPayloadType;
-  static const uint8_t kFlexfecPayloadType;
-  static const uint8_t kAudioSendPayloadType;
-  static const uint8_t kPayloadTypeH264;
-  static const uint8_t kPayloadTypeVP8;
-  static const uint8_t kPayloadTypeVP9;
+  enum classPayloadTypes : uint8_t {
+    kSendRtxPayloadType = 98,
+    kRtxRedPayloadType = 99,
+    kVideoSendPayloadType = 100,
+    kAudioSendPayloadType = 103,
+    kRedPayloadType = 118,
+    kUlpfecPayloadType = 119,
+    kFlexfecPayloadType = 120,
+    kPayloadTypeH264 = 122,
+    kPayloadTypeVP8 = 123,
+    kPayloadTypeVP9 = 124,
+    kFakeVideoSendPayloadType = 125,
+  };
   static const uint32_t kSendRtxSsrcs[kNumSsrcs];
   static const uint32_t kVideoSendSsrcs[kNumSsrcs];
   static const uint32_t kAudioSendSsrc;

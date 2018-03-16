@@ -453,17 +453,6 @@ const int CallTest::kDefaultHeight;
 const int CallTest::kDefaultFramerate;
 const int CallTest::kDefaultTimeoutMs = 30 * 1000;
 const int CallTest::kLongTimeoutMs = 120 * 1000;
-const uint8_t CallTest::kVideoSendPayloadType = 100;
-const uint8_t CallTest::kFakeVideoSendPayloadType = 125;
-const uint8_t CallTest::kSendRtxPayloadType = 98;
-const uint8_t CallTest::kRedPayloadType = 118;
-const uint8_t CallTest::kRtxRedPayloadType = 99;
-const uint8_t CallTest::kUlpfecPayloadType = 119;
-const uint8_t CallTest::kFlexfecPayloadType = 120;
-const uint8_t CallTest::kAudioSendPayloadType = 103;
-const uint8_t CallTest::kPayloadTypeH264 = 122;
-const uint8_t CallTest::kPayloadTypeVP8 = 123;
-const uint8_t CallTest::kPayloadTypeVP9 = 124;
 const uint32_t CallTest::kSendRtxSsrcs[kNumSsrcs] = {
     0xBADCAFD, 0xBADCAFE, 0xBADCAFF, 0xBADCB00, 0xBADCB01, 0xBADCB02};
 const uint32_t CallTest::kVideoSendSsrcs[kNumSsrcs] = {
