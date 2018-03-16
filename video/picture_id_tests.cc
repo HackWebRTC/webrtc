@@ -14,7 +14,6 @@
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/numerics/sequence_number_util.h"
 #include "test/call_test.h"
-#include "test/field_trial.h"
 
 namespace webrtc {
 namespace {
@@ -27,9 +26,6 @@ const int kMinPacketsToObserve = 10;
 const int kEncoderBitrateBps = 300000;
 const uint32_t kPictureIdWraparound = (1 << 15);
 const size_t kNumTemporalLayers[] = {1, 2, 3};
-
-const char kVp8ForcedFallbackEncoderEnabled[] =
-    "WebRTC-VP8-Forced-Fallback-Encoder-v2/Enabled/";
 
 RtpVideoCodecTypes PayloadNameToRtpVideoCodecType(
     const std::string& payload_name) {
@@ -224,12 +220,9 @@ class PictureIdObserver : public test::RtpRtcpObserver {
 };
 
 class PictureIdTest : public test::CallTest,
-                      public ::testing::WithParamInterface<
-                          ::testing::tuple<std::string, size_t>> {
+                      public ::testing::WithParamInterface<size_t> {
  public:
-  PictureIdTest()
-      : scoped_field_trial_(::testing::get<0>(GetParam())),
-        num_temporal_layers_(::testing::get<1>(GetParam())) {}
+  PictureIdTest() : num_temporal_layers_(GetParam()) {}
 
   virtual ~PictureIdTest() {
     EXPECT_EQ(nullptr, video_send_stream_);
@@ -249,16 +242,13 @@ class PictureIdTest : public test::CallTest,
       const std::vector<int>& ssrc_counts);
 
  private:
-  test::ScopedFieldTrials scoped_field_trial_;
   const size_t num_temporal_layers_;
   std::unique_ptr<PictureIdObserver> observer_;
 };
 
-INSTANTIATE_TEST_CASE_P(
-    TestWithForcedFallbackEncoderEnabled,
-    PictureIdTest,
-    ::testing::Combine(::testing::Values(kVp8ForcedFallbackEncoderEnabled, ""),
-                       ::testing::ValuesIn(kNumTemporalLayers)));
+INSTANTIATE_TEST_CASE_P(TemporalLayers,
+                        PictureIdTest,
+                        ::testing::ValuesIn(kNumTemporalLayers));
 
 // Use a special stream factory to ensure that all simulcast streams are being
 // sent.
@@ -432,22 +422,13 @@ TEST_P(PictureIdTest, IncreasingAfterRecreateStreamSimulcastEncoderAdapter) {
   TestPictureIdIncreaseAfterRecreateStreams({1, 3, 3, 1, 1});
 }
 
-// When using the simulcast encoder adapter, the picture id is randomly set
-// when the ssrc count is reduced and then increased. This means that we are
-// not spec compliant in that particular case.
 TEST_P(PictureIdTest, ContinuousAfterStreamCountChangeSimulcastEncoderAdapter) {
-  // If forced fallback is enabled, the picture id is set in the PayloadRouter
-  // and the sequence should be continuous.
-  if (::testing::get<0>(GetParam()) == kVp8ForcedFallbackEncoderEnabled &&
-      ::testing::get<1>(GetParam()) == 1) {  // No temporal layers.
-    InternalEncoderFactory internal_encoder_factory;
-    SimulcastEncoderAdapter simulcast_encoder_adapter(
-        &internal_encoder_factory);
-    // Make sure that the picture id is not reset if the stream count goes
-    // down and then up.
-    SetupEncoder(&simulcast_encoder_adapter, "VP8");
-    TestPictureIdContinuousAfterReconfigure({3, 1, 3});
-  }
+  InternalEncoderFactory internal_encoder_factory;
+  SimulcastEncoderAdapter simulcast_encoder_adapter(&internal_encoder_factory);
+  // Make sure that the picture id is not reset if the stream count goes
+  // down and then up.
+  SetupEncoder(&simulcast_encoder_adapter, "VP8");
+  TestPictureIdContinuousAfterReconfigure({3, 1, 3});
 }
 
 TEST_P(PictureIdTest, IncreasingAfterRecreateStreamVp9) {
