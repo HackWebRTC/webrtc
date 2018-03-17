@@ -32,10 +32,12 @@ class CallOperationEndToEndTest
   test::ScopedFieldTrials field_trial_;
 };
 
-INSTANTIATE_TEST_CASE_P(RoundRobin,
-                        CallOperationEndToEndTest,
-                        ::testing::Values("WebRTC-RoundRobinPacing/Disabled/",
-                                          "WebRTC-RoundRobinPacing/Enabled/"));
+INSTANTIATE_TEST_CASE_P(
+    FieldTrials,
+    CallOperationEndToEndTest,
+    ::testing::Values("WebRTC-RoundRobinPacing/Disabled/",
+                      "WebRTC-RoundRobinPacing/Enabled/",
+                      "WebRTC-TaskQueueCongestionControl/Enabled/"));
 
 TEST_P(CallOperationEndToEndTest, ReceiverCanBeStartedTwice) {
   CreateCalls(Call::Config(event_log_.get()), Call::Config(event_log_.get()));

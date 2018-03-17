@@ -33,10 +33,12 @@ class TransportFeedbackEndToEndTest
   test::ScopedFieldTrials field_trial_;
 };
 
-INSTANTIATE_TEST_CASE_P(RoundRobin,
-                        TransportFeedbackEndToEndTest,
-                        ::testing::Values("WebRTC-RoundRobinPacing/Disabled/",
-                                          "WebRTC-RoundRobinPacing/Enabled/"));
+INSTANTIATE_TEST_CASE_P(
+    FieldTrials,
+    TransportFeedbackEndToEndTest,
+    ::testing::Values("WebRTC-RoundRobinPacing/Disabled/",
+                      "WebRTC-RoundRobinPacing/Enabled/",
+                      "WebRTC-TaskQueueCongestionControl/Enabled/"));
 
 TEST_P(TransportFeedbackEndToEndTest, AssignsTransportSequenceNumbers) {
   static const int kExtensionId = 5;
