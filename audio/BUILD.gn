@@ -189,10 +189,27 @@ if (rtc_include_tests) {
       }
 
       data = [
-        "../resources/voice_engine/audio_dtx16.wav",
+        "../resources/voice_engine/audio_tiny16.wav",
+      ]
+
+      if (!build_with_chromium && is_clang) {
+        # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163)
+        suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+      }
+    }
+
+    group("low_bandwidth_audio_perf_test") {
+      testonly = true
+
+      deps = [
+        ":low_bandwidth_audio_test",
+      ]
+
+      data = [
+        "test/low_bandwidth_audio_test.py",
+        "${root_out_dir}/low_bandwidth_audio_test",
         "../resources/voice_engine/audio_tiny16.wav",
         "../resources/voice_engine/audio_tiny48.wav",
-        "test/low_bandwidth_audio_test.py",
       ]
       if (is_linux || is_android) {
         data += [
@@ -212,10 +229,7 @@ if (rtc_include_tests) {
         data += [ "../tools_webrtc/audio_quality/mac/pesq" ]
       }
 
-      if (!build_with_chromium && is_clang) {
-        # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163)
-        suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-      }
+      write_runtime_deps = "${root_out_dir}/${target_name}.runtime_deps"
     }
   }
 
