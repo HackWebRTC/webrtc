@@ -15,6 +15,7 @@
 #include <vector>
 #include <utility>
 
+#include "modules/video_coding/codecs/vp8/include/vp8_common_types.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {
@@ -46,7 +47,7 @@ BitrateAllocation SimulcastRateAllocator::GetAllocation(
 
 void SimulcastRateAllocator::DistributeAllocationToSimulcastLayers(
     uint32_t total_bitrate_bps,
-    BitrateAllocation* allocated_bitrates_bps) {
+    BitrateAllocation* allocated_bitrates_bps) const {
   uint32_t left_to_allocate = total_bitrate_bps;
   if (codec_.maxBitrate && codec_.maxBitrate * 1000 < left_to_allocate)
     left_to_allocate = codec_.maxBitrate * 1000;
@@ -122,7 +123,7 @@ void SimulcastRateAllocator::DistributeAllocationToSimulcastLayers(
 
 void SimulcastRateAllocator::DistributeAllocationToTemporalLayers(
     uint32_t framerate,
-    BitrateAllocation* allocated_bitrates_bps) {
+    BitrateAllocation* allocated_bitrates_bps) const {
   const int num_spatial_streams =
       std::max(1, static_cast<int>(codec_.numberOfSimulcastStreams));
 
@@ -130,32 +131,25 @@ void SimulcastRateAllocator::DistributeAllocationToTemporalLayers(
   // available temporal layers.
   for (int simulcast_id = 0; simulcast_id < num_spatial_streams;
        ++simulcast_id) {
-    // TODO(shampson): Consider adding a continue here if the simulcast stream
-    //                 is inactive. Currently this is not added because the call
-    //                 below to OnRatesUpdated changes the TemporalLayer's
-    //                 state.
-    auto tl_it = temporal_layers_.find(simulcast_id);
-    if (tl_it == temporal_layers_.end())
-      continue;  // TODO(sprang): If > 1 SS, assume default TL alloc?
-
     uint32_t target_bitrate_kbps =
         allocated_bitrates_bps->GetBitrate(simulcast_id, 0) / 1000;
+    if (target_bitrate_kbps == 0) {
+      continue;
+    }
 
     const uint32_t expected_allocated_bitrate_kbps = target_bitrate_kbps;
     RTC_DCHECK_EQ(
         target_bitrate_kbps,
         allocated_bitrates_bps->GetSpatialLayerSum(simulcast_id) / 1000);
-    const int num_temporal_streams = std::max<uint8_t>(
-        1, codec_.numberOfSimulcastStreams == 0
-               ? codec_.VP8().numberOfTemporalLayers
-               : codec_.simulcastStream[simulcast_id].numberOfTemporalLayers);
-
+    const int num_temporal_streams = NumTemporalStreams(simulcast_id);
     uint32_t max_bitrate_kbps;
     // Legacy temporal-layered only screenshare, or simulcast screenshare
     // with legacy mode for simulcast stream 0.
-    if (codec_.mode == kScreensharing && codec_.targetBitrate > 0 &&
+    const bool conference_screenshare_mode =
+        codec_.mode == kScreensharing && codec_.targetBitrate > 0 &&
         ((num_spatial_streams == 1 && num_temporal_streams == 2) ||  // Legacy.
-         (num_spatial_streams > 1 && simulcast_id == 0))) {  // Simulcast.
+         (num_spatial_streams > 1 && simulcast_id == 0));  // Simulcast.
+    if (conference_screenshare_mode) {
       // TODO(holmer): This is a "temporary" hack for screensharing, where we
       // interpret the startBitrate as the encoder target bitrate. This is
       // to allow for a different max bitrate, so if the codec can't meet
@@ -170,8 +164,18 @@ void SimulcastRateAllocator::DistributeAllocationToTemporalLayers(
       max_bitrate_kbps = codec_.simulcastStream[simulcast_id].maxBitrate;
     }
 
-    std::vector<uint32_t> tl_allocation = tl_it->second->OnRatesUpdated(
-        target_bitrate_kbps, max_bitrate_kbps, framerate);
+    std::vector<uint32_t> tl_allocation;
+    if (num_temporal_streams == 1) {
+      tl_allocation.push_back(target_bitrate_kbps);
+    } else {
+      if (conference_screenshare_mode) {
+        tl_allocation = ScreenshareTemporalLayerAllocation(
+            target_bitrate_kbps, max_bitrate_kbps, framerate, simulcast_id);
+      } else {
+        tl_allocation = DefaultTemporalLayerAllocation(
+            target_bitrate_kbps, max_bitrate_kbps, framerate, simulcast_id);
+      }
+    }
     RTC_DCHECK_GT(tl_allocation.size(), 0);
     RTC_DCHECK_LE(tl_allocation.size(), num_temporal_streams);
 
@@ -188,6 +192,54 @@ void SimulcastRateAllocator::DistributeAllocationToTemporalLayers(
   }
 }
 
+std::vector<uint32_t> SimulcastRateAllocator::DefaultTemporalLayerAllocation(
+    int bitrate_kbps,
+    int max_bitrate_kbps,
+    int framerate,
+    int simulcast_id) const {
+  const size_t num_temporal_layers = NumTemporalStreams(simulcast_id);
+  std::vector<uint32_t> bitrates;
+  for (size_t i = 0; i < num_temporal_layers; ++i) {
+    float layer_bitrate =
+        bitrate_kbps * kVp8LayerRateAlloction[num_temporal_layers - 1][i];
+    bitrates.push_back(static_cast<uint32_t>(layer_bitrate + 0.5));
+  }
+
+  // Allocation table is of aggregates, transform to individual rates.
+  uint32_t sum = 0;
+  for (size_t i = 0; i < num_temporal_layers; ++i) {
+    uint32_t layer_bitrate = bitrates[i];
+    RTC_DCHECK_LE(sum, bitrates[i]);
+    bitrates[i] -= sum;
+    sum = layer_bitrate;
+
+    if (sum >= static_cast<uint32_t>(bitrate_kbps)) {
+      // Sum adds up; any subsequent layers will be 0.
+      bitrates.resize(i + 1);
+      break;
+    }
+  }
+
+  return bitrates;
+}
+
+std::vector<uint32_t>
+SimulcastRateAllocator::ScreenshareTemporalLayerAllocation(
+    int bitrate_kbps,
+    int max_bitrate_kbps,
+    int framerate,
+    int simulcast_id) const {
+  if (simulcast_id > 0) {
+    return DefaultTemporalLayerAllocation(bitrate_kbps, max_bitrate_kbps,
+                                          framerate, simulcast_id);
+  }
+  std::vector<uint32_t> allocation;
+  allocation.push_back(bitrate_kbps);
+  if (max_bitrate_kbps > bitrate_kbps)
+    allocation.push_back(max_bitrate_kbps - bitrate_kbps);
+  return allocation;
+}
+
 uint32_t SimulcastRateAllocator::GetPreferredBitrateBps(uint32_t framerate) {
   // Create a temporary instance without temporal layers, as they may be
   // stateful, and updating the bitrate to max here can cause side effects.
@@ -199,6 +251,13 @@ uint32_t SimulcastRateAllocator::GetPreferredBitrateBps(uint32_t framerate) {
 
 const VideoCodec& webrtc::SimulcastRateAllocator::GetCodec() const {
   return codec_;
+}
+
+int SimulcastRateAllocator::NumTemporalStreams(size_t simulcast_id) const {
+  return std::max<uint8_t>(
+      1, codec_.numberOfSimulcastStreams == 0
+             ? codec_.VP8().numberOfTemporalLayers
+             : codec_.simulcastStream[simulcast_id].numberOfTemporalLayers);
 }
 
 }  // namespace webrtc

@@ -26,7 +26,7 @@ using ::testing::NiceMock;
 using ::testing::Return;
 
 namespace webrtc {
-
+namespace {
 // 5 frames per second at 90 kHz.
 const uint32_t kTimestampDelta5Fps = 90000 / 5;
 const int kDefaultQp = 54;
@@ -43,6 +43,11 @@ const int kTl1Flags =
     VP8_EFLAG_NO_REF_ARF | VP8_EFLAG_NO_UPD_ARF | VP8_EFLAG_NO_UPD_LAST;
 const int kTl1SyncFlags = VP8_EFLAG_NO_REF_ARF | VP8_EFLAG_NO_REF_GF |
                           VP8_EFLAG_NO_UPD_ARF | VP8_EFLAG_NO_UPD_LAST;
+const std::vector<uint32_t> kDefault2TlBitratesBps = {
+    kDefaultTl0BitrateKbps * 1000,
+    (kDefaultTl1BitrateKbps - kDefaultTl0BitrateKbps) * 1000};
+
+}  // namespace
 
 class ScreenshareLayerTest : public ::testing::Test {
  protected:
@@ -99,10 +104,7 @@ class ScreenshareLayerTest : public ::testing::Test {
     memset(&vp8_cfg, 0, sizeof(Vp8EncoderConfig));
     vp8_cfg.rc_min_quantizer = min_qp_;
     vp8_cfg.rc_max_quantizer = max_qp_;
-    EXPECT_THAT(layers_->OnRatesUpdated(kDefaultTl0BitrateKbps,
-                                        kDefaultTl1BitrateKbps, kFrameRate),
-                ElementsAre(kDefaultTl0BitrateKbps,
-                            kDefaultTl1BitrateKbps - kDefaultTl0BitrateKbps));
+    layers_->OnRatesUpdated(kDefault2TlBitratesBps, kFrameRate);
     EXPECT_TRUE(layers_->UpdateConfiguration(&vp8_cfg));
     frame_size_ = FrameSizeForBitrate(vp8_cfg.rc_target_bitrate);
     return vp8_cfg;
@@ -344,10 +346,9 @@ TEST_F(ScreenshareLayerTest, TooHighBitrate) {
 TEST_F(ScreenshareLayerTest, TargetBitrateCappedByTL0) {
   const int kTl0_kbps = 100;
   const int kTl1_kbps = 1000;
-  layers_->OnRatesUpdated(kTl0_kbps, kTl1_kbps, 5);
-
-  EXPECT_THAT(layers_->OnRatesUpdated(kTl0_kbps, kTl1_kbps, 5),
-              ElementsAre(kTl0_kbps, kTl1_kbps - kTl0_kbps));
+  const std::vector<uint32_t> layer_rates = {kTl0_kbps * 1000,
+                                             (kTl1_kbps - kTl0_kbps) * 1000};
+  layers_->OnRatesUpdated(layer_rates, kFrameRate);
   EXPECT_TRUE(layers_->UpdateConfiguration(&cfg_));
 
   EXPECT_EQ(static_cast<unsigned int>(
@@ -358,8 +359,9 @@ TEST_F(ScreenshareLayerTest, TargetBitrateCappedByTL0) {
 TEST_F(ScreenshareLayerTest, TargetBitrateCappedByTL1) {
   const int kTl0_kbps = 100;
   const int kTl1_kbps = 450;
-  EXPECT_THAT(layers_->OnRatesUpdated(kTl0_kbps, kTl1_kbps, 5),
-              ElementsAre(kTl0_kbps, kTl1_kbps - kTl0_kbps));
+  const std::vector<uint32_t> layer_rates = {kTl0_kbps * 1000,
+                                             (kTl1_kbps - kTl0_kbps) * 1000};
+  layers_->OnRatesUpdated(layer_rates, kFrameRate);
   EXPECT_TRUE(layers_->UpdateConfiguration(&cfg_));
 
   EXPECT_EQ(static_cast<unsigned int>(
@@ -369,12 +371,11 @@ TEST_F(ScreenshareLayerTest, TargetBitrateCappedByTL1) {
 
 TEST_F(ScreenshareLayerTest, TargetBitrateBelowTL0) {
   const int kTl0_kbps = 100;
-  const int kTl1_kbps = 100;
-  EXPECT_THAT(layers_->OnRatesUpdated(kTl0_kbps, kTl1_kbps, 5),
-              ElementsAre(kTl0_kbps));
+  const std::vector<uint32_t> layer_rates = {kTl0_kbps * 1000};
+  layers_->OnRatesUpdated(layer_rates, kFrameRate);
   EXPECT_TRUE(layers_->UpdateConfiguration(&cfg_));
 
-  EXPECT_EQ(static_cast<uint32_t>(kTl1_kbps), cfg_.rc_target_bitrate);
+  EXPECT_EQ(static_cast<uint32_t>(kTl0_kbps), cfg_.rc_target_bitrate);
 }
 
 TEST_F(ScreenshareLayerTest, EncoderDrop) {
@@ -432,7 +433,8 @@ TEST_F(ScreenshareLayerTest, RespectsMaxIntervalBetweenFrames) {
   const int kLargeFrameSizeBytes = 100000;
   const uint32_t kStartTimestamp = 1234;
 
-  layers_->OnRatesUpdated(kLowBitrateKbps, kLowBitrateKbps, 5);
+  const std::vector<uint32_t> layer_rates = {kLowBitrateKbps * 1000};
+  layers_->OnRatesUpdated(layer_rates, kFrameRate);
   layers_->UpdateConfiguration(&cfg_);
 
   EXPECT_EQ(kTl0Flags,
@@ -628,7 +630,7 @@ TEST_F(ScreenshareLayerTest, AdjustsBitrateWhenDroppingFrames) {
   const uint32_t kTimestampDelta10Fps = kTimestampDelta5Fps / 2;
   const int kNumFrames = 30;
   uint32_t default_bitrate = cfg_.rc_target_bitrate;
-  layers_->OnRatesUpdated(kDefaultTl0BitrateKbps, kDefaultTl1BitrateKbps, 10);
+  layers_->OnRatesUpdated(kDefault2TlBitratesBps, 10);
 
   int num_dropped_frames = 0;
   for (int i = 0; i < kNumFrames; ++i) {

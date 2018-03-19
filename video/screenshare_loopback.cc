@@ -52,7 +52,7 @@ int TargetBitrateKbps() {
   return static_cast<int>(FLAG_target_bitrate);
 }
 
-DEFINE_int(max_bitrate, 2000, "Call and stream max bitrate in kbps.");
+DEFINE_int(max_bitrate, 1000, "Call and stream max bitrate in kbps.");
 int MaxBitrateKbps() {
   return static_cast<int>(FLAG_max_bitrate);
 }

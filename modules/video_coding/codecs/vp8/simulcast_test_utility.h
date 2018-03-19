@@ -575,6 +575,7 @@ class TestVp8Simulcast : public ::testing::Test {
       settings_.simulcastStream[i].maxBitrate = 0;
       settings_.simulcastStream[i].width = settings_.width;
       settings_.simulcastStream[i].height = settings_.height;
+      settings_.simulcastStream[i].numberOfTemporalLayers = 1;
     }
     // Setting input image to new resolution.
     input_buffer_ = I420Buffer::Create(settings_.width, settings_.height);

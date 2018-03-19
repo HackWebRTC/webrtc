@@ -10,13 +10,14 @@
 
 #include "modules/video_coding/codecs/vp8/default_temporal_layers.h"
 #include "modules/video_coding/codecs/vp8/libvpx_vp8_encoder.h"
+#include "modules/video_coding/codecs/vp8/simulcast_rate_allocator.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
 
 namespace webrtc {
 namespace test {
-
+namespace {
 enum {
   kTemporalUpdateLast = VP8_EFLAG_NO_UPD_GF | VP8_EFLAG_NO_UPD_ARF |
                         VP8_EFLAG_NO_REF_GF | VP8_EFLAG_NO_REF_ARF,
@@ -49,12 +50,32 @@ enum {
       VP8_EFLAG_NO_UPD_ARF | VP8_EFLAG_NO_REF_GF,
 };
 
+std::vector<uint32_t> GetTemporalLayerRates(int target_bitrate_kbps,
+                                            int framerate_fps,
+                                            int num_temporal_layers) {
+  VideoCodec codec;
+  codec.codecType = VideoCodecType::kVideoCodecVP8;
+  codec.numberOfSimulcastStreams = 1;
+  codec.targetBitrate = target_bitrate_kbps;
+  codec.maxBitrate = target_bitrate_kbps;
+  codec.maxFramerate = framerate_fps;
+  codec.simulcastStream[0].targetBitrate = target_bitrate_kbps;
+  codec.simulcastStream[0].maxBitrate = target_bitrate_kbps;
+  codec.simulcastStream[0].numberOfTemporalLayers = num_temporal_layers;
+  codec.simulcastStream[0].active = true;
+  SimulcastRateAllocator allocator(codec, nullptr);
+  return allocator.GetAllocation(target_bitrate_kbps, framerate_fps)
+      .GetTemporalLayerAllocation(0);
+}
+
+}  // namespace
+
 TEST(TemporalLayersTest, 2Layers) {
   DefaultTemporalLayers tl(2, 0);
   DefaultTemporalLayersChecker checker(2, 0);
   Vp8EncoderConfig cfg;
   CodecSpecificInfoVP8 vp8_info;
-  tl.OnRatesUpdated(500, 500, 30);
+  tl.OnRatesUpdated(GetTemporalLayerRates(500, 30, 1), 30);
   tl.UpdateConfiguration(&cfg);
 
   int expected_flags[16] = {
@@ -102,7 +123,7 @@ TEST(TemporalLayersTest, 3Layers) {
   DefaultTemporalLayersChecker checker(3, 0);
   Vp8EncoderConfig cfg;
   CodecSpecificInfoVP8 vp8_info;
-  tl.OnRatesUpdated(500, 500, 30);
+  tl.OnRatesUpdated(GetTemporalLayerRates(500, 30, 1), 30);
   tl.UpdateConfiguration(&cfg);
 
   int expected_flags[16] = {
@@ -151,7 +172,7 @@ TEST(TemporalLayersTest, Alternative3Layers) {
   DefaultTemporalLayersChecker checker(3, 0);
   Vp8EncoderConfig cfg;
   CodecSpecificInfoVP8 vp8_info;
-  tl.OnRatesUpdated(500, 500, 30);
+  tl.OnRatesUpdated(GetTemporalLayerRates(500, 30, 1), 30);
   tl.UpdateConfiguration(&cfg);
 
   int expected_flags[8] = {kTemporalUpdateLast,
@@ -187,7 +208,7 @@ TEST(TemporalLayersTest, 4Layers) {
   DefaultTemporalLayersChecker checker(4, 0);
   Vp8EncoderConfig cfg;
   CodecSpecificInfoVP8 vp8_info;
-  tl.OnRatesUpdated(500, 500, 30);
+  tl.OnRatesUpdated(GetTemporalLayerRates(500, 30, 1), 30);
   tl.UpdateConfiguration(&cfg);
   int expected_flags[16] = {
       kTemporalUpdateLast,
@@ -234,7 +255,7 @@ TEST(TemporalLayersTest, KeyFrame) {
   DefaultTemporalLayersChecker checker(3, 0);
   Vp8EncoderConfig cfg;
   CodecSpecificInfoVP8 vp8_info;
-  tl.OnRatesUpdated(500, 500, 30);
+  tl.OnRatesUpdated(GetTemporalLayerRates(500, 30, 1), 30);
   tl.UpdateConfiguration(&cfg);
 
   int expected_flags[8] = {
@@ -347,7 +368,7 @@ TEST_P(TemporalLayersReferenceTest, ValidFrameConfigs) {
   const int num_layers = GetParam();
   DefaultTemporalLayers tl(num_layers, 0);
   Vp8EncoderConfig cfg;
-  tl.OnRatesUpdated(500, 500, 30);
+  tl.OnRatesUpdated(GetTemporalLayerRates(500, 30, 1), 30);
   tl.UpdateConfiguration(&cfg);
 
   // Run through the pattern and store the frame dependencies, plus keep track

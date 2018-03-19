@@ -314,6 +314,10 @@ int LibvpxVp8Encoder::SetRateAllocation(const BitrateAllocation& bitrate,
       SetStreamState(send_stream, stream_idx);
 
     configurations_[i].rc_target_bitrate = target_bitrate_kbps;
+    if (send_stream) {
+      temporal_layers_[stream_idx]->OnRatesUpdated(
+          bitrate.GetTemporalLayerAllocation(stream_idx), new_framerate);
+    }
 
     UpdateVpxConfiguration(temporal_layers_[stream_idx].get(),
                            &configurations_[i]);
@@ -342,6 +346,7 @@ void LibvpxVp8Encoder::SetupTemporalLayers(int num_streams,
                                            const VideoCodec& codec) {
   RTC_DCHECK(codec.VP8().tl_factory != nullptr);
   const TemporalLayersFactory* tl_factory = codec.VP8().tl_factory;
+  RTC_DCHECK(temporal_layers_.empty());
   if (num_streams == 1) {
     temporal_layers_.emplace_back(
         tl_factory->Create(0, num_temporal_layers, tl0_pic_idx_[0]));
@@ -546,8 +551,10 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
   }
 
   configurations_[0].rc_target_bitrate = stream_bitrates[stream_idx];
-  temporal_layers_[stream_idx]->OnRatesUpdated(
-      stream_bitrates[stream_idx], inst->maxBitrate, inst->maxFramerate);
+  if (stream_bitrates[stream_idx] > 0) {
+    temporal_layers_[stream_idx]->OnRatesUpdated(
+        allocation.GetTemporalLayerAllocation(stream_idx), inst->maxFramerate);
+  }
   UpdateVpxConfiguration(temporal_layers_[stream_idx].get(),
                          &configurations_[0]);
 
@@ -570,8 +577,11 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
                   inst->simulcastStream[stream_idx].height, kVp832ByteAlign);
     SetStreamState(stream_bitrates[stream_idx] > 0, stream_idx);
     configurations_[i].rc_target_bitrate = stream_bitrates[stream_idx];
-    temporal_layers_[stream_idx]->OnRatesUpdated(
-        stream_bitrates[stream_idx], inst->maxBitrate, inst->maxFramerate);
+    if (stream_bitrates[stream_idx] > 0) {
+      temporal_layers_[stream_idx]->OnRatesUpdated(
+          allocation.GetTemporalLayerAllocation(stream_idx),
+          inst->maxFramerate);
+    }
     UpdateVpxConfiguration(temporal_layers_[stream_idx].get(),
                            &configurations_[i]);
   }

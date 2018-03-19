@@ -611,6 +611,11 @@ class BitrateAllocation {
   // Get the sum of all the temporal layer for a specific spatial layer.
   uint32_t GetSpatialLayerSum(size_t spatial_index) const;
 
+  // Returns a vector of the temporal layer bitrates for the specific spatial
+  // layer. Length of the returned vector is cropped to the highest temporal
+  // layer with a defined bitrate.
+  std::vector<uint32_t> GetTemporalLayerAllocation(size_t spatial_index) const;
+
   uint32_t get_sum_bps() const { return sum_; }  // Sum of all bitrates.
   uint32_t get_sum_kbps() const { return (sum_ + 500) / 1000; }
 
@@ -623,7 +628,6 @@ class BitrateAllocation {
 
   // Expensive, please use only in tests.
   std::string ToString() const;
-  std::ostream& operator<<(std::ostream& os) const;
 
  private:
   uint32_t sum_;

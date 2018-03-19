@@ -321,42 +321,27 @@ uint8_t DefaultTemporalLayers::Tl0PicIdx() const {
   return tl0_pic_idx_;
 }
 
-std::vector<uint32_t> DefaultTemporalLayers::OnRatesUpdated(
-    int bitrate_kbps,
-    int max_bitrate_kbps,
-    int framerate) {
-  std::vector<uint32_t> bitrates;
-  for (size_t i = 0; i < num_layers_; ++i) {
-    float layer_bitrate =
-        bitrate_kbps * kVp8LayerRateAlloction[num_layers_ - 1][i];
-    bitrates.push_back(static_cast<uint32_t>(layer_bitrate + 0.5));
+void DefaultTemporalLayers::OnRatesUpdated(
+    const std::vector<uint32_t>& bitrates_bps,
+    int framerate_fps) {
+  RTC_DCHECK_GT(bitrates_bps.size(), 0);
+  RTC_DCHECK_LE(bitrates_bps.size(), num_layers_);
+  // |bitrates_bps| uses individual rate per layer, but Vp8EncoderConfig wants
+  // the accumulated rate, so sum them up.
+  new_bitrates_bps_ = bitrates_bps;
+  new_bitrates_bps_->resize(num_layers_);
+  for (size_t i = 1; i < num_layers_; ++i) {
+    (*new_bitrates_bps_)[i] += (*new_bitrates_bps_)[i - 1];
   }
-  new_bitrates_kbps_ = rtc::Optional<std::vector<uint32_t>>(bitrates);
-
-  // Allocation table is of aggregates, transform to individual rates.
-  uint32_t sum = 0;
-  for (size_t i = 0; i < num_layers_; ++i) {
-    uint32_t layer_bitrate = bitrates[i];
-    RTC_DCHECK_LE(sum, bitrates[i]);
-    bitrates[i] -= sum;
-    sum = layer_bitrate;
-
-    if (sum >= static_cast<uint32_t>(bitrate_kbps)) {
-      // Sum adds up; any subsequent layers will be 0.
-      bitrates.resize(i + 1);
-      break;
-    }
-  }
-
-  return bitrates;
 }
 
 bool DefaultTemporalLayers::UpdateConfiguration(Vp8EncoderConfig* cfg) {
-  if (!new_bitrates_kbps_)
+  if (!new_bitrates_bps_) {
     return false;
+  }
 
   for (size_t i = 0; i < num_layers_; ++i) {
-    cfg->ts_target_bitrate[i] = (*new_bitrates_kbps_)[i];
+    cfg->ts_target_bitrate[i] = (*new_bitrates_bps_)[i] / 1000;
     // ..., 4, 2, 1
     cfg->ts_rate_decimator[i] = 1 << (num_layers_ - i - 1);
   }
@@ -366,7 +351,7 @@ bool DefaultTemporalLayers::UpdateConfiguration(Vp8EncoderConfig* cfg) {
   memcpy(cfg->ts_layer_id, &temporal_ids_[0],
          sizeof(unsigned int) * temporal_ids_.size());
 
-  new_bitrates_kbps_ = rtc::Optional<std::vector<uint32_t>>();
+  new_bitrates_bps_.reset();
 
   return true;
 }

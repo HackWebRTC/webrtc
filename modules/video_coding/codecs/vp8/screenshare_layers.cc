@@ -239,37 +239,42 @@ TemporalLayers::FrameConfig ScreenshareLayers::UpdateLayerConfig(
   return tl_config;
 }
 
-std::vector<uint32_t> ScreenshareLayers::OnRatesUpdated(int bitrate_kbps,
-                                                        int max_bitrate_kbps,
-                                                        int framerate) {
-  RTC_DCHECK_GT(framerate, 0);
+void ScreenshareLayers::OnRatesUpdated(
+    const std::vector<uint32_t>& bitrates_bps,
+    int framerate_fps) {
+  RTC_DCHECK_GT(framerate_fps, 0);
+  RTC_DCHECK_GE(bitrates_bps.size(), 1);
+  RTC_DCHECK_LE(bitrates_bps.size(), 2);
+
+  // |bitrates_bps| uses individual rates per layer, but we want to use the
+  // accumulated rate here.
+  uint32_t tl0_kbps = bitrates_bps[0] / 1000;
+  uint32_t tl1_kbps = tl0_kbps;
+  if (bitrates_bps.size() > 1) {
+    tl1_kbps += bitrates_bps[1] / 1000;
+  }
+
   if (!target_framerate_) {
-    // First OnRatesUpdated() is called during construction, with the configured
-    // targets as parameters.
-    target_framerate_.emplace(framerate);
+    // First OnRatesUpdated() is called during construction, with the
+    // configured targets as parameters.
+    target_framerate_ = framerate_fps;
     capture_framerate_ = target_framerate_;
     bitrate_updated_ = true;
   } else {
-    bitrate_updated_ =
-        bitrate_kbps != static_cast<int>(layers_[0].target_rate_kbps_) ||
-        max_bitrate_kbps != static_cast<int>(layers_[1].target_rate_kbps_) ||
-        (capture_framerate_ &&
-         framerate != static_cast<int>(*capture_framerate_));
-    if (framerate < 0) {
+    bitrate_updated_ = capture_framerate_ &&
+                       framerate_fps != static_cast<int>(*capture_framerate_);
+    bitrate_updated_ |= tl0_kbps != layers_[0].target_rate_kbps_;
+    bitrate_updated_ |= tl1_kbps != layers_[1].target_rate_kbps_;
+
+    if (framerate_fps < 0) {
       capture_framerate_.reset();
     } else {
-      capture_framerate_.emplace(framerate);
+      capture_framerate_ = framerate_fps;
     }
   }
 
-  layers_[0].target_rate_kbps_ = bitrate_kbps;
-  layers_[1].target_rate_kbps_ = max_bitrate_kbps;
-
-  std::vector<uint32_t> allocation;
-  allocation.push_back(bitrate_kbps);
-  if (max_bitrate_kbps > bitrate_kbps)
-    allocation.push_back(max_bitrate_kbps - bitrate_kbps);
-  return allocation;
+  layers_[0].target_rate_kbps_ = tl0_kbps;
+  layers_[1].target_rate_kbps_ = tl1_kbps;
 }
 
 void ScreenshareLayers::FrameEncoded(unsigned int size, int qp) {

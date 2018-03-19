@@ -16,6 +16,7 @@
 #include <type_traits>
 
 #include "rtc_base/checks.h"
+#include "rtc_base/strings/string_builder.h"
 #include "rtc_base/stringutils.h"
 
 namespace webrtc {
@@ -232,13 +233,37 @@ uint32_t BitrateAllocation::GetSpatialLayerSum(size_t spatial_index) const {
   return sum;
 }
 
+std::vector<uint32_t> BitrateAllocation::GetTemporalLayerAllocation(
+    size_t spatial_index) const {
+  RTC_CHECK_LT(spatial_index, kMaxSpatialLayers);
+  std::vector<uint32_t> temporal_rates;
+
+  // Find the highest temporal layer with a defined bitrate in order to
+  // determine the size of the temporal layer allocation.
+  for (size_t i = kMaxTemporalStreams; i > 0; --i) {
+    if (has_bitrate_[spatial_index][i - 1]) {
+      temporal_rates.resize(i);
+      break;
+    }
+  }
+
+  for (size_t i = 0; i < temporal_rates.size(); ++i) {
+    temporal_rates[i] = bitrates_[spatial_index][i];
+  }
+
+  return temporal_rates;
+}
+
 std::string BitrateAllocation::ToString() const {
   if (sum_ == 0)
     return "BitrateAllocation [ [] ]";
 
-  // TODO(sprang): Replace this stringstream with something cheaper.
-  std::ostringstream oss;
-  oss << "BitrateAllocation [";
+  // Max string length in practice is 260, but let's have some overhead and
+  // round up to nearest power of two.
+  char string_buf[512];
+  rtc::SimpleStringBuilder ssb(string_buf);
+
+  ssb << "BitrateAllocation [";
   uint32_t spatial_cumulator = 0;
   for (int si = 0; si < kMaxSpatialLayers; ++si) {
     RTC_DCHECK_LE(spatial_cumulator, sum_);
@@ -247,11 +272,11 @@ std::string BitrateAllocation::ToString() const {
 
     const uint32_t layer_sum = GetSpatialLayerSum(si);
     if (layer_sum == sum_) {
-      oss << " [";
+      ssb << " [";
     } else {
       if (si > 0)
-        oss << ",";
-      oss << std::endl << "  [";
+        ssb << ",";
+      ssb << '\n' << "  [";
     }
     spatial_cumulator += layer_sum;
 
@@ -262,23 +287,18 @@ std::string BitrateAllocation::ToString() const {
         break;
 
       if (ti > 0)
-        oss << ", ";
+        ssb << ", ";
 
       uint32_t bitrate = bitrates_[si][ti];
-      oss << bitrate;
+      ssb << bitrate;
       temporal_cumulator += bitrate;
     }
-    oss << "]";
+    ssb << "]";
   }
 
   RTC_DCHECK_EQ(spatial_cumulator, sum_);
-  oss << " ]";
-  return oss.str();
-}
-
-std::ostream& BitrateAllocation::operator<<(std::ostream& os) const {
-  os << ToString();
-  return os;
+  ssb << " ]";
+  return ssb.str();
 }
 
 }  // namespace webrtc

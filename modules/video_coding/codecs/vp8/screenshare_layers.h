@@ -37,11 +37,9 @@ class ScreenshareLayers : public TemporalLayers {
   // and/or update the reference buffers.
   TemporalLayers::FrameConfig UpdateLayerConfig(uint32_t timestamp) override;
 
-  // Update state based on new bitrate target and incoming framerate.
-  // Returns the bitrate allocation for the active temporal layers.
-  std::vector<uint32_t> OnRatesUpdated(int bitrate_kbps,
-                                       int max_bitrate_kbps,
-                                       int framerate) override;
+  // New target bitrate, per temporal layer.
+  void OnRatesUpdated(const std::vector<uint32_t>& bitrates_bps,
+                      int framerate_fps) override;
 
   // Update the encoder configuration with target bitrates or other parameters.
   // Returns true iff the configuration was actually modified.

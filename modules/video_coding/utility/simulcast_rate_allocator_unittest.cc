@@ -30,7 +30,7 @@ constexpr uint32_t kFramerateFps = 5;
 class MockTemporalLayers : public TemporalLayers {
  public:
   MOCK_METHOD1(UpdateLayerConfig, TemporalLayers::FrameConfig(uint32_t));
-  MOCK_METHOD3(OnRatesUpdated, std::vector<uint32_t>(int, int, int));
+  MOCK_METHOD2(OnRatesUpdated, void(const std::vector<uint32_t>&, int));
   MOCK_METHOD1(UpdateConfiguration, bool(Vp8EncoderConfig*));
   MOCK_METHOD4(PopulateCodecSpecific,
                void(bool,
@@ -487,7 +487,7 @@ TEST_F(SimulcastRateAllocatorTest, GetPreferredBitrateBps) {
   MockTemporalLayers mock_layers;
   allocator_.reset(new SimulcastRateAllocator(codec_, nullptr));
   allocator_->OnTemporalLayersCreated(0, &mock_layers);
-  EXPECT_CALL(mock_layers, OnRatesUpdated(_, _, _)).Times(0);
+  EXPECT_CALL(mock_layers, OnRatesUpdated(_, _)).Times(0);
   EXPECT_EQ(codec_.maxBitrate * 1000,
             allocator_->GetPreferredBitrateBps(codec_.maxFramerate));
 }
