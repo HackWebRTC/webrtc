@@ -117,7 +117,6 @@ class VideoStreamEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   void AdaptDown(AdaptReason reason) override;
 
  private:
-  class ConfigureEncoderTask;
   class EncodeTask;
   class VideoSourceProxy;
 
