@@ -49,7 +49,6 @@
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/numerics/safe_minmax.h"
 #include "rtc_base/ptr_util.h"
 #include "rtc_base/rate_limiter.h"
@@ -1109,11 +1108,8 @@ void Call::OnTargetTransferRate(TargetTransferRate msg) {
 void Call::OnAllocationLimitsChanged(uint32_t min_send_bitrate_bps,
                                      uint32_t max_padding_bitrate_bps,
                                      uint32_t total_bitrate_bps) {
-  // TODO(srte): We should not mix signed and unsigned types for bitrates.
   transport_send_->SetAllocatedSendBitrateLimits(
-      rtc::dchecked_cast<int>(min_send_bitrate_bps),
-      rtc::dchecked_cast<int>(max_padding_bitrate_bps),
-      rtc::dchecked_cast<int>(total_bitrate_bps));
+      min_send_bitrate_bps, max_padding_bitrate_bps, total_bitrate_bps);
   rtc::CritScope lock(&bitrate_crit_);
   min_allocated_send_bitrate_bps_ = min_send_bitrate_bps;
   configured_max_padding_bitrate_bps_ = max_padding_bitrate_bps;
