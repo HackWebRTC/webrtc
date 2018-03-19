@@ -127,6 +127,19 @@ TEST_F(FileUtilsTest, TempFilename) {
   remove(temp_filename.c_str());
 }
 
+TEST_F(FileUtilsTest, GenerateTempFilename) {
+  std::string temp_filename = webrtc::test::GenerateTempFilename(
+      webrtc::test::OutputPath(), "TempFilenameTest");
+  ASSERT_FALSE(webrtc::test::FileExists(temp_filename))
+      << "File exists: " << temp_filename;
+  FILE* file = fopen(temp_filename.c_str(), "wb");
+  ASSERT_TRUE(file != NULL) << "Failed to open file: " << temp_filename;
+  ASSERT_GT(fprintf(file, "%s", "Dummy data"), 0)
+      << "Failed to write to file: " << temp_filename;
+  fclose(file);
+  remove(temp_filename.c_str());
+}
+
 // Only tests that the code executes
 #if defined(WEBRTC_IOS)
 #define MAYBE_CreateDir DISABLED_CreateDir

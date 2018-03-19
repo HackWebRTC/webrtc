@@ -1194,6 +1194,7 @@ if (rtc_include_tests) {
       "numerics/safe_minmax_unittest.cc",
       "onetimeevent_unittest.cc",
       "pathutils_unittest.cc",
+      "platform_file_unittest.cc",
       "platform_thread_unittest.cc",
       "random_unittest.cc",
       "rate_limiter_unittest.cc",

@@ -40,7 +40,13 @@ std::string OutputPath();
 
 // Generates an empty file with a unique name in the specified directory and
 // returns the file name and path.
+// TODO(titovartem) rename to TempFile and next method to TempFilename
 std::string TempFilename(const std::string &dir, const std::string &prefix);
+
+// Generates a unique file name that can be used for file creation. Doesn't
+// create any files.
+std::string GenerateTempFilename(const std::string& dir,
+                                 const std::string& prefix);
 
 // Returns a path to a resource file for the currently executing platform.
 // Adapts to what filenames are currently present in the

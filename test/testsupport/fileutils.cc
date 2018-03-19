@@ -215,6 +215,13 @@ std::string TempFilename(const std::string &dir, const std::string &prefix) {
 #endif
 }
 
+std::string GenerateTempFilename(const std::string& dir,
+                                 const std::string& prefix) {
+  std::string filename = TempFilename(dir, prefix);
+  RemoveFile(filename);
+  return filename;
+}
+
 rtc::Optional<std::vector<std::string>> ReadDirectory(std::string path) {
   if (path.length() == 0)
     return rtc::Optional<std::vector<std::string>>();

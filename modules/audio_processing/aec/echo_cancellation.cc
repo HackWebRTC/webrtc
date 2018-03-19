@@ -677,7 +677,7 @@ static int ProcessNormal(Aec* aecInst,
 }
 
 static void ProcessExtended(Aec* self,
-                            const float* const* near,
+                            const float* const* nearend,
                             size_t num_bands,
                             float* const* out,
                             size_t num_samples,
@@ -709,8 +709,8 @@ static void ProcessExtended(Aec* self,
   if (!self->farend_started) {
     for (i = 0; i < num_bands; ++i) {
       // Only needed if they don't already point to the same place.
-      if (near[i] != out[i]) {
-        memcpy(out[i], near[i], sizeof(near[i][0]) * num_samples);
+      if (nearend[i] != out[i]) {
+        memcpy(out[i], nearend[i], sizeof(nearend[i][0]) * num_samples);
       }
     }
     return;
@@ -746,7 +746,7 @@ static void ProcessExtended(Aec* self,
     const int adjusted_known_delay =
         WEBRTC_SPL_MAX(0, self->knownDelay + delay_diff_offset);
 
-    WebRtcAec_ProcessFrames(self->aec, near, num_bands, num_samples,
+    WebRtcAec_ProcessFrames(self->aec, nearend, num_bands, num_samples,
                             adjusted_known_delay, out);
   }
 }
