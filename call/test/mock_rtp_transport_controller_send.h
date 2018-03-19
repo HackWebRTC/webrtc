@@ -32,10 +32,8 @@ class MockRtpTransportControllerSend
   MOCK_METHOD0(packet_sender, RtpPacketSender*());
   MOCK_CONST_METHOD0(keepalive_config, RtpKeepAliveConfig&());
   MOCK_METHOD3(SetAllocatedSendBitrateLimits, void(int, int, int));
-  MOCK_METHOD0(GetPacerModule, Module*());
   MOCK_METHOD1(SetPacingFactor, void(float));
   MOCK_METHOD1(SetQueueTimeLimit, void(int));
-  MOCK_METHOD0(GetModule, Module*());
   MOCK_METHOD0(GetCallStatsObserver, CallStatsObserver*());
   MOCK_METHOD1(RegisterPacketFeedbackObserver, void(PacketFeedbackObserver*));
   MOCK_METHOD1(DeRegisterPacketFeedbackObserver, void(PacketFeedbackObserver*));
@@ -44,9 +42,7 @@ class MockRtpTransportControllerSend
   MOCK_METHOD2(OnNetworkRouteChanged,
                void(const std::string&, const rtc::NetworkRoute&));
   MOCK_METHOD1(OnNetworkAvailability, void(bool));
-  MOCK_METHOD1(SetTransportOverhead, void(size_t));
   MOCK_METHOD0(GetBandwidthObserver, RtcpBandwidthObserver*());
-  MOCK_CONST_METHOD1(AvailableBandwidth, bool(uint32_t*));
   MOCK_CONST_METHOD0(GetPacerQueuingDelayMs, int64_t());
   MOCK_CONST_METHOD0(GetFirstPacketTimeMs, int64_t());
   MOCK_METHOD1(EnablePeriodicAlrProbing, void(bool));
