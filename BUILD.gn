@@ -171,7 +171,9 @@ config("common_inherited_config") {
 
 config("common_config") {
   cflags = []
+  cflags_c = []
   cflags_cc = []
+  cflags_objc = []
   defines = []
 
   if (rtc_enable_protobuf) {
@@ -221,6 +223,20 @@ config("common_config") {
         "-Wno-missing-field-initializers",
         "-Wno-strict-overflow",
       ]
+      cflags_c += [
+        # TODO(bugs.webrtc.org/9029): enable commented compiler flags.
+        # Some of these flags should also be added to cflags_objc.
+
+        # "-Wextra",  (used when building C++ but not when building C)
+        # "-Wmissing-prototypes",  (C/Obj-C only)
+        # "-Wmissing-declarations",  (ensure this is always used C/C++, etc..)
+        "-Wstrict-prototypes",
+
+        # "-Wpointer-arith",  (ensure this is always used C/C++, etc..)
+        # "-Wbad-function-cast",  (C/Obj-C only)
+        # "-Wnested-externs",  (C/Obj-C only)
+      ]
+      cflags_objc += [ "-Wstrict-prototypes" ]
       cflags_cc = [
         "-Wnon-virtual-dtor",
 

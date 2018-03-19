@@ -34,5 +34,5 @@
 
 @end
 
-NSInteger ARDGetCpuUsagePercentage();
+NSInteger ARDGetCpuUsagePercentage(void);
 
