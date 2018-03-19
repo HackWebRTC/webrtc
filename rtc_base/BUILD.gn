@@ -852,7 +852,6 @@ rtc_static_library("rtc_base_generic") {
     "physicalsocketserver.h",
     "proxyinfo.cc",
     "proxyinfo.h",
-    "ratelimiter.h",
     "rtccertificate.cc",
     "rtccertificate.h",
     "rtccertificategenerator.cc",
