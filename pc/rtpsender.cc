@@ -250,6 +250,7 @@ void AudioRtpSender::Stop() {
       stats_->RemoveLocalAudioTrack(track_.get(), ssrc_);
     }
   }
+  media_channel_ = nullptr;
   stopped_ = true;
 }
 
@@ -433,6 +434,7 @@ void VideoRtpSender::Stop() {
   if (can_send_track()) {
     ClearVideoSend();
   }
+  media_channel_ = nullptr;
   stopped_ = true;
 }
 
