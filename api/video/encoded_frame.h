@@ -16,7 +16,39 @@
 namespace webrtc {
 namespace video_coding {
 
+// NOTE: This class is still under development and may change without notice.
+struct VideoLayerFrameId {
+  // TODO(philipel): The default ctor is currently used internaly, but have a
+  //                 look if we can remove it.
+  VideoLayerFrameId() : picture_id(-1), spatial_layer(0) {}
+  VideoLayerFrameId(int64_t picture_id, uint8_t spatial_layer)
+      : picture_id(picture_id), spatial_layer(spatial_layer) {}
+
+  bool operator==(const VideoLayerFrameId& rhs) const {
+    return picture_id == rhs.picture_id && spatial_layer == rhs.spatial_layer;
+  }
+
+  bool operator!=(const VideoLayerFrameId& rhs) const {
+    return !(*this == rhs);
+  }
+
+  bool operator<(const VideoLayerFrameId& rhs) const {
+    if (picture_id == rhs.picture_id)
+      return spatial_layer < rhs.spatial_layer;
+    return picture_id < rhs.picture_id;
+  }
+
+  bool operator<=(const VideoLayerFrameId& rhs) const { return !(rhs < *this); }
+  bool operator>(const VideoLayerFrameId& rhs) const { return rhs < *this; }
+  bool operator>=(const VideoLayerFrameId& rhs) const { return rhs <= *this; }
+
+  int64_t picture_id;
+  uint8_t spatial_layer;
+};
+
 // TODO(philipel): Remove webrtc::VCMEncodedFrame inheritance.
+// TODO(philipel): Move transport specific info out of EncodedFrame.
+// NOTE: This class is still under development and may change without notice.
 class EncodedFrame : public webrtc::VCMEncodedFrame {
  public:
   static const uint8_t kMaxFrameReferences = 5;
@@ -44,11 +76,11 @@ class EncodedFrame : public webrtc::VCMEncodedFrame {
 
   bool is_keyframe() const { return num_references == 0; }
 
-  // The tuple (|picture_id|, |spatial_layer|) uniquely identifies a frame
-  // object. For codec types that don't necessarily have picture ids they
-  // have to be constructed from the header data relevant to that codec.
-  int64_t picture_id = 0;
-  uint8_t spatial_layer = 0;
+  VideoLayerFrameId id;
+  // TODO(philipel): Remove the two references below when downstream projects
+  //                 have been updated.
+  int64_t& picture_id = id.picture_id;
+  uint8_t& spatial_layer = id.spatial_layer;
   uint32_t timestamp = 0;
 
   // TODO(philipel): Add simple modify/access functions to prevent adding too

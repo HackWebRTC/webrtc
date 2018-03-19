@@ -368,7 +368,8 @@ void RtpVideoStreamReceiver::OnCompleteFrame(
     rtc::CritScope lock(&last_seq_num_cs_);
     video_coding::RtpFrameObject* rtp_frame =
         static_cast<video_coding::RtpFrameObject*>(frame.get());
-    last_seq_num_for_pic_id_[rtp_frame->picture_id] = rtp_frame->last_seq_num();
+    last_seq_num_for_pic_id_[rtp_frame->id.picture_id] =
+        rtp_frame->last_seq_num();
   }
   complete_frame_callback_->OnCompleteFrame(std::move(frame));
 }

@@ -160,8 +160,8 @@ class TestFrameBuffer2 : public ::testing::Test {
         {rtc::checked_cast<uint16_t>(refs)...}};
 
     std::unique_ptr<FrameObjectFake> frame(new FrameObjectFake());
-    frame->picture_id = picture_id;
-    frame->spatial_layer = spatial_layer;
+    frame->id.picture_id = picture_id;
+    frame->id.spatial_layer = spatial_layer;
     frame->timestamp = ts_ms * 90;
     frame->num_references = references.size();
     frame->inter_layer_predicted = inter_layer_predicted;
@@ -193,8 +193,8 @@ class TestFrameBuffer2 : public ::testing::Test {
     rtc::CritScope lock(&crit_);
     ASSERT_LT(index, frames_.size());
     ASSERT_TRUE(frames_[index]);
-    ASSERT_EQ(picture_id, frames_[index]->picture_id);
-    ASSERT_EQ(spatial_layer, frames_[index]->spatial_layer);
+    ASSERT_EQ(picture_id, frames_[index]->id.picture_id);
+    ASSERT_EQ(spatial_layer, frames_[index]->id.spatial_layer);
   }
 
   void CheckNoFrame(size_t index) {
@@ -269,6 +269,7 @@ TEST_F(TestFrameBuffer2, OneSuperFrame) {
 TEST_F(TestFrameBuffer2, SetPlayoutDelay) {
   const PlayoutDelay kPlayoutDelayMs = {123, 321};
   std::unique_ptr<FrameObjectFake> test_frame(new FrameObjectFake());
+  test_frame->id.picture_id = 0;
   test_frame->SetPlayoutDelay(kPlayoutDelayMs);
   buffer_.InsertFrame(std::move(test_frame));
   EXPECT_EQ(kPlayoutDelayMs.min_ms, timing_.min_playout_delay());
@@ -500,8 +501,8 @@ TEST_F(TestFrameBuffer2, StatsCallback) {
   {
     std::unique_ptr<FrameObjectFake> frame(new FrameObjectFake());
     frame->SetSize(kFrameSize);
-    frame->picture_id = pid;
-    frame->spatial_layer = 0;
+    frame->id.picture_id = pid;
+    frame->id.spatial_layer = 0;
     frame->timestamp = ts;
     frame->num_references = 0;
     frame->inter_layer_predicted = false;
