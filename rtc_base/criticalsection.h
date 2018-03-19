@@ -11,7 +11,6 @@
 #ifndef RTC_BASE_CRITICALSECTION_H_
 #define RTC_BASE_CRITICALSECTION_H_
 
-#include "rtc_base/atomicops.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/platform_thread_types.h"

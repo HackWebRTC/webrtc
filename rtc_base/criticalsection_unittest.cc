@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "rtc_base/arraysize.h"
+#include "rtc_base/atomicops.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/event.h"
