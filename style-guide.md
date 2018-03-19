@@ -109,6 +109,18 @@ implements the signal. It may:
   sigslot::signal<int>& SignalFoo() { return bar_.SignalFoo(); }
   ```
 
+### std::bind
+
+Don’t use `std::bind`—there are pitfalls, and lambdas are almost as
+succinct and already familiar to modern C++ programmers.
+
+### std::function
+
+`std::function` is allowed, but remember that it’s not the right tool
+for every occasion. Prefer to use interfaces when that makes sense,
+and consider `rtc::FunctionView` for cases where the callee will not
+save the function object.
+
 ## **C**
 
 There’s a substantial chunk of legacy C code in WebRTC, and a lot of
