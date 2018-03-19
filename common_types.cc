@@ -20,6 +20,52 @@
 
 namespace webrtc {
 
+bool VideoCodecVP8::operator==(const VideoCodecVP8& other) const {
+  // Doesn't compare the tl_factory pointers, which are constructed
+  // based on other members.
+  return (complexity == other.complexity &&
+          resilience == other.resilience &&
+          numberOfTemporalLayers == other.numberOfTemporalLayers &&
+          denoisingOn == other.denoisingOn &&
+          automaticResizeOn == other.automaticResizeOn &&
+          frameDroppingOn == other.frameDroppingOn &&
+          keyFrameInterval == other.keyFrameInterval);
+}
+
+bool VideoCodecVP9::operator==(const VideoCodecVP9& other) const {
+  return (complexity == other.complexity &&
+          resilienceOn == other.resilienceOn &&
+          numberOfTemporalLayers == other.numberOfTemporalLayers &&
+          denoisingOn == other.denoisingOn &&
+          frameDroppingOn == other.frameDroppingOn &&
+          keyFrameInterval == other.keyFrameInterval &&
+          adaptiveQpMode == other.adaptiveQpMode &&
+          automaticResizeOn == other.automaticResizeOn &&
+          numberOfSpatialLayers == other.numberOfSpatialLayers &&
+          flexibleMode == other.flexibleMode);
+}
+
+bool VideoCodecH264::operator==(const VideoCodecH264& other) const {
+  return (frameDroppingOn == other.frameDroppingOn &&
+          keyFrameInterval == other.keyFrameInterval &&
+          spsLen == other.spsLen &&
+          ppsLen == other.ppsLen &&
+          profile == other.profile &&
+          (spsLen == 0 || memcmp(spsData, other.spsData, spsLen) == 0) &&
+          (ppsLen == 0 || memcmp(ppsData, other.ppsData, ppsLen) == 0));
+}
+
+bool SpatialLayer::operator==(const SpatialLayer& other) const {
+  return (width == other.width &&
+          height == other.height &&
+          numberOfTemporalLayers == other.numberOfTemporalLayers &&
+          maxBitrate == other.maxBitrate &&
+          targetBitrate == other.targetBitrate &&
+          minBitrate == other.minBitrate &&
+          qpMax == other.qpMax &&
+          active == other.active);
+}
+
 VideoCodec::VideoCodec()
     : codecType(kVideoCodecUnknown),
       plType(0),

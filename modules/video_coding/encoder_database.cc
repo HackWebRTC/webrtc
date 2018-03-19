@@ -138,23 +138,23 @@ bool VCMEncoderDataBase::RequiresEncoderReset(
 
   switch (new_send_codec.codecType) {
     case kVideoCodecVP8:
-      if (memcmp(&new_send_codec.VP8(), send_codec_.VP8(),
-                 sizeof(new_send_codec.VP8())) != 0) {
+      if (new_send_codec.VP8() != *send_codec_.VP8()) {
         return true;
       }
       break;
+
     case kVideoCodecVP9:
-      if (memcmp(&new_send_codec.VP9(), send_codec_.VP9(),
-                 sizeof(new_send_codec.VP9())) != 0) {
+      if (new_send_codec.VP9() != *send_codec_.VP9()) {
         return true;
       }
       break;
+
     case kVideoCodecH264:
-      if (memcmp(&new_send_codec.H264(), send_codec_.H264(),
-                 sizeof(new_send_codec.H264())) != 0) {
+      if (new_send_codec.H264() != *send_codec_.H264()) {
         return true;
       }
       break;
+
     case kVideoCodecGeneric:
       break;
     // Known codecs without payload-specifics
@@ -169,15 +169,9 @@ bool VCMEncoderDataBase::RequiresEncoderReset(
       return true;
   }
 
-  if (new_send_codec.numberOfSimulcastStreams > 0) {
-    for (unsigned char i = 0; i < new_send_codec.numberOfSimulcastStreams;
-         ++i) {
-      if (memcmp(&new_send_codec.simulcastStream[i],
-                 &send_codec_.simulcastStream[i],
-                 sizeof(new_send_codec.simulcastStream[i])) != 0) {
-        return true;
-      }
-    }
+  for (unsigned char i = 0; i < new_send_codec.numberOfSimulcastStreams; ++i) {
+    if (new_send_codec.simulcastStream[i] != send_codec_.simulcastStream[i])
+      return true;
   }
   return false;
 }

@@ -422,6 +422,10 @@ enum VP8ResilienceMode {
 class TemporalLayersFactory;
 // VP8 specific
 struct VideoCodecVP8 {
+  bool operator==(const VideoCodecVP8& other) const;
+  bool operator!=(const VideoCodecVP8& other) const {
+    return !(*this == other);
+  }
   VideoCodecComplexity complexity;
   VP8ResilienceMode resilience;
   unsigned char numberOfTemporalLayers;
@@ -434,6 +438,10 @@ struct VideoCodecVP8 {
 
 // VP9 specific.
 struct VideoCodecVP9 {
+  bool operator==(const VideoCodecVP9& other) const;
+  bool operator!=(const VideoCodecVP9& other) const {
+    return !(*this == other);
+  }
   VideoCodecComplexity complexity;
   bool resilienceOn;
   unsigned char numberOfTemporalLayers;
@@ -461,6 +469,10 @@ enum Profile {
 
 // H264 specific.
 struct VideoCodecH264 {
+  bool operator==(const VideoCodecH264& other) const;
+  bool operator!=(const VideoCodecH264& other) const {
+    return !(*this == other);
+  }
   bool frameDroppingOn;
   int keyFrameInterval;
   // These are NULL/0 if not externally negotiated.
@@ -496,6 +508,9 @@ union VideoCodecUnion {
 };
 
 struct SpatialLayer {
+  bool operator==(const SpatialLayer& other) const;
+  bool operator!=(const SpatialLayer& other) const { return !(*this == other); }
+
   unsigned short width;
   unsigned short height;
   unsigned char numberOfTemporalLayers;
