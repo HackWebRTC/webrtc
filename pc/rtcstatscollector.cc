@@ -23,6 +23,7 @@
 #include "p2p/base/p2pconstants.h"
 #include "p2p/base/port.h"
 #include "pc/peerconnection.h"
+#include "pc/rtcstatstraversal.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/ptr_util.h"
 #include "rtc_base/stringutils.h"
@@ -606,7 +607,92 @@ void ProduceReceiverMediaTrackStats(
   }
 }
 
+rtc::scoped_refptr<RTCStatsReport> CreateReportFilteredBySelector(
+    bool filter_by_sender_selector,
+    rtc::scoped_refptr<const RTCStatsReport> report,
+    rtc::scoped_refptr<RtpSenderInternal> sender_selector,
+    rtc::scoped_refptr<RtpReceiverInternal> receiver_selector) {
+  std::vector<std::string> rtpstream_ids;
+  if (filter_by_sender_selector) {
+    // Filter mode: RTCStatsCollector::RequestInfo::kSenderSelector
+    if (sender_selector) {
+      // Find outbound-rtp(s) of the sender, i.e. the outbound-rtp(s) that
+      // reference the sender stats.
+      // Because we do not implement sender stats, we look at outbound-rtp(s)
+      // that reference the track attachment stats for the sender instead.
+      std::string track_id =
+          RTCMediaStreamTrackStatsIDFromDirectionAndAttachment(
+              kSender, sender_selector->AttachmentId());
+      for (const auto& stats : *report) {
+        if (stats.type() != RTCOutboundRTPStreamStats::kType)
+          continue;
+        const auto& outbound_rtp = stats.cast_to<RTCOutboundRTPStreamStats>();
+        if (outbound_rtp.track_id.is_defined() &&
+            *outbound_rtp.track_id == track_id) {
+          rtpstream_ids.push_back(outbound_rtp.id());
+        }
+      }
+    }
+  } else {
+    // Filter mode: RTCStatsCollector::RequestInfo::kReceiverSelector
+    if (receiver_selector) {
+      // Find inbound-rtp(s) of the receiver, i.e. the inbound-rtp(s) that
+      // reference the receiver stats.
+      // Because we do not implement receiver stats, we look at inbound-rtp(s)
+      // that reference the track attachment stats for the receiver instead.
+      std::string track_id =
+          RTCMediaStreamTrackStatsIDFromDirectionAndAttachment(
+              kReceiver, receiver_selector->AttachmentId());
+      for (const auto& stats : *report) {
+        if (stats.type() != RTCInboundRTPStreamStats::kType)
+          continue;
+        const auto& inbound_rtp = stats.cast_to<RTCInboundRTPStreamStats>();
+        if (inbound_rtp.track_id.is_defined() &&
+            *inbound_rtp.track_id == track_id) {
+          rtpstream_ids.push_back(inbound_rtp.id());
+        }
+      }
+    }
+  }
+  if (rtpstream_ids.empty())
+    return RTCStatsReport::Create(report->timestamp_us());
+  return TakeReferencedStats(report->Copy(), rtpstream_ids);
+}
+
 }  // namespace
+
+RTCStatsCollector::RequestInfo::RequestInfo(
+    rtc::scoped_refptr<RTCStatsCollectorCallback> callback)
+    : RequestInfo(FilterMode::kAll, std::move(callback), nullptr, nullptr) {}
+
+RTCStatsCollector::RequestInfo::RequestInfo(
+    rtc::scoped_refptr<RtpSenderInternal> selector,
+    rtc::scoped_refptr<RTCStatsCollectorCallback> callback)
+    : RequestInfo(FilterMode::kSenderSelector,
+                  std::move(callback),
+                  std::move(selector),
+                  nullptr) {}
+
+RTCStatsCollector::RequestInfo::RequestInfo(
+    rtc::scoped_refptr<RtpReceiverInternal> selector,
+    rtc::scoped_refptr<RTCStatsCollectorCallback> callback)
+    : RequestInfo(FilterMode::kReceiverSelector,
+                  std::move(callback),
+                  nullptr,
+                  std::move(selector)) {}
+
+RTCStatsCollector::RequestInfo::RequestInfo(
+    RTCStatsCollector::RequestInfo::FilterMode filter_mode,
+    rtc::scoped_refptr<RTCStatsCollectorCallback> callback,
+    rtc::scoped_refptr<RtpSenderInternal> sender_selector,
+    rtc::scoped_refptr<RtpReceiverInternal> receiver_selector)
+    : filter_mode_(filter_mode),
+      callback_(std::move(callback)),
+      sender_selector_(std::move(sender_selector)),
+      receiver_selector_(std::move(receiver_selector)) {
+  RTC_DCHECK(callback_);
+  RTC_DCHECK(!sender_selector_ || !receiver_selector_);
+}
 
 rtc::scoped_refptr<RTCStatsCollector> RTCStatsCollector::Create(
     PeerConnectionInternal* pc,
@@ -640,9 +726,25 @@ RTCStatsCollector::~RTCStatsCollector() {
 
 void RTCStatsCollector::GetStatsReport(
     rtc::scoped_refptr<RTCStatsCollectorCallback> callback) {
+  GetStatsReportInternal(RequestInfo(std::move(callback)));
+}
+
+void RTCStatsCollector::GetStatsReport(
+    rtc::scoped_refptr<RtpSenderInternal> selector,
+    rtc::scoped_refptr<RTCStatsCollectorCallback> callback) {
+  GetStatsReportInternal(RequestInfo(std::move(selector), std::move(callback)));
+}
+
+void RTCStatsCollector::GetStatsReport(
+    rtc::scoped_refptr<RtpReceiverInternal> selector,
+    rtc::scoped_refptr<RTCStatsCollectorCallback> callback) {
+  GetStatsReportInternal(RequestInfo(std::move(selector), std::move(callback)));
+}
+
+void RTCStatsCollector::GetStatsReportInternal(
+    RTCStatsCollector::RequestInfo request) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
-  RTC_DCHECK(callback);
-  callbacks_.push_back(callback);
+  requests_.push_back(std::move(request));
 
   // "Now" using a monotonically increasing timer.
   int64_t cache_now_us = rtc::TimeMicros();
@@ -651,13 +753,12 @@ void RTCStatsCollector::GetStatsReport(
     // We have a fresh cached report to deliver. Deliver asynchronously, since
     // the caller may not be expecting a synchronous callback, and it avoids
     // reentrancy problems.
-    std::vector<rtc::scoped_refptr<RTCStatsCollectorCallback>> callbacks;
-    callbacks.swap(callbacks_);
+    std::vector<RequestInfo> requests;
+    requests.swap(requests_);
     invoker_.AsyncInvoke<void>(
         RTC_FROM_HERE, signaling_thread_,
         rtc::Bind(&RTCStatsCollector::DeliverCachedReport, this, cached_report_,
-                  std::move(callbacks)));
-    callbacks_.clear();
+                  std::move(requests)));
   } else if (!num_pending_partial_reports_) {
     // Only start gathering stats if we're not already gathering stats. In the
     // case of already gathering stats, |callback_| will be invoked when there
@@ -781,24 +882,40 @@ void RTCStatsCollector::AddPartialResults_s(
     TRACE_EVENT_INSTANT1("webrtc_stats", "webrtc_stats", "report",
                          cached_report_->ToJson());
 
-    // Swap the list of callbacks, in case one of them recursively calls
-    // GetStatsReport again and modifies the callback list.
-    std::vector<rtc::scoped_refptr<RTCStatsCollectorCallback>> callbacks;
-    callbacks.swap(callbacks_);
-    DeliverCachedReport(cached_report_, std::move(callbacks));
+    // Deliver report and clear |requests_|.
+    std::vector<RequestInfo> requests;
+    requests.swap(requests_);
+    DeliverCachedReport(cached_report_, std::move(requests));
   }
 }
 
 void RTCStatsCollector::DeliverCachedReport(
     rtc::scoped_refptr<const RTCStatsReport> cached_report,
-    std::vector<rtc::scoped_refptr<RTCStatsCollectorCallback>> callbacks) {
+    std::vector<RTCStatsCollector::RequestInfo> requests) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
-  RTC_DCHECK(!callbacks.empty());
+  RTC_DCHECK(!requests.empty());
   RTC_DCHECK(cached_report);
 
-  for (const rtc::scoped_refptr<RTCStatsCollectorCallback>& callback :
-       callbacks) {
-    callback->OnStatsDelivered(cached_report);
+  for (const RequestInfo& request : requests) {
+    if (request.filter_mode() == RequestInfo::FilterMode::kAll) {
+      request.callback()->OnStatsDelivered(cached_report);
+    } else {
+      bool filter_by_sender_selector;
+      rtc::scoped_refptr<RtpSenderInternal> sender_selector;
+      rtc::scoped_refptr<RtpReceiverInternal> receiver_selector;
+      if (request.filter_mode() == RequestInfo::FilterMode::kSenderSelector) {
+        filter_by_sender_selector = true;
+        sender_selector = request.sender_selector();
+      } else {
+        RTC_DCHECK(request.filter_mode() ==
+                   RequestInfo::FilterMode::kReceiverSelector);
+        filter_by_sender_selector = false;
+        receiver_selector = request.receiver_selector();
+      }
+      request.callback()->OnStatsDelivered(CreateReportFilteredBySelector(
+          filter_by_sender_selector, cached_report, sender_selector,
+          receiver_selector));
+    }
   }
 }
 

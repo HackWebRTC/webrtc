@@ -35,6 +35,9 @@
 
 namespace webrtc {
 
+class RtpSenderInternal;
+class RtpReceiverInternal;
+
 // All public methods of the collector are to be called on the signaling thread.
 // Stats are gathered on the signaling, worker and network threads
 // asynchronously. The callback is invoked on the signaling thread. Resulting
@@ -50,7 +53,18 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
   // it is returned, otherwise new stats are gathered and returned. A report is
   // considered fresh for |cache_lifetime_| ms. const RTCStatsReports are safe
   // to use across multiple threads and may be destructed on any thread.
+  // If the optional selector argument is used, stats are filtered according to
+  // stats selection algorithm before delivery.
+  // https://w3c.github.io/webrtc-pc/#dfn-stats-selection-algorithm
   void GetStatsReport(rtc::scoped_refptr<RTCStatsCollectorCallback> callback);
+  // If |selector| is null the selection algorithm is still applied (interpreted
+  // as: no RTP streams are sent by selector). The result is empty.
+  void GetStatsReport(rtc::scoped_refptr<RtpSenderInternal> selector,
+                      rtc::scoped_refptr<RTCStatsCollectorCallback> callback);
+  // If |selector| is null the selection algorithm is still applied (interpreted
+  // as: no RTP streams are received by selector). The result is empty.
+  void GetStatsReport(rtc::scoped_refptr<RtpReceiverInternal> selector,
+                      rtc::scoped_refptr<RTCStatsCollectorCallback> callback);
   // Clears the cache's reference to the most recent stats report. Subsequently
   // calling |GetStatsReport| guarantees fresh stats.
   void ClearCachedStatsReport();
@@ -73,6 +87,49 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
       const rtc::scoped_refptr<RTCStatsReport>& partial_report);
 
  private:
+  class RequestInfo {
+   public:
+    enum class FilterMode { kAll, kSenderSelector, kReceiverSelector };
+
+    // Constructs with FilterMode::kAll.
+    explicit RequestInfo(
+        rtc::scoped_refptr<RTCStatsCollectorCallback> callback);
+    // Constructs with FilterMode::kSenderSelector. The selection algorithm is
+    // applied even if |selector| is null, resulting in an empty report.
+    RequestInfo(rtc::scoped_refptr<RtpSenderInternal> selector,
+                rtc::scoped_refptr<RTCStatsCollectorCallback> callback);
+    // Constructs with FilterMode::kReceiverSelector. The selection algorithm is
+    // applied even if |selector| is null, resulting in an empty report.
+    RequestInfo(rtc::scoped_refptr<RtpReceiverInternal> selector,
+                rtc::scoped_refptr<RTCStatsCollectorCallback> callback);
+
+    FilterMode filter_mode() const { return filter_mode_; }
+    rtc::scoped_refptr<RTCStatsCollectorCallback> callback() const {
+      return callback_;
+    }
+    rtc::scoped_refptr<RtpSenderInternal> sender_selector() const {
+      RTC_DCHECK(filter_mode_ == FilterMode::kSenderSelector);
+      return sender_selector_;
+    }
+    rtc::scoped_refptr<RtpReceiverInternal> receiver_selector() const {
+      RTC_DCHECK(filter_mode_ == FilterMode::kReceiverSelector);
+      return receiver_selector_;
+    }
+
+   private:
+    RequestInfo(FilterMode filter_mode,
+                rtc::scoped_refptr<RTCStatsCollectorCallback> callback,
+                rtc::scoped_refptr<RtpSenderInternal> sender_selector,
+                rtc::scoped_refptr<RtpReceiverInternal> receiver_selector);
+
+    FilterMode filter_mode_;
+    rtc::scoped_refptr<RTCStatsCollectorCallback> callback_;
+    rtc::scoped_refptr<RtpSenderInternal> sender_selector_;
+    rtc::scoped_refptr<RtpReceiverInternal> receiver_selector_;
+  };
+
+  void GetStatsReportInternal(RequestInfo request);
+
   struct CertificateStatsPair {
     std::unique_ptr<rtc::SSLCertificateStats> local;
     std::unique_ptr<rtc::SSLCertificateStats> remote;
@@ -96,7 +153,7 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
   void AddPartialResults_s(rtc::scoped_refptr<RTCStatsReport> partial_report);
   void DeliverCachedReport(
       rtc::scoped_refptr<const RTCStatsReport> cached_report,
-      std::vector<rtc::scoped_refptr<RTCStatsCollectorCallback>> callbacks);
+      std::vector<RequestInfo> requests);
 
   // Produces |RTCCertificateStats|.
   void ProduceCertificateStats_n(
@@ -168,7 +225,7 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
   int num_pending_partial_reports_;
   int64_t partial_report_timestamp_us_;
   rtc::scoped_refptr<RTCStatsReport> partial_report_;
-  std::vector<rtc::scoped_refptr<RTCStatsCollectorCallback>> callbacks_;
+  std::vector<RequestInfo> requests_;
 
   // Set in |GetStatsReport|, read in |ProducePartialResultsOnNetworkThread| and
   // |ProducePartialResultsOnSignalingThread|, reset after work is complete. Not
