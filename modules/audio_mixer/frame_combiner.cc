@@ -215,6 +215,9 @@ void FrameCombiner::Combine(const std::vector<AudioFrame*>& mix_list,
                             size_t number_of_streams,
                             AudioFrame* audio_frame_for_mixing) {
   RTC_DCHECK(audio_frame_for_mixing);
+
+  LogMixingStats(mix_list, sample_rate, number_of_streams);
+
   SetAudioFrameFields(mix_list, number_of_channels, sample_rate,
                       number_of_streams, audio_frame_for_mixing);
 
@@ -255,8 +258,6 @@ void FrameCombiner::Combine(const std::vector<AudioFrame*>& mix_list,
   }
 
   InterleaveToAudioFrame(mixing_buffer_view, audio_frame_for_mixing);
-
-  LogMixingStats(mix_list, sample_rate, number_of_streams);
 }
 
 void FrameCombiner::LogMixingStats(const std::vector<AudioFrame*>& mix_list,

@@ -21,7 +21,7 @@ namespace {
 void LogRegionStats(const InterpolatedGainCurve::Stats& stats) {
   using Region = InterpolatedGainCurve::GainCurveRegion;
 
-  std::string histogram_name = "WebRTC.Audio.AGC2.FixedDigitalGainCurveRegion.";
+  std::string histogram_name = "WebRTC.Audio.Agc2.FixedDigitalGainCurveRegion.";
   if (stats.region == Region::kIdentity) {
     histogram_name += "Identity";
   } else if (stats.region == Region::kKnee) {
