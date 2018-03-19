@@ -207,10 +207,15 @@ if (rtc_include_tests) {
 
       data = [
         "test/low_bandwidth_audio_test.py",
-        "${root_out_dir}/low_bandwidth_audio_test",
         "../resources/voice_engine/audio_tiny16.wav",
         "../resources/voice_engine/audio_tiny48.wav",
       ]
+      if (is_win) {
+        data += [ "${root_out_dir}/low_bandwidth_audio_test.exe" ]
+      } else {
+        data += [ "${root_out_dir}/low_bandwidth_audio_test" ]
+      }
+
       if (is_linux || is_android) {
         data += [
           "../tools_webrtc/audio_quality/linux/PolqaOem64",
