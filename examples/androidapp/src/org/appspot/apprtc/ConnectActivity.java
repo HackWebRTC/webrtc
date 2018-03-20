@@ -235,7 +235,7 @@ public class ConnectActivity extends Activity {
    */
   private boolean sharedPrefGetBoolean(
       int attributeId, String intentName, int defaultId, boolean useFromIntent) {
-    boolean defaultValue = Boolean.valueOf(getString(defaultId));
+    boolean defaultValue = Boolean.parseBoolean(getString(defaultId));
     if (useFromIntent) {
       return getIntent().getBooleanExtra(intentName, defaultValue);
     } else {
