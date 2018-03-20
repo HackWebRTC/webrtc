@@ -26,6 +26,7 @@
 #include "rtc_base/stringutils.h"
 #include "rtc_base/thread.h"
 #include "sdk/android/generated_peerconnection_jni/jni/PeerConnectionFactory_jni.h"
+#include "sdk/android/native_api/audio_device_module/audio_device_android.h"
 #include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 #include "sdk/android/src/jni/pc/androidnetworkmonitor.h"
@@ -76,6 +77,9 @@ static char* field_trials_init_string = nullptr;
 // Set in PeerConnectionFactory_initializeAndroidGlobals().
 static bool factory_static_initialized = false;
 static bool video_hw_acceleration_enabled = true;
+
+static const char* kExternalAndroidAudioDeviceFieldTrialName =
+    "WebRTC-ExternalAndroidAudioDevice";
 
 void PeerConnectionFactoryNetworkThreadReady() {
   RTC_LOG(LS_INFO) << "Network thread JavaCallback";
@@ -211,7 +215,10 @@ jlong CreatePeerConnectionFactoryForJava(
     rtc::NetworkMonitorFactory::SetFactory(network_monitor_factory);
   }
 
-  AudioDeviceModule* adm = nullptr;
+  rtc::scoped_refptr<AudioDeviceModule> adm =
+      field_trial::IsEnabled(kExternalAndroidAudioDeviceFieldTrialName)
+          ? CreateAndroidAudioDeviceModule()
+          : nullptr;
   rtc::scoped_refptr<AudioMixer> audio_mixer = nullptr;
   std::unique_ptr<CallFactoryInterface> call_factory(CreateCallFactory());
   std::unique_ptr<RtcEventLogFactoryInterface> rtc_event_log_factory(
@@ -259,9 +266,8 @@ jlong CreatePeerConnectionFactoryForJava(
           CreateVideoDecoderFactory(jni, jdecoder_factory));
     }
 
-    rtc::scoped_refptr<AudioDeviceModule> adm_scoped = nullptr;
     media_engine.reset(CreateMediaEngine(
-        adm_scoped, audio_encoder_factory, audio_decoder_factory,
+        adm, audio_encoder_factory, audio_decoder_factory,
         std::move(video_encoder_factory), std::move(video_decoder_factory),
         audio_mixer, audio_processor));
   }

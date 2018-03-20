@@ -69,13 +69,7 @@ import org.webrtc.VideoRenderer;
 import org.webrtc.VideoSink;
 import org.webrtc.VideoSource;
 import org.webrtc.VideoTrack;
-import org.webrtc.voiceengine.WebRtcAudioManager;
-import org.webrtc.voiceengine.WebRtcAudioRecord;
-import org.webrtc.voiceengine.WebRtcAudioRecord.AudioRecordStartErrorCode;
-import org.webrtc.voiceengine.WebRtcAudioRecord.WebRtcAudioRecordErrorCallback;
-import org.webrtc.voiceengine.WebRtcAudioTrack;
-import org.webrtc.voiceengine.WebRtcAudioTrack.AudioTrackStartErrorCode;
-import org.webrtc.voiceengine.WebRtcAudioUtils;
+import org.webrtc.audio.AudioDeviceModule;
 
 /**
  * Peer connection client implementation.
@@ -104,6 +98,8 @@ public class PeerConnectionClient {
       "WebRTC-H264HighProfile/Enabled/";
   private static final String DISABLE_WEBRTC_AGC_FIELDTRIAL =
       "WebRTC-Audio-MinimizeResamplingOnMobile/Enabled/";
+  private static final String EXTERNAL_ANDROID_AUDIO_DEVICE_FIELDTRIAL =
+      "WebRTC-ExternalAndroidAudioDevice/Enabled/";
   private static final String AUDIO_CODEC_PARAM_BITRATE = "maxaveragebitrate";
   private static final String AUDIO_ECHO_CANCELLATION_CONSTRAINT = "googEchoCancellation";
   private static final String AUDIO_AUTO_GAIN_CONTROL_CONSTRAINT = "googAutoGainControl";
@@ -402,6 +398,8 @@ public class PeerConnectionClient {
       fieldTrials += DISABLE_WEBRTC_AGC_FIELDTRIAL;
       Log.d(TAG, "Disable WebRTC AGC field trial.");
     }
+    fieldTrials += EXTERNAL_ANDROID_AUDIO_DEVICE_FIELDTRIAL;
+    Log.d(TAG, "Enable WebRTC external Android audio device field trial.");
 
     // Check preferred video codec.
     preferredVideoCodec = VIDEO_CODEC_VP8;
@@ -450,38 +448,30 @@ public class PeerConnectionClient {
     // Enable/disable OpenSL ES playback.
     if (!peerConnectionParameters.useOpenSLES) {
       Log.d(TAG, "Disable OpenSL ES audio even if device supports it");
-      WebRtcAudioManager.setBlacklistDeviceForOpenSLESUsage(true /* enable */);
+      AudioDeviceModule.setBlacklistDeviceForOpenSLESUsage(true /* enable */);
     } else {
       Log.d(TAG, "Allow OpenSL ES audio if device supports it");
-      WebRtcAudioManager.setBlacklistDeviceForOpenSLESUsage(false);
+      AudioDeviceModule.setBlacklistDeviceForOpenSLESUsage(false);
     }
 
     if (peerConnectionParameters.disableBuiltInAEC) {
       Log.d(TAG, "Disable built-in AEC even if device supports it");
-      WebRtcAudioUtils.setWebRtcBasedAcousticEchoCanceler(true);
+      AudioDeviceModule.setWebRtcBasedAcousticEchoCanceler(true);
     } else {
       Log.d(TAG, "Enable built-in AEC if device supports it");
-      WebRtcAudioUtils.setWebRtcBasedAcousticEchoCanceler(false);
-    }
-
-    if (peerConnectionParameters.disableBuiltInAGC) {
-      Log.d(TAG, "Disable built-in AGC even if device supports it");
-      WebRtcAudioUtils.setWebRtcBasedAutomaticGainControl(true);
-    } else {
-      Log.d(TAG, "Enable built-in AGC if device supports it");
-      WebRtcAudioUtils.setWebRtcBasedAutomaticGainControl(false);
+      AudioDeviceModule.setWebRtcBasedAcousticEchoCanceler(false);
     }
 
     if (peerConnectionParameters.disableBuiltInNS) {
       Log.d(TAG, "Disable built-in NS even if device supports it");
-      WebRtcAudioUtils.setWebRtcBasedNoiseSuppressor(true);
+      AudioDeviceModule.setWebRtcBasedNoiseSuppressor(true);
     } else {
       Log.d(TAG, "Enable built-in NS if device supports it");
-      WebRtcAudioUtils.setWebRtcBasedNoiseSuppressor(false);
+      AudioDeviceModule.setWebRtcBasedNoiseSuppressor(false);
     }
 
     // Set audio record error callbacks.
-    WebRtcAudioRecord.setErrorCallback(new WebRtcAudioRecordErrorCallback() {
+    AudioDeviceModule.setErrorCallback(new AudioDeviceModule.AudioRecordErrorCallback() {
       @Override
       public void onWebRtcAudioRecordInitError(String errorMessage) {
         Log.e(TAG, "onWebRtcAudioRecordInitError: " + errorMessage);
@@ -490,7 +480,7 @@ public class PeerConnectionClient {
 
       @Override
       public void onWebRtcAudioRecordStartError(
-          AudioRecordStartErrorCode errorCode, String errorMessage) {
+          AudioDeviceModule.AudioRecordStartErrorCode errorCode, String errorMessage) {
         Log.e(TAG, "onWebRtcAudioRecordStartError: " + errorCode + ". " + errorMessage);
         reportError(errorMessage);
       }
@@ -518,7 +508,7 @@ public class PeerConnectionClient {
       }
     }
 
-    WebRtcAudioTrack.setErrorCallback(new WebRtcAudioTrack.ErrorCallback() {
+    AudioDeviceModule.setErrorCallback(new AudioDeviceModule.AudioTrackErrorCallback() {
       @Override
       public void onWebRtcAudioTrackInitError(String errorMessage) {
         Log.e(TAG, "onWebRtcAudioTrackInitError: " + errorMessage);
@@ -527,7 +517,7 @@ public class PeerConnectionClient {
 
       @Override
       public void onWebRtcAudioTrackStartError(
-          AudioTrackStartErrorCode errorCode, String errorMessage) {
+          AudioDeviceModule.AudioTrackStartErrorCode errorCode, String errorMessage) {
         Log.e(TAG, "onWebRtcAudioTrackStartError: " + errorCode + ". " + errorMessage);
         reportError(errorMessage);
       }

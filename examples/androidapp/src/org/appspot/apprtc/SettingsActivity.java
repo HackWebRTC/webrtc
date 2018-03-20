@@ -17,6 +17,7 @@ import android.os.Bundle;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import org.webrtc.Camera2Enumerator;
+import org.webrtc.audio.AudioDeviceModule;
 import org.webrtc.voiceengine.WebRtcAudioUtils;
 
 /**
@@ -172,8 +173,8 @@ public class SettingsActivity extends Activity implements OnSharedPreferenceChan
 
     // Disable forcing WebRTC based AEC so it won't affect our value.
     // Otherwise, if it was enabled, isAcousticEchoCancelerSupported would always return false.
-    WebRtcAudioUtils.setWebRtcBasedAcousticEchoCanceler(false);
-    if (!WebRtcAudioUtils.isAcousticEchoCancelerSupported()) {
+    AudioDeviceModule.setWebRtcBasedAcousticEchoCanceler(false);
+    if (!AudioDeviceModule.isAcousticEchoCancelerSupported()) {
       Preference disableBuiltInAECPreference =
           settingsFragment.findPreference(keyprefDisableBuiltInAEC);
 
@@ -181,17 +182,14 @@ public class SettingsActivity extends Activity implements OnSharedPreferenceChan
       disableBuiltInAECPreference.setEnabled(false);
     }
 
-    WebRtcAudioUtils.setWebRtcBasedAutomaticGainControl(false);
-    if (!WebRtcAudioUtils.isAutomaticGainControlSupported()) {
-      Preference disableBuiltInAGCPreference =
-          settingsFragment.findPreference(keyprefDisableBuiltInAGC);
+    Preference disableBuiltInAGCPreference =
+        settingsFragment.findPreference(keyprefDisableBuiltInAGC);
 
-      disableBuiltInAGCPreference.setSummary(getString(R.string.pref_built_in_agc_not_available));
-      disableBuiltInAGCPreference.setEnabled(false);
-    }
+    disableBuiltInAGCPreference.setSummary(getString(R.string.pref_built_in_agc_not_available));
+    disableBuiltInAGCPreference.setEnabled(false);
 
-    WebRtcAudioUtils.setWebRtcBasedNoiseSuppressor(false);
-    if (!WebRtcAudioUtils.isNoiseSuppressorSupported()) {
+    AudioDeviceModule.setWebRtcBasedNoiseSuppressor(false);
+    if (!AudioDeviceModule.isNoiseSuppressorSupported()) {
       Preference disableBuiltInNSPreference =
           settingsFragment.findPreference(keyprefDisableBuiltInNS);
 
