@@ -472,7 +472,13 @@ TEST_F(SendSideCongestionControllerTest, UpdatesDelayBasedEstimate) {
   EXPECT_LT(*target_bitrate_bps_, bitrate_before_delay);
 }
 
-TEST_F(SendSideCongestionControllerTest, PacerQueueEncodeRatePushback) {
+// TODO(bugs.webrtc.org/9039): Enable when cause of flakyness found.
+#if defined(WEBRTC_WIN)
+#define MAYBE_PacerQueueEncodeRatePushback DISABLED_PacerQueueEncodeRatePushback
+#else
+#define MAYBE_PacerQueueEncodeRatePushback PacerQueueEncodeRatePushback
+#endif
+TEST_F(SendSideCongestionControllerTest, MAYBE_PacerQueueEncodeRatePushback) {
   ::webrtc::test::ScopedFieldTrials pushback_field_trial(
       "WebRTC-PacerPushbackExperiment/Enabled/");
   SetUp();
