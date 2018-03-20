@@ -17,6 +17,13 @@
 
 namespace webrtc {
 
+NetEq::Config::Config() = default;
+NetEq::Config::Config(const Config&) = default;
+NetEq::Config::Config(Config&&) = default;
+NetEq::Config::~Config() = default;
+NetEq::Config& NetEq::Config::operator=(const Config&) = default;
+NetEq::Config& NetEq::Config::operator=(Config&&) = default;
+
 std::string NetEq::Config::ToString() const {
   std::stringstream ss;
   ss << "sample_rate_hz=" << sample_rate_hz

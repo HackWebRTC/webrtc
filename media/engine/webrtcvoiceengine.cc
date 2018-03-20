@@ -19,6 +19,7 @@
 #include <utility>
 #include <vector>
 
+#include "api/audio_codecs/audio_codec_pair_id.h"
 #include "api/call/audio_sink.h"
 #include "media/base/audiosource.h"
 #include "media/base/mediaconstants.h"
@@ -1104,6 +1105,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
       webrtc::Transport* rtcp_send_transport,
       const rtc::scoped_refptr<webrtc::AudioDecoderFactory>& decoder_factory,
       const std::map<int, webrtc::SdpAudioFormat>& decoder_map,
+      rtc::Optional<webrtc::AudioCodecPairId> codec_pair_id,
       size_t jitter_buffer_max_packets,
       bool jitter_buffer_fast_accelerate)
       : call_(call), config_() {
@@ -1121,6 +1123,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
     }
     config_.decoder_factory = decoder_factory;
     config_.decoder_map = decoder_map;
+    config_.codec_pair_id = codec_pair_id;
     RecreateAudioReceiveStream();
   }
 
@@ -1850,7 +1853,7 @@ bool WebRtcVoiceMediaChannel::AddRecvStream(const StreamParams& sp) {
                 ssrc, receiver_reports_ssrc_, recv_transport_cc_enabled_,
                 recv_nack_enabled_, sp.stream_ids(), recv_rtp_extensions_,
                 call_, this, engine()->decoder_factory_, decoder_map_,
-                engine()->audio_jitter_buffer_max_packets_,
+                codec_pair_id_, engine()->audio_jitter_buffer_max_packets_,
                 engine()->audio_jitter_buffer_fast_accelerate_)));
   recv_streams_[ssrc]->SetPlayout(playout_);
 

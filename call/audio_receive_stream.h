@@ -111,6 +111,8 @@ class AudioReceiveStream {
     std::map<int, SdpAudioFormat> decoder_map;
 
     rtc::scoped_refptr<AudioDecoderFactory> decoder_factory;
+
+    rtc::Optional<AudioCodecPairId> codec_pair_id;
   };
 
   // Reconfigure the stream according to the Configuration.

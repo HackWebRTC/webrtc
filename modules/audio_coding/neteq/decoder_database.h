@@ -43,11 +43,14 @@ class DecoderDatabase {
   class DecoderInfo {
    public:
     DecoderInfo(const SdpAudioFormat& audio_format,
+                rtc::Optional<AudioCodecPairId> codec_pair_id,
                 AudioDecoderFactory* factory,
                 const std::string& codec_name);
     explicit DecoderInfo(const SdpAudioFormat& audio_format,
+                         rtc::Optional<AudioCodecPairId> codec_pair_id,
                          AudioDecoderFactory* factory = nullptr);
     explicit DecoderInfo(NetEqDecoder ct,
+                         rtc::Optional<AudioCodecPairId> codec_pair_id,
                          AudioDecoderFactory* factory = nullptr);
     DecoderInfo(const SdpAudioFormat& audio_format,
                 AudioDecoder* ext_dec,
@@ -108,6 +111,7 @@ class DecoderDatabase {
     const std::string name_;
 
     const SdpAudioFormat audio_format_;
+    const rtc::Optional<AudioCodecPairId> codec_pair_id_;
     AudioDecoderFactory* const factory_;
     mutable std::unique_ptr<AudioDecoder> decoder_;
 
@@ -138,7 +142,8 @@ class DecoderDatabase {
   static const uint8_t kRtpPayloadTypeError = 0xFF;
 
   DecoderDatabase(
-      const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory);
+      const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory,
+      rtc::Optional<AudioCodecPairId> codec_pair_id);
 
   virtual ~DecoderDatabase();
 
@@ -242,6 +247,7 @@ class DecoderDatabase {
   int active_cng_decoder_type_;
   mutable std::unique_ptr<ComfortNoiseDecoder> active_cng_decoder_;
   rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;
+  const rtc::Optional<AudioCodecPairId> codec_pair_id_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(DecoderDatabase);
 };

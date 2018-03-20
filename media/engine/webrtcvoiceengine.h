@@ -272,6 +272,10 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   rtc::Optional<webrtc::AudioSendStream::Config::SendCodecSpec>
       send_codec_spec_;
 
+  // TODO(kwiberg): Per-SSRC codec pair IDs?
+  const webrtc::AudioCodecPairId codec_pair_id_ =
+      webrtc::AudioCodecPairId::Create();
+
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(WebRtcVoiceMediaChannel);
 };
 }  // namespace cricket

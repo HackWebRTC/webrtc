@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+#include "api/audio_codecs/audio_codec_pair_id.h"
 #include "api/audio_codecs/audio_decoder.h"
 #include "api/optional.h"
 #include "api/rtp_headers.h"
@@ -90,26 +91,24 @@ class NetEq {
   };
 
   struct Config {
-    Config()
-        : sample_rate_hz(16000),
-          enable_post_decode_vad(false),
-          max_packets_in_buffer(50),
-          // |max_delay_ms| has the same effect as calling SetMaximumDelay().
-          max_delay_ms(2000),
-          background_noise_mode(kBgnOff),
-          playout_mode(kPlayoutOn),
-          enable_fast_accelerate(false) {}
+    Config();
+    Config(const Config&);
+    Config(Config&&);
+    ~Config();
+    Config& operator=(const Config&);
+    Config& operator=(Config&&);
 
     std::string ToString() const;
 
-    int sample_rate_hz;  // Initial value. Will change with input data.
-    bool enable_post_decode_vad;
-    size_t max_packets_in_buffer;
-    int max_delay_ms;
-    BackgroundNoiseMode background_noise_mode;
-    NetEqPlayoutMode playout_mode;
-    bool enable_fast_accelerate;
+    int sample_rate_hz = 16000;  // Initial value. Will change with input data.
+    bool enable_post_decode_vad = false;
+    size_t max_packets_in_buffer = 50;
+    int max_delay_ms = 2000;
+    BackgroundNoiseMode background_noise_mode = kBgnOff;
+    NetEqPlayoutMode playout_mode = kPlayoutOn;
+    bool enable_fast_accelerate = false;
     bool enable_muted_state = false;
+    rtc::Optional<AudioCodecPairId> codec_pair_id;
   };
 
   enum ReturnCodes {

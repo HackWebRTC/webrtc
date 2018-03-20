@@ -70,13 +70,12 @@ std::unique_ptr<voe::ChannelProxy> CreateChannelAndProxy(
   RTC_DCHECK(audio_state);
   internal::AudioState* internal_audio_state =
       static_cast<internal::AudioState*>(audio_state);
-  return std::unique_ptr<voe::ChannelProxy>(new voe::ChannelProxy(
-      std::unique_ptr<voe::Channel>(new voe::Channel(
-              module_process_thread,
-              internal_audio_state->audio_device_module(),
-              config.jitter_buffer_max_packets,
-              config.jitter_buffer_fast_accelerate,
-              config.decoder_factory))));
+  return std::unique_ptr<voe::ChannelProxy>(
+      new voe::ChannelProxy(std::unique_ptr<voe::Channel>(new voe::Channel(
+          module_process_thread, internal_audio_state->audio_device_module(),
+          config.jitter_buffer_max_packets,
+          config.jitter_buffer_fast_accelerate, config.decoder_factory,
+          config.codec_pair_id))));
 }
 }  // namespace
 

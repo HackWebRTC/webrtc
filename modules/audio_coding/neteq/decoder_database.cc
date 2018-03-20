@@ -19,36 +19,46 @@
 namespace webrtc {
 
 DecoderDatabase::DecoderDatabase(
-    const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory)
+    const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory,
+    rtc::Optional<AudioCodecPairId> codec_pair_id)
     : active_decoder_type_(-1),
       active_cng_decoder_type_(-1),
-      decoder_factory_(decoder_factory) {}
+      decoder_factory_(decoder_factory),
+      codec_pair_id_(codec_pair_id) {}
 
 DecoderDatabase::~DecoderDatabase() = default;
 
-DecoderDatabase::DecoderInfo::DecoderInfo(const SdpAudioFormat& audio_format,
-                                          AudioDecoderFactory* factory,
-                                          const std::string& codec_name)
+DecoderDatabase::DecoderInfo::DecoderInfo(
+    const SdpAudioFormat& audio_format,
+    rtc::Optional<AudioCodecPairId> codec_pair_id,
+    AudioDecoderFactory* factory,
+    const std::string& codec_name)
     : name_(codec_name),
       audio_format_(audio_format),
+      codec_pair_id_(codec_pair_id),
       factory_(factory),
       external_decoder_(nullptr),
       cng_decoder_(CngDecoder::Create(audio_format)),
       subtype_(SubtypeFromFormat(audio_format)) {}
 
-DecoderDatabase::DecoderInfo::DecoderInfo(const SdpAudioFormat& audio_format,
-                                          AudioDecoderFactory* factory)
-    : DecoderInfo(audio_format, factory, audio_format.name) {}
+DecoderDatabase::DecoderInfo::DecoderInfo(
+    const SdpAudioFormat& audio_format,
+    rtc::Optional<AudioCodecPairId> codec_pair_id,
+    AudioDecoderFactory* factory)
+    : DecoderInfo(audio_format, codec_pair_id, factory, audio_format.name) {}
 
-DecoderDatabase::DecoderInfo::DecoderInfo(NetEqDecoder ct,
-                                          AudioDecoderFactory* factory)
-    : DecoderInfo(*NetEqDecoderToSdpAudioFormat(ct), factory) {}
+DecoderDatabase::DecoderInfo::DecoderInfo(
+    NetEqDecoder ct,
+    rtc::Optional<AudioCodecPairId> codec_pair_id,
+    AudioDecoderFactory* factory)
+    : DecoderInfo(*NetEqDecoderToSdpAudioFormat(ct), codec_pair_id, factory) {}
 
 DecoderDatabase::DecoderInfo::DecoderInfo(const SdpAudioFormat& audio_format,
                                           AudioDecoder* ext_dec,
                                           const std::string& codec_name)
     : name_(codec_name),
       audio_format_(audio_format),
+      codec_pair_id_(rtc::nullopt),
       factory_(nullptr),
       external_decoder_(ext_dec),
       subtype_(Subtype::kNormal) {
@@ -83,7 +93,7 @@ AudioDecoder* DecoderDatabase::DecoderInfo::GetDecoder() const {
     // TODO(ossu): Keep a check here for now, since a number of tests create
     // DecoderInfos without factories.
     RTC_DCHECK(factory_);
-    decoder_ = factory_->MakeAudioDecoder(audio_format_, rtc::nullopt);
+    decoder_ = factory_->MakeAudioDecoder(audio_format_, codec_pair_id_);
   }
   RTC_DCHECK(decoder_) << "Failed to create: " << audio_format_;
   return decoder_.get();
@@ -156,7 +166,8 @@ std::vector<int> DecoderDatabase::SetCodecs(
     RTC_DCHECK_LE(rtp_payload_type, 0x7f);
     if (decoders_.count(rtp_payload_type) == 0) {
       decoders_.insert(std::make_pair(
-          rtp_payload_type, DecoderInfo(audio_format, decoder_factory_.get())));
+          rtp_payload_type,
+          DecoderInfo(audio_format, codec_pair_id_, decoder_factory_.get())));
     } else {
       // The mapping for this payload type hasn't changed.
     }
@@ -178,7 +189,7 @@ int DecoderDatabase::RegisterPayload(uint8_t rtp_payload_type,
   if (!opt_format) {
     return kCodecNotSupported;
   }
-  DecoderInfo info(*opt_format, decoder_factory_, name);
+  DecoderInfo info(*opt_format, codec_pair_id_, decoder_factory_, name);
   if (!info.CanGetDecoder()) {
     return kCodecNotSupported;
   }
@@ -197,7 +208,8 @@ int DecoderDatabase::RegisterPayload(int rtp_payload_type,
     return kInvalidRtpPayloadType;
   }
   const auto ret = decoders_.insert(std::make_pair(
-      rtp_payload_type, DecoderInfo(audio_format, decoder_factory_.get())));
+      rtp_payload_type,
+      DecoderInfo(audio_format, codec_pair_id_, decoder_factory_.get())));
   if (ret.second == false) {
     // Database already contains a decoder with type |rtp_payload_type|.
     return kDecoderExists;

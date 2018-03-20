@@ -335,7 +335,7 @@ TEST_F(NetEqImplTest, InsertPacket) {
 
         *dec = std::move(mock_decoder);
       }));
-  DecoderDatabase::DecoderInfo info(NetEqDecoder::kDecoderPCMu,
+  DecoderDatabase::DecoderInfo info(NetEqDecoder::kDecoderPCMu, rtc::nullopt,
                                     mock_decoder_factory);
 
   // Expectations for decoder database.

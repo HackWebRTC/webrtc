@@ -557,7 +557,8 @@ Channel::Channel(rtc::TaskQueue* encoder_queue,
               audio_device_module,
               0,
               false,
-              rtc::scoped_refptr<AudioDecoderFactory>()) {
+              rtc::scoped_refptr<AudioDecoderFactory>(),
+              rtc::nullopt) {
   RTC_DCHECK(encoder_queue);
   encoder_queue_ = encoder_queue;
 }
@@ -566,7 +567,8 @@ Channel::Channel(ProcessThread* module_process_thread,
                  AudioDeviceModule* audio_device_module,
                  size_t jitter_buffer_max_packets,
                  bool jitter_buffer_fast_playout,
-                 rtc::scoped_refptr<AudioDecoderFactory> decoder_factory)
+                 rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
+                 rtc::Optional<AudioCodecPairId> codec_pair_id)
     : event_log_proxy_(new RtcEventLogProxy()),
       rtcp_rtt_stats_proxy_(new RtcpRttStatsProxy()),
       rtp_payload_registry_(new RTPPayloadRegistry()),
@@ -610,6 +612,7 @@ Channel::Channel(ProcessThread* module_process_thread,
   RTC_DCHECK(audio_device_module);
   AudioCodingModule::Config acm_config;
   acm_config.decoder_factory = decoder_factory;
+  acm_config.neteq_config.codec_pair_id = codec_pair_id;
   acm_config.neteq_config.max_packets_in_buffer = jitter_buffer_max_packets;
   acm_config.neteq_config.enable_fast_accelerate = jitter_buffer_fast_playout;
   acm_config.neteq_config.enable_muted_state = true;

@@ -57,7 +57,8 @@ NetEqImpl::Dependencies::Dependencies(
     const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory)
     : tick_timer(new TickTimer),
       buffer_level_filter(new BufferLevelFilter),
-      decoder_database(new DecoderDatabase(decoder_factory)),
+      decoder_database(
+          new DecoderDatabase(decoder_factory, config.codec_pair_id)),
       delay_peak_detector(new DelayPeakDetector(tick_timer.get())),
       delay_manager(new DelayManager(config.max_packets_in_buffer,
                                      delay_peak_detector.get(),

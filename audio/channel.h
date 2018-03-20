@@ -157,7 +157,8 @@ class Channel
           AudioDeviceModule* audio_device_module,
           size_t jitter_buffer_max_packets,
           bool jitter_buffer_fast_playout,
-          rtc::scoped_refptr<AudioDecoderFactory> decoder_factory);
+          rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
+          rtc::Optional<AudioCodecPairId> codec_pair_id);
   virtual ~Channel();
 
   void SetSink(AudioSinkInterface* sink);
