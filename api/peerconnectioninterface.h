@@ -67,10 +67,6 @@
 #ifndef API_PEERCONNECTIONINTERFACE_H_
 #define API_PEERCONNECTIONINTERFACE_H_
 
-// TODO(sakal): Remove this define after migration to virtual PeerConnection
-// observer is complete.
-#define VIRTUAL_PEERCONNECTION_OBSERVER_DESTRUCTOR
-
 #include <memory>
 #include <string>
 #include <utility>
