@@ -77,10 +77,6 @@ class EncodedFrame : public webrtc::VCMEncodedFrame {
   bool is_keyframe() const { return num_references == 0; }
 
   VideoLayerFrameId id;
-  // TODO(philipel): Remove the two references below when downstream projects
-  //                 have been updated.
-  int64_t& picture_id = id.picture_id;
-  uint8_t& spatial_layer = id.spatial_layer;
   uint32_t timestamp = 0;
 
   // TODO(philipel): Add simple modify/access functions to prevent adding too
