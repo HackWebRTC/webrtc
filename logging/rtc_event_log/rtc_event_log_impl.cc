@@ -81,10 +81,9 @@ std::unique_ptr<RtcEventLogEncoder> CreateEncoder(
 
 class RtcEventLogImpl final : public RtcEventLog {
  public:
-  explicit RtcEventLogImpl(
-      std::unique_ptr<RtcEventLogEncoder> event_encoder,
-      std::unique_ptr<rtc::TaskQueue> task_queue =
-          rtc::MakeUnique<rtc::TaskQueue>("rtc_event_log"));
+  RtcEventLogImpl(std::unique_ptr<RtcEventLogEncoder> event_encoder,
+                  std::unique_ptr<rtc::TaskQueue> task_queue);
+
   ~RtcEventLogImpl() override;
 
   // TODO(eladalon): We should change these name to reflect that what we're
@@ -363,6 +362,13 @@ void RtcEventLogImpl::WriteToOutput(const std::string& output_string) {
 
 // RtcEventLog member functions.
 std::unique_ptr<RtcEventLog> RtcEventLog::Create(EncodingType encoding_type) {
+  return Create(encoding_type,
+                rtc::MakeUnique<rtc::TaskQueue>("rtc_event_log"));
+}
+
+std::unique_ptr<RtcEventLog> RtcEventLog::Create(
+    EncodingType encoding_type,
+    std::unique_ptr<rtc::TaskQueue> task_queue) {
 #ifdef ENABLE_RTC_EVENT_LOG
   // TODO(eladalon): Known issue - there's a race over |rtc_event_log_count|.
   constexpr int kMaxLogCount = 5;
@@ -374,7 +380,8 @@ std::unique_ptr<RtcEventLog> RtcEventLog::Create(EncodingType encoding_type) {
     return CreateNull();
   }
   auto encoder = CreateEncoder(encoding_type);
-  return rtc::MakeUnique<RtcEventLogImpl>(std::move(encoder));
+  return rtc::MakeUnique<RtcEventLogImpl>(std::move(encoder),
+                                          std::move(task_queue));
 #else
   return CreateNull();
 #endif  // ENABLE_RTC_EVENT_LOG

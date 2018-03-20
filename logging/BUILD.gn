@@ -44,6 +44,7 @@ rtc_source_set("rtc_event_log_api") {
   deps = [
     "../api:libjingle_logging_api",
     "../rtc_base:rtc_base_approved",
+    "../rtc_base:rtc_task_queue",
   ]
 }
 
