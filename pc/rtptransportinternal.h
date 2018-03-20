@@ -14,6 +14,7 @@
 #include <string>
 
 #include "api/ortc/rtptransportinterface.h"
+#include "api/umametrics.h"
 #include "p2p/base/icetransportinternal.h"
 #include "rtc_base/networkroute.h"
 #include "rtc_base/sigslot.h"
@@ -82,6 +83,9 @@ class RtpTransportInternal : public RtpTransportInterface,
   virtual bool HandlesPayloadType(int payload_type) const = 0;
 
   virtual void AddHandledPayloadType(int payload_type) = 0;
+
+  virtual void SetMetricsObserver(
+      rtc::scoped_refptr<MetricsObserverInterface> metrics_observer) = 0;
 };
 
 }  // namespace webrtc

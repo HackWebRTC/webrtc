@@ -70,6 +70,9 @@ class RtpTransport : public RtpTransportInternal {
 
   void AddHandledPayloadType(int payload_type) override;
 
+  void SetMetricsObserver(
+      rtc::scoped_refptr<MetricsObserverInterface> metrics_observer) override {}
+
  protected:
   // TODO(zstein): Remove this when we remove RtpTransportAdapter.
   RtpTransportAdapter* GetInternal() override;

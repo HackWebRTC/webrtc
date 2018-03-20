@@ -2866,6 +2866,13 @@ void PeerConnection::RegisterUMAObserver(UMAObserver* observer) {
     transport_controller()->SetMetricsObserver(uma_observer_);
   }
 
+  for (auto transceiver : transceivers_) {
+    auto* channel = transceiver->internal()->channel();
+    if (channel) {
+      channel->SetMetricsObserver(uma_observer_);
+    }
+  }
+
   // Send information about IPv4/IPv6 status.
   if (uma_observer_) {
     port_allocator_->SetMetricsObserver(uma_observer_);
@@ -5420,6 +5427,9 @@ cricket::VoiceChannel* PeerConnection::CreateVoiceChannel(
       this, &PeerConnection::OnDtlsSrtpSetupFailure);
   voice_channel->SignalSentPacket.connect(this,
                                           &PeerConnection::OnSentPacket_w);
+  if (uma_observer_) {
+    voice_channel->SetMetricsObserver(uma_observer_);
+  }
 
   return voice_channel;
 }
@@ -5458,6 +5468,9 @@ cricket::VideoChannel* PeerConnection::CreateVideoChannel(
       this, &PeerConnection::OnDtlsSrtpSetupFailure);
   video_channel->SignalSentPacket.connect(this,
                                           &PeerConnection::OnSentPacket_w);
+  if (uma_observer_) {
+    video_channel->SetMetricsObserver(uma_observer_);
+  }
 
   return video_channel;
 }
@@ -5511,6 +5524,9 @@ bool PeerConnection::CreateDataChannel(const std::string& mid,
         this, &PeerConnection::OnDtlsSrtpSetupFailure);
     rtp_data_channel_->SignalSentPacket.connect(
         this, &PeerConnection::OnSentPacket_w);
+    if (uma_observer_) {
+      rtp_data_channel_->SetMetricsObserver(uma_observer_);
+    }
   }
 
   return true;

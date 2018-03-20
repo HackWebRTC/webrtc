@@ -312,6 +312,7 @@ if (rtc_include_tests) {
       ":rtc_pc",
       ":rtc_pc_base",
       "../api:array_view",
+      "../api:fakemetricsobserver",
       "../api:libjingle_peerconnection_api",
       "../logging:rtc_event_log_api",
       "../media:rtc_media_base",

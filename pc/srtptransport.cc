@@ -259,6 +259,11 @@ bool SrtpTransport::SetRtcpParams(int send_cs,
     return false;
   }
 
+  if (metrics_observer_) {
+    send_rtcp_session_->SetMetricsObserver(metrics_observer_);
+    recv_rtcp_session_->SetMetricsObserver(metrics_observer_);
+  }
+
   RTC_LOG(LS_INFO) << "SRTCP activated with negotiated parameters:"
                       " send cipher_suite "
                    << send_cs << " recv cipher_suite " << recv_cs;
@@ -281,6 +286,10 @@ void SrtpTransport::ResetParams() {
 void SrtpTransport::CreateSrtpSessions() {
   send_session_.reset(new cricket::SrtpSession());
   recv_session_.reset(new cricket::SrtpSession());
+  if (metrics_observer_) {
+    send_session_->SetMetricsObserver(metrics_observer_);
+    recv_session_->SetMetricsObserver(metrics_observer_);
+  }
 
   if (external_auth_enabled_) {
     send_session_->EnableExternalAuth();
@@ -388,6 +397,24 @@ bool SrtpTransport::IsExternalAuthActive() const {
 
   RTC_CHECK(send_session_);
   return send_session_->IsExternalAuthActive();
+}
+
+void SrtpTransport::SetMetricsObserver(
+    rtc::scoped_refptr<MetricsObserverInterface> metrics_observer) {
+  metrics_observer_ = metrics_observer;
+  if (send_session_) {
+    send_session_->SetMetricsObserver(metrics_observer_);
+  }
+  if (recv_session_) {
+    recv_session_->SetMetricsObserver(metrics_observer_);
+  }
+  if (send_rtcp_session_) {
+    send_rtcp_session_->SetMetricsObserver(metrics_observer_);
+  }
+  if (recv_rtcp_session_) {
+    recv_rtcp_session_->SetMetricsObserver(metrics_observer_);
+  }
+  rtp_transport_->SetMetricsObserver(metrics_observer);
 }
 
 }  // namespace webrtc

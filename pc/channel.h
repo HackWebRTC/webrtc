@@ -204,6 +204,9 @@ class BaseChannel
     transport_name_ = transport_name;
   }
 
+  void SetMetricsObserver(
+      rtc::scoped_refptr<webrtc::MetricsObserverInterface> metrics_observer);
+
  protected:
   virtual MediaChannel* media_channel() const { return media_channel_.get(); }
 
@@ -394,6 +397,8 @@ class BaseChannel
   std::string transport_name_;
 
   const bool rtcp_mux_required_;
+
+  rtc::scoped_refptr<webrtc::MetricsObserverInterface> metrics_observer_;
 
   // Separate DTLS/non-DTLS pointers to support using BaseChannel without DTLS.
   // Temporary measure until more refactoring is done.

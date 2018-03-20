@@ -42,6 +42,9 @@ enum PeerConnectionEnumCounterType {
   kEnumCounterSdpSemanticNegotiated,
   kEnumCounterKeyProtocolMediaType,
   kEnumCounterSdpFormatReceived,
+  // The next 2 counters log the value of srtp_err_status_t defined in libsrtp.
+  kEnumCounterSrtpUnprotectError,
+  kEnumCounterSrtcpUnprotectError,
   kPeerConnectionEnumCounterMax
 };
 

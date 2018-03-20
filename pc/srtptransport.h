@@ -98,6 +98,9 @@ class SrtpTransport : public RtpTransportInternalAdapter {
     rtp_abs_sendtime_extn_id_ = rtp_abs_sendtime_extn_id;
   }
 
+  void SetMetricsObserver(
+      rtc::scoped_refptr<MetricsObserverInterface> metrics_observer) override;
+
  private:
   void ConnectToRtpTransport();
   void CreateSrtpSessions();
@@ -146,6 +149,8 @@ class SrtpTransport : public RtpTransportInternalAdapter {
   bool external_auth_enabled_ = false;
 
   int rtp_abs_sendtime_extn_id_ = -1;
+
+  rtc::scoped_refptr<MetricsObserverInterface> metrics_observer_;
 };
 
 }  // namespace webrtc

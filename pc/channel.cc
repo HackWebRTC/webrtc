@@ -144,6 +144,12 @@ void BaseChannel::ConnectToRtpTransport() {
                                               &BaseChannel::OnWritableState);
   rtp_transport_->SignalSentPacket.connect(this,
                                            &BaseChannel::SignalSentPacket_n);
+  // TODO(bugs.webrtc.org/8587): Set the metrics observer through
+  // JsepTransportController once it takes responsibility for creating
+  // RtpTransports.
+  if (metrics_observer_) {
+    rtp_transport_->SetMetricsObserver(metrics_observer_);
+  }
 }
 
 void BaseChannel::DisconnectFromRtpTransport() {
@@ -153,6 +159,7 @@ void BaseChannel::DisconnectFromRtpTransport() {
   rtp_transport_->SignalNetworkRouteChanged.disconnect(this);
   rtp_transport_->SignalWritableState.disconnect(this);
   rtp_transport_->SignalSentPacket.disconnect(this);
+  rtp_transport_->SetMetricsObserver(nullptr);
 }
 
 void BaseChannel::Init_w(DtlsTransportInternal* rtp_dtls_transport,
@@ -351,6 +358,14 @@ void BaseChannel::SetTransport_n(
   auto& socket_options = rtcp ? rtcp_socket_options_ : socket_options_;
   for (const auto& pair : socket_options) {
     new_packet_transport->SetOption(pair.first, pair.second);
+  }
+}
+
+void BaseChannel::SetMetricsObserver(
+    rtc::scoped_refptr<webrtc::MetricsObserverInterface> metrics_observer) {
+  metrics_observer_ = metrics_observer;
+  if (rtp_transport_) {
+    rtp_transport_->SetMetricsObserver(metrics_observer);
   }
 }
 
