@@ -22,7 +22,6 @@
 extern "C" {
 #include "common_audio/ring_buffer.h"
 }
-#include "common_audio/wav_file.h"
 #include "modules/audio_processing/aec/aec_common.h"
 #include "modules/audio_processing/utility/block_mean_calculator.h"
 #include "modules/audio_processing/utility/ooura_fft.h"
