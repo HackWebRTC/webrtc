@@ -24,6 +24,7 @@ import subprocess
 LIB_TO_LICENSES_DICT = {
     'android_tools': ['third_party/android_tools/LICENSE'],
     'auto': ['third_party/auto/src/LICENSE.txt'],
+    'bazel': ['third_party/bazel/LICENSE'],
     'boringssl': ['third_party/boringssl/src/LICENSE'],
     'errorprone': ['third_party/errorprone/LICENSE'],
     'expat': ['third_party/expat/files/COPYING'],
@@ -31,6 +32,7 @@ LIB_TO_LICENSES_DICT = {
     'guava': ['third_party/guava/LICENSE'],
     'ijar': ['third_party/ijar/LICENSE'],
     'jsoncpp': ['third_party/jsoncpp/LICENSE'],
+    'jsr-305': ['third_party/jsr-305/src/ri/LICENSE'],
     'libc++': ['buildtools/third_party/libc++/trunk/LICENSE.TXT'],
     'libc++abi': ['buildtools/third_party/libc++abi/trunk/LICENSE.TXT'],
     'libevent': ['base/third_party/libevent/LICENSE'],
@@ -54,7 +56,7 @@ CHECKOUT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir, os.pardir))
 sys.path.append(os.path.join(CHECKOUT_ROOT, 'build'))
 import find_depot_tools
 
-THIRD_PARTY_LIB_REGEX = r'^.*/third_party/([\w+]+).*$'
+THIRD_PARTY_LIB_REGEX = r'^.*/third_party/([\w\-+]+).*$'
 
 class LicenseBuilder(object):
 

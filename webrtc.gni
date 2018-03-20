@@ -496,8 +496,15 @@ if (is_android) {
                                "visibility",
                              ])
 
+      javac_args = []
+
       # Treat warnings as errors.
-      javac_args = [ "-Werror" ]
+      javac_args += [ "-Werror" ]
+
+      # Add any arguments defined by the invoker.
+      if (defined(invoker.javac_args)) {
+        javac_args += invoker.javac_args
+      }
 
       no_build_hooks = true
     }

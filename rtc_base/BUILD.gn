@@ -1380,5 +1380,15 @@ if (is_android) {
       "java/src/org/webrtc/Size.java",
       "java/src/org/webrtc/ThreadUtils.java",
     ]
+
+    javac_args = [
+      "-Xep:ParameterNotNullable:ERROR",
+      "-Xep:FieldMissingNullable:ERROR",
+      "-Xep:ReturnMissingNullable:ERROR",
+    ]
+
+    deps = [
+      "//third_party/jsr-305:jsr_305_javalib",
+    ]
   }
 }
