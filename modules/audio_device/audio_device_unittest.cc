@@ -94,8 +94,8 @@ enum class TransportType {
 // measurements.
 class AudioStream {
  public:
-  virtual void Write(rtc::ArrayView<const int16_t> source, size_t channels) = 0;
-  virtual void Read(rtc::ArrayView<int16_t> destination, size_t channels) = 0;
+  virtual void Write(rtc::ArrayView<const int16_t> source) = 0;
+  virtual void Read(rtc::ArrayView<int16_t> destination) = 0;
 
   virtual ~AudioStream() = default;
 };
@@ -122,8 +122,7 @@ int IndexToMilliseconds(size_t index, size_t frames_per_10ms_buffer) {
 // change over time and that both sides will use the same size.
 class FifoAudioStream : public AudioStream {
  public:
-  void Write(rtc::ArrayView<const int16_t> source, size_t channels) override {
-    EXPECT_EQ(channels, 1u);
+  void Write(rtc::ArrayView<const int16_t> source) override {
     RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
     const size_t size = [&] {
       rtc::CritScope lock(&lock_);
@@ -140,8 +139,7 @@ class FifoAudioStream : public AudioStream {
     written_elements_ += size;
   }
 
-  void Read(rtc::ArrayView<int16_t> destination, size_t channels) override {
-    EXPECT_EQ(channels, 1u);
+  void Read(rtc::ArrayView<int16_t> destination) override {
     rtc::CritScope lock(&lock_);
     if (fifo_.empty()) {
       std::fill(destination.begin(), destination.end(), 0);
@@ -191,9 +189,8 @@ class LatencyAudioStream : public AudioStream {
   }
 
   // Insert periodic impulses in first two samples of |destination|.
-  void Read(rtc::ArrayView<int16_t> destination, size_t channels) override {
+  void Read(rtc::ArrayView<int16_t> destination) override {
     RTC_DCHECK_RUN_ON(&read_thread_checker_);
-    EXPECT_EQ(channels, 1u);
     if (read_count_ == 0) {
       PRINT("[");
     }
@@ -214,8 +211,7 @@ class LatencyAudioStream : public AudioStream {
 
   // Detect received impulses in |source|, derive time between transmission and
   // detection and add the calculated delay to list of latencies.
-  void Write(rtc::ArrayView<const int16_t> source, size_t channels) override {
-    EXPECT_EQ(channels, 1u);
+  void Write(rtc::ArrayView<const int16_t> source) override {
     RTC_DCHECK_RUN_ON(&write_thread_checker_);
     RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
     rtc::CritScope lock(&lock_);
@@ -360,8 +356,7 @@ class MockAudioTransport : public test::MockAudioTransport {
     if (audio_stream_) {
       audio_stream_->Write(
           rtc::MakeArrayView(static_cast<const int16_t*>(audio_buffer),
-                             samples_per_channel * channels),
-          channels);
+                             samples_per_channel * channels));
     }
     // Signal the event after given amount of callbacks.
     if (ReceivedEnoughCallbacks()) {
@@ -375,7 +370,7 @@ class MockAudioTransport : public test::MockAudioTransport {
                                const size_t channels,
                                const uint32_t sample_rate,
                                void* audio_buffer,
-                               size_t& samples_per_channel_out,
+                               size_t& samples_out,
                                int64_t* elapsed_time_ms,
                                int64_t* ntp_time_ms) {
     EXPECT_TRUE(play_mode()) << "No test is expecting these callbacks.";
@@ -395,13 +390,11 @@ class MockAudioTransport : public test::MockAudioTransport {
                 playout_parameters_.frames_per_10ms_buffer());
     }
     play_count_++;
-    samples_per_channel_out = samples_per_channel;
+    samples_out = samples_per_channel * channels;
     // Read audio data from audio stream object if one has been injected.
     if (audio_stream_) {
-      audio_stream_->Read(
-          rtc::MakeArrayView(static_cast<int16_t*>(audio_buffer),
-                             samples_per_channel * channels),
-          channels);
+      audio_stream_->Read(rtc::MakeArrayView(
+          static_cast<int16_t*>(audio_buffer), samples_per_channel * channels));
     } else {
       // Fill the audio buffer with zeros to avoid disturbing audio.
       const size_t num_bytes = samples_per_channel * bytes_per_frame;
@@ -693,11 +686,11 @@ TEST_F(AudioDeviceTest, RunPlayoutAndRecordingInFullDuplex) {
   mock.HandleCallbacks(event(), &audio_stream,
                        kFullDuplexTimeInSec * kNumCallbacksPerSecond);
   EXPECT_EQ(0, audio_device()->RegisterAudioCallback(&mock));
-  // Run both sides in mono to make the loopback packet handling less complex.
-  // The test works for stereo as well; the only requirement is that both sides
-  // use the same configuration.
-  EXPECT_EQ(0, audio_device()->SetStereoPlayout(false));
-  EXPECT_EQ(0, audio_device()->SetStereoRecording(false));
+  // Run both sides using the same channel configuration to avoid conversions
+  // between mono/stereo while running in full duplex mode. Also, some devices
+  // (mainly on Windows) do not support mono.
+  EXPECT_EQ(0, audio_device()->SetStereoPlayout(true));
+  EXPECT_EQ(0, audio_device()->SetStereoRecording(true));
   StartPlayout();
   StartRecording();
   event()->Wait(static_cast<int>(
@@ -730,8 +723,8 @@ TEST_F(AudioDeviceTest, DISABLED_MeasureLoopbackLatency) {
   mock.HandleCallbacks(event(), &audio_stream,
                        kMeasureLatencyTimeInSec * kNumCallbacksPerSecond);
   EXPECT_EQ(0, audio_device()->RegisterAudioCallback(&mock));
-  EXPECT_EQ(0, audio_device()->SetStereoPlayout(false));
-  EXPECT_EQ(0, audio_device()->SetStereoRecording(false));
+  EXPECT_EQ(0, audio_device()->SetStereoPlayout(true));
+  EXPECT_EQ(0, audio_device()->SetStereoRecording(true));
   StartPlayout();
   StartRecording();
   event()->Wait(static_cast<int>(
