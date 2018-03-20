@@ -416,4 +416,52 @@ bool FakeNetworkPipe::HasDemuxer() const {
   return demuxer_ != nullptr;
 }
 
+void FakeNetworkPipe::DeliverPacketWithLock(NetworkPacket* packet) {
+  rtc::CritScope crit(&config_lock_);
+  DeliverPacket(packet);
+}
+
+void FakeNetworkPipe::ResetStats() {
+  rtc::CritScope crit(&process_lock_);
+  dropped_packets_ = 0;
+  sent_packets_ = 0;
+  total_packet_delay_ = 0;
+}
+
+int FakeNetworkPipe::GetConfigCapacityKbps() const {
+  rtc::CritScope crit(&config_lock_);
+  return config_.link_capacity_kbps;
+}
+
+void FakeNetworkPipe::AddToPacketDropCount() {
+  rtc::CritScope crit(&process_lock_);
+  ++dropped_packets_;
+}
+
+void FakeNetworkPipe::AddToPacketSentCount(int count) {
+  rtc::CritScope crit(&process_lock_);
+  sent_packets_ += count;
+}
+
+void FakeNetworkPipe::AddToTotalDelay(int delay_ms) {
+  rtc::CritScope crit(&process_lock_);
+  total_packet_delay_ += delay_ms;
+}
+
+int64_t FakeNetworkPipe::GetTimeInMilliseconds() const {
+  return clock_->TimeInMilliseconds();
+}
+
+bool FakeNetworkPipe::IsRandomLoss(double prob_loss) {
+  return random_.Rand<double>() < prob_loss;
+}
+
+bool FakeNetworkPipe::ShouldProcess(int64_t time_now) const {
+  return time_now >= next_process_time_;
+}
+
+void FakeNetworkPipe::SetTimeToNextProcess(int64_t skip_ms) {
+  next_process_time_ += skip_ms;
+}
+
 }  // namespace webrtc

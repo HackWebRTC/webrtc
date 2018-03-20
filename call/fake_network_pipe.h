@@ -42,8 +42,9 @@ class NetworkPacket {
                 bool is_rtcp,
                 MediaType media_type_,
                 rtc::Optional<PacketTime> packet_time_);
-  // Disallow copy constructor (no deep copies of |data_|).
+  // Disallow copy constructor and copy assignment (no deep copies of |data_|).
   NetworkPacket(const NetworkPacket&) = delete;
+  NetworkPacket& operator=(const NetworkPacket&) = delete;
   // Allow move constructor/assignment, so that we can use in stl containers.
   NetworkPacket(NetworkPacket&&);
   NetworkPacket& operator=(NetworkPacket&&);
@@ -90,7 +91,7 @@ class Demuxer {
 };
 
 // This class doesn't have any internal thread safety, so caller must make sure
-// SetReceiver and and DeliverPacket aren't called in a racy manner.
+// SetReceiver and DeliverPacket aren't called in a racy manner.
 class DemuxerImpl final : public Demuxer {
  public:
   explicit DemuxerImpl(const std::map<uint8_t, MediaType>& payload_type_map);
@@ -154,7 +155,7 @@ class FakeNetworkPipe : public Transport, public PacketReceiver, public Module {
   // Sends a new packet to the link. When/if packets are delivered, they will
   // be passed to the receiver instance given in SetReceiver(). This method
   // should only be used if a Demuxer was provided in the constructor.
-  virtual void SendPacket(const uint8_t* packet, size_t packet_length);
+  void SendPacket(const uint8_t* packet, size_t packet_length);
 
   // Must not be called in parallel with SendPacket or Process.
   void SetReceiver(PacketReceiver* receiver);
@@ -188,10 +189,22 @@ class FakeNetworkPipe : public Transport, public PacketReceiver, public Module {
   int AverageDelay();
   size_t DroppedPackets();
   size_t SentPackets();
+  void ResetStats();
+
+ protected:
+  void DeliverPacketWithLock(NetworkPacket* packet);
+  int GetConfigCapacityKbps() const;
+  void AddToPacketDropCount();
+  void AddToPacketSentCount(int count);
+  void AddToTotalDelay(int delay_ms);
+  int64_t GetTimeInMilliseconds() const;
+  bool IsRandomLoss(double prob_loss);
+  bool ShouldProcess(int64_t time_now) const;
+  void SetTimeToNextProcess(int64_t skip_ms);
 
  private:
   // Returns true if enqueued, or false if packet was dropped.
-  bool EnqueuePacket(rtc::CopyOnWriteBuffer packet,
+  virtual bool EnqueuePacket(rtc::CopyOnWriteBuffer packet,
                      rtc::Optional<PacketOptions> options,
                      bool is_rtcp,
                      MediaType media_type,
