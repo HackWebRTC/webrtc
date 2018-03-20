@@ -12,12 +12,13 @@
 
 #include <utility>
 
-#include "modules/utility/include/helpers_android.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
+#include "sdk/android/generated_audio_jni/jni/WebRtcAudioManager_jni.h"
 #include "sdk/android/src/jni/audio_device/audio_common.h"
+#include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {
 
@@ -25,16 +26,8 @@ namespace android_adm {
 
 // AudioManager::JavaAudioManager implementation
 AudioManager::JavaAudioManager::JavaAudioManager(
-    NativeRegistration* native_reg,
-    std::unique_ptr<GlobalRef> audio_manager)
-    : audio_manager_(std::move(audio_manager)),
-      init_(native_reg->GetMethodId("init", "()Z")),
-      dispose_(native_reg->GetMethodId("dispose", "()V")),
-      is_communication_mode_enabled_(
-          native_reg->GetMethodId("isCommunicationModeEnabled", "()Z")),
-      is_device_blacklisted_for_open_sles_usage_(
-          native_reg->GetMethodId("isDeviceBlacklistedForOpenSLESUsage",
-                                  "()Z")) {
+    const ScopedJavaLocalRef<jobject>& audio_manager)
+    : env_(audio_manager.env()), audio_manager_(audio_manager) {
   RTC_LOG(INFO) << "JavaAudioManager::ctor";
 }
 
@@ -43,26 +36,30 @@ AudioManager::JavaAudioManager::~JavaAudioManager() {
 }
 
 bool AudioManager::JavaAudioManager::Init() {
-  return audio_manager_->CallBooleanMethod(init_);
+  thread_checker_.CalledOnValidThread();
+  return Java_WebRtcAudioManager_init(env_, audio_manager_);
 }
 
 void AudioManager::JavaAudioManager::Close() {
-  audio_manager_->CallVoidMethod(dispose_);
+  thread_checker_.CalledOnValidThread();
+  Java_WebRtcAudioManager_dispose(env_, audio_manager_);
 }
 
 bool AudioManager::JavaAudioManager::IsCommunicationModeEnabled() {
-  return audio_manager_->CallBooleanMethod(is_communication_mode_enabled_);
+  thread_checker_.CalledOnValidThread();
+  return Java_WebRtcAudioManager_isCommunicationModeEnabled(env_,
+                                                            audio_manager_);
 }
 
 bool AudioManager::JavaAudioManager::IsDeviceBlacklistedForOpenSLESUsage() {
-  return audio_manager_->CallBooleanMethod(
-      is_device_blacklisted_for_open_sles_usage_);
+  thread_checker_.CalledOnValidThread();
+  return Java_WebRtcAudioManager_isDeviceBlacklistedForOpenSLESUsage(
+      env_, audio_manager_);
 }
 
 // AudioManager implementation
 AudioManager::AudioManager()
-    : j_environment_(JVM::GetInstance()->environment()),
-      audio_layer_(AudioDeviceModule::kPlatformDefaultAudio),
+    : audio_layer_(AudioDeviceModule::kPlatformDefaultAudio),
       initialized_(false),
       hardware_aec_(false),
       hardware_agc_(false),
@@ -71,17 +68,9 @@ AudioManager::AudioManager()
       low_latency_record_(false),
       delay_estimate_in_milliseconds_(0) {
   RTC_LOG(INFO) << "ctor";
-  RTC_CHECK(j_environment_);
-  JNINativeMethod native_methods[] = {
-      {"nativeCacheAudioParameters", "(IIIZZZZZZZIIJ)V",
-       reinterpret_cast<void*>(&AudioManager::CacheAudioParameters)}};
-  j_native_registration_ = j_environment_->RegisterNatives(
-      "org/webrtc/voiceengine/WebRtcAudioManager", native_methods,
-      arraysize(native_methods));
   j_audio_manager_.reset(
-      new JavaAudioManager(j_native_registration_.get(),
-                           j_native_registration_->NewObject(
-                               "<init>", "(J)V", PointerTojlong(this))));
+      new JavaAudioManager(Java_WebRtcAudioManager_Constructor(
+          AttachCurrentThreadIfNeeded(), jni::jlongFromPointer(this))));
 }
 
 AudioManager::~AudioManager() {
@@ -238,42 +227,20 @@ int AudioManager::GetDelayEstimateInMilliseconds() const {
   return delay_estimate_in_milliseconds_;
 }
 
-void JNICALL AudioManager::CacheAudioParameters(JNIEnv* env,
-                                                jobject obj,
-                                                jint sample_rate,
-                                                jint output_channels,
-                                                jint input_channels,
-                                                jboolean hardware_aec,
-                                                jboolean hardware_agc,
-                                                jboolean hardware_ns,
-                                                jboolean low_latency_output,
-                                                jboolean low_latency_input,
-                                                jboolean pro_audio,
-                                                jboolean a_audio,
-                                                jint output_buffer_size,
-                                                jint input_buffer_size,
-                                                jlong native_audio_manager) {
-  AudioManager* this_object =
-      reinterpret_cast<AudioManager*>(native_audio_manager);
-  this_object->OnCacheAudioParameters(
-      env, sample_rate, output_channels, input_channels, hardware_aec,
-      hardware_agc, hardware_ns, low_latency_output, low_latency_input,
-      pro_audio, a_audio, output_buffer_size, input_buffer_size);
-}
-
-void AudioManager::OnCacheAudioParameters(JNIEnv* env,
-                                          jint sample_rate,
-                                          jint output_channels,
-                                          jint input_channels,
-                                          jboolean hardware_aec,
-                                          jboolean hardware_agc,
-                                          jboolean hardware_ns,
-                                          jboolean low_latency_output,
-                                          jboolean low_latency_input,
-                                          jboolean pro_audio,
-                                          jboolean a_audio,
-                                          jint output_buffer_size,
-                                          jint input_buffer_size) {
+void AudioManager::CacheAudioParameters(JNIEnv* env,
+                                        const JavaParamRef<jobject>& j_caller,
+                                        jint sample_rate,
+                                        jint output_channels,
+                                        jint input_channels,
+                                        jboolean hardware_aec,
+                                        jboolean hardware_agc,
+                                        jboolean hardware_ns,
+                                        jboolean low_latency_output,
+                                        jboolean low_latency_input,
+                                        jboolean pro_audio,
+                                        jboolean a_audio,
+                                        jint output_buffer_size,
+                                        jint input_buffer_size) {
   RTC_LOG(INFO)
       << "OnCacheAudioParameters: "
       << "hardware_aec: " << static_cast<bool>(hardware_aec)

@@ -20,7 +20,6 @@
 #include "modules/audio_device/audio_device_buffer.h"
 #include "modules/audio_device/fine_audio_buffer.h"
 #include "modules/audio_device/include/audio_device_defines.h"
-#include "modules/utility/include/helpers_android.h"
 #include "rtc_base/thread_checker.h"
 #include "sdk/android/src/jni/audio_device/audio_common.h"
 #include "sdk/android/src/jni/audio_device/audio_manager.h"

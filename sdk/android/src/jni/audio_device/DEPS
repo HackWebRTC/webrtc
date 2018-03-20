@@ -1,6 +1,4 @@
 include_rules = [
   "+base/android/jni_android.h",
   "+modules/audio_device",
-  # TODO(bugs.webrtc.org/8689): Remove this dependency and use jni generation instead.
-  "+modules/utility/include/helpers_android.h",
 ]

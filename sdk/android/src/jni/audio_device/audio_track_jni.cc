@@ -18,6 +18,8 @@
 #include "rtc_base/format_macros.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
+#include "sdk/android/generated_audio_jni/jni/WebRtcAudioTrack_jni.h"
+#include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {
 
@@ -25,47 +27,45 @@ namespace android_adm {
 
 // AudioTrackJni::JavaAudioTrack implementation.
 AudioTrackJni::JavaAudioTrack::JavaAudioTrack(
-    NativeRegistration* native_reg,
-    std::unique_ptr<GlobalRef> audio_track)
-    : audio_track_(std::move(audio_track)),
-      init_playout_(native_reg->GetMethodId("initPlayout", "(II)Z")),
-      start_playout_(native_reg->GetMethodId("startPlayout", "()Z")),
-      stop_playout_(native_reg->GetMethodId("stopPlayout", "()Z")),
-      set_stream_volume_(native_reg->GetMethodId("setStreamVolume", "(I)Z")),
-      get_stream_max_volume_(
-          native_reg->GetMethodId("getStreamMaxVolume", "()I")),
-      get_stream_volume_(native_reg->GetMethodId("getStreamVolume", "()I")) {}
+    const ScopedJavaLocalRef<jobject>& audio_track)
+    : env_(audio_track.env()), audio_track_(audio_track) {}
 
 AudioTrackJni::JavaAudioTrack::~JavaAudioTrack() {}
 
 bool AudioTrackJni::JavaAudioTrack::InitPlayout(int sample_rate, int channels) {
-  return audio_track_->CallBooleanMethod(init_playout_, sample_rate, channels);
+  thread_checker_.CalledOnValidThread();
+  return Java_WebRtcAudioTrack_initPlayout(env_, audio_track_, sample_rate,
+                                           channels);
 }
 
 bool AudioTrackJni::JavaAudioTrack::StartPlayout() {
-  return audio_track_->CallBooleanMethod(start_playout_);
+  thread_checker_.CalledOnValidThread();
+  return Java_WebRtcAudioTrack_startPlayout(env_, audio_track_);
 }
 
 bool AudioTrackJni::JavaAudioTrack::StopPlayout() {
-  return audio_track_->CallBooleanMethod(stop_playout_);
+  thread_checker_.CalledOnValidThread();
+  return Java_WebRtcAudioTrack_stopPlayout(env_, audio_track_);
 }
 
 bool AudioTrackJni::JavaAudioTrack::SetStreamVolume(int volume) {
-  return audio_track_->CallBooleanMethod(set_stream_volume_, volume);
+  thread_checker_.CalledOnValidThread();
+  return Java_WebRtcAudioTrack_setStreamVolume(env_, audio_track_, volume);
 }
 
 int AudioTrackJni::JavaAudioTrack::GetStreamMaxVolume() {
-  return audio_track_->CallIntMethod(get_stream_max_volume_);
+  thread_checker_.CalledOnValidThread();
+  return Java_WebRtcAudioTrack_getStreamMaxVolume(env_, audio_track_);
 }
 
 int AudioTrackJni::JavaAudioTrack::GetStreamVolume() {
-  return audio_track_->CallIntMethod(get_stream_volume_);
+  thread_checker_.CalledOnValidThread();
+  return Java_WebRtcAudioTrack_getStreamVolume(env_, audio_track_);
 }
 
 // TODO(henrika): possible extend usage of AudioManager and add it as member.
 AudioTrackJni::AudioTrackJni(AudioManager* audio_manager)
-    : j_environment_(JVM::GetInstance()->environment()),
-      audio_parameters_(audio_manager->GetPlayoutAudioParameters()),
+    : audio_parameters_(audio_manager->GetPlayoutAudioParameters()),
       direct_buffer_address_(nullptr),
       direct_buffer_capacity_in_bytes_(0),
       frames_per_buffer_(0),
@@ -74,19 +74,8 @@ AudioTrackJni::AudioTrackJni(AudioManager* audio_manager)
       audio_device_buffer_(nullptr) {
   RTC_LOG(INFO) << "ctor";
   RTC_DCHECK(audio_parameters_.is_valid());
-  RTC_CHECK(j_environment_);
-  JNINativeMethod native_methods[] = {
-      {"nativeCacheDirectBufferAddress", "(Ljava/nio/ByteBuffer;J)V",
-       reinterpret_cast<void*>(&AudioTrackJni::CacheDirectBufferAddress)},
-      {"nativeGetPlayoutData", "(IJ)V",
-       reinterpret_cast<void*>(&AudioTrackJni::GetPlayoutData)}};
-  j_native_registration_ = j_environment_->RegisterNatives(
-      "org/webrtc/voiceengine/WebRtcAudioTrack", native_methods,
-      arraysize(native_methods));
-  j_audio_track_.reset(
-      new JavaAudioTrack(j_native_registration_.get(),
-                         j_native_registration_->NewObject(
-                             "<init>", "(J)V", PointerTojlong(this))));
+  j_audio_track_.reset(new JavaAudioTrack(Java_WebRtcAudioTrack_Constructor(
+      AttachCurrentThreadIfNeeded(), jni::jlongFromPointer(this))));
   // Detach from this thread since we want to use the checker to verify calls
   // from the Java based audio thread.
   thread_checker_java_.DetachFromThread();
@@ -205,22 +194,15 @@ void AudioTrackJni::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
   audio_device_buffer_->SetPlayoutChannels(channels);
 }
 
-void JNICALL AudioTrackJni::CacheDirectBufferAddress(JNIEnv* env,
-                                                     jobject obj,
-                                                     jobject byte_buffer,
-                                                     jlong nativeAudioTrack) {
-  AudioTrackJni* this_object =
-      reinterpret_cast<AudioTrackJni*>(nativeAudioTrack);
-  this_object->OnCacheDirectBufferAddress(env, byte_buffer);
-}
-
-void AudioTrackJni::OnCacheDirectBufferAddress(JNIEnv* env,
-                                               jobject byte_buffer) {
+void AudioTrackJni::CacheDirectBufferAddress(
+    JNIEnv* env,
+    const JavaParamRef<jobject>&,
+    const JavaParamRef<jobject>& byte_buffer) {
   RTC_LOG(INFO) << "OnCacheDirectBufferAddress";
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(!direct_buffer_address_);
-  direct_buffer_address_ = env->GetDirectBufferAddress(byte_buffer);
-  jlong capacity = env->GetDirectBufferCapacity(byte_buffer);
+  direct_buffer_address_ = env->GetDirectBufferAddress(byte_buffer.obj());
+  jlong capacity = env->GetDirectBufferCapacity(byte_buffer.obj());
   RTC_LOG(INFO) << "direct buffer capacity: " << capacity;
   direct_buffer_capacity_in_bytes_ = static_cast<size_t>(capacity);
   const size_t bytes_per_frame = audio_parameters_.channels() * sizeof(int16_t);
@@ -228,18 +210,11 @@ void AudioTrackJni::OnCacheDirectBufferAddress(JNIEnv* env,
   RTC_LOG(INFO) << "frames_per_buffer: " << frames_per_buffer_;
 }
 
-void JNICALL AudioTrackJni::GetPlayoutData(JNIEnv* env,
-                                           jobject obj,
-                                           jint length,
-                                           jlong nativeAudioTrack) {
-  AudioTrackJni* this_object =
-      reinterpret_cast<AudioTrackJni*>(nativeAudioTrack);
-  this_object->OnGetPlayoutData(static_cast<size_t>(length));
-}
-
 // This method is called on a high-priority thread from Java. The name of
 // the thread is 'AudioRecordTrack'.
-void AudioTrackJni::OnGetPlayoutData(size_t length) {
+void AudioTrackJni::GetPlayoutData(JNIEnv* env,
+                                   const JavaParamRef<jobject>&,
+                                   size_t length) {
   RTC_DCHECK(thread_checker_java_.CalledOnValidThread());
   const size_t bytes_per_frame = audio_parameters_.channels() * sizeof(int16_t);
   RTC_DCHECK_EQ(frames_per_buffer_, length / bytes_per_frame);

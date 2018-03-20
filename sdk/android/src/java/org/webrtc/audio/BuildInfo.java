@@ -11,12 +11,14 @@
 package org.webrtc.audio;
 
 import android.os.Build;
+import org.webrtc.CalledByNative;
 
 public final class BuildInfo {
   public static String getDevice() {
     return Build.DEVICE;
   }
 
+  @CalledByNative
   public static String getDeviceModel() {
     return Build.MODEL;
   }
@@ -25,26 +27,32 @@ public final class BuildInfo {
     return Build.PRODUCT;
   }
 
+  @CalledByNative
   public static String getBrand() {
     return Build.BRAND;
   }
 
+  @CalledByNative
   public static String getDeviceManufacturer() {
     return Build.MANUFACTURER;
   }
 
+  @CalledByNative
   public static String getAndroidBuildId() {
     return Build.ID;
   }
 
+  @CalledByNative
   public static String getBuildType() {
     return Build.TYPE;
   }
 
+  @CalledByNative
   public static String getBuildRelease() {
     return Build.VERSION.RELEASE;
   }
 
+  @CalledByNative
   public static int getSdkVersion() {
     return Build.VERSION.SDK_INT;
   }

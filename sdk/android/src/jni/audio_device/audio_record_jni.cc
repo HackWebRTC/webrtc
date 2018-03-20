@@ -19,7 +19,9 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/timeutils.h"
+#include "sdk/android/generated_audio_jni/jni/WebRtcAudioRecord_jni.h"
 #include "sdk/android/src/jni/audio_device/audio_common.h"
+#include "sdk/android/src/jni/jni_helpers.h"
 #include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
@@ -47,46 +49,44 @@ class ScopedHistogramTimer {
 
 // AudioRecordJni::JavaAudioRecord implementation.
 AudioRecordJni::JavaAudioRecord::JavaAudioRecord(
-    NativeRegistration* native_reg,
-    std::unique_ptr<GlobalRef> audio_record)
-    : audio_record_(std::move(audio_record)),
-      init_recording_(native_reg->GetMethodId("initRecording", "(II)I")),
-      start_recording_(native_reg->GetMethodId("startRecording", "()Z")),
-      stop_recording_(native_reg->GetMethodId("stopRecording", "()Z")),
-      enable_built_in_aec_(native_reg->GetMethodId("enableBuiltInAEC", "(Z)Z")),
-      enable_built_in_ns_(native_reg->GetMethodId("enableBuiltInNS", "(Z)Z")) {}
+    const ScopedJavaLocalRef<jobject>& audio_record)
+    : env_(audio_record.env()), audio_record_(audio_record) {}
 
 AudioRecordJni::JavaAudioRecord::~JavaAudioRecord() {}
 
 int AudioRecordJni::JavaAudioRecord::InitRecording(int sample_rate,
                                                    size_t channels) {
-  return audio_record_->CallIntMethod(init_recording_,
-                                      static_cast<jint>(sample_rate),
-                                      static_cast<jint>(channels));
+  thread_checker_.CalledOnValidThread();
+  return Java_WebRtcAudioRecord_initRecording(env_, audio_record_,
+                                              static_cast<jint>(sample_rate),
+                                              static_cast<jint>(channels));
 }
 
 bool AudioRecordJni::JavaAudioRecord::StartRecording() {
-  return audio_record_->CallBooleanMethod(start_recording_);
+  thread_checker_.CalledOnValidThread();
+  return Java_WebRtcAudioRecord_startRecording(env_, audio_record_);
 }
 
 bool AudioRecordJni::JavaAudioRecord::StopRecording() {
-  return audio_record_->CallBooleanMethod(stop_recording_);
+  thread_checker_.CalledOnValidThread();
+  return Java_WebRtcAudioRecord_stopRecording(env_, audio_record_);
 }
 
 bool AudioRecordJni::JavaAudioRecord::EnableBuiltInAEC(bool enable) {
-  return audio_record_->CallBooleanMethod(enable_built_in_aec_,
-                                          static_cast<jboolean>(enable));
+  thread_checker_.CalledOnValidThread();
+  return Java_WebRtcAudioRecord_enableBuiltInAEC(env_, audio_record_,
+                                                 static_cast<jboolean>(enable));
 }
 
 bool AudioRecordJni::JavaAudioRecord::EnableBuiltInNS(bool enable) {
-  return audio_record_->CallBooleanMethod(enable_built_in_ns_,
-                                          static_cast<jboolean>(enable));
+  thread_checker_.CalledOnValidThread();
+  return Java_WebRtcAudioRecord_enableBuiltInNS(env_, audio_record_,
+                                                static_cast<jboolean>(enable));
 }
 
 // AudioRecordJni implementation.
 AudioRecordJni::AudioRecordJni(AudioManager* audio_manager)
-    : j_environment_(JVM::GetInstance()->environment()),
-      audio_manager_(audio_manager),
+    : audio_manager_(audio_manager),
       audio_parameters_(audio_manager->GetRecordAudioParameters()),
       total_delay_in_milliseconds_(0),
       direct_buffer_address_(nullptr),
@@ -97,19 +97,8 @@ AudioRecordJni::AudioRecordJni(AudioManager* audio_manager)
       audio_device_buffer_(nullptr) {
   RTC_LOG(INFO) << "ctor";
   RTC_DCHECK(audio_parameters_.is_valid());
-  RTC_CHECK(j_environment_);
-  JNINativeMethod native_methods[] = {
-      {"nativeCacheDirectBufferAddress", "(Ljava/nio/ByteBuffer;J)V",
-       reinterpret_cast<void*>(&AudioRecordJni::CacheDirectBufferAddress)},
-      {"nativeDataIsRecorded", "(IJ)V",
-       reinterpret_cast<void*>(&AudioRecordJni::DataIsRecorded)}};
-  j_native_registration_ = j_environment_->RegisterNatives(
-      "org/webrtc/voiceengine/WebRtcAudioRecord", native_methods,
-      arraysize(native_methods));
-  j_audio_record_.reset(
-      new JavaAudioRecord(j_native_registration_.get(),
-                          j_native_registration_->NewObject(
-                              "<init>", "(J)V", PointerTojlong(this))));
+  j_audio_record_.reset(new JavaAudioRecord(Java_WebRtcAudioRecord_Constructor(
+      AttachCurrentThreadIfNeeded(), jni::jlongFromPointer(this))));
   // Detach from this thread since we want to use the checker to verify calls
   // from the Java based audio thread.
   thread_checker_java_.DetachFromThread();
@@ -230,38 +219,24 @@ int32_t AudioRecordJni::EnableBuiltInNS(bool enable) {
   return j_audio_record_->EnableBuiltInNS(enable) ? 0 : -1;
 }
 
-void JNICALL AudioRecordJni::CacheDirectBufferAddress(JNIEnv* env,
-                                                      jobject obj,
-                                                      jobject byte_buffer,
-                                                      jlong nativeAudioRecord) {
-  AudioRecordJni* this_object =
-      reinterpret_cast<AudioRecordJni*>(nativeAudioRecord);
-  this_object->OnCacheDirectBufferAddress(env, byte_buffer);
-}
-
-void AudioRecordJni::OnCacheDirectBufferAddress(JNIEnv* env,
-                                                jobject byte_buffer) {
+void AudioRecordJni::CacheDirectBufferAddress(
+    JNIEnv* env,
+    const JavaParamRef<jobject>& j_caller,
+    const JavaParamRef<jobject>& byte_buffer) {
   RTC_LOG(INFO) << "OnCacheDirectBufferAddress";
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(!direct_buffer_address_);
-  direct_buffer_address_ = env->GetDirectBufferAddress(byte_buffer);
-  jlong capacity = env->GetDirectBufferCapacity(byte_buffer);
+  direct_buffer_address_ = env->GetDirectBufferAddress(byte_buffer.obj());
+  jlong capacity = env->GetDirectBufferCapacity(byte_buffer.obj());
   RTC_LOG(INFO) << "direct buffer capacity: " << capacity;
   direct_buffer_capacity_in_bytes_ = static_cast<size_t>(capacity);
 }
 
-void JNICALL AudioRecordJni::DataIsRecorded(JNIEnv* env,
-                                            jobject obj,
-                                            jint length,
-                                            jlong nativeAudioRecord) {
-  AudioRecordJni* this_object =
-      reinterpret_cast<AudioRecordJni*>(nativeAudioRecord);
-  this_object->OnDataIsRecorded(length);
-}
-
 // This method is called on a high-priority thread from Java. The name of
 // the thread is 'AudioRecordThread'.
-void AudioRecordJni::OnDataIsRecorded(int length) {
+void AudioRecordJni::DataIsRecorded(JNIEnv* env,
+                                    const JavaParamRef<jobject>& j_caller,
+                                    int length) {
   RTC_DCHECK(thread_checker_java_.CalledOnValidThread());
   if (!audio_device_buffer_) {
     RTC_LOG(LS_ERROR) << "AttachAudioBuffer has not been called";

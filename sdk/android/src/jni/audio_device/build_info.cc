@@ -10,52 +10,48 @@
 
 #include "sdk/android/src/jni/audio_device/build_info.h"
 
-#include "modules/utility/include/helpers_android.h"
+#include "sdk/android/generated_audio_jni/jni/BuildInfo_jni.h"
+#include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {
 
 namespace android_adm {
 
-BuildInfo::BuildInfo()
-    : j_environment_(JVM::GetInstance()->environment()),
-      j_build_info_(
-          JVM::GetInstance()->GetClass("org/webrtc/voiceengine/BuildInfo")) {}
-
-std::string BuildInfo::GetStringFromJava(const char* name) {
-  jmethodID id = j_build_info_.GetStaticMethodId(name, "()Ljava/lang/String;");
-  jstring j_string =
-      static_cast<jstring>(j_build_info_.CallStaticObjectMethod(id));
-  return j_environment_->JavaToStdString(j_string);
-}
+BuildInfo::BuildInfo() : env_(AttachCurrentThreadIfNeeded()) {}
 
 std::string BuildInfo::GetDeviceModel() {
-  return GetStringFromJava("getDeviceModel");
+  thread_checker_.CalledOnValidThread();
+  return JavaToStdString(env_, Java_BuildInfo_getDeviceModel(env_));
 }
 
 std::string BuildInfo::GetBrand() {
-  return GetStringFromJava("getBrand");
+  thread_checker_.CalledOnValidThread();
+  return JavaToStdString(env_, Java_BuildInfo_getBrand(env_));
 }
 
 std::string BuildInfo::GetDeviceManufacturer() {
-  return GetStringFromJava("getDeviceManufacturer");
+  thread_checker_.CalledOnValidThread();
+  return JavaToStdString(env_, Java_BuildInfo_getDeviceManufacturer(env_));
 }
 
 std::string BuildInfo::GetAndroidBuildId() {
-  return GetStringFromJava("getAndroidBuildId");
+  thread_checker_.CalledOnValidThread();
+  return JavaToStdString(env_, Java_BuildInfo_getAndroidBuildId(env_));
 }
 
 std::string BuildInfo::GetBuildType() {
-  return GetStringFromJava("getBuildType");
+  thread_checker_.CalledOnValidThread();
+  return JavaToStdString(env_, Java_BuildInfo_getBuildType(env_));
 }
 
 std::string BuildInfo::GetBuildRelease() {
-  return GetStringFromJava("getBuildRelease");
+  thread_checker_.CalledOnValidThread();
+  return JavaToStdString(env_, Java_BuildInfo_getBuildRelease(env_));
 }
 
 SdkCode BuildInfo::GetSdkVersion() {
-  jmethodID id = j_build_info_.GetStaticMethodId("getSdkVersion", "()I");
-  jint j_version = j_build_info_.CallStaticIntMethod(id);
-  return static_cast<SdkCode>(j_version);
+  thread_checker_.CalledOnValidThread();
+  return static_cast<SdkCode>(Java_BuildInfo_getSdkVersion(env_));
 }
 
 }  // namespace android_adm

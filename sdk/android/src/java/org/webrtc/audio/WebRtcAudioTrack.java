@@ -25,6 +25,8 @@ import org.webrtc.Logging;
 import org.webrtc.ThreadUtils;
 import org.webrtc.audio.AudioDeviceModule.AudioTrackErrorCallback;
 import org.webrtc.audio.AudioDeviceModule.AudioTrackStartErrorCode;
+import org.webrtc.CalledByNative;
+import org.webrtc.NativeClassQualifiedName;
 
 class WebRtcAudioTrack {
   private static final boolean DEBUG = false;
@@ -122,7 +124,7 @@ class WebRtcAudioTrack {
         // Get 10ms of PCM data from the native WebRTC client. Audio data is
         // written into the common ByteBuffer using the address that was
         // cached at construction.
-        nativeGetPlayoutData(sizeInBytes, nativeAudioTrack);
+        nativeGetPlayoutData(nativeAudioTrack, sizeInBytes);
         // Write data until all data has been written to the audio sink.
         // Upon return, the buffer position will have been advanced to reflect
         // the amount of data that was successfully written to the AudioTrack.
@@ -188,6 +190,7 @@ class WebRtcAudioTrack {
     }
   }
 
+  @CalledByNative
   WebRtcAudioTrack(long nativeAudioTrack) {
     threadChecker.checkIsOnValidThread();
     Logging.d(TAG, "ctor" + WebRtcAudioUtils.getThreadInfo());
@@ -199,6 +202,7 @@ class WebRtcAudioTrack {
     }
   }
 
+  @CalledByNative
   private boolean initPlayout(int sampleRate, int channels) {
     threadChecker.checkIsOnValidThread();
     Logging.d(TAG, "initPlayout(sampleRate=" + sampleRate + ", channels=" + channels + ")");
@@ -209,7 +213,7 @@ class WebRtcAudioTrack {
     // Rather than passing the ByteBuffer with every callback (requiring
     // the potentially expensive GetDirectBufferAddress) we simply have the
     // the native class cache the address to the memory once.
-    nativeCacheDirectBufferAddress(byteBuffer, nativeAudioTrack);
+    nativeCacheDirectBufferAddress(nativeAudioTrack, byteBuffer);
 
     // Get the minimum buffer size required for the successful creation of an
     // AudioTrack object to be created in the MODE_STREAM mode.
@@ -271,6 +275,7 @@ class WebRtcAudioTrack {
     return true;
   }
 
+  @CalledByNative
   private boolean startPlayout() {
     threadChecker.checkIsOnValidThread();
     Logging.d(TAG, "startPlayout");
@@ -301,6 +306,7 @@ class WebRtcAudioTrack {
     return true;
   }
 
+  @CalledByNative
   private boolean stopPlayout() {
     threadChecker.checkIsOnValidThread();
     Logging.d(TAG, "stopPlayout");
@@ -321,6 +327,7 @@ class WebRtcAudioTrack {
   }
 
   // Get max possible volume index for a phone call audio stream.
+  @CalledByNative
   private int getStreamMaxVolume() {
     threadChecker.checkIsOnValidThread();
     Logging.d(TAG, "getStreamMaxVolume");
@@ -329,6 +336,7 @@ class WebRtcAudioTrack {
   }
 
   // Set current volume level for a phone call audio stream.
+  @CalledByNative
   private boolean setStreamVolume(int volume) {
     threadChecker.checkIsOnValidThread();
     Logging.d(TAG, "setStreamVolume(" + volume + ")");
@@ -351,6 +359,7 @@ class WebRtcAudioTrack {
   }
 
   /** Get current volume level for a phone call audio stream. */
+  @CalledByNative
   private int getStreamVolume() {
     threadChecker.checkIsOnValidThread();
     Logging.d(TAG, "getStreamVolume");
@@ -447,9 +456,12 @@ class WebRtcAudioTrack {
     return (channels == 1 ? AudioFormat.CHANNEL_OUT_MONO : AudioFormat.CHANNEL_OUT_STEREO);
   }
 
-  private native void nativeCacheDirectBufferAddress(ByteBuffer byteBuffer, long nativeAudioRecord);
+  @NativeClassQualifiedName("webrtc::android_adm::AudioTrackJni")
+  private static native void nativeCacheDirectBufferAddress(
+      long nativeAudioRecord, ByteBuffer byteBuffer);
 
-  private native void nativeGetPlayoutData(int bytes, long nativeAudioRecord);
+  @NativeClassQualifiedName("webrtc::android_adm::AudioTrackJni")
+  private static native void nativeGetPlayoutData(long nativeAudioRecord, int bytes);
 
   // Sets all samples to be played out to zero if |mute| is true, i.e.,
   // ensures that the speaker is muted.

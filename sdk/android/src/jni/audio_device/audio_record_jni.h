@@ -16,8 +16,6 @@
 
 #include "modules/audio_device/audio_device_buffer.h"
 #include "modules/audio_device/include/audio_device_defines.h"
-#include "modules/utility/include/helpers_android.h"
-#include "modules/utility/include/jvm_android.h"
 #include "rtc_base/thread_checker.h"
 #include "sdk/android/src/jni/audio_device/audio_manager.h"
 
@@ -48,8 +46,8 @@ class AudioRecordJni {
   // Wraps the Java specific parts of the AudioRecordJni into one helper class.
   class JavaAudioRecord {
    public:
-    JavaAudioRecord(NativeRegistration* native_registration,
-                    std::unique_ptr<GlobalRef> audio_track);
+    explicit JavaAudioRecord(const ScopedJavaLocalRef<jobject>& audio_record);
+
     ~JavaAudioRecord();
 
     int InitRecording(int sample_rate, size_t channels);
@@ -59,12 +57,9 @@ class AudioRecordJni {
     bool EnableBuiltInNS(bool enable);
 
    private:
-    std::unique_ptr<GlobalRef> audio_record_;
-    jmethodID init_recording_;
-    jmethodID start_recording_;
-    jmethodID stop_recording_;
-    jmethodID enable_built_in_aec_;
-    jmethodID enable_built_in_ns_;
+    JNIEnv* const env_;
+    rtc::ThreadChecker thread_checker_;
+    ScopedJavaGlobalRef<jobject> audio_record_;
   };
 
   explicit AudioRecordJni(AudioManager* audio_manager);
@@ -86,17 +81,14 @@ class AudioRecordJni {
   int32_t EnableBuiltInAGC(bool enable);
   int32_t EnableBuiltInNS(bool enable);
 
- private:
   // Called from Java side so we can cache the address of the Java-manged
   // |byte_buffer| in |direct_buffer_address_|. The size of the buffer
   // is also stored in |direct_buffer_capacity_in_bytes_|.
   // This method will be called by the WebRtcAudioRecord constructor, i.e.,
   // on the same thread that this object is created on.
-  static void JNICALL CacheDirectBufferAddress(JNIEnv* env,
-                                               jobject obj,
-                                               jobject byte_buffer,
-                                               jlong nativeAudioRecord);
-  void OnCacheDirectBufferAddress(JNIEnv* env, jobject byte_buffer);
+  void CacheDirectBufferAddress(JNIEnv* env,
+                                const JavaParamRef<jobject>& j_caller,
+                                const JavaParamRef<jobject>& byte_buffer);
 
   // Called periodically by the Java based WebRtcAudioRecord object when
   // recording has started. Each call indicates that there are |length| new
@@ -104,28 +96,17 @@ class AudioRecordJni {
   // now time to send these to the consumer.
   // This method is called on a high-priority thread from Java. The name of
   // the thread is 'AudioRecordThread'.
-  static void JNICALL DataIsRecorded(JNIEnv* env,
-                                     jobject obj,
-                                     jint length,
-                                     jlong nativeAudioRecord);
-  void OnDataIsRecorded(int length);
+  void DataIsRecorded(JNIEnv* env,
+                      const JavaParamRef<jobject>& j_caller,
+                      int length);
 
+ private:
   // Stores thread ID in constructor.
   rtc::ThreadChecker thread_checker_;
 
   // Stores thread ID in first call to OnDataIsRecorded() from high-priority
   // thread in Java. Detached during construction of this object.
   rtc::ThreadChecker thread_checker_java_;
-
-  // Calls AttachCurrentThread() if this thread is not attached at construction.
-  // Also ensures that DetachCurrentThread() is called at destruction.
-  AttachCurrentThreadIfNeeded attach_thread_if_needed_;
-
-  // Wraps the JNI interface pointer and methods associated with it.
-  std::unique_ptr<JNIEnvironment> j_environment_;
-
-  // Contains factory method for creating the Java object.
-  std::unique_ptr<NativeRegistration> j_native_registration_;
 
   // Wraps the Java specific parts of the AudioRecordJni class.
   std::unique_ptr<AudioRecordJni::JavaAudioRecord> j_audio_record_;

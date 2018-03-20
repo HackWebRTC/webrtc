@@ -195,6 +195,8 @@ rtc_source_set("audio_device_jni") {
   }
   deps = [
     ":base_jni",
+    ":generated_audio_jni",
+    ":native_api_jni",
     "../../api:array_view",
     "../../modules/audio_device:audio_device",
     "../../modules/audio_device:audio_device_buffer",
@@ -219,6 +221,17 @@ rtc_static_library("null_audio_jni") {
   deps = [
     ":base_jni",
   ]
+}
+
+generate_jni("generated_audio_jni") {
+  sources = [
+    "src/java/org/webrtc/audio/BuildInfo.java",
+    "src/java/org/webrtc/audio/WebRtcAudioManager.java",
+    "src/java/org/webrtc/audio/WebRtcAudioRecord.java",
+    "src/java/org/webrtc/audio/WebRtcAudioTrack.java",
+  ]
+  jni_package = ""
+  jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
 }
 
 generate_jni("generated_video_jni") {
@@ -809,6 +822,7 @@ rtc_android_library("libjingle_peerconnection_java") {
     "src/java/org/webrtc/WrappedNativeI420Buffer.java",
     "src/java/org/webrtc/WrappedNativeVideoEncoder.java",
     "src/java/org/webrtc/WrappedNativeVideoDecoder.java",
+    "src/java/org/webrtc/audio/BuildInfo.java",
     "src/java/org/webrtc/audio/WebRtcAudioEffects.java",
     "src/java/org/webrtc/audio/WebRtcAudioManager.java",
     "src/java/org/webrtc/audio/WebRtcAudioRecord.java",

@@ -22,6 +22,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 import org.webrtc.ContextUtils;
 import org.webrtc.Logging;
+import org.webrtc.CalledByNative;
+import org.webrtc.NativeClassQualifiedName;
 
 // WebRtcAudioManager handles tasks that uses android.media.AudioManager.
 // At construction, storeAudioParameters() is called and it retrieves
@@ -170,6 +172,7 @@ class WebRtcAudioManager {
 
   private final VolumeLogger volumeLogger;
 
+  @CalledByNative
   WebRtcAudioManager(long nativeAudioManager) {
     Logging.d(TAG, "ctor" + WebRtcAudioUtils.getThreadInfo());
     this.nativeAudioManager = nativeAudioManager;
@@ -180,12 +183,13 @@ class WebRtcAudioManager {
     }
     volumeLogger = new VolumeLogger(audioManager);
     storeAudioParameters();
-    nativeCacheAudioParameters(sampleRate, outputChannels, inputChannels, hardwareAEC, hardwareAGC,
-        hardwareNS, lowLatencyOutput, lowLatencyInput, proAudio, aAudio, outputBufferSize,
-        inputBufferSize, nativeAudioManager);
+    nativeCacheAudioParameters(nativeAudioManager, sampleRate, outputChannels, inputChannels,
+        hardwareAEC, hardwareAGC, hardwareNS, lowLatencyOutput, lowLatencyInput, proAudio, aAudio,
+        outputBufferSize, inputBufferSize);
     WebRtcAudioUtils.logAudioState(TAG);
   }
 
+  @CalledByNative
   private boolean init() {
     Logging.d(TAG, "init" + WebRtcAudioUtils.getThreadInfo());
     if (initialized) {
@@ -197,6 +201,7 @@ class WebRtcAudioManager {
     return true;
   }
 
+  @CalledByNative
   private void dispose() {
     Logging.d(TAG, "dispose" + WebRtcAudioUtils.getThreadInfo());
     if (!initialized) {
@@ -205,10 +210,12 @@ class WebRtcAudioManager {
     volumeLogger.stop();
   }
 
+  @CalledByNative
   private boolean isCommunicationModeEnabled() {
     return (audioManager.getMode() == AudioManager.MODE_IN_COMMUNICATION);
   }
 
+  @CalledByNative
   private boolean isDeviceBlacklistedForOpenSLESUsage() {
     boolean blacklisted = blacklistDeviceForOpenSLESUsageIsOverridden
         ? blacklistDeviceForOpenSLESUsage
@@ -376,8 +383,9 @@ class WebRtcAudioManager {
     }
   }
 
-  private native void nativeCacheAudioParameters(int sampleRate, int outputChannels,
-      int inputChannels, boolean hardwareAEC, boolean hardwareAGC, boolean hardwareNS,
-      boolean lowLatencyOutput, boolean lowLatencyInput, boolean proAudio, boolean aAudio,
-      int outputBufferSize, int inputBufferSize, long nativeAudioManager);
+  @NativeClassQualifiedName("webrtc::android_adm::AudioManager")
+  private native void nativeCacheAudioParameters(long nativeAudioManager, int sampleRate,
+      int outputChannels, int inputChannels, boolean hardwareAEC, boolean hardwareAGC,
+      boolean hardwareNS, boolean lowLatencyOutput, boolean lowLatencyInput, boolean proAudio,
+      boolean aAudio, int outputBufferSize, int inputBufferSize);
 }

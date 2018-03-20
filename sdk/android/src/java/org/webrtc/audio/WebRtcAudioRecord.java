@@ -23,6 +23,8 @@ import org.webrtc.Logging;
 import org.webrtc.ThreadUtils;
 import org.webrtc.audio.AudioDeviceModule.AudioRecordErrorCallback;
 import org.webrtc.audio.AudioDeviceModule.AudioRecordStartErrorCode;
+import org.webrtc.CalledByNative;
+import org.webrtc.NativeClassQualifiedName;
 
 class WebRtcAudioRecord {
   private static final boolean DEBUG = false;
@@ -150,7 +152,7 @@ class WebRtcAudioRecord {
           // failed to join this thread. To be a bit safer, try to avoid calling any native methods
           // in case they've been unregistered after stopRecording() returned.
           if (keepAlive) {
-            nativeDataIsRecorded(bytesRead, nativeAudioRecord);
+            nativeDataIsRecorded(nativeAudioRecord, bytesRead);
           }
           if (audioSamplesReadyCallback != null) {
             // Copy the entire byte buffer array.  Assume that the start of the byteBuffer is
@@ -192,6 +194,7 @@ class WebRtcAudioRecord {
     }
   }
 
+  @CalledByNative
   WebRtcAudioRecord(long nativeAudioRecord) {
     Logging.d(TAG, "ctor" + WebRtcAudioUtils.getThreadInfo());
     this.nativeAudioRecord = nativeAudioRecord;
@@ -201,6 +204,7 @@ class WebRtcAudioRecord {
     effects = WebRtcAudioEffects.create();
   }
 
+  @CalledByNative
   private boolean enableBuiltInAEC(boolean enable) {
     Logging.d(TAG, "enableBuiltInAEC(" + enable + ')');
     if (effects == null) {
@@ -210,6 +214,7 @@ class WebRtcAudioRecord {
     return effects.setAEC(enable);
   }
 
+  @CalledByNative
   private boolean enableBuiltInNS(boolean enable) {
     Logging.d(TAG, "enableBuiltInNS(" + enable + ')');
     if (effects == null) {
@@ -219,6 +224,7 @@ class WebRtcAudioRecord {
     return effects.setNS(enable);
   }
 
+  @CalledByNative
   private int initRecording(int sampleRate, int channels) {
     Logging.d(TAG, "initRecording(sampleRate=" + sampleRate + ", channels=" + channels + ")");
     if (audioRecord != null) {
@@ -233,7 +239,7 @@ class WebRtcAudioRecord {
     // Rather than passing the ByteBuffer with every callback (requiring
     // the potentially expensive GetDirectBufferAddress) we simply have the
     // the native class cache the address to the memory once.
-    nativeCacheDirectBufferAddress(byteBuffer, nativeAudioRecord);
+    nativeCacheDirectBufferAddress(nativeAudioRecord, byteBuffer);
 
     // Get the minimum buffer size required for the successful creation of
     // an AudioRecord object, in byte units.
@@ -273,6 +279,7 @@ class WebRtcAudioRecord {
     return framesPerBuffer;
   }
 
+  @CalledByNative
   private boolean startRecording() {
     Logging.d(TAG, "startRecording");
     assertTrue(audioRecord != null);
@@ -295,6 +302,7 @@ class WebRtcAudioRecord {
     return true;
   }
 
+  @CalledByNative
   private boolean stopRecording() {
     Logging.d(TAG, "stopRecording");
     assertTrue(audioThread != null);
@@ -340,9 +348,11 @@ class WebRtcAudioRecord {
     return (channels == 1 ? AudioFormat.CHANNEL_IN_MONO : AudioFormat.CHANNEL_IN_STEREO);
   }
 
-  private native void nativeCacheDirectBufferAddress(ByteBuffer byteBuffer, long nativeAudioRecord);
+  @NativeClassQualifiedName("webrtc::android_adm::AudioRecordJni")
+  private native void nativeCacheDirectBufferAddress(long nativeAudioRecord, ByteBuffer byteBuffer);
 
-  private native void nativeDataIsRecorded(int bytes, long nativeAudioRecord);
+  @NativeClassQualifiedName("webrtc::android_adm::AudioRecordJni")
+  private native void nativeDataIsRecorded(long nativeAudioRecord, int bytes);
 
   @SuppressWarnings("NoSynchronizedMethodCheck")
   public static synchronized void setAudioSource(int source) {
