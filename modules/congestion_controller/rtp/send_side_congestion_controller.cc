@@ -314,6 +314,7 @@ SendSideCongestionController::SendSideCongestionController(
           webrtc::field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")),
       transport_overhead_bytes_per_packet_(0),
       network_available_(false),
+      periodic_tasks_enabled_(true),
       task_queue_(MakeUnique<rtc::TaskQueue>("SendSideCCQueue")) {
   task_queue_ptr_ = task_queue_.get();
   initial_config_.constraints =
@@ -543,6 +544,8 @@ void SendSideCongestionController::Process() {
 }
 
 void SendSideCongestionController::StartProcessPeriodicTasks() {
+  if (!periodic_tasks_enabled_)
+    return;
   task_queue_ptr_->PostDelayedTask(
       NewPeriodicTask(
           rtc::Bind(
@@ -650,6 +653,13 @@ void SendSideCongestionController::SetPacingFactor(float pacing_factor) {
     RTC_DCHECK_RUN_ON(task_queue_ptr_);
     streams_config_.pacing_factor = pacing_factor;
     UpdateStreamsConfig();
+  });
+}
+
+void SendSideCongestionController::DisablePeriodicTasks() {
+  task_queue_->PostTask([this]() {
+    RTC_DCHECK_RUN_ON(task_queue_ptr_);
+    periodic_tasks_enabled_ = false;
   });
 }
 

@@ -48,6 +48,7 @@ class SendSideCongestionControllerForTest
  public:
   using SendSideCongestionController::SendSideCongestionController;
   ~SendSideCongestionControllerForTest() {}
+  using SendSideCongestionController::DisablePeriodicTasks;
   void WaitOnTasks() { SendSideCongestionController::WaitOnTasksForTest(); }
   void Process() override {
     SendSideCongestionController::PostPeriodicTasksForTest();
@@ -77,6 +78,7 @@ class SendSideCongestionControllerTest : public ::testing::Test {
     controller_.reset(new SendSideCongestionControllerForTest(
         &clock_, &event_log_, pacer_.get(), kInitialBitrateBps, 0,
         5 * kInitialBitrateBps));
+    controller_->DisablePeriodicTasks();
     controller_->RegisterNetworkObserver(&observer_);
     controller_->SignalNetworkState(NetworkState::kNetworkUp);
     bandwidth_observer_ = controller_->GetBandwidthObserver();
@@ -95,6 +97,7 @@ class SendSideCongestionControllerTest : public ::testing::Test {
     controller_.reset(new SendSideCongestionControllerForTest(
         &clock_, &event_log_, pacer_.get(), kInitialBitrateBps, 0,
         5 * kInitialBitrateBps));
+    controller_->DisablePeriodicTasks();
     controller_->RegisterNetworkObserver(&target_bitrate_observer_);
     controller_->SignalNetworkState(NetworkState::kNetworkUp);
   }
@@ -472,13 +475,7 @@ TEST_F(SendSideCongestionControllerTest, UpdatesDelayBasedEstimate) {
   EXPECT_LT(*target_bitrate_bps_, bitrate_before_delay);
 }
 
-// TODO(bugs.webrtc.org/9039): Enable when cause of flakyness found.
-#if defined(WEBRTC_WIN)
-#define MAYBE_PacerQueueEncodeRatePushback DISABLED_PacerQueueEncodeRatePushback
-#else
-#define MAYBE_PacerQueueEncodeRatePushback PacerQueueEncodeRatePushback
-#endif
-TEST_F(SendSideCongestionControllerTest, MAYBE_PacerQueueEncodeRatePushback) {
+TEST_F(SendSideCongestionControllerTest, PacerQueueEncodeRatePushback) {
   ::webrtc::test::ScopedFieldTrials pushback_field_trial(
       "WebRTC-PacerPushbackExperiment/Enabled/");
   SetUp();

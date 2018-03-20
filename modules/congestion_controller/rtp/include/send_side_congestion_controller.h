@@ -130,6 +130,10 @@ class SendSideCongestionController
  protected:
   // TODO(srte): The tests should be rewritten to not depend on internals and
   // these functions should be removed.
+  // Since we can't control the timing of the internal task queue, this method
+  // is used in unit tests to stop the periodic tasks from running unless
+  // PostPeriodicTasksForTest is called.
+  void DisablePeriodicTasks();
   // Post periodic tasks just once. This allows unit tests to trigger process
   // updates immediately.
   void PostPeriodicTasksForTest();
@@ -182,6 +186,7 @@ class SendSideCongestionController
   // TODO(srte): Remove atomic when feedback adapter runs on task queue.
   std::atomic<size_t> transport_overhead_bytes_per_packet_;
   bool network_available_ RTC_GUARDED_BY(task_queue_ptr_);
+  bool periodic_tasks_enabled_ RTC_GUARDED_BY(task_queue_ptr_);
 
   // Protects access to last_packet_feedback_vector_ in feedback adapter.
   // TODO(srte): Remove this checker when feedback adapter runs on task queue.
