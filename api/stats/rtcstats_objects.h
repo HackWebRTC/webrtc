@@ -11,6 +11,7 @@
 #ifndef API_STATS_RTCSTATS_OBJECTS_H_
 #define API_STATS_RTCSTATS_OBJECTS_H_
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -217,11 +218,13 @@ class RTCIceCandidateStats : public RTCStats {
 // But here we define them as subclasses of |RTCIceCandidateStats| because the
 // |kType| need to be different ("RTCStatsType type") in the local/remote case.
 // https://w3c.github.io/webrtc-stats/#rtcstatstype-str*
+// This forces us to have to override copy() and type().
 class RTCLocalIceCandidateStats final : public RTCIceCandidateStats {
  public:
   static const char kType[];
   RTCLocalIceCandidateStats(const std::string& id, int64_t timestamp_us);
   RTCLocalIceCandidateStats(std::string&& id, int64_t timestamp_us);
+  std::unique_ptr<RTCStats> copy() const override;
   const char* type() const override;
 };
 
@@ -230,6 +233,7 @@ class RTCRemoteIceCandidateStats final : public RTCIceCandidateStats {
   static const char kType[];
   RTCRemoteIceCandidateStats(const std::string& id, int64_t timestamp_us);
   RTCRemoteIceCandidateStats(std::string&& id, int64_t timestamp_us);
+  std::unique_ptr<RTCStats> copy() const override;
   const char* type() const override;
 };
 

@@ -110,6 +110,12 @@ class FakePeerConnectionBase : public PeerConnectionInternal {
   }
 
   void GetStats(RTCStatsCollectorCallback* callback) override {}
+  void GetStats(
+      rtc::scoped_refptr<RtpSenderInterface> selector,
+      rtc::scoped_refptr<RTCStatsCollectorCallback> callback) override {}
+  void GetStats(
+      rtc::scoped_refptr<RtpReceiverInterface> selector,
+      rtc::scoped_refptr<RTCStatsCollectorCallback> callback) override {}
 
   void ClearStatsCache() override {}
 

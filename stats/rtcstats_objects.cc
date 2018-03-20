@@ -262,7 +262,7 @@ RTCIceCandidatePairStats::~RTCIceCandidatePairStats() {
 }
 
 // clang-format off
-WEBRTC_RTCSTATS_IMPL(RTCIceCandidateStats, RTCStats, "ice-candidate",
+WEBRTC_RTCSTATS_IMPL(RTCIceCandidateStats, RTCStats, "abstract-ice-candidate",
     &transport_id,
     &is_remote,
     &network_type,
@@ -323,6 +323,10 @@ RTCLocalIceCandidateStats::RTCLocalIceCandidateStats(
     : RTCIceCandidateStats(std::move(id), timestamp_us, false) {
 }
 
+std::unique_ptr<RTCStats> RTCLocalIceCandidateStats::copy() const {
+  return std::unique_ptr<RTCStats>(new RTCLocalIceCandidateStats(*this));
+}
+
 const char* RTCLocalIceCandidateStats::type() const {
   return kType;
 }
@@ -337,6 +341,10 @@ RTCRemoteIceCandidateStats::RTCRemoteIceCandidateStats(
 RTCRemoteIceCandidateStats::RTCRemoteIceCandidateStats(
     std::string&& id, int64_t timestamp_us)
     : RTCIceCandidateStats(std::move(id), timestamp_us, true) {
+}
+
+std::unique_ptr<RTCStats> RTCRemoteIceCandidateStats::copy() const {
+  return std::unique_ptr<RTCStats>(new RTCRemoteIceCandidateStats(*this));
 }
 
 const char* RTCRemoteIceCandidateStats::type() const {

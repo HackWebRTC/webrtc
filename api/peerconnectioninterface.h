@@ -805,15 +805,46 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     return {};
   }
 
+  // The legacy non-compliant GetStats() API. This correspond to the
+  // callback-based version of getStats() in JavaScript. The returned metrics
+  // are UNDOCUMENTED and many of them rely on implementation-specific details.
+  // The goal is to DELETE THIS VERSION but we can't today because it is heavily
+  // relied upon by third parties. See https://crbug.com/822696.
+  //
+  // This version is wired up into Chrome. Any stats implemented are
+  // automatically exposed to the Web Platform. This has BYPASSED the Chrome
+  // release processes for years and lead to cross-browser incompatibility
+  // issues and web application reliance on Chrome-only behavior.
+  //
+  // This API is in "maintenance mode", serious regressions should be fixed but
+  // adding new stats is highly discouraged.
+  //
+  // TODO(hbos): Deprecate and remove this when third parties have migrated to
+  // the spec-compliant GetStats() API. https://crbug.com/822696
   virtual bool GetStats(StatsObserver* observer,
-                        MediaStreamTrackInterface* track,
+                        MediaStreamTrackInterface* track,  // Optional
                         StatsOutputLevel level) = 0;
-  // Gets stats using the new stats collection API, see webrtc/api/stats/. These
-  // will replace old stats collection API when the new API has matured enough.
-  // TODO(hbos): Default implementation that does nothing only exists as to not
-  // break third party projects. As soon as they have been updated this should
-  // be changed to "= 0;".
+  // The spec-compliant GetStats() API. This correspond to the promise-based
+  // version of getStats() in JavaScript. Implementation status is described in
+  // api/stats/rtcstats_objects.h. For more details on stats, see spec:
+  // https://w3c.github.io/webrtc-pc/#dom-rtcpeerconnection-getstats
+  // TODO(hbos): Takes shared ownership, use rtc::scoped_refptr<> instead. This
+  // requires stop overriding the current version in third party or making third
+  // party calls explicit to avoid ambiguity during switch. Make the future
+  // version abstract as soon as third party projects implement it.
   virtual void GetStats(RTCStatsCollectorCallback* callback) {}
+  // Spec-compliant getStats() performing the stats selection algorithm with the
+  // sender. https://w3c.github.io/webrtc-pc/#dom-rtcrtpsender-getstats
+  // TODO(hbos): Make abstract as soon as third party projects implement it.
+  virtual void GetStats(
+      rtc::scoped_refptr<RtpSenderInterface> selector,
+      rtc::scoped_refptr<RTCStatsCollectorCallback> callback) {}
+  // Spec-compliant getStats() performing the stats selection algorithm with the
+  // receiver. https://w3c.github.io/webrtc-pc/#dom-rtcrtpreceiver-getstats
+  // TODO(hbos): Make abstract as soon as third party projects implement it.
+  virtual void GetStats(
+      rtc::scoped_refptr<RtpReceiverInterface> selector,
+      rtc::scoped_refptr<RTCStatsCollectorCallback> callback) {}
   // Clear cached stats in the RTCStatsCollector.
   // Exposed for testing while waiting for automatic cache clear to work.
   // https://bugs.webrtc.org/8693

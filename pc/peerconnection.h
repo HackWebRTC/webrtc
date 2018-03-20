@@ -116,10 +116,18 @@ class PeerConnection : public PeerConnectionInternal,
   rtc::scoped_refptr<DataChannelInterface> CreateDataChannel(
       const std::string& label,
       const DataChannelInit* config) override;
+  // WARNING: LEGACY. See peerconnectioninterface.h
   bool GetStats(StatsObserver* observer,
                 webrtc::MediaStreamTrackInterface* track,
                 StatsOutputLevel level) override;
+  // Spec-complaint GetStats(). See peerconnectioninterface.h
   void GetStats(RTCStatsCollectorCallback* callback) override;
+  void GetStats(
+      rtc::scoped_refptr<RtpSenderInterface> selector,
+      rtc::scoped_refptr<RTCStatsCollectorCallback> callback) override;
+  void GetStats(
+      rtc::scoped_refptr<RtpReceiverInterface> selector,
+      rtc::scoped_refptr<RTCStatsCollectorCallback> callback) override;
   void ClearStatsCache() override;
 
   SignalingState signaling_state() override;

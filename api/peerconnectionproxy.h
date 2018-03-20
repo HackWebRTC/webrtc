@@ -70,6 +70,14 @@ BEGIN_SIGNALING_PROXY_MAP(PeerConnection)
                 MediaStreamTrackInterface*,
                 StatsOutputLevel)
   PROXY_METHOD1(void, GetStats, RTCStatsCollectorCallback*)
+  PROXY_METHOD2(void,
+                GetStats,
+                rtc::scoped_refptr<RtpSenderInterface>,
+                rtc::scoped_refptr<RTCStatsCollectorCallback>);
+  PROXY_METHOD2(void,
+                GetStats,
+                rtc::scoped_refptr<RtpReceiverInterface>,
+                rtc::scoped_refptr<RTCStatsCollectorCallback>);
   PROXY_METHOD2(rtc::scoped_refptr<DataChannelInterface>,
                 CreateDataChannel,
                 const std::string&,
