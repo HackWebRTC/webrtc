@@ -203,6 +203,9 @@ int64_t RtpTransportControllerSend::GetPacerQueuingDelayMs() const {
 int64_t RtpTransportControllerSend::GetFirstPacketTimeMs() const {
   return pacer_.FirstSentPacketTimeMs();
 }
+void RtpTransportControllerSend::SetPerPacketFeedbackAvailable(bool available) {
+  send_side_cc_->SetPerPacketFeedbackAvailable(available);
+}
 void RtpTransportControllerSend::EnablePeriodicAlrProbing(bool enable) {
   send_side_cc_->EnablePeriodicAlrProbing(enable);
 }
