@@ -5,4 +5,7 @@ specific_include_rules = {
   "encoded_frame.h": [
     "+modules/video_coding/encoded_frame.h",
   ],
+  "video_stream_decoder_create.cc": [
+    "+video/video_stream_decoder_impl.h",
+  ],
 }

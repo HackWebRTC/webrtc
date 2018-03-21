@@ -102,6 +102,28 @@ rtc_static_library("video") {
   }
 }
 
+rtc_source_set("video_stream_decoder_impl") {
+  visibility = [ "*" ]
+  sources = [
+    "video_stream_decoder_impl.cc",
+    "video_stream_decoder_impl.h",
+  ]
+
+  deps = [
+    "../api:encoded_frame_api",
+    "../api:optional",
+    "../api:video_frame_api",
+    "../api:video_stream_decoder",
+    "../api/video_codecs:video_codecs_api",
+    "../rtc_base:rtc_base_approved",
+  ]
+
+  if (!build_with_chromium && is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+  }
+}
+
 if (rtc_include_tests) {
   rtc_source_set("video_quality_test") {
     testonly = true
