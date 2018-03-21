@@ -24,13 +24,13 @@ namespace webrtc {
 class MockVideoStreamEncoder : public VideoStreamEncoder {
  public:
   explicit MockVideoStreamEncoder(SendStatisticsProxy* send_stats_proxy)
-      : VideoStreamEncoder(
-            1,
-            send_stats_proxy,
-            VideoSendStream::Config::EncoderSettings(nullptr),
-            nullptr,
-            rtc::MakeUnique<OveruseFrameDetector>(CpuOveruseOptions(),
-                                                  nullptr)) {}
+      : VideoStreamEncoder(1,
+                           send_stats_proxy,
+                           VideoSendStream::Config::EncoderSettings("fake", 0,
+                                                                    nullptr),
+                           nullptr,
+                           rtc::MakeUnique<OveruseFrameDetector>(
+                               CpuOveruseOptions(), nullptr)) {}
   ~MockVideoStreamEncoder() { Stop(); }
 
   MOCK_METHOD0(SendKeyFrame, void());

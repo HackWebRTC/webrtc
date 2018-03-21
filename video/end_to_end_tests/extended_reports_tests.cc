@@ -132,12 +132,12 @@ class RtcpXrObserver : public test::EndToEndTest {
           new rtc::RefCountedObject<ZeroTargetVideoStreamFactory>();
 
       // Configure VP8 to be able to use simulcast.
-      send_config->rtp.payload_name = "VP8";
+      send_config->encoder_settings.payload_name = "VP8";
       (*receive_configs)[0].decoders.resize(1);
       (*receive_configs)[0].decoders[0].payload_type =
-          send_config->rtp.payload_type;
+          send_config->encoder_settings.payload_type;
       (*receive_configs)[0].decoders[0].payload_name =
-          send_config->rtp.payload_name;
+          send_config->encoder_settings.payload_name;
     }
     if (enable_target_bitrate_) {
       // TargetBitrate only signaled for screensharing.

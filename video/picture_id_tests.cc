@@ -308,8 +308,7 @@ void PictureIdTest::SetupEncoder(VideoEncoder* encoder,
 
     CreateSendConfig(kNumSimulcastStreams, 0, 0, send_transport_.get());
     video_send_config_.encoder_settings.encoder = encoder;
-    video_send_config_.rtp.payload_name = payload_name;
-    video_encoder_config_.codec_type = PayloadStringToCodecType(payload_name);
+    video_send_config_.encoder_settings.payload_name = payload_name;
     video_encoder_config_.video_stream_factory =
         new rtc::RefCountedObject<VideoStreamFactory>(num_temporal_layers_);
     video_encoder_config_.number_of_streams = 1;

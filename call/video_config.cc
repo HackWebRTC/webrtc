@@ -46,8 +46,7 @@ std::string VideoStream::ToString() const {
 }
 
 VideoEncoderConfig::VideoEncoderConfig()
-    : codec_type(kVideoCodecUnknown),
-      content_type(ContentType::kRealtimeVideo),
+    : content_type(ContentType::kRealtimeVideo),
       encoder_specific_settings(nullptr),
       min_transmit_bitrate_bps(0),
       max_bitrate_bps(0),
@@ -60,9 +59,7 @@ VideoEncoderConfig::~VideoEncoderConfig() = default;
 
 std::string VideoEncoderConfig::ToString() const {
   std::stringstream ss;
-  ss << "{codec_type: ";
-  ss << CodecTypeToPayloadString(codec_type);
-  ss << ", content_type: ";
+  ss << "{content_type: ";
   switch (content_type) {
     case ContentType::kRealtimeVideo:
       ss << "kRealtimeVideo";
