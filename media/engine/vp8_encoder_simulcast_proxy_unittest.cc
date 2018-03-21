@@ -63,8 +63,6 @@ TEST(VP8EncoderSimulcastProxy, ChoosesCorrectImplementation) {
       "SimulcastEncoderAdapter (Fake, Fake, Fake)";
   VideoCodec codec_settings;
   webrtc::test::CodecSettings(kVideoCodecVP8, &codec_settings);
-  TemporalLayersFactory tl_factory;
-  codec_settings.VP8()->tl_factory = &tl_factory;
   codec_settings.simulcastStream[0] = {
       test::kTestWidth, test::kTestHeight, 2, 2000, 1000, 1000, 56};
   codec_settings.simulcastStream[1] = {

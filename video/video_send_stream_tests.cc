@@ -2578,12 +2578,10 @@ void VideoCodecConfigObserver<VideoCodecVP8>::VerifyCodecSpecifics(
   }
 
   // Set expected temporal layers as they should have been set when
-  // reconfiguring the encoder and not match the set config. Also copy the
-  // TemporalLayersFactory pointer that has been injected by VideoStreamEncoder.
+  // reconfiguring the encoder and not match the set config.
   VideoCodecVP8 encoder_settings = encoder_settings_;
   encoder_settings.numberOfTemporalLayers =
       kVideoCodecConfigObserverNumberOfTemporalLayers;
-  encoder_settings.tl_factory = config.VP8().tl_factory;
   EXPECT_EQ(
       0, memcmp(&config.VP8(), &encoder_settings, sizeof(encoder_settings_)));
 }

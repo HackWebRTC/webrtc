@@ -24,15 +24,9 @@
 
 namespace webrtc {
 
-class SimulcastRateAllocator : public VideoBitrateAllocator,
-                               public TemporalLayersListener {
+class SimulcastRateAllocator : public VideoBitrateAllocator {
  public:
-  explicit SimulcastRateAllocator(
-      const VideoCodec& codec,
-      std::unique_ptr<TemporalLayersFactory> tl_factory);
-
-  void OnTemporalLayersCreated(int simulcast_id,
-                               TemporalLayers* layers) override;
+  explicit SimulcastRateAllocator(const VideoCodec& codec);
 
   BitrateAllocation GetAllocation(uint32_t total_bitrate_bps,
                                   uint32_t framerate) override;
@@ -58,8 +52,6 @@ class SimulcastRateAllocator : public VideoBitrateAllocator,
   int NumTemporalStreams(size_t simulcast_id) const;
 
   const VideoCodec codec_;
-  std::map<uint32_t, TemporalLayers*> temporal_layers_;
-  std::unique_ptr<TemporalLayersFactory> tl_factory_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(SimulcastRateAllocator);
 };

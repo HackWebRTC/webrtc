@@ -413,10 +413,7 @@ class TestVideoSenderWithVp8 : public TestVideoSender {
     codec_.startBitrate = codec_bitrate_kbps_;
     codec_.maxBitrate = codec_bitrate_kbps_;
 
-    TemporalLayersFactory* tl_factory = new TemporalLayersFactory();
-    rate_allocator_.reset(new SimulcastRateAllocator(
-        codec_, std::unique_ptr<TemporalLayersFactory>(tl_factory)));
-    codec_.VP8()->tl_factory = tl_factory;
+    rate_allocator_.reset(new SimulcastRateAllocator(codec_));
 
     encoder_ = VP8Encoder::Create();
     sender_->RegisterExternalEncoder(encoder_.get(), false);

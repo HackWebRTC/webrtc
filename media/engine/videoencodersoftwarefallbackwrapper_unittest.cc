@@ -171,11 +171,7 @@ void VideoEncoderSoftwareFallbackWrapperTest::UtilizeFallbackEncoder() {
   codec_.width = kWidth;
   codec_.height = kHeight;
   codec_.VP8()->numberOfTemporalLayers = 1;
-  std::unique_ptr<TemporalLayersFactory> tl_factory(
-      new TemporalLayersFactory());
-  codec_.VP8()->tl_factory = tl_factory.get();
-  rate_allocator_.reset(
-      new SimulcastRateAllocator(codec_, std::move(tl_factory)));
+  rate_allocator_.reset(new SimulcastRateAllocator(codec_));
 
   fake_encoder_->init_encode_return_code_ = WEBRTC_VIDEO_CODEC_ERROR;
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
@@ -199,11 +195,7 @@ void VideoEncoderSoftwareFallbackWrapperTest::FallbackFromEncodeRequest() {
   codec_.width = kWidth;
   codec_.height = kHeight;
   codec_.VP8()->numberOfTemporalLayers = 1;
-  std::unique_ptr<TemporalLayersFactory> tl_factory(
-      new TemporalLayersFactory());
-  codec_.VP8()->tl_factory = tl_factory.get();
-  rate_allocator_.reset(
-      new SimulcastRateAllocator(codec_, std::move(tl_factory)));
+  rate_allocator_.reset(new SimulcastRateAllocator(codec_));
   fallback_wrapper_.InitEncode(&codec_, 2, kMaxPayloadSize);
   EXPECT_EQ(
       WEBRTC_VIDEO_CODEC_OK,
@@ -352,8 +344,6 @@ class ForcedFallbackTest : public VideoEncoderSoftwareFallbackWrapperTest {
 
   void ConfigureVp8Codec() {
     fallback_wrapper_.RegisterEncodeCompleteCallback(&callback_);
-    std::unique_ptr<TemporalLayersFactory> tl_factory(
-        new TemporalLayersFactory());
     codec_.codecType = kVideoCodecVP8;
     codec_.maxFramerate = kFramerate;
     codec_.width = kWidth;
@@ -361,9 +351,7 @@ class ForcedFallbackTest : public VideoEncoderSoftwareFallbackWrapperTest {
     codec_.VP8()->numberOfTemporalLayers = 1;
     codec_.VP8()->automaticResizeOn = true;
     codec_.VP8()->frameDroppingOn = true;
-    codec_.VP8()->tl_factory = tl_factory.get();
-    rate_allocator_.reset(
-        new SimulcastRateAllocator(codec_, std::move(tl_factory)));
+    rate_allocator_.reset(new SimulcastRateAllocator(codec_));
   }
 
   void InitEncode(int width, int height) {

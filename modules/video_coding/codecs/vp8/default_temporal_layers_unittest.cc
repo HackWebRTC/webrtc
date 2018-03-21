@@ -63,7 +63,7 @@ std::vector<uint32_t> GetTemporalLayerRates(int target_bitrate_kbps,
   codec.simulcastStream[0].maxBitrate = target_bitrate_kbps;
   codec.simulcastStream[0].numberOfTemporalLayers = num_temporal_layers;
   codec.simulcastStream[0].active = true;
-  SimulcastRateAllocator allocator(codec, nullptr);
+  SimulcastRateAllocator allocator(codec);
   return allocator.GetAllocation(target_bitrate_kbps, framerate_fps)
       .GetTemporalLayerAllocation(0);
 }

@@ -48,47 +48,19 @@ bool VideoCodecInitializer::SetupCodec(
   *codec =
       VideoEncoderConfigToVideoCodec(config, streams, settings.payload_name,
                                      settings.payload_type, nack_enabled);
-
-  std::unique_ptr<TemporalLayersFactory> tl_factory;
-  switch (codec->codecType) {
-    case kVideoCodecVP8: {
-      if (!codec->VP8()->tl_factory) {
-        if (codec->mode == kScreensharing &&
-            (codec->numberOfSimulcastStreams > 1 ||
-             (codec->numberOfSimulcastStreams == 1 &&
-              codec->VP8()->numberOfTemporalLayers == 2))) {
-          // Conference mode temporal layering for screen content.
-          tl_factory.reset(new ScreenshareTemporalLayersFactory());
-        } else {
-          // Standard video temporal layers.
-          tl_factory.reset(new TemporalLayersFactory());
-        }
-        codec->VP8()->tl_factory = tl_factory.get();
-      }
-      break;
-    }
-    default: {
-      // TODO(sprang): Warn, once we have specific allocators for all supported
-      //               codec types.
-      break;
-    }
-  }
-  *bitrate_allocator = CreateBitrateAllocator(*codec, std::move(tl_factory));
+  *bitrate_allocator = CreateBitrateAllocator(*codec);
 
   return true;
 }
 
 std::unique_ptr<VideoBitrateAllocator>
-VideoCodecInitializer::CreateBitrateAllocator(
-    const VideoCodec& codec,
-    std::unique_ptr<TemporalLayersFactory> tl_factory) {
+VideoCodecInitializer::CreateBitrateAllocator(const VideoCodec& codec) {
   std::unique_ptr<VideoBitrateAllocator> rate_allocator;
 
   switch (codec.codecType) {
     case kVideoCodecVP8: {
       // Set up default VP8 temporal layer factory, if not provided.
-      rate_allocator.reset(
-          new SimulcastRateAllocator(codec, std::move(tl_factory)));
+      rate_allocator.reset(new SimulcastRateAllocator(codec));
     } break;
     default:
       rate_allocator.reset(new DefaultVideoBitrateAllocator(codec));

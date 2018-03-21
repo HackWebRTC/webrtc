@@ -556,15 +556,13 @@ class VideoStreamEncoderTest : public ::testing::Test {
       int res =
           FakeEncoder::InitEncode(config, number_of_cores, max_payload_size);
       rtc::CritScope lock(&local_crit_sect_);
-      if (config->codecType == kVideoCodecVP8 && config->VP8().tl_factory) {
+      if (config->codecType == kVideoCodecVP8) {
         // Simulate setting up temporal layers, in order to validate the life
         // cycle of these objects.
         int num_streams = std::max<int>(1, config->numberOfSimulcastStreams);
-        int num_temporal_layers =
-            std::max<int>(1, config->VP8().numberOfTemporalLayers);
         for (int i = 0; i < num_streams; ++i) {
           allocated_temporal_layers_.emplace_back(
-              config->VP8().tl_factory->Create(i, num_temporal_layers, 42));
+              TemporalLayers::CreateTemporalLayers(*config, i, 42));
         }
       }
       if (force_init_encode_failed_)

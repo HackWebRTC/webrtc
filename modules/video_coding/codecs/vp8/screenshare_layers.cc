@@ -37,40 +37,6 @@ constexpr int ScreenshareLayers::kMaxNumTemporalLayers;
 // been exceeded. This prevents needless keyframe requests.
 const int ScreenshareLayers::kMaxFrameIntervalMs = 2750;
 
-webrtc::TemporalLayers* ScreenshareTemporalLayersFactory::Create(
-    int simulcast_id,
-    int num_temporal_layers,
-    uint8_t initial_tl0_pic_idx) const {
-  webrtc::TemporalLayers* tl;
-  if (simulcast_id == 0) {
-    tl = new webrtc::ScreenshareLayers(num_temporal_layers, rand(),
-                                       webrtc::Clock::GetRealTimeClock());
-  } else {
-    TemporalLayersFactory rt_tl_factory;
-    tl = rt_tl_factory.Create(simulcast_id, num_temporal_layers, rand());
-  }
-  if (listener_)
-    listener_->OnTemporalLayersCreated(simulcast_id, tl);
-  return tl;
-}
-
-std::unique_ptr<webrtc::TemporalLayersChecker>
-ScreenshareTemporalLayersFactory::CreateChecker(
-    int simulcast_id,
-    int temporal_layers,
-    uint8_t initial_tl0_pic_idx) const {
-  webrtc::TemporalLayersChecker* tlc;
-  if (simulcast_id == 0) {
-    tlc =
-        new webrtc::TemporalLayersChecker(temporal_layers, initial_tl0_pic_idx);
-  } else {
-    TemporalLayersFactory rt_tl_factory;
-    return rt_tl_factory.CreateChecker(simulcast_id, temporal_layers,
-                                       initial_tl0_pic_idx);
-  }
-  return std::unique_ptr<webrtc::TemporalLayersChecker>(tlc);
-}
-
 ScreenshareLayers::ScreenshareLayers(int num_temporal_layers,
                                      uint8_t initial_tl0_pic_idx,
                                      Clock* clock)

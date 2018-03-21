@@ -60,7 +60,6 @@ class TestVp8Impl : public VideoCodecUnitTest {
     codec_settings.VP8()->frameDroppingOn = false;
     codec_settings.VP8()->automaticResizeOn = false;
     codec_settings.VP8()->complexity = kComplexityNormal;
-    codec_settings.VP8()->tl_factory = &tl_factory_;
     return codec_settings;
   }
 
@@ -120,8 +119,6 @@ class TestVp8Impl : public VideoCodecUnitTest {
     ASSERT_TRUE(vp8::GetQp(encoded_frame._buffer, encoded_frame._length, &qp));
     EXPECT_EQ(encoded_frame.qp_, qp) << "Encoder QP != parsed bitstream QP.";
   }
-
-  TemporalLayersFactory tl_factory_;
 };
 
 TEST_F(TestVp8Impl, SetRateAllocation) {

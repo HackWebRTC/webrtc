@@ -20,20 +20,8 @@
 
 namespace webrtc {
 
-SimulcastRateAllocator::SimulcastRateAllocator(
-    const VideoCodec& codec,
-    std::unique_ptr<TemporalLayersFactory> tl_factory)
-    : codec_(codec), tl_factory_(std::move(tl_factory)) {
-  if (tl_factory_.get())
-    tl_factory_->SetListener(this);
-}
-
-void SimulcastRateAllocator::OnTemporalLayersCreated(int simulcast_id,
-                                                     TemporalLayers* layers) {
-  RTC_DCHECK(temporal_layers_.find(simulcast_id) == temporal_layers_.end());
-  RTC_DCHECK(layers);
-  temporal_layers_[simulcast_id] = layers;
-}
+SimulcastRateAllocator::SimulcastRateAllocator(const VideoCodec& codec)
+    : codec_(codec) {}
 
 BitrateAllocation SimulcastRateAllocator::GetAllocation(
     uint32_t total_bitrate_bps,
@@ -241,12 +229,7 @@ SimulcastRateAllocator::ScreenshareTemporalLayerAllocation(
 }
 
 uint32_t SimulcastRateAllocator::GetPreferredBitrateBps(uint32_t framerate) {
-  // Create a temporary instance without temporal layers, as they may be
-  // stateful, and updating the bitrate to max here can cause side effects.
-  SimulcastRateAllocator temp_allocator(codec_, nullptr);
-  BitrateAllocation allocation =
-      temp_allocator.GetAllocation(codec_.maxBitrate * 1000, framerate);
-  return allocation.get_sum_bps();
+  return GetAllocation(codec_.maxBitrate * 1000, framerate).get_sum_bps();
 }
 
 const VideoCodec& webrtc::SimulcastRateAllocator::GetCodec() const {

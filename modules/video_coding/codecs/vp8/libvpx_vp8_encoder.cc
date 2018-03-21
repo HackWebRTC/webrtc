@@ -344,24 +344,12 @@ void LibvpxVp8Encoder::SetStreamState(bool send_stream, int stream_idx) {
 void LibvpxVp8Encoder::SetupTemporalLayers(int num_streams,
                                            int num_temporal_layers,
                                            const VideoCodec& codec) {
-  RTC_DCHECK(codec.VP8().tl_factory != nullptr);
-  const TemporalLayersFactory* tl_factory = codec.VP8().tl_factory;
   RTC_DCHECK(temporal_layers_.empty());
-  if (num_streams == 1) {
+  for (int i = 0; i < num_streams; ++i) {
     temporal_layers_.emplace_back(
-        tl_factory->Create(0, num_temporal_layers, tl0_pic_idx_[0]));
+        TemporalLayers::CreateTemporalLayers(codec, i, tl0_pic_idx_[i]));
     temporal_layers_checkers_.emplace_back(
-        tl_factory->CreateChecker(0, num_temporal_layers, tl0_pic_idx_[0]));
-  } else {
-    for (int i = 0; i < num_streams; ++i) {
-      RTC_CHECK_GT(num_temporal_layers, 0);
-      int layers = std::max(static_cast<uint8_t>(1),
-                            codec.simulcastStream[i].numberOfTemporalLayers);
-      temporal_layers_.emplace_back(
-          tl_factory->Create(i, layers, tl0_pic_idx_[i]));
-      temporal_layers_checkers_.emplace_back(
-          tl_factory->CreateChecker(i, layers, tl0_pic_idx_[i]));
-    }
+        TemporalLayers::CreateTemporalLayersChecker(codec, i, tl0_pic_idx_[i]));
   }
 }
 
@@ -541,7 +529,7 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
   // Note the order we use is different from webm, we have lowest resolution
   // at position 0 and they have highest resolution at position 0.
   int stream_idx = encoders_.size() - 1;
-  SimulcastRateAllocator init_allocator(codec_, nullptr);
+  SimulcastRateAllocator init_allocator(codec_);
   BitrateAllocation allocation = init_allocator.GetAllocation(
       inst->startBitrate * 1000, inst->maxFramerate);
   std::vector<uint32_t> stream_bitrates;

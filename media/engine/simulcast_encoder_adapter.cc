@@ -103,33 +103,6 @@ class AdapterEncodedImageCallback : public webrtc::EncodedImageCallback {
   webrtc::SimulcastEncoderAdapter* const adapter_;
   const size_t stream_idx_;
 };
-
-// Utility class used to adapt the simulcast id as reported by the temporal
-// layers factory, since each sub-encoder will report stream 0.
-class TemporalLayersFactoryAdapter : public webrtc::TemporalLayersFactory {
- public:
-  TemporalLayersFactoryAdapter(int adapted_simulcast_id,
-                               const TemporalLayersFactory& tl_factory)
-      : adapted_simulcast_id_(adapted_simulcast_id), tl_factory_(tl_factory) {}
-  ~TemporalLayersFactoryAdapter() override {}
-  webrtc::TemporalLayers* Create(int simulcast_id,
-                                 int temporal_layers,
-                                 uint8_t initial_tl0_pic_idx) const override {
-    return tl_factory_.Create(adapted_simulcast_id_, temporal_layers,
-                              initial_tl0_pic_idx);
-  }
-  std::unique_ptr<webrtc::TemporalLayersChecker> CreateChecker(
-      int simulcast_id,
-      int temporal_layers,
-      uint8_t initial_tl0_pic_idx) const override {
-    return tl_factory_.CreateChecker(adapted_simulcast_id_, temporal_layers,
-                                     initial_tl0_pic_idx);
-  }
-
-  const int adapted_simulcast_id_;
-  const TemporalLayersFactory& tl_factory_;
-};
-
 }  // namespace
 
 namespace webrtc {
@@ -204,7 +177,7 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
   }
 
   codec_ = *inst;
-  SimulcastRateAllocator rate_allocator(codec_, nullptr);
+  SimulcastRateAllocator rate_allocator(codec_);
   BitrateAllocation allocation = rate_allocator.GetAllocation(
       codec_.startBitrate * 1000, codec_.maxFramerate);
   std::vector<uint32_t> start_bitrates;
@@ -230,9 +203,6 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
       PopulateStreamCodec(codec_, i, start_bitrate_kbps,
                           highest_resolution_stream, &stream_codec);
     }
-    TemporalLayersFactoryAdapter tl_factory_adapter(i,
-                                                    *codec_.VP8()->tl_factory);
-    stream_codec.VP8()->tl_factory = &tl_factory_adapter;
 
     // TODO(ronghuawu): Remove once this is handled in LibvpxVp8Encoder.
     if (stream_codec.qpMax < kDefaultMinQp) {

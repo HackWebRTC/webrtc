@@ -37,23 +37,6 @@ static const uint32_t kHighScreenshareTl0Bps = 800000;
 static const uint32_t kHighScreenshareTl1Bps = 1200000;
 }  // namespace
 
-/*
- *   static bool SetupCodec(
-      const VideoEncoderConfig& config,
-      const VideoSendStream::Config::EncoderSettings settings,
-      const std::vector<VideoStream>& streams,
-      bool nack_enabled,
-      VideoCodec* codec,
-      std::unique_ptr<VideoBitrateAllocator>* bitrate_allocator);
-
-  // Create a bitrate allocator for the specified codec. |tl_factory| is
-  // optional, if it is populated, ownership of that instance will be
-  // transferred to the VideoBitrateAllocator instance.
-  static std::unique_ptr<VideoBitrateAllocator> CreateBitrateAllocator(
-      const VideoCodec& codec,
-      std::unique_ptr<TemporalLayersFactory> tl_factory);
- */
-
 // TODO(sprang): Extend coverage to handle the rest of the codec initializer.
 class VideoCodecInitializerTest : public ::testing::Test {
  public:
@@ -96,14 +79,12 @@ class VideoCodecInitializerTest : public ::testing::Test {
     }
     if (codec_out_.codecType == VideoCodecType::kVideoCodecMultiplex)
       return true;
+
     // Make sure temporal layers instances have been created.
     if (codec_out_.codecType == VideoCodecType::kVideoCodecVP8) {
-      if (!codec_out_.VP8()->tl_factory)
-        return false;
-
       for (int i = 0; i < codec_out_.numberOfSimulcastStreams; ++i) {
-        temporal_layers_.emplace_back(codec_out_.VP8()->tl_factory->Create(
-            i, *streams_[i].num_temporal_layers, 0));
+        temporal_layers_.emplace_back(
+            TemporalLayers::CreateTemporalLayers(codec_out_, i, 0));
       }
     }
     return true;

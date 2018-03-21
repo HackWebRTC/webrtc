@@ -284,18 +284,6 @@ std::vector<TemporalLayers::FrameConfig> GetTemporalPattern(size_t num_layers) {
   return {TemporalLayers::FrameConfig(
       TemporalLayers::kNone, TemporalLayers::kNone, TemporalLayers::kNone)};
 }
-
-// Temporary fix for forced SW fallback.
-// For VP8 SW codec, |TemporalLayers| is created and reported to
-// SimulcastRateAllocator::OnTemporalLayersCreated but not for VP8 HW.
-// Causes an issue when going from forced SW -> HW as |TemporalLayers| is not
-// deregistred when deleted by SW codec (tl factory might not exist, owned by
-// SimulcastRateAllocator).
-bool ExcludeOnTemporalLayersCreated(int num_temporal_layers) {
-  return webrtc::field_trial::IsEnabled(
-             "WebRTC-VP8-Forced-Fallback-Encoder-v2") &&
-         num_temporal_layers == 1;
-}
 }  // namespace
 
 DefaultTemporalLayers::DefaultTemporalLayers(int number_of_temporal_layers,
@@ -397,30 +385,6 @@ void DefaultTemporalLayers::PopulateCodecSpecific(
     last_base_layer_sync_ = frame_is_keyframe;
     vp8_info->tl0PicIdx = tl0_pic_idx_;
   }
-}
-
-TemporalLayers* TemporalLayersFactory::Create(
-    int simulcast_id,
-    int temporal_layers,
-    uint8_t initial_tl0_pic_idx) const {
-  TemporalLayers* tl =
-      new DefaultTemporalLayers(temporal_layers, initial_tl0_pic_idx);
-  if (listener_ && !ExcludeOnTemporalLayersCreated(temporal_layers))
-    listener_->OnTemporalLayersCreated(simulcast_id, tl);
-  return tl;
-}
-
-std::unique_ptr<TemporalLayersChecker> TemporalLayersFactory::CreateChecker(
-    int /*simulcast_id*/,
-    int temporal_layers,
-    uint8_t initial_tl0_pic_idx) const {
-  TemporalLayersChecker* tlc =
-      new DefaultTemporalLayersChecker(temporal_layers, initial_tl0_pic_idx);
-  return std::unique_ptr<TemporalLayersChecker>(tlc);
-}
-
-void TemporalLayersFactory::SetListener(TemporalLayersListener* listener) {
-  listener_ = listener;
 }
 
 // Returns list of temporal dependencies for each frame in the temporal pattern.

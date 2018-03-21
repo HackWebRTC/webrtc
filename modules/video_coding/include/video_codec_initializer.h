@@ -19,7 +19,6 @@
 
 namespace webrtc {
 
-class TemporalLayersFactory;
 class VideoBitrateAllocator;
 class VideoCodec;
 class VideoEncoderConfig;
@@ -44,8 +43,7 @@ class VideoCodecInitializer {
   // optional, if it is populated, ownership of that instance will be
   // transferred to the VideoBitrateAllocator instance.
   static std::unique_ptr<VideoBitrateAllocator> CreateBitrateAllocator(
-      const VideoCodec& codec,
-      std::unique_ptr<TemporalLayersFactory> tl_factory);
+      const VideoCodec& codec);
 
  private:
   static VideoCodec VideoEncoderConfigToVideoCodec(

@@ -15,13 +15,65 @@
 #include <vector>
 
 #include "modules/include/module_common_types.h"
+#include "modules/video_coding/codecs/vp8/default_temporal_layers.h"
 #include "modules/video_coding/codecs/vp8/include/vp8_common_types.h"
+#include "modules/video_coding/codecs/vp8/screenshare_layers.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/ptr_util.h"
+#include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
+namespace {
+uint8_t NumTemporalLayers(const VideoCodec& codec, int spatial_id) {
+  uint8_t num_temporal_layers =
+      std::max<uint8_t>(1, codec.VP8().numberOfTemporalLayers);
+  if (codec.numberOfSimulcastStreams > 0) {
+    RTC_DCHECK_LT(spatial_id, codec.numberOfSimulcastStreams);
+    num_temporal_layers =
+        std::max(num_temporal_layers,
+                 codec.simulcastStream[spatial_id].numberOfTemporalLayers);
+  }
+  return num_temporal_layers;
+}
+
+bool IsConferenceModeScreenshare(const VideoCodec& codec) {
+  if (codec.mode != kScreensharing) {
+    return false;
+  }
+  return NumTemporalLayers(codec, 0) == 2;
+}
+}  // namespace
+
+std::unique_ptr<TemporalLayers> TemporalLayers::CreateTemporalLayers(
+    const VideoCodec& codec,
+    size_t spatial_id,
+    uint8_t initial_tl0_pic_idx) {
+  if (IsConferenceModeScreenshare(codec) && spatial_id == 0) {
+    // Conference mode temporal layering for screen content in base stream.
+    return rtc::MakeUnique<ScreenshareLayers>(2, initial_tl0_pic_idx,
+                                              Clock::GetRealTimeClock());
+  }
+
+  return rtc::MakeUnique<DefaultTemporalLayers>(
+      NumTemporalLayers(codec, spatial_id), initial_tl0_pic_idx);
+}
+
+std::unique_ptr<TemporalLayersChecker>
+TemporalLayers::CreateTemporalLayersChecker(const VideoCodec& codec,
+                                            size_t spatial_id,
+                                            uint8_t initial_tl0_pic_idx) {
+  if (IsConferenceModeScreenshare(codec) && spatial_id == 0) {
+    // Conference mode temporal layering for screen content in base stream,
+    // use generic checker.
+    return rtc::MakeUnique<TemporalLayersChecker>(2, initial_tl0_pic_idx);
+  }
+
+  return rtc::MakeUnique<DefaultTemporalLayersChecker>(
+      NumTemporalLayers(codec, spatial_id), initial_tl0_pic_idx);
+}
 
 TemporalLayersChecker::TemporalLayersChecker(int num_temporal_layers,
                                              uint8_t /*initial_tl0_pic_idx*/)

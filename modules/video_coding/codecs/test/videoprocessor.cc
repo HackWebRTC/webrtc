@@ -37,18 +37,6 @@ namespace {
 const int kMsToRtpTimestamp = kVideoPayloadTypeFrequency / 1000;
 const int kMaxBufferedInputFrames = 10;
 
-std::unique_ptr<VideoBitrateAllocator> CreateBitrateAllocator(
-    TestConfig* config) {
-  std::unique_ptr<TemporalLayersFactory> tl_factory;
-  if (config->codec_settings.codecType == VideoCodecType::kVideoCodecVP8) {
-    tl_factory.reset(new TemporalLayersFactory());
-    config->codec_settings.VP8()->tl_factory = tl_factory.get();
-  }
-  return std::unique_ptr<VideoBitrateAllocator>(
-      VideoCodecInitializer::CreateBitrateAllocator(config->codec_settings,
-                                                    std::move(tl_factory)));
-}
-
 size_t GetMaxNaluSizeBytes(const EncodedImage& encoded_frame,
                            const TestConfig& config) {
   if (config.codec_settings.codecType != kVideoCodecH264)
@@ -179,7 +167,8 @@ VideoProcessor::VideoProcessor(webrtc::VideoEncoder* encoder,
       stats_(stats),
       encoder_(encoder),
       decoders_(decoders),
-      bitrate_allocator_(CreateBitrateAllocator(&config_)),
+      bitrate_allocator_(VideoCodecInitializer::CreateBitrateAllocator(
+          config_.codec_settings)),
       framerate_fps_(0),
       encode_callback_(this),
       decode_callback_(this),

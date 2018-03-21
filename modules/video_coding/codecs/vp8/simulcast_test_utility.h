@@ -271,10 +271,7 @@ class TestVp8Simulcast : public ::testing::Test {
   }
 
   void SetUpRateAllocator() {
-    TemporalLayersFactory* tl_factory = new TemporalLayersFactory();
-    rate_allocator_.reset(new SimulcastRateAllocator(
-        settings_, std::unique_ptr<TemporalLayersFactory>(tl_factory)));
-    settings_.VP8()->tl_factory = tl_factory;
+    rate_allocator_.reset(new SimulcastRateAllocator(settings_));
   }
 
   void SetRates(uint32_t bitrate_kbps, uint32_t fps) {

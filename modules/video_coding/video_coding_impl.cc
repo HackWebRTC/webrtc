@@ -114,11 +114,8 @@ class VideoCodingModuleImpl : public VideoCodingModule {
       // asynchronously keep the instance alive until destruction or until a
       // new send codec is registered.
       VideoCodec vp8_codec = *sendCodec;
-      std::unique_ptr<TemporalLayersFactory> tl_factory(
-          new TemporalLayersFactory());
-      vp8_codec.VP8()->tl_factory = tl_factory.get();
-      rate_allocator_ = VideoCodecInitializer::CreateBitrateAllocator(
-          vp8_codec, std::move(tl_factory));
+      rate_allocator_ =
+          VideoCodecInitializer::CreateBitrateAllocator(vp8_codec);
       return sender_.RegisterSendCodec(&vp8_codec, numberOfCores,
                                        maxPayloadSize);
     }
