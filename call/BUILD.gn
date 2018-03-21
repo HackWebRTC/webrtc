@@ -147,6 +147,8 @@ rtc_static_library("call") {
     "degraded_call.h",
     "flexfec_receive_stream_impl.cc",
     "flexfec_receive_stream_impl.h",
+    "receive_time_calculator.cc",
+    "receive_time_calculator.h",
   ]
 
   if (!build_with_chromium && is_clang) {
@@ -249,6 +251,7 @@ if (rtc_include_tests) {
       "bitrate_estimator_tests.cc",
       "call_unittest.cc",
       "flexfec_receive_stream_unittest.cc",
+      "receive_time_calculator_unittest.cc",
       "rtcp_demuxer_unittest.cc",
       "rtp_bitrate_configurator_unittest.cc",
       "rtp_demuxer_unittest.cc",

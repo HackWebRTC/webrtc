@@ -24,6 +24,7 @@
 #include "call/bitrate_allocator.h"
 #include "call/call.h"
 #include "call/flexfec_receive_stream_impl.h"
+#include "call/receive_time_calculator.h"
 #include "call/rtp_stream_receiver_controller.h"
 #include "call/rtp_transport_controller_send.h"
 #include "logging/rtc_event_log/events/rtc_event_audio_receive_stream_config.h"
@@ -362,6 +363,9 @@ class Call : public webrtc::Call,
   RateLimiter retransmission_rate_limiter_;
   std::unique_ptr<RtpTransportControllerSendInterface> transport_send_;
   ReceiveSideCongestionController receive_side_cc_;
+
+  const std::unique_ptr<ReceiveTimeCalculator> receive_time_calculator_;
+
   const std::unique_ptr<SendDelayStats> video_send_delay_stats_;
   const int64_t start_ms_;
   // TODO(perkj): |worker_queue_| is supposed to replace
@@ -436,6 +440,7 @@ Call::Call(const Call::Config& config,
       pacer_bitrate_kbps_counter_(clock_, nullptr, true),
       retransmission_rate_limiter_(clock_, kRetransmitWindowSizeMs),
       receive_side_cc_(clock_, transport_send->packet_router()),
+      receive_time_calculator_(ReceiveTimeCalculator::CreateFromFieldTrial()),
       video_send_delay_stats_(new SendDelayStats(clock_)),
       start_ms_(clock_->TimeInMilliseconds()),
       worker_queue_("call_worker_queue") {
@@ -1227,7 +1232,12 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
     return DELIVERY_PACKET_ERROR;
 
   if (packet_time.timestamp != -1) {
-    parsed_packet.set_arrival_time_ms((packet_time.timestamp + 500) / 1000);
+    int64_t timestamp_us = packet_time.timestamp;
+    if (receive_time_calculator_) {
+      timestamp_us = receive_time_calculator_->ReconcileReceiveTimes(
+          packet_time.timestamp, clock_->TimeInMicroseconds());
+    }
+    parsed_packet.set_arrival_time_ms((timestamp_us + 500) / 1000);
   } else {
     parsed_packet.set_arrival_time_ms(clock_->TimeInMilliseconds());
   }
