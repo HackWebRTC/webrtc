@@ -87,6 +87,7 @@ if (rtc_include_tests) {
       "../p2p:p2p_test_utils",
       "../p2p:rtc_p2p",
       "../pc:pc_test_utils",
+      "../pc:peerconnection",
       "../rtc_base:rtc_base",
       "../rtc_base:rtc_base_approved",
       "../rtc_base:rtc_base_tests_main",

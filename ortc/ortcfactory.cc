@@ -32,7 +32,6 @@
 #include "pc/audiotrack.h"
 #include "pc/channelmanager.h"
 #include "pc/localaudiosource.h"
-#include "pc/videocapturertracksource.h"
 #include "pc/videotrack.h"
 #include "rtc_base/asyncpacketsocket.h"
 #include "rtc_base/bind.h"
@@ -114,10 +113,6 @@ PROXY_WORKER_METHOD3(RTCErrorOr<std::unique_ptr<UdpTransportInterface>>,
 PROXY_METHOD1(rtc::scoped_refptr<AudioSourceInterface>,
               CreateAudioSource,
               const cricket::AudioOptions&)
-PROXY_METHOD2(rtc::scoped_refptr<VideoTrackSourceInterface>,
-              CreateVideoSource,
-              std::unique_ptr<cricket::VideoCapturer>,
-              const MediaConstraintsInterface*)
 PROXY_METHOD2(rtc::scoped_refptr<VideoTrackInterface>,
               CreateVideoTrack,
               const std::string&,
@@ -478,17 +473,6 @@ rtc::scoped_refptr<AudioSourceInterface> OrtcFactory::CreateAudioSource(
   RTC_DCHECK_RUN_ON(signaling_thread_);
   return rtc::scoped_refptr<LocalAudioSource>(
       LocalAudioSource::Create(&options));
-}
-
-rtc::scoped_refptr<VideoTrackSourceInterface> OrtcFactory::CreateVideoSource(
-    std::unique_ptr<cricket::VideoCapturer> capturer,
-    const MediaConstraintsInterface* constraints) {
-  RTC_DCHECK_RUN_ON(signaling_thread_);
-  rtc::scoped_refptr<VideoTrackSourceInterface> source(
-      VideoCapturerTrackSource::Create(
-          worker_thread_.get(), std::move(capturer), constraints, false));
-  return VideoTrackSourceProxy::Create(signaling_thread_, worker_thread_.get(),
-                                       source);
 }
 
 rtc::scoped_refptr<VideoTrackInterface> OrtcFactory::CreateVideoTrack(
