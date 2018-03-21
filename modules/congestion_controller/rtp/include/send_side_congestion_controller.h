@@ -100,6 +100,7 @@ class SendSideCongestionController
 
   TransportFeedbackObserver* GetTransportFeedbackObserver() override;
 
+  void SetPerPacketFeedbackAvailable(bool available) override;
   void EnablePeriodicAlrProbing(bool enable) override;
 
   void OnSentPacket(const rtc::SentPacket& sent_packet) override;

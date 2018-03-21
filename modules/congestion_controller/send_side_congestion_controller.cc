@@ -251,6 +251,9 @@ RateLimiter* SendSideCongestionController::GetRetransmissionRateLimiter() {
   return retransmission_rate_limiter_.get();
 }
 
+void SendSideCongestionController::SetPerPacketFeedbackAvailable(
+    bool available) {}
+
 void SendSideCongestionController::EnablePeriodicAlrProbing(bool enable) {
   probe_controller_->EnablePeriodicAlrProbing(enable);
 }
