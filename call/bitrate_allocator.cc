@@ -220,7 +220,7 @@ void BitrateAllocator::UpdateAllocationLimits() {
                    << total_requested_padding_bitrate << "bps";
   limit_observer_->OnAllocationLimitsChanged(total_requested_min_bitrate,
                                              total_requested_padding_bitrate,
-                                             total_requested_bitrate);
+                                             total_requested_bitrate, true);
 }
 
 void BitrateAllocator::RemoveObserver(BitrateAllocatorObserver* observer) {
