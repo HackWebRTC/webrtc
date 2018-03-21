@@ -277,14 +277,16 @@ void AudioSendStream::Start() {
     return;
   }
 
+  bool has_transport_sequence_number =
+      FindExtensionIds(config_.rtp.extensions).transport_sequence_number != 0;
   if (config_.min_bitrate_bps != -1 && config_.max_bitrate_bps != -1 &&
-      (FindExtensionIds(config_.rtp.extensions).transport_sequence_number !=
-           0 ||
+      (has_transport_sequence_number ||
        !webrtc::field_trial::IsEnabled("WebRTC-Audio-SendSideBwe"))) {
     // Audio BWE is enabled.
     transport_->packet_sender()->SetAccountForAudioPackets(true);
     ConfigureBitrateObserver(config_.min_bitrate_bps, config_.max_bitrate_bps,
-                             config_.bitrate_priority);
+                             config_.bitrate_priority,
+                             has_transport_sequence_number);
   }
   channel_proxy_->StartSend();
   sending_ = true;
@@ -670,12 +672,13 @@ void AudioSendStream::ReconfigureBitrateObserver(
     return;
   }
 
+  bool has_transport_sequence_number = new_transport_seq_num_id != 0;
   if (new_config.min_bitrate_bps != -1 && new_config.max_bitrate_bps != -1 &&
-      (new_transport_seq_num_id != 0 ||
+      (has_transport_sequence_number ||
        !webrtc::field_trial::IsEnabled("WebRTC-Audio-SendSideBwe"))) {
-    stream->ConfigureBitrateObserver(new_config.min_bitrate_bps,
-                                     new_config.max_bitrate_bps,
-                                     new_config.bitrate_priority);
+    stream->ConfigureBitrateObserver(
+        new_config.min_bitrate_bps, new_config.max_bitrate_bps,
+        new_config.bitrate_priority, has_transport_sequence_number);
   } else {
     stream->RemoveBitrateObserver();
   }
@@ -683,7 +686,8 @@ void AudioSendStream::ReconfigureBitrateObserver(
 
 void AudioSendStream::ConfigureBitrateObserver(int min_bitrate_bps,
                                                int max_bitrate_bps,
-                                               double bitrate_priority) {
+                                               double bitrate_priority,
+                                               bool has_packet_feedback) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   RTC_DCHECK_GE(max_bitrate_bps, min_bitrate_bps);
   rtc::Event thread_sync_event(false /* manual_reset */, false);
@@ -695,7 +699,8 @@ void AudioSendStream::ConfigureBitrateObserver(int min_bitrate_bps,
     config_.bitrate_priority = bitrate_priority;
     // This either updates the current observer or adds a new observer.
     bitrate_allocator_->AddObserver(this, min_bitrate_bps, max_bitrate_bps, 0,
-                                    true, config_.track_id, bitrate_priority);
+                                    true, config_.track_id, bitrate_priority,
+                                    has_packet_feedback);
     thread_sync_event.Set();
   });
   thread_sync_event.Wait(rtc::Event::kForever);
