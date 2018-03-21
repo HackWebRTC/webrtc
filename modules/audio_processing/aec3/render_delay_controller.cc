@@ -40,6 +40,8 @@ class RenderDelayControllerImpl final : public RenderDelayController {
   void LogRenderCall() override;
   rtc::Optional<DelayEstimate> GetDelay(
       const DownsampledRenderBuffer& render_buffer,
+      size_t render_delay_buffer_delay,
+      const rtc::Optional<int>& echo_remover_delay,
       rtc::ArrayView<const float> capture) override;
 
  private:
@@ -146,6 +148,8 @@ void RenderDelayControllerImpl::LogRenderCall() {
 
 rtc::Optional<DelayEstimate> RenderDelayControllerImpl::GetDelay(
     const DownsampledRenderBuffer& render_buffer,
+    size_t render_delay_buffer_delay,
+    const rtc::Optional<int>& echo_remover_delay,
     rtc::ArrayView<const float> capture) {
   RTC_DCHECK_EQ(kBlockSize, capture.size());
   ++capture_call_counter_;
@@ -157,6 +161,14 @@ rtc::Optional<DelayEstimate> RenderDelayControllerImpl::GetDelay(
   auto delay_samples =
       delay_estimator_.EstimateDelay(render_buffer, capture_delayed);
 
+  // Overrule the delay estimator delay if the echo remover reports a delay.
+  if (echo_remover_delay) {
+    int total_echo_remover_delay_samples =
+        (render_delay_buffer_delay + *echo_remover_delay) * kBlockSize;
+    delay_samples = DelayEstimate(DelayEstimate::Quality::kRefined,
+                                  total_echo_remover_delay_samples);
+  }
+
   std::copy(capture.begin(), capture.end(),
             delay_buf_.begin() + delay_buf_index_);
   delay_buf_index_ = (delay_buf_index_ + kBlockSize) % delay_buf_.size();
@@ -165,6 +177,9 @@ rtc::Optional<DelayEstimate> RenderDelayControllerImpl::GetDelay(
   rtc::Optional<int> skew = skew_estimator_.GetSkewFromCapture();
 
   if (delay_samples) {
+    // TODO(peah): Refactor the rest of the code to assume a kRefined estimate
+    // quality.
+    RTC_DCHECK(DelayEstimate::Quality::kRefined == delay_samples->quality);
     if (!delay_samples_ || delay_samples->delay != delay_samples_->delay) {
       delay_change_counter_ = 0;
     }

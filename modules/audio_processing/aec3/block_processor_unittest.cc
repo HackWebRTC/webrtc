@@ -166,7 +166,7 @@ TEST(BlockProcessor, DISABLED_SubmoduleIntegration) {
     EXPECT_CALL(*render_delay_buffer_mock, Delay())
         .Times(kNumBlocks)
         .WillRepeatedly(Return(0));
-    EXPECT_CALL(*render_delay_controller_mock, GetDelay(_, _))
+    EXPECT_CALL(*render_delay_controller_mock, GetDelay(_, _, _, _))
         .Times(kNumBlocks);
     EXPECT_CALL(*echo_remover_mock, ProcessCapture(_, _, _, _, _))
         .Times(kNumBlocks);

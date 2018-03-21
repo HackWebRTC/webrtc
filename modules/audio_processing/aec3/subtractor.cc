@@ -99,6 +99,7 @@ void Subtractor::HandleEchoPathChange(
     shadow_filter_converged_ = false;
     main_filter_.SetSizePartitions(config_.filter.main_initial.length_blocks,
                                    true);
+    main_filter_once_converged_ = false;
     shadow_filter_.SetSizePartitions(
         config_.filter.shadow_initial.length_blocks, true);
   };
@@ -153,22 +154,21 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
   PredictionError(fft_, S, y, &e_shadow, nullptr, &shadow_saturation);
   fft_.ZeroPaddedFft(e_shadow, Aec3Fft::Window::kHanning, &E_shadow);
 
-  if (!(main_filter_converged_ || shadow_filter_converged_)) {
-    const auto sum_of_squares = [](float a, float b) { return a + b * b; };
-    const float y2 = std::accumulate(y.begin(), y.end(), 0.f, sum_of_squares);
+  // Check for filter convergence.
+  const auto sum_of_squares = [](float a, float b) { return a + b * b; };
+  const float y2 = std::accumulate(y.begin(), y.end(), 0.f, sum_of_squares);
+  const float e2_main =
+      std::accumulate(e_main.begin(), e_main.end(), 0.f, sum_of_squares);
+  const float e2_shadow =
+      std::accumulate(e_shadow.begin(), e_shadow.end(), 0.f, sum_of_squares);
 
-    if (!main_filter_converged_) {
-      const float e2_main =
-          std::accumulate(e_main.begin(), e_main.end(), 0.f, sum_of_squares);
-      main_filter_converged_ = e2_main > 0.1 * y2;
-    }
-
-    if (!shadow_filter_converged_) {
-      const float e2_shadow = std::accumulate(e_shadow.begin(), e_shadow.end(),
-                                              0.f, sum_of_squares);
-      shadow_filter_converged_ = e2_shadow > 0.1 * y2;
-    }
-  }
+  constexpr float kConvergenceThreshold = 200 * 200 * kBlockSize;
+  main_filter_converged_ = e2_main < 0.2 * y2 && y2 > kConvergenceThreshold;
+  shadow_filter_converged_ =
+      e2_shadow < 0.05 * y2 && y2 > kConvergenceThreshold;
+  main_filter_once_converged_ =
+      main_filter_once_converged_ || main_filter_converged_;
+  main_filter_diverged_ = e2_main > 1.5f * y2 && y2 > 30.f * 30.f * kBlockSize;
 
   // Compute spectra for future use.
   E_shadow.Spectrum(optimization_, output->E2_shadow);
@@ -205,9 +205,7 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
   data_dumper_->DumpRaw("aec3_subtractor_G_shadow", G.re);
   data_dumper_->DumpRaw("aec3_subtractor_G_shadow", G.im);
 
-  main_filter_.DumpFilter("aec3_subtractor_H_main", "aec3_subtractor_h_main");
-  shadow_filter_.DumpFilter("aec3_subtractor_H_shadow",
-                            "aec3_subtractor_h_shadow");
+  DumpFilters();
 }
 
 }  // namespace webrtc

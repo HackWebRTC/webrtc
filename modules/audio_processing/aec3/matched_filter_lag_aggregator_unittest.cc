@@ -22,7 +22,7 @@
 namespace webrtc {
 namespace {
 
-constexpr size_t kNumLagsBeforeDetection = 25;
+constexpr size_t kNumLagsBeforeDetection = 26;
 
 }  // namespace
 
@@ -37,7 +37,7 @@ TEST(MatchedFilterLagAggregator, MostAccurateLagChosen) {
   lag_estimates[1] = MatchedFilter::LagEstimate(0.5f, true, kLag2, true);
 
   for (size_t k = 0; k < kNumLagsBeforeDetection; ++k) {
-    EXPECT_TRUE(aggregator.Aggregate(lag_estimates));
+    aggregator.Aggregate(lag_estimates);
   }
 
   rtc::Optional<DelayEstimate> aggregated_lag =

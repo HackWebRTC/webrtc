@@ -78,15 +78,15 @@ TEST(SuppressionGain, BasicGainComputation) {
   for (int k = 0; k <= kNumBlocksPerSecond / 5 + 1; ++k) {
     aec_state.Update(delay_estimate, subtractor.FilterFrequencyResponse(),
                      subtractor.FilterImpulseResponse(),
-                     subtractor.ConvergedFilter(),
-                     *render_delay_buffer->GetRenderBuffer(), E2, Y2, s, false);
+                     subtractor.ConvergedFilter(), subtractor.DivergedFilter(),
+                     *render_delay_buffer->GetRenderBuffer(), E2, Y2, s);
   }
 
   for (int k = 0; k < 100; ++k) {
     aec_state.Update(delay_estimate, subtractor.FilterFrequencyResponse(),
                      subtractor.FilterImpulseResponse(),
-                     subtractor.ConvergedFilter(),
-                     *render_delay_buffer->GetRenderBuffer(), E2, Y2, s, false);
+                     subtractor.ConvergedFilter(), subtractor.DivergedFilter(),
+                     *render_delay_buffer->GetRenderBuffer(), E2, Y2, s);
     suppression_gain.GetGain(E2, R2, N2, analyzer, aec_state, x,
                              &high_bands_gain, &g);
   }
@@ -101,8 +101,8 @@ TEST(SuppressionGain, BasicGainComputation) {
   for (int k = 0; k < 100; ++k) {
     aec_state.Update(delay_estimate, subtractor.FilterFrequencyResponse(),
                      subtractor.FilterImpulseResponse(),
-                     subtractor.ConvergedFilter(),
-                     *render_delay_buffer->GetRenderBuffer(), E2, Y2, s, false);
+                     subtractor.ConvergedFilter(), subtractor.DivergedFilter(),
+                     *render_delay_buffer->GetRenderBuffer(), E2, Y2, s);
     suppression_gain.GetGain(E2, R2, N2, analyzer, aec_state, x,
                              &high_bands_gain, &g);
   }

@@ -38,9 +38,12 @@ class EchoRemover {
   virtual void ProcessCapture(
       const EchoPathVariability& echo_path_variability,
       bool capture_signal_saturation,
-      const rtc::Optional<DelayEstimate>& delay_estimate,
+      const rtc::Optional<DelayEstimate>& external_delay,
       RenderBuffer* render_buffer,
       std::vector<std::vector<float>>* capture) = 0;
+
+  // Returns the internal delay estimate in blocks.
+  virtual rtc::Optional<int> Delay() const = 0;
 
   // Updates the status on whether echo leakage is detected in the output of the
   // echo remover.

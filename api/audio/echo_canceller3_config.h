@@ -18,7 +18,6 @@ namespace webrtc {
 // Configuration struct for EchoCanceller3
 struct EchoCanceller3Config {
   EchoCanceller3Config();
-
   struct Delay {
     size_t default_delay = 5;
     size_t down_sampling_factor = 4;
@@ -57,14 +56,14 @@ struct EchoCanceller3Config {
 
   struct Erle {
     float min = 1.f;
-    float max_l = 8.f;
+    float max_l = 4.f;
     float max_h = 1.5f;
   } erle;
 
   struct EpStrength {
-    float lf = 10.f;
-    float mf = 10.f;
-    float hf = 10.f;
+    float lf = 2.f;
+    float mf = 2.f;
+    float hf = 2.f;
     float default_len = 0.f;
     bool echo_can_saturate = true;
     bool bounded_erl = false;

@@ -38,6 +38,8 @@ class RenderDelayController {
   // Aligns the render buffer content with the capture signal.
   virtual rtc::Optional<DelayEstimate> GetDelay(
       const DownsampledRenderBuffer& render_buffer,
+      size_t render_delay_buffer_delay,
+      const rtc::Optional<int>& echo_remover_delay,
       rtc::ArrayView<const float> capture) = 0;
 };
 }  // namespace webrtc

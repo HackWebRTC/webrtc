@@ -47,7 +47,7 @@ class MockRenderDelayBuffer : public RenderDelayBuffer {
                    const std::vector<std::vector<float>>& block));
   MOCK_METHOD0(PrepareCaptureProcessing, RenderDelayBuffer::BufferingEvent());
   MOCK_METHOD1(SetDelay, bool(size_t delay));
-  MOCK_CONST_METHOD0(Delay, rtc::Optional<size_t>());
+  MOCK_CONST_METHOD0(Delay, size_t());
   MOCK_CONST_METHOD0(MaxDelay, size_t());
   MOCK_METHOD0(GetRenderBuffer, RenderBuffer*());
   MOCK_CONST_METHOD0(GetDownsampledRenderBuffer,

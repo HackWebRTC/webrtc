@@ -28,9 +28,6 @@ class OutputSelector {
                         rtc::ArrayView<const float> subtractor_output,
                         rtc::ArrayView<float> capture);
 
-  // Returns true if the linear aec output is the one used.
-  bool UseSubtractorOutput() const { return use_subtractor_output_; }
-
  private:
   bool use_subtractor_output_ = false;
   RTC_DISALLOW_COPY_AND_ASSIGN(OutputSelector);

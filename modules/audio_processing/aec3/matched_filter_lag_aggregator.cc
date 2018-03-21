@@ -70,8 +70,6 @@ rtc::Optional<DelayEstimate> MatchedFilterLagAggregator::Aggregate(
     if (histogram_[candidate] > 25) {
       significant_candidate_found_ = true;
       return DelayEstimate(DelayEstimate::Quality::kRefined, candidate);
-    } else if (!significant_candidate_found_) {
-      return DelayEstimate(DelayEstimate::Quality::kCoarse, candidate);
     }
   }
   return rtc::nullopt;

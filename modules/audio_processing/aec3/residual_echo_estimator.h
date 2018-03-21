@@ -48,10 +48,8 @@ class ResidualEchoEstimator {
 
   // Estimates the residual echo power based on the estimate of the echo path
   // gain.
-  void NonLinearEstimate(bool sufficient_filter_updates,
-                         bool saturated_echo,
-                         bool bounded_erl,
-                         bool transparent_mode,
+  void NonLinearEstimate(bool saturated_echo,
+                         float echo_path_gain,
                          const std::array<float, kFftLengthBy2Plus1>& X2,
                          const std::array<float, kFftLengthBy2Plus1>& Y2,
                          std::array<float, kFftLengthBy2Plus1>* R2);

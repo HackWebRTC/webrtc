@@ -38,7 +38,16 @@ void SuppressionGainUpperLimiter::Reset() {
   recent_reset_ = true;
 }
 
-void SuppressionGainUpperLimiter::Update(bool render_activity) {
+void SuppressionGainUpperLimiter::Update(bool render_activity,
+                                         bool transparent_mode) {
+  if (transparent_mode) {
+    active_render_seen_ = true;
+    call_startup_phase_ = false;
+    recent_reset_ = false;
+    suppressor_gain_limit_ = 1.f;
+    return;
+  }
+
   if (recent_reset_ && !call_startup_phase_) {
     // Only enforce 250 ms full suppression after in-call resets,
     constexpr int kMuteFramesAfterReset = kNumBlocksPerSecond / 4;

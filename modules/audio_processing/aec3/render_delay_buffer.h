@@ -57,7 +57,7 @@ class RenderDelayBuffer {
   virtual bool SetDelay(size_t delay) = 0;
 
   // Gets the buffer delay.
-  virtual rtc::Optional<size_t> Delay() const = 0;
+  virtual size_t Delay() const = 0;
 
   // Gets the buffer delay.
   virtual size_t MaxDelay() const = 0;

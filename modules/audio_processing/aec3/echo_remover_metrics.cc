@@ -237,7 +237,7 @@ void EchoRemoverMetrics::Update(
             static_cast<int>(
                 active_render_count_ > kMetricsCollectionBlocksBy2 ? 1 : 0));
         RTC_HISTOGRAM_COUNTS_LINEAR("WebRTC.Audio.EchoCanceller.FilterDelay",
-                                    aec_state.FilterDelay(), 0, 30, 31);
+                                    aec_state.FilterDelayBlocks(), 0, 30, 31);
         RTC_HISTOGRAM_BOOLEAN("WebRTC.Audio.EchoCanceller.CaptureSaturation",
                               static_cast<int>(saturated_capture_ ? 1 : 0));
         break;

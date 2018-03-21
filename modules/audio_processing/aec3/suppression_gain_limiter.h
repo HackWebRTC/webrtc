@@ -27,7 +27,7 @@ class SuppressionGainUpperLimiter {
   void Reset();
 
   // Updates the limiting behavior for the current capture bloc.
-  void Update(bool render_activity);
+  void Update(bool render_activity, bool transparent_mode);
 
   // Returns the current suppressor gain limit.
   float Limit() const { return suppressor_gain_limit_; }

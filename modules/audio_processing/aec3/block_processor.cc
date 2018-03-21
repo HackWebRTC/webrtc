@@ -57,6 +57,7 @@ class BlockProcessorImpl final : public BlockProcessor {
   RenderDelayBuffer::BufferingEvent render_event_;
   size_t capture_call_counter_ = 0;
   rtc::Optional<DelayEstimate> estimated_delay_;
+  rtc::Optional<int> echo_remover_delay_;
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(BlockProcessorImpl);
 };
 
@@ -158,7 +159,8 @@ void BlockProcessorImpl::ProcessCapture(
   // Compute and and apply the render delay required to achieve proper signal
   // alignment.
   estimated_delay_ = delay_controller_->GetDelay(
-      render_buffer_->GetDownsampledRenderBuffer(), (*capture_block)[0]);
+      render_buffer_->GetDownsampledRenderBuffer(), render_buffer_->Delay(),
+      echo_remover_delay_, (*capture_block)[0]);
 
   if (estimated_delay_) {
     if (render_buffer_->CausalDelay(estimated_delay_->delay)) {
@@ -190,6 +192,10 @@ void BlockProcessorImpl::ProcessCapture(
   echo_remover_->ProcessCapture(
       echo_path_variability, capture_signal_saturation, estimated_delay_,
       render_buffer_->GetRenderBuffer(), capture_block);
+
+  // Check to see if a refined delay estimate has been obtained from the echo
+  // remover.
+  echo_remover_delay_ = echo_remover_->Delay();
 
   // Update the metrics.
   metrics_.UpdateCapture(false);

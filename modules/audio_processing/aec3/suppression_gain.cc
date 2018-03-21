@@ -27,11 +27,16 @@ namespace {
 
 // Reduce gain to avoid narrow band echo leakage.
 void NarrowBandAttenuation(int narrow_bin,
+                           const std::array<float, kFftLengthBy2Plus1>& nearend,
+                           const std::array<float, kFftLengthBy2Plus1>& echo,
                            std::array<float, kFftLengthBy2Plus1>* gain) {
-  const int upper_bin =
-      std::min(narrow_bin + 6, static_cast<int>(kFftLengthBy2Plus1 - 1));
-  for (int k = std::max(0, narrow_bin - 6); k <= upper_bin; ++k) {
-    (*gain)[k] = std::min((*gain)[k], 0.001f);
+  // TODO(peah): Verify that the condition below is not too conservative.
+  if (10.f * echo[narrow_bin] > nearend[narrow_bin]) {
+    const int upper_bin =
+        std::min(narrow_bin + 6, static_cast<int>(kFftLengthBy2Plus1 - 1));
+    for (int k = std::max(0, narrow_bin - 6); k <= upper_bin; ++k) {
+      (*gain)[k] = std::min((*gain)[k], 0.001f);
+    }
   }
 }
 
@@ -267,7 +272,7 @@ void SuppressionGain::LowerBandGain(
                         echo, masker, min_gain, max_gain, one_by_echo, gain);
     AdjustForExternalFilters(gain);
     if (narrow_peak_band) {
-      NarrowBandAttenuation(*narrow_peak_band, gain);
+      NarrowBandAttenuation(*narrow_peak_band, nearend, echo, gain);
     }
   }
 
