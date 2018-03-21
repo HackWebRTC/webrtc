@@ -16,86 +16,117 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
+#include "rtc_base/ptr_util.h"
+#include "rtc_base/refcount.h"
+#include "rtc_base/refcountedobject.h"
+
 #include "sdk/android/generated_audio_jni/jni/WebRtcAudioManager_jni.h"
 #include "sdk/android/src/jni/audio_device/audio_common.h"
 #include "sdk/android/src/jni/jni_helpers.h"
+
+#if defined(AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO)
+#include "sdk/android/src/jni/audio_device/aaudio_player.h"
+#include "sdk/android/src/jni/audio_device/aaudio_recorder.h"
+#endif
+#include "sdk/android/src/jni/audio_device/audio_device_template_android.h"
+#include "sdk/android/src/jni/audio_device/audio_manager.h"
+#include "sdk/android/src/jni/audio_device/audio_record_jni.h"
+#include "sdk/android/src/jni/audio_device/audio_track_jni.h"
+#include "sdk/android/src/jni/audio_device/opensles_player.h"
+#include "sdk/android/src/jni/audio_device/opensles_recorder.h"
 
 namespace webrtc {
 
 namespace android_adm {
 
-// AudioManager::JavaAudioManager implementation
-AudioManager::JavaAudioManager::JavaAudioManager(
-    const ScopedJavaLocalRef<jobject>& audio_manager)
-    : env_(audio_manager.env()), audio_manager_(audio_manager) {
-  RTC_LOG(INFO) << "JavaAudioManager::ctor";
+#if defined(AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO)
+rtc::scoped_refptr<AudioDeviceModule>
+AudioManager::CreateAAudioAudioDeviceModule(
+    JNIEnv* env,
+    const JavaParamRef<jobject>& application_context) {
+  RTC_LOG(INFO) << __FUNCTION__;
+  return new rtc::RefCountedObject<android_adm::AudioDeviceTemplateAndroid<
+      android_adm::AAudioRecorder, android_adm::AAudioPlayer>>(
+      env, AudioDeviceModule::kAndroidAAudioAudio);
+}
+#endif
+
+rtc::scoped_refptr<AudioDeviceModule> AudioManager::CreateAudioDeviceModule(
+    JNIEnv* env,
+    const JavaParamRef<jobject>& application_context) {
+  const bool use_opensles_output =
+      !Java_WebRtcAudioManager_isDeviceBlacklistedForOpenSLESUsage(env) &&
+      Java_WebRtcAudioManager_isLowLatencyOutputSupported(env,
+                                                          application_context);
+  const bool use_opensles_input =
+      use_opensles_output && Java_WebRtcAudioManager_isLowLatencyInputSupported(
+                                 env, application_context);
+  return CreateAudioDeviceModule(env, application_context, use_opensles_input,
+                                 use_opensles_output);
 }
 
-AudioManager::JavaAudioManager::~JavaAudioManager() {
-  RTC_LOG(INFO) << "JavaAudioManager::~dtor";
-}
+rtc::scoped_refptr<AudioDeviceModule> AudioManager::CreateAudioDeviceModule(
+    JNIEnv* env,
+    const JavaParamRef<jobject>& application_context,
+    bool use_opensles_input,
+    bool use_opensles_output) {
+  RTC_LOG(INFO) << __FUNCTION__;
 
-bool AudioManager::JavaAudioManager::Init() {
-  thread_checker_.CalledOnValidThread();
-  return Java_WebRtcAudioManager_init(env_, audio_manager_);
-}
-
-void AudioManager::JavaAudioManager::Close() {
-  thread_checker_.CalledOnValidThread();
-  Java_WebRtcAudioManager_dispose(env_, audio_manager_);
-}
-
-bool AudioManager::JavaAudioManager::IsCommunicationModeEnabled() {
-  thread_checker_.CalledOnValidThread();
-  return Java_WebRtcAudioManager_isCommunicationModeEnabled(env_,
-                                                            audio_manager_);
-}
-
-bool AudioManager::JavaAudioManager::IsDeviceBlacklistedForOpenSLESUsage() {
-  thread_checker_.CalledOnValidThread();
-  return Java_WebRtcAudioManager_isDeviceBlacklistedForOpenSLESUsage(
-      env_, audio_manager_);
+  if (use_opensles_output) {
+    if (use_opensles_input) {
+      // Use OpenSL ES for both playout and recording.
+      return new rtc::RefCountedObject<android_adm::AudioDeviceTemplateAndroid<
+          android_adm::OpenSLESRecorder, android_adm::OpenSLESPlayer>>(
+          env, application_context, AudioDeviceModule::kAndroidOpenSLESAudio);
+    } else {
+      // Use OpenSL ES for output and AudioRecord API for input. This
+      // combination provides low-latency output audio and at the same
+      // time support for HW AEC using the AudioRecord Java API.
+      return new rtc::RefCountedObject<android_adm::AudioDeviceTemplateAndroid<
+          android_adm::AudioRecordJni, android_adm::OpenSLESPlayer>>(
+          env, application_context,
+          AudioDeviceModule::kAndroidJavaInputAndOpenSLESOutputAudio);
+    }
+  } else {
+    RTC_DCHECK(!use_opensles_input)
+        << "Combination of OpenSLES input and Java-based output not supported";
+    // Use Java-based audio in both directions.
+    return new rtc::RefCountedObject<android_adm::AudioDeviceTemplateAndroid<
+        android_adm::AudioRecordJni, android_adm::AudioTrackJni>>(
+        env, application_context, AudioDeviceModule::kAndroidJavaAudio);
+  }
 }
 
 // AudioManager implementation
-AudioManager::AudioManager()
-    : audio_layer_(AudioDeviceModule::kPlatformDefaultAudio),
-      initialized_(false),
-      hardware_aec_(false),
-      hardware_agc_(false),
-      hardware_ns_(false),
-      low_latency_playout_(false),
-      low_latency_record_(false),
-      delay_estimate_in_milliseconds_(0) {
+AudioManager::AudioManager(JNIEnv* env,
+                           AudioDeviceModule::AudioLayer audio_layer,
+                           const JavaParamRef<jobject>& application_context)
+    : j_audio_manager_(
+          Java_WebRtcAudioManager_Constructor(env, application_context)),
+      audio_layer_(audio_layer),
+      initialized_(false) {
   RTC_LOG(INFO) << "ctor";
-  j_audio_manager_.reset(
-      new JavaAudioManager(Java_WebRtcAudioManager_Constructor(
-          AttachCurrentThreadIfNeeded(), jni::jlongFromPointer(this))));
+  const int sample_rate =
+      Java_WebRtcAudioManager_getSampleRate(env, j_audio_manager_);
+  const size_t output_channels =
+      Java_WebRtcAudioManager_getStereoOutput(env, j_audio_manager_) ? 2 : 1;
+  const size_t input_channels =
+      Java_WebRtcAudioManager_getStereoInput(env, j_audio_manager_) ? 2 : 1;
+  const size_t output_buffer_size =
+      Java_WebRtcAudioManager_getOutputBufferSize(env, j_audio_manager_);
+  const size_t input_buffer_size =
+      Java_WebRtcAudioManager_getInputBufferSize(env, j_audio_manager_);
+  playout_parameters_.reset(sample_rate, static_cast<size_t>(output_channels),
+                            static_cast<size_t>(output_buffer_size));
+  record_parameters_.reset(sample_rate, static_cast<size_t>(input_channels),
+                           static_cast<size_t>(input_buffer_size));
+  thread_checker_.DetachFromThread();
 }
 
 AudioManager::~AudioManager() {
   RTC_LOG(INFO) << "dtor";
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   Close();
-}
-
-void AudioManager::SetActiveAudioLayer(
-    AudioDeviceModule::AudioLayer audio_layer) {
-  RTC_LOG(INFO) << "SetActiveAudioLayer: " << audio_layer;
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  RTC_DCHECK(!initialized_);
-  // Store the currently utilized audio layer.
-  audio_layer_ = audio_layer;
-  // The delay estimate can take one of two fixed values depending on if the
-  // device supports low-latency output or not. However, it is also possible
-  // that the user explicitly selects the high-latency audio path, hence we use
-  // the selected |audio_layer| here to set the delay estimate.
-  delay_estimate_in_milliseconds_ =
-      (audio_layer == AudioDeviceModule::kAndroidJavaAudio)
-          ? kHighLatencyModeDelayEstimateInMilliseconds
-          : kLowLatencyModeDelayEstimateInMilliseconds;
-  RTC_LOG(INFO) << "delay_estimate_in_milliseconds: "
-                << delay_estimate_in_milliseconds_;
 }
 
 SLObjectItf AudioManager::GetOpenSLEngine() {
@@ -144,7 +175,8 @@ bool AudioManager::Init() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(!initialized_);
   RTC_DCHECK_NE(audio_layer_, AudioDeviceModule::kPlatformDefaultAudio);
-  if (!j_audio_manager_->Init()) {
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  if (!Java_WebRtcAudioManager_init(env, j_audio_manager_)) {
     RTC_LOG(LS_ERROR) << "Init() failed";
     return false;
   }
@@ -157,60 +189,31 @@ bool AudioManager::Close() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   if (!initialized_)
     return true;
-  j_audio_manager_->Close();
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  Java_WebRtcAudioManager_dispose(env, j_audio_manager_);
   initialized_ = false;
   return true;
 }
 
 bool AudioManager::IsCommunicationModeEnabled() const {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  return j_audio_manager_->IsCommunicationModeEnabled();
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  return Java_WebRtcAudioManager_isCommunicationModeEnabled(env,
+                                                            j_audio_manager_);
 }
 
 bool AudioManager::IsAcousticEchoCancelerSupported() const {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  return hardware_aec_;
-}
-
-bool AudioManager::IsAutomaticGainControlSupported() const {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  return hardware_agc_;
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  return Java_WebRtcAudioManager_isAcousticEchoCancelerSupported(
+      env, j_audio_manager_);
 }
 
 bool AudioManager::IsNoiseSuppressorSupported() const {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  return hardware_ns_;
-}
-
-bool AudioManager::IsLowLatencyPlayoutSupported() const {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  // Some devices are blacklisted for usage of OpenSL ES even if they report
-  // that low-latency playout is supported. See b/21485703 for details.
-  return j_audio_manager_->IsDeviceBlacklistedForOpenSLESUsage()
-             ? false
-             : low_latency_playout_;
-}
-
-bool AudioManager::IsLowLatencyRecordSupported() const {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  return low_latency_record_;
-}
-
-bool AudioManager::IsProAudioSupported() const {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  // TODO(henrika): return the state independently of if OpenSL ES is
-  // blacklisted or not for now. We could use the same approach as in
-  // IsLowLatencyPlayoutSupported() but I can't see the need for it yet.
-  return pro_audio_;
-}
-
-// TODO(henrika): improve comments...
-bool AudioManager::IsAAudioSupported() const {
-#if defined(AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO)
-  return a_audio_;
-#else
-  return false;
-#endif
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  return Java_WebRtcAudioManager_isNoiseSuppressorSupported(env,
+                                                            j_audio_manager_);
 }
 
 bool AudioManager::IsStereoPlayoutSupported() const {
@@ -224,49 +227,9 @@ bool AudioManager::IsStereoRecordSupported() const {
 }
 
 int AudioManager::GetDelayEstimateInMilliseconds() const {
-  return delay_estimate_in_milliseconds_;
-}
-
-void AudioManager::CacheAudioParameters(JNIEnv* env,
-                                        const JavaParamRef<jobject>& j_caller,
-                                        jint sample_rate,
-                                        jint output_channels,
-                                        jint input_channels,
-                                        jboolean hardware_aec,
-                                        jboolean hardware_agc,
-                                        jboolean hardware_ns,
-                                        jboolean low_latency_output,
-                                        jboolean low_latency_input,
-                                        jboolean pro_audio,
-                                        jboolean a_audio,
-                                        jint output_buffer_size,
-                                        jint input_buffer_size) {
-  RTC_LOG(INFO)
-      << "OnCacheAudioParameters: "
-      << "hardware_aec: " << static_cast<bool>(hardware_aec)
-      << ", hardware_agc: " << static_cast<bool>(hardware_agc)
-      << ", hardware_ns: " << static_cast<bool>(hardware_ns)
-      << ", low_latency_output: " << static_cast<bool>(low_latency_output)
-      << ", low_latency_input: " << static_cast<bool>(low_latency_input)
-      << ", pro_audio: " << static_cast<bool>(pro_audio)
-      << ", a_audio: " << static_cast<bool>(a_audio)
-      << ", sample_rate: " << static_cast<int>(sample_rate)
-      << ", output_channels: " << static_cast<int>(output_channels)
-      << ", input_channels: " << static_cast<int>(input_channels)
-      << ", output_buffer_size: " << static_cast<int>(output_buffer_size)
-      << ", input_buffer_size: " << static_cast<int>(input_buffer_size);
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  hardware_aec_ = hardware_aec;
-  hardware_agc_ = hardware_agc;
-  hardware_ns_ = hardware_ns;
-  low_latency_playout_ = low_latency_output;
-  low_latency_record_ = low_latency_input;
-  pro_audio_ = pro_audio;
-  a_audio_ = a_audio;
-  playout_parameters_.reset(sample_rate, static_cast<size_t>(output_channels),
-                            static_cast<size_t>(output_buffer_size));
-  record_parameters_.reset(sample_rate, static_cast<size_t>(input_channels),
-                           static_cast<size_t>(input_buffer_size));
+  return audio_layer_ == AudioDeviceModule::kAndroidJavaAudio
+             ? kHighLatencyModeDelayEstimateInMilliseconds
+             : kLowLatencyModeDelayEstimateInMilliseconds;
 }
 
 const AudioParameters& AudioManager::GetPlayoutAudioParameters() {

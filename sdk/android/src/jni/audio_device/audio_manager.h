@@ -30,36 +30,31 @@ namespace android_adm {
 // relies on the AudioManager in android.media. It also populates an
 // AudioParameter structure with native audio parameters detected at
 // construction. This class does not make any audio-related modifications
-// unless Init() is called. Caching audio parameters makes no changes but only
-// reads data from the Java side.
+// unless Init() is called.
 class AudioManager {
  public:
-  // Wraps the Java specific parts of the AudioManager into one helper class.
-  // Stores method IDs for all supported methods at construction and then
-  // allows calls like JavaAudioManager::Close() while hiding the Java/JNI
-  // parts that are associated with this call.
-  class JavaAudioManager {
-   public:
-    explicit JavaAudioManager(const ScopedJavaLocalRef<jobject>& audio_manager);
-    ~JavaAudioManager();
+#if defined(AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO)
+  static rtc::scoped_refptr<AudioDeviceModule> CreateAAudioAudioDeviceModule(
+      JNIEnv* env,
+      const JavaParamRef<jobject>& application_context);
+#endif
 
-    bool Init();
-    void Close();
-    bool IsCommunicationModeEnabled();
-    bool IsDeviceBlacklistedForOpenSLESUsage();
+  static rtc::scoped_refptr<AudioDeviceModule> CreateAudioDeviceModule(
+      JNIEnv* env,
+      const JavaParamRef<jobject>& application_context,
+      bool use_opensles_input,
+      bool use_opensles_output);
 
-   private:
-    JNIEnv* const env_;
-    rtc::ThreadChecker thread_checker_;
-    ScopedJavaGlobalRef<jobject> audio_manager_;
-  };
+  // This function has internal logic checking if OpenSLES is blacklisted and
+  // whether it's supported.
+  static rtc::scoped_refptr<AudioDeviceModule> CreateAudioDeviceModule(
+      JNIEnv* env,
+      const JavaParamRef<jobject>& application_context);
 
-  AudioManager();
+  AudioManager(JNIEnv* env,
+               AudioDeviceModule::AudioLayer audio_layer,
+               const JavaParamRef<jobject>& application_context);
   ~AudioManager();
-
-  // Sets the currently active audio layer combination. Must be called before
-  // Init().
-  void SetActiveAudioLayer(AudioDeviceModule::AudioLayer audio_layer);
 
   // Creates and realizes the main (global) Open SL engine object and returns
   // a reference to it. The engine object is only created at the first call
@@ -91,13 +86,7 @@ class AudioManager {
   // Can currently only be used in combination with a Java based audio backend
   // for the recoring side (i.e. using the android.media.AudioRecord API).
   bool IsAcousticEchoCancelerSupported() const;
-  bool IsAutomaticGainControlSupported() const;
   bool IsNoiseSuppressorSupported() const;
-
-  // Returns true if the device supports the low-latency audio paths in
-  // combination with OpenSL ES.
-  bool IsLowLatencyPlayoutSupported() const;
-  bool IsLowLatencyRecordSupported() const;
 
   // Returns true if the device supports (and has been configured for) stereo.
   // Call the Java API WebRtcAudioManager.setStereoOutput/Input() with true as
@@ -107,49 +96,23 @@ class AudioManager {
   bool IsStereoPlayoutSupported() const;
   bool IsStereoRecordSupported() const;
 
-  // Returns true if the device supports pro-audio features in combination with
-  // OpenSL ES.
-  bool IsProAudioSupported() const;
-
-  // Returns true if the device supports AAudio.
-  bool IsAAudioSupported() const;
-
   // Returns the estimated total delay of this device. Unit is in milliseconds.
   // The vaule is set once at construction and never changes after that.
   // Possible values are webrtc::kLowLatencyModeDelayEstimateInMilliseconds and
   // webrtc::kHighLatencyModeDelayEstimateInMilliseconds.
   int GetDelayEstimateInMilliseconds() const;
 
-  // Called from Java side so we can cache the native audio parameters.
-  // This method will be called by the WebRtcAudioManager constructor, i.e.
-  // on the same thread that this object is created on.
-  void CacheAudioParameters(JNIEnv* env,
-                            const JavaParamRef<jobject>& j_caller,
-                            jint sample_rate,
-                            jint output_channels,
-                            jint input_channels,
-                            jboolean hardware_aec,
-                            jboolean hardware_agc,
-                            jboolean hardware_ns,
-                            jboolean low_latency_output,
-                            jboolean low_latency_input,
-                            jboolean pro_audio,
-                            jboolean a_audio,
-                            jint output_buffer_size,
-                            jint input_buffer_size);
-
  private:
-  // Stores thread ID in the constructor.
-  // We can then use ThreadChecker::CalledOnValidThread() to ensure that
-  // other methods are called from the same thread.
+  // This class is single threaded except that construction might happen on a
+  // different thread.
   rtc::ThreadChecker thread_checker_;
 
   // Wraps the Java specific parts of the AudioManager.
-  std::unique_ptr<AudioManager::JavaAudioManager> j_audio_manager_;
+  ScopedJavaGlobalRef<jobject> j_audio_manager_;
 
   // Contains the selected audio layer specified by the AudioLayer enumerator
   // in the AudioDeviceModule class.
-  AudioDeviceModule::AudioLayer audio_layer_;
+  const AudioDeviceModule::AudioLayer audio_layer_;
 
   // This object is the global entry point of the OpenSL ES API.
   // After creating the engine object, the application can obtain this object‘s
@@ -161,32 +124,8 @@ class AudioManager {
   // Set to true by Init() and false by Close().
   bool initialized_;
 
-  // True if device supports hardware (or built-in) AEC.
-  bool hardware_aec_;
-  // True if device supports hardware (or built-in) AGC.
-  bool hardware_agc_;
-  // True if device supports hardware (or built-in) NS.
-  bool hardware_ns_;
-
-  // True if device supports the low-latency OpenSL ES audio path for output.
-  bool low_latency_playout_;
-
-  // True if device supports the low-latency OpenSL ES audio path for input.
-  bool low_latency_record_;
-
-  // True if device supports the low-latency OpenSL ES pro-audio path.
-  bool pro_audio_;
-
-  // True if device supports the low-latency AAudio audio path.
-  bool a_audio_;
-
-  // The delay estimate can take one of two fixed values depending on if the
-  // device supports low-latency output or not.
-  int delay_estimate_in_milliseconds_;
-
-  // Contains native parameters (e.g. sample rate, channel configuration).
-  // Set at construction in OnCacheAudioParameters() which is called from
-  // Java on the same thread as this object is created on.
+  // Contains native parameters (e.g. sample rate, channel configuration). Set
+  // at construction.
   AudioParameters playout_parameters_;
   AudioParameters record_parameters_;
 };

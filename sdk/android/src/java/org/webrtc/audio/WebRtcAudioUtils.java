@@ -130,11 +130,6 @@ final class WebRtcAudioUtils {
   public static boolean isNoiseSuppressorSupported() {
     return WebRtcAudioEffects.canUseNoiseSuppressor();
   }
-  // TODO(henrika): deprecated; remove when no longer used by any client.
-  public static boolean isAutomaticGainControlSupported() {
-    // Always return false here to avoid trying to use any built-in AGC.
-    return false;
-  }
 
   // Call this method if the default handling of querying the native sample
   // rate shall be overridden. Can be useful on some devices where the

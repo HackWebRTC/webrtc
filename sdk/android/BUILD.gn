@@ -593,10 +593,10 @@ rtc_static_library("peerconnection_jni") {
   }
 
   deps = [
+    ":audio_device_jni",
     ":base_jni",
     ":generated_external_classes_jni",
     ":generated_peerconnection_jni",
-    ":native_api_audio_device_module",
     ":native_api_jni",
     "../..:webrtc_common",
     "../../api:libjingle_peerconnection_api",
@@ -845,7 +845,6 @@ rtc_android_library("libjingle_peerconnection_java") {
   }
 
   deps = [
-    ":native_api_audio_device_module",
     "../../modules/audio_device:audio_device_java",
     "../../rtc_base:base_java",
   ]

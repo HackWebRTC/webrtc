@@ -20,10 +20,8 @@ import android.media.AudioTrack;
 import android.os.Build;
 import java.util.Timer;
 import java.util.TimerTask;
-import org.webrtc.ContextUtils;
 import org.webrtc.Logging;
 import org.webrtc.CalledByNative;
-import org.webrtc.NativeClassQualifiedName;
 
 // WebRtcAudioManager handles tasks that uses android.media.AudioManager.
 // At construction, storeAudioParameters() is called and it retrieves
@@ -38,10 +36,6 @@ class WebRtcAudioManager {
   private static final boolean DEBUG = false;
 
   private static final String TAG = "WebRtcAudioManager";
-
-  // TODO(bugs.webrtc.org/8914): disabled by default until AAudio support has
-  // been completed. Goal is to always return false on Android O MR1 and higher.
-  private static final boolean blacklistDeviceForAAudioUsage = true;
 
   // Use mono as default for both audio directions.
   private static boolean useStereoOutput = false;
@@ -79,13 +73,15 @@ class WebRtcAudioManager {
 
   // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
   @SuppressWarnings("NoSynchronizedMethodCheck")
-  public static synchronized boolean getStereoOutput() {
+  @CalledByNative
+  public synchronized boolean getStereoOutput() {
     return useStereoOutput;
   }
 
   // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
   @SuppressWarnings("NoSynchronizedMethodCheck")
-  public static synchronized boolean getStereoInput() {
+  @CalledByNative
+  public synchronized boolean getStereoInput() {
     return useStereoInput;
   }
 
@@ -150,42 +146,34 @@ class WebRtcAudioManager {
     }
   }
 
-  private final long nativeAudioManager;
   private final AudioManager audioManager;
-
-  private boolean initialized = false;
-  private int nativeSampleRate;
-  private int nativeChannels;
-
-  private boolean hardwareAEC;
-  private boolean hardwareAGC;
-  private boolean hardwareNS;
-  private boolean lowLatencyOutput;
-  private boolean lowLatencyInput;
-  private boolean proAudio;
-  private boolean aAudio;
-  private int sampleRate;
-  private int outputChannels;
-  private int inputChannels;
-  private int outputBufferSize;
-  private int inputBufferSize;
-
+  private final int sampleRate;
+  private final int outputBufferSize;
+  private final int inputBufferSize;
   private final VolumeLogger volumeLogger;
 
+  private boolean initialized = false;
+
   @CalledByNative
-  WebRtcAudioManager(long nativeAudioManager) {
+  WebRtcAudioManager(Context context) {
     Logging.d(TAG, "ctor" + WebRtcAudioUtils.getThreadInfo());
-    this.nativeAudioManager = nativeAudioManager;
-    audioManager =
-        (AudioManager) ContextUtils.getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
+    this.audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
     if (DEBUG) {
       WebRtcAudioUtils.logDeviceInfo(TAG);
     }
-    volumeLogger = new VolumeLogger(audioManager);
-    storeAudioParameters();
-    nativeCacheAudioParameters(nativeAudioManager, sampleRate, outputChannels, inputChannels,
-        hardwareAEC, hardwareAGC, hardwareNS, lowLatencyOutput, lowLatencyInput, proAudio, aAudio,
-        outputBufferSize, inputBufferSize);
+    this.volumeLogger = new VolumeLogger(audioManager);
+
+    final int outputChannels = getStereoOutput() ? 2 : 1;
+    final int inputChannels = getStereoInput() ? 2 : 1;
+
+    this.sampleRate = getNativeOutputSampleRate();
+    this.outputBufferSize = isLowLatencyOutputSupported(context)
+        ? getLowLatencyOutputFramesPerBuffer()
+        : getMinOutputFrameSize(sampleRate, outputChannels);
+    this.inputBufferSize = isLowLatencyInputSupported(context)
+        ? getLowLatencyInputFramesPerBuffer()
+        : getMinInputFrameSize(sampleRate, inputChannels);
+
     WebRtcAudioUtils.logAudioState(TAG);
   }
 
@@ -216,7 +204,7 @@ class WebRtcAudioManager {
   }
 
   @CalledByNative
-  private boolean isDeviceBlacklistedForOpenSLESUsage() {
+  private static boolean isDeviceBlacklistedForOpenSLESUsage() {
     boolean blacklisted = blacklistDeviceForOpenSLESUsageIsOverridden
         ? blacklistDeviceForOpenSLESUsage
         : WebRtcAudioUtils.deviceIsBlacklistedForOpenSLESUsage();
@@ -226,64 +214,22 @@ class WebRtcAudioManager {
     return blacklisted;
   }
 
-  private void storeAudioParameters() {
-    outputChannels = getStereoOutput() ? 2 : 1;
-    inputChannels = getStereoInput() ? 2 : 1;
-    sampleRate = getNativeOutputSampleRate();
-    hardwareAEC = isAcousticEchoCancelerSupported();
-    // TODO(henrika): use of hardware AGC is no longer supported. Currently
-    // hardcoded to false. To be removed.
-    hardwareAGC = false;
-    hardwareNS = isNoiseSuppressorSupported();
-    lowLatencyOutput = isLowLatencyOutputSupported();
-    lowLatencyInput = isLowLatencyInputSupported();
-    proAudio = isProAudioSupported();
-    aAudio = isAAudioSupported();
-    outputBufferSize = lowLatencyOutput ? getLowLatencyOutputFramesPerBuffer()
-                                        : getMinOutputFrameSize(sampleRate, outputChannels);
-    inputBufferSize = lowLatencyInput ? getLowLatencyInputFramesPerBuffer()
-                                      : getMinInputFrameSize(sampleRate, inputChannels);
-  }
-
-  // Gets the current earpiece state.
-  private boolean hasEarpiece() {
-    return ContextUtils.getApplicationContext().getPackageManager().hasSystemFeature(
-        PackageManager.FEATURE_TELEPHONY);
-  }
-
   // Returns true if low-latency audio output is supported.
-  private boolean isLowLatencyOutputSupported() {
-    return ContextUtils.getApplicationContext().getPackageManager().hasSystemFeature(
-        PackageManager.FEATURE_AUDIO_LOW_LATENCY);
+  @CalledByNative
+  public static boolean isLowLatencyOutputSupported(Context context) {
+    return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_AUDIO_LOW_LATENCY);
   }
 
   // Returns true if low-latency audio input is supported.
   // TODO(henrika): remove the hardcoded false return value when OpenSL ES
   // input performance has been evaluated and tested more.
-  public boolean isLowLatencyInputSupported() {
+  @CalledByNative
+  public static boolean isLowLatencyInputSupported(Context context) {
     // TODO(henrika): investigate if some sort of device list is needed here
     // as well. The NDK doc states that: "As of API level 21, lower latency
     // audio input is supported on select devices. To take advantage of this
     // feature, first confirm that lower latency output is available".
-    return WebRtcAudioUtils.runningOnLollipopOrHigher() && isLowLatencyOutputSupported();
-  }
-
-  // Returns true if the device has professional audio level of functionality
-  // and therefore supports the lowest possible round-trip latency.
-  @TargetApi(23)
-  private boolean isProAudioSupported() {
-    return WebRtcAudioUtils.runningOnMarshmallowOrHigher()
-        && ContextUtils.getApplicationContext().getPackageManager().hasSystemFeature(
-               PackageManager.FEATURE_AUDIO_PRO);
-  }
-
-  // AAudio is supported on Androio Oreo MR1 (API 27) and higher.
-  // TODO(bugs.webrtc.org/8914): currently disabled by default.
-  private boolean isAAudioSupported() {
-    if (blacklistDeviceForAAudioUsage) {
-      Logging.w(TAG, "AAudio support is currently disabled on all devices!");
-    }
-    return !blacklistDeviceForAAudioUsage && WebRtcAudioUtils.runningOnOreoMR1OrHigher();
+    return WebRtcAudioUtils.runningOnLollipopOrHigher() && isLowLatencyOutputSupported(context);
   }
 
   // Returns the native output sample rate for this device's output stream.
@@ -314,6 +260,11 @@ class WebRtcAudioManager {
     return sampleRateHz;
   }
 
+  @CalledByNative
+  int getSampleRate() {
+    return sampleRate;
+  }
+
   @TargetApi(17)
   private int getSampleRateOnJellyBeanMR10OrHigher() {
     String sampleRateString = audioManager.getProperty(AudioManager.PROPERTY_OUTPUT_SAMPLE_RATE);
@@ -324,7 +275,6 @@ class WebRtcAudioManager {
   // Returns the native output buffer size for low-latency output streams.
   @TargetApi(17)
   private int getLowLatencyOutputFramesPerBuffer() {
-    assertTrue(isLowLatencyOutputSupported());
     if (!WebRtcAudioUtils.runningOnJellyBeanMR1OrHigher()) {
       return DEFAULT_FRAME_PER_BUFFER;
     }
@@ -339,11 +289,24 @@ class WebRtcAudioManager {
   // 2) explicit use (override) of a WebRTC based version must not be set,
   // 3) the device must not be blacklisted for use of the effect, and
   // 4) the UUID of the effect must be approved (some UUIDs can be excluded).
-  private static boolean isAcousticEchoCancelerSupported() {
+  @CalledByNative
+  boolean isAcousticEchoCancelerSupported() {
     return WebRtcAudioEffects.canUseAcousticEchoCanceler();
   }
-  private static boolean isNoiseSuppressorSupported() {
+
+  @CalledByNative
+  boolean isNoiseSuppressorSupported() {
     return WebRtcAudioEffects.canUseNoiseSuppressor();
+  }
+
+  @CalledByNative
+  int getOutputBufferSize() {
+    return outputBufferSize;
+  }
+
+  @CalledByNative
+  int getInputBufferSize() {
+    return inputBufferSize;
   }
 
   // Returns the minimum output buffer size for Java based audio (AudioTrack).
@@ -360,7 +323,6 @@ class WebRtcAudioManager {
 
   // Returns the native input buffer size for input streams.
   private int getLowLatencyInputFramesPerBuffer() {
-    assertTrue(isLowLatencyInputSupported());
     return getLowLatencyOutputFramesPerBuffer();
   }
 
@@ -375,17 +337,4 @@ class WebRtcAudioManager {
                sampleRateInHz, channelConfig, AudioFormat.ENCODING_PCM_16BIT)
         / bytesPerFrame;
   }
-
-  // Helper method which throws an exception  when an assertion has failed.
-  private static void assertTrue(boolean condition) {
-    if (!condition) {
-      throw new AssertionError("Expected condition to be true");
-    }
-  }
-
-  @NativeClassQualifiedName("webrtc::android_adm::AudioManager")
-  private native void nativeCacheAudioParameters(long nativeAudioManager, int sampleRate,
-      int outputChannels, int inputChannels, boolean hardwareAEC, boolean hardwareAGC,
-      boolean hardwareNS, boolean lowLatencyOutput, boolean lowLatencyInput, boolean proAudio,
-      boolean aAudio, int outputBufferSize, int inputBufferSize);
 }

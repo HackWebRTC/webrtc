@@ -27,7 +27,6 @@ public class PeerConnectionFactory {
 
   private final long nativeFactory;
   private static volatile boolean internalTracerInitialized = false;
-  private static Context applicationContext;
   private static Thread networkThread;
   private static Thread workerThread;
   private static Thread signalingThread;
@@ -181,7 +180,7 @@ public class PeerConnectionFactory {
   public static void initialize(InitializationOptions options) {
     ContextUtils.initialize(options.applicationContext);
     NativeLibrary.initialize(options.nativeLibraryLoader);
-    nativeInitializeAndroidGlobals(options.applicationContext, options.enableVideoHwAcceleration);
+    nativeInitializeAndroidGlobals(options.enableVideoHwAcceleration);
     initializeFieldTrials(options.fieldTrials);
     if (options.enableInternalTracer && !internalTracerInitialized) {
       initializeInternalTracer();
@@ -249,8 +248,8 @@ public class PeerConnectionFactory {
   public PeerConnectionFactory(
       Options options, VideoEncoderFactory encoderFactory, VideoDecoderFactory decoderFactory) {
     checkInitializeHasBeenCalled();
-    nativeFactory =
-        nativeCreatePeerConnectionFactory(options, encoderFactory, decoderFactory, 0, 0);
+    nativeFactory = nativeCreatePeerConnectionFactory(
+        ContextUtils.getApplicationContext(), options, encoderFactory, decoderFactory, 0, 0);
     if (nativeFactory == 0) {
       throw new RuntimeException("Failed to initialize PeerConnectionFactory!");
     }
@@ -267,7 +266,8 @@ public class PeerConnectionFactory {
       VideoDecoderFactory decoderFactory, AudioProcessingFactory audioProcessingFactory,
       FecControllerFactoryFactoryInterface fecControllerFactoryFactory) {
     checkInitializeHasBeenCalled();
-    nativeFactory = nativeCreatePeerConnectionFactory(options, encoderFactory, decoderFactory,
+    nativeFactory = nativeCreatePeerConnectionFactory(ContextUtils.getApplicationContext(), options,
+        encoderFactory, decoderFactory,
         audioProcessingFactory == null ? 0 : audioProcessingFactory.createNative(),
         fecControllerFactoryFactory == null ? 0 : fecControllerFactoryFactory.createNative());
     if (nativeFactory == 0) {
@@ -449,8 +449,7 @@ public class PeerConnectionFactory {
 
   // Must be called at least once before creating a PeerConnectionFactory
   // (for example, at application startup time).
-  private static native void nativeInitializeAndroidGlobals(
-      Context context, boolean videoHwAcceleration);
+  private static native void nativeInitializeAndroidGlobals(boolean videoHwAcceleration);
   private static native void nativeInitializeFieldTrials(String fieldTrialsInitString);
   private static native String nativeFindFieldTrialsFullName(String name);
   // Internal tracing initialization. Must be called before PeerConnectionFactory is created to
@@ -462,7 +461,7 @@ public class PeerConnectionFactory {
   private static native void nativeShutdownInternalTracer();
   private static native boolean nativeStartInternalTracingCapture(String tracingFilename);
   private static native void nativeStopInternalTracingCapture();
-  private static native long nativeCreatePeerConnectionFactory(Options options,
+  private static native long nativeCreatePeerConnectionFactory(Context context, Options options,
       VideoEncoderFactory encoderFactory, VideoDecoderFactory decoderFactory,
       long nativeAudioProcessor, long nativeFecControllerFactory);
   private static native long nativeCreatePeerConnection(long factory,
