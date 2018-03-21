@@ -47,46 +47,13 @@ class ScopedHistogramTimer {
 };
 }  // namespace
 
-// AudioRecordJni::JavaAudioRecord implementation.
-AudioRecordJni::JavaAudioRecord::JavaAudioRecord(
-    const ScopedJavaLocalRef<jobject>& audio_record)
-    : env_(audio_record.env()), audio_record_(audio_record) {}
-
-AudioRecordJni::JavaAudioRecord::~JavaAudioRecord() {}
-
-int AudioRecordJni::JavaAudioRecord::InitRecording(int sample_rate,
-                                                   size_t channels) {
-  thread_checker_.CalledOnValidThread();
-  return Java_WebRtcAudioRecord_initRecording(env_, audio_record_,
-                                              static_cast<jint>(sample_rate),
-                                              static_cast<jint>(channels));
-}
-
-bool AudioRecordJni::JavaAudioRecord::StartRecording() {
-  thread_checker_.CalledOnValidThread();
-  return Java_WebRtcAudioRecord_startRecording(env_, audio_record_);
-}
-
-bool AudioRecordJni::JavaAudioRecord::StopRecording() {
-  thread_checker_.CalledOnValidThread();
-  return Java_WebRtcAudioRecord_stopRecording(env_, audio_record_);
-}
-
-bool AudioRecordJni::JavaAudioRecord::EnableBuiltInAEC(bool enable) {
-  thread_checker_.CalledOnValidThread();
-  return Java_WebRtcAudioRecord_enableBuiltInAEC(env_, audio_record_,
-                                                 static_cast<jboolean>(enable));
-}
-
-bool AudioRecordJni::JavaAudioRecord::EnableBuiltInNS(bool enable) {
-  thread_checker_.CalledOnValidThread();
-  return Java_WebRtcAudioRecord_enableBuiltInNS(env_, audio_record_,
-                                                static_cast<jboolean>(enable));
-}
-
 // AudioRecordJni implementation.
 AudioRecordJni::AudioRecordJni(AudioManager* audio_manager)
-    : audio_manager_(audio_manager),
+    : env_(AttachCurrentThreadIfNeeded()),
+      j_audio_record_(
+          Java_WebRtcAudioRecord_Constructor(env_,
+                                             jni::jlongFromPointer(this))),
+      audio_manager_(audio_manager),
       audio_parameters_(audio_manager->GetRecordAudioParameters()),
       total_delay_in_milliseconds_(0),
       direct_buffer_address_(nullptr),
@@ -97,8 +64,6 @@ AudioRecordJni::AudioRecordJni(AudioManager* audio_manager)
       audio_device_buffer_(nullptr) {
   RTC_LOG(INFO) << "ctor";
   RTC_DCHECK(audio_parameters_.is_valid());
-  j_audio_record_.reset(new JavaAudioRecord(Java_WebRtcAudioRecord_Constructor(
-      AttachCurrentThreadIfNeeded(), jni::jlongFromPointer(this))));
   // Detach from this thread since we want to use the checker to verify calls
   // from the Java based audio thread.
   thread_checker_java_.DetachFromThread();
@@ -129,8 +94,10 @@ int32_t AudioRecordJni::InitRecording() {
   RTC_DCHECK(!initialized_);
   RTC_DCHECK(!recording_);
   ScopedHistogramTimer timer("WebRTC.Audio.InitRecordingDurationMs");
-  int frames_per_buffer = j_audio_record_->InitRecording(
-      audio_parameters_.sample_rate(), audio_parameters_.channels());
+
+  int frames_per_buffer = Java_WebRtcAudioRecord_initRecording(
+      env_, j_audio_record_, audio_parameters_.sample_rate(),
+      audio_parameters_.channels());
   if (frames_per_buffer < 0) {
     direct_buffer_address_ = nullptr;
     RTC_LOG(LS_ERROR) << "InitRecording failed";
@@ -156,7 +123,7 @@ int32_t AudioRecordJni::StartRecording() {
     return 0;
   }
   ScopedHistogramTimer timer("WebRTC.Audio.StartRecordingDurationMs");
-  if (!j_audio_record_->StartRecording()) {
+  if (!Java_WebRtcAudioRecord_startRecording(env_, j_audio_record_)) {
     RTC_LOG(LS_ERROR) << "StartRecording failed";
     return -1;
   }
@@ -170,7 +137,7 @@ int32_t AudioRecordJni::StopRecording() {
   if (!initialized_ || !recording_) {
     return 0;
   }
-  if (!j_audio_record_->StopRecording()) {
+  if (!Java_WebRtcAudioRecord_stopRecording(env_, j_audio_record_)) {
     RTC_LOG(LS_ERROR) << "StopRecording failed";
     return -1;
   }
@@ -204,7 +171,9 @@ void AudioRecordJni::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
 int32_t AudioRecordJni::EnableBuiltInAEC(bool enable) {
   RTC_LOG(INFO) << "EnableBuiltInAEC(" << enable << ")";
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  return j_audio_record_->EnableBuiltInAEC(enable) ? 0 : -1;
+  return Java_WebRtcAudioRecord_enableBuiltInAEC(env_, j_audio_record_, enable)
+             ? 0
+             : -1;
 }
 
 int32_t AudioRecordJni::EnableBuiltInAGC(bool enable) {
@@ -216,7 +185,9 @@ int32_t AudioRecordJni::EnableBuiltInAGC(bool enable) {
 int32_t AudioRecordJni::EnableBuiltInNS(bool enable) {
   RTC_LOG(INFO) << "EnableBuiltInNS(" << enable << ")";
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  return j_audio_record_->EnableBuiltInNS(enable) ? 0 : -1;
+  return Java_WebRtcAudioRecord_enableBuiltInNS(env_, j_audio_record_, enable)
+             ? 0
+             : -1;
 }
 
 void AudioRecordJni::CacheDirectBufferAddress(

@@ -43,25 +43,6 @@ namespace android_adm {
 // guarantees that no other (possibly non attached) thread is used.
 class AudioRecordJni {
  public:
-  // Wraps the Java specific parts of the AudioRecordJni into one helper class.
-  class JavaAudioRecord {
-   public:
-    explicit JavaAudioRecord(const ScopedJavaLocalRef<jobject>& audio_record);
-
-    ~JavaAudioRecord();
-
-    int InitRecording(int sample_rate, size_t channels);
-    bool StartRecording();
-    bool StopRecording();
-    bool EnableBuiltInAEC(bool enable);
-    bool EnableBuiltInNS(bool enable);
-
-   private:
-    JNIEnv* const env_;
-    rtc::ThreadChecker thread_checker_;
-    ScopedJavaGlobalRef<jobject> audio_record_;
-  };
-
   explicit AudioRecordJni(AudioManager* audio_manager);
   ~AudioRecordJni();
 
@@ -109,7 +90,8 @@ class AudioRecordJni {
   rtc::ThreadChecker thread_checker_java_;
 
   // Wraps the Java specific parts of the AudioRecordJni class.
-  std::unique_ptr<AudioRecordJni::JavaAudioRecord> j_audio_record_;
+  JNIEnv* const env_;
+  ScopedJavaGlobalRef<jobject> j_audio_record_;
 
   // Raw pointer to the audio manger.
   const AudioManager* audio_manager_;

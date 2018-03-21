@@ -39,25 +39,6 @@ namespace android_adm {
 // guarantees that no other (possibly non attached) thread is used.
 class AudioTrackJni {
  public:
-  // Wraps the Java specific parts of the AudioTrackJni into one helper class.
-  class JavaAudioTrack {
-   public:
-    explicit JavaAudioTrack(const ScopedJavaLocalRef<jobject>& audio_track);
-    ~JavaAudioTrack();
-
-    bool InitPlayout(int sample_rate, int channels);
-    bool StartPlayout();
-    bool StopPlayout();
-    bool SetStreamVolume(int volume);
-    int GetStreamMaxVolume();
-    int GetStreamVolume();
-
-   private:
-    JNIEnv* const env_;
-    rtc::ThreadChecker thread_checker_;
-    ScopedJavaGlobalRef<jobject> audio_track_;
-  };
-
   explicit AudioTrackJni(AudioManager* audio_manager);
   ~AudioTrackJni();
 
@@ -104,7 +85,8 @@ class AudioTrackJni {
   rtc::ThreadChecker thread_checker_java_;
 
   // Wraps the Java specific parts of the AudioTrackJni class.
-  std::unique_ptr<AudioTrackJni::JavaAudioTrack> j_audio_track_;
+  JNIEnv* const env_;
+  ScopedJavaGlobalRef<jobject> j_audio_track_;
 
   // Contains audio parameters provided to this class at construction by the
   // AudioManager.
