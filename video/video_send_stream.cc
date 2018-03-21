@@ -427,6 +427,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   uint32_t encoder_max_bitrate_bps_;
   uint32_t encoder_target_rate_bps_;
   double encoder_bitrate_priority_;
+  bool has_packet_feedback_;
 
   VideoStreamEncoder* const video_stream_encoder_;
   EncoderRtcpFeedback encoder_feedback_;
@@ -710,6 +711,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
       encoder_min_bitrate_bps_(0),
       encoder_target_rate_bps_(0),
       encoder_bitrate_priority_(initial_encoder_bitrate_priority),
+      has_packet_feedback_(false),
       video_stream_encoder_(video_stream_encoder),
       encoder_feedback_(Clock::GetRealTimeClock(),
                         config_->rtp.ssrcs,
@@ -765,6 +767,8 @@ VideoSendStreamImpl::VideoSendStreamImpl(
   // If send-side BWE is enabled, check if we should apply updated probing and
   // pacing settings.
   if (TransportSeqNumExtensionConfigured(*config_)) {
+    has_packet_feedback_ = true;
+
     rtc::Optional<AlrExperimentSettings> alr_settings;
     if (content_type == VideoEncoderConfig::ContentType::kScreen) {
       alr_settings = AlrExperimentSettings::CreateFromFieldTrial(
@@ -924,7 +928,7 @@ void VideoSendStreamImpl::StartupVideoSendStream() {
   bitrate_allocator_->AddObserver(
       this, encoder_min_bitrate_bps_, encoder_max_bitrate_bps_,
       max_padding_bitrate_, !config_->suspend_below_min_bitrate,
-      config_->track_id, encoder_bitrate_priority_);
+      config_->track_id, encoder_bitrate_priority_, has_packet_feedback_);
   // Start monitoring encoder activity.
   {
     rtc::CritScope lock(&encoder_activity_crit_sect_);
@@ -981,7 +985,7 @@ void VideoSendStreamImpl::SignalEncoderActive() {
   bitrate_allocator_->AddObserver(
       this, encoder_min_bitrate_bps_, encoder_max_bitrate_bps_,
       max_padding_bitrate_, !config_->suspend_below_min_bitrate,
-      config_->track_id, encoder_bitrate_priority_);
+      config_->track_id, encoder_bitrate_priority_, has_packet_feedback_);
 }
 
 void VideoSendStreamImpl::OnEncoderConfigurationChanged(
@@ -1038,7 +1042,7 @@ void VideoSendStreamImpl::OnEncoderConfigurationChanged(
     bitrate_allocator_->AddObserver(
         this, encoder_min_bitrate_bps_, encoder_max_bitrate_bps_,
         max_padding_bitrate_, !config_->suspend_below_min_bitrate,
-        config_->track_id, encoder_bitrate_priority_);
+        config_->track_id, encoder_bitrate_priority_, has_packet_feedback_);
   }
 }
 
