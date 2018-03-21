@@ -751,7 +751,8 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
       const rtc::Optional<std::string>& audio_network_adaptor_config,
       webrtc::Call* call,
       webrtc::Transport* send_transport,
-      const rtc::scoped_refptr<webrtc::AudioEncoderFactory>& encoder_factory)
+      const rtc::scoped_refptr<webrtc::AudioEncoderFactory>& encoder_factory,
+      const rtc::Optional<webrtc::AudioCodecPairId> codec_pair_id)
       : call_(call),
         config_(send_transport),
         send_side_bwe_with_overhead_(
@@ -765,6 +766,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     config_.rtp.extensions = extensions;
     config_.audio_network_adaptor_config = audio_network_adaptor_config;
     config_.encoder_factory = encoder_factory;
+    config_.codec_pair_id = codec_pair_id;
     config_.track_id = track_id;
     rtp_parameters_.encodings[0].ssrc = ssrc;
 
@@ -1766,16 +1768,9 @@ bool WebRtcVoiceMediaChannel::AddSendStream(const StreamParams& sp) {
   rtc::Optional<std::string> audio_network_adaptor_config =
       GetAudioNetworkAdaptorConfig(options_);
   WebRtcAudioSendStream* stream = new WebRtcAudioSendStream(
-      ssrc,
-      sp.cname,
-      sp.id,
-      send_codec_spec_,
-      send_rtp_extensions_,
-      max_send_bitrate_bps_,
-      audio_network_adaptor_config,
-      call_,
-      this,
-      engine()->encoder_factory_);
+      ssrc, sp.cname, sp.id, send_codec_spec_, send_rtp_extensions_,
+      max_send_bitrate_bps_, audio_network_adaptor_config, call_, this,
+      engine()->encoder_factory_, codec_pair_id_);
   send_streams_.insert(std::make_pair(ssrc, stream));
 
   // At this point the stream's local SSRC has been updated. If it is the first
