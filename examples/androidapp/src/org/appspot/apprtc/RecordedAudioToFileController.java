@@ -19,15 +19,15 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.concurrent.ExecutorService;
-import org.webrtc.voiceengine.WebRtcAudioRecord;
-import org.webrtc.voiceengine.WebRtcAudioRecord.AudioSamples;
-import org.webrtc.voiceengine.WebRtcAudioRecord.WebRtcAudioRecordSamplesReadyCallback;
+import org.webrtc.audio.AudioDeviceModule;
+import org.webrtc.audio.AudioDeviceModule.AudioSamples;
+import org.webrtc.audio.AudioDeviceModule.SamplesReadyCallback;
 
 /**
- * Implements the WebRtcAudioRecordSamplesReadyCallback interface and writes
+ * Implements the AudioRecordSamplesReadyCallback interface and writes
  * recorded raw audio samples to an output file.
  */
-public class RecordedAudioToFileController implements WebRtcAudioRecordSamplesReadyCallback {
+public class RecordedAudioToFileController implements SamplesReadyCallback {
   private static final String TAG = "RecordedAudioToFile";
   private static final long MAX_FILE_SIZE_IN_BYTES = 58348800L;
 
@@ -52,7 +52,7 @@ public class RecordedAudioToFileController implements WebRtcAudioRecordSamplesRe
       return false;
     }
     // Register this class as receiver of recorded audio samples for storage.
-    WebRtcAudioRecord.setOnAudioSamplesReady(this);
+    AudioDeviceModule.setOnAudioSamplesReady(this);
     return true;
   }
 
@@ -63,7 +63,7 @@ public class RecordedAudioToFileController implements WebRtcAudioRecordSamplesRe
   public void stop() {
     Log.d(TAG, "stop");
     // De-register this class as receiver of recorded audio samples for storage.
-    WebRtcAudioRecord.setOnAudioSamplesReady(null);
+    AudioDeviceModule.setOnAudioSamplesReady(null);
     synchronized (lock) {
       if (rawAudioFileOutputStream != null) {
         try {

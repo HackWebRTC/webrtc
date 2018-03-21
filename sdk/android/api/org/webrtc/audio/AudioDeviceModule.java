@@ -45,8 +45,54 @@ public class AudioDeviceModule {
     void onWebRtcAudioRecordError(String errorMessage);
   }
 
+  /**
+   * Contains audio sample information.
+   */
+  public static class AudioSamples {
+    /** See {@link AudioRecord#getAudioFormat()} */
+    private final int audioFormat;
+    /** See {@link AudioRecord#getChannelCount()} */
+    private final int channelCount;
+    /** See {@link AudioRecord#getSampleRate()} */
+    private final int sampleRate;
+
+    private final byte[] data;
+
+    public AudioSamples(int audioFormat, int channelCount, int sampleRate, byte[] data) {
+      this.audioFormat = audioFormat;
+      this.channelCount = channelCount;
+      this.sampleRate = sampleRate;
+      this.data = data;
+    }
+
+    public int getAudioFormat() {
+      return audioFormat;
+    }
+
+    public int getChannelCount() {
+      return channelCount;
+    }
+
+    public int getSampleRate() {
+      return sampleRate;
+    }
+
+    public byte[] getData() {
+      return data;
+    }
+  }
+
+  /** Called when new audio samples are ready. This should only be set for debug purposes */
+  public static interface SamplesReadyCallback {
+    void onWebRtcAudioRecordSamplesReady(AudioSamples samples);
+  }
+
   public static void setErrorCallback(AudioRecordErrorCallback errorCallback) {
     WebRtcAudioRecord.setErrorCallback(errorCallback);
+  }
+
+  public static void setOnAudioSamplesReady(SamplesReadyCallback callback) {
+    WebRtcAudioRecord.setOnAudioSamplesReady(callback);
   }
 
   /* AudioTrack */

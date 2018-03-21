@@ -25,6 +25,7 @@ import org.webrtc.audio.AudioDeviceModule.AudioRecordErrorCallback;
 import org.webrtc.audio.AudioDeviceModule.AudioRecordStartErrorCode;
 import org.webrtc.CalledByNative;
 import org.webrtc.NativeClassQualifiedName;
+import org.webrtc.audio.AudioDeviceModule.SamplesReadyCallback;
 
 class WebRtcAudioRecord {
   private static final boolean DEBUG = false;
@@ -72,52 +73,9 @@ class WebRtcAudioRecord {
     WebRtcAudioRecord.errorCallback = errorCallback;
   }
 
-  /**
-   * Contains audio sample information. Object is passed using {@link
-   * WebRtcAudioRecord.WebRtcAudioRecordSamplesReadyCallback}
-   */
-  public static class AudioSamples {
-    /** See {@link AudioRecord#getAudioFormat()} */
-    private final int audioFormat;
-    /** See {@link AudioRecord#getChannelCount()} */
-    private final int channelCount;
-    /** See {@link AudioRecord#getSampleRate()} */
-    private final int sampleRate;
+  private static SamplesReadyCallback audioSamplesReadyCallback = null;
 
-    private final byte[] data;
-
-    private AudioSamples(AudioRecord audioRecord, byte[] data) {
-      this.audioFormat = audioRecord.getAudioFormat();
-      this.channelCount = audioRecord.getChannelCount();
-      this.sampleRate = audioRecord.getSampleRate();
-      this.data = data;
-    }
-
-    public int getAudioFormat() {
-      return audioFormat;
-    }
-
-    public int getChannelCount() {
-      return channelCount;
-    }
-
-    public int getSampleRate() {
-      return sampleRate;
-    }
-
-    public byte[] getData() {
-      return data;
-    }
-  }
-
-  /** Called when new audio samples are ready. This should only be set for debug purposes */
-  public static interface WebRtcAudioRecordSamplesReadyCallback {
-    void onWebRtcAudioRecordSamplesReady(AudioSamples samples);
-  }
-
-  private static WebRtcAudioRecordSamplesReadyCallback audioSamplesReadyCallback = null;
-
-  public static void setOnAudioSamplesReady(WebRtcAudioRecordSamplesReadyCallback callback) {
+  public static void setOnAudioSamplesReady(SamplesReadyCallback callback) {
     audioSamplesReadyCallback = callback;
   }
 
@@ -159,7 +117,8 @@ class WebRtcAudioRecord {
             // at index 0.
             byte[] data = Arrays.copyOf(byteBuffer.array(), byteBuffer.capacity());
             audioSamplesReadyCallback.onWebRtcAudioRecordSamplesReady(
-                new AudioSamples(audioRecord, data));
+                new AudioDeviceModule.AudioSamples(audioRecord.getAudioFormat(),
+                    audioRecord.getChannelCount(), audioRecord.getSampleRate(), data));
           }
         } else {
           String errorMessage = "AudioRecord.read failed: " + bytesRead;

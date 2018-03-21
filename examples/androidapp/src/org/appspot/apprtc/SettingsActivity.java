@@ -18,7 +18,6 @@ import android.preference.ListPreference;
 import android.preference.Preference;
 import org.webrtc.Camera2Enumerator;
 import org.webrtc.audio.AudioDeviceModule;
-import org.webrtc.voiceengine.WebRtcAudioUtils;
 
 /**
  * Settings activity for AppRTC.

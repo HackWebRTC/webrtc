@@ -108,7 +108,6 @@ if (is_android) {
 
     deps = [
       ":AppRTCMobile_resources",
-      "../modules/audio_device:audio_device_java",
       "../rtc_base:base_java",
       "../sdk/android:libjingle_peerconnection_java",
       "../sdk/android:libjingle_peerconnection_metrics_default_java",
@@ -830,7 +829,6 @@ if (is_android) {
     requires_android = true
     deps = [
       ":webrtc_unity_java",
-      "../modules/audio_device:audio_device_java",
       "../rtc_base:base_java",
       "../sdk/android:libjingle_peerconnection_java",
       "../sdk/android:libjingle_peerconnection_metrics_default_java",
