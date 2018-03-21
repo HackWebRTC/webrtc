@@ -77,14 +77,14 @@ TEST_F(LogEndToEndTest, LogsEncodedFramesWhenRequested) {
       decoder_ = VP8Decoder::Create();
 
       send_config->post_encode_callback = this;
-      send_config->encoder_settings.payload_name = "VP8";
+      send_config->rtp.payload_name = "VP8";
       send_config->encoder_settings.encoder = encoder_.get();
 
       (*receive_configs)[0].decoders.resize(1);
       (*receive_configs)[0].decoders[0].payload_type =
-          send_config->encoder_settings.payload_type;
+          send_config->rtp.payload_type;
       (*receive_configs)[0].decoders[0].payload_name =
-          send_config->encoder_settings.payload_name;
+          send_config->rtp.payload_name;
       (*receive_configs)[0].decoders[0].decoder = decoder_.get();
     }
 

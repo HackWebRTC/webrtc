@@ -112,16 +112,8 @@ class VideoSendStream {
 
     struct EncoderSettings {
       EncoderSettings() = default;
-      EncoderSettings(std::string payload_name,
-                      int payload_type,
-                      VideoEncoder* encoder)
-          : payload_name(std::move(payload_name)),
-            payload_type(payload_type),
-            encoder(encoder) {}
+      explicit EncoderSettings(VideoEncoder* encoder) : encoder(encoder) {}
       std::string ToString() const;
-
-      std::string payload_name;
-      int payload_type = -1;
 
       // TODO(sophiechang): Delete this field when no one is using internal
       // sources anymore.
@@ -158,6 +150,16 @@ class VideoSendStream {
 
       // RTP header extensions to use for this send stream.
       std::vector<RtpExtension> extensions;
+
+      // TODO(nisse): For now, these are fixed, but we'd like to support
+      // changing codec without recreating the VideoSendStream. Then these
+      // fields must be removed, and association between payload type and codec
+      // must move above the per-stream level. Ownership could be with
+      // RtpTransportControllerSend, with a reference from PayloadRouter, where
+      // the latter would be responsible for mapping the codec type of encoded
+      // images to the right payload type.
+      std::string payload_name;
+      int payload_type = -1;
 
       // See NackConfig for description.
       NackConfig nack;

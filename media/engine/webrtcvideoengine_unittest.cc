@@ -133,7 +133,7 @@ rtc::scoped_refptr<webrtc::VideoFrameBuffer> CreateBlackFrameBuffer(
 void VerifySendStreamHasRtxTypes(const webrtc::VideoSendStream::Config& config,
                                  const std::map<int, int>& rtx_types) {
   std::map<int, int>::const_iterator it;
-  it = rtx_types.find(config.encoder_settings.payload_type);
+  it = rtx_types.find(config.rtp.payload_type);
   EXPECT_TRUE(it != rtx_types.end() &&
               it->second == config.rtp.rtx.payload_type);
 

@@ -26,18 +26,15 @@ namespace webrtc {
 
 bool VideoCodecInitializer::SetupCodec(
     const VideoEncoderConfig& config,
-    const VideoSendStream::Config::EncoderSettings settings,
     const std::vector<VideoStream>& streams,
     bool nack_enabled,
     VideoCodec* codec,
     std::unique_ptr<VideoBitrateAllocator>* bitrate_allocator) {
-  if (PayloadStringToCodecType(settings.payload_name) == kVideoCodecMultiplex) {
-    VideoSendStream::Config::EncoderSettings associated_codec_settings =
-        settings;
-    associated_codec_settings.payload_name =
-        CodecTypeToPayloadString(kVideoCodecVP9);
-    if (!SetupCodec(config, associated_codec_settings, streams, nack_enabled,
-                    codec, bitrate_allocator)) {
+  if (config.codec_type == kVideoCodecMultiplex) {
+    VideoEncoderConfig associated_config = config.Copy();
+    associated_config.codec_type = kVideoCodecVP9;
+    if (!SetupCodec(associated_config, streams, nack_enabled, codec,
+                    bitrate_allocator)) {
       RTC_LOG(LS_ERROR) << "Failed to create stereo encoder configuration.";
       return false;
     }
@@ -46,8 +43,7 @@ bool VideoCodecInitializer::SetupCodec(
   }
 
   *codec =
-      VideoEncoderConfigToVideoCodec(config, streams, settings.payload_name,
-                                     settings.payload_type, nack_enabled);
+      VideoEncoderConfigToVideoCodec(config, streams, nack_enabled);
   *bitrate_allocator = CreateBitrateAllocator(*codec);
 
   return true;
@@ -73,8 +69,6 @@ VideoCodecInitializer::CreateBitrateAllocator(const VideoCodec& codec) {
 VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
     const VideoEncoderConfig& config,
     const std::vector<VideoStream>& streams,
-    const std::string& payload_name,
-    int payload_type,
     bool nack_enabled) {
   static const int kEncoderMinBitrateKbps = 30;
   RTC_DCHECK(!streams.empty());
@@ -82,7 +76,7 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
 
   VideoCodec video_codec;
   memset(&video_codec, 0, sizeof(video_codec));
-  video_codec.codecType = PayloadStringToCodecType(payload_name);
+  video_codec.codecType = config.codec_type;
 
   switch (config.content_type) {
     case VideoEncoderConfig::ContentType::kRealtimeVideo:
@@ -155,7 +149,9 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
       break;
   }
 
-  video_codec.plType = payload_type;
+  // TODO(nisse): The plType field should be deleted. Luckily, our
+  // callers don't need it.
+  video_codec.plType = 0;
   video_codec.numberOfSimulcastStreams =
       static_cast<unsigned char>(streams.size());
   video_codec.minBitrate = streams[0].min_bitrate_bps / 1000;
