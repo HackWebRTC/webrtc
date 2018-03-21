@@ -70,7 +70,7 @@ class BitrateAllocator {
                         int64_t rtt,
                         int64_t bwe_period_ms);
 
-  // Set the start and max send bitrate used by the bandwidth management.
+  // Set the configuration used by the bandwidth management.
   //
   // |observer| updates bitrates if already in use.
   // |min_bitrate_bps| = 0 equals no min bitrate.
@@ -78,17 +78,23 @@ class BitrateAllocator {
   // |enforce_min_bitrate| = 'true' will allocate at least |min_bitrate_bps| for
   //    this observer, even if the BWE is too low, 'false' will allocate 0 to
   //    the observer if BWE doesn't allow |min_bitrate_bps|.
-  // Note that |observer|->OnBitrateUpdated() will be called within the scope of
-  // this method with the current rtt, fraction_loss and available bitrate and
-  // that the bitrate in OnBitrateUpdated will be zero if the |observer| is
-  // currently not allowed to send data.
+  // |has_packet_feedback| indicates whether the data produced by the
+  // corresponding media stream will receive per packet feedback. This is
+  // tracked here to communicate to limit observers whether packet feedback can
+  // be expected, which is true if any of the active observers has packet
+  // feedback enabled. Note that |observer|->OnBitrateUpdated() will be called
+  // within the scope of this method with the current rtt, fraction_loss and
+  // available bitrate and that the bitrate in OnBitrateUpdated will be zero if
+  // the |observer| is currently not allowed to send data.
   void AddObserver(BitrateAllocatorObserver* observer,
                    uint32_t min_bitrate_bps,
                    uint32_t max_bitrate_bps,
                    uint32_t pad_up_bitrate_bps,
                    bool enforce_min_bitrate,
                    std::string track_id,
-                   double bitrate_priority);
+                   double bitrate_priority,
+                   // TODO(srte): Remove default when callers have been fixed.
+                   bool has_packet_feedback = false);
 
   // Removes a previously added observer, but will not trigger a new bitrate
   // allocation.
@@ -113,7 +119,8 @@ class BitrateAllocator {
                    uint32_t pad_up_bitrate_bps,
                    bool enforce_min_bitrate,
                    std::string track_id,
-                   double bitrate_priority)
+                   double bitrate_priority,
+                   bool has_packet_feedback)
         : TrackConfig(min_bitrate_bps,
                       max_bitrate_bps,
                       enforce_min_bitrate,
@@ -122,7 +129,8 @@ class BitrateAllocator {
           pad_up_bitrate_bps(pad_up_bitrate_bps),
           allocated_bitrate_bps(-1),
           media_ratio(1.0),
-          bitrate_priority(bitrate_priority) {}
+          bitrate_priority(bitrate_priority),
+          has_packet_feedback(has_packet_feedback) {}
 
     BitrateAllocatorObserver* observer;
     uint32_t pad_up_bitrate_bps;
@@ -132,6 +140,7 @@ class BitrateAllocator {
     // observers. If an observer has twice the bitrate_priority of other
     // observers, it should be allocated twice the bitrate above its min.
     double bitrate_priority;
+    bool has_packet_feedback;
 
     uint32_t LastAllocatedBitrate() const;
     // The minimum bitrate required by this observer, including
@@ -211,6 +220,7 @@ class BitrateAllocator {
   int64_t last_bwe_log_time_ RTC_GUARDED_BY(&sequenced_checker_);
   uint32_t total_requested_padding_bitrate_ RTC_GUARDED_BY(&sequenced_checker_);
   uint32_t total_requested_min_bitrate_ RTC_GUARDED_BY(&sequenced_checker_);
+  bool has_packet_feedback_ RTC_GUARDED_BY(&sequenced_checker_);
   std::unique_ptr<rtc::BitrateAllocationStrategy> bitrate_allocation_strategy_
       RTC_GUARDED_BY(&sequenced_checker_);
   uint8_t transmission_max_bitrate_multiplier_;
