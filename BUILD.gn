@@ -327,6 +327,7 @@ if (!build_with_chromium) {
 
     sources = []
     complete_static_lib = true
+    rtc_remove_configs = [ "//build/config/compiler:thin_archive" ]
     defines = []
 
     deps = [
