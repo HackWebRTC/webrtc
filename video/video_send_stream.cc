@@ -825,17 +825,18 @@ VideoSendStreamImpl::VideoSendStreamImpl(
   // TODO(pbos): Should we set CNAME on all RTP modules?
   rtp_rtcp_modules_.front()->SetCNAME(config_->rtp.c_name.c_str());
 
+  int payload_type = config_->rtp.payload_type != -1
+                         ? config_->rtp.payload_type
+                         : config_->encoder_settings.payload_type;
+
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {
     rtp_rtcp->RegisterRtcpStatisticsCallback(stats_proxy_);
     rtp_rtcp->RegisterSendChannelRtpStatisticsCallback(stats_proxy_);
     rtp_rtcp->SetMaxRtpPacketSize(config_->rtp.max_packet_size);
     rtp_rtcp->RegisterVideoSendPayload(
-        config_->rtp.payload_type != -1
-            ? config_->rtp.payload_type
-            : config_->encoder_settings.payload_type,
-        !config_->rtp.payload_name.empty()
-            ? config_->rtp.payload_name.c_str()
-            : config_->encoder_settings.payload_name.c_str());
+        payload_type, !config_->rtp.payload_name.empty()
+                          ? config_->rtp.payload_name.c_str()
+                          : config_->encoder_settings.payload_name.c_str());
   }
 
   fec_controller_->SetProtectionCallback(this);
@@ -845,8 +846,8 @@ VideoSendStreamImpl::VideoSendStreamImpl(
   }
 
   RTC_DCHECK(config_->encoder_settings.encoder);
-  RTC_DCHECK_GE(config_->encoder_settings.payload_type, 0);
-  RTC_DCHECK_LE(config_->encoder_settings.payload_type, 127);
+  RTC_DCHECK_GE(payload_type, 0);
+  RTC_DCHECK_LE(payload_type, 127);
 
   video_stream_encoder_->SetStartBitrate(
       bitrate_allocator_->GetStartBitrate(this));
