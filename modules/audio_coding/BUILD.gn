@@ -652,7 +652,7 @@ rtc_source_set("isac_fix_c_arm_asm") {
     ]
     deps = [
       ":isac_fix_common",
-      "../../system_wrappers:asm_defines",
+      "../../rtc_base/system:asm_defines",
     ]
   }
 }
