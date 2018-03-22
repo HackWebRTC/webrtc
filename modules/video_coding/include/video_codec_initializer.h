@@ -49,8 +49,8 @@ class VideoCodecInitializer {
   static VideoCodec VideoEncoderConfigToVideoCodec(
       const VideoEncoderConfig& config,
       const std::vector<VideoStream>& streams,
-      const std::string& payload_name,
-      int payload_type,
+      // TODO(nisse): Delete when we can rely on config.codec_type.
+      VideoCodecType codec_type,
       bool nack_enabled);
 };
 
