@@ -173,6 +173,8 @@ class AecState {
   bool converged_filter_seen_ = false;
   bool consistent_filter_seen_ = false;
   bool external_delay_seen_ = false;
+  size_t converged_filter_count_ = 0;
+  bool finite_erl_ = false;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(AecState);
 };
