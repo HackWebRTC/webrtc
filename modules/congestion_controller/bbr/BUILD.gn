@@ -29,16 +29,23 @@ rtc_source_set("rtt_stats") {
     "../network_control",
   ]
 }
+rtc_source_set("windowed_filter") {
+  sources = [
+    "windowed_filter.h",
+  ]
+}
 if (rtc_include_tests) {
   rtc_source_set("bbr_unittests") {
     testonly = true
     sources = [
       "data_transfer_tracker_unittest.cc",
       "rtt_stats_unittest.cc",
+      "windowed_filter_unittest.cc",
     ]
     deps = [
       ":data_transfer_tracker",
       ":rtt_stats",
+      ":windowed_filter",
       "../../../test:test_support",
       "../network_control",
     ]
