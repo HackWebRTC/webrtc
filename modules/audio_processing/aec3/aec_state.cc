@@ -221,6 +221,7 @@ void AecState::Update(
   use_linear_filter_output_ = usable_linear_estimate_ && !TransparentMode();
 
   data_dumper_->DumpRaw("aec3_erle", Erle());
+  data_dumper_->DumpRaw("aec3_erle_onset", erle_estimator_.ErleOnsets());
   data_dumper_->DumpRaw("aec3_erl", Erl());
   data_dumper_->DumpRaw("aec3_erle_time_domain", ErleTimeDomain());
   data_dumper_->DumpRaw("aec3_erl_time_domain", ErlTimeDomain());

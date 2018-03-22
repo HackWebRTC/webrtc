@@ -245,10 +245,9 @@ void EchoRemoverImpl::ProcessCapture(
   data_dumper_->DumpRaw("aec3_E2_shadow", E2_shadow);
   data_dumper_->DumpRaw("aec3_S2_linear", S2_linear);
   data_dumper_->DumpRaw("aec3_Y2", Y2);
-  data_dumper_->DumpRaw("aec3_X2", render_buffer->Spectrum(0));
+  data_dumper_->DumpRaw(
+      "aec3_X2", render_buffer->Spectrum(aec_state_.FilterDelayBlocks()));
   data_dumper_->DumpRaw("aec3_R2", R2);
-  data_dumper_->DumpRaw("aec3_erle", aec_state_.Erle());
-  data_dumper_->DumpRaw("aec3_erl", aec_state_.Erl());
   data_dumper_->DumpRaw("aec3_filter_delay", aec_state_.FilterDelayBlocks());
   data_dumper_->DumpRaw("aec3_capture_saturation",
                         aec_state_.SaturatedCapture() ? 1 : 0);

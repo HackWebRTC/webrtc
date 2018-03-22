@@ -24,7 +24,9 @@ ErleEstimator::ErleEstimator(float min_erle,
       max_erle_lf_(max_erle_lf),
       max_erle_hf_(max_erle_hf) {
   erle_.fill(min_erle_);
+  erle_onsets_.fill(min_erle_);
   hold_counters_.fill(0);
+  coming_onset_.fill(true);
   erle_time_domain_ = min_erle_;
   hold_counter_time_domain_ = 0;
 }
@@ -43,29 +45,55 @@ void ErleEstimator::Update(rtc::ArrayView<const float> render_spectrum,
 
   // Corresponds of WGN of power -46 dBFS.
   constexpr float kX2Min = 44015068.0f;
+  constexpr int kOnsetSizeBlocks = 4;
+  constexpr int kErleHold = 100;
+  constexpr int kErleOnsetHold = kErleHold + kOnsetSizeBlocks;
+
+  auto erle_band_update = [](float erle_band, float new_erle, float alpha_inc,
+                             float alpha_dec, float min_erle, float max_erle) {
+    float alpha = new_erle > erle_band ? alpha_inc : alpha_dec;
+    float erle_band_out = erle_band;
+    erle_band_out = erle_band + alpha * (new_erle - erle_band);
+    erle_band_out = rtc::SafeClamp(erle_band_out, min_erle, max_erle);
+    return erle_band_out;
+  };
 
   // Update the estimates in a clamped minimum statistics manner.
   auto erle_update = [&](size_t start, size_t stop, float max_erle) {
     for (size_t k = start; k < stop; ++k) {
       if (X2[k] > kX2Min && E2[k] > 0.f) {
         const float new_erle = Y2[k] / E2[k];
-        if (new_erle > erle_[k]) {
-          hold_counters_[k - 1] = 100;
-          erle_[k] += 0.1f * (new_erle - erle_[k]);
-          erle_[k] = rtc::SafeClamp(erle_[k], min_erle_, max_erle);
+
+        if (coming_onset_[k - 1]) {
+          hold_counters_[k - 1] = kErleOnsetHold;
+          coming_onset_[k - 1] = false;
         }
+        if (hold_counters_[k - 1] > kErleHold) {
+          erle_onsets_[k] = erle_band_update(erle_onsets_[k], new_erle, 0.05f,
+                                             0.1f, min_erle_, max_erle);
+        } else {
+          hold_counters_[k - 1] = kErleHold;
+        }
+        erle_[k] = erle_band_update(erle_[k], new_erle, 0.01f, 0.02f, min_erle_,
+                                    max_erle);
       }
     }
   };
-  erle_update(1, kFftLengthBy2 / 2, max_erle_lf_);
-  erle_update(kFftLengthBy2 / 2, kFftLengthBy2, max_erle_hf_);
 
-  std::for_each(hold_counters_.begin(), hold_counters_.end(),
-                [](int& a) { --a; });
-  std::transform(hold_counters_.begin(), hold_counters_.end(),
-                 erle_.begin() + 1, erle_.begin() + 1, [&](int a, float b) {
-                   return a > 0 ? b : std::max(min_erle_, 0.97f * b);
-                 });
+  constexpr size_t kFftLengthBy4 = kFftLengthBy2 / 2;
+  erle_update(1, kFftLengthBy4, max_erle_lf_);
+  erle_update(kFftLengthBy4, kFftLengthBy2, max_erle_hf_);
+
+  for (size_t k = 0; k < hold_counters_.size(); ++k) {
+    hold_counters_[k]--;
+    if (hold_counters_[k] <= 0) {
+      coming_onset_[k] = true;
+      if (erle_[k + 1] > erle_onsets_[k + 1]) {
+        erle_[k + 1] = std::max(erle_onsets_[k + 1], 0.97f * erle_[k + 1]);
+        RTC_DCHECK_LE(min_erle_, erle_[k + 1]);
+      }
+    }
+  }
 
   erle_[0] = erle_[1];
   erle_[kFftLengthBy2] = erle_[kFftLengthBy2 - 1];
@@ -77,7 +105,7 @@ void ErleEstimator::Update(rtc::ArrayView<const float> render_spectrum,
     const float Y2_sum = std::accumulate(Y2.begin(), Y2.end(), 0.0f);
     const float new_erle = Y2_sum / E2_sum;
     if (new_erle > erle_time_domain_) {
-      hold_counter_time_domain_ = 100;
+      hold_counter_time_domain_ = kErleHold;
       erle_time_domain_ += 0.1f * (new_erle - erle_time_domain_);
       erle_time_domain_ =
           rtc::SafeClamp(erle_time_domain_, min_erle_, max_erle_lf_);
