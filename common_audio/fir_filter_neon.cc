@@ -14,7 +14,7 @@
 #include <string.h>
 
 #include "rtc_base/checks.h"
-#include "system_wrappers/include/aligned_malloc.h"
+#include "rtc_base/memory/aligned_malloc.h"
 
 namespace webrtc {
 

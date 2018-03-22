@@ -1228,6 +1228,7 @@ if (rtc_include_tests) {
       "../system_wrappers:system_wrappers",
       "../test:fileutils",
       "../test:test_support",
+      "memory:unittests",
     ]
   }
 

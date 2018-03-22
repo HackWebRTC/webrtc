@@ -15,8 +15,6 @@ import("../webrtc.gni")
 rtc_static_library("system_wrappers") {
   visibility = [ "*" ]
   sources = [
-    "include/aligned_array.h",
-    "include/aligned_malloc.h",
     "include/clock.h",
     "include/cpu_info.h",
     "include/event_wrapper.h",
@@ -26,7 +24,6 @@ rtc_static_library("system_wrappers") {
     "include/rw_lock_wrapper.h",
     "include/sleep.h",
     "include/timestamp_extrapolator.h",
-    "source/aligned_malloc.cc",
     "source/clock.cc",
     "source/cpu_features.cc",
     "source/cpu_info.cc",
@@ -219,8 +216,6 @@ if (rtc_include_tests) {
   rtc_test("system_wrappers_unittests") {
     testonly = true
     sources = [
-      "source/aligned_array_unittest.cc",
-      "source/aligned_malloc_unittest.cc",
       "source/clock_unittest.cc",
       "source/event_timer_posix_unittest.cc",
       "source/metrics_default_unittest.cc",

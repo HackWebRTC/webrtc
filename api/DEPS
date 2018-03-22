@@ -24,8 +24,4 @@ specific_include_rules = {
     "+modules/audio_coding",
     "+modules/audio_processing",
   ],
-
-  ".*i420_buffer\.h": [
-    "+system_wrappers/include/aligned_malloc.h",
-  ],
 }

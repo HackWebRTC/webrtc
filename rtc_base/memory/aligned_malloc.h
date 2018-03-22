@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SYSTEM_WRAPPERS_INCLUDE_ALIGNED_MALLOC_H_
-#define SYSTEM_WRAPPERS_INCLUDE_ALIGNED_MALLOC_H_
+#ifndef RTC_BASE_MEMORY_ALIGNED_MALLOC_H_
+#define RTC_BASE_MEMORY_ALIGNED_MALLOC_H_
 
 // The functions declared here
 // 1) Allocates block of aligned memory.
@@ -54,4 +54,4 @@ struct AlignedFreeDeleter {
 
 }  // namespace webrtc
 
-#endif  // SYSTEM_WRAPPERS_INCLUDE_ALIGNED_MALLOC_H_
+#endif  // RTC_BASE_MEMORY_ALIGNED_MALLOC_H_

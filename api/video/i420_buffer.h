@@ -13,9 +13,9 @@
 
 #include <memory>
 
-#include "api/video/video_rotation.h"
 #include "api/video/video_frame_buffer.h"
-#include "system_wrappers/include/aligned_malloc.h"
+#include "api/video/video_rotation.h"
+#include "rtc_base/memory/aligned_malloc.h"
 
 namespace webrtc {
 

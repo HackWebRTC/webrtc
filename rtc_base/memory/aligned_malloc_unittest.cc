@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "system_wrappers/include/aligned_malloc.h"
+#include "rtc_base/memory/aligned_malloc.h"
 
 #include <memory>
 

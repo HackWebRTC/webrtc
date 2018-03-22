@@ -16,7 +16,7 @@
 
 #include "common_audio/blocker.h"
 #include "common_audio/real_fourier.h"
-#include "system_wrappers/include/aligned_array.h"
+#include "rtc_base/memory/aligned_array.h"
 
 namespace webrtc {
 

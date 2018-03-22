@@ -17,13 +17,13 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/keep_ref_until_done.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/memory/aligned_malloc.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/timeutils.h"
 #include "sdk/android/generated_video_jni/jni/VideoFrame_jni.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 #include "sdk/android/src/jni/surfacetexturehelper.h"
 #include "sdk/android/src/jni/wrapped_native_i420_buffer.h"
-#include "system_wrappers/include/aligned_malloc.h"
 #include "third_party/libyuv/include/libyuv/scale.h"
 
 namespace webrtc {
