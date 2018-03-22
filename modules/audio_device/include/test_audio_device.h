@@ -17,6 +17,7 @@
 #include "modules/audio_device/include/audio_device.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/event.h"
+#include "rtc_base/platform_file.h"
 #include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
@@ -85,40 +86,31 @@ class TestAudioDeviceModule : public AudioDeviceModule {
   static std::unique_ptr<PulsedNoiseCapturer> CreatePulsedNoiseCapturer(
       int16_t max_amplitude,
       int sampling_frequency_in_hz,
-      int num_channels);
+      int num_channels = 1);
 
-  // Same as calling CreatePulsedNoiseCapturer(max_amplitude,
-  // sampling_frequency_in_hz, 1).
-  static std::unique_ptr<PulsedNoiseCapturer> CreatePulsedNoiseCapturer(
-      int16_t max_amplitude,
-      int sampling_frequency_in_hz);
+  // Returns a Renderer instance that does nothing with the audio data.
+  static std::unique_ptr<Renderer> CreateDiscardRenderer(
+      int sampling_frequency_in_hz,
+      int num_channels = 1);
+
+  // WavReader and WavWriter creation based on file name.
 
   // Returns a Capturer instance that gets its data from a file. The sample rate
-  // and channels will be check against the Wav file.
+  // and channels will be checked against the Wav file.
   static std::unique_ptr<Capturer> CreateWavFileReader(
       std::string filename,
       int sampling_frequency_in_hz,
-      int num_channels);
-
-  // Same as calling CreateWavFileReader(filename, sampling_frequency_in_hz, 1).
-  static std::unique_ptr<Capturer> CreateWavFileReader(
-      std::string filename,
-      int sampling_frequency_in_hz);
+      int num_channels = 1);
 
   // Returns a Capturer instance that gets its data from a file.
-  // Automatically detects sample rate.
+  // Automatically detects sample rate and num of channels.
   static std::unique_ptr<Capturer> CreateWavFileReader(std::string filename);
 
   // Returns a Renderer instance that writes its data to a file.
   static std::unique_ptr<Renderer> CreateWavFileWriter(
       std::string filename,
       int sampling_frequency_in_hz,
-      int num_channels);
-
-  // Same as calling CreateWavFileWriter(filename, sampling_frequency_in_hz, 1).
-  static std::unique_ptr<Renderer> CreateWavFileWriter(
-      std::string filename,
-      int sampling_frequency_in_hz);
+      int num_channels = 1);
 
   // Returns a Renderer instance that writes its data to a WAV file, cutting
   // off silence at the beginning (not necessarily perfect silence, see
@@ -126,22 +118,34 @@ class TestAudioDeviceModule : public AudioDeviceModule {
   static std::unique_ptr<Renderer> CreateBoundedWavFileWriter(
       std::string filename,
       int sampling_frequency_in_hz,
-      int num_channels);
+      int num_channels = 1);
 
-  // Same as calling CreateBounderWavFileWriter(filename,
-  // sampling_frequency_in_hz, 1).
-  static std::unique_ptr<Renderer> CreateBoundedWavFileWriter(
-      std::string filename,
-      int sampling_frequency_in_hz);
+  // WavReader and WavWriter creation based on rtc::PlatformFile.
 
-  // Returns a Renderer instance that does nothing with the audio data.
-  static std::unique_ptr<Renderer> CreateDiscardRenderer(
+  // Returns a Capturer instance that gets its data from a file. The sample rate
+  // and channels will be checked against the Wav file.
+  static std::unique_ptr<Capturer> CreateWavFileReader(
+      rtc::PlatformFile file,
       int sampling_frequency_in_hz,
-      int num_channels);
+      int num_channels = 1);
 
-  // Same as calling CreateDiscardRenderer(sampling_frequency_in_hz, 1).
-  static std::unique_ptr<Renderer> CreateDiscardRenderer(
-      int sampling_frequency_in_hz);
+  // Returns a Capturer instance that gets its data from a file.
+  // Automatically detects sample rate and num of channels.
+  static std::unique_ptr<Capturer> CreateWavFileReader(rtc::PlatformFile file);
+
+  // Returns a Renderer instance that writes its data to a file.
+  static std::unique_ptr<Renderer> CreateWavFileWriter(
+      rtc::PlatformFile file,
+      int sampling_frequency_in_hz,
+      int num_channels = 1);
+
+  // Returns a Renderer instance that writes its data to a WAV file, cutting
+  // off silence at the beginning (not necessarily perfect silence, see
+  // kAmplitudeThreshold) and at the end (only actual 0 samples in this case).
+  static std::unique_ptr<Renderer> CreateBoundedWavFileWriter(
+      rtc::PlatformFile file,
+      int sampling_frequency_in_hz,
+      int num_channels = 1);
 
   virtual int32_t Init() = 0;
   virtual int32_t RegisterAudioCallback(AudioTransport* callback) = 0;
