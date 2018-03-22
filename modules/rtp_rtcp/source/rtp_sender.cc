@@ -123,7 +123,7 @@ RTPSender::RTPSender(
       transport_(transport),
       sending_media_(true),                   // Default to sending media.
       max_packet_size_(IP_PACKET_SIZE - 28),  // Default is IP-v4/UDP.
-      payload_type_(-1),
+      last_payload_type_(-1),
       payload_type_map_(),
       rtp_header_extension_map_(),
       packet_history_(clock),
@@ -304,12 +304,6 @@ int32_t RTPSender::DeRegisterSendPayload(int8_t payload_type) {
   return 0;
 }
 
-// TODO(nisse): Delete this method, only used internally and by test code.
-void RTPSender::SetSendPayloadType(int8_t payload_type) {
-  rtc::CritScope lock(&send_critsect_);
-  payload_type_ = payload_type;
-}
-
 void RTPSender::SetMaxRtpPacketSize(size_t max_packet_size) {
   RTC_DCHECK_GE(max_packet_size, 100);
   RTC_DCHECK_LE(max_packet_size, IP_PACKET_SIZE);
@@ -363,7 +357,7 @@ int32_t RTPSender::CheckPayloadType(int8_t payload_type,
     RTC_LOG(LS_ERROR) << "Invalid payload_type " << payload_type << ".";
     return -1;
   }
-  if (payload_type_ == payload_type) {
+  if (last_payload_type_ == payload_type) {
     if (!audio_configured_) {
       *video_type = video_->VideoCodecType();
     }
@@ -376,7 +370,6 @@ int32_t RTPSender::CheckPayloadType(int8_t payload_type,
                         << " not registered.";
     return -1;
   }
-  SetSendPayloadType(payload_type);
   RtpUtility::Payload* payload = it->second;
   RTC_DCHECK(payload);
   if (payload->typeSpecific.is_video() && !audio_configured_) {
@@ -531,7 +524,7 @@ size_t RTPSender::SendPadData(size_t bytes,
       timestamp = last_rtp_timestamp_;
       capture_time_ms = capture_time_ms_;
       if (rtx_ == kRtxOff) {
-        if (payload_type_ == -1)
+        if (last_payload_type_ == -1)
           break;
         // Without RTX we can't send padding in the middle of frames.
         // For audio marker bits doesn't mark the end of a frame and frames
@@ -550,7 +543,7 @@ size_t RTPSender::SendPadData(size_t bytes,
 
         sequence_number = sequence_number_;
         ++sequence_number_;
-        payload_type = payload_type_;
+        payload_type = last_payload_type_;
         over_rtx = false;
       } else {
         // Without abs-send-time or transport sequence number a media packet
@@ -1093,6 +1086,8 @@ bool RTPSender::AssignSequenceNumber(RtpPacketToSend* packet) {
   // Remember marker bit to determine if padding can be inserted with
   // sequence number following |packet|.
   last_packet_marker_bit_ = packet->Marker();
+  // Remember payload type to use in the padding packet if rtx is disabled.
+  last_payload_type_ = packet->PayloadType();
   // Save timestamps to generate timestamp field and extensions for the padding.
   last_rtp_timestamp_ = packet->Timestamp();
   last_timestamp_time_ms_ = clock_->TimeInMilliseconds();

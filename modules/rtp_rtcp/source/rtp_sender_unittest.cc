@@ -172,7 +172,6 @@ class RtpSenderTest : public ::testing::TestWithParam<bool> {
         nullptr, &seq_num_allocator_, nullptr, nullptr, nullptr, nullptr,
         &mock_rtc_event_log_, &send_packet_observer_,
         &retransmission_rate_limiter_, nullptr, populate_network2));
-    rtp_sender_->SetSendPayloadType(kPayload);
     rtp_sender_->SetSequenceNumber(kSeqNum);
     rtp_sender_->SetTimestampOffset(0);
     rtp_sender_->SetSSRC(kSsrc);
@@ -346,7 +345,7 @@ TEST_P(RtpSenderTestWithoutPacer, AssignSequenceNumberFailsOnNotSending) {
   EXPECT_FALSE(rtp_sender_->AssignSequenceNumber(packet.get()));
 }
 
-TEST_P(RtpSenderTestWithoutPacer, AssignSequenceNumberMayAllowPadding) {
+TEST_P(RtpSenderTestWithoutPacer, AssignSequenceNumberMayAllowPaddingOnVideo) {
   constexpr size_t kPaddingSize = 100;
   auto packet = rtp_sender_->AllocatePacket();
   ASSERT_TRUE(packet);
@@ -354,13 +353,44 @@ TEST_P(RtpSenderTestWithoutPacer, AssignSequenceNumberMayAllowPadding) {
   ASSERT_FALSE(rtp_sender_->TimeToSendPadding(kPaddingSize, PacedPacketInfo()));
   packet->SetMarker(false);
   ASSERT_TRUE(rtp_sender_->AssignSequenceNumber(packet.get()));
-  // Packet without marker bit doesn't allow padding.
+  // Packet without marker bit doesn't allow padding on video stream.
   EXPECT_FALSE(rtp_sender_->TimeToSendPadding(kPaddingSize, PacedPacketInfo()));
 
   packet->SetMarker(true);
   ASSERT_TRUE(rtp_sender_->AssignSequenceNumber(packet.get()));
   // Packet with marker bit allows send padding.
   EXPECT_TRUE(rtp_sender_->TimeToSendPadding(kPaddingSize, PacedPacketInfo()));
+}
+
+TEST_P(RtpSenderTest, AssignSequenceNumberAllowsPaddingOnAudio) {
+  MockTransport transport;
+  const bool kEnableAudio = true;
+  rtp_sender_.reset(new RTPSender(
+      kEnableAudio, &fake_clock_, &transport, &mock_paced_sender_, nullptr,
+      nullptr, nullptr, nullptr, nullptr, nullptr, &mock_rtc_event_log_,
+      nullptr, &retransmission_rate_limiter_, nullptr, false));
+  rtp_sender_->SetTimestampOffset(0);
+  rtp_sender_->SetSSRC(kSsrc);
+
+  std::unique_ptr<RtpPacketToSend> audio_packet = rtp_sender_->AllocatePacket();
+  // Padding on audio stream allowed regardless of marker in the last packet.
+  audio_packet->SetMarker(false);
+  audio_packet->SetPayloadType(kPayload);
+  rtp_sender_->AssignSequenceNumber(audio_packet.get());
+
+  const size_t kPaddingSize = 59;
+  EXPECT_CALL(transport, SendRtp(_, kPaddingSize + kRtpHeaderSize, _))
+      .WillOnce(testing::Return(true));
+  EXPECT_EQ(kPaddingSize,
+            rtp_sender_->TimeToSendPadding(kPaddingSize, PacedPacketInfo()));
+
+  // Requested padding size is too small, will send a larger one.
+  const size_t kMinPaddingSize = 50;
+  EXPECT_CALL(transport, SendRtp(_, kMinPaddingSize + kRtpHeaderSize, _))
+      .WillOnce(testing::Return(true));
+  EXPECT_EQ(
+      kMinPaddingSize,
+      rtp_sender_->TimeToSendPadding(kMinPaddingSize - 5, PacedPacketInfo()));
 }
 
 TEST_P(RtpSenderTestWithoutPacer, AssignSequenceNumberSetPaddingTimestamps) {
@@ -962,7 +992,6 @@ TEST_P(RtpSenderTest, SendFlexfecPackets) {
       &retransmission_rate_limiter_, nullptr, false));
   rtp_sender_->SetSSRC(kMediaSsrc);
   rtp_sender_->SetSequenceNumber(kSeqNum);
-  rtp_sender_->SetSendPayloadType(kMediaPayloadType);
   rtp_sender_->SetStorePacketsStatus(true, 10);
 
   // Parameters selected to generate a single FEC packet per media packet.
@@ -1022,7 +1051,6 @@ TEST_P(RtpSenderTest, NoFlexfecForTimingFrames) {
       &retransmission_rate_limiter_, nullptr, false));
   rtp_sender_->SetSSRC(kMediaSsrc);
   rtp_sender_->SetSequenceNumber(kSeqNum);
-  rtp_sender_->SetSendPayloadType(kMediaPayloadType);
   rtp_sender_->SetStorePacketsStatus(true, 10);
 
   // Need extension to be registered for timing frames to be sent.
@@ -1122,7 +1150,6 @@ TEST_P(RtpSenderTestWithoutPacer, SendFlexfecPackets) {
                     &retransmission_rate_limiter_, nullptr, false));
   rtp_sender_->SetSSRC(kMediaSsrc);
   rtp_sender_->SetSequenceNumber(kSeqNum);
-  rtp_sender_->SetSendPayloadType(kMediaPayloadType);
 
   // Parameters selected to generate a single FEC packet per media packet.
   FecProtectionParams params;
@@ -1145,7 +1172,6 @@ TEST_P(RtpSenderTestWithoutPacer, SendFlexfecPackets) {
 }
 
 TEST_P(RtpSenderTest, FecOverheadRate) {
-  constexpr int kMediaPayloadType = 127;
   constexpr int kFlexfecPayloadType = 118;
   constexpr uint32_t kMediaSsrc = 1234;
   constexpr uint32_t kFlexfecSsrc = 5678;
@@ -1163,7 +1189,6 @@ TEST_P(RtpSenderTest, FecOverheadRate) {
       &retransmission_rate_limiter_, nullptr, false));
   rtp_sender_->SetSSRC(kMediaSsrc);
   rtp_sender_->SetSequenceNumber(kSeqNum);
-  rtp_sender_->SetSendPayloadType(kMediaPayloadType);
 
   // Parameters selected to generate a single FEC packet per media packet.
   FecProtectionParams params;
@@ -1963,40 +1988,12 @@ TEST_P(RtpSenderTest, DoesNotUpdateOverheadOnEqualSize) {
   SendGenericPayload();
 }
 
-TEST_P(RtpSenderTest, SendAudioPadding) {
-  MockTransport transport;
-  const bool kEnableAudio = true;
-  rtp_sender_.reset(new RTPSender(
-      kEnableAudio, &fake_clock_, &transport, &mock_paced_sender_, nullptr,
-      nullptr, nullptr, nullptr, nullptr, nullptr, &mock_rtc_event_log_,
-      nullptr, &retransmission_rate_limiter_, nullptr, false));
-  rtp_sender_->SetSendPayloadType(kPayload);
-  rtp_sender_->SetSequenceNumber(kSeqNum);
-  rtp_sender_->SetTimestampOffset(0);
-  rtp_sender_->SetSSRC(kSsrc);
-
-  const size_t kPaddingSize = 59;
-  EXPECT_CALL(transport, SendRtp(_, kPaddingSize + kRtpHeaderSize, _))
-      .WillOnce(testing::Return(true));
-  EXPECT_EQ(kPaddingSize,
-            rtp_sender_->TimeToSendPadding(kPaddingSize, PacedPacketInfo()));
-
-  // Requested padding size is too small, will send a larger one.
-  const size_t kMinPaddingSize = 50;
-  EXPECT_CALL(transport, SendRtp(_, kMinPaddingSize + kRtpHeaderSize, _))
-      .WillOnce(testing::Return(true));
-  EXPECT_EQ(
-      kMinPaddingSize,
-      rtp_sender_->TimeToSendPadding(kMinPaddingSize - 5, PacedPacketInfo()));
-}
-
 TEST_P(RtpSenderTest, SendsKeepAlive) {
   MockTransport transport;
   rtp_sender_.reset(
       new RTPSender(false, &fake_clock_, &transport, nullptr, nullptr, nullptr,
                     nullptr, nullptr, nullptr, nullptr, &mock_rtc_event_log_,
                     nullptr, &retransmission_rate_limiter_, nullptr, false));
-  rtp_sender_->SetSendPayloadType(kPayload);
   rtp_sender_->SetSequenceNumber(kSeqNum);
   rtp_sender_->SetTimestampOffset(0);
   rtp_sender_->SetSSRC(kSsrc);

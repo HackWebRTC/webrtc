@@ -81,8 +81,6 @@ class RTPSender {
 
   int32_t DeRegisterSendPayload(const int8_t payload_type);
 
-  void SetSendPayloadType(int8_t payload_type);
-
   void SetSendingMediaStatus(bool enabled);
   bool SendingMedia() const;
 
@@ -277,7 +275,7 @@ class RTPSender {
 
   size_t max_packet_size_;
 
-  int8_t payload_type_ RTC_GUARDED_BY(send_critsect_);
+  int8_t last_payload_type_ RTC_GUARDED_BY(send_critsect_);
   std::map<int8_t, RtpUtility::Payload*> payload_type_map_;
 
   RtpHeaderExtensionMap rtp_header_extension_map_
