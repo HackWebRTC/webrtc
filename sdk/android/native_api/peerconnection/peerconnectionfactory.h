@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 The WebRTC project authors. All Rights Reserved.
+ *  Copyright 2018 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -8,19 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SDK_ANDROID_SRC_JNI_PC_PEERCONNECTIONFACTORY_H_
-#define SDK_ANDROID_SRC_JNI_PC_PEERCONNECTIONFACTORY_H_
+#ifndef SDK_ANDROID_NATIVE_API_PEERCONNECTION_PEERCONNECTIONFACTORY_H_
+#define SDK_ANDROID_NATIVE_API_PEERCONNECTION_PEERCONNECTIONFACTORY_H_
 
 #include <jni.h>
+
+#include <memory>
+
 #include "api/peerconnectioninterface.h"
 #include "rtc_base/thread.h"
 
 namespace webrtc {
-namespace jni {
-
-void PeerConnectionFactoryNetworkThreadReady();
-void PeerConnectionFactoryWorkerThreadReady();
-void PeerConnectionFactorySignalingThreadReady();
 
 // Creates java PeerConnectionFactory with specified |pcf|.
 jobject NativeToJavaPeerConnectionFactory(
@@ -31,7 +29,6 @@ jobject NativeToJavaPeerConnectionFactory(
     std::unique_ptr<rtc::Thread> signaling_thread,
     rtc::NetworkMonitorFactory* network_monitor_factory = nullptr);
 
-}  // namespace jni
 }  // namespace webrtc
 
-#endif  // SDK_ANDROID_SRC_JNI_PC_PEERCONNECTIONFACTORY_H_
+#endif  // SDK_ANDROID_NATIVE_API_PEERCONNECTION_PEERCONNECTIONFACTORY_H_

@@ -277,6 +277,15 @@ public class PeerConnectionFactory {
     }
   }
 
+  @CalledByNative
+  PeerConnectionFactory(long nativeFactory) {
+    checkInitializeHasBeenCalled();
+    if (nativeFactory == 0) {
+      throw new RuntimeException("Failed to initialize PeerConnectionFactory!");
+    }
+    this.nativeFactory = nativeFactory;
+  }
+
   /**
    * Deprecated. PeerConnection constraints are deprecated. Supply values in rtcConfig struct
    * instead and use the method without constraints in the signature.
