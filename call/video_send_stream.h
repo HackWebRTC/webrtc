@@ -120,6 +120,8 @@ class VideoSendStream {
             encoder(encoder) {}
       std::string ToString() const;
 
+      // TODO(nisse): About to be deleted. Unused if the corresponding
+      // fields in the below Rtp struct are set.
       std::string payload_name;
       int payload_type = -1;
 
@@ -158,6 +160,16 @@ class VideoSendStream {
 
       // RTP header extensions to use for this send stream.
       std::vector<RtpExtension> extensions;
+
+      // TODO(nisse): For now, these are fixed, but we'd like to support
+      // changing codec without recreating the VideoSendStream. Then these
+      // fields must be removed, and association between payload type and codec
+      // must move above the per-stream level. Ownership could be with
+      // RtpTransportControllerSend, with a reference from PayloadRouter, where
+      // the latter would be responsible for mapping the codec type of encoded
+      // images to the right payload type.
+      std::string payload_name;
+      int payload_type = -1;
 
       // See NackConfig for description.
       NackConfig nack;

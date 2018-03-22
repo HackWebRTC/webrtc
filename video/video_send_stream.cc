@@ -731,7 +731,9 @@ VideoSendStreamImpl::VideoSendStreamImpl(
                                              transport->keepalive_config())),
       payload_router_(rtp_rtcp_modules_,
                       config_->rtp.ssrcs,
-                      config_->encoder_settings.payload_type,
+                      config_->rtp.payload_type != -1
+                          ? config_->rtp.payload_type
+                          : config_->encoder_settings.payload_type,
                       suspended_payload_states),
       weak_ptr_factory_(this),
       overhead_bytes_per_packet_(0),
@@ -828,8 +830,12 @@ VideoSendStreamImpl::VideoSendStreamImpl(
     rtp_rtcp->RegisterSendChannelRtpStatisticsCallback(stats_proxy_);
     rtp_rtcp->SetMaxRtpPacketSize(config_->rtp.max_packet_size);
     rtp_rtcp->RegisterVideoSendPayload(
-        config_->encoder_settings.payload_type,
-        config_->encoder_settings.payload_name.c_str());
+        config_->rtp.payload_type != -1
+            ? config_->rtp.payload_type
+            : config_->encoder_settings.payload_type,
+        !config_->rtp.payload_name.empty()
+            ? config_->rtp.payload_name.c_str()
+            : config_->encoder_settings.payload_name.c_str());
   }
 
   fec_controller_->SetProtectionCallback(this);
