@@ -12,6 +12,7 @@ package org.appspot.apprtc;
 
 import android.media.AudioFormat;
 import android.os.Environment;
+import javax.annotation.Nullable;
 import android.util.Log;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -33,6 +34,7 @@ public class RecordedAudioToFileController implements SamplesReadyCallback {
 
   private final Object lock = new Object();
   private final ExecutorService executor;
+  @Nullable
   private OutputStream rawAudioFileOutputStream = null;
   private long fileSizeInBytes = 0;
 

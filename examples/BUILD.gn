@@ -106,12 +106,19 @@ if (is_android) {
       "androidapp/src/org/appspot/apprtc/util/AsyncHttpURLConnection.java",
     ]
 
+    javac_args = [
+      "-Xep:ParameterNotNullable:ERROR",
+      "-Xep:FieldMissingNullable:ERROR",
+      "-Xep:ReturnMissingNullable:ERROR",
+    ]
+
     deps = [
       ":AppRTCMobile_resources",
       "../rtc_base:base_java",
       "../sdk/android:libjingle_peerconnection_java",
       "../sdk/android:libjingle_peerconnection_metrics_default_java",
       "androidapp/third_party/autobanh:autobanh_java",
+      "//third_party/jsr-305:jsr_305_javalib",
     ]
   }
 
