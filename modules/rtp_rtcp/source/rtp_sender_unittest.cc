@@ -43,6 +43,7 @@ const int kTransmissionTimeOffsetExtensionId = 1;
 const int kAbsoluteSendTimeExtensionId = 14;
 const int kTransportSequenceNumberExtensionId = 13;
 const int kVideoTimingExtensionId = 12;
+const int kMidExtensionId = 11;
 const int kPayload = 100;
 const int kRtxPayload = 98;
 const uint32_t kTimestamp = 10;
@@ -83,6 +84,7 @@ class LoopbackTransportTest : public webrtc::Transport {
                                    kAudioLevelExtensionId);
     receivers_extensions_.Register(kRtpExtensionVideoTiming,
                                    kVideoTimingExtensionId);
+    receivers_extensions_.Register(kRtpExtensionMid, kMidExtensionId);
   }
 
   bool SendRtp(const uint8_t* data,
@@ -1169,6 +1171,30 @@ TEST_P(RtpSenderTestWithoutPacer, SendFlexfecPackets) {
   const RtpPacketReceived& flexfec_packet = transport_.sent_packets_[1];
   EXPECT_EQ(kFlexfecPayloadType, flexfec_packet.PayloadType());
   EXPECT_EQ(kFlexfecSsrc, flexfec_packet.Ssrc());
+}
+
+// Test that the MID header extension is included on sent packets when
+// configured.
+TEST_P(RtpSenderTestWithoutPacer, MidIncludedOnSentPackets) {
+  const char kMid[] = "mid";
+
+  // Register MID header extension and set the MID for the RTPSender.
+  rtp_sender_->SetSendingMediaStatus(false);
+  rtp_sender_->RegisterRtpHeaderExtension(kRtpExtensionMid, kMidExtensionId);
+  rtp_sender_->SetMid(kMid);
+  rtp_sender_->SetSendingMediaStatus(true);
+
+  // Send a couple packets.
+  SendGenericPayload();
+  SendGenericPayload();
+
+  // Expect both packets to have the MID set.
+  ASSERT_EQ(2u, transport_.sent_packets_.size());
+  for (const RtpPacketReceived& packet : transport_.sent_packets_) {
+    std::string mid;
+    ASSERT_TRUE(packet.GetExtension<RtpMid>(&mid));
+    EXPECT_EQ(kMid, mid);
+  }
 }
 
 TEST_P(RtpSenderTest, FecOverheadRate) {

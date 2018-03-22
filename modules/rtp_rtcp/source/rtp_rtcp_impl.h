@@ -13,6 +13,7 @@
 
 #include <memory>
 #include <set>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -85,6 +86,8 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
 
   // Configure SSRC, default is a random number.
   void SetSSRC(uint32_t ssrc) override;
+
+  void SetMid(const std::string& mid) override;
 
   void SetCsrcs(const std::vector<uint32_t>& csrcs) override;
 

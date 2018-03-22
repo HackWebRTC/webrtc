@@ -11,6 +11,7 @@
 #include "modules/rtp_rtcp/source/rtp_sender.h"
 
 #include <algorithm>
+#include <string>
 #include <utility>
 
 #include "logging/rtc_event_log/events/rtc_event_rtp_packet_outgoing.h"
@@ -328,6 +329,9 @@ int RTPSender::RtxStatus() const {
 void RTPSender::SetRtxSsrc(uint32_t ssrc) {
   rtc::CritScope lock(&send_critsect_);
   ssrc_rtx_.emplace(ssrc);
+  if (mid_oracle_rtx_) {
+    mid_oracle_rtx_->SetSsrc(ssrc);
+  }
 }
 
 uint32_t RTPSender::RtxSsrc() const {
@@ -727,6 +731,16 @@ void RTPSender::OnReceivedNack(
 void RTPSender::OnReceivedRtcpReportBlocks(
     const ReportBlockList& report_blocks) {
   playout_delay_oracle_.OnReceivedRtcpReportBlocks(report_blocks);
+
+  {
+    rtc::CritScope lock(&send_critsect_);
+    if (mid_oracle_) {
+      mid_oracle_->OnReceivedRtcpReportBlocks(report_blocks);
+    }
+    if (mid_oracle_rtx_) {
+      mid_oracle_rtx_->OnReceivedRtcpReportBlocks(report_blocks);
+    }
+  }
 }
 
 // Called from pacer when we can send the packet.
@@ -1073,6 +1087,10 @@ std::unique_ptr<RtpPacketToSend> RTPSender::AllocatePacket() const {
     packet->SetExtension<PlayoutDelayLimits>(
         playout_delay_oracle_.playout_delay());
   }
+  if (mid_oracle_ && mid_oracle_->send_mid()) {
+    // This is a no-op if the MID header extension is not registered.
+    packet->SetExtension<RtpMid>(mid_oracle_->mid());
+  }
   return packet;
 }
 
@@ -1145,12 +1163,42 @@ void RTPSender::SetSSRC(uint32_t ssrc) {
   if (!sequence_number_forced_) {
     sequence_number_ = random_.Rand(1, kMaxInitRtpSeqNumber);
   }
+  if (mid_oracle_) {
+    mid_oracle_->SetSsrc(ssrc);
+  }
 }
 
 uint32_t RTPSender::SSRC() const {
   rtc::CritScope lock(&send_critsect_);
   RTC_DCHECK(ssrc_);
   return *ssrc_;
+}
+
+void RTPSender::SetMid(const std::string& mid) {
+  // This is configured via the API.
+  rtc::CritScope lock(&send_critsect_);
+
+  // Cannot change MID once sending.
+  RTC_DCHECK(!sending_media_);
+
+  // Cannot change the MID if it is already set.
+  if (mid_oracle_) {
+    RTC_DCHECK_EQ(mid_oracle_->mid(), mid);
+    return;
+  }
+  if (mid_oracle_rtx_) {
+    RTC_DCHECK_EQ(mid_oracle_rtx_->mid(), mid);
+    return;
+  }
+
+  mid_oracle_ = rtc::MakeUnique<MidOracle>(mid);
+  if (ssrc_) {
+    mid_oracle_->SetSsrc(*ssrc_);
+  }
+  mid_oracle_rtx_ = rtc::MakeUnique<MidOracle>(mid);
+  if (ssrc_rtx_) {
+    mid_oracle_rtx_->SetSsrc(*ssrc_rtx_);
+  }
 }
 
 rtc::Optional<uint32_t> RTPSender::FlexfecSsrc() const {
@@ -1236,6 +1284,12 @@ std::unique_ptr<RtpPacketToSend> RTPSender::BuildRtxPacket(
 
     // Replace SSRC.
     rtx_packet->SetSsrc(*ssrc_rtx_);
+
+    // Possibly include the MID header extension.
+    if (mid_oracle_rtx_ && mid_oracle_rtx_->send_mid()) {
+      // This is a no-op if the MID header extension is not registered.
+      rtx_packet->SetExtension<RtpMid>(mid_oracle_rtx_->mid());
+    }
   }
 
   uint8_t* rtx_payload =
