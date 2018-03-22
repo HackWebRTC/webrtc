@@ -183,6 +183,7 @@ if (rtc_include_tests) {
       "../pacing:pacing",
       "../remote_bitrate_estimator:remote_bitrate_estimator",
       "../rtp_rtcp:rtp_rtcp_format",
+      "bbr:bbr_unittests",
       "goog_cc:goog_cc_unittests",
       "network_control:network_control_unittests",
       "rtp:congestion_controller_unittests",

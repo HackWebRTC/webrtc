@@ -91,6 +91,9 @@ class TimeDelta {
   TimeDelta operator*(int32_t scalar) const {
     return TimeDelta::us(us() * scalar);
   }
+  TimeDelta operator/(int64_t scalar) const {
+    return TimeDelta::us(us() / scalar);
+  }
   bool operator==(const TimeDelta& other) const {
     return microseconds_ == other.microseconds_;
   }
