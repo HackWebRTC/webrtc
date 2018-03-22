@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
 import org.webrtc.EglBase14;
 import org.webrtc.VideoFrame;
 
@@ -73,21 +74,21 @@ public class MediaCodecVideoEncoder {
 
   // Active running encoder instance. Set in initEncode() (called from native code)
   // and reset to null in release() call.
-  private static MediaCodecVideoEncoder runningInstance = null;
-  private static MediaCodecVideoEncoderErrorCallback errorCallback = null;
+  @Nullable private static MediaCodecVideoEncoder runningInstance = null;
+  @Nullable private static MediaCodecVideoEncoderErrorCallback errorCallback = null;
   private static int codecErrors = 0;
   // List of disabled codec types - can be set from application.
   private static Set<String> hwEncoderDisabledTypes = new HashSet<String>();
 
-  private Thread mediaCodecThread;
-  private MediaCodec mediaCodec;
+  @Nullable private Thread mediaCodecThread;
+  @Nullable private MediaCodec mediaCodec;
   private ByteBuffer[] outputBuffers;
-  private EglBase14 eglBase;
+  @Nullable private EglBase14 eglBase;
   private int profile;
   private int width;
   private int height;
-  private Surface inputSurface;
-  private GlRectDrawer drawer;
+  @Nullable private Surface inputSurface;
+  @Nullable private GlRectDrawer drawer;
 
   private static final String VP8_MIME_TYPE = "video/x-vnd.on2.vp8";
   private static final String VP9_MIME_TYPE = "video/x-vnd.on2.vp9";
@@ -231,7 +232,7 @@ public class MediaCodecVideoEncoder {
   private long lastKeyFrameMs;
 
   // SPS and PPS NALs (Config frame) for H.264.
-  private ByteBuffer configData = null;
+  @Nullable private ByteBuffer configData = null;
 
   // MediaCodec error handler - invoked when critical error happens which may prevent
   // further use of media codec API. Now it means that one of media codec instances
@@ -269,7 +270,7 @@ public class MediaCodecVideoEncoder {
         && (findHwEncoder(VP8_MIME_TYPE, vp8HwList(), supportedColorList) != null);
   }
 
-  public static EncoderProperties vp8HwEncoderProperties() {
+  public static @Nullable EncoderProperties vp8HwEncoderProperties() {
     if (hwEncoderDisabledTypes.contains(VP8_MIME_TYPE)) {
       return null;
     } else {
@@ -322,7 +323,7 @@ public class MediaCodecVideoEncoder {
     public final BitrateAdjustmentType bitrateAdjustmentType; // Bitrate adjustment type
   }
 
-  private static EncoderProperties findHwEncoder(
+  private static @Nullable EncoderProperties findHwEncoder(
       String mime, MediaCodecProperties[] supportedHwCodecProperties, int[] colorList) {
     // MediaCodec.setParameters is missing for JB and below, so bitrate
     // can not be adjusted dynamically.
@@ -433,7 +434,7 @@ public class MediaCodecVideoEncoder {
     }
   }
 
-  static MediaCodec createByCodecName(String codecName) {
+  static @Nullable MediaCodec createByCodecName(String codecName) {
     try {
       // In the L-SDK this call can throw IOException so in order to work in
       // both cases catch an exception.
@@ -445,7 +446,7 @@ public class MediaCodecVideoEncoder {
 
   @CalledByNativeUnchecked
   boolean initEncode(VideoCodecType type, int profile, int width, int height, int kbps, int fps,
-      EglBase14.Context sharedContext) {
+      @Nullable EglBase14.Context sharedContext) {
     final boolean useSurface = sharedContext != null;
     Logging.d(TAG,
         "Java initEncode: " + type + ". Profile: " + profile + " : " + width + " x " + height
@@ -857,6 +858,7 @@ public class MediaCodecVideoEncoder {
 
   // Dequeue and return an output buffer, or null if no output is ready.  Return
   // a fake OutputBufferInfo with index -1 if the codec is no longer operable.
+  @Nullable
   @CalledByNativeUnchecked
   OutputBufferInfo dequeueOutputBuffer() {
     checkOnMediaCodecThread();

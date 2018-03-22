@@ -10,6 +10,7 @@
 
 package org.webrtc;
 
+import android.graphics.SurfaceTexture;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecInfo.CodecCapabilities;
@@ -28,6 +29,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
 
 // Java-side of peerconnection.cc:MediaCodecVideoDecoder.
 // This class is an implementation detail of the Java PeerConnection API.
@@ -69,14 +71,14 @@ public class MediaCodecVideoDecoder {
   private static final int MAX_QUEUED_OUTPUTBUFFERS = 3;
   // Active running decoder instance. Set in initDecode() (called from native code)
   // and reset to null in release() call.
-  private static MediaCodecVideoDecoder runningInstance = null;
-  private static MediaCodecVideoDecoderErrorCallback errorCallback = null;
+  @Nullable private static MediaCodecVideoDecoder runningInstance = null;
+  @Nullable private static MediaCodecVideoDecoderErrorCallback errorCallback = null;
   private static int codecErrors = 0;
   // List of disabled codec types - can be set from application.
   private static Set<String> hwDecoderDisabledTypes = new HashSet<String>();
 
-  private Thread mediaCodecThread;
-  private MediaCodec mediaCodec;
+  @Nullable private Thread mediaCodecThread;
+  @Nullable private MediaCodec mediaCodec;
   private ByteBuffer[] inputBuffers;
   private ByteBuffer[] outputBuffers;
   private static final String VP8_MIME_TYPE = "video/x-vnd.on2.vp8";
@@ -139,9 +141,9 @@ public class MediaCodecVideoDecoder {
   private boolean useSurface;
 
   // The below variables are only used when decoding to a Surface.
-  private TextureListener textureListener;
+  @Nullable private TextureListener textureListener;
   private int droppedFrames;
-  private Surface surface = null;
+  @Nullable private Surface surface = null;
   private final Queue<DecodedOutputBuffer> dequeuedSurfaceOutputBuffers =
       new ArrayDeque<DecodedOutputBuffer>();
 
@@ -242,7 +244,8 @@ public class MediaCodecVideoDecoder {
     public final int colorFormat; // Color format supported by codec.
   }
 
-  private static DecoderProperties findDecoder(String mime, String[] supportedCodecPrefixes) {
+  private static @Nullable DecoderProperties findDecoder(
+      String mime, String[] supportedCodecPrefixes) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
       return null; // MediaCodec.setParameters is missing.
     }
@@ -319,8 +322,8 @@ public class MediaCodecVideoDecoder {
 
   // Pass null in |surfaceTextureHelper| to configure the codec for ByteBuffer output.
   @CalledByNativeUnchecked
-  private boolean initDecode(
-      VideoCodecType type, int width, int height, SurfaceTextureHelper surfaceTextureHelper) {
+  private boolean initDecode(VideoCodecType type, int width, int height,
+      @Nullable SurfaceTextureHelper surfaceTextureHelper) {
     if (mediaCodecThread != null) {
       throw new RuntimeException("initDecode: Forgot to release()?");
     }
@@ -356,7 +359,7 @@ public class MediaCodecVideoDecoder {
       stride = width;
       sliceHeight = height;
 
-      if (useSurface) {
+      if (useSurface && surfaceTextureHelper != null) {
         textureListener = new TextureListener(surfaceTextureHelper);
         surface = new Surface(surfaceTextureHelper.getSurfaceTexture());
       }
@@ -638,8 +641,8 @@ public class MediaCodecVideoDecoder {
     private final Object newFrameLock = new Object();
     // |bufferToRender| is non-null when waiting for transition between addBufferToRender() to
     // onTextureFrameAvailable().
-    private DecodedOutputBuffer bufferToRender;
-    private DecodedTextureBuffer renderedBuffer;
+    @Nullable private DecodedOutputBuffer bufferToRender;
+    @Nullable private DecodedTextureBuffer renderedBuffer;
 
     public TextureListener(SurfaceTextureHelper surfaceTextureHelper) {
       this.surfaceTextureHelper = surfaceTextureHelper;
@@ -681,6 +684,7 @@ public class MediaCodecVideoDecoder {
     }
 
     // Dequeues and returns a DecodedTextureBuffer if available, or null otherwise.
+    @Nullable
     @SuppressWarnings("WaitNotInLoop")
     public DecodedTextureBuffer dequeueTextureBuffer(int timeoutMs) {
       synchronized (newFrameLock) {
@@ -717,7 +721,7 @@ public class MediaCodecVideoDecoder {
   // unsupported format, or if |mediaCodec| is not in the Executing state. Throws CodecException
   // upon codec error.
   @CalledByNativeUnchecked
-  private DecodedOutputBuffer dequeueOutputBuffer(int dequeueTimeoutMs) {
+  private @Nullable DecodedOutputBuffer dequeueOutputBuffer(int dequeueTimeoutMs) {
     checkOnMediaCodecThread();
     if (decodeStartTimeMs.isEmpty()) {
       return null;
@@ -801,7 +805,7 @@ public class MediaCodecVideoDecoder {
   // upon codec error. If |dequeueTimeoutMs| > 0, the oldest decoded frame will be dropped if
   // a frame can't be returned.
   @CalledByNativeUnchecked
-  private DecodedTextureBuffer dequeueTextureBuffer(int dequeueTimeoutMs) {
+  private @Nullable DecodedTextureBuffer dequeueTextureBuffer(int dequeueTimeoutMs) {
     checkOnMediaCodecThread();
     if (!useSurface) {
       throw new IllegalStateException("dequeueTexture() called for byte buffer decoding.");

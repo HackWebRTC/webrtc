@@ -15,6 +15,7 @@ import android.media.MediaCodec;
 import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaFormat;
 import android.os.SystemClock;
+import javax.annotation.Nullable;
 import android.view.Surface;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -71,7 +72,7 @@ class HardwareVideoDecoder
   // Output thread runs a loop which polls MediaCodec for decoded output buffers.  It reformats
   // those buffers into VideoFrames and delivers them to the callback.  Variable is set on decoder
   // thread and is immutable while the codec is running.
-  private Thread outputThread;
+  @Nullable private Thread outputThread;
 
   // Checker that ensures work is run on the output thread.
   private ThreadChecker outputThreadChecker;
@@ -81,7 +82,7 @@ class HardwareVideoDecoder
   private ThreadChecker decoderThreadChecker;
 
   private volatile boolean running = false;
-  private volatile Exception shutdownException = null;
+  @Nullable private volatile Exception shutdownException = null;
 
   // Dimensions (width, height, stride, and sliceHeight) may be accessed by either the decode thread
   // or the output thread.  Accesses should be protected with this lock.
@@ -101,8 +102,8 @@ class HardwareVideoDecoder
 
   private final EglBase.Context sharedContext;
   // Valid and immutable while the decoder is running.
-  private SurfaceTextureHelper surfaceTextureHelper;
-  private Surface surface = null;
+  @Nullable private SurfaceTextureHelper surfaceTextureHelper;
+  @Nullable private Surface surface = null;
 
   private static class DecodedTextureMetadata {
     final int width;
@@ -123,14 +124,14 @@ class HardwareVideoDecoder
 
   // Metadata for the last frame rendered to the texture.
   private final Object renderedTextureMetadataLock = new Object();
-  private DecodedTextureMetadata renderedTextureMetadata;
+  @Nullable private DecodedTextureMetadata renderedTextureMetadata;
 
   // Decoding proceeds asynchronously.  This callback returns decoded frames to the caller.  Valid
   // and immutable while the decoder is running.
-  private Callback callback;
+  @Nullable private Callback callback;
 
   // Valid and immutable while the decoder is running.
-  private MediaCodec codec = null;
+  @Nullable private MediaCodec codec = null;
 
   HardwareVideoDecoder(
       String codecName, VideoCodecType codecType, int colorFormat, EglBase.Context sharedContext) {

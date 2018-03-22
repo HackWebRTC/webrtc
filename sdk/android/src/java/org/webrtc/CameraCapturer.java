@@ -14,6 +14,7 @@ import android.content.Context;
 import android.media.MediaRecorder;
 import android.os.Handler;
 import android.os.Looper;
+import javax.annotation.Nullable;
 import java.util.Arrays;
 
 @SuppressWarnings("deprecation")
@@ -37,9 +38,10 @@ abstract class CameraCapturer implements CameraVideoCapturer {
   private final static int OPEN_CAMERA_TIMEOUT = 10000;
 
   private final CameraEnumerator cameraEnumerator;
-  private final CameraEventsHandler eventsHandler;
+  @Nullable private final CameraEventsHandler eventsHandler;
   private final Handler uiThreadHandler;
 
+  @Nullable
   private final CameraSession.CreateSessionCallback createSessionCallback =
       new CameraSession.CreateSessionCallback() {
         @Override
@@ -125,6 +127,7 @@ abstract class CameraCapturer implements CameraVideoCapturer {
         }
       };
 
+  @Nullable
   private final CameraSession.Events cameraSessionEventsHandler = new CameraSession.Events() {
     @Override
     public void onCameraOpening() {
@@ -203,31 +206,31 @@ abstract class CameraCapturer implements CameraVideoCapturer {
 
   // Initialized on initialize
   // -------------------------
-  private Handler cameraThreadHandler;
+  @Nullable private Handler cameraThreadHandler;
   private Context applicationContext;
   private CapturerObserver capturerObserver;
-  private SurfaceTextureHelper surfaceHelper;
+  @Nullable private SurfaceTextureHelper surfaceHelper;
 
   private final Object stateLock = new Object();
   private boolean sessionOpening; /* guarded by stateLock */
-  private CameraSession currentSession; /* guarded by stateLock */
+  @Nullable private CameraSession currentSession; /* guarded by stateLock */
   private String cameraName; /* guarded by stateLock */
   private int width; /* guarded by stateLock */
   private int height; /* guarded by stateLock */
   private int framerate; /* guarded by stateLock */
   private int openAttemptsRemaining; /* guarded by stateLock */
   private SwitchState switchState = SwitchState.IDLE; /* guarded by stateLock */
-  private CameraSwitchHandler switchEventsHandler; /* guarded by stateLock */
+  @Nullable private CameraSwitchHandler switchEventsHandler; /* guarded by stateLock */
   // Valid from onDone call until stopCapture, otherwise null.
-  private CameraStatistics cameraStatistics; /* guarded by stateLock */
+  @Nullable private CameraStatistics cameraStatistics; /* guarded by stateLock */
   private boolean firstFrameObserved; /* guarded by stateLock */
 
   // Variables used on camera thread - do not require stateLock synchronization.
   private MediaRecorderState mediaRecorderState = MediaRecorderState.IDLE;
-  private MediaRecorderHandler mediaRecorderEventsHandler;
+  @Nullable private MediaRecorderHandler mediaRecorderEventsHandler;
 
-  public CameraCapturer(
-      String cameraName, CameraEventsHandler eventsHandler, CameraEnumerator cameraEnumerator) {
+  public CameraCapturer(String cameraName, @Nullable CameraEventsHandler eventsHandler,
+      CameraEnumerator cameraEnumerator) {
     if (eventsHandler == null) {
       eventsHandler = new CameraEventsHandler() {
         @Override
@@ -262,8 +265,8 @@ abstract class CameraCapturer implements CameraVideoCapturer {
   }
 
   @Override
-  public void initialize(SurfaceTextureHelper surfaceTextureHelper, Context applicationContext,
-      CapturerObserver capturerObserver) {
+  public void initialize(@Nullable SurfaceTextureHelper surfaceTextureHelper,
+      Context applicationContext, CapturerObserver capturerObserver) {
     this.applicationContext = applicationContext;
     this.capturerObserver = capturerObserver;
     this.surfaceHelper = surfaceTextureHelper;
@@ -412,14 +415,15 @@ abstract class CameraCapturer implements CameraVideoCapturer {
     }
   }
 
-  private void reportCameraSwitchError(String error, CameraSwitchHandler switchEventsHandler) {
+  private void reportCameraSwitchError(
+      String error, @Nullable CameraSwitchHandler switchEventsHandler) {
     Logging.e(TAG, error);
     if (switchEventsHandler != null) {
       switchEventsHandler.onCameraSwitchError(error);
     }
   }
 
-  private void switchCameraInternal(final CameraSwitchHandler switchEventsHandler) {
+  private void switchCameraInternal(@Nullable final CameraSwitchHandler switchEventsHandler) {
     Logging.d(TAG, "switchCamera internal");
 
     final String[] deviceNames = cameraEnumerator.getDeviceNames();
@@ -476,7 +480,7 @@ abstract class CameraCapturer implements CameraVideoCapturer {
   }
 
   private void reportUpdateMediaRecorderError(
-      String error, MediaRecorderHandler mediaRecoderEventsHandler) {
+      String error, @Nullable MediaRecorderHandler mediaRecoderEventsHandler) {
     checkIsOnCameraThread();
     Logging.e(TAG, error);
     if (mediaRecoderEventsHandler != null) {
@@ -485,7 +489,7 @@ abstract class CameraCapturer implements CameraVideoCapturer {
   }
 
   private void updateMediaRecorderInternal(
-      MediaRecorder mediaRecorder, MediaRecorderHandler mediaRecoderEventsHandler) {
+      @Nullable MediaRecorder mediaRecorder, MediaRecorderHandler mediaRecoderEventsHandler) {
     checkIsOnCameraThread();
     boolean addMediaRecorder = (mediaRecorder != null);
     Logging.d(TAG,

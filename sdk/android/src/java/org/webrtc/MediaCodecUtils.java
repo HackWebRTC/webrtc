@@ -14,6 +14,7 @@ import android.annotation.TargetApi;
 import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecInfo.CodecCapabilities;
+import javax.annotation.Nullable;
 
 /** Container class for static constants and helpers used with MediaCodec. */
 @TargetApi(18)
@@ -54,7 +55,8 @@ class MediaCodecUtils {
   // Color formats supported by texture mode encoding - in order of preference.
   static final int[] TEXTURE_COLOR_FORMATS = {MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface};
 
-  static Integer selectColorFormat(int[] supportedColorFormats, CodecCapabilities capabilities) {
+  static @Nullable Integer selectColorFormat(
+      int[] supportedColorFormats, CodecCapabilities capabilities) {
     for (int supportedColorFormat : supportedColorFormats) {
       for (int codecColorFormat : capabilities.colorFormats) {
         if (codecColorFormat == supportedColorFormat) {

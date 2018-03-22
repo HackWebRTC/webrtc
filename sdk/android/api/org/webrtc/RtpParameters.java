@@ -10,6 +10,7 @@
 
 package org.webrtc;
 
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.ArrayList;
 import org.webrtc.MediaStreamTrack;
@@ -31,7 +32,7 @@ public class RtpParameters {
     // If non-null, this represents the Transport Independent Application
     // Specific maximum bandwidth defined in RFC3890. If null, there is no
     // maximum bitrate.
-    public Integer maxBitrateBps;
+    @Nullable public Integer maxBitrateBps;
     // SSRC to be used by this encoding.
     // Can't be changed between getParameters/setParameters.
     public Long ssrc;
@@ -48,6 +49,7 @@ public class RtpParameters {
       return active;
     }
 
+    @Nullable
     @CalledByNative("Encoding")
     Integer getMaxBitrateBps() {
       return maxBitrateBps;

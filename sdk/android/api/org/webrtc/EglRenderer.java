@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
 
 /**
  * Implements org.webrtc.VideoRenderer.Callbacks by displaying the video stream on an EGL Surface.
@@ -84,7 +85,7 @@ public class EglRenderer implements VideoRenderer.Callbacks, VideoSink {
   // |renderThreadHandler| is a handler for communicating with |renderThread|, and is synchronized
   // on |handlerLock|.
   private final Object handlerLock = new Object();
-  private Handler renderThreadHandler;
+  @Nullable private Handler renderThreadHandler;
 
   private final ArrayList<FrameListenerAndParams> frameListeners = new ArrayList<>();
 
@@ -98,14 +99,14 @@ public class EglRenderer implements VideoRenderer.Callbacks, VideoSink {
 
   // EGL and GL resources for drawing YUV/OES textures. After initilization, these are only accessed
   // from the render thread.
-  private EglBase eglBase;
+  @Nullable private EglBase eglBase;
   private final VideoFrameDrawer frameDrawer = new VideoFrameDrawer();
-  private RendererCommon.GlDrawer drawer;
+  @Nullable private RendererCommon.GlDrawer drawer;
   private final Matrix drawMatrix = new Matrix();
 
   // Pending frame to render. Serves as a queue with size 1. Synchronized on |frameLock|.
   private final Object frameLock = new Object();
-  private VideoFrame pendingFrame;
+  @Nullable private VideoFrame pendingFrame;
 
   // These variables are synchronized on |layoutLock|.
   private final Object layoutLock = new Object();
@@ -130,7 +131,7 @@ public class EglRenderer implements VideoRenderer.Callbacks, VideoSink {
   private long renderSwapBufferTimeNs;
 
   // Used for bitmap capturing.
-  private GlTextureFrameBuffer bitmapTextureFramebuffer;
+  @Nullable private GlTextureFrameBuffer bitmapTextureFramebuffer;
 
   private final Runnable logStatisticsRunnable = new Runnable() {
     @Override
@@ -162,7 +163,7 @@ public class EglRenderer implements VideoRenderer.Callbacks, VideoSink {
    * |drawer|. It is allowed to call init() to reinitialize the renderer after a previous
    * init()/release() cycle.
    */
-  public void init(final EglBase.Context sharedContext, final int[] configAttributes,
+  public void init(@Nullable final EglBase.Context sharedContext, final int[] configAttributes,
       RendererCommon.GlDrawer drawer) {
     synchronized (handlerLock) {
       if (renderThreadHandler != null) {
@@ -385,7 +386,7 @@ public class EglRenderer implements VideoRenderer.Callbacks, VideoSink {
    *                          FPS reduction.
    */
   public void addFrameListener(final FrameListener listener, final float scale,
-      final RendererCommon.GlDrawer drawerParam, final boolean applyFpsReduction) {
+      @Nullable final RendererCommon.GlDrawer drawerParam, final boolean applyFpsReduction) {
     postToRenderThread(() -> {
       final RendererCommon.GlDrawer listenerDrawer = drawerParam == null ? drawer : drawerParam;
       frameListeners.add(

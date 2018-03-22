@@ -19,12 +19,13 @@ import java.lang.System;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
+import org.webrtc.CalledByNative;
 import org.webrtc.Logging;
+import org.webrtc.NativeClassQualifiedName;
 import org.webrtc.ThreadUtils;
 import org.webrtc.audio.AudioDeviceModule.AudioRecordErrorCallback;
 import org.webrtc.audio.AudioDeviceModule.AudioRecordStartErrorCode;
-import org.webrtc.CalledByNative;
-import org.webrtc.NativeClassQualifiedName;
 import org.webrtc.audio.AudioDeviceModule.SamplesReadyCallback;
 
 class WebRtcAudioRecord {
@@ -56,24 +57,24 @@ class WebRtcAudioRecord {
 
   private final long nativeAudioRecord;
 
-  private WebRtcAudioEffects effects = null;
+  private @Nullable WebRtcAudioEffects effects = null;
 
-  private ByteBuffer byteBuffer;
+  private @Nullable ByteBuffer byteBuffer;
 
-  private AudioRecord audioRecord = null;
-  private AudioRecordThread audioThread = null;
+  private @Nullable AudioRecord audioRecord = null;
+  private @Nullable AudioRecordThread audioThread = null;
 
   private static volatile boolean microphoneMute = false;
   private byte[] emptyBytes;
 
-  private static AudioRecordErrorCallback errorCallback = null;
+  private static @Nullable AudioRecordErrorCallback errorCallback = null;
 
   public static void setErrorCallback(AudioRecordErrorCallback errorCallback) {
     Logging.d(TAG, "Set error callback");
     WebRtcAudioRecord.errorCallback = errorCallback;
   }
 
-  private static SamplesReadyCallback audioSamplesReadyCallback = null;
+  private static @Nullable SamplesReadyCallback audioSamplesReadyCallback = null;
 
   public static void setOnAudioSamplesReady(SamplesReadyCallback callback) {
     audioSamplesReadyCallback = callback;

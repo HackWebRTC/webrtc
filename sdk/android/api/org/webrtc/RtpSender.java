@@ -10,15 +10,17 @@
 
 package org.webrtc;
 
+import javax.annotation.Nullable;
+
 /** Java wrapper for a C++ RtpSenderInterface. */
 @JNINamespace("webrtc::jni")
 public class RtpSender {
   final long nativeRtpSender;
 
-  private MediaStreamTrack cachedTrack;
+  @Nullable private MediaStreamTrack cachedTrack;
   private boolean ownsTrack = true;
 
-  private final DtmfSender dtmfSender;
+  private final @Nullable DtmfSender dtmfSender;
 
   @CalledByNative
   public RtpSender(long nativeRtpSender) {
@@ -44,7 +46,7 @@ public class RtpSender {
    *                      or a MediaStream.
    * @return              true on success and false on failure.
    */
-  public boolean setTrack(MediaStreamTrack track, boolean takeOwnership) {
+  public boolean setTrack(@Nullable MediaStreamTrack track, boolean takeOwnership) {
     if (!nativeSetTrack(nativeRtpSender, (track == null) ? 0 : track.nativeTrack)) {
       return false;
     }
@@ -56,6 +58,7 @@ public class RtpSender {
     return true;
   }
 
+  @Nullable
   public MediaStreamTrack track() {
     return cachedTrack;
   }
@@ -72,6 +75,7 @@ public class RtpSender {
     return nativeGetId(nativeRtpSender);
   }
 
+  @Nullable
   public DtmfSender dtmf() {
     return dtmfSender;
   }

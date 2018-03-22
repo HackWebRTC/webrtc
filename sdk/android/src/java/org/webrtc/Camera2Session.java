@@ -24,6 +24,7 @@ import android.hardware.camera2.CaptureFailure;
 import android.hardware.camera2.CaptureRequest;
 import android.media.MediaRecorder;
 import android.os.Handler;
+import javax.annotation.Nullable;
 import android.util.Range;
 import android.view.Surface;
 import android.view.WindowManager;
@@ -51,7 +52,7 @@ class Camera2Session implements CameraSession {
   private final Context applicationContext;
   private final CameraManager cameraManager;
   private final SurfaceTextureHelper surfaceTextureHelper;
-  private final Surface mediaRecorderSurface;
+  @Nullable private final Surface mediaRecorderSurface;
   private final String cameraId;
   private final int width;
   private final int height;
@@ -65,11 +66,11 @@ class Camera2Session implements CameraSession {
   private CaptureFormat captureFormat;
 
   // Initialized when camera opens
-  private CameraDevice cameraDevice;
-  private Surface surface;
+  @Nullable private CameraDevice cameraDevice;
+  @Nullable private Surface surface;
 
   // Initialized when capture session is created
-  private CameraCaptureSession captureSession;
+  @Nullable private CameraCaptureSession captureSession;
 
   // State
   private SessionState state = SessionState.RUNNING;
@@ -304,7 +305,8 @@ class Camera2Session implements CameraSession {
 
   private Camera2Session(CreateSessionCallback callback, Events events, Context applicationContext,
       CameraManager cameraManager, SurfaceTextureHelper surfaceTextureHelper,
-      MediaRecorder mediaRecorder, String cameraId, int width, int height, int framerate) {
+      @Nullable MediaRecorder mediaRecorder, String cameraId, int width, int height,
+      int framerate) {
     Logging.d(TAG, "Create new camera2 session on camera " + cameraId);
 
     constructionTimeNs = System.nanoTime();

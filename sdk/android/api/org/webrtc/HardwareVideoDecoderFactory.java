@@ -19,6 +19,7 @@ import android.media.MediaCodecInfo;
 import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaCodecList;
 import android.os.Build;
+import javax.annotation.Nullable;
 
 /** Factory for Android hardware VideoDecoders. */
 @SuppressWarnings("deprecation") // API level 16 requires use of deprecated methods.
@@ -47,6 +48,7 @@ public class HardwareVideoDecoderFactory implements VideoDecoderFactory {
     this.fallbackToSoftware = fallbackToSoftware;
   }
 
+  @Nullable
   @Override
   public VideoDecoder createDecoder(String codecType) {
     VideoCodecType type = VideoCodecType.valueOf(codecType);
@@ -70,7 +72,7 @@ public class HardwareVideoDecoderFactory implements VideoDecoderFactory {
         sharedContext);
   }
 
-  private MediaCodecInfo findCodecForType(VideoCodecType type) {
+  private @Nullable MediaCodecInfo findCodecForType(VideoCodecType type) {
     // HW decoding is not supported on builds before KITKAT.
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
       return null;

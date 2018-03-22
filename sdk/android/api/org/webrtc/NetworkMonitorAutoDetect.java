@@ -35,6 +35,7 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import javax.annotation.Nullable;
 
 /**
  * Borrowed from Chromium's
@@ -188,7 +189,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
      *  Note: In some rare Android systems connectivityManager is null.  We handle that
      *  gracefully below.
      */
-    private final ConnectivityManager connectivityManager;
+    @Nullable private final ConnectivityManager connectivityManager;
 
     ConnectivityManagerDelegate(Context context) {
       connectivityManager =
@@ -227,7 +228,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
     /**
      * Returns connection type and status information gleaned from networkInfo.
      */
-    NetworkState getNetworkState(NetworkInfo networkInfo) {
+    NetworkState getNetworkState(@Nullable NetworkInfo networkInfo) {
       if (networkInfo == null || !networkInfo.isConnected()) {
         return new NetworkState(false, -1, -1);
       }
@@ -246,6 +247,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
       return connectivityManager.getAllNetworks();
     }
 
+    @Nullable
     List<NetworkInformation> getActiveNetworkList() {
       if (!supportNetworkCallback()) {
         return null;
@@ -304,7 +306,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
     }
 
     @SuppressLint("NewApi")
-    private NetworkInformation networkToInfo(Network network) {
+    private @Nullable NetworkInformation networkToInfo(Network network) {
       if (connectivityManager == null) {
         return null;
       }
@@ -408,7 +410,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
 
   /** Queries the WifiManager for SSID of the current Wifi connection. */
   static class WifiManagerDelegate {
-    private final Context context;
+    @Nullable private final Context context;
     WifiManagerDelegate(Context context) {
       this.context = context;
     }
@@ -444,7 +446,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
     private final Observer observer;
     // Network information about a WifiP2p (aka WiFi-Direct) network, or null if no such network is
     // connected.
-    private NetworkInformation wifiP2pNetworkInfo = null;
+    @Nullable private NetworkInformation wifiP2pNetworkInfo = null;
 
     WifiDirectManagerDelegate(Observer observer, Context context) {
       this.context = context;
@@ -482,7 +484,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
     }
 
     /** Handle a change notification about the wifi p2p group. */
-    private void onWifiP2pGroupChange(WifiP2pGroup wifiP2pGroup) {
+    private void onWifiP2pGroupChange(@Nullable WifiP2pGroup wifiP2pGroup) {
       if (wifiP2pGroup == null || wifiP2pGroup.getInterface() == null) {
         return;
       }
@@ -528,9 +530,9 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
   private final Context context;
   // Used to request mobile network. It does not do anything except for keeping
   // the callback for releasing the request.
-  private final NetworkCallback mobileNetworkCallback;
+  @Nullable private final NetworkCallback mobileNetworkCallback;
   // Used to receive updates on all networks.
-  private final NetworkCallback allNetworkCallback;
+  @Nullable private final NetworkCallback allNetworkCallback;
   // connectivityManagerDelegate and wifiManagerDelegate are only non-final for testing.
   private ConnectivityManagerDelegate connectivityManagerDelegate;
   private WifiManagerDelegate wifiManagerDelegate;
@@ -617,6 +619,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
     return isRegistered;
   }
 
+  @Nullable
   List<NetworkInformation> getActiveNetworkList() {
     List<NetworkInformation> connectivityManagerList =
         connectivityManagerDelegate.getActiveNetworkList();

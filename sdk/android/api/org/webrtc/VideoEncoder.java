@@ -10,6 +10,7 @@
 
 package org.webrtc;
 
+import javax.annotation.Nullable;
 import org.webrtc.EncodedImage;
 
 /**
@@ -93,8 +94,8 @@ public interface VideoEncoder {
   /** Settings for WebRTC quality based scaling. */
   public class ScalingSettings {
     public final boolean on;
-    public final Integer low;
-    public final Integer high;
+    @Nullable public final Integer low;
+    @Nullable public final Integer high;
 
     /**
      * Settings to disable quality based scaling.

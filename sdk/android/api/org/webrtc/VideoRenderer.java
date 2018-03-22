@@ -10,6 +10,7 @@
 
 package org.webrtc;
 
+import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import org.webrtc.VideoFrame;
 
@@ -28,14 +29,14 @@ public class VideoRenderer {
   public static class I420Frame {
     public final int width;
     public final int height;
-    public final int[] yuvStrides;
-    public ByteBuffer[] yuvPlanes;
+    @Nullable public final int[] yuvStrides;
+    @Nullable public ByteBuffer[] yuvPlanes;
     public final boolean yuvFrame;
     // Matrix that transforms standard coordinates to their proper sampling locations in
     // the texture. This transform compensates for any properties of the video source that
     // cause it to appear different from a normalized texture. This matrix does not take
     // |rotationDegree| into account.
-    public final float[] samplingMatrix;
+    @Nullable public final float[] samplingMatrix;
     public int textureId;
     // Frame pointer in C++.
     private long nativeFramePointer;
@@ -46,7 +47,7 @@ public class VideoRenderer {
 
     // If this I420Frame was constructed from VideoFrame.Buffer, this points to
     // the backing buffer.
-    private final VideoFrame.Buffer backingBuffer;
+    @Nullable private final VideoFrame.Buffer backingBuffer;
 
     /**
      * Construct a frame of the given dimensions with the specified planar data.

@@ -10,7 +10,10 @@
 
 package org.webrtc;
 
+import javax.annotation.Nullable;
+
 public class SoftwareVideoDecoderFactory implements VideoDecoderFactory {
+  @Nullable
   @Override
   public VideoDecoder createDecoder(String codecType) {
     if (codecType.equalsIgnoreCase("VP8")) {

@@ -10,6 +10,8 @@
 
 package org.webrtc;
 
+import javax.annotation.Nullable;
+
 public class DefaultVideoDecoderFactory implements VideoDecoderFactory {
   private final HardwareVideoDecoderFactory hardwareVideoDecoderFactory;
   private final SoftwareVideoDecoderFactory softwareVideoDecoderFactory;
@@ -21,7 +23,7 @@ public class DefaultVideoDecoderFactory implements VideoDecoderFactory {
   }
 
   @Override
-  public VideoDecoder createDecoder(String codecType) {
+  public @Nullable VideoDecoder createDecoder(String codecType) {
     VideoDecoder decoder = hardwareVideoDecoderFactory.createDecoder(codecType);
     if (decoder != null) {
       return decoder;

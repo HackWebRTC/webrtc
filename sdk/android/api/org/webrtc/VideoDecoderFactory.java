@@ -10,11 +10,13 @@
 
 package org.webrtc;
 
+import javax.annotation.Nullable;
+
 /** Factory for creating VideoDecoders. */
 public interface VideoDecoderFactory {
   /**
    * Creates a VideoDecoder for the given codec. Supports the same codecs supported by
    * VideoEncoderFactory.
    */
-  @CalledByNative VideoDecoder createDecoder(String codecType);
+  @Nullable @CalledByNative VideoDecoder createDecoder(String codecType);
 }

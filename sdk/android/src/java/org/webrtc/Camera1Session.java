@@ -14,6 +14,7 @@ import android.content.Context;
 import android.media.MediaRecorder;
 import android.os.Handler;
 import android.os.SystemClock;
+import javax.annotation.Nullable;
 import android.view.Surface;
 import android.view.WindowManager;
 import java.io.IOException;
@@ -152,8 +153,8 @@ class Camera1Session implements CameraSession {
   }
 
   private Camera1Session(Events events, boolean captureToTexture, Context applicationContext,
-      SurfaceTextureHelper surfaceTextureHelper, MediaRecorder mediaRecorder, int cameraId,
-      android.hardware.Camera camera, android.hardware.Camera.CameraInfo info,
+      SurfaceTextureHelper surfaceTextureHelper, @Nullable MediaRecorder mediaRecorder,
+      int cameraId, android.hardware.Camera camera, android.hardware.Camera.CameraInfo info,
       CaptureFormat captureFormat, long constructionTimeNs) {
     Logging.d(TAG, "Create new camera1 session on camera " + cameraId);
 
