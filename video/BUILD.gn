@@ -94,6 +94,7 @@ rtc_static_library("video") {
     "../rtc_base:rtc_task_queue",
     "../rtc_base:sequenced_task_checker",
     "../rtc_base:weak_ptr",
+    "../rtc_base/time:timestamp_extrapolator",
     "../system_wrappers",
   ]
 

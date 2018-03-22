@@ -37,7 +37,6 @@
 #include "rtc_base/system/fallthrough.h"
 #include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/metrics.h"
-#include "system_wrappers/include/timestamp_extrapolator.h"
 #include "video/receive_statistics_proxy.h"
 
 namespace webrtc {

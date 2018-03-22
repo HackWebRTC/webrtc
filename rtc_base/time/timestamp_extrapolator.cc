@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "system_wrappers/include/timestamp_extrapolator.h"
+#include "rtc_base/time/timestamp_extrapolator.h"
 
 #include <algorithm>
 
@@ -178,12 +178,14 @@ void TimestampExtrapolator::CheckForWrapArounds(uint32_t ts90khz) {
       // Forward wrap around
       _wrapArounds++;
     }
-  }
-  // This difference will probably be less than -2^31 if we have had a backward
-  // wrap around. Since it is casted to a Word32, it should be positive.
-  else if (static_cast<int32_t>(_prevWrapTimestamp - ts90khz) > 0) {
-    // Backward wrap around
-    _wrapArounds--;
+  } else {
+    // This difference will probably be less than -2^31 if we have had a
+    // backward wrap around. Since it is casted to a Word32, it should be
+    // positive.
+    if (static_cast<int32_t>(_prevWrapTimestamp - ts90khz) > 0) {
+      // Backward wrap around
+      _wrapArounds--;
+    }
   }
   _prevWrapTimestamp = ts90khz;
 }
@@ -193,9 +195,9 @@ bool TimestampExtrapolator::DelayChangeDetection(double error) {
   error = (error > 0) ? std::min(error, _accMaxError)
                       : std::max(error, -_accMaxError);
   _detectorAccumulatorPos =
-      std::max(_detectorAccumulatorPos + error - _accDrift, (double)0);
+      std::max(_detectorAccumulatorPos + error - _accDrift, double{0});
   _detectorAccumulatorNeg =
-      std::min(_detectorAccumulatorNeg + error + _accDrift, (double)0);
+      std::min(_detectorAccumulatorNeg + error + _accDrift, double{0});
   if (_detectorAccumulatorPos > _alarmThreshold ||
       _detectorAccumulatorNeg < -_alarmThreshold) {
     // Alarm

@@ -12,9 +12,9 @@
 
 #include <algorithm>
 
+#include "rtc_base/time/timestamp_extrapolator.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/metrics.h"
-#include "system_wrappers/include/timestamp_extrapolator.h"
 
 namespace webrtc {
 

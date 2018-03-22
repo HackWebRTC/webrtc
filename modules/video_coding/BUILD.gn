@@ -153,6 +153,7 @@ rtc_static_library("video_coding") {
     "../../rtc_base:sequenced_task_checker",
     "../../rtc_base/experiments:alr_experiment",
     "../../rtc_base/system:fallthrough",
+    "../../rtc_base/time:timestamp_extrapolator",
     "../../system_wrappers",
     "../../system_wrappers:field_trial_api",
     "../../system_wrappers:metrics_api",

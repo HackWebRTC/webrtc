@@ -23,7 +23,6 @@ rtc_static_library("system_wrappers") {
     "include/rtp_to_ntp_estimator.h",
     "include/rw_lock_wrapper.h",
     "include/sleep.h",
-    "include/timestamp_extrapolator.h",
     "source/clock.cc",
     "source/cpu_features.cc",
     "source/cpu_info.cc",
@@ -40,7 +39,6 @@ rtc_static_library("system_wrappers") {
     "source/rw_lock_win.cc",
     "source/rw_lock_win.h",
     "source/sleep.cc",
-    "source/timestamp_extrapolator.cc",
   ]
 
   defines = []

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SYSTEM_WRAPPERS_INCLUDE_TIMESTAMP_EXTRAPOLATOR_H_
-#define SYSTEM_WRAPPERS_INCLUDE_TIMESTAMP_EXTRAPOLATOR_H_
+#ifndef RTC_BASE_TIME_TIMESTAMP_EXTRAPOLATOR_H_
+#define RTC_BASE_TIME_TIMESTAMP_EXTRAPOLATOR_H_
 
 #include "system_wrappers/include/rw_lock_wrapper.h"
 #include "typedefs.h"  // NOLINT(build/include)
@@ -51,4 +51,4 @@ class TimestampExtrapolator {
 
 }  // namespace webrtc
 
-#endif  // SYSTEM_WRAPPERS_INCLUDE_TIMESTAMP_EXTRAPOLATOR_H_
+#endif  // RTC_BASE_TIME_TIMESTAMP_EXTRAPOLATOR_H_
