@@ -216,7 +216,7 @@ RenderDelayBuffer::BufferingEvent RenderDelayBufferImpl::Insert(
     } else {
       if (++num_api_calls_in_a_row_ > max_observed_jitter_) {
         max_observed_jitter_ = num_api_calls_in_a_row_;
-        RTC_LOG(LS_INFO)
+        RTC_LOG(LS_WARNING)
             << "New max number api jitter observed at render block "
             << render_call_counter_ << ":  " << num_api_calls_in_a_row_
             << " blocks";
@@ -264,7 +264,7 @@ RenderDelayBufferImpl::PrepareCaptureProcessing() {
     } else {
       if (++num_api_calls_in_a_row_ > max_observed_jitter_) {
         max_observed_jitter_ = num_api_calls_in_a_row_;
-        RTC_LOG(LS_INFO)
+        RTC_LOG(LS_WARNING)
             << "New max number api jitter observed at capture block "
             << capture_call_counter_ << ":  " << num_api_calls_in_a_row_
             << " blocks";
@@ -355,6 +355,7 @@ int RenderDelayBufferImpl::MapInternalDelayToExternalDelay() const {
 
 // Set the read indices according to the delay.
 void RenderDelayBufferImpl::ApplyDelay(int delay) {
+  RTC_LOG(LS_WARNING) << "Applying internal delay of " << delay << " blocks.";
   blocks_.read = blocks_.OffsetIndex(blocks_.write, -delay);
   spectra_.read = spectra_.OffsetIndex(spectra_.write, delay);
   ffts_.read = ffts_.OffsetIndex(ffts_.write, delay);
