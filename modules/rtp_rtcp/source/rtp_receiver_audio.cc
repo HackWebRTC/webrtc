@@ -191,20 +191,6 @@ int RTPReceiverAudio::Energy(uint8_t array_of_energy[kRtpCsrcSize]) const {
   return num_energy_;
 }
 
-int32_t RTPReceiverAudio::InvokeOnInitializeDecoder(
-    RtpFeedback* callback,
-    int8_t payload_type,
-    const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-    const PayloadUnion& specific_payload) const {
-  const auto& ap = specific_payload.audio_payload();
-  if (callback->OnInitializeDecoder(payload_type, ap.format, ap.rate) == -1) {
-    RTC_LOG(LS_ERROR) << "Failed to create decoder for payload type: "
-                      << payload_name << "/" << static_cast<int>(payload_type);
-    return -1;
-  }
-  return 0;
-}
-
 // We are not allowed to have any critsects when calling data_callback.
 int32_t RTPReceiverAudio::ParseAudioCodecSpecific(
     WebRtcRTPHeader* rtp_header,

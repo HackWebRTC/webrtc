@@ -40,12 +40,6 @@ class RTPReceiverVideo : public RTPReceiverStrategy {
   int32_t OnNewPayloadTypeCreated(int payload_type,
                                   const SdpAudioFormat& audio_format) override;
 
-  int32_t InvokeOnInitializeDecoder(
-      RtpFeedback* callback,
-      int8_t payload_type,
-      const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-      const PayloadUnion& specific_payload) const override;
-
   void SetPacketOverHead(uint16_t packet_over_head);
 
  private:

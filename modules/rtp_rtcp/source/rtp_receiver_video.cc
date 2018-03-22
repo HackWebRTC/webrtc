@@ -127,14 +127,4 @@ RTPAliveType RTPReceiverVideo::ProcessDeadOrAlive(
   return kRtpDead;
 }
 
-int32_t RTPReceiverVideo::InvokeOnInitializeDecoder(
-    RtpFeedback* callback,
-    int8_t payload_type,
-    const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-    const PayloadUnion& specific_payload) const {
-  // TODO(pbos): Remove as soon as audio can handle a changing payload type
-  // without this callback.
-  return 0;
-}
-
 }  // namespace webrtc

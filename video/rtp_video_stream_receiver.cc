@@ -261,16 +261,6 @@ void RtpVideoStreamReceiver::OnRecoveredPacket(const uint8_t* rtp_packet,
   ReceivePacket(rtp_packet, rtp_packet_length, header);
 }
 
-// TODO(pbos): Remove as soon as audio can handle a changing payload type
-// without this callback.
-int32_t RtpVideoStreamReceiver::OnInitializeDecoder(
-    const int payload_type,
-    const SdpAudioFormat& audio_format,
-    const uint32_t rate) {
-  RTC_NOTREACHED();
-  return 0;
-}
-
 // This method handles both regular RTP packets and packets recovered
 // via FlexFEC.
 void RtpVideoStreamReceiver::OnRtpPacket(const RtpPacketReceived& packet) {

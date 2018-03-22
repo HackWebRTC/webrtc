@@ -57,12 +57,6 @@ class RTPReceiverAudio : public RTPReceiverStrategy,
   int32_t OnNewPayloadTypeCreated(int payload_type,
                                   const SdpAudioFormat& audio_format) override;
 
-  int32_t InvokeOnInitializeDecoder(
-      RtpFeedback* callback,
-      int8_t payload_type,
-      const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-      const PayloadUnion& specific_payload) const override;
-
   // We need to look out for special payload types here and sometimes reset
   // statistics. In addition we sometimes need to tweak the frequency.
   void CheckPayloadChanged(int8_t payload_type,

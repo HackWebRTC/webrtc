@@ -394,19 +394,6 @@ void Channel::OnIncomingCSRCChanged(uint32_t CSRC, bool added) {
   // TODO(saza): remove.
 }
 
-int32_t Channel::OnInitializeDecoder(int payload_type,
-                                     const SdpAudioFormat& audio_format,
-                                     uint32_t rate) {
-  if (!audio_coding_->RegisterReceiveCodec(payload_type, audio_format)) {
-    RTC_DLOG(LS_WARNING) << "Channel::OnInitializeDecoder() invalid codec (pt="
-                         << payload_type << ", " << audio_format
-                         << ") received -1";
-    return -1;
-  }
-
-  return 0;
-}
-
 int32_t Channel::OnReceivedPayloadData(const uint8_t* payloadData,
                                        size_t payloadSize,
                                        const WebRtcRTPHeader* rtpHeader) {

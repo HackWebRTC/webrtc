@@ -69,16 +69,6 @@ class VerifyingAudioReceiver : public RtpData {
   }
 };
 
-class RTPCallback : public NullRtpFeedback {
- public:
-  int32_t OnInitializeDecoder(int payload_type,
-                              const SdpAudioFormat& audio_format,
-                              uint32_t rate) override {
-    EXPECT_EQ(0u, rate) << "The rate should be zero";
-    return 0;
-  }
-};
-
 }  // namespace
 
 class RtpRtcpAudioTest : public ::testing::Test {
@@ -137,7 +127,7 @@ class RtpRtcpAudioTest : public ::testing::Test {
 
   VerifyingAudioReceiver data_receiver1;
   VerifyingAudioReceiver data_receiver2;
-  RTPCallback rtp_callback;
+  NullRtpFeedback rtp_callback;
   std::unique_ptr<ReceiveStatistics> receive_statistics1_;
   std::unique_ptr<ReceiveStatistics> receive_statistics2_;
   std::unique_ptr<RTPPayloadRegistry> rtp_payload_registry1_;

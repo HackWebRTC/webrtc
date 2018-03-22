@@ -256,14 +256,6 @@ class RtpFeedback {
  public:
   virtual ~RtpFeedback() {}
 
-  // Receiving payload change or SSRC change. (return success!)
-  /*
-  *   channels    - number of channels in codec (1 = mono, 2 = stereo)
-  */
-  virtual int32_t OnInitializeDecoder(int payload_type,
-                                      const SdpAudioFormat& audio_format,
-                                      uint32_t rate) = 0;
-
   virtual void OnIncomingSSRCChanged(uint32_t ssrc) = 0;
 
   virtual void OnIncomingCSRCChanged(uint32_t csrc, bool added) = 0;
@@ -450,20 +442,9 @@ class NullRtpFeedback : public RtpFeedback {
  public:
   ~NullRtpFeedback() override {}
 
-  int32_t OnInitializeDecoder(int payload_type,
-                              const SdpAudioFormat& audio_format,
-                              uint32_t rate) override;
-
   void OnIncomingSSRCChanged(uint32_t ssrc) override {}
   void OnIncomingCSRCChanged(uint32_t csrc, bool added) override {}
 };
-
-inline int32_t NullRtpFeedback::OnInitializeDecoder(
-    int payload_type,
-    const SdpAudioFormat& audio_format,
-    uint32_t rate) {
-  return 0;
-}
 
 // Statistics about packet loss for a single directional connection. All values
 // are totals since the connection initiated.

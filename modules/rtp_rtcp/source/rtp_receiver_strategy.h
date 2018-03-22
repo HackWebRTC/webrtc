@@ -59,13 +59,6 @@ class RTPReceiverStrategy {
       int payload_type,
       const SdpAudioFormat& audio_format) = 0;
 
-  // Invokes the OnInitializeDecoder callback in a media-specific way.
-  virtual int32_t InvokeOnInitializeDecoder(
-      RtpFeedback* callback,
-      int8_t payload_type,
-      const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-      const PayloadUnion& specific_payload) const = 0;
-
   // Checks if the payload type has changed, and returns whether we should
   // reset statistics and/or discard this packet.
   virtual void CheckPayloadChanged(int8_t payload_type,
