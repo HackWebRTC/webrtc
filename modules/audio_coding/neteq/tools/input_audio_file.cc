@@ -56,13 +56,18 @@ bool InputAudioFile::Seek(int samples) {
   RTC_CHECK_NE(EOF, file_size) << "Error returned when getting file position.";
   // Find new position.
   long new_pos = current_pos + sizeof(int16_t) * samples;  // Samples to bytes.
-  RTC_CHECK_GE(new_pos, 0)
-      << "Trying to move to before the beginning of the file";
   if (loop_at_end_) {
     new_pos = new_pos % file_size;  // Wrap around the end of the file.
+    if (new_pos < 0) {
+      // For negative values of new_pos, newpos % file_size will also be
+      // negative. To get the correct result it's needed to add file_size.
+      new_pos += file_size;
+    }
   } else {
     new_pos = new_pos > file_size ? file_size : new_pos;  // Don't loop.
   }
+  RTC_CHECK_GE(new_pos, 0)
+      << "Trying to move to before the beginning of the file";
   // Move to new position relative to the beginning of the file.
   RTC_CHECK_EQ(0, fseek(fp_, new_pos, SEEK_SET));
   return true;
