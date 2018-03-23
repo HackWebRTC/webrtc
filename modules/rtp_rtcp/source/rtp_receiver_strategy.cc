@@ -19,20 +19,6 @@ RTPReceiverStrategy::RTPReceiverStrategy(RtpData* data_callback)
 
 RTPReceiverStrategy::~RTPReceiverStrategy() = default;
 
-void RTPReceiverStrategy::GetLastMediaSpecificPayload(
-    PayloadUnion* payload) const {
-  rtc::CritScope cs(&crit_sect_);
-  if (last_payload_) {
-    *payload = *last_payload_;
-  }
-}
-
-void RTPReceiverStrategy::SetLastMediaSpecificPayload(
-    const PayloadUnion& payload) {
-  rtc::CritScope cs(&crit_sect_);
-  last_payload_.emplace(payload);
-}
-
 void RTPReceiverStrategy::CheckPayloadChanged(int8_t payload_type,
                                               PayloadUnion* specific_payload,
                                               bool* should_discard_changes) {

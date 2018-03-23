@@ -67,10 +67,6 @@ class RTPReceiverStrategy {
 
   virtual int Energy(uint8_t array_of_energy[kRtpCsrcSize]) const;
 
-  // Stores / retrieves the last media specific payload for later reference.
-  void GetLastMediaSpecificPayload(PayloadUnion* payload) const;
-  void SetLastMediaSpecificPayload(const PayloadUnion& payload);
-
  protected:
   // The data callback is where we should send received payload data.
   // See ParseRtpPacket. This class does not claim ownership of the callback.
@@ -83,7 +79,6 @@ class RTPReceiverStrategy {
   explicit RTPReceiverStrategy(RtpData* data_callback);
 
   rtc::CriticalSection crit_sect_;
-  rtc::Optional<PayloadUnion> last_payload_;
   RtpData* data_callback_;
 };
 }  // namespace webrtc

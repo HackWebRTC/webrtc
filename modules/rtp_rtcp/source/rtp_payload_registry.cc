@@ -103,8 +103,7 @@ bool IsPayloadTypeValid(int8_t payload_type) {
 }  // namespace
 
 RTPPayloadRegistry::RTPPayloadRegistry()
-    : last_received_payload_type_(-1),
-      last_received_media_payload_type_(-1) {}
+    : last_received_payload_type_(-1) {}
 
 RTPPayloadRegistry::~RTPPayloadRegistry() = default;
 
@@ -129,7 +128,6 @@ void RTPPayloadRegistry::SetAudioReceivePayloads(
   // Clear the value of last received payload type since it might mean
   // something else now.
   last_received_payload_type_ = -1;
-  last_received_media_payload_type_ = -1;
 }
 
 int32_t RTPPayloadRegistry::RegisterReceivePayload(
@@ -170,7 +168,6 @@ int32_t RTPPayloadRegistry::RegisterReceivePayload(
   // Successful set of payload type, clear the value of last received payload
   // type since it might mean something else.
   last_received_payload_type_ = -1;
-  last_received_media_payload_type_ = -1;
   return 0;
 }
 
@@ -204,7 +201,6 @@ int32_t RTPPayloadRegistry::RegisterReceivePayload(
   // Successful set of payload type, clear the value of last received payload
   // type since it might mean something else.
   last_received_payload_type_ = -1;
-  last_received_media_payload_type_ = -1;
   return 0;
 }
 
@@ -278,16 +274,6 @@ rtc::Optional<RtpUtility::Payload> RTPPayloadRegistry::PayloadTypeToPayload(
   return it == payload_type_map_.end()
              ? rtc::nullopt
              : rtc::Optional<RtpUtility::Payload>(it->second);
-}
-
-bool RTPPayloadRegistry::ReportMediaPayloadType(uint8_t media_payload_type) {
-  rtc::CritScope cs(&crit_sect_);
-  if (last_received_media_payload_type_ == media_payload_type) {
-    // Media type unchanged.
-    return true;
-  }
-  last_received_media_payload_type_ = media_payload_type;
-  return false;
 }
 
 }  // namespace webrtc

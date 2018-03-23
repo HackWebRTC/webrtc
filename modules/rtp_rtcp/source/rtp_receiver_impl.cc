@@ -272,8 +272,6 @@ bool RtpReceiverImpl::GetLatestTimestamps(uint32_t* timestamp,
 // Implementation note: must not hold critsect when called.
 void RtpReceiverImpl::CheckSSRCChanged(const RTPHeader& rtp_header) {
   bool new_ssrc = false;
-  // TODO(nisse): This is unused, delete any corresponding dead code.
-  rtc::Optional<AudioPayload> reinitialize_audio_payload;
 
   {
     rtc::CritScope lock(&critical_section_rtp_receiver_);
@@ -288,23 +286,6 @@ void RtpReceiverImpl::CheckSSRCChanged(const RTPHeader& rtp_header) {
       last_received_timestamp_ = 0;
       last_received_frame_time_ms_ = -1;
 
-      // Do we have a SSRC? Then the stream is restarted.
-      if (ssrc_ != 0) {
-        // Do we have the same codec? Then re-initialize coder.
-        if (rtp_header.payloadType == last_received_payload_type) {
-          const auto payload = rtp_payload_registry_->PayloadTypeToPayload(
-              rtp_header.payloadType);
-          if (!payload) {
-            return;
-          }
-          if (payload->typeSpecific.is_audio()) {
-            reinitialize_audio_payload.emplace(
-                payload->typeSpecific.audio_payload());
-          } else {
-            // OnInitializeDecoder() is only used for audio.
-          }
-        }
-      }
       ssrc_ = rtp_header.ssrc;
     }
   }
@@ -326,10 +307,6 @@ void RtpReceiverImpl::CheckSSRCChanged(const RTPHeader& rtp_header) {
 int32_t RtpReceiverImpl::CheckPayloadChanged(const RTPHeader& rtp_header,
                                              const int8_t first_payload_byte,
                                              PayloadUnion* specific_payload) {
-  // TODO(nisse): re_initialize_decoder is unused, and most or all of
-  // this code can likely be deleted.
-  bool re_initialize_decoder = false;
-
   int8_t payload_type = rtp_header.payloadType;
 
   {
@@ -357,22 +334,6 @@ int32_t RtpReceiverImpl::CheckPayloadChanged(const RTPHeader& rtp_header,
         return -1;
       }
       rtp_payload_registry_->set_last_received_payload_type(payload_type);
-
-      re_initialize_decoder = true;
-
-      rtp_media_receiver_->SetLastMediaSpecificPayload(payload->typeSpecific);
-      rtp_media_receiver_->GetLastMediaSpecificPayload(specific_payload);
-
-      if (!payload->typeSpecific.is_audio()) {
-        bool media_type_unchanged =
-            rtp_payload_registry_->ReportMediaPayloadType(payload_type);
-        if (media_type_unchanged) {
-          // Only reset the decoder if the media codec type has changed.
-          re_initialize_decoder = false;
-        }
-      }
-    } else {
-      rtp_media_receiver_->GetLastMediaSpecificPayload(specific_payload);
     }
   }  // End critsect.
 

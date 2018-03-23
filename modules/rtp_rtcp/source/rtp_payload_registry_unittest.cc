@@ -155,11 +155,6 @@ TEST(RtpPayloadRegistryTest,
   rtp_payload_registry.set_last_received_payload_type(17);
   EXPECT_EQ(17, rtp_payload_registry.last_received_payload_type());
 
-  bool media_type_unchanged = rtp_payload_registry.ReportMediaPayloadType(18);
-  EXPECT_FALSE(media_type_unchanged);
-  media_type_unchanged = rtp_payload_registry.ReportMediaPayloadType(18);
-  EXPECT_TRUE(media_type_unchanged);
-
   bool ignored;
   constexpr int payload_type = 34;
   const SdpAudioFormat audio_format("name", 44000, 1);
@@ -167,8 +162,6 @@ TEST(RtpPayloadRegistryTest,
                    payload_type, audio_format, &ignored));
 
   EXPECT_EQ(-1, rtp_payload_registry.last_received_payload_type());
-  media_type_unchanged = rtp_payload_registry.ReportMediaPayloadType(18);
-  EXPECT_FALSE(media_type_unchanged);
 }
 
 class ParameterizedRtpPayloadRegistryTest
