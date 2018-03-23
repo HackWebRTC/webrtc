@@ -24,7 +24,7 @@
 
 #if defined(WEBRTC_WIN)
 #include "rtc_base/win32.h"
-#include <Iphlpapi.h>
+#include <iphlpapi.h>
 #elif !defined(__native_client__)
 #include "rtc_base/ifaddrs_converter.h"
 #endif
