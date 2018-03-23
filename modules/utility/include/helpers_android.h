@@ -20,6 +20,15 @@
   RTC_CHECK(!jni->ExceptionCheck()) \
       << (jni->ExceptionDescribe(), jni->ExceptionClear(), "")
 
+#if defined(WEBRTC_ARCH_X86)
+// Dalvik JIT generated code doesn't guarantee 16-byte stack alignment on
+// x86 - use force_align_arg_pointer to realign the stack at the JNI
+// boundary. bugs.webrtc.org/9050
+#define JNI_FUNCTION_ALIGN __attribute__((force_align_arg_pointer))
+#else
+#define JNI_FUNCTION_ALIGN
+#endif
+
 namespace webrtc {
 
 // Return a |JNIEnv*| usable on this thread or NULL if this thread is detached.
