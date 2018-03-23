@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "system_wrappers/include/rw_lock_wrapper.h"
+#include "rtc_base/synchronization/rw_lock_wrapper.h"
 
 #include <assert.h>
 
 #if defined(_WIN32)
-#include "system_wrappers/source/rw_lock_win.h"
+#include "rtc_base/synchronization/rw_lock_win.h"
 #else
-#include "system_wrappers/source/rw_lock_posix.h"
+#include "rtc_base/synchronization/rw_lock_posix.h"
 #endif
 
 namespace webrtc {

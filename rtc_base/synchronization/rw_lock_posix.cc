@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "system_wrappers/source/rw_lock_posix.h"
+#include "rtc_base/synchronization/rw_lock_posix.h"
 
 namespace webrtc {
 

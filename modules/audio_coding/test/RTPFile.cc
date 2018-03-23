@@ -20,7 +20,7 @@
 #endif
 
 #include "audio_coding_module.h"
-#include "system_wrappers/include/rw_lock_wrapper.h"
+#include "rtc_base/synchronization/rw_lock_wrapper.h"
 // TODO(tlegrand): Consider removing usage of gtest.
 #include "test/gtest.h"
 #include "typedefs.h"  // NOLINT(build/include)

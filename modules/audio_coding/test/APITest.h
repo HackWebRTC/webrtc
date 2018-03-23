@@ -18,8 +18,8 @@
 #include "modules/audio_coding/test/Channel.h"
 #include "modules/audio_coding/test/PCMFile.h"
 #include "modules/audio_coding/test/utility.h"
+#include "rtc_base/synchronization/rw_lock_wrapper.h"
 #include "system_wrappers/include/event_wrapper.h"
-#include "system_wrappers/include/rw_lock_wrapper.h"
 
 namespace webrtc {
 

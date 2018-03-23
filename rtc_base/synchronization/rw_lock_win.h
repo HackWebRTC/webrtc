@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SYSTEM_WRAPPERS_SOURCE_RW_LOCK_WIN_H_
-#define SYSTEM_WRAPPERS_SOURCE_RW_LOCK_WIN_H_
+#ifndef RTC_BASE_SYNCHRONIZATION_RW_LOCK_WIN_H_
+#define RTC_BASE_SYNCHRONIZATION_RW_LOCK_WIN_H_
 
-#include "system_wrappers/include/rw_lock_wrapper.h"
+#include "rtc_base/synchronization/rw_lock_wrapper.h"
 
 #include <Windows.h>
 
@@ -20,13 +20,12 @@ namespace webrtc {
 class RWLockWin : public RWLockWrapper {
  public:
   static RWLockWin* Create();
-  ~RWLockWin() {}
 
-  virtual void AcquireLockExclusive();
-  virtual void ReleaseLockExclusive();
+  void AcquireLockExclusive() override;
+  void ReleaseLockExclusive() override;
 
-  virtual void AcquireLockShared();
-  virtual void ReleaseLockShared();
+  void AcquireLockShared() override;
+  void ReleaseLockShared() override;
 
  private:
   RWLockWin();
@@ -37,4 +36,4 @@ class RWLockWin : public RWLockWrapper {
 
 }  // namespace webrtc
 
-#endif  // SYSTEM_WRAPPERS_SOURCE_RW_LOCK_WIN_H_
+#endif  // RTC_BASE_SYNCHRONIZATION_RW_LOCK_WIN_H_

@@ -11,7 +11,7 @@
 #ifndef RTC_BASE_TIME_TIMESTAMP_EXTRAPOLATOR_H_
 #define RTC_BASE_TIME_TIMESTAMP_EXTRAPOLATOR_H_
 
-#include "system_wrappers/include/rw_lock_wrapper.h"
+#include "rtc_base/synchronization/rw_lock_wrapper.h"
 #include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {

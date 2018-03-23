@@ -363,6 +363,7 @@ rtc_static_library("desktop_capture_generic") {
     "../../api:refcountedbase",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base",  # TODO(kjellander): Cleanup in bugs.webrtc.org/3806.
+    "../../rtc_base/synchronization:rw_lock_wrapper",
     "../../system_wrappers",
     "../../system_wrappers:cpu_features_api",
     "../../system_wrappers:metrics_api",

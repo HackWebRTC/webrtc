@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SYSTEM_WRAPPERS_SOURCE_RW_LOCK_POSIX_H_
-#define SYSTEM_WRAPPERS_SOURCE_RW_LOCK_POSIX_H_
-
-#include "system_wrappers/include/rw_lock_wrapper.h"
-#include "typedefs.h"  // NOLINT(build/include)
+#ifndef RTC_BASE_SYNCHRONIZATION_RW_LOCK_POSIX_H_
+#define RTC_BASE_SYNCHRONIZATION_RW_LOCK_POSIX_H_
 
 #include <pthread.h>
+
+#include "rtc_base/synchronization/rw_lock_wrapper.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 
@@ -38,4 +38,4 @@ class RWLockPosix : public RWLockWrapper {
 
 }  // namespace webrtc
 
-#endif  // SYSTEM_WRAPPERS_SOURCE_RW_LOCK_POSIX_H_
+#endif  // RTC_BASE_SYNCHRONIZATION_RW_LOCK_POSIX_H_

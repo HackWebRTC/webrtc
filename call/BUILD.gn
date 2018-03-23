@@ -188,6 +188,7 @@ rtc_static_library("call") {
     "../rtc_base:rtc_task_queue",
     "../rtc_base:safe_minmax",
     "../rtc_base:sequenced_task_checker",
+    "../rtc_base/synchronization:rw_lock_wrapper",
     "../system_wrappers",
     "../system_wrappers:field_trial_api",
     "../system_wrappers:metrics_api",

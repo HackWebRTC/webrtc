@@ -25,8 +25,8 @@
 #endif  // defined(WEBRTC_POSIX)
 
 #include "rtc_base/criticalsection.h"
+#include "rtc_base/synchronization/rw_lock_wrapper.h"
 #include "rtc_base/timeutils.h"
-#include "system_wrappers/include/rw_lock_wrapper.h"
 
 namespace webrtc {
 
