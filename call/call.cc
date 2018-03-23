@@ -134,8 +134,8 @@ std::unique_ptr<rtclog::StreamConfig> CreateRtcLogStreamConfig(
   rtclog_config->rtcp_mode = config.rtp.rtcp_mode;
   rtclog_config->rtp_extensions = config.rtp.extensions;
 
-  rtclog_config->codecs.emplace_back(config.encoder_settings.payload_name,
-                                     config.encoder_settings.payload_type,
+  rtclog_config->codecs.emplace_back(config.rtp.payload_name,
+                                     config.rtp.payload_type,
                                      config.rtp.rtx.payload_type);
   return rtclog_config;
 }

@@ -26,23 +26,15 @@ namespace webrtc {
 
 bool VideoCodecInitializer::SetupCodec(
     const VideoEncoderConfig& config,
-    const VideoSendStream::Config::EncoderSettings settings,
     const std::vector<VideoStream>& streams,
     bool nack_enabled,
     VideoCodec* codec,
     std::unique_ptr<VideoBitrateAllocator>* bitrate_allocator) {
-  VideoCodecType codec_type = config.codec_type;
-  // TODO(nisse): Transition hack, the intention is to delete the
-  // |settings| argument and require configuration via
-  // config.codec_type.
-  if (codec_type == kVideoCodecUnknown) {
-    codec_type = PayloadStringToCodecType(settings.payload_name);
-  }
-  if (codec_type == kVideoCodecMultiplex) {
+  if (config.codec_type == kVideoCodecMultiplex) {
     VideoEncoderConfig associated_config = config.Copy();
     associated_config.codec_type = kVideoCodecVP9;
-    if (!SetupCodec(associated_config, settings /* ignored */, streams,
-                    nack_enabled, codec, bitrate_allocator)) {
+    if (!SetupCodec(associated_config, streams, nack_enabled, codec,
+                    bitrate_allocator)) {
       RTC_LOG(LS_ERROR) << "Failed to create stereo encoder configuration.";
       return false;
     }
@@ -51,7 +43,7 @@ bool VideoCodecInitializer::SetupCodec(
   }
 
   *codec =
-      VideoEncoderConfigToVideoCodec(config, streams, codec_type, nack_enabled);
+      VideoEncoderConfigToVideoCodec(config, streams, nack_enabled);
   *bitrate_allocator = CreateBitrateAllocator(*codec);
 
   return true;
@@ -77,7 +69,6 @@ VideoCodecInitializer::CreateBitrateAllocator(const VideoCodec& codec) {
 VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
     const VideoEncoderConfig& config,
     const std::vector<VideoStream>& streams,
-    VideoCodecType codec_type,
     bool nack_enabled) {
   static const int kEncoderMinBitrateKbps = 30;
   RTC_DCHECK(!streams.empty());
@@ -85,7 +76,7 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
 
   VideoCodec video_codec;
   memset(&video_codec, 0, sizeof(video_codec));
-  video_codec.codecType = codec_type;
+  video_codec.codecType = config.codec_type;
 
   switch (config.content_type) {
     case VideoEncoderConfig::ContentType::kRealtimeVideo:

@@ -126,11 +126,7 @@ SendStatisticsProxy::SendStatisticsProxy(
     const VideoSendStream::Config& config,
     VideoEncoderConfig::ContentType content_type)
     : clock_(clock),
-      // TODO(nisse): This is a transition hack; encoder_settings.payload_name
-      // is soon to be deleted.
-      payload_name_(!config.rtp.payload_name.empty()
-                        ? config.rtp.payload_name
-                        : config.encoder_settings.payload_name),
+      payload_name_(config.rtp.payload_name),
       rtp_config_(config.rtp),
       fallback_max_pixels_(GetFallbackMaxPixelsIfFieldTrialEnabled()),
       fallback_max_pixels_disabled_(GetFallbackMaxPixelsIfFieldTrialDisabled()),

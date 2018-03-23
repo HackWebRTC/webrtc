@@ -247,9 +247,6 @@ void RtpReplay() {
   }
   receive_config.renderer = &file_passthrough;
 
-  VideoSendStream::Config::EncoderSettings encoder_settings;
-  encoder_settings.payload_name = flags::Codec();
-  encoder_settings.payload_type = flags::MediaPayloadType();
   VideoReceiveStream::Decoder decoder;
   std::unique_ptr<DecoderBitstreamFileWriter> bitstream_writer;
   if (!flags::DecoderBitstreamFilename().empty()) {
@@ -257,7 +254,8 @@ void RtpReplay() {
         flags::DecoderBitstreamFilename().c_str()));
     receive_config.pre_decode_callback = bitstream_writer.get();
   }
-  decoder = test::CreateMatchingDecoder(encoder_settings);
+  decoder = test::CreateMatchingDecoder(flags::MediaPayloadType(),
+                                        flags::Codec());
   if (!flags::DecoderBitstreamFilename().empty()) {
     // Replace with a null decoder if we're writing the bitstream to a file
     // instead.

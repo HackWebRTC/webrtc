@@ -112,18 +112,8 @@ class VideoSendStream {
 
     struct EncoderSettings {
       EncoderSettings() = default;
-      EncoderSettings(std::string payload_name,
-                      int payload_type,
-                      VideoEncoder* encoder)
-          : payload_name(std::move(payload_name)),
-            payload_type(payload_type),
-            encoder(encoder) {}
+      explicit EncoderSettings(VideoEncoder* encoder) : encoder(encoder) {}
       std::string ToString() const;
-
-      // TODO(nisse): About to be deleted. Unused if the corresponding
-      // fields in the below Rtp struct are set.
-      std::string payload_name;
-      int payload_type = -1;
 
       // TODO(sophiechang): Delete this field when no one is using internal
       // sources anymore.
