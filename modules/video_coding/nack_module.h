@@ -32,6 +32,7 @@ class NackModule : public Module {
              NackSender* nack_sender,
              KeyFrameRequestSender* keyframe_request_sender);
 
+  int OnReceivedPacket(uint16_t seq_num, bool is_keyframe);
   int OnReceivedPacket(const VCMPacket& packet);
   void ClearUpTo(uint16_t seq_num);
   void UpdateRtt(int64_t rtt_ms);

@@ -209,12 +209,8 @@ int32_t RtpVideoStreamReceiver::OnReceivedPayloadData(
       nack_module_ ? nack_module_->OnReceivedPacket(packet) : -1;
   packet.receive_time_ms = clock_->TimeInMilliseconds();
 
-  // In the case of a video stream without picture ids and no rtx the
-  // RtpFrameReferenceFinder will need to know about padding to
-  // correctly calculate frame references.
   if (packet.sizeBytes == 0) {
-    reference_finder_->PaddingReceived(packet.seqNum);
-    packet_buffer_->PaddingReceived(packet.seqNum);
+    NotifyReceiverOfEmptyPacket(packet.seqNum);
     return 0;
   }
 
@@ -436,41 +432,21 @@ void RtpVideoStreamReceiver::ParseAndHandleEncapsulatingHeader(
   }
 }
 
+// In the case of a video stream without picture ids and no rtx the
+// RtpFrameReferenceFinder will need to know about padding to
+// correctly calculate frame references.
+void RtpVideoStreamReceiver::NotifyReceiverOfEmptyPacket(uint16_t seq_num) {
+  reference_finder_->PaddingReceived(seq_num);
+  packet_buffer_->PaddingReceived(seq_num);
+}
+
 void RtpVideoStreamReceiver::NotifyReceiverOfFecPacket(
     const RTPHeader& header) {
-  int8_t last_media_payload_type =
-      rtp_payload_registry_.last_received_media_payload_type();
-  if (last_media_payload_type < 0) {
-    RTC_LOG(LS_WARNING) << "Failed to get last media payload type.";
-    return;
+  if (nack_module_) {
+    nack_module_->OnReceivedPacket(header.sequenceNumber,
+                                   /* is_keyframe = */ false);
   }
-  // Fake an empty media packet.
-  WebRtcRTPHeader rtp_header = {};
-  rtp_header.header = header;
-  rtp_header.header.payloadType = last_media_payload_type;
-  rtp_header.header.paddingLength = 0;
-  const auto pl =
-      rtp_payload_registry_.PayloadTypeToPayload(last_media_payload_type);
-  if (!pl) {
-    RTC_LOG(LS_WARNING) << "Failed to get payload specifics.";
-    return;
-  }
-  rtp_header.type.Video.codec = pl->typeSpecific.video_payload().videoCodecType;
-  rtp_header.type.Video.rotation = kVideoRotation_0;
-  if (header.extension.hasVideoRotation) {
-    rtp_header.type.Video.rotation = header.extension.videoRotation;
-  }
-  rtp_header.type.Video.content_type = VideoContentType::UNSPECIFIED;
-  if (header.extension.hasVideoContentType) {
-    rtp_header.type.Video.content_type = header.extension.videoContentType;
-  }
-  rtp_header.type.Video.video_timing = {0u, 0u, 0u, 0u, 0u, 0u, false};
-  if (header.extension.has_video_timing) {
-    rtp_header.type.Video.video_timing = header.extension.video_timing;
-  }
-  rtp_header.type.Video.playout_delay = header.extension.playout_delay;
-
-  OnReceivedPayloadData(nullptr, 0, &rtp_header);
+  NotifyReceiverOfEmptyPacket(header.sequenceNumber);
 }
 
 bool RtpVideoStreamReceiver::DeliverRtcp(const uint8_t* rtcp_packet,
