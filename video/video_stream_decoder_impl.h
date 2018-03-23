@@ -11,17 +11,17 @@
 #ifndef VIDEO_VIDEO_STREAM_DECODER_IMPL_H_
 #define VIDEO_VIDEO_STREAM_DECODER_IMPL_H_
 
-#include <functional>
 #include <map>
 #include <memory>
 #include <utility>
 
-#include "api/optional.h"
-#include "api/video/encoded_frame.h"
-#include "api/video/video_frame.h"
 #include "api/video/video_stream_decoder.h"
-#include "api/video_codecs/sdp_video_format.h"
-#include "api/video_codecs/video_decoder_factory.h"
+#include "modules/video_coding/frame_buffer2.h"
+#include "modules/video_coding/jitter_estimator.h"
+#include "modules/video_coding/timing.h"
+#include "rtc_base/task_queue.h"
+#include "rtc_base/thread_checker.h"
+#include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 
@@ -45,9 +45,21 @@ class VideoStreamDecoderImpl : public VideoStreamDecoder,
                rtc::Optional<int32_t> decode_time_ms,
                rtc::Optional<uint8_t> qp) override;
 
-  VideoStreamDecoder::Callbacks* callbacks_;
-  VideoDecoderFactory* decoder_factory_;
+  VideoStreamDecoder::Callbacks* const callbacks_
+      RTC_PT_GUARDED_BY(bookkeeping_queue_);
+  VideoDecoderFactory* const decoder_factory_;
   std::map<int, std::pair<SdpVideoFormat, int>> decoder_settings_;
+
+  // The |bookkeeping_queue_| is used to:
+  //  - Make |callbacks_|.
+  //  - Insert/extract frames from the |frame_buffer_|
+  //  - Synchronize with whatever thread that makes the Decoded callback.
+  rtc::TaskQueue bookkeeping_queue_;
+
+  VCMJitterEstimator jitter_estimator_;
+  VCMTiming timing_;
+  video_coding::FrameBuffer frame_buffer_;
+  video_coding::VideoLayerFrameId last_continuous_id_;
 };
 
 }  // namespace webrtc

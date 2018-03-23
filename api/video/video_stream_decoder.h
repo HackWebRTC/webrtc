@@ -21,10 +21,6 @@
 #include "api/video_codecs/video_decoder_factory.h"
 
 namespace webrtc {
-// TODO(philipel): #include instead of forward declare when the relevant CL has
-//                 landed.
-class FrameKey;
-
 // NOTE: This class is still under development and may change without notice.
 class VideoStreamDecoder {
  public:
@@ -36,7 +32,8 @@ class VideoStreamDecoder {
     virtual void OnNonDecodableState() = 0;
 
     // Called with the last continuous frame.
-    virtual void OnContinuousUntil(const FrameKey& key) = 0;
+    virtual void OnContinuousUntil(
+        const video_coding::VideoLayerFrameId& key) = 0;
 
     // Called with the decoded frame.
     virtual void OnDecodedFrame(VideoFrame decodedImage,

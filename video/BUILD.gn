@@ -116,7 +116,10 @@ rtc_source_set("video_stream_decoder_impl") {
     "../api:video_frame_api",
     "../api:video_stream_decoder",
     "../api/video_codecs:video_codecs_api",
+    "../modules/video_coding:video_coding",
     "../rtc_base:rtc_base_approved",
+    "../rtc_base:rtc_task_queue_api",
+    "../system_wrappers:system_wrappers",
   ]
 
   if (!build_with_chromium && is_clang) {
