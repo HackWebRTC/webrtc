@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "p2p/base/common.h"
+#include "p2p/base/p2pconstants.h"
 #include "p2p/base/portallocator.h"
 #include "p2p/base/stun.h"
 #include "rtc_base/checks.h"
@@ -25,7 +26,6 @@
 namespace cricket {
 
 // TODO(?): Move these to a common place (used in relayport too)
-const int KEEPALIVE_DELAY = 10 * 1000;  // 10 seconds - sort timeouts
 const int RETRY_TIMEOUT = 50 * 1000;    // 50 seconds
 
 // Handles a binding request sent to the STUN server.
@@ -166,17 +166,12 @@ UDPPort::UDPPort(rtc::Thread* thread,
                  const std::string& password,
                  const std::string& origin,
                  bool emit_local_for_anyaddress)
-    : Port(thread,
-           LOCAL_PORT_TYPE,
-           factory,
-           network,
-           username,
-           password),
+    : Port(thread, LOCAL_PORT_TYPE, factory, network, username, password),
       requests_(thread),
       socket_(socket),
       error_(0),
       ready_(false),
-      stun_keepalive_delay_(KEEPALIVE_DELAY),
+      stun_keepalive_delay_(STUN_KEEPALIVE_INTERVAL),
       emit_local_for_anyaddress_(emit_local_for_anyaddress) {
   requests_.set_origin(origin);
 }
@@ -202,7 +197,7 @@ UDPPort::UDPPort(rtc::Thread* thread,
       socket_(NULL),
       error_(0),
       ready_(false),
-      stun_keepalive_delay_(KEEPALIVE_DELAY),
+      stun_keepalive_delay_(STUN_KEEPALIVE_INTERVAL),
       emit_local_for_anyaddress_(emit_local_for_anyaddress) {
   requests_.set_origin(origin);
 }
@@ -322,7 +317,7 @@ void UDPPort::GetStunStats(rtc::Optional<StunStats>* stats) {
 }
 
 void UDPPort::set_stun_keepalive_delay(const rtc::Optional<int>& delay) {
-  stun_keepalive_delay_ = delay.value_or(KEEPALIVE_DELAY);
+  stun_keepalive_delay_ = delay.value_or(STUN_KEEPALIVE_INTERVAL);
 }
 
 void UDPPort::OnLocalAddressReady(rtc::AsyncPacketSocket* socket,

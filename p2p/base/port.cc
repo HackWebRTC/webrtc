@@ -1036,7 +1036,6 @@ Connection::Connection(Port* port,
       packet_loss_estimator_(kConsiderPacketLostAfter, kForgetPacketAfter),
       reported_(false),
       state_(IceCandidatePairState::WAITING),
-      receiving_timeout_(WEAK_CONNECTION_RECEIVE_TIMEOUT),
       time_created_ms_(rtc::TimeMillis()) {
   // All of our connections start in WAITING state.
   // TODO(mallinath) - Start connections from STATE_FROZEN.
@@ -1095,7 +1094,7 @@ void Connection::set_write_state(WriteState value) {
 
 void Connection::UpdateReceiving(int64_t now) {
   bool receiving =
-      last_received() > 0 && now <= last_received() + receiving_timeout_;
+      last_received() > 0 && now <= last_received() + receiving_timeout();
   if (receiving_ == receiving) {
     return;
   }
@@ -1132,6 +1131,10 @@ int Connection::unwritable_timeout() const {
 
 int Connection::unwritable_min_checks() const {
   return unwritable_min_checks_.value_or(CONNECTION_WRITE_CONNECT_FAILURES);
+}
+
+int Connection::receiving_timeout() const {
+  return receiving_timeout_.value_or(WEAK_CONNECTION_RECEIVE_TIMEOUT);
 }
 
 void Connection::OnSendStunPacket(const void* data, size_t size,

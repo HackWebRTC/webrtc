@@ -113,7 +113,7 @@ enum { MSG_ADD_CANDIDATES, MSG_REMOVE_CANDIDATES };
 cricket::IceConfig CreateIceConfig(
     int receiving_timeout,
     cricket::ContinualGatheringPolicy continual_gathering_policy,
-    int backup_ping_interval = -1) {
+    rtc::Optional<int> backup_ping_interval = rtc::nullopt) {
   cricket::IceConfig config;
   config.receiving_timeout = receiving_timeout;
   config.continual_gathering_policy = continual_gathering_policy;
@@ -3567,10 +3567,10 @@ TEST_F(P2PTransportChannelPingTest, TestReceivingStateChange) {
   PrepareChannel(&ch);
   // Default receiving timeout and checking receiving interval should not be too
   // small.
-  EXPECT_LE(1000, ch.receiving_timeout());
+  EXPECT_LE(1000, ch.config().receiving_timeout_or_default());
   EXPECT_LE(200, ch.check_receiving_interval());
   ch.SetIceConfig(CreateIceConfig(500, GATHER_ONCE));
-  EXPECT_EQ(500, ch.receiving_timeout());
+  EXPECT_EQ(500, ch.config().receiving_timeout_or_default());
   EXPECT_EQ(50, ch.check_receiving_interval());
   ch.MaybeStartGathering();
   ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "1.1.1.1", 1, 1));

@@ -85,7 +85,9 @@ class FakeIceTransport : public IceTransportInternal {
   }
 
   // Convenience functions for accessing ICE config and other things.
-  int receiving_timeout() const { return ice_config_.receiving_timeout; }
+  int receiving_timeout() const {
+    return ice_config_.receiving_timeout_or_default();
+  }
   bool gather_continually() const { return ice_config_.gather_continually(); }
   const Candidates& remote_candidates() const { return remote_candidates_; }
 

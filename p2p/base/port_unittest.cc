@@ -12,6 +12,7 @@
 #include <memory>
 
 #include "p2p/base/basicpacketsocketfactory.h"
+#include "p2p/base/p2pconstants.h"
 #include "p2p/base/relayport.h"
 #include "p2p/base/stunport.h"
 #include "p2p/base/tcpport.h"

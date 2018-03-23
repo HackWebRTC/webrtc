@@ -95,45 +95,6 @@ int CompareCandidatePairsByNetworkPreference(
 
 namespace cricket {
 
-// When the socket is unwritable, we will use 10 Kbps (ignoring IP+UDP headers)
-// for pinging.  When the socket is writable, we will use only 1 Kbps because
-// we don't want to degrade the quality on a modem.  These numbers should work
-// well on a 28.8K modem, which is the slowest connection on which the voice
-// quality is reasonable at all.
-static const int PING_PACKET_SIZE = 60 * 8;
-
-// The next two ping intervals are at the channel level.
-// STRONG_PING_INTERVAL (480ms) is applied when the selected connection is both
-// writable and receiving.
-//
-// This constant is the default value of ice_check_interval_strong_connectivity
-// in IceConfig if not set.
-const int STRONG_PING_INTERVAL = 1000 * PING_PACKET_SIZE / 1000;
-// WEAK_PING_INTERVAL (48ms) is applied when the selected connection is either
-// not writable or not receiving.
-//
-// This constant is the default value of ice_check_interval_weak_connectivity in
-// IceConfig if not set.
-const int WEAK_PING_INTERVAL = 1000 * PING_PACKET_SIZE / 10000;
-
-// The next two ping intervals are at the connection level.
-// Writable connections are pinged at a faster rate while the connections are
-// stabilizing or the channel is weak.
-const int WEAK_OR_STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL = 900;  // ms
-// Writable connections are pinged at a slower rate once they are stabilized and
-// the channel is strongly connected.
-const int STRONG_AND_STABLE_WRITABLE_CONNECTION_PING_INTERVAL = 2500;  // ms
-
-static const int MIN_CHECK_RECEIVING_INTERVAL = 50;  // ms
-
-static const int RECEIVING_SWITCHING_DELAY = 1000;  // ms
-
-// We periodically check if any existing networks do not have any connection
-// and regather on those networks.
-static const int DEFAULT_REGATHER_ON_FAILED_NETWORKS_INTERVAL = 5 * 60 * 1000;
-
-static constexpr int DEFAULT_BACKUP_CONNECTION_PING_INTERVAL = 25 * 1000;
-
 bool IceCredentialsChanged(const std::string& old_ufrag,
                            const std::string& old_pwd,
                            const std::string& new_ufrag,
@@ -161,16 +122,14 @@ P2PTransportChannel::P2PTransportChannel(const std::string& transport_name,
       tiebreaker_(0),
       gathering_state_(kIceGatheringNew),
       rand_(rtc::SystemTimeNanos()),
-      check_receiving_interval_(MIN_CHECK_RECEIVING_INTERVAL * 5),
-      config_(MIN_CHECK_RECEIVING_INTERVAL * 50 /* receiving_timeout */,
-              DEFAULT_BACKUP_CONNECTION_PING_INTERVAL,
+      config_(RECEIVING_TIMEOUT,
+              BACKUP_CONNECTION_PING_INTERVAL,
               GATHER_ONCE /* continual_gathering_policy */,
               false /* prioritize_most_likely_candidate_pairs */,
               STRONG_AND_STABLE_WRITABLE_CONNECTION_PING_INTERVAL,
               true /* presume_writable_when_fully_relayed */,
-              DEFAULT_REGATHER_ON_FAILED_NETWORKS_INTERVAL,
-              RECEIVING_SWITCHING_DELAY,
-              rtc::nullopt) {
+              REGATHER_ON_FAILED_NETWORKS_INTERVAL,
+              RECEIVING_SWITCHING_DELAY) {
   uint32_t weak_ping_interval = ::strtoul(
       webrtc::field_trial::FindFullName("WebRTC-StunInterPacketDelay").c_str(),
       nullptr, 10);
@@ -270,7 +229,7 @@ bool P2PTransportChannel::ShouldSwitchSelectedConnection(
   }
 
   rtc::Optional<int64_t> receiving_unchanged_threshold(
-      rtc::TimeMillis() - config_.receiving_switching_delay.value_or(0));
+      rtc::TimeMillis() - config_.receiving_switching_delay_or_default());
   int cmp = CompareConnections(selected_connection_, new_connection,
                                receiving_unchanged_threshold,
                                missed_receiving_unchanged_threshold);
@@ -294,13 +253,14 @@ bool P2PTransportChannel::MaybeSwitchSelectedConnection(
     return true;
   }
   if (missed_receiving_unchanged_threshold &&
-      config_.receiving_switching_delay) {
+      config_.receiving_switching_delay_or_default()) {
     // If we do not switch to the connection because it missed the receiving
     // threshold, the new connection is in a better receiving state than the
     // currently selected connection. So we need to re-check whether it needs
     // to be switched at a later time.
-    thread()->PostDelayed(RTC_FROM_HERE, *config_.receiving_switching_delay,
-                          this, MSG_SORT_AND_UPDATE_STATE);
+    thread()->PostDelayed(RTC_FROM_HERE,
+                          config_.receiving_switching_delay_or_default(), this,
+                          MSG_SORT_AND_UPDATE_STATE);
   }
   return false;
 }
@@ -463,27 +423,22 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
     }
   }
 
-  if (config.backup_connection_ping_interval >= 0 &&
-      config_.backup_connection_ping_interval !=
-          config.backup_connection_ping_interval) {
+  if (config_.backup_connection_ping_interval !=
+      config.backup_connection_ping_interval) {
     config_.backup_connection_ping_interval =
         config.backup_connection_ping_interval;
     RTC_LOG(LS_INFO) << "Set backup connection ping interval to "
-                     << config_.backup_connection_ping_interval
+                     << config_.backup_connection_ping_interval_or_default()
                      << " milliseconds.";
   }
-
-  if (config.receiving_timeout >= 0 &&
-      config_.receiving_timeout != config.receiving_timeout) {
+  if (config_.receiving_timeout != config.receiving_timeout) {
     config_.receiving_timeout = config.receiving_timeout;
-    check_receiving_interval_ =
-        std::max(MIN_CHECK_RECEIVING_INTERVAL, config_.receiving_timeout / 10);
-
     for (Connection* connection : connections_) {
       connection->set_receiving_timeout(config_.receiving_timeout);
     }
     RTC_LOG(LS_INFO) << "Set ICE receiving timeout to "
-                     << config_.receiving_timeout << " milliseconds";
+                     << config_.receiving_timeout_or_default()
+                     << " milliseconds";
   }
 
   config_.prioritize_most_likely_candidate_pairs =
@@ -491,17 +446,17 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
   RTC_LOG(LS_INFO) << "Set ping most likely connection to "
                    << config_.prioritize_most_likely_candidate_pairs;
 
-  if (config.stable_writable_connection_ping_interval >= 0 &&
-      config_.stable_writable_connection_ping_interval !=
-          config.stable_writable_connection_ping_interval) {
+  if (config_.stable_writable_connection_ping_interval !=
+      config.stable_writable_connection_ping_interval) {
     config_.stable_writable_connection_ping_interval =
         config.stable_writable_connection_ping_interval;
-    RTC_LOG(LS_INFO) << "Set stable_writable_connection_ping_interval to "
-                     << config_.stable_writable_connection_ping_interval;
+    RTC_LOG(LS_INFO)
+        << "Set stable_writable_connection_ping_interval to "
+        << config_.stable_writable_connection_ping_interval_or_default();
   }
 
-  if (config.presume_writable_when_fully_relayed !=
-      config_.presume_writable_when_fully_relayed) {
+  if (config_.presume_writable_when_fully_relayed !=
+      config.presume_writable_when_fully_relayed) {
     if (!connections_.empty()) {
       RTC_LOG(LS_ERROR) << "Trying to change 'presume writable' "
                         << "while connections already exist!";
@@ -513,15 +468,17 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
     }
   }
 
-  if (config.regather_on_failed_networks_interval) {
+  if (config_.regather_on_failed_networks_interval !=
+      config.regather_on_failed_networks_interval) {
     config_.regather_on_failed_networks_interval =
         config.regather_on_failed_networks_interval;
-    RTC_LOG(LS_INFO) << "Set regather_on_failed_networks_interval to "
-                     << config_.regather_on_failed_networks_interval.value_or(
-                            -1);
+    RTC_LOG(LS_INFO)
+        << "Set regather_on_failed_networks_interval to "
+        << config_.regather_on_failed_networks_interval_or_default();
   }
 
-  if (config.regather_all_networks_interval_range) {
+  if (config_.regather_all_networks_interval_range !=
+      config.regather_all_networks_interval_range) {
     // Config validation is assumed to have already happened at the API layer.
     RTC_DCHECK(config.continual_gathering_policy != GATHER_ONCE);
     config_.regather_all_networks_interval_range =
@@ -532,10 +489,10 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
                             .ToString();
   }
 
-  if (config.receiving_switching_delay) {
+  if (config_.receiving_switching_delay != config.receiving_switching_delay) {
     config_.receiving_switching_delay = config.receiving_switching_delay;
     RTC_LOG(LS_INFO) << "Set receiving_switching_delay to"
-                     << config_.receiving_switching_delay.value_or(-1);
+                     << config_.receiving_switching_delay_or_default();
   }
 
   if (config_.default_nomination_mode != config.default_nomination_mode) {
@@ -548,24 +505,24 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
       config.ice_check_interval_strong_connectivity) {
     config_.ice_check_interval_strong_connectivity =
         config.ice_check_interval_strong_connectivity;
-    RTC_LOG(LS_INFO) << "Set strong ping interval to "
-                     << config_.ice_check_interval_strong_connectivity.value_or(
-                            -1);
+    RTC_LOG(LS_INFO)
+        << "Set strong ping interval to "
+        << config_.ice_check_interval_strong_connectivity_or_default();
   }
 
   if (config_.ice_check_interval_weak_connectivity !=
       config.ice_check_interval_weak_connectivity) {
     config_.ice_check_interval_weak_connectivity =
         config.ice_check_interval_weak_connectivity;
-    RTC_LOG(LS_INFO) << "Set weak ping interval to "
-                     << config_.ice_check_interval_weak_connectivity.value_or(
-                            -1);
+    RTC_LOG(LS_INFO)
+        << "Set weak ping interval to "
+        << config_.ice_check_interval_weak_connectivity_or_default();
   }
 
   if (config_.ice_check_min_interval != config.ice_check_min_interval) {
     config_.ice_check_min_interval = config.ice_check_min_interval;
     RTC_LOG(LS_INFO) << "Set min ping interval to "
-                     << config_.ice_check_min_interval.value_or(-1);
+                     << config_.ice_check_min_interval_or_default();
   }
 
   if (config_.ice_unwritable_timeout != config.ice_unwritable_timeout) {
@@ -574,7 +531,7 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
       conn->set_unwritable_timeout(config_.ice_unwritable_timeout);
     }
     RTC_LOG(LS_INFO) << "Set unwritable timeout to "
-                     << config_.ice_unwritable_timeout.value_or(-1);
+                     << config_.ice_unwritable_timeout_or_default();
   }
 
   if (config_.ice_unwritable_min_checks != config.ice_unwritable_min_checks) {
@@ -583,7 +540,7 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
       conn->set_unwritable_min_checks(config_.ice_unwritable_min_checks);
     }
     RTC_LOG(LS_INFO) << "Set unwritable min checks to "
-                     << config_.ice_unwritable_min_checks.value_or(-1);
+                     << config_.ice_unwritable_min_checks_or_default();
   }
 
   if (config_.network_preference != config.network_preference) {
@@ -603,12 +560,17 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
     allocator_session()->SetStunKeepaliveIntervalForReadyPorts(
         config_.stun_keepalive_interval);
     RTC_LOG(LS_INFO) << "Set STUN keepalive interval to "
-                     << config.stun_keepalive_interval.value_or(-1);
+                     << config.stun_keepalive_interval_or_default();
   }
 }
 
 const IceConfig& P2PTransportChannel::config() const {
   return config_;
+}
+
+int P2PTransportChannel::check_receiving_interval() const {
+  return std::max(MIN_CHECK_RECEIVING_INTERVAL,
+                  config_.receiving_timeout_or_default() / 10);
 }
 
 void P2PTransportChannel::SetMetricsObserver(
@@ -1253,9 +1215,10 @@ void P2PTransportChannel::MaybeStartPinging() {
     LOG_J(LS_INFO, this) << "Have a pingable connection for the first time; "
                          << "starting to ping.";
     thread()->Post(RTC_FROM_HERE, this, MSG_CHECK_AND_PING);
-    thread()->PostDelayed(RTC_FROM_HERE,
-                          *config_.regather_on_failed_networks_interval, this,
-                          MSG_REGATHER_ON_FAILED_NETWORKS);
+    thread()->PostDelayed(
+        RTC_FROM_HERE,
+        config_.regather_on_failed_networks_interval_or_default(), this,
+        MSG_REGATHER_ON_FAILED_NETWORKS);
     if (config_.regather_all_networks_interval_range) {
       thread()->PostDelayed(RTC_FROM_HERE,
                             SampleRegatherAllNetworksInterval(), this,
@@ -1806,7 +1769,7 @@ void P2PTransportChannel::OnCheckAndPing() {
       MarkConnectionPinged(conn);
     }
   }
-  int delay = std::min(ping_interval, check_receiving_interval_);
+  int delay = std::min(ping_interval, check_receiving_interval());
   thread()->PostDelayed(RTC_FROM_HERE, delay, this, MSG_CHECK_AND_PING);
 }
 
@@ -1852,7 +1815,7 @@ bool P2PTransportChannel::IsPingable(const Connection* conn,
   if (IsBackupConnection(conn)) {
     return conn->rtt_samples() == 0 ||
            (now >= conn->last_ping_response_received() +
-                       config_.backup_connection_ping_interval);
+                       config_.backup_connection_ping_interval_or_default());
   }
   // Don't ping inactive non-backup connections.
   if (!conn->active()) {
@@ -1885,7 +1848,8 @@ int P2PTransportChannel::CalculateActiveWritablePingInterval(
     return weak_ping_interval();
   }
 
-  int stable_interval = config_.stable_writable_connection_ping_interval;
+  int stable_interval =
+      config_.stable_writable_connection_ping_interval_or_default();
   int weak_or_stablizing_interval = std::min(
       stable_interval, WEAK_OR_STABILIZING_WRITABLE_CONNECTION_PING_INTERVAL);
   // If the channel is weak or the connection is not stable yet, use the
@@ -2162,9 +2126,9 @@ void P2PTransportChannel::OnRegatherOnFailedNetworks() {
     allocator_session()->RegatherOnFailedNetworks();
   }
 
-  thread()->PostDelayed(RTC_FROM_HERE,
-                        *config_.regather_on_failed_networks_interval, this,
-                        MSG_REGATHER_ON_FAILED_NETWORKS);
+  thread()->PostDelayed(
+      RTC_FROM_HERE, config_.regather_on_failed_networks_interval_or_default(),
+      this, MSG_REGATHER_ON_FAILED_NETWORKS);
 }
 
 void P2PTransportChannel::OnRegatherOnAllNetworks() {

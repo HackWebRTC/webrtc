@@ -600,6 +600,15 @@ std::string GetSetDescriptionErrorMessage(cricket::ContentSource source,
   return oss.str();
 }
 
+rtc::Optional<int> RTCConfigurationToIceConfigOptionalInt(
+    int rtc_configuration_parameter) {
+  if (rtc_configuration_parameter ==
+      webrtc::PeerConnectionInterface::RTCConfiguration::kUndefined) {
+    return rtc::nullopt;
+  }
+  return rtc_configuration_parameter;
+}
+
 }  // namespace
 
 // Upon completion, posts a task to execute the callback of the
@@ -4889,11 +4898,13 @@ cricket::IceConfig PeerConnection::ParseIceConfig(
   }
 
   cricket::IceConfig ice_config;
-  ice_config.receiving_timeout = config.ice_connection_receiving_timeout;
+  ice_config.receiving_timeout = RTCConfigurationToIceConfigOptionalInt(
+      config.ice_connection_receiving_timeout);
   ice_config.prioritize_most_likely_candidate_pairs =
       config.prioritize_most_likely_ice_candidate_pairs;
   ice_config.backup_connection_ping_interval =
-      config.ice_backup_candidate_pair_ping_interval;
+      RTCConfigurationToIceConfigOptionalInt(
+          config.ice_backup_candidate_pair_ping_interval);
   ice_config.continual_gathering_policy = gathering_policy;
   ice_config.presume_writable_when_fully_relayed =
       config.presume_writable_when_fully_relayed;

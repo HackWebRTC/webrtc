@@ -70,10 +70,10 @@ enum class NominationMode {
 // -1.
 struct IceConfig {
   // The ICE connection receiving timeout value in milliseconds.
-  int receiving_timeout = -1;
+  rtc::Optional<int> receiving_timeout;
   // Time interval in milliseconds to ping a backup connection when the ICE
   // channel is strongly connected.
-  int backup_connection_ping_interval = -1;
+  rtc::Optional<int> backup_connection_ping_interval;
 
   ContinualGatheringPolicy continual_gathering_policy = GATHER_ONCE;
 
@@ -87,7 +87,7 @@ struct IceConfig {
   bool prioritize_most_likely_candidate_pairs = false;
 
   // Writable connections are pinged at a slower rate once stablized.
-  int stable_writable_connection_ping_interval = -1;
+  rtc::Optional<int> stable_writable_connection_ping_interval;
 
   // If set to true, this means the ICE transport should presume TURN-to-TURN
   // candidate pairs will succeed, even before a binding response is received.
@@ -153,9 +153,23 @@ struct IceConfig {
             int stable_writable_connection_ping_interval_ms,
             bool presume_writable_when_fully_relayed,
             int regather_on_failed_networks_interval_ms,
-            int receiving_switching_delay_ms,
-            rtc::Optional<rtc::AdapterType> network_preference);
+            int receiving_switching_delay_ms);
   ~IceConfig();
+
+  // Helper getters for parameters with implementation-specific default value.
+  // By convention, parameters with default value are represented by
+  // rtc::Optional and setting a parameter to null restores its default value.
+  int receiving_timeout_or_default() const;
+  int backup_connection_ping_interval_or_default() const;
+  int stable_writable_connection_ping_interval_or_default() const;
+  int regather_on_failed_networks_interval_or_default() const;
+  int receiving_switching_delay_or_default() const;
+  int ice_check_interval_strong_connectivity_or_default() const;
+  int ice_check_interval_weak_connectivity_or_default() const;
+  int ice_check_min_interval_or_default() const;
+  int ice_unwritable_timeout_or_default() const;
+  int ice_unwritable_min_checks_or_default() const;
+  int stun_keepalive_interval_or_default() const;
 };
 
 // TODO(zhihuang): Replace this with
