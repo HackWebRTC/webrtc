@@ -35,8 +35,6 @@ class RTPReceiverVideo : public RTPReceiverStrategy {
 
   RTPAliveType ProcessDeadOrAlive(uint16_t last_payload_length) const override;
 
-  bool ShouldReportCsrcChanges(uint8_t payload_type) const override;
-
   int32_t OnNewPayloadTypeCreated(int payload_type,
                                   const SdpAudioFormat& audio_format) override;
 

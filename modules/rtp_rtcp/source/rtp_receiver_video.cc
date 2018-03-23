@@ -38,11 +38,6 @@ RTPReceiverVideo::RTPReceiverVideo(RtpData* data_callback)
 RTPReceiverVideo::~RTPReceiverVideo() {
 }
 
-bool RTPReceiverVideo::ShouldReportCsrcChanges(uint8_t payload_type) const {
-  // Always do this for video packets.
-  return true;
-}
-
 int32_t RTPReceiverVideo::OnNewPayloadTypeCreated(
     int payload_type,
     const SdpAudioFormat& audio_format) {

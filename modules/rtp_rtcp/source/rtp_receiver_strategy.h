@@ -49,10 +49,6 @@ class RTPReceiverStrategy {
   virtual RTPAliveType ProcessDeadOrAlive(
       uint16_t last_payload_length) const = 0;
 
-  // Returns true if we should report CSRC changes for this payload type.
-  // TODO(phoglund): should move out of here along with other payload stuff.
-  virtual bool ShouldReportCsrcChanges(uint8_t payload_type) const = 0;
-
   // Notifies the strategy that we have created a new non-RED audio payload type
   // in the payload registry.
   virtual int32_t OnNewPayloadTypeCreated(

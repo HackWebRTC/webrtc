@@ -257,8 +257,6 @@ class RtpFeedback {
   virtual ~RtpFeedback() {}
 
   virtual void OnIncomingSSRCChanged(uint32_t ssrc) = 0;
-
-  virtual void OnIncomingCSRCChanged(uint32_t csrc, bool added) = 0;
 };
 
 class RtcpIntraFrameObserver {
@@ -443,7 +441,6 @@ class NullRtpFeedback : public RtpFeedback {
   ~NullRtpFeedback() override {}
 
   void OnIncomingSSRCChanged(uint32_t ssrc) override {}
-  void OnIncomingCSRCChanged(uint32_t csrc, bool added) override {}
 };
 
 // Statistics about packet loss for a single directional connection. All values

@@ -71,11 +71,6 @@ bool RTPReceiverAudio::CNGPayloadType(int8_t payload_type) {
          payload_type == cng_fb_payload_type_;
 }
 
-bool RTPReceiverAudio::ShouldReportCsrcChanges(uint8_t payload_type) const {
-  // Don't do this for DTMF packets, otherwise it's fine.
-  return !TelephoneEventPayloadType(payload_type);
-}
-
 // -   Sample based or frame based codecs based on RFC 3551
 // -
 // -   NOTE! There is one error in the RFC, stating G.722 uses 8 bits/samples.

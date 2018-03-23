@@ -250,7 +250,6 @@ class Channel
 
   // From RtpFeedback in the RTP/RTCP module
   void OnIncomingSSRCChanged(uint32_t ssrc) override;
-  void OnIncomingCSRCChanged(uint32_t CSRC, bool added) override;
 
   // From Transport (called by the RTP/RTCP module)
   bool SendRtp(const uint8_t* data,
