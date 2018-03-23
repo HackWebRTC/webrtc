@@ -139,7 +139,7 @@ size_t hex_encode(char* buffer, size_t buflen,
 size_t hex_encode_with_delimiter(char* buffer, size_t buflen,
                                  const char* csource, size_t srclen,
                                  char delimiter) {
-  RTC_DCHECK(buffer);  // TODO(grunell): estimate output size
+  RTC_DCHECK(buffer);  // TODO(kwiberg): estimate output size
   if (buflen == 0)
     return 0;
 
@@ -195,7 +195,7 @@ size_t hex_decode(char * cbuffer, size_t buflen,
 size_t hex_decode_with_delimiter(char* cbuffer, size_t buflen,
                                  const char* source, size_t srclen,
                                  char delimiter) {
-  RTC_DCHECK(cbuffer);  // TODO(grunell): estimate output size
+  RTC_DCHECK(cbuffer);  // TODO(kwiberg): estimate output size
   if (buflen == 0)
     return 0;
 
