@@ -194,14 +194,17 @@ bool FindMatchingCrypto(const CryptoParamsVec& cryptos,
   return false;
 }
 
-// For audio, HMAC 32 is prefered over HMAC 80 because of the low overhead.
+// For audio, HMAC 32 (if enabled) is prefered over HMAC 80 because of the
+// low overhead.
 void GetSupportedAudioSdesCryptoSuites(const rtc::CryptoOptions& crypto_options,
                                        std::vector<int>* crypto_suites) {
   if (crypto_options.enable_gcm_crypto_suites) {
     crypto_suites->push_back(rtc::SRTP_AEAD_AES_256_GCM);
     crypto_suites->push_back(rtc::SRTP_AEAD_AES_128_GCM);
   }
-  crypto_suites->push_back(rtc::SRTP_AES128_CM_SHA1_32);
+  if (crypto_options.enable_aes128_sha1_32_crypto_cipher) {
+    crypto_suites->push_back(rtc::SRTP_AES128_CM_SHA1_32);
+  }
   crypto_suites->push_back(rtc::SRTP_AES128_CM_SHA1_80);
 }
 
@@ -245,8 +248,8 @@ void GetSupportedDataSdesCryptoSuiteNames(
 }
 
 // Support any GCM cipher (if enabled through options). For video support only
-// 80-bit SHA1 HMAC. For audio 32-bit HMAC is tolerated unless bundle is enabled
-// because it is low overhead.
+// 80-bit SHA1 HMAC. For audio 32-bit HMAC is tolerated (if enabled) unless
+// bundle is enabled because it is low overhead.
 // Pick the crypto in the list that is supported.
 static bool SelectCrypto(const MediaContentDescription* offer,
                          bool bundle,
@@ -261,7 +264,7 @@ static bool SelectCrypto(const MediaContentDescription* offer,
          rtc::IsGcmCryptoSuiteName(i->cipher_suite)) ||
         rtc::CS_AES_CM_128_HMAC_SHA1_80 == i->cipher_suite ||
         (rtc::CS_AES_CM_128_HMAC_SHA1_32 == i->cipher_suite && audio &&
-         !bundle)) {
+         !bundle && crypto_options.enable_aes128_sha1_32_crypto_cipher)) {
       return CreateCryptoParams(i->tag, i->cipher_suite, crypto);
     }
   }

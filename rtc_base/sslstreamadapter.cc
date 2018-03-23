@@ -105,7 +105,11 @@ std::vector<int> GetSupportedDtlsSrtpCryptoSuites(
   // Note: SRTP_AES128_CM_SHA1_80 is what is required to be supported (by
   // draft-ietf-rtcweb-security-arch), but SRTP_AES128_CM_SHA1_32 is allowed as
   // well, and saves a few bytes per packet if it ends up selected.
-  crypto_suites.push_back(rtc::SRTP_AES128_CM_SHA1_32);
+  // As the cipher suite is potentially insecure, it will only be used if
+  // enabled by both peers.
+  if (crypto_options.enable_aes128_sha1_32_crypto_cipher) {
+    crypto_suites.push_back(rtc::SRTP_AES128_CM_SHA1_32);
+  }
   crypto_suites.push_back(rtc::SRTP_AES128_CM_SHA1_80);
   return crypto_suites;
 }
