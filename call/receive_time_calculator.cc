@@ -31,7 +31,7 @@ ReceiveTimeCalculator::CreateFromFieldTrial() {
   if (!IsEnabled(kBweReceiveTimeCorrection))
     return nullptr;
   int min, max;
-  if (sscanf(FindFullName(kBweReceiveTimeCorrection).c_str(), "Enabled/%d,%d",
+  if (sscanf(FindFullName(kBweReceiveTimeCorrection).c_str(), "Enabled,%d,%d",
              &min, &max) != 2) {
     RTC_LOG(LS_WARNING) << "Invalid number of parameters provided.";
     return nullptr;
