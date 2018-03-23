@@ -182,7 +182,7 @@ rtc_source_set("audio_device_jni") {
   ]
   libs = [ "OpenSLES" ]
   if (rtc_enable_android_aaudio) {
-    defines += [ "AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO" ]
+    defines = [ "AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO" ]
     sources += [
       "src/jni/audio_device/aaudio_player.cc",
       "src/jni/audio_device/aaudio_player.h",

@@ -47,7 +47,7 @@ AudioManager::CreateAAudioAudioDeviceModule(
   RTC_LOG(INFO) << __FUNCTION__;
   return new rtc::RefCountedObject<android_adm::AudioDeviceTemplateAndroid<
       android_adm::AAudioRecorder, android_adm::AAudioPlayer>>(
-      env, AudioDeviceModule::kAndroidAAudioAudio);
+      env, application_context, AudioDeviceModule::kAndroidAAudioAudio);
 }
 #endif
 
