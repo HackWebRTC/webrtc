@@ -1488,14 +1488,14 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignaling) {
   ASSERT_TRUE_WAIT(
       (selected_connection = ep1_ch1()->selected_connection()) != nullptr,
       kMediumTimeout);
-  EXPECT_EQ("prflx", selected_connection->remote_candidate().type());
+  EXPECT_EQ(PRFLX_PORT_TYPE, selected_connection->remote_candidate().type());
   EXPECT_EQ(kIceUfrag[1], selected_connection->remote_candidate().username());
   EXPECT_EQ(kIcePwd[1], selected_connection->remote_candidate().password());
   EXPECT_EQ(1u, selected_connection->remote_candidate().generation());
 
   ResumeCandidates(1);
   // Verify ep1's selected connection is updated to use the 'local' candidate.
-  EXPECT_EQ_WAIT("local",
+  EXPECT_EQ_WAIT(LOCAL_PORT_TYPE,
                  ep1_ch1()->selected_connection()->remote_candidate().type(),
                  kMediumTimeout);
   EXPECT_EQ(selected_connection, ep1_ch1()->selected_connection());
@@ -1530,14 +1530,14 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveCandidateBeforeSignalingWithNAT) {
   ASSERT_TRUE_WAIT(
       (selected_connection = ep1_ch1()->selected_connection()) != nullptr,
       kMediumTimeout);
-  EXPECT_EQ("prflx", selected_connection->remote_candidate().type());
+  EXPECT_EQ(PRFLX_PORT_TYPE, selected_connection->remote_candidate().type());
   EXPECT_EQ(kIceUfrag[1], selected_connection->remote_candidate().username());
   EXPECT_EQ(kIcePwd[1], selected_connection->remote_candidate().password());
   EXPECT_EQ(1u, selected_connection->remote_candidate().generation());
 
   ResumeCandidates(1);
 
-  EXPECT_EQ_WAIT("prflx",
+  EXPECT_EQ_WAIT(PRFLX_PORT_TYPE,
                  ep1_ch1()->selected_connection()->remote_candidate().type(),
                  kMediumTimeout);
   EXPECT_EQ(selected_connection, ep1_ch1()->selected_connection());
@@ -1581,7 +1581,7 @@ TEST_F(P2PTransportChannelTest,
 
   // The caller should have the selected connection connected to the peer
   // reflexive candidate.
-  EXPECT_EQ_WAIT("prflx",
+  EXPECT_EQ_WAIT(PRFLX_PORT_TYPE,
                  ep1_ch1()->selected_connection()->remote_candidate().type(),
                  kDefaultTimeout);
   const Connection* prflx_selected_connection =
@@ -1597,7 +1597,7 @@ TEST_F(P2PTransportChannelTest,
   // their information to update the peer reflexive candidate.
   ResumeCandidates(1);
 
-  EXPECT_EQ_WAIT("relay",
+  EXPECT_EQ_WAIT(RELAY_PORT_TYPE,
                  ep1_ch1()->selected_connection()->remote_candidate().type(),
                  kDefaultTimeout);
   EXPECT_EQ(prflx_selected_connection, ep1_ch1()->selected_connection());
@@ -1875,10 +1875,10 @@ TEST_F(P2PTransportChannelTest, TestForceTurn) {
   EXPECT_TRUE(ep1_ch1()->selected_connection() &&
               ep2_ch1()->selected_connection());
 
-  EXPECT_EQ("relay", RemoteCandidate(ep1_ch1())->type());
-  EXPECT_EQ("relay", LocalCandidate(ep1_ch1())->type());
-  EXPECT_EQ("relay", RemoteCandidate(ep2_ch1())->type());
-  EXPECT_EQ("relay", LocalCandidate(ep2_ch1())->type());
+  EXPECT_EQ(RELAY_PORT_TYPE, RemoteCandidate(ep1_ch1())->type());
+  EXPECT_EQ(RELAY_PORT_TYPE, LocalCandidate(ep1_ch1())->type());
+  EXPECT_EQ(RELAY_PORT_TYPE, RemoteCandidate(ep2_ch1())->type());
+  EXPECT_EQ(RELAY_PORT_TYPE, LocalCandidate(ep2_ch1())->type());
 
   TestSendRecv(&clock);
   DestroyChannels();
@@ -2171,6 +2171,50 @@ TEST_F(P2PTransportChannelTest, SignalReadyToSendWithPresumedWritable) {
   virtual_socket_server()->SetSendingBlocked(false);
   EXPECT_TRUE(GetEndpoint(0)->ready_to_send_);
   EXPECT_EQ(len, SendData(ep1_ch1(), data, len));
+}
+
+// Test that role conflict error responses are sent as expected when receiving a
+// ping from an unknown address over a TURN connection. Regression test for
+// crbug.com/webrtc/9034.
+TEST_F(P2PTransportChannelTest,
+       TurnToPrflxSelectedAfterResolvingIceControllingRoleConflict) {
+  rtc::ScopedFakeClock clock;
+  // Gather only relay candidates.
+  ConfigureEndpoints(NAT_SYMMETRIC, NAT_SYMMETRIC,
+                     kDefaultPortAllocatorFlags | PORTALLOCATOR_DISABLE_UDP |
+                         PORTALLOCATOR_DISABLE_STUN | PORTALLOCATOR_DISABLE_TCP,
+                     kDefaultPortAllocatorFlags | PORTALLOCATOR_DISABLE_UDP |
+                         PORTALLOCATOR_DISABLE_STUN |
+                         PORTALLOCATOR_DISABLE_TCP);
+  // With conflicting ICE roles, endpoint 1 has the higher tie breaker and will
+  // send a binding error response.
+  SetIceRole(0, ICEROLE_CONTROLLING);
+  SetIceTiebreaker(0, kHighTiebreaker);
+  SetIceRole(1, ICEROLE_CONTROLLING);
+  SetIceTiebreaker(1, kLowTiebreaker);
+  // We want the remote TURN candidate to show up as prflx. To do this we need
+  // to configure the server to accept packets from an address we haven't
+  // explicitly installed permission for.
+  test_turn_server()->set_enable_permission_checks(false);
+  GetEndpoint(0)->cd1_.ch_.reset(CreateChannel(
+      0, ICE_CANDIDATE_COMPONENT_DEFAULT, kIceParams[0], kIceParams[1]));
+  GetEndpoint(1)->cd1_.ch_.reset(CreateChannel(
+      1, ICE_CANDIDATE_COMPONENT_DEFAULT, kIceParams[1], kIceParams[0]));
+  // Don't signal candidates from channel 2, so that channel 1 sees the TURN
+  // candidate as peer reflexive.
+  PauseCandidates(1);
+  ep1_ch1()->MaybeStartGathering();
+  ep2_ch1()->MaybeStartGathering();
+
+  EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable(),
+                             kMediumTimeout, clock);
+
+  ASSERT_NE(nullptr, ep1_ch1()->selected_connection());
+
+  EXPECT_EQ(RELAY_PORT_TYPE, LocalCandidate(ep1_ch1())->type());
+  EXPECT_EQ(PRFLX_PORT_TYPE, RemoteCandidate(ep1_ch1())->type());
+
+  DestroyChannels();
 }
 
 // Test what happens when we have 2 users behind the same NAT. This can lead

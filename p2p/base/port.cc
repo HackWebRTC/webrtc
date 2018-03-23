@@ -465,14 +465,15 @@ void Port::OnReadPacket(
     RTC_LOG(LS_INFO) << "Received STUN ping "
                      << " id=" << rtc::hex_encode(msg->transaction_id())
                      << " from unknown address " << addr.ToSensitiveString();
-
+    // We need to signal an unknown address before we handle any role conflict
+    // below. Otherwise there would be no candidate pair and TURN entry created
+    // to send the error response in case of a role conflict.
+    SignalUnknownAddress(this, addr, proto, msg.get(), remote_username, false);
     // Check for role conflicts.
     if (!MaybeIceRoleConflict(addr, msg.get(), remote_username)) {
       RTC_LOG(LS_INFO) << "Received conflicting role from the peer.";
       return;
     }
-
-    SignalUnknownAddress(this, addr, proto, msg.get(), remote_username, false);
   } else {
     // NOTE(tschmelcher): STUN_BINDING_RESPONSE is benign. It occurs if we
     // pruned a connection for this port while it had STUN requests in flight,
@@ -1606,10 +1607,10 @@ void Connection::OnConnectionRequestResponse(ConnectionRequest* request,
 void Connection::OnConnectionRequestErrorResponse(ConnectionRequest* request,
                                                   StunMessage* response) {
   int error_code = response->GetErrorCodeValue();
-  LOG_J(LS_INFO, this) << "Received STUN error response"
-                       << " id=" << rtc::hex_encode(request->id())
-                       << " code=" << error_code
-                       << " rtt=" << request->Elapsed();
+  LOG_J(LS_WARNING, this) << "Received STUN error response"
+                          << " id=" << rtc::hex_encode(request->id())
+                          << " code=" << error_code
+                          << " rtt=" << request->Elapsed();
 
   if (error_code == STUN_ERROR_UNKNOWN_ATTRIBUTE ||
       error_code == STUN_ERROR_SERVER_ERROR ||
