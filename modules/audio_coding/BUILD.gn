@@ -971,6 +971,7 @@ rtc_static_library("audio_network_adaptor") {
     "../../rtc_base:checks",
     "../../rtc_base:protobuf_utils",
     "../../rtc_base:rtc_base_approved",
+    "../../rtc_base/system:file_wrapper",
     "../../system_wrappers",
     "../../system_wrappers:field_trial_api",
   ]

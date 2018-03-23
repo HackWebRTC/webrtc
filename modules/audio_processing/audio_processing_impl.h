@@ -26,8 +26,8 @@
 #include "rtc_base/ignore_wundef.h"
 #include "rtc_base/protobuf_utils.h"
 #include "rtc_base/swap_queue.h"
+#include "rtc_base/system/file_wrapper.h"
 #include "rtc_base/thread_annotations.h"
-#include "system_wrappers/include/file_wrapper.h"
 
 namespace webrtc {
 

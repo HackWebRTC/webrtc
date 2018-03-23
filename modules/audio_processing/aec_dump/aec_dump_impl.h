@@ -22,9 +22,9 @@
 #include "rtc_base/ignore_wundef.h"
 #include "rtc_base/platform_file.h"
 #include "rtc_base/race_checker.h"
+#include "rtc_base/system/file_wrapper.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread_annotations.h"
-#include "system_wrappers/include/file_wrapper.h"
 
 // Files generated at build-time by the protobuf compiler.
 RTC_PUSH_IGNORING_WUNDEF()

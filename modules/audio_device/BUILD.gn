@@ -187,6 +187,7 @@ rtc_source_set("audio_device_impl") {
     "../../rtc_base:deprecation",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:rtc_task_queue",
+    "../../rtc_base/system:file_wrapper",
     "../../system_wrappers",
     "../../system_wrappers:metrics_api",
     "../utility",

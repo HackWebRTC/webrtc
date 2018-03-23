@@ -23,3 +23,16 @@ rtc_source_set("fallthrough") {
     "fallthrough.h",
   ]
 }
+
+rtc_source_set("file_wrapper") {
+  sources = [
+    "file_wrapper.cc",
+    "file_wrapper.h",
+  ]
+  deps = [
+    "..:checks",
+    "..:criticalsection",
+    "../..:typedefs",
+    "../..:webrtc_common",
+  ]
+}

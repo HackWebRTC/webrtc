@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "system_wrappers/include/file_wrapper.h"
+#include "rtc_base/system/file_wrapper.h"
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -16,6 +16,8 @@
 #include <stdarg.h>
 #include <string.h>
 #endif
+
+#include <utility>
 
 #include "rtc_base/checks.h"
 
