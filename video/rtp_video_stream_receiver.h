@@ -60,8 +60,7 @@ class RtpVideoStreamReceiver : public RtpData,
                                public VCMFrameTypeCallback,
                                public VCMPacketRequestCallback,
                                public video_coding::OnReceivedFrameCallback,
-                               public video_coding::OnCompleteFrameCallback,
-                               public CallStatsObserver {
+                               public video_coding::OnCompleteFrameCallback {
  public:
   RtpVideoStreamReceiver(
       Transport* transport,
@@ -132,7 +131,8 @@ class RtpVideoStreamReceiver : public RtpData,
   void OnCompleteFrame(
       std::unique_ptr<video_coding::EncodedFrame> frame) override;
 
-  void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) override;
+  // Called by VideoReceiveStream when stats are updated.
+  void UpdateRtt(int64_t max_rtt_ms);
 
   rtc::Optional<int64_t> LastReceivedPacketMs() const;
   rtc::Optional<int64_t> LastReceivedKeyframePacketMs() const;

@@ -42,8 +42,7 @@ enum StreamType {
 };
 
 class VideoStreamDecoder : public VCMReceiveCallback,
-                           public VCMReceiveStatisticsCallback,
-                           public CallStatsObserver {
+                           public VCMReceiveStatisticsCallback {
  public:
   friend class ChannelStatsObserver;
 
@@ -85,8 +84,8 @@ class VideoStreamDecoder : public VCMReceiveCallback,
   void RegisterReceiveStatisticsProxy(
       ReceiveStatisticsProxy* receive_statistics_proxy);
 
-  // Implements StatsObserver.
-  void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) override;
+  // Called by VideoReceiveStream when stats are updated.
+  void UpdateRtt(int64_t max_rtt_ms);
 
  private:
   // Used for all registered callbacks except rendering.

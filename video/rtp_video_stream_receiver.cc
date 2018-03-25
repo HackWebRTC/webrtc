@@ -359,8 +359,7 @@ void RtpVideoStreamReceiver::OnCompleteFrame(
   complete_frame_callback_->OnCompleteFrame(std::move(frame));
 }
 
-void RtpVideoStreamReceiver::OnRttUpdate(int64_t avg_rtt_ms,
-                                         int64_t max_rtt_ms) {
+void RtpVideoStreamReceiver::UpdateRtt(int64_t max_rtt_ms) {
   if (nack_module_)
     nack_module_->UpdateRtt(max_rtt_ms);
 }

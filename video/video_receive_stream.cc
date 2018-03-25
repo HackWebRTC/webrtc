@@ -180,7 +180,6 @@ void VideoReceiveStream::Start() {
                           rtp_video_stream_receiver_.IsUlpfecEnabled();
 
   frame_buffer_->Start();
-  call_stats_->RegisterStatsObserver(&rtp_video_stream_receiver_);
   call_stats_->RegisterStatsObserver(this);
 
   if (rtp_video_stream_receiver_.IsRetransmissionsEnabled() &&
@@ -216,8 +215,6 @@ void VideoReceiveStream::Start() {
       &rtp_video_stream_receiver_,
       rtp_video_stream_receiver_.IsRetransmissionsEnabled(), protected_by_fec,
       &stats_proxy_, renderer));
-  // Register the channel to receive stats updates.
-  call_stats_->RegisterStatsObserver(video_stream_decoder_.get());
 
   process_thread_->RegisterModule(&video_receiver_, RTC_FROM_HERE);
 
@@ -237,7 +234,6 @@ void VideoReceiveStream::Stop() {
 
   frame_buffer_->Stop();
   call_stats_->DeregisterStatsObserver(this);
-  call_stats_->DeregisterStatsObserver(&rtp_video_stream_receiver_);
   process_thread_->DeRegisterModule(&video_receiver_);
 
   if (decode_thread_.IsRunning()) {
@@ -257,7 +253,6 @@ void VideoReceiveStream::Stop() {
       video_receiver_.RegisterExternalDecoder(nullptr, decoder.payload_type);
   }
 
-  call_stats_->DeregisterStatsObserver(video_stream_decoder_.get());
   video_stream_decoder_.reset();
   incoming_video_stream_.reset();
   transport_adapter_.Disable();
@@ -362,7 +357,10 @@ void VideoReceiveStream::OnCompleteFrame(
 }
 
 void VideoReceiveStream::OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) {
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&module_process_sequence_checker_);
   frame_buffer_->UpdateRtt(max_rtt_ms);
+  rtp_video_stream_receiver_.UpdateRtt(max_rtt_ms);
+  video_stream_decoder_->UpdateRtt(max_rtt_ms);
 }
 
 int VideoReceiveStream::id() const {

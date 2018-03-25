@@ -125,7 +125,7 @@ void VideoStreamDecoder::OnCompleteFrame(bool is_keyframe,
                                          size_t size_bytes,
                                          VideoContentType content_type) {}
 
-void VideoStreamDecoder::OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) {
+void VideoStreamDecoder::UpdateRtt(int64_t max_rtt_ms) {
   video_receiver_->SetReceiveChannelParameters(max_rtt_ms);
 }
 }  // namespace webrtc
