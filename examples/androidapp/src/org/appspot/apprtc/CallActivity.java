@@ -120,6 +120,8 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
   public static final String EXTRA_NEGOTIATED = "org.appspot.apprtc.NEGOTIATED";
   public static final String EXTRA_ID = "org.appspot.apprtc.ID";
   public static final String EXTRA_ENABLE_RTCEVENTLOG = "org.appspot.apprtc.ENABLE_RTCEVENTLOG";
+  public static final String EXTRA_USE_LEGACY_AUDIO_DEVICE =
+      "org.appspot.apprtc.USE_LEGACY_AUDIO_DEVICE";
 
   private static final int CAPTURE_PERMISSION_REQUEST_CODE = 1;
 
@@ -347,7 +349,8 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
             intent.getBooleanExtra(EXTRA_DISABLE_BUILT_IN_AGC, false),
             intent.getBooleanExtra(EXTRA_DISABLE_BUILT_IN_NS, false),
             intent.getBooleanExtra(EXTRA_DISABLE_WEBRTC_AGC_AND_HPF, false),
-            intent.getBooleanExtra(EXTRA_ENABLE_RTCEVENTLOG, false), dataChannelParameters);
+            intent.getBooleanExtra(EXTRA_ENABLE_RTCEVENTLOG, false),
+            intent.getBooleanExtra(EXTRA_USE_LEGACY_AUDIO_DEVICE, false), dataChannelParameters);
     commandLineRun = intent.getBooleanExtra(EXTRA_CMDLINE, false);
     int runTimeMs = intent.getIntExtra(EXTRA_RUNTIME, 0);
 

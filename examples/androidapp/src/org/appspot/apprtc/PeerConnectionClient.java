@@ -71,6 +71,13 @@ import org.webrtc.VideoSink;
 import org.webrtc.VideoSource;
 import org.webrtc.VideoTrack;
 import org.webrtc.audio.AudioDeviceModule;
+import org.webrtc.voiceengine.WebRtcAudioManager;
+import org.webrtc.voiceengine.WebRtcAudioRecord;
+import org.webrtc.voiceengine.WebRtcAudioRecord.AudioRecordStartErrorCode;
+import org.webrtc.voiceengine.WebRtcAudioRecord.WebRtcAudioRecordErrorCallback;
+import org.webrtc.voiceengine.WebRtcAudioTrack;
+import org.webrtc.voiceengine.WebRtcAudioTrack.AudioTrackStartErrorCode;
+import org.webrtc.voiceengine.WebRtcAudioUtils;
 
 /**
  * Peer connection client implementation.
@@ -233,6 +240,7 @@ public class PeerConnectionClient {
     public final boolean disableBuiltInNS;
     public final boolean disableWebRtcAGCAndHPF;
     public final boolean enableRtcEventLog;
+    public final boolean useLegacyAudioDevice;
     private final DataChannelParameters dataChannelParameters;
 
     public PeerConnectionParameters(boolean videoCallEnabled, boolean loopback, boolean tracing,
@@ -241,7 +249,7 @@ public class PeerConnectionClient {
         String audioCodec, boolean noAudioProcessing, boolean aecDump, boolean saveInputAudioToFile,
         boolean useOpenSLES, boolean disableBuiltInAEC, boolean disableBuiltInAGC,
         boolean disableBuiltInNS, boolean disableWebRtcAGCAndHPF, boolean enableRtcEventLog,
-        DataChannelParameters dataChannelParameters) {
+        boolean useLegacyAudioDevice, DataChannelParameters dataChannelParameters) {
       this.videoCallEnabled = videoCallEnabled;
       this.loopback = loopback;
       this.tracing = tracing;
@@ -263,6 +271,7 @@ public class PeerConnectionClient {
       this.disableBuiltInNS = disableBuiltInNS;
       this.disableWebRtcAGCAndHPF = disableWebRtcAGCAndHPF;
       this.enableRtcEventLog = enableRtcEventLog;
+      this.useLegacyAudioDevice = useLegacyAudioDevice;
       this.dataChannelParameters = dataChannelParameters;
     }
   }
@@ -418,8 +427,10 @@ public class PeerConnectionClient {
       fieldTrials += DISABLE_WEBRTC_AGC_FIELDTRIAL;
       Log.d(TAG, "Disable WebRTC AGC field trial.");
     }
-    fieldTrials += EXTERNAL_ANDROID_AUDIO_DEVICE_FIELDTRIAL;
-    Log.d(TAG, "Enable WebRTC external Android audio device field trial.");
+    if (!peerConnectionParameters.useLegacyAudioDevice) {
+      fieldTrials += EXTERNAL_ANDROID_AUDIO_DEVICE_FIELDTRIAL;
+      Log.d(TAG, "Enable WebRTC external Android audio device field trial.");
+    }
 
     // Check preferred video codec.
     preferredVideoCodec = VIDEO_CODEC_VP8;
@@ -465,6 +476,121 @@ public class PeerConnectionClient {
     preferIsac = peerConnectionParameters.audioCodec != null
         && peerConnectionParameters.audioCodec.equals(AUDIO_CODEC_ISAC);
 
+    if (peerConnectionParameters.useLegacyAudioDevice) {
+      setupAudioDeviceLegacy();
+    } else {
+      setupAudioDevice();
+    }
+
+    // It is possible to save a copy in raw PCM format on a file by checking
+    // the "Save input audio to file" checkbox in the Settings UI. A callback
+    // interface is set when this flag is enabled. As a result, a copy of recorded
+    // audio samples are provided to this client directly from the native audio
+    // layer in Java.
+    if (peerConnectionParameters.saveInputAudioToFile) {
+      if (!peerConnectionParameters.useOpenSLES) {
+        Log.d(TAG, "Enable recording of microphone input audio to file");
+        saveRecordedAudioToFile = new RecordedAudioToFileController(
+            executor, peerConnectionParameters.useLegacyAudioDevice);
+      } else {
+        // TODO(henrika): ensure that the UI reflects that if OpenSL ES is selected,
+        // then the "Save inut audio to file" option shall be grayed out.
+        Log.e(TAG, "Recording of input audio is not supported for OpenSL ES");
+      }
+    }
+    // Create peer connection factory.
+    if (options != null) {
+      Log.d(TAG, "Factory networkIgnoreMask option: " + options.networkIgnoreMask);
+    }
+    final boolean enableH264HighProfile =
+        VIDEO_CODEC_H264_HIGH.equals(peerConnectionParameters.videoCodec);
+    final VideoEncoderFactory encoderFactory;
+    final VideoDecoderFactory decoderFactory;
+
+    if (peerConnectionParameters.videoCodecHwAcceleration) {
+      encoderFactory = new DefaultVideoEncoderFactory(
+          rootEglBase.getEglBaseContext(), true /* enableIntelVp8Encoder */, enableH264HighProfile);
+      decoderFactory = new DefaultVideoDecoderFactory(rootEglBase.getEglBaseContext());
+    } else {
+      encoderFactory = new SoftwareVideoEncoderFactory();
+      decoderFactory = new SoftwareVideoDecoderFactory();
+    }
+
+    factory = new PeerConnectionFactory(options, encoderFactory, decoderFactory);
+    Log.d(TAG, "Peer connection factory created.");
+  }
+
+  void setupAudioDeviceLegacy() {
+    // Enable/disable OpenSL ES playback.
+    if (!peerConnectionParameters.useOpenSLES) {
+      Log.d(TAG, "Disable OpenSL ES audio even if device supports it");
+      WebRtcAudioManager.setBlacklistDeviceForOpenSLESUsage(true /* enable */);
+    } else {
+      Log.d(TAG, "Allow OpenSL ES audio if device supports it");
+      WebRtcAudioManager.setBlacklistDeviceForOpenSLESUsage(false);
+    }
+
+    if (peerConnectionParameters.disableBuiltInAEC) {
+      Log.d(TAG, "Disable built-in AEC even if device supports it");
+      WebRtcAudioUtils.setWebRtcBasedAcousticEchoCanceler(true);
+    } else {
+      Log.d(TAG, "Enable built-in AEC if device supports it");
+      WebRtcAudioUtils.setWebRtcBasedAcousticEchoCanceler(false);
+    }
+
+    if (peerConnectionParameters.disableBuiltInNS) {
+      Log.d(TAG, "Disable built-in NS even if device supports it");
+      WebRtcAudioUtils.setWebRtcBasedNoiseSuppressor(true);
+    } else {
+      Log.d(TAG, "Enable built-in NS if device supports it");
+      WebRtcAudioUtils.setWebRtcBasedNoiseSuppressor(false);
+    }
+
+    // Set audio record error callbacks.
+    WebRtcAudioRecord.setErrorCallback(new WebRtcAudioRecordErrorCallback() {
+      @Override
+      public void onWebRtcAudioRecordInitError(String errorMessage) {
+        Log.e(TAG, "onWebRtcAudioRecordInitError: " + errorMessage);
+        reportError(errorMessage);
+      }
+
+      @Override
+      public void onWebRtcAudioRecordStartError(
+          AudioRecordStartErrorCode errorCode, String errorMessage) {
+        Log.e(TAG, "onWebRtcAudioRecordStartError: " + errorCode + ". " + errorMessage);
+        reportError(errorMessage);
+      }
+
+      @Override
+      public void onWebRtcAudioRecordError(String errorMessage) {
+        Log.e(TAG, "onWebRtcAudioRecordError: " + errorMessage);
+        reportError(errorMessage);
+      }
+    });
+
+    WebRtcAudioTrack.setErrorCallback(new WebRtcAudioTrack.ErrorCallback() {
+      @Override
+      public void onWebRtcAudioTrackInitError(String errorMessage) {
+        Log.e(TAG, "onWebRtcAudioTrackInitError: " + errorMessage);
+        reportError(errorMessage);
+      }
+
+      @Override
+      public void onWebRtcAudioTrackStartError(
+          AudioTrackStartErrorCode errorCode, String errorMessage) {
+        Log.e(TAG, "onWebRtcAudioTrackStartError: " + errorCode + ". " + errorMessage);
+        reportError(errorMessage);
+      }
+
+      @Override
+      public void onWebRtcAudioTrackError(String errorMessage) {
+        Log.e(TAG, "onWebRtcAudioTrackError: " + errorMessage);
+        reportError(errorMessage);
+      }
+    });
+  }
+
+  void setupAudioDevice() {
     // Enable/disable OpenSL ES playback.
     if (!peerConnectionParameters.useOpenSLES) {
       Log.d(TAG, "Disable OpenSL ES audio even if device supports it");
@@ -512,22 +638,6 @@ public class PeerConnectionClient {
       }
     });
 
-    // It is possible to save a copy in raw PCM format on a file by checking
-    // the "Save input audio to file" checkbox in the Settings UI. A callback
-    // interface is set when this flag is enabled. As a result, a copy of recorded
-    // audio samples are provided to this client directly from the native audio
-    // layer in Java.
-    if (peerConnectionParameters.saveInputAudioToFile) {
-      if (!peerConnectionParameters.useOpenSLES) {
-        Log.d(TAG, "Enable recording of microphone input audio to file");
-        saveRecordedAudioToFile = new RecordedAudioToFileController(executor);
-      } else {
-        // TODO(henrika): ensure that the UI reflects that if OpenSL ES is selected,
-        // then the "Save inut audio to file" option shall be grayed out.
-        Log.e(TAG, "Recording of input audio is not supported for OpenSL ES");
-      }
-    }
-
     AudioDeviceModule.setErrorCallback(new AudioDeviceModule.AudioTrackErrorCallback() {
       @Override
       public void onWebRtcAudioTrackInitError(String errorMessage) {
@@ -548,27 +658,6 @@ public class PeerConnectionClient {
         reportError(errorMessage);
       }
     });
-
-    // Create peer connection factory.
-    if (options != null) {
-      Log.d(TAG, "Factory networkIgnoreMask option: " + options.networkIgnoreMask);
-    }
-    final boolean enableH264HighProfile =
-        VIDEO_CODEC_H264_HIGH.equals(peerConnectionParameters.videoCodec);
-    final VideoEncoderFactory encoderFactory;
-    final VideoDecoderFactory decoderFactory;
-
-    if (peerConnectionParameters.videoCodecHwAcceleration) {
-      encoderFactory = new DefaultVideoEncoderFactory(
-          rootEglBase.getEglBaseContext(), true /* enableIntelVp8Encoder */, enableH264HighProfile);
-      decoderFactory = new DefaultVideoDecoderFactory(rootEglBase.getEglBaseContext());
-    } else {
-      encoderFactory = new SoftwareVideoEncoderFactory();
-      decoderFactory = new SoftwareVideoDecoderFactory();
-    }
-
-    factory = new PeerConnectionFactory(options, encoderFactory, decoderFactory);
-    Log.d(TAG, "Peer connection factory created.");
   }
 
   private void createMediaConstraintsInternal() {

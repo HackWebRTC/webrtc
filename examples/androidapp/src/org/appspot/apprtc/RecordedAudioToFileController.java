@@ -21,14 +21,16 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.concurrent.ExecutorService;
 import org.webrtc.audio.AudioDeviceModule;
-import org.webrtc.audio.AudioDeviceModule.AudioSamples;
 import org.webrtc.audio.AudioDeviceModule.SamplesReadyCallback;
+import org.webrtc.voiceengine.WebRtcAudioRecord;
+import org.webrtc.voiceengine.WebRtcAudioRecord.WebRtcAudioRecordSamplesReadyCallback;
 
 /**
  * Implements the AudioRecordSamplesReadyCallback interface and writes
  * recorded raw audio samples to an output file.
  */
-public class RecordedAudioToFileController implements SamplesReadyCallback {
+public class RecordedAudioToFileController
+    implements SamplesReadyCallback, WebRtcAudioRecordSamplesReadyCallback {
   private static final String TAG = "RecordedAudioToFile";
   private static final long MAX_FILE_SIZE_IN_BYTES = 58348800L;
 
@@ -37,10 +39,12 @@ public class RecordedAudioToFileController implements SamplesReadyCallback {
   @Nullable
   private OutputStream rawAudioFileOutputStream = null;
   private long fileSizeInBytes = 0;
+  private boolean useLegacyAudioDevice;
 
-  public RecordedAudioToFileController(ExecutorService executor) {
+  public RecordedAudioToFileController(ExecutorService executor, boolean useLegacyAudioDevice) {
     Log.d(TAG, "ctor");
     this.executor = executor;
+    this.useLegacyAudioDevice = useLegacyAudioDevice;
   }
 
   /**
@@ -54,7 +58,11 @@ public class RecordedAudioToFileController implements SamplesReadyCallback {
       return false;
     }
     // Register this class as receiver of recorded audio samples for storage.
-    AudioDeviceModule.setOnAudioSamplesReady(this);
+    if (useLegacyAudioDevice) {
+      WebRtcAudioRecord.setOnAudioSamplesReady(this);
+    } else {
+      AudioDeviceModule.setOnAudioSamplesReady(this);
+    }
     return true;
   }
 
@@ -65,7 +73,11 @@ public class RecordedAudioToFileController implements SamplesReadyCallback {
   public void stop() {
     Log.d(TAG, "stop");
     // De-register this class as receiver of recorded audio samples for storage.
-    AudioDeviceModule.setOnAudioSamplesReady(null);
+    if (useLegacyAudioDevice) {
+      WebRtcAudioRecord.setOnAudioSamplesReady(null);
+    } else {
+      AudioDeviceModule.setOnAudioSamplesReady(null);
+    }
     synchronized (lock) {
       if (rawAudioFileOutputStream != null) {
         try {
@@ -106,7 +118,41 @@ public class RecordedAudioToFileController implements SamplesReadyCallback {
 
   // Called when new audio samples are ready.
   @Override
-  public void onWebRtcAudioRecordSamplesReady(AudioSamples samples) {
+  public void onWebRtcAudioRecordSamplesReady(AudioDeviceModule.AudioSamples samples) {
+    // The native audio layer on Android should use 16-bit PCM format.
+    if (samples.getAudioFormat() != AudioFormat.ENCODING_PCM_16BIT) {
+      Log.e(TAG, "Invalid audio format");
+      return;
+    }
+    // Open a new file for the first callback only since it allows us to add
+    // audio parameters to the file name.
+    synchronized (lock) {
+      if (rawAudioFileOutputStream == null) {
+        openRawAudioOutputFile(samples.getSampleRate(), samples.getChannelCount());
+        fileSizeInBytes = 0;
+      }
+    }
+    // Append the recorded 16-bit audio samples to the open output file.
+    executor.execute(() -> {
+      if (rawAudioFileOutputStream != null) {
+        try {
+          // Set a limit on max file size. 58348800 bytes corresponds to
+          // approximately 10 minutes of recording in mono at 48kHz.
+          if (fileSizeInBytes < MAX_FILE_SIZE_IN_BYTES) {
+            // Writes samples.getData().length bytes to output stream.
+            rawAudioFileOutputStream.write(samples.getData());
+            fileSizeInBytes += samples.getData().length;
+          }
+        } catch (IOException e) {
+          Log.e(TAG, "Failed to write audio to file: " + e.getMessage());
+        }
+      }
+    });
+  }
+
+  // Called when new audio samples are ready.
+  @Override
+  public void onWebRtcAudioRecordSamplesReady(WebRtcAudioRecord.AudioSamples samples) {
     // The native audio layer on Android should use 16-bit PCM format.
     if (samples.getAudioFormat() != AudioFormat.ENCODING_PCM_16BIT) {
       Log.e(TAG, "Invalid audio format");
