@@ -62,6 +62,7 @@ RtpTransportControllerSend::RtpTransportControllerSend(
                                      &pacer_,
                                      bitrate_config,
                                      TaskQueueExperimentEnabled())) {
+  send_side_cc_ptr_ = send_side_cc_.get();
   process_thread_->RegisterModule(&pacer_, RTC_FROM_HERE);
   process_thread_->RegisterModule(send_side_cc_.get(), RTC_FROM_HERE);
   process_thread_->Start();
@@ -85,7 +86,7 @@ void RtpTransportControllerSend::OnNetworkChanged(uint32_t bitrate_bps,
   msg.network_estimate.at_time = msg.at_time;
   msg.network_estimate.bwe_period = TimeDelta::ms(probing_interval_ms);
   uint32_t bandwidth_bps;
-  if (send_side_cc_->AvailableBandwidth(&bandwidth_bps))
+  if (send_side_cc_ptr_->AvailableBandwidth(&bandwidth_bps))
     msg.network_estimate.bandwidth = DataRate::bps(bandwidth_bps);
   msg.network_estimate.loss_rate_ratio = fraction_loss / 255.0;
   msg.network_estimate.round_trip_time = TimeDelta::ms(rtt_ms);
