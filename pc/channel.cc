@@ -1265,6 +1265,7 @@ bool VoiceChannel::SetRemoteContent_w(const MediaContentDescription* content,
   AudioSendParameters send_params = last_send_params_;
   RtpSendParametersFromMediaDescription(audio, rtp_header_extensions,
       &send_params);
+  send_params.mid = content_name();
 
   bool parameters_applied = media_channel()->SetSendParameters(send_params);
   if (!parameters_applied) {
@@ -1410,6 +1411,7 @@ bool VideoChannel::SetRemoteContent_w(const MediaContentDescription* content,
   if (video->conference_mode()) {
     send_params.conference_mode = true;
   }
+  send_params.mid = content_name();
 
   bool parameters_applied = media_channel()->SetSendParameters(send_params);
 

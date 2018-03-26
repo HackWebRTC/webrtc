@@ -600,6 +600,10 @@ RtpCapabilities WebRtcVoiceEngine::GetCapabilities() const {
         webrtc::RtpExtension::kTransportSequenceNumberUri,
         webrtc::RtpExtension::kTransportSequenceNumberDefaultId));
   }
+  // TODO(bugs.webrtc.org/4050): Add MID header extension as capability once MID
+  // demuxing is completed.
+  // capabilities.header_extensions.push_back(webrtc::RtpExtension(
+  //     webrtc::RtpExtension::kMidUri, webrtc::RtpExtension::kMidDefaultId));
   return capabilities;
 }
 
@@ -742,6 +746,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
  public:
   WebRtcAudioSendStream(
       uint32_t ssrc,
+      const std::string& mid,
       const std::string& c_name,
       const std::string track_id,
       const rtc::Optional<webrtc::AudioSendStream::Config::SendCodecSpec>&
@@ -762,6 +767,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     RTC_DCHECK(call);
     RTC_DCHECK(encoder_factory);
     config_.rtp.ssrc = ssrc;
+    config_.rtp.mid = mid;
     config_.rtp.c_name = c_name;
     config_.rtp.extensions = extensions;
     config_.audio_network_adaptor_config = audio_network_adaptor_config;
@@ -792,6 +798,15 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
   void SetRtpExtensions(const std::vector<webrtc::RtpExtension>& extensions) {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
     config_.rtp.extensions = extensions;
+    ReconfigureAudioSendStream();
+  }
+
+  void SetMid(const std::string& mid) {
+    RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+    if (config_.rtp.mid == mid) {
+      return;
+    }
+    config_.rtp.mid = mid;
     ReconfigureAudioSendStream();
   }
 
@@ -1302,6 +1317,12 @@ bool WebRtcVoiceMediaChannel::SetSendParameters(
       it.second->SetRtpExtensions(send_rtp_extensions_);
     }
   }
+  if (!params.mid.empty()) {
+    mid_ = params.mid;
+    for (auto& it : send_streams_) {
+      it.second->SetMid(params.mid);
+    }
+  }
 
   if (!SetMaxSendBitrate(params.max_bandwidth_bps)) {
     return false;
@@ -1768,7 +1789,7 @@ bool WebRtcVoiceMediaChannel::AddSendStream(const StreamParams& sp) {
   rtc::Optional<std::string> audio_network_adaptor_config =
       GetAudioNetworkAdaptorConfig(options_);
   WebRtcAudioSendStream* stream = new WebRtcAudioSendStream(
-      ssrc, sp.cname, sp.id, send_codec_spec_, send_rtp_extensions_,
+      ssrc, mid_, sp.cname, sp.id, send_codec_spec_, send_rtp_extensions_,
       max_send_bitrate_bps_, audio_network_adaptor_config, call_, this,
       engine()->encoder_factory_, codec_pair_id_);
   send_streams_.insert(std::make_pair(ssrc, stream));

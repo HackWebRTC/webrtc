@@ -74,6 +74,10 @@ class AudioSendStream {
       // Sender SSRC.
       uint32_t ssrc = 0;
 
+      // The value to send in the MID RTP header extension if the extension is
+      // included in the list of extensions.
+      std::string mid;
+
       // RTP header extensions used for the sent stream.
       std::vector<RtpExtension> extensions;
 

@@ -184,6 +184,8 @@ AudioSendStream::ExtensionIds AudioSendStream::FindExtensionIds(
       ids.audio_level = extension.id;
     } else if (extension.uri == RtpExtension::kTransportSequenceNumberUri) {
       ids.transport_sequence_number = extension.id;
+    } else if (extension.uri == RtpExtension::kMidUri) {
+      ids.mid = extension.id;
     }
   }
   return ids;
@@ -258,6 +260,12 @@ void AudioSendStream::ConfigureStream(
 
     channel_proxy->RegisterSenderCongestionControlObjects(stream->transport_,
                                                           bandwidth_observer);
+  }
+
+  // MID RTP header extension.
+  if ((first_time || new_ids.mid != old_ids.mid) && new_ids.mid != 0 &&
+      !new_config.rtp.mid.empty()) {
+    channel_proxy->SetMid(new_config.rtp.mid, new_ids.mid);
   }
 
   if (!ReconfigureSendCodec(stream, new_config)) {

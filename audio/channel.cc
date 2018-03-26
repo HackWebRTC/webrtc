@@ -1042,6 +1042,12 @@ int Channel::SetLocalSSRC(unsigned int ssrc) {
   return 0;
 }
 
+void Channel::SetMid(const std::string& mid, int extension_id) {
+  int ret = SetSendRtpHeaderExtension(true, kRtpExtensionMid, extension_id);
+  RTC_DCHECK_EQ(0, ret);
+  _rtpRtcpModule->SetMid(mid);
+}
+
 int Channel::GetRemoteSSRC(unsigned int& ssrc) {
   ssrc = rtp_receiver_->SSRC();
   return 0;

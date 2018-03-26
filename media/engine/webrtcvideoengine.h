@@ -213,6 +213,7 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
     // These optionals are unset if not changed.
     rtc::Optional<VideoCodecSettings> codec;
     rtc::Optional<std::vector<webrtc::RtpExtension>> rtp_header_extensions;
+    rtc::Optional<std::string> mid;
     rtc::Optional<int> max_bandwidth_bps;
     rtc::Optional<bool> conference_mode;
     rtc::Optional<webrtc::RtcpMode> rtcp_mode;

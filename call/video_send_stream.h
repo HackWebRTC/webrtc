@@ -142,6 +142,10 @@ class VideoSendStream {
 
       std::vector<uint32_t> ssrcs;
 
+      // The value to send in the MID RTP header extension if the extension is
+      // included in the list of extensions.
+      std::string mid;
+
       // See RtcpMode for description.
       RtcpMode rtcp_mode = RtcpMode::kCompound;
 

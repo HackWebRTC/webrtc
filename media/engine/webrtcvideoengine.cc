@@ -596,6 +596,10 @@ RtpCapabilities WebRtcVideoEngine::GetCapabilities() const {
   capabilities.header_extensions.push_back(
         webrtc::RtpExtension(webrtc::RtpExtension::kVideoTimingUri,
                              webrtc::RtpExtension::kVideoTimingDefaultId));
+  // TODO(bugs.webrtc.org/4050): Add MID header extension as capability once MID
+  // demuxing is completed.
+  // capabilities.header_extensions.push_back(webrtc::RtpExtension(
+  //     webrtc::RtpExtension::kMidUri, webrtc::RtpExtension::kMidDefaultId));
   return capabilities;
 }
 
@@ -713,6 +717,10 @@ bool WebRtcVideoChannel::GetChangedSendParameters(
   if (!send_rtp_extensions_ || (*send_rtp_extensions_ != filtered_extensions)) {
     changed_params->rtp_header_extensions =
         rtc::Optional<std::vector<webrtc::RtpExtension>>(filtered_extensions);
+  }
+
+  if (params.mid != send_params_.mid) {
+    changed_params->mid = params.mid;
   }
 
   // Handle max bitrate.
@@ -1632,6 +1640,8 @@ WebRtcVideoChannel::WebRtcVideoSendStream::WebRtcVideoSendStream(
   parameters_.config.rtp.rtcp_mode = send_params.rtcp.reduced_size
                                          ? webrtc::RtcpMode::kReducedSize
                                          : webrtc::RtcpMode::kCompound;
+  parameters_.config.rtp.mid = send_params.mid;
+
   if (codec_settings) {
     SetCodec(*codec_settings);
   }
@@ -1774,6 +1784,10 @@ void WebRtcVideoChannel::WebRtcVideoSendStream::SetSendParameters(
   }
   if (params.rtp_header_extensions) {
     parameters_.config.rtp.extensions = *params.rtp_header_extensions;
+    recreate_stream = true;
+  }
+  if (params.mid) {
+    parameters_.config.rtp.mid = *params.mid;
     recreate_stream = true;
   }
   if (params.max_bandwidth_bps) {

@@ -219,6 +219,7 @@ class Channel
 
   // RTP+RTCP
   int SetLocalSSRC(unsigned int ssrc);
+  void SetMid(const std::string& mid, int extension_id);
   int SetSendAudioLevelIndicationStatus(bool enable, unsigned char id);
   void EnableSendTransportSequenceNumber(int id);
 

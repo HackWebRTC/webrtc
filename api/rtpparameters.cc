@@ -114,6 +114,9 @@ const char RtpExtension::kVideoTimingUri[] =
     "http://www.webrtc.org/experiments/rtp-hdrext/video-timing";
 const int RtpExtension::kVideoTimingDefaultId = 8;
 
+const char RtpExtension::kMidUri[] = "urn:ietf:params:rtp-hdrext:sdes:mid";
+const int RtpExtension::kMidDefaultId = 9;
+
 const char RtpExtension::kEncryptHeaderExtensionsUri[] =
     "urn:ietf:params:rtp-hdrext:encrypt";
 
@@ -122,7 +125,8 @@ const int RtpExtension::kMaxId = 14;
 
 bool RtpExtension::IsSupportedForAudio(const std::string& uri) {
   return uri == webrtc::RtpExtension::kAudioLevelUri ||
-         uri == webrtc::RtpExtension::kTransportSequenceNumberUri;
+         uri == webrtc::RtpExtension::kTransportSequenceNumberUri ||
+         uri == webrtc::RtpExtension::kMidUri;
 }
 
 bool RtpExtension::IsSupportedForVideo(const std::string& uri) {
@@ -132,7 +136,8 @@ bool RtpExtension::IsSupportedForVideo(const std::string& uri) {
          uri == webrtc::RtpExtension::kTransportSequenceNumberUri ||
          uri == webrtc::RtpExtension::kPlayoutDelayUri ||
          uri == webrtc::RtpExtension::kVideoContentTypeUri ||
-         uri == webrtc::RtpExtension::kVideoTimingUri;
+         uri == webrtc::RtpExtension::kVideoTimingUri ||
+         uri == webrtc::RtpExtension::kMidUri;
 }
 
 bool RtpExtension::IsEncryptionSupported(const std::string& uri) {
@@ -149,7 +154,8 @@ bool RtpExtension::IsEncryptionSupported(const std::string& uri) {
          uri == webrtc::RtpExtension::kVideoRotationUri ||
          uri == webrtc::RtpExtension::kTransportSequenceNumberUri ||
          uri == webrtc::RtpExtension::kPlayoutDelayUri ||
-         uri == webrtc::RtpExtension::kVideoContentTypeUri;
+         uri == webrtc::RtpExtension::kVideoContentTypeUri ||
+         uri == webrtc::RtpExtension::kMidUri;
 }
 
 const RtpExtension* RtpExtension::FindHeaderExtensionByUri(

@@ -53,6 +53,11 @@ void ChannelProxy::SetLocalSSRC(uint32_t ssrc) {
   RTC_DCHECK_EQ(0, error);
 }
 
+void ChannelProxy::SetMid(const std::string& mid, int extension_id) {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  channel_->SetMid(mid, extension_id);
+}
+
 void ChannelProxy::SetRTCP_CNAME(const std::string& c_name) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   // Note: VoERTP_RTCP::SetRTCP_CNAME() accepts a char[256] array.

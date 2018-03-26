@@ -615,11 +615,15 @@ struct RtpSendParameters : RtpParameters<Codec> {
     ost << "codecs: " << VectorToString(this->codecs) << ", ";
     ost << "extensions: " << VectorToString(this->extensions) << ", ";
     ost << "max_bandwidth_bps: " << max_bandwidth_bps << ", ";
+    ost << "mid: " << (mid.empty() ? "<not set>" : mid) << ", ";
     ost << "}";
     return ost.str();
   }
 
   int max_bandwidth_bps = -1;
+  // This is the value to be sent in the MID RTP header extension (if the header
+  // extension in included in the list of extensions).
+  std::string mid;
 };
 
 struct AudioSendParameters : RtpSendParameters<AudioCodec> {
