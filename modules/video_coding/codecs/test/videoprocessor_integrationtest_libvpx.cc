@@ -358,7 +358,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_SimulcastVP8) {
   std::vector<RateProfile> rate_profiles = {{1500, 30, config_.num_frames}};
 
   std::vector<RateControlThresholds> rc_thresholds = {
-      {20, 5, 90, 0.75, 0.5, 0.3, 0, 1}};
+      {20, 5, 90, 0.8, 0.5, 0.3, 0, 1}};
   std::vector<QualityThresholds> quality_thresholds = {{34, 32, 0.90, 0.88}};
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
