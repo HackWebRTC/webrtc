@@ -28,7 +28,7 @@
 #include <assert.h>
 #include <string.h>
 
-#include <Functiondiscoverykeys_devpkey.h>
+#include <functiondiscoverykeys_devpkey.h>
 #include <comdef.h>
 #include <dmo.h>
 #include <mmsystem.h>
