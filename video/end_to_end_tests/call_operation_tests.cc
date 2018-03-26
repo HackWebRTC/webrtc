@@ -219,7 +219,10 @@ TEST_P(CallOperationEndToEndTestNoTaskQueueCongestionControl,
   });
 }
 
-TEST_P(CallOperationEndToEndTest, ObserversEncodedFrames) {
+// TODO(bugs.webrtc.org/9060): Re-enable this test with the TaskQueue when it
+// is no longer flaky.
+TEST_P(CallOperationEndToEndTestNoTaskQueueCongestionControl,
+       ObserversEncodedFrames) {
   class EncodedFrameTestObserver : public EncodedFrameObserver {
    public:
     EncodedFrameTestObserver()
