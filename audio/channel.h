@@ -90,7 +90,6 @@ struct ReportBlock {
 namespace voe {
 
 class RtcEventLogProxy;
-class RtcpRttStatsProxy;
 class RtpPacketSenderProxy;
 class TransportFeedbackProxy;
 class TransportSequenceNumberProxy;
@@ -151,10 +150,12 @@ class Channel
   // Used for send streams.
   Channel(rtc::TaskQueue* encoder_queue,
           ProcessThread* module_process_thread,
-          AudioDeviceModule* audio_device_module);
+          AudioDeviceModule* audio_device_module,
+          RtcpRttStats* rtcp_rtt_stats);
   // Used for receive streams.
   Channel(ProcessThread* module_process_thread,
           AudioDeviceModule* audio_device_module,
+          RtcpRttStats* rtcp_rtt_stats,
           size_t jitter_buffer_max_packets,
           bool jitter_buffer_fast_playout,
           rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
@@ -285,7 +286,6 @@ class Channel
   // Set a RtcEventLog logging object.
   void SetRtcEventLog(RtcEventLog* event_log);
 
-  void SetRtcpRttStats(RtcpRttStats* rtcp_rtt_stats);
   void SetTransportOverhead(size_t transport_overhead_per_packet);
 
   // From OverheadObserver in the RTP/RTCP module
@@ -341,7 +341,6 @@ class Channel
   ChannelState channel_state_;
 
   std::unique_ptr<voe::RtcEventLogProxy> event_log_proxy_;
-  std::unique_ptr<voe::RtcpRttStatsProxy> rtcp_rtt_stats_proxy_;
 
   std::unique_ptr<RTPPayloadRegistry> rtp_payload_registry_;
   std::unique_ptr<ReceiveStatistics> rtp_receive_statistics_;

@@ -110,7 +110,6 @@ class ChannelProxy : public RtpPacketSinkInterface {
                           RtpReceiver** rtp_receiver) const;
   virtual uint32_t GetPlayoutTimestamp() const;
   virtual void SetMinimumPlayoutDelay(int delay_ms);
-  virtual void SetRtcpRttStats(RtcpRttStats* rtcp_rtt_stats);
   virtual bool GetRecCodec(CodecInst* codec_inst) const;
   virtual void OnTwccBasedUplinkPacketLossRate(float packet_loss_rate);
   virtual void OnRecoverableUplinkPacketLossRate(

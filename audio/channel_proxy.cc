@@ -283,11 +283,6 @@ void ChannelProxy::SetMinimumPlayoutDelay(int delay_ms) {
   }
 }
 
-void ChannelProxy::SetRtcpRttStats(RtcpRttStats* rtcp_rtt_stats) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  channel_->SetRtcpRttStats(rtcp_rtt_stats);
-}
-
 bool ChannelProxy::GetRecCodec(CodecInst* codec_inst) const {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   return channel_->GetRecCodec(*codec_inst) == 0;

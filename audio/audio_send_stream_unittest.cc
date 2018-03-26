@@ -228,9 +228,6 @@ struct ConfigHelper {
     EXPECT_CALL(*channel_proxy_, SetRtcEventLog(testing::NotNull())).Times(1);
     EXPECT_CALL(*channel_proxy_, SetRtcEventLog(testing::IsNull()))
         .Times(1);  // Destructor resets the event log
-    EXPECT_CALL(*channel_proxy_, SetRtcpRttStats(&rtcp_rtt_stats_)).Times(1);
-    EXPECT_CALL(*channel_proxy_, SetRtcpRttStats(testing::IsNull()))
-        .Times(1);  // Destructor resets the rtt stats.
   }
 
   void SetupMockForSetupSendCodec(bool expect_set_encoder_call) {

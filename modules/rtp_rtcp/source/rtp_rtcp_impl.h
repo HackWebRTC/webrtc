@@ -343,7 +343,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
 
   RemoteBitrateEstimator* remote_bitrate_;
 
-  RtcpRttStats* rtt_stats_;
+  RtcpRttStats* const rtt_stats_;
 
   PacketLossStats send_loss_stats_;
   PacketLossStats receive_loss_stats_;
