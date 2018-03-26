@@ -43,9 +43,8 @@ class JsepTransport2Test : public testing::Test, public sigslot::has_slots<> {
       const std::string& transport_name,
       rtc::PacketTransportInternal* rtp_packet_transport,
       rtc::PacketTransportInternal* rtcp_packet_transport) {
-    bool rtcp_mux_enabled = (rtcp_packet_transport == nullptr);
-    auto srtp_transport =
-        rtc::MakeUnique<webrtc::SrtpTransport>(rtcp_mux_enabled);
+    auto srtp_transport = rtc::MakeUnique<webrtc::SrtpTransport>(
+        rtcp_packet_transport == nullptr);
 
     srtp_transport->SetRtpPacketTransport(rtp_packet_transport);
     if (rtcp_packet_transport) {
@@ -58,11 +57,8 @@ class JsepTransport2Test : public testing::Test, public sigslot::has_slots<> {
       const std::string& transport_name,
       cricket::DtlsTransportInternal* rtp_dtls_transport,
       cricket::DtlsTransportInternal* rtcp_dtls_transport) {
-    bool rtcp_mux_enabled = (rtcp_dtls_transport == nullptr);
-    auto srtp_transport =
-        rtc::MakeUnique<webrtc::SrtpTransport>(rtcp_mux_enabled);
-    auto dtls_srtp_transport =
-        rtc::MakeUnique<webrtc::DtlsSrtpTransport>(std::move(srtp_transport));
+    auto dtls_srtp_transport = rtc::MakeUnique<webrtc::DtlsSrtpTransport>(
+        rtcp_dtls_transport == nullptr);
 
     dtls_srtp_transport->SetDtlsTransports(rtp_dtls_transport,
                                            rtcp_dtls_transport);

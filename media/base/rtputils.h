@@ -55,6 +55,7 @@ bool SetRtpHeader(void* data, size_t len, const RtpHeader& header);
 
 bool IsRtpPacket(const void* data, size_t len);
 
+bool IsRtcp(const char* data, int len);
 // True if |payload type| is 0-127.
 bool IsValidRtpPayloadType(int payload_type);
 
