@@ -208,8 +208,11 @@ TEST(StreamParams, FecFrFunctions) {
 TEST(StreamParams, ToString) {
   cricket::StreamParams sp =
       CreateStreamParamsWithSsrcGroup("XYZ", kSsrcs2, arraysize(kSsrcs2));
-  EXPECT_STREQ("{ssrcs:[1,2];ssrc_groups:{semantics:XYZ;ssrcs:[1,2]};}",
-               sp.ToString().c_str());
+  sp.set_stream_ids({"stream_id"});
+  EXPECT_STREQ(
+      "{ssrcs:[1,2];ssrc_groups:{semantics:XYZ;ssrcs:[1,2]};stream_ids:stream_"
+      "id;}",
+      sp.ToString().c_str());
 }
 
 TEST(StreamParams, TestIsOneSsrcStream_LegacyStream) {

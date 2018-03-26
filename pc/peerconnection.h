@@ -635,7 +635,6 @@ class PeerConnection : public PeerConnectionInternal,
   std::vector<RtpSenderInfo>* GetLocalSenderInfos(
       cricket::MediaType media_type);
   const RtpSenderInfo* FindSenderInfo(const std::vector<RtpSenderInfo>& infos,
-                                      const std::string& stream_id,
                                       const std::string sender_id) const;
 
   // Returns the specified SCTP DataChannel in sctp_data_channels_,

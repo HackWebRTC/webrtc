@@ -48,8 +48,9 @@ class RtpSenderInterface : public rtc::RefCountInterface {
   // to uniquely identify a receiver until we implement Unified Plan SDP.
   virtual std::string id() const = 0;
 
-  // Returns a list of streams associated with this sender's track. Although we
-  // only support one track per stream, in theory the API allows for multiple.
+  // Returns a list of media stream ids associated with this sender's track.
+  // These are signalled in the SDP so that the remote side can associate
+  // tracks.
   virtual std::vector<std::string> stream_ids() const = 0;
 
   virtual RtpParameters GetParameters() const = 0;
