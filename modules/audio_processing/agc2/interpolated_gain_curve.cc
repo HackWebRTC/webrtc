@@ -20,19 +20,33 @@ namespace webrtc {
 namespace {
 void LogRegionStats(const InterpolatedGainCurve::Stats& stats) {
   using Region = InterpolatedGainCurve::GainCurveRegion;
+  const int duration_s =
+      stats.region_duration_frames / (1000 / kFrameDurationMs);
 
-  std::string histogram_name = "WebRTC.Audio.Agc2.FixedDigitalGainCurveRegion.";
-  if (stats.region == Region::kIdentity) {
-    histogram_name += "Identity";
-  } else if (stats.region == Region::kKnee) {
-    histogram_name += "Knee";
-  } else if (stats.region == Region::kLimiter) {
-    histogram_name += "Limiter";
-  } else {
-    histogram_name += "Saturation";
+  switch (stats.region) {
+    case Region::kIdentity: {
+      RTC_HISTOGRAM_COUNTS_10000(
+          "WebRTC.Audio.Agc2.FixedDigitalGainCurveRegion.Identity", duration_s);
+      break;
+    }
+    case Region::kKnee: {
+      RTC_HISTOGRAM_COUNTS_10000(
+          "WebRTC.Audio.Agc2.FixedDigitalGainCurveRegion.Knee", duration_s);
+      break;
+    }
+    case Region::kLimiter: {
+      RTC_HISTOGRAM_COUNTS_10000(
+          "WebRTC.Audio.Agc2.FixedDigitalGainCurveRegion.Limiter", duration_s);
+      break;
+    }
+    case Region::kSaturation: {
+      RTC_HISTOGRAM_COUNTS_10000(
+          "WebRTC.Audio.Agc2.FixedDigitalGainCurveRegion.Saturation",
+          duration_s);
+      break;
+    }
+    default: { RTC_NOTREACHED(); }
   }
-  RTC_HISTOGRAM_COUNTS_10000(histogram_name,
-                             stats.region_duration_frames / 100);
 }
 }  // namespace
 
