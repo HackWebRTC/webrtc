@@ -15,6 +15,7 @@
 #include <memory>
 #include <utility>
 
+#include "api/optional.h"
 #include "api/video/video_stream_decoder.h"
 #include "modules/video_coding/frame_buffer2.h"
 #include "modules/video_coding/jitter_estimator.h"
@@ -38,6 +39,8 @@ class VideoStreamDecoderImpl : public VideoStreamDecoder,
   void OnFrame(std::unique_ptr<video_coding::EncodedFrame> frame) override;
 
  private:
+  VideoDecoder* GetDecoder(int payload_type);
+
   // Implements DecodedImageCallback interface
   int32_t Decoded(VideoFrame& decodedImage) override;
   int32_t Decoded(VideoFrame& decodedImage, int64_t decode_time_ms) override;
@@ -60,6 +63,8 @@ class VideoStreamDecoderImpl : public VideoStreamDecoder,
   VCMTiming timing_;
   video_coding::FrameBuffer frame_buffer_;
   video_coding::VideoLayerFrameId last_continuous_id_;
+  rtc::Optional<int> current_payload_type_;
+  std::unique_ptr<VideoDecoder> decoder_;
 };
 
 }  // namespace webrtc

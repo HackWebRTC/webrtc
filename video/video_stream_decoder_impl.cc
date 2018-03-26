@@ -67,4 +67,48 @@ void VideoStreamDecoderImpl::OnFrame(
   }
 }
 
+VideoDecoder* VideoStreamDecoderImpl::GetDecoder(int payload_type) {
+  if (current_payload_type_ == payload_type) {
+    RTC_DCHECK(decoder_);
+    return decoder_.get();
+  }
+
+  current_payload_type_.reset();
+  decoder_.reset();
+
+  auto decoder_settings_it = decoder_settings_.find(payload_type);
+  if (decoder_settings_it == decoder_settings_.end()) {
+    RTC_LOG(LS_WARNING) << "Payload type " << payload_type
+                        << " not registered.";
+    return nullptr;
+  }
+
+  const SdpVideoFormat& video_format = decoder_settings_it->second.first;
+  std::unique_ptr<VideoDecoder> decoder =
+      decoder_factory_->CreateVideoDecoder(video_format);
+  if (!decoder) {
+    RTC_LOG(LS_WARNING) << "Failed to create decoder for payload type "
+                        << payload_type << ".";
+    return nullptr;
+  }
+
+  int num_cores = decoder_settings_it->second.second;
+  int32_t init_result = decoder->InitDecode(nullptr, num_cores);
+  if (init_result != WEBRTC_VIDEO_CODEC_OK) {
+    RTC_LOG(LS_WARNING) << "Failed to initialize decoder for payload type "
+                        << payload_type << ".";
+    return nullptr;
+  }
+
+  int32_t register_result = decoder->RegisterDecodeCompleteCallback(this);
+  if (register_result != WEBRTC_VIDEO_CODEC_OK) {
+    RTC_LOG(LS_WARNING) << "Failed to register decode callback.";
+    return nullptr;
+  }
+
+  current_payload_type_.emplace(payload_type);
+  decoder_ = std::move(decoder);
+  return decoder_.get();
+}
+
 }  // namespace webrtc
