@@ -1162,11 +1162,11 @@ TEST_F(PeerConnectionJsepTest,
 
   ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
 
-  const auto& track_events = callee->observer()->add_track_events_;
-  ASSERT_EQ(1u, track_events.size());
-  const auto& event = track_events[0];
-  EXPECT_EQ(kTrackLabel, event.receiver->track()->id());
-  EXPECT_EQ(0u, event.streams.size());
+  ASSERT_EQ(callee->observer()->add_track_events_.size(), 1u);
+  EXPECT_EQ(kTrackLabel,
+            callee->observer()->add_track_events_[0].receiver->track()->id());
+  // TODO(bugs.webrtc.org/7933): Also verify that no stream was added to the
+  // receiver.
 }
 
 // Test that setting a remote offer with one track that has one stream fires off
@@ -1226,27 +1226,7 @@ TEST_F(PeerConnectionJsepTest,
               UnorderedElementsAre(track1, track2));
 }
 
-// Test that setting a remote offer with one track that has two streams fires
-// off the correct OnAddTrack event.
-TEST_F(PeerConnectionJsepTest,
-       SetRemoteOfferWithOneTrackTwoStreamFiresOnAddTrack) {
-  const std::string kTrackLabel = "audio_track";
-  const std::string kStreamId1 = "audio_stream1";
-  const std::string kStreamId2 = "audio_stream2";
-
-  auto caller = CreatePeerConnection();
-  auto callee = CreatePeerConnection();
-  ASSERT_TRUE(caller->AddAudioTrack(kTrackLabel, {kStreamId1, kStreamId2}));
-
-  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
-
-  const auto& track_events = callee->observer()->add_track_events_;
-  ASSERT_EQ(1u, track_events.size());
-  const auto& event = track_events[0];
-  ASSERT_EQ(2u, event.streams.size());
-  EXPECT_EQ(kStreamId1, event.streams[0]->id());
-  EXPECT_EQ(kStreamId2, event.streams[1]->id());
-}
+// TODO(bugs.webrtc.org/7932): Also test multi-stream case.
 
 // Test that if an RtpTransceiver with a current_direction set is stopped, then
 // current_direction is changed to null.

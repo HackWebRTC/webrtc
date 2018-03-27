@@ -72,7 +72,7 @@ struct StreamParams {
     return (groupid == other.groupid && id == other.id &&
             ssrcs == other.ssrcs && ssrc_groups == other.ssrc_groups &&
             type == other.type && display == other.display &&
-            cname == other.cname && stream_ids_ == other.stream_ids_);
+            cname == other.cname && sync_label == other.sync_label);
   }
   bool operator!=(const StreamParams &other) const {
     return !(*this == other);
@@ -165,6 +165,8 @@ struct StreamParams {
   // Friendly name describing stream
   std::string display;
   std::string cname;  // RTCP CNAME
+  // TODO(shampson): Move callers to |stream_ids()| and make private.
+  std::string sync_label;  // Friendly name of cname.
 
  private:
   bool AddSecondarySsrc(const std::string& semantics,
@@ -173,8 +175,6 @@ struct StreamParams {
   bool GetSecondarySsrc(const std::string& semantics,
                         uint32_t primary_ssrc,
                         uint32_t* secondary_ssrc) const;
-
-  std::vector<std::string> stream_ids_;
 };
 
 // A Stream can be selected by either groupid+id or ssrc.

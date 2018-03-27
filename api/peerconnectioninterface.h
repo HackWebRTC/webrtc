@@ -1152,6 +1152,13 @@ class PeerConnectionObserver {
   virtual void OnTrack(
       rtc::scoped_refptr<RtpTransceiverInterface> transceiver) {}
 
+  // TODO(hbos,deadbeef): Add |OnAssociatedStreamsUpdated| with |receiver| and
+  // |streams| as arguments. This should be called when an existing receiver its
+  // associated streams updated. https://crbug.com/webrtc/8315
+  // This may be blocked on supporting multiple streams per sender or else
+  // this may count as the removal and addition of a track?
+  // https://crbug.com/webrtc/7932
+
   // Called when a receiver is completely removed. This is current (Plan B SDP)
   // behavior that occurs when processing the removal of a remote track, and is
   // called when the receiver is removed and the track is muted. When Unified

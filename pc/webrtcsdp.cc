@@ -120,12 +120,10 @@ static const char kSsrcAttributeCname[] = "cname";
 static const char kAttributeExtmap[] = "extmap";
 // draft-alvestrand-mmusic-msid-01
 // a=msid-semantic: WMS
-// This is a legacy field supported only for Plan B semantics.
 static const char kAttributeMsidSemantics[] = "msid-semantic";
 static const char kMediaStreamSemantic[] = "WMS";
 static const char kSsrcAttributeMsid[] = "msid";
 static const char kDefaultMsid[] = "default";
-static const char kNoStreamMsid[] = "-";
 static const char kSsrcAttributeMslabel[] = "mslabel";
 static const char kSSrcAttributeLabel[] = "label";
 static const char kAttributeSsrcGroup[] = "ssrc-group";
@@ -327,7 +325,7 @@ static bool ParseDtlsSetup(const std::string& line,
                            cricket::ConnectionRole* role,
                            SdpParseError* error);
 static bool ParseMsidAttribute(const std::string& line,
-                               std::vector<std::string>* stream_ids,
+                               std::string* stream_id,
                                std::string* track_id,
                                SdpParseError* error);
 
@@ -580,50 +578,43 @@ static bool GetPayloadTypeFromString(const std::string& line,
       cricket::IsValidRtpPayloadType(*payload_type);
 }
 
-// |msid_stream_idss| and |msid_track_id| represent the stream/track ID from the
+// |msid_stream_id| and |msid_track_id| represent the stream/track ID from the
 // "a=msid" attribute, if it exists. They are empty if the attribute does not
 // exist.
-// TODO(bugs.webrtc.org/7932): Currently we require that an a=ssrc line is
-// signalled in order to add the appropriate stream_ids. Update here to add both
-// StreamParams objects for the a=ssrc msid lines, and add the
-// stream_id/track_id, to the MediaContentDescription for the a=msid lines. This
-// way the logic will get pushed out to peerconnection.cc for interpreting the
-// media stream ids.
 void CreateTracksFromSsrcInfos(const SsrcInfoVec& ssrc_infos,
-                               const std::vector<std::string>& msid_stream_ids,
+                               const std::string& msid_stream_id,
                                const std::string& msid_track_id,
-                               StreamParamsVec* tracks,
-                               int msid_signaling) {
+                               StreamParamsVec* tracks) {
   RTC_DCHECK(tracks != NULL);
+  RTC_DCHECK(msid_stream_id.empty() == msid_track_id.empty());
   for (SsrcInfoVec::const_iterator ssrc_info = ssrc_infos.begin();
        ssrc_info != ssrc_infos.end(); ++ssrc_info) {
     if (ssrc_info->cname.empty()) {
       continue;
     }
 
-    std::vector<std::string> stream_ids;
+    std::string stream_id;
     std::string track_id;
-    if (msid_signaling & cricket::kMsidSignalingMediaSection) {
-      // This is the case with Unified Plan SDP msid signaling.
-      stream_ids = msid_stream_ids;
-      track_id = msid_track_id;
-    } else if (msid_signaling & cricket::kMsidSignalingSsrcAttribute) {
-      // This is the case with Plan B SDP msid signaling.
-      stream_ids.push_back(ssrc_info->stream_id);
-      track_id = ssrc_info->track_id;
-    } else if (!ssrc_info->mslabel.empty()) {
-      // Since there's no a=msid or a=ssrc msid signaling, this is a sdp from
-      // an older version of client that doesn't support msid.
+    if (ssrc_info->stream_id.empty() && !ssrc_info->mslabel.empty()) {
+      // If there's no msid and there's mslabel, we consider this is a sdp from
+      // a older version of client that doesn't support msid.
       // In that case, we use the mslabel and label to construct the track.
-      stream_ids.push_back(ssrc_info->mslabel);
+      stream_id = ssrc_info->mslabel;
       track_id = ssrc_info->label;
+    } else if (ssrc_info->stream_id.empty() && !msid_stream_id.empty()) {
+      // If there's no msid in the SSRC attributes, but there's a global one
+      // (from a=msid), use that. This is the case with Unified Plan SDP.
+      stream_id = msid_stream_id;
+      track_id = msid_track_id;
     } else {
-      // Since no media streams isn't supported with older SDP signaling, we
-      // use a default a stream id.
-      stream_ids.push_back(kDefaultMsid);
+      stream_id = ssrc_info->stream_id;
+      track_id = ssrc_info->track_id;
     }
-    // If a track ID wasn't populated from the SSRC attributes OR the
+    // If a stream/track ID wasn't populated from the SSRC attributes OR the
     // msid attribute, use default/random values.
+    if (stream_id.empty()) {
+      stream_id = kDefaultMsid;
+    }
     if (track_id.empty()) {
       // TODO(ronghuawu): What should we do if the track id doesn't appear?
       // Create random string (which will be used as track label later)?
@@ -643,7 +634,7 @@ void CreateTracksFromSsrcInfos(const SsrcInfoVec& ssrc_infos,
     }
     track->add_ssrc(ssrc_info->ssrc_id);
     track->cname = ssrc_info->cname;
-    track->set_stream_ids(stream_ids);
+    track->set_stream_ids({stream_id});
     track->id = track_id;
   }
 }
@@ -1481,26 +1472,18 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
   }
   AddLine(os.str(), message);
 
-  // Specified in https://datatracker.ietf.org/doc/draft-ietf-mmusic-msid/16/
-  // a=msid:<msid-id> <msid-appdata>
-  // The msid-id is a 1*64 token char representing the media stream id, and the
-  // msid-appdata is a 1*64 token char representing the track id. There is a
-  // line for every media stream, with a special msid-id value of "-"
-  // representing no streams. The value of "msid-appdata" MUST be identical for
-  // all lines.
+  // Specified in https://tools.ietf.org/html/draft-ietf-mmusic-msid-16
+  // a=msid:<stream id> <track id>
   if (msid_signaling & cricket::kMsidSignalingMediaSection) {
     const StreamParamsVec& streams = media_desc->streams();
     if (streams.size() == 1u) {
       const StreamParams& track = streams[0];
-      std::vector<std::string> stream_ids = track.stream_ids();
-      if (stream_ids.empty()) {
-        stream_ids.push_back(kNoStreamMsid);
-      }
-      for (const std::string& stream_id : stream_ids) {
-        InitAttrLine(kAttributeMsid, &os);
-        os << kSdpDelimiterColon << stream_id << kSdpDelimiterSpace << track.id;
-        AddLine(os.str(), message);
-      }
+      // TODO(bugs.webrtc.org/7932): Support serializing more than one stream
+      // label.
+      const std::string& stream_id = track.first_stream_id();
+      InitAttrLine(kAttributeMsid, &os);
+      os << kSdpDelimiterColon << stream_id << kSdpDelimiterSpace << track.id;
+      AddLine(os.str(), message);
     } else if (streams.size() > 1u) {
       RTC_LOG(LS_WARNING)
           << "Trying to serialize Unified Plan SDP with more than "
@@ -1549,6 +1532,13 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
 
   for (StreamParamsVec::const_iterator track = media_desc->streams().begin();
        track != media_desc->streams().end(); ++track) {
+    // Require that the track belongs to a media stream. This extra check is
+    // necessary since the MediaContentDescription always contains a
+    // StreamParams with an ssrc even if no track or media stream have been
+    // created.
+    if (track->stream_ids().empty())
+      continue;
+
     // Build the ssrc-group lines.
     for (size_t i = 0; i < track->ssrc_groups.size(); ++i) {
       // RFC 5576
@@ -1578,9 +1568,8 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
         // a=ssrc:<ssrc-id> msid:identifier [appdata]
         // The appdata consists of the "id" attribute of a MediaStreamTrack,
         // which corresponds to the "id" attribute of StreamParams.
-        // Since a=ssrc msid signaling is used in Plan B SDP semantics, and
-        // multiple stream ids are not supported for Plan B, we are only adding
-        // a line for the first media stream id here.
+        // TODO(bugs.webrtc.org/7932): Support serializing more than one stream
+        // label.
         const std::string& stream_id = track->first_stream_id();
         InitAttrLine(kAttributeSsrc, &os);
         os << kSdpDelimiterColon << ssrc << kSdpDelimiterSpace
@@ -1594,7 +1583,8 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
         // a=ssrc:<ssrc-id> mslabel:<value>
         // The label isn't yet defined.
         // a=ssrc:<ssrc-id> label:<value>
-        AddSsrcLine(ssrc, kSsrcAttributeMslabel, stream_id, message);
+        AddSsrcLine(ssrc, kSsrcAttributeMslabel, track->first_stream_id(),
+                    message);
         AddSsrcLine(ssrc, kSSrcAttributeLabel, track->id, message);
       }
     }
@@ -2207,44 +2197,31 @@ static bool ParseDtlsSetup(const std::string& line,
 }
 
 static bool ParseMsidAttribute(const std::string& line,
-                               std::vector<std::string>* stream_ids,
+                               std::string* stream_id,
                                std::string* track_id,
                                SdpParseError* error) {
-  // https://datatracker.ietf.org/doc/draft-ietf-mmusic-msid/16/
+  // draft-ietf-mmusic-msid-11
   // a=msid:<stream id> <track id>
   // msid-value = msid-id [ SP msid-appdata ]
   // msid-id = 1*64token-char ; see RFC 4566
   // msid-appdata = 1*64token-char  ; see RFC 4566
   std::string field1;
-  std::string new_stream_id;
-  std::string new_track_id;
   if (!rtc::tokenize_first(line.substr(kLinePrefixLength), kSdpDelimiterSpace,
-                           &field1, &new_track_id)) {
+                           &field1, track_id)) {
     const size_t expected_fields = 2;
     return ParseFailedExpectFieldNum(line, expected_fields, error);
   }
 
-  if (new_track_id.empty()) {
+  if (track_id->empty()) {
     return ParseFailed(line, "Missing track ID in msid attribute.", error);
   }
-  // All track ids should be the same within an m section in a Unified Plan SDP.
-  if (!track_id->empty() && new_track_id.compare(*track_id) != 0) {
-    return ParseFailed(
-        line, "Two different track IDs in msid attribute in one m= section",
-        error);
-  }
-  *track_id = new_track_id;
 
   // msid:<msid-id>
-  if (!GetValue(field1, kAttributeMsid, &new_stream_id, error)) {
+  if (!GetValue(field1, kAttributeMsid, stream_id, error)) {
     return false;
   }
-  if (new_stream_id.empty()) {
+  if (stream_id->empty()) {
     return ParseFailed(line, "Missing stream ID in msid attribute.", error);
-  }
-  // The special value "-" indicates "no MediaStream".
-  if (new_stream_id.compare(kNoStreamMsid) != 0) {
-    stream_ids->push_back(new_stream_id);
   }
   return true;
 }
@@ -2729,7 +2706,7 @@ bool ParseContent(const std::string& message,
   SsrcGroupVec ssrc_groups;
   std::string maxptime_as_string;
   std::string ptime_as_string;
-  std::vector<std::string> stream_ids;
+  std::string stream_id;
   std::string track_id;
 
   // Loop until the next m line
@@ -2929,7 +2906,7 @@ bool ParseContent(const std::string& message,
         if (flag_value.compare(kValueConference) == 0)
           media_desc->set_conference_mode(true);
       } else if (HasAttribute(line, kAttributeMsid)) {
-        if (!ParseMsidAttribute(line, &stream_ids, &track_id, error)) {
+        if (!ParseMsidAttribute(line, &stream_id, &track_id, error)) {
           return false;
         }
         *msid_signaling |= cricket::kMsidSignalingMediaSection;
@@ -2945,8 +2922,7 @@ bool ParseContent(const std::string& message,
   // If the stream_id/track_id for all SSRCS are identical, one StreamParams
   // will be created in CreateTracksFromSsrcInfos, containing all the SSRCs from
   // the m= section.
-  CreateTracksFromSsrcInfos(ssrc_infos, stream_ids, track_id, &tracks,
-                            *msid_signaling);
+  CreateTracksFromSsrcInfos(ssrc_infos, stream_id, track_id, &tracks);
 
   // Add the ssrc group to the track.
   for (SsrcGroupVec::iterator ssrc_group = ssrc_groups.begin();
@@ -3062,7 +3038,7 @@ bool ParseSsrcAttribute(const std::string& line,
     ssrc_info->cname = value;
   } else if (attribute == kSsrcAttributeMsid) {
     // draft-alvestrand-mmusic-msid-00
-    // msid:identifier [appdata]
+    // "msid:" identifier [ " " appdata ]
     std::vector<std::string> fields;
     rtc::split(value, kSdpDelimiterSpace, &fields);
     if (fields.size() < 1 || fields.size() > 2) {

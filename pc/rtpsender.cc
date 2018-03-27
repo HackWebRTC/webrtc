@@ -79,6 +79,9 @@ AudioRtpSender::AudioRtpSender(rtc::Thread* worker_thread,
       sink_adapter_(new LocalAudioSinkAdapter()),
       attachment_id_(track ? GenerateUniqueId() : 0) {
   RTC_DCHECK(worker_thread);
+  // TODO(bugs.webrtc.org/7932): Remove once zero or multiple streams are
+  // supported.
+  RTC_DCHECK_EQ(stream_ids.size(), 1u);
   if (track_) {
     track_->RegisterObserver(this);
     track_->AddSink(sink_adapter_.get());
@@ -315,6 +318,9 @@ VideoRtpSender::VideoRtpSender(rtc::Thread* worker_thread,
                                      : VideoTrackInterface::ContentHint::kNone),
       attachment_id_(track ? GenerateUniqueId() : 0) {
   RTC_DCHECK(worker_thread);
+  // TODO(bugs.webrtc.org/7932): Remove once zero or multiple streams are
+  // supported.
+  RTC_DCHECK_EQ(stream_ids.size(), 1u);
   if (track_) {
     track_->RegisterObserver(this);
   }

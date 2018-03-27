@@ -1628,16 +1628,9 @@ TEST_P(PeerConnectionInterfaceTest, AddTrackWithoutStream) {
   EXPECT_EQ(audio_track, audio_sender->track());
   EXPECT_EQ("video_track", video_sender->id());
   EXPECT_EQ(video_track, video_sender->track());
-  if (sdp_semantics_ == SdpSemantics::kPlanB) {
-    // If the ID is truly a random GUID, it should be infinitely unlikely they
-    // will be the same.
-    EXPECT_NE(video_sender->stream_ids(), audio_sender->stream_ids());
-  } else {
-    // We allows creating tracks without stream ids under Unified Plan
-    // semantics.
-    EXPECT_EQ(0u, video_sender->stream_ids().size());
-    EXPECT_EQ(0u, audio_sender->stream_ids().size());
-  }
+  // If the ID is truly a random GUID, it should be infinitely unlikely they
+  // will be the same.
+  EXPECT_NE(video_sender->stream_ids(), audio_sender->stream_ids());
 }
 
 // Test that we can call GetStats() after AddTrack but before connecting

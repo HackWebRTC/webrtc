@@ -115,8 +115,8 @@ TEST_F(PeerConnectionRtpCallbacksTest, AddTrackWithoutStreamFiresOnAddTrack) {
                                    static_cast<webrtc::RTCError*>(nullptr)));
 
   ASSERT_EQ(callee->observer()->add_track_events_.size(), 1u);
-  // Since we are not supporting the no stream case with Plan B, there should be
-  // a generated stream, even though we didn't set one with AddTrack.
+  // TODO(hbos): When "no stream" is handled correctly we would expect
+  // |add_track_events_[0].streams| to be empty. https://crbug.com/webrtc/7933
   auto& add_track_event = callee->observer()->add_track_events_[0];
   ASSERT_EQ(add_track_event.streams.size(), 1u);
   EXPECT_TRUE(add_track_event.streams[0]->FindAudioTrack("audio_track"));
@@ -219,54 +219,15 @@ TEST_F(PeerConnectionRtpCallbacksTest,
             callee->observer()->remove_track_events_);
 }
 
-// Tests the edge case that if a stream ID changes for a given track that both
-// OnRemoveTrack and OnAddTrack is fired.
-TEST_F(PeerConnectionRtpCallbacksTest,
-       RemoteStreamIdChangesFiresOnRemoveAndOnAddTrack) {
-  auto caller = CreatePeerConnection();
-  auto callee = CreatePeerConnection();
-
-  const char kStreamId1[] = "stream1";
-  const char kStreamId2[] = "stream2";
-  caller->AddTrack(caller->CreateAudioTrack("audio_track1"), {kStreamId1});
-  ASSERT_TRUE(
-      callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal(),
-                                   static_cast<webrtc::RTCError*>(nullptr)));
-  EXPECT_EQ(callee->observer()->add_track_events_.size(), 1u);
-
-  // Change the stream ID of the sender in the session description.
-  auto offer = caller->CreateOfferAndSetAsLocal();
-  auto audio_desc = offer->description()->GetContentDescriptionByName("audio");
-  ASSERT_EQ(audio_desc->mutable_streams().size(), 1u);
-  audio_desc->mutable_streams()[0].set_stream_ids({kStreamId2});
-  ASSERT_TRUE(
-      callee->SetRemoteDescription(CloneSessionDescription(offer.get()),
-                                   static_cast<webrtc::RTCError*>(nullptr)));
-
-  ASSERT_EQ(callee->observer()->add_track_events_.size(), 2u);
-  EXPECT_EQ(callee->observer()->add_track_events_[1].streams[0]->id(),
-            kStreamId2);
-  ASSERT_EQ(callee->observer()->remove_track_events_.size(), 1u);
-  EXPECT_EQ(callee->observer()->remove_track_events_[0]->streams()[0]->id(),
-            kStreamId1);
-}
-
 // Tests that setting a remote description with sending transceivers will fire
 // the OnTrack callback for each transceiver and setting a remote description
-// with receive only transceivers will not call OnTrack. One transceiver is
-// created without any stream_ids, while the other is created with multiple
-// stream_ids.
+// with receive only transceivers will not call OnTrack.
 TEST_F(PeerConnectionRtpCallbacksTest, UnifiedPlanAddTransceiverCallsOnTrack) {
-  const std::string kStreamId1 = "video_stream1";
-  const std::string kStreamId2 = "video_stream2";
   auto caller = CreatePeerConnectionWithUnifiedPlan();
   auto callee = CreatePeerConnectionWithUnifiedPlan();
 
   auto audio_transceiver = caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO);
-  RtpTransceiverInit video_transceiver_init;
-  video_transceiver_init.stream_ids = {kStreamId1, kStreamId2};
-  auto video_transceiver =
-      caller->AddTransceiver(cricket::MEDIA_TYPE_VIDEO, video_transceiver_init);
+  auto video_transceiver = caller->AddTransceiver(cricket::MEDIA_TYPE_VIDEO);
 
   ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
 
@@ -276,14 +237,6 @@ TEST_F(PeerConnectionRtpCallbacksTest, UnifiedPlanAddTransceiverCallsOnTrack) {
             callee->pc()->GetTransceivers()[0]->mid());
   EXPECT_EQ(video_transceiver->mid(),
             callee->pc()->GetTransceivers()[1]->mid());
-  std::vector<rtc::scoped_refptr<MediaStreamInterface>> audio_streams =
-      callee->pc()->GetTransceivers()[0]->receiver()->streams();
-  std::vector<rtc::scoped_refptr<MediaStreamInterface>> video_streams =
-      callee->pc()->GetTransceivers()[1]->receiver()->streams();
-  ASSERT_EQ(0u, audio_streams.size());
-  ASSERT_EQ(2u, video_streams.size());
-  EXPECT_EQ(kStreamId1, video_streams[0]->id());
-  EXPECT_EQ(kStreamId2, video_streams[1]->id());
 }
 
 // Test that doing additional offer/answer exchanges with no changes to tracks
@@ -382,8 +335,8 @@ TEST_F(PeerConnectionRtpObserverTest, AddSenderWithoutStreamAddsReceiver) {
   EXPECT_EQ(callee->pc()->GetReceivers().size(), 1u);
   auto receiver_added = callee->pc()->GetReceivers()[0];
   EXPECT_EQ("audio_track", receiver_added->track()->id());
-  // Since we are not supporting the no stream case with Plan B, there should be
-  // a generated stream, even though we didn't set one with AddTrack.
+  // TODO(hbos): When "no stream" is handled correctly we would expect
+  // |receiver_added->streams()| to be empty. https://crbug.com/webrtc/7933
   EXPECT_EQ(receiver_added->streams().size(), 1u);
   EXPECT_TRUE(receiver_added->streams()[0]->FindAudioTrack("audio_track"));
 }
@@ -552,38 +505,6 @@ TEST_F(PeerConnectionRtpObserverTest,
   EXPECT_TRUE_WAIT(srd2_callback_called, kDefaultTimeout);
 }
 
-// Tests that with Unified Plan if the the stream id changes for a track when
-// when setting a new remote description, that the media stream is updated
-// appropriately for the receiver.
-TEST_F(PeerConnectionRtpObserverTest, RemoteStreamIdChangesUpdatesReceiver) {
-  auto caller = CreatePeerConnectionWithUnifiedPlan();
-  auto callee = CreatePeerConnectionWithUnifiedPlan();
-
-  const char kStreamId1[] = "stream1";
-  const char kStreamId2[] = "stream2";
-  caller->AddTrack(caller->CreateAudioTrack("audio_track1"), {kStreamId1});
-  ASSERT_TRUE(
-      callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal(),
-                                   static_cast<webrtc::RTCError*>(nullptr)));
-  EXPECT_EQ(callee->observer()->add_track_events_.size(), 1u);
-
-  // Change the stream id of the sender in the session description.
-  auto offer = caller->CreateOfferAndSetAsLocal();
-  auto contents = offer->description()->contents();
-  ASSERT_EQ(contents.size(), 1u);
-  ASSERT_EQ(contents[0].media_description()->mutable_streams().size(), 1u);
-  contents[0].media_description()->mutable_streams()[0].set_stream_ids(
-      {kStreamId2});
-
-  // Set the remote description and verify that the stream was updated properly.
-  ASSERT_TRUE(
-      callee->SetRemoteDescription(CloneSessionDescription(offer.get()),
-                                   static_cast<webrtc::RTCError*>(nullptr)));
-  auto receivers = callee->pc()->GetReceivers();
-  ASSERT_EQ(receivers.size(), 1u);
-  ASSERT_EQ(receivers[0]->streams().size(), 1u);
-  EXPECT_EQ(receivers[0]->streams()[0]->id(), kStreamId2);
-}
 // Tests for the legacy SetRemoteDescription() function signature.
 class PeerConnectionRtpLegacyObserverTest : public PeerConnectionRtpTest {};
 
@@ -1145,39 +1066,6 @@ TEST_F(PeerConnectionMsidSignalingTest, PlanBOfferToUnifiedPlanAnswer) {
   auto* answer = caller->pc()->remote_description();
   EXPECT_EQ(cricket::kMsidSignalingSsrcAttribute,
             answer->description()->msid_signaling());
-}
-
-// This tests that a Plan B endpoint appropriately sets the remote description
-// from a Unified Plan offer. When the Unified Plan offer contains a=msid lines
-// that signal no stream ids or multiple stream ids we expect that the Plan B
-// endpoint always has exactly one media stream per track.
-TEST_F(PeerConnectionMsidSignalingTest, UnifiedPlanToPlanBAnswer) {
-  const std::string kStreamId1 = "audio_stream_1";
-  const std::string kStreamId2 = "audio_stream_2";
-
-  auto caller = CreatePeerConnectionWithUnifiedPlan();
-  caller->AddAudioTrack("caller_audio", {kStreamId1, kStreamId2});
-  caller->AddVideoTrack("caller_video", {});
-  auto callee = CreatePeerConnectionWithPlanB();
-  callee->AddAudioTrack("callee_audio");
-  caller->AddVideoTrack("callee_video");
-
-  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
-
-  // Offer should have had both a=msid and a=ssrc MSID lines.
-  auto* offer = callee->pc()->remote_description();
-  EXPECT_EQ((cricket::kMsidSignalingMediaSection |
-             cricket::kMsidSignalingSsrcAttribute),
-            offer->description()->msid_signaling());
-
-  // Callee should always have 1 stream for all of it's receivers.
-  const auto& track_events = callee->observer()->add_track_events_;
-  ASSERT_EQ(2u, track_events.size());
-  ASSERT_EQ(1u, track_events[0].streams.size());
-  EXPECT_EQ(kStreamId1, track_events[0].streams[0]->id());
-  ASSERT_EQ(1u, track_events[1].streams.size());
-  // This autogenerated a stream id for the empty one signalled.
-  EXPECT_FALSE(track_events[0].streams[0]->id().empty());
 }
 
 TEST_F(PeerConnectionMsidSignalingTest, PureUnifiedPlanToUs) {
