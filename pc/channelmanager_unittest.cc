@@ -195,11 +195,14 @@ class ChannelManagerTestWithRtpTransport
     RTPTransportType type = GetParam();
     switch (type) {
       case RTPTransportType::kRtp:
-        return CreatePlainRtpTransport();
+        return rtc::MakeUnique<webrtc::RtpTransport>(
+            /*rtcp_mux_required=*/true);
       case RTPTransportType::kSrtp:
-        return CreateSrtpTransport();
+        return rtc::MakeUnique<webrtc::SrtpTransport>(
+            /*rtcp_mux_required=*/true);
       case RTPTransportType::kDtlsSrtp:
-        return CreateDtlsSrtpTransport();
+        return rtc::MakeUnique<webrtc::DtlsSrtpTransport>(
+            /*rtcp_mux_required=*/true);
     }
     return nullptr;
   }
@@ -223,29 +226,6 @@ class ChannelManagerTestWithRtpTransport
     cm_->DestroyVoiceChannel(voice_channel);
     cm_->DestroyRtpDataChannel(rtp_data_channel);
     cm_->Terminate();
-  }
-
- private:
-  std::unique_ptr<webrtc::RtpTransportInternal> CreatePlainRtpTransport() {
-    return rtc::MakeUnique<webrtc::RtpTransport>(/*rtcp_mux_required=*/true);
-  }
-
-  std::unique_ptr<webrtc::RtpTransportInternal> CreateSrtpTransport() {
-    auto rtp_transport =
-        rtc::MakeUnique<webrtc::RtpTransport>(/*rtcp_mux_required=*/true);
-    auto srtp_transport =
-        rtc::MakeUnique<webrtc::SrtpTransport>(std::move(rtp_transport));
-    return srtp_transport;
-  }
-
-  std::unique_ptr<webrtc::RtpTransportInternal> CreateDtlsSrtpTransport() {
-    auto rtp_transport =
-        rtc::MakeUnique<webrtc::RtpTransport>(/*rtcp_mux_required=*/true);
-    auto srtp_transport =
-        rtc::MakeUnique<webrtc::SrtpTransport>(std::move(rtp_transport));
-    auto dtls_srtp_transport_ =
-        rtc::MakeUnique<webrtc::DtlsSrtpTransport>(std::move(srtp_transport));
-    return dtls_srtp_transport_;
   }
 };
 

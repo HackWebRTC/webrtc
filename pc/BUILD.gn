@@ -30,8 +30,6 @@ rtc_static_library("rtc_pc_base") {
   defines = []
   sources = [
     "audiomonitor.h",
-    "bundlefilter.cc",
-    "bundlefilter.h",
     "channel.cc",
     "channel.h",
     "channelmanager.cc",
@@ -80,10 +78,13 @@ rtc_static_library("rtc_pc_base") {
     "../api:optional",
     "../api:ortc_api",
     "../api:video_frame_api",
+    "../call:rtp_interfaces",
+    "../call:rtp_receiver",
     "../common_video:common_video",
     "../media:rtc_data",
     "../media:rtc_h264_profile_id",
     "../media:rtc_media_base",
+    "../modules/rtp_rtcp:rtp_rtcp_format",
     "../p2p:rtc_p2p",
     "../rtc_base:checks",
     "../rtc_base:rtc_base",
@@ -274,7 +275,6 @@ if (rtc_include_tests) {
     testonly = true
 
     sources = [
-      "bundlefilter_unittest.cc",
       "channel_unittest.cc",
       "channelmanager_unittest.cc",
       "currentspeakermonitor_unittest.cc",
@@ -314,9 +314,11 @@ if (rtc_include_tests) {
       "../api:array_view",
       "../api:fakemetricsobserver",
       "../api:libjingle_peerconnection_api",
+      "../call:rtp_interfaces",
       "../logging:rtc_event_log_api",
       "../media:rtc_media_base",
       "../media:rtc_media_tests_utils",
+      "../modules/rtp_rtcp:rtp_rtcp_format",
       "../p2p:p2p_test_utils",
       "../p2p:rtc_p2p",
       "../rtc_base:checks",

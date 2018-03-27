@@ -507,7 +507,6 @@ void ChannelManager::DestroyRtpDataChannel(RtpDataChannel* data_channel) {
   if (it == data_channels_.end()) {
     return;
   }
-
   data_channels_.erase(it);
 }
 
