@@ -129,9 +129,24 @@ void AAudioPlayer::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
       audio_device_buffer_, audio_parameters.sample_rate(), capacity));
 }
 
-int AAudioPlayer::SpeakerVolumeIsAvailable(bool* available) {
-  *available = false;
-  return 0;
+bool AAudioPlayer::SpeakerVolumeIsAvailable() {
+  return false;
+}
+
+int AAudioPlayer::SetSpeakerVolume(uint32_t volume) {
+  return -1;
+}
+
+rtc::Optional<uint32_t> AAudioPlayer::SpeakerVolume() const {
+  return rtc::nullopt;
+}
+
+rtc::Optional<uint32_t> AAudioPlayer::MaxSpeakerVolume() const {
+  return rtc::nullopt;
+}
+
+rtc::Optional<uint32_t> AAudioPlayer::MinSpeakerVolume() const {
+  return rtc::nullopt;
 }
 
 void AAudioPlayer::OnErrorCallback(aaudio_result_t error) {

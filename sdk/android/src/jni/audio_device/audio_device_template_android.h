@@ -349,9 +349,7 @@ class AudioDeviceTemplateAndroid : public AudioDeviceModule {
   int32_t SpeakerVolumeIsAvailable(bool* available) override {
     RTC_LOG(INFO) << __FUNCTION__;
     CHECKinitialized_();
-    if (output_->SpeakerVolumeIsAvailable(available) == -1) {
-      return -1;
-    }
+    *available = output_->SpeakerVolumeIsAvailable();
     RTC_LOG(INFO) << "output: " << *available;
     return 0;
   }
@@ -362,31 +360,34 @@ class AudioDeviceTemplateAndroid : public AudioDeviceModule {
     return output_->SetSpeakerVolume(volume);
   }
 
-  int32_t SpeakerVolume(uint32_t* volume) const override {
+  int32_t SpeakerVolume(uint32_t* output_volume) const override {
     RTC_LOG(INFO) << __FUNCTION__;
     CHECKinitialized_();
-    if (output_->SpeakerVolume(volume) == -1) {
+    rtc::Optional<uint32_t> volume = output_->SpeakerVolume();
+    if (!volume)
       return -1;
-    }
+    *output_volume = *volume;
     RTC_LOG(INFO) << "output: " << *volume;
     return 0;
   }
 
-  int32_t MaxSpeakerVolume(uint32_t* maxVolume) const override {
+  int32_t MaxSpeakerVolume(uint32_t* output_max_volume) const override {
     RTC_LOG(INFO) << __FUNCTION__;
     CHECKinitialized_();
-    if (output_->MaxSpeakerVolume(maxVolume) == -1) {
+    rtc::Optional<uint32_t> max_volume = output_->MaxSpeakerVolume();
+    if (!max_volume)
       return -1;
-    }
+    *output_max_volume = *max_volume;
     return 0;
   }
 
-  int32_t MinSpeakerVolume(uint32_t* minVolume) const override {
+  int32_t MinSpeakerVolume(uint32_t* output_min_volume) const override {
     RTC_LOG(INFO) << __FUNCTION__;
     CHECKinitialized_();
-    if (output_->MinSpeakerVolume(minVolume) == -1) {
+    rtc::Optional<uint32_t> min_volume = output_->MinSpeakerVolume();
+    if (!min_volume)
       return -1;
-    }
+    *output_min_volume = *min_volume;
     return 0;
   }
 
@@ -513,12 +514,8 @@ class AudioDeviceTemplateAndroid : public AudioDeviceModule {
   int32_t StereoRecordingIsAvailable(bool* available) const override {
     RTC_LOG(INFO) << __FUNCTION__;
     CHECKinitialized_();
-    bool isAvailable = false;
-    if (audio_manager_.IsStereoRecordSupported() == -1) {
-      return -1;
-    }
-    *available = isAvailable;
-    RTC_LOG(INFO) << "output: " << isAvailable;
+    *available = audio_manager_.IsStereoRecordSupported();
+    RTC_LOG(INFO) << "output: " << *available;
     return 0;
   }
 

@@ -14,6 +14,7 @@
 #include <jni.h>
 #include <memory>
 
+#include "api/optional.h"
 #include "modules/audio_device/audio_device_buffer.h"
 #include "modules/audio_device/include/audio_device_defines.h"
 #include "rtc_base/thread_checker.h"
@@ -52,11 +53,11 @@ class AudioTrackJni {
   int32_t StopPlayout();
   bool Playing() const { return playing_; }
 
-  int SpeakerVolumeIsAvailable(bool* available);
+  bool SpeakerVolumeIsAvailable();
   int SetSpeakerVolume(uint32_t volume);
-  int SpeakerVolume(uint32_t* volume) const;
-  int MaxSpeakerVolume(uint32_t* max_volume) const;
-  int MinSpeakerVolume(uint32_t* min_volume) const;
+  rtc::Optional<uint32_t> SpeakerVolume() const;
+  rtc::Optional<uint32_t> MaxSpeakerVolume() const;
+  rtc::Optional<uint32_t> MinSpeakerVolume() const;
 
   void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer);
 

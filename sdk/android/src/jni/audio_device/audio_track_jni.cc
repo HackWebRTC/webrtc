@@ -115,9 +115,8 @@ int32_t AudioTrackJni::StopPlayout() {
   return 0;
 }
 
-int AudioTrackJni::SpeakerVolumeIsAvailable(bool* available) {
-  *available = true;
-  return 0;
+bool AudioTrackJni::SpeakerVolumeIsAvailable() {
+  return true;
 }
 
 int AudioTrackJni::SetSpeakerVolume(uint32_t volume) {
@@ -128,23 +127,22 @@ int AudioTrackJni::SetSpeakerVolume(uint32_t volume) {
              : -1;
 }
 
-int AudioTrackJni::MaxSpeakerVolume(uint32_t* max_volume) const {
+rtc::Optional<uint32_t> AudioTrackJni::MaxSpeakerVolume() const {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  *max_volume = Java_WebRtcAudioTrack_getStreamMaxVolume(env_, j_audio_track_);
+  return Java_WebRtcAudioTrack_getStreamMaxVolume(env_, j_audio_track_);
+}
+
+rtc::Optional<uint32_t> AudioTrackJni::MinSpeakerVolume() const {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return 0;
 }
 
-int AudioTrackJni::MinSpeakerVolume(uint32_t* min_volume) const {
+rtc::Optional<uint32_t> AudioTrackJni::SpeakerVolume() const {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  *min_volume = 0;
-  return 0;
-}
-
-int AudioTrackJni::SpeakerVolume(uint32_t* volume) const {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  *volume = Java_WebRtcAudioTrack_getStreamVolume(env_, j_audio_track_);
+  const uint32_t volume =
+      Java_WebRtcAudioTrack_getStreamVolume(env_, j_audio_track_);
   RTC_LOG(INFO) << "SpeakerVolume: " << volume;
-  return 0;
+  return volume;
 }
 
 // TODO(henrika): possibly add stereo support.

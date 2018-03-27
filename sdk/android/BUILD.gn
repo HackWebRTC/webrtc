@@ -198,6 +198,7 @@ rtc_source_set("audio_device_jni") {
     ":generated_audio_jni",
     ":native_api_jni",
     "../../api:array_view",
+    "../../api:optional",
     "../../modules/audio_device:audio_device",
     "../../modules/audio_device:audio_device_buffer",
     "../../modules/utility:utility",
