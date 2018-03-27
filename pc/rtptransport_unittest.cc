@@ -197,37 +197,49 @@ TEST(RtpTransportTest, SetRtcpTransportWithNetworkRouteChanged) {
   EXPECT_FALSE(observer.network_route());
 }
 
+class SignalCounter : public sigslot::has_slots<> {
+ public:
+  explicit SignalCounter(RtpTransport* transport) {
+    transport->SignalReadyToSend.connect(this, &SignalCounter::OnReadyToSend);
+  }
+  int count() const { return count_; }
+  void OnReadyToSend(bool ready) { ++count_; }
+
+ private:
+  int count_ = 0;
+};
+
 TEST(RtpTransportTest, ChangingReadyToSendStateOnlySignalsWhenChanged) {
   RtpTransport transport(kMuxEnabled);
-  TransportObserver observer(&transport);
+  SignalCounter observer(&transport);
   rtc::FakePacketTransport fake_rtp("fake_rtp");
   fake_rtp.SetWritable(true);
 
   // State changes, so we should signal.
   transport.SetRtpPacketTransport(&fake_rtp);
-  EXPECT_EQ(observer.ready_to_send_signal_count(), 1);
+  EXPECT_EQ(observer.count(), 1);
 
   // State does not change, so we should not signal.
   transport.SetRtpPacketTransport(&fake_rtp);
-  EXPECT_EQ(observer.ready_to_send_signal_count(), 1);
+  EXPECT_EQ(observer.count(), 1);
 
   // State does not change, so we should not signal.
   transport.SetRtcpMuxEnabled(true);
-  EXPECT_EQ(observer.ready_to_send_signal_count(), 1);
+  EXPECT_EQ(observer.count(), 1);
 
   // State changes, so we should signal.
   transport.SetRtcpMuxEnabled(false);
-  EXPECT_EQ(observer.ready_to_send_signal_count(), 2);
+  EXPECT_EQ(observer.count(), 2);
 }
 
 // Test that SignalPacketReceived fires with rtcp=true when a RTCP packet is
 // received.
 TEST(RtpTransportTest, SignalDemuxedRtcp) {
   RtpTransport transport(kMuxDisabled);
+  SignalPacketReceivedCounter observer(&transport);
   rtc::FakePacketTransport fake_rtp("fake_rtp");
   fake_rtp.SetDestination(&fake_rtp, true);
   transport.SetRtpPacketTransport(&fake_rtp);
-  TransportObserver observer(&transport);
 
   // An rtcp packet.
   const char data[] = {0, 73, 0, 0};
@@ -247,15 +259,11 @@ static const int kRtpLen = 12;
 // handled payload type is received.
 TEST(RtpTransportTest, SignalHandledRtpPayloadType) {
   RtpTransport transport(kMuxDisabled);
+  SignalPacketReceivedCounter observer(&transport);
   rtc::FakePacketTransport fake_rtp("fake_rtp");
   fake_rtp.SetDestination(&fake_rtp, true);
-  // Disable the encryption to allow raw RTP data.
   transport.SetRtpPacketTransport(&fake_rtp);
-  TransportObserver observer(&transport);
-  RtpDemuxerCriteria demuxer_criteria;
-  // Add a handled payload type.
-  demuxer_criteria.payload_types = {0x11};
-  transport.RegisterRtpDemuxerSink(demuxer_criteria, &observer);
+  transport.AddHandledPayloadType(0x11);
 
   // An rtp packet.
   const rtc::PacketOptions options;
@@ -264,22 +272,16 @@ TEST(RtpTransportTest, SignalHandledRtpPayloadType) {
   fake_rtp.SendPacket(rtp_data.data<char>(), kRtpLen, options, flags);
   EXPECT_EQ(1, observer.rtp_count());
   EXPECT_EQ(0, observer.rtcp_count());
-  // Remove the sink before destroying the transport.
-  transport.UnregisterRtpDemuxerSink(&observer);
 }
 
 // Test that SignalPacketReceived does not fire when a RTP packet with an
 // unhandled payload type is received.
 TEST(RtpTransportTest, DontSignalUnhandledRtpPayloadType) {
   RtpTransport transport(kMuxDisabled);
+  SignalPacketReceivedCounter observer(&transport);
   rtc::FakePacketTransport fake_rtp("fake_rtp");
   fake_rtp.SetDestination(&fake_rtp, true);
   transport.SetRtpPacketTransport(&fake_rtp);
-  TransportObserver observer(&transport);
-  RtpDemuxerCriteria demuxer_criteria;
-  // Add an unhandled payload type.
-  demuxer_criteria.payload_types = {0x12};
-  transport.RegisterRtpDemuxerSink(demuxer_criteria, &observer);
 
   const rtc::PacketOptions options;
   const int flags = 0;
@@ -287,8 +289,6 @@ TEST(RtpTransportTest, DontSignalUnhandledRtpPayloadType) {
   fake_rtp.SendPacket(rtp_data.data<char>(), kRtpLen, options, flags);
   EXPECT_EQ(0, observer.rtp_count());
   EXPECT_EQ(0, observer.rtcp_count());
-  // Remove the sink before destroying the transport.
-  transport.UnregisterRtpDemuxerSink(&observer);
 }
 
 }  // namespace webrtc

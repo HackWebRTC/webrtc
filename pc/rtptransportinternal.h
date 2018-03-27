@@ -13,11 +13,9 @@
 
 #include <string>
 
-#include "api/ortc/srtptransportinterface.h"
+#include "api/ortc/rtptransportinterface.h"
 #include "api/umametrics.h"
-#include "call/rtp_demuxer.h"
 #include "p2p/base/icetransportinternal.h"
-#include "pc/sessiondescription.h"
 #include "rtc_base/networkroute.h"
 #include "rtc_base/sigslot.h"
 
@@ -29,11 +27,11 @@ struct PacketTime;
 
 namespace webrtc {
 
-// This represents the internal interface beneath SrtpTransportInterface;
+// This represents the internal interface beneath RtpTransportInterface;
 // it is not accessible to API consumers but is accessible to internal classes
 // in order to send and receive RTP and RTCP packets belonging to a single RTP
 // session. Additional convenience and configuration methods are also provided.
-class RtpTransportInternal : public SrtpTransportInterface,
+class RtpTransportInternal : public RtpTransportInterface,
                              public sigslot::has_slots<> {
  public:
   virtual void SetRtcpMuxEnabled(bool enable) = 0;
@@ -54,11 +52,11 @@ class RtpTransportInternal : public SrtpTransportInterface,
   // than just "writable"; it means the last send didn't return ENOTCONN.
   sigslot::signal1<bool> SignalReadyToSend;
 
-  // Called whenever an RTCP packet is received. There is no equivalent signal
-  // for RTP packets because they would be forwarded to the BaseChannel through
-  // the RtpDemuxer callback.
-  sigslot::signal2<rtc::CopyOnWriteBuffer*, const rtc::PacketTime&>
-      SignalRtcpPacketReceived;
+  // TODO(zstein): Consider having two signals - RtpPacketReceived and
+  // RtcpPacketReceived.
+  // The first argument is true for RTCP packets and false for RTP packets.
+  sigslot::signal3<bool, rtc::CopyOnWriteBuffer*, const rtc::PacketTime&>
+      SignalPacketReceived;
 
   // Called whenever the network route of the P2P layer transport changes.
   // The argument is an optional network route.
@@ -82,22 +80,12 @@ class RtpTransportInternal : public SrtpTransportInterface,
                               const rtc::PacketOptions& options,
                               int flags) = 0;
 
-  // This method updates the RTP header extension map so that the RTP transport
-  // can parse the received packets and identify the MID. This is called by the
-  // BaseChannel when setting the content description.
-  //
-  // Note: This doesn't take the BUNDLE case in account meaning the RTP header
-  // extension maps are not merged when BUNDLE is enabled. This is fine because
-  // the ID for MID should be consistent among all the RTP transports.
-  virtual void UpdateRtpHeaderExtensionMap(
-      const cricket::RtpHeaderExtensions& header_extensions) = 0;
+  virtual bool HandlesPayloadType(int payload_type) const = 0;
+
+  virtual void AddHandledPayloadType(int payload_type) = 0;
 
   virtual void SetMetricsObserver(
       rtc::scoped_refptr<MetricsObserverInterface> metrics_observer) = 0;
-  virtual bool RegisterRtpDemuxerSink(const RtpDemuxerCriteria& criteria,
-                                      RtpPacketSinkInterface* sink) = 0;
-
-  virtual bool UnregisterRtpDemuxerSink(RtpPacketSinkInterface* sink) = 0;
 };
 
 }  // namespace webrtc

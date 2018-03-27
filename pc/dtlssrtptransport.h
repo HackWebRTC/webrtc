@@ -16,17 +16,20 @@
 #include <vector>
 
 #include "p2p/base/dtlstransportinternal.h"
+#include "pc/rtptransportinternaladapter.h"
 #include "pc/srtptransport.h"
 #include "rtc_base/buffer.h"
 
 namespace webrtc {
 
-// The subclass of SrtpTransport is used for DTLS-SRTP. When the DTLS handshake
-// is finished, it extracts the keying materials from DtlsTransport and
-// configures the SrtpSessions in the base class.
-class DtlsSrtpTransport : public SrtpTransport {
+// This class is intended to be used as an RtpTransport and it wraps both an
+// SrtpTransport and DtlsTransports(RTP/RTCP). When the DTLS handshake is
+// finished, it extracts the keying materials from DtlsTransport and sets them
+// to SrtpTransport.
+class DtlsSrtpTransport : public RtpTransportInternalAdapter {
  public:
-  explicit DtlsSrtpTransport(bool rtcp_mux_enabled);
+  explicit DtlsSrtpTransport(
+      std::unique_ptr<webrtc::SrtpTransport> srtp_transport);
 
   // Set P2P layer RTP/RTCP DtlsTransports. When using RTCP-muxing,
   // |rtcp_dtls_transport| is null.
@@ -41,6 +44,15 @@ class DtlsSrtpTransport : public SrtpTransport {
 
   void UpdateRecvEncryptedHeaderExtensionIds(
       const std::vector<int>& recv_extension_ids);
+
+  bool IsActive() { return srtp_transport_->IsActive(); }
+
+  // Cache RTP Absoulute SendTime extension header ID. This is only used when
+  // external authentication is enabled.
+  void CacheRtpAbsSendTimeHeaderExtension(int rtp_abs_sendtime_extn_id) {
+    srtp_transport_->CacheRtpAbsSendTimeHeaderExtension(
+        rtp_abs_sendtime_extn_id);
+  }
 
   // TODO(zhihuang): Remove this when we remove RtpTransportAdapter.
   RtpTransportAdapter* GetInternal() override { return nullptr; }
@@ -71,11 +83,16 @@ class DtlsSrtpTransport : public SrtpTransport {
 
   void OnDtlsState(cricket::DtlsTransportInternal* dtls_transport,
                    cricket::DtlsTransportState state);
-
-  // Override the RtpTransport::OnWritableState.
-  void OnWritableState(rtc::PacketTransportInternal* packet_transport) override;
+  void OnWritableState(bool writable);
+  void OnSentPacket(const rtc::SentPacket& sent_packet);
+  void OnPacketReceived(bool rtcp,
+                        rtc::CopyOnWriteBuffer* packet,
+                        const rtc::PacketTime& packet_time);
+  void OnReadyToSend(bool ready);
+  void OnNetworkRouteChanged(rtc::Optional<rtc::NetworkRoute> network_route);
 
   bool writable_ = false;
+  std::unique_ptr<SrtpTransport> srtp_transport_;
   // Owned by the TransportController.
   cricket::DtlsTransportInternal* rtp_dtls_transport_ = nullptr;
   cricket::DtlsTransportInternal* rtcp_dtls_transport_ = nullptr;

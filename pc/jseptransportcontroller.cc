@@ -457,12 +457,15 @@ JsepTransportController::CreateDtlsSrtpTransport(
     cricket::DtlsTransportInternal* rtp_dtls_transport,
     cricket::DtlsTransportInternal* rtcp_dtls_transport) {
   RTC_DCHECK(network_thread_->IsCurrent());
-
-  auto dtls_srtp_transport = rtc::MakeUnique<webrtc::DtlsSrtpTransport>(
-      rtcp_dtls_transport == nullptr);
+  bool rtcp_mux_enabled = rtcp_dtls_transport == nullptr;
+  auto srtp_transport =
+      rtc::MakeUnique<webrtc::SrtpTransport>(rtcp_mux_enabled);
   if (config_.enable_external_auth) {
-    dtls_srtp_transport->EnableExternalAuth();
+    srtp_transport->EnableExternalAuth();
   }
+
+  auto dtls_srtp_transport =
+      rtc::MakeUnique<webrtc::DtlsSrtpTransport>(std::move(srtp_transport));
 
   dtls_srtp_transport->SetDtlsTransports(rtp_dtls_transport,
                                          rtcp_dtls_transport);

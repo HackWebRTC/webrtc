@@ -17,19 +17,20 @@
 #include <vector>
 
 #include "p2p/base/icetransportinternal.h"
-#include "pc/rtptransport.h"
+#include "pc/rtptransportinternaladapter.h"
 #include "pc/srtpfilter.h"
 #include "pc/srtpsession.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {
 
-// This subclass of the RtpTransport is used for SRTP which is reponsible for
-// protecting/unprotecting the packets. It provides interfaces to set the crypto
-// parameters for the SrtpSession underneath.
-class SrtpTransport : public RtpTransport {
+// This class will eventually be a wrapper around RtpTransportInternal
+// that protects and unprotects sent and received RTP packets.
+class SrtpTransport : public RtpTransportInternalAdapter {
  public:
   explicit SrtpTransport(bool rtcp_mux_enabled);
+
+  explicit SrtpTransport(std::unique_ptr<RtpTransportInternal> rtp_transport);
 
   bool SendRtpPacket(rtc::CopyOnWriteBuffer* packet,
                      const rtc::PacketOptions& options,
@@ -38,16 +39,6 @@ class SrtpTransport : public RtpTransport {
   bool SendRtcpPacket(rtc::CopyOnWriteBuffer* packet,
                       const rtc::PacketOptions& options,
                       int flags) override;
-
-  // SrtpTransportInterface override.
-  // TODO(zhihuang): Implement these methods and replace the RtpTransportAdapter
-  // object.
-  RTCError SetSrtpSendKey(const cricket::CryptoParams& params) override {
-    return RTCError::OK();
-  }
-  RTCError SetSrtpReceiveKey(const cricket::CryptoParams& params) override {
-    return RTCError::OK();
-  }
 
   // The transport becomes active if the send_session_ and recv_session_ are
   // created.
@@ -114,12 +105,22 @@ class SrtpTransport : public RtpTransport {
   void ConnectToRtpTransport();
   void CreateSrtpSessions();
 
-  void OnRtpPacketReceived(rtc::CopyOnWriteBuffer* packet,
-                           const rtc::PacketTime& packet_time) override;
-  void OnRtcpPacketReceived(rtc::CopyOnWriteBuffer* packet,
-                            const rtc::PacketTime& packet_time) override;
-  void OnNetworkRouteChanged(
-      rtc::Optional<rtc::NetworkRoute> network_route) override;
+  bool SendPacket(bool rtcp,
+                  rtc::CopyOnWriteBuffer* packet,
+                  const rtc::PacketOptions& options,
+                  int flags);
+
+  void OnPacketReceived(bool rtcp,
+                        rtc::CopyOnWriteBuffer* packet,
+                        const rtc::PacketTime& packet_time);
+  void OnReadyToSend(bool ready) { SignalReadyToSend(ready); }
+  void OnNetworkRouteChanged(rtc::Optional<rtc::NetworkRoute> network_route);
+
+  void OnWritableState(bool writable) { SignalWritableState(writable); }
+
+  void OnSentPacket(const rtc::SentPacket& sent_packet) {
+    SignalSentPacket(sent_packet);
+  }
 
   bool ProtectRtp(void* data, int in_len, int max_len, int* out_len);
 
@@ -138,6 +139,7 @@ class SrtpTransport : public RtpTransport {
   bool UnprotectRtcp(void* data, int in_len, int* out_len);
 
   const std::string content_name_;
+  std::unique_ptr<RtpTransportInternal> rtp_transport_;
 
   std::unique_ptr<cricket::SrtpSession> send_session_;
   std::unique_ptr<cricket::SrtpSession> recv_session_;
