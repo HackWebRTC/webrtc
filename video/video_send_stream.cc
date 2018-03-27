@@ -721,7 +721,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
                                              &encoder_feedback_,
                                              bandwidth_observer_,
                                              transport,
-                                             call_stats_->rtcp_rtt_stats(),
+                                             call_stats,
                                              flexfec_sender_.get(),
                                              stats_proxy_,
                                              send_delay_stats,

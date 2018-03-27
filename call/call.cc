@@ -420,7 +420,7 @@ Call::Call(const Call::Config& config,
     : clock_(Clock::GetRealTimeClock()),
       num_cpu_cores_(CpuInfo::DetectNumberOfCores()),
       module_process_thread_(ProcessThread::Create("ModuleProcessThread")),
-      call_stats_(new CallStats(clock_)),
+      call_stats_(new CallStats(clock_, module_process_thread_.get())),
       bitrate_allocator_(new BitrateAllocator(this)),
       config_(config),
       audio_network_state_(kNetworkDown),
@@ -592,8 +592,7 @@ webrtc::AudioSendStream* Call::CreateAudioSendStream(
   AudioSendStream* send_stream = new AudioSendStream(
       config, config_.audio_state, &worker_queue_, module_process_thread_.get(),
       transport_send_.get(), bitrate_allocator_.get(), event_log_,
-      call_stats_->rtcp_rtt_stats(), suspended_rtp_state,
-      &sent_rtp_audio_timer_ms_);
+      call_stats_.get(), suspended_rtp_state, &sent_rtp_audio_timer_ms_);
   {
     WriteLockScoped write_lock(*send_crit_);
     RTC_DCHECK(audio_send_ssrcs_.find(config.rtp.ssrc) ==
@@ -872,7 +871,7 @@ FlexfecReceiveStream* Call::CreateFlexfecReceiveStream(
     // this locked scope.
     receive_stream = new FlexfecReceiveStreamImpl(
         &video_receiver_controller_, config, recovered_packet_receiver,
-        call_stats_->rtcp_rtt_stats(), module_process_thread_.get());
+        call_stats_.get(), module_process_thread_.get());
 
     RTC_DCHECK(receive_rtp_config_.find(config.remote_ssrc) ==
                receive_rtp_config_.end());
@@ -933,7 +932,7 @@ Call::Stats Call::GetStats() const {
         aggregate_network_up_ ? transport_send_->GetPacerQueuingDelayMs() : 0;
   }
 
-  stats.rtt_ms = call_stats_->rtcp_rtt_stats()->LastProcessedRtt();
+  stats.rtt_ms = call_stats_->LastProcessedRtt();
   {
     rtc::CritScope cs(&bitrate_crit_);
     stats.max_padding_bitrate_bps = configured_max_padding_bitrate_bps_;
