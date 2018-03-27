@@ -29,11 +29,18 @@ if (rtc_include_tests) {
   rtc_source_set("network_control_test") {
     testonly = true
     sources = [
+      "test/mock_network_control.h",
+      "test/network_control_tester.cc",
+      "test/network_control_tester.h",
       "test/network_ostream_operators.cc",
       "test/network_ostream_operators.h",
     ]
     deps = [
       ":network_control",
+      "../../../api:optional",
+      "../../../rtc_base:checks",
+      "../../../rtc_base:rtc_base_approved",
+      "../../../test:test_support",
     ]
   }
   rtc_source_set("network_control_unittests") {
