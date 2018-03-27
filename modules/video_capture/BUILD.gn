@@ -166,7 +166,7 @@ if (!build_with_chromium) {
         "windows/video_capture_mf.h",
       ]
 
-      libs = [ "Strmiids.lib" ]
+      libs = [ "strmiids.lib" ]
 
       if (build_with_mozilla) {
         sources += [
