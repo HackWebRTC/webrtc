@@ -336,7 +336,7 @@ void VideoProcessor::FrameEncoded(
   if (!first_encoded_frame_[simulcast_svc_idx] &&
       config_.NumberOfSpatialLayers() > 1) {
     for (size_t i = 0; i < simulcast_svc_idx; ++i) {
-      RTC_CHECK_EQ(last_encoded_frame_num_[i], frame_number);
+      RTC_CHECK_LE(last_encoded_frame_num_[i], frame_number);
     }
     for (size_t i = simulcast_svc_idx + 1; i < num_simulcast_or_spatial_layers_;
          ++i) {
@@ -371,8 +371,8 @@ void VideoProcessor::FrameEncoded(
   frame_stat->max_nalu_size_bytes = GetMaxNaluSizeBytes(encoded_image, config_);
   frame_stat->qp = encoded_image.qp_;
 
+  const webrtc::EncodedImage* encoded_image_for_decode = &encoded_image;
   if (config_.decode) {
-    const webrtc::EncodedImage* encoded_image_for_decode = &encoded_image;
     if (config_.NumberOfSpatialLayers() > 1) {
       encoded_image_for_decode = MergeAndStoreEncodedImageForSvcDecoding(
           encoded_image, codec_type, frame_number, simulcast_svc_idx);
@@ -386,9 +386,9 @@ void VideoProcessor::FrameEncoded(
   }
 
   if (encoded_frame_writers_) {
-    RTC_CHECK(
-        encoded_frame_writers_->at(simulcast_svc_idx)
-            ->WriteFrame(encoded_image, config_.codec_settings.codecType));
+    RTC_CHECK(encoded_frame_writers_->at(simulcast_svc_idx)
+                  ->WriteFrame(*encoded_image_for_decode,
+                               config_.codec_settings.codecType));
   }
 }
 
@@ -466,11 +466,17 @@ VideoProcessor::MergeAndStoreEncodedImageForSvcDecoding(
   EncodedImage base_image;
   RTC_CHECK_EQ(base_image._length, 0);
 
-  // Each SVC layer is decoded with dedicated decoder. Add data of base layers
-  // to current coded frame buffer.
+  // Each SVC layer is decoded with dedicated decoder. Find the nearest
+  // non-dropped base frame and merge it and current frame into superframe.
   if (simulcast_svc_idx > 0) {
-    base_image = merged_encoded_frames_.at(simulcast_svc_idx - 1);
-    RTC_CHECK_EQ(base_image._timeStamp, encoded_image._timeStamp);
+    for (int base_idx = static_cast<int>(simulcast_svc_idx) - 1; base_idx >= 0;
+         --base_idx) {
+      EncodedImage lower_layer = merged_encoded_frames_.at(base_idx);
+      if (lower_layer._timeStamp == encoded_image._timeStamp) {
+        base_image = lower_layer;
+        break;
+      }
+    }
   }
   const size_t payload_size_bytes = base_image._length + encoded_image._length;
   const size_t buffer_size_bytes =
