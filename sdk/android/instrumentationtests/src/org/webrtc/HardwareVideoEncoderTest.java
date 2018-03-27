@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
 import org.chromium.base.test.params.BaseJUnit4RunnerDelegate;
 import org.chromium.base.test.params.ParameterAnnotations.ClassParameter;
 import org.chromium.base.test.params.ParameterAnnotations.UseRunnerDelegate;
@@ -291,7 +292,7 @@ public class HardwareVideoEncoderTest {
         eglContext, ENABLE_INTEL_VP8_ENCODER, ENABLE_H264_HIGH_PROFILE);
   }
 
-  private VideoEncoder createEncoder() {
+  private @Nullable VideoEncoder createEncoder() {
     VideoEncoderFactory factory =
         createEncoderFactory(useEglContext ? eglBase.getEglBaseContext() : null);
     VideoCodecInfo[] supportedCodecs = factory.getSupportedCodecs();

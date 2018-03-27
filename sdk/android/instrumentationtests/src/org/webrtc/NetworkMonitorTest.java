@@ -35,6 +35,7 @@ import android.support.test.annotation.UiThreadTest;
 import android.support.test.filters.MediumTest;
 import android.support.test.filters.SmallTest;
 import android.support.test.rule.UiThreadTestRule;
+import javax.annotation.Nullable;
 import org.chromium.base.test.BaseJUnit4ClassRunner;
 import org.junit.Before;
 import org.junit.Rule;
@@ -147,7 +148,7 @@ public class NetworkMonitorTest {
   }
 
   private static final Object lock = new Object();
-  private static Handler uiThreadHandler = null;
+  private static @Nullable Handler uiThreadHandler = null;
 
   private NetworkMonitorAutoDetect receiver;
   private MockConnectivityManagerDelegate connectivityDelegate;
@@ -155,10 +156,11 @@ public class NetworkMonitorTest {
 
   private static Handler getUiThreadHandler() {
     synchronized (lock) {
-      if (uiThreadHandler == null) {
-        uiThreadHandler = new Handler(Looper.getMainLooper());
+      Handler handler = uiThreadHandler;
+      if (handler != null) {
+        return handler;
       }
-      return uiThreadHandler;
+      return uiThreadHandler = new Handler(Looper.getMainLooper());
     }
   }
 

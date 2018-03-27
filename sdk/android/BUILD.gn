@@ -845,16 +845,9 @@ rtc_android_library("libjingle_peerconnection_java") {
     ]
   }
 
-  javac_args = [
-    "-Xep:ParameterNotNullable:ERROR",
-    "-Xep:FieldMissingNullable:ERROR",
-    "-Xep:ReturnMissingNullable:ERROR",
-  ]
-
   deps = [
     "../../modules/audio_device:audio_device_java",
     "../../rtc_base:base_java",
-    "//third_party/jsr-305:jsr_305_javalib",
   ]
 }
 

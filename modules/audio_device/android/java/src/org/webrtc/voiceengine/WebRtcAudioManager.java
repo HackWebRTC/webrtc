@@ -20,6 +20,7 @@ import android.media.AudioTrack;
 import android.os.Build;
 import java.util.Timer;
 import java.util.TimerTask;
+import javax.annotation.Nullable;
 import org.webrtc.ContextUtils;
 import org.webrtc.Logging;
 
@@ -102,7 +103,7 @@ public class WebRtcAudioManager {
     private static final int TIMER_PERIOD_IN_SECONDS = 30;
 
     private final AudioManager audioManager;
-    private Timer timer;
+    private @Nullable Timer timer;
 
     public VolumeLogger(AudioManager audioManager) {
       this.audioManager = audioManager;

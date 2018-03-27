@@ -20,6 +20,7 @@ import android.media.AudioTrack;
 import android.os.Process;
 import java.lang.Thread;
 import java.nio.ByteBuffer;
+import javax.annotation.Nullable;
 import org.webrtc.ContextUtils;
 import org.webrtc.Logging;
 import org.webrtc.ThreadUtils;
@@ -79,8 +80,8 @@ public class WebRtcAudioTrack {
 
   private ByteBuffer byteBuffer;
 
-  private AudioTrack audioTrack = null;
-  private AudioTrackThread audioThread = null;
+  private @Nullable AudioTrack audioTrack = null;
+  private @Nullable AudioTrackThread audioThread = null;
 
   // Samples to be played are replaced by zeros if |speakerMute| is set to true.
   // Can be used to ensure that the speaker is fully muted.
@@ -107,8 +108,8 @@ public class WebRtcAudioTrack {
     void onWebRtcAudioTrackError(String errorMessage);
   }
 
-  private static WebRtcAudioTrackErrorCallback errorCallbackOld = null;
-  private static ErrorCallback errorCallback = null;
+  private static @Nullable WebRtcAudioTrackErrorCallback errorCallbackOld = null;
+  private static @Nullable ErrorCallback errorCallback = null;
 
   @Deprecated
   public static void setErrorCallback(WebRtcAudioTrackErrorCallback errorCallback) {

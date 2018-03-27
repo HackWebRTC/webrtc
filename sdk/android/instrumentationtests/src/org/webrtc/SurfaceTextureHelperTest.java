@@ -21,6 +21,7 @@ import android.support.test.filters.MediumTest;
 import android.support.test.filters.SmallTest;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CountDownLatch;
+import javax.annotation.Nullable;
 import org.chromium.base.test.BaseJUnit4ClassRunner;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,7 +38,7 @@ public class SurfaceTextureHelperTest {
     public float[] transformMatrix;
     private boolean hasNewFrame = false;
     // Thread where frames are expected to be received on.
-    private final Thread expectedThread;
+    private final @Nullable Thread expectedThread;
 
     MockTextureListener() {
       this.expectedThread = null;

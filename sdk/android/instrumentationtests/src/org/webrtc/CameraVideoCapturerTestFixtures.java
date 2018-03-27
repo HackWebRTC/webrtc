@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import javax.annotation.Nullable;
 import org.chromium.base.test.BaseJUnit4ClassRunner;
 import org.junit.runner.RunWith;
 import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
@@ -103,7 +104,7 @@ class CameraVideoCapturerTestFixtures {
 
   static private class FakeCapturerObserver implements CameraVideoCapturer.CapturerObserver {
     private int framesCaptured = 0;
-    private VideoFrame videoFrame;
+    private @Nullable VideoFrame videoFrame;
     final private Object frameLock = new Object();
     final private Object capturerStartLock = new Object();
     private Boolean capturerStartResult;
@@ -290,7 +291,7 @@ class CameraVideoCapturerTestFixtures {
       return cameraEnumerator.createCapturer(name, eventsHandler);
     }
 
-    public String getNameOfFrontFacingDevice() {
+    public @Nullable String getNameOfFrontFacingDevice() {
       for (String deviceName : cameraEnumerator.getDeviceNames()) {
         if (cameraEnumerator.isFrontFacing(deviceName)) {
           return deviceName;
@@ -300,7 +301,7 @@ class CameraVideoCapturerTestFixtures {
       return null;
     }
 
-    public String getNameOfBackFacingDevice() {
+    public @Nullable String getNameOfBackFacingDevice() {
       for (String deviceName : cameraEnumerator.getDeviceNames()) {
         if (cameraEnumerator.isBackFacing(deviceName)) {
           return deviceName;

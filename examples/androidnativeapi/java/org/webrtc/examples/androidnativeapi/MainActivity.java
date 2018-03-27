@@ -13,16 +13,17 @@ package org.webrtc.examples.androidnativeapi;
 import android.app.Activity;
 import android.os.Bundle;
 import android.widget.Button;
+import javax.annotation.Nullable;
 import org.webrtc.ContextUtils;
 import org.webrtc.EglBase;
 import org.webrtc.GlRectDrawer;
 import org.webrtc.SurfaceViewRenderer;
 
 public class MainActivity extends Activity {
-  private CallClient callClient;
-  private EglBase eglBase;
-  private SurfaceViewRenderer localRenderer;
-  private SurfaceViewRenderer remoteRenderer;
+  private @Nullable CallClient callClient;
+  private @Nullable EglBase eglBase;
+  private @Nullable SurfaceViewRenderer localRenderer;
+  private @Nullable SurfaceViewRenderer remoteRenderer;
 
   @Override
   protected void onCreate(Bundle savedInstance) {

@@ -12,6 +12,7 @@ package org.webrtc;
 
 import android.content.Context;
 import java.util.List;
+import javax.annotation.Nullable;
 
 public class UnityUtility {
   private static final String VIDEO_CAPTURER_THREAD_NAME = "VideoCapturerThread";
@@ -26,7 +27,7 @@ public class UnityUtility {
     return Camera2Enumerator.isSupported(ContextUtils.getApplicationContext());
   }
 
-  private static VideoCapturer createCameraCapturer(CameraEnumerator enumerator) {
+  private static @Nullable VideoCapturer createCameraCapturer(CameraEnumerator enumerator) {
     final String[] deviceNames = enumerator.getDeviceNames();
 
     for (String deviceName : deviceNames) {

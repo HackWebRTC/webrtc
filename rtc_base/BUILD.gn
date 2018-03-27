@@ -1383,18 +1383,5 @@ if (is_android) {
       "java/src/org/webrtc/Size.java",
       "java/src/org/webrtc/ThreadUtils.java",
     ]
-
-    # TODO(crbug.com/824679): Find out why this fails in Chromium
-    if (!build_with_chromium) {
-      javac_args = [
-        "-Xep:ParameterNotNullable:ERROR",
-        "-Xep:FieldMissingNullable:ERROR",
-        "-Xep:ReturnMissingNullable:ERROR",
-      ]
-    }
-
-    deps = [
-      "//third_party/jsr-305:jsr_305_javalib",
-    ]
   }
 }

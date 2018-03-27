@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
 import org.chromium.base.test.params.BaseJUnit4RunnerDelegate;
 import org.chromium.base.test.params.ParameterAnnotations.ClassParameter;
 import org.chromium.base.test.params.ParameterAnnotations.UseRunnerDelegate;
@@ -118,7 +119,7 @@ public final class HardwareVideoDecoderTest {
     return new HardwareVideoDecoderFactory(eglContext);
   }
 
-  private VideoDecoder createDecoder() {
+  private @Nullable VideoDecoder createDecoder() {
     VideoDecoderFactory factory =
         createDecoderFactory(useEglContext ? eglBase.getEglBaseContext() : null);
     return factory.createDecoder(codecType);

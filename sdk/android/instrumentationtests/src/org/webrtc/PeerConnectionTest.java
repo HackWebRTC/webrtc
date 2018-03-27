@@ -34,6 +34,7 @@ import java.util.Queue;
 import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
 import org.chromium.base.test.BaseJUnit4ClassRunner;
 import org.chromium.base.test.util.DisabledTest;
 import org.junit.Before;
@@ -48,7 +49,7 @@ import org.webrtc.PeerConnection.SignalingState;
 @RunWith(BaseJUnit4ClassRunner.class)
 public class PeerConnectionTest {
   private static final int TIMEOUT_SECONDS = 20;
-  private TreeSet<String> threadsBeforeTest = null;
+  private @Nullable TreeSet<String> threadsBeforeTest = null;
 
   @Before
   public void setUp() {
@@ -530,8 +531,8 @@ public class PeerConnectionTest {
 
   private static class SdpObserverLatch implements SdpObserver {
     private boolean success = false;
-    private SessionDescription sdp = null;
-    private String error = null;
+    private @Nullable SessionDescription sdp = null;
+    private @Nullable String error = null;
     private CountDownLatch latch = new CountDownLatch(1);
 
     public SdpObserverLatch() {}
@@ -572,11 +573,11 @@ public class PeerConnectionTest {
       return success;
     }
 
-    public SessionDescription getSdp() {
+    public @Nullable SessionDescription getSdp() {
       return sdp;
     }
 
-    public String getError() {
+    public @Nullable String getError() {
       return error;
     }
   }
