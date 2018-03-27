@@ -22,7 +22,6 @@
 #include "modules/desktop_capture/desktop_region.h"
 #include "modules/desktop_capture/mac/desktop_configuration.h"
 #include "modules/desktop_capture/mac/desktop_configuration_monitor.h"
-#include "modules/desktop_capture/mac/scoped_pixel_buffer_object.h"
 #include "modules/desktop_capture/screen_capture_frame_queue.h"
 #include "modules/desktop_capture/screen_capturer_helper.h"
 #include "modules/desktop_capture/shared_desktop_frame.h"
@@ -69,8 +68,6 @@ class ScreenCapturerMac final : public DesktopCapturer {
   const bool detect_updated_region_;
 
   Callback* callback_ = nullptr;
-
-  ScopedPixelBufferObject pixel_buffer_object_;
 
   // Queue of the frames buffers.
   ScreenCaptureFrameQueue<SharedDesktopFrame> queue_;

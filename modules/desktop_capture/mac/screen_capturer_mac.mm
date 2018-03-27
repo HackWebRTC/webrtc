@@ -8,21 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <stddef.h>
-
-#include <set>
 #include <utility>
-
-#include <ApplicationServices/ApplicationServices.h>
-#include <Cocoa/Cocoa.h>
-#include <dlfcn.h>
 
 #include "modules/desktop_capture/mac/screen_capturer_mac.h"
 
 #include "rtc_base/checks.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/macutils.h"
 #include "rtc_base/timeutils.h"
 #include "sdk/objc/Framework/Classes/Common/scoped_cftyperef.h"
 
@@ -217,26 +209,6 @@ CGImageRef CreateExcludedWindowRegionImage(const DesktopRect& pixel_bounds,
   return CGWindowListCreateImageFromArray(window_bounds, window_list, kCGWindowImageDefault);
 }
 
-// DesktopFrame wrapper that flips wrapped frame upside down by inverting
-// stride.
-class InvertedDesktopFrame : public DesktopFrame {
- public:
-  InvertedDesktopFrame(std::unique_ptr<DesktopFrame> frame)
-      : DesktopFrame(frame->size(),
-                     -frame->stride(),
-                     frame->data() + (frame->size().height() - 1) * frame->stride(),
-                     frame->shared_memory()) {
-    original_frame_ = std::move(frame);
-    MoveFrameInfoFrom(original_frame_.get());
-  }
-  ~InvertedDesktopFrame() override {}
-
- private:
-  std::unique_ptr<DesktopFrame> original_frame_;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(InvertedDesktopFrame);
-};
-
 }  // namespace
 
 ScreenCapturerMac::ScreenCapturerMac(
@@ -272,8 +244,8 @@ void ScreenCapturerMac::ReleaseBuffers() {
 }
 
 void ScreenCapturerMac::Start(Callback* callback) {
-  assert(!callback_);
-  assert(callback);
+  RTC_DCHECK(!callback_);
+  RTC_DCHECK(callback);
 
   callback_ = callback;
 }
@@ -343,7 +315,7 @@ void ScreenCapturerMac::SetExcludedWindow(WindowId window) {
 }
 
 bool ScreenCapturerMac::GetSourceList(SourceList* screens) {
-  assert(screens->size() == 0);
+  RTC_DCHECK(screens->size() == 0);
 
   for (MacDisplayConfigurations::iterator it = desktop_config_.displays.begin();
        it != desktop_config_.displays.end();
@@ -452,7 +424,7 @@ bool ScreenCapturerMac::CgBlit(const DesktopFrame& frame, const DesktopRegion& r
     // Request access to the raw pixel data via the image's DataProvider.
     CGDataProviderRef provider = CGImageGetDataProvider(image);
     CFDataRef data = CGDataProviderCopyData(provider);
-    assert(data);
+    RTC_DCHECK(data);
 
     const uint8_t* display_base_address = CFDataGetBytePtr(data);
     int src_bytes_per_row = CGImageGetBytesPerRow(image);
@@ -478,7 +450,7 @@ bool ScreenCapturerMac::CgBlit(const DesktopFrame& frame, const DesktopRegion& r
     if (excluded_image) {
       CGDataProviderRef provider = CGImageGetDataProvider(excluded_image);
       CFDataRef excluded_image_data = CGDataProviderCopyData(provider);
-      assert(excluded_image_data);
+      RTC_DCHECK(excluded_image_data);
       display_base_address = CFDataGetBytePtr(excluded_image_data);
       src_bytes_per_row = CGImageGetBytesPerRow(excluded_image);
 

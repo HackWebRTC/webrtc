@@ -194,7 +194,6 @@ if (is_mac) {
     libs = [
       "AppKit.framework",
       "IOKit.framework",
-      "OpenGL.framework",
     ]
   }
 }
@@ -241,8 +240,6 @@ rtc_static_library("desktop_capture_generic") {
     "mac/desktop_configuration_monitor.h",
     "mac/full_screen_chrome_window_detector.cc",
     "mac/full_screen_chrome_window_detector.h",
-    "mac/scoped_pixel_buffer_object.cc",
-    "mac/scoped_pixel_buffer_object.h",
     "mac/window_list_utils.cc",
     "mac/window_list_utils.h",
     "mouse_cursor.cc",
