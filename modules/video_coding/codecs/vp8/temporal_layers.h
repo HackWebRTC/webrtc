@@ -99,12 +99,10 @@ class TemporalLayers {
 
   static std::unique_ptr<TemporalLayers> CreateTemporalLayers(
       const VideoCodec& codec,
-      size_t spatial_id,
-      uint8_t initial_tl0_pic_idx);
+      size_t spatial_id);
   static std::unique_ptr<TemporalLayersChecker> CreateTemporalLayersChecker(
       const VideoCodec& codec,
-      size_t spatial_id,
-      uint8_t initial_tl0_pic_idx);
+      size_t spatial_id);
 
   // Factory for TemporalLayer strategy. Default behavior is a fixed pattern
   // of temporal layers. See default_temporal_layers.cc
@@ -129,10 +127,6 @@ class TemporalLayers {
       uint32_t timestamp) = 0;
 
   virtual void FrameEncoded(unsigned int size, int qp) = 0;
-
-  // Returns the current tl0_pic_idx, so it can be reused in future
-  // instantiations.
-  virtual uint8_t Tl0PicIdx() const = 0;
 };
 
 // TODO(webrtc:9012): Remove TemporalLayersFactory type and field once all
@@ -149,7 +143,7 @@ class TemporalLayersFactory {
 // each UpdateLayersConfig() of a corresponding TemporalLayers class.
 class TemporalLayersChecker {
  public:
-  TemporalLayersChecker(int num_temporal_layers, uint8_t initial_tl0_pic_idx);
+  explicit TemporalLayersChecker(int num_temporal_layers);
   virtual ~TemporalLayersChecker() {}
 
   virtual bool CheckTemporalConfig(

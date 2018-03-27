@@ -100,16 +100,10 @@ class TestVp8Impl : public VideoCodecUnitTest {
     EXPECT_EQ(0u, codec_specific_info->codecSpecific.VP8.simulcastIdx);
   }
 
-  void EncodeAndExpectFrameWith(int16_t picture_id,
-                                int tl0_pic_idx,
-                                uint8_t temporal_idx) {
+  void EncodeAndExpectFrameWith(uint8_t temporal_idx) {
     EncodedImage encoded_frame;
     CodecSpecificInfo codec_specific_info;
     EncodeAndWaitForFrame(&encoded_frame, &codec_specific_info);
-    EXPECT_EQ(picture_id % (1 << 15),
-              codec_specific_info.codecSpecific.VP8.pictureId);
-    EXPECT_EQ(tl0_pic_idx % (1 << 8),
-              codec_specific_info.codecSpecific.VP8.tl0PicIdx);
     EXPECT_EQ(temporal_idx, codec_specific_info.codecSpecific.VP8.temporalIdx);
   }
 
@@ -319,7 +313,7 @@ TEST_F(TestVp8Impl, MAYBE_DecodeWithACompleteKeyFrame) {
   EXPECT_GT(I420PSNR(input_frame_.get(), decoded_frame.get()), 36);
 }
 
-TEST_F(TestVp8Impl, EncoderWith2TemporalLayersRetainsRtpStateAfterRelease) {
+TEST_F(TestVp8Impl, EncoderWith2TemporalLayers) {
   codec_settings_.VP8()->numberOfTemporalLayers = 2;
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             encoder_->InitEncode(&codec_settings_, kNumCores, kMaxPayloadSize));
@@ -330,78 +324,16 @@ TEST_F(TestVp8Impl, EncoderWith2TemporalLayersRetainsRtpStateAfterRelease) {
   EncodeAndWaitForFrame(&encoded_frame, &codec_specific_info);
 
   EXPECT_EQ(0, codec_specific_info.codecSpecific.VP8.temporalIdx);
-  const int16_t picture_id = codec_specific_info.codecSpecific.VP8.pictureId;
-  const int tl0_pic_idx = codec_specific_info.codecSpecific.VP8.tl0PicIdx;
   // Temporal layer 1.
   input_frame_->set_timestamp(input_frame_->timestamp() + kTimestampIncrement);
 
-  EncodeAndExpectFrameWith(picture_id + 1, tl0_pic_idx + 0, 1);
+  EncodeAndExpectFrameWith(1);
   // Temporal layer 0.
   input_frame_->set_timestamp(input_frame_->timestamp() + kTimestampIncrement);
-  EncodeAndExpectFrameWith(picture_id + 2, tl0_pic_idx + 1, 0);
+  EncodeAndExpectFrameWith(0);
   // Temporal layer 1.
   input_frame_->set_timestamp(input_frame_->timestamp() + kTimestampIncrement);
-  EncodeAndExpectFrameWith(picture_id + 3, tl0_pic_idx + 1, 1);
-
-  // Reinit.
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Release());
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->InitEncode(&codec_settings_, kNumCores, kMaxPayloadSize));
-
-  // Temporal layer 0.
-  input_frame_->set_timestamp(input_frame_->timestamp() + kTimestampIncrement);
-  EncodeAndExpectFrameWith(picture_id + 4, tl0_pic_idx + 2, 0);
-  // Temporal layer 1.
-  input_frame_->set_timestamp(input_frame_->timestamp() + kTimestampIncrement);
-  EncodeAndExpectFrameWith(picture_id + 5, tl0_pic_idx + 2, 1);
-  // Temporal layer 0.
-  input_frame_->set_timestamp(input_frame_->timestamp() + kTimestampIncrement);
-  EncodeAndExpectFrameWith(picture_id + 6, tl0_pic_idx + 3, 0);
-  // Temporal layer 1.
-  input_frame_->set_timestamp(input_frame_->timestamp() + kTimestampIncrement);
-  EncodeAndExpectFrameWith(picture_id + 7, tl0_pic_idx + 3, 1);
-}
-
-TEST_F(TestVp8Impl, EncoderWith3TemporalLayersRetainsRtpStateAfterRelease) {
-  codec_settings_.VP8()->numberOfTemporalLayers = 3;
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->InitEncode(&codec_settings_, kNumCores, kMaxPayloadSize));
-
-  EncodedImage encoded_frame;
-  CodecSpecificInfo codec_specific_info;
-  EncodeAndWaitForFrame(&encoded_frame, &codec_specific_info);
-
-  // Temporal layer 0.
-  EXPECT_EQ(0, codec_specific_info.codecSpecific.VP8.temporalIdx);
-  const int16_t picture_id = codec_specific_info.codecSpecific.VP8.pictureId;
-  const int tl0_pic_idx = codec_specific_info.codecSpecific.VP8.tl0PicIdx;
-  // Temporal layer 2.
-  input_frame_->set_timestamp(input_frame_->timestamp() + kTimestampIncrement);
-  EncodeAndExpectFrameWith(picture_id + 1, tl0_pic_idx + 0, 2);
-  // Temporal layer 1.
-  input_frame_->set_timestamp(input_frame_->timestamp() + kTimestampIncrement);
-  EncodeAndExpectFrameWith(picture_id + 2, tl0_pic_idx + 0, 1);
-  // Temporal layer 2.
-  input_frame_->set_timestamp(input_frame_->timestamp() + kTimestampIncrement);
-  EncodeAndExpectFrameWith(picture_id + 3, tl0_pic_idx + 0, 2);
-
-  // Reinit.
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Release());
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->InitEncode(&codec_settings_, kNumCores, kMaxPayloadSize));
-
-  // Temporal layer 0.
-  input_frame_->set_timestamp(input_frame_->timestamp() + kTimestampIncrement);
-  EncodeAndExpectFrameWith(picture_id + 4, tl0_pic_idx + 1, 0);
-  // Temporal layer 2.
-  input_frame_->set_timestamp(input_frame_->timestamp() + kTimestampIncrement);
-  EncodeAndExpectFrameWith(picture_id + 5, tl0_pic_idx + 1, 2);
-  // Temporal layer 1.
-  input_frame_->set_timestamp(input_frame_->timestamp() + kTimestampIncrement);
-  EncodeAndExpectFrameWith(picture_id + 6, tl0_pic_idx + 1, 1);
-  // Temporal layer 2.
-  input_frame_->set_timestamp(input_frame_->timestamp() + kTimestampIncrement);
-  EncodeAndExpectFrameWith(picture_id + 7, tl0_pic_idx + 1, 2);
+  EncodeAndExpectFrameWith(1);
 }
 
 TEST_F(TestVp8Impl, ScalingDisabledIfAutomaticResizeOff) {

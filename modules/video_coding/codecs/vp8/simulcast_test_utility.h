@@ -96,7 +96,6 @@ class Vp8TestEncodedImageCallback : public EncodedImageCallback {
                encoded_image._length);
       }
     }
-    picture_id_ = codec_specific_info->codecSpecific.VP8.pictureId;
     layer_sync_[codec_specific_info->codecSpecific.VP8.simulcastIdx] =
         codec_specific_info->codecSpecific.VP8.layerSync;
     temporal_layer_[codec_specific_info->codecSpecific.VP8.simulcastIdx] =

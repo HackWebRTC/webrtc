@@ -96,8 +96,6 @@ class LibvpxVp8Encoder : public VP8Encoder {
   uint32_t rc_max_intra_target_;
   std::vector<std::unique_ptr<TemporalLayers>> temporal_layers_;
   std::vector<std::unique_ptr<TemporalLayersChecker>> temporal_layers_checkers_;
-  std::vector<uint16_t> picture_id_;
-  std::vector<uint8_t> tl0_pic_idx_;
   std::vector<bool> key_frame_request_;
   std::vector<bool> send_stream_;
   std::vector<int> cpu_speed_;

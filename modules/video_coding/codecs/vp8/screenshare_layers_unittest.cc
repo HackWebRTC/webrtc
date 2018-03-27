@@ -61,7 +61,7 @@ class ScreenshareLayerTest : public ::testing::Test {
   virtual ~ScreenshareLayerTest() {}
 
   void SetUp() override {
-    layers_.reset(new ScreenshareLayers(2, 0, &clock_));
+    layers_.reset(new ScreenshareLayers(2, &clock_));
     cfg_ = ConfigureBitrates();
   }
 
@@ -175,7 +175,7 @@ class ScreenshareLayerTest : public ::testing::Test {
 };
 
 TEST_F(ScreenshareLayerTest, 1Layer) {
-  layers_.reset(new ScreenshareLayers(1, 0, &clock_));
+  layers_.reset(new ScreenshareLayers(1, &clock_));
   ConfigureBitrates();
   // One layer screenshare should not use the frame dropper as all frames will
   // belong to the base layer.
@@ -184,13 +184,11 @@ TEST_F(ScreenshareLayerTest, 1Layer) {
   timestamp_ += kTimestampDelta5Fps;
   EXPECT_EQ(static_cast<uint8_t>(kNoTemporalIdx), vp8_info_.temporalIdx);
   EXPECT_FALSE(vp8_info_.layerSync);
-  EXPECT_EQ(kNoTl0PicIdx, vp8_info_.tl0PicIdx);
 
   flags = EncodeFrame(false);
   EXPECT_EQ(kSingleLayerFlags, flags);
   EXPECT_EQ(static_cast<uint8_t>(kNoTemporalIdx), vp8_info_.temporalIdx);
   EXPECT_FALSE(vp8_info_.layerSync);
-  EXPECT_EQ(kNoTl0PicIdx, vp8_info_.tl0PicIdx);
 }
 
 TEST_F(ScreenshareLayerTest, 2LayersPeriodicSync) {
@@ -540,7 +538,7 @@ TEST_F(ScreenshareLayerTest, UpdatesHistograms) {
 }
 
 TEST_F(ScreenshareLayerTest, AllowsUpdateConfigBeforeSetRates) {
-  layers_.reset(new ScreenshareLayers(2, 0, &clock_));
+  layers_.reset(new ScreenshareLayers(2, &clock_));
   // New layer instance, OnRatesUpdated() never called.
   // UpdateConfiguration() call should not cause crash.
   layers_->UpdateConfiguration(&cfg_);

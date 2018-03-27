@@ -29,7 +29,6 @@ class ScreenshareLayers : public TemporalLayers {
   static const int kMaxFrameIntervalMs;
 
   ScreenshareLayers(int num_temporal_layers,
-                    uint8_t initial_tl0_pic_idx,
                     Clock* clock);
   virtual ~ScreenshareLayers();
 
@@ -52,8 +51,6 @@ class ScreenshareLayers : public TemporalLayers {
 
   void FrameEncoded(unsigned int size, int qp) override;
 
-  uint8_t Tl0PicIdx() const override;
-
  private:
   enum class TemporalLayerState : int { kDrop, kTl0, kTl1, kTl1Sync };
 
@@ -64,7 +61,6 @@ class ScreenshareLayers : public TemporalLayers {
 
   int number_of_temporal_layers_;
   bool last_base_layer_sync_;
-  uint8_t tl0_pic_idx_;
   int active_layer_;
   int64_t last_timestamp_;
   int64_t last_sync_timestamp_;

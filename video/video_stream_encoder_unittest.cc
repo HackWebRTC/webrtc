@@ -563,7 +563,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
         int num_streams = std::max<int>(1, config->numberOfSimulcastStreams);
         for (int i = 0; i < num_streams; ++i) {
           allocated_temporal_layers_.emplace_back(
-              TemporalLayers::CreateTemporalLayers(*config, i, 42));
+              TemporalLayers::CreateTemporalLayers(*config, i));
         }
       }
       if (force_init_encode_failed_)

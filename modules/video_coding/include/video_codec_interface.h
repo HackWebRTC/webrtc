@@ -28,19 +28,19 @@ class RTPFragmentationHeader;  // forward declaration
 // Note: if any pointers are added to this struct, it must be fitted
 // with a copy-constructor. See below.
 struct CodecSpecificInfoVP8 {
-  // TODO(nisse): Delete, set by PayloadRouter.
+  // TODO(nisse): Used on receive side only. Move elsewhere?
   int16_t pictureId;  // Negative value to skip pictureId.
   bool nonReference;
   uint8_t simulcastIdx;
   uint8_t temporalIdx;
   bool layerSync;
-  // TODO(nisse): Delete, set by PayloadRouter.
+  // TODO(nisse): Used on receive side only. Move elsewhere?
   int tl0PicIdx;  // Negative value to skip tl0PicIdx.
   int8_t keyIdx;  // Negative value to skip keyIdx.
 };
 
 struct CodecSpecificInfoVP9 {
-  // TODO(nisse): Delete, set by PayloadRouter.
+  // TODO(nisse): Used on receive side only. Move elsewhere?
   int16_t picture_id;  // Negative value to skip pictureId.
 
   bool first_frame_in_picture;  // First frame, increment picture_id.
@@ -49,7 +49,7 @@ struct CodecSpecificInfoVP9 {
   bool flexible_mode;
   bool ss_data_available;
 
-  // TODO(nisse): Delete, set by PayloadRouter.
+  // TODO(nisse): Used on receive side only. Move elsewhere?
   int tl0_pic_idx;  // Negative value to skip tl0PicIdx.
   uint8_t temporal_idx;
   uint8_t spatial_idx;

@@ -325,7 +325,6 @@ TEST(PayloadRouterTest, InfoMappedToRtpVideoHeader_Vp8) {
   memset(&codec_info, 0, sizeof(CodecSpecificInfo));
   codec_info.codecType = kVideoCodecVP8;
   codec_info.codecSpecific.VP8.simulcastIdx = 1;
-  codec_info.codecSpecific.VP8.pictureId = -1;
   codec_info.codecSpecific.VP8.temporalIdx = kTemporalIdx;
   codec_info.codecSpecific.VP8.keyIdx = kNoKeyIdx;
   codec_info.codecSpecific.VP8.layerSync = true;

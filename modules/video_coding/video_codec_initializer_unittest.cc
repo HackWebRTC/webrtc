@@ -82,7 +82,7 @@ class VideoCodecInitializerTest : public ::testing::Test {
     if (codec_out_.codecType == VideoCodecType::kVideoCodecVP8) {
       for (int i = 0; i < codec_out_.numberOfSimulcastStreams; ++i) {
         temporal_layers_.emplace_back(
-            TemporalLayers::CreateTemporalLayers(codec_out_, i, 0));
+            TemporalLayers::CreateTemporalLayers(codec_out_, i));
       }
     }
     return true;

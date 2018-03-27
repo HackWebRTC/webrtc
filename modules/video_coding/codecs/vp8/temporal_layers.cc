@@ -49,34 +49,30 @@ bool IsConferenceModeScreenshare(const VideoCodec& codec) {
 
 std::unique_ptr<TemporalLayers> TemporalLayers::CreateTemporalLayers(
     const VideoCodec& codec,
-    size_t spatial_id,
-    uint8_t initial_tl0_pic_idx) {
+    size_t spatial_id) {
   if (IsConferenceModeScreenshare(codec) && spatial_id == 0) {
     // Conference mode temporal layering for screen content in base stream.
-    return rtc::MakeUnique<ScreenshareLayers>(2, initial_tl0_pic_idx,
-                                              Clock::GetRealTimeClock());
+    return rtc::MakeUnique<ScreenshareLayers>(2, Clock::GetRealTimeClock());
   }
 
   return rtc::MakeUnique<DefaultTemporalLayers>(
-      NumTemporalLayers(codec, spatial_id), initial_tl0_pic_idx);
+      NumTemporalLayers(codec, spatial_id));
 }
 
 std::unique_ptr<TemporalLayersChecker>
 TemporalLayers::CreateTemporalLayersChecker(const VideoCodec& codec,
-                                            size_t spatial_id,
-                                            uint8_t initial_tl0_pic_idx) {
+                                            size_t spatial_id) {
   if (IsConferenceModeScreenshare(codec) && spatial_id == 0) {
     // Conference mode temporal layering for screen content in base stream,
     // use generic checker.
-    return rtc::MakeUnique<TemporalLayersChecker>(2, initial_tl0_pic_idx);
+    return rtc::MakeUnique<TemporalLayersChecker>(2);
   }
 
   return rtc::MakeUnique<DefaultTemporalLayersChecker>(
-      NumTemporalLayers(codec, spatial_id), initial_tl0_pic_idx);
+      NumTemporalLayers(codec, spatial_id));
 }
 
-TemporalLayersChecker::TemporalLayersChecker(int num_temporal_layers,
-                                             uint8_t /*initial_tl0_pic_idx*/)
+TemporalLayersChecker::TemporalLayersChecker(int num_temporal_layers)
     : num_temporal_layers_(num_temporal_layers),
       sequence_number_(0),
       last_sync_sequence_number_(0),

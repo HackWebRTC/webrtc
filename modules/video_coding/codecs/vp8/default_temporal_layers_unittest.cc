@@ -71,8 +71,8 @@ std::vector<uint32_t> GetTemporalLayerRates(int target_bitrate_kbps,
 }  // namespace
 
 TEST(TemporalLayersTest, 2Layers) {
-  DefaultTemporalLayers tl(2, 0);
-  DefaultTemporalLayersChecker checker(2, 0);
+  DefaultTemporalLayers tl(2);
+  DefaultTemporalLayersChecker checker(2);
   Vp8EncoderConfig cfg;
   CodecSpecificInfoVP8 vp8_info;
   tl.OnRatesUpdated(GetTemporalLayerRates(500, 30, 1), 30);
@@ -119,8 +119,8 @@ TEST(TemporalLayersTest, 2Layers) {
 }
 
 TEST(TemporalLayersTest, 3Layers) {
-  DefaultTemporalLayers tl(3, 0);
-  DefaultTemporalLayersChecker checker(3, 0);
+  DefaultTemporalLayers tl(3);
+  DefaultTemporalLayersChecker checker(3);
   Vp8EncoderConfig cfg;
   CodecSpecificInfoVP8 vp8_info;
   tl.OnRatesUpdated(GetTemporalLayerRates(500, 30, 1), 30);
@@ -168,8 +168,8 @@ TEST(TemporalLayersTest, 3Layers) {
 
 TEST(TemporalLayersTest, Alternative3Layers) {
   ScopedFieldTrials field_trial("WebRTC-UseShortVP8TL3Pattern/Enabled/");
-  DefaultTemporalLayers tl(3, 0);
-  DefaultTemporalLayersChecker checker(3, 0);
+  DefaultTemporalLayers tl(3);
+  DefaultTemporalLayersChecker checker(3);
   Vp8EncoderConfig cfg;
   CodecSpecificInfoVP8 vp8_info;
   tl.OnRatesUpdated(GetTemporalLayerRates(500, 30, 1), 30);
@@ -204,8 +204,8 @@ TEST(TemporalLayersTest, Alternative3Layers) {
 }
 
 TEST(TemporalLayersTest, 4Layers) {
-  DefaultTemporalLayers tl(4, 0);
-  DefaultTemporalLayersChecker checker(4, 0);
+  DefaultTemporalLayers tl(4);
+  DefaultTemporalLayersChecker checker(4);
   Vp8EncoderConfig cfg;
   CodecSpecificInfoVP8 vp8_info;
   tl.OnRatesUpdated(GetTemporalLayerRates(500, 30, 1), 30);
@@ -251,8 +251,8 @@ TEST(TemporalLayersTest, 4Layers) {
 }
 
 TEST(TemporalLayersTest, KeyFrame) {
-  DefaultTemporalLayers tl(3, 0);
-  DefaultTemporalLayersChecker checker(3, 0);
+  DefaultTemporalLayers tl(3);
+  DefaultTemporalLayersChecker checker(3);
   Vp8EncoderConfig cfg;
   CodecSpecificInfoVP8 vp8_info;
   tl.OnRatesUpdated(GetTemporalLayerRates(500, 30, 1), 30);
@@ -366,7 +366,7 @@ INSTANTIATE_TEST_CASE_P(DefaultTemporalLayersTest,
 
 TEST_P(TemporalLayersReferenceTest, ValidFrameConfigs) {
   const int num_layers = GetParam();
-  DefaultTemporalLayers tl(num_layers, 0);
+  DefaultTemporalLayers tl(num_layers);
   Vp8EncoderConfig cfg;
   tl.OnRatesUpdated(GetTemporalLayerRates(500, 30, 1), 30);
   tl.UpdateConfiguration(&cfg);

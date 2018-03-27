@@ -38,13 +38,11 @@ constexpr int ScreenshareLayers::kMaxNumTemporalLayers;
 const int ScreenshareLayers::kMaxFrameIntervalMs = 2750;
 
 ScreenshareLayers::ScreenshareLayers(int num_temporal_layers,
-                                     uint8_t initial_tl0_pic_idx,
                                      Clock* clock)
     : clock_(clock),
       number_of_temporal_layers_(
           std::min(kMaxNumTemporalLayers, num_temporal_layers)),
       last_base_layer_sync_(false),
-      tl0_pic_idx_(initial_tl0_pic_idx),
       active_layer_(-1),
       last_timestamp_(-1),
       last_sync_timestamp_(-1),
@@ -61,10 +59,6 @@ ScreenshareLayers::ScreenshareLayers(int num_temporal_layers,
 
 ScreenshareLayers::~ScreenshareLayers() {
   UpdateHistograms();
-}
-
-uint8_t ScreenshareLayers::Tl0PicIdx() const {
-  return tl0_pic_idx_;
 }
 
 TemporalLayers::FrameConfig ScreenshareLayers::UpdateLayerConfig(
@@ -286,7 +280,6 @@ void ScreenshareLayers::PopulateCodecSpecific(
   if (number_of_temporal_layers_ == 1) {
     vp8_info->temporalIdx = kNoTemporalIdx;
     vp8_info->layerSync = false;
-    vp8_info->tl0PicIdx = kNoTl0PicIdx;
   } else {
     int64_t unwrapped_timestamp = time_wrap_handler_.Unwrap(timestamp);
     vp8_info->temporalIdx = tl_config.packetizer_temporal_idx;
@@ -301,11 +294,7 @@ void ScreenshareLayers::PopulateCodecSpecific(
       last_sync_timestamp_ = unwrapped_timestamp;
       vp8_info->layerSync = true;
     }
-    if (vp8_info->temporalIdx == 0) {
-      tl0_pic_idx_++;
-    }
     last_base_layer_sync_ = frame_is_keyframe;
-    vp8_info->tl0PicIdx = tl0_pic_idx_;
   }
 }
 

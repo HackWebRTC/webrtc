@@ -286,13 +286,11 @@ std::vector<TemporalLayers::FrameConfig> GetTemporalPattern(size_t num_layers) {
 }
 }  // namespace
 
-DefaultTemporalLayers::DefaultTemporalLayers(int number_of_temporal_layers,
-                                             uint8_t initial_tl0_pic_idx)
+DefaultTemporalLayers::DefaultTemporalLayers(int number_of_temporal_layers)
     : num_layers_(std::max(1, number_of_temporal_layers)),
       temporal_ids_(GetTemporalIds(num_layers_)),
       temporal_layer_sync_(GetTemporalLayerSync(num_layers_)),
       temporal_pattern_(GetTemporalPattern(num_layers_)),
-      tl0_pic_idx_(initial_tl0_pic_idx),
       pattern_idx_(255),
       last_base_layer_sync_(false) {
   RTC_DCHECK_EQ(temporal_pattern_.size(), temporal_layer_sync_.size());
@@ -303,10 +301,6 @@ DefaultTemporalLayers::DefaultTemporalLayers(int number_of_temporal_layers,
   // temporal_ids_ are ever longer. If this is no longer correct it needs to
   // wrap at max(temporal_ids_.size(), temporal_pattern_.size()).
   RTC_DCHECK_LE(temporal_ids_.size(), temporal_pattern_.size());
-}
-
-uint8_t DefaultTemporalLayers::Tl0PicIdx() const {
-  return tl0_pic_idx_;
 }
 
 void DefaultTemporalLayers::OnRatesUpdated(
@@ -367,7 +361,6 @@ void DefaultTemporalLayers::PopulateCodecSpecific(
   if (num_layers_ == 1) {
     vp8_info->temporalIdx = kNoTemporalIdx;
     vp8_info->layerSync = false;
-    vp8_info->tl0PicIdx = kNoTl0PicIdx;
   } else {
     vp8_info->temporalIdx = tl_config.packetizer_temporal_idx;
     vp8_info->layerSync = tl_config.layer_sync;
@@ -380,10 +373,7 @@ void DefaultTemporalLayers::PopulateCodecSpecific(
       // be a layer sync.
       vp8_info->layerSync = true;
     }
-    if (vp8_info->temporalIdx == 0)
-      tl0_pic_idx_++;
     last_base_layer_sync_ = frame_is_keyframe;
-    vp8_info->tl0PicIdx = tl0_pic_idx_;
   }
 }
 
@@ -414,9 +404,8 @@ std::vector<std::set<uint8_t>> GetTemporalDependencies(
 }
 
 DefaultTemporalLayersChecker::DefaultTemporalLayersChecker(
-    int num_temporal_layers,
-    uint8_t initial_tl0_pic_idx)
-    : TemporalLayersChecker(num_temporal_layers, initial_tl0_pic_idx),
+    int num_temporal_layers)
+    : TemporalLayersChecker(num_temporal_layers),
       num_layers_(std::max(1, num_temporal_layers)),
       temporal_ids_(GetTemporalIds(num_layers_)),
       temporal_dependencies_(GetTemporalDependencies(num_layers_)),

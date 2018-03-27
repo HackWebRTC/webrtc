@@ -28,7 +28,6 @@
 #include "rtc_base/keep_ref_until_done.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/ptr_util.h"
-#include "rtc_base/random.h"
 #include "rtc_base/timeutils.h"
 #include "rtc_base/trace_event.h"
 
@@ -83,10 +82,6 @@ VP9EncoderImpl::VP9EncoderImpl()
       spatial_layer_(new ScreenshareLayersVP9(2)) {
   memset(&codec_, 0, sizeof(codec_));
   memset(&svc_params_, 0, sizeof(vpx_svc_extra_cfg_t));
-
-  Random random(rtc::TimeMicros());
-  picture_id_ = random.Rand<uint16_t>() & 0x7FFF;
-  tl0_pic_idx_ = random.Rand<uint8_t>();
 }
 
 VP9EncoderImpl::~VP9EncoderImpl() {
@@ -637,7 +632,6 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
   }
 
   if (is_first_frame) {
-    picture_id_ = (picture_id_ + 1) & 0x7FFF;
     // TODO(asapersson): this info has to be obtained from the encoder.
     vp9_info->inter_layer_predicted = false;
     ++frames_since_kf_;
@@ -650,15 +644,6 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
 
   if (pkt.data.frame.flags & VPX_FRAME_IS_KEY) {
     frames_since_kf_ = 0;
-  }
-
-  vp9_info->picture_id = picture_id_;
-
-  if (!vp9_info->flexible_mode) {
-    if (layer_id.temporal_layer_id == 0 && layer_id.spatial_layer_id == 0) {
-      tl0_pic_idx_++;
-    }
-    vp9_info->tl0_pic_idx = tl0_pic_idx_;
   }
 
   // Always populate this, so that the packetizer can properly set the marker

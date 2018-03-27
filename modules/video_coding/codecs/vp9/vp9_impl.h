@@ -127,10 +127,6 @@ class VP9EncoderImpl : public VP9Encoder {
   uint8_t num_ref_pics_[kMaxVp9NumberOfSpatialLayers];
   uint8_t p_diff_[kMaxVp9NumberOfSpatialLayers][kMaxVp9RefPics];
   std::unique_ptr<ScreenshareLayersVP9> spatial_layer_;
-
-  // RTP state.
-  uint16_t picture_id_;
-  uint8_t tl0_pic_idx_;  // Only used in non-flexible mode.
 };
 
 class VP9DecoderImpl : public VP9Decoder {

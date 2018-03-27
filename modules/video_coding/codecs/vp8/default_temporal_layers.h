@@ -23,8 +23,7 @@ namespace webrtc {
 
 class DefaultTemporalLayers : public TemporalLayers {
  public:
-  DefaultTemporalLayers(int number_of_temporal_layers,
-                        uint8_t initial_tl0_pic_idx);
+  explicit DefaultTemporalLayers(int number_of_temporal_layers);
   virtual ~DefaultTemporalLayers() {}
 
   // Returns the recommended VP8 encode flags needed. May refresh the decoder
@@ -44,15 +43,12 @@ class DefaultTemporalLayers : public TemporalLayers {
 
   void FrameEncoded(unsigned int size, int qp) override {}
 
-  uint8_t Tl0PicIdx() const override;
-
  private:
   const size_t num_layers_;
   const std::vector<unsigned int> temporal_ids_;
   const std::vector<bool> temporal_layer_sync_;
   const std::vector<TemporalLayers::FrameConfig> temporal_pattern_;
 
-  uint8_t tl0_pic_idx_;
   uint8_t pattern_idx_;
   bool last_base_layer_sync_;
   // Updated cumulative bitrates, per temporal layer.
@@ -61,8 +57,7 @@ class DefaultTemporalLayers : public TemporalLayers {
 
 class DefaultTemporalLayersChecker : public TemporalLayersChecker {
  public:
-  DefaultTemporalLayersChecker(int number_of_temporal_layers,
-                               uint8_t initial_tl0_pic_idx);
+  explicit DefaultTemporalLayersChecker(int number_of_temporal_layers);
   bool CheckTemporalConfig(
       bool frame_is_keyframe,
       const TemporalLayers::FrameConfig& frame_config) override;
