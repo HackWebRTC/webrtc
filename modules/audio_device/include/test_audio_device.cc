@@ -160,7 +160,7 @@ class TestAudioDeviceModuleImpl
       if (capturing_) {
         // Capture 10ms of audio. 2 bytes per sample.
         const bool keep_capturing = capturer_->Capture(&recording_buffer_);
-        uint32_t new_mic_level;
+        uint32_t new_mic_level = 0;
         if (recording_buffer_.size() > 0) {
           audio_callback_->RecordedDataIsAvailable(
               recording_buffer_.data(), recording_buffer_.size(), 2,
@@ -173,9 +173,9 @@ class TestAudioDeviceModuleImpl
         }
       }
       if (rendering_) {
-        size_t samples_out;
-        int64_t elapsed_time_ms;
-        int64_t ntp_time_ms;
+        size_t samples_out = 0;
+        int64_t elapsed_time_ms = 0;
+        int64_t ntp_time_ms = 0;
         const int sampling_frequency = renderer_->SamplingFrequency();
         audio_callback_->NeedMorePlayData(
             SamplesPerFrame(sampling_frequency), 2, renderer_->NumChannels(),
