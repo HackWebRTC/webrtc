@@ -22,6 +22,7 @@ namespace webrtc {
 class VCMCodecTimer {
  public:
   VCMCodecTimer();
+  ~VCMCodecTimer();
 
   // Add a new decode time to the filter.
   void AddTiming(int64_t new_decode_time_ms, int64_t now_ms);

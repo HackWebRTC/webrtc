@@ -80,6 +80,10 @@ class FrameBuffer {
 
  private:
   struct FrameInfo {
+    FrameInfo();
+    FrameInfo(FrameInfo&&);
+    ~FrameInfo();
+
     // The maximum number of frames that can depend on this frame.
     static constexpr size_t kMaxNumDependentFrames = 8;
 

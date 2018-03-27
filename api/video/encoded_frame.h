@@ -70,7 +70,7 @@ class EncodedFrame : public webrtc::VCMEncodedFrame {
   // This information is currently needed by the timing calculation class.
   // TODO(philipel): Remove this function when a new timing class has
   //                 been implemented.
-  virtual bool delayed_by_retransmission() const { return 0; }
+  virtual bool delayed_by_retransmission() const;
 
   size_t size() const { return _length; }
 

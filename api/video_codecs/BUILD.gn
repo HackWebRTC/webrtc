@@ -15,7 +15,9 @@ if (is_android) {
 rtc_source_set("video_codecs_api") {
   visibility = [ "*" ]
   sources = [
+    "sdp_video_format.cc",
     "sdp_video_format.h",
+    "video_decoder.cc",
     "video_decoder.h",
     "video_decoder_factory.h",
     "video_encoder.cc",

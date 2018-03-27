@@ -43,7 +43,7 @@ void VideoStreamDecoderImpl::OnFrame(
           : frame_(std::move(frame)),
             video_stream_decoder_(video_stream_decoder) {}
 
-      bool Run() {
+      bool Run() override {
         video_stream_decoder_->OnFrame(std::move(frame_));
         return true;
       }

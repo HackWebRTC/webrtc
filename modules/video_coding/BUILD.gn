@@ -168,6 +168,7 @@ rtc_source_set("video_codec_interface") {
     "include/video_codec_interface.h",
     "include/video_coding_defines.h",
     "include/video_error_codes.h",
+    "video_coding_defines.cc",
   ]
   deps = [
     "..:module_api",

@@ -602,5 +602,9 @@ void FrameBuffer::ClearFramesAndHistory() {
   num_frames_buffered_ = 0;
 }
 
+FrameBuffer::FrameInfo::FrameInfo() = default;
+FrameBuffer::FrameInfo::FrameInfo(FrameInfo&&) = default;
+FrameBuffer::FrameInfo::~FrameInfo() = default;
+
 }  // namespace video_coding
 }  // namespace webrtc
