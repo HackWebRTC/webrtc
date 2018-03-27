@@ -1028,7 +1028,9 @@ RTCError PeerConnection::ValidateConfiguration(
                     "ice_regather_interval_range specified but continual "
                     "gathering policy is GATHER_ONCE");
   }
-  return RTCError::OK();
+  auto result =
+      cricket::P2PTransportChannel::ValidateIceConfig(ParseIceConfig(config));
+  return result;
 }
 
 rtc::scoped_refptr<StreamCollectionInterface>

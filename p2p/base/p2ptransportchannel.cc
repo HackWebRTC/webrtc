@@ -91,9 +91,22 @@ int CompareCandidatePairsByNetworkPreference(
   return a_and_b_equal;
 }
 
+uint32_t GetWeakPingIntervalInFieldTrial() {
+  uint32_t weak_ping_interval = ::strtoul(
+      webrtc::field_trial::FindFullName("WebRTC-StunInterPacketDelay").c_str(),
+      nullptr, 10);
+  if (weak_ping_interval) {
+    return static_cast<int>(weak_ping_interval);
+  }
+  return cricket::WEAK_PING_INTERVAL;
+}
+
 }  // unnamed namespace
 
 namespace cricket {
+
+using webrtc::RTCErrorType;
+using webrtc::RTCError;
 
 bool IceCredentialsChanged(const std::string& old_ufrag,
                            const std::string& old_pwd,
@@ -130,12 +143,10 @@ P2PTransportChannel::P2PTransportChannel(const std::string& transport_name,
               true /* presume_writable_when_fully_relayed */,
               REGATHER_ON_FAILED_NETWORKS_INTERVAL,
               RECEIVING_SWITCHING_DELAY) {
-  uint32_t weak_ping_interval = ::strtoul(
-      webrtc::field_trial::FindFullName("WebRTC-StunInterPacketDelay").c_str(),
-      nullptr, 10);
-  if (weak_ping_interval) {
-    weak_ping_interval_ = static_cast<int>(weak_ping_interval);
-  }
+  weak_ping_interval_ = GetWeakPingIntervalInFieldTrial();
+  // Validate IceConfig even for mostly built-in constant default values in case
+  // we change them.
+  RTC_DCHECK(ValidateIceConfig(config_).ok());
   ice_event_log_.set_event_log(event_log);
 }
 
@@ -562,10 +573,62 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
     RTC_LOG(LS_INFO) << "Set STUN keepalive interval to "
                      << config.stun_keepalive_interval_or_default();
   }
+
+  RTC_DCHECK(ValidateIceConfig(config_).ok());
 }
 
 const IceConfig& P2PTransportChannel::config() const {
   return config_;
+}
+
+RTCError P2PTransportChannel::ValidateIceConfig(const IceConfig& config) {
+  if (config.regather_all_networks_interval_range &&
+      config.continual_gathering_policy == GATHER_ONCE) {
+    return RTCError(RTCErrorType::INVALID_PARAMETER,
+                    "regather_all_networks_interval_range specified but "
+                    "continual gathering policy is GATHER_ONCE");
+  }
+
+  if (config.ice_check_interval_strong_connectivity_or_default() <
+      config.ice_check_interval_weak_connectivity.value_or(
+          GetWeakPingIntervalInFieldTrial())) {
+    return RTCError(RTCErrorType::INVALID_PARAMETER,
+                    "Ping interval of candidate pairs is shorter when ICE is "
+                    "strongly connected than that when ICE is weakly "
+                    "connected");
+  }
+
+  if (config.receiving_timeout_or_default() <
+      std::max(config.ice_check_interval_strong_connectivity_or_default(),
+               config.ice_check_min_interval_or_default())) {
+    return RTCError(
+        RTCErrorType::INVALID_PARAMETER,
+        "Receiving timeout is shorter than the minimal ping interval.");
+  }
+
+  if (config.backup_connection_ping_interval_or_default() <
+      config.ice_check_interval_strong_connectivity_or_default()) {
+    return RTCError(RTCErrorType::INVALID_PARAMETER,
+                    "Ping interval of backup candidate pairs is shorter than "
+                    "that of general candidate pairs when ICE is strongly "
+                    "connected");
+  }
+
+  if (config.stable_writable_connection_ping_interval_or_default() <
+      config.ice_check_interval_strong_connectivity_or_default()) {
+    return RTCError(RTCErrorType::INVALID_PARAMETER,
+                    "Ping interval of stable and writable candidate pairs is "
+                    "shorter than that of general candidate pairs when ICE is "
+                    "strongly connected");
+  }
+
+  if (config.ice_unwritable_timeout_or_default() > CONNECTION_WRITE_TIMEOUT) {
+    return RTCError(RTCErrorType::INVALID_PARAMETER,
+                    "The timeout period for the writability state to become "
+                    "UNRELIABLE is longer than that to become TIMEOUT.");
+  }
+
+  return RTCError::OK();
 }
 
 int P2PTransportChannel::check_receiving_interval() const {

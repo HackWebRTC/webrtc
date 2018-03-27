@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "api/candidate.h"
+#include "api/rtcerror.h"
 #include "logging/rtc_event_log/events/rtc_event_ice_candidate_pair_config.h"
 #include "logging/rtc_event_log/icelogger.h"
 #include "p2p/base/candidatepairinterface.h"
@@ -106,6 +107,7 @@ class P2PTransportChannel : public IceTransportInternal,
   // TODO(deadbeef): Use rtc::Optional instead of negative values.
   void SetIceConfig(const IceConfig& config) override;
   const IceConfig& config() const;
+  static webrtc::RTCError ValidateIceConfig(const IceConfig& config);
   void SetMetricsObserver(webrtc::MetricsObserverInterface* observer) override;
 
   // From TransportChannel:

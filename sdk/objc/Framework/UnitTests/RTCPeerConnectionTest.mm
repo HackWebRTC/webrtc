@@ -40,8 +40,8 @@
   config.tcpCandidatePolicy = RTCTcpCandidatePolicyDisabled;
   config.candidateNetworkPolicy = RTCCandidateNetworkPolicyLowCost;
   const int maxPackets = 60;
-  const int timeout = 1;
-  const int interval = 2;
+  const int timeout = 1500;
+  const int interval = 2000;
   config.audioJitterBufferMaxPackets = maxPackets;
   config.audioJitterBufferFastAccelerate = YES;
   config.iceConnectionReceivingTimeout = timeout;

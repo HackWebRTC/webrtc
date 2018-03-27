@@ -147,6 +147,9 @@ const int64_t kForgetPacketAfter = 30000;  // 30 seconds
 
 namespace cricket {
 
+using webrtc::RTCErrorType;
+using webrtc::RTCError;
+
 // TODO(ronghuawu): Use "local", "srflx", "prflx" and "relay". But this requires
 // the signaling part be updated correspondingly as well.
 const char LOCAL_PORT_TYPE[] = "local";
