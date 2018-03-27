@@ -141,7 +141,8 @@ rtc_static_library("audio_processing") {
     "../../system_wrappers:cpu_features_api",
     "../../system_wrappers:field_trial_api",
     "../../system_wrappers:metrics_api",
-    "agc2",
+    "agc2:adaptive_digital",
+    "agc2:fixed_digital",
     "vad",
   ]
 

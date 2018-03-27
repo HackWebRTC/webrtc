@@ -51,7 +51,7 @@ rtc_static_library("audio_mixer_impl") {
     "../audio_processing",
     "../audio_processing:apm_logging",
     "../audio_processing:audio_frame_view",
-    "../audio_processing/agc2:agc2",
+    "../audio_processing/agc2:fixed_digital",
   ]
 }
 
