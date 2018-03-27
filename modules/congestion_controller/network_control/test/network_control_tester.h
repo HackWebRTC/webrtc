@@ -91,7 +91,7 @@ class FeedbackBasedNetworkControllerTester {
   TimeDelta process_interval_;
   Timestamp current_time_;
   TimeDelta accumulated_delay_;
-  std::deque<PacketResult> received_packets_;
+  std::deque<PacketResult> outstanding_packets_;
 };
 }  // namespace test
 }  // namespace webrtc

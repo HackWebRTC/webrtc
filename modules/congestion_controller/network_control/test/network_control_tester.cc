@@ -95,28 +95,43 @@ void FeedbackBasedNetworkControllerTester::RunSimulation(
   Timestamp start_time = current_time_;
   Timestamp last_process_time = current_time_;
   while (current_time_ - start_time < duration) {
-    SentPacket sent_packet =
-        next_packet(cacher_.GetState(), current_time_, packet_interval);
-    controller_->OnSentPacket(sent_packet);
-    received_packets_.push_back(SimulateSend(
-        sent_packet, packet_interval, propagation_delay, actual_bandwidth));
-    if (received_packets_.size() >= 2 &&
+    bool send_packet = true;
+    NetworkControlState control_state = cacher_.GetState();
+
+    if (control_state.congestion_window &&
+        control_state.congestion_window->enabled) {
+      DataSize data_in_flight = DataSize::Zero();
+      for (PacketResult& packet : outstanding_packets_)
+        data_in_flight += packet.sent_packet->size;
+      if (data_in_flight > control_state.congestion_window->data_window)
+        send_packet = false;
+    }
+
+    if (send_packet) {
+      SentPacket sent_packet =
+          next_packet(cacher_.GetState(), current_time_, packet_interval);
+      controller_->OnSentPacket(sent_packet);
+      outstanding_packets_.push_back(SimulateSend(
+          sent_packet, packet_interval, propagation_delay, actual_bandwidth));
+    }
+
+    if (outstanding_packets_.size() >= 2 &&
         current_time_ >=
-            received_packets_[1].receive_time + propagation_delay) {
+            outstanding_packets_[1].receive_time + propagation_delay) {
       TransportPacketsFeedback feedback;
       feedback.prior_in_flight = DataSize::Zero();
-      for (PacketResult& packet : received_packets_)
+      for (PacketResult& packet : outstanding_packets_)
         feedback.prior_in_flight += packet.sent_packet->size;
-      while (!received_packets_.empty() &&
-             current_time_ >=
-                 received_packets_.front().receive_time + propagation_delay) {
-        feedback.packet_feedbacks.push_back(received_packets_.front());
-        received_packets_.pop_front();
+      while (!outstanding_packets_.empty() &&
+             current_time_ >= outstanding_packets_.front().receive_time +
+                                  propagation_delay) {
+        feedback.packet_feedbacks.push_back(outstanding_packets_.front());
+        outstanding_packets_.pop_front();
       }
       feedback.feedback_time =
           feedback.packet_feedbacks.back().receive_time + propagation_delay;
       feedback.data_in_flight = DataSize::Zero();
-      for (PacketResult& packet : received_packets_)
+      for (PacketResult& packet : outstanding_packets_)
         feedback.data_in_flight += packet.sent_packet->size;
       controller_->OnTransportPacketsFeedback(feedback);
     }
