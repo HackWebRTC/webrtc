@@ -128,9 +128,9 @@ struct EchoCanceller3Config {
     float noise_gate_power = 27509.42f;
     float noise_gate_slope = 0.3f;
     size_t render_pre_window_size = 1;
-    size_t render_post_window_size = 3;
-    float nonlinear_hold = 2;
-    float nonlinear_release = 0.1f;
+    size_t render_post_window_size = 1;
+    float nonlinear_hold = 1;
+    float nonlinear_release = 0.001f;
   } echo_model;
 };
 }  // namespace webrtc
