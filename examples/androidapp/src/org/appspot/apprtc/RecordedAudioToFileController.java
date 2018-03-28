@@ -38,13 +38,12 @@ public class RecordedAudioToFileController
   private final ExecutorService executor;
   @Nullable
   private OutputStream rawAudioFileOutputStream = null;
+  private boolean isRunning;
   private long fileSizeInBytes = 0;
-  private boolean useLegacyAudioDevice;
 
-  public RecordedAudioToFileController(ExecutorService executor, boolean useLegacyAudioDevice) {
+  public RecordedAudioToFileController(ExecutorService executor) {
     Log.d(TAG, "ctor");
     this.executor = executor;
-    this.useLegacyAudioDevice = useLegacyAudioDevice;
   }
 
   /**
@@ -57,11 +56,8 @@ public class RecordedAudioToFileController
       Log.e(TAG, "Writing to external media is not possible");
       return false;
     }
-    // Register this class as receiver of recorded audio samples for storage.
-    if (useLegacyAudioDevice) {
-      WebRtcAudioRecord.setOnAudioSamplesReady(this);
-    } else {
-      AudioDeviceModule.setOnAudioSamplesReady(this);
+    synchronized (lock) {
+      isRunning = true;
     }
     return true;
   }
@@ -72,13 +68,8 @@ public class RecordedAudioToFileController
    */
   public void stop() {
     Log.d(TAG, "stop");
-    // De-register this class as receiver of recorded audio samples for storage.
-    if (useLegacyAudioDevice) {
-      WebRtcAudioRecord.setOnAudioSamplesReady(null);
-    } else {
-      AudioDeviceModule.setOnAudioSamplesReady(null);
-    }
     synchronized (lock) {
+      isRunning = false;
       if (rawAudioFileOutputStream != null) {
         try {
           rawAudioFileOutputStream.close();
@@ -118,49 +109,26 @@ public class RecordedAudioToFileController
 
   // Called when new audio samples are ready.
   @Override
+  public void onWebRtcAudioRecordSamplesReady(WebRtcAudioRecord.AudioSamples samples) {
+    onWebRtcAudioRecordSamplesReady(new AudioDeviceModule.AudioSamples(samples.getAudioFormat(),
+        samples.getChannelCount(), samples.getSampleRate(), samples.getData()));
+  }
+
+  // Called when new audio samples are ready.
+  @Override
   public void onWebRtcAudioRecordSamplesReady(AudioDeviceModule.AudioSamples samples) {
     // The native audio layer on Android should use 16-bit PCM format.
     if (samples.getAudioFormat() != AudioFormat.ENCODING_PCM_16BIT) {
       Log.e(TAG, "Invalid audio format");
       return;
     }
-    // Open a new file for the first callback only since it allows us to add
-    // audio parameters to the file name.
     synchronized (lock) {
-      if (rawAudioFileOutputStream == null) {
-        openRawAudioOutputFile(samples.getSampleRate(), samples.getChannelCount());
-        fileSizeInBytes = 0;
+      // Abort early if stop() has been called.
+      if (!isRunning) {
+        return;
       }
-    }
-    // Append the recorded 16-bit audio samples to the open output file.
-    executor.execute(() -> {
-      if (rawAudioFileOutputStream != null) {
-        try {
-          // Set a limit on max file size. 58348800 bytes corresponds to
-          // approximately 10 minutes of recording in mono at 48kHz.
-          if (fileSizeInBytes < MAX_FILE_SIZE_IN_BYTES) {
-            // Writes samples.getData().length bytes to output stream.
-            rawAudioFileOutputStream.write(samples.getData());
-            fileSizeInBytes += samples.getData().length;
-          }
-        } catch (IOException e) {
-          Log.e(TAG, "Failed to write audio to file: " + e.getMessage());
-        }
-      }
-    });
-  }
-
-  // Called when new audio samples are ready.
-  @Override
-  public void onWebRtcAudioRecordSamplesReady(WebRtcAudioRecord.AudioSamples samples) {
-    // The native audio layer on Android should use 16-bit PCM format.
-    if (samples.getAudioFormat() != AudioFormat.ENCODING_PCM_16BIT) {
-      Log.e(TAG, "Invalid audio format");
-      return;
-    }
-    // Open a new file for the first callback only since it allows us to add
-    // audio parameters to the file name.
-    synchronized (lock) {
+      // Open a new file for the first callback only since it allows us to add audio parameters to
+      // the file name.
       if (rawAudioFileOutputStream == null) {
         openRawAudioOutputFile(samples.getSampleRate(), samples.getChannelCount());
         fileSizeInBytes = 0;

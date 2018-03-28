@@ -476,12 +476,6 @@ public class PeerConnectionClient {
     preferIsac = peerConnectionParameters.audioCodec != null
         && peerConnectionParameters.audioCodec.equals(AUDIO_CODEC_ISAC);
 
-    if (peerConnectionParameters.useLegacyAudioDevice) {
-      setupAudioDeviceLegacy();
-    } else {
-      setupAudioDevice();
-    }
-
     // It is possible to save a copy in raw PCM format on a file by checking
     // the "Save input audio to file" checkbox in the Settings UI. A callback
     // interface is set when this flag is enabled. As a result, a copy of recorded
@@ -490,13 +484,18 @@ public class PeerConnectionClient {
     if (peerConnectionParameters.saveInputAudioToFile) {
       if (!peerConnectionParameters.useOpenSLES) {
         Log.d(TAG, "Enable recording of microphone input audio to file");
-        saveRecordedAudioToFile = new RecordedAudioToFileController(
-            executor, peerConnectionParameters.useLegacyAudioDevice);
+        saveRecordedAudioToFile = new RecordedAudioToFileController(executor);
       } else {
         // TODO(henrika): ensure that the UI reflects that if OpenSL ES is selected,
         // then the "Save inut audio to file" option shall be grayed out.
         Log.e(TAG, "Recording of input audio is not supported for OpenSL ES");
       }
+    }
+
+    if (peerConnectionParameters.useLegacyAudioDevice) {
+      setupAudioDeviceLegacy();
+    } else {
+      setupAudioDevice();
     }
     // Create peer connection factory.
     if (options != null) {
@@ -545,6 +544,8 @@ public class PeerConnectionClient {
       Log.d(TAG, "Enable built-in NS if device supports it");
       WebRtcAudioUtils.setWebRtcBasedNoiseSuppressor(false);
     }
+
+    WebRtcAudioRecord.setOnAudioSamplesReady(saveRecordedAudioToFile);
 
     // Set audio record error callbacks.
     WebRtcAudioRecord.setErrorCallback(new WebRtcAudioRecordErrorCallback() {
@@ -615,6 +616,8 @@ public class PeerConnectionClient {
       Log.d(TAG, "Enable built-in NS if device supports it");
       AudioDeviceModule.setWebRtcBasedNoiseSuppressor(false);
     }
+
+    AudioDeviceModule.setOnAudioSamplesReady(saveRecordedAudioToFile);
 
     // Set audio record error callbacks.
     AudioDeviceModule.setErrorCallback(new AudioDeviceModule.AudioRecordErrorCallback() {
