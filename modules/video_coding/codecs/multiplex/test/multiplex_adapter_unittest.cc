@@ -21,6 +21,7 @@
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
 #include "rtc_base/keep_ref_until_done.h"
 #include "rtc_base/ptr_util.h"
+#include "test/video_codec_settings.h"
 
 using testing::_;
 using testing::Return;
@@ -48,18 +49,17 @@ class TestMultiplexAdapter : public VideoCodecUnitTest {
         encoder_factory_.get(), SdpVideoFormat(kMultiplexAssociatedCodecName));
   }
 
-  VideoCodec codec_settings() override {
-    VideoCodec codec_settings;
-    codec_settings.codecType = kMultiplexAssociatedCodecType;
-    codec_settings.VP9()->numberOfTemporalLayers = 1;
-    codec_settings.VP9()->numberOfSpatialLayers = 1;
-    codec_settings.codecType = webrtc::kVideoCodecMultiplex;
-    return codec_settings;
+  void ModifyCodecSettings(VideoCodec* codec_settings) override {
+    webrtc::test::CodecSettings(kMultiplexAssociatedCodecType, codec_settings);
+    codec_settings->VP9()->numberOfTemporalLayers = 1;
+    codec_settings->VP9()->numberOfSpatialLayers = 1;
+    codec_settings->codecType = webrtc::kVideoCodecMultiplex;
   }
 
   std::unique_ptr<VideoFrame> CreateI420AInputFrame() {
+    VideoFrame* input_frame = NextInputFrame();
     rtc::scoped_refptr<webrtc::I420BufferInterface> yuv_buffer =
-        input_frame_->video_frame_buffer()->ToI420();
+        input_frame->video_frame_buffer()->ToI420();
     rtc::scoped_refptr<I420ABufferInterface> yuva_buffer = WrapI420ABuffer(
         yuv_buffer->width(), yuv_buffer->height(), yuv_buffer->DataY(),
         yuv_buffer->StrideY(), yuv_buffer->DataU(), yuv_buffer->StrideU(),
@@ -120,8 +120,9 @@ TEST_F(TestMultiplexAdapter, ConstructAndDestructEncoder) {
 }
 
 TEST_F(TestMultiplexAdapter, EncodeDecodeI420Frame) {
+  VideoFrame* input_frame = NextInputFrame();
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->Encode(*input_frame_, nullptr, nullptr));
+            encoder_->Encode(*input_frame, nullptr, nullptr));
   EncodedImage encoded_frame;
   CodecSpecificInfo codec_specific_info;
   ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
@@ -134,7 +135,7 @@ TEST_F(TestMultiplexAdapter, EncodeDecodeI420Frame) {
   rtc::Optional<uint8_t> decoded_qp;
   ASSERT_TRUE(WaitForDecodedFrame(&decoded_frame, &decoded_qp));
   ASSERT_TRUE(decoded_frame);
-  EXPECT_GT(I420PSNR(input_frame_.get(), decoded_frame.get()), 36);
+  EXPECT_GT(I420PSNR(input_frame, decoded_frame.get()), 36);
 }
 
 TEST_F(TestMultiplexAdapter, EncodeDecodeI420AFrame) {
@@ -162,8 +163,9 @@ TEST_F(TestMultiplexAdapter, EncodeDecodeI420AFrame) {
 }
 
 TEST_F(TestMultiplexAdapter, CheckSingleFrameEncodedBitstream) {
+  VideoFrame* input_frame = NextInputFrame();
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->Encode(*input_frame_, nullptr, nullptr));
+            encoder_->Encode(*input_frame, nullptr, nullptr));
   EncodedImage encoded_frame;
   CodecSpecificInfo codec_specific_info;
   ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));

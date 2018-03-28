@@ -602,8 +602,7 @@ if (rtc_include_tests) {
     ]
   }
 
-  video_coding_modules_tests_resources = [ "../../resources/paris_qcif.yuv" ]
-
+  video_coding_modules_tests_resources = []
   if (!(is_ios || is_android)) {
     video_coding_modules_tests_resources += [
       "../../resources/FourPeople_1280x720_30.yuv",
@@ -611,13 +610,20 @@ if (rtc_include_tests) {
     ]
   }
 
-  if (is_ios || is_mac) {
-    bundle_data("video_coding_modules_tests_resources_bundle_data") {
-      testonly = true
-      sources = video_coding_modules_tests_resources
-      outputs = [
-        "{{bundle_resources_dir}}/{{source_file_part}}",
-      ]
+  num_video_coding_modules_tests_resources = 0
+  foreach(i, video_coding_modules_tests_resources) {
+    num_video_coding_modules_tests_resources += 1
+  }
+
+  if (num_video_coding_modules_tests_resources > 0) {
+    if (is_ios || is_mac) {
+      bundle_data("video_coding_modules_tests_resources_bundle_data") {
+        testonly = true
+        sources = video_coding_modules_tests_resources
+        outputs = [
+          "{{bundle_resources_dir}}/{{source_file_part}}",
+        ]
+      }
     }
   }
 
@@ -682,10 +688,11 @@ if (rtc_include_tests) {
       sources +=
           [ "codecs/test/videoprocessor_integrationtest_videotoolbox.cc" ]
 
-      deps += [
-        ":objc_codec_factory_helper",
-        ":video_coding_modules_tests_resources_bundle_data",
-      ]
+      deps += [ ":objc_codec_factory_helper" ]
+
+      if (num_video_coding_modules_tests_resources > 0) {
+        deps += [ ":video_coding_modules_tests_resources_bundle_data" ]
+      }
     }
 
     if (rtc_use_h264) {

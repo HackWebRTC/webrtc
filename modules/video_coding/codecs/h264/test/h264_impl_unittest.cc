@@ -11,6 +11,7 @@
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/video_coding/codecs/h264/include/h264.h"
 #include "modules/video_coding/codecs/test/video_codec_unittest.h"
+#include "test/video_codec_settings.h"
 
 namespace webrtc {
 
@@ -24,13 +25,8 @@ class TestH264Impl : public VideoCodecUnitTest {
     return H264Decoder::Create();
   }
 
-  VideoCodec codec_settings() override {
-    VideoCodec codec_inst;
-    codec_inst.codecType = webrtc::kVideoCodecH264;
-    // If frame dropping is false, we get a warning that bitrate can't
-    // be controlled for RC_QUALITY_MODE; RC_BITRATE_MODE and RC_TIMESTAMP_MODE
-    codec_inst.H264()->frameDroppingOn = true;
-    return codec_inst;
+  void ModifyCodecSettings(VideoCodec* codec_settings) override {
+    webrtc::test::CodecSettings(kVideoCodecH264, codec_settings);
   }
 };
 
@@ -43,8 +39,9 @@ class TestH264Impl : public VideoCodecUnitTest {
 #endif
 
 TEST_F(TestH264Impl, MAYBE_EncodeDecode) {
+  VideoFrame* input_frame = NextInputFrame();
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->Encode(*input_frame_, nullptr, nullptr));
+            encoder_->Encode(*input_frame, nullptr, nullptr));
   EncodedImage encoded_frame;
   CodecSpecificInfo codec_specific_info;
   ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
@@ -56,12 +53,12 @@ TEST_F(TestH264Impl, MAYBE_EncodeDecode) {
   rtc::Optional<uint8_t> decoded_qp;
   ASSERT_TRUE(WaitForDecodedFrame(&decoded_frame, &decoded_qp));
   ASSERT_TRUE(decoded_frame);
-  EXPECT_GT(I420PSNR(input_frame_.get(), decoded_frame.get()), 36);
+  EXPECT_GT(I420PSNR(input_frame, decoded_frame.get()), 36);
 }
 
 TEST_F(TestH264Impl, MAYBE_DecodedQpEqualsEncodedQp) {
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->Encode(*input_frame_, nullptr, nullptr));
+            encoder_->Encode(*NextInputFrame(), nullptr, nullptr));
   EncodedImage encoded_frame;
   CodecSpecificInfo codec_specific_info;
   ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));

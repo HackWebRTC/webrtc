@@ -22,6 +22,7 @@
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/event.h"
 #include "rtc_base/thread_annotations.h"
+#include "test/frame_generator.h"
 #include "test/gtest.h"
 
 namespace webrtc {
@@ -35,7 +36,8 @@ class VideoCodecUnitTest : public ::testing::Test {
                              false /* initially signaled */),
         wait_for_encoded_frames_threshold_(1),
         decoded_frame_event_(false /* manual reset */,
-                             false /* initially signaled */) {}
+                             false /* initially signaled */),
+        last_input_frame_timestamp_(0) {}
 
  protected:
   class FakeEncodeCompleteCallback : public webrtc::EncodedImageCallback {
@@ -74,9 +76,12 @@ class VideoCodecUnitTest : public ::testing::Test {
 
   virtual std::unique_ptr<VideoEncoder> CreateEncoder() = 0;
   virtual std::unique_ptr<VideoDecoder> CreateDecoder() = 0;
-  virtual VideoCodec codec_settings() = 0;
 
   void SetUp() override;
+
+  virtual void ModifyCodecSettings(VideoCodec* codec_settings);
+
+  VideoFrame* NextInputFrame();
 
   // Helper method for waiting a single encoded frame.
   bool WaitForEncodedFrame(EncodedImage* frame,
@@ -94,17 +99,12 @@ class VideoCodecUnitTest : public ::testing::Test {
   bool WaitForDecodedFrame(std::unique_ptr<VideoFrame>* frame,
                            rtc::Optional<uint8_t>* qp);
 
-  // Populated by InitCodecs().
   VideoCodec codec_settings_;
-
-  std::unique_ptr<VideoFrame> input_frame_;
 
   std::unique_ptr<VideoEncoder> encoder_;
   std::unique_ptr<VideoDecoder> decoder_;
 
  private:
-  void InitCodecs();
-
   FakeEncodeCompleteCallback encode_complete_callback_;
   FakeDecodeCompleteCallback decode_complete_callback_;
 
@@ -121,6 +121,9 @@ class VideoCodecUnitTest : public ::testing::Test {
   rtc::Optional<VideoFrame> decoded_frame_
       RTC_GUARDED_BY(decoded_frame_section_);
   rtc::Optional<uint8_t> decoded_qp_ RTC_GUARDED_BY(decoded_frame_section_);
+
+  std::unique_ptr<test::FrameGenerator> input_frame_generator_;
+  uint32_t last_input_frame_timestamp_;
 };
 
 }  // namespace webrtc
