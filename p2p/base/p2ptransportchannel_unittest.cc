@@ -560,8 +560,8 @@ class P2PTransportChannelTestBase : public testing::Test,
     if (connect_time < expected.connect_wait) {
       RTC_LOG(LS_INFO) << "Connect time: " << connect_time << " ms";
     } else {
-      RTC_LOG(LS_INFO) << "Connect time: "
-                       << "TIMEOUT (" << expected.connect_wait << " ms)";
+      RTC_LOG(LS_INFO) << "Connect time: TIMEOUT ("
+                       << expected.connect_wait << " ms)";
     }
 
     // Allow a few turns of the crank for the selected connections to emerge.
@@ -585,8 +585,8 @@ class P2PTransportChannelTestBase : public testing::Test,
       if (converge_time < converge_wait) {
         RTC_LOG(LS_INFO) << "Converge time: " << converge_time << " ms";
       } else {
-        RTC_LOG(LS_INFO) << "Converge time: "
-                         << "TIMEOUT (" << converge_wait << " ms)";
+        RTC_LOG(LS_INFO) << "Converge time: TIMEOUT ("
+                         << converge_wait << " ms)";
       }
     }
     // Try sending some data to other end.

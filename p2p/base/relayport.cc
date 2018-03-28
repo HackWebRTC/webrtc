@@ -508,7 +508,7 @@ void RelayEntry::Connect() {
         rtc::SocketAddress(port_->Network()->GetBestIP(), 0), ra->address,
         port_->proxy(), port_->user_agent(), opts);
   } else {
-    RTC_LOG(LS_WARNING) << "Unknown protocol (" << ra->proto << ")";
+    RTC_LOG(LS_WARNING) << "Unknown protocol: " << ra->proto;
   }
 
   // If we failed to get a socket, move on to the next protocol.
@@ -832,9 +832,8 @@ void AllocateRequest::OnErrorResponse(StunMessage* response) {
   if (!attr) {
     RTC_LOG(LS_ERROR) << "Missing allocate response error code.";
   } else {
-    RTC_LOG(INFO) << "Allocate error response:"
-                  << " code=" << attr->code() << " reason='" << attr->reason()
-                  << "'";
+    RTC_LOG(INFO) << "Allocate error response: code=" << attr->code()
+                  << " reason=" << attr->reason();
   }
 
   if (rtc::TimeMillis() - start_time_ <= kRetryTimeout)

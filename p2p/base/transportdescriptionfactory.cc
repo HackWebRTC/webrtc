@@ -64,7 +64,7 @@ TransportDescription* TransportDescriptionFactory::CreateAnswer(
   // TODO(juberti): Figure out why we get NULL offers, and fix this upstream.
   if (!offer) {
     RTC_LOG(LS_WARNING) << "Failed to create TransportDescription answer "
-                        << "because offer is NULL";
+                           "because offer is NULL";
     return NULL;
   }
 

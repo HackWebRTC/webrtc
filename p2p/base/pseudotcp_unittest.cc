@@ -554,8 +554,8 @@ class PseudoTcpTestReceiveWindow : public PseudoTcpTestBase {
     } else {
       if (!remote_.isReceiveBufferFull()) {
         RTC_LOG(LS_ERROR) << "This shouldn't happen - the send buffer is full, "
-                          << "the receive buffer is not, and there are no "
-                          << "remaining messages to process.";
+                             "the receive buffer is not, and there are no "
+                             "remaining messages to process.";
       }
       send_stream_.GetPosition(&position);
       send_position_.push_back(position);

@@ -13,7 +13,6 @@
 #include <utility>
 #include <vector>
 
-#include "p2p/base/common.h"
 #include "p2p/base/p2pconstants.h"
 #include "p2p/base/portallocator.h"
 #include "p2p/base/stun.h"
@@ -69,9 +68,9 @@ class StunBindingRequest : public StunRequest {
       RTC_LOG(LS_ERROR) << "Missing binding response error code.";
     } else {
       RTC_LOG(LS_ERROR) << "Binding error response:"
-                        << " class=" << attr->eclass()
-                        << " number=" << attr->number() << " reason='"
-                        << attr->reason() << "'";
+                           " class=" << attr->eclass()
+                        << " number=" << attr->number() << " reason="
+                        << attr->reason();
     }
 
     port_->OnStunBindingOrResolveRequestFailed(server_addr_);
@@ -209,7 +208,8 @@ bool UDPPort::Init() {
     socket_ = socket_factory()->CreateUdpSocket(
         rtc::SocketAddress(Network()->GetBestIP(), 0), min_port(), max_port());
     if (!socket_) {
-      LOG_J(LS_WARNING, this) << "UDP socket creation failed";
+      RTC_LOG(LS_WARNING) << ToString()
+                          << ": UDP socket creation failed";
       return false;
     }
     socket_->SignalReadPacket.connect(this, &UDPPort::OnReadPacket);
@@ -271,8 +271,8 @@ int UDPPort::SendTo(const void* data, size_t size,
   int sent = socket_->SendTo(data, size, addr, options);
   if (sent < 0) {
     error_ = socket_->GetError();
-    LOG_J(LS_ERROR, this) << "UDP send of " << size
-                          << " bytes failed with error " << error_;
+    RTC_LOG(LS_ERROR) << ToString() << ": UDP send of "
+                      << size << " bytes failed with error " << error_;
   }
   return sent;
 }
@@ -387,8 +387,9 @@ void UDPPort::ResolveStunAddress(const rtc::SocketAddress& stun_addr) {
     resolver_->SignalDone.connect(this, &UDPPort::OnResolveResult);
   }
 
-  LOG_J(LS_INFO, this) << "Starting STUN host lookup for "
-                       << stun_addr.ToSensitiveString();
+  RTC_LOG(LS_INFO) << ToString()
+                   << ": Starting STUN host lookup for "
+                   << stun_addr.ToSensitiveString();
   resolver_->Resolve(stun_addr);
 }
 
@@ -399,8 +400,9 @@ void UDPPort::OnResolveResult(const rtc::SocketAddress& input,
   rtc::SocketAddress resolved;
   if (error != 0 || !resolver_->GetResolvedAddress(
                         input, Network()->GetBestIP().family(), &resolved)) {
-    LOG_J(LS_WARNING, this) << "StunPort: stun host lookup received error "
-                            << error;
+    RTC_LOG(LS_WARNING) << ToString()
+                        << ": StunPort: stun host lookup received error "
+                        << error;
     OnStunBindingOrResolveRequestFailed(input);
     return;
   }

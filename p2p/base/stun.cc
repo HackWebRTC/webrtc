@@ -268,7 +268,7 @@ bool StunMessage::AddMessageIntegrity(const char* key,
   RTC_DCHECK(ret == sizeof(hmac));
   if (ret != sizeof(hmac)) {
     RTC_LOG(LS_ERROR) << "HMAC computation failed. Message-Integrity "
-                      << "has dummy value.";
+                         "has dummy value.";
     return false;
   }
 

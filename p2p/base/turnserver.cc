@@ -14,7 +14,6 @@
 #include <utility>
 
 #include "p2p/base/asyncstuntcpsocket.h"
-#include "p2p/base/common.h"
 #include "p2p/base/packetsocketfactory.h"
 #include "p2p/base/stun.h"
 #include "rtc_base/bind.h"
@@ -601,7 +600,7 @@ TurnServerAllocation::~TurnServerAllocation() {
     delete *it;
   }
   thread_->Clear(this, MSG_ALLOCATION_TIMEOUT);
-  LOG_J(LS_INFO, this) << "Allocation destroyed";
+  RTC_LOG(LS_INFO) << ToString() << ": Allocation destroyed";
 }
 
 std::string TurnServerAllocation::ToString() const {
@@ -630,8 +629,9 @@ void TurnServerAllocation::HandleTurnMessage(const TurnMessage* msg) {
       break;
     default:
       // Not sure what to do with this, just eat it.
-      LOG_J(LS_WARNING, this) << "Invalid TURN message type received: "
-                              << msg->type();
+      RTC_LOG(LS_WARNING) << ToString()
+                          << ": Invalid TURN message type received: "
+                          << msg->type();
   }
 }
 
@@ -653,7 +653,8 @@ void TurnServerAllocation::HandleAllocateRequest(const TurnMessage* msg) {
   thread_->PostDelayed(RTC_FROM_HERE, lifetime_secs * 1000, this,
                        MSG_ALLOCATION_TIMEOUT);
 
-  LOG_J(LS_INFO, this) << "Created allocation, lifetime=" << lifetime_secs;
+  RTC_LOG(LS_INFO) << ToString()
+                   << ": Created allocation with lifetime=" << lifetime_secs;
 
   // We've already validated all the important bits; just send a response here.
   TurnMessage response;
@@ -681,7 +682,8 @@ void TurnServerAllocation::HandleRefreshRequest(const TurnMessage* msg) {
   thread_->PostDelayed(RTC_FROM_HERE, lifetime_secs * 1000, this,
                        MSG_ALLOCATION_TIMEOUT);
 
-  LOG_J(LS_INFO, this) << "Refreshed allocation, lifetime=" << lifetime_secs;
+  RTC_LOG(LS_INFO) << ToString()
+                   << ": Refreshed allocation, lifetime=" << lifetime_secs;
 
   // Send a success response with a LIFETIME attribute.
   TurnMessage response;
@@ -700,7 +702,8 @@ void TurnServerAllocation::HandleSendIndication(const TurnMessage* msg) {
   const StunAddressAttribute* peer_attr =
       msg->GetAddress(STUN_ATTR_XOR_PEER_ADDRESS);
   if (!data_attr || !peer_attr) {
-    LOG_J(LS_WARNING, this) << "Received invalid send indication";
+    RTC_LOG(LS_WARNING) << ToString()
+                        << ": Received invalid send indication";
     return;
   }
 
@@ -709,8 +712,10 @@ void TurnServerAllocation::HandleSendIndication(const TurnMessage* msg) {
     SendExternal(data_attr->bytes(), data_attr->length(),
                  peer_attr->GetAddress());
   } else {
-    LOG_J(LS_WARNING, this) << "Received send indication without permission"
-                            << "peer=" << peer_attr->GetAddress();
+    RTC_LOG(LS_WARNING) << ToString()
+                        << ": Received send indication without permission"
+                           " peer="
+                        << peer_attr->GetAddress();
   }
 }
 
@@ -733,8 +738,8 @@ void TurnServerAllocation::HandleCreatePermissionRequest(
   // Add this permission.
   AddPermission(peer_attr->GetAddress().ipaddr());
 
-  LOG_J(LS_INFO, this) << "Created permission, peer="
-                       << peer_attr->GetAddress();
+  RTC_LOG(LS_INFO) << ToString()
+                   << ": Created permission, peer=" << peer_attr->GetAddress();
 
   // Send a success response.
   TurnMessage response;
@@ -782,8 +787,9 @@ void TurnServerAllocation::HandleChannelBindRequest(const TurnMessage* msg) {
   // Channel binds also refresh permissions.
   AddPermission(peer_attr->GetAddress().ipaddr());
 
-  LOG_J(LS_INFO, this) << "Bound channel, id=" << channel_id
-                       << ", peer=" << peer_attr->GetAddress();
+  RTC_LOG(LS_INFO) << ToString()
+                   << ": Bound channel, id=" << channel_id
+                   << ", peer=" << peer_attr->GetAddress();
 
   // Send a success response.
   TurnMessage response;
@@ -800,8 +806,9 @@ void TurnServerAllocation::HandleChannelData(const char* data, size_t size) {
     SendExternal(data + TURN_CHANNEL_HEADER_SIZE,
                  size - TURN_CHANNEL_HEADER_SIZE, channel->peer());
   } else {
-    LOG_J(LS_WARNING, this) << "Received channel data for invalid channel, id="
-                            << channel_id;
+    RTC_LOG(LS_WARNING) << ToString()
+                        << ": Received channel data for invalid channel, id="
+                        << channel_id;
   }
 }
 
@@ -832,8 +839,9 @@ void TurnServerAllocation::OnExternalPacket(
         rtc::MakeUnique<StunByteStringAttribute>(STUN_ATTR_DATA, data, size));
     server_->SendStun(&conn_, &msg);
   } else {
-    LOG_J(LS_WARNING, this) << "Received external packet without permission, "
-                            << "peer=" << addr;
+    RTC_LOG(LS_WARNING)
+        << ToString()
+        << ": Received external packet without permission, peer=" << addr;
   }
 }
 
