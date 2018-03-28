@@ -43,12 +43,13 @@ namespace webrtc {
 
 namespace android_adm {
 
-OpenSLESRecorder::OpenSLESRecorder(AudioManager* audio_manager)
-    : audio_manager_(audio_manager),
-      audio_parameters_(audio_manager->GetRecordAudioParameters()),
+OpenSLESRecorder::OpenSLESRecorder(AudioManager* audio_manager,
+                                   OpenSLEngineManager* engine_manager)
+    : audio_parameters_(audio_manager->GetRecordAudioParameters()),
       audio_device_buffer_(nullptr),
       initialized_(false),
       recording_(false),
+      engine_manager_(engine_manager),
       engine_(nullptr),
       recorder_(nullptr),
       simple_buffer_queue_(nullptr),
@@ -214,7 +215,7 @@ bool OpenSLESRecorder::ObtainEngineInterface() {
     return true;
   // Get access to (or create if not already existing) the global OpenSL Engine
   // object.
-  SLObjectItf engine_object = audio_manager_->GetOpenSLEngine();
+  SLObjectItf engine_object = engine_manager_->GetOpenSLEngine();
   if (engine_object == nullptr) {
     ALOGE("Failed to access the global OpenSL engine");
     return false;

@@ -38,18 +38,6 @@ class AudioManager {
                const JavaParamRef<jobject>& application_context);
   ~AudioManager();
 
-  // Creates and realizes the main (global) Open SL engine object and returns
-  // a reference to it. The engine object is only created at the first call
-  // since OpenSL ES for Android only supports a single engine per application.
-  // Subsequent calls returns the already created engine. The SL engine object
-  // is destroyed when the AudioManager object is deleted. It means that the
-  // engine object will be the first OpenSL ES object to be created and last
-  // object to be destroyed.
-  // Note that NULL will be returned unless the audio layer is specified as
-  // AudioDeviceModule::kAndroidOpenSLESAudio or
-  // AudioDeviceModule::kAndroidJavaInputAndOpenSLESOutputAudio.
-  SLObjectItf GetOpenSLEngine();
-
   // Initializes the audio manager and stores the current audio mode.
   bool Init();
   // Revert any setting done by Init().
@@ -95,13 +83,6 @@ class AudioManager {
   // Contains the selected audio layer specified by the AudioLayer enumerator
   // in the AudioDeviceModule class.
   const AudioDeviceModule::AudioLayer audio_layer_;
-
-  // This object is the global entry point of the OpenSL ES API.
-  // After creating the engine object, the application can obtain this object‘s
-  // SLEngineItf interface. This interface contains creation methods for all
-  // the other object types in the API. None of these interface are realized
-  // by this class. It only provides access to the global engine object.
-  ScopedSLObjectItf engine_object_;
 
   // Set to true by Init() and false by Close().
   bool initialized_;

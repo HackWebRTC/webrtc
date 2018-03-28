@@ -63,7 +63,8 @@ class OpenSLESRecorder : public AudioInput {
   // TODO(henrika): perhaps set this value dynamically based on OS version.
   static const int kNumOfOpenSLESBuffers = 2;
 
-  explicit OpenSLESRecorder(AudioManager* audio_manager);
+  OpenSLESRecorder(AudioManager* audio_manager,
+                   OpenSLEngineManager* engine_manager);
   ~OpenSLESRecorder() override;
 
   int Init() override;
@@ -133,12 +134,6 @@ class OpenSLESRecorder : public AudioInput {
   // Detached during construction of this object.
   rtc::ThreadChecker thread_checker_opensles_;
 
-  // Raw pointer to the audio manager injected at construction. Used to cache
-  // audio parameters and to access the global SL engine object needed by the
-  // ObtainEngineInterface() method. The audio manager outlives any instance of
-  // this class.
-  AudioManager* const audio_manager_;
-
   // Contains audio parameters provided to this class at construction by the
   // AudioManager.
   const AudioParameters audio_parameters_;
@@ -155,6 +150,7 @@ class OpenSLESRecorder : public AudioInput {
   bool initialized_;
   bool recording_;
 
+  OpenSLEngineManager* const engine_manager_;
   // This interface exposes creation methods for all the OpenSL ES object types.
   // It is the OpenSL ES API entry point.
   SLEngineItf engine_;

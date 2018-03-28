@@ -60,7 +60,8 @@ class OpenSLESPlayer : public AudioOutput {
   // TODO(henrika): perhaps set this value dynamically based on OS version.
   static const int kNumOfOpenSLESBuffers = 2;
 
-  explicit OpenSLESPlayer(AudioManager* audio_manager);
+  OpenSLESPlayer(AudioManager* audio_manager,
+                 std::unique_ptr<OpenSLEngineManager> engine_manager);
   ~OpenSLESPlayer() override;
 
   int Init() override;
@@ -125,12 +126,6 @@ class OpenSLESPlayer : public AudioOutput {
   // Detached during construction of this object.
   rtc::ThreadChecker thread_checker_opensles_;
 
-  // Raw pointer to the audio manager injected at construction. Used to cache
-  // audio parameters and to access the global SL engine object needed by the
-  // ObtainEngineInterface() method. The audio manager outlives any instance of
-  // this class.
-  AudioManager* audio_manager_;
-
   // Contains audio parameters provided to this class at construction by the
   // AudioManager.
   const AudioParameters audio_parameters_;
@@ -168,6 +163,7 @@ class OpenSLESPlayer : public AudioOutput {
   // Example (kNumOfOpenSLESBuffers = 2): counts 0, 1, 0, 1, ...
   int buffer_index_;
 
+  std::unique_ptr<OpenSLEngineManager> engine_manager_;
   // This interface exposes creation methods for all the OpenSL ES object types.
   // It is the OpenSL ES API entry point.
   SLEngineItf engine_;

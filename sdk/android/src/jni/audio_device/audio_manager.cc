@@ -73,47 +73,6 @@ AudioManager::~AudioManager() {
   Close();
 }
 
-SLObjectItf AudioManager::GetOpenSLEngine() {
-  RTC_LOG(INFO) << "GetOpenSLEngine";
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  // Only allow usage of OpenSL ES if such an audio layer has been specified.
-  if (audio_layer_ != AudioDeviceModule::kAndroidOpenSLESAudio &&
-      audio_layer_ !=
-          AudioDeviceModule::kAndroidJavaInputAndOpenSLESOutputAudio) {
-    RTC_LOG(INFO)
-        << "Unable to create OpenSL engine for the current audio layer: "
-        << audio_layer_;
-    return nullptr;
-  }
-  // OpenSL ES for Android only supports a single engine per application.
-  // If one already has been created, return existing object instead of
-  // creating a new.
-  if (engine_object_.Get() != nullptr) {
-    RTC_LOG(WARNING) << "The OpenSL ES engine object has already been created";
-    return engine_object_.Get();
-  }
-  // Create the engine object in thread safe mode.
-  const SLEngineOption option[] = {
-      {SL_ENGINEOPTION_THREADSAFE, static_cast<SLuint32>(SL_BOOLEAN_TRUE)}};
-  SLresult result =
-      slCreateEngine(engine_object_.Receive(), 1, option, 0, NULL, NULL);
-  if (result != SL_RESULT_SUCCESS) {
-    RTC_LOG(LS_ERROR) << "slCreateEngine() failed: "
-                      << GetSLErrorString(result);
-    engine_object_.Reset();
-    return nullptr;
-  }
-  // Realize the SL Engine in synchronous mode.
-  result = engine_object_->Realize(engine_object_.Get(), SL_BOOLEAN_FALSE);
-  if (result != SL_RESULT_SUCCESS) {
-    RTC_LOG(LS_ERROR) << "Realize() failed: " << GetSLErrorString(result);
-    engine_object_.Reset();
-    return nullptr;
-  }
-  // Finally return the SLObjectItf interface of the engine object.
-  return engine_object_.Get();
-}
-
 bool AudioManager::Init() {
   RTC_LOG(INFO) << "Init";
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
