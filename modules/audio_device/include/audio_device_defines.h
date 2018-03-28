@@ -45,6 +45,7 @@ class AudioTransport {
                                           const bool keyPressed,
                                           uint32_t& newMicLevel) = 0;  // NOLINT
 
+  // Implementation has to setup safe values for all specified out parameters.
   virtual int32_t NeedMorePlayData(const size_t nSamples,
                                    const size_t nBytesPerSample,
                                    const size_t nChannels,

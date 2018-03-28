@@ -174,8 +174,8 @@ class TestAudioDeviceModuleImpl
       }
       if (rendering_) {
         size_t samples_out = 0;
-        int64_t elapsed_time_ms = 0;
-        int64_t ntp_time_ms = 0;
+        int64_t elapsed_time_ms = -1;
+        int64_t ntp_time_ms = -1;
         const int sampling_frequency = renderer_->SamplingFrequency();
         audio_callback_->NeedMorePlayData(
             SamplesPerFrame(sampling_frequency), 2, renderer_->NumChannels(),
