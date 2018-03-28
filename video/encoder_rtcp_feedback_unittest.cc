@@ -29,8 +29,7 @@ class MockVideoStreamEncoder : public VideoStreamEncoder {
             send_stats_proxy,
             VideoSendStream::Config::EncoderSettings(nullptr),
             nullptr,
-            rtc::MakeUnique<OveruseFrameDetector>(CpuOveruseOptions(),
-                                                  nullptr)) {}
+            rtc::MakeUnique<OveruseFrameDetector>(nullptr)) {}
   ~MockVideoStreamEncoder() { Stop(); }
 
   MOCK_METHOD0(SendKeyFrame, void());

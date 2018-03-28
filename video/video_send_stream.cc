@@ -238,24 +238,6 @@ int CalculatePacketRate(uint32_t bitrate_bps, size_t packet_size_bytes) {
                           packet_size_bits);
 }
 
-// TODO(pbos): Lower these thresholds (to closer to 100%) when we handle
-// pipelining encoders better (multiple input frames before something comes
-// out). This should effectively turn off CPU adaptations for systems that
-// remotely cope with the load right now.
-CpuOveruseOptions GetCpuOveruseOptions(const VideoSendStream::Config& config) {
-  CpuOveruseOptions options;
-
-  if (config.encoder_settings.full_overuse_time) {
-    options.low_encode_usage_threshold_percent = 150;
-    options.high_encode_usage_threshold_percent = 200;
-  }
-  if (config.encoder_settings.experiment_cpu_load_estimator) {
-    options.filter_time_ms = 5 * rtc::kNumMillisecsPerSec;
-  }
-
-  return options;
-}
-
 size_t CalculateMaxHeaderSize(const VideoSendStream::Config::Rtp& config) {
   size_t header_size = kRtpHeaderSize;
   size_t extensions_size = 0;
@@ -533,8 +515,7 @@ VideoSendStream::VideoSendStream(
       num_cpu_cores, &stats_proxy_,
       config_.encoder_settings,
       config_.pre_encode_callback,
-      rtc::MakeUnique<OveruseFrameDetector>(
-          GetCpuOveruseOptions(config_), &stats_proxy_));
+      rtc::MakeUnique<OveruseFrameDetector>(&stats_proxy_));
   // TODO(srte): Initialization should not be done posted on a task queue.
   // Note that the posted task must not outlive this scope since the closure
   // references local variables.

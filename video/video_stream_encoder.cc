@@ -94,6 +94,25 @@ bool IsFramerateScalingEnabled(
              VideoSendStream::DegradationPreference::kBalanced;
 }
 
+// TODO(pbos): Lower these thresholds (to closer to 100%) when we handle
+// pipelining encoders better (multiple input frames before something comes
+// out). This should effectively turn off CPU adaptations for systems that
+// remotely cope with the load right now.
+CpuOveruseOptions GetCpuOveruseOptions(
+    const VideoSendStream::Config::EncoderSettings& settings) {
+  CpuOveruseOptions options;
+
+  if (settings.full_overuse_time) {
+    options.low_encode_usage_threshold_percent = 150;
+    options.high_encode_usage_threshold_percent = 200;
+  }
+  if (settings.experiment_cpu_load_estimator) {
+    options.filter_time_ms = 5 * rtc::kNumMillisecsPerSec;
+  }
+
+  return options;
+}
+
 }  //  namespace
 
 class VideoStreamEncoder::EncodeTask : public rtc::QueuedTask {
@@ -396,7 +415,8 @@ VideoStreamEncoder::VideoStreamEncoder(
   RTC_DCHECK(overuse_detector_);
   encoder_queue_.PostTask([this] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
-    overuse_detector_->StartCheckForOveruse(this);
+    overuse_detector_->StartCheckForOveruse(GetCpuOveruseOptions(settings_),
+                                            this);
     video_sender_.RegisterExternalEncoder(
         settings_.encoder, settings_.internal_source);
   });

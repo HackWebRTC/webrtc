@@ -65,12 +65,12 @@ class CpuOveruseMetricsObserver {
 // check for overuse.
 class OveruseFrameDetector {
  public:
-  OveruseFrameDetector(const CpuOveruseOptions& options,
-                       CpuOveruseMetricsObserver* metrics_observer);
+  explicit OveruseFrameDetector(CpuOveruseMetricsObserver* metrics_observer);
   virtual ~OveruseFrameDetector();
 
   // Start to periodically check for overuse.
-  void StartCheckForOveruse(AdaptationObserverInterface* overuse_observer);
+  void StartCheckForOveruse(const CpuOveruseOptions& options,
+                            AdaptationObserverInterface* overuse_observer);
 
   // StopCheckForOveruse must be called before destruction if
   // StartCheckForOveruse has been called.
@@ -116,6 +116,7 @@ class OveruseFrameDetector {
  protected:
   // Protected for test purposes.
   void CheckForOveruse(AdaptationObserverInterface* overuse_observer);
+  void SetOptions(const CpuOveruseOptions& options);
 
  private:
   class CheckOveruseTask;
@@ -136,7 +137,7 @@ class OveruseFrameDetector {
   // Owned by the task queue from where StartCheckForOveruse is called.
   CheckOveruseTask* check_overuse_task_;
 
-  const CpuOveruseOptions options_;
+  CpuOveruseOptions options_;
 
   // Stats metrics.
   CpuOveruseMetricsObserver* const metrics_observer_;
@@ -156,8 +157,7 @@ class OveruseFrameDetector {
   bool in_quick_rampup_ RTC_GUARDED_BY(task_checker_);
   int current_rampup_delay_ms_ RTC_GUARDED_BY(task_checker_);
 
-  const std::unique_ptr<ProcessingUsage> usage_
-      RTC_PT_GUARDED_BY(task_checker_);
+  std::unique_ptr<ProcessingUsage> usage_ RTC_PT_GUARDED_BY(task_checker_);
 
   RTC_DISALLOW_COPY_AND_ASSIGN(OveruseFrameDetector);
 };

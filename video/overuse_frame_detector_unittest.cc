@@ -58,13 +58,13 @@ class CpuOveruseObserverImpl : public AdaptationObserverInterface {
 
 class OveruseFrameDetectorUnderTest : public OveruseFrameDetector {
  public:
-  OveruseFrameDetectorUnderTest(const CpuOveruseOptions& options,
-                                CpuOveruseMetricsObserver* metrics_observer)
-      : OveruseFrameDetector(options,
-                             metrics_observer) {}
+  explicit OveruseFrameDetectorUnderTest(
+      CpuOveruseMetricsObserver* metrics_observer)
+      : OveruseFrameDetector(metrics_observer) {}
   ~OveruseFrameDetectorUnderTest() {}
 
   using OveruseFrameDetector::CheckForOveruse;
+  using OveruseFrameDetector::SetOptions;
 };
 
 class OveruseFrameDetectorTest : public ::testing::Test,
@@ -73,12 +73,9 @@ class OveruseFrameDetectorTest : public ::testing::Test,
   void SetUp() override {
     observer_ = &mock_observer_;
     options_.min_process_count = 0;
-    ReinitializeOveruseDetector();
-  }
-
-  void ReinitializeOveruseDetector() {
-    overuse_detector_.reset(new OveruseFrameDetectorUnderTest(
-        options_, this));
+    overuse_detector_ = rtc::MakeUnique<OveruseFrameDetectorUnderTest>(this);
+    // Unfortunately, we can't call SetOptions here, since that would break
+    // single-threading requirements in the RunOnTqNormalUsage test.
   }
 
   void OnEncodedFrameTimeMeasured(int encode_time_ms,
@@ -199,12 +196,14 @@ class OveruseFrameDetectorTest : public ::testing::Test,
 // UsagePercent() < low_encode_usage_threshold_percent => underuse.
 TEST_F(OveruseFrameDetectorTest, TriggerOveruse) {
   // usage > high => overuse
+  overuse_detector_->SetOptions(options_);
   EXPECT_CALL(mock_observer_, AdaptDown(reason_)).Times(1);
   TriggerOveruse(options_.high_threshold_consecutive_count);
 }
 
 TEST_F(OveruseFrameDetectorTest, OveruseAndRecover) {
   // usage > high => overuse
+  overuse_detector_->SetOptions(options_);
   EXPECT_CALL(mock_observer_, AdaptDown(reason_)).Times(1);
   TriggerOveruse(options_.high_threshold_consecutive_count);
   // usage < low => underuse
@@ -213,6 +212,7 @@ TEST_F(OveruseFrameDetectorTest, OveruseAndRecover) {
 }
 
 TEST_F(OveruseFrameDetectorTest, DoubleOveruseAndRecover) {
+  overuse_detector_->SetOptions(options_);
   EXPECT_CALL(mock_observer_, AdaptDown(reason_)).Times(2);
   TriggerOveruse(options_.high_threshold_consecutive_count);
   TriggerOveruse(options_.high_threshold_consecutive_count);
@@ -225,8 +225,7 @@ TEST_F(OveruseFrameDetectorTest, TriggerUnderuseWithMinProcessCount) {
   options_.min_process_count = 1;
   CpuOveruseObserverImpl overuse_observer;
   observer_ = nullptr;
-  overuse_detector_.reset(new OveruseFrameDetectorUnderTest(
-      options_, this));
+  overuse_detector_->SetOptions(options_);
   InsertAndSendFramesWithInterval(
       1200, kFrameIntervalUs, kWidth, kHeight, kProcessTimeUs);
   overuse_detector_->CheckForOveruse(&overuse_observer);
@@ -237,6 +236,7 @@ TEST_F(OveruseFrameDetectorTest, TriggerUnderuseWithMinProcessCount) {
 }
 
 TEST_F(OveruseFrameDetectorTest, ConstantOveruseGivesNoNormalUsage) {
+  overuse_detector_->SetOptions(options_);
   EXPECT_CALL(mock_observer_, AdaptUp(reason_)).Times(0);
   EXPECT_CALL(mock_observer_, AdaptDown(reason_)).Times(64);
   for (size_t i = 0; i < 64; ++i) {
@@ -245,26 +245,30 @@ TEST_F(OveruseFrameDetectorTest, ConstantOveruseGivesNoNormalUsage) {
 }
 
 TEST_F(OveruseFrameDetectorTest, ConsecutiveCountTriggersOveruse) {
+  overuse_detector_->SetOptions(options_);
   EXPECT_CALL(mock_observer_, AdaptDown(reason_)).Times(1);
   options_.high_threshold_consecutive_count = 2;
-  ReinitializeOveruseDetector();
+  overuse_detector_->SetOptions(options_);
   TriggerOveruse(2);
 }
 
 TEST_F(OveruseFrameDetectorTest, IncorrectConsecutiveCountTriggersNoOveruse) {
+  overuse_detector_->SetOptions(options_);
   EXPECT_CALL(mock_observer_, AdaptDown(reason_)).Times(0);
   options_.high_threshold_consecutive_count = 2;
-  ReinitializeOveruseDetector();
+  overuse_detector_->SetOptions(options_);
   TriggerOveruse(1);
 }
 
 TEST_F(OveruseFrameDetectorTest, ProcessingUsage) {
+  overuse_detector_->SetOptions(options_);
   InsertAndSendFramesWithInterval(
       1000, kFrameIntervalUs, kWidth, kHeight, kProcessTimeUs);
   EXPECT_EQ(kProcessTimeUs * 100 / kFrameIntervalUs, UsagePercent());
 }
 
 TEST_F(OveruseFrameDetectorTest, ResetAfterResolutionChange) {
+  overuse_detector_->SetOptions(options_);
   ForceUpdate(kWidth, kHeight);
   EXPECT_EQ(InitialUsage(), UsagePercent());
   InsertAndSendFramesWithInterval(
@@ -276,6 +280,7 @@ TEST_F(OveruseFrameDetectorTest, ResetAfterResolutionChange) {
 }
 
 TEST_F(OveruseFrameDetectorTest, ResetAfterFrameTimeout) {
+  overuse_detector_->SetOptions(options_);
   ForceUpdate(kWidth, kHeight);
   EXPECT_EQ(InitialUsage(), UsagePercent());
   InsertAndSendFramesWithInterval(
@@ -295,7 +300,7 @@ TEST_F(OveruseFrameDetectorTest, ResetAfterFrameTimeout) {
 
 TEST_F(OveruseFrameDetectorTest, MinFrameSamplesBeforeUpdating) {
   options_.min_frame_samples = 40;
-  ReinitializeOveruseDetector();
+  overuse_detector_->SetOptions(options_);
   InsertAndSendFramesWithInterval(
       40, kFrameIntervalUs, kWidth, kHeight, kProcessTimeUs);
   EXPECT_EQ(InitialUsage(), UsagePercent());
@@ -314,11 +319,13 @@ TEST_F(OveruseFrameDetectorTest, MinFrameSamplesBeforeUpdating) {
 }
 
 TEST_F(OveruseFrameDetectorTest, InitialProcessingUsage) {
+  overuse_detector_->SetOptions(options_);
   ForceUpdate(kWidth, kHeight);
   EXPECT_EQ(InitialUsage(), UsagePercent());
 }
 
 TEST_F(OveruseFrameDetectorTest, MeasuresMultipleConcurrentSamples) {
+  overuse_detector_->SetOptions(options_);
   EXPECT_CALL(mock_observer_, AdaptDown(reason_))
       .Times(testing::AtLeast(1));
   static const int kIntervalUs = 33 * rtc::kNumMicrosecsPerMillisec;
@@ -342,6 +349,7 @@ TEST_F(OveruseFrameDetectorTest, MeasuresMultipleConcurrentSamples) {
 
 TEST_F(OveruseFrameDetectorTest, UpdatesExistingSamples) {
   // >85% encoding time should trigger overuse.
+  overuse_detector_->SetOptions(options_);
   EXPECT_CALL(mock_observer_, AdaptDown(reason_))
       .Times(testing::AtLeast(1));
   static const int kIntervalUs = 33 * rtc::kNumMicrosecsPerMillisec;
@@ -372,7 +380,7 @@ TEST_F(OveruseFrameDetectorTest, RunOnTqNormalUsage) {
 
   rtc::Event event(false, false);
   queue.PostTask([this, &event] {
-      overuse_detector_->StartCheckForOveruse(observer_);
+    overuse_detector_->StartCheckForOveruse(options_, observer_);
     event.Set();
   });
   event.Wait(rtc::Event::kForever);
@@ -401,6 +409,7 @@ TEST_F(OveruseFrameDetectorTest, MaxIntervalScalesWithFramerate) {
   const int kCapturerMaxFrameRate = 30;
   const int kEncodeMaxFrameRate = 20;  // Maximum fps the encoder can sustain.
 
+  overuse_detector_->SetOptions(options_);
   // Trigger overuse.
   int64_t frame_interval_us = rtc::kNumMicrosecsPerSec / kCapturerMaxFrameRate;
   // Processing time just below over use limit given kEncodeMaxFrameRate.
@@ -434,6 +443,7 @@ TEST_F(OveruseFrameDetectorTest, MaxIntervalScalesWithFramerate) {
 
 TEST_F(OveruseFrameDetectorTest, RespectsMinFramerate) {
   const int kMinFrameRate = 7;  // Minimum fps allowed by current detector impl.
+  overuse_detector_->SetOptions(options_);
   overuse_detector_->OnTargetFramerateUpdated(kMinFrameRate);
 
   // Normal usage just at the limit.
@@ -470,6 +480,7 @@ TEST_F(OveruseFrameDetectorTest, RespectsMinFramerate) {
 
 TEST_F(OveruseFrameDetectorTest, LimitsMaxFrameInterval) {
   const int kMaxFrameRate = 20;
+  overuse_detector_->SetOptions(options_);
   overuse_detector_->OnTargetFramerateUpdated(kMaxFrameRate);
   int64_t frame_interval_us = rtc::kNumMicrosecsPerSec / kMaxFrameRate;
   // Maximum frame interval allowed is 35% above ideal.
@@ -518,6 +529,7 @@ TEST_F(OveruseFrameDetectorTest, NoOveruseForLargeRandomFrameInterval) {
   // EXPECT_CALL(mock_observer_, AdaptDown(_)).Times(0);
   // EXPECT_CALL(mock_observer_, AdaptUp(reason_))
   //     .Times(testing::AtLeast(1));
+  overuse_detector_->SetOptions(options_);
 
   const int kNumFrames = 500;
   const int kEncodeTimeUs = 100 * rtc::kNumMicrosecsPerMillisec;
@@ -542,6 +554,7 @@ TEST_F(OveruseFrameDetectorTest, NoOveruseForLargeRandomFrameInterval) {
 TEST_F(OveruseFrameDetectorTest, NoOveruseForRandomFrameIntervalWithReset) {
   // TODO(bugs.webrtc.org/8504): When new estimator is relanded,
   // behavior is improved in this scenario, and we get AdaptUp events.
+  overuse_detector_->SetOptions(options_);
   EXPECT_CALL(mock_observer_, AdaptDown(_)).Times(0);
   // EXPECT_CALL(mock_observer_, AdaptUp(reason_))
   //     .Times(testing::AtLeast(1));
@@ -627,12 +640,14 @@ class OveruseFrameDetectorTest2 : public OveruseFrameDetectorTest {
 // UsagePercent() < low_encode_usage_threshold_percent => underuse.
 TEST_F(OveruseFrameDetectorTest2, TriggerOveruse) {
   // usage > high => overuse
+  overuse_detector_->SetOptions(options_);
   EXPECT_CALL(mock_observer_, AdaptDown(reason_)).Times(1);
   TriggerOveruse(options_.high_threshold_consecutive_count);
 }
 
 TEST_F(OveruseFrameDetectorTest2, OveruseAndRecover) {
   // usage > high => overuse
+  overuse_detector_->SetOptions(options_);
   EXPECT_CALL(mock_observer_, AdaptDown(reason_)).Times(1);
   TriggerOveruse(options_.high_threshold_consecutive_count);
   // usage < low => underuse
@@ -641,6 +656,7 @@ TEST_F(OveruseFrameDetectorTest2, OveruseAndRecover) {
 }
 
 TEST_F(OveruseFrameDetectorTest2, DoubleOveruseAndRecover) {
+  overuse_detector_->SetOptions(options_);
   EXPECT_CALL(mock_observer_, AdaptDown(reason_)).Times(2);
   TriggerOveruse(options_.high_threshold_consecutive_count);
   TriggerOveruse(options_.high_threshold_consecutive_count);
@@ -653,8 +669,7 @@ TEST_F(OveruseFrameDetectorTest2, TriggerUnderuseWithMinProcessCount) {
   options_.min_process_count = 1;
   CpuOveruseObserverImpl overuse_observer;
   observer_ = nullptr;
-  overuse_detector_.reset(new OveruseFrameDetectorUnderTest(
-      options_, this));
+  overuse_detector_->SetOptions(options_);
   InsertAndSendFramesWithInterval(
       1200, kFrameIntervalUs, kWidth, kHeight, kProcessTimeUs);
   overuse_detector_->CheckForOveruse(&overuse_observer);
@@ -665,6 +680,7 @@ TEST_F(OveruseFrameDetectorTest2, TriggerUnderuseWithMinProcessCount) {
 }
 
 TEST_F(OveruseFrameDetectorTest2, ConstantOveruseGivesNoNormalUsage) {
+  overuse_detector_->SetOptions(options_);
   EXPECT_CALL(mock_observer_, AdaptUp(reason_)).Times(0);
   EXPECT_CALL(mock_observer_, AdaptDown(reason_)).Times(64);
   for (size_t i = 0; i < 64; ++i) {
@@ -675,24 +691,26 @@ TEST_F(OveruseFrameDetectorTest2, ConstantOveruseGivesNoNormalUsage) {
 TEST_F(OveruseFrameDetectorTest2, ConsecutiveCountTriggersOveruse) {
   EXPECT_CALL(mock_observer_, AdaptDown(reason_)).Times(1);
   options_.high_threshold_consecutive_count = 2;
-  ReinitializeOveruseDetector();
+  overuse_detector_->SetOptions(options_);
   TriggerOveruse(2);
 }
 
 TEST_F(OveruseFrameDetectorTest2, IncorrectConsecutiveCountTriggersNoOveruse) {
   EXPECT_CALL(mock_observer_, AdaptDown(reason_)).Times(0);
   options_.high_threshold_consecutive_count = 2;
-  ReinitializeOveruseDetector();
+  overuse_detector_->SetOptions(options_);
   TriggerOveruse(1);
 }
 
 TEST_F(OveruseFrameDetectorTest2, ProcessingUsage) {
+  overuse_detector_->SetOptions(options_);
   InsertAndSendFramesWithInterval(
       1000, kFrameIntervalUs, kWidth, kHeight, kProcessTimeUs);
   EXPECT_EQ(kProcessTimeUs * 100 / kFrameIntervalUs, UsagePercent());
 }
 
 TEST_F(OveruseFrameDetectorTest2, ResetAfterResolutionChange) {
+  overuse_detector_->SetOptions(options_);
   ForceUpdate(kWidth, kHeight);
   EXPECT_EQ(InitialUsage(), UsagePercent());
   InsertAndSendFramesWithInterval(
@@ -704,6 +722,7 @@ TEST_F(OveruseFrameDetectorTest2, ResetAfterResolutionChange) {
 }
 
 TEST_F(OveruseFrameDetectorTest2, ResetAfterFrameTimeout) {
+  overuse_detector_->SetOptions(options_);
   ForceUpdate(kWidth, kHeight);
   EXPECT_EQ(InitialUsage(), UsagePercent());
   InsertAndSendFramesWithInterval(
@@ -722,6 +741,7 @@ TEST_F(OveruseFrameDetectorTest2, ResetAfterFrameTimeout) {
 }
 
 TEST_F(OveruseFrameDetectorTest2, ConvergesSlowly) {
+  overuse_detector_->SetOptions(options_);
   InsertAndSendFramesWithInterval(1, kFrameIntervalUs, kWidth, kHeight,
                                   kProcessTimeUs);
   // No update for the first sample.
@@ -743,11 +763,13 @@ TEST_F(OveruseFrameDetectorTest2, ConvergesSlowly) {
 }
 
 TEST_F(OveruseFrameDetectorTest2, InitialProcessingUsage) {
+  overuse_detector_->SetOptions(options_);
   ForceUpdate(kWidth, kHeight);
   EXPECT_EQ(InitialUsage(), UsagePercent());
 }
 
 TEST_F(OveruseFrameDetectorTest2, MeasuresMultipleConcurrentSamples) {
+  overuse_detector_->SetOptions(options_);
   EXPECT_CALL(mock_observer_, AdaptDown(reason_))
       .Times(testing::AtLeast(1));
   static const int kIntervalUs = 33 * rtc::kNumMicrosecsPerMillisec;
@@ -771,6 +793,7 @@ TEST_F(OveruseFrameDetectorTest2, MeasuresMultipleConcurrentSamples) {
 
 TEST_F(OveruseFrameDetectorTest2, UpdatesExistingSamples) {
   // >85% encoding time should trigger overuse.
+  overuse_detector_->SetOptions(options_);
   EXPECT_CALL(mock_observer_, AdaptDown(reason_))
       .Times(testing::AtLeast(1));
   static const int kIntervalUs = 33 * rtc::kNumMicrosecsPerMillisec;
@@ -801,7 +824,7 @@ TEST_F(OveruseFrameDetectorTest2, RunOnTqNormalUsage) {
 
   rtc::Event event(false, false);
   queue.PostTask([this, &event] {
-    overuse_detector_->StartCheckForOveruse(observer_);
+    overuse_detector_->StartCheckForOveruse(options_, observer_);
     event.Set();
   });
   event.Wait(rtc::Event::kForever);
@@ -829,6 +852,7 @@ TEST_F(OveruseFrameDetectorTest2, RunOnTqNormalUsage) {
 // Models screencast, with irregular arrival of frames which are heavy
 // to encode.
 TEST_F(OveruseFrameDetectorTest2, NoOveruseForLargeRandomFrameInterval) {
+  overuse_detector_->SetOptions(options_);
   EXPECT_CALL(mock_observer_, AdaptDown(_)).Times(0);
   EXPECT_CALL(mock_observer_, AdaptUp(reason_))
       .Times(testing::AtLeast(1));
@@ -849,6 +873,7 @@ TEST_F(OveruseFrameDetectorTest2, NoOveruseForLargeRandomFrameInterval) {
 // Models screencast, with irregular arrival of frames, often
 // exceeding the timeout interval.
 TEST_F(OveruseFrameDetectorTest2, NoOveruseForRandomFrameIntervalWithReset) {
+  overuse_detector_->SetOptions(options_);
   EXPECT_CALL(mock_observer_, AdaptDown(_)).Times(0);
   EXPECT_CALL(mock_observer_, AdaptUp(reason_))
       .Times(testing::AtLeast(1));

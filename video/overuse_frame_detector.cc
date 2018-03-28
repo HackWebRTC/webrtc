@@ -510,10 +510,8 @@ class OveruseFrameDetector::CheckOveruseTask : public rtc::QueuedTask {
 };
 
 OveruseFrameDetector::OveruseFrameDetector(
-    const CpuOveruseOptions& options,
     CpuOveruseMetricsObserver* metrics_observer)
     : check_overuse_task_(nullptr),
-      options_(options),
       metrics_observer_(metrics_observer),
       num_process_times_(0),
       // TODO(nisse): Use rtc::Optional
@@ -525,8 +523,7 @@ OveruseFrameDetector::OveruseFrameDetector(
       num_overuse_detections_(0),
       last_rampup_time_ms_(-1),
       in_quick_rampup_(false),
-      current_rampup_delay_ms_(kStandardRampUpDelayMs),
-      usage_(CreateProcessingUsage(options)) {
+      current_rampup_delay_ms_(kStandardRampUpDelayMs) {
   task_checker_.Detach();
 }
 
@@ -535,10 +532,13 @@ OveruseFrameDetector::~OveruseFrameDetector() {
 }
 
 void OveruseFrameDetector::StartCheckForOveruse(
+    const CpuOveruseOptions& options,
     AdaptationObserverInterface* overuse_observer) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
   RTC_DCHECK(!check_overuse_task_);
   RTC_DCHECK(overuse_observer != nullptr);
+
+  SetOptions(options);
   check_overuse_task_ = new CheckOveruseTask(this, overuse_observer);
 }
 void OveruseFrameDetector::StopCheckForOveruse() {
@@ -667,6 +667,14 @@ void OveruseFrameDetector::CheckForOveruse(
                       << " encode usage " << metrics_->encode_usage_percent
                       << " overuse detections " << num_overuse_detections_
                       << " rampup delay " << rampup_delay;
+}
+
+void OveruseFrameDetector::SetOptions(const CpuOveruseOptions& options) {
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
+  options_ = options;
+  // Force reset with next frame.
+  num_pixels_ = 0;
+  usage_ = CreateProcessingUsage(options);
 }
 
 bool OveruseFrameDetector::IsOverusing(const CpuOveruseMetrics& metrics) {
