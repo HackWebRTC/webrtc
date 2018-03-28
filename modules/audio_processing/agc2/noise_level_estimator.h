@@ -20,7 +20,7 @@ class NoiseLevelEstimator {
  public:
   NoiseLevelEstimator() {}
 
-  // Returns the estimated noise level in DbFS.
+  // Returns the estimated noise level in dBFS.
   float Analyze(AudioFrameView<const float> frame);
 
  private:

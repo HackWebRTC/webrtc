@@ -548,6 +548,7 @@ if (rtc_include_tests) {
       "../../test:test_support",
       "../audio_coding:neteq_input_audio_tools",
       "aec_dump:mock_aec_dump_unittests",
+      "agc2:adaptive_digital_unittests",
       "agc2:fixed_digital_unittests",
       "test/conversational_speech:unittest",
       "vad:vad_unittests",

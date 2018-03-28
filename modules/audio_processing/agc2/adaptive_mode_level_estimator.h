@@ -11,6 +11,7 @@
 #ifndef MODULES_AUDIO_PROCESSING_AGC2_ADAPTIVE_MODE_LEVEL_ESTIMATOR_H_
 #define MODULES_AUDIO_PROCESSING_AGC2_ADAPTIVE_MODE_LEVEL_ESTIMATOR_H_
 
+#include "modules/audio_processing/agc2/saturation_protector.h"
 #include "modules/audio_processing/vad/vad_with_level.h"
 
 namespace webrtc {
@@ -21,6 +22,16 @@ class AdaptiveModeLevelEstimator {
   explicit AdaptiveModeLevelEstimator(ApmDataDumper* apm_data_dumper);
   void UpdateEstimation(const VadWithLevel::LevelAndProbability& vad_data);
   float LatestLevelEstimate() const;
+
+ private:
+  void DebugDumpEstimate();
+
+  int buffer_size_ms_ = 0;
+  float last_estimate_with_offset_dbfs_ = kInitialSpeechLevelEstimateDbfs;
+  float estimate_numerator_ = 0.f;
+  float estimate_denominator_ = 0.f;
+  SaturationProtector saturation_protector_;
+  ApmDataDumper* const apm_data_dumper_;
 };
 
 }  // namespace webrtc

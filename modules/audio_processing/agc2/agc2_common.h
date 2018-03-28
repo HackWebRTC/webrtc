@@ -27,6 +27,18 @@ constexpr size_t kMaximalNumberOfSamplesPerChannel = 480;
 
 constexpr float kAttackFilterConstant = 0.f;
 
+// Used in the Level Estimator for deciding when to update the speech
+// level estimate.
+constexpr float kVadConfidenceThreshold = 0.9f;
+
+// The amount of 'memory' of the Level Estimator. Decides leak factors.
+constexpr float kFullBufferSizeMs = 1000.f;
+constexpr float kFullBufferLeakFactor = 1.f - 1.f / kFullBufferSizeMs;
+
+constexpr float kInitialSpeechLevelEstimateDbfs = -30.f;
+
+constexpr float kInitialSaturationMarginDb = 17.f;
+
 // This is computed from kDecayMs by
 // 10 ** (-1/20 * subframe_duration / kDecayMs).
 // |subframe_duration| is |kFrameDurationMs / kSubFramesInFrame|.

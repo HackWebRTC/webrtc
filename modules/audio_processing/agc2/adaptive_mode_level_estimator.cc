@@ -17,7 +17,9 @@
 namespace webrtc {
 
 AdaptiveModeLevelEstimator::AdaptiveModeLevelEstimator(
-    ApmDataDumper* apm_data_dumper) {}
+    ApmDataDumper* apm_data_dumper)
+    : saturation_protector_(apm_data_dumper),
+      apm_data_dumper_(apm_data_dumper) {}
 
 void AdaptiveModeLevelEstimator::UpdateEstimation(
     const VadWithLevel::LevelAndProbability& vad_data) {
@@ -27,10 +29,40 @@ void AdaptiveModeLevelEstimator::UpdateEstimation(
   RTC_DCHECK_LT(vad_data.speech_peak_dbfs, 50.f);
   RTC_DCHECK_GE(vad_data.speech_probability, 0.f);
   RTC_DCHECK_LE(vad_data.speech_probability, 1.f);
+
+  if (vad_data.speech_probability < kVadConfidenceThreshold) {
+    DebugDumpEstimate();
+    return;
+  }
+
+  const bool buffer_is_full = buffer_size_ms_ >= kFullBufferSizeMs;
+  if (!buffer_is_full) {
+    buffer_size_ms_ += kFrameDurationMs;
+  }
+
+  const float leak_factor = buffer_is_full ? kFullBufferLeakFactor : 1.f;
+
+  estimate_numerator_ = estimate_numerator_ * leak_factor +
+                        vad_data.speech_rms_dbfs * vad_data.speech_probability;
+  estimate_denominator_ =
+      estimate_denominator_ * leak_factor + vad_data.speech_probability;
+
+  last_estimate_with_offset_dbfs_ = estimate_numerator_ / estimate_denominator_;
+
+  saturation_protector_.UpdateMargin(vad_data, last_estimate_with_offset_dbfs_);
+  DebugDumpEstimate();
 }
 
 float AdaptiveModeLevelEstimator::LatestLevelEstimate() const {
-  // TODO(webrtc:7494): This is a stub. Add implementation.
-  return 0.f;
+  return rtc::SafeClamp<float>(
+      last_estimate_with_offset_dbfs_ + saturation_protector_.LastMargin(),
+      -90.f, 0.f);
+}
+
+void AdaptiveModeLevelEstimator::DebugDumpEstimate() {
+  apm_data_dumper_->DumpRaw("agc2_adaptive_level_estimate_with_offset_dbfs",
+                            last_estimate_with_offset_dbfs_);
+  apm_data_dumper_->DumpRaw("agc2_adaptive_level_estimate_dbfs",
+                            LatestLevelEstimate());
 }
 }  // namespace webrtc
