@@ -41,8 +41,8 @@ CallTest::CallTest()
       num_video_streams_(1),
       num_audio_streams_(0),
       num_flexfec_streams_(0),
-      decoder_factory_(CreateBuiltinAudioDecoderFactory()),
-      encoder_factory_(CreateBuiltinAudioEncoderFactory()),
+      audio_decoder_factory_(CreateBuiltinAudioDecoderFactory()),
+      audio_encoder_factory_(CreateBuiltinAudioEncoderFactory()),
       task_queue_("CallTestTaskQueue") {}
 
 CallTest::~CallTest() {
@@ -220,7 +220,7 @@ void CallTest::CreateAudioAndFecSendConfigs(size_t num_audio_streams,
     audio_send_config_.rtp.ssrc = kAudioSendSsrc;
     audio_send_config_.send_codec_spec = AudioSendStream::Config::SendCodecSpec(
         kAudioSendPayloadType, {"opus", 48000, 2, {{"stereo", "1"}}});
-    audio_send_config_.encoder_factory = encoder_factory_;
+    audio_send_config_.encoder_factory = audio_encoder_factory_;
   }
 
   // TODO(brandtr): Update this when we support multistream protection.
@@ -278,7 +278,7 @@ void CallTest::CreateMatchingAudioAndFecConfigs(
     audio_config.rtp.local_ssrc = kReceiverLocalAudioSsrc;
     audio_config.rtcp_send_transport = rtcp_send_transport;
     audio_config.rtp.remote_ssrc = audio_send_config_.rtp.ssrc;
-    audio_config.decoder_factory = decoder_factory_;
+    audio_config.decoder_factory = audio_decoder_factory_;
     audio_config.decoder_map = {{kAudioSendPayloadType, {"opus", 48000, 2}}};
     audio_receive_configs_.push_back(audio_config);
   }

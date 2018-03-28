@@ -243,7 +243,7 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
     audio_recv_config.rtp.remote_ssrc = kAudioSendSsrc;
     audio_recv_config.rtp.local_ssrc = kAudioRecvSsrc;
     audio_recv_config.sync_group = kSyncGroup;
-    audio_recv_config.decoder_factory = decoder_factory_;
+    audio_recv_config.decoder_factory = audio_decoder_factory_;
     audio_recv_config.decoder_map = {
         {kAudioSendPayloadType, {"ISAC", 16000, 1}}};
 

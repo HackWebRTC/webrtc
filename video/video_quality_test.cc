@@ -2071,7 +2071,7 @@ void VideoQualityTest::SetupAudio(Transport* transport,
       {"OPUS", 48000, 2,
        {{"usedtx", (params_.audio.dtx ? "1" : "0")},
          {"stereo", "1"}}});
-  audio_send_config_.encoder_factory = encoder_factory_;
+  audio_send_config_.encoder_factory = audio_encoder_factory_;
   audio_send_stream_ = sender_call_->CreateAudioSendStream(audio_send_config_);
 
   AudioReceiveStream::Config audio_config;
@@ -2080,7 +2080,7 @@ void VideoQualityTest::SetupAudio(Transport* transport,
   audio_config.rtp.remote_ssrc = audio_send_config_.rtp.ssrc;
   audio_config.rtp.transport_cc = params_.call.send_side_bwe;
   audio_config.rtp.extensions = audio_send_config_.rtp.extensions;
-  audio_config.decoder_factory = decoder_factory_;
+  audio_config.decoder_factory = audio_decoder_factory_;
   audio_config.decoder_map = {{kAudioSendPayloadType, {"OPUS", 48000, 2}}};
   if (params_.video[0].enabled && params_.audio.sync_video)
     audio_config.sync_group = kSyncGroup;
