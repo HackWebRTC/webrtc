@@ -154,6 +154,8 @@ class TurnPortTest : public testing::Test,
         turn_error_(false),
         turn_unknown_address_(false),
         turn_create_permission_success_(false),
+        turn_port_closed_(false),
+        turn_port_destroyed_(false),
         udp_ready_(false),
         test_finish_(false) {
     // Some code uses "last received time == 0" to represent "nothing received
@@ -210,6 +212,13 @@ class TurnPortTest : public testing::Test,
     turn_port_->HandleIncomingPacket(socket, data, size, remote_addr,
                                      packet_time);
   }
+  void OnTurnPortClosed(TurnPort* port) {
+    turn_port_closed_ = true;
+  }
+  void OnTurnPortDestroyed(PortInterface* port) {
+    turn_port_destroyed_ = true;
+  }
+
   rtc::AsyncSocket* CreateServerSocket(const SocketAddress addr) {
     rtc::AsyncSocket* socket = ss_->CreateAsyncSocket(SOCK_STREAM);
     EXPECT_GE(socket->Bind(addr), 0);
@@ -316,6 +325,10 @@ class TurnPortTest : public testing::Test,
         &TurnPortTest::OnTurnCreatePermissionResult);
     turn_port_->SignalTurnRefreshResult.connect(
         this, &TurnPortTest::OnTurnRefreshResult);
+    turn_port_->SignalTurnPortClosed.connect(
+        this, &TurnPortTest::OnTurnPortClosed);
+    turn_port_->SignalDestroyed.connect(
+        this, &TurnPortTest::OnTurnPortDestroyed);
   }
 
   void CreateUdpPort() { CreateUdpPort(kLocalAddr2); }
@@ -677,6 +690,48 @@ class TurnPortTest : public testing::Test,
                              kSimulatedRtt, fake_clock_);
   }
 
+  // Test that the TURN allocation is released by sending a refresh request
+  // with lifetime 0 when Release is called.
+  void TestTurnGracefulReleaseAllocation(ProtocolType protocol_type) {
+    PrepareTurnAndUdpPorts(protocol_type);
+
+    // Create connections and send pings.
+    Connection* conn1 = turn_port_->CreateConnection(
+        udp_port_->Candidates()[0], Port::ORIGIN_MESSAGE);
+    Connection* conn2 = udp_port_->CreateConnection(
+        turn_port_->Candidates()[0], Port::ORIGIN_MESSAGE);
+    ASSERT_TRUE(conn1 != NULL);
+    ASSERT_TRUE(conn2 != NULL);
+    conn1->SignalReadPacket.connect(static_cast<TurnPortTest*>(this),
+                                    &TurnPortTest::OnTurnReadPacket);
+    conn2->SignalReadPacket.connect(static_cast<TurnPortTest*>(this),
+                                    &TurnPortTest::OnUdpReadPacket);
+    conn1->Ping(0);
+    EXPECT_EQ_SIMULATED_WAIT(Connection::STATE_WRITABLE, conn1->write_state(),
+                             kSimulatedRtt * 2, fake_clock_);
+    conn2->Ping(0);
+    EXPECT_EQ_SIMULATED_WAIT(Connection::STATE_WRITABLE, conn2->write_state(),
+                             kSimulatedRtt * 2, fake_clock_);
+
+    // Send some data from Udp to TurnPort.
+    unsigned char buf[256] = { 0 };
+    conn2->Send(buf, sizeof(buf), options);
+
+    // Now release the TurnPort allocation.
+    // This will send a REFRESH with lifetime 0 to server.
+    turn_port_->Release();
+
+    // Wait for the TurnPort to signal closed.
+    ASSERT_TRUE_SIMULATED_WAIT(turn_port_closed_, kSimulatedRtt, fake_clock_);
+
+    // But the data should have arrived first.
+    ASSERT_EQ(1ul, turn_packets_.size());
+    EXPECT_EQ(sizeof(buf), turn_packets_[0].size());
+
+    // The allocation is released at server.
+    EXPECT_EQ(0U, turn_server_.server()->allocations().size());
+  }
+
  protected:
   rtc::ScopedFakeClock fake_clock_;
   // When a "create port" helper method is called with an IP, we create a
@@ -694,6 +749,8 @@ class TurnPortTest : public testing::Test,
   bool turn_error_;
   bool turn_unknown_address_;
   bool turn_create_permission_success_;
+  bool turn_port_closed_;
+  bool turn_port_destroyed_;
   bool udp_ready_;
   bool test_finish_;
   bool turn_refresh_success_ = false;
@@ -1449,6 +1506,24 @@ TEST_F(TurnPortTest, TestTurnTLSReleaseAllocation) {
   turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TLS);
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTlsProtoAddr);
   TestTurnReleaseAllocation(PROTO_TLS);
+}
+
+TEST_F(TurnPortTest, TestTurnUDPGracefulReleaseAllocation) {
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_UDP);
+  CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
+  TestTurnGracefulReleaseAllocation(PROTO_UDP);
+}
+
+TEST_F(TurnPortTest, TestTurnTCPGracefulReleaseAllocation) {
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
+  CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
+  TestTurnGracefulReleaseAllocation(PROTO_TCP);
+}
+
+TEST_F(TurnPortTest, TestTurnTLSGracefulReleaseAllocation) {
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TLS);
+  CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTlsProtoAddr);
+  TestTurnGracefulReleaseAllocation(PROTO_TLS);
 }
 
 // Test that nothing bad happens if we try to create a connection to the same

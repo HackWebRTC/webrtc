@@ -266,9 +266,7 @@ TurnPort::~TurnPort() {
   // release the allocation by sending a refresh with
   // lifetime 0.
   if (ready()) {
-    TurnRefreshRequest bye(this);
-    bye.set_lifetime(0);
-    SendRequest(&bye, 0);
+    Release();
   }
 
   while (!entries_.empty()) {
@@ -841,6 +839,18 @@ void TurnPort::HandleRefreshError() {
   }
 }
 
+void TurnPort::Release() {
+  // Remove any pending refresh requests.
+  request_manager_.Clear();
+
+  // Send refresh with lifetime 0.
+  TurnRefreshRequest* req = new TurnRefreshRequest(this);
+  req->set_lifetime(0);
+  SendRequest(req, 0);
+
+  state_ = STATE_RECEIVEONLY;
+}
+
 void TurnPort::Close() {
   if (!ready()) {
     OnAllocateError();
@@ -852,6 +862,8 @@ void TurnPort::Close() {
   for (auto kv : connections()) {
     kv.second->Destroy();
   }
+
+  SignalTurnPortClosed(this);
 }
 
 void TurnPort::OnMessage(rtc::Message* message) {
@@ -881,6 +893,9 @@ void TurnPort::OnMessage(rtc::Message* message) {
         socket_ = NULL;
         PrepareAddress();
       }
+      break;
+    case MSG_ALLOCATION_RELEASED:
+      Close();
       break;
     default:
       Port::OnMessage(message);
@@ -1430,8 +1445,16 @@ void TurnRefreshRequest::OnResponse(StunMessage* response) {
     return;
   }
 
-  // Schedule a refresh based on the returned lifetime value.
-  port_->ScheduleRefresh(lifetime_attr->value());
+  if (lifetime_attr->value() > 0) {
+    // Schedule a refresh based on the returned lifetime value.
+    port_->ScheduleRefresh(lifetime_attr->value());
+  } else {
+    // If we scheduled a refresh with lifetime 0, we're releasing this
+    // allocation; see TurnPort::Release.
+    port_->thread()->Post(RTC_FROM_HERE, port_,
+                          TurnPort::MSG_ALLOCATION_RELEASED);
+  }
+
   port_->SignalTurnRefreshResult(port_, TURN_SUCCESS_RESULT_CODE);
 }
 
