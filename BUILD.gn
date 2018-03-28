@@ -221,7 +221,6 @@ config("common_config") {
         # Repeat some flags that get overridden by -Wextra.
         "-Wno-unused-parameter",
         "-Wno-missing-field-initializers",
-        "-Wno-strict-overflow",
       ]
       cflags_c += [
         # TODO(bugs.webrtc.org/9029): enable commented compiler flags.
