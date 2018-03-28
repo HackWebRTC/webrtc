@@ -18,6 +18,7 @@ namespace webrtc {
 // Configuration struct for EchoCanceller3
 struct EchoCanceller3Config {
   EchoCanceller3Config();
+  EchoCanceller3Config(const EchoCanceller3Config& e);
   struct Delay {
     size_t default_delay = 5;
     size_t down_sampling_factor = 4;
@@ -119,6 +120,18 @@ struct EchoCanceller3Config {
 
     bool has_clock_drift = false;
   } echo_removal_control;
+
+  struct EchoModel {
+    size_t noise_floor_hold = 50;
+    float min_noise_floor_power = 1638400.f;
+    float stationary_gate_slope = 10.f;
+    float noise_gate_power = 27509.42f;
+    float noise_gate_slope = 0.3f;
+    size_t render_pre_window_size = 1;
+    size_t render_post_window_size = 3;
+    float nonlinear_hold = 2;
+    float nonlinear_release = 0.1f;
+  } echo_model;
 };
 }  // namespace webrtc
 

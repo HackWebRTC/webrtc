@@ -13,6 +13,7 @@
 
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/atomicops.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 
@@ -27,6 +28,43 @@ bool DetectSaturation(rtc::ArrayView<const float> y) {
     }
   }
   return false;
+}
+
+// Method for adjusting config parameter dependencies..
+EchoCanceller3Config AdjustConfig(const EchoCanceller3Config& config) {
+  EchoCanceller3Config adjusted_cfg = config;
+
+  // Use customized parameters when the system has clock-drift.
+  if (config.echo_removal_control.has_clock_drift) {
+    RTC_LOG(LS_WARNING)
+        << "Customizing parameters to work well for the clock-drift case.";
+    if (config.ep_strength.bounded_erl) {
+      adjusted_cfg.ep_strength.default_len = 0.85f;
+      adjusted_cfg.ep_strength.lf = 0.01f;
+      adjusted_cfg.ep_strength.mf = 0.01f;
+      adjusted_cfg.ep_strength.hf = 0.01f;
+      adjusted_cfg.echo_model.render_pre_window_size = 1;
+      adjusted_cfg.echo_model.render_post_window_size = 1;
+      adjusted_cfg.echo_model.nonlinear_hold = 3;
+      adjusted_cfg.echo_model.nonlinear_release = 0.001f;
+    } else {
+      adjusted_cfg.ep_strength.bounded_erl = true;
+      adjusted_cfg.delay.down_sampling_factor = 2;
+      adjusted_cfg.ep_strength.default_len = 0.8f;
+      adjusted_cfg.ep_strength.lf = 0.01f;
+      adjusted_cfg.ep_strength.mf = 0.01f;
+      adjusted_cfg.ep_strength.hf = 0.01f;
+      adjusted_cfg.filter.main = {30, 0.1f, 0.8f, 0.001f, 20075344.f};
+      adjusted_cfg.filter.shadow = {30, 0.7f, 20075344.f};
+      adjusted_cfg.filter.main_initial = {30, 0.1f, 1.5f, 0.001f, 20075344.f};
+      adjusted_cfg.filter.shadow_initial = {30, 0.9f, 20075344.f};
+      adjusted_cfg.echo_model.render_pre_window_size = 2;
+      adjusted_cfg.echo_model.render_post_window_size = 2;
+      adjusted_cfg.echo_model.nonlinear_hold = 3;
+      adjusted_cfg.echo_model.nonlinear_release = 0.6f;
+    }
+  }
+  return adjusted_cfg;
 }
 
 void FillSubFrameView(AudioBuffer* frame,
@@ -209,11 +247,12 @@ int EchoCanceller3::instance_count_ = 0;
 EchoCanceller3::EchoCanceller3(const EchoCanceller3Config& config,
                                int sample_rate_hz,
                                bool use_highpass_filter)
-    : EchoCanceller3(config,
-                     sample_rate_hz,
-                     use_highpass_filter,
-                     std::unique_ptr<BlockProcessor>(
-                         BlockProcessor::Create(config, sample_rate_hz))) {}
+    : EchoCanceller3(
+          AdjustConfig(config),
+          sample_rate_hz,
+          use_highpass_filter,
+          std::unique_ptr<BlockProcessor>(
+              BlockProcessor::Create(AdjustConfig(config), sample_rate_hz))) {}
 EchoCanceller3::EchoCanceller3(const EchoCanceller3Config& config,
                                int sample_rate_hz,
                                bool use_highpass_filter,
