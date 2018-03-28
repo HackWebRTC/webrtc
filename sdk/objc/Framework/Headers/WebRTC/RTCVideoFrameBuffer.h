@@ -71,6 +71,8 @@ RTC_EXPORT
 @property(nonatomic, readonly) CVPixelBufferRef pixelBuffer;
 @property(nonatomic, readonly) int cropX;
 @property(nonatomic, readonly) int cropY;
+@property(nonatomic, readonly) int cropWidth;
+@property(nonatomic, readonly) int cropHeight;
 
 + (NSSet<NSNumber *> *)supportedPixelFormats;
 
@@ -89,7 +91,8 @@ RTC_EXPORT
 /** The minimum size of the |tmpBuffer| must be the number of bytes returned from the
  * bufferSizeForCroppingAndScalingToWidth:height: method.
  */
-- (BOOL)cropAndScaleTo:(CVPixelBufferRef)outputPixelBuffer withTempBuffer:(uint8_t *)tmpBuffer;
+- (BOOL)cropAndScaleTo:(CVPixelBufferRef)outputPixelBuffer
+        withTempBuffer:(nullable uint8_t *)tmpBuffer;
 
 @end
 
