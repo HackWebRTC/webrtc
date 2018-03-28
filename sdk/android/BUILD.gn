@@ -798,8 +798,6 @@ rtc_android_library("base_java") {
   ]
 
   deps = [
-    ":native_api_audio_device_module",
-    "//modules/audio_device:audio_device_java",
     "//rtc_base:base_java",
   ]
 }
@@ -891,6 +889,7 @@ rtc_android_library("libjingle_peerconnection_java") {
   deps = [
     ":base_java",
     ":hwcodecs_java",
+    "//modules/audio_device:audio_device_java",
     "//rtc_base:base_java",
   ]
 
