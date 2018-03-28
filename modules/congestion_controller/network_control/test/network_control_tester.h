@@ -51,7 +51,7 @@ class NetworkControlCacher : public NetworkControllerObserver {
   NetworkControlState current_state_;
 };
 
-class NetworkControllerTester {
+class FeedbackBasedNetworkControllerTester {
  public:
   // A PacketProducer is a function that takes a network control state, a
   // timestamp representing the expected send time and a time delta of the send
@@ -59,9 +59,10 @@ class NetworkControllerTester {
   // SentPacket struct with actual send time and packet size.
   using PacketProducer = std::function<
       SentPacket(const NetworkControlState&, Timestamp, TimeDelta)>;
-  NetworkControllerTester(NetworkControllerFactoryInterface* factory,
-                          NetworkControllerConfig initial_config);
-  ~NetworkControllerTester();
+  FeedbackBasedNetworkControllerTester(
+      NetworkControllerFactoryInterface* factory,
+      NetworkControllerConfig initial_config);
+  ~FeedbackBasedNetworkControllerTester();
 
   // Runs the simulations for the given duration, the PacketProducer will be
   // called repeatedly based on the given packet interval and the network will

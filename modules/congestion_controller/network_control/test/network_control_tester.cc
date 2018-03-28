@@ -56,7 +56,7 @@ SentPacket SimpleTargetRateProducer::ProduceNext(
   return packet;
 }
 
-NetworkControllerTester::NetworkControllerTester(
+FeedbackBasedNetworkControllerTester::FeedbackBasedNetworkControllerTester(
     NetworkControllerFactoryInterface* factory,
     NetworkControllerConfig initial_config)
     : current_time_(Timestamp::seconds(100000)),
@@ -66,12 +66,14 @@ NetworkControllerTester::NetworkControllerTester(
   process_interval_ = factory->GetProcessInterval();
 }
 
-NetworkControllerTester::~NetworkControllerTester() = default;
+FeedbackBasedNetworkControllerTester::~FeedbackBasedNetworkControllerTester() =
+    default;
 
-PacketResult NetworkControllerTester::SimulateSend(SentPacket packet,
-                                                   TimeDelta time_delta,
-                                                   TimeDelta propagation_delay,
-                                                   DataRate actual_bandwidth) {
+PacketResult FeedbackBasedNetworkControllerTester::SimulateSend(
+    SentPacket packet,
+    TimeDelta time_delta,
+    TimeDelta propagation_delay,
+    DataRate actual_bandwidth) {
   TimeDelta bandwidth_delay = packet.size / actual_bandwidth;
   accumulated_delay_ =
       std::max(accumulated_delay_ - time_delta, TimeDelta::Zero());
@@ -84,11 +86,12 @@ PacketResult NetworkControllerTester::SimulateSend(SentPacket packet,
   return result;
 }
 
-void NetworkControllerTester::RunSimulation(TimeDelta duration,
-                                            TimeDelta packet_interval,
-                                            DataRate actual_bandwidth,
-                                            TimeDelta propagation_delay,
-                                            PacketProducer next_packet) {
+void FeedbackBasedNetworkControllerTester::RunSimulation(
+    TimeDelta duration,
+    TimeDelta packet_interval,
+    DataRate actual_bandwidth,
+    TimeDelta propagation_delay,
+    PacketProducer next_packet) {
   Timestamp start_time = current_time_;
   Timestamp last_process_time = current_time_;
   while (current_time_ - start_time < duration) {
