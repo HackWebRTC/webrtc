@@ -14,6 +14,8 @@
 #ifndef MODULES_VIDEO_CODING_CODECS_VP9_INCLUDE_VP9_GLOBALS_H_
 #define MODULES_VIDEO_CODING_CODECS_VP9_INCLUDE_VP9_GLOBALS_H_
 
+#include <assert.h>
+
 #include "modules/video_coding/codecs/interface/common_constants.h"
 
 namespace webrtc {
@@ -26,6 +28,9 @@ const uint8_t kNumVp9Buffers = 8;
 const size_t kMaxVp9RefPics = 3;
 const size_t kMaxVp9FramesInGof = 0xFF;  // 8 bits
 const size_t kMaxVp9NumberOfSpatialLayers = 8;
+
+const size_t kMinVp9SpatialLayerWidth = 320;
+const size_t kMinVp9SpatialLayerHeight = 180;
 
 enum TemporalStructureMode {
   kTemporalStructureMode1,  // 1 temporal layer structure - i.e., IPPP...

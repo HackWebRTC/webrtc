@@ -227,9 +227,17 @@ bool BitrateAllocation::IsSpatialLayerUsed(size_t spatial_index) const {
 // Get the sum of all the temporal layer for a specific spatial layer.
 uint32_t BitrateAllocation::GetSpatialLayerSum(size_t spatial_index) const {
   RTC_CHECK_LT(spatial_index, kMaxSpatialLayers);
+  return GetTemporalLayerSum(spatial_index, kMaxTemporalStreams - 1);
+}
+
+uint32_t BitrateAllocation::GetTemporalLayerSum(size_t spatial_index,
+                                                size_t temporal_index) const {
+  RTC_CHECK_LT(spatial_index, kMaxSpatialLayers);
+  RTC_CHECK_LT(temporal_index, kMaxTemporalStreams);
   uint32_t sum = 0;
-  for (int i = 0; i < kMaxTemporalStreams; ++i)
+  for (size_t i = 0; i <= temporal_index; ++i) {
     sum += bitrates_[spatial_index][i];
+  }
   return sum;
 }
 

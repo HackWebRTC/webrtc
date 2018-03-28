@@ -24,6 +24,7 @@
 #include "common_video/include/video_frame_buffer.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/video_coding/codecs/vp9/screenshare_layers.h"
+#include "modules/video_coding/codecs/vp9/svc_rate_allocator.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/keep_ref_until_done.h"
 #include "rtc_base/logging.h"
@@ -122,25 +123,21 @@ bool VP9EncoderImpl::ExplicitlyConfiguredSpatialLayers() const {
   return num_spatial_layers_ > 1 && codec_.spatialLayers[0].targetBitrate > 0;
 }
 
-bool VP9EncoderImpl::SetSvcRates() {
+bool VP9EncoderImpl::SetSvcRates(const BitrateAllocation& bitrate_allocation) {
   uint8_t i = 0;
 
+  config_->rc_target_bitrate = bitrate_allocation.get_sum_kbps();
+  spatial_layer_->ConfigureBitrate(bitrate_allocation.get_sum_kbps(), 0);
+
   if (ExplicitlyConfiguredSpatialLayers()) {
-    if (num_temporal_layers_ > 1) {
-      RTC_LOG(LS_ERROR) << "Multiple temporal layers when manually specifying "
-                           "spatial layers not implemented yet!";
-      return false;
-    }
-    int total_bitrate_bps = 0;
-    for (i = 0; i < num_spatial_layers_; ++i)
-      total_bitrate_bps += codec_.spatialLayers[i].targetBitrate * 1000;
-    // If total bitrate differs now from what has been specified at the
-    // beginning, update the bitrates in the same ratio as before.
-    for (i = 0; i < num_spatial_layers_; ++i) {
-      config_->ss_target_bitrate[i] = config_->layer_target_bitrate[i] =
-          static_cast<int>(static_cast<int64_t>(config_->rc_target_bitrate) *
-                           codec_.spatialLayers[i].targetBitrate * 1000 /
-                           total_bitrate_bps);
+    for (size_t sl_idx = 0; sl_idx < num_spatial_layers_; ++sl_idx) {
+      config_->ss_target_bitrate[sl_idx] =
+          bitrate_allocation.GetSpatialLayerSum(sl_idx) / 1000;
+
+      for (size_t tl_idx = 0; tl_idx < num_temporal_layers_; ++tl_idx) {
+        config_->layer_target_bitrate[sl_idx * num_temporal_layers_ + tl_idx] =
+            bitrate_allocation.GetTemporalLayerSum(sl_idx, tl_idx) / 1000;
+      }
     }
   } else {
     float rate_ratio[VPX_MAX_LAYERS] = {0};
@@ -212,12 +209,9 @@ int VP9EncoderImpl::SetRateAllocation(
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
 
-  // TODO(sprang): Actually use BitrateAllocation layer info.
-  config_->rc_target_bitrate = bitrate_allocation.get_sum_kbps();
   codec_.maxFramerate = frame_rate;
-  spatial_layer_->ConfigureBitrate(bitrate_allocation.get_sum_kbps(), 0);
 
-  if (!SetSvcRates()) {
+  if (!SetSvcRates(bitrate_allocation)) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
 
@@ -439,7 +433,10 @@ int VP9EncoderImpl::InitAndSetControlSettings(const VideoCodec* inst) {
     }
   }
 
-  if (!SetSvcRates()) {
+  SvcRateAllocator init_allocator(codec_);
+  BitrateAllocation allocation = init_allocator.GetAllocation(
+      inst->startBitrate * 1000, inst->maxFramerate);
+  if (!SetSvcRates(allocation)) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
 

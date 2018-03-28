@@ -77,7 +77,7 @@ class VP9EncoderImpl : public VP9Encoder {
                              uint32_t timestamp);
 
   bool ExplicitlyConfiguredSpatialLayers() const;
-  bool SetSvcRates();
+  bool SetSvcRates(const BitrateAllocation& bitrate_allocation);
 
   // Used for flexible mode to set the flags and buffer references used
   // by the encoder. Also calculates the references used by the RTP

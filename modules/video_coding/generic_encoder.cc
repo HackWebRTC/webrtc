@@ -128,21 +128,8 @@ void VCMGenericEncoder::SetEncoderParameters(const EncoderParameters& params) {
     }
     vcm_encoded_frame_callback_->OnFrameRateChanged(params.input_frame_rate);
     for (size_t i = 0; i < streams_or_svc_num_; ++i) {
-      size_t layer_bitrate_bytes_per_sec =
-          params.target_bitrate.GetSpatialLayerSum(i) / 8;
-      // VP9 rate control is not yet moved out of VP9Impl. Due to that rates
-      // are not split among spatial layers. Use default 1:2:4 bitrate
-      // distribution.
-      // TODO(ilnik): move bitrate per spatial layer calculations out of
-      // vp9_impl.cc and drop the check below.
-      if (codec_type_ == kVideoCodecVP9) {
-        int scaling_factor_num = 1 << i;                          // 1, 2 or 4
-        int scaling_factor_den = (1 << streams_or_svc_num_) - 1;  // 1 + 2 + 4
-        layer_bitrate_bytes_per_sec = params.target_bitrate.get_sum_bps() / 8 *
-                                      scaling_factor_num / scaling_factor_den;
-      }
       vcm_encoded_frame_callback_->OnTargetBitrateChanged(
-          layer_bitrate_bytes_per_sec, i);
+          params.target_bitrate.GetSpatialLayerSum(i) / 8, i);
     }
   }
 }

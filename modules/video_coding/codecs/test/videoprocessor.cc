@@ -350,24 +350,18 @@ void VideoProcessor::FrameEncoded(
   frame_stat->encoding_successful = true;
   frame_stat->encode_time_us =
       GetElapsedTimeMicroseconds(frame_stat->encode_start_ns, encode_stop_ns);
-  if (codec_type == kVideoCodecVP9) {
-    const CodecSpecificInfoVP9& vp9_info = codec_specific.codecSpecific.VP9;
-    frame_stat->inter_layer_predicted = vp9_info.inter_layer_predicted;
-
-    // TODO(ssilkin): Implement bitrate allocation for VP9 SVC. For now set
-    // target for base layers equal to total target to avoid devision by zero
-    // at analysis.
-    frame_stat->target_bitrate_kbps = bitrate_allocation_.get_sum_kbps();
-  } else {
-    frame_stat->target_bitrate_kbps =
-        (bitrate_allocation_.GetBitrate(simulcast_svc_idx, temporal_idx) +
-         500) /
-        1000;
-  }
+  frame_stat->target_bitrate_kbps = (bitrate_allocation_.GetTemporalLayerSum(
+                                         simulcast_svc_idx, temporal_idx) +
+                                     500) /
+                                    1000;
   frame_stat->length_bytes = encoded_image._length;
   frame_stat->frame_type = encoded_image._frameType;
   frame_stat->temporal_layer_idx = temporal_idx;
   frame_stat->simulcast_svc_idx = simulcast_svc_idx;
+  if (codec_type == kVideoCodecVP9) {
+    const CodecSpecificInfoVP9& vp9_info = codec_specific.codecSpecific.VP9;
+    frame_stat->inter_layer_predicted = vp9_info.inter_layer_predicted;
+  }
   frame_stat->max_nalu_size_bytes = GetMaxNaluSizeBytes(encoded_image, config_);
   frame_stat->qp = encoded_image.qp_;
 

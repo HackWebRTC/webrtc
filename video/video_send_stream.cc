@@ -26,6 +26,7 @@
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/source/rtp_sender.h"
 #include "modules/utility/include/process_thread.h"
+#include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
 #include "modules/video_coding/fec_controller_default.h"
 #include "modules/video_coding/utility/ivf_file_writer.h"
 #include "rtc_base/checks.h"

@@ -2463,7 +2463,7 @@ class VideoCodecConfigObserver : public test::SendTest,
         init_encode_event_(false, false),
         num_initializations_(0),
         stream_(nullptr) {
-    memset(&encoder_settings_, 0, sizeof(encoder_settings_));
+    InitCodecSpecifics();
   }
 
  private:
@@ -2517,6 +2517,7 @@ class VideoCodecConfigObserver : public test::SendTest,
     return FakeEncoder::InitEncode(config, number_of_cores, max_payload_size);
   }
 
+  void InitCodecSpecifics();
   void VerifyCodecSpecifics(const VideoCodec& config) const;
   rtc::scoped_refptr<VideoEncoderConfig::EncoderSpecificSettings>
   GetEncoderSpecificSettings() const;
@@ -2526,7 +2527,8 @@ class VideoCodecConfigObserver : public test::SendTest,
         init_encode_event_.Wait(VideoSendStreamTest::kDefaultTimeoutMs));
     ASSERT_EQ(1u, num_initializations_) << "VideoEncoder not initialized.";
 
-    encoder_settings_.frameDroppingOn = true;
+    // Change encoder settings to actually trigger reconfiguration.
+    encoder_settings_.frameDroppingOn = !encoder_settings_.frameDroppingOn;
     encoder_config_.encoder_specific_settings = GetEncoderSpecificSettings();
     stream_->ReconfigureVideoEncoder(std::move(encoder_config_));
     ASSERT_TRUE(
@@ -2553,6 +2555,11 @@ class VideoCodecConfigObserver : public test::SendTest,
 };
 
 template <>
+void VideoCodecConfigObserver<VideoCodecH264>::InitCodecSpecifics() {
+  encoder_settings_ = VideoEncoder::GetDefaultH264Settings();
+}
+
+template <>
 void VideoCodecConfigObserver<VideoCodecH264>::VerifyCodecSpecifics(
     const VideoCodec& config) const {
   EXPECT_EQ(
@@ -2564,6 +2571,11 @@ rtc::scoped_refptr<VideoEncoderConfig::EncoderSpecificSettings>
 VideoCodecConfigObserver<VideoCodecH264>::GetEncoderSpecificSettings() const {
   return new rtc::RefCountedObject<
       VideoEncoderConfig::H264EncoderSpecificSettings>(encoder_settings_);
+}
+
+template <>
+void VideoCodecConfigObserver<VideoCodecVP8>::InitCodecSpecifics() {
+  encoder_settings_ = VideoEncoder::GetDefaultVp8Settings();
 }
 
 template <>
@@ -2593,6 +2605,11 @@ rtc::scoped_refptr<VideoEncoderConfig::EncoderSpecificSettings>
 VideoCodecConfigObserver<VideoCodecVP8>::GetEncoderSpecificSettings() const {
   return new rtc::RefCountedObject<
       VideoEncoderConfig::Vp8EncoderSpecificSettings>(encoder_settings_);
+}
+
+template <>
+void VideoCodecConfigObserver<VideoCodecVP9>::InitCodecSpecifics() {
+  encoder_settings_ = VideoEncoder::GetDefaultVp9Settings();
 }
 
 template <>
@@ -3381,22 +3398,45 @@ void VideoSendStreamTest::TestVp9NonFlexMode(uint8_t num_temporal_layers,
   // Set to < kNumFramesToSend and coprime to length of temporal layer
   // structures to verify temporal id reset on key frame.
   static const int kKeyFrameInterval = 31;
+
+  static const int kWidth = kMinVp9SpatialLayerWidth;
+  static const int kHeight = kMinVp9SpatialLayerHeight;
+  static const float kGoodBitsPerPixel = 0.1f;
   class NonFlexibleMode : public Vp9HeaderObserver {
    public:
     NonFlexibleMode(uint8_t num_temporal_layers, uint8_t num_spatial_layers)
         : num_temporal_layers_(num_temporal_layers),
           num_spatial_layers_(num_spatial_layers),
           l_field_(num_temporal_layers > 1 || num_spatial_layers > 1) {}
+
     void ModifyVideoConfigsHook(
         VideoSendStream::Config* send_config,
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
       encoder_config->codec_type = kVideoCodecVP9;
+      int bitrate_bps = 0;
+      for (int sl_idx = 0; sl_idx < num_spatial_layers_; ++sl_idx) {
+        const int width = kWidth << sl_idx;
+        const int height = kHeight << sl_idx;
+        const float bpp = kGoodBitsPerPixel / (1 << sl_idx);
+        bitrate_bps += static_cast<int>(width * height * bpp * 30);
+      }
+      encoder_config->max_bitrate_bps = bitrate_bps * 2;
+
       vp9_settings_.flexibleMode = false;
       vp9_settings_.frameDroppingOn = false;
       vp9_settings_.keyFrameInterval = kKeyFrameInterval;
       vp9_settings_.numberOfTemporalLayers = num_temporal_layers_;
       vp9_settings_.numberOfSpatialLayers = num_spatial_layers_;
+    }
+
+    void ModifyVideoCaptureStartResolution(int* width,
+                                           int* height,
+                                           int* frame_rate) override {
+      expected_width_ = kWidth << (num_spatial_layers_ - 1);
+      expected_height_ = kHeight << (num_spatial_layers_ - 1);
+      *width = expected_width_;
+      *height = expected_height_;
     }
 
     void InspectHeader(const RTPVideoHeaderVP9& vp9) override {

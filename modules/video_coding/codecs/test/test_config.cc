@@ -15,6 +15,7 @@
 #include "media/base/h264_profile_level_id.h"
 #include "media/base/mediaconstants.h"
 #include "media/engine/simulcast.h"
+#include "modules/video_coding/codecs/vp9/svc_config.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "rtc_base/checks.h"
 #include "system_wrappers/include/cpu_info.h"
@@ -46,6 +47,19 @@ void ConfigureSimulcast(VideoCodec* codec_settings) {
     ss->minBitrate = streams[i].min_bitrate_bps / 1000;
     ss->qpMax = streams[i].max_qp;
     ss->active = true;
+  }
+}
+
+void ConfigureSvc(VideoCodec* codec_settings) {
+  RTC_CHECK_EQ(kVideoCodecVP9, codec_settings->codecType);
+
+  const std::vector<SpatialLayer> layers =
+      GetSvcConfig(codec_settings->width, codec_settings->height,
+                   codec_settings->VP9()->numberOfSpatialLayers,
+                   codec_settings->VP9()->numberOfTemporalLayers);
+
+  for (size_t i = 0; i < layers.size(); ++i) {
+    codec_settings->spatialLayers[i] = layers[i];
   }
 }
 
@@ -124,9 +138,6 @@ void TestConfig::SetCodecSettings(VideoCodecType codec_type,
   codec_settings.numberOfSimulcastStreams =
       num_simulcast_streams <= 1 ? 0
                                  : static_cast<uint8_t>(num_simulcast_streams);
-  if (codec_settings.numberOfSimulcastStreams > 1) {
-    ConfigureSimulcast(&codec_settings);
-  }
 
   switch (codec_settings.codecType) {
     case kVideoCodecVP8:
@@ -157,6 +168,13 @@ void TestConfig::SetCodecSettings(VideoCodecType codec_type,
     default:
       RTC_NOTREACHED();
       break;
+  }
+
+  if (codec_settings.numberOfSimulcastStreams > 1) {
+    ConfigureSimulcast(&codec_settings);
+  } else if (codec_settings.codecType == kVideoCodecVP9 &&
+             codec_settings.VP9()->numberOfSpatialLayers > 1) {
+    ConfigureSvc(&codec_settings);
   }
 }
 

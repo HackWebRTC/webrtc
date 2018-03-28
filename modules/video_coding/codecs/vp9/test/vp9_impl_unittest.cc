@@ -8,9 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "api/video/i420_buffer.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/video_coding/codecs/test/video_codec_unittest.h"
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
+#include "modules/video_coding/codecs/vp9/svc_config.h"
 #include "test/video_codec_settings.h"
 
 namespace webrtc {
@@ -117,7 +119,6 @@ TEST_F(TestVp9Impl, ParserQpEqualsEncodedQp) {
 
   int qp = 0;
   ASSERT_TRUE(vp9::GetQp(encoded_frame._buffer, encoded_frame._length, &qp));
-
   EXPECT_EQ(encoded_frame.qp_, qp);
 }
 
@@ -161,8 +162,18 @@ TEST_F(TestVp9Impl, EncoderExplicitLayering) {
 
   codec_settings_.width = 960;
   codec_settings_.height = 540;
-  codec_settings_.spatialLayers[0].targetBitrate = 500;
-  codec_settings_.spatialLayers[1].targetBitrate = 1000;
+  codec_settings_.spatialLayers[0].minBitrate = 200;
+  codec_settings_.spatialLayers[0].maxBitrate = 500;
+  codec_settings_.spatialLayers[0].targetBitrate =
+      (codec_settings_.spatialLayers[0].minBitrate +
+       codec_settings_.spatialLayers[0].maxBitrate) /
+      2;
+  codec_settings_.spatialLayers[1].minBitrate = 400;
+  codec_settings_.spatialLayers[1].maxBitrate = 1500;
+  codec_settings_.spatialLayers[1].targetBitrate =
+      (codec_settings_.spatialLayers[1].minBitrate +
+       codec_settings_.spatialLayers[1].maxBitrate) /
+      2;
 
   codec_settings_.spatialLayers[0].width = codec_settings_.width / 2;
   codec_settings_.spatialLayers[0].height = codec_settings_.height / 2;
@@ -189,6 +200,66 @@ TEST_F(TestVp9Impl, EncoderExplicitLayering) {
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_ERR_PARAMETER,
             encoder_->InitEncode(&codec_settings_, 1 /* number of cores */,
                                  0 /* max payload size (unused) */));
+}
+
+TEST_F(TestVp9Impl, EnableDisableSpatialLayers) {
+  // Configure encoder to produce N spatial layers. Encode few frames of layer 0
+  // then enable layer 1 and encode few more frames and so on until layer N-1.
+  // Then disable layers one by one in the same way.
+  const size_t num_spatial_layers = 3;
+  const size_t num_temporal_layers = 1;
+  codec_settings_.VP9()->numberOfSpatialLayers =
+      static_cast<unsigned char>(num_spatial_layers);
+  codec_settings_.VP9()->numberOfTemporalLayers =
+      static_cast<unsigned char>(num_temporal_layers);
+
+  std::vector<SpatialLayer> layers =
+      GetSvcConfig(codec_settings_.width, codec_settings_.height,
+                   num_spatial_layers, num_temporal_layers);
+  for (size_t i = 0; i < layers.size(); ++i) {
+    codec_settings_.spatialLayers[i] = layers[i];
+  }
+
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->InitEncode(&codec_settings_, 1 /* number of cores */,
+                                 0 /* max payload size (unused) */));
+
+  BitrateAllocation bitrate_allocation;
+  for (size_t sl_idx = 0; sl_idx < num_spatial_layers; ++sl_idx) {
+    bitrate_allocation.SetBitrate(sl_idx, 0,
+                                  layers[sl_idx].targetBitrate * 1000);
+    EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+              encoder_->SetRateAllocation(bitrate_allocation,
+                                          codec_settings_.maxFramerate));
+
+    const size_t num_frames_to_encode = 3;
+    for (size_t frame_num = 0; frame_num < num_frames_to_encode; ++frame_num) {
+      SetWaitForEncodedFramesThreshold(sl_idx + 1);
+      EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+                encoder_->Encode(*NextInputFrame(), nullptr, nullptr));
+      std::vector<EncodedImage> encoded_frame;
+      std::vector<CodecSpecificInfo> codec_specific_info;
+      ASSERT_TRUE(WaitForEncodedFrames(&encoded_frame, &codec_specific_info));
+    }
+  }
+
+  for (size_t i = 0; i < num_spatial_layers - 1; ++i) {
+    const size_t sl_idx = num_spatial_layers - i - 1;
+    bitrate_allocation.SetBitrate(sl_idx, 0, 0);
+    EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+              encoder_->SetRateAllocation(bitrate_allocation,
+                                          codec_settings_.maxFramerate));
+
+    const size_t num_frames_to_encode = 3;
+    for (size_t frame_num = 0; frame_num < num_frames_to_encode; ++frame_num) {
+      SetWaitForEncodedFramesThreshold(sl_idx);
+      EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+                encoder_->Encode(*NextInputFrame(), nullptr, nullptr));
+      std::vector<EncodedImage> encoded_frame;
+      std::vector<CodecSpecificInfo> codec_specific_info;
+      ASSERT_TRUE(WaitForEncodedFrames(&encoded_frame, &codec_specific_info));
+    }
+  }
 }
 
 }  // namespace webrtc

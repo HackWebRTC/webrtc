@@ -15,6 +15,7 @@
 #include "api/video/i420_buffer.h"
 #include "media/base/videoadapter.h"
 #include "modules/video_coding/codecs/vp8/temporal_layers.h"
+#include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
 #include "modules/video_coding/utility/default_video_bitrate_allocator.h"
 #include "rtc_base/fakeclock.h"
 #include "rtc_base/logging.h"
@@ -952,11 +953,14 @@ TEST_F(VideoStreamEncoderTest, Vp9ResilienceIsOnFor2SL1TLWithNackEnabled) {
   const size_t kNumStreams = 1;
   const size_t kNumTl = 1;
   const unsigned char kNumSl = 2;
+  const int kFrameWidth = kMinVp9SpatialLayerWidth << (kNumSl - 1);
+  const int kFrameHeight = kMinVp9SpatialLayerHeight << (kNumSl - 1);
   ResetEncoder("VP9", kNumStreams, kNumTl, kNumSl, kNackEnabled, false);
   video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
   // Capture a frame and wait for it to synchronize with the encoder thread.
-  video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(1, kFrameWidth, kFrameHeight));
   sink_.WaitForEncodedFrame(1);
   // The encoder have been configured once when the first frame is received.
   EXPECT_EQ(1, sink_.number_of_reconfigurations());
