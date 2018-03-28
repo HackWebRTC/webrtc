@@ -20,6 +20,8 @@ SdpVideoFormat::SdpVideoFormat(const std::string& name,
 
 SdpVideoFormat::SdpVideoFormat(const SdpVideoFormat&) = default;
 SdpVideoFormat::SdpVideoFormat(SdpVideoFormat&&) = default;
+SdpVideoFormat& SdpVideoFormat::operator=(const SdpVideoFormat&) = default;
+SdpVideoFormat& SdpVideoFormat::operator=(SdpVideoFormat&&) = default;
 
 SdpVideoFormat::~SdpVideoFormat() = default;
 

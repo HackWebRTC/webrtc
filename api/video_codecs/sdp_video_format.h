@@ -25,6 +25,8 @@ struct SdpVideoFormat {
   SdpVideoFormat(const std::string& name, const Parameters& parameters);
   SdpVideoFormat(const SdpVideoFormat&);
   SdpVideoFormat(SdpVideoFormat&&);
+  SdpVideoFormat& operator=(const SdpVideoFormat&);
+  SdpVideoFormat& operator=(SdpVideoFormat&&);
 
   ~SdpVideoFormat();
 
