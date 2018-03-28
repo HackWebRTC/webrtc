@@ -35,16 +35,6 @@ import org.webrtc.Logging;
 final class WebRtcAudioUtils {
   private static final String TAG = "WebRtcAudioUtils";
 
-  // List of devices where we have seen issues (e.g. bad audio quality) using
-  // the low latency output mode in combination with OpenSL ES.
-  // The device name is given by Build.MODEL.
-  private static final String[] BLACKLISTED_OPEN_SL_ES_MODELS = new String[] {
-      // It is recommended to maintain a list of blacklisted models outside
-      // this package and instead call
-      // WebRtcAudioManager.setBlacklistDeviceForOpenSLESUsage(true)
-      // from the client for devices where OpenSL ES shall be disabled.
-  };
-
   // List of devices where it has been verified that the built-in effect
   // bad and where it makes sense to avoid using it and instead rely on the
   // native WebRTC version instead. The device name is given by Build.MODEL.
@@ -205,12 +195,6 @@ final class WebRtcAudioUtils {
   // Returns true if we're running on emulator.
   public static boolean runningOnEmulator() {
     return Build.HARDWARE.equals("goldfish") && Build.BRAND.startsWith("generic_");
-  }
-
-  // Returns true if the device is blacklisted for OpenSL ES usage.
-  public static boolean deviceIsBlacklistedForOpenSLESUsage() {
-    List<String> blackListedModels = Arrays.asList(BLACKLISTED_OPEN_SL_ES_MODELS);
-    return blackListedModels.contains(Build.MODEL);
   }
 
   // Information about the current build, taken from system properties.

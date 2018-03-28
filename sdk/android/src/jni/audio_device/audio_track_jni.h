@@ -19,6 +19,7 @@
 #include "modules/audio_device/include/audio_device_defines.h"
 #include "rtc_base/thread_checker.h"
 #include "sdk/android/src/jni/audio_device/audio_common.h"
+#include "sdk/android/src/jni/audio_device/audio_device_module.h"
 #include "sdk/android/src/jni/audio_device/audio_manager.h"
 
 namespace webrtc {
@@ -38,28 +39,28 @@ namespace android_adm {
 // This class uses AttachCurrentThreadIfNeeded to attach to a Java VM if needed
 // and detach when the object goes out of scope. Additional thread checking
 // guarantees that no other (possibly non attached) thread is used.
-class AudioTrackJni {
+class AudioTrackJni : public AudioOutput {
  public:
   explicit AudioTrackJni(AudioManager* audio_manager);
-  ~AudioTrackJni();
+  ~AudioTrackJni() override;
 
-  int32_t Init();
-  int32_t Terminate();
+  int32_t Init() override;
+  int32_t Terminate() override;
 
-  int32_t InitPlayout();
-  bool PlayoutIsInitialized() const { return initialized_; }
+  int32_t InitPlayout() override;
+  bool PlayoutIsInitialized() const override { return initialized_; }
 
-  int32_t StartPlayout();
-  int32_t StopPlayout();
-  bool Playing() const { return playing_; }
+  int32_t StartPlayout() override;
+  int32_t StopPlayout() override;
+  bool Playing() const override { return playing_; }
 
-  bool SpeakerVolumeIsAvailable();
-  int SetSpeakerVolume(uint32_t volume);
-  rtc::Optional<uint32_t> SpeakerVolume() const;
-  rtc::Optional<uint32_t> MaxSpeakerVolume() const;
-  rtc::Optional<uint32_t> MinSpeakerVolume() const;
+  bool SpeakerVolumeIsAvailable() override;
+  int SetSpeakerVolume(uint32_t volume) override;
+  rtc::Optional<uint32_t> SpeakerVolume() const override;
+  rtc::Optional<uint32_t> MaxSpeakerVolume() const override;
+  rtc::Optional<uint32_t> MinSpeakerVolume() const override;
 
-  void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer);
+  void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) override;
 
   // Called from Java side so we can cache the address of the Java-manged
   // |byte_buffer| in |direct_buffer_address_|. The size of the buffer
@@ -86,7 +87,7 @@ class AudioTrackJni {
   rtc::ThreadChecker thread_checker_java_;
 
   // Wraps the Java specific parts of the AudioTrackJni class.
-  JNIEnv* const env_;
+  JNIEnv* env_ = nullptr;
   ScopedJavaGlobalRef<jobject> j_audio_track_;
 
   // Contains audio parameters provided to this class at construction by the

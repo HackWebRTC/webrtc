@@ -17,6 +17,7 @@
 #include "modules/audio_device/audio_device_buffer.h"
 #include "modules/audio_device/include/audio_device_defines.h"
 #include "rtc_base/thread_checker.h"
+#include "sdk/android/src/jni/audio_device/audio_device_module.h"
 #include "sdk/android/src/jni/audio_device/audio_manager.h"
 
 namespace webrtc {
@@ -41,26 +42,26 @@ namespace android_adm {
 // This class uses AttachCurrentThreadIfNeeded to attach to a Java VM if needed
 // and detach when the object goes out of scope. Additional thread checking
 // guarantees that no other (possibly non attached) thread is used.
-class AudioRecordJni {
+class AudioRecordJni : public AudioInput {
  public:
   explicit AudioRecordJni(AudioManager* audio_manager);
-  ~AudioRecordJni();
+  ~AudioRecordJni() override;
 
-  int32_t Init();
-  int32_t Terminate();
+  int32_t Init() override;
+  int32_t Terminate() override;
 
-  int32_t InitRecording();
-  bool RecordingIsInitialized() const { return initialized_; }
+  int32_t InitRecording() override;
+  bool RecordingIsInitialized() const override { return initialized_; }
 
-  int32_t StartRecording();
-  int32_t StopRecording();
-  bool Recording() const { return recording_; }
+  int32_t StartRecording() override;
+  int32_t StopRecording() override;
+  bool Recording() const override { return recording_; }
 
-  void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer);
+  void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) override;
 
-  int32_t EnableBuiltInAEC(bool enable);
-  int32_t EnableBuiltInAGC(bool enable);
-  int32_t EnableBuiltInNS(bool enable);
+  int32_t EnableBuiltInAEC(bool enable) override;
+  int32_t EnableBuiltInAGC(bool enable) override;
+  int32_t EnableBuiltInNS(bool enable) override;
 
   // Called from Java side so we can cache the address of the Java-manged
   // |byte_buffer| in |direct_buffer_address_|. The size of the buffer
@@ -90,7 +91,7 @@ class AudioRecordJni {
   rtc::ThreadChecker thread_checker_java_;
 
   // Wraps the Java specific parts of the AudioRecordJni class.
-  JNIEnv* const env_;
+  JNIEnv* env_ = nullptr;
   ScopedJavaGlobalRef<jobject> j_audio_record_;
 
   // Raw pointer to the audio manger.

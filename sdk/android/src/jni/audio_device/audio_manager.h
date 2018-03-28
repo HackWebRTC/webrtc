@@ -33,24 +33,6 @@ namespace android_adm {
 // unless Init() is called.
 class AudioManager {
  public:
-#if defined(AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO)
-  static rtc::scoped_refptr<AudioDeviceModule> CreateAAudioAudioDeviceModule(
-      JNIEnv* env,
-      const JavaParamRef<jobject>& application_context);
-#endif
-
-  static rtc::scoped_refptr<AudioDeviceModule> CreateAudioDeviceModule(
-      JNIEnv* env,
-      const JavaParamRef<jobject>& application_context,
-      bool use_opensles_input,
-      bool use_opensles_output);
-
-  // This function has internal logic checking if OpenSLES is blacklisted and
-  // whether it's supported.
-  static rtc::scoped_refptr<AudioDeviceModule> CreateAudioDeviceModule(
-      JNIEnv* env,
-      const JavaParamRef<jobject>& application_context);
-
   AudioManager(JNIEnv* env,
                AudioDeviceModule::AudioLayer audio_layer,
                const JavaParamRef<jobject>& application_context);

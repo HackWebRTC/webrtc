@@ -22,6 +22,7 @@
 #include "modules/audio_device/include/audio_device_defines.h"
 #include "rtc_base/thread_checker.h"
 #include "sdk/android/src/jni/audio_device/audio_common.h"
+#include "sdk/android/src/jni/audio_device/audio_device_module.h"
 #include "sdk/android/src/jni/audio_device/audio_manager.h"
 #include "sdk/android/src/jni/audio_device/opensles_common.h"
 
@@ -49,7 +50,7 @@ namespace android_adm {
 // If the device doesn't claim this feature but supports API level 9 (Android
 // platform version 2.3) or later, then we can still use the OpenSL ES APIs but
 // the output latency may be higher.
-class OpenSLESPlayer {
+class OpenSLESPlayer : public AudioOutput {
  public:
   // Beginning with API level 17 (Android 4.2), a buffer count of 2 or more is
   // required for lower latency. Beginning with API level 18 (Android 4.3), a
@@ -60,25 +61,25 @@ class OpenSLESPlayer {
   static const int kNumOfOpenSLESBuffers = 2;
 
   explicit OpenSLESPlayer(AudioManager* audio_manager);
-  ~OpenSLESPlayer();
+  ~OpenSLESPlayer() override;
 
-  int Init();
-  int Terminate();
+  int Init() override;
+  int Terminate() override;
 
-  int InitPlayout();
-  bool PlayoutIsInitialized() const { return initialized_; }
+  int InitPlayout() override;
+  bool PlayoutIsInitialized() const override { return initialized_; }
 
-  int StartPlayout();
-  int StopPlayout();
-  bool Playing() const { return playing_; }
+  int StartPlayout() override;
+  int StopPlayout() override;
+  bool Playing() const override { return playing_; }
 
-  bool SpeakerVolumeIsAvailable();
-  int SetSpeakerVolume(uint32_t volume);
-  rtc::Optional<uint32_t> SpeakerVolume() const;
-  rtc::Optional<uint32_t> MaxSpeakerVolume() const;
-  rtc::Optional<uint32_t> MinSpeakerVolume() const;
+  bool SpeakerVolumeIsAvailable() override;
+  int SetSpeakerVolume(uint32_t volume) override;
+  rtc::Optional<uint32_t> SpeakerVolume() const override;
+  rtc::Optional<uint32_t> MaxSpeakerVolume() const override;
+  rtc::Optional<uint32_t> MinSpeakerVolume() const override;
 
-  void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer);
+  void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) override;
 
  private:
   // These callback methods are called when data is required for playout.

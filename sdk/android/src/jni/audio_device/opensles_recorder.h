@@ -22,6 +22,7 @@
 #include "modules/audio_device/include/audio_device_defines.h"
 #include "rtc_base/thread_checker.h"
 #include "sdk/android/src/jni/audio_device/audio_common.h"
+#include "sdk/android/src/jni/audio_device/audio_device_module.h"
 #include "sdk/android/src/jni/audio_device/audio_manager.h"
 #include "sdk/android/src/jni/audio_device/opensles_common.h"
 
@@ -52,7 +53,7 @@ namespace android_adm {
 // for input effects preclude the lower latency path.
 // See https://developer.android.com/ndk/guides/audio/opensl-prog-notes.html
 // for more details.
-class OpenSLESRecorder {
+class OpenSLESRecorder : public AudioInput {
  public:
   // Beginning with API level 17 (Android 4.2), a buffer count of 2 or more is
   // required for lower latency. Beginning with API level 18 (Android 4.3), a
@@ -63,24 +64,24 @@ class OpenSLESRecorder {
   static const int kNumOfOpenSLESBuffers = 2;
 
   explicit OpenSLESRecorder(AudioManager* audio_manager);
-  ~OpenSLESRecorder();
+  ~OpenSLESRecorder() override;
 
-  int Init();
-  int Terminate();
+  int Init() override;
+  int Terminate() override;
 
-  int InitRecording();
-  bool RecordingIsInitialized() const { return initialized_; }
+  int InitRecording() override;
+  bool RecordingIsInitialized() const override { return initialized_; }
 
-  int StartRecording();
-  int StopRecording();
-  bool Recording() const { return recording_; }
+  int StartRecording() override;
+  int StopRecording() override;
+  bool Recording() const override { return recording_; }
 
-  void AttachAudioBuffer(AudioDeviceBuffer* audio_buffer);
+  void AttachAudioBuffer(AudioDeviceBuffer* audio_buffer) override;
 
   // TODO(henrika): add support using OpenSL ES APIs when available.
-  int EnableBuiltInAEC(bool enable);
-  int EnableBuiltInAGC(bool enable);
-  int EnableBuiltInNS(bool enable);
+  int EnableBuiltInAEC(bool enable) override;
+  int EnableBuiltInAGC(bool enable) override;
+  int EnableBuiltInNS(bool enable) override;
 
  private:
   // Obtaines the SL Engine Interface from the existing global Engine object.

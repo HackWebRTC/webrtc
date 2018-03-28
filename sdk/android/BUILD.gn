@@ -164,7 +164,8 @@ rtc_source_set("audio_device_jni") {
 
   sources = [
     "src/jni/audio_device/audio_common.h",
-    "src/jni/audio_device/audio_device_template_android.h",
+    "src/jni/audio_device/audio_device_module.cc",
+    "src/jni/audio_device/audio_device_module.h",
     "src/jni/audio_device/audio_manager.cc",
     "src/jni/audio_device/audio_manager.h",
     "src/jni/audio_device/audio_record_jni.cc",

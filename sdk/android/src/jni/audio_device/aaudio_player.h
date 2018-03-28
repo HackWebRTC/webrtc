@@ -22,6 +22,7 @@
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/thread_checker.h"
 #include "sdk/android/src/jni/audio_device/aaudio_wrapper.h"
+#include "sdk/android/src/jni/audio_device/audio_device_module.h"
 
 namespace webrtc {
 
@@ -29,8 +30,6 @@ class AudioDeviceBuffer;
 class FineAudioBuffer;
 
 namespace android_adm {
-
-class AudioManager;
 
 // Implements low-latency 16-bit mono PCM audio output support for Android
 // using the C based AAudio API.
@@ -52,30 +51,31 @@ class AudioManager;
 // where the internal AAudio buffer can be increased when needed. It will
 // reduce the risk of underruns (~glitches) at the expense of an increased
 // latency.
-class AAudioPlayer final : public AAudioObserverInterface,
+class AAudioPlayer final : public AudioOutput,
+                           public AAudioObserverInterface,
                            public rtc::MessageHandler {
  public:
   explicit AAudioPlayer(AudioManager* audio_manager);
   ~AAudioPlayer();
 
-  int Init();
-  int Terminate();
+  int Init() override;
+  int Terminate() override;
 
-  int InitPlayout();
-  bool PlayoutIsInitialized() const;
+  int InitPlayout() override;
+  bool PlayoutIsInitialized() const override;
 
-  int StartPlayout();
-  int StopPlayout();
-  bool Playing() const;
+  int StartPlayout() override;
+  int StopPlayout() override;
+  bool Playing() const override;
 
-  void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer);
+  void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) override;
 
   // Not implemented in AAudio.
-  bool SpeakerVolumeIsAvailable();
-  int SetSpeakerVolume(uint32_t volume);
-  rtc::Optional<uint32_t> SpeakerVolume() const;
-  rtc::Optional<uint32_t> MaxSpeakerVolume() const;
-  rtc::Optional<uint32_t> MinSpeakerVolume() const;
+  bool SpeakerVolumeIsAvailable() override;
+  int SetSpeakerVolume(uint32_t volume) override;
+  rtc::Optional<uint32_t> SpeakerVolume() const override;
+  rtc::Optional<uint32_t> MaxSpeakerVolume() const override;
+  rtc::Optional<uint32_t> MinSpeakerVolume() const override;
 
  protected:
   // AAudioObserverInterface implementation.

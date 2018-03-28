@@ -20,6 +20,7 @@
 #include "rtc_base/thread.h"
 #include "rtc_base/thread_checker.h"
 #include "sdk/android/src/jni/audio_device/aaudio_wrapper.h"
+#include "sdk/android/src/jni/audio_device/audio_device_module.h"
 
 namespace webrtc {
 
@@ -27,8 +28,6 @@ class FineAudioBuffer;
 class AudioDeviceBuffer;
 
 namespace android_adm {
-
-class AudioManager;
 
 // Implements low-latency 16-bit mono PCM audio input support for Android
 // using the C based AAudio API.
@@ -44,30 +43,29 @@ class AudioManager;
 //
 // TODO(henrika): add comments about device changes and adaptive buffer
 // management.
-class AAudioRecorder : public AAudioObserverInterface,
+class AAudioRecorder : public AudioInput,
+                       public AAudioObserverInterface,
                        public rtc::MessageHandler {
  public:
   explicit AAudioRecorder(AudioManager* audio_manager);
   ~AAudioRecorder();
 
-  int Init();
-  int Terminate();
+  int Init() override;
+  int Terminate() override;
 
-  int InitRecording();
-  bool RecordingIsInitialized() const { return initialized_; }
+  int InitRecording() override;
+  bool RecordingIsInitialized() const override { return initialized_; }
 
-  int StartRecording();
-  int StopRecording();
-  bool Recording() const { return recording_; }
+  int StartRecording() override;
+  int StopRecording() override;
+  bool Recording() const override { return recording_; }
 
-  void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer);
-
-  double latency_millis() const { return latency_millis_; }
+  void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) override;
 
   // TODO(henrika): add support using AAudio APIs when available.
-  int EnableBuiltInAEC(bool enable);
-  int EnableBuiltInAGC(bool enable);
-  int EnableBuiltInNS(bool enable);
+  int EnableBuiltInAEC(bool enable) override;
+  int EnableBuiltInAGC(bool enable) override;
+  int EnableBuiltInNS(bool enable) override;
 
  protected:
   // AAudioObserverInterface implementation.

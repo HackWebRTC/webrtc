@@ -24,10 +24,6 @@ public class AudioDeviceModule {
   public AudioDeviceModule() {}
 
   /* AudioManager */
-  public static void setBlacklistDeviceForOpenSLESUsage(boolean enable) {
-    WebRtcAudioManager.setBlacklistDeviceForOpenSLESUsage(enable);
-  }
-
   public static void setStereoInput(boolean enable) {
     WebRtcAudioManager.setStereoInput(enable);
   }

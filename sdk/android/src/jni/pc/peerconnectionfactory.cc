@@ -27,6 +27,8 @@
 #include "sdk/android/generated_peerconnection_jni/jni/PeerConnectionFactory_jni.h"
 #include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/src/jni/audio_device/audio_manager.h"
+#include "sdk/android/src/jni/audio_device/audio_record_jni.h"
+#include "sdk/android/src/jni/audio_device/audio_track_jni.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 #include "sdk/android/src/jni/pc/androidnetworkmonitor.h"
 #include "sdk/android/src/jni/pc/audio.h"
@@ -238,10 +240,23 @@ jlong CreatePeerConnectionFactoryForJava(
     rtc::NetworkMonitorFactory::SetFactory(network_monitor_factory);
   }
 
-  rtc::scoped_refptr<AudioDeviceModule> adm =
-      field_trial::IsEnabled(kExternalAndroidAudioDeviceFieldTrialName)
-          ? android_adm::AudioManager::CreateAudioDeviceModule(jni, jcontext)
-          : nullptr;
+  rtc::scoped_refptr<AudioDeviceModule> adm = nullptr;
+  if (field_trial::IsEnabled(kExternalAndroidAudioDeviceFieldTrialName)) {
+    // Only Java AudioDeviceModule is supported as an external ADM at the
+    // moment.
+    const AudioDeviceModule::AudioLayer audio_layer =
+        AudioDeviceModule::kAndroidJavaAudio;
+    auto audio_manager =
+        rtc::MakeUnique<android_adm::AudioManager>(jni, audio_layer, jcontext);
+    auto audio_input =
+        rtc::MakeUnique<android_adm::AudioRecordJni>(audio_manager.get());
+    auto audio_output =
+        rtc::MakeUnique<android_adm::AudioTrackJni>(audio_manager.get());
+    adm = CreateAudioDeviceModuleFromInputAndOutput(
+        audio_layer, std::move(audio_manager), std::move(audio_input),
+        std::move(audio_output));
+  }
+
   rtc::scoped_refptr<AudioMixer> audio_mixer = nullptr;
   std::unique_ptr<CallFactoryInterface> call_factory(CreateCallFactory());
   std::unique_ptr<RtcEventLogFactoryInterface> rtc_event_log_factory(

@@ -42,20 +42,6 @@ class WebRtcAudioManager {
   private static boolean useStereoOutput = false;
   private static boolean useStereoInput = false;
 
-  private static boolean blacklistDeviceForOpenSLESUsage = false;
-  private static boolean blacklistDeviceForOpenSLESUsageIsOverridden = false;
-
-  // Call this method to override the default list of blacklisted devices
-  // specified in WebRtcAudioUtils.BLACKLISTED_OPEN_SL_ES_MODELS.
-  // Allows an app to take control over which devices to exclude from using
-  // the OpenSL ES audio output path
-  // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
-  @SuppressWarnings("NoSynchronizedMethodCheck")
-  public static synchronized void setBlacklistDeviceForOpenSLESUsage(boolean enable) {
-    blacklistDeviceForOpenSLESUsageIsOverridden = true;
-    blacklistDeviceForOpenSLESUsage = enable;
-  }
-
   // Call these methods to override the default mono audio modes for the specified direction(s)
   // (input and/or output).
   // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
@@ -204,19 +190,7 @@ class WebRtcAudioManager {
     return (audioManager.getMode() == AudioManager.MODE_IN_COMMUNICATION);
   }
 
-  @CalledByNative
-  private static boolean isDeviceBlacklistedForOpenSLESUsage() {
-    boolean blacklisted = blacklistDeviceForOpenSLESUsageIsOverridden
-        ? blacklistDeviceForOpenSLESUsage
-        : WebRtcAudioUtils.deviceIsBlacklistedForOpenSLESUsage();
-    if (blacklisted) {
-      Logging.d(TAG, Build.MODEL + " is blacklisted for OpenSL ES usage!");
-    }
-    return blacklisted;
-  }
-
   // Returns true if low-latency audio output is supported.
-  @CalledByNative
   public static boolean isLowLatencyOutputSupported(Context context) {
     return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_AUDIO_LOW_LATENCY);
   }
@@ -224,7 +198,6 @@ class WebRtcAudioManager {
   // Returns true if low-latency audio input is supported.
   // TODO(henrika): remove the hardcoded false return value when OpenSL ES
   // input performance has been evaluated and tested more.
-  @CalledByNative
   public static boolean isLowLatencyInputSupported(Context context) {
     // TODO(henrika): investigate if some sort of device list is needed here
     // as well. The NDK doc states that: "As of API level 21, lower latency

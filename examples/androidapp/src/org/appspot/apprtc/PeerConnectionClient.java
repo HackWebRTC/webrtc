@@ -595,10 +595,9 @@ public class PeerConnectionClient {
     // Enable/disable OpenSL ES playback.
     if (!peerConnectionParameters.useOpenSLES) {
       Log.d(TAG, "Disable OpenSL ES audio even if device supports it");
-      AudioDeviceModule.setBlacklistDeviceForOpenSLESUsage(true /* enable */);
     } else {
       Log.d(TAG, "Allow OpenSL ES audio if device supports it");
-      AudioDeviceModule.setBlacklistDeviceForOpenSLESUsage(false);
+      // TODO(magjed): Add support for external OpenSLES ADM.
     }
 
     if (peerConnectionParameters.disableBuiltInAEC) {

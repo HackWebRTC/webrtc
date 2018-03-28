@@ -27,9 +27,9 @@ namespace android_adm {
 
 // TODO(henrika): possible extend usage of AudioManager and add it as member.
 AudioTrackJni::AudioTrackJni(AudioManager* audio_manager)
-    : env_(AttachCurrentThreadIfNeeded()),
-      j_audio_track_(
-          Java_WebRtcAudioTrack_Constructor(env_, jni::jlongFromPointer(this))),
+    : j_audio_track_(
+          Java_WebRtcAudioTrack_Constructor(AttachCurrentThreadIfNeeded(),
+                                            jni::jlongFromPointer(this))),
       audio_parameters_(audio_manager->GetPlayoutAudioParameters()),
       direct_buffer_address_(nullptr),
       direct_buffer_capacity_in_bytes_(0),
@@ -39,8 +39,9 @@ AudioTrackJni::AudioTrackJni(AudioManager* audio_manager)
       audio_device_buffer_(nullptr) {
   RTC_LOG(INFO) << "ctor";
   RTC_DCHECK(audio_parameters_.is_valid());
-  // Detach from this thread since we want to use the checker to verify calls
-  // from the Java based audio thread.
+  // Detach from this thread since construction is allowed to happen on a
+  // different thread.
+  thread_checker_.DetachFromThread();
   thread_checker_java_.DetachFromThread();
 }
 
@@ -52,6 +53,7 @@ AudioTrackJni::~AudioTrackJni() {
 
 int32_t AudioTrackJni::Init() {
   RTC_LOG(INFO) << "Init";
+  env_ = AttachCurrentThreadIfNeeded();
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return 0;
 }

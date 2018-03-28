@@ -45,13 +45,13 @@ class ScopedHistogramTimer {
   const std::string histogram_name_;
   int64_t start_time_ms_;
 };
+
 }  // namespace
 
 // AudioRecordJni implementation.
 AudioRecordJni::AudioRecordJni(AudioManager* audio_manager)
-    : env_(AttachCurrentThreadIfNeeded()),
-      j_audio_record_(
-          Java_WebRtcAudioRecord_Constructor(env_,
+    : j_audio_record_(
+          Java_WebRtcAudioRecord_Constructor(AttachCurrentThreadIfNeeded(),
                                              jni::jlongFromPointer(this))),
       audio_manager_(audio_manager),
       audio_parameters_(audio_manager->GetRecordAudioParameters()),
@@ -64,8 +64,9 @@ AudioRecordJni::AudioRecordJni(AudioManager* audio_manager)
       audio_device_buffer_(nullptr) {
   RTC_LOG(INFO) << "ctor";
   RTC_DCHECK(audio_parameters_.is_valid());
-  // Detach from this thread since we want to use the checker to verify calls
-  // from the Java based audio thread.
+  // Detach from this thread since construction is allowed to happen on a
+  // different thread.
+  thread_checker_.DetachFromThread();
   thread_checker_java_.DetachFromThread();
 }
 
@@ -77,6 +78,7 @@ AudioRecordJni::~AudioRecordJni() {
 
 int32_t AudioRecordJni::Init() {
   RTC_LOG(INFO) << "Init";
+  env_ = AttachCurrentThreadIfNeeded();
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return 0;
 }

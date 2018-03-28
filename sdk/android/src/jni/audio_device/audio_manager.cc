@@ -28,7 +28,7 @@
 #include "sdk/android/src/jni/audio_device/aaudio_player.h"
 #include "sdk/android/src/jni/audio_device/aaudio_recorder.h"
 #endif
-#include "sdk/android/src/jni/audio_device/audio_device_template_android.h"
+#include "sdk/android/src/jni/audio_device/audio_device_module.h"
 #include "sdk/android/src/jni/audio_device/audio_manager.h"
 #include "sdk/android/src/jni/audio_device/audio_record_jni.h"
 #include "sdk/android/src/jni/audio_device/audio_track_jni.h"
@@ -38,64 +38,6 @@
 namespace webrtc {
 
 namespace android_adm {
-
-#if defined(AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO)
-rtc::scoped_refptr<AudioDeviceModule>
-AudioManager::CreateAAudioAudioDeviceModule(
-    JNIEnv* env,
-    const JavaParamRef<jobject>& application_context) {
-  RTC_LOG(INFO) << __FUNCTION__;
-  return new rtc::RefCountedObject<android_adm::AudioDeviceTemplateAndroid<
-      android_adm::AAudioRecorder, android_adm::AAudioPlayer>>(
-      env, application_context, AudioDeviceModule::kAndroidAAudioAudio);
-}
-#endif
-
-rtc::scoped_refptr<AudioDeviceModule> AudioManager::CreateAudioDeviceModule(
-    JNIEnv* env,
-    const JavaParamRef<jobject>& application_context) {
-  const bool use_opensles_output =
-      !Java_WebRtcAudioManager_isDeviceBlacklistedForOpenSLESUsage(env) &&
-      Java_WebRtcAudioManager_isLowLatencyOutputSupported(env,
-                                                          application_context);
-  const bool use_opensles_input =
-      use_opensles_output && Java_WebRtcAudioManager_isLowLatencyInputSupported(
-                                 env, application_context);
-  return CreateAudioDeviceModule(env, application_context, use_opensles_input,
-                                 use_opensles_output);
-}
-
-rtc::scoped_refptr<AudioDeviceModule> AudioManager::CreateAudioDeviceModule(
-    JNIEnv* env,
-    const JavaParamRef<jobject>& application_context,
-    bool use_opensles_input,
-    bool use_opensles_output) {
-  RTC_LOG(INFO) << __FUNCTION__;
-
-  if (use_opensles_output) {
-    if (use_opensles_input) {
-      // Use OpenSL ES for both playout and recording.
-      return new rtc::RefCountedObject<android_adm::AudioDeviceTemplateAndroid<
-          android_adm::OpenSLESRecorder, android_adm::OpenSLESPlayer>>(
-          env, application_context, AudioDeviceModule::kAndroidOpenSLESAudio);
-    } else {
-      // Use OpenSL ES for output and AudioRecord API for input. This
-      // combination provides low-latency output audio and at the same
-      // time support for HW AEC using the AudioRecord Java API.
-      return new rtc::RefCountedObject<android_adm::AudioDeviceTemplateAndroid<
-          android_adm::AudioRecordJni, android_adm::OpenSLESPlayer>>(
-          env, application_context,
-          AudioDeviceModule::kAndroidJavaInputAndOpenSLESOutputAudio);
-    }
-  } else {
-    RTC_DCHECK(!use_opensles_input)
-        << "Combination of OpenSLES input and Java-based output not supported";
-    // Use Java-based audio in both directions.
-    return new rtc::RefCountedObject<android_adm::AudioDeviceTemplateAndroid<
-        android_adm::AudioRecordJni, android_adm::AudioTrackJni>>(
-        env, application_context, AudioDeviceModule::kAndroidJavaAudio);
-  }
-}
 
 // AudioManager implementation
 AudioManager::AudioManager(JNIEnv* env,
@@ -120,6 +62,8 @@ AudioManager::AudioManager(JNIEnv* env,
                             static_cast<size_t>(output_buffer_size));
   record_parameters_.reset(sample_rate, static_cast<size_t>(input_channels),
                            static_cast<size_t>(input_buffer_size));
+  RTC_CHECK(playout_parameters_.is_valid());
+  RTC_CHECK(record_parameters_.is_valid());
   thread_checker_.DetachFromThread();
 }
 
@@ -217,12 +161,10 @@ bool AudioManager::IsNoiseSuppressorSupported() const {
 }
 
 bool AudioManager::IsStereoPlayoutSupported() const {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return (playout_parameters_.channels() == 2);
 }
 
 bool AudioManager::IsStereoRecordSupported() const {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return (record_parameters_.channels() == 2);
 }
 
@@ -234,13 +176,11 @@ int AudioManager::GetDelayEstimateInMilliseconds() const {
 
 const AudioParameters& AudioManager::GetPlayoutAudioParameters() {
   RTC_CHECK(playout_parameters_.is_valid());
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return playout_parameters_;
 }
 
 const AudioParameters& AudioManager::GetRecordAudioParameters() {
   RTC_CHECK(record_parameters_.is_valid());
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return record_parameters_;
 }
 

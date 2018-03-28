@@ -193,7 +193,7 @@ class WebRtcAudioTrack {
 
   @CalledByNative
   WebRtcAudioTrack(long nativeAudioTrack) {
-    threadChecker.checkIsOnValidThread();
+    threadChecker.detachThread();
     Logging.d(TAG, "ctor" + WebRtcAudioUtils.getThreadInfo());
     this.nativeAudioTrack = nativeAudioTrack;
     audioManager =
