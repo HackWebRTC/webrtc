@@ -12,7 +12,7 @@ rtc_android_apk("androidnativeapi") {
 
   deps = [
     ":resources",
-    "//sdk/android:libjingle_peerconnection_java",
+    "//sdk/android:base_java",
   ]
 
   shared_libraries = [ ":examples_androidnativeapi_jni" ]
