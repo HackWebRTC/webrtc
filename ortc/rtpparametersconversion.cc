@@ -330,7 +330,7 @@ RtpCodecCapability ToRtpCodecCapability(const C& cricket_codec) {
        cricket_codec.feedback_params.params()) {
     rtc::Optional<RtcpFeedback> feedback = ToRtcpFeedback(cricket_feedback);
     if (feedback) {
-      codec.rtcp_feedback.push_back(feedback.MoveValue());
+      codec.rtcp_feedback.push_back(feedback.value());
     }
   }
   ToRtpCodecCapabilityTypeSpecific(cricket_codec, &codec);
@@ -370,7 +370,7 @@ RtpCodecParameters ToRtpCodecParameters(const C& cricket_codec) {
        cricket_codec.feedback_params.params()) {
     rtc::Optional<RtcpFeedback> feedback = ToRtcpFeedback(cricket_feedback);
     if (feedback) {
-      codec_param.rtcp_feedback.push_back(feedback.MoveValue());
+      codec_param.rtcp_feedback.push_back(feedback.value());
     }
   }
   ToRtpCodecParametersTypeSpecific(cricket_codec, &codec_param);
