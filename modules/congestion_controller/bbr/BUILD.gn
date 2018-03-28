@@ -8,7 +8,37 @@
 
 import("../../../webrtc.gni")
 
+rtc_static_library("bbr") {
+  sources = [
+    "bbr_factory.cc",
+    "bbr_factory.h",
+  ]
+  deps = [
+    ":bbr_controller",
+    "../../../rtc_base:rtc_base_approved",
+    "../network_control",
+  ]
+}
+
+rtc_source_set("bbr_controller") {
+  visibility = [ ":*" ]
+  sources = [
+    "bbr_network_controller.cc",
+    "bbr_network_controller.h",
+  ]
+  deps = [
+    ":data_transfer_tracker",
+    ":rtt_stats",
+    ":windowed_filter",
+    "../../../api:optional",
+    "../../../rtc_base:checks",
+    "../../../rtc_base:rtc_base_approved",
+    "../../../rtc_base/system:fallthrough",
+    "../network_control",
+  ]
+}
 rtc_source_set("data_transfer_tracker") {
+  visibility = [ ":*" ]
   sources = [
     "data_transfer_tracker.cc",
     "data_transfer_tracker.h",
@@ -20,6 +50,7 @@ rtc_source_set("data_transfer_tracker") {
   ]
 }
 rtc_source_set("rtt_stats") {
+  visibility = [ ":*" ]
   sources = [
     "rtt_stats.cc",
     "rtt_stats.h",
@@ -30,6 +61,7 @@ rtc_source_set("rtt_stats") {
   ]
 }
 rtc_source_set("windowed_filter") {
+  visibility = [ ":*" ]
   sources = [
     "windowed_filter.h",
   ]
@@ -38,16 +70,24 @@ if (rtc_include_tests) {
   rtc_source_set("bbr_unittests") {
     testonly = true
     sources = [
+      "bbr_network_controller_unittest.cc",
       "data_transfer_tracker_unittest.cc",
       "rtt_stats_unittest.cc",
       "windowed_filter_unittest.cc",
     ]
     deps = [
+      ":bbr",
+      ":bbr_controller",
       ":data_transfer_tracker",
       ":rtt_stats",
       ":windowed_filter",
       "../../../test:test_support",
       "../network_control",
+      "../network_control:network_control_test",
     ]
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
   }
 }

@@ -56,7 +56,7 @@ SentPacket SimpleTargetRateProducer::ProduceNext(
   return packet;
 }
 
-FeedbackBasedNetworkControllerTester::FeedbackBasedNetworkControllerTester(
+NetworkControllerTester::NetworkControllerTester(
     NetworkControllerFactoryInterface* factory,
     NetworkControllerConfig initial_config)
     : current_time_(Timestamp::seconds(100000)),
@@ -66,14 +66,12 @@ FeedbackBasedNetworkControllerTester::FeedbackBasedNetworkControllerTester(
   process_interval_ = factory->GetProcessInterval();
 }
 
-FeedbackBasedNetworkControllerTester::~FeedbackBasedNetworkControllerTester() =
-    default;
+NetworkControllerTester::~NetworkControllerTester() = default;
 
-PacketResult FeedbackBasedNetworkControllerTester::SimulateSend(
-    SentPacket packet,
-    TimeDelta time_delta,
-    TimeDelta propagation_delay,
-    DataRate actual_bandwidth) {
+PacketResult NetworkControllerTester::SimulateSend(SentPacket packet,
+                                                   TimeDelta time_delta,
+                                                   TimeDelta propagation_delay,
+                                                   DataRate actual_bandwidth) {
   TimeDelta bandwidth_delay = packet.size / actual_bandwidth;
   accumulated_delay_ =
       std::max(accumulated_delay_ - time_delta, TimeDelta::Zero());
@@ -86,12 +84,11 @@ PacketResult FeedbackBasedNetworkControllerTester::SimulateSend(
   return result;
 }
 
-void FeedbackBasedNetworkControllerTester::RunSimulation(
-    TimeDelta duration,
-    TimeDelta packet_interval,
-    DataRate actual_bandwidth,
-    TimeDelta propagation_delay,
-    PacketProducer next_packet) {
+void NetworkControllerTester::RunSimulation(TimeDelta duration,
+                                            TimeDelta packet_interval,
+                                            DataRate actual_bandwidth,
+                                            TimeDelta propagation_delay,
+                                            PacketProducer next_packet) {
   Timestamp start_time = current_time_;
   Timestamp last_process_time = current_time_;
   while (current_time_ - start_time < duration) {
