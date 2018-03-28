@@ -167,6 +167,12 @@ void AecState::Update(
     blocks_since_converged_filter_ =
         converged_filter ? 0 : blocks_since_converged_filter_ + 1;
   }
+  if (converged_filter) {
+    active_blocks_since_converged_filter_ = 0;
+  } else if (active_render_block) {
+    ++active_blocks_since_converged_filter_;
+  }
+
   bool recently_converged_filter =
       blocks_since_converged_filter_ < 60 * kNumBlocksPerSecond;
 
@@ -197,6 +203,13 @@ void AecState::Update(
   }
 
   converged_filter_seen_ = converged_filter_seen_ || converged_filter;
+
+  // If no filter convergence is seen for a long time, reset the estimated
+  // properties of the echo path.
+  if (active_blocks_since_converged_filter_ > 60 * kNumBlocksPerSecond) {
+    converged_filter_seen_ = false;
+    finite_erl_ = false;
+  }
 
   // After an amount of active render samples for which an echo should have been
   // detected in the capture signal if the ERL was not infinite, flag that a

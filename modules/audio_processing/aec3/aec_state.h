@@ -175,6 +175,7 @@ class AecState {
   bool external_delay_seen_ = false;
   size_t converged_filter_count_ = 0;
   bool finite_erl_ = false;
+  size_t active_blocks_since_converged_filter_ = 0;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(AecState);
 };
