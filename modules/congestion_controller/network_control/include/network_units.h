@@ -17,6 +17,11 @@
 
 namespace webrtc {
 namespace units_internal {
+constexpr int64_t kPlusInfinityVal = std::numeric_limits<int64_t>::max();
+constexpr int64_t kMinusInfinityVal = std::numeric_limits<int64_t>::min();
+constexpr int64_t kSignedNotInitializedVal = kMinusInfinityVal + 1;
+constexpr int64_t kNotInitializedVal = -1;
+
 inline int64_t DivideAndRound(int64_t numerator, int64_t denominators) {
   if (numerator >= 0) {
     return (numerator + (denominators / 2)) / denominators;
@@ -26,7 +31,7 @@ inline int64_t DivideAndRound(int64_t numerator, int64_t denominators) {
 }
 }  // namespace units_internal
 
-// TimeDelta represents the difference between two timestamps. Connomly this can
+// TimeDelta represents the difference between two timestamps. Commonly this can
 // be a duration. However since two Timestamps are not guaranteed to have the
 // same epoch (they might come from different computers, making exact
 // synchronisation infeasible), the duration covered by a TimeDelta can be
@@ -35,13 +40,14 @@ inline int64_t DivideAndRound(int64_t numerator, int64_t denominators) {
 // microseconds (us).
 class TimeDelta {
  public:
-  static const TimeDelta kPlusInfinity;
-  static const TimeDelta kMinusInfinity;
-  static const TimeDelta kNotInitialized;
-  static const TimeDelta kZero;
-  TimeDelta() : TimeDelta(kNotInitialized) {}
-  static TimeDelta Zero() { return kZero; }
-  static TimeDelta Infinity() { return kPlusInfinity; }
+  TimeDelta() : TimeDelta(units_internal::kSignedNotInitializedVal) {}
+  static TimeDelta Zero() { return TimeDelta(0); }
+  static TimeDelta PlusInfinity() {
+    return TimeDelta(units_internal::kPlusInfinityVal);
+  }
+  static TimeDelta MinusInfinity() {
+    return TimeDelta(units_internal::kMinusInfinityVal);
+  }
   static TimeDelta seconds(int64_t seconds) { return TimeDelta::s(seconds); }
   static TimeDelta s(int64_t seconds) {
     return TimeDelta::us(seconds * 1000000);
@@ -65,10 +71,17 @@ class TimeDelta {
   bool IsZero() const { return microseconds_ == 0; }
   bool IsFinite() const { return IsInitialized() && !IsInfinite(); }
   bool IsInitialized() const {
-    return microseconds_ != kNotInitialized.microseconds_;
+    return microseconds_ != units_internal::kSignedNotInitializedVal;
   }
   bool IsInfinite() const {
-    return *this == kPlusInfinity || *this == kMinusInfinity;
+    return microseconds_ == units_internal::kPlusInfinityVal ||
+           microseconds_ == units_internal::kMinusInfinityVal;
+  }
+  bool IsPlusInfinity() const {
+    return microseconds_ == units_internal::kPlusInfinityVal;
+  }
+  bool IsMinusInfinity() const {
+    return microseconds_ == units_internal::kMinusInfinityVal;
   }
   TimeDelta operator+(const TimeDelta& other) const {
     return TimeDelta::us(us() + other.us());
@@ -133,10 +146,10 @@ inline TimeDelta operator*(const int32_t& scalar, const TimeDelta& delta) {
 // difference of two Timestamps results in a TimeDelta.
 class Timestamp {
  public:
-  static const Timestamp kPlusInfinity;
-  static const Timestamp kNotInitialized;
-  Timestamp() : Timestamp(kNotInitialized) {}
-  static Timestamp Infinity() { return kPlusInfinity; }
+  Timestamp() : Timestamp(units_internal::kNotInitializedVal) {}
+  static Timestamp Infinity() {
+    return Timestamp(units_internal::kPlusInfinityVal);
+  }
   static Timestamp seconds(int64_t seconds) { return Timestamp::s(seconds); }
   static Timestamp s(int64_t seconds) {
     return Timestamp::us(seconds * 1000000);
@@ -153,10 +166,10 @@ class Timestamp {
     return microseconds_;
   }
   bool IsInfinite() const {
-    return microseconds_ == kPlusInfinity.microseconds_;
+    return microseconds_ == units_internal::kPlusInfinityVal;
   }
   bool IsInitialized() const {
-    return microseconds_ != kNotInitialized.microseconds_;
+    return microseconds_ != units_internal::kNotInitializedVal;
   }
   bool IsFinite() const { return IsInitialized() && !IsInfinite(); }
   TimeDelta operator-(const Timestamp& other) const {
@@ -198,12 +211,11 @@ class Timestamp {
 // truncated to fit.
 class DataSize {
  public:
-  static const DataSize kZero;
-  static const DataSize kPlusInfinity;
-  static const DataSize kNotInitialized;
-  DataSize() : DataSize(kNotInitialized) {}
-  static DataSize Zero() { return kZero; }
-  static DataSize Infinity() { return kPlusInfinity; }
+  DataSize() : DataSize(units_internal::kNotInitializedVal) {}
+  static DataSize Zero() { return DataSize(0); }
+  static DataSize Infinity() {
+    return DataSize(units_internal::kPlusInfinityVal);
+  }
   static DataSize bytes(int64_t bytes) {
     RTC_DCHECK_GE(bytes, 0);
     return DataSize(bytes);
@@ -224,8 +236,10 @@ class DataSize {
     return units_internal::DivideAndRound(bits(), 1000);
   }
   bool IsZero() const { return bytes_ == 0; }
-  bool IsInfinite() const { return bytes_ == kPlusInfinity.bytes_; }
-  bool IsInitialized() const { return bytes_ != kNotInitialized.bytes_; }
+  bool IsInfinite() const { return bytes_ == units_internal::kPlusInfinityVal; }
+  bool IsInitialized() const {
+    return bytes_ != units_internal::kNotInitializedVal;
+  }
   bool IsFinite() const { return IsInitialized() && !IsInfinite(); }
   DataSize operator-(const DataSize& other) const {
     return DataSize::bytes(bytes() - other.bytes());
@@ -288,12 +302,11 @@ inline DataSize operator*(const int32_t& scalar, const DataSize& size) {
 // resolution should document this by changing this comment.
 class DataRate {
  public:
-  static const DataRate kZero;
-  static const DataRate kPlusInfinity;
-  static const DataRate kNotInitialized;
-  DataRate() : DataRate(kNotInitialized) {}
-  static DataRate Zero() { return kZero; }
-  static DataRate Infinity() { return kPlusInfinity; }
+  DataRate() : DataRate(units_internal::kNotInitializedVal) {}
+  static DataRate Zero() { return DataRate(0); }
+  static DataRate Infinity() {
+    return DataRate(units_internal::kPlusInfinityVal);
+  }
   static DataRate bytes_per_second(int64_t bytes_per_sec) {
     RTC_DCHECK_GE(bytes_per_sec, 0);
     return DataRate(bytes_per_sec * 8);
@@ -320,10 +333,10 @@ class DataRate {
   int64_t kbps() const { return units_internal::DivideAndRound(bps(), 1000); }
   bool IsZero() const { return bits_per_sec_ == 0; }
   bool IsInfinite() const {
-    return bits_per_sec_ == kPlusInfinity.bits_per_sec_;
+    return bits_per_sec_ == units_internal::kPlusInfinityVal;
   }
   bool IsInitialized() const {
-    return bits_per_sec_ != kNotInitialized.bits_per_sec_;
+    return bits_per_sec_ != units_internal::kNotInitializedVal;
   }
   bool IsFinite() const { return IsInitialized() && !IsInfinite(); }
   DataRate operator*(double scalar) const;

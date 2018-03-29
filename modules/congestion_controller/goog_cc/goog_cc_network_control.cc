@@ -218,7 +218,7 @@ void GoogCcNetworkController::OnStreamsConfig(StreamsConfig msg) {
 
 void GoogCcNetworkController::OnTargetRateConstraints(
     TargetRateConstraints constraints) {
-  UpdateBitrateConstraints(constraints, DataRate::kNotInitialized);
+  UpdateBitrateConstraints(constraints, DataRate());
 }
 
 void GoogCcNetworkController::UpdateBitrateConstraints(

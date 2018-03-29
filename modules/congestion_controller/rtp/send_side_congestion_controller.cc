@@ -426,8 +426,8 @@ void SendSideCongestionController::OnNetworkRouteChanged(
   msg.at_time = Timestamp::ms(clock_->TimeInMilliseconds());
   msg.constraints =
       ConvertConstraints(min_bitrate_bps, max_bitrate_bps, clock_);
-  msg.starting_rate = start_bitrate_bps > 0 ? DataRate::bps(start_bitrate_bps)
-                                            : DataRate::kNotInitialized;
+  msg.starting_rate =
+      start_bitrate_bps > 0 ? DataRate::bps(start_bitrate_bps) : DataRate();
   task_queue_->PostTask([this, msg]() {
     RTC_DCHECK_RUN_ON(task_queue_ptr_);
     controller_->OnNetworkRouteChange(msg);

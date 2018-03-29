@@ -12,29 +12,6 @@
 #include <cmath>
 
 namespace webrtc {
-namespace {
-int64_t kPlusInfinityVal = std::numeric_limits<int64_t>::max();
-int64_t kMinusInfinityVal = std::numeric_limits<int64_t>::min();
-int64_t kSignedNotInitializedVal = kMinusInfinityVal + 1;
-int64_t kNotInitializedVal = -1;
-}  // namespace
-const TimeDelta TimeDelta::kZero = TimeDelta(0);
-const TimeDelta TimeDelta::kMinusInfinity = TimeDelta(kMinusInfinityVal);
-const TimeDelta TimeDelta::kPlusInfinity = TimeDelta(kPlusInfinityVal);
-const TimeDelta TimeDelta::kNotInitialized =
-    TimeDelta(kSignedNotInitializedVal);
-
-const Timestamp Timestamp::kPlusInfinity = Timestamp(kPlusInfinityVal);
-const Timestamp Timestamp::kNotInitialized = Timestamp(kNotInitializedVal);
-
-const DataRate DataRate::kZero = DataRate(0);
-const DataRate DataRate::kPlusInfinity = DataRate(kPlusInfinityVal);
-const DataRate DataRate::kNotInitialized = DataRate(kNotInitializedVal);
-
-const DataSize DataSize::kZero = DataSize(0);
-const DataSize DataSize::kPlusInfinity = DataSize(kPlusInfinityVal);
-const DataSize DataSize::kNotInitialized = DataSize(kNotInitializedVal);
-
 TimeDelta TimeDelta::operator*(double scalar) const {
   return TimeDelta::us(std::round(us() * scalar));
 }
@@ -74,38 +51,38 @@ DataSize operator*(const TimeDelta& duration, const DataRate& rate) {
 }
 
 ::std::ostream& operator<<(::std::ostream& os, const DataRate& value) {
-  if (value == DataRate::kPlusInfinity) {
+  if (value.IsInfinite()) {
     return os << "inf bps";
-  } else if (value == DataRate::kNotInitialized) {
+  } else if (!value.IsInitialized()) {
     return os << "? bps";
   } else {
     return os << value.bps() << " bps";
   }
 }
 ::std::ostream& operator<<(::std::ostream& os, const DataSize& value) {
-  if (value == DataSize::kPlusInfinity) {
+  if (value.IsInfinite()) {
     return os << "inf bytes";
-  } else if (value == DataSize::kNotInitialized) {
+  } else if (!value.IsInitialized()) {
     return os << "? bytes";
   } else {
     return os << value.bytes() << " bytes";
   }
 }
 ::std::ostream& operator<<(::std::ostream& os, const Timestamp& value) {
-  if (value == Timestamp::kPlusInfinity) {
+  if (value.IsInfinite()) {
     return os << "inf ms";
-  } else if (value == Timestamp::kNotInitialized) {
+  } else if (!value.IsInitialized()) {
     return os << "? ms";
   } else {
     return os << value.ms() << " ms";
   }
 }
 ::std::ostream& operator<<(::std::ostream& os, const TimeDelta& value) {
-  if (value == TimeDelta::kPlusInfinity) {
+  if (value.IsPlusInfinity()) {
     return os << "+inf ms";
-  } else if (value == TimeDelta::kMinusInfinity) {
+  } else if (value.IsMinusInfinity()) {
     return os << "-inf ms";
-  } else if (value == TimeDelta::kNotInitialized) {
+  } else if (!value.IsInitialized()) {
     return os << "? ms";
   } else {
     return os << value.ms() << " ms";

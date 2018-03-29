@@ -292,7 +292,7 @@ TEST_F(WindowedFilterTest, ExpireAllMins) {
   TimeDelta rtt_sample = windowed_min_rtt_.GetThirdBest() + TimeDelta::ms(5);
   // This assert is necessary to avoid triggering -Wstrict-overflow
   // See crbug/616957
-  ASSERT_LT(windowed_min_rtt_.GetThirdBest(), TimeDelta::Infinity());
+  ASSERT_LT(windowed_min_rtt_.GetThirdBest(), TimeDelta::PlusInfinity());
   // Third best min sample was recorded at 100ms, so expiry time is 199ms.
   int64_t now_ms = 200;
   windowed_min_rtt_.Update(rtt_sample, now_ms);

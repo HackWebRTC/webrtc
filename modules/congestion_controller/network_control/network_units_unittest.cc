@@ -42,16 +42,14 @@ TEST(TimeDeltaTest, IdentityChecks) {
   EXPECT_TRUE(TimeDelta::Zero().IsZero());
   EXPECT_FALSE(TimeDelta::ms(kValue).IsZero());
 
-  EXPECT_TRUE(TimeDelta::Infinity().IsInfinite());
-  EXPECT_TRUE(TimeDelta::kPlusInfinity.IsInfinite());
-  EXPECT_TRUE(TimeDelta::kMinusInfinity.IsInfinite());
+  EXPECT_TRUE(TimeDelta::PlusInfinity().IsInfinite());
+  EXPECT_TRUE(TimeDelta::MinusInfinity().IsInfinite());
   EXPECT_FALSE(TimeDelta::Zero().IsInfinite());
   EXPECT_FALSE(TimeDelta::ms(-kValue).IsInfinite());
   EXPECT_FALSE(TimeDelta::ms(kValue).IsInfinite());
 
-  EXPECT_FALSE(TimeDelta::Infinity().IsFinite());
-  EXPECT_FALSE(TimeDelta::kPlusInfinity.IsFinite());
-  EXPECT_FALSE(TimeDelta::kMinusInfinity.IsFinite());
+  EXPECT_FALSE(TimeDelta::PlusInfinity().IsFinite());
+  EXPECT_FALSE(TimeDelta::MinusInfinity().IsFinite());
   EXPECT_TRUE(TimeDelta::ms(-kValue).IsFinite());
   EXPECT_TRUE(TimeDelta::ms(kValue).IsFinite());
   EXPECT_TRUE(TimeDelta::Zero().IsFinite());
@@ -63,8 +61,8 @@ TEST(TimeDeltaTest, ComparisonOperators) {
   const TimeDelta small = TimeDelta::ms(kSmall);
   const TimeDelta large = TimeDelta::ms(kLarge);
 
-  EXPECT_EQ(TimeDelta::Zero(), TimeDelta::Zero());
-  EXPECT_EQ(TimeDelta::Infinity(), TimeDelta::Infinity());
+  EXPECT_EQ(TimeDelta::Zero(), TimeDelta::ms(0));
+  EXPECT_EQ(TimeDelta::PlusInfinity(), TimeDelta::PlusInfinity());
   EXPECT_EQ(small, TimeDelta::ms(kSmall));
   EXPECT_LE(small, TimeDelta::ms(kSmall));
   EXPECT_GE(small, TimeDelta::ms(kSmall));
@@ -73,12 +71,12 @@ TEST(TimeDeltaTest, ComparisonOperators) {
   EXPECT_LT(small, TimeDelta::ms(kLarge));
   EXPECT_GE(large, TimeDelta::ms(kSmall));
   EXPECT_GT(large, TimeDelta::ms(kSmall));
-  EXPECT_LT(TimeDelta::kZero, small);
-  EXPECT_GT(TimeDelta::kZero, TimeDelta::ms(-kSmall));
-  EXPECT_GT(TimeDelta::kZero, TimeDelta::ms(-kSmall));
+  EXPECT_LT(TimeDelta::Zero(), small);
+  EXPECT_GT(TimeDelta::Zero(), TimeDelta::ms(-kSmall));
+  EXPECT_GT(TimeDelta::Zero(), TimeDelta::ms(-kSmall));
 
-  EXPECT_GT(TimeDelta::kPlusInfinity, large);
-  EXPECT_LT(TimeDelta::kMinusInfinity, TimeDelta::kZero);
+  EXPECT_GT(TimeDelta::PlusInfinity(), large);
+  EXPECT_LT(TimeDelta::MinusInfinity(), TimeDelta::Zero());
 }
 
 TEST(TimeDeltaTest, MathOperations) {
@@ -123,7 +121,7 @@ TEST(TimestampTest, IdentityChecks) {
   EXPECT_TRUE(Timestamp::Infinity().IsInfinite());
   EXPECT_FALSE(Timestamp::ms(kValue).IsInfinite());
 
-  EXPECT_FALSE(Timestamp::kNotInitialized.IsFinite());
+  EXPECT_FALSE(Timestamp().IsFinite());
   EXPECT_FALSE(Timestamp::Infinity().IsFinite());
   EXPECT_TRUE(Timestamp::ms(kValue).IsFinite());
 }
@@ -175,12 +173,10 @@ TEST(DataSizeTest, IdentityChecks) {
   EXPECT_FALSE(DataSize::bytes(kValue).IsZero());
 
   EXPECT_TRUE(DataSize::Infinity().IsInfinite());
-  EXPECT_TRUE(DataSize::kPlusInfinity.IsInfinite());
   EXPECT_FALSE(DataSize::Zero().IsInfinite());
   EXPECT_FALSE(DataSize::bytes(kValue).IsInfinite());
 
   EXPECT_FALSE(DataSize::Infinity().IsFinite());
-  EXPECT_FALSE(DataSize::kPlusInfinity.IsFinite());
   EXPECT_TRUE(DataSize::bytes(kValue).IsFinite());
   EXPECT_TRUE(DataSize::Zero().IsFinite());
 }
@@ -191,7 +187,7 @@ TEST(DataSizeTest, ComparisonOperators) {
   const DataSize small = DataSize::bytes(kSmall);
   const DataSize large = DataSize::bytes(kLarge);
 
-  EXPECT_EQ(DataSize::Zero(), DataSize::Zero());
+  EXPECT_EQ(DataSize::Zero(), DataSize::bytes(0));
   EXPECT_EQ(DataSize::Infinity(), DataSize::Infinity());
   EXPECT_EQ(small, small);
   EXPECT_LE(small, small);
@@ -201,9 +197,8 @@ TEST(DataSizeTest, ComparisonOperators) {
   EXPECT_LT(small, large);
   EXPECT_GE(large, small);
   EXPECT_GT(large, small);
-  EXPECT_LT(DataSize::kZero, small);
-
-  EXPECT_GT(DataSize::kPlusInfinity, large);
+  EXPECT_LT(DataSize::Zero(), small);
+  EXPECT_GT(DataSize::Infinity(), large);
 }
 
 TEST(DataSizeTest, MathOperations) {
@@ -250,12 +245,10 @@ TEST(DataRateTest, IdentityChecks) {
   EXPECT_FALSE(DataRate::bytes_per_second(kValue).IsZero());
 
   EXPECT_TRUE(DataRate::Infinity().IsInfinite());
-  EXPECT_TRUE(DataRate::kPlusInfinity.IsInfinite());
   EXPECT_FALSE(DataRate::Zero().IsInfinite());
   EXPECT_FALSE(DataRate::bytes_per_second(kValue).IsInfinite());
 
   EXPECT_FALSE(DataRate::Infinity().IsFinite());
-  EXPECT_FALSE(DataRate::kPlusInfinity.IsFinite());
   EXPECT_TRUE(DataRate::bytes_per_second(kValue).IsFinite());
   EXPECT_TRUE(DataRate::Zero().IsFinite());
 }
@@ -266,7 +259,7 @@ TEST(DataRateTest, ComparisonOperators) {
   const DataRate small = DataRate::bytes_per_second(kSmall);
   const DataRate large = DataRate::bytes_per_second(kLarge);
 
-  EXPECT_EQ(DataRate::Zero(), DataRate::Zero());
+  EXPECT_EQ(DataRate::Zero(), DataRate::bps(0));
   EXPECT_EQ(DataRate::Infinity(), DataRate::Infinity());
   EXPECT_EQ(small, small);
   EXPECT_LE(small, small);
@@ -276,8 +269,8 @@ TEST(DataRateTest, ComparisonOperators) {
   EXPECT_LT(small, large);
   EXPECT_GE(large, small);
   EXPECT_GT(large, small);
-  EXPECT_LT(DataRate::kZero, small);
-  EXPECT_GT(DataRate::kPlusInfinity, large);
+  EXPECT_LT(DataRate::Zero(), small);
+  EXPECT_GT(DataRate::Infinity(), large);
 }
 
 TEST(DataRateTest, MathOperations) {

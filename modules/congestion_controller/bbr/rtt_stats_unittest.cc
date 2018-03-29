@@ -131,7 +131,7 @@ TEST_F(RttStatsTest, UpdateRttWithBadSendDeltas) {
 
   std::vector<TimeDelta> bad_send_deltas;
   bad_send_deltas.push_back(TimeDelta::Zero());
-  bad_send_deltas.push_back(TimeDelta::Infinity());
+  bad_send_deltas.push_back(TimeDelta::PlusInfinity());
   bad_send_deltas.push_back(TimeDelta::us(-1000));
 
   for (TimeDelta bad_send_delta : bad_send_deltas) {
