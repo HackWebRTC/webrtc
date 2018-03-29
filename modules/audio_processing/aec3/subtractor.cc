@@ -162,7 +162,7 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
   const float e2_shadow =
       std::accumulate(e_shadow.begin(), e_shadow.end(), 0.f, sum_of_squares);
 
-  constexpr float kConvergenceThreshold = 200 * 200 * kBlockSize;
+  constexpr float kConvergenceThreshold = 50 * 50 * kBlockSize;
   main_filter_converged_ = e2_main < 0.2 * y2 && y2 > kConvergenceThreshold;
   shadow_filter_converged_ =
       e2_shadow < 0.05 * y2 && y2 > kConvergenceThreshold;
