@@ -43,9 +43,6 @@ class AudioManager {
   // Revert any setting done by Init().
   bool Close();
 
-  // Returns true if current audio mode is AudioManager.MODE_IN_COMMUNICATION.
-  bool IsCommunicationModeEnabled() const;
-
   // Native audio parameters stored during construction.
   const AudioParameters& GetPlayoutAudioParameters();
   const AudioParameters& GetRecordAudioParameters();

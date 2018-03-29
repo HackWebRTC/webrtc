@@ -128,11 +128,6 @@ class WebRtcAudioManager {
     volumeLogger.stop();
   }
 
-  @CalledByNative
-  private boolean isCommunicationModeEnabled() {
-    return (audioManager.getMode() == AudioManager.MODE_IN_COMMUNICATION);
-  }
-
   // Returns true if low-latency audio output is supported.
   public static boolean isLowLatencyOutputSupported(Context context) {
     return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_AUDIO_LOW_LATENCY);

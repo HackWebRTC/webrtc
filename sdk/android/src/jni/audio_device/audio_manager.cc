@@ -98,13 +98,6 @@ bool AudioManager::Close() {
   return true;
 }
 
-bool AudioManager::IsCommunicationModeEnabled() const {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  JNIEnv* env = AttachCurrentThreadIfNeeded();
-  return Java_WebRtcAudioManager_isCommunicationModeEnabled(env,
-                                                            j_audio_manager_);
-}
-
 bool AudioManager::IsAcousticEchoCancelerSupported() const {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   JNIEnv* env = AttachCurrentThreadIfNeeded();

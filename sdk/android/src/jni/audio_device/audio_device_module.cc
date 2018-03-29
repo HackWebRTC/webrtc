@@ -252,10 +252,6 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
       return 0;
     }
     audio_device_buffer_->StartPlayout();
-    if (!audio_manager_->IsCommunicationModeEnabled()) {
-      RTC_LOG(WARNING)
-          << "The application should use MODE_IN_COMMUNICATION audio mode!";
-    }
     int32_t result = output_->StartPlayout();
     RTC_LOG(INFO) << "output: " << result;
     RTC_HISTOGRAM_BOOLEAN("WebRTC.Audio.StartPlayoutSuccess",
@@ -289,10 +285,6 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
     CHECKinitialized_();
     if (Recording()) {
       return 0;
-    }
-    if (!audio_manager_->IsCommunicationModeEnabled()) {
-      RTC_LOG(WARNING)
-          << "The application should use MODE_IN_COMMUNICATION audio mode!";
     }
     audio_device_buffer_->StartRecording();
     int32_t result = input_->StartRecording();
