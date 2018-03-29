@@ -24,8 +24,8 @@ import javax.annotation.Nullable;
 import org.webrtc.ContextUtils;
 import org.webrtc.Logging;
 import org.webrtc.ThreadUtils;
-import org.webrtc.audio.AudioDeviceModule.AudioTrackErrorCallback;
-import org.webrtc.audio.AudioDeviceModule.AudioTrackStartErrorCode;
+import org.webrtc.audio.JavaAudioDeviceModule.AudioTrackErrorCallback;
+import org.webrtc.audio.JavaAudioDeviceModule.AudioTrackStartErrorCode;
 import org.webrtc.CalledByNative;
 import org.webrtc.NativeClassQualifiedName;
 

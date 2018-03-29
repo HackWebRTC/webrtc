@@ -17,7 +17,7 @@ import android.os.Bundle;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import org.webrtc.Camera2Enumerator;
-import org.webrtc.audio.AudioDeviceModule;
+import org.webrtc.audio.JavaAudioDeviceModule;
 import org.webrtc.voiceengine.WebRtcAudioUtils;
 
 /**
@@ -201,8 +201,8 @@ public class SettingsActivity extends Activity implements OnSharedPreferenceChan
         disableBuiltInNSPreference.setEnabled(false);
       }
     } else {
-      AudioDeviceModule.setWebRtcBasedAcousticEchoCanceler(false);
-      if (!AudioDeviceModule.isAcousticEchoCancelerSupported()) {
+      JavaAudioDeviceModule.setWebRtcBasedAcousticEchoCanceler(false);
+      if (!JavaAudioDeviceModule.isAcousticEchoCancelerSupported()) {
         Preference disableBuiltInAECPreference =
             settingsFragment.findPreference(keyprefDisableBuiltInAEC);
 
@@ -216,8 +216,8 @@ public class SettingsActivity extends Activity implements OnSharedPreferenceChan
       disableBuiltInAGCPreference.setSummary(getString(R.string.pref_built_in_agc_not_available));
       disableBuiltInAGCPreference.setEnabled(false);
 
-      AudioDeviceModule.setWebRtcBasedNoiseSuppressor(false);
-      if (!AudioDeviceModule.isNoiseSuppressorSupported()) {
+      JavaAudioDeviceModule.setWebRtcBasedNoiseSuppressor(false);
+      if (!JavaAudioDeviceModule.isNoiseSuppressorSupported()) {
         Preference disableBuiltInNSPreference =
             settingsFragment.findPreference(keyprefDisableBuiltInNS);
 

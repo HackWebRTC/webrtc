@@ -765,7 +765,7 @@ rtc_android_library("base_java") {
     "api/org/webrtc/VideoSink.java",
     "api/org/webrtc/YuvConverter.java",
     "api/org/webrtc/YuvHelper.java",
-    "api/org/webrtc/audio/AudioDeviceModule.java",
+    "api/org/webrtc/audio/JavaAudioDeviceModule.java",
     "src/java/org/webrtc/AndroidVideoTrackSourceObserver.java",
     "src/java/org/webrtc/CalledByNative.java",
     "src/java/org/webrtc/CalledByNativeUnchecked.java",

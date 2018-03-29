@@ -24,9 +24,9 @@ import org.webrtc.CalledByNative;
 import org.webrtc.Logging;
 import org.webrtc.NativeClassQualifiedName;
 import org.webrtc.ThreadUtils;
-import org.webrtc.audio.AudioDeviceModule.AudioRecordErrorCallback;
-import org.webrtc.audio.AudioDeviceModule.AudioRecordStartErrorCode;
-import org.webrtc.audio.AudioDeviceModule.SamplesReadyCallback;
+import org.webrtc.audio.JavaAudioDeviceModule.AudioRecordErrorCallback;
+import org.webrtc.audio.JavaAudioDeviceModule.AudioRecordStartErrorCode;
+import org.webrtc.audio.JavaAudioDeviceModule.SamplesReadyCallback;
 
 class WebRtcAudioRecord {
   private static final boolean DEBUG = false;
@@ -118,7 +118,7 @@ class WebRtcAudioRecord {
             // at index 0.
             byte[] data = Arrays.copyOf(byteBuffer.array(), byteBuffer.capacity());
             audioSamplesReadyCallback.onWebRtcAudioRecordSamplesReady(
-                new AudioDeviceModule.AudioSamples(audioRecord.getAudioFormat(),
+                new JavaAudioDeviceModule.AudioSamples(audioRecord.getAudioFormat(),
                     audioRecord.getChannelCount(), audioRecord.getSampleRate(), data));
           }
         } else {

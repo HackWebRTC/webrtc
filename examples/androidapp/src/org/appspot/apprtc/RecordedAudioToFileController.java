@@ -20,8 +20,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.concurrent.ExecutorService;
-import org.webrtc.audio.AudioDeviceModule;
-import org.webrtc.audio.AudioDeviceModule.SamplesReadyCallback;
+import org.webrtc.audio.JavaAudioDeviceModule;
+import org.webrtc.audio.JavaAudioDeviceModule.SamplesReadyCallback;
 import org.webrtc.voiceengine.WebRtcAudioRecord;
 import org.webrtc.voiceengine.WebRtcAudioRecord.WebRtcAudioRecordSamplesReadyCallback;
 
@@ -110,13 +110,13 @@ public class RecordedAudioToFileController
   // Called when new audio samples are ready.
   @Override
   public void onWebRtcAudioRecordSamplesReady(WebRtcAudioRecord.AudioSamples samples) {
-    onWebRtcAudioRecordSamplesReady(new AudioDeviceModule.AudioSamples(samples.getAudioFormat(),
+    onWebRtcAudioRecordSamplesReady(new JavaAudioDeviceModule.AudioSamples(samples.getAudioFormat(),
         samples.getChannelCount(), samples.getSampleRate(), samples.getData()));
   }
 
   // Called when new audio samples are ready.
   @Override
-  public void onWebRtcAudioRecordSamplesReady(AudioDeviceModule.AudioSamples samples) {
+  public void onWebRtcAudioRecordSamplesReady(JavaAudioDeviceModule.AudioSamples samples) {
     // The native audio layer on Android should use 16-bit PCM format.
     if (samples.getAudioFormat() != AudioFormat.ENCODING_PCM_16BIT) {
       Log.e(TAG, "Invalid audio format");

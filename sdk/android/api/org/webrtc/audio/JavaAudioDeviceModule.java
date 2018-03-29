@@ -16,13 +16,12 @@ import org.webrtc.audio.WebRtcAudioTrack;
 import org.webrtc.audio.WebRtcAudioUtils;
 
 /**
- * Public API for Java audio methods.
+ * AudioDeviceModule implemented using android.media.AudioRecord as input and
+ * android.media.AudioTrack as output.
  *
  * <p>Note: This class is still under development and may change without notice.
  */
-public class AudioDeviceModule {
-  public AudioDeviceModule() {}
-
+public class JavaAudioDeviceModule {
   /* AudioManager */
   public static void setStereoInput(boolean enable) {
     WebRtcAudioManager.setStereoInput(enable);
@@ -97,6 +96,7 @@ public class AudioDeviceModule {
     AUDIO_TRACK_START_EXCEPTION,
     AUDIO_TRACK_START_STATE_MISMATCH,
   }
+
   public static interface AudioTrackErrorCallback {
     void onWebRtcAudioTrackInitError(String errorMessage);
     void onWebRtcAudioTrackStartError(AudioTrackStartErrorCode errorCode, String errorMessage);
