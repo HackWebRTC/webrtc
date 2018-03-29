@@ -13,6 +13,7 @@
 #include <cstdlib>
 
 #include "modules/congestion_controller/network_control/include/network_units.h"
+#include "modules/congestion_controller/network_control/include/network_units_to_string.h"
 #include "rtc_base/logging.h"
 
 namespace webrtc {
@@ -49,7 +50,7 @@ void RttStats::UpdateRtt(TimeDelta send_delta,
   if (send_delta.IsInfinite() || send_delta <= TimeDelta::Zero()) {
     RTC_LOG(LS_WARNING) << "Ignoring measured send_delta, because it's is "
                         << "either infinite, zero, or negative.  send_delta = "
-                        << send_delta;
+                        << ToString(send_delta);
     return;
   }
 

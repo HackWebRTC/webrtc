@@ -12,7 +12,6 @@
 #define MODULES_CONGESTION_CONTROLLER_NETWORK_CONTROL_INCLUDE_NETWORK_UNITS_H_
 #include <stdint.h>
 #include <limits>
-#include <ostream>
 #include "rtc_base/checks.h"
 
 namespace webrtc {
@@ -385,11 +384,6 @@ DataRate operator/(const DataSize& size, const TimeDelta& duration);
 TimeDelta operator/(const DataSize& size, const DataRate& rate);
 DataSize operator*(const DataRate& rate, const TimeDelta& duration);
 DataSize operator*(const TimeDelta& duration, const DataRate& rate);
-
-::std::ostream& operator<<(::std::ostream& os, const DataRate& datarate);
-::std::ostream& operator<<(::std::ostream& os, const DataSize& datasize);
-::std::ostream& operator<<(::std::ostream& os, const Timestamp& timestamp);
-::std::ostream& operator<<(::std::ostream& os, const TimeDelta& delta);
 
 }  // namespace webrtc
 

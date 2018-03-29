@@ -24,10 +24,10 @@ void DataTransferTracker::AddSample(DataSize size_delta,
                                     Timestamp send_time,
                                     Timestamp ack_time) {
   size_sum_ += size_delta;
-  if (!samples_.empty()) {
-    RTC_DCHECK_GE(send_time, samples_.back().send_time);
-    RTC_DCHECK_GE(ack_time, samples_.back().ack_time);
-  }
+
+  RTC_DCHECK(samples_.empty() || send_time >= samples_.back().send_time);
+  RTC_DCHECK(samples_.empty() || ack_time >= samples_.back().ack_time);
+
   if (!samples_.empty() && ack_time == samples_.back().ack_time) {
     samples_.back().send_time = send_time;
     samples_.back().size_sum = size_sum_;

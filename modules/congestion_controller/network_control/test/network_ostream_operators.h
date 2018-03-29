@@ -17,6 +17,19 @@
 namespace webrtc {
 ::std::ostream& operator<<(  // no-presubmit-check TODO(webrtc:8982)
     ::std::ostream& os,      // no-presubmit-check TODO(webrtc:8982)
+    const DataRate& datarate);
+::std::ostream& operator<<(  // no-presubmit-check TODO(webrtc:8982)
+    ::std::ostream& os,      // no-presubmit-check TODO(webrtc:8982)
+    const DataSize& datasize);
+::std::ostream& operator<<(  // no-presubmit-check TODO(webrtc:8982)
+    ::std::ostream& os,      // no-presubmit-check TODO(webrtc:8982)
+    const Timestamp& timestamp);
+::std::ostream& operator<<(  // no-presubmit-check TODO(webrtc:8982)
+    ::std::ostream& os,      // no-presubmit-check TODO(webrtc:8982)
+    const TimeDelta& delta);
+
+::std::ostream& operator<<(  // no-presubmit-check TODO(webrtc:8982)
+    ::std::ostream& os,      // no-presubmit-check TODO(webrtc:8982)
     const CongestionWindow& window);
 ::std::ostream& operator<<(  // no-presubmit-check TODO(webrtc:8982)
     ::std::ostream& os,      // no-presubmit-check TODO(webrtc:8982)

@@ -48,6 +48,7 @@ if (rtc_include_tests) {
       ":windowed_filter",
       "../../../test:test_support",
       "../network_control",
+      "../network_control:network_control_test",
     ]
   }
 }

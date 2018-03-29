@@ -9,8 +9,31 @@
  */
 
 #include "modules/congestion_controller/network_control/test/network_ostream_operators.h"
+#include "modules/congestion_controller/network_control/include/network_units_to_string.h"
 
 namespace webrtc {
+
+std::ostream& operator<<(  // no-presubmit-check TODO(webrtc:8982)
+    std::ostream& os,      // no-presubmit-check TODO(webrtc:8982)
+    const DataRate& value) {
+  return os << ToString(value);
+}
+std::ostream& operator<<(  // no-presubmit-check TODO(webrtc:8982)
+    std::ostream& os,      // no-presubmit-check TODO(webrtc:8982)
+    const DataSize& value) {
+  return os << ToString(value);
+}
+std::ostream& operator<<(  // no-presubmit-check TODO(webrtc:8982)
+    std::ostream& os,      // no-presubmit-check TODO(webrtc:8982)
+    const Timestamp& value) {
+  return os << ToString(value);
+}
+std::ostream& operator<<(  // no-presubmit-check TODO(webrtc:8982)
+    std::ostream& os,      // no-presubmit-check TODO(webrtc:8982)
+    const TimeDelta& value) {
+  return os << ToString(value);
+}
+
 ::std::ostream& operator<<(  // no-presubmit-check TODO(webrtc:8982)
     ::std::ostream& os,      // no-presubmit-check TODO(webrtc:8982)
     const CongestionWindow& window) {

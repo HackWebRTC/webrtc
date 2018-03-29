@@ -9,6 +9,7 @@
  */
 
 #include "modules/congestion_controller/network_control/test/network_control_tester.h"
+#include "modules/congestion_controller/network_control/test/network_ostream_operators.h"
 
 #include <algorithm>
 

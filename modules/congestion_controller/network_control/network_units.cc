@@ -50,43 +50,5 @@ DataSize operator*(const TimeDelta& duration, const DataRate& rate) {
   return rate * duration;
 }
 
-::std::ostream& operator<<(::std::ostream& os, const DataRate& value) {
-  if (value.IsInfinite()) {
-    return os << "inf bps";
-  } else if (!value.IsInitialized()) {
-    return os << "? bps";
-  } else {
-    return os << value.bps() << " bps";
-  }
-}
-::std::ostream& operator<<(::std::ostream& os, const DataSize& value) {
-  if (value.IsInfinite()) {
-    return os << "inf bytes";
-  } else if (!value.IsInitialized()) {
-    return os << "? bytes";
-  } else {
-    return os << value.bytes() << " bytes";
-  }
-}
-::std::ostream& operator<<(::std::ostream& os, const Timestamp& value) {
-  if (value.IsInfinite()) {
-    return os << "inf ms";
-  } else if (!value.IsInitialized()) {
-    return os << "? ms";
-  } else {
-    return os << value.ms() << " ms";
-  }
-}
-::std::ostream& operator<<(::std::ostream& os, const TimeDelta& value) {
-  if (value.IsPlusInfinity()) {
-    return os << "+inf ms";
-  } else if (value.IsMinusInfinity()) {
-    return os << "-inf ms";
-  } else if (!value.IsInitialized()) {
-    return os << "? ms";
-  } else {
-    return os << value.ms() << " ms";
-  }
-}
 
 }  // namespace webrtc

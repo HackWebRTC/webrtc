@@ -13,8 +13,10 @@ rtc_static_library("network_control") {
     "include/network_control.h",
     "include/network_types.h",
     "include/network_units.h",
+    "include/network_units_to_string.h",
     "network_types.cc",
     "network_units.cc",
+    "network_units_to_string.cc",
   ]
 
   deps = [
