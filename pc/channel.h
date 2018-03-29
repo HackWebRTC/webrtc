@@ -23,7 +23,6 @@
 #include "api/rtpreceiverinterface.h"
 #include "api/videosinkinterface.h"
 #include "api/videosourceinterface.h"
-#include "call/rtp_packet_sink_interface.h"
 #include "media/base/mediachannel.h"
 #include "media/base/mediaengine.h"
 #include "media/base/streamparams.h"
@@ -70,10 +69,9 @@ class MediaContentDescription;
 // vtable, and the media channel's thread using BaseChannel as the
 // NetworkInterface.
 
-class BaseChannel : public rtc::MessageHandler,
-                    public sigslot::has_slots<>,
-                    public MediaChannel::NetworkInterface,
-                    public webrtc::RtpPacketSinkInterface {
+class BaseChannel
+    : public rtc::MessageHandler, public sigslot::has_slots<>,
+      public MediaChannel::NetworkInterface {
  public:
   // If |srtp_required| is true, the channel will not send or receive any
   // RTP/RTCP packets without using SRTP (either using SDES or DTLS-SRTP).
@@ -195,8 +193,10 @@ class BaseChannel : public rtc::MessageHandler,
 
   virtual cricket::MediaType media_type() = 0;
 
-  // RtpPacketSinkInterface overrides.
-  void OnRtpPacket(const webrtc::RtpPacketReceived& packet) override;
+  // Public for testing.
+  // TODO(zstein): Remove this once channels register themselves with
+  // an RtpTransport in a more explicit way.
+  bool HandlesPayloadType(int payload_type) const;
 
   // Used by the RTCStatsCollector tests to set the transport name without
   // creating RtpTransports.
@@ -264,10 +264,12 @@ class BaseChannel : public rtc::MessageHandler,
                   rtc::CopyOnWriteBuffer* packet,
                   const rtc::PacketOptions& options);
 
-  void OnRtcpPacketReceived(rtc::CopyOnWriteBuffer* packet,
-                            const rtc::PacketTime& packet_time);
+  bool WantsPacket(bool rtcp, const rtc::CopyOnWriteBuffer* packet);
+  void HandlePacket(bool rtcp, rtc::CopyOnWriteBuffer* packet,
+                    const rtc::PacketTime& packet_time);
+  // TODO(zstein): packet can be const once the RtpTransport handles protection.
   void OnPacketReceived(bool rtcp,
-                        const rtc::CopyOnWriteBuffer& packet,
+                        rtc::CopyOnWriteBuffer* packet,
                         const rtc::PacketTime& packet_time);
   void ProcessPacket(bool rtcp,
                      const rtc::CopyOnWriteBuffer& packet,
@@ -358,11 +360,6 @@ class BaseChannel : public rtc::MessageHandler,
 
   void AddHandledPayloadType(int payload_type);
 
-  void UpdateRtpHeaderExtensionMap(
-      const RtpHeaderExtensions& header_extensions);
-
-  bool RegisterRtpDemuxerSink();
-
  private:
   void ConnectToRtpTransport();
   void DisconnectFromRtpTransport();
@@ -442,9 +439,6 @@ class BaseChannel : public rtc::MessageHandler,
   // The cached encrypted header extension IDs.
   rtc::Optional<std::vector<int>> cached_send_extension_ids_;
   rtc::Optional<std::vector<int>> cached_recv_extension_ids_;
-
-  bool encryption_disabled_ = false;
-  webrtc::RtpDemuxerCriteria demuxer_criteria_;
 };
 
 // VoiceChannel is a specialization that adds support for early media, DTMF,

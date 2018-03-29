@@ -959,8 +959,8 @@ void RenameContent(cricket::SessionDescription* desc,
 
 // Tests that an answer responds with the same MIDs as the offer.
 TEST_P(PeerConnectionMediaTest, AnswerHasSameMidsAsOffer) {
-  const std::string kAudioMid = "notdefault1";
-  const std::string kVideoMid = "notdefault2";
+  const std::string kAudioMid = "not default1";
+  const std::string kVideoMid = "not default2";
 
   auto caller = CreatePeerConnectionWithAudioVideo();
   auto callee = CreatePeerConnectionWithAudioVideo();
@@ -980,8 +980,8 @@ TEST_P(PeerConnectionMediaTest, AnswerHasSameMidsAsOffer) {
 // Test that if the callee creates a re-offer, the MIDs are the same as the
 // original offer.
 TEST_P(PeerConnectionMediaTest, ReOfferHasSameMidsAsFirstOffer) {
-  const std::string kAudioMid = "notdefault1";
-  const std::string kVideoMid = "notdefault2";
+  const std::string kAudioMid = "not default1";
+  const std::string kVideoMid = "not default2";
 
   auto caller = CreatePeerConnectionWithAudioVideo();
   auto callee = CreatePeerConnectionWithAudioVideo();
