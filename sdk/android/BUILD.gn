@@ -793,6 +793,7 @@ rtc_android_library("base_java") {
     "src/java/org/webrtc/audio/BuildInfo.java",
     "src/java/org/webrtc/audio/WebRtcAudioEffects.java",
     "src/java/org/webrtc/audio/WebRtcAudioManager.java",
+    "src/java/org/webrtc/audio/VolumeLogger.java",
     "src/java/org/webrtc/audio/WebRtcAudioRecord.java",
     "src/java/org/webrtc/audio/WebRtcAudioTrack.java",
     "src/java/org/webrtc/audio/WebRtcAudioUtils.java",
