@@ -165,8 +165,6 @@ void MouseCursorMonitorWin::Capture() {
     position = position.subtract(rect.top_left());
   }
 
-  // TODO(zijiehe): Remove this overload.
-  callback_->OnMouseCursorPosition(inside ? INSIDE : OUTSIDE, position);
   callback_->OnMouseCursorPosition(position);
 }
 

@@ -131,7 +131,6 @@ class FakeMouseMonitor : public MouseCursorMonitor {
       callback_->OnMouseCursor(new MouseCursor(image.release(), hotspot_));
     }
 
-    callback_->OnMouseCursorPosition(state_, position_);
     callback_->OnMouseCursorPosition(position_);
   }
 
@@ -167,16 +166,13 @@ void VerifyFrame(const DesktopFrame& frame,
 
 }  // namespace
 
-template <bool use_desktop_relative_cursor_position>
 class DesktopAndCursorComposerTest : public testing::Test,
                                      public DesktopCapturer::Callback {
  public:
   DesktopAndCursorComposerTest()
       : fake_screen_(new FakeScreenCapturer()),
         fake_cursor_(new FakeMouseMonitor()),
-        blender_(fake_screen_,
-                 fake_cursor_,
-                 use_desktop_relative_cursor_position) {
+        blender_(fake_screen_, fake_cursor_) {
     blender_.Start(this);
   }
 
@@ -195,22 +191,7 @@ class DesktopAndCursorComposerTest : public testing::Test,
   std::unique_ptr<DesktopFrame> frame_;
 };
 
-using DesktopAndCursorComposerWithRelativePositionTest =
-    DesktopAndCursorComposerTest<false>;
-
-// Verify DesktopAndCursorComposer can handle the case when the screen capturer
-// fails.
-TEST_F(DesktopAndCursorComposerWithRelativePositionTest, Error) {
-  fake_cursor_->SetHotspot(DesktopVector());
-  fake_cursor_->SetState(MouseCursorMonitor::INSIDE, DesktopVector());
-  fake_screen_->SetNextFrame(nullptr);
-
-  blender_.CaptureFrame();
-
-  EXPECT_FALSE(frame_);
-}
-
-TEST_F(DesktopAndCursorComposerWithRelativePositionTest, Blend) {
+TEST_F(DesktopAndCursorComposerTest, CursorShouldBeIgnoredIfNoFrameCaptured) {
   struct {
     int x, y;
     int hotspot_x, hotspot_y;
@@ -245,23 +226,15 @@ TEST_F(DesktopAndCursorComposerWithRelativePositionTest, Blend) {
 
     std::unique_ptr<SharedDesktopFrame> frame(
         SharedDesktopFrame::Wrap(CreateTestFrame()));
-    fake_screen_->SetNextFrame(frame->Share());
 
     blender_.CaptureFrame();
-
-    VerifyFrame(*frame_, state, pos);
-
-    // Verify that the cursor is erased before the frame buffer is returned to
-    // the screen capturer.
-    frame_.reset();
-    VerifyFrame(*frame, MouseCursorMonitor::OUTSIDE, DesktopVector());
+    // If capturer captured nothing, then cursor should be ignored, not matter
+    // its state or position.
+    EXPECT_EQ(frame_, nullptr);
   }
 }
 
-using DesktopAndCursorComposerWithAbsolutePositionTest =
-    DesktopAndCursorComposerTest<true>;
-
-TEST_F(DesktopAndCursorComposerWithAbsolutePositionTest,
+TEST_F(DesktopAndCursorComposerTest,
        CursorShouldBeIgnoredIfItIsOutOfDesktopFrame) {
   std::unique_ptr<SharedDesktopFrame> frame(
       SharedDesktopFrame::Wrap(CreateTestFrame()));
@@ -298,8 +271,7 @@ TEST_F(DesktopAndCursorComposerWithAbsolutePositionTest,
   }
 }
 
-TEST_F(DesktopAndCursorComposerWithAbsolutePositionTest,
-       IsOccludedShouldBeConsidered) {
+TEST_F(DesktopAndCursorComposerTest, IsOccludedShouldBeConsidered) {
   std::unique_ptr<SharedDesktopFrame> frame(
       SharedDesktopFrame::Wrap(CreateTestFrame()));
   frame->set_top_left(DesktopVector(100, 200));
@@ -329,7 +301,7 @@ TEST_F(DesktopAndCursorComposerWithAbsolutePositionTest,
   }
 }
 
-TEST_F(DesktopAndCursorComposerWithAbsolutePositionTest, CursorIncluded) {
+TEST_F(DesktopAndCursorComposerTest, CursorIncluded) {
   std::unique_ptr<SharedDesktopFrame> frame(
       SharedDesktopFrame::Wrap(CreateTestFrame()));
   frame->set_top_left(DesktopVector(100, 200));

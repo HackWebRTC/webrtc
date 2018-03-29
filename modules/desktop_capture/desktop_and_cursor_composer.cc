@@ -128,25 +128,15 @@ DesktopFrameWithCursor::~DesktopFrameWithCursor() {
 }  // namespace
 
 DesktopAndCursorComposer::DesktopAndCursorComposer(
-    DesktopCapturer* desktop_capturer,
-    MouseCursorMonitor* mouse_monitor)
-    : DesktopAndCursorComposer(desktop_capturer, mouse_monitor, false) {}
-
-DesktopAndCursorComposer::DesktopAndCursorComposer(
     std::unique_ptr<DesktopCapturer> desktop_capturer,
     const DesktopCaptureOptions& options)
     : DesktopAndCursorComposer(desktop_capturer.release(),
-                               MouseCursorMonitor::Create(options).release(),
-                               true) {}
+                               MouseCursorMonitor::Create(options).release()) {}
 
 DesktopAndCursorComposer::DesktopAndCursorComposer(
     DesktopCapturer* desktop_capturer,
-    MouseCursorMonitor* mouse_monitor,
-    bool use_desktop_relative_cursor_position)
-    : desktop_capturer_(desktop_capturer),
-      mouse_monitor_(mouse_monitor),
-      use_desktop_relative_cursor_position_(
-          use_desktop_relative_cursor_position) {
+    MouseCursorMonitor* mouse_monitor)
+    : desktop_capturer_(desktop_capturer), mouse_monitor_(mouse_monitor) {
   RTC_DCHECK(desktop_capturer_);
 }
 
@@ -178,19 +168,12 @@ void DesktopAndCursorComposer::OnCaptureResult(
     DesktopCapturer::Result result,
     std::unique_ptr<DesktopFrame> frame) {
   if (frame && cursor_) {
-    if (use_desktop_relative_cursor_position_) {
-      if (frame->rect().Contains(cursor_position_) &&
-          !desktop_capturer_->IsOccluded(cursor_position_)) {
-        const DesktopVector relative_position =
-            cursor_position_.subtract(frame->top_left());
-        frame = rtc::MakeUnique<DesktopFrameWithCursor>(
-            std::move(frame), *cursor_, relative_position);
-      }
-    } else {
-      if (cursor_state_ == MouseCursorMonitor::INSIDE) {
-        frame = rtc::MakeUnique<DesktopFrameWithCursor>(
-            std::move(frame), *cursor_, cursor_position_);
-      }
+    if (frame->rect().Contains(cursor_position_) &&
+        !desktop_capturer_->IsOccluded(cursor_position_)) {
+      const DesktopVector relative_position =
+          cursor_position_.subtract(frame->top_left());
+      frame = rtc::MakeUnique<DesktopFrameWithCursor>(
+          std::move(frame), *cursor_, relative_position);
     }
   }
 
@@ -204,17 +187,12 @@ void DesktopAndCursorComposer::OnMouseCursor(MouseCursor* cursor) {
 void DesktopAndCursorComposer::OnMouseCursorPosition(
     MouseCursorMonitor::CursorState state,
     const DesktopVector& position) {
-  if (!use_desktop_relative_cursor_position_) {
-    cursor_state_ = state;
-    cursor_position_ = position;
-  }
+  RTC_NOTREACHED();
 }
 
 void DesktopAndCursorComposer::OnMouseCursorPosition(
     const DesktopVector& position) {
-  if (use_desktop_relative_cursor_position_) {
-    cursor_position_ = position;
-  }
+  cursor_position_ = position;
 }
 
 }  // namespace webrtc

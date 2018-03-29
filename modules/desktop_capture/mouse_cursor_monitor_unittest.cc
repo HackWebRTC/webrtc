@@ -33,14 +33,16 @@ class MouseCursorMonitorTest : public testing::Test,
 
   void OnMouseCursorPosition(MouseCursorMonitor::CursorState state,
                              const DesktopVector& position) override {
-    state_ = state;
+    RTC_NOTREACHED();
+  }
+
+  void OnMouseCursorPosition(const DesktopVector& position) override {
     position_ = position;
     position_received_ = true;
   }
 
  protected:
   std::unique_ptr<MouseCursor> cursor_image_;
-  MouseCursorMonitor::CursorState state_;
   DesktopVector position_;
   bool position_received_;
 };
@@ -78,7 +80,6 @@ TEST_F(MouseCursorMonitorTest, MAYBE(FromScreen)) {
             cursor_image_->image()->size().height());
 
   EXPECT_TRUE(position_received_);
-  EXPECT_EQ(MouseCursorMonitor::INSIDE, state_);
 }
 
 TEST_F(MouseCursorMonitorTest, MAYBE(FromWindow)) {
