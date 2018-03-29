@@ -263,8 +263,9 @@ void AudioSendStream::ConfigureStream(
   }
 
   // MID RTP header extension.
-  if ((first_time || new_ids.mid != old_ids.mid) && new_ids.mid != 0 &&
-      !new_config.rtp.mid.empty()) {
+  if ((first_time || new_ids.mid != old_ids.mid ||
+       new_config.rtp.mid != old_config.rtp.mid) &&
+      new_ids.mid != 0 && !new_config.rtp.mid.empty()) {
     channel_proxy->SetMid(new_config.rtp.mid, new_ids.mid);
   }
 

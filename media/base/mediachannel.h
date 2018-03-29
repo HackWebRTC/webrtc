@@ -589,56 +589,59 @@ struct RtcpParameters {
 
 template <class Codec>
 struct RtpParameters {
-  virtual std::string ToString() const {
-    std::ostringstream ost;
-    ost << "{";
-    ost << "codecs: " << VectorToString(codecs) << ", ";
-    ost << "extensions: " << VectorToString(extensions);
-    ost << "}";
-    return ost.str();
-  }
+  virtual ~RtpParameters() = default;
 
   std::vector<Codec> codecs;
   std::vector<webrtc::RtpExtension> extensions;
   // TODO(pthatcher): Add streams.
   RtcpParameters rtcp;
-  virtual ~RtpParameters() = default;
+
+  std::string ToString() const {
+    std::ostringstream ost;
+    ost << "{";
+    const char* separator = "";
+    for (const auto& entry : ToStringMap()) {
+      ost << separator << entry.first << ": " << entry.second;
+      separator = ", ";
+    }
+    ost << "}";
+    return ost.str();
+  }
+
+ protected:
+  virtual std::map<std::string, std::string> ToStringMap() const {
+    return {{"codecs", VectorToString(codecs)},
+            {"extensions", VectorToString(extensions)}};
+  }
 };
 
 // TODO(deadbeef): Rename to RtpSenderParameters, since they're intended to
 // encapsulate all the parameters needed for an RtpSender.
 template <class Codec>
 struct RtpSendParameters : RtpParameters<Codec> {
-  std::string ToString() const override {
-    std::ostringstream ost;
-    ost << "{";
-    ost << "codecs: " << VectorToString(this->codecs) << ", ";
-    ost << "extensions: " << VectorToString(this->extensions) << ", ";
-    ost << "max_bandwidth_bps: " << max_bandwidth_bps << ", ";
-    ost << "mid: " << (mid.empty() ? "<not set>" : mid) << ", ";
-    ost << "}";
-    return ost.str();
-  }
-
   int max_bandwidth_bps = -1;
   // This is the value to be sent in the MID RTP header extension (if the header
   // extension in included in the list of extensions).
   std::string mid;
+
+ protected:
+  std::map<std::string, std::string> ToStringMap() const override {
+    auto params = RtpParameters<Codec>::ToStringMap();
+    params["max_bandwidth_bps"] = rtc::ToString(max_bandwidth_bps);
+    params["mid"] = (mid.empty() ? "<not set>" : mid);
+    return params;
+  }
 };
 
 struct AudioSendParameters : RtpSendParameters<AudioCodec> {
-  std::string ToString() const override {
-    std::ostringstream ost;
-    ost << "{";
-    ost << "codecs: " << VectorToString(this->codecs) << ", ";
-    ost << "extensions: " << VectorToString(this->extensions) << ", ";
-    ost << "max_bandwidth_bps: " << max_bandwidth_bps << ", ";
-    ost << "options: " << options.ToString();
-    ost << "}";
-    return ost.str();
-  }
-
   AudioOptions options;
+
+ protected:
+  std::map<std::string, std::string> ToStringMap() const override {
+    auto params = RtpSendParameters<AudioCodec>::ToStringMap();
+    params["options"] = options.ToString();
+    return params;
+  }
 };
 
 struct AudioRecvParameters : RtpParameters<AudioCodec> {
@@ -704,6 +707,13 @@ struct VideoSendParameters : RtpSendParameters<VideoCodec> {
   // WebRtcVideoChannel::WebRtcVideoSendStream::CreateVideoEncoderConfig.
   // The special screencast behaviour is disabled by default.
   bool conference_mode = false;
+
+ protected:
+  std::map<std::string, std::string> ToStringMap() const override {
+    auto params = RtpSendParameters<VideoCodec>::ToStringMap();
+    params["conference_mode"] = (conference_mode ? "yes" : "no");
+    return params;
+  }
 };
 
 // TODO(deadbeef): Rename to VideoReceiverParameters, since they're intended to
@@ -819,15 +829,6 @@ struct SendDataParams {
 enum SendDataResult { SDR_SUCCESS, SDR_ERROR, SDR_BLOCK };
 
 struct DataSendParameters : RtpSendParameters<DataCodec> {
-  std::string ToString() const {
-    std::ostringstream ost;
-    // Options and extensions aren't used.
-    ost << "{";
-    ost << "codecs: " << VectorToString(codecs) << ", ";
-    ost << "max_bandwidth_bps: " << max_bandwidth_bps;
-    ost << "}";
-    return ost.str();
-  }
 };
 
 struct DataRecvParameters : RtpParameters<DataCodec> {
