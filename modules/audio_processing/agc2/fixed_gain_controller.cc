@@ -54,10 +54,6 @@ void FixedGainController::SetSampleRate(size_t sample_rate_hz) {
   gain_curve_applier_.SetSampleRate(sample_rate_hz);
 }
 
-void FixedGainController::EnableLimiter(bool enable_limiter) {
-  enable_limiter_ = enable_limiter;
-}
-
 void FixedGainController::Process(AudioFrameView<float> signal) {
   // Apply fixed digital gain; interpolate if necessary. One of the
   // planned usages of the FGC is to only use the limiter. In that
@@ -72,16 +68,13 @@ void FixedGainController::Process(AudioFrameView<float> signal) {
     }
   }
 
-  // Use the limiter (if configured to).
-  if (enable_limiter_) {
-    gain_curve_applier_.Process(signal);
+  // Use the limiter.
+  gain_curve_applier_.Process(signal);
 
-    // Dump data for debug.
-    const auto channel_view = signal.channel(0);
-    apm_data_dumper_->DumpRaw("agc2_fixed_digital_gain_curve_applier",
-                              channel_view.size(), channel_view.data());
-  }
-
+  // Dump data for debug.
+  const auto channel_view = signal.channel(0);
+  apm_data_dumper_->DumpRaw("agc2_fixed_digital_gain_curve_applier",
+                            channel_view.size(), channel_view.data());
   // Hard-clipping.
   for (size_t k = 0; k < signal.num_channels(); ++k) {
     rtc::ArrayView<float> channel_view = signal.channel(k);

@@ -190,7 +190,6 @@ FrameCombiner::FrameCombiner(LimiterType limiter_type)
       data_dumper_(new ApmDataDumper(0)),
       apm_agc2_limiter_(data_dumper_.get()) {
   apm_agc2_limiter_.SetGain(0.f);
-  apm_agc2_limiter_.EnableLimiter(true);
 }
 
 FrameCombiner::FrameCombiner(bool use_limiter)

@@ -49,34 +49,20 @@ ApmDataDumper test_data_dumper(0);
 
 std::unique_ptr<FixedGainController> CreateFixedGainController(
     float gain_to_apply,
-    size_t rate,
-    bool enable_limiter) {
+    size_t rate) {
   std::unique_ptr<FixedGainController> fgc =
       rtc::MakeUnique<FixedGainController>(&test_data_dumper);
   fgc->SetGain(gain_to_apply);
   fgc->SetSampleRate(rate);
-  fgc->EnableLimiter(enable_limiter);
   return fgc;
 }
 
 }  // namespace
 
-TEST(AutomaticGainController2FixedDigital, CreateUseWithoutLimiter) {
-  const int kSampleRate = 48000;
-  std::unique_ptr<FixedGainController> fixed_gc =
-      CreateFixedGainController(kGainToApplyDb, kSampleRate, false);
-  VectorFloatFrame vectors_with_float_frame(
-      1, rtc::CheckedDivExact(kSampleRate, 100), kInputLevelLinear);
-  auto float_frame = vectors_with_float_frame.float_frame_view();
-  fixed_gc->Process(float_frame);
-  const auto channel = float_frame.channel(0);
-  EXPECT_LT(kInputLevelLinear, channel[0]);
-}
-
-TEST(AutomaticGainController2FixedDigital, CreateUseWithLimiter) {
+TEST(AutomaticGainController2FixedDigital, CreateUse) {
   const int kSampleRate = 44000;
   std::unique_ptr<FixedGainController> fixed_gc =
-      CreateFixedGainController(kGainToApplyDb, kSampleRate, true);
+      CreateFixedGainController(kGainToApplyDb, kSampleRate);
   VectorFloatFrame vectors_with_float_frame(
       1, rtc::CheckedDivExact(kSampleRate, 100), kInputLevelLinear);
   auto float_frame = vectors_with_float_frame.float_frame_view();
@@ -96,7 +82,7 @@ TEST(AutomaticGainController2FixedDigital, CheckSaturationBehaviorWithLimiter) {
     // Since |test::kLimiterMaxInputLevelDbFs| > |gain_db|, the
     // limiter will not saturate the signal.
     std::unique_ptr<FixedGainController> fixed_gc_no_saturation =
-        CreateFixedGainController(gain_db, kSampleRate, true);
+        CreateFixedGainController(gain_db, kSampleRate);
 
     // Saturation not expected.
     SCOPED_TRACE(std::to_string(gain_db));
@@ -112,7 +98,7 @@ TEST(AutomaticGainController2FixedDigital, CheckSaturationBehaviorWithLimiter) {
     // Since |test::kLimiterMaxInputLevelDbFs| < |gain|, the limiter
     // will saturate the signal.
     std::unique_ptr<FixedGainController> fixed_gc_saturation =
-        CreateFixedGainController(gain_db, kSampleRate, true);
+        CreateFixedGainController(gain_db, kSampleRate);
 
     // Saturation expected.
     SCOPED_TRACE(std::to_string(gain_db));
@@ -135,7 +121,7 @@ TEST(AutomaticGainController2FixedDigital,
     // Since |gain| > |test::kLimiterMaxInputLevelDbFs|, the limiter will
     // not saturate the signal.
     std::unique_ptr<FixedGainController> fixed_gc_no_saturation =
-        CreateFixedGainController(gain_db, kSampleRate, true);
+        CreateFixedGainController(gain_db, kSampleRate);
 
     // Saturation not expected.
     SCOPED_TRACE(std::to_string(gain_db));
@@ -151,7 +137,7 @@ TEST(AutomaticGainController2FixedDigital,
     // Singe |gain| < |test::kLimiterMaxInputLevelDbFs|, the limiter will
     // saturate the signal.
     std::unique_ptr<FixedGainController> fixed_gc_saturation =
-        CreateFixedGainController(gain_db, kSampleRate, true);
+        CreateFixedGainController(gain_db, kSampleRate);
 
     // Saturation expected.
     SCOPED_TRACE(std::to_string(gain_db));
@@ -170,7 +156,7 @@ TEST(AutomaticGainController2FixedDigital, GainShouldChangeOnSetGain) {
   constexpr float kGainDbFactor10 = 20.f;
 
   std::unique_ptr<FixedGainController> fixed_gc_no_saturation =
-      CreateFixedGainController(kGainDbNoChange, kSampleRate, false);
+      CreateFixedGainController(kGainDbNoChange, kSampleRate);
 
   // Signal level is unchanged with 0 db gain.
   EXPECT_FLOAT_EQ(
