@@ -12,6 +12,7 @@
 
 #include "modules/desktop_capture/mac/screen_capturer_mac.h"
 
+#include "modules/desktop_capture/mac/desktop_frame_cgimage.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/logging.h"
@@ -405,32 +406,19 @@ bool ScreenCapturerMac::CgBlit(const DesktopFrame& frame, const DesktopRegion& r
       }
     }
 
-    // Create an image containing a snapshot of the display.
-    rtc::ScopedCFTypeRef<CGImageRef> image(CGDisplayCreateImage(display_config.id));
-    if (!image) {
+    std::unique_ptr<DesktopFrameCGImage> frame_source =
+        DesktopFrameCGImage::CreateForDisplay(display_config.id);
+    if (!frame_source) {
       continue;
     }
 
-    // Verify that the image has 32-bit depth.
-    int bits_per_pixel = CGImageGetBitsPerPixel(image.get());
-    if (bits_per_pixel / 8 != DesktopFrame::kBytesPerPixel) {
-      RTC_LOG(LS_ERROR) << "CGDisplayCreateImage() returned imaged with " << bits_per_pixel
-                        << " bits per pixel. Only 32-bit depth is supported.";
-      return false;
-    }
+    const uint8_t* display_base_address = frame_source->data();
+    int src_bytes_per_row = frame_source->stride();
+    RTC_DCHECK(display_base_address);
 
-    // Request access to the raw pixel data via the image's DataProvider.
-    CGDataProviderRef provider = CGImageGetDataProvider(image.get());
-    rtc::ScopedCFTypeRef<CFDataRef> data(CGDataProviderCopyData(provider));
-    RTC_DCHECK(data);
-
-    const uint8_t* display_base_address = CFDataGetBytePtr(data.get());
-    int src_bytes_per_row = CGImageGetBytesPerRow(image.get());
-
-    // |image| size may be different from display_bounds in case the screen was
+    // |frame_source| size may be different from display_bounds in case the screen was
     // resized recently.
-    copy_region.IntersectWith(
-        DesktopRect::MakeWH(CGImageGetWidth(image.get()), CGImageGetHeight(image.get())));
+    copy_region.IntersectWith(frame_source->rect());
 
     // Copy the dirty region from the display buffer into our desktop buffer.
     uint8_t* out_ptr = frame.GetFrameDataAtPos(display_bounds.top_left());

@@ -175,6 +175,8 @@ if (is_mac) {
     visibility = [ ":desktop_capture" ]
     sources = [
       "mac/desktop_configuration.mm",
+      "mac/desktop_frame_cgimage.h",
+      "mac/desktop_frame_cgimage.mm",
       "mac/screen_capturer_mac.h",
       "mac/screen_capturer_mac.mm",
       "mouse_cursor_monitor_mac.mm",
