@@ -229,19 +229,19 @@ void FakeVideoSendStream::ReconfigureVideoEncoder(
   if (config.encoder_specific_settings != NULL) {
     const unsigned char num_temporal_layers = static_cast<unsigned char>(
         video_streams_.back().num_temporal_layers.value_or(1));
-    if (config_.rtp.payload_name == "VP8") {
+    if (config_.encoder_settings.payload_name == "VP8") {
       config.encoder_specific_settings->FillVideoCodecVp8(&vpx_settings_.vp8);
       if (!video_streams_.empty()) {
         vpx_settings_.vp8.numberOfTemporalLayers = num_temporal_layers;
       }
-    } else if (config_.rtp.payload_name == "VP9") {
+    } else if (config_.encoder_settings.payload_name == "VP9") {
       config.encoder_specific_settings->FillVideoCodecVp9(&vpx_settings_.vp9);
       if (!video_streams_.empty()) {
         vpx_settings_.vp9.numberOfTemporalLayers = num_temporal_layers;
       }
     } else {
       ADD_FAILURE() << "Unsupported encoder payload: "
-                    << config_.rtp.payload_name;
+                    << config_.encoder_settings.payload_name;
     }
   }
   codec_settings_set_ = config.encoder_specific_settings != NULL;

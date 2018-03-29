@@ -78,12 +78,10 @@ std::vector<VideoStream> DefaultVideoStreamFactory::CreateEncoderStreams(
   return CreateVideoStreams(width, height, encoder_config);
 }
 
-void FillEncoderConfiguration(VideoCodecType codec_type,
-                              size_t num_streams,
+void FillEncoderConfiguration(size_t num_streams,
                               VideoEncoderConfig* configuration) {
   RTC_DCHECK_LE(num_streams, DefaultVideoStreamFactory::kMaxNumberOfStreams);
 
-  configuration->codec_type = codec_type;
   configuration->number_of_streams = num_streams;
   configuration->video_stream_factory =
       new rtc::RefCountedObject<DefaultVideoStreamFactory>();
@@ -96,17 +94,17 @@ void FillEncoderConfiguration(VideoCodecType codec_type,
 }
 
 VideoReceiveStream::Decoder CreateMatchingDecoder(
-    int payload_type, const std::string& payload_name) {
+    const VideoSendStream::Config::EncoderSettings& encoder_settings) {
   VideoReceiveStream::Decoder decoder;
-  decoder.payload_type = payload_type;
-  decoder.payload_name = payload_name;
-  if (payload_name == "H264") {
+  decoder.payload_type = encoder_settings.payload_type;
+  decoder.payload_name = encoder_settings.payload_name;
+  if (encoder_settings.payload_name == "H264") {
     decoder.decoder = H264Decoder::Create().release();
-  } else if (payload_name == "VP8") {
+  } else if (encoder_settings.payload_name == "VP8") {
     decoder.decoder = VP8Decoder::Create().release();
-  } else if (payload_name == "VP9") {
+  } else if (encoder_settings.payload_name == "VP9") {
     decoder.decoder = VP9Decoder::Create().release();
-  } else if (payload_name == "multiplex") {
+  } else if (encoder_settings.payload_name == "multiplex") {
     decoder.decoder = new MultiplexDecoderAdapter(
         new InternalDecoderFactory(), SdpVideoFormat(cricket::kVp9CodecName));
   } else {
@@ -114,12 +112,5 @@ VideoReceiveStream::Decoder CreateMatchingDecoder(
   }
   return decoder;
 }
-
-VideoReceiveStream::Decoder CreateMatchingDecoder(
-    const VideoSendStream::Config& config) {
-  return CreateMatchingDecoder(config.rtp.payload_type,
-                               config.rtp.payload_name);
-}
-
 }  // namespace test
 }  // namespace webrtc

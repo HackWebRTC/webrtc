@@ -1747,8 +1747,8 @@ void WebRtcVideoChannel::WebRtcVideoSendStream::SetCodec(
   parameters_.config.encoder_settings.internal_source =
       info.has_internal_source;
 
-  parameters_.config.rtp.payload_name = codec_settings.codec.name;
-  parameters_.config.rtp.payload_type = codec_settings.codec.id;
+  parameters_.config.encoder_settings.payload_name = codec_settings.codec.name;
+  parameters_.config.encoder_settings.payload_type = codec_settings.codec.id;
   parameters_.config.rtp.ulpfec = codec_settings.ulpfec;
   parameters_.config.rtp.flexfec.payload_type =
       codec_settings.flexfec_payload_type;
@@ -1904,8 +1904,6 @@ WebRtcVideoChannel::WebRtcVideoSendStream::CreateVideoEncoderConfig(
     const VideoCodec& codec) const {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   webrtc::VideoEncoderConfig encoder_config;
-  encoder_config.codec_type = webrtc::PayloadStringToCodecType(codec.name);
-
   bool is_screencast = parameters_.options.is_screencast.value_or(false);
   if (is_screencast) {
     encoder_config.min_transmit_bitrate_bps =

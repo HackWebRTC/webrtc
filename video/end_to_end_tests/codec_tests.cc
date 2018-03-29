@@ -68,17 +68,17 @@ class CodecObserver : public test::EndToEndTest,
       VideoSendStream::Config* send_config,
       std::vector<VideoReceiveStream::Config>* receive_configs,
       VideoEncoderConfig* encoder_config) override {
-    encoder_config->codec_type = PayloadStringToCodecType(payload_name_);
     send_config->encoder_settings.encoder = encoder_.get();
-    send_config->rtp.payload_name = payload_name_;
-    send_config->rtp.payload_type = test::CallTest::kVideoSendPayloadType;
+    send_config->encoder_settings.payload_name = payload_name_;
+    send_config->encoder_settings.payload_type =
+        test::CallTest::kVideoSendPayloadType;
 
     (*receive_configs)[0].renderer = this;
     (*receive_configs)[0].decoders.resize(1);
     (*receive_configs)[0].decoders[0].payload_type =
-        send_config->rtp.payload_type;
+        send_config->encoder_settings.payload_type;
     (*receive_configs)[0].decoders[0].payload_name =
-        send_config->rtp.payload_name;
+        send_config->encoder_settings.payload_name;
     (*receive_configs)[0].decoders[0].decoder = decoder_.get();
   }
 

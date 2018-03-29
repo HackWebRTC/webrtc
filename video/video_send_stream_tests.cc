@@ -532,7 +532,7 @@ class UlpfecObserver : public test::EndToEndTest {
               VideoSendStreamTest::kNackRtpHistoryMs;
     }
     send_config->encoder_settings.encoder = encoder_;
-    send_config->rtp.payload_name = payload_name_;
+    send_config->encoder_settings.payload_name = payload_name_;
     send_config->rtp.ulpfec.red_payload_type =
         VideoSendStreamTest::kRedPayloadType;
     send_config->rtp.ulpfec.ulpfec_payload_type =
@@ -709,7 +709,7 @@ class FlexfecObserver : public test::EndToEndTest {
               VideoSendStreamTest::kNackRtpHistoryMs;
     }
     send_config->encoder_settings.encoder = encoder_;
-    send_config->rtp.payload_name = payload_name_;
+    send_config->encoder_settings.payload_name = payload_name_;
     if (header_extensions_enabled_) {
       send_config->rtp.extensions.push_back(RtpExtension(
           RtpExtension::kAbsSendTimeUri, test::kAbsSendTimeExtensionId));
@@ -718,7 +718,6 @@ class FlexfecObserver : public test::EndToEndTest {
     } else {
       send_config->rtp.extensions.clear();
     }
-    encoder_config->codec_type = PayloadStringToCodecType(payload_name_);
   }
 
   void PerformTest() override {
@@ -1074,7 +1073,7 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
       }
 
       if (!test_generic_packetization_)
-        send_config->rtp.payload_name = "VP8";
+        send_config->encoder_settings.payload_name = "VP8";
 
       send_config->encoder_settings.encoder = &encoder_;
       send_config->rtp.max_packet_size = kMaxPacketSize;
@@ -2118,7 +2117,7 @@ TEST_F(VideoSendStreamTest, VideoSendStreamUpdateActiveSimulcastLayers) {
 
     video_send_config_.encoder_settings.encoder = &encoder;
     video_send_config_.encoder_settings.internal_source = true;
-    video_send_config_.rtp.payload_name = "VP8";
+    video_send_config_.encoder_settings.payload_name = "VP8";
 
     CreateVideoStreams();
   });
@@ -2492,9 +2491,8 @@ class VideoCodecConfigObserver : public test::SendTest,
       std::vector<VideoReceiveStream::Config>* receive_configs,
       VideoEncoderConfig* encoder_config) override {
     send_config->encoder_settings.encoder = this;
-    send_config->rtp.payload_name = codec_name_;
+    send_config->encoder_settings.payload_name = codec_name_;
 
-    encoder_config->codec_type = video_codec_type_;
     encoder_config->encoder_specific_settings = GetEncoderSpecificSettings();
     encoder_config->video_stream_factory =
         new rtc::RefCountedObject<VideoStreamFactory>();
@@ -3084,8 +3082,8 @@ class Vp9HeaderObserver : public test::SendTest {
       std::vector<VideoReceiveStream::Config>* receive_configs,
       VideoEncoderConfig* encoder_config) override {
     send_config->encoder_settings.encoder = vp9_encoder_.get();
-    send_config->rtp.payload_name = "VP9";
-    send_config->rtp.payload_type = kVp9PayloadType;
+    send_config->encoder_settings.payload_name = "VP9";
+    send_config->encoder_settings.payload_type = kVp9PayloadType;
     ModifyVideoConfigsHook(send_config, receive_configs, encoder_config);
     encoder_config->encoder_specific_settings = new rtc::RefCountedObject<
       VideoEncoderConfig::Vp9EncoderSpecificSettings>(vp9_settings_);
@@ -3486,7 +3484,6 @@ TEST_F(VideoSendStreamTest, Vp9NonFlexModeSmallResolution) {
         VideoSendStream::Config* send_config,
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
-      encoder_config->codec_type = kVideoCodecVP9;
       vp9_settings_.flexibleMode = false;
       vp9_settings_.numberOfTemporalLayers = 1;
       vp9_settings_.numberOfSpatialLayers = 1;
@@ -3524,7 +3521,6 @@ TEST_F(VideoSendStreamTest, MAYBE_Vp9FlexModeRefCount) {
         VideoSendStream::Config* send_config,
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
-      encoder_config->codec_type = kVideoCodecVP9;
       encoder_config->content_type = VideoEncoderConfig::ContentType::kScreen;
       vp9_settings_.flexibleMode = true;
       vp9_settings_.numberOfTemporalLayers = 1;

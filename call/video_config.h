@@ -126,6 +126,10 @@ class VideoEncoderConfig {
   ~VideoEncoderConfig();
   std::string ToString() const;
 
+  // TODO(nisse): This codec_type member is intended to be the new way
+  // to say which codec to use, when
+  // VideoSendStream::Config::EncoderSettings::payload_name is
+  // deleted. For the transition, both need to coexist.
   VideoCodecType codec_type;
   rtc::scoped_refptr<VideoStreamFactoryInterface> video_stream_factory;
   std::vector<SpatialLayer> spatial_layers;

@@ -20,6 +20,10 @@
 namespace webrtc {
 
 namespace {
+static const char* kVp8PayloadName = "VP8";
+static const int kVp8PayloadType = 100;
+static const char* kVp9PayloadName = "VP9";
+static const int kVp9PayloadType = 120;
 static const int kDefaultWidth = 1280;
 static const int kDefaultHeight = 720;
 static const int kDefaultFrameRate = 30;
@@ -48,8 +52,6 @@ class VideoCodecInitializerTest : public ::testing::Test {
                 int num_temporal_streams,
                 bool screenshare) {
     config_ = VideoEncoderConfig();
-    config_.codec_type = type;
-
     if (screenshare) {
       config_.min_transmit_bitrate_bps = kDefaultMinTransmitBitrateBps;
       config_.content_type = VideoEncoderConfig::ContentType::kScreen;
@@ -61,12 +63,16 @@ class VideoCodecInitializerTest : public ::testing::Test {
       vp8_settings.numberOfTemporalLayers = num_temporal_streams;
       config_.encoder_specific_settings = new rtc::RefCountedObject<
           webrtc::VideoEncoderConfig::Vp8EncoderSpecificSettings>(vp8_settings);
+      settings_.payload_name = kVp8PayloadName;
+      settings_.payload_type = kVp8PayloadType;
     } else if (type == VideoCodecType::kVideoCodecVP9) {
       VideoCodecVP9 vp9_settings = VideoEncoder::GetDefaultVp9Settings();
       vp9_settings.numberOfSpatialLayers = num_spatial_streams;
       vp9_settings.numberOfTemporalLayers = num_temporal_streams;
       config_.encoder_specific_settings = new rtc::RefCountedObject<
           webrtc::VideoEncoderConfig::Vp9EncoderSpecificSettings>(vp9_settings);
+      settings_.payload_name = kVp9PayloadName;
+      settings_.payload_type = kVp9PayloadType;
     } else if (type != VideoCodecType::kVideoCodecMultiplex) {
       ADD_FAILURE() << "Unexpected codec type: " << type;
     }
@@ -76,8 +82,8 @@ class VideoCodecInitializerTest : public ::testing::Test {
     codec_out_ = VideoCodec();
     bitrate_allocator_out_.reset();
     temporal_layers_.clear();
-    if (!VideoCodecInitializer::SetupCodec(config_, streams_, nack_enabled_,
-                                           &codec_out_,
+    if (!VideoCodecInitializer::SetupCodec(config_, settings_, streams_,
+                                           nack_enabled_, &codec_out_,
                                            &bitrate_allocator_out_)) {
       return false;
     }
@@ -121,6 +127,7 @@ class VideoCodecInitializerTest : public ::testing::Test {
 
   // Input settings.
   VideoEncoderConfig config_;
+  VideoSendStream::Config::EncoderSettings settings_;
   std::vector<VideoStream> streams_;
   bool nack_enabled_;
 

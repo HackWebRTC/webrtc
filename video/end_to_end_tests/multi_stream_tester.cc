@@ -72,10 +72,10 @@ void MultiStreamTester::RunTest() {
       VideoSendStream::Config send_config(sender_transport.get());
       send_config.rtp.ssrcs.push_back(ssrc);
       send_config.encoder_settings.encoder = encoders[i].get();
-      send_config.rtp.payload_name = "VP8";
-      send_config.rtp.payload_type = kVideoPayloadType;
+      send_config.encoder_settings.payload_name = "VP8";
+      send_config.encoder_settings.payload_type = kVideoPayloadType;
       VideoEncoderConfig encoder_config;
-      test::FillEncoderConfiguration(kVideoCodecVP8, 1, &encoder_config);
+      test::FillEncoderConfiguration(1, &encoder_config);
       encoder_config.max_bitrate_bps = 100000;
 
       UpdateSendConfig(i, &send_config, &encoder_config, &frame_generators[i]);
@@ -88,7 +88,7 @@ void MultiStreamTester::RunTest() {
       receive_config.rtp.remote_ssrc = ssrc;
       receive_config.rtp.local_ssrc = test::CallTest::kReceiverLocalVideoSsrc;
       VideoReceiveStream::Decoder decoder =
-          test::CreateMatchingDecoder(send_config);
+          test::CreateMatchingDecoder(send_config.encoder_settings);
       allocated_decoders.push_back(
           std::unique_ptr<VideoDecoder>(decoder.decoder));
       receive_config.decoders.push_back(decoder);
