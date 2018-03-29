@@ -67,6 +67,9 @@ class TimeDelta {
     return microseconds_;
   }
   TimeDelta Abs() const { return TimeDelta::us(std::abs(us())); }
+
+  double SecondsAsDouble() const;
+
   bool IsZero() const { return microseconds_ == 0; }
   bool IsFinite() const { return IsInitialized() && !IsInfinite(); }
   bool IsInitialized() const {
@@ -188,6 +191,8 @@ class Timestamp {
     microseconds_ += other.us();
     return *this;
   }
+
+  double SecondsAsDouble() const;
   bool operator==(const Timestamp& other) const {
     return microseconds_ == other.microseconds_;
   }
