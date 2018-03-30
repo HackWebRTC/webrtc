@@ -1628,16 +1628,9 @@ TEST_P(PeerConnectionInterfaceTest, AddTrackWithoutStream) {
   EXPECT_EQ(audio_track, audio_sender->track());
   EXPECT_EQ("video_track", video_sender->id());
   EXPECT_EQ(video_track, video_sender->track());
-  if (sdp_semantics_ == SdpSemantics::kPlanB) {
-    // If the ID is truly a random GUID, it should be infinitely unlikely they
-    // will be the same.
-    EXPECT_NE(video_sender->stream_ids(), audio_sender->stream_ids());
-  } else {
-    // We allows creating tracks without stream ids under Unified Plan
-    // semantics.
-    EXPECT_EQ(0u, video_sender->stream_ids().size());
-    EXPECT_EQ(0u, audio_sender->stream_ids().size());
-  }
+  // If the ID is truly a random GUID, it should be infinitely unlikely they
+  // will be the same.
+  EXPECT_NE(video_sender->stream_ids(), audio_sender->stream_ids());
 }
 
 // Test that we can call GetStats() after AddTrack but before connecting
@@ -3057,33 +3050,6 @@ TEST_F(PeerConnectionInterfaceTestPlanB, VerifyDefaultStreamIsNotCreated) {
 
   CreateAndSetRemoteOffer(kSdpStringWithoutStreams);
   EXPECT_EQ(0u, observer_.remote_streams()->count());
-}
-
-// This tests that when a Plan B endpoint receives an SDP that signals no media
-// stream IDs indicated by the special character "-" in the a=msid line, that
-// a default stream ID will be used for the MediaStream ID. This can occur
-// when a Unified Plan endpoint signals no media stream IDs, but signals both
-// a=ssrc msid and a=msid lines for interop signaling with Plan B.
-TEST_F(PeerConnectionInterfaceTestPlanB,
-       SdpWithEmptyMsidAndSsrcCreatesDefaultStreamId) {
-  FakeConstraints constraints;
-  constraints.AddMandatory(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
-                           true);
-  CreatePeerConnection(&constraints);
-  // Add a a=msid line to the SDP. This is prioritized when parsing the SDP, so
-  // the sender's stream ID will be interpreted as no stream IDs.
-  std::string sdp_string = kSdpStringWithStream1AudioTrackOnly;
-  sdp_string.append("a=msid:- audiotrack0\n");
-
-  CreateAndSetRemoteOffer(sdp_string);
-
-  ASSERT_EQ(1u, observer_.remote_streams()->count());
-  // Because SSRCs are signaled the track ID will be what was signaled in the
-  // a=msid line.
-  EXPECT_EQ("audiotrack0", observer_.last_added_track_label_);
-  MediaStreamInterface* remote_stream = observer_.remote_streams()->at(0);
-  EXPECT_EQ("default", remote_stream->id());
-  ASSERT_EQ(1u, remote_stream->GetAudioTracks().size());
 }
 
 // This tests that an RtpSender is created when the local description is set

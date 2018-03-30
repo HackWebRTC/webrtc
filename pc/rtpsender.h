@@ -50,6 +50,12 @@ class RtpSenderInternal : public RtpSenderInterface {
   // description).
   virtual void SetSsrc(uint32_t ssrc) = 0;
 
+  // TODO(steveanton): With Unified Plan, a track/RTCRTPSender can be part of
+  // multiple streams (or no stream at all). Replace these singular methods with
+  // their corresponding plural methods.
+  // Until these are removed, RtpSenders must have exactly one stream.
+  virtual void set_stream_id(const std::string& stream_id) = 0;
+  virtual std::string stream_id() const = 0;
   virtual void set_stream_ids(const std::vector<std::string>& stream_ids) = 0;
 
   virtual void Stop() = 0;
@@ -136,6 +142,10 @@ class AudioRtpSender : public DtmfProviderInterface,
   // RtpSenderInternal implementation.
   void SetSsrc(uint32_t ssrc) override;
 
+  void set_stream_id(const std::string& stream_id) override {
+    stream_ids_ = {stream_id};
+  }
+  std::string stream_id() const override { return stream_ids_[0]; }
   void set_stream_ids(const std::vector<std::string>& stream_ids) override {
     stream_ids_ = stream_ids;
   }
@@ -167,6 +177,8 @@ class AudioRtpSender : public DtmfProviderInterface,
 
   rtc::Thread* const worker_thread_;
   const std::string id_;
+  // TODO(steveanton): Until more Unified Plan work is done, this can only have
+  // exactly one element.
   std::vector<std::string> stream_ids_;
   cricket::VoiceMediaChannel* media_channel_ = nullptr;
   StatsCollector* stats_;
@@ -224,6 +236,10 @@ class VideoRtpSender : public ObserverInterface,
   // RtpSenderInternal implementation.
   void SetSsrc(uint32_t ssrc) override;
 
+  void set_stream_id(const std::string& stream_id) override {
+    stream_ids_ = {stream_id};
+  }
+  std::string stream_id() const override { return stream_ids_[0]; }
   void set_stream_ids(const std::vector<std::string>& stream_ids) override {
     stream_ids_ = stream_ids;
   }
@@ -250,6 +266,8 @@ class VideoRtpSender : public ObserverInterface,
 
   rtc::Thread* worker_thread_;
   const std::string id_;
+  // TODO(steveanton): Until more Unified Plan work is done, this can only have
+  // exactly one element.
   std::vector<std::string> stream_ids_;
   cricket::VideoMediaChannel* media_channel_ = nullptr;
   rtc::scoped_refptr<VideoTrackInterface> track_;
