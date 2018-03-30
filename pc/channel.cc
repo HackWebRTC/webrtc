@@ -704,6 +704,7 @@ VoiceChannel::~VoiceChannel() {
   TRACE_EVENT0("webrtc", "VoiceChannel::~VoiceChannel");
   // this can't be done in the base class, since it calls a virtual
   DisableMedia_w();
+  Deinit();
 }
 
 void BaseChannel::UpdateMediaSendRecvState() {
@@ -835,6 +836,7 @@ VideoChannel::~VideoChannel() {
   TRACE_EVENT0("webrtc", "VideoChannel::~VideoChannel");
   // this can't be done in the base class, since it calls a virtual
   DisableMedia_w();
+  Deinit();
 }
 
 void VideoChannel::UpdateMediaSendRecvState_w() {
@@ -965,6 +967,7 @@ RtpDataChannel::~RtpDataChannel() {
   TRACE_EVENT0("webrtc", "RtpDataChannel::~RtpDataChannel");
   // this can't be done in the base class, since it calls a virtual
   DisableMedia_w();
+  Deinit();
 }
 
 void RtpDataChannel::Init_w(webrtc::RtpTransportInternal* rtp_transport) {
