@@ -391,7 +391,7 @@ if (use_desktop_capture_differ_sse2) {
       "differ_vector_sse2.h",
     ]
 
-    if (is_posix) {
+    if (is_posix || is_fuchsia) {
       cflags = [ "-msse2" ]
     }
   }

@@ -78,7 +78,7 @@ if (build_video_processing_sse2) {
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
 
-    if (is_posix) {
+    if (is_posix || is_fuchsia) {
       cflags = [ "-msse2" ]
     }
   }

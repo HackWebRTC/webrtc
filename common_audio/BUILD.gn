@@ -303,7 +303,7 @@ if (current_cpu == "x86" || current_cpu == "x64") {
       "resampler/sinc_resampler_sse.cc",
     ]
 
-    if (is_posix) {
+    if (is_posix || is_fuchsia) {
       cflags = [ "-msse2" ]
     }
 

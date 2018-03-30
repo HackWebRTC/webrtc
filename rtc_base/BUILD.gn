@@ -452,7 +452,7 @@ rtc_source_set("rtc_base_approved_generic") {
     libs += [ "log" ]
   }
 
-  if (is_posix) {
+  if (is_posix || is_fuchsia) {
     sources += [ "file_posix.cc" ]
   }
 
@@ -1019,7 +1019,7 @@ rtc_static_library("rtc_base_generic") {
     defines += [ "_CRT_NONSTDC_NO_DEPRECATE" ]
   }
 
-  if (is_posix) {
+  if (is_posix || is_fuchsia) {
     sources += [
       "ifaddrs_converter.cc",
       "ifaddrs_converter.h",
@@ -1353,7 +1353,7 @@ if (rtc_include_tests) {
         "win32window_unittest.cc",
       ]
     }
-    if (is_posix) {
+    if (is_posix || is_fuchsia) {
       sources += [
         "openssladapter_unittest.cc",
         "ssladapter_unittest.cc",

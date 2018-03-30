@@ -394,7 +394,7 @@ rtc_source_set("aec_core") {
       "utility/ooura_fft_sse2.cc",
       "utility/ooura_fft_tables_neon_sse2.h",
     ]
-    if (is_posix) {
+    if (is_posix || is_fuchsia) {
       cflags += [ "-msse2" ]
     }
   }

@@ -120,7 +120,7 @@ config("common_inherited_config") {
       ".",
     ]
   }
-  if (is_posix) {
+  if (is_posix || is_fuchsia) {
     defines += [ "WEBRTC_POSIX" ]
   }
   if (is_ios) {
@@ -213,7 +213,7 @@ config("common_config") {
       "LOGGING_INSIDE_WEBRTC",
     ]
   } else {
-    if (is_posix) {
+    if (is_posix || is_fuchsia) {
       # Enable more warnings: -Wextra is currently disabled in Chromium.
       cflags = [
         "-Wextra",
