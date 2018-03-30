@@ -12,7 +12,6 @@
 
 #if defined(WEBRTC_WIN)
 #include <windows.h>
-#include <winsock2.h>
 #elif defined(WEBRTC_LINUX)
 #include <unistd.h>
 #endif
