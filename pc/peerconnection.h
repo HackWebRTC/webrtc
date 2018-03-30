@@ -20,6 +20,7 @@
 #include "api/peerconnectioninterface.h"
 #include "api/turncustomizer.h"
 #include "pc/iceserverparsing.h"
+#include "pc/jseptransportcontroller.h"
 #include "pc/peerconnectionfactory.h"
 #include "pc/peerconnectioninternal.h"
 #include "pc/rtcstatscollector.h"
@@ -208,7 +209,7 @@ class PeerConnection : public PeerConnectionInternal,
   std::string session_id() const override { return session_id_; }
 
   bool initial_offerer() const override {
-    return initial_offerer_ && *initial_offerer_;
+    return transport_controller_ && transport_controller_->initial_offerer();
   }
 
   std::vector<
@@ -234,12 +235,10 @@ class PeerConnection : public PeerConnectionInternal,
   }
 
   rtc::Optional<std::string> sctp_content_name() const override {
-    return sctp_content_name_;
+    return sctp_mid_;
   }
 
-  rtc::Optional<std::string> sctp_transport_name() const override {
-    return sctp_transport_name_;
-  }
+  rtc::Optional<std::string> sctp_transport_name() const override;
 
   cricket::CandidateStatsList GetPooledCandidateStats() const override;
   std::map<std::string, std::string> GetTransportNamesByMid() const override;
@@ -709,7 +708,7 @@ class PeerConnection : public PeerConnectionInternal,
       const rtc::scoped_refptr<rtc::RTCCertificate>& certificate);
   void OnDtlsSrtpSetupFailure(cricket::BaseChannel*, bool rtcp);
 
-  cricket::TransportController* transport_controller() const {
+  JsepTransportController* transport_controller() const {
     return transport_controller_.get();
   }
 
@@ -727,7 +726,9 @@ class PeerConnection : public PeerConnectionInternal,
   // Updates the error state, signaling if necessary.
   void SetSessionError(SessionError error, const std::string& error_desc);
 
-  RTCError UpdateSessionState(SdpType type, cricket::ContentSource source);
+  RTCError UpdateSessionState(SdpType type,
+                              cricket::ContentSource source,
+                              const cricket::SessionDescription* description);
   // Push the media parts of the local or remote session description
   // down to all of the channels.
   RTCError PushdownMediaDescription(SdpType type,
@@ -743,18 +744,6 @@ class PeerConnection : public PeerConnectionInternal,
       const cricket::SessionDescription* description,
       const std::string& content_name,
       cricket::TransportDescription* info);
-
-  // Returns the transport name for the given media section identified by |mid|.
-  // If BUNDLE is enabled and the media section is part of the bundle group,
-  // the transport name will be the first mid in the bundle group. Otherwise,
-  // the transport name will be the mid of the media section.
-  std::string GetTransportNameForMediaSection(
-      const std::string& mid,
-      const cricket::ContentGroup* bundle_group) const;
-
-  // Cause all the BaseChannels in the bundle group to have the same
-  // transport channel.
-  bool EnableBundle(const cricket::ContentGroup& bundle);
 
   // Enables media channels to allow sending of media.
   // This enables media to flow on all configured audio/video channels and the
@@ -792,17 +781,12 @@ class PeerConnection : public PeerConnectionInternal,
       const cricket::SessionDescription& desc) const;
 
   // Helper methods to create media channels.
-  cricket::VoiceChannel* CreateVoiceChannel(const std::string& mid,
-                                            const std::string& transport_name);
-  cricket::VideoChannel* CreateVideoChannel(const std::string& mid,
-                                            const std::string& transport_name);
-  bool CreateDataChannel(const std::string& mid,
-                         const std::string& transport_name);
+  cricket::VoiceChannel* CreateVoiceChannel(const std::string& mid);
+  cricket::VideoChannel* CreateVideoChannel(const std::string& mid);
+  bool CreateDataChannel(const std::string& mid);
 
-  bool CreateSctpTransport_n(const std::string& content_name,
-                             const std::string& transport_name);
+  bool CreateSctpTransport_n(const std::string& mid);
   // For bundling.
-  void ChangeSctpTransport_n(const std::string& transport_name);
   void DestroySctpTransport_n();
   // SctpTransport signal handlers. Needed to marshal signals from the network
   // to signaling thread.
@@ -846,7 +830,7 @@ class PeerConnection : public PeerConnectionInternal,
   // this session.
   bool SrtpRequired() const;
 
-  // TransportController signal handlers.
+  // JsepTransportController signal handlers.
   void OnTransportControllerConnectionState(cricket::IceConnectionState state);
   void OnTransportControllerGatheringState(cricket::IceGatheringState state);
   void OnTransportControllerCandidatesGathered(
@@ -880,8 +864,6 @@ class PeerConnection : public PeerConnectionInternal,
 
   const std::string GetTransportName(const std::string& content_name);
 
-  void DestroyRtcpTransport_n(const std::string& transport_name);
-
   // Destroys and clears the BaseChannel associated with the given transceiver,
   // if such channel is set.
   void DestroyTransceiverChannel(
@@ -894,6 +876,12 @@ class PeerConnection : public PeerConnectionInternal,
   // Destroys the given BaseChannel. The channel cannot be accessed after this
   // method is called.
   void DestroyBaseChannel(cricket::BaseChannel* channel);
+
+  void OnRtpTransportChanged(const std::string& mid,
+                             RtpTransportInternal* rtp_transport);
+
+  void OnDtlsTransportChanged(const std::string& mid,
+                              cricket::DtlsTransportInternal* dtls_transport);
 
   sigslot::signal1<DataChannel*> SignalDataChannelCreated_;
 
@@ -957,20 +945,16 @@ class PeerConnection : public PeerConnectionInternal,
   std::string session_error_desc_;
 
   std::string session_id_;
-  rtc::Optional<bool> initial_offerer_;
 
-  std::unique_ptr<cricket::TransportController> transport_controller_;
+  std::unique_ptr<JsepTransportController> transport_controller_;
   std::unique_ptr<cricket::SctpTransportInternalFactory> sctp_factory_;
   // |rtp_data_channel_| is used if in RTP data channel mode, |sctp_transport_|
   // when using SCTP.
   cricket::RtpDataChannel* rtp_data_channel_ = nullptr;
 
   std::unique_ptr<cricket::SctpTransportInternal> sctp_transport_;
-  // |sctp_transport_name_| keeps track of what DTLS transport the SCTP
-  // transport is using (which can change due to bundling).
-  rtc::Optional<std::string> sctp_transport_name_;
-  // |sctp_content_name_| is the content name (MID) in SDP.
-  rtc::Optional<std::string> sctp_content_name_;
+  // |sctp_mid_| is the content name (MID) in SDP.
+  rtc::Optional<std::string> sctp_mid_;
   // Value cached on signaling thread. Only updated when SctpReadyToSendData
   // fires on the signaling thread.
   bool sctp_ready_to_send_data_ = false;

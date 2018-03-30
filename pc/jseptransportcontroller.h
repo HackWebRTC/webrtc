@@ -135,6 +135,7 @@ class JsepTransportController : public sigslot::has_slots<>,
   bool GetStats(const std::string& mid, cricket::TransportStats* stats);
   void SetMetricsObserver(webrtc::MetricsObserverInterface* metrics_observer);
 
+  bool initial_offerer() const { return initial_offerer_ && *initial_offerer_; }
   // All of these signals are fired on the signaling thread.
 
   // If any transport failed => failed,
@@ -176,6 +177,8 @@ class JsepTransportController : public sigslot::has_slots<>,
   RTCError ApplyDescription_n(bool local,
                               SdpType type,
                               const cricket::SessionDescription* description);
+  RTCError ValidateBundleGroup(const cricket::SessionDescription* description);
+  RTCError ValidateContent(const cricket::ContentInfo& content_info);
 
   void HandleRejectedContent(const cricket::ContentInfo& content_info);
   void HandleBundledContent(const cricket::ContentInfo& content_info);
@@ -183,7 +186,8 @@ class JsepTransportController : public sigslot::has_slots<>,
   cricket::JsepTransportDescription CreateJsepTransportDescription(
       cricket::ContentInfo content_info,
       cricket::TransportInfo transport_info,
-      const std::vector<int>& encrypted_extension_ids);
+      const std::vector<int>& encrypted_extension_ids,
+      int rtp_abs_sendtime_extn_id);
 
   rtc::Optional<std::string> bundled_mid() const {
     rtc::Optional<std::string> bundled_mid;
@@ -202,15 +206,29 @@ class JsepTransportController : public sigslot::has_slots<>,
 
   std::vector<int> MergeEncryptedHeaderExtensionIdsForBundle(
       const cricket::SessionDescription* description);
-
   std::vector<int> GetEncryptedHeaderExtensionIds(
       const cricket::ContentInfo& content_info);
 
-  const cricket::JsepTransport2* GetJsepTransport(const std::string& mid) const;
-  cricket::JsepTransport2* GetJsepTransport(const std::string& mid);
+  int GetRtpAbsSendTimeHeaderExtensionId(
+      const cricket::ContentInfo& content_info);
 
-  void MaybeCreateJsepTransport(const std::string& mid,
-                                const cricket::ContentInfo& content_info);
+  // This method takes the BUNDLE group into account. If the JsepTransport is
+  // destroyed because of BUNDLE, it would return the transport which other
+  // transports are bundled on (In current implementation, it is the first
+  // content in the BUNDLE group).
+  const cricket::JsepTransport2* GetJsepTransportForMid(
+      const std::string& mid) const;
+  cricket::JsepTransport2* GetJsepTransportForMid(const std::string& mid);
+
+  // Get the JsepTransport without considering the BUNDLE group. Return nullptr
+  // if the JsepTransport is destroyed.
+  const cricket::JsepTransport2* GetJsepTransportByName(
+      const std::string& transport_name) const;
+  cricket::JsepTransport2* GetJsepTransportByName(
+      const std::string& transport_name);
+
+  RTCError MaybeCreateJsepTransport(const std::string& mid,
+                                    const cricket::ContentInfo& content_info);
   void MaybeDestroyJsepTransport(const std::string& mid);
   void DestroyAllJsepTransports_n();
 
@@ -232,8 +250,8 @@ class JsepTransportController : public sigslot::has_slots<>,
       rtc::PacketTransportInternal* rtcp_packet_transport);
   std::unique_ptr<webrtc::SrtpTransport> CreateSdesTransport(
       const std::string& transport_name,
-      rtc::PacketTransportInternal* rtp_packet_transport,
-      rtc::PacketTransportInternal* rtcp_packet_transport);
+      cricket::DtlsTransportInternal* rtp_dtls_transport,
+      cricket::DtlsTransportInternal* rtcp_dtls_transport);
   std::unique_ptr<webrtc::DtlsSrtpTransport> CreateDtlsSrtpTransport(
       const std::string& transport_name,
       cricket::DtlsTransportInternal* rtp_dtls_transport,
@@ -265,9 +283,9 @@ class JsepTransportController : public sigslot::has_slots<>,
   cricket::PortAllocator* const port_allocator_ = nullptr;
 
   std::map<std::string, std::unique_ptr<cricket::JsepTransport2>>
-      jsep_transports_by_mid_;
+      jsep_transports_by_name_;
 
-  // Aggregate state for TransportChannelImpls.
+  // Aggregate state for Transports.
   cricket::IceConnectionState ice_connection_state_ =
       cricket::kIceConnectionConnecting;
   cricket::IceGatheringState ice_gathering_state_ = cricket::kIceGatheringNew;

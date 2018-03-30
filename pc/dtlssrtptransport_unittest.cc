@@ -70,9 +70,6 @@ class DtlsSrtpTransportTest : public testing::Test,
       bool rtcp_mux_enabled) {
     auto rtp_transport = rtc::MakeUnique<RtpTransport>(rtcp_mux_enabled);
 
-    rtp_transport->AddHandledPayloadType(0x00);
-    rtp_transport->AddHandledPayloadType(0xc9);
-
     auto srtp_transport =
         rtc::MakeUnique<SrtpTransport>(std::move(rtp_transport));
     auto dtls_srtp_transport =
@@ -118,8 +115,8 @@ class DtlsSrtpTransportTest : public testing::Test,
   void SendRecvRtpPackets() {
     ASSERT_TRUE(dtls_srtp_transport1_);
     ASSERT_TRUE(dtls_srtp_transport2_);
-    ASSERT_TRUE(dtls_srtp_transport1_->IsActive());
-    ASSERT_TRUE(dtls_srtp_transport2_->IsActive());
+    ASSERT_TRUE(dtls_srtp_transport1_->IsSrtpActive());
+    ASSERT_TRUE(dtls_srtp_transport2_->IsSrtpActive());
 
     size_t rtp_len = sizeof(kPcmuFrame);
     size_t packet_size = rtp_len + kRtpAuthTagLen;
@@ -181,8 +178,8 @@ class DtlsSrtpTransportTest : public testing::Test,
       const std::vector<int>& encrypted_header_ids) {
     ASSERT_TRUE(dtls_srtp_transport1_);
     ASSERT_TRUE(dtls_srtp_transport2_);
-    ASSERT_TRUE(dtls_srtp_transport1_->IsActive());
-    ASSERT_TRUE(dtls_srtp_transport2_->IsActive());
+    ASSERT_TRUE(dtls_srtp_transport1_->IsSrtpActive());
+    ASSERT_TRUE(dtls_srtp_transport2_->IsSrtpActive());
 
     size_t rtp_len = sizeof(kPcmuFrameWithExtensions);
     size_t packet_size = rtp_len + kRtpAuthTagLen;
@@ -353,8 +350,8 @@ TEST_F(DtlsSrtpTransportTest,
                          rtcp_dtls2.get(), /*rtcp_mux_enabled=*/false);
 
   CompleteDtlsHandshake(rtp_dtls1.get(), rtp_dtls2.get());
-  EXPECT_FALSE(dtls_srtp_transport1_->IsActive());
-  EXPECT_FALSE(dtls_srtp_transport2_->IsActive());
+  EXPECT_FALSE(dtls_srtp_transport1_->IsSrtpActive());
+  EXPECT_FALSE(dtls_srtp_transport2_->IsSrtpActive());
   CompleteDtlsHandshake(rtcp_dtls1.get(), rtcp_dtls2.get());
   SendRecvPackets();
 }
@@ -372,8 +369,8 @@ TEST_F(DtlsSrtpTransportTest, DtlsSrtpResetAfterDtlsTransportChange) {
                          /*rtcp_mux_enabled=*/true);
 
   CompleteDtlsHandshake(rtp_dtls1.get(), rtp_dtls2.get());
-  EXPECT_TRUE(dtls_srtp_transport1_->IsActive());
-  EXPECT_TRUE(dtls_srtp_transport2_->IsActive());
+  EXPECT_TRUE(dtls_srtp_transport1_->IsSrtpActive());
+  EXPECT_TRUE(dtls_srtp_transport2_->IsSrtpActive());
 
   auto rtp_dtls3 = rtc::MakeUnique<FakeDtlsTransport>(
       "audio", cricket::ICE_CANDIDATE_COMPONENT_RTP);
@@ -383,8 +380,8 @@ TEST_F(DtlsSrtpTransportTest, DtlsSrtpResetAfterDtlsTransportChange) {
   // The previous context is reset.
   dtls_srtp_transport1_->SetDtlsTransports(rtp_dtls3.get(), nullptr);
   dtls_srtp_transport2_->SetDtlsTransports(rtp_dtls4.get(), nullptr);
-  EXPECT_FALSE(dtls_srtp_transport1_->IsActive());
-  EXPECT_FALSE(dtls_srtp_transport2_->IsActive());
+  EXPECT_FALSE(dtls_srtp_transport1_->IsSrtpActive());
+  EXPECT_FALSE(dtls_srtp_transport2_->IsSrtpActive());
 
   // Re-setup.
   CompleteDtlsHandshake(rtp_dtls3.get(), rtp_dtls4.get());
@@ -409,8 +406,8 @@ TEST_F(DtlsSrtpTransportTest,
 
   CompleteDtlsHandshake(rtp_dtls1.get(), rtp_dtls2.get());
   // Inactive because the RTCP transport handshake didn't complete.
-  EXPECT_FALSE(dtls_srtp_transport1_->IsActive());
-  EXPECT_FALSE(dtls_srtp_transport2_->IsActive());
+  EXPECT_FALSE(dtls_srtp_transport1_->IsSrtpActive());
+  EXPECT_FALSE(dtls_srtp_transport2_->IsSrtpActive());
 
   dtls_srtp_transport1_->SetRtcpMuxEnabled(true);
   dtls_srtp_transport2_->SetRtcpMuxEnabled(true);

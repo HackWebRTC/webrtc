@@ -123,6 +123,8 @@ class JsepTransportControllerTest : public testing::Test,
                        rtc::scoped_refptr<rtc::RTCCertificate> cert) {
     std::unique_ptr<cricket::AudioContentDescription> audio(
         new cricket::AudioContentDescription());
+    // Set RTCP-mux to be true because the default policy is "mux required".
+    audio->set_rtcp_mux(true);
     description->AddContent(mid, cricket::MediaProtocolType::kRtp,
                             /*rejected=*/false, audio.release());
     AddTransportInfo(description, mid, ufrag, pwd, ice_mode, conn_role, cert);
@@ -137,6 +139,8 @@ class JsepTransportControllerTest : public testing::Test,
                        rtc::scoped_refptr<rtc::RTCCertificate> cert) {
     std::unique_ptr<cricket::VideoContentDescription> video(
         new cricket::VideoContentDescription());
+    // Set RTCP-mux to be true because the default policy is "mux required".
+    video->set_rtcp_mux(true);
     description->AddContent(mid, cricket::MediaProtocolType::kRtp,
                             /*rejected=*/false, video.release());
     AddTransportInfo(description, mid, ufrag, pwd, ice_mode, conn_role, cert);
@@ -152,6 +156,7 @@ class JsepTransportControllerTest : public testing::Test,
                       rtc::scoped_refptr<rtc::RTCCertificate> cert) {
     std::unique_ptr<cricket::DataContentDescription> data(
         new cricket::DataContentDescription());
+    data->set_rtcp_mux(true);
     description->AddContent(mid, protocol_type,
                             /*rejected=*/false, data.release());
     AddTransportInfo(description, mid, ufrag, pwd, ice_mode, conn_role, cert);
@@ -323,6 +328,20 @@ TEST_F(JsepTransportControllerTest, GetDtlsTransport) {
   // Return nullptr for non-existing ones.
   EXPECT_EQ(nullptr, transport_controller_->GetDtlsTransport(kVideoMid2));
   EXPECT_EQ(nullptr, transport_controller_->GetRtcpDtlsTransport(kVideoMid2));
+}
+
+TEST_F(JsepTransportControllerTest, GetDtlsTransportWithRtcpMux) {
+  JsepTransportController::Config config;
+  config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyRequire;
+  CreateJsepTransportController(config);
+  auto description = CreateSessionDescriptionWithoutBundle();
+  EXPECT_TRUE(transport_controller_
+                  ->SetLocalDescription(SdpType::kOffer, description.get())
+                  .ok());
+  EXPECT_NE(nullptr, transport_controller_->GetDtlsTransport(kAudioMid1));
+  EXPECT_EQ(nullptr, transport_controller_->GetRtcpDtlsTransport(kAudioMid1));
+  EXPECT_NE(nullptr, transport_controller_->GetDtlsTransport(kVideoMid1));
+  EXPECT_EQ(nullptr, transport_controller_->GetRtcpDtlsTransport(kVideoMid1));
 }
 
 TEST_F(JsepTransportControllerTest, SetIceConfig) {
@@ -1203,6 +1222,104 @@ TEST_F(JsepTransportControllerTest, ChangeBundledMidNotSupported) {
   EXPECT_TRUE(transport_controller_
                   ->SetLocalDescription(SdpType::kOffer, local_offer.get())
                   .ok());
+  EXPECT_FALSE(transport_controller_
+                   ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                   .ok());
+}
+// Test that rejecting only the first m= section of a BUNDLE group is treated as
+// an error, but rejecting all of them works as expected.
+TEST_F(JsepTransportControllerTest, RejectFirstContentInBundleGroup) {
+  CreateJsepTransportController(JsepTransportController::Config());
+  cricket::ContentGroup bundle_group(cricket::GROUP_TYPE_BUNDLE);
+  bundle_group.AddContentName(kAudioMid1);
+  bundle_group.AddContentName(kVideoMid1);
+  bundle_group.AddContentName(kDataMid1);
+
+  auto local_offer = rtc::MakeUnique<cricket::SessionDescription>();
+  AddAudioSection(local_offer.get(), kAudioMid1, kIceUfrag1, kIcePwd1,
+                  cricket::ICEMODE_FULL, cricket::CONNECTIONROLE_ACTPASS,
+                  nullptr);
+  AddVideoSection(local_offer.get(), kVideoMid1, kIceUfrag2, kIcePwd2,
+                  cricket::ICEMODE_FULL, cricket::CONNECTIONROLE_ACTPASS,
+                  nullptr);
+  AddDataSection(local_offer.get(), kDataMid1,
+                 cricket::MediaProtocolType::kSctp, kIceUfrag3, kIcePwd3,
+                 cricket::ICEMODE_FULL, cricket::CONNECTIONROLE_ACTPASS,
+                 nullptr);
+
+  auto remote_answer = rtc::MakeUnique<cricket::SessionDescription>();
+  AddAudioSection(remote_answer.get(), kAudioMid1, kIceUfrag1, kIcePwd1,
+                  cricket::ICEMODE_FULL, cricket::CONNECTIONROLE_PASSIVE,
+                  nullptr);
+  AddVideoSection(remote_answer.get(), kVideoMid1, kIceUfrag2, kIcePwd2,
+                  cricket::ICEMODE_FULL, cricket::CONNECTIONROLE_PASSIVE,
+                  nullptr);
+  AddDataSection(remote_answer.get(), kDataMid1,
+                 cricket::MediaProtocolType::kSctp, kIceUfrag3, kIcePwd3,
+                 cricket::ICEMODE_FULL, cricket::CONNECTIONROLE_PASSIVE,
+                 nullptr);
+  // Reject audio content in answer.
+  remote_answer->contents()[0].rejected = true;
+
+  local_offer->AddGroup(bundle_group);
+  remote_answer->AddGroup(bundle_group);
+
+  EXPECT_TRUE(transport_controller_
+                  ->SetLocalDescription(SdpType::kOffer, local_offer.get())
+                  .ok());
+  EXPECT_FALSE(transport_controller_
+                   ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                   .ok());
+
+  // Reject all the contents.
+  remote_answer->contents()[1].rejected = true;
+  remote_answer->contents()[2].rejected = true;
+  EXPECT_TRUE(transport_controller_
+                  ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                  .ok());
+  EXPECT_EQ(nullptr, transport_controller_->GetRtpTransport(kAudioMid1));
+  EXPECT_EQ(nullptr, transport_controller_->GetRtpTransport(kVideoMid1));
+  EXPECT_EQ(nullptr, transport_controller_->GetDtlsTransport(kDataMid1));
+}
+
+// Tests that applying non-RTCP-mux offer would fail when kRtcpMuxPolicyRequire
+// is used.
+TEST_F(JsepTransportControllerTest, ApplyNonRtcpMuxOfferWhenMuxingRequired) {
+  JsepTransportController::Config config;
+  config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyRequire;
+  CreateJsepTransportController(config);
+  auto local_offer = rtc::MakeUnique<cricket::SessionDescription>();
+  AddAudioSection(local_offer.get(), kAudioMid1, kIceUfrag1, kIcePwd1,
+                  cricket::ICEMODE_FULL, cricket::CONNECTIONROLE_ACTPASS,
+                  nullptr);
+
+  local_offer->contents()[0].media_description()->set_rtcp_mux(false);
+  // Applying a non-RTCP-mux offer is expected to fail.
+  EXPECT_FALSE(transport_controller_
+                   ->SetLocalDescription(SdpType::kOffer, local_offer.get())
+                   .ok());
+}
+
+// Tests that applying non-RTCP-mux answer would fail when kRtcpMuxPolicyRequire
+// is used.
+TEST_F(JsepTransportControllerTest, ApplyNonRtcpMuxAnswerWhenMuxingRequired) {
+  JsepTransportController::Config config;
+  config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyRequire;
+  CreateJsepTransportController(config);
+  auto local_offer = rtc::MakeUnique<cricket::SessionDescription>();
+  AddAudioSection(local_offer.get(), kAudioMid1, kIceUfrag1, kIcePwd1,
+                  cricket::ICEMODE_FULL, cricket::CONNECTIONROLE_ACTPASS,
+                  nullptr);
+  EXPECT_TRUE(transport_controller_
+                  ->SetLocalDescription(SdpType::kOffer, local_offer.get())
+                  .ok());
+
+  auto remote_answer = rtc::MakeUnique<cricket::SessionDescription>();
+  AddAudioSection(remote_answer.get(), kAudioMid1, kIceUfrag1, kIcePwd1,
+                  cricket::ICEMODE_FULL, cricket::CONNECTIONROLE_PASSIVE,
+                  nullptr);
+  // Applying a non-RTCP-mux answer is expected to fail.
+  remote_answer->contents()[0].media_description()->set_rtcp_mux(false);
   EXPECT_FALSE(transport_controller_
                    ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
                    .ok());

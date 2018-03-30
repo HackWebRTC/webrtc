@@ -45,7 +45,7 @@ class DtlsSrtpTransport : public RtpTransportInternalAdapter {
   void UpdateRecvEncryptedHeaderExtensionIds(
       const std::vector<int>& recv_extension_ids);
 
-  bool IsActive() { return srtp_transport_->IsActive(); }
+  bool IsSrtpActive() const override { return srtp_transport_->IsSrtpActive(); }
 
   // Cache RTP Absoulute SendTime extension header ID. This is only used when
   // external authentication is enabled.
@@ -54,10 +54,16 @@ class DtlsSrtpTransport : public RtpTransportInternalAdapter {
         rtp_abs_sendtime_extn_id);
   }
 
-  // TODO(zhihuang): Remove this when we remove RtpTransportAdapter.
-  RtpTransportAdapter* GetInternal() override { return nullptr; }
-
   sigslot::signal2<DtlsSrtpTransport*, bool> SignalDtlsSrtpSetupFailure;
+
+  RTCError SetSrtpSendKey(const cricket::CryptoParams& params) override {
+    return RTCError(RTCErrorType::UNSUPPORTED_OPERATION,
+                    "Set SRTP keys for DTLS-SRTP is not supported.");
+  }
+  RTCError SetSrtpReceiveKey(const cricket::CryptoParams& params) override {
+    return RTCError(RTCErrorType::UNSUPPORTED_OPERATION,
+                    "Set SRTP keys for DTLS-SRTP is not supported.");
+  }
 
  private:
   bool IsDtlsActive();

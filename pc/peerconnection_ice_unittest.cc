@@ -200,7 +200,9 @@ class PeerConnectionIceBaseTest : public ::testing::Test {
       if (transceiver->media_type() == cricket::MEDIA_TYPE_AUDIO) {
         cricket::BaseChannel* channel = transceiver->internal()->channel();
         if (channel) {
-          return channel->rtp_dtls_transport()->ice_transport()->GetIceRole();
+          auto dtls_transport = static_cast<cricket::DtlsTransportInternal*>(
+              channel->rtp_packet_transport());
+          return dtls_transport->ice_transport()->GetIceRole();
         }
       }
     }

@@ -61,7 +61,7 @@ static const char kFireFoxSdpOffer[] =
     "a=candidate:5 2 UDP 1694302206 74.95.2.170 33611 typ srflx raddr"
     " 10.0.254.2 rport 58890\r\n"
 #ifdef HAVE_SCTP
-    "m=application 45536 SCTP/DTLS 5000\r\n"
+    "m=application 45536 DTLS/SCTP 5000\r\n"
     "c=IN IP4 74.95.2.170\r\n"
     "a=fmtp:5000 protocol=webrtc-datachannel;streams=16\r\n"
     "a=sendrecv\r\n"

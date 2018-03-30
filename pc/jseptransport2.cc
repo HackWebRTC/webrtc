@@ -54,10 +54,12 @@ JsepTransportDescription::JsepTransportDescription(
     bool rtcp_mux_enabled,
     const std::vector<CryptoParams>& cryptos,
     const std::vector<int>& encrypted_header_extension_ids,
+    int rtp_abs_sendtime_extn_id,
     const TransportDescription& transport_desc)
     : rtcp_mux_enabled(rtcp_mux_enabled),
       cryptos(cryptos),
       encrypted_header_extension_ids(encrypted_header_extension_ids),
+      rtp_abs_sendtime_extn_id(rtp_abs_sendtime_extn_id),
       transport_desc(transport_desc) {}
 
 JsepTransportDescription::JsepTransportDescription(
@@ -65,6 +67,7 @@ JsepTransportDescription::JsepTransportDescription(
     : rtcp_mux_enabled(from.rtcp_mux_enabled),
       cryptos(from.cryptos),
       encrypted_header_extension_ids(from.encrypted_header_extension_ids),
+      rtp_abs_sendtime_extn_id(from.rtp_abs_sendtime_extn_id),
       transport_desc(from.transport_desc) {}
 
 JsepTransportDescription::~JsepTransportDescription() = default;
@@ -77,6 +80,7 @@ JsepTransportDescription& JsepTransportDescription::operator=(
   rtcp_mux_enabled = from.rtcp_mux_enabled;
   cryptos = from.cryptos;
   encrypted_header_extension_ids = from.encrypted_header_extension_ids;
+  rtp_abs_sendtime_extn_id = from.rtp_abs_sendtime_extn_id;
   transport_desc = from.transport_desc;
 
   return *this;
@@ -218,11 +222,15 @@ webrtc::RTCError JsepTransport2::SetRemoteJsepTransportDescription(
       return webrtc::RTCError(webrtc::RTCErrorType::INVALID_PARAMETER,
                               "Failed to setup SDES crypto parameters.");
     }
+    sdes_transport_->CacheRtpAbsSendTimeHeaderExtension(
+        jsep_description.rtp_abs_sendtime_extn_id);
   } else if (dtls_srtp_transport_) {
     RTC_DCHECK(!unencrypted_rtp_transport_);
     RTC_DCHECK(!sdes_transport_);
     dtls_srtp_transport_->UpdateSendEncryptedHeaderExtensionIds(
         jsep_description.encrypted_header_extension_ids);
+    dtls_srtp_transport_->CacheRtpAbsSendTimeHeaderExtension(
+        jsep_description.rtp_abs_sendtime_extn_id);
   }
 
   remote_description_.reset(new JsepTransportDescription(jsep_description));

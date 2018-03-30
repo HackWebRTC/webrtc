@@ -24,6 +24,8 @@ namespace webrtc {
 // methods.
 class RtpTransportInternalAdapter : public RtpTransportInternal {
  public:
+  RtpTransportInternalAdapter() {}
+
   explicit RtpTransportInternalAdapter(RtpTransportInternal* transport)
       : transport_(transport) {
     RTC_DCHECK(transport_);
@@ -51,6 +53,8 @@ class RtpTransportInternalAdapter : public RtpTransportInternal {
     transport_->SetRtcpPacketTransport(rtcp);
   }
 
+  bool IsReadyToSend() const override { return transport_->IsReadyToSend(); }
+
   bool IsWritable(bool rtcp) const override {
     return transport_->IsWritable(rtcp);
   }
@@ -65,14 +69,6 @@ class RtpTransportInternalAdapter : public RtpTransportInternal {
                       const rtc::PacketOptions& options,
                       int flags) override {
     return transport_->SendRtcpPacket(packet, options, flags);
-  }
-
-  bool HandlesPayloadType(int payload_type) const override {
-    return transport_->HandlesPayloadType(payload_type);
-  }
-
-  void AddHandledPayloadType(int payload_type) override {
-    return transport_->AddHandledPayloadType(payload_type);
   }
 
   // RtpTransportInterface overrides.
@@ -92,6 +88,8 @@ class RtpTransportInternalAdapter : public RtpTransportInternal {
     return transport_->GetParameters();
   }
 
+  RtpTransportAdapter* GetInternal() override { return nullptr; }
+
   void SetMetricsObserver(
       rtc::scoped_refptr<MetricsObserverInterface> metrics_observer) override {
     transport_->SetMetricsObserver(metrics_observer);
@@ -99,7 +97,7 @@ class RtpTransportInternalAdapter : public RtpTransportInternal {
 
  protected:
   // Owned by the subclasses.
-  RtpTransportInternal* transport_;
+  RtpTransportInternal* transport_ = nullptr;
 };
 
 }  // namespace webrtc

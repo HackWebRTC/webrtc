@@ -2342,8 +2342,10 @@ TEST_P(PeerConnectionIntegrationTest, GetCaptureStartNtpTimeWithOldStatsApi) {
 
   // Get the audio output level stats. Note that the level is not available
   // until an RTCP packet has been received.
-  EXPECT_TRUE_WAIT(callee()->OldGetStatsForTrack(remote_audio_track)->
-                   CaptureStartNtpTime() > 0, 2 * kMaxWaitForFramesMs);
+  EXPECT_TRUE_WAIT(
+      callee()->OldGetStatsForTrack(remote_audio_track)->CaptureStartNtpTime() >
+          0,
+      2 * kMaxWaitForFramesMs);
 }
 
 // Test that we can get stats (using the new stats implemnetation) for

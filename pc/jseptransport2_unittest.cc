@@ -9,8 +9,10 @@
  */
 
 #include <memory>
+#include <tuple>
 #include <utility>
 
+#include "media/base/fakertp.h"
 #include "p2p/base/fakedtlstransport.h"
 #include "p2p/base/fakeicetransport.h"
 #include "pc/jseptransport2.h"
@@ -40,7 +42,6 @@ struct NegotiateRoleParams {
 class JsepTransport2Test : public testing::Test, public sigslot::has_slots<> {
  protected:
   std::unique_ptr<webrtc::SrtpTransport> CreateSdesTransport(
-      const std::string& transport_name,
       rtc::PacketTransportInternal* rtp_packet_transport,
       rtc::PacketTransportInternal* rtcp_packet_transport) {
     bool rtcp_mux_enabled = (rtcp_packet_transport == nullptr);
@@ -55,7 +56,6 @@ class JsepTransport2Test : public testing::Test, public sigslot::has_slots<> {
   }
 
   std::unique_ptr<webrtc::DtlsSrtpTransport> CreateDtlsSrtpTransport(
-      const std::string& transport_name,
       cricket::DtlsTransportInternal* rtp_dtls_transport,
       cricket::DtlsTransportInternal* rtcp_dtls_transport) {
     bool rtcp_mux_enabled = (rtcp_dtls_transport == nullptr);
@@ -71,7 +71,8 @@ class JsepTransport2Test : public testing::Test, public sigslot::has_slots<> {
 
   // Create a new JsepTransport2 with a FakeDtlsTransport and a
   // FakeIceTransport.
-  void CreateJsepTransport2(bool rtcp_mux_enabled, SrtpMode srtp_mode) {
+  std::unique_ptr<JsepTransport2> CreateJsepTransport2(bool rtcp_mux_enabled,
+                                                       SrtpMode srtp_mode) {
     auto ice = rtc::MakeUnique<FakeIceTransport>(kTransportName,
                                                  ICE_CANDIDATE_COMPONENT_RTP);
     auto rtp_dtls_transport =
@@ -89,29 +90,28 @@ class JsepTransport2Test : public testing::Test, public sigslot::has_slots<> {
     std::unique_ptr<webrtc::DtlsSrtpTransport> dtls_srtp_transport;
     switch (srtp_mode) {
       case SrtpMode::kSdes:
-        sdes_transport =
-            CreateSdesTransport(kTransportName, rtp_dtls_transport.get(),
-                                rtcp_dtls_transport.get());
+        sdes_transport = CreateSdesTransport(rtp_dtls_transport.get(),
+                                             rtcp_dtls_transport.get());
         sdes_transport_ = sdes_transport.get();
         break;
       case SrtpMode::kDtlsSrtp:
-        dtls_srtp_transport =
-            CreateDtlsSrtpTransport(kTransportName, rtp_dtls_transport.get(),
-                                    rtcp_dtls_transport.get());
+        dtls_srtp_transport = CreateDtlsSrtpTransport(
+            rtp_dtls_transport.get(), rtcp_dtls_transport.get());
         break;
       default:
         RTC_NOTREACHED();
     }
 
-    jsep_transport_ = rtc::MakeUnique<JsepTransport2>(
+    auto jsep_transport = rtc::MakeUnique<JsepTransport2>(
         kTransportName, /*local_certificate=*/nullptr,
         std::move(unencrypted_rtp_transport), std::move(sdes_transport),
         std::move(dtls_srtp_transport), std::move(rtp_dtls_transport),
         std::move(rtcp_dtls_transport));
 
     signal_rtcp_mux_active_received_ = false;
-    jsep_transport_->SignalRtcpMuxActive.connect(
+    jsep_transport->SignalRtcpMuxActive.connect(
         this, &JsepTransport2Test::OnRtcpMuxActive);
+    return jsep_transport;
   }
 
   JsepTransportDescription MakeJsepTransportDescription(
@@ -159,7 +159,7 @@ class JsepTransport2WithRtcpMux : public JsepTransport2Test,
 // This test verifies the ICE parameters are properly applied to the transports.
 TEST_P(JsepTransport2WithRtcpMux, SetIceParameters) {
   bool rtcp_mux_enabled = GetParam();
-  CreateJsepTransport2(rtcp_mux_enabled, SrtpMode::kDtlsSrtp);
+  jsep_transport_ = CreateJsepTransport2(rtcp_mux_enabled, SrtpMode::kDtlsSrtp);
 
   JsepTransportDescription jsep_description;
   jsep_description.transport_desc = TransportDescription(kIceUfrag1, kIcePwd1);
@@ -205,7 +205,7 @@ TEST_P(JsepTransport2WithRtcpMux, SetIceParameters) {
 // Similarly, test DTLS parameters are properly applied to the transports.
 TEST_P(JsepTransport2WithRtcpMux, SetDtlsParameters) {
   bool rtcp_mux_enabled = GetParam();
-  CreateJsepTransport2(rtcp_mux_enabled, SrtpMode::kDtlsSrtp);
+  jsep_transport_ = CreateJsepTransport2(rtcp_mux_enabled, SrtpMode::kDtlsSrtp);
 
   // Create certificates.
   rtc::scoped_refptr<rtc::RTCCertificate> local_cert =
@@ -256,7 +256,7 @@ TEST_P(JsepTransport2WithRtcpMux, SetDtlsParameters) {
 // CONNECTIONROLE_PASSIVE, expecting SSL_CLIENT role.
 TEST_P(JsepTransport2WithRtcpMux, SetDtlsParametersWithPassiveAnswer) {
   bool rtcp_mux_enabled = GetParam();
-  CreateJsepTransport2(rtcp_mux_enabled, SrtpMode::kDtlsSrtp);
+  jsep_transport_ = CreateJsepTransport2(rtcp_mux_enabled, SrtpMode::kDtlsSrtp);
 
   // Create certificates.
   rtc::scoped_refptr<rtc::RTCCertificate> local_cert =
@@ -308,7 +308,7 @@ TEST_P(JsepTransport2WithRtcpMux, SetDtlsParametersWithPassiveAnswer) {
 // only starts returning "false" once an ICE restart has been initiated.
 TEST_P(JsepTransport2WithRtcpMux, NeedsIceRestart) {
   bool rtcp_mux_enabled = GetParam();
-  CreateJsepTransport2(rtcp_mux_enabled, SrtpMode::kDtlsSrtp);
+  jsep_transport_ = CreateJsepTransport2(rtcp_mux_enabled, SrtpMode::kDtlsSrtp);
 
   // Use the same JsepTransportDescription for both offer and answer.
   JsepTransportDescription description;
@@ -353,7 +353,7 @@ TEST_P(JsepTransport2WithRtcpMux, NeedsIceRestart) {
 
 TEST_P(JsepTransport2WithRtcpMux, GetStats) {
   bool rtcp_mux_enabled = GetParam();
-  CreateJsepTransport2(rtcp_mux_enabled, SrtpMode::kDtlsSrtp);
+  jsep_transport_ = CreateJsepTransport2(rtcp_mux_enabled, SrtpMode::kDtlsSrtp);
 
   size_t expected_stats_size = rtcp_mux_enabled ? 1u : 2u;
   TransportStats stats;
@@ -369,7 +369,7 @@ TEST_P(JsepTransport2WithRtcpMux, GetStats) {
 // certificate matches the fingerprint.
 TEST_P(JsepTransport2WithRtcpMux, VerifyCertificateFingerprint) {
   bool rtcp_mux_enabled = GetParam();
-  CreateJsepTransport2(rtcp_mux_enabled, SrtpMode::kDtlsSrtp);
+  jsep_transport_ = CreateJsepTransport2(rtcp_mux_enabled, SrtpMode::kDtlsSrtp);
 
   EXPECT_FALSE(
       jsep_transport_->VerifyCertificateFingerprint(nullptr, nullptr).ok());
@@ -436,7 +436,8 @@ TEST_P(JsepTransport2WithRtcpMux, ValidDtlsRoleNegotiation) {
        SdpType::kPrAnswer}};
 
   for (auto& param : valid_client_params) {
-    CreateJsepTransport2(rtcp_mux_enabled, SrtpMode::kDtlsSrtp);
+    jsep_transport_ =
+        CreateJsepTransport2(rtcp_mux_enabled, SrtpMode::kDtlsSrtp);
     jsep_transport_->SetLocalCertificate(certificate);
 
     local_description.transport_desc.connection_role = param.local_role;
@@ -477,7 +478,8 @@ TEST_P(JsepTransport2WithRtcpMux, ValidDtlsRoleNegotiation) {
        SdpType::kPrAnswer}};
 
   for (auto& param : valid_server_params) {
-    CreateJsepTransport2(rtcp_mux_enabled, SrtpMode::kDtlsSrtp);
+    jsep_transport_ =
+        CreateJsepTransport2(rtcp_mux_enabled, SrtpMode::kDtlsSrtp);
     jsep_transport_->SetLocalCertificate(certificate);
 
     local_description.transport_desc.connection_role = param.local_role;
@@ -548,7 +550,8 @@ TEST_P(JsepTransport2WithRtcpMux, InvalidDtlsRoleNegotiation) {
        SdpType::kPrAnswer}};
 
   for (auto& param : duplicate_params) {
-    CreateJsepTransport2(rtcp_mux_enabled, SrtpMode::kDtlsSrtp);
+    jsep_transport_ =
+        CreateJsepTransport2(rtcp_mux_enabled, SrtpMode::kDtlsSrtp);
     jsep_transport_->SetLocalCertificate(certificate);
 
     local_description.transport_desc.connection_role = param.local_role;
@@ -603,7 +606,8 @@ TEST_P(JsepTransport2WithRtcpMux, InvalidDtlsRoleNegotiation) {
        SdpType::kPrAnswer}};
 
   for (auto& param : offerer_without_actpass_params) {
-    CreateJsepTransport2(rtcp_mux_enabled, SrtpMode::kDtlsSrtp);
+    jsep_transport_ =
+        CreateJsepTransport2(rtcp_mux_enabled, SrtpMode::kDtlsSrtp);
     jsep_transport_->SetLocalCertificate(certificate);
 
     local_description.transport_desc.connection_role = param.local_role;
@@ -645,7 +649,7 @@ TEST_F(JsepTransport2Test, ValidDtlsReofferFromAnswerer) {
       rtc::RTCCertificate::Create(std::unique_ptr<rtc::SSLIdentity>(
           rtc::SSLIdentity::Generate("testing", rtc::KT_ECDSA)));
   bool rtcp_mux_enabled = true;
-  CreateJsepTransport2(rtcp_mux_enabled, SrtpMode::kDtlsSrtp);
+  jsep_transport_ = CreateJsepTransport2(rtcp_mux_enabled, SrtpMode::kDtlsSrtp);
   jsep_transport_->SetLocalCertificate(certificate);
 
   JsepTransportDescription local_offer =
@@ -692,7 +696,7 @@ TEST_F(JsepTransport2Test, InvalidDtlsReofferFromAnswerer) {
       rtc::RTCCertificate::Create(std::unique_ptr<rtc::SSLIdentity>(
           rtc::SSLIdentity::Generate("testing", rtc::KT_ECDSA)));
   bool rtcp_mux_enabled = true;
-  CreateJsepTransport2(rtcp_mux_enabled, SrtpMode::kDtlsSrtp);
+  jsep_transport_ = CreateJsepTransport2(rtcp_mux_enabled, SrtpMode::kDtlsSrtp);
   jsep_transport_->SetLocalCertificate(certificate);
 
   JsepTransportDescription local_offer =
@@ -738,7 +742,7 @@ TEST_F(JsepTransport2Test, RemoteOfferWithCurrentNegotiatedDtlsRole) {
       rtc::RTCCertificate::Create(std::unique_ptr<rtc::SSLIdentity>(
           rtc::SSLIdentity::Generate("testing", rtc::KT_ECDSA)));
   bool rtcp_mux_enabled = true;
-  CreateJsepTransport2(rtcp_mux_enabled, SrtpMode::kDtlsSrtp);
+  jsep_transport_ = CreateJsepTransport2(rtcp_mux_enabled, SrtpMode::kDtlsSrtp);
   jsep_transport_->SetLocalCertificate(certificate);
 
   JsepTransportDescription remote_desc =
@@ -783,7 +787,7 @@ TEST_F(JsepTransport2Test, RemoteOfferThatChangesNegotiatedDtlsRole) {
       rtc::RTCCertificate::Create(std::unique_ptr<rtc::SSLIdentity>(
           rtc::SSLIdentity::Generate("testing", rtc::KT_ECDSA)));
   bool rtcp_mux_enabled = true;
-  CreateJsepTransport2(rtcp_mux_enabled, SrtpMode::kDtlsSrtp);
+  jsep_transport_ = CreateJsepTransport2(rtcp_mux_enabled, SrtpMode::kDtlsSrtp);
   jsep_transport_->SetLocalCertificate(certificate);
 
   JsepTransportDescription remote_desc =
@@ -828,7 +832,7 @@ TEST_F(JsepTransport2Test, DtlsSetupWithLegacyAsAnswerer) {
       rtc::RTCCertificate::Create(std::unique_ptr<rtc::SSLIdentity>(
           rtc::SSLIdentity::Generate("testing", rtc::KT_ECDSA)));
   bool rtcp_mux_enabled = true;
-  CreateJsepTransport2(rtcp_mux_enabled, SrtpMode::kDtlsSrtp);
+  jsep_transport_ = CreateJsepTransport2(rtcp_mux_enabled, SrtpMode::kDtlsSrtp);
   jsep_transport_->SetLocalCertificate(certificate);
 
   JsepTransportDescription remote_desc =
@@ -860,7 +864,8 @@ TEST_F(JsepTransport2Test, DtlsSetupWithLegacyAsAnswerer) {
 // Tests that when the RTCP mux is successfully negotiated, the RTCP transport
 // will be destroyed and the SignalRtpMuxActive will be fired.
 TEST_F(JsepTransport2Test, RtcpMuxNegotiation) {
-  CreateJsepTransport2(/*rtcp_mux_enabled=*/false, SrtpMode::kDtlsSrtp);
+  jsep_transport_ =
+      CreateJsepTransport2(/*rtcp_mux_enabled=*/false, SrtpMode::kDtlsSrtp);
   JsepTransportDescription local_desc;
   local_desc.rtcp_mux_enabled = true;
   EXPECT_NE(nullptr, jsep_transport_->rtcp_dtls_transport());
@@ -882,7 +887,8 @@ TEST_F(JsepTransport2Test, RtcpMuxNegotiation) {
   EXPECT_TRUE(signal_rtcp_mux_active_received_);
 
   // The remote side doesn't support RTCP-mux.
-  CreateJsepTransport2(/*rtcp_mux_enabled=*/false, SrtpMode::kDtlsSrtp);
+  jsep_transport_ =
+      CreateJsepTransport2(/*rtcp_mux_enabled=*/false, SrtpMode::kDtlsSrtp);
   signal_rtcp_mux_active_received_ = false;
   remote_desc.rtcp_mux_enabled = false;
   ASSERT_TRUE(
@@ -899,9 +905,10 @@ TEST_F(JsepTransport2Test, RtcpMuxNegotiation) {
 }
 
 TEST_F(JsepTransport2Test, SdesNegotiation) {
-  CreateJsepTransport2(/*rtcp_mux_enabled=*/true, SrtpMode::kSdes);
+  jsep_transport_ =
+      CreateJsepTransport2(/*rtcp_mux_enabled=*/true, SrtpMode::kSdes);
   ASSERT_TRUE(sdes_transport_);
-  EXPECT_FALSE(sdes_transport_->IsActive());
+  EXPECT_FALSE(sdes_transport_->IsSrtpActive());
 
   JsepTransportDescription offer_desc;
   offer_desc.cryptos.push_back(cricket::CryptoParams(
@@ -920,13 +927,14 @@ TEST_F(JsepTransport2Test, SdesNegotiation) {
       jsep_transport_
           ->SetRemoteJsepTransportDescription(answer_desc, SdpType::kAnswer)
           .ok());
-  EXPECT_TRUE(sdes_transport_->IsActive());
+  EXPECT_TRUE(sdes_transport_->IsSrtpActive());
 }
 
 TEST_F(JsepTransport2Test, SdesNegotiationWithEmptyCryptosInAnswer) {
-  CreateJsepTransport2(/*rtcp_mux_enabled=*/true, SrtpMode::kSdes);
+  jsep_transport_ =
+      CreateJsepTransport2(/*rtcp_mux_enabled=*/true, SrtpMode::kSdes);
   ASSERT_TRUE(sdes_transport_);
-  EXPECT_FALSE(sdes_transport_->IsActive());
+  EXPECT_FALSE(sdes_transport_->IsSrtpActive());
 
   JsepTransportDescription offer_desc;
   offer_desc.cryptos.push_back(cricket::CryptoParams(
@@ -943,13 +951,14 @@ TEST_F(JsepTransport2Test, SdesNegotiationWithEmptyCryptosInAnswer) {
           ->SetRemoteJsepTransportDescription(answer_desc, SdpType::kAnswer)
           .ok());
   // SRTP is not active because the crypto parameter is answer is empty.
-  EXPECT_FALSE(sdes_transport_->IsActive());
+  EXPECT_FALSE(sdes_transport_->IsSrtpActive());
 }
 
 TEST_F(JsepTransport2Test, SdesNegotiationWithMismatchedCryptos) {
-  CreateJsepTransport2(/*rtcp_mux_enabled=*/true, SrtpMode::kSdes);
+  jsep_transport_ =
+      CreateJsepTransport2(/*rtcp_mux_enabled=*/true, SrtpMode::kSdes);
   ASSERT_TRUE(sdes_transport_);
-  EXPECT_FALSE(sdes_transport_->IsActive());
+  EXPECT_FALSE(sdes_transport_->IsSrtpActive());
 
   JsepTransportDescription offer_desc;
   offer_desc.cryptos.push_back(cricket::CryptoParams(
@@ -974,7 +983,8 @@ TEST_F(JsepTransport2Test, SdesNegotiationWithMismatchedCryptos) {
 // Tests that the remote candidates can be added to the transports after both
 // local and remote descriptions are set.
 TEST_F(JsepTransport2Test, AddRemoteCandidates) {
-  CreateJsepTransport2(/*rtcp_mux_enabled=*/true, SrtpMode::kDtlsSrtp);
+  jsep_transport_ =
+      CreateJsepTransport2(/*rtcp_mux_enabled=*/true, SrtpMode::kDtlsSrtp);
   auto fake_ice_transport = static_cast<FakeIceTransport*>(
       jsep_transport_->rtp_dtls_transport()->ice_transport());
 
@@ -996,5 +1006,238 @@ TEST_F(JsepTransport2Test, AddRemoteCandidates) {
   EXPECT_TRUE(jsep_transport_->AddRemoteCandidates(candidates).ok());
   EXPECT_EQ(candidates.size(), fake_ice_transport->remote_candidates().size());
 }
+
+enum class Scenario {
+  kSdes,
+  kDtlsBeforeCallerSendOffer,
+  kDtlsBeforeCallerSetAnswer,
+  kDtlsAfterCallerSetAnswer,
+};
+
+class JsepTransport2HeaderExtensionTest
+    : public JsepTransport2Test,
+      public ::testing::WithParamInterface<std::tuple<Scenario, bool>> {
+ protected:
+  JsepTransport2HeaderExtensionTest() {}
+
+  void CreateJsepTransportPair(SrtpMode mode) {
+    jsep_transport1_ = CreateJsepTransport2(/*rtcp_mux_enabled=*/true, mode);
+    jsep_transport2_ = CreateJsepTransport2(/*rtcp_mux_enabled=*/true, mode);
+
+    auto fake_dtls1 =
+        static_cast<FakeDtlsTransport*>(jsep_transport1_->rtp_dtls_transport());
+    auto fake_dtls2 =
+        static_cast<FakeDtlsTransport*>(jsep_transport2_->rtp_dtls_transport());
+
+    fake_dtls1->fake_ice_transport()->SignalReadPacket.connect(
+        this, &JsepTransport2HeaderExtensionTest::OnReadPacket1);
+    fake_dtls2->fake_ice_transport()->SignalReadPacket.connect(
+        this, &JsepTransport2HeaderExtensionTest::OnReadPacket2);
+
+    if (mode == SrtpMode::kDtlsSrtp) {
+      auto cert1 =
+          rtc::RTCCertificate::Create(std::unique_ptr<rtc::SSLIdentity>(
+              rtc::SSLIdentity::Generate("session1", rtc::KT_DEFAULT)));
+      jsep_transport1_->rtp_dtls_transport()->SetLocalCertificate(cert1);
+      auto cert2 =
+          rtc::RTCCertificate::Create(std::unique_ptr<rtc::SSLIdentity>(
+              rtc::SSLIdentity::Generate("session1", rtc::KT_DEFAULT)));
+      jsep_transport2_->rtp_dtls_transport()->SetLocalCertificate(cert2);
+    }
+  }
+
+  void OnReadPacket1(rtc::PacketTransportInternal* transport,
+                     const char* data,
+                     size_t size,
+                     const rtc::PacketTime& time,
+                     int flags) {
+    RTC_LOG(LS_INFO) << "JsepTransport 1 Received a packet.";
+    CompareHeaderExtensions(
+        reinterpret_cast<const char*>(kPcmuFrameWithExtensions),
+        sizeof(kPcmuFrameWithExtensions), data, size, recv_encrypted_headers1_,
+        false);
+    received_packet_count_++;
+  }
+
+  void OnReadPacket2(rtc::PacketTransportInternal* transport,
+                     const char* data,
+                     size_t size,
+                     const rtc::PacketTime& time,
+                     int flags) {
+    RTC_LOG(LS_INFO) << "JsepTransport 2 Received a packet.";
+    CompareHeaderExtensions(
+        reinterpret_cast<const char*>(kPcmuFrameWithExtensions),
+        sizeof(kPcmuFrameWithExtensions), data, size, recv_encrypted_headers2_,
+        false);
+    received_packet_count_++;
+  }
+
+  void ConnectTransport() {
+    auto rtp_dtls_transport1 =
+        static_cast<FakeDtlsTransport*>(jsep_transport1_->rtp_dtls_transport());
+    auto rtp_dtls_transport2 =
+        static_cast<FakeDtlsTransport*>(jsep_transport2_->rtp_dtls_transport());
+    rtp_dtls_transport1->SetDestination(rtp_dtls_transport2);
+  }
+
+  int GetRtpAuthLen() {
+    bool use_gcm = std::get<1>(GetParam());
+    if (use_gcm) {
+      return 16;
+    }
+    return 10;
+  }
+
+  void TestSendRecvPacketWithEncryptedHeaderExtension() {
+    TestOneWaySendRecvPacketWithEncryptedHeaderExtension(
+        jsep_transport1_.get());
+    TestOneWaySendRecvPacketWithEncryptedHeaderExtension(
+        jsep_transport2_.get());
+  }
+
+  void TestOneWaySendRecvPacketWithEncryptedHeaderExtension(
+      JsepTransport2* sender_transport) {
+    size_t rtp_len = sizeof(kPcmuFrameWithExtensions);
+    size_t packet_size = rtp_len + GetRtpAuthLen();
+    rtc::Buffer rtp_packet_buffer(packet_size);
+    char* rtp_packet_data = rtp_packet_buffer.data<char>();
+    memcpy(rtp_packet_data, kPcmuFrameWithExtensions, rtp_len);
+    // In order to be able to run this test function multiple times we can not
+    // use the same sequence number twice. Increase the sequence number by one.
+    rtc::SetBE16(reinterpret_cast<uint8_t*>(rtp_packet_data) + 2,
+                 ++sequence_number_);
+    rtc::CopyOnWriteBuffer rtp_packet(rtp_packet_data, rtp_len, packet_size);
+
+    int packet_count_before = received_packet_count_;
+    rtc::PacketOptions options;
+    // Send a packet and verify that the packet can be successfully received and
+    // decrypted.
+    ASSERT_TRUE(sender_transport->rtp_transport()->SendRtpPacket(
+        &rtp_packet, options, cricket::PF_SRTP_BYPASS));
+    EXPECT_EQ(packet_count_before + 1, received_packet_count_);
+  }
+
+  int sequence_number_ = 0;
+  int received_packet_count_ = 0;
+  std::unique_ptr<JsepTransport2> jsep_transport1_;
+  std::unique_ptr<JsepTransport2> jsep_transport2_;
+  std::vector<int> recv_encrypted_headers1_;
+  std::vector<int> recv_encrypted_headers2_;
+};
+
+// Test that the encrypted header extension works and can be changed in
+// different scenarios.
+TEST_P(JsepTransport2HeaderExtensionTest, EncryptedHeaderExtensionNegotiation) {
+  Scenario scenario = std::get<0>(GetParam());
+  bool use_gcm = std::get<1>(GetParam());
+  SrtpMode mode = SrtpMode ::kDtlsSrtp;
+  if (scenario == Scenario::kSdes) {
+    mode = SrtpMode::kSdes;
+  }
+  CreateJsepTransportPair(mode);
+  recv_encrypted_headers1_.push_back(kHeaderExtensionIDs[0]);
+  recv_encrypted_headers2_.push_back(kHeaderExtensionIDs[1]);
+
+  cricket::CryptoParams sdes_param(1, rtc::CS_AES_CM_128_HMAC_SHA1_80,
+                                   "inline:" + rtc::CreateRandomString(40),
+                                   std::string());
+  if (use_gcm) {
+    auto fake_dtls1 =
+        static_cast<FakeDtlsTransport*>(jsep_transport1_->rtp_dtls_transport());
+    auto fake_dtls2 =
+        static_cast<FakeDtlsTransport*>(jsep_transport2_->rtp_dtls_transport());
+
+    fake_dtls1->SetSrtpCryptoSuite(rtc::SRTP_AEAD_AES_256_GCM);
+    fake_dtls2->SetSrtpCryptoSuite(rtc::SRTP_AEAD_AES_256_GCM);
+  }
+
+  if (scenario == Scenario::kDtlsBeforeCallerSendOffer) {
+    ConnectTransport();
+  }
+
+  JsepTransportDescription offer_desc;
+  offer_desc.encrypted_header_extension_ids = recv_encrypted_headers1_;
+  if (scenario == Scenario::kSdes) {
+    offer_desc.cryptos.push_back(sdes_param);
+  }
+  ASSERT_TRUE(
+      jsep_transport1_
+          ->SetLocalJsepTransportDescription(offer_desc, SdpType::kOffer)
+          .ok());
+  ASSERT_TRUE(
+      jsep_transport2_
+          ->SetRemoteJsepTransportDescription(offer_desc, SdpType::kOffer)
+          .ok());
+
+  JsepTransportDescription answer_desc;
+  answer_desc.encrypted_header_extension_ids = recv_encrypted_headers2_;
+  if (scenario == Scenario::kSdes) {
+    answer_desc.cryptos.push_back(sdes_param);
+  }
+  ASSERT_TRUE(
+      jsep_transport2_
+          ->SetLocalJsepTransportDescription(answer_desc, SdpType::kAnswer)
+          .ok());
+
+  if (scenario == Scenario::kDtlsBeforeCallerSetAnswer) {
+    ConnectTransport();
+    // Sending packet from transport2 to transport1 should work when they are
+    // partially configured.
+    TestOneWaySendRecvPacketWithEncryptedHeaderExtension(
+        /*sender_transport=*/jsep_transport2_.get());
+  }
+
+  ASSERT_TRUE(
+      jsep_transport1_
+          ->SetRemoteJsepTransportDescription(answer_desc, SdpType::kAnswer)
+          .ok());
+
+  if (scenario == Scenario::kDtlsAfterCallerSetAnswer ||
+      scenario == Scenario::kSdes) {
+    ConnectTransport();
+  }
+  EXPECT_TRUE(jsep_transport1_->rtp_transport()->IsSrtpActive());
+  EXPECT_TRUE(jsep_transport2_->rtp_transport()->IsSrtpActive());
+  TestSendRecvPacketWithEncryptedHeaderExtension();
+
+  // Change the encrypted header extension in a new offer/answer exchange.
+  recv_encrypted_headers1_.clear();
+  recv_encrypted_headers2_.clear();
+  recv_encrypted_headers1_.push_back(kHeaderExtensionIDs[1]);
+  recv_encrypted_headers2_.push_back(kHeaderExtensionIDs[0]);
+  offer_desc.encrypted_header_extension_ids = recv_encrypted_headers1_;
+  answer_desc.encrypted_header_extension_ids = recv_encrypted_headers2_;
+  ASSERT_TRUE(
+      jsep_transport1_
+          ->SetLocalJsepTransportDescription(offer_desc, SdpType::kOffer)
+          .ok());
+  ASSERT_TRUE(
+      jsep_transport2_
+          ->SetRemoteJsepTransportDescription(offer_desc, SdpType::kOffer)
+          .ok());
+  ASSERT_TRUE(
+      jsep_transport2_
+          ->SetLocalJsepTransportDescription(answer_desc, SdpType::kAnswer)
+          .ok());
+  ASSERT_TRUE(
+      jsep_transport1_
+          ->SetRemoteJsepTransportDescription(answer_desc, SdpType::kAnswer)
+          .ok());
+  EXPECT_TRUE(jsep_transport1_->rtp_transport()->IsSrtpActive());
+  EXPECT_TRUE(jsep_transport2_->rtp_transport()->IsSrtpActive());
+  TestSendRecvPacketWithEncryptedHeaderExtension();
+}
+
+INSTANTIATE_TEST_CASE_P(
+    JsepTransport2Test,
+    JsepTransport2HeaderExtensionTest,
+    ::testing::Values(
+        std::make_tuple(Scenario::kSdes, false),
+        std::make_tuple(Scenario::kDtlsBeforeCallerSendOffer, true),
+        std::make_tuple(Scenario::kDtlsBeforeCallerSetAnswer, true),
+        std::make_tuple(Scenario::kDtlsAfterCallerSetAnswer, true),
+        std::make_tuple(Scenario::kDtlsBeforeCallerSendOffer, false),
+        std::make_tuple(Scenario::kDtlsBeforeCallerSetAnswer, false),
+        std::make_tuple(Scenario::kDtlsAfterCallerSetAnswer, false)));
 
 }  // namespace cricket

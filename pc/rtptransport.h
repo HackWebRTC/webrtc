@@ -13,7 +13,7 @@
 
 #include <string>
 
-#include "pc/bundlefilter.h"
+#include "api/ortc/rtptransportinterface.h"
 #include "pc/rtptransportinternal.h"
 #include "rtc_base/sigslot.h"
 
@@ -49,12 +49,18 @@ class RtpTransport : public RtpTransportInternal {
   }
   void SetRtcpPacketTransport(rtc::PacketTransportInternal* rtcp) override;
 
-  PacketTransportInterface* GetRtpPacketTransport() const override;
-  PacketTransportInterface* GetRtcpPacketTransport() const override;
+  PacketTransportInterface* GetRtpPacketTransport() const override {
+    return rtp_packet_transport_;
+  }
+  PacketTransportInterface* GetRtcpPacketTransport() const override {
+    return rtcp_packet_transport_;
+  }
 
   // TODO(zstein): Use these RtcpParameters for configuration elsewhere.
   RTCError SetParameters(const RtpTransportParameters& parameters) override;
   RtpTransportParameters GetParameters() const override;
+
+  bool IsReadyToSend() const override { return ready_to_send_; }
 
   bool IsWritable(bool rtcp) const override;
 
@@ -66,9 +72,7 @@ class RtpTransport : public RtpTransportInternal {
                       const rtc::PacketOptions& options,
                       int flags) override;
 
-  bool HandlesPayloadType(int payload_type) const override;
-
-  void AddHandledPayloadType(int payload_type) override;
+  bool IsSrtpActive() const override { return false; }
 
   void SetMetricsObserver(
       rtc::scoped_refptr<MetricsObserverInterface> metrics_observer) override {}
@@ -106,6 +110,15 @@ class RtpTransport : public RtpTransportInternal {
 
   bool WantsPacket(bool rtcp, const rtc::CopyOnWriteBuffer* packet);
 
+  RTCError SetSrtpSendKey(const cricket::CryptoParams& params) override {
+    RTC_NOTREACHED();
+    return RTCError::OK();
+  }
+  RTCError SetSrtpReceiveKey(const cricket::CryptoParams& params) override {
+    RTC_NOTREACHED();
+    return RTCError::OK();
+  }
+
   bool rtcp_mux_enabled_;
 
   rtc::PacketTransportInternal* rtp_packet_transport_ = nullptr;
@@ -116,8 +129,6 @@ class RtpTransport : public RtpTransportInternal {
   bool rtcp_ready_to_send_ = false;
 
   RtpTransportParameters parameters_;
-
-  cricket::BundleFilter bundle_filter_;
 };
 
 }  // namespace webrtc

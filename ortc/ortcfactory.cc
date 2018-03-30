@@ -232,7 +232,7 @@ OrtcFactory::CreateRtpTransportController() {
   RTC_DCHECK_RUN_ON(signaling_thread_);
   return RtpTransportControllerAdapter::CreateProxied(
       cricket::MediaConfig(), channel_manager_.get(), null_event_log_.get(),
-      signaling_thread_, worker_thread_.get());
+      signaling_thread_, worker_thread_.get(), network_thread_);
 }
 
 RTCErrorOr<std::unique_ptr<RtpTransportInterface>>

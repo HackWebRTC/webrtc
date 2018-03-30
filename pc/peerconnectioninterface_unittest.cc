@@ -667,18 +667,7 @@ class PeerConnectionFactoryForTest : public webrtc::PeerConnectionFactory {
                                       std::move(call_factory),
                                       std::move(event_log_factory)) {}
 
-  cricket::TransportController* CreateTransportController(
-      cricket::PortAllocator* port_allocator,
-      bool redetermine_role_on_ice_restart,
-      webrtc::RtcEventLog* event_log = nullptr) override {
-    transport_controller = new cricket::TransportController(
-        rtc::Thread::Current(), rtc::Thread::Current(), port_allocator,
-        redetermine_role_on_ice_restart, rtc::CryptoOptions(), event_log);
-    return transport_controller;
-  }
-
   rtc::scoped_refptr<FakeAudioCaptureModule> fake_audio_capture_module_;
-  cricket::TransportController* transport_controller;
 };
 
 // TODO(steveanton): Convert to use the new PeerConnectionWrapper.
@@ -2318,8 +2307,7 @@ TEST_P(PeerConnectionInterfaceTest, ReceiveFireFoxOffer) {
   content =
       cricket::GetFirstDataContent(pc_->local_description()->description());
   ASSERT_TRUE(content != NULL);
-  // Expected to fail since it's using an incompatible format.
-  EXPECT_TRUE(content->rejected);
+  EXPECT_FALSE(content->rejected);
 #endif
 }
 
@@ -2341,7 +2329,7 @@ TEST_P(PeerConnectionInterfaceTest, DtlsSdesFallbackNotSupported) {
   std::unique_ptr<SessionDescriptionInterface> desc(
       webrtc::CreateSessionDescription(SdpType::kOffer, kDtlsSdesFallbackSdp,
                                        nullptr));
-  EXPECT_FALSE(DoSetSessionDescription(std::move(desc), false));
+  EXPECT_FALSE(DoSetSessionDescription(std::move(desc), /*local=*/false));
 }
 
 // Test that we can create an audio only offer and receive an answer with a

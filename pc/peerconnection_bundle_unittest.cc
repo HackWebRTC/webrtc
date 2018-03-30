@@ -67,12 +67,14 @@ class PeerConnectionWrapperForBundleTest : public PeerConnectionWrapper {
     return false;
   }
 
-  rtc::PacketTransportInternal* voice_rtp_transport_channel() {
-    return (voice_channel() ? voice_channel()->rtp_dtls_transport() : nullptr);
+  rtc::PacketTransportInternal* voice_rtp_transport() {
+    return (voice_channel() ? voice_channel()->rtp_packet_transport()
+                            : nullptr);
   }
 
-  rtc::PacketTransportInternal* voice_rtcp_transport_channel() {
-    return (voice_channel() ? voice_channel()->rtcp_dtls_transport() : nullptr);
+  rtc::PacketTransportInternal* voice_rtcp_transport() {
+    return (voice_channel() ? voice_channel()->rtcp_packet_transport()
+                            : nullptr);
   }
 
   cricket::VoiceChannel* voice_channel() {
@@ -86,12 +88,14 @@ class PeerConnectionWrapperForBundleTest : public PeerConnectionWrapper {
     return nullptr;
   }
 
-  rtc::PacketTransportInternal* video_rtp_transport_channel() {
-    return (video_channel() ? video_channel()->rtp_dtls_transport() : nullptr);
+  rtc::PacketTransportInternal* video_rtp_transport() {
+    return (video_channel() ? video_channel()->rtp_packet_transport()
+                            : nullptr);
   }
 
-  rtc::PacketTransportInternal* video_rtcp_transport_channel() {
-    return (video_channel() ? video_channel()->rtcp_dtls_transport() : nullptr);
+  rtc::PacketTransportInternal* video_rtcp_transport() {
+    return (video_channel() ? video_channel()->rtcp_packet_transport()
+                            : nullptr);
   }
 
   cricket::VideoChannel* video_channel() {
@@ -348,6 +352,24 @@ TEST_P(PeerConnectionBundleTest,
   EXPECT_EQ(0u, caller->observer()->GetCandidatesByMline(1).size());
 }
 
+// It will fail if the offerer uses the mux-BUNDLE policy but the answerer
+// doesn't support BUNDLE.
+TEST_P(PeerConnectionBundleTest, MaxBundleNotSupportedInAnswer) {
+  RTCConfiguration config;
+  config.bundle_policy = BundlePolicy::kBundlePolicyMaxBundle;
+  auto caller = CreatePeerConnectionWithAudioVideo(config);
+  auto callee = CreatePeerConnectionWithAudioVideo();
+
+  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
+  bool equal_before =
+      (caller->voice_rtp_transport() == caller->video_rtp_transport());
+  EXPECT_EQ(true, equal_before);
+  RTCOfferAnswerOptions options;
+  options.use_rtp_mux = false;
+  EXPECT_FALSE(
+      caller->SetRemoteDescription(callee->CreateAnswerAndSetAsLocal(options)));
+}
+
 // The following parameterized test verifies that an offer/answer with varying
 // bundle policies and either bundle in the answer or not will produce the
 // expected RTP transports for audio and video. In particular, for bundling we
@@ -393,16 +415,16 @@ TEST_P(PeerConnectionBundleMatrixTest,
   auto callee = CreatePeerConnectionWithAudioVideo();
 
   ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
-  bool equal_before = (caller->voice_rtp_transport_channel() ==
-                       caller->video_rtp_transport_channel());
+  bool equal_before =
+      (caller->voice_rtp_transport() == caller->video_rtp_transport());
   EXPECT_EQ(expected_same_before_, equal_before);
 
   RTCOfferAnswerOptions options;
   options.use_rtp_mux = (bundle_included_ == BundleIncluded::kBundleInAnswer);
   ASSERT_TRUE(
       caller->SetRemoteDescription(callee->CreateAnswerAndSetAsLocal(options)));
-  bool equal_after = (caller->voice_rtp_transport_channel() ==
-                      caller->video_rtp_transport_channel());
+  bool equal_after =
+      (caller->voice_rtp_transport() == caller->video_rtp_transport());
   EXPECT_EQ(expected_same_after_, equal_after);
 }
 
@@ -424,10 +446,6 @@ INSTANTIATE_TEST_CASE_P(
                                    false),
                    std::make_tuple(BundlePolicy::kBundlePolicyMaxBundle,
                                    BundleIncluded::kBundleInAnswer,
-                                   true,
-                                   true),
-                   std::make_tuple(BundlePolicy::kBundlePolicyMaxBundle,
-                                   BundleIncluded::kBundleNotInAnswer,
                                    true,
                                    true),
                    std::make_tuple(BundlePolicy::kBundlePolicyMaxCompat,
@@ -454,13 +472,11 @@ TEST_P(PeerConnectionBundleTest,
   ASSERT_TRUE(callee->SetRemoteDescription(
       caller->CreateOfferAndSetAsLocal(options_with_bundle)));
 
-  EXPECT_EQ(callee->voice_rtp_transport_channel(),
-            callee->video_rtp_transport_channel());
+  EXPECT_EQ(callee->voice_rtp_transport(), callee->video_rtp_transport());
 
   ASSERT_TRUE(callee->SetLocalDescription(callee->CreateAnswer()));
 
-  EXPECT_EQ(callee->voice_rtp_transport_channel(),
-            callee->video_rtp_transport_channel());
+  EXPECT_EQ(callee->voice_rtp_transport(), callee->video_rtp_transport());
 }
 
 TEST_P(PeerConnectionBundleTest,
@@ -496,8 +512,8 @@ TEST_P(PeerConnectionBundleTest,
   ASSERT_TRUE(
       caller->SetRemoteDescription(callee->CreateAnswerAndSetAsLocal(options)));
 
-  EXPECT_FALSE(caller->voice_rtp_transport_channel());
-  EXPECT_TRUE(caller->video_rtp_transport_channel());
+  EXPECT_FALSE(caller->voice_rtp_transport());
+  EXPECT_TRUE(caller->video_rtp_transport());
 }
 
 // When requiring RTCP multiplexing, the PeerConnection never makes RTCP
@@ -510,19 +526,18 @@ TEST_P(PeerConnectionBundleTest, NeverCreateRtcpTransportWithRtcpMuxRequired) {
 
   ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
 
-  EXPECT_FALSE(caller->voice_rtcp_transport_channel());
-  EXPECT_FALSE(caller->video_rtcp_transport_channel());
+  EXPECT_FALSE(caller->voice_rtcp_transport());
+  EXPECT_FALSE(caller->video_rtcp_transport());
 
   ASSERT_TRUE(
       caller->SetRemoteDescription(callee->CreateAnswerAndSetAsLocal()));
 
-  EXPECT_FALSE(caller->voice_rtcp_transport_channel());
-  EXPECT_FALSE(caller->video_rtcp_transport_channel());
+  EXPECT_FALSE(caller->voice_rtcp_transport());
+  EXPECT_FALSE(caller->video_rtcp_transport());
 }
 
-// When negotiating RTCP multiplexing, the PeerConnection makes RTCP transport
-// channels when the offer is sent, but will destroy them once the remote answer
-// is set.
+// When negotiating RTCP multiplexing, the PeerConnection makes RTCP transports
+// when the offer is sent, but will destroy them once the remote answer is set.
 TEST_P(PeerConnectionBundleTest,
        CreateRtcpTransportOnlyBeforeAnswerWithRtcpMuxNegotiate) {
   RTCConfiguration config;
@@ -532,14 +547,14 @@ TEST_P(PeerConnectionBundleTest,
 
   ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
 
-  EXPECT_TRUE(caller->voice_rtcp_transport_channel());
-  EXPECT_TRUE(caller->video_rtcp_transport_channel());
+  EXPECT_TRUE(caller->voice_rtcp_transport());
+  EXPECT_TRUE(caller->video_rtcp_transport());
 
   ASSERT_TRUE(
       caller->SetRemoteDescription(callee->CreateAnswerAndSetAsLocal()));
 
-  EXPECT_FALSE(caller->voice_rtcp_transport_channel());
-  EXPECT_FALSE(caller->video_rtcp_transport_channel());
+  EXPECT_FALSE(caller->voice_rtcp_transport());
+  EXPECT_FALSE(caller->video_rtcp_transport());
 }
 
 TEST_P(PeerConnectionBundleTest, FailToSetDescriptionWithBundleAndNoRtcpMux) {
@@ -588,7 +603,7 @@ TEST_P(PeerConnectionBundleTest,
 
   ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
   ASSERT_TRUE(
-      caller->SetRemoteDescription(callee->CreateAnswerAndSetAsLocal()));
+      caller->SetRemoteDescription(callee->CreateAnswerAndSetAsLocal(options)));
 
   // The way the *_WAIT checks work is they only wait if the condition fails,
   // which does not help in the case where state is not changing. This is
@@ -624,7 +639,7 @@ TEST_P(PeerConnectionBundleTest, BundleOnFirstMidInAnswer) {
 
   ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
 
-  auto* old_video_transport = caller->video_rtp_transport_channel();
+  auto* old_video_transport = caller->video_rtp_transport();
 
   auto answer = callee->CreateAnswer();
   auto* old_bundle_group =
@@ -640,9 +655,8 @@ TEST_P(PeerConnectionBundleTest, BundleOnFirstMidInAnswer) {
 
   ASSERT_TRUE(caller->SetRemoteDescription(std::move(answer)));
 
-  EXPECT_EQ(old_video_transport, caller->video_rtp_transport_channel());
-  EXPECT_EQ(caller->voice_rtp_transport_channel(),
-            caller->video_rtp_transport_channel());
+  EXPECT_EQ(old_video_transport, caller->video_rtp_transport());
+  EXPECT_EQ(caller->voice_rtp_transport(), caller->video_rtp_transport());
 }
 
 INSTANTIATE_TEST_CASE_P(PeerConnectionBundleTest,
