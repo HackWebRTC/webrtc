@@ -180,7 +180,6 @@ void VideoReceiveStream::Start() {
                           rtp_video_stream_receiver_.IsUlpfecEnabled();
 
   frame_buffer_->Start();
-  call_stats_->RegisterStatsObserver(this);
 
   if (rtp_video_stream_receiver_.IsRetransmissionsEnabled() &&
       protected_by_fec) {
@@ -215,6 +214,10 @@ void VideoReceiveStream::Start() {
       &rtp_video_stream_receiver_,
       rtp_video_stream_receiver_.IsRetransmissionsEnabled(), protected_by_fec,
       &stats_proxy_, renderer));
+
+  // Make sure we register as a stats observer *after* we've prepared the
+  // |video_stream_decoder_|.
+  call_stats_->RegisterStatsObserver(this);
 
   process_thread_->RegisterModule(&video_receiver_, RTC_FROM_HERE);
 
