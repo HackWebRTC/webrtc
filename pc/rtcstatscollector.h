@@ -209,6 +209,7 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
       const std::map<std::string, cricket::TransportStats>&
           transport_stats_by_name) const;
   std::vector<RtpTransceiverStatsInfo> PrepareTransceiverStatsInfos_s() const;
+  std::set<std::string> PrepareTransportNames_s() const;
 
   // Slots for signals (sigslot) that are wired up to |pc_|.
   void OnDataChannelCreated(DataChannel* channel);
@@ -232,6 +233,7 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
   // passed as arguments to avoid copies. This is thread safe - when we
   // set/reset we know there are no pending stats requests in progress.
   std::vector<RtpTransceiverStatsInfo> transceiver_stats_infos_;
+  std::set<std::string> transport_names_;
 
   Call::Stats call_stats_;
 
