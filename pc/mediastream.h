@@ -23,7 +23,7 @@ namespace webrtc {
 
 class MediaStream : public Notifier<MediaStreamInterface> {
  public:
-  static rtc::scoped_refptr<MediaStream> Create(const std::string& label);
+  static rtc::scoped_refptr<MediaStream> Create(const std::string& id);
 
   std::string id() const override { return id_; }
 
@@ -40,7 +40,7 @@ class MediaStream : public Notifier<MediaStreamInterface> {
   VideoTrackVector GetVideoTracks() override { return video_tracks_; }
 
  protected:
-  explicit MediaStream(const std::string& label);
+  explicit MediaStream(const std::string& id);
 
  private:
   template <typename TrackVector, typename Track>
