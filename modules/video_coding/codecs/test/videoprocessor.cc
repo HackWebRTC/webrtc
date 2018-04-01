@@ -181,7 +181,8 @@ VideoProcessor::VideoProcessor(webrtc::VideoEncoder* encoder,
       first_encoded_frame_(num_simulcast_or_spatial_layers_, true),
       last_encoded_frame_num_(num_simulcast_or_spatial_layers_),
       first_decoded_frame_(num_simulcast_or_spatial_layers_, true),
-      last_decoded_frame_num_(num_simulcast_or_spatial_layers_) {
+      last_decoded_frame_num_(num_simulcast_or_spatial_layers_),
+      post_encode_time_ns_(0) {
   // Sanity checks.
   RTC_CHECK(rtc::TaskQueue::Current())
       << "VideoProcessor must be run on a task queue.";
@@ -257,6 +258,8 @@ void VideoProcessor::ProcessFrame() {
     input_frames_.emplace(frame_number, input_frame);
   }
   last_inputed_timestamp_ = timestamp;
+
+  post_encode_time_ns_ = 0;
 
   // Create frame statistics object for all simulcast/spatial layers.
   for (size_t simulcast_svc_idx = 0;
@@ -348,8 +351,8 @@ void VideoProcessor::FrameEncoded(
 
   // Update frame statistics.
   frame_stat->encoding_successful = true;
-  frame_stat->encode_time_us =
-      GetElapsedTimeMicroseconds(frame_stat->encode_start_ns, encode_stop_ns);
+  frame_stat->encode_time_us = GetElapsedTimeMicroseconds(
+      frame_stat->encode_start_ns, encode_stop_ns - post_encode_time_ns_);
   frame_stat->target_bitrate_kbps = (bitrate_allocation_.GetTemporalLayerSum(
                                          simulcast_svc_idx, temporal_idx) +
                                      500) /
@@ -383,6 +386,12 @@ void VideoProcessor::FrameEncoded(
     RTC_CHECK(encoded_frame_writers_->at(simulcast_svc_idx)
                   ->WriteFrame(*encoded_image_for_decode,
                                config_.codec_settings.codecType));
+  }
+
+  if (!config_.IsAsyncCodec()) {
+    // To get pure encode time for next layers, measure time spent in encode
+    // callback and subtract it from encode time of next layers.
+    post_encode_time_ns_ += rtc::TimeNanos() - encode_stop_ns;
   }
 }
 

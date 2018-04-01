@@ -230,6 +230,11 @@ class VideoProcessor {
   std::map<size_t, size_t> frame_wxh_to_simulcast_svc_idx_
       RTC_GUARDED_BY(sequence_checker_);
 
+  // Time spent in frame encode callback. It is accumulated for layers and
+  // reset when frame encode starts. When next layer is encoded post-encode time
+  // is substracted from measured encode time. Thus we get pure encode time.
+  int64_t post_encode_time_ns_ RTC_GUARDED_BY(sequence_checker_);
+
   // This class must be operated on a TaskQueue.
   rtc::SequencedTaskChecker sequence_checker_;
 
