@@ -30,7 +30,10 @@ const int kCifHeight = 288;
 const int kNumFramesShort = 100;
 #endif
 const int kNumFramesLong = 300;
-const size_t kBitrateRdPerfKbps[] = {300, 600, 800, 1250, 1750, 2500};
+const size_t kBitrateRdPerfKbps[] = {100,  200,  300,  400,  500,  600,
+                                     700,  800,  1000, 1250, 1400, 1600,
+                                     1800, 2000, 2200, 2500};
+const size_t kNumFirstFramesToSkipAtRdPerfAnalysis = 60;
 }  // namespace
 
 class VideoProcessorIntegrationTestLibvpx
@@ -392,6 +395,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, DISABLED_MultiresVP8RdPerf) {
   config_.filename = "FourPeople_1280x720_30";
   config_.filepath = ResourcePath(config_.filename, "yuv");
   config_.num_frames = 300;
+  config_.print_frame_level_stats = true;
   config_.SetCodecSettings(kVideoCodecVP8, 3, 1, 3, true, true, false,
                            kResilienceOn, 1280, 720);
 
@@ -403,8 +407,8 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, DISABLED_MultiresVP8RdPerf) {
     ProcessFramesAndMaybeVerify(rate_profiles, nullptr, nullptr, nullptr,
                                 nullptr);
 
-    rd_stats[bitrate_kbps] =
-        stats_.SliceAndCalcLayerVideoStatistic(0, config_.num_frames - 1);
+    rd_stats[bitrate_kbps] = stats_.SliceAndCalcLayerVideoStatistic(
+        kNumFirstFramesToSkipAtRdPerfAnalysis, config_.num_frames - 1);
   }
 
   PrintRdPerf(rd_stats);
@@ -414,6 +418,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, DISABLED_SvcVP9RdPerf) {
   config_.filename = "FourPeople_1280x720_30";
   config_.filepath = ResourcePath(config_.filename, "yuv");
   config_.num_frames = 300;
+  config_.print_frame_level_stats = true;
   config_.SetCodecSettings(kVideoCodecVP9, 1, 3, 3, true, true, false,
                            kResilienceOn, 1280, 720);
 
@@ -425,8 +430,8 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, DISABLED_SvcVP9RdPerf) {
     ProcessFramesAndMaybeVerify(rate_profiles, nullptr, nullptr, nullptr,
                                 nullptr);
 
-    rd_stats[bitrate_kbps] =
-        stats_.SliceAndCalcLayerVideoStatistic(0, config_.num_frames - 1);
+    rd_stats[bitrate_kbps] = stats_.SliceAndCalcLayerVideoStatistic(
+        kNumFirstFramesToSkipAtRdPerfAnalysis, config_.num_frames - 1);
   }
 
   PrintRdPerf(rd_stats);
