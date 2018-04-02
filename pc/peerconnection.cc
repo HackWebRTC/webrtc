@@ -1225,6 +1225,9 @@ PeerConnection::AddTrackUnifiedPlan(
     const std::vector<std::string>& stream_ids) {
   auto transceiver = FindFirstTransceiverForAddedTrack(track);
   if (transceiver) {
+    RTC_LOG(LS_INFO) << "Reusing an existing "
+                     << cricket::MediaTypeToString(transceiver->media_type())
+                     << " transceiver for AddTrack.";
     if (transceiver->direction() == RtpTransceiverDirection::kRecvOnly) {
       transceiver->internal()->set_direction(
           RtpTransceiverDirection::kSendRecv);
@@ -1239,6 +1242,8 @@ PeerConnection::AddTrackUnifiedPlan(
         (track->kind() == MediaStreamTrackInterface::kAudioKind
              ? cricket::MEDIA_TYPE_AUDIO
              : cricket::MEDIA_TYPE_VIDEO);
+    RTC_LOG(LS_INFO) << "Adding " << cricket::MediaTypeToString(media_type)
+                     << " transceiver in response to a call to AddTrack.";
     auto sender = CreateSender(media_type, track, stream_ids);
     auto receiver = CreateReceiver(media_type, rtc::CreateRandomUuid());
     transceiver = CreateAndAddTransceiver(sender, receiver);
@@ -1390,6 +1395,8 @@ PeerConnection::AddTransceiver(
   std::vector<std::string> stream_ids = {
       !init.stream_ids.empty() ? init.stream_ids[0] : rtc::CreateRandomUuid()};
 
+  RTC_LOG(LS_INFO) << "Adding " << cricket::MediaTypeToString(media_type)
+                   << " transceiver in response to a call to AddTransceiver.";
   auto sender = CreateSender(media_type, track, stream_ids);
   auto receiver = CreateReceiver(media_type, rtc::CreateRandomUuid());
   auto transceiver = CreateAndAddTransceiver(sender, receiver);
@@ -1794,14 +1801,28 @@ RTCError PeerConnection::HandleLegacyOfferOptions(
 void PeerConnection::RemoveRecvDirectionFromReceivingTransceiversOfType(
     cricket::MediaType media_type) {
   for (auto transceiver : GetReceivingTransceiversOfType(media_type)) {
-    transceiver->internal()->set_direction(
-        RtpTransceiverDirectionWithRecvSet(transceiver->direction(), false));
+    RtpTransceiverDirection new_direction =
+        RtpTransceiverDirectionWithRecvSet(transceiver->direction(), false);
+    if (new_direction != transceiver->direction()) {
+      RTC_LOG(LS_INFO) << "Changing " << cricket::MediaTypeToString(media_type)
+                       << " transceiver (MID="
+                       << transceiver->mid().value_or("<not set>") << ") from "
+                       << RtpTransceiverDirectionToString(
+                              transceiver->direction())
+                       << " to "
+                       << RtpTransceiverDirectionToString(new_direction)
+                       << " since CreateOffer specified offer_to_receive=0";
+      transceiver->internal()->set_direction(new_direction);
+    }
   }
 }
 
 void PeerConnection::AddUpToOneReceivingTransceiverOfType(
     cricket::MediaType media_type) {
   if (GetReceivingTransceiversOfType(media_type).empty()) {
+    RTC_LOG(LS_INFO)
+        << "Adding one recvonly " << cricket::MediaTypeToString(media_type)
+        << " transceiver since CreateOffer specified offer_to_receive=1";
     RtpTransceiverInit init;
     init.direction = RtpTransceiverDirection::kRecvOnly;
     AddTransceiver(media_type, nullptr, init, /*fire_callback=*/false);
@@ -2032,6 +2053,8 @@ RTCError PeerConnection::ApplyLocalDescription(
         transceiver->internal()->set_current_direction(media_desc->direction());
       }
       if (content->rejected && !transceiver->stopped()) {
+        RTC_LOG(LS_INFO) << "Stopping transceiver for MID=" << content->name
+                         << " since the media section was rejected.";
         transceiver->Stop();
       }
     }
@@ -2079,9 +2102,6 @@ RTCError PeerConnection::ApplyLocalDescription(
           FindMediaSectionForTransceiver(transceiver, local_description());
       if (!content) {
         continue;
-      }
-      if (content->rejected && !transceiver->stopped()) {
-        transceiver->Stop();
       }
       const auto& streams = content->media_description()->streams();
       if (!content->rejected && !streams.empty()) {
@@ -2373,6 +2393,9 @@ RTCError PeerConnection::ApplyRemoteDescription(
           (!transceiver->current_direction() ||
            !RtpTransceiverDirectionHasRecv(
                *transceiver->current_direction()))) {
+        RTC_LOG(LS_INFO) << "Processing the addition of a new track for MID="
+                         << content->name << " (added to stream=" << sync_label
+                         << ").";
         rtc::scoped_refptr<MediaStreamInterface> stream =
             remote_streams_->find(sync_label);
         if (!stream) {
@@ -2390,12 +2413,16 @@ RTCError PeerConnection::ApplyRemoteDescription(
       if (!RtpTransceiverDirectionHasRecv(local_direction) &&
           (transceiver->current_direction() &&
            RtpTransceiverDirectionHasRecv(*transceiver->current_direction()))) {
+        RTC_LOG(LS_INFO) << "Processing the removal of a track for MID="
+                         << content->name;
         transceiver->internal()->receiver_internal()->SetStreams({});
       }
       if (type == SdpType::kPrAnswer || type == SdpType::kAnswer) {
         transceiver->internal()->set_current_direction(local_direction);
       }
       if (content->rejected && !transceiver->stopped()) {
+        RTC_LOG(LS_INFO) << "Stopping transceiver for MID=" << content->name
+                         << " since the media section was rejected.";
         transceiver->Stop();
       }
       if (!content->rejected &&
@@ -2555,6 +2582,8 @@ RTCError PeerConnection::UpdateTransceiversAndDataChannels(
     } else if (media_type == cricket::MEDIA_TYPE_DATA) {
       if (GetDataMid() && new_content.name != *GetDataMid()) {
         // Ignore all but the first data section.
+        RTC_LOG(LS_INFO) << "Ignoring data media section with MID="
+                         << new_content.name;
         continue;
       }
       RTCError error = UpdateDataChannel(source, new_content, bundle_group);
@@ -2652,6 +2681,8 @@ PeerConnection::AssociateTransceiver(cricket::ContentSource source,
             : old_remote_content->name;
     auto old_transceiver = GetAssociatedTransceiver(old_mid);
     if (old_transceiver) {
+      RTC_LOG(LS_INFO) << "Dissociating transceiver for MID=" << old_mid
+                       << " since the media section is being recycled.";
       old_transceiver->internal()->set_mid(rtc::nullopt);
       old_transceiver->internal()->set_mline_index(rtc::nullopt);
     }
@@ -2680,6 +2711,11 @@ PeerConnection::AssociateTransceiver(cricket::ContentSource source,
     // If no RtpTransceiver was found in the previous step, create one with a
     // recvonly direction.
     if (!transceiver) {
+      RTC_LOG(LS_INFO) << "Adding "
+                       << cricket::MediaTypeToString(media_desc->type())
+                       << " transceiver for MID=" << content.name
+                       << " at i=" << mline_index
+                       << " in response to the remote description.";
       auto sender =
           CreateSender(media_desc->type(), nullptr, {rtc::CreateRandomUuid()});
       std::string receiver_id;
@@ -4065,8 +4101,11 @@ void PeerConnection::UpdateRemoteSendersList(
 
 void PeerConnection::OnRemoteSenderAdded(const RtpSenderInfo& sender_info,
                                          cricket::MediaType media_type) {
-  MediaStreamInterface* stream = remote_streams_->find(sender_info.stream_id);
+  RTC_LOG(LS_INFO) << "Creating " << cricket::MediaTypeToString(media_type)
+                   << " receiver for track_id=" << sender_info.sender_id
+                   << " and stream_id=" << sender_info.stream_id;
 
+  MediaStreamInterface* stream = remote_streams_->find(sender_info.stream_id);
   if (media_type == cricket::MEDIA_TYPE_AUDIO) {
     CreateAudioReceiver(stream, sender_info);
   } else if (media_type == cricket::MEDIA_TYPE_VIDEO) {
