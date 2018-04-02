@@ -476,8 +476,6 @@ static bool AddStreamParams(
         }
       }
       stream_param.cname = rtcp_cname;
-      // TODO(steveanton): Support any number of stream ids.
-      RTC_CHECK(sender.stream_ids.size() == 1U);
       stream_param.set_stream_ids(sender.stream_ids);
       content_description->AddStream(stream_param);
 
@@ -488,8 +486,6 @@ static bool AddStreamParams(
       // Use existing generated SSRCs/groups, but update the sync_label if
       // necessary. This may be needed if a MediaStreamTrack was moved from one
       // MediaStream to another.
-      // TODO(steveanton): Support any number of stream ids.
-      RTC_CHECK(sender.stream_ids.size() == 1U);
       param->set_stream_ids(sender.stream_ids);
       content_description->AddStream(*param);
     }

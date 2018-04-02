@@ -37,8 +37,6 @@ class MockRtpSenderInternal : public RtpSenderInternal {
   MOCK_METHOD1(SetVoiceMediaChannel, void(cricket::VoiceMediaChannel*));
   MOCK_METHOD1(SetVideoMediaChannel, void(cricket::VideoMediaChannel*));
   MOCK_METHOD1(SetSsrc, void(uint32_t));
-  MOCK_METHOD1(set_stream_id, void(const std::string&));
-  MOCK_CONST_METHOD0(stream_id, std::string());
   MOCK_METHOD1(set_stream_ids, void(const std::vector<std::string>&));
   MOCK_METHOD0(Stop, void());
   MOCK_CONST_METHOD0(AttachmentId, int());

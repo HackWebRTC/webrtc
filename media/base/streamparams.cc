@@ -141,9 +141,15 @@ std::string StreamParams::ToString() const {
   if (!cname.empty()) {
     ost << "cname:" << cname << ";";
   }
-  if (!sync_label.empty()) {
-    ost << "sync_label:" << sync_label;
+  ost << "stream_ids:";
+  for (std::vector<std::string>::const_iterator it = stream_ids_.begin();
+       it != stream_ids_.end(); ++it) {
+    if (it != stream_ids_.begin()) {
+      ost << ",";
+    }
+    ost << *it;
   }
+  ost << ";";
   ost << "}";
   return ost.str();
 }
@@ -200,22 +206,15 @@ bool StreamParams::GetSecondarySsrc(const std::string& semantics,
 }
 
 std::vector<std::string> StreamParams::stream_ids() const {
-  if (sync_label.empty()) {
-    return {};
-  }
-  return {sync_label};
+  return stream_ids_;
 }
 
 void StreamParams::set_stream_ids(const std::vector<std::string>& stream_ids) {
-  // TODO(bugs.webrtc.org/7932): Support an arbitrary number of stream ids.
-  RTC_DCHECK_LE(stream_ids.size(), 1) << "set_stream_ids currently only "
-                                         "supports exactly 0 or 1 stream "
-                                         "id.";
-  sync_label = (stream_ids.empty() ? "" : stream_ids[0]);
+  stream_ids_ = stream_ids;
 }
 
 std::string StreamParams::first_stream_id() const {
-  return sync_label;
+  return stream_ids_.empty() ? "" : stream_ids_[0];
 }
 
 bool IsOneSsrcStream(const StreamParams& sp) {
