@@ -32,10 +32,14 @@ std::string FrameStatistics::ToString() const {
   ss << " decoded_height " << decoded_height;
   ss << " simulcast_svc_idx " << simulcast_svc_idx;
   ss << " temporal_layer_idx " << temporal_layer_idx;
+  ss << " inter_layer_predicted " << inter_layer_predicted;
   ss << " frame_type " << frame_type;
   ss << " length_bytes " << length_bytes;
   ss << " qp " << qp;
   ss << " psnr " << psnr;
+  ss << " psnr_y " << psnr_y;
+  ss << " psnr_u " << psnr_u;
+  ss << " psnr_v " << psnr_v;
   ss << " ssim " << ssim;
   ss << " encode_time_us " << encode_time_us;
   ss << " decode_time_us " << decode_time_us;
