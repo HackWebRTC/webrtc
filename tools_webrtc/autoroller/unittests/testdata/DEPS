@@ -17,8 +17,9 @@ deps = {
 
 deps_os = {
   # Entry only present in WebRTC, not Chromium.
-  'win': {
-    'src/third_party/winsdk_samples':
-      Var('chromium_git') + '/external/webrtc/deps/third_party/winsdk_samples_v71@e71b549167a665d7424d6f1dadfbff4b4aad1589',
+  'android': {
+    'src/examples/androidtests/third_party/gradle':
+      Var('chromium_git') + '/external/github.com/gradle/gradle.git' + '@' +
+        '89af43c4d0506f69980f00dde78c97b2f81437f8',
   },
 }
