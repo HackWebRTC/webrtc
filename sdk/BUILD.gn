@@ -669,22 +669,33 @@ if (is_ios || is_mac) {
           ]
 
           sources = [
+            "objc/Framework/UnitTests/ObjCVideoTrackSource_xctest.mm",
+            "objc/Framework/UnitTests/RTCCVPixelBuffer_xctest.mm",
             "objc/Framework/UnitTests/RTCCallbackLogger_xctest.m",
             "objc/Framework/UnitTests/RTCDoNotPutCPlusPlusInFrameworkHeaders_xctest.m",
             "objc/Framework/UnitTests/RTCFileVideoCapturer_xctest.mm",
+            "objc/Framework/UnitTests/frame_buffer_helpers.h",
+            "objc/Framework/UnitTests/frame_buffer_helpers.mm",
           ]
 
           deps = [
             ":common_objc",
             ":framework_objc",
+            ":native_api",
+            ":native_video",
             ":videocapture_objc",
+            ":videoframebuffer_objc",
             ":videosource_objc",
             ":videotoolbox_objc",
             "../../system_wrappers:system_wrappers_default",
+            "../api:video_frame_api_i420",
+            "../common_video:common_video",
             "../media:rtc_media_base",
+            "../media:rtc_media_tests_utils",
             "../modules:module_api",
             "../rtc_base:rtc_base",
             "../rtc_base:rtc_base_tests_utils",
+            "//third_party/libyuv",
           ]
 
           if (rtc_use_metal_rendering) {
@@ -698,6 +709,12 @@ if (is_ios || is_mac) {
           ]
 
           include_dirs += [ "$root_out_dir/WebRTC.framework/Headers/" ]
+
+          if (!build_with_chromium && is_clang) {
+            # Suppress warnings from the Chromium Clang plugin
+            # (bugs.webrtc.org/163).
+            suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+          }
         }
 
         bundle_data("sdk_unittests_bundle_data") {

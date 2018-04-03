@@ -89,6 +89,10 @@
   return self;
 }
 
+- (rtc::scoped_refptr<webrtc::I420BufferInterface>)nativeI420Buffer {
+  return _i420Buffer;
+}
+
 @end
 
 @implementation RTCMutableI420Buffer
