@@ -5533,10 +5533,10 @@ Call::Stats PeerConnection::GetCallStats() {
 bool PeerConnection::CreateSctpTransport_n(const std::string& mid) {
   RTC_DCHECK(network_thread()->IsCurrent());
   RTC_DCHECK(sctp_factory_);
-  cricket::DtlsTransportInternal* tc =
+  cricket::DtlsTransportInternal* dtls_transport =
       transport_controller_->GetDtlsTransport(mid);
-  RTC_DCHECK(tc);
-  sctp_transport_ = sctp_factory_->CreateSctpTransport(tc);
+  RTC_DCHECK(dtls_transport);
+  sctp_transport_ = sctp_factory_->CreateSctpTransport(dtls_transport);
   RTC_DCHECK(sctp_transport_);
   sctp_invoker_.reset(new rtc::AsyncInvoker());
   sctp_transport_->SignalReadyToSendData.connect(
@@ -5546,7 +5546,7 @@ bool PeerConnection::CreateSctpTransport_n(const std::string& mid) {
   sctp_transport_->SignalStreamClosedRemotely.connect(
       this, &PeerConnection::OnSctpStreamClosedRemotely_n);
   sctp_mid_ = mid;
-  sctp_transport_->SetTransportChannel(tc);
+  sctp_transport_->SetDtlsTransport(dtls_transport);
   return true;
 }
 
@@ -6122,7 +6122,7 @@ void PeerConnection::OnDtlsTransportChanged(
     cricket::DtlsTransportInternal* dtls_transport) {
   if (sctp_transport_) {
     RTC_DCHECK(mid == sctp_mid_);
-    sctp_transport_->SetTransportChannel(dtls_transport);
+    sctp_transport_->SetDtlsTransport(dtls_transport);
   }
 }
 

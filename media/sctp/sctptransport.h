@@ -46,15 +46,15 @@ struct SctpInboundPacket;
 //  3.  OnSctpOutboundPacket(wrapped_data)
 // [sctp thread returns having async invoked on the network thread]
 //  4.  SctpTransport::OnPacketFromSctpToNetwork(wrapped_data)
-//  5.  TransportChannel::SendPacket(wrapped_data)
+//  5.  DtlsTransport::SendPacket(wrapped_data)
 //  6.  ... across network ... a packet is sent back ...
 //  7.  SctpTransport::OnPacketReceived(wrapped_data)
 //  8.  usrsctp_conninput(wrapped_data)
 // [network thread returns; sctp thread then calls the following]
 //  9.  OnSctpInboundData(data)
 // [sctp thread returns having async invoked on the network thread]
-//  10. SctpTransport::OnInboundPacketFromSctpToChannel(inboundpacket)
-//  11. SctpTransport::OnDataFromSctpToChannel(data)
+//  10. SctpTransport::OnInboundPacketFromSctpToTransport(inboundpacket)
+//  11. SctpTransport::OnDataFromSctpToTransport(data)
 //  12. SctpTransport::SignalDataReceived(data)
 // [from the same thread, methods registered/connected to
 //  SctpTransport are called with the recieved data]
@@ -71,7 +71,7 @@ class SctpTransport : public SctpTransportInternal,
   ~SctpTransport() override;
 
   // SctpTransportInternal overrides (see sctptransportinternal.h for comments).
-  void SetTransportChannel(rtc::PacketTransportInternal* channel) override;
+  void SetDtlsTransport(rtc::PacketTransportInternal* transport) override;
   bool Start(int local_port, int remote_port) override;
   bool OpenStream(int sid) override;
   bool ResetStream(int sid) override;
@@ -88,8 +88,8 @@ class SctpTransport : public SctpTransportInternal,
   rtc::Thread* network_thread() const { return network_thread_; }
 
  private:
-  void ConnectTransportChannelSignals();
-  void DisconnectTransportChannelSignals();
+  void ConnectTransportSignals();
+  void DisconnectTransportSignals();
 
   // Creates the socket and connects.
   bool Connect();
@@ -124,11 +124,11 @@ class SctpTransport : public SctpTransportInternal,
   // Called using |invoker_| to decide what to do with the packet.
   // The |flags| parameter is used by SCTP to distinguish notification packets
   // from other types of packets.
-  void OnInboundPacketFromSctpToChannel(const rtc::CopyOnWriteBuffer& buffer,
-                                        ReceiveDataParams params,
-                                        int flags);
-  void OnDataFromSctpToChannel(const ReceiveDataParams& params,
-                               const rtc::CopyOnWriteBuffer& buffer);
+  void OnInboundPacketFromSctpToTransport(const rtc::CopyOnWriteBuffer& buffer,
+                                          ReceiveDataParams params,
+                                          int flags);
+  void OnDataFromSctpToTransport(const ReceiveDataParams& params,
+                                 const rtc::CopyOnWriteBuffer& buffer);
   void OnNotificationFromSctp(const rtc::CopyOnWriteBuffer& buffer);
   void OnNotificationAssocChange(const sctp_assoc_change& change);
 
@@ -140,7 +140,7 @@ class SctpTransport : public SctpTransportInternal,
   // Helps pass inbound/outbound packets asynchronously to the network thread.
   rtc::AsyncInvoker invoker_;
   // Underlying DTLS channel.
-  rtc::PacketTransportInternal* transport_channel_;
+  rtc::PacketTransportInternal* transport_;
   bool was_ever_writable_ = false;
   int local_port_ = kSctpDefaultPort;
   int remote_port_ = kSctpDefaultPort;
@@ -149,8 +149,7 @@ class SctpTransport : public SctpTransportInternal,
   // Has Start been called? Don't create SCTP socket until it has.
   bool started_ = false;
   // Are we ready to queue data (SCTP socket created, and not blocked due to
-  // congestion control)? Different than |transport_channel_|'s "ready to
-  // send".
+  // congestion control)? Different than |transport_|'s "ready to send".
   bool ready_to_send_data_ = false;
 
   typedef std::set<uint32_t> StreamSet;
@@ -179,9 +178,9 @@ class SctpTransportFactory : public SctpTransportInternalFactory {
       : network_thread_(network_thread) {}
 
   std::unique_ptr<SctpTransportInternal> CreateSctpTransport(
-      rtc::PacketTransportInternal* channel) override {
+      rtc::PacketTransportInternal* transport) override {
     return std::unique_ptr<SctpTransportInternal>(
-        new SctpTransport(network_thread_, channel));
+        new SctpTransport(network_thread_, transport));
   }
 
  private:

@@ -238,16 +238,16 @@ class SctpTransportTest : public testing::Test, public sigslot::has_slots<> {
 };
 
 // Test that data can be sent end-to-end when an SCTP transport starts with one
-// transport channel (which is unwritable), and then switches to another
-// channel. A common scenario due to how BUNDLE works.
-TEST_F(SctpTransportTest, SwitchTransportChannel) {
+// transport (which is unwritable), and then switches to another transport. A
+// common scenario due to how BUNDLE works.
+TEST_F(SctpTransportTest, SwitchDtlsTransport) {
   FakeDtlsTransport black_hole("black hole", 0);
   FakeDtlsTransport fake_dtls1("fake dtls 1", 0);
   FakeDtlsTransport fake_dtls2("fake dtls 2", 0);
   SctpFakeDataReceiver recv1;
   SctpFakeDataReceiver recv2;
 
-  // Construct transport1 with the "black hole" channel.
+  // Construct transport1 with the "black hole" transport.
   std::unique_ptr<SctpTransport> transport1(
       CreateTransport(&black_hole, &recv1));
   std::unique_ptr<SctpTransport> transport2(
@@ -261,10 +261,10 @@ TEST_F(SctpTransportTest, SwitchTransportChannel) {
   transport1->Start(kTransport1Port, kTransport2Port);
   transport2->Start(kTransport2Port, kTransport1Port);
 
-  // Switch transport1_ to the normal fake_dtls1_ channel.
-  transport1->SetTransportChannel(&fake_dtls1);
+  // Switch transport1_ to the normal fake_dtls1_ transport.
+  transport1->SetDtlsTransport(&fake_dtls1);
 
-  // Connect the two fake DTLS channels.
+  // Connect the two fake DTLS transports.
   bool asymmetric = false;
   fake_dtls1.SetDestination(&fake_dtls2, asymmetric);
 
@@ -274,6 +274,10 @@ TEST_F(SctpTransportTest, SwitchTransportChannel) {
   ASSERT_TRUE(SendData(transport2.get(), 1, "bar", &result));
   EXPECT_TRUE_WAIT(ReceivedData(&recv2, 1, "foo"), kDefaultTimeout);
   EXPECT_TRUE_WAIT(ReceivedData(&recv1, 1, "bar"), kDefaultTimeout);
+
+  // Setting a null DtlsTransport should work. This could happen when an SCTP
+  // data section is rejected.
+  transport1->SetDtlsTransport(nullptr);
 }
 
 // Calling Start twice shouldn't do anything bad, if with the same parameters.
@@ -317,7 +321,7 @@ TEST_F(SctpTransportTest, NegativeOnePortTreatedAsDefault) {
   transport1->Start(kSctpDefaultPort, kSctpDefaultPort);
   transport2->Start(-1, -1);
 
-  // Connect the two fake DTLS channels.
+  // Connect the two fake DTLS transports.
   bool asymmetric = false;
   fake_dtls1.SetDestination(&fake_dtls2, asymmetric);
 
@@ -347,7 +351,7 @@ TEST_F(SctpTransportTest, ResetStreamWithAlreadyResetStreamFails) {
 }
 
 // Test that SignalReadyToSendData is fired after Start has been called and the
-// DTLS channel is writable.
+// DTLS transport is writable.
 TEST_F(SctpTransportTest, SignalReadyToSendDataAfterDtlsWritable) {
   FakeDtlsTransport fake_dtls("fake dtls", 0);
   SctpFakeDataReceiver recv;

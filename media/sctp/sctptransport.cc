@@ -361,8 +361,8 @@ class SctpTransport::UsrSctpWrapper {
       // CopyOnWriteBuffer is the most convenient way to do this.
       transport->invoker_.AsyncInvoke<void>(
           RTC_FROM_HERE, transport->network_thread_,
-          rtc::Bind(&SctpTransport::OnInboundPacketFromSctpToChannel, transport,
-                    buffer, params, flags));
+          rtc::Bind(&SctpTransport::OnInboundPacketFromSctpToTransport,
+                    transport, buffer, params, flags));
     }
     free(data);
     return 1;
@@ -405,14 +405,14 @@ class SctpTransport::UsrSctpWrapper {
 };
 
 SctpTransport::SctpTransport(rtc::Thread* network_thread,
-                             rtc::PacketTransportInternal* channel)
+                             rtc::PacketTransportInternal* transport)
     : network_thread_(network_thread),
-      transport_channel_(channel),
-      was_ever_writable_(channel->writable()) {
+      transport_(transport),
+      was_ever_writable_(transport->writable()) {
   RTC_DCHECK(network_thread_);
-  RTC_DCHECK(transport_channel_);
+  RTC_DCHECK(transport_);
   RTC_DCHECK_RUN_ON(network_thread_);
-  ConnectTransportChannelSignals();
+  ConnectTransportSignals();
 }
 
 SctpTransport::~SctpTransport() {
@@ -420,15 +420,14 @@ SctpTransport::~SctpTransport() {
   CloseSctpSocket();
 }
 
-void SctpTransport::SetTransportChannel(rtc::PacketTransportInternal* channel) {
+void SctpTransport::SetDtlsTransport(rtc::PacketTransportInternal* transport) {
   RTC_DCHECK_RUN_ON(network_thread_);
-  RTC_DCHECK(channel);
-  DisconnectTransportChannelSignals();
-  transport_channel_ = channel;
-  ConnectTransportChannelSignals();
-  if (!was_ever_writable_ && channel->writable()) {
+  DisconnectTransportSignals();
+  transport_ = transport;
+  ConnectTransportSignals();
+  if (!was_ever_writable_ && transport && transport->writable()) {
     was_ever_writable_ = true;
-    // New channel is writable, now we can start the SCTP connection if Start
+    // New transport is writable, now we can start the SCTP connection if Start
     // was called already.
     if (started_) {
       RTC_DCHECK(!sock_);
@@ -457,7 +456,7 @@ bool SctpTransport::Start(int local_sctp_port, int remote_sctp_port) {
   remote_port_ = remote_sctp_port;
   started_ = true;
   RTC_DCHECK(!sock_);
-  // Only try to connect if the DTLS channel has been writable before
+  // Only try to connect if the DTLS transport has been writable before
   // (indicating that the DTLS handshake is complete).
   if (was_ever_writable_) {
     return Connect();
@@ -591,18 +590,23 @@ bool SctpTransport::ReadyToSendData() {
   return ready_to_send_data_;
 }
 
-void SctpTransport::ConnectTransportChannelSignals() {
+void SctpTransport::ConnectTransportSignals() {
   RTC_DCHECK_RUN_ON(network_thread_);
-  transport_channel_->SignalWritableState.connect(
-      this, &SctpTransport::OnWritableState);
-  transport_channel_->SignalReadPacket.connect(this,
-                                               &SctpTransport::OnPacketRead);
+  if (!transport_) {
+    return;
+  }
+  transport_->SignalWritableState.connect(this,
+                                          &SctpTransport::OnWritableState);
+  transport_->SignalReadPacket.connect(this, &SctpTransport::OnPacketRead);
 }
 
-void SctpTransport::DisconnectTransportChannelSignals() {
+void SctpTransport::DisconnectTransportSignals() {
   RTC_DCHECK_RUN_ON(network_thread_);
-  transport_channel_->SignalWritableState.disconnect(this);
-  transport_channel_->SignalReadPacket.disconnect(this);
+  if (!transport_) {
+    return;
+  }
+  transport_->SignalWritableState.disconnect(this);
+  transport_->SignalReadPacket.disconnect(this);
 }
 
 bool SctpTransport::Connect() {
@@ -836,7 +840,7 @@ void SctpTransport::SetReadyToSendData() {
 
 void SctpTransport::OnWritableState(rtc::PacketTransportInternal* transport) {
   RTC_DCHECK_RUN_ON(network_thread_);
-  RTC_DCHECK_EQ(transport_channel_, transport);
+  RTC_DCHECK_EQ(transport_, transport);
   if (!was_ever_writable_ && transport->writable()) {
     was_ever_writable_ = true;
     if (started_) {
@@ -852,7 +856,7 @@ void SctpTransport::OnPacketRead(rtc::PacketTransportInternal* transport,
                                  const rtc::PacketTime& packet_time,
                                  int flags) {
   RTC_DCHECK_RUN_ON(network_thread_);
-  RTC_DCHECK_EQ(transport_channel_, transport);
+  RTC_DCHECK_EQ(transport_, transport);
   TRACE_EVENT0("webrtc", "SctpTransport::OnPacketRead");
 
   if (flags & PF_SRTP_BYPASS) {
@@ -906,24 +910,24 @@ void SctpTransport::OnPacketFromSctpToNetwork(
   }
   TRACE_EVENT0("webrtc", "SctpTransport::OnPacketFromSctpToNetwork");
 
-  // Don't create noise by trying to send a packet when the DTLS channel isn't
+  // Don't create noise by trying to send a packet when the DTLS transport isn't
   // even writable.
-  if (!transport_channel_->writable()) {
+  if (!transport_ || !transport_->writable()) {
     return;
   }
 
   // Bon voyage.
-  transport_channel_->SendPacket(buffer.data<char>(), buffer.size(),
-                                 rtc::PacketOptions(), PF_NORMAL);
+  transport_->SendPacket(buffer.data<char>(), buffer.size(),
+                         rtc::PacketOptions(), PF_NORMAL);
 }
 
-void SctpTransport::OnInboundPacketFromSctpToChannel(
+void SctpTransport::OnInboundPacketFromSctpToTransport(
     const rtc::CopyOnWriteBuffer& buffer,
     ReceiveDataParams params,
     int flags) {
   RTC_DCHECK_RUN_ON(network_thread_);
   RTC_LOG(LS_VERBOSE) << debug_name_
-                      << "->OnInboundPacketFromSctpToChannel(...): "
+                      << "->OnInboundPacketFromSctpToTransport(...): "
                       << "Received SCTP data:"
                       << " sid=" << params.sid
                       << " notification: " << (flags & MSG_NOTIFICATION)
@@ -932,22 +936,22 @@ void SctpTransport::OnInboundPacketFromSctpToChannel(
   // connection" message. This sets sock_ = NULL;
   if (!buffer.size() || !buffer.data()) {
     RTC_LOG(LS_INFO) << debug_name_
-                     << "->OnInboundPacketFromSctpToChannel(...): "
+                     << "->OnInboundPacketFromSctpToTransport(...): "
                         "No data, closing.";
     return;
   }
   if (flags & MSG_NOTIFICATION) {
     OnNotificationFromSctp(buffer);
   } else {
-    OnDataFromSctpToChannel(params, buffer);
+    OnDataFromSctpToTransport(params, buffer);
   }
 }
 
-void SctpTransport::OnDataFromSctpToChannel(
+void SctpTransport::OnDataFromSctpToTransport(
     const ReceiveDataParams& params,
     const rtc::CopyOnWriteBuffer& buffer) {
   RTC_DCHECK_RUN_ON(network_thread_);
-  RTC_LOG(LS_VERBOSE) << debug_name_ << "->OnDataFromSctpToChannel(...): "
+  RTC_LOG(LS_VERBOSE) << debug_name_ << "->OnDataFromSctpToTransport(...): "
                       << "Posting with length: " << buffer.size()
                       << " on stream " << params.sid;
   // Reports all received messages to upper layers, no matter whether the sid

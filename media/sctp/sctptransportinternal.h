@@ -48,17 +48,15 @@ constexpr uint16_t kMinSctpSid = 0;
 // usrsctp.h)
 const int kSctpDefaultPort = 5000;
 
-// Abstract SctpTransport interface for use internally (by
-// PeerConnection/WebRtcSession/etc.). Exists to allow mock/fake SctpTransports
-// to be created.
+// Abstract SctpTransport interface for use internally (by PeerConnection etc.).
+// Exists to allow mock/fake SctpTransports to be created.
 class SctpTransportInternal {
  public:
   virtual ~SctpTransportInternal() {}
 
-  // Changes what underlying DTLS channel is uses. Used when switching which
+  // Changes what underlying DTLS transport is uses. Used when switching which
   // bundled transport the SctpTransport uses.
-  // Assumes |channel| is non-null.
-  virtual void SetTransportChannel(rtc::PacketTransportInternal* channel) = 0;
+  virtual void SetDtlsTransport(rtc::PacketTransportInternal* transport) = 0;
 
   // When Start is called, connects as soon as possible; this can be called
   // before DTLS completes, in which case the connection will begin when DTLS

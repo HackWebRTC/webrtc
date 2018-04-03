@@ -2258,10 +2258,39 @@ TEST_P(PeerConnectionInterfaceTest, DataChannelCloseWhenPeerConnectionClose) {
   EXPECT_EQ(DataChannelInterface::kClosed, data2->state());
 }
 
-// This test that data channels can be rejected in an answer.
-TEST_P(PeerConnectionInterfaceTest, TestRejectDataChannelInAnswer) {
+// This tests that RTP data channels can be rejected in an answer.
+TEST_P(PeerConnectionInterfaceTest, TestRejectRtpDataChannelInAnswer) {
   FakeConstraints constraints;
   constraints.SetAllowRtpDataChannels();
+  CreatePeerConnection(&constraints);
+
+  rtc::scoped_refptr<DataChannelInterface> offer_channel(
+      pc_->CreateDataChannel("offer_channel", NULL));
+
+  CreateOfferAsLocalDescription();
+
+  // Create an answer where the m-line for data channels are rejected.
+  std::string sdp;
+  EXPECT_TRUE(pc_->local_description()->ToString(&sdp));
+  std::unique_ptr<SessionDescriptionInterface> answer(
+      webrtc::CreateSessionDescription(SdpType::kAnswer, sdp));
+  ASSERT_TRUE(answer);
+  cricket::ContentInfo* data_info =
+      cricket::GetFirstDataContent(answer->description());
+  data_info->rejected = true;
+
+  DoSetRemoteDescription(std::move(answer));
+  EXPECT_EQ(DataChannelInterface::kClosed, offer_channel->state());
+}
+
+#ifdef HAVE_SCTP
+// This tests that SCTP data channels can be rejected in an answer.
+TEST_P(PeerConnectionInterfaceTest, TestRejectSctpDataChannelInAnswer)
+#else
+TEST_P(PeerConnectionInterfaceTest, DISABLED_TestRejectSctpDataChannelInAnswer)
+#endif
+{
+  FakeConstraints constraints;
   CreatePeerConnection(&constraints);
 
   rtc::scoped_refptr<DataChannelInterface> offer_channel(
