@@ -432,7 +432,7 @@ def CheckNoStreamUsageIsAdded(input_api, output_api,
   include_re = input_api.re.compile(r'#include <(i|o|s)stream>')
   usage_re = input_api.re.compile(r'std::(w|i|o|io|wi|wo|wio)(string)*stream')
   no_presubmit_re = input_api.re.compile(
-      r'  // no-presubmit-check TODO\(webrtc:8982\)')
+      r'// no-presubmit-check TODO\(webrtc:8982\)')
   for f in input_api.AffectedSourceFiles(input_api.FilterSourceFile):
     if f.LocalPath() == 'PRESUBMIT.py':
       continue

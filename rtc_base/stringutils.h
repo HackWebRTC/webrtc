@@ -78,7 +78,7 @@ inline int _strnicmp(const char* s1, const char* s2, size_t n) {
   return strncasecmp(s1, s2, n);
 }
 
-#endif // WEBRTC_POSIX
+#endif  // WEBRTC_POSIX
 
 ///////////////////////////////////////////////////////////////////////////////
 // Traits simplifies porting string functions to be CTYPE-agnostic
@@ -91,9 +91,9 @@ const size_t SIZE_UNKNOWN = static_cast<size_t>(-1);
 template<class CTYPE>
 struct Traits {
   // STL string type
-  //typedef XXX string;
+  // typedef XXX string;
   // Null-terminated string
-  //inline static const CTYPE* empty_str();
+  // inline static const CTYPE* empty_str();
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -119,7 +119,7 @@ const CTYPE* strchr(const CTYPE* str, const CTYPE* chs) {
 
 template<class CTYPE>
 const CTYPE* strchrn(const CTYPE* str, size_t slen, CTYPE ch) {
-  for (size_t i=0; i<slen && str[i]; ++i) {
+  for (size_t i=0; i < slen && str[i]; ++i) {
     if (str[i] == ch) {
       return str + i;
     }
@@ -312,6 +312,7 @@ bool ends_with(const char *s1, const char *s2);
 // Remove leading and trailing whitespaces.
 std::string string_trim(const std::string& s);
 
+std::string ToHex(const int i);
 }  // namespace rtc
 
-#endif // RTC_BASE_STRINGUTILS_H_
+#endif  // RTC_BASE_STRINGUTILS_H_

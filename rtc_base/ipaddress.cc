@@ -217,12 +217,16 @@ const InterfaceAddress& InterfaceAddress::operator=(
 }
 
 std::ostream& operator<<(std::ostream& os, const InterfaceAddress& ip) {
-  os << static_cast<const IPAddress&>(ip);
+  return os << ip.ToString();
+}
 
-  if (ip.family() == AF_INET6)
-    os << "|flags:0x" << std::hex << ip.ipv6_flags();
+std::string InterfaceAddress::ToString() const {
+  std::string result = IPAddress::ToString();
 
-  return os;
+  if (family() == AF_INET6)
+    result += "|flags:0x" + rtc::ToHex(ipv6_flags());
+
+  return result;
 }
 
 static bool IPIsPrivateNetworkV4(const IPAddress& ip) {

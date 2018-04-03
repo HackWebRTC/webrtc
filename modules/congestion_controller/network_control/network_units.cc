@@ -50,5 +50,4 @@ DataSize operator*(const TimeDelta& duration, const DataRate& rate) {
   return rate * duration;
 }
 
-
 }  // namespace webrtc

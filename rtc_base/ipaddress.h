@@ -144,6 +144,8 @@ class InterfaceAddress : public IPAddress {
   friend std::ostream& operator<<(std::ostream& os,
                                   const InterfaceAddress& addr);
 
+  std::string ToString() const;
+
  private:
   int ipv6_flags_;
 };
