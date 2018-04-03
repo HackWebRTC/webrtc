@@ -1842,6 +1842,13 @@ bool WebRtcVoiceMediaChannel::AddRecvStream(const StreamParams& sp) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   RTC_LOG(LS_INFO) << "AddRecvStream: " << sp.ToString();
 
+  if (!sp.has_ssrcs()) {
+    // This is a StreamParam with unsignaled SSRCs. Store it, so it can be used
+    // later when we know the SSRCs on the first packet arrival.
+    unsignaled_stream_params_ = sp;
+    return true;
+  }
+
   if (!ValidateStreamParams(sp)) {
     return false;
   }
@@ -1881,6 +1888,13 @@ bool WebRtcVoiceMediaChannel::RemoveRecvStream(uint32_t ssrc) {
   TRACE_EVENT0("webrtc", "WebRtcVoiceMediaChannel::RemoveRecvStream");
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   RTC_LOG(LS_INFO) << "RemoveRecvStream: " << ssrc;
+
+  if (ssrc == 0) {
+    // This indicates that we need to remove the unsignaled stream parameters
+    // that are cached.
+    unsignaled_stream_params_ = StreamParams();
+    return true;
+  }
 
   const auto it = recv_streams_.find(ssrc);
   if (it == recv_streams_.end()) {
@@ -1993,7 +2007,7 @@ void WebRtcVoiceMediaChannel::OnPacketReceived(
       unsignaled_recv_ssrcs_.end(), ssrc) == unsignaled_recv_ssrcs_.end());
 
   // Add new stream.
-  StreamParams sp;
+  StreamParams sp = unsignaled_stream_params_;
   sp.ssrcs.push_back(ssrc);
   RTC_LOG(LS_INFO) << "Creating unsignaled receive stream for SSRC=" << ssrc;
   if (!AddRecvStream(sp)) {

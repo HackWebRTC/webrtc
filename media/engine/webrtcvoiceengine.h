@@ -252,6 +252,12 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   // Queue of unsignaled SSRCs; oldest at the beginning.
   std::vector<uint32_t> unsignaled_recv_ssrcs_;
 
+  // This is a stream param that comes from the remote description, but wasn't
+  // signaled with any a=ssrc lines. It holds the information that was signaled
+  // before the unsignaled receive stream is created when the first packet is
+  // received.
+  StreamParams unsignaled_stream_params_;
+
   // Volume for unsignaled streams, which may be set before the stream exists.
   double default_recv_volume_ = 1.0;
   // Sink for latest unsignaled stream - may be set before the stream exists.

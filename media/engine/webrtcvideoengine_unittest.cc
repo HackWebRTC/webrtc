@@ -4184,6 +4184,44 @@ TEST_F(WebRtcVideoChannelTest, MapsReceivedPayloadTypeToCodecName) {
   EXPECT_STREQ("", info.receivers[0].codec_name.c_str());
 }
 
+// Tests that when we add a stream without SSRCs, but contains a stream_id
+// that it is stored and its stream id is later used when the first packet
+// arrives to properly create a receive stream with a sync label.
+TEST_F(WebRtcVideoChannelTest, RecvUnsignaledSsrcWithSignaledStreamId) {
+  const char kSyncLabel[] = "sync_label";
+  cricket::StreamParams unsignaled_stream;
+  unsignaled_stream.set_stream_ids({kSyncLabel});
+  ASSERT_TRUE(channel_->AddRecvStream(unsignaled_stream));
+  // The stream shouldn't have been created at this point because it doesn't
+  // have any SSRCs.
+  EXPECT_EQ(0, fake_call_->GetVideoReceiveStreams().size());
+
+  // Create and deliver packet.
+  const size_t kDataLength = 12;
+  uint8_t data[kDataLength];
+  memset(data, 0, sizeof(data));
+  rtc::SetBE32(&data[8], kIncomingUnsignalledSsrc);
+  rtc::CopyOnWriteBuffer packet(data, kDataLength);
+  rtc::PacketTime packet_time;
+  channel_->OnPacketReceived(&packet, packet_time);
+
+  // The stream should now be created with the appropriate sync label.
+  EXPECT_EQ(1u, fake_call_->GetVideoReceiveStreams().size());
+  EXPECT_EQ(kSyncLabel,
+            fake_call_->GetVideoReceiveStreams()[0]->GetConfig().sync_group);
+
+  // Removing the unsignaled stream should clear the cache. This time when
+  // a default video receive stream is created it won't have a sync_group.
+  ASSERT_TRUE(channel_->RemoveRecvStream(0));
+  ASSERT_TRUE(channel_->RemoveRecvStream(kIncomingUnsignalledSsrc));
+  EXPECT_EQ(0u, fake_call_->GetVideoReceiveStreams().size());
+
+  channel_->OnPacketReceived(&packet, packet_time);
+  EXPECT_EQ(1u, fake_call_->GetVideoReceiveStreams().size());
+  EXPECT_TRUE(
+      fake_call_->GetVideoReceiveStreams()[0]->GetConfig().sync_group.empty());
+}
+
 void WebRtcVideoChannelTest::TestReceiveUnsignaledSsrcPacket(
     uint8_t payload_type,
     bool expect_created_receive_stream) {

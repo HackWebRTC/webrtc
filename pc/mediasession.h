@@ -35,8 +35,6 @@ const char kDefaultRtcpCname[] = "DefaultRtcpCname";
 // Options for an RtpSender contained with an media description/"m=" section.
 struct SenderOptions {
   std::string track_id;
-  // TODO(steveanton): As part of work towards Unified Plan, this has been
-  // changed to be a vector. But for now this can only have exactly one.
   std::vector<std::string> stream_ids;
   int num_sim_layers;
 };

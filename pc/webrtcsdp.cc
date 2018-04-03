@@ -580,15 +580,26 @@ static bool GetPayloadTypeFromString(const std::string& line,
       cricket::IsValidRtpPayloadType(*payload_type);
 }
 
-// |msid_stream_idss| and |msid_track_id| represent the stream/track ID from the
+// Creates a StreamParams track in the case when no SSRC lines are signaled.
+// This is a track that does not contain SSRCs and only contains
+// stream_ids/track_id if it's signaled with a=msid lines.
+void CreateTrackWithNoSsrcs(const std::vector<std::string>& msid_stream_ids,
+                            const std::string& msid_track_id,
+                            StreamParamsVec* tracks) {
+  StreamParams track;
+  if (msid_track_id.empty() || msid_stream_ids.empty()) {
+    // We only create an unsignaled track if a=msid lines were signaled.
+    return;
+  }
+  track.set_stream_ids(msid_stream_ids);
+  track.id = msid_track_id;
+  tracks->push_back(track);
+}
+
+// Creates the StreamParams tracks, for the case when SSRC lines are signaled.
+// |msid_stream_ids| and |msid_track_id| represent the stream/track ID from the
 // "a=msid" attribute, if it exists. They are empty if the attribute does not
-// exist.
-// TODO(bugs.webrtc.org/7932): Currently we require that an a=ssrc line is
-// signalled in order to add the appropriate stream_ids. Update here to add both
-// StreamParams objects for the a=ssrc msid lines, and add the
-// stream_id/track_id, to the MediaContentDescription for the a=msid lines. This
-// way the logic will get pushed out to peerconnection.cc for interpreting the
-// media stream ids.
+// exist. We prioritize getting stream_ids/track_ids signaled in a=msid lines.
 void CreateTracksFromSsrcInfos(const SsrcInfoVec& ssrc_infos,
                                const std::vector<std::string>& msid_stream_ids,
                                const std::string& msid_track_id,
@@ -2945,8 +2956,17 @@ bool ParseContent(const std::string& message,
   // If the stream_id/track_id for all SSRCS are identical, one StreamParams
   // will be created in CreateTracksFromSsrcInfos, containing all the SSRCs from
   // the m= section.
-  CreateTracksFromSsrcInfos(ssrc_infos, stream_ids, track_id, &tracks,
-                            *msid_signaling);
+  if (!ssrc_infos.empty()) {
+    CreateTracksFromSsrcInfos(ssrc_infos, stream_ids, track_id, &tracks,
+                              *msid_signaling);
+  } else if (media_type != cricket::MEDIA_TYPE_DATA &&
+             (*msid_signaling & cricket::kMsidSignalingMediaSection)) {
+    // If the stream_ids/track_id was signaled but SSRCs were unsignaled we
+    // still create a track. This isn't done for data media types because
+    // StreamParams aren't used for SCTP streams, and RTP data channels don't
+    // support unsignaled SSRCs.
+    CreateTrackWithNoSsrcs(stream_ids, track_id, &tracks);
+  }
 
   // Add the ssrc group to the track.
   for (SsrcGroupVec::iterator ssrc_group = ssrc_groups.begin();

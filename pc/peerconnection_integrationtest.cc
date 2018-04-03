@@ -136,6 +136,21 @@ void RemoveSsrcsAndMsids(cricket::SessionDescription* desc) {
   desc->set_msid_supported(false);
 }
 
+// Removes all stream information besides the stream ids, simulating an
+// endpoint that only signals a=msid lines to convey stream_ids.
+void RemoveSsrcsAndKeepMsids(cricket::SessionDescription* desc) {
+  for (ContentInfo& content : desc->contents()) {
+    std::vector<std::string> stream_ids;
+    if (!content.media_description()->streams().empty()) {
+      stream_ids = content.media_description()->streams()[0].stream_ids();
+    }
+    content.media_description()->mutable_streams().clear();
+    cricket::StreamParams new_stream;
+    new_stream.set_stream_ids(stream_ids);
+    content.media_description()->AddStream(new_stream);
+  }
+}
+
 int FindFirstMediaStatsIndexByKind(
     const std::string& kind,
     const std::vector<const webrtc::RTCMediaStreamTrackStats*>&
@@ -2178,6 +2193,27 @@ TEST_P(PeerConnectionIntegrationTest, EndToEndCallWithoutSsrcOrMsidSignaling) {
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
   MediaExpectations media_expectations;
   media_expectations.ExpectBidirectionalAudioAndVideo();
+  ASSERT_TRUE(ExpectNewFrames(media_expectations));
+}
+
+// Basic end-to-end test, without SSRC signaling. This means that the track
+// was created properly and frames are delivered when the MSIDs are communicated
+// with a=msid lines and no a=ssrc lines.
+TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
+       EndToEndCallWithoutSsrcSignaling) {
+  const char kStreamId[] = "streamId";
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+  // Add just audio tracks.
+  caller()->AddTrack(caller()->CreateLocalAudioTrack(), {kStreamId});
+  callee()->AddAudioTrack();
+
+  // Remove SSRCs from the received offer SDP.
+  callee()->SetReceivedSdpMunger(RemoveSsrcsAndKeepMsids);
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  MediaExpectations media_expectations;
+  media_expectations.ExpectBidirectionalAudio();
   ASSERT_TRUE(ExpectNewFrames(media_expectations));
 }
 

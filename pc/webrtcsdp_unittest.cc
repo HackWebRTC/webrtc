@@ -1191,6 +1191,28 @@ class WebRtcSdpTest : public testing::Test {
                                   jdesc_.session_version()));
   }
 
+  // Turns the existing reference description into a unified plan description
+  // with one audio MediaContentDescription that contains one StreamParams with
+  // 0 ssrcs.
+  void MakeUnifiedPlanDescriptionNoSsrcSignaling() {
+    desc_.RemoveContentByName(kVideoContentName);
+    desc_.RemoveContentByName(kAudioContentName);
+    desc_.RemoveTransportInfoByName(kVideoContentName);
+    RemoveVideoCandidates();
+
+    AudioContentDescription* audio_desc = CreateAudioContentDescription();
+    StreamParams audio_track;
+    audio_track.id = kAudioTrackId1;
+    audio_track.set_stream_ids({kStreamId1});
+    audio_desc->AddStream(audio_track);
+    desc_.AddContent(kAudioContentName, MediaProtocolType::kRtp, audio_desc);
+
+    // Enable signaling a=msid lines.
+    desc_.set_msid_signaling(cricket::kMsidSignalingMediaSection);
+    ASSERT_TRUE(jdesc_.Initialize(desc_.Copy(), jdesc_.session_id(),
+                                  jdesc_.session_version()));
+  }
+
   // Creates a video content description with no streams, and some default
   // configuration.
   VideoContentDescription* CreateVideoContentDescription() {
@@ -1501,6 +1523,30 @@ class WebRtcSdpTest : public testing::Test {
   void RemoveCryptos() {
     audio_desc_->set_cryptos(std::vector<CryptoParams>());
     video_desc_->set_cryptos(std::vector<CryptoParams>());
+  }
+
+  // Removes everything in StreamParams from the session description that is
+  // used for a=ssrc lines.
+  void RemoveSsrcSignalingFromStreamParams() {
+    for (cricket::ContentInfo content_info : jdesc_.description()->contents()) {
+      // With Unified Plan there should be one StreamParams per m= section.
+      StreamParams& stream =
+          content_info.media_description()->mutable_streams()[0];
+      stream.ssrcs.clear();
+      stream.ssrc_groups.clear();
+      stream.cname.clear();
+    }
+  }
+
+  // Removes all a=ssrc lines from the SDP string.
+  void RemoveSsrcLinesFromSdpString(std::string* sdp_string) {
+    const char kAttributeSsrc[] = "a=ssrc";
+    while (sdp_string->find(kAttributeSsrc) != std::string::npos) {
+      size_t pos_ssrc_attribute = sdp_string->find(kAttributeSsrc);
+      size_t beg_line_pos = sdp_string->rfind('\n', pos_ssrc_attribute);
+      size_t end_line_pos = sdp_string->find('\n', pos_ssrc_attribute);
+      sdp_string->erase(beg_line_pos, end_line_pos - beg_line_pos);
+    }
   }
 
   bool TestSerializeDirection(RtpTransceiverDirection direction) {
@@ -3362,6 +3408,30 @@ TEST_F(WebRtcSdpTest, DeserializeUnifiedPlanSessionDescriptionSpecialMsid) {
 
 TEST_F(WebRtcSdpTest, SerializeUnifiedPlanSessionDescriptionSpecialMsid) {
   MakeUnifiedPlanDescriptionMultipleStreamIds();
+  TestSerialize(jdesc_);
+}
+
+// This tests that a Unified Plan SDP with no a=ssrc lines is
+// serialized/deserialized appropriately. In this case the
+// MediaContentDescription will contain a StreamParams object that doesn't have
+// any SSRCs. Vice versa, this will be created upon deserializing an SDP with no
+// SSRC lines.
+TEST_F(WebRtcSdpTest, DeserializeUnifiedPlanSessionDescriptionNoSsrcSignaling) {
+  MakeUnifiedPlanDescription();
+  RemoveSsrcSignalingFromStreamParams();
+  std::string unified_plan_sdp_string = kUnifiedPlanSdpFullString;
+  RemoveSsrcLinesFromSdpString(&unified_plan_sdp_string);
+
+  JsepSessionDescription deserialized_description(kDummyType);
+  EXPECT_TRUE(
+      SdpDeserialize(unified_plan_sdp_string, &deserialized_description));
+  EXPECT_TRUE(CompareSessionDescription(jdesc_, deserialized_description));
+}
+
+TEST_F(WebRtcSdpTest, SerializeUnifiedPlanSessionDescriptionNoSsrcSignaling) {
+  MakeUnifiedPlanDescription();
+  RemoveSsrcSignalingFromStreamParams();
+
   TestSerialize(jdesc_);
 }
 

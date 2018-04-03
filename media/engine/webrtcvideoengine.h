@@ -177,6 +177,8 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
 
   rtc::Optional<uint32_t> GetDefaultReceiveStreamSsrc();
 
+  StreamParams unsignaled_stream_params() { return unsignaled_stream_params_; }
+
   // AdaptReason is used for expressing why a WebRtcVideoSendStream request
   // a lower input frame size than the currently configured camera input frame
   // size. There can be more than one reason OR:ed together.
@@ -504,6 +506,11 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
   VideoOptions default_send_options_;
   VideoRecvParameters recv_params_;
   int64_t last_stats_log_ms_;
+  // This is a stream param that comes from the remote description, but wasn't
+  // signaled with any a=ssrc lines. It holds information that was signaled
+  // before the unsignaled receive stream is created when the first packet is
+  // received.
+  StreamParams unsignaled_stream_params_;
 };
 
 class EncoderStreamFactory

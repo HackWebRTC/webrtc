@@ -3076,6 +3076,27 @@ TEST_F(PeerConnectionInterfaceTestPlanB, VerifyDefaultStreamIsNotCreated) {
   EXPECT_EQ(0u, observer_.remote_streams()->count());
 }
 
+// This tests that a default MediaStream is created if a remote SDP comes from
+// an endpoint that doesn't signal SSRCs, but signals media stream IDs.
+TEST_F(PeerConnectionInterfaceTestPlanB,
+       SdpWithMsidWithoutSsrcCreatesDefaultStream) {
+  FakeConstraints constraints;
+  constraints.AddMandatory(webrtc::MediaConstraintsInterface::kEnableDtlsSrtp,
+                           true);
+  CreatePeerConnection(&constraints);
+  std::string sdp_string = kSdpStringWithoutStreamsAudioOnly;
+  // Add a=msid lines to simulate a Unified Plan endpoint that only
+  // signals stream IDs with a=msid lines.
+  sdp_string.append("a=msid:audio_stream_id audio_track_id\n");
+
+  CreateAndSetRemoteOffer(sdp_string);
+
+  ASSERT_EQ(1u, observer_.remote_streams()->count());
+  MediaStreamInterface* remote_stream = observer_.remote_streams()->at(0);
+  EXPECT_EQ("default", remote_stream->id());
+  ASSERT_EQ(1u, remote_stream->GetAudioTracks().size());
+}
+
 // This tests that when a Plan B endpoint receives an SDP that signals no media
 // stream IDs indicated by the special character "-" in the a=msid line, that
 // a default stream ID will be used for the MediaStream ID. This can occur
