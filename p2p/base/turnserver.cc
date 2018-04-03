@@ -715,7 +715,7 @@ void TurnServerAllocation::HandleSendIndication(const TurnMessage* msg) {
     RTC_LOG(LS_WARNING) << ToString()
                         << ": Received send indication without permission"
                            " peer="
-                        << peer_attr->GetAddress();
+                        << peer_attr->GetAddress().ToString();
   }
 }
 
@@ -739,7 +739,8 @@ void TurnServerAllocation::HandleCreatePermissionRequest(
   AddPermission(peer_attr->GetAddress().ipaddr());
 
   RTC_LOG(LS_INFO) << ToString()
-                   << ": Created permission, peer=" << peer_attr->GetAddress();
+                   << ": Created permission, peer="
+                   << peer_attr->GetAddress().ToString();
 
   // Send a success response.
   TurnMessage response;
@@ -789,7 +790,7 @@ void TurnServerAllocation::HandleChannelBindRequest(const TurnMessage* msg) {
 
   RTC_LOG(LS_INFO) << ToString()
                    << ": Bound channel, id=" << channel_id
-                   << ", peer=" << peer_attr->GetAddress();
+                   << ", peer=" << peer_attr->GetAddress().ToString();
 
   // Send a success response.
   TurnMessage response;
@@ -841,7 +842,8 @@ void TurnServerAllocation::OnExternalPacket(
   } else {
     RTC_LOG(LS_WARNING)
         << ToString()
-        << ": Received external packet without permission, peer=" << addr;
+        << ": Received external packet without permission, peer="
+        << addr.ToString();
   }
 }
 

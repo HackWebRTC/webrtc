@@ -10,6 +10,7 @@
 
 #include "call/audio_send_stream.h"
 #include "rtc_base/stringencode.h"
+#include "rtc_base/strings/audio_format_to_string.h"
 
 namespace webrtc {
 
@@ -67,7 +68,7 @@ std::string AudioSendStream::Config::SendCodecSpec::ToString() const {
   ss << ", cng_payload_type: "
      << (cng_payload_type ? rtc::ToString(*cng_payload_type) : "<unset>");
   ss << ", payload_type: " << payload_type;
-  ss << ", format: " << format;
+  ss << ", format: " << rtc::ToString(format);
   ss << '}';
   return ss.str();
 }

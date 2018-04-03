@@ -409,7 +409,8 @@ void VirtualSocket::OnMessage(Message* pmsg) {
     } else if ((SOCK_STREAM == type_) && (CS_CONNECTING == state_)) {
       CompleteConnect(data->addr, true);
     } else {
-      RTC_LOG(LS_VERBOSE) << "Socket at " << local_addr_ << " is not listening";
+      RTC_LOG(LS_VERBOSE) << "Socket at " << local_addr_.ToString()
+                          << " is not listening";
       server_->Disconnect(server_->LookupBinding(data->addr));
     }
     delete data;
@@ -805,7 +806,8 @@ int VirtualSocketServer::Connect(VirtualSocket* socket,
   VirtualSocket* remote = LookupBinding(remote_addr);
   if (!CanInteractWith(socket, remote)) {
     RTC_LOG(LS_INFO) << "Address family mismatch between "
-                     << socket->GetLocalAddress() << " and " << remote_addr;
+                     << socket->GetLocalAddress().ToString() << " and "
+                     << remote_addr.ToString();
     return -1;
   }
   if (remote != nullptr) {
@@ -813,7 +815,7 @@ int VirtualSocketServer::Connect(VirtualSocket* socket,
     msg_queue_->PostDelayed(RTC_FROM_HERE, delay, remote, MSG_ID_CONNECT,
                             new MessageAddress(addr));
   } else {
-    RTC_LOG(LS_INFO) << "No one listening at " << remote_addr;
+    RTC_LOG(LS_INFO) << "No one listening at " << remote_addr.ToString();
     msg_queue_->PostDelayed(RTC_FROM_HERE, delay, socket, MSG_ID_DISCONNECT);
   }
   return 0;
@@ -856,17 +858,18 @@ int VirtualSocketServer::SendUdp(VirtualSocket* socket,
     dummy_socket->SetLocalAddress(remote_addr);
     if (!CanInteractWith(socket, dummy_socket.get())) {
       RTC_LOG(LS_VERBOSE) << "Incompatible address families: "
-                          << socket->GetLocalAddress() << " and "
-                          << remote_addr;
+                          << socket->GetLocalAddress().ToString() << " and "
+                          << remote_addr.ToString();
       return -1;
     }
-    RTC_LOG(LS_VERBOSE) << "No one listening at " << remote_addr;
+    RTC_LOG(LS_VERBOSE) << "No one listening at " << remote_addr.ToString();
     return static_cast<int>(data_size);
   }
 
   if (!CanInteractWith(socket, recipient)) {
     RTC_LOG(LS_VERBOSE) << "Incompatible address families: "
-                        << socket->GetLocalAddress() << " and " << remote_addr;
+                        << socket->GetLocalAddress().ToString() << " and "
+                        << remote_addr.ToString();
     return -1;
   }
 

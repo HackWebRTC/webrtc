@@ -23,6 +23,7 @@
 #include "rtc_base/event.h"
 #include "rtc_base/function_view.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/strings/audio_format_to_string.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/timeutils.h"
 #include "system_wrappers/include/field_trial.h"
@@ -509,7 +510,8 @@ bool AudioSendStream::SetupSendCodec(AudioSendStream* stream,
           spec.payload_type, spec.format, new_config.codec_pair_id);
 
   if (!encoder) {
-    RTC_DLOG(LS_ERROR) << "Unable to create encoder for " << spec.format;
+    RTC_DLOG(LS_ERROR) << "Unable to create encoder for "
+                       << rtc::ToString(spec.format);
     return false;
   }
   // If a bitrate has been specified for the codec, use it over the

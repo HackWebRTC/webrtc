@@ -467,8 +467,8 @@ void TurnPort::OnSocketConnect(rtc::AsyncPacketSocket* socket) {
     server_address_.address = socket_->GetRemoteAddress();
   }
 
-  RTC_LOG(LS_INFO) << "TurnPort connected to " << socket->GetRemoteAddress()
-                   << " using tcp.";
+  RTC_LOG(LS_INFO) << "TurnPort connected to "
+                   << socket->GetRemoteAddress().ToString() << " using tcp.";
   SendRequest(new TurnAllocateRequest(this), 0);
 }
 
@@ -584,7 +584,8 @@ int TurnPort::SendTo(const void* data, size_t size,
   // Try to find an entry for this specific address; we should have one.
   TurnEntry* entry = FindEntry(addr);
   if (!entry) {
-    RTC_LOG(LS_ERROR) << "Did not find the TurnEntry for address: " << addr;
+    RTC_LOG(LS_ERROR) << "Did not find the TurnEntry for address "
+                      << addr.ToString();
     return 0;
   }
 

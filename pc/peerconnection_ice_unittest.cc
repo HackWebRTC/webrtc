@@ -527,7 +527,7 @@ TEST_P(PeerConnectionIceTest, VerifyUfragPwdLength) {
     if (candidate_ip == address.ipaddr()) {
       return ::testing::AssertionSuccess();
     }
-    candidate_hosts << "\n" << candidate_ip;
+    candidate_hosts << "\n" << candidate_ip.ToString();
   }
   return ::testing::AssertionFailure()
          << address_expr << " (host " << address.HostAsURIString()

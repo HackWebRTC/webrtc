@@ -288,39 +288,39 @@ TEST(IPAddressTest, TestCopyCtor) {
   IPAddress addr(v4addr);
   IPAddress addr2(addr);
 
-  EXPECT_PRED2(AreEqual, addr, addr2);
+  EXPECT_TRUE(AreEqual(addr, addr2));
 
   addr = IPAddress(INADDR_ANY);
   addr2 = IPAddress(addr);
-  EXPECT_PRED2(AreEqual, addr, addr2);
+  EXPECT_TRUE(AreEqual(addr, addr2));
 
   addr = IPAddress(INADDR_LOOPBACK);
   addr2 = IPAddress(addr);
-  EXPECT_PRED2(AreEqual, addr, addr2);
+  EXPECT_TRUE(AreEqual(addr, addr2));
 
   addr = IPAddress(kIPv4PublicAddr);
   addr2 = IPAddress(addr);
-  EXPECT_PRED2(AreEqual, addr, addr2);
+  EXPECT_TRUE(AreEqual(addr, addr2));
 
   addr = IPAddress(kIPv4RFC1918Addr);
   addr2 = IPAddress(addr);
-  EXPECT_PRED2(AreEqual, addr, addr2);
+  EXPECT_TRUE(AreEqual(addr, addr2));
 
   addr = IPAddress(in6addr_any);
   addr2 = IPAddress(addr);
-  EXPECT_PRED2(AreEqual, addr, addr2);
+  EXPECT_TRUE(AreEqual(addr, addr2));
 
   addr = IPAddress(in6addr_loopback);
   addr2 = IPAddress(addr);
-  EXPECT_PRED2(AreEqual, addr, addr2);
+  EXPECT_TRUE(AreEqual(addr, addr2));
 
   addr = IPAddress(kIPv6LinkLocalAddr);
   addr2 = IPAddress(addr);
-  EXPECT_PRED2(AreEqual, addr, addr2);
+  EXPECT_TRUE(AreEqual(addr, addr2));
 
   addr = IPAddress(kIPv6PublicAddr);
   addr2 = IPAddress(addr);
-  EXPECT_PRED2(AreEqual, addr, addr2);
+  EXPECT_TRUE(AreEqual(addr, addr2));
 }
 
 TEST(IPAddressTest, TestEquality) {
@@ -446,46 +446,46 @@ TEST(IPAddressTest, TestFromString) {
 
   EXPECT_TRUE(IPFromString(kIPv4AnyAddrString, &addr));
   EXPECT_EQ(addr.ToString(), kIPv4AnyAddrString);
-  EXPECT_PRED2(AreEqual, addr, addr2);
+  EXPECT_TRUE(AreEqual(addr, addr2));
 
   addr2 = IPAddress(INADDR_LOOPBACK);
   EXPECT_TRUE(IPFromString(kIPv4LoopbackAddrString, &addr));
   EXPECT_EQ(addr.ToString(), kIPv4LoopbackAddrString);
-  EXPECT_PRED2(AreEqual, addr, addr2);
+  EXPECT_TRUE(AreEqual(addr, addr2));
 
   addr2 = IPAddress(kIPv4RFC1918Addr);
   EXPECT_TRUE(IPFromString(kIPv4RFC1918AddrString, &addr));
   EXPECT_EQ(addr.ToString(), kIPv4RFC1918AddrString);
-  EXPECT_PRED2(AreEqual, addr, addr2);
+  EXPECT_TRUE(AreEqual(addr, addr2));
 
   addr2 = IPAddress(kIPv4PublicAddr);
   EXPECT_TRUE(IPFromString(kIPv4PublicAddrString, &addr));
   EXPECT_EQ(addr.ToString(), kIPv4PublicAddrString);
-  EXPECT_PRED2(AreEqual, addr, addr2);
+  EXPECT_TRUE(AreEqual(addr, addr2));
 
   addr2 = IPAddress(in6addr_any);
   EXPECT_TRUE(IPFromString(kIPv6AnyAddrString, &addr));
   EXPECT_EQ(addr.ToString(), kIPv6AnyAddrString);
-  EXPECT_PRED2(AreEqual, addr, addr2);
+  EXPECT_TRUE(AreEqual(addr, addr2));
 
   addr2 = IPAddress(in6addr_loopback);
   EXPECT_TRUE(IPFromString(kIPv6LoopbackAddrString, &addr));
   EXPECT_EQ(addr.ToString(), kIPv6LoopbackAddrString);
-  EXPECT_PRED2(AreEqual, addr, addr2);
+  EXPECT_TRUE(AreEqual(addr, addr2));
 
   addr2 = IPAddress(kIPv6LinkLocalAddr);
   EXPECT_TRUE(IPFromString(kIPv6LinkLocalAddrString, &addr));
   EXPECT_EQ(addr.ToString(), kIPv6LinkLocalAddrString);
-  EXPECT_PRED2(AreEqual, addr, addr2);
+  EXPECT_TRUE(AreEqual(addr, addr2));
 
   addr2 = IPAddress(kIPv6PublicAddr);
   EXPECT_TRUE(IPFromString(kIPv6PublicAddrString, &addr));
   EXPECT_EQ(addr.ToString(), kIPv6PublicAddrString);
-  EXPECT_PRED2(AreEqual, addr, addr2);
+  EXPECT_TRUE(AreEqual(addr, addr2));
 
   addr2 = IPAddress(kIPv4MappedRFC1918Addr);
   EXPECT_TRUE(IPFromString(kIPv4MappedV4StyleAddrString, &addr));
-  EXPECT_PRED2(AreEqual, addr, addr2);
+  EXPECT_TRUE(AreEqual(addr, addr2));
 
   // Broken cases, should set addr to AF_UNSPEC.
   EXPECT_PRED1(BrokenIPStringFails, kIPv4BrokenString1);

@@ -46,6 +46,7 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/sanitizer.h"
+#include "rtc_base/strings/audio_format_to_string.h"
 #include "rtc_base/system/fallthrough.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/field_trial.h"
@@ -262,7 +263,8 @@ int NetEqImpl::RegisterExternalDecoder(AudioDecoder* decoder,
 bool NetEqImpl::RegisterPayloadType(int rtp_payload_type,
                                     const SdpAudioFormat& audio_format) {
   RTC_LOG(LS_VERBOSE) << "NetEqImpl::RegisterPayloadType: payload type "
-                      << rtp_payload_type << ", codec " << audio_format;
+                      << rtp_payload_type << ", codec "
+                      << rtc::ToString(audio_format);
   rtc::CritScope lock(&crit_sect_);
   return decoder_database_->RegisterPayload(rtp_payload_type, audio_format) ==
          DecoderDatabase::kOK;

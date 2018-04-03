@@ -26,6 +26,7 @@
 #include "rtc_base/format_macros.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
+#include "rtc_base/strings/audio_format_to_string.h"
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc {
@@ -260,7 +261,8 @@ bool AcmReceiver::AddCodec(int rtp_payload_type,
       neteq_->RegisterPayloadType(rtp_payload_type, audio_format);
   if (!success) {
     RTC_LOG(LERROR) << "AcmReceiver::AddCodec failed for payload type "
-                    << rtp_payload_type << ", decoder format " << audio_format;
+                    << rtp_payload_type << ", decoder format "
+                    << rtc::ToString(audio_format);
   }
   return success;
 }

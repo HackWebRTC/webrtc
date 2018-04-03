@@ -258,6 +258,7 @@ rtc_static_library("rtc_audio_video") {
     "../modules/audio_processing/aec_dump:aec_dump",
     "../modules/video_coding:video_codec_interface",
     "../modules/video_coding:video_coding",
+    "../rtc_base:audio_format_to_string",
     "../rtc_base:checks",
   ]
 

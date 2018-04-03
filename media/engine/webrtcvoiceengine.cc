@@ -40,6 +40,7 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/race_checker.h"
 #include "rtc_base/stringencode.h"
+#include "rtc_base/strings/audio_format_to_string.h"
 #include "rtc_base/stringutils.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/field_trial.h"
@@ -689,7 +690,7 @@ AudioCodecs WebRtcVoiceEngine::CollectCodecs(
       }
     } else {
       RTC_LOG(LS_ERROR) << "Unable to assign payload type to format: "
-                        << format;
+                        << rtc::ToString(format);
     }
 
     return opt_codec;
@@ -1529,7 +1530,7 @@ bool WebRtcVoiceMediaChannel::SetRecvCodecs(
     auto format = AudioCodecToSdpAudioFormat(codec);
     if (!IsCodec(codec, "cn") && !IsCodec(codec, "telephone-event") &&
         !engine()->decoder_factory_->IsSupportedDecoder(format)) {
-      RTC_LOG(LS_ERROR) << "Unsupported codec: " << format;
+      RTC_LOG(LS_ERROR) << "Unsupported codec: " << rtc::ToString(format);
       return false;
     }
     // We allow adding new codecs but don't allow changing the payload type of

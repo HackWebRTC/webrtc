@@ -201,13 +201,13 @@ void PhysicalSocketTest::ConnectInternalAcceptError(const IPAddress& loopback) {
       server_->CreateAsyncSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(client1.get());
   EXPECT_EQ(AsyncSocket::CS_CLOSED, client1->GetState());
-  EXPECT_PRED1(IsUnspecOrEmptyIP, client1->GetLocalAddress().ipaddr());
+  EXPECT_TRUE(IsUnspecOrEmptyIP(client1->GetLocalAddress().ipaddr()));
 
   std::unique_ptr<AsyncSocket> client2(
       server_->CreateAsyncSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(client2.get());
   EXPECT_EQ(AsyncSocket::CS_CLOSED, client2->GetState());
-  EXPECT_PRED1(IsUnspecOrEmptyIP, client2->GetLocalAddress().ipaddr());
+  EXPECT_TRUE(IsUnspecOrEmptyIP(client2->GetLocalAddress().ipaddr()));
 
   // Create server and listen.
   std::unique_ptr<AsyncSocket> server(

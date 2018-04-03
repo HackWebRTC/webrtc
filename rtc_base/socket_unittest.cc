@@ -224,7 +224,7 @@ void SocketTest::ConnectInternal(const IPAddress& loopback) {
       ss_->CreateAsyncSocket(loopback.family(), SOCK_STREAM));
   sink.Monitor(client.get());
   EXPECT_EQ(AsyncSocket::CS_CLOSED, client->GetState());
-  EXPECT_PRED1(IsUnspecOrEmptyIP, client->GetLocalAddress().ipaddr());
+  EXPECT_TRUE(IsUnspecOrEmptyIP(client->GetLocalAddress().ipaddr()));
 
   // Create server and listen.
   std::unique_ptr<AsyncSocket> server(

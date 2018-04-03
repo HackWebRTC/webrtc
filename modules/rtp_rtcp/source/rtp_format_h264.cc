@@ -337,11 +337,11 @@ bool RtpPacketizerH264::NextPacket(RtpPacketToSend* rtp_packet) {
     packets_.pop();
     input_fragments_.pop_front();
   } else if (packet.aggregated) {
-    RTC_CHECK_EQ(H264PacketizationMode::NonInterleaved, packetization_mode_);
+    RTC_CHECK(H264PacketizationMode::NonInterleaved == packetization_mode_);
     bool is_last_packet = num_packets_left_ == 1;
     NextAggregatePacket(rtp_packet, is_last_packet);
   } else {
-    RTC_CHECK_EQ(H264PacketizationMode::NonInterleaved, packetization_mode_);
+    RTC_CHECK(H264PacketizationMode::NonInterleaved == packetization_mode_);
     NextFragmentPacket(rtp_packet);
   }
   RTC_DCHECK_LE(rtp_packet->payload_size(), max_payload_len_);

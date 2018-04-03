@@ -150,11 +150,11 @@ std::string ToString(RTCErrorType error);
 // Helper macro that can be used by implementations to create an error with a
 // message and log it. |message| should be a string literal or movable
 // std::string.
-#define LOG_AND_RETURN_ERROR_EX(type, message, severity) \
-  {                                                      \
-    RTC_DCHECK(type != RTCErrorType::NONE);              \
-    RTC_LOG(severity) << message << " (" << type << ")"; \
-    return webrtc::RTCError(type, message);              \
+#define LOG_AND_RETURN_ERROR_EX(type, message, severity)           \
+  {                                                                \
+    RTC_DCHECK(type != RTCErrorType::NONE);                        \
+    RTC_LOG(severity) << message << " (" << ToString(type) << ")"; \
+    return webrtc::RTCError(type, message);                        \
   }
 
 #define LOG_AND_RETURN_ERROR(type, message) \

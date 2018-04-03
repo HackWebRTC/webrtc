@@ -75,6 +75,7 @@ rtc_static_library("audio") {
     "../modules/rtp_rtcp",
     "../modules/rtp_rtcp:rtp_rtcp_format",
     "../modules/utility",
+    "../rtc_base:audio_format_to_string",
     "../rtc_base:checks",
     "../rtc_base:rate_limiter",
     "../rtc_base:rtc_base",

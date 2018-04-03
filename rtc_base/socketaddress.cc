@@ -26,12 +26,11 @@
 #include <unistd.h>
 #endif
 
-#include <sstream>
-
 #include "rtc_base/byteorder.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/nethelpers.h"
+#include "rtc_base/strings/string_builder.h"
 
 #if defined(WEBRTC_WIN)
 #include "rtc_base/win32.h"
@@ -161,21 +160,21 @@ std::string SocketAddress::HostAsSensitiveURIString() const {
 }
 
 std::string SocketAddress::PortAsString() const {
-  std::ostringstream ost;
-  ost << port_;
-  return ost.str();
+  return std::to_string(port_);
 }
 
 std::string SocketAddress::ToString() const {
-  std::ostringstream ost;
-  ost << *this;
-  return ost.str();
+  char buf[1024];
+  rtc::SimpleStringBuilder sb(buf);
+  sb << HostAsURIString() << ":" << port();
+  return sb.str();
 }
 
 std::string SocketAddress::ToSensitiveString() const {
-  std::ostringstream ost;
-  ost << HostAsSensitiveURIString() << ":" << port();
-  return ost.str();
+  char buf[1024];
+  rtc::SimpleStringBuilder sb(buf);
+  sb << HostAsSensitiveURIString() << ":" << port();
+  return sb.str();
 }
 
 bool SocketAddress::FromString(const std::string& str) {

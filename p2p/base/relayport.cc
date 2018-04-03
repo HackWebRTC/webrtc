@@ -443,7 +443,8 @@ void RelayConnection::OnSendPacket(const void* data, size_t size,
   rtc::PacketOptions options;  // Default dscp set to NO_CHANGE.
   int sent = socket_->SendTo(data, size, GetAddress(), options);
   if (sent <= 0) {
-    RTC_LOG(LS_VERBOSE) << "OnSendPacket: failed sending to " << GetAddress()
+    RTC_LOG(LS_VERBOSE) << "OnSendPacket: failed sending to "
+                        << GetAddress().ToString()
                         << strerror(socket_->GetError());
     RTC_DCHECK(sent < 0);
   }
@@ -652,7 +653,7 @@ void RelayEntry::OnMessage(rtc::Message *pmsg) {
   if (current_connection_) {
     const ProtocolAddress* ra = current_connection_->protocol_address();
     RTC_LOG(LS_WARNING) << "Relay " << ra->proto << " connection to "
-                        << ra->address << " timed out";
+                        << ra->address.ToString() << " timed out";
 
     // Currently we connect to each server address in sequence. If we
     // have more addresses to try, treat this is an error and move on to
