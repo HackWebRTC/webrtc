@@ -2448,7 +2448,7 @@ TEST_F(VideoSendStreamTest, EncoderSetupPropagatesCommonEncoderConfigValues) {
   RunBaseTest(&test);
 }
 
-static const size_t kVideoCodecConfigObserverNumberOfTemporalLayers = 4;
+static const size_t kVideoCodecConfigObserverNumberOfTemporalLayers = 3;
 template <typename T>
 class VideoCodecConfigObserver : public test::SendTest,
                                  public test::FakeEncoder {

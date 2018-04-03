@@ -95,9 +95,24 @@ BitrateAllocation SvcRateAllocator::GetAllocation(uint32_t total_bitrate_bps,
         SplitBitrate(num_temporal_layers, spatial_layer_bitrate_bps[sl_idx],
                      kTemporalLayeringRateScalingFactor);
 
-    for (size_t tl_idx = 0; tl_idx < num_temporal_layers; ++tl_idx) {
-      bitrate_allocation.SetBitrate(sl_idx, num_temporal_layers - tl_idx - 1,
-                                    temporal_layer_bitrate_bps[tl_idx]);
+    // Distribute rate across temporal layers. Allocate more bits to lower
+    // layers since they are used for prediction of higher layers and their
+    // references are far apart.
+    if (num_temporal_layers == 1) {
+      bitrate_allocation.SetBitrate(sl_idx, 0, temporal_layer_bitrate_bps[0]);
+    } else if (num_temporal_layers == 2) {
+      bitrate_allocation.SetBitrate(sl_idx, 0, temporal_layer_bitrate_bps[1]);
+      bitrate_allocation.SetBitrate(sl_idx, 1, temporal_layer_bitrate_bps[0]);
+    } else {
+      RTC_CHECK_EQ(num_temporal_layers, 3);
+      // In case of three temporal layers the high layer has two frames and the
+      // middle layer has one frame within GOP (in between two consecutive low
+      // layer frames). Thus high layer requires more bits (comparing pure
+      // bitrate of layer, excluding bitrate of base layers) to keep quality on
+      // par with lower layers.
+      bitrate_allocation.SetBitrate(sl_idx, 0, temporal_layer_bitrate_bps[2]);
+      bitrate_allocation.SetBitrate(sl_idx, 1, temporal_layer_bitrate_bps[0]);
+      bitrate_allocation.SetBitrate(sl_idx, 2, temporal_layer_bitrate_bps[1]);
     }
   }
 
