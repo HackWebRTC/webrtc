@@ -35,12 +35,13 @@ class VideoProcessorIntegrationTestVideoToolbox
   }
 };
 
+// TODO(webrtc:9099): Disabled until the issue is fixed.
 // HW codecs don't work on simulators. Only run these tests on device.
-#if TARGET_OS_IPHONE && !TARGET_IPHONE_SIMULATOR
-#define MAYBE_TEST_F TEST_F
-#else
+// #if TARGET_OS_IPHONE && !TARGET_IPHONE_SIMULATOR
+//  #define MAYBE_TEST_F TEST_F
+// #else
 #define MAYBE_TEST_F(s, name) TEST_F(s, DISABLED_##name)
-#endif
+// #endif
 
 // TODO(kthelgason): Use RC Thresholds when the internal bitrateAdjuster is no
 // longer in use.
