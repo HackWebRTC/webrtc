@@ -92,15 +92,6 @@ class ADMWrapper : public AudioDeviceModule, public AudioTransport {
     return res;
   }
 
-  void PushCaptureData(int voe_channel,
-                       const void* audio_data,
-                       int bits_per_sample,
-                       int sample_rate,
-                       size_t number_of_channels,
-                       size_t number_of_frames) override {
-    RTC_NOTREACHED();
-  }
-
   void PullRenderData(int bits_per_sample,
                       int sample_rate,
                       size_t number_of_channels,

@@ -55,21 +55,6 @@ class AudioTransport {
                                    int64_t* elapsed_time_ms,
                                    int64_t* ntp_time_ms) = 0;  // NOLINT
 
-  // Method to push the captured audio data to the specific VoE channel.
-  // The data will not undergo audio processing.
-  // |voe_channel| is the id of the VoE channel which is the sink to the
-  // capture data.
-  // TODO(bugs.webrtc.org/8659): Remove this method once clients updated.
-  RTC_DEPRECATED virtual void PushCaptureData(
-      int voe_channel,
-      const void* audio_data,
-      int bits_per_sample,
-      int sample_rate,
-      size_t number_of_channels,
-      size_t number_of_frames) {
-    RTC_NOTREACHED();
-  }
-
   // Method to pull mixed render audio data from all active VoE channels.
   // The data will not be passed as reference for audio processing internally.
   virtual void PullRenderData(int bits_per_sample,
