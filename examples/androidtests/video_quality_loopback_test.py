@@ -133,12 +133,12 @@ def SetUpTools(android_device, temp_dir, processes):
 
   # Build AppRTC.
   build_apprtc_script = os.path.join(RTC_TOOLS_DIR, 'build_apprtc.py')
-  apprtc_src_dir = os.path.join(temp_dir, 'apprtc', 'src')
+  apprtc_dir = os.path.join(temp_dir, 'apprtc')
   go_dir = os.path.join(temp_dir, 'go')
   collider_dir = os.path.join(temp_dir, 'collider')
 
-  _RunCommand([sys.executable, build_apprtc_script, apprtc_src_dir, go_dir,
-              collider_dir])
+  _RunCommand([sys.executable, build_apprtc_script, apprtc_dir, go_dir,
+               collider_dir])
 
   # Start AppRTC Server.
   dev_appserver = os.path.join(temp_dir, 'apprtc', 'temp', 'google-cloud-sdk',
