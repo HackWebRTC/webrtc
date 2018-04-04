@@ -13,6 +13,8 @@ package org.webrtc;
 import android.content.Context;
 import java.util.List;
 import javax.annotation.Nullable;
+import org.webrtc.audio.AudioDeviceModule;
+import org.webrtc.audio.LegacyAudioDeviceModule;
 
 /**
  * Java wrapper for a C++ PeerConnectionFactoryInterface.  Main entry point to
@@ -132,6 +134,7 @@ public class PeerConnectionFactory {
 
   public static class Builder {
     private @Nullable Options options;
+    private @Nullable AudioDeviceModule audioDeviceModule = new LegacyAudioDeviceModule();
     private @Nullable VideoEncoderFactory encoderFactory;
     private @Nullable VideoDecoderFactory decoderFactory;
     private @Nullable AudioProcessingFactory audioProcessingFactory;
@@ -141,6 +144,11 @@ public class PeerConnectionFactory {
 
     public Builder setOptions(Options options) {
       this.options = options;
+      return this;
+    }
+
+    public Builder setAudioDeviceModule(AudioDeviceModule audioDeviceModule) {
+      this.audioDeviceModule = audioDeviceModule;
       return this;
     }
 
@@ -170,7 +178,7 @@ public class PeerConnectionFactory {
     }
 
     public PeerConnectionFactory createPeerConnectionFactory() {
-      return new PeerConnectionFactory(options, encoderFactory, decoderFactory,
+      return new PeerConnectionFactory(options, audioDeviceModule, encoderFactory, decoderFactory,
           audioProcessingFactory, fecControllerFactoryFactory);
     }
   }
@@ -255,8 +263,8 @@ public class PeerConnectionFactory {
   public PeerConnectionFactory(
       Options options, VideoEncoderFactory encoderFactory, VideoDecoderFactory decoderFactory) {
     checkInitializeHasBeenCalled();
-    nativeFactory = nativeCreatePeerConnectionFactory(
-        ContextUtils.getApplicationContext(), options, encoderFactory, decoderFactory, 0, 0);
+    nativeFactory = nativeCreatePeerConnectionFactory(ContextUtils.getApplicationContext(), options,
+        0 /* audioDeviceModule */, encoderFactory, decoderFactory, 0, 0);
     if (nativeFactory == 0) {
       throw new RuntimeException("Failed to initialize PeerConnectionFactory!");
     }
@@ -265,16 +273,17 @@ public class PeerConnectionFactory {
   @Deprecated
   public PeerConnectionFactory(Options options, VideoEncoderFactory encoderFactory,
       VideoDecoderFactory decoderFactory, AudioProcessingFactory audioProcessingFactory) {
-    this(options, encoderFactory, decoderFactory, audioProcessingFactory,
-        null /* fecControllerFactoryFactory */);
+    this(options, new LegacyAudioDeviceModule(), encoderFactory, decoderFactory,
+        audioProcessingFactory, null /* fecControllerFactoryFactory */);
   }
 
-  private PeerConnectionFactory(Options options, @Nullable VideoEncoderFactory encoderFactory,
-      @Nullable VideoDecoderFactory decoderFactory,
+  private PeerConnectionFactory(Options options, @Nullable AudioDeviceModule audioDeviceModule,
+      @Nullable VideoEncoderFactory encoderFactory, @Nullable VideoDecoderFactory decoderFactory,
       @Nullable AudioProcessingFactory audioProcessingFactory,
       @Nullable FecControllerFactoryFactoryInterface fecControllerFactoryFactory) {
     checkInitializeHasBeenCalled();
     nativeFactory = nativeCreatePeerConnectionFactory(ContextUtils.getApplicationContext(), options,
+        audioDeviceModule == null ? 0 : audioDeviceModule.getNativeAudioDeviceModulePointer(),
         encoderFactory, decoderFactory,
         audioProcessingFactory == null ? 0 : audioProcessingFactory.createNative(),
         fecControllerFactoryFactory == null ? 0 : fecControllerFactoryFactory.createNative());
@@ -483,8 +492,9 @@ public class PeerConnectionFactory {
   private static native boolean nativeStartInternalTracingCapture(String tracingFilename);
   private static native void nativeStopInternalTracingCapture();
   private static native long nativeCreatePeerConnectionFactory(Context context, Options options,
-      VideoEncoderFactory encoderFactory, VideoDecoderFactory decoderFactory,
-      long nativeAudioProcessor, long nativeFecControllerFactory);
+      long nativeAudioDeviceModule, VideoEncoderFactory encoderFactory,
+      VideoDecoderFactory decoderFactory, long nativeAudioProcessor,
+      long nativeFecControllerFactory);
   private static native long nativeCreatePeerConnection(long factory,
       PeerConnection.RTCConfiguration rtcConfig, MediaConstraints constraints, long nativeObserver);
   private static native long nativeCreateLocalMediaStream(long factory, String label);

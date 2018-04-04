@@ -20,7 +20,6 @@
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/timeutils.h"
 #include "sdk/android/src/jni/audio_device/audio_common.h"
-#include "sdk/android/src/jni/audio_device/audio_manager.h"
 
 #define TAG "OpenSLESRecorder"
 #define ALOGV(...) __android_log_print(ANDROID_LOG_VERBOSE, TAG, __VA_ARGS__)
@@ -43,9 +42,9 @@ namespace webrtc {
 
 namespace android_adm {
 
-OpenSLESRecorder::OpenSLESRecorder(AudioManager* audio_manager,
+OpenSLESRecorder::OpenSLESRecorder(const AudioParameters& audio_parameters,
                                    OpenSLEngineManager* engine_manager)
-    : audio_parameters_(audio_manager->GetRecordAudioParameters()),
+    : audio_parameters_(audio_parameters),
       audio_device_buffer_(nullptr),
       initialized_(false),
       recording_(false),
@@ -193,6 +192,14 @@ void OpenSLESRecorder::AttachAudioBuffer(AudioDeviceBuffer* audio_buffer) {
   audio_device_buffer_->SetRecordingChannels(channels);
   // Allocated memory for internal data buffers given existing audio parameters.
   AllocateDataBuffers();
+}
+
+bool OpenSLESRecorder::IsAcousticEchoCancelerSupported() const {
+  return false;
+}
+
+bool OpenSLESRecorder::IsNoiseSuppressorSupported() const {
+  return false;
 }
 
 int OpenSLESRecorder::EnableBuiltInAEC(bool enable) {

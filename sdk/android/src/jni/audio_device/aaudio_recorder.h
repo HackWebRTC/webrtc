@@ -47,7 +47,7 @@ class AAudioRecorder : public AudioInput,
                        public AAudioObserverInterface,
                        public rtc::MessageHandler {
  public:
-  explicit AAudioRecorder(AudioManager* audio_manager);
+  explicit AAudioRecorder(const AudioParameters& audio_parameters);
   ~AAudioRecorder() override;
 
   int Init() override;
@@ -63,6 +63,8 @@ class AAudioRecorder : public AudioInput,
   void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) override;
 
   // TODO(henrika): add support using AAudio APIs when available.
+  bool IsAcousticEchoCancelerSupported() const override;
+  bool IsNoiseSuppressorSupported() const override;
   int EnableBuiltInAEC(bool enable) override;
   int EnableBuiltInAGC(bool enable) override;
   int EnableBuiltInNS(bool enable) override;

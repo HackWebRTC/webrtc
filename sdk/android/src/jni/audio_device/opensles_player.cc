@@ -20,7 +20,6 @@
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/timeutils.h"
 #include "sdk/android/src/jni/audio_device/audio_common.h"
-#include "sdk/android/src/jni/audio_device/audio_manager.h"
 
 #define TAG "OpenSLESPlayer"
 #define ALOGV(...) __android_log_print(ANDROID_LOG_VERBOSE, TAG, __VA_ARGS__)
@@ -43,9 +42,9 @@ namespace webrtc {
 namespace android_adm {
 
 OpenSLESPlayer::OpenSLESPlayer(
-    AudioManager* audio_manager,
+    const AudioParameters& audio_parameters,
     std::unique_ptr<OpenSLEngineManager> engine_manager)
-    : audio_parameters_(audio_manager->GetPlayoutAudioParameters()),
+    : audio_parameters_(audio_parameters),
       audio_device_buffer_(nullptr),
       initialized_(false),
       playing_(false),

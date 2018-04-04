@@ -26,9 +26,6 @@
 #include "rtc_base/thread.h"
 #include "sdk/android/generated_peerconnection_jni/jni/PeerConnectionFactory_jni.h"
 #include "sdk/android/native_api/jni/java_types.h"
-#include "sdk/android/src/jni/audio_device/audio_manager.h"
-#include "sdk/android/src/jni/audio_device/audio_record_jni.h"
-#include "sdk/android/src/jni/audio_device/audio_track_jni.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 #include "sdk/android/src/jni/pc/androidnetworkmonitor.h"
 #include "sdk/android/src/jni/pc/audio.h"
@@ -83,9 +80,6 @@ static char* field_trials_init_string = nullptr;
 // Set in PeerConnectionFactory_initializeAndroidGlobals().
 static bool factory_static_initialized = false;
 static bool video_hw_acceleration_enabled = true;
-
-static const char* kExternalAndroidAudioDeviceFieldTrialName =
-    "WebRTC-ExternalAndroidAudioDevice";
 
 void PeerConnectionFactoryNetworkThreadReady() {
   RTC_LOG(LS_INFO) << "Network thread JavaCallback";
@@ -199,6 +193,7 @@ jlong CreatePeerConnectionFactoryForJava(
     JNIEnv* jni,
     const JavaParamRef<jobject>& jcontext,
     const JavaParamRef<jobject>& joptions,
+    rtc::scoped_refptr<AudioDeviceModule> audio_device_module,
     const JavaParamRef<jobject>& jencoder_factory,
     const JavaParamRef<jobject>& jdecoder_factory,
     rtc::scoped_refptr<AudioProcessing> audio_processor,
@@ -240,23 +235,6 @@ jlong CreatePeerConnectionFactoryForJava(
     rtc::NetworkMonitorFactory::SetFactory(network_monitor_factory);
   }
 
-  rtc::scoped_refptr<AudioDeviceModule> adm = nullptr;
-  if (field_trial::IsEnabled(kExternalAndroidAudioDeviceFieldTrialName)) {
-    // Only Java AudioDeviceModule is supported as an external ADM at the
-    // moment.
-    const AudioDeviceModule::AudioLayer audio_layer =
-        AudioDeviceModule::kAndroidJavaAudio;
-    auto audio_manager =
-        rtc::MakeUnique<android_adm::AudioManager>(jni, audio_layer, jcontext);
-    auto audio_input =
-        rtc::MakeUnique<android_adm::AudioRecordJni>(audio_manager.get());
-    auto audio_output =
-        rtc::MakeUnique<android_adm::AudioTrackJni>(audio_manager.get());
-    adm = CreateAudioDeviceModuleFromInputAndOutput(
-        audio_layer, std::move(audio_manager), std::move(audio_input),
-        std::move(audio_output));
-  }
-
   rtc::scoped_refptr<AudioMixer> audio_mixer = nullptr;
   std::unique_ptr<CallFactoryInterface> call_factory(CreateCallFactory());
   std::unique_ptr<RtcEventLogFactoryInterface> rtc_event_log_factory(
@@ -274,7 +252,7 @@ jlong CreatePeerConnectionFactoryForJava(
       legacy_video_decoder_factory = CreateLegacyVideoDecoderFactory();
     }
     media_engine.reset(CreateMediaEngine(
-        adm, audio_encoder_factory, audio_decoder_factory,
+        audio_device_module, audio_encoder_factory, audio_decoder_factory,
         legacy_video_encoder_factory, legacy_video_decoder_factory, audio_mixer,
         audio_processor));
 #endif
@@ -305,7 +283,7 @@ jlong CreatePeerConnectionFactoryForJava(
     }
 
     media_engine.reset(CreateMediaEngine(
-        adm, audio_encoder_factory, audio_decoder_factory,
+        audio_device_module, audio_encoder_factory, audio_decoder_factory,
         std::move(video_encoder_factory), std::move(video_decoder_factory),
         audio_mixer, audio_processor));
   }
@@ -335,6 +313,7 @@ static jlong JNI_PeerConnectionFactory_CreatePeerConnectionFactory(
     const JavaParamRef<jclass>&,
     const JavaParamRef<jobject>& jcontext,
     const JavaParamRef<jobject>& joptions,
+    jlong native_audio_device_module,
     const JavaParamRef<jobject>& jencoder_factory,
     const JavaParamRef<jobject>& jdecoder_factory,
     jlong native_audio_processor,
@@ -345,7 +324,9 @@ static jlong JNI_PeerConnectionFactory_CreatePeerConnectionFactory(
       reinterpret_cast<FecControllerFactoryInterface*>(
           native_fec_controller_factory));
   return CreatePeerConnectionFactoryForJava(
-      jni, jcontext, joptions, jencoder_factory, jdecoder_factory,
+      jni, jcontext, joptions,
+      reinterpret_cast<AudioDeviceModule*>(native_audio_device_module),
+      jencoder_factory, jdecoder_factory,
       audio_processor ? audio_processor : CreateAudioProcessing(),
       std::move(fec_controller_factory));
 }

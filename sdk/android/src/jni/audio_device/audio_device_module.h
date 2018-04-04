@@ -16,13 +16,10 @@
 #include "api/optional.h"
 #include "modules/audio_device/audio_device_buffer.h"
 #include "sdk/android/native_api/jni/scoped_java_ref.h"
-#include "sdk/android/src/jni/audio_device/audio_manager.h"
 
 namespace webrtc {
 
 namespace android_adm {
-
-class AudioManager;
 
 class AudioInput {
  public:
@@ -39,6 +36,11 @@ class AudioInput {
   virtual bool Recording() const = 0;
 
   virtual void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) = 0;
+
+  // Returns true if the audio input supports built-in audio effects for AEC and
+  // NS.
+  virtual bool IsAcousticEchoCancelerSupported() const = 0;
+  virtual bool IsNoiseSuppressorSupported() const = 0;
 
   virtual int32_t EnableBuiltInAEC(bool enable) = 0;
   virtual int32_t EnableBuiltInAGC(bool enable) = 0;
@@ -64,9 +66,29 @@ class AudioOutput {
   virtual void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) = 0;
 };
 
+// Extract an android.media.AudioManager from an android.content.Context.
+ScopedJavaLocalRef<jobject> GetAudioManager(JNIEnv* env,
+                                            const JavaRef<jobject>& j_context);
+
+// Get default audio sample rate by querying an android.media.AudioManager.
+int GetDefaultSampleRate(JNIEnv* env, const JavaRef<jobject>& j_audio_manager);
+
+// Get audio input and output parameters based on a number of settings.
+void GetAudioParameters(JNIEnv* env,
+                        const JavaRef<jobject>& j_context,
+                        const JavaRef<jobject>& j_audio_manager,
+                        int sample_rate,
+                        bool use_stereo_input,
+                        bool use_stereo_output,
+                        AudioParameters* input_parameters,
+                        AudioParameters* output_parameters);
+
+// Glue together an audio input and audio output to get an AudioDeviceModule.
 rtc::scoped_refptr<AudioDeviceModule> CreateAudioDeviceModuleFromInputAndOutput(
     AudioDeviceModule::AudioLayer audio_layer,
-    std::unique_ptr<AudioManager> audio_manager,
+    bool is_stereo_playout_supported,
+    bool is_stereo_record_supported,
+    uint16_t playout_delay_ms,
     std::unique_ptr<AudioInput> audio_input,
     std::unique_ptr<AudioOutput> audio_output);
 

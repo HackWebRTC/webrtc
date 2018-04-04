@@ -13,7 +13,6 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/timeutils.h"
-#include "sdk/android/src/jni/audio_device/audio_manager.h"
 
 #define LOG_ON_ERROR(op)                                                      \
   do {                                                                        \
@@ -132,15 +131,14 @@ class ScopedStreamBuilder {
 
 }  // namespace
 
-AAudioWrapper::AAudioWrapper(AudioManager* audio_manager,
+AAudioWrapper::AAudioWrapper(const AudioParameters& audio_parameters,
                              aaudio_direction_t direction,
                              AAudioObserverInterface* observer)
-    : direction_(direction), observer_(observer) {
+    : audio_parameters_(audio_parameters),
+      direction_(direction),
+      observer_(observer) {
   RTC_LOG(INFO) << "ctor";
   RTC_DCHECK(observer_);
-  direction_ == AAUDIO_DIRECTION_OUTPUT
-      ? audio_parameters_ = audio_manager->GetPlayoutAudioParameters()
-      : audio_parameters_ = audio_manager->GetRecordAudioParameters();
   aaudio_thread_checker_.DetachFromThread();
   RTC_LOG(INFO) << audio_parameters_.ToString();
 }

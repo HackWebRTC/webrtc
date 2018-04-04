@@ -18,7 +18,6 @@ import android.preference.ListPreference;
 import android.preference.Preference;
 import org.webrtc.Camera2Enumerator;
 import org.webrtc.audio.JavaAudioDeviceModule;
-import org.webrtc.voiceengine.WebRtcAudioUtils;
 
 /**
  * Settings activity for AppRTC.
@@ -174,56 +173,26 @@ public class SettingsActivity extends Activity implements OnSharedPreferenceChan
       camera2Preference.setEnabled(false);
     }
 
-    // Disable forcing WebRTC based AEC so it won't affect our value.
-    // Otherwise, if it was enabled, isAcousticEchoCancelerSupported would always return false.
-    if (sharedPreferences.getBoolean(keyprefUseLegacyAudioDevice, false)) {
-      WebRtcAudioUtils.setWebRtcBasedAcousticEchoCanceler(false);
-      if (!WebRtcAudioUtils.isAcousticEchoCancelerSupported()) {
-        Preference disableBuiltInAECPreference =
-            settingsFragment.findPreference(keyprefDisableBuiltInAEC);
+    if (!JavaAudioDeviceModule.isBuiltInAcousticEchoCancelerSupported()) {
+      Preference disableBuiltInAECPreference =
+          settingsFragment.findPreference(keyprefDisableBuiltInAEC);
 
-        disableBuiltInAECPreference.setSummary(getString(R.string.pref_built_in_aec_not_available));
-        disableBuiltInAECPreference.setEnabled(false);
-      }
+      disableBuiltInAECPreference.setSummary(getString(R.string.pref_built_in_aec_not_available));
+      disableBuiltInAECPreference.setEnabled(false);
+    }
 
-      Preference disableBuiltInAGCPreference =
-          settingsFragment.findPreference(keyprefDisableBuiltInAGC);
+    Preference disableBuiltInAGCPreference =
+        settingsFragment.findPreference(keyprefDisableBuiltInAGC);
 
-      disableBuiltInAGCPreference.setSummary(getString(R.string.pref_built_in_agc_not_available));
-      disableBuiltInAGCPreference.setEnabled(false);
+    disableBuiltInAGCPreference.setSummary(getString(R.string.pref_built_in_agc_not_available));
+    disableBuiltInAGCPreference.setEnabled(false);
 
-      WebRtcAudioUtils.setWebRtcBasedNoiseSuppressor(false);
-      if (!WebRtcAudioUtils.isNoiseSuppressorSupported()) {
-        Preference disableBuiltInNSPreference =
-            settingsFragment.findPreference(keyprefDisableBuiltInNS);
+    if (!JavaAudioDeviceModule.isBuiltInNoiseSuppressorSupported()) {
+      Preference disableBuiltInNSPreference =
+          settingsFragment.findPreference(keyprefDisableBuiltInNS);
 
-        disableBuiltInNSPreference.setSummary(getString(R.string.pref_built_in_ns_not_available));
-        disableBuiltInNSPreference.setEnabled(false);
-      }
-    } else {
-      JavaAudioDeviceModule.setWebRtcBasedAcousticEchoCanceler(false);
-      if (!JavaAudioDeviceModule.isAcousticEchoCancelerSupported()) {
-        Preference disableBuiltInAECPreference =
-            settingsFragment.findPreference(keyprefDisableBuiltInAEC);
-
-        disableBuiltInAECPreference.setSummary(getString(R.string.pref_built_in_aec_not_available));
-        disableBuiltInAECPreference.setEnabled(false);
-      }
-
-      Preference disableBuiltInAGCPreference =
-          settingsFragment.findPreference(keyprefDisableBuiltInAGC);
-
-      disableBuiltInAGCPreference.setSummary(getString(R.string.pref_built_in_agc_not_available));
-      disableBuiltInAGCPreference.setEnabled(false);
-
-      JavaAudioDeviceModule.setWebRtcBasedNoiseSuppressor(false);
-      if (!JavaAudioDeviceModule.isNoiseSuppressorSupported()) {
-        Preference disableBuiltInNSPreference =
-            settingsFragment.findPreference(keyprefDisableBuiltInNS);
-
-        disableBuiltInNSPreference.setSummary(getString(R.string.pref_built_in_ns_not_available));
-        disableBuiltInNSPreference.setEnabled(false);
-      }
+      disableBuiltInNSPreference.setSummary(getString(R.string.pref_built_in_ns_not_available));
+      disableBuiltInNSPreference.setEnabled(false);
     }
   }
 

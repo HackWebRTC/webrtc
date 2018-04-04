@@ -21,7 +21,6 @@ import android.os.Process;
 import java.lang.Thread;
 import java.nio.ByteBuffer;
 import javax.annotation.Nullable;
-import org.webrtc.ContextUtils;
 import org.webrtc.Logging;
 import org.webrtc.ThreadUtils;
 import org.webrtc.audio.JavaAudioDeviceModule.AudioTrackErrorCallback;
@@ -30,9 +29,7 @@ import org.webrtc.CalledByNative;
 import org.webrtc.NativeClassQualifiedName;
 
 class WebRtcAudioTrack {
-  private static final boolean DEBUG = false;
-
-  private static final String TAG = "WebRtcAudioTrack";
+  private static final String TAG = "WebRtcAudioTrackExternal";
 
   // Default audio data format is PCM 16 bit per sample.
   // Guaranteed to be supported by all devices.
@@ -51,17 +48,6 @@ class WebRtcAudioTrack {
   // By default, WebRTC creates audio tracks with a usage attribute
   // corresponding to voice communications, such as telephony or VoIP.
   private static final int DEFAULT_USAGE = getDefaultUsageAttribute();
-  private static int usageAttribute = DEFAULT_USAGE;
-
-  // This method overrides the default usage attribute and allows the user
-  // to set it to something else than AudioAttributes.USAGE_VOICE_COMMUNICATION.
-  // NOTE: calling this method will most likely break existing VoIP tuning.
-  // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
-  @SuppressWarnings("NoSynchronizedMethodCheck")
-  public static synchronized void setAudioTrackUsageAttribute(int usage) {
-    Logging.w(TAG, "Default usage attribute is changed from: " + DEFAULT_USAGE + " to " + usage);
-    usageAttribute = usage;
-  }
 
   private static int getDefaultUsageAttribute() {
     if (WebRtcAudioUtils.runningOnLollipopOrHigher()) {
@@ -77,7 +63,8 @@ class WebRtcAudioTrack {
     return AudioAttributes.USAGE_VOICE_COMMUNICATION;
   }
 
-  private final long nativeAudioTrack;
+  private long nativeAudioTrack;
+  private final Context context;
   private final AudioManager audioManager;
   private final ThreadUtils.ThreadChecker threadChecker = new ThreadUtils.ThreadChecker();
 
@@ -85,18 +72,14 @@ class WebRtcAudioTrack {
 
   private @Nullable AudioTrack audioTrack = null;
   private @Nullable AudioTrackThread audioThread = null;
+  private final VolumeLogger volumeLogger;
 
   // Samples to be played are replaced by zeros if |speakerMute| is set to true.
   // Can be used to ensure that the speaker is fully muted.
-  private static volatile boolean speakerMute = false;
+  private volatile boolean speakerMute = false;
   private byte[] emptyBytes;
 
-  private static @Nullable AudioTrackErrorCallback errorCallback = null;
-
-  public static void setErrorCallback(AudioTrackErrorCallback errorCallback) {
-    Logging.d(TAG, "Set extended error callback");
-    WebRtcAudioTrack.errorCallback = errorCallback;
-  }
+  private final @Nullable AudioTrackErrorCallback errorCallback;
 
   /**
    * Audio thread which keeps calling AudioTrack.write() to stream audio.
@@ -192,15 +175,22 @@ class WebRtcAudioTrack {
   }
 
   @CalledByNative
-  WebRtcAudioTrack(long nativeAudioTrack) {
+  WebRtcAudioTrack(Context context, AudioManager audioManager) {
+    this(context, audioManager, null /* errorCallback */);
+  }
+
+  WebRtcAudioTrack(
+      Context context, AudioManager audioManager, @Nullable AudioTrackErrorCallback errorCallback) {
     threadChecker.detachThread();
-    Logging.d(TAG, "ctor" + WebRtcAudioUtils.getThreadInfo());
+    this.context = context;
+    this.audioManager = audioManager;
+    this.errorCallback = errorCallback;
+    this.volumeLogger = new VolumeLogger(audioManager);
+  }
+
+  @CalledByNative
+  public void setNativeAudioTrack(long nativeAudioTrack) {
     this.nativeAudioTrack = nativeAudioTrack;
-    audioManager =
-        (AudioManager) ContextUtils.getApplicationContext().getSystemService(Context.AUDIO_SERVICE);
-    if (DEBUG) {
-      WebRtcAudioUtils.logDeviceInfo(TAG);
-    }
   }
 
   @CalledByNative
@@ -279,6 +269,7 @@ class WebRtcAudioTrack {
   @CalledByNative
   private boolean startPlayout() {
     threadChecker.checkIsOnValidThread();
+    volumeLogger.start();
     Logging.d(TAG, "startPlayout");
     assertTrue(audioTrack != null);
     assertTrue(audioThread == null);
@@ -310,6 +301,7 @@ class WebRtcAudioTrack {
   @CalledByNative
   private boolean stopPlayout() {
     threadChecker.checkIsOnValidThread();
+    volumeLogger.stop();
     Logging.d(TAG, "stopPlayout");
     assertTrue(audioThread != null);
     logUnderrunCount();
@@ -319,7 +311,7 @@ class WebRtcAudioTrack {
     audioThread.interrupt();
     if (!ThreadUtils.joinUninterruptibly(audioThread, AUDIO_TRACK_THREAD_JOIN_TIMEOUT_MS)) {
       Logging.e(TAG, "Join of AudioTrackThread timed out.");
-      WebRtcAudioUtils.logAudioState(TAG);
+      WebRtcAudioUtils.logAudioState(TAG, context, audioManager);
     }
     Logging.d(TAG, "AudioTrackThread has now been stopped.");
     audioThread = null;
@@ -332,7 +324,6 @@ class WebRtcAudioTrack {
   private int getStreamMaxVolume() {
     threadChecker.checkIsOnValidThread();
     Logging.d(TAG, "getStreamMaxVolume");
-    assertTrue(audioManager != null);
     return audioManager.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL);
   }
 
@@ -341,7 +332,6 @@ class WebRtcAudioTrack {
   private boolean setStreamVolume(int volume) {
     threadChecker.checkIsOnValidThread();
     Logging.d(TAG, "setStreamVolume(" + volume + ")");
-    assertTrue(audioManager != null);
     if (isVolumeFixed()) {
       Logging.e(TAG, "The device implements a fixed volume policy.");
       return false;
@@ -364,7 +354,6 @@ class WebRtcAudioTrack {
   private int getStreamVolume() {
     threadChecker.checkIsOnValidThread();
     Logging.d(TAG, "getStreamVolume");
-    assertTrue(audioManager != null);
     return audioManager.getStreamVolume(AudioManager.STREAM_VOICE_CALL);
   }
 
@@ -394,12 +383,9 @@ class WebRtcAudioTrack {
     if (sampleRateInHz != nativeOutputSampleRate) {
       Logging.w(TAG, "Unable to use fast mode since requested sample rate is not native");
     }
-    if (usageAttribute != DEFAULT_USAGE) {
-      Logging.w(TAG, "A non default usage attribute is used: " + usageAttribute);
-    }
     // Create an audio track where the audio usage is for VoIP and the content type is speech.
     return new AudioTrack(new AudioAttributes.Builder()
-                              .setUsage(usageAttribute)
+                              .setUsage(DEFAULT_USAGE)
                               .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                               .build(),
         new AudioFormat.Builder()
@@ -466,7 +452,7 @@ class WebRtcAudioTrack {
 
   // Sets all samples to be played out to zero if |mute| is true, i.e.,
   // ensures that the speaker is muted.
-  public static void setSpeakerMute(boolean mute) {
+  public void setSpeakerMute(boolean mute) {
     Logging.w(TAG, "setSpeakerMute(" + mute + ")");
     speakerMute = mute;
   }
@@ -482,7 +468,7 @@ class WebRtcAudioTrack {
 
   private void reportWebRtcAudioTrackInitError(String errorMessage) {
     Logging.e(TAG, "Init playout error: " + errorMessage);
-    WebRtcAudioUtils.logAudioState(TAG);
+    WebRtcAudioUtils.logAudioState(TAG, context, audioManager);
     if (errorCallback != null) {
       errorCallback.onWebRtcAudioTrackInitError(errorMessage);
     }
@@ -491,7 +477,7 @@ class WebRtcAudioTrack {
   private void reportWebRtcAudioTrackStartError(
       AudioTrackStartErrorCode errorCode, String errorMessage) {
     Logging.e(TAG, "Start playout error: " + errorCode + ". " + errorMessage);
-    WebRtcAudioUtils.logAudioState(TAG);
+    WebRtcAudioUtils.logAudioState(TAG, context, audioManager);
     if (errorCallback != null) {
       errorCallback.onWebRtcAudioTrackStartError(errorCode, errorMessage);
     }
@@ -499,7 +485,7 @@ class WebRtcAudioTrack {
 
   private void reportWebRtcAudioTrackError(String errorMessage) {
     Logging.e(TAG, "Run-time playback error: " + errorMessage);
-    WebRtcAudioUtils.logAudioState(TAG);
+    WebRtcAudioUtils.logAudioState(TAG, context, audioManager);
     if (errorCallback != null) {
       errorCallback.onWebRtcAudioTrackError(errorMessage);
     }

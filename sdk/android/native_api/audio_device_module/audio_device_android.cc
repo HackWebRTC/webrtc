@@ -19,7 +19,7 @@
 #include "rtc_base/refcountedobject.h"
 #include "sdk/android/src/jni/audio_device/aaudio_player.h"
 #include "sdk/android/src/jni/audio_device/aaudio_recorder.h"
-#include "sdk/android/src/jni/audio_device/audio_manager.h"
+
 #include "sdk/android/src/jni/audio_device/audio_record_jni.h"
 #include "sdk/android/src/jni/audio_device/audio_track_jni.h"
 #include "sdk/android/src/jni/audio_device/opensles_player.h"
@@ -28,72 +28,117 @@
 
 namespace webrtc {
 
+namespace {
+
+void GetDefaultAudioParameters(JNIEnv* env,
+                               jobject application_context,
+                               AudioParameters* input_parameters,
+                               AudioParameters* output_parameters) {
+  const JavaParamRef<jobject> j_context(application_context);
+  const ScopedJavaLocalRef<jobject> j_audio_manager =
+      android_adm::GetAudioManager(env, j_context);
+  const int sample_rate =
+      android_adm::GetDefaultSampleRate(env, j_audio_manager);
+  android_adm::GetAudioParameters(env, j_context, j_audio_manager, sample_rate,
+                                  false /* use_stereo_input */,
+                                  false /* use_stereo_output */,
+                                  input_parameters, output_parameters);
+}
+
+}  // namespace
+
 #if defined(AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO)
 rtc::scoped_refptr<AudioDeviceModule> CreateAAudioAudioDeviceModule(
     JNIEnv* env,
     jobject application_context) {
-  RTC_LOG(INFO) << __FUNCTION__;
-  const AudioDeviceModule::AudioLayer audio_layer =
-      AudioDeviceModule::kAndroidAAudioAudio;
-  auto audio_manager = rtc::MakeUnique<android_adm::AudioManager>(
-      env, audio_layer, JavaParamRef<jobject>(application_context));
-  auto audio_input =
-      rtc::MakeUnique<android_adm::AAudioRecorder>(audio_manager.get());
-  auto audio_output =
-      rtc::MakeUnique<android_adm::AAudioPlayer>(audio_manager.get());
+  // Get default audio input/output parameters.
+  AudioParameters input_parameters;
+  AudioParameters output_parameters;
+  GetDefaultAudioParameters(env, application_context, &input_parameters,
+                            &output_parameters);
+  // Create ADM from AAudioRecorder and AAudioPlayer.
   return CreateAudioDeviceModuleFromInputAndOutput(
-      audio_layer, std::move(audio_manager), std::move(audio_input),
-      std::move(audio_output));
+      AudioDeviceModule::kAndroidAAudioAudio, false /* use_stereo_input */,
+      false /* use_stereo_output */,
+      android_adm::kLowLatencyModeDelayEstimateInMilliseconds,
+      rtc::MakeUnique<android_adm::AAudioRecorder>(input_parameters),
+      rtc::MakeUnique<android_adm::AAudioPlayer>(output_parameters));
 }
 #endif
 
 rtc::scoped_refptr<AudioDeviceModule> CreateJavaAudioDeviceModule(
     JNIEnv* env,
     jobject application_context) {
-  const AudioDeviceModule::AudioLayer audio_layer =
-      AudioDeviceModule::kAndroidJavaAudio;
-  auto audio_manager = rtc::MakeUnique<android_adm::AudioManager>(
-      env, audio_layer, JavaParamRef<jobject>(application_context));
-  auto audio_input =
-      rtc::MakeUnique<android_adm::AudioRecordJni>(audio_manager.get());
-  auto audio_output =
-      rtc::MakeUnique<android_adm::AudioTrackJni>(audio_manager.get());
+  // Get default audio input/output parameters.
+  const JavaParamRef<jobject> j_context(application_context);
+  const ScopedJavaLocalRef<jobject> j_audio_manager =
+      android_adm::GetAudioManager(env, j_context);
+  AudioParameters input_parameters;
+  AudioParameters output_parameters;
+  GetDefaultAudioParameters(env, application_context, &input_parameters,
+                            &output_parameters);
+  // Create ADM from AudioRecord and AudioTrack.
+  auto audio_input = rtc::MakeUnique<android_adm::AudioRecordJni>(
+      env, input_parameters,
+      android_adm::kHighLatencyModeDelayEstimateInMilliseconds,
+      android_adm::AudioRecordJni::CreateJavaWebRtcAudioRecord(
+          env, j_context, j_audio_manager));
+  auto audio_output = rtc::MakeUnique<android_adm::AudioTrackJni>(
+      env, output_parameters,
+      android_adm::AudioTrackJni::CreateJavaWebRtcAudioTrack(env, j_context,
+                                                             j_audio_manager));
   return CreateAudioDeviceModuleFromInputAndOutput(
-      audio_layer, std::move(audio_manager), std::move(audio_input),
-      std::move(audio_output));
+      AudioDeviceModule::kAndroidJavaAudio, false /* use_stereo_input */,
+      false /* use_stereo_output */,
+      android_adm::kHighLatencyModeDelayEstimateInMilliseconds,
+      std::move(audio_input), std::move(audio_output));
 }
 
 rtc::scoped_refptr<AudioDeviceModule> CreateOpenSLESAudioDeviceModule(
     JNIEnv* env,
     jobject application_context) {
-  const AudioDeviceModule::AudioLayer audio_layer =
-      AudioDeviceModule::kAndroidOpenSLESAudio;
+  // Get default audio input/output parameters.
+  AudioParameters input_parameters;
+  AudioParameters output_parameters;
+  GetDefaultAudioParameters(env, application_context, &input_parameters,
+                            &output_parameters);
+  // Create ADM from OpenSLESRecorder and OpenSLESPlayer.
   auto engine_manager = rtc::MakeUnique<android_adm::OpenSLEngineManager>();
-  auto audio_manager = rtc::MakeUnique<android_adm::AudioManager>(
-      env, audio_layer, JavaParamRef<jobject>(application_context));
   auto audio_input = rtc::MakeUnique<android_adm::OpenSLESRecorder>(
-      audio_manager.get(), engine_manager.get());
+      input_parameters, engine_manager.get());
   auto audio_output = rtc::MakeUnique<android_adm::OpenSLESPlayer>(
-      audio_manager.get(), std::move(engine_manager));
+      output_parameters, std::move(engine_manager));
   return CreateAudioDeviceModuleFromInputAndOutput(
-      audio_layer, std::move(audio_manager), std::move(audio_input),
-      std::move(audio_output));
+      AudioDeviceModule::kAndroidOpenSLESAudio, false /* use_stereo_input */,
+      false /* use_stereo_output */,
+      android_adm::kLowLatencyModeDelayEstimateInMilliseconds,
+      std::move(audio_input), std::move(audio_output));
 }
 
 rtc::scoped_refptr<AudioDeviceModule>
 CreateJavaInputAndOpenSLESOutputAudioDeviceModule(JNIEnv* env,
                                                   jobject application_context) {
-  const AudioDeviceModule::AudioLayer audio_layer =
-      AudioDeviceModule::kAndroidJavaInputAndOpenSLESOutputAudio;
-  auto audio_manager = rtc::MakeUnique<android_adm::AudioManager>(
-      env, audio_layer, JavaParamRef<jobject>(application_context));
-  auto audio_input =
-      rtc::MakeUnique<android_adm::AudioRecordJni>(audio_manager.get());
+  // Get default audio input/output parameters.
+  const JavaParamRef<jobject> j_context(application_context);
+  const ScopedJavaLocalRef<jobject> j_audio_manager =
+      android_adm::GetAudioManager(env, j_context);
+  AudioParameters input_parameters;
+  AudioParameters output_parameters;
+  GetDefaultAudioParameters(env, application_context, &input_parameters,
+                            &output_parameters);
+  // Create ADM from AudioRecord and OpenSLESPlayer.
+  auto audio_input = rtc::MakeUnique<android_adm::AudioRecordJni>(
+      env, input_parameters,
+      android_adm::kLowLatencyModeDelayEstimateInMilliseconds,
+      android_adm::AudioRecordJni::CreateJavaWebRtcAudioRecord(
+          env, j_context, j_audio_manager));
   auto audio_output = rtc::MakeUnique<android_adm::OpenSLESPlayer>(
-      audio_manager.get(), rtc::MakeUnique<android_adm::OpenSLEngineManager>());
+      output_parameters, rtc::MakeUnique<android_adm::OpenSLEngineManager>());
   return CreateAudioDeviceModuleFromInputAndOutput(
-      audio_layer, std::move(audio_manager), std::move(audio_input),
-      std::move(audio_output));
+      AudioDeviceModule::kAndroidJavaInputAndOpenSLESOutputAudio,
+      false /* use_stereo_input */, false /* use_stereo_output */,
+      android_adm::kLowLatencyModeDelayEstimateInMilliseconds,
+      std::move(audio_input), std::move(audio_output));
 }
 
 }  // namespace webrtc

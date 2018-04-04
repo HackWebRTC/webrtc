@@ -20,8 +20,6 @@ namespace webrtc {
 
 namespace android_adm {
 
-class AudioManager;
-
 // AAudio callback interface for audio transport to/from the AAudio stream.
 // The interface also contains an error callback method for notifications of
 // e.g. device changes.
@@ -60,7 +58,7 @@ class AAudioObserverInterface {
 // ensure that the audio device and stream direction agree.
 class AAudioWrapper {
  public:
-  AAudioWrapper(AudioManager* audio_manager,
+  AAudioWrapper(const AudioParameters& audio_parameters,
                 aaudio_direction_t direction,
                 AAudioObserverInterface* observer);
   ~AAudioWrapper();
@@ -117,7 +115,7 @@ class AAudioWrapper {
 
   rtc::ThreadChecker thread_checker_;
   rtc::ThreadChecker aaudio_thread_checker_;
-  AudioParameters audio_parameters_;
+  const AudioParameters audio_parameters_;
   const aaudio_direction_t direction_;
   AAudioObserverInterface* observer_ = nullptr;
   AAudioStream* stream_ = nullptr;

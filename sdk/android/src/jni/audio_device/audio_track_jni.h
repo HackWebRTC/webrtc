@@ -20,7 +20,6 @@
 #include "rtc_base/thread_checker.h"
 #include "sdk/android/src/jni/audio_device/audio_common.h"
 #include "sdk/android/src/jni/audio_device/audio_device_module.h"
-#include "sdk/android/src/jni/audio_device/audio_manager.h"
 
 namespace webrtc {
 
@@ -32,16 +31,23 @@ namespace android_adm {
 // C++-land, but decoded audio buffers are requested on a high-priority
 // thread managed by the Java class.
 //
-// An instance must be created and destroyed on one and the same thread.
-// All public methods must also be called on the same thread. A thread checker
-// will RTC_DCHECK if any method is called on an invalid thread.
+// An instance can be created on any thread, but must then be used on one and
+// the same thread. All public methods must also be called on the same thread. A
+// thread checker will RTC_DCHECK if any method is called on an invalid thread
 //
-// This class uses AttachCurrentThreadIfNeeded to attach to a Java VM if needed
-// and detach when the object goes out of scope. Additional thread checking
-// guarantees that no other (possibly non attached) thread is used.
+// This class uses AttachCurrentThreadIfNeeded to attach to a Java VM if needed.
+// Additional thread checking guarantees that no other (possibly non attached)
+// thread is used.
 class AudioTrackJni : public AudioOutput {
  public:
-  explicit AudioTrackJni(AudioManager* audio_manager);
+  static ScopedJavaLocalRef<jobject> CreateJavaWebRtcAudioTrack(
+      JNIEnv* env,
+      const JavaRef<jobject>& j_context,
+      const JavaRef<jobject>& j_audio_manager);
+
+  AudioTrackJni(JNIEnv* env,
+                const AudioParameters& audio_parameters,
+                const JavaRef<jobject>& j_webrtc_audio_track);
   ~AudioTrackJni() override;
 
   int32_t Init() override;

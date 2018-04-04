@@ -29,127 +29,10 @@ import java.lang.Thread;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import org.webrtc.ContextUtils;
 import org.webrtc.Logging;
 
 final class WebRtcAudioUtils {
-  private static final String TAG = "WebRtcAudioUtils";
-
-  // List of devices where it has been verified that the built-in effect
-  // bad and where it makes sense to avoid using it and instead rely on the
-  // native WebRTC version instead. The device name is given by Build.MODEL.
-  private static final String[] BLACKLISTED_AEC_MODELS = new String[] {
-      // It is recommended to maintain a list of blacklisted models outside
-      // this package and instead call setWebRtcBasedAcousticEchoCanceler(true)
-      // from the client for devices where the built-in AEC shall be disabled.
-  };
-  private static final String[] BLACKLISTED_NS_MODELS = new String[] {
-      // It is recommended to maintain a list of blacklisted models outside
-      // this package and instead call setWebRtcBasedNoiseSuppressor(true)
-      // from the client for devices where the built-in NS shall be disabled.
-  };
-
-  // Use 16kHz as the default sample rate. A higher sample rate might prevent
-  // us from supporting communication mode on some older (e.g. ICS) devices.
-  private static final int DEFAULT_SAMPLE_RATE_HZ = 16000;
-  private static int defaultSampleRateHz = DEFAULT_SAMPLE_RATE_HZ;
-  // Set to true if setDefaultSampleRateHz() has been called.
-  private static boolean isDefaultSampleRateOverridden = false;
-
-  // By default, utilize hardware based audio effects for AEC and NS when
-  // available.
-  private static boolean useWebRtcBasedAcousticEchoCanceler = false;
-  private static boolean useWebRtcBasedNoiseSuppressor = false;
-
-  // Call these methods if any hardware based effect shall be replaced by a
-  // software based version provided by the WebRTC stack instead.
-  // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
-  @SuppressWarnings("NoSynchronizedMethodCheck")
-  public static synchronized void setWebRtcBasedAcousticEchoCanceler(boolean enable) {
-    useWebRtcBasedAcousticEchoCanceler = enable;
-  }
-
-  // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
-  @SuppressWarnings("NoSynchronizedMethodCheck")
-  public static synchronized void setWebRtcBasedNoiseSuppressor(boolean enable) {
-    useWebRtcBasedNoiseSuppressor = enable;
-  }
-
-  // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
-  @SuppressWarnings("NoSynchronizedMethodCheck")
-  public static synchronized void setWebRtcBasedAutomaticGainControl(boolean enable) {
-    // TODO(henrika): deprecated; remove when no longer used by any client.
-    Logging.w(TAG, "setWebRtcBasedAutomaticGainControl() is deprecated");
-  }
-
-  // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
-  @SuppressWarnings("NoSynchronizedMethodCheck")
-  public static synchronized boolean useWebRtcBasedAcousticEchoCanceler() {
-    if (useWebRtcBasedAcousticEchoCanceler) {
-      Logging.w(TAG, "Overriding default behavior; now using WebRTC AEC!");
-    }
-    return useWebRtcBasedAcousticEchoCanceler;
-  }
-
-  // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
-  @SuppressWarnings("NoSynchronizedMethodCheck")
-  public static synchronized boolean useWebRtcBasedNoiseSuppressor() {
-    if (useWebRtcBasedNoiseSuppressor) {
-      Logging.w(TAG, "Overriding default behavior; now using WebRTC NS!");
-    }
-    return useWebRtcBasedNoiseSuppressor;
-  }
-
-  // TODO(henrika): deprecated; remove when no longer used by any client.
-  // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
-  @SuppressWarnings("NoSynchronizedMethodCheck")
-  public static synchronized boolean useWebRtcBasedAutomaticGainControl() {
-    // Always return true here to avoid trying to use any built-in AGC.
-    return true;
-  }
-
-  // Returns true if the device supports an audio effect (AEC or NS).
-  // Four conditions must be fulfilled if functions are to return true:
-  // 1) the platform must support the built-in (HW) effect,
-  // 2) explicit use (override) of a WebRTC based version must not be set,
-  // 3) the device must not be blacklisted for use of the effect, and
-  // 4) the UUID of the effect must be approved (some UUIDs can be excluded).
-  public static boolean isAcousticEchoCancelerSupported() {
-    return WebRtcAudioEffects.canUseAcousticEchoCanceler();
-  }
-  public static boolean isNoiseSuppressorSupported() {
-    return WebRtcAudioEffects.canUseNoiseSuppressor();
-  }
-
-  // Call this method if the default handling of querying the native sample
-  // rate shall be overridden. Can be useful on some devices where the
-  // available Android APIs are known to return invalid results.
-  // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
-  @SuppressWarnings("NoSynchronizedMethodCheck")
-  public static synchronized void setDefaultSampleRateHz(int sampleRateHz) {
-    isDefaultSampleRateOverridden = true;
-    defaultSampleRateHz = sampleRateHz;
-  }
-
-  // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
-  @SuppressWarnings("NoSynchronizedMethodCheck")
-  public static synchronized boolean isDefaultSampleRateOverridden() {
-    return isDefaultSampleRateOverridden;
-  }
-
-  // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
-  @SuppressWarnings("NoSynchronizedMethodCheck")
-  public static synchronized int getDefaultSampleRateHz() {
-    return defaultSampleRateHz;
-  }
-
-  public static List<String> getBlackListedModelsForAecUsage() {
-    return Arrays.asList(WebRtcAudioUtils.BLACKLISTED_AEC_MODELS);
-  }
-
-  public static List<String> getBlackListedModelsForNsUsage() {
-    return Arrays.asList(WebRtcAudioUtils.BLACKLISTED_NS_MODELS);
-  }
+  private static final String TAG = "WebRtcAudioUtilsExternal";
 
   public static boolean runningOnJellyBeanMR1OrHigher() {
     // November 2012: Android 4.2. API Level 17.
@@ -214,22 +97,19 @@ final class WebRtcAudioUtils {
   // Logs information about the current audio state. The idea is to call this
   // method when errors are detected to log under what conditions the error
   // occurred. Hopefully it will provide clues to what might be the root cause.
-  static void logAudioState(String tag) {
+  static void logAudioState(String tag, Context context, AudioManager audioManager) {
     logDeviceInfo(tag);
-    final Context context = ContextUtils.getApplicationContext();
-    final AudioManager audioManager =
-        (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-    logAudioStateBasic(tag, audioManager);
+    logAudioStateBasic(tag, context, audioManager);
     logAudioStateVolume(tag, audioManager);
     logAudioDeviceInfo(tag, audioManager);
   }
 
   // Reports basic audio statistics.
-  private static void logAudioStateBasic(String tag, AudioManager audioManager) {
+  private static void logAudioStateBasic(String tag, Context context, AudioManager audioManager) {
     Logging.d(tag,
         "Audio State: "
             + "audio mode: " + modeToString(audioManager.getMode()) + ", "
-            + "has mic: " + hasMicrophone() + ", "
+            + "has mic: " + hasMicrophone(context) + ", "
             + "mic muted: " + audioManager.isMicrophoneMute() + ", "
             + "music active: " + audioManager.isMusicActive() + ", "
             + "speakerphone: " + audioManager.isSpeakerphoneOn() + ", "
@@ -394,8 +274,7 @@ final class WebRtcAudioUtils {
   }
 
   // Returns true if the device can record audio via a microphone.
-  private static boolean hasMicrophone() {
-    return ContextUtils.getApplicationContext().getPackageManager().hasSystemFeature(
-        PackageManager.FEATURE_MICROPHONE);
+  private static boolean hasMicrophone(Context context) {
+    return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_MICROPHONE);
   }
 }

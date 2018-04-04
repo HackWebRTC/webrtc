@@ -15,7 +15,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/timeutils.h"
-#include "sdk/android/src/jni/audio_device/audio_manager.h"
+
 #include "system_wrappers/include/sleep.h"
 
 namespace webrtc {
@@ -26,9 +26,9 @@ enum AudioDeviceMessageType : uint32_t {
   kMessageInputStreamDisconnected,
 };
 
-AAudioRecorder::AAudioRecorder(AudioManager* audio_manager)
+AAudioRecorder::AAudioRecorder(const AudioParameters& audio_parameters)
     : main_thread_(rtc::Thread::Current()),
-      aaudio_(audio_manager, AAUDIO_DIRECTION_INPUT, this) {
+      aaudio_(audio_parameters, AAUDIO_DIRECTION_INPUT, this) {
   RTC_LOG(INFO) << "ctor";
   thread_checker_aaudio_.DetachFromThread();
 }
@@ -120,6 +120,14 @@ void AAudioRecorder::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
   const size_t capacity = 5 * audio_parameters.GetBytesPer10msBuffer();
   fine_audio_buffer_.reset(new FineAudioBuffer(
       audio_device_buffer_, audio_parameters.sample_rate(), capacity));
+}
+
+bool AAudioRecorder::IsAcousticEchoCancelerSupported() const {
+  return false;
+}
+
+bool AAudioRecorder::IsNoiseSuppressorSupported() const {
+  return false;
 }
 
 int AAudioRecorder::EnableBuiltInAEC(bool enable) {

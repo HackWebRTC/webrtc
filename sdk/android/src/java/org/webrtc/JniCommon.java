@@ -14,10 +14,10 @@ import java.nio.ByteBuffer;
 
 /** Class with static JNI helper functions that are used in many places. */
 @JNINamespace("webrtc::jni")
-class JniCommon {
+public class JniCommon {
   /** Functions to increment/decrement an rtc::RefCountInterface pointer. */
-  static native void nativeAddRef(long refCountedPointer);
-  static native void nativeReleaseRef(long refCountedPointer);
+  public static native void nativeAddRef(long refCountedPointer);
+  public static native void nativeReleaseRef(long refCountedPointer);
 
   public static native ByteBuffer nativeAllocateByteBuffer(int size);
   public static native void nativeFreeByteBuffer(ByteBuffer buffer);

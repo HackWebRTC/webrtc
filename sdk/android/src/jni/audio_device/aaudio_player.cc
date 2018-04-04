@@ -14,7 +14,6 @@
 #include "modules/audio_device/fine_audio_buffer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "sdk/android/src/jni/audio_device/audio_manager.h"
 
 namespace webrtc {
 
@@ -24,9 +23,9 @@ enum AudioDeviceMessageType : uint32_t {
   kMessageOutputStreamDisconnected,
 };
 
-AAudioPlayer::AAudioPlayer(AudioManager* audio_manager)
+AAudioPlayer::AAudioPlayer(const AudioParameters& audio_parameters)
     : main_thread_(rtc::Thread::Current()),
-      aaudio_(audio_manager, AAUDIO_DIRECTION_OUTPUT, this) {
+      aaudio_(audio_parameters, AAUDIO_DIRECTION_OUTPUT, this) {
   RTC_LOG(INFO) << "ctor";
   thread_checker_aaudio_.DetachFromThread();
 }

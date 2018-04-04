@@ -48,14 +48,20 @@ class ScopedHistogramTimer {
 
 }  // namespace
 
-// AudioRecordJni implementation.
-AudioRecordJni::AudioRecordJni(AudioManager* audio_manager)
-    : j_audio_record_(
-          Java_WebRtcAudioRecord_Constructor(AttachCurrentThreadIfNeeded(),
-                                             jni::jlongFromPointer(this))),
-      audio_manager_(audio_manager),
-      audio_parameters_(audio_manager->GetRecordAudioParameters()),
-      total_delay_in_milliseconds_(0),
+ScopedJavaLocalRef<jobject> AudioRecordJni::CreateJavaWebRtcAudioRecord(
+    JNIEnv* env,
+    const JavaRef<jobject>& j_context,
+    const JavaRef<jobject>& j_audio_manager) {
+  return Java_WebRtcAudioRecord_Constructor(env, j_context, j_audio_manager);
+}
+
+AudioRecordJni::AudioRecordJni(JNIEnv* env,
+                               const AudioParameters& audio_parameters,
+                               int total_delay_ms,
+                               const JavaRef<jobject>& j_audio_record)
+    : j_audio_record_(env, j_audio_record),
+      audio_parameters_(audio_parameters),
+      total_delay_ms_(total_delay_ms),
       direct_buffer_address_(nullptr),
       direct_buffer_capacity_in_bytes_(0),
       frames_per_buffer_(0),
@@ -64,6 +70,8 @@ AudioRecordJni::AudioRecordJni(AudioManager* audio_manager)
       audio_device_buffer_(nullptr) {
   RTC_LOG(INFO) << "ctor";
   RTC_DCHECK(audio_parameters_.is_valid());
+  Java_WebRtcAudioRecord_setNativeAudioRecord(env, j_audio_record_,
+                                              jni::jlongFromPointer(this));
   // Detach from this thread since construction is allowed to happen on a
   // different thread.
   thread_checker_.DetachFromThread();
@@ -171,11 +179,16 @@ void AudioRecordJni::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
   const size_t channels = audio_parameters_.channels();
   RTC_LOG(INFO) << "SetRecordingChannels(" << channels << ")";
   audio_device_buffer_->SetRecordingChannels(channels);
-  total_delay_in_milliseconds_ =
-      audio_manager_->GetDelayEstimateInMilliseconds();
-  RTC_DCHECK_GT(total_delay_in_milliseconds_, 0);
-  RTC_LOG(INFO) << "total_delay_in_milliseconds: "
-                << total_delay_in_milliseconds_;
+}
+
+bool AudioRecordJni::IsAcousticEchoCancelerSupported() const {
+  return Java_WebRtcAudioRecord_isAcousticEchoCancelerSupported(
+      env_, j_audio_record_);
+}
+
+bool AudioRecordJni::IsNoiseSuppressorSupported() const {
+  return Java_WebRtcAudioRecord_isNoiseSuppressorSupported(env_,
+                                                           j_audio_record_);
 }
 
 int32_t AudioRecordJni::EnableBuiltInAEC(bool enable) {
@@ -228,7 +241,7 @@ void AudioRecordJni::DataIsRecorded(JNIEnv* env,
   // We provide one (combined) fixed delay estimate for the APM and use the
   // |playDelayMs| parameter only. Components like the AEC only sees the sum
   // of |playDelayMs| and |recDelayMs|, hence the distributions does not matter.
-  audio_device_buffer_->SetVQEData(total_delay_in_milliseconds_, 0);
+  audio_device_buffer_->SetVQEData(total_delay_ms_, 0);
   if (audio_device_buffer_->DeliverRecordedData() == -1) {
     RTC_LOG(INFO) << "AudioDeviceBuffer::DeliverRecordedData failed";
   }

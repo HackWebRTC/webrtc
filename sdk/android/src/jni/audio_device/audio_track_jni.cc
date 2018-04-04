@@ -18,19 +18,24 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
 #include "sdk/android/generated_java_audio_device_jni/jni/WebRtcAudioTrack_jni.h"
-#include "sdk/android/src/jni/audio_device/audio_manager.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {
 
 namespace android_adm {
 
-// TODO(henrika): possible extend usage of AudioManager and add it as member.
-AudioTrackJni::AudioTrackJni(AudioManager* audio_manager)
-    : j_audio_track_(
-          Java_WebRtcAudioTrack_Constructor(AttachCurrentThreadIfNeeded(),
-                                            jni::jlongFromPointer(this))),
-      audio_parameters_(audio_manager->GetPlayoutAudioParameters()),
+ScopedJavaLocalRef<jobject> AudioTrackJni::CreateJavaWebRtcAudioTrack(
+    JNIEnv* env,
+    const JavaRef<jobject>& j_context,
+    const JavaRef<jobject>& j_audio_manager) {
+  return Java_WebRtcAudioTrack_Constructor(env, j_context, j_audio_manager);
+}
+
+AudioTrackJni::AudioTrackJni(JNIEnv* env,
+                             const AudioParameters& audio_parameters,
+                             const JavaRef<jobject>& j_webrtc_audio_track)
+    : j_audio_track_(env, j_webrtc_audio_track),
+      audio_parameters_(audio_parameters),
       direct_buffer_address_(nullptr),
       direct_buffer_capacity_in_bytes_(0),
       frames_per_buffer_(0),
@@ -39,6 +44,8 @@ AudioTrackJni::AudioTrackJni(AudioManager* audio_manager)
       audio_device_buffer_(nullptr) {
   RTC_LOG(INFO) << "ctor";
   RTC_DCHECK(audio_parameters_.is_valid());
+  Java_WebRtcAudioTrack_setNativeAudioTrack(env, j_audio_track_,
+                                            jni::jlongFromPointer(this));
   // Detach from this thread since construction is allowed to happen on a
   // different thread.
   thread_checker_.DetachFromThread();
