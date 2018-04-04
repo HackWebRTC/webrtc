@@ -230,6 +230,11 @@ void RtpTransport::OnReadPacket(rtc::PacketTransportInternal* transport,
                                 int flags) {
   TRACE_EVENT0("webrtc", "RtpTransport::OnReadPacket");
 
+  if (!cricket::IsRtpPacket(data, len) &&
+      !IsRtcp(data, static_cast<int>(len))) {
+    return;
+  }
+
   // When using RTCP multiplexing we might get RTCP packets on the RTP
   // transport. We check the RTP payload type to determine if it is RTCP.
   bool rtcp = transport == rtcp_packet_transport() ||
@@ -239,6 +244,7 @@ void RtpTransport::OnReadPacket(rtc::PacketTransportInternal* transport,
   if (!WantsPacket(rtcp, &packet)) {
     return;
   }
+
   // This mutates |packet| if it is protected.
   SignalPacketReceived(rtcp, &packet, packet_time);
 }
