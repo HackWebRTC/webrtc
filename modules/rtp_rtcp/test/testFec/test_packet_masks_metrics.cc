@@ -725,8 +725,7 @@ class FecPacketMaskMetricsTest : public ::testing::Test {
     fprintf(fp_mask_, "\n");
   }
 
-  int ProcessXORPacketMasks(CodeType code_type,
-                          FecMaskType fec_mask_type) {
+  int ProcessXORPacketMasks(CodeType code_type, FecMaskType fec_mask_type) {
     int code_index = 0;
     // Maximum number of media packets allowed for the mask type.
     const int packet_mask_max = kMaxMediaPackets[fec_mask_type];
@@ -734,17 +733,16 @@ class FecPacketMaskMetricsTest : public ::testing::Test {
         new uint8_t[packet_mask_max * kUlpfecMaxPacketMaskSize]);
     // Loop through codes up to |kMaxMediaPacketsTest|.
     for (int num_media_packets = 1; num_media_packets <= kMaxMediaPacketsTest;
-        num_media_packets++) {
+         ++num_media_packets) {
       const int mask_bytes_fec_packet =
           static_cast<int>(internal::PacketMaskSize(num_media_packets));
       internal::PacketMaskTable mask_table(fec_mask_type, num_media_packets);
       for (int num_fec_packets = 1; num_fec_packets <= num_media_packets;
           num_fec_packets++) {
         memset(packet_mask.get(), 0, num_media_packets * mask_bytes_fec_packet);
-        memcpy(packet_mask.get(),
-               mask_table.fec_packet_mask_table()[num_media_packets - 1]
-                                                 [num_fec_packets - 1],
-               num_fec_packets * mask_bytes_fec_packet);
+        rtc::ArrayView<const uint8_t> mask =
+            mask_table.LookUp(num_media_packets - 1, num_fec_packets - 1);
+        memcpy(packet_mask.get(), &mask[0], mask.size());
         // Convert to bit mask.
         GetPacketMaskConvertToBitMask(packet_mask.get(), num_media_packets,
                                       num_fec_packets, mask_bytes_fec_packet,

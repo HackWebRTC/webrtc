@@ -111,7 +111,9 @@ rtc_static_library("rtp_rtcp") {
     "include/ulpfec_receiver.h",
     "source/dtmf_queue.cc",
     "source/dtmf_queue.h",
+    "source/fec_private_tables_bursty.cc",
     "source/fec_private_tables_bursty.h",
+    "source/fec_private_tables_random.cc",
     "source/fec_private_tables_random.h",
     "source/flexfec_header_reader_writer.cc",
     "source/flexfec_header_reader_writer.h",
@@ -331,6 +333,7 @@ if (rtc_include_tests) {
 
     sources = [
       "source/byte_io_unittest.cc",
+      "source/fec_private_tables_bursty_unittest.cc",
       "source/flexfec_header_reader_writer_unittest.cc",
       "source/flexfec_receiver_unittest.cc",
       "source/flexfec_sender_unittest.cc",

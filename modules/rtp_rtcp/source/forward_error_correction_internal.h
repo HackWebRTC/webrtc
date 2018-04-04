@@ -12,7 +12,8 @@
 #define MODULES_RTP_RTCP_SOURCE_FORWARD_ERROR_CORRECTION_INTERNAL_H_
 
 #include "modules/include/module_common_types.h"
-#include "typedefs.h"  // NOLINT(build/include)
+
+#include "api/array_view.h"
 
 namespace webrtc {
 
@@ -33,18 +34,20 @@ namespace internal {
 class PacketMaskTable {
  public:
   PacketMaskTable(FecMaskType fec_mask_type, int num_media_packets);
-  ~PacketMaskTable() {}
-  FecMaskType fec_mask_type() const { return fec_mask_type_; }
-  const uint8_t* const* const* fec_packet_mask_table() const {
-    return fec_packet_mask_table_;
-  }
+  ~PacketMaskTable();
+
+  rtc::ArrayView<const uint8_t> LookUp(int media_packet_index,
+                                       int fec_index) const;
 
  private:
-  FecMaskType InitMaskType(FecMaskType fec_mask_type, int num_media_packets);
-  const uint8_t* const* const* InitMaskTable(FecMaskType fec_mask_type_);
-  const FecMaskType fec_mask_type_;
-  const uint8_t* const* const* fec_packet_mask_table_;
+  static const uint8_t* PickTable(FecMaskType fec_mask_type,
+                                  int num_media_packets);
+  const uint8_t* table_;
 };
+
+rtc::ArrayView<const uint8_t> LookUpInFecTable(const uint8_t* table,
+                                               int media_packet_index,
+                                               int fec_index);
 
 // Returns an array of packet masks. The mask of a single FEC packet
 // corresponds to a number of mask bytes. The mask indicates which
