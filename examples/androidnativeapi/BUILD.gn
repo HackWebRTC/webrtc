@@ -12,7 +12,8 @@ rtc_android_apk("androidnativeapi") {
 
   deps = [
     ":resources",
-    "//sdk/android:base_java",
+    "//sdk/android:surfaceviewrenderer_java",
+    "//sdk/android:video_api_java",
   ]
 
   shared_libraries = [ ":examples_androidnativeapi_jni" ]

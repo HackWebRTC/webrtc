@@ -730,9 +730,16 @@ dist_jar("libwebrtc") {
   deps = [
     ":audio_java",
     ":base_java",
+    ":camera_java",
+    ":filevideo_java",
     ":hwcodecs_java",
     ":libjingle_peerconnection_java",
     ":libjingle_peerconnection_metrics_default_java",
+    ":peerconnection_java",
+    ":screencapturer_java",
+    ":surfaceviewrenderer_java",
+    ":video_api_java",
+    ":video_java",
     "../../modules/audio_device:audio_device_java",
     "../../rtc_base:base_java",
   ]
@@ -745,71 +752,54 @@ dist_jar("libwebrtc") {
 # TODO(sakal): Extract files from this target to releveant subtargets, video, audio etc.
 rtc_android_library("base_java") {
   java_files = [
-    "api/org/webrtc/AudioProcessingFactory.java",
-    "api/org/webrtc/Camera1Capturer.java",
-    "api/org/webrtc/Camera1Enumerator.java",
-    "api/org/webrtc/Camera2Capturer.java",
-    "api/org/webrtc/Camera2Enumerator.java",
-    "api/org/webrtc/CameraEnumerationAndroid.java",
-    "api/org/webrtc/CameraEnumerator.java",
-    "api/org/webrtc/CameraVideoCapturer.java",
-    "api/org/webrtc/EglBase.java",
-    "api/org/webrtc/EglRenderer.java",
+    "src/java/org/webrtc/CalledByNative.java",
+    "src/java/org/webrtc/CalledByNativeUnchecked.java",
+    "src/java/org/webrtc/Histogram.java",
+    "src/java/org/webrtc/JniCommon.java",
+    "src/java/org/webrtc/JniHelper.java",
+    "src/java/org/webrtc/JNINamespace.java",
+    "src/java/org/webrtc/NativeClassQualifiedName.java",
+    "src/java/org/webrtc/WebRtcClassLoader.java",
+  ]
+
+  deps = [
+    "//rtc_base:base_java",
+  ]
+}
+
+rtc_android_library("video_api_java") {
+  java_files = [
     "api/org/webrtc/EncodedImage.java",
-    "api/org/webrtc/FileVideoCapturer.java",
-    "api/org/webrtc/GlRectDrawer.java",
-    "api/org/webrtc/GlShader.java",
-    "api/org/webrtc/GlTextureFrameBuffer.java",
-    "api/org/webrtc/GlUtil.java",
-    "api/org/webrtc/JavaI420Buffer.java",
-    "api/org/webrtc/RendererCommon.java",
-    "api/org/webrtc/ScreenCapturerAndroid.java",
-    "api/org/webrtc/SurfaceEglRenderer.java",
-    "api/org/webrtc/SurfaceTextureHelper.java",
-    "api/org/webrtc/SurfaceViewRenderer.java",
     "api/org/webrtc/VideoCapturer.java",
     "api/org/webrtc/VideoCodecInfo.java",
     "api/org/webrtc/VideoCodecStatus.java",
     "api/org/webrtc/VideoDecoder.java",
     "api/org/webrtc/VideoDecoderFactory.java",
-    "api/org/webrtc/VideoDecoderFallback.java",
     "api/org/webrtc/VideoEncoder.java",
     "api/org/webrtc/VideoEncoderFactory.java",
-    "api/org/webrtc/VideoEncoderFallback.java",
-    "api/org/webrtc/VideoFileRenderer.java",
     "api/org/webrtc/VideoFrame.java",
-    "api/org/webrtc/VideoFrameDrawer.java",
-    "api/org/webrtc/VideoRenderer.java",
+    "api/org/webrtc/VideoRenderer.java",  # TODO(sakal): Remove
     "api/org/webrtc/VideoSink.java",
+  ]
+
+  # TODO(sakal): These should be moved to video_java but cannot because of dependencies.
+  java_files += [
+    "api/org/webrtc/EglBase.java",
+    "api/org/webrtc/GlShader.java",
+    "api/org/webrtc/GlTextureFrameBuffer.java",
+    "api/org/webrtc/GlUtil.java",
+    "api/org/webrtc/JavaI420Buffer.java",
+    "api/org/webrtc/RendererCommon.java",
+    "api/org/webrtc/SurfaceTextureHelper.java",
     "api/org/webrtc/YuvConverter.java",
     "api/org/webrtc/YuvHelper.java",
-    "src/java/org/webrtc/AndroidVideoTrackSourceObserver.java",
-    "src/java/org/webrtc/CalledByNative.java",
-    "src/java/org/webrtc/CalledByNativeUnchecked.java",
-    "src/java/org/webrtc/JNINamespace.java",
-    "src/java/org/webrtc/Camera1Session.java",
-    "src/java/org/webrtc/Camera2Session.java",
-    "src/java/org/webrtc/CameraCapturer.java",
-    "src/java/org/webrtc/CameraSession.java",
-    "src/java/org/webrtc/WebRtcClassLoader.java",
-    "src/java/org/webrtc/JniHelper.java",
     "src/java/org/webrtc/EglBase10.java",
     "src/java/org/webrtc/EglBase14.java",
-    "src/java/org/webrtc/Histogram.java",
-    "src/java/org/webrtc/JniCommon.java",
-    "src/java/org/webrtc/NativeClassQualifiedName.java",
-    "src/java/org/webrtc/NV12Buffer.java",
-    "src/java/org/webrtc/NV21Buffer.java",
     "src/java/org/webrtc/TextureBufferImpl.java",
-    "src/java/org/webrtc/VideoCodecType.java",
-    "src/java/org/webrtc/VideoDecoderWrapper.java",
-    "src/java/org/webrtc/VideoEncoderWrapper.java",
-    "src/java/org/webrtc/WrappedNativeI420Buffer.java",
-    "src/java/org/webrtc/WrappedNativeVideoEncoder.java",
-    "src/java/org/webrtc/WrappedNativeVideoDecoder.java",
   ]
 
   deps = [
+    ":base_java",
     "//rtc_base:base_java",
   ]
 }
@@ -832,6 +822,89 @@ rtc_android_library("audio_java") {
   ]
 }
 
+rtc_android_library("video_java") {
+  java_files = [
+    "api/org/webrtc/EglRenderer.java",
+    "api/org/webrtc/GlRectDrawer.java",
+    "api/org/webrtc/VideoDecoderFallback.java",
+    "api/org/webrtc/VideoEncoderFallback.java",
+    "api/org/webrtc/VideoFrameDrawer.java",
+    "src/java/org/webrtc/AndroidVideoTrackSourceObserver.java",
+    "src/java/org/webrtc/VideoDecoderWrapper.java",
+    "src/java/org/webrtc/VideoEncoderWrapper.java",
+    "src/java/org/webrtc/WrappedNativeI420Buffer.java",
+    "src/java/org/webrtc/WrappedNativeVideoDecoder.java",
+    "src/java/org/webrtc/WrappedNativeVideoEncoder.java",
+  ]
+
+  deps = [
+    ":base_java",
+    ":video_api_java",
+    "//rtc_base:base_java",
+  ]
+}
+
+rtc_android_library("camera_java") {
+  java_files = [
+    "api/org/webrtc/Camera1Capturer.java",
+    "api/org/webrtc/Camera1Enumerator.java",
+    "api/org/webrtc/Camera2Capturer.java",
+    "api/org/webrtc/Camera2Enumerator.java",
+    "api/org/webrtc/CameraEnumerationAndroid.java",
+    "api/org/webrtc/CameraEnumerator.java",
+    "api/org/webrtc/CameraVideoCapturer.java",
+    "src/java/org/webrtc/Camera1Session.java",
+    "src/java/org/webrtc/Camera2Session.java",
+    "src/java/org/webrtc/CameraCapturer.java",
+    "src/java/org/webrtc/CameraSession.java",
+    "src/java/org/webrtc/NV21Buffer.java",
+  ]
+
+  deps = [
+    ":base_java",
+    ":video_api_java",
+    ":video_java",
+    "//rtc_base:base_java",
+  ]
+}
+
+rtc_android_library("screencapturer_java") {
+  java_files = [ "api/org/webrtc/ScreenCapturerAndroid.java" ]
+
+  deps = [
+    ":video_api_java",
+    ":video_java",
+    "//rtc_base:base_java",
+  ]
+}
+
+rtc_android_library("surfaceviewrenderer_java") {
+  java_files = [
+    "api/org/webrtc/SurfaceEglRenderer.java",
+    "api/org/webrtc/SurfaceViewRenderer.java",
+  ]
+
+  deps = [
+    ":video_api_java",
+    ":video_java",
+    "//rtc_base:base_java",
+  ]
+}
+
+rtc_android_library("filevideo_java") {
+  java_files = [
+    "api/org/webrtc/VideoFileRenderer.java",
+    "api/org/webrtc/FileVideoCapturer.java",
+  ]
+
+  deps = [
+    ":base_java",
+    ":video_api_java",
+    ":video_java",
+    "//rtc_base:base_java",
+  ]
+}
+
 if (rtc_use_builtin_sw_codecs) {
   rtc_android_library("swcodecs_java") {
     java_files = [
@@ -845,6 +918,8 @@ if (rtc_use_builtin_sw_codecs) {
 
     deps = [
       ":base_java",
+      ":video_api_java",
+      ":video_java",
       "//rtc_base:base_java",
     ]
   }
@@ -859,10 +934,14 @@ rtc_android_library("hwcodecs_java") {
     "src/java/org/webrtc/HardwareVideoDecoder.java",
     "src/java/org/webrtc/HardwareVideoEncoder.java",
     "src/java/org/webrtc/MediaCodecUtils.java",
+    "src/java/org/webrtc/NV12Buffer.java",
+    "src/java/org/webrtc/VideoCodecType.java",
   ]
 
   deps = [
     ":base_java",
+    ":video_api_java",
+    ":video_java",
     "//rtc_base:base_java",
   ]
 
@@ -876,14 +955,13 @@ rtc_android_library("hwcodecs_java") {
   }
 }
 
-rtc_android_library("libjingle_peerconnection_java") {
+rtc_android_library("peerconnection_java") {
   java_files = [
+    "api/org/webrtc/AudioProcessingFactory.java",
     "api/org/webrtc/AudioSource.java",
     "api/org/webrtc/AudioTrack.java",
     "api/org/webrtc/CallSessionFileRotatingLogSink.java",
     "api/org/webrtc/DataChannel.java",
-    "api/org/webrtc/DefaultVideoDecoderFactory.java",
-    "api/org/webrtc/DefaultVideoEncoderFactory.java",
     "api/org/webrtc/DtmfSender.java",
     "api/org/webrtc/FecControllerFactoryFactoryInterface.java",
     "api/org/webrtc/IceCandidate.java",
@@ -919,13 +997,38 @@ rtc_android_library("libjingle_peerconnection_java") {
   deps = [
     ":audio_java",
     ":base_java",
+    ":video_api_java",
+    ":video_java",  # TODO(sakal): Remove dependency.
+    "//rtc_base:base_java",
+  ]
+}
+
+# Old target that pulls in everything. This will be going away in the future,
+# clients should depend on individual video_java etc. targets instead.
+rtc_android_library("libjingle_peerconnection_java") {
+  java_files = [ "src/java/org/webrtc/Empty.java" ]
+
+  deps = [
+    ":base_java",
+    ":camera_java",
+    ":filevideo_java",
     ":hwcodecs_java",
+    ":peerconnection_java",
+    ":screencapturer_java",
+    ":surfaceviewrenderer_java",
+    ":video_api_java",
+    ":video_java",
     "//modules/audio_device:audio_device_java",
     "//rtc_base:base_java",
   ]
 
   if (rtc_use_builtin_sw_codecs) {
     deps += [ ":swcodecs_java" ]
+
+    java_files += [
+      "api/org/webrtc/DefaultVideoDecoderFactory.java",
+      "api/org/webrtc/DefaultVideoEncoderFactory.java",
+    ]
   }
 }
 
@@ -975,6 +1078,7 @@ if (rtc_include_tests) {
       ":base_java",
       ":libjingle_peerconnection_java",
       ":libjingle_peerconnection_metrics_default_java",
+      ":video_api_java",
       "//base:base_java",
       "//base:base_java_test_support",
       "//rtc_base:base_java",

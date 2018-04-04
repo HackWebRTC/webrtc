@@ -183,6 +183,8 @@ public class VideoFrame {
     buffer.release();
   }
 
+  // TODO(sakal): This file should be strictly an interface. This method should be moved somewhere
+  // else.
   public static VideoFrame.Buffer cropAndScaleI420(final I420Buffer buffer, int cropX, int cropY,
       int cropWidth, int cropHeight, int scaleWidth, int scaleHeight) {
     if (cropWidth == scaleWidth && cropHeight == scaleHeight) {
