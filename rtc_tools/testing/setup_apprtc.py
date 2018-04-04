@@ -34,11 +34,11 @@ def main(argv):
                                 output_dir])
 
   build_apprtc_path = os.path.join(SCRIPT_DIR, 'build_apprtc.py')
-  apprtc_src_dir = os.path.join(output_dir, 'apprtc', 'src')
+  apprtc_dir = os.path.join(output_dir, 'apprtc')
   go_dir = os.path.join(output_dir, 'go')
   collider_dir = os.path.join(output_dir, 'collider')
   utils.RunSubprocessWithRetry([sys.executable, build_apprtc_path,
-                                apprtc_src_dir, go_dir, collider_dir])
+                                apprtc_dir, go_dir, collider_dir])
 
 
 if __name__ == '__main__':

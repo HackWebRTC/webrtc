@@ -16,6 +16,7 @@ This script needs to know the path to the 'src' directory in apprtc, the
 root directory of 'go' and the output_dir.
 """
 
+import fileinput
 import os
 import shutil
 import subprocess
@@ -24,7 +25,15 @@ import sys
 import utils
 
 
-USAGE_STR = "Usage: {} <apprtc_src_dir> <go_dir> <output_dir>"
+USAGE_STR = "Usage: {} <apprtc_dir> <go_dir> <output_dir>"
+
+
+def _ConfigureApprtcServerToDeveloperMode(app_yaml_path):
+  for line in fileinput.input(app_yaml_path, inplace=True):
+    # We can't click past these in browser-based tests, so disable them.
+    line = line.replace('BYPASS_JOIN_CONFIRMATION: false',
+                        'BYPASS_JOIN_CONFIRMATION: true')
+    sys.stdout.write(line)
 
 
 def main(argv):
@@ -35,11 +44,14 @@ def main(argv):
   go_root_dir = os.path.abspath(argv[2])
   golang_workspace = os.path.abspath(argv[3])
 
+  app_yaml_path = os.path.join(apprtc_dir, 'out', 'app_engine', 'app.yaml')
+  _ConfigureApprtcServerToDeveloperMode(app_yaml_path)
+
   utils.RemoveDirectory(golang_workspace)
 
   golang_workspace_src = os.path.join(golang_workspace, 'src')
 
-  collider_dir = os.path.join(apprtc_dir, 'collider')
+  collider_dir = os.path.join(apprtc_dir, 'src', 'collider')
   shutil.copytree(collider_dir, golang_workspace_src)
 
   golang_binary = 'go%s' % ('.exe' if utils.GetPlatform() == 'win' else '')
