@@ -346,6 +346,11 @@ bool HasRemb(const Codec& codec) {
       FeedbackParam(kRtcpFbParamRemb, kParamValueEmpty));
 }
 
+bool HasRrtr(const Codec& codec) {
+  return codec.HasFeedbackParam(
+      FeedbackParam(kRtcpFbParamRrtr, kParamValueEmpty));
+}
+
 bool HasTransportCc(const Codec& codec) {
   return codec.HasFeedbackParam(
       FeedbackParam(kRtcpFbParamTransportCc, kParamValueEmpty));

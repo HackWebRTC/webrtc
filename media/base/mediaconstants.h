@@ -101,6 +101,9 @@ extern const char kRtcpFbParamTransportCc[];
 // ccm submessages according to RFC 5104
 extern const char kRtcpFbParamCcm[];
 extern const char kRtcpFbCcmParamFir[];
+// Receiver reference time report
+// https://tools.ietf.org/html/rfc3611 section 4.4
+extern const char kRtcpFbParamRrtr[];
 // Google specific parameters
 extern const char kCodecParamMaxBitrate[];
 extern const char kCodecParamMinBitrate[];
