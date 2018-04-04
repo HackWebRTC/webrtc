@@ -487,15 +487,6 @@ int VP9EncoderImpl::InitAndSetControlSettings(const VideoCodec* inst) {
   }
   // Enable encoder skip of static/low content blocks.
   vpx_codec_control(encoder_, VP8E_SET_STATIC_THRESHOLD, 1);
-
-  // Turn off per-layer frame dropping.
-  vpx_svc_frame_drop_t svc_frame_drop;
-  svc_frame_drop.framedrop_mode = CONSTRAINED_LAYER_DROP;
-  for (size_t sl_idx = 0; sl_idx < num_spatial_layers_; ++sl_idx) {
-    svc_frame_drop.framedrop_thresh[sl_idx] = config_->rc_dropframe_thresh;
-  }
-  vpx_codec_control(encoder_, VP9E_SET_SVC_FRAME_DROP_LAYER, &svc_frame_drop);
-
   inited_ = true;
   return WEBRTC_VIDEO_CODEC_OK;
 }
