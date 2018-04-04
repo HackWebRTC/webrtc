@@ -10,7 +10,7 @@
 
 #include "sdk/android/src/jni/audio_device/build_info.h"
 
-#include "sdk/android/generated_audio_jni/jni/BuildInfo_jni.h"
+#include "sdk/android/generated_audio_device_base_jni/jni/BuildInfo_jni.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {

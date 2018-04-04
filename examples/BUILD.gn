@@ -116,6 +116,7 @@ if (is_android) {
       ":AppRTCMobile_resources",
       "../modules/audio_device:audio_device_java",
       "../rtc_base:base_java",
+      "../sdk/android:audio_java",
       "../sdk/android:base_java",
       "../sdk/android:hwcodecs_java",
       "../sdk/android:libjingle_peerconnection_java",

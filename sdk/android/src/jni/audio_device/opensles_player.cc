@@ -114,6 +114,10 @@ int OpenSLESPlayer::InitPlayout() {
   return 0;
 }
 
+bool OpenSLESPlayer::PlayoutIsInitialized() const {
+  return initialized_;
+}
+
 int OpenSLESPlayer::StartPlayout() {
   ALOGD("StartPlayout[tid=%d]", rtc::CurrentThreadId());
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
@@ -166,6 +170,10 @@ int OpenSLESPlayer::StopPlayout() {
   initialized_ = false;
   playing_ = false;
   return 0;
+}
+
+bool OpenSLESPlayer::Playing() const {
+  return playing_;
 }
 
 bool OpenSLESPlayer::SpeakerVolumeIsAvailable() {

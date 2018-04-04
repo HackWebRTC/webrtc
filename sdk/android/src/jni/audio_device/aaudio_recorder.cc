@@ -66,6 +66,10 @@ int AAudioRecorder::InitRecording() {
   return 0;
 }
 
+bool AAudioRecorder::RecordingIsInitialized() const {
+  return initialized_;
+}
+
 int AAudioRecorder::StartRecording() {
   RTC_LOG(INFO) << "StartRecording";
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
@@ -96,6 +100,10 @@ int AAudioRecorder::StopRecording() {
   initialized_ = false;
   recording_ = false;
   return 0;
+}
+
+bool AAudioRecorder::Recording() const {
+  return recording_;
 }
 
 void AAudioRecorder::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {

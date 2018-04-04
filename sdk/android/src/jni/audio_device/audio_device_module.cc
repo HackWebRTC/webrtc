@@ -76,7 +76,7 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
     thread_checker_.DetachFromThread();
   }
 
-  virtual ~AndroidAudioDeviceModule() { RTC_LOG(INFO) << __FUNCTION__; }
+  ~AndroidAudioDeviceModule() override { RTC_LOG(INFO) << __FUNCTION__; }
 
   int32_t ActiveAudioLayer(
       AudioDeviceModule::AudioLayer* audioLayer) const override {

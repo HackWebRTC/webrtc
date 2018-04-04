@@ -19,7 +19,7 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/timeutils.h"
-#include "sdk/android/generated_audio_jni/jni/WebRtcAudioRecord_jni.h"
+#include "sdk/android/generated_java_audio_device_jni/jni/WebRtcAudioRecord_jni.h"
 #include "sdk/android/src/jni/audio_device/audio_common.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 #include "system_wrappers/include/metrics.h"
@@ -115,6 +115,10 @@ int32_t AudioRecordJni::InitRecording() {
   return 0;
 }
 
+bool AudioRecordJni::RecordingIsInitialized() const {
+  return initialized_;
+}
+
 int32_t AudioRecordJni::StartRecording() {
   RTC_LOG(INFO) << "StartRecording";
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
@@ -151,6 +155,10 @@ int32_t AudioRecordJni::StopRecording() {
   recording_ = false;
   direct_buffer_address_ = nullptr;
   return 0;
+}
+
+bool AudioRecordJni::Recording() const {
+  return recording_;
 }
 
 void AudioRecordJni::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {

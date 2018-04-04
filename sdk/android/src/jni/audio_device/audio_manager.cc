@@ -20,20 +20,11 @@
 #include "rtc_base/refcount.h"
 #include "rtc_base/refcountedobject.h"
 
-#include "sdk/android/generated_audio_jni/jni/WebRtcAudioManager_jni.h"
+#include "sdk/android/generated_audio_device_base_jni/jni/WebRtcAudioManager_jni.h"
 #include "sdk/android/src/jni/audio_device/audio_common.h"
-#include "sdk/android/src/jni/jni_helpers.h"
-
-#if defined(AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO)
-#include "sdk/android/src/jni/audio_device/aaudio_player.h"
-#include "sdk/android/src/jni/audio_device/aaudio_recorder.h"
-#endif
 #include "sdk/android/src/jni/audio_device/audio_device_module.h"
 #include "sdk/android/src/jni/audio_device/audio_manager.h"
-#include "sdk/android/src/jni/audio_device/audio_record_jni.h"
-#include "sdk/android/src/jni/audio_device/audio_track_jni.h"
-#include "sdk/android/src/jni/audio_device/opensles_player.h"
-#include "sdk/android/src/jni/audio_device/opensles_recorder.h"
+#include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {
 

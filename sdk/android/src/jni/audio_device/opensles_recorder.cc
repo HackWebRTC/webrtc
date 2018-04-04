@@ -110,6 +110,10 @@ int OpenSLESRecorder::InitRecording() {
   return 0;
 }
 
+bool OpenSLESRecorder::RecordingIsInitialized() const {
+  return initialized_;
+}
+
 int OpenSLESRecorder::StartRecording() {
   ALOGD("StartRecording[tid=%d]", rtc::CurrentThreadId());
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
@@ -166,6 +170,10 @@ int OpenSLESRecorder::StopRecording() {
   initialized_ = false;
   recording_ = false;
   return 0;
+}
+
+bool OpenSLESRecorder::Recording() const {
+  return recording_;
 }
 
 void OpenSLESRecorder::AttachAudioBuffer(AudioDeviceBuffer* audio_buffer) {

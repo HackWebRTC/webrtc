@@ -51,11 +51,11 @@ class AudioRecordJni : public AudioInput {
   int32_t Terminate() override;
 
   int32_t InitRecording() override;
-  bool RecordingIsInitialized() const override { return initialized_; }
+  bool RecordingIsInitialized() const override;
 
   int32_t StartRecording() override;
   int32_t StopRecording() override;
-  bool Recording() const override { return recording_; }
+  bool Recording() const override;
 
   void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) override;
 

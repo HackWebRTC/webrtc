@@ -48,11 +48,11 @@ class AudioTrackJni : public AudioOutput {
   int32_t Terminate() override;
 
   int32_t InitPlayout() override;
-  bool PlayoutIsInitialized() const override { return initialized_; }
+  bool PlayoutIsInitialized() const override;
 
   int32_t StartPlayout() override;
   int32_t StopPlayout() override;
-  bool Playing() const override { return playing_; }
+  bool Playing() const override;
 
   bool SpeakerVolumeIsAvailable() override;
   int SetSpeakerVolume(uint32_t volume) override;

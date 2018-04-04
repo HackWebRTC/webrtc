@@ -70,6 +70,7 @@ typedef ScopedSLObject<SLObjectItf, const SLObjectItf_*> ScopedSLObjectItf;
 class OpenSLEngineManager {
  public:
   OpenSLEngineManager();
+  ~OpenSLEngineManager();
   SLObjectItf GetOpenSLEngine();
 
  private:

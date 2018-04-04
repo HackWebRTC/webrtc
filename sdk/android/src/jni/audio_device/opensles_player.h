@@ -68,11 +68,11 @@ class OpenSLESPlayer : public AudioOutput {
   int Terminate() override;
 
   int InitPlayout() override;
-  bool PlayoutIsInitialized() const override { return initialized_; }
+  bool PlayoutIsInitialized() const override;
 
   int StartPlayout() override;
   int StopPlayout() override;
-  bool Playing() const override { return playing_; }
+  bool Playing() const override;
 
   bool SpeakerVolumeIsAvailable() override;
   int SetSpeakerVolume(uint32_t volume) override;

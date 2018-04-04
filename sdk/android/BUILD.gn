@@ -145,21 +145,27 @@ rtc_source_set("native_api_audio_device_module") {
   ]
 
   deps = [
-    ":audio_device_jni",
+    ":audio_device_base_jni",
     ":base_jni",
+    ":java_audio_device_jni",
+    ":opensles_audio_device_jni",
     "../../modules/audio_device:audio_device",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
     "../../system_wrappers",
     "../../system_wrappers:metrics_api",
   ]
+  if (rtc_enable_android_aaudio) {
+    deps += [ ":aaudio_audio_device_jni" ]
+  }
+
   if (!build_with_chromium && is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
     suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 }
 
-rtc_source_set("audio_device_jni") {
+rtc_source_set("audio_device_base_jni") {
   visibility = [ "*" ]
 
   sources = [
@@ -168,12 +174,54 @@ rtc_source_set("audio_device_jni") {
     "src/jni/audio_device/audio_device_module.h",
     "src/jni/audio_device/audio_manager.cc",
     "src/jni/audio_device/audio_manager.h",
-    "src/jni/audio_device/audio_record_jni.cc",
-    "src/jni/audio_device/audio_record_jni.h",
-    "src/jni/audio_device/audio_track_jni.cc",
-    "src/jni/audio_device/audio_track_jni.h",
     "src/jni/audio_device/build_info.cc",
     "src/jni/audio_device/build_info.h",
+  ]
+
+  deps = [
+    ":base_jni",
+    ":generated_audio_device_base_jni",
+    ":native_api_jni",
+    "../../api:optional",
+    "../../modules/audio_device:audio_device",
+    "../../modules/audio_device:audio_device_buffer",
+    "../../rtc_base:checks",
+    "../../rtc_base:rtc_base_approved",
+    "../../system_wrappers:metrics_api",
+  ]
+}
+
+if (rtc_enable_android_aaudio) {
+  rtc_source_set("aaudio_audio_device_jni") {
+    visibility = [ "*" ]
+    defines = [ "AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO" ]
+    sources = [
+      "src/jni/audio_device/aaudio_player.cc",
+      "src/jni/audio_device/aaudio_player.h",
+      "src/jni/audio_device/aaudio_recorder.cc",
+      "src/jni/audio_device/aaudio_recorder.h",
+      "src/jni/audio_device/aaudio_wrapper.cc",
+      "src/jni/audio_device/aaudio_wrapper.h",
+    ]
+    libs = [ "aaudio" ]
+    deps = [
+      ":audio_device_base_jni",
+      ":base_jni",
+      "../../api:array_view",
+      "../../api:optional",
+      "../../modules/audio_device:audio_device",
+      "../../modules/audio_device:audio_device_buffer",
+      "../../rtc_base:checks",
+      "../../rtc_base:rtc_base",
+      "../../rtc_base:rtc_base_approved",
+      "../../system_wrappers",
+    ]
+  }
+}
+
+rtc_source_set("opensles_audio_device_jni") {
+  visibility = [ "*" ]
+  sources = [
     "src/jni/audio_device/opensles_common.cc",
     "src/jni/audio_device/opensles_common.h",
     "src/jni/audio_device/opensles_player.cc",
@@ -182,37 +230,38 @@ rtc_source_set("audio_device_jni") {
     "src/jni/audio_device/opensles_recorder.h",
   ]
   libs = [ "OpenSLES" ]
-  if (rtc_enable_android_aaudio) {
-    defines = [ "AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO" ]
-    sources += [
-      "src/jni/audio_device/aaudio_player.cc",
-      "src/jni/audio_device/aaudio_player.h",
-      "src/jni/audio_device/aaudio_recorder.cc",
-      "src/jni/audio_device/aaudio_recorder.h",
-      "src/jni/audio_device/aaudio_wrapper.cc",
-      "src/jni/audio_device/aaudio_wrapper.h",
-    ]
-    libs += [ "aaudio" ]
-  }
   deps = [
+    ":audio_device_base_jni",
     ":base_jni",
-    ":generated_audio_jni",
-    ":native_api_jni",
     "../../api:array_view",
     "../../api:optional",
     "../../modules/audio_device:audio_device",
     "../../modules/audio_device:audio_device_buffer",
-    "../../modules/utility:utility",
     "../../rtc_base:checks",
-    "../../rtc_base:rtc_base",
     "../../rtc_base:rtc_base_approved",
-    "../../system_wrappers",
+  ]
+}
+
+rtc_source_set("java_audio_device_jni") {
+  visibility = [ "*" ]
+
+  sources = [
+    "src/jni/audio_device/audio_record_jni.cc",
+    "src/jni/audio_device/audio_record_jni.h",
+    "src/jni/audio_device/audio_track_jni.cc",
+    "src/jni/audio_device/audio_track_jni.h",
+  ]
+  deps = [
+    ":audio_device_base_jni",
+    ":base_jni",
+    ":generated_java_audio_device_jni",
+    "../../api:optional",
+    "../../modules/audio_device:audio_device",
+    "../../modules/audio_device:audio_device_buffer",
+    "../../rtc_base:checks",
+    "../../rtc_base:rtc_base_approved",
     "../../system_wrappers:metrics_api",
   ]
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
 }
 
 rtc_static_library("null_audio_jni") {
@@ -225,10 +274,17 @@ rtc_static_library("null_audio_jni") {
   ]
 }
 
-generate_jni("generated_audio_jni") {
+generate_jni("generated_audio_device_base_jni") {
   sources = [
     "src/java/org/webrtc/audio/BuildInfo.java",
     "src/java/org/webrtc/audio/WebRtcAudioManager.java",
+  ]
+  jni_package = ""
+  jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
+}
+
+generate_jni("generated_java_audio_device_jni") {
+  sources = [
     "src/java/org/webrtc/audio/WebRtcAudioRecord.java",
     "src/java/org/webrtc/audio/WebRtcAudioTrack.java",
   ]
@@ -595,10 +651,11 @@ rtc_static_library("peerconnection_jni") {
   }
 
   deps = [
-    ":audio_device_jni",
+    ":audio_device_base_jni",
     ":base_jni",
     ":generated_external_classes_jni",
     ":generated_peerconnection_jni",
+    ":java_audio_device_jni",
     ":native_api_jni",
     "../..:webrtc_common",
     "../../api:libjingle_peerconnection_api",
@@ -711,6 +768,7 @@ dist_jar("libwebrtc") {
   no_build_hooks = true
 
   deps = [
+    ":audio_java",
     ":base_java",
     ":hwcodecs_java",
     ":libjingle_peerconnection_java",
@@ -765,7 +823,6 @@ rtc_android_library("base_java") {
     "api/org/webrtc/VideoSink.java",
     "api/org/webrtc/YuvConverter.java",
     "api/org/webrtc/YuvHelper.java",
-    "api/org/webrtc/audio/JavaAudioDeviceModule.java",
     "src/java/org/webrtc/AndroidVideoTrackSourceObserver.java",
     "src/java/org/webrtc/CalledByNative.java",
     "src/java/org/webrtc/CalledByNativeUnchecked.java",
@@ -790,16 +847,27 @@ rtc_android_library("base_java") {
     "src/java/org/webrtc/WrappedNativeI420Buffer.java",
     "src/java/org/webrtc/WrappedNativeVideoEncoder.java",
     "src/java/org/webrtc/WrappedNativeVideoDecoder.java",
+  ]
+
+  deps = [
+    "//rtc_base:base_java",
+  ]
+}
+
+rtc_android_library("audio_java") {
+  java_files = [
+    "api/org/webrtc/audio/JavaAudioDeviceModule.java",
+    "src/java/org/webrtc/audio/VolumeLogger.java",
     "src/java/org/webrtc/audio/BuildInfo.java",
     "src/java/org/webrtc/audio/WebRtcAudioEffects.java",
     "src/java/org/webrtc/audio/WebRtcAudioManager.java",
-    "src/java/org/webrtc/audio/VolumeLogger.java",
     "src/java/org/webrtc/audio/WebRtcAudioRecord.java",
     "src/java/org/webrtc/audio/WebRtcAudioTrack.java",
     "src/java/org/webrtc/audio/WebRtcAudioUtils.java",
   ]
 
   deps = [
+    ":base_java",
     "//rtc_base:base_java",
   ]
 }
@@ -889,6 +957,7 @@ rtc_android_library("libjingle_peerconnection_java") {
   ]
 
   deps = [
+    ":audio_java",
     ":base_java",
     ":hwcodecs_java",
     "//modules/audio_device:audio_device_java",

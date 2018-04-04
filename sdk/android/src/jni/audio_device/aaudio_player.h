@@ -56,7 +56,7 @@ class AAudioPlayer final : public AudioOutput,
                            public rtc::MessageHandler {
  public:
   explicit AAudioPlayer(AudioManager* audio_manager);
-  ~AAudioPlayer();
+  ~AAudioPlayer() override;
 
   int Init() override;
   int Terminate() override;

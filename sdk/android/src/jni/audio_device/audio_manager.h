@@ -11,7 +11,6 @@
 #ifndef SDK_ANDROID_SRC_JNI_AUDIO_DEVICE_AUDIO_MANAGER_H_
 #define SDK_ANDROID_SRC_JNI_AUDIO_DEVICE_AUDIO_MANAGER_H_
 
-#include <SLES/OpenSLES.h>
 #include <jni.h>
 #include <memory>
 
@@ -20,7 +19,6 @@
 #include "rtc_base/thread_checker.h"
 #include "sdk/android/native_api/jni/scoped_java_ref.h"
 #include "sdk/android/src/jni/audio_device/audio_common.h"
-#include "sdk/android/src/jni/audio_device/opensles_common.h"
 
 namespace webrtc {
 

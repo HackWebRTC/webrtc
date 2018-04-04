@@ -9,7 +9,6 @@
  */
 
 #include "sdk/android/src/jni/audio_device/audio_track_jni.h"
-#include "sdk/android/src/jni/audio_device/audio_manager.h"
 
 #include <utility>
 
@@ -18,7 +17,8 @@
 #include "rtc_base/format_macros.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
-#include "sdk/android/generated_audio_jni/jni/WebRtcAudioTrack_jni.h"
+#include "sdk/android/generated_java_audio_device_jni/jni/WebRtcAudioTrack_jni.h"
+#include "sdk/android/src/jni/audio_device/audio_manager.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {
@@ -80,6 +80,10 @@ int32_t AudioTrackJni::InitPlayout() {
   return 0;
 }
 
+bool AudioTrackJni::PlayoutIsInitialized() const {
+  return initialized_;
+}
+
 int32_t AudioTrackJni::StartPlayout() {
   RTC_LOG(INFO) << "StartPlayout";
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
@@ -115,6 +119,10 @@ int32_t AudioTrackJni::StopPlayout() {
   playing_ = false;
   direct_buffer_address_ = nullptr;
   return 0;
+}
+
+bool AudioTrackJni::Playing() const {
+  return playing_;
 }
 
 bool AudioTrackJni::SpeakerVolumeIsAvailable() {
