@@ -49,19 +49,17 @@ def main(argv):
 
   utils.RemoveDirectory(golang_workspace)
 
-  golang_workspace_src = os.path.join(golang_workspace, 'src')
-
   collider_dir = os.path.join(apprtc_dir, 'src', 'collider')
-  shutil.copytree(collider_dir, golang_workspace_src)
+  shutil.copytree(collider_dir, os.path.join(golang_workspace, 'src'))
 
-  golang_binary = 'go%s' % ('.exe' if utils.GetPlatform() == 'win' else '')
-  golang_path = os.path.join(go_root_dir, 'bin', golang_binary)
-
+  golang_path = os.path.join(go_root_dir, 'bin',
+                             'go' + utils.GetExecutableExtension())
   golang_env = os.environ.copy()
   golang_env['GOROOT'] = go_root_dir
   golang_env['GOPATH'] = golang_workspace
-  collider_exec = os.path.join(golang_workspace, 'collidermain')
-  subprocess.check_call([golang_path, 'build', '-o', collider_exec,
+  collider_out = os.path.join(golang_workspace,
+                              'collidermain' + utils.GetExecutableExtension())
+  subprocess.check_call([golang_path, 'build', '-o', collider_out,
                          'collidermain'], env=golang_env)
 
 
