@@ -882,9 +882,7 @@ VP9DecoderImpl::VP9DecoderImpl()
     : decode_complete_callback_(nullptr),
       inited_(false),
       decoder_(nullptr),
-      key_frame_required_(true) {
-  memset(&codec_, 0, sizeof(codec_));
-}
+      key_frame_required_(true) {}
 
 VP9DecoderImpl::~VP9DecoderImpl() {
   inited_ = true;  // in order to do the actual release
@@ -900,9 +898,6 @@ VP9DecoderImpl::~VP9DecoderImpl() {
 }
 
 int VP9DecoderImpl::InitDecode(const VideoCodec* inst, int number_of_cores) {
-  if (inst == nullptr) {
-    return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
-  }
   int ret_val = Release();
   if (ret_val < 0) {
     return ret_val;
@@ -917,10 +912,6 @@ int VP9DecoderImpl::InitDecode(const VideoCodec* inst, int number_of_cores) {
   vpx_codec_flags_t flags = 0;
   if (vpx_codec_dec_init(decoder_, vpx_codec_vp9_dx(), &cfg, flags)) {
     return WEBRTC_VIDEO_CODEC_MEMORY;
-  }
-  if (&codec_ != inst) {
-    // Save VideoCodec instance for later; mainly for duplicating the decoder.
-    codec_ = *inst;
   }
 
   if (!frame_buffer_pool_.InitializeVpxUsePool(decoder_)) {
