@@ -22,7 +22,8 @@ namespace webrtc {
 AdaptiveAgc::AdaptiveAgc(ApmDataDumper* apm_data_dumper)
     : speech_level_estimator_(apm_data_dumper),
       gain_applier_(apm_data_dumper),
-      apm_data_dumper_(apm_data_dumper) {
+      apm_data_dumper_(apm_data_dumper),
+      noise_level_estimator_(apm_data_dumper) {
   RTC_DCHECK(apm_data_dumper);
 }
 

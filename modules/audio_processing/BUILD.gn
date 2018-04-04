@@ -550,6 +550,7 @@ if (rtc_include_tests) {
       "aec_dump:mock_aec_dump_unittests",
       "agc2:adaptive_digital_unittests",
       "agc2:fixed_digital_unittests",
+      "agc2:noise_estimator_unittests",
       "test/conversational_speech:unittest",
       "vad:vad_unittests",
       "//testing/gtest",
