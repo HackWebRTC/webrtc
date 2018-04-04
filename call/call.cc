@@ -55,6 +55,7 @@
 #include "rtc_base/rate_limiter.h"
 #include "rtc_base/sequenced_task_checker.h"
 #include "rtc_base/synchronization/rw_lock_wrapper.h"
+#include "rtc_base/strings/string_builder.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/trace_event.h"
@@ -379,7 +380,8 @@ class Call : public webrtc::Call,
 }  // namespace internal
 
 std::string Call::Stats::ToString(int64_t time_ms) const {
-  std::stringstream ss;
+  char buf[1024];
+  rtc::SimpleStringBuilder ss(buf);
   ss << "Call stats: " << time_ms << ", {";
   ss << "send_bw_bps: " << send_bandwidth_bps << ", ";
   ss << "recv_bw_bps: " << recv_bandwidth_bps << ", ";

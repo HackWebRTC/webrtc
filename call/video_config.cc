@@ -10,10 +10,10 @@
 #include "call/video_config.h"
 
 #include <algorithm>
-#include <sstream>
 #include <string>
 
 #include "rtc_base/checks.h"
+#include "rtc_base/strings/string_builder.h"
 
 namespace webrtc {
 VideoStream::VideoStream()
@@ -30,7 +30,8 @@ VideoStream::VideoStream(const VideoStream& other) = default;
 VideoStream::~VideoStream() = default;
 
 std::string VideoStream::ToString() const {
-  std::stringstream ss;
+  char buf[1024];
+  rtc::SimpleStringBuilder ss(buf);
   ss << "{width: " << width;
   ss << ", height: " << height;
   ss << ", max_framerate: " << max_framerate;
@@ -59,7 +60,8 @@ VideoEncoderConfig::VideoEncoderConfig(VideoEncoderConfig&&) = default;
 VideoEncoderConfig::~VideoEncoderConfig() = default;
 
 std::string VideoEncoderConfig::ToString() const {
-  std::stringstream ss;
+  char buf[1024];
+  rtc::SimpleStringBuilder ss(buf);
   ss << "{codec_type: ";
   ss << CodecTypeToPayloadString(codec_type);
   ss << ", content_type: ";

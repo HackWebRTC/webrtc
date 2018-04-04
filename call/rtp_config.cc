@@ -9,20 +9,21 @@
  */
 
 #include "call/rtp_config.h"
-
-#include <sstream>
+#include "rtc_base/strings/string_builder.h"
 
 namespace webrtc {
 
 std::string NackConfig::ToString() const {
-  std::stringstream ss;
+  char buf[1024];
+  rtc::SimpleStringBuilder ss(buf);
   ss << "{rtp_history_ms: " << rtp_history_ms;
   ss << '}';
   return ss.str();
 }
 
 std::string UlpfecConfig::ToString() const {
-  std::stringstream ss;
+  char buf[1024];
+  rtc::SimpleStringBuilder ss(buf);
   ss << "{ulpfec_payload_type: " << ulpfec_payload_type;
   ss << ", red_payload_type: " << red_payload_type;
   ss << ", red_rtx_payload_type: " << red_rtx_payload_type;

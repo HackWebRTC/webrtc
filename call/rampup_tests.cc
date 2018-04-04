@@ -13,6 +13,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
+#include "rtc_base/stringencode.h"
 #include "test/encoder_settings.h"
 #include "test/gtest.h"
 #include "test/testsupport/perf_test.h"
@@ -447,17 +448,13 @@ Call::Config RampUpDownUpTester::GetReceiverCallConfig() {
 std::string RampUpDownUpTester::GetModifierString() const {
   std::string str("_");
   if (num_video_streams_ > 0) {
-    std::ostringstream s;
-    s << num_video_streams_;
-    str += s.str();
+    str += rtc::ToString(num_video_streams_);
     str += "stream";
     str += (num_video_streams_ > 1 ? "s" : "");
     str += "_";
   }
   if (num_audio_streams_ > 0) {
-    std::ostringstream s;
-    s << num_audio_streams_;
-    str += s.str();
+    str += rtc::ToString(num_audio_streams_);
     str += "stream";
     str += (num_audio_streams_ > 1 ? "s" : "");
     str += "_";
