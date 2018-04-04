@@ -94,6 +94,8 @@ class VP9EncoderImpl : public VP9Encoder {
   static void EncoderOutputCodedPacketCallback(vpx_codec_cx_pkt* pkt,
                                                void* user_data);
 
+  void DeliverBufferedFrame(bool end_of_superframe);
+
   // Determine maximum target for Intra frames
   //
   // Input:
@@ -103,6 +105,7 @@ class VP9EncoderImpl : public VP9Encoder {
   uint32_t MaxIntraTarget(uint32_t optimal_buffer_size);
 
   EncodedImage encoded_image_;
+  CodecSpecificInfo codec_specific_;
   EncodedImageCallback* encoded_complete_callback_;
   VideoCodec codec_;
   bool inited_;

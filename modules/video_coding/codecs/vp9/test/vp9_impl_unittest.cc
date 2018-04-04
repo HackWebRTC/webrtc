@@ -262,4 +262,60 @@ TEST_F(TestVp9Impl, EnableDisableSpatialLayers) {
   }
 }
 
+TEST_F(TestVp9Impl, EndOfSuperframe) {
+  const size_t num_spatial_layers = 2;
+  const size_t num_temporal_layers = 1;
+  codec_settings_.VP9()->numberOfSpatialLayers =
+      static_cast<unsigned char>(num_spatial_layers);
+  codec_settings_.VP9()->numberOfTemporalLayers =
+      static_cast<unsigned char>(num_temporal_layers);
+
+  std::vector<SpatialLayer> layers =
+      GetSvcConfig(codec_settings_.width, codec_settings_.height,
+                   num_spatial_layers, num_temporal_layers);
+  for (size_t i = 0; i < layers.size(); ++i) {
+    codec_settings_.spatialLayers[i] = layers[i];
+  }
+
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->InitEncode(&codec_settings_, 1 /* number of cores */,
+                                 0 /* max payload size (unused) */));
+
+  // Encode both base and upper layers. Check that end-of-superframe flag is
+  // set on upper layer frame but not on base layer frame.
+  BitrateAllocation bitrate_allocation;
+  bitrate_allocation.SetBitrate(0, 0, layers[0].targetBitrate * 1000);
+  bitrate_allocation.SetBitrate(1, 0, layers[1].targetBitrate * 1000);
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->SetRateAllocation(bitrate_allocation,
+                                        codec_settings_.maxFramerate));
+  SetWaitForEncodedFramesThreshold(2);
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->Encode(*NextInputFrame(), nullptr, nullptr));
+
+  std::vector<EncodedImage> frames;
+  std::vector<CodecSpecificInfo> codec_specific;
+  ASSERT_TRUE(WaitForEncodedFrames(&frames, &codec_specific));
+  EXPECT_FALSE(codec_specific[0].codecSpecific.VP9.end_of_superframe);
+  EXPECT_TRUE(codec_specific[1].codecSpecific.VP9.end_of_superframe);
+
+  // Encode only base layer. Check that end-of-superframe flag is
+  // set on base layer frame.
+  bitrate_allocation.SetBitrate(1, 0, 0);
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->SetRateAllocation(bitrate_allocation,
+                                        codec_settings_.maxFramerate));
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->InitEncode(&codec_settings_, 1 /* number of cores */,
+                                 0 /* max payload size (unused) */));
+
+  SetWaitForEncodedFramesThreshold(1);
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->Encode(*NextInputFrame(), nullptr, nullptr));
+
+  ASSERT_TRUE(WaitForEncodedFrames(&frames, &codec_specific));
+  EXPECT_EQ(codec_specific[0].codecSpecific.VP9.spatial_idx, 0);
+  EXPECT_TRUE(codec_specific[0].codecSpecific.VP9.end_of_superframe);
+}
+
 }  // namespace webrtc

@@ -576,9 +576,13 @@ bool RtpPacketizerVp9::NextPacket(RtpPacketToSend* packet) {
   if (!WriteHeaderAndPayload(packet_info, packet, packets_.empty())) {
     return false;
   }
-  packet->SetMarker(packets_.empty() &&
-                    (hdr_.spatial_idx == kNoSpatialIdx ||
-                     hdr_.spatial_idx == hdr_.num_spatial_layers - 1));
+
+  // Ensure end_of_superframe is always set on top spatial layer when it is not
+  // dropped.
+  RTC_DCHECK(hdr_.spatial_idx < hdr_.num_spatial_layers - 1 ||
+             hdr_.end_of_superframe);
+
+  packet->SetMarker(packets_.empty() && hdr_.end_of_superframe);
   return true;
 }
 

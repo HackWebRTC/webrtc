@@ -352,6 +352,84 @@ TEST(PayloadRouterTest, InfoMappedToRtpVideoHeader_Vp8) {
       payload_router.OnEncodedImage(encoded_image, &codec_info, nullptr).error);
 }
 
+TEST(PayloadRouterTest, InfoMappedToRtpVideoHeader_Vp9) {
+  RtpPayloadState state;
+  state.picture_id = kPictureId;
+  state.tl0_pic_idx = kTl0PicIdx;
+  std::map<uint32_t, RtpPayloadState> states = {{kSsrc1, state}};
+
+  NiceMock<MockRtpRtcp> rtp;
+  std::vector<RtpRtcp*> modules = {&rtp};
+  PayloadRouter router(modules, {kSsrc1}, kPayloadType, states);
+  router.SetActive(true);
+
+  EncodedImage encoded_image;
+  encoded_image.rotation_ = kVideoRotation_90;
+  encoded_image.content_type_ = VideoContentType::SCREENSHARE;
+
+  CodecSpecificInfo codec_info;
+  memset(&codec_info, 0, sizeof(CodecSpecificInfo));
+  codec_info.codecType = kVideoCodecVP9;
+  codec_info.codecSpecific.VP9.num_spatial_layers = 3;
+  codec_info.codecSpecific.VP9.first_frame_in_picture = true;
+  codec_info.codecSpecific.VP9.spatial_idx = 0;
+  codec_info.codecSpecific.VP9.temporal_idx = 2;
+  codec_info.codecSpecific.VP9.end_of_superframe = false;
+
+  EXPECT_CALL(rtp, SendOutgoingData(_, _, _, _, _, _, nullptr, _, _))
+      .WillOnce(
+          Invoke([&codec_info](Unused, Unused, Unused, Unused, Unused, Unused,
+                               Unused, const RTPVideoHeader* header, Unused) {
+            EXPECT_EQ(kVideoRotation_90, header->rotation);
+            EXPECT_EQ(VideoContentType::SCREENSHARE, header->content_type);
+            EXPECT_EQ(kRtpVideoVp9, header->codec);
+            EXPECT_EQ(kPictureId + 1, header->codecHeader.VP9.picture_id);
+            EXPECT_EQ(kTl0PicIdx, header->codecHeader.VP9.tl0_pic_idx);
+            EXPECT_EQ(header->codecHeader.VP9.temporal_idx,
+                      codec_info.codecSpecific.VP9.temporal_idx);
+            EXPECT_EQ(header->codecHeader.VP9.spatial_idx,
+                      codec_info.codecSpecific.VP9.spatial_idx);
+            EXPECT_EQ(header->codecHeader.VP9.num_spatial_layers,
+                      codec_info.codecSpecific.VP9.num_spatial_layers);
+            EXPECT_EQ(header->codecHeader.VP9.end_of_superframe,
+                      codec_info.codecSpecific.VP9.end_of_superframe);
+            return true;
+          }));
+  EXPECT_CALL(rtp, Sending()).WillOnce(Return(true));
+
+  EXPECT_EQ(EncodedImageCallback::Result::OK,
+            router.OnEncodedImage(encoded_image, &codec_info, nullptr).error);
+
+  // Next spatial layer.
+  codec_info.codecSpecific.VP9.first_frame_in_picture = false;
+  codec_info.codecSpecific.VP9.spatial_idx += 1;
+  codec_info.codecSpecific.VP9.end_of_superframe = true;
+
+  EXPECT_CALL(rtp, SendOutgoingData(_, _, _, _, _, _, nullptr, _, _))
+      .WillOnce(
+          Invoke([&codec_info](Unused, Unused, Unused, Unused, Unused, Unused,
+                               Unused, const RTPVideoHeader* header, Unused) {
+            EXPECT_EQ(kVideoRotation_90, header->rotation);
+            EXPECT_EQ(VideoContentType::SCREENSHARE, header->content_type);
+            EXPECT_EQ(kRtpVideoVp9, header->codec);
+            EXPECT_EQ(kPictureId + 1, header->codecHeader.VP9.picture_id);
+            EXPECT_EQ(kTl0PicIdx, header->codecHeader.VP9.tl0_pic_idx);
+            EXPECT_EQ(header->codecHeader.VP9.temporal_idx,
+                      codec_info.codecSpecific.VP9.temporal_idx);
+            EXPECT_EQ(header->codecHeader.VP9.spatial_idx,
+                      codec_info.codecSpecific.VP9.spatial_idx);
+            EXPECT_EQ(header->codecHeader.VP9.num_spatial_layers,
+                      codec_info.codecSpecific.VP9.num_spatial_layers);
+            EXPECT_EQ(header->codecHeader.VP9.end_of_superframe,
+                      codec_info.codecSpecific.VP9.end_of_superframe);
+            return true;
+          }));
+  EXPECT_CALL(rtp, Sending()).WillOnce(Return(true));
+
+  EXPECT_EQ(EncodedImageCallback::Result::OK,
+            router.OnEncodedImage(encoded_image, &codec_info, nullptr).error);
+}
+
 TEST(PayloadRouterTest, InfoMappedToRtpVideoHeader_H264) {
   NiceMock<MockRtpRtcp> rtp1;
   std::vector<RtpRtcp*> modules = {&rtp1};

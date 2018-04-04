@@ -586,6 +586,9 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
   }
   timestamp_ += duration;
 
+  const bool end_of_superframe = true;
+  DeliverBufferedFrame(end_of_superframe);
+
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
@@ -688,6 +691,14 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
 int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
   RTC_DCHECK_EQ(pkt->kind, VPX_CODEC_CX_FRAME_PKT);
 
+  if (pkt->data.frame.sz == 0) {
+    // Ignore dropped frame.
+    return WEBRTC_VIDEO_CODEC_OK;
+  }
+
+  const bool end_of_superframe = false;
+  DeliverBufferedFrame(end_of_superframe);
+
   if (pkt->data.frame.sz > encoded_image_._size) {
     delete[] encoded_image_._buffer;
     encoded_image_._size = pkt->data.frame.sz;
@@ -695,15 +706,6 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
   }
   memcpy(encoded_image_._buffer, pkt->data.frame.buf, pkt->data.frame.sz);
   encoded_image_._length = pkt->data.frame.sz;
-
-  // No data partitioning in VP9, so 1 partition only.
-  int part_idx = 0;
-  RTPFragmentationHeader frag_info;
-  frag_info.VerifyAndAllocateFragmentationHeader(1);
-  frag_info.fragmentationOffset[part_idx] = 0;
-  frag_info.fragmentationLength[part_idx] = pkt->data.frame.sz;
-  frag_info.fragmentationPlType[part_idx] = 0;
-  frag_info.fragmentationTimeDiff[part_idx] = 0;
 
   vpx_svc_layer_id_t layer_id = {0};
   vpx_codec_control(encoder_, VP9E_GET_SVC_LAYER_ID, &layer_id);
@@ -720,30 +722,45 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
   }
   RTC_DCHECK_LE(encoded_image_._length, encoded_image_._size);
 
-  CodecSpecificInfo codec_specific;
-  PopulateCodecSpecific(&codec_specific, *pkt, input_image_->timestamp());
+  memset(&codec_specific_, 0, sizeof(codec_specific_));
+  PopulateCodecSpecific(&codec_specific_, *pkt, input_image_->timestamp());
 
-  if (encoded_image_._length > 0) {
-    TRACE_COUNTER1("webrtc", "EncodedFrameSize", encoded_image_._length);
-    encoded_image_._timeStamp = input_image_->timestamp();
-    encoded_image_.capture_time_ms_ = input_image_->render_time_ms();
-    encoded_image_.rotation_ = input_image_->rotation();
-    encoded_image_.content_type_ = (codec_.mode == kScreensharing)
-                                       ? VideoContentType::SCREENSHARE
-                                       : VideoContentType::UNSPECIFIED;
-    encoded_image_._encodedHeight =
-        pkt->data.frame.height[layer_id.spatial_layer_id];
-    encoded_image_._encodedWidth =
-        pkt->data.frame.width[layer_id.spatial_layer_id];
-    encoded_image_.timing_.flags = TimingFrameFlags::kInvalid;
-    int qp = -1;
-    vpx_codec_control(encoder_, VP8E_GET_LAST_QUANTIZER, &qp);
-    encoded_image_.qp_ = qp;
+  TRACE_COUNTER1("webrtc", "EncodedFrameSize", encoded_image_._length);
+  encoded_image_._timeStamp = input_image_->timestamp();
+  encoded_image_.capture_time_ms_ = input_image_->render_time_ms();
+  encoded_image_.rotation_ = input_image_->rotation();
+  encoded_image_.content_type_ = (codec_.mode == kScreensharing)
+                                     ? VideoContentType::SCREENSHARE
+                                     : VideoContentType::UNSPECIFIED;
+  encoded_image_._encodedHeight =
+      pkt->data.frame.height[layer_id.spatial_layer_id];
+  encoded_image_._encodedWidth =
+      pkt->data.frame.width[layer_id.spatial_layer_id];
+  encoded_image_.timing_.flags = TimingFrameFlags::kInvalid;
+  int qp = -1;
+  vpx_codec_control(encoder_, VP8E_GET_LAST_QUANTIZER, &qp);
+  encoded_image_.qp_ = qp;
 
-    encoded_complete_callback_->OnEncodedImage(encoded_image_, &codec_specific,
-                                               &frag_info);
-  }
   return WEBRTC_VIDEO_CODEC_OK;
+}
+
+void VP9EncoderImpl::DeliverBufferedFrame(bool end_of_superframe) {
+  if (encoded_image_._length > 0) {
+    codec_specific_.codecSpecific.VP9.end_of_superframe = end_of_superframe;
+
+    // No data partitioning in VP9, so 1 partition only.
+    int part_idx = 0;
+    RTPFragmentationHeader frag_info;
+    frag_info.VerifyAndAllocateFragmentationHeader(1);
+    frag_info.fragmentationOffset[part_idx] = 0;
+    frag_info.fragmentationLength[part_idx] = encoded_image_._length;
+    frag_info.fragmentationPlType[part_idx] = 0;
+    frag_info.fragmentationTimeDiff[part_idx] = 0;
+
+    encoded_complete_callback_->OnEncodedImage(encoded_image_, &codec_specific_,
+                                               &frag_info);
+    encoded_image_._length = 0;
+  }
 }
 
 vpx_svc_ref_frame_config VP9EncoderImpl::GenerateRefsAndFlags(

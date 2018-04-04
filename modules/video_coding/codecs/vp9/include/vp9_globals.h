@@ -172,6 +172,7 @@ struct RTPVideoHeaderVP9 {
     gof_idx = kNoGofIdx;
     num_ref_pics = 0;
     num_spatial_layers = 1;
+    end_of_superframe = true;
   }
 
   bool inter_pic_predicted;  // This layer frame is dependent on previously
@@ -208,6 +209,8 @@ struct RTPVideoHeaderVP9 {
   uint16_t width[kMaxVp9NumberOfSpatialLayers];
   uint16_t height[kMaxVp9NumberOfSpatialLayers];
   GofInfoVP9 gof;
+
+  bool end_of_superframe;  // This frame is last frame in superframe.
 };
 
 }  // namespace webrtc
