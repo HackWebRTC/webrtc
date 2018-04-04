@@ -220,6 +220,7 @@ class BitrateAllocator {
   int64_t last_bwe_log_time_ RTC_GUARDED_BY(&sequenced_checker_);
   uint32_t total_requested_padding_bitrate_ RTC_GUARDED_BY(&sequenced_checker_);
   uint32_t total_requested_min_bitrate_ RTC_GUARDED_BY(&sequenced_checker_);
+  uint32_t total_requested_max_bitrate_ RTC_GUARDED_BY(&sequenced_checker_);
   bool has_packet_feedback_ RTC_GUARDED_BY(&sequenced_checker_);
   std::unique_ptr<rtc::BitrateAllocationStrategy> bitrate_allocation_strategy_
       RTC_GUARDED_BY(&sequenced_checker_);

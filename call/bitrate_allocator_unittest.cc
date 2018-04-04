@@ -117,6 +117,8 @@ TEST_F(BitrateAllocatorTest, UpdatingBitrateObserver) {
               OnAllocationLimitsChanged(kMinSendBitrateBps, 0, _));
   allocator_->AddObserver(&bitrate_observer, kMinSendBitrateBps, 4000000, 0,
                           true, "", kDefaultBitratePriority);
+  EXPECT_CALL(limit_observer_,
+              OnAllocationLimitsChanged(kMinSendBitrateBps, 0, _));
   EXPECT_EQ(4000000, allocator_->GetStartBitrate(&bitrate_observer));
 
   allocator_->AddObserver(&bitrate_observer, kMinSendBitrateBps, kMaxBitrateBps,
@@ -221,6 +223,7 @@ TEST_F(BitrateAllocatorTestNoEnforceMin, OneBitrateObserver) {
   TestBitrateObserver bitrate_observer_1;
   // Expect OnAllocationLimitsChanged with |min_send_bitrate_bps| = 0 since
   // AddObserver is called with |enforce_min_bitrate| = false.
+  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(0, 0, _));
   EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(0, 120000, _));
   allocator_->AddObserver(&bitrate_observer_1, 100000, 400000, 0, false, "",
                           kDefaultBitratePriority);
@@ -306,6 +309,7 @@ TEST_F(BitrateAllocatorTestNoEnforceMin, OneBitrateObserverWithPacketLoss) {
   TestBitrateObserver bitrate_observer;
   // Expect OnAllocationLimitsChanged with |min_send_bitrate_bps| = 0 since
   // AddObserver is called with |enforce_min_bitrate| = false.
+  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(0, 0, _));
   EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(0, 168000, _));
   allocator_->AddObserver(&bitrate_observer, 100000, 400000, 0, false, "",
                           kDefaultBitratePriority);
@@ -347,6 +351,7 @@ TEST_F(BitrateAllocatorTestNoEnforceMin, OneBitrateObserverWithPacketLoss) {
   allocator_->OnNetworkChanged(139000, 0, 0, kDefaultProbingIntervalMs);
   EXPECT_EQ(139000u, bitrate_observer.last_bitrate_bps_);
 
+  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(0, 0, _));
   allocator_->RemoveObserver(&bitrate_observer);
 }
 
