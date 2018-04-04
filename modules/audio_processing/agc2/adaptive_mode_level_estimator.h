@@ -26,7 +26,7 @@ class AdaptiveModeLevelEstimator {
  private:
   void DebugDumpEstimate();
 
-  int buffer_size_ms_ = 0;
+  size_t buffer_size_ms_ = 0;
   float last_estimate_with_offset_dbfs_ = kInitialSpeechLevelEstimateDbfs;
   float estimate_numerator_ = 0.f;
   float estimate_denominator_ = 0.f;

@@ -135,6 +135,7 @@ rtc_source_set("adaptive_digital_unittests") {
 
   sources = [
     "adaptive_mode_level_estimator_unittest.cc",
+    "saturation_protector_unittest.cc",
   ]
   deps = [
     ":adaptive_digital",
