@@ -30,6 +30,10 @@ AdaptiveAgc::AdaptiveAgc(ApmDataDumper* apm_data_dumper)
 AdaptiveAgc::~AdaptiveAgc() = default;
 
 void AdaptiveAgc::Process(AudioFrameView<float> float_frame) {
+  // TODO(webrtc:7494): Remove this loop. Remove the vectors from
+  // VadWithData after we move to a VAD that outputs an estimate every
+  // kFrameDurationMs ms.
+  //
   // Some VADs are 'bursty'. They return several estimates for some
   // frames, and no estimates for other frames. We want to feed all to
   // the level estimator, but only care about the last level it

@@ -29,7 +29,17 @@ class AdaptiveDigitalGainApplier {
       AudioFrameView<float> float_frame);
 
  private:
+  // Keep track of current gain for ramping up and down and
+  // logging. This member variable is redundant together with
+  // last_gain_db_. Both are kept as an optimization.
+  float last_gain_linear_ = 1.f;
   float last_gain_db_ = 0.f;
+
+  // For some combinations of noise and speech probability, increasing
+  // the level is not allowed. Since we may get VAD results in bursts,
+  // we keep track of this variable until the next VAD results come
+  // in.
+  bool gain_increase_allowed_ = true;
   ApmDataDumper* apm_data_dumper_ = nullptr;
 };
 }  // namespace webrtc

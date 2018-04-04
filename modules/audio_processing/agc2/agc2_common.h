@@ -27,8 +27,19 @@ constexpr size_t kMaximalNumberOfSamplesPerChannel = 480;
 
 constexpr float kAttackFilterConstant = 0.f;
 
+// Adaptive digital gain applier settings below.
+constexpr float kMaxGainChangePerSecondDb = 3.f;
+constexpr float kMaxGainChangePerFrameDb =
+    kMaxGainChangePerSecondDb * kFrameDurationMs / 1000.f;
+constexpr float kHeadroomDbfs = 1.f;
+constexpr float kMaxGainDb = 30.f;
+
+// This parameter must be tuned together with the noise estimator.
+constexpr float kMaxNoiseLevelDbfs = -50.f;
+
 // Used in the Level Estimator for deciding when to update the speech
-// level estimate.
+// level estimate. Also used in the adaptive digital gain applier to
+// decide when to allow target gain reduction.
 constexpr float kVadConfidenceThreshold = 0.9f;
 
 // The amount of 'memory' of the Level Estimator. Decides leak factors.
