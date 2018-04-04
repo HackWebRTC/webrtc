@@ -23,8 +23,7 @@
 
 id<RTCVideoDecoderFactory> CreateDecoderFactoryReturning(int return_code) {
   id decoderMock = OCMProtocolMock(@protocol(RTCVideoDecoder));
-  OCMStub([decoderMock startDecodeWithSettings:[OCMArg any] numberOfCores:1])
-      .andReturn(return_code);
+  OCMStub([decoderMock startDecodeWithNumberOfCores:1]).andReturn(return_code);
   OCMStub([decoderMock decode:[OCMArg any]
                     missingFrames:NO
               fragmentationHeader:[OCMArg any]

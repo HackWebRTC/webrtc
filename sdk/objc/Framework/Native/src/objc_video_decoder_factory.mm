@@ -37,9 +37,15 @@ class ObjCVideoDecoder : public VideoDecoder {
       : decoder_(decoder), implementation_name_([decoder implementationName].stdString) {}
 
   int32_t InitDecode(const VideoCodec *codec_settings, int32_t number_of_cores) {
-    RTCVideoEncoderSettings *settings =
-        [[RTCVideoEncoderSettings alloc] initWithNativeVideoCodec:codec_settings];
-    return [decoder_ startDecodeWithSettings:settings numberOfCores:number_of_cores];
+    if ([decoder_ respondsToSelector:@selector(startDecodeWithNumberOfCores:)]) {
+      return [decoder_ startDecodeWithNumberOfCores:number_of_cores];
+    } else {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+      RTCVideoEncoderSettings *settings = [[RTCVideoEncoderSettings alloc] init];
+      return [decoder_ startDecodeWithSettings:settings numberOfCores:number_of_cores];
+#pragma clang diagnostic pop
+    }
   }
 
   int32_t Decode(const EncodedImage &input_image,

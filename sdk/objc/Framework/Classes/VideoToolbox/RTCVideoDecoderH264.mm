@@ -92,6 +92,10 @@ void decompressionOutputCallback(void *decoderRef,
   [self setVideoFormat:nullptr];
 }
 
+- (NSInteger)startDecodeWithNumberOfCores:(int)numberOfCores {
+  return WEBRTC_VIDEO_CODEC_OK;
+}
+
 - (NSInteger)startDecodeWithSettings:(RTCVideoEncoderSettings *)settings
                        numberOfCores:(int)numberOfCores {
   return WEBRTC_VIDEO_CODEC_OK;

@@ -35,6 +35,11 @@
   RTC_NOTREACHED();
 }
 
+- (NSInteger)startDecodeWithNumberOfCores:(int)numberOfCores {
+  RTC_NOTREACHED();
+  return 0;
+}
+
 - (NSInteger)startDecodeWithSettings:(RTCVideoEncoderSettings *)settings
                        numberOfCores:(int)numberOfCores {
   RTC_NOTREACHED();
