@@ -20,6 +20,7 @@
 #include "modules/video_coding/frame_buffer2.h"
 #include "modules/video_coding/jitter_estimator.h"
 #include "modules/video_coding/timing.h"
+#include "rtc_base/platform_thread.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread_checker.h"
 #include "system_wrappers/include/clock.h"
@@ -39,7 +40,17 @@ class VideoStreamDecoderImpl : public VideoStreamDecoder,
   void OnFrame(std::unique_ptr<video_coding::EncodedFrame> frame) override;
 
  private:
+  enum DecodeResult {
+    kOk,
+    kDecodeFailure,
+    kNoFrame,
+    kNoDecoder,
+    kShutdown,
+  };
+
   VideoDecoder* GetDecoder(int payload_type);
+  static void DecodeLoop(void* ptr);
+  DecodeResult DecodeNextFrame(int max_wait_time_ms, bool keyframe_required);
 
   // Implements DecodedImageCallback interface
   int32_t Decoded(VideoFrame& decodedImage) override;
@@ -59,12 +70,21 @@ class VideoStreamDecoderImpl : public VideoStreamDecoder,
   //  - Synchronize with whatever thread that makes the Decoded callback.
   rtc::TaskQueue bookkeeping_queue_;
 
+  rtc::PlatformThread decode_thread_;
   VCMJitterEstimator jitter_estimator_;
   VCMTiming timing_;
   video_coding::FrameBuffer frame_buffer_;
   video_coding::VideoLayerFrameId last_continuous_id_;
   rtc::Optional<int> current_payload_type_;
   std::unique_ptr<VideoDecoder> decoder_;
+
+  // Keep track of the |decode_start_time_| of the last |kDecodeTimeMemory|
+  // number of frames. The |decode_start_time_| array contain
+  // <frame timestamp> --> <decode start time> pairs.
+  static constexpr int kDecodeTimeMemory = 8;
+  std::array<std::pair<int64_t, int64_t>, kDecodeTimeMemory> decode_start_time_
+      RTC_GUARDED_BY(bookkeeping_queue_);
+  int next_start_time_index_ RTC_GUARDED_BY(bookkeeping_queue_);
 };
 
 }  // namespace webrtc
