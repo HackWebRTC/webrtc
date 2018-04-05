@@ -656,7 +656,9 @@ bool SctpTransport::Connect() {
   sctp_paddrparams params = {{0}};
   memcpy(&params.spp_address, &remote_sconn, sizeof(remote_sconn));
   params.spp_flags = SPP_PMTUD_DISABLE;
-  params.spp_pathmtu = kSctpMtu;
+  // The MTU value provided specifies the space available for chunks in the
+  // packet, so we subtract the SCTP header size.
+  params.spp_pathmtu = kSctpMtu - sizeof(struct sctp_common_header);
   if (usrsctp_setsockopt(sock_, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS, &params,
                          sizeof(params))) {
     RTC_LOG_ERRNO(LS_ERROR) << debug_name_ << "->Connect(): "
