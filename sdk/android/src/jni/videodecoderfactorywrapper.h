@@ -25,6 +25,7 @@ class VideoDecoderFactoryWrapper : public VideoDecoderFactory {
  public:
   VideoDecoderFactoryWrapper(JNIEnv* jni,
                              const JavaRef<jobject>& decoder_factory);
+  ~VideoDecoderFactoryWrapper() override;
 
   std::vector<SdpVideoFormat> GetSupportedFormats() const override;
   std::unique_ptr<VideoDecoder> CreateVideoDecoder(

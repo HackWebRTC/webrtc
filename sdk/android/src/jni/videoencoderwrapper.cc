@@ -43,6 +43,7 @@ VideoEncoderWrapper::VideoEncoderWrapper(JNIEnv* jni,
   picture_id_ = random.Rand<uint16_t>() & 0x7FFF;
   tl0_pic_idx_ = random.Rand<uint8_t>();
 }
+VideoEncoderWrapper::~VideoEncoderWrapper() = default;
 
 int32_t VideoEncoderWrapper::InitEncode(const VideoCodec* codec_settings,
                                         int32_t number_of_cores,
@@ -205,6 +206,10 @@ VideoEncoderWrapper::ScalingSettings VideoEncoderWrapper::GetScalingSettings()
     default:
       return ScalingSettings::kOff;
   }
+}
+
+bool VideoEncoderWrapper::SupportsNativeHandle() const {
+  return true;
 }
 
 const char* VideoEncoderWrapper::ImplementationName() const {

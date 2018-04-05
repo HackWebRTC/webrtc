@@ -61,7 +61,7 @@ class MediaCodecVideoDecoder : public VideoDecoder, public rtc::MessageHandler {
  public:
   explicit MediaCodecVideoDecoder(
       JNIEnv* jni, VideoCodecType codecType, jobject render_egl_context);
-  virtual ~MediaCodecVideoDecoder();
+  ~MediaCodecVideoDecoder() override;
 
   int32_t InitDecode(const VideoCodec* codecSettings, int32_t numberOfCores)
       override;

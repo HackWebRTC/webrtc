@@ -25,6 +25,7 @@ VideoDecoderFactoryWrapper::VideoDecoderFactoryWrapper(
     JNIEnv* jni,
     const JavaRef<jobject>& decoder_factory)
     : decoder_factory_(jni, decoder_factory) {}
+VideoDecoderFactoryWrapper::~VideoDecoderFactoryWrapper() = default;
 
 std::unique_ptr<VideoDecoder> VideoDecoderFactoryWrapper::CreateVideoDecoder(
     const SdpVideoFormat& format) {

@@ -22,6 +22,7 @@ namespace rtc {
 // should have when it is delivered to a certain sink.
 struct VideoSinkWants {
   VideoSinkWants();
+  VideoSinkWants(const VideoSinkWants&);
   ~VideoSinkWants();
   // Tells the source whether the sink wants frames with rotation applied.
   // By default, any rotation must be applied by the sink.

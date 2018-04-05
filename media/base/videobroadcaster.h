@@ -33,6 +33,7 @@ class VideoBroadcaster : public VideoSourceBase,
                          public VideoSinkInterface<webrtc::VideoFrame> {
  public:
   VideoBroadcaster();
+  ~VideoBroadcaster() override;
   void AddOrUpdateSink(VideoSinkInterface<webrtc::VideoFrame>* sink,
                        const VideoSinkWants& wants) override;
   void RemoveSink(VideoSinkInterface<webrtc::VideoFrame>* sink) override;

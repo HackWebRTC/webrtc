@@ -32,20 +32,21 @@ class AndroidVideoTrackSource : public rtc::AdaptedVideoTrackSource {
                           JNIEnv* jni,
                           const JavaRef<jobject>& j_surface_texture_helper,
                           bool is_screencast = false);
+  ~AndroidVideoTrackSource() override;
 
-  bool is_screencast() const override { return is_screencast_; }
+  bool is_screencast() const override;
 
   // Indicates that the encoder should denoise video before encoding it.
   // If it is not set, the default configuration is used which is different
   // depending on video codec.
-  rtc::Optional<bool> needs_denoising() const override { return false; }
+  rtc::Optional<bool> needs_denoising() const override;
 
   // Called by the native capture observer
   void SetState(SourceState state);
 
-  SourceState state() const override { return state_; }
+  SourceState state() const override;
 
-  bool remote() const override { return false; }
+  bool remote() const override;
 
   void OnByteBufferFrameCaptured(const void* frame_data,
                                  int length,
@@ -69,9 +70,7 @@ class AndroidVideoTrackSource : public rtc::AdaptedVideoTrackSource {
 
   void OnOutputFormatRequest(int width, int height, int fps);
 
-  rtc::scoped_refptr<SurfaceTextureHelper> surface_texture_helper() {
-    return surface_texture_helper_;
-  }
+  rtc::scoped_refptr<SurfaceTextureHelper> surface_texture_helper();
 
  private:
   rtc::Thread* signaling_thread_;

@@ -31,7 +31,7 @@ VideoRotation jintToVideoRotation(jint rotation) {
 }
 
 AndroidVideoTrackSource* AndroidVideoTrackSourceFromJavaProxy(jlong j_proxy) {
-  auto proxy_source = reinterpret_cast<VideoTrackSourceProxy*>(j_proxy);
+  auto* proxy_source = reinterpret_cast<VideoTrackSourceProxy*>(j_proxy);
   return reinterpret_cast<AndroidVideoTrackSource*>(proxy_source->internal());
 }
 
@@ -51,6 +51,15 @@ AndroidVideoTrackSource::AndroidVideoTrackSource(
   RTC_LOG(LS_INFO) << "AndroidVideoTrackSource ctor";
   camera_thread_checker_.DetachFromThread();
 }
+AndroidVideoTrackSource::~AndroidVideoTrackSource() = default;
+
+bool AndroidVideoTrackSource::is_screencast() const {
+  return is_screencast_;
+}
+
+rtc::Optional<bool> AndroidVideoTrackSource::needs_denoising() const {
+  return false;
+}
 
 void AndroidVideoTrackSource::SetState(SourceState state) {
   if (rtc::Thread::Current() != signaling_thread_) {
@@ -64,6 +73,14 @@ void AndroidVideoTrackSource::SetState(SourceState state) {
     state_ = state;
     FireOnChanged();
   }
+}
+
+AndroidVideoTrackSource::SourceState AndroidVideoTrackSource::state() const {
+  return state_;
+}
+
+bool AndroidVideoTrackSource::remote() const {
+  return false;
 }
 
 void AndroidVideoTrackSource::OnByteBufferFrameCaptured(const void* frame_data,
@@ -211,6 +228,11 @@ void AndroidVideoTrackSource::OnOutputFormatRequest(int width,
   cricket::VideoFormat format(width, height,
                               cricket::VideoFormat::FpsToInterval(fps), 0);
   video_adapter()->OnOutputFormatRequest(format);
+}
+
+rtc::scoped_refptr<SurfaceTextureHelper>
+AndroidVideoTrackSource::surface_texture_helper() {
+  return surface_texture_helper_;
 }
 
 static void JNI_AndroidVideoTrackSourceObserver_OnByteBufferFrameCaptured(

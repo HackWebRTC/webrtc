@@ -22,6 +22,7 @@ AdaptedVideoTrackSource::AdaptedVideoTrackSource(int required_alignment)
     : video_adapter_(required_alignment) {
   thread_checker_.DetachFromThread();
 }
+AdaptedVideoTrackSource::~AdaptedVideoTrackSource() = default;
 
 bool AdaptedVideoTrackSource::GetStats(Stats* stats) {
   rtc::CritScope lock(&stats_crit_);

@@ -34,6 +34,7 @@ class EncodedImage {
   static size_t GetBufferPaddingBytes(VideoCodecType codec_type);
 
   EncodedImage();
+  EncodedImage(const EncodedImage&);
   EncodedImage(uint8_t* buffer, size_t length, size_t size);
 
   void SetEncodeTime(int64_t encode_start_ms, int64_t encode_finish_ms);

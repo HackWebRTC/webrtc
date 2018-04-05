@@ -29,11 +29,10 @@ namespace webrtc {
 // are created. This is to prevent memory leaks where frames are not returned.
 class I420BufferPool {
  public:
-  I420BufferPool()
-      : I420BufferPool(false) {}
-  explicit I420BufferPool(bool zero_initialize)
-      : I420BufferPool(zero_initialize, std::numeric_limits<size_t>::max()) {}
+  I420BufferPool();
+  explicit I420BufferPool(bool zero_initialize);
   I420BufferPool(bool zero_initialze, size_t max_number_of_buffers);
+  ~I420BufferPool();
 
   // Returns a buffer from the pool. If no suitable buffer exist in the pool
   // and there are less than |max_number_of_buffers| pending, a buffer is

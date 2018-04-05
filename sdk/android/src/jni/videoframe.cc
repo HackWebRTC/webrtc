@@ -49,7 +49,7 @@ class AndroidVideoI420Buffer : public I420BufferInterface {
                          int width,
                          int height,
                          const JavaRef<jobject>& j_video_frame_buffer);
-  ~AndroidVideoI420Buffer();
+  ~AndroidVideoI420Buffer() override;
 
  private:
   const uint8_t* DataY() const override { return data_y_; }

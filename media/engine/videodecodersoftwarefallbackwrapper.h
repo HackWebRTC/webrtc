@@ -26,6 +26,7 @@ class VideoDecoderSoftwareFallbackWrapper : public VideoDecoder {
   VideoDecoderSoftwareFallbackWrapper(
       std::unique_ptr<VideoDecoder> sw_fallback_decoder,
       std::unique_ptr<VideoDecoder> hw_decoder);
+  ~VideoDecoderSoftwareFallbackWrapper() override;
 
   int32_t InitDecode(const VideoCodec* codec_settings,
                      int32_t number_of_cores) override;

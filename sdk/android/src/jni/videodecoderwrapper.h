@@ -28,6 +28,7 @@ namespace jni {
 class VideoDecoderWrapper : public VideoDecoder {
  public:
   VideoDecoderWrapper(JNIEnv* jni, const JavaRef<jobject>& decoder);
+  ~VideoDecoderWrapper() override;
 
   int32_t InitDecode(const VideoCodec* codec_settings,
                      int32_t number_of_cores) override;
@@ -67,6 +68,10 @@ class VideoDecoderWrapper : public VideoDecoder {
     uint32_t timestamp_rtp;
     int64_t timestamp_ntp;
     rtc::Optional<uint8_t> qp;
+
+    FrameExtraInfo();
+    FrameExtraInfo(const FrameExtraInfo&);
+    ~FrameExtraInfo();
   };
 
   int32_t InitDecodeInternal(JNIEnv* jni) RTC_RUN_ON(decoder_thread_checker_);

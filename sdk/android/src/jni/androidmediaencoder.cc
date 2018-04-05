@@ -93,7 +93,7 @@ namespace {
 // this is the encoder queue from ViE encoder.
 class MediaCodecVideoEncoder : public VideoEncoder {
  public:
-  virtual ~MediaCodecVideoEncoder();
+  ~MediaCodecVideoEncoder() override;
   MediaCodecVideoEncoder(JNIEnv* jni,
                          const cricket::VideoCodec& codec,
                          jobject egl_context);

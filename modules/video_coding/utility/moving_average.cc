@@ -15,6 +15,7 @@
 namespace webrtc {
 
 MovingAverage::MovingAverage(size_t s) : sum_history_(s + 1, 0) {}
+MovingAverage::~MovingAverage() = default;
 
 void MovingAverage::AddSample(int sample) {
   count_++;

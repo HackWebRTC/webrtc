@@ -50,6 +50,8 @@ VideoDecoderWrapper::VideoDecoderWrapper(JNIEnv* jni,
   decoder_thread_checker_.DetachFromThread();
 }
 
+VideoDecoderWrapper::~VideoDecoderWrapper() = default;
+
 int32_t VideoDecoderWrapper::InitDecode(const VideoCodec* codec_settings,
                                         int32_t number_of_cores) {
   RTC_DCHECK_RUN_ON(&decoder_thread_checker_);
@@ -193,6 +195,11 @@ void VideoDecoderWrapper::OnDecodedFrame(
   callback_->Decoded(frame, decoding_time_ms,
                      decoder_qp ? decoder_qp : frame_extra_info.qp);
 }
+
+VideoDecoderWrapper::FrameExtraInfo::FrameExtraInfo() = default;
+VideoDecoderWrapper::FrameExtraInfo::FrameExtraInfo(const FrameExtraInfo&) =
+    default;
+VideoDecoderWrapper::FrameExtraInfo::~FrameExtraInfo() = default;
 
 int32_t VideoDecoderWrapper::HandleReturnCode(JNIEnv* jni,
                                               const JavaRef<jobject>& j_value,

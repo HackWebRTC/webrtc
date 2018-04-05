@@ -22,6 +22,7 @@
 namespace cricket {
 
 FeedbackParams::FeedbackParams() = default;
+FeedbackParams::~FeedbackParams() = default;
 
 bool FeedbackParam::operator==(const FeedbackParam& other) const {
   return _stricmp(other.id().c_str(), id().c_str()) == 0 &&

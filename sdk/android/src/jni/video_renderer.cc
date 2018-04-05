@@ -26,7 +26,7 @@ class JavaVideoRendererWrapper : public rtc::VideoSinkInterface<VideoFrame> {
   JavaVideoRendererWrapper(JNIEnv* jni, const JavaRef<jobject>& j_callbacks)
       : j_callbacks_(jni, j_callbacks) {}
 
-  virtual ~JavaVideoRendererWrapper() {}
+  ~JavaVideoRendererWrapper() override {}
 
   void OnFrame(const VideoFrame& video_frame) override {
     JNIEnv* env = AttachCurrentThreadIfNeeded();

@@ -19,6 +19,7 @@ namespace webrtc {
 class MovingAverage {
  public:
   explicit MovingAverage(size_t s);
+  ~MovingAverage();
   void AddSample(int sample);
   rtc::Optional<int> GetAverage() const;
   rtc::Optional<int> GetAverage(size_t num_samples) const;

@@ -36,6 +36,7 @@ class FeedbackParam {
       : id_(id),
         param_(kParamValueEmpty) {
   }
+
   bool operator==(const FeedbackParam& other) const;
 
   const std::string& id() const { return id_; }
@@ -49,6 +50,7 @@ class FeedbackParam {
 class FeedbackParams {
  public:
   FeedbackParams();
+  ~FeedbackParams();
   bool operator==(const FeedbackParams& other) const;
 
   bool Has(const FeedbackParam& param) const;

@@ -86,6 +86,8 @@ VideoEncoderSoftwareFallbackWrapper::VideoEncoderSoftwareFallbackWrapper(
             1);  // No HW below.
   }
 }
+VideoEncoderSoftwareFallbackWrapper::~VideoEncoderSoftwareFallbackWrapper() =
+    default;
 
 bool VideoEncoderSoftwareFallbackWrapper::InitFallbackEncoder() {
   RTC_LOG(LS_WARNING) << "Encoder falling back to software encoding.";

@@ -24,7 +24,7 @@ class MediaCodecVideoEncoderFactory
     : public cricket::WebRtcVideoEncoderFactory {
  public:
   MediaCodecVideoEncoderFactory();
-  virtual ~MediaCodecVideoEncoderFactory();
+  ~MediaCodecVideoEncoderFactory() override;
 
   void SetEGLContext(JNIEnv* jni, jobject egl_context);
 

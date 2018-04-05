@@ -45,6 +45,8 @@ size_t EncodedImage::GetBufferPaddingBytes(VideoCodecType codec_type) {
 
 EncodedImage::EncodedImage() : EncodedImage(nullptr, 0, 0) {}
 
+EncodedImage::EncodedImage(const EncodedImage&) = default;
+
 EncodedImage::EncodedImage(uint8_t* buffer, size_t length, size_t size)
       : _buffer(buffer), _length(length), _size(size) {}
 

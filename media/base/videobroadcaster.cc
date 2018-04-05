@@ -21,6 +21,7 @@ namespace rtc {
 VideoBroadcaster::VideoBroadcaster() {
   thread_checker_.DetachFromThread();
 }
+VideoBroadcaster::~VideoBroadcaster() = default;
 
 void VideoBroadcaster::AddOrUpdateSink(
     VideoSinkInterface<webrtc::VideoFrame>* sink,

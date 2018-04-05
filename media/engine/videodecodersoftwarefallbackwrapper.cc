@@ -31,6 +31,8 @@ VideoDecoderSoftwareFallbackWrapper::VideoDecoderSoftwareFallbackWrapper(
           std::string(fallback_decoder_->ImplementationName()) +
           " (fallback from: " + hw_decoder_->ImplementationName() + ")"),
       callback_(nullptr) {}
+VideoDecoderSoftwareFallbackWrapper::~VideoDecoderSoftwareFallbackWrapper() =
+    default;
 
 int32_t VideoDecoderSoftwareFallbackWrapper::InitDecode(
     const VideoCodec* codec_settings,

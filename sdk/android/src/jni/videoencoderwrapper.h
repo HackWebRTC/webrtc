@@ -30,6 +30,7 @@ namespace jni {
 class VideoEncoderWrapper : public VideoEncoder {
  public:
   VideoEncoderWrapper(JNIEnv* jni, const JavaRef<jobject>& j_encoder);
+  ~VideoEncoderWrapper() override;
 
   int32_t InitEncode(const VideoCodec* codec_settings,
                      int32_t number_of_cores,
@@ -51,7 +52,7 @@ class VideoEncoderWrapper : public VideoEncoder {
 
   ScalingSettings GetScalingSettings() const override;
 
-  bool SupportsNativeHandle() const override { return true; }
+  bool SupportsNativeHandle() const override;
 
   // Should only be called by JNI.
   void OnEncodedFrame(JNIEnv* jni,

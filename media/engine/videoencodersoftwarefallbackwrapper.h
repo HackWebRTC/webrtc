@@ -28,6 +28,7 @@ class VideoEncoderSoftwareFallbackWrapper : public VideoEncoder {
   VideoEncoderSoftwareFallbackWrapper(
       std::unique_ptr<webrtc::VideoEncoder> sw_encoder,
       std::unique_ptr<webrtc::VideoEncoder> hw_encoder);
+  ~VideoEncoderSoftwareFallbackWrapper() override;
 
   int32_t InitEncode(const VideoCodec* codec_settings,
                      int32_t number_of_cores,

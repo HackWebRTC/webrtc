@@ -75,14 +75,6 @@ rtc_source_set("internal_jni") {
   deps = [
     "../../rtc_base:checks",
   ]
-
-  if (is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [
-      "//build/config/clang:extra_warnings",
-      "//build/config/clang:find_bad_constructs",
-    ]
-  }
 }
 
 rtc_source_set("base_jni") {
@@ -112,14 +104,6 @@ rtc_source_set("base_jni") {
     "../../rtc_base:rtc_base_approved",
     "../../system_wrappers:metrics_api",
   ]
-
-  if (is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [
-      "//build/config/clang:extra_warnings",
-      "//build/config/clang:find_bad_constructs",
-    ]
-  }
 }
 
 rtc_static_library("audio_jni") {
@@ -373,14 +357,6 @@ rtc_static_library("video_jni") {
 
   configs += [ ":libjingle_peerconnection_jni_warnings_config" ]
 
-  if (is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [
-      "//build/config/clang:extra_warnings",
-      "//build/config/clang:find_bad_constructs",
-    ]
-  }
-
   # TODO(jschuh): Bug 1348: fix this warning.
   configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
 
@@ -462,14 +438,6 @@ rtc_static_library("vp8_jni") {
     "src/jni/vp8codec.cc",
   ]
 
-  if (is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [
-      "//build/config/clang:extra_warnings",
-      "//build/config/clang:find_bad_constructs",
-    ]
-  }
-
   deps = [
     ":base_jni",
     ":generated_vp8_jni",
@@ -491,14 +459,6 @@ rtc_static_library("vp9_jni") {
   sources = [
     "src/jni/vp9codec.cc",
   ]
-
-  if (is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [
-      "//build/config/clang:extra_warnings",
-      "//build/config/clang:find_bad_constructs",
-    ]
-  }
 
   deps = [
     ":base_jni",

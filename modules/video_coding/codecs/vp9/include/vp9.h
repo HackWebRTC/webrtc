@@ -23,7 +23,7 @@ class VP9Encoder : public VideoEncoder {
   static bool IsSupported();
   static std::unique_ptr<VP9Encoder> Create();
 
-  virtual ~VP9Encoder() {}
+  ~VP9Encoder() override {}
 };
 
 class VP9Decoder : public VideoDecoder {
@@ -31,7 +31,7 @@ class VP9Decoder : public VideoDecoder {
   static bool IsSupported();
   static std::unique_ptr<VP9Decoder> Create();
 
-  virtual ~VP9Decoder() {}
+  ~VP9Decoder() override {}
 };
 }  // namespace webrtc
 

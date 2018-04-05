@@ -26,6 +26,7 @@ class AdaptedVideoTrackSource
     : public webrtc::Notifier<webrtc::VideoTrackSourceInterface> {
  public:
   AdaptedVideoTrackSource();
+  ~AdaptedVideoTrackSource() override;
 
  protected:
   // Allows derived classes to initialize |video_adapter_| with a custom
