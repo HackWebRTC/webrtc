@@ -103,10 +103,11 @@ TEST_P(FecEndToEndTest, ReceivesUlpfec) {
       // Use VP8 instead of FAKE, since the latter does not have PictureID
       // in the packetization headers.
       send_config->encoder_settings.encoder = encoder_.get();
-      send_config->encoder_settings.payload_name = "VP8";
-      send_config->encoder_settings.payload_type = kVideoSendPayloadType;
+      send_config->rtp.payload_name = "VP8";
+      send_config->rtp.payload_type = kVideoSendPayloadType;
+      encoder_config->codec_type = kVideoCodecVP8;
       VideoReceiveStream::Decoder decoder =
-          test::CreateMatchingDecoder(send_config->encoder_settings);
+          test::CreateMatchingDecoder(*send_config);
       decoder_.reset(decoder.decoder);
       (*receive_configs)[0].decoders.clear();
       (*receive_configs)[0].decoders.push_back(decoder);
@@ -452,8 +453,9 @@ TEST_P(FecEndToEndTest, ReceivedUlpfecPacketsNotNacked) {
       send_config->rtp.ulpfec.ulpfec_payload_type = kUlpfecPayloadType;
       // Set codec to VP8, otherwise NACK/FEC hybrid will be disabled.
       send_config->encoder_settings.encoder = encoder_.get();
-      send_config->encoder_settings.payload_name = "VP8";
-      send_config->encoder_settings.payload_type = kFakeVideoSendPayloadType;
+      send_config->rtp.payload_name = "VP8";
+      send_config->rtp.payload_type = kFakeVideoSendPayloadType;
+      encoder_config->codec_type = kVideoCodecVP8;
 
       (*receive_configs)[0].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
       (*receive_configs)[0].rtp.red_payload_type = kRedPayloadType;
@@ -461,9 +463,9 @@ TEST_P(FecEndToEndTest, ReceivedUlpfecPacketsNotNacked) {
 
       (*receive_configs)[0].decoders.resize(1);
       (*receive_configs)[0].decoders[0].payload_type =
-          send_config->encoder_settings.payload_type;
+          send_config->rtp.payload_type;
       (*receive_configs)[0].decoders[0].payload_name =
-          send_config->encoder_settings.payload_name;
+          send_config->rtp.payload_name;
       (*receive_configs)[0].decoders[0].decoder = decoder_.get();
     }
 

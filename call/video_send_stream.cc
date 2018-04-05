@@ -91,9 +91,7 @@ std::string VideoSendStream::Config::ToString() const {
 std::string VideoSendStream::Config::EncoderSettings::ToString() const {
   char buf[1024];
   rtc::SimpleStringBuilder ss(buf);
-  ss << "{payload_name: " << payload_name;
-  ss << ", payload_type: " << payload_type;
-  ss << ", encoder_factory: "
+  ss << "{encoder_factory: "
      << (encoder_factory ? "(VideoEncoderFactory)" : "(nullptr)");
   ss << ", encoder: " << (encoder ? "(VideoEncoder)" : "nullptr");
   ss << '}';
@@ -132,6 +130,8 @@ std::string VideoSendStream::Config::Rtp::ToString() const {
 
   ss << ", nack: {rtp_history_ms: " << nack.rtp_history_ms << '}';
   ss << ", ulpfec: " << ulpfec.ToString();
+  ss << ", payload_name: " << payload_name;
+  ss << ", payload_type: " << payload_type;
 
   ss << ", flexfec: {payload_type: " << flexfec.payload_type;
   ss << ", ssrc: " << flexfec.ssrc;

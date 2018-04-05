@@ -89,7 +89,8 @@ void HistogramTest::VerifyHistogramStats(bool use_rtx,
         send_config->rtp.ulpfec.ulpfec_payload_type = kUlpfecPayloadType;
         send_config->rtp.ulpfec.red_payload_type = kRedPayloadType;
         send_config->encoder_settings.encoder = vp8_encoder_.get();
-        send_config->encoder_settings.payload_name = "VP8";
+        send_config->rtp.payload_name = "VP8";
+        encoder_config->codec_type = kVideoCodecVP8;
         (*receive_configs)[0].decoders[0].payload_name = "VP8";
         (*receive_configs)[0].rtp.red_payload_type = kRedPayloadType;
         (*receive_configs)[0].rtp.ulpfec_payload_type = kUlpfecPayloadType;

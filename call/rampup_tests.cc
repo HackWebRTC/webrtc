@@ -220,7 +220,7 @@ void RampUpTester::ModifyVideoConfigs(
       recv_config.rtp.rtx_ssrc = video_rtx_ssrcs_[i];
       recv_config.rtp
           .rtx_associated_payload_types[send_config->rtp.rtx.payload_type] =
-          send_config->encoder_settings.payload_type;
+          send_config->rtp.payload_type;
     }
     ++i;
   }

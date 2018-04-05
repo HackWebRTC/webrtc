@@ -285,11 +285,11 @@ class VideoStreamEncoderTest : public ::testing::Test {
     metrics::Reset();
     video_send_config_ = VideoSendStream::Config(nullptr);
     video_send_config_.encoder_settings.encoder = &fake_encoder_;
-    video_send_config_.encoder_settings.payload_name = "FAKE";
-    video_send_config_.encoder_settings.payload_type = 125;
+    video_send_config_.rtp.payload_name = "FAKE";
+    video_send_config_.rtp.payload_type = 125;
 
     VideoEncoderConfig video_encoder_config;
-    test::FillEncoderConfiguration(1, &video_encoder_config);
+    test::FillEncoderConfiguration(kVideoCodecVP8, 1, &video_encoder_config);
     video_encoder_config.video_stream_factory =
         new rtc::RefCountedObject<VideoStreamFactory>(1, max_framerate_);
     video_encoder_config_ = video_encoder_config.Copy();
@@ -326,9 +326,10 @@ class VideoStreamEncoderTest : public ::testing::Test {
                     unsigned char num_spatial_layers,
                     bool nack_enabled,
                     bool screenshare) {
-    video_send_config_.encoder_settings.payload_name = payload_name;
+    video_send_config_.rtp.payload_name = payload_name;
 
     VideoEncoderConfig video_encoder_config;
+    video_encoder_config.codec_type = PayloadStringToCodecType(payload_name);
     video_encoder_config.number_of_streams = num_streams;
     video_encoder_config.max_bitrate_bps = kTargetBitrateBps;
     video_encoder_config.video_stream_factory =
@@ -784,7 +785,7 @@ TEST_F(VideoStreamEncoderTest,
   EXPECT_EQ(1, sink_.number_of_reconfigurations());
 
   VideoEncoderConfig video_encoder_config;
-  test::FillEncoderConfiguration(1, &video_encoder_config);
+  test::FillEncoderConfiguration(kVideoCodecVP8, 1, &video_encoder_config);
   video_encoder_config.min_transmit_bitrate_bps = 9999;
   video_stream_encoder_->ConfigureEncoder(std::move(video_encoder_config),
                                           kMaxPayloadLength,
@@ -2283,6 +2284,7 @@ TEST_F(VideoStreamEncoderTest, OveruseDetectorUpdatedOnReconfigureAndAdaption) {
 
   // Trigger reconfigure encoder (without resetting the entire instance).
   VideoEncoderConfig video_encoder_config;
+  video_encoder_config.codec_type = kVideoCodecVP8;
   video_encoder_config.max_bitrate_bps = kTargetBitrateBps;
   video_encoder_config.number_of_streams = 1;
   video_encoder_config.video_stream_factory =
@@ -2334,6 +2336,7 @@ TEST_F(VideoStreamEncoderTest,
 
   // Trigger initial configuration.
   VideoEncoderConfig video_encoder_config;
+  video_encoder_config.codec_type = kVideoCodecVP8;
   video_encoder_config.max_bitrate_bps = kTargetBitrateBps;
   video_encoder_config.number_of_streams = 1;
   video_encoder_config.video_stream_factory =
@@ -2396,6 +2399,7 @@ TEST_F(VideoStreamEncoderTest,
 
   // Trigger initial configuration.
   VideoEncoderConfig video_encoder_config;
+  video_encoder_config.codec_type = kVideoCodecVP8;
   video_encoder_config.max_bitrate_bps = kTargetBitrateBps;
   video_encoder_config.number_of_streams = 1;
   video_encoder_config.video_stream_factory =
@@ -3189,6 +3193,7 @@ TEST_F(VideoStreamEncoderTest, AcceptsFullHdAdaptedDownSimulcastFrames) {
   video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
   // Trigger reconfigure encoder (without resetting the entire instance).
   VideoEncoderConfig video_encoder_config;
+  video_encoder_config.codec_type = kVideoCodecVP8;
   video_encoder_config.max_bitrate_bps = kTargetBitrateBps;
   video_encoder_config.number_of_streams = 1;
   video_encoder_config.video_stream_factory =

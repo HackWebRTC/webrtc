@@ -496,11 +496,12 @@ TEST_F(RtpRtcpEndToEndTest, TestFlexfecRtpStatePreservation) {
                      send_transport.get());
     encoder = VP8Encoder::Create();
     video_send_config_.encoder_settings.encoder = encoder.get();
-    video_send_config_.encoder_settings.payload_name = "VP8";
-    video_send_config_.encoder_settings.payload_type = kVideoSendPayloadType;
+    video_send_config_.rtp.payload_name = "VP8";
+    video_send_config_.rtp.payload_type = kVideoSendPayloadType;
     video_send_config_.rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
     video_send_config_.rtp.rtx.ssrcs.push_back(kSendRtxSsrcs[0]);
     video_send_config_.rtp.rtx.payload_type = kSendRtxPayloadType;
+    video_encoder_config_.codec_type = kVideoCodecVP8;
 
     CreateMatchingReceiveConfigs(receive_transport.get());
     video_receive_configs_[0].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
