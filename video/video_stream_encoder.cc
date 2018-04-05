@@ -115,54 +115,6 @@ CpuOveruseOptions GetCpuOveruseOptions(
 
 }  //  namespace
 
-class VideoStreamEncoder::EncodeTask : public rtc::QueuedTask {
- public:
-  EncodeTask(const VideoFrame& frame,
-             VideoStreamEncoder* video_stream_encoder,
-             int64_t time_when_posted_us,
-             bool log_stats)
-      : frame_(frame),
-        video_stream_encoder_(video_stream_encoder),
-        time_when_posted_us_(time_when_posted_us),
-        log_stats_(log_stats) {
-    ++video_stream_encoder_->posted_frames_waiting_for_encode_;
-  }
-
- private:
-  bool Run() override {
-    RTC_DCHECK_RUN_ON(&video_stream_encoder_->encoder_queue_);
-    video_stream_encoder_->stats_proxy_->OnIncomingFrame(frame_.width(),
-                                                         frame_.height());
-    ++video_stream_encoder_->captured_frame_count_;
-    const int posted_frames_waiting_for_encode =
-        video_stream_encoder_->posted_frames_waiting_for_encode_.fetch_sub(1);
-    RTC_DCHECK_GT(posted_frames_waiting_for_encode, 0);
-    if (posted_frames_waiting_for_encode == 1) {
-      video_stream_encoder_->EncodeVideoFrame(frame_, time_when_posted_us_);
-    } else {
-      // There is a newer frame in flight. Do not encode this frame.
-      RTC_LOG(LS_VERBOSE)
-          << "Incoming frame dropped due to that the encoder is blocked.";
-      ++video_stream_encoder_->dropped_frame_count_;
-      video_stream_encoder_->stats_proxy_->OnFrameDroppedInEncoderQueue();
-    }
-    if (log_stats_) {
-      RTC_LOG(LS_INFO) << "Number of frames: captured "
-                       << video_stream_encoder_->captured_frame_count_
-                       << ", dropped (due to encoder blocked) "
-                       << video_stream_encoder_->dropped_frame_count_
-                       << ", interval_ms " << kFrameLogIntervalMs;
-      video_stream_encoder_->captured_frame_count_ = 0;
-      video_stream_encoder_->dropped_frame_count_ = 0;
-    }
-    return true;
-  }
-  VideoFrame frame_;
-  VideoStreamEncoder* const video_stream_encoder_;
-  const int64_t time_when_posted_us_;
-  const bool log_stats_;
-};
-
 // VideoSourceProxy is responsible ensuring thread safety between calls to
 // VideoStreamEncoder::SetSource that will happen on libjingle's worker thread
 // when a video capturer is connected to the encoder and the encoder task queue
@@ -695,8 +647,38 @@ void VideoStreamEncoder::OnFrame(const VideoFrame& video_frame) {
   }
 
   last_captured_timestamp_ = incoming_frame.ntp_time_ms();
-  encoder_queue_.PostTask(std::unique_ptr<rtc::QueuedTask>(new EncodeTask(
-      incoming_frame, this, rtc::TimeMicros(), log_stats)));
+
+  int64_t post_time_us = rtc::TimeMicros();
+  ++posted_frames_waiting_for_encode_;
+
+  encoder_queue_.PostTask(
+      [this, incoming_frame, post_time_us, log_stats]() {
+        RTC_DCHECK_RUN_ON(&encoder_queue_);
+        stats_proxy_->OnIncomingFrame(incoming_frame.width(),
+                                      incoming_frame.height());
+        ++captured_frame_count_;
+        const int posted_frames_waiting_for_encode =
+            posted_frames_waiting_for_encode_.fetch_sub(1);
+        RTC_DCHECK_GT(posted_frames_waiting_for_encode, 0);
+        if (posted_frames_waiting_for_encode == 1) {
+          EncodeVideoFrame(incoming_frame, post_time_us);
+        } else {
+          // There is a newer frame in flight. Do not encode this frame.
+          RTC_LOG(LS_VERBOSE)
+              << "Incoming frame dropped due to that the encoder is blocked.";
+          ++dropped_frame_count_;
+          stats_proxy_->OnFrameDroppedInEncoderQueue();
+        }
+        if (log_stats) {
+          RTC_LOG(LS_INFO) << "Number of frames: captured "
+                           << captured_frame_count_
+                           << ", dropped (due to encoder blocked) "
+                           << dropped_frame_count_ << ", interval_ms "
+                           << kFrameLogIntervalMs;
+          captured_frame_count_ = 0;
+          dropped_frame_count_ = 0;
+        }
+      });
 }
 
 void VideoStreamEncoder::OnDiscardedFrame() {
