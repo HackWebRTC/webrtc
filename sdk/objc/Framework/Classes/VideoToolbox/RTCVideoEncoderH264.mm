@@ -330,7 +330,7 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
   _mode = settings.mode;
 
   // We can only set average bitrate on the HW encoder.
-  _targetBitrateBps = settings.startBitrate;
+  _targetBitrateBps = settings.startBitrate * 1000;  // startBitrate is in kbps.
   _bitrateAdjuster->SetTargetBitrateBps(_targetBitrateBps);
 
   // TODO(tkchin): Try setting payload size via
