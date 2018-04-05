@@ -9,8 +9,6 @@
  */
 #include "modules/audio_processing/aec3/echo_canceller3.h"
 
-#include <sstream>
-
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/atomicops.h"
 #include "rtc_base/logging.h"
