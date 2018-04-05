@@ -43,8 +43,9 @@ class FakeDecoder : public VideoDecoder {
   static const char* kImplementationName;
 
  private:
-  VideoCodec config_;
   DecodedImageCallback* callback_;
+  int width_;
+  int height_;
 };
 
 class FakeH264Decoder : public FakeDecoder {
