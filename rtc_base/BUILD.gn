@@ -855,6 +855,8 @@ rtc_static_library("rtc_base_generic") {
     "openssl.h",
     "openssladapter.cc",
     "openssladapter.h",
+    "opensslcommon.cc",
+    "opensslcommon.h",
     "openssldigest.cc",
     "openssldigest.h",
     "opensslidentity.cc",
@@ -1356,6 +1358,7 @@ if (rtc_include_tests) {
     if (is_posix || is_fuchsia) {
       sources += [
         "openssladapter_unittest.cc",
+        "opensslcommon_unittest.cc",
         "ssladapter_unittest.cc",
         "sslidentity_unittest.cc",
         "sslstreamadapter_unittest.cc",
