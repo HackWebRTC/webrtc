@@ -1266,8 +1266,10 @@ static int Decode(ISACStruct* ISAC_main_inst,
 
         /* It might be less due to garbage. */
         if ((numDecodedBytesUB != lenNextStream) &&
-            (numDecodedBytesUB != (lenNextStream -
-                encoded[numDecodedBytesLB + 1 + numDecodedBytesUB]))) {
+            (numDecodedBytesLB + 1 + numDecodedBytesUB >= lenEncodedBytes ||
+             numDecodedBytesUB !=
+                 (lenNextStream -
+                  encoded[numDecodedBytesLB + 1 + numDecodedBytesUB]))) {
           instISAC->errorCode = ISAC_LENGTH_MISMATCH;
           return -1;
         }
