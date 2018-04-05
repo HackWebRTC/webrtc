@@ -13,8 +13,12 @@
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-
 #include "third_party/libyuv/include/libyuv.h"
+
+#if !defined(NDEBUG) && defined(WEBRTC_IOS)
+#import <UIKit/UIKit.h>
+#import <VideoToolbox/VideoToolbox.h>
+#endif
 
 @implementation RTCCVPixelBuffer {
   int _width;
@@ -243,6 +247,20 @@
 
   return i420Buffer;
 }
+
+#pragma mark - Debugging
+
+#if !defined(NDEBUG) && defined(WEBRTC_IOS)
+- (id)debugQuickLookObject {
+  CGImageRef cgImage;
+  VTCreateCGImageFromCVPixelBuffer(_pixelBuffer, NULL, &cgImage);
+  UIImage *image = [UIImage imageWithCGImage:cgImage scale:1.0 orientation:UIImageOrientationUp];
+  CGImageRelease(cgImage);
+  return image;
+}
+#endif
+
+#pragma mark - Private
 
 - (void)cropAndScaleNV12To:(CVPixelBufferRef)outputPixelBuffer withTempBuffer:(uint8_t*)tmpBuffer {
   // Prepare output pointers.

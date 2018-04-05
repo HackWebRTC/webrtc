@@ -18,13 +18,16 @@ void DrawGradientInRGBPixelBuffer(CVPixelBufferRef pixelBuffer) {
   size_t width = CVPixelBufferGetWidth(pixelBuffer);
   size_t height = CVPixelBufferGetHeight(pixelBuffer);
   CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+  int byteOrder = CVPixelBufferGetPixelFormatType(pixelBuffer) == kCVPixelFormatType_32ARGB ?
+      kCGBitmapByteOrder32Little :
+      0;
   CGContextRef cgContext = CGBitmapContextCreate(baseAddr,
                                                  width,
                                                  height,
                                                  8,
                                                  CVPixelBufferGetBytesPerRow(pixelBuffer),
                                                  colorSpace,
-                                                 kCGImageAlphaNoneSkipLast);
+                                                 byteOrder | kCGImageAlphaNoneSkipLast);
 
   // Create a gradient
   CGFloat colors[] = {
