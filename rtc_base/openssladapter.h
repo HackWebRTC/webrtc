@@ -11,22 +11,21 @@
 #ifndef RTC_BASE_OPENSSLADAPTER_H_
 #define RTC_BASE_OPENSSLADAPTER_H_
 
+#include <openssl/ossl_typ.h>
+
 #include <map>
+#include <memory>
 #include <string>
+#include <vector>
+
 #include "rtc_base/buffer.h"
 #include "rtc_base/messagehandler.h"
 #include "rtc_base/messagequeue.h"
 #include "rtc_base/opensslidentity.h"
+#include "rtc_base/opensslsessioncache.h"
 #include "rtc_base/ssladapter.h"
 
-typedef struct ssl_st SSL;
-typedef struct ssl_ctx_st SSL_CTX;
-typedef struct x509_store_ctx_st X509_STORE_CTX;
-typedef struct ssl_session_st SSL_SESSION;
-
 namespace rtc {
-
-class OpenSSLAdapterFactory;
 
 class OpenSSLAdapter : public SSLAdapter, public MessageHandler {
  public:
@@ -34,7 +33,7 @@ class OpenSSLAdapter : public SSLAdapter, public MessageHandler {
   static bool CleanupSSL();
 
   explicit OpenSSLAdapter(AsyncSocket* socket,
-                          OpenSSLAdapterFactory* factory = nullptr);
+                          OpenSSLSessionCache* ssl_session_cache = nullptr);
   ~OpenSSLAdapter() override;
 
   void SetIgnoreBadCert(bool ignore) override;
@@ -110,7 +109,7 @@ class OpenSSLAdapter : public SSLAdapter, public MessageHandler {
 
   // Parent object that maintains shared state.
   // Can be null if state sharing is not needed.
-  OpenSSLAdapterFactory* factory_;
+  OpenSSLSessionCache* ssl_session_cache_ = nullptr;
 
   SSLState state_;
   std::unique_ptr<OpenSSLIdentity> identity_;
@@ -144,31 +143,32 @@ class OpenSSLAdapter : public SSLAdapter, public MessageHandler {
 std::string TransformAlpnProtocols(const std::vector<std::string>& protos);
 
 /////////////////////////////////////////////////////////////////////////////
+
+// The OpenSSLAdapterFactory is responsbile for creating multiple new
+// OpenSSLAdapters with a shared SSL_CTX and a shared SSL_SESSION cache. The
+// SSL_SESSION cache allows existing SSL_SESSIONS to be reused instead of
+// recreating them leading to a significant performance improvement.
 class OpenSSLAdapterFactory : public SSLAdapterFactory {
  public:
   OpenSSLAdapterFactory();
   ~OpenSSLAdapterFactory() override;
-
+  // Set the SSL Mode to use with this factory. This should only be set before
+  // the first adapter is created with the factory. If it is called after it
+  // will DCHECK.
   void SetMode(SSLMode mode) override;
+  // Constructs a new socket using the shared OpenSSLSessionCache. This means
+  // existing SSLSessions already in the cache will be reused instead of
+  // re-created for improved performance.
   OpenSSLAdapter* CreateAdapter(AsyncSocket* socket) override;
-  static OpenSSLAdapterFactory* Create();
 
  private:
-  SSL_CTX* ssl_ctx() { return ssl_ctx_; }
-  // Looks up a session by hostname. The returned SSL_SESSION is not up_refed.
-  SSL_SESSION* LookupSession(const std::string& hostname);
-  // Adds a session to the cache, and up_refs it. Any existing session with the
-  // same hostname is replaced.
-  void AddSession(const std::string& hostname, SSL_SESSION* session);
+  // Holds the SSLMode (DTLS,TLS) that will be used to set the session cache.
+  SSLMode ssl_mode_ = SSL_MODE_TLS;
+  // Holds a cache of existing SSL Sessions.
+  std::unique_ptr<OpenSSLSessionCache> ssl_session_cache_;
+  // TODO(benwright): Remove this when context is moved to OpenSSLCommon.
+  // Hold a friend class to the OpenSSLAdapter to retrieve the context.
   friend class OpenSSLAdapter;
-
-  SSLMode ssl_mode_;
-  // Holds the shared SSL_CTX for all created adapters.
-  SSL_CTX* ssl_ctx_;
-  // Map of hostnames to SSL_SESSIONs; holds references to the SSL_SESSIONs,
-  // which are cleaned up when the factory is destroyed.
-  // TODO(juberti): Add LRU eviction to keep the cache from growing forever.
-  std::map<std::string, SSL_SESSION*> sessions_;
 };
 
 }  // namespace rtc

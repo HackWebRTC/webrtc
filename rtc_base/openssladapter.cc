@@ -14,11 +14,6 @@
 #include <unistd.h>
 #endif
 
-#if defined(WEBRTC_WIN)
-// Must be included first before openssl headers.
-#include "rtc_base/win32.h"  // NOLINT
-#endif  // WEBRTC_WIN
-
 #include <openssl/bio.h>
 #include <openssl/crypto.h>
 #include <openssl/err.h>
@@ -26,13 +21,14 @@
 #include <openssl/rand.h>
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
+#include "rtc_base/openssl.h"
 
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
-#include "rtc_base/openssl.h"
 #include "rtc_base/opensslcommon.h"
+#include "rtc_base/ptr_util.h"
 #include "rtc_base/sslroots.h"
 #include "rtc_base/stringencode.h"
 #include "rtc_base/stringutils.h"
@@ -206,9 +202,9 @@ bool OpenSSLAdapter::CleanupSSL() {
 }
 
 OpenSSLAdapter::OpenSSLAdapter(AsyncSocket* socket,
-                               OpenSSLAdapterFactory* factory)
+                               OpenSSLSessionCache* ssl_session_cache)
     : SSLAdapter(socket),
-      factory_(factory),
+      ssl_session_cache_(ssl_session_cache),
       state_(SSL_NONE),
       role_(SSL_CLIENT),
       ssl_read_needs_write_(false),
@@ -222,8 +218,8 @@ OpenSSLAdapter::OpenSSLAdapter(AsyncSocket* socket,
   // If a factory is used, take a reference on the factory's SSL_CTX.
   // Otherwise, we'll create our own later.
   // Either way, we'll release our reference via SSL_CTX_free() in Cleanup().
-  if (factory_) {
-    ssl_ctx_ = factory_->ssl_ctx();
+  if (ssl_session_cache_ != nullptr) {
+    ssl_ctx_ = ssl_session_cache_->GetSSLContext();
     RTC_DCHECK(ssl_ctx_);
     // Note: if using OpenSSL, requires version 1.1.0 or later.
     SSL_CTX_up_ref(ssl_ctx_);
@@ -307,7 +303,7 @@ int OpenSSLAdapter::BeginSSL() {
   // First set up the context. We should either have a factory, with its own
   // pre-existing context, or be running standalone, in which case we will
   // need to create one, and specify |false| to disable session caching.
-  if (!factory_) {
+  if (ssl_session_cache_ == nullptr) {
     RTC_DCHECK(!ssl_ctx_);
     ssl_ctx_ = CreateContext(ssl_mode_, false);
   }
@@ -352,8 +348,8 @@ int OpenSSLAdapter::BeginSSL() {
     SSL_set_tlsext_host_name(ssl_, ssl_host_name_.c_str());
 
     // Enable session caching, if configured and a hostname is supplied.
-    if (factory_) {
-      SSL_SESSION* cached = factory_->LookupSession(ssl_host_name_);
+    if (ssl_session_cache_ != nullptr) {
+      SSL_SESSION* cached = ssl_session_cache_->LookupSession(ssl_host_name_);
       if (cached) {
         if (SSL_set_session(ssl_, cached) == 0) {
           RTC_LOG(LS_WARNING) << "Failed to apply SSL session from cache";
@@ -615,7 +611,6 @@ int OpenSSLAdapter::SendTo(const void* pv,
 
 int OpenSSLAdapter::Recv(void* pv, size_t cb, int64_t* timestamp) {
   switch (state_) {
-
   case SSL_NONE:
     return AsyncSocketAdapter::Recv(pv, cb, timestamp);
 
@@ -883,9 +878,9 @@ int OpenSSLAdapter::SSLVerifyCallback(int ok, X509_STORE_CTX* store) {
 int OpenSSLAdapter::NewSSLSessionCallback(SSL* ssl, SSL_SESSION* session) {
   OpenSSLAdapter* stream =
       reinterpret_cast<OpenSSLAdapter*>(SSL_get_app_data(ssl));
-  RTC_DCHECK(stream->factory_);
+  RTC_DCHECK(stream->ssl_session_cache_);
   RTC_LOG(LS_INFO) << "Caching SSL session for " << stream->ssl_host_name_;
-  stream->factory_->AddSession(stream->ssl_host_name_, session);
+  stream->ssl_session_cache_->AddSession(stream->ssl_host_name_, session);
   return 1;  // We've taken ownership of the session; OpenSSL shouldn't free it.
 }
 
@@ -984,43 +979,26 @@ std::string TransformAlpnProtocols(
 // OpenSSLAdapterFactory
 //////////////////////////////////////////////////////////////////////
 
-OpenSSLAdapterFactory::OpenSSLAdapterFactory()
-    : ssl_mode_(SSL_MODE_TLS), ssl_ctx_(nullptr) {}
-
-OpenSSLAdapterFactory::~OpenSSLAdapterFactory() {
-  for (auto it : sessions_) {
-    SSL_SESSION_free(it.second);
-  }
-  SSL_CTX_free(ssl_ctx_);
-}
+OpenSSLAdapterFactory::OpenSSLAdapterFactory() = default;
+OpenSSLAdapterFactory::~OpenSSLAdapterFactory() = default;
 
 void OpenSSLAdapterFactory::SetMode(SSLMode mode) {
-  RTC_DCHECK(!ssl_ctx_);
+  RTC_DCHECK(!ssl_session_cache_);
   ssl_mode_ = mode;
 }
 
 OpenSSLAdapter* OpenSSLAdapterFactory::CreateAdapter(AsyncSocket* socket) {
-  if (!ssl_ctx_) {
-    bool enable_cache = true;
-    ssl_ctx_ = OpenSSLAdapter::CreateContext(ssl_mode_, enable_cache);
-    if (!ssl_ctx_) {
+  if (ssl_session_cache_ == nullptr) {
+    SSL_CTX* ssl_ctx =
+        OpenSSLAdapter::CreateContext(ssl_mode_, /* enable_cache = */ true);
+    if (ssl_ctx == nullptr) {
       return nullptr;
     }
+    // The OpenSSLSessionCache will upref the ssl_ctx.
+    ssl_session_cache_ = MakeUnique<OpenSSLSessionCache>(ssl_mode_, ssl_ctx);
+    SSL_CTX_free(ssl_ctx);
   }
-
-  return new OpenSSLAdapter(socket, this);
+  return new OpenSSLAdapter(socket, ssl_session_cache_.get());
 }
 
-SSL_SESSION* OpenSSLAdapterFactory::LookupSession(const std::string& hostname) {
-  auto it = sessions_.find(hostname);
-  return (it != sessions_.end()) ? it->second : nullptr;
-}
-
-void OpenSSLAdapterFactory::AddSession(const std::string& hostname,
-                                       SSL_SESSION* new_session) {
-  SSL_SESSION* old_session = LookupSession(hostname);
-  SSL_SESSION_free(old_session);
-  sessions_[hostname] = new_session;
-}
-
-} // namespace rtc
+}  // namespace rtc

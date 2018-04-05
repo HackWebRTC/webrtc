@@ -861,6 +861,8 @@ rtc_static_library("rtc_base_generic") {
     "openssldigest.h",
     "opensslidentity.cc",
     "opensslidentity.h",
+    "opensslsessioncache.cc",
+    "opensslsessioncache.h",
     "opensslstreamadapter.cc",
     "opensslstreamadapter.h",
     "physicalsocketserver.cc",
@@ -1359,6 +1361,7 @@ if (rtc_include_tests) {
       sources += [
         "openssladapter_unittest.cc",
         "opensslcommon_unittest.cc",
+        "opensslsessioncache_unittest.cc",
         "ssladapter_unittest.cc",
         "sslidentity_unittest.cc",
         "sslstreamadapter_unittest.cc",
