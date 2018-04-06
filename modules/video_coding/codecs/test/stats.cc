@@ -293,8 +293,9 @@ VideoStatistics Stats::SliceAndCalcVideoStatistic(
     if (frame_stat.decoding_successful) {
       ++video_stat.num_decoded_frames;
 
-      video_stat.width = frame_stat.decoded_width;
-      video_stat.height = frame_stat.decoded_height;
+      video_stat.width = std::max(video_stat.width, frame_stat.decoded_width);
+      video_stat.height =
+          std::max(video_stat.height, frame_stat.decoded_height);
 
       psnr_y.AddSample(frame_stat.psnr_y);
       psnr_u.AddSample(frame_stat.psnr_u);

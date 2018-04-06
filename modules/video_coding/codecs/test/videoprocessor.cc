@@ -171,7 +171,6 @@ VideoProcessor::VideoProcessor(webrtc::VideoEncoder* encoder,
           config_.codec_settings)),
       framerate_fps_(0),
       encode_callback_(this),
-      decode_callback_(this),
       input_frame_reader_(input_frame_reader),
       merged_encoded_frames_(num_simulcast_or_spatial_layers_),
       encoded_frame_writers_(encoded_frame_writers),
@@ -205,11 +204,20 @@ VideoProcessor::VideoProcessor(webrtc::VideoEncoder* encoder,
                                     static_cast<int>(config_.NumberOfCores()),
                                     config_.max_payload_size_bytes),
                WEBRTC_VIDEO_CODEC_OK);
-  for (auto& decoder : *decoders_) {
-    RTC_CHECK_EQ(decoder->InitDecode(&config_.codec_settings,
-                                     static_cast<int>(config_.NumberOfCores())),
+
+  for (size_t simulcast_svc_idx = 0;
+       simulcast_svc_idx < num_simulcast_or_spatial_layers_;
+       ++simulcast_svc_idx) {
+    decode_callback_.push_back(
+        rtc::MakeUnique<VideoProcessorDecodeCompleteCallback>(
+            this, simulcast_svc_idx));
+    RTC_CHECK_EQ(decoders_->at(simulcast_svc_idx)
+                     ->InitDecode(&config_.codec_settings,
+                                  static_cast<int>(config_.NumberOfCores())),
                  WEBRTC_VIDEO_CODEC_OK);
-    RTC_CHECK_EQ(decoder->RegisterDecodeCompleteCallback(&decode_callback_),
+    RTC_CHECK_EQ(decoders_->at(simulcast_svc_idx)
+                     ->RegisterDecodeCompleteCallback(
+                         decode_callback_.at(simulcast_svc_idx).get()),
                  WEBRTC_VIDEO_CODEC_OK);
   }
 }
@@ -322,9 +330,6 @@ void VideoProcessor::FrameEncoded(
   size_t simulcast_svc_idx = 0;
   size_t temporal_idx = 0;
   GetLayerIndices(codec_specific, &simulcast_svc_idx, &temporal_idx);
-  const size_t frame_wxh =
-      encoded_image._encodedWidth * encoded_image._encodedHeight;
-  frame_wxh_to_simulcast_svc_idx_[frame_wxh] = simulcast_svc_idx;
 
   FrameStatistics* frame_stat = stats_->GetFrameWithTimestamp(
       encoded_image._timeStamp, simulcast_svc_idx);
@@ -361,23 +366,52 @@ void VideoProcessor::FrameEncoded(
   frame_stat->frame_type = encoded_image._frameType;
   frame_stat->temporal_layer_idx = temporal_idx;
   frame_stat->simulcast_svc_idx = simulcast_svc_idx;
-  if (codec_type == kVideoCodecVP9) {
-    const CodecSpecificInfoVP9& vp9_info = codec_specific.codecSpecific.VP9;
-    frame_stat->inter_layer_predicted = vp9_info.inter_layer_predicted;
-  }
   frame_stat->max_nalu_size_bytes = GetMaxNaluSizeBytes(encoded_image, config_);
   frame_stat->qp = encoded_image.qp_;
 
+  const size_t num_spatial_layers = config_.NumberOfSpatialLayers();
+  // TODO(ssilkin): Get actual value. For now assume inter-layer prediction
+  // is enabled for all frames.
+  const bool inter_layer_prediction = num_spatial_layers > 1;
+  bool end_of_superframe = false;
+  if (codec_type == kVideoCodecVP9) {
+    const CodecSpecificInfoVP9& vp9_info = codec_specific.codecSpecific.VP9;
+    frame_stat->inter_layer_predicted = vp9_info.inter_layer_predicted;
+    end_of_superframe = vp9_info.end_of_superframe;
+  }
+
   const webrtc::EncodedImage* encoded_image_for_decode = &encoded_image;
-  if (config_.decode) {
-    if (config_.NumberOfSpatialLayers() > 1) {
-      encoded_image_for_decode = MergeAndStoreEncodedImageForSvcDecoding(
-          encoded_image, codec_type, frame_number, simulcast_svc_idx);
+  if (config_.decode || encoded_frame_writers_) {
+    if (num_spatial_layers > 1) {
+      encoded_image_for_decode = BuildAndStoreSuperframe(
+          encoded_image, codec_type, frame_number, simulcast_svc_idx,
+          frame_stat->inter_layer_predicted);
     }
-    frame_stat->decode_start_ns = rtc::TimeNanos();
-    frame_stat->decode_return_code =
-        decoders_->at(simulcast_svc_idx)
-            ->Decode(*encoded_image_for_decode, false, nullptr);
+  }
+
+  if (config_.decode) {
+    DecodeFrame(*encoded_image_for_decode, simulcast_svc_idx);
+
+    if (end_of_superframe && inter_layer_prediction) {
+      // If inter-layer prediction is enabled and upper layer was dropped then
+      // base layer should be passed to upper layer decoder. Otherwise decoder
+      // won't be able to decode next superframe.
+      const EncodedImage* base_image = nullptr;
+      for (size_t spatial_idx = 0; spatial_idx < num_spatial_layers;
+           ++spatial_idx) {
+        const bool layer_dropped =
+            last_decoded_frame_num_[spatial_idx] < frame_number;
+
+        // Ensure current layer was decoded.
+        RTC_CHECK(layer_dropped == false || spatial_idx != simulcast_svc_idx);
+
+        if (!layer_dropped) {
+          base_image = &merged_encoded_frames_[spatial_idx];
+        } else if (base_image) {
+          DecodeFrame(*base_image, spatial_idx);
+        }
+      }
+    }
   } else {
     frame_stat->decode_return_code = WEBRTC_VIDEO_CODEC_NO_OUTPUT;
   }
@@ -395,16 +429,14 @@ void VideoProcessor::FrameEncoded(
   }
 }
 
-void VideoProcessor::FrameDecoded(const VideoFrame& decoded_frame) {
+void VideoProcessor::FrameDecoded(const VideoFrame& decoded_frame,
+                                  size_t simulcast_svc_idx) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
 
   // For the highest measurement accuracy of the decode time, the start/stop
   // time recordings should wrap the Decode call as tightly as possible.
   const int64_t decode_stop_ns = rtc::TimeNanos();
 
-  // Layer metadata.
-  const size_t simulcast_svc_idx =
-      frame_wxh_to_simulcast_svc_idx_.at(decoded_frame.size());
   FrameStatistics* frame_stat = stats_->GetFrameWithTimestamp(
       decoded_frame.timestamp(), simulcast_svc_idx);
   const size_t frame_number = frame_stat->frame_number;
@@ -457,12 +489,23 @@ void VideoProcessor::FrameDecoded(const VideoFrame& decoded_frame) {
   }
 }
 
-const webrtc::EncodedImage*
-VideoProcessor::MergeAndStoreEncodedImageForSvcDecoding(
+void VideoProcessor::DecodeFrame(const EncodedImage& encoded_image,
+                                 size_t simulcast_svc_idx) {
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
+  FrameStatistics* frame_stat = stats_->GetFrameWithTimestamp(
+      encoded_image._timeStamp, simulcast_svc_idx);
+
+  frame_stat->decode_start_ns = rtc::TimeNanos();
+  frame_stat->decode_return_code =
+      decoders_->at(simulcast_svc_idx)->Decode(encoded_image, false, nullptr);
+}
+
+const webrtc::EncodedImage* VideoProcessor::BuildAndStoreSuperframe(
     const EncodedImage& encoded_image,
     const VideoCodecType codec,
     size_t frame_number,
-    size_t simulcast_svc_idx) {
+    size_t simulcast_svc_idx,
+    bool inter_layer_predicted) {
   // Should only be called for SVC.
   RTC_CHECK_GT(config_.NumberOfSpatialLayers(), 1);
 
@@ -471,7 +514,7 @@ VideoProcessor::MergeAndStoreEncodedImageForSvcDecoding(
 
   // Each SVC layer is decoded with dedicated decoder. Find the nearest
   // non-dropped base frame and merge it and current frame into superframe.
-  if (simulcast_svc_idx > 0) {
+  if (inter_layer_predicted) {
     for (int base_idx = static_cast<int>(simulcast_svc_idx) - 1; base_idx >= 0;
          --base_idx) {
       EncodedImage lower_layer = merged_encoded_frames_.at(base_idx);

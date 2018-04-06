@@ -123,8 +123,10 @@ class VideoProcessor {
       : public webrtc::DecodedImageCallback {
    public:
     explicit VideoProcessorDecodeCompleteCallback(
-        VideoProcessor* video_processor)
+        VideoProcessor* video_processor,
+        size_t simulcast_svc_idx)
         : video_processor_(video_processor),
+          simulcast_svc_idx_(simulcast_svc_idx),
           task_queue_(rtc::TaskQueue::Current()) {
       RTC_DCHECK(video_processor_);
       RTC_DCHECK(task_queue_);
@@ -133,11 +135,12 @@ class VideoProcessor {
     int32_t Decoded(webrtc::VideoFrame& image) override {
       // Post the callback to the right task queue, if needed.
       if (!task_queue_->IsCurrent()) {
-        task_queue_->PostTask(
-            [this, image]() { video_processor_->FrameDecoded(image); });
+        task_queue_->PostTask([this, image]() {
+          video_processor_->FrameDecoded(image, simulcast_svc_idx_);
+        });
         return 0;
       }
-      video_processor_->FrameDecoded(image);
+      video_processor_->FrameDecoded(image, simulcast_svc_idx_);
       return 0;
     }
 
@@ -154,6 +157,7 @@ class VideoProcessor {
 
    private:
     VideoProcessor* const video_processor_;
+    const size_t simulcast_svc_idx_;
     rtc::TaskQueue* const task_queue_;
   };
 
@@ -162,15 +166,18 @@ class VideoProcessor {
                     const webrtc::CodecSpecificInfo& codec_specific);
 
   // Invoked by the callback adapter when a frame has completed decoding.
-  void FrameDecoded(const webrtc::VideoFrame& image);
+  void FrameDecoded(const webrtc::VideoFrame& image, size_t simulcast_svc_idx);
+
+  void DecodeFrame(const EncodedImage& encoded_image, size_t simulcast_svc_idx);
 
   // In order to supply the SVC decoders with super frames containing all
   // lower layer frames, we merge and store the layer frames in this method.
-  const webrtc::EncodedImage* MergeAndStoreEncodedImageForSvcDecoding(
+  const webrtc::EncodedImage* BuildAndStoreSuperframe(
       const EncodedImage& encoded_image,
       const VideoCodecType codec,
       size_t frame_number,
-      size_t simulcast_svc_idx) RTC_RUN_ON(sequence_checker_);
+      size_t simulcast_svc_idx,
+      bool inter_layer_predicted) RTC_RUN_ON(sequence_checker_);
 
   // Test input/output.
   TestConfig config_ RTC_GUARDED_BY(sequence_checker_);
@@ -186,7 +193,11 @@ class VideoProcessor {
 
   // Adapters for the codec callbacks.
   VideoProcessorEncodeCompleteCallback encode_callback_;
-  VideoProcessorDecodeCompleteCallback decode_callback_;
+  // Assign separate callback object to each decoder. This allows us to identify
+  // decoded layer in frame decode callback.
+  // simulcast_svc_idx -> decode callback.
+  std::vector<std::unique_ptr<VideoProcessorDecodeCompleteCallback>>
+      decode_callback_;
 
   // Each call to ProcessFrame() will read one frame from |input_frame_reader_|.
   FrameReader* const input_frame_reader_;
@@ -226,9 +237,6 @@ class VideoProcessor {
   std::vector<bool> first_decoded_frame_ RTC_GUARDED_BY(sequence_checker_);
   // simulcast_svc_idx -> frame_number.
   std::vector<size_t> last_decoded_frame_num_ RTC_GUARDED_BY(sequence_checker_);
-  // frame size (pixels) -> simulcast_svc_idx.
-  std::map<size_t, size_t> frame_wxh_to_simulcast_svc_idx_
-      RTC_GUARDED_BY(sequence_checker_);
 
   // Time spent in frame encode callback. It is accumulated for layers and
   // reset when frame encode starts. When next layer is encoded post-encode time
