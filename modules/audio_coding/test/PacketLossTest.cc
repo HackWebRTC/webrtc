@@ -12,6 +12,7 @@
 
 #include <memory>
 
+#include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
 
@@ -127,7 +128,9 @@ void PacketLossTest::Perform() {
 #ifndef WEBRTC_CODEC_OPUS
   return;
 #else
-  std::unique_ptr<AudioCodingModule> acm(AudioCodingModule::Create());
+  AudioCodingModule::Config config;
+  config.decoder_factory = CreateBuiltinAudioDecoderFactory();
+  std::unique_ptr<AudioCodingModule> acm(AudioCodingModule::Create(config));
 
   int codec_id = acm->Codec("opus", 48000, channels_);
 

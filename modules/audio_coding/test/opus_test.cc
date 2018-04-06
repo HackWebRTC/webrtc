@@ -14,6 +14,7 @@
 
 #include <string>
 
+#include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/audio_format_conversion.h"
 #include "modules/audio_coding/codecs/opus/opus_interface.h"
@@ -27,7 +28,8 @@
 namespace webrtc {
 
 OpusTest::OpusTest()
-    : acm_receiver_(AudioCodingModule::Create()),
+    : acm_receiver_(AudioCodingModule::Create(
+          AudioCodingModule::Config(CreateBuiltinAudioDecoderFactory()))),
       channel_a2b_(NULL),
       counter_(0),
       payload_type_(255),

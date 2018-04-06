@@ -14,6 +14,7 @@
 
 #include <string>
 
+#include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/audio_format_conversion.h"
 #include "modules/audio_coding/include/audio_coding_module_typedefs.h"
@@ -108,8 +109,10 @@ void TestPackStereo::set_lost_packet(bool lost) {
 }
 
 TestStereo::TestStereo(int test_mode)
-    : acm_a_(AudioCodingModule::Create()),
-      acm_b_(AudioCodingModule::Create()),
+    : acm_a_(AudioCodingModule::Create(
+          AudioCodingModule::Config(CreateBuiltinAudioDecoderFactory()))),
+      acm_b_(AudioCodingModule::Create(
+          AudioCodingModule::Config(CreateBuiltinAudioDecoderFactory()))),
       channel_a2b_(NULL),
       test_cntr_(0),
       pack_size_samp_(0),
@@ -120,11 +123,13 @@ TestStereo::TestStereo(int test_mode)
       l16_16khz_pltype_(-1),
       l16_32khz_pltype_(-1)
 #ifdef PCMA_AND_PCMU
-      , pcma_pltype_(-1)
-      , pcmu_pltype_(-1)
+      ,
+      pcma_pltype_(-1),
+      pcmu_pltype_(-1)
 #endif
 #ifdef WEBRTC_CODEC_OPUS
-      , opus_pltype_(-1)
+      ,
+      opus_pltype_(-1)
 #endif
 {
   // test_mode = 0 for silent test (auto test)

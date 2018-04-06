@@ -166,7 +166,12 @@ class AudioCodingModuleTestOldApi : public ::testing::Test {
   void TearDown() {}
 
   void SetUp() {
-    acm_.reset(AudioCodingModule::Create(clock_));
+    acm_.reset(AudioCodingModule::Create([this] {
+      AudioCodingModule::Config config;
+      config.clock = clock_;
+      config.decoder_factory = CreateBuiltinAudioDecoderFactory();
+      return config;
+    }()));
 
     rtp_utility_->Populate(&rtp_header_);
 

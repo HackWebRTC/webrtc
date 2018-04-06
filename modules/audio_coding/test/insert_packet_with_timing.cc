@@ -13,6 +13,7 @@
 
 #include <memory>
 
+#include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/audio_format_conversion.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
@@ -56,20 +57,31 @@ const int kPlayoutPeriodMs = 10;
 
 namespace webrtc {
 
+namespace {
+
+AudioCodingModule::Config AcmConfig(Clock* clock) {
+  AudioCodingModule::Config config;
+  config.clock = clock;
+  config.decoder_factory = CreateBuiltinAudioDecoderFactory();
+  return config;
+}
+
+}  // namespace
+
 class InsertPacketWithTiming {
  public:
   InsertPacketWithTiming()
       : sender_clock_(new SimulatedClock(0)),
         receiver_clock_(new SimulatedClock(0)),
-        send_acm_(AudioCodingModule::Create(sender_clock_)),
-        receive_acm_(AudioCodingModule::Create(receiver_clock_)),
+        send_acm_(AudioCodingModule::Create(AcmConfig(sender_clock_))),
+        receive_acm_(AudioCodingModule::Create(AcmConfig(receiver_clock_))),
         channel_(new Channel),
         seq_num_fid_(fopen(FLAG_seq_num, "rt")),
         send_ts_fid_(fopen(FLAG_send_ts, "rt")),
         receive_ts_fid_(fopen(FLAG_receive_ts, "rt")),
         pcm_out_fid_(fopen(FLAG_output, "wb")),
         samples_in_1ms_(48),
-        num_10ms_in_codec_frame_(2),  // Typical 20 ms frames.
+        num_10ms_in_codec_frame_(2),   // Typical 20 ms frames.
         time_to_insert_packet_ms_(3),  // An arbitrary offset on pushing packet.
         next_receive_ts_(0),
         time_to_playout_audio_ms_(kPlayoutPeriodMs),

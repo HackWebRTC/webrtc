@@ -12,6 +12,7 @@
 
 #include <assert.h>
 
+#include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/audio_format_conversion.h"
 #include "modules/audio_coding/include/audio_coding_module_typedefs.h"
@@ -34,21 +35,24 @@
 namespace webrtc {
 
 namespace {
-  const char kNameL16[] = "L16";
-  const char kNamePCMU[] = "PCMU";
-  const char kNameCN[] = "CN";
-  const char kNameRED[] = "RED";
-  const char kNameISAC[] = "ISAC";
-  const char kNameG722[] = "G722";
-  const char kNameOPUS[] = "opus";
-}
+
+const char kNameL16[] = "L16";
+const char kNamePCMU[] = "PCMU";
+const char kNameCN[] = "CN";
+const char kNameRED[] = "RED";
+const char kNameISAC[] = "ISAC";
+const char kNameG722[] = "G722";
+const char kNameOPUS[] = "opus";
+
+}  // namespace
 
 TestRedFec::TestRedFec()
-    : _acmA(AudioCodingModule::Create()),
-      _acmB(AudioCodingModule::Create()),
+    : _acmA(AudioCodingModule::Create(
+          AudioCodingModule::Config(CreateBuiltinAudioDecoderFactory()))),
+      _acmB(AudioCodingModule::Create(
+          AudioCodingModule::Config(CreateBuiltinAudioDecoderFactory()))),
       _channelA2B(NULL),
-      _testCntr(0) {
-}
+      _testCntr(0) {}
 
 TestRedFec::~TestRedFec() {
   if (_channelA2B != NULL) {

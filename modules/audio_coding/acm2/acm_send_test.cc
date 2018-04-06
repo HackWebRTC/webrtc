@@ -15,6 +15,7 @@
 #include <string.h>
 
 #include "api/audio_codecs/audio_encoder.h"
+#include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "modules/audio_coding/neteq/tools/input_audio_file.h"
 #include "modules/audio_coding/neteq/tools/packet.h"
@@ -28,7 +29,12 @@ AcmSendTestOldApi::AcmSendTestOldApi(InputAudioFile* audio_source,
                                      int source_rate_hz,
                                      int test_duration_ms)
     : clock_(0),
-      acm_(webrtc::AudioCodingModule::Create(&clock_)),
+      acm_(webrtc::AudioCodingModule::Create([this] {
+        AudioCodingModule::Config config;
+        config.clock = &clock_;
+        config.decoder_factory = CreateBuiltinAudioDecoderFactory();
+        return config;
+      }())),
       audio_source_(audio_source),
       source_rate_hz_(source_rate_hz),
       input_block_size_samples_(

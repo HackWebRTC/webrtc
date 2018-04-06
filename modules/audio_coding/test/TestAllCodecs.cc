@@ -14,6 +14,7 @@
 #include <limits>
 #include <string>
 
+#include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/audio_format_conversion.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
@@ -104,8 +105,10 @@ void TestPack::reset_payload_size() {
 }
 
 TestAllCodecs::TestAllCodecs(int test_mode)
-    : acm_a_(AudioCodingModule::Create()),
-      acm_b_(AudioCodingModule::Create()),
+    : acm_a_(AudioCodingModule::Create(
+          AudioCodingModule::Config(CreateBuiltinAudioDecoderFactory()))),
+      acm_b_(AudioCodingModule::Create(
+          AudioCodingModule::Config(CreateBuiltinAudioDecoderFactory()))),
       channel_a_to_b_(NULL),
       test_count_(0),
       packet_size_samples_(0),

@@ -19,6 +19,7 @@
 #include <ostream>
 #include <string>
 
+#include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/audio_format_conversion.h"
 #include "modules/audio_coding/test/utility.h"
@@ -47,8 +48,10 @@ void APITest::Wait(uint32_t waitLengthMs) {
 }
 
 APITest::APITest()
-    : _acmA(AudioCodingModule::Create()),
-      _acmB(AudioCodingModule::Create()),
+    : _acmA(AudioCodingModule::Create(
+          AudioCodingModule::Config(CreateBuiltinAudioDecoderFactory()))),
+      _acmB(AudioCodingModule::Create(
+          AudioCodingModule::Config(CreateBuiltinAudioDecoderFactory()))),
       _channel_A2B(NULL),
       _channel_B2A(NULL),
       _writeToFile(true),

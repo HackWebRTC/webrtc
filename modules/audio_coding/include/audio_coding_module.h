@@ -66,7 +66,8 @@ class AudioCodingModule {
 
  public:
   struct Config {
-    Config();
+    explicit Config(
+        rtc::scoped_refptr<AudioDecoderFactory> decoder_factory = nullptr);
     Config(const Config&);
     ~Config();
 
@@ -75,17 +76,6 @@ class AudioCodingModule {
     rtc::scoped_refptr<AudioDecoderFactory> decoder_factory;
   };
 
-  ///////////////////////////////////////////////////////////////////////////
-  // Creation and destruction of a ACM.
-  //
-  // The second method is used for testing where a simulated clock can be
-  // injected into ACM. ACM will take the ownership of the object clock and
-  // delete it when destroyed.
-  //
-  // TODO(solenberg): Remove once downstream projects are updated.
-  RTC_DEPRECATED static AudioCodingModule* Create(int id);
-  static AudioCodingModule* Create();
-  static AudioCodingModule* Create(Clock* clock);
   static AudioCodingModule* Create(const Config& config);
   virtual ~AudioCodingModule() = default;
 

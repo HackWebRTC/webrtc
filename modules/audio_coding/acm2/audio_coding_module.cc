@@ -12,7 +12,6 @@
 
 #include <algorithm>
 
-#include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "modules/audio_coding/acm2/acm_receiver.h"
 #include "modules/audio_coding/acm2/acm_resampler.h"
 #include "modules/audio_coding/acm2/codec_manager.h"
@@ -1243,8 +1242,11 @@ ANAStats AudioCodingModuleImpl::GetANAStats() const {
 
 }  // namespace
 
-AudioCodingModule::Config::Config()
-    : neteq_config(), clock(Clock::GetRealTimeClock()) {
+AudioCodingModule::Config::Config(
+    rtc::scoped_refptr<AudioDecoderFactory> decoder_factory)
+    : neteq_config(),
+      clock(Clock::GetRealTimeClock()),
+      decoder_factory(decoder_factory) {
   // Post-decode VAD is disabled by default in NetEq, however, Audio
   // Conference Mixer relies on VAD decisions and fails without them.
   neteq_config.enable_post_decode_vad = true;
@@ -1253,34 +1255,7 @@ AudioCodingModule::Config::Config()
 AudioCodingModule::Config::Config(const Config&) = default;
 AudioCodingModule::Config::~Config() = default;
 
-AudioCodingModule* AudioCodingModule::Create(int id) {
-  RTC_UNUSED(id);
-  return Create();
-}
-
-// Create module
-AudioCodingModule* AudioCodingModule::Create() {
-  Config config;
-  config.clock = Clock::GetRealTimeClock();
-  config.decoder_factory = CreateBuiltinAudioDecoderFactory();
-  return Create(config);
-}
-
-AudioCodingModule* AudioCodingModule::Create(Clock* clock) {
-  Config config;
-  config.clock = clock;
-  config.decoder_factory = CreateBuiltinAudioDecoderFactory();
-  return Create(config);
-}
-
 AudioCodingModule* AudioCodingModule::Create(const Config& config) {
-  if (!config.decoder_factory) {
-    // TODO(ossu): Backwards compatibility. Will be removed after a deprecation
-    // cycle.
-    Config config_copy = config;
-    config_copy.decoder_factory = CreateBuiltinAudioDecoderFactory();
-    return new AudioCodingModuleImpl(config_copy);
-  }
   return new AudioCodingModuleImpl(config);
 }
 

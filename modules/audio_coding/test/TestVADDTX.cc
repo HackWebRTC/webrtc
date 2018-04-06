@@ -12,6 +12,7 @@
 
 #include <string>
 
+#include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "modules/audio_coding/codecs/audio_format_conversion.h"
 #include "modules/audio_coding/test/PCMFile.h"
 #include "modules/audio_coding/test/utility.h"
@@ -62,8 +63,10 @@ void ActivityMonitor::GetStatistics(uint32_t* counter) {
 }
 
 TestVadDtx::TestVadDtx()
-    : acm_send_(AudioCodingModule::Create()),
-      acm_receive_(AudioCodingModule::Create()),
+    : acm_send_(AudioCodingModule::Create(
+          AudioCodingModule::Config(CreateBuiltinAudioDecoderFactory()))),
+      acm_receive_(AudioCodingModule::Create(
+          AudioCodingModule::Config(CreateBuiltinAudioDecoderFactory()))),
       channel_(new Channel),
       monitor_(new ActivityMonitor) {
   EXPECT_EQ(0, acm_send_->RegisterTransportCallback(channel_.get()));

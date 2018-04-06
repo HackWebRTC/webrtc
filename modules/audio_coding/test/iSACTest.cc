@@ -23,6 +23,7 @@
 #include <time.h>
 #endif
 
+#include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "modules/audio_coding/codecs/audio_format_conversion.h"
 #include "modules/audio_coding/test/utility.h"
 #include "system_wrappers/include/event_wrapper.h"
@@ -67,8 +68,10 @@ int16_t SetISAConfig(ACMTestISACConfig& isacConfig, AudioCodingModule* acm,
 }
 
 ISACTest::ISACTest(int testMode)
-    : _acmA(AudioCodingModule::Create()),
-      _acmB(AudioCodingModule::Create()),
+    : _acmA(AudioCodingModule::Create(
+          AudioCodingModule::Config(CreateBuiltinAudioDecoderFactory()))),
+      _acmB(AudioCodingModule::Create(
+          AudioCodingModule::Config(CreateBuiltinAudioDecoderFactory()))),
       _testMode(testMode) {}
 
 ISACTest::~ISACTest() {}

@@ -10,6 +10,7 @@
 
 #include <memory>
 
+#include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/pcm16b/pcm16b.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
@@ -22,7 +23,9 @@ namespace webrtc {
 
 class TargetDelayTest : public ::testing::Test {
  protected:
-  TargetDelayTest() : acm_(AudioCodingModule::Create()) {}
+  TargetDelayTest()
+      : acm_(AudioCodingModule::Create(
+            AudioCodingModule::Config(CreateBuiltinAudioDecoderFactory()))) {}
 
   ~TargetDelayTest() {}
 
