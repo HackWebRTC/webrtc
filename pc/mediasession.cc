@@ -1297,8 +1297,8 @@ SessionDescription* MediaSessionDescriptionFactory::CreateOffer(
 
   RtpHeaderExtensions audio_rtp_extensions;
   RtpHeaderExtensions video_rtp_extensions;
-  GetRtpHdrExtsToOffer(current_description, &audio_rtp_extensions,
-                       &video_rtp_extensions);
+  GetRtpHdrExtsToOffer(session_options, current_description,
+                       &audio_rtp_extensions, &video_rtp_extensions);
 
   // Must have options for each existing section.
   if (current_description) {
@@ -1718,6 +1718,7 @@ void MediaSessionDescriptionFactory::GetCodecsForAnswer(
 }
 
 void MediaSessionDescriptionFactory::GetRtpHdrExtsToOffer(
+    const MediaSessionOptions& session_options,
     const SessionDescription* current_description,
     RtpHeaderExtensions* offer_audio_extensions,
     RtpHeaderExtensions* offer_video_extensions) const {
@@ -1753,12 +1754,12 @@ void MediaSessionDescriptionFactory::GetRtpHdrExtsToOffer(
 
   // Add our default RTP header extensions that are not in
   // |current_description|.
-  MergeRtpHdrExts(audio_rtp_header_extensions(), offer_audio_extensions,
-                  &all_regular_extensions, &all_encrypted_extensions,
-                  &used_ids);
-  MergeRtpHdrExts(video_rtp_header_extensions(), offer_video_extensions,
-                  &all_regular_extensions, &all_encrypted_extensions,
-                  &used_ids);
+  MergeRtpHdrExts(audio_rtp_header_extensions(session_options.is_unified_plan),
+                  offer_audio_extensions, &all_regular_extensions,
+                  &all_encrypted_extensions, &used_ids);
+  MergeRtpHdrExts(video_rtp_header_extensions(session_options.is_unified_plan),
+                  offer_video_extensions, &all_regular_extensions,
+                  &all_encrypted_extensions, &used_ids);
 
   // TODO(jbauch): Support adding encrypted header extensions to existing
   // sessions.
@@ -2117,8 +2118,9 @@ bool MediaSessionDescriptionFactory::AddAudioContentForAnswer(
   if (!CreateMediaContentAnswer(
           offer_audio_description, media_description_options, session_options,
           filtered_codecs, sdes_policy, GetCryptos(current_content),
-          audio_rtp_extensions_, enable_encrypted_rtp_header_extensions_,
-          current_streams, bundle_enabled, audio_answer.get())) {
+          audio_rtp_header_extensions(session_options.is_unified_plan),
+          enable_encrypted_rtp_header_extensions_, current_streams,
+          bundle_enabled, audio_answer.get())) {
     return false;  // Fails the session setup.
   }
 
@@ -2202,8 +2204,9 @@ bool MediaSessionDescriptionFactory::AddVideoContentForAnswer(
   if (!CreateMediaContentAnswer(
           offer_video_description, media_description_options, session_options,
           filtered_codecs, sdes_policy, GetCryptos(current_content),
-          video_rtp_extensions_, enable_encrypted_rtp_header_extensions_,
-          current_streams, bundle_enabled, video_answer.get())) {
+          video_rtp_header_extensions(session_options.is_unified_plan),
+          enable_encrypted_rtp_header_extensions_, current_streams,
+          bundle_enabled, video_answer.get())) {
     return false;  // Failed the sessin setup.
   }
   bool secure = bundle_transport ? bundle_transport->description.secure()
