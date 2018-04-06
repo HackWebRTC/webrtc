@@ -24,7 +24,6 @@
 #include "modules/rtp_rtcp/include/flexfec_sender.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "modules/rtp_rtcp/source/mid_oracle.h"
 #include "modules/rtp_rtcp/source/playout_delay_oracle.h"
 #include "modules/rtp_rtcp/source/rtp_packet_history.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_config.h"
@@ -321,7 +320,8 @@ class RTPSender {
   // Must be explicitly set by the application, use of rtc::Optional
   // only to keep track of correct use.
   rtc::Optional<uint32_t> ssrc_ RTC_GUARDED_BY(send_critsect_);
-  std::unique_ptr<MidOracle> mid_oracle_ RTC_GUARDED_BY(send_critsect_);
+  // MID value to send in the MID header extension.
+  std::string mid_ RTC_GUARDED_BY(send_critsect_);
   uint32_t last_rtp_timestamp_ RTC_GUARDED_BY(send_critsect_);
   int64_t capture_time_ms_ RTC_GUARDED_BY(send_critsect_);
   int64_t last_timestamp_time_ms_ RTC_GUARDED_BY(send_critsect_);
@@ -330,7 +330,6 @@ class RTPSender {
   std::vector<uint32_t> csrcs_ RTC_GUARDED_BY(send_critsect_);
   int rtx_ RTC_GUARDED_BY(send_critsect_);
   rtc::Optional<uint32_t> ssrc_rtx_ RTC_GUARDED_BY(send_critsect_);
-  std::unique_ptr<MidOracle> mid_oracle_rtx_ RTC_GUARDED_BY(send_critsect_);
   // Mapping rtx_payload_type_map_[associated] = rtx.
   std::map<int8_t, int8_t> rtx_payload_type_map_ RTC_GUARDED_BY(send_critsect_);
   size_t rtp_overhead_bytes_per_packet_ RTC_GUARDED_BY(send_critsect_);
