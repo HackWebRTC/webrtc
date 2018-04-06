@@ -11,7 +11,7 @@
 #ifndef MODULES_VIDEO_CAPTURE_MAIN_SOURCE_WINDOWS_SINK_FILTER_DS_H_
 #define MODULES_VIDEO_CAPTURE_MAIN_SOURCE_WINDOWS_SINK_FILTER_DS_H_
 
-#include <Streams.h> // Include base DS filter header files
+#include <streams.h> // Include base DS filter header files
 
 #include "modules/video_capture/video_capture_defines.h"
 
@@ -23,7 +23,7 @@ namespace videocapturemodule
 
 class CaptureSinkFilter;
 /**
- *	input pin for camera input
+ *     input pin for camera input
  *
  */
 class CaptureInputPin: public CBaseInputPin

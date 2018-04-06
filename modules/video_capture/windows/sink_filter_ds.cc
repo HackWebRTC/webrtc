@@ -17,7 +17,7 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
 
-#include <Dvdmedia.h>  // VIDEOINFOHEADER2
+#include <dvdmedia.h>  // VIDEOINFOHEADER2
 #include <initguid.h>
 
 #define DELETE_RESET(p) \

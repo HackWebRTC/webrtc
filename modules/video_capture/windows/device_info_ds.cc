@@ -16,8 +16,8 @@
 #include "modules/video_capture/windows/help_functions_ds.h"
 #include "rtc_base/logging.h"
 
-#include <Dvdmedia.h>
-#include <Streams.h>
+#include <dvdmedia.h>
+#include <streams.h>
 
 namespace webrtc {
 namespace videocapturemodule {
