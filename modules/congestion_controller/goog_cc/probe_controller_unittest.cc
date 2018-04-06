@@ -39,23 +39,12 @@ constexpr int kExponentialProbingTimeoutMs = 5000;
 constexpr int kAlrProbeInterval = 5000;
 constexpr int kAlrEndedTimeoutMs = 3000;
 constexpr int kBitrateDropTimeoutMs = 5000;
-
-inline Matcher<ProbeClusterConfig> DataRateEqBps(int bps) {
-  return Field(&ProbeClusterConfig::target_data_rate, DataRate::bps(bps));
-}
-class MockNetworkControllerObserver : public NetworkControllerObserver {
- public:
-  MOCK_METHOD1(OnCongestionWindow, void(CongestionWindow));
-  MOCK_METHOD1(OnPacerConfig, void(PacerConfig));
-  MOCK_METHOD1(OnProbeClusterConfig, void(ProbeClusterConfig));
-  MOCK_METHOD1(OnTargetTransferRate, void(TargetTransferRate));
-};
 }  // namespace
 
 class ProbeControllerTest : public ::testing::Test {
  protected:
   ProbeControllerTest() : clock_(100000000L) {
-    probe_controller_.reset(new ProbeController(&cluster_handler_));
+    probe_controller_.reset(new ProbeController());
   }
   ~ProbeControllerTest() override {}
 
@@ -69,107 +58,110 @@ class ProbeControllerTest : public ::testing::Test {
   int64_t NowMs() { return clock_.TimeInMilliseconds(); }
 
   SimulatedClock clock_;
-  NiceMock<MockNetworkControllerObserver> cluster_handler_;
   std::unique_ptr<ProbeController> probe_controller_;
 };
 
 TEST_F(ProbeControllerTest, InitiatesProbingAtStart) {
-  EXPECT_CALL(cluster_handler_, OnProbeClusterConfig(_)).Times(AtLeast(2));
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
                                  kMaxBitrateBps, NowMs());
+  EXPECT_GE(probe_controller_->GetAndResetPendingProbes().size(), 2u);
 }
 
 TEST_F(ProbeControllerTest, ProbeOnlyWhenNetworkIsUp) {
   SetNetworkAvailable(false);
-  EXPECT_CALL(cluster_handler_, OnProbeClusterConfig(_)).Times(0);
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
                                  kMaxBitrateBps, NowMs());
-
-  testing::Mock::VerifyAndClearExpectations(&cluster_handler_);
-  EXPECT_CALL(cluster_handler_, OnProbeClusterConfig(_)).Times(AtLeast(2));
+  EXPECT_EQ(probe_controller_->GetAndResetPendingProbes().size(), 0u);
   SetNetworkAvailable(true);
+  EXPECT_GE(probe_controller_->GetAndResetPendingProbes().size(), 2u);
 }
 
 TEST_F(ProbeControllerTest, InitiatesProbingOnMaxBitrateIncrease) {
-  EXPECT_CALL(cluster_handler_, OnProbeClusterConfig(_)).Times(AtLeast(2));
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
                                  kMaxBitrateBps, NowMs());
   // Long enough to time out exponential probing.
   clock_.AdvanceTimeMilliseconds(kExponentialProbingTimeoutMs);
   probe_controller_->SetEstimatedBitrate(kStartBitrateBps, NowMs());
   probe_controller_->Process(NowMs());
+  EXPECT_GE(probe_controller_->GetAndResetPendingProbes().size(), 2u);
 
-  EXPECT_CALL(cluster_handler_,
-              OnProbeClusterConfig(DataRateEqBps(kMaxBitrateBps + 100)));
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
                                  kMaxBitrateBps + 100, NowMs());
+
+  EXPECT_EQ(
+      probe_controller_->GetAndResetPendingProbes()[0].target_data_rate.bps(),
+      kMaxBitrateBps + 100);
 }
 
 TEST_F(ProbeControllerTest, InitiatesProbingOnMaxBitrateIncreaseAtMaxBitrate) {
-  EXPECT_CALL(cluster_handler_, OnProbeClusterConfig(_)).Times(AtLeast(2));
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
                                  kMaxBitrateBps, NowMs());
   // Long enough to time out exponential probing.
   clock_.AdvanceTimeMilliseconds(kExponentialProbingTimeoutMs);
   probe_controller_->SetEstimatedBitrate(kStartBitrateBps, NowMs());
   probe_controller_->Process(NowMs());
+  EXPECT_GE(probe_controller_->GetAndResetPendingProbes().size(), 2u);
 
   probe_controller_->SetEstimatedBitrate(kMaxBitrateBps, NowMs());
-  EXPECT_CALL(cluster_handler_,
-              OnProbeClusterConfig(DataRateEqBps(kMaxBitrateBps + 100)));
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
                                  kMaxBitrateBps + 100, NowMs());
+  EXPECT_EQ(
+      probe_controller_->GetAndResetPendingProbes()[0].target_data_rate.bps(),
+      kMaxBitrateBps + 100);
 }
 
 TEST_F(ProbeControllerTest, TestExponentialProbing) {
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
                                  kMaxBitrateBps, NowMs());
+  probe_controller_->GetAndResetPendingProbes();
 
   // Repeated probe should only be sent when estimated bitrate climbs above
   // 0.7 * 6 * kStartBitrateBps = 1260.
-  EXPECT_CALL(cluster_handler_, OnProbeClusterConfig(_)).Times(0);
   probe_controller_->SetEstimatedBitrate(1000, NowMs());
-  testing::Mock::VerifyAndClearExpectations(&cluster_handler_);
+  EXPECT_EQ(probe_controller_->GetAndResetPendingProbes().size(), 0u);
 
-  EXPECT_CALL(cluster_handler_, OnProbeClusterConfig(DataRateEqBps(2 * 1800)));
   probe_controller_->SetEstimatedBitrate(1800, NowMs());
+  EXPECT_EQ(
+      probe_controller_->GetAndResetPendingProbes()[0].target_data_rate.bps(),
+      2 * 1800);
 }
 
 TEST_F(ProbeControllerTest, TestExponentialProbingTimeout) {
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
                                  kMaxBitrateBps, NowMs());
-
+  probe_controller_->GetAndResetPendingProbes();
   // Advance far enough to cause a time out in waiting for probing result.
   clock_.AdvanceTimeMilliseconds(kExponentialProbingTimeoutMs);
   probe_controller_->Process(NowMs());
 
-  EXPECT_CALL(cluster_handler_, OnProbeClusterConfig(_)).Times(0);
   probe_controller_->SetEstimatedBitrate(1800, NowMs());
+  EXPECT_EQ(probe_controller_->GetAndResetPendingProbes().size(), 0u);
 }
 
 TEST_F(ProbeControllerTest, RequestProbeInAlr) {
-  EXPECT_CALL(cluster_handler_, OnProbeClusterConfig(_)).Times(2);
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
                                  kMaxBitrateBps, NowMs());
   probe_controller_->SetEstimatedBitrate(500, NowMs());
-  testing::Mock::VerifyAndClearExpectations(&cluster_handler_);
-  EXPECT_CALL(cluster_handler_, OnProbeClusterConfig(DataRateEqBps(0.85 * 500)))
-      .Times(1);
+  EXPECT_GE(probe_controller_->GetAndResetPendingProbes().size(), 2u);
+
   probe_controller_->SetAlrStartTimeMs(clock_.TimeInMilliseconds());
   clock_.AdvanceTimeMilliseconds(kAlrProbeInterval + 1);
   probe_controller_->Process(NowMs());
   probe_controller_->SetEstimatedBitrate(250, NowMs());
   probe_controller_->RequestProbe(NowMs());
+
+  std::vector<ProbeClusterConfig> probes =
+      probe_controller_->GetAndResetPendingProbes();
+  EXPECT_EQ(probes.size(), 1u);
+  EXPECT_EQ(probes[0].target_data_rate.bps(), 0.85 * 500);
 }
 
 TEST_F(ProbeControllerTest, RequestProbeWhenAlrEndedRecently) {
-  EXPECT_CALL(cluster_handler_, OnProbeClusterConfig(_)).Times(2);
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
                                  kMaxBitrateBps, NowMs());
   probe_controller_->SetEstimatedBitrate(500, NowMs());
-  testing::Mock::VerifyAndClearExpectations(&cluster_handler_);
-  EXPECT_CALL(cluster_handler_, OnProbeClusterConfig(DataRateEqBps(0.85 * 500)))
-      .Times(1);
+  EXPECT_EQ(probe_controller_->GetAndResetPendingProbes().size(), 2u);
+
   probe_controller_->SetAlrStartTimeMs(rtc::nullopt);
   clock_.AdvanceTimeMilliseconds(kAlrProbeInterval + 1);
   probe_controller_->Process(NowMs());
@@ -177,15 +169,19 @@ TEST_F(ProbeControllerTest, RequestProbeWhenAlrEndedRecently) {
   probe_controller_->SetAlrEndedTimeMs(clock_.TimeInMilliseconds());
   clock_.AdvanceTimeMilliseconds(kAlrEndedTimeoutMs - 1);
   probe_controller_->RequestProbe(NowMs());
+
+  std::vector<ProbeClusterConfig> probes =
+      probe_controller_->GetAndResetPendingProbes();
+  EXPECT_EQ(probes.size(), 1u);
+  EXPECT_EQ(probes[0].target_data_rate.bps(), 0.85 * 500);
 }
 
 TEST_F(ProbeControllerTest, RequestProbeWhenAlrNotEndedRecently) {
-  EXPECT_CALL(cluster_handler_, OnProbeClusterConfig(_)).Times(2);
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
                                  kMaxBitrateBps, NowMs());
   probe_controller_->SetEstimatedBitrate(500, NowMs());
-  testing::Mock::VerifyAndClearExpectations(&cluster_handler_);
-  EXPECT_CALL(cluster_handler_, OnProbeClusterConfig(_)).Times(0);
+  EXPECT_EQ(probe_controller_->GetAndResetPendingProbes().size(), 2u);
+
   probe_controller_->SetAlrStartTimeMs(rtc::nullopt);
   clock_.AdvanceTimeMilliseconds(kAlrProbeInterval + 1);
   probe_controller_->Process(NowMs());
@@ -193,65 +189,63 @@ TEST_F(ProbeControllerTest, RequestProbeWhenAlrNotEndedRecently) {
   probe_controller_->SetAlrEndedTimeMs(clock_.TimeInMilliseconds());
   clock_.AdvanceTimeMilliseconds(kAlrEndedTimeoutMs + 1);
   probe_controller_->RequestProbe(NowMs());
+  EXPECT_EQ(probe_controller_->GetAndResetPendingProbes().size(), 0u);
 }
 
 TEST_F(ProbeControllerTest, RequestProbeWhenBweDropNotRecent) {
-  EXPECT_CALL(cluster_handler_, OnProbeClusterConfig(_)).Times(2);
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
                                  kMaxBitrateBps, NowMs());
   probe_controller_->SetEstimatedBitrate(500, NowMs());
-  testing::Mock::VerifyAndClearExpectations(&cluster_handler_);
-  EXPECT_CALL(cluster_handler_, OnProbeClusterConfig(_)).Times(0);
+  EXPECT_EQ(probe_controller_->GetAndResetPendingProbes().size(), 2u);
+
   probe_controller_->SetAlrStartTimeMs(clock_.TimeInMilliseconds());
   clock_.AdvanceTimeMilliseconds(kAlrProbeInterval + 1);
   probe_controller_->Process(NowMs());
   probe_controller_->SetEstimatedBitrate(250, NowMs());
   clock_.AdvanceTimeMilliseconds(kBitrateDropTimeoutMs + 1);
   probe_controller_->RequestProbe(NowMs());
+  EXPECT_EQ(probe_controller_->GetAndResetPendingProbes().size(), 0u);
 }
 
 TEST_F(ProbeControllerTest, PeriodicProbing) {
-  EXPECT_CALL(cluster_handler_, OnProbeClusterConfig(_)).Times(2);
   probe_controller_->EnablePeriodicAlrProbing(true);
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
                                  kMaxBitrateBps, NowMs());
   probe_controller_->SetEstimatedBitrate(500, NowMs());
-  testing::Mock::VerifyAndClearExpectations(&cluster_handler_);
+  EXPECT_EQ(probe_controller_->GetAndResetPendingProbes().size(), 2u);
 
   int64_t start_time = clock_.TimeInMilliseconds();
 
   // Expect the controller to send a new probe after 5s has passed.
-  EXPECT_CALL(cluster_handler_, OnProbeClusterConfig(DataRateEqBps(1000)))
-      .Times(1);
   probe_controller_->SetAlrStartTimeMs(start_time);
   clock_.AdvanceTimeMilliseconds(5000);
   probe_controller_->Process(NowMs());
   probe_controller_->SetEstimatedBitrate(500, NowMs());
-  testing::Mock::VerifyAndClearExpectations(&cluster_handler_);
+
+  std::vector<ProbeClusterConfig> probes =
+      probe_controller_->GetAndResetPendingProbes();
+  EXPECT_EQ(probes.size(), 1u);
+  EXPECT_EQ(probes[0].target_data_rate.bps(), 1000);
 
   // The following probe should be sent at 10s into ALR.
-  EXPECT_CALL(cluster_handler_, OnProbeClusterConfig(_)).Times(0);
   probe_controller_->SetAlrStartTimeMs(start_time);
   clock_.AdvanceTimeMilliseconds(4000);
   probe_controller_->Process(NowMs());
   probe_controller_->SetEstimatedBitrate(500, NowMs());
-  testing::Mock::VerifyAndClearExpectations(&cluster_handler_);
+  EXPECT_EQ(probe_controller_->GetAndResetPendingProbes().size(), 0u);
 
-  EXPECT_CALL(cluster_handler_, OnProbeClusterConfig(_)).Times(1);
   probe_controller_->SetAlrStartTimeMs(start_time);
   clock_.AdvanceTimeMilliseconds(1000);
   probe_controller_->Process(NowMs());
   probe_controller_->SetEstimatedBitrate(500, NowMs());
-  testing::Mock::VerifyAndClearExpectations(&cluster_handler_);
+  EXPECT_EQ(probe_controller_->GetAndResetPendingProbes().size(), 1u);
 }
 
 TEST_F(ProbeControllerTest, PeriodicProbingAfterReset) {
-  NiceMock<MockNetworkControllerObserver> local_handler;
-  probe_controller_.reset(new ProbeController(&local_handler));
+  probe_controller_.reset(new ProbeController());
   int64_t alr_start_time = clock_.TimeInMilliseconds();
 
   probe_controller_->SetAlrStartTimeMs(alr_start_time);
-  EXPECT_CALL(local_handler, OnProbeClusterConfig(_)).Times(2);
   probe_controller_->EnablePeriodicAlrProbing(true);
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
                                  kMaxBitrateBps, NowMs());
@@ -259,17 +253,19 @@ TEST_F(ProbeControllerTest, PeriodicProbingAfterReset) {
 
   clock_.AdvanceTimeMilliseconds(10000);
   probe_controller_->Process(NowMs());
+  EXPECT_EQ(probe_controller_->GetAndResetPendingProbes().size(), 2u);
 
-  EXPECT_CALL(local_handler, OnProbeClusterConfig(_)).Times(2);
   probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
                                  kMaxBitrateBps, NowMs());
+  EXPECT_EQ(probe_controller_->GetAndResetPendingProbes().size(), 2u);
 
   // Make sure we use |kStartBitrateBps| as the estimated bitrate
   // until SetEstimatedBitrate is called with an updated estimate.
   clock_.AdvanceTimeMilliseconds(10000);
-  EXPECT_CALL(local_handler,
-              OnProbeClusterConfig(DataRateEqBps(kStartBitrateBps * 2)));
   probe_controller_->Process(NowMs());
+  EXPECT_EQ(
+      probe_controller_->GetAndResetPendingProbes()[0].target_data_rate.bps(),
+      kStartBitrateBps * 2);
 }
 
 TEST_F(ProbeControllerTest, TestExponentialProbingOverflow) {
@@ -277,15 +273,16 @@ TEST_F(ProbeControllerTest, TestExponentialProbingOverflow) {
   probe_controller_->SetBitrates(kMinBitrateBps, 10 * kMbpsMultiplier,
                                  100 * kMbpsMultiplier, NowMs());
 
-  // Verify that probe bitrate is capped at the specified max bitrate.
-  EXPECT_CALL(cluster_handler_,
-              OnProbeClusterConfig(DataRateEqBps(100 * kMbpsMultiplier)));
   probe_controller_->SetEstimatedBitrate(60 * kMbpsMultiplier, NowMs());
-  testing::Mock::VerifyAndClearExpectations(&cluster_handler_);
+
+  // Verify that probe bitrate is capped at the specified max bitrate.
+  EXPECT_EQ(
+      probe_controller_->GetAndResetPendingProbes()[2].target_data_rate.bps(),
+      100 * kMbpsMultiplier);
 
   // Verify that repeated probes aren't sent.
-  EXPECT_CALL(cluster_handler_, OnProbeClusterConfig(_)).Times(0);
   probe_controller_->SetEstimatedBitrate(100 * kMbpsMultiplier, NowMs());
+  EXPECT_EQ(probe_controller_->GetAndResetPendingProbes().size(), 0u);
 }
 
 }  // namespace test

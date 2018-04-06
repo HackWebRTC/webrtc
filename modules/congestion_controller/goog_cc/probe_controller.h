@@ -14,6 +14,7 @@
 #include <stdint.h>
 
 #include <initializer_list>
+#include <vector>
 
 #include "api/optional.h"
 #include "modules/congestion_controller/network_control/include/network_control.h"
@@ -29,7 +30,7 @@ namespace webrtc_cc {
 // bitrate is adjusted by an application.
 class ProbeController {
  public:
-  explicit ProbeController(NetworkControllerObserver* observer);
+  ProbeController();
   ~ProbeController();
 
   void SetBitrates(int64_t min_bitrate_bps,
@@ -59,6 +60,8 @@ class ProbeController {
 
   void Process(int64_t at_time_ms);
 
+  std::vector<ProbeClusterConfig> GetAndResetPendingProbes();
+
  private:
   enum class State {
     // Initial state where no probing has been triggered yet.
@@ -73,8 +76,6 @@ class ProbeController {
   void InitiateProbing(int64_t now_ms,
                        std::initializer_list<int64_t> bitrates_to_probe,
                        bool probe_further);
-
-  NetworkControllerObserver* const observer_;
 
   bool network_available_;
   State state_;
@@ -96,7 +97,9 @@ class ProbeController {
   int64_t mid_call_probing_bitrate_bps_;
   int64_t mid_call_probing_succcess_threshold_;
 
-  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(ProbeController);
+  std::vector<ProbeClusterConfig> pending_probes_;
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(ProbeController);
 };
 
 }  // namespace webrtc_cc

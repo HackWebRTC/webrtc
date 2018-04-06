@@ -76,8 +76,7 @@ constexpr char kBweRapidRecoveryExperiment[] =
 
 }  // namespace
 
-ProbeController::ProbeController(NetworkControllerObserver* observer)
-    : observer_(observer), enable_periodic_alr_probing_(false) {
+ProbeController::ProbeController() : enable_periodic_alr_probing_(false) {
   Reset(0);
   in_rapid_recovery_experiment_ = webrtc::field_trial::FindFullName(
                                       kBweRapidRecoveryExperiment) == "Enabled";
@@ -287,6 +286,14 @@ void ProbeController::Process(int64_t at_time_ms) {
   }
 }
 
+std::vector<ProbeClusterConfig> ProbeController::GetAndResetPendingProbes() {
+  if (pending_probes_.empty())
+    return std::vector<ProbeClusterConfig>();
+  std::vector<ProbeClusterConfig> pending_probes;
+  pending_probes_.swap(pending_probes);
+  return pending_probes;
+}
+
 void ProbeController::InitiateProbing(
     int64_t now_ms,
     std::initializer_list<int64_t> bitrates_to_probe,
@@ -305,7 +312,7 @@ void ProbeController::InitiateProbing(
     config.target_data_rate = DataRate::bps(rtc::dchecked_cast<int>(bitrate));
     config.target_duration = TimeDelta::ms(kMinProbeDurationMs);
     config.target_probe_count = kMinProbePacketsSent;
-    observer_->OnProbeClusterConfig(config);
+    pending_probes_.push_back(config);
   }
   time_last_probing_initiated_ms_ = now_ms;
   if (probe_further) {

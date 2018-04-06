@@ -348,6 +348,7 @@ void SendSideCongestionController::MaybeCreateControllers() {
   controller_ =
       controller_factory_->Create(control_handler_.get(), initial_config_);
   UpdateStreamsConfig();
+  UpdateControllerWithTimeInterval();
   StartProcessPeriodicTasks();
 }
 

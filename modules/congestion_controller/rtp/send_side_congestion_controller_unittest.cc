@@ -361,6 +361,7 @@ TEST_F(SendSideCongestionControllerTest, ProbeOnRouteChange) {
   route.local_network_id = 1;
   controller_->OnNetworkRouteChanged(route, 2 * kInitialBitrateBps, 0,
                                      20 * kInitialBitrateBps);
+  controller_->Process();
 }
 
 // Estimated bitrate reduced when the feedbacks arrive with such a long delay,

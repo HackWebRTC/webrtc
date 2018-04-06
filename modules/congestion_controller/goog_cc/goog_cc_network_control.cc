@@ -109,7 +109,7 @@ GoogCcNetworkController::GoogCcNetworkController(
     NetworkControllerConfig config)
     : event_log_(event_log),
       observer_(observer),
-      probe_controller_(new ProbeController(observer_)),
+      probe_controller_(new ProbeController()),
       bandwidth_estimation_(
           rtc::MakeUnique<SendSideBandwidthEstimation>(event_log_)),
       alr_detector_(rtc::MakeUnique<AlrDetector>()),
@@ -167,6 +167,11 @@ void GoogCcNetworkController::OnProcessInterval(ProcessInterval msg) {
       alr_detector_->GetApplicationLimitedRegionStartTime();
   probe_controller_->SetAlrStartTimeMs(start_time_ms);
   probe_controller_->Process(msg.at_time.ms());
+
+  for (const ProbeClusterConfig& probe :
+       probe_controller_->GetAndResetPendingProbes()) {
+    observer_->OnProbeClusterConfig(probe);
+  }
   MaybeTriggerOnNetworkChanged(msg.at_time);
 }
 
