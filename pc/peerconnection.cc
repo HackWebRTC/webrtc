@@ -4044,8 +4044,14 @@ void PeerConnection::UpdateRemoteSendersList(
     const RtpSenderInfo& info = *sender_it;
     const cricket::StreamParams* params =
         cricket::GetStreamBySsrc(streams, info.first_ssrc);
+    std::string params_stream_id;
+    if (params) {
+      params_stream_id =
+          (!params->first_stream_id().empty() ? params->first_stream_id()
+                                              : kDefaultStreamId);
+    }
     bool sender_exists = params && params->id == info.sender_id &&
-                         params->first_stream_id() == info.stream_id;
+                         params_stream_id == info.stream_id;
     // If this is a default track, and we still need it, don't remove it.
     if ((info.stream_id == kDefaultStreamId && default_sender_needed) ||
         sender_exists) {
@@ -4072,8 +4078,8 @@ void PeerConnection::UpdateRemoteSendersList(
     // not supported in Plan B, we just take the first here and create the
     // default stream ID if none is specified.
     const std::string& stream_id =
-        (!params.stream_ids().empty() ? params.stream_ids()[0]
-                                      : kDefaultStreamId);
+        (!params.first_stream_id().empty() ? params.first_stream_id()
+                                           : kDefaultStreamId);
     const std::string& sender_id = params.id;
     uint32_t ssrc = params.first_ssrc();
 
@@ -4137,6 +4143,10 @@ void PeerConnection::OnRemoteSenderAdded(const RtpSenderInfo& sender_info,
 
 void PeerConnection::OnRemoteSenderRemoved(const RtpSenderInfo& sender_info,
                                            cricket::MediaType media_type) {
+  RTC_LOG(LS_INFO) << "Removing " << cricket::MediaTypeToString(media_type)
+                   << " receiver for track_id=" << sender_info.sender_id
+                   << " and stream_id=" << sender_info.stream_id;
+
   MediaStreamInterface* stream = remote_streams_->find(sender_info.stream_id);
 
   rtc::scoped_refptr<RtpReceiverInterface> receiver;

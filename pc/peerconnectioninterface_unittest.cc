@@ -3122,6 +3122,19 @@ TEST_F(PeerConnectionInterfaceTestPlanB,
   MediaStreamInterface* remote_stream = observer_.remote_streams()->at(0);
   EXPECT_EQ("default", remote_stream->id());
   ASSERT_EQ(1u, remote_stream->GetAudioTracks().size());
+
+  // Previously a bug ocurred when setting the remote description a second time.
+  // This is because we checked equality of the remote StreamParams stream ID
+  // (empty), and the previously set stream ID for the remote sender
+  // ("default"). This cause a track to be removed, then added, when really
+  // nothing should occur because it is the same track.
+  CreateAndSetRemoteOffer(sdp_string);
+  EXPECT_EQ(0u, observer_.remove_track_events_.size());
+  EXPECT_EQ(1u, observer_.add_track_events_.size());
+  EXPECT_EQ("audiotrack0", observer_.last_added_track_label_);
+  remote_stream = observer_.remote_streams()->at(0);
+  EXPECT_EQ("default", remote_stream->id());
+  ASSERT_EQ(1u, remote_stream->GetAudioTracks().size());
 }
 
 // This tests that an RtpSender is created when the local description is set
