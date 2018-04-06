@@ -181,13 +181,7 @@ rtc_source_set("test_support") {
   }
 
   deps = [
-    "..:webrtc_common",
-    "../:typedefs",
-    "../api:array_view",
-    "../common_video",
-    "../rtc_base:gtest_prod",
     "../rtc_base:rtc_base_approved",
-    "../system_wrappers",
     "//testing/gmock",
     "//testing/gtest",
   ]
@@ -319,14 +313,16 @@ if (rtc_include_tests) {
       ":fileutils",
       ":perf_test",
       ":rtp_test_utils",
-      "../api:video_frame_api",
+      ":test_main",
+      ":test_support",
+      ":test_support_test_artifacts",
+      ":video_test_common",
+      ":video_test_support",
       "../api:video_frame_api_i420",
-      "../call:call_interfaces",
-      "../common_audio",
-      "../modules/audio_device",
-      "../modules/rtp_rtcp",
+      "../modules/rtp_rtcp:rtp_rtcp",
       "../rtc_base:rtc_base_approved",
-      "../system_wrappers",
+      "../test:single_threaded_task_queue",
+      "//testing/gtest",
     ]
     sources = [
       "frame_generator_unittest.cc",
@@ -358,19 +354,11 @@ if (rtc_include_tests) {
     if (is_ios) {
       deps += [ ":test_support_unittests_bundle_data" ]
     }
-
-    deps += [
-      ":direct_transport",
-      ":fileutils_unittests",
-      ":test_common",
-      ":test_main",
-      ":test_support_test_artifacts",
-      ":video_test_common",
-      ":video_test_support",
-      "../modules/video_capture",
-      "../rtc_base:rtc_base_approved",
-      "//testing/gtest",
-    ]
+    if (!is_android && !build_with_chromium) {
+      # This is needed in order to avoid:
+      # undefined symbol: webrtc::videocapturemodule::VideoCaptureImpl::Create
+      deps += [ "../modules/video_capture:video_capture_internal_impl" ]
+    }
   }
 }
 
