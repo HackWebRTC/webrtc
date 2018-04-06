@@ -207,17 +207,6 @@ rtc_source_set("test_support") {
 }
 
 if (rtc_include_tests) {
-  rtc_source_set("floating_point_except_observer") {
-    testonly = true
-    sources = [
-      "fpe_observer.h",
-    ]
-    deps = [
-      ":test_support",
-      "../rtc_base:rtc_base_approved",
-    ]
-  }
-
   rtc_source_set("test_main") {
     visibility = [ "*" ]
     testonly = true
@@ -328,10 +317,8 @@ if (rtc_include_tests) {
   rtc_test("test_support_unittests") {
     deps = [
       ":fileutils",
-      ":floating_point_except_observer",
       ":perf_test",
       ":rtp_test_utils",
-      ":test_support",
       "../api:video_frame_api",
       "../api:video_frame_api_i420",
       "../call:call_interfaces",
@@ -342,7 +329,6 @@ if (rtc_include_tests) {
       "../system_wrappers",
     ]
     sources = [
-      "fpe_observer_unittest.cc",
       "frame_generator_unittest.cc",
       "rtp_file_reader_unittest.cc",
       "rtp_file_writer_unittest.cc",
