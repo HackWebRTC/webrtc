@@ -51,6 +51,8 @@ class DirectTransport : public Transport {
 
   ~DirectTransport() override;
 
+  void SetClockOffset(int64_t offset_ms);
+
   void SetConfig(const FakeNetworkPipe::Config& config);
 
   RTC_DEPRECATED void StopSending();

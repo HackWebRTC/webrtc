@@ -68,6 +68,10 @@ DirectTransport::~DirectTransport() {
   task_queue_->CancelTask(next_scheduled_task_);
 }
 
+void DirectTransport::SetClockOffset(int64_t offset_ms) {
+  fake_network_->SetClockOffset(offset_ms);
+}
+
 void DirectTransport::SetConfig(const FakeNetworkPipe::Config& config) {
   fake_network_->SetConfig(config);
 }
