@@ -54,6 +54,7 @@ bool Utf8ToWindowsFilename(const std::string& utf8, std::wstring* filename);
 enum WindowsMajorVersions {
   kWindows2000 = 5,
   kWindowsVista = 6,
+  kWindows10 = 10,
 };
 bool GetOsVersion(int* major, int* minor, int* build);
 
@@ -72,6 +73,11 @@ inline bool IsWindows8OrLater() {
   int major, minor;
   return (GetOsVersion(&major, &minor, nullptr) &&
           (major > kWindowsVista || (major == kWindowsVista && minor >= 2)));
+}
+
+inline bool IsWindows10OrLater() {
+  int major;
+  return (GetOsVersion(&major, nullptr, nullptr) && (major >= kWindows10));
 }
 
 // Determine the current integrity level of the process.

@@ -24,10 +24,12 @@ namespace {
 struct TopWindowVerifierContext {
   TopWindowVerifierContext(HWND selected_window,
                            HWND excluded_window,
-                           DesktopRect selected_window_rect)
+                           DesktopRect selected_window_rect,
+                           WindowCaptureHelperWin* window_capture_helper)
       : selected_window(selected_window),
         excluded_window(excluded_window),
         selected_window_rect(selected_window_rect),
+        window_capture_helper(window_capture_helper),
         is_top_window(false) {
     RTC_DCHECK_NE(selected_window, excluded_window);
   }
@@ -35,6 +37,7 @@ struct TopWindowVerifierContext {
   const HWND selected_window;
   const HWND excluded_window;
   const DesktopRect selected_window_rect;
+  WindowCaptureHelperWin* window_capture_helper;
   bool is_top_window;
 };
 
@@ -54,8 +57,8 @@ BOOL CALLBACK TopWindowVerifier(HWND hwnd, LPARAM param) {
     return TRUE;
   }
 
-  // Ignore hidden or minimized window.
-  if (IsIconic(hwnd) || !IsWindowVisible(hwnd)) {
+  // Ignore invisible window on current desktop.
+  if (!context->window_capture_helper->IsWindowVisibleOnCurrentDesktop(hwnd)) {
     return TRUE;
   }
 
@@ -140,17 +143,17 @@ class CroppingWindowCapturerWin : public CroppingWindowCapturer {
   // rectangular, or the rect from GetWindowRect if the region is not set.
   DesktopRect window_region_rect_;
 
-  AeroChecker aero_checker_;
+  WindowCaptureHelperWin window_capture_helper_;
 };
 
 bool CroppingWindowCapturerWin::ShouldUseScreenCapturer() {
-  if (!rtc::IsWindows8OrLater() && aero_checker_.IsAeroEnabled()) {
+  if (!rtc::IsWindows8OrLater() && window_capture_helper_.IsAeroEnabled()) {
     return false;
   }
 
   const HWND selected = reinterpret_cast<HWND>(selected_window());
-  // Check if the window is hidden or minimized.
-  if (IsIconic(selected) || !IsWindowVisible(selected)) {
+  // Check if the window is visible on current desktop.
+  if (!window_capture_helper_.IsWindowVisibleOnCurrentDesktop(selected)) {
     return false;
   }
 
@@ -223,8 +226,9 @@ bool CroppingWindowCapturerWin::ShouldUseScreenCapturer() {
   // windows, context menus, and |excluded_window_|.
   // |content_rect| is preferred, see the comments in TopWindowVerifier()
   // function.
-  TopWindowVerifierContext context(
-      selected, reinterpret_cast<HWND>(excluded_window()), content_rect);
+  TopWindowVerifierContext context(selected,
+                                   reinterpret_cast<HWND>(excluded_window()),
+                                   content_rect, &window_capture_helper_);
   const LPARAM enum_param = reinterpret_cast<LPARAM>(&context);
   EnumWindows(&TopWindowVerifier, enum_param);
   if (!context.is_top_window) {

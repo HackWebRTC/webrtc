@@ -12,6 +12,7 @@
 
 #include "modules/desktop_capture/win/scoped_gdi_object.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 #include "rtc_base/win32.h"
 
 namespace webrtc {
@@ -130,27 +131,57 @@ bool IsWindowMaximized(HWND window, bool* result) {
   return true;
 }
 
-AeroChecker::AeroChecker() : dwmapi_library_(nullptr), func_(nullptr) {
+// WindowCaptureHelperWin implementation.
+WindowCaptureHelperWin::WindowCaptureHelperWin()
+    : dwmapi_library_(nullptr),
+      func_(nullptr),
+      virtual_desktop_manager_(nullptr) {
   // Try to load dwmapi.dll dynamically since it is not available on XP.
   dwmapi_library_ = LoadLibrary(L"dwmapi.dll");
   if (dwmapi_library_) {
     func_ = reinterpret_cast<DwmIsCompositionEnabledFunc>(
         GetProcAddress(dwmapi_library_, "DwmIsCompositionEnabled"));
   }
+
+  if (rtc::IsWindows10OrLater()) {
+    if (FAILED(::CoCreateInstance(__uuidof(VirtualDesktopManager), nullptr,
+                                  CLSCTX_ALL,
+                                  IID_PPV_ARGS(&virtual_desktop_manager_)))) {
+      RTC_LOG(LS_WARNING) << "Fail to create instance of VirtualDesktopManager";
+    }
+  }
 }
 
-AeroChecker::~AeroChecker() {
+WindowCaptureHelperWin::~WindowCaptureHelperWin() {
   if (dwmapi_library_) {
     FreeLibrary(dwmapi_library_);
   }
 }
 
-bool AeroChecker::IsAeroEnabled() {
+bool WindowCaptureHelperWin::IsAeroEnabled() {
   BOOL result = FALSE;
   if (func_) {
     func_(&result);
   }
   return result != FALSE;
+}
+
+bool WindowCaptureHelperWin::IsWindowOnCurrentDesktop(HWND hwnd) {
+  // Make sure the window is on the current virtual desktop.
+  if (virtual_desktop_manager_) {
+    BOOL on_current_desktop;
+    if (SUCCEEDED(virtual_desktop_manager_->IsWindowOnCurrentVirtualDesktop(
+            hwnd, &on_current_desktop)) &&
+        !on_current_desktop) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool WindowCaptureHelperWin::IsWindowVisibleOnCurrentDesktop(HWND hwnd) {
+  return !::IsIconic(hwnd) && ::IsWindowVisible(hwnd) &&
+         IsWindowOnCurrentDesktop(hwnd);
 }
 
 }  // namespace webrtc
