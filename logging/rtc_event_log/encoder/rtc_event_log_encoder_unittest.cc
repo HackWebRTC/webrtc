@@ -417,7 +417,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventProbeResultFailure) {
 
 TEST_P(RtcEventLogEncoderTest, RtcEventProbeResultSuccess) {
   const int id = RandomPositiveInt();
-  const int bitrate_bps = RandomBitrate();
+  const uint64_t bitrate_bps = rtc::checked_cast<uint64_t>(RandomBitrate());
 
   auto event = rtc::MakeUnique<RtcEventProbeResultSuccess>(id, bitrate_bps);
   const int64_t timestamp_us = event->timestamp_us_;
@@ -433,7 +433,6 @@ TEST_P(RtcEventLogEncoderTest, RtcEventProbeResultSuccess) {
 
   EXPECT_EQ(parsed_log_.GetTimestamp(0), timestamp_us);
   EXPECT_EQ(rtc::dchecked_cast<int>(parsed_event.id), id);
-  ASSERT_TRUE(parsed_event.bitrate_bps);
   EXPECT_EQ(parsed_event.bitrate_bps, bitrate_bps);
   ASSERT_FALSE(parsed_event.failure_reason);
 }

@@ -314,12 +314,12 @@ TEST(AudioNetworkAdaptorImplTest, TestANAStats) {
 
   auto ana_stats = states.audio_network_adaptor->GetStats();
 
-  EXPECT_EQ(ana_stats.bitrate_action_counter, 2);
-  EXPECT_EQ(ana_stats.channel_action_counter, 2);
-  EXPECT_EQ(ana_stats.dtx_action_counter, 2);
-  EXPECT_EQ(ana_stats.fec_action_counter, 2);
-  EXPECT_EQ(ana_stats.frame_length_increase_counter, 1);
-  EXPECT_EQ(ana_stats.frame_length_decrease_counter, 1);
+  EXPECT_EQ(ana_stats.bitrate_action_counter, 2u);
+  EXPECT_EQ(ana_stats.channel_action_counter, 2u);
+  EXPECT_EQ(ana_stats.dtx_action_counter, 2u);
+  EXPECT_EQ(ana_stats.fec_action_counter, 2u);
+  EXPECT_EQ(ana_stats.frame_length_increase_counter, 1u);
+  EXPECT_EQ(ana_stats.frame_length_decrease_counter, 1u);
   EXPECT_EQ(ana_stats.uplink_packet_loss_fraction, 0.1f);
 }
 
