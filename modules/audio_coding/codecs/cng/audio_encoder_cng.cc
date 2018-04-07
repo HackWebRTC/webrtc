@@ -44,19 +44,19 @@ bool AudioEncoderCng::Config::IsOk() const {
 }
 
 AudioEncoderCng::AudioEncoderCng(Config&& config)
-    : speech_encoder_(
-          ([&] { RTC_CHECK(config.IsOk()) << "Invalid configuration."; }(),
-           std::move(config.speech_encoder))),
+    : speech_encoder_((static_cast<void>([&] {
+                         RTC_CHECK(config.IsOk()) << "Invalid configuration.";
+                       }()),
+                       std::move(config.speech_encoder))),
       cng_payload_type_(config.payload_type),
       num_cng_coefficients_(config.num_cng_coefficients),
       sid_frame_interval_ms_(config.sid_frame_interval_ms),
       last_frame_active_(true),
       vad_(config.vad ? std::unique_ptr<Vad>(config.vad)
-           : CreateVad(config.vad_mode)),
+                      : CreateVad(config.vad_mode)),
       cng_encoder_(new ComfortNoiseEncoder(SampleRateHz(),
                                            sid_frame_interval_ms_,
-                                           num_cng_coefficients_)) {
-}
+                                           num_cng_coefficients_)) {}
 
 AudioEncoderCng::~AudioEncoderCng() = default;
 
