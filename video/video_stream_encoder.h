@@ -144,14 +144,8 @@ class VideoStreamEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   void OnFrame(const VideoFrame& video_frame) override;
   void OnDiscardedFrame() override;
 
-  void MaybeEncodeVideoFrame(const VideoFrame& frame,
-                             int64_t time_when_posted_in_ms);
-
   void EncodeVideoFrame(const VideoFrame& frame,
                         int64_t time_when_posted_in_ms);
-  // Indicates wether frame should be dropped because the pixel count is too
-  // large for the current bitrate configuration.
-  bool DropDueToSize(uint32_t pixel_count) const RTC_RUN_ON(&encoder_queue_);
 
   // Implements EncodedImageCallback.
   EncodedImageCallback::Result OnEncodedImage(
@@ -287,8 +281,6 @@ class VideoStreamEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   int64_t last_frame_log_ms_ RTC_GUARDED_BY(incoming_frame_race_checker_);
   int captured_frame_count_ RTC_GUARDED_BY(&encoder_queue_);
   int dropped_frame_count_ RTC_GUARDED_BY(&encoder_queue_);
-  rtc::Optional<VideoFrame> pending_frame_ RTC_GUARDED_BY(&encoder_queue_);
-  int64_t pending_frame_post_time_us_ RTC_GUARDED_BY(&encoder_queue_);
 
   VideoBitrateAllocationObserver* bitrate_observer_
       RTC_GUARDED_BY(&encoder_queue_);

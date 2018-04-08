@@ -703,18 +703,12 @@ TEST_F(VideoStreamEncoderTest, DropsFramesBeforeFirstOnBitrateUpdated) {
   // Dropped since no target bitrate has been set.
   rtc::Event frame_destroyed_event(false, false);
   video_source_.IncomingCapturedFrame(CreateFrame(1, &frame_destroyed_event));
-  // Fill the pending frame cache with a new frame so the previous frame is
-  // dropped.
-  video_source_.IncomingCapturedFrame(CreateFrame(2, nullptr));
   EXPECT_TRUE(frame_destroyed_event.Wait(kDefaultTimeoutMs));
 
   video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
-  // The pending frame should be received.
+  video_source_.IncomingCapturedFrame(CreateFrame(2, nullptr));
   WaitForEncodedFrame(2);
-  video_source_.IncomingCapturedFrame(CreateFrame(3, nullptr));
-
-  WaitForEncodedFrame(3);
   video_stream_encoder_->Stop();
 }
 
