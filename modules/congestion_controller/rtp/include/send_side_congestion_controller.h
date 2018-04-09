@@ -52,6 +52,13 @@ namespace send_side_cc_internal {
 // in SendSideCongestionController, which would risk causing data race on
 // destruction unless members are properly ordered.
 class ControlHandler;
+
+// TODO(srte): Make sure the PeriodicTask implementation is reusable and move it
+// to task_queue.h.
+class PeriodicTask : public rtc::QueuedTask {
+ public:
+  virtual void Stop() = 0;
+};
 }  // namespace send_side_cc_internal
 
 class SendSideCongestionController
@@ -188,6 +195,10 @@ class SendSideCongestionController
   std::atomic<size_t> transport_overhead_bytes_per_packet_;
   bool network_available_ RTC_GUARDED_BY(task_queue_ptr_);
   bool periodic_tasks_enabled_ RTC_GUARDED_BY(task_queue_ptr_);
+  send_side_cc_internal::PeriodicTask* pacer_queue_update_task_
+      RTC_GUARDED_BY(task_queue_ptr_);
+  send_side_cc_internal::PeriodicTask* controller_task_
+      RTC_GUARDED_BY(task_queue_ptr_);
 
   // Protects access to last_packet_feedback_vector_ in feedback adapter.
   // TODO(srte): Remove this checker when feedback adapter runs on task queue.
