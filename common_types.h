@@ -419,7 +419,6 @@ enum VP8ResilienceMode {
                      // within a frame.
 };
 
-class TemporalLayersFactory;
 // VP8 specific
 struct VideoCodecVP8 {
   bool operator==(const VideoCodecVP8& other) const;
@@ -433,7 +432,6 @@ struct VideoCodecVP8 {
   bool automaticResizeOn;
   bool frameDroppingOn;
   int keyFrameInterval;
-  TemporalLayersFactory* tl_factory;
 };
 
 // VP9 specific.

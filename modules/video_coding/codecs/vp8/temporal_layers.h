@@ -129,15 +129,6 @@ class TemporalLayers {
   virtual void FrameEncoded(unsigned int size, int qp) = 0;
 };
 
-// TODO(webrtc:9012): Remove TemporalLayersFactory type and field once all
-// upstream usage is gone.
-class TemporalLayersFactory {
- public:
-  TemporalLayersFactory() = default;
-  virtual ~TemporalLayersFactory() = default;
-};
-
-
 // Used only inside RTC_DCHECK(). It checks correctness of temporal layers
 // dependencies and sync bits. The only method of this class is called after
 // each UpdateLayersConfig() of a corresponding TemporalLayers class.

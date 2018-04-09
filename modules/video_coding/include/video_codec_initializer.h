@@ -38,9 +38,7 @@ class VideoCodecInitializer {
       VideoCodec* codec,
       std::unique_ptr<VideoBitrateAllocator>* bitrate_allocator);
 
-  // Create a bitrate allocator for the specified codec. |tl_factory| is
-  // optional, if it is populated, ownership of that instance will be
-  // transferred to the VideoBitrateAllocator instance.
+  // Create a bitrate allocator for the specified codec.
   static std::unique_ptr<VideoBitrateAllocator> CreateBitrateAllocator(
       const VideoCodec& codec);
 

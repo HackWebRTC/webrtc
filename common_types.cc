@@ -22,8 +22,6 @@
 namespace webrtc {
 
 bool VideoCodecVP8::operator==(const VideoCodecVP8& other) const {
-  // Doesn't compare the tl_factory pointers, which are constructed
-  // based on other members.
   return (complexity == other.complexity &&
           resilience == other.resilience &&
           numberOfTemporalLayers == other.numberOfTemporalLayers &&
