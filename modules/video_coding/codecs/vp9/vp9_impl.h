@@ -74,7 +74,8 @@ class VP9EncoderImpl : public VP9Encoder {
 
   void PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
                              const vpx_codec_cx_pkt& pkt,
-                             uint32_t timestamp);
+                             uint32_t timestamp,
+                             bool first_frame_in_picture);
 
   bool ExplicitlyConfiguredSpatialLayers() const;
   bool SetSvcRates(const BitrateAllocation& bitrate_allocation);

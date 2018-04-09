@@ -585,11 +585,14 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
 
 void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
                                            const vpx_codec_cx_pkt& pkt,
-                                           uint32_t timestamp) {
+                                           uint32_t timestamp,
+                                           bool first_frame_in_picture) {
   RTC_CHECK(codec_specific != nullptr);
   codec_specific->codecType = kVideoCodecVP9;
   codec_specific->codec_name = ImplementationName();
   CodecSpecificInfoVP9* vp9_info = &(codec_specific->codecSpecific.VP9);
+
+  vp9_info->first_frame_in_picture = first_frame_in_picture;
   // TODO(asapersson): Set correct value.
   vp9_info->inter_pic_predicted =
       (pkt.data.frame.flags & VPX_FRAME_IS_KEY) ? false : true;
@@ -623,15 +626,7 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
   // TODO(asapersson): this info has to be obtained from the encoder.
   vp9_info->temporal_up_switch = false;
 
-  bool is_first_frame = false;
-  if (is_flexible_mode_) {
-    is_first_frame =
-        layer_id.spatial_layer_id == spatial_layer_->GetStartLayer();
-  } else {
-    is_first_frame = layer_id.spatial_layer_id == 0;
-  }
-
-  if (is_first_frame) {
+  if (first_frame_in_picture) {
     // TODO(asapersson): this info has to be obtained from the encoder.
     vp9_info->inter_layer_predicted = false;
     ++frames_since_kf_;
@@ -639,8 +634,6 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
     // TODO(asapersson): this info has to be obtained from the encoder.
     vp9_info->inter_layer_predicted = true;
   }
-
-  vp9_info->first_frame_in_picture = is_first_frame;
 
   if (pkt.data.frame.flags & VPX_FRAME_IS_KEY) {
     frames_since_kf_ = 0;
@@ -687,6 +680,13 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
     return WEBRTC_VIDEO_CODEC_OK;
   }
 
+  vpx_svc_layer_id_t layer_id = {0};
+  vpx_codec_control(encoder_, VP9E_GET_SVC_LAYER_ID, &layer_id);
+
+  const bool first_frame_in_picture = encoded_image_._length == 0;
+  // Ensure we don't buffer layers of previous picture (superframe).
+  RTC_DCHECK(first_frame_in_picture || layer_id.spatial_layer_id > 0);
+
   const bool end_of_superframe = false;
   DeliverBufferedFrame(end_of_superframe);
 
@@ -698,14 +698,12 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
   memcpy(encoded_image_._buffer, pkt->data.frame.buf, pkt->data.frame.sz);
   encoded_image_._length = pkt->data.frame.sz;
 
-  vpx_svc_layer_id_t layer_id = {0};
-  vpx_codec_control(encoder_, VP9E_GET_SVC_LAYER_ID, &layer_id);
-  if (is_flexible_mode_ && codec_.mode == kScreensharing)
+  if (is_flexible_mode_ && codec_.mode == kScreensharing) {
     spatial_layer_->LayerFrameEncoded(
         static_cast<unsigned int>(encoded_image_._length),
         layer_id.spatial_layer_id);
+  }
 
-  // End of frame.
   // Check if encoded frame is a key frame.
   encoded_image_._frameType = kVideoFrameDelta;
   if (pkt->data.frame.flags & VPX_FRAME_IS_KEY) {
@@ -714,7 +712,8 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
   RTC_DCHECK_LE(encoded_image_._length, encoded_image_._size);
 
   memset(&codec_specific_, 0, sizeof(codec_specific_));
-  PopulateCodecSpecific(&codec_specific_, *pkt, input_image_->timestamp());
+  PopulateCodecSpecific(&codec_specific_, *pkt, input_image_->timestamp(),
+                        first_frame_in_picture);
 
   TRACE_COUNTER1("webrtc", "EncodedFrameSize", encoded_image_._length);
   encoded_image_._timeStamp = input_image_->timestamp();
