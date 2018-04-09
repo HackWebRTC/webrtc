@@ -150,7 +150,6 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
   bool SetSend(bool send) override;
   bool SetVideoSend(
       uint32_t ssrc,
-      bool enable,
       const VideoOptions* options,
       rtc::VideoSourceInterface<webrtc::VideoFrame>* source) override;
   bool AddSendStream(const StreamParams& sp) override;
@@ -280,8 +279,7 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
                          const rtc::VideoSinkWants& wants) override;
     void RemoveSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) override;
 
-    bool SetVideoSend(bool mute,
-                      const VideoOptions* options,
+    bool SetVideoSend(const VideoOptions* options,
                       rtc::VideoSourceInterface<webrtc::VideoFrame>* source);
 
     void SetSend(bool send);

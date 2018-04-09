@@ -577,13 +577,9 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
   bool SetSend(bool send) override { return set_sending(send); }
   bool SetVideoSend(
       uint32_t ssrc,
-      bool enable,
       const VideoOptions* options,
       rtc::VideoSourceInterface<webrtc::VideoFrame>* source) override {
-    if (!RtpHelper<VideoMediaChannel>::MuteStream(ssrc, !enable)) {
-      return false;
-    }
-    if (enable && options) {
+    if (options) {
       if (!SetOptions(*options)) {
         return false;
       }

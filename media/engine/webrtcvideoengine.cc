@@ -1064,17 +1064,13 @@ bool WebRtcVideoChannel::SetSend(bool send) {
   return true;
 }
 
-// TODO(nisse): The enable argument was used for mute logic which has
-// been moved to VideoBroadcaster. So remove the argument from this
-// method.
 bool WebRtcVideoChannel::SetVideoSend(
     uint32_t ssrc,
-    bool enable,
     const VideoOptions* options,
     rtc::VideoSourceInterface<webrtc::VideoFrame>* source) {
   TRACE_EVENT0("webrtc", "SetVideoSend");
   RTC_DCHECK(ssrc != 0);
-  RTC_LOG(LS_INFO) << "SetVideoSend (ssrc= " << ssrc << ", enable = " << enable
+  RTC_LOG(LS_INFO) << "SetVideoSend (ssrc= " << ssrc
                    << ", options: "
                    << (options ? options->ToString() : "nullptr")
                    << ", source = " << (source ? "(source)" : "nullptr") << ")";
@@ -1088,7 +1084,7 @@ bool WebRtcVideoChannel::SetVideoSend(
     return false;
   }
 
-  return kv->second->SetVideoSend(enable, options, source);
+  return kv->second->SetVideoSend(options, source);
 }
 
 bool WebRtcVideoChannel::ValidateSendSsrcAvailability(
@@ -1665,16 +1661,12 @@ WebRtcVideoChannel::WebRtcVideoSendStream::~WebRtcVideoSendStream() {
 }
 
 bool WebRtcVideoChannel::WebRtcVideoSendStream::SetVideoSend(
-    bool enable,
     const VideoOptions* options,
     rtc::VideoSourceInterface<webrtc::VideoFrame>* source) {
   TRACE_EVENT0("webrtc", "WebRtcVideoSendStream::SetVideoSend");
   RTC_DCHECK_RUN_ON(&thread_checker_);
 
-  // Ignore |options| pointer if |enable| is false.
-  bool options_present = enable && options;
-
-  if (options_present) {
+  if (options) {
     VideoOptions old_options = parameters_.options;
     parameters_.options.SetAll(*options);
     if (parameters_.options.is_screencast.value_or(false) !=

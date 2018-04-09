@@ -754,7 +754,6 @@ class VideoMediaChannel : public MediaChannel {
   // The |ssrc| must correspond to a registered send stream.
   virtual bool SetVideoSend(
       uint32_t ssrc,
-      bool enable,
       const VideoOptions* options,
       rtc::VideoSourceInterface<webrtc::VideoFrame>* source) = 0;
   // Sets the sink object to be used for the specified stream.

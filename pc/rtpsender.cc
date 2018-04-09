@@ -309,7 +309,6 @@ VideoRtpSender::VideoRtpSender(rtc::Thread* worker_thread,
       id_(track ? track->id() : rtc::CreateRandomUuid()),
       stream_ids_(stream_ids),
       track_(track),
-      cached_track_enabled_(track ? track->enabled() : false),
       cached_track_content_hint_(track
                                      ? track->content_hint()
                                      : VideoTrackInterface::ContentHint::kNone),
@@ -327,9 +326,7 @@ VideoRtpSender::~VideoRtpSender() {
 void VideoRtpSender::OnChanged() {
   TRACE_EVENT0("webrtc", "VideoRtpSender::OnChanged");
   RTC_DCHECK(!stopped_);
-  if (cached_track_enabled_ != track_->enabled() ||
-      cached_track_content_hint_ != track_->content_hint()) {
-    cached_track_enabled_ = track_->enabled();
+  if (cached_track_content_hint_ != track_->content_hint()) {
     cached_track_content_hint_ = track_->content_hint();
     if (can_send_track()) {
       SetVideoSend();
@@ -362,7 +359,6 @@ bool VideoRtpSender::SetTrack(MediaStreamTrackInterface* track) {
   rtc::scoped_refptr<VideoTrackInterface> old_track = track_;
   track_ = video_track;
   if (track_) {
-    cached_track_enabled_ = track_->enabled();
     cached_track_content_hint_ = track_->content_hint();
     track_->RegisterObserver(this);
   }
@@ -455,11 +451,8 @@ void VideoRtpSender::SetVideoSend() {
       options.is_screencast = true;
       break;
   }
-  // |track_->enabled()| hops to the signaling thread, so call it before we hop
-  // to the worker thread or else it will deadlock.
-  bool track_enabled = track_->enabled();
   bool success = worker_thread_->Invoke<bool>(RTC_FROM_HERE, [&] {
-    return media_channel_->SetVideoSend(ssrc_, track_enabled, &options, track_);
+      return media_channel_->SetVideoSend(ssrc_, &options, track_);
   });
   RTC_DCHECK(success);
 }
@@ -475,7 +468,7 @@ void VideoRtpSender::ClearVideoSend() {
   // This the normal case when the underlying media channel has already been
   // deleted.
   worker_thread_->Invoke<bool>(RTC_FROM_HERE, [&] {
-    return media_channel_->SetVideoSend(ssrc_, false, nullptr, nullptr);
+    return media_channel_->SetVideoSend(ssrc_, nullptr, nullptr);
   });
 }
 
