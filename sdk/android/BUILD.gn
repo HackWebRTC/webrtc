@@ -725,6 +725,7 @@ dist_jar("libwebrtc") {
 # TODO(sakal): Extract files from this target to releveant subtargets, video, audio etc.
 rtc_android_library("base_java") {
   java_files = [
+    "api/org/webrtc/RefCounted.java",
     "src/java/org/webrtc/CalledByNative.java",
     "src/java/org/webrtc/CalledByNativeUnchecked.java",
     "src/java/org/webrtc/Histogram.java",
@@ -732,6 +733,7 @@ rtc_android_library("base_java") {
     "src/java/org/webrtc/JniHelper.java",
     "src/java/org/webrtc/JNINamespace.java",
     "src/java/org/webrtc/NativeClassQualifiedName.java",
+    "src/java/org/webrtc/RefCountDelegate.java",
     "src/java/org/webrtc/WebRtcClassLoader.java",
   ]
 

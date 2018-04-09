@@ -11,6 +11,7 @@
 package org.webrtc;
 
 import java.nio.ByteBuffer;
+import javax.annotation.Nullable;
 import org.webrtc.VideoFrame.I420Buffer;
 
 /** Implementation of VideoFrame.I420Buffer backed by Java direct byte buffers. */
@@ -23,13 +24,10 @@ public class JavaI420Buffer implements VideoFrame.I420Buffer {
   private final int strideY;
   private final int strideU;
   private final int strideV;
-  private final Runnable releaseCallback;
-  private final Object refCountLock = new Object();
-
-  private int refCount;
+  private final RefCountDelegate refCountDelegate;
 
   private JavaI420Buffer(int width, int height, ByteBuffer dataY, int strideY, ByteBuffer dataU,
-      int strideU, ByteBuffer dataV, int strideV, Runnable releaseCallback) {
+      int strideU, ByteBuffer dataV, int strideV, @Nullable Runnable releaseCallback) {
     this.width = width;
     this.height = height;
     this.dataY = dataY;
@@ -38,9 +36,7 @@ public class JavaI420Buffer implements VideoFrame.I420Buffer {
     this.strideY = strideY;
     this.strideU = strideU;
     this.strideV = strideV;
-    this.releaseCallback = releaseCallback;
-
-    this.refCount = 1;
+    this.refCountDelegate = new RefCountDelegate(releaseCallback);
   }
 
   /** Wraps existing ByteBuffers into JavaI420Buffer object without copying the contents. */
@@ -155,18 +151,12 @@ public class JavaI420Buffer implements VideoFrame.I420Buffer {
 
   @Override
   public void retain() {
-    synchronized (refCountLock) {
-      ++refCount;
-    }
+    refCountDelegate.retain();
   }
 
   @Override
   public void release() {
-    synchronized (refCountLock) {
-      if (--refCount == 0 && releaseCallback != null) {
-        releaseCallback.run();
-      }
-    }
+    refCountDelegate.release();
   }
 
   @Override

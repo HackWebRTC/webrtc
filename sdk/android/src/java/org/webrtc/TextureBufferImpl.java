@@ -12,6 +12,8 @@ package org.webrtc;
 
 import android.graphics.Matrix;
 import java.nio.ByteBuffer;
+import java.util.concurrent.atomic.AtomicInteger;
+import javax.annotation.Nullable;
 
 /**
  * Android texture buffer backed by a SurfaceTextureHelper's texture. The buffer calls
@@ -24,20 +26,17 @@ class TextureBufferImpl implements VideoFrame.TextureBuffer {
   private final int id;
   private final Matrix transformMatrix;
   private final SurfaceTextureHelper surfaceTextureHelper;
-  private final Runnable releaseCallback;
-  private final Object refCountLock = new Object();
-  private int refCount;
+  private final RefCountDelegate refCountDelegate;
 
   public TextureBufferImpl(int width, int height, Type type, int id, Matrix transformMatrix,
-      SurfaceTextureHelper surfaceTextureHelper, Runnable releaseCallback) {
+      SurfaceTextureHelper surfaceTextureHelper, @Nullable Runnable releaseCallback) {
     this.width = width;
     this.height = height;
     this.type = type;
     this.id = id;
     this.transformMatrix = transformMatrix;
     this.surfaceTextureHelper = surfaceTextureHelper;
-    this.releaseCallback = releaseCallback;
-    this.refCount = 1; // Creator implicitly holds a reference.
+    this.refCountDelegate = new RefCountDelegate(releaseCallback);
   }
 
   @Override
@@ -72,18 +71,12 @@ class TextureBufferImpl implements VideoFrame.TextureBuffer {
 
   @Override
   public void retain() {
-    synchronized (refCountLock) {
-      ++refCount;
-    }
+    refCountDelegate.retain();
   }
 
   @Override
   public void release() {
-    synchronized (refCountLock) {
-      if (--refCount == 0 && releaseCallback != null) {
-        releaseCallback.run();
-      }
-    }
+    refCountDelegate.release();
   }
 
   @Override
