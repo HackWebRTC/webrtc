@@ -11,7 +11,7 @@
 #include "modules/congestion_controller/bbr/windowed_filter.h"
 
 #include "modules/congestion_controller/bbr/rtt_stats.h"
-#include "modules/congestion_controller/network_control/test/network_ostream_operators.h"
+#include "modules/congestion_controller/network_control/include/network_units_to_string.h"
 #include "test/gtest.h"
 
 namespace webrtc {
@@ -33,11 +33,11 @@ class WindowedFilterTest : public ::testing::Test {
     TimeDelta rtt_sample = TimeDelta::ms(10);
     for (int i = 0; i < 5; ++i) {
       windowed_min_rtt_.Update(rtt_sample, now_ms);
-      RTC_LOG(LS_VERBOSE) << "i: " << i << " sample: " << rtt_sample
+      RTC_LOG(LS_VERBOSE) << "i: " << i << " sample: " << ToString(rtt_sample)
                           << " mins: "
-                          << " " << windowed_min_rtt_.GetBest() << " "
-                          << windowed_min_rtt_.GetSecondBest() << " "
-                          << windowed_min_rtt_.GetThirdBest();
+                          << " " << ToString(windowed_min_rtt_.GetBest()) << " "
+                          << ToString(windowed_min_rtt_.GetSecondBest()) << " "
+                          << ToString(windowed_min_rtt_.GetThirdBest());
       now_ms += 25;
       rtt_sample = rtt_sample + TimeDelta::ms(10);
     }
@@ -55,10 +55,11 @@ class WindowedFilterTest : public ::testing::Test {
     DataRate bw_sample = DataRate::bps(1000);
     for (int i = 0; i < 5; ++i) {
       windowed_max_bw_.Update(bw_sample, now_ms);
-      RTC_LOG(LS_VERBOSE) << "i: " << i << " sample: " << bw_sample << " maxs: "
-                          << " " << windowed_max_bw_.GetBest() << " "
-                          << windowed_max_bw_.GetSecondBest() << " "
-                          << windowed_max_bw_.GetThirdBest();
+      RTC_LOG(LS_VERBOSE) << "i: " << i << " sample: " << ToString(bw_sample)
+                          << " maxs: "
+                          << " " << ToString(windowed_max_bw_.GetBest()) << " "
+                          << ToString(windowed_max_bw_.GetSecondBest()) << " "
+                          << ToString(windowed_max_bw_.GetThirdBest());
       now_ms += 25;
       bw_sample = DataRate::bps(bw_sample.bps() - 100);
     }

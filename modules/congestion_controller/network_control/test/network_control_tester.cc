@@ -9,7 +9,7 @@
  */
 
 #include "modules/congestion_controller/network_control/test/network_control_tester.h"
-#include "modules/congestion_controller/network_control/test/network_ostream_operators.h"
+#include "modules/congestion_controller/network_control/include/network_units_to_string.h"
 
 #include <algorithm>
 
@@ -21,23 +21,27 @@ namespace {
 void Update(NetworkControlUpdate* target, const NetworkControlUpdate& update) {
   if (update.congestion_window) {
     RTC_LOG(LS_INFO) << "Received window="
-                     << update.congestion_window->data_window << "\n";
+                     << ToString(update.congestion_window->data_window) << "\n";
     target->congestion_window = update.congestion_window;
   }
   if (update.pacer_config) {
-    RTC_LOG(LS_INFO) << "Received pacing at:" << update.pacer_config->at_time
-                     << ": rate=" << update.pacer_config->data_rate() << "\n";
+    RTC_LOG(LS_INFO) << "Received pacing at:"
+                     << ToString(update.pacer_config->at_time)
+                     << ": rate=" << ToString(update.pacer_config->data_rate())
+                     << "\n";
     target->pacer_config = update.pacer_config;
   }
   if (update.target_rate) {
-    RTC_LOG(LS_INFO) << "Received target at:" << update.target_rate->at_time
-                     << ": rate=" << update.target_rate->target_rate << "\n";
+    RTC_LOG(LS_INFO) << "Received target at:"
+                     << ToString(update.target_rate->at_time)
+                     << ": rate=" << ToString(update.target_rate->target_rate)
+                     << "\n";
     target->target_rate = update.target_rate;
   }
   for (const auto& probe : update.probe_cluster_configs) {
     target->probe_cluster_configs.push_back(probe);
-    RTC_LOG(LS_INFO) << "Received probe at:" << probe.at_time
-                     << ": target=" << probe.target_data_rate << "\n";
+    RTC_LOG(LS_INFO) << "Received probe at:" << ToString(probe.at_time)
+                     << ": target=" << ToString(probe.target_data_rate) << "\n";
   }
 }
 }  // namespace

@@ -34,8 +34,6 @@ if (rtc_include_tests) {
       "test/mock_network_control.h",
       "test/network_control_tester.cc",
       "test/network_control_tester.h",
-      "test/network_ostream_operators.cc",
-      "test/network_ostream_operators.h",
     ]
     deps = [
       ":network_control",
