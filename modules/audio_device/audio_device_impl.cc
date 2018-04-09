@@ -227,24 +227,39 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects() {
 // END #if defined(WEBRTC_ANDROID)
 
 // Linux ADM implementation.
+// Note that, LINUX_ALSA is always defined by default when WEBRTC_LINUX is
+// defined. LINUX_PULSE depends on the 'rtc_include_pulse_audio' build flag.
+// TODO(bugs.webrtc.org/9127): improve support and make it more clear that
+// PulseAudio is the default selection.
 #elif defined(WEBRTC_LINUX)
-  if ((audio_layer == kLinuxPulseAudio) ||
+#if !defined(LINUX_PULSE)
+  // Build flag 'rtc_include_pulse_audio' is set to false. In this mode:
+  // - kPlatformDefaultAudio => ALSA, and
+  // - kLinuxAlsaAudio => ALSA, and
+  // - kLinuxPulseAudio => Invalid selection.
+  RTC_LOG(WARNING) << "PulseAudio is disabled using build flag.";
+  if ((audio_layer == kLinuxAlsaAudio) ||
       (audio_layer == kPlatformDefaultAudio)) {
-#if defined(LINUX_PULSE)
-    RTC_LOG(INFO) << "Attempting to use Linux PulseAudio APIs...";
-    // Linux PulseAudio implementation.
-    audio_device_.reset(new AudioDeviceLinuxPulse());
-    RTC_LOG(INFO) << "Linux PulseAudio APIs will be utilized";
-#endif
-#if defined(LINUX_PULSE)
-#endif
-  } else if (audio_layer == kLinuxAlsaAudio) {
-#if defined(LINUX_ALSA)
-    // Linux ALSA implementation.
     audio_device_.reset(new AudioDeviceLinuxALSA());
     RTC_LOG(INFO) << "Linux ALSA APIs will be utilized.";
-#endif
   }
+#else
+  // Build flag 'rtc_include_pulse_audio' is set to true (default). In this
+  // mode:
+  // - kPlatformDefaultAudio => PulseAudio, and
+  // - kLinuxPulseAudio => PulseAudio, and
+  // - kLinuxAlsaAudio => ALSA (supported but not default).
+  RTC_LOG(INFO) << "PulseAudio support is enabled.";
+  if ((audio_layer == kLinuxPulseAudio) ||
+      (audio_layer == kPlatformDefaultAudio)) {
+    // Linux PulseAudio implementation is default.
+    audio_device_.reset(new AudioDeviceLinuxPulse());
+    RTC_LOG(INFO) << "Linux PulseAudio APIs will be utilized";
+  } else if (audio_layer == kLinuxAlsaAudio) {
+    audio_device_.reset(new AudioDeviceLinuxALSA());
+    RTC_LOG(WARNING) << "Linux ALSA APIs will be utilized.";
+  }
+#endif  // #if !defined(LINUX_PULSE)
 #endif  // #if defined(WEBRTC_LINUX)
 
 // iOS ADM implementation.
