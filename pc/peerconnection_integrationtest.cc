@@ -4258,10 +4258,22 @@ TEST_P(PeerConnectionIntegrationInteropTest,
   ASSERT_TRUE(ExpectNewFrames(media_expectations));
 }
 
-// Test that if one side offers two video tracks then the other side will only
-// see the first one and ignore the second.
-TEST_P(PeerConnectionIntegrationInteropTest, TwoVideoLocalToNoMediaRemote) {
-  ASSERT_TRUE(CreatePeerConnectionWrappersWithSemantics());
+INSTANTIATE_TEST_CASE_P(
+    PeerConnectionIntegrationTest,
+    PeerConnectionIntegrationInteropTest,
+    Values(std::make_tuple(SdpSemantics::kPlanB, SdpSemantics::kUnifiedPlan),
+           std::make_tuple(SdpSemantics::kUnifiedPlan, SdpSemantics::kPlanB)));
+
+// Test that if the Unified Plan side offers two video tracks then the Plan B
+// side will only see the first one and ignore the second.
+TEST_F(PeerConnectionIntegrationTestPlanB, TwoVideoUnifiedPlanToNoMediaPlanB) {
+  RTCConfiguration caller_config;
+  caller_config.sdp_semantics = SdpSemantics::kUnifiedPlan;
+  RTCConfiguration callee_config;
+  callee_config.sdp_semantics = SdpSemantics::kPlanB;
+  ASSERT_TRUE(
+      CreatePeerConnectionWrappersWithConfig(caller_config, callee_config));
+
   ConnectFakeSignaling();
   auto first_sender = caller()->AddVideoTrack();
   caller()->AddVideoTrack();
@@ -4280,66 +4292,6 @@ TEST_P(PeerConnectionIntegrationInteropTest, TwoVideoLocalToNoMediaRemote) {
   media_expectations.CalleeExpectsSomeVideo();
   ASSERT_TRUE(ExpectNewFrames(media_expectations));
 }
-
-// Test that in the multi-track case each endpoint only looks at the first track
-// and ignores the second one.
-TEST_P(PeerConnectionIntegrationInteropTest, TwoVideoLocalToTwoVideoRemote) {
-  ASSERT_TRUE(CreatePeerConnectionWrappersWithSemantics());
-  ConnectFakeSignaling();
-  caller()->AddVideoTrack();
-  caller()->AddVideoTrack();
-  callee()->AddVideoTrack();
-  callee()->AddVideoTrack();
-
-  caller()->CreateAndSetAndSignalOffer();
-  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
-
-  PeerConnectionWrapper* plan_b =
-      (caller_semantics_ == SdpSemantics::kPlanB ? caller() : callee());
-  PeerConnectionWrapper* unified_plan =
-      (caller_semantics_ == SdpSemantics::kUnifiedPlan ? caller() : callee());
-
-  // Should have two senders each, one for each track.
-  EXPECT_EQ(2u, plan_b->pc()->GetSenders().size());
-  EXPECT_EQ(2u, unified_plan->pc()->GetSenders().size());
-
-  // Plan B will have one receiver since it only looks at the first video
-  // section. The receiver should have the same track ID as the sender's first
-  // track.
-  ASSERT_EQ(1u, plan_b->pc()->GetReceivers().size());
-  EXPECT_EQ(unified_plan->pc()->GetSenders()[0]->track()->id(),
-            plan_b->pc()->GetReceivers()[0]->track()->id());
-
-  // Unified Plan will have two receivers since they were created with the
-  // transceivers when the tracks were added.
-  ASSERT_EQ(2u, unified_plan->pc()->GetReceivers().size());
-
-  if (unified_plan == caller()) {
-    // If the Unified Plan endpoint was the caller, then the Plan B endpoint
-    // would have rejected the second video media section so we would expect the
-    // transceiver to be stopped.
-    EXPECT_FALSE(unified_plan->pc()->GetTransceivers()[0]->stopped());
-    EXPECT_TRUE(unified_plan->pc()->GetTransceivers()[1]->stopped());
-  } else {
-    // If the Unified Plan endpoint was the callee, then the Plan B endpoint
-    // would have offered only one video section so we would expect the first
-    // transceiver to map to the first track and the second transceiver to be
-    // missing a mid.
-    EXPECT_TRUE(unified_plan->pc()->GetTransceivers()[0]->mid());
-    EXPECT_FALSE(unified_plan->pc()->GetTransceivers()[1]->mid());
-  }
-
-  // Should be exchanging video frames for the first tracks on each endpoint.
-  MediaExpectations media_expectations;
-  media_expectations.ExpectBidirectionalVideo();
-  ASSERT_TRUE(ExpectNewFrames(media_expectations));
-}
-
-INSTANTIATE_TEST_CASE_P(
-    PeerConnectionIntegrationTest,
-    PeerConnectionIntegrationInteropTest,
-    Values(std::make_tuple(SdpSemantics::kPlanB, SdpSemantics::kUnifiedPlan),
-           std::make_tuple(SdpSemantics::kUnifiedPlan, SdpSemantics::kPlanB)));
 
 }  // namespace
 

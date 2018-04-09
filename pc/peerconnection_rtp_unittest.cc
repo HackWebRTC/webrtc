@@ -1294,7 +1294,10 @@ TEST_F(SdpFormatReceivedTest, ComplexPlanBIsReportedAsComplexPlanB) {
   auto callee = CreatePeerConnectionWithUnifiedPlan();
   auto callee_metrics = callee->RegisterFakeMetricsObserver();
 
-  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOffer()));
+  // This fails since Unified Plan cannot set a session description with
+  // multiple "Plan B tracks" in the same media section. But we still expect the
+  // SDP Format to be recorded.
+  ASSERT_FALSE(callee->SetRemoteDescription(caller->CreateOffer()));
 
   EXPECT_TRUE(callee_metrics->ExpectOnlySingleEnumCount(
       kEnumCounterSdpFormatReceived, kSdpFormatReceivedComplexPlanB));

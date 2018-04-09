@@ -2194,6 +2194,11 @@ void PeerConnection::SetRemoteDescription(
     return;
   }
 
+  if (desc->GetType() == SdpType::kOffer) {
+    // Report to UMA the format of the received offer.
+    ReportSdpFormatReceived(*desc);
+  }
+
   RTCError error = ValidateSessionDescription(desc.get(), cricket::CS_REMOTE);
   if (!error.ok()) {
     std::string error_message = GetSetDescriptionErrorMessage(
@@ -2224,11 +2229,6 @@ void PeerConnection::SetRemoteDescription(
     return;
   }
   RTC_DCHECK(remote_description());
-
-  if (type == SdpType::kOffer) {
-    // Report to UMA the format of the received offer.
-    ReportSdpFormatReceived(*remote_description());
-  }
 
   if (type == SdpType::kAnswer) {
     // TODO(deadbeef): We already had to hop to the network thread for
@@ -5748,6 +5748,25 @@ RTCError PeerConnection::ValidateSessionDescription(
                                   *sdesc->description(), type)) {
       LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
                            kMlineMismatchInSubsequentOffer);
+    }
+  }
+
+  if (IsUnifiedPlan()) {
+    // Ensure that each audio and video media section has at most one
+    // "StreamParams". This will return an error if receiving a session
+    // description from a "Plan B" endpoint which adds multiple tracks of the
+    // same type. With Unified Plan, there can only be at most one track per
+    // media section.
+    for (const ContentInfo& content : sdesc->description()->contents()) {
+      const MediaContentDescription& desc = *content.description;
+      if ((desc.type() == cricket::MEDIA_TYPE_AUDIO ||
+           desc.type() == cricket::MEDIA_TYPE_VIDEO) &&
+          desc.streams().size() > 1u) {
+        LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
+                             "Media section has more than one track specified "
+                             "with a=ssrc lines which is not supported with "
+                             "Unified Plan.");
+      }
     }
   }
 
