@@ -150,6 +150,10 @@ class VideoTimingExtension {
 // Subclasses must defined kId and kUri static constexpr members.
 class BaseRtpStringExtension {
  public:
+  // String RTP header extensions are limited to 16 bytes because it is the
+  // maximum length that can be encoded with one-byte header extensions.
+  static constexpr uint8_t kMaxValueSizeBytes = 16;
+
   static bool Parse(rtc::ArrayView<const uint8_t> data,
                     StringRtpHeaderExtension* str);
   static size_t ValueSize(const StringRtpHeaderExtension& str) {

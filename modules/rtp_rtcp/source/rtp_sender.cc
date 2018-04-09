@@ -60,6 +60,7 @@ constexpr RtpExtensionSize kFecOrPaddingExtensionSizes[] = {
     CreateExtensionSize<TransmissionOffset>(),
     CreateExtensionSize<TransportSequenceNumber>(),
     CreateExtensionSize<PlayoutDelayLimits>(),
+    {RtpMid::kId, RtpMid::kMaxValueSizeBytes},
 };
 
 // Size info for header extensions that might be used in video packets.
@@ -71,6 +72,7 @@ constexpr RtpExtensionSize kVideoExtensionSizes[] = {
     CreateExtensionSize<VideoOrientation>(),
     CreateExtensionSize<VideoContentTypeExtension>(),
     CreateExtensionSize<VideoTimingExtension>(),
+    {RtpMid::kId, RtpMid::kMaxValueSizeBytes},
 };
 
 const char* FrameTypeToString(FrameType frame_type) {
