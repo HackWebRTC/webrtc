@@ -90,7 +90,7 @@
   if (_metalView) {
     _metalView.delegate = self;
     [self addSubview:_metalView];
-    _metalView.contentMode = UIViewContentModeScaleAspectFill;
+    _metalView.contentMode = UIViewContentModeScaleAspectFit;
   }
 }
 
