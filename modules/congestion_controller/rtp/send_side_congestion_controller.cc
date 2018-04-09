@@ -14,12 +14,14 @@
 #include <functional>
 #include <memory>
 #include <vector>
+#include "modules/congestion_controller/bbr/bbr_factory.h"
 #include "modules/congestion_controller/goog_cc/include/goog_cc_factory.h"
 #include "modules/congestion_controller/network_control/include/network_types.h"
 #include "modules/congestion_controller/network_control/include/network_units.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/experiments/congestion_controller_experiment.h"
 #include "rtc_base/format_macros.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
@@ -49,9 +51,12 @@ bool IsPacerPushbackExperimentEnabled() {
               webrtc::runtime_enabled_features::kDualStreamModeFeatureName));
 }
 
-NetworkControllerFactoryInterface::uptr ControllerFactory(
-    RtcEventLog* event_log) {
-  return rtc::MakeUnique<GoogCcNetworkControllerFactory>(event_log);
+std::unique_ptr<NetworkControllerFactoryInterface> MaybeCreateBbrFactory() {
+  if (CongestionControllerExperiment::BbrControllerEnabled()) {
+    return rtc::MakeUnique<BbrNetworkControllerFactory>();
+  } else {
+    return nullptr;
+  }
 }
 
 void SortPacketFeedbackVector(std::vector<webrtc::PacketFeedback>* input) {
@@ -326,15 +331,19 @@ SendSideCongestionController::SendSideCongestionController(
     : clock_(clock),
       pacer_(pacer),
       transport_feedback_adapter_(clock_),
-      controller_factory_(ControllerFactory(event_log)),
+      controller_factory_with_feedback_(MaybeCreateBbrFactory()),
+      controller_factory_fallback_(
+          rtc::MakeUnique<GoogCcNetworkControllerFactory>(event_log)),
       pacer_controller_(MakeUnique<PacerController>(pacer_)),
-      process_interval_(controller_factory_->GetProcessInterval()),
+      process_interval_(controller_factory_fallback_->GetProcessInterval()),
       observer_(nullptr),
       send_side_bwe_with_overhead_(
           webrtc::field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")),
       transport_overhead_bytes_per_packet_(0),
       network_available_(false),
       periodic_tasks_enabled_(true),
+      packet_feedback_available_(false),
+      feedback_only_controller_(false),
       pacer_queue_update_task_(nullptr),
       controller_task_(nullptr),
       task_queue_(MakeUnique<rtc::TaskQueue>("SendSideCCQueue")) {
@@ -357,21 +366,44 @@ SendSideCongestionController::SendSideCongestionController(
 // bandwidth is set before this class is initialized so the controllers can be
 // created in the constructor.
 void SendSideCongestionController::MaybeCreateControllers() {
-  if (controller_ || !network_available_ || !observer_)
+  if (!controller_)
+    MaybeRecreateControllers();
+}
+
+void SendSideCongestionController::MaybeRecreateControllers() {
+  if (!network_available_ || !observer_)
     return;
+  if (!control_handler_) {
+    control_handler_ = MakeUnique<send_side_cc_internal::ControlHandler>(
+        observer_, pacer_controller_.get(), clock_);
+  }
 
   initial_config_.constraints.at_time =
       Timestamp::ms(clock_->TimeInMilliseconds());
   initial_config_.stream_based_config = streams_config_;
 
-  control_handler_ = MakeUnique<send_side_cc_internal::ControlHandler>(
-      observer_, pacer_controller_.get(), clock_);
+  const bool feedback_only_controller =
+      packet_feedback_available_ && controller_factory_with_feedback_;
 
-  controller_ =
-      controller_factory_->Create(control_handler_.get(), initial_config_);
-  UpdateStreamsConfig();
-  UpdateControllerWithTimeInterval();
-  StartProcessPeriodicTasks();
+  if (!controller_ || (feedback_only_controller != feedback_only_controller_)) {
+    if (feedback_only_controller) {
+      RTC_LOG(LS_INFO) << "Creating feedback based only controller";
+      controller_ = controller_factory_with_feedback_->Create(
+          control_handler_.get(), initial_config_);
+      process_interval_ =
+          controller_factory_with_feedback_->GetProcessInterval();
+    } else {
+      RTC_LOG(LS_INFO) << "Creating fallback controller";
+      controller_ = controller_factory_fallback_->Create(control_handler_.get(),
+                                                         initial_config_);
+      process_interval_ = controller_factory_fallback_->GetProcessInterval();
+    }
+    feedback_only_controller_ = feedback_only_controller;
+    UpdateStreamsConfig();
+    UpdateControllerWithTimeInterval();
+    StartProcessPeriodicTasks();
+  }
+  RTC_DCHECK(controller_);
 }
 
 SendSideCongestionController::~SendSideCongestionController() {
@@ -484,7 +516,13 @@ RtcpBandwidthObserver* SendSideCongestionController::GetBandwidthObserver() {
 }
 
 void SendSideCongestionController::SetPerPacketFeedbackAvailable(
-    bool available) {}
+    bool available) {
+  task_queue_->PostTask([this, available]() {
+    RTC_DCHECK_RUN_ON(task_queue_ptr_);
+    packet_feedback_available_ = available;
+    MaybeRecreateControllers();
+  });
+}
 
 void SendSideCongestionController::EnablePeriodicAlrProbing(bool enable) {
   task_queue_->PostTask([this, enable]() {

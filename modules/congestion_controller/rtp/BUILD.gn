@@ -44,6 +44,7 @@ rtc_static_library("congestion_controller") {
     "../../../rtc_base:rtc_task_queue_api",
     "../../../rtc_base:safe_minmax",
     "../../../rtc_base:sequenced_task_checker",
+    "../../../rtc_base/experiments:congestion_controller_experiment",
     "../../../system_wrappers",
     "../../../system_wrappers:field_trial_api",
     "../../../system_wrappers:metrics_api",
@@ -51,6 +52,7 @@ rtc_static_library("congestion_controller") {
     "../../pacing",
     "../../remote_bitrate_estimator",
     "../../rtp_rtcp:rtp_rtcp_format",
+    "../bbr",
     "../goog_cc",
     "../network_control",
   ]

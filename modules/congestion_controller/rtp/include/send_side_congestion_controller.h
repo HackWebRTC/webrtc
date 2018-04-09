@@ -151,6 +151,8 @@ class SendSideCongestionController
 
  private:
   void MaybeCreateControllers() RTC_RUN_ON(task_queue_ptr_);
+  void MaybeRecreateControllers() RTC_RUN_ON(task_queue_ptr_);
+
   void StartProcessPeriodicTasks() RTC_RUN_ON(task_queue_ptr_);
   void UpdateControllerWithTimeInterval() RTC_RUN_ON(task_queue_ptr_);
   void UpdatePacerQueue() RTC_RUN_ON(task_queue_ptr_);
@@ -167,7 +169,10 @@ class SendSideCongestionController
   // TODO(srte): Move all access to feedback adapter to task queue.
   TransportFeedbackAdapter transport_feedback_adapter_;
 
-  const std::unique_ptr<NetworkControllerFactoryInterface> controller_factory_;
+  const std::unique_ptr<NetworkControllerFactoryInterface>
+      controller_factory_with_feedback_ RTC_GUARDED_BY(task_queue_ptr_);
+  const std::unique_ptr<NetworkControllerFactoryInterface>
+      controller_factory_fallback_ RTC_GUARDED_BY(task_queue_ptr_);
 
   const std::unique_ptr<PacerController> pacer_controller_
       RTC_GUARDED_BY(task_queue_ptr_);
@@ -195,6 +200,8 @@ class SendSideCongestionController
   std::atomic<size_t> transport_overhead_bytes_per_packet_;
   bool network_available_ RTC_GUARDED_BY(task_queue_ptr_);
   bool periodic_tasks_enabled_ RTC_GUARDED_BY(task_queue_ptr_);
+  bool packet_feedback_available_ RTC_GUARDED_BY(task_queue_ptr_);
+  bool feedback_only_controller_ RTC_GUARDED_BY(task_queue_ptr_);
   send_side_cc_internal::PeriodicTask* pacer_queue_update_task_
       RTC_GUARDED_BY(task_queue_ptr_);
   send_side_cc_internal::PeriodicTask* controller_task_

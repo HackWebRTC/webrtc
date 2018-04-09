@@ -117,6 +117,7 @@ class BbrNetworkController : public NetworkControllerInterface {
   struct BbrControllerConfig {
     // Default config based on default QUIC config
     static BbrControllerConfig DefaultConfig();
+    static BbrControllerConfig ExperimentConfig();
 
     double probe_bw_pacing_gain_offset;
     double encoder_rate_gain;

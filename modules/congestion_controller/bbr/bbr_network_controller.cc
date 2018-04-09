@@ -18,6 +18,7 @@
 #include "modules/congestion_controller/network_control/include/network_units.h"
 #include "modules/congestion_controller/network_control/include/network_units_to_string.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/experiments/congestion_controller_experiment.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/system/fallthrough.h"
 
@@ -123,6 +124,40 @@ BbrNetworkController::BbrControllerConfig::DefaultConfig() {
   return config;
 }
 
+BbrNetworkController::BbrControllerConfig
+BbrNetworkController::BbrControllerConfig::ExperimentConfig() {
+  auto exp = CongestionControllerExperiment::GetBbrExperimentConfig();
+  if (exp) {
+    BbrControllerConfig config;
+    config.exit_startup_on_loss = exp->exit_startup_on_loss;
+    config.exit_startup_rtt_threshold_ms = exp->exit_startup_rtt_threshold_ms;
+    config.fully_drain_queue = exp->fully_drain_queue;
+    config.initial_conservation_in_startup =
+        static_cast<RecoveryState>(exp->initial_conservation_in_startup);
+    config.num_startup_rtts = exp->num_startup_rtts;
+    config.probe_rtt_based_on_bdp = exp->probe_rtt_based_on_bdp;
+    config.probe_rtt_disabled_if_app_limited =
+        exp->probe_rtt_disabled_if_app_limited;
+    config.probe_rtt_skipped_if_similar_rtt =
+        exp->probe_rtt_skipped_if_similar_rtt;
+    config.rate_based_recovery = exp->rate_based_recovery;
+    config.rate_based_startup = exp->rate_based_startup;
+    config.slower_startup = exp->slower_startup;
+    config.encoder_rate_gain = exp->encoder_rate_gain;
+    config.encoder_rate_gain_in_probe_rtt = exp->encoder_rate_gain_in_probe_rtt;
+    config.max_ack_height_window_multiplier =
+        exp->max_ack_height_window_multiplier;
+    config.max_aggregation_bytes_multiplier =
+        exp->max_aggregation_bytes_multiplier;
+    config.probe_bw_pacing_gain_offset = exp->probe_bw_pacing_gain_offset;
+    config.probe_rtt_congestion_window_gain =
+        exp->probe_rtt_congestion_window_gain;
+    return config;
+  } else {
+    return DefaultConfig();
+  }
+}
+
 BbrNetworkController::DebugState::DebugState(const BbrNetworkController& sender)
     : mode(sender.mode_),
       max_bandwidth(sender.max_bandwidth_.GetBest()),
@@ -154,7 +189,7 @@ BbrNetworkController::BbrNetworkController(NetworkControllerObserver* observer,
       congestion_window_gain_constant_(kProbeBWCongestionWindowGain),
       rtt_variance_weight_(kBbrRttVariationWeight),
       recovery_window_(max_congestion_window_) {
-  config_ = BbrControllerConfig::DefaultConfig();
+  config_ = BbrControllerConfig::ExperimentConfig();
   if (config.starting_bandwidth.IsFinite())
     default_bandwidth_ = config.starting_bandwidth;
   constraints_ = config.constraints;
