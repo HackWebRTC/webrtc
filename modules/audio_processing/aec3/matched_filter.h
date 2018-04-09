@@ -15,6 +15,7 @@
 #include <memory>
 #include <vector>
 
+#include "api/array_view.h"
 #include "api/optional.h"
 #include "modules/audio_processing/aec3/aec3_common.h"
 #include "modules/audio_processing/aec3/downsampled_render_buffer.h"

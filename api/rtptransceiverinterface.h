@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 
+#include "api/array_view.h"
 #include "api/optional.h"
 #include "api/rtpreceiverinterface.h"
 #include "api/rtpsenderinterface.h"

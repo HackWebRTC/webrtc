@@ -12,6 +12,8 @@
 #include <string>
 #include <vector>
 
+#include "rtc_base/checks.h"
+
 namespace webrtc {
 
 ConfigReader::ConfigReader(const std::string& config_file_path)
