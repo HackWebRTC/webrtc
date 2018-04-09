@@ -11,13 +11,13 @@
 #define CALL_AUDIO_STATE_H_
 
 #include "api/audio/audio_mixer.h"
+#include "modules/audio_device/include/audio_device.h"
+#include "modules/audio_processing/include/audio_processing.h"
 #include "rtc_base/refcount.h"
 #include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 
-class AudioDeviceModule;
-class AudioProcessing;
 class AudioTransport;
 
 // AudioState holds the state which must be shared between multiple instances of
@@ -25,6 +25,9 @@ class AudioTransport;
 class AudioState : public rtc::RefCountInterface {
  public:
   struct Config {
+    Config();
+    ~Config();
+
     // The audio mixer connected to active receive streams. One per
     // AudioState.
     rtc::scoped_refptr<AudioMixer> audio_mixer;
@@ -65,7 +68,7 @@ class AudioState : public rtc::RefCountInterface {
   static rtc::scoped_refptr<AudioState> Create(
       const AudioState::Config& config);
 
-  virtual ~AudioState() {}
+  ~AudioState() override {}
 };
 }  // namespace webrtc
 

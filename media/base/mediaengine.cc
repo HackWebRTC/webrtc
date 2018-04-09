@@ -12,6 +12,9 @@
 
 namespace cricket {
 
+RtpCapabilities::RtpCapabilities() = default;
+RtpCapabilities::~RtpCapabilities() = default;
+
 webrtc::RtpParameters CreateRtpParametersWithOneEncoding() {
   webrtc::RtpParameters parameters;
   webrtc::RtpEncodingParameters encoding;

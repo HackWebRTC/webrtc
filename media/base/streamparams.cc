@@ -38,6 +38,9 @@ bool GetStream(const StreamParamsVec& streams,
   return found != nullptr;
 }
 
+MediaStreams::MediaStreams() = default;
+MediaStreams::~MediaStreams() = default;
+
 bool MediaStreams::GetAudioStream(
     const StreamSelector& selector, StreamParams* stream) {
   return GetStream(audio_, selector, stream);
@@ -100,6 +103,16 @@ static std::string SsrcsToString(const std::vector<uint32_t>& ssrcs) {
   return ost.str();
 }
 
+SsrcGroup::SsrcGroup(const std::string& usage,
+                     const std::vector<uint32_t>& ssrcs)
+    : semantics(usage), ssrcs(ssrcs) {}
+SsrcGroup::SsrcGroup(const SsrcGroup&) = default;
+SsrcGroup::SsrcGroup(SsrcGroup&&) = default;
+SsrcGroup::~SsrcGroup() = default;
+
+SsrcGroup& SsrcGroup::operator=(const SsrcGroup&) = default;
+SsrcGroup& SsrcGroup::operator=(SsrcGroup&&) = default;
+
 bool SsrcGroup::has_semantics(const std::string& semantics_in) const {
   return (semantics == semantics_in && ssrcs.size() > 0);
 }
@@ -112,6 +125,13 @@ std::string SsrcGroup::ToString() const {
   ost << "}";
   return ost.str();
 }
+
+StreamParams::StreamParams() = default;
+StreamParams::StreamParams(const StreamParams&) = default;
+StreamParams::StreamParams(StreamParams&&) = default;
+StreamParams::~StreamParams() = default;
+StreamParams& StreamParams::operator=(const StreamParams&) = default;
+StreamParams& StreamParams::operator=(StreamParams&&) = default;
 
 std::string StreamParams::ToString() const {
   std::ostringstream ost;

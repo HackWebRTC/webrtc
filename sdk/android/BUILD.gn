@@ -141,11 +141,6 @@ rtc_source_set("native_api_audio_device_module") {
   if (rtc_enable_android_aaudio) {
     deps += [ ":aaudio_audio_device_jni" ]
   }
-
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
 }
 
 rtc_source_set("audio_device_base_jni") {
@@ -477,14 +472,6 @@ rtc_static_library("media_jni") {
     "../../modules/audio_device:audio_device",
     "../../modules/audio_processing:audio_processing",
   ]
-
-  if (is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [
-      "//build/config/clang:extra_warnings",
-      "//build/config/clang:find_bad_constructs",
-    ]
-  }
 }
 
 rtc_static_library("null_media_jni") {
@@ -495,14 +482,6 @@ rtc_static_library("null_media_jni") {
   deps = [
     ":base_jni",
   ]
-
-  if (is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [
-      "//build/config/clang:extra_warnings",
-      "//build/config/clang:find_bad_constructs",
-    ]
-  }
 }
 
 generate_jni("generated_peerconnection_jni") {
@@ -1166,14 +1145,6 @@ rtc_static_library("native_api_codecs") {
     "native_api/codecs/wrapper.cc",
     "native_api/codecs/wrapper.h",
   ]
-
-  if (is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [
-      "//build/config/clang:extra_warnings",
-      "//build/config/clang:find_bad_constructs",
-    ]
-  }
 
   deps = [
     ":base_jni",

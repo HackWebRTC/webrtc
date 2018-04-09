@@ -15,12 +15,9 @@
 #include <string>
 #include <vector>
 
-#include "api/fec_controller.h"
-#include "api/rtcerror.h"
 #include "call/audio_receive_stream.h"
 #include "call/audio_send_stream.h"
-#include "call/audio_state.h"
-#include "call/bitrate_constraints.h"
+#include "call/call_config.h"
 #include "call/flexfec_receive_stream.h"
 #include "call/rtp_transport_controller_send_interface.h"
 #include "call/video_receive_stream.h"
@@ -29,13 +26,9 @@
 #include "rtc_base/bitrateallocationstrategy.h"
 #include "rtc_base/copyonwritebuffer.h"
 #include "rtc_base/networkroute.h"
-#include "rtc_base/platform_file.h"
 #include "rtc_base/socket.h"
 
 namespace webrtc {
-
-class AudioProcessing;
-class RtcEventLog;
 
 enum class MediaType {
   ANY,
@@ -58,33 +51,6 @@ class PacketReceiver {
 
  protected:
   virtual ~PacketReceiver() {}
-};
-
-struct CallConfig {
-  explicit CallConfig(RtcEventLog* event_log) : event_log(event_log) {
-    RTC_DCHECK(event_log);
-  }
-
-  RTC_DEPRECATED static constexpr int kDefaultStartBitrateBps = 300000;
-
-  // Bitrate config used until valid bitrate estimates are calculated. Also
-  // used to cap total bitrate used. This comes from the remote connection.
-  BitrateConstraints bitrate_config;
-
-  // AudioState which is possibly shared between multiple calls.
-  // TODO(solenberg): Change this to a shared_ptr once we can use C++11.
-  rtc::scoped_refptr<AudioState> audio_state;
-
-  // Audio Processing Module to be used in this call.
-  // TODO(solenberg): Change this to a shared_ptr once we can use C++11.
-  AudioProcessing* audio_processing = nullptr;
-
-  // RtcEventLog to use for this call. Required.
-  // Use webrtc::RtcEventLog::CreateNull() for a null implementation.
-  RtcEventLog* event_log = nullptr;
-
-  // FecController to use for this call.
-  FecControllerFactoryInterface* fec_controller_factory = nullptr;
 };
 
 // A Call instance can contain several send and/or receive streams. All streams

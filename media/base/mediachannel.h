@@ -94,6 +94,9 @@ static std::string VectorToString(const std::vector<T>& vals) {
 // We are moving all of the setting of options to structs like this,
 // but some things currently still use flags.
 struct VideoOptions {
+  VideoOptions();
+  ~VideoOptions();
+
   void SetAll(const VideoOptions& change) {
     SetFrom(&video_noise_reduction, change.video_noise_reduction);
     SetFrom(&screencast_min_bitrate_kbps, change.screencast_min_bitrate_kbps);
@@ -176,17 +179,11 @@ class MediaChannel : public sigslot::has_slots<> {
   explicit MediaChannel(const MediaConfig& config)
       : enable_dscp_(config.enable_dscp), network_interface_(NULL) {}
   MediaChannel() : enable_dscp_(false), network_interface_(NULL) {}
-  virtual ~MediaChannel() {}
+  ~MediaChannel() override {}
 
   // Sets the abstract interface class for sending RTP/RTCP data.
-  virtual void SetInterface(NetworkInterface *iface) {
-    rtc::CritScope cs(&network_interface_crit_);
-    network_interface_ = iface;
-    SetDscp(enable_dscp_ ? PreferredDscp() : rtc::DSCP_DEFAULT);
-  }
-  virtual rtc::DiffServCodePoint PreferredDscp() const {
-    return rtc::DSCP_DEFAULT;
-  }
+  virtual void SetInterface(NetworkInterface* iface);
+  virtual rtc::DiffServCodePoint PreferredDscp() const;
   // Called when a RTP packet is received.
   virtual void OnPacketReceived(rtc::CopyOnWriteBuffer* packet,
                                 const rtc::PacketTime& packet_time) = 0;
@@ -217,9 +214,7 @@ class MediaChannel : public sigslot::has_slots<> {
   virtual bool RemoveRecvStream(uint32_t ssrc) = 0;
 
   // Returns the absoulte sendtime extension id value from media channel.
-  virtual int GetRtpSendTimeExtnId() const {
-    return -1;
-  }
+  virtual int GetRtpSendTimeExtnId() const;
 
   // Base method to send packet using NetworkInterface.
   bool SendPacket(rtc::CopyOnWriteBuffer* packet,
@@ -294,6 +289,8 @@ struct SsrcReceiverInfo {
 };
 
 struct MediaSenderInfo {
+  MediaSenderInfo();
+  ~MediaSenderInfo();
   void add_ssrc(const SsrcSenderInfo& stat) {
     local_stats.push_back(stat);
   }
@@ -339,6 +336,8 @@ struct MediaSenderInfo {
 };
 
 struct MediaReceiverInfo {
+  MediaReceiverInfo();
+  ~MediaReceiverInfo();
   void add_ssrc(const SsrcReceiverInfo& stat) {
     local_stats.push_back(stat);
   }
@@ -383,6 +382,8 @@ struct MediaReceiverInfo {
 };
 
 struct VoiceSenderInfo : public MediaSenderInfo {
+  VoiceSenderInfo();
+  ~VoiceSenderInfo();
   int ext_seqnum = 0;
   int jitter_ms = 0;
   int audio_level = 0;
@@ -404,6 +405,8 @@ struct VoiceSenderInfo : public MediaSenderInfo {
 };
 
 struct VoiceReceiverInfo : public MediaReceiverInfo {
+  VoiceReceiverInfo();
+  ~VoiceReceiverInfo();
   int ext_seqnum = 0;
   int jitter_ms = 0;
   int jitter_buffer_ms = 0;
@@ -447,6 +450,8 @@ struct VoiceReceiverInfo : public MediaReceiverInfo {
 };
 
 struct VideoSenderInfo : public MediaSenderInfo {
+  VideoSenderInfo();
+  ~VideoSenderInfo();
   std::vector<SsrcGroup> ssrc_groups;
   // TODO(hbos): Move this to |VideoMediaInfo::send_codecs|?
   std::string encoder_implementation_name;
@@ -473,6 +478,8 @@ struct VideoSenderInfo : public MediaSenderInfo {
 };
 
 struct VideoReceiverInfo : public MediaReceiverInfo {
+  VideoReceiverInfo();
+  ~VideoReceiverInfo();
   std::vector<SsrcGroup> ssrc_groups;
   // TODO(hbos): Move this to |VideoMediaInfo::receive_codecs|?
   std::string decoder_implementation_name;
@@ -547,6 +554,8 @@ struct BandwidthEstimationInfo {
 typedef std::map<int, webrtc::RtpCodecParameters> RtpCodecParametersMap;
 
 struct VoiceMediaInfo {
+  VoiceMediaInfo();
+  ~VoiceMediaInfo();
   void Clear() {
     senders.clear();
     receivers.clear();
@@ -560,6 +569,8 @@ struct VoiceMediaInfo {
 };
 
 struct VideoMediaInfo {
+  VideoMediaInfo();
+  ~VideoMediaInfo();
   void Clear() {
     senders.clear();
     receivers.clear();
@@ -577,6 +588,8 @@ struct VideoMediaInfo {
 };
 
 struct DataMediaInfo {
+  DataMediaInfo();
+  ~DataMediaInfo();
   void Clear() {
     senders.clear();
     receivers.clear();
@@ -636,14 +649,12 @@ struct RtpSendParameters : RtpParameters<Codec> {
 };
 
 struct AudioSendParameters : RtpSendParameters<AudioCodec> {
+  AudioSendParameters();
+  ~AudioSendParameters() override;
   AudioOptions options;
 
  protected:
-  std::map<std::string, std::string> ToStringMap() const override {
-    auto params = RtpSendParameters<AudioCodec>::ToStringMap();
-    params["options"] = options.ToString();
-    return params;
-  }
+  std::map<std::string, std::string> ToStringMap() const override;
 };
 
 struct AudioRecvParameters : RtpParameters<AudioCodec> {
@@ -654,7 +665,7 @@ class VoiceMediaChannel : public MediaChannel {
   VoiceMediaChannel() {}
   explicit VoiceMediaChannel(const MediaConfig& config)
       : MediaChannel(config) {}
-  virtual ~VoiceMediaChannel() {}
+  ~VoiceMediaChannel() override {}
   virtual bool SetSendParameters(const AudioSendParameters& params) = 0;
   virtual bool SetRecvParameters(const AudioRecvParameters& params) = 0;
   virtual webrtc::RtpParameters GetRtpSendParameters(uint32_t ssrc) const = 0;
@@ -702,6 +713,8 @@ class VoiceMediaChannel : public MediaChannel {
 // TODO(deadbeef): Rename to VideoSenderParameters, since they're intended to
 // encapsulate all the parameters needed for a video RtpSender.
 struct VideoSendParameters : RtpSendParameters<VideoCodec> {
+  VideoSendParameters();
+  ~VideoSendParameters() override;
   // Use conference mode? This flag comes from the remote
   // description's SDP line 'a=x-google-flag:conference', copied over
   // by VideoChannel::SetRemoteContent_w, and ultimately used by
@@ -711,11 +724,7 @@ struct VideoSendParameters : RtpSendParameters<VideoCodec> {
   bool conference_mode = false;
 
  protected:
-  std::map<std::string, std::string> ToStringMap() const override {
-    auto params = RtpSendParameters<VideoCodec>::ToStringMap();
-    params["conference_mode"] = (conference_mode ? "yes" : "no");
-    return params;
-  }
+  std::map<std::string, std::string> ToStringMap() const override;
 };
 
 // TODO(deadbeef): Rename to VideoReceiverParameters, since they're intended to
@@ -728,7 +737,7 @@ class VideoMediaChannel : public MediaChannel {
   VideoMediaChannel() {}
   explicit VideoMediaChannel(const MediaConfig& config)
       : MediaChannel(config) {}
-  virtual ~VideoMediaChannel() {}
+  ~VideoMediaChannel() override {}
 
   virtual bool SetSendParameters(const VideoSendParameters& params) = 0;
   virtual bool SetRecvParameters(const VideoRecvParameters& params) = 0;
@@ -837,21 +846,21 @@ struct DataRecvParameters : RtpParameters<DataCodec> {
 
 class DataMediaChannel : public MediaChannel {
  public:
-  DataMediaChannel() {}
-  explicit DataMediaChannel(const MediaConfig& config) : MediaChannel(config) {}
-  virtual ~DataMediaChannel() {}
+  DataMediaChannel();
+  explicit DataMediaChannel(const MediaConfig& config);
+  ~DataMediaChannel() override;
 
   virtual bool SetSendParameters(const DataSendParameters& params) = 0;
   virtual bool SetRecvParameters(const DataRecvParameters& params) = 0;
 
   // TODO(pthatcher): Implement this.
-  virtual bool GetStats(DataMediaInfo* info) { return true; }
+  virtual bool GetStats(DataMediaInfo* info);
 
   virtual bool SetSend(bool send) = 0;
   virtual bool SetReceive(bool receive) = 0;
 
-  virtual void OnNetworkRouteChanged(const std::string& transport_name,
-                                     const rtc::NetworkRoute& network_route) {}
+  void OnNetworkRouteChanged(const std::string& transport_name,
+                             const rtc::NetworkRoute& network_route) override {}
 
   virtual bool SendData(
       const SendDataParams& params,

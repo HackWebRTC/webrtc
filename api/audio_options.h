@@ -23,6 +23,8 @@ namespace cricket {
 // We are moving all of the setting of options to structs like this,
 // but some things currently still use flags.
 struct AudioOptions {
+  AudioOptions();
+  ~AudioOptions();
   void SetAll(const AudioOptions& change) {
     SetFrom(&echo_cancellation, change.echo_cancellation);
 #if defined(WEBRTC_IOS)

@@ -36,10 +36,8 @@ class FlexfecReceiveStream : public RtpPacketSinkInterface {
   };
 
   struct Config {
-    explicit Config(Transport* rtcp_send_transport)
-        : rtcp_send_transport(rtcp_send_transport) {
-      RTC_DCHECK(rtcp_send_transport);
-    }
+    explicit Config(Transport* rtcp_send_transport);
+    ~Config();
 
     std::string ToString() const;
 

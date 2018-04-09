@@ -189,6 +189,7 @@ rtc_source_set("rtc_stats_api") {
 rtc_source_set("audio_options_api") {
   visibility = [ "*" ]
   sources = [
+    "audio_options.cc",
     "audio_options.h",
   ]
 

@@ -39,6 +39,8 @@ class Call;
 namespace cricket {
 
 struct RtpCapabilities {
+  RtpCapabilities();
+  ~RtpCapabilities();
   std::vector<webrtc::RtpExtension> header_extensions;
 };
 

@@ -43,8 +43,12 @@ extern const char kFidSsrcGroupSemantics[];
 extern const char kSimSsrcGroupSemantics[];
 
 struct SsrcGroup {
-  SsrcGroup(const std::string& usage, const std::vector<uint32_t>& ssrcs)
-      : semantics(usage), ssrcs(ssrcs) {}
+  SsrcGroup(const std::string& usage, const std::vector<uint32_t>& ssrcs);
+  SsrcGroup(const SsrcGroup&);
+  SsrcGroup(SsrcGroup&&);
+  ~SsrcGroup();
+  SsrcGroup& operator=(const SsrcGroup&);
+  SsrcGroup& operator=(SsrcGroup&&);
 
   bool operator==(const SsrcGroup& other) const {
     return (semantics == other.semantics && ssrcs == other.ssrcs);
@@ -62,6 +66,13 @@ struct SsrcGroup {
 };
 
 struct StreamParams {
+  StreamParams();
+  StreamParams(const StreamParams&);
+  StreamParams(StreamParams&&);
+  ~StreamParams();
+  StreamParams& operator=(const StreamParams&);
+  StreamParams& operator=(StreamParams&&);
+
   static StreamParams CreateLegacy(uint32_t ssrc) {
     StreamParams stream;
     stream.ssrcs.push_back(ssrc);
@@ -216,7 +227,8 @@ typedef std::vector<StreamParams> StreamParamsVec;
 // See https://code.google.com/p/webrtc/issues/detail?id=4107
 struct MediaStreams {
  public:
-  MediaStreams() {}
+  MediaStreams();
+  ~MediaStreams();
   void CopyFrom(const MediaStreams& sources);
 
   bool empty() const {
