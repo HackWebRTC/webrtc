@@ -98,7 +98,13 @@ TEST_F(FullStackTest, GeneratorWithoutPacketLossMultiplexI420AFrame) {
 
 #endif  // !defined(RTC_DISABLE_VP9)
 
-TEST_F(FullStackTest, ParisQcifWithoutPacketLoss) {
+#if defined(WEBRTC_LINUX)
+// Crashes on the linux trusty perf bot: bugs.webrtc.org/9129.
+#define MAYBE_ParisQcifWithoutPacketLoss DISABLED_ParisQcifWithoutPacketLoss
+#else
+#define MAYBE_ParisQcifWithoutPacketLoss ParisQcifWithoutPacketLoss
+#endif
+TEST_F(FullStackTest, MAYBE_ParisQcifWithoutPacketLoss) {
   VideoQualityTest::Params paris_qcif;
   paris_qcif.call.send_side_bwe = true;
   paris_qcif.video[0] = {true,   176,    144,   30,    300000,
