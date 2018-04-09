@@ -21,8 +21,8 @@ std::unique_ptr<DesktopCapturer> DesktopCapturer::CreateRawScreenCapturer(
     return nullptr;
   }
 
-  std::unique_ptr<ScreenCapturerMac> capturer(
-      new ScreenCapturerMac(options.configuration_monitor(), options.detect_updated_region()));
+  std::unique_ptr<ScreenCapturerMac> capturer(new ScreenCapturerMac(
+      options.configuration_monitor(), options.detect_updated_region(), options.allow_iosurface()));
   if (!capturer.get()->Init()) {
     return nullptr;
   }

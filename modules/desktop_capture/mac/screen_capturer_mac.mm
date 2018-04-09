@@ -12,7 +12,7 @@
 
 #include "modules/desktop_capture/mac/screen_capturer_mac.h"
 
-#include "modules/desktop_capture/mac/desktop_frame_cgimage.h"
+#include "modules/desktop_capture/mac/desktop_frame_provider.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/logging.h"
@@ -215,10 +215,14 @@ rtc::ScopedCFTypeRef<CGImageRef> CreateExcludedWindowRegionImage(const DesktopRe
 
 ScreenCapturerMac::ScreenCapturerMac(
     rtc::scoped_refptr<DesktopConfigurationMonitor> desktop_config_monitor,
-    bool detect_updated_region)
+    bool detect_updated_region,
+    bool allow_iosurface)
     : detect_updated_region_(detect_updated_region),
-      desktop_config_monitor_(desktop_config_monitor) {
+      desktop_config_monitor_(desktop_config_monitor),
+      desktop_frame_provider_(allow_iosurface) {
   display_stream_manager_ = new DisplayStreamManager;
+
+  RTC_LOG(LS_INFO) << "Allow IOSurface: " << allow_iosurface;
 }
 
 ScreenCapturerMac::~ScreenCapturerMac() {
@@ -406,8 +410,8 @@ bool ScreenCapturerMac::CgBlit(const DesktopFrame& frame, const DesktopRegion& r
       }
     }
 
-    std::unique_ptr<DesktopFrameCGImage> frame_source =
-        DesktopFrameCGImage::CreateForDisplay(display_config.id);
+    std::unique_ptr<DesktopFrame> frame_source =
+        desktop_frame_provider_.TakeLatestFrameForDisplay(display_config.id);
     if (!frame_source) {
       continue;
     }
@@ -518,7 +522,7 @@ bool ScreenCapturerMac::RegisterRefreshAndMoveHandlers() {
       if (count != 0) {
         // According to CGDisplayStream.h, it's safe to call
         // CGDisplayStreamStop() from within the callback.
-        ScreenRefresh(count, rects, display_origin);
+        ScreenRefresh(display_id, count, rects, display_origin, frame_surface);
       }
     };
 
@@ -547,12 +551,17 @@ bool ScreenCapturerMac::RegisterRefreshAndMoveHandlers() {
 }
 
 void ScreenCapturerMac::UnregisterRefreshAndMoveHandlers() {
+  // Release obsolete io surfaces.
+  desktop_frame_provider_.Release();
+
   display_stream_manager_->UnregisterActiveStreams();
 }
 
-void ScreenCapturerMac::ScreenRefresh(CGRectCount count,
+void ScreenCapturerMac::ScreenRefresh(CGDirectDisplayID display_id,
+                                      CGRectCount count,
                                       const CGRect* rect_array,
-                                      DesktopVector display_origin) {
+                                      DesktopVector display_origin,
+                                      IOSurfaceRef io_surface) {
   if (screen_pixel_bounds_.is_empty()) ScreenConfigurationChanged();
 
   // The refresh rects are in display coordinates. We want to translate to
@@ -576,6 +585,9 @@ void ScreenCapturerMac::ScreenRefresh(CGRectCount count,
   }
 
   helper_.InvalidateRegion(region);
+
+  desktop_frame_provider_.InvalidateIOSurface(
+      display_id, rtc::ScopedCFTypeRef<IOSurfaceRef>(io_surface, rtc::RetainPolicy::RETAIN));
 }
 
 std::unique_ptr<DesktopFrame> ScreenCapturerMac::CreateFrame() {
