@@ -16,11 +16,8 @@
 
 namespace webrtc {
 namespace test {
-class MockNetworkControllerObserver : public NetworkControllerObserver {
+class MockTargetTransferRateObserver : public TargetTransferRateObserver {
  public:
-  MOCK_METHOD1(OnCongestionWindow, void(CongestionWindow));
-  MOCK_METHOD1(OnPacerConfig, void(PacerConfig));
-  MOCK_METHOD1(OnProbeClusterConfig, void(ProbeClusterConfig));
   MOCK_METHOD1(OnTargetTransferRate, void(TargetTransferRate));
 };
 }  // namespace test

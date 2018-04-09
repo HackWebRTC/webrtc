@@ -21,7 +21,6 @@ class BbrNetworkControllerFactory : public NetworkControllerFactoryInterface {
  public:
   BbrNetworkControllerFactory();
   std::unique_ptr<NetworkControllerInterface> Create(
-      NetworkControllerObserver* observer,
       NetworkControllerConfig config) override;
   TimeDelta GetProcessInterval() const override;
 };

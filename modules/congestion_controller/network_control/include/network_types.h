@@ -63,6 +63,7 @@ struct SentPacket {
 };
 
 struct PacerQueueUpdate {
+  Timestamp at_time;
   TimeDelta expected_queue_time;
 };
 
@@ -158,6 +159,19 @@ struct TargetTransferRate {
   DataRate target_rate;
   // The estimate on which the target rate is based on.
   NetworkEstimate network_estimate;
+};
+
+// Contains updates of network controller comand state. Using optionals to
+// indicate whether a member has been updated. The array of probe clusters
+// should be used to send out probes if not empty.
+struct NetworkControlUpdate {
+  NetworkControlUpdate();
+  NetworkControlUpdate(const NetworkControlUpdate&);
+  ~NetworkControlUpdate();
+  rtc::Optional<CongestionWindow> congestion_window;
+  rtc::Optional<PacerConfig> pacer_config;
+  std::vector<ProbeClusterConfig> probe_cluster_configs;
+  rtc::Optional<TargetTransferRate> target_rate;
 };
 
 // Process control

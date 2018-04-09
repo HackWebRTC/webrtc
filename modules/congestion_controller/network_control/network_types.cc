@@ -51,4 +51,9 @@ std::vector<PacketResult> TransportPacketsFeedback::PacketsWithFeedback()
   return packet_feedbacks;
 }
 
+NetworkControlUpdate::NetworkControlUpdate() = default;
+NetworkControlUpdate::NetworkControlUpdate(const NetworkControlUpdate&) =
+    default;
+NetworkControlUpdate::~NetworkControlUpdate() = default;
+
 }  // namespace webrtc

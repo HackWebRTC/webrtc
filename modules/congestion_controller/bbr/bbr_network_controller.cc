@@ -176,10 +176,8 @@ BbrNetworkController::DebugState::DebugState(const BbrNetworkController& sender)
 
 BbrNetworkController::DebugState::DebugState(const DebugState& state) = default;
 
-BbrNetworkController::BbrNetworkController(NetworkControllerObserver* observer,
-                                           NetworkControllerConfig config)
-    : observer_(observer),
-      random_(10),
+BbrNetworkController::BbrNetworkController(NetworkControllerConfig config)
+    : random_(10),
       max_bandwidth_(kBandwidthWindowSize, DataRate::Zero(), 0),
       default_bandwidth_(kInitialBandwidth),
       max_ack_height_(kBandwidthWindowSize, DataSize::Zero(), 0),
@@ -195,7 +193,6 @@ BbrNetworkController::BbrNetworkController(NetworkControllerObserver* observer,
   constraints_ = config.constraints;
   Reset();
   EnterStartupMode();
-  SignalUpdatedRates(config.constraints.at_time);
 }
 
 BbrNetworkController::~BbrNetworkController() {}
@@ -213,7 +210,7 @@ void BbrNetworkController::Reset() {
   EnterStartupMode();
 }
 
-void BbrNetworkController::SignalUpdatedRates(Timestamp at_time) {
+NetworkControlUpdate BbrNetworkController::CreateRateUpdate(Timestamp at_time) {
   DataRate bandwidth = BandwidthEstimate();
   if (bandwidth.IsZero())
     bandwidth = default_bandwidth_;
@@ -237,7 +234,7 @@ void BbrNetworkController::SignalUpdatedRates(Timestamp at_time) {
       last_update_state_.pacing_rate == pacing_rate &&
       last_update_state_.target_rate == target_rate &&
       last_update_state_.probing_for_bandwidth == probing_for_bandwidth)
-    return;
+    return NetworkControlUpdate();
   last_update_state_.mode = mode_;
   last_update_state_.bandwidth = bandwidth;
   last_update_state_.rtt = rtt;
@@ -254,6 +251,8 @@ void BbrNetworkController::SignalUpdatedRates(Timestamp at_time) {
                    << ", Probing:" << probing_for_bandwidth
                    << ", pacing_gain: " << pacing_gain_;
 
+  NetworkControlUpdate update;
+
   TargetTransferRate target_rate_msg;
   target_rate_msg.network_estimate.at_time = at_time;
   target_rate_msg.network_estimate.bandwidth = bandwidth;
@@ -265,7 +264,7 @@ void BbrNetworkController::SignalUpdatedRates(Timestamp at_time) {
 
   target_rate_msg.target_rate = target_rate;
   target_rate_msg.at_time = at_time;
-  observer_->OnTargetTransferRate(target_rate_msg);
+  update.target_rate = target_rate_msg;
 
   PacerConfig pacer_config;
   // A small time window ensures an even pacing rate.
@@ -278,46 +277,56 @@ void BbrNetworkController::SignalUpdatedRates(Timestamp at_time) {
     pacer_config.pad_window = DataSize::Zero();
 
   pacer_config.at_time = at_time;
-  observer_->OnPacerConfig(pacer_config);
+  update.pacer_config = pacer_config;
 
   CongestionWindow congestion_window;
   congestion_window.data_window = GetCongestionWindow();
-  observer_->OnCongestionWindow(congestion_window);
+  update.congestion_window = congestion_window;
+  return update;
 }
 
-void BbrNetworkController::OnNetworkAvailability(NetworkAvailability msg) {
+NetworkControlUpdate BbrNetworkController::OnNetworkAvailability(
+    NetworkAvailability msg) {
   Reset();
   rtt_stats_.OnConnectionMigration();
-  SignalUpdatedRates(msg.at_time);
+  return CreateRateUpdate(msg.at_time);
 }
 
-void BbrNetworkController::OnNetworkRouteChange(NetworkRouteChange msg) {
+NetworkControlUpdate BbrNetworkController::OnNetworkRouteChange(
+    NetworkRouteChange msg) {
   constraints_ = msg.constraints;
   Reset();
   if (msg.starting_rate.IsFinite())
     default_bandwidth_ = msg.starting_rate;
   rtt_stats_.OnConnectionMigration();
-  SignalUpdatedRates(msg.at_time);
+  return CreateRateUpdate(msg.at_time);
 }
 
-void BbrNetworkController::OnProcessInterval(ProcessInterval) {}
+NetworkControlUpdate BbrNetworkController::OnProcessInterval(
+    ProcessInterval msg) {
+  return CreateRateUpdate(msg.at_time);
+}
 
-void BbrNetworkController::OnStreamsConfig(StreamsConfig msg) {}
+NetworkControlUpdate BbrNetworkController::OnStreamsConfig(StreamsConfig msg) {
+  return NetworkControlUpdate();
+}
 
-void BbrNetworkController::OnTargetRateConstraints(TargetRateConstraints msg) {
+NetworkControlUpdate BbrNetworkController::OnTargetRateConstraints(
+    TargetRateConstraints msg) {
   constraints_ = msg;
-  SignalUpdatedRates(msg.at_time);
+  return CreateRateUpdate(msg.at_time);
 }
 
 bool BbrNetworkController::InSlowStart() const {
   return mode_ == STARTUP;
 }
 
-void BbrNetworkController::OnSentPacket(SentPacket msg) {
+NetworkControlUpdate BbrNetworkController::OnSentPacket(SentPacket msg) {
   last_send_time_ = msg.send_time;
   if (!aggregation_epoch_start_time_.IsInitialized()) {
     aggregation_epoch_start_time_ = msg.send_time;
   }
+  return NetworkControlUpdate();
 }
 
 bool BbrNetworkController::CanSend(DataSize bytes_in_flight) {
@@ -365,7 +374,7 @@ bool BbrNetworkController::IsProbingForMoreBandwidth() const {
   return (mode_ == PROBE_BW && pacing_gain_ > 1) || mode_ == STARTUP;
 }
 
-void BbrNetworkController::OnTransportPacketsFeedback(
+NetworkControlUpdate BbrNetworkController::OnTransportPacketsFeedback(
     TransportPacketsFeedback msg) {
   Timestamp feedback_recv_time = msg.feedback_time;
   rtc::Optional<SentPacket> last_sent_packet =
@@ -443,12 +452,21 @@ void BbrNetworkController::OnTransportPacketsFeedback(
   CalculatePacingRate();
   CalculateCongestionWindow(total_acked_size);
   CalculateRecoveryWindow(total_acked_size, bytes_lost, bytes_in_flight);
-  SignalUpdatedRates(msg.feedback_time);
+  return CreateRateUpdate(msg.feedback_time);
 }
 
-void BbrNetworkController::OnRemoteBitrateReport(RemoteBitrateReport msg) {}
-void BbrNetworkController::OnRoundTripTimeUpdate(RoundTripTimeUpdate msg) {}
-void BbrNetworkController::OnTransportLossReport(TransportLossReport msg) {}
+NetworkControlUpdate BbrNetworkController::OnRemoteBitrateReport(
+    RemoteBitrateReport msg) {
+  return NetworkControlUpdate();
+}
+NetworkControlUpdate BbrNetworkController::OnRoundTripTimeUpdate(
+    RoundTripTimeUpdate msg) {
+  return NetworkControlUpdate();
+}
+NetworkControlUpdate BbrNetworkController::OnTransportLossReport(
+    TransportLossReport msg) {
+  return NetworkControlUpdate();
+}
 
 TimeDelta BbrNetworkController::GetMinRtt() const {
   return !min_rtt_.IsZero() ? min_rtt_

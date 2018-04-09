@@ -21,7 +21,6 @@ class GoogCcNetworkControllerFactory
  public:
   explicit GoogCcNetworkControllerFactory(RtcEventLog*);
   NetworkControllerInterface::uptr Create(
-      NetworkControllerObserver* observer,
       NetworkControllerConfig config) override;
   TimeDelta GetProcessInterval() const override;
 

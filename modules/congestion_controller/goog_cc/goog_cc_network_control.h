@@ -32,36 +32,36 @@ namespace webrtc_cc {
 class GoogCcNetworkController : public NetworkControllerInterface {
  public:
   GoogCcNetworkController(RtcEventLog* event_log,
-                          NetworkControllerObserver* observer,
                           NetworkControllerConfig config);
   ~GoogCcNetworkController() override;
 
   // NetworkControllerInterface
-  void OnNetworkAvailability(NetworkAvailability msg) override;
-  void OnNetworkRouteChange(NetworkRouteChange msg) override;
-  void OnProcessInterval(ProcessInterval msg) override;
-  void OnRemoteBitrateReport(RemoteBitrateReport msg) override;
-  void OnRoundTripTimeUpdate(RoundTripTimeUpdate msg) override;
-  void OnSentPacket(SentPacket msg) override;
-  void OnStreamsConfig(StreamsConfig msg) override;
-  void OnTargetRateConstraints(TargetRateConstraints msg) override;
-  void OnTransportLossReport(TransportLossReport msg) override;
-  void OnTransportPacketsFeedback(TransportPacketsFeedback msg) override;
+  NetworkControlUpdate OnNetworkAvailability(NetworkAvailability msg) override;
+  NetworkControlUpdate OnNetworkRouteChange(NetworkRouteChange msg) override;
+  NetworkControlUpdate OnProcessInterval(ProcessInterval msg) override;
+  NetworkControlUpdate OnRemoteBitrateReport(RemoteBitrateReport msg) override;
+  NetworkControlUpdate OnRoundTripTimeUpdate(RoundTripTimeUpdate msg) override;
+  NetworkControlUpdate OnSentPacket(SentPacket msg) override;
+  NetworkControlUpdate OnStreamsConfig(StreamsConfig msg) override;
+  NetworkControlUpdate OnTargetRateConstraints(
+      TargetRateConstraints msg) override;
+  NetworkControlUpdate OnTransportLossReport(TransportLossReport msg) override;
+  NetworkControlUpdate OnTransportPacketsFeedback(
+      TransportPacketsFeedback msg) override;
 
  private:
   void UpdateBitrateConstraints(TargetRateConstraints constraints,
                                 DataRate starting_rate);
-  void MaybeUpdateCongestionWindow();
-  void MaybeTriggerOnNetworkChanged(Timestamp at_time);
+  rtc::Optional<CongestionWindow> MaybeUpdateCongestionWindow();
+  NetworkControlUpdate MaybeTriggerOnNetworkChanged(Timestamp at_time);
   bool GetNetworkParameters(int32_t* estimated_bitrate_bps,
                             uint8_t* fraction_loss,
                             int64_t* rtt_ms,
                             Timestamp at_time);
-  void OnNetworkEstimate(NetworkEstimate msg);
-  void UpdatePacingRates(Timestamp at_time);
+  NetworkControlUpdate OnNetworkEstimate(NetworkEstimate msg);
+  PacerConfig UpdatePacingRates(Timestamp at_time);
 
   RtcEventLog* const event_log_;
-  NetworkControllerObserver* const observer_;
 
   const std::unique_ptr<ProbeController> probe_controller_;
 

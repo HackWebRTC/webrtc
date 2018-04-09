@@ -95,23 +95,24 @@ class BbrNetworkController : public NetworkControllerInterface {
     Timestamp end_of_app_limited_phase;
   };
 
-  BbrNetworkController(NetworkControllerObserver* observer,
-                       NetworkControllerConfig config);
+  explicit BbrNetworkController(NetworkControllerConfig config);
   ~BbrNetworkController() override;
 
   // NetworkControllerInterface
-  void OnNetworkAvailability(NetworkAvailability msg) override;
-  void OnNetworkRouteChange(NetworkRouteChange msg) override;
-  void OnProcessInterval(ProcessInterval msg) override;
-  void OnSentPacket(SentPacket msg) override;
-  void OnStreamsConfig(StreamsConfig msg) override;
-  void OnTargetRateConstraints(TargetRateConstraints msg) override;
-  void OnTransportPacketsFeedback(TransportPacketsFeedback msg) override;
+  NetworkControlUpdate OnNetworkAvailability(NetworkAvailability msg) override;
+  NetworkControlUpdate OnNetworkRouteChange(NetworkRouteChange msg) override;
+  NetworkControlUpdate OnProcessInterval(ProcessInterval msg) override;
+  NetworkControlUpdate OnSentPacket(SentPacket msg) override;
+  NetworkControlUpdate OnStreamsConfig(StreamsConfig msg) override;
+  NetworkControlUpdate OnTargetRateConstraints(
+      TargetRateConstraints msg) override;
+  NetworkControlUpdate OnTransportPacketsFeedback(
+      TransportPacketsFeedback msg) override;
 
   // Part of remote bitrate estimation api, not implemented for BBR
-  void OnRemoteBitrateReport(RemoteBitrateReport msg) override;
-  void OnRoundTripTimeUpdate(RoundTripTimeUpdate msg) override;
-  void OnTransportLossReport(TransportLossReport msg) override;
+  NetworkControlUpdate OnRemoteBitrateReport(RemoteBitrateReport msg) override;
+  NetworkControlUpdate OnRoundTripTimeUpdate(RoundTripTimeUpdate msg) override;
+  NetworkControlUpdate OnTransportLossReport(TransportLossReport msg) override;
 
  private:
   struct BbrControllerConfig {
@@ -168,7 +169,7 @@ class BbrNetworkController : public NetworkControllerInterface {
   };
 
   void Reset();
-  void SignalUpdatedRates(Timestamp at_time);
+  NetworkControlUpdate CreateRateUpdate(Timestamp at_time);
 
   bool InSlowStart() const;
   bool InRecovery() const;
@@ -260,7 +261,6 @@ class BbrNetworkController : public NetworkControllerInterface {
   void CalculateRecoveryWindow(DataSize bytes_acked,
                                DataSize bytes_lost,
                                DataSize bytes_in_flight);
-  NetworkControllerObserver* observer_;
 
   RttStats rtt_stats_;
   webrtc::Random random_;

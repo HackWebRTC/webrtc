@@ -19,9 +19,8 @@ namespace webrtc {
 BbrNetworkControllerFactory::BbrNetworkControllerFactory() {}
 
 std::unique_ptr<NetworkControllerInterface> BbrNetworkControllerFactory::Create(
-    NetworkControllerObserver* observer,
     NetworkControllerConfig config) {
-  return rtc::MakeUnique<bbr::BbrNetworkController>(observer, config);
+  return rtc::MakeUnique<bbr::BbrNetworkController>(config);
 }
 
 TimeDelta BbrNetworkControllerFactory::GetProcessInterval() const {

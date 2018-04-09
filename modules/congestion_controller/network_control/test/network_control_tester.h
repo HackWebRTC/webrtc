@@ -20,35 +20,13 @@
 
 namespace webrtc {
 namespace test {
-struct NetworkControlState {
-  NetworkControlState();
-  NetworkControlState(const NetworkControlState&);
-  ~NetworkControlState();
-  rtc::Optional<CongestionWindow> congestion_window;
-  rtc::Optional<PacerConfig> pacer_config;
-  rtc::Optional<ProbeClusterConfig> probe_config;
-  rtc::Optional<TargetTransferRate> target_rate;
-};
 
 // Produces one packet per time delta
 class SimpleTargetRateProducer {
  public:
-  static SentPacket ProduceNext(const NetworkControlState& state,
+  static SentPacket ProduceNext(const NetworkControlUpdate& state,
                                 Timestamp current_time,
                                 TimeDelta time_delta);
-};
-class NetworkControlCacher : public NetworkControllerObserver {
- public:
-  NetworkControlCacher();
-  ~NetworkControlCacher() override;
-  void OnCongestionWindow(CongestionWindow msg) override;
-  void OnPacerConfig(PacerConfig msg) override;
-  void OnProbeClusterConfig(ProbeClusterConfig) override;
-  void OnTargetTransferRate(TargetTransferRate msg) override;
-  NetworkControlState GetState() { return current_state_; }
-
- private:
-  NetworkControlState current_state_;
 };
 
 class NetworkControllerTester {
@@ -58,7 +36,7 @@ class NetworkControllerTester {
   // times (This allows the PacketProducer to be stateless). It returns a
   // SentPacket struct with actual send time and packet size.
   using PacketProducer = std::function<
-      SentPacket(const NetworkControlState&, Timestamp, TimeDelta)>;
+      SentPacket(const NetworkControlUpdate&, Timestamp, TimeDelta)>;
   NetworkControllerTester(NetworkControllerFactoryInterface* factory,
                           NetworkControllerConfig initial_config);
   ~NetworkControllerTester();
@@ -78,19 +56,19 @@ class NetworkControllerTester {
                      DataRate actual_bandwidth,
                      TimeDelta propagation_delay,
                      PacketProducer next_packet);
-  NetworkControlState GetState() { return cacher_.GetState(); }
+  NetworkControlUpdate GetState() { return state_; }
 
  private:
   PacketResult SimulateSend(SentPacket packet,
                             TimeDelta time_delta,
                             TimeDelta propagation_delay,
                             DataRate actual_bandwidth);
-  NetworkControlCacher cacher_;
   std::unique_ptr<NetworkControllerInterface> controller_;
   TimeDelta process_interval_;
   Timestamp current_time_;
   TimeDelta accumulated_delay_;
   std::deque<PacketResult> outstanding_packets_;
+  NetworkControlUpdate state_;
 };
 }  // namespace test
 }  // namespace webrtc

@@ -17,36 +17,33 @@
 #include "rtc_base/logging.h"
 namespace webrtc {
 namespace test {
-
-NetworkControlState::NetworkControlState() = default;
-NetworkControlState::~NetworkControlState() = default;
-NetworkControlState::NetworkControlState(const NetworkControlState&) = default;
-
-NetworkControlCacher::NetworkControlCacher() = default;
-NetworkControlCacher::~NetworkControlCacher() = default;
-
-void NetworkControlCacher::OnCongestionWindow(CongestionWindow msg) {
-  current_state_.congestion_window = msg;
-  RTC_LOG(LS_INFO) << "Received window=" << msg.data_window << "\n";
+namespace {
+void Update(NetworkControlUpdate* target, const NetworkControlUpdate& update) {
+  if (update.congestion_window) {
+    RTC_LOG(LS_INFO) << "Received window="
+                     << update.congestion_window->data_window << "\n";
+    target->congestion_window = update.congestion_window;
+  }
+  if (update.pacer_config) {
+    RTC_LOG(LS_INFO) << "Received pacing at:" << update.pacer_config->at_time
+                     << ": rate=" << update.pacer_config->data_rate() << "\n";
+    target->pacer_config = update.pacer_config;
+  }
+  if (update.target_rate) {
+    RTC_LOG(LS_INFO) << "Received target at:" << update.target_rate->at_time
+                     << ": rate=" << update.target_rate->target_rate << "\n";
+    target->target_rate = update.target_rate;
+  }
+  for (const auto& probe : update.probe_cluster_configs) {
+    target->probe_cluster_configs.push_back(probe);
+    RTC_LOG(LS_INFO) << "Received probe at:" << probe.at_time
+                     << ": target=" << probe.target_data_rate << "\n";
+  }
 }
-void NetworkControlCacher::OnPacerConfig(PacerConfig msg) {
-  current_state_.pacer_config = msg;
-  RTC_LOG(LS_INFO) << "Received pacing at:" << msg.at_time
-                   << ": rate=" << msg.data_rate() << "\n";
-}
-void NetworkControlCacher::OnProbeClusterConfig(ProbeClusterConfig msg) {
-  current_state_.probe_config = msg;
-  RTC_LOG(LS_INFO) << "Received probe at:" << msg.at_time
-                   << ": target=" << msg.target_data_rate << "\n";
-}
-void NetworkControlCacher::OnTargetTransferRate(TargetTransferRate msg) {
-  current_state_.target_rate = msg;
-  RTC_LOG(LS_INFO) << "Received target at:" << msg.at_time
-                   << ": rate=" << msg.target_rate << "\n";
-}
+}  // namespace
 
 SentPacket SimpleTargetRateProducer::ProduceNext(
-    const NetworkControlState& cache,
+    const NetworkControlUpdate& cache,
     Timestamp current_time,
     TimeDelta time_delta) {
   DataRate actual_send_rate =
@@ -63,8 +60,11 @@ NetworkControllerTester::NetworkControllerTester(
     : current_time_(Timestamp::seconds(100000)),
       accumulated_delay_(TimeDelta::ms(0)) {
   initial_config.constraints.at_time = current_time_;
-  controller_ = factory->Create(&cacher_, initial_config);
+  controller_ = factory->Create(initial_config);
   process_interval_ = factory->GetProcessInterval();
+  ProcessInterval interval_msg;
+  interval_msg.at_time = current_time_;
+  state_ = controller_->OnProcessInterval(interval_msg);
 }
 
 NetworkControllerTester::~NetworkControllerTester() = default;
@@ -94,21 +94,18 @@ void NetworkControllerTester::RunSimulation(TimeDelta duration,
   Timestamp last_process_time = current_time_;
   while (current_time_ - start_time < duration) {
     bool send_packet = true;
-    NetworkControlState control_state = cacher_.GetState();
-
-    if (control_state.congestion_window &&
-        control_state.congestion_window->enabled) {
+    if (state_.congestion_window && state_.congestion_window->enabled) {
       DataSize data_in_flight = DataSize::Zero();
       for (PacketResult& packet : outstanding_packets_)
         data_in_flight += packet.sent_packet->size;
-      if (data_in_flight > control_state.congestion_window->data_window)
+      if (data_in_flight > state_.congestion_window->data_window)
         send_packet = false;
     }
 
     if (send_packet) {
       SentPacket sent_packet =
-          next_packet(cacher_.GetState(), current_time_, packet_interval);
-      controller_->OnSentPacket(sent_packet);
+          next_packet(state_, current_time_, packet_interval);
+      Update(&state_, controller_->OnSentPacket(sent_packet));
       outstanding_packets_.push_back(SimulateSend(
           sent_packet, packet_interval, propagation_delay, actual_bandwidth));
     }
@@ -131,13 +128,13 @@ void NetworkControllerTester::RunSimulation(TimeDelta duration,
       feedback.data_in_flight = DataSize::Zero();
       for (PacketResult& packet : outstanding_packets_)
         feedback.data_in_flight += packet.sent_packet->size;
-      controller_->OnTransportPacketsFeedback(feedback);
+      Update(&state_, controller_->OnTransportPacketsFeedback(feedback));
     }
     current_time_ += packet_interval;
     if (current_time_ - last_process_time > process_interval_) {
       ProcessInterval interval_msg;
       interval_msg.at_time = current_time_;
-      controller_->OnProcessInterval(interval_msg);
+      Update(&state_, controller_->OnProcessInterval(interval_msg));
     }
   }
 }

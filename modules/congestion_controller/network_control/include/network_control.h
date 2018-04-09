@@ -28,19 +28,6 @@ class TargetTransferRateObserver {
   virtual ~TargetTransferRateObserver() = default;
 };
 
-// NetworkControllerObserver is an interface implemented by observers of network
-// controllers. It contains declarations of the possible configuration messages
-// that can be sent from a network controller implementation.
-class NetworkControllerObserver : public TargetTransferRateObserver {
- public:
-  // Called when congestion window configutation is changed.
-  virtual void OnCongestionWindow(CongestionWindow) = 0;
-  // Called when pacer configuration has changed.
-  virtual void OnPacerConfig(PacerConfig) = 0;
-  // Called to indicate that a new probe should be sent.
-  virtual void OnProbeClusterConfig(ProbeClusterConfig) = 0;
-};
-
 // Configuration sent to factory create function. The parameters here are
 // optional to use for a network controller implementation.
 struct NetworkControllerConfig {
@@ -67,26 +54,28 @@ class NetworkControllerInterface {
   virtual ~NetworkControllerInterface() = default;
 
   // Called when network availabilty changes.
-  virtual void OnNetworkAvailability(NetworkAvailability) = 0;
+  virtual NetworkControlUpdate OnNetworkAvailability(NetworkAvailability) = 0;
   // Called when the receiving or sending endpoint changes address.
-  virtual void OnNetworkRouteChange(NetworkRouteChange) = 0;
+  virtual NetworkControlUpdate OnNetworkRouteChange(NetworkRouteChange) = 0;
   // Called periodically with a periodicy as specified by
   // NetworkControllerFactoryInterface::GetProcessInterval.
-  virtual void OnProcessInterval(ProcessInterval) = 0;
+  virtual NetworkControlUpdate OnProcessInterval(ProcessInterval) = 0;
   // Called when remotely calculated bitrate is received.
-  virtual void OnRemoteBitrateReport(RemoteBitrateReport) = 0;
+  virtual NetworkControlUpdate OnRemoteBitrateReport(RemoteBitrateReport) = 0;
   // Called round trip time has been calculated by protocol specific mechanisms.
-  virtual void OnRoundTripTimeUpdate(RoundTripTimeUpdate) = 0;
+  virtual NetworkControlUpdate OnRoundTripTimeUpdate(RoundTripTimeUpdate) = 0;
   // Called when a packet is sent on the network.
-  virtual void OnSentPacket(SentPacket) = 0;
+  virtual NetworkControlUpdate OnSentPacket(SentPacket) = 0;
   // Called when the stream specific configuration has been updated.
-  virtual void OnStreamsConfig(StreamsConfig) = 0;
+  virtual NetworkControlUpdate OnStreamsConfig(StreamsConfig) = 0;
   // Called when target transfer rate constraints has been changed.
-  virtual void OnTargetRateConstraints(TargetRateConstraints) = 0;
+  virtual NetworkControlUpdate OnTargetRateConstraints(
+      TargetRateConstraints) = 0;
   // Called when a protocol specific calculation of packet loss has been made.
-  virtual void OnTransportLossReport(TransportLossReport) = 0;
+  virtual NetworkControlUpdate OnTransportLossReport(TransportLossReport) = 0;
   // Called with per packet feedback regarding receive time.
-  virtual void OnTransportPacketsFeedback(TransportPacketsFeedback) = 0;
+  virtual NetworkControlUpdate OnTransportPacketsFeedback(
+      TransportPacketsFeedback) = 0;
 };
 
 // NetworkControllerFactoryInterface is an interface for creating a network
@@ -97,7 +86,6 @@ class NetworkControllerFactoryInterface {
   // Used to create a new network controller, requires an observer to be
   // provided to handle callbacks.
   virtual NetworkControllerInterface::uptr Create(
-      NetworkControllerObserver* observer,
       NetworkControllerConfig config) = 0;
   // Returns the interval by which the network controller expects
   // OnProcessInterval calls.
