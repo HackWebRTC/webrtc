@@ -103,7 +103,9 @@
   id<RTCVideoViewShading> _shader;
   RTCNV12TextureCache *_nv12TextureCache;
   RTCI420TextureCache *_i420TextureCache;
-  RTCVideoFrame *_lastDrawnFrame;
+  // As timestamps should be unique between frames, will store last
+  // drawn frame timestamp instead of the whole frame to reduce memory usage.
+  int64_t _lastDrawnFrameTimeStampNs;
 }
 
 @synthesize delegate = _delegate;
@@ -229,7 +231,7 @@
   // The renderer will draw the frame to the framebuffer corresponding to the
   // one used by |view|.
   RTCVideoFrame *frame = self.videoFrame;
-  if (!frame || frame == _lastDrawnFrame) {
+  if (!frame || frame.timeStampNs == _lastDrawnFrameTimeStampNs) {
     return;
   }
   [self ensureGLContext];
@@ -246,6 +248,8 @@
                                       yPlane:_nv12TextureCache.yTexture
                                      uvPlane:_nv12TextureCache.uvTexture];
       [_nv12TextureCache releaseTextures];
+
+      _lastDrawnFrameTimeStampNs = self.videoFrame.timeStampNs;
     }
   } else {
     if (!_i420TextureCache) {
@@ -258,6 +262,8 @@
                                     yPlane:_i420TextureCache.yTexture
                                     uPlane:_i420TextureCache.uTexture
                                     vPlane:_i420TextureCache.vTexture];
+
+    _lastDrawnFrameTimeStampNs = self.videoFrame.timeStampNs;
   }
 }
 
@@ -281,7 +287,7 @@
 - (void)displayLinkTimerDidFire {
   // Don't render unless video frame have changed or the view content
   // has explicitly been marked dirty.
-  if (!_isDirty && _lastDrawnFrame == self.videoFrame) {
+  if (!_isDirty && _lastDrawnFrameTimeStampNs == self.videoFrame.timeStampNs) {
     return;
   }
 
