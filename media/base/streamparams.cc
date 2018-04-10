@@ -152,12 +152,6 @@ std::string StreamParams::ToString() const {
     ost << it->ToString();
   }
   ost << ";";
-  if (!type.empty()) {
-    ost << "type:" << type << ";";
-  }
-  if (!display.empty()) {
-    ost << "display:" << display << ";";
-  }
   if (!cname.empty()) {
     ost << "cname:" << cname << ";";
   }

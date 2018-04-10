@@ -65,6 +65,10 @@ struct SsrcGroup {
   std::vector<uint32_t> ssrcs;  // SSRCs of this type.
 };
 
+// StreamParams is used to represent a sender/track in a SessionDescription.
+// In Plan B, this means that multiple StreamParams can exist within one
+// MediaContentDescription, while in UnifiedPlan this means that there is one
+// StreamParams per MediaContentDescription.
 struct StreamParams {
   StreamParams();
   StreamParams(const StreamParams&);
@@ -82,7 +86,6 @@ struct StreamParams {
   bool operator==(const StreamParams& other) const {
     return (groupid == other.groupid && id == other.id &&
             ssrcs == other.ssrcs && ssrc_groups == other.ssrc_groups &&
-            type == other.type && display == other.display &&
             cname == other.cname && stream_ids_ == other.stream_ids_);
   }
   bool operator!=(const StreamParams &other) const {
@@ -165,18 +168,17 @@ struct StreamParams {
 
   // Resource of the MUC jid of the participant of with this stream.
   // For 1:1 calls, should be left empty (which means remote streams
-  // and local streams should not be mixed together).
+  // and local streams should not be mixed together). This is not used
+  // internally and should be deprecated.
   std::string groupid;
-  // Unique per-groupid, not across all groupids
+  // A unique identifier of the StreamParams object. When the SDP is created,
+  // this comes from the track ID of the sender that the StreamParams object
+  // is associated with.
   std::string id;
   // There may be no SSRCs stored in unsignaled case when stream_ids are
   // signaled with a=msid lines.
   std::vector<uint32_t> ssrcs;         // All SSRCs for this source
   std::vector<SsrcGroup> ssrc_groups;  // e.g. FID, FEC, SIM
-  // Examples: "camera", "screencast"
-  std::string type;
-  // Friendly name describing stream
-  std::string display;
   std::string cname;  // RTCP CNAME
 
  private:
@@ -187,6 +189,9 @@ struct StreamParams {
                         uint32_t primary_ssrc,
                         uint32_t* secondary_ssrc) const;
 
+  // The stream IDs of the sender that the StreamParams object is associated
+  // with. In Plan B this should always be size of 1, while in Unified Plan this
+  // could be none or multiple stream IDs.
   std::vector<std::string> stream_ids_;
 };
 
