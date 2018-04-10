@@ -18,7 +18,6 @@
 #import "WebRTC/RTCVideoFrameBuffer.h"
 
 #import "RTCMTLRenderer+Private.h"
-#include "rtc_base/checks.h"
 
 #define MTL_STRINGIFY(s) @ #s
 
@@ -86,7 +85,6 @@ static NSString *const shaderSource = MTL_STRINGIFY(
 }
 
 - (BOOL)setupTexturesForFrame:(nonnull RTCVideoFrame *)frame {
-  RTC_DCHECK([frame.buffer isKindOfClass:[RTCCVPixelBuffer class]]);
   [super setupTexturesForFrame:frame];
   CVPixelBufferRef pixelBuffer = ((RTCCVPixelBuffer *)frame.buffer).pixelBuffer;
 
