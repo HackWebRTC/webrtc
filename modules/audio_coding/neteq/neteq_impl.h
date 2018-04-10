@@ -17,6 +17,7 @@
 #include "api/optional.h"
 #include "modules/audio_coding/neteq/audio_multi_vector.h"
 #include "modules/audio_coding/neteq/defines.h"
+#include "modules/audio_coding/neteq/expand_uma_logger.h"
 #include "modules/audio_coding/neteq/include/neteq.h"
 #include "modules/audio_coding/neteq/packet.h"  // Declare PacketList.
 #include "modules/audio_coding/neteq/random_vector.h"
@@ -440,6 +441,8 @@ class NetEqImpl : public webrtc::NetEq {
   std::unique_ptr<TickTimer::Stopwatch> generated_noise_stopwatch_
       RTC_GUARDED_BY(crit_sect_);
   std::vector<uint32_t> last_decoded_timestamps_ RTC_GUARDED_BY(crit_sect_);
+  ExpandUmaLogger expand_uma_logger_ RTC_GUARDED_BY(crit_sect_);
+  ExpandUmaLogger speech_expand_uma_logger_ RTC_GUARDED_BY(crit_sect_);
 
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(NetEqImpl);

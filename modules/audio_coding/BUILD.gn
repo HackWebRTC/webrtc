@@ -1039,6 +1039,8 @@ rtc_static_library("neteq") {
     "neteq/dtmf_tone_generator.h",
     "neteq/expand.cc",
     "neteq/expand.h",
+    "neteq/expand_uma_logger.cc",
+    "neteq/expand_uma_logger.h",
     "neteq/include/neteq.h",
     "neteq/merge.cc",
     "neteq/merge.h",

@@ -106,7 +106,13 @@ NetEqImpl::NetEqImpl(const NetEq::Config& config,
       playout_mode_(config.playout_mode),
       enable_fast_accelerate_(config.enable_fast_accelerate),
       nack_enabled_(false),
-      enable_muted_state_(config.enable_muted_state) {
+      enable_muted_state_(config.enable_muted_state),
+      expand_uma_logger_("WebRTC.Audio.ExpandRatePercent",
+                         10,  // Report once every 10 s.
+                         tick_timer_.get()),
+      speech_expand_uma_logger_("WebRTC.Audio.SpeechExpandRatePercent",
+                                10,  // Report once every 10 s.
+                                tick_timer_.get()) {
   RTC_LOG(LS_INFO) << "NetEq config: " << config.ToString();
   int fs = config.sample_rate_hz;
   if (fs != 8000 && fs != 16000 && fs != 32000 && fs != 48000) {
@@ -837,6 +843,11 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame, bool* muted) {
   last_decoded_timestamps_.clear();
   tick_timer_->Increment();
   stats_.IncreaseCounter(output_size_samples_, fs_hz_);
+  const auto lifetime_stats = stats_.GetLifetimeStatistics();
+  expand_uma_logger_.UpdateSampleCounter(lifetime_stats.concealed_samples,
+                                         fs_hz_);
+  speech_expand_uma_logger_.UpdateSampleCounter(
+      lifetime_stats.voice_concealed_samples, fs_hz_);
 
   // Check for muted state.
   if (enable_muted_state_ && expand_->Muted() && packet_buffer_->Empty()) {
