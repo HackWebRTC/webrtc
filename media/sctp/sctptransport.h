@@ -140,7 +140,7 @@ class SctpTransport : public SctpTransportInternal,
   // Helps pass inbound/outbound packets asynchronously to the network thread.
   rtc::AsyncInvoker invoker_;
   // Underlying DTLS channel.
-  rtc::PacketTransportInternal* transport_;
+  rtc::PacketTransportInternal* transport_ = nullptr;
   bool was_ever_writable_ = false;
   int local_port_ = kSctpDefaultPort;
   int remote_port_ = kSctpDefaultPort;

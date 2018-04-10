@@ -543,17 +543,8 @@ RTCError JsepTransportController::ApplyDescription_n(
     remote_desc_ = description;
   }
 
-  if (ShouldUpdateBundleGroup(type, description)) {
-    if (!description->HasGroup(cricket::GROUP_TYPE_BUNDLE)) {
-      return RTCError(RTCErrorType::INVALID_PARAMETER,
-                      "max-bundle is used but no bundle group found.");
-    } else {
-      bundle_group_ = *description->GetGroupByName(cricket::GROUP_TYPE_BUNDLE);
-    }
-  }
-
   RTCError error;
-  error = ValidateBundleGroup(description);
+  error = ValidateAndMaybeUpdateBundleGroup(local, type, description);
   if (!error.ok()) {
     return error;
   }
@@ -570,7 +561,7 @@ RTCError JsepTransportController::ApplyDescription_n(
         (IsBundled(content_info.name) && content_info.name != *bundled_mid())) {
       continue;
     }
-    error = MaybeCreateJsepTransport(content_info.name, content_info);
+    error = MaybeCreateJsepTransport(content_info);
     if (!error.ok()) {
       return error;
     }
@@ -583,7 +574,7 @@ RTCError JsepTransportController::ApplyDescription_n(
     const cricket::TransportInfo& transport_info =
         description->transport_infos()[i];
     if (content_info.rejected) {
-      HandleRejectedContent(content_info);
+      HandleRejectedContent(content_info, description);
       continue;
     }
 
@@ -633,9 +624,75 @@ RTCError JsepTransportController::ApplyDescription_n(
   return RTCError::OK();
 }
 
-RTCError JsepTransportController::ValidateBundleGroup(
+RTCError JsepTransportController::ValidateAndMaybeUpdateBundleGroup(
+    bool local,
+    SdpType type,
     const cricket::SessionDescription* description) {
   RTC_DCHECK(description);
+  const cricket::ContentGroup* new_bundle_group =
+      description->GetGroupByName(cricket::GROUP_TYPE_BUNDLE);
+
+  // The BUNDLE group containing a MID that no m= section has is invalid.
+  if (new_bundle_group) {
+    for (auto content_name : new_bundle_group->content_names()) {
+      if (!description->GetContentByName(content_name)) {
+        return RTCError(RTCErrorType::INVALID_PARAMETER,
+                        "The BUNDLE group contains MID:" + content_name +
+                            " matching no m= section.");
+      }
+    }
+  }
+
+  if (type == SdpType::kAnswer) {
+    const cricket::ContentGroup* offered_bundle_group =
+        local ? remote_desc_->GetGroupByName(cricket::GROUP_TYPE_BUNDLE)
+              : local_desc_->GetGroupByName(cricket::GROUP_TYPE_BUNDLE);
+
+    if (new_bundle_group) {
+      // The BUNDLE group in answer should be a subset of offered group.
+      for (auto content_name : new_bundle_group->content_names()) {
+        if (!offered_bundle_group ||
+            !offered_bundle_group->HasContentName(content_name)) {
+          return RTCError(RTCErrorType::INVALID_PARAMETER,
+                          "The BUNDLE group in answer contains a MID that was "
+                          "not in the offered group.");
+        }
+      }
+    }
+
+    if (bundle_group_) {
+      for (auto content_name : bundle_group_->content_names()) {
+        // An answer that removes m= sections from pre-negotiated BUNDLE group
+        // without rejecting it, is invalid.
+        if (!new_bundle_group ||
+            !new_bundle_group->HasContentName(content_name)) {
+          auto* content_info = description->GetContentByName(content_name);
+          if (!content_info || !content_info->rejected) {
+            return RTCError(RTCErrorType::INVALID_PARAMETER,
+                            "Answer cannot remove m= section  " + content_name +
+                                " from already-established BUNDLE group.");
+          }
+        }
+      }
+    }
+  }
+
+  if (config_.bundle_policy ==
+          PeerConnectionInterface::kBundlePolicyMaxBundle &&
+      !description->HasGroup(cricket::GROUP_TYPE_BUNDLE)) {
+    return RTCError(RTCErrorType::INVALID_PARAMETER,
+                    "max-bundle is used but no bundle group found.");
+  }
+
+  if (ShouldUpdateBundleGroup(type, description)) {
+    std::string new_bundled_mid = *(new_bundle_group->FirstContentName());
+    if (bundled_mid() && *bundled_mid() != new_bundled_mid) {
+      return RTCError(RTCErrorType::UNSUPPORTED_OPERATION,
+                      "Changing the negotiated BUNDLE-tag is not supported.");
+    }
+
+    bundle_group_ = *new_bundle_group;
+  }
 
   if (!bundled_mid()) {
     return RTCError::OK();
@@ -679,24 +736,20 @@ RTCError JsepTransportController::ValidateContent(
 }
 
 void JsepTransportController::HandleRejectedContent(
-    const cricket::ContentInfo& content_info) {
+    const cricket::ContentInfo& content_info,
+    const cricket::SessionDescription* description) {
   // If the content is rejected, let the
   // BaseChannel/SctpTransport change the RtpTransport/DtlsTransport first,
   // then destroy the cricket::JsepTransport2.
-  if (content_info.type == cricket::MediaProtocolType::kRtp) {
-    SignalRtpTransportChanged(content_info.name, nullptr);
-  } else {
-    SignalDtlsTransportChanged(content_info.name, nullptr);
-  }
+  RemoveTransportForMid(content_info.name, content_info.type);
   // If the answerer rejects the first content, which other contents are bundled
   // on, all the other contents in the bundle group will be rejected.
   if (content_info.name == bundled_mid()) {
     for (auto content_name : bundle_group_->content_names()) {
-      if (content_info.type == cricket::MediaProtocolType::kRtp) {
-        SignalRtpTransportChanged(content_name, nullptr);
-      } else {
-        SignalDtlsTransportChanged(content_name, nullptr);
-      }
+      const cricket::ContentInfo* content_in_group =
+          description->GetContentByName(content_name);
+      RTC_DCHECK(content_in_group);
+      RemoveTransportForMid(content_name, content_in_group->type);
     }
     bundle_group_.reset();
   } else if (IsBundled(content_info.name)) {
@@ -712,19 +765,40 @@ void JsepTransportController::HandleRejectedContent(
 
 void JsepTransportController::HandleBundledContent(
     const cricket::ContentInfo& content_info) {
+  auto jsep_transport = GetJsepTransportByName(*bundled_mid());
+  RTC_DCHECK(jsep_transport);
   // If the content is bundled, let the
   // BaseChannel/SctpTransport change the RtpTransport/DtlsTransport first,
   // then destroy the cricket::JsepTransport2.
-  if (content_info.type == cricket::MediaProtocolType::kRtp) {
-    auto rtp_transport =
-        jsep_transports_by_name_[*bundled_mid()]->rtp_transport();
-    SignalRtpTransportChanged(content_info.name, rtp_transport);
-  } else {
-    auto dtls_transport =
-        jsep_transports_by_name_[*bundled_mid()]->rtp_dtls_transport();
-    SignalDtlsTransportChanged(content_info.name, dtls_transport);
-  }
+  SetTransportForMid(content_info.name, jsep_transport, content_info.type);
   MaybeDestroyJsepTransport(content_info.name);
+}
+
+void JsepTransportController::SetTransportForMid(
+    const std::string& mid,
+    cricket::JsepTransport2* jsep_transport,
+    cricket::MediaProtocolType protocol_type) {
+  if (mid_to_transport_[mid] == jsep_transport) {
+    return;
+  }
+
+  mid_to_transport_[mid] = jsep_transport;
+  if (protocol_type == cricket::MediaProtocolType::kRtp) {
+    SignalRtpTransportChanged(mid, jsep_transport->rtp_transport());
+  } else {
+    SignalDtlsTransportChanged(mid, jsep_transport->rtp_dtls_transport());
+  }
+}
+
+void JsepTransportController::RemoveTransportForMid(
+    const std::string& mid,
+    cricket::MediaProtocolType protocol_type) {
+  if (protocol_type == cricket::MediaProtocolType::kRtp) {
+    SignalRtpTransportChanged(mid, nullptr);
+  } else {
+    SignalDtlsTransportChanged(mid, nullptr);
+  }
+  mid_to_transport_.erase(mid);
 }
 
 cricket::JsepTransportDescription
@@ -832,22 +906,14 @@ int JsepTransportController::GetRtpAbsSendTimeHeaderExtensionId(
 
 const cricket::JsepTransport2* JsepTransportController::GetJsepTransportForMid(
     const std::string& mid) const {
-  auto target_mid = mid;
-  if (IsBundled(mid)) {
-    target_mid = *bundled_mid();
-  }
-  auto it = jsep_transports_by_name_.find(target_mid);
-  return (it == jsep_transports_by_name_.end()) ? nullptr : it->second.get();
+  auto it = mid_to_transport_.find(mid);
+  return it == mid_to_transport_.end() ? nullptr : it->second;
 }
 
 cricket::JsepTransport2* JsepTransportController::GetJsepTransportForMid(
     const std::string& mid) {
-  auto target_mid = mid;
-  if (IsBundled(mid)) {
-    target_mid = *bundled_mid();
-  }
-  auto it = jsep_transports_by_name_.find(target_mid);
-  return (it == jsep_transports_by_name_.end()) ? nullptr : it->second.get();
+  auto it = mid_to_transport_.find(mid);
+  return it == mid_to_transport_.end() ? nullptr : it->second;
 }
 
 const cricket::JsepTransport2* JsepTransportController::GetJsepTransportByName(
@@ -863,10 +929,10 @@ cricket::JsepTransport2* JsepTransportController::GetJsepTransportByName(
 }
 
 RTCError JsepTransportController::MaybeCreateJsepTransport(
-    const std::string& mid,
     const cricket::ContentInfo& content_info) {
   RTC_DCHECK(network_thread_->IsCurrent());
-  cricket::JsepTransport2* transport = GetJsepTransportForMid(mid);
+  cricket::JsepTransport2* transport =
+      GetJsepTransportByName(content_info.name);
   if (transport) {
     return RTCError::OK();
   }
@@ -880,12 +946,13 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
   }
 
   std::unique_ptr<cricket::DtlsTransportInternal> rtp_dtls_transport =
-      CreateDtlsTransport(mid, /*rtcp =*/false);
+      CreateDtlsTransport(content_info.name, /*rtcp =*/false);
   std::unique_ptr<cricket::DtlsTransportInternal> rtcp_dtls_transport;
   if (config_.rtcp_mux_policy !=
           PeerConnectionInterface::kRtcpMuxPolicyRequire &&
       content_info.type == cricket::MediaProtocolType::kRtp) {
-    rtcp_dtls_transport = CreateDtlsTransport(mid, /*rtcp =*/true);
+    rtcp_dtls_transport =
+        CreateDtlsTransport(content_info.name, /*rtcp =*/true);
   }
 
   std::unique_ptr<RtpTransport> unencrypted_rtp_transport;
@@ -893,30 +960,44 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
   std::unique_ptr<DtlsSrtpTransport> dtls_srtp_transport;
   if (config_.disable_encryption) {
     unencrypted_rtp_transport = CreateUnencryptedRtpTransport(
-        mid, rtp_dtls_transport.get(), rtcp_dtls_transport.get());
+        content_info.name, rtp_dtls_transport.get(), rtcp_dtls_transport.get());
   } else if (!content_desc->cryptos().empty()) {
-    sdes_transport = CreateSdesTransport(mid, rtp_dtls_transport.get(),
-                                         rtcp_dtls_transport.get());
+    sdes_transport = CreateSdesTransport(
+        content_info.name, rtp_dtls_transport.get(), rtcp_dtls_transport.get());
   } else {
-    dtls_srtp_transport = CreateDtlsSrtpTransport(mid, rtp_dtls_transport.get(),
-                                                  rtcp_dtls_transport.get());
+    dtls_srtp_transport = CreateDtlsSrtpTransport(
+        content_info.name, rtp_dtls_transport.get(), rtcp_dtls_transport.get());
   }
 
   std::unique_ptr<cricket::JsepTransport2> jsep_transport =
       rtc::MakeUnique<cricket::JsepTransport2>(
-          mid, certificate_, std::move(unencrypted_rtp_transport),
+          content_info.name, certificate_, std::move(unencrypted_rtp_transport),
           std::move(sdes_transport), std::move(dtls_srtp_transport),
           std::move(rtp_dtls_transport), std::move(rtcp_dtls_transport));
   jsep_transport->SignalRtcpMuxActive.connect(
       this, &JsepTransportController::UpdateAggregateStates_n);
-  jsep_transports_by_name_[mid] = std::move(jsep_transport);
-  UpdateAggregateStates_n();
+  SetTransportForMid(content_info.name, jsep_transport.get(),
+                     content_info.type);
 
+  jsep_transports_by_name_[content_info.name] = std::move(jsep_transport);
+  UpdateAggregateStates_n();
   return RTCError::OK();
 }
 
 void JsepTransportController::MaybeDestroyJsepTransport(
     const std::string& mid) {
+  auto jsep_transport = GetJsepTransportByName(mid);
+  if (!jsep_transport) {
+    return;
+  }
+
+  // Don't destroy the JsepTransport if there are still media sections referring
+  // to it.
+  for (const auto& kv : mid_to_transport_) {
+    if (kv.second == jsep_transport) {
+      return;
+    }
+  }
   jsep_transports_by_name_.erase(mid);
   UpdateAggregateStates_n();
 }

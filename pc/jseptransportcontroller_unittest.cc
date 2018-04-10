@@ -1053,7 +1053,7 @@ TEST_F(JsepTransportControllerTest, BundleSubsetOfMediaSections) {
   ASSERT_TRUE(it != changed_rtp_transport_by_mid_.end());
   EXPECT_EQ(transport1, it->second);
   it = changed_rtp_transport_by_mid_.find(kAudioMid2);
-  EXPECT_TRUE(it == changed_rtp_transport_by_mid_.end());
+  EXPECT_TRUE(transport2 == it->second);
 }
 
 // Tests that the initial offer/answer only have data section and audio/video
@@ -1323,6 +1323,90 @@ TEST_F(JsepTransportControllerTest, ApplyNonRtcpMuxAnswerWhenMuxingRequired) {
   EXPECT_FALSE(transport_controller_
                    ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
                    .ok());
+}
+
+// This tests that the BUNDLE group in answer should be a subset of the offered
+// group.
+TEST_F(JsepTransportControllerTest,
+       AddContentToBundleGroupInAnswerNotSupported) {
+  CreateJsepTransportController(JsepTransportController::Config());
+  auto local_offer = CreateSessionDescriptionWithoutBundle();
+  auto remote_answer = CreateSessionDescriptionWithoutBundle();
+
+  cricket::ContentGroup offer_bundle_group(cricket::GROUP_TYPE_BUNDLE);
+  offer_bundle_group.AddContentName(kAudioMid1);
+  local_offer->AddGroup(offer_bundle_group);
+
+  cricket::ContentGroup answer_bundle_group(cricket::GROUP_TYPE_BUNDLE);
+  answer_bundle_group.AddContentName(kAudioMid1);
+  answer_bundle_group.AddContentName(kVideoMid1);
+  remote_answer->AddGroup(answer_bundle_group);
+  EXPECT_TRUE(transport_controller_
+                  ->SetLocalDescription(SdpType::kOffer, local_offer.get())
+                  .ok());
+  EXPECT_FALSE(transport_controller_
+                   ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                   .ok());
+}
+
+// This tests that the BUNDLE group with non-existing MID should be rejectd.
+TEST_F(JsepTransportControllerTest, RejectBundleGroupWithNonExistingMid) {
+  CreateJsepTransportController(JsepTransportController::Config());
+  auto local_offer = CreateSessionDescriptionWithoutBundle();
+  auto remote_answer = CreateSessionDescriptionWithoutBundle();
+
+  cricket::ContentGroup invalid_bundle_group(cricket::GROUP_TYPE_BUNDLE);
+  // The BUNDLE group is invalid because there is no data section in the
+  // description.
+  invalid_bundle_group.AddContentName(kDataMid1);
+  local_offer->AddGroup(invalid_bundle_group);
+  remote_answer->AddGroup(invalid_bundle_group);
+
+  EXPECT_FALSE(transport_controller_
+                   ->SetLocalDescription(SdpType::kOffer, local_offer.get())
+                   .ok());
+  EXPECT_FALSE(transport_controller_
+                   ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                   .ok());
+}
+
+// This tests that an answer shouldn't be able to remove an m= section from an
+// established group without rejecting it.
+TEST_F(JsepTransportControllerTest, RemoveContentFromBundleGroup) {
+  CreateJsepTransportController(JsepTransportController::Config());
+
+  auto local_offer = CreateSessionDescriptionWithBundleGroup();
+  auto remote_answer = CreateSessionDescriptionWithBundleGroup();
+  EXPECT_TRUE(transport_controller_
+                  ->SetLocalDescription(SdpType::kOffer, local_offer.get())
+                  .ok());
+  EXPECT_TRUE(transport_controller_
+                  ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                  .ok());
+
+  // Do an re-offer/answer.
+  EXPECT_TRUE(transport_controller_
+                  ->SetLocalDescription(SdpType::kOffer, local_offer.get())
+                  .ok());
+  auto new_answer = CreateSessionDescriptionWithoutBundle();
+  cricket::ContentGroup new_bundle_group(cricket::GROUP_TYPE_BUNDLE);
+  //  The answer removes video from the BUNDLE group without rejecting it is
+  //  invalid.
+  new_bundle_group.AddContentName(kAudioMid1);
+  new_answer->AddGroup(new_bundle_group);
+
+  // Applying invalid answer is expected to fail.
+  EXPECT_FALSE(transport_controller_
+                   ->SetRemoteDescription(SdpType::kAnswer, new_answer.get())
+                   .ok());
+
+  // Rejected the video content.
+  auto video_content = new_answer->GetContentByName(kVideoMid1);
+  ASSERT_TRUE(video_content);
+  video_content->rejected = true;
+  EXPECT_TRUE(transport_controller_
+                  ->SetRemoteDescription(SdpType::kAnswer, new_answer.get())
+                  .ok());
 }
 
 }  // namespace webrtc

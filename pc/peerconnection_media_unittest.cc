@@ -955,6 +955,14 @@ void RenameContent(cricket::SessionDescription* desc,
   auto* transport = desc->GetTransportInfoByName(old_name);
   RTC_DCHECK(transport);
   transport->content_name = new_name;
+
+  // Rename the content name in the BUNDLE group.
+  cricket::ContentGroup new_bundle_group =
+      *desc->GetGroupByName(cricket::GROUP_TYPE_BUNDLE);
+  new_bundle_group.RemoveContentName(old_name);
+  new_bundle_group.AddContentName(new_name);
+  desc->RemoveGroupByName(cricket::GROUP_TYPE_BUNDLE);
+  desc->AddGroup(new_bundle_group);
 }
 
 // Tests that an answer responds with the same MIDs as the offer.
