@@ -22,6 +22,7 @@
 #include "rtc_base/proxyinfo.h"
 #include "rtc_base/sigslot.h"
 #include "rtc_base/thread.h"
+#include "rtc_base/thread_checker.h"
 
 namespace webrtc {
 class MetricsObserverInterface;
@@ -326,19 +327,18 @@ class PortAllocatorSession : public sigslot::has_slots<> {
 };
 
 // Every method of PortAllocator (including the destructor) must be called on
-// the same thread, except for the constructor which may be called on any
-// thread.
+// the same thread after Initialize is called.
 //
-// This allows constructing a PortAllocator subclass on one thread and
-// passing it into an object that uses it on a different thread.
+// This allows a PortAllocator subclass to be constructed and configured on one
+// thread, and passed into an object that uses it on a different thread.
 class PortAllocator : public sigslot::has_slots<> {
  public:
   PortAllocator();
   ~PortAllocator() override;
 
-  // This should be called on the PortAllocator's thread before the
-  // PortAllocator is used. Subclasses may override this if necessary.
-  virtual void Initialize() {}
+  // This MUST be called on the PortAllocator's thread after finishing
+  // constructing and configuring the PortAllocator subclasses.
+  virtual void Initialize();
 
   // Set STUN and TURN servers to be used in future sessions, and set
   // candidate pool size, as described in JSEP.
@@ -360,14 +360,23 @@ class PortAllocator : public sigslot::has_slots<> {
                         const rtc::Optional<int>&
                             stun_candidate_keepalive_interval = rtc::nullopt);
 
-  const ServerAddresses& stun_servers() const { return stun_servers_; }
+  const ServerAddresses& stun_servers() const {
+    CheckRunOnValidThreadIfInitialized();
+    return stun_servers_;
+  }
 
   const std::vector<RelayServerConfig>& turn_servers() const {
+    CheckRunOnValidThreadIfInitialized();
     return turn_servers_;
   }
 
-  int candidate_pool_size() const { return candidate_pool_size_; }
+  int candidate_pool_size() const {
+    CheckRunOnValidThreadIfInitialized();
+    return candidate_pool_size_;
+  }
+
   const rtc::Optional<int>& stun_candidate_keepalive_interval() const {
+    CheckRunOnValidThreadIfInitialized();
     return stun_candidate_keepalive_interval_;
   }
 
@@ -410,23 +419,48 @@ class PortAllocator : public sigslot::has_slots<> {
   // Discard any remaining pooled sessions.
   void DiscardCandidatePool();
 
-  uint32_t flags() const { return flags_; }
-  void set_flags(uint32_t flags) { flags_ = flags; }
+  uint32_t flags() const {
+    CheckRunOnValidThreadIfInitialized();
+    return flags_;
+  }
+
+  void set_flags(uint32_t flags) {
+    CheckRunOnValidThreadIfInitialized();
+    flags_ = flags;
+  }
 
   // These three methods are deprecated. If connections need to go through a
   // proxy, the application should create a BasicPortAllocator given a custom
   // PacketSocketFactory that creates proxy sockets.
-  const std::string& user_agent() const { return agent_; }
-  const rtc::ProxyInfo& proxy() const { return proxy_; }
+  const std::string& user_agent() const {
+    CheckRunOnValidThreadIfInitialized();
+    return agent_;
+  }
+
+  const rtc::ProxyInfo& proxy() const {
+    CheckRunOnValidThreadIfInitialized();
+    return proxy_;
+  }
+
   void set_proxy(const std::string& agent, const rtc::ProxyInfo& proxy) {
+    CheckRunOnValidThreadIfInitialized();
     agent_ = agent;
     proxy_ = proxy;
   }
 
   // Gets/Sets the port range to use when choosing client ports.
-  int min_port() const { return min_port_; }
-  int max_port() const { return max_port_; }
+  int min_port() const {
+    CheckRunOnValidThreadIfInitialized();
+    return min_port_;
+  }
+
+  int max_port() const {
+    CheckRunOnValidThreadIfInitialized();
+    return max_port_;
+  }
+
   bool SetPortRange(int min_port, int max_port) {
+    CheckRunOnValidThreadIfInitialized();
     if (min_port > max_port) {
       return false;
     }
@@ -444,8 +478,15 @@ class PortAllocator : public sigslot::has_slots<> {
   // ICE down. We should work on making our ICE logic smarter (for example,
   // prioritizing pinging connections that are most likely to work) so that
   // every network interface can be used without impacting ICE's speed.
-  void set_max_ipv6_networks(int networks) { max_ipv6_networks_ = networks; }
-  int max_ipv6_networks() { return max_ipv6_networks_; }
+  void set_max_ipv6_networks(int networks) {
+    CheckRunOnValidThreadIfInitialized();
+    max_ipv6_networks_ = networks;
+  }
+
+  int max_ipv6_networks() {
+    CheckRunOnValidThreadIfInitialized();
+    return max_ipv6_networks_;
+  }
 
   // Delay between different candidate gathering phases (UDP, TURN, TCP).
   // Defaults to 1 second, but PeerConnection sets it to 50ms.
@@ -453,30 +494,59 @@ class PortAllocator : public sigslot::has_slots<> {
   // STUN transactions at once, but that's already happening if you configure
   // multiple STUN servers or have multiple network interfaces. We should
   // implement some global pacing logic instead if that's our goal.
-  uint32_t step_delay() const { return step_delay_; }
-  void set_step_delay(uint32_t delay) { step_delay_ = delay; }
+  uint32_t step_delay() const {
+    CheckRunOnValidThreadIfInitialized();
+    return step_delay_;
+  }
 
-  bool allow_tcp_listen() const { return allow_tcp_listen_; }
+  void set_step_delay(uint32_t delay) {
+    CheckRunOnValidThreadIfInitialized();
+    step_delay_ = delay;
+  }
+
+  bool allow_tcp_listen() const {
+    CheckRunOnValidThreadIfInitialized();
+    return allow_tcp_listen_;
+  }
+
   void set_allow_tcp_listen(bool allow_tcp_listen) {
+    CheckRunOnValidThreadIfInitialized();
     allow_tcp_listen_ = allow_tcp_listen;
   }
 
-  uint32_t candidate_filter() { return candidate_filter_; }
+  uint32_t candidate_filter() {
+    CheckRunOnValidThreadIfInitialized();
+    return candidate_filter_;
+  }
+
   void set_candidate_filter(uint32_t filter) {
+    CheckRunOnValidThreadIfInitialized();
     candidate_filter_ = filter;
   }
 
-  bool prune_turn_ports() const { return prune_turn_ports_; }
+  bool prune_turn_ports() const {
+    CheckRunOnValidThreadIfInitialized();
+    return prune_turn_ports_;
+  }
 
   // Gets/Sets the Origin value used for WebRTC STUN requests.
-  const std::string& origin() const { return origin_; }
-  void set_origin(const std::string& origin) { origin_ = origin; }
+  const std::string& origin() const {
+    CheckRunOnValidThreadIfInitialized();
+    return origin_;
+  }
+
+  void set_origin(const std::string& origin) {
+    CheckRunOnValidThreadIfInitialized();
+    origin_ = origin;
+  }
 
   void SetMetricsObserver(webrtc::MetricsObserverInterface* observer) {
+    CheckRunOnValidThreadIfInitialized();
     metrics_observer_ = observer;
   }
 
   webrtc::TurnCustomizer* turn_customizer() {
+    CheckRunOnValidThreadIfInitialized();
     return turn_customizer_;
   }
 
@@ -503,6 +573,17 @@ class PortAllocator : public sigslot::has_slots<> {
     return pooled_sessions_;
   }
 
+  // The following thread checks are only done in DCHECK for the consistency
+  // with the exsiting thread checks.
+  void CheckRunOnValidThreadIfInitialized() const {
+    RTC_DCHECK(!initialized_ || thread_checker_.CalledOnValidThread());
+  }
+
+  void CheckRunOnValidThreadAndInitialized() const {
+    RTC_DCHECK(initialized_ && thread_checker_.CalledOnValidThread());
+  }
+
+  bool initialized_ = false;
   uint32_t flags_;
   std::string agent_;
   rtc::ProxyInfo proxy_;
@@ -513,6 +594,7 @@ class PortAllocator : public sigslot::has_slots<> {
   bool allow_tcp_listen_;
   uint32_t candidate_filter_;
   std::string origin_;
+  rtc::ThreadChecker thread_checker_;
 
  private:
   ServerAddresses stun_servers_;

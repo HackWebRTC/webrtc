@@ -107,9 +107,19 @@ PortAllocator::PortAllocator()
       max_ipv6_networks_(kDefaultMaxIPv6Networks),
       step_delay_(kDefaultStepDelay),
       allow_tcp_listen_(true),
-      candidate_filter_(CF_ALL) {}
+      candidate_filter_(CF_ALL) {
+  // The allocator will be attached to a thread in Initialize.
+  thread_checker_.DetachFromThread();
+}
 
-PortAllocator::~PortAllocator() = default;
+void PortAllocator::Initialize() {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  initialized_ = true;
+}
+
+PortAllocator::~PortAllocator() {
+  CheckRunOnValidThreadIfInitialized();
+}
 
 bool PortAllocator::SetConfiguration(
     const ServerAddresses& stun_servers,
@@ -118,6 +128,7 @@ bool PortAllocator::SetConfiguration(
     bool prune_turn_ports,
     webrtc::TurnCustomizer* turn_customizer,
     const rtc::Optional<int>& stun_candidate_keepalive_interval) {
+  CheckRunOnValidThreadIfInitialized();
   bool ice_servers_changed =
       (stun_servers != stun_servers_ || turn_servers != turn_servers_);
   stun_servers_ = stun_servers;
@@ -181,6 +192,7 @@ std::unique_ptr<PortAllocatorSession> PortAllocator::CreateSession(
     int component,
     const std::string& ice_ufrag,
     const std::string& ice_pwd) {
+  CheckRunOnValidThreadAndInitialized();
   auto session = std::unique_ptr<PortAllocatorSession>(
       CreateSessionInternal(content_name, component, ice_ufrag, ice_pwd));
   session->SetCandidateFilter(candidate_filter());
@@ -192,6 +204,7 @@ std::unique_ptr<PortAllocatorSession> PortAllocator::TakePooledSession(
     int component,
     const std::string& ice_ufrag,
     const std::string& ice_pwd) {
+  CheckRunOnValidThreadAndInitialized();
   RTC_DCHECK(!ice_ufrag.empty());
   RTC_DCHECK(!ice_pwd.empty());
   if (pooled_sessions_.empty()) {
@@ -208,6 +221,7 @@ std::unique_ptr<PortAllocatorSession> PortAllocator::TakePooledSession(
 }
 
 const PortAllocatorSession* PortAllocator::GetPooledSession() const {
+  CheckRunOnValidThreadAndInitialized();
   if (pooled_sessions_.empty()) {
     return nullptr;
   }
@@ -215,15 +229,18 @@ const PortAllocatorSession* PortAllocator::GetPooledSession() const {
 }
 
 void PortAllocator::FreezeCandidatePool() {
+  CheckRunOnValidThreadAndInitialized();
   candidate_pool_frozen_ = true;
 }
 
 void PortAllocator::DiscardCandidatePool() {
+  CheckRunOnValidThreadIfInitialized();
   pooled_sessions_.clear();
 }
 
 void PortAllocator::GetCandidateStatsFromPooledSessions(
     CandidateStatsList* candidate_stats_list) {
+  CheckRunOnValidThreadAndInitialized();
   for (const auto& session : pooled_sessions()) {
     session->GetCandidateStatsFromReadyPorts(candidate_stats_list);
   }

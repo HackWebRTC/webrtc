@@ -3182,8 +3182,14 @@ class PeerConnectionIntegrationIceStatesTest
   }
 
   void SetPortAllocatorFlags() {
-    caller()->port_allocator()->set_flags(port_allocator_flags_);
-    callee()->port_allocator()->set_flags(port_allocator_flags_);
+    network_thread()->Invoke<void>(
+        RTC_FROM_HERE,
+        rtc::Bind(&cricket::PortAllocator::set_flags,
+                  caller()->port_allocator(), port_allocator_flags_));
+    network_thread()->Invoke<void>(
+        RTC_FROM_HERE,
+        rtc::Bind(&cricket::PortAllocator::set_flags,
+                  callee()->port_allocator(), port_allocator_flags_));
   }
 
   std::vector<SocketAddress> CallerAddresses() {

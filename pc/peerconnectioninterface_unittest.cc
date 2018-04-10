@@ -1414,31 +1414,6 @@ TEST_P(PeerConnectionInterfaceTest,
   EXPECT_TRUE(raw_port_allocator->prune_turn_ports());
 }
 
-// Test that the PeerConnection initializes the port allocator passed into it,
-// and on the correct thread.
-TEST_P(PeerConnectionInterfaceTest,
-       CreatePeerConnectionInitializesPortAllocatorOnNetworkThread) {
-  std::unique_ptr<rtc::Thread> network_thread(
-      rtc::Thread::CreateWithSocketServer());
-  network_thread->Start();
-  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> pc_factory(
-      webrtc::CreatePeerConnectionFactory(
-          network_thread.get(), rtc::Thread::Current(), rtc::Thread::Current(),
-          fake_audio_capture_module_,
-          webrtc::CreateBuiltinAudioEncoderFactory(),
-          webrtc::CreateBuiltinAudioDecoderFactory(), nullptr, nullptr));
-  std::unique_ptr<cricket::FakePortAllocator> port_allocator(
-      new cricket::FakePortAllocator(network_thread.get(), nullptr));
-  cricket::FakePortAllocator* raw_port_allocator = port_allocator.get();
-  PeerConnectionInterface::RTCConfiguration config;
-  rtc::scoped_refptr<PeerConnectionInterface> pc(
-      pc_factory->CreatePeerConnection(
-          config, nullptr, std::move(port_allocator), nullptr, &observer_));
-  // FakePortAllocator RTC_CHECKs that it's initialized on the right thread,
-  // so all we have to do here is check that it's initialized.
-  EXPECT_TRUE(raw_port_allocator->initialized());
-}
-
 // Check that GetConfiguration returns the configuration the PeerConnection was
 // constructed with, before SetConfiguration is called.
 TEST_P(PeerConnectionInterfaceTest, GetConfigurationAfterCreatePeerConnection) {

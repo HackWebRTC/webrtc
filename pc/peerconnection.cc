@@ -1980,11 +1980,6 @@ void PeerConnection::SetLocalDescription(
 
   PostSetSessionDescriptionSuccess(observer);
 
-  // According to JSEP, after setLocalDescription, changing the candidate pool
-  // size is not allowed, and changing the set of ICE servers will not result
-  // in new candidates being gathered.
-  port_allocator_->FreezeCandidatePool();
-
   // MaybeStartGathering needs to be called after posting
   // MSG_SET_SESSIONDESCRIPTION_SUCCESS, so that we don't signal any candidates
   // before signaling that SetLocalDescription completed.
@@ -2821,6 +2816,9 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
                                       RTCError* error) {
   TRACE_EVENT0("webrtc", "PeerConnection::SetConfiguration");
 
+  // According to JSEP, after setLocalDescription, changing the candidate pool
+  // size is not allowed, and changing the set of ICE servers will not result
+  // in new candidates being gathered.
   if (local_description() && configuration.ice_candidate_pool_size !=
                                  configuration_.ice_candidate_pool_size) {
     RTC_LOG(LS_ERROR) << "Can't change candidate pool size after calling "
@@ -2978,23 +2976,12 @@ bool PeerConnection::RemoveIceCandidates(
 
 void PeerConnection::RegisterUMAObserver(UMAObserver* observer) {
   TRACE_EVENT0("webrtc", "PeerConnection::RegisterUmaObserver");
-  uma_observer_ = observer;
-
-  if (transport_controller()) {
-    transport_controller()->SetMetricsObserver(uma_observer_);
-  }
-
-  for (auto transceiver : transceivers_) {
-    auto* channel = transceiver->internal()->channel();
-    if (channel) {
-      channel->SetMetricsObserver(uma_observer_);
-    }
-  }
-
+  network_thread()->Invoke<void>(
+      RTC_FROM_HERE,
+      rtc::Bind(&PeerConnection::SetMetricObserver_n, this, observer));
   // Send information about IPv4/IPv6 status.
   if (uma_observer_) {
-    port_allocator_->SetMetricsObserver(uma_observer_);
-    if (port_allocator_->flags() & cricket::PORTALLOCATOR_ENABLE_IPV6) {
+    if (port_allocator_flags_ & cricket::PORTALLOCATOR_ENABLE_IPV6) {
       uma_observer_->IncrementEnumCounter(
           kEnumCounterAddressFamily, kPeerConnection_IPv6,
           kPeerConnectionAddressFamilyCounter_Max);
@@ -3024,6 +3011,25 @@ void PeerConnection::RegisterUMAObserver(UMAObserver* observer) {
       default:
         RTC_NOTREACHED();
     }
+  }
+}
+
+void PeerConnection::SetMetricObserver_n(UMAObserver* observer) {
+  RTC_DCHECK(network_thread()->IsCurrent());
+  uma_observer_ = observer;
+  if (transport_controller()) {
+    transport_controller()->SetMetricsObserver(uma_observer_);
+  }
+
+  for (auto transceiver : transceivers_) {
+    auto* channel = transceiver->internal()->channel();
+    if (channel) {
+      channel->SetMetricsObserver(uma_observer_);
+    }
+  }
+
+  if (uma_observer_) {
+    port_allocator_->SetMetricsObserver(uma_observer_);
   }
 }
 
@@ -4613,44 +4619,43 @@ bool PeerConnection::InitializePortAllocator_n(
   }
 
   port_allocator_->Initialize();
-
   // To handle both internal and externally created port allocator, we will
   // enable BUNDLE here.
-  int portallocator_flags = port_allocator_->flags();
-  portallocator_flags |= cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
-                         cricket::PORTALLOCATOR_ENABLE_IPV6 |
-                         cricket::PORTALLOCATOR_ENABLE_IPV6_ON_WIFI;
+  port_allocator_flags_ = port_allocator_->flags();
+  port_allocator_flags_ |= cricket::PORTALLOCATOR_ENABLE_SHARED_SOCKET |
+                           cricket::PORTALLOCATOR_ENABLE_IPV6 |
+                           cricket::PORTALLOCATOR_ENABLE_IPV6_ON_WIFI;
   // If the disable-IPv6 flag was specified, we'll not override it
   // by experiment.
   if (configuration.disable_ipv6) {
-    portallocator_flags &= ~(cricket::PORTALLOCATOR_ENABLE_IPV6);
+    port_allocator_flags_ &= ~(cricket::PORTALLOCATOR_ENABLE_IPV6);
   } else if (webrtc::field_trial::FindFullName("WebRTC-IPv6Default")
                  .find("Disabled") == 0) {
-    portallocator_flags &= ~(cricket::PORTALLOCATOR_ENABLE_IPV6);
+    port_allocator_flags_ &= ~(cricket::PORTALLOCATOR_ENABLE_IPV6);
   }
 
   if (configuration.disable_ipv6_on_wifi) {
-    portallocator_flags &= ~(cricket::PORTALLOCATOR_ENABLE_IPV6_ON_WIFI);
+    port_allocator_flags_ &= ~(cricket::PORTALLOCATOR_ENABLE_IPV6_ON_WIFI);
     RTC_LOG(LS_INFO) << "IPv6 candidates on Wi-Fi are disabled.";
   }
 
   if (configuration.tcp_candidate_policy == kTcpCandidatePolicyDisabled) {
-    portallocator_flags |= cricket::PORTALLOCATOR_DISABLE_TCP;
+    port_allocator_flags_ |= cricket::PORTALLOCATOR_DISABLE_TCP;
     RTC_LOG(LS_INFO) << "TCP candidates are disabled.";
   }
 
   if (configuration.candidate_network_policy ==
       kCandidateNetworkPolicyLowCost) {
-    portallocator_flags |= cricket::PORTALLOCATOR_DISABLE_COSTLY_NETWORKS;
+    port_allocator_flags_ |= cricket::PORTALLOCATOR_DISABLE_COSTLY_NETWORKS;
     RTC_LOG(LS_INFO) << "Do not gather candidates on high-cost networks";
   }
 
   if (configuration.disable_link_local_networks) {
-    portallocator_flags |= cricket::PORTALLOCATOR_DISABLE_LINK_LOCAL_NETWORKS;
+    port_allocator_flags_ |= cricket::PORTALLOCATOR_DISABLE_LINK_LOCAL_NETWORKS;
     RTC_LOG(LS_INFO) << "Disable candidates on link-local network interfaces.";
   }
 
-  port_allocator_->set_flags(portallocator_flags);
+  port_allocator_->set_flags(port_allocator_flags_);
   // No step delay is used while allocating ports.
   port_allocator_->set_step_delay(cricket::kMinimumStepDelay);
   port_allocator_->set_candidate_filter(
@@ -4676,6 +4681,12 @@ bool PeerConnection::ReconfigurePortAllocator_n(
     rtc::Optional<int> stun_candidate_keepalive_interval) {
   port_allocator_->set_candidate_filter(
       ConvertIceTransportTypeToCandidateFilter(type));
+  // According to JSEP, after setLocalDescription, changing the candidate pool
+  // size is not allowed, and changing the set of ICE servers will not result
+  // in new candidates being gathered.
+  if (local_description()) {
+    port_allocator_->FreezeCandidatePool();
+  }
   // Call this last since it may create pooled allocator sessions using the
   // candidate filter set above.
   return port_allocator_->SetConfiguration(
@@ -5077,7 +5088,10 @@ rtc::Optional<std::string> PeerConnection::sctp_transport_name() const {
 
 cricket::CandidateStatsList PeerConnection::GetPooledCandidateStats() const {
   cricket::CandidateStatsList candidate_states_list;
-  port_allocator_->GetCandidateStatsFromPooledSessions(&candidate_states_list);
+  network_thread()->Invoke<void>(
+      RTC_FROM_HERE,
+      rtc::Bind(&cricket::PortAllocator::GetCandidateStatsFromPooledSessions,
+                port_allocator_.get(), &candidate_states_list));
   return candidate_states_list;
 }
 

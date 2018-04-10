@@ -18,11 +18,12 @@
 #include "p2p/base/basicpacketsocketfactory.h"
 #include "p2p/base/portallocator.h"
 #include "p2p/base/udpport.h"
+#include "rtc_base/bind.h"
 #include "rtc_base/nethelpers.h"
+#include "rtc_base/thread.h"
 
 namespace rtc {
 class SocketFactory;
-class Thread;
 }
 
 namespace cricket {
@@ -219,12 +220,9 @@ class FakePortAllocator : public cricket::PortAllocator {
       owned_factory_.reset(new rtc::BasicPacketSocketFactory(network_thread_));
       factory_ = owned_factory_.get();
     }
-  }
-
-  void Initialize() override {
-    // Port allocator should be initialized on the network thread.
-    RTC_CHECK(network_thread_->IsCurrent());
-    initialized_ = true;
+    network_thread_->Invoke<void>(RTC_FROM_HERE,
+                                  rtc::Bind(&PortAllocator::Initialize,
+                                            static_cast<PortAllocator*>(this)));
   }
 
   void SetNetworkIgnoreMask(int network_ignore_mask) override {}
@@ -245,7 +243,6 @@ class FakePortAllocator : public cricket::PortAllocator {
   rtc::Thread* network_thread_;
   rtc::PacketSocketFactory* factory_;
   std::unique_ptr<rtc::BasicPacketSocketFactory> owned_factory_;
-  bool initialized_ = false;
 };
 
 }  // namespace cricket
