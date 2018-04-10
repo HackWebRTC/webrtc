@@ -678,7 +678,7 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
       CFRelease(dataRateLimits);
     }
     if (status != noErr) {
-      RTC_LOG(LS_ERROR) << "Failed to set data rate limit";
+      RTC_LOG(LS_ERROR) << "Failed to set data rate limit with code: " << status;
     }
 
     _encoderBitrateBps = bitrateBps;
@@ -695,7 +695,7 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
               timestamp:(uint32_t)timestamp
                rotation:(RTCVideoRotation)rotation {
   if (status != noErr) {
-    RTC_LOG(LS_ERROR) << "H264 encode failed.";
+    RTC_LOG(LS_ERROR) << "H264 encode failed with code: " << status;
     return;
   }
   if (infoFlags & kVTEncodeInfo_FrameDropped) {

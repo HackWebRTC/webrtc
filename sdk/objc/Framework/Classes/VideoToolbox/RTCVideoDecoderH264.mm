@@ -242,6 +242,7 @@ void decompressionOutputCallback(void *decoderRef,
       nullptr, _videoFormat, nullptr, attributes, &record, &_decompressionSession);
   CFRelease(attributes);
   if (status != noErr) {
+    RTC_LOG(LS_ERROR) << "Failed to create decompression session: " << status;
     [self destroyDecompressionSession];
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
