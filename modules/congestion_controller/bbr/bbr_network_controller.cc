@@ -63,9 +63,9 @@ const size_t kGainCycleLength = 8;
 const BbrRoundTripCount kBandwidthWindowSize = kGainCycleLength + 2;
 
 // The time after which the current min_rtt value expires.
-const TimeDelta kMinRttExpiry = TimeDelta::seconds(10);
+constexpr int64_t kMinRttExpirySeconds = 10;
 // The minimum time the connection can spend in PROBE_RTT mode.
-const TimeDelta kProbeRttTime = TimeDelta::ms(200);
+constexpr int64_t kProbeRttTimeMs = 200;
 // If the bandwidth does not increase by the factor of |kStartupGrowthTarget|
 // within |kRoundTripsWithoutGrowthBeforeExitingStartup| rounds, the connection
 // will exit the STARTUP mode.
@@ -76,14 +76,16 @@ const double kModerateProbeRttMultiplier = 0.75;
 // we don't need to enter PROBE_RTT.
 const double kSimilarMinRttThreshold = 1.125;
 
-const TimeDelta kInitialRtt = TimeDelta::ms(200);
-const DataRate kInitialBandwidth = DataRate::kbps(300);
+constexpr int64_t kInitialRttMs = 200;
+constexpr int64_t kInitialBandwidthKbps = 300;
 
-const TimeDelta kMaxRtt = TimeDelta::ms(1000);
-const DataRate kMaxBandwidth = DataRate::kbps(5000);
+constexpr int64_t kMaxRttMs = 1000;
+constexpr int64_t kMaxBandwidthKbps = 5000;
 
-const DataSize kInitialCongestionWindow = kInitialRtt * kInitialBandwidth;
-const DataSize kDefaultMaxCongestionWindow = kMaxRtt * kMaxBandwidth;
+constexpr int64_t kInitialCongestionWindowBytes =
+    (kInitialRttMs * kInitialBandwidthKbps) / 8;
+constexpr int64_t kDefaultMaxCongestionWindowBytes =
+    (kMaxRttMs * kMaxBandwidthKbps) / 8;
 
 static std::string ModeToString(BbrNetworkController::Mode mode) {
   switch (mode) {
@@ -179,11 +181,12 @@ BbrNetworkController::DebugState::DebugState(const DebugState& state) = default;
 BbrNetworkController::BbrNetworkController(NetworkControllerConfig config)
     : random_(10),
       max_bandwidth_(kBandwidthWindowSize, DataRate::Zero(), 0),
-      default_bandwidth_(kInitialBandwidth),
+      default_bandwidth_(DataRate::kbps(kInitialBandwidthKbps)),
       max_ack_height_(kBandwidthWindowSize, DataSize::Zero(), 0),
-      congestion_window_(kInitialCongestionWindow),
-      initial_congestion_window_(kInitialCongestionWindow),
-      max_congestion_window_(kDefaultMaxCongestionWindow),
+      congestion_window_(DataSize::bytes(kInitialCongestionWindowBytes)),
+      initial_congestion_window_(
+          DataSize::bytes(kInitialCongestionWindowBytes)),
+      max_congestion_window_(DataSize::bytes(kDefaultMaxCongestionWindowBytes)),
       congestion_window_gain_constant_(kProbeBWCongestionWindowGain),
       rtt_variance_weight_(kBbrRttVariationWeight),
       recovery_window_(max_congestion_window_) {
@@ -537,7 +540,9 @@ bool BbrNetworkController::UpdateMinRtt(Timestamp ack_time,
 
   // Do not expire min_rtt if none was ever available.
   bool min_rtt_expired =
-      !min_rtt_.IsZero() && (ack_time > (min_rtt_timestamp_ + kMinRttExpiry));
+      !min_rtt_.IsZero() &&
+      (ack_time >
+       (min_rtt_timestamp_ + TimeDelta::seconds(kMinRttExpirySeconds)));
 
   if (min_rtt_expired || sample_rtt < min_rtt_ || min_rtt_.IsZero()) {
     RTC_LOG(LS_INFO) << "Min RTT updated, old value: " << ToString(min_rtt_)
@@ -708,7 +713,7 @@ void BbrNetworkController::MaybeEnterOrExitProbeRtt(
       // we allow an extra packet since QUIC checks CWND before sending a
       // packet.
       if (msg.data_in_flight < ProbeRttCongestionWindow() + kMaxPacketSize) {
-        exit_probe_rtt_at_ = msg.feedback_time + kProbeRttTime;
+        exit_probe_rtt_at_ = msg.feedback_time + TimeDelta::ms(kProbeRttTimeMs);
         probe_rtt_round_passed_ = false;
       }
     } else {
