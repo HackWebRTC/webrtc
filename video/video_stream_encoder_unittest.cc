@@ -702,13 +702,20 @@ TEST_F(VideoStreamEncoderTest, EncodeOneFrame) {
 TEST_F(VideoStreamEncoderTest, DropsFramesBeforeFirstOnBitrateUpdated) {
   // Dropped since no target bitrate has been set.
   rtc::Event frame_destroyed_event(false, false);
+  // The encoder will cache up to one frame for a short duration. Adding two
+  // frames means that the first frame will be dropped and the second frame will
+  // be sent when the encoder is enabled.
   video_source_.IncomingCapturedFrame(CreateFrame(1, &frame_destroyed_event));
+  video_source_.IncomingCapturedFrame(CreateFrame(2, nullptr));
   EXPECT_TRUE(frame_destroyed_event.Wait(kDefaultTimeoutMs));
 
   video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
-  video_source_.IncomingCapturedFrame(CreateFrame(2, nullptr));
+  // The pending frame should be received.
   WaitForEncodedFrame(2);
+  video_source_.IncomingCapturedFrame(CreateFrame(3, nullptr));
+
+  WaitForEncodedFrame(3);
   video_stream_encoder_->Stop();
 }
 
@@ -718,12 +725,16 @@ TEST_F(VideoStreamEncoderTest, DropsFramesWhenRateSetToZero) {
   WaitForEncodedFrame(1);
 
   video_stream_encoder_->OnBitrateUpdated(0, 0, 0);
-  // Dropped since bitrate is zero.
+  // The encoder will cache up to one frame for a short duration. Adding two
+  // frames means that the first frame will be dropped and the second frame will
+  // be sent when the encoder is resumed.
   video_source_.IncomingCapturedFrame(CreateFrame(2, nullptr));
+  video_source_.IncomingCapturedFrame(CreateFrame(3, nullptr));
 
   video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
-  video_source_.IncomingCapturedFrame(CreateFrame(3, nullptr));
   WaitForEncodedFrame(3);
+  video_source_.IncomingCapturedFrame(CreateFrame(4, nullptr));
+  WaitForEncodedFrame(4);
   video_stream_encoder_->Stop();
 }
 

@@ -40,20 +40,12 @@ const int64_t kFrameLogIntervalMs = 60000;
 const int kMinFramerateFps = 2;
 const int kMaxFramerateFps = 120;
 
+// Time to keep a single cached pending frame in paused state.
+const int64_t kPendingFrameTimeoutMs = 1000;
+
 // The maximum number of frames to drop at beginning of stream
 // to try and achieve desired bitrate.
 const int kMaxInitialFramedrop = 4;
-
-uint32_t MaximumFrameSizeForBitrate(uint32_t kbps) {
-  if (kbps > 0) {
-    if (kbps < 300 /* qvga */) {
-      return 320 * 240;
-    } else if (kbps < 500 /* vga */) {
-      return 640 * 480;
-    }
-  }
-  return std::numeric_limits<uint32_t>::max();
-}
 
 // Initial limits for kBalanced degradation preference.
 int MinFps(int pixels) {
@@ -661,7 +653,7 @@ void VideoStreamEncoder::OnFrame(const VideoFrame& video_frame) {
             posted_frames_waiting_for_encode_.fetch_sub(1);
         RTC_DCHECK_GT(posted_frames_waiting_for_encode, 0);
         if (posted_frames_waiting_for_encode == 1) {
-          EncodeVideoFrame(incoming_frame, post_time_us);
+          MaybeEncodeVideoFrame(incoming_frame, post_time_us);
         } else {
           // There is a newer frame in flight. Do not encode this frame.
           RTC_LOG(LS_VERBOSE)
@@ -712,8 +704,8 @@ void VideoStreamEncoder::TraceFrameDropEnd() {
   encoder_paused_and_dropped_frame_ = false;
 }
 
-void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
-                                          int64_t time_when_posted_us) {
+void VideoStreamEncoder::MaybeEncodeVideoFrame(const VideoFrame& video_frame,
+                                               int64_t time_when_posted_us) {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
 
   if (pre_encode_callback_)
@@ -731,9 +723,7 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
                      << ", texture=" << last_frame_info_->is_texture << ".";
   }
 
-  if (initial_rampup_ < kMaxInitialFramedrop &&
-      video_frame.size() >
-          MaximumFrameSizeForBitrate(encoder_start_bitrate_bps_ / 1000)) {
+  if (DropDueToSize(video_frame.size())) {
     RTC_LOG(LS_INFO) << "Dropping frame. Too large for target bitrate.";
     int count = GetConstAdaptCounter().ResolutionCount(kQuality);
     AdaptDown(kQuality);
@@ -741,6 +731,8 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
       stats_proxy_->OnInitialQualityResolutionAdaptDown();
     }
     ++initial_rampup_;
+    pending_frame_ = video_frame;
+    pending_frame_post_time_us_ = time_when_posted_us;
     return;
   }
   initial_rampup_ = kMaxInitialFramedrop;
@@ -758,9 +750,20 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
   }
 
   if (EncoderPaused()) {
-    TraceFrameDropStart();
+    if (pending_frame_)
+      TraceFrameDropStart();
+    pending_frame_ = video_frame;
+    pending_frame_post_time_us_ = time_when_posted_us;
     return;
   }
+
+  pending_frame_.reset();
+  EncodeVideoFrame(video_frame, time_when_posted_us);
+}
+
+void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
+                                          int64_t time_when_posted_us) {
+  RTC_DCHECK_RUN_ON(&encoder_queue_);
   TraceFrameDropEnd();
 
   VideoFrame out_frame(video_frame);
@@ -891,6 +894,25 @@ void VideoStreamEncoder::OnBitrateUpdated(uint32_t bitrate_bps,
                      << (video_is_suspended ? "suspended" : "not suspended");
     stats_proxy_->OnSuspendChange(video_is_suspended);
   }
+  if (video_suspension_changed && !video_is_suspended && pending_frame_ &&
+      !DropDueToSize(pending_frame_->size())) {
+    int64_t pending_time_us = rtc::TimeMicros() - pending_frame_post_time_us_;
+    if (pending_time_us < kPendingFrameTimeoutMs * 1000)
+      EncodeVideoFrame(*pending_frame_, pending_frame_post_time_us_);
+    pending_frame_.reset();
+  }
+}
+
+bool VideoStreamEncoder::DropDueToSize(uint32_t pixel_count) const {
+  if (initial_rampup_ < kMaxInitialFramedrop &&
+      encoder_start_bitrate_bps_ > 0) {
+    if (encoder_start_bitrate_bps_ < 300000 /* qvga */) {
+      return pixel_count > 320 * 240;
+    } else if (encoder_start_bitrate_bps_ < 500000 /* vga */) {
+      return pixel_count > 640 * 480;
+    }
+  }
+  return false;
 }
 
 void VideoStreamEncoder::AdaptDown(AdaptReason reason) {
