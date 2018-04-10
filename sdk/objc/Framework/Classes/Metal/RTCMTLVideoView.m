@@ -105,12 +105,12 @@
 
 - (void)drawInMTKView:(nonnull MTKView *)view {
   NSAssert(view == self.metalView, @"Receiving draw callbacks from foreign instance.");
-  if (!self.videoFrame) {
+  RTCVideoFrame *videoFrame = self.videoFrame;
+  if (!videoFrame) {
     return;
   }
 
-  id<RTCMTLRenderer> renderer = nil;
-  if ([self.videoFrame.buffer isKindOfClass:[RTCCVPixelBuffer class]]) {
+  if ([videoFrame.buffer isKindOfClass:[RTCCVPixelBuffer class]]) {
     if (!self.rendererNV12) {
       self.rendererNV12 = [RTCMTLVideoView createNV12Renderer];
       if (![self.rendererNV12 addRenderingDestination:self.metalView]) {
@@ -118,7 +118,7 @@
         RTCLogError(@"Failed to create NV12 renderer");
       }
     }
-    renderer = self.rendererNV12;
+    [self.rendererNV12 drawFrame:videoFrame];
   } else {
     if (!self.rendererI420) {
       self.rendererI420 = [RTCMTLVideoView createI420Renderer];
@@ -127,10 +127,8 @@
         RTCLogError(@"Failed to create I420 renderer");
       }
     }
-    renderer = self.rendererI420;
+    [self.rendererI420 drawFrame:videoFrame];
   }
-
-  [renderer drawFrame:self.videoFrame];
 }
 
 - (void)mtkView:(MTKView *)view drawableSizeWillChange:(CGSize)size {
