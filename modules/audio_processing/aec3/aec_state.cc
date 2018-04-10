@@ -59,7 +59,6 @@ void AecState::HandleEchoPathChange(
     usable_linear_estimate_ = false;
     capture_signal_saturation_ = false;
     echo_saturation_ = false;
-    previous_max_sample_ = 0.f;
     std::fill(max_render_.begin(), max_render_.end(), 0.f);
     blocks_with_proper_filter_adaptation_ = 0;
     blocks_since_reset_ = 0;
@@ -144,7 +143,7 @@ void AecState::Update(
   // TODO(peah): Add the delay in this computation to ensure that the render and
   // capture signals are properly aligned.
   if (config_.ep_strength.echo_can_saturate) {
-    echo_saturation_ = DetectEchoSaturation(x);
+    echo_saturation_ = DetectEchoSaturation(x, EchoPathGain());
   }
 
   bool filter_has_had_time_to_converge =
@@ -458,19 +457,22 @@ bool AecState::DetectActiveRender(rtc::ArrayView<const float> x) const {
                         kFftLengthBy2;
 }
 
-bool AecState::DetectEchoSaturation(rtc::ArrayView<const float> x) {
+bool AecState::DetectEchoSaturation(rtc::ArrayView<const float> x,
+                                    float echo_path_gain) {
   RTC_DCHECK_LT(0, x.size());
   const float max_sample = fabs(*std::max_element(
       x.begin(), x.end(), [](float a, float b) { return a * a < b * b; }));
-  previous_max_sample_ = max_sample;
 
   // Set flag for potential presence of saturated echo
-  blocks_since_last_saturation_ =
-      previous_max_sample_ > 200.f && SaturatedCapture()
-          ? 0
-          : blocks_since_last_saturation_ + 1;
+  const float kMargin = 10.f;
+  float peak_echo_amplitude = max_sample * echo_path_gain * kMargin;
+  if (SaturatedCapture() && peak_echo_amplitude > 32000) {
+    blocks_since_last_saturation_ = 0;
+  } else {
+    ++blocks_since_last_saturation_;
+  }
 
-  return blocks_since_last_saturation_ < 20;
+  return blocks_since_last_saturation_ < 5;
 }
 
 }  // namespace webrtc

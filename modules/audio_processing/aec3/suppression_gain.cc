@@ -1,3 +1,4 @@
+
 /*
  *  Copyright (c) 2017 The WebRTC project authors. All Rights Reserved.
  *
@@ -117,7 +118,6 @@ void GainToNoAudibleEcho(
     const EchoCanceller3Config& config,
     bool low_noise_render,
     bool saturated_echo,
-    bool saturating_echo_path,
     bool linear_echo_estimate,
     const std::array<float, kFftLengthBy2Plus1>& nearend,
     const std::array<float, kFftLengthBy2Plus1>& echo,
@@ -224,11 +224,7 @@ void SuppressionGain::LowerBandGain(
     const std::array<float, kFftLengthBy2Plus1>& comfort_noise,
     std::array<float, kFftLengthBy2Plus1>* gain) {
   const bool saturated_echo = aec_state.SaturatedEcho();
-  const bool saturating_echo_path = aec_state.SaturatingEchoPath();
   const bool linear_echo_estimate = aec_state.UsableLinearEstimate();
-
-  // Count the number of blocks since saturation.
-  no_saturation_counter_ = saturated_echo ? 0 : no_saturation_counter_ + 1;
 
   // Precompute 1/echo (note that when the echo is zero, the precomputed value
   // is never used).
@@ -242,7 +238,7 @@ void SuppressionGain::LowerBandGain(
   const float min_echo_power =
       low_noise_render ? config_.echo_audibility.low_render_limit
                        : config_.echo_audibility.normal_render_limit;
-  if (no_saturation_counter_ > 10) {
+  if (!saturated_echo) {
     for (size_t k = 0; k < nearend.size(); ++k) {
       const float denom = std::min(nearend[k], echo[k]);
       min_gain[k] = denom > 0.f ? min_echo_power / denom : 1.f;
@@ -268,8 +264,8 @@ void SuppressionGain::LowerBandGain(
     std::array<float, kFftLengthBy2Plus1> masker;
     MaskingPower(config_, nearend, comfort_noise, last_masker_, *gain, &masker);
     GainToNoAudibleEcho(config_, low_noise_render, saturated_echo,
-                        saturating_echo_path, linear_echo_estimate, nearend,
-                        echo, masker, min_gain, max_gain, one_by_echo, gain);
+                        linear_echo_estimate, nearend, echo, masker, min_gain,
+                        max_gain, one_by_echo, gain);
     AdjustForExternalFilters(gain);
     if (narrow_peak_band) {
       NarrowBandAttenuation(*narrow_peak_band, nearend, echo, gain);
@@ -280,7 +276,8 @@ void SuppressionGain::LowerBandGain(
   AdjustNonConvergedFrequencies(gain);
 
   // Update the allowed maximum gain increase.
-  UpdateGainIncrease(low_noise_render, linear_echo_estimate, echo, *gain);
+  UpdateGainIncrease(low_noise_render, linear_echo_estimate, saturated_echo,
+                     echo, *gain);
 
   // Adjust gain dynamics.
   const float gain_bound =
@@ -353,6 +350,7 @@ void SuppressionGain::SetInitialState(bool state) {
 void SuppressionGain::UpdateGainIncrease(
     bool low_noise_render,
     bool linear_echo_estimate,
+    bool saturated_echo,
     const std::array<float, kFftLengthBy2Plus1>& echo,
     const std::array<float, kFftLengthBy2Plus1>& new_gain) {
   float max_inc;
@@ -379,7 +377,7 @@ void SuppressionGain::UpdateGainIncrease(
     rate_dec = p.nonlinear.rate_dec;
     min_inc = p.nonlinear.min_inc;
     min_dec = p.nonlinear.min_dec;
-  } else if (initial_state_ && no_saturation_counter_ > 10) {
+  } else if (initial_state_ && !saturated_echo) {
     if (initial_state_change_counter_ > 0) {
       float change_factor =
           initial_state_change_counter_ * one_by_state_change_duration_blocks_;
@@ -409,7 +407,7 @@ void SuppressionGain::UpdateGainIncrease(
     rate_dec = p.low_noise.rate_dec;
     min_inc = p.low_noise.min_inc;
     min_dec = p.low_noise.min_dec;
-  } else if (no_saturation_counter_ > 10) {
+  } else if (!saturated_echo) {
     max_inc = p.normal.max_inc;
     max_dec = p.normal.max_dec;
     rate_inc = p.normal.rate_inc;

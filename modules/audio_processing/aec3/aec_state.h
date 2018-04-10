@@ -81,9 +81,6 @@ class AecState {
   // Returns whether the echo signal is saturated.
   bool SaturatedEcho() const { return echo_saturation_; }
 
-  // Returns whether the echo path can saturate.
-  bool SaturatingEchoPath() const { return saturating_echo_path_; }
-
   // Updates the capture signal saturation.
   void UpdateCaptureSaturation(bool capture_signal_saturation) {
     capture_signal_saturation_ = capture_signal_saturation;
@@ -127,7 +124,8 @@ class AecState {
   void UpdateReverb(const std::vector<float>& impulse_response);
   bool DetectActiveRender(rtc::ArrayView<const float> x) const;
   void UpdateSuppressorGainLimit(bool render_activity);
-  bool DetectEchoSaturation(rtc::ArrayView<const float> x);
+  bool DetectEchoSaturation(rtc::ArrayView<const float> x,
+                            float echo_path_gain);
 
   static int instance_count_;
   std::unique_ptr<ApmDataDumper> data_dumper_;
@@ -141,7 +139,6 @@ class AecState {
   bool capture_signal_saturation_ = false;
   bool echo_saturation_ = false;
   bool transparent_mode_ = false;
-  float previous_max_sample_ = 0.f;
   bool render_received_ = false;
   int filter_delay_blocks_ = 0;
   size_t blocks_since_last_saturation_ = 1000;
@@ -158,7 +155,6 @@ class AecState {
   const EchoCanceller3Config config_;
   std::vector<float> max_render_;
   float reverb_decay_ = fabsf(config_.ep_strength.default_len);
-  bool saturating_echo_path_ = false;
   bool filter_has_had_time_to_converge_ = false;
   bool initial_state_ = true;
   const float gain_rampup_increase_;

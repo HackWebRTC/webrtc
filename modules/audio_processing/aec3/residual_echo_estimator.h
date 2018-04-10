@@ -43,13 +43,11 @@ class ResidualEchoEstimator {
   // (ERLE) and the linear power estimate.
   void LinearEstimate(const std::array<float, kFftLengthBy2Plus1>& S2_linear,
                       const std::array<float, kFftLengthBy2Plus1>& erle,
-                      size_t delay,
                       std::array<float, kFftLengthBy2Plus1>* R2);
 
   // Estimates the residual echo power based on the estimate of the echo path
   // gain.
-  void NonLinearEstimate(bool saturated_echo,
-                         float echo_path_gain,
+  void NonLinearEstimate(float echo_path_gain,
                          const std::array<float, kFftLengthBy2Plus1>& X2,
                          const std::array<float, kFftLengthBy2Plus1>& Y2,
                          std::array<float, kFftLengthBy2Plus1>* R2);
@@ -57,7 +55,6 @@ class ResidualEchoEstimator {
   // Adds the estimated unmodelled echo power to the residual echo power
   // estimate.
   void AddEchoReverb(const std::array<float, kFftLengthBy2Plus1>& S2,
-                     bool saturated_echo,
                      size_t delay,
                      float reverb_decay_factor,
                      std::array<float, kFftLengthBy2Plus1>* R2);

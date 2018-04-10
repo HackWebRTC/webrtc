@@ -51,6 +51,7 @@ class SuppressionGain {
   void UpdateGainIncrease(
       bool low_noise_render,
       bool linear_echo_estimate,
+      bool saturated_echo,
       const std::array<float, kFftLengthBy2Plus1>& echo,
       const std::array<float, kFftLengthBy2Plus1>& new_gain);
 
@@ -72,7 +73,6 @@ class SuppressionGain {
   std::array<float, kFftLengthBy2Plus1> last_echo_;
 
   LowNoiseRenderDetector low_render_detector_;
-  size_t no_saturation_counter_ = 0;
   bool initial_state_ = true;
   int initial_state_change_counter_ = 0;
   RTC_DISALLOW_COPY_AND_ASSIGN(SuppressionGain);

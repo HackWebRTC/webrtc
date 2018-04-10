@@ -62,9 +62,9 @@ struct EchoCanceller3Config {
   } erle;
 
   struct EpStrength {
-    float lf = 2.f;
-    float mf = 2.f;
-    float hf = 2.f;
+    float lf = 10.f;
+    float mf = 10.f;
+    float hf = 10.f;
     float default_len = 0.f;
     bool echo_can_saturate = true;
     bool bounded_erl = false;
