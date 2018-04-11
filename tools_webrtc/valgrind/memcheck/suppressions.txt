@@ -442,13 +442,6 @@
    fun:_ZN3rtc47HttpServer_SignalsCloseAfterForcedCloseAll_Test8TestBodyEv
 }
 {
-   bug_5989
-   Memcheck:Unaddressable
-   ...
-   fun:_ZNK3rtc15CriticalSection5EnterEv
-   ...
-}
-{
    bug_687087
    Memcheck:Uninitialized
    fun:vfprintf
