@@ -2176,6 +2176,43 @@ TEST_P(PeerConnectionIntegrationTest, VideoRejectedInSubsequentOffer) {
   }
 }
 
+// Do one offer/answer with audio, another that disables it (rejecting the m=
+// section), and another that re-enables it. Regression test for:
+// bugs.webrtc.org/6023
+TEST_F(PeerConnectionIntegrationTestPlanB, EnableAudioAfterRejecting) {
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+
+  // Add audio track, do normal offer/answer.
+  rtc::scoped_refptr<webrtc::AudioTrackInterface> track =
+      caller()->CreateLocalAudioTrack();
+  rtc::scoped_refptr<webrtc::RtpSenderInterface> sender =
+      caller()->pc()->AddTrack(track, {"stream"}).MoveValue();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  // Remove audio track, and set offer_to_receive_audio to false to cause the
+  // m= section to be completely disabled, not just "recvonly".
+  caller()->pc()->RemoveTrack(sender);
+  PeerConnectionInterface::RTCOfferAnswerOptions options;
+  options.offer_to_receive_audio = 0;
+  caller()->SetOfferAnswerOptions(options);
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  // Add the audio track again, expecting negotiation to succeed and frames to
+  // flow.
+  sender = caller()->pc()->AddTrack(track, {"stream"}).MoveValue();
+  options.offer_to_receive_audio = 1;
+  caller()->SetOfferAnswerOptions(options);
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  MediaExpectations media_expectations;
+  media_expectations.CalleeExpectsSomeAudio();
+  EXPECT_TRUE(ExpectNewFrames(media_expectations));
+}
+
 // Basic end-to-end test, but without SSRC/MSID signaling. This functionality
 // is needed to support legacy endpoints.
 // TODO(deadbeef): When we support the MID extension and demuxing on MID, also
