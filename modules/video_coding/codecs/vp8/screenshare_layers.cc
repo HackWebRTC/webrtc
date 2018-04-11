@@ -221,10 +221,12 @@ void ScreenshareLayers::OnRatesUpdated(
     capture_framerate_ = target_framerate_;
     bitrate_updated_ = true;
   } else {
-    bitrate_updated_ = capture_framerate_ &&
-                       framerate_fps != static_cast<int>(*capture_framerate_);
-    bitrate_updated_ |= tl0_kbps != layers_[0].target_rate_kbps_;
-    bitrate_updated_ |= tl1_kbps != layers_[1].target_rate_kbps_;
+    if ((capture_framerate_ &&
+         framerate_fps != static_cast<int>(*capture_framerate_)) ||
+        (tl0_kbps != layers_[0].target_rate_kbps_) ||
+        (tl1_kbps != layers_[1].target_rate_kbps_)) {
+      bitrate_updated_ = true;
+    }
 
     if (framerate_fps < 0) {
       capture_framerate_.reset();

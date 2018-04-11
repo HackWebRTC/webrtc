@@ -642,4 +642,23 @@ TEST_F(ScreenshareLayerTest, AdjustsBitrateWhenDroppingFrames) {
   EXPECT_EQ(cfg_.rc_target_bitrate, default_bitrate * 2);
 }
 
+TEST_F(ScreenshareLayerTest, UpdatesConfigurationAfterRateChange) {
+  // Set inital rate again, no need to update configuration.
+  layers_->OnRatesUpdated(kDefault2TlBitratesBps, kFrameRate);
+  EXPECT_FALSE(layers_->UpdateConfiguration(&cfg_));
+
+  // Rate changed, now update config.
+  std::vector<uint32_t> bitrates = kDefault2TlBitratesBps;
+  bitrates[1] -= 100000;
+  layers_->OnRatesUpdated(bitrates, 5);
+  EXPECT_TRUE(layers_->UpdateConfiguration(&cfg_));
+
+  // Changed rate, but then set changed rate again before trying to update
+  // configuration, update should still apply.
+  bitrates[1] -= 100000;
+  layers_->OnRatesUpdated(bitrates, 5);
+  layers_->OnRatesUpdated(bitrates, 5);
+  EXPECT_TRUE(layers_->UpdateConfiguration(&cfg_));
+}
+
 }  // namespace webrtc
