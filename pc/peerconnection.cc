@@ -5340,25 +5340,26 @@ bool PeerConnection::UseCandidate(const IceCandidateInterface* candidate) {
   // Invoking BaseSession method to handle remote candidates.
   RTCError error =
       transport_controller_->AddRemoteCandidates(content.name, candidates);
-  if (error.ok()) {
-    // Candidates successfully submitted for checking.
-    if (ice_connection_state_ == PeerConnectionInterface::kIceConnectionNew ||
-        ice_connection_state_ ==
-            PeerConnectionInterface::kIceConnectionDisconnected) {
-      // If state is New, then the session has just gotten its first remote ICE
-      // candidates, so go to Checking.
-      // If state is Disconnected, the session is re-using old candidates or
-      // receiving additional ones, so go to Checking.
-      // If state is Connected, stay Connected.
-      // TODO(bemasc): If state is Connected, and the new candidates are for a
-      // newly added transport, then the state actually _should_ move to
-      // checking.  Add a way to distinguish that case.
-      SetIceConnectionState(PeerConnectionInterface::kIceConnectionChecking);
-    }
-    // TODO(bemasc): If state is Completed, go back to Connected.
-  } else if (error.message()) {
+  if (!error.ok()) {
     RTC_LOG(LS_WARNING) << error.message();
+    return false;
   }
+
+  // Candidates successfully submitted for checking.
+  if (ice_connection_state_ == PeerConnectionInterface::kIceConnectionNew ||
+      ice_connection_state_ ==
+          PeerConnectionInterface::kIceConnectionDisconnected) {
+    // If state is New, then the session has just gotten its first remote ICE
+    // candidates, so go to Checking.
+    // If state is Disconnected, the session is re-using old candidates or
+    // receiving additional ones, so go to Checking.
+    // If state is Connected, stay Connected.
+    // TODO(bemasc): If state is Connected, and the new candidates are for a
+    // newly added transport, then the state actually _should_ move to
+    // checking.  Add a way to distinguish that case.
+    SetIceConnectionState(PeerConnectionInterface::kIceConnectionChecking);
+  }
+  // TODO(bemasc): If state is Completed, go back to Connected.
   return true;
 }
 
