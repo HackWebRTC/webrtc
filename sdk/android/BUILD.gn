@@ -1203,6 +1203,8 @@ generate_jni("generated_native_unittests_jni") {
   testonly = true
 
   sources = [
+    "native_unittests/org/webrtc/ApplicationContextProvider.java",
+    "native_unittests/org/webrtc/BuildInfo.java",
     "native_unittests/org/webrtc/JavaTypesTestHelper.java",
     "native_unittests/org/webrtc/PeerConnectionFactoryInitializationHelper.java",
   ]
@@ -1214,12 +1216,15 @@ rtc_android_library("native_unittests_java") {
   testonly = true
 
   java_files = [
+    "native_unittests/org/webrtc/ApplicationContextProvider.java",
+    "native_unittests/org/webrtc/BuildInfo.java",
     "native_unittests/org/webrtc/JavaTypesTestHelper.java",
     "native_unittests/org/webrtc/PeerConnectionFactoryInitializationHelper.java",
   ]
 
   deps = [
     ":libjingle_peerconnection_java",
+    "//third_party/android_support_test_runner:runner_java",
   ]
 }
 
@@ -1227,9 +1232,15 @@ rtc_source_set("native_unittests") {
   testonly = true
 
   sources = [
+    "native_unittests/audio_device/audio_device_unittest.cc",
     "native_unittests/java_types_unittest.cc",
     "native_unittests/peerconnection/peerconnectionfactory_unittest.cc",
     "native_unittests/test_jni_onload.cc",
+  ]
+
+  data = [
+    "../../resources/audio_device/audio_short44.pcm",
+    "../../resources/audio_device/audio_short48.pcm",
   ]
 
   if (is_clang) {
@@ -1241,24 +1252,33 @@ rtc_source_set("native_unittests") {
   }
 
   deps = [
+    ":audio_device_base_jni",
     ":audio_jni",
+    ":base_jni",
     ":generated_native_unittests_jni",
+    ":java_audio_device_jni",
     ":media_jni",
+    ":native_api_audio_device_module",
     ":native_api_base",
     ":native_api_jni",
     ":native_api_peerconnection",
     ":native_unittests_java",
+    ":opensles_audio_device_jni",
     ":video_jni",
+    "../../system_wrappers:system_wrappers",
     "//api/audio_codecs:builtin_audio_decoder_factory",
     "//api/audio_codecs:builtin_audio_encoder_factory",
     "//media:rtc_audio_video",
     "//media:rtc_internal_video_codecs",
     "//media:rtc_media_base",
+    "//modules/audio_device:audio_device",
+    "//modules/audio_device:mock_audio_device",
     "//modules/audio_processing:audio_processing",
     "//modules/utility:utility",
     "//pc:libjingle_peerconnection",
     "//rtc_base:checks",
     "//rtc_base:rtc_base_approved",
+    "//test:fileutils",
     "//test:test_support",
     "//testing/gtest",
   ]
