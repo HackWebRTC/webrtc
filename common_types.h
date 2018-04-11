@@ -13,7 +13,6 @@
 
 #include <stddef.h>
 #include <string.h>
-#include <ostream>
 #include <string>
 #include <vector>
 
@@ -27,14 +26,6 @@
 // Disable "new behavior: elements of array will be default initialized"
 // warning. Affects OverUseDetectorOptions.
 #pragma warning(disable : 4351)
-#endif
-
-#if defined(WEBRTC_EXPORT)
-#define WEBRTC_DLLEXPORT _declspec(dllexport)
-#elif defined(WEBRTC_DLL)
-#define WEBRTC_DLLEXPORT _declspec(dllimport)
-#else
-#define WEBRTC_DLLEXPORT
 #endif
 
 #ifndef NULL
@@ -54,34 +45,6 @@
 #endif
 
 namespace webrtc {
-
-class RewindableStream {
- public:
-  virtual ~RewindableStream() {}
-  virtual int Rewind() = 0;
-};
-
-class InStream : public RewindableStream {
- public:
-  // Reads |len| bytes from file to |buf|. Returns the number of bytes read
-  // or -1 on error.
-  virtual int Read(void* buf, size_t len) = 0;
-};
-
-class OutStream : public RewindableStream {
- public:
-  // Writes |len| bytes from |buf| to file. The actual writing may happen
-  // some time later. Call Flush() to force a write.
-  virtual bool Write(const void* buf, size_t len) = 0;
-};
-
-// For the deprecated MediaFile module.
-enum FileFormats {
-  kFileFormatWavFile = 1,
-  kFileFormatPcm16kHzFile = 7,
-  kFileFormatPcm8kHzFile = 8,
-  kFileFormatPcm32kHzFile = 9,
-};
 
 enum FrameType {
   kEmptyFrame = 0,
@@ -282,20 +245,6 @@ struct CodecInst {
 
 // RTP
 enum { kRtpCsrcSize = 15 };  // RFC 3550 page 13
-
-enum PayloadFrequencies {
-  kFreq8000Hz = 8000,
-  kFreq16000Hz = 16000,
-  kFreq32000Hz = 32000
-};
-
-// Degree of bandwidth reduction.
-enum VadModes {
-  kVadConventional = 0,  // lowest reduction
-  kVadAggressiveLow,
-  kVadAggressiveMid,
-  kVadAggressiveHigh  // highest reduction
-};
 
 // NETEQ statistics.
 struct NetworkStatistics {

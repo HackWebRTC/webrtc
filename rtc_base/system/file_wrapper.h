@@ -18,13 +18,12 @@
 #include "rtc_base/criticalsection.h"
 #include "typedefs.h"  // NOLINT(build/include)
 
-// Implementation of an InStream and OutStream that can read (exclusive) or
-// write from/to a file.
+// Implementation that can read (exclusive) or write from/to a file.
 
 namespace webrtc {
 
-// TODO(tommi): Remove the base classes, rename to rtc::File and move to base.
-class FileWrapper : public InStream, public OutStream {
+// TODO(tommi): Rename to rtc::File and move to base.
+class FileWrapper final {
  public:
   static const size_t kMaxFileNameSize = 1024;
 
@@ -34,7 +33,7 @@ class FileWrapper : public InStream, public OutStream {
   static FileWrapper Open(const char* file_name_utf8, bool read_only);
 
   FileWrapper(FILE* file, size_t max_size);
-  ~FileWrapper() override;
+  ~FileWrapper();
 
   // Support for move semantics.
   FileWrapper(FileWrapper&& other);
@@ -61,9 +60,9 @@ class FileWrapper : public InStream, public OutStream {
   int Flush();
 
   // Rewinds the file to the start.
-  int Rewind() override;
-  int Read(void* buf, size_t length) override;
-  bool Write(const void* buf, size_t length) override;
+  int Rewind();
+  int Read(void* buf, size_t length);
+  bool Write(const void* buf, size_t length);
 
  private:
   FileWrapper();
