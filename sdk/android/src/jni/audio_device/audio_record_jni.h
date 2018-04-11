@@ -70,7 +70,6 @@ class AudioRecordJni : public AudioInput {
   bool IsNoiseSuppressorSupported() const override;
 
   int32_t EnableBuiltInAEC(bool enable) override;
-  int32_t EnableBuiltInAGC(bool enable) override;
   int32_t EnableBuiltInNS(bool enable) override;
 
   // Called from Java side so we can cache the address of the Java-manged

@@ -209,13 +209,6 @@ int OpenSLESRecorder::EnableBuiltInAEC(bool enable) {
   return 0;
 }
 
-int OpenSLESRecorder::EnableBuiltInAGC(bool enable) {
-  ALOGD("EnableBuiltInAGC(%d)", enable);
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  ALOGE("Not implemented");
-  return 0;
-}
-
 int OpenSLESRecorder::EnableBuiltInNS(bool enable) {
   ALOGD("EnableBuiltInNS(%d)", enable);
   RTC_DCHECK(thread_checker_.CalledOnValidThread());

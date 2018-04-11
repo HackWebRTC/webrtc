@@ -182,11 +182,13 @@ void AudioRecordJni::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
 }
 
 bool AudioRecordJni::IsAcousticEchoCancelerSupported() const {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return Java_WebRtcAudioRecord_isAcousticEchoCancelerSupported(
       env_, j_audio_record_);
 }
 
 bool AudioRecordJni::IsNoiseSuppressorSupported() const {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   return Java_WebRtcAudioRecord_isNoiseSuppressorSupported(env_,
                                                            j_audio_record_);
 }
@@ -197,12 +199,6 @@ int32_t AudioRecordJni::EnableBuiltInAEC(bool enable) {
   return Java_WebRtcAudioRecord_enableBuiltInAEC(env_, j_audio_record_, enable)
              ? 0
              : -1;
-}
-
-int32_t AudioRecordJni::EnableBuiltInAGC(bool enable) {
-  // TODO(henrika): possibly remove when no longer used by any client.
-  FATAL() << "Should never be called";
-  return -1;
 }
 
 int32_t AudioRecordJni::EnableBuiltInNS(bool enable) {

@@ -118,9 +118,8 @@ int32_t AudioTrackJni::StopPlayout() {
     RTC_LOG(LS_ERROR) << "StopPlayout failed";
     return -1;
   }
-  // If we don't detach here, we will hit a RTC_DCHECK in OnDataIsRecorded()
-  // next time StartRecording() is called since it will create a new Java
-  // thread.
+  // If we don't detach here, we will hit a RTC_DCHECK next time StartPlayout()
+  // is called since it will create a new Java thread.
   thread_checker_java_.DetachFromThread();
   initialized_ = false;
   playing_ = false;

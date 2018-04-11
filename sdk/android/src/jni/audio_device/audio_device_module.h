@@ -43,7 +43,6 @@ class AudioInput {
   virtual bool IsNoiseSuppressorSupported() const = 0;
 
   virtual int32_t EnableBuiltInAEC(bool enable) = 0;
-  virtual int32_t EnableBuiltInAGC(bool enable) = 0;
   virtual int32_t EnableBuiltInNS(bool enable) = 0;
 };
 

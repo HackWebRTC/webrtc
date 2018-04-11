@@ -66,7 +66,6 @@ class AAudioRecorder : public AudioInput,
   bool IsAcousticEchoCancelerSupported() const override;
   bool IsNoiseSuppressorSupported() const override;
   int EnableBuiltInAEC(bool enable) override;
-  int EnableBuiltInAGC(bool enable) override;
   int EnableBuiltInNS(bool enable) override;
 
  protected:

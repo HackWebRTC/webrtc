@@ -19,20 +19,6 @@
 #include "sdk/android/generated_audio_device_base_jni/jni/WebRtcAudioManager_jni.h"
 #include "system_wrappers/include/metrics.h"
 
-#define CHECKinitialized_() \
-  {                         \
-    if (!initialized_) {    \
-      return -1;            \
-    }                       \
-  }
-
-#define CHECKinitialized__BOOL() \
-  {                              \
-    if (!initialized_) {         \
-      return false;              \
-    }                            \
-  }
-
 namespace webrtc {
 
 namespace android_adm {
@@ -136,7 +122,6 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
 
   bool Initialized() const override {
     RTC_LOG(INFO) << __FUNCTION__ << ":" << initialized_;
-    RTC_DCHECK(thread_checker_.CalledOnValidThread());  // not done in _impl
     return initialized_;
   }
 
@@ -201,7 +186,8 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
 
   int32_t InitPlayout() override {
     RTC_LOG(INFO) << __FUNCTION__;
-    CHECKinitialized_();
+    if (!initialized_)
+      return -1;
     if (PlayoutIsInitialized()) {
       return 0;
     }
@@ -214,7 +200,6 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
 
   bool PlayoutIsInitialized() const override {
     RTC_LOG(INFO) << __FUNCTION__;
-    CHECKinitialized__BOOL();
     return output_->PlayoutIsInitialized();
   }
 
@@ -227,7 +212,8 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
 
   int32_t InitRecording() override {
     RTC_LOG(INFO) << __FUNCTION__;
-    CHECKinitialized_();
+    if (!initialized_)
+      return -1;
     if (RecordingIsInitialized()) {
       return 0;
     }
@@ -240,13 +226,13 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
 
   bool RecordingIsInitialized() const override {
     RTC_LOG(INFO) << __FUNCTION__;
-    CHECKinitialized__BOOL();
     return input_->RecordingIsInitialized();
   }
 
   int32_t StartPlayout() override {
     RTC_LOG(INFO) << __FUNCTION__;
-    CHECKinitialized_();
+    if (!initialized_)
+      return -1;
     if (Playing()) {
       return 0;
     }
@@ -260,7 +246,8 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
 
   int32_t StopPlayout() override {
     RTC_LOG(INFO) << __FUNCTION__;
-    CHECKinitialized_();
+    if (!initialized_)
+      return -1;
     if (!Playing())
       return 0;
     RTC_LOG(INFO) << __FUNCTION__;
@@ -274,13 +261,13 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
 
   bool Playing() const override {
     RTC_LOG(INFO) << __FUNCTION__;
-    CHECKinitialized__BOOL();
     return output_->Playing();
   }
 
   int32_t StartRecording() override {
     RTC_LOG(INFO) << __FUNCTION__;
-    CHECKinitialized_();
+    if (!initialized_)
+      return -1;
     if (Recording()) {
       return 0;
     }
@@ -294,8 +281,8 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
 
   int32_t StopRecording() override {
     RTC_LOG(INFO) << __FUNCTION__;
-    CHECKinitialized_();
-    // Avoid using audio manger (JNI/Java cost) if recording was inactive.
+    if (!initialized_)
+      return -1;
     if (!Recording())
       return 0;
     audio_device_buffer_->StopRecording();
@@ -308,39 +295,33 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
 
   bool Recording() const override {
     RTC_LOG(INFO) << __FUNCTION__;
-    CHECKinitialized__BOOL();
     return input_->Recording();
   }
 
   int32_t InitSpeaker() override {
     RTC_LOG(INFO) << __FUNCTION__;
-    CHECKinitialized_();
-    return 0;
+    return initialized_ ? 0 : -1;
   }
 
   bool SpeakerIsInitialized() const override {
     RTC_LOG(INFO) << __FUNCTION__;
-    CHECKinitialized__BOOL();
-    RTC_LOG(INFO) << "output: " << true;
-    return true;
+    return initialized_;
   }
 
   int32_t InitMicrophone() override {
     RTC_LOG(INFO) << __FUNCTION__;
-    CHECKinitialized_();
-    return 0;
+    return initialized_ ? 0 : -1;
   }
 
   bool MicrophoneIsInitialized() const override {
     RTC_LOG(INFO) << __FUNCTION__;
-    CHECKinitialized__BOOL();
-    RTC_LOG(INFO) << "output: " << true;
-    return true;
+    return initialized_;
   }
 
   int32_t SpeakerVolumeIsAvailable(bool* available) override {
     RTC_LOG(INFO) << __FUNCTION__;
-    CHECKinitialized_();
+    if (!initialized_)
+      return -1;
     *available = output_->SpeakerVolumeIsAvailable();
     RTC_LOG(INFO) << "output: " << *available;
     return 0;
@@ -348,13 +329,15 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
 
   int32_t SetSpeakerVolume(uint32_t volume) override {
     RTC_LOG(INFO) << __FUNCTION__;
-    CHECKinitialized_();
+    if (!initialized_)
+      return -1;
     return output_->SetSpeakerVolume(volume);
   }
 
   int32_t SpeakerVolume(uint32_t* output_volume) const override {
     RTC_LOG(INFO) << __FUNCTION__;
-    CHECKinitialized_();
+    if (!initialized_)
+      return -1;
     rtc::Optional<uint32_t> volume = output_->SpeakerVolume();
     if (!volume)
       return -1;
@@ -365,7 +348,8 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
 
   int32_t MaxSpeakerVolume(uint32_t* output_max_volume) const override {
     RTC_LOG(INFO) << __FUNCTION__;
-    CHECKinitialized_();
+    if (!initialized_)
+      return -1;
     rtc::Optional<uint32_t> max_volume = output_->MaxSpeakerVolume();
     if (!max_volume)
       return -1;
@@ -375,7 +359,8 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
 
   int32_t MinSpeakerVolume(uint32_t* output_min_volume) const override {
     RTC_LOG(INFO) << __FUNCTION__;
-    CHECKinitialized_();
+    if (!initialized_)
+      return -1;
     rtc::Optional<uint32_t> min_volume = output_->MinSpeakerVolume();
     if (!min_volume)
       return -1;
@@ -385,7 +370,6 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
 
   int32_t MicrophoneVolumeIsAvailable(bool* available) override {
     RTC_LOG(INFO) << __FUNCTION__;
-    CHECKinitialized_();
     *available = false;
     RTC_LOG(INFO) << "output: " << *available;
     return -1;
@@ -393,77 +377,66 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
 
   int32_t SetMicrophoneVolume(uint32_t volume) override {
     RTC_LOG(INFO) << __FUNCTION__ << "(" << volume << ")";
-    CHECKinitialized_();
     FATAL() << "Should never be called";
     return -1;
   }
 
   int32_t MicrophoneVolume(uint32_t* volume) const override {
     RTC_LOG(INFO) << __FUNCTION__;
-    CHECKinitialized_();
     FATAL() << "Should never be called";
     return -1;
   }
 
   int32_t MaxMicrophoneVolume(uint32_t* maxVolume) const override {
     RTC_LOG(INFO) << __FUNCTION__;
-    CHECKinitialized_();
     FATAL() << "Should never be called";
     return -1;
   }
 
   int32_t MinMicrophoneVolume(uint32_t* minVolume) const override {
     RTC_LOG(INFO) << __FUNCTION__;
-    CHECKinitialized_();
     FATAL() << "Should never be called";
     return -1;
   }
 
   int32_t SpeakerMuteIsAvailable(bool* available) override {
     RTC_LOG(INFO) << __FUNCTION__;
-    CHECKinitialized_();
     FATAL() << "Should never be called";
     return -1;
   }
 
   int32_t SetSpeakerMute(bool enable) override {
     RTC_LOG(INFO) << __FUNCTION__ << "(" << enable << ")";
-    CHECKinitialized_();
     FATAL() << "Should never be called";
     return -1;
   }
 
   int32_t SpeakerMute(bool* enabled) const override {
     RTC_LOG(INFO) << __FUNCTION__;
-    CHECKinitialized_();
     FATAL() << "Should never be called";
     return -1;
   }
 
   int32_t MicrophoneMuteIsAvailable(bool* available) override {
     RTC_LOG(INFO) << __FUNCTION__;
-    CHECKinitialized_();
     FATAL() << "Not implemented";
     return -1;
   }
 
   int32_t SetMicrophoneMute(bool enable) override {
     RTC_LOG(INFO) << __FUNCTION__ << "(" << enable << ")";
-    CHECKinitialized_();
     FATAL() << "Not implemented";
     return -1;
   }
 
   int32_t MicrophoneMute(bool* enabled) const override {
     RTC_LOG(INFO) << __FUNCTION__;
-    CHECKinitialized_();
     FATAL() << "Not implemented";
     return -1;
   }
 
   int32_t StereoPlayoutIsAvailable(bool* available) const override {
     RTC_LOG(INFO) << __FUNCTION__;
-    CHECKinitialized_();
     *available = is_stereo_playout_supported_;
     RTC_LOG(INFO) << "output: " << *available;
     return 0;
@@ -471,29 +444,19 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
 
   int32_t SetStereoPlayout(bool enable) override {
     RTC_LOG(INFO) << __FUNCTION__ << "(" << enable << ")";
-    CHECKinitialized_();
-    if (PlayoutIsInitialized()) {
-      RTC_LOG(WARNING) << "recording in stereo is not supported";
-      return -1;
-    }
+    // Android does not support changes between mono and stero on the fly. The
+    // use of stereo or mono is determined by the audio layer. It is allowed
+    // to call this method if that same state is not modified.
     bool available = is_stereo_playout_supported_;
-    // Android does not support changes between mono and stero on the fly. It is
-    // allowed to call this method if that same state is not modified.
     if (enable != available) {
-      RTC_LOG(WARNING) << "failed to change stereo recording";
+      RTC_LOG(WARNING) << "changing stereo playout not supported";
       return -1;
     }
-    int8_t nChannels(1);
-    if (enable) {
-      nChannels = 2;
-    }
-    audio_device_buffer_->SetPlayoutChannels(nChannels);
     return 0;
   }
 
   int32_t StereoPlayout(bool* enabled) const override {
     RTC_LOG(INFO) << __FUNCTION__;
-    CHECKinitialized_();
     *enabled = is_stereo_playout_supported_;
     RTC_LOG(INFO) << "output: " << *enabled;
     return 0;
@@ -501,7 +464,6 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
 
   int32_t StereoRecordingIsAvailable(bool* available) const override {
     RTC_LOG(INFO) << __FUNCTION__;
-    CHECKinitialized_();
     *available = is_stereo_record_supported_;
     RTC_LOG(INFO) << "output: " << *available;
     return 0;
@@ -509,36 +471,25 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
 
   int32_t SetStereoRecording(bool enable) override {
     RTC_LOG(INFO) << __FUNCTION__ << "(" << enable << ")";
-    CHECKinitialized_();
-    if (RecordingIsInitialized()) {
-      RTC_LOG(WARNING) << "recording in stereo is not supported";
-      return -1;
-    }
+    // Android does not support changes between mono and stero on the fly. The
+    // use of stereo or mono is determined by the audio layer. It is allowed
+    // to call this method if that same state is not modified.
     bool available = is_stereo_record_supported_;
-    // Android does not support changes between mono and stero on the fly. It is
-    // allowed to call this method if that same state is not modified.
     if (enable != available) {
-      RTC_LOG(WARNING) << "failed to change stereo recording";
+      RTC_LOG(WARNING) << "changing stereo recording not supported";
       return -1;
     }
-    int8_t nChannels(1);
-    if (enable) {
-      nChannels = 2;
-    }
-    audio_device_buffer_->SetRecordingChannels(nChannels);
     return 0;
   }
 
   int32_t StereoRecording(bool* enabled) const override {
     RTC_LOG(INFO) << __FUNCTION__;
-    CHECKinitialized_();
     *enabled = is_stereo_record_supported_;
     RTC_LOG(INFO) << "output: " << *enabled;
     return 0;
   }
 
   int32_t PlayoutDelay(uint16_t* delay_ms) const override {
-    CHECKinitialized_();
     // Best guess we can do is to use half of the estimated total delay.
     *delay_ms = playout_delay_ms_;
     RTC_DCHECK_GT(*delay_ms, 0);
@@ -559,22 +510,18 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
   // until I have added full support for audio effects based on OpenSL ES APIs.
   bool BuiltInAECIsAvailable() const override {
     RTC_LOG(INFO) << __FUNCTION__;
-    CHECKinitialized__BOOL();
+    if (!initialized_)
+      return false;
     bool isAvailable = input_->IsAcousticEchoCancelerSupported();
     RTC_LOG(INFO) << "output: " << isAvailable;
     return isAvailable;
   }
 
-  // Returns true if the device both supports built in AGC and the device
-  // is not blacklisted.
-  // TODO(henrika): add implementation for OpenSL ES based audio as well.
-  // In addition, see comments for BuiltInAECIsAvailable().
+  // Not implemented for any input device on Android.
   bool BuiltInAGCIsAvailable() const override {
     RTC_LOG(INFO) << __FUNCTION__;
-    CHECKinitialized__BOOL();
-    bool isAvailable = false;
-    RTC_LOG(INFO) << "output: " << isAvailable;
-    return isAvailable;
+    RTC_LOG(INFO) << "output: " << false;
+    return false;
   }
 
   // Returns true if the device both supports built in NS and the device
@@ -583,7 +530,8 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
   // In addition, see comments for BuiltInAECIsAvailable().
   bool BuiltInNSIsAvailable() const override {
     RTC_LOG(INFO) << __FUNCTION__;
-    CHECKinitialized__BOOL();
+    if (!initialized_)
+      return false;
     bool isAvailable = input_->IsNoiseSuppressorSupported();
     RTC_LOG(INFO) << "output: " << isAvailable;
     return isAvailable;
@@ -592,27 +540,25 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
   // TODO(henrika): add implementation for OpenSL ES based audio as well.
   int32_t EnableBuiltInAEC(bool enable) override {
     RTC_LOG(INFO) << __FUNCTION__ << "(" << enable << ")";
-    CHECKinitialized_();
+    if (!initialized_)
+      return -1;
     RTC_CHECK(BuiltInAECIsAvailable()) << "HW AEC is not available";
     int32_t result = input_->EnableBuiltInAEC(enable);
     RTC_LOG(INFO) << "output: " << result;
     return result;
   }
 
-  // TODO(henrika): add implementation for OpenSL ES based audio as well.
   int32_t EnableBuiltInAGC(bool enable) override {
     RTC_LOG(INFO) << __FUNCTION__ << "(" << enable << ")";
-    CHECKinitialized_();
-    RTC_CHECK(BuiltInAGCIsAvailable()) << "HW AGC is not available";
-    int32_t result = input_->EnableBuiltInAGC(enable);
-    RTC_LOG(INFO) << "output: " << result;
-    return result;
+    FATAL() << "HW AGC is not available";
+    return -1;
   }
 
   // TODO(henrika): add implementation for OpenSL ES based audio as well.
   int32_t EnableBuiltInNS(bool enable) override {
     RTC_LOG(INFO) << __FUNCTION__ << "(" << enable << ")";
-    CHECKinitialized_();
+    if (!initialized_)
+      return -1;
     RTC_CHECK(BuiltInNSIsAvailable()) << "HW NS is not available";
     int32_t result = input_->EnableBuiltInNS(enable);
     RTC_LOG(INFO) << "output: " << result;

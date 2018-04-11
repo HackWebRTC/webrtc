@@ -136,12 +136,6 @@ int AAudioRecorder::EnableBuiltInAEC(bool enable) {
   return -1;
 }
 
-int AAudioRecorder::EnableBuiltInAGC(bool enable) {
-  RTC_LOG(INFO) << "EnableBuiltInAGC: " << enable;
-  RTC_LOG(LS_ERROR) << "Not implemented";
-  return -1;
-}
-
 int AAudioRecorder::EnableBuiltInNS(bool enable) {
   RTC_LOG(INFO) << "EnableBuiltInNS: " << enable;
   RTC_LOG(LS_ERROR) << "Not implemented";
