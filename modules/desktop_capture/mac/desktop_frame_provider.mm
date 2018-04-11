@@ -37,7 +37,7 @@ std::unique_ptr<DesktopFrame> DesktopFrameProvider::TakeLatestFrameForDisplay(
   // handler. Indeed chromium's content uses a dedicates thread.
   WriteLockScoped scoped_io_surfaces_lock(*io_surfaces_lock_);
   if (io_surfaces_[display_id]) {
-    return std::move(io_surfaces_[display_id]);
+    return io_surfaces_[display_id]->Share();
   }
 
   return nullptr;
@@ -54,7 +54,9 @@ void DesktopFrameProvider::InvalidateIOSurface(CGDirectDisplayID display_id,
 
   // Call from the thread which runs the CGDisplayStream handler.
   WriteLockScoped scoped_io_surfaces_lock(*io_surfaces_lock_);
-  io_surfaces_[display_id] = std::move(desktop_frame_iosurface);
+  io_surfaces_[display_id] = desktop_frame_iosurface ?
+      SharedDesktopFrame::Wrap(std::move(desktop_frame_iosurface)) :
+      nullptr;
 }
 
 void DesktopFrameProvider::Release() {

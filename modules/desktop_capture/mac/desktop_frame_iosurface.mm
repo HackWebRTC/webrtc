@@ -35,6 +35,8 @@ std::unique_ptr<DesktopFrameIOSurface> DesktopFrameIOSurface::Wrap(
   if (bytes_per_pixel != DesktopFrame::kBytesPerPixel) {
     RTC_LOG(LS_ERROR) << "CGDisplayStream handler returned IOSurface with " << (8 * bytes_per_pixel)
                       << " bits per pixel. Only 32-bit depth is supported.";
+    IOSurfaceUnlock(io_surface.get(), kIOSurfaceLockReadOnly, nullptr);
+    IOSurfaceDecrementUseCount(io_surface.get());
     return nullptr;
   }
 

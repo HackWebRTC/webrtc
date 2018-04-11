@@ -17,7 +17,7 @@
 #include <map>
 #include <memory>
 
-#include "modules/desktop_capture/desktop_frame.h"
+#include "modules/desktop_capture/shared_desktop_frame.h"
 #include "rtc_base/synchronization/rw_lock_wrapper.h"
 #include "sdk/objc/Framework/Classes/Common/scoped_cftyperef.h"
 
@@ -29,7 +29,9 @@ class DesktopFrameProvider {
   ~DesktopFrameProvider();
 
   // The caller takes ownership of the returned desktop frame. Otherwise
-  // returns null if |display_id| is invalid or not ready.
+  // returns null if |display_id| is invalid or not ready. Note that this
+  // function does not remove the frame from the internal container. Caller
+  // has to call the Release function.
   std::unique_ptr<DesktopFrame> TakeLatestFrameForDisplay(
       CGDirectDisplayID display_id);
 
@@ -48,7 +50,7 @@ class DesktopFrameProvider {
   const std::unique_ptr<RWLockWrapper> io_surfaces_lock_;
 
   // Most recent IOSurface that contains a capture of matching display.
-  std::map<CGDirectDisplayID, std::unique_ptr<DesktopFrame>> io_surfaces_;
+  std::map<CGDirectDisplayID, std::unique_ptr<SharedDesktopFrame>> io_surfaces_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(DesktopFrameProvider);
 };
