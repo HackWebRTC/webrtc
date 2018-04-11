@@ -131,7 +131,8 @@ public class EglRenderer implements VideoRenderer.Callbacks, VideoSink {
   private long renderSwapBufferTimeNs;
 
   // Used for bitmap capturing.
-  @Nullable private GlTextureFrameBuffer bitmapTextureFramebuffer;
+  private final GlTextureFrameBuffer bitmapTextureFramebuffer =
+      new GlTextureFrameBuffer(GLES20.GL_RGBA);
 
   private final Runnable logStatisticsRunnable = new Runnable() {
     @Override
@@ -233,10 +234,7 @@ public class EglRenderer implements VideoRenderer.Callbacks, VideoSink {
           drawer = null;
         }
         frameDrawer.release();
-        if (bitmapTextureFramebuffer != null) {
-          bitmapTextureFramebuffer.release();
-          bitmapTextureFramebuffer = null;
-        }
+        bitmapTextureFramebuffer.release();
         if (eglBase != null) {
           logD("eglBase detach and release.");
           eglBase.detachCurrent();
@@ -637,9 +635,6 @@ public class EglRenderer implements VideoRenderer.Callbacks, VideoSink {
         continue;
       }
 
-      if (bitmapTextureFramebuffer == null) {
-        bitmapTextureFramebuffer = new GlTextureFrameBuffer(GLES20.GL_RGBA);
-      }
       bitmapTextureFramebuffer.setSize(scaledWidth, scaledHeight);
 
       GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, bitmapTextureFramebuffer.getFrameBufferId());
