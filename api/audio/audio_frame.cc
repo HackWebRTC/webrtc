@@ -13,7 +13,6 @@
 #include "api/audio/audio_frame.h"
 
 #include "rtc_base/checks.h"
-#include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/timeutils.h"
 
 namespace webrtc {
@@ -43,12 +42,12 @@ void AudioFrame::ResetWithoutMuting() {
 }
 
 void AudioFrame::UpdateFrame(uint32_t timestamp,
-                                    const int16_t* data,
-                                    size_t samples_per_channel,
-                                    int sample_rate_hz,
-                                    SpeechType speech_type,
-                                    VADActivity vad_activity,
-                                    size_t num_channels) {
+                             const int16_t* data,
+                             size_t samples_per_channel,
+                             int sample_rate_hz,
+                             SpeechType speech_type,
+                             VADActivity vad_activity,
+                             size_t num_channels) {
   timestamp_ = timestamp;
   samples_per_channel_ = samples_per_channel;
   sample_rate_hz_ = sample_rate_hz;
@@ -118,62 +117,6 @@ void AudioFrame::Mute() {
 }
 
 bool AudioFrame::muted() const { return muted_; }
-
-AudioFrame& AudioFrame::operator>>=(const int rhs) {
-  RTC_CHECK_GT(num_channels_, 0);
-  RTC_CHECK_LT(num_channels_, 3);
-  if ((num_channels_ > 2) || (num_channels_ < 1)) return *this;
-  if (muted_) return *this;
-
-  for (size_t i = 0; i < samples_per_channel_ * num_channels_; i++) {
-    data_[i] = static_cast<int16_t>(data_[i] >> rhs);
-  }
-  return *this;
-}
-
-AudioFrame& AudioFrame::operator+=(const AudioFrame& rhs) {
-  // Sanity check
-  RTC_CHECK_GT(num_channels_, 0);
-  RTC_CHECK_LT(num_channels_, 3);
-  if ((num_channels_ > 2) || (num_channels_ < 1)) return *this;
-  if (num_channels_ != rhs.num_channels_) return *this;
-
-  bool noPrevData = muted_;
-  if (samples_per_channel_ != rhs.samples_per_channel_) {
-    if (samples_per_channel_ == 0) {
-      // special case we have no data to start with
-      samples_per_channel_ = rhs.samples_per_channel_;
-      noPrevData = true;
-    } else {
-      return *this;
-    }
-  }
-
-  if ((vad_activity_ == kVadActive) || rhs.vad_activity_ == kVadActive) {
-    vad_activity_ = kVadActive;
-  } else if (vad_activity_ == kVadUnknown || rhs.vad_activity_ == kVadUnknown) {
-    vad_activity_ = kVadUnknown;
-  }
-
-  if (speech_type_ != rhs.speech_type_) speech_type_ = kUndefined;
-
-  if (!rhs.muted()) {
-    muted_ = false;
-    if (noPrevData) {
-      memcpy(data_, rhs.data(),
-             sizeof(int16_t) * rhs.samples_per_channel_ * num_channels_);
-    } else {
-      // IMPROVEMENT this can be done very fast in assembly
-      for (size_t i = 0; i < samples_per_channel_ * num_channels_; i++) {
-        int32_t wrap_guard =
-            static_cast<int32_t>(data_[i]) + static_cast<int32_t>(rhs.data_[i]);
-        data_[i] = rtc::saturated_cast<int16_t>(wrap_guard);
-      }
-    }
-  }
-
-  return *this;
-}
 
 // static
 const int16_t* AudioFrame::empty_data() {

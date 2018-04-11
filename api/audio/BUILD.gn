@@ -18,7 +18,6 @@ rtc_source_set("audio_frame_api") {
   deps = [
     "../../:typedefs",
     "../../rtc_base:checks",
-    "../../rtc_base:deprecation",
     "../../rtc_base:rtc_base_approved",
   ]
 }

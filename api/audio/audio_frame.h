@@ -11,11 +11,7 @@
 #ifndef API_AUDIO_AUDIO_FRAME_H_
 #define API_AUDIO_AUDIO_FRAME_H_
 
-#include <stdint.h>
-#include <stdlib.h>
-
 #include "rtc_base/constructormagic.h"
-#include "rtc_base/deprecation.h"
 #include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
@@ -68,17 +64,6 @@ class AudioFrame {
   // ResetWithoutMuting() to skip this wasteful zeroing.
   void ResetWithoutMuting();
 
-  // TODO(solenberg): Remove once downstream users of AudioFrame have updated.
-  RTC_DEPRECATED
-      void UpdateFrame(int id, uint32_t timestamp, const int16_t* data,
-                       size_t samples_per_channel, int sample_rate_hz,
-                       SpeechType speech_type, VADActivity vad_activity,
-                       size_t num_channels = 1) {
-    RTC_UNUSED(id);
-    UpdateFrame(timestamp, data, samples_per_channel, sample_rate_hz,
-                speech_type, vad_activity, num_channels);
-  }
-
   void UpdateFrame(uint32_t timestamp, const int16_t* data,
                    size_t samples_per_channel, int sample_rate_hz,
                    SpeechType speech_type, VADActivity vad_activity,
@@ -107,13 +92,6 @@ class AudioFrame {
   void Mute();
   // Frame is muted by default.
   bool muted() const;
-
-  // These methods are deprecated. Use the functions in
-  // webrtc/audio/utility instead. These methods will exists for a
-  // short period of time until webrtc clients have updated. See
-  // webrtc:6548 for details.
-  RTC_DEPRECATED AudioFrame& operator>>=(const int rhs);
-  RTC_DEPRECATED AudioFrame& operator+=(const AudioFrame& rhs);
 
   // RTP timestamp of the first sample in the AudioFrame.
   uint32_t timestamp_ = 0;
