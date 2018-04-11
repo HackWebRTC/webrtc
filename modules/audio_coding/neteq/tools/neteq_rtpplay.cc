@@ -370,7 +370,9 @@ class StatsGetter : public NetEqGetAudioCallback {
       stats_.push_back(stats);
     }
     const auto lifetime_stat = neteq->GetLifetimeStatistics();
-    if (current_concealment_event_ != lifetime_stat.concealment_events) {
+    if (current_concealment_event_ != lifetime_stat.concealment_events &&
+        voice_concealed_samples_until_last_event_ <
+            lifetime_stat.voice_concealed_samples) {
       if (last_event_end_time_ms_ > 0) {
         // Do not account for the first event to avoid start of the call
         // skewing.
