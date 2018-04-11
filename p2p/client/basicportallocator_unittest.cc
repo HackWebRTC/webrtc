@@ -166,7 +166,6 @@ class BasicPortAllocatorTestBase : public testing::Test,
     allocator_.reset(new BasicPortAllocator(&network_manager_, stun_servers,
                                             kRelayUdpIntAddr, kRelayTcpIntAddr,
                                             kRelaySslTcpIntAddr));
-    allocator_->Initialize();
     allocator_->set_step_delay(kMinimumStepDelay);
   }
 
@@ -202,7 +201,6 @@ class BasicPortAllocatorTestBase : public testing::Test,
   // Endpoint is on the public network. No STUN or TURN.
   void ResetWithNoServersOrNat() {
     allocator_.reset(new BasicPortAllocator(&network_manager_));
-    allocator_->Initialize();
     allocator_->set_step_delay(kMinimumStepDelay);
   }
   // Endpoint is behind a NAT, with STUN specified.
@@ -485,8 +483,7 @@ class BasicPortAllocatorTestBase : public testing::Test,
     }
     allocator_.reset(new BasicPortAllocator(
         &network_manager_, nat_socket_factory_.get(), stun_servers));
-    allocator_->Initialize();
-    allocator_->set_step_delay(kMinimumStepDelay);
+    allocator().set_step_delay(kMinimumStepDelay);
   }
 
   std::unique_ptr<rtc::VirtualSocketServer> vss_;
@@ -582,7 +579,6 @@ class BasicPortAllocatorTest : public FakeClockBase,
     AddInterface(kClientAddr, "net1");
     AddInterface(kClientIPv6Addr, "net1");
     allocator_.reset(new BasicPortAllocator(&network_manager_));
-    allocator_->Initialize();
     allocator_->SetConfiguration(allocator_->stun_servers(),
                                  allocator_->turn_servers(), 0, true);
     AddTurnServers(kTurnUdpIntIPv6Addr, rtc::SocketAddress());
@@ -620,7 +616,6 @@ class BasicPortAllocatorTest : public FakeClockBase,
     turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
     AddInterface(kClientAddr);
     allocator_.reset(new BasicPortAllocator(&network_manager_));
-    allocator_->Initialize();
     allocator_->SetConfiguration(allocator_->stun_servers(),
                                  allocator_->turn_servers(), 0, true);
     AddTurnServers(kTurnUdpIntAddr, kTurnTcpIntAddr);
@@ -667,7 +662,6 @@ class BasicPortAllocatorTest : public FakeClockBase,
     AddInterface(kClientAddr2, "net2", rtc::ADAPTER_TYPE_CELLULAR);
     AddInterface(kClientIPv6Addr2, "net2", rtc::ADAPTER_TYPE_CELLULAR);
     allocator_.reset(new BasicPortAllocator(&network_manager_));
-    allocator_->Initialize();
     allocator_->SetConfiguration(allocator_->stun_servers(),
                                  allocator_->turn_servers(), 0, true);
     // Have both UDP/TCP and IPv4/IPv6 TURN ports.
@@ -1657,7 +1651,6 @@ TEST_F(BasicPortAllocatorTest, TestSharedSocketWithoutNatUsingTurn) {
   turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
   AddInterface(kClientAddr);
   allocator_.reset(new BasicPortAllocator(&network_manager_));
-  allocator_->Initialize();
 
   AddTurnServers(kTurnUdpIntAddr, kTurnTcpIntAddr);
 
@@ -1762,7 +1755,6 @@ TEST_F(BasicPortAllocatorTestWithRealClock,
                                  PROTO_UDP);
   AddInterface(kClientAddr);
   allocator_.reset(new BasicPortAllocator(&network_manager_));
-  allocator_->Initialize();
   RelayServerConfig turn_server(RELAY_TURN);
   RelayCredentials credentials(kTurnUsername, kTurnPassword);
   turn_server.credentials = credentials;

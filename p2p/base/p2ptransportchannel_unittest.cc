@@ -155,7 +155,6 @@ cricket::BasicPortAllocator* CreateBasicPortAllocator(
 
   cricket::BasicPortAllocator* allocator =
       new cricket::BasicPortAllocator(network_manager);
-  allocator->Initialize();
   allocator->SetConfiguration(stun_servers, turn_servers, 0, false);
   return allocator;
 }

@@ -186,7 +186,6 @@ void BasicPortAllocator::OnIceRegathering(PortAllocatorSession* session,
 }
 
 BasicPortAllocator::~BasicPortAllocator() {
-  CheckRunOnValidThreadIfInitialized();
   // Our created port allocator sessions depend on us, so destroy our remaining
   // pooled sessions before anything else.
   DiscardCandidatePool();
@@ -196,14 +195,12 @@ void BasicPortAllocator::SetNetworkIgnoreMask(int network_ignore_mask) {
   // TODO(phoglund): implement support for other types than loopback.
   // See https://code.google.com/p/webrtc/issues/detail?id=4288.
   // Then remove set_network_ignore_list from NetworkManager.
-  CheckRunOnValidThreadIfInitialized();
   network_ignore_mask_ = network_ignore_mask;
 }
 
 PortAllocatorSession* BasicPortAllocator::CreateSessionInternal(
     const std::string& content_name, int component,
     const std::string& ice_ufrag, const std::string& ice_pwd) {
-  CheckRunOnValidThreadAndInitialized();
   PortAllocatorSession* session = new BasicPortAllocatorSession(
       this, content_name, component, ice_ufrag, ice_pwd);
   session->SignalIceRegathering.connect(this,
@@ -212,7 +209,6 @@ PortAllocatorSession* BasicPortAllocator::CreateSessionInternal(
 }
 
 void BasicPortAllocator::AddTurnServer(const RelayServerConfig& turn_server) {
-  CheckRunOnValidThreadAndInitialized();
   std::vector<RelayServerConfig> new_turn_servers = turn_servers();
   new_turn_servers.push_back(turn_server);
   SetConfiguration(stun_servers(), new_turn_servers, candidate_pool_size(),
