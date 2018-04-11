@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <iterator>
 #include <memory>
 #include <vector>
 
