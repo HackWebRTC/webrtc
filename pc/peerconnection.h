@@ -655,6 +655,8 @@ class PeerConnection : public PeerConnectionInternal,
       webrtc::TurnCustomizer* turn_customizer,
       rtc::Optional<int> stun_candidate_keepalive_interval);
 
+  void SetMetricObserver_n(UMAObserver* observer);
+
   // Starts output of an RTC event log to the given output object.
   // This function should only be called from the worker thread.
   bool StartRtcEventLog_w(std::unique_ptr<RtcEventLogOutput> output,
@@ -907,6 +909,7 @@ class PeerConnection : public PeerConnectionInternal,
   PeerConnectionInterface::RTCConfiguration configuration_;
 
   std::unique_ptr<cricket::PortAllocator> port_allocator_;
+  int port_allocator_flags_ = 0;
 
   // One PeerConnection has only one RTCP CNAME.
   // https://tools.ietf.org/html/draft-ietf-rtcweb-rtp-usage-26#section-4.9
