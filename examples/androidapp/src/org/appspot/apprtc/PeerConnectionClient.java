@@ -654,7 +654,6 @@ public class PeerConnectionClient {
         .setUseHardwareNoiseSuppressor(peerConnectionParameters.disableBuiltInNS)
         .setAudioRecordErrorCallback(audioRecordErrorCallback)
         .setAudioTrackErrorCallback(audioTrackErrorCallback)
-        .setSamplesReadyCallback(saveRecordedAudioToFile)
         .createAudioDeviceModule();
   }
 
