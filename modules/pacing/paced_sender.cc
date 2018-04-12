@@ -268,12 +268,14 @@ void PacedSender::Process() {
   // TODO(srte): Stop sending packet in paused state when pause is no longer
   // used for congestion windows.
   if (paused_ || Congested()) {
-    // We can not send padding unless a normal packet has first been sent. If we
-    // do, timestamps get messed up.
-    if (elapsed_time_ms >= kCongestedPacketIntervalMs && packet_counter_ > 0) {
-      PacedPacketInfo pacing_info;
-      size_t bytes_sent = SendPadding(1, pacing_info);
-      alr_detector_->OnBytesSent(bytes_sent, elapsed_time_ms);
+    if (elapsed_time_ms >= kCongestedPacketIntervalMs) {
+      // We can not send padding unless a normal packet has first been sent. If
+      // we do, timestamps get messed up.
+      if (packet_counter_ > 0) {
+        PacedPacketInfo pacing_info;
+        size_t bytes_sent = SendPadding(1, pacing_info);
+        alr_detector_->OnBytesSent(bytes_sent, elapsed_time_ms);
+      }
       last_send_time_us_ = clock_->TimeInMicroseconds();
     }
     return;
