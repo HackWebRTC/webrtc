@@ -16,8 +16,8 @@
 
 #include <string>
 
+#include "api/audio/audio_frame.h"
 #include "api/optional.h"
-#include "modules/include/module_common_types.h"
 #include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {

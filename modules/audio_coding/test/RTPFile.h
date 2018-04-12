@@ -15,7 +15,6 @@
 #include <queue>
 
 #include "modules/audio_coding/include/audio_coding_module.h"
-#include "modules/include/module_common_types.h"
 #include "rtc_base/synchronization/rw_lock_wrapper.h"
 #include "typedefs.h"  // NOLINT(build/include)
 

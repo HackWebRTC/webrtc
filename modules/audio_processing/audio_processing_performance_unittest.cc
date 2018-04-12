@@ -17,7 +17,6 @@
 
 #include "api/array_view.h"
 #include "modules/audio_processing/test/test_utils.h"
-#include "modules/include/module_common_types.h"
 #include "rtc_base/atomicops.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/platform_thread.h"

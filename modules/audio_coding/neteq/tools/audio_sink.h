@@ -11,7 +11,7 @@
 #ifndef MODULES_AUDIO_CODING_NETEQ_TOOLS_AUDIO_SINK_H_
 #define MODULES_AUDIO_CODING_NETEQ_TOOLS_AUDIO_SINK_H_
 
-#include "modules/include/module_common_types.h"
+#include "api/audio/audio_frame.h"
 #include "rtc_base/constructormagic.h"
 #include "typedefs.h"  // NOLINT(build/include)
 

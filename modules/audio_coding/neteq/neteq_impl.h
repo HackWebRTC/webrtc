@@ -15,6 +15,7 @@
 #include <string>
 
 #include "api/optional.h"
+#include "api/audio/audio_frame.h"
 #include "modules/audio_coding/neteq/audio_multi_vector.h"
 #include "modules/audio_coding/neteq/defines.h"
 #include "modules/audio_coding/neteq/expand_uma_logger.h"
@@ -24,7 +25,6 @@
 #include "modules/audio_coding/neteq/rtcp.h"
 #include "modules/audio_coding/neteq/statistics_calculator.h"
 #include "modules/audio_coding/neteq/tick_timer.h"
-#include "modules/include/module_common_types.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/thread_annotations.h"

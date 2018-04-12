@@ -18,10 +18,10 @@
 #include <string>
 #include <vector>
 
+#include "api/audio/audio_frame.h"
 #include "common_audio/channel_buffer.h"
 #include "common_audio/wav_file.h"
 #include "modules/audio_processing/include/audio_processing.h"
-#include "modules/include/module_common_types.h"
 #include "rtc_base/constructormagic.h"
 
 namespace webrtc {

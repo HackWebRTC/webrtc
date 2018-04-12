@@ -19,7 +19,6 @@
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "modules/audio_coding/test/Channel.h"
 #include "modules/audio_coding/test/PCMFile.h"
-#include "modules/include/module_common_types.h"
 #include "rtc_base/flags.h"
 #include "system_wrappers/include/clock.h"
 #include "test/gtest.h"

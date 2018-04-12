@@ -11,8 +11,8 @@
 #ifndef MODULES_AUDIO_CODING_NETEQ_SYNC_BUFFER_H_
 #define MODULES_AUDIO_CODING_NETEQ_SYNC_BUFFER_H_
 
+#include "api/audio/audio_frame.h"
 #include "modules/audio_coding/neteq/audio_multi_vector.h"
-#include "modules/include/module_common_types.h"
 #include "rtc_base/constructormagic.h"
 #include "typedefs.h"  // NOLINT(build/include)
 

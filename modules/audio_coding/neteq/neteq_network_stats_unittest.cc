@@ -10,10 +10,10 @@
 
 #include <memory>
 
+#include "api/audio/audio_frame.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/neteq/tools/neteq_external_decoder_test.h"
 #include "modules/audio_coding/neteq/tools/rtp_generator.h"
-#include "modules/include/module_common_types.h"
 #include "test/gmock.h"
 
 namespace webrtc {

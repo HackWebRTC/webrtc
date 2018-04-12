@@ -19,6 +19,7 @@
 #include "modules/audio_coding/neteq/expand.h"
 #include "modules/audio_coding/neteq/packet_buffer.h"
 #include "modules/audio_coding/neteq/sync_buffer.h"
+#include "modules/include/module_common_types.h"
 
 namespace webrtc {
 

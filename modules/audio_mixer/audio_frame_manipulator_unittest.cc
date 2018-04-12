@@ -11,7 +11,6 @@
 #include <algorithm>
 
 #include "modules/audio_mixer/audio_frame_manipulator.h"
-#include "modules/include/module_common_types.h"
 #include "test/gtest.h"
 
 namespace webrtc {

@@ -10,6 +10,7 @@
 
 #include <memory>
 
+#include "common_types.h"
 #include "modules/audio_coding/acm2/rent_a_codec.h"
 #include "rtc_base/arraysize.h"
 #include "test/gtest.h"

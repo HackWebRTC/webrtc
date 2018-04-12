@@ -24,7 +24,6 @@ extern "C" {
 #include "modules/audio_coding/codecs/isac/main/source/pitch_estimator.h"
 #include "modules/audio_coding/codecs/isac/main/source/structs.h"
 }
-#include "modules/include/module_common_types.h"
 
 namespace webrtc {
 

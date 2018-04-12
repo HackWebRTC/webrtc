@@ -425,6 +425,7 @@ if (rtc_include_tests) {
     deps = [
       ":webrtc_common",
       "api:rtc_api_unittests",
+      "api/audio/test:audio_api_unittests",
       "api/audio_codecs/test:audio_codecs_api_unittests",
       "p2p:libstunprober_unittests",
       "p2p:rtc_p2p_unittests",

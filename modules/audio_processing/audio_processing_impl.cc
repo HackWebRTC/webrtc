@@ -43,7 +43,6 @@
 #include "modules/audio_processing/residual_echo_detector.h"
 #include "modules/audio_processing/transient/transient_suppressor.h"
 #include "modules/audio_processing/voice_detection_impl.h"
-#include "modules/include/module_common_types.h"
 #include "rtc_base/atomicops.h"
 #include "rtc_base/system/file_wrapper.h"
 #include "system_wrappers/include/metrics.h"
@@ -1375,8 +1374,8 @@ int AudioProcessingImpl::AnalyzeReverseStreamLocked(
   processing_config.reverse_output_stream() = output_config;
 
   RETURN_ON_ERR(MaybeInitializeRender(processing_config));
-  assert(input_config.num_frames() ==
-         formats_.api_format.reverse_input_stream().num_frames());
+  RTC_DCHECK_EQ(input_config.num_frames(),
+                formats_.api_format.reverse_input_stream().num_frames());
 
   if (aec_dump_) {
     const size_t channel_size =

@@ -12,8 +12,8 @@
 
 #include "audio/remix_resample.h"
 #include "common_audio/resampler/include/push_resampler.h"
-#include "modules/include/module_common_types.h"
 #include "rtc_base/arraysize.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/format_macros.h"
 #include "test/gtest.h"
 

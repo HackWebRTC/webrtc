@@ -19,7 +19,6 @@
 #include "modules/audio_coding/neteq/tools/audio_sink.h"
 #include "modules/audio_coding/neteq/tools/input_audio_file.h"
 #include "modules/audio_coding/neteq/tools/rtp_generator.h"
-#include "modules/include/module_common_types.h"
 #include "rtc_base/flags.h"
 #include "test/gtest.h"
 #include "typedefs.h"  // NOLINT(build/include)

@@ -21,7 +21,6 @@
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/include/audio_coding_module_typedefs.h"
 #include "modules/audio_coding/neteq/include/neteq.h"
-#include "modules/include/module.h"
 #include "rtc_base/deprecation.h"
 #include "rtc_base/function_view.h"
 #include "system_wrappers/include/clock.h"
@@ -278,9 +277,7 @@ class AudioCodingModule {
   //
   // Input:
   //   -audio_frame        : the input audio frame, containing raw audio
-  //                         sampling frequency etc.,
-  //                         c.f. module_common_types.h for definition of
-  //                         AudioFrame.
+  //                         sampling frequency etc.
   //
   // Return value:
   //   >= 0   number of bytes encoded.
@@ -663,9 +660,7 @@ class AudioCodingModule {
   //
   // Output:
   //   -audio_frame        : output audio frame which contains raw audio data
-  //                         and other relevant parameters, c.f.
-  //                         module_common_types.h for the definition of
-  //                         AudioFrame.
+  //                         and other relevant parameters.
   //   -muted              : if true, the sample data in audio_frame is not
   //                         populated, and must be interpreted as all zero.
   //

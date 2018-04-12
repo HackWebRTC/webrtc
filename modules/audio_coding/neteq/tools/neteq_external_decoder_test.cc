@@ -11,6 +11,7 @@
 
 #include "modules/audio_coding/neteq/tools/neteq_external_decoder_test.h"
 
+#include "api/audio/audio_frame.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "rtc_base/format_macros.h"
 #include "test/gtest.h"

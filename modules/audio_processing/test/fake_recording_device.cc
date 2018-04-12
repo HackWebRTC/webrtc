@@ -12,6 +12,7 @@
 
 #include <algorithm>
 
+#include "api/optional.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/ptr_util.h"
 

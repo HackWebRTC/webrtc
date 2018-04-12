@@ -14,10 +14,10 @@
 #include <memory>
 #include <vector>
 
+#include "api/audio/audio_frame.h"
 #include "common_audio/channel_buffer.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "modules/audio_processing/splitting_filter.h"
-#include "modules/include/module_common_types.h"
 #include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {

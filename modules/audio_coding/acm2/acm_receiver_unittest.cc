@@ -17,6 +17,7 @@
 #include "modules/audio_coding/acm2/rent_a_codec.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "modules/audio_coding/neteq/tools/rtp_generator.h"
+#include "modules/include/module_common_types.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "system_wrappers/include/clock.h"

@@ -11,6 +11,8 @@
 #ifndef API_AUDIO_AUDIO_FRAME_H_
 #define API_AUDIO_AUDIO_FRAME_H_
 
+#include <stddef.h>
+
 #include "rtc_base/constructormagic.h"
 #include "typedefs.h"  // NOLINT(build/include)
 

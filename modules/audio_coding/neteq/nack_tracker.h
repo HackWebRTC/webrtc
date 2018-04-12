@@ -15,6 +15,7 @@
 #include <map>
 
 #include "modules/audio_coding/include/audio_coding_module_typedefs.h"
+#include "modules/include/module_common_types.h"
 #include "rtc_base/gtest_prod_util.h"
 
 //

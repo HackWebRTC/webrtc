@@ -11,12 +11,10 @@
 #ifndef AUDIO_REMIX_RESAMPLE_H_
 #define AUDIO_REMIX_RESAMPLE_H_
 
+#include "api/audio/audio_frame.h"
 #include "common_audio/resampler/include/push_resampler.h"
 
 namespace webrtc {
-
-class AudioFrame;
-
 namespace voe {
 
 // Upmix or downmix and resample the audio to |dst_frame|. Expects |dst_frame|

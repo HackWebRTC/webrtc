@@ -18,6 +18,7 @@
 #include "modules/audio_coding/test/ACMTest.h"
 #include "modules/audio_coding/test/PCMFile.h"
 #include "modules/audio_coding/test/RTPFile.h"
+#include "modules/include/module_common_types.h"
 #include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {

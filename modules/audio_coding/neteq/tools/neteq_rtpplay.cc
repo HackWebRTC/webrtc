@@ -32,7 +32,6 @@
 #include "modules/audio_coding/neteq/tools/output_audio_file.h"
 #include "modules/audio_coding/neteq/tools/output_wav_file.h"
 #include "modules/audio_coding/neteq/tools/rtp_file_source.h"
-#include "modules/include/module_common_types.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/flags.h"
 #include "test/testsupport/fileutils.h"

@@ -16,7 +16,6 @@
 
 #include "modules/audio_processing/agc2/fixed_gain_controller.h"
 #include "modules/audio_processing/include/audio_processing.h"
-#include "modules/include/module_common_types.h"
 
 namespace webrtc {
 class ApmDataDumper;

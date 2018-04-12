@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "api/audio/audio_mixer.h"
+#include "api/rtp_headers.h"
 #include "audio/audio_state.h"
 #include "call/audio_receive_stream.h"
 #include "call/rtp_packet_sink_interface.h"

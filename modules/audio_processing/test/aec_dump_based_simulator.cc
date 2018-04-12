@@ -14,6 +14,7 @@
 
 #include "modules/audio_processing/test/protobuf_utils.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/numerics/safe_conversions.h"
 
 namespace webrtc {
 namespace test {

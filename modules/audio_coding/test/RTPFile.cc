@@ -19,8 +19,7 @@
 #   include <arpa/inet.h>
 #endif
 
-#include "audio_coding_module.h"
-#include "rtc_base/synchronization/rw_lock_wrapper.h"
+#include "modules/include/module_common_types.h"
 // TODO(tlegrand): Consider removing usage of gtest.
 #include "test/gtest.h"
 #include "typedefs.h"  // NOLINT(build/include)

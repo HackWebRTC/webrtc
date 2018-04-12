@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <memory>
 
+#include "api/audio/audio_frame.h"
 #include "modules/audio_processing/agc/agc.h"
 #include "modules/audio_processing/agc/loudness_histogram.h"
 #include "modules/audio_processing/agc/utility.h"
@@ -23,7 +24,6 @@
 #include "modules/audio_processing/vad/pitch_based_vad.h"
 #include "modules/audio_processing/vad/standalone_vad.h"
 #include "modules/audio_processing/vad/vad_audio_proc.h"
-#include "modules/include/module_common_types.h"
 #include "rtc_base/flags.h"
 #include "rtc_base/numerics/safe_minmax.h"
 #include "test/gtest.h"

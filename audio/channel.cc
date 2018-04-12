@@ -26,7 +26,6 @@
 #include "modules/audio_coding/codecs/audio_format_conversion.h"
 #include "modules/audio_device/include/audio_device.h"
 #include "modules/audio_processing/include/audio_processing.h"
-#include "modules/include/module_common_types.h"
 #include "modules/pacing/packet_router.h"
 #include "modules/rtp_rtcp/include/receive_statistics.h"
 #include "modules/rtp_rtcp/include/rtp_payload_registry.h"

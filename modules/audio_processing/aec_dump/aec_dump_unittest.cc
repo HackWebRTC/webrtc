@@ -12,7 +12,6 @@
 
 #include "modules/audio_processing/aec_dump/aec_dump_factory.h"
 
-#include "modules/include/module_common_types.h"
 #include "rtc_base/task_queue.h"
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"

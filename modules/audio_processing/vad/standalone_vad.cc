@@ -11,7 +11,6 @@
 #include "modules/audio_processing/vad/standalone_vad.h"
 
 #include "audio/utility/audio_frame_operations.h"
-#include "modules/include/module_common_types.h"
 #include "rtc_base/checks.h"
 #include "typedefs.h"  // NOLINT(build/include)
 

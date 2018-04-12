@@ -15,7 +15,6 @@
 #include <vector>
 
 #include "api/optional.h"
-#include "modules/include/module_common_types.h"
 
 namespace webrtc {
 

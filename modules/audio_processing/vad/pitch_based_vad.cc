@@ -17,7 +17,6 @@
 #include "modules/audio_processing/vad/common.h"
 #include "modules/audio_processing/vad/noise_gmm_tables.h"
 #include "modules/audio_processing/vad/voice_gmm_tables.h"
-#include "modules/include/module_common_types.h"
 
 namespace webrtc {
 
