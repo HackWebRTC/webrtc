@@ -448,6 +448,8 @@ class Port : public PortInterface, public rtc::MessageHandler,
   // Extra work to be done in subclasses when a connection is destroyed.
   virtual void HandleConnectionDestroyed(Connection* conn) {}
 
+  void CopyPortInformationToPacketInfo(rtc::PacketInfo* info) const;
+
  private:
   void Construct();
   // Called when one of our connections deletes itself.

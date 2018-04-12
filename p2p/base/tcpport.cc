@@ -216,8 +216,9 @@ int TCPPort::SendTo(const void* data, size_t size,
                       << addr.ToSensitiveString();
     return SOCKET_ERROR;  // TODO(tbd): Set error_
   }
-
-  int sent = socket->Send(data, size, options);
+  rtc::PacketOptions modified_options(options);
+  CopyPortInformationToPacketInfo(&modified_options.info_signaled_after_sent);
+  int sent = socket->Send(data, size, modified_options);
   if (sent < 0) {
     error_ = socket->GetError();
     // Error from this code path for a Connection (instead of from a bare
@@ -386,7 +387,10 @@ int TCPConnection::Send(const void* data, size_t size,
     return SOCKET_ERROR;
   }
   stats_.sent_total_packets++;
-  int sent = socket_->Send(data, size, options);
+  rtc::PacketOptions modified_options(options);
+  static_cast<TCPPort*>(port_)->CopyPortInformationToPacketInfo(
+      &modified_options.info_signaled_after_sent);
+  int sent = socket_->Send(data, size, modified_options);
   if (sent < 0) {
     stats_.sent_discarded_packets++;
     error_ = socket_->GetError();

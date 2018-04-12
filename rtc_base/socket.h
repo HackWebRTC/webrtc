@@ -25,6 +25,7 @@
 #include "rtc_base/win32.h"
 #endif
 
+#include "api/optional.h"
 #include "rtc_base/basictypes.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/socketaddress.h"
@@ -123,13 +124,46 @@ inline bool IsBlockingError(int e) {
   return (e == EWOULDBLOCK) || (e == EAGAIN) || (e == EINPROGRESS);
 }
 
-struct SentPacket {
-  SentPacket() : packet_id(-1), send_time_ms(-1) {}
-  SentPacket(int packet_id, int64_t send_time_ms)
-      : packet_id(packet_id), send_time_ms(send_time_ms) {}
+enum class PacketType {
+  kUnknown,
+  kData,
+  kIceConnectivityCheck,
+  kIceConnectivityCheckResponse,
+  kStunMessage,
+  kTurnMessage,
+};
 
-  int packet_id;
-  int64_t send_time_ms;
+enum class PacketInfoProtocolType {
+  kUnknown,
+  kUdp,
+  kTcp,
+  kSsltcp,
+  kTls,
+};
+
+struct PacketInfo {
+  PacketInfo();
+  PacketInfo(const PacketInfo& info);
+  ~PacketInfo();
+
+  PacketType packet_type = PacketType::kUnknown;
+  PacketInfoProtocolType protocol = PacketInfoProtocolType::kUnknown;
+  // A unique id assigned by the network manager, and rtc::nullopt if not set.
+  rtc::Optional<uint16_t> network_id;
+  size_t packet_size_bytes = 0;
+  size_t turn_overhead_bytes = 0;
+  SocketAddress local_socket_address;
+  SocketAddress remote_socket_address;
+};
+
+struct SentPacket {
+  SentPacket();
+  SentPacket(int packet_id, int64_t send_time_ms);
+  SentPacket(int packet_id, int64_t send_time_ms, const rtc::PacketInfo& info);
+
+  int packet_id = -1;
+  int64_t send_time_ms = -1;
+  rtc::PacketInfo info;
 };
 
 // General interface for the socket implementations of various networks.  The

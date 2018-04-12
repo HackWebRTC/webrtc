@@ -382,6 +382,8 @@ class P2PTransportChannelTestBase : public testing::Test,
         this, &P2PTransportChannelTestBase::OnRoleConflict);
     channel->SignalNetworkRouteChanged.connect(
         this, &P2PTransportChannelTestBase::OnNetworkRouteChanged);
+    channel->SignalSentPacket.connect(
+        this, &P2PTransportChannelTestBase::OnSentPacket);
     channel->SetIceParameters(local_ice);
     if (remote_ice_parameter_source_ == FROM_SETICEPARAMETERS) {
       channel->SetRemoteIceParameters(remote_ice);
@@ -681,6 +683,13 @@ class P2PTransportChannelTestBase : public testing::Test,
     TestSendRecv(&clock);
   }
 
+  void TestPacketInfoIsSet(rtc::PacketInfo info) {
+    EXPECT_NE(info.packet_type, rtc::PacketType::kUnknown);
+    EXPECT_NE(info.protocol, rtc::PacketInfoProtocolType::kUnknown);
+    EXPECT_TRUE(info.network_id.has_value());
+    EXPECT_FALSE(info.local_socket_address.IsNil());
+  }
+
   void OnReadyToSend(rtc::PacketTransportInternal* transport) {
     GetEndpoint(transport)->ready_to_send_ = true;
   }
@@ -802,6 +811,11 @@ class P2PTransportChannelTestBase : public testing::Test,
                            ? ICEROLE_CONTROLLED
                            : ICEROLE_CONTROLLING;
     channel->SetIceRole(new_role);
+  }
+
+  void OnSentPacket(rtc::PacketTransportInternal* transport,
+                    const rtc::SentPacket& packet) {
+    TestPacketInfoIsSet(packet.info);
   }
 
   int SendData(IceTransportInternal* channel, const char* data, size_t len) {

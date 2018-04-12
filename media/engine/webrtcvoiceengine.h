@@ -206,7 +206,8 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
 
   bool SendRtcp(const uint8_t* data, size_t len) override {
     rtc::CopyOnWriteBuffer packet(data, len, kMaxRtpPacketLen);
-    return VoiceMediaChannel::SendRtcp(&packet, rtc::PacketOptions());
+    rtc::PacketOptions rtc_options;
+    return VoiceMediaChannel::SendRtcp(&packet, rtc_options);
   }
 
  private:

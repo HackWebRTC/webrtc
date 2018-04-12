@@ -1206,7 +1206,10 @@ int P2PTransportChannel::SendPacket(const char *data, size_t len,
   }
 
   last_sent_packet_id_ = options.packet_id;
-  int sent = selected_connection_->Send(data, len, options);
+  rtc::PacketOptions modified_options(options);
+  modified_options.info_signaled_after_sent.packet_type =
+      rtc::PacketType::kData;
+  int sent = selected_connection_->Send(data, len, modified_options);
   if (sent <= 0) {
     RTC_DCHECK(sent < 0);
     error_ = selected_connection_->GetError();

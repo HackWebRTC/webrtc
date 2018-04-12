@@ -349,7 +349,9 @@ int RelayPort::SendTo(const void* data, size_t size,
   }
 
   // Send the actual contents to the server using the usual mechanism.
-  int sent = entry->SendTo(data, size, addr, options);
+  rtc::PacketOptions modified_options(options);
+  CopyPortInformationToPacketInfo(&modified_options.info_signaled_after_sent);
+  int sent = entry->SendTo(data, size, addr, modified_options);
   if (sent <= 0) {
     RTC_DCHECK(sent < 0);
     error_ = entry->GetError();

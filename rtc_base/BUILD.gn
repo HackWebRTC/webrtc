@@ -805,6 +805,7 @@ rtc_static_library("rtc_base_generic") {
     "sigslot.cc",
     "sigslot.h",
     "sigslotrepeater.h",
+    "socket.cc",
     "socket.h",
     "socketadapters.cc",
     "socketadapters.h",

@@ -268,7 +268,9 @@ int UDPPort::SendTo(const void* data, size_t size,
                     const rtc::SocketAddress& addr,
                     const rtc::PacketOptions& options,
                     bool payload) {
-  int sent = socket_->SendTo(data, size, addr, options);
+  rtc::PacketOptions modified_options(options);
+  CopyPortInformationToPacketInfo(&modified_options.info_signaled_after_sent);
+  int sent = socket_->SendTo(data, size, addr, modified_options);
   if (sent < 0) {
     error_ = socket_->GetError();
     RTC_LOG(LS_ERROR) << ToString() << ": UDP send of "
@@ -526,6 +528,8 @@ void UDPPort::MaybeSetPortCompleteOrError() {
 void UDPPort::OnSendPacket(const void* data, size_t size, StunRequest* req) {
   StunBindingRequest* sreq = static_cast<StunBindingRequest*>(req);
   rtc::PacketOptions options(DefaultDscpValue());
+  options.info_signaled_after_sent.packet_type = rtc::PacketType::kStunMessage;
+  CopyPortInformationToPacketInfo(&options.info_signaled_after_sent);
   if (socket_->SendTo(data, size, sreq->server_addr(), options) < 0) {
     RTC_LOG_ERR_EX(LERROR, socket_->GetError()) << "sendto";
   }
