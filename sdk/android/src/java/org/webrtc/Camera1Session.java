@@ -11,7 +11,6 @@
 package org.webrtc;
 
 import android.content.Context;
-import android.media.MediaRecorder;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.view.Surface;
@@ -56,8 +55,8 @@ class Camera1Session implements CameraSession {
   @SuppressWarnings("ByteBufferBackingArray")
   public static void create(final CreateSessionCallback callback, final Events events,
       final boolean captureToTexture, final Context applicationContext,
-      final SurfaceTextureHelper surfaceTextureHelper, final MediaRecorder mediaRecorder,
-      final int cameraId, final int width, final int height, final int framerate) {
+      final SurfaceTextureHelper surfaceTextureHelper, final int cameraId, final int width,
+      final int height, final int framerate) {
     final long constructionTimeNs = System.nanoTime();
     Logging.d(TAG, "Open camera " + cameraId);
     events.onCameraOpening();
@@ -105,9 +104,8 @@ class Camera1Session implements CameraSession {
     // Calculate orientation manually and send it as CVO insted.
     camera.setDisplayOrientation(0 /* degrees */);
 
-    callback.onDone(
-        new Camera1Session(events, captureToTexture, applicationContext, surfaceTextureHelper,
-            mediaRecorder, cameraId, camera, info, captureFormat, constructionTimeNs));
+    callback.onDone(new Camera1Session(events, captureToTexture, applicationContext,
+        surfaceTextureHelper, cameraId, camera, info, captureFormat, constructionTimeNs));
   }
 
   private static void updateCameraParameters(android.hardware.Camera camera,
@@ -155,9 +153,9 @@ class Camera1Session implements CameraSession {
   }
 
   private Camera1Session(Events events, boolean captureToTexture, Context applicationContext,
-      SurfaceTextureHelper surfaceTextureHelper, @Nullable MediaRecorder mediaRecorder,
-      int cameraId, android.hardware.Camera camera, android.hardware.Camera.CameraInfo info,
-      CaptureFormat captureFormat, long constructionTimeNs) {
+      SurfaceTextureHelper surfaceTextureHelper, int cameraId, android.hardware.Camera camera,
+      android.hardware.Camera.CameraInfo info, CaptureFormat captureFormat,
+      long constructionTimeNs) {
     Logging.d(TAG, "Create new camera1 session on camera " + cameraId);
 
     this.cameraThreadHandler = new Handler();
@@ -172,11 +170,6 @@ class Camera1Session implements CameraSession {
     this.constructionTimeNs = constructionTimeNs;
 
     startCapturing();
-
-    if (mediaRecorder != null) {
-      camera.unlock();
-      mediaRecorder.setCamera(camera);
-    }
   }
 
   @Override
