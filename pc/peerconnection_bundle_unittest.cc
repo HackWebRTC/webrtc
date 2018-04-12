@@ -248,6 +248,13 @@ class PeerConnectionBundleTest
   PeerConnectionBundleTest() : PeerConnectionBundleBaseTest(GetParam()) {}
 };
 
+class PeerConnectionBundleTestUnifiedPlan
+    : public PeerConnectionBundleBaseTest {
+ protected:
+  PeerConnectionBundleTestUnifiedPlan()
+      : PeerConnectionBundleBaseTest(SdpSemantics::kUnifiedPlan) {}
+};
+
 SdpContentMutator RemoveRtcpMux() {
   return [](cricket::ContentInfo* content, cricket::TransportInfo* transport) {
     content->media_description()->set_rtcp_mux(false);
@@ -803,5 +810,35 @@ INSTANTIATE_TEST_CASE_P(PeerConnectionBundleTest,
                         PeerConnectionBundleTest,
                         Values(SdpSemantics::kPlanB,
                                SdpSemantics::kUnifiedPlan));
+
+// According to RFC5888, if an endpoint understands the semantics of an
+// "a=group", it MUST return an answer with that group. So, an empty BUNDLE
+// group is valid when the answerer rejects all m= sections (by stopping all
+// transceivers), meaning there's nothing to bundle.
+//
+// Only writing this test for Unified Plan mode, since there's no way to reject
+// m= sections in answers for Plan B without SDP munging.
+TEST_F(PeerConnectionBundleTestUnifiedPlan,
+       EmptyBundleGroupCreatedInAnswerWhenAppropriate) {
+  auto caller = CreatePeerConnectionWithAudioVideo();
+  auto callee = CreatePeerConnection();
+
+  EXPECT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
+
+  // Stop all transceivers, causing all m= sections to be rejected.
+  for (const auto& transceiver : callee->pc()->GetTransceivers()) {
+    transceiver->Stop();
+  }
+  EXPECT_TRUE(
+      caller->SetRemoteDescription(callee->CreateAnswerAndSetAsLocal()));
+
+  // Verify that the answer actually contained an empty bundle group.
+  const SessionDescriptionInterface* desc = callee->pc()->local_description();
+  ASSERT_NE(nullptr, desc);
+  const cricket::ContentGroup* bundle_group =
+      desc->description()->GetGroupByName(cricket::GROUP_TYPE_BUNDLE);
+  ASSERT_NE(nullptr, bundle_group);
+  EXPECT_TRUE(bundle_group->content_names().empty());
+}
 
 }  // namespace webrtc

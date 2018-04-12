@@ -589,7 +589,7 @@ RTCError JsepTransportController::ApplyDescription_n(
     }
 
     std::vector<int> extension_ids;
-    if (bundle_group_ && content_info.name == *bundled_mid()) {
+    if (bundled_mid() && content_info.name == *bundled_mid()) {
       extension_ids = merged_encrypted_extension_ids;
     } else {
       extension_ids = GetEncryptedHeaderExtensionIds(content_info);
@@ -685,8 +685,9 @@ RTCError JsepTransportController::ValidateAndMaybeUpdateBundleGroup(
   }
 
   if (ShouldUpdateBundleGroup(type, description)) {
-    std::string new_bundled_mid = *(new_bundle_group->FirstContentName());
-    if (bundled_mid() && *bundled_mid() != new_bundled_mid) {
+    const std::string* new_bundled_mid = new_bundle_group->FirstContentName();
+    if (bundled_mid() && new_bundled_mid &&
+        *bundled_mid() != *new_bundled_mid) {
       return RTCError(RTCErrorType::UNSUPPORTED_OPERATION,
                       "Changing the negotiated BUNDLE-tag is not supported.");
     }

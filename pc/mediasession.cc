@@ -1494,10 +1494,17 @@ SessionDescription* MediaSessionDescriptionFactory::CreateAnswer(
     }
   }
 
-  // Only put BUNDLE group in answer if nonempty.
-  if (answer_bundle.FirstContentName()) {
+  // If a BUNDLE group was offered, put a BUNDLE group in the answer even if
+  // it's empty. RFC5888 says:
+  //
+  //   A SIP entity that receives an offer that contains an "a=group" line
+  //   with semantics that are understood MUST return an answer that
+  //   contains an "a=group" line with the same semantics.
+  if (offer_bundle) {
     answer->AddGroup(answer_bundle);
+  }
 
+  if (answer_bundle.FirstContentName()) {
     // Share the same ICE credentials and crypto params across all contents,
     // as BUNDLE requires.
     if (!UpdateTransportInfoForBundle(answer_bundle, answer.get())) {

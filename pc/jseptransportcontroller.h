@@ -201,8 +201,8 @@ class JsepTransportController : public sigslot::has_slots<>,
 
   rtc::Optional<std::string> bundled_mid() const {
     rtc::Optional<std::string> bundled_mid;
-    if (bundle_group_) {
-      bundled_mid = std::move(*(bundle_group_->FirstContentName()));
+    if (bundle_group_ && bundle_group_->FirstContentName()) {
+      bundled_mid = *(bundle_group_->FirstContentName());
     }
     return bundled_mid;
   }
