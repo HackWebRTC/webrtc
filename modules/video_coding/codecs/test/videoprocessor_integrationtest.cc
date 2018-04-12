@@ -16,8 +16,6 @@
 
 #if defined(WEBRTC_ANDROID)
 #include "modules/video_coding/codecs/test/android_codec_factory_helper.h"
-#elif defined(WEBRTC_IOS)
-#include "modules/video_coding/codecs/test/objc_codec_factory_helper.h"
 #endif
 
 #include "api/video_codecs/sdp_video_format.h"
@@ -298,35 +296,37 @@ void VideoProcessorIntegrationTest::VerifyVideoStatistic(
   }
 }
 
-void VideoProcessorIntegrationTest::CreateEncoderAndDecoder() {
-  if (config_.hw_encoder) {
-#if defined(WEBRTC_ANDROID)
-    encoder_factory_ = CreateAndroidEncoderFactory();
-#elif defined(WEBRTC_IOS)
-    EXPECT_EQ(kVideoCodecH264, config_.codec_settings.codecType)
-        << "iOS HW codecs only support H264.";
-    encoder_factory_ = CreateObjCEncoderFactory();
-#else
-    RTC_NOTREACHED() << "Only support HW encoder on Android and iOS.";
-#endif
-  } else {
-    encoder_factory_ = rtc::MakeUnique<InternalEncoderFactory>();
-  }
-
-  std::unique_ptr<VideoDecoderFactory> decoder_factory;
+std::unique_ptr<VideoDecoderFactory>
+VideoProcessorIntegrationTest::CreateDecoderFactory() {
   if (config_.hw_decoder) {
 #if defined(WEBRTC_ANDROID)
-    decoder_factory = CreateAndroidDecoderFactory();
-#elif defined(WEBRTC_IOS)
-    EXPECT_EQ(kVideoCodecH264, config_.codec_settings.codecType)
-        << "iOS HW codecs only support H264.";
-    decoder_factory = CreateObjCDecoderFactory();
+    return CreateAndroidDecoderFactory();
 #else
-    RTC_NOTREACHED() << "Only support HW decoder on Android and iOS.";
+    RTC_NOTREACHED() << "Only support HW decoder on Android.";
+    return nullptr;
 #endif
   } else {
-    decoder_factory = rtc::MakeUnique<InternalDecoderFactory>();
+    return rtc::MakeUnique<InternalDecoderFactory>();
   }
+}
+
+std::unique_ptr<VideoEncoderFactory>
+VideoProcessorIntegrationTest::CreateEncoderFactory() {
+  if (config_.hw_encoder) {
+#if defined(WEBRTC_ANDROID)
+    return CreateAndroidEncoderFactory();
+#else
+    RTC_NOTREACHED() << "Only support HW encoder on Android.";
+    return nullptr;
+#endif
+  } else {
+    return rtc::MakeUnique<InternalEncoderFactory>();
+  }
+}
+
+void VideoProcessorIntegrationTest::CreateEncoderAndDecoder() {
+  encoder_factory_ = CreateEncoderFactory();
+  std::unique_ptr<VideoDecoderFactory> decoder_factory = CreateDecoderFactory();
 
   const SdpVideoFormat format = config_.ToSdpVideoFormat();
   if (config_.simulcast_adapted_encoder) {

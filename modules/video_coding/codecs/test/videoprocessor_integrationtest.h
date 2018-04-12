@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 
+#include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "common_video/h264/h264_common.h"
@@ -97,6 +98,11 @@ class VideoProcessorIntegrationTest : public testing::Test {
 
   // Can be used by all H.264 tests.
   const H264KeyframeChecker h264_keyframe_checker_;
+
+ protected:
+  // Overwrite in subclasses for custom codec factories.
+  virtual std::unique_ptr<VideoDecoderFactory> CreateDecoderFactory();
+  virtual std::unique_ptr<VideoEncoderFactory> CreateEncoderFactory();
 
  private:
   class CpuProcessTime;

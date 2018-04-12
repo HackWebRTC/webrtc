@@ -12,6 +12,7 @@
 
 #include <vector>
 
+#include "modules/video_coding/codecs/test/objc_codec_factory_helper.h"
 #include "test/field_trial.h"
 #include "test/testsupport/fileutils.h"
 
@@ -33,12 +34,32 @@ class VideoProcessorIntegrationTestVideoToolbox
     config_.hw_decoder = true;
     config_.encoded_frame_checker = &h264_keyframe_checker_;
   }
+
+  std::unique_ptr<VideoDecoderFactory> CreateDecoderFactory() override {
+    if (config_.hw_decoder) {
+      EXPECT_EQ(kVideoCodecH264, config_.codec_settings.codecType)
+          << "iOS HW codecs only support H264.";
+      return CreateObjCDecoderFactory();
+    }
+    RTC_NOTREACHED() << "Only support HW decoder on iOS.";
+    return nullptr;
+  }
+
+  std::unique_ptr<VideoEncoderFactory> CreateEncoderFactory() override {
+    if (config_.hw_encoder) {
+      EXPECT_EQ(kVideoCodecH264, config_.codec_settings.codecType)
+          << "iOS HW codecs only support H264.";
+      return CreateObjCEncoderFactory();
+    }
+    RTC_NOTREACHED() << "Only support HW encoder on iOS.";
+    return nullptr;
+  }
 };
 
 // TODO(webrtc:9099): Disabled until the issue is fixed.
 // HW codecs don't work on simulators. Only run these tests on device.
 // #if TARGET_OS_IPHONE && !TARGET_IPHONE_SIMULATOR
-//  #define MAYBE_TEST_F TEST_F
+// #define MAYBE_TEST_F TEST_F
 // #else
 #define MAYBE_TEST_F(s, name) TEST_F(s, DISABLED_##name)
 // #endif
