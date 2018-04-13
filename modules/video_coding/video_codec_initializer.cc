@@ -222,6 +222,13 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
               GetSvcConfig(video_codec.width, video_codec.height,
                            video_codec.VP9()->numberOfSpatialLayers,
                            video_codec.VP9()->numberOfTemporalLayers);
+
+          const bool no_spatial_layering = (spatial_layers.size() == 1);
+          if (no_spatial_layering) {
+            // Use codec's bitrate limits.
+            spatial_layers.back().minBitrate = video_codec.minBitrate;
+            spatial_layers.back().maxBitrate = video_codec.maxBitrate;
+          }
         }
 
         RTC_DCHECK(!spatial_layers.empty());

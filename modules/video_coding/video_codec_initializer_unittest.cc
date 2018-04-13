@@ -272,4 +272,16 @@ TEST_F(VideoCodecInitializerTest, Vp9SvcAdjustedLayering) {
   EXPECT_EQ(codec_out_.VP9()->numberOfSpatialLayers, 2u);
 }
 
+TEST_F(VideoCodecInitializerTest,
+       Vp9SingleSpatialLayerMaxBitrateIsEqualToCodecMaxBitrate) {
+  SetUpFor(VideoCodecType::kVideoCodecVP9, 1, 3, false);
+  VideoStream stream = DefaultStream();
+  stream.num_temporal_layers = 3;
+  streams_.push_back(stream);
+
+  EXPECT_TRUE(InitializeCodec());
+  EXPECT_EQ(codec_out_.spatialLayers[0].maxBitrate,
+            kDefaultMaxBitrateBps / 1000);
+}
+
 }  // namespace webrtc

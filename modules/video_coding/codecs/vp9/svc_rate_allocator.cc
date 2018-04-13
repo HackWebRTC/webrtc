@@ -35,6 +35,10 @@ BitrateAllocation SvcRateAllocator::GetAllocation(uint32_t total_bitrate_bps,
   size_t num_temporal_layers = codec_.VP9().numberOfTemporalLayers;
   RTC_CHECK(num_temporal_layers > 0);
 
+  if (codec_.maxBitrate != 0) {
+    total_bitrate_bps = std::min(total_bitrate_bps, codec_.maxBitrate * 1000);
+  }
+
   if (codec_.mode == kScreensharing) {
     // At screen sharing bitrate allocation is handled by VP9 encoder wrapper.
     bitrate_allocation.SetBitrate(0, 0, total_bitrate_bps);
@@ -62,7 +66,7 @@ BitrateAllocation SvcRateAllocator::GetAllocation(uint32_t total_bitrate_bps,
       size_t excess_rate = 0;
       for (size_t sl_idx = 0; sl_idx < num_spatial_layers; ++sl_idx) {
         RTC_DCHECK_GT(codec_.spatialLayers[sl_idx].maxBitrate, 0);
-        RTC_DCHECK_GT(codec_.spatialLayers[sl_idx].maxBitrate,
+        RTC_DCHECK_GE(codec_.spatialLayers[sl_idx].maxBitrate,
                       codec_.spatialLayers[sl_idx].minBitrate);
 
         const size_t min_bitrate_bps =
