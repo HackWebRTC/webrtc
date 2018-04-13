@@ -73,7 +73,7 @@ class GoogCcNetworkController : public NetworkControllerInterface {
   std::deque<int64_t> feedback_rtts_;
   rtc::Optional<int64_t> min_feedback_rtt_ms_;
 
-  rtc::Optional<NetworkEstimate> last_estimate_;
+  DataRate last_bandwidth_;
   rtc::Optional<TargetTransferRate> last_target_rate_;
 
   int32_t last_estimated_bitrate_bps_ = 0;
