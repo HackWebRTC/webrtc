@@ -104,7 +104,7 @@ std::string CodecSpecificToString(const VideoCodec& codec) {
 
 }  // namespace
 
-void TestConfig::SetCodecSettings(VideoCodecType codec_type,
+void TestConfig::SetCodecSettings(std::string codec_name,
                                   size_t num_simulcast_streams,
                                   size_t num_spatial_layers,
                                   size_t num_temporal_layers,
@@ -114,6 +114,8 @@ void TestConfig::SetCodecSettings(VideoCodecType codec_type,
                                   bool resilience_on,
                                   size_t width,
                                   size_t height) {
+  this->codec_name = codec_name;
+  VideoCodecType codec_type = PayloadStringToCodecType(codec_name);
   webrtc::test::CodecSettings(codec_type, &codec_settings);
 
   // TODO(brandtr): Move the setting of |width| and |height| to the tests, and
@@ -166,7 +168,6 @@ void TestConfig::SetCodecSettings(VideoCodecType codec_type,
       codec_settings.H264()->keyFrameInterval = kBaseKeyFrameInterval;
       break;
     default:
-      RTC_NOTREACHED();
       break;
   }
 
@@ -240,44 +241,37 @@ std::string TestConfig::ToString() const {
 }
 
 SdpVideoFormat TestConfig::ToSdpVideoFormat() const {
-  switch (codec_settings.codecType) {
-    case kVideoCodecVP8:
-      return SdpVideoFormat(cricket::kVp8CodecName);
-
-    case kVideoCodecVP9:
-      return SdpVideoFormat(cricket::kVp9CodecName);
-
-    case kVideoCodecH264: {
-      const char* packetization_mode =
-          h264_codec_settings.packetization_mode ==
-                  H264PacketizationMode::NonInterleaved
-              ? "1"
-              : "0";
-      return SdpVideoFormat(
-          cricket::kH264CodecName,
-          {{cricket::kH264FmtpProfileLevelId,
-            *H264::ProfileLevelIdToString(H264::ProfileLevelId(
-                h264_codec_settings.profile, H264::kLevel3_1))},
-           {cricket::kH264FmtpPacketizationMode, packetization_mode}});
-    }
-    default:
-      RTC_NOTREACHED();
-      return SdpVideoFormat("");
+  if (codec_settings.codecType == kVideoCodecH264) {
+    const char* packetization_mode =
+        h264_codec_settings.packetization_mode ==
+                H264PacketizationMode::NonInterleaved
+            ? "1"
+            : "0";
+    return SdpVideoFormat(
+        codec_name,
+        {{cricket::kH264FmtpProfileLevelId,
+          *H264::ProfileLevelIdToString(H264::ProfileLevelId(
+              h264_codec_settings.profile, H264::kLevel3_1))},
+         {cricket::kH264FmtpPacketizationMode, packetization_mode}});
   }
+  return SdpVideoFormat(codec_name);
 }
 
 std::string TestConfig::CodecName() const {
-  std::string codec_name = CodecTypeToPayloadString(codec_settings.codecType);
+  std::string name = codec_name;
+  if (name.empty()) {
+    name = CodecTypeToPayloadString(codec_settings.codecType);
+  }
   if (codec_settings.codecType == kVideoCodecH264) {
     if (h264_codec_settings.profile == H264::kProfileConstrainedHigh) {
-      codec_name += "-CHP";
+      return name + "-CHP";
     } else {
       RTC_DCHECK_EQ(h264_codec_settings.profile,
                     H264::kProfileConstrainedBaseline);
-      codec_name += "-CBP";
+      return name + "-CBP";
     }
   }
-  return codec_name;
+  return name;
 }
 
 std::string TestConfig::FilenameWithParams() const {

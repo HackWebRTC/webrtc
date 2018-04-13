@@ -31,7 +31,7 @@ struct TestConfig {
                                    const EncodedImage& encoded_frame) const = 0;
   };
 
-  void SetCodecSettings(VideoCodecType codec_type,
+  void SetCodecSettings(std::string codec_name,
                         size_t num_simulcast_streams,
                         size_t num_spatial_layers,
                         size_t num_temporal_layers,
@@ -81,6 +81,9 @@ struct TestConfig {
 
   // Codec settings to use.
   webrtc::VideoCodec codec_settings;
+
+  // Name of the codec being tested.
+  std::string codec_name;
 
   // H.264 specific settings.
   struct H264CodecSettings {

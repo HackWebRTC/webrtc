@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "common_types.h"  // NOLINT(build/include)
+#include "media/base/mediaconstants.h"
 #include "test/field_trial.h"
 #include "test/testsupport/fileutils.h"
 
@@ -36,8 +37,8 @@ class VideoProcessorIntegrationTestMediaCodec
 };
 
 TEST_F(VideoProcessorIntegrationTestMediaCodec, ForemanCif500kbpsVp8) {
-  config_.SetCodecSettings(kVideoCodecVP8, 1, 1, 1, false, false, false, false,
-                           352, 288);
+  config_.SetCodecSettings(cricket::kVp8CodecName, 1, 1, 1, false, false, false,
+                           false, 352, 288);
 
   std::vector<RateProfile> rate_profiles = {{500, 30, kForemanNumFrames}};
 
@@ -55,8 +56,8 @@ TEST_F(VideoProcessorIntegrationTestMediaCodec, ForemanCif500kbpsVp8) {
 
 TEST_F(VideoProcessorIntegrationTestMediaCodec, ForemanCif500kbpsH264CBP) {
   config_.encoded_frame_checker = &h264_keyframe_checker_;
-  config_.SetCodecSettings(kVideoCodecH264, 1, 1, 1, false, false, false, false,
-                           352, 288);
+  config_.SetCodecSettings(cricket::kH264CodecName, 1, 1, 1, false, false,
+                           false, false, 352, 288);
 
   std::vector<RateProfile> rate_profiles = {{500, 30, kForemanNumFrames}};
 
@@ -80,8 +81,8 @@ TEST_F(VideoProcessorIntegrationTestMediaCodec,
 
   config_.h264_codec_settings.profile = H264::kProfileConstrainedHigh;
   config_.encoded_frame_checker = &h264_keyframe_checker_;
-  config_.SetCodecSettings(kVideoCodecH264, 1, 1, 1, false, false, false, false,
-                           352, 288);
+  config_.SetCodecSettings(cricket::kH264CodecName, 1, 1, 1, false, false,
+                           false, false, 352, 288);
 
   std::vector<RateProfile> rate_profiles = {{500, 30, kForemanNumFrames}};
 

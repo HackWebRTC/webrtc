@@ -71,7 +71,8 @@ class VideoProcessorIntegrationTestParameterized
     const size_t num_spatial_layers =
         codec_type_ == kVideoCodecVP9 ? kNumSpatialLayers : 1;
 
-    config_.SetCodecSettings(codec_type_, num_simulcast_streams,
+    const std::string codec_name = CodecTypeToPayloadString(codec_type_);
+    config_.SetCodecSettings(codec_name, num_simulcast_streams,
                              num_spatial_layers, kNumTemporalLayers,
                              kDenoisingOn, kFrameDropperOn, kSpatialResizeOn,
                              kResilienceOn, width, height);

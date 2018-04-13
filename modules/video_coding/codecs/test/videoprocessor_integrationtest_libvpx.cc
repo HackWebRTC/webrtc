@@ -12,6 +12,7 @@
 
 #include <vector>
 
+#include "media/base/mediaconstants.h"
 #include "modules/video_coding/codecs/test/test_config.h"
 #include "modules/video_coding/utility/vp8_header_parser.h"
 #include "modules/video_coding/utility/vp9_uncompressed_header_parser.h"
@@ -96,7 +97,7 @@ class VideoProcessorIntegrationTestLibvpx
 
 #if !defined(RTC_DISABLE_VP9)
 TEST_F(VideoProcessorIntegrationTestLibvpx, HighBitrateVP9) {
-  config_.SetCodecSettings(kVideoCodecVP9, 1, 1, 1, false, true, false,
+  config_.SetCodecSettings(cricket::kVp9CodecName, 1, 1, 1, false, true, false,
                            kResilienceOn, kCifWidth, kCifHeight);
   config_.num_frames = kNumFramesShort;
 
@@ -112,7 +113,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, HighBitrateVP9) {
 }
 
 TEST_F(VideoProcessorIntegrationTestLibvpx, ChangeBitrateVP9) {
-  config_.SetCodecSettings(kVideoCodecVP9, 1, 1, 1, false, true, false,
+  config_.SetCodecSettings(cricket::kVp9CodecName, 1, 1, 1, false, true, false,
                            kResilienceOn, kCifWidth, kCifHeight);
 
   std::vector<RateProfile> rate_profiles = {
@@ -133,7 +134,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, ChangeBitrateVP9) {
 }
 
 TEST_F(VideoProcessorIntegrationTestLibvpx, ChangeFramerateVP9) {
-  config_.SetCodecSettings(kVideoCodecVP9, 1, 1, 1, false, true, false,
+  config_.SetCodecSettings(cricket::kVp9CodecName, 1, 1, 1, false, true, false,
                            kResilienceOn, kCifWidth, kCifHeight);
 
   std::vector<RateProfile> rate_profiles = {
@@ -156,7 +157,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, ChangeFramerateVP9) {
 }
 
 TEST_F(VideoProcessorIntegrationTestLibvpx, DenoiserOnVP9) {
-  config_.SetCodecSettings(kVideoCodecVP9, 1, 1, 1, true, true, false,
+  config_.SetCodecSettings(cricket::kVp9CodecName, 1, 1, 1, true, true, false,
                            kResilienceOn, kCifWidth, kCifHeight);
   config_.num_frames = kNumFramesShort;
 
@@ -172,7 +173,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, DenoiserOnVP9) {
 }
 
 TEST_F(VideoProcessorIntegrationTestLibvpx, VeryLowBitrateVP9) {
-  config_.SetCodecSettings(kVideoCodecVP9, 1, 1, 1, false, true, true,
+  config_.SetCodecSettings(cricket::kVp9CodecName, 1, 1, 1, false, true, true,
                            kResilienceOn, kCifWidth, kCifHeight);
 
   std::vector<RateProfile> rate_profiles = {{50, 30, kNumFramesLong}};
@@ -192,7 +193,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, VeryLowBitrateVP9) {
 #endif  // !defined(RTC_DISABLE_VP9)
 
 TEST_F(VideoProcessorIntegrationTestLibvpx, HighBitrateVP8) {
-  config_.SetCodecSettings(kVideoCodecVP8, 1, 1, 1, true, true, false,
+  config_.SetCodecSettings(cricket::kVp8CodecName, 1, 1, 1, true, true, false,
                            kResilienceOn, kCifWidth, kCifHeight);
   config_.num_frames = kNumFramesShort;
 
@@ -228,7 +229,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, HighBitrateVP8) {
 #define MAYBE_ChangeBitrateVP8 ChangeBitrateVP8
 #endif
 TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_ChangeBitrateVP8) {
-  config_.SetCodecSettings(kVideoCodecVP8, 1, 1, 1, true, true, false,
+  config_.SetCodecSettings(cricket::kVp8CodecName, 1, 1, 1, true, true, false,
                            kResilienceOn, kCifWidth, kCifHeight);
 
   std::vector<RateProfile> rate_profiles = {
@@ -259,7 +260,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_ChangeBitrateVP8) {
 #define MAYBE_ChangeFramerateVP8 ChangeFramerateVP8
 #endif
 TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_ChangeFramerateVP8) {
-  config_.SetCodecSettings(kVideoCodecVP8, 1, 1, 1, true, true, false,
+  config_.SetCodecSettings(cricket::kVp8CodecName, 1, 1, 1, true, true, false,
                            kResilienceOn, kCifWidth, kCifHeight);
 
   std::vector<RateProfile> rate_profiles = {
@@ -296,7 +297,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_ChangeFramerateVP8) {
 #define MAYBE_TemporalLayersVP8 TemporalLayersVP8
 #endif
 TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_TemporalLayersVP8) {
-  config_.SetCodecSettings(kVideoCodecVP8, 1, 1, 3, true, true, false,
+  config_.SetCodecSettings(cricket::kVp8CodecName, 1, 1, 3, true, true, false,
                            kResilienceOn, kCifWidth, kCifHeight);
 
   std::vector<RateProfile> rate_profiles = {{200, 30, 150},
@@ -331,7 +332,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_MultiresVP8) {
   config_.filename = "ConferenceMotion_1280_720_50";
   config_.filepath = ResourcePath(config_.filename, "yuv");
   config_.num_frames = 100;
-  config_.SetCodecSettings(kVideoCodecVP8, 3, 1, 3, true, true, false,
+  config_.SetCodecSettings(cricket::kVp8CodecName, 3, 1, 3, true, true, false,
                            kResilienceOn, 1280, 720);
 
   std::vector<RateProfile> rate_profiles = {{1500, 30, config_.num_frames}};
@@ -355,7 +356,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_SimulcastVP8) {
   config_.filepath = ResourcePath(config_.filename, "yuv");
   config_.num_frames = 100;
   config_.simulcast_adapted_encoder = true;
-  config_.SetCodecSettings(kVideoCodecVP8, 3, 1, 3, true, true, false,
+  config_.SetCodecSettings(cricket::kVp8CodecName, 3, 1, 3, true, true, false,
                            kResilienceOn, 1280, 720);
 
   std::vector<RateProfile> rate_profiles = {{1500, 30, config_.num_frames}};
@@ -378,7 +379,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, MAYBE_SvcVP9) {
   config_.filename = "ConferenceMotion_1280_720_50";
   config_.filepath = ResourcePath(config_.filename, "yuv");
   config_.num_frames = 100;
-  config_.SetCodecSettings(kVideoCodecVP9, 1, 3, 3, true, true, false,
+  config_.SetCodecSettings(cricket::kVp9CodecName, 1, 3, 3, true, true, false,
                            kResilienceOn, 1280, 720);
 
   std::vector<RateProfile> rate_profiles = {{1500, 30, config_.num_frames}};
@@ -396,7 +397,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, DISABLED_MultiresVP8RdPerf) {
   config_.filepath = ResourcePath(config_.filename, "yuv");
   config_.num_frames = 300;
   config_.print_frame_level_stats = true;
-  config_.SetCodecSettings(kVideoCodecVP8, 3, 1, 3, true, true, false,
+  config_.SetCodecSettings(cricket::kVp8CodecName, 3, 1, 3, true, true, false,
                            kResilienceOn, 1280, 720);
 
   std::map<size_t, std::vector<VideoStatistics>> rd_stats;
@@ -419,7 +420,7 @@ TEST_F(VideoProcessorIntegrationTestLibvpx, DISABLED_SvcVP9RdPerf) {
   config_.filepath = ResourcePath(config_.filename, "yuv");
   config_.num_frames = 300;
   config_.print_frame_level_stats = true;
-  config_.SetCodecSettings(kVideoCodecVP9, 1, 3, 3, true, true, false,
+  config_.SetCodecSettings(cricket::kVp9CodecName, 1, 3, 3, true, true, false,
                            kResilienceOn, 1280, 720);
 
   std::map<size_t, std::vector<VideoStatistics>> rd_stats;

@@ -12,6 +12,7 @@
 
 #include "api/video/i420_buffer.h"
 #include "common_types.h"  // NOLINT(build/include)
+#include "media/base/mediaconstants.h"
 #include "modules/video_coding/codecs/test/videoprocessor.h"
 #include "modules/video_coding/include/mock/mock_video_codec_interface.h"
 #include "modules/video_coding/include/video_coding.h"
@@ -51,8 +52,8 @@ const int kFrameSize = kWidth * kHeight * 3 / 2;  // I420.
 class VideoProcessorTest : public testing::Test {
  protected:
   VideoProcessorTest() : q_("VP queue") {
-    config_.SetCodecSettings(kVideoCodecVP8, 1, 1, 1, false, false, false,
-                             false, kWidth, kHeight);
+    config_.SetCodecSettings(cricket::kVp8CodecName, 1, 1, 1, false, false,
+                             false, false, kWidth, kHeight);
 
     decoder_mock_ = new MockVideoDecoder();
     decoders_.push_back(std::unique_ptr<VideoDecoder>(decoder_mock_));
