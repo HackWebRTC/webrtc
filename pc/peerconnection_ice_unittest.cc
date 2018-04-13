@@ -398,25 +398,6 @@ TEST_P(PeerConnectionIceTest, CannotAddCandidateWhenRemoteDescriptionNotSet) {
   EXPECT_FALSE(caller->pc()->AddIceCandidate(&jsep_candidate));
 }
 
-// Should be able to add a candidate immediately after setting a remote offer,
-// even if an answer hasn't been created yet.
-TEST_P(PeerConnectionIceTest, CanAddCandidateWhenLocalDescriptionNotSet) {
-  const SocketAddress kCallerAddress("1.1.1.1", 0);
-
-  auto caller = CreatePeerConnectionWithAudioVideo();
-  auto callee = CreatePeerConnectionWithAudioVideo();
-  caller->network()->AddInterface(kCallerAddress);
-
-  // Apply offer, but not answer.
-  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
-
-  // Wait for gathering to finish and try adding a candidate from the caller.
-  EXPECT_TRUE_WAIT(caller->IsIceGatheringDone(), kIceCandidatesTimeout);
-  ASSERT_LT(0u, caller->observer()->GetCandidatesByMline(0).size());
-  EXPECT_TRUE(callee->pc()->AddIceCandidate(
-      caller->observer()->GetCandidatesByMline(0)[0]));
-}
-
 TEST_P(PeerConnectionIceTest, DuplicateIceCandidateIgnoredWhenAdded) {
   const SocketAddress kCalleeAddress("1.1.1.1", 1111);
 
