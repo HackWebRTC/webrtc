@@ -345,9 +345,7 @@ void VideoProcessor::FrameEncoded(
   frame_stat->encode_time_us = GetElapsedTimeMicroseconds(
       frame_stat->encode_start_ns, encode_stop_ns - post_encode_time_ns_);
   frame_stat->target_bitrate_kbps =
-      (bitrate_allocation_.GetTemporalLayerSum(spatial_idx, temporal_idx) +
-       500) /
-      1000;
+      bitrate_allocation_.GetTemporalLayerSum(spatial_idx, temporal_idx) / 1000;
   frame_stat->length_bytes = encoded_image._length;
   frame_stat->frame_type = encoded_image._frameType;
   frame_stat->temporal_idx = temporal_idx;
