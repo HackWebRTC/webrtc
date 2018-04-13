@@ -3003,27 +3003,6 @@ void PeerConnection::RegisterUMAObserver(UMAObserver* observer) {
           kEnumCounterAddressFamily, kPeerConnection_IPv4,
           kPeerConnectionAddressFamilyCounter_Max);
     }
-    // Send information about the requested SDP semantics.
-    switch (configuration_.sdp_semantics) {
-      case SdpSemantics::kDefault:
-        uma_observer_->IncrementEnumCounter(kEnumCounterSdpSemanticRequested,
-                                            kSdpSemanticRequestDefault,
-                                            kSdpSemanticRequestMax);
-
-        break;
-      case SdpSemantics::kPlanB:
-        uma_observer_->IncrementEnumCounter(kEnumCounterSdpSemanticRequested,
-                                            kSdpSemanticRequestPlanB,
-                                            kSdpSemanticRequestMax);
-        break;
-      case SdpSemantics::kUnifiedPlan:
-        uma_observer_->IncrementEnumCounter(kEnumCounterSdpSemanticRequested,
-                                            kSdpSemanticRequestUnifiedPlan,
-                                            kSdpSemanticRequestMax);
-        break;
-      default:
-        RTC_NOTREACHED();
-    }
   }
 }
 

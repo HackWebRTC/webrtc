@@ -1146,9 +1146,7 @@ class PeerConnectionIntegrationBaseTest : public testing::Test {
     if (config) {
       modified_config = *config;
     }
-    if (modified_config.sdp_semantics == SdpSemantics::kDefault) {
-      modified_config.sdp_semantics = sdp_semantics_;
-    }
+    modified_config.sdp_semantics = sdp_semantics_;
     if (!cert_generator) {
       cert_generator = rtc::MakeUnique<FakeRTCCertificateGenerator>();
     }
@@ -1166,6 +1164,25 @@ class PeerConnectionIntegrationBaseTest : public testing::Test {
     return CreatePeerConnectionWrappersWithConfig(
         PeerConnectionInterface::RTCConfiguration(),
         PeerConnectionInterface::RTCConfiguration());
+  }
+
+  bool CreatePeerConnectionWrappersWithSdpSemantics(
+      SdpSemantics caller_semantics,
+      SdpSemantics callee_semantics) {
+    // Can't specify the sdp_semantics in the passed-in configuration since it
+    // will be overwritten by CreatePeerConnectionWrapper with whatever is
+    // stored in sdp_semantics_. So get around this by modifying the instance
+    // variable before calling CreatePeerConnectionWrapper for the caller and
+    // callee PeerConnections.
+    SdpSemantics original_semantics = sdp_semantics_;
+    sdp_semantics_ = caller_semantics;
+    caller_ = CreatePeerConnectionWrapper("Caller", nullptr, nullptr, nullptr,
+                                          nullptr);
+    sdp_semantics_ = callee_semantics;
+    callee_ = CreatePeerConnectionWrapper("Callee", nullptr, nullptr, nullptr,
+                                          nullptr);
+    sdp_semantics_ = original_semantics;
+    return caller_ && callee_;
   }
 
   bool CreatePeerConnectionWrappersWithConstraints(
@@ -1415,7 +1432,7 @@ class PeerConnectionIntegrationBaseTest : public testing::Test {
   }
 
  protected:
-  const SdpSemantics sdp_semantics_;
+  SdpSemantics sdp_semantics_;
 
  private:
   // |ss_| is used by |network_thread_| so it must be destroyed later.
@@ -4187,16 +4204,13 @@ class PeerConnectionIntegrationInteropTest
   // because we specify not to use the test semantics when creating
   // PeerConnectionWrappers.
   PeerConnectionIntegrationInteropTest()
-      : PeerConnectionIntegrationBaseTest(SdpSemantics::kDefault),
+      : PeerConnectionIntegrationBaseTest(SdpSemantics::kPlanB),
         caller_semantics_(std::get<0>(GetParam())),
         callee_semantics_(std::get<1>(GetParam())) {}
 
   bool CreatePeerConnectionWrappersWithSemantics() {
-    RTCConfiguration caller_config;
-    caller_config.sdp_semantics = caller_semantics_;
-    RTCConfiguration callee_config;
-    callee_config.sdp_semantics = callee_semantics_;
-    return CreatePeerConnectionWrappersWithConfig(caller_config, callee_config);
+    return CreatePeerConnectionWrappersWithSdpSemantics(caller_semantics_,
+                                                        callee_semantics_);
   }
 
   const SdpSemantics caller_semantics_;
@@ -4304,13 +4318,8 @@ INSTANTIATE_TEST_CASE_P(
 // Test that if the Unified Plan side offers two video tracks then the Plan B
 // side will only see the first one and ignore the second.
 TEST_F(PeerConnectionIntegrationTestPlanB, TwoVideoUnifiedPlanToNoMediaPlanB) {
-  RTCConfiguration caller_config;
-  caller_config.sdp_semantics = SdpSemantics::kUnifiedPlan;
-  RTCConfiguration callee_config;
-  callee_config.sdp_semantics = SdpSemantics::kPlanB;
-  ASSERT_TRUE(
-      CreatePeerConnectionWrappersWithConfig(caller_config, callee_config));
-
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithSdpSemantics(
+      SdpSemantics::kUnifiedPlan, SdpSemantics::kPlanB));
   ConnectFakeSignaling();
   auto first_sender = caller()->AddVideoTrack();
   caller()->AddVideoTrack();

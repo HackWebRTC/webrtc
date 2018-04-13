@@ -404,8 +404,6 @@
 
 + (webrtc::SdpSemantics)nativeSdpSemanticsForSdpSemantics:(RTCSdpSemantics)sdpSemantics {
   switch (sdpSemantics) {
-    case RTCSdpSemanticsDefault:
-      return webrtc::SdpSemantics::kDefault;
     case RTCSdpSemanticsPlanB:
       return webrtc::SdpSemantics::kPlanB;
     case RTCSdpSemanticsUnifiedPlan:
@@ -415,8 +413,6 @@
 
 + (RTCSdpSemantics)sdpSemanticsForNativeSdpSemantics:(webrtc::SdpSemantics)sdpSemantics {
   switch (sdpSemantics) {
-    case webrtc::SdpSemantics::kDefault:
-      return RTCSdpSemanticsDefault;
     case webrtc::SdpSemantics::kPlanB:
       return RTCSdpSemanticsPlanB;
     case webrtc::SdpSemantics::kUnifiedPlan:
@@ -426,8 +422,6 @@
 
 + (NSString *)stringForSdpSemantics:(RTCSdpSemantics)sdpSemantics {
   switch (sdpSemantics) {
-    case RTCSdpSemanticsDefault:
-      return @"DEFAULT";
     case RTCSdpSemanticsPlanB:
       return @"PLAN_B";
     case RTCSdpSemanticsUnifiedPlan:

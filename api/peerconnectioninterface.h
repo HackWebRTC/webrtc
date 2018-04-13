@@ -154,9 +154,7 @@ class StatsObserver : public rtc::RefCountInterface {
   virtual ~StatsObserver() {}
 };
 
-// For now, kDefault is interpreted as kPlanB.
-// TODO(bugs.webrtc.org/8530): Switch default to kUnifiedPlan.
-enum class SdpSemantics { kDefault, kPlanB, kUnifiedPlan };
+enum class SdpSemantics { kPlanB, kUnifiedPlan };
 
 class PeerConnectionInterface : public rtc::RefCountInterface {
  public:
@@ -559,15 +557,12 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     // will also cause PeerConnection to ignore all but the first a=ssrc lines
     // that form a Plan B stream.
     //
-    // For users who only send at most one audio and one video track, this
-    // choice does not matter and should be left as kDefault.
-    //
     // For users who wish to send multiple audio/video streams and need to stay
-    // interoperable with legacy WebRTC implementations, specify kPlanB.
+    // interoperable with legacy WebRTC implementations or use legacy APIs,
+    // specify kPlanB.
     //
-    // For users who wish to send multiple audio/video streams and/or wish to
-    // use the new RtpTransceiver API, specify kUnifiedPlan.
-    SdpSemantics sdp_semantics = SdpSemantics::kDefault;
+    // For all other users, specify kUnifiedPlan.
+    SdpSemantics sdp_semantics = SdpSemantics::kPlanB;
 
     //
     // Don't forget to update operator== if adding something.
