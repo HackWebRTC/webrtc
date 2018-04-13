@@ -488,6 +488,16 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
                                      withFrame:(RTCVideoFrame *)frame {
   BOOL resetCompressionSession = NO;
 
+  // If we're capturing native frames in another pixel format than the compression session is
+  // configured with, make sure the compression session is reset using the correct pixel format.
+  // If we're capturing non-native frames and the compression session is configured with a non-NV12
+  // format, reset it to NV12.
+  OSType framePixelFormat = kNV12PixelFormat;
+  if ([frame.buffer isKindOfClass:[RTCCVPixelBuffer class]]) {
+    RTCCVPixelBuffer *rtcPixelBuffer = (RTCCVPixelBuffer *)frame.buffer;
+    framePixelFormat = CVPixelBufferGetPixelFormatType(rtcPixelBuffer.pixelBuffer);
+  }
+
 #if defined(WEBRTC_IOS)
   if (!pixelBufferPool) {
     // Kind of a hack. On backgrounding, the compression session seems to get
@@ -500,11 +510,6 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
   }
 #endif
 
-  // If we're capturing native frames in another pixel format than the compression session is
-  // configured with, make sure the compression session is reset using the correct pixel format.
-  // If we're capturing non-native frames and the compression session is configured with a non-NV12
-  // format, reset it to NV12.
-  OSType framePixelFormat = kNV12PixelFormat;
   if (pixelBufferPool) {
     // The pool attribute `kCVPixelBufferPixelFormatTypeKey` can contain either an array of pixel
     // formats or a single pixel format.
@@ -517,11 +522,6 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
       compressionSessionPixelFormats = (NSArray *)pixelFormats;
     } else {
       compressionSessionPixelFormats = @[ (NSNumber *)pixelFormats ];
-    }
-
-    if ([frame.buffer isKindOfClass:[RTCCVPixelBuffer class]]) {
-      RTCCVPixelBuffer *rtcPixelBuffer = (RTCCVPixelBuffer *)frame.buffer;
-      framePixelFormat = CVPixelBufferGetPixelFormatType(rtcPixelBuffer.pixelBuffer);
     }
 
     if (![compressionSessionPixelFormats
