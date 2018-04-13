@@ -932,6 +932,7 @@ bool PeerConnection::Initialize(
   config.bundle_policy = configuration.bundle_policy;
   config.rtcp_mux_policy = configuration.rtcp_mux_policy;
   config.crypto_options = options.crypto_options;
+  config.transport_observer = this;
 #if defined(ENABLE_EXTERNAL_AUTH)
   config.enable_external_auth = true;
 #endif
@@ -947,10 +948,6 @@ bool PeerConnection::Initialize(
       this, &PeerConnection::OnTransportControllerCandidatesRemoved);
   transport_controller_->SignalDtlsHandshakeError.connect(
       this, &PeerConnection::OnTransportControllerDtlsHandshakeError);
-  transport_controller_->SignalRtpTransportChanged.connect(
-      this, &PeerConnection::OnRtpTransportChanged);
-  transport_controller_->SignalDtlsTransportChanged.connect(
-      this, &PeerConnection::OnDtlsTransportChanged);
 
   sctp_factory_ = factory_->CreateSctpTransportInternalFactory();
 
@@ -5430,9 +5427,6 @@ cricket::VoiceChannel* PeerConnection::CreateVoiceChannel(
   voice_channel->SignalSentPacket.connect(this,
                                           &PeerConnection::OnSentPacket_w);
   voice_channel->SetRtpTransport(rtp_transport);
-  if (factory_->options().disable_encryption) {
-    voice_channel->DisableEncryption(true);
-  }
   if (uma_observer_) {
     voice_channel->SetMetricsObserver(uma_observer_);
   }
@@ -5458,9 +5452,6 @@ cricket::VideoChannel* PeerConnection::CreateVideoChannel(
   video_channel->SignalSentPacket.connect(this,
                                           &PeerConnection::OnSentPacket_w);
   video_channel->SetRtpTransport(rtp_transport);
-  if (factory_->options().disable_encryption) {
-    video_channel->DisableEncryption(true);
-  }
   if (uma_observer_) {
     video_channel->SetMetricsObserver(uma_observer_);
   }
@@ -5500,9 +5491,6 @@ bool PeerConnection::CreateDataChannel(const std::string& mid) {
     rtp_data_channel_->SignalSentPacket.connect(
         this, &PeerConnection::OnSentPacket_w);
     rtp_data_channel_->SetRtpTransport(rtp_transport);
-    if (factory_->options().disable_encryption) {
-      rtp_data_channel_->DisableEncryption(true);
-    }
     if (uma_observer_) {
       rtp_data_channel_->SetMetricsObserver(uma_observer_);
     }
@@ -6100,7 +6088,6 @@ void PeerConnection::DestroyDataChannel() {
 
 void PeerConnection::DestroyBaseChannel(cricket::BaseChannel* channel) {
   RTC_DCHECK(channel);
-
   switch (channel->media_type()) {
     case cricket::MEDIA_TYPE_AUDIO:
       channel_manager()->DestroyVoiceChannel(
@@ -6120,13 +6107,14 @@ void PeerConnection::DestroyBaseChannel(cricket::BaseChannel* channel) {
   }
 }
 
-void PeerConnection::OnRtpTransportChanged(
+bool PeerConnection::OnRtpTransportChanged(
     const std::string& mid,
     RtpTransportInternal* rtp_transport) {
   auto base_channel = GetChannel(mid);
   if (base_channel) {
-    base_channel->SetRtpTransport(rtp_transport);
+    return base_channel->SetRtpTransport(rtp_transport);
   }
+  return true;
 }
 
 void PeerConnection::OnDtlsTransportChanged(

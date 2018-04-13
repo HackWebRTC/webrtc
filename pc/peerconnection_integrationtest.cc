@@ -2273,6 +2273,8 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
 
 // Test that if two video tracks are sent (from caller to callee, in this test),
 // they're transmitted correctly end-to-end.
+// TODO(zhihuang): Enable this test in Unified Plan mode once the MID-based
+// demuxing is ready.
 TEST_P(PeerConnectionIntegrationTest, EndToEndCallWithTwoVideoTracks) {
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
@@ -2395,7 +2397,6 @@ TEST_P(PeerConnectionIntegrationTest, GetBytesReceivedStatsWithOldStatsApi) {
 TEST_P(PeerConnectionIntegrationTest, GetBytesSentStatsWithOldStatsApi) {
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
-  caller()->AddAudioVideoTracks();
   auto audio_track = caller()->CreateLocalAudioTrack();
   auto video_track = caller()->CreateLocalVideoTrack();
   caller()->AddTrack(audio_track);

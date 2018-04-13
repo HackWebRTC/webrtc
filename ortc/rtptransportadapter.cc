@@ -171,8 +171,8 @@ RtpTransportAdapter::RtpTransportAdapter(
 
   transport_->SignalReadyToSend.connect(this,
                                         &RtpTransportAdapter::OnReadyToSend);
-  transport_->SignalPacketReceived.connect(
-      this, &RtpTransportAdapter::OnPacketReceived);
+  transport_->SignalRtcpPacketReceived.connect(
+      this, &RtpTransportAdapter::OnRtcpPacketReceived);
   transport_->SignalWritableState.connect(
       this, &RtpTransportAdapter::OnWritableState);
 }

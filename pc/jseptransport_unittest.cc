@@ -15,7 +15,7 @@
 #include "media/base/fakertp.h"
 #include "p2p/base/fakedtlstransport.h"
 #include "p2p/base/fakeicetransport.h"
-#include "pc/jseptransport2.h"
+#include "pc/jseptransport.h"
 #include "rtc_base/gunit.h"
 
 namespace cricket {
@@ -44,9 +44,8 @@ class JsepTransport2Test : public testing::Test, public sigslot::has_slots<> {
   std::unique_ptr<webrtc::SrtpTransport> CreateSdesTransport(
       rtc::PacketTransportInternal* rtp_packet_transport,
       rtc::PacketTransportInternal* rtcp_packet_transport) {
-    bool rtcp_mux_enabled = (rtcp_packet_transport == nullptr);
-    auto srtp_transport =
-        rtc::MakeUnique<webrtc::SrtpTransport>(rtcp_mux_enabled);
+    auto srtp_transport = rtc::MakeUnique<webrtc::SrtpTransport>(
+        rtcp_packet_transport == nullptr);
 
     srtp_transport->SetRtpPacketTransport(rtp_packet_transport);
     if (rtcp_packet_transport) {
@@ -58,21 +57,17 @@ class JsepTransport2Test : public testing::Test, public sigslot::has_slots<> {
   std::unique_ptr<webrtc::DtlsSrtpTransport> CreateDtlsSrtpTransport(
       cricket::DtlsTransportInternal* rtp_dtls_transport,
       cricket::DtlsTransportInternal* rtcp_dtls_transport) {
-    bool rtcp_mux_enabled = (rtcp_dtls_transport == nullptr);
-    auto srtp_transport =
-        rtc::MakeUnique<webrtc::SrtpTransport>(rtcp_mux_enabled);
-    auto dtls_srtp_transport =
-        rtc::MakeUnique<webrtc::DtlsSrtpTransport>(std::move(srtp_transport));
-
+    auto dtls_srtp_transport = rtc::MakeUnique<webrtc::DtlsSrtpTransport>(
+        rtcp_dtls_transport == nullptr);
     dtls_srtp_transport->SetDtlsTransports(rtp_dtls_transport,
                                            rtcp_dtls_transport);
     return dtls_srtp_transport;
   }
 
-  // Create a new JsepTransport2 with a FakeDtlsTransport and a
+  // Create a new JsepTransport with a FakeDtlsTransport and a
   // FakeIceTransport.
-  std::unique_ptr<JsepTransport2> CreateJsepTransport2(bool rtcp_mux_enabled,
-                                                       SrtpMode srtp_mode) {
+  std::unique_ptr<JsepTransport> CreateJsepTransport2(bool rtcp_mux_enabled,
+                                                      SrtpMode srtp_mode) {
     auto ice = rtc::MakeUnique<FakeIceTransport>(kTransportName,
                                                  ICE_CANDIDATE_COMPONENT_RTP);
     auto rtp_dtls_transport =
@@ -102,7 +97,7 @@ class JsepTransport2Test : public testing::Test, public sigslot::has_slots<> {
         RTC_NOTREACHED();
     }
 
-    auto jsep_transport = rtc::MakeUnique<JsepTransport2>(
+    auto jsep_transport = rtc::MakeUnique<JsepTransport>(
         kTransportName, /*local_certificate=*/nullptr,
         std::move(unencrypted_rtp_transport), std::move(sdes_transport),
         std::move(dtls_srtp_transport), std::move(rtp_dtls_transport),
@@ -144,7 +139,7 @@ class JsepTransport2Test : public testing::Test, public sigslot::has_slots<> {
 
   void OnRtcpMuxActive() { signal_rtcp_mux_active_received_ = true; }
 
-  std::unique_ptr<JsepTransport2> jsep_transport_;
+  std::unique_ptr<JsepTransport> jsep_transport_;
   bool signal_rtcp_mux_active_received_ = false;
   // The SrtpTransport is owned by |jsep_transport_|. Keep a raw pointer here
   // for testing.
@@ -1096,7 +1091,7 @@ class JsepTransport2HeaderExtensionTest
   }
 
   void TestOneWaySendRecvPacketWithEncryptedHeaderExtension(
-      JsepTransport2* sender_transport) {
+      JsepTransport* sender_transport) {
     size_t rtp_len = sizeof(kPcmuFrameWithExtensions);
     size_t packet_size = rtp_len + GetRtpAuthLen();
     rtc::Buffer rtp_packet_buffer(packet_size);
@@ -1119,8 +1114,8 @@ class JsepTransport2HeaderExtensionTest
 
   int sequence_number_ = 0;
   int received_packet_count_ = 0;
-  std::unique_ptr<JsepTransport2> jsep_transport1_;
-  std::unique_ptr<JsepTransport2> jsep_transport2_;
+  std::unique_ptr<JsepTransport> jsep_transport1_;
+  std::unique_ptr<JsepTransport> jsep_transport2_;
   std::vector<int> recv_encrypted_headers1_;
   std::vector<int> recv_encrypted_headers2_;
 };

@@ -666,6 +666,42 @@ TEST_P(PeerConnectionBundleTest, BundleOnFirstMidInAnswer) {
   EXPECT_EQ(caller->voice_rtp_transport(), caller->video_rtp_transport());
 }
 
+// This tests that applying description with conflicted RTP demuxing criteria
+// will fail.
+TEST_P(PeerConnectionBundleTest,
+       ApplyDescriptionWithConflictedDemuxCriteriaFail) {
+  auto caller = CreatePeerConnectionWithAudioVideo();
+  auto callee = CreatePeerConnectionWithAudioVideo();
+
+  RTCOfferAnswerOptions options;
+  options.use_rtp_mux = false;
+  auto offer = caller->CreateOffer(options);
+  // Modified the SDP to make two m= sections have the same SSRC.
+  ASSERT_GE(offer->description()->contents().size(), 2U);
+  offer->description()
+      ->contents()[0]
+      .description->mutable_streams()[0]
+      .ssrcs[0] = 1111222;
+  offer->description()
+      ->contents()[1]
+      .description->mutable_streams()[0]
+      .ssrcs[0] = 1111222;
+  EXPECT_TRUE(
+      caller->SetLocalDescription(CloneSessionDescription(offer.get())));
+  EXPECT_TRUE(callee->SetRemoteDescription(std::move(offer)));
+  EXPECT_TRUE(callee->CreateAnswerAndSetAsLocal(options));
+
+  // Enable BUNDLE in subsequent offer/answer exchange and two m= sections are
+  // expectd to use one RtpTransport underneath.
+  options.use_rtp_mux = true;
+  EXPECT_TRUE(
+      callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal(options)));
+  auto answer = callee->CreateAnswer(options);
+  // When BUNDLE is enabled, applying the description is expected to fail
+  // because the demuxing criteria is conflicted.
+  EXPECT_FALSE(callee->SetLocalDescription(std::move(answer)));
+}
+
 // This tests that changing the pre-negotiated BUNDLE tag is not supported.
 TEST_P(PeerConnectionBundleTest, RejectDescriptionChangingBundleTag) {
   RTCConfiguration config;

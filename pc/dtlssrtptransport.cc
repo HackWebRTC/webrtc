@@ -24,22 +24,8 @@ static const char kDtlsSrtpExporterLabel[] = "EXTRACTOR-dtls_srtp";
 
 namespace webrtc {
 
-DtlsSrtpTransport::DtlsSrtpTransport(
-    std::unique_ptr<webrtc::SrtpTransport> srtp_transport)
-    : RtpTransportInternalAdapter(srtp_transport.get()) {
-  srtp_transport_ = std::move(srtp_transport);
-  RTC_DCHECK(srtp_transport_);
-  srtp_transport_->SignalPacketReceived.connect(
-      this, &DtlsSrtpTransport::OnPacketReceived);
-  srtp_transport_->SignalReadyToSend.connect(this,
-                                             &DtlsSrtpTransport::OnReadyToSend);
-  srtp_transport_->SignalNetworkRouteChanged.connect(
-      this, &DtlsSrtpTransport::OnNetworkRouteChanged);
-  srtp_transport_->SignalWritableState.connect(
-      this, &DtlsSrtpTransport::OnWritableState);
-  srtp_transport_->SignalSentPacket.connect(this,
-                                            &DtlsSrtpTransport::OnSentPacket);
-}
+DtlsSrtpTransport::DtlsSrtpTransport(bool rtcp_mux_enabled)
+    : SrtpTransport(rtcp_mux_enabled) {}
 
 void DtlsSrtpTransport::SetDtlsTransports(
     cricket::DtlsTransportInternal* rtp_dtls_transport,
@@ -54,7 +40,7 @@ void DtlsSrtpTransport::SetDtlsTransports(
   // DtlsTransport changes and wait until the DTLS handshake is complete to set
   // the newly negotiated parameters.
   if (IsSrtpActive()) {
-    srtp_transport_->ResetParams();
+    ResetParams();
   }
 
   const std::string transport_name =
@@ -76,13 +62,13 @@ void DtlsSrtpTransport::SetDtlsTransports(
   SetRtpDtlsTransport(rtp_dtls_transport);
   SetRtpPacketTransport(rtp_dtls_transport);
 
-  UpdateWritableStateAndMaybeSetupDtlsSrtp();
+  MaybeSetupDtlsSrtp();
 }
 
 void DtlsSrtpTransport::SetRtcpMuxEnabled(bool enable) {
-  srtp_transport_->SetRtcpMuxEnabled(enable);
+  SrtpTransport::SetRtcpMuxEnabled(enable);
   if (enable) {
-    UpdateWritableStateAndMaybeSetupDtlsSrtp();
+    MaybeSetupDtlsSrtp();
   }
 }
 
@@ -128,10 +114,9 @@ bool DtlsSrtpTransport::IsDtlsConnected() {
 }
 
 bool DtlsSrtpTransport::IsDtlsWritable() {
-  auto rtp_packet_transport = srtp_transport_->rtp_packet_transport();
   auto rtcp_packet_transport =
-      rtcp_mux_enabled() ? nullptr : srtp_transport_->rtcp_packet_transport();
-  return rtp_packet_transport && rtp_packet_transport->writable() &&
+      rtcp_mux_enabled() ? nullptr : rtcp_dtls_transport_;
+  return rtp_dtls_transport_ && rtp_dtls_transport_->writable() &&
          (!rtcp_packet_transport || rtcp_packet_transport->writable());
 }
 
@@ -140,7 +125,7 @@ bool DtlsSrtpTransport::DtlsHandshakeCompleted() {
 }
 
 void DtlsSrtpTransport::MaybeSetupDtlsSrtp() {
-  if (IsSrtpActive() || !DtlsHandshakeCompleted()) {
+  if (IsSrtpActive() || !IsDtlsWritable()) {
     return;
   }
 
@@ -170,11 +155,10 @@ void DtlsSrtpTransport::SetupRtpDtlsSrtp() {
 
   if (!ExtractParams(rtp_dtls_transport_, &selected_crypto_suite, &send_key,
                      &recv_key) ||
-      !srtp_transport_->SetRtpParams(
-          selected_crypto_suite, &send_key[0],
-          static_cast<int>(send_key.size()), send_extension_ids,
-          selected_crypto_suite, &recv_key[0],
-          static_cast<int>(recv_key.size()), recv_extension_ids)) {
+      !SetRtpParams(selected_crypto_suite, &send_key[0],
+                    static_cast<int>(send_key.size()), send_extension_ids,
+                    selected_crypto_suite, &recv_key[0],
+                    static_cast<int>(recv_key.size()), recv_extension_ids)) {
     SignalDtlsSrtpSetupFailure(this, /*rtcp=*/false);
     RTC_LOG(LS_WARNING) << "DTLS-SRTP key installation for RTP failed";
   }
@@ -202,11 +186,11 @@ void DtlsSrtpTransport::SetupRtcpDtlsSrtp() {
   rtc::ZeroOnFreeBuffer<unsigned char> rtcp_recv_key;
   if (!ExtractParams(rtcp_dtls_transport_, &selected_crypto_suite,
                      &rtcp_send_key, &rtcp_recv_key) ||
-      !srtp_transport_->SetRtcpParams(
-          selected_crypto_suite, &rtcp_send_key[0],
-          static_cast<int>(rtcp_send_key.size()), send_extension_ids,
-          selected_crypto_suite, &rtcp_recv_key[0],
-          static_cast<int>(rtcp_recv_key.size()), recv_extension_ids)) {
+      !SetRtcpParams(selected_crypto_suite, &rtcp_send_key[0],
+                     static_cast<int>(rtcp_send_key.size()), send_extension_ids,
+                     selected_crypto_suite, &rtcp_recv_key[0],
+                     static_cast<int>(rtcp_recv_key.size()),
+                     recv_extension_ids)) {
     SignalDtlsSrtpSetupFailure(this, /*rtcp=*/true);
     RTC_LOG(LS_WARNING) << "DTLS-SRTP key installation for RTCP failed";
   }
@@ -307,59 +291,22 @@ void DtlsSrtpTransport::SetRtcpDtlsTransport(
   SetDtlsTransport(rtcp_dtls_transport, &rtcp_dtls_transport_);
 }
 
-void DtlsSrtpTransport::UpdateWritableStateAndMaybeSetupDtlsSrtp() {
-  bool writable = IsDtlsWritable();
-  SetWritable(writable);
-  if (writable) {
-    MaybeSetupDtlsSrtp();
-  }
-}
-
-void DtlsSrtpTransport::SetWritable(bool writable) {
-  // Only fire the signal if the writable state changes.
-  if (writable_ != writable) {
-    writable_ = writable;
-    SignalWritableState(writable_);
-  }
-}
-
 void DtlsSrtpTransport::OnDtlsState(cricket::DtlsTransportInternal* transport,
                                     cricket::DtlsTransportState state) {
   RTC_DCHECK(transport == rtp_dtls_transport_ ||
              transport == rtcp_dtls_transport_);
 
   if (state != cricket::DTLS_TRANSPORT_CONNECTED) {
-    srtp_transport_->ResetParams();
+    ResetParams();
     return;
   }
 
   MaybeSetupDtlsSrtp();
 }
 
-void DtlsSrtpTransport::OnWritableState(bool writable) {
-  SetWritable(writable);
-  if (writable) {
-    MaybeSetupDtlsSrtp();
-  }
-}
-
-void DtlsSrtpTransport::OnSentPacket(const rtc::SentPacket& sent_packet) {
-  SignalSentPacket(sent_packet);
-}
-
-void DtlsSrtpTransport::OnPacketReceived(bool rtcp,
-                                         rtc::CopyOnWriteBuffer* packet,
-                                         const rtc::PacketTime& packet_time) {
-  SignalPacketReceived(rtcp, packet, packet_time);
-}
-
-void DtlsSrtpTransport::OnReadyToSend(bool ready) {
-  SignalReadyToSend(ready);
-}
-
-void DtlsSrtpTransport::OnNetworkRouteChanged(
-    rtc::Optional<rtc::NetworkRoute> network_route) {
-  SignalNetworkRouteChanged(network_route);
+void DtlsSrtpTransport::OnWritableState(
+    rtc::PacketTransportInternal* packet_transport) {
+  MaybeSetupDtlsSrtp();
 }
 
 }  // namespace webrtc

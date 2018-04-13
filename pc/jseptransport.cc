@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/jseptransport2.h"
+#include "pc/jseptransport.h"
 
 #include <memory>
 #include <utility>  // for std::pair
@@ -21,6 +21,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/ptr_util.h"
+#include "rtc_base/strings/string_builder.h"
 
 using webrtc::SdpType;
 
@@ -86,7 +87,7 @@ JsepTransportDescription& JsepTransportDescription::operator=(
   return *this;
 }
 
-JsepTransport2::JsepTransport2(
+JsepTransport::JsepTransport(
     const std::string& mid,
     const rtc::scoped_refptr<rtc::RTCCertificate>& local_certificate,
     std::unique_ptr<webrtc::RtpTransport> unencrypted_rtp_transport,
@@ -115,9 +116,9 @@ JsepTransport2::JsepTransport2(
   }
 }
 
-JsepTransport2::~JsepTransport2() {}
+JsepTransport::~JsepTransport() {}
 
-webrtc::RTCError JsepTransport2::SetLocalJsepTransportDescription(
+webrtc::RTCError JsepTransport::SetLocalJsepTransportDescription(
     const JsepTransportDescription& jsep_description,
     SdpType type) {
   webrtc::RTCError error;
@@ -195,7 +196,7 @@ webrtc::RTCError JsepTransport2::SetLocalJsepTransportDescription(
   return webrtc::RTCError::OK();
 }
 
-webrtc::RTCError JsepTransport2::SetRemoteJsepTransportDescription(
+webrtc::RTCError JsepTransport::SetRemoteJsepTransportDescription(
     const JsepTransportDescription& jsep_description,
     webrtc::SdpType type) {
   webrtc::RTCError error;
@@ -251,7 +252,7 @@ webrtc::RTCError JsepTransport2::SetRemoteJsepTransportDescription(
   return webrtc::RTCError::OK();
 }
 
-webrtc::RTCError JsepTransport2::AddRemoteCandidates(
+webrtc::RTCError JsepTransport::AddRemoteCandidates(
     const Candidates& candidates) {
   if (!local_description_ || !remote_description_) {
     return webrtc::RTCError(webrtc::RTCErrorType::INVALID_STATE,
@@ -276,14 +277,14 @@ webrtc::RTCError JsepTransport2::AddRemoteCandidates(
   return webrtc::RTCError::OK();
 }
 
-void JsepTransport2::SetNeedsIceRestartFlag() {
+void JsepTransport::SetNeedsIceRestartFlag() {
   if (!needs_ice_restart_) {
     needs_ice_restart_ = true;
     RTC_LOG(LS_VERBOSE) << "needs-ice-restart flag set for transport " << mid();
   }
 }
 
-rtc::Optional<rtc::SSLRole> JsepTransport2::GetDtlsRole() const {
+rtc::Optional<rtc::SSLRole> JsepTransport::GetDtlsRole() const {
   RTC_DCHECK(rtp_dtls_transport_);
   rtc::SSLRole dtls_role;
   if (!rtp_dtls_transport_->GetDtlsRole(&dtls_role)) {
@@ -293,7 +294,7 @@ rtc::Optional<rtc::SSLRole> JsepTransport2::GetDtlsRole() const {
   return rtc::Optional<rtc::SSLRole>(dtls_role);
 }
 
-bool JsepTransport2::GetStats(TransportStats* stats) {
+bool JsepTransport::GetStats(TransportStats* stats) {
   stats->transport_name = mid();
   stats->channel_stats.clear();
   bool ret = GetTransportStats(rtp_dtls_transport_.get(), stats);
@@ -303,7 +304,7 @@ bool JsepTransport2::GetStats(TransportStats* stats) {
   return ret;
 }
 
-webrtc::RTCError JsepTransport2::VerifyCertificateFingerprint(
+webrtc::RTCError JsepTransport::VerifyCertificateFingerprint(
     const rtc::RTCCertificate* certificate,
     const rtc::SSLFingerprint* fingerprint) const {
   if (!fingerprint) {
@@ -320,22 +321,23 @@ webrtc::RTCError JsepTransport2::VerifyCertificateFingerprint(
   if (*fp_tmp == *fingerprint) {
     return webrtc::RTCError::OK();
   }
-  std::ostringstream desc;
+  char ss_buf[1024];
+  rtc::SimpleStringBuilder desc(ss_buf);
   desc << "Local fingerprint does not match identity. Expected: ";
   desc << fp_tmp->ToString();
   desc << " Got: " << fingerprint->ToString();
-  return webrtc::RTCError(webrtc::RTCErrorType::INVALID_PARAMETER, desc.str());
+  return webrtc::RTCError(webrtc::RTCErrorType::INVALID_PARAMETER,
+                          std::string(desc.str()));
 }
 
-void JsepTransport2::SetLocalIceParameters(
-    IceTransportInternal* ice_transport) {
+void JsepTransport::SetLocalIceParameters(IceTransportInternal* ice_transport) {
   RTC_DCHECK(ice_transport);
   RTC_DCHECK(local_description_);
   ice_transport->SetIceParameters(
       local_description_->transport_desc.GetIceParameters());
 }
 
-void JsepTransport2::SetRemoteIceParameters(
+void JsepTransport::SetRemoteIceParameters(
     IceTransportInternal* ice_transport) {
   RTC_DCHECK(ice_transport);
   RTC_DCHECK(remote_description_);
@@ -344,7 +346,7 @@ void JsepTransport2::SetRemoteIceParameters(
   ice_transport->SetRemoteIceMode(remote_description_->transport_desc.ice_mode);
 }
 
-webrtc::RTCError JsepTransport2::SetNegotiatedDtlsParameters(
+webrtc::RTCError JsepTransport::SetNegotiatedDtlsParameters(
     DtlsTransportInternal* dtls_transport,
     rtc::Optional<rtc::SSLRole> dtls_role,
     rtc::SSLFingerprint* remote_fingerprint) {
@@ -367,9 +369,9 @@ webrtc::RTCError JsepTransport2::SetNegotiatedDtlsParameters(
   return webrtc::RTCError::OK();
 }
 
-bool JsepTransport2::SetRtcpMux(bool enable,
-                                webrtc::SdpType type,
-                                ContentSource source) {
+bool JsepTransport::SetRtcpMux(bool enable,
+                               webrtc::SdpType type,
+                               ContentSource source) {
   bool ret = false;
   switch (type) {
     case SdpType::kOffer:
@@ -399,7 +401,7 @@ bool JsepTransport2::SetRtcpMux(bool enable,
   return ret;
 }
 
-void JsepTransport2::ActivateRtcpMux() {
+void JsepTransport::ActivateRtcpMux() {
   if (unencrypted_rtp_transport_) {
     RTC_DCHECK(!sdes_transport_);
     RTC_DCHECK(!dtls_srtp_transport_);
@@ -420,10 +422,10 @@ void JsepTransport2::ActivateRtcpMux() {
   SignalRtcpMuxActive();
 }
 
-bool JsepTransport2::SetSdes(const std::vector<CryptoParams>& cryptos,
-                             const std::vector<int>& encrypted_extension_ids,
-                             webrtc::SdpType type,
-                             ContentSource source) {
+bool JsepTransport::SetSdes(const std::vector<CryptoParams>& cryptos,
+                            const std::vector<int>& encrypted_extension_ids,
+                            webrtc::SdpType type,
+                            ContentSource source) {
   bool ret = false;
   ret = sdes_negotiator_.Process(cryptos, type, source);
   if (!ret) {
@@ -464,7 +466,7 @@ bool JsepTransport2::SetSdes(const std::vector<CryptoParams>& cryptos,
   return ret;
 }
 
-webrtc::RTCError JsepTransport2::NegotiateAndSetDtlsParameters(
+webrtc::RTCError JsepTransport::NegotiateAndSetDtlsParameters(
     SdpType local_description_type) {
   if (!local_description_ || !remote_description_) {
     return webrtc::RTCError(webrtc::RTCErrorType::INVALID_STATE,
@@ -516,7 +518,7 @@ webrtc::RTCError JsepTransport2::NegotiateAndSetDtlsParameters(
   return error;
 }
 
-webrtc::RTCError JsepTransport2::NegotiateDtlsRole(
+webrtc::RTCError JsepTransport::NegotiateDtlsRole(
     SdpType local_description_type,
     ConnectionRole local_connection_role,
     ConnectionRole remote_connection_role,
@@ -604,8 +606,8 @@ webrtc::RTCError JsepTransport2::NegotiateDtlsRole(
   return webrtc::RTCError::OK();
 }
 
-bool JsepTransport2::GetTransportStats(DtlsTransportInternal* dtls_transport,
-                                       TransportStats* stats) {
+bool JsepTransport::GetTransportStats(DtlsTransportInternal* dtls_transport,
+                                      TransportStats* stats) {
   RTC_DCHECK(dtls_transport);
   TransportChannelStats substats;
   substats.component = dtls_transport == rtcp_dtls_transport_.get()

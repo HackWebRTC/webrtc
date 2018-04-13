@@ -51,6 +51,7 @@ class RtcEventLog;
 // - Generating stats.
 class PeerConnection : public PeerConnectionInternal,
                        public DataChannelProviderInterface,
+                       public JsepTransportController::Observer,
                        public rtc::MessageHandler,
                        public sigslot::has_slots<> {
  public:
@@ -877,11 +878,13 @@ class PeerConnection : public PeerConnectionInternal,
   // method is called.
   void DestroyBaseChannel(cricket::BaseChannel* channel);
 
-  void OnRtpTransportChanged(const std::string& mid,
-                             RtpTransportInternal* rtp_transport);
+  // JsepTransportController::Observer override.
+  bool OnRtpTransportChanged(const std::string& mid,
+                             RtpTransportInternal* rtp_transport) override;
 
-  void OnDtlsTransportChanged(const std::string& mid,
-                              cricket::DtlsTransportInternal* dtls_transport);
+  void OnDtlsTransportChanged(
+      const std::string& mid,
+      cricket::DtlsTransportInternal* dtls_transport) override;
 
   sigslot::signal1<DataChannel*> SignalDataChannelCreated_;
 

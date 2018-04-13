@@ -869,8 +869,6 @@ void RtpTransportControllerAdapter::CreateVoiceChannel() {
       cricket::AudioOptions());
   RTC_DCHECK(voice_channel_);
   voice_channel_->Enable(true);
-  voice_channel_->DisableEncryption(
-      !inner_audio_transport_->GetInternal()->IsSrtpTransport());
 }
 
 void RtpTransportControllerAdapter::CreateVideoChannel() {
@@ -880,8 +878,6 @@ void RtpTransportControllerAdapter::CreateVideoChannel() {
       cricket::VideoOptions());
   RTC_DCHECK(video_channel_);
   video_channel_->Enable(true);
-  video_channel_->DisableEncryption(
-      !inner_video_transport_->GetInternal()->IsSrtpTransport());
 }
 
 void RtpTransportControllerAdapter::DestroyVoiceChannel() {

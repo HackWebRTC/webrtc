@@ -71,6 +71,20 @@ class RtpTransportInternalAdapter : public RtpTransportInternal {
     return transport_->SendRtcpPacket(packet, options, flags);
   }
 
+  void UpdateRtpHeaderExtensionMap(
+      const cricket::RtpHeaderExtensions& header_extensions) override {
+    transport_->UpdateRtpHeaderExtensionMap(header_extensions);
+  }
+
+  bool RegisterRtpDemuxerSink(const RtpDemuxerCriteria& criteria,
+                              RtpPacketSinkInterface* sink) override {
+    return transport_->RegisterRtpDemuxerSink(criteria, sink);
+  }
+
+  bool UnregisterRtpDemuxerSink(RtpPacketSinkInterface* sink) override {
+    return transport_->UnregisterRtpDemuxerSink(sink);
+  }
+
   // RtpTransportInterface overrides.
   PacketTransportInterface* GetRtpPacketTransport() const override {
     return transport_->GetRtpPacketTransport();

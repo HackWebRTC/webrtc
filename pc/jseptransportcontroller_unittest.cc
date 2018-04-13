@@ -59,7 +59,8 @@ class FakeTransportFactory : public cricket::TransportFactoryInterface {
   }
 };
 
-class JsepTransportControllerTest : public testing::Test,
+class JsepTransportControllerTest : public JsepTransportController::Observer,
+                                    public testing::Test,
                                     public sigslot::has_slots<> {
  public:
   JsepTransportControllerTest() : signaling_thread_(rtc::Thread::Current()) {
@@ -71,6 +72,7 @@ class JsepTransportControllerTest : public testing::Test,
       rtc::Thread* signaling_thread = rtc::Thread::Current(),
       rtc::Thread* network_thread = rtc::Thread::Current(),
       cricket::PortAllocator* port_allocator = nullptr) {
+    config.transport_observer = this;
     // The tests only works with |fake_transport_factory|;
     config.external_transport_factory = fake_transport_factory_.get();
     transport_controller_ = rtc::MakeUnique<JsepTransportController>(
@@ -85,10 +87,6 @@ class JsepTransportControllerTest : public testing::Test,
         this, &JsepTransportControllerTest::OnGatheringState);
     transport_controller_->SignalIceCandidatesGathered.connect(
         this, &JsepTransportControllerTest::OnCandidatesGathered);
-    transport_controller_->SignalRtpTransportChanged.connect(
-        this, &JsepTransportControllerTest::OnRtpTransportChanged);
-    transport_controller_->SignalDtlsTransportChanged.connect(
-        this, &JsepTransportControllerTest::OnDtlsTransportChanged);
   }
 
   std::unique_ptr<cricket::SessionDescription>
@@ -262,13 +260,16 @@ class JsepTransportControllerTest : public testing::Test,
     ++candidates_signal_count_;
   }
 
-  void OnRtpTransportChanged(const std::string& mid,
-                             RtpTransportInternal* rtp_transport) {
+  // JsepTransportController::Observer overrides.
+  bool OnRtpTransportChanged(const std::string& mid,
+                             RtpTransportInternal* rtp_transport) override {
     changed_rtp_transport_by_mid_[mid] = rtp_transport;
+    return true;
   }
 
-  void OnDtlsTransportChanged(const std::string& mid,
-                              cricket::DtlsTransportInternal* dtls_transport) {
+  void OnDtlsTransportChanged(
+      const std::string& mid,
+      cricket::DtlsTransportInternal* dtls_transport) override {
     changed_dtls_transport_by_mid_[mid] = dtls_transport;
   }
 

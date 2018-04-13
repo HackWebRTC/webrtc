@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_JSEPTRANSPORT2_H_
-#define PC_JSEPTRANSPORT2_H_
+#ifndef PC_JSEPTRANSPORT_H_
+#define PC_JSEPTRANSPORT_H_
 
 #include <map>
 #include <memory>
@@ -68,14 +68,14 @@ struct JsepTransportDescription {
 // JSEP. Each transport consists of DTLS and ICE transport channels for RTP
 // (and possibly RTCP, if rtcp-mux isn't used).
 //
-// On Threading:  JsepTransport performs work solely on the network thread, and
+// On Threading: JsepTransport performs work solely on the network thread, and
 // so its methods should only be called on the network thread.
-class JsepTransport2 : public sigslot::has_slots<> {
+class JsepTransport : public sigslot::has_slots<> {
  public:
   // |mid| is just used for log statements in order to identify the Transport.
   // Note that |local_certificate| is allowed to be null since a remote
   // description may be set before a local certificate is generated.
-  JsepTransport2(
+  JsepTransport(
       const std::string& mid,
       const rtc::scoped_refptr<rtc::RTCCertificate>& local_certificate,
       std::unique_ptr<webrtc::RtpTransport> unencrypted_rtp_transport,
@@ -84,7 +84,7 @@ class JsepTransport2 : public sigslot::has_slots<> {
       std::unique_ptr<DtlsTransportInternal> rtp_dtls_transport,
       std::unique_ptr<DtlsTransportInternal> rtcp_dtls_transport);
 
-  ~JsepTransport2() override;
+  ~JsepTransport() override;
 
   // Returns the MID of this transport. This is only used for logging.
   const std::string& mid() const { return mid_; }
@@ -239,9 +239,9 @@ class JsepTransport2 : public sigslot::has_slots<> {
   rtc::Optional<std::vector<int>> send_extension_ids_;
   rtc::Optional<std::vector<int>> recv_extension_ids_;
 
-  RTC_DISALLOW_COPY_AND_ASSIGN(JsepTransport2);
+  RTC_DISALLOW_COPY_AND_ASSIGN(JsepTransport);
 };
 
 }  // namespace cricket
 
-#endif  // PC_JSEPTRANSPORT2_H_
+#endif  // PC_JSEPTRANSPORT_H_

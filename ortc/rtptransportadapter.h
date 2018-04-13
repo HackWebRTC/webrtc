@@ -14,13 +14,11 @@
 #include <memory>
 #include <vector>
 
-#include "api/ortc/srtptransportinterface.h"
 #include "api/rtcerror.h"
 #include "media/base/streamparams.h"
 #include "ortc/rtptransportcontrolleradapter.h"
 #include "pc/channel.h"
-#include "pc/rtptransport.h"
-#include "pc/rtptransportinternal.h"
+#include "pc/rtptransportinternaladapter.h"
 #include "pc/srtptransport.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/sigslot.h"
@@ -82,8 +80,6 @@ class RtpTransportAdapter : public RtpTransportInternalAdapter {
 
   bool IsSrtpActive() const override { return transport_->IsSrtpActive(); }
 
-  bool IsSrtpTransport() const { return srtp_transport_ != nullptr; }
-
  protected:
   RtpTransportAdapter* GetInternal() override { return this; }
 
@@ -96,10 +92,9 @@ class RtpTransportAdapter : public RtpTransportInternalAdapter {
 
   void OnReadyToSend(bool ready) { SignalReadyToSend(ready); }
 
-  void OnPacketReceived(bool rtcp,
-                        rtc::CopyOnWriteBuffer* packet,
-                        const rtc::PacketTime& time) {
-    SignalPacketReceived(rtcp, packet, time);
+  void OnRtcpPacketReceived(rtc::CopyOnWriteBuffer* packet,
+                            const rtc::PacketTime& time) {
+    SignalRtcpPacketReceived(packet, time);
   }
 
   void OnWritableState(bool writable) { SignalWritableState(writable); }

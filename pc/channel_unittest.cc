@@ -42,6 +42,8 @@ const cricket::VideoCodec kH264SvcCodec(99, "H264-SVC");
 const cricket::DataCodec kGoogleDataCodec(101, "google-data");
 const uint32_t kSsrc1 = 0x1111;
 const uint32_t kSsrc2 = 0x2222;
+const uint32_t kSsrc3 = 0x3333;
+const uint32_t kSsrc4 = 0x4444;
 const int kAudioPts[] = {0, 8};
 const int kVideoPts[] = {97, 99};
 enum class NetworkIsWorker { Yes, No };
@@ -239,13 +241,6 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     if (flags2 & SSRC_MUX) {
       AddLegacyStreamInContent(kSsrc2, flags2, &remote_media_content2_);
     }
-
-    if (!(flags1 & DTLS)) {
-      channel1_->DisableEncryption(true);
-    }
-    if (!(flags2 & DTLS)) {
-      channel2_->DisableEncryption(true);
-    }
   }
   std::unique_ptr<typename T::Channel> CreateChannel(
       rtc::Thread* worker_thread,
@@ -289,9 +284,8 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   std::unique_ptr<webrtc::RtpTransport> CreateUnencryptedTransport(
       rtc::PacketTransportInternal* rtp_packet_transport,
       rtc::PacketTransportInternal* rtcp_packet_transport) {
-    bool rtcp_mux_enabled = (rtcp_packet_transport == nullptr);
     auto rtp_transport =
-        rtc::MakeUnique<webrtc::RtpTransport>(rtcp_mux_enabled);
+        rtc::MakeUnique<webrtc::RtpTransport>(rtcp_packet_transport == nullptr);
 
     rtp_transport->SetRtpPacketTransport(rtp_packet_transport);
     if (rtcp_packet_transport) {
@@ -303,11 +297,8 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   std::unique_ptr<webrtc::DtlsSrtpTransport> CreateDtlsSrtpTransport(
       cricket::DtlsTransportInternal* rtp_dtls_transport,
       cricket::DtlsTransportInternal* rtcp_dtls_transport) {
-    bool rtcp_mux_enabled = (rtcp_dtls_transport == nullptr);
-    auto srtp_transport =
-        rtc::MakeUnique<webrtc::SrtpTransport>(rtcp_mux_enabled);
-    auto dtls_srtp_transport =
-        rtc::MakeUnique<webrtc::DtlsSrtpTransport>(std::move(srtp_transport));
+    auto dtls_srtp_transport = rtc::MakeUnique<webrtc::DtlsSrtpTransport>(
+        rtcp_dtls_transport == nullptr);
 
     dtls_srtp_transport->SetDtlsTransports(rtp_dtls_transport,
                                            rtcp_dtls_transport);
@@ -1177,10 +1168,6 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     CreateChannels(flags, flags);
     EXPECT_TRUE(SendInitiate());
     EXPECT_TRUE(SendAccept());
-    EXPECT_TRUE(channel1_->HandlesPayloadType(pl_type1));
-    EXPECT_TRUE(channel2_->HandlesPayloadType(pl_type1));
-    EXPECT_FALSE(channel1_->HandlesPayloadType(pl_type2));
-    EXPECT_FALSE(channel2_->HandlesPayloadType(pl_type2));
 
     // Both channels can receive pl_type1 only.
     SendCustomRtp1(kSsrc1, ++sequence_number1_1, pl_type1);
@@ -1191,11 +1178,11 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_TRUE(CheckNoRtp1());
     EXPECT_TRUE(CheckNoRtp2());
 
-    SendCustomRtp1(kSsrc1, ++sequence_number1_1, pl_type2);
-    SendCustomRtp2(kSsrc2, ++sequence_number2_2, pl_type2);
+    SendCustomRtp1(kSsrc3, ++sequence_number1_1, pl_type2);
+    SendCustomRtp2(kSsrc4, ++sequence_number2_2, pl_type2);
     WaitForThreads();
-    EXPECT_FALSE(CheckCustomRtp2(kSsrc1, sequence_number1_1, pl_type2));
-    EXPECT_FALSE(CheckCustomRtp1(kSsrc2, sequence_number2_2, pl_type2));
+    EXPECT_FALSE(CheckCustomRtp2(kSsrc3, sequence_number1_1, pl_type2));
+    EXPECT_FALSE(CheckCustomRtp1(kSsrc4, sequence_number2_2, pl_type2));
 
     // RTCP test
     SendCustomRtcp1(kSsrc1);
