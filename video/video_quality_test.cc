@@ -19,6 +19,7 @@
 
 #include "logging/rtc_event_log/output/rtc_event_log_output_file.h"
 #include "media/engine/internalencoderfactory.h"
+#include "media/engine/vp8_encoder_simulcast_proxy.h"
 #include "media/engine/webrtcvideoengine.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"
 #include "modules/rtp_rtcp/source/rtp_format.h"
@@ -1375,23 +1376,15 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
           H264Encoder::Create(cricket::VideoCodec("H264"));
       payload_type = kPayloadTypeH264;
     } else if (params_.video[video_idx].codec == "VP8") {
-      if (params_.screenshare[video_idx].enabled &&
-          params_.ss[video_idx].streams.size() > 1) {
-        // Simulcast screenshare needs a simulcast encoder adapter to work,
-        // since encoders usually can't natively do simulcast with different
-        // frame rates for the different layers.
-        video_encoders_[video_idx].reset(
-            new SimulcastEncoderAdapter(new InternalEncoderFactory()));
-      } else {
-        video_encoders_[video_idx] = VP8Encoder::Create();
-      }
+      video_encoders_[video_idx] =
+          rtc::MakeUnique<VP8EncoderSimulcastProxy>(&internal_encoder_factory_);
       payload_type = kPayloadTypeVP8;
     } else if (params_.video[video_idx].codec == "VP9") {
       video_encoders_[video_idx] = VP9Encoder::Create();
       payload_type = kPayloadTypeVP9;
     } else if (params_.video[video_idx].codec == "multiplex") {
       video_encoders_[video_idx] = rtc::MakeUnique<MultiplexEncoderAdapter>(
-          new InternalEncoderFactory(), SdpVideoFormat(cricket::kVp9CodecName));
+          &internal_encoder_factory_, SdpVideoFormat(cricket::kVp9CodecName));
       payload_type = kPayloadTypeVP9;
     } else {
       RTC_NOTREACHED() << "Codec not supported!";

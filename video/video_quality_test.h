@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-#include "media/engine/simulcast_encoder_adapter.h"
+#include "media/engine/internalencoderfactory.h"
 #include "test/call_test.h"
 #include "test/frame_generator.h"
 #include "test/layer_filtering_transport.h"
@@ -148,6 +148,7 @@ class VideoQualityTest : public test::CallTest {
 
   std::vector<std::unique_ptr<test::VideoCapturer>> video_capturers_;
   std::vector<std::unique_ptr<test::VideoCapturer>> thumbnail_capturers_;
+  InternalEncoderFactory internal_encoder_factory_;
   std::vector<std::unique_ptr<VideoEncoder>> video_encoders_;
 
   std::vector<std::unique_ptr<VideoEncoder>> thumbnail_encoders_;
