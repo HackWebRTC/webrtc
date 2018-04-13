@@ -53,8 +53,10 @@ bool IsPacerPushbackExperimentEnabled() {
 
 std::unique_ptr<NetworkControllerFactoryInterface> MaybeCreateBbrFactory() {
   if (CongestionControllerExperiment::BbrControllerEnabled()) {
+    RTC_LOG(LS_INFO) << "Creating BBR factory";
     return rtc::MakeUnique<BbrNetworkControllerFactory>();
   } else {
+    RTC_LOG(LS_INFO) << "Not creating BBR factory";
     return nullptr;
   }
 }
@@ -342,7 +344,6 @@ SendSideCongestionController::SendSideCongestionController(
       network_available_(false),
       periodic_tasks_enabled_(true),
       packet_feedback_available_(false),
-      feedback_only_controller_(false),
       pacer_queue_update_task_(nullptr),
       controller_task_(nullptr),
       task_queue_(MakeUnique<rtc::TaskQueue>("SendSideCCQueue")) {
@@ -380,11 +381,9 @@ void SendSideCongestionController::MaybeRecreateControllers() {
       Timestamp::ms(clock_->TimeInMilliseconds());
   initial_config_.stream_based_config = streams_config_;
 
-  const bool feedback_only_controller =
-      packet_feedback_available_ && controller_factory_with_feedback_;
-
-  if (!controller_ || (feedback_only_controller != feedback_only_controller_)) {
-    if (feedback_only_controller) {
+  if (!controller_) {
+    // TODO(srte): Use fallback controller if no feedback is available.
+    if (controller_factory_with_feedback_) {
       RTC_LOG(LS_INFO) << "Creating feedback based only controller";
       controller_ = controller_factory_with_feedback_->Create(initial_config_);
       process_interval_ =
@@ -394,7 +393,6 @@ void SendSideCongestionController::MaybeRecreateControllers() {
       controller_ = controller_factory_fallback_->Create(initial_config_);
       process_interval_ = controller_factory_fallback_->GetProcessInterval();
     }
-    feedback_only_controller_ = feedback_only_controller;
     UpdateControllerWithTimeInterval();
     StartProcessPeriodicTasks();
   }

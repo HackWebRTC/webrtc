@@ -203,7 +203,6 @@ class SendSideCongestionController
   bool network_available_ RTC_GUARDED_BY(task_queue_ptr_);
   bool periodic_tasks_enabled_ RTC_GUARDED_BY(task_queue_ptr_);
   bool packet_feedback_available_ RTC_GUARDED_BY(task_queue_ptr_);
-  bool feedback_only_controller_ RTC_GUARDED_BY(task_queue_ptr_);
   send_side_cc_internal::PeriodicTask* pacer_queue_update_task_
       RTC_GUARDED_BY(task_queue_ptr_);
   send_side_cc_internal::PeriodicTask* controller_task_
