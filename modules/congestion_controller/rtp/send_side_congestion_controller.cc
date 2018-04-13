@@ -480,7 +480,12 @@ void SendSideCongestionController::OnNetworkRouteChanged(
       start_bitrate_bps > 0 ? DataRate::bps(start_bitrate_bps) : DataRate();
   task_queue_->PostTask([this, msg]() {
     RTC_DCHECK_RUN_ON(task_queue_ptr_);
-    PostUpdates(controller_->OnNetworkRouteChange(msg));
+    if (controller_) {
+      PostUpdates(controller_->OnNetworkRouteChange(msg));
+    } else {
+      initial_config_.starting_bandwidth = msg.starting_rate;
+      initial_config_.constraints = msg.constraints;
+    }
     pacer_controller_->OnNetworkRouteChange(msg);
   });
 }
