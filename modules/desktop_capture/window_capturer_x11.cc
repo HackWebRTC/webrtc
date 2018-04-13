@@ -28,6 +28,7 @@
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/trace_event.h"
 
 namespace webrtc {
 
@@ -181,8 +182,10 @@ void WindowCapturerLinux::Start(Callback* callback) {
 }
 
 void WindowCapturerLinux::CaptureFrame() {
+  TRACE_EVENT0("webrtc", "WindowCapturerLinux::CaptureFrame");
+
   if (!x_server_pixel_buffer_.IsWindowValid()) {
-    RTC_LOG(LS_INFO) << "The window is no longer valid.";
+    RTC_LOG(LS_ERROR) << "The window is no longer valid.";
     callback_->OnCaptureResult(Result::ERROR_PERMANENT, nullptr);
     return;
   }
@@ -193,7 +196,7 @@ void WindowCapturerLinux::CaptureFrame() {
     // Without the Xcomposite extension we capture when the whole window is
     // visible on screen and not covered by any other window. This is not
     // something we want so instead, just bail out.
-    RTC_LOG(LS_INFO) << "No Xcomposite extension detected.";
+    RTC_LOG(LS_ERROR) << "No Xcomposite extension detected.";
     callback_->OnCaptureResult(Result::ERROR_PERMANENT, nullptr);
     return;
   }
@@ -212,6 +215,7 @@ void WindowCapturerLinux::CaptureFrame() {
   x_server_pixel_buffer_.Synchronize();
   if (!x_server_pixel_buffer_.CaptureRect(DesktopRect::MakeSize(frame->size()),
                                           frame.get())) {
+    RTC_LOG(LS_WARNING) << "Temporarily failed to capture winodw.";
     callback_->OnCaptureResult(Result::ERROR_TEMPORARY, nullptr);
     return;
   }

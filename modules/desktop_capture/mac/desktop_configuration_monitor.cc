@@ -12,6 +12,7 @@
 
 #include "modules/desktop_capture/mac/desktop_configuration.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/trace_event.h"
 #include "system_wrappers/include/event_wrapper.h"
 
 namespace webrtc {
@@ -65,6 +66,11 @@ void DesktopConfigurationMonitor::DisplaysReconfiguredCallback(
 void DesktopConfigurationMonitor::DisplaysReconfigured(
     CGDirectDisplayID display,
     CGDisplayChangeSummaryFlags flags) {
+  TRACE_EVENT0("webrtc", "DesktopConfigurationMonitor::DisplaysReconfigured");
+  RTC_LOG(LS_INFO) << "DisplaysReconfigured: "
+                   << "DisplayID " << display << "; ChangeSummaryFlags "
+                   << flags;
+
   if (flags & kCGDisplayBeginConfigurationFlag) {
     if (reconfiguring_displays_.empty()) {
       // If this is the first display to start reconfiguring then wait on

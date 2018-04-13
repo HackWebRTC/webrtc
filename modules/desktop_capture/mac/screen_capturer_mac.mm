@@ -17,6 +17,7 @@
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/timeutils.h"
+#include "rtc_base/trace_event.h"
 #include "sdk/objc/Framework/Classes/Common/scoped_cftyperef.h"
 
 namespace webrtc {
@@ -232,10 +233,13 @@ ScreenCapturerMac::~ScreenCapturerMac() {
 }
 
 bool ScreenCapturerMac::Init() {
+  TRACE_EVENT0("webrtc", "ScreenCapturerMac::Init");
+
   desktop_config_monitor_->Lock();
   desktop_config_ = desktop_config_monitor_->desktop_configuration();
   desktop_config_monitor_->Unlock();
   if (!RegisterRefreshAndMoveHandlers()) {
+    RTC_LOG(LS_ERROR) << "Failed to register refresh and move handlers.";
     return false;
   }
   ScreenConfigurationChanged();
@@ -252,11 +256,14 @@ void ScreenCapturerMac::ReleaseBuffers() {
 void ScreenCapturerMac::Start(Callback* callback) {
   RTC_DCHECK(!callback_);
   RTC_DCHECK(callback);
+  TRACE_EVENT_INSTANT1(
+      "webrtc", "ScreenCapturermac::Start", "target display id ", current_display_);
 
   callback_ = callback;
 }
 
 void ScreenCapturerMac::CaptureFrame() {
+  TRACE_EVENT0("webrtc", "creenCapturerMac::CaptureFrame");
   int64_t capture_start_time_nanos = rtc::TimeNanos();
 
   queue_.MoveToNextFrame();

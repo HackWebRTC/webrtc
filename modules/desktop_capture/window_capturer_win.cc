@@ -14,12 +14,13 @@
 
 #include "modules/desktop_capture/desktop_capturer.h"
 #include "modules/desktop_capture/desktop_frame_win.h"
-#include "modules/desktop_capture/window_finder_win.h"
 #include "modules/desktop_capture/win/screen_capture_utils.h"
 #include "modules/desktop_capture/win/window_capture_utils.h"
+#include "modules/desktop_capture/window_finder_win.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/trace_event.h"
 #include "rtc_base/win32.h"
 
 namespace webrtc {
@@ -208,6 +209,8 @@ void WindowCapturerWin::Start(Callback* callback) {
 }
 
 void WindowCapturerWin::CaptureFrame() {
+  TRACE_EVENT0("webrtc", "WindowCapturerWin::CaptureFrame");
+
   if (!window_) {
     RTC_LOG(LS_ERROR) << "Window hasn't been selected: " << GetLastError();
     callback_->OnCaptureResult(Result::ERROR_PERMANENT, nullptr);
@@ -216,6 +219,7 @@ void WindowCapturerWin::CaptureFrame() {
 
   // Stop capturing if the window has been closed.
   if (!IsWindow(window_)) {
+    RTC_LOG(LS_ERROR) << "target window has been closed";
     callback_->OnCaptureResult(Result::ERROR_PERMANENT, nullptr);
     return;
   }
@@ -277,6 +281,7 @@ void WindowCapturerWin::CaptureFrame() {
   std::unique_ptr<DesktopFrameWin> frame(
       DesktopFrameWin::Create(cropped_rect.size(), nullptr, window_dc));
   if (!frame.get()) {
+    RTC_LOG(LS_WARNING) << "Failed to create frame.";
     ReleaseDC(window_, window_dc);
     callback_->OnCaptureResult(Result::ERROR_TEMPORARY, nullptr);
     return;

@@ -30,6 +30,7 @@
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/timeutils.h"
+#include "rtc_base/trace_event.h"
 
 namespace webrtc {
 namespace {
@@ -134,6 +135,7 @@ ScreenCapturerLinux::~ScreenCapturerLinux() {
 }
 
 bool ScreenCapturerLinux::Init(const DesktopCaptureOptions& options) {
+  TRACE_EVENT0("webrtc", "ScreenCapturerLinux::Init");
   options_ = options;
 
   root_window_ = RootWindow(display(), DefaultScreen(display()));
@@ -225,6 +227,7 @@ void ScreenCapturerLinux::Start(Callback* callback) {
 }
 
 void ScreenCapturerLinux::CaptureFrame() {
+  TRACE_EVENT0("webrtc", "ScreenCapturerLinux::CaptureFrame");
   int64_t capture_start_time_nanos = rtc::TimeNanos();
 
   queue_.MoveToNextFrame();
@@ -238,6 +241,7 @@ void ScreenCapturerLinux::CaptureFrame() {
   // in a good shape.
   if (!x_server_pixel_buffer_.is_initialized()) {
      // We failed to initialize pixel buffer.
+     RTC_LOG(LS_ERROR) << "Pixel buffer is not initialized.";
      callback_->OnCaptureResult(Result::ERROR_PERMANENT, nullptr);
      return;
   }
@@ -253,6 +257,7 @@ void ScreenCapturerLinux::CaptureFrame() {
 
   std::unique_ptr<DesktopFrame> result = CaptureScreen();
   if (!result) {
+    RTC_LOG(LS_WARNING) << "Temporarily failed to capture screen.";
     callback_->OnCaptureResult(Result::ERROR_TEMPORARY, nullptr);
     return;
   }
@@ -349,6 +354,7 @@ std::unique_ptr<DesktopFrame> ScreenCapturerLinux::CaptureScreen() {
 }
 
 void ScreenCapturerLinux::ScreenConfigurationChanged() {
+  TRACE_EVENT0("webrtc", "ScreenCapturerLinux::ScreenConfigurationChanged");
   // Make sure the frame buffers will be reallocated.
   queue_.Reset();
 

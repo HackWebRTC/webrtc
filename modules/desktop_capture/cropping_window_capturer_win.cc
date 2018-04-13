@@ -13,6 +13,7 @@
 #include "modules/desktop_capture/win/screen_capture_utils.h"
 #include "modules/desktop_capture/win/window_capture_utils.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/trace_event.h"
 #include "rtc_base/win32.h"
 
 namespace webrtc {
@@ -244,6 +245,8 @@ bool CroppingWindowCapturerWin::ShouldUseScreenCapturer() {
 }
 
 DesktopRect CroppingWindowCapturerWin::GetWindowRectInVirtualScreen() {
+  TRACE_EVENT0("webrtc",
+               "CroppingWindowCapturerWin::GetWindowRectInVirtualScreen");
   DesktopRect window_rect;
   HWND hwnd = reinterpret_cast<HWND>(selected_window());
   if (!GetCroppedWindowRect(hwnd, &window_rect, /* original_rect */ nullptr)) {

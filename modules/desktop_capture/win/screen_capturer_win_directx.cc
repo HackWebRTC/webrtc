@@ -21,6 +21,7 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/ptr_util.h"
 #include "rtc_base/timeutils.h"
+#include "rtc_base/trace_event.h"
 
 namespace webrtc {
 
@@ -117,6 +118,7 @@ void ScreenCapturerWinDirectx::SetSharedMemoryFactory(
 
 void ScreenCapturerWinDirectx::CaptureFrame() {
   RTC_DCHECK(callback_);
+  TRACE_EVENT0("webrtc", "ScreenCapturerWinDirectx::CaptureFrame");
 
   int64_t capture_start_time_nanos = rtc::TimeNanos();
 
