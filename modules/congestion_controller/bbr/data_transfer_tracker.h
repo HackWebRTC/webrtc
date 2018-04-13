@@ -11,7 +11,7 @@
 #define MODULES_CONGESTION_CONTROLLER_BBR_DATA_TRANSFER_TRACKER_H_
 
 #include <deque>
-#include "modules/congestion_controller/network_control/include/network_units.h"
+#include "modules/congestion_controller/network_control/units/network_units.h"
 
 namespace webrtc {
 namespace bbr {

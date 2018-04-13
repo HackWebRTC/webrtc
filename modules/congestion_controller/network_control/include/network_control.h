@@ -14,7 +14,7 @@
 #include <memory>
 
 #include "modules/congestion_controller/network_control/include/network_types.h"
-#include "modules/congestion_controller/network_control/include/network_units.h"
+#include "modules/congestion_controller/network_control/units/network_units.h"
 
 namespace webrtc {
 

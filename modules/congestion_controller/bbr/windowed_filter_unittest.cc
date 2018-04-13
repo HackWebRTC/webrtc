@@ -11,7 +11,6 @@
 #include "modules/congestion_controller/bbr/windowed_filter.h"
 
 #include "modules/congestion_controller/bbr/rtt_stats.h"
-#include "modules/congestion_controller/network_control/include/network_units_to_string.h"
 #include "test/gtest.h"
 
 namespace webrtc {

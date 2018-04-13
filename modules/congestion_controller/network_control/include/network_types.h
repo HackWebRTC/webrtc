@@ -12,7 +12,7 @@
 #define MODULES_CONGESTION_CONTROLLER_NETWORK_CONTROL_INCLUDE_NETWORK_TYPES_H_
 #include <stdint.h>
 #include <vector>
-#include "modules/congestion_controller/network_control/include/network_units.h"
+#include "modules/congestion_controller/network_control/units/network_units.h"
 #include "modules/include/module_common_types.h"
 #include "rtc_base/constructormagic.h"
 

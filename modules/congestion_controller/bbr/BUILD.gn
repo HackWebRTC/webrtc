@@ -36,6 +36,7 @@ rtc_source_set("bbr_controller") {
     "../../../rtc_base/experiments:congestion_controller_experiment",
     "../../../rtc_base/system:fallthrough",
     "../network_control",
+    "../network_control/units",
   ]
 }
 rtc_source_set("data_transfer_tracker") {
@@ -47,7 +48,7 @@ rtc_source_set("data_transfer_tracker") {
   deps = [
     "../../../rtc_base:checks",
     "../../../rtc_base:rtc_base_approved",
-    "../network_control",
+    "../network_control/units",
   ]
 }
 rtc_source_set("rtt_stats") {
@@ -58,7 +59,7 @@ rtc_source_set("rtt_stats") {
   ]
   deps = [
     "../../../rtc_base:rtc_base_approved",
-    "../network_control",
+    "../network_control/units",
   ]
 }
 rtc_source_set("windowed_filter") {
@@ -83,8 +84,8 @@ if (rtc_include_tests) {
       ":rtt_stats",
       ":windowed_filter",
       "../../../test:test_support",
-      "../network_control",
       "../network_control:network_control_test",
+      "../network_control/units",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).

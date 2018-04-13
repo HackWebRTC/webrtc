@@ -9,7 +9,7 @@
  */
 
 #include "modules/congestion_controller/bbr/data_transfer_tracker.h"
-#include "modules/congestion_controller/network_control/include/network_units.h"
+#include "modules/congestion_controller/network_control/units/network_units.h"
 #include "test/gtest.h"
 
 namespace webrtc {

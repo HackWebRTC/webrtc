@@ -16,7 +16,7 @@
 #include <algorithm>
 #include <cstdint>
 
-#include "modules/congestion_controller/network_control/include/network_units.h"
+#include "modules/congestion_controller/network_control/units/network_units.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/logging.h"
 
