@@ -89,6 +89,7 @@
 }
 
 #pragma mark - Test cases
+
 - (void)testInitAssertsIfMetalUnavailabe {
   // given
   OCMStub([self.classMock isMetalAvailable]).andReturn(NO);
@@ -163,6 +164,34 @@
   [realView drawInMTKView:nil];
 
   // then
+  [self.rendererNV12Mock verify];
+  [self.classMock verify];
+}
+
+- (void)testRTCVideoRenderWorksAfterReconstruction {
+  OCMStub([self.classMock isMetalAvailable]).andReturn(YES);
+  self.rendererNV12Mock = [self rendererMockWithSuccessfulSetup:YES];
+  self.frameMock = [self frameMockWithCVPixelBuffer:YES];
+
+  OCMExpect([self.rendererNV12Mock drawFrame:self.frameMock]);
+  OCMExpect([self.classMock createNV12Renderer]).andReturn(self.rendererNV12Mock);
+  [[self.classMock reject] createI420Renderer];
+
+  RTCMTLVideoView *realView = [[RTCMTLVideoView alloc] init];
+
+  [realView renderFrame:self.frameMock];
+  [realView drawInMTKView:nil];
+  [self.rendererNV12Mock verify];
+  [self.classMock verify];
+
+  // Recreate view.
+  realView = [[RTCMTLVideoView alloc] init];
+  OCMExpect([self.rendererNV12Mock drawFrame:self.frameMock]);
+  // View hould reinit renderer.
+  OCMExpect([self.classMock createNV12Renderer]).andReturn(self.rendererNV12Mock);
+
+  [realView renderFrame:self.frameMock];
+  [realView drawInMTKView:nil];
   [self.rendererNV12Mock verify];
   [self.classMock verify];
 }
