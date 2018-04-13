@@ -34,10 +34,12 @@ std::unique_ptr<SendSideCongestionControllerInterface> CreateController(
     const BitrateConstraints& bitrate_config,
     bool task_queue_controller) {
   if (task_queue_controller) {
+    RTC_LOG(LS_INFO) << "Using TaskQueue based SSCC";
     return rtc::MakeUnique<webrtc::webrtc_cc::SendSideCongestionController>(
         clock, event_log, pacer, bitrate_config.start_bitrate_bps,
         bitrate_config.min_bitrate_bps, bitrate_config.max_bitrate_bps);
   }
+  RTC_LOG(LS_INFO) << "Using Legacy SSCC";
   auto cc = rtc::MakeUnique<webrtc::SendSideCongestionController>(
       clock, nullptr /* observer */, event_log, pacer);
   cc->SignalNetworkState(kNetworkDown);
