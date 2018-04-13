@@ -55,7 +55,7 @@ void FixedGainController::SetSampleRate(size_t sample_rate_hz) {
 }
 
 void FixedGainController::Process(AudioFrameView<float> signal) {
-  // Apply fixed digital gain; interpolate if necessary. One of the
+  // Apply fixed digital gain. One of the
   // planned usages of the FGC is to only use the limiter. In that
   // case, the gain would be 1.0. Not doing the multiplications speeds
   // it up considerably. Hence the check.

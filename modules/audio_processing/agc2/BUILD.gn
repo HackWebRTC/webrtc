@@ -31,6 +31,7 @@ rtc_source_set("adaptive_digital") {
 
   deps = [
     ":common",
+    ":gain_applier",
     ":noise_level_estimator",
     "..:aec_core",
     "..:apm_logging",
@@ -108,6 +109,18 @@ rtc_source_set("noise_level_estimator") {
   configs += [ "..:apm_debug_dump" ]
 }
 
+rtc_source_set("gain_applier") {
+  sources = [
+    "gain_applier.cc",
+    "gain_applier.h",
+  ]
+  deps = [
+    ":common",
+    "..:audio_frame_view",
+    "../../../rtc_base:safe_minmax",
+  ]
+}
+
 rtc_source_set("test_utils") {
   testonly = true
   visibility = [ ":*" ]
@@ -161,11 +174,13 @@ rtc_source_set("adaptive_digital_unittests") {
   sources = [
     "adaptive_digital_gain_applier_unittest.cc",
     "adaptive_mode_level_estimator_unittest.cc",
+    "gain_applier_unittest.cc",
     "saturation_protector_unittest.cc",
   ]
   deps = [
     ":adaptive_digital",
     ":common",
+    ":gain_applier",
     ":test_utils",
     "..:apm_logging",
     "..:audio_frame_view",

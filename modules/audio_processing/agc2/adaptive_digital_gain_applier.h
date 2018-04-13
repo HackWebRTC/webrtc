@@ -11,6 +11,7 @@
 #ifndef MODULES_AUDIO_PROCESSING_AGC2_ADAPTIVE_DIGITAL_GAIN_APPLIER_H_
 #define MODULES_AUDIO_PROCESSING_AGC2_ADAPTIVE_DIGITAL_GAIN_APPLIER_H_
 
+#include "modules/audio_processing/agc2/gain_applier.h"
 #include "modules/audio_processing/include/audio_frame_view.h"
 #include "modules/audio_processing/vad/vad_with_level.h"
 
@@ -29,11 +30,8 @@ class AdaptiveDigitalGainApplier {
       AudioFrameView<float> float_frame);
 
  private:
-  // Keep track of current gain for ramping up and down and
-  // logging. This member variable is redundant together with
-  // last_gain_db_. Both are kept as an optimization.
-  float last_gain_linear_ = 1.f;
   float last_gain_db_ = 0.f;
+  GainApplier gain_applier_;
 
   // For some combinations of noise and speech probability, increasing
   // the level is not allowed. Since we may get VAD results in bursts,

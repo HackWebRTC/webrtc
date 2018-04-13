@@ -64,52 +64,13 @@ float ComputeGainChangeThisFrameDb(float target_gain_db,
   return rtc::SafeClamp(target_gain_difference_db, -kMaxGainChangePerFrameDb,
                         kMaxGainChangePerFrameDb);
 }
-
-// Returns true when the gain factor is so close to 1 that it would
-// not affect int16 samples.
-bool GainCloseToOne(float gain_factor) {
-  return 1.f - 1.f / kMaxFloatS16Value <= gain_factor &&
-         gain_factor <= 1.f + 1.f / kMaxFloatS16Value;
-}
-
-void ApplyGainWithRamping(float last_gain_linear,
-                          float gain_at_end_of_frame_linear,
-                          AudioFrameView<float> float_frame) {
-  // Do not modify the signal when input is loud.
-  if (last_gain_linear == gain_at_end_of_frame_linear &&
-      GainCloseToOne(gain_at_end_of_frame_linear)) {
-    return;
-  }
-
-  // A typical case: gain is constant and different from 1.
-  if (last_gain_linear == gain_at_end_of_frame_linear) {
-    for (size_t k = 0; k < float_frame.num_channels(); ++k) {
-      rtc::ArrayView<float> channel_view = float_frame.channel(k);
-      for (auto& sample : channel_view) {
-        sample *= gain_at_end_of_frame_linear;
-      }
-    }
-    return;
-  }
-
-  // The gain changes. We have to change slowly to avoid discontinuities.
-  const size_t samples = float_frame.samples_per_channel();
-  RTC_DCHECK_GT(samples, 0);
-  const float increment =
-      (gain_at_end_of_frame_linear - last_gain_linear) / samples;
-  float gain = last_gain_linear;
-  for (size_t i = 0; i < samples; ++i) {
-    for (size_t ch = 0; ch < float_frame.num_channels(); ++ch) {
-      float_frame.channel(ch)[i] *= gain;
-    }
-    gain += increment;
-  }
-}
 }  // namespace
 
 AdaptiveDigitalGainApplier::AdaptiveDigitalGainApplier(
     ApmDataDumper* apm_data_dumper)
-    : apm_data_dumper_(apm_data_dumper) {}
+    : gain_applier_(false, 1.f),  // Initial gain is 1, and we do not
+                                  // clip after gain.
+      apm_data_dumper_(apm_data_dumper) {}
 
 void AdaptiveDigitalGainApplier::Process(
     float input_level_dbfs,
@@ -151,15 +112,13 @@ void AdaptiveDigitalGainApplier::Process(
 
   // Optimization: avoid calling math functions if gain does not
   // change.
-  const float gain_at_end_of_frame =
-      gain_change_this_frame_db == 0.f
-          ? last_gain_linear_
-          : DbToRatio(last_gain_db_ + gain_change_this_frame_db);
-
-  ApplyGainWithRamping(last_gain_linear_, gain_at_end_of_frame, float_frame);
+  if (gain_change_this_frame_db != 0.f) {
+    gain_applier_.SetGainFactor(
+        DbToRatio(last_gain_db_ + gain_change_this_frame_db));
+  }
+  gain_applier_.ApplyGain(float_frame);
 
   // Remember that the gain has changed for the next iteration.
-  last_gain_linear_ = gain_at_end_of_frame;
   last_gain_db_ = last_gain_db_ + gain_change_this_frame_db;
   apm_data_dumper_->DumpRaw("agc2_applied_gain_db", last_gain_db_);
 }
