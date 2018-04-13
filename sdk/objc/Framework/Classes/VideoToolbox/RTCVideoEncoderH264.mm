@@ -167,8 +167,8 @@ void compressionOutputCallback(void *encoder,
                                 rotation:encodeParams->rotation];
 }
 
-// Extract VideoToolbox profile out of the cricket::VideoCodec. If there is no
-// specific VideoToolbox profile for the specified level, AutoLevel will be
+// Extract VideoToolbox profile out of the webrtc::SdpVideoFormat. If there is
+// no specific VideoToolbox profile for the specified level, AutoLevel will be
 // returned. The user must initialize the encoder with a resolution and
 // framerate conforming to the selected H264 level regardless.
 CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {

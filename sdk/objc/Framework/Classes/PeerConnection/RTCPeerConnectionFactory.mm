@@ -58,7 +58,7 @@
 - (instancetype)init {
 #ifdef HAVE_NO_MEDIA
   return [self initWithNoMedia];
-#elif !defined(USE_BUILTIN_SW_CODECS)
+#else
   return [self initWithNativeAudioEncoderFactory:webrtc::CreateBuiltinAudioEncoderFactory()
                        nativeAudioDecoderFactory:webrtc::CreateBuiltinAudioDecoderFactory()
                        nativeVideoEncoderFactory:webrtc::ObjCToNativeVideoEncoderFactory(
@@ -67,18 +67,6 @@
                                                      [[RTCVideoDecoderFactoryH264 alloc] init])
                                audioDeviceModule:nullptr
                            audioProcessingModule:nullptr];
-#else
-  // Here we construct webrtc::ObjCVideoEncoderFactory directly because we rely
-  // on the fact that they inherit from both webrtc::VideoEncoderFactory and
-  // cricket::WebRtcVideoEncoderFactory.
-  return [self initWithNativeAudioEncoderFactory:webrtc::CreateBuiltinAudioEncoderFactory()
-                       nativeAudioDecoderFactory:webrtc::CreateBuiltinAudioDecoderFactory()
-                 legacyNativeVideoEncoderFactory:new webrtc::ObjCVideoEncoderFactory(
-                                                     [[RTCVideoEncoderFactoryH264 alloc] init])
-                 legacyNativeVideoDecoderFactory:new webrtc::ObjCVideoDecoderFactory(
-                                                     [[RTCVideoDecoderFactoryH264 alloc] init])
-                               audioDeviceModule:nullptr];
-
 #endif
 }
 
@@ -151,18 +139,6 @@
   return [self initWithNoMedia];
 #else
   if (self = [self initNative]) {
-#if defined(USE_BUILTIN_SW_CODECS)
-    if (!videoEncoderFactory) {
-      auto legacy_video_encoder_factory = rtc::MakeUnique<webrtc::ObjCVideoEncoderFactory>(
-          [[RTCVideoEncoderFactoryH264 alloc] init]);
-      videoEncoderFactory = ConvertVideoEncoderFactory(std::move(legacy_video_encoder_factory));
-    }
-    if (!videoDecoderFactory) {
-      auto legacy_video_decoder_factory = rtc::MakeUnique<webrtc::ObjCVideoDecoderFactory>(
-          [[RTCVideoDecoderFactoryH264 alloc] init]);
-      videoDecoderFactory = ConvertVideoDecoderFactory(std::move(legacy_video_decoder_factory));
-    }
-#endif
     _nativeFactory = webrtc::CreatePeerConnectionFactory(_networkThread.get(),
                                                          _workerThread.get(),
                                                          _signalingThread.get(),
@@ -178,34 +154,6 @@
   return self;
 #endif
 }
-
-#if defined(USE_BUILTIN_SW_CODECS)
-- (instancetype)
-    initWithNativeAudioEncoderFactory:
-        (rtc::scoped_refptr<webrtc::AudioEncoderFactory>)audioEncoderFactory
-            nativeAudioDecoderFactory:
-                (rtc::scoped_refptr<webrtc::AudioDecoderFactory>)audioDecoderFactory
-      legacyNativeVideoEncoderFactory:(cricket::WebRtcVideoEncoderFactory *)videoEncoderFactory
-      legacyNativeVideoDecoderFactory:(cricket::WebRtcVideoDecoderFactory *)videoDecoderFactory
-                    audioDeviceModule:(nullable webrtc::AudioDeviceModule *)audioDeviceModule {
-#ifdef HAVE_NO_MEDIA
-  return [self initWithNoMedia];
-#else
-  if (self = [self initNative]) {
-    _nativeFactory = webrtc::CreatePeerConnectionFactory(_networkThread.get(),
-                                                         _workerThread.get(),
-                                                         _signalingThread.get(),
-                                                         audioDeviceModule,
-                                                         audioEncoderFactory,
-                                                         audioDecoderFactory,
-                                                         videoEncoderFactory,
-                                                         videoDecoderFactory);
-    NSAssert(_nativeFactory, @"Failed to initialize PeerConnectionFactory!");
-  }
-  return self;
-#endif
-}
-#endif
 
 - (RTCAudioSource *)audioSourceWithConstraints:(nullable RTCMediaConstraints *)constraints {
   std::unique_ptr<webrtc::MediaConstraints> nativeConstraints;

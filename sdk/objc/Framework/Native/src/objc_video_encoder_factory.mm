@@ -160,28 +160,4 @@ std::unique_ptr<VideoEncoder> ObjCVideoEncoderFactory::CreateVideoEncoder(
   }
 }
 
-// WebRtcVideoEncoderFactory
-
-VideoEncoder *ObjCVideoEncoderFactory::CreateVideoEncoder(const cricket::VideoCodec &codec) {
-  RTCVideoCodecInfo *info = [[RTCVideoCodecInfo alloc]
-      initWithNativeSdpVideoFormat:SdpVideoFormat(codec.name, codec.params)];
-  id<RTCVideoEncoder> encoder = [encoder_factory_ createEncoder:info];
-  return new ObjCVideoEncoder(encoder);
-}
-
-const std::vector<cricket::VideoCodec> &ObjCVideoEncoderFactory::supported_codecs() const {
-  supported_codecs_.clear();
-  for (RTCVideoCodecInfo *supportedCodec in encoder_factory_.supportedCodecs) {
-    SdpVideoFormat format = [supportedCodec nativeSdpVideoFormat];
-    supported_codecs_.push_back(cricket::VideoCodec(format));
-  }
-
-  return supported_codecs_;
-}
-
-void ObjCVideoEncoderFactory::DestroyVideoEncoder(VideoEncoder *encoder) {
-  delete encoder;
-  encoder = nullptr;
-}
-
 }  // namespace webrtc

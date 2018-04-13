@@ -150,22 +150,4 @@ std::vector<SdpVideoFormat> ObjCVideoDecoderFactory::GetSupportedFormats() const
   return supported_formats;
 }
 
-// WebRtcVideoDecoderFactory
-
-VideoDecoder *ObjCVideoDecoderFactory::CreateVideoDecoderWithParams(
-    const cricket::VideoCodec &codec, cricket::VideoDecoderParams params) {
-  return CreateVideoDecoder(SdpVideoFormat(codec.name, codec.params)).release();
-}
-
-VideoDecoder *ObjCVideoDecoderFactory::CreateVideoDecoder(VideoCodecType type) {
-  // This is implemented to avoid hiding an overloaded virtual function
-  RTC_NOTREACHED();
-  return nullptr;
-}
-
-void ObjCVideoDecoderFactory::DestroyVideoDecoder(VideoDecoder *decoder) {
-  delete decoder;
-  decoder = nullptr;
-}
-
 }  // namespace webrtc

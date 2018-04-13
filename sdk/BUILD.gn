@@ -407,13 +407,9 @@ if (is_ios || is_mac) {
         ":common_objc",
         ":native_video",
         ":videocodec_objc",
+        ":vp8",
+        ":vp9",
       ]
-      if (rtc_use_builtin_sw_codecs) {
-        deps += [
-          ":vp8",
-          ":vp9",
-        ]
-      }
     }
 
     rtc_static_library("vp8") {
@@ -826,6 +822,7 @@ if (is_ios || is_mac) {
           ":videosource_objc",
           ":videotoolbox_objc",
           "../../system_wrappers:system_wrappers_default",
+          "../api/video_codecs:video_codecs_api",
           "../media:rtc_media_base",
           "../modules:module_api",
           "../modules/video_coding:video_codec_interface",
@@ -902,15 +899,12 @@ if (is_ios || is_mac) {
           "objc/Framework/Headers/WebRTC/RTCVideoTrack.h",
           "objc/Framework/Headers/WebRTC/RTCVideoViewShading.h",
           "objc/Framework/Headers/WebRTC/UIDevice+RTCDevice.h",
+          "objc/Framework/Headers/WebRTC/RTCVideoDecoderVP8.h",
+          "objc/Framework/Headers/WebRTC/RTCVideoDecoderVP9.h",
+          "objc/Framework/Headers/WebRTC/RTCVideoEncoderVP8.h",
+          "objc/Framework/Headers/WebRTC/RTCVideoEncoderVP9.h",
         ]
-        if (rtc_use_builtin_sw_codecs) {
-          common_objc_headers += [
-            "objc/Framework/Headers/WebRTC/RTCVideoDecoderVP8.h",
-            "objc/Framework/Headers/WebRTC/RTCVideoDecoderVP9.h",
-            "objc/Framework/Headers/WebRTC/RTCVideoEncoderVP8.h",
-            "objc/Framework/Headers/WebRTC/RTCVideoEncoderVP9.h",
-          ]
-        }
+
         if (!build_with_chromium) {
           common_objc_headers += [
             "objc/Framework/Headers/WebRTC/RTCCallbackLogger.h",

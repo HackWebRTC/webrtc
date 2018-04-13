@@ -13,16 +13,12 @@
 
 #include "api/video_codecs/video_decoder_factory.h"
 #include "media/base/codec.h"
-#include "media/engine/webrtcvideodecoderfactory.h"
 
 @protocol RTCVideoDecoderFactory;
 
 namespace webrtc {
 
-// TODO(andersc): Remove the inheritance from cricket::WebRtcVideoDecoderFactory
-// when the legacy path in [RTCPeerConnectionFactory init] is no longer needed.
-class ObjCVideoDecoderFactory : public VideoDecoderFactory,
-                                public cricket::WebRtcVideoDecoderFactory {
+class ObjCVideoDecoderFactory : public VideoDecoderFactory {
  public:
   explicit ObjCVideoDecoderFactory(id<RTCVideoDecoderFactory>);
   ~ObjCVideoDecoderFactory();
@@ -32,13 +28,6 @@ class ObjCVideoDecoderFactory : public VideoDecoderFactory,
   std::vector<SdpVideoFormat> GetSupportedFormats() const override;
   std::unique_ptr<VideoDecoder> CreateVideoDecoder(
       const SdpVideoFormat& format) override;
-
-  // Needed for WebRtcVideoDecoderFactory interface.
-  VideoDecoder* CreateVideoDecoderWithParams(
-      const cricket::VideoCodec& codec,
-      cricket::VideoDecoderParams params) override;
-  VideoDecoder* CreateVideoDecoder(VideoCodecType type) override;
-  void DestroyVideoDecoder(VideoDecoder* decoder) override;
 
  private:
   id<RTCVideoDecoderFactory> decoder_factory_;

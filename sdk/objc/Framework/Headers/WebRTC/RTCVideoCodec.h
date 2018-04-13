@@ -90,7 +90,7 @@ typedef NS_ENUM(NSUInteger, RTCVideoCodecMode) {
   RTCVideoCodecModeScreensharing,
 };
 
-/** Holds information to identify a codec. Corresponds to cricket::VideoCodec. */
+/** Holds information to identify a codec. Corresponds to webrtc::SdpVideoFormat. */
 RTC_EXPORT
 @interface RTCVideoCodecInfo : NSObject <NSCoding>
 
