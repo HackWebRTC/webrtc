@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <numeric>
 
 #include "rtc_base/checks.h"
 
@@ -132,16 +133,24 @@ std::vector<size_t> SvcRateAllocator::SplitBitrate(size_t num_layers,
                                                    float rate_scaling_factor) {
   std::vector<size_t> bitrates;
 
-  float denominator = 0.0f;
+  double denominator = 0.0;
   for (size_t layer_idx = 0; layer_idx < num_layers; ++layer_idx) {
     denominator += std::pow(rate_scaling_factor, layer_idx);
   }
 
-  float numerator = std::pow(rate_scaling_factor, num_layers - 1);
+  double numerator = std::pow(rate_scaling_factor, num_layers - 1);
   for (size_t layer_idx = 0; layer_idx < num_layers; ++layer_idx) {
     bitrates.push_back(numerator * total_bitrate / denominator);
     numerator /= rate_scaling_factor;
   }
+
+  const size_t sum = std::accumulate(bitrates.begin(), bitrates.end(), 0);
+  // Ensure the sum of split bitrates doesn't exceed the total bitrate.
+  RTC_DCHECK_LE(sum, total_bitrate);
+
+  // Keep the sum of split bitrates equal to the total bitrate by adding bits,
+  // which were lost due to rounding, to the latest layer.
+  bitrates.back() += total_bitrate - sum;
 
   return bitrates;
 }

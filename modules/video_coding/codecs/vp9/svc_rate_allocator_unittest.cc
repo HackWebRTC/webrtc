@@ -134,12 +134,9 @@ TEST(SvcRateAllocatorTest, BitrateIsCapped) {
 
   EXPECT_EQ(allocation.get_sum_kbps(),
             layers[0].maxBitrate + layers[1].maxBitrate + layers[2].maxBitrate);
-  EXPECT_EQ((allocation.GetSpatialLayerSum(0) + 500) / 1000,
-            layers[0].maxBitrate);
-  EXPECT_EQ((allocation.GetSpatialLayerSum(1) + 500) / 1000,
-            layers[1].maxBitrate);
-  EXPECT_EQ((allocation.GetSpatialLayerSum(2) + 500) / 1000,
-            layers[2].maxBitrate);
+  EXPECT_EQ(allocation.GetSpatialLayerSum(0) / 1000, layers[0].maxBitrate);
+  EXPECT_EQ(allocation.GetSpatialLayerSum(1) / 1000, layers[1].maxBitrate);
+  EXPECT_EQ(allocation.GetSpatialLayerSum(2) / 1000, layers[2].maxBitrate);
 }
 
 }  // namespace webrtc
