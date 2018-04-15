@@ -40,8 +40,8 @@ struct FrameStatistics {
   webrtc::FrameType frame_type = kVideoFrameDelta;
 
   // Layering.
-  size_t temporal_layer_idx = 0;
-  size_t simulcast_svc_idx = 0;
+  size_t spatial_idx = 0;
+  size_t temporal_idx = 0;
   bool inter_layer_predicted = false;
 
   // H264 specific.
@@ -72,8 +72,8 @@ struct VideoStatistics {
   size_t target_bitrate_kbps = 0;
   float input_framerate_fps = 0.0f;
 
-  size_t spatial_layer_idx = 0;
-  size_t temporal_layer_idx = 0;
+  size_t spatial_idx = 0;
+  size_t temporal_idx = 0;
 
   size_t width = 0;
   size_t height = 0;
@@ -117,12 +117,11 @@ class Stats {
   ~Stats() = default;
 
   // Creates a FrameStatistics for the next frame to be processed.
-  FrameStatistics* AddFrame(size_t timestamp, size_t spatial_layer_idx);
+  FrameStatistics* AddFrame(size_t timestamp, size_t spatial_idx);
 
   // Returns the FrameStatistics corresponding to |frame_number| or |timestamp|.
-  FrameStatistics* GetFrame(size_t frame_number, size_t spatial_layer_idx);
-  FrameStatistics* GetFrameWithTimestamp(size_t timestamp,
-                                         size_t spatial_layer_idx);
+  FrameStatistics* GetFrame(size_t frame_number, size_t spatial_idx);
+  FrameStatistics* GetFrameWithTimestamp(size_t timestamp, size_t spatial_idx);
 
   std::vector<VideoStatistics> SliceAndCalcLayerVideoStatistic(
       size_t first_frame_num,
@@ -133,25 +132,25 @@ class Stats {
 
   void PrintFrameStatistics();
 
-  size_t Size(size_t spatial_layer_idx);
+  size_t Size(size_t spatial_idx);
 
   void Clear();
 
  private:
   FrameStatistics AggregateFrameStatistic(size_t frame_num,
-                                          size_t spatial_layer_idx,
+                                          size_t spatial_idx,
                                           bool aggregate_independent_layers);
 
   size_t CalcLayerTargetBitrateKbps(size_t first_frame_num,
                                     size_t last_frame_num,
-                                    size_t spatial_layer_idx,
-                                    size_t temporal_layer_idx,
+                                    size_t spatial_idx,
+                                    size_t temporal_idx,
                                     bool aggregate_independent_layers);
 
   VideoStatistics SliceAndCalcVideoStatistic(size_t first_frame_num,
                                              size_t last_frame_num,
-                                             size_t spatial_layer_idx,
-                                             size_t temporal_layer_idx,
+                                             size_t spatial_idx,
+                                             size_t temporal_idx,
                                              bool aggregate_independent_layers);
 
   void GetNumberOfEncodedLayers(size_t first_frame_num,
