@@ -881,11 +881,14 @@ class PeerConnection : public PeerConnectionInternal,
   void DestroyBaseChannel(cricket::BaseChannel* channel);
 
   // JsepTransportController::Observer override.
-  bool OnRtpTransportChanged(const std::string& mid,
-                             RtpTransportInternal* rtp_transport) override;
-
-  void OnDtlsTransportChanged(
+  //
+  // Called by |transport_controller_| when processing transport information
+  // from a session description, and the mapping from m= sections to transports
+  // changed (as a result of BUNDLE negotiation, or m= sections being
+  // rejected).
+  bool OnTransportChanged(
       const std::string& mid,
+      RtpTransportInternal* rtp_transport,
       cricket::DtlsTransportInternal* dtls_transport) override;
 
   sigslot::signal1<DataChannel*> SignalDataChannelCreated_;

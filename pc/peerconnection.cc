@@ -6121,23 +6121,19 @@ void PeerConnection::DestroyBaseChannel(cricket::BaseChannel* channel) {
   }
 }
 
-bool PeerConnection::OnRtpTransportChanged(
+bool PeerConnection::OnTransportChanged(
     const std::string& mid,
-    RtpTransportInternal* rtp_transport) {
+    RtpTransportInternal* rtp_transport,
+    cricket::DtlsTransportInternal* dtls_transport) {
+  bool ret = true;
   auto base_channel = GetChannel(mid);
   if (base_channel) {
-    return base_channel->SetRtpTransport(rtp_transport);
+    ret = base_channel->SetRtpTransport(rtp_transport);
   }
-  return true;
-}
-
-void PeerConnection::OnDtlsTransportChanged(
-    const std::string& mid,
-    cricket::DtlsTransportInternal* dtls_transport) {
-  if (sctp_transport_) {
-    RTC_DCHECK(mid == sctp_mid_);
+  if (sctp_transport_ && mid == sctp_mid_) {
     sctp_transport_->SetDtlsTransport(dtls_transport);
   }
+  return ret;
 }
 
 void PeerConnection::ClearStatsCache() {

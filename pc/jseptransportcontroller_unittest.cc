@@ -261,16 +261,13 @@ class JsepTransportControllerTest : public JsepTransportController::Observer,
   }
 
   // JsepTransportController::Observer overrides.
-  bool OnRtpTransportChanged(const std::string& mid,
-                             RtpTransportInternal* rtp_transport) override {
-    changed_rtp_transport_by_mid_[mid] = rtp_transport;
-    return true;
-  }
-
-  void OnDtlsTransportChanged(
+  bool OnTransportChanged(
       const std::string& mid,
+      RtpTransportInternal* rtp_transport,
       cricket::DtlsTransportInternal* dtls_transport) override {
+    changed_rtp_transport_by_mid_[mid] = rtp_transport;
     changed_dtls_transport_by_mid_[mid] = dtls_transport;
+    return true;
   }
 
   // Information received from signals from transport controller.

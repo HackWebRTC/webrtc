@@ -574,10 +574,7 @@ RTCError JsepTransportController::ApplyDescription_n(
     const cricket::TransportInfo& transport_info =
         description->transport_infos()[i];
     if (content_info.rejected) {
-      if (!HandleRejectedContent(content_info, description)) {
-        return RTCError(RTCErrorType::INVALID_PARAMETER,
-                        "Failed to process the rejected m= section.");
-      }
+      HandleRejectedContent(content_info, description);
       continue;
     }
 
@@ -742,20 +739,16 @@ RTCError JsepTransportController::ValidateContent(
   return RTCError::OK();
 }
 
-bool JsepTransportController::HandleRejectedContent(
+void JsepTransportController::HandleRejectedContent(
     const cricket::ContentInfo& content_info,
     const cricket::SessionDescription* description) {
-  bool ret = true;
   // If the content is rejected, let the
   // BaseChannel/SctpTransport change the RtpTransport/DtlsTransport first,
   // then destroy the cricket::JsepTransport.
-  ret = RemoveTransportForMid(content_info.name, content_info.type);
+  RemoveTransportForMid(content_info.name);
   if (content_info.name == bundled_mid()) {
     for (auto content_name : bundle_group_->content_names()) {
-      const cricket::ContentInfo* content_in_group =
-          description->GetContentByName(content_name);
-      RTC_DCHECK(content_in_group);
-      ret = ret && RemoveTransportForMid(content_name, content_in_group->type);
+      RemoveTransportForMid(content_name);
     }
     bundle_group_.reset();
   } else if (IsBundled(content_info.name)) {
@@ -766,10 +759,7 @@ bool JsepTransportController::HandleRejectedContent(
       bundle_group_.reset();
     }
   }
-  if (ret) {
-    MaybeDestroyJsepTransport(content_info.name);
-  }
-  return ret;
+  MaybeDestroyJsepTransport(content_info.name);
 }
 
 bool JsepTransportController::HandleBundledContent(
@@ -779,8 +769,7 @@ bool JsepTransportController::HandleBundledContent(
   // If the content is bundled, let the
   // BaseChannel/SctpTransport change the RtpTransport/DtlsTransport first,
   // then destroy the cricket::JsepTransport.
-  if (SetTransportForMid(content_info.name, jsep_transport,
-                         content_info.type)) {
+  if (SetTransportForMid(content_info.name, jsep_transport)) {
     MaybeDestroyJsepTransport(content_info.name);
     return true;
   }
@@ -789,37 +778,25 @@ bool JsepTransportController::HandleBundledContent(
 
 bool JsepTransportController::SetTransportForMid(
     const std::string& mid,
-    cricket::JsepTransport* jsep_transport,
-    cricket::MediaProtocolType protocol_type) {
+    cricket::JsepTransport* jsep_transport) {
   RTC_DCHECK(jsep_transport);
   if (mid_to_transport_[mid] == jsep_transport) {
     return true;
   }
 
-  bool ret = true;
   mid_to_transport_[mid] = jsep_transport;
-  if (protocol_type == cricket::MediaProtocolType::kRtp) {
-    ret = config_.transport_observer->OnRtpTransportChanged(
-        mid, jsep_transport->rtp_transport());
-  } else {
-    config_.transport_observer->OnDtlsTransportChanged(
-        mid, jsep_transport->rtp_dtls_transport());
-  }
-  return ret;
+  return config_.transport_observer->OnTransportChanged(
+      mid, jsep_transport->rtp_transport(),
+      jsep_transport->rtp_dtls_transport());
 }
 
-bool JsepTransportController::RemoveTransportForMid(
-    const std::string& mid,
-    cricket::MediaProtocolType protocol_type) {
-  bool ret = true;
-  if (protocol_type == cricket::MediaProtocolType::kRtp) {
-    ret = config_.transport_observer->OnRtpTransportChanged(mid, nullptr);
-    RTC_DCHECK(ret);
-  } else {
-    config_.transport_observer->OnDtlsTransportChanged(mid, nullptr);
-  }
+void JsepTransportController::RemoveTransportForMid(const std::string& mid) {
+  bool ret =
+      config_.transport_observer->OnTransportChanged(mid, nullptr, nullptr);
+  // Calling OnTransportChanged with nullptr should always succeed, since it is
+  // only expected to fail when adding media to a transport (not removing).
+  RTC_DCHECK(ret);
   mid_to_transport_.erase(mid);
-  return ret;
 }
 
 cricket::JsepTransportDescription
@@ -996,8 +973,7 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
           std::move(rtp_dtls_transport), std::move(rtcp_dtls_transport));
   jsep_transport->SignalRtcpMuxActive.connect(
       this, &JsepTransportController::UpdateAggregateStates_n);
-  SetTransportForMid(content_info.name, jsep_transport.get(),
-                     content_info.type);
+  SetTransportForMid(content_info.name, jsep_transport.get());
 
   jsep_transports_by_name_[content_info.name] = std::move(jsep_transport);
   UpdateAggregateStates_n();

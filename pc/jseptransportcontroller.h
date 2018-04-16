@@ -53,11 +53,9 @@ class JsepTransportController : public sigslot::has_slots<>,
     // Returns true if media associated with |mid| was successfully set up to be
     // demultiplexed on |rtp_transport|. Could return false if two bundled m=
     // sections use the same SSRC, for example.
-    virtual bool OnRtpTransportChanged(const std::string& mid,
-                                       RtpTransportInternal* rtp_transport) = 0;
-
-    virtual void OnDtlsTransportChanged(
+    virtual bool OnTransportChanged(
         const std::string& mid,
+        RtpTransportInternal* rtp_transport,
         cricket::DtlsTransportInternal* dtls_transport) = 0;
   };
 
@@ -189,15 +187,13 @@ class JsepTransportController : public sigslot::has_slots<>,
       const cricket::SessionDescription* description);
   RTCError ValidateContent(const cricket::ContentInfo& content_info);
 
-  bool HandleRejectedContent(const cricket::ContentInfo& content_info,
+  void HandleRejectedContent(const cricket::ContentInfo& content_info,
                              const cricket::SessionDescription* description);
   bool HandleBundledContent(const cricket::ContentInfo& content_info);
 
   bool SetTransportForMid(const std::string& mid,
-                          cricket::JsepTransport* jsep_transport,
-                          cricket::MediaProtocolType protocol_type);
-  bool RemoveTransportForMid(const std::string& mid,
-                             cricket::MediaProtocolType protocol_type);
+                          cricket::JsepTransport* jsep_transport);
+  void RemoveTransportForMid(const std::string& mid);
 
   cricket::JsepTransportDescription CreateJsepTransportDescription(
       cricket::ContentInfo content_info,
