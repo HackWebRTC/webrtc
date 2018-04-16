@@ -17,18 +17,18 @@ TEST(TimestampTest, GetBackSameValues) {
   const int64_t kValue = 499;
   EXPECT_EQ(Timestamp::ms(kValue).ms(), kValue);
   EXPECT_EQ(Timestamp::us(kValue).us(), kValue);
-  EXPECT_EQ(Timestamp::s(kValue).s(), kValue);
+  EXPECT_EQ(Timestamp::seconds(kValue).seconds(), kValue);
 }
 
 TEST(TimestampTest, GetDifferentPrefix) {
   const int64_t kValue = 3000000;
-  EXPECT_EQ(Timestamp::us(kValue).s(), kValue / 1000000);
-  EXPECT_EQ(Timestamp::ms(kValue).s(), kValue / 1000);
+  EXPECT_EQ(Timestamp::us(kValue).seconds(), kValue / 1000000);
+  EXPECT_EQ(Timestamp::ms(kValue).seconds(), kValue / 1000);
   EXPECT_EQ(Timestamp::us(kValue).ms(), kValue / 1000);
 
   EXPECT_EQ(Timestamp::ms(kValue).us(), kValue * 1000);
-  EXPECT_EQ(Timestamp::s(kValue).ms(), kValue * 1000);
-  EXPECT_EQ(Timestamp::s(kValue).us(), kValue * 1000000);
+  EXPECT_EQ(Timestamp::seconds(kValue).ms(), kValue * 1000);
+  EXPECT_EQ(Timestamp::seconds(kValue).us(), kValue * 1000000);
 }
 
 TEST(TimestampTest, IdentityChecks) {

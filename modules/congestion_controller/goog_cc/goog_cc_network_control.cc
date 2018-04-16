@@ -429,7 +429,7 @@ PacerConfig GoogCcNetworkController::UpdatePacingRates(Timestamp at_time) {
   DataRate padding_rate = std::min(max_padding_rate_, last_bandwidth_);
   PacerConfig msg;
   msg.at_time = at_time;
-  msg.time_window = TimeDelta::s(1);
+  msg.time_window = TimeDelta::seconds(1);
   msg.data_window = pacing_rate * msg.time_window;
   msg.pad_window = padding_rate * msg.time_window;
   return msg;

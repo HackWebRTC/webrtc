@@ -83,7 +83,7 @@ TEST(UnitConversionTest, DataRateAndDataSizeAndTimeDelta) {
   EXPECT_EQ((delta_a * rate_b).bytes(), kValueA * kValueB);
   EXPECT_EQ((rate_b * delta_a).bytes(), kValueA * kValueB);
   EXPECT_EQ((size_c / delta_a).bytes_per_second(), kValueC / kValueA);
-  EXPECT_EQ((size_c / rate_b).s(), kValueC / kValueB);
+  EXPECT_EQ((size_c / rate_b).seconds(), kValueC / kValueB);
 }
 
 #if GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)

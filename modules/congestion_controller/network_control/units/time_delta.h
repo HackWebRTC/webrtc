@@ -43,8 +43,7 @@ class TimeDelta {
   static TimeDelta MinusInfinity() {
     return TimeDelta(timedelta_impl::kMinusInfinityVal);
   }
-  static TimeDelta seconds(int64_t seconds) { return TimeDelta::s(seconds); }
-  static TimeDelta s(int64_t seconds) {
+  static TimeDelta seconds(int64_t seconds) {
     return TimeDelta::us(seconds * 1000000);
   }
   static TimeDelta ms(int64_t milliseconds) {
@@ -57,7 +56,7 @@ class TimeDelta {
     RTC_DCHECK(microseconds != timedelta_impl::kSignedNotInitializedVal);
     return TimeDelta(microseconds);
   }
-  int64_t s() const {
+  int64_t seconds() const {
     return (us() + (us() >= 0 ? 500000 : -500000)) / 1000000;
   }
   int64_t ms() const { return (us() + (us() >= 0 ? 500 : -500)) / 1000; }

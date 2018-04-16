@@ -21,21 +21,21 @@ TEST(TimeDeltaTest, GetBackSameValues) {
     int64_t value = kValue * sign;
     EXPECT_EQ(TimeDelta::ms(value).ms(), value);
     EXPECT_EQ(TimeDelta::us(value).us(), value);
-    EXPECT_EQ(TimeDelta::s(value).s(), value);
-    EXPECT_EQ(TimeDelta::seconds(value).s(), value);
+    EXPECT_EQ(TimeDelta::seconds(value).seconds(), value);
+    EXPECT_EQ(TimeDelta::seconds(value).seconds(), value);
   }
   EXPECT_EQ(TimeDelta::Zero().us(), 0);
 }
 
 TEST(TimeDeltaTest, GetDifferentPrefix) {
   const int64_t kValue = 3000000;
-  EXPECT_EQ(TimeDelta::us(kValue).s(), kValue / 1000000);
-  EXPECT_EQ(TimeDelta::ms(kValue).s(), kValue / 1000);
+  EXPECT_EQ(TimeDelta::us(kValue).seconds(), kValue / 1000000);
+  EXPECT_EQ(TimeDelta::ms(kValue).seconds(), kValue / 1000);
   EXPECT_EQ(TimeDelta::us(kValue).ms(), kValue / 1000);
 
   EXPECT_EQ(TimeDelta::ms(kValue).us(), kValue * 1000);
-  EXPECT_EQ(TimeDelta::s(kValue).ms(), kValue * 1000);
-  EXPECT_EQ(TimeDelta::s(kValue).us(), kValue * 1000000);
+  EXPECT_EQ(TimeDelta::seconds(kValue).ms(), kValue * 1000);
+  EXPECT_EQ(TimeDelta::seconds(kValue).us(), kValue * 1000000);
 }
 
 TEST(TimeDeltaTest, IdentityChecks) {

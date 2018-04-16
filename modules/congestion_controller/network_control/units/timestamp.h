@@ -36,8 +36,7 @@ class Timestamp {
   static Timestamp Infinity() {
     return Timestamp(timestamp_impl::kPlusInfinityVal);
   }
-  static Timestamp seconds(int64_t seconds) { return Timestamp::s(seconds); }
-  static Timestamp s(int64_t seconds) {
+  static Timestamp seconds(int64_t seconds) {
     return Timestamp::us(seconds * 1000000);
   }
   static Timestamp ms(int64_t millis) { return Timestamp::us(millis * 1000); }
@@ -45,7 +44,7 @@ class Timestamp {
     RTC_DCHECK_GE(micros, 0);
     return Timestamp(micros);
   }
-  int64_t s() const { return (us() + 500000) / 1000000; }
+  int64_t seconds() const { return (us() + 500000) / 1000000; }
   int64_t ms() const { return (us() + 500) / 1000; }
   int64_t us() const {
     RTC_DCHECK(IsFinite());
