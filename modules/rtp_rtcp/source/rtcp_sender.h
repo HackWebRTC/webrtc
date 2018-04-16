@@ -59,6 +59,10 @@ class RTCPSender {
  public:
   struct FeedbackState {
     FeedbackState();
+    FeedbackState(const FeedbackState&);
+    FeedbackState(FeedbackState&&);
+
+    ~FeedbackState();
 
     uint32_t packets_sent;
     size_t media_bytes_sent;
@@ -68,8 +72,7 @@ class RTCPSender {
     uint32_t last_rr_ntp_frac;
     uint32_t remote_sr;
 
-    bool has_last_xr_rr;
-    rtcp::ReceiveTimeInfo last_xr_rr;
+    std::vector<rtcp::ReceiveTimeInfo> last_xr_rtis;
 
     // Used when generating TMMBR.
     ModuleRtpRtcpImpl* module;

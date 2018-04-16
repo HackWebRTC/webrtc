@@ -85,8 +85,13 @@ RTCPSender::FeedbackState::FeedbackState()
       last_rr_ntp_secs(0),
       last_rr_ntp_frac(0),
       remote_sr(0),
-      has_last_xr_rr(false),
       module(nullptr) {}
+
+RTCPSender::FeedbackState::FeedbackState(const FeedbackState&) = default;
+
+RTCPSender::FeedbackState::FeedbackState(FeedbackState&&) = default;
+
+RTCPSender::FeedbackState::~FeedbackState() = default;
 
 class PacketContainer : public rtcp::CompoundPacket {
  public:
@@ -644,8 +649,8 @@ std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildExtendedReports(
     xr->SetRrtr(rrtr);
   }
 
-  if (ctx.feedback_state_.has_last_xr_rr) {
-    xr->AddDlrrItem(ctx.feedback_state_.last_xr_rr);
+  for (const rtcp::ReceiveTimeInfo& rti : ctx.feedback_state_.last_xr_rtis) {
+    xr->AddDlrrItem(rti);
   }
 
   if (video_bitrate_allocation_) {
@@ -791,7 +796,7 @@ void RTCPSender::PrepareReport(const FeedbackState& feedback_state) {
 
   if (generate_report) {
     if ((!sending_ && xr_send_receiver_reference_time_enabled_) ||
-        feedback_state.has_last_xr_rr || video_bitrate_allocation_) {
+        !feedback_state.last_xr_rtis.empty() || video_bitrate_allocation_) {
       SetFlag(kRtcpAnyExtendedReports, true);
     }
 

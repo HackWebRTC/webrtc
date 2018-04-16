@@ -620,6 +620,21 @@ TEST_F(RtcpReceiverTest, InjectByePacket_RemovesReportBlocks) {
   EXPECT_EQ(2u, received_blocks.size());
 }
 
+TEST_F(RtcpReceiverTest, InjectByePacketRemovesReferenceTimeInfo) {
+  rtcp::ExtendedReports xr;
+  xr.SetSenderSsrc(kSenderSsrc);
+  rtcp::Rrtr rrtr;
+  rrtr.SetNtp(NtpTime(0x10203, 0x40506));
+  xr.SetRrtr(rrtr);
+  InjectRtcpPacket(xr);
+
+  rtcp::Bye bye;
+  bye.SetSenderSsrc(kSenderSsrc);
+  InjectRtcpPacket(bye);
+
+  EXPECT_THAT(rtcp_receiver_.ConsumeReceivedXrReferenceTimeInfo(), IsEmpty());
+}
+
 TEST_F(RtcpReceiverTest, InjectPliPacket) {
   rtcp::Pli pli;
   pli.SetMediaSsrc(kReceiverMainSsrc);
@@ -706,19 +721,17 @@ TEST_F(RtcpReceiverTest, InjectExtendedReportsReceiverReferenceTimePacket) {
   xr.SetSenderSsrc(kSenderSsrc);
   xr.SetRrtr(rrtr);
 
-  ReceiveTimeInfo rrtime;
-  EXPECT_FALSE(rtcp_receiver_.LastReceivedXrReferenceTimeInfo(&rrtime));
+  std::vector<rtcp::ReceiveTimeInfo> last_xr_rtis =
+      rtcp_receiver_.ConsumeReceivedXrReferenceTimeInfo();
+  EXPECT_THAT(last_xr_rtis, IsEmpty());
 
   InjectRtcpPacket(xr);
 
-  EXPECT_TRUE(rtcp_receiver_.LastReceivedXrReferenceTimeInfo(&rrtime));
-  EXPECT_EQ(rrtime.ssrc, kSenderSsrc);
-  EXPECT_EQ(rrtime.last_rr, CompactNtp(kNtp));
-  EXPECT_EQ(0U, rrtime.delay_since_last_rr);
-
-  system_clock_.AdvanceTimeMilliseconds(1500);
-  EXPECT_TRUE(rtcp_receiver_.LastReceivedXrReferenceTimeInfo(&rrtime));
-  EXPECT_NEAR(1500, CompactNtpRttToMs(rrtime.delay_since_last_rr), 1);
+  last_xr_rtis = rtcp_receiver_.ConsumeReceivedXrReferenceTimeInfo();
+  ASSERT_THAT(last_xr_rtis, SizeIs(1));
+  EXPECT_EQ(kSenderSsrc, last_xr_rtis[0].ssrc);
+  EXPECT_EQ(CompactNtp(kNtp), last_xr_rtis[0].last_rr);
+  EXPECT_EQ(0U, last_xr_rtis[0].delay_since_last_rr);
 }
 
 TEST_F(RtcpReceiverTest, ExtendedReportsDlrrPacketNotToUsIgnored) {
@@ -788,8 +801,9 @@ TEST_F(RtcpReceiverTest, InjectExtendedReportsPacketWithMultipleReportBlocks) {
 
   InjectRtcpPacket(xr);
 
-  ReceiveTimeInfo rrtime;
-  EXPECT_TRUE(rtcp_receiver_.LastReceivedXrReferenceTimeInfo(&rrtime));
+  std::vector<rtcp::ReceiveTimeInfo> last_xr_rtis =
+      rtcp_receiver_.ConsumeReceivedXrReferenceTimeInfo();
+  EXPECT_THAT(last_xr_rtis, SizeIs(1));
   int64_t rtt_ms = 0;
   EXPECT_TRUE(rtcp_receiver_.GetAndResetXrRrRtt(&rtt_ms));
 }
@@ -813,8 +827,9 @@ TEST_F(RtcpReceiverTest, InjectExtendedReportsPacketWithUnknownReportBlock) {
   InjectRtcpPacket(packet);
 
   // Validate Rrtr was received and processed.
-  ReceiveTimeInfo rrtime;
-  EXPECT_TRUE(rtcp_receiver_.LastReceivedXrReferenceTimeInfo(&rrtime));
+  std::vector<rtcp::ReceiveTimeInfo> last_xr_rtis =
+      rtcp_receiver_.ConsumeReceivedXrReferenceTimeInfo();
+  EXPECT_THAT(last_xr_rtis, SizeIs(1));
   // Validate Dlrr report wasn't processed.
   int64_t rtt_ms = 0;
   EXPECT_FALSE(rtcp_receiver_.GetAndResetXrRrRtt(&rtt_ms));
@@ -869,12 +884,11 @@ TEST_F(RtcpReceiverTest, XrDlrrCalculatesNegativeRttAsOne) {
   EXPECT_EQ(1, rtt_ms);
 }
 
-TEST_F(RtcpReceiverTest, LastReceivedXrReferenceTimeInfoInitiallyFalse) {
-  ReceiveTimeInfo info;
-  EXPECT_FALSE(rtcp_receiver_.LastReceivedXrReferenceTimeInfo(&info));
+TEST_F(RtcpReceiverTest, ConsumeReceivedXrReferenceTimeInfoInitiallyEmpty) {
+  EXPECT_THAT(rtcp_receiver_.ConsumeReceivedXrReferenceTimeInfo(), IsEmpty());
 }
 
-TEST_F(RtcpReceiverTest, GetLastReceivedExtendedReportsReferenceTimeInfo) {
+TEST_F(RtcpReceiverTest, ConsumeReceivedXrReferenceTimeInfo) {
   const NtpTime kNtp(0x10203, 0x40506);
   const uint32_t kNtpMid = CompactNtp(kNtp);
 
@@ -886,15 +900,69 @@ TEST_F(RtcpReceiverTest, GetLastReceivedExtendedReportsReferenceTimeInfo) {
 
   InjectRtcpPacket(xr);
 
-  ReceiveTimeInfo info;
-  EXPECT_TRUE(rtcp_receiver_.LastReceivedXrReferenceTimeInfo(&info));
-  EXPECT_EQ(kSenderSsrc, info.ssrc);
-  EXPECT_EQ(kNtpMid, info.last_rr);
-  EXPECT_EQ(0U, info.delay_since_last_rr);
-
   system_clock_.AdvanceTimeMilliseconds(1000);
-  EXPECT_TRUE(rtcp_receiver_.LastReceivedXrReferenceTimeInfo(&info));
-  EXPECT_EQ(65536U, info.delay_since_last_rr);
+
+  std::vector<rtcp::ReceiveTimeInfo> last_xr_rtis =
+      rtcp_receiver_.ConsumeReceivedXrReferenceTimeInfo();
+  ASSERT_THAT(last_xr_rtis, SizeIs(1));
+  EXPECT_EQ(kSenderSsrc, last_xr_rtis[0].ssrc);
+  EXPECT_EQ(kNtpMid, last_xr_rtis[0].last_rr);
+  EXPECT_EQ(65536U, last_xr_rtis[0].delay_since_last_rr);
+}
+
+TEST_F(RtcpReceiverTest,
+       ReceivedRrtrFromSameSsrcUpdatesReceivedReferenceTimeInfo) {
+  const NtpTime kNtp1(0x10203, 0x40506);
+  const NtpTime kNtp2(0x11223, 0x44556);
+  const int64_t kDelayMs = 2000;
+
+  rtcp::ExtendedReports xr;
+  xr.SetSenderSsrc(kSenderSsrc);
+  rtcp::Rrtr rrtr1;
+  rrtr1.SetNtp(kNtp1);
+  xr.SetRrtr(rrtr1);
+  InjectRtcpPacket(xr);
+  system_clock_.AdvanceTimeMilliseconds(kDelayMs);
+  rtcp::Rrtr rrtr2;
+  rrtr2.SetNtp(kNtp2);
+  xr.SetRrtr(rrtr2);
+  InjectRtcpPacket(xr);
+  system_clock_.AdvanceTimeMilliseconds(kDelayMs);
+
+  std::vector<rtcp::ReceiveTimeInfo> last_xr_rtis =
+      rtcp_receiver_.ConsumeReceivedXrReferenceTimeInfo();
+  ASSERT_THAT(last_xr_rtis, SizeIs(1));
+  EXPECT_EQ(kSenderSsrc, last_xr_rtis[0].ssrc);
+  EXPECT_EQ(CompactNtp(kNtp2), last_xr_rtis[0].last_rr);
+  EXPECT_EQ(kDelayMs * 65536 / 1000, last_xr_rtis[0].delay_since_last_rr);
+}
+
+TEST_F(RtcpReceiverTest, StoresLastReceivedRrtrPerSsrc) {
+  const size_t kNumBufferedReports = 1;
+  const size_t kNumReports =
+      rtcp::ExtendedReports::kMaxNumberOfDlrrItems + kNumBufferedReports;
+  for (size_t i = 0; i < kNumReports; ++i) {
+    rtcp::ExtendedReports xr;
+    xr.SetSenderSsrc(i * 100);
+    rtcp::Rrtr rrtr;
+    rrtr.SetNtp(NtpTime(i * 200, i * 300));
+    xr.SetRrtr(rrtr);
+    InjectRtcpPacket(xr);
+    system_clock_.AdvanceTimeMilliseconds(1000);
+  }
+
+  std::vector<rtcp::ReceiveTimeInfo> last_xr_rtis =
+      rtcp_receiver_.ConsumeReceivedXrReferenceTimeInfo();
+  ASSERT_THAT(last_xr_rtis,
+              SizeIs(rtcp::ExtendedReports::kMaxNumberOfDlrrItems));
+  for (size_t i = 0; i < rtcp::ExtendedReports::kMaxNumberOfDlrrItems; ++i) {
+    EXPECT_EQ(i * 100, last_xr_rtis[i].ssrc);
+    EXPECT_EQ(CompactNtp(NtpTime(i * 200, i * 300)), last_xr_rtis[i].last_rr);
+    EXPECT_EQ(65536U * (kNumReports - i), last_xr_rtis[i].delay_since_last_rr);
+  }
+
+  last_xr_rtis = rtcp_receiver_.ConsumeReceivedXrReferenceTimeInfo();
+  ASSERT_THAT(last_xr_rtis, SizeIs(kNumBufferedReports));
 }
 
 TEST_F(RtcpReceiverTest, ReceiveReportTimeout) {

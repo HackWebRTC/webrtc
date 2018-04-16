@@ -57,6 +57,9 @@ const int64_t kTmmbrTimeoutIntervalMs = 5 * 5000;
 const int64_t kMaxWarningLogIntervalMs = 10000;
 const int64_t kRtcpMinFrameLengthMs = 17;
 
+// Maximum number of received RRTRs that will be stored.
+const size_t kMaxNumberOfStoredRrtrs = 200;
+
 }  // namespace
 
 struct RTCPReceiver::PacketInformation {
@@ -84,6 +87,22 @@ struct RTCPReceiver::TmmbrInformation {
 
   std::vector<rtcp::TmmbItem> tmmbn;
   std::map<uint32_t, TimedTmmbrItem> tmmbr;
+};
+
+// Structure for storing received RRTR RTCP messages (RFC3611, section 4.4).
+struct RTCPReceiver::RrtrInformation {
+  RrtrInformation(uint32_t ssrc,
+                  uint32_t received_remote_mid_ntp_time,
+                  uint32_t local_receive_mid_ntp_time)
+      : ssrc(ssrc),
+        received_remote_mid_ntp_time(received_remote_mid_ntp_time),
+        local_receive_mid_ntp_time(local_receive_mid_ntp_time) {}
+
+  uint32_t ssrc;
+  // Received NTP timestamp in compact representation.
+  uint32_t received_remote_mid_ntp_time;
+  // NTP time when the report was received in compact representation.
+  uint32_t local_receive_mid_ntp_time;
 };
 
 struct RTCPReceiver::ReportBlockWithRtt {
@@ -251,22 +270,26 @@ bool RTCPReceiver::NTP(uint32_t* received_ntp_secs,
   return true;
 }
 
-bool RTCPReceiver::LastReceivedXrReferenceTimeInfo(
-    rtcp::ReceiveTimeInfo* info) const {
-  RTC_DCHECK(info);
+std::vector<rtcp::ReceiveTimeInfo>
+RTCPReceiver::ConsumeReceivedXrReferenceTimeInfo() {
   rtc::CritScope lock(&rtcp_receiver_lock_);
-  if (!last_received_xr_ntp_.Valid())
-    return false;
 
-  info->ssrc = remote_time_info_.ssrc;
-  info->last_rr = remote_time_info_.last_rr;
+  const size_t last_xr_rtis_size = std::min(
+      received_rrtrs_.size(), rtcp::ExtendedReports::kMaxNumberOfDlrrItems);
+  std::vector<rtcp::ReceiveTimeInfo> last_xr_rtis;
+  last_xr_rtis.reserve(last_xr_rtis_size);
 
-  // Get the delay since last received report (RFC 3611).
-  uint32_t receive_time_ntp = CompactNtp(last_received_xr_ntp_);
-  uint32_t now_ntp = CompactNtp(clock_->CurrentNtpTime());
+  const uint32_t now_ntp = CompactNtp(clock_->CurrentNtpTime());
 
-  info->delay_since_last_rr = now_ntp - receive_time_ntp;
-  return true;
+  for (size_t i = 0; i < last_xr_rtis_size; ++i) {
+    RrtrInformation& rrtr = received_rrtrs_.front();
+    last_xr_rtis.emplace_back(rrtr.ssrc, rrtr.received_remote_mid_ntp_time,
+                              now_ntp - rrtr.local_receive_mid_ntp_time);
+    received_rrtrs_ssrc_it_.erase(rrtr.ssrc);
+    received_rrtrs_.pop_front();
+  }
+
+  return last_xr_rtis;
 }
 
 // We can get multiple receive reports when we receive the report from a CE.
@@ -673,6 +696,11 @@ void RTCPReceiver::HandleBye(const CommonHeader& rtcp_block) {
 
   last_fir_.erase(bye.sender_ssrc());
   received_cnames_.erase(bye.sender_ssrc());
+  auto it = received_rrtrs_ssrc_it_.find(bye.sender_ssrc());
+  if (it != received_rrtrs_ssrc_it_.end()) {
+    received_rrtrs_.erase(it->second);
+    received_rrtrs_ssrc_it_.erase(it);
+  }
   xr_rr_rtt_ms_ = 0;
 }
 
@@ -698,9 +726,23 @@ void RTCPReceiver::HandleXr(const CommonHeader& rtcp_block,
 
 void RTCPReceiver::HandleXrReceiveReferenceTime(uint32_t sender_ssrc,
                                                 const rtcp::Rrtr& rrtr) {
-  remote_time_info_.ssrc = sender_ssrc;
-  remote_time_info_.last_rr = CompactNtp(rrtr.ntp());
-  last_received_xr_ntp_ = clock_->CurrentNtpTime();
+  uint32_t received_remote_mid_ntp_time = CompactNtp(rrtr.ntp());
+  uint32_t local_receive_mid_ntp_time = CompactNtp(clock_->CurrentNtpTime());
+
+  auto it = received_rrtrs_ssrc_it_.find(sender_ssrc);
+  if (it != received_rrtrs_ssrc_it_.end()) {
+    it->second->received_remote_mid_ntp_time = received_remote_mid_ntp_time;
+    it->second->local_receive_mid_ntp_time = local_receive_mid_ntp_time;
+  } else {
+    if (received_rrtrs_.size() < kMaxNumberOfStoredRrtrs) {
+      received_rrtrs_.emplace_back(sender_ssrc, received_remote_mid_ntp_time,
+                                   local_receive_mid_ntp_time);
+      received_rrtrs_ssrc_it_[sender_ssrc] = std::prev(received_rrtrs_.end());
+    } else {
+      RTC_LOG(LS_WARNING) << "Discarding received RRTR for ssrc " << sender_ssrc
+                          << ", reached maximum number of stored RRTRs.";
+    }
+  }
 }
 
 void RTCPReceiver::HandleXrDlrrReportBlock(const rtcp::ReceiveTimeInfo& rti) {

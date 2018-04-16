@@ -18,6 +18,7 @@
 using testing::ElementsAre;
 using testing::ElementsAreArray;
 using testing::make_tuple;
+using testing::SizeIs;
 using webrtc::rtcp::Dlrr;
 using webrtc::rtcp::ExtendedReports;
 using webrtc::rtcp::ReceiveTimeInfo;
@@ -211,6 +212,18 @@ TEST_F(RtcpPacketExtendedReportsTest, CreateAndParseWithDlrrWithTwoSubBlocks) {
   EXPECT_THAT(parsed.dlrr().sub_blocks(), ElementsAre(kTimeInfo1, kTimeInfo2));
 }
 
+TEST_F(RtcpPacketExtendedReportsTest, CreateLimitsTheNumberOfDlrrSubBlocks) {
+  const ReceiveTimeInfo kTimeInfo = Rand<ReceiveTimeInfo>();
+  ExtendedReports xr;
+
+  for (size_t i = 0; i < ExtendedReports::kMaxNumberOfDlrrItems; ++i)
+    EXPECT_TRUE(xr.AddDlrrItem(kTimeInfo));
+  EXPECT_FALSE(xr.AddDlrrItem(kTimeInfo));
+
+  EXPECT_THAT(xr.dlrr().sub_blocks(),
+              SizeIs(ExtendedReports::kMaxNumberOfDlrrItems));
+}
+
 TEST_F(RtcpPacketExtendedReportsTest, CreateAndParseWithVoipMetric) {
   const VoipMetric kVoipMetric = Rand<VoipMetric>();
 
@@ -228,15 +241,15 @@ TEST_F(RtcpPacketExtendedReportsTest, CreateAndParseWithVoipMetric) {
   EXPECT_EQ(kVoipMetric, parsed.voip_metric());
 }
 
-TEST_F(RtcpPacketExtendedReportsTest, CreateAndParseWithMultipleReportBlocks) {
+TEST_F(RtcpPacketExtendedReportsTest, CreateAndParseWithMaximumReportBlocks) {
   const Rrtr kRrtr = Rand<Rrtr>();
-  const ReceiveTimeInfo kTimeInfo = Rand<ReceiveTimeInfo>();
   const VoipMetric kVoipMetric = Rand<VoipMetric>();
 
   ExtendedReports xr;
   xr.SetSenderSsrc(kSenderSsrc);
   xr.SetRrtr(kRrtr);
-  xr.AddDlrrItem(kTimeInfo);
+  for (size_t i = 0; i < ExtendedReports::kMaxNumberOfDlrrItems; ++i)
+    xr.AddDlrrItem(Rand<ReceiveTimeInfo>());
   xr.SetVoipMetric(kVoipMetric);
 
   rtc::Buffer packet = xr.Build();
@@ -247,7 +260,8 @@ TEST_F(RtcpPacketExtendedReportsTest, CreateAndParseWithMultipleReportBlocks) {
 
   EXPECT_EQ(kSenderSsrc, parsed.sender_ssrc());
   EXPECT_EQ(kRrtr, parsed.rrtr());
-  EXPECT_THAT(parsed.dlrr().sub_blocks(), ElementsAre(kTimeInfo));
+  EXPECT_THAT(parsed.dlrr().sub_blocks(),
+              ElementsAreArray(xr.dlrr().sub_blocks()));
   EXPECT_EQ(kVoipMetric, parsed.voip_metric());
 }
 

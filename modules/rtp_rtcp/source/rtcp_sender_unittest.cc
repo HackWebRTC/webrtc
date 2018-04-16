@@ -24,6 +24,7 @@
 using ::testing::_;
 using ::testing::ElementsAre;
 using ::testing::Invoke;
+using ::testing::SizeIs;
 
 namespace webrtc {
 
@@ -608,20 +609,45 @@ TEST_F(RtcpSenderTest, SendXrWithVoipMetric) {
 TEST_F(RtcpSenderTest, SendXrWithDlrr) {
   rtcp_sender_->SetRTCPStatus(RtcpMode::kCompound);
   RTCPSender::FeedbackState feedback_state = rtp_rtcp_impl_->GetFeedbackState();
-  feedback_state.has_last_xr_rr = true;
   rtcp::ReceiveTimeInfo last_xr_rr;
   last_xr_rr.ssrc = 0x11111111;
   last_xr_rr.last_rr = 0x22222222;
   last_xr_rr.delay_since_last_rr = 0x33333333;
-  feedback_state.last_xr_rr = last_xr_rr;
+  feedback_state.last_xr_rtis.push_back(last_xr_rr);
   EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state, kRtcpReport));
   EXPECT_EQ(1, parser()->xr()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser()->xr()->sender_ssrc());
-  EXPECT_EQ(1U, parser()->xr()->dlrr().sub_blocks().size());
+  ASSERT_THAT(parser()->xr()->dlrr().sub_blocks(), SizeIs(1));
   EXPECT_EQ(last_xr_rr.ssrc, parser()->xr()->dlrr().sub_blocks()[0].ssrc);
   EXPECT_EQ(last_xr_rr.last_rr, parser()->xr()->dlrr().sub_blocks()[0].last_rr);
   EXPECT_EQ(last_xr_rr.delay_since_last_rr,
             parser()->xr()->dlrr().sub_blocks()[0].delay_since_last_rr);
+}
+
+TEST_F(RtcpSenderTest, SendXrWithMultipleDlrrSubBlocks) {
+  const size_t kNumReceivers = 2;
+  rtcp_sender_->SetRTCPStatus(RtcpMode::kCompound);
+  RTCPSender::FeedbackState feedback_state = rtp_rtcp_impl_->GetFeedbackState();
+  for (size_t i = 0; i < kNumReceivers; ++i) {
+    rtcp::ReceiveTimeInfo last_xr_rr;
+    last_xr_rr.ssrc = i;
+    last_xr_rr.last_rr = (i + 1) * 100;
+    last_xr_rr.delay_since_last_rr = (i + 2) * 200;
+    feedback_state.last_xr_rtis.push_back(last_xr_rr);
+  }
+
+  EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state, kRtcpReport));
+  EXPECT_EQ(1, parser()->xr()->num_packets());
+  EXPECT_EQ(kSenderSsrc, parser()->xr()->sender_ssrc());
+  ASSERT_THAT(parser()->xr()->dlrr().sub_blocks(), SizeIs(kNumReceivers));
+  for (size_t i = 0; i < kNumReceivers; ++i) {
+    EXPECT_EQ(feedback_state.last_xr_rtis[i].ssrc,
+              parser()->xr()->dlrr().sub_blocks()[i].ssrc);
+    EXPECT_EQ(feedback_state.last_xr_rtis[i].last_rr,
+              parser()->xr()->dlrr().sub_blocks()[i].last_rr);
+    EXPECT_EQ(feedback_state.last_xr_rtis[i].delay_since_last_rr,
+              parser()->xr()->dlrr().sub_blocks()[i].delay_since_last_rr);
+  }
 }
 
 TEST_F(RtcpSenderTest, SendXrWithRrtr) {
