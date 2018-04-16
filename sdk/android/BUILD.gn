@@ -766,11 +766,11 @@ rtc_android_library("video_api_java") {
     "api/org/webrtc/JavaI420Buffer.java",
     "api/org/webrtc/RendererCommon.java",
     "api/org/webrtc/SurfaceTextureHelper.java",
+    "api/org/webrtc/TextureBufferImpl.java",
     "api/org/webrtc/YuvConverter.java",
     "api/org/webrtc/YuvHelper.java",
     "src/java/org/webrtc/EglBase10.java",
     "src/java/org/webrtc/EglBase14.java",
-    "src/java/org/webrtc/TextureBufferImpl.java",
   ]
 
   deps = [

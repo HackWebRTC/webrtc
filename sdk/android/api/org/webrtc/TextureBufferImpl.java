@@ -11,31 +11,32 @@
 package org.webrtc;
 
 import android.graphics.Matrix;
-import java.nio.ByteBuffer;
-import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.Nullable;
+import android.os.Handler;
 
 /**
- * Android texture buffer backed by a SurfaceTextureHelper's texture. The buffer calls
- * |releaseCallback| when it is released.
+ * Android texture buffer that glues together the necessary information together with a generic
+ * release callback. ToI420() is implemented by providing a Handler and a YuvConverter.
  */
-class TextureBufferImpl implements VideoFrame.TextureBuffer {
+public class TextureBufferImpl implements VideoFrame.TextureBuffer {
   private final int width;
   private final int height;
   private final Type type;
   private final int id;
   private final Matrix transformMatrix;
-  private final SurfaceTextureHelper surfaceTextureHelper;
+  private final Handler toI420Handler;
+  private final YuvConverter yuvConverter;
   private final RefCountDelegate refCountDelegate;
 
   public TextureBufferImpl(int width, int height, Type type, int id, Matrix transformMatrix,
-      SurfaceTextureHelper surfaceTextureHelper, @Nullable Runnable releaseCallback) {
+      Handler toI420Handler, YuvConverter yuvConverter, @Nullable Runnable releaseCallback) {
     this.width = width;
     this.height = height;
     this.type = type;
     this.id = id;
     this.transformMatrix = transformMatrix;
-    this.surfaceTextureHelper = surfaceTextureHelper;
+    this.toI420Handler = toI420Handler;
+    this.yuvConverter = yuvConverter;
     this.refCountDelegate = new RefCountDelegate(releaseCallback);
   }
 
@@ -66,7 +67,8 @@ class TextureBufferImpl implements VideoFrame.TextureBuffer {
 
   @Override
   public VideoFrame.I420Buffer toI420() {
-    return surfaceTextureHelper.textureToYuv(this);
+    return ThreadUtils.invokeAtFrontUninterruptibly(
+        toI420Handler, () -> yuvConverter.convert(this));
   }
 
   @Override
@@ -82,17 +84,12 @@ class TextureBufferImpl implements VideoFrame.TextureBuffer {
   @Override
   public VideoFrame.Buffer cropAndScale(
       int cropX, int cropY, int cropWidth, int cropHeight, int scaleWidth, int scaleHeight) {
-    retain();
-    Matrix newMatrix = new Matrix(transformMatrix);
-    newMatrix.postScale(cropWidth / (float) width, cropHeight / (float) height);
-    newMatrix.postTranslate(cropX / (float) width, cropY / (float) height);
+    final Matrix newMatrix = new Matrix(transformMatrix);
+    newMatrix.preTranslate(cropX / (float) width, cropY / (float) height);
+    newMatrix.preScale(cropWidth / (float) width, cropHeight / (float) height);
 
+    retain();
     return new TextureBufferImpl(
-        scaleWidth, scaleHeight, type, id, newMatrix, surfaceTextureHelper, new Runnable() {
-          @Override
-          public void run() {
-            release();
-          }
-        });
+        scaleWidth, scaleHeight, type, id, newMatrix, toI420Handler, yuvConverter, this ::release);
   }
 }

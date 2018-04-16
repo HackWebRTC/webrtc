@@ -18,8 +18,8 @@ import org.webrtc.VideoFrame.I420Buffer;
 import org.webrtc.VideoFrame.TextureBuffer;
 
 /**
- * Class for converting OES textures to a YUV ByteBuffer. It should be constructed on a thread with
- * an active EGL context, and only be used from that thread.
+ * Class for converting OES textures to a YUV ByteBuffer. It can be constructed on any thread, but
+ * should only be operated from a single thread with an active EGL context.
  */
 public class YuvConverter {
   // Vertex coordinates in Normalized Device Coordinates, i.e.
@@ -111,7 +111,7 @@ public class YuvConverter {
   // clang-format on
 
   private final ThreadUtils.ThreadChecker threadChecker = new ThreadUtils.ThreadChecker();
-  private final GlTextureFrameBuffer textureFrameBuffer;
+  private final GlTextureFrameBuffer textureFrameBuffer = new GlTextureFrameBuffer(GLES20.GL_RGBA);
   private TextureBuffer.Type shaderTextureType;
   private GlShader shader;
   private int texMatrixLoc;
@@ -123,8 +123,7 @@ public class YuvConverter {
    * This class should be constructed on a thread that has an active EGL context.
    */
   public YuvConverter() {
-    threadChecker.checkIsOnValidThread();
-    textureFrameBuffer = new GlTextureFrameBuffer(GLES20.GL_RGBA);
+    threadChecker.detachThread();
   }
 
   /** Converts the texture buffer to I420. */

@@ -320,12 +320,7 @@ public class SurfaceTextureHelper {
    * buffer calls returnTextureFrame() when it is released.
    */
   public TextureBuffer createTextureBuffer(int width, int height, Matrix transformMatrix) {
-    return new TextureBufferImpl(
-        width, height, TextureBuffer.Type.OES, oesTextureId, transformMatrix, this, new Runnable() {
-          @Override
-          public void run() {
-            returnTextureFrame();
-          }
-        });
+    return new TextureBufferImpl(width, height, TextureBuffer.Type.OES, oesTextureId,
+        transformMatrix, handler, yuvConverter, this ::returnTextureFrame);
   }
 }
