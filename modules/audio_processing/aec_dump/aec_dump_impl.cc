@@ -48,6 +48,10 @@ void CopyFromConfigToEvent(const webrtc::InternalAPMConfig& config,
   pb_cfg->set_intelligibility_enhancer_enabled(
       config.intelligibility_enhancer_enabled);
 
+  pb_cfg->set_pre_amplifier_enabled(config.pre_amplifier_enabled);
+  pb_cfg->set_pre_amplifier_fixed_gain_factor(
+      config.pre_amplifier_fixed_gain_factor);
+
   pb_cfg->set_experiments_description(config.experiments_description);
 }
 

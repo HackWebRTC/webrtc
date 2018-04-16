@@ -53,6 +53,7 @@ struct SimulationSettings {
   rtc::Optional<std::string> ed_graph_output_filename;
   rtc::Optional<bool> use_agc;
   rtc::Optional<bool> use_agc2;
+  rtc::Optional<bool> use_pre_amplifier;
   rtc::Optional<bool> use_hpf;
   rtc::Optional<bool> use_ns;
   rtc::Optional<bool> use_ts;
@@ -74,6 +75,7 @@ struct SimulationSettings {
   rtc::Optional<bool> use_agc_limiter;
   rtc::Optional<int> agc_compression_gain;
   float agc2_fixed_gain_db;
+  float pre_amplifier_gain_factor;
   rtc::Optional<int> vad_likelihood;
   rtc::Optional<int> ns_level;
   rtc::Optional<bool> use_refined_adaptive_filter;

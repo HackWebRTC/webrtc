@@ -270,6 +270,13 @@ class AudioProcessing : public rtc::RefCountInterface {
       bool enabled = false;
     } high_pass_filter;
 
+    // Enabled the pre-amplifier. It amplifies the capture signal
+    // before any other processing is done.
+    struct PreAmplifier {
+      bool enabled = false;
+      float fixed_gain_factor = 1.f;
+    } pre_amplifier;
+
     // Enables the next generation AGC functionality. This feature
     // replaces the standard methods of gain control in the previous
     // AGC. This functionality is currently only partially

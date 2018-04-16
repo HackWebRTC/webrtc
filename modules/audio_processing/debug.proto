@@ -72,8 +72,11 @@ message Config {
   // Semicolon-separated string containing experimental feature
   // descriptions.
   optional string experiments_description = 17;
-  // Intelligibility Enhancer
+  // Intelligibility Enhancer.
   optional bool intelligibility_enhancer_enabled = 18;
+  // Pre amplifier.
+  optional bool pre_amplifier_enabled = 19;
+  optional float pre_amplifier_fixed_gain_factor = 20;
 }
 
 message Event {

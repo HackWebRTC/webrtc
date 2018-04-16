@@ -84,6 +84,9 @@ DEFINE_int(agc,
 DEFINE_int(agc2,
            kParameterNotSpecifiedValue,
            "Activate (1) or deactivate(0) the AGC2");
+DEFINE_int(pre_amplifier,
+           kParameterNotSpecifiedValue,
+           "Activate (1) or deactivate(0) the pre amplifier");
 DEFINE_int(hpf,
            kParameterNotSpecifiedValue,
            "Activate (1) or deactivate(0) the high-pass filter");
@@ -150,6 +153,9 @@ DEFINE_int(agc_compression_gain,
            kParameterNotSpecifiedValue,
            "Specify the AGC compression gain (0-90)");
 DEFINE_float(agc2_fixed_gain_db, 0.f, "AGC2 fixed gain (dB) to apply");
+DEFINE_float(pre_amplifier_gain_factor,
+             1.f,
+             "Pre-amplifier gain factor (linear) to apply");
 DEFINE_int(vad_likelihood,
            kParameterNotSpecifiedValue,
            "Specify the VAD likelihood (0-3)");
@@ -219,6 +225,7 @@ SimulationSettings CreateSettings() {
     settings.use_hpf = true;
     settings.use_agc = true;
     settings.use_agc2 = false;
+    settings.use_pre_amplifier = false;
     settings.use_aec = true;
     settings.use_aecm = false;
     settings.use_ed = false;
@@ -247,6 +254,7 @@ SimulationSettings CreateSettings() {
   SetSettingIfSpecified(FLAG_ed_graph, &settings.ed_graph_output_filename);
   SetSettingIfFlagSet(FLAG_agc, &settings.use_agc);
   SetSettingIfFlagSet(FLAG_agc2, &settings.use_agc2);
+  SetSettingIfFlagSet(FLAG_pre_amplifier, &settings.use_pre_amplifier);
   SetSettingIfFlagSet(FLAG_hpf, &settings.use_hpf);
   SetSettingIfFlagSet(FLAG_ns, &settings.use_ns);
   SetSettingIfFlagSet(FLAG_ts, &settings.use_ts);
@@ -274,6 +282,7 @@ SimulationSettings CreateSettings() {
   SetSettingIfSpecified(FLAG_agc_compression_gain,
                         &settings.agc_compression_gain);
   settings.agc2_fixed_gain_db = FLAG_agc2_fixed_gain_db;
+  settings.pre_amplifier_gain_factor = FLAG_pre_amplifier_gain_factor;
   SetSettingIfSpecified(FLAG_vad_likelihood, &settings.vad_likelihood);
   SetSettingIfSpecified(FLAG_ns_level, &settings.ns_level);
   SetSettingIfSpecified(FLAG_stream_delay, &settings.stream_delay);

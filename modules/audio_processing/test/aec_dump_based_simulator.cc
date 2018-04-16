@@ -465,6 +465,15 @@ void AecDumpBasedSimulator::HandleMessage(
       }
     }
 
+    if (msg.has_pre_amplifier_enabled() || settings_.use_pre_amplifier) {
+      const bool enable = settings_.use_pre_amplifier
+                              ? *settings_.use_pre_amplifier
+                              : msg.pre_amplifier_enabled();
+      apm_config.pre_amplifier.enabled = enable;
+      apm_config.pre_amplifier.fixed_gain_factor =
+          settings_.pre_amplifier_gain_factor;
+    }
+
     if (settings_.use_verbose_logging && msg.has_experiments_description() &&
         !msg.experiments_description().empty()) {
       std::cout << " experiments not included by default in the simulation: "

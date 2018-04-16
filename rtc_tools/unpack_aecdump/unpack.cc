@@ -52,6 +52,11 @@ DEFINE_bool(help, false, "Print this message.");
     fprintf(settings_file, "  " #field_name ": %d\n", msg.field_name()); \
   }
 
+#define PRINT_CONFIG_FLOAT(field_name)                                   \
+  if (msg.has_##field_name()) {                                          \
+    fprintf(settings_file, "  " #field_name ": %f\n", msg.field_name()); \
+  }
+
 namespace webrtc {
 
 using audioproc::Event;
@@ -267,6 +272,9 @@ int do_main(int argc, char* argv[]) {
       PRINT_CONFIG(ns_level);
       PRINT_CONFIG(transient_suppression_enabled);
       PRINT_CONFIG(intelligibility_enhancer_enabled);
+      PRINT_CONFIG(pre_amplifier_enabled);
+      PRINT_CONFIG_FLOAT(pre_amplifier_fixed_gain_factor);
+
       if (msg.has_experiments_description()) {
         fprintf(settings_file, "  experiments_description: %s\n",
                 msg.experiments_description().c_str());
