@@ -73,6 +73,7 @@
   } else {
     OCMStub([frameMock buffer]).andReturn([[RTCI420Buffer alloc] initWithWidth:200 height:200]);
   }
+  OCMStub([frameMock timeStampNs]).andReturn(arc4random_uniform(INT_MAX));
   return frameMock;
 }
 
@@ -194,6 +195,56 @@
   [realView drawInMTKView:nil];
   [self.rendererNV12Mock verify];
   [self.classMock verify];
+}
+
+- (void)testDontRedrawOldFrame {
+  OCMStub([self.classMock isMetalAvailable]).andReturn(YES);
+  self.rendererNV12Mock = [self rendererMockWithSuccessfulSetup:YES];
+  self.frameMock = [self frameMockWithCVPixelBuffer:YES];
+
+  OCMExpect([self.rendererNV12Mock drawFrame:self.frameMock]);
+  OCMExpect([self.classMock createNV12Renderer]).andReturn(self.rendererNV12Mock);
+  [[self.classMock reject] createI420Renderer];
+
+  RTCMTLVideoView *realView = [[RTCMTLVideoView alloc] init];
+  [realView renderFrame:self.frameMock];
+  [realView drawInMTKView:nil];
+
+  [self.rendererNV12Mock verify];
+  [self.classMock verify];
+
+  [[self.rendererNV12Mock reject] drawFrame:[OCMArg any]];
+
+  [realView renderFrame:self.frameMock];
+  [realView drawInMTKView:nil];
+
+  [self.rendererNV12Mock verify];
+}
+
+- (void)testDoDrawNewFrame {
+  OCMStub([self.classMock isMetalAvailable]).andReturn(YES);
+  self.rendererNV12Mock = [self rendererMockWithSuccessfulSetup:YES];
+  self.frameMock = [self frameMockWithCVPixelBuffer:YES];
+
+  OCMExpect([self.rendererNV12Mock drawFrame:self.frameMock]);
+  OCMExpect([self.classMock createNV12Renderer]).andReturn(self.rendererNV12Mock);
+  [[self.classMock reject] createI420Renderer];
+
+  RTCMTLVideoView *realView = [[RTCMTLVideoView alloc] init];
+  [realView renderFrame:self.frameMock];
+  [realView drawInMTKView:nil];
+
+  [self.rendererNV12Mock verify];
+  [self.classMock verify];
+
+  // Get new frame.
+  self.frameMock = [self frameMockWithCVPixelBuffer:YES];
+  OCMExpect([self.rendererNV12Mock drawFrame:self.frameMock]);
+
+  [realView renderFrame:self.frameMock];
+  [realView drawInMTKView:nil];
+
+  [self.rendererNV12Mock verify];
 }
 
 @end

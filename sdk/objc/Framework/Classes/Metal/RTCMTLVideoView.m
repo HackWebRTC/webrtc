@@ -33,7 +33,9 @@
 @property(atomic, strong) RTCVideoFrame *videoFrame;
 @end
 
-@implementation RTCMTLVideoView
+@implementation RTCMTLVideoView {
+  int64_t _lastFrameTimeNs;
+}
 
 @synthesize rendererI420 = _rendererI420;
 @synthesize rendererNV12 = _rendererNV12;
@@ -106,7 +108,8 @@
 - (void)drawInMTKView:(nonnull MTKView *)view {
   NSAssert(view == self.metalView, @"Receiving draw callbacks from foreign instance.");
   RTCVideoFrame *videoFrame = self.videoFrame;
-  if (!videoFrame) {
+  // Skip rendering if we've already rendered this frame.
+  if (!videoFrame || videoFrame.timeStampNs == _lastFrameTimeNs) {
     return;
   }
 
@@ -116,6 +119,7 @@
       if (![self.rendererNV12 addRenderingDestination:self.metalView]) {
         self.rendererNV12 = nil;
         RTCLogError(@"Failed to create NV12 renderer");
+        return;
       }
     }
     [self.rendererNV12 drawFrame:videoFrame];
@@ -125,10 +129,12 @@
       if (![self.rendererI420 addRenderingDestination:self.metalView]) {
         self.rendererI420 = nil;
         RTCLogError(@"Failed to create I420 renderer");
+        return;
       }
     }
     [self.rendererI420 drawFrame:videoFrame];
   }
+  _lastFrameTimeNs = videoFrame.timeStampNs;
 }
 
 - (void)mtkView:(MTKView *)view drawableSizeWillChange:(CGSize)size {
