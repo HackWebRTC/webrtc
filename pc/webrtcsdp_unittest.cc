@@ -3758,3 +3758,12 @@ TEST_F(WebRtcSdpTest, SerializeAndDeserializeWithConnectionAddress) {
   EXPECT_EQ(video_desc_->connection_address().ToString(),
             video_desc->connection_address().ToString());
 }
+
+// RFC4566 says "If a session has no meaningful name, the value "s= " SHOULD be
+// used (i.e., a single space as the session name)." So we should accept that.
+TEST_F(WebRtcSdpTest, DeserializeEmptySessionName) {
+  JsepSessionDescription jsep_desc(kDummyType);
+  std::string sdp = kSdpString;
+  Replace("s=-\r\n", "s= \r\n", &sdp);
+  EXPECT_TRUE(SdpDeserialize(sdp, &jsep_desc));
+}

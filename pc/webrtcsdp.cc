@@ -457,10 +457,15 @@ static bool GetLine(const std::string& message,
   // where <type> MUST be exactly one case-significant character and
   // <value> is structured text whose format depends on <type>.
   // Whitespace MUST NOT be used on either side of the "=" sign.
-  if (line->length() < 3 ||
-      !islower(cline[0]) ||
+  //
+  // However, an exception to the whitespace rule is made for "s=", since
+  // RFC4566 also says:
+  //
+  //   If a session has no meaningful name, the value "s= " SHOULD be used
+  //   (i.e., a single space as the session name).
+  if (line->length() < 3 || !islower(cline[0]) ||
       cline[1] != kSdpDelimiterEqual ||
-      cline[2] == kSdpDelimiterSpace) {
+      (cline[0] != kLineTypeSessionName && cline[2] == kSdpDelimiterSpace)) {
     *pos = line_begin;
     return false;
   }
