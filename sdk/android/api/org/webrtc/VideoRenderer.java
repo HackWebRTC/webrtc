@@ -171,10 +171,10 @@ public class VideoRenderer {
             yuvStrides[1], yuvPlanes[2], yuvStrides[2],
             () -> { VideoRenderer.renderFrameDone(this); });
       } else {
-        // Note: No Handler or YuvConverter means calling toI420 will crash.
+        // Note: surfaceTextureHelper being null means calling toI420 will crash.
         buffer = new TextureBufferImpl(width, height, VideoFrame.TextureBuffer.Type.OES, textureId,
-            RendererCommon.convertMatrixToAndroidGraphicsMatrix(samplingMatrix), null /* handler */,
-            null /* yuvConverter */, () -> VideoRenderer.renderFrameDone(this));
+            RendererCommon.convertMatrixToAndroidGraphicsMatrix(samplingMatrix),
+            null /* surfaceTextureHelper */, () -> { VideoRenderer.renderFrameDone(this); });
       }
       return new VideoFrame(buffer, rotationDegree, 0 /* timestampNs */);
     }
