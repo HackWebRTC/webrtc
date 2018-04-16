@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <string.h>
 #include <limits>
 
 #include "common_audio/wav_header.h"

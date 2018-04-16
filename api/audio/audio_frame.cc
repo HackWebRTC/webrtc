@@ -10,6 +10,8 @@
 
 #include "api/audio/audio_frame.h"
 
+#include <string.h>
+
 #include "rtc_base/checks.h"
 #include "rtc_base/timeutils.h"
 

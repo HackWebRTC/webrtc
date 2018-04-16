@@ -12,6 +12,7 @@
 
 #include <math.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "common_audio/fft4g.h"
 #include "modules/audio_processing/vad/pitch_internal.h"

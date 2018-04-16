@@ -10,6 +10,7 @@
 
 #include "audio/utility/audio_frame_operations.h"
 
+#include <string.h>
 #include <algorithm>
 
 #include "rtc_base/checks.h"
