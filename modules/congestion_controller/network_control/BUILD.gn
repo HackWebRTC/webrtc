@@ -20,7 +20,10 @@ rtc_static_library("network_control") {
     "../../../api:optional",
     "../../../rtc_base:checks",
     "../../../rtc_base:rtc_base_approved",
-    "units",
+    "units:data_rate",
+    "units:data_size",
+    "units:time_delta",
+    "units:timestamp",
   ]
 }
 
@@ -38,7 +41,6 @@ if (rtc_include_tests) {
       "../../../rtc_base:checks",
       "../../../rtc_base:rtc_base_approved",
       "../../../test:test_support",
-      "units",
     ]
   }
   rtc_source_set("network_control_unittests") {

@@ -12,7 +12,6 @@
 
 #include <cstdlib>
 
-#include "modules/congestion_controller/network_control/units/network_units.h"
 #include "rtc_base/logging.h"
 
 namespace webrtc {

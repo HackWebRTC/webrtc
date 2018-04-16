@@ -10,6 +10,9 @@
 
 #include "modules/congestion_controller/bbr/windowed_filter.h"
 
+#include "modules/congestion_controller/network_control/units/data_rate.h"
+#include "modules/congestion_controller/network_control/units/time_delta.h"
+
 #include "modules/congestion_controller/bbr/rtt_stats.h"
 #include "test/gtest.h"
 
