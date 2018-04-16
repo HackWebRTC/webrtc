@@ -84,20 +84,6 @@ constexpr int64_t kInitialCongestionWindowBytes =
     (kInitialRttMs * kInitialBandwidthKbps) / 8;
 constexpr int64_t kDefaultMaxCongestionWindowBytes =
     (kMaxRttMs * kMaxBandwidthKbps) / 8;
-
-static std::string ModeToString(BbrNetworkController::Mode mode) {
-  switch (mode) {
-    case BbrNetworkController::STARTUP:
-      return "STARTUP";
-    case BbrNetworkController::DRAIN:
-      return "DRAIN";
-    case BbrNetworkController::PROBE_BW:
-      return "PROBE_BW";
-    case BbrNetworkController::PROBE_RTT:
-      return "PROBE_RTT";
-  }
-  return "???";
-}
 }  // namespace
 
 BbrNetworkController::BbrControllerConfig
@@ -242,15 +228,6 @@ NetworkControlUpdate BbrNetworkController::CreateRateUpdate(Timestamp at_time) {
   last_update_state_.pacing_rate = pacing_rate;
   last_update_state_.target_rate = target_rate;
   last_update_state_.probing_for_bandwidth = probing_for_bandwidth;
-
-  RTC_LOG(LS_INFO) << "RateUpdate, mode: " << ModeToString(mode_)
-                   << ", bw: " << ToString(bandwidth)
-                   << ", min_rtt: " << ToString(rtt)
-                   << ", last_rtt: " << ToString(last_rtt_)
-                   << ", pacing_rate: " << ToString(pacing_rate)
-                   << ", target_rate: " << ToString(target_rate)
-                   << ", Probing:" << probing_for_bandwidth
-                   << ", pacing_gain: " << pacing_gain_;
 
   NetworkControlUpdate update;
 
@@ -543,10 +520,6 @@ bool BbrNetworkController::UpdateMinRtt(Timestamp ack_time,
        (min_rtt_timestamp_ + TimeDelta::seconds(kMinRttExpirySeconds)));
 
   if (min_rtt_expired || sample_rtt < min_rtt_ || min_rtt_.IsZero()) {
-    RTC_LOG(LS_INFO) << "Min RTT updated, old value: " << ToString(min_rtt_)
-                     << ", new value: " << ToString(sample_rtt)
-                     << ", current time: " << ToString(ack_time);
-
     if (ShouldExtendMinRttExpiry()) {
       min_rtt_expired = false;
     } else {
@@ -698,7 +671,6 @@ void BbrNetworkController::MaybeEnterOrExitProbeRtt(
     // Do not decide on the time to exit PROBE_RTT until the |bytes_in_flight|
     // is at the target small value.
     exit_probe_rtt_at_ = Timestamp();
-    RTC_LOG(LS_INFO) << "Entering RTT Probe";
   }
 
   if (mode_ == PROBE_RTT) {
@@ -720,7 +692,6 @@ void BbrNetworkController::MaybeEnterOrExitProbeRtt(
       }
       if (msg.feedback_time >= exit_probe_rtt_at_ && probe_rtt_round_passed_) {
         min_rtt_timestamp_ = msg.feedback_time;
-        RTC_LOG(LS_INFO) << "Exiting RTT Probe";
         if (!is_at_full_bandwidth_) {
           EnterStartupMode();
         } else {
