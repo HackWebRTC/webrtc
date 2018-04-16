@@ -1135,8 +1135,21 @@ void Connection::set_write_state(WriteState value) {
 }
 
 void Connection::UpdateReceiving(int64_t now) {
-  bool receiving =
-      last_received() > 0 && now <= last_received() + receiving_timeout();
+  bool receiving;
+  if (last_ping_sent() < last_ping_response_received()) {
+    // We consider any candidate pair that has its last connectivity check
+    // acknowledged by a response as receiving, particularly for backup
+    // candidate pairs that send checks at a much slower pace than the selected
+    // one. Otherwise, a backup candidate pair constantly becomes not receiving
+    // as a side effect of a long ping interval, since we do not have a separate
+    // receiving timeout for backup candidate pairs. See
+    // IceConfig.ice_backup_candidate_pair_ping_interval,
+    // IceConfig.ice_connection_receiving_timeout and their default value.
+    receiving = true;
+  } else {
+    receiving =
+        last_received() > 0 && now <= last_received() + receiving_timeout();
+  }
   if (receiving_ == receiving) {
     return;
   }
