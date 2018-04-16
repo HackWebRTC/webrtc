@@ -80,7 +80,7 @@ public class SurfaceTextureHelper {
   private final EglBase eglBase;
   private final SurfaceTexture surfaceTexture;
   private final int oesTextureId;
-  private YuvConverter yuvConverter;
+  private final YuvConverter yuvConverter = new YuvConverter();
 
   // These variables are only accessed from the |handler| thread.
   @Nullable private OnTextureFrameAvailableListener listener;
@@ -243,29 +243,16 @@ public class SurfaceTextureHelper {
       throw new IllegalStateException("textureToByteBuffer called with unexpected textureId");
     }
 
-    ThreadUtils.invokeAtFrontUninterruptibly(handler, new Runnable() {
-      @Override
-      public void run() {
-        if (yuvConverter == null) {
-          yuvConverter = new YuvConverter();
-        }
-        yuvConverter.convert(buf, width, height, stride, textureId, transformMatrix);
-      }
-    });
+    ThreadUtils.invokeAtFrontUninterruptibly(handler,
+        () -> yuvConverter.convert(buf, width, height, stride, textureId, transformMatrix));
   }
 
   /**
    * Posts to the correct thread to convert |textureBuffer| to I420.
    */
   public VideoFrame.I420Buffer textureToYuv(final TextureBuffer textureBuffer) {
-    final VideoFrame.I420Buffer[] result = new VideoFrame.I420Buffer[1];
-    ThreadUtils.invokeAtFrontUninterruptibly(handler, () -> {
-      if (yuvConverter == null) {
-        yuvConverter = new YuvConverter();
-      }
-      result[0] = yuvConverter.convert(textureBuffer);
-    });
-    return result[0];
+    return ThreadUtils.invokeAtFrontUninterruptibly(
+        handler, () -> yuvConverter.convert(textureBuffer));
   }
 
   private void updateTexImage() {
@@ -302,9 +289,7 @@ public class SurfaceTextureHelper {
     if (isTextureInUse || !isQuitting) {
       throw new IllegalStateException("Unexpected release.");
     }
-    if (yuvConverter != null) {
-      yuvConverter.release();
-    }
+    yuvConverter.release();
     GLES20.glDeleteTextures(1, new int[] {oesTextureId}, 0);
     surfaceTexture.release();
     eglBase.release();
@@ -320,12 +305,7 @@ public class SurfaceTextureHelper {
    * buffer calls returnTextureFrame() when it is released.
    */
   public TextureBuffer createTextureBuffer(int width, int height, Matrix transformMatrix) {
-    return new TextureBufferImpl(
-        width, height, TextureBuffer.Type.OES, oesTextureId, transformMatrix, this, new Runnable() {
-          @Override
-          public void run() {
-            returnTextureFrame();
-          }
-        });
+    return new TextureBufferImpl(width, height, TextureBuffer.Type.OES, oesTextureId,
+        transformMatrix, handler, yuvConverter, this ::returnTextureFrame);
   }
 }
