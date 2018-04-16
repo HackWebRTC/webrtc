@@ -10,22 +10,18 @@
 
 #include <errno.h>
 #include <inttypes.h>
+#include <iostream>
 #include <limits.h>  // For ULONG_MAX returned by strtoul.
+#include <memory>
 #include <stdio.h>
 #include <stdlib.h>  // For strtoul.
-#include <string.h>
-
-#include <algorithm>
-#include <ios>
-#include <iostream>
-#include <memory>
-#include <numeric>
 #include <string>
 
 #include "modules/audio_coding/neteq/include/neteq.h"
 #include "modules/audio_coding/neteq/tools/fake_decode_from_file.h"
 #include "modules/audio_coding/neteq/tools/input_audio_file.h"
 #include "modules/audio_coding/neteq/tools/neteq_delay_analyzer.h"
+#include "modules/audio_coding/neteq/tools/neteq_stats_getter.h"
 #include "modules/audio_coding/neteq/tools/neteq_packet_source_input.h"
 #include "modules/audio_coding/neteq/tools/neteq_replacement_input.h"
 #include "modules/audio_coding/neteq/tools/neteq_test.h"
@@ -308,168 +304,6 @@ class SsrcSwitchDetector : public NetEqPostInsertPacket {
   rtc::Optional<uint32_t> last_ssrc_;
 };
 
-class StatsGetter : public NetEqGetAudioCallback {
- public:
-  // This struct is a replica of webrtc::NetEqNetworkStatistics, but with all
-  // values stored in double precision.
-  struct Stats {
-    double current_buffer_size_ms = 0.0;
-    double preferred_buffer_size_ms = 0.0;
-    double jitter_peaks_found = 0.0;
-    double packet_loss_rate = 0.0;
-    double expand_rate = 0.0;
-    double speech_expand_rate = 0.0;
-    double preemptive_rate = 0.0;
-    double accelerate_rate = 0.0;
-    double secondary_decoded_rate = 0.0;
-    double secondary_discarded_rate = 0.0;
-    double clockdrift_ppm = 0.0;
-    double added_zero_samples = 0.0;
-    double mean_waiting_time_ms = 0.0;
-    double median_waiting_time_ms = 0.0;
-    double min_waiting_time_ms = 0.0;
-    double max_waiting_time_ms = 0.0;
-  };
-
-  struct ConcealmentEvent {
-    uint64_t duration_ms;
-    size_t concealment_event_number;
-    int64_t time_from_previous_event_end_ms;
-
-    friend std::ostream& operator<<(std::ostream& stream,
-                                    const ConcealmentEvent& concealment_event) {
-      stream << "ConcealmentEvent duration_ms:" << concealment_event.duration_ms
-             << " event_number:" << concealment_event.concealment_event_number
-             << " time_from_previous_event_end_ms:"
-             << concealment_event.time_from_previous_event_end_ms << "\n";
-      return stream;
-    }
-  };
-
-  // Takes a pointer to another callback object, which will be invoked after
-  // this object finishes. This does not transfer ownership, and null is a
-  // valid value.
-  explicit StatsGetter(NetEqGetAudioCallback* other_callback)
-      : other_callback_(other_callback) {}
-
-  void BeforeGetAudio(NetEq* neteq) override {
-    if (other_callback_) {
-      other_callback_->BeforeGetAudio(neteq);
-    }
-  }
-
-  void AfterGetAudio(int64_t time_now_ms,
-                     const AudioFrame& audio_frame,
-                     bool muted,
-                     NetEq* neteq) override {
-    if (++counter_ >= 100) {
-      counter_ = 0;
-      NetEqNetworkStatistics stats;
-      RTC_CHECK_EQ(neteq->NetworkStatistics(&stats), 0);
-      stats_.push_back(stats);
-    }
-    const auto lifetime_stat = neteq->GetLifetimeStatistics();
-    if (current_concealment_event_ != lifetime_stat.concealment_events &&
-        voice_concealed_samples_until_last_event_ <
-            lifetime_stat.voice_concealed_samples) {
-      if (last_event_end_time_ms_ > 0) {
-        // Do not account for the first event to avoid start of the call
-        // skewing.
-        ConcealmentEvent concealment_event;
-        uint64_t last_event_voice_concealed_samples =
-            lifetime_stat.voice_concealed_samples -
-            voice_concealed_samples_until_last_event_;
-        RTC_CHECK_GT(last_event_voice_concealed_samples, 0);
-        concealment_event.duration_ms = last_event_voice_concealed_samples /
-                                        (audio_frame.sample_rate_hz_ / 1000);
-        concealment_event.concealment_event_number = current_concealment_event_;
-        concealment_event.time_from_previous_event_end_ms =
-            time_now_ms - last_event_end_time_ms_;
-        concealment_events_.emplace_back(concealment_event);
-        voice_concealed_samples_until_last_event_ =
-            lifetime_stat.voice_concealed_samples;
-      }
-      last_event_end_time_ms_ = time_now_ms;
-      voice_concealed_samples_until_last_event_ =
-          lifetime_stat.voice_concealed_samples;
-      current_concealment_event_ = lifetime_stat.concealment_events;
-    }
-
-    if (other_callback_) {
-      other_callback_->AfterGetAudio(time_now_ms, audio_frame, muted, neteq);
-    }
-  }
-
-  double AverageSpeechExpandRate() const {
-    double sum_speech_expand =
-        std::accumulate(stats_.begin(), stats_.end(), double{0.0},
-                        [](double a, NetEqNetworkStatistics b) {
-                          return a + static_cast<double>(b.speech_expand_rate);
-                        });
-    return sum_speech_expand / 16384.0 / stats_.size();
-  }
-
-  const std::vector<ConcealmentEvent>& concealment_events() {
-    // Do not account for the last concealment event to avoid potential end
-    // call skewing.
-    return concealment_events_;
-  }
-
-  Stats AverageStats() const {
-    Stats sum_stats = std::accumulate(
-        stats_.begin(), stats_.end(), Stats(),
-        [](Stats a, NetEqNetworkStatistics b) {
-          a.current_buffer_size_ms += b.current_buffer_size_ms;
-          a.preferred_buffer_size_ms += b.preferred_buffer_size_ms;
-          a.jitter_peaks_found += b.jitter_peaks_found;
-          a.packet_loss_rate += b.packet_loss_rate / 16384.0;
-          a.expand_rate += b.expand_rate / 16384.0;
-          a.speech_expand_rate += b.speech_expand_rate / 16384.0;
-          a.preemptive_rate += b.preemptive_rate / 16384.0;
-          a.accelerate_rate += b.accelerate_rate / 16384.0;
-          a.secondary_decoded_rate += b.secondary_decoded_rate / 16384.0;
-          a.secondary_discarded_rate += b.secondary_discarded_rate / 16384.0;
-          a.clockdrift_ppm += b.clockdrift_ppm;
-          a.added_zero_samples += b.added_zero_samples;
-          a.mean_waiting_time_ms += b.mean_waiting_time_ms;
-          a.median_waiting_time_ms += b.median_waiting_time_ms;
-          a.min_waiting_time_ms =
-              std::min(a.min_waiting_time_ms,
-                       static_cast<double>(b.min_waiting_time_ms));
-          a.max_waiting_time_ms =
-              std::max(a.max_waiting_time_ms,
-                       static_cast<double>(b.max_waiting_time_ms));
-          return a;
-        });
-
-    sum_stats.current_buffer_size_ms /= stats_.size();
-    sum_stats.preferred_buffer_size_ms /= stats_.size();
-    sum_stats.jitter_peaks_found /= stats_.size();
-    sum_stats.packet_loss_rate /= stats_.size();
-    sum_stats.expand_rate /= stats_.size();
-    sum_stats.speech_expand_rate /= stats_.size();
-    sum_stats.preemptive_rate /= stats_.size();
-    sum_stats.accelerate_rate /= stats_.size();
-    sum_stats.secondary_decoded_rate /= stats_.size();
-    sum_stats.secondary_discarded_rate /= stats_.size();
-    sum_stats.clockdrift_ppm /= stats_.size();
-    sum_stats.added_zero_samples /= stats_.size();
-    sum_stats.mean_waiting_time_ms /= stats_.size();
-    sum_stats.median_waiting_time_ms /= stats_.size();
-
-    return sum_stats;
-  }
-
- private:
-  NetEqGetAudioCallback* other_callback_;
-  size_t counter_ = 0;
-  std::vector<NetEqNetworkStatistics> stats_;
-  size_t current_concealment_event_ = 1;
-  uint64_t voice_concealed_samples_until_last_event_ = 0;
-  std::vector<ConcealmentEvent> concealment_events_;
-  int64_t last_event_end_time_ms_ = 0;
-};
-
 int RunTest(int argc, char* argv[]) {
   std::string program_name = argv[0];
   std::string usage = "Tool for decoding an RTP dump file using NetEq.\n"
@@ -675,7 +509,7 @@ int RunTest(int argc, char* argv[]) {
 
   SsrcSwitchDetector ssrc_switch_detector(delay_analyzer.get());
   callbacks.post_insert_packet = &ssrc_switch_detector;
-  StatsGetter stats_getter(delay_analyzer.get());
+  NetEqStatsGetter stats_getter(std::move(delay_analyzer));
   callbacks.get_audio_callback = &stats_getter;
   NetEq::Config config;
   config.sample_rate_hz = *sample_rate_hz;
@@ -721,11 +555,10 @@ int RunTest(int argc, char* argv[]) {
   printf("  current_buffer_size_ms: %f ms\n", stats.current_buffer_size_ms);
   printf("  preferred_buffer_size_ms: %f ms\n", stats.preferred_buffer_size_ms);
   if (FLAG_concealment_events) {
-    std::cout << " concealment_events_ms:"
-              << "\n";
+    std::cout << " concealment_events_ms:" << std::endl;
     for (auto concealment_event : stats_getter.concealment_events())
-      std::cout << concealment_event;
-    std::cout << " end of concealment_events_ms\n";
+      std::cout << concealment_event.ToString() << std::endl;
+    std::cout << " end of concealment_events_ms" << std::endl;
   }
   return 0;
 }
