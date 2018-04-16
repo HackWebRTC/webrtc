@@ -74,4 +74,10 @@ TEST(AudioProcessingImplTest, AudioParameterChangeTriggersInit) {
   EXPECT_NOERR(mock.ProcessReverseStream(&frame));
 }
 
+TEST(AudioProcessingImplTest, UpdateCapturePreGainRuntimeSetting) {
+  // TODO(bugs.chromium.org/9138): Implement this test as soon as the pre-gain
+  // sub-module is implemented and it is notified by HandleRuntimeSettings()
+  // when the gain changes.
+}
+
 }  // namespace webrtc

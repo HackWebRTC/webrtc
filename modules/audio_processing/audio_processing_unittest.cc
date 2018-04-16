@@ -35,6 +35,7 @@
 #include "rtc_base/numerics/safe_minmax.h"
 #include "rtc_base/protobuf_utils.h"
 #include "rtc_base/refcountedobject.h"
+#include "rtc_base/swap_queue.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread.h"
 #include "system_wrappers/include/event_wrapper.h"
@@ -2818,6 +2819,34 @@ INSTANTIATE_TEST_CASE_P(
 #endif
 
 }  // namespace
+
+TEST(RuntimeSettingTest, TestDefaultCtor) {
+  auto s = AudioProcessing::RuntimeSetting();
+  EXPECT_EQ(AudioProcessing::RuntimeSetting::Type::kNotSpecified, s.type());
+}
+
+TEST(RuntimeSettingTest, TestCapturePreGain) {
+  using Type = AudioProcessing::RuntimeSetting::Type;
+  {
+    auto s = AudioProcessing::RuntimeSetting::CreateCapturePreGain(1.25f);
+    EXPECT_EQ(Type::kCapturePreGain, s.type());
+    float v;
+    s.GetFloat(&v);
+    EXPECT_EQ(1.25f, v);
+  }
+
+#if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
+  EXPECT_DEATH(AudioProcessing::RuntimeSetting::CreateCapturePreGain(0.1f), "");
+#endif
+}
+
+TEST(RuntimeSettingTest, TestUsageWithSwapQueue) {
+  SwapQueue<AudioProcessing::RuntimeSetting> q(1);
+  auto s = AudioProcessing::RuntimeSetting();
+  ASSERT_TRUE(q.Insert(&s));
+  ASSERT_TRUE(q.Remove(&s));
+  EXPECT_EQ(AudioProcessing::RuntimeSetting::Type::kNotSpecified, s.type());
+}
 
 TEST(ApmConfiguration, EnablePostProcessing) {
   // Verify that apm uses a capture post processing module if one is provided.
