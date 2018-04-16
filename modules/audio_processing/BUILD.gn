@@ -143,6 +143,7 @@ rtc_static_library("audio_processing") {
     "../../system_wrappers:metrics_api",
     "agc2:adaptive_digital",
     "agc2:fixed_digital",
+    "agc2:gain_applier",
     "vad",
   ]
 

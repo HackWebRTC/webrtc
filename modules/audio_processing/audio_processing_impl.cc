@@ -20,6 +20,7 @@
 #include "common_audio/signal_processing/include/signal_processing_library.h"
 #include "modules/audio_processing/aec/aec_core.h"
 #include "modules/audio_processing/agc/agc_manager_direct.h"
+#include "modules/audio_processing/agc2/gain_applier.h"
 #include "modules/audio_processing/audio_buffer.h"
 #include "modules/audio_processing/beamformer/nonlinear_beamformer.h"
 #include "modules/audio_processing/common.h"
@@ -186,6 +187,7 @@ bool AudioProcessingImpl::ApmSubmoduleStates::Update(
     bool beamformer_enabled,
     bool adaptive_gain_controller_enabled,
     bool gain_controller2_enabled,
+    bool pre_amplifier_enabled,
     bool echo_controller_enabled,
     bool voice_activity_detector_enabled,
     bool level_estimator_enabled,
@@ -205,6 +207,7 @@ bool AudioProcessingImpl::ApmSubmoduleStates::Update(
       (adaptive_gain_controller_enabled != adaptive_gain_controller_enabled_);
   changed |=
       (gain_controller2_enabled != gain_controller2_enabled_);
+  changed |= (pre_amplifier_enabled_ != pre_amplifier_enabled);
   changed |= (echo_controller_enabled != echo_controller_enabled_);
   changed |= (level_estimator_enabled != level_estimator_enabled_);
   changed |=
@@ -220,6 +223,7 @@ bool AudioProcessingImpl::ApmSubmoduleStates::Update(
     beamformer_enabled_ = beamformer_enabled;
     adaptive_gain_controller_enabled_ = adaptive_gain_controller_enabled;
     gain_controller2_enabled_ = gain_controller2_enabled;
+    pre_amplifier_enabled_ = pre_amplifier_enabled;
     echo_controller_enabled_ = echo_controller_enabled;
     level_estimator_enabled_ = level_estimator_enabled;
     voice_activity_detector_enabled_ = voice_activity_detector_enabled;
@@ -251,7 +255,8 @@ bool AudioProcessingImpl::ApmSubmoduleStates::CaptureMultiBandProcessingActive()
 
 bool AudioProcessingImpl::ApmSubmoduleStates::CaptureFullBandProcessingActive()
     const {
-  return gain_controller2_enabled_ || capture_post_processor_enabled_;
+  return gain_controller2_enabled_ || capture_post_processor_enabled_ ||
+         pre_amplifier_enabled_;
 }
 
 bool AudioProcessingImpl::ApmSubmoduleStates::RenderMultiBandSubModulesActive()
@@ -312,6 +317,7 @@ struct AudioProcessingImpl::ApmPrivateSubmodules {
   std::unique_ptr<EchoControl> echo_controller;
   std::unique_ptr<CustomProcessing> capture_post_processor;
   std::unique_ptr<CustomProcessing> render_pre_processor;
+  std::unique_ptr<GainApplier> pre_amplifier;
 };
 
 AudioProcessingBuilder::AudioProcessingBuilder() = default;
@@ -714,6 +720,7 @@ void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
     config_.gain_controller2 = AudioProcessing::Config::GainController2();
   }
   InitializeGainController2();
+  InitializePreAmplifier();
   private_submodules_->gain_controller2->ApplyConfig(config_.gain_controller2);
   RTC_LOG(LS_INFO) << "Gain Controller 2 activated: "
                    << config_.gain_controller2.enabled;
@@ -913,8 +920,12 @@ void AudioProcessingImpl::HandleRuntimeSettings() {
     RTC_DCHECK(setting.type() != RuntimeSetting::Type::kNotSpecified);
     switch (setting.type()) {
       case RuntimeSetting::Type::kCapturePreGain:
-        // TODO(bugs.chromium.org/9138): Notify
-        // pre-gain when the sub-module is implemented.
+        if (config_.pre_amplifier.enabled) {
+          float value;
+          setting.GetFloat(&value);
+          private_submodules_->pre_amplifier->SetGainFactor(value);
+        }
+        // TODO(bugs.chromium.org/9138): Log setting handling by Aec Dump.
         break;
       default:
         RTC_NOTREACHED();
@@ -1188,6 +1199,12 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
   MaybeUpdateHistograms();
 
   AudioBuffer* capture_buffer = capture_.capture_audio.get();  // For brevity.
+
+  if (private_submodules_->pre_amplifier) {
+    private_submodules_->pre_amplifier->ApplyGain(AudioFrameView<float>(
+        capture_buffer->channels_f(), capture_buffer->num_channels(),
+        capture_buffer->num_frames()));
+  }
 
   capture_input_rms_.Analyze(rtc::ArrayView<const int16_t>(
       capture_buffer->channels_const()[0],
@@ -1771,7 +1788,7 @@ bool AudioProcessingImpl::UpdateActiveSubmoduleStates() {
       capture_nonlocked_.intelligibility_enabled,
       capture_nonlocked_.beamformer_enabled,
       public_submodules_->gain_control->is_enabled(),
-      config_.gain_controller2.enabled,
+      config_.gain_controller2.enabled, config_.pre_amplifier.enabled,
       capture_nonlocked_.echo_controller_enabled,
       public_submodules_->voice_detection->is_enabled(),
       public_submodules_->level_estimator->is_enabled(),
@@ -1834,6 +1851,15 @@ void AudioProcessingImpl::InitializeEchoController() {
 void AudioProcessingImpl::InitializeGainController2() {
   if (config_.gain_controller2.enabled) {
     private_submodules_->gain_controller2->Initialize(proc_sample_rate_hz());
+  }
+}
+
+void AudioProcessingImpl::InitializePreAmplifier() {
+  if (config_.pre_amplifier.enabled) {
+    private_submodules_->pre_amplifier.reset(
+        new GainApplier(true, config_.pre_amplifier.fixed_gain_factor));
+  } else {
+    private_submodules_->pre_amplifier.reset();
   }
 }
 
