@@ -15,6 +15,5 @@
 #include "modules/congestion_controller/network_control/units/data_size.h"
 #include "modules/congestion_controller/network_control/units/time_delta.h"
 #include "modules/congestion_controller/network_control/units/timestamp.h"
-#include "modules/congestion_controller/network_control/units/unit_operators.h"
 
 #endif  // MODULES_CONGESTION_CONTROLLER_NETWORK_CONTROL_UNITS_NETWORK_UNITS_H_

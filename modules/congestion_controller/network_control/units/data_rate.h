@@ -18,6 +18,9 @@
 
 #include "rtc_base/checks.h"
 
+#include "modules/congestion_controller/network_control/units/data_size.h"
+#include "modules/congestion_controller/network_control/units/time_delta.h"
+
 namespace webrtc {
 namespace data_rate_impl {
 constexpr int64_t kPlusInfinityVal = std::numeric_limits<int64_t>::max();
@@ -113,7 +116,13 @@ inline DataRate operator*(const int32_t& scalar, const DataRate& rate) {
   return rate * scalar;
 }
 
+DataRate operator/(const DataSize& size, const TimeDelta& duration);
+TimeDelta operator/(const DataSize& size, const DataRate& rate);
+DataSize operator*(const DataRate& rate, const TimeDelta& duration);
+DataSize operator*(const TimeDelta& duration, const DataRate& rate);
+
 std::string ToString(const DataRate& value);
+
 }  // namespace webrtc
 
 #endif  // MODULES_CONGESTION_CONTROLLER_NETWORK_CONTROL_UNITS_DATA_RATE_H_

@@ -72,5 +72,50 @@ TEST(DataRateTest, MathOperations) {
   EXPECT_EQ((size_a * kInt32Value).bytes_per_second(), kValueA * kInt32Value);
   EXPECT_EQ((size_a * kFloatValue).bytes_per_second(), kValueA * kFloatValue);
 }
+
+TEST(UnitConversionTest, DataRateAndDataSizeAndTimeDelta) {
+  const int64_t kValueA = 5;
+  const int64_t kValueB = 450;
+  const int64_t kValueC = 45000;
+  const TimeDelta delta_a = TimeDelta::seconds(kValueA);
+  const DataRate rate_b = DataRate::bytes_per_second(kValueB);
+  const DataSize size_c = DataSize::bytes(kValueC);
+  EXPECT_EQ((delta_a * rate_b).bytes(), kValueA * kValueB);
+  EXPECT_EQ((rate_b * delta_a).bytes(), kValueA * kValueB);
+  EXPECT_EQ((size_c / delta_a).bytes_per_second(), kValueC / kValueA);
+  EXPECT_EQ((size_c / rate_b).s(), kValueC / kValueB);
+}
+
+#if GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
+TEST(UnitConversionTest, DivisionByZeroFails) {
+  const DataSize non_zero_size = DataSize::bytes(100);
+  const DataSize zero_size = DataSize::Zero();
+  const DataRate zero_rate = DataRate::Zero();
+  const TimeDelta zero_delta = TimeDelta::Zero();
+
+  EXPECT_DEATH(non_zero_size / zero_rate, "");
+  EXPECT_DEATH(non_zero_size / zero_delta, "");
+  EXPECT_DEATH(zero_size / zero_rate, "");
+  EXPECT_DEATH(zero_size / zero_delta, "");
+}
+
+TEST(UnitConversionTest, DivisionFailsOnLargeSize) {
+  // Note that the failure is expected since the current implementation  is
+  // implementated in a way that does not support division of large sizes. If
+  // the implementation is changed, this test can safely be removed.
+  const int64_t kToolargeForDivision =
+      std::numeric_limits<int64_t>::max() / 1000000;
+  const int64_t kJustSmallEnoughForDivision = kToolargeForDivision - 1;
+  const DataSize large_size = DataSize::bytes(kJustSmallEnoughForDivision);
+  const DataSize too_large_size = DataSize::bytes(kToolargeForDivision);
+  const DataRate data_rate = DataRate::kbps(100);
+  const TimeDelta time_delta = TimeDelta::ms(100);
+  EXPECT_TRUE((large_size / data_rate).IsFinite());
+  EXPECT_TRUE((large_size / time_delta).IsFinite());
+
+  EXPECT_DEATH(too_large_size / data_rate, "");
+  EXPECT_DEATH(too_large_size / time_delta, "");
+}
+#endif  // GTEST_HAS_DEATH_TEST && !!defined(WEBRTC_ANDROID)
 }  // namespace test
 }  // namespace webrtc
