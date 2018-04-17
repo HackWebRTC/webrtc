@@ -56,6 +56,12 @@ class NetEqStatsGetter : public NetEqGetAudioCallback {
   // valid value.
   explicit NetEqStatsGetter(std::unique_ptr<NetEqDelayAnalyzer> delay_analyzer);
 
+  int64_t stats_query_interval_ms() const { return stats_query_interval_ms_; }
+
+  void set_stats_query_interval_ms(int64_t stats_query_interval_ms) {
+    stats_query_interval_ms_ = stats_query_interval_ms;
+  }
+
   void BeforeGetAudio(NetEq* neteq) override;
 
   void AfterGetAudio(int64_t time_now_ms,
@@ -79,7 +85,8 @@ class NetEqStatsGetter : public NetEqGetAudioCallback {
 
  private:
   std::unique_ptr<NetEqDelayAnalyzer> delay_analyzer_;
-  size_t counter_ = 0;
+  int64_t stats_query_interval_ms_ = 1000;
+  int64_t last_stats_query_time_ms_ = 0;
   std::vector<NetEqNetworkStatistics> stats_;
   size_t current_concealment_event_ = 1;
   uint64_t voice_concealed_samples_until_last_event_ = 0;

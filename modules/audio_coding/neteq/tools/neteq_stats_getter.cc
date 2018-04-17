@@ -16,6 +16,7 @@
 
 #include "rtc_base/checks.h"
 #include "rtc_base/strings/string_builder.h"
+#include "rtc_base/timeutils.h"
 
 namespace webrtc {
 namespace test {
@@ -44,11 +45,15 @@ void NetEqStatsGetter::AfterGetAudio(int64_t time_now_ms,
                                      const AudioFrame& audio_frame,
                                      bool muted,
                                      NetEq* neteq) {
-  if (++counter_ >= 100) {
-    counter_ = 0;
+  // TODO(minyue): Get stats should better not be called as a call back after
+  // get audio. It is called independently from get audio in practice.
+  if (last_stats_query_time_ms_ == 0 ||
+      rtc::TimeDiff(time_now_ms, last_stats_query_time_ms_) >=
+          stats_query_interval_ms_) {
     NetEqNetworkStatistics stats;
     RTC_CHECK_EQ(neteq->NetworkStatistics(&stats), 0);
     stats_.push_back(stats);
+    last_stats_query_time_ms_ = time_now_ms;
   }
   const auto lifetime_stat = neteq->GetLifetimeStatistics();
   if (current_concealment_event_ != lifetime_stat.concealment_events &&
