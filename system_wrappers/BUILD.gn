@@ -25,8 +25,6 @@ rtc_static_library("system_wrappers") {
     "source/cpu_features.cc",
     "source/cpu_info.cc",
     "source/event.cc",
-    "source/event_timer_posix.cc",
-    "source/event_timer_posix.h",
     "source/event_timer_win.cc",
     "source/event_timer_win.h",
     "source/rtp_to_ntp_estimator.cc",
@@ -47,6 +45,13 @@ rtc_static_library("system_wrappers") {
     "../rtc_base:checks",
     "../rtc_base/synchronization:rw_lock_wrapper",
   ]
+
+  if (is_posix || is_fuchsia) {
+    sources += [
+      "source/event_timer_posix.cc",
+      "source/event_timer_posix.h",
+    ]
+  }
 
   if (is_android) {
     defines += [ "WEBRTC_THREAD_RR" ]
@@ -208,13 +213,18 @@ if (rtc_include_tests) {
     testonly = true
     sources = [
       "source/clock_unittest.cc",
-      "source/event_timer_posix_unittest.cc",
       "source/metrics_default_unittest.cc",
       "source/metrics_unittest.cc",
       "source/ntp_time_unittest.cc",
       "source/rtp_to_ntp_estimator_unittest.cc",
     ]
     configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
+
+    if (is_posix || is_fuchsia) {
+      sources += [
+        "source/event_timer_posix_unittest.cc",
+      ]
+    }
 
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
