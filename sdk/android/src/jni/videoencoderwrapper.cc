@@ -66,6 +66,8 @@ int32_t VideoEncoderWrapper::InitEncodeInternal(JNIEnv* jni) {
       break;
     case kVideoCodecVP9:
       automatic_resize_on = codec_settings_.VP9()->automaticResizeOn;
+      gof_.SetGofInfoVP9(TemporalStructureMode::kTemporalStructureMode1);
+      gof_idx_ = 0;
       break;
     default:
       automatic_resize_on = true;
@@ -414,6 +416,8 @@ CodecSpecificInfo VideoEncoderWrapper::ParseCodecSpecificInfo(
       info.codecSpecific.VP9.gof_idx =
           static_cast<uint8_t>(gof_idx_++ % gof_.num_frames_in_gof);
       info.codecSpecific.VP9.num_spatial_layers = 1;
+      info.codecSpecific.VP9.first_frame_in_picture = true;
+      info.codecSpecific.VP9.end_of_superframe = true;
       info.codecSpecific.VP9.spatial_layer_resolution_present = false;
       if (info.codecSpecific.VP9.ss_data_available) {
         info.codecSpecific.VP9.spatial_layer_resolution_present = true;
