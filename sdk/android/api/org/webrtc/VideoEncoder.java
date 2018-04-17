@@ -148,6 +148,11 @@ public interface VideoEncoder {
       this.low = low;
       this.high = high;
     }
+
+    @Override
+    public String toString() {
+      return on ? "[ " + low + ", " + high + " ]" : "OFF";
+    }
   }
 
   public interface Callback {
