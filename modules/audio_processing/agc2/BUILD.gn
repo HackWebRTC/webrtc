@@ -43,7 +43,6 @@ rtc_source_set("adaptive_digital") {
     "../../../rtc_base:safe_minmax",
     "../vad",
     "../vad:vad_with_level",
-    "rnn_vad",
   ]
 }
 
