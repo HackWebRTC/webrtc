@@ -22,8 +22,6 @@
 
 namespace webrtc {
 
-class EventTimerWrapper;
-
 namespace test {
 
 class FrameGenerator;

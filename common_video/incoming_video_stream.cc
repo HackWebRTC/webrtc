@@ -15,7 +15,6 @@
 #include "common_video/video_render_frames.h"
 #include "rtc_base/timeutils.h"
 #include "rtc_base/trace_event.h"
-#include "system_wrappers/include/event_wrapper.h"
 
 namespace webrtc {
 namespace {
