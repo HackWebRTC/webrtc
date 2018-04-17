@@ -149,14 +149,6 @@ class RtcpPacketTypeCounterObserver {
       const RtcpPacketTypeCounter& packet_counter) = 0;
 };
 
-// Rate statistics for a stream.
-struct BitrateStatistics {
-  BitrateStatistics() : bitrate_bps(0), packet_rate(0) {}
-
-  uint32_t bitrate_bps;  // Bitrate in bits per second.
-  uint32_t packet_rate;  // Packet rate in packets per second.
-};
-
 // Callback, used to notify an observer whenever new rates have been estimated.
 class BitrateStatisticsObserver {
  public:
