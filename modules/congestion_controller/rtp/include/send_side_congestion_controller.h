@@ -163,8 +163,6 @@ class SendSideCongestionController
                                           int64_t now_ms)
       RTC_RUN_ON(task_queue_ptr_);
 
-  void PostUpdates(NetworkControlUpdate update) RTC_RUN_ON(task_queue_ptr_);
-
   const Clock* const clock_;
   // PacedSender is thread safe and doesn't need protection here.
   PacedSender* const pacer_;
