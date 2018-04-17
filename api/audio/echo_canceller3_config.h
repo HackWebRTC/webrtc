@@ -71,20 +71,31 @@ struct EchoCanceller3Config {
   } ep_strength;
 
   struct Mask {
+    Mask();
+    Mask(const Mask& m);
     float m1 = 0.01f;
     float m2 = 0.0001f;
     float m3 = 0.01f;
-    float m4 = 0.1f;
-    float m5 = 0.1f;
+    float m5 = 0.01f;
     float m6 = 0.0001f;
     float m7 = 0.01f;
     float m8 = 0.0001f;
     float m9 = 0.1f;
+
+    float gain_curve_offset = 1.45f;
+    float gain_curve_slope = 5.f;
+    float temporal_masking_lf = 0.9f;
+    float temporal_masking_hf = 0.6f;
+    size_t temporal_masking_lf_bands = 3;
   } gain_mask;
 
   struct EchoAudibility {
     float low_render_limit = 4 * 64.f;
     float normal_render_limit = 64.f;
+    float floor_power = 2 * 64.f;
+    float audibility_threshold_lf = 10;
+    float audibility_threshold_mf = 10;
+    float audibility_threshold_hf = 10;
   } echo_audibility;
 
   struct RenderLevels {

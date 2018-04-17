@@ -209,12 +209,20 @@ EchoCanceller3Config ParseAec3Parameters(const std::string& filename) {
     ReadParam(section, "m1", &cfg.gain_mask.m1);
     ReadParam(section, "m2", &cfg.gain_mask.m2);
     ReadParam(section, "m3", &cfg.gain_mask.m3);
-    ReadParam(section, "m4", &cfg.gain_mask.m4);
     ReadParam(section, "m5", &cfg.gain_mask.m5);
     ReadParam(section, "m6", &cfg.gain_mask.m6);
     ReadParam(section, "m7", &cfg.gain_mask.m7);
     ReadParam(section, "m8", &cfg.gain_mask.m8);
     ReadParam(section, "m9", &cfg.gain_mask.m9);
+
+    ReadParam(section, "gain_curve_offset", &cfg.gain_mask.gain_curve_offset);
+    ReadParam(section, "gain_curve_slope", &cfg.gain_mask.gain_curve_slope);
+    ReadParam(section, "temporal_masking_lf",
+              &cfg.gain_mask.temporal_masking_lf);
+    ReadParam(section, "temporal_masking_hf",
+              &cfg.gain_mask.temporal_masking_hf);
+    ReadParam(section, "temporal_masking_lf_bands",
+              &cfg.gain_mask.temporal_masking_lf_bands);
   }
 
   if (rtc::GetValueFromJsonObject(root, "echo_audibility", &section)) {
@@ -222,6 +230,14 @@ EchoCanceller3Config ParseAec3Parameters(const std::string& filename) {
               &cfg.echo_audibility.low_render_limit);
     ReadParam(section, "normal_render_limit",
               &cfg.echo_audibility.normal_render_limit);
+
+    ReadParam(section, "floor_power", &cfg.echo_audibility.floor_power);
+    ReadParam(section, "audibility_threshold_lf",
+              &cfg.echo_audibility.audibility_threshold_lf);
+    ReadParam(section, "audibility_threshold_mf",
+              &cfg.echo_audibility.audibility_threshold_mf);
+    ReadParam(section, "audibility_threshold_hf",
+              &cfg.echo_audibility.audibility_threshold_hf);
   }
 
   if (rtc::GetValueFromJsonObject(root, "gain_updates", &section)) {
