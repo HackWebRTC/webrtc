@@ -230,7 +230,8 @@ int DecoderDatabase::InsertExternal(uint8_t rtp_payload_type,
   }
 
   const auto opt_db_format = NetEqDecoderToSdpAudioFormat(codec_type);
-  const SdpAudioFormat format = opt_db_format.value_or({"arbitrary", 0, 0});
+  const SdpAudioFormat format =
+      opt_db_format.value_or(SdpAudioFormat("arbitrary", 0, 0));
 
   std::pair<DecoderMap::iterator, bool> ret;
   DecoderInfo info(format, decoder, codec_name);
