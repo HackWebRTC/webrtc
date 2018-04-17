@@ -48,6 +48,7 @@ std::string VideoStream::ToString() const {
 
 VideoEncoderConfig::VideoEncoderConfig()
     : codec_type(kVideoCodecUnknown),
+      video_format("Unset"),
       content_type(ContentType::kRealtimeVideo),
       encoder_specific_settings(nullptr),
       min_transmit_bitrate_bps(0),

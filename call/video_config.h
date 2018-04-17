@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "api/optional.h"
+#include "api/video_codecs/sdp_video_format.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/basictypes.h"
 #include "rtc_base/refcount.h"
@@ -126,7 +127,10 @@ class VideoEncoderConfig {
   ~VideoEncoderConfig();
   std::string ToString() const;
 
+  // TODO(nisse): Consolidate on one of these.
   VideoCodecType codec_type;
+  SdpVideoFormat video_format;
+
   rtc::scoped_refptr<VideoStreamFactoryInterface> video_stream_factory;
   std::vector<SpatialLayer> spatial_layers;
   ContentType content_type;
