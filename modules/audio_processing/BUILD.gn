@@ -552,6 +552,7 @@ if (rtc_include_tests) {
       "agc2:adaptive_digital_unittests",
       "agc2:fixed_digital_unittests",
       "agc2:noise_estimator_unittests",
+      "agc2/rnn_vad:unittests",
       "test/conversational_speech:unittest",
       "vad:vad_unittests",
       "//testing/gtest",
