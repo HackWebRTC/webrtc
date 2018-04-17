@@ -172,7 +172,6 @@ class ControlHandler {
   void OnPacerQueueUpdate(PacerQueueUpdate msg);
 
   rtc::Optional<TargetTransferRate> last_transfer_rate();
-  bool pacer_configured();
 
  private:
   void OnNetworkInvalidation();
@@ -185,9 +184,6 @@ class ControlHandler {
                                            int64_t rtt);
   NetworkChangedObserver* observer_ = nullptr;
   PacerController* pacer_controller_;
-
-  rtc::Optional<TargetTransferRate> last_target_rate_;
-  bool pacer_configured_ = false;
 
   rtc::Optional<TargetTransferRate> current_target_rate_msg_;
   bool network_available_ = true;
@@ -219,7 +215,6 @@ void ControlHandler::OnCongestionWindow(CongestionWindow window) {
 void ControlHandler::OnPacerConfig(PacerConfig config) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
   pacer_controller_->OnPacerConfig(config);
-  pacer_configured_ = true;
 }
 
 void ControlHandler::OnProbeClusterConfig(ProbeClusterConfig config) {
@@ -230,7 +225,6 @@ void ControlHandler::OnProbeClusterConfig(ProbeClusterConfig config) {
 void ControlHandler::OnTargetTransferRate(TargetTransferRate target_rate) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
   current_target_rate_msg_ = target_rate;
-  last_target_rate_ = target_rate;
   OnNetworkInvalidation();
 }
 
@@ -312,12 +306,7 @@ bool ControlHandler::IsSendQueueFull() const {
 
 rtc::Optional<TargetTransferRate> ControlHandler::last_transfer_rate() {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
-  return last_target_rate_;
-}
-
-bool ControlHandler::pacer_configured() {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
-  return pacer_configured_;
+  return current_target_rate_msg_;
 }
 }  // namespace send_side_cc_internal
 
