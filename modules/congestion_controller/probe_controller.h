@@ -83,6 +83,7 @@ class ProbeController {
   bool enable_periodic_alr_probing_ RTC_GUARDED_BY(critsect_);
   int64_t time_of_last_large_drop_ms_ RTC_GUARDED_BY(critsect_);
   int64_t bitrate_before_last_large_drop_bps_ RTC_GUARDED_BY(critsect_);
+  int64_t max_total_allocated_bitrate_ RTC_GUARDED_BY(critsect_);
 
   bool in_rapid_recovery_experiment_ RTC_GUARDED_BY(critsect_);
   // For WebRTC.BWE.MidCallProbing.* metric.

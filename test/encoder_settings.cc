@@ -48,10 +48,37 @@ std::vector<VideoStream> CreateVideoStreams(
     stream_settings[i].max_framerate = 30;
     stream_settings[i].min_bitrate_bps =
         DefaultVideoStreamFactory::kDefaultMinBitratePerStream[i];
-    stream_settings[i].target_bitrate_bps = stream_settings[i].max_bitrate_bps =
-        std::min(bitrate_left_bps,
-                 DefaultVideoStreamFactory::kMaxBitratePerStream[i]);
+
+    int target_bitrate_bps = -1;
+    int max_bitrate_bps = -1;
+    // Use configured values instead of default values if values has been
+    // configured.
+    if (i < encoder_config.simulcast_layers.size()) {
+      const VideoStream& stream = encoder_config.simulcast_layers[i];
+
+      max_bitrate_bps =
+          stream.max_bitrate_bps > 0
+              ? stream.max_bitrate_bps
+              : DefaultVideoStreamFactory::kMaxBitratePerStream[i];
+      max_bitrate_bps = std::min(bitrate_left_bps, max_bitrate_bps);
+
+      target_bitrate_bps =
+          stream.target_bitrate_bps > 0
+              ? stream.target_bitrate_bps
+              : DefaultVideoStreamFactory::kMaxBitratePerStream[i];
+      target_bitrate_bps = std::min(max_bitrate_bps, target_bitrate_bps);
+    } else {
+      max_bitrate_bps = std::min(
+          bitrate_left_bps, DefaultVideoStreamFactory::kMaxBitratePerStream[i]);
+      target_bitrate_bps = max_bitrate_bps;
+    }
+
+    RTC_DCHECK_NE(target_bitrate_bps, -1);
+    RTC_DCHECK_NE(max_bitrate_bps, -1);
+    stream_settings[i].target_bitrate_bps = target_bitrate_bps;
+    stream_settings[i].max_bitrate_bps = max_bitrate_bps;
     stream_settings[i].max_qp = 56;
+
     if (i < encoder_config.simulcast_layers.size()) {
       // Higher level controls are setting the active configuration for the
       // VideoStream.

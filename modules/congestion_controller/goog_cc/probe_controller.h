@@ -90,6 +90,7 @@ class ProbeController {
   bool enable_periodic_alr_probing_;
   int64_t time_of_last_large_drop_ms_;
   int64_t bitrate_before_last_large_drop_bps_;
+  int64_t max_total_allocated_bitrate_;
 
   bool in_rapid_recovery_experiment_;
   // For WebRTC.BWE.MidCallProbing.* metric.

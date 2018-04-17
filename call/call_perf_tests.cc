@@ -659,7 +659,6 @@ TEST_F(CallPerfTest, NoPadWithoutMinTransmitBitrate) {
 TEST_F(CallPerfTest, MAYBE_KeepsHighBitrateWhenReconfiguringSender) {
   static const uint32_t kInitialBitrateKbps = 400;
   static const uint32_t kReconfigureThresholdKbps = 600;
-  static const uint32_t kPermittedReconfiguredBitrateDiffKbps = 100;
 
   class VideoStreamFactory
       : public VideoEncoderConfig::VideoStreamFactoryInterface {
@@ -710,9 +709,7 @@ TEST_F(CallPerfTest, MAYBE_KeepsHighBitrateWhenReconfiguringSender) {
         EXPECT_EQ(2 * kDefaultWidth, config->width);
         EXPECT_EQ(2 * kDefaultHeight, config->height);
         EXPECT_GE(last_set_bitrate_kbps_, kReconfigureThresholdKbps);
-        EXPECT_GT(
-            config->startBitrate,
-            last_set_bitrate_kbps_ - kPermittedReconfiguredBitrateDiffKbps)
+        EXPECT_GT(config->startBitrate, kReconfigureThresholdKbps)
             << "Encoder reconfigured with bitrate too far away from last set.";
         observation_complete_.Set();
       }
