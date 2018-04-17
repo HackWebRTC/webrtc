@@ -123,7 +123,7 @@ FakeVideoSendStream::FakeVideoSendStream(
       framerate_scaling_enabled_(false),
       source_(nullptr),
       num_swapped_frames_(0) {
-  RTC_DCHECK(config.encoder_settings.encoder != NULL);
+  RTC_DCHECK(config.encoder_settings.encoder_factory != nullptr);
   ReconfigureVideoEncoder(std::move(encoder_config));
 }
 

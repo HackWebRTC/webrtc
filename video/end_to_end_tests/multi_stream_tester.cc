@@ -18,6 +18,7 @@
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "test/call_test.h"
 #include "test/encoder_settings.h"
+#include "test/function_video_encoder_factory.h"
 
 namespace webrtc {
 
@@ -48,7 +49,8 @@ void MultiStreamTester::RunTest() {
   VideoReceiveStream* receive_streams[kNumStreams];
   test::FrameGeneratorCapturer* frame_generators[kNumStreams];
   std::vector<std::unique_ptr<VideoDecoder>> allocated_decoders;
-  std::unique_ptr<VideoEncoder> encoders[kNumStreams];
+  test::FunctionVideoEncoderFactory encoder_factory(
+      []() { return VP8Encoder::Create(); });
 
   task_queue_->SendTask([&]() {
     sender_call = rtc::WrapUnique(Call::Create(config));
@@ -61,9 +63,6 @@ void MultiStreamTester::RunTest() {
     sender_transport->SetReceiver(receiver_call->Receiver());
     receiver_transport->SetReceiver(sender_call->Receiver());
 
-    for (size_t i = 0; i < kNumStreams; ++i)
-      encoders[i] = VP8Encoder::Create();
-
     for (size_t i = 0; i < kNumStreams; ++i) {
       uint32_t ssrc = codec_settings[i].ssrc;
       int width = codec_settings[i].width;
@@ -71,7 +70,7 @@ void MultiStreamTester::RunTest() {
 
       VideoSendStream::Config send_config(sender_transport.get());
       send_config.rtp.ssrcs.push_back(ssrc);
-      send_config.encoder_settings.encoder = encoders[i].get();
+      send_config.encoder_settings.encoder_factory = &encoder_factory;
       send_config.rtp.payload_name = "VP8";
       send_config.rtp.payload_type = kVideoPayloadType;
       VideoEncoderConfig encoder_config;

@@ -19,9 +19,9 @@
 #include "modules/audio_device/include/test_audio_device.h"
 #include "test/encoder_settings.h"
 #include "test/fake_decoder.h"
-#include "test/fake_encoder.h"
 #include "test/fake_videorenderer.h"
 #include "test/frame_generator_capturer.h"
+#include "test/function_video_encoder_factory.h"
 #include "test/rtp_rtcp_observer.h"
 #include "test/single_threaded_task_queue.h"
 
@@ -138,7 +138,8 @@ class CallTest : public ::testing::Test {
   std::vector<FlexfecReceiveStream*> flexfec_receive_streams_;
 
   std::unique_ptr<test::FrameGeneratorCapturer> frame_generator_capturer_;
-  test::FakeEncoder fake_encoder_;
+  test::FunctionVideoEncoderFactory fake_encoder_factory_;
+  int fake_encoder_max_bitrate_ = -1;
   std::vector<std::unique_ptr<VideoDecoder>> allocated_decoders_;
   size_t num_video_streams_;
   size_t num_audio_streams_;

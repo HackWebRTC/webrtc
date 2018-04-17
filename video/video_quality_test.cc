@@ -26,6 +26,7 @@
 #include "modules/rtp_rtcp/source/rtp_utility.h"
 #include "modules/video_coding/codecs/h264/include/h264.h"
 #include "modules/video_coding/codecs/multiplex/include/multiplex_encoder_adapter.h"
+#include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/codecs/vp8/include/vp8_common_types.h"
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
 #include "rtc_base/cpu_time.h"
@@ -1074,6 +1075,36 @@ class VideoAnalyzer : public PacketReceiver,
   const int64_t start_ms_;
 };
 
+// Not used by these tests.
+std::vector<SdpVideoFormat>
+VideoQualityTest::TestVideoEncoderFactory::GetSupportedFormats() const {
+  RTC_NOTREACHED();
+  return {};
+}
+
+VideoEncoderFactory::CodecInfo
+VideoQualityTest::TestVideoEncoderFactory::QueryVideoEncoder(
+    const SdpVideoFormat& format) const {
+  CodecInfo codec_info;
+  codec_info.is_hardware_accelerated = false;
+  codec_info.has_internal_source = false;
+  return codec_info;
+}
+
+std::unique_ptr<VideoEncoder>
+VideoQualityTest::TestVideoEncoderFactory::CreateVideoEncoder(
+    const SdpVideoFormat& format) {
+  if (format.name == "VP8") {
+    return rtc::MakeUnique<VP8EncoderSimulcastProxy>(
+        &internal_encoder_factory_);
+  } else if (format.name == "multiplex") {
+    return rtc::MakeUnique<MultiplexEncoderAdapter>(
+        &internal_encoder_factory_, SdpVideoFormat(cricket::kVp9CodecName));
+  } else {
+    return internal_encoder_factory_.CreateVideoEncoder(format);
+  }
+}
+
 VideoQualityTest::VideoQualityTest()
     : clock_(Clock::GetRealTimeClock()), receive_logs_(0), send_logs_(0) {
   payload_type_map_ = test::CallTest::payload_type_map_;
@@ -1354,7 +1385,6 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
   CreateMatchingAudioAndFecConfigs(recv_transport);
   video_receive_configs_.clear();
   video_send_configs_.clear();
-  video_encoders_.clear();
   video_encoder_configs_.clear();
   allocated_decoders_.clear();
   bool decode_all_receive_streams = true;
@@ -1363,7 +1393,6 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
   video_encoder_configs_.resize(num_video_streams_);
   for (size_t video_idx = 0; video_idx < num_video_streams_; ++video_idx) {
     video_send_configs_.push_back(VideoSendStream::Config(send_transport));
-    video_encoders_.push_back(nullptr);
     video_encoder_configs_.push_back(VideoEncoderConfig());
     num_video_substreams = params_.ss[video_idx].streams.size();
     RTC_CHECK_GT(num_video_substreams, 0);
@@ -1372,26 +1401,20 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
 
     int payload_type;
     if (params_.video[video_idx].codec == "H264") {
-      video_encoders_[video_idx] =
-          H264Encoder::Create(cricket::VideoCodec("H264"));
       payload_type = kPayloadTypeH264;
     } else if (params_.video[video_idx].codec == "VP8") {
-      video_encoders_[video_idx] =
-          rtc::MakeUnique<VP8EncoderSimulcastProxy>(&internal_encoder_factory_);
       payload_type = kPayloadTypeVP8;
     } else if (params_.video[video_idx].codec == "VP9") {
-      video_encoders_[video_idx] = VP9Encoder::Create();
       payload_type = kPayloadTypeVP9;
     } else if (params_.video[video_idx].codec == "multiplex") {
-      video_encoders_[video_idx] = rtc::MakeUnique<MultiplexEncoderAdapter>(
-          &internal_encoder_factory_, SdpVideoFormat(cricket::kVp9CodecName));
       payload_type = kPayloadTypeVP9;
     } else {
       RTC_NOTREACHED() << "Codec not supported!";
       return;
     }
-    video_send_configs_[video_idx].encoder_settings.encoder =
-        video_encoders_[video_idx].get();
+    video_send_configs_[video_idx].encoder_settings.encoder_factory =
+        &video_encoder_factory_;
+
     video_send_configs_[video_idx].rtp.payload_name =
         params_.video[video_idx].codec;
     video_send_configs_[video_idx].rtp.payload_type = payload_type;
@@ -1415,6 +1438,9 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
                      test::kVideoContentTypeExtensionId));
     video_send_configs_[video_idx].rtp.extensions.push_back(RtpExtension(
         RtpExtension::kVideoTimingUri, test::kVideoTimingExtensionId));
+
+    video_encoder_configs_[video_idx].video_format.name =
+        params_.video[video_idx].codec;
 
     video_encoder_configs_[video_idx].codec_type =
         PayloadStringToCodecType(params_.video[video_idx].codec);
@@ -1600,14 +1626,13 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
 void VideoQualityTest::SetupThumbnails(Transport* send_transport,
                                        Transport* recv_transport) {
   for (int i = 0; i < params_.call.num_thumbnails; ++i) {
-    thumbnail_encoders_.emplace_back(VP8Encoder::Create());
-
     // Thumbnails will be send in the other way: from receiver_call to
     // sender_call.
     VideoSendStream::Config thumbnail_send_config(recv_transport);
     thumbnail_send_config.rtp.ssrcs.push_back(kThumbnailSendSsrcStart + i);
-    thumbnail_send_config.encoder_settings.encoder =
-        thumbnail_encoders_.back().get();
+    // TODO(nisse): Could use a simpler VP8-only encoder factory.
+    thumbnail_send_config.encoder_settings.encoder_factory =
+        &video_encoder_factory_;
     thumbnail_send_config.rtp.payload_name = params_.video[0].codec;
     thumbnail_send_config.rtp.payload_type = kPayloadTypeVP8;
     thumbnail_send_config.rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
@@ -1625,6 +1650,7 @@ void VideoQualityTest::SetupThumbnails(Transport* send_transport,
 
     VideoEncoderConfig thumbnail_encoder_config;
     thumbnail_encoder_config.codec_type = kVideoCodecVP8;
+    thumbnail_encoder_config.video_format.name = "VP8";
     thumbnail_encoder_config.min_transmit_bitrate_bps = 7500;
     thumbnail_send_config.suspend_below_min_bitrate =
         params_.video[0].suspend_below_min_bitrate;

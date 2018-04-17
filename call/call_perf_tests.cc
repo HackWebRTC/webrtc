@@ -29,6 +29,7 @@
 #include "test/call_test.h"
 #include "test/direct_transport.h"
 #include "test/drifting_clock.h"
+#include "test/encoder_proxy_factory.h"
 #include "test/encoder_settings.h"
 #include "test/fake_encoder.h"
 #include "test/field_trial.h"
@@ -637,7 +638,7 @@ void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
     std::vector<double> bitrate_kbps_list_;
   } test(pad_to_min_bitrate);
 
-  fake_encoder_.SetMaxBitrate(kMaxEncodeBitrateKbps);
+  fake_encoder_max_bitrate_ = kMaxEncodeBitrateKbps;
   RunBaseTest(&test);
 }
 
@@ -687,7 +688,8 @@ TEST_F(CallPerfTest, MAYBE_KeepsHighBitrateWhenReconfiguringSender) {
           encoder_inits_(0),
           last_set_bitrate_kbps_(0),
           send_stream_(nullptr),
-          frame_generator_(nullptr) {}
+          frame_generator_(nullptr),
+          encoder_factory_(this) {}
 
     int32_t InitEncode(const VideoCodec* config,
                        int32_t number_of_cores,
@@ -738,7 +740,7 @@ TEST_F(CallPerfTest, MAYBE_KeepsHighBitrateWhenReconfiguringSender) {
         VideoSendStream::Config* send_config,
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
-      send_config->encoder_settings.encoder = this;
+      send_config->encoder_settings.encoder_factory = &encoder_factory_;
       encoder_config->max_bitrate_bps = 2 * kReconfigureThresholdKbps * 1000;
       encoder_config->video_stream_factory =
           new rtc::RefCountedObject<VideoStreamFactory>();
@@ -773,6 +775,7 @@ TEST_F(CallPerfTest, MAYBE_KeepsHighBitrateWhenReconfiguringSender) {
     uint32_t last_set_bitrate_kbps_;
     VideoSendStream* send_stream_;
     test::FrameGeneratorCapturer* frame_generator_;
+    test::EncoderProxyFactory encoder_factory_;
     VideoEncoderConfig encoder_config_;
   } test;
 

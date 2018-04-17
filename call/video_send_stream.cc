@@ -93,7 +93,6 @@ std::string VideoSendStream::Config::EncoderSettings::ToString() const {
   rtc::SimpleStringBuilder ss(buf);
   ss << "{encoder_factory: "
      << (encoder_factory ? "(VideoEncoderFactory)" : "(nullptr)");
-  ss << ", encoder: " << (encoder ? "(VideoEncoder)" : "nullptr");
   ss << '}';
   return ss.str();
 }
