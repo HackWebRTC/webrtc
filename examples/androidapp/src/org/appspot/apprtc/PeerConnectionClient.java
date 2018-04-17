@@ -650,8 +650,8 @@ public class PeerConnectionClient {
 
     return JavaAudioDeviceModule.builder(appContext)
         .setSamplesReadyCallback(saveRecordedAudioToFile)
-        .setUseHardwareAcousticEchoCanceler(peerConnectionParameters.disableBuiltInAEC)
-        .setUseHardwareNoiseSuppressor(peerConnectionParameters.disableBuiltInNS)
+        .setUseHardwareAcousticEchoCanceler(!peerConnectionParameters.disableBuiltInAEC)
+        .setUseHardwareNoiseSuppressor(!peerConnectionParameters.disableBuiltInNS)
         .setAudioRecordErrorCallback(audioRecordErrorCallback)
         .setAudioTrackErrorCallback(audioTrackErrorCallback)
         .createAudioDeviceModule();
