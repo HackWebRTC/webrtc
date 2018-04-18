@@ -53,6 +53,11 @@ inline std::string ToString(H264PacketizationMode mode) {
   return "";
 }
 
+inline std::ostream& operator<<(std::ostream& stream,
+                                H264PacketizationMode mode) {
+  return stream << ToString(mode);
+}
+
 struct NaluInfo {
   uint8_t type;
   int sps_id;

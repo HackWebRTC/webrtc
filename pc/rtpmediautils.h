@@ -44,14 +44,6 @@ RtpTransceiverDirection RtpTransceiverDirectionWithRecvSet(
 // Returns an unspecified string representation of the given direction.
 const char* RtpTransceiverDirectionToString(RtpTransceiverDirection direction);
 
-#ifdef UNIT_TEST
-inline std::ostream& operator<<(  // no-presubmit-check TODO(webrtc:8982)
-    std::ostream& os,             // no-presubmit-check TODO(webrtc:8982)
-    RtpTransceiverDirection direction) {
-  return os << RtpTransceiverDirectionToString(direction);
-}
-#endif  // UNIT_TEST
-
 }  // namespace webrtc
 
 #endif  // PC_RTPMEDIAUTILS_H_

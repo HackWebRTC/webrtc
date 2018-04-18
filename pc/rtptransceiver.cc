@@ -16,6 +16,10 @@
 
 namespace webrtc {
 
+std::ostream& operator<<(std::ostream& os, RtpTransceiverDirection direction) {
+  return os << RtpTransceiverDirectionToString(direction);
+}
+
 RtpTransceiver::RtpTransceiver(cricket::MediaType media_type)
     : unified_plan_(false), media_type_(media_type) {
   RTC_DCHECK(media_type == cricket::MEDIA_TYPE_AUDIO ||
