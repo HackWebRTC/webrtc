@@ -64,7 +64,7 @@
 
 + (BOOL)isMetalAvailable {
 #if defined(RTC_SUPPORTS_METAL)
-  return YES;
+  return MTLCreateSystemDefaultDevice() != nil;
 #else
   return NO;
 #endif
