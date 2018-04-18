@@ -225,7 +225,7 @@ public class PeerConnectionTest {
     // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
     @SuppressWarnings("NoSynchronizedMethodCheck")
     public synchronized void onAddStream(MediaStream stream) {
-      assertEquals(expectedAddStreamLabels.remove(), stream.label());
+      assertEquals(expectedAddStreamLabels.remove(), stream.getId());
       for (AudioTrack track : stream.audioTracks) {
         assertEquals("audio", track.kind());
       }
@@ -248,7 +248,7 @@ public class PeerConnectionTest {
     // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
     @SuppressWarnings("NoSynchronizedMethodCheck")
     public synchronized void onRemoveStream(MediaStream stream) {
-      assertEquals(expectedRemoveStreamLabels.remove(), stream.label());
+      assertEquals(expectedRemoveStreamLabels.remove(), stream.getId());
       WeakReference<VideoRenderer> renderer = renderers.remove(stream);
       assertNotNull(renderer);
       assertNotNull(renderer.get());

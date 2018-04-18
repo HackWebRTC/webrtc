@@ -88,12 +88,6 @@ public class MediaStream {
     JniCommon.nativeReleaseRef(nativeStream);
   }
 
-  // TODO(shampson): Remove this when downstreams have moved to using id() instead.
-  @Deprecated
-  public String label() {
-    return nativeGetId(nativeStream);
-  }
-
   public String getId() {
     return nativeGetId(nativeStream);
   }
