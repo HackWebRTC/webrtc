@@ -120,11 +120,6 @@ bool IPAddress::operator <(const IPAddress &other) const {
   return false;
 }
 
-std::ostream& operator<<(std::ostream& os, const IPAddress& ip) {
-  os << ip.ToString();
-  return os;
-}
-
 in6_addr IPAddress::ipv6_address() const {
   return u_.ip6;
 }
@@ -214,10 +209,6 @@ const InterfaceAddress& InterfaceAddress::operator=(
   ipv6_flags_ = other.ipv6_flags_;
   static_cast<IPAddress&>(*this) = other;
   return *this;
-}
-
-std::ostream& operator<<(std::ostream& os, const InterfaceAddress& ip) {
-  return os << ip.ToString();
 }
 
 std::string InterfaceAddress::ToString() const {

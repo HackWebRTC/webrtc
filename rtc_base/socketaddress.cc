@@ -199,11 +199,6 @@ bool SocketAddress::FromString(const std::string& str) {
   return true;
 }
 
-std::ostream& operator<<(std::ostream& os, const SocketAddress& addr) {
-  os << addr.HostAsURIString() << ":" << addr.port();
-  return os;
-}
-
 bool SocketAddress::IsAnyIP() const {
   return IPIsAny(ip_);
 }
