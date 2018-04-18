@@ -10,7 +10,6 @@
 
 #include "logging/rtc_event_log/rtc_event_log.h"
 
-#include <atomic>
 #include <deque>
 #include <functional>
 #include <limits>
@@ -40,11 +39,6 @@ constexpr size_t kMaxEventsInHistory = 10000;
 // The config-history is supposed to be unbounded, but needs to have some bound
 // to prevent an attack via unreasonable memory use.
 constexpr size_t kMaxEventsInConfigHistory = 1000;
-
-// Observe a limit on the number of concurrent logs, so as not to run into
-// OS-imposed limits on open files and/or threads/task-queues.
-// TODO(eladalon): Known issue - there's a race over |rtc_event_log_count|.
-std::atomic<int> rtc_event_log_count(0);
 
 // TODO(eladalon): This class exists because C++11 doesn't allow transferring a
 // unique_ptr to a lambda (a copy constructor is required). We should get
@@ -160,9 +154,6 @@ RtcEventLogImpl::~RtcEventLogImpl() {
 
   // If we're logging to the output, this will stop that. Blocking function.
   StopLogging();
-
-  int count = std::atomic_fetch_sub(&rtc_event_log_count, 1) - 1;
-  RTC_DCHECK_GE(count, 0);
 }
 
 bool RtcEventLogImpl::StartLogging(std::unique_ptr<RtcEventLogOutput> output,
@@ -370,17 +361,7 @@ std::unique_ptr<RtcEventLog> RtcEventLog::Create(
     EncodingType encoding_type,
     std::unique_ptr<rtc::TaskQueue> task_queue) {
 #ifdef ENABLE_RTC_EVENT_LOG
-  // TODO(eladalon): Known issue - there's a race over |rtc_event_log_count|.
-  constexpr int kMaxLogCount = 5;
-  int count = 1 + std::atomic_fetch_add(&rtc_event_log_count, 1);
-  if (count > kMaxLogCount) {
-    RTC_LOG(LS_WARNING) << "Denied creation of additional WebRTC event logs. "
-                        << count - 1 << " logs open already.";
-    std::atomic_fetch_sub(&rtc_event_log_count, 1);
-    return CreateNull();
-  }
-  auto encoder = CreateEncoder(encoding_type);
-  return rtc::MakeUnique<RtcEventLogImpl>(std::move(encoder),
+  return rtc::MakeUnique<RtcEventLogImpl>(CreateEncoder(encoding_type),
                                           std::move(task_queue));
 #else
   return CreateNull();
