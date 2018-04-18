@@ -93,10 +93,6 @@ void RTCError::set_message(std::string&& message) {
   }
 }
 
-std::ostream& operator<<(std::ostream& stream, RTCErrorType error) {
-  return stream << ToString(error);
-}
-
 // TODO(jonasolsson): Change to use absl::string_view when it's available.
 std::string ToString(RTCErrorType error) {
   int index = static_cast<int>(error);

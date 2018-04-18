@@ -30,9 +30,6 @@ enum class RtpTransceiverDirection {
   kInactive
 };
 
-// This is provided as a debugging aid. The format of the output is unspecified.
-std::ostream& operator<<(std::ostream& os, RtpTransceiverDirection direction);
-
 // Structure for initializing an RtpTransceiver in a call to
 // PeerConnectionInterface::AddTransceiver.
 // https://w3c.github.io/webrtc-pc/#dom-rtcrtptransceiverinit
