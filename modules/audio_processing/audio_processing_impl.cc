@@ -1273,6 +1273,11 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
   if (private_submodules_->echo_controller) {
     data_dumper_->DumpRaw("stream_delay", stream_delay_ms());
 
+    if (was_stream_delay_set()) {
+      private_submodules_->echo_controller->SetAudioBufferDelay(
+          stream_delay_ms());
+    }
+
     private_submodules_->echo_controller->ProcessCapture(
         capture_buffer, capture_.echo_path_gain_change);
   } else {

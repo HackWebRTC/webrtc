@@ -82,6 +82,8 @@ class EchoCanceller3 : public EchoControl {
   void ProcessCapture(AudioBuffer* capture, bool level_change) override;
   // Collect current metrics from the echo canceller.
   Metrics GetMetrics() const override;
+  // Provides an optional external estimate of the audio buffer delay.
+  void SetAudioBufferDelay(size_t delay_ms) override;
 
   // Signals whether an external detector has detected echo leakage from the
   // echo canceller.

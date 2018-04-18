@@ -50,6 +50,8 @@ class RenderDelayBufferImpl final : public RenderDelayBuffer {
 
   bool CausalDelay(size_t delay) const override;
 
+  void SetAudioBufferDelay(size_t delay_ms) override;
+
  private:
   static int instance_count_;
   std::unique_ptr<ApmDataDumper> data_dumper_;
@@ -75,6 +77,8 @@ class RenderDelayBufferImpl final : public RenderDelayBuffer {
   size_t render_call_counter_ = 0;
   bool render_activity_ = false;
   size_t render_activity_counter_ = 0;
+  rtc::Optional<size_t> external_audio_buffer_delay_ms_;
+  bool external_delay_verified_after_reset_ = false;
 
   int LowRateBufferOffset() const { return DelayEstimatorOffset(config_) >> 1; }
   int MapExternalDelayToInternalDelay(size_t external_delay_blocks) const;
@@ -197,12 +201,33 @@ void RenderDelayBufferImpl::Reset() {
   low_rate_.read = low_rate_.OffsetIndex(
       low_rate_.write, LowRateBufferOffset() * sub_block_size_);
 
-  // Set the render buffer delays to the default delay.
-  ApplyDelay(config_.delay.default_delay);
+  // Check for any external audio buffer delay and whether it is feasible.
+  if (external_audio_buffer_delay_ms_) {
+    constexpr size_t kHeadroom = 5;
+    size_t external_delay_to_set = 0;
+    if (*external_audio_buffer_delay_ms_ < kHeadroom) {
+      external_delay_to_set = 0;
+    } else {
+      external_delay_to_set = *external_audio_buffer_delay_ms_ - kHeadroom;
+    }
 
-  // Unset the delays which are set by ApplyConfig.
-  delay_ = rtc::nullopt;
-  internal_delay_ = rtc::nullopt;
+    constexpr size_t kMaxExternalDelay = 170;
+    external_delay_to_set = std::min(external_delay_to_set, kMaxExternalDelay);
+
+    // When an external delay estimate is available, use that delay as the
+    // initial render buffer delay. Avoid verifying the set delay.
+    external_delay_verified_after_reset_ = true;
+    SetDelay(external_delay_to_set);
+    external_delay_verified_after_reset_ = false;
+  } else {
+    // If an external delay estimate is not available, use that delay as the
+    // initial delay. Set the render buffer delays to the default delay.
+    ApplyDelay(config_.delay.default_delay);
+
+    // Unset the delays which are set by SetDelay.
+    delay_ = rtc::nullopt;
+    internal_delay_ = rtc::nullopt;
+  }
 }
 
 // Inserts a new block into the render buffers.
@@ -305,6 +330,15 @@ RenderDelayBufferImpl::PrepareCaptureProcessing() {
 
 // Sets the delay and returns a bool indicating whether the delay was changed.
 bool RenderDelayBufferImpl::SetDelay(size_t delay) {
+  if (!external_delay_verified_after_reset_ &&
+      external_audio_buffer_delay_ms_) {
+    int delay_difference = static_cast<int>(*external_audio_buffer_delay_ms_) -
+                           static_cast<int>(delay);
+    RTC_LOG(LS_WARNING) << "Difference between the externally reported delay "
+                           "and the first delay estimate: "
+                        << delay_difference << " ms.";
+    external_delay_verified_after_reset_ = true;
+  }
   if (delay_ && *delay_ == delay) {
     return false;
   }
@@ -329,6 +363,15 @@ bool RenderDelayBufferImpl::CausalDelay(size_t delay) const {
 
   return internal_delay >=
          static_cast<int>(config_.delay.min_echo_path_delay_blocks);
+}
+
+void RenderDelayBufferImpl::SetAudioBufferDelay(size_t delay_ms) {
+  if (!external_audio_buffer_delay_ms_) {
+    RTC_LOG(LS_WARNING)
+        << "Receiving a first reported externally buffer delay of " << delay_ms
+        << " ms.";
+  }
+  external_audio_buffer_delay_ms_ = delay_ms;
 }
 
 // Maps the externally computed delay to the delay used internally.

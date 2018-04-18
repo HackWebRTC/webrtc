@@ -38,6 +38,9 @@ class EchoControl {
   // Collect current metrics from the echo controller.
   virtual Metrics GetMetrics() const = 0;
 
+  // Provides an optional external estimate of the audio buffer delay.
+  virtual void SetAudioBufferDelay(size_t delay_ms) = 0;
+
   virtual ~EchoControl() {}
 };
 
