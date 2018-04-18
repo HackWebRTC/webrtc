@@ -231,8 +231,6 @@ class VideoStreamEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   rtc::ThreadChecker thread_checker_;
 
   VideoEncoderConfig encoder_config_ RTC_GUARDED_BY(&encoder_queue_);
-  std::unique_ptr<VideoEncoder> encoder_ RTC_GUARDED_BY(&encoder_queue_)
-      RTC_PT_GUARDED_BY(&encoder_queue_);
   std::unique_ptr<VideoBitrateAllocator> rate_allocator_
       RTC_GUARDED_BY(&encoder_queue_)
       RTC_PT_GUARDED_BY(&encoder_queue_);
@@ -243,9 +241,6 @@ class VideoStreamEncoder : public rtc::VideoSinkInterface<VideoFrame>,
   // Set when ConfigureEncoder has been called in order to lazy reconfigure the
   // encoder on the next frame.
   bool pending_encoder_reconfiguration_ RTC_GUARDED_BY(&encoder_queue_);
-  // Set when configuration must create a new encoder object, e.g.,
-  // because of a codec change.
-  bool pending_encoder_creation_ RTC_GUARDED_BY(&encoder_queue_);
   rtc::Optional<VideoFrameInfo> last_frame_info_
       RTC_GUARDED_BY(&encoder_queue_);
   int crop_width_ RTC_GUARDED_BY(&encoder_queue_);

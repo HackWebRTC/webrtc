@@ -350,6 +350,8 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
     // TODO(skvlad): Combine parameters_ and rtp_parameters_ once we have only
     // one stream per MediaChannel.
     webrtc::RtpParameters rtp_parameters_ RTC_GUARDED_BY(&thread_checker_);
+    std::unique_ptr<webrtc::VideoEncoder> allocated_encoder_
+        RTC_GUARDED_BY(&thread_checker_);
 
     bool sending_ RTC_GUARDED_BY(&thread_checker_);
   };

@@ -512,8 +512,6 @@ VideoSendStream::VideoSendStream(
                    encoder_config.content_type),
       config_(std::move(config)),
       content_type_(encoder_config.content_type) {
-  RTC_DCHECK(config_.encoder_settings.encoder_factory);
-
   video_stream_encoder_ = rtc::MakeUnique<VideoStreamEncoder>(
       num_cpu_cores, &stats_proxy_,
       config_.encoder_settings,
@@ -828,6 +826,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
     transport_->RegisterPacketFeedbackObserver(this);
   }
 
+  RTC_DCHECK(config_->encoder_settings.encoder);
   RTC_DCHECK_GE(config_->rtp.payload_type, 0);
   RTC_DCHECK_LE(config_->rtp.payload_type, 127);
 

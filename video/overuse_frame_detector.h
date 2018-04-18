@@ -118,8 +118,6 @@ class OveruseFrameDetector {
   void CheckForOveruse(AdaptationObserverInterface* overuse_observer);
   void SetOptions(const CpuOveruseOptions& options);
 
-  CpuOveruseOptions options_;
-
  private:
   class CheckOveruseTask;
 
@@ -138,6 +136,8 @@ class OveruseFrameDetector {
   rtc::SequencedTaskChecker task_checker_;
   // Owned by the task queue from where StartCheckForOveruse is called.
   CheckOveruseTask* check_overuse_task_;
+
+  CpuOveruseOptions options_;
 
   // Stats metrics.
   CpuOveruseMetricsObserver* const metrics_observer_;

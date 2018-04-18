@@ -543,10 +543,8 @@ void OveruseFrameDetector::StartCheckForOveruse(
 }
 void OveruseFrameDetector::StopCheckForOveruse() {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
-  if (check_overuse_task_) {
-    check_overuse_task_->Stop();
-    check_overuse_task_ = nullptr;
-  }
+  check_overuse_task_->Stop();
+  check_overuse_task_ = nullptr;
 }
 
 void OveruseFrameDetector::EncodedFrameTimeMeasured(int encode_duration_ms) {

@@ -10,8 +10,6 @@
 
 #include "system_wrappers/include/sleep.h"
 #include "test/call_test.h"
-#include "test/encoder_proxy_factory.h"
-#include "test/fake_encoder.h"
 #include "test/gtest.h"
 
 namespace webrtc {
@@ -79,15 +77,12 @@ void NetworkStateEndToEndTest::VerifyNewVideoSendStreamsRespectNetworkState(
     MediaType network_to_bring_up,
     VideoEncoder* encoder,
     Transport* transport) {
-  test::EncoderProxyFactory encoder_factory(encoder);
-
-  task_queue_.SendTask([this, network_to_bring_up, &encoder_factory,
-                        transport]() {
+  task_queue_.SendTask([this, network_to_bring_up, encoder, transport]() {
     CreateSenderCall(Call::Config(event_log_.get()));
     sender_call_->SignalChannelNetworkState(network_to_bring_up, kNetworkUp);
 
     CreateSendConfig(1, 0, 0, transport);
-    video_send_config_.encoder_settings.encoder_factory = &encoder_factory;
+    video_send_config_.encoder_settings.encoder = encoder;
     CreateVideoStreams();
     CreateFrameGeneratorCapturer(kDefaultFramerate, kDefaultWidth,
                                  kDefaultHeight);
@@ -156,7 +151,6 @@ TEST_F(NetworkStateEndToEndTest, RespectsNetworkState) {
           packet_event_(false, false),
           sender_call_(nullptr),
           receiver_call_(nullptr),
-          encoder_factory_(this),
           sender_state_(kNetworkUp),
           sender_rtp_(0),
           sender_padding_(0),
@@ -203,7 +197,7 @@ TEST_F(NetworkStateEndToEndTest, RespectsNetworkState) {
         VideoSendStream::Config* send_config,
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
-      send_config->encoder_settings.encoder_factory = &encoder_factory_;
+      send_config->encoder_settings.encoder = this;
     }
 
     void PerformTest() override {
@@ -335,7 +329,6 @@ TEST_F(NetworkStateEndToEndTest, RespectsNetworkState) {
     rtc::Event packet_event_;
     Call* sender_call_;
     Call* receiver_call_;
-    test::EncoderProxyFactory encoder_factory_;
     NetworkState sender_state_ RTC_GUARDED_BY(test_crit_);
     int sender_rtp_ RTC_GUARDED_BY(test_crit_);
     int sender_padding_ RTC_GUARDED_BY(test_crit_);

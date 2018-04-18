@@ -12,8 +12,6 @@
 #include "rtc_base/rate_limiter.h"
 #include "system_wrappers/include/sleep.h"
 #include "test/call_test.h"
-#include "test/encoder_proxy_factory.h"
-#include "test/fake_encoder.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
 #include "test/rtcp_packet_parser.h"
@@ -282,7 +280,6 @@ TEST_P(BandwidthEndToEndTest, ReportsSetEncoderRates) {
           FakeEncoder(Clock::GetRealTimeClock()),
           task_queue_(task_queue),
           send_stream_(nullptr),
-          encoder_factory_(this),
           bitrate_kbps_(0) {}
 
     void OnVideoStreamsCreated(
@@ -295,7 +292,7 @@ TEST_P(BandwidthEndToEndTest, ReportsSetEncoderRates) {
         VideoSendStream::Config* send_config,
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
-      send_config->encoder_settings.encoder_factory = &encoder_factory_;
+      send_config->encoder_settings.encoder = this;
       RTC_DCHECK_EQ(1, encoder_config->number_of_streams);
     }
 
@@ -353,7 +350,6 @@ TEST_P(BandwidthEndToEndTest, ReportsSetEncoderRates) {
     test::SingleThreadedTaskQueueForTesting* const task_queue_;
     rtc::CriticalSection crit_;
     VideoSendStream* send_stream_;
-    test::EncoderProxyFactory encoder_factory_;
     uint32_t bitrate_kbps_ RTC_GUARDED_BY(crit_);
   } test(&task_queue_);
 

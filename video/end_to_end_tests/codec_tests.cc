@@ -18,7 +18,6 @@
 #include "test/call_test.h"
 #include "test/encoder_settings.h"
 #include "test/field_trial.h"
-#include "test/function_video_encoder_factory.h"
 #include "test/gtest.h"
 
 namespace webrtc {
@@ -48,7 +47,7 @@ class CodecObserver : public test::EndToEndTest,
   CodecObserver(int no_frames_to_wait_for,
                 VideoRotation rotation_to_test,
                 const std::string& payload_name,
-                VideoEncoderFactory* encoder_factory,
+                std::unique_ptr<webrtc::VideoEncoder> encoder,
                 std::unique_ptr<webrtc::VideoDecoder> decoder)
       : EndToEndTest(4 * CodecEndToEndTest::kDefaultTimeoutMs),
         // TODO(hta): This timeout (120 seconds) is excessive.
@@ -56,7 +55,7 @@ class CodecObserver : public test::EndToEndTest,
         no_frames_to_wait_for_(no_frames_to_wait_for),
         expected_rotation_(rotation_to_test),
         payload_name_(payload_name),
-        encoder_factory_(encoder_factory),
+        encoder_(std::move(encoder)),
         decoder_(std::move(decoder)),
         frame_counter_(0) {}
 
@@ -70,7 +69,7 @@ class CodecObserver : public test::EndToEndTest,
       std::vector<VideoReceiveStream::Config>* receive_configs,
       VideoEncoderConfig* encoder_config) override {
     encoder_config->codec_type = PayloadStringToCodecType(payload_name_);
-    send_config->encoder_settings.encoder_factory = encoder_factory_;
+    send_config->encoder_settings.encoder = encoder_.get();
     send_config->rtp.payload_name = payload_name_;
     send_config->rtp.payload_type = test::CallTest::kVideoSendPayloadType;
 
@@ -98,70 +97,56 @@ class CodecObserver : public test::EndToEndTest,
   int no_frames_to_wait_for_;
   VideoRotation expected_rotation_;
   std::string payload_name_;
-  VideoEncoderFactory* encoder_factory_;
+  std::unique_ptr<webrtc::VideoEncoder> encoder_;
   std::unique_ptr<webrtc::VideoDecoder> decoder_;
   int frame_counter_;
 };
 
 TEST_P(CodecEndToEndTest, SendsAndReceivesVP8) {
-  test::FunctionVideoEncoderFactory encoder_factory(
-      []() { return VP8Encoder::Create(); });
-  CodecObserver test(5, kVideoRotation_0, "VP8", &encoder_factory,
+  CodecObserver test(5, kVideoRotation_0, "VP8", VP8Encoder::Create(),
                      VP8Decoder::Create());
   RunBaseTest(&test);
 }
 
 TEST_P(CodecEndToEndTest, SendsAndReceivesVP8Rotation90) {
-  test::FunctionVideoEncoderFactory encoder_factory(
-      []() { return VP8Encoder::Create(); });
-  CodecObserver test(5, kVideoRotation_90, "VP8", &encoder_factory,
+  CodecObserver test(5, kVideoRotation_90, "VP8", VP8Encoder::Create(),
                      VP8Decoder::Create());
   RunBaseTest(&test);
 }
 
 #if !defined(RTC_DISABLE_VP9)
 TEST_P(CodecEndToEndTest, SendsAndReceivesVP9) {
-  test::FunctionVideoEncoderFactory encoder_factory(
-      []() { return VP9Encoder::Create(); });
-  CodecObserver test(500, kVideoRotation_0, "VP9", &encoder_factory,
+  CodecObserver test(500, kVideoRotation_0, "VP9", VP9Encoder::Create(),
                      VP9Decoder::Create());
   RunBaseTest(&test);
 }
 
 TEST_P(CodecEndToEndTest, SendsAndReceivesVP9VideoRotation90) {
-  test::FunctionVideoEncoderFactory encoder_factory(
-      []() { return VP9Encoder::Create(); });
-  CodecObserver test(5, kVideoRotation_90, "VP9", &encoder_factory,
+  CodecObserver test(5, kVideoRotation_90, "VP9", VP9Encoder::Create(),
                      VP9Decoder::Create());
   RunBaseTest(&test);
 }
 
 // Mutiplex tests are using VP9 as the underlying implementation.
 TEST_P(CodecEndToEndTest, SendsAndReceivesMultiplex) {
-  InternalEncoderFactory internal_encoder_factory;
+  InternalEncoderFactory encoder_factory;
   InternalDecoderFactory decoder_factory;
-  test::FunctionVideoEncoderFactory encoder_factory(
-      [&internal_encoder_factory]() {
-        return rtc::MakeUnique<MultiplexEncoderAdapter>(
-            &internal_encoder_factory, SdpVideoFormat(cricket::kVp9CodecName));
-      });
   CodecObserver test(
-      5, kVideoRotation_0, "multiplex", &encoder_factory,
+      5, kVideoRotation_0, "multiplex",
+      rtc::MakeUnique<MultiplexEncoderAdapter>(
+          &encoder_factory, SdpVideoFormat(cricket::kVp9CodecName)),
       rtc::MakeUnique<MultiplexDecoderAdapter>(
           &decoder_factory, SdpVideoFormat(cricket::kVp9CodecName)));
   RunBaseTest(&test);
 }
 
 TEST_P(CodecEndToEndTest, SendsAndReceivesMultiplexVideoRotation90) {
-  InternalEncoderFactory internal_encoder_factory;
+  InternalEncoderFactory encoder_factory;
   InternalDecoderFactory decoder_factory;
-  test::FunctionVideoEncoderFactory encoder_factory(
-      [&internal_encoder_factory]() {
-        return rtc::MakeUnique<MultiplexEncoderAdapter>(
-            &internal_encoder_factory, SdpVideoFormat(cricket::kVp9CodecName));
-      });
   CodecObserver test(
-      5, kVideoRotation_90, "multiplex", &encoder_factory,
+      5, kVideoRotation_90, "multiplex",
+      rtc::MakeUnique<MultiplexEncoderAdapter>(
+          &encoder_factory, SdpVideoFormat(cricket::kVp9CodecName)),
       rtc::MakeUnique<MultiplexDecoderAdapter>(
           &decoder_factory, SdpVideoFormat(cricket::kVp9CodecName)));
   RunBaseTest(&test);
@@ -182,17 +167,15 @@ INSTANTIATE_TEST_CASE_P(SpsPpsIdrIsKeyframe,
                         h264_field_trial_combinations);
 
 TEST_P(EndToEndTestH264, SendsAndReceivesH264) {
-  test::FunctionVideoEncoderFactory encoder_factory(
-      []() { return H264Encoder::Create(cricket::VideoCodec("H264")); });
-  CodecObserver test(500, kVideoRotation_0, "H264", &encoder_factory,
+  CodecObserver test(500, kVideoRotation_0, "H264",
+                     H264Encoder::Create(cricket::VideoCodec("H264")),
                      H264Decoder::Create());
   RunBaseTest(&test);
 }
 
 TEST_P(EndToEndTestH264, SendsAndReceivesH264VideoRotation90) {
-  test::FunctionVideoEncoderFactory encoder_factory(
-      []() { return H264Encoder::Create(cricket::VideoCodec("H264")); });
-  CodecObserver test(5, kVideoRotation_90, "H264", &encoder_factory,
+  CodecObserver test(5, kVideoRotation_90, "H264",
+                     H264Encoder::Create(cricket::VideoCodec("H264")),
                      H264Decoder::Create());
   RunBaseTest(&test);
 }
@@ -200,9 +183,7 @@ TEST_P(EndToEndTestH264, SendsAndReceivesH264VideoRotation90) {
 TEST_P(EndToEndTestH264, SendsAndReceivesH264PacketizationMode0) {
   cricket::VideoCodec codec = cricket::VideoCodec("H264");
   codec.SetParam(cricket::kH264FmtpPacketizationMode, "0");
-  test::FunctionVideoEncoderFactory encoder_factory(
-      [codec]() { return H264Encoder::Create(codec); });
-  CodecObserver test(500, kVideoRotation_0, "H264", &encoder_factory,
+  CodecObserver test(500, kVideoRotation_0, "H264", H264Encoder::Create(codec),
                      H264Decoder::Create());
   RunBaseTest(&test);
 }
@@ -210,9 +191,7 @@ TEST_P(EndToEndTestH264, SendsAndReceivesH264PacketizationMode0) {
 TEST_P(EndToEndTestH264, SendsAndReceivesH264PacketizationMode1) {
   cricket::VideoCodec codec = cricket::VideoCodec("H264");
   codec.SetParam(cricket::kH264FmtpPacketizationMode, "1");
-  test::FunctionVideoEncoderFactory encoder_factory(
-      [codec]() { return H264Encoder::Create(codec); });
-  CodecObserver test(500, kVideoRotation_0, "H264", &encoder_factory,
+  CodecObserver test(500, kVideoRotation_0, "H264", H264Encoder::Create(codec),
                      H264Decoder::Create());
   RunBaseTest(&test);
 }

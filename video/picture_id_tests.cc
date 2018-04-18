@@ -14,7 +14,6 @@
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/numerics/sequence_number_util.h"
 #include "test/call_test.h"
-#include "test/function_video_encoder_factory.h"
 
 namespace webrtc {
 namespace {
@@ -236,8 +235,7 @@ class PictureIdTest : public test::CallTest,
     });
   }
 
-  void SetupEncoder(VideoEncoderFactory* encoder_factory,
-                    const std::string& payload_name);
+  void SetupEncoder(VideoEncoder* encoder, const std::string& payload_name);
   void TestPictureIdContinuousAfterReconfigure(
       const std::vector<int>& ssrc_counts);
   void TestPictureIdIncreaseAfterRecreateStreams(
@@ -294,12 +292,12 @@ class VideoStreamFactory
   const size_t num_of_temporal_layers_;
 };
 
-void PictureIdTest::SetupEncoder(VideoEncoderFactory* encoder_factory,
+void PictureIdTest::SetupEncoder(VideoEncoder* encoder,
                                  const std::string& payload_name) {
   observer_.reset(
       new PictureIdObserver(PayloadNameToRtpVideoCodecType(payload_name)));
 
-  task_queue_.SendTask([this, encoder_factory, payload_name]() {
+  task_queue_.SendTask([this, &encoder, payload_name]() {
     Call::Config config(event_log_.get());
     CreateCalls(config, config);
 
@@ -309,7 +307,7 @@ void PictureIdTest::SetupEncoder(VideoEncoderFactory* encoder_factory,
         FakeNetworkPipe::Config()));
 
     CreateSendConfig(kNumSimulcastStreams, 0, 0, send_transport_.get());
-    video_send_config_.encoder_settings.encoder_factory = encoder_factory;
+    video_send_config_.encoder_settings.encoder = encoder;
     video_send_config_.rtp.payload_name = payload_name;
     video_encoder_config_.codec_type = PayloadStringToCodecType(payload_name);
     video_encoder_config_.video_stream_factory =
@@ -392,67 +390,51 @@ void PictureIdTest::TestPictureIdIncreaseAfterRecreateStreams(
 }
 
 TEST_P(PictureIdTest, ContinuousAfterReconfigureVp8) {
-  test::FunctionVideoEncoderFactory encoder_factory(
-      []() { return VP8Encoder::Create(); });
-  SetupEncoder(&encoder_factory, "VP8");
+  std::unique_ptr<VideoEncoder> encoder(VP8Encoder::Create());
+  SetupEncoder(encoder.get(), "VP8");
   TestPictureIdContinuousAfterReconfigure({1, 3, 3, 1, 1});
 }
 
 TEST_P(PictureIdTest, IncreasingAfterRecreateStreamVp8) {
-  test::FunctionVideoEncoderFactory encoder_factory(
-      []() { return VP8Encoder::Create(); });
-  SetupEncoder(&encoder_factory, "VP8");
+  std::unique_ptr<VideoEncoder> encoder(VP8Encoder::Create());
+  SetupEncoder(encoder.get(), "VP8");
   TestPictureIdIncreaseAfterRecreateStreams({1, 3, 3, 1, 1});
 }
 
 TEST_P(PictureIdTest, ContinuousAfterStreamCountChangeVp8) {
-  test::FunctionVideoEncoderFactory encoder_factory(
-      []() { return VP8Encoder::Create(); });
+  std::unique_ptr<VideoEncoder> encoder(VP8Encoder::Create());
   // Make sure that the picture id is not reset if the stream count goes
   // down and then up.
-  SetupEncoder(&encoder_factory, "VP8");
+  SetupEncoder(encoder.get(), "VP8");
   TestPictureIdContinuousAfterReconfigure({3, 1, 3});
 }
 
 TEST_P(PictureIdTest, ContinuousAfterReconfigureSimulcastEncoderAdapter) {
   InternalEncoderFactory internal_encoder_factory;
-  test::FunctionVideoEncoderFactory encoder_factory(
-      [&internal_encoder_factory]() {
-        return rtc::MakeUnique<SimulcastEncoderAdapter>(
-            &internal_encoder_factory);
-      });
-  SetupEncoder(&encoder_factory, "VP8");
+  SimulcastEncoderAdapter simulcast_encoder_adapter(&internal_encoder_factory);
+  SetupEncoder(&simulcast_encoder_adapter, "VP8");
   TestPictureIdContinuousAfterReconfigure({1, 3, 3, 1, 1});
 }
 
 TEST_P(PictureIdTest, IncreasingAfterRecreateStreamSimulcastEncoderAdapter) {
   InternalEncoderFactory internal_encoder_factory;
-  test::FunctionVideoEncoderFactory encoder_factory(
-      [&internal_encoder_factory]() {
-        return rtc::MakeUnique<SimulcastEncoderAdapter>(
-            &internal_encoder_factory);
-      });
-  SetupEncoder(&encoder_factory, "VP8");
+  SimulcastEncoderAdapter simulcast_encoder_adapter(&internal_encoder_factory);
+  SetupEncoder(&simulcast_encoder_adapter, "VP8");
   TestPictureIdIncreaseAfterRecreateStreams({1, 3, 3, 1, 1});
 }
 
 TEST_P(PictureIdTest, ContinuousAfterStreamCountChangeSimulcastEncoderAdapter) {
   InternalEncoderFactory internal_encoder_factory;
-  test::FunctionVideoEncoderFactory encoder_factory(
-      [&internal_encoder_factory]() {
-        return rtc::MakeUnique<SimulcastEncoderAdapter>(
-            &internal_encoder_factory);
-      });
+  SimulcastEncoderAdapter simulcast_encoder_adapter(&internal_encoder_factory);
   // Make sure that the picture id is not reset if the stream count goes
   // down and then up.
-  SetupEncoder(&encoder_factory, "VP8");
+  SetupEncoder(&simulcast_encoder_adapter, "VP8");
   TestPictureIdContinuousAfterReconfigure({3, 1, 3});
 }
 
 TEST_P(PictureIdTest, IncreasingAfterRecreateStreamVp9) {
-  test::FunctionVideoEncoderFactory encoder_factory(
-      []() { return VP9Encoder::Create(); });
-  SetupEncoder(&encoder_factory, "VP9");
+  std::unique_ptr<VideoEncoder> encoder(VP9Encoder::Create());
+  SetupEncoder(encoder.get(), "VP9");
   TestPictureIdIncreaseAfterRecreateStreams({1, 1});
 }
 

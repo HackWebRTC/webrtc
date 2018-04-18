@@ -14,8 +14,6 @@
 #include "system_wrappers/include/metrics_default.h"
 #include "system_wrappers/include/sleep.h"
 #include "test/call_test.h"
-#include "test/fake_encoder.h"
-#include "test/function_video_encoder_factory.h"
 #include "test/gtest.h"
 #include "test/rtcp_packet_parser.h"
 
@@ -39,10 +37,7 @@ TEST_F(StatsEndToEndTest, GetStats) {
    public:
     StatsObserver()
         : EndToEndTest(kLongTimeoutMs),
-          encoder_factory_([]() {
-            return rtc::MakeUnique<test::DelayedEncoder>(
-                Clock::GetRealTimeClock(), 10);
-          }),
+          encoder_(Clock::GetRealTimeClock(), 10),
           send_stream_(nullptr),
           expected_send_ssrcs_(),
           check_stats_event_(false, false) {}
@@ -302,7 +297,7 @@ TEST_F(StatsEndToEndTest, GetStats) {
 
       // Use a delayed encoder to make sure we see CpuOveruseMetrics stats that
       // are non-zero.
-      send_config->encoder_settings.encoder_factory = &encoder_factory_;
+      send_config->encoder_settings.encoder = &encoder_;
     }
 
     size_t GetNumVideoStreams() const override { return kNumSimulcastStreams; }
@@ -354,7 +349,7 @@ TEST_F(StatsEndToEndTest, GetStats) {
       }
     }
 
-    test::FunctionVideoEncoderFactory encoder_factory_;
+    test::DelayedEncoder encoder_;
     std::vector<VideoReceiveStream*> receive_streams_;
     std::map<std::string, bool> receive_stats_filled_;
 

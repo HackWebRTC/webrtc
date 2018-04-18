@@ -12,7 +12,6 @@
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "test/call_test.h"
 #include "test/field_trial.h"
-#include "test/function_video_encoder_factory.h"
 #include "test/gtest.h"
 #include "test/rtcp_packet_parser.h"
 
@@ -43,7 +42,7 @@ TEST_P(FecEndToEndTest, ReceivesUlpfec) {
    public:
     UlpfecRenderObserver()
         : EndToEndTest(kDefaultTimeoutMs),
-          encoder_factory_([]() { return VP8Encoder::Create(); }),
+          encoder_(VP8Encoder::Create()),
           random_(0xcafef00d1),
           num_packets_sent_(0) {}
 
@@ -103,7 +102,7 @@ TEST_P(FecEndToEndTest, ReceivesUlpfec) {
         VideoEncoderConfig* encoder_config) override {
       // Use VP8 instead of FAKE, since the latter does not have PictureID
       // in the packetization headers.
-      send_config->encoder_settings.encoder_factory = &encoder_factory_;
+      send_config->encoder_settings.encoder = encoder_.get();
       send_config->rtp.payload_name = "VP8";
       send_config->rtp.payload_type = kVideoSendPayloadType;
       encoder_config->codec_type = kVideoCodecVP8;
@@ -129,7 +128,6 @@ TEST_P(FecEndToEndTest, ReceivesUlpfec) {
 
     rtc::CriticalSection crit_;
     std::unique_ptr<VideoEncoder> encoder_;
-    test::FunctionVideoEncoderFactory encoder_factory_;
     std::unique_ptr<VideoDecoder> decoder_;
     std::set<uint32_t> dropped_sequence_numbers_ RTC_GUARDED_BY(crit_);
     // Several packets can have the same timestamp.
@@ -337,7 +335,7 @@ TEST_P(FecEndToEndTest, ReceivedUlpfecPacketsNotNacked) {
           ulpfec_sequence_number_(0),
           has_last_sequence_number_(false),
           last_sequence_number_(0),
-          encoder_factory_([]() { return VP8Encoder::Create(); }),
+          encoder_(VP8Encoder::Create()),
           decoder_(VP8Decoder::Create()) {}
 
    private:
@@ -454,7 +452,7 @@ TEST_P(FecEndToEndTest, ReceivedUlpfecPacketsNotNacked) {
       send_config->rtp.ulpfec.red_payload_type = kRedPayloadType;
       send_config->rtp.ulpfec.ulpfec_payload_type = kUlpfecPayloadType;
       // Set codec to VP8, otherwise NACK/FEC hybrid will be disabled.
-      send_config->encoder_settings.encoder_factory = &encoder_factory_;
+      send_config->encoder_settings.encoder = encoder_.get();
       send_config->rtp.payload_name = "VP8";
       send_config->rtp.payload_type = kFakeVideoSendPayloadType;
       encoder_config->codec_type = kVideoCodecVP8;
@@ -490,7 +488,6 @@ TEST_P(FecEndToEndTest, ReceivedUlpfecPacketsNotNacked) {
     bool has_last_sequence_number_;
     uint16_t last_sequence_number_;
     std::unique_ptr<webrtc::VideoEncoder> encoder_;
-    test::FunctionVideoEncoderFactory encoder_factory_;
     std::unique_ptr<webrtc::VideoDecoder> decoder_;
   } test;
 
