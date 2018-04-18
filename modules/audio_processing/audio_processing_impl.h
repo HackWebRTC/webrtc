@@ -24,9 +24,7 @@
 #include "rtc_base/function_view.h"
 #include "rtc_base/gtest_prod_util.h"
 #include "rtc_base/ignore_wundef.h"
-#include "rtc_base/protobuf_utils.h"
 #include "rtc_base/swap_queue.h"
-#include "rtc_base/system/file_wrapper.h"
 #include "rtc_base/thread_annotations.h"
 
 namespace webrtc {

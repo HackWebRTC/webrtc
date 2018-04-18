@@ -134,10 +134,8 @@ rtc_static_library("audio_processing") {
     "../../rtc_base:checks",
     "../../rtc_base:deprecation",
     "../../rtc_base:gtest_prod",
-    "../../rtc_base:protobuf_utils",
     "../../rtc_base:safe_minmax",
     "../../rtc_base:sanitizer",
-    "../../rtc_base/system:file_wrapper",
     "../../system_wrappers:cpu_features_api",
     "../../system_wrappers:field_trial_api",
     "../../system_wrappers:metrics_api",
@@ -149,11 +147,6 @@ rtc_static_library("audio_processing") {
 
   if (aec_untrusted_delay_for_testing) {
     defines += [ "WEBRTC_UNTRUSTED_DELAY" ]
-  }
-
-  if (rtc_enable_protobuf) {
-    defines += [ "WEBRTC_AUDIOPROC_DEBUG_DUMP" ]
-    deps += [ ":audioproc_debug_proto" ]
   }
 
   if (rtc_enable_intelligibility_enhancer) {

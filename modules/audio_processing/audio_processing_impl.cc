@@ -45,7 +45,6 @@
 #include "modules/audio_processing/transient/transient_suppressor.h"
 #include "modules/audio_processing/voice_detection_impl.h"
 #include "rtc_base/atomicops.h"
-#include "rtc_base/system/file_wrapper.h"
 #include "system_wrappers/include/metrics.h"
 
 // Check to verify that the define for the intelligibility enhancer is properly
