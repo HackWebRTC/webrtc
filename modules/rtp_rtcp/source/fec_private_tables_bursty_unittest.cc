@@ -15,6 +15,11 @@
 #include "test/gtest.h"
 
 namespace webrtc {
+namespace {
+constexpr uint8_t kMaskRandom15_6[] = {0x82, 0x08, 0x41, 0x04, 0x20, 0x82,
+                                       0x10, 0x40, 0x08, 0x20, 0x04, 0x10};
+}
+
 namespace fec_private_tables {
 
 using internal::LookUpInFecTable;
@@ -57,18 +62,20 @@ TEST(FecTable, TestRandomLookup) {
   EXPECT_EQ(4u, result.size());
   EXPECT_EQ(0xa8u, result[0]);
   EXPECT_EQ(0xd0u, result[2]);
+}
 
-  result = LookUpInFecTable(&kPacketMaskRandomTbl[0], 16, 0);
-  // kMaskRandom17_1.
-  EXPECT_EQ(6u, result.size());
-  EXPECT_EQ(0xffu, result[0]);
-  EXPECT_EQ(0x00u, result[5]);
-
-  result = LookUpInFecTable(&kPacketMaskRandomTbl[0], 47, 47);
-  // kMaskRandom48_48.
-  EXPECT_EQ(6u * 48, result.size());
-  EXPECT_EQ(0x10u, result[0]);
-  EXPECT_EQ(0x02u, result[6]);
+TEST(FecTable, TestRandomGenerated) {
+  FecMaskType fec_mask_type = webrtc::kFecMaskRandom;
+  int num_media_packets = 15;
+  int num_fec_packets = 6;
+  size_t mask_size = sizeof(kMaskRandom15_6) / sizeof(uint8_t);
+  internal::PacketMaskTable mask_table(fec_mask_type, num_media_packets);
+  rtc::ArrayView<const uint8_t> mask =
+      mask_table.LookUp(num_media_packets, num_fec_packets);
+  EXPECT_EQ(mask.size(), mask_size);
+  for (size_t i = 0; i < mask_size; i++) {
+    EXPECT_EQ(mask[i], kMaskRandom15_6[i]);
+  }
 }
 
 }  // namespace fec_private_tables

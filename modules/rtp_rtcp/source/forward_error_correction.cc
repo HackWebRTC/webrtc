@@ -155,12 +155,12 @@ int ForwardErrorCorrection::EncodeFec(const PacketList& media_packets,
     fec_packets->push_back(&generated_fec_packets_[i]);
   }
 
-  const internal::PacketMaskTable mask_table(fec_mask_type, num_media_packets);
+  internal::PacketMaskTable mask_table(fec_mask_type, num_media_packets);
   packet_mask_size_ = internal::PacketMaskSize(num_media_packets);
   memset(packet_masks_, 0, num_fec_packets * packet_mask_size_);
   internal::GeneratePacketMasks(num_media_packets, num_fec_packets,
                                 num_important_packets, use_unequal_protection,
-                                mask_table, packet_masks_);
+                                &mask_table, packet_masks_);
 
   // Adapt packet masks to missing media packets.
   int num_mask_bits = InsertZerosInPacketMasks(media_packets, num_fec_packets);

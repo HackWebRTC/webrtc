@@ -192,10 +192,9 @@ void RunTest(bool use_flexfec) {
                    num_media_packets * mask_bytes_per_fec_packet);
 
             // Transfer packet masks from bit-mask to byte-mask.
-            internal::GeneratePacketMasks(num_media_packets, num_fec_packets,
-                                          num_imp_packets,
-                                          kUseUnequalProtection,
-                                          mask_table, packet_mask.get());
+            internal::GeneratePacketMasks(
+                num_media_packets, num_fec_packets, num_imp_packets,
+                kUseUnequalProtection, &mask_table, packet_mask.get());
 
 #ifdef VERBOSE_OUTPUT
             printf(
