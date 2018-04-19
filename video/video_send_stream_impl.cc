@@ -444,7 +444,6 @@ VideoSendStreamImpl::VideoSendStreamImpl(
     transport_->RegisterPacketFeedbackObserver(this);
   }
 
-  RTC_DCHECK(config_->encoder_settings.encoder);
   RTC_DCHECK_GE(config_->rtp.payload_type, 0);
   RTC_DCHECK_LE(config_->rtp.payload_type, 127);
 

@@ -468,7 +468,8 @@ TEST_F(RtpRtcpEndToEndTest, TestFlexfecRtpStatePreservation) {
 
   std::unique_ptr<test::PacketTransport> send_transport;
   std::unique_ptr<test::PacketTransport> receive_transport;
-  std::unique_ptr<VideoEncoder> encoder;
+  test::FunctionVideoEncoderFactory encoder_factory(
+      []() { return VP8Encoder::Create(); });
 
   task_queue_.SendTask([&]() {
     CreateCalls(config, config);
@@ -494,8 +495,8 @@ TEST_F(RtpRtcpEndToEndTest, TestFlexfecRtpStatePreservation) {
     const int kNumFlexfecStreams = 1;
     CreateSendConfig(kNumVideoStreams, 0, kNumFlexfecStreams,
                      send_transport.get());
-    encoder = VP8Encoder::Create();
-    video_send_config_.encoder_settings.encoder = encoder.get();
+
+    video_send_config_.encoder_settings.encoder_factory = &encoder_factory;
     video_send_config_.rtp.payload_name = "VP8";
     video_send_config_.rtp.payload_type = kVideoSendPayloadType;
     video_send_config_.rtp.nack.rtp_history_ms = kNackRtpHistoryMs;

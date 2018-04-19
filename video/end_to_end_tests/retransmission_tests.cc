@@ -12,6 +12,7 @@
 #include "system_wrappers/include/sleep.h"
 #include "test/call_test.h"
 #include "test/field_trial.h"
+#include "test/function_video_encoder_factory.h"
 #include "test/gtest.h"
 #include "test/rtcp_packet_parser.h"
 
@@ -339,7 +340,7 @@ void RetransmissionEndToEndTest::DecodesRetransmittedFrame(bool enable_rtx,
           retransmission_ssrc_(enable_rtx ? kSendRtxSsrcs[0]
                                           : kVideoSendSsrcs[0]),
           retransmission_payload_type_(GetPayloadType(enable_rtx, enable_red)),
-          encoder_(VP8Encoder::Create()),
+          encoder_factory_([]() { return VP8Encoder::Create(); }),
           marker_bits_observed_(0),
           retransmitted_timestamp_(0) {}
 
@@ -437,7 +438,7 @@ void RetransmissionEndToEndTest::DecodesRetransmittedFrame(bool enable_rtx,
       // Configure encoding and decoding with VP8, since generic packetization
       // doesn't support FEC with NACK.
       RTC_DCHECK_EQ(1, (*receive_configs)[0].decoders.size());
-      send_config->encoder_settings.encoder = encoder_.get();
+      send_config->encoder_settings.encoder_factory = &encoder_factory_;
       send_config->rtp.payload_name = "VP8";
       encoder_config->codec_type = kVideoCodecVP8;
       (*receive_configs)[0].decoders[0].payload_name = "VP8";
@@ -469,7 +470,7 @@ void RetransmissionEndToEndTest::DecodesRetransmittedFrame(bool enable_rtx,
     const int payload_type_;
     const uint32_t retransmission_ssrc_;
     const int retransmission_payload_type_;
-    std::unique_ptr<VideoEncoder> encoder_;
+    test::FunctionVideoEncoderFactory encoder_factory_;
     const std::string payload_name_;
     int marker_bits_observed_;
     uint32_t retransmitted_timestamp_ RTC_GUARDED_BY(&crit_);

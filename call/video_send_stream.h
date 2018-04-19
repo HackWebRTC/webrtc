@@ -113,17 +113,7 @@ class VideoSendStream {
 
     struct EncoderSettings {
       EncoderSettings() = default;
-      explicit EncoderSettings(VideoEncoder* encoder) : encoder(encoder) {}
       std::string ToString() const;
-
-      // TODO(sophiechang): Delete this field when no one is using internal
-      // sources anymore.
-      bool internal_source = false;
-
-      // Allow 100% encoder utilization. Used for HW encoders where CPU isn't
-      // expected to be the limiting factor, but a chip could be running at
-      // 30fps (for example) exactly.
-      bool full_overuse_time = false;
 
       // Enables the new method to estimate the cpu load from encoding, used for
       // cpu adaptation.
@@ -132,9 +122,8 @@ class VideoSendStream {
       // Ownership stays with WebrtcVideoEngine (delegated from PeerConnection).
       VideoEncoderFactory* encoder_factory = nullptr;
 
-      // TODO(nisse): Delete, let VideoStreamEncoder create the encoder.
-      // Uninitialized VideoEncoder instance to be used for encoding. Will be
-      // initialized from inside the VideoSendStream.
+      // TODO(nisse): Unused! But kept temporarily to transition downstream
+      // projects.
       VideoEncoder* encoder = nullptr;
     } encoder_settings;
 
