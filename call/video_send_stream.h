@@ -121,10 +121,6 @@ class VideoSendStream {
 
       // Ownership stays with WebrtcVideoEngine (delegated from PeerConnection).
       VideoEncoderFactory* encoder_factory = nullptr;
-
-      // TODO(nisse): Unused! But kept temporarily to transition downstream
-      // projects.
-      VideoEncoder* encoder = nullptr;
     } encoder_settings;
 
     static const size_t kDefaultMaxPacketSize = 1500 - 40;  // TCP over IPv4.
