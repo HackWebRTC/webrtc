@@ -19,6 +19,7 @@ source_set("lib") {
     "common.h",
     "ring_buffer.h",
     "sequence_buffer.h",
+    "symmetric_matrix_buffer.h",
   ]
   deps = [
     "../../../../api:array_view",
@@ -32,6 +33,7 @@ if (rtc_include_tests) {
     sources = [
       "ring_buffer_unittest.cc",
       "sequence_buffer_unittest.cc",
+      "symmetric_matrix_buffer_unittest.cc",
     ]
     deps = [
       ":lib",
