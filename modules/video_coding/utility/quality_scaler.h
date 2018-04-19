@@ -49,16 +49,16 @@ class QualityScaler {
   QualityScaler(AdaptationObserverInterface* observer,
                 VideoEncoder::QpThresholds thresholds);
   virtual ~QualityScaler();
-  // Should be called each time the encoder drops a frame
+  // Should be called each time the encoder drops a frame.
   void ReportDroppedFrame();
   // Inform the QualityScaler of the last seen QP.
   void ReportQP(int qp);
 
-  // The following members declared protected for testing purposes
+  // The following members declared protected for testing purposes.
  protected:
   QualityScaler(AdaptationObserverInterface* observer,
                 VideoEncoder::QpThresholds thresholds,
-                int64_t sampling_period);
+                int64_t sampling_period_ms);
 
  private:
   class CheckQPTask;
@@ -72,12 +72,11 @@ class QualityScaler {
   AdaptationObserverInterface* const observer_ RTC_GUARDED_BY(&task_checker_);
   rtc::SequencedTaskChecker task_checker_;
 
+  const VideoEncoder::QpThresholds thresholds_;
   const int64_t sampling_period_ms_;
   bool fast_rampup_ RTC_GUARDED_BY(&task_checker_);
   MovingAverage average_qp_ RTC_GUARDED_BY(&task_checker_);
   MovingAverage framedrop_percent_ RTC_GUARDED_BY(&task_checker_);
-
-  VideoEncoder::QpThresholds thresholds_ RTC_GUARDED_BY(&task_checker_);
 };
 }  // namespace webrtc
 

@@ -21,8 +21,8 @@ namespace webrtc {
 namespace {
 static const int kFramerate = 30;
 static const int kLowQp = 15;
-static const int kLowQpThreshold = 18;
 static const int kHighQp = 40;
+static const int kMinFramesNeededToScale = 60;  // From quality_scaler.cc.
 static const size_t kDefaultTimeoutMs = 150;
 }  // namespace
 
@@ -66,6 +66,7 @@ class QualityScalerUnderTest : public QualityScaler {
 class QualityScalerTest : public ::testing::Test {
  protected:
   enum ScaleDirection {
+    kKeepScaleAboveLowQp,
     kKeepScaleAtHighQp,
     kScaleDown,
     kScaleDownAboveHighQp,
@@ -77,8 +78,8 @@ class QualityScalerTest : public ::testing::Test {
         observer_(new MockAdaptationObserver()) {
     DO_SYNC(q_, {
       qs_ = std::unique_ptr<QualityScaler>(new QualityScalerUnderTest(
-          observer_.get(),
-          VideoEncoder::QpThresholds(kLowQpThreshold, kHighQp)));});
+          observer_.get(), VideoEncoder::QpThresholds(kLowQp, kHighQp)));
+    });
   }
 
   ~QualityScalerTest() {
@@ -88,6 +89,9 @@ class QualityScalerTest : public ::testing::Test {
   void TriggerScale(ScaleDirection scale_direction) {
     for (int i = 0; i < kFramerate * 5; ++i) {
       switch (scale_direction) {
+        case kKeepScaleAboveLowQp:
+          qs_->ReportQP(kLowQp + 1);
+          break;
         case kScaleUp:
           qs_->ReportQP(kLowQp);
           break;
@@ -113,6 +117,7 @@ TEST_F(QualityScalerTest, DownscalesAfterContinuousFramedrop) {
   DO_SYNC(q_, { TriggerScale(kScaleDown); });
   EXPECT_TRUE(observer_->event.Wait(kDefaultTimeoutMs));
   EXPECT_EQ(1, observer_->adapt_down_events_);
+  EXPECT_EQ(0, observer_->adapt_up_events_);
 }
 
 TEST_F(QualityScalerTest, KeepsScaleAtHighQp) {
@@ -142,13 +147,6 @@ TEST_F(QualityScalerTest, DownscalesAfterTwoThirdsFramedrop) {
   EXPECT_EQ(0, observer_->adapt_up_events_);
 }
 
-TEST_F(QualityScalerTest, DoesNotDownscaleOnNormalQp) {
-  DO_SYNC(q_, { TriggerScale(kScaleDownAboveHighQp); });
-  EXPECT_TRUE(observer_->event.Wait(kDefaultTimeoutMs));
-  EXPECT_EQ(1, observer_->adapt_down_events_);
-  EXPECT_EQ(0, observer_->adapt_up_events_);
-}
-
 TEST_F(QualityScalerTest, DoesNotDownscaleAfterHalfFramedrop) {
   DO_SYNC(q_, {
     for (int i = 0; i < kFramerate * 5; ++i) {
@@ -156,6 +154,13 @@ TEST_F(QualityScalerTest, DoesNotDownscaleAfterHalfFramedrop) {
       qs_->ReportQP(kHighQp);
     }
   });
+  EXPECT_FALSE(observer_->event.Wait(kDefaultTimeoutMs));
+  EXPECT_EQ(0, observer_->adapt_down_events_);
+  EXPECT_EQ(0, observer_->adapt_up_events_);
+}
+
+TEST_F(QualityScalerTest, KeepsScaleOnNormalQp) {
+  DO_SYNC(q_, { TriggerScale(kKeepScaleAboveLowQp); });
   EXPECT_FALSE(observer_->event.Wait(kDefaultTimeoutMs));
   EXPECT_EQ(0, observer_->adapt_down_events_);
   EXPECT_EQ(0, observer_->adapt_up_events_);
@@ -181,22 +186,49 @@ TEST_F(QualityScalerTest, ScalesDownAndBackUp) {
 
 TEST_F(QualityScalerTest, DoesNotScaleUntilEnoughFramesObserved) {
   DO_SYNC(q_, {
-      // Send 30 frames. This should not be enough to make a decision.
-      for (int i = 0; i < kFramerate; ++i) {
-        qs_->ReportQP(kLowQp);
-      }
-    });
+    // Not enough frames to make a decision.
+    for (int i = 0; i < kMinFramesNeededToScale - 1; ++i) {
+      qs_->ReportQP(kLowQp);
+    }
+  });
   EXPECT_FALSE(observer_->event.Wait(kDefaultTimeoutMs));
   DO_SYNC(q_, {
-      // Send 30 more. This should result in an adapt request as
-      // enough frames have now been observed.
-      for (int i = 0; i < kFramerate; ++i) {
-        qs_->ReportQP(kLowQp);
-      }
-    });
+    // Send 1 more. Enough frames observed, should result in an adapt request.
+    qs_->ReportQP(kLowQp);
+  });
   EXPECT_TRUE(observer_->event.Wait(kDefaultTimeoutMs));
   EXPECT_EQ(0, observer_->adapt_down_events_);
   EXPECT_EQ(1, observer_->adapt_up_events_);
+
+  // Samples should be cleared after an adapt request.
+  DO_SYNC(q_, {
+    // Not enough frames to make a decision.
+    qs_->ReportQP(kLowQp);
+  });
+  EXPECT_FALSE(observer_->event.Wait(kDefaultTimeoutMs));
+  EXPECT_EQ(0, observer_->adapt_down_events_);
+  EXPECT_EQ(1, observer_->adapt_up_events_);
 }
+
+TEST_F(QualityScalerTest, ScalesDownAndBackUpWithMinFramesNeeded) {
+  DO_SYNC(q_, {
+    for (int i = 0; i < kMinFramesNeededToScale; ++i) {
+      qs_->ReportQP(kHighQp + 1);
+    }
+  });
+  EXPECT_TRUE(observer_->event.Wait(kDefaultTimeoutMs));
+  EXPECT_EQ(1, observer_->adapt_down_events_);
+  EXPECT_EQ(0, observer_->adapt_up_events_);
+  // Samples cleared.
+  DO_SYNC(q_, {
+    for (int i = 0; i < kMinFramesNeededToScale; ++i) {
+      qs_->ReportQP(kLowQp);
+    }
+  });
+  EXPECT_TRUE(observer_->event.Wait(kDefaultTimeoutMs));
+  EXPECT_EQ(1, observer_->adapt_down_events_);
+  EXPECT_EQ(1, observer_->adapt_up_events_);
+}
+
 }  // namespace webrtc
 #undef DO_SYNC

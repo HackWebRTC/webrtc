@@ -73,15 +73,15 @@ QualityScaler::QualityScaler(AdaptationObserverInterface* observer,
 // Protected ctor, should not be called directly.
 QualityScaler::QualityScaler(AdaptationObserverInterface* observer,
                              VideoEncoder::QpThresholds thresholds,
-                             int64_t sampling_period)
+                             int64_t sampling_period_ms)
     : check_qp_task_(nullptr),
       observer_(observer),
-      sampling_period_ms_(sampling_period),
+      thresholds_(thresholds),
+      sampling_period_ms_(sampling_period_ms),
       fast_rampup_(true),
       // Arbitrarily choose size based on 30 fps for 5 seconds.
       average_qp_(5 * 30),
-      framedrop_percent_(5 * 30),
-      thresholds_(thresholds) {
+      framedrop_percent_(5 * 30) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
   RTC_DCHECK(observer_ != nullptr);
   check_qp_task_ = new CheckQPTask(this);
@@ -116,14 +116,15 @@ void QualityScaler::CheckQP() {
   // Should be set through InitEncode -> Should be set by now.
   RTC_DCHECK_GE(thresholds_.low, 0);
 
-  // If we have not observed at least this many frames we can't
-  // make a good scaling decision.
+  // If we have not observed at least this many frames we can't make a good
+  // scaling decision.
   if (framedrop_percent_.size() < kMinFramesNeededToScale)
     return;
 
   // Check if we should scale down due to high frame drop.
   const rtc::Optional<int> drop_rate = framedrop_percent_.GetAverage();
   if (drop_rate && *drop_rate >= kFramedropPercentThreshold) {
+    RTC_LOG(LS_INFO) << "Reporting high QP, framedrop percent " << *drop_rate;
     ReportQPHigh();
     return;
   }
