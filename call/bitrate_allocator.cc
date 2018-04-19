@@ -142,29 +142,24 @@ void BitrateAllocator::OnNetworkChanged(uint32_t target_bitrate_bps,
 }
 
 void BitrateAllocator::AddObserver(BitrateAllocatorObserver* observer,
-                                   uint32_t min_bitrate_bps,
-                                   uint32_t max_bitrate_bps,
-                                   uint32_t pad_up_bitrate_bps,
-                                   bool enforce_min_bitrate,
-                                   std::string track_id,
-                                   double bitrate_priority,
-                                   bool has_packet_feedback) {
+                                   MediaStreamAllocationConfig config) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
-  RTC_DCHECK_GT(bitrate_priority, 0);
-  RTC_DCHECK(std::isnormal(bitrate_priority));
+  RTC_DCHECK_GT(config.bitrate_priority, 0);
+  RTC_DCHECK(std::isnormal(config.bitrate_priority));
   auto it = FindObserverConfig(observer);
 
   // Update settings if the observer already exists, create a new one otherwise.
   if (it != bitrate_observer_configs_.end()) {
-    it->min_bitrate_bps = min_bitrate_bps;
-    it->max_bitrate_bps = max_bitrate_bps;
-    it->pad_up_bitrate_bps = pad_up_bitrate_bps;
-    it->enforce_min_bitrate = enforce_min_bitrate;
-    it->bitrate_priority = bitrate_priority;
+    it->min_bitrate_bps = config.min_bitrate_bps;
+    it->max_bitrate_bps = config.max_bitrate_bps;
+    it->pad_up_bitrate_bps = config.pad_up_bitrate_bps;
+    it->enforce_min_bitrate = config.enforce_min_bitrate;
+    it->bitrate_priority = config.bitrate_priority;
   } else {
     bitrate_observer_configs_.push_back(ObserverConfig(
-        observer, min_bitrate_bps, max_bitrate_bps, pad_up_bitrate_bps,
-        enforce_min_bitrate, track_id, bitrate_priority, has_packet_feedback));
+        observer, config.min_bitrate_bps, config.max_bitrate_bps,
+        config.pad_up_bitrate_bps, config.enforce_min_bitrate, config.track_id,
+        config.bitrate_priority, config.has_packet_feedback));
   }
 
   ObserverAllocation allocation;
