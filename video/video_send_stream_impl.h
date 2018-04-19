@@ -52,9 +52,9 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
       rtc::TaskQueue* worker_queue,
       CallStats* call_stats,
       RtpTransportControllerSendInterface* transport,
-      BitrateAllocator* bitrate_allocator,
+      BitrateAllocatorInterface* bitrate_allocator,
       SendDelayStats* send_delay_stats,
-      VideoStreamEncoder* video_stream_encoder,
+      VideoStreamEncoderInterface* video_stream_encoder,
       RtcEventLog* event_log,
       const VideoSendStream::Config* config,
       int initial_encoder_max_bitrate,
@@ -156,7 +156,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
 
   CallStats* const call_stats_;
   RtpTransportControllerSendInterface* const transport_;
-  BitrateAllocator* const bitrate_allocator_;
+  BitrateAllocatorInterface* const bitrate_allocator_;
 
   // TODO(brandtr): Move ownership to PayloadRouter.
   std::unique_ptr<FlexfecSender> flexfec_sender_;
@@ -172,7 +172,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   double encoder_bitrate_priority_;
   bool has_packet_feedback_;
 
-  VideoStreamEncoder* const video_stream_encoder_;
+  VideoStreamEncoderInterface* const video_stream_encoder_;
   EncoderRtcpFeedback encoder_feedback_;
 
   RtcpBandwidthObserver* const bandwidth_observer_;

@@ -19,7 +19,7 @@ namespace webrtc {
 
 EncoderRtcpFeedback::EncoderRtcpFeedback(Clock* clock,
                                          const std::vector<uint32_t>& ssrcs,
-                                         VideoStreamEncoder* encoder)
+                                         VideoStreamEncoderInterface* encoder)
     : clock_(clock),
       ssrcs_(ssrcs),
       video_stream_encoder_(encoder),
