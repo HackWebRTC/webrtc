@@ -18,9 +18,6 @@
 #include <limits>
 
 #include "api/optional.h"
-// TODO(bugs.webrtc.org/7504): Included here because users of this header expect
-// it to declare AudioFrame. Delete as soon as all known users are updated.
-#include "api/audio/audio_frame.h"
 #include "api/rtp_headers.h"
 #include "api/video/video_rotation.h"
 #include "common_types.h"  // NOLINT(build/include)
