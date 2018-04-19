@@ -11,7 +11,7 @@
     "target_os=\"ios\"",
     "use_goma=true"
   ],
-  "additional_compile_targets": [ "all" ],
+  "additional_compile_targets": [],
   "configuration": "Debug",
   "sdk": "iphonesimulator11.0",
   "tests": [
