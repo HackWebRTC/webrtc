@@ -122,7 +122,7 @@ void AAudioPlayer::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
   // size per callback used by AAudio. Use an initial capacity of 50ms to ensure
   // that the buffer can cache old data and at the same time be prepared for
   // increased burst size in AAudio if buffer underruns are detected.
-  const size_t capacity = 5 * audio_parameters.GetBytesPer10msBuffer();
+  const size_t capacity = 5 * audio_parameters.frames_per_10ms_buffer();
   fine_audio_buffer_.reset(new FineAudioBuffer(
       audio_device_buffer_, audio_parameters.sample_rate(), capacity));
 }
@@ -184,16 +184,16 @@ aaudio_data_callback_result_t AAudioPlayer::OnDataCallback(void* audio_data,
 
   // Read audio data from the WebRTC source using the FineAudioBuffer object
   // and write that data into |audio_data| to be played out by AAudio.
-  const size_t num_bytes =
-      sizeof(int16_t) * aaudio_.samples_per_frame() * num_frames;
   // Prime output with zeros during a short initial phase to avoid distortion.
   // TODO(henrika): do more work to figure out of if the initial forced silence
   // period is really needed.
   if (aaudio_.frames_written() < 50 * aaudio_.frames_per_burst()) {
+    const size_t num_bytes =
+        sizeof(int16_t) * aaudio_.samples_per_frame() * num_frames;
     memset(audio_data, 0, num_bytes);
   } else {
     fine_audio_buffer_->GetPlayoutData(
-        rtc::ArrayView<int8_t>(static_cast<int8_t*>(audio_data), num_bytes),
+        rtc::MakeArrayView(static_cast<int16_t*>(audio_data), num_frames),
         static_cast<int>(latency_millis_ + 0.5));
   }
 

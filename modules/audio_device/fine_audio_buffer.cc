@@ -26,7 +26,6 @@ FineAudioBuffer::FineAudioBuffer(AudioDeviceBuffer* device_buffer,
     : device_buffer_(device_buffer),
       sample_rate_(sample_rate),
       samples_per_10_ms_(static_cast<size_t>(sample_rate_ * 10 / 1000)),
-      bytes_per_10_ms_(samples_per_10_ms_ * sizeof(int16_t)),
       playout_buffer_(0, capacity),
       record_buffer_(0, capacity) {
   RTC_LOG(INFO) << "samples_per_10_ms_: " << samples_per_10_ms_;
@@ -42,52 +41,53 @@ void FineAudioBuffer::ResetRecord() {
   record_buffer_.Clear();
 }
 
-void FineAudioBuffer::GetPlayoutData(rtc::ArrayView<int8_t> audio_buffer,
+void FineAudioBuffer::GetPlayoutData(rtc::ArrayView<int16_t> audio_buffer,
                                      int playout_delay_ms) {
   // Ask WebRTC for new data in chunks of 10ms until we have enough to
   // fulfill the request. It is possible that the buffer already contains
   // enough samples from the last round.
-  const size_t num_bytes = audio_buffer.size();
-  while (playout_buffer_.size() < num_bytes) {
+  while (playout_buffer_.size() < audio_buffer.size()) {
     // Get 10ms decoded audio from WebRTC.
     device_buffer_->RequestPlayoutData(samples_per_10_ms_);
     // Append |bytes_per_10_ms_| elements to the end of the buffer.
-    const size_t bytes_written = playout_buffer_.AppendData(
-        bytes_per_10_ms_, [&](rtc::ArrayView<int8_t> buf) {
+    const size_t samples_written = playout_buffer_.AppendData(
+        samples_per_10_ms_, [&](rtc::ArrayView<int16_t> buf) {
           const size_t samples_per_channel =
               device_buffer_->GetPlayoutData(buf.data());
           // TODO(henrika): this class is only used on mobile devices and is
           // currently limited to mono. Modifications are needed for stereo.
-          return sizeof(int16_t) * samples_per_channel;
+          return samples_per_channel;
         });
-    RTC_DCHECK_EQ(bytes_per_10_ms_, bytes_written);
+    RTC_DCHECK_EQ(samples_per_10_ms_, samples_written);
   }
+
+  const size_t num_bytes = audio_buffer.size() * sizeof(int16_t);
   // Provide the requested number of bytes to the consumer.
   memcpy(audio_buffer.data(), playout_buffer_.data(), num_bytes);
   // Move remaining samples to start of buffer to prepare for next round.
-  memmove(playout_buffer_.data(), playout_buffer_.data() + num_bytes,
-          playout_buffer_.size() - num_bytes);
-  playout_buffer_.SetSize(playout_buffer_.size() - num_bytes);
+  memmove(playout_buffer_.data(), playout_buffer_.data() + audio_buffer.size(),
+          (playout_buffer_.size() - audio_buffer.size()) * sizeof(int16_t));
+  playout_buffer_.SetSize(playout_buffer_.size() - audio_buffer.size());
   // Cache playout latency for usage in DeliverRecordedData();
   playout_delay_ms_ = playout_delay_ms;
 }
 
 void FineAudioBuffer::DeliverRecordedData(
-    rtc::ArrayView<const int8_t> audio_buffer,
+    rtc::ArrayView<const int16_t> audio_buffer,
     int record_delay_ms) {
   // Always append new data and grow the buffer if needed.
   record_buffer_.AppendData(audio_buffer.data(), audio_buffer.size());
   // Consume samples from buffer in chunks of 10ms until there is not
-  // enough data left. The number of remaining bytes in the cache is given by
+  // enough data left. The number of remaining samples in the cache is given by
   // the new size of the buffer.
-  while (record_buffer_.size() >= bytes_per_10_ms_) {
+  while (record_buffer_.size() >= samples_per_10_ms_) {
     device_buffer_->SetRecordedBuffer(record_buffer_.data(),
                                       samples_per_10_ms_);
     device_buffer_->SetVQEData(playout_delay_ms_, record_delay_ms);
     device_buffer_->DeliverRecordedData();
-    memmove(record_buffer_.data(), record_buffer_.data() + bytes_per_10_ms_,
-            record_buffer_.size() - bytes_per_10_ms_);
-    record_buffer_.SetSize(record_buffer_.size() - bytes_per_10_ms_);
+    memmove(record_buffer_.data(), record_buffer_.data() + samples_per_10_ms_,
+            (record_buffer_.size() - samples_per_10_ms_) * sizeof(int16_t));
+    record_buffer_.SetSize(record_buffer_.size() - samples_per_10_ms_);
   }
 }
 

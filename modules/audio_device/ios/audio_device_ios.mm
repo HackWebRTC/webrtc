@@ -360,12 +360,11 @@ OSStatus AudioDeviceIOS::OnDeliverRecordedData(AudioUnitRenderActionFlags* flags
   // Simply return if recording is not enabled.
   if (!rtc::AtomicOps::AcquireLoad(&recording_)) return result;
 
-  const size_t num_bytes = num_frames * VoiceProcessingAudioUnit::kBytesPerSample;
   // Set the size of our own audio buffer and clear it first to avoid copying
   // in combination with potential reallocations.
   // On real iOS devices, the size will only be set once (at first callback).
   record_audio_buffer_.Clear();
-  record_audio_buffer_.SetSize(num_bytes);
+  record_audio_buffer_.SetSize(num_frames);
 
   // Allocate AudioBuffers to be used as storage for the received audio.
   // The AudioBufferList structure works as a placeholder for the
@@ -376,8 +375,9 @@ OSStatus AudioDeviceIOS::OnDeliverRecordedData(AudioUnitRenderActionFlags* flags
   audio_buffer_list.mNumberBuffers = 1;
   AudioBuffer* audio_buffer = &audio_buffer_list.mBuffers[0];
   audio_buffer->mNumberChannels = record_parameters_.channels();
-  audio_buffer->mDataByteSize = record_audio_buffer_.size();
-  audio_buffer->mData = record_audio_buffer_.data();
+  audio_buffer->mDataByteSize =
+      record_audio_buffer_.size() * VoiceProcessingAudioUnit::kBytesPerSample;
+  audio_buffer->mData = reinterpret_cast<int8_t*>(record_audio_buffer_.data());
 
   // Obtain the recorded audio samples by initiating a rendering cycle.
   // Since it happens on the input bus, the |io_data| parameter is a reference
@@ -409,16 +409,13 @@ OSStatus AudioDeviceIOS::OnGetPlayoutData(AudioUnitRenderActionFlags* flags,
   AudioBuffer* audio_buffer = &io_data->mBuffers[0];
   RTC_DCHECK_EQ(1, audio_buffer->mNumberChannels);
 
-  // Get pointer to internal audio buffer to which new audio data shall be
-  // written.
-  const size_t size_in_bytes = audio_buffer->mDataByteSize;
-  RTC_CHECK_EQ(size_in_bytes / VoiceProcessingAudioUnit::kBytesPerSample, num_frames);
-  int8_t* destination = reinterpret_cast<int8_t*>(audio_buffer->mData);
   // Produce silence and give audio unit a hint about it if playout is not
   // activated.
   if (!rtc::AtomicOps::AcquireLoad(&playing_)) {
+    const size_t size_in_bytes = audio_buffer->mDataByteSize;
+    RTC_CHECK_EQ(size_in_bytes / VoiceProcessingAudioUnit::kBytesPerSample, num_frames);
     *flags |= kAudioUnitRenderAction_OutputIsSilence;
-    memset(destination, 0, size_in_bytes);
+    memset(static_cast<int8_t*>(audio_buffer->mData), 0, size_in_bytes);
     return noErr;
   }
 
@@ -454,8 +451,9 @@ OSStatus AudioDeviceIOS::OnGetPlayoutData(AudioUnitRenderActionFlags* flags,
   // Read decoded 16-bit PCM samples from WebRTC (using a size that matches
   // the native I/O audio unit) and copy the result to the audio buffer in the
   // |io_data| destination.
-  fine_audio_buffer_->GetPlayoutData(rtc::ArrayView<int8_t>(destination, size_in_bytes),
-                                     kFixedPlayoutDelayEstimate);
+  fine_audio_buffer_->GetPlayoutData(
+      rtc::ArrayView<int16_t>(static_cast<int16_t*>(audio_buffer->mData), num_frames),
+      kFixedPlayoutDelayEstimate);
   return noErr;
 }
 
@@ -704,9 +702,9 @@ void AudioDeviceIOS::SetupAudioBuffersForActiveAudioSession() {
   // the native audio unit buffer size. Use a reasonable capacity to avoid
   // reallocations while audio is played to reduce risk of glitches.
   RTC_DCHECK(audio_device_buffer_);
-  const size_t capacity_in_bytes = 2 * playout_parameters_.GetBytesPerBuffer();
+  const size_t capacity_in_samples = 2 * playout_parameters_.frames_per_buffer();
   fine_audio_buffer_.reset(new FineAudioBuffer(
-      audio_device_buffer_, playout_parameters_.sample_rate(), capacity_in_bytes));
+      audio_device_buffer_, playout_parameters_.sample_rate(), capacity_in_samples));
 }
 
 bool AudioDeviceIOS::CreateAudioUnit() {

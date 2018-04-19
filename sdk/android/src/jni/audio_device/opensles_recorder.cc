@@ -355,12 +355,12 @@ void OpenSLESRecorder::AllocateDataBuffers() {
   RTC_DCHECK(audio_device_buffer_);
   fine_audio_buffer_.reset(
       new FineAudioBuffer(audio_device_buffer_, audio_parameters_.sample_rate(),
-                          2 * audio_parameters_.GetBytesPerBuffer()));
+                          2 * audio_parameters_.frames_per_buffer()));
   // Allocate queue of audio buffers that stores recorded audio samples.
-  const int data_size_bytes = audio_parameters_.GetBytesPerBuffer();
-  audio_buffers_.reset(new std::unique_ptr<SLint8[]>[kNumOfOpenSLESBuffers]);
+  const int data_size_samples = audio_parameters_.frames_per_buffer();
+  audio_buffers_.reset(new std::unique_ptr<SLint16[]>[kNumOfOpenSLESBuffers]);
   for (int i = 0; i < kNumOfOpenSLESBuffers; ++i) {
-    audio_buffers_[i].reset(new SLint8[data_size_bytes]);
+    audio_buffers_[i].reset(new SLint16[data_size_samples]);
   }
 }
 
@@ -385,12 +385,12 @@ void OpenSLESRecorder::ReadBufferQueue() {
   // since there is no support to turn off built-in EC in combination with
   // OpenSL ES anyhow. Hence, as is, the WebRTC based AEC (which would use
   // these estimates) will never be active.
-  const size_t size_in_bytes =
-      static_cast<size_t>(audio_parameters_.GetBytesPerBuffer());
-  const int8_t* data =
-      static_cast<const int8_t*>(audio_buffers_[buffer_index_].get());
+  const size_t size_in_samples =
+      static_cast<size_t>(audio_parameters_.frames_per_buffer());
   fine_audio_buffer_->DeliverRecordedData(
-      rtc::ArrayView<const int8_t>(data, size_in_bytes), 25);
+      rtc::ArrayView<const int16_t>(audio_buffers_[buffer_index_].get(),
+                                    size_in_samples),
+      25);
   // Enqueue the utilized audio buffer and use if for recording again.
   EnqueueAudioBuffer();
 }
@@ -398,8 +398,10 @@ void OpenSLESRecorder::ReadBufferQueue() {
 bool OpenSLESRecorder::EnqueueAudioBuffer() {
   SLresult err =
       (*simple_buffer_queue_)
-          ->Enqueue(simple_buffer_queue_, audio_buffers_[buffer_index_].get(),
-                    audio_parameters_.GetBytesPerBuffer());
+          ->Enqueue(
+              simple_buffer_queue_,
+              reinterpret_cast<SLint8*>(audio_buffers_[buffer_index_].get()),
+              audio_parameters_.GetBytesPerBuffer());
   if (SL_RESULT_SUCCESS != err) {
     ALOGE("Enqueue failed: %s", GetSLErrorString(err));
     return false;

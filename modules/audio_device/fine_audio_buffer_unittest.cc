@@ -34,7 +34,7 @@ const int kSamplesPer10Ms = kSampleRate * 10 / 1000;
 // buffer 2 would contain 3,4,5. Note that SCHAR_MAX is 127 so wrap-around
 // will happen.
 // |buffer| is the audio buffer to verify.
-bool VerifyBuffer(const int8_t* buffer, int buffer_number, int size) {
+bool VerifyBuffer(const int16_t* buffer, int buffer_number, int size) {
   int start_value = (buffer_number * size) % SCHAR_MAX;
   for (int i = 0; i < size; ++i) {
     if (buffer[i] != (i + start_value) % SCHAR_MAX) {
@@ -52,10 +52,9 @@ bool VerifyBuffer(const int8_t* buffer, int buffer_number, int size) {
 // |samples_per_10_ms| is the number of samples that should be written to the
 // buffer (|arg0|).
 ACTION_P2(UpdateBuffer, iteration, samples_per_10_ms) {
-  int8_t* buffer = static_cast<int8_t*>(arg0);
-  int bytes_per_10_ms = samples_per_10_ms * static_cast<int>(sizeof(int16_t));
-  int start_value = (iteration * bytes_per_10_ms) % SCHAR_MAX;
-  for (int i = 0; i < bytes_per_10_ms; ++i) {
+  int16_t* buffer = static_cast<int16_t*>(arg0);
+  int start_value = (iteration * samples_per_10_ms) % SCHAR_MAX;
+  for (int i = 0; i < samples_per_10_ms; ++i) {
     buffer[i] = (i + start_value) % SCHAR_MAX;
   }
   return samples_per_10_ms;
@@ -63,7 +62,7 @@ ACTION_P2(UpdateBuffer, iteration, samples_per_10_ms) {
 
 // Writes a periodic ramp pattern to the supplied |buffer|. See UpdateBuffer()
 // for details.
-void UpdateInputBuffer(int8_t* buffer, int iteration, int size) {
+void UpdateInputBuffer(int16_t* buffer, int iteration, int size) {
   int start_value = (iteration * size) % SCHAR_MAX;
   for (int i = 0; i < size; ++i) {
     buffer[i] = (i + start_value) % SCHAR_MAX;
@@ -75,18 +74,16 @@ void UpdateInputBuffer(int8_t* buffer, int iteration, int size) {
 // supplied using a buffer size that is smaller or larger than 10ms.
 // See VerifyBuffer() for details.
 ACTION_P2(VerifyInputBuffer, iteration, samples_per_10_ms) {
-  const int8_t* buffer = static_cast<const int8_t*>(arg0);
-  int bytes_per_10_ms = samples_per_10_ms * static_cast<int>(sizeof(int16_t));
-  int start_value = (iteration * bytes_per_10_ms) % SCHAR_MAX;
-  for (int i = 0; i < bytes_per_10_ms; ++i) {
+  const int16_t* buffer = static_cast<const int16_t*>(arg0);
+  int start_value = (iteration * samples_per_10_ms) % SCHAR_MAX;
+  for (int i = 0; i < samples_per_10_ms; ++i) {
     EXPECT_EQ(buffer[i], (i + start_value) % SCHAR_MAX);
   }
   return 0;
 }
 
 void RunFineBufferTest(int frame_size_in_samples) {
-  const int kFrameSizeBytes =
-      frame_size_in_samples * static_cast<int>(sizeof(int16_t));
+  const int kFrameSizeSamples = frame_size_in_samples;
   const int kNumberOfFrames = 5;
   // Ceiling of integer division: 1 + ((x - 1) / y)
   const int kNumberOfUpdateBufferCalls =
@@ -118,17 +115,17 @@ void RunFineBufferTest(int frame_size_in_samples) {
       .WillRepeatedly(Return(kSamplesPer10Ms));
 
   FineAudioBuffer fine_buffer(&audio_device_buffer, kSampleRate,
-                              kFrameSizeBytes);
-  std::unique_ptr<int8_t[]> out_buffer(new int8_t[kFrameSizeBytes]);
-  std::unique_ptr<int8_t[]> in_buffer(new int8_t[kFrameSizeBytes]);
+                              kFrameSizeSamples);
+  std::unique_ptr<int16_t[]> out_buffer(new int16_t[kFrameSizeSamples]);
+  std::unique_ptr<int16_t[]> in_buffer(new int16_t[kFrameSizeSamples]);
 
   for (int i = 0; i < kNumberOfFrames; ++i) {
     fine_buffer.GetPlayoutData(
-        rtc::ArrayView<int8_t>(out_buffer.get(), kFrameSizeBytes), 0);
-    EXPECT_TRUE(VerifyBuffer(out_buffer.get(), i, kFrameSizeBytes));
-    UpdateInputBuffer(in_buffer.get(), i, kFrameSizeBytes);
+        rtc::ArrayView<int16_t>(out_buffer.get(), kFrameSizeSamples), 0);
+    EXPECT_TRUE(VerifyBuffer(out_buffer.get(), i, kFrameSizeSamples));
+    UpdateInputBuffer(in_buffer.get(), i, kFrameSizeSamples);
     fine_buffer.DeliverRecordedData(
-        rtc::ArrayView<const int8_t>(in_buffer.get(), kFrameSizeBytes), 0);
+        rtc::ArrayView<const int16_t>(in_buffer.get(), kFrameSizeSamples), 0);
   }
 }
 
