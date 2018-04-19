@@ -514,8 +514,8 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log)
         }
         uint64_t timestamp = parsed_log_.GetTimestamp(i);
         StreamId stream(parsed_header.ssrc, direction);
-        rtp_packets_[stream].push_back(
-            LoggedRtpPacket(timestamp, parsed_header, total_length));
+        rtp_packets_[stream].push_back(LoggedRtpPacket(
+            timestamp, parsed_header, header_length, total_length));
         break;
       }
       case ParsedRtcEventLog::RTCP_EVENT: {
@@ -1911,7 +1911,8 @@ class NetEqStreamInput : public test::NetEqInput {
 
     // This is a header-only "dummy" packet. Set the payload to all zeros, with
     // length according to the virtual length.
-    packet_data->payload.SetSize(packet_stream_it_->total_length);
+    packet_data->payload.SetSize(packet_stream_it_->total_length -
+                                 packet_stream_it_->header_length);
     std::fill_n(packet_data->payload.data(), packet_data->payload.size(), 0);
 
     ++packet_stream_it_;
