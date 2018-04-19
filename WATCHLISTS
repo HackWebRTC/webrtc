@@ -20,7 +20,7 @@
     },
     'root_files': {
       # Non-recursive contents of ./
-      'filepath': '^[^/]*$|',
+      'filepath': '^[^/]*$',
     },
     'build_files': {
       'filepath': '\.gni$|\.gn$',
