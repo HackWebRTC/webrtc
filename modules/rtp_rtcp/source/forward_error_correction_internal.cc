@@ -392,19 +392,18 @@ void UnequalProtectionMask(int num_media_packets,
 }
 
 // This algorithm is tailored to look up data in the |kPacketMaskRandomTbl| and
-// |kPacketMaskBurstyTbl| tables.
-// The format of those arrays is that they're essentially a 3 dimensional array
-// with the following dimensions:
-// * media packet
-//   * Size for kPacketMaskRandomTbl: 48
+// |kPacketMaskBurstyTbl| tables. These tables only cover fec code for up to 12
+// media packets. Starting from 13 media packets, the fec code will be generated
+// at runtime. The format of those arrays is that they're essentially a 3
+// dimensional array with the following dimensions: * media packet
+//   * Size for kPacketMaskRandomTbl: 12
 //   * Size for kPacketMaskBurstyTbl: 12
 // * fec index
 //   * Size for both random and bursty table increases from 1 to number of rows.
 //     (i.e. 1-48, or 1-12 respectively).
 // * Fec data (what actually gets returned)
-//   * Size for kPacketMaskRandomTbl:
-//     * For the first 16 entries: 2 * fec index (1 based)
-//     * For entries >= 17:        6 * fec index (1 based)
+//   * Size for kPacketMaskRandomTbl: 2 bytes.
+//     * For all entries: 2 * fec index (1 based)
 //   * Size for kPacketMaskBurstyTbl: 2 bytes.
 //     * For all entries: 2 * fec index (1 based)
 rtc::ArrayView<const uint8_t> LookUpInFecTable(const uint8_t* table,

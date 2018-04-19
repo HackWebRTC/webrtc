@@ -65,7 +65,7 @@ TEST(FecTable, TestRandomLookup) {
 }
 
 TEST(FecTable, TestRandomGenerated) {
-  FecMaskType fec_mask_type = webrtc::kFecMaskRandom;
+  FecMaskType fec_mask_type = kFecMaskRandom;
   int num_media_packets = 15;
   int num_fec_packets = 6;
   size_t mask_size = sizeof(kMaskRandom15_6) / sizeof(uint8_t);
@@ -73,7 +73,7 @@ TEST(FecTable, TestRandomGenerated) {
   rtc::ArrayView<const uint8_t> mask =
       mask_table.LookUp(num_media_packets, num_fec_packets);
   EXPECT_EQ(mask.size(), mask_size);
-  for (size_t i = 0; i < mask_size; i++) {
+  for (size_t i = 0; i < mask_size; ++i) {
     EXPECT_EQ(mask[i], kMaskRandom15_6[i]);
   }
 }

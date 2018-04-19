@@ -25,7 +25,9 @@ constexpr size_t kUlpfecMaxMediaPackets = 48;
 constexpr size_t kUlpfecPacketMaskSizeLBitClear = 2;
 constexpr size_t kUlpfecPacketMaskSizeLBitSet = 6;
 
-// Packet code mask maximum length
+// Packet code mask maximum length. kFECPacketMaskMaxSize = MaxNumFECPackets *
+// (kUlpfecMaxMediaPackets / 8), and MaxNumFECPackets is equal to maximum number
+// of media packets (kUlpfecMaxMediaPackets)
 constexpr size_t kFECPacketMaskMaxSize = 288;
 
 // Convenience constants.
