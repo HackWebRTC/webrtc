@@ -39,18 +39,20 @@ void DtlsSrtpTransport::SetDtlsTransports(
   // When using DTLS-SRTP, we must reset the SrtpTransport every time the
   // DtlsTransport changes and wait until the DTLS handshake is complete to set
   // the newly negotiated parameters.
-  if (IsSrtpActive()) {
+  if (IsSrtpActive() && rtp_dtls_transport != rtp_dtls_transport_) {
     ResetParams();
   }
 
   const std::string transport_name =
       rtp_dtls_transport ? rtp_dtls_transport->transport_name() : "null";
 
-  // This would only be possible if using BUNDLE but not rtcp-mux, which isn't
-  // allowed according to the BUNDLE spec.
-  RTC_CHECK(!(IsSrtpActive()))
-      << "Setting RTCP for DTLS/SRTP after the DTLS is active "
-         "should never happen.";
+  if (rtcp_dtls_transport && rtcp_dtls_transport != rtcp_dtls_transport_) {
+    // This would only be possible if using BUNDLE but not rtcp-mux, which isn't
+    // allowed according to the BUNDLE spec.
+    RTC_CHECK(!(IsSrtpActive()))
+        << "Setting RTCP for DTLS/SRTP after the DTLS is active "
+           "should never happen.";
+  }
 
   RTC_LOG(LS_INFO) << "Setting RTCP Transport on " << transport_name
                    << " transport " << rtcp_dtls_transport;
