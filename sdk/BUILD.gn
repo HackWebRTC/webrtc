@@ -700,7 +700,7 @@ if (is_ios || is_mac) {
           ]
 
           if (rtc_use_metal_rendering) {
-            sources += [ "objc/Framework/UnitTests/RTCMTLVideoView_xctest.mm" ]
+            sources += [ "objc/Framework/UnitTests/RTCMTLVideoView_xctest.m" ]
             deps += [ ":metal_objc" ]
           }
 

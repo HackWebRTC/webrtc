@@ -62,12 +62,8 @@
   id frameMock = OCMClassMock([RTCVideoFrame class]);
   if (hasCVPixelBuffer) {
     CVPixelBufferRef pixelBufferRef;
-    CVPixelBufferCreate(kCFAllocatorDefault,
-                        200,
-                        200,
-                        kCVPixelFormatType_420YpCbCr8Planar,
-                        nullptr,
-                        &pixelBufferRef);
+    CVPixelBufferCreate(
+        kCFAllocatorDefault, 200, 200, kCVPixelFormatType_420YpCbCr8Planar, nil, &pixelBufferRef);
     OCMStub([frameMock buffer])
         .andReturn([[RTCCVPixelBuffer alloc] initWithPixelBuffer:pixelBufferRef]);
   } else {
@@ -245,6 +241,21 @@
   [realView drawInMTKView:nil];
 
   [self.rendererNV12Mock verify];
+}
+
+- (void)testReportsSizeChangesToDelegate {
+  OCMStub([self.classMock isMetalAvailable]).andReturn(YES);
+
+  id delegateMock = OCMProtocolMock(@protocol(RTCVideoViewDelegate));
+  CGSize size = CGSizeMake(640, 480);
+  OCMExpect([delegateMock videoView:[OCMArg any] didChangeVideoSize:size]);
+
+  RTCMTLVideoView *realView = [[RTCMTLVideoView alloc] init];
+  realView.delegate = delegateMock;
+  [realView setSize:size];
+
+  // Delegate method is invoked with a dispatch_async.
+  OCMVerifyAllWithDelay(delegateMock, 1);
 }
 
 @end
