@@ -130,7 +130,8 @@ void ProbeController::OnMaxTotalAllocatedBitrate(
   rtc::CritScope cs(&critsect_);
   // TODO(philipel): Should |max_total_allocated_bitrate| be used as a limit for
   //                 ALR probing?
-  if (max_total_allocated_bitrate != max_total_allocated_bitrate_ &&
+  if (state_ == State::kProbingComplete &&
+      max_total_allocated_bitrate != max_total_allocated_bitrate_ &&
       estimated_bitrate_bps_ != 0 &&
       (max_bitrate_bps_ <= 0 || estimated_bitrate_bps_ < max_bitrate_bps_) &&
       estimated_bitrate_bps_ < max_total_allocated_bitrate) {
@@ -143,6 +144,13 @@ void ProbeController::OnMaxTotalAllocatedBitrate(
 void ProbeController::OnNetworkStateChanged(NetworkState network_state) {
   rtc::CritScope cs(&critsect_);
   network_state_ = network_state;
+
+  if (network_state_ == kNetworkDown &&
+      state_ == State::kWaitingForProbingResult) {
+    state_ = State::kProbingComplete;
+    min_bitrate_to_probe_further_bps_ = kExponentialProbingDisabled;
+  }
+
   if (network_state_ == kNetworkUp && state_ == State::kInit)
     InitiateExponentialProbing();
 }

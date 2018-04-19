@@ -216,6 +216,11 @@ TEST_P(ProbingEndToEndTest, ProbeOnVideoEncoderReconfiguration) {
       send_stream_ = send_stream;
     }
 
+    void OnRtpTransportControllerSendCreated(
+        RtpTransportControllerSend* transport_controller) override {
+      transport_controller_ = transport_controller;
+    }
+
     test::PacketTransport* CreateSendTransport(
         test::SingleThreadedTaskQueueForTesting* task_queue,
         Call* sender_call) override {
@@ -243,6 +248,12 @@ TEST_P(ProbingEndToEndTest, ProbeOnVideoEncoderReconfiguration) {
               FakeNetworkPipe::Config config;
               config.link_capacity_kbps = 200;
               send_transport_->SetConfig(config);
+
+              // In order to speed up the test we can interrupt exponential
+              // probing by toggling the network availability. The alternative
+              // is to wait for it to time out (1000 ms).
+              transport_controller_->OnNetworkAvailability(false);
+              transport_controller_->OnNetworkAvailability(true);
 
               ++state_;
             }
@@ -279,6 +290,7 @@ TEST_P(ProbingEndToEndTest, ProbeOnVideoEncoderReconfiguration) {
     test::PacketTransport* send_transport_;
     VideoSendStream* send_stream_;
     VideoEncoderConfig* encoder_config_;
+    RtpTransportControllerSend* transport_controller_;
   };
 
   bool success = false;
