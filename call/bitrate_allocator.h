@@ -67,10 +67,22 @@ struct MediaStreamAllocationConfig {
   bool has_packet_feedback;
 };
 
+// Interface used for mocking
+class BitrateAllocatorInterface {
+ public:
+  virtual void AddObserver(BitrateAllocatorObserver* observer,
+                           MediaStreamAllocationConfig config) = 0;
+  virtual void RemoveObserver(BitrateAllocatorObserver* observer) = 0;
+  virtual int GetStartBitrate(BitrateAllocatorObserver* observer) = 0;
+
+ protected:
+  virtual ~BitrateAllocatorInterface() = default;
+};
+
 // Usage: this class will register multiple RtcpBitrateObserver's one at each
 // RTCP module. It will aggregate the results and run one bandwidth estimation
 // and push the result to the encoders via BitrateAllocatorObserver(s).
-class BitrateAllocator {
+class BitrateAllocator : public BitrateAllocatorInterface {
  public:
   // Used to get notified when send stream limits such as the minimum send
   // bitrate and max padding bitrate is changed.
@@ -82,7 +94,7 @@ class BitrateAllocator {
                                            bool has_packet_feedback) = 0;
 
    protected:
-    virtual ~LimitObserver() {}
+    virtual ~LimitObserver() = default;
   };
 
   explicit BitrateAllocator(LimitObserver* limit_observer);
@@ -98,15 +110,15 @@ class BitrateAllocator {
   // |observer| updates bitrates if already in use.
   // |config| is the configuration to use for allocation.
   void AddObserver(BitrateAllocatorObserver* observer,
-                   MediaStreamAllocationConfig config);
+                   MediaStreamAllocationConfig config) override;
 
   // Removes a previously added observer, but will not trigger a new bitrate
   // allocation.
-  void RemoveObserver(BitrateAllocatorObserver* observer);
+  void RemoveObserver(BitrateAllocatorObserver* observer) override;
 
   // Returns initial bitrate allocated for |observer|. If |observer| is not in
   // the list of added observers, a best guess is returned.
-  int GetStartBitrate(BitrateAllocatorObserver* observer);
+  int GetStartBitrate(BitrateAllocatorObserver* observer) override;
 
   // Sets external allocation strategy. If strategy is not set default WebRTC
   // allocation mechanism will be used. The strategy may be changed during call.

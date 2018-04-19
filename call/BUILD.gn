@@ -370,7 +370,17 @@ if (rtc_include_tests) {
       "../test:test_support",
     ]
   }
+  rtc_source_set("mock_bitrate_allocator") {
+    testonly = true
 
+    sources = [
+      "test/mock_bitrate_allocator.h",
+    ]
+    deps = [
+      ":bitrate_allocator",
+      "//test:test_support",
+    ]
+  }
   rtc_source_set("mock_call_interfaces") {
     testonly = true
 
