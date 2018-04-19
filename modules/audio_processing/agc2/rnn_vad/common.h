@@ -15,7 +15,14 @@ namespace webrtc {
 namespace rnn_vad {
 
 constexpr size_t kSampleRate24kHz = 24000;
-constexpr size_t kFrameSize10ms24kHz = 240;
+constexpr size_t kFrameSize10ms24kHz = kSampleRate24kHz / 100;
+constexpr size_t kFrameSize20ms24kHz = kFrameSize10ms24kHz * 2;
+
+// Pitch analysis params.
+constexpr size_t kPitchMinPeriod24kHz = kSampleRate24kHz / 800;   // 0.00125 s.
+constexpr size_t kPitchMaxPeriod24kHz = kSampleRate24kHz / 62.5;  // 0.016 s.
+constexpr size_t kBufSize24kHz = kPitchMaxPeriod24kHz + kFrameSize20ms24kHz;
+static_assert((kBufSize24kHz & 1) == 0, "The buffer size must be even.");
 
 }  // namespace rnn_vad
 }  // namespace webrtc
