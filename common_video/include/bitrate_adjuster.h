@@ -18,6 +18,8 @@
 
 namespace webrtc {
 
+// TODO(nisse): Delete, together with the corresponding deprecated
+// constructor.
 class Clock;
 
 // Certain hardware encoders tend to consistently overshoot the bitrate that
@@ -28,9 +30,14 @@ class BitrateAdjuster {
   // min_adjusted_bitrate_pct and max_adjusted_bitrate_pct are the lower and
   // upper bound outputted adjusted bitrates as a percentage of the target
   // bitrate.
-  BitrateAdjuster(Clock* clock,
-                  float min_adjusted_bitrate_pct,
+  BitrateAdjuster(float min_adjusted_bitrate_pct,
                   float max_adjusted_bitrate_pct);
+  // TODO(bugs.webrtc.org/6733): Deprecated, only for compatibility
+  // with old code. Delete as soon as all users are updated.
+  BitrateAdjuster(Clock*,
+                  float min_adjusted_bitrate_pct,
+                  float max_adjusted_bitrate_pct)
+      : BitrateAdjuster(min_adjusted_bitrate_pct, max_adjusted_bitrate_pct) {}
   virtual ~BitrateAdjuster() {}
 
   static const uint32_t kBitrateUpdateIntervalMs;
@@ -68,7 +75,6 @@ class BitrateAdjuster {
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   rtc::CriticalSection crit_;
-  Clock* const clock_;
   const float min_adjusted_bitrate_pct_;
   const float max_adjusted_bitrate_pct_;
   // The bitrate we want.

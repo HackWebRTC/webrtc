@@ -32,7 +32,6 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/timeutils.h"
 #include "sdk/objc/Framework/Classes/VideoToolbox/nalu_rewriter.h"
-#include "system_wrappers/include/clock.h"
 #include "third_party/libyuv/include/libyuv/convert_from.h"
 
 @interface RTCVideoEncoderH264 ()
@@ -302,8 +301,7 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
 - (instancetype)initWithCodecInfo:(RTCVideoCodecInfo *)codecInfo {
   if (self = [super init]) {
     _codecInfo = codecInfo;
-    _bitrateAdjuster.reset(new webrtc::BitrateAdjuster(
-        webrtc::Clock::GetRealTimeClock(), .5, .95));
+    _bitrateAdjuster.reset(new webrtc::BitrateAdjuster(.5, .95));
     _packetizationMode = RTCH264PacketizationModeNonInterleaved;
     _profile = ExtractProfile([codecInfo nativeSdpVideoFormat]);
     RTC_LOG(LS_INFO) << "Using profile " << CFStringToString(_profile);
