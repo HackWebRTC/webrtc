@@ -48,9 +48,17 @@ class VideoStreamDecoderImpl : public VideoStreamDecoder,
     kShutdown,
   };
 
+  struct FrameTimestamps {
+    int64_t timestamp;
+    int64_t decode_start_time_ms;
+    int64_t render_time_us;
+  };
+
   VideoDecoder* GetDecoder(int payload_type);
   static void DecodeLoop(void* ptr);
   DecodeResult DecodeNextFrame(int max_wait_time_ms, bool keyframe_required);
+
+  FrameTimestamps* GetFrameTimestamps(int64_t timestamp);
 
   // Implements DecodedImageCallback interface
   int32_t Decoded(VideoFrame& decodedImage) override;
@@ -78,13 +86,12 @@ class VideoStreamDecoderImpl : public VideoStreamDecoder,
   rtc::Optional<int> current_payload_type_;
   std::unique_ptr<VideoDecoder> decoder_;
 
-  // Keep track of the |decode_start_time_| of the last |kDecodeTimeMemory|
-  // number of frames. The |decode_start_time_| array contain
-  // <frame timestamp> --> <decode start time> pairs.
-  static constexpr int kDecodeTimeMemory = 8;
-  std::array<std::pair<int64_t, int64_t>, kDecodeTimeMemory> decode_start_time_
+  // Some decoders are pipelined so it is not sufficient to save frame info
+  // for the last frame only.
+  static constexpr int kFrameTimestampsMemory = 8;
+  std::array<FrameTimestamps, kFrameTimestampsMemory> frame_timestamps_
       RTC_GUARDED_BY(bookkeeping_queue_);
-  int next_start_time_index_ RTC_GUARDED_BY(bookkeeping_queue_);
+  int next_frame_timestamps_index_ RTC_GUARDED_BY(bookkeeping_queue_);
 };
 
 }  // namespace webrtc
