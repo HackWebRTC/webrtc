@@ -633,6 +633,7 @@ rtc_source_set("isac_fix_common") {
     "codecs/isac/fix/source/filterbank_internal.h",
     "codecs/isac/fix/source/settings.h",
     "codecs/isac/fix/source/structs.h",
+    "codecs/isac/fix/source/transform_tables.c",
   ]
   public_configs = [ ":isac_fix_config" ]
   deps = [
@@ -698,7 +699,6 @@ rtc_source_set("isac_fix_c") {
     "codecs/isac/fix/source/spectrum_ar_model_tables.c",
     "codecs/isac/fix/source/spectrum_ar_model_tables.h",
     "codecs/isac/fix/source/transform.c",
-    "codecs/isac/fix/source/transform_tables.c",
   ]
 
   public_configs = [ ":isac_fix_config" ]
