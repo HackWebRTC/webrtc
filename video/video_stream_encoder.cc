@@ -891,7 +891,7 @@ EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
         overuse_detector_->FrameSent(timestamp, time_sent_us, capture_time_us,
                                      encode_duration_us);
         if (quality_scaler_ && qp >= 0)
-          quality_scaler_->ReportQP(qp);
+          quality_scaler_->ReportQp(qp);
       });
 
   return result;

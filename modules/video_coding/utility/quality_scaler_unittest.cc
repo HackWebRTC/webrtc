@@ -90,19 +90,19 @@ class QualityScalerTest : public ::testing::Test {
     for (int i = 0; i < kFramerate * 5; ++i) {
       switch (scale_direction) {
         case kKeepScaleAboveLowQp:
-          qs_->ReportQP(kLowQp + 1);
+          qs_->ReportQp(kLowQp + 1);
           break;
         case kScaleUp:
-          qs_->ReportQP(kLowQp);
+          qs_->ReportQp(kLowQp);
           break;
         case kScaleDown:
           qs_->ReportDroppedFrame();
           break;
         case kKeepScaleAtHighQp:
-          qs_->ReportQP(kHighQp);
+          qs_->ReportQp(kHighQp);
           break;
         case kScaleDownAboveHighQp:
-          qs_->ReportQP(kHighQp + 1);
+          qs_->ReportQp(kHighQp + 1);
           break;
       }
     }
@@ -139,7 +139,7 @@ TEST_F(QualityScalerTest, DownscalesAfterTwoThirdsFramedrop) {
     for (int i = 0; i < kFramerate * 5; ++i) {
       qs_->ReportDroppedFrame();
       qs_->ReportDroppedFrame();
-      qs_->ReportQP(kHighQp);
+      qs_->ReportQp(kHighQp);
     }
   });
   EXPECT_TRUE(observer_->event.Wait(kDefaultTimeoutMs));
@@ -151,7 +151,7 @@ TEST_F(QualityScalerTest, DoesNotDownscaleAfterHalfFramedrop) {
   DO_SYNC(q_, {
     for (int i = 0; i < kFramerate * 5; ++i) {
       qs_->ReportDroppedFrame();
-      qs_->ReportQP(kHighQp);
+      qs_->ReportQp(kHighQp);
     }
   });
   EXPECT_FALSE(observer_->event.Wait(kDefaultTimeoutMs));
@@ -188,13 +188,13 @@ TEST_F(QualityScalerTest, DoesNotScaleUntilEnoughFramesObserved) {
   DO_SYNC(q_, {
     // Not enough frames to make a decision.
     for (int i = 0; i < kMinFramesNeededToScale - 1; ++i) {
-      qs_->ReportQP(kLowQp);
+      qs_->ReportQp(kLowQp);
     }
   });
   EXPECT_FALSE(observer_->event.Wait(kDefaultTimeoutMs));
   DO_SYNC(q_, {
     // Send 1 more. Enough frames observed, should result in an adapt request.
-    qs_->ReportQP(kLowQp);
+    qs_->ReportQp(kLowQp);
   });
   EXPECT_TRUE(observer_->event.Wait(kDefaultTimeoutMs));
   EXPECT_EQ(0, observer_->adapt_down_events_);
@@ -203,7 +203,7 @@ TEST_F(QualityScalerTest, DoesNotScaleUntilEnoughFramesObserved) {
   // Samples should be cleared after an adapt request.
   DO_SYNC(q_, {
     // Not enough frames to make a decision.
-    qs_->ReportQP(kLowQp);
+    qs_->ReportQp(kLowQp);
   });
   EXPECT_FALSE(observer_->event.Wait(kDefaultTimeoutMs));
   EXPECT_EQ(0, observer_->adapt_down_events_);
@@ -213,7 +213,7 @@ TEST_F(QualityScalerTest, DoesNotScaleUntilEnoughFramesObserved) {
 TEST_F(QualityScalerTest, ScalesDownAndBackUpWithMinFramesNeeded) {
   DO_SYNC(q_, {
     for (int i = 0; i < kMinFramesNeededToScale; ++i) {
-      qs_->ReportQP(kHighQp + 1);
+      qs_->ReportQp(kHighQp + 1);
     }
   });
   EXPECT_TRUE(observer_->event.Wait(kDefaultTimeoutMs));
@@ -222,7 +222,7 @@ TEST_F(QualityScalerTest, ScalesDownAndBackUpWithMinFramesNeeded) {
   // Samples cleared.
   DO_SYNC(q_, {
     for (int i = 0; i < kMinFramesNeededToScale; ++i) {
-      qs_->ReportQP(kLowQp);
+      qs_->ReportQp(kLowQp);
     }
   });
   EXPECT_TRUE(observer_->event.Wait(kDefaultTimeoutMs));

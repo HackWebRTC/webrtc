@@ -52,7 +52,7 @@ class QualityScaler {
   // Should be called each time the encoder drops a frame.
   void ReportDroppedFrame();
   // Inform the QualityScaler of the last seen QP.
-  void ReportQP(int qp);
+  void ReportQp(int qp);
 
   // The following members declared protected for testing purposes.
  protected:
@@ -61,14 +61,14 @@ class QualityScaler {
                 int64_t sampling_period_ms);
 
  private:
-  class CheckQPTask;
-  void CheckQP();
+  class CheckQpTask;
+  void CheckQp();
   void ClearSamples();
-  void ReportQPLow();
-  void ReportQPHigh();
+  void ReportQpLow();
+  void ReportQpHigh();
   int64_t GetSamplingPeriodMs() const;
 
-  CheckQPTask* check_qp_task_ RTC_GUARDED_BY(&task_checker_);
+  CheckQpTask* check_qp_task_ RTC_GUARDED_BY(&task_checker_);
   AdaptationObserverInterface* const observer_ RTC_GUARDED_BY(&task_checker_);
   rtc::SequencedTaskChecker task_checker_;
 

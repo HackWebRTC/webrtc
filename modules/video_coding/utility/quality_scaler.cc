@@ -37,10 +37,10 @@ static const int kMinFramesNeededToScale = 2 * 30;
 
 }  // namespace
 
-class QualityScaler::CheckQPTask : public rtc::QueuedTask {
+class QualityScaler::CheckQpTask : public rtc::QueuedTask {
  public:
-  explicit CheckQPTask(QualityScaler* scaler) : scaler_(scaler) {
-    RTC_LOG(LS_INFO) << "Created CheckQPTask. Scheduling on queue...";
+  explicit CheckQpTask(QualityScaler* scaler) : scaler_(scaler) {
+    RTC_LOG(LS_INFO) << "Created CheckQpTask. Scheduling on queue...";
     rtc::TaskQueue::Current()->PostDelayedTask(
         std::unique_ptr<rtc::QueuedTask>(this), scaler_->GetSamplingPeriodMs());
   }
@@ -55,7 +55,7 @@ class QualityScaler::CheckQPTask : public rtc::QueuedTask {
     RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
     if (stop_)
       return true;  // TaskQueue will free this task.
-    scaler_->CheckQP();
+    scaler_->CheckQp();
     rtc::TaskQueue::Current()->PostDelayedTask(
         std::unique_ptr<rtc::QueuedTask>(this), scaler_->GetSamplingPeriodMs());
     return false;  // Retain the task in order to reuse it.
@@ -84,7 +84,7 @@ QualityScaler::QualityScaler(AdaptationObserverInterface* observer,
       framedrop_percent_(5 * 30) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
   RTC_DCHECK(observer_ != nullptr);
-  check_qp_task_ = new CheckQPTask(this);
+  check_qp_task_ = new CheckQpTask(this);
   RTC_LOG(LS_INFO) << "QP thresholds: low: " << thresholds_.low
                    << ", high: " << thresholds_.high;
 }
@@ -105,13 +105,13 @@ void QualityScaler::ReportDroppedFrame() {
   framedrop_percent_.AddSample(100);
 }
 
-void QualityScaler::ReportQP(int qp) {
+void QualityScaler::ReportQp(int qp) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
   framedrop_percent_.AddSample(0);
   average_qp_.AddSample(qp);
 }
 
-void QualityScaler::CheckQP() {
+void QualityScaler::CheckQp() {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
   // Should be set through InitEncode -> Should be set by now.
   RTC_DCHECK_GE(thresholds_.low, 0);
@@ -125,7 +125,7 @@ void QualityScaler::CheckQP() {
   const rtc::Optional<int> drop_rate = framedrop_percent_.GetAverage();
   if (drop_rate && *drop_rate >= kFramedropPercentThreshold) {
     RTC_LOG(LS_INFO) << "Reporting high QP, framedrop percent " << *drop_rate;
-    ReportQPHigh();
+    ReportQpHigh();
     return;
   }
 
@@ -134,24 +134,24 @@ void QualityScaler::CheckQP() {
   if (avg_qp) {
     RTC_LOG(LS_INFO) << "Checking average QP " << *avg_qp;
     if (*avg_qp > thresholds_.high) {
-      ReportQPHigh();
+      ReportQpHigh();
       return;
     }
     if (*avg_qp <= thresholds_.low) {
       // QP has been low. We want to try a higher resolution.
-      ReportQPLow();
+      ReportQpLow();
       return;
     }
   }
 }
 
-void QualityScaler::ReportQPLow() {
+void QualityScaler::ReportQpLow() {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
   ClearSamples();
   observer_->AdaptUp(AdaptationObserverInterface::AdaptReason::kQuality);
 }
 
-void QualityScaler::ReportQPHigh() {
+void QualityScaler::ReportQpHigh() {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
   ClearSamples();
   observer_->AdaptDown(AdaptationObserverInterface::AdaptReason::kQuality);
