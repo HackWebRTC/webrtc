@@ -46,6 +46,7 @@ import org.appspot.apprtc.PeerConnectionClient.PeerConnectionParameters;
 import org.webrtc.Camera1Enumerator;
 import org.webrtc.Camera2Enumerator;
 import org.webrtc.CameraEnumerator;
+import org.webrtc.EglBase;
 import org.webrtc.FileVideoCapturer;
 import org.webrtc.IceCandidate;
 import org.webrtc.Logging;
@@ -253,12 +254,10 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
     remoteRenderers.add(remoteProxyRenderer);
 
     final Intent intent = getIntent();
-
-    // Create peer connection client.
-    peerConnectionClient = new PeerConnectionClient(getApplicationContext());
+    final EglBase eglBase = EglBase.create();
 
     // Create video renderers.
-    pipRenderer.init(peerConnectionClient.getRenderContext(), null);
+    pipRenderer.init(eglBase.getEglBaseContext(), null);
     pipRenderer.setScalingType(ScalingType.SCALE_ASPECT_FIT);
     String saveRemoteVideoToFile = intent.getStringExtra(EXTRA_SAVE_REMOTE_VIDEO_TO_FILE);
 
@@ -267,15 +266,15 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
       int videoOutWidth = intent.getIntExtra(EXTRA_SAVE_REMOTE_VIDEO_TO_FILE_WIDTH, 0);
       int videoOutHeight = intent.getIntExtra(EXTRA_SAVE_REMOTE_VIDEO_TO_FILE_HEIGHT, 0);
       try {
-        videoFileRenderer = new VideoFileRenderer(saveRemoteVideoToFile, videoOutWidth,
-            videoOutHeight, peerConnectionClient.getRenderContext());
+        videoFileRenderer = new VideoFileRenderer(
+            saveRemoteVideoToFile, videoOutWidth, videoOutHeight, eglBase.getEglBaseContext());
         remoteRenderers.add(videoFileRenderer);
       } catch (IOException e) {
         throw new RuntimeException(
             "Failed to open video file for output: " + saveRemoteVideoToFile, e);
       }
     }
-    fullscreenRenderer.init(peerConnectionClient.getRenderContext(), null);
+    fullscreenRenderer.init(eglBase.getEglBaseContext(), null);
     fullscreenRenderer.setScalingType(ScalingType.SCALE_ASPECT_FILL);
 
     pipRenderer.setZOrderMediaOverlay(true);
@@ -394,12 +393,14 @@ public class CallActivity extends Activity implements AppRTCClient.SignalingEven
       }, runTimeMs);
     }
 
+    // Create peer connection client.
+    peerConnectionClient = new PeerConnectionClient(
+        getApplicationContext(), eglBase, peerConnectionParameters, CallActivity.this);
+    PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
     if (loopback) {
-      PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
       options.networkIgnoreMask = 0;
-      peerConnectionClient.setPeerConnectionFactoryOptions(options);
     }
-    peerConnectionClient.createPeerConnectionFactory(peerConnectionParameters, CallActivity.this);
+    peerConnectionClient.createPeerConnectionFactory(options);
 
     if (screencaptureEnabled) {
       startScreenCapture();

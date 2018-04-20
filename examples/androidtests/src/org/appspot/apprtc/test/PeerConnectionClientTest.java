@@ -35,6 +35,7 @@ import org.junit.runner.RunWith;
 import org.webrtc.Camera1Enumerator;
 import org.webrtc.Camera2Enumerator;
 import org.webrtc.CameraEnumerator;
+import org.webrtc.EglBase;
 import org.webrtc.IceCandidate;
 import org.webrtc.MediaCodecVideoEncoder;
 import org.webrtc.PeerConnection;
@@ -315,13 +316,14 @@ public class PeerConnectionClientTest implements PeerConnectionEvents {
             null, null, null, // clientId, wssUrl, wssPostUrl.
             null, null); // offerSdp, iceCandidates.
 
+    final EglBase eglBase = EglBase.create();
     PeerConnectionClient client =
-        new PeerConnectionClient(InstrumentationRegistry.getTargetContext());
+        new PeerConnectionClient(InstrumentationRegistry.getTargetContext(), eglBase,
+            peerConnectionParameters, this /* PeerConnectionEvents */);
     PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
     options.networkIgnoreMask = 0;
     options.disableNetworkMonitor = true;
-    client.setPeerConnectionFactoryOptions(options);
-    client.createPeerConnectionFactory(peerConnectionParameters, this);
+    client.createPeerConnectionFactory(options);
     client.createPeerConnection(localRenderer, remoteRenderer, videoCapturer, signalingParameters);
     client.createOffer();
     return client;
