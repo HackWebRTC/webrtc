@@ -14,13 +14,13 @@ import android.content.Context;
 import android.media.MediaRecorder;
 import android.os.Handler;
 import android.os.SystemClock;
-import javax.annotation.Nullable;
 import android.view.Surface;
 import android.view.WindowManager;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
 import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
 
 @SuppressWarnings("deprecation")
@@ -52,6 +52,8 @@ class Camera1Session implements CameraSession {
   private SessionState state;
   private boolean firstFrameReported = false;
 
+  // TODO(titovartem) make correct fix during webrtc:9175
+  @SuppressWarnings("ByteBufferBackingArray")
   public static void create(final CreateSessionCallback callback, final Events events,
       final boolean captureToTexture, final Context applicationContext,
       final SurfaceTextureHelper surfaceTextureHelper, final MediaRecorder mediaRecorder,

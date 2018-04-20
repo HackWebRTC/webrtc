@@ -224,6 +224,8 @@ public class EglRendererTest {
   }
 
   /** Checks that the bitmap content matches the test frame with the given index. */
+  // TODO(titovartem) make correct fix during webrtc:9175
+  @SuppressWarnings("ByteBufferBackingArray")
   private static void checkBitmapContent(Bitmap bitmap, int frame) {
     checkBitmap(bitmap, 1f);
 

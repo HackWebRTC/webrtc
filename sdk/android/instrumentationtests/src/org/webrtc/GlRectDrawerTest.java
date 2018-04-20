@@ -85,6 +85,8 @@ public class GlRectDrawerTest {
     return rgbBuffer;
   }
 
+  // TODO(titovartem) make correct fix during webrtc:9175
+  @SuppressWarnings("ByteBufferBackingArray")
   @Test
   @SmallTest
   public void testRgbRendering() {
@@ -124,6 +126,8 @@ public class GlRectDrawerTest {
     eglBase.release();
   }
 
+  // TODO(titovartem) make correct fix during webrtc:9175
+  @SuppressWarnings("ByteBufferBackingArray")
   @Test
   @SmallTest
   public void testYuvRendering() {
@@ -212,6 +216,8 @@ public class GlRectDrawerTest {
    *  - Render the OES texture onto the pixel buffer.
    *  - Read back the pixel buffer and compare it with the known RGB data.
    */
+  // TODO(titovartem) make correct fix during webrtc:9175
+  @SuppressWarnings("ByteBufferBackingArray")
   @Test
   @MediumTest
   public void testOesRendering() throws InterruptedException {

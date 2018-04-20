@@ -11,10 +11,10 @@
 package org.webrtc.audio;
 
 import android.annotation.TargetApi;
-import android.media.AudioFormat;
-import android.media.AudioRecord;
-import android.media.AudioManager;
 import android.content.Context;
+import android.media.AudioFormat;
+import android.media.AudioManager;
+import android.media.AudioRecord;
 import android.media.MediaRecorder.AudioSource;
 import android.os.Process;
 import java.lang.System;
@@ -88,6 +88,8 @@ class WebRtcAudioRecord {
       super(name);
     }
 
+    // TODO(titovartem) make correct fix during webrtc:9175
+    @SuppressWarnings("ByteBufferBackingArray")
     @Override
     public void run() {
       Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO);
