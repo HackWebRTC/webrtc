@@ -68,8 +68,7 @@ float ComputeGainChangeThisFrameDb(float target_gain_db,
 
 AdaptiveDigitalGainApplier::AdaptiveDigitalGainApplier(
     ApmDataDumper* apm_data_dumper)
-    : gain_applier_(false, 1.f),  // Initial gain is 1, and we do not
-                                  // clip after gain.
+    : gain_applier_(false, DbToRatio(last_gain_db_)),
       apm_data_dumper_(apm_data_dumper) {}
 
 void AdaptiveDigitalGainApplier::Process(

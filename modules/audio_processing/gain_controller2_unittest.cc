@@ -80,12 +80,6 @@ TEST(GainController2, Usage) {
   SetAudioBufferSamples(sample_value, &ab);
   AudioProcessing::Config::GainController2 config;
 
-  // Check that samples are not modified when the fixed gain is 0 dB.
-  config.fixed_gain_db = 0.f;
-  gain_controller2->ApplyConfig(config);
-  gain_controller2->Process(&ab);
-  EXPECT_EQ(ab.channels_f()[0][0], sample_value);
-
   // Check that samples are amplified when the fixed gain is greater than 0 dB.
   config.fixed_gain_db = 5.f;
   gain_controller2->ApplyConfig(config);

@@ -33,6 +33,7 @@ constexpr float kMaxGainChangePerFrameDb =
     kMaxGainChangePerSecondDb * kFrameDurationMs / 1000.f;
 constexpr float kHeadroomDbfs = 1.f;
 constexpr float kMaxGainDb = 30.f;
+constexpr float kInitialAdaptiveDigitalGainDb = 8.f;
 
 // This parameter must be tuned together with the noise estimator.
 constexpr float kMaxNoiseLevelDbfs = -50.f;

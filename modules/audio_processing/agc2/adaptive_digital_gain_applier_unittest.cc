@@ -145,7 +145,7 @@ TEST(AutomaticGainController2AdaptiveGainApplier, GainIsRampedInAFrame) {
       rtc::ArrayView<const VadWithLevel::LevelAndProbability>(&kVadSpeech, 1),
       fake_audio.float_frame_view());
   float maximal_difference = 0.f;
-  float current_value = 1.f;
+  float current_value = 1.f * DbToRatio(kInitialAdaptiveDigitalGainDb);
   for (const auto& x : fake_audio.float_frame_view().channel(0)) {
     const float difference = std::abs(x - current_value);
     maximal_difference = std::max(maximal_difference, difference);
@@ -164,22 +164,27 @@ TEST(AutomaticGainController2AdaptiveGainApplier, NoiseLimitsGain) {
 
   constexpr float initial_level_dbfs = -25.f;
   constexpr int num_samples = 480;
-  constexpr int num_frames = 100;
+  constexpr int num_initial_frames =
+      kInitialAdaptiveDigitalGainDb / kMaxGainChangePerFrameDb;
+  constexpr int num_frames = 50;
 
   ASSERT_GT(kWithNoiseDbfs, kMaxNoiseLevelDbfs) << "kWithNoiseDbfs is too low";
 
-  for (int i = 0; i < num_frames; ++i) {
+  for (int i = 0; i < num_initial_frames + num_frames; ++i) {
     VectorFloatFrame fake_audio(1, num_samples, 1.f);
     gain_applier.Process(
         initial_level_dbfs, kWithNoiseDbfs,
         rtc::ArrayView<const VadWithLevel::LevelAndProbability>(&kVadSpeech, 1),
         fake_audio.float_frame_view());
 
-    const float maximal_ratio =
-        *std::max_element(fake_audio.float_frame_view().channel(0).begin(),
-                          fake_audio.float_frame_view().channel(0).end());
+    // Wait so that the adaptive gain applier has time to lower the gain.
+    if (i > num_initial_frames) {
+      const float maximal_ratio =
+          *std::max_element(fake_audio.float_frame_view().channel(0).begin(),
+                            fake_audio.float_frame_view().channel(0).end());
 
-    EXPECT_NEAR(maximal_ratio, 1.f, 0.001f);
+      EXPECT_NEAR(maximal_ratio, 1.f, 0.001f);
+    }
   }
 }
 }  // namespace webrtc

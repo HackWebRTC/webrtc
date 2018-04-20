@@ -11,6 +11,7 @@
 #ifndef MODULES_AUDIO_PROCESSING_AGC2_ADAPTIVE_DIGITAL_GAIN_APPLIER_H_
 #define MODULES_AUDIO_PROCESSING_AGC2_ADAPTIVE_DIGITAL_GAIN_APPLIER_H_
 
+#include "modules/audio_processing/agc2/agc2_common.h"
 #include "modules/audio_processing/agc2/gain_applier.h"
 #include "modules/audio_processing/include/audio_frame_view.h"
 #include "modules/audio_processing/vad/vad_with_level.h"
@@ -30,7 +31,7 @@ class AdaptiveDigitalGainApplier {
       AudioFrameView<float> float_frame);
 
  private:
-  float last_gain_db_ = 0.f;
+  float last_gain_db_ = kInitialAdaptiveDigitalGainDb;
   GainApplier gain_applier_;
 
   // For some combinations of noise and speech probability, increasing
