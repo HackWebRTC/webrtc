@@ -11,6 +11,7 @@
 #import <XCTest/XCTest.h>
 
 #import <Foundation/Foundation.h>
+#import <MetalKit/MetalKit.h>
 #import <OCMock/OCMock.h>
 
 #include <WebRTC/RTCMTLVideoView.h>
@@ -256,6 +257,19 @@
 
   // Delegate method is invoked with a dispatch_async.
   OCMVerifyAllWithDelay(delegateMock, 1);
+}
+
+- (void)testSetContentMode {
+  OCMStub([self.classMock isMetalAvailable]).andReturn(YES);
+  id metalKitView = OCMClassMock([MTKView class]);
+  [[[[self.classMock stub] ignoringNonObjectArgs] andReturn:metalKitView]
+      createMetalView:CGRectZero];
+  OCMExpect([metalKitView setContentMode:UIViewContentModeScaleAspectFill]);
+
+  RTCMTLVideoView *realView = [[RTCMTLVideoView alloc] init];
+  [realView setVideoContentMode:UIViewContentModeScaleAspectFill];
+
+  OCMVerify(metalKitView);
 }
 
 @end
