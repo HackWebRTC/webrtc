@@ -11,9 +11,7 @@
 #ifndef API_RTCERROR_H_
 #define API_RTCERROR_H_
 
-#ifdef UNIT_TEST
 #include <ostream>
-#endif  // UNIT_TEST
 #include <string>
 #include <utility>  // For std::move.
 
@@ -145,15 +143,9 @@ class RTCError {
 // error type.
 //
 // Only intended to be used for logging/disagnostics.
-std::string ToString(RTCErrorType error);
+std::ostream& operator<<(std::ostream& stream, RTCErrorType error);
 
-#ifdef UNIT_TEST
-inline std::ostream& operator<<(  // no-presubmit-check TODO(webrtc:8982)
-    std::ostream& stream,         // no-presubmit-check TODO(webrtc:8982)
-    RTCErrorType error) {
-  return stream << ToString(error);
-}
-#endif  // UNIT_TEST
+std::string ToString(RTCErrorType error);
 
 // Helper macro that can be used by implementations to create an error with a
 // message and log it. |message| should be a string literal or movable
