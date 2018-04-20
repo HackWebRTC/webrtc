@@ -84,12 +84,6 @@ enum NetEqPlayoutMode {
 // This is the interface class for NetEq.
 class NetEq {
  public:
-  enum BackgroundNoiseMode {
-    kBgnOn,    // Default behavior with eternal noise.
-    kBgnFade,  // Noise fades to zero after some time.
-    kBgnOff    // Background noise is always zero.
-  };
-
   struct Config {
     Config();
     Config(const Config&);
@@ -104,7 +98,6 @@ class NetEq {
     bool enable_post_decode_vad = false;
     size_t max_packets_in_buffer = 50;
     int max_delay_ms = 2000;
-    BackgroundNoiseMode background_noise_mode = kBgnOff;
     NetEqPlayoutMode playout_mode = kPlayoutOn;
     bool enable_fast_accelerate = false;
     bool enable_muted_state = false;

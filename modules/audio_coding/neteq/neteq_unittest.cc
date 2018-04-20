@@ -950,9 +950,6 @@ TEST_F(NetEqDecodingTest, GetAudioBeforeInsertPacket) {
 
 class NetEqBgnTest : public NetEqDecodingTest {
  protected:
-  virtual void TestCondition(double sum_squared_noise,
-                             bool should_be_faded) = 0;
-
   void CheckBgn(int sampling_rate_hz) {
     size_t expected_samples_per_channel = 0;
     uint8_t payload_type = 0xFF;  // Invalid.
@@ -1044,7 +1041,7 @@ class NetEqBgnTest : public NetEqDecodingTest {
         for (size_t k = 0;
              k < output.num_channels_ * output.samples_per_channel_; ++k)
           sum_squared += output_data[k] * output_data[k];
-        TestCondition(sum_squared, n > kFadingThreshold);
+        EXPECT_EQ(0, sum_squared);
       } else {
         EXPECT_EQ(AudioFrame::kPLC, output.speech_type_);
       }
@@ -1053,53 +1050,7 @@ class NetEqBgnTest : public NetEqDecodingTest {
   }
 };
 
-class NetEqBgnTestOn : public NetEqBgnTest {
- protected:
-  NetEqBgnTestOn() : NetEqBgnTest() {
-    config_.background_noise_mode = NetEq::kBgnOn;
-  }
-
-  void TestCondition(double sum_squared_noise, bool /*should_be_faded*/) {
-    EXPECT_NE(0, sum_squared_noise);
-  }
-};
-
-class NetEqBgnTestOff : public NetEqBgnTest {
- protected:
-  NetEqBgnTestOff() : NetEqBgnTest() {
-    config_.background_noise_mode = NetEq::kBgnOff;
-  }
-
-  void TestCondition(double sum_squared_noise, bool /*should_be_faded*/) {
-    EXPECT_EQ(0, sum_squared_noise);
-  }
-};
-
-class NetEqBgnTestFade : public NetEqBgnTest {
- protected:
-  NetEqBgnTestFade() : NetEqBgnTest() {
-    config_.background_noise_mode = NetEq::kBgnFade;
-  }
-
-  void TestCondition(double sum_squared_noise, bool should_be_faded) {
-    if (should_be_faded)
-      EXPECT_EQ(0, sum_squared_noise);
-  }
-};
-
-TEST_F(NetEqBgnTestOn, RunTest) {
-  CheckBgn(8000);
-  CheckBgn(16000);
-  CheckBgn(32000);
-}
-
-TEST_F(NetEqBgnTestOff, RunTest) {
-  CheckBgn(8000);
-  CheckBgn(16000);
-  CheckBgn(32000);
-}
-
-TEST_F(NetEqBgnTestFade, RunTest) {
+TEST_F(NetEqBgnTest, RunTest) {
   CheckBgn(8000);
   CheckBgn(16000);
   CheckBgn(32000);

@@ -911,46 +911,10 @@ void Expand::GenerateBackgroundNoise(int16_t* random_vector,
 
     // Unmute the background noise.
     int16_t bgn_mute_factor = background_noise_->MuteFactor(channel);
-    NetEq::BackgroundNoiseMode bgn_mode = background_noise_->mode();
-    if (bgn_mode == NetEq::kBgnFade && too_many_expands &&
-        bgn_mute_factor > 0) {
-      // Fade BGN to zero.
-      // Calculate muting slope, approximately -2^18 / fs_hz.
-      int mute_slope;
-      if (fs_hz_ == 8000) {
-        mute_slope = -32;
-      } else if (fs_hz_ == 16000) {
-        mute_slope = -16;
-      } else if (fs_hz_ == 32000) {
-        mute_slope = -8;
-      } else {
-        mute_slope = -5;
-      }
-      // Use UnmuteSignal function with negative slope.
-      // |bgn_mute_factor| is in Q14. |mute_slope| is in Q20.
-      DspHelper::UnmuteSignal(noise_samples,
-                              num_noise_samples,
-                              &bgn_mute_factor,
-                              mute_slope,
-                              noise_samples);
-    } else if (bgn_mute_factor < 16384) {
-      // If mode is kBgnOn, or if kBgnFade has started fading,
-      // use regular |mute_slope|.
-      if (!stop_muting_ && bgn_mode != NetEq::kBgnOff &&
-          !(bgn_mode == NetEq::kBgnFade && too_many_expands)) {
-        DspHelper::UnmuteSignal(noise_samples,
-                                static_cast<int>(num_noise_samples),
-                                &bgn_mute_factor,
-                                mute_slope,
-                                noise_samples);
-      } else {
-        // kBgnOn and stop muting, or
-        // kBgnOff (mute factor is always 0), or
-        // kBgnFade has reached 0.
-        WebRtcSpl_AffineTransformVector(noise_samples, noise_samples,
-                                        bgn_mute_factor, 8192, 14,
-                                        num_noise_samples);
-      }
+    if (bgn_mute_factor < 16384) {
+      WebRtcSpl_AffineTransformVector(noise_samples, noise_samples,
+                                      bgn_mute_factor, 8192, 14,
+                                      num_noise_samples);
     }
     // Update mute_factor in BackgroundNoise class.
     background_noise_->SetMuteFactor(channel, bgn_mute_factor);
