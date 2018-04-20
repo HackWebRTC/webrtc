@@ -112,8 +112,8 @@ static constexpr LevelConstraint kLevelConstraints[] = {
     {245760, 8192, webrtc::H264::kLevel4_1},
     {522240, 8704, webrtc::H264::kLevel4_2},
     {589824, 22080, webrtc::H264::kLevel5},
-    {983040, 3684, webrtc::H264::kLevel5_1},
-    {2073600, 3684, webrtc::H264::kLevel5_2},
+    {983040, 36864, webrtc::H264::kLevel5_1},
+    {2073600, 36864, webrtc::H264::kLevel5_2},
 };
 
 }  // anonymous namespace
