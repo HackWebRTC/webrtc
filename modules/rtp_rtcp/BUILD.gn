@@ -179,7 +179,6 @@ rtc_static_library("rtp_rtcp") {
     "source/ulpfec_header_reader_writer.h",
     "source/ulpfec_receiver_impl.cc",
     "source/ulpfec_receiver_impl.h",
-    "source/video_codec_information.h",
   ]
 
   if (rtc_enable_bwe_test_logging) {

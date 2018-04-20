@@ -22,7 +22,6 @@
 #include "modules/rtp_rtcp/source/rtp_sender.h"
 #include "modules/rtp_rtcp/source/rtp_utility.h"
 #include "modules/rtp_rtcp/source/ulpfec_generator.h"
-#include "modules/rtp_rtcp/source/video_codec_information.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/onetimeevent.h"
 #include "rtc_base/rate_statistics.h"
