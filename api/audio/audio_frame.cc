@@ -120,9 +120,8 @@ bool AudioFrame::muted() const { return muted_; }
 
 // static
 const int16_t* AudioFrame::empty_data() {
-  static const int16_t kEmptyData[kMaxDataSizeSamples] = {0};
-  static_assert(sizeof(kEmptyData) == kMaxDataSizeBytes, "kMaxDataSizeBytes");
-  return kEmptyData;
+  static int16_t* null_data = new int16_t[kMaxDataSizeSamples]();
+  return &null_data[0];
 }
 
 }  // namespace webrtc
