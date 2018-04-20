@@ -17,7 +17,7 @@ VideoCodecVP8 VideoEncoder::GetDefaultVp8Settings() {
   VideoCodecVP8 vp8_settings;
   memset(&vp8_settings, 0, sizeof(vp8_settings));
 
-  vp8_settings.resilience = kResilientStream;
+  vp8_settings.resilienceOn = true;
   vp8_settings.numberOfTemporalLayers = 1;
   vp8_settings.denoisingOn = true;
   vp8_settings.automaticResizeOn = false;

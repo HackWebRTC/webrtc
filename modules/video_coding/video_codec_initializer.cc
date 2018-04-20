@@ -186,7 +186,7 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
       if (nack_enabled && video_codec.VP8()->numberOfTemporalLayers == 1) {
         RTC_LOG(LS_INFO)
             << "No temporal layers and nack enabled -> resilience off";
-        video_codec.VP8()->resilience = kResilienceOff;
+        video_codec.VP8()->resilienceOn = false;
       }
       break;
     }

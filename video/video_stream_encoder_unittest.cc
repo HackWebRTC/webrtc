@@ -853,7 +853,7 @@ TEST_F(VideoStreamEncoderTest, Vp8ResilienceIsOffFor1S1TLWithNackEnabled) {
   EXPECT_EQ(kNumStreams, fake_encoder_.codec_config().numberOfSimulcastStreams);
   EXPECT_EQ(kNumTl, fake_encoder_.codec_config().VP8()->numberOfTemporalLayers);
   // Resilience is off for no temporal layers with nack on.
-  EXPECT_EQ(kResilienceOff, fake_encoder_.codec_config().VP8()->resilience);
+  EXPECT_FALSE(fake_encoder_.codec_config().VP8()->resilienceOn);
   video_stream_encoder_->Stop();
 }
 
@@ -873,7 +873,7 @@ TEST_F(VideoStreamEncoderTest, Vp8ResilienceIsOffFor2S1TlWithNackEnabled) {
   EXPECT_EQ(kNumStreams, fake_encoder_.codec_config().numberOfSimulcastStreams);
   EXPECT_EQ(kNumTl, fake_encoder_.codec_config().VP8()->numberOfTemporalLayers);
   // Resilience is off for no temporal layers and >1 streams with nack on.
-  EXPECT_EQ(kResilienceOff, fake_encoder_.codec_config().VP8()->resilience);
+  EXPECT_FALSE(fake_encoder_.codec_config().VP8()->resilienceOn);
   video_stream_encoder_->Stop();
 }
 
@@ -893,7 +893,7 @@ TEST_F(VideoStreamEncoderTest, Vp8ResilienceIsOnFor1S1TLWithNackDisabled) {
   EXPECT_EQ(kNumStreams, fake_encoder_.codec_config().numberOfSimulcastStreams);
   EXPECT_EQ(kNumTl, fake_encoder_.codec_config().VP8()->numberOfTemporalLayers);
   // Resilience is on for no temporal layers with nack off.
-  EXPECT_EQ(kResilientStream, fake_encoder_.codec_config().VP8()->resilience);
+  EXPECT_TRUE(fake_encoder_.codec_config().VP8()->resilienceOn);
   video_stream_encoder_->Stop();
 }
 
@@ -913,7 +913,7 @@ TEST_F(VideoStreamEncoderTest, Vp8ResilienceIsOnFor1S2TlWithNackEnabled) {
   EXPECT_EQ(kNumStreams, fake_encoder_.codec_config().numberOfSimulcastStreams);
   EXPECT_EQ(kNumTl, fake_encoder_.codec_config().VP8()->numberOfTemporalLayers);
   // Resilience is on for temporal layers.
-  EXPECT_EQ(kResilientStream, fake_encoder_.codec_config().VP8()->resilience);
+  EXPECT_TRUE(fake_encoder_.codec_config().VP8()->resilienceOn);
   video_stream_encoder_->Stop();
 }
 

@@ -441,16 +441,8 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
   configurations_[0].g_lag_in_frames = 0;  // 0- no frame lagging
 
   // Set the error resilience mode according to user settings.
-  switch (inst->VP8().resilience) {
-    case kResilienceOff:
-      configurations_[0].g_error_resilient = 0;
-      break;
-    case kResilientStream:
-      configurations_[0].g_error_resilient = VPX_ERROR_RESILIENT_DEFAULT;
-      break;
-    case kResilientFrames:
-      return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;  // Not supported
-  }
+  configurations_[0].g_error_resilient =
+      inst->VP8().resilienceOn ? VPX_ERROR_RESILIENT_DEFAULT : 0;
 
   // rate control settings
   configurations_[0].rc_dropframe_thresh = inst->VP8().frameDroppingOn ? 30 : 0;
@@ -675,7 +667,7 @@ int LibvpxVp8Encoder::InitAndSetControlSettings() {
     vpx_codec_control(&(encoders_[i]), VP8E_SET_SCREEN_CONTENT_MODE,
                       codec_.mode == kScreensharing ? 2 : 0);
     // Apply boost on golden frames (has only effect when resilience is off).
-    if (use_gf_boost_ && codec_.VP8()->resilience == kResilienceOff) {
+    if (use_gf_boost_ && !codec_.VP8()->resilienceOn) {
       int gf_boost_percent;
       if (GetGfBoostPercentageFromFieldTrialGroup(&gf_boost_percent)) {
         vpx_codec_control(&(encoders_[i]), VP8E_SET_GF_CBR_BOOST_PCT,

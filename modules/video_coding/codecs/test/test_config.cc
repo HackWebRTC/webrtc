@@ -68,7 +68,7 @@ std::string CodecSpecificToString(const VideoCodec& codec) {
   switch (codec.codecType) {
     case kVideoCodecVP8:
       ss << "complexity: " << codec.VP8().complexity;
-      ss << "\nresilience: " << codec.VP8().resilience;
+      ss << "\nresilience: " << codec.VP8().resilienceOn;
       ss << "\nnum_temporal_layers: "
          << static_cast<int>(codec.VP8().numberOfTemporalLayers);
       ss << "\ndenoising: " << codec.VP8().denoisingOn;
@@ -143,8 +143,7 @@ void TestConfig::SetCodecSettings(std::string codec_name,
 
   switch (codec_settings.codecType) {
     case kVideoCodecVP8:
-      codec_settings.VP8()->resilience =
-          resilience_on ? kResilientStream : kResilienceOff;
+      codec_settings.VP8()->resilienceOn = resilience_on;
       codec_settings.VP8()->numberOfTemporalLayers =
           static_cast<uint8_t>(num_temporal_layers);
       codec_settings.VP8()->denoisingOn = denoising_on;

@@ -23,7 +23,7 @@ namespace webrtc {
 
 bool VideoCodecVP8::operator==(const VideoCodecVP8& other) const {
   return (complexity == other.complexity &&
-          resilience == other.resilience &&
+          resilienceOn == other.resilienceOn &&
           numberOfTemporalLayers == other.numberOfTemporalLayers &&
           denoisingOn == other.denoisingOn &&
           automaticResizeOn == other.automaticResizeOn &&

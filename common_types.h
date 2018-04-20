@@ -349,17 +349,6 @@ enum VideoCodecComplexity {
   kComplexityMax = 3
 };
 
-enum VP8ResilienceMode {
-  kResilienceOff,    // The stream produced by the encoder requires a
-                     // recovery frame (typically a key frame) to be
-                     // decodable after a packet loss.
-  kResilientStream,  // A stream produced by the encoder is resilient to
-                     // packet losses, but packets within a frame subsequent
-                     // to a loss can't be decoded.
-  kResilientFrames   // Same as kResilientStream but with added resilience
-                     // within a frame.
-};
-
 // VP8 specific
 struct VideoCodecVP8 {
   bool operator==(const VideoCodecVP8& other) const;
@@ -367,7 +356,7 @@ struct VideoCodecVP8 {
     return !(*this == other);
   }
   VideoCodecComplexity complexity;
-  VP8ResilienceMode resilience;
+  bool resilienceOn;
   unsigned char numberOfTemporalLayers;
   bool denoisingOn;
   bool automaticResizeOn;
