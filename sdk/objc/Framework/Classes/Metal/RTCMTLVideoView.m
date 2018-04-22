@@ -35,6 +35,7 @@
 
 @implementation RTCMTLVideoView {
   int64_t _lastFrameTimeNs;
+  CGSize _videoFrameSize;
 }
 
 @synthesize delegate = _delegate;
@@ -94,6 +95,7 @@
     _metalView.delegate = self;
     [self addSubview:_metalView];
     _metalView.contentMode = UIViewContentModeScaleAspectFit;
+    _videoFrameSize = CGSizeZero;
   }
 }
 
@@ -105,7 +107,13 @@
 
 - (void)layoutSubviews {
   [super layoutSubviews];
-  _metalView.frame = self.bounds;
+  CGRect bounds = self.bounds;
+  _metalView.frame = bounds;
+  if (!CGSizeEqualToSize(_videoFrameSize, CGSizeZero)) {
+    _metalView.drawableSize = _videoFrameSize;
+  } else {
+    _metalView.drawableSize = bounds.size;
+  }
 }
 
 #pragma mark - MTKViewDelegate methods
@@ -149,6 +157,7 @@
 
 - (void)setSize:(CGSize)size {
   self.metalView.drawableSize = size;
+  _videoFrameSize = size;
   dispatch_async(dispatch_get_main_queue(), ^{
     [self.delegate videoView:self didChangeVideoSize:size];
   });
