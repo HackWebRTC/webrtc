@@ -104,6 +104,7 @@ rtc_source_set("audio_coding_module_typedefs") {
 
 rtc_static_library("audio_coding") {
   visibility += [ "*" ]
+  allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
   sources = [
     "acm2/acm_receiver.cc",
     "acm2/acm_receiver.h",
@@ -220,6 +221,7 @@ config("g711_config") {
 
 rtc_static_library("g711") {
   visibility += [ "*" ]
+  poisonous = [ "audio_codecs" ]
   sources = [
     "codecs/g711/audio_decoder_pcm.cc",
     "codecs/g711/audio_decoder_pcm.h",
@@ -242,6 +244,7 @@ rtc_static_library("g711") {
 }
 
 rtc_source_set("g711_c") {
+  poisonous = [ "audio_codecs" ]
   sources = [
     "codecs/g711/g711.c",
     "codecs/g711/g711.h",
@@ -260,6 +263,7 @@ config("g722_config") {
 
 rtc_static_library("g722") {
   visibility += [ "*" ]
+  poisonous = [ "audio_codecs" ]
   sources = [
     "codecs/g722/audio_decoder_g722.cc",
     "codecs/g722/audio_decoder_g722.h",
@@ -283,6 +287,7 @@ rtc_static_library("g722") {
 }
 
 rtc_source_set("g722_c") {
+  poisonous = [ "audio_codecs" ]
   sources = [
     "codecs/g722/g722_decode.c",
     "codecs/g722/g722_enc_dec.h",
@@ -302,6 +307,7 @@ config("ilbc_config") {
 
 rtc_static_library("ilbc") {
   visibility += webrtc_default_visibility
+  poisonous = [ "audio_codecs" ]
   sources = [
     "codecs/ilbc/audio_decoder_ilbc.cc",
     "codecs/ilbc/audio_decoder_ilbc.h",
@@ -326,6 +332,7 @@ rtc_static_library("ilbc") {
 }
 
 rtc_source_set("ilbc_c") {
+  poisonous = [ "audio_codecs" ]
   sources = [
     "codecs/ilbc/abs_quant.c",
     "codecs/ilbc/abs_quant.h",
@@ -483,6 +490,7 @@ rtc_source_set("ilbc_c") {
 }
 
 rtc_static_library("isac_common") {
+  poisonous = [ "audio_codecs" ]
   sources = [
     "codecs/isac/audio_decoder_isac_t.h",
     "codecs/isac/audio_decoder_isac_t_impl.h",
@@ -508,6 +516,7 @@ config("isac_config") {
 
 rtc_static_library("isac") {
   visibility += [ "*" ]
+  poisonous = [ "audio_codecs" ]
   sources = [
     "codecs/isac/main/include/audio_decoder_isac.h",
     "codecs/isac/main/include/audio_encoder_isac.h",
@@ -525,6 +534,7 @@ rtc_static_library("isac") {
 }
 
 rtc_static_library("isac_c") {
+  poisonous = [ "audio_codecs" ]
   sources = [
     "codecs/isac/main/include/isac.h",
     "codecs/isac/main/source/arith_routines.c",
@@ -602,6 +612,7 @@ config("isac_fix_config") {
 
 rtc_static_library("isac_fix") {
   visibility += [ "*" ]
+  poisonous = [ "audio_codecs" ]
   sources = [
     "codecs/isac/fix/source/audio_decoder_isacfix.cc",
     "codecs/isac/fix/source/audio_encoder_isacfix.cc",
@@ -625,6 +636,7 @@ rtc_static_library("isac_fix") {
 }
 
 rtc_source_set("isac_fix_common") {
+  poisonous = [ "audio_codecs" ]
   sources = [
     "codecs/isac/fix/source/codec.h",
     "codecs/isac/fix/source/entropy_coding.h",
@@ -645,6 +657,7 @@ rtc_source_set("isac_fix_common") {
 }
 
 rtc_source_set("isac_fix_c_arm_asm") {
+  poisonous = [ "audio_codecs" ]
   sources = []
   if (current_cpu == "arm" && arm_version >= 7) {
     sources += [
@@ -659,6 +672,7 @@ rtc_source_set("isac_fix_c_arm_asm") {
 }
 
 rtc_source_set("isac_fix_c") {
+  poisonous = [ "audio_codecs" ]
   sources = [
     "codecs/isac/fix/include/audio_decoder_isacfix.h",
     "codecs/isac/fix/include/audio_encoder_isacfix.h",
@@ -760,6 +774,7 @@ rtc_source_set("isac_fix_c") {
 
 if (rtc_build_with_neon) {
   rtc_static_library("isac_neon") {
+    poisonous = [ "audio_codecs" ]
     sources = [
       "codecs/isac/fix/source/entropy_coding_neon.c",
       "codecs/isac/fix/source/filterbanks_neon.c",
@@ -801,6 +816,7 @@ config("pcm16b_config") {
 
 rtc_static_library("pcm16b") {
   visibility += [ "*" ]
+  poisonous = [ "audio_codecs" ]
   sources = [
     "codecs/pcm16b/audio_decoder_pcm16b.cc",
     "codecs/pcm16b/audio_decoder_pcm16b.h",
@@ -825,6 +841,7 @@ rtc_static_library("pcm16b") {
 }
 
 rtc_source_set("pcm16b_c") {
+  poisonous = [ "audio_codecs" ]
   sources = [
     "codecs/pcm16b/pcm16b.c",
     "codecs/pcm16b/pcm16b.h",
@@ -839,6 +856,7 @@ rtc_source_set("pcm16b_c") {
 
 rtc_static_library("webrtc_opus") {
   visibility += webrtc_default_visibility
+  poisonous = [ "audio_codecs" ]
   sources = [
     "codecs/opus/audio_decoder_opus.cc",
     "codecs/opus/audio_decoder_opus.h",
@@ -874,6 +892,7 @@ rtc_static_library("webrtc_opus") {
 }
 
 rtc_source_set("webrtc_opus_c") {
+  poisonous = [ "audio_codecs" ]
   sources = [
     "codecs/opus/opus_inst.h",
     "codecs/opus/opus_interface.c",

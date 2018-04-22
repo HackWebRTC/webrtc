@@ -278,6 +278,41 @@ if (build_with_chromium) {
   webrtc_default_visibility += [ webrtc_root + "/../webrtc_overrides/*" ]
 }
 
+# ---- Poisons ----
+#
+# The general idea is that some targets declare that they contain some
+# kind of poison, which makes it impossible for other targets to
+# depend on them (even transitively) unless they declare themselves
+# immune to that particular type of poison.
+#
+# Targets that *contain* poison of type foo should contain the line
+#
+#   poisonous = [ "foo" ]
+#
+# and targets that *are immune but arent't themselves poisonous*
+# should contain
+#
+#   allow_poison = [ "foo" ]
+#
+# This useful in cases where we have some large target or set of
+# targets and want to ensure that most other targets do not
+# transitively depend on them. For example, almost no high-level
+# target should depend on the audio codecs, since we want WebRTC users
+# to be able to inject any subset of them and actually end up with a
+# binary that doesn't include the codecs they didn't inject.
+#
+# Test-only targets (`testonly` set to true) and non-public targets
+# (`visibility` not containing "*") are automatically immune to all
+# types of poison.
+#
+# Here's the complete list of all types of poison. It must be kept in
+# 1:1 correspondence with the set of //:poison_* targets.
+#
+all_poison_types = [
+  # Encoders and decoders for specific audio codecs such as Opus and iSAC.
+  "audio_codecs",
+]
+
 template("rtc_test") {
   test(target_name) {
     forward_variables_from(invoker,
@@ -321,6 +356,45 @@ template("rtc_source_set") {
     if (!defined(visibility)) {
       visibility = webrtc_default_visibility
     }
+
+    # What's your poison?
+    if (defined(testonly) && testonly) {
+      assert(!defined(poisonous))
+      assert(!defined(allow_poison))
+    } else {
+      if (!defined(poisonous)) {
+        poisonous = []
+      }
+      if (!defined(allow_poison)) {
+        allow_poison = []
+      }
+      if (!defined(assert_no_deps)) {
+        assert_no_deps = []
+      }
+      if (!defined(deps)) {
+        deps = []
+      }
+      foreach(p, poisonous) {
+        deps += [ webrtc_root + ":poison_" + p ]
+      }
+      foreach(poison_type, all_poison_types) {
+        allow_dep = true
+        foreach(v, visibility) {
+          if (v == "*") {
+            allow_dep = false
+          }
+        }
+        foreach(p, allow_poison + poisonous) {
+          if (p == poison_type) {
+            allow_dep = true
+          }
+        }
+        if (!allow_dep) {
+          assert_no_deps += [ webrtc_root + ":poison_" + poison_type ]
+        }
+      }
+    }
+
     configs += invoker.configs
     configs -= rtc_remove_configs
     configs -= invoker.suppressed_configs
@@ -375,6 +449,45 @@ template("rtc_static_library") {
     if (!defined(visibility)) {
       visibility = webrtc_default_visibility
     }
+
+    # What's your poison?
+    if (defined(testonly) && testonly) {
+      assert(!defined(poisonous))
+      assert(!defined(allow_poison))
+    } else {
+      if (!defined(poisonous)) {
+        poisonous = []
+      }
+      if (!defined(allow_poison)) {
+        allow_poison = []
+      }
+      if (!defined(assert_no_deps)) {
+        assert_no_deps = []
+      }
+      if (!defined(deps)) {
+        deps = []
+      }
+      foreach(p, poisonous) {
+        deps += [ webrtc_root + ":poison_" + p ]
+      }
+      foreach(poison_type, all_poison_types) {
+        allow_dep = true
+        foreach(v, visibility) {
+          if (v == "*") {
+            allow_dep = false
+          }
+        }
+        foreach(p, allow_poison + poisonous) {
+          if (p == poison_type) {
+            allow_dep = true
+          }
+        }
+        if (!allow_dep) {
+          assert_no_deps += [ webrtc_root + ":poison_" + poison_type ]
+        }
+      }
+    }
+
     configs += invoker.configs
     configs -= rtc_remove_configs
     configs -= invoker.suppressed_configs
@@ -399,6 +512,45 @@ template("rtc_shared_library") {
     if (!defined(visibility)) {
       visibility = webrtc_default_visibility
     }
+
+    # What's your poison?
+    if (defined(testonly) && testonly) {
+      assert(!defined(poisonous))
+      assert(!defined(allow_poison))
+    } else {
+      if (!defined(poisonous)) {
+        poisonous = []
+      }
+      if (!defined(allow_poison)) {
+        allow_poison = []
+      }
+      if (!defined(assert_no_deps)) {
+        assert_no_deps = []
+      }
+      if (!defined(deps)) {
+        deps = []
+      }
+      foreach(p, poisonous) {
+        deps += [ webrtc_root + ":poison_" + p ]
+      }
+      foreach(poison_type, all_poison_types) {
+        allow_dep = true
+        foreach(v, visibility) {
+          if (v == "*") {
+            allow_dep = false
+          }
+        }
+        foreach(p, allow_poison + poisonous) {
+          if (p == poison_type) {
+            allow_dep = true
+          }
+        }
+        if (!allow_dep) {
+          assert_no_deps += [ webrtc_root + ":poison_" + poison_type ]
+        }
+      }
+    }
+
     configs += invoker.configs
     configs -= rtc_remove_configs
     configs -= invoker.suppressed_configs

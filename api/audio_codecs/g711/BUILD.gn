@@ -14,6 +14,7 @@ if (is_android) {
 
 rtc_static_library("audio_encoder_g711") {
   visibility = [ "*" ]
+  poisonous = [ "audio_codecs" ]
   sources = [
     "audio_encoder_g711.cc",
     "audio_encoder_g711.h",
@@ -30,6 +31,7 @@ rtc_static_library("audio_encoder_g711") {
 
 rtc_static_library("audio_decoder_g711") {
   visibility = [ "*" ]
+  poisonous = [ "audio_codecs" ]
   sources = [
     "audio_decoder_g711.cc",
     "audio_decoder_g711.h",

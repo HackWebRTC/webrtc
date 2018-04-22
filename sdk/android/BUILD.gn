@@ -519,6 +519,7 @@ rtc_static_library("peerconnection_jni") {
   # made public because we don't have a proper NDK yet. Header APIs here are not
   # considered public and are subject to change.
   visibility = [ "*" ]
+  allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
 
   sources = [
     "src/jni/androidnetworkmonitor_jni.h",
@@ -611,6 +612,7 @@ rtc_static_library("peerconnection_jni") {
 
 rtc_static_library("libjingle_peerconnection_jni") {
   visibility = [ "*" ]
+  allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
   public_deps = [
     ":audio_jni",
     ":base_jni",
@@ -631,6 +633,7 @@ generate_jni("generated_metrics_jni") {
 
 rtc_static_library("libjingle_peerconnection_metrics_default_jni") {
   visibility = [ "*" ]
+  allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
   sources = [
     "src/jni/androidmetrics.cc",
   ]
@@ -1143,6 +1146,7 @@ rtc_static_library("native_api_jni") {
 # objects.
 rtc_static_library("native_api_codecs") {
   visibility = [ "*" ]
+  allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
   sources = [
     "native_api/codecs/wrapper.cc",
     "native_api/codecs/wrapper.h",
@@ -1160,6 +1164,7 @@ rtc_static_library("native_api_codecs") {
 # API for creating Java PeerConnectionFactory from C++ equivalents.
 rtc_static_library("native_api_peerconnection") {
   visibility = [ "*" ]
+  allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
   sources = [
     "native_api/peerconnection/peerconnectionfactory.cc",
     "native_api/peerconnection/peerconnectionfactory.h",
@@ -1186,6 +1191,7 @@ rtc_static_library("native_api_peerconnection") {
 # video interfaces from their Java equivalents.
 rtc_static_library("native_api_video") {
   visibility = [ "*" ]
+  allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
   sources = [
     "native_api/video/wrapper.cc",
     "native_api/video/wrapper.h",

@@ -14,6 +14,7 @@ import("../../webrtc.gni")
 # use the internal capturer.
 rtc_static_library("video_capture_module") {
   visibility = [ "*" ]
+  allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
   sources = [
     "device_info_impl.cc",
     "device_info_impl.h",
@@ -50,6 +51,7 @@ rtc_static_library("video_capture_module") {
 
 rtc_static_library("video_capture") {
   visibility = [ "*" ]
+  allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
   sources = [
     "external/device_info_external.cc",
     "external/video_capture_external.cc",

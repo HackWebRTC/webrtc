@@ -21,6 +21,7 @@ rtc_source_set("audio_encoder_ilbc_config") {
 
 rtc_static_library("audio_encoder_ilbc") {
   visibility = [ "*" ]
+  poisonous = [ "audio_codecs" ]
   sources = [
     "audio_encoder_ilbc.cc",
     "audio_encoder_ilbc.h",
@@ -38,6 +39,7 @@ rtc_static_library("audio_encoder_ilbc") {
 
 rtc_static_library("audio_decoder_ilbc") {
   visibility = [ "*" ]
+  poisonous = [ "audio_codecs" ]
   sources = [
     "audio_decoder_ilbc.cc",
     "audio_decoder_ilbc.h",

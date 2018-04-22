@@ -229,6 +229,7 @@ if (is_ios || is_mac) {
 
     rtc_static_library("ui_objc") {
       visibility = [ "*" ]
+      allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
       if (is_ios) {
         sources = [
           "objc/Framework/Classes/UI/RTCCameraPreviewView.m",
@@ -255,6 +256,7 @@ if (is_ios || is_mac) {
     if (rtc_use_metal_rendering) {
       rtc_static_library("metal_objc") {
         visibility = [ "*" ]
+        allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
         sources = [
           "objc/Framework/Classes/Metal/RTCMTLI420Renderer.h",
           "objc/Framework/Classes/Metal/RTCMTLI420Renderer.mm",
@@ -316,6 +318,7 @@ if (is_ios || is_mac) {
 
     rtc_static_library("videocapture_objc") {
       visibility = [ "*" ]
+      allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
       sources = [
         "objc/Framework/Classes/PeerConnection/RTCCameraVideoCapturer.m",
         "objc/Framework/Headers/WebRTC/RTCCameraVideoCapturer.h",
@@ -347,6 +350,8 @@ if (is_ios || is_mac) {
     }
 
     rtc_static_library("videocodec_objc") {
+      visibility = [ "*" ]
+      allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
       sources = [
         "objc/Framework/Classes/PeerConnection/RTCEncodedImage.mm",
         "objc/Framework/Classes/PeerConnection/RTCRtpFragmentationHeader.mm",
@@ -363,7 +368,6 @@ if (is_ios || is_mac) {
         # (bugs.webrtc.org/163).
         suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
       }
-      visibility = [ "*" ]
       public_configs = [ ":common_config_objc" ]
       deps = [
         ":common_objc",
@@ -398,6 +402,7 @@ if (is_ios || is_mac) {
 
     rtc_static_library("vp8") {
       visibility = [ "*" ]
+      allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
       sources = [
         "objc/Framework/Classes/PeerConnection/RTCVideoCodecVP8.mm",
         "objc/Framework/Headers/WebRTC/RTCVideoDecoderVP8.h",
@@ -419,6 +424,7 @@ if (is_ios || is_mac) {
 
     rtc_static_library("vp9") {
       visibility = [ "*" ]
+      allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
       sources = [
         "objc/Framework/Classes/PeerConnection/RTCVideoCodecVP9.mm",
         "objc/Framework/Headers/WebRTC/RTCVideoDecoderVP9.h",
@@ -447,6 +453,7 @@ if (is_ios || is_mac) {
     # The applications which only use WebRTC DataChannel can depend on this.
     rtc_static_library("peerconnectionfactory_no_media_objc") {
       visibility = [ "*" ]
+      allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
       defines = [ "HAVE_NO_MEDIA" ]
 
       sources = [
@@ -500,6 +507,8 @@ if (is_ios || is_mac) {
     }
 
     rtc_static_library("videorendereradapter_objc") {
+      visibility = [ "*" ]
+      allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
       sources = [
         "objc/Framework/Classes/PeerConnection/RTCVideoRendererAdapter+Private.h",
         "objc/Framework/Classes/PeerConnection/RTCVideoRendererAdapter.h",
@@ -507,7 +516,6 @@ if (is_ios || is_mac) {
       ]
 
       configs += [ "..:common_objc" ]
-      visibility = [ "*" ]
       public_configs = [ ":common_config_objc" ]
 
       deps = [
@@ -537,6 +545,8 @@ if (is_ios || is_mac) {
     }
 
     rtc_static_library("peerconnectionfactory_base_objc") {
+      visibility = [ "*" ]
+      allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
       sources = [
         "objc/Framework/Classes/PeerConnection/RTCAudioSource+Private.h",
         "objc/Framework/Classes/PeerConnection/RTCAudioSource.mm",
@@ -624,7 +634,6 @@ if (is_ios || is_mac) {
       ]
 
       configs += [ "..:common_objc" ]
-      visibility = [ "*" ]
       public_configs = [ ":common_config_objc" ]
 
       if (!build_with_chromium && is_clang) {
@@ -958,6 +967,7 @@ if (is_ios || is_mac) {
     # The native API is currently experimental and may change without notice.
     rtc_static_library("native_api") {
       visibility = [ "*" ]
+      allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
       sources = [
         "objc/Framework/Native/api/video_capturer.h",
         "objc/Framework/Native/api/video_capturer.mm",
@@ -1067,6 +1077,7 @@ if (is_ios || is_mac) {
 
     rtc_static_library("videotoolbox_objc") {
       visibility = [ "*" ]
+      allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
       sources = [
         "objc/Framework/Classes/VideoToolbox/RTCVideoDecoderH264.mm",
         "objc/Framework/Classes/VideoToolbox/RTCVideoEncoderH264.mm",

@@ -587,3 +587,15 @@ if (rtc_include_tests) {
     }
   }
 }
+
+# ---- Poisons ----
+#
+# Here is one empty dummy target for each poison type (needed because
+# "being poisonous with poison type foo" is implemented as "depends on
+# //:poison_foo").
+#
+# The set of poison_* targets needs to be kept in sync with the
+# `all_poison_types` list in webrtc.gni.
+#
+group("poison_audio_codecs") {
+}

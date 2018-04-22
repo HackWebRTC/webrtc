@@ -268,6 +268,7 @@ rtc_source_set("video_stream_decoder") {
 
 rtc_source_set("video_stream_decoder_create") {
   visibility = [ "*" ]
+  allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
   sources = [
     "video/video_stream_decoder_create.cc",
     "video/video_stream_decoder_create.h",
