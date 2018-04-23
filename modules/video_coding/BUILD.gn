@@ -745,6 +745,7 @@ if (rtc_include_tests) {
       "codecs/vp8/default_temporal_layers_unittest.cc",
       "codecs/vp8/screenshare_layers_unittest.cc",
       "codecs/vp8/simulcast_unittest.cc",
+      "codecs/vp9/svc_config_unittest.cc",
       "codecs/vp9/svc_rate_allocator_unittest.cc",
       "decoding_state_unittest.cc",
       "fec_controller_unittest.cc",

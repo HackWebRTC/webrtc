@@ -56,7 +56,7 @@ std::vector<SpatialLayer> GetSvcConfig(size_t input_width,
     spatial_layer.maxBitrate =
         static_cast<int>((1.5 * num_pixels + 75 * 1000) / 1000);
     spatial_layer.targetBitrate =
-        (spatial_layer.maxBitrate - spatial_layer.minBitrate) / 2;
+        (spatial_layer.maxBitrate + spatial_layer.minBitrate) / 2;
 
     spatial_layers.push_back(spatial_layer);
   }
