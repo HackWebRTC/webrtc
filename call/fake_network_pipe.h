@@ -168,11 +168,11 @@ class FakeNetworkPipe : public Transport, public PacketReceiver, public Module {
   int GetConfigCapacityKbps() const;
   void AddToPacketDropCount();
   void AddToPacketSentCount(int count);
-  void AddToTotalDelay(int delay_ms);
-  int64_t GetTimeInMilliseconds() const;
+  void AddToTotalDelay(int delay_us);
+  int64_t GetTimeInMicroseconds() const;
   bool IsRandomLoss(double prob_loss);
-  bool ShouldProcess(int64_t time_now) const;
-  void SetTimeToNextProcess(int64_t skip_ms);
+  bool ShouldProcess(int64_t time_now_us) const;
+  void SetTimeToNextProcess(int64_t skip_us);
 
  private:
   // Returns true if enqueued, or false if packet was dropped.
@@ -208,7 +208,7 @@ class FakeNetworkPipe : public Transport, public PacketReceiver, public Module {
   // Statistics.
   size_t dropped_packets_ RTC_GUARDED_BY(process_lock_);
   size_t sent_packets_ RTC_GUARDED_BY(process_lock_);
-  int64_t total_packet_delay_ RTC_GUARDED_BY(process_lock_);
+  int64_t total_packet_delay_us_ RTC_GUARDED_BY(process_lock_);
 
   // Are we currently dropping a burst of packets?
   bool bursting_;
@@ -220,9 +220,9 @@ class FakeNetworkPipe : public Transport, public PacketReceiver, public Module {
   // The probability to drop a burst of packets.
   double prob_start_bursting_ RTC_GUARDED_BY(config_lock_);
 
-  int64_t next_process_time_;
+  int64_t next_process_time_us_;
 
-  int64_t last_log_time_;
+  int64_t last_log_time_us_;
 
   int64_t capacity_delay_error_bytes_ = 0;
 
