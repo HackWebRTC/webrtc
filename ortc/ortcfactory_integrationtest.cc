@@ -505,7 +505,9 @@ TEST_F(OrtcFactoryIntegrationTest,
 #endif
 
 // Tests that the packets cannot be decoded if the keys are mismatched.
-TEST_F(OrtcFactoryIntegrationTest, SrtpSendersAndReceiversWithMismatchingKeys) {
+// TODO(webrtc:9184): Disabled because this test is flaky.
+TEST_F(OrtcFactoryIntegrationTest,
+       DISABLED_SrtpSendersAndReceiversWithMismatchingKeys) {
   auto udp_transports = CreateAndConnectUdpTransportPair();
   auto srtp_transports = CreateSrtpTransportPairAndSetMismatchingKeys(
       MakeRtcpMuxParameters(), udp_transports);
