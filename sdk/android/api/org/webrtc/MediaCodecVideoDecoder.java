@@ -30,6 +30,8 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
+import org.webrtc.EglBase;
+import org.webrtc.VideoFrame;
 
 // Java-side of peerconnection.cc:MediaCodecVideoDecoder.
 // This class is an implementation detail of the Java PeerConnection API.
@@ -320,16 +322,16 @@ public class MediaCodecVideoDecoder {
     }
   }
 
-  // Pass null in |surfaceTextureHelper| to configure the codec for ByteBuffer output.
+  // Pass null in |eglContext| to configure the codec for ByteBuffer output.
   @CalledByNativeUnchecked
-  private boolean initDecode(VideoCodecType type, int width, int height,
-      @Nullable SurfaceTextureHelper surfaceTextureHelper) {
+  private boolean initDecode(
+      VideoCodecType type, int width, int height, @Nullable EglBase.Context eglContext) {
     if (mediaCodecThread != null) {
       throw new RuntimeException("initDecode: Forgot to release()?");
     }
 
     String mime = null;
-    useSurface = (surfaceTextureHelper != null);
+    useSurface = (eglContext != null);
     String[] supportedCodecPrefixes = null;
     if (type == VideoCodecType.VIDEO_CODEC_VP8) {
       mime = VP8_MIME_TYPE;
@@ -359,9 +361,14 @@ public class MediaCodecVideoDecoder {
       stride = width;
       sliceHeight = height;
 
-      if (useSurface && surfaceTextureHelper != null) {
-        textureListener = new TextureListener(surfaceTextureHelper);
-        surface = new Surface(surfaceTextureHelper.getSurfaceTexture());
+      if (useSurface) {
+        @Nullable
+        final SurfaceTextureHelper surfaceTextureHelper =
+            SurfaceTextureHelper.create("Decoder SurfaceTextureHelper", eglContext);
+        if (surfaceTextureHelper != null) {
+          textureListener = new TextureListener(surfaceTextureHelper);
+          surface = new Surface(surfaceTextureHelper.getSurfaceTexture());
+        }
       }
 
       MediaFormat format = MediaFormat.createVideoFormat(mime, width, height);
@@ -567,8 +574,7 @@ public class MediaCodecVideoDecoder {
 
   // Helper struct for dequeueTextureBuffer() below.
   private static class DecodedTextureBuffer {
-    private final int textureID;
-    private final float[] transformMatrix;
+    private final VideoFrame.Buffer videoFrameBuffer;
     // Presentation timestamp returned in dequeueOutputBuffer call.
     private final long presentationTimeStampMs;
     // C++ inputImage._timeStamp value for output frame.
@@ -585,11 +591,9 @@ public class MediaCodecVideoDecoder {
 
     // A DecodedTextureBuffer with zero |textureID| has special meaning and represents a frame
     // that was dropped.
-    public DecodedTextureBuffer(int textureID, float[] transformMatrix,
-        long presentationTimeStampMs, long timeStampMs, long ntpTimeStampMs, long decodeTimeMs,
-        long frameDelay) {
-      this.textureID = textureID;
-      this.transformMatrix = transformMatrix;
+    public DecodedTextureBuffer(VideoFrame.Buffer videoFrameBuffer, long presentationTimeStampMs,
+        long timeStampMs, long ntpTimeStampMs, long decodeTimeMs, long frameDelay) {
+      this.videoFrameBuffer = videoFrameBuffer;
       this.presentationTimeStampMs = presentationTimeStampMs;
       this.timeStampMs = timeStampMs;
       this.ntpTimeStampMs = ntpTimeStampMs;
@@ -598,13 +602,8 @@ public class MediaCodecVideoDecoder {
     }
 
     @CalledByNative("DecodedTextureBuffer")
-    int getTextureId() {
-      return textureID;
-    }
-
-    @CalledByNative("DecodedTextureBuffer")
-    float[] getTransformMatrix() {
-      return transformMatrix;
+    VideoFrame.Buffer getVideoFrameBuffer() {
+      return videoFrameBuffer;
     }
 
     @CalledByNative("DecodedTextureBuffer")
@@ -634,8 +633,7 @@ public class MediaCodecVideoDecoder {
   }
 
   // Poll based texture listener.
-  private static class TextureListener
-      implements SurfaceTextureHelper.OnTextureFrameAvailableListener {
+  private class TextureListener implements SurfaceTextureHelper.OnTextureFrameAvailableListener {
     private final SurfaceTextureHelper surfaceTextureHelper;
     // |newFrameLock| is used to synchronize arrival of new frames with wait()/notifyAll().
     private final Object newFrameLock = new Object();
@@ -674,9 +672,10 @@ public class MediaCodecVideoDecoder {
           throw new IllegalStateException("Already holding a texture.");
         }
         // |timestampNs| is always zero on some Android versions.
-        renderedBuffer = new DecodedTextureBuffer(oesTextureId, transformMatrix,
-            bufferToRender.presentationTimeStampMs, bufferToRender.timeStampMs,
-            bufferToRender.ntpTimeStampMs, bufferToRender.decodeTimeMs,
+        final VideoFrame.Buffer buffer = surfaceTextureHelper.createTextureBuffer(
+            width, height, RendererCommon.convertMatrixToAndroidGraphicsMatrix(transformMatrix));
+        renderedBuffer = new DecodedTextureBuffer(buffer, bufferToRender.presentationTimeStampMs,
+            bufferToRender.timeStampMs, bufferToRender.ntpTimeStampMs, bufferToRender.decodeTimeMs,
             SystemClock.elapsedRealtime() - bufferToRender.endDecodeTimeMs);
         bufferToRender = null;
         newFrameLock.notifyAll();
@@ -709,10 +708,11 @@ public class MediaCodecVideoDecoder {
       surfaceTextureHelper.stopListening();
       synchronized (newFrameLock) {
         if (renderedBuffer != null) {
-          surfaceTextureHelper.returnTextureFrame();
+          renderedBuffer.getVideoFrameBuffer().release();
           renderedBuffer = null;
         }
       }
+      surfaceTextureHelper.dispose();
     }
   }
 
@@ -844,8 +844,9 @@ public class MediaCodecVideoDecoder {
       }
 
       mediaCodec.releaseOutputBuffer(droppedFrame.index, false /* render */);
-      return new DecodedTextureBuffer(0, null, droppedFrame.presentationTimeStampMs,
-          droppedFrame.timeStampMs, droppedFrame.ntpTimeStampMs, droppedFrame.decodeTimeMs,
+      return new DecodedTextureBuffer(null /* videoFrameBuffer */,
+          droppedFrame.presentationTimeStampMs, droppedFrame.timeStampMs,
+          droppedFrame.ntpTimeStampMs, droppedFrame.decodeTimeMs,
           SystemClock.elapsedRealtime() - droppedFrame.endDecodeTimeMs);
     }
     return null;
