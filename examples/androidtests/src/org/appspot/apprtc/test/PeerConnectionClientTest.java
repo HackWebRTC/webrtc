@@ -44,7 +44,6 @@ import org.webrtc.SessionDescription;
 import org.webrtc.StatsReport;
 import org.webrtc.VideoCapturer;
 import org.webrtc.VideoFrame;
-import org.webrtc.VideoRenderer;
 import org.webrtc.VideoSink;
 
 @RunWith(AndroidJUnit4.class)
@@ -87,7 +86,7 @@ public class PeerConnectionClientTest implements PeerConnectionEvents {
   private final Object closeEvent = new Object();
 
   // Mock renderer implementation.
-  private static class MockRenderer implements VideoRenderer.Callbacks {
+  private static class MockRenderer implements VideoSink {
     // These are protected by 'this' since we gets called from worker threads.
     private String rendererName;
     private boolean renderFrameCalled = false;
@@ -111,17 +110,17 @@ public class PeerConnectionClientTest implements PeerConnectionEvents {
     @Override
     // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
     @SuppressWarnings("NoSynchronizedMethodCheck")
-    public synchronized void renderFrame(VideoRenderer.I420Frame frame) {
+    public synchronized void onFrame(VideoFrame frame) {
       if (!renderFrameCalled) {
         if (rendererName != null) {
-          Log.d(TAG, rendererName + " render frame: " + frame.rotatedWidth() + " x "
-                  + frame.rotatedHeight());
+          Log.d(TAG,
+              rendererName + " render frame: " + frame.getRotatedWidth() + " x "
+                  + frame.getRotatedHeight());
         } else {
-          Log.d(TAG, "Render frame: " + frame.rotatedWidth() + " x " + frame.rotatedHeight());
+          Log.d(TAG, "Render frame: " + frame.getRotatedWidth() + " x " + frame.getRotatedHeight());
         }
       }
       renderFrameCalled = true;
-      VideoRenderer.renderFrameDone(frame);
       doneRendering.countDown();
     }
 

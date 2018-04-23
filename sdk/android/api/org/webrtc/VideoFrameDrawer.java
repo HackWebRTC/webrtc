@@ -21,6 +21,7 @@ import java.nio.ByteBuffer;
  * drawer.drawYuv depending on the type of the buffer. The frame will be rendered with rotation
  * taken into account. You can supply an additional render matrix for custom transformations.
  */
+@JNINamespace("webrtc::jni")
 public class VideoFrameDrawer {
   /**
    * Draws a VideoFrame.TextureBuffer. Calls either drawer.drawOes or drawer.drawRgb
@@ -97,7 +98,7 @@ public class VideoFrameDrawer {
           // Input is packed already.
           packedByteBuffer = planes[i];
         } else {
-          VideoRenderer.nativeCopyPlane(
+          nativeCopyPlane(
               planes[i], planeWidths[i], planeHeights[i], strides[i], copyBuffer, planeWidths[i]);
           packedByteBuffer = copyBuffer;
         }
@@ -228,4 +229,8 @@ public class VideoFrameDrawer {
     yuvUploader.release();
     lastI420Frame = null;
   }
+
+  // Helper native function to do a video frame plane copying.
+  static native void nativeCopyPlane(
+      ByteBuffer src, int width, int height, int srcStride, ByteBuffer dst, int dstStride);
 }

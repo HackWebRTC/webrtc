@@ -29,7 +29,7 @@ import javax.annotation.Nullable;
 import org.chromium.base.test.BaseJUnit4ClassRunner;
 import org.junit.runner.RunWith;
 import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
-import org.webrtc.VideoRenderer.I420Frame;
+import org.webrtc.VideoFrame;
 
 class CameraVideoCapturerTestFixtures {
   static final String TAG = "CameraVideoCapturerTestFixtures";
@@ -38,21 +38,20 @@ class CameraVideoCapturerTestFixtures {
   static final int DEFAULT_HEIGHT = 480;
   static final int DEFAULT_FPS = 15;
 
-  static private class RendererCallbacks implements VideoRenderer.Callbacks {
+  static private class RendererCallbacks implements VideoSink {
     private final Object frameLock = new Object();
     private int framesRendered = 0;
     private int width = 0;
     private int height = 0;
 
     @Override
-    public void renderFrame(I420Frame frame) {
+    public void onFrame(VideoFrame frame) {
       synchronized (frameLock) {
         ++framesRendered;
-        width = frame.rotatedWidth();
-        height = frame.rotatedHeight();
+        width = frame.getRotatedWidth();
+        height = frame.getRotatedHeight();
         frameLock.notify();
       }
-      VideoRenderer.renderFrameDone(frame);
     }
 
     public int frameWidth() {
@@ -79,25 +78,26 @@ class CameraVideoCapturerTestFixtures {
     }
   }
 
-  static private class FakeAsyncRenderer implements VideoRenderer.Callbacks {
-    private final List<I420Frame> pendingFrames = new ArrayList<I420Frame>();
+  static private class FakeAsyncRenderer implements VideoSink {
+    private final List<VideoFrame> pendingFrames = new ArrayList<VideoFrame>();
 
     @Override
-    public void renderFrame(I420Frame frame) {
+    public void onFrame(VideoFrame frame) {
       synchronized (pendingFrames) {
+        frame.retain();
         pendingFrames.add(frame);
         pendingFrames.notifyAll();
       }
     }
 
     // Wait until at least one frame have been received, before returning them.
-    public List<I420Frame> waitForPendingFrames() throws InterruptedException {
+    public List<VideoFrame> waitForPendingFrames() throws InterruptedException {
       Logging.d(TAG, "Waiting for pending frames");
       synchronized (pendingFrames) {
         while (pendingFrames.isEmpty()) {
           pendingFrames.wait();
         }
-        return new ArrayList<I420Frame>(pendingFrames);
+        return new ArrayList<VideoFrame>(pendingFrames);
       }
     }
   }
@@ -387,13 +387,13 @@ class CameraVideoCapturerTestFixtures {
   }
 
   private VideoTrackWithRenderer createVideoTrackWithRenderer(
-      CameraVideoCapturer capturer, VideoRenderer.Callbacks rendererCallbacks) {
+      CameraVideoCapturer capturer, VideoSink rendererCallbacks) {
     VideoTrackWithRenderer videoTrackWithRenderer = new VideoTrackWithRenderer();
     videoTrackWithRenderer.source = peerConnectionFactory.createVideoSource(capturer);
     capturer.startCapture(DEFAULT_WIDTH, DEFAULT_HEIGHT, DEFAULT_FPS);
     videoTrackWithRenderer.track =
         peerConnectionFactory.createVideoTrack("dummy", videoTrackWithRenderer.source);
-    videoTrackWithRenderer.track.addRenderer(new VideoRenderer(rendererCallbacks));
+    videoTrackWithRenderer.track.addSink(rendererCallbacks);
     return videoTrackWithRenderer;
   }
 
@@ -727,13 +727,13 @@ class CameraVideoCapturerTestFixtures {
     disposeVideoTrackWithRenderer(videoTrackWithRenderer);
 
     // Return the frame(s), on a different thread out of spite.
-    final List<I420Frame> pendingFrames =
+    final List<VideoFrame> pendingFrames =
         videoTrackWithRenderer.fakeAsyncRenderer.waitForPendingFrames();
     final Thread returnThread = new Thread(new Runnable() {
       @Override
       public void run() {
-        for (I420Frame frame : pendingFrames) {
-          VideoRenderer.renderFrameDone(frame);
+        for (VideoFrame frame : pendingFrames) {
+          frame.release();
         }
       }
     });

@@ -248,9 +248,12 @@ public class EglRendererTest {
 
   /** Tells eglRenderer to render test frame with given index. */
   private void feedFrame(int i) {
-    eglRenderer.renderFrame(new VideoRenderer.I420Frame(TEST_FRAME_WIDTH, TEST_FRAME_HEIGHT, 0,
-        new int[] {TEST_FRAME_WIDTH, TEST_FRAME_WIDTH / 2, TEST_FRAME_WIDTH / 2}, TEST_FRAMES[i],
-        0));
+    final VideoFrame.I420Buffer buffer = JavaI420Buffer.wrap(TEST_FRAME_WIDTH, TEST_FRAME_HEIGHT,
+        TEST_FRAMES[i][0], TEST_FRAME_WIDTH, TEST_FRAMES[i][1], TEST_FRAME_WIDTH / 2,
+        TEST_FRAMES[i][2], TEST_FRAME_WIDTH / 2, null /* releaseCallback */);
+    final VideoFrame frame = new VideoFrame(buffer, 0 /* rotation */, 0 /* timestamp */);
+    eglRenderer.onFrame(frame);
+    frame.release();
   }
 
   @Test

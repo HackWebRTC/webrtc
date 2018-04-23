@@ -66,7 +66,6 @@ import org.webrtc.StatsReport;
 import org.webrtc.VideoCapturer;
 import org.webrtc.VideoDecoderFactory;
 import org.webrtc.VideoEncoderFactory;
-import org.webrtc.VideoRenderer;
 import org.webrtc.VideoSink;
 import org.webrtc.VideoSource;
 import org.webrtc.VideoTrack;
@@ -147,8 +146,7 @@ public class PeerConnectionClient {
   private boolean isError;
   @Nullable
   private VideoSink localRender;
-  @Nullable
-  private List<VideoRenderer.Callbacks> remoteRenders;
+  @Nullable private List<VideoSink> remoteSinks;
   private SignalingParameters signalingParameters;
   private int videoWidth;
   private int videoHeight;
@@ -356,25 +354,23 @@ public class PeerConnectionClient {
     executor.execute(() -> createPeerConnectionFactoryInternal(options));
   }
 
-  public void createPeerConnection(final VideoSink localRender,
-      final VideoRenderer.Callbacks remoteRender, final VideoCapturer videoCapturer,
-      final SignalingParameters signalingParameters) {
+  public void createPeerConnection(final VideoSink localRender, final VideoSink remoteSink,
+      final VideoCapturer videoCapturer, final SignalingParameters signalingParameters) {
     if (peerConnectionParameters.videoCallEnabled && videoCapturer == null) {
       Log.w(TAG, "Video call enabled but no video capturer provided.");
     }
     createPeerConnection(
-        localRender, Collections.singletonList(remoteRender), videoCapturer, signalingParameters);
+        localRender, Collections.singletonList(remoteSink), videoCapturer, signalingParameters);
   }
 
-  public void createPeerConnection(final VideoSink localRender,
-      final List<VideoRenderer.Callbacks> remoteRenders, final VideoCapturer videoCapturer,
-      final SignalingParameters signalingParameters) {
+  public void createPeerConnection(final VideoSink localRender, final List<VideoSink> remoteSinks,
+      final VideoCapturer videoCapturer, final SignalingParameters signalingParameters) {
     if (peerConnectionParameters == null) {
       Log.e(TAG, "Creating peer connection without initializing factory.");
       return;
     }
     this.localRender = localRender;
-    this.remoteRenders = remoteRenders;
+    this.remoteSinks = remoteSinks;
     this.videoCapturer = videoCapturer;
     this.signalingParameters = signalingParameters;
     executor.execute(() -> {
@@ -685,8 +681,8 @@ public class PeerConnectionClient {
       // answer to get the remote track.
       remoteVideoTrack = getRemoteVideoTrack();
       remoteVideoTrack.setEnabled(renderVideo);
-      for (VideoRenderer.Callbacks remoteRender : remoteRenders) {
-        remoteVideoTrack.addRenderer(new VideoRenderer(remoteRender));
+      for (VideoSink remoteSink : remoteSinks) {
+        remoteVideoTrack.addSink(remoteSink);
       }
     }
     peerConnection.addTrack(createAudioTrack(), mediaStreamLabels);
@@ -781,7 +777,7 @@ public class PeerConnectionClient {
       saveRecordedAudioToFile = null;
     }
     localRender = null;
-    remoteRenders = null;
+    remoteSinks = null;
     Log.d(TAG, "Closing peer connection factory.");
     if (factory != null) {
       factory.dispose();

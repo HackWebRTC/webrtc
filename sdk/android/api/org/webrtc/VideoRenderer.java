@@ -195,10 +195,6 @@ public class VideoRenderer {
     }
   }
 
-  // Helper native function to do a video frame plane copying.
-  static native void nativeCopyPlane(
-      ByteBuffer src, int width, int height, int srcStride, ByteBuffer dst, int dstStride);
-
   /** The real meat of VideoSinkInterface. */
   public static interface Callbacks {
     // |frame| might have pending rotation and implementation of Callbacks
