@@ -63,7 +63,7 @@ static void JNI_NV21Buffer_CropAndScale(JNIEnv* jni,
 
   // Crop using pointer arithmetic.
   src_y += crop_x + crop_y * src_stride_y;
-  src_uv += crop_chroma_x + crop_chroma_y * src_stride_uv;
+  src_uv += 2 * crop_chroma_x + crop_chroma_y * src_stride_uv;
 
   NV12ToI420Scaler scaler;
   // U- and V-planes are swapped because this is NV21 not NV12.

@@ -62,7 +62,7 @@ static void JNI_NV12Buffer_CropAndScale(JNIEnv* jni,
 
   // Crop using pointer arithmetic.
   src_y += crop_x + crop_y * src_stride_y;
-  src_uv += crop_chroma_x + crop_chroma_y * src_stride_uv;
+  src_uv += 2 * crop_chroma_x + crop_chroma_y * src_stride_uv;
 
   std::vector<uint8_t> tmp_buffer(tmp_size);
   uint8_t* tmp_u = tmp_buffer.data();
