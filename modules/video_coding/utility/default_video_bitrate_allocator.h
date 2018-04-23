@@ -20,8 +20,8 @@ class DefaultVideoBitrateAllocator : public VideoBitrateAllocator {
   explicit DefaultVideoBitrateAllocator(const VideoCodec& codec);
   ~DefaultVideoBitrateAllocator() override;
 
-  BitrateAllocation GetAllocation(uint32_t total_bitrate,
-                                  uint32_t framerate) override;
+  VideoBitrateAllocation GetAllocation(uint32_t total_bitrate,
+                                       uint32_t framerate) override;
   uint32_t GetPreferredBitrateBps(uint32_t framerate) override;
 
  private:

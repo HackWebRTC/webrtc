@@ -224,7 +224,7 @@ TEST_F(TestVp9Impl, EnableDisableSpatialLayers) {
             encoder_->InitEncode(&codec_settings_, 1 /* number of cores */,
                                  0 /* max payload size (unused) */));
 
-  BitrateAllocation bitrate_allocation;
+  VideoBitrateAllocation bitrate_allocation;
   for (size_t sl_idx = 0; sl_idx < num_spatial_layers; ++sl_idx) {
     bitrate_allocation.SetBitrate(sl_idx, 0,
                                   layers[sl_idx].targetBitrate * 1000);
@@ -283,7 +283,7 @@ TEST_F(TestVp9Impl, EndOfSuperframe) {
 
   // Encode both base and upper layers. Check that end-of-superframe flag is
   // set on upper layer frame but not on base layer frame.
-  BitrateAllocation bitrate_allocation;
+  VideoBitrateAllocation bitrate_allocation;
   bitrate_allocation.SetBitrate(0, 0, layers[0].targetBitrate * 1000);
   bitrate_allocation.SetBitrate(1, 0, layers[1].targetBitrate * 1000);
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,

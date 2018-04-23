@@ -35,7 +35,7 @@ VideoSender::VideoSender(Clock* clock,
       _codecDataBase(&_encodedFrameCallback),
       frame_dropper_enabled_(true),
       current_codec_(),
-      encoder_params_({BitrateAllocation(), 0, 0, 0}),
+      encoder_params_({VideoBitrateAllocation(), 0, 0, 0}),
       encoder_has_internal_source_(false),
       next_frame_types_(1, kVideoFrameDelta) {
   _mediaOpt.Reset();
@@ -150,7 +150,7 @@ EncoderParameters VideoSender::UpdateEncoderParameters(
   if (input_frame_rate == 0)
     input_frame_rate = current_codec_.maxFramerate;
 
-  BitrateAllocation bitrate_allocation;
+  VideoBitrateAllocation bitrate_allocation;
   // Only call allocators if bitrate > 0 (ie, not suspended), otherwise they
   // might cap the bitrate to the min bitrate configured.
   if (target_bitrate_bps > 0) {
@@ -171,7 +171,7 @@ EncoderParameters VideoSender::UpdateEncoderParameters(
 void VideoSender::UpdateChannelParameters(
     VideoBitrateAllocator* bitrate_allocator,
     VideoBitrateAllocationObserver* bitrate_updated_callback) {
-  BitrateAllocation target_rate;
+  VideoBitrateAllocation target_rate;
   {
     rtc::CritScope cs(&params_crit_);
     encoder_params_ =

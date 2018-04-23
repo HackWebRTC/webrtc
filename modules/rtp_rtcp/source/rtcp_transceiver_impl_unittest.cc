@@ -35,7 +35,7 @@ using ::testing::Invoke;
 using ::testing::Return;
 using ::testing::SizeIs;
 using ::testing::StrictMock;
-using ::webrtc::BitrateAllocation;
+using ::webrtc::VideoBitrateAllocation;
 using ::webrtc::CompactNtp;
 using ::webrtc::CompactNtpRttToMs;
 using ::webrtc::MockRtcpRttStats;
@@ -60,7 +60,8 @@ class MockMediaReceiverRtcpObserver : public webrtc::MediaReceiverRtcpObserver {
  public:
   MOCK_METHOD3(OnSenderReport, void(uint32_t, NtpTime, uint32_t));
   MOCK_METHOD1(OnBye, void(uint32_t));
-  MOCK_METHOD2(OnBitrateAllocation, void(uint32_t, const BitrateAllocation&));
+  MOCK_METHOD2(OnBitrateAllocation,
+               void(uint32_t, const VideoBitrateAllocation&));
 };
 
 // Since some tests will need to wait for this period, make it small to avoid
@@ -552,7 +553,7 @@ TEST(RtcpTransceiverImplTest, CallsObserverOnTargetBitrateBySenderSsrc) {
   xr.SetTargetBitrate(target_bitrate);
   auto raw_packet = xr.Build();
 
-  BitrateAllocation bitrate_allocation;
+  VideoBitrateAllocation bitrate_allocation;
   bitrate_allocation.SetBitrate(0, 0, /*bitrate_bps=*/10000);
   bitrate_allocation.SetBitrate(0, 1, /*bitrate_bps=*/20000);
   bitrate_allocation.SetBitrate(1, 0, /*bitrate_bps=*/40000);
@@ -578,7 +579,7 @@ TEST(RtcpTransceiverImplTest, SkipsIncorrectTargetBitrateEntries) {
   xr.SetSenderSsrc(kRemoteSsrc);
   auto raw_packet = xr.Build();
 
-  BitrateAllocation expected_allocation;
+  VideoBitrateAllocation expected_allocation;
   expected_allocation.SetBitrate(0, 0, /*bitrate_bps=*/10000);
   EXPECT_CALL(observer, OnBitrateAllocation(kRemoteSsrc, expected_allocation));
   rtcp_transceiver.ReceivePacket(raw_packet, /*now_us=*/0);

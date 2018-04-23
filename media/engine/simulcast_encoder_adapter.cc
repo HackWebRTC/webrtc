@@ -178,7 +178,7 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
 
   codec_ = *inst;
   SimulcastRateAllocator rate_allocator(codec_);
-  BitrateAllocation allocation = rate_allocator.GetAllocation(
+  VideoBitrateAllocation allocation = rate_allocator.GetAllocation(
       codec_.startBitrate * 1000, codec_.maxFramerate);
   std::vector<uint32_t> start_bitrates;
   for (int i = 0; i < kMaxSimulcastStreams; ++i) {
@@ -367,8 +367,9 @@ int SimulcastEncoderAdapter::SetChannelParameters(uint32_t packet_loss,
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int SimulcastEncoderAdapter::SetRateAllocation(const BitrateAllocation& bitrate,
-                                               uint32_t new_framerate) {
+int SimulcastEncoderAdapter::SetRateAllocation(
+    const VideoBitrateAllocation& bitrate,
+    uint32_t new_framerate) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&encoder_queue_);
 
   if (!Initialized()) {
@@ -410,7 +411,7 @@ int SimulcastEncoderAdapter::SetRateAllocation(const BitrateAllocation& bitrate,
 
     // Slice the temporal layers out of the full allocation and pass it on to
     // the encoder handling the current simulcast stream.
-    BitrateAllocation stream_allocation;
+    VideoBitrateAllocation stream_allocation;
     for (int i = 0; i < kMaxTemporalStreams; ++i) {
       if (bitrate.HasBitrate(stream_idx, i)) {
         stream_allocation.SetBitrate(0, i, bitrate.GetBitrate(stream_idx, i));

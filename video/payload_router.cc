@@ -266,15 +266,15 @@ EncodedImageCallback::Result PayloadRouter::OnEncodedImage(
 }
 
 void PayloadRouter::OnBitrateAllocationUpdated(
-    const BitrateAllocation& bitrate) {
+    const VideoBitrateAllocation& bitrate) {
   rtc::CritScope lock(&crit_);
   if (IsActive()) {
     if (rtp_modules_.size() == 1) {
       // If spatial scalability is enabled, it is covered by a single stream.
       rtp_modules_[0]->SetVideoBitrateAllocation(bitrate);
     } else {
-      // Simulcast is in use, split the BitrateAllocation into one struct per
-      // rtp stream, moving over the temporal layer allocation.
+      // Simulcast is in use, split the VideoBitrateAllocation into one struct
+      // per rtp stream, moving over the temporal layer allocation.
       for (size_t si = 0; si < rtp_modules_.size(); ++si) {
         // Don't send empty TargetBitrate messages on streams not being relayed.
         if (!bitrate.IsSpatialLayerUsed(si)) {
@@ -283,7 +283,7 @@ void PayloadRouter::OnBitrateAllocationUpdated(
           continue;
         }
 
-        BitrateAllocation layer_bitrate;
+        VideoBitrateAllocation layer_bitrate;
         for (int tl = 0; tl < kMaxTemporalStreams; ++tl) {
           if (bitrate.HasBitrate(si, tl))
             layer_bitrate.SetBitrate(0, tl, bitrate.GetBitrate(si, tl));

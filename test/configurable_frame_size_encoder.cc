@@ -74,7 +74,7 @@ int32_t ConfigurableFrameSizeEncoder::SetChannelParameters(uint32_t packet_loss,
 }
 
 int32_t ConfigurableFrameSizeEncoder::SetRateAllocation(
-    const BitrateAllocation& allocation,
+    const VideoBitrateAllocation& allocation,
     uint32_t framerate) {
   return WEBRTC_VIDEO_CODEC_OK;
 }

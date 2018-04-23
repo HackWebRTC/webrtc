@@ -46,7 +46,7 @@ class LibvpxVp8Encoder : public VP8Encoder {
 
   int SetChannelParameters(uint32_t packet_loss, int64_t rtt) override;
 
-  int SetRateAllocation(const BitrateAllocation& bitrate,
+  int SetRateAllocation(const VideoBitrateAllocation& bitrate,
                         uint32_t new_framerate) override;
 
   ScalingSettings GetScalingSettings() const override;

@@ -46,7 +46,7 @@ class MultiplexEncoderAdapter : public VideoEncoder {
              const std::vector<FrameType>* frame_types) override;
   int RegisterEncodeCompleteCallback(EncodedImageCallback* callback) override;
   int SetChannelParameters(uint32_t packet_loss, int64_t rtt) override;
-  int SetRateAllocation(const BitrateAllocation& bitrate,
+  int SetRateAllocation(const VideoBitrateAllocation& bitrate,
                         uint32_t new_framerate) override;
   int Release() override;
   const char* ImplementationName() const override;

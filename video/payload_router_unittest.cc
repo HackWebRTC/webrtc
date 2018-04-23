@@ -232,17 +232,17 @@ TEST(PayloadRouterTest, SimulcastTargetBitrate) {
   PayloadRouter payload_router(modules, {kSsrc1, kSsrc2}, kPayloadType, {});
   payload_router.SetActive(true);
 
-  BitrateAllocation bitrate;
+  VideoBitrateAllocation bitrate;
   bitrate.SetBitrate(0, 0, 10000);
   bitrate.SetBitrate(0, 1, 20000);
   bitrate.SetBitrate(1, 0, 40000);
   bitrate.SetBitrate(1, 1, 80000);
 
-  BitrateAllocation layer0_bitrate;
+  VideoBitrateAllocation layer0_bitrate;
   layer0_bitrate.SetBitrate(0, 0, 10000);
   layer0_bitrate.SetBitrate(0, 1, 20000);
 
-  BitrateAllocation layer1_bitrate;
+  VideoBitrateAllocation layer1_bitrate;
   layer1_bitrate.SetBitrate(0, 0, 40000);
   layer1_bitrate.SetBitrate(0, 1, 80000);
 
@@ -265,17 +265,17 @@ TEST(PayloadRouterTest, SimulcastTargetBitrateWithInactiveStream) {
   payload_router.SetActive(true);
 
   // Create bitrate allocation with bitrate only for the first and third stream.
-  BitrateAllocation bitrate;
+  VideoBitrateAllocation bitrate;
   bitrate.SetBitrate(0, 0, 10000);
   bitrate.SetBitrate(0, 1, 20000);
   bitrate.SetBitrate(2, 0, 40000);
   bitrate.SetBitrate(2, 1, 80000);
 
-  BitrateAllocation layer0_bitrate;
+  VideoBitrateAllocation layer0_bitrate;
   layer0_bitrate.SetBitrate(0, 0, 10000);
   layer0_bitrate.SetBitrate(0, 1, 20000);
 
-  BitrateAllocation layer2_bitrate;
+  VideoBitrateAllocation layer2_bitrate;
   layer2_bitrate.SetBitrate(0, 0, 40000);
   layer2_bitrate.SetBitrate(0, 1, 80000);
 
@@ -294,7 +294,7 @@ TEST(PayloadRouterTest, SvcTargetBitrate) {
   PayloadRouter payload_router(modules, {kSsrc1}, kPayloadType, {});
   payload_router.SetActive(true);
 
-  BitrateAllocation bitrate;
+  VideoBitrateAllocation bitrate;
   bitrate.SetBitrate(0, 0, 10000);
   bitrate.SetBitrate(0, 1, 20000);
   bitrate.SetBitrate(1, 0, 40000);

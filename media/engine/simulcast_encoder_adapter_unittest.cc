@@ -150,7 +150,7 @@ class MockVideoEncoder : public VideoEncoder {
 
   MOCK_METHOD0(Release, int32_t());
 
-  int32_t SetRateAllocation(const BitrateAllocation& bitrate_allocation,
+  int32_t SetRateAllocation(const VideoBitrateAllocation& bitrate_allocation,
                             uint32_t framerate) {
     last_set_bitrate_ = bitrate_allocation;
     return 0;
@@ -184,7 +184,7 @@ class MockVideoEncoder : public VideoEncoder {
     init_encode_return_value_ = value;
   }
 
-  BitrateAllocation last_set_bitrate() const { return last_set_bitrate_; }
+  VideoBitrateAllocation last_set_bitrate() const { return last_set_bitrate_; }
 
   MOCK_CONST_METHOD0(ImplementationName, const char*());
 
@@ -192,7 +192,7 @@ class MockVideoEncoder : public VideoEncoder {
   MockVideoEncoderFactory* const factory_;
   bool supports_native_handle_ = false;
   int32_t init_encode_return_value_ = 0;
-  BitrateAllocation last_set_bitrate_;
+  VideoBitrateAllocation last_set_bitrate_;
 
   VideoCodec codec_;
   EncodedImageCallback* callback_;
@@ -679,22 +679,22 @@ TEST_F(TestSimulcastEncoderAdapterFake, SetRatesUnderMinBitrate) {
   rate_allocator_.reset(new SimulcastRateAllocator(codec_));
 
   // Above min should be respected.
-  BitrateAllocation target_bitrate =
+  VideoBitrateAllocation target_bitrate =
       rate_allocator_->GetAllocation(codec_.minBitrate * 1000, 30);
   adapter_->SetRateAllocation(target_bitrate, 30);
   EXPECT_EQ(target_bitrate,
             helper_->factory()->encoders()[0]->last_set_bitrate());
 
   // Below min but non-zero should be replaced with the min bitrate.
-  BitrateAllocation too_low_bitrate =
+  VideoBitrateAllocation too_low_bitrate =
       rate_allocator_->GetAllocation((codec_.minBitrate - 1) * 1000, 30);
   adapter_->SetRateAllocation(too_low_bitrate, 30);
   EXPECT_EQ(target_bitrate,
             helper_->factory()->encoders()[0]->last_set_bitrate());
 
   // Zero should be passed on as is, since it means "pause".
-  adapter_->SetRateAllocation(BitrateAllocation(), 30);
-  EXPECT_EQ(BitrateAllocation(),
+  adapter_->SetRateAllocation(VideoBitrateAllocation(), 30);
+  EXPECT_EQ(VideoBitrateAllocation(),
             helper_->factory()->encoders()[0]->last_set_bitrate());
 }
 

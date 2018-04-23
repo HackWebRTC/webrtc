@@ -299,7 +299,7 @@ TEST_P(BandwidthEndToEndTest, ReportsSetEncoderRates) {
       RTC_DCHECK_EQ(1, encoder_config->number_of_streams);
     }
 
-    int32_t SetRateAllocation(const BitrateAllocation& rate_allocation,
+    int32_t SetRateAllocation(const VideoBitrateAllocation& rate_allocation,
                               uint32_t framerate) override {
       // Make sure not to trigger on any default zero bitrates.
       if (rate_allocation.get_sum_bps() == 0)

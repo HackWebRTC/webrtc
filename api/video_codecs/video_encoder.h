@@ -197,7 +197,7 @@ class VideoEncoder {
 
   // Default fallback: Just use the sum of bitrates as the single target rate.
   // TODO(sprang): Remove this default implementation when we remove SetRates().
-  virtual int32_t SetRateAllocation(const BitrateAllocation& allocation,
+  virtual int32_t SetRateAllocation(const VideoBitrateAllocation& allocation,
                                     uint32_t framerate);
 
   // Any encoder implementation wishing to use the WebRTC provided

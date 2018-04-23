@@ -179,7 +179,7 @@ class MockRtpRtcp : public RtpRtcp {
                void(StreamDataCountersCallback*));
   MOCK_CONST_METHOD0(GetSendChannelRtpStatisticsCallback,
                      StreamDataCountersCallback*(void));
-  MOCK_METHOD1(SetVideoBitrateAllocation, void(const BitrateAllocation&));
+  MOCK_METHOD1(SetVideoBitrateAllocation, void(const VideoBitrateAllocation&));
   // Members.
   unsigned int remote_ssrc_;
 

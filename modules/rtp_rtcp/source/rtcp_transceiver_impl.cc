@@ -294,8 +294,8 @@ void RtcpTransceiverImpl::HandleTargetBitrate(
       remote_sender_it->second.observers.empty())
     return;
 
-  // Convert rtcp::TargetBitrate to BitrateAllocation from common types.
-  BitrateAllocation bitrate_allocation;
+  // Convert rtcp::TargetBitrate to VideoBitrateAllocation.
+  VideoBitrateAllocation bitrate_allocation;
   for (const rtcp::TargetBitrate::BitrateItem& item :
        target_bitrate.GetTargetBitrates()) {
     if (item.spatial_layer >= kMaxSpatialLayers ||

@@ -947,7 +947,8 @@ bool RTCPSender::AllVolatileFlagsConsumed() const {
   return true;
 }
 
-void RTCPSender::SetVideoBitrateAllocation(const BitrateAllocation& bitrate) {
+void RTCPSender::SetVideoBitrateAllocation(
+    const VideoBitrateAllocation& bitrate) {
   rtc::CritScope lock(&critical_section_rtcp_sender_);
   video_bitrate_allocation_.emplace(bitrate);
   SetFlag(kRtcpAnyExtendedReports, true);

@@ -18,6 +18,8 @@
 
 #include "api/array_view.h"
 #include "api/optional.h"
+// TODO(sprang): Remove this include when all usage includes it directly.
+#include "api/video/video_bitrate_allocation.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/deprecation.h"
 #include "typedefs.h"  // NOLINT(build/include)
@@ -338,10 +340,6 @@ enum class VideoType {
 };
 
 // Video codec
-enum { kMaxSimulcastStreams = 4 };
-enum { kMaxSpatialLayers = 5 };
-enum { kMaxTemporalStreams = 4 };
-
 enum VideoCodecComplexity {
   kComplexityNormal = 0,
   kComplexityHigh = 1,
@@ -519,58 +517,8 @@ class VideoCodec {
   VideoCodecUnion codec_specific_;
 };
 
-class BitrateAllocation {
- public:
-  static const uint32_t kMaxBitrateBps;
-  BitrateAllocation();
-
-  bool SetBitrate(size_t spatial_index,
-                  size_t temporal_index,
-                  uint32_t bitrate_bps);
-
-  bool HasBitrate(size_t spatial_index, size_t temporal_index) const;
-
-  uint32_t GetBitrate(size_t spatial_index, size_t temporal_index) const;
-
-  // Whether the specific spatial layers has the bitrate set in any of its
-  // temporal layers.
-  bool IsSpatialLayerUsed(size_t spatial_index) const;
-
-  // Get the sum of all the temporal layer for a specific spatial layer.
-  uint32_t GetSpatialLayerSum(size_t spatial_index) const;
-
-  // Sum of bitrates of temporal layers, from layer 0 to |temporal_index|
-  // inclusive, of specified spatial layer |spatial_index|. Bitrates of lower
-  // spatial layers are not included.
-  uint32_t GetTemporalLayerSum(size_t spatial_index,
-                               size_t temporal_index) const;
-
-  // Returns a vector of the temporal layer bitrates for the specific spatial
-  // layer. Length of the returned vector is cropped to the highest temporal
-  // layer with a defined bitrate.
-  std::vector<uint32_t> GetTemporalLayerAllocation(size_t spatial_index) const;
-
-  uint32_t get_sum_bps() const { return sum_; }  // Sum of all bitrates.
-  uint32_t get_sum_kbps() const {
-    // Round down to not exceed the allocated bitrate.
-    return sum_ / 1000;
-  }
-
-  inline bool operator==(const BitrateAllocation& other) const {
-    return memcmp(bitrates_, other.bitrates_, sizeof(bitrates_)) == 0;
-  }
-  inline bool operator!=(const BitrateAllocation& other) const {
-    return !(*this == other);
-  }
-
-  // Expensive, please use only in tests.
-  std::string ToString() const;
-
- private:
-  uint32_t sum_;
-  uint32_t bitrates_[kMaxSpatialLayers][kMaxTemporalStreams];
-  bool has_bitrate_[kMaxSpatialLayers][kMaxTemporalStreams];
-};
+// TODO(sprang): Remove this when downstream projects have been updated.
+using BitrateAllocation = VideoBitrateAllocation;
 
 // Bandwidth over-use detector options.  These are used to drive
 // experimentation with bandwidth estimation parameters.

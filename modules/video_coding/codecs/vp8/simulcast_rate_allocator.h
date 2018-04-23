@@ -28,18 +28,18 @@ class SimulcastRateAllocator : public VideoBitrateAllocator {
  public:
   explicit SimulcastRateAllocator(const VideoCodec& codec);
 
-  BitrateAllocation GetAllocation(uint32_t total_bitrate_bps,
-                                  uint32_t framerate) override;
+  VideoBitrateAllocation GetAllocation(uint32_t total_bitrate_bps,
+                                       uint32_t framerate) override;
   uint32_t GetPreferredBitrateBps(uint32_t framerate) override;
   const VideoCodec& GetCodec() const;
 
  private:
   void DistributeAllocationToSimulcastLayers(
       uint32_t total_bitrate_bps,
-      BitrateAllocation* allocated_bitrates_bps) const;
+      VideoBitrateAllocation* allocated_bitrates_bps) const;
   void DistributeAllocationToTemporalLayers(
       uint32_t framerate,
-      BitrateAllocation* allocated_bitrates_bps) const;
+      VideoBitrateAllocation* allocated_bitrates_bps) const;
   std::vector<uint32_t> DefaultTemporalLayerAllocation(int bitrate_kbps,
                                                        int max_bitrate_kbps,
                                                        int framerate,

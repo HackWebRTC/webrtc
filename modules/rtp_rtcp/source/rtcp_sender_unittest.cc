@@ -823,7 +823,7 @@ TEST_F(RtcpSenderTest, SendXrWithTargetBitrate) {
   rtcp_sender_->SetRTCPStatus(RtcpMode::kCompound);
   const size_t kNumSpatialLayers = 2;
   const size_t kNumTemporalLayers = 2;
-  BitrateAllocation allocation;
+  VideoBitrateAllocation allocation;
   for (size_t sl = 0; sl < kNumSpatialLayers; ++sl) {
     uint32_t start_bitrate_bps = (sl + 1) * 100000;
     for (size_t tl = 0; tl < kNumTemporalLayers; ++tl)

@@ -60,7 +60,7 @@ class PayloadRouter : public EncodedImageCallback {
       const CodecSpecificInfo* codec_specific_info,
       const RTPFragmentationHeader* fragmentation) override;
 
-  void OnBitrateAllocationUpdated(const BitrateAllocation& bitrate);
+  void OnBitrateAllocationUpdated(const VideoBitrateAllocation& bitrate);
 
  private:
   class RtpPayloadParams;

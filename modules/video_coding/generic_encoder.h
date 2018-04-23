@@ -28,7 +28,7 @@ class MediaOptimization;
 }  // namespace media_optimization
 
 struct EncoderParameters {
-  BitrateAllocation target_bitrate;
+  VideoBitrateAllocation target_bitrate;
   uint8_t loss_rate;
   int64_t rtt;
   uint32_t input_frame_rate;

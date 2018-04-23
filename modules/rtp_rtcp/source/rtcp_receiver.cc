@@ -71,7 +71,7 @@ struct RTCPReceiver::PacketInformation {
   int64_t rtt_ms = 0;
   uint32_t receiver_estimated_max_bitrate_bps = 0;
   std::unique_ptr<rtcp::TransportFeedback> transport_feedback;
-  rtc::Optional<BitrateAllocation> target_bitrate_allocation;
+  rtc::Optional<VideoBitrateAllocation> target_bitrate_allocation;
 };
 
 // Structure for handing TMMBR and TMMBN rtcp messages (RFC5104, section 3.5.4).
@@ -775,7 +775,7 @@ void RTCPReceiver::HandleXrTargetBitrate(
     return;  // Not for us.
   }
 
-  BitrateAllocation bitrate_allocation;
+  VideoBitrateAllocation bitrate_allocation;
   for (const auto& item : target_bitrate.GetTargetBitrates()) {
     if (item.spatial_layer >= kMaxSpatialLayers ||
         item.temporal_layer >= kMaxTemporalStreams) {

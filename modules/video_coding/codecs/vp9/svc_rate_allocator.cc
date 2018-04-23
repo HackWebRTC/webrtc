@@ -27,9 +27,10 @@ SvcRateAllocator::SvcRateAllocator(const VideoCodec& codec) : codec_(codec) {
   RTC_DCHECK_EQ(codec.codecType, kVideoCodecVP9);
 }
 
-BitrateAllocation SvcRateAllocator::GetAllocation(uint32_t total_bitrate_bps,
-                                                  uint32_t framerate_fps) {
-  BitrateAllocation bitrate_allocation;
+VideoBitrateAllocation SvcRateAllocator::GetAllocation(
+    uint32_t total_bitrate_bps,
+    uint32_t framerate_fps) {
+  VideoBitrateAllocation bitrate_allocation;
 
   size_t num_spatial_layers = codec_.VP9().numberOfSpatialLayers;
   RTC_CHECK(num_spatial_layers > 0);

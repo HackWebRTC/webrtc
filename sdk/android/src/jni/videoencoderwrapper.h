@@ -47,7 +47,7 @@ class VideoEncoderWrapper : public VideoEncoder {
 
   int32_t SetChannelParameters(uint32_t packet_loss, int64_t rtt) override;
 
-  int32_t SetRateAllocation(const BitrateAllocation& allocation,
+  int32_t SetRateAllocation(const VideoBitrateAllocation& allocation,
                             uint32_t framerate) override;
 
   ScalingSettings GetScalingSettings() const override;
@@ -89,7 +89,7 @@ class VideoEncoderWrapper : public VideoEncoder {
   CodecSpecificInfo ParseCodecSpecificInfo(const EncodedImage& frame);
   ScopedJavaLocalRef<jobject> ToJavaBitrateAllocation(
       JNIEnv* jni,
-      const BitrateAllocation& allocation);
+      const VideoBitrateAllocation& allocation);
   std::string GetImplementationName(JNIEnv* jni) const;
 
   const ScopedJavaGlobalRef<jobject> encoder_;

@@ -20,10 +20,10 @@ DefaultVideoBitrateAllocator::DefaultVideoBitrateAllocator(
 
 DefaultVideoBitrateAllocator::~DefaultVideoBitrateAllocator() {}
 
-BitrateAllocation DefaultVideoBitrateAllocator::GetAllocation(
+VideoBitrateAllocation DefaultVideoBitrateAllocator::GetAllocation(
     uint32_t total_bitrate_bps,
     uint32_t framerate) {
-  BitrateAllocation allocation;
+  VideoBitrateAllocation allocation;
   if (total_bitrate_bps == 0 || !codec_.active)
     return allocation;
 

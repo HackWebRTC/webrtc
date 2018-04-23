@@ -33,7 +33,7 @@ class MediaReceiverRtcpObserver {
                               uint32_t rtp_time) {}
   virtual void OnBye(uint32_t sender_ssrc) {}
   virtual void OnBitrateAllocation(uint32_t sender_ssrc,
-                                   const BitrateAllocation& allocation) {}
+                                   const VideoBitrateAllocation& allocation) {}
 };
 
 struct RtcpTransceiverConfig {

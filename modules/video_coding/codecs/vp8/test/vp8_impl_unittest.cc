@@ -85,7 +85,7 @@ TEST_F(TestVp8Impl, SetRateAllocation) {
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Release());
 
   const int kBitrateBps = 300000;
-  BitrateAllocation bitrate_allocation;
+  VideoBitrateAllocation bitrate_allocation;
   bitrate_allocation.SetBitrate(0, 0, kBitrateBps);
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_UNINITIALIZED,
             encoder_->SetRateAllocation(bitrate_allocation,

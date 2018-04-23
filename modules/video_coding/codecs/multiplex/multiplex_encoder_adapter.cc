@@ -174,8 +174,9 @@ int MultiplexEncoderAdapter::SetChannelParameters(uint32_t packet_loss,
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int MultiplexEncoderAdapter::SetRateAllocation(const BitrateAllocation& bitrate,
-                                               uint32_t framerate) {
+int MultiplexEncoderAdapter::SetRateAllocation(
+    const VideoBitrateAllocation& bitrate,
+    uint32_t framerate) {
   for (auto& encoder : encoders_) {
     // TODO(emircan): |framerate| is used to calculate duration in encoder
     // instances. We report the total frame rate to keep real time for now.

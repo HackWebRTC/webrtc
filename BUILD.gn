@@ -384,6 +384,7 @@ rtc_static_library("webrtc_common") {
     ":typedefs",
     "api:array_view",
     "api:optional",
+    "api:video_bitrate_allocation",
     "rtc_base:checks",
     "rtc_base:deprecation",
     "rtc_base:stringutils",

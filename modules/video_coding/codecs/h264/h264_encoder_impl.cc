@@ -288,7 +288,7 @@ int32_t H264EncoderImpl::RegisterEncodeCompleteCallback(
 }
 
 int32_t H264EncoderImpl::SetRateAllocation(
-    const BitrateAllocation& bitrate_allocation,
+    const VideoBitrateAllocation& bitrate_allocation,
     uint32_t framerate) {
   if (bitrate_allocation.get_sum_bps() <= 0 || framerate <= 0)
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;

@@ -65,7 +65,8 @@ class SimulcastRateAllocatorTest : public ::testing::TestWithParam<bool> {
   }
 
   template <size_t S>
-  void ExpectEqual(uint32_t (&expected)[S], const BitrateAllocation& actual) {
+  void ExpectEqual(uint32_t (&expected)[S],
+                   const VideoBitrateAllocation& actual) {
     // EXPECT_EQ(S, actual.size());
     uint32_t sum = 0;
     for (size_t i = 0; i < S; ++i) {
@@ -112,7 +113,7 @@ class SimulcastRateAllocatorTest : public ::testing::TestWithParam<bool> {
     }
   }
 
-  BitrateAllocation GetAllocation(uint32_t target_bitrate) {
+  VideoBitrateAllocation GetAllocation(uint32_t target_bitrate) {
     return allocator_->GetAllocation(target_bitrate * 1000U, kDefaultFrameRate);
   }
 
@@ -138,7 +139,7 @@ TEST_F(SimulcastRateAllocatorTest, NoSimulcastAboveMax) {
 }
 
 TEST_F(SimulcastRateAllocatorTest, NoSimulcastNoMax) {
-  const uint32_t kMax = BitrateAllocation::kMaxBitrateBps / 1000;
+  const uint32_t kMax = VideoBitrateAllocation::kMaxBitrateBps / 1000;
   codec_.active = true;
   codec_.maxBitrate = 0;
   CreateAllocator();
@@ -528,7 +529,7 @@ TEST_P(ScreenshareRateAllocationTest, BitrateBelowTl0) {
   SetupConferenceScreenshare(GetParam());
   CreateAllocator();
 
-  BitrateAllocation allocation =
+  VideoBitrateAllocation allocation =
       allocator_->GetAllocation(kTargetBitrateKbps * 1000, kFramerateFps);
 
   // All allocation should go in TL0.
@@ -541,7 +542,7 @@ TEST_P(ScreenshareRateAllocationTest, BitrateAboveTl0) {
   CreateAllocator();
 
   uint32_t target_bitrate_kbps = (kTargetBitrateKbps + kMaxBitrateKbps) / 2;
-  BitrateAllocation allocation =
+  VideoBitrateAllocation allocation =
       allocator_->GetAllocation(target_bitrate_kbps * 1000, kFramerateFps);
 
   // Fill TL0, then put the rest in TL1.
@@ -555,7 +556,7 @@ TEST_P(ScreenshareRateAllocationTest, BitrateAboveTl1) {
   SetupConferenceScreenshare(GetParam());
   CreateAllocator();
 
-  BitrateAllocation allocation =
+  VideoBitrateAllocation allocation =
       allocator_->GetAllocation(kMaxBitrateKbps * 2000, kFramerateFps);
 
   // Fill both TL0 and TL1, but no more.
@@ -573,7 +574,7 @@ TEST_P(ScreenshareRateAllocationTest, InactiveScreenshare) {
 
   // Enough bitrate for TL0 and TL1.
   uint32_t target_bitrate_kbps = (kTargetBitrateKbps + kMaxBitrateKbps) / 2;
-  BitrateAllocation allocation =
+  VideoBitrateAllocation allocation =
       allocator_->GetAllocation(target_bitrate_kbps * 1000, kFramerateFps);
 
   EXPECT_EQ(0U, allocation.get_sum_kbps());

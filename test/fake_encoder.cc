@@ -178,8 +178,9 @@ int32_t FakeEncoder::SetChannelParameters(uint32_t packet_loss, int64_t rtt) {
   return 0;
 }
 
-int32_t FakeEncoder::SetRateAllocation(const BitrateAllocation& rate_allocation,
-                                       uint32_t framerate) {
+int32_t FakeEncoder::SetRateAllocation(
+    const VideoBitrateAllocation& rate_allocation,
+    uint32_t framerate) {
   rtc::CritScope cs(&crit_sect_);
   target_bitrate_ = rate_allocation;
   configured_input_framerate_ = framerate;

@@ -583,7 +583,7 @@ void VideoSendStreamImpl::SignalEncoderTimedOut() {
 }
 
 void VideoSendStreamImpl::OnBitrateAllocationUpdated(
-    const BitrateAllocation& allocation) {
+    const VideoBitrateAllocation& allocation) {
   payload_router_.OnBitrateAllocationUpdated(allocation);
 }
 

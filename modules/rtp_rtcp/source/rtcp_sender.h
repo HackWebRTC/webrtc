@@ -149,7 +149,7 @@ class RTCPSender {
   void SetCsrcs(const std::vector<uint32_t>& csrcs);
 
   void SetTargetBitrate(unsigned int target_bitrate);
-  void SetVideoBitrateAllocation(const BitrateAllocation& bitrate);
+  void SetVideoBitrateAllocation(const VideoBitrateAllocation& bitrate);
   bool SendFeedbackPacket(const rtcp::TransportFeedback& packet);
 
   int64_t RtcpAudioReportInverval() const;
@@ -261,7 +261,7 @@ class RTCPSender {
 
   RtcpNackStats nack_stats_ RTC_GUARDED_BY(critical_section_rtcp_sender_);
 
-  rtc::Optional<BitrateAllocation> video_bitrate_allocation_
+  rtc::Optional<VideoBitrateAllocation> video_bitrate_allocation_
       RTC_GUARDED_BY(critical_section_rtcp_sender_);
 
   void SetFlag(uint32_t type, bool is_volatile)

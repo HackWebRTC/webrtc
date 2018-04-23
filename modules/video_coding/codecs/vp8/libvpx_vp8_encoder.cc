@@ -252,7 +252,7 @@ int LibvpxVp8Encoder::Release() {
   return ret_val;
 }
 
-int LibvpxVp8Encoder::SetRateAllocation(const BitrateAllocation& bitrate,
+int LibvpxVp8Encoder::SetRateAllocation(const VideoBitrateAllocation& bitrate,
                                         uint32_t new_framerate) {
   if (!inited_)
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
@@ -512,7 +512,7 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
   // at position 0 and they have highest resolution at position 0.
   int stream_idx = encoders_.size() - 1;
   SimulcastRateAllocator init_allocator(codec_);
-  BitrateAllocation allocation = init_allocator.GetAllocation(
+  VideoBitrateAllocation allocation = init_allocator.GetAllocation(
       inst->startBitrate * 1000, inst->maxFramerate);
   std::vector<uint32_t> stream_bitrates;
   for (int i = 0; i == 0 || i < inst->numberOfSimulcastStreams; ++i) {

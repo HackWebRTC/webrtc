@@ -203,7 +203,7 @@ int32_t VideoEncoderSoftwareFallbackWrapper::SetChannelParameters(
 }
 
 int32_t VideoEncoderSoftwareFallbackWrapper::SetRateAllocation(
-    const BitrateAllocation& bitrate_allocation,
+    const VideoBitrateAllocation& bitrate_allocation,
     uint32_t framerate) {
   rates_set_ = true;
   bitrate_allocation_ = bitrate_allocation;

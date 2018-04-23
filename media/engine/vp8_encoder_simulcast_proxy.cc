@@ -59,7 +59,7 @@ int VP8EncoderSimulcastProxy::SetChannelParameters(uint32_t packet_loss,
 }
 
 int VP8EncoderSimulcastProxy::SetRateAllocation(
-    const BitrateAllocation& bitrate,
+    const VideoBitrateAllocation& bitrate,
     uint32_t new_framerate) {
   return encoder_->SetRateAllocation(bitrate, new_framerate);
 }

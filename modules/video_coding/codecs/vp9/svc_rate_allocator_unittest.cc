@@ -46,7 +46,7 @@ TEST(SvcRateAllocatorTest, SingleLayerFor320x180Input) {
   VideoCodec codec = Configure(320, 180, 3, 3);
   SvcRateAllocator allocator = SvcRateAllocator(codec);
 
-  BitrateAllocation allocation = allocator.GetAllocation(1000 * 1000, 30);
+  VideoBitrateAllocation allocation = allocator.GetAllocation(1000 * 1000, 30);
 
   EXPECT_GT(allocation.GetSpatialLayerSum(0), 0u);
   EXPECT_EQ(allocation.GetSpatialLayerSum(1), 0u);
@@ -56,7 +56,7 @@ TEST(SvcRateAllocatorTest, TwoLayersFor640x360Input) {
   VideoCodec codec = Configure(640, 360, 3, 3);
   SvcRateAllocator allocator = SvcRateAllocator(codec);
 
-  BitrateAllocation allocation = allocator.GetAllocation(1000 * 1000, 30);
+  VideoBitrateAllocation allocation = allocator.GetAllocation(1000 * 1000, 30);
 
   EXPECT_GT(allocation.GetSpatialLayerSum(0), 0u);
   EXPECT_GT(allocation.GetSpatialLayerSum(1), 0u);
@@ -67,7 +67,7 @@ TEST(SvcRateAllocatorTest, ThreeLayersFor1280x720Input) {
   VideoCodec codec = Configure(1280, 720, 3, 3);
   SvcRateAllocator allocator = SvcRateAllocator(codec);
 
-  BitrateAllocation allocation = allocator.GetAllocation(1000 * 1000, 30);
+  VideoBitrateAllocation allocation = allocator.GetAllocation(1000 * 1000, 30);
 
   EXPECT_GT(allocation.GetSpatialLayerSum(0), 0u);
   EXPECT_GT(allocation.GetSpatialLayerSum(1), 0u);
@@ -81,7 +81,7 @@ TEST(SvcRateAllocatorTest,
 
   const SpatialLayer* layers = codec.spatialLayers;
 
-  BitrateAllocation allocation =
+  VideoBitrateAllocation allocation =
       allocator.GetAllocation(layers[0].minBitrate * 1000 / 2, 30);
 
   EXPECT_GT(allocation.GetSpatialLayerSum(0), 0u);
@@ -98,7 +98,7 @@ TEST(SvcRateAllocatorTest, Disable640x360Layer) {
   size_t min_bitrate_for_640x360_layer_kbps =
       layers[0].minBitrate + layers[1].minBitrate;
 
-  BitrateAllocation allocation = allocator.GetAllocation(
+  VideoBitrateAllocation allocation = allocator.GetAllocation(
       min_bitrate_for_640x360_layer_kbps * 1000 - 1, 30);
 
   EXPECT_GT(allocation.GetSpatialLayerSum(0), 0u);
@@ -114,7 +114,7 @@ TEST(SvcRateAllocatorTest, Disable1280x720Layer) {
   size_t min_bitrate_for_1280x720_layer_kbps =
       layers[0].minBitrate + layers[1].minBitrate + layers[2].minBitrate;
 
-  BitrateAllocation allocation = allocator.GetAllocation(
+  VideoBitrateAllocation allocation = allocator.GetAllocation(
       min_bitrate_for_1280x720_layer_kbps * 1000 - 1, 30);
 
   EXPECT_GT(allocation.GetSpatialLayerSum(0), 0u);
@@ -129,7 +129,7 @@ TEST(SvcRateAllocatorTest, BitrateIsCapped) {
   const SpatialLayer* layers = codec.spatialLayers;
 
   const uint32_t link_mbps = 100;
-  BitrateAllocation allocation =
+  VideoBitrateAllocation allocation =
       allocator.GetAllocation(link_mbps * 1000000, 30);
 
   EXPECT_EQ(allocation.get_sum_kbps(),

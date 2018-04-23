@@ -93,7 +93,7 @@ class MockVideoBitrateAllocationObserver
     : public VideoBitrateAllocationObserver {
  public:
   MOCK_METHOD1(OnBitrateAllocationUpdated,
-               void(const BitrateAllocation& allocation));
+               void(const VideoBitrateAllocation& allocation));
 };
 
 // SSRC of remote peer, that sends rtcp packet to the rtcp receiver under test.
@@ -1318,7 +1318,7 @@ TEST_F(RtcpReceiverTest, ForceSenderReport) {
 }
 
 TEST_F(RtcpReceiverTest, ReceivesTargetBitrate) {
-  BitrateAllocation expected_allocation;
+  VideoBitrateAllocation expected_allocation;
   expected_allocation.SetBitrate(0, 0, 10000);
   expected_allocation.SetBitrate(0, 1, 20000);
   expected_allocation.SetBitrate(1, 0, 40000);
@@ -1348,7 +1348,7 @@ TEST_F(RtcpReceiverTest, ReceivesTargetBitrate) {
 }
 
 TEST_F(RtcpReceiverTest, HandlesIncorrectTargetBitrate) {
-  BitrateAllocation expected_allocation;
+  VideoBitrateAllocation expected_allocation;
   expected_allocation.SetBitrate(0, 0, 10000);
 
   rtcp::TargetBitrate bitrate;

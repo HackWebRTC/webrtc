@@ -46,7 +46,7 @@ class VP9EncoderImpl : public VP9Encoder {
 
   int SetChannelParameters(uint32_t packet_loss, int64_t rtt) override;
 
-  int SetRateAllocation(const BitrateAllocation& bitrate_allocation,
+  int SetRateAllocation(const VideoBitrateAllocation& bitrate_allocation,
                         uint32_t frame_rate) override;
 
   const char* ImplementationName() const override;
@@ -78,7 +78,7 @@ class VP9EncoderImpl : public VP9Encoder {
                              bool first_frame_in_picture);
 
   bool ExplicitlyConfiguredSpatialLayers() const;
-  bool SetSvcRates(const BitrateAllocation& bitrate_allocation);
+  bool SetSvcRates(const VideoBitrateAllocation& bitrate_allocation);
 
   // Used for flexible mode to set the flags and buffer references used
   // by the encoder. Also calculates the references used by the RTP

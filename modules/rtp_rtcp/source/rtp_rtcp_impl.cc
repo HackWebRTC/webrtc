@@ -927,7 +927,7 @@ StreamDataCountersCallback*
 }
 
 void ModuleRtpRtcpImpl::SetVideoBitrateAllocation(
-    const BitrateAllocation& bitrate) {
+    const VideoBitrateAllocation& bitrate) {
   rtcp_sender_.SetVideoBitrateAllocation(bitrate);
 }
 }  // namespace webrtc

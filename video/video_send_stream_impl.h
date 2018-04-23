@@ -126,7 +126,8 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
       const RTPFragmentationHeader* fragmentation) override;
 
   // Implements VideoBitrateAllocationObserver.
-  void OnBitrateAllocationUpdated(const BitrateAllocation& allocation) override;
+  void OnBitrateAllocationUpdated(
+      const VideoBitrateAllocation& allocation) override;
 
   // Starts monitoring and sends a keyframe.
   void StartupVideoSendStream();

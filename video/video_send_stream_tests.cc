@@ -2052,7 +2052,7 @@ class StartStopBitrateObserver : public test::FakeEncoder {
     return FakeEncoder::InitEncode(config, number_of_cores, max_payload_size);
   }
 
-  int32_t SetRateAllocation(const BitrateAllocation& bitrate,
+  int32_t SetRateAllocation(const VideoBitrateAllocation& bitrate,
                             uint32_t framerate) override {
     rtc::CritScope lock(&crit_);
     bitrate_kbps_ = bitrate.get_sum_kbps();
@@ -2884,7 +2884,7 @@ TEST_F(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
                                      maxPayloadSize);
     }
 
-    int32_t SetRateAllocation(const BitrateAllocation& bitrate,
+    int32_t SetRateAllocation(const VideoBitrateAllocation& bitrate,
                               uint32_t frameRate) override {
       {
         rtc::CritScope lock(&crit_);
@@ -3657,7 +3657,7 @@ TEST_F(VideoSendStreamTest, RemoveOverheadFromBandwidth) {
           first_packet_sent_(false),
           bitrate_changed_event_(false, false) {}
 
-    int32_t SetRateAllocation(const BitrateAllocation& bitrate,
+    int32_t SetRateAllocation(const VideoBitrateAllocation& bitrate,
                               uint32_t frameRate) override {
       rtc::CritScope lock(&crit_);
       // Wait for the first sent packet so that videosendstream knows

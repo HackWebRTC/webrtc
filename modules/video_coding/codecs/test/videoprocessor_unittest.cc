@@ -166,7 +166,7 @@ TEST_F(VideoProcessorTest, SetRates) {
   const int kFramerateFps = 17;
   EXPECT_CALL(encoder_mock_,
               SetRateAllocation(
-                  Property(&BitrateAllocation::get_sum_kbps, kBitrateKbps),
+                  Property(&VideoBitrateAllocation::get_sum_kbps, kBitrateKbps),
                   kFramerateFps))
       .Times(1);
   DO_SYNC(q_, { video_processor_->SetRates(kBitrateKbps, kFramerateFps); });
@@ -174,9 +174,9 @@ TEST_F(VideoProcessorTest, SetRates) {
   const int kNewBitrateKbps = 456;
   const int kNewFramerateFps = 34;
   EXPECT_CALL(encoder_mock_,
-              SetRateAllocation(
-                  Property(&BitrateAllocation::get_sum_kbps, kNewBitrateKbps),
-                  kNewFramerateFps))
+              SetRateAllocation(Property(&VideoBitrateAllocation::get_sum_kbps,
+                                         kNewBitrateKbps),
+                                kNewFramerateFps))
       .Times(1);
   DO_SYNC(q_,
           { video_processor_->SetRates(kNewBitrateKbps, kNewFramerateFps); });

@@ -159,7 +159,7 @@ class FakeWebRtcVideoEncoder : public webrtc::VideoEncoder {
     return WEBRTC_VIDEO_CODEC_OK;
   }
 
-  int32_t SetRateAllocation(const webrtc::BitrateAllocation& allocation,
+  int32_t SetRateAllocation(const webrtc::VideoBitrateAllocation& allocation,
                             uint32_t framerate) override {
     return WEBRTC_VIDEO_CODEC_OK;
   }

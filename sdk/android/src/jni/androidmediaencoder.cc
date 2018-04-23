@@ -110,7 +110,7 @@ class MediaCodecVideoEncoder : public VideoEncoder {
   int32_t Release() override;
   int32_t SetChannelParameters(uint32_t /* packet_loss */,
                                int64_t /* rtt */) override;
-  int32_t SetRateAllocation(const BitrateAllocation& rate_allocation,
+  int32_t SetRateAllocation(const VideoBitrateAllocation& rate_allocation,
                             uint32_t frame_rate) override;
 
   bool SupportsNativeHandle() const override { return egl_context_ != nullptr; }
@@ -951,7 +951,7 @@ int32_t MediaCodecVideoEncoder::Release() {
 }
 
 int32_t MediaCodecVideoEncoder::SetRateAllocation(
-    const BitrateAllocation& rate_allocation,
+    const VideoBitrateAllocation& rate_allocation,
     uint32_t frame_rate) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&encoder_queue_checker_);
   const uint32_t new_bit_rate = rate_allocation.get_sum_kbps();

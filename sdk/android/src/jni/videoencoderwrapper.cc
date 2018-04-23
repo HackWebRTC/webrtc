@@ -149,7 +149,7 @@ int32_t VideoEncoderWrapper::SetChannelParameters(uint32_t packet_loss,
 }
 
 int32_t VideoEncoderWrapper::SetRateAllocation(
-    const BitrateAllocation& allocation,
+    const VideoBitrateAllocation& allocation,
     uint32_t framerate) {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
 
@@ -437,7 +437,7 @@ CodecSpecificInfo VideoEncoderWrapper::ParseCodecSpecificInfo(
 
 ScopedJavaLocalRef<jobject> VideoEncoderWrapper::ToJavaBitrateAllocation(
     JNIEnv* jni,
-    const BitrateAllocation& allocation) {
+    const VideoBitrateAllocation& allocation) {
   ScopedJavaLocalRef<jobjectArray> j_allocation_array(
       jni, jni->NewObjectArray(kMaxSpatialLayers, int_array_class_.obj(),
                                nullptr /* initial */));

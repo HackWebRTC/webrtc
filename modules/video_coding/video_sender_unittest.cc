@@ -306,7 +306,7 @@ TEST_F(TestVideoSenderWithMockEncoder, TestSetRate) {
   const uint32_t new_bitrate_kbps = settings_.startBitrate + 300;
 
   // Initial frame rate is taken from config, as we have no data yet.
-  BitrateAllocation new_rate_allocation = rate_allocator_->GetAllocation(
+  VideoBitrateAllocation new_rate_allocation = rate_allocator_->GetAllocation(
       new_bitrate_kbps * 1000, settings_.maxFramerate);
   EXPECT_CALL(encoder_,
               SetRateAllocation(new_rate_allocation, settings_.maxFramerate))
@@ -351,7 +351,7 @@ TEST_F(TestVideoSenderWithMockEncoder, TestEncoderParametersForInternalSource) {
   // Update encoder bitrate parameters. We expect that to immediately call
   // SetRates on the encoder without waiting for AddFrame processing.
   const uint32_t new_bitrate_kbps = settings_.startBitrate + 300;
-  BitrateAllocation new_rate_allocation = rate_allocator_->GetAllocation(
+  VideoBitrateAllocation new_rate_allocation = rate_allocator_->GetAllocation(
       new_bitrate_kbps * 1000, settings_.maxFramerate);
   EXPECT_CALL(encoder_, SetRateAllocation(new_rate_allocation, _))
       .Times(1)
@@ -383,7 +383,7 @@ TEST_F(TestVideoSenderWithMockEncoder,
   // Call to SetChannelParameters with changed bitrate should call encoder
   // SetRates but not encoder SetChannelParameters (that are unchanged).
   uint32_t new_bitrate_bps = 2 * settings_.startBitrate * 1000;
-  BitrateAllocation new_rate_allocation =
+  VideoBitrateAllocation new_rate_allocation =
       rate_allocator_->GetAllocation(new_bitrate_bps, kInputFps);
   EXPECT_CALL(encoder_, SetRateAllocation(new_rate_allocation, kInputFps))
       .Times(1)

@@ -84,7 +84,7 @@ class VideoEncoderSoftwareFallbackWrapperTest : public ::testing::Test {
       return WEBRTC_VIDEO_CODEC_OK;
     }
 
-    int32_t SetRateAllocation(const BitrateAllocation& bitrate_allocation,
+    int32_t SetRateAllocation(const VideoBitrateAllocation& bitrate_allocation,
                               uint32_t framerate) override {
       ++set_rates_count_;
       return WEBRTC_VIDEO_CODEC_OK;
@@ -283,7 +283,7 @@ TEST_F(VideoEncoderSoftwareFallbackWrapperTest,
        SetRatesForwardedDuringFallback) {
   UtilizeFallbackEncoder();
   EXPECT_EQ(1, fake_encoder_->set_rates_count_);
-  fallback_wrapper_.SetRateAllocation(BitrateAllocation(), 1);
+  fallback_wrapper_.SetRateAllocation(VideoBitrateAllocation(), 1);
   EXPECT_EQ(2, fake_encoder_->set_rates_count_);
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, fallback_wrapper_.Release());
 }

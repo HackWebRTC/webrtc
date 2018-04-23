@@ -38,8 +38,9 @@ VCMGenericEncoder::VCMGenericEncoder(
     : encoder_(encoder),
       vcm_encoded_frame_callback_(encoded_frame_callback),
       internal_source_(internal_source),
-      encoder_params_({BitrateAllocation(), 0, 0, 0}),
-      streams_or_svc_num_(0) {}
+      encoder_params_({VideoBitrateAllocation(), 0, 0, 0}),
+      streams_or_svc_num_(0),
+      codec_type_(VideoCodecType::kVideoCodecUnknown) {}
 
 VCMGenericEncoder::~VCMGenericEncoder() {}
 

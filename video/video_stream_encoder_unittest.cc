@@ -260,7 +260,7 @@ class MockableSendStatisticsProxy : public SendStatisticsProxy {
 
 class MockBitrateObserver : public VideoBitrateAllocationObserver {
  public:
-  MOCK_METHOD1(OnBitrateAllocationUpdated, void(const BitrateAllocation&));
+  MOCK_METHOD1(OnBitrateAllocationUpdated, void(const VideoBitrateAllocation&));
 };
 
 }  // namespace
@@ -2247,7 +2247,7 @@ TEST_F(VideoStreamEncoderTest, CallsBitrateObserver) {
   video_stream_encoder_->SetBitrateObserver(&bitrate_observer);
 
   const int kDefaultFps = 30;
-  const BitrateAllocation expected_bitrate =
+  const VideoBitrateAllocation expected_bitrate =
       DefaultVideoBitrateAllocator(fake_encoder_.codec_config())
           .GetAllocation(kLowTargetBitrateBps, kDefaultFps);
 

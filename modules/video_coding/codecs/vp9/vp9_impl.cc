@@ -123,7 +123,8 @@ bool VP9EncoderImpl::ExplicitlyConfiguredSpatialLayers() const {
   return num_spatial_layers_ > 1 && codec_.spatialLayers[0].targetBitrate > 0;
 }
 
-bool VP9EncoderImpl::SetSvcRates(const BitrateAllocation& bitrate_allocation) {
+bool VP9EncoderImpl::SetSvcRates(
+    const VideoBitrateAllocation& bitrate_allocation) {
   uint8_t i = 0;
 
   config_->rc_target_bitrate = bitrate_allocation.get_sum_kbps();
@@ -192,7 +193,7 @@ bool VP9EncoderImpl::SetSvcRates(const BitrateAllocation& bitrate_allocation) {
 }
 
 int VP9EncoderImpl::SetRateAllocation(
-    const BitrateAllocation& bitrate_allocation,
+    const VideoBitrateAllocation& bitrate_allocation,
     uint32_t frame_rate) {
   if (!inited_) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
@@ -434,7 +435,7 @@ int VP9EncoderImpl::InitAndSetControlSettings(const VideoCodec* inst) {
   }
 
   SvcRateAllocator init_allocator(codec_);
-  BitrateAllocation allocation = init_allocator.GetAllocation(
+  VideoBitrateAllocation allocation = init_allocator.GetAllocation(
       inst->startBitrate * 1000, inst->maxFramerate);
   if (!SetSvcRates(allocation)) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;

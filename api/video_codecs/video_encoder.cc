@@ -86,7 +86,7 @@ int32_t VideoEncoder::SetRates(uint32_t bitrate, uint32_t framerate) {
 }
 
 int32_t VideoEncoder::SetRateAllocation(
-    const BitrateAllocation& allocation,
+    const VideoBitrateAllocation& allocation,
     uint32_t framerate) {
   return SetRates(allocation.get_sum_kbps(), framerate);
 }

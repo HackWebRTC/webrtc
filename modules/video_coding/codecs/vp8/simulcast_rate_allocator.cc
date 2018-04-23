@@ -23,10 +23,10 @@ namespace webrtc {
 SimulcastRateAllocator::SimulcastRateAllocator(const VideoCodec& codec)
     : codec_(codec) {}
 
-BitrateAllocation SimulcastRateAllocator::GetAllocation(
+VideoBitrateAllocation SimulcastRateAllocator::GetAllocation(
     uint32_t total_bitrate_bps,
     uint32_t framerate) {
-  BitrateAllocation allocated_bitrates_bps;
+  VideoBitrateAllocation allocated_bitrates_bps;
   DistributeAllocationToSimulcastLayers(total_bitrate_bps,
                                         &allocated_bitrates_bps);
   DistributeAllocationToTemporalLayers(framerate, &allocated_bitrates_bps);
@@ -35,7 +35,7 @@ BitrateAllocation SimulcastRateAllocator::GetAllocation(
 
 void SimulcastRateAllocator::DistributeAllocationToSimulcastLayers(
     uint32_t total_bitrate_bps,
-    BitrateAllocation* allocated_bitrates_bps) const {
+    VideoBitrateAllocation* allocated_bitrates_bps) const {
   uint32_t left_to_allocate = total_bitrate_bps;
   if (codec_.maxBitrate && codec_.maxBitrate * 1000 < left_to_allocate)
     left_to_allocate = codec_.maxBitrate * 1000;
@@ -111,7 +111,7 @@ void SimulcastRateAllocator::DistributeAllocationToSimulcastLayers(
 
 void SimulcastRateAllocator::DistributeAllocationToTemporalLayers(
     uint32_t framerate,
-    BitrateAllocation* allocated_bitrates_bps) const {
+    VideoBitrateAllocation* allocated_bitrates_bps) const {
   const int num_spatial_streams =
       std::max(1, static_cast<int>(codec_.numberOfSimulcastStreams));
 

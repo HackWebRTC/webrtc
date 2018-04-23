@@ -188,7 +188,7 @@ class VideoProcessor {
   webrtc::VideoEncoder* const encoder_;
   VideoDecoderList* const decoders_;
   const std::unique_ptr<VideoBitrateAllocator> bitrate_allocator_;
-  BitrateAllocation bitrate_allocation_ RTC_GUARDED_BY(sequence_checker_);
+  VideoBitrateAllocation bitrate_allocation_ RTC_GUARDED_BY(sequence_checker_);
   uint32_t framerate_fps_ RTC_GUARDED_BY(sequence_checker_);
 
   // Adapters for the codec callbacks.
