@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "sdk/android/generated_java_audio_device_jni/jni/JavaAudioDeviceModule_jni.h"
+#include "sdk/android/generated_java_audio_jni/jni/JavaAudioDeviceModule_jni.h"
 #include "sdk/android/src/jni/audio_device/audio_record_jni.h"
 #include "sdk/android/src/jni/audio_device/audio_track_jni.h"
 #include "sdk/android/src/jni/jni_helpers.h"

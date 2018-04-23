@@ -21,10 +21,6 @@ import org.webrtc.voiceengine.WebRtcAudioTrack;
  */
 @Deprecated
 public class LegacyAudioDeviceModule implements AudioDeviceModule {
-  public static AudioDeviceModule Create() {
-    return new LegacyAudioDeviceModule();
-  }
-
   @Override
   public long getNativeAudioDeviceModulePointer() {
     // Returning a null pointer will make WebRTC construct the built-in legacy AudioDeviceModule for

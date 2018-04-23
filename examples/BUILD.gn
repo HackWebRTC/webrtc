@@ -106,21 +106,16 @@ if (is_android) {
       "androidapp/src/org/appspot/apprtc/util/AsyncHttpURLConnection.java",
     ]
 
-    javac_args = [
-      "-Xep:ParameterNotNullable:ERROR",
-      "-Xep:FieldMissingNullable:ERROR",
-      "-Xep:ReturnMissingNullable:ERROR",
-    ]
-
     deps = [
       ":AppRTCMobile_resources",
       "../modules/audio_device:audio_device_java",
       "../rtc_base:base_java",
-      "../sdk/android:audio_java",
+      "../sdk/android:audio_api_java",
       "../sdk/android:base_java",
       "../sdk/android:camera_java",
       "../sdk/android:filevideo_java",
       "../sdk/android:hwcodecs_java",
+      "../sdk/android:java_audio_device_module_java",
       "../sdk/android:libjingle_peerconnection_java",
       "../sdk/android:libjingle_peerconnection_metrics_default_java",
       "../sdk/android:peerconnection_java",
