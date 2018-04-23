@@ -52,7 +52,7 @@ void NetEqStatsGetter::AfterGetAudio(int64_t time_now_ms,
           stats_query_interval_ms_) {
     NetEqNetworkStatistics stats;
     RTC_CHECK_EQ(neteq->NetworkStatistics(&stats), 0);
-    stats_.push_back(stats);
+    stats_.push_back(std::make_pair(time_now_ms, stats));
     last_stats_query_time_ms_ = time_now_ms;
   }
   const auto lifetime_stat = neteq->GetLifetimeStatistics();
@@ -88,18 +88,19 @@ void NetEqStatsGetter::AfterGetAudio(int64_t time_now_ms,
 }
 
 double NetEqStatsGetter::AverageSpeechExpandRate() const {
-  double sum_speech_expand =
-      std::accumulate(stats_.begin(), stats_.end(), double{0.0},
-                      [](double a, NetEqNetworkStatistics b) {
-                        return a + static_cast<double>(b.speech_expand_rate);
-                      });
+  double sum_speech_expand = std::accumulate(
+      stats_.begin(), stats_.end(), double{0.0},
+      [](double a, std::pair<int64_t, NetEqNetworkStatistics> b) {
+        return a + static_cast<double>(b.second.speech_expand_rate);
+      });
   return sum_speech_expand / 16384.0 / stats_.size();
 }
 
 NetEqStatsGetter::Stats NetEqStatsGetter::AverageStats() const {
   Stats sum_stats = std::accumulate(
       stats_.begin(), stats_.end(), Stats(),
-      [](Stats a, NetEqNetworkStatistics b) {
+      [](Stats a, std::pair<int64_t, NetEqNetworkStatistics> bb) {
+        const auto& b = bb.second;
         a.current_buffer_size_ms += b.current_buffer_size_ms;
         a.preferred_buffer_size_ms += b.preferred_buffer_size_ms;
         a.jitter_peaks_found += b.jitter_peaks_found;
