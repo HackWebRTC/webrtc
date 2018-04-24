@@ -139,10 +139,7 @@ config("common_inherited_config") {
     defines += [ "WEBRTC_FUCHSIA" ]
   }
   if (is_win) {
-    defines += [
-      "WEBRTC_WIN",
-      "_CRT_SECURE_NO_WARNINGS",  # Suppress warnings about _vsnprinf
-    ]
+    defines += [ "WEBRTC_WIN" ]
   }
   if (is_android) {
     defines += [
