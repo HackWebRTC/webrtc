@@ -235,6 +235,8 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   // Counts how many frames we've dropped in the initial rampup phase.
   int initial_rampup_;
 
+  const bool quality_scaling_experiment_enabled_;
+
   const std::unique_ptr<VideoSourceProxy> source_proxy_;
   EncoderSink* sink_;
   const VideoSendStream::Config::EncoderSettings settings_;

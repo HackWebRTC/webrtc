@@ -75,6 +75,7 @@ rtc_static_library("video") {
     "../rtc_base:checks",
     "../rtc_base:stringutils",
     "../rtc_base/experiments:alr_experiment",
+    "../rtc_base/experiments:quality_scaling_experiment",
     "../rtc_base/system:fallthrough",
     "../system_wrappers:field_trial_api",
     "../system_wrappers:metrics_api",

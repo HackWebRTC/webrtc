@@ -23,6 +23,7 @@
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/experiments/quality_scaling_experiment.h"
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/system/fallthrough.h"
@@ -330,6 +331,7 @@ VideoStreamEncoder::VideoStreamEncoder(
     : shutdown_event_(true /* manual_reset */, false),
       number_of_cores_(number_of_cores),
       initial_rampup_(0),
+      quality_scaling_experiment_enabled_(QualityScalingExperiment::Enabled()),
       source_proxy_(new VideoSourceProxy(this)),
       sink_(nullptr),
       settings_(settings),
@@ -606,10 +608,17 @@ void VideoStreamEncoder::ConfigureQualityScaler() {
       // Quality scaler has not already been configured.
       // Drop frames and scale down until desired quality is achieved.
 
+      // Use experimental thresholds if available.
+      rtc::Optional<VideoEncoder::QpThresholds> experimental_thresholds;
+      if (quality_scaling_experiment_enabled_) {
+        experimental_thresholds = QualityScalingExperiment::GetQpThresholds(
+            encoder_config_.codec_type);
+      }
       // Since the interface is non-public, MakeUnique can't do this upcast.
       AdaptationObserverInterface* observer = this;
       quality_scaler_ = rtc::MakeUnique<QualityScaler>(
-          observer, *(scaling_settings.thresholds));
+          observer, experimental_thresholds ? *experimental_thresholds
+                                            : *(scaling_settings.thresholds));
     }
   } else {
     quality_scaler_.reset(nullptr);
@@ -904,11 +913,16 @@ void VideoStreamEncoder::OnDroppedFrame(DropReason reason) {
       encoder_queue_.PostTask([this] {
         RTC_DCHECK_RUN_ON(&encoder_queue_);
         if (quality_scaler_)
-          quality_scaler_->ReportDroppedFrame();
+          quality_scaler_->ReportDroppedFrameByMediaOpt();
       });
       break;
     case DropReason::kDroppedByEncoder:
       stats_proxy_->OnFrameDroppedByEncoder();
+      encoder_queue_.PostTask([this] {
+        RTC_DCHECK_RUN_ON(&encoder_queue_);
+        if (quality_scaler_)
+          quality_scaler_->ReportDroppedFrameByEncoder();
+      });
       break;
   }
 }

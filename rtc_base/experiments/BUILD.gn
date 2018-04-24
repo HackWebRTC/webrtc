@@ -32,15 +32,31 @@ rtc_static_library("congestion_controller_experiment") {
   ]
 }
 
+rtc_static_library("quality_scaling_experiment") {
+  sources = [
+    "quality_scaling_experiment.cc",
+    "quality_scaling_experiment.h",
+  ]
+  deps = [
+    "../:rtc_base_approved",
+    "../..:webrtc_common",
+    "../../api:optional",
+    "../../api/video_codecs:video_codecs_api",
+    "../../system_wrappers:field_trial_api",
+  ]
+}
+
 if (rtc_include_tests) {
   rtc_source_set("experiments_unittests") {
     testonly = true
 
     sources = [
       "congestion_controller_experiment_unittest.cc",
+      "quality_scaling_experiment_unittest.cc",
     ]
     deps = [
       ":congestion_controller_experiment",
+      ":quality_scaling_experiment",
       "../:rtc_base_tests_main",
       "../:rtc_base_tests_utils",
       "../../test:field_trial",
