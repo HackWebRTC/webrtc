@@ -12,7 +12,7 @@
     "use_goma=true"
   ],
   "use_analyze": false,
-  "additional_compile_targets": [],
+  "additional_compile_targets": [ "all" ],
   "configuration": "Debug",
   "sdk": "iphonesimulator9.3",
   "tests": [
