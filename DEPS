@@ -1,5 +1,10 @@
 # This file contains dependencies for WebRTC.
 
+gclient_gn_args_file = 'src/build/config/gclient_args.gni'
+gclient_gn_args = [
+  'checkout_android',
+]
+
 vars = {
   'chromium_git': 'https://chromium.googlesource.com',
   # By default, we should check out everything needed to run on the main
