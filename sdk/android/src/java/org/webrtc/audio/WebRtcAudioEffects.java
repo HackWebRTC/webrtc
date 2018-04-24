@@ -51,8 +51,6 @@ class WebRtcAudioEffects {
   // Affects the final state given to the setEnabled() method on each effect.
   // The default state is set to "disabled" but each effect can also be enabled
   // by calling setAEC() and setNS().
-  // To enable an effect, both the shouldEnableXXX member and the static
-  // canUseXXX() must be true.
   private boolean shouldEnableAec = false;
   private boolean shouldEnableNs = false;
 

@@ -188,13 +188,13 @@ class WebRtcAudioRecord {
 
   @CalledByNative
   private boolean enableBuiltInAEC(boolean enable) {
-    Logging.d(TAG, "enableBuiltInAEC(" + enable + ')');
+    Logging.d(TAG, "enableBuiltInAEC(" + enable + ")");
     return effects.setAEC(enable);
   }
 
   @CalledByNative
   private boolean enableBuiltInNS(boolean enable) {
-    Logging.d(TAG, "enableBuiltInNS(" + enable + ')');
+    Logging.d(TAG, "enableBuiltInNS(" + enable + ")");
     return effects.setNS(enable);
   }
 

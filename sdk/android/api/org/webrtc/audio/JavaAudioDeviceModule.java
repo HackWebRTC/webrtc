@@ -53,6 +53,7 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
      * return invalid results.
      */
     public Builder setSampleRate(int sampleRate) {
+      Logging.d(TAG, "Sample rate overridden to: " + sampleRate);
       this.sampleRate = sampleRate;
       return this;
     }
@@ -96,7 +97,7 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
      */
     public Builder setUseHardwareNoiseSuppressor(boolean useHardwareNoiseSuppressor) {
       if (useHardwareNoiseSuppressor && !isBuiltInNoiseSuppressorSupported()) {
-        Logging.e(TAG, "HW noise suppressor not supported");
+        Logging.e(TAG, "HW NS not supported");
         useHardwareNoiseSuppressor = false;
       }
       this.useHardwareNoiseSuppressor = useHardwareNoiseSuppressor;
@@ -110,7 +111,7 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
      */
     public Builder setUseHardwareAcousticEchoCanceler(boolean useHardwareAcousticEchoCanceler) {
       if (useHardwareAcousticEchoCanceler && !isBuiltInAcousticEchoCancelerSupported()) {
-        Logging.e(TAG, "HW acoustic echo canceler not supported");
+        Logging.e(TAG, "HW AEC not supported");
         useHardwareAcousticEchoCanceler = false;
       }
       this.useHardwareAcousticEchoCanceler = useHardwareAcousticEchoCanceler;
@@ -138,6 +139,23 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
      * and is responsible for calling release().
      */
     public AudioDeviceModule createAudioDeviceModule() {
+      Logging.d(TAG, "createAudioDeviceModule");
+      if (useHardwareNoiseSuppressor) {
+        Logging.d(TAG, "HW NS will be used.");
+      } else {
+        if (isBuiltInNoiseSuppressorSupported()) {
+          Logging.d(TAG, "Overriding default behavior; now using WebRTC NS!");
+        }
+        Logging.d(TAG, "HW NS will not be used.");
+      }
+      if (useHardwareAcousticEchoCanceler) {
+        Logging.d(TAG, "HW AEC will be used.");
+      } else {
+        if (isBuiltInAcousticEchoCancelerSupported()) {
+          Logging.d(TAG, "Overriding default behavior; now using WebRTC AEC!");
+        }
+        Logging.d(TAG, "HW AEC will not be used.");
+      }
       final WebRtcAudioRecord audioInput =
           new WebRtcAudioRecord(context, audioManager, audioSource, audioRecordErrorCallback,
               samplesReadyCallback, useHardwareAcousticEchoCanceler, useHardwareNoiseSuppressor);
@@ -278,11 +296,13 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
 
   @Override
   public void setSpeakerMute(boolean mute) {
+    Logging.d(TAG, "setSpeakerMute: " + mute);
     audioOutput.setSpeakerMute(mute);
   }
 
   @Override
   public void setMicrophoneMute(boolean mute) {
+    Logging.d(TAG, "setMicrophoneMute: " + mute);
     audioInput.setMicrophoneMute(mute);
   }
 
