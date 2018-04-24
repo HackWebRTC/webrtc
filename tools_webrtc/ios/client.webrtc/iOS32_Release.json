@@ -13,7 +13,7 @@
     "target_os=\"ios\"",
     "use_goma=true"
   ],
-  "additional_compile_targets": [],
+  "additional_compile_targets": [ "all" ],
   "configuration": "Release",
   "sdk": "iphoneos10.3",
   "tests": [
