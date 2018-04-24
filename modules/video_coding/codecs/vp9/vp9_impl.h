@@ -95,7 +95,7 @@ class VP9EncoderImpl : public VP9Encoder {
   static void EncoderOutputCodedPacketCallback(vpx_codec_cx_pkt* pkt,
                                                void* user_data);
 
-  void DeliverBufferedFrame(bool end_of_superframe);
+  void DeliverBufferedFrame(bool end_of_picture);
 
   // Determine maximum target for Intra frames
   //

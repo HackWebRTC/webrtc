@@ -577,12 +577,12 @@ bool RtpPacketizerVp9::NextPacket(RtpPacketToSend* packet) {
     return false;
   }
 
-  // Ensure end_of_superframe is always set on top spatial layer when it is not
+  // Ensure end_of_picture is always set on top spatial layer when it is not
   // dropped.
   RTC_DCHECK(hdr_.spatial_idx < hdr_.num_spatial_layers - 1 ||
-             hdr_.end_of_superframe);
+             hdr_.end_of_picture);
 
-  packet->SetMarker(packets_.empty() && hdr_.end_of_superframe);
+  packet->SetMarker(packets_.empty() && hdr_.end_of_picture);
   return true;
 }
 

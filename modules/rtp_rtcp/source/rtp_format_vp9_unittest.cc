@@ -480,7 +480,7 @@ TEST_F(RtpPacketizerVp9Test, TestSsDataDoesNotFitInAveragePacket) {
   CreateParseAndCheckPackets(kExpectedHdrSizes, kExpectedSizes, kExpectedNum);
 }
 
-TEST_F(RtpPacketizerVp9Test, EndOfSuperframeSetsSetMarker) {
+TEST_F(RtpPacketizerVp9Test, EndOfPictureSetsSetMarker) {
   const size_t kFrameSize = 10;
   const size_t kPacketSize = 8;
   const size_t kLastPacketReductionLen = 0;
@@ -497,17 +497,17 @@ TEST_F(RtpPacketizerVp9Test, EndOfSuperframeSetsSetMarker) {
   // Drop top layer and ensure that marker bit is set on last encoded layer.
   for (size_t spatial_idx = 0; spatial_idx < vp9_header.num_spatial_layers - 1;
        ++spatial_idx) {
-    const bool end_of_superframe =
+    const bool end_of_picture =
         spatial_idx + 1 == vp9_header.num_spatial_layers - 1;
     vp9_header.spatial_idx = spatial_idx;
-    vp9_header.end_of_superframe = end_of_superframe;
+    vp9_header.end_of_picture = end_of_picture;
     RtpPacketizerVp9 packetizer(vp9_header, kPacketSize,
                                 kLastPacketReductionLen);
     packetizer.SetPayloadData(kFrame, sizeof(kFrame), kNoFragmentation);
     ASSERT_TRUE(packetizer.NextPacket(&packet));
     EXPECT_FALSE(packet.Marker());
     ASSERT_TRUE(packetizer.NextPacket(&packet));
-    EXPECT_EQ(packet.Marker(), end_of_superframe);
+    EXPECT_EQ(packet.Marker(), end_of_picture);
   }
 }
 

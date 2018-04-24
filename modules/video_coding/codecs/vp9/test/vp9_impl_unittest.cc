@@ -262,7 +262,7 @@ TEST_F(TestVp9Impl, EnableDisableSpatialLayers) {
   }
 }
 
-TEST_F(TestVp9Impl, EndOfSuperframe) {
+TEST_F(TestVp9Impl, EndOfPicture) {
   const size_t num_spatial_layers = 2;
   const size_t num_temporal_layers = 1;
   codec_settings_.VP9()->numberOfSpatialLayers =
@@ -296,8 +296,8 @@ TEST_F(TestVp9Impl, EndOfSuperframe) {
   std::vector<EncodedImage> frames;
   std::vector<CodecSpecificInfo> codec_specific;
   ASSERT_TRUE(WaitForEncodedFrames(&frames, &codec_specific));
-  EXPECT_FALSE(codec_specific[0].codecSpecific.VP9.end_of_superframe);
-  EXPECT_TRUE(codec_specific[1].codecSpecific.VP9.end_of_superframe);
+  EXPECT_FALSE(codec_specific[0].codecSpecific.VP9.end_of_picture);
+  EXPECT_TRUE(codec_specific[1].codecSpecific.VP9.end_of_picture);
 
   // Encode only base layer. Check that end-of-superframe flag is
   // set on base layer frame.
@@ -315,7 +315,7 @@ TEST_F(TestVp9Impl, EndOfSuperframe) {
 
   ASSERT_TRUE(WaitForEncodedFrames(&frames, &codec_specific));
   EXPECT_EQ(codec_specific[0].codecSpecific.VP9.spatial_idx, 0);
-  EXPECT_TRUE(codec_specific[0].codecSpecific.VP9.end_of_superframe);
+  EXPECT_TRUE(codec_specific[0].codecSpecific.VP9.end_of_picture);
 }
 
 }  // namespace webrtc

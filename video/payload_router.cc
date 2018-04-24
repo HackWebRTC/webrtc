@@ -72,8 +72,8 @@ void CopyCodecSpecific(const CodecSpecificInfo* info, RTPVideoHeader* rtp) {
       for (int i = 0; i < info->codecSpecific.VP9.num_ref_pics; ++i) {
         rtp->codecHeader.VP9.pid_diff[i] = info->codecSpecific.VP9.p_diff[i];
       }
-      rtp->codecHeader.VP9.end_of_superframe =
-          info->codecSpecific.VP9.end_of_superframe;
+      rtp->codecHeader.VP9.end_of_picture =
+          info->codecSpecific.VP9.end_of_picture;
       return;
     }
     case kVideoCodecH264:

@@ -580,8 +580,8 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
   }
   timestamp_ += duration;
 
-  const bool end_of_superframe = true;
-  DeliverBufferedFrame(end_of_superframe);
+  const bool end_of_picture = true;
+  DeliverBufferedFrame(end_of_picture);
 
   return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -691,8 +691,8 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
   // Ensure we don't buffer layers of previous picture (superframe).
   RTC_DCHECK(first_frame_in_picture || layer_id.spatial_layer_id > 0);
 
-  const bool end_of_superframe = false;
-  DeliverBufferedFrame(end_of_superframe);
+  const bool end_of_picture = false;
+  DeliverBufferedFrame(end_of_picture);
 
   if (pkt->data.frame.sz > encoded_image_._size) {
     delete[] encoded_image_._buffer;
@@ -738,9 +738,9 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-void VP9EncoderImpl::DeliverBufferedFrame(bool end_of_superframe) {
+void VP9EncoderImpl::DeliverBufferedFrame(bool end_of_picture) {
   if (encoded_image_._length > 0) {
-    codec_specific_.codecSpecific.VP9.end_of_superframe = end_of_superframe;
+    codec_specific_.codecSpecific.VP9.end_of_picture = end_of_picture;
 
     // No data partitioning in VP9, so 1 partition only.
     int part_idx = 0;

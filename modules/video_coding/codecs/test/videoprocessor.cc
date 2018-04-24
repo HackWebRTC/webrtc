@@ -357,11 +357,11 @@ void VideoProcessor::FrameEncoded(
   // TODO(ssilkin): Get actual value. For now assume inter-layer prediction
   // is enabled for all frames.
   const bool inter_layer_prediction = num_spatial_layers > 1;
-  bool end_of_superframe = false;
+  bool end_of_picture = false;
   if (codec_type == kVideoCodecVP9) {
     const CodecSpecificInfoVP9& vp9_info = codec_specific.codecSpecific.VP9;
     frame_stat->inter_layer_predicted = vp9_info.inter_layer_predicted;
-    end_of_superframe = vp9_info.end_of_superframe;
+    end_of_picture = vp9_info.end_of_picture;
   }
 
   const webrtc::EncodedImage* encoded_image_for_decode = &encoded_image;
@@ -376,7 +376,7 @@ void VideoProcessor::FrameEncoded(
   if (config_.decode) {
     DecodeFrame(*encoded_image_for_decode, spatial_idx);
 
-    if (end_of_superframe && inter_layer_prediction) {
+    if (end_of_picture && inter_layer_prediction) {
       // If inter-layer prediction is enabled and upper layer was dropped then
       // base layer should be passed to upper layer decoder. Otherwise decoder
       // won't be able to decode next superframe.

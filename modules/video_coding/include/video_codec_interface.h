@@ -70,7 +70,7 @@ struct CodecSpecificInfoVP9 {
   uint8_t num_ref_pics;
   uint8_t p_diff[kMaxVp9RefPics];
 
-  bool end_of_superframe;
+  bool end_of_picture;
 };
 
 struct CodecSpecificInfoGeneric {

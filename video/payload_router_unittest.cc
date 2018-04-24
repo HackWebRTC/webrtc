@@ -374,7 +374,7 @@ TEST(PayloadRouterTest, InfoMappedToRtpVideoHeader_Vp9) {
   codec_info.codecSpecific.VP9.first_frame_in_picture = true;
   codec_info.codecSpecific.VP9.spatial_idx = 0;
   codec_info.codecSpecific.VP9.temporal_idx = 2;
-  codec_info.codecSpecific.VP9.end_of_superframe = false;
+  codec_info.codecSpecific.VP9.end_of_picture = false;
 
   EXPECT_CALL(rtp, SendOutgoingData(_, _, _, _, _, _, nullptr, _, _))
       .WillOnce(
@@ -391,8 +391,8 @@ TEST(PayloadRouterTest, InfoMappedToRtpVideoHeader_Vp9) {
                       codec_info.codecSpecific.VP9.spatial_idx);
             EXPECT_EQ(header->codecHeader.VP9.num_spatial_layers,
                       codec_info.codecSpecific.VP9.num_spatial_layers);
-            EXPECT_EQ(header->codecHeader.VP9.end_of_superframe,
-                      codec_info.codecSpecific.VP9.end_of_superframe);
+            EXPECT_EQ(header->codecHeader.VP9.end_of_picture,
+                      codec_info.codecSpecific.VP9.end_of_picture);
             return true;
           }));
   EXPECT_CALL(rtp, Sending()).WillOnce(Return(true));
@@ -403,7 +403,7 @@ TEST(PayloadRouterTest, InfoMappedToRtpVideoHeader_Vp9) {
   // Next spatial layer.
   codec_info.codecSpecific.VP9.first_frame_in_picture = false;
   codec_info.codecSpecific.VP9.spatial_idx += 1;
-  codec_info.codecSpecific.VP9.end_of_superframe = true;
+  codec_info.codecSpecific.VP9.end_of_picture = true;
 
   EXPECT_CALL(rtp, SendOutgoingData(_, _, _, _, _, _, nullptr, _, _))
       .WillOnce(
@@ -420,8 +420,8 @@ TEST(PayloadRouterTest, InfoMappedToRtpVideoHeader_Vp9) {
                       codec_info.codecSpecific.VP9.spatial_idx);
             EXPECT_EQ(header->codecHeader.VP9.num_spatial_layers,
                       codec_info.codecSpecific.VP9.num_spatial_layers);
-            EXPECT_EQ(header->codecHeader.VP9.end_of_superframe,
-                      codec_info.codecSpecific.VP9.end_of_superframe);
+            EXPECT_EQ(header->codecHeader.VP9.end_of_picture,
+                      codec_info.codecSpecific.VP9.end_of_picture);
             return true;
           }));
   EXPECT_CALL(rtp, Sending()).WillOnce(Return(true));
