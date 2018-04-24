@@ -342,11 +342,14 @@ void SuppressionGain::LowerBandGain(
 }
 
 SuppressionGain::SuppressionGain(const EchoCanceller3Config& config,
-                                 Aec3Optimization optimization)
+                                 Aec3Optimization optimization,
+                                 int sample_rate_hz)
     : optimization_(optimization),
       config_(config),
       state_change_duration_blocks_(
-          static_cast<int>(config_.filter.config_change_duration_blocks)) {
+          static_cast<int>(config_.filter.config_change_duration_blocks)),
+      coherence_gain_(sample_rate_hz,
+                      config_.suppressor.bands_with_reliable_coherence) {
   RTC_DCHECK_LT(0, state_change_duration_blocks_);
   one_by_state_change_duration_blocks_ = 1.f / state_change_duration_blocks_;
   last_gain_.fill(1.f);
@@ -355,10 +358,15 @@ SuppressionGain::SuppressionGain(const EchoCanceller3Config& config,
   last_echo_.fill(0.f);
 }
 
+SuppressionGain::~SuppressionGain() = default;
+
 void SuppressionGain::GetGain(
-    const std::array<float, kFftLengthBy2Plus1>& nearend,
-    const std::array<float, kFftLengthBy2Plus1>& echo,
-    const std::array<float, kFftLengthBy2Plus1>& comfort_noise,
+    const std::array<float, kFftLengthBy2Plus1>& nearend_spectrum,
+    const std::array<float, kFftLengthBy2Plus1>& echo_spectrum,
+    const std::array<float, kFftLengthBy2Plus1>& comfort_noise_spectrum,
+    const FftData& linear_aec_fft,
+    const FftData& render_fft,
+    const FftData& capture_fft,
     const RenderSignalAnalyzer& render_signal_analyzer,
     const AecState& aec_state,
     const std::vector<std::vector<float>>& render,
@@ -371,8 +379,8 @@ void SuppressionGain::GetGain(
   bool low_noise_render = low_render_detector_.Detect(render);
   const rtc::Optional<int> narrow_peak_band =
       render_signal_analyzer.NarrowPeakBand();
-  LowerBandGain(low_noise_render, narrow_peak_band, aec_state, nearend, echo,
-                comfort_noise, low_band_gain);
+  LowerBandGain(low_noise_render, narrow_peak_band, aec_state, nearend_spectrum,
+                echo_spectrum, comfort_noise_spectrum, low_band_gain);
 
   const float gain_upper_bound = aec_state.SuppressionGainLimit();
   if (gain_upper_bound < 1.f) {
@@ -384,6 +392,17 @@ void SuppressionGain::GetGain(
   // Compute the gain for the upper bands.
   *high_bands_gain = UpperBandsGain(narrow_peak_band, aec_state.SaturatedEcho(),
                                     render, *low_band_gain);
+
+  // Adjust the gain for bands where the coherence indicates not echo.
+  if (config_.suppressor.bands_with_reliable_coherence > 0) {
+    std::array<float, kFftLengthBy2Plus1> G_coherence;
+    coherence_gain_.ComputeGain(linear_aec_fft, render_fft, capture_fft,
+                                G_coherence);
+    for (size_t k = 0; k < config_.suppressor.bands_with_reliable_coherence;
+         ++k) {
+      (*low_band_gain)[k] = std::max((*low_band_gain)[k], G_coherence[k]);
+    }
+  }
 }
 
 void SuppressionGain::SetInitialState(bool state) {

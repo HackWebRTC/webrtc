@@ -29,15 +29,25 @@ TEST(SuppressionGain, NullOutputGains) {
   std::array<float, kFftLengthBy2Plus1> E2;
   std::array<float, kFftLengthBy2Plus1> R2;
   std::array<float, kFftLengthBy2Plus1> N2;
+  FftData E;
+  FftData X;
+  FftData Y;
   E2.fill(0.f);
   R2.fill(0.f);
   N2.fill(0.f);
+  E.re.fill(0.f);
+  E.im.fill(0.f);
+  X.re.fill(0.f);
+  X.im.fill(0.f);
+  Y.re.fill(0.f);
+  Y.im.fill(0.f);
+
   float high_bands_gain;
   AecState aec_state(EchoCanceller3Config{});
   EXPECT_DEATH(
-      SuppressionGain(EchoCanceller3Config{}, DetectOptimization())
-          .GetGain(E2, R2, N2, RenderSignalAnalyzer((EchoCanceller3Config{})),
-                   aec_state,
+      SuppressionGain(EchoCanceller3Config{}, DetectOptimization(), 16000)
+          .GetGain(E2, R2, N2, E, X, Y,
+                   RenderSignalAnalyzer((EchoCanceller3Config{})), aec_state,
                    std::vector<std::vector<float>>(
                        3, std::vector<float>(kBlockSize, 0.f)),
                    &high_bands_gain, nullptr),
@@ -48,8 +58,8 @@ TEST(SuppressionGain, NullOutputGains) {
 
 // Does a sanity check that the gains are correctly computed.
 TEST(SuppressionGain, BasicGainComputation) {
-  SuppressionGain suppression_gain(EchoCanceller3Config(),
-                                   DetectOptimization());
+  SuppressionGain suppression_gain(EchoCanceller3Config(), DetectOptimization(),
+                                   16000);
   RenderSignalAnalyzer analyzer(EchoCanceller3Config{});
   float high_bands_gain;
   std::array<float, kFftLengthBy2Plus1> E2;
@@ -58,6 +68,9 @@ TEST(SuppressionGain, BasicGainComputation) {
   std::array<float, kFftLengthBy2Plus1> N2;
   std::array<float, kFftLengthBy2Plus1> g;
   std::array<float, kBlockSize> s;
+  FftData E;
+  FftData X;
+  FftData Y;
   std::vector<std::vector<float>> x(1, std::vector<float>(kBlockSize, 0.f));
   EchoCanceller3Config config;
   AecState aec_state(config);
@@ -73,6 +86,12 @@ TEST(SuppressionGain, BasicGainComputation) {
   R2.fill(0.1f);
   N2.fill(100.f);
   s.fill(10.f);
+  E.re.fill(sqrtf(E2[0]));
+  E.im.fill(0.f);
+  X.re.fill(sqrtf(R2[0]));
+  X.im.fill(0.f);
+  Y.re.fill(sqrtf(Y2[0]));
+  Y.im.fill(0.f);
 
   // Ensure that the gain is no longer forced to zero.
   for (int k = 0; k <= kNumBlocksPerSecond / 5 + 1; ++k) {
@@ -87,7 +106,7 @@ TEST(SuppressionGain, BasicGainComputation) {
                      subtractor.FilterImpulseResponse(),
                      subtractor.ConvergedFilter(), subtractor.DivergedFilter(),
                      *render_delay_buffer->GetRenderBuffer(), E2, Y2, s);
-    suppression_gain.GetGain(E2, R2, N2, analyzer, aec_state, x,
+    suppression_gain.GetGain(E2, R2, N2, E, X, Y, analyzer, aec_state, x,
                              &high_bands_gain, &g);
   }
   std::for_each(g.begin(), g.end(),
@@ -98,12 +117,16 @@ TEST(SuppressionGain, BasicGainComputation) {
   Y2.fill(100.f);
   R2.fill(0.1f);
   N2.fill(0.f);
+  E.re.fill(sqrtf(E2[0]));
+  X.re.fill(sqrtf(R2[0]));
+  Y.re.fill(sqrtf(Y2[0]));
+
   for (int k = 0; k < 100; ++k) {
     aec_state.Update(delay_estimate, subtractor.FilterFrequencyResponse(),
                      subtractor.FilterImpulseResponse(),
                      subtractor.ConvergedFilter(), subtractor.DivergedFilter(),
                      *render_delay_buffer->GetRenderBuffer(), E2, Y2, s);
-    suppression_gain.GetGain(E2, R2, N2, analyzer, aec_state, x,
+    suppression_gain.GetGain(E2, R2, N2, E, X, Y, analyzer, aec_state, x,
                              &high_bands_gain, &g);
   }
   std::for_each(g.begin(), g.end(),
@@ -112,9 +135,11 @@ TEST(SuppressionGain, BasicGainComputation) {
   // Ensure that a strong echo is suppressed.
   E2.fill(1000000000.f);
   R2.fill(10000000000000.f);
-  N2.fill(0.f);
+  E.re.fill(sqrtf(E2[0]));
+  X.re.fill(sqrtf(R2[0]));
+
   for (int k = 0; k < 10; ++k) {
-    suppression_gain.GetGain(E2, R2, N2, analyzer, aec_state, x,
+    suppression_gain.GetGain(E2, R2, N2, E, X, Y, analyzer, aec_state, x,
                              &high_bands_gain, &g);
   }
   std::for_each(g.begin(), g.end(),

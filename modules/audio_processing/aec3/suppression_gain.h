@@ -17,6 +17,7 @@
 #include "api/audio/echo_canceller3_config.h"
 #include "modules/audio_processing/aec3/aec3_common.h"
 #include "modules/audio_processing/aec3/aec_state.h"
+#include "modules/audio_processing/aec3/coherence_gain.h"
 #include "modules/audio_processing/aec3/render_signal_analyzer.h"
 #include "rtc_base/constructormagic.h"
 
@@ -25,15 +26,21 @@ namespace webrtc {
 class SuppressionGain {
  public:
   SuppressionGain(const EchoCanceller3Config& config,
-                  Aec3Optimization optimization);
-  void GetGain(const std::array<float, kFftLengthBy2Plus1>& nearend,
-               const std::array<float, kFftLengthBy2Plus1>& echo,
-               const std::array<float, kFftLengthBy2Plus1>& comfort_noise,
-               const RenderSignalAnalyzer& render_signal_analyzer,
-               const AecState& aec_state,
-               const std::vector<std::vector<float>>& render,
-               float* high_bands_gain,
-               std::array<float, kFftLengthBy2Plus1>* low_band_gain);
+                  Aec3Optimization optimization,
+                  int sample_rate_hz);
+  ~SuppressionGain();
+  void GetGain(
+      const std::array<float, kFftLengthBy2Plus1>& nearend_spectrum,
+      const std::array<float, kFftLengthBy2Plus1>& echo_spectrum,
+      const std::array<float, kFftLengthBy2Plus1>& comfort_noise_spectrum,
+      const FftData& linear_aec_fft,
+      const FftData& render_fft,
+      const FftData& capture_fft,
+      const RenderSignalAnalyzer& render_signal_analyzer,
+      const AecState& aec_state,
+      const std::vector<std::vector<float>>& render,
+      float* high_bands_gain,
+      std::array<float, kFftLengthBy2Plus1>* low_band_gain);
 
   // Toggles the usage of the initial state.
   void SetInitialState(bool state);
@@ -75,6 +82,8 @@ class SuppressionGain {
   LowNoiseRenderDetector low_render_detector_;
   bool initial_state_ = true;
   int initial_state_change_counter_ = 0;
+  CoherenceGain coherence_gain_;
+
   RTC_DISALLOW_COPY_AND_ASSIGN(SuppressionGain);
 };
 

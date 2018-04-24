@@ -22,7 +22,6 @@
 #include "modules/audio_processing/aec3/echo_path_variability.h"
 #include "modules/audio_processing/aec3/echo_remover_metrics.h"
 #include "modules/audio_processing/aec3/fft_data.h"
-#include "modules/audio_processing/aec3/output_selector.h"
 #include "modules/audio_processing/aec3/render_buffer.h"
 #include "modules/audio_processing/aec3/render_delay_buffer.h"
 #include "modules/audio_processing/aec3/residual_echo_estimator.h"
@@ -86,12 +85,14 @@ class EchoRemoverImpl final : public EchoRemover {
   ComfortNoiseGenerator cng_;
   SuppressionFilter suppression_filter_;
   RenderSignalAnalyzer render_signal_analyzer_;
-  OutputSelector output_selector_;
   ResidualEchoEstimator residual_echo_estimator_;
   bool echo_leakage_detected_ = false;
   AecState aec_state_;
   EchoRemoverMetrics metrics_;
   bool initial_state_ = true;
+  std::array<float, kFftLengthBy2> e_old_;
+  std::array<float, kFftLengthBy2> x_old_;
+  std::array<float, kFftLengthBy2> y_old_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(EchoRemoverImpl);
 };
@@ -107,13 +108,16 @@ EchoRemoverImpl::EchoRemoverImpl(const EchoCanceller3Config& config,
       optimization_(DetectOptimization()),
       sample_rate_hz_(sample_rate_hz),
       subtractor_(config, data_dumper_.get(), optimization_),
-      suppression_gain_(config_, optimization_),
+      suppression_gain_(config_, optimization_, sample_rate_hz),
       cng_(optimization_),
       suppression_filter_(sample_rate_hz_),
       render_signal_analyzer_(config_),
       residual_echo_estimator_(config_),
       aec_state_(config_) {
   RTC_DCHECK(ValidFullBandRate(sample_rate_hz));
+  x_old_.fill(0.f);
+  y_old_.fill(0.f);
+  e_old_.fill(0.f);
 }
 
 EchoRemoverImpl::~EchoRemoverImpl() = default;
@@ -191,6 +195,8 @@ void EchoRemoverImpl::ProcessCapture(
   fft_.ZeroPaddedFft(y0, Aec3Fft::Window::kRectangular, &Y);
   LinearEchoPower(E_main_nonwindowed, Y, &S2_linear);
   Y.Spectrum(optimization_, Y2);
+  fft_.PaddedFft(y0, y_old_, Aec3Fft::Window::kSqrtHanning, &Y);
+  std::copy(y0.begin(), y0.end(), y_old_.begin());
 
   // Update the AEC state information.
   aec_state_.Update(external_delay, subtractor_.FilterFrequencyResponse(),
@@ -201,12 +207,11 @@ void EchoRemoverImpl::ProcessCapture(
   // Choose the linear output.
   data_dumper_->DumpWav("aec3_output_linear2", kBlockSize, &e_main[0],
                         LowestBandRate(sample_rate_hz_), 1);
-  output_selector_.FormLinearOutput(aec_state_.UseLinearFilterOutput(), e_main,
-                                    y0);
-
+  if (aec_state_.UseLinearFilterOutput()) {
+    std::copy(e_main.begin(), e_main.end(), y0.begin());
+  }
   data_dumper_->DumpWav("aec3_output_linear", kBlockSize, &y0[0],
                         LowestBandRate(sample_rate_hz_), 1);
-  data_dumper_->DumpRaw("aec3_output_linear", y0);
   const auto& E2 = aec_state_.UseLinearFilterOutput() ? E2_main : Y2;
 
   // Estimate the residual echo power.
@@ -216,12 +221,32 @@ void EchoRemoverImpl::ProcessCapture(
   // Estimate the comfort noise.
   cng_.Compute(aec_state_, Y2, &comfort_noise, &high_band_comfort_noise);
 
-  // A choose and apply echo suppression gain.
-  suppression_gain_.GetGain(E2, R2, cng_.NoiseSpectrum(),
+  // Compute spectra.
+  const bool suppression_gain_uses_ffts =
+      config_.suppressor.bands_with_reliable_coherence > 0;
+  FftData X;
+  if (suppression_gain_uses_ffts) {
+    const std::vector<float>& x_aligned =
+        render_buffer->Block(-aec_state_.FilterDelayBlocks())[0];
+    fft_.PaddedFft(x_aligned, x_old_, Aec3Fft::Window::kSqrtHanning, &X);
+    std::copy(x_aligned.begin(), x_aligned.end(), x_old_.begin());
+  } else {
+    X.Clear();
+  }
+
+  FftData E;
+  fft_.PaddedFft(e_main, e_old_, Aec3Fft::Window::kSqrtHanning, &E);
+  std::copy(e_main.begin(), e_main.end(), e_old_.begin());
+
+  const auto& Y_fft = aec_state_.UseLinearFilterOutput() ? E : Y;
+
+  // Compute and apply the suppression gain.
+  suppression_gain_.GetGain(E2, R2, cng_.NoiseSpectrum(), E, X, Y,
                             render_signal_analyzer_, aec_state_, x,
                             &high_bands_gain, &G);
+
   suppression_filter_.ApplyGain(comfort_noise, high_band_comfort_noise, G,
-                                high_bands_gain, y);
+                                high_bands_gain, Y_fft, y);
 
   // Update the metrics.
   metrics_.Update(aec_state_, cng_.NoiseSpectrum(), G);

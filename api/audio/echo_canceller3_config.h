@@ -143,6 +143,10 @@ struct EchoCanceller3Config {
     float nonlinear_hold = 1;
     float nonlinear_release = 0.001f;
   } echo_model;
+
+  struct Suppressor {
+    size_t bands_with_reliable_coherence = 5;
+  } suppressor;
 };
 }  // namespace webrtc
 
