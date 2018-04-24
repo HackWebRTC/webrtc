@@ -43,6 +43,8 @@ void CopyCodecSpecific(const CodecSpecificInfo* info, RTPVideoHeader* rtp) {
           info->codecSpecific.VP9.flexible_mode;
       rtp->codecHeader.VP9.ss_data_available =
           info->codecSpecific.VP9.ss_data_available;
+      rtp->codecHeader.VP9.non_ref_for_inter_layer_pred =
+          info->codecSpecific.VP9.non_ref_for_inter_layer_pred;
       rtp->codecHeader.VP9.temporal_idx = info->codecSpecific.VP9.temporal_idx;
       rtp->codecHeader.VP9.spatial_idx = info->codecSpecific.VP9.spatial_idx;
       rtp->codecHeader.VP9.temporal_up_switch =
