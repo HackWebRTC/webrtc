@@ -2813,6 +2813,11 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
                                       RTCError* error) {
   TRACE_EVENT0("webrtc", "PeerConnection::SetConfiguration");
 
+  if (IsClosed()) {
+    RTC_LOG(LS_ERROR) << "SetConfiguration: PeerConnection is closed.";
+    return SafeSetError(RTCErrorType::INVALID_STATE, error);
+  }
+
   // According to JSEP, after setLocalDescription, changing the candidate pool
   // size is not allowed, and changing the set of ICE servers will not result
   // in new candidates being gathered.
@@ -2904,17 +2909,18 @@ bool PeerConnection::AddIceCandidate(
     const IceCandidateInterface* ice_candidate) {
   TRACE_EVENT0("webrtc", "PeerConnection::AddIceCandidate");
   if (IsClosed()) {
+    RTC_LOG(LS_ERROR) << "AddIceCandidate: PeerConnection is closed.";
     return false;
   }
 
   if (!remote_description()) {
-    RTC_LOG(LS_ERROR) << "ProcessIceMessage: ICE candidates can't be added "
+    RTC_LOG(LS_ERROR) << "AddIceCandidate: ICE candidates can't be added "
                          "without any remote session description.";
     return false;
   }
 
   if (!ice_candidate) {
-    RTC_LOG(LS_ERROR) << "ProcessIceMessage: Candidate is NULL.";
+    RTC_LOG(LS_ERROR) << "AddIceCandidate: Candidate is null.";
     return false;
   }
 
@@ -2926,14 +2932,14 @@ bool PeerConnection::AddIceCandidate(
 
   // Add this candidate to the remote session description.
   if (!mutable_remote_description()->AddCandidate(ice_candidate)) {
-    RTC_LOG(LS_ERROR) << "ProcessIceMessage: Candidate cannot be used.";
+    RTC_LOG(LS_ERROR) << "AddIceCandidate: Candidate cannot be used.";
     return false;
   }
 
   if (ready) {
     return UseCandidate(ice_candidate);
   } else {
-    RTC_LOG(LS_INFO) << "ProcessIceMessage: Not ready to use candidate.";
+    RTC_LOG(LS_INFO) << "AddIceCandidate: Not ready to use candidate.";
     return true;
   }
 }
@@ -2941,14 +2947,19 @@ bool PeerConnection::AddIceCandidate(
 bool PeerConnection::RemoveIceCandidates(
     const std::vector<cricket::Candidate>& candidates) {
   TRACE_EVENT0("webrtc", "PeerConnection::RemoveIceCandidates");
+  if (IsClosed()) {
+    RTC_LOG(LS_ERROR) << "RemoveIceCandidates: PeerConnection is closed.";
+    return false;
+  }
+
   if (!remote_description()) {
-    RTC_LOG(LS_ERROR) << "RemoveRemoteIceCandidates: ICE candidates can't be "
-                         "removed without any remote session description.";
+    RTC_LOG(LS_ERROR) << "RemoveIceCandidates: ICE candidates can't be removed "
+                         "without any remote session description.";
     return false;
   }
 
   if (candidates.empty()) {
-    RTC_LOG(LS_ERROR) << "RemoveRemoteIceCandidates: candidates are empty.";
+    RTC_LOG(LS_ERROR) << "RemoveIceCandidates: candidates are empty.";
     return false;
   }
 
@@ -2956,8 +2967,7 @@ bool PeerConnection::RemoveIceCandidates(
       mutable_remote_description()->RemoveCandidates(candidates);
   if (number_removed != candidates.size()) {
     RTC_LOG(LS_ERROR)
-        << "RemoveRemoteIceCandidates: Failed to remove candidates. "
-           "Requested "
+        << "RemoveIceCandidates: Failed to remove candidates. Requested "
         << candidates.size() << " but only " << number_removed
         << " are removed.";
   }
@@ -2965,8 +2975,9 @@ bool PeerConnection::RemoveIceCandidates(
   // Remove the candidates from the transport controller.
   RTCError error = transport_controller_->RemoveRemoteCandidates(candidates);
   if (!error.ok()) {
-    RTC_LOG(LS_ERROR) << "Error when removing remote candidates: "
-                      << error.message();
+    RTC_LOG(LS_ERROR)
+        << "RemoveIceCandidates: Error when removing remote candidates: "
+        << error.message();
   }
   return true;
 }
@@ -2993,8 +3004,8 @@ void PeerConnection::RegisterUMAObserver(UMAObserver* observer) {
 void PeerConnection::SetMetricObserver_n(UMAObserver* observer) {
   RTC_DCHECK(network_thread()->IsCurrent());
   uma_observer_ = observer;
-  if (transport_controller()) {
-    transport_controller()->SetMetricsObserver(uma_observer_);
+  if (transport_controller_) {
+    transport_controller_->SetMetricsObserver(uma_observer_);
   }
 
   for (auto transceiver : transceivers_) {

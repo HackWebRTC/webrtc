@@ -711,10 +711,6 @@ class PeerConnection : public PeerConnectionInternal,
       const rtc::scoped_refptr<rtc::RTCCertificate>& certificate);
   void OnDtlsSrtpSetupFailure(cricket::BaseChannel*, bool rtcp);
 
-  JsepTransportController* transport_controller() const {
-    return transport_controller_.get();
-  }
-
   // Non-const versions of local_description()/remote_description(), for use
   // internally.
   SessionDescriptionInterface* mutable_local_description() {

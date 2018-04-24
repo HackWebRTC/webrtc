@@ -1440,6 +1440,15 @@ TEST_P(PeerConnectionInterfaceTest, GetConfigurationAfterSetConfiguration) {
   EXPECT_EQ(PeerConnectionInterface::kRelay, returned_config.type);
 }
 
+TEST_P(PeerConnectionInterfaceTest, SetConfigurationFailsAfterClose) {
+  CreatePeerConnection();
+
+  pc_->Close();
+
+  EXPECT_FALSE(
+      pc_->SetConfiguration(PeerConnectionInterface::RTCConfiguration()));
+}
+
 TEST_F(PeerConnectionInterfaceTestPlanB, AddStreams) {
   CreatePeerConnectionWithoutDtls();
   AddVideoStream(kStreamId1);

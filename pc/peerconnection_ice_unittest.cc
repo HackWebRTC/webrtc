@@ -398,6 +398,24 @@ TEST_P(PeerConnectionIceTest, CannotAddCandidateWhenRemoteDescriptionNotSet) {
   EXPECT_FALSE(caller->pc()->AddIceCandidate(&jsep_candidate));
 }
 
+TEST_P(PeerConnectionIceTest, CannotAddCandidateWhenPeerConnectionClosed) {
+  const SocketAddress kCalleeAddress("1.1.1.1", 1111);
+
+  auto caller = CreatePeerConnectionWithAudioVideo();
+  auto callee = CreatePeerConnectionWithAudioVideo();
+
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+
+  cricket::Candidate candidate = CreateLocalUdpCandidate(kCalleeAddress);
+  auto* audio_content = cricket::GetFirstAudioContent(
+      caller->pc()->local_description()->description());
+  JsepIceCandidate jsep_candidate(audio_content->name, 0, candidate);
+
+  caller->pc()->Close();
+
+  EXPECT_FALSE(caller->pc()->AddIceCandidate(&jsep_candidate));
+}
+
 TEST_P(PeerConnectionIceTest, DuplicateIceCandidateIgnoredWhenAdded) {
   const SocketAddress kCalleeAddress("1.1.1.1", 1111);
 
@@ -412,6 +430,27 @@ TEST_P(PeerConnectionIceTest, DuplicateIceCandidateIgnoredWhenAdded) {
   caller->AddIceCandidate(&candidate);
   EXPECT_TRUE(caller->AddIceCandidate(&candidate));
   EXPECT_EQ(1u, caller->GetIceCandidatesFromRemoteDescription().size());
+}
+
+TEST_P(PeerConnectionIceTest,
+       CannotRemoveIceCandidatesWhenPeerConnectionClosed) {
+  const SocketAddress kCalleeAddress("1.1.1.1", 1111);
+
+  auto caller = CreatePeerConnectionWithAudioVideo();
+  auto callee = CreatePeerConnectionWithAudioVideo();
+
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+
+  cricket::Candidate candidate = CreateLocalUdpCandidate(kCalleeAddress);
+  auto* audio_content = cricket::GetFirstAudioContent(
+      caller->pc()->local_description()->description());
+  JsepIceCandidate ice_candidate(audio_content->name, 0, candidate);
+
+  ASSERT_TRUE(caller->pc()->AddIceCandidate(&ice_candidate));
+
+  caller->pc()->Close();
+
+  EXPECT_FALSE(caller->pc()->RemoveIceCandidates({candidate}));
 }
 
 TEST_P(PeerConnectionIceTest,
