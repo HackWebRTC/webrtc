@@ -127,9 +127,9 @@
                      _i420Buffer->DataV(),
                      _i420Buffer->StrideV(),
                      ctxData,
-                     _i420Buffer->width() * 4,
-                     _i420Buffer->width(),
-                     _i420Buffer->height());
+                     CGBitmapContextGetBytesPerRow(c),
+                     CGBitmapContextGetWidth(c),
+                     CGBitmapContextGetHeight(c));
 
   UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
   UIGraphicsEndImageContext();

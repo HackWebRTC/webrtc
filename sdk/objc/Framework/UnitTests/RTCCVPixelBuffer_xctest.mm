@@ -133,6 +133,18 @@
                                  outputSize:CGSizeMake(0, 0)];
 }
 
+- (void)testCropAndScaleToSmallFormat_NV12 {
+  [self cropAndScaleTestWithNV12InputFormat:kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
+                               outputFormat:kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
+                                 outputSize:CGSizeMake(148, 320)];
+}
+
+- (void)testCropAndScaleToOddFormat_NV12 {
+  [self cropAndScaleTestWithNV12InputFormat:kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
+                               outputFormat:kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
+                                 outputSize:CGSizeMake(361, 640)];
+}
+
 - (void)testCropAndScale_32BGRA {
   [self cropAndScaleTestWithRGBPixelFormat:kCVPixelFormatType_32BGRA];
 }
