@@ -418,8 +418,8 @@ void VideoStreamEncoder::SetSource(
     bool allow_scaling = IsResolutionScalingEnabled(degradation_preference_);
     initial_rampup_ = allow_scaling ? 0 : kMaxInitialFramedrop;
 
-    if (encoder_)
-      ConfigureQualityScaler();
+    stats_proxy_->SetAdaptationStats(GetActiveCounts(kCpu),
+                                     GetActiveCounts(kQuality));
 
     if (!IsFramerateScalingEnabled(degradation_preference) &&
         max_framerate_ != -1) {
@@ -542,6 +542,8 @@ void VideoStreamEncoder::ReconfigureEncoder() {
     // or just discard incoming frames?
     RTC_CHECK(encoder_);
 
+    ConfigureQualityScaler();
+
     const webrtc::VideoEncoderFactory::CodecInfo info =
         settings_.encoder_factory->QueryVideoEncoder(
             encoder_config_.video_format);
@@ -590,8 +592,6 @@ void VideoStreamEncoder::ReconfigureEncoder() {
   int target_framerate = std::min(
       max_framerate_, source_proxy_->GetActiveSinkWants().max_framerate_fps);
   overuse_detector_->OnTargetFramerateUpdated(target_framerate);
-
-  ConfigureQualityScaler();
 }
 
 void VideoStreamEncoder::ConfigureQualityScaler() {
@@ -616,6 +616,8 @@ void VideoStreamEncoder::ConfigureQualityScaler() {
     initial_rampup_ = kMaxInitialFramedrop;
   }
 
+  // TODO(nisse): Is this still the right place to do this? This is
+  // now called when the encoder is created.
   stats_proxy_->SetAdaptationStats(GetActiveCounts(kCpu),
                                    GetActiveCounts(kQuality));
 }
