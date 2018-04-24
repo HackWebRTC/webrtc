@@ -48,9 +48,10 @@ LayerFilteringTransport::LayerFilteringTransport(
     uint8_t vp9_video_payload_type,
     int selected_tl,
     int selected_sl,
+    const std::map<uint8_t, MediaType>& payload_type_map,
     uint32_t ssrc_to_filter_min,
     uint32_t ssrc_to_filter_max)
-    : DirectTransport(task_queue, std::move(pipe), send_call),
+    : DirectTransport(task_queue, std::move(pipe), send_call, payload_type_map),
       vp8_video_payload_type_(vp8_video_payload_type),
       vp9_video_payload_type_(vp9_video_payload_type),
       selected_tl_(selected_tl),
@@ -84,8 +85,9 @@ LayerFilteringTransport::LayerFilteringTransport(
     uint8_t vp8_video_payload_type,
     uint8_t vp9_video_payload_type,
     int selected_tl,
-    int selected_sl)
-    : DirectTransport(task_queue, std::move(pipe), send_call),
+    int selected_sl,
+    const std::map<uint8_t, MediaType>& payload_type_map)
+    : DirectTransport(task_queue, std::move(pipe), send_call, payload_type_map),
       vp8_video_payload_type_(vp8_video_payload_type),
       vp9_video_payload_type_(vp9_video_payload_type),
       selected_tl_(selected_tl),

@@ -310,6 +310,7 @@ if (rtc_include_tests) {
 
   rtc_test("test_support_unittests") {
     deps = [
+      ":direct_transport",
       ":fileutils",
       ":perf_test",
       ":rtp_test_utils",
@@ -325,6 +326,7 @@ if (rtc_include_tests) {
       "//testing/gtest",
     ]
     sources = [
+      "direct_transport_unittest.cc",
       "frame_generator_unittest.cc",
       "rtp_file_reader_unittest.cc",
       "rtp_file_writer_unittest.cc",

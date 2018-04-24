@@ -82,29 +82,6 @@ class NetworkPacket {
   rtc::Optional<PacketTime> packet_time_;
 };
 
-class Demuxer {
- public:
-  virtual ~Demuxer() = default;
-  virtual void SetReceiver(PacketReceiver* receiver) = 0;
-  virtual void DeliverPacket(const NetworkPacket* packet,
-                             const PacketTime& packet_time) = 0;
-};
-
-// This class doesn't have any internal thread safety, so caller must make sure
-// SetReceiver and DeliverPacket aren't called in a racy manner.
-class DemuxerImpl final : public Demuxer {
- public:
-  explicit DemuxerImpl(const std::map<uint8_t, MediaType>& payload_type_map);
-
-  void SetReceiver(PacketReceiver* receiver) override;
-  void DeliverPacket(const NetworkPacket* packet,
-                     const PacketTime& packet_time) override;
-
- private:
-  PacketReceiver* packet_receiver_;
-  const std::map<uint8_t, MediaType> payload_type_map_;
-  RTC_DISALLOW_COPY_AND_ASSIGN(DemuxerImpl);
-};
 
 // Class faking a network link. This is a simple and naive solution just faking
 // capacity and adding an extra transport delay in addition to the capacity
@@ -130,16 +107,14 @@ class FakeNetworkPipe : public Transport, public PacketReceiver, public Module {
     int avg_burst_loss_length = -1;
   };
 
-  // Use this constructor if you plan to insert packets using DeliverPacket().
+  // Use these constructors if you plan to insert packets using DeliverPacket().
   FakeNetworkPipe(Clock* clock, const FakeNetworkPipe::Config& config);
-
-  // Use these constructors if you plan to insert packets using SendPacket().
   FakeNetworkPipe(Clock* clock,
                   const FakeNetworkPipe::Config& config,
-                  std::unique_ptr<Demuxer> demuxer);
+                  PacketReceiver* receiver);
   FakeNetworkPipe(Clock* clock,
                   const FakeNetworkPipe::Config& config,
-                  std::unique_ptr<Demuxer> demuxer,
+                  PacketReceiver* receiver,
                   uint64_t seed);
 
   // Use this constructor if you plan to insert packets using SendRt[c?]p().
@@ -154,12 +129,7 @@ class FakeNetworkPipe : public Transport, public PacketReceiver, public Module {
   // Sets a new configuration. This won't affect packets already in the pipe.
   void SetConfig(const FakeNetworkPipe::Config& config);
 
-  // Sends a new packet to the link. When/if packets are delivered, they will
-  // be passed to the receiver instance given in SetReceiver(). This method
-  // should only be used if a Demuxer was provided in the constructor.
-  void SendPacket(const uint8_t* packet, size_t packet_length);
-
-  // Must not be called in parallel with SendPacket or Process.
+  // Must not be called in parallel with DeliverPacket or Process.
   void SetReceiver(PacketReceiver* receiver);
 
   // Implements Transport interface. When/if packets are delivered, they will
@@ -214,12 +184,11 @@ class FakeNetworkPipe : public Transport, public PacketReceiver, public Module {
   void DeliverPacket(NetworkPacket* packet)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(config_lock_);
   bool HasTransport() const;
-  bool HasDemuxer() const;
+  bool HasReceiver() const;
 
   Clock* const clock_;
   // |config_lock| guards the mostly constant things like the callbacks.
   rtc::CriticalSection config_lock_;
-  const std::unique_ptr<Demuxer> demuxer_ RTC_GUARDED_BY(config_lock_);
   PacketReceiver* receiver_ RTC_GUARDED_BY(config_lock_);
   Transport* const transport_ RTC_GUARDED_BY(config_lock_);
 
