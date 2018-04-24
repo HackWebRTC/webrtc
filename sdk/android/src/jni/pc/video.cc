@@ -26,7 +26,6 @@
 #include "sdk/android/src/jni/androidmediadecoder_jni.h"
 #include "sdk/android/src/jni/androidmediaencoder_jni.h"
 #include "sdk/android/src/jni/androidvideotracksource.h"
-#include "sdk/android/src/jni/surfacetexturehelper.h"
 #include "sdk/android/src/jni/videodecoderfactorywrapper.h"
 #include "sdk/android/src/jni/videoencoderfactorywrapper.h"
 
@@ -82,11 +81,10 @@ void SetEglContext(JNIEnv* env,
 void* CreateVideoSource(JNIEnv* env,
                         rtc::Thread* signaling_thread,
                         rtc::Thread* worker_thread,
-                        const JavaParamRef<jobject>& j_surface_texture_helper,
                         jboolean is_screencast) {
   rtc::scoped_refptr<AndroidVideoTrackSource> source(
-      new rtc::RefCountedObject<AndroidVideoTrackSource>(
-          signaling_thread, env, j_surface_texture_helper, is_screencast));
+      new rtc::RefCountedObject<AndroidVideoTrackSource>(signaling_thread, env,
+                                                         is_screencast));
   return VideoTrackSourceProxy::Create(signaling_thread, worker_thread, source)
       .release();
 }

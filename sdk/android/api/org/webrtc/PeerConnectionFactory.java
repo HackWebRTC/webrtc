@@ -350,18 +350,20 @@ public class PeerConnectionFactory {
     return new MediaStream(nativeCreateLocalMediaStream(nativeFactory, label));
   }
 
+  public VideoSource createVideoSource(boolean isScreencast) {
+    return new VideoSource(nativeCreateVideoSource(nativeFactory, isScreencast));
+  }
+
   public VideoSource createVideoSource(VideoCapturer capturer) {
     final EglBase.Context eglContext =
         localEglbase == null ? null : localEglbase.getEglBaseContext();
     final SurfaceTextureHelper surfaceTextureHelper =
         SurfaceTextureHelper.create(VIDEO_CAPTURER_THREAD_NAME, eglContext);
-    long nativeAndroidVideoTrackSource =
-        nativeCreateVideoSource(nativeFactory, surfaceTextureHelper, capturer.isScreencast());
-    VideoCapturer.CapturerObserver capturerObserver =
-        new AndroidVideoTrackSourceObserver(nativeAndroidVideoTrackSource);
-    capturer.initialize(
-        surfaceTextureHelper, ContextUtils.getApplicationContext(), capturerObserver);
-    return new VideoSource(nativeAndroidVideoTrackSource);
+    final VideoSource videoSource = new VideoSource(
+        nativeCreateVideoSource(nativeFactory, capturer.isScreencast()), surfaceTextureHelper);
+    capturer.initialize(surfaceTextureHelper, ContextUtils.getApplicationContext(),
+        videoSource.getCapturerObserver());
+    return videoSource;
   }
 
   public VideoTrack createVideoTrack(String id, VideoSource source) {
@@ -498,8 +500,7 @@ public class PeerConnectionFactory {
   private static native long nativeCreatePeerConnection(long factory,
       PeerConnection.RTCConfiguration rtcConfig, MediaConstraints constraints, long nativeObserver);
   private static native long nativeCreateLocalMediaStream(long factory, String label);
-  private static native long nativeCreateVideoSource(
-      long factory, SurfaceTextureHelper surfaceTextureHelper, boolean is_screencast);
+  private static native long nativeCreateVideoSource(long factory, boolean is_screencast);
   private static native long nativeCreateVideoTrack(
       long factory, String id, long nativeVideoSource);
   private static native long nativeCreateAudioSource(long factory, MediaConstraints constraints);

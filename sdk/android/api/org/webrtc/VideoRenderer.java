@@ -186,13 +186,6 @@ public class VideoRenderer {
       return new I420Frame(width, height, rotationDegree, new int[] {y_stride, u_stride, v_stride},
           new ByteBuffer[] {y_buffer, u_buffer, v_buffer}, nativeFramePointer);
     }
-
-    @CalledByNative("I420Frame")
-    static I420Frame createTextureFrame(int width, int height, int rotationDegree, int textureId,
-        float[] samplingMatrix, long nativeFramePointer) {
-      return new I420Frame(
-          width, height, rotationDegree, textureId, samplingMatrix, nativeFramePointer);
-    }
   }
 
   /** The real meat of VideoSinkInterface. */

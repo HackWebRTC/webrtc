@@ -48,11 +48,10 @@ public class UnityUtility {
     VideoCapturer capturer =
         createCameraCapturer(new Camera2Enumerator(ContextUtils.getApplicationContext()));
 
-    VideoCapturer.CapturerObserver capturerObserver =
-        new AndroidVideoTrackSourceObserver(nativeTrackSource);
+    VideoSource videoSource = new VideoSource(nativeTrackSource);
 
-    capturer.initialize(
-        surfaceTextureHelper, ContextUtils.getApplicationContext(), capturerObserver);
+    capturer.initialize(surfaceTextureHelper, ContextUtils.getApplicationContext(),
+        videoSource.getCapturerObserver());
 
     capturer.startCapture(720, 480, 30);
     return capturer;

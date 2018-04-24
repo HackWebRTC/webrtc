@@ -269,7 +269,6 @@ generate_jni("generated_video_jni") {
     "api/org/webrtc/EncodedImage.java",
     "api/org/webrtc/MediaCodecVideoDecoder.java",
     "api/org/webrtc/MediaCodecVideoEncoder.java",
-    "api/org/webrtc/SurfaceTextureHelper.java",
     "api/org/webrtc/VideoCodecInfo.java",
     "api/org/webrtc/VideoCodecStatus.java",
     "api/org/webrtc/VideoDecoder.java",
@@ -285,7 +284,6 @@ generate_jni("generated_video_jni") {
     "api/org/webrtc/VideoSource.java",
     "api/org/webrtc/VideoTrack.java",
     "api/org/webrtc/YuvHelper.java",
-    "src/java/org/webrtc/AndroidVideoTrackSourceObserver.java",
     "src/java/org/webrtc/EglBase14.java",
     "src/java/org/webrtc/NV12Buffer.java",
     "src/java/org/webrtc/NV21Buffer.java",
@@ -315,8 +313,6 @@ rtc_static_library("video_jni") {
     "src/jni/nv12buffer.cc",
     "src/jni/nv21buffer.cc",
     "src/jni/pc/video.cc",
-    "src/jni/surfacetexturehelper.cc",
-    "src/jni/surfacetexturehelper.h",
     "src/jni/video_renderer.cc",
     "src/jni/videocodecinfo.cc",
     "src/jni/videocodecinfo.h",
@@ -838,7 +834,7 @@ rtc_android_library("video_java") {
     "api/org/webrtc/VideoDecoderFallback.java",
     "api/org/webrtc/VideoEncoderFallback.java",
     "api/org/webrtc/VideoFrameDrawer.java",
-    "src/java/org/webrtc/AndroidVideoTrackSourceObserver.java",
+    "src/java/org/webrtc/NV21Buffer.java",
     "src/java/org/webrtc/VideoDecoderWrapper.java",
     "src/java/org/webrtc/VideoEncoderWrapper.java",
     "src/java/org/webrtc/WrappedNativeI420Buffer.java",
@@ -866,7 +862,6 @@ rtc_android_library("camera_java") {
     "src/java/org/webrtc/Camera2Session.java",
     "src/java/org/webrtc/CameraCapturer.java",
     "src/java/org/webrtc/CameraSession.java",
-    "src/java/org/webrtc/NV21Buffer.java",
   ]
 
   deps = [

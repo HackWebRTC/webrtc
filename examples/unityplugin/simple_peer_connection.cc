@@ -447,8 +447,7 @@ void SimplePeerConnection::AddStreams(bool audio_only) {
 
     rtc::scoped_refptr<webrtc::jni::AndroidVideoTrackSource> source(
         new rtc::RefCountedObject<webrtc::jni::AndroidVideoTrackSource>(
-            g_signaling_thread.get(), env,
-            webrtc::JavaParamRef<jobject>(texture_helper), false));
+            g_signaling_thread.get(), env, false));
     rtc::scoped_refptr<webrtc::VideoTrackSourceProxy> proxy_source =
         webrtc::VideoTrackSourceProxy::Create(g_signaling_thread.get(),
                                               g_worker_thread.get(), source);

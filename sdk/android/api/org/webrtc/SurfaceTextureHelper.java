@@ -51,7 +51,6 @@ public class SurfaceTextureHelper {
    * thread and handler is created for handling the SurfaceTexture. May return null if EGL fails to
    * initialize a pixel buffer surface and make it current.
    */
-  @CalledByNative
   public static SurfaceTextureHelper create(
       final String threadName, final EglBase.Context sharedContext) {
     final HandlerThread thread = new HandlerThread(threadName);
@@ -195,7 +194,6 @@ public class SurfaceTextureHelper {
    * onTextureFrameAvailable(). Only one texture frame can be in flight at once, so you must call
    * this function in order to receive a new frame.
    */
-  @CalledByNative
   public void returnTextureFrame() {
     handler.post(new Runnable() {
       @Override
@@ -219,7 +217,6 @@ public class SurfaceTextureHelper {
    * stopped when the texture frame has been returned by a call to returnTextureFrame(). You are
    * guaranteed to not receive any more onTextureFrameAvailable() after this function returns.
    */
-  @CalledByNative
   public void dispose() {
     Logging.d(TAG, "dispose()");
     ThreadUtils.invokeAtFrontUninterruptibly(handler, new Runnable() {
@@ -231,20 +228,6 @@ public class SurfaceTextureHelper {
         }
       }
     });
-  }
-
-  /** Deprecated, use textureToYuv. */
-  @Deprecated
-  @SuppressWarnings("deprecation") // yuvConverter.convert is deprecated
-  @CalledByNative
-  void textureToYUV(final ByteBuffer buf, final int width, final int height, final int stride,
-      final int textureId, final float[] transformMatrix) {
-    if (textureId != oesTextureId) {
-      throw new IllegalStateException("textureToByteBuffer called with unexpected textureId");
-    }
-
-    ThreadUtils.invokeAtFrontUninterruptibly(handler,
-        () -> yuvConverter.convert(buf, width, height, stride, textureId, transformMatrix));
   }
 
   /**

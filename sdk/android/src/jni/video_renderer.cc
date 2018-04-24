@@ -34,19 +34,7 @@ class JavaVideoRendererWrapper : public rtc::VideoSinkInterface<VideoFrame> {
     ScopedJavaLocalRef<jobject> j_frame;
     if (video_frame.video_frame_buffer()->type() ==
         VideoFrameBuffer::Type::kNative) {
-      AndroidVideoFrameBuffer* android_buffer =
-          static_cast<AndroidVideoFrameBuffer*>(
-              video_frame.video_frame_buffer().get());
-      switch (android_buffer->android_type()) {
-        case AndroidVideoFrameBuffer::AndroidType::kTextureBuffer:
-          j_frame = ToJavaTextureFrame(env, video_frame);
-          break;
-        case AndroidVideoFrameBuffer::AndroidType::kJavaBuffer:
-          j_frame = FromWrappedJavaBuffer(env, video_frame);
-          break;
-        default:
-          RTC_NOTREACHED();
-      }
+      j_frame = FromWrappedJavaBuffer(env, video_frame);
     } else {
       j_frame = ToJavaI420Frame(env, video_frame);
     }
@@ -92,18 +80,6 @@ class JavaVideoRendererWrapper : public rtc::VideoSinkInterface<VideoFrame> {
         env, frame.width(), frame.height(), static_cast<int>(frame.rotation()),
         i420_buffer->StrideY(), y_buffer, i420_buffer->StrideU(), u_buffer,
         i420_buffer->StrideV(), v_buffer, javaShallowCopy(frame));
-  }
-
-  // Return a VideoRenderer.I420Frame referring texture object in |frame|.
-  ScopedJavaLocalRef<jobject> ToJavaTextureFrame(JNIEnv* env,
-                                                 const VideoFrame& frame) {
-    NativeHandleImpl handle =
-        static_cast<AndroidTextureBuffer*>(frame.video_frame_buffer().get())
-            ->native_handle_impl();
-    return Java_I420Frame_createTextureFrame(
-        env, frame.width(), frame.height(), static_cast<int>(frame.rotation()),
-        handle.oes_texture_id, handle.sampling_matrix.ToJava(env),
-        javaShallowCopy(frame));
   }
 
   ScopedJavaGlobalRef<jobject> j_callbacks_;

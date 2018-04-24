@@ -22,7 +22,6 @@
 #include "rtc_base/timeutils.h"
 #include "sdk/android/generated_video_jni/jni/VideoFrame_jni.h"
 #include "sdk/android/src/jni/jni_helpers.h"
-#include "sdk/android/src/jni/surfacetexturehelper.h"
 #include "sdk/android/src/jni/wrapped_native_i420_buffer.h"
 #include "third_party/libyuv/include/libyuv/scale.h"
 
@@ -218,77 +217,6 @@ NativeHandleImpl::NativeHandleImpl(
     : oes_texture_id(j_oes_texture_id),
       sampling_matrix(jni, j_transform_matrix) {}
 
-AndroidTextureBuffer::AndroidTextureBuffer(
-    int width,
-    int height,
-    const NativeHandleImpl& native_handle,
-    const rtc::scoped_refptr<SurfaceTextureHelper>& surface_texture_helper)
-    : width_(width),
-      height_(height),
-      native_handle_(native_handle),
-      surface_texture_helper_(surface_texture_helper) {}
-
-AndroidTextureBuffer::~AndroidTextureBuffer() {
-  surface_texture_helper_->ReturnTextureFrame();
-}
-
-VideoFrameBuffer::Type AndroidTextureBuffer::type() const {
-  return Type::kNative;
-}
-
-NativeHandleImpl AndroidTextureBuffer::native_handle_impl() const {
-  return native_handle_;
-}
-
-int AndroidTextureBuffer::width() const {
-  return width_;
-}
-
-int AndroidTextureBuffer::height() const {
-  return height_;
-}
-
-rtc::scoped_refptr<I420BufferInterface> AndroidTextureBuffer::ToI420() {
-  int uv_width = (width() + 7) / 8;
-  int stride = 8 * uv_width;
-  int uv_height = (height() + 1) / 2;
-  size_t size = stride * (height() + uv_height);
-  // The data is owned by the frame, and the normal case is that the
-  // data is deleted by the frame's destructor callback.
-  //
-  // TODO(nisse): Use an I420BufferPool. We then need to extend that
-  // class, and I420Buffer, to support our memory layout.
-  // TODO(nisse): Depending on
-  // system_wrappers/include/aligned_malloc.h violate current DEPS
-  // rules. We get away for now only because it is indirectly included
-  // by i420_buffer.h
-  std::unique_ptr<uint8_t, AlignedFreeDeleter> yuv_data(
-      static_cast<uint8_t*>(AlignedMalloc(size, kBufferAlignment)));
-  // See YuvConverter.java for the required layout.
-  uint8_t* y_data = yuv_data.get();
-  uint8_t* u_data = y_data + height() * stride;
-  uint8_t* v_data = u_data + stride / 2;
-
-  rtc::scoped_refptr<I420BufferInterface> copy = webrtc::WrapI420Buffer(
-      width(), height(), y_data, stride, u_data, stride, v_data, stride,
-      rtc::Bind(&AlignedFree, yuv_data.release()));
-
-  JNIEnv* jni = AttachCurrentThreadIfNeeded();
-
-  // TODO(sakal): This call to a deperecated method will be removed when
-  // AndroidTextureBuffer is removed.
-  ScopedJavaLocalRef<jobject> byte_buffer =
-      NewDirectByteBuffer(jni, y_data, size);
-  SurfaceTextureHelperTextureToYUV(
-      jni, surface_texture_helper_->GetJavaSurfaceTextureHelper(), byte_buffer,
-      width(), height(), stride, native_handle_);
-  return copy;
-}
-
-AndroidVideoFrameBuffer::AndroidType AndroidTextureBuffer::android_type() {
-  return AndroidType::kTextureBuffer;
-}
-
 rtc::scoped_refptr<AndroidVideoBuffer> AndroidVideoBuffer::Adopt(
     JNIEnv* jni,
     const JavaRef<jobject>& j_video_frame_buffer) {
@@ -355,10 +283,6 @@ rtc::scoped_refptr<I420BufferInterface> AndroidVideoBuffer::ToI420() {
   return AndroidVideoI420Buffer::Adopt(jni, width_, height_, j_i420_buffer);
 }
 
-AndroidVideoFrameBuffer::AndroidType AndroidVideoBuffer::android_type() {
-  return AndroidType::kJavaBuffer;
-}
-
 VideoFrame JavaToNativeFrame(JNIEnv* jni,
                              const JavaRef<jobject>& j_video_frame,
                              uint32_t timestamp_rtp) {
@@ -373,31 +297,15 @@ VideoFrame JavaToNativeFrame(JNIEnv* jni,
                     static_cast<VideoRotation>(rotation));
 }
 
-static bool IsJavaVideoBuffer(rtc::scoped_refptr<VideoFrameBuffer> buffer) {
-  if (buffer->type() != VideoFrameBuffer::Type::kNative) {
-    return false;
-  }
-  AndroidVideoFrameBuffer* android_buffer =
-      static_cast<AndroidVideoFrameBuffer*>(buffer.get());
-  return android_buffer->android_type() ==
-         AndroidVideoFrameBuffer::AndroidType::kJavaBuffer;
-}
-
 ScopedJavaLocalRef<jobject> NativeToJavaVideoFrame(JNIEnv* jni,
                                                    const VideoFrame& frame) {
   rtc::scoped_refptr<VideoFrameBuffer> buffer = frame.video_frame_buffer();
 
-  if (IsJavaVideoBuffer(buffer)) {
-    RTC_DCHECK(buffer->type() == VideoFrameBuffer::Type::kNative);
-    AndroidVideoFrameBuffer* android_buffer =
-        static_cast<AndroidVideoFrameBuffer*>(buffer.get());
-    RTC_DCHECK(android_buffer->android_type() ==
-               AndroidVideoFrameBuffer::AndroidType::kJavaBuffer);
-    AndroidVideoBuffer* android_video_buffer =
-        static_cast<AndroidVideoBuffer*>(android_buffer);
-
+  if (buffer->type() == VideoFrameBuffer::Type::kNative) {
+    AndroidVideoBuffer* android_buffer =
+        static_cast<AndroidVideoBuffer*>(buffer.get());
     ScopedJavaLocalRef<jobject> j_video_frame_buffer(
-        jni, android_video_buffer->video_frame_buffer());
+        jni, android_buffer->video_frame_buffer());
     Java_Buffer_retain(jni, j_video_frame_buffer);
     return Java_VideoFrame_Constructor(
         jni, j_video_frame_buffer, static_cast<jint>(frame.rotation()),

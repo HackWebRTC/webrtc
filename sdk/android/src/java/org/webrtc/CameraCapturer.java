@@ -184,7 +184,7 @@ abstract class CameraCapturer implements CameraVideoCapturer {
       checkIsOnCameraThread();
       synchronized (stateLock) {
         if (session != currentSession) {
-          Logging.w(TAG, "onTextureFrameCaptured from another session.");
+          Logging.w(TAG, "onFrameCaptured from another session.");
           return;
         }
         if (!firstFrameObserved) {

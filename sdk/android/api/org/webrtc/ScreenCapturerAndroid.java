@@ -27,7 +27,7 @@ import javax.annotation.Nullable;
  * {@code SurfaceTexture} using a {@code SurfaceTextureHelper}.
  * The {@code SurfaceTextureHelper} is created by the native code and passed to this capturer in
  * {@code VideoCapturer.initialize()}. On receiving a new frame, this capturer passes it
- * as a texture to the native code via {@code CapturerObserver.onTextureFrameCaptured()}. This takes
+ * as a texture to the native code via {@code CapturerObserver.onFrameCaptured()}. This takes
  * place on the HandlerThread of the given {@code SurfaceTextureHelper}. When done with each frame,
  * the native code returns the buffer to the  {@code SurfaceTextureHelper} to be used for new
  * frames. At any time, at most one frame is being processed.

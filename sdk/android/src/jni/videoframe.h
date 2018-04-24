@@ -18,15 +18,12 @@
 #include "api/video/video_rotation.h"
 #include "rtc_base/callback.h"
 #include "sdk/android/src/jni/jni_helpers.h"
-#include "sdk/android/src/jni/surfacetexturehelper.h"
 
 namespace webrtc {
 namespace jni {
 
 // TODO(sakal): Remove once clients have migrated.
 using ::webrtc::JavaParamRef;
-
-class SurfaceTextureHelper;
 
 // Open gl texture matrix, in column-major order. Operations are
 // in-place.
@@ -66,44 +63,7 @@ struct NativeHandleImpl {
   Matrix sampling_matrix;
 };
 
-// Base class to differentiate between the old texture frames and the new
-// Java-based frames.
-// TODO(sakal): Remove this and AndroidTextureBuffer once they are no longer
-// needed.
-class AndroidVideoFrameBuffer : public VideoFrameBuffer {
- public:
-  enum class AndroidType { kTextureBuffer, kJavaBuffer };
-
-  virtual AndroidType android_type() = 0;
-};
-
-class AndroidTextureBuffer : public AndroidVideoFrameBuffer {
- public:
-  AndroidTextureBuffer(
-      int width,
-      int height,
-      const NativeHandleImpl& native_handle,
-      const rtc::scoped_refptr<SurfaceTextureHelper>& surface_texture_helper);
-  ~AndroidTextureBuffer() override;
-
-  NativeHandleImpl native_handle_impl() const;
-
- private:
-  Type type() const override;
-  int width() const override;
-  int height() const override;
-
-  rtc::scoped_refptr<I420BufferInterface> ToI420() override;
-
-  AndroidType android_type() override;
-
-  const int width_;
-  const int height_;
-  NativeHandleImpl native_handle_;
-  rtc::scoped_refptr<SurfaceTextureHelper> surface_texture_helper_;
-};
-
-class AndroidVideoBuffer : public AndroidVideoFrameBuffer {
+class AndroidVideoBuffer : public VideoFrameBuffer {
  public:
   // Creates a native VideoFrameBuffer from a Java VideoFrame.Buffer.
   static rtc::scoped_refptr<AndroidVideoBuffer> Create(
@@ -142,8 +102,6 @@ class AndroidVideoBuffer : public AndroidVideoFrameBuffer {
   int height() const override;
 
   rtc::scoped_refptr<I420BufferInterface> ToI420() override;
-
-  AndroidType android_type() override;
 
   const int width_;
   const int height_;

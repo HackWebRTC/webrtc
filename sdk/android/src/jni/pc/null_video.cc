@@ -35,7 +35,6 @@ void SetEglContext(JNIEnv* env,
 void* CreateVideoSource(JNIEnv* env,
                         rtc::Thread* signaling_thread,
                         rtc::Thread* worker_thread,
-                        const JavaParamRef<jobject>& j_surface_texture_helper,
                         jboolean is_screencast) {
   return nullptr;
 }
@@ -46,14 +45,6 @@ void SetEglContext(JNIEnv* env,
 void SetEglContext(JNIEnv* env,
                    cricket::WebRtcVideoDecoderFactory* decoder_factory,
                    jobject egl_context) {}
-
-void* CreateVideoSource(JNIEnv* env,
-                        rtc::Thread* signaling_thread,
-                        rtc::Thread* worker_thread,
-                        jobject j_surface_texture_helper,
-                        jboolean is_screencast) {
-  return nullptr;
-}
 
 cricket::WebRtcVideoEncoderFactory* CreateLegacyVideoEncoderFactory() {
   return nullptr;

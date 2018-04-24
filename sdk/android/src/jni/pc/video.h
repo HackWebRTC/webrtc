@@ -30,8 +30,6 @@ class VideoDecoderFactory;
 namespace webrtc {
 namespace jni {
 
-class SurfaceTextureHelper;
-
 VideoEncoderFactory* CreateVideoEncoderFactory(
     JNIEnv* jni,
     const JavaRef<jobject>& j_encoder_factory);
@@ -50,7 +48,6 @@ void SetEglContext(JNIEnv* env,
 void* CreateVideoSource(JNIEnv* env,
                         rtc::Thread* signaling_thread,
                         rtc::Thread* worker_thread,
-                        const JavaParamRef<jobject>& j_surface_texture_helper,
                         jboolean is_screencast);
 
 cricket::WebRtcVideoEncoderFactory* CreateLegacyVideoEncoderFactory();

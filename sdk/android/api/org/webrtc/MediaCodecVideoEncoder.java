@@ -612,25 +612,6 @@ public class MediaCodecVideoEncoder {
     }
   }
 
-  @CalledByNativeUnchecked
-  boolean encodeTexture(boolean isKeyframe, int oesTextureId, float[] transformationMatrix,
-      long presentationTimestampUs) {
-    checkOnMediaCodecThread();
-    try {
-      checkKeyFrameRequired(isKeyframe, presentationTimestampUs);
-      eglBase.makeCurrent();
-      // TODO(perkj): glClear() shouldn't be necessary since every pixel is covered anyway,
-      // but it's a workaround for bug webrtc:5147.
-      GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-      drawer.drawOes(oesTextureId, transformationMatrix, width, height, 0, 0, width, height);
-      eglBase.swapBuffers(TimeUnit.MICROSECONDS.toNanos(presentationTimestampUs));
-      return true;
-    } catch (RuntimeException e) {
-      Logging.e(TAG, "encodeTexture failed", e);
-      return false;
-    }
-  }
-
   /**
    * Encodes a new style VideoFrame. |bufferIndex| is -1 if we are not encoding in surface mode.
    */

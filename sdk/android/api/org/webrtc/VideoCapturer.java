@@ -46,8 +46,8 @@ public interface VideoCapturer {
    * capture observer. It will be called only once and before any startCapture() request. The
    * camera thread is guaranteed to be valid until dispose() is called. If the VideoCapturer wants
    * to deliver texture frames, it should do this by rendering on the SurfaceTexture in
-   * |surfaceTextureHelper|, register itself as a listener, and forward the texture frames to
-   * CapturerObserver.onTextureFrameCaptured().
+   * |surfaceTextureHelper|, register itself as a listener, and forward the frames to
+   * CapturerObserver.onFrameCaptured().
    */
   void initialize(SurfaceTextureHelper surfaceTextureHelper, Context applicationContext,
       CapturerObserver capturerObserver);
