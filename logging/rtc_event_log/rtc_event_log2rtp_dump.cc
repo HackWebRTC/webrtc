@@ -16,7 +16,7 @@
 #include <string>
 
 #include "logging/rtc_event_log/rtc_event_log.h"
-#include "logging/rtc_event_log/rtc_event_log_parser.h"
+#include "logging/rtc_event_log/rtc_event_log_parser2.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "modules/rtp_rtcp/source/rtp_utility.h"
 #include "rtc_base/checks.h"

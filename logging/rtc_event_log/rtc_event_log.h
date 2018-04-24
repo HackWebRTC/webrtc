@@ -21,6 +21,7 @@
 
 namespace webrtc {
 
+// TODO(terelius): Move this to the parser.
 enum PacketDirection { kIncomingPacket = 0, kOutgoingPacket };
 
 class RtcEventLog {

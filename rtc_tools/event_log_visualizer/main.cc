@@ -10,7 +10,7 @@
 
 #include <iostream>
 
-#include "logging/rtc_event_log/rtc_event_log_parser.h"
+#include "logging/rtc_event_log/rtc_event_log_parser2.h"
 #include "rtc_base/flags.h"
 #include "rtc_tools/event_log_visualizer/analyzer.h"
 #include "rtc_tools/event_log_visualizer/plot_base.h"
@@ -143,10 +143,15 @@ DEFINE_bool(show_alr_state,
             false,
             "Show the state ALR state on the total bitrate graph");
 
-DEFINE_bool(
-    print_triage_notifications,
-    false,
-    "Print triage notifications, i.e. a list of suspicious looking events.");
+DEFINE_bool(parse_unconfigured_header_extensions,
+            true,
+            "Attempt to parse unconfigured header extensions using the default "
+            "WebRTC mapping. This can give very misleading results if the "
+            "application negotiates a different mapping.");
+
+DEFINE_bool(print_triage_alerts,
+            false,
+            "Print triage alerts, i.e. a list of potential problems.");
 
 void SetAllPlotFlags(bool setting);
 
@@ -209,7 +214,13 @@ int main(int argc, char* argv[]) {
 
   std::string filename = argv[1];
 
-  webrtc::ParsedRtcEventLog parsed_log;
+  webrtc::ParsedRtcEventLog::UnconfiguredHeaderExtensions header_extensions =
+      webrtc::ParsedRtcEventLog::UnconfiguredHeaderExtensions::kDontParse;
+  if (FLAG_parse_unconfigured_header_extensions) {
+    header_extensions = webrtc::ParsedRtcEventLog::
+        UnconfiguredHeaderExtensions::kAttemptWebrtcDefaultConfig;
+  }
+  webrtc::ParsedRtcEventLog parsed_log(header_extensions);
 
   if (!parsed_log.ParseFile(filename)) {
     std::cerr << "Could not parse the entire log file." << std::endl;
@@ -218,31 +229,34 @@ int main(int argc, char* argv[]) {
               << std::endl;
   }
 
-  webrtc::plotting::EventLogAnalyzer analyzer(parsed_log);
-  std::unique_ptr<webrtc::plotting::PlotCollection> collection(
-      new webrtc::plotting::PythonPlotCollection());
+  webrtc::EventLogAnalyzer analyzer(parsed_log);
+  std::unique_ptr<webrtc::PlotCollection> collection(
+      new webrtc::PythonPlotCollection());
 
   if (FLAG_plot_incoming_packet_sizes) {
-    analyzer.CreatePacketGraph(webrtc::PacketDirection::kIncomingPacket,
+    analyzer.CreatePacketGraph(webrtc::kIncomingPacket,
                                collection->AppendNewPlot());
   }
   if (FLAG_plot_outgoing_packet_sizes) {
-    analyzer.CreatePacketGraph(webrtc::PacketDirection::kOutgoingPacket,
+    analyzer.CreatePacketGraph(webrtc::kOutgoingPacket,
                                collection->AppendNewPlot());
   }
   if (FLAG_plot_incoming_packet_count) {
-    analyzer.CreateAccumulatedPacketsGraph(
-        webrtc::PacketDirection::kIncomingPacket, collection->AppendNewPlot());
+    analyzer.CreateAccumulatedPacketsGraph(webrtc::kIncomingPacket,
+                                           collection->AppendNewPlot());
   }
   if (FLAG_plot_outgoing_packet_count) {
-    analyzer.CreateAccumulatedPacketsGraph(
-        webrtc::PacketDirection::kOutgoingPacket, collection->AppendNewPlot());
+    analyzer.CreateAccumulatedPacketsGraph(webrtc::kOutgoingPacket,
+                                           collection->AppendNewPlot());
   }
   if (FLAG_plot_audio_playout) {
     analyzer.CreatePlayoutGraph(collection->AppendNewPlot());
   }
   if (FLAG_plot_audio_level) {
-    analyzer.CreateAudioLevelGraph(collection->AppendNewPlot());
+    analyzer.CreateAudioLevelGraph(webrtc::kIncomingPacket,
+                                   collection->AppendNewPlot());
+    analyzer.CreateAudioLevelGraph(webrtc::kOutgoingPacket,
+                                   collection->AppendNewPlot());
   }
   if (FLAG_plot_incoming_sequence_number_delta) {
     analyzer.CreateSequenceNumberGraph(collection->AppendNewPlot());
@@ -257,23 +271,19 @@ int main(int argc, char* argv[]) {
     analyzer.CreateIncomingPacketLossGraph(collection->AppendNewPlot());
   }
   if (FLAG_plot_incoming_bitrate) {
-    analyzer.CreateTotalBitrateGraph(webrtc::PacketDirection::kIncomingPacket,
-                                     collection->AppendNewPlot(),
-                                     FLAG_show_detector_state,
-                                     FLAG_show_alr_state);
+    analyzer.CreateTotalIncomingBitrateGraph(collection->AppendNewPlot());
   }
   if (FLAG_plot_outgoing_bitrate) {
-    analyzer.CreateTotalBitrateGraph(webrtc::PacketDirection::kOutgoingPacket,
-                                     collection->AppendNewPlot(),
-                                     FLAG_show_detector_state,
-                                     FLAG_show_alr_state);
+    analyzer.CreateTotalOutgoingBitrateGraph(collection->AppendNewPlot(),
+                                             FLAG_show_detector_state,
+                                             FLAG_show_alr_state);
   }
   if (FLAG_plot_incoming_stream_bitrate) {
-    analyzer.CreateStreamBitrateGraph(webrtc::PacketDirection::kIncomingPacket,
+    analyzer.CreateStreamBitrateGraph(webrtc::kIncomingPacket,
                                       collection->AppendNewPlot());
   }
   if (FLAG_plot_outgoing_stream_bitrate) {
-    analyzer.CreateStreamBitrateGraph(webrtc::PacketDirection::kOutgoingPacket,
+    analyzer.CreateStreamBitrateGraph(webrtc::kOutgoingPacket,
                                       collection->AppendNewPlot());
   }
   if (FLAG_plot_simulated_receiveside_bwe) {
@@ -289,7 +299,10 @@ int main(int argc, char* argv[]) {
     analyzer.CreateFractionLossGraph(collection->AppendNewPlot());
   }
   if (FLAG_plot_timestamps) {
-    analyzer.CreateTimestampGraph(collection->AppendNewPlot());
+    analyzer.CreateTimestampGraph(webrtc::kIncomingPacket,
+                                  collection->AppendNewPlot());
+    analyzer.CreateTimestampGraph(webrtc::kOutgoingPacket,
+                                  collection->AppendNewPlot());
   }
   if (FLAG_plot_pacer_delay) {
     analyzer.CreatePacerDelayGraph(collection->AppendNewPlot());
@@ -333,7 +346,7 @@ int main(int argc, char* argv[]) {
 
   collection->Draw();
 
-  if (FLAG_print_triage_notifications) {
+  if (FLAG_print_triage_alerts) {
     analyzer.CreateTriageNotifications();
     analyzer.PrintNotifications(stderr);
   }

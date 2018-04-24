@@ -13,7 +13,6 @@
 #include <memory>
 
 namespace webrtc {
-namespace plotting {
 
 ProtobufPlot::ProtobufPlot() {}
 
@@ -83,5 +82,4 @@ Plot* ProtobufPlotCollection::AppendNewPlot() {
   return plot;
 }
 
-}  // namespace plotting
 }  // namespace webrtc

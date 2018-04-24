@@ -460,9 +460,8 @@ void RtcEventLogTestHelper::VerifyPlayoutEvent(
   EXPECT_EQ(ssrc, playout_event.local_ssrc());
 
   // Check consistency of the parser.
-  uint32_t parsed_ssrc;
-  parsed_log.GetAudioPlayout(index, &parsed_ssrc);
-  EXPECT_EQ(ssrc, parsed_ssrc);
+  LoggedAudioPlayoutEvent parsed_event = parsed_log.GetAudioPlayout(index);
+  EXPECT_EQ(ssrc, parsed_event.ssrc);
 }
 
 void RtcEventLogTestHelper::VerifyBweLossEvent(
@@ -484,14 +483,10 @@ void RtcEventLogTestHelper::VerifyBweLossEvent(
   EXPECT_EQ(total_packets, bwe_event.total_packets());
 
   // Check consistency of the parser.
-  int32_t parsed_bitrate;
-  uint8_t parsed_fraction_loss;
-  int32_t parsed_total_packets;
-  parsed_log.GetLossBasedBweUpdate(
-      index, &parsed_bitrate, &parsed_fraction_loss, &parsed_total_packets);
-  EXPECT_EQ(bitrate, parsed_bitrate);
-  EXPECT_EQ(fraction_loss, parsed_fraction_loss);
-  EXPECT_EQ(total_packets, parsed_total_packets);
+  LoggedBweLossBasedUpdate bwe_update = parsed_log.GetLossBasedBweUpdate(index);
+  EXPECT_EQ(bitrate, bwe_update.bitrate_bps);
+  EXPECT_EQ(fraction_loss, bwe_update.fraction_lost);
+  EXPECT_EQ(total_packets, bwe_update.expected_packets);
 }
 
 void RtcEventLogTestHelper::VerifyBweDelayEvent(
@@ -511,8 +506,7 @@ void RtcEventLogTestHelper::VerifyBweDelayEvent(
             GetRuntimeDetectorState(bwe_event.detector_state()));
 
   // Check consistency of the parser.
-  ParsedRtcEventLog::BweDelayBasedUpdate res =
-      parsed_log.GetDelayBasedBweUpdate(index);
+  LoggedBweDelayBasedUpdate res = parsed_log.GetDelayBasedBweUpdate(index);
   EXPECT_EQ(res.bitrate_bps, bitrate);
   EXPECT_EQ(res.detector_state, detector_state);
 }
@@ -521,15 +515,20 @@ void RtcEventLogTestHelper::VerifyAudioNetworkAdaptation(
     const ParsedRtcEventLog& parsed_log,
     size_t index,
     const AudioEncoderRuntimeConfig& config) {
-  AudioEncoderRuntimeConfig parsed_config;
-  parsed_log.GetAudioNetworkAdaptation(index, &parsed_config);
-  EXPECT_EQ(config.bitrate_bps, parsed_config.bitrate_bps);
-  EXPECT_EQ(config.enable_dtx, parsed_config.enable_dtx);
-  EXPECT_EQ(config.enable_fec, parsed_config.enable_fec);
-  EXPECT_EQ(config.frame_length_ms, parsed_config.frame_length_ms);
-  EXPECT_EQ(config.num_channels, parsed_config.num_channels);
+  ASSERT_LT(index, parsed_log.events_.size());
+  const rtclog::Event& event = parsed_log.events_[index];
+  ASSERT_TRUE(IsValidBasicEvent(event));
+  ASSERT_EQ(rtclog::Event::AUDIO_NETWORK_ADAPTATION_EVENT, event.type());
+
+  LoggedAudioNetworkAdaptationEvent parsed_event =
+      parsed_log.GetAudioNetworkAdaptation(index);
+  EXPECT_EQ(config.bitrate_bps, parsed_event.config.bitrate_bps);
+  EXPECT_EQ(config.enable_dtx, parsed_event.config.enable_dtx);
+  EXPECT_EQ(config.enable_fec, parsed_event.config.enable_fec);
+  EXPECT_EQ(config.frame_length_ms, parsed_event.config.frame_length_ms);
+  EXPECT_EQ(config.num_channels, parsed_event.config.num_channels);
   EXPECT_EQ(config.uplink_packet_loss_fraction,
-            parsed_config.uplink_packet_loss_fraction);
+            parsed_event.config.uplink_packet_loss_fraction);
 }
 
 void RtcEventLogTestHelper::VerifyLogStartEvent(
