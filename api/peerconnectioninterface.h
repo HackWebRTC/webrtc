@@ -919,13 +919,6 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   virtual void SetRemoteDescription(
       std::unique_ptr<SessionDescriptionInterface> desc,
       rtc::scoped_refptr<SetRemoteDescriptionObserverInterface> observer) {}
-  // Deprecated; Replaced by SetConfiguration.
-  // TODO(deadbeef): Remove once Chrome is moved over to SetConfiguration.
-  virtual bool UpdateIce(const IceServers& configuration,
-                         const MediaConstraintsInterface* constraints) {
-    return false;
-  }
-  virtual bool UpdateIce(const IceServers& configuration) { return false; }
 
   // TODO(deadbeef): Make this pure virtual once all Chrome subclasses of
   // PeerConnectionInterface implement it.

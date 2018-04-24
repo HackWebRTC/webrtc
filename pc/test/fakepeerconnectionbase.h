@@ -173,13 +173,6 @@ class FakePeerConnectionBase : public PeerConnectionInternal {
       rtc::scoped_refptr<SetRemoteDescriptionObserverInterface> observer)
       override {}
 
-  bool UpdateIce(const IceServers& configuration,
-                 const MediaConstraintsInterface* constraints) override {
-    return false;
-  }
-
-  bool UpdateIce(const IceServers& configuration) override { return false; }
-
   RTCConfiguration GetConfiguration() override { return RTCConfiguration(); }
 
   bool SetConfiguration(const PeerConnectionInterface::RTCConfiguration& config,
