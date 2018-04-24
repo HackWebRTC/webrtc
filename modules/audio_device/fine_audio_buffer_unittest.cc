@@ -26,6 +26,7 @@ using ::testing::Return;
 namespace webrtc {
 
 const int kSampleRate = 44100;
+const int kChannels = 2;
 const int kSamplesPer10Ms = kSampleRate * 10 / 1000;
 
 // The fake audio data is 0,1,..SCHAR_MAX-1,0,1,... This is to make it easy
@@ -57,7 +58,8 @@ ACTION_P2(UpdateBuffer, iteration, samples_per_10_ms) {
   for (int i = 0; i < samples_per_10_ms; ++i) {
     buffer[i] = (i + start_value) % SCHAR_MAX;
   }
-  return samples_per_10_ms;
+  // Should return samples per channel.
+  return samples_per_10_ms / kChannels;
 }
 
 // Writes a periodic ramp pattern to the supplied |buffer|. See UpdateBuffer()
@@ -90,13 +92,18 @@ void RunFineBufferTest(int frame_size_in_samples) {
       1 + ((kNumberOfFrames * frame_size_in_samples - 1) / kSamplesPer10Ms);
 
   MockAudioDeviceBuffer audio_device_buffer;
+  audio_device_buffer.SetPlayoutSampleRate(kSampleRate);
+  audio_device_buffer.SetPlayoutChannels(kChannels);
+  audio_device_buffer.SetRecordingSampleRate(kSampleRate);
+  audio_device_buffer.SetRecordingChannels(kChannels);
+
   EXPECT_CALL(audio_device_buffer, RequestPlayoutData(_))
       .WillRepeatedly(Return(kSamplesPer10Ms));
   {
     InSequence s;
     for (int i = 0; i < kNumberOfUpdateBufferCalls; ++i) {
       EXPECT_CALL(audio_device_buffer, GetPlayoutData(_))
-          .WillOnce(UpdateBuffer(i, kSamplesPer10Ms))
+          .WillOnce(UpdateBuffer(i, kChannels * kSamplesPer10Ms))
           .RetiresOnSaturation();
     }
   }
@@ -104,7 +111,7 @@ void RunFineBufferTest(int frame_size_in_samples) {
     InSequence s;
     for (int j = 0; j < kNumberOfUpdateBufferCalls - 1; ++j) {
       EXPECT_CALL(audio_device_buffer, SetRecordedBuffer(_, kSamplesPer10Ms))
-          .WillOnce(VerifyInputBuffer(j, kSamplesPer10Ms))
+          .WillOnce(VerifyInputBuffer(j, kChannels * kSamplesPer10Ms))
           .RetiresOnSaturation();
     }
   }
@@ -112,20 +119,26 @@ void RunFineBufferTest(int frame_size_in_samples) {
       .Times(kNumberOfUpdateBufferCalls - 1);
   EXPECT_CALL(audio_device_buffer, DeliverRecordedData())
       .Times(kNumberOfUpdateBufferCalls - 1)
-      .WillRepeatedly(Return(kSamplesPer10Ms));
+      .WillRepeatedly(Return(0));
 
-  FineAudioBuffer fine_buffer(&audio_device_buffer, kSampleRate,
-                              kFrameSizeSamples);
-  std::unique_ptr<int16_t[]> out_buffer(new int16_t[kFrameSizeSamples]);
-  std::unique_ptr<int16_t[]> in_buffer(new int16_t[kFrameSizeSamples]);
+  FineAudioBuffer fine_buffer(&audio_device_buffer);
+  std::unique_ptr<int16_t[]> out_buffer(
+      new int16_t[kChannels * kFrameSizeSamples]);
+  std::unique_ptr<int16_t[]> in_buffer(
+      new int16_t[kChannels * kFrameSizeSamples]);
 
   for (int i = 0; i < kNumberOfFrames; ++i) {
     fine_buffer.GetPlayoutData(
-        rtc::ArrayView<int16_t>(out_buffer.get(), kFrameSizeSamples), 0);
-    EXPECT_TRUE(VerifyBuffer(out_buffer.get(), i, kFrameSizeSamples));
-    UpdateInputBuffer(in_buffer.get(), i, kFrameSizeSamples);
+        rtc::ArrayView<int16_t>(out_buffer.get(),
+                                kChannels * kFrameSizeSamples),
+        0);
+    EXPECT_TRUE(
+        VerifyBuffer(out_buffer.get(), i, kChannels * kFrameSizeSamples));
+    UpdateInputBuffer(in_buffer.get(), i, kChannels * kFrameSizeSamples);
     fine_buffer.DeliverRecordedData(
-        rtc::ArrayView<const int16_t>(in_buffer.get(), kFrameSizeSamples), 0);
+        rtc::ArrayView<const int16_t>(in_buffer.get(),
+                                      kChannels * kFrameSizeSamples),
+        0);
   }
 }
 

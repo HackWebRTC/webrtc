@@ -699,12 +699,9 @@ void AudioDeviceIOS::SetupAudioBuffersForActiveAudioSession() {
 
   // Create a modified audio buffer class which allows us to ask for,
   // or deliver, any number of samples (and not only multiple of 10ms) to match
-  // the native audio unit buffer size. Use a reasonable capacity to avoid
-  // reallocations while audio is played to reduce risk of glitches.
+  // the native audio unit buffer size.
   RTC_DCHECK(audio_device_buffer_);
-  const size_t capacity_in_samples = 2 * playout_parameters_.frames_per_buffer();
-  fine_audio_buffer_.reset(new FineAudioBuffer(
-      audio_device_buffer_, playout_parameters_.sample_rate(), capacity_in_samples));
+  fine_audio_buffer_.reset(new FineAudioBuffer(audio_device_buffer_));
 }
 
 bool AudioDeviceIOS::CreateAudioUnit() {

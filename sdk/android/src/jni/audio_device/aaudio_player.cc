@@ -14,6 +14,7 @@
 #include "modules/audio_device/fine_audio_buffer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 
@@ -40,7 +41,9 @@ AAudioPlayer::~AAudioPlayer() {
 int AAudioPlayer::Init() {
   RTC_LOG(INFO) << "Init";
   RTC_DCHECK_RUN_ON(&main_thread_checker_);
-  RTC_DCHECK_EQ(aaudio_.audio_parameters().channels(), 1u);
+  if (aaudio_.audio_parameters().channels() == 2) {
+    RTC_DLOG(LS_WARNING) << "Stereo mode is enabled";
+  }
   return 0;
 }
 
@@ -120,12 +123,8 @@ void AAudioPlayer::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
   RTC_CHECK(audio_device_buffer_);
   // Create a modified audio buffer class which allows us to ask for any number
   // of samples (and not only multiple of 10ms) to match the optimal buffer
-  // size per callback used by AAudio. Use an initial capacity of 50ms to ensure
-  // that the buffer can cache old data and at the same time be prepared for
-  // increased burst size in AAudio if buffer underruns are detected.
-  const size_t capacity = 5 * audio_parameters.frames_per_10ms_buffer();
-  fine_audio_buffer_.reset(new FineAudioBuffer(
-      audio_device_buffer_, audio_parameters.sample_rate(), capacity));
+  // size per callback used by AAudio.
+  fine_audio_buffer_ = rtc::MakeUnique<FineAudioBuffer>(audio_device_buffer_);
 }
 
 bool AAudioPlayer::SpeakerVolumeIsAvailable() {
@@ -209,7 +208,8 @@ aaudio_data_callback_result_t AAudioPlayer::OnDataCallback(void* audio_data,
     memset(audio_data, 0, num_bytes);
   } else {
     fine_audio_buffer_->GetPlayoutData(
-        rtc::MakeArrayView(static_cast<int16_t*>(audio_data), num_frames),
+        rtc::MakeArrayView(static_cast<int16_t*>(audio_data),
+                           aaudio_.samples_per_frame() * num_frames),
         static_cast<int>(latency_millis_ + 0.5));
   }
 
