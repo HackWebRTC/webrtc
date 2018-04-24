@@ -68,8 +68,6 @@ constexpr int64_t kProbeRttTimeMs = 200;
 // within |kRoundTripsWithoutGrowthBeforeExitingStartup| rounds, the connection
 // will exit the STARTUP mode.
 const double kStartupGrowthTarget = 1.25;
-// Coefficient of target congestion window to use when basing PROBE_RTT on BDP.
-const double kModerateProbeRttMultiplier = 0.75;
 // Coefficient to determine if a new RTT is sufficiently similar to min_rtt that
 // we don't need to enter PROBE_RTT.
 const double kSimilarMinRttThreshold = 1.125;
@@ -465,7 +463,7 @@ DataSize BbrNetworkController::GetTargetCongestionWindow(double gain) const {
 
 DataSize BbrNetworkController::ProbeRttCongestionWindow() const {
   if (config_.probe_rtt_based_on_bdp) {
-    return GetTargetCongestionWindow(kModerateProbeRttMultiplier);
+    return GetTargetCongestionWindow(config_.probe_rtt_congestion_window_gain);
   }
   return kMinimumCongestionWindow;
 }
