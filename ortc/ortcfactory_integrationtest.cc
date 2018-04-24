@@ -477,14 +477,37 @@ TEST_F(OrtcFactoryIntegrationTest, SetTrackWhileSending) {
       kDefaultTimeout);
 }
 
+// TODO(webrtc:7915, webrtc:9184): Tests below are disabled for iOS 64 on debug
+// builds because of flakiness.
+#if !(defined(WEBRTC_IOS) && defined(WEBRTC_ARCH_64_BITS) && !defined(NDEBUG))
+#define MAYBE_BasicTwoWayAudioVideoRtpSendersAndReceivers \
+  BasicTwoWayAudioVideoRtpSendersAndReceivers
+#define MAYBE_BasicTwoWayAudioVideoSrtpSendersAndReceivers \
+  BasicTwoWayAudioVideoSrtpSendersAndReceivers
+#define MAYBE_SrtpSendersAndReceiversWithMismatchingKeys \
+  SrtpSendersAndReceiversWithMismatchingKeys
+#define MAYBE_OneSideSrtpSenderAndReceiver OneSideSrtpSenderAndReceiver
+#define MAYBE_FullTwoWayAudioVideoSrtpSendersAndReceivers \
+  FullTwoWayAudioVideoSrtpSendersAndReceivers
+#else
+#define MAYBE_BasicTwoWayAudioVideoRtpSendersAndReceivers \
+  DISABLED_BasicTwoWayAudioVideoRtpSendersAndReceivers
+#define MAYBE_BasicTwoWayAudioVideoSrtpSendersAndReceivers \
+  DISABLED_BasicTwoWayAudioVideoSrtpSendersAndReceivers
+#define MAYBE_SrtpSendersAndReceiversWithMismatchingKeys \
+  DISABLED_SrtpSendersAndReceiversWithMismatchingKeys
+#define MAYBE_OneSideSrtpSenderAndReceiver DISABLED_OneSideSrtpSenderAndReceiver
+#define MAYBE_FullTwoWayAudioVideoSrtpSendersAndReceivers \
+  DISABLED_FullTwoWayAudioVideoSrtpSendersAndReceivers
+#endif
+
 // End-to-end test with two pairs of RTP senders and receivers, for audio and
 // video.
 //
 // Uses muxed RTCP, and minimal parameters with hard-coded configs that are
 // known to work.
-#if !(defined(WEBRTC_IOS) && defined(WEBRTC_ARCH_64_BITS) && !defined(NDEBUG))
 TEST_F(OrtcFactoryIntegrationTest,
-       BasicTwoWayAudioVideoRtpSendersAndReceivers) {
+       MAYBE_BasicTwoWayAudioVideoRtpSendersAndReceivers) {
   auto udp_transports = CreateAndConnectUdpTransportPair();
   auto rtp_transports =
       CreateRtpTransportPair(MakeRtcpMuxParameters(), udp_transports);
@@ -494,7 +517,7 @@ TEST_F(OrtcFactoryIntegrationTest,
 }
 
 TEST_F(OrtcFactoryIntegrationTest,
-       BasicTwoWayAudioVideoSrtpSendersAndReceivers) {
+       MAYBE_BasicTwoWayAudioVideoSrtpSendersAndReceivers) {
   auto udp_transports = CreateAndConnectUdpTransportPair();
   auto srtp_transports = CreateSrtpTransportPairAndSetKeys(
       MakeRtcpMuxParameters(), udp_transports);
@@ -502,12 +525,11 @@ TEST_F(OrtcFactoryIntegrationTest,
   BasicTwoWayRtpSendersAndReceiversTest(std::move(srtp_transports),
                                         expect_success);
 }
-#endif
 
 // Tests that the packets cannot be decoded if the keys are mismatched.
 // TODO(webrtc:9184): Disabled because this test is flaky.
 TEST_F(OrtcFactoryIntegrationTest,
-       DISABLED_SrtpSendersAndReceiversWithMismatchingKeys) {
+       MAYBE_SrtpSendersAndReceiversWithMismatchingKeys) {
   auto udp_transports = CreateAndConnectUdpTransportPair();
   auto srtp_transports = CreateSrtpTransportPairAndSetMismatchingKeys(
       MakeRtcpMuxParameters(), udp_transports);
@@ -520,7 +542,7 @@ TEST_F(OrtcFactoryIntegrationTest,
 }
 
 // Tests that the frames cannot be decoded if only one side uses SRTP.
-TEST_F(OrtcFactoryIntegrationTest, OneSideSrtpSenderAndReceiver) {
+TEST_F(OrtcFactoryIntegrationTest, MAYBE_OneSideSrtpSenderAndReceiver) {
   auto rtcp_parameters = MakeRtcpMuxParameters();
   auto udp_transports = CreateAndConnectUdpTransportPair();
   auto rtcp_udp_transports = UdpTransportPair();
@@ -559,7 +581,7 @@ TEST_F(OrtcFactoryIntegrationTest, OneSideSrtpSenderAndReceiver) {
 // TODO(deadbeef): Update this test as more audio/video features become
 // supported.
 TEST_F(OrtcFactoryIntegrationTest,
-       FullTwoWayAudioVideoSrtpSendersAndReceivers) {
+       MAYBE_FullTwoWayAudioVideoSrtpSendersAndReceivers) {
   // We want four pairs of UDP transports for this test, for audio/video and
   // RTP/RTCP.
   auto audio_rtp_udp_transports = CreateAndConnectUdpTransportPair();
