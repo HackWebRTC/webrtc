@@ -157,8 +157,8 @@
 
 - (void)setSize:(CGSize)size {
   self.metalView.drawableSize = size;
-  _videoFrameSize = size;
   dispatch_async(dispatch_get_main_queue(), ^{
+    _videoFrameSize = size;
     [self.delegate videoView:self didChangeVideoSize:size];
   });
 }
