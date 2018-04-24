@@ -38,7 +38,10 @@ rtc_static_library("encoded_frame") {
 
 rtc_static_library("video_coding") {
   visibility = [ "*" ]
-  allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
+  allow_poison = [
+    "audio_codecs",  # TODO(bugs.webrtc.org/8396): Remove.
+    "software_video_codecs",  # TODO(bugs.webrtc.org/7925): Remove.
+  ]
   deps = []
 
   sources = [
@@ -406,6 +409,7 @@ rtc_static_library("webrtc_vp8_helpers") {
 # This target includes the internal SW codec.
 rtc_static_library("webrtc_vp8") {
   visibility = [ "*" ]
+  poisonous = [ "software_video_codecs" ]
   sources = [
     "codecs/vp8/include/vp8.h",
     "codecs/vp8/include/vp8_common_types.h",
@@ -474,6 +478,7 @@ rtc_static_library("webrtc_vp9_helpers") {
 
 rtc_static_library("webrtc_vp9") {
   visibility = [ "*" ]
+  poisonous = [ "software_video_codecs" ]
   if (rtc_libvpx_build_vp9) {
     sources = [
       "codecs/vp9/include/vp9.h",

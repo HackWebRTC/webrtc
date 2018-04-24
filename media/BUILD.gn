@@ -156,7 +156,10 @@ rtc_static_library("rtc_constants") {
 
 rtc_static_library("rtc_internal_video_codecs") {
   visibility = [ "*" ]
-  allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
+  allow_poison = [
+    "audio_codecs",  # TODO(bugs.webrtc.org/8396): Remove.
+    "software_video_codecs",
+  ]
   defines = []
   libs = []
   deps = [
@@ -255,7 +258,10 @@ rtc_static_library("rtc_software_fallback_wrappers") {
 
 rtc_static_library("rtc_audio_video") {
   visibility = [ "*" ]
-  allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
+  allow_poison = [
+    "audio_codecs",  # TODO(bugs.webrtc.org/8396): Remove.
+    "software_video_codecs",  # TODO(bugs.webrtc.org/7925): Remove.
+  ]
   defines = []
   libs = []
   deps = [
@@ -423,7 +429,10 @@ rtc_static_library("rtc_data") {
 
 rtc_source_set("rtc_media") {
   visibility = [ "*" ]
-  allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
+  allow_poison = [
+    "audio_codecs",  # TODO(bugs.webrtc.org/8396): Remove.
+    "software_video_codecs",  # TODO(bugs.webrtc.org/7925): Remove.
+  ]
   deps = [
     ":rtc_audio_video",
     ":rtc_data",

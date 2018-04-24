@@ -607,7 +607,10 @@ rtc_static_library("peerconnection_jni") {
 
 rtc_static_library("libjingle_peerconnection_jni") {
   visibility = [ "*" ]
-  allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
+  allow_poison = [
+    "audio_codecs",  # TODO(bugs.webrtc.org/8396): Remove.
+    "software_video_codecs",  # TODO(bugs.webrtc.org/7925): Remove.
+  ]
   public_deps = [
     ":audio_jni",
     ":base_jni",
@@ -1174,7 +1177,10 @@ rtc_static_library("native_api_jni") {
 # objects.
 rtc_static_library("native_api_codecs") {
   visibility = [ "*" ]
-  allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
+  allow_poison = [
+    "audio_codecs",  # TODO(bugs.webrtc.org/8396): Remove.
+    "software_video_codecs",  # TODO(bugs.webrtc.org/7925): Remove.
+  ]
   sources = [
     "native_api/codecs/wrapper.cc",
     "native_api/codecs/wrapper.h",
@@ -1219,7 +1225,10 @@ rtc_static_library("native_api_peerconnection") {
 # video interfaces from their Java equivalents.
 rtc_static_library("native_api_video") {
   visibility = [ "*" ]
-  allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
+  allow_poison = [
+    "audio_codecs",  # TODO(bugs.webrtc.org/8396): Remove.
+    "software_video_codecs",  # TODO(bugs.webrtc.org/7925): Remove.
+  ]
   sources = [
     "native_api/video/wrapper.cc",
     "native_api/video/wrapper.h",
