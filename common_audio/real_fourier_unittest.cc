@@ -72,11 +72,7 @@ class RealFourierTest : public ::testing::Test {
   const RealFourier::fft_cplx_scoper cplx_buffer_;
 };
 
-using FftTypes = ::testing::Types<
-#if defined(RTC_USE_OPENMAX_DL)
-    RealFourierOpenmax,
-#endif
-    RealFourierOoura>;
+using FftTypes = ::testing::Types<RealFourierOoura>;
 TYPED_TEST_CASE(RealFourierTest, FftTypes);
 
 TYPED_TEST(RealFourierTest, SimpleForwardTransform) {
