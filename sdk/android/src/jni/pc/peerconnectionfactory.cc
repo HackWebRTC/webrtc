@@ -412,28 +412,6 @@ static void JNI_PeerConnectionFactory_StopAecDump(JNIEnv* jni,
   factory->StopAecDump();
 }
 
-static void JNI_PeerConnectionFactory_SetOptions(
-    JNIEnv* jni,
-    const JavaParamRef<jobject>&,
-    jlong native_factory,
-    const JavaParamRef<jobject>& options) {
-  rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
-      factoryFromJava(native_factory));
-  PeerConnectionFactoryInterface::Options options_to_set =
-      JavaToNativePeerConnectionFactoryOptions(jni, options);
-  factory->SetOptions(options_to_set);
-
-  if (options_to_set.disable_network_monitor) {
-    OwnedFactoryAndThreads* owner =
-        reinterpret_cast<OwnedFactoryAndThreads*>(native_factory);
-    if (owner->network_monitor_factory()) {
-      rtc::NetworkMonitorFactory::ReleaseFactory(
-          owner->network_monitor_factory());
-      owner->clear_network_monitor_factory();
-    }
-  }
-}
-
 static jlong JNI_PeerConnectionFactory_CreatePeerConnection(
     JNIEnv* jni,
     const JavaParamRef<jclass>&,
