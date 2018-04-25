@@ -335,6 +335,7 @@ NSString * const kRTCAudioSessionOutputVolumeSelector = @"outputVolume";
   if (!active && activationCount == 0) {
     RTCLogWarning(@"Attempting to deactivate without prior activation.");
   }
+  [self notifyWillSetActive:active];
   BOOL success = YES;
   BOOL isActive = self.isActive;
   // Keep a local error so we can log it.
@@ -365,9 +366,11 @@ NSString * const kRTCAudioSessionOutputVolumeSelector = @"outputVolume";
     if (active) {
       [self incrementActivationCount];
     }
+    [self notifyDidSetActive:active];
   } else {
     RTCLogError(@"Failed to setActive:%d. Error: %@",
                 active, error.localizedDescription);
+    [self notifyFailedToSetActive:active error:error];
   }
   // Decrement activation count on deactivation whether or not it succeeded.
   if (!active) {
@@ -927,6 +930,33 @@ NSString * const kRTCAudioSessionOutputVolumeSelector = @"outputVolume";
     SEL sel = @selector(audioSession:didDetectPlayoutGlitch:);
     if ([delegate respondsToSelector:sel]) {
       [delegate audioSession:self didDetectPlayoutGlitch:totalNumberOfGlitches];
+    }
+  }
+}
+
+- (void)notifyWillSetActive:(BOOL)active {
+  for (id delegate : self.delegates) {
+    SEL sel = @selector(audioSession:willSetActive:);
+    if ([delegate respondsToSelector:sel]) {
+      [delegate audioSession:self willSetActive:active];
+    }
+  }
+}
+
+- (void)notifyDidSetActive:(BOOL)active {
+  for (id delegate : self.delegates) {
+    SEL sel = @selector(audioSession:didSetActive:);
+    if ([delegate respondsToSelector:sel]) {
+      [delegate audioSession:self didSetActive:active];
+    }
+  }
+}
+
+- (void)notifyFailedToSetActive:(BOOL)active error:(NSError *)error {
+  for (id delegate : self.delegates) {
+    SEL sel = @selector(audioSession:failedToSetActive:error:);
+    if ([delegate respondsToSelector:sel]) {
+      [delegate audioSession:self failedToSetActive:active error:error];
     }
   }
 }

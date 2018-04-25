@@ -84,6 +84,20 @@ RTC_EXPORT
 - (void)audioSession:(RTCAudioSession *)audioSession
     didDetectPlayoutGlitch:(int64_t)totalNumberOfGlitches;
 
+/** Called when the audio session is about to change the active state.
+ */
+- (void)audioSession:(RTCAudioSession *)audioSession willSetActive:(BOOL)active;
+
+/** Called after the audio session sucessfully changed the active state.
+ */
+- (void)audioSession:(RTCAudioSession *)audioSession didSetActive:(BOOL)active;
+
+/** Called after the audio session failed to change the active state.
+ */
+- (void)audioSession:(RTCAudioSession *)audioSession
+    failedToSetActive:(BOOL)active
+                error:(NSError *)error;
+
 @end
 
 /** This is a protocol used to inform RTCAudioSession when the audio session
