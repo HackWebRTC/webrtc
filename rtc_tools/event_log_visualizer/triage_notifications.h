@@ -14,136 +14,130 @@
 #include <string>
 
 namespace webrtc {
+namespace plotting {
 
-class IncomingRtpReceiveTimeGap {
+class TriageNotification {
+ public:
+  TriageNotification() : time_seconds_() {}
+  explicit TriageNotification(float time_seconds)
+      : time_seconds_(time_seconds) {}
+  virtual ~TriageNotification() = default;
+  virtual std::string ToString() = 0;
+  rtc::Optional<float> Time() { return time_seconds_; }
+
+ private:
+  rtc::Optional<float> time_seconds_;
+};
+
+class IncomingRtpReceiveTimeGap : public TriageNotification {
  public:
   IncomingRtpReceiveTimeGap(float time_seconds, int64_t duration)
-      : time_seconds_(time_seconds), duration_(duration) {}
-  float Time() const { return time_seconds_; }
-  std::string ToString() const {
+      : TriageNotification(time_seconds), duration_(duration) {}
+  std::string ToString() {
     return std::string("No RTP packets received for ") +
            std::to_string(duration_) + std::string(" ms");
   }
 
  private:
-  float time_seconds_;
   int64_t duration_;
 };
 
-class IncomingRtcpReceiveTimeGap {
+class IncomingRtcpReceiveTimeGap : public TriageNotification {
  public:
   IncomingRtcpReceiveTimeGap(float time_seconds, int64_t duration)
-      : time_seconds_(time_seconds), duration_(duration) {}
-  float Time() const { return time_seconds_; }
-  std::string ToString() const {
+      : TriageNotification(time_seconds), duration_(duration) {}
+  std::string ToString() {
     return std::string("No RTCP packets received for ") +
            std::to_string(duration_) + std::string(" ms");
   }
 
  private:
-  float time_seconds_;
   int64_t duration_;
 };
 
-class OutgoingRtpSendTimeGap {
+class OutgoingRtpSendTimeGap : public TriageNotification {
  public:
   OutgoingRtpSendTimeGap(float time_seconds, int64_t duration)
-      : time_seconds_(time_seconds), duration_(duration) {}
-  float Time() const { return time_seconds_; }
-  std::string ToString() const {
+      : TriageNotification(time_seconds), duration_(duration) {}
+  std::string ToString() {
     return std::string("No RTP packets sent for ") + std::to_string(duration_) +
            std::string(" ms");
   }
 
  private:
-  float time_seconds_;
   int64_t duration_;
 };
 
-class OutgoingRtcpSendTimeGap {
+class OutgoingRtcpSendTimeGap : public TriageNotification {
  public:
   OutgoingRtcpSendTimeGap(float time_seconds, int64_t duration)
-      : time_seconds_(time_seconds), duration_(duration) {}
-  float Time() const { return time_seconds_; }
-  std::string ToString() const {
+      : TriageNotification(time_seconds), duration_(duration) {}
+  std::string ToString() {
     return std::string("No RTCP packets sent for ") +
            std::to_string(duration_) + std::string(" ms");
   }
 
  private:
-  float time_seconds_;
   int64_t duration_;
 };
 
-class IncomingSeqNumJump {
+class IncomingSeqNoJump : public TriageNotification {
  public:
-  IncomingSeqNumJump(float time_seconds, uint32_t ssrc)
-      : time_seconds_(time_seconds), ssrc_(ssrc) {}
-  float Time() const { return time_seconds_; }
-  std::string ToString() const {
+  IncomingSeqNoJump(float time_seconds, uint32_t ssrc)
+      : TriageNotification(time_seconds), ssrc_(ssrc) {}
+  std::string ToString() {
     return std::string("Sequence number jumps on incoming SSRC ") +
            std::to_string(ssrc_);
   }
 
  private:
-  float time_seconds_;
-
   uint32_t ssrc_;
 };
 
-class IncomingCaptureTimeJump {
+class IncomingCaptureTimeJump : public TriageNotification {
  public:
   IncomingCaptureTimeJump(float time_seconds, uint32_t ssrc)
-      : time_seconds_(time_seconds), ssrc_(ssrc) {}
-  float Time() const { return time_seconds_; }
-  std::string ToString() const {
+      : TriageNotification(time_seconds), ssrc_(ssrc) {}
+  std::string ToString() {
     return std::string("Capture timestamp jumps on incoming SSRC ") +
            std::to_string(ssrc_);
   }
 
  private:
-  float time_seconds_;
-
   uint32_t ssrc_;
 };
 
-class OutgoingSeqNoJump {
+class OutgoingSeqNoJump : public TriageNotification {
  public:
   OutgoingSeqNoJump(float time_seconds, uint32_t ssrc)
-      : time_seconds_(time_seconds), ssrc_(ssrc) {}
-  float Time() const { return time_seconds_; }
-  std::string ToString() const {
+      : TriageNotification(time_seconds), ssrc_(ssrc) {}
+  std::string ToString() {
     return std::string("Sequence number jumps on outgoing SSRC ") +
            std::to_string(ssrc_);
   }
 
  private:
-  float time_seconds_;
-
   uint32_t ssrc_;
 };
 
-class OutgoingCaptureTimeJump {
+class OutgoingCaptureTimeJump : public TriageNotification {
  public:
   OutgoingCaptureTimeJump(float time_seconds, uint32_t ssrc)
-      : time_seconds_(time_seconds), ssrc_(ssrc) {}
-  float Time() const { return time_seconds_; }
-  std::string ToString() const {
+      : TriageNotification(time_seconds), ssrc_(ssrc) {}
+  std::string ToString() {
     return std::string("Capture timestamp jumps on outgoing SSRC ") +
            std::to_string(ssrc_);
   }
 
  private:
-  float time_seconds_;
-
   uint32_t ssrc_;
 };
 
-class OutgoingHighLoss {
+class OutgoingHighLoss : public TriageNotification {
  public:
   explicit OutgoingHighLoss(double avg_loss_fraction)
       : avg_loss_fraction_(avg_loss_fraction) {}
-  std::string ToString() const {
+  std::string ToString() {
     return std::string("High average loss (") +
            std::to_string(avg_loss_fraction_ * 100) +
            std::string("%) across the call.");
@@ -153,6 +147,7 @@ class OutgoingHighLoss {
   double avg_loss_fraction_;
 };
 
+}  // namespace plotting
 }  // namespace webrtc
 
 #endif  // RTC_TOOLS_EVENT_LOG_VISUALIZER_TRIAGE_NOTIFICATIONS_H_

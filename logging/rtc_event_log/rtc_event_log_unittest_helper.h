@@ -12,7 +12,7 @@
 #define LOGGING_RTC_EVENT_LOG_RTC_EVENT_LOG_UNITTEST_HELPER_H_
 
 #include "call/call.h"
-#include "logging/rtc_event_log/rtc_event_log_parser2.h"
+#include "logging/rtc_event_log/rtc_event_log_parser.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 

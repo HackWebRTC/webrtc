@@ -32,7 +32,7 @@
 #include "logging/rtc_event_log/events/rtc_event_rtp_packet_outgoing.h"
 #include "logging/rtc_event_log/events/rtc_event_video_receive_stream_config.h"
 #include "logging/rtc_event_log/events/rtc_event_video_send_stream_config.h"
-#include "logging/rtc_event_log/rtc_event_log_parser2.h"
+#include "logging/rtc_event_log/rtc_event_log_parser.h"
 #include "modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor_config.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/bye.h"  // Arbitrary RTCP message.
@@ -142,11 +142,11 @@ void RtcEventLogEncoderTest::TestRtcEventAudioNetworkAdaptation(
   ASSERT_EQ(parsed_log_.GetEventType(0),
             ParsedRtcEventLog::AUDIO_NETWORK_ADAPTATION_EVENT);
 
-  LoggedAudioNetworkAdaptationEvent parsed_event =
-      parsed_log_.GetAudioNetworkAdaptation(0);
+  AudioEncoderRuntimeConfig parsed_runtime_config;
+  parsed_log_.GetAudioNetworkAdaptation(0, &parsed_runtime_config);
 
-  EXPECT_EQ(parsed_event.timestamp_us, timestamp_us);
-  EXPECT_EQ(parsed_event.config, original_runtime_config);
+  EXPECT_EQ(parsed_log_.GetTimestamp(0), timestamp_us);
+  EXPECT_EQ(parsed_runtime_config, original_runtime_config);
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventAudioNetworkAdaptationBitrate) {
@@ -234,10 +234,11 @@ TEST_P(RtcEventLogEncoderTest, RtcEventAudioPlayout) {
   ASSERT_EQ(parsed_log_.GetEventType(0),
             ParsedRtcEventLog::AUDIO_PLAYOUT_EVENT);
 
-  LoggedAudioPlayoutEvent playout_event = parsed_log_.GetAudioPlayout(0);
+  uint32_t parsed_ssrc;
+  parsed_log_.GetAudioPlayout(0, &parsed_ssrc);
 
-  EXPECT_EQ(playout_event.timestamp_us, timestamp_us);
-  EXPECT_EQ(playout_event.ssrc, ssrc);
+  EXPECT_EQ(parsed_log_.GetTimestamp(0), timestamp_us);
+  EXPECT_EQ(parsed_ssrc, ssrc);
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventAudioReceiveStreamConfig) {
@@ -332,12 +333,16 @@ TEST_P(RtcEventLogEncoderTest, RtcEventBweUpdateLossBased) {
   ASSERT_EQ(parsed_log_.GetEventType(0),
             ParsedRtcEventLog::LOSS_BASED_BWE_UPDATE);
 
-  LoggedBweLossBasedUpdate bwe_update = parsed_log_.GetLossBasedBweUpdate(0);
+  int32_t parsed_bitrate_bps;
+  uint8_t parsed_fraction_loss;
+  int32_t parsed_total_packets;
+  parsed_log_.GetLossBasedBweUpdate(
+      0, &parsed_bitrate_bps, &parsed_fraction_loss, &parsed_total_packets);
 
-  EXPECT_EQ(bwe_update.timestamp_us, timestamp_us);
-  EXPECT_EQ(bwe_update.bitrate_bps, bitrate_bps);
-  EXPECT_EQ(bwe_update.fraction_lost, fraction_loss);
-  EXPECT_EQ(bwe_update.expected_packets, total_packets);
+  EXPECT_EQ(parsed_log_.GetTimestamp(0), timestamp_us);
+  EXPECT_EQ(parsed_bitrate_bps, bitrate_bps);
+  EXPECT_EQ(parsed_fraction_loss, fraction_loss);
+  EXPECT_EQ(parsed_total_packets, total_packets);
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventLoggingStarted) {

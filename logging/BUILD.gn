@@ -253,8 +253,8 @@ if (rtc_enable_protobuf) {
 
   rtc_static_library("rtc_event_log_parser") {
     sources = [
-      "rtc_event_log/rtc_event_log_parser2.cc",
-      "rtc_event_log/rtc_event_log_parser2.h",
+      "rtc_event_log/rtc_event_log_parser.cc",
+      "rtc_event_log/rtc_event_log_parser.h",
     ]
 
     deps = [
@@ -265,7 +265,6 @@ if (rtc_enable_protobuf) {
       ":rtc_event_log_proto",
       ":rtc_stream_config",
       "..:webrtc_common",
-      "../api:libjingle_peerconnection_api",
       "../call:video_stream_api",
       "../modules/audio_coding:audio_network_adaptor",
       "../modules/remote_bitrate_estimator:remote_bitrate_estimator",
@@ -366,7 +365,6 @@ if (rtc_enable_protobuf) {
         "../rtc_base:checks",
         "../rtc_base:protobuf_utils",
         "../rtc_base:rtc_base_approved",
-        "../rtc_base:stringutils",
 
         # TODO(kwiberg): Remove this dependency.
         "../api/audio_codecs:audio_codecs_api",

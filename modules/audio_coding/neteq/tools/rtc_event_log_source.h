@@ -14,7 +14,7 @@
 #include <memory>
 #include <string>
 
-#include "logging/rtc_event_log/rtc_event_log_parser2.h"
+#include "logging/rtc_event_log/rtc_event_log_parser.h"
 #include "modules/audio_coding/neteq/tools/packet_source.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/constructormagic.h"
