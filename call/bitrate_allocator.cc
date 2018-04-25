@@ -72,6 +72,7 @@ BitrateAllocator::~BitrateAllocator() {
                            num_pause_events_);
 }
 
+// static
 uint8_t BitrateAllocator::GetTransmissionMaxBitrateMultiplier() {
   uint64_t multiplier = strtoul(webrtc::field_trial::FindFullName(
                                     "WebRTC-TransmissionMaxBitrateMultiplier")

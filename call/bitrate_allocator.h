@@ -219,7 +219,7 @@ class BitrateAllocator : public BitrateAllocatorInterface {
   // TODO(bugs.webrtc.org/8541): May be worth to refactor to keep this logic in
   // video send stream. Similar logic is implemented in
   // AudioPriorityBitrateAllocationStrategy.
-  uint8_t GetTransmissionMaxBitrateMultiplier();
+  static uint8_t GetTransmissionMaxBitrateMultiplier();
 
   rtc::SequencedTaskChecker sequenced_checker_;
   LimitObserver* const limit_observer_ RTC_GUARDED_BY(&sequenced_checker_);
@@ -240,7 +240,7 @@ class BitrateAllocator : public BitrateAllocatorInterface {
   bool has_packet_feedback_ RTC_GUARDED_BY(&sequenced_checker_);
   std::unique_ptr<rtc::BitrateAllocationStrategy> bitrate_allocation_strategy_
       RTC_GUARDED_BY(&sequenced_checker_);
-  uint8_t transmission_max_bitrate_multiplier_;
+  const uint8_t transmission_max_bitrate_multiplier_;
 };
 
 }  // namespace webrtc
