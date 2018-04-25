@@ -73,7 +73,7 @@ static const char kUnsupportedExtensionName[] =
 
 cricket::VideoCodec RemoveFeedbackParams(cricket::VideoCodec&& codec) {
   codec.feedback_params = cricket::FeedbackParams();
-  return codec;
+  return std::move(codec);
 }
 
 void VerifyCodecHasDefaultFeedbackParams(const cricket::VideoCodec& codec) {
