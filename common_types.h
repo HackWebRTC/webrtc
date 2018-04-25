@@ -354,7 +354,6 @@ struct VideoCodecVP8 {
     return !(*this == other);
   }
   VideoCodecComplexity complexity;
-  bool resilienceOn;
   unsigned char numberOfTemporalLayers;
   bool denoisingOn;
   bool automaticResizeOn;
@@ -369,7 +368,6 @@ struct VideoCodecVP9 {
     return !(*this == other);
   }
   VideoCodecComplexity complexity;
-  bool resilienceOn;
   unsigned char numberOfTemporalLayers;
   bool denoisingOn;
   bool frameDroppingOn;

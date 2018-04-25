@@ -183,11 +183,6 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
       RTC_DCHECK_LE(video_codec.VP8()->numberOfTemporalLayers,
                     kMaxTemporalStreams);
 
-      if (nack_enabled && video_codec.VP8()->numberOfTemporalLayers == 1) {
-        RTC_LOG(LS_INFO)
-            << "No temporal layers and nack enabled -> resilience off";
-        video_codec.VP8()->resilienceOn = false;
-      }
       break;
     }
     case kVideoCodecVP9: {
@@ -250,12 +245,6 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
                       kMaxTemporalStreams);
       }
 
-      if (nack_enabled && video_codec.VP9()->numberOfTemporalLayers == 1 &&
-          video_codec.VP9()->numberOfSpatialLayers == 1) {
-        RTC_LOG(LS_INFO) << "No temporal or spatial layers and nack enabled -> "
-                         << "resilience off";
-        video_codec.VP9()->resilienceOn = false;
-      }
       break;
     }
     case kVideoCodecH264: {

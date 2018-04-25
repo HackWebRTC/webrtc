@@ -214,7 +214,6 @@ class TestVp8Simulcast : public ::testing::Test {
     ConfigureStream(kDefaultWidth, kDefaultHeight, kMaxBitrates[2],
                     kMinBitrates[2], kTargetBitrates[2],
                     &settings->simulcastStream[2], temporal_layer_profile[2]);
-    settings->VP8()->resilienceOn = true;
     settings->VP8()->denoisingOn = true;
     settings->VP8()->automaticResizeOn = false;
     settings->VP8()->frameDroppingOn = true;

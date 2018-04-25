@@ -266,6 +266,7 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   }
 
   num_spatial_layers_ = inst->VP9().numberOfSpatialLayers;
+  RTC_DCHECK_GT(num_spatial_layers_, 0);
   num_temporal_layers_ = inst->VP9().numberOfTemporalLayers;
   if (num_temporal_layers_ == 0)
     num_temporal_layers_ = 1;
@@ -290,7 +291,8 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   config_->g_w = codec_.width;
   config_->g_h = codec_.height;
   config_->rc_target_bitrate = inst->startBitrate;  // in kbit/s
-  config_->g_error_resilient = inst->VP9().resilienceOn ? 1 : 0;
+  config_->g_error_resilient =
+      (num_spatial_layers_ > 1 || num_temporal_layers_ > 1) ? 1 : 0;
   // Setting the time base of the codec.
   config_->g_timebase.num = 1;
   config_->g_timebase.den = 90000;

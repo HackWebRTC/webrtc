@@ -70,7 +70,7 @@ class VideoProcessorIntegrationTestVideoToolbox
 MAYBE_TEST_F(VideoProcessorIntegrationTestVideoToolbox,
        ForemanCif500kbpsH264CBP) {
   config_.SetCodecSettings(cricket::kH264CodecName, 1, 1, 1, false, false,
-                           false, false, 352, 288);
+                           false, 352, 288);
 
   std::vector<RateProfile> rate_profiles = {{500, 30, kForemanNumFrames}};
 
@@ -86,7 +86,7 @@ MAYBE_TEST_F(VideoProcessorIntegrationTestVideoToolbox,
 
   config_.h264_codec_settings.profile = H264::kProfileConstrainedHigh;
   config_.SetCodecSettings(cricket::kH264CodecName, 1, 1, 1, false, false,
-                           false, false, 352, 288);
+                           false, 352, 288);
 
   std::vector<RateProfile> rate_profiles = {{500, 30, kForemanNumFrames}};
 

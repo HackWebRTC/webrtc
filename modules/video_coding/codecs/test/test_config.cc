@@ -68,7 +68,6 @@ std::string CodecSpecificToString(const VideoCodec& codec) {
   switch (codec.codecType) {
     case kVideoCodecVP8:
       ss << "complexity: " << codec.VP8().complexity;
-      ss << "\nresilience: " << codec.VP8().resilienceOn;
       ss << "\nnum_temporal_layers: "
          << static_cast<int>(codec.VP8().numberOfTemporalLayers);
       ss << "\ndenoising: " << codec.VP8().denoisingOn;
@@ -78,7 +77,6 @@ std::string CodecSpecificToString(const VideoCodec& codec) {
       break;
     case kVideoCodecVP9:
       ss << "complexity: " << codec.VP9().complexity;
-      ss << "\nresilience: " << codec.VP9().resilienceOn;
       ss << "\nnum_temporal_layers: "
          << static_cast<int>(codec.VP9().numberOfTemporalLayers);
       ss << "\nnum_spatial_layers: "
@@ -111,7 +109,6 @@ void TestConfig::SetCodecSettings(std::string codec_name,
                                   bool denoising_on,
                                   bool frame_dropper_on,
                                   bool spatial_resize_on,
-                                  bool resilience_on,
                                   size_t width,
                                   size_t height) {
   this->codec_name = codec_name;
@@ -143,7 +140,6 @@ void TestConfig::SetCodecSettings(std::string codec_name,
 
   switch (codec_settings.codecType) {
     case kVideoCodecVP8:
-      codec_settings.VP8()->resilienceOn = resilience_on;
       codec_settings.VP8()->numberOfTemporalLayers =
           static_cast<uint8_t>(num_temporal_layers);
       codec_settings.VP8()->denoisingOn = denoising_on;
@@ -152,7 +148,6 @@ void TestConfig::SetCodecSettings(std::string codec_name,
       codec_settings.VP8()->keyFrameInterval = kBaseKeyFrameInterval;
       break;
     case kVideoCodecVP9:
-      codec_settings.VP9()->resilienceOn = resilience_on;
       codec_settings.VP9()->numberOfTemporalLayers =
           static_cast<uint8_t>(num_temporal_layers);
       codec_settings.VP9()->denoisingOn = denoising_on;
