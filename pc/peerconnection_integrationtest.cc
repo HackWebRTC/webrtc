@@ -3887,6 +3887,49 @@ TEST_P(PeerConnectionIntegrationTest, TurnCustomizerUsedForTurnConnections) {
   delete SetCalleePcWrapperAndReturnCurrent(nullptr);
 }
 
+// Verifies that you can use TCP instead of UDP to connect to a TURN server.
+TEST_P(PeerConnectionIntegrationTest, TCPUsedForTurnConnections) {
+  static const rtc::SocketAddress turn_server_internal_address{"88.88.88.0",
+                                                               3478};
+  static const rtc::SocketAddress turn_server_external_address{"88.88.88.1", 0};
+
+  // Enable TCP for the fake turn server.
+  cricket::TestTurnServer turn_server(
+      network_thread(), turn_server_internal_address,
+      turn_server_external_address, cricket::PROTO_TCP);
+
+  webrtc::PeerConnectionInterface::IceServer ice_server;
+  ice_server.urls.push_back("turn:88.88.88.0:3478?transport=tcp");
+  ice_server.username = "test";
+  ice_server.password = "test";
+
+  PeerConnectionInterface::RTCConfiguration client_1_config;
+  client_1_config.servers.push_back(ice_server);
+  client_1_config.type = webrtc::PeerConnectionInterface::kRelay;
+
+  PeerConnectionInterface::RTCConfiguration client_2_config;
+  client_2_config.servers.push_back(ice_server);
+  client_2_config.type = webrtc::PeerConnectionInterface::kRelay;
+
+  ASSERT_TRUE(
+      CreatePeerConnectionWrappersWithConfig(client_1_config, client_2_config));
+  ConnectFakeSignaling();
+
+  // Set "offer to receive audio/video" without adding any tracks, so we just
+  // set up ICE/DTLS with no media.
+  PeerConnectionInterface::RTCOfferAnswerOptions options;
+  options.offer_to_receive_audio = 1;
+  options.offer_to_receive_video = 1;
+  caller()->SetOfferAnswerOptions(options);
+  caller()->CreateAndSetAndSignalOffer();
+  EXPECT_TRUE_WAIT(DtlsConnected(), kDefaultTimeout);
+
+  // Need to free the clients here since they're using things we created on
+  // the stack.
+  delete SetCallerPcWrapperAndReturnCurrent(nullptr);
+  delete SetCalleePcWrapperAndReturnCurrent(nullptr);
+}
+
 // Test that audio and video flow end-to-end when codec names don't use the
 // expected casing, given that they're supposed to be case insensitive. To test
 // this, all but one codec is removed from each media description, and its
