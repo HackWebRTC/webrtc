@@ -132,10 +132,10 @@ void AecState::Update(
   suppression_gain_limiter_.Update(render_buffer.GetRenderActivity(),
                                    transparent_mode_);
 
-  if (UseStationaryProperties() && external_delay_seen_) {
+  if (UseStationaryProperties()) {
     // Update the echo audibility evaluator.
     echo_audibility_.Update(render_buffer, FilterDelayBlocks(),
-                            capture_block_counter_);
+                            capture_block_counter_, external_delay_seen_);
   }
 
   // Update the ERL and ERLE measures.

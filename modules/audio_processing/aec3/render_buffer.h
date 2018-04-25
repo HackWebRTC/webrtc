@@ -45,6 +45,14 @@ class RenderBuffer {
     return spectrum_buffer_->buffer[position];
   }
 
+  // Get the spectrum directly from a position in the buffer.
+  rtc::ArrayView<const float> SpectrumFromPosition(int position) const {
+    RTC_CHECK_LT(position, spectrum_buffer_->size);
+    int position_bound = std::min(position, spectrum_buffer_->size - 1);
+    position_bound = std::max(0, position_bound);
+    return spectrum_buffer_->buffer[position_bound];
+  }
+
   // Returns the circular fft buffer.
   rtc::ArrayView<const FftData> GetFftBuffer() const {
     return fft_buffer_->buffer;
@@ -56,6 +64,9 @@ class RenderBuffer {
     RTC_DCHECK_EQ(spectrum_buffer_->write, fft_buffer_->write);
     return fft_buffer_->read;
   }
+
+  // Returns the write postion in the circular buffer.
+  int GetWritePositionSpectrum() const { return spectrum_buffer_->write; }
 
   // Returns the sum of the spectrums for a certain number of FFTs.
   void SpectralSum(size_t num_spectra,
@@ -81,6 +92,9 @@ class RenderBuffer {
 
     return headroom;
   }
+
+  // Decrease an index that is used for accessing the buffer.
+  int DecIdx(int idx) const { return spectrum_buffer_->DecIndex(idx); }
 
  private:
   const MatrixBuffer* const block_buffer_;

@@ -34,7 +34,8 @@ class EchoAudibility {
   // Feed new render data to the echo audibility estimator.
   void Update(const RenderBuffer& render_buffer,
               size_t delay_blocks,
-              size_t capture_block_counter_);
+              size_t capture_block_counter_,
+              bool external_delay_seen);
 
   // Get the residual echo scaling.
   void GetResidualEchoScaling(rtc::ArrayView<float> residual_scaling) const {
@@ -53,6 +54,15 @@ class EchoAudibility {
 
   // Compute the residual scaling per frequency for the current frame.
   void ComputeResidualScaling();
+
+  void UpdateAfterStableDelay(const RenderBuffer& render_buffer,
+                              size_t delay_blocks,
+                              size_t capture_block_counter);
+
+  void UpdateBeforeStableDelay(const RenderBuffer& render_buffer);
+
+  bool first_update_ = true;
+  int render_write_prev_;
   StationarityEstimator render_stationarity_;
   RTC_DISALLOW_COPY_AND_ASSIGN(EchoAudibility);
 };

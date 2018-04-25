@@ -55,6 +55,13 @@ void StationarityEstimator::Update(rtc::ArrayView<const float> spectrum,
   }
 }
 
+// Update just the noise estimator. Usefull until the delay is known
+void StationarityEstimator::UpdateNoiseEstimator(
+    rtc::ArrayView<const float> spectrum) {
+  noise_.Update(spectrum);
+  data_dumper_->DumpRaw("aec3_stationarity_noise_spectrum", noise_.Spectrum());
+}
+
 void StationarityEstimator::UpdateStationarityFlags(size_t current_block_number,
                                                     size_t num_lookahead) {
   RTC_DCHECK_GE(idx_lookahead_.capacity(),

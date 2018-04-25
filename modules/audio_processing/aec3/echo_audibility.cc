@@ -27,9 +27,9 @@ void EchoAudibility::Reset() {
 
 EchoAudibility::~EchoAudibility() = default;
 
-void EchoAudibility::Update(const RenderBuffer& render_buffer,
-                            size_t delay_blocks,
-                            size_t capture_block_counter) {
+void EchoAudibility::UpdateAfterStableDelay(const RenderBuffer& render_buffer,
+                                            size_t delay_blocks,
+                                            size_t capture_block_counter) {
   RTC_DCHECK_GT(capture_block_counter, delay_blocks);
 
   size_t num_lookahead = std::min(StationarityEstimator::GetMaxNumLookAhead(),
@@ -45,6 +45,38 @@ void EchoAudibility::Update(const RenderBuffer& render_buffer,
   }
   render_stationarity_.UpdateStationarityFlags(render_block_number,
                                                num_lookahead);
+}
+
+void EchoAudibility::UpdateBeforeStableDelay(
+    const RenderBuffer& render_buffer) {
+  // If the delay is not set, the read position in the buffer cannot be trust
+  // and the write position in the render buffer should be used instead
+
+  if (first_update_) {
+    render_write_prev_ = render_buffer.GetWritePositionSpectrum();
+    first_update_ = false;
+    return;
+  }
+  int render_write_current = render_buffer.GetWritePositionSpectrum();
+
+  for (int idx = render_write_prev_; idx != render_write_current;
+       idx = render_buffer.DecIdx(idx)) {
+    render_stationarity_.UpdateNoiseEstimator(
+        render_buffer.SpectrumFromPosition(idx));
+  }
+
+  render_write_prev_ = render_write_current;
+}
+
+void EchoAudibility::Update(const RenderBuffer& render_buffer,
+                            size_t delay_blocks,
+                            size_t capture_block_counter,
+                            bool external_delay_seen) {
+  if (external_delay_seen) {
+    UpdateAfterStableDelay(render_buffer, delay_blocks, capture_block_counter);
+  } else {
+    UpdateBeforeStableDelay(render_buffer);
+  }
 }
 
 }  // namespace webrtc

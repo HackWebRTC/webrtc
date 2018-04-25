@@ -33,6 +33,9 @@ class StationarityEstimator {
   // Update the stationarity estimator.
   void Update(rtc::ArrayView<const float> spectrum, int block_number);
 
+  // Update just the noise estimator. Usefull until the delay is known
+  void UpdateNoiseEstimator(rtc::ArrayView<const float> spectrum);
+
   // Update the flag indicating whether this current frame is stationary. For
   // getting a more robust estimation, it looks at future and/or past frames.
   void UpdateStationarityFlags(size_t current_block_number,
