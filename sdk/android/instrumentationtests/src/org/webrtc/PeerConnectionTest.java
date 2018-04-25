@@ -642,8 +642,7 @@ public class PeerConnectionTest {
   @Test
   @SmallTest
   public void testCreationWithConfig() throws Exception {
-    PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
-    PeerConnectionFactory factory = new PeerConnectionFactory(options);
+    PeerConnectionFactory factory = PeerConnectionFactory.builder().createPeerConnectionFactory();
     List<PeerConnection.IceServer> iceServers = Arrays.asList(
         PeerConnection.IceServer.builder("stun:stun.l.google.com:19302").createIceServer(),
         PeerConnection.IceServer.builder("turn:fake.example.com")
@@ -669,7 +668,8 @@ public class PeerConnectionTest {
     // have those.
     PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
     options.networkIgnoreMask = 0;
-    PeerConnectionFactory factory = new PeerConnectionFactory(options);
+    PeerConnectionFactory factory =
+        PeerConnectionFactory.builder().setOptions(options).createPeerConnectionFactory();
 
     List<PeerConnection.IceServer> iceServers = new ArrayList<>();
     iceServers.add(
@@ -908,7 +908,8 @@ public class PeerConnectionTest {
     // have those.
     PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
     options.networkIgnoreMask = 0;
-    PeerConnectionFactory factory = new PeerConnectionFactory(options);
+    PeerConnectionFactory factory =
+        PeerConnectionFactory.builder().setOptions(options).createPeerConnectionFactory();
 
     List<PeerConnection.IceServer> iceServers = new ArrayList<>();
     iceServers.add(
@@ -1062,7 +1063,8 @@ public class PeerConnectionTest {
     // have those.
     PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
     options.networkIgnoreMask = 0;
-    PeerConnectionFactory factory = new PeerConnectionFactory(options);
+    PeerConnectionFactory factory =
+        PeerConnectionFactory.builder().setOptions(options).createPeerConnectionFactory();
 
     List<PeerConnection.IceServer> iceServers = new ArrayList<>();
     iceServers.add(
@@ -1255,8 +1257,7 @@ public class PeerConnectionTest {
   @Test
   @MediumTest
   public void testRemoteStreamUpdatedWhenTracksAddedOrRemoved() throws Exception {
-    PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
-    PeerConnectionFactory factory = new PeerConnectionFactory(options);
+    PeerConnectionFactory factory = PeerConnectionFactory.builder().createPeerConnectionFactory();
 
     // This test is fine with no ICE servers.
     List<PeerConnection.IceServer> iceServers = new ArrayList<>();

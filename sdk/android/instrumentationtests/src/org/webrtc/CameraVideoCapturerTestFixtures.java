@@ -336,7 +336,7 @@ class CameraVideoCapturerTestFixtures {
         PeerConnectionFactory.InitializationOptions.builder(testObjectFactory.getAppContext())
             .createInitializationOptions());
 
-    this.peerConnectionFactory = new PeerConnectionFactory(null /* options */);
+    this.peerConnectionFactory = PeerConnectionFactory.builder().createPeerConnectionFactory();
     this.testObjectFactory = testObjectFactory;
   }
 

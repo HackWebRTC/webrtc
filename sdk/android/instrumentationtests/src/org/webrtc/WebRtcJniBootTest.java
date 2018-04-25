@@ -28,8 +28,6 @@ public class WebRtcJniBootTest {
     PeerConnectionFactory.initialize(PeerConnectionFactory.InitializationOptions
                                          .builder(InstrumentationRegistry.getTargetContext())
                                          .createInitializationOptions());
-
-    PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
-    new PeerConnectionFactory(options);
+    PeerConnectionFactory.builder().createPeerConnectionFactory();
   }
 }
