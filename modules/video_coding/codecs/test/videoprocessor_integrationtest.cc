@@ -394,6 +394,8 @@ void VideoProcessorIntegrationTest::SetUpAndInitObjects(
       config_.NumberOfSimulcastStreams(), config_.NumberOfSpatialLayers());
 
   if (visualization_params) {
+    RTC_DCHECK(encoded_frame_writers_.empty());
+    RTC_DCHECK(decoded_frame_writers_.empty());
     for (size_t simulcast_svc_idx = 0;
          simulcast_svc_idx < num_simulcast_or_spatial_layers;
          ++simulcast_svc_idx) {
@@ -453,9 +455,11 @@ void VideoProcessorIntegrationTest::ReleaseAndCloseObjects(
   for (auto& encoded_frame_writer : encoded_frame_writers_) {
     EXPECT_TRUE(encoded_frame_writer->Close());
   }
+  encoded_frame_writers_.clear();
   for (auto& decoded_frame_writer : decoded_frame_writers_) {
     decoded_frame_writer->Close();
   }
+  decoded_frame_writers_.clear();
 }
 
 void VideoProcessorIntegrationTest::PrintSettings(
