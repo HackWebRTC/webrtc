@@ -238,6 +238,8 @@ EchoCanceller3Config ParseAec3Parameters(const std::string& filename) {
               &cfg.echo_audibility.audibility_threshold_mf);
     ReadParam(section, "audibility_threshold_hf",
               &cfg.echo_audibility.audibility_threshold_hf);
+    ReadParam(section, "use_stationary_properties",
+              &cfg.echo_audibility.use_stationary_properties);
   }
 
   if (rtc::GetValueFromJsonObject(root, "gain_updates", &section)) {

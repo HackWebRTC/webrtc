@@ -67,6 +67,21 @@ class RenderBuffer {
   // Specifies the recent activity seen in the render signal.
   void SetRenderActivity(bool activity) { render_activity_ = activity; }
 
+  // Returns the headroom between the write and the read positions in the
+  // buffer;
+  int Headroom() const {
+    // The write and read indices are decreased over time.
+    int headroom =
+        fft_buffer_->write < fft_buffer_->read
+            ? fft_buffer_->read - fft_buffer_->write
+            : fft_buffer_->size - fft_buffer_->write + fft_buffer_->read;
+
+    RTC_DCHECK_LE(0, headroom);
+    RTC_DCHECK_GE(fft_buffer_->size, headroom);
+
+    return headroom;
+  }
+
  private:
   const MatrixBuffer* const block_buffer_;
   const VectorBuffer* const spectrum_buffer_;
