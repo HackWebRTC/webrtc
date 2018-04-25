@@ -10,6 +10,8 @@
 
 #include "modules/video_coding/codecs/test/videoprocessor_integrationtest.h"
 
+#include <string>
+#include <tuple>
 #include <vector>
 
 #include "common_types.h"  // NOLINT(build/include)
@@ -22,6 +24,7 @@ namespace test {
 
 namespace {
 const int kForemanNumFrames = 300;
+const int kForemanFramerateFps = 30;
 }  // namespace
 
 class VideoProcessorIntegrationTestMediaCodec
@@ -40,7 +43,8 @@ TEST_F(VideoProcessorIntegrationTestMediaCodec, ForemanCif500kbpsVp8) {
   config_.SetCodecSettings(cricket::kVp8CodecName, 1, 1, 1, false, false, false,
                            false, 352, 288);
 
-  std::vector<RateProfile> rate_profiles = {{500, 30, kForemanNumFrames}};
+  std::vector<RateProfile> rate_profiles = {
+      {500, kForemanFramerateFps, kForemanNumFrames}};
 
   // The thresholds below may have to be tweaked to let even poor MediaCodec
   // implementations pass. If this test fails on the bots, disable it and
@@ -59,7 +63,8 @@ TEST_F(VideoProcessorIntegrationTestMediaCodec, ForemanCif500kbpsH264CBP) {
   config_.SetCodecSettings(cricket::kH264CodecName, 1, 1, 1, false, false,
                            false, false, 352, 288);
 
-  std::vector<RateProfile> rate_profiles = {{500, 30, kForemanNumFrames}};
+  std::vector<RateProfile> rate_profiles = {
+      {500, kForemanFramerateFps, kForemanNumFrames}};
 
   // The thresholds below may have to be tweaked to let even poor MediaCodec
   // implementations pass. If this test fails on the bots, disable it and
@@ -84,7 +89,8 @@ TEST_F(VideoProcessorIntegrationTestMediaCodec,
   config_.SetCodecSettings(cricket::kH264CodecName, 1, 1, 1, false, false,
                            false, false, 352, 288);
 
-  std::vector<RateProfile> rate_profiles = {{500, 30, kForemanNumFrames}};
+  std::vector<RateProfile> rate_profiles = {
+      {500, kForemanFramerateFps, kForemanNumFrames}};
 
   // The thresholds below may have to be tweaked to let even poor MediaCodec
   // implementations pass. If this test fails on the bots, disable it and
@@ -96,6 +102,35 @@ TEST_F(VideoProcessorIntegrationTestMediaCodec,
 
   ProcessFramesAndMaybeVerify(rate_profiles, &rc_thresholds,
                               &quality_thresholds, nullptr, nullptr);
+}
+
+TEST_F(VideoProcessorIntegrationTestMediaCodec, ForemanMixedRes100kbpsVp8H264) {
+  const int kNumFrames = 30;
+  // TODO(brandtr): Add H.264 when we have fixed the encoder.
+  const std::vector<std::string> codecs = {cricket::kVp8CodecName};
+  const std::vector<std::tuple<int, int>> resolutions = {
+      {128, 96}, {160, 120}, {176, 144}, {240, 136}, {320, 240}, {480, 272}};
+  const std::vector<RateProfile> rate_profiles = {
+      {100, kForemanFramerateFps, kNumFrames}};
+  const std::vector<QualityThresholds> quality_thresholds = {
+      {29, 26, 0.8, 0.75}};
+
+  for (const auto& codec : codecs) {
+    for (const auto& resolution : resolutions) {
+      const int width = std::get<0>(resolution);
+      const int height = std::get<1>(resolution);
+      config_.filename = std::string("foreman_") + std::to_string(width) + "x" +
+                         std::to_string(height);
+      config_.filepath = ResourcePath(config_.filename, "yuv");
+      config_.num_frames = kNumFrames;
+      config_.SetCodecSettings(codec, 1, 1, 1, false, false, false, false,
+                               width, height);
+
+      ProcessFramesAndMaybeVerify(
+          rate_profiles, nullptr /* rc_thresholds */, &quality_thresholds,
+          nullptr /* bs_thresholds */, nullptr /* visualization_params */);
+    }
+  }
 }
 
 }  // namespace test
