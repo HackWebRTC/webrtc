@@ -42,7 +42,9 @@ struct PacketOptions {
   ~PacketOptions();
 
   DiffServCodePoint dscp = DSCP_NO_CHANGE;
-  int packet_id = -1;  // 16 bits, -1 represents "not set".
+  // When used with RTP packets (for example, webrtc::PacketOptions), the value
+  // should be 16 bits. A value of -1 represents "not set".
+  int64_t packet_id = -1;
   PacketTimeUpdateParams packet_time_params;
   // PacketInfo is passed to SentPacket when signaling this packet is sent.
   PacketInfo info_signaled_after_sent;

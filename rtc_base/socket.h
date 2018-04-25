@@ -158,10 +158,12 @@ struct PacketInfo {
 
 struct SentPacket {
   SentPacket();
-  SentPacket(int packet_id, int64_t send_time_ms);
-  SentPacket(int packet_id, int64_t send_time_ms, const rtc::PacketInfo& info);
+  SentPacket(int64_t packet_id, int64_t send_time_ms);
+  SentPacket(int64_t packet_id,
+             int64_t send_time_ms,
+             const rtc::PacketInfo& info);
 
-  int packet_id = -1;
+  int64_t packet_id = -1;
   int64_t send_time_ms = -1;
   rtc::PacketInfo info;
 };
