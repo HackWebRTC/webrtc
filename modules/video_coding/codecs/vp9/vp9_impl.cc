@@ -74,9 +74,10 @@ VP9EncoderImpl::VP9EncoderImpl()
       config_(nullptr),
       raw_(nullptr),
       input_image_(nullptr),
-      frames_since_kf_(0),
+      pics_since_key_(0),
       num_temporal_layers_(0),
       num_spatial_layers_(0),
+      inter_layer_pred_(InterLayerPredMode::kOn),
       is_flexible_mode_(false),
       frames_encoded_(0),
       // Use two spatial when screensharing with flexible mode.
@@ -367,6 +368,8 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
 
+  inter_layer_pred_ = inst->VP9().interLayerPred;
+
   return InitAndSetControlSettings(inst);
 }
 
@@ -456,10 +459,28 @@ int VP9EncoderImpl::InitAndSetControlSettings(const VideoCodec* inst) {
   vpx_codec_control(
       encoder_, VP9E_SET_SVC,
       (num_temporal_layers_ > 1 || num_spatial_layers_ > 1) ? 1 : 0);
+
   if (num_temporal_layers_ > 1 || num_spatial_layers_ > 1) {
     vpx_codec_control(encoder_, VP9E_SET_SVC_PARAMETERS,
                       &svc_params_);
   }
+
+  if (num_spatial_layers_ > 1) {
+    switch (inter_layer_pred_) {
+      case InterLayerPredMode::kOn:
+        vpx_codec_control(encoder_, VP9E_SET_SVC_INTER_LAYER_PRED, 0);
+        break;
+      case InterLayerPredMode::kOff:
+        vpx_codec_control(encoder_, VP9E_SET_SVC_INTER_LAYER_PRED, 1);
+        break;
+      case InterLayerPredMode::kOnKeyPic:
+        vpx_codec_control(encoder_, VP9E_SET_SVC_INTER_LAYER_PRED, 2);
+        break;
+      default:
+        RTC_NOTREACHED();
+    }
+  }
+
   // Register callback for getting each spatial layer.
   vpx_codec_priv_output_cx_pkt_cb_pair_t cbp = {
       VP9EncoderImpl::EncoderOutputCodedPacketCallback,
@@ -604,7 +625,6 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
       ((pkt.data.frame.flags & VPX_FRAME_IS_KEY) && !codec_.VP9()->flexibleMode)
           ? true
           : false;
-  vp9_info->non_ref_for_inter_layer_pred = false;
 
   vpx_svc_layer_id_t layer_id = {0};
   vpx_codec_control(encoder_, VP9E_GET_SVC_LAYER_ID, &layer_id);
@@ -630,18 +650,30 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
   // TODO(asapersson): this info has to be obtained from the encoder.
   vp9_info->temporal_up_switch = false;
 
-  if (first_frame_in_picture) {
-    // TODO(asapersson): this info has to be obtained from the encoder.
-    vp9_info->inter_layer_predicted = false;
-    ++frames_since_kf_;
-  } else {
-    // TODO(asapersson): this info has to be obtained from the encoder.
-    vp9_info->inter_layer_predicted = true;
+  if (pkt.data.frame.flags & VPX_FRAME_IS_KEY) {
+    pics_since_key_ = 0;
+  } else if (first_frame_in_picture) {
+    ++pics_since_key_;
   }
 
-  if (pkt.data.frame.flags & VPX_FRAME_IS_KEY) {
-    frames_since_kf_ = 0;
-  }
+  const bool is_key_pic = (pics_since_key_ == 0);
+  const bool is_inter_layer_pred_allowed =
+      (inter_layer_pred_ == InterLayerPredMode::kOn ||
+       (inter_layer_pred_ == InterLayerPredMode::kOnKeyPic && is_key_pic));
+
+  // Always set inter_layer_predicted to true on high layer frame if inter-layer
+  // prediction (ILP) is allowed even if encoder didn't actually use it.
+  // Setting inter_layer_predicted to false would allow receiver to decode high
+  // layer frame without decoding low layer frame. If that would happen (e.g.
+  // if low layer frame is lost) then receiver won't be able to decode next high
+  // layer frame which uses ILP.
+  vp9_info->inter_layer_predicted =
+      first_frame_in_picture ? false : is_inter_layer_pred_allowed;
+
+  const bool is_last_layer =
+      (layer_id.spatial_layer_id + 1 == num_spatial_layers_);
+  vp9_info->non_ref_for_inter_layer_pred =
+      is_last_layer ? true : !is_inter_layer_pred_allowed;
 
   // Always populate this, so that the packetizer can properly set the marker
   // bit.
@@ -656,7 +688,7 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
     }
   } else {
     vp9_info->gof_idx =
-        static_cast<uint8_t>(frames_since_kf_ % gof_.num_frames_in_gof);
+        static_cast<uint8_t>(pics_since_key_ % gof_.num_frames_in_gof);
     vp9_info->temporal_up_switch = gof_.temporal_up_switch[vp9_info->gof_idx];
   }
 

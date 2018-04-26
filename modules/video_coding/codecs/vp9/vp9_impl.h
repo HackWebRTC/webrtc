@@ -120,9 +120,10 @@ class VP9EncoderImpl : public VP9Encoder {
   const VideoFrame* input_image_;
   GofInfoVP9 gof_;       // Contains each frame's temporal information for
                          // non-flexible mode.
-  size_t frames_since_kf_;
+  size_t pics_since_key_;
   uint8_t num_temporal_layers_;
   uint8_t num_spatial_layers_;
+  InterLayerPredMode inter_layer_pred_;
 
   // Used for flexible mode.
   bool is_flexible_mode_;

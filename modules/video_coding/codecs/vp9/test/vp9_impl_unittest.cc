@@ -318,4 +318,69 @@ TEST_F(TestVp9Impl, EndOfPicture) {
   EXPECT_TRUE(codec_specific[0].codecSpecific.VP9.end_of_picture);
 }
 
+TEST_F(TestVp9Impl, InterLayerPred) {
+  const size_t num_spatial_layers = 2;
+  const size_t num_temporal_layers = 1;
+  codec_settings_.VP9()->numberOfSpatialLayers =
+      static_cast<unsigned char>(num_spatial_layers);
+  codec_settings_.VP9()->numberOfTemporalLayers =
+      static_cast<unsigned char>(num_temporal_layers);
+  codec_settings_.VP9()->frameDroppingOn = false;
+
+  std::vector<SpatialLayer> layers =
+      GetSvcConfig(codec_settings_.width, codec_settings_.height,
+                   num_spatial_layers, num_temporal_layers);
+
+  BitrateAllocation bitrate_allocation;
+  for (size_t i = 0; i < layers.size(); ++i) {
+    codec_settings_.spatialLayers[i] = layers[i];
+    bitrate_allocation.SetBitrate(i, 0, layers[i].targetBitrate * 1000);
+  }
+
+  const std::vector<InterLayerPredMode> inter_layer_pred_modes = {
+      InterLayerPredMode::kOff, InterLayerPredMode::kOn,
+      InterLayerPredMode::kOnKeyPic};
+
+  for (const InterLayerPredMode inter_layer_pred : inter_layer_pred_modes) {
+    codec_settings_.VP9()->interLayerPred = inter_layer_pred;
+    EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+              encoder_->InitEncode(&codec_settings_, 1 /* number of cores */,
+                                   0 /* max payload size (unused) */));
+
+    EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+              encoder_->SetRateAllocation(bitrate_allocation,
+                                          codec_settings_.maxFramerate));
+
+    SetWaitForEncodedFramesThreshold(2);
+    EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+              encoder_->Encode(*NextInputFrame(), nullptr, nullptr));
+
+    std::vector<EncodedImage> frames;
+    std::vector<CodecSpecificInfo> codec_specific;
+    ASSERT_TRUE(WaitForEncodedFrames(&frames, &codec_specific));
+
+    // Key frame.
+    EXPECT_FALSE(codec_specific[0].codecSpecific.VP9.inter_pic_predicted);
+    EXPECT_EQ(codec_specific[0].codecSpecific.VP9.spatial_idx, 0);
+    EXPECT_EQ(codec_specific[0].codecSpecific.VP9.non_ref_for_inter_layer_pred,
+              inter_layer_pred == InterLayerPredMode::kOff);
+    EXPECT_TRUE(
+        codec_specific[1].codecSpecific.VP9.non_ref_for_inter_layer_pred);
+
+    SetWaitForEncodedFramesThreshold(2);
+    EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+              encoder_->Encode(*NextInputFrame(), nullptr, nullptr));
+    ASSERT_TRUE(WaitForEncodedFrames(&frames, &codec_specific));
+
+    // Delta frame.
+    EXPECT_TRUE(codec_specific[0].codecSpecific.VP9.inter_pic_predicted);
+    EXPECT_EQ(codec_specific[0].codecSpecific.VP9.spatial_idx, 0);
+    EXPECT_EQ(codec_specific[0].codecSpecific.VP9.non_ref_for_inter_layer_pred,
+              inter_layer_pred == InterLayerPredMode::kOff ||
+                  inter_layer_pred == InterLayerPredMode::kOnKeyPic);
+    EXPECT_TRUE(
+        codec_specific[1].codecSpecific.VP9.non_ref_for_inter_layer_pred);
+  }
+}
+
 }  // namespace webrtc
