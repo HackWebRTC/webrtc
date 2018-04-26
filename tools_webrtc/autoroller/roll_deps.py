@@ -54,8 +54,11 @@ CLANG_UPDATE_SCRIPT_LOCAL_PATH = os.path.join(CHECKOUT_SRC_DIR, 'tools',
                                               'clang', 'scripts', 'update.py')
 
 DepsEntry = collections.namedtuple('DepsEntry', 'path url revision')
-ChangedDep = collections.namedtuple('ChangedDep',
-                                    'path url current_rev new_rev')
+ChangedDep = collections.namedtuple(
+    'ChangedDep', 'path url current_rev new_rev')
+CipdDepsEntry = collections.namedtuple('CipdDepsEntry', 'path packages')
+ChangedCipdPackage = collections.namedtuple(
+    'ChangedCipdPackage', 'path package current_version new_version')
 
 class RollError(Exception):
   pass
@@ -208,20 +211,39 @@ def BuildDepsentryDict(deps_dict):
   result = {}
   def AddDepsEntries(deps_subdict):
     for path, dep in deps_subdict.iteritems():
-      if isinstance(dep, dict):
-        if dep.get('dep_type') == 'cipd':
-          continue
-        deps_url = dep['url']
+      if path in result:
+        continue
+      if not isinstance(dep, dict):
+        dep = {'url': dep}
+      if dep.get('dep_type') == 'cipd':
+        result[path] = CipdDepsEntry(path, dep['packages'])
       else:
-        deps_url = dep
-      if not result.has_key(path):
-        url, revision = deps_url.split('@') if deps_url else (None, None)
+        url, revision = dep['url'].split('@')
         result[path] = DepsEntry(path, url, revision)
 
   AddDepsEntries(deps_dict['deps'])
   for deps_os in ['win', 'mac', 'unix', 'android', 'ios', 'unix']:
     AddDepsEntries(deps_dict.get('deps_os', {}).get(deps_os, {}))
   return result
+
+
+def _RemoveStringPrefix(string, substring):
+  assert string.startswith(substring)
+  return string[len(substring):]
+
+
+def _FindChangedCipdPackages(path, old_pkgs, new_pkgs):
+  assert ({p['package'] for p in old_pkgs} ==
+          {p['package'] for p in new_pkgs})
+  for old_pkg in old_pkgs:
+    for new_pkg in new_pkgs:
+      old_version = _RemoveStringPrefix(old_pkg['version'], 'version:')
+      new_version = _RemoveStringPrefix(new_pkg['version'], 'version:')
+      if (old_pkg['package'] == new_pkg['package'] and
+          old_version != new_version):
+        logging.debug('Roll dependency %s to %s', path, new_version)
+        yield ChangedCipdPackage(path, old_pkg['package'],
+                                 old_version, new_version)
 
 
 def CalculateChangedDeps(webrtc_deps, new_cr_deps):
@@ -247,6 +269,13 @@ def CalculateChangedDeps(webrtc_deps, new_cr_deps):
       continue
     cr_deps_entry = new_cr_entries.get(path)
     if cr_deps_entry:
+      assert type(cr_deps_entry) is type(webrtc_deps_entry)
+
+      if isinstance(cr_deps_entry, CipdDepsEntry):
+        result.extend(_FindChangedCipdPackages(path, webrtc_deps_entry.packages,
+                                               cr_deps_entry.packages))
+        continue
+
       # Use the revision from Chromium's DEPS file.
       new_rev = cr_deps_entry.revision
       assert webrtc_deps_entry.url == cr_deps_entry.url, (
@@ -301,9 +330,13 @@ def GenerateCommitMessage(current_cr_rev, new_cr_rev, current_commit_pos,
     commit_msg.append('Changed dependencies:')
 
     for c in changed_deps_list:
-      commit_msg.append('* %s: %s/+log/%s..%s' % (c.path, c.url,
-                                                  c.current_rev[0:10],
-                                                  c.new_rev[0:10]))
+      if isinstance(c, ChangedCipdPackage):
+        commit_msg.append('* %s: %s..%s' % (c.path, c.current_version,
+                                            c.new_version))
+      else:
+        commit_msg.append('* %s: %s/+log/%s..%s' % (c.path, c.url,
+                                                    c.current_rev[0:10],
+                                                    c.new_rev[0:10]))
       if 'libvpx' in c.path:
         tbr_authors += 'marpan@webrtc.org, '
 
@@ -354,9 +387,12 @@ def UpdateDepsFile(deps_filename, old_cr_revision, new_cr_revision,
           'platforms in the target_os list, i.e.\n'
           'target_os = ["android", "unix", "mac", "ios", "win"];\n'
           'Then run "gclient sync" again.' % local_dep_dir)
-    _RunCommand(
-      ['gclient', 'setdep', '--revision', '%s@%s' % (dep.path, dep.new_rev)],
-      working_dir=CHECKOUT_SRC_DIR)
+    if isinstance(dep, ChangedCipdPackage):
+      update = '%s:%s@%s' % (dep.path, dep.package, dep.new_version)
+    else:
+      update = '%s@%s' % (dep.path, dep.new_rev)
+    _RunCommand(['gclient', 'setdep', '--revision', update],
+                working_dir=CHECKOUT_SRC_DIR)
 
 
 def _IsTreeClean():

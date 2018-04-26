@@ -70,7 +70,6 @@ class TestRollChromiumRevision(unittest.TestCase):
     for test_file in glob.glob(os.path.join(SCRIPT_DIR, 'testdata', '*')):
       shutil.copy(test_file, self._output_dir)
     self._webrtc_depsfile = os.path.join(self._output_dir, 'DEPS')
-    self._old_cr_depsfile = os.path.join(self._output_dir, 'DEPS.chromium.old')
     self._new_cr_depsfile = os.path.join(self._output_dir, 'DEPS.chromium.new')
 
     self.fake = FakeCmd()
@@ -107,7 +106,7 @@ class TestRollChromiumRevision(unittest.TestCase):
       self.assertEquals(vars_dict[variable_name], TEST_DATA_VARS[variable_name])
     AssertVar('chromium_git')
     AssertVar('chromium_revision')
-    self.assertEquals(len(local_scope['deps']), 2)
+    self.assertEquals(len(local_scope['deps']), 3)
     self.assertEquals(len(local_scope['deps_os']), 1)
 
   def testGetMatchingDepsEntriesReturnsPathInSimpleCase(self):
@@ -130,7 +129,7 @@ class TestRollChromiumRevision(unittest.TestCase):
     webrtc_deps = ParseLocalDepsFile(self._webrtc_depsfile)
     new_cr_deps = ParseLocalDepsFile(self._new_cr_depsfile)
     changed_deps = CalculateChangedDeps(webrtc_deps, new_cr_deps)
-    self.assertEquals(len(changed_deps), 2)
+    self.assertEquals(len(changed_deps), 3)
     self.assertEquals(changed_deps[0].path, 'src/build')
     self.assertEquals(changed_deps[0].current_rev, BUILD_OLD_REV)
     self.assertEquals(changed_deps[0].new_rev, BUILD_NEW_REV)
@@ -138,6 +137,11 @@ class TestRollChromiumRevision(unittest.TestCase):
     self.assertEquals(changed_deps[1].path, 'src/buildtools')
     self.assertEquals(changed_deps[1].current_rev, BUILDTOOLS_OLD_REV)
     self.assertEquals(changed_deps[1].new_rev, BUILDTOOLS_NEW_REV)
+
+    self.assertEquals(changed_deps[2].path, 'src/third_party/xstream')
+    self.assertEquals(changed_deps[2].package, 'chromium/third_party/xstream')
+    self.assertEquals(changed_deps[2].current_version, '1.4.8-cr0')
+    self.assertEquals(changed_deps[2].new_version, '1.10.0-cr0')
 
 
 class TestChooseCQMode(unittest.TestCase):

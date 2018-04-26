@@ -13,6 +13,18 @@ deps = {
   # Entry that's also a DEPS entry in the Chromium DEPS file.
   'src/buildtools':
     Var('chromium_git') + '/chromium/buildtools.git' + '@' + '64e38f0cebdde27aa0cfb405f330063582f9ac76',
+
+  # Entry that's also a CIPD entry in the Chromium DEPS file.
+  'src/third_party/xstream': {
+      'packages': [
+          {
+              'package': 'chromium/third_party/xstream',
+              'version': 'version:1.4.8-cr0',
+          },
+      ],
+      'condition': 'checkout_android',
+      'dep_type': 'cipd',
+  },
 }
 
 deps_os = {
