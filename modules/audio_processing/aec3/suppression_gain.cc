@@ -21,6 +21,8 @@
 #include <numeric>
 
 #include "modules/audio_processing/aec3/vector_math.h"
+#include "modules/audio_processing/logging/apm_data_dumper.h"
+#include "rtc_base/atomicops.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {
@@ -253,6 +255,8 @@ void AdjustNonConvergedFrequencies(
 
 }  // namespace
 
+int SuppressionGain::instance_count_ = 0;
+
 // TODO(peah): Add further optimizations, in particular for the divisions.
 void SuppressionGain::LowerBandGain(
     bool low_noise_render,
@@ -298,8 +302,8 @@ void SuppressionGain::LowerBandGain(
   // Iteratively compute the gain required to attenuate the echo to a non
   // noticeable level.
   gain->fill(0.f);
+  std::array<float, kFftLengthBy2Plus1> masker;
   for (int k = 0; k < 2; ++k) {
-    std::array<float, kFftLengthBy2Plus1> masker;
     MaskingPower(config_, nearend, comfort_noise, last_masker_, *gain, &masker);
     GainToNoAudibleEcho(config_, low_noise_render, saturated_echo,
                         linear_echo_estimate, nearend, weighted_echo, masker,
@@ -320,12 +324,20 @@ void SuppressionGain::LowerBandGain(
   MaskingPower(config_, nearend, comfort_noise, last_masker_, *gain,
                &last_masker_);
   aec3::VectorMath(optimization_).Sqrt(*gain);
+
+  // Debug outputs for the purpose of development and analysis.
+  data_dumper_->DumpRaw("aec3_suppressor_min_gain", min_gain);
+  data_dumper_->DumpRaw("aec3_suppressor_max_gain", max_gain);
+  data_dumper_->DumpRaw("aec3_suppressor_masker", masker);
+  data_dumper_->DumpRaw("aec3_suppressor_last_masker", last_masker_);
 }
 
 SuppressionGain::SuppressionGain(const EchoCanceller3Config& config,
                                  Aec3Optimization optimization,
                                  int sample_rate_hz)
-    : optimization_(optimization),
+    : data_dumper_(
+          new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
+      optimization_(optimization),
       config_(config),
       state_change_duration_blocks_(
           static_cast<int>(config_.filter.config_change_duration_blocks)),
