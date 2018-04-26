@@ -156,10 +156,6 @@ def main():
     _CleanTemporary(args.output_dir, architectures)
     return 0
 
-  # Ignoring x86 for now because of a GN build issue
-  # where the generated dynamic framework has the wrong architectures.
-  architectures.remove('x86')
-
   gn_target_name = 'framework_objc'
   if not args.bitcode:
     gn_args.append('enable_dsyms=true')
