@@ -372,6 +372,12 @@ if (is_ios || is_mac) {
         "objc/Framework/Headers/WebRTC/RTCVideoCodecFactory.h",
         "objc/Framework/Headers/WebRTC/RTCVideoCodecH264.h",
       ]
+      if (is_ios) {
+        sources += [
+          "objc/Framework/Classes/Video/UIDevice+H264Profile.h",
+          "objc/Framework/Classes/Video/UIDevice+H264Profile.mm",
+        ]
+      }
       if (!build_with_chromium && is_clang) {
         # Suppress warnings from the Chromium Clang plugin
         # (bugs.webrtc.org/163).
@@ -382,6 +388,7 @@ if (is_ios || is_mac) {
         ":common_objc",
         "../api/video_codecs:video_codecs_api",
         "../common_video",
+        "../media:rtc_h264_profile_id",
         "../media:rtc_media_base",
         "../modules:module_api",
         "../modules/video_coding:video_codec_interface",

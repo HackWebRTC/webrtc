@@ -12,15 +12,70 @@
 
 #import "NSString+StdString.h"
 #import "RTCVideoCodec+Private.h"
+#if defined(WEBRTC_IOS)
+#import "UIDevice+H264Profile.h"
+#endif
 #import "WebRTC/RTCVideoCodecFactory.h"
 
 #include "media/base/mediaconstants.h"
+
+namespace {
+
+NSString *MaxSupportedProfileLevelConstrainedHigh();
+NSString *MaxSupportedProfileLevelConstrainedBaseline();
+
+}  // namespace
 
 NSString *const kRTCVideoCodecVp8Name = @(cricket::kVp8CodecName);
 NSString *const kRTCVideoCodecVp9Name = @(cricket::kVp9CodecName);
 NSString *const kRTCVideoCodecH264Name = @(cricket::kH264CodecName);
 NSString *const kRTCLevel31ConstrainedHigh = @"640c1f";
 NSString *const kRTCLevel31ConstrainedBaseline = @"42e01f";
+NSString *const kRTCMaxSupportedH264ProfileLevelConstrainedHigh =
+    MaxSupportedProfileLevelConstrainedHigh();
+NSString *const kRTCMaxSupportedH264ProfileLevelConstrainedBaseline =
+    MaxSupportedProfileLevelConstrainedBaseline();
+
+namespace {
+
+#if defined(WEBRTC_IOS)
+
+using namespace webrtc::H264;
+
+NSString *MaxSupportedLevelForProfile(Profile profile) {
+  const rtc::Optional<ProfileLevelId> profileLevelId = [UIDevice maxSupportedH264Profile];
+  if (profileLevelId && profileLevelId->profile >= profile) {
+    const rtc::Optional<std::string> profileString =
+        ProfileLevelIdToString(ProfileLevelId(profile, profileLevelId->level));
+    if (profileString) {
+      return [NSString stringForStdString:*profileString];
+    }
+  }
+  return nil;
+}
+#endif
+
+NSString *MaxSupportedProfileLevelConstrainedBaseline() {
+#if defined(WEBRTC_IOS)
+  NSString *profile = MaxSupportedLevelForProfile(webrtc::H264::kProfileConstrainedBaseline);
+  if (profile != nil) {
+    return profile;
+  }
+#endif
+  return kRTCLevel31ConstrainedBaseline;
+}
+
+NSString *MaxSupportedProfileLevelConstrainedHigh() {
+#if defined(WEBRTC_IOS)
+  NSString *profile = MaxSupportedLevelForProfile(webrtc::H264::kProfileConstrainedHigh);
+  if (profile != nil) {
+    return profile;
+  }
+#endif
+  return kRTCLevel31ConstrainedHigh;
+}
+
+}  // namespace
 
 @implementation RTCVideoCodecInfo
 

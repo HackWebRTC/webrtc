@@ -25,7 +25,7 @@
 
 + (NSArray<RTCVideoCodecInfo *> *)supportedCodecs {
   NSDictionary<NSString *, NSString *> *constrainedHighParams = @{
-    @"profile-level-id" : kRTCLevel31ConstrainedHigh,
+    @"profile-level-id" : kRTCMaxSupportedH264ProfileLevelConstrainedHigh,
     @"level-asymmetry-allowed" : @"1",
     @"packetization-mode" : @"1",
   };
@@ -34,7 +34,7 @@
                                    parameters:constrainedHighParams];
 
   NSDictionary<NSString *, NSString *> *constrainedBaselineParams = @{
-    @"profile-level-id" : kRTCLevel31ConstrainedBaseline,
+    @"profile-level-id" : kRTCMaxSupportedH264ProfileLevelConstrainedBaseline,
     @"level-asymmetry-allowed" : @"1",
     @"packetization-mode" : @"1",
   };
