@@ -548,22 +548,6 @@ static bool GetCryptosByName(const SessionDescription* sdesc,
   return true;
 }
 
-// Predicate function used by the remove_if.
-// Returns true if the |crypto|'s cipher_suite is not found in |filter|.
-static bool CryptoNotFound(const CryptoParams crypto,
-                           const CryptoParamsVec* filter) {
-  if (filter == NULL) {
-    return true;
-  }
-  for (CryptoParamsVec::const_iterator it = filter->begin();
-       it != filter->end(); ++it) {
-    if (it->cipher_suite == crypto.cipher_suite) {
-      return false;
-    }
-  }
-  return true;
-}
-
 // Prunes the |target_cryptos| by removing the crypto params (cipher_suite)
 // which are not available in |filter|.
 static void PruneCryptos(const CryptoParamsVec& filter,
@@ -571,11 +555,19 @@ static void PruneCryptos(const CryptoParamsVec& filter,
   if (!target_cryptos) {
     return;
   }
-  target_cryptos->erase(std::remove_if(target_cryptos->begin(),
-                                       target_cryptos->end(),
-                                       bind2nd(ptr_fun(CryptoNotFound),
-                                               &filter)),
-                        target_cryptos->end());
+
+  target_cryptos->erase(
+      std::remove_if(target_cryptos->begin(), target_cryptos->end(),
+                     // Returns true if the |crypto|'s cipher_suite is not
+                     // found in |filter|.
+                     [&filter](const CryptoParams& crypto) {
+                       for (const CryptoParams& entry : filter) {
+                         if (entry.cipher_suite == crypto.cipher_suite)
+                           return false;
+                       }
+                       return true;
+                     }),
+      target_cryptos->end());
 }
 
 bool IsRtpProtocol(const std::string& protocol) {
