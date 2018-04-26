@@ -90,7 +90,7 @@ int FindSimulcastFormatIndex(int width, int height, size_t max_layers) {
 }
 
 // Simulcast stream width and height must both be dividable by
-// |2 ^ simulcast_layers - 1|.
+// |2 ^ (simulcast_layers - 1)|.
 int NormalizeSimulcastSize(int size, size_t simulcast_layers) {
   const int base2_exponent = static_cast<int>(simulcast_layers) - 1;
   return ((size >> base2_exponent) << base2_exponent);
