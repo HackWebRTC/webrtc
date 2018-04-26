@@ -363,17 +363,6 @@ void SuppressionGain::GetGain(
   LowerBandGain(low_noise_render, aec_state, nearend_spectrum, echo_spectrum,
                 comfort_noise_spectrum, low_band_gain);
 
-  const float gain_upper_bound = aec_state.SuppressionGainLimit();
-  if (gain_upper_bound < 1.f) {
-    for (size_t k = 0; k < low_band_gain->size(); ++k) {
-      (*low_band_gain)[k] = std::min((*low_band_gain)[k], gain_upper_bound);
-    }
-  }
-
-  // Compute the gain for the upper bands.
-  *high_bands_gain = UpperBandsGain(narrow_peak_band, aec_state.SaturatedEcho(),
-                                    render, *low_band_gain);
-
   // Adjust the gain for bands where the coherence indicates not echo.
   if (config_.suppressor.bands_with_reliable_coherence > 0) {
     std::array<float, kFftLengthBy2Plus1> G_coherence;
@@ -384,6 +373,18 @@ void SuppressionGain::GetGain(
       (*low_band_gain)[k] = std::max((*low_band_gain)[k], G_coherence[k]);
     }
   }
+
+  // Limit the gain of the lower bands during start up and after resets.
+  const float gain_upper_bound = aec_state.SuppressionGainLimit();
+  if (gain_upper_bound < 1.f) {
+    for (size_t k = 0; k < low_band_gain->size(); ++k) {
+      (*low_band_gain)[k] = std::min((*low_band_gain)[k], gain_upper_bound);
+    }
+  }
+
+  // Compute the gain for the upper bands.
+  *high_bands_gain = UpperBandsGain(narrow_peak_band, aec_state.SaturatedEcho(),
+                                    render, *low_band_gain);
 }
 
 void SuppressionGain::SetInitialState(bool state) {
