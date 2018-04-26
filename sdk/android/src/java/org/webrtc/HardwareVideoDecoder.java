@@ -207,7 +207,7 @@ class HardwareVideoDecoder
   public VideoCodecStatus decode(EncodedImage frame, DecodeInfo info) {
     decoderThreadChecker.checkIsOnValidThread();
     if (codec == null || callback == null) {
-      Logging.d(TAG, "decode uninitalized, codec: " + codec + ", callback: " + callback);
+      Logging.d(TAG, "decode uninitalized, codec: " + (codec != null) + ", callback: " + callback);
       return VideoCodecStatus.UNINITIALIZED;
     }
 
