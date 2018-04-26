@@ -175,12 +175,20 @@ RTC_EXPORT
           missingFrames:(BOOL)missingFrames
     fragmentationHeader:(RTCRtpFragmentationHeader *)fragmentationHeader
       codecSpecificInfo:(nullable id<RTCCodecSpecificInfo>)info
-           renderTimeMs:(int64_t)renderTimeMs;
+           renderTimeMs:(int64_t)renderTimeMs
+    DEPRECATED_MSG_ATTRIBUTE("use decode:missingFrames:codecSpecificInfo:renderTimeMs: instead");
 - (NSString *)implementationName;
 
 // TODO(andersc): Make non-optional when `startDecodeWithSettings:numberOfCores:` is removed.
 @optional
 - (NSInteger)startDecodeWithNumberOfCores:(int)numberOfCores;
+
+// TODO(andersc): Make non-optional when `decode:...fragmentationHeader:...` is removed.
+@optional
+- (NSInteger)decode:(RTCEncodedImage *)encodedImage
+        missingFrames:(BOOL)missingFrames
+    codecSpecificInfo:(nullable id<RTCCodecSpecificInfo>)info
+         renderTimeMs:(int64_t)renderTimeMs;
 
 @end
 
