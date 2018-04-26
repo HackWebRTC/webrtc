@@ -28,14 +28,13 @@ class MockVideoStreamEncoder : public VideoStreamEncoderInterface {
   MOCK_METHOD1(SetBitrateObserver, void(VideoBitrateAllocationObserver*));
   MOCK_METHOD0(Stop, void());
 
-  MOCK_METHOD3(MockedConfigureEncoder,
-               void(const VideoEncoderConfig&, size_t, bool));
+  MOCK_METHOD2(MockedConfigureEncoder,
+               void(const VideoEncoderConfig&, size_t));
   // gtest generates implicit copy which is not allowed on VideoEncoderConfig,
   // so we can't mock ConfigureEncoder directly.
   void ConfigureEncoder(VideoEncoderConfig config,
-                        size_t max_data_payload_length,
-                        bool nack_enabled) {
-    MockedConfigureEncoder(config, max_data_payload_length, nack_enabled);
+                        size_t max_data_payload_length) {
+    MockedConfigureEncoder(config, max_data_payload_length);
   }
 };
 

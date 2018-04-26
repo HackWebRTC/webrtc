@@ -39,7 +39,7 @@ static const uint32_t kHighScreenshareTl1Bps = 1200000;
 // TODO(sprang): Extend coverage to handle the rest of the codec initializer.
 class VideoCodecInitializerTest : public ::testing::Test {
  public:
-  VideoCodecInitializerTest() : nack_enabled_(false) {}
+  VideoCodecInitializerTest() {}
   virtual ~VideoCodecInitializerTest() {}
 
  protected:
@@ -76,7 +76,7 @@ class VideoCodecInitializerTest : public ::testing::Test {
     codec_out_ = VideoCodec();
     bitrate_allocator_out_.reset();
     temporal_layers_.clear();
-    if (!VideoCodecInitializer::SetupCodec(config_, streams_, nack_enabled_,
+    if (!VideoCodecInitializer::SetupCodec(config_, streams_,
                                            &codec_out_,
                                            &bitrate_allocator_out_)) {
       return false;
@@ -122,7 +122,6 @@ class VideoCodecInitializerTest : public ::testing::Test {
   // Input settings.
   VideoEncoderConfig config_;
   std::vector<VideoStream> streams_;
-  bool nack_enabled_;
 
   // Output.
   VideoCodec codec_out_;

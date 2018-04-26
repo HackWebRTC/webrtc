@@ -344,7 +344,6 @@ VideoStreamEncoder::VideoStreamEncoder(
       pending_encoder_creation_(false),
       encoder_start_bitrate_bps_(0),
       max_data_payload_length_(0),
-      nack_enabled_(false),
       last_observed_bitrate_bps_(0),
       encoder_paused_and_dropped_frame_(false),
       clock_(Clock::GetRealTimeClock()),
@@ -448,34 +447,30 @@ void VideoStreamEncoder::SetStartBitrate(int start_bitrate_bps) {
 }
 
 void VideoStreamEncoder::ConfigureEncoder(VideoEncoderConfig config,
-                                          size_t max_data_payload_length,
-                                          bool nack_enabled) {
+                                          size_t max_data_payload_length) {
   // TODO(srte): This struct should be replaced by a lambda with move capture
   // when C++14 lambda is allowed.
   struct ConfigureEncoderTask {
     void operator()() {
       encoder->ConfigureEncoderOnTaskQueue(
-          std::move(config), max_data_payload_length, nack_enabled);
+          std::move(config), max_data_payload_length);
     }
     VideoStreamEncoder* encoder;
     VideoEncoderConfig config;
     size_t max_data_payload_length;
-    bool nack_enabled;
   };
   encoder_queue_.PostTask(ConfigureEncoderTask{
-      this, std::move(config), max_data_payload_length, nack_enabled});
+      this, std::move(config), max_data_payload_length});
 }
 
 void VideoStreamEncoder::ConfigureEncoderOnTaskQueue(
     VideoEncoderConfig config,
-    size_t max_data_payload_length,
-    bool nack_enabled) {
+    size_t max_data_payload_length) {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
   RTC_DCHECK(sink_);
   RTC_LOG(LS_INFO) << "ConfigureEncoder requested.";
 
   max_data_payload_length_ = max_data_payload_length;
-  nack_enabled_ = nack_enabled;
   pending_encoder_creation_ =
       (!encoder_ || encoder_config_.video_format != config.video_format);
   encoder_config_ = std::move(config);
@@ -520,7 +515,7 @@ void VideoStreamEncoder::ReconfigureEncoder() {
 
   VideoCodec codec;
   if (!VideoCodecInitializer::SetupCodec(
-          encoder_config_, streams, nack_enabled_, &codec, &rate_allocator_)) {
+          encoder_config_, streams, &codec, &rate_allocator_)) {
     RTC_LOG(LS_ERROR) << "Failed to create encoder configuration.";
   }
 

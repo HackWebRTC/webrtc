@@ -63,8 +63,7 @@ class VideoStreamEncoderInterface : public rtc::VideoSinkInterface<VideoFrame> {
   virtual void SetBitrateObserver(
       VideoBitrateAllocationObserver* bitrate_observer) = 0;
   virtual void ConfigureEncoder(VideoEncoderConfig config,
-                                size_t max_data_payload_length,
-                                bool nack_enabled) = 0;
+                                size_t max_data_payload_length) = 0;
   virtual void Stop() = 0;
 
  protected:
@@ -115,8 +114,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
       VideoBitrateAllocationObserver* bitrate_observer) override;
 
   void ConfigureEncoder(VideoEncoderConfig config,
-                        size_t max_data_payload_length,
-                        bool nack_enabled) override;
+                        size_t max_data_payload_length) override;
 
   // Permanently stop encoding. After this method has returned, it is
   // guaranteed that no encoded frames will be delivered to the sink.
@@ -156,8 +154,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   };
 
   void ConfigureEncoderOnTaskQueue(VideoEncoderConfig config,
-                                   size_t max_data_payload_length,
-                                   bool nack_enabled);
+                                   size_t max_data_payload_length);
   void ReconfigureEncoder() RTC_RUN_ON(&encoder_queue_);
 
   void ConfigureQualityScaler();
@@ -276,7 +273,6 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   int crop_height_ RTC_GUARDED_BY(&encoder_queue_);
   uint32_t encoder_start_bitrate_bps_ RTC_GUARDED_BY(&encoder_queue_);
   size_t max_data_payload_length_ RTC_GUARDED_BY(&encoder_queue_);
-  bool nack_enabled_ RTC_GUARDED_BY(&encoder_queue_);
   uint32_t last_observed_bitrate_bps_ RTC_GUARDED_BY(&encoder_queue_);
   bool encoder_paused_and_dropped_frame_ RTC_GUARDED_BY(&encoder_queue_);
   Clock* const clock_;

@@ -169,8 +169,7 @@ void VideoSendStream::ReconfigureVideoEncoder(VideoEncoderConfig config) {
   RTC_DCHECK(content_type_ == config.content_type);
   video_stream_encoder_->ConfigureEncoder(
       std::move(config),
-      config_.rtp.max_packet_size - CalculateMaxHeaderSize(config_.rtp),
-      config_.rtp.nack.rtp_history_ms > 0);
+      config_.rtp.max_packet_size - CalculateMaxHeaderSize(config_.rtp));
 }
 
 VideoSendStream::Stats VideoSendStream::GetStats() {
