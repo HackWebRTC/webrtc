@@ -3210,6 +3210,15 @@ void PeerConnection::Close() {
   for (auto transceiver : transceivers_) {
     transceiver->Stop();
   }
+
+  // Ensure that all asynchronous stats requests are completed before destroying
+  // the transport controller below.
+  if (stats_collector_) {
+    stats_collector_->WaitForPendingRequest();
+  }
+
+  // Don't destroy BaseChannels until after stats has been cleaned up so that
+  // the last stats request can still read from the channels.
   DestroyAllChannels();
 
   // The event log is used in the transport controller, which must be outlived

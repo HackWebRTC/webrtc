@@ -826,7 +826,20 @@ TEST_F(RTCStatsIntegrationTest, GetsStatsWhileDestroyingPeerConnections) {
   caller_ = nullptr;
   // Any pending stats requests should have completed in the act of destroying
   // the peer connection.
-  EXPECT_TRUE(stats_obtainer->report());
+  ASSERT_TRUE(stats_obtainer->report());
+  EXPECT_EQ(stats_obtainer->report()->ToJson(),
+            RTCStatsReportTraceListener::last_trace());
+}
+
+TEST_F(RTCStatsIntegrationTest, GetsStatsWhileClosingPeerConnection) {
+  StartCall();
+
+  rtc::scoped_refptr<RTCStatsObtainer> stats_obtainer =
+      RTCStatsObtainer::Create();
+  caller_->pc()->GetStats(stats_obtainer);
+  caller_->pc()->Close();
+
+  ASSERT_TRUE(stats_obtainer->report());
   EXPECT_EQ(stats_obtainer->report()->ToJson(),
             RTCStatsReportTraceListener::last_trace());
 }
