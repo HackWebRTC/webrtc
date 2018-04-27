@@ -19,10 +19,29 @@ constexpr size_t kFrameSize10ms24kHz = kSampleRate24kHz / 100;
 constexpr size_t kFrameSize20ms24kHz = kFrameSize10ms24kHz * 2;
 
 // Pitch analysis params.
-constexpr size_t kPitchMinPeriod24kHz = kSampleRate24kHz / 800;   // 0.00125 s.
-constexpr size_t kPitchMaxPeriod24kHz = kSampleRate24kHz / 62.5;  // 0.016 s.
-constexpr size_t kBufSize24kHz = kPitchMaxPeriod24kHz + kFrameSize20ms24kHz;
+constexpr size_t kMinPitch24kHz = kSampleRate24kHz / 800;   // 0.00125 s.
+constexpr size_t kMaxPitch24kHz = kSampleRate24kHz / 62.5;  // 0.016 s.
+constexpr size_t kBufSize24kHz = kMaxPitch24kHz + kFrameSize20ms24kHz;
 static_assert((kBufSize24kHz & 1) == 0, "The buffer size must be even.");
+
+// Define a higher minimum pitch period for the initial search. This is used to
+// avoid searching for very short periods, for which a refinement step is
+// responsible.
+constexpr size_t kInitialMinPitch24kHz = 3 * kMinPitch24kHz;
+static_assert(kMinPitch24kHz < kInitialMinPitch24kHz, "");
+static_assert(kInitialMinPitch24kHz < kMaxPitch24kHz, "");
+
+// 12 kHz analysis.
+constexpr size_t kSampleRate12kHz = 12000;
+constexpr size_t kFrameSize10ms12kHz = kSampleRate12kHz / 100;
+constexpr size_t kFrameSize20ms12kHz = kFrameSize10ms12kHz * 2;
+constexpr size_t kBufSize12kHz = kBufSize24kHz / 2;
+constexpr size_t kInitialMinPitch12kHz = kInitialMinPitch24kHz / 2;
+constexpr size_t kMaxPitch12kHz = kMaxPitch24kHz / 2;
+
+// 48 kHz constants.
+constexpr size_t kMinPitch48kHz = kMinPitch24kHz * 2;
+constexpr size_t kMaxPitch48kHz = kMaxPitch24kHz * 2;
 
 }  // namespace rnn_vad
 }  // namespace webrtc

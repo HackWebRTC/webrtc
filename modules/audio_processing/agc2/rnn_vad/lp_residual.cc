@@ -90,22 +90,18 @@ void ComputeAndPostProcessLpcCoefficients(
       {auto_corr.data(), auto_corr.size()},
       {lpc_coeffs_pre.data(), lpc_coeffs_pre.size()});
   // LPC coefficients post-processing.
-  // TODO(https://bugs.webrtc.org/9076): Consider removing these steps.
-  {
-    float c = 1.f;
-    for (size_t i = 0; i < kNumLpcCoefficients - 1; ++i) {
-      c *= 0.9f;
-      lpc_coeffs_pre[i] *= c;
-    }
+  // TODO(bugs.webrtc.org/9076): Consider removing these steps.
+  float c1 = 1.f;
+  for (size_t i = 0; i < kNumLpcCoefficients - 1; ++i) {
+    c1 *= 0.9f;
+    lpc_coeffs_pre[i] *= c1;
   }
-  {
-    const float c = 0.8f;
-    lpc_coeffs[0] = lpc_coeffs_pre[0] + c;
-    lpc_coeffs[1] = lpc_coeffs_pre[1] + c * lpc_coeffs_pre[0];
-    lpc_coeffs[2] = lpc_coeffs_pre[2] + c * lpc_coeffs_pre[1];
-    lpc_coeffs[3] = lpc_coeffs_pre[3] + c * lpc_coeffs_pre[2];
-    lpc_coeffs[4] = c * lpc_coeffs_pre[3];
-  }
+  const float c2 = 0.8f;
+  lpc_coeffs[0] = lpc_coeffs_pre[0] + c2;
+  lpc_coeffs[1] = lpc_coeffs_pre[1] + c2 * lpc_coeffs_pre[0];
+  lpc_coeffs[2] = lpc_coeffs_pre[2] + c2 * lpc_coeffs_pre[1];
+  lpc_coeffs[3] = lpc_coeffs_pre[3] + c2 * lpc_coeffs_pre[2];
+  lpc_coeffs[4] = c2 * lpc_coeffs_pre[3];
 }
 
 void ComputeLpResidual(

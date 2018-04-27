@@ -79,7 +79,7 @@ int main(int argc, char* argv[]) {
   std::array<float, kFrameSize10ms24kHz> samples_10ms_24kHz;
   PushSincResampler resampler(frame_size_10ms, kFrameSize10ms24kHz);
 
-  // TODO(alessiob): Init feature extractor and RNN-based VAD.
+  // TODO(bugs.webrtc.org/9076): Init feature extractor and RNN-based VAD.
 
   // Compute VAD probabilities.
   while (true) {
@@ -93,7 +93,7 @@ int main(int argc, char* argv[]) {
     resampler.Resample(samples_10ms.data(), samples_10ms.size(),
                        samples_10ms_24kHz.data(), samples_10ms_24kHz.size());
 
-    // TODO(alessiob): Extract features.
+    // TODO(bugs.webrtc.org/9076): Extract features.
     float vad_probability;
     bool is_silence = true;
 
@@ -101,15 +101,15 @@ int main(int argc, char* argv[]) {
     if (features_file) {
       const float float_is_silence = is_silence ? 1.f : 0.f;
       fwrite(&float_is_silence, sizeof(float), 1, features_file);
-      // TODO(alessiob): Write feature vector.
+      // TODO(bugs.webrtc.org/9076): Write feature vector.
     }
 
     // Compute VAD probability.
     if (is_silence) {
       vad_probability = 0.f;
-      // TODO(alessiob): Reset VAD.
+      // TODO(bugs.webrtc.org/9076): Reset VAD.
     } else {
-      // TODO(alessiob): Compute VAD probability.
+      // TODO(bugs.webrtc.org/9076): Compute VAD probability.
     }
     RTC_DCHECK_GE(vad_probability, 0.f);
     RTC_DCHECK_GE(1.f, vad_probability);

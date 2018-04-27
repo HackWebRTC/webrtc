@@ -14,11 +14,9 @@
 #include "test/gtest.h"
 
 namespace webrtc {
+namespace rnn_vad {
 namespace test {
 namespace {
-
-using rnn_vad::RingBuffer;
-using rnn_vad::SymmetricMatrixBuffer;
 
 template <typename T, size_t S>
 void CheckSymmetry(const SymmetricMatrixBuffer<T, S>* sym_matrix_buf) {
@@ -108,4 +106,5 @@ TEST(RnnVadTest, SymmetricMatrixBufferUseCase) {
 }
 
 }  // namespace test
+}  // namespace rnn_vad
 }  // namespace webrtc

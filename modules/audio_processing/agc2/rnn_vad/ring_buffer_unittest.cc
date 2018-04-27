@@ -13,10 +13,8 @@
 #include "test/gtest.h"
 
 namespace webrtc {
+namespace rnn_vad {
 namespace test {
-
-using rnn_vad::RingBuffer;
-
 namespace {
 
 // Compare the elements of two given array views.
@@ -113,4 +111,5 @@ TEST(RnnVadTest, RingBufferFloating) {
 }
 
 }  // namespace test
+}  // namespace rnn_vad
 }  // namespace webrtc

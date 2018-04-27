@@ -15,10 +15,8 @@
 #include "test/gtest.h"
 
 namespace webrtc {
+namespace rnn_vad {
 namespace test {
-
-using rnn_vad::SequenceBuffer;
-
 namespace {
 
 template <typename T, size_t S, size_t N>
@@ -103,4 +101,5 @@ TEST(RnnVadTest, SequenceBufferPushOpsFloating) {
 }
 
 }  // namespace test
+}  // namespace rnn_vad
 }  // namespace webrtc

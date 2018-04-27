@@ -23,6 +23,7 @@
 #include "rtc_base/checks.h"
 
 namespace webrtc {
+namespace rnn_vad {
 namespace test {
 
 constexpr float kFloatMin = std::numeric_limits<float>::min();
@@ -31,15 +32,14 @@ constexpr float kFloatMin = std::numeric_limits<float>::min();
 // that their absolute error is above a given threshold.
 void ExpectNearAbsolute(rtc::ArrayView<const float> expected,
                         rtc::ArrayView<const float> computed,
-                        const float tolerance);
+                        float tolerance);
 
 // Reader for binary files consisting of an arbitrary long sequence of elements
 // having type T. It is possible to read and cast to another type D at once.
 template <typename T, typename D = T>
 class BinaryFileReader {
  public:
-  explicit BinaryFileReader(const std::string& file_path,
-                            const size_t chunk_size = 1)
+  explicit BinaryFileReader(const std::string& file_path, size_t chunk_size = 1)
       : is_(file_path, std::ios::binary | std::ios::ate),
         data_length_(is_.tellg() / sizeof(T)),
         chunk_size_(chunk_size) {
@@ -97,6 +97,7 @@ std::pair<std::unique_ptr<BinaryFileReader<float>>, const size_t>
 CreateLpResidualAndPitchPeriodGainReader();
 
 }  // namespace test
+}  // namespace rnn_vad
 }  // namespace webrtc
 
 #endif  // MODULES_AUDIO_PROCESSING_AGC2_RNN_VAD_TEST_UTILS_H_

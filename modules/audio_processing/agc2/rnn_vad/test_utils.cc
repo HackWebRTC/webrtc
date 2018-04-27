@@ -16,6 +16,7 @@
 #include "test/testsupport/fileutils.h"
 
 namespace webrtc {
+namespace rnn_vad {
 namespace test {
 namespace {
 
@@ -24,9 +25,11 @@ using ReaderPairType =
 
 }  // namespace
 
+using webrtc::test::ResourcePath;
+
 void ExpectNearAbsolute(rtc::ArrayView<const float> expected,
                         rtc::ArrayView<const float> computed,
-                        const float tolerance) {
+                        float tolerance) {
   ASSERT_EQ(expected.size(), computed.size());
   for (size_t i = 0; i < expected.size(); ++i) {
     SCOPED_TRACE(i);
@@ -36,8 +39,7 @@ void ExpectNearAbsolute(rtc::ArrayView<const float> expected,
 
 ReaderPairType CreatePitchBuffer24kHzReader() {
   auto ptr = rtc::MakeUnique<BinaryFileReader<float>>(
-      test::ResourcePath("audio_processing/agc2/rnn_vad/pitch_buf_24k", "dat"),
-      864);
+      ResourcePath("audio_processing/agc2/rnn_vad/pitch_buf_24k", "dat"), 864);
   return {std::move(ptr),
           rtc::CheckedDivExact(ptr->data_length(), static_cast<size_t>(864))};
 }
@@ -45,11 +47,12 @@ ReaderPairType CreatePitchBuffer24kHzReader() {
 ReaderPairType CreateLpResidualAndPitchPeriodGainReader() {
   constexpr size_t num_lp_residual_coeffs = 864;
   auto ptr = rtc::MakeUnique<BinaryFileReader<float>>(
-      test::ResourcePath("audio_processing/agc2/rnn_vad/pitch_lp_res", "dat"),
+      ResourcePath("audio_processing/agc2/rnn_vad/pitch_lp_res", "dat"),
       num_lp_residual_coeffs);
   return {std::move(ptr),
           rtc::CheckedDivExact(ptr->data_length(), 2 + num_lp_residual_coeffs)};
 }
 
 }  // namespace test
+}  // namespace rnn_vad
 }  // namespace webrtc

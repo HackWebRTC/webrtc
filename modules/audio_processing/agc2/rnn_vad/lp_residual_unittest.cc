@@ -14,21 +14,16 @@
 
 #include "modules/audio_processing/agc2/rnn_vad/common.h"
 #include "modules/audio_processing/agc2/rnn_vad/test_utils.h"
-// TODO(https://bugs.webrtc.org/8948): Add when the issue is fixed.
+// TODO(bugs.webrtc.org/8948): Add when the issue is fixed.
 // #include "test/fpe_observer.h"
 #include "test/gtest.h"
 
 namespace webrtc {
+namespace rnn_vad {
 namespace test {
 
-using rnn_vad::ComputeAndPostProcessLpcCoefficients;
-using rnn_vad::ComputeLpResidual;
-using rnn_vad::kBufSize24kHz;
-using rnn_vad::kFrameSize10ms24kHz;
-using rnn_vad::kNumLpcCoefficients;
-
 TEST(RnnVadTest, LpResidualOfEmptyFrame) {
-  // TODO(https://bugs.webrtc.org/8948): Add when the issue is fixed.
+  // TODO(bugs.webrtc.org/8948): Add when the issue is fixed.
   // FloatingPointExceptionObserver fpe_observer;
 
   // Input frame (empty, i.e., all samples set to 0).
@@ -44,7 +39,7 @@ TEST(RnnVadTest, LpResidualOfEmptyFrame) {
                     {lp_residual});
 }
 
-// TODO(https://bugs.webrtc.org/9076): Remove when the issue is fixed.
+// TODO(bugs.webrtc.org/9076): Remove when the issue is fixed.
 TEST(RnnVadTest, LpResidualPipelineBitExactness) {
   // Pitch buffer 24 kHz data reader.
   auto pitch_buf_24kHz_reader = CreatePitchBuffer24kHzReader();
@@ -66,7 +61,7 @@ TEST(RnnVadTest, LpResidualPipelineBitExactness) {
   rtc::ArrayView<float, kBufSize24kHz> computed_lp_residual_view(
       computed_lp_residual.data(), computed_lp_residual.size());
   {
-    // TODO(https://bugs.webrtc.org/8948): Add when the issue is fixed.
+    // TODO(bugs.webrtc.org/8948): Add when the issue is fixed.
     // FloatingPointExceptionObserver fpe_observer;
 
     for (size_t i = 0; i < num_frames; ++i) {
@@ -91,4 +86,5 @@ TEST(RnnVadTest, LpResidualPipelineBitExactness) {
 }
 
 }  // namespace test
+}  // namespace rnn_vad
 }  // namespace webrtc

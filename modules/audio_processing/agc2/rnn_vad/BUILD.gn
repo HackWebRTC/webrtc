@@ -19,6 +19,11 @@ source_set("lib") {
     "common.h",
     "lp_residual.cc",
     "lp_residual.h",
+    "pitch_info.h",
+    "pitch_search.cc",
+    "pitch_search.h",
+    "pitch_search_internal.cc",
+    "pitch_search_internal.h",
     "ring_buffer.h",
     "sequence_buffer.h",
     "symmetric_matrix_buffer.h",
@@ -64,6 +69,8 @@ if (rtc_include_tests) {
     testonly = true
     sources = [
       "lp_residual_unittest.cc",
+      "pitch_search_internal_unittest.cc",
+      "pitch_search_unittest.cc",
       "ring_buffer_unittest.cc",
       "sequence_buffer_unittest.cc",
       "symmetric_matrix_buffer_unittest.cc",
