@@ -60,6 +60,9 @@ static NetworkType GetNetworkTypeFromJava(
   if (enum_name == "CONNECTION_BLUETOOTH") {
     return NetworkType::NETWORK_BLUETOOTH;
   }
+  if (enum_name == "CONNECTION_VPN") {
+    return NetworkType::NETWORK_VPN;
+  }
   if (enum_name == "CONNECTION_NONE") {
     return NetworkType::NETWORK_NONE;
   }
@@ -80,6 +83,7 @@ static rtc::AdapterType AdapterTypeFromNetworkType(NetworkType network_type) {
     case NETWORK_2G:
     case NETWORK_UNKNOWN_CELLULAR:
       return rtc::ADAPTER_TYPE_CELLULAR;
+    case NETWORK_VPN:
     case NETWORK_BLUETOOTH:
       // There is no corresponding mapping for bluetooth networks.
       // Map it to VPN for now.
@@ -123,6 +127,9 @@ static NetworkInformation GetNetworkInformationFromJava(
       Java_NetworkInformation_getHandle(jni, j_network_info));
   network_info.type = GetNetworkTypeFromJava(
       jni, Java_NetworkInformation_getConnectionType(jni, j_network_info));
+  network_info.underlying_type_for_vpn = GetNetworkTypeFromJava(
+      jni, Java_NetworkInformation_getUnderlyingConnectionTypeForVpn(
+               jni, j_network_info));
   ScopedJavaLocalRef<jobjectArray> j_ip_addresses =
       Java_NetworkInformation_getIpAddresses(jni, j_network_info);
   network_info.ip_addresses = JavaToNativeVector<rtc::IPAddress>(
@@ -147,7 +154,11 @@ NetworkInformation& NetworkInformation::operator=(NetworkInformation&&) =
 std::string NetworkInformation::ToString() const {
   std::stringstream ss;
   ss << "NetInfo[name " << interface_name << "; handle " << handle << "; type "
-     << type << "; address";
+     << type;
+  if (type == NETWORK_VPN) {
+    ss << "; underlying_type_for_vpn " << underlying_type_for_vpn;
+  }
+  ss << "; address";
   for (const rtc::IPAddress address : ip_addresses) {
     ss << " " << address.ToString();
   }
@@ -316,6 +327,10 @@ void AndroidNetworkMonitor::OnNetworkConnected_w(
   RTC_LOG(LS_INFO) << "Network connected: " << network_info.ToString();
   adapter_type_by_name_[network_info.interface_name] =
       AdapterTypeFromNetworkType(network_info.type);
+  if (network_info.type == NETWORK_VPN) {
+    vpn_underlying_adapter_type_by_name_[network_info.interface_name] =
+        AdapterTypeFromNetworkType(network_info.underlying_type_for_vpn);
+  }
   network_info_by_handle_[network_info.handle] = network_info;
   for (const rtc::IPAddress& address : network_info.ip_addresses) {
     network_handle_by_address_[address] = network_info.handle;
@@ -360,6 +375,15 @@ rtc::AdapterType AndroidNetworkMonitor::GetAdapterType(
   if (type == rtc::ADAPTER_TYPE_UNKNOWN) {
     RTC_LOG(LS_WARNING) << "Get an unknown type for the interface " << if_name;
   }
+  return type;
+}
+
+rtc::AdapterType AndroidNetworkMonitor::GetVpnUnderlyingAdapterType(
+    const std::string& if_name) {
+  auto iter = vpn_underlying_adapter_type_by_name_.find(if_name);
+  rtc::AdapterType type = (iter == vpn_underlying_adapter_type_by_name_.end())
+                              ? rtc::ADAPTER_TYPE_UNKNOWN
+                              : iter->second;
   return type;
 }
 

@@ -293,7 +293,7 @@ class Network {
           AdapterType type);
   Network(const Network&);
   ~Network();
-
+  // This signal is fired whenever type() or underlying_type_for_vpn() changes.
   sigslot::signal1<const Network*> SignalTypeChanged;
 
   const DefaultLocalAddressProvider* default_local_address_provider() {
@@ -367,28 +367,37 @@ class Network {
   void set_ignored(bool ignored) { ignored_ = ignored; }
 
   AdapterType type() const { return type_; }
+  // When type() is ADAPTER_TYPE_VPN, this returns the type of the underlying
+  // network interface used by the VPN, typically the preferred network type
+  // (see for example, the method setUnderlyingNetworks(android.net.Network[])
+  // on https://developer.android.com/reference/android/net/VpnService.html).
+  // When this information is unavailable from the OS, ADAPTER_TYPE_UNKNOWN is
+  // returned.
+  AdapterType underlying_type_for_vpn() const {
+    return underlying_type_for_vpn_;
+  }
   void set_type(AdapterType type) {
     if (type_ == type) {
       return;
     }
     type_ = type;
+    if (type != ADAPTER_TYPE_VPN) {
+      underlying_type_for_vpn_ = ADAPTER_TYPE_UNKNOWN;
+    }
     SignalTypeChanged(this);
   }
 
-  uint16_t GetCost() const {
-    switch (type_) {
-      case rtc::ADAPTER_TYPE_ETHERNET:
-      case rtc::ADAPTER_TYPE_LOOPBACK:
-        return kNetworkCostMin;
-      case rtc::ADAPTER_TYPE_WIFI:
-      case rtc::ADAPTER_TYPE_VPN:
-        return kNetworkCostLow;
-      case rtc::ADAPTER_TYPE_CELLULAR:
-        return kNetworkCostHigh;
-      default:
-        return kNetworkCostUnknown;
+  void set_underlying_type_for_vpn(AdapterType type) {
+    if (underlying_type_for_vpn_ == type) {
+      return;
     }
+    underlying_type_for_vpn_ = type;
+    SignalTypeChanged(this);
   }
+
+  bool IsVpn() const { return type_ == ADAPTER_TYPE_VPN; }
+
+  uint16_t GetCost() const;
   // A unique id assigned by the network manager, which may be signaled
   // to the remote side in the candidate.
   uint16_t id() const { return id_; }
@@ -421,6 +430,7 @@ class Network {
   int scope_id_;
   bool ignored_;
   AdapterType type_;
+  AdapterType underlying_type_for_vpn_ = ADAPTER_TYPE_UNKNOWN;
   int preference_;
   bool active_ = true;
   uint16_t id_ = 0;

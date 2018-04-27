@@ -35,6 +35,7 @@ enum NetworkType {
   NETWORK_2G,
   NETWORK_UNKNOWN_CELLULAR,
   NETWORK_BLUETOOTH,
+  NETWORK_VPN,
   NETWORK_NONE
 };
 
@@ -44,6 +45,7 @@ struct NetworkInformation {
   std::string interface_name;
   NetworkHandle handle;
   NetworkType type;
+  NetworkType underlying_type_for_vpn;
   std::vector<rtc::IPAddress> ip_addresses;
 
   NetworkInformation();
@@ -73,6 +75,8 @@ class AndroidNetworkMonitor : public rtc::NetworkMonitorBase,
       int socket_fd,
       const rtc::IPAddress& address) override;
   rtc::AdapterType GetAdapterType(const std::string& if_name) override;
+  rtc::AdapterType GetVpnUnderlyingAdapterType(
+      const std::string& if_name) override;
   void OnNetworkConnected(const NetworkInformation& network_info);
   void OnNetworkDisconnected(NetworkHandle network_handle);
   // Always expected to be called on the network thread.
@@ -100,6 +104,7 @@ class AndroidNetworkMonitor : public rtc::NetworkMonitorBase,
   rtc::ThreadChecker thread_checker_;
   bool started_ = false;
   std::map<std::string, rtc::AdapterType> adapter_type_by_name_;
+  std::map<std::string, rtc::AdapterType> vpn_underlying_adapter_type_by_name_;
   std::map<rtc::IPAddress, NetworkHandle> network_handle_by_address_;
   std::map<NetworkHandle, NetworkInformation> network_info_by_handle_;
 };

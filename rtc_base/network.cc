@@ -111,6 +111,24 @@ std::string AdapterTypeToString(AdapterType type) {
   }
 }
 
+uint16_t ComputeNetworkCostByType(int type) {
+  switch (type) {
+    case rtc::ADAPTER_TYPE_ETHERNET:
+    case rtc::ADAPTER_TYPE_LOOPBACK:
+      return kNetworkCostMin;
+    case rtc::ADAPTER_TYPE_WIFI:
+      return kNetworkCostLow;
+    case rtc::ADAPTER_TYPE_CELLULAR:
+      return kNetworkCostHigh;
+    case rtc::ADAPTER_TYPE_VPN:
+      // The cost of a VPN should be computed using its underlying network type.
+      RTC_NOTREACHED();
+      return kNetworkCostUnknown;
+    default:
+      return kNetworkCostUnknown;
+  }
+}
+
 #if !defined(__native_client__)
 bool IsIgnoredIPv6(const InterfaceAddress& ip) {
   if (ip.family() != AF_INET6) {
@@ -476,6 +494,7 @@ void BasicNetworkManager::ConvertIfAddrs(struct ifaddrs* interfaces,
     }
 
     AdapterType adapter_type = ADAPTER_TYPE_UNKNOWN;
+    AdapterType vpn_underlying_adapter_type = ADAPTER_TYPE_UNKNOWN;
     if (cursor->ifa_flags & IFF_LOOPBACK) {
       adapter_type = ADAPTER_TYPE_LOOPBACK;
     } else {
@@ -487,6 +506,11 @@ void BasicNetworkManager::ConvertIfAddrs(struct ifaddrs* interfaces,
       if (adapter_type == ADAPTER_TYPE_UNKNOWN) {
         adapter_type = GetAdapterTypeFromName(cursor->ifa_name);
       }
+    }
+
+    if (adapter_type == ADAPTER_TYPE_VPN && network_monitor_) {
+      vpn_underlying_adapter_type =
+          network_monitor_->GetVpnUnderlyingAdapterType(cursor->ifa_name);
     }
     int prefix_length = CountIPMaskBits(mask);
     prefix = TruncateIP(ip, prefix_length);
@@ -502,6 +526,7 @@ void BasicNetworkManager::ConvertIfAddrs(struct ifaddrs* interfaces,
       network->set_scope_id(scope_id);
       network->AddIP(ip);
       network->set_ignored(IsIgnoredNetwork(*network));
+      network->set_underlying_type_for_vpn(vpn_underlying_adapter_type);
       if (include_ignored || !network->ignored()) {
         current_networks[key] = network.get();
         networks->push_back(network.release());
@@ -511,6 +536,8 @@ void BasicNetworkManager::ConvertIfAddrs(struct ifaddrs* interfaces,
       existing_network->AddIP(ip);
       if (adapter_type != ADAPTER_TYPE_UNKNOWN) {
         existing_network->set_type(adapter_type);
+        existing_network->set_underlying_type_for_vpn(
+            vpn_underlying_adapter_type);
       }
     }
   }
@@ -971,13 +998,22 @@ IPAddress Network::GetBestIP() const {
   return static_cast<IPAddress>(selected_ip);
 }
 
+uint16_t Network::GetCost() const {
+  AdapterType type = IsVpn() ? underlying_type_for_vpn_ : type_;
+  return ComputeNetworkCostByType(type);
+}
+
 std::string Network::ToString() const {
   std::stringstream ss;
   // Print out the first space-terminated token of the network desc, plus
   // the IP address.
-  ss << "Net[" << description_.substr(0, description_.find(' '))
-     << ":" << prefix_.ToSensitiveString() << "/" << prefix_length_
-     << ":" << AdapterTypeToString(type_) << "]";
+  ss << "Net[" << description_.substr(0, description_.find(' ')) << ":"
+     << prefix_.ToSensitiveString() << "/" << prefix_length_ << ":"
+     << AdapterTypeToString(type_);
+  if (IsVpn()) {
+    ss << "/" << AdapterTypeToString(underlying_type_for_vpn_);
+  }
+  ss << "]";
   return ss.str();
 }
 
