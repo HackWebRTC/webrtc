@@ -174,24 +174,24 @@ int getifaddrs(struct ifaddrs** result) {
           rtattr* rta = IFA_RTA(address_msg);
           ssize_t payload_len = IFA_PAYLOAD(header);
           while (RTA_OK(rta, payload_len)) {
-            if (rta->rta_type == IFA_ADDRESS) {
-              int family = address_msg->ifa_family;
-              if (family == AF_INET || family == AF_INET6) {
-                ifaddrs* newest = new ifaddrs;
-                memset(newest, 0, sizeof(ifaddrs));
-                if (current) {
-                  current->ifa_next = newest;
-                } else {
-                  start = newest;
-                }
-                if (populate_ifaddrs(newest, address_msg, RTA_DATA(rta),
-                                     RTA_PAYLOAD(rta)) != 0) {
-                  freeifaddrs(start);
-                  *result = nullptr;
-                  return -1;
-                }
-                current = newest;
+            if ((address_msg->ifa_family == AF_INET &&
+                    rta->rta_type == IFA_LOCAL) ||
+                (address_msg->ifa_family == AF_INET6 &&
+                 rta->rta_type == IFA_ADDRESS)) {
+              ifaddrs* newest = new ifaddrs;
+              memset(newest, 0, sizeof(ifaddrs));
+              if (current) {
+                current->ifa_next = newest;
+              } else {
+                start = newest;
               }
+              if (populate_ifaddrs(newest, address_msg, RTA_DATA(rta),
+                                   RTA_PAYLOAD(rta)) != 0) {
+                freeifaddrs(start);
+                *result = nullptr;
+                return -1;
+              }
+              current = newest;
             }
             rta = RTA_NEXT(rta, payload_len);
           }
