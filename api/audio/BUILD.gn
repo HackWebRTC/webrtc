@@ -44,7 +44,6 @@ rtc_source_set("aec3_config") {
 
 rtc_source_set("aec3_factory") {
   visibility = [ "*" ]
-  allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
   configs += [ "../../modules/audio_processing:apm_debug_dump" ]
   sources = [
     "echo_canceller3_factory.cc",

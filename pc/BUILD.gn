@@ -27,7 +27,6 @@ config("rtc_pc_config") {
 
 rtc_static_library("rtc_pc_base") {
   visibility = [ "*" ]
-  allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
   defines = []
   sources = [
     "audiomonitor.h",
@@ -124,7 +123,6 @@ config("libjingle_peerconnection_warnings_config") {
 
 rtc_static_library("peerconnection") {
   visibility = [ "*" ]
-  allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
   cflags = []
   sources = [
     "audiotrack.cc",

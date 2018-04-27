@@ -31,6 +31,7 @@
 #include "modules/audio_coding/codecs/isac/main/source/lpc_shape_swb16_tables.h"
 #include "modules/audio_coding/codecs/isac/main/source/os_specific_inline.h"
 #include "modules/audio_coding/codecs/isac/main/source/structs.h"
+#include "modules/audio_coding/codecs/isac/main/source/isac_vad.h"
 
 #define BIT_MASK_DEC_INIT 0x0001
 #define BIT_MASK_ENC_INIT 0x0002

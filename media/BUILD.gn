@@ -64,7 +64,6 @@ rtc_source_set("rtc_media_config") {
 
 rtc_static_library("rtc_media_base") {
   visibility = [ "*" ]
-  allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
   defines = []
   libs = []
   deps = [
@@ -156,10 +155,7 @@ rtc_static_library("rtc_constants") {
 
 rtc_static_library("rtc_internal_video_codecs") {
   visibility = [ "*" ]
-  allow_poison = [
-    "audio_codecs",  # TODO(bugs.webrtc.org/8396): Remove.
-    "software_video_codecs",
-  ]
+  allow_poison = [ "software_video_codecs" ]
   defines = []
   libs = []
   deps = [

@@ -362,7 +362,6 @@ if (is_ios || is_mac) {
 
     rtc_static_library("videocodec_objc") {
       visibility = [ "*" ]
-      allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
       sources = [
         "objc/Framework/Classes/PeerConnection/RTCEncodedImage.mm",
         "objc/Framework/Classes/PeerConnection/RTCRtpFragmentationHeader.mm",
@@ -416,10 +415,7 @@ if (is_ios || is_mac) {
 
     rtc_static_library("vp8") {
       visibility = [ "*" ]
-      allow_poison = [
-        "audio_codecs",  # TODO(bugs.webrtc.org/8396): Remove.
-        "software_video_codecs",
-      ]
+      allow_poison = [ "software_video_codecs" ]
       sources = [
         "objc/Framework/Classes/PeerConnection/RTCVideoCodecVP8.mm",
         "objc/Framework/Headers/WebRTC/RTCVideoDecoderVP8.h",
@@ -441,10 +437,7 @@ if (is_ios || is_mac) {
 
     rtc_static_library("vp9") {
       visibility = [ "*" ]
-      allow_poison = [
-        "audio_codecs",  # TODO(bugs.webrtc.org/8396): Remove.
-        "software_video_codecs",
-      ]
+      allow_poison = [ "software_video_codecs" ]
       sources = [
         "objc/Framework/Classes/PeerConnection/RTCVideoCodecVP9.mm",
         "objc/Framework/Headers/WebRTC/RTCVideoDecoderVP9.h",

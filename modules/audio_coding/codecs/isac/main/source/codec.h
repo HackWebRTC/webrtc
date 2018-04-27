@@ -19,6 +19,8 @@
 #ifndef MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_SOURCE_CODEC_H_
 #define MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_SOURCE_CODEC_H_
 
+#include <stddef.h>
+
 #include "modules/audio_coding/codecs/isac/main/source/structs.h"
 
 void WebRtcIsac_ResetBitstream(Bitstr* bit_stream);
@@ -165,13 +167,7 @@ int WebRtcIsac_EncodeUb12(const TransformTables* transform_tables,
 
 void WebRtcIsac_InitMasking(MaskFiltstr* maskdata);
 
-void WebRtcIsac_InitPreFilterbank(PreFiltBankstr* prefiltdata);
-
 void WebRtcIsac_InitPostFilterbank(PostFiltBankstr* postfiltdata);
-
-void WebRtcIsac_InitPitchFilter(PitchFiltstr* pitchfiltdata);
-
-void WebRtcIsac_InitPitchAnalysis(PitchAnalysisStruct* State);
 
 
 /**************************** transform functions ****************************/
@@ -192,24 +188,7 @@ void WebRtcIsac_Spec2time(const TransformTables* tables,
                           double* outre2,
                           FFTstr* fftstr_obj);
 
-/******************************* filter functions ****************************/
-
-void WebRtcIsac_AllPoleFilter(double* InOut, double* Coef, size_t lengthInOut,
-                              int orderCoef);
-
-void WebRtcIsac_AllZeroFilter(double* In, double* Coef, size_t lengthInOut,
-                              int orderCoef, double* Out);
-
-void WebRtcIsac_ZeroPoleFilter(double* In, double* ZeroCoef, double* PoleCoef,
-                               size_t lengthInOut, int orderCoef, double* Out);
-
-
 /***************************** filterbank functions **************************/
-
-void WebRtcIsac_SplitAndFilterFloat(float* in, float* LP, float* HP,
-                                    double* LP_la, double* HP_la,
-                                    PreFiltBankstr* prefiltdata);
-
 
 void WebRtcIsac_FilterAndCombineFloat(float* InLP, float* InHP, float* Out,
                                       PostFiltBankstr* postfiltdata);
@@ -226,7 +205,5 @@ void WebRtcIsac_NormLatticeFilterAr(int orderCoef, float* stateF, float* stateG,
                                     float* lat_out);
 
 void WebRtcIsac_Dir2Lat(double* a, int orderCoef, float* sth, float* cth);
-
-void WebRtcIsac_AutoCorr(double* r, const double* x, size_t N, size_t order);
 
 #endif /* MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_SOURCE_CODEC_H_ */

@@ -40,7 +40,7 @@ rtc_static_library("vad") {
     "../../../common_audio",
     "../../../common_audio:common_audio_c",
     "../../../rtc_base:checks",
-    "../../audio_coding:isac",
+    "../../audio_coding:isac_vad",
   ]
 }
 

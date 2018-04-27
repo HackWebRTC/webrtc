@@ -35,6 +35,8 @@
 #include "modules/audio_coding/codecs/isac/main/source/lpc_shape_swb12_tables.h"
 #include "modules/audio_coding/codecs/isac/main/source/lpc_shape_swb16_tables.h"
 #include "modules/audio_coding/codecs/isac/main/source/lpc_gain_swb_tables.h"
+#include "modules/audio_coding/codecs/isac/main/source/isac_vad.h"
+#include "modules/audio_coding/codecs/isac/main/source/pitch_filter.h"
 
 
 #define UB_LOOKAHEAD 24

@@ -496,11 +496,11 @@ rtc_static_library("isac_common") {
     "codecs/isac/audio_decoder_isac_t_impl.h",
     "codecs/isac/audio_encoder_isac_t.h",
     "codecs/isac/audio_encoder_isac_t_impl.h",
-    "codecs/isac/bandwidth_info.h",
     "codecs/isac/locked_bandwidth_info.cc",
     "codecs/isac/locked_bandwidth_info.h",
   ]
   deps = [
+    ":isac_bwinfo",
     "../..:typedefs",
     "../..:webrtc_common",
     "../../api:optional",
@@ -533,6 +533,38 @@ rtc_static_library("isac") {
   ]
 }
 
+rtc_source_set("isac_bwinfo") {
+  sources = [
+    "codecs/isac/bandwidth_info.h",
+  ]
+  deps = [
+    "../..:typedefs",
+  ]
+}
+
+rtc_source_set("isac_vad") {
+  visibility += webrtc_default_visibility
+  sources = [
+    "codecs/isac/main/source/filter_functions.c",
+    "codecs/isac/main/source/filter_functions.h",
+    "codecs/isac/main/source/isac_vad.c",
+    "codecs/isac/main/source/isac_vad.h",
+    "codecs/isac/main/source/os_specific_inline.h",
+    "codecs/isac/main/source/pitch_estimator.c",
+    "codecs/isac/main/source/pitch_estimator.h",
+    "codecs/isac/main/source/pitch_filter.c",
+    "codecs/isac/main/source/pitch_filter.h",
+    "codecs/isac/main/source/settings.h",
+    "codecs/isac/main/source/structs.h",
+  ]
+  deps = [
+    ":isac_bwinfo",
+    "../..:typedefs",
+    "../../rtc_base:compile_assert_c",
+    "../../rtc_base/system:ignore_warnings",
+  ]
+}
+
 rtc_static_library("isac_c") {
   poisonous = [ "audio_codecs" ]
   sources = [
@@ -555,9 +587,6 @@ rtc_static_library("isac_c") {
     "codecs/isac/main/source/entropy_coding.h",
     "codecs/isac/main/source/fft.c",
     "codecs/isac/main/source/fft.h",
-    "codecs/isac/main/source/filter_functions.c",
-    "codecs/isac/main/source/filterbank_tables.c",
-    "codecs/isac/main/source/filterbank_tables.h",
     "codecs/isac/main/source/filterbanks.c",
     "codecs/isac/main/source/intialize.c",
     "codecs/isac/main/source/isac.c",
@@ -573,18 +602,12 @@ rtc_static_library("isac_c") {
     "codecs/isac/main/source/lpc_shape_swb16_tables.h",
     "codecs/isac/main/source/lpc_tables.c",
     "codecs/isac/main/source/lpc_tables.h",
-    "codecs/isac/main/source/os_specific_inline.h",
-    "codecs/isac/main/source/pitch_estimator.c",
-    "codecs/isac/main/source/pitch_estimator.h",
-    "codecs/isac/main/source/pitch_filter.c",
     "codecs/isac/main/source/pitch_gain_tables.c",
     "codecs/isac/main/source/pitch_gain_tables.h",
     "codecs/isac/main/source/pitch_lag_tables.c",
     "codecs/isac/main/source/pitch_lag_tables.h",
-    "codecs/isac/main/source/settings.h",
     "codecs/isac/main/source/spectrum_ar_model_tables.c",
     "codecs/isac/main/source/spectrum_ar_model_tables.h",
-    "codecs/isac/main/source/structs.h",
     "codecs/isac/main/source/transform.c",
   ]
 
@@ -595,7 +618,8 @@ rtc_static_library("isac_c") {
   public_configs = [ ":isac_config" ]
 
   deps = [
-    ":isac_common",
+    ":isac_bwinfo",
+    ":isac_vad",
     "../..:typedefs",
     "../..:webrtc_common",
     "../../common_audio",
@@ -649,7 +673,7 @@ rtc_source_set("isac_fix_common") {
   ]
   public_configs = [ ":isac_fix_config" ]
   deps = [
-    ":isac_common",
+    ":isac_bwinfo",
     "../..:typedefs",
     "../../common_audio",
     "../../common_audio:common_audio_c",
@@ -718,6 +742,7 @@ rtc_source_set("isac_fix_c") {
   public_configs = [ ":isac_fix_config" ]
 
   deps = [
+    ":isac_bwinfo",
     ":isac_common",
     "../..:typedefs",
     "../..:webrtc_common",

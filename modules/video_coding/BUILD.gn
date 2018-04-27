@@ -38,10 +38,7 @@ rtc_static_library("encoded_frame") {
 
 rtc_static_library("video_coding") {
   visibility = [ "*" ]
-  allow_poison = [
-    "audio_codecs",  # TODO(bugs.webrtc.org/8396): Remove.
-    "software_video_codecs",  # TODO(bugs.webrtc.org/7925): Remove.
-  ]
+  allow_poison = [ "software_video_codecs" ]  # TODO(bugs.webrtc.org/7925): Remove.
   deps = []
 
   sources = [
@@ -254,7 +251,6 @@ rtc_source_set("video_coding_utility") {
 
 rtc_static_library("webrtc_h264") {
   visibility = [ "*" ]
-  allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
   sources = [
     "codecs/h264/h264.cc",
     "codecs/h264/include/h264.h",
