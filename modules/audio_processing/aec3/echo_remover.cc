@@ -45,6 +45,16 @@ void LinearEchoPower(const FftData& E,
   }
 }
 
+// Computes a windowed (square root Hanning) padded FFT and updates the related
+// memory.
+void WindowedPaddedFft(const Aec3Fft& fft,
+                       rtc::ArrayView<const float> v,
+                       rtc::ArrayView<float> v_old,
+                       FftData* V) {
+  fft.PaddedFft(v, v_old, Aec3Fft::Window::kSqrtHanning, V);
+  std::copy(v.begin(), v.end(), v_old.begin());
+}
+
 // Class for removing the echo from the capture signal.
 class EchoRemoverImpl final : public EchoRemover {
  public:
@@ -163,18 +173,16 @@ void EchoRemoverImpl::ProcessCapture(
   }
 
   std::array<float, kFftLengthBy2Plus1> Y2;
+  std::array<float, kFftLengthBy2Plus1> E2;
   std::array<float, kFftLengthBy2Plus1> R2;
   std::array<float, kFftLengthBy2Plus1> S2_linear;
   std::array<float, kFftLengthBy2Plus1> G;
   float high_bands_gain;
   FftData Y;
+  FftData E;
   FftData comfort_noise;
   FftData high_band_comfort_noise;
   SubtractorOutput subtractor_output;
-  FftData& E_main_nonwindowed = subtractor_output.E_main_nonwindowed;
-  auto& E2_main = subtractor_output.E2_main_nonwindowed;
-  auto& E2_shadow = subtractor_output.E2_shadow;
-  auto& e_main = subtractor_output.e_main;
 
   // Analyze the render signal.
   render_signal_analyzer_.Update(*render_buffer,
@@ -190,29 +198,42 @@ void EchoRemoverImpl::ProcessCapture(
   // If the delay is known, use the echo subtractor.
   subtractor_.Process(*render_buffer, y0, render_signal_analyzer_, aec_state_,
                       &subtractor_output);
+  const auto& e = subtractor_output.e_main;
 
   // Compute spectra.
-  fft_.ZeroPaddedFft(y0, Aec3Fft::Window::kRectangular, &Y);
-  LinearEchoPower(E_main_nonwindowed, Y, &S2_linear);
+  WindowedPaddedFft(fft_, y0, y_old_, &Y);
+  WindowedPaddedFft(fft_, e, e_old_, &E);
+  LinearEchoPower(E, Y, &S2_linear);
   Y.Spectrum(optimization_, Y2);
-  fft_.PaddedFft(y0, y_old_, Aec3Fft::Window::kSqrtHanning, &Y);
-  std::copy(y0.begin(), y0.end(), y_old_.begin());
+  E.Spectrum(optimization_, E2);
 
   // Update the AEC state information.
   aec_state_.Update(external_delay, subtractor_.FilterFrequencyResponse(),
                     subtractor_.FilterImpulseResponse(),
                     subtractor_.ConvergedFilter(), subtractor_.DivergedFilter(),
-                    *render_buffer, E2_main, Y2, subtractor_output.s_main);
+                    *render_buffer, E2, Y2, subtractor_output.s_main);
+
+  // Compute spectra.
+  const bool suppression_gain_uses_ffts =
+      config_.suppressor.bands_with_reliable_coherence > 0;
+  FftData X;
+  if (suppression_gain_uses_ffts) {
+    auto& x_aligned = render_buffer->Block(-aec_state_.FilterDelayBlocks())[0];
+    WindowedPaddedFft(fft_, x_aligned, x_old_, &X);
+  } else {
+    X.Clear();
+  }
 
   // Choose the linear output.
-  data_dumper_->DumpWav("aec3_output_linear2", kBlockSize, &e_main[0],
+  data_dumper_->DumpWav("aec3_output_linear2", kBlockSize, &e[0],
                         LowestBandRate(sample_rate_hz_), 1);
   if (aec_state_.UseLinearFilterOutput()) {
-    std::copy(e_main.begin(), e_main.end(), y0.begin());
+    std::copy(e.begin(), e.end(), y0.begin());
   }
+  const auto& Y_fft = aec_state_.UseLinearFilterOutput() ? E : Y;
+
   data_dumper_->DumpWav("aec3_output_linear", kBlockSize, &y0[0],
                         LowestBandRate(sample_rate_hz_), 1);
-  const auto& E2 = aec_state_.UseLinearFilterOutput() ? E2_main : Y2;
 
   // Estimate the residual echo power.
   residual_echo_estimator_.Estimate(aec_state_, *render_buffer, S2_linear, Y2,
@@ -221,24 +242,7 @@ void EchoRemoverImpl::ProcessCapture(
   // Estimate the comfort noise.
   cng_.Compute(aec_state_, Y2, &comfort_noise, &high_band_comfort_noise);
 
-  // Compute spectra.
-  const bool suppression_gain_uses_ffts =
-      config_.suppressor.bands_with_reliable_coherence > 0;
-  FftData X;
-  if (suppression_gain_uses_ffts) {
-    const std::vector<float>& x_aligned =
-        render_buffer->Block(-aec_state_.FilterDelayBlocks())[0];
-    fft_.PaddedFft(x_aligned, x_old_, Aec3Fft::Window::kSqrtHanning, &X);
-    std::copy(x_aligned.begin(), x_aligned.end(), x_old_.begin());
-  } else {
-    X.Clear();
-  }
 
-  FftData E;
-  fft_.PaddedFft(e_main, e_old_, Aec3Fft::Window::kSqrtHanning, &E);
-  std::copy(e_main.begin(), e_main.end(), e_old_.begin());
-
-  const auto& Y_fft = aec_state_.UseLinearFilterOutput() ? E : Y;
 
   // Compute and apply the suppression gain.
   suppression_gain_.GetGain(E2, R2, cng_.NoiseSpectrum(), E, X, Y,
@@ -266,8 +270,6 @@ void EchoRemoverImpl::ProcessCapture(
   data_dumper_->DumpRaw("aec3_using_subtractor_output",
                         aec_state_.UseLinearFilterOutput() ? 1 : 0);
   data_dumper_->DumpRaw("aec3_E2", E2);
-  data_dumper_->DumpRaw("aec3_E2_main", E2_main);
-  data_dumper_->DumpRaw("aec3_E2_shadow", E2_shadow);
   data_dumper_->DumpRaw("aec3_S2_linear", S2_linear);
   data_dumper_->DumpRaw("aec3_Y2", Y2);
   data_dumper_->DumpRaw(

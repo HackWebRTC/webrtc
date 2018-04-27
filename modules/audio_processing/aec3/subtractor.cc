@@ -134,7 +134,6 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
   RTC_DCHECK_EQ(kBlockSize, capture.size());
   rtc::ArrayView<const float> y = capture;
   FftData& E_main = output->E_main;
-  FftData& E_main_nonwindowed = output->E_main_nonwindowed;
   FftData E_shadow;
   std::array<float, kBlockSize>& e_main = output->e_main;
   std::array<float, kBlockSize>& e_shadow = output->e_shadow;
@@ -173,16 +172,6 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
   // Compute spectra for future use.
   E_shadow.Spectrum(optimization_, output->E2_shadow);
   E_main.Spectrum(optimization_, output->E2_main);
-
-  if (main_filter_converged_ || !shadow_filter_converged_) {
-    fft_.ZeroPaddedFft(e_main, Aec3Fft::Window::kRectangular,
-                       &E_main_nonwindowed);
-    E_main_nonwindowed.Spectrum(optimization_, output->E2_main_nonwindowed);
-  } else {
-    fft_.ZeroPaddedFft(e_shadow, Aec3Fft::Window::kRectangular,
-                       &E_main_nonwindowed);
-    E_main_nonwindowed.Spectrum(optimization_, output->E2_main_nonwindowed);
-  }
 
   // Update the main filter.
   std::array<float, kFftLengthBy2Plus1> X2;
