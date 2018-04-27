@@ -34,7 +34,7 @@
 #include "logging/rtc_event_log/events/rtc_event_video_send_stream_config.h"
 #include "logging/rtc_event_log/output/rtc_event_log_output_file.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
-#include "logging/rtc_event_log/rtc_event_log_parser.h"
+#include "logging/rtc_event_log/rtc_event_log_parser_new.h"
 #include "logging/rtc_event_log/rtc_event_log_unittest_helper.h"
 #include "logging/rtc_event_log/rtc_stream_config.h"
 #include "modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
@@ -120,35 +120,36 @@ const std::map<EventType, std::string> event_type_to_string(
      {EventType::kBweProbeClusterCreated, "BWE_PROBE_CREATED"},
      {EventType::kBweProbeResult, "BWE_PROBE_RESULT"}});
 
-const std::map<ParsedRtcEventLog::EventType, std::string>
+const std::map<ParsedRtcEventLogNew::EventType, std::string>
     parsed_event_type_to_string(
-        {{ParsedRtcEventLog::EventType::UNKNOWN_EVENT, "UNKNOWN_EVENT"},
-         {ParsedRtcEventLog::EventType::LOG_START, "LOG_START"},
-         {ParsedRtcEventLog::EventType::LOG_END, "LOG_END"},
-         {ParsedRtcEventLog::EventType::RTP_EVENT, "RTP"},
-         {ParsedRtcEventLog::EventType::RTCP_EVENT, "RTCP"},
-         {ParsedRtcEventLog::EventType::AUDIO_PLAYOUT_EVENT, "AUDIO_PLAYOUT"},
-         {ParsedRtcEventLog::EventType::LOSS_BASED_BWE_UPDATE,
+        {{ParsedRtcEventLogNew::EventType::UNKNOWN_EVENT, "UNKNOWN_EVENT"},
+         {ParsedRtcEventLogNew::EventType::LOG_START, "LOG_START"},
+         {ParsedRtcEventLogNew::EventType::LOG_END, "LOG_END"},
+         {ParsedRtcEventLogNew::EventType::RTP_EVENT, "RTP"},
+         {ParsedRtcEventLogNew::EventType::RTCP_EVENT, "RTCP"},
+         {ParsedRtcEventLogNew::EventType::AUDIO_PLAYOUT_EVENT,
+          "AUDIO_PLAYOUT"},
+         {ParsedRtcEventLogNew::EventType::LOSS_BASED_BWE_UPDATE,
           "LOSS_BASED_BWE_UPDATE"},
-         {ParsedRtcEventLog::EventType::DELAY_BASED_BWE_UPDATE,
+         {ParsedRtcEventLogNew::EventType::DELAY_BASED_BWE_UPDATE,
           "DELAY_BASED_BWE_UPDATE"},
-         {ParsedRtcEventLog::EventType::VIDEO_RECEIVER_CONFIG_EVENT,
+         {ParsedRtcEventLogNew::EventType::VIDEO_RECEIVER_CONFIG_EVENT,
           "VIDEO_RECV_CONFIG"},
-         {ParsedRtcEventLog::EventType::VIDEO_SENDER_CONFIG_EVENT,
+         {ParsedRtcEventLogNew::EventType::VIDEO_SENDER_CONFIG_EVENT,
           "VIDEO_SEND_CONFIG"},
-         {ParsedRtcEventLog::EventType::AUDIO_RECEIVER_CONFIG_EVENT,
+         {ParsedRtcEventLogNew::EventType::AUDIO_RECEIVER_CONFIG_EVENT,
           "AUDIO_RECV_CONFIG"},
-         {ParsedRtcEventLog::EventType::AUDIO_SENDER_CONFIG_EVENT,
+         {ParsedRtcEventLogNew::EventType::AUDIO_SENDER_CONFIG_EVENT,
           "AUDIO_SEND_CONFIG"},
-         {ParsedRtcEventLog::EventType::AUDIO_NETWORK_ADAPTATION_EVENT,
+         {ParsedRtcEventLogNew::EventType::AUDIO_NETWORK_ADAPTATION_EVENT,
           "AUDIO_NETWORK_ADAPTATION"},
-         {ParsedRtcEventLog::EventType::BWE_PROBE_CLUSTER_CREATED_EVENT,
+         {ParsedRtcEventLogNew::EventType::BWE_PROBE_CLUSTER_CREATED_EVENT,
           "BWE_PROBE_CREATED"},
-         {ParsedRtcEventLog::EventType::BWE_PROBE_RESULT_EVENT,
+         {ParsedRtcEventLogNew::EventType::BWE_PROBE_RESULT_EVENT,
           "BWE_PROBE_RESULT"}});
 }  // namespace
 
-void PrintActualEvents(const ParsedRtcEventLog& parsed_log,
+void PrintActualEvents(const ParsedRtcEventLogNew& parsed_log,
                        std::ostream& stream);
 
 RtpPacketToSend GenerateOutgoingRtpPacket(
@@ -530,7 +531,7 @@ void RtcEventLogSession::ReadAndVerifySession() {
       test::OutputPath() + "RtcEventLogTest_" + test_name;
 
   // Read the generated file from disk.
-  ParsedRtcEventLog parsed_log;
+  ParsedRtcEventLogNew parsed_log;
   ASSERT_TRUE(parsed_log.ParseFile(temp_filename));
   EXPECT_GE(5000u, event_types.size() + 2);  // The events must fit.
   EXPECT_EQ(event_types.size() + 2, parsed_log.GetNumberOfEvents());
@@ -644,7 +645,7 @@ void RtcEventLogSession::PrintExpectedEvents(std::ostream& stream) {
   stream << std::endl;
 }
 
-void PrintActualEvents(const ParsedRtcEventLog& parsed_log,
+void PrintActualEvents(const ParsedRtcEventLogNew& parsed_log,
                        std::ostream& stream) {
   for (size_t i = 0; i < parsed_log.GetNumberOfEvents(); i++) {
     auto it = parsed_event_type_to_string.find(parsed_log.GetEventType(i));
@@ -735,7 +736,7 @@ TEST(RtcEventLogTest, CircularBufferKeepsMostRecentEvents) {
   log_dumper->StopLogging();
 
   // Read the generated file from disk.
-  ParsedRtcEventLog parsed_log;
+  ParsedRtcEventLogNew parsed_log;
   ASSERT_TRUE(parsed_log.ParseFile(temp_filename));
   // If the following fails, it probably means that kNumEvents isn't larger
   // than the size of the cyclic buffer in the event log. Try increasing
@@ -749,18 +750,17 @@ TEST(RtcEventLogTest, CircularBufferKeepsMostRecentEvents) {
   rtc::Optional<uint32_t> last_ssrc;
   for (size_t i = 1; i < parsed_log.GetNumberOfEvents() - 1; i++) {
     EXPECT_EQ(parsed_log.GetEventType(i),
-              ParsedRtcEventLog::EventType::AUDIO_PLAYOUT_EVENT);
-    uint32_t ssrc;
-    parsed_log.GetAudioPlayout(i, &ssrc);
-    int64_t timestamp = parsed_log.GetTimestamp(i);
-    EXPECT_LT(ssrc, kNumEvents);
-    EXPECT_EQ(static_cast<int64_t>(kStartTime + 10000 * ssrc), timestamp);
+              ParsedRtcEventLogNew::EventType::AUDIO_PLAYOUT_EVENT);
+    LoggedAudioPlayoutEvent playout_event = parsed_log.GetAudioPlayout(i);
+    EXPECT_LT(playout_event.ssrc, kNumEvents);
+    EXPECT_EQ(static_cast<int64_t>(kStartTime + 10000 * playout_event.ssrc),
+              playout_event.timestamp_us);
     if (last_ssrc)
-      EXPECT_EQ(ssrc, *last_ssrc + 1);
+      EXPECT_EQ(playout_event.ssrc, *last_ssrc + 1);
     if (last_timestamp)
-      EXPECT_EQ(timestamp, *last_timestamp + 10000);
-    last_ssrc = ssrc;
-    last_timestamp = timestamp;
+      EXPECT_EQ(playout_event.timestamp_us, *last_timestamp + 10000);
+    last_ssrc = playout_event.ssrc;
+    last_timestamp = playout_event.timestamp_us;
   }
   RtcEventLogTestHelper::VerifyLogEndEvent(parsed_log,
                                            parsed_log.GetNumberOfEvents() - 1);
