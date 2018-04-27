@@ -61,6 +61,7 @@ using cricket::FakeWebRtcVideoDecoderFactory;
 using cricket::FakeWebRtcVideoEncoder;
 using cricket::FakeWebRtcVideoEncoderFactory;
 using cricket::MediaContentDescription;
+using cricket::StreamParams;
 using rtc::SocketAddress;
 using ::testing::Combine;
 using ::testing::ElementsAre;
@@ -140,12 +141,17 @@ void RemoveSsrcsAndMsids(cricket::SessionDescription* desc) {
 // endpoint that only signals a=msid lines to convey stream_ids.
 void RemoveSsrcsAndKeepMsids(cricket::SessionDescription* desc) {
   for (ContentInfo& content : desc->contents()) {
+    std::string track_id;
     std::vector<std::string> stream_ids;
     if (!content.media_description()->streams().empty()) {
-      stream_ids = content.media_description()->streams()[0].stream_ids();
+      const StreamParams& first_stream =
+          content.media_description()->streams()[0];
+      track_id = first_stream.id;
+      stream_ids = first_stream.stream_ids();
     }
     content.media_description()->mutable_streams().clear();
-    cricket::StreamParams new_stream;
+    StreamParams new_stream;
+    new_stream.id = track_id;
     new_stream.set_stream_ids(stream_ids);
     content.media_description()->AddStream(new_stream);
   }
@@ -2271,10 +2277,33 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
   ASSERT_TRUE(ExpectNewFrames(media_expectations));
 }
 
+// Tests that video flows between multiple video tracks when SSRCs are not
+// signaled. This exercises the MID RTP header extension which is needed to
+// demux the incoming video tracks.
+TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
+       EndToEndCallWithTwoVideoTracksAndNoSignaledSsrc) {
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+  caller()->AddVideoTrack();
+  caller()->AddVideoTrack();
+  callee()->AddVideoTrack();
+  callee()->AddVideoTrack();
+
+  caller()->SetReceivedSdpMunger(&RemoveSsrcsAndKeepMsids);
+  callee()->SetReceivedSdpMunger(&RemoveSsrcsAndKeepMsids);
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  ASSERT_EQ(2u, caller()->pc()->GetReceivers().size());
+  ASSERT_EQ(2u, callee()->pc()->GetReceivers().size());
+
+  // Expect video to be received in both directions on both tracks.
+  MediaExpectations media_expectations;
+  media_expectations.ExpectBidirectionalVideo();
+  EXPECT_TRUE(ExpectNewFrames(media_expectations));
+}
+
 // Test that if two video tracks are sent (from caller to callee, in this test),
 // they're transmitted correctly end-to-end.
-// TODO(zhihuang): Enable this test in Unified Plan mode once the MID-based
-// demuxing is ready.
 TEST_P(PeerConnectionIntegrationTest, EndToEndCallWithTwoVideoTracks) {
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
@@ -2498,7 +2527,7 @@ TEST_P(PeerConnectionIntegrationTest,
 // Helper for test below.
 void ModifySsrcs(cricket::SessionDescription* desc) {
   for (ContentInfo& content : desc->contents()) {
-    for (cricket::StreamParams& stream :
+    for (StreamParams& stream :
          content.media_description()->mutable_streams()) {
       for (uint32_t& ssrc : stream.ssrcs) {
         ssrc = rtc::CreateRandomId();
