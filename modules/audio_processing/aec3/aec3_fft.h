@@ -51,14 +51,14 @@ class Aec3Fft {
   // Concatenates the kFftLengthBy2 values long x and x_old before computing the
   // Fft. After that, x is copied to x_old.
   void PaddedFft(rtc::ArrayView<const float> x,
-                 rtc::ArrayView<float> x_old,
+                 rtc::ArrayView<const float> x_old,
                  FftData* X) const {
     PaddedFft(x, x_old, Window::kRectangular, X);
   }
 
   // Padded Fft using a time-domain window.
   void PaddedFft(rtc::ArrayView<const float> x,
-                 rtc::ArrayView<float> x_old,
+                 rtc::ArrayView<const float> x_old,
                  Window window,
                  FftData* X) const;
 

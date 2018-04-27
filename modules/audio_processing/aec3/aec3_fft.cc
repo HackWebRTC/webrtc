@@ -98,7 +98,7 @@ void Aec3Fft::ZeroPaddedFft(rtc::ArrayView<const float> x,
 }
 
 void Aec3Fft::PaddedFft(rtc::ArrayView<const float> x,
-                        rtc::ArrayView<float> x_old,
+                        rtc::ArrayView<const float> x_old,
                         Window window,
                         FftData* X) const {
   RTC_DCHECK(X);
@@ -110,7 +110,6 @@ void Aec3Fft::PaddedFft(rtc::ArrayView<const float> x,
     case Window::kRectangular:
       std::copy(x_old.begin(), x_old.end(), fft.begin());
       std::copy(x.begin(), x.end(), fft.begin() + x_old.size());
-      std::copy(x.begin(), x.end(), x_old.begin());
       break;
     case Window::kHanning:
       RTC_NOTREACHED();
