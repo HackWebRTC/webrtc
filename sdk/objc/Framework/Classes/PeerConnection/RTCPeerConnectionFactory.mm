@@ -95,14 +95,17 @@
 - (instancetype)initNative {
   if (self = [super init]) {
     _networkThread = rtc::Thread::CreateWithSocketServer();
+    _networkThread->SetName("network_thread", _networkThread.get());
     BOOL result = _networkThread->Start();
     NSAssert(result, @"Failed to start network thread.");
 
     _workerThread = rtc::Thread::Create();
+    _workerThread->SetName("worker_thread", _workerThread.get());
     result = _workerThread->Start();
     NSAssert(result, @"Failed to start worker thread.");
 
     _signalingThread = rtc::Thread::Create();
+    _signalingThread->SetName("signaling_thread", _signalingThread.get());
     result = _signalingThread->Start();
     NSAssert(result, @"Failed to start signaling thread.");
   }
