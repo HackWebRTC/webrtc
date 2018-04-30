@@ -15,7 +15,6 @@ namespace webrtc {
 namespace test {
 TEST(DataRateTest, GetBackSameValues) {
   const int64_t kValue = 123 * 8;
-  EXPECT_EQ(DataRate::bytes_per_second(kValue).bytes_per_second(), kValue);
   EXPECT_EQ(DataRate::bits_per_second(kValue).bits_per_second(), kValue);
   EXPECT_EQ(DataRate::bps(kValue).bps(), kValue);
   EXPECT_EQ(DataRate::kbps(kValue).kbps(), kValue);
@@ -23,30 +22,28 @@ TEST(DataRateTest, GetBackSameValues) {
 
 TEST(DataRateTest, GetDifferentPrefix) {
   const int64_t kValue = 123 * 8000;
-  EXPECT_EQ(DataRate::bytes_per_second(kValue).bps(), kValue * 8);
-  EXPECT_EQ(DataRate::bits_per_second(kValue).bytes_per_second(), kValue / 8);
   EXPECT_EQ(DataRate::bps(kValue).kbps(), kValue / 1000);
 }
 
 TEST(DataRateTest, IdentityChecks) {
   const int64_t kValue = 3000;
   EXPECT_TRUE(DataRate::Zero().IsZero());
-  EXPECT_FALSE(DataRate::bytes_per_second(kValue).IsZero());
+  EXPECT_FALSE(DataRate::bits_per_second(kValue).IsZero());
 
   EXPECT_TRUE(DataRate::Infinity().IsInfinite());
   EXPECT_FALSE(DataRate::Zero().IsInfinite());
-  EXPECT_FALSE(DataRate::bytes_per_second(kValue).IsInfinite());
+  EXPECT_FALSE(DataRate::bits_per_second(kValue).IsInfinite());
 
   EXPECT_FALSE(DataRate::Infinity().IsFinite());
-  EXPECT_TRUE(DataRate::bytes_per_second(kValue).IsFinite());
+  EXPECT_TRUE(DataRate::bits_per_second(kValue).IsFinite());
   EXPECT_TRUE(DataRate::Zero().IsFinite());
 }
 
 TEST(DataRateTest, ComparisonOperators) {
   const int64_t kSmall = 450;
   const int64_t kLarge = 451;
-  const DataRate small = DataRate::bytes_per_second(kSmall);
-  const DataRate large = DataRate::bytes_per_second(kLarge);
+  const DataRate small = DataRate::bits_per_second(kSmall);
+  const DataRate large = DataRate::bits_per_second(kLarge);
 
   EXPECT_EQ(DataRate::Zero(), DataRate::bps(0));
   EXPECT_EQ(DataRate::Infinity(), DataRate::Infinity());
@@ -65,25 +62,25 @@ TEST(DataRateTest, ComparisonOperators) {
 TEST(DataRateTest, MathOperations) {
   const int64_t kValueA = 450;
   const int64_t kValueB = 267;
-  const DataRate size_a = DataRate::bytes_per_second(kValueA);
+  const DataRate size_a = DataRate::bits_per_second(kValueA);
   const int32_t kInt32Value = 123;
   const double kFloatValue = 123.0;
-  EXPECT_EQ((size_a * kValueB).bytes_per_second(), kValueA * kValueB);
-  EXPECT_EQ((size_a * kInt32Value).bytes_per_second(), kValueA * kInt32Value);
-  EXPECT_EQ((size_a * kFloatValue).bytes_per_second(), kValueA * kFloatValue);
+  EXPECT_EQ((size_a * kValueB).bits_per_second(), kValueA * kValueB);
+  EXPECT_EQ((size_a * kInt32Value).bits_per_second(), kValueA * kInt32Value);
+  EXPECT_EQ((size_a * kFloatValue).bits_per_second(), kValueA * kFloatValue);
 }
 
 TEST(UnitConversionTest, DataRateAndDataSizeAndTimeDelta) {
-  const int64_t kValueA = 5;
-  const int64_t kValueB = 450;
-  const int64_t kValueC = 45000;
-  const TimeDelta delta_a = TimeDelta::seconds(kValueA);
-  const DataRate rate_b = DataRate::bytes_per_second(kValueB);
-  const DataSize size_c = DataSize::bytes(kValueC);
-  EXPECT_EQ((delta_a * rate_b).bytes(), kValueA * kValueB);
-  EXPECT_EQ((rate_b * delta_a).bytes(), kValueA * kValueB);
-  EXPECT_EQ((size_c / delta_a).bytes_per_second(), kValueC / kValueA);
-  EXPECT_EQ((size_c / rate_b).seconds(), kValueC / kValueB);
+  const int64_t kSeconds = 5;
+  const int64_t kBitsPerSecond = 440;
+  const int64_t kBytes = 44000;
+  const TimeDelta delta_a = TimeDelta::seconds(kSeconds);
+  const DataRate rate_b = DataRate::bits_per_second(kBitsPerSecond);
+  const DataSize size_c = DataSize::bytes(kBytes);
+  EXPECT_EQ((delta_a * rate_b).bytes(), kSeconds * kBitsPerSecond / 8);
+  EXPECT_EQ((rate_b * delta_a).bytes(), kSeconds * kBitsPerSecond / 8);
+  EXPECT_EQ((size_c / delta_a).bits_per_second(), kBytes * 8 / kSeconds);
+  EXPECT_EQ((size_c / rate_b).seconds(), kBytes * 8 / kBitsPerSecond);
 }
 
 #if GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
@@ -103,9 +100,9 @@ TEST(UnitConversionTest, DivisionFailsOnLargeSize) {
   // Note that the failure is expected since the current implementation  is
   // implementated in a way that does not support division of large sizes. If
   // the implementation is changed, this test can safely be removed.
-  const int64_t kToolargeForDivision =
-      std::numeric_limits<int64_t>::max() / 1000000;
-  const int64_t kJustSmallEnoughForDivision = kToolargeForDivision - 1;
+  const int64_t kJustSmallEnoughForDivision =
+      std::numeric_limits<int64_t>::max() / 8000000;
+  const int64_t kToolargeForDivision = kJustSmallEnoughForDivision + 1;
   const DataSize large_size = DataSize::bytes(kJustSmallEnoughForDivision);
   const DataSize too_large_size = DataSize::bytes(kToolargeForDivision);
   const DataRate data_rate = DataRate::kbps(100);

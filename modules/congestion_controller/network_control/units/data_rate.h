@@ -25,24 +25,25 @@ namespace webrtc {
 namespace data_rate_impl {
 constexpr int64_t kPlusInfinityVal = std::numeric_limits<int64_t>::max();
 constexpr int64_t kNotInitializedVal = -1;
+
+inline int64_t Microbits(const DataSize& size) {
+  constexpr int64_t kMaxBeforeConversion =
+      std::numeric_limits<int64_t>::max() / 8000000;
+  RTC_DCHECK_LE(size.bytes(), kMaxBeforeConversion)
+      << "size is too large to be expressed in microbytes";
+  return size.bytes() * 8000000;
+}
 }  // namespace data_rate_impl
 
 // DataRate is a class that represents a given data rate. This can be used to
-// represent bandwidth, encoding bitrate, etc. The internal storage is currently
-// bits per second (bps) since this makes it easier to intepret the raw value
-// when debugging. The promised precision, however is only that it will
-// represent bytes per second accurately. Any implementation depending on bps
-// resolution should document this by changing this comment.
+// represent bandwidth, encoding bitrate, etc. The internal storage is bits per
+// second (bps).
 class DataRate {
  public:
   DataRate() : DataRate(data_rate_impl::kNotInitializedVal) {}
   static DataRate Zero() { return DataRate(0); }
   static DataRate Infinity() {
     return DataRate(data_rate_impl::kPlusInfinityVal);
-  }
-  static DataRate bytes_per_second(int64_t bytes_per_sec) {
-    RTC_DCHECK_GE(bytes_per_sec, 0);
-    return DataRate(bytes_per_sec * 8);
   }
   static DataRate bits_per_second(int64_t bits_per_sec) {
     RTC_DCHECK_GE(bits_per_sec, 0);
@@ -58,7 +59,6 @@ class DataRate {
     RTC_DCHECK(IsFinite());
     return bits_per_sec_;
   }
-  int64_t bytes_per_second() const { return bits_per_second() / 8; }
   int64_t bps() const { return bits_per_second(); }
   int64_t bps_or(int64_t fallback) const {
     return IsFinite() ? bits_per_second() : fallback;
@@ -72,15 +72,7 @@ class DataRate {
     return bits_per_sec_ != data_rate_impl::kNotInitializedVal;
   }
   bool IsFinite() const { return IsInitialized() && !IsInfinite(); }
-  DataRate operator*(double scalar) const {
-    return DataRate::bytes_per_second(std::round(bytes_per_second() * scalar));
-  }
-  DataRate operator*(int64_t scalar) const {
-    return DataRate::bytes_per_second(bytes_per_second() * scalar);
-  }
-  DataRate operator*(int32_t scalar) const {
-    return DataRate::bytes_per_second(bytes_per_second() * scalar);
-  }
+
   bool operator==(const DataRate& other) const {
     return bits_per_sec_ == other.bits_per_sec_;
   }
@@ -106,20 +98,41 @@ class DataRate {
   explicit DataRate(int64_t bits_per_second) : bits_per_sec_(bits_per_second) {}
   int64_t bits_per_sec_;
 };
+
+inline DataRate operator*(const DataRate& rate, const double& scalar) {
+  return DataRate::bits_per_second(std::round(rate.bits_per_second() * scalar));
+}
 inline DataRate operator*(const double& scalar, const DataRate& rate) {
   return rate * scalar;
 }
+inline DataRate operator*(const DataRate& rate, const int64_t& scalar) {
+  return DataRate::bits_per_second(rate.bits_per_second() * scalar);
+}
 inline DataRate operator*(const int64_t& scalar, const DataRate& rate) {
   return rate * scalar;
+}
+inline DataRate operator*(const DataRate& rate, const int32_t& scalar) {
+  return DataRate::bits_per_second(rate.bits_per_second() * scalar);
 }
 inline DataRate operator*(const int32_t& scalar, const DataRate& rate) {
   return rate * scalar;
 }
 
-DataRate operator/(const DataSize& size, const TimeDelta& duration);
-TimeDelta operator/(const DataSize& size, const DataRate& rate);
-DataSize operator*(const DataRate& rate, const TimeDelta& duration);
-DataSize operator*(const TimeDelta& duration, const DataRate& rate);
+inline DataRate operator/(const DataSize& size, const TimeDelta& duration) {
+  return DataRate::bits_per_second(data_rate_impl::Microbits(size) /
+                                   duration.us());
+}
+inline TimeDelta operator/(const DataSize& size, const DataRate& rate) {
+  return TimeDelta::us(data_rate_impl::Microbits(size) /
+                       rate.bits_per_second());
+}
+inline DataSize operator*(const DataRate& rate, const TimeDelta& duration) {
+  int64_t microbits = rate.bits_per_second() * duration.us();
+  return DataSize::bytes((microbits + 4000000) / 8000000);
+}
+inline DataSize operator*(const TimeDelta& duration, const DataRate& rate) {
+  return rate * duration;
+}
 
 std::string ToString(const DataRate& value);
 

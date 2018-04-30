@@ -17,14 +17,10 @@ namespace test {
 TEST(DataSizeTest, GetBackSameValues) {
   const int64_t kValue = 123 * 8;
   EXPECT_EQ(DataSize::bytes(kValue).bytes(), kValue);
-  EXPECT_EQ(DataSize::bits(kValue).bits(), kValue);
 }
 
 TEST(DataSizeTest, GetDifferentPrefix) {
   const int64_t kValue = 123 * 8000;
-  EXPECT_EQ(DataSize::bytes(kValue).bits(), kValue * 8);
-  EXPECT_EQ(DataSize::bits(kValue).bytes(), kValue / 8);
-  EXPECT_EQ(DataSize::bits(kValue).kilobits(), kValue / 1000);
   EXPECT_EQ(DataSize::bytes(kValue).kilobytes(), kValue / 1000);
 }
 

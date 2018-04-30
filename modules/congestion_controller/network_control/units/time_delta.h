@@ -97,18 +97,7 @@ class TimeDelta {
     microseconds_ += other.us();
     return *this;
   }
-  TimeDelta operator*(double scalar) const {
-    return TimeDelta::us(std::round(us() * scalar));
-  }
-  TimeDelta operator*(int64_t scalar) const {
-    return TimeDelta::us(us() * scalar);
-  }
-  TimeDelta operator*(int32_t scalar) const {
-    return TimeDelta::us(us() * scalar);
-  }
-  TimeDelta operator/(int64_t scalar) const {
-    return TimeDelta::us(us() / scalar);
-  }
+
   bool operator==(const TimeDelta& other) const {
     return microseconds_ == other.microseconds_;
   }
@@ -132,14 +121,28 @@ class TimeDelta {
   explicit TimeDelta(int64_t us) : microseconds_(us) {}
   int64_t microseconds_;
 };
+
+inline TimeDelta operator*(const TimeDelta& delta, const double& scalar) {
+  return TimeDelta::us(std::round(delta.us() * scalar));
+}
 inline TimeDelta operator*(const double& scalar, const TimeDelta& delta) {
   return delta * scalar;
+}
+inline TimeDelta operator*(const TimeDelta& delta, const int64_t& scalar) {
+  return TimeDelta::us(delta.us() * scalar);
 }
 inline TimeDelta operator*(const int64_t& scalar, const TimeDelta& delta) {
   return delta * scalar;
 }
+inline TimeDelta operator*(const TimeDelta& delta, const int32_t& scalar) {
+  return TimeDelta::us(delta.us() * scalar);
+}
 inline TimeDelta operator*(const int32_t& scalar, const TimeDelta& delta) {
   return delta * scalar;
+}
+
+inline TimeDelta operator/(const TimeDelta& delta, const int64_t& scalar) {
+  return TimeDelta::us(delta.us() / scalar);
 }
 
 std::string ToString(const TimeDelta& value);
