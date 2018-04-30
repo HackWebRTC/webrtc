@@ -45,10 +45,10 @@ class RenderBuffer {
     return spectrum_buffer_->buffer[position];
   }
 
-  // Get the spectrum directly from a position in the buffer.
-  rtc::ArrayView<const float> SpectrumFromPosition(int position) const {
-    RTC_CHECK_LT(position, spectrum_buffer_->size);
-    int position_bound = std::min(position, spectrum_buffer_->size - 1);
+  // Get the spectrum directly from an index in the buffer.
+  rtc::ArrayView<const float> SpectrumAtIndex(int index) const {
+    RTC_CHECK_LT(index, spectrum_buffer_->size);
+    int position_bound = std::min(index, spectrum_buffer_->size - 1);
     position_bound = std::max(0, position_bound);
     return spectrum_buffer_->buffer[position_bound];
   }
@@ -65,6 +65,11 @@ class RenderBuffer {
     return fft_buffer_->read;
   }
 
+  // Applies an offset to a buffer index and returns it.
+  int OffsetSpectrumIndex(int index, int offset) const {
+    return spectrum_buffer_->OffsetIndex(index, offset);
+  }
+
   // Returns the write postion in the circular buffer.
   int GetWritePositionSpectrum() const { return spectrum_buffer_->write; }
 
@@ -79,7 +84,7 @@ class RenderBuffer {
   void SetRenderActivity(bool activity) { render_activity_ = activity; }
 
   // Returns the headroom between the write and the read positions in the
-  // buffer;
+  // buffer.
   int Headroom() const {
     // The write and read indices are decreased over time.
     int headroom =
@@ -93,8 +98,11 @@ class RenderBuffer {
     return headroom;
   }
 
-  // Decrease an index that is used for accessing the buffer.
+  // Decreases an index that is used for accessing the buffer.
   int DecIdx(int idx) const { return spectrum_buffer_->DecIndex(idx); }
+
+  // Returns a reference to the spectrum buffer.
+  const VectorBuffer& GetSpectrumBuffer() const { return *spectrum_buffer_; }
 
  private:
   const MatrixBuffer* const block_buffer_;

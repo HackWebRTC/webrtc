@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "modules/audio_processing/aec3/aec3_common.h"
+#include "modules/audio_processing/aec3/vector_buffer.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/atomicops.h"
 
@@ -25,17 +26,11 @@ constexpr float kMinNoisePower = 10.f;
 constexpr int kHangoverBlocks = kNumBlocksPerSecond / 20;
 constexpr int kNBlocksAverageInitPhase = 20;
 constexpr int kNBlocksInitialPhase = kNumBlocksPerSecond * 2.;
-constexpr size_t kLongWindowSize = 13;
 }  // namespace
 
 StationarityEstimator::StationarityEstimator()
     : data_dumper_(
-          new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
-      idx_lookahead_(kLongWindowSize, 0),
-      idx_lookback_(kLongWindowSize, 0) {
-  static_assert(StationarityEstimator::CircularBuffer::GetBufferSize() >=
-                    (kLongWindowSize + 1),
-                "Mismatch between the window size and the buffer size.");
+          new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))) {
   Reset();
 }
 
@@ -47,14 +42,6 @@ void StationarityEstimator::Reset() {
   stationarity_flags_.fill(false);
 }
 
-void StationarityEstimator::Update(rtc::ArrayView<const float> spectrum,
-                                   int block_number) {
-  if (!buffer_.IsBlockNumberAlreadyUpdated(block_number)) {
-    noise_.Update(spectrum);
-    WriteInfoFrameInSlot(block_number, spectrum);
-  }
-}
-
 // Update just the noise estimator. Usefull until the delay is known
 void StationarityEstimator::UpdateNoiseEstimator(
     rtc::ArrayView<const float> spectrum) {
@@ -62,48 +49,54 @@ void StationarityEstimator::UpdateNoiseEstimator(
   data_dumper_->DumpRaw("aec3_stationarity_noise_spectrum", noise_.Spectrum());
 }
 
-void StationarityEstimator::UpdateStationarityFlags(size_t current_block_number,
-                                                    size_t num_lookahead) {
-  RTC_DCHECK_GE(idx_lookahead_.capacity(),
-                std::min(num_lookahead + 1, kLongWindowSize));
-  idx_lookahead_.resize(std::min(num_lookahead + 1, kLongWindowSize));
-  idx_lookback_.resize(0);
-  GetSlotsAheadBack(current_block_number);
+void StationarityEstimator::UpdateStationarityFlags(
+    const VectorBuffer& spectrum_buffer,
+    int idx_current,
+    int num_lookahead) {
+  std::array<int, kWindowLength> indexes;
+  int num_lookahead_bounded = std::min(num_lookahead, kWindowLength - 1);
+  int idx = idx_current;
+
+  if (num_lookahead_bounded < kWindowLength - 1) {
+    int num_lookback = (kWindowLength - 1) - num_lookahead_bounded;
+    idx = spectrum_buffer.OffsetIndex(idx_current, num_lookback);
+  }
+  // For estimating the stationarity properties of the current frame, the
+  // power for each band is accumulated for several consecutive spectra in the
+  // method EstimateBandStationarity.
+  // In order to avoid getting the indexes of the spectra for every band with
+  // its associated overhead, those indexes are stored in an array and then use
+  // when the estimation is done.
+  indexes[0] = idx;
+  for (size_t k = 1; k < indexes.size(); ++k) {
+    indexes[k] = spectrum_buffer.DecIndex(indexes[k - 1]);
+  }
+  RTC_DCHECK_EQ(
+      spectrum_buffer.DecIndex(indexes[kWindowLength - 1]),
+      spectrum_buffer.OffsetIndex(idx_current, -(num_lookahead_bounded + 1)));
 
   for (size_t k = 0; k < stationarity_flags_.size(); ++k) {
-    stationarity_flags_[k] = EstimateBandStationarity(k);
+    stationarity_flags_[k] =
+        EstimateBandStationarity(spectrum_buffer, indexes, k);
   }
   UpdateHangover();
   SmoothStationaryPerFreq();
 
-  data_dumper_->DumpRaw("aec3_stationarity_noise_spectrum", noise_.Spectrum());
 }
 
-void StationarityEstimator::WriteInfoFrameInSlot(
-    int block_number,
-    rtc::ArrayView<const float> spectrum) {
-  size_t slot = buffer_.SetBlockNumberInSlot(block_number);
-  for (size_t k = 0; k < spectrum.size(); ++k) {
-    buffer_.SetElementProperties(spectrum[k], slot, k);
-  }
-}
-
-bool StationarityEstimator::EstimateBandStationarity(size_t band) const {
+bool StationarityEstimator::EstimateBandStationarity(
+    const VectorBuffer& spectrum_buffer,
+    const std::array<int, kWindowLength>& indexes,
+    size_t band) const {
   constexpr float kThrStationarity = 10.f;
-  float acumPower = 0.f;
-  for (auto slot : idx_lookahead_) {
-    acumPower += buffer_.GetPowerBand(slot, band);
+  float acum_power = 0.f;
+  for (auto idx : indexes) {
+    acum_power += spectrum_buffer.buffer[idx][band];
   }
-  for (auto slot : idx_lookback_) {
-    acumPower += buffer_.GetPowerBand(slot, band);
-  }
-
-  // Generally windowSize is equal to kLongWindowSize
-  float windowSize = idx_lookahead_.size() + idx_lookback_.size();
-  float noise = windowSize * GetStationarityPowerBand(band);
+  float noise = kWindowLength * GetStationarityPowerBand(band);
   RTC_CHECK_LT(0.f, noise);
-  bool stationary = acumPower < kThrStationarity * noise;
-  data_dumper_->DumpRaw("aec3_stationarity_long_ratio", acumPower / noise);
+  bool stationary = acum_power < kThrStationarity * noise;
+  data_dumper_->DumpRaw("aec3_stationarity_long_ratio", acum_power / noise);
   return stationary;
 }
 
@@ -122,32 +115,6 @@ void StationarityEstimator::UpdateHangover() {
       hangovers_[k] = kHangoverBlocks;
     } else if (reduce_hangover) {
       hangovers_[k] = std::max(hangovers_[k] - 1, 0);
-    }
-  }
-}
-
-void StationarityEstimator::GetSlotsAheadBack(size_t current_block_number) {
-  for (size_t block = 0; block < idx_lookahead_.size(); ++block) {
-    idx_lookahead_[block] = buffer_.GetSlotNumber(current_block_number + block);
-  }
-  size_t num_lookback_blocks;
-  if (idx_lookahead_.size() >= kLongWindowSize) {
-    RTC_CHECK_EQ(idx_lookahead_.size(), kLongWindowSize);
-    num_lookback_blocks = 0;
-  } else {
-    num_lookback_blocks = kLongWindowSize - idx_lookahead_.size();
-  }
-  if (current_block_number < num_lookback_blocks) {
-    idx_lookback_.resize(0);
-  } else {
-    for (size_t block = 0; block < num_lookback_blocks; ++block) {
-      int block_number = current_block_number - block - 1;
-      if (!buffer_.IsBlockNumberAlreadyUpdated(block_number)) {
-        break;
-      } else {
-        RTC_DCHECK_GE(idx_lookback_.capacity(), idx_lookback_.size() + 1);
-        idx_lookback_.push_back(buffer_.GetSlotNumber(block_number));
-      }
     }
   }
 }
@@ -228,12 +195,6 @@ float StationarityEstimator::NoiseSpectrum::UpdateBandBySmoothing(
         std::max(power_band_noise_updated, kMinNoisePower);
   }
   return power_band_noise_updated;
-}
-
-StationarityEstimator::CircularBuffer::CircularBuffer() {
-  for (auto slot : slots_) {
-    slot.block_number_ = -1;
-  }
 }
 
 }  // namespace webrtc
