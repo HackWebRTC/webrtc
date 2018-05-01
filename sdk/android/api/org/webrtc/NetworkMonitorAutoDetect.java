@@ -242,11 +242,15 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
      * Only callable on Lollipop and newer releases.
      */
     @SuppressLint("NewApi")
-    NetworkState getNetworkState(Network network) {
-      if (connectivityManager == null) {
+    NetworkState getNetworkState(@Nullable Network network) {
+      if (network == null || connectivityManager == null) {
         return new NetworkState(false, -1, -1, -1, -1);
       }
       NetworkInfo networkInfo = connectivityManager.getNetworkInfo(network);
+      if (networkInfo == null) {
+        Logging.w(TAG, "Couldn't retrieve information from network " + network.toString());
+        return new NetworkState(false, -1, -1, -1, -1);
+      }
       // The general logic of handling a VPN in this method is as follows. getNetworkInfo will
       // return the info of the network with the same id as in |network| when it is registered via
       // ConnectivityManager.registerNetworkAgent in Android. |networkInfo| may or may not indicate
@@ -263,12 +267,17 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
       // |network| to the active network. If they are not the same network, we will have to fall
       // back to report an unknown network.
 
-      // When |network| is in fact a VPN after querying its capability but |networkInfo| is not of
-      // type TYPE_VPN, |networkInfo| contains the info for the underlying network, and we return a
-      // NetworkState constructed from it.
-      if (networkInfo.getType() != ConnectivityManager.TYPE_VPN
-          && connectivityManager.getNetworkCapabilities(network).hasTransport(
-                 NetworkCapabilities.TRANSPORT_VPN)) {
+      if (networkInfo.getType() != ConnectivityManager.TYPE_VPN) {
+        // Note that getNetworkCapabilities returns null if the network is unknown.
+        NetworkCapabilities networkCapabilities =
+            connectivityManager.getNetworkCapabilities(network);
+        if (networkCapabilities == null
+            || !networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) {
+          return getNetworkState(networkInfo);
+        }
+        // When |network| is in fact a VPN after querying its capability but |networkInfo| is not of
+        // type TYPE_VPN, |networkInfo| contains the info for the underlying network, and we return
+        // a NetworkState constructed from it.
         return new NetworkState(networkInfo.isConnected(), ConnectivityManager.TYPE_VPN, -1,
             networkInfo.getType(), networkInfo.getSubtype());
       }
@@ -277,6 +286,9 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
       // NetworkState of the active network via getActiveNetworkInfo(), if |network| is the active
       // network that supports the VPN. Otherwise, NetworkState of an unknown network with type -1
       // will be returned.
+      //
+      // Note that getActiveNetwork and getActiveNetworkInfo return null if no default network is
+      // currently active.
       if (networkInfo.getType() == ConnectivityManager.TYPE_VPN
           && network.equals(connectivityManager.getActiveNetwork())) {
         // If a VPN network is in place, we can find the underlying network type via querying the
@@ -376,8 +388,8 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
     }
 
     @SuppressLint("NewApi")
-    private @Nullable NetworkInformation networkToInfo(Network network) {
-      if (connectivityManager == null) {
+    private @Nullable NetworkInformation networkToInfo(@Nullable Network network) {
+      if (network == null || connectivityManager == null) {
         return null;
       }
       LinkProperties linkProperties = connectivityManager.getLinkProperties(network);
