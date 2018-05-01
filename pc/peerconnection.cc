@@ -2348,6 +2348,7 @@ RTCError PeerConnection::ApplyRemoteDescription(
   // read to determine the current checking state. The existing SignalConnecting
   // actually means "gathering candidates", so cannot be be used here.
   if (remote_description()->GetType() != SdpType::kOffer &&
+      remote_description()->number_of_mediasections() > 0u &&
       ice_connection_state() == PeerConnectionInterface::kIceConnectionNew) {
     SetIceConnectionState(PeerConnectionInterface::kIceConnectionChecking);
   }

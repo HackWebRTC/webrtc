@@ -351,6 +351,21 @@ TEST_P(PeerConnectionIceTest, SetRemoteDescriptionFailsIfNoIceCredentials) {
   EXPECT_FALSE(callee->SetRemoteDescription(std::move(offer)));
 }
 
+// Test that doing an offer/answer exchange with no transport (i.e., no data
+// channel or media) results in the ICE connection state staying at New.
+TEST_P(PeerConnectionIceTest,
+       OfferAnswerWithNoTransportsDoesNotChangeIceConnectionState) {
+  auto caller = CreatePeerConnection();
+  auto callee = CreatePeerConnection();
+
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+
+  EXPECT_EQ(PeerConnectionInterface::kIceConnectionNew,
+            caller->pc()->ice_connection_state());
+  EXPECT_EQ(PeerConnectionInterface::kIceConnectionNew,
+            callee->pc()->ice_connection_state());
+}
+
 // The following group tests that ICE candidates are not generated before
 // SetLocalDescription is called on a PeerConnection.
 
