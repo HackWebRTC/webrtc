@@ -43,6 +43,7 @@ struct FrameStatistics {
   size_t spatial_idx = 0;
   size_t temporal_idx = 0;
   bool inter_layer_predicted = false;
+  bool non_ref_for_inter_layer_pred = true;
 
   // H264 specific.
   size_t max_nalu_size_bytes = 0;

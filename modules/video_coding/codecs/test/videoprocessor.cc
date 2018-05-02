@@ -354,14 +354,16 @@ void VideoProcessor::FrameEncoded(
   frame_stat->qp = encoded_image.qp_;
 
   const size_t num_spatial_layers = config_.NumberOfSpatialLayers();
-  // TODO(ssilkin): Get actual value. For now assume inter-layer prediction
-  // is enabled for all frames.
-  const bool inter_layer_prediction = num_spatial_layers > 1;
   bool end_of_picture = false;
   if (codec_type == kVideoCodecVP9) {
     const CodecSpecificInfoVP9& vp9_info = codec_specific.codecSpecific.VP9;
     frame_stat->inter_layer_predicted = vp9_info.inter_layer_predicted;
+    frame_stat->non_ref_for_inter_layer_pred =
+        vp9_info.non_ref_for_inter_layer_pred;
     end_of_picture = vp9_info.end_of_picture;
+  } else {
+    frame_stat->inter_layer_predicted = false;
+    frame_stat->non_ref_for_inter_layer_pred = true;
   }
 
   const webrtc::EncodedImage* encoded_image_for_decode = &encoded_image;
@@ -376,20 +378,24 @@ void VideoProcessor::FrameEncoded(
   if (config_.decode) {
     DecodeFrame(*encoded_image_for_decode, spatial_idx);
 
-    if (end_of_picture && inter_layer_prediction) {
+    if (end_of_picture && num_spatial_layers > 1) {
       // If inter-layer prediction is enabled and upper layer was dropped then
       // base layer should be passed to upper layer decoder. Otherwise decoder
       // won't be able to decode next superframe.
       const EncodedImage* base_image = nullptr;
+      const FrameStatistics* base_stat = nullptr;
       for (size_t i = 0; i < num_spatial_layers; ++i) {
-        const bool layer_dropped = last_decoded_frame_num_[i] < frame_number;
+        const bool layer_dropped = (first_decoded_frame_[i] ||
+                                    last_decoded_frame_num_[i] < frame_number);
 
         // Ensure current layer was decoded.
         RTC_CHECK(layer_dropped == false || i != spatial_idx);
 
         if (!layer_dropped) {
           base_image = &merged_encoded_frames_[i];
-        } else if (base_image) {
+          base_stat =
+              stats_->GetFrameWithTimestamp(encoded_image._timeStamp, i);
+        } else if (base_image && !base_stat->non_ref_for_inter_layer_pred) {
           DecodeFrame(*base_image, i);
         }
       }
