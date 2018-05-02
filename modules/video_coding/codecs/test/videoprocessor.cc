@@ -181,6 +181,7 @@ VideoProcessor::VideoProcessor(webrtc::VideoEncoder* encoder,
       last_encoded_frame_num_(num_simulcast_or_spatial_layers_),
       first_decoded_frame_(num_simulcast_or_spatial_layers_, true),
       last_decoded_frame_num_(num_simulcast_or_spatial_layers_),
+      decoded_frame_buffer_(num_simulcast_or_spatial_layers_),
       post_encode_time_ns_(0) {
   // Sanity checks.
   RTC_CHECK(rtc::TaskQueue::Current())
@@ -429,6 +430,16 @@ void VideoProcessor::FrameDecoded(const VideoFrame& decoded_frame,
       stats_->GetFrameWithTimestamp(decoded_frame.timestamp(), spatial_idx);
   const size_t frame_number = frame_stat->frame_number;
 
+  if (decoded_frame_writers_ && !first_decoded_frame_[spatial_idx]) {
+    // Fill drops with last decoded frame to make them look like freeze at
+    // playback and to keep decoded layers in sync.
+    for (size_t i = last_decoded_frame_num_[spatial_idx] + 1; i < frame_number;
+         ++i) {
+      RTC_CHECK(decoded_frame_writers_->at(spatial_idx)
+                    ->WriteFrame(decoded_frame_buffer_[spatial_idx].data()));
+    }
+  }
+
   // Ensure that the decode order is monotonically increasing, within this
   // simulcast/spatial layer.
   RTC_CHECK(first_decoded_frame_[spatial_idx] ||
@@ -469,11 +480,12 @@ void VideoProcessor::FrameDecoded(const VideoFrame& decoded_frame,
 
   if (decoded_frame_writers_) {
     ExtractI420BufferWithSize(decoded_frame, config_.codec_settings.width,
-                              config_.codec_settings.height, &tmp_i420_buffer_);
-    RTC_CHECK_EQ(tmp_i420_buffer_.size(),
+                              config_.codec_settings.height,
+                              &decoded_frame_buffer_[spatial_idx]);
+    RTC_CHECK_EQ(decoded_frame_buffer_[spatial_idx].size(),
                  decoded_frame_writers_->at(spatial_idx)->FrameLength());
     RTC_CHECK(decoded_frame_writers_->at(spatial_idx)
-                  ->WriteFrame(tmp_i420_buffer_.data()));
+                  ->WriteFrame(decoded_frame_buffer_[spatial_idx].data()));
   }
 }
 

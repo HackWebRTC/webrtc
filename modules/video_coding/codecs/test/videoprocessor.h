@@ -221,7 +221,6 @@ class VideoProcessor {
   // and decoded bitstreams. Each frame writer is enabled by being non-null.
   IvfFileWriterList* const encoded_frame_writers_;
   FrameWriterList* const decoded_frame_writers_;
-  rtc::Buffer tmp_i420_buffer_;  // Temp storage for format conversion.
 
   // Metadata for inputed/encoded/decoded frames. Used for frame identification,
   // frame drop detection, etc. We assume that encoded/decoded frames are
@@ -237,6 +236,9 @@ class VideoProcessor {
   std::vector<bool> first_decoded_frame_ RTC_GUARDED_BY(sequence_checker_);
   // simulcast_svc_idx -> frame_number.
   std::vector<size_t> last_decoded_frame_num_ RTC_GUARDED_BY(sequence_checker_);
+  // simulcast_svc_idx -> buffer.
+  std::vector<rtc::Buffer> decoded_frame_buffer_
+      RTC_GUARDED_BY(sequence_checker_);
 
   // Time spent in frame encode callback. It is accumulated for layers and
   // reset when frame encode starts. When next layer is encoded post-encode time
