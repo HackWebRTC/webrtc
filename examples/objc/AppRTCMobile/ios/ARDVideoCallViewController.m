@@ -124,7 +124,11 @@
 - (void)appClient:(ARDAppClient *)client
     didReceiveRemoteVideoTrack:(RTCVideoTrack *)remoteVideoTrack {
   self.remoteVideoTrack = remoteVideoTrack;
-  _videoCallView.statusLabel.hidden = YES;
+  __weak ARDVideoCallViewController *weakSelf = self;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    ARDVideoCallViewController *strongSelf = weakSelf;
+    strongSelf.videoCallView.statusLabel.hidden = YES;
+  });
 }
 
 - (void)appClient:(ARDAppClient *)client
