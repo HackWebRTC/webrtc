@@ -882,9 +882,7 @@ void PeerConnection::DestroyAllChannels() {
 
 bool PeerConnection::Initialize(
     const PeerConnectionInterface::RTCConfiguration& configuration,
-    std::unique_ptr<cricket::PortAllocator> allocator,
-    std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
-    PeerConnectionObserver* observer) {
+    PeerConnectionDependencies dependencies) {
   TRACE_EVENT0("webrtc", "PeerConnection::Initialize");
 
   RTCError config_error = ValidateConfiguration(configuration);
@@ -893,21 +891,21 @@ bool PeerConnection::Initialize(
     return false;
   }
 
-  if (!allocator) {
+  if (!dependencies.allocator) {
     RTC_LOG(LS_ERROR)
         << "PeerConnection initialized without a PortAllocator? "
            "This shouldn't happen if using PeerConnectionFactory.";
     return false;
   }
 
-  if (!observer) {
+  if (!dependencies.observer) {
     // TODO(deadbeef): Why do we do this?
     RTC_LOG(LS_ERROR) << "PeerConnection initialized without a "
                          "PeerConnectionObserver";
     return false;
   }
-  observer_ = observer;
-  port_allocator_ = std::move(allocator);
+  observer_ = dependencies.observer;
+  port_allocator_ = std::move(dependencies.allocator);
 
   // The port allocator lives on the network thread and should be initialized
   // there.
@@ -971,7 +969,7 @@ bool PeerConnection::Initialize(
     dtls_enabled_ = false;
   } else {
     // Enable DTLS by default if we have an identity store or a certificate.
-    dtls_enabled_ = (cert_generator || certificate);
+    dtls_enabled_ = (dependencies.cert_generator || certificate);
     // |configuration| can override the default |dtls_enabled_| value.
     if (configuration.enable_dtls_srtp) {
       dtls_enabled_ = *(configuration.enable_dtls_srtp);
@@ -1005,16 +1003,16 @@ bool PeerConnection::Initialize(
   // what PeerConnectionDescriptionFactory will do, so make sure that we give it
   // the right instructions by clearing the variables if needed.
   if (!dtls_enabled_) {
-    cert_generator.reset();
+    dependencies.cert_generator.reset();
     certificate = nullptr;
   } else if (certificate) {
     // Favor generated certificate over the certificate generator.
-    cert_generator.reset();
+    dependencies.cert_generator.reset();
   }
 
   webrtc_session_desc_factory_.reset(new WebRtcSessionDescriptionFactory(
       signaling_thread(), channel_manager(), this, session_id(),
-      std::move(cert_generator), certificate));
+      std::move(dependencies.cert_generator), certificate));
   webrtc_session_desc_factory_->SignalCertificateReady.connect(
       this, &PeerConnection::OnCertificateReady);
 

@@ -61,9 +61,7 @@ class PeerConnection : public PeerConnectionInternal,
 
   bool Initialize(
       const PeerConnectionInterface::RTCConfiguration& configuration,
-      std::unique_ptr<cricket::PortAllocator> allocator,
-      std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
-      PeerConnectionObserver* observer);
+      PeerConnectionDependencies dependencies);
 
   rtc::scoped_refptr<StreamCollectionInterface> local_streams() override;
   rtc::scoped_refptr<StreamCollectionInterface> remote_streams() override;

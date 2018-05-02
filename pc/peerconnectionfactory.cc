@@ -307,11 +307,7 @@ PeerConnectionFactory::CreatePeerConnection(
       new rtc::RefCountedObject<PeerConnection>(this, std::move(event_log),
                                                 std::move(call)));
 
-  // TODO(benwright) Update initialize to take the entire dependencies
-  // structure.
-  if (!pc->Initialize(configuration, std::move(dependencies.allocator),
-                      std::move(dependencies.cert_generator),
-                      dependencies.observer)) {
+  if (!pc->Initialize(configuration, std::move(dependencies))) {
     return nullptr;
   }
   return PeerConnectionProxy::Create(signaling_thread(), pc);
