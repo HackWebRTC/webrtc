@@ -711,9 +711,10 @@ void P2PTransportChannel::OnPortReady(PortAllocatorSession *session,
        ++it) {
     int val = port->SetOption(it->first, it->second);
     if (val < 0) {
-      RTC_LOG(LS_WARNING) << port->ToString() << ": SetOption("
-                          << it->first << ", " << it->second
-                          << ") failed: " << port->GetError();
+      // Errors are frequent, so use LS_INFO. bugs.webrtc.org/9221
+      RTC_LOG(LS_INFO) << port->ToString() << ": SetOption(" << it->first
+                       << ", " << it->second
+                       << ") failed: " << port->GetError();
     }
   }
 
