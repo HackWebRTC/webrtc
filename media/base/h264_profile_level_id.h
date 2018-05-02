@@ -46,7 +46,7 @@ enum Level {
 };
 
 struct ProfileLevelId {
-  ProfileLevelId(Profile profile, Level level)
+  constexpr ProfileLevelId(Profile profile, Level level)
       : profile(profile), level(level) {}
   Profile profile;
   Level level;
