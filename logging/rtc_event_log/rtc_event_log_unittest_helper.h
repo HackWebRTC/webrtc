@@ -72,19 +72,19 @@ class RtcEventLogTestHelper {
 
   static void VerifyBweProbeCluster(const ParsedRtcEventLogNew& parsed_log,
                                     size_t index,
-                                    uint32_t id,
-                                    uint32_t bitrate_bps,
+                                    int32_t id,
+                                    int32_t bitrate_bps,
                                     uint32_t min_probes,
                                     uint32_t min_bytes);
 
   static void VerifyProbeResultSuccess(const ParsedRtcEventLogNew& parsed_log,
                                        size_t index,
-                                       uint32_t id,
-                                       uint32_t bitrate_bps);
+                                       int32_t id,
+                                       int32_t bitrate_bps);
 
   static void VerifyProbeResultFailure(const ParsedRtcEventLogNew& parsed_log,
                                        size_t index,
-                                       uint32_t id,
+                                       int32_t id,
                                        ProbeFailureReason failure_reason);
 };
 

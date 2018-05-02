@@ -553,8 +553,8 @@ void RtcEventLogTestHelper::VerifyLogEndEvent(
 void RtcEventLogTestHelper::VerifyBweProbeCluster(
     const ParsedRtcEventLogNew& parsed_log,
     size_t index,
-    uint32_t id,
-    uint32_t bitrate_bps,
+    int32_t id,
+    int32_t bitrate_bps,
     uint32_t min_probes,
     uint32_t min_bytes) {
   ASSERT_LT(index, parsed_log.events_.size());
@@ -578,8 +578,8 @@ void RtcEventLogTestHelper::VerifyBweProbeCluster(
 void RtcEventLogTestHelper::VerifyProbeResultSuccess(
     const ParsedRtcEventLogNew& parsed_log,
     size_t index,
-    uint32_t id,
-    uint32_t bitrate_bps) {
+    int32_t id,
+    int32_t bitrate_bps) {
   ASSERT_LT(index, parsed_log.events_.size());
   const rtclog::Event& event = parsed_log.events_[index];
   ASSERT_TRUE(IsValidBasicEvent(event));
@@ -599,7 +599,7 @@ void RtcEventLogTestHelper::VerifyProbeResultSuccess(
 void RtcEventLogTestHelper::VerifyProbeResultFailure(
     const ParsedRtcEventLogNew& parsed_log,
     size_t index,
-    uint32_t id,
+    int32_t id,
     ProbeFailureReason failure_reason) {
   ASSERT_LT(index, parsed_log.events_.size());
   const rtclog::Event& event = parsed_log.events_[index];

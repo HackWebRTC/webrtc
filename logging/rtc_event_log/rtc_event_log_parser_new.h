@@ -88,8 +88,8 @@ struct LoggedBweLossBasedUpdate {
 
 struct LoggedBweProbeClusterCreatedEvent {
   int64_t timestamp_us;
-  uint32_t id;
-  uint64_t bitrate_bps;
+  int32_t id;
+  int32_t bitrate_bps;
   uint32_t min_packets;
   uint32_t min_bytes;
   int64_t log_time_us() const { return timestamp_us; }
@@ -98,8 +98,8 @@ struct LoggedBweProbeClusterCreatedEvent {
 
 struct LoggedBweProbeResultEvent {
   int64_t timestamp_us;
-  uint32_t id;
-  rtc::Optional<uint64_t> bitrate_bps;
+  int32_t id;
+  rtc::Optional<int32_t> bitrate_bps;
   rtc::Optional<ProbeFailureReason> failure_reason;
   int64_t log_time_us() const { return timestamp_us; }
   int64_t log_time_ms() const { return timestamp_us / 1000; }

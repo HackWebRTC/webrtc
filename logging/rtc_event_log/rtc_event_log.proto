@@ -109,7 +109,7 @@ message RtpPacket {
   optional bytes header = 4;
 
   // optional - The probe cluster id.
-  optional uint32 probe_cluster_id = 5;
+  optional int32 probe_cluster_id = 5;
 
   // Do not add code to log user payload data without a privacy review!
 }
@@ -297,10 +297,10 @@ message AudioNetworkAdaptation {
 
 message BweProbeCluster {
   // required - The id of this probe cluster.
-  optional uint32 id = 1;
+  optional int32 id = 1;
 
   // required - The bitrate in bps that this probe cluster is meant to probe.
-  optional uint64 bitrate_bps = 2;
+  optional int32 bitrate_bps = 2;
 
   // required - The minimum number of packets used to probe the given bitrate.
   optional uint32 min_packets = 3;
@@ -311,7 +311,7 @@ message BweProbeCluster {
 
 message BweProbeResult {
   // required - The id of this probe cluster.
-  optional uint32 id = 1;
+  optional int32 id = 1;
 
   enum ResultType {
     SUCCESS = 0;
@@ -324,7 +324,7 @@ message BweProbeResult {
   optional ResultType result = 2;
 
   // optional - but required if result == SUCCESS. The resulting bitrate in bps.
-  optional uint64 bitrate_bps = 3;
+  optional int32 bitrate_bps = 3;
 }
 
 message AlrState {
