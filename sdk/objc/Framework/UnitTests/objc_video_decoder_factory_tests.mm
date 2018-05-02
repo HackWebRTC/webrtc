@@ -24,15 +24,6 @@
 id<RTCVideoDecoderFactory> CreateDecoderFactoryReturning(int return_code) {
   id decoderMock = OCMProtocolMock(@protocol(RTCVideoDecoder));
   OCMStub([decoderMock startDecodeWithNumberOfCores:1]).andReturn(return_code);
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-  OCMStub([decoderMock decode:[OCMArg any]
-                    missingFrames:NO
-              fragmentationHeader:[OCMArg any]
-                codecSpecificInfo:[OCMArg any]
-                     renderTimeMs:0])
-      .andReturn(return_code);
-#pragma clang diagnostic pop
   OCMStub([decoderMock decode:[OCMArg any]
                     missingFrames:NO
                 codecSpecificInfo:[OCMArg any]

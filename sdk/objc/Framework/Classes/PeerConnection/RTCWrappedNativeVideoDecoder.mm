@@ -59,15 +59,6 @@
   return 0;
 }
 
-- (NSInteger)decode:(RTCEncodedImage *)encodedImage
-          missingFrames:(BOOL)missingFrames
-    fragmentationHeader:(RTCRtpFragmentationHeader *)fragmentationHeader
-      codecSpecificInfo:(nullable id<RTCCodecSpecificInfo>)info
-           renderTimeMs:(int64_t)renderTimeMs {
-  RTC_NOTREACHED();
-  return 0;
-}
-
 - (NSString *)implementationName {
   RTC_NOTREACHED();
   return nil;

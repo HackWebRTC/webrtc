@@ -50,7 +50,7 @@ class ObjCVideoDecoder : public VideoDecoder {
 
   int32_t Decode(const EncodedImage &input_image,
                  bool missing_frames,
-                 const RTPFragmentationHeader *fragmentation,
+                 const RTPFragmentationHeader * /* fragmentation */,
                  const CodecSpecificInfo *codec_specific_info = NULL,
                  int64_t render_time_ms = -1) {
     RTCEncodedImage *encodedImage =
@@ -67,24 +67,10 @@ class ObjCVideoDecoder : public VideoDecoder {
       }
     }
 
-    if ([decoder_ respondsToSelector:@selector
-                  (decode:missingFrames:codecSpecificInfo:renderTimeMs:)]) {
-      return [decoder_ decode:encodedImage
-                missingFrames:missing_frames
-            codecSpecificInfo:rtcCodecSpecificInfo
-                 renderTimeMs:render_time_ms];
-    } else {
-      RTCRtpFragmentationHeader *header =
-          [[RTCRtpFragmentationHeader alloc] initWithNativeFragmentationHeader:fragmentation];
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-      return [decoder_ decode:encodedImage
-                missingFrames:missing_frames
-          fragmentationHeader:header
-            codecSpecificInfo:rtcCodecSpecificInfo
-                 renderTimeMs:render_time_ms];
-#pragma clang diagnostic pop
-    }
+    return [decoder_ decode:encodedImage
+              missingFrames:missing_frames
+          codecSpecificInfo:rtcCodecSpecificInfo
+               renderTimeMs:render_time_ms];
   }
 
   int32_t RegisterDecodeCompleteCallback(DecodedImageCallback *callback) {
