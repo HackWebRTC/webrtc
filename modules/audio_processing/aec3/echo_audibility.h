@@ -18,8 +18,11 @@
 #include <vector>
 
 #include "api/array_view.h"
+#include "api/optional.h"
+#include "modules/audio_processing/aec3/matrix_buffer.h"
 #include "modules/audio_processing/aec3/render_buffer.h"
 #include "modules/audio_processing/aec3/stationarity_estimator.h"
+#include "modules/audio_processing/aec3/vector_buffer.h"
 #include "rtc_base/constructormagic.h"
 
 namespace webrtc {
@@ -33,8 +36,7 @@ class EchoAudibility {
 
   // Feed new render data to the echo audibility estimator.
   void Update(const RenderBuffer& render_buffer,
-              size_t delay_blocks,
-              size_t capture_block_counter_,
+              int delay_blocks,
               bool external_delay_seen);
 
   // Get the residual echo scaling.
@@ -52,18 +54,23 @@ class EchoAudibility {
   // Reset the EchoAudibility class.
   void Reset();
 
-  // Compute the residual scaling per frequency for the current frame.
-  void ComputeResidualScaling();
-
   // Updates the render stationarity flags for the current frame.
   void UpdateRenderStationarityFlags(const RenderBuffer& render_buffer,
-                                     size_t delay_blocks);
+                                     int delay_blocks);
 
   // Updates the noise estimator with the new render data since the previous
   // call to this method.
-  void UpdateRenderNoiseEstimator(const RenderBuffer& render_buffer);
+  void UpdateRenderNoiseEstimator(const VectorBuffer& spectrum_buffer,
+                                  const MatrixBuffer& block_buffer,
+                                  bool external_delay_seen);
 
-  int render_write_prev_;
+  // Returns a bool being true if the render signal contains just close to zero
+  // values.
+  bool IsRenderTooLow(const MatrixBuffer& block_buffer);
+
+  rtc::Optional<int> render_spectrum_write_prev_;
+  int render_block_write_prev_;
+  bool non_zero_render_seen_;
   StationarityEstimator render_stationarity_;
   RTC_DISALLOW_COPY_AND_ASSIGN(EchoAudibility);
 };

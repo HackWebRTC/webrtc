@@ -135,7 +135,7 @@ void AecState::Update(
   if (UseStationaryProperties()) {
     // Update the echo audibility evaluator.
     echo_audibility_.Update(render_buffer, FilterDelayBlocks(),
-                            capture_block_counter_, external_delay_seen_);
+                            external_delay_seen_);
   }
 
   // Update the ERL and ERLE measures.
