@@ -53,10 +53,9 @@ void ResidualEchoEstimator::Estimate(
     size_t window_end =
         aec_state.FilterDelayBlocks() +
         static_cast<int>(config_.echo_model.render_post_window_size);
-    EchoGeneratingPower(render_buffer, window_start, window_end, &X2);
+    EchoGeneratingPower(render_buffer, window_start, window_end,
+                        !aec_state.UseStationaryProperties(), &X2);
 
-    // TODO(devicentepena): look if this is competing/completing
-    // with the stationarity estimator
     // Subtract the stationary noise power to avoid stationary noise causing
     // excessive echo suppression.
     std::transform(X2.begin(), X2.end(), X2_noise_floor_.begin(), X2.begin(),
@@ -187,6 +186,7 @@ void ResidualEchoEstimator::EchoGeneratingPower(
     const RenderBuffer& render_buffer,
     size_t min_delay,
     size_t max_delay,
+    bool apply_noise_gating,
     std::array<float, kFftLengthBy2Plus1>* X2) const {
   X2->fill(0.f);
   for (size_t k = min_delay; k <= max_delay; ++k) {
@@ -195,13 +195,15 @@ void ResidualEchoEstimator::EchoGeneratingPower(
                    [](float a, float b) { return std::max(a, b); });
   }
 
-  // Apply soft noise gate.
-  std::for_each(X2->begin(), X2->end(), [&](float& a) {
-    if (config_.echo_model.noise_gate_power > a) {
-      a = std::max(0.f, a - config_.echo_model.noise_gate_slope *
-                                (config_.echo_model.noise_gate_power - a));
-    }
-  });
+  if (apply_noise_gating) {
+    // Apply soft noise gate.
+    std::for_each(X2->begin(), X2->end(), [&](float& a) {
+      if (config_.echo_model.noise_gate_power > a) {
+        a = std::max(0.f, a - config_.echo_model.noise_gate_slope *
+                                  (config_.echo_model.noise_gate_power - a));
+      }
+    });
+  }
 }
 
 void ResidualEchoEstimator::RenderNoisePower(

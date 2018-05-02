@@ -64,6 +64,7 @@ class ResidualEchoEstimator {
   void EchoGeneratingPower(const RenderBuffer& render_buffer,
                            size_t min_delay,
                            size_t max_delay,
+                           bool apply_noise_gating,
                            std::array<float, kFftLengthBy2Plus1>* X2) const;
 
   // Updates estimate for the power of the stationary noise component in the
