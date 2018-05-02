@@ -75,9 +75,15 @@ public class VideoSource extends MediaSource {
           frame.getBuffer().getHeight(), frame.getRotation(), frame.getTimestampNs(),
           frame.getBuffer());
     }
+
+    public void dispose() {
+      if (surfaceTextureHelper != null) {
+        surfaceTextureHelper.dispose();
+      }
+    }
   }
 
-  private final VideoCapturer.CapturerObserver capturerObserver;
+  private final NativeCapturerObserver capturerObserver;
 
   public VideoSource(long nativeSource) {
     super(nativeSource);
@@ -102,6 +108,12 @@ public class VideoSource extends MediaSource {
 
   public VideoCapturer.CapturerObserver getCapturerObserver() {
     return capturerObserver;
+  }
+
+  @Override
+  public void dispose() {
+    capturerObserver.dispose();
+    super.dispose();
   }
 
   private static native void nativeAdaptOutputFormat(long source, int width, int height, int fps);

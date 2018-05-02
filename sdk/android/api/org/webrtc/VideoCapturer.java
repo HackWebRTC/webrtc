@@ -29,7 +29,7 @@ public interface VideoCapturer {
       throw new UnsupportedOperationException("Deprecated and not implemented.");
     }
 
-    // Delivers a captured frame in a texture with id |oesTextureId|. Called on a Java thread
+    // Delivers a captured frame in a texture with id {@code oesTextureId}. Called on a Java thread
     // owned by VideoCapturer.
     @Deprecated
     default void onTextureFrameCaptured(int width, int height, int oesTextureId,
@@ -46,15 +46,18 @@ public interface VideoCapturer {
    * capture observer. It will be called only once and before any startCapture() request. The
    * camera thread is guaranteed to be valid until dispose() is called. If the VideoCapturer wants
    * to deliver texture frames, it should do this by rendering on the SurfaceTexture in
-   * |surfaceTextureHelper|, register itself as a listener, and forward the frames to
-   * CapturerObserver.onFrameCaptured().
+   * {@code surfaceTextureHelper}, register itself as a listener, and forward the frames to
+   * CapturerObserver.onFrameCaptured(). The caller still has ownership of {@code
+   * surfaceTextureHelper} and is responsible for making sure surfaceTextureHelper.dispose() is
+   * called. This also means that the caller can reuse the SurfaceTextureHelper to initialize a new
+   * VideoCapturer once the previous VideoCapturer has been disposed.
    */
   void initialize(SurfaceTextureHelper surfaceTextureHelper, Context applicationContext,
       CapturerObserver capturerObserver);
 
   /**
-   * Start capturing frames in a format that is as close as possible to |width| x |height| and
-   * |framerate|.
+   * Start capturing frames in a format that is as close as possible to {@code width x height} and
+   * {@code framerate}.
    */
   void startCapture(int width, int height, int framerate);
 
