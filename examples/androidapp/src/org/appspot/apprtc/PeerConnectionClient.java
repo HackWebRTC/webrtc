@@ -105,8 +105,6 @@ public class PeerConnectionClient {
   private static final String VIDEO_FLEXFEC_FIELDTRIAL =
       "WebRTC-FlexFEC-03-Advertised/Enabled/WebRTC-FlexFEC-03/Enabled/";
   private static final String VIDEO_VP8_INTEL_HW_ENCODER_FIELDTRIAL = "WebRTC-IntelVP8/Enabled/";
-  private static final String VIDEO_H264_HIGH_PROFILE_FIELDTRIAL =
-      "WebRTC-H264HighProfile/Enabled/";
   private static final String DISABLE_WEBRTC_AGC_FIELDTRIAL =
       "WebRTC-Audio-MinimizeResamplingOnMobile/Enabled/";
   private static final String AUDIO_CODEC_PARAM_BITRATE = "maxaveragebitrate";
@@ -1042,10 +1040,6 @@ public class PeerConnectionClient {
     if (peerConnectionParameters.disableWebRtcAGCAndHPF) {
       fieldTrials += DISABLE_WEBRTC_AGC_FIELDTRIAL;
       Log.d(TAG, "Disable WebRTC AGC field trial.");
-    }
-    if (VIDEO_CODEC_H264_HIGH.equals(peerConnectionParameters.videoCodec)) {
-      // TODO(magjed): Strip High from SDP when selecting Baseline instead of using field trial.
-      fieldTrials += VIDEO_H264_HIGH_PROFILE_FIELDTRIAL;
     }
     return fieldTrials;
   }

@@ -14,7 +14,6 @@
 
 #include "media/base/mediaconstants.h"
 #include "modules/video_coding/codecs/test/objc_codec_factory_helper.h"
-#include "test/field_trial.h"
 #include "test/testsupport/fileutils.h"
 
 namespace webrtc {
@@ -82,8 +81,6 @@ MAYBE_TEST_F(VideoProcessorIntegrationTestVideoToolbox,
 
 MAYBE_TEST_F(VideoProcessorIntegrationTestVideoToolbox,
        ForemanCif500kbpsH264CHP) {
-  ScopedFieldTrials override_field_trials("WebRTC-H264HighProfile/Enabled/");
-
   config_.h264_codec_settings.profile = H264::kProfileConstrainedHigh;
   config_.SetCodecSettings(cricket::kH264CodecName, 1, 1, 1, false, false,
                            false, 352, 288);

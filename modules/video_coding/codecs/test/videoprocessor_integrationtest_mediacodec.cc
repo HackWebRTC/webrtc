@@ -16,7 +16,6 @@
 
 #include "common_types.h"  // NOLINT(build/include)
 #include "media/base/mediaconstants.h"
-#include "test/field_trial.h"
 #include "test/testsupport/fileutils.h"
 
 namespace webrtc {
@@ -82,8 +81,6 @@ TEST_F(VideoProcessorIntegrationTestMediaCodec, ForemanCif500kbpsH264CBP) {
 // HW encoders that support CHP.
 TEST_F(VideoProcessorIntegrationTestMediaCodec,
        DISABLED_ForemanCif500kbpsH264CHP) {
-  ScopedFieldTrials override_field_trials("WebRTC-H264HighProfile/Enabled/");
-
   config_.h264_codec_settings.profile = H264::kProfileConstrainedHigh;
   config_.encoded_frame_checker = &h264_keyframe_checker_;
   config_.SetCodecSettings(cricket::kH264CodecName, 1, 1, 1, false, false,

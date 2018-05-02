@@ -81,7 +81,6 @@ namespace {
   // Maximum time limit between incoming frames before requesting a key frame.
   const size_t kFrameDiffThresholdMs = 350;
   const int kMinKeyFrameInterval = 6;
-  const char kH264HighProfileFieldTrial[] = "WebRTC-H264HighProfile";
   const char kCustomQPThresholdsFieldTrial[] = "WebRTC-CustomQPThresholds";
 }  // namespace
 
@@ -1318,11 +1317,7 @@ VideoEncoder* MediaCodecVideoEncoderFactory::CreateVideoEncoder(
 
 const std::vector<cricket::VideoCodec>&
 MediaCodecVideoEncoderFactory::supported_codecs() const {
-  if (field_trial::IsEnabled(kH264HighProfileFieldTrial)) {
-    return supported_codecs_with_h264_hp_;
-  } else {
-    return supported_codecs_;
-  }
+  return supported_codecs_with_h264_hp_;
 }
 
 void MediaCodecVideoEncoderFactory::DestroyVideoEncoder(VideoEncoder* encoder) {
