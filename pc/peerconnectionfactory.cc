@@ -264,22 +264,35 @@ PeerConnectionFactory::CreatePeerConnection(
     std::unique_ptr<cricket::PortAllocator> allocator,
     std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
     PeerConnectionObserver* observer) {
+  // Convert the legacy API into the new depnedency structure.
+  PeerConnectionDependencies dependencies(observer);
+  dependencies.allocator = std::move(allocator);
+  dependencies.cert_generator = std::move(cert_generator);
+  // Pass that into the new API.
+  return CreatePeerConnection(configuration, std::move(dependencies));
+}
+
+rtc::scoped_refptr<PeerConnectionInterface>
+PeerConnectionFactory::CreatePeerConnection(
+    const PeerConnectionInterface::RTCConfiguration& configuration,
+    PeerConnectionDependencies dependencies) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
 
-  if (!cert_generator.get()) {
-    // No certificate generator specified, use the default one.
-    cert_generator.reset(
-        new rtc::RTCCertificateGenerator(signaling_thread_, network_thread_));
+  // Set internal defaults if optional dependencies are not set.
+  if (!dependencies.cert_generator) {
+    dependencies.cert_generator = rtc::MakeUnique<rtc::RTCCertificateGenerator>(
+        signaling_thread_, network_thread_);
   }
-
-  if (!allocator) {
-    allocator.reset(new cricket::BasicPortAllocator(
+  if (!dependencies.allocator) {
+    dependencies.allocator.reset(new cricket::BasicPortAllocator(
         default_network_manager_.get(), default_socket_factory_.get(),
         configuration.turn_customizer));
   }
+
   network_thread_->Invoke<void>(
-      RTC_FROM_HERE, rtc::Bind(&cricket::PortAllocator::SetNetworkIgnoreMask,
-                               allocator.get(), options_.network_ignore_mask));
+      RTC_FROM_HERE,
+      rtc::Bind(&cricket::PortAllocator::SetNetworkIgnoreMask,
+                dependencies.allocator.get(), options_.network_ignore_mask));
 
   std::unique_ptr<RtcEventLog> event_log =
       worker_thread_->Invoke<std::unique_ptr<RtcEventLog>>(
@@ -294,8 +307,11 @@ PeerConnectionFactory::CreatePeerConnection(
       new rtc::RefCountedObject<PeerConnection>(this, std::move(event_log),
                                                 std::move(call)));
 
-  if (!pc->Initialize(configuration, std::move(allocator),
-                      std::move(cert_generator), observer)) {
+  // TODO(benwright) Update initialize to take the entire dependencies
+  // structure.
+  if (!pc->Initialize(configuration, std::move(dependencies.allocator),
+                      std::move(dependencies.cert_generator),
+                      dependencies.observer)) {
     return nullptr;
   }
   return PeerConnectionProxy::Create(signaling_thread(), pc);

@@ -44,6 +44,10 @@ BEGIN_SIGNALING_PROXY_MAP(PeerConnectionFactory)
                 std::unique_ptr<cricket::PortAllocator>,
                 std::unique_ptr<rtc::RTCCertificateGeneratorInterface>,
                 PeerConnectionObserver*);
+  PROXY_METHOD2(rtc::scoped_refptr<PeerConnectionInterface>,
+                CreatePeerConnection,
+                const PeerConnectionInterface::RTCConfiguration&,
+                PeerConnectionDependencies);
   PROXY_METHOD1(rtc::scoped_refptr<MediaStreamInterface>,
                 CreateLocalMediaStream, const std::string&)
   PROXY_METHOD1(rtc::scoped_refptr<AudioSourceInterface>,

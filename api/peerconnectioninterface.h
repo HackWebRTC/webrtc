@@ -1153,6 +1153,30 @@ class PeerConnectionObserver {
       rtc::scoped_refptr<RtpReceiverInterface> receiver) {}
 };
 
+// PeerConnectionDependencies holds all of PeerConnections dependencies.
+// A dependency is distinct from a configuration as it defines significant
+// executable code that can be provided by a user of the API.
+//
+// All new dependencies should be added as a unique_ptr to allow the
+// PeerConnection object to be the definitive owner of the dependencies
+// lifetime making injection safer.
+struct PeerConnectionDependencies final {
+  explicit PeerConnectionDependencies(PeerConnectionObserver* observer_in)
+      : observer(observer_in) {}
+  // This object is not copyable or assignable.
+  PeerConnectionDependencies(const PeerConnectionDependencies&) = delete;
+  PeerConnectionDependencies& operator=(const PeerConnectionDependencies&) =
+      delete;
+  // This object is only moveable.
+  PeerConnectionDependencies(PeerConnectionDependencies&&) = default;
+  PeerConnectionDependencies& operator=(PeerConnectionDependencies&&) = default;
+  // Mandatory dependencies
+  PeerConnectionObserver* observer = nullptr;
+  // Optional dependencies
+  std::unique_ptr<cricket::PortAllocator> allocator;
+  std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator;
+};
+
 // PeerConnectionFactoryInterface is the factory interface used for creating
 // PeerConnection, MediaStream and MediaStreamTrack objects.
 //
@@ -1205,8 +1229,18 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
   // Set the options to be used for subsequently created PeerConnections.
   virtual void SetOptions(const Options& options) = 0;
 
-  // |allocator| and |cert_generator| may be null, in which case default
-  // implementations will be used.
+  // The preferred way to create a new peer connection. Simply provide the
+  // configuration and a PeerConnectionDependencies structure.
+  // TODO(benwright): Make pure virtual once downstream mock PC factory classes
+  // are updated.
+  virtual rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection(
+      const PeerConnectionInterface::RTCConfiguration& configuration,
+      PeerConnectionDependencies dependencies) {
+    return nullptr;
+  }
+
+  // Deprecated; |allocator| and |cert_generator| may be null, in which case
+  // default implementations will be used.
   //
   // |observer| must not be null.
   //

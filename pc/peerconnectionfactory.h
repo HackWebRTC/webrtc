@@ -56,6 +56,10 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
       std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
       PeerConnectionObserver* observer) override;
 
+  rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection(
+      const PeerConnectionInterface::RTCConfiguration& configuration,
+      PeerConnectionDependencies dependencies) override;
+
   bool Initialize();
 
   rtc::scoped_refptr<MediaStreamInterface> CreateLocalMediaStream(
