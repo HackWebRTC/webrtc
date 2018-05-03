@@ -19,6 +19,9 @@ NS_ASSUME_NONNULL_BEGIN
 RTC_EXPORT
 @interface RTCRtpParameters : NSObject
 
+/** A unique identifier for the last set of parameters applied. */
+@property(nonatomic, copy) NSString *transactionId;
+
 /** The currently active encodings in the order of preference. */
 @property(nonatomic, copy) NSArray<RTCRtpEncodingParameters *> *encodings;
 
