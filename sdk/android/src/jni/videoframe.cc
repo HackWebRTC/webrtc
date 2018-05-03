@@ -125,11 +125,7 @@ int64_t GetJavaVideoFrameTimestampNs(JNIEnv* jni,
 
 Matrix::Matrix(JNIEnv* jni, const JavaRef<jfloatArray>& a) {
   RTC_CHECK_EQ(16, jni->GetArrayLength(a.obj()));
-  jfloat* ptr = jni->GetFloatArrayElements(a.obj(), nullptr);
-  for (int i = 0; i < 16; ++i) {
-    elem_[i] = ptr[i];
-  }
-  jni->ReleaseFloatArrayElements(a.obj(), ptr, 0);
+  jni->GetFloatArrayRegion(a.obj(), 0, 16, elem_);
 }
 
 ScopedJavaLocalRef<jfloatArray> Matrix::ToJava(JNIEnv* jni) const {
