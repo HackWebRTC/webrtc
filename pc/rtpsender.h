@@ -128,7 +128,7 @@ class AudioRtpSender : public DtmfProviderInterface,
 
   std::vector<std::string> stream_ids() const override { return stream_ids_; }
 
-  RtpParameters GetParameters() const override;
+  RtpParameters GetParameters() override;
   RTCError SetParameters(const RtpParameters& parameters) override;
 
   rtc::scoped_refptr<DtmfSenderInterface> GetDtmfSender() const override;
@@ -172,6 +172,7 @@ class AudioRtpSender : public DtmfProviderInterface,
   StatsCollector* stats_;
   rtc::scoped_refptr<AudioTrackInterface> track_;
   rtc::scoped_refptr<DtmfSenderInterface> dtmf_sender_proxy_;
+  rtc::Optional<std::string> last_transaction_id_;
   uint32_t ssrc_ = 0;
   bool cached_track_enabled_ = false;
   bool stopped_ = false;
@@ -216,7 +217,7 @@ class VideoRtpSender : public ObserverInterface,
 
   std::vector<std::string> stream_ids() const override { return stream_ids_; }
 
-  RtpParameters GetParameters() const override;
+  RtpParameters GetParameters() override;
   RTCError SetParameters(const RtpParameters& parameters) override;
 
   rtc::scoped_refptr<DtmfSenderInterface> GetDtmfSender() const override;
@@ -253,6 +254,7 @@ class VideoRtpSender : public ObserverInterface,
   std::vector<std::string> stream_ids_;
   cricket::VideoMediaChannel* media_channel_ = nullptr;
   rtc::scoped_refptr<VideoTrackInterface> track_;
+  rtc::Optional<std::string> last_transaction_id_;
   uint32_t ssrc_ = 0;
   VideoTrackInterface::ContentHint cached_track_content_hint_ =
       VideoTrackInterface::ContentHint::kNone;

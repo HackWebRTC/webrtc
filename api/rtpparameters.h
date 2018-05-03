@@ -546,7 +546,6 @@ struct RtpParameters {
   // Used when calling getParameters/setParameters with a PeerConnection
   // RtpSender, to ensure that outdated parameters are not unintentionally
   // applied successfully.
-  // TODO(deadbeef): Not implemented.
   std::string transaction_id;
 
   // Value to use for MID RTP header extension.
