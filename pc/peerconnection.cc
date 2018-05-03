@@ -2865,7 +2865,7 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
   // Note that this isn't possible through chromium, since it's an unsigned
   // short in WebIDL.
   if (configuration.ice_candidate_pool_size < 0 ||
-      configuration.ice_candidate_pool_size > UINT16_MAX) {
+      configuration.ice_candidate_pool_size > static_cast<int>(UINT16_MAX)) {
     return SafeSetError(RTCErrorType::INVALID_RANGE, error);
   }
 

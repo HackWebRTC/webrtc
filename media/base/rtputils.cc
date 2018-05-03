@@ -257,7 +257,7 @@ bool SetRtpSsrc(void* data, size_t len, uint32_t value) {
 // Assumes version 2, no padding, no extensions, no csrcs.
 bool SetRtpHeader(void* data, size_t len, const RtpHeader& header) {
   if (!IsValidRtpPayloadType(header.payload_type) ||
-      header.seq_num < 0 || header.seq_num > UINT16_MAX) {
+      header.seq_num < 0 || header.seq_num > static_cast<int>(UINT16_MAX)) {
     return false;
   }
   return (SetUint8(data, kRtpFlagsOffset, kRtpVersion << 6) &&
