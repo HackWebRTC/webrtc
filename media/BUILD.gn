@@ -486,6 +486,7 @@ if (rtc_include_tests) {
       "engine/fakewebrtcdeviceinfo.h",
       "engine/fakewebrtcvcmfactory.h",
       "engine/fakewebrtcvideocapturemodule.h",
+      "engine/fakewebrtcvideoengine.cc",
       "engine/fakewebrtcvideoengine.h",
     ]
 

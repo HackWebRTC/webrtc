@@ -10,6 +10,8 @@
 
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
+#include "api/video_codecs/builtin_video_decoder_factory.h"
+#include "api/video_codecs/builtin_video_encoder_factory.h"
 #include "p2p/base/fakeportallocator.h"
 #include "pc/mediasession.h"
 #include "pc/peerconnectionwrapper.h"
@@ -46,7 +48,9 @@ class PeerConnectionCryptoBaseTest : public ::testing::Test {
     pc_factory_ = CreatePeerConnectionFactory(
         rtc::Thread::Current(), rtc::Thread::Current(), rtc::Thread::Current(),
         FakeAudioCaptureModule::Create(), CreateBuiltinAudioEncoderFactory(),
-        CreateBuiltinAudioDecoderFactory(), nullptr, nullptr);
+        CreateBuiltinAudioDecoderFactory(), CreateBuiltinVideoEncoderFactory(),
+        CreateBuiltinVideoDecoderFactory(), nullptr /* audio_mixer */,
+        nullptr /* audio_processing */);
   }
 
   WrapperPtr CreatePeerConnection() {

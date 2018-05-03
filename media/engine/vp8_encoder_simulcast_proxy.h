@@ -25,7 +25,7 @@ namespace webrtc {
 class VP8EncoderSimulcastProxy : public VP8Encoder {
  public:
   explicit VP8EncoderSimulcastProxy(VideoEncoderFactory* factory);
-  virtual ~VP8EncoderSimulcastProxy();
+  ~VP8EncoderSimulcastProxy() override;
 
   // Implements VideoEncoder.
   int Release() override;

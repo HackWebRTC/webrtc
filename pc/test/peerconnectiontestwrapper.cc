@@ -12,6 +12,9 @@
 #include <utility>
 #include <vector>
 
+#include "api/video_codecs/builtin_video_decoder_factory.h"
+#include "api/video_codecs/builtin_video_encoder_factory.h"
+#include "modules/audio_processing/include/audio_processing.h"
 #include "p2p/base/fakeportallocator.h"
 #include "pc/sdputils.h"
 #include "pc/test/fakeperiodicvideocapturer.h"
@@ -80,8 +83,11 @@ bool PeerConnectionTestWrapper::CreatePc(
 
   peer_connection_factory_ = webrtc::CreatePeerConnectionFactory(
       network_thread_, worker_thread_, rtc::Thread::Current(),
-      fake_audio_capture_module_, audio_encoder_factory, audio_decoder_factory,
-      nullptr, nullptr);
+      rtc::scoped_refptr<webrtc::AudioDeviceModule>(fake_audio_capture_module_),
+      audio_encoder_factory, audio_decoder_factory,
+      webrtc::CreateBuiltinVideoEncoderFactory(),
+      webrtc::CreateBuiltinVideoDecoderFactory(), nullptr /* audio_mixer */,
+      nullptr /* audio_processing */);
   if (!peer_connection_factory_) {
     return false;
   }

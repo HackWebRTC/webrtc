@@ -30,6 +30,9 @@
 #include "api/peerconnectionproxy.h"
 #include "api/rtpreceiverinterface.h"
 #include "api/test/fakeconstraints.h"
+#include "api/video_codecs/builtin_video_decoder_factory.h"
+#include "api/video_codecs/builtin_video_encoder_factory.h"
+#include "api/video_codecs/sdp_video_format.h"
 #include "media/engine/fakewebrtcvideoengine.h"
 #include "p2p/base/p2pconstants.h"
 #include "p2p/base/portinterface.h"
@@ -604,9 +607,15 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
     rtc::Thread* const signaling_thread = rtc::Thread::Current();
     peer_connection_factory_ = webrtc::CreatePeerConnectionFactory(
         network_thread, worker_thread, signaling_thread,
-        fake_audio_capture_module_, webrtc::CreateBuiltinAudioEncoderFactory(),
-        webrtc::CreateBuiltinAudioDecoderFactory(), fake_video_encoder_factory_,
-        fake_video_decoder_factory_);
+        rtc::scoped_refptr<webrtc::AudioDeviceModule>(
+            fake_audio_capture_module_),
+        webrtc::CreateBuiltinAudioEncoderFactory(),
+        webrtc::CreateBuiltinAudioDecoderFactory(),
+        std::unique_ptr<FakeWebRtcVideoEncoderFactory>(
+            fake_video_encoder_factory_),
+        std::unique_ptr<FakeWebRtcVideoDecoderFactory>(
+            fake_video_decoder_factory_),
+        nullptr /* audio_mixer */, nullptr /* audio_processing */);
     if (!peer_connection_factory_) {
       return false;
     }
@@ -658,7 +667,7 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
   void EnableVideoDecoderFactory() {
     video_decoder_factory_enabled_ = true;
     fake_video_decoder_factory_->AddSupportedVideoCodecType(
-        webrtc::kVideoCodecVP8);
+        webrtc::SdpVideoFormat("VP8"));
   }
 
   rtc::scoped_refptr<webrtc::VideoTrackInterface> CreateLocalVideoTrackInternal(

@@ -17,6 +17,8 @@
 #include "api/mediastreaminterface.h"
 #include "api/peerconnectioninterface.h"
 #include "api/umametrics.h"
+#include "api/video_codecs/builtin_video_decoder_factory.h"
+#include "api/video_codecs/builtin_video_encoder_factory.h"
 #include "pc/mediasession.h"
 #include "pc/mediastream.h"
 #include "pc/mediastreamtrack.h"
@@ -70,8 +72,10 @@ class PeerConnectionRtpTest : public testing::Test {
                                         FakeAudioCaptureModule::Create(),
                                         CreateBuiltinAudioEncoderFactory(),
                                         CreateBuiltinAudioDecoderFactory(),
-                                        nullptr,
-                                        nullptr)) {}
+                                        CreateBuiltinVideoEncoderFactory(),
+                                        CreateBuiltinVideoDecoderFactory(),
+                                        nullptr /* audio_mixer */,
+                                        nullptr /* audio_processing */)) {}
 
   std::unique_ptr<PeerConnectionWrapper> CreatePeerConnection() {
     return CreatePeerConnection(RTCConfiguration());

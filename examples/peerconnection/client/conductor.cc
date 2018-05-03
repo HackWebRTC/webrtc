@@ -17,8 +17,12 @@
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/test/fakeconstraints.h"
+#include "api/video_codecs/builtin_video_decoder_factory.h"
+#include "api/video_codecs/builtin_video_encoder_factory.h"
 #include "examples/peerconnection/client/defaults.h"
 #include "media/engine/webrtcvideocapturerfactory.h"
+#include "modules/audio_device/include/audio_device.h"
+#include "modules/audio_processing/include/audio_processing.h"
 #include "modules/video_capture/video_capture_factory.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/json.h"
@@ -73,8 +77,13 @@ bool Conductor::InitializePeerConnection() {
   RTC_DCHECK(!peer_connection_);
 
   peer_connection_factory_ = webrtc::CreatePeerConnectionFactory(
+      nullptr /* network_thread */, nullptr /* worker_thread */,
+      nullptr /* signaling_thread */, nullptr /* default_adm */,
       webrtc::CreateBuiltinAudioEncoderFactory(),
-      webrtc::CreateBuiltinAudioDecoderFactory());
+      webrtc::CreateBuiltinAudioDecoderFactory(),
+      webrtc::CreateBuiltinVideoEncoderFactory(),
+      webrtc::CreateBuiltinVideoDecoderFactory(), nullptr /* audio_mixer */,
+      nullptr /* audio_processing */);
 
   if (!peer_connection_factory_) {
     main_wnd_->MessageBox("Error",
