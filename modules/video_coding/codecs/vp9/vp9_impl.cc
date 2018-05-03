@@ -74,6 +74,7 @@ VP9EncoderImpl::VP9EncoderImpl()
       config_(nullptr),
       raw_(nullptr),
       input_image_(nullptr),
+      force_key_frame_(true),
       pics_since_key_(0),
       num_temporal_layers_(0),
       num_spatial_layers_(0),
@@ -133,12 +134,22 @@ bool VP9EncoderImpl::SetSvcRates(
 
   if (ExplicitlyConfiguredSpatialLayers()) {
     for (size_t sl_idx = 0; sl_idx < num_spatial_layers_; ++sl_idx) {
+      const bool was_layer_enabled = (config_->ss_target_bitrate[sl_idx] > 0);
       config_->ss_target_bitrate[sl_idx] =
           bitrate_allocation.GetSpatialLayerSum(sl_idx) / 1000;
 
       for (size_t tl_idx = 0; tl_idx < num_temporal_layers_; ++tl_idx) {
         config_->layer_target_bitrate[sl_idx * num_temporal_layers_ + tl_idx] =
             bitrate_allocation.GetTemporalLayerSum(sl_idx, tl_idx) / 1000;
+      }
+
+      const bool is_layer_enabled = (config_->ss_target_bitrate[sl_idx] > 0);
+      if (is_layer_enabled && !was_layer_enabled) {
+        if (inter_layer_pred_ == InterLayerPredMode::kOff ||
+            inter_layer_pred_ == InterLayerPredMode::kOnKeyPic) {
+          // TODO(wemb:1526): remove key frame request when issue is fixed.
+          force_key_frame_ = true;
+        }
       }
     }
   } else {
@@ -539,10 +550,12 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
   if (encoded_complete_callback_ == nullptr) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
-  FrameType frame_type = kVideoFrameDelta;
+
   // We only support one stream at the moment.
-  if (frame_types && frame_types->size() > 0) {
-    frame_type = (*frame_types)[0];
+  if (frame_types && !frame_types->empty()) {
+    if ((*frame_types)[0] == kVideoFrameKey) {
+      force_key_frame_ = true;
+    }
   }
   RTC_DCHECK_EQ(input_image.width(), raw_->d_w);
   RTC_DCHECK_EQ(input_image.height(), raw_->d_h);
@@ -565,9 +578,7 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
   raw_->stride[VPX_PLANE_V] = i420_buffer->StrideV();
 
   vpx_enc_frame_flags_t flags = 0;
-  bool send_keyframe = (frame_type == kVideoFrameKey);
-  if (send_keyframe) {
-    // Key frame request from caller.
+  if (force_key_frame_) {
     flags = VPX_EFLAG_FORCE_KF;
   }
 
@@ -584,7 +595,7 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
       RTC_NOTREACHED();
     } else {
       settings = spatial_layer_->GetSuperFrameSettings(input_image.timestamp(),
-                                                       send_keyframe);
+                                                       force_key_frame_);
     }
     enc_layer_conf = GenerateRefsAndFlags(settings);
     layer_id.temporal_layer_id = 0;
@@ -740,10 +751,16 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
         layer_id.spatial_layer_id);
   }
 
+  const bool is_key_frame =
+      (pkt->data.frame.flags & VPX_FRAME_IS_KEY) ? true : false;
+  // Ensure encoder issued key frame on request.
+  RTC_DCHECK(is_key_frame || !force_key_frame_);
+
   // Check if encoded frame is a key frame.
   encoded_image_._frameType = kVideoFrameDelta;
-  if (pkt->data.frame.flags & VPX_FRAME_IS_KEY) {
+  if (is_key_frame) {
     encoded_image_._frameType = kVideoFrameKey;
+    force_key_frame_ = false;
   }
   RTC_DCHECK_LE(encoded_image_._length, encoded_image_._size);
 
