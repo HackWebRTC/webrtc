@@ -309,8 +309,7 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp8(
   // base layer frame.
   if (codec_header.temporalIdx == 0) {
     layer_info_it =
-        layer_info_
-            .insert(make_pair(codec_header.tl0PicIdx, layer_info_it->second))
+        layer_info_.emplace(codec_header.tl0PicIdx, layer_info_it->second)
             .first;
     frame->num_references = 1;
     frame->references[0] = layer_info_it->second[0];
@@ -434,21 +433,55 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp9(
     return kHandOff;
   }
 
+  GofInfo* info;
   if (codec_header.ss_data_available) {
-    // Scalability structures can only be sent with tl0 frames.
     if (codec_header.temporal_idx != 0) {
-      RTC_LOG(LS_WARNING)
-          << "Received scalability structure on a non base layer"
-             " frame. Scalability structure ignored.";
+      RTC_LOG(LS_WARNING) << "Received scalability structure on a non base "
+                             "layer frame. Scalability structure ignored.";
     } else {
       current_ss_idx_ = Add<kMaxGofSaved>(current_ss_idx_, 1);
       scalability_structures_[current_ss_idx_] = codec_header.gof;
       scalability_structures_[current_ss_idx_].pid_start = frame->id.picture_id;
-
-      GofInfo info(&scalability_structures_[current_ss_idx_],
-                   frame->id.picture_id);
-      gof_info_.insert(std::make_pair(codec_header.tl0_pic_idx, info));
+      gof_info_.emplace(codec_header.tl0_pic_idx,
+                        GofInfo(&scalability_structures_[current_ss_idx_],
+                                frame->id.picture_id));
     }
+
+    const auto gof_info_it = gof_info_.find(codec_header.tl0_pic_idx);
+    if (gof_info_it == gof_info_.end())
+      return kStash;
+
+    info = &gof_info_it->second;
+
+    if (frame->frame_type() == kVideoFrameKey) {
+      frame->num_references = 0;
+      FrameReceivedVp9(frame->id.picture_id, info);
+      UnwrapPictureIds(frame);
+      return kHandOff;
+    }
+  } else {
+    if (frame->frame_type() == kVideoFrameKey) {
+      RTC_LOG(LS_WARNING) << "Received keyframe without scalability structure";
+      return kDrop;
+    }
+
+    auto gof_info_it = gof_info_.find((codec_header.temporal_idx == 0)
+                                          ? codec_header.tl0_pic_idx - 1
+                                          : codec_header.tl0_pic_idx);
+
+    // Gof info for this frame is not available yet, stash this frame.
+    if (gof_info_it == gof_info_.end())
+      return kStash;
+
+    if (codec_header.temporal_idx == 0) {
+      gof_info_it =
+          gof_info_
+              .emplace(codec_header.tl0_pic_idx,
+                       GofInfo(gof_info_it->second.gof, frame->id.picture_id))
+              .first;
+    }
+
+    info = &gof_info_it->second;
   }
 
   // Clean up info for base layers that are too old.
@@ -456,28 +489,6 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp9(
   auto clean_gof_info_to = gof_info_.lower_bound(old_tl0_pic_idx);
   gof_info_.erase(gof_info_.begin(), clean_gof_info_to);
 
-  if (frame->frame_type() == kVideoFrameKey) {
-    // When using GOF all keyframes must include the scalability structure.
-    if (!codec_header.ss_data_available)
-      RTC_LOG(LS_WARNING) << "Received keyframe without scalability structure";
-
-    frame->num_references = 0;
-    GofInfo info = gof_info_.find(codec_header.tl0_pic_idx)->second;
-    FrameReceivedVp9(frame->id.picture_id, &info);
-    UnwrapPictureIds(frame);
-    return kHandOff;
-  }
-
-  auto gof_info_it = gof_info_.find(
-      (codec_header.temporal_idx == 0 && !codec_header.ss_data_available)
-          ? codec_header.tl0_pic_idx - 1
-          : codec_header.tl0_pic_idx);
-
-  // Gof info for this frame is not available yet, stash this frame.
-  if (gof_info_it == gof_info_.end())
-    return kStash;
-
-  GofInfo* info = &gof_info_it->second;
   FrameReceivedVp9(frame->id.picture_id, info);
 
   // Make sure we don't miss any frame that could potentially have the
@@ -485,19 +496,8 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp9(
   if (MissingRequiredFrameVp9(frame->id.picture_id, *info))
     return kStash;
 
-  if (codec_header.temporal_up_switch) {
-    auto pid_tidx =
-        std::make_pair(frame->id.picture_id, codec_header.temporal_idx);
-    up_switch_.insert(pid_tidx);
-  }
-
-  // If this is a base layer frame that contains a scalability structure
-  // then gof info has already been inserted earlier, so we only want to
-  // insert if we haven't done so already.
-  if (codec_header.temporal_idx == 0 && !codec_header.ss_data_available) {
-    GofInfo new_info(info->gof, frame->id.picture_id);
-    gof_info_.insert(std::make_pair(codec_header.tl0_pic_idx, new_info));
-  }
+  if (codec_header.temporal_up_switch)
+    up_switch_.emplace(frame->id.picture_id, codec_header.temporal_idx);
 
   // Clean out old info about up switch frames.
   uint16_t old_picture_id = Subtract<kPicIdLength>(frame->id.picture_id, 50);
