@@ -25,15 +25,12 @@ source_set("lib") {
     "pitch_search_internal.cc",
     "pitch_search_internal.h",
     "ring_buffer.h",
-    "rnn.cc",
-    "rnn.h",
     "sequence_buffer.h",
     "symmetric_matrix_buffer.h",
   ]
   deps = [
     "../../../../api:array_view",
     "../../../../rtc_base:checks",
-    "//third_party/rnnoise:rnn_vad",
   ]
 }
 
@@ -56,8 +53,6 @@ if (rtc_include_tests) {
   unittest_resources = [
     "../../../../resources/audio_processing/agc2/rnn_vad/pitch_buf_24k.dat",
     "../../../../resources/audio_processing/agc2/rnn_vad/pitch_lp_res.dat",
-    "../../../../resources/audio_processing/agc2/rnn_vad/sil_features.dat",
-    "../../../../resources/audio_processing/agc2/rnn_vad/vad_prob.dat",
   ]
 
   if (is_ios) {
@@ -77,7 +72,6 @@ if (rtc_include_tests) {
       "pitch_search_internal_unittest.cc",
       "pitch_search_unittest.cc",
       "ring_buffer_unittest.cc",
-      "rnn_unittest.cc",
       "sequence_buffer_unittest.cc",
       "symmetric_matrix_buffer_unittest.cc",
     ]
@@ -85,9 +79,7 @@ if (rtc_include_tests) {
       ":lib",
       ":lib_test",
       "../../../../api:array_view",
-      "../../../../rtc_base:checks",
       "../../../../test:test_support",
-      "//third_party/rnnoise:rnn_vad",
     ]
     data = unittest_resources
     if (is_ios) {

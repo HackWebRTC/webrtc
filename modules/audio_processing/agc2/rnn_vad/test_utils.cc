@@ -53,21 +53,6 @@ ReaderPairType CreateLpResidualAndPitchPeriodGainReader() {
           rtc::CheckedDivExact(ptr->data_length(), 2 + num_lp_residual_coeffs)};
 }
 
-ReaderPairType CreateSilenceFlagsFeatureMatrixReader() {
-  auto ptr = rtc::MakeUnique<BinaryFileReader<float>>(
-      test::ResourcePath("audio_processing/agc2/rnn_vad/sil_features", "dat"),
-      42);
-  // Features (42) and silence flag.
-  return {std::move(ptr),
-          rtc::CheckedDivExact(ptr->data_length(), static_cast<size_t>(43))};
-}
-
-ReaderPairType CreateVadProbsReader() {
-  auto ptr = rtc::MakeUnique<BinaryFileReader<float>>(
-      test::ResourcePath("audio_processing/agc2/rnn_vad/vad_prob", "dat"));
-  return {std::move(ptr), ptr->data_length()};
-}
-
 }  // namespace test
 }  // namespace rnn_vad
 }  // namespace webrtc
