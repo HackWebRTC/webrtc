@@ -196,7 +196,7 @@ public class PeerConnectionFactory {
     ContextUtils.initialize(options.applicationContext);
     NativeLibrary.initialize(options.nativeLibraryLoader);
     nativeInitializeAndroidGlobals(options.enableVideoHwAcceleration);
-    nativeInitializeFieldTrials(options.fieldTrials);
+    initializeFieldTrials(options.fieldTrials);
     if (options.enableInternalTracer && !internalTracerInitialized) {
       initializeInternalTracer();
     }
@@ -245,6 +245,36 @@ public class PeerConnectionFactory {
 
   public static void stopInternalTracingCapture() {
     nativeStopInternalTracingCapture();
+  }
+
+  @Deprecated
+  public PeerConnectionFactory() {
+    this(null);
+  }
+
+  // Note: initializeAndroidGlobals must be called at least once before
+  // constructing a PeerConnectionFactory.
+  @Deprecated
+  public PeerConnectionFactory(Options options) {
+    this(options, null /* encoderFactory */, null /* decoderFactory */);
+  }
+
+  @Deprecated
+  public PeerConnectionFactory(
+      Options options, VideoEncoderFactory encoderFactory, VideoDecoderFactory decoderFactory) {
+    checkInitializeHasBeenCalled();
+    nativeFactory = nativeCreatePeerConnectionFactory(ContextUtils.getApplicationContext(), options,
+        0 /* audioDeviceModule */, encoderFactory, decoderFactory, 0, 0);
+    if (nativeFactory == 0) {
+      throw new RuntimeException("Failed to initialize PeerConnectionFactory!");
+    }
+  }
+
+  @Deprecated
+  public PeerConnectionFactory(Options options, VideoEncoderFactory encoderFactory,
+      VideoDecoderFactory decoderFactory, AudioProcessingFactory audioProcessingFactory) {
+    this(options, new LegacyAudioDeviceModule(), encoderFactory, decoderFactory,
+        audioProcessingFactory, null /* fecControllerFactoryFactory */);
   }
 
   private PeerConnectionFactory(Options options, @Nullable AudioDeviceModule audioDeviceModule,
@@ -361,6 +391,11 @@ public class PeerConnectionFactory {
     nativeStopAecDump(nativeFactory);
   }
 
+  @Deprecated
+  public void setOptions(Options options) {
+    nativeSetOptions(nativeFactory, options);
+  }
+
   /** Set the EGL context used by HW Video encoding and decoding.
    *
    * @param localEglContext   Must be the same as used by VideoCapturerAndroid and any local video
@@ -449,6 +484,9 @@ public class PeerConnectionFactory {
   private static native void nativeInitializeAndroidGlobals(boolean videoHwAcceleration);
   private static native void nativeInitializeFieldTrials(String fieldTrialsInitString);
   private static native String nativeFindFieldTrialsFullName(String name);
+  // Internal tracing initialization. Must be called before PeerConnectionFactory is created to
+  // prevent racing with tracing code.
+  // Deprecated, use PeerConnectionFactory.initialize instead.
   private static native void nativeInitializeInternalTracer();
   // Internal tracing shutdown, called to prevent resource leaks. Must be called after
   // PeerConnectionFactory is gone to prevent races with code performing tracing.
@@ -470,6 +508,7 @@ public class PeerConnectionFactory {
   private static native boolean nativeStartAecDump(
       long factory, int file_descriptor, int filesize_limit_bytes);
   private static native void nativeStopAecDump(long factory);
+  @Deprecated public native void nativeSetOptions(long factory, Options options);
   private static native void nativeSetVideoHwAccelerationOptions(
       long factory, Object localEGLContext, Object remoteEGLContext);
   private static native void nativeInvokeThreadsCallbacks(long factory);
