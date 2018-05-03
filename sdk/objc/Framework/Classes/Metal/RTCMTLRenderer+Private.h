@@ -11,6 +11,8 @@
 #import <Metal/Metal.h>
 #import "RTCMTLRenderer.h"
 
+#define MTL_STRINGIFY(s) @ #s
+
 NS_ASSUME_NONNULL_BEGIN
 @interface RTCMTLRenderer (Private)
 - (nullable id<MTLDevice>)currentMetalDevice;

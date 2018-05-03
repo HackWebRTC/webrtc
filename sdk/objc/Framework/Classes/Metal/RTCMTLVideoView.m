@@ -19,16 +19,19 @@
 
 #import "RTCMTLI420Renderer.h"
 #import "RTCMTLNV12Renderer.h"
+#import "RTCMTLRGBRenderer.h"
 
 // To avoid unreconized symbol linker errors, we're taking advantage of the objc runtime.
 // Linking errors occur when compiling for architectures that don't support Metal.
 #define MTKViewClass NSClassFromString(@"MTKView")
 #define RTCMTLNV12RendererClass NSClassFromString(@"RTCMTLNV12Renderer")
 #define RTCMTLI420RendererClass NSClassFromString(@"RTCMTLI420Renderer")
+#define RTCMTLRGBRendererClass NSClassFromString(@"RTCMTLRGBRenderer")
 
 @interface RTCMTLVideoView () <MTKViewDelegate>
 @property(nonatomic, strong) RTCMTLI420Renderer *rendererI420;
 @property(nonatomic, strong) RTCMTLNV12Renderer *rendererNV12;
+@property(nonatomic, strong) RTCMTLRGBRenderer *rendererRGB;
 @property(nonatomic, strong) MTKView *metalView;
 @property(atomic, strong) RTCVideoFrame *videoFrame;
 @end
@@ -41,6 +44,7 @@
 @synthesize delegate = _delegate;
 @synthesize rendererI420 = _rendererI420;
 @synthesize rendererNV12 = _rendererNV12;
+@synthesize rendererRGB = _rendererRGB;
 @synthesize metalView = _metalView;
 @synthesize videoFrame = _videoFrame;
 
@@ -81,6 +85,10 @@
 
 + (RTCMTLI420Renderer *)createI420Renderer {
   return [[RTCMTLI420RendererClass alloc] init];
+}
+
++ (RTCMTLRGBRenderer *)createRGBRenderer {
+  return [[RTCMTLRGBRenderer alloc] init];
 }
 
 - (void)configure {
@@ -127,15 +135,29 @@
   }
 
   if ([videoFrame.buffer isKindOfClass:[RTCCVPixelBuffer class]]) {
-    if (!self.rendererNV12) {
-      self.rendererNV12 = [RTCMTLVideoView createNV12Renderer];
-      if (![self.rendererNV12 addRenderingDestination:self.metalView]) {
-        self.rendererNV12 = nil;
-        RTCLogError(@"Failed to create NV12 renderer");
-        return;
+    RTCCVPixelBuffer *buffer = (RTCCVPixelBuffer*)videoFrame.buffer;
+    const OSType pixelFormat = CVPixelBufferGetPixelFormatType(buffer.pixelBuffer);
+    if (pixelFormat == kCVPixelFormatType_32BGRA || pixelFormat == kCVPixelFormatType_32ARGB) {
+      if (!self.rendererRGB) {
+        self.rendererRGB = [RTCMTLVideoView createRGBRenderer];
+        if (![self.rendererRGB addRenderingDestination:self.metalView]) {
+          self.rendererRGB = nil;
+          RTCLogError(@"Failed to create RGB renderer");
+          return;
+        }
       }
+      [self.rendererRGB drawFrame:videoFrame];
+    } else {
+      if (!self.rendererNV12) {
+        self.rendererNV12 = [RTCMTLVideoView createNV12Renderer];
+        if (![self.rendererNV12 addRenderingDestination:self.metalView]) {
+          self.rendererNV12 = nil;
+          RTCLogError(@"Failed to create NV12 renderer");
+          return;
+        }
+      }
+      [self.rendererNV12 drawFrame:videoFrame];
     }
-    [self.rendererNV12 drawFrame:videoFrame];
   } else {
     if (!self.rendererI420) {
       self.rendererI420 = [RTCMTLVideoView createI420Renderer];

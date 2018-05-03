@@ -274,6 +274,8 @@ if (is_ios || is_mac) {
           sources += [
             "objc/Framework/Classes/Metal/RTCMTLNV12Renderer.h",
             "objc/Framework/Classes/Metal/RTCMTLNV12Renderer.mm",
+            "objc/Framework/Classes/Metal/RTCMTLRGBRenderer.h",
+            "objc/Framework/Classes/Metal/RTCMTLRGBRenderer.mm",
             "objc/Framework/Classes/Metal/RTCMTLVideoView.m",
             "objc/Framework/Headers/WebRTC/RTCMTLVideoView.h",
           ]
