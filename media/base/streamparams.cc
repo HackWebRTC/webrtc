@@ -11,9 +11,9 @@
 #include "media/base/streamparams.h"
 
 #include <list>
-#include <sstream>
 
 #include "rtc_base/checks.h"
+#include "rtc_base/strings/string_builder.h"
 
 namespace cricket {
 namespace {
@@ -90,17 +90,18 @@ bool MediaStreams::RemoveDataStream(
 }
 
 static std::string SsrcsToString(const std::vector<uint32_t>& ssrcs) {
-  std::ostringstream ost;
-  ost << "ssrcs:[";
+  char buf[1024];
+  rtc::SimpleStringBuilder sb(buf);
+  sb << "ssrcs:[";
   for (std::vector<uint32_t>::const_iterator it = ssrcs.begin();
        it != ssrcs.end(); ++it) {
     if (it != ssrcs.begin()) {
-      ost << ",";
+      sb << ",";
     }
-    ost << *it;
+    sb << *it;
   }
-  ost << "]";
-  return ost.str();
+  sb << "]";
+  return sb.str();
 }
 
 SsrcGroup::SsrcGroup(const std::string& usage,
@@ -118,12 +119,13 @@ bool SsrcGroup::has_semantics(const std::string& semantics_in) const {
 }
 
 std::string SsrcGroup::ToString() const {
-  std::ostringstream ost;
-  ost << "{";
-  ost << "semantics:" << semantics << ";";
-  ost << SsrcsToString(ssrcs);
-  ost << "}";
-  return ost.str();
+  char buf[1024];
+  rtc::SimpleStringBuilder sb(buf);
+  sb << "{";
+  sb << "semantics:" << semantics << ";";
+  sb << SsrcsToString(ssrcs);
+  sb << "}";
+  return sb.str();
 }
 
 StreamParams::StreamParams() = default;
@@ -134,38 +136,39 @@ StreamParams& StreamParams::operator=(const StreamParams&) = default;
 StreamParams& StreamParams::operator=(StreamParams&&) = default;
 
 std::string StreamParams::ToString() const {
-  std::ostringstream ost;
-  ost << "{";
+  char buf[2 * 1024];
+  rtc::SimpleStringBuilder sb(buf);
+  sb << "{";
   if (!groupid.empty()) {
-    ost << "groupid:" << groupid << ";";
+    sb << "groupid:" << groupid << ";";
   }
   if (!id.empty()) {
-    ost << "id:" << id << ";";
+    sb << "id:" << id << ";";
   }
-  ost << SsrcsToString(ssrcs) << ";";
-  ost << "ssrc_groups:";
+  sb << SsrcsToString(ssrcs) << ";";
+  sb << "ssrc_groups:";
   for (std::vector<SsrcGroup>::const_iterator it = ssrc_groups.begin();
        it != ssrc_groups.end(); ++it) {
     if (it != ssrc_groups.begin()) {
-      ost << ",";
+      sb << ",";
     }
-    ost << it->ToString();
+    sb << it->ToString();
   }
-  ost << ";";
+  sb << ";";
   if (!cname.empty()) {
-    ost << "cname:" << cname << ";";
+    sb << "cname:" << cname << ";";
   }
-  ost << "stream_ids:";
+  sb << "stream_ids:";
   for (std::vector<std::string>::const_iterator it = stream_ids_.begin();
        it != stream_ids_.end(); ++it) {
     if (it != stream_ids_.begin()) {
-      ost << ",";
+      sb << ",";
     }
-    ost << *it;
+    sb << *it;
   }
-  ost << ";";
-  ost << "}";
-  return ost.str();
+  sb << ";";
+  sb << "}";
+  return sb.str();
 }
 void StreamParams::GetPrimarySsrcs(std::vector<uint32_t>* ssrcs) const {
   const SsrcGroup* sim_group = get_ssrc_group(kSimSsrcGroupSemantics);

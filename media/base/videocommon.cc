@@ -12,9 +12,9 @@
 
 #include <limits.h>  // For INT_MAX
 #include <math.h>
-#include <sstream>
 
 #include "rtc_base/arraysize.h"
+#include "rtc_base/strings/string_builder.h"
 
 namespace cricket {
 
@@ -70,10 +70,11 @@ std::string VideoFormat::ToString() const {
     }
   }
 
-  std::ostringstream ss;
-  ss << fourcc_name << width << "x" << height << "x"
+  char buf[256];
+  rtc::SimpleStringBuilder sb(buf);
+  sb << fourcc_name << width << "x" << height << "x"
      << IntervalToFpsFloat(interval);
-  return ss.str();
+  return sb.str();
 }
 
 }  // namespace cricket

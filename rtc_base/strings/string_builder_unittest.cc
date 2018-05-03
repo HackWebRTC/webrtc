@@ -33,7 +33,7 @@ TEST(SimpleStringBuilder, NumbersAndChars) {
   SimpleStringBuilder sb(sb_buf);
   sb << 1 << ':' << 2.1 << ":" << 2.2f << ':' << 78187493520ll << ':'
      << 78187493520ul;
-  EXPECT_EQ(0, strcmp(sb.str(), "1:2.100000:2.200000:78187493520:78187493520"));
+  EXPECT_EQ(0, strcmp(sb.str(), "1:2.1:2.2:78187493520:78187493520"));
 }
 
 TEST(SimpleStringBuilder, Format) {

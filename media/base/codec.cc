@@ -11,12 +11,12 @@
 #include "media/base/codec.h"
 
 #include <algorithm>
-#include <sstream>
 
 #include "media/base/h264_profile_level_id.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/stringencode.h"
+#include "rtc_base/strings/string_builder.h"
 #include "rtc_base/stringutils.h"
 
 namespace cricket {
@@ -183,10 +183,11 @@ bool AudioCodec::Matches(const AudioCodec& codec) const {
 }
 
 std::string AudioCodec::ToString() const {
-  std::ostringstream os;
-  os << "AudioCodec[" << id << ":" << name << ":" << clockrate << ":" << bitrate
+  char buf[256];
+  rtc::SimpleStringBuilder sb(buf);
+  sb << "AudioCodec[" << id << ":" << name << ":" << clockrate << ":" << bitrate
      << ":" << channels << "]";
-  return os.str();
+  return sb.str();
 }
 
 webrtc::RtpCodecParameters AudioCodec::ToCodecParameters() const {
@@ -197,9 +198,10 @@ webrtc::RtpCodecParameters AudioCodec::ToCodecParameters() const {
 }
 
 std::string VideoCodec::ToString() const {
-  std::ostringstream os;
-  os << "VideoCodec[" << id << ":" << name << "]";
-  return os.str();
+  char buf[256];
+  rtc::SimpleStringBuilder sb(buf);
+  sb << "VideoCodec[" << id << ":" << name << "]";
+  return sb.str();
 }
 
 webrtc::RtpCodecParameters VideoCodec::ToCodecParameters() const {
@@ -331,9 +333,10 @@ DataCodec& DataCodec::operator=(const DataCodec& c) = default;
 DataCodec& DataCodec::operator=(DataCodec&& c) = default;
 
 std::string DataCodec::ToString() const {
-  std::ostringstream os;
-  os << "DataCodec[" << id << ":" << name << "]";
-  return os.str();
+  char buf[256];
+  rtc::SimpleStringBuilder sb(buf);
+  sb << "DataCodec[" << id << ":" << name << "]";
+  return sb.str();
 }
 
 bool HasNack(const Codec& codec) {

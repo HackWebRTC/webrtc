@@ -67,15 +67,15 @@ SimpleStringBuilder& SimpleStringBuilder::operator<<(
 }
 
 SimpleStringBuilder& SimpleStringBuilder::operator<<(float f) {
-  return AppendFormat("%f", f);
+  return AppendFormat("%g", f);
 }
 
 SimpleStringBuilder& SimpleStringBuilder::operator<<(double f) {
-  return AppendFormat("%f", f);
+  return AppendFormat("%g", f);
 }
 
 SimpleStringBuilder& SimpleStringBuilder::operator<<(long double f) {
-  return AppendFormat("%Lf", f);
+  return AppendFormat("%Lg", f);
 }
 
 SimpleStringBuilder& SimpleStringBuilder::AppendFormat(const char* fmt, ...) {
