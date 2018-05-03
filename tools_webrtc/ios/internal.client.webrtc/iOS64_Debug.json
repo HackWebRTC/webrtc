@@ -2,7 +2,7 @@
   "comments": [
     "Tests for 64-bit iOS devices."
   ],
-  "xcode version": "9.0",
+  "xcode build version": "9C40b",
   "gn_args": [
     "goma_dir=\"$(goma_dir)\"",
     "is_component_build=false",
@@ -22,7 +22,17 @@
     {
       "include": "real_device_tests.json",
       "device type": "iPhone 6s",
-      "os": "10.3.3"
+      "os": "10.3.3",
+      "dimensions": [
+        {
+          "os": "Mac-10.12",
+          "pool": "Chrome"
+        },
+        {
+          "os": "Mac-10.13",
+          "pool": "Chrome"
+        }
+      ]
     }
   ]
 }
