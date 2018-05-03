@@ -19,12 +19,10 @@ namespace webrtc {
 
 class TargetTransferRateObserver {
  public:
+  virtual ~TargetTransferRateObserver() = default;
   // Called to indicate target transfer rate as well as giving information about
   // the current estimate of network parameters.
   virtual void OnTargetTransferRate(TargetTransferRate) = 0;
-
- protected:
-  virtual ~TargetTransferRateObserver() = default;
 };
 
 // Configuration sent to factory create function. The parameters here are
