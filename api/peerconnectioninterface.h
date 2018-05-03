@@ -1098,9 +1098,7 @@ class PeerConnectionObserver {
   // Triggered when media is received on a new stream from remote peer.
   virtual void OnAddStream(rtc::scoped_refptr<MediaStreamInterface> stream) {}
 
-  // Triggered when a remote peer close a stream.
-  // Deprecated: This callback will no longer be fired with Unified Plan
-  // semantics.
+  // Triggered when a remote peer closes a stream.
   virtual void OnRemoveStream(rtc::scoped_refptr<MediaStreamInterface> stream) {
   }
 
@@ -1158,14 +1156,13 @@ class PeerConnectionObserver {
   virtual void OnTrack(
       rtc::scoped_refptr<RtpTransceiverInterface> transceiver) {}
 
-  // Called when a receiver is completely removed. This is current (Plan B SDP)
-  // behavior that occurs when processing the removal of a remote track, and is
-  // called when the receiver is removed and the track is muted. When Unified
-  // Plan SDP is supported, transceivers can change direction (and receivers
-  // stopped) but receivers are never removed, so this is never called.
+  // Called when signaling indicates that media will no longer be received on a
+  // track.
+  // With Plan B semantics, the given receiver will have been removed from the
+  // PeerConnection and the track muted.
+  // With Unified Plan semantics, the receiver will remain but the transceiver
+  // will have changed direction to either sendonly or inactive.
   // https://w3c.github.io/webrtc-pc/#process-remote-track-removal
-  // TODO(hbos,deadbeef): When Unified Plan SDP is supported and receivers are
-  // no longer removed, deprecate and remove this callback.
   // TODO(hbos,deadbeef): Make pure virtual when all subclasses implement it.
   virtual void OnRemoveTrack(
       rtc::scoped_refptr<RtpReceiverInterface> receiver) {}
