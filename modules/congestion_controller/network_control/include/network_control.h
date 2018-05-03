@@ -47,7 +47,6 @@ struct NetworkControllerConfig {
 // non-concurrent fashion.
 class NetworkControllerInterface {
  public:
-  using uptr = std::unique_ptr<NetworkControllerInterface>;
   virtual ~NetworkControllerInterface() = default;
 
   // Called when network availabilty changes.
@@ -79,10 +78,9 @@ class NetworkControllerInterface {
 // controller.
 class NetworkControllerFactoryInterface {
  public:
-  using uptr = std::unique_ptr<NetworkControllerFactoryInterface>;
   // Used to create a new network controller, requires an observer to be
   // provided to handle callbacks.
-  virtual NetworkControllerInterface::uptr Create(
+  virtual std::unique_ptr<NetworkControllerInterface> Create(
       NetworkControllerConfig config) = 0;
   // Returns the interval by which the network controller expects
   // OnProcessInterval calls.

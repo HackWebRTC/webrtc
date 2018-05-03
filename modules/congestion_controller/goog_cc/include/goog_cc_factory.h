@@ -10,6 +10,8 @@
 
 #ifndef MODULES_CONGESTION_CONTROLLER_GOOG_CC_INCLUDE_GOOG_CC_FACTORY_H_
 #define MODULES_CONGESTION_CONTROLLER_GOOG_CC_INCLUDE_GOOG_CC_FACTORY_H_
+#include <memory>
+
 #include "modules/congestion_controller/network_control/include/network_control.h"
 
 namespace webrtc {
@@ -20,7 +22,7 @@ class GoogCcNetworkControllerFactory
     : public NetworkControllerFactoryInterface {
  public:
   explicit GoogCcNetworkControllerFactory(RtcEventLog*);
-  NetworkControllerInterface::uptr Create(
+  std::unique_ptr<NetworkControllerInterface> Create(
       NetworkControllerConfig config) override;
   TimeDelta GetProcessInterval() const override;
 
