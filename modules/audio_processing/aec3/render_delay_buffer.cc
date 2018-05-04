@@ -77,7 +77,7 @@ class RenderDelayBufferImpl final : public RenderDelayBuffer {
   size_t render_call_counter_ = 0;
   bool render_activity_ = false;
   size_t render_activity_counter_ = 0;
-  rtc::Optional<size_t> external_audio_buffer_delay_ms_;
+  rtc::Optional<size_t> external_audio_buffer_delay_;
   bool external_delay_verified_after_reset_ = false;
 
   int LowRateBufferOffset() const { return DelayEstimatorOffset(config_) >> 1; }
@@ -202,16 +202,16 @@ void RenderDelayBufferImpl::Reset() {
       low_rate_.write, LowRateBufferOffset() * sub_block_size_);
 
   // Check for any external audio buffer delay and whether it is feasible.
-  if (external_audio_buffer_delay_ms_) {
-    constexpr size_t kHeadroom = 5;
+  if (external_audio_buffer_delay_) {
+    constexpr size_t kHeadroom = 1;
     size_t external_delay_to_set = 0;
-    if (*external_audio_buffer_delay_ms_ < kHeadroom) {
+    if (*external_audio_buffer_delay_ < kHeadroom) {
       external_delay_to_set = 0;
     } else {
-      external_delay_to_set = *external_audio_buffer_delay_ms_ - kHeadroom;
+      external_delay_to_set = *external_audio_buffer_delay_ - kHeadroom;
     }
 
-    constexpr size_t kMaxExternalDelay = 170;
+    constexpr size_t kMaxExternalDelay = 170 / 4;
     external_delay_to_set = std::min(external_delay_to_set, kMaxExternalDelay);
 
     // When an external delay estimate is available, use that delay as the
@@ -330,13 +330,7 @@ RenderDelayBufferImpl::PrepareCaptureProcessing() {
 
 // Sets the delay and returns a bool indicating whether the delay was changed.
 bool RenderDelayBufferImpl::SetDelay(size_t delay) {
-  if (!external_delay_verified_after_reset_ &&
-      external_audio_buffer_delay_ms_) {
-    int delay_difference = static_cast<int>(*external_audio_buffer_delay_ms_) -
-                           static_cast<int>(delay);
-    RTC_LOG(LS_WARNING) << "Difference between the externally reported delay "
-                           "and the first delay estimate: "
-                        << delay_difference << " ms.";
+  if (!external_delay_verified_after_reset_ && external_audio_buffer_delay_) {
     external_delay_verified_after_reset_ = true;
   }
   if (delay_ && *delay_ == delay) {
@@ -366,12 +360,12 @@ bool RenderDelayBufferImpl::CausalDelay(size_t delay) const {
 }
 
 void RenderDelayBufferImpl::SetAudioBufferDelay(size_t delay_ms) {
-  if (!external_audio_buffer_delay_ms_) {
+  if (!external_audio_buffer_delay_) {
     RTC_LOG(LS_WARNING)
         << "Receiving a first reported externally buffer delay of " << delay_ms
         << " ms.";
   }
-  external_audio_buffer_delay_ms_ = delay_ms;
+  external_audio_buffer_delay_ = delay_ms / 4;
 }
 
 // Maps the externally computed delay to the delay used internally.
