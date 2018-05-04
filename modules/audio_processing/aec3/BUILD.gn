@@ -116,6 +116,7 @@ rtc_static_library("aec3") {
     "../../../rtc_base:rtc_base_approved",
     "../../../rtc_base:safe_minmax",
     "../../../system_wrappers:cpu_features_api",
+    "../../../system_wrappers:field_trial_api",
     "../../../system_wrappers:metrics_api",
   ]
 

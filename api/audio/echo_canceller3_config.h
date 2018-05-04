@@ -73,6 +73,7 @@ struct EchoCanceller3Config {
   struct Mask {
     Mask();
     Mask(const Mask& m);
+    float m0 = 0.1f;
     float m1 = 0.01f;
     float m2 = 0.0001f;
     float m3 = 0.01f;
@@ -120,6 +121,8 @@ struct EchoCanceller3Config {
     GainChanges saturation = {1.2f, 1.2f, 1.5f, 1.5f, 1.f, 1.f};
     GainChanges nonlinear = {1.5f, 1.5f, 1.2f, 1.2f, 1.1f, 1.1f};
 
+    float max_inc_factor = 2.0f;
+    float max_dec_factor_lf = 0.25f;
     float floor_first_increase = 0.00001f;
   } gain_updates;
 
