@@ -121,11 +121,12 @@ class LogSink {
 
 class LogMessage {
  public:
+  LogMessage(const char* file, int line, LoggingSeverity sev);
   LogMessage(const char* file,
              int line,
              LoggingSeverity sev,
-             LogErrorContext err_ctx = ERRCTX_NONE,
-             int err = 0);
+             LogErrorContext err_ctx,
+             int err);
 
 #if defined(WEBRTC_ANDROID)
   LogMessage(const char* file, int line, LoggingSeverity sev, const char* tag);

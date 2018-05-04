@@ -96,6 +96,9 @@ LogMessage::StreamList LogMessage::streams_ RTC_GUARDED_BY(g_log_crit);
 // Boolean options default to false (0)
 bool LogMessage::thread_, LogMessage::timestamp_;
 
+LogMessage::LogMessage(const char* file, int line, LoggingSeverity sev)
+    : LogMessage(file, line, sev, ERRCTX_NONE, 0) {}
+
 LogMessage::LogMessage(const char* file,
                        int line,
                        LoggingSeverity sev,
