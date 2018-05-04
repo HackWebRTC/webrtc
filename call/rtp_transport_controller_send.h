@@ -23,6 +23,7 @@
 #include "modules/utility/include/process_thread.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/networkroute.h"
+#include "rtc_base/task_queue.h"
 
 namespace webrtc {
 class Clock;
@@ -47,6 +48,7 @@ class RtpTransportControllerSend final
                         int64_t probing_interval_ms) override;
 
   // Implements RtpTransportControllerSendInterface
+  rtc::TaskQueue* GetWorkerQueue() override;
   PacketRouter* packet_router() override;
 
   TransportFeedbackObserver* transport_feedback_observer() override;
@@ -102,6 +104,10 @@ class RtpTransportControllerSend final
   // Declared last since it will issue callbacks from a task queue. Declaring it
   // last ensures that it is destroyed first.
   const std::unique_ptr<SendSideCongestionControllerInterface> send_side_cc_;
+  // TODO(perkj): |task_queue_| is supposed to replace |process_thread_|.
+  // |task_queue_| is defined last to ensure all pending tasks are cancelled
+  // and deleted before any other members.
+  rtc::TaskQueue task_queue_;
   RTC_DISALLOW_COPY_AND_ASSIGN(RtpTransportControllerSend);
 };
 

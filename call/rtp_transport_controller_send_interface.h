@@ -21,6 +21,7 @@
 namespace rtc {
 struct SentPacket;
 struct NetworkRoute;
+class TaskQueue;
 }  // namespace rtc
 namespace webrtc {
 
@@ -62,6 +63,7 @@ class TransportFeedbackObserver;
 class RtpTransportControllerSendInterface {
  public:
   virtual ~RtpTransportControllerSendInterface() {}
+  virtual rtc::TaskQueue* GetWorkerQueue() = 0;
   virtual PacketRouter* packet_router() = 0;
   virtual TransportFeedbackObserver* transport_feedback_observer() = 0;
 

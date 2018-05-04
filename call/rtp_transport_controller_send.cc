@@ -63,7 +63,8 @@ RtpTransportControllerSend::RtpTransportControllerSend(
                                      event_log,
                                      &pacer_,
                                      bitrate_config,
-                                     TaskQueueExperimentEnabled())) {
+                                     TaskQueueExperimentEnabled())),
+      task_queue_("rtp_send_controller") {
   send_side_cc_ptr_ = send_side_cc_.get();
   process_thread_->RegisterModule(&pacer_, RTC_FROM_HERE);
   process_thread_->RegisterModule(send_side_cc_.get(), RTC_FROM_HERE);
@@ -92,10 +93,24 @@ void RtpTransportControllerSend::OnNetworkChanged(uint32_t bitrate_bps,
     msg.network_estimate.bandwidth = DataRate::bps(bandwidth_bps);
   msg.network_estimate.loss_rate_ratio = fraction_loss / 255.0;
   msg.network_estimate.round_trip_time = TimeDelta::ms(rtt_ms);
-  rtc::CritScope cs(&observer_crit_);
-  // We wont register as observer until we have an observer.
-  RTC_DCHECK(observer_ != nullptr);
-  observer_->OnTargetTransferRate(msg);
+
+  if (!task_queue_.IsCurrent()) {
+    task_queue_.PostTask([this, msg] {
+      rtc::CritScope cs(&observer_crit_);
+      // We won't register as observer until we have an observer.
+      RTC_DCHECK(observer_ != nullptr);
+      observer_->OnTargetTransferRate(msg);
+    });
+  } else {
+    rtc::CritScope cs(&observer_crit_);
+    // We won't register as observer until we have an observer.
+    RTC_DCHECK(observer_ != nullptr);
+    observer_->OnTargetTransferRate(msg);
+  }
+}
+
+rtc::TaskQueue* RtpTransportControllerSend::GetWorkerQueue() {
+  return &task_queue_;
 }
 
 PacketRouter* RtpTransportControllerSend::packet_router() {

@@ -110,6 +110,7 @@ rtc_source_set("rtp_sender") {
     "../modules/utility",
     "../rtc_base:rtc_base",
     "../rtc_base:rtc_base_approved",
+    "../rtc_base:rtc_task_queue",
     "../system_wrappers:field_trial_api",
   ]
 }
