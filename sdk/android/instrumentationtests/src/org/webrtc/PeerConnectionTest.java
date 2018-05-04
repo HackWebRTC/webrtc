@@ -250,8 +250,9 @@ public class PeerConnectionTest {
       WeakReference<VideoSink> videoSink = videoSinks.remove(stream);
       assertNotNull(videoSink);
       assertNotNull(videoSink.get());
-      assertEquals(1, stream.videoTracks.size());
-      stream.videoTracks.get(0).removeSink(videoSink.get());
+      for (VideoTrack videoTrack : stream.videoTracks) {
+        videoTrack.removeSink(videoSink.get());
+      }
       gotRemoteStreams.remove(stream);
     }
 
@@ -1054,8 +1055,6 @@ public class PeerConnectionTest {
     System.gc();
   }
 
-  // Flaky on Android. See webrtc:7761
-  @DisabledTest
   @Test
   @MediumTest
   public void testTrackRemovalAndAddition() throws Exception {
@@ -1194,19 +1193,17 @@ public class PeerConnectionTest {
     VideoTrack offererVideoTrack = oLMS.get().videoTracks.get(0);
     // Note that when we call removeTrack, we regain responsibility for
     // disposing of the track.
+    offeringExpectations.expectRenegotiationNeeded();
     oLMS.get().removeTrack(offererVideoTrack);
     negotiate(offeringPC, offeringExpectations, answeringPC, answeringExpectations);
 
     // Make sure the track was really removed.
-    // TODO(deadbeef): Currently the expectation is that the video track's
-    // state will be set to "ended". However, in the future, it's likely that
-    // the video track will be completely removed from the remote stream
-    // (as it is on the C++ level).
     MediaStream aRMS = answeringExpectations.gotRemoteStreams.iterator().next();
-    assertEquals(aRMS.videoTracks.get(0).state(), MediaStreamTrack.State.ENDED);
+    assertTrue(aRMS.videoTracks.isEmpty());
 
     // Add the video track to test if the answeringPC will create a new track
     // for the updated remote description.
+    offeringExpectations.expectRenegotiationNeeded();
     oLMS.get().addTrack(offererVideoTrack);
     // The answeringPC sets the updated remote description with a track added.
     // So the onAddTrack callback is expected to be called once.
@@ -1217,8 +1214,10 @@ public class PeerConnectionTest {
     // Finally, remove both the audio and video tracks, which should completely
     // remove the remote stream. This used to trigger an assert.
     // See: https://bugs.chromium.org/p/webrtc/issues/detail?id=5128
+    offeringExpectations.expectRenegotiationNeeded();
     oLMS.get().removeTrack(offererVideoTrack);
     AudioTrack offererAudioTrack = oLMS.get().audioTracks.get(0);
+    offeringExpectations.expectRenegotiationNeeded();
     oLMS.get().removeTrack(offererAudioTrack);
 
     answeringExpectations.expectRemoveStream("offeredMediaStream");
