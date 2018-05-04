@@ -5157,7 +5157,7 @@ TEST_F(WebRtcVideoChannelTest,
   EXPECT_EQ(kSsrcs3[1], recv_stream1->GetConfig().rtp.remote_ssrc);
 }
 
-TEST_F(WebRtcVideoChannelTest, CanSentMaxBitrateForExistingStream) {
+TEST_F(WebRtcVideoChannelTest, CanSetMaxBitrateForExistingStream) {
   AddSendStream();
 
   FakeVideoCapturerWithTaskQueue capturer;
@@ -5197,6 +5197,35 @@ TEST_F(WebRtcVideoChannelTest, CannotSetMaxBitrateForNonexistentStream) {
   nonexistent_parameters.encodings.push_back(webrtc::RtpEncodingParameters());
   EXPECT_FALSE(
       channel_->SetRtpSendParameters(last_ssrc_, nonexistent_parameters).ok());
+}
+
+TEST_F(WebRtcVideoChannelTest,
+       SetLowMaxBitrateOverwritesVideoStreamMinBitrate) {
+  AddSendStream();
+  webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(last_ssrc_);
+  EXPECT_EQ(1UL, parameters.encodings.size());
+  EXPECT_FALSE(parameters.encodings[0].max_bitrate_bps.has_value());
+  EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters).ok());
+
+  // Note that this is testing the behavior of the FakeVideoSendStream, which
+  // also calls to CreateEncoderStreams to get the VideoStreams, so essentially
+  // we are just testing the behavior of
+  // EncoderStreamFactory::CreateEncoderStreams.
+  std::vector<webrtc::VideoStream> video_streams =
+      fake_call_->GetVideoSendStreams().front()->GetVideoStreams();
+  ASSERT_EQ(1UL, video_streams.size());
+  EXPECT_EQ(kMinVideoBitrateBps, video_streams[0].min_bitrate_bps);
+
+  // Set a low max bitrate & check that VideoStream.min_bitrate_bps is limited
+  // by this amount.
+  parameters = channel_->GetRtpSendParameters(last_ssrc_);
+  int low_max_bitrate_bps = kMinVideoBitrateBps - 1000;
+  parameters.encodings[0].max_bitrate_bps = low_max_bitrate_bps;
+  EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters).ok());
+
+  video_streams = fake_call_->GetVideoSendStreams().front()->GetVideoStreams();
+  ASSERT_EQ(1UL, video_streams.size());
+  EXPECT_GE(low_max_bitrate_bps, video_streams[0].min_bitrate_bps);
 }
 
 TEST_F(WebRtcVideoChannelTest,
