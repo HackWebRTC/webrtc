@@ -602,6 +602,19 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
     layer_id.spatial_layer_id = settings.start_layer;
     vpx_codec_control(encoder_, VP9E_SET_SVC_LAYER_ID, &layer_id);
     vpx_codec_control(encoder_, VP9E_SET_SVC_REF_FRAME_CONFIG, &enc_layer_conf);
+  } else if (codec_.mode == kRealtimeVideo && num_spatial_layers_ > 1) {
+    // In RTP non-flexible mode, frame dropping of individual layers in a
+    // superframe leads to incorrect reference picture ID values in the
+    // RTP header. Dropping the entire superframe if the base is dropped
+    // or not dropping upper layers if base is not dropped mitigates
+    // the problem.
+    vpx_svc_frame_drop_t svc_drop_frame;
+    svc_drop_frame.framedrop_mode = CONSTRAINED_LAYER_DROP;
+    for (size_t i = 0; i < num_spatial_layers_; ++i) {
+      svc_drop_frame.framedrop_thresh[i] =
+        (i == 0) ? config_->rc_dropframe_thresh : 0;
+    }
+    vpx_codec_control(encoder_, VP9E_SET_SVC_FRAME_DROP_LAYER, &svc_drop_frame);
   }
 
   RTC_CHECK_GT(codec_.maxFramerate, 0);
