@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/video_coding/codecs/test/videoprocessor_integrationtest.h"
-
+#include "api/test/create_videocodec_test_fixture.h"
+#include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
 
 namespace webrtc {
@@ -36,14 +36,12 @@ const VisualizationParams kVisualizationParams = {
     false,  // save_encoded_ivf
     false,  // save_decoded_y4m
 };
-
 const int kNumFrames = 30;
-
 }  // namespace
 
 // Tests for plotting statistics from logs.
 class VideoProcessorIntegrationTestParameterized
-    : public VideoProcessorIntegrationTest,
+    : public ::testing::Test,
       public ::testing::WithParamInterface<
           ::testing::tuple<size_t, VideoCodecType, bool>> {
  protected:
@@ -57,13 +55,14 @@ class VideoProcessorIntegrationTestParameterized
                size_t height,
                size_t framerate,
                const std::string& filename) {
-    config_.filename = filename;
-    config_.filepath = ResourcePath(filename, "yuv");
-    config_.use_single_core = kUseSingleCore;
-    config_.measure_cpu = kMeasureCpu;
-    config_.hw_encoder = hw_codec_;
-    config_.hw_decoder = hw_codec_;
-    config_.num_frames = kNumFrames;
+    TestConfig config;
+    config.filename = filename;
+    config.filepath = ResourcePath(filename, "yuv");
+    config.use_single_core = kUseSingleCore;
+    config.measure_cpu = kMeasureCpu;
+    config.hw_encoder = hw_codec_;
+    config.hw_decoder = hw_codec_;
+    config.num_frames = kNumFrames;
 
     const size_t num_simulcast_streams =
         codec_type_ == kVideoCodecVP8 ? kNumSpatialLayers : 1;
@@ -71,18 +70,19 @@ class VideoProcessorIntegrationTestParameterized
         codec_type_ == kVideoCodecVP9 ? kNumSpatialLayers : 1;
 
     const std::string codec_name = CodecTypeToPayloadString(codec_type_);
-    config_.SetCodecSettings(codec_name, num_simulcast_streams,
-                             num_spatial_layers, kNumTemporalLayers,
-                             kDenoisingOn, kFrameDropperOn, kSpatialResizeOn,
-                             width, height);
+    config.SetCodecSettings(codec_name, num_simulcast_streams,
+                            num_spatial_layers, kNumTemporalLayers,
+                            kDenoisingOn, kFrameDropperOn, kSpatialResizeOn,
+                            width, height);
 
     std::vector<RateProfile> rate_profiles = {
         {bitrate_, framerate, kNumFrames}};
 
-    ProcessFramesAndMaybeVerify(rate_profiles, nullptr, nullptr, nullptr,
-                                &kVisualizationParams);
+    fixture_ = CreateVideoCodecTestFixture(config);
+    fixture_->RunTest(rate_profiles, nullptr, nullptr, nullptr,
+                      &kVisualizationParams);
   }
-
+  std::unique_ptr<VideoCodecTestFixture> fixture_;
   const size_t bitrate_;
   const VideoCodecType codec_type_;
   const bool hw_codec_;

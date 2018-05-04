@@ -1,0 +1,6 @@
+# TODO(kthelgason): Move the relevant included files to api/test.
+specific_include_rules = {
+  ".*": [
+    "+modules/video_coding/codecs/test",
+  ],
+}

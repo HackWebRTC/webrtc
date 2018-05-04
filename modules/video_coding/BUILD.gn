@@ -670,43 +670,25 @@ if (rtc_include_tests) {
     }
   }
 
-  rtc_source_set("video_coding_modules_tests") {
+  rtc_source_set("videocodec_test_impl") {
     testonly = true
-
     sources = [
-      "codecs/h264/test/h264_impl_unittest.cc",
-      "codecs/multiplex/test/multiplex_adapter_unittest.cc",
-      "codecs/test/video_encoder_decoder_instantiation_tests.cc",
-      "codecs/test/videoprocessor_integrationtest.cc",
-      "codecs/test/videoprocessor_integrationtest.h",
-      "codecs/test/videoprocessor_integrationtest_libvpx.cc",
-      "codecs/test/videoprocessor_integrationtest_openh264.cc",
-      "codecs/test/videoprocessor_integrationtest_parameterized.cc",
-      "codecs/vp8/test/vp8_impl_unittest.cc",
-      "codecs/vp9/test/vp9_impl_unittest.cc",
+      "codecs/test/videocodec_test_fixture_impl.cc",
+      "codecs/test/videocodec_test_fixture_impl.h",
     ]
-
     deps = [
       ":video_codec_interface",
       ":video_codecs_test_framework",
       ":video_coding",
       ":video_coding_utility",
-      ":webrtc_h264",
       ":webrtc_multiplex",
       ":webrtc_vp8_helpers",
-      ":webrtc_vp9",
       ":webrtc_vp9_helpers",
       "../..:webrtc_common",
-      "../../api:mock_video_codec_factory",
-      "../../api:optional",
-      "../../api:video_frame_api",
-      "../../api:video_frame_api_i420",
+      "../../api:videocodec_test_fixture_api",
       "../../api/video_codecs:video_codecs_api",
       "../../common_video",
-      "../../media:rtc_audio_video",
-      "../../media:rtc_h264_profile_id",
       "../../media:rtc_internal_video_codecs",
-      "../../media:rtc_media_base",
       "../../media:rtc_software_fallback_wrappers",
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base",
@@ -714,22 +696,66 @@ if (rtc_include_tests) {
       "../../system_wrappers",
       "../../test:fileutils",
       "../../test:test_support",
-      "../../test:video_test_common",
       "../../test:video_test_support",
-      "../video_capture",
+    ]
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+    if (is_android) {
+      deps += [ ":android_codec_factory_helper" ]
+    }
+  }
+
+  rtc_source_set("video_coding_modules_tests") {
+    testonly = true
+
+    sources = [
+      "codecs/h264/test/h264_impl_unittest.cc",
+      "codecs/multiplex/test/multiplex_adapter_unittest.cc",
+      "codecs/test/video_encoder_decoder_instantiation_tests.cc",
+      "codecs/test/videocodec_test_libvpx.cc",
+      "codecs/test/videocodec_test_openh264.cc",
+      "codecs/test/videocodec_test_parameterized.cc",
+      "codecs/vp8/test/vp8_impl_unittest.cc",
+      "codecs/vp9/test/vp9_impl_unittest.cc",
+    ]
+
+    deps = [
+      ":video_codecs_test_framework",
+      ":video_coding_utility",
+      ":videocodec_test_impl",
+      ":webrtc_h264",
+      ":webrtc_multiplex",
+      ":webrtc_vp8_helpers",
+      ":webrtc_vp9",
+      ":webrtc_vp9_helpers",
+      "../..:webrtc_common",
+      "../../api:create_videocodec_test_fixture_api",
+      "../../api:mock_video_codec_factory",
+      "../../api:optional",
+      "../../api:video_frame_api_i420",
+      "../../api:videocodec_test_fixture_api",
+      "../../api/video_codecs:video_codecs_api",
+      "../../common_video",
+      "../../media:rtc_h264_profile_id",
+      "../../media:rtc_media_base",
+      "../../rtc_base:rtc_base",
+      "../../test:fileutils",
+      "../../test:test_support",
+      "../../test:video_test_common",
     ]
 
     data = video_coding_modules_tests_resources
 
     if (is_android) {
-      sources += [ "codecs/test/videoprocessor_integrationtest_mediacodec.cc" ]
+      sources += [ "codecs/test/videocodec_test_mediacodec.cc" ]
 
       deps += [ ":android_codec_factory_helper" ]
     }
 
     if (is_ios || is_mac) {
-      sources +=
-          [ "codecs/test/videoprocessor_integrationtest_videotoolbox.cc" ]
+      sources += [ "codecs/test/videocodec_test_videotoolbox.cc" ]
 
       deps += [ ":objc_codec_factory_helper" ]
 
