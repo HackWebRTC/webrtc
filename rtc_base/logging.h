@@ -58,6 +58,7 @@
 #include "rtc_base/basictypes.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/deprecation.h"
+#include "rtc_base/system/no_inline.h"
 #include "rtc_base/thread_annotations.h"
 
 #if !defined(NDEBUG) || defined(DLOG_ALWAYS_ON)
@@ -142,6 +143,16 @@ class LogMessage {
   ~LogMessage();
 
   static bool Loggable(LoggingSeverity sev);
+
+  // Same as the above, but using a template argument instead of a function
+  // argument. (When the logging severity is statically known, passing it as a
+  // template argument instead of as a function argument saves space at the
+  // call site.)
+  template <LoggingSeverity S>
+  RTC_NO_INLINE static bool Loggable() {
+    return Loggable(S);
+  }
+
   std::ostream& stream();
 
   // Returns the time at which this function was called for the first time.
@@ -268,9 +279,11 @@ class LogMessageVoidify {
     ? (void) 0 \
     : rtc::LogMessageVoidify() &
 
-#define RTC_LOG(sev) \
-  RTC_LOG_SEVERITY_PRECONDITION(rtc::sev) \
-    rtc::LogMessage(__FILE__, __LINE__, rtc::sev).stream()
+#define RTC_LOG_SEVERITY_PRECONDITION_C(sev) \
+  !(rtc::LogMessage::Loggable<rtc::sev>()) ? (void)0 : rtc::LogMessageVoidify()&
+#define RTC_LOG(sev)                   \
+  RTC_LOG_SEVERITY_PRECONDITION_C(sev) \
+  rtc::LogMessage(__FILE__, __LINE__, rtc::sev).stream()
 
 // The _V version is for when a variable is passed in.  It doesn't do the
 // namespace concatenation.
@@ -297,11 +310,11 @@ inline bool LogCheckLevel(LoggingSeverity sev) {
   return (LogMessage::GetMinLogSeverity() <= sev);
 }
 
-#define RTC_LOG_E(sev, ctx, err, ...) \
-  RTC_LOG_SEVERITY_PRECONDITION(rtc::sev) \
-    rtc::LogMessage(__FILE__, __LINE__, rtc::sev, \
-                    rtc::ERRCTX_ ## ctx, err , ##__VA_ARGS__)   \
-        .stream()
+#define RTC_LOG_E(sev, ctx, err, ...)                                   \
+  RTC_LOG_SEVERITY_PRECONDITION_C(sev)                                  \
+  rtc::LogMessage(__FILE__, __LINE__, rtc::sev, rtc::ERRCTX_##ctx, err, \
+                  ##__VA_ARGS__)                                        \
+      .stream()
 
 #define RTC_LOG_T(sev) RTC_LOG(sev) << this << ": "
 

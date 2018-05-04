@@ -42,3 +42,9 @@ rtc_source_set("ignore_warnings") {
     "ignore_warnings.h",
   ]
 }
+
+rtc_source_set("no_inline") {
+  sources = [
+    "no_inline.h",
+  ]
+}
