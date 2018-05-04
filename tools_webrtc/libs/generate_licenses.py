@@ -44,7 +44,6 @@ LIB_TO_LICENSES_DICT = {
     'openmax_dl': ['third_party/openmax_dl/LICENSE'],
     'opus': ['third_party/opus/src/COPYING'],
     'protobuf': ['third_party/protobuf/LICENSE'],
-    'rnnoise': ['third_party/rnnoise/COPYING'],
     'usrsctp': ['third_party/usrsctp/LICENSE'],
     'webrtc': ['LICENSE', 'LICENSE_THIRD_PARTY'],
     'zlib': ['third_party/zlib/LICENSE'],
