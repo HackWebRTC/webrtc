@@ -590,11 +590,11 @@ void ScreenCapturerMac::ScreenRefresh(CGDirectDisplayID display_id,
 
     region.AddRect(rect);
   }
-
-  helper_.InvalidateRegion(region);
-
+  // Always having the latest iosurface before invalidating a region.
+  // See https://bugs.chromium.org/p/webrtc/issues/detail?id=8652 for details.
   desktop_frame_provider_.InvalidateIOSurface(
       display_id, rtc::ScopedCFTypeRef<IOSurfaceRef>(io_surface, rtc::RetainPolicy::RETAIN));
+  helper_.InvalidateRegion(region);
 }
 
 std::unique_ptr<DesktopFrame> ScreenCapturerMac::CreateFrame() {
