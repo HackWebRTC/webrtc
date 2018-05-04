@@ -20,9 +20,9 @@ namespace bbr {
 class DataTransferTracker {
  public:
   struct Result {
-    TimeDelta ack_timespan;
-    TimeDelta send_timespan;
-    DataSize acked_data;
+    TimeDelta ack_timespan = TimeDelta::Zero();
+    TimeDelta send_timespan = TimeDelta::Zero();
+    DataSize acked_data = DataSize::Zero();
   };
   DataTransferTracker();
   ~DataTransferTracker();
@@ -36,10 +36,10 @@ class DataTransferTracker {
 
  private:
   struct Sample {
-    Timestamp ack_time;
-    Timestamp send_time;
-    DataSize size_delta;
-    DataSize size_sum;
+    Timestamp ack_time = Timestamp::Infinity();
+    Timestamp send_time = Timestamp::Infinity();
+    DataSize size_delta = DataSize::Zero();
+    DataSize size_sum = DataSize::Zero();
   };
   std::deque<Sample> samples_;
   DataSize size_sum_ = DataSize::Zero();

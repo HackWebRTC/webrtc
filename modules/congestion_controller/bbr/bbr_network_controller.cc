@@ -84,6 +84,11 @@ constexpr int64_t kDefaultMaxCongestionWindowBytes =
     (kMaxRttMs * kMaxBandwidthKbps) / 8;
 }  // namespace
 
+BbrNetworkController::UpdateState::UpdateState() = default;
+BbrNetworkController::UpdateState::UpdateState(
+    const BbrNetworkController::UpdateState&) = default;
+BbrNetworkController::UpdateState::~UpdateState() = default;
+
 BbrNetworkController::BbrControllerConfig
 BbrNetworkController::BbrControllerConfig::DefaultConfig() {
   BbrControllerConfig config;
@@ -187,10 +192,10 @@ void BbrNetworkController::Reset() {
   rounds_without_bandwidth_gain_ = 0;
   is_at_full_bandwidth_ = false;
   last_update_state_.mode = Mode::STARTUP;
-  last_update_state_.bandwidth = DataRate();
-  last_update_state_.rtt = TimeDelta();
-  last_update_state_.pacing_rate = DataRate();
-  last_update_state_.target_rate = DataRate();
+  last_update_state_.bandwidth.reset();
+  last_update_state_.rtt.reset();
+  last_update_state_.pacing_rate.reset();
+  last_update_state_.target_rate.reset();
   last_update_state_.probing_for_bandwidth = false;
   EnterStartupMode();
 }
@@ -299,8 +304,9 @@ bool BbrNetworkController::InSlowStart() const {
 
 NetworkControlUpdate BbrNetworkController::OnSentPacket(SentPacket msg) {
   last_send_time_ = msg.send_time;
-  if (!aggregation_epoch_start_time_.IsInitialized()) {
+  if (!aggregation_epoch_start_time_) {
     aggregation_epoch_start_time_ = msg.send_time;
+    aggregation_epoch_bytes_ = DataSize::Zero();
   }
   return NetworkControlUpdate();
 }
@@ -418,7 +424,7 @@ NetworkControlUpdate BbrNetworkController::OnTransportPacketsFeedback(
   MaybeEnterOrExitProbeRtt(msg, is_round_start, min_rtt_expired);
 
   // Calculate number of packets acked and lost.
-  DataSize bytes_lost = DataSize();
+  DataSize bytes_lost = DataSize::Zero();
   for (const PacketResult& packet : lost_packets) {
     bytes_lost += packet.sent_packet->size;
   }
@@ -668,14 +674,14 @@ void BbrNetworkController::MaybeEnterOrExitProbeRtt(
     pacing_gain_ = 1;
     // Do not decide on the time to exit PROBE_RTT until the |bytes_in_flight|
     // is at the target small value.
-    exit_probe_rtt_at_ = Timestamp();
+    exit_probe_rtt_at_.reset();
   }
 
   if (mode_ == PROBE_RTT) {
     is_app_limited_ = true;
     end_of_app_limited_phase_ = last_send_time_;
 
-    if (!exit_probe_rtt_at_.IsInitialized()) {
+    if (!exit_probe_rtt_at_) {
       // If the window has reached the appropriate size, schedule exiting
       // PROBE_RTT.  The CWND during PROBE_RTT is kMinimumCongestionWindow, but
       // we allow an extra packet since QUIC checks CWND before sending a
@@ -688,7 +694,7 @@ void BbrNetworkController::MaybeEnterOrExitProbeRtt(
       if (is_round_start) {
         probe_rtt_round_passed_ = true;
       }
-      if (msg.feedback_time >= exit_probe_rtt_at_ && probe_rtt_round_passed_) {
+      if (msg.feedback_time >= *exit_probe_rtt_at_ && probe_rtt_round_passed_) {
         min_rtt_timestamp_ = msg.feedback_time;
         if (!is_at_full_bandwidth_) {
           EnterStartupMode();
@@ -733,7 +739,8 @@ void BbrNetworkController::UpdateRecoveryState(Timestamp last_acked_send_time,
       RTC_FALLTHROUGH();
     case GROWTH:
       // Exit recovery if appropriate.
-      if (!has_losses && last_acked_send_time > end_recovery_at_) {
+      if (!has_losses && end_recovery_at_ &&
+          last_acked_send_time > *end_recovery_at_) {
         recovery_state_ = NOT_IN_RECOVERY;
       }
 
@@ -744,10 +751,16 @@ void BbrNetworkController::UpdateRecoveryState(Timestamp last_acked_send_time,
 void BbrNetworkController::UpdateAckAggregationBytes(
     Timestamp ack_time,
     DataSize newly_acked_bytes) {
+  if (!aggregation_epoch_start_time_) {
+    RTC_LOG(LS_ERROR)
+        << "Received feedback before information about sent packets.";
+    RTC_DCHECK(aggregation_epoch_start_time_.has_value());
+    return;
+  }
   // Compute how many bytes are expected to be delivered, assuming max bandwidth
   // is correct.
   DataSize expected_bytes_acked =
-      max_bandwidth_.GetBest() * (ack_time - aggregation_epoch_start_time_);
+      max_bandwidth_.GetBest() * (ack_time - *aggregation_epoch_start_time_);
   // Reset the current aggregation epoch as soon as the ack arrival rate is less
   // than or equal to the max bandwidth.
   if (aggregation_epoch_bytes_ <= expected_bytes_acked) {
@@ -785,7 +798,7 @@ void BbrNetworkController::CalculatePacingRate() {
     return;
   }
   // Slow the pacing rate in STARTUP once loss has ever been detected.
-  const bool has_ever_detected_loss = end_recovery_at_.IsInitialized();
+  const bool has_ever_detected_loss = end_recovery_at_.has_value();
   if (config_.slower_startup && has_ever_detected_loss) {
     pacing_rate_ = kStartupAfterLossGain * BandwidthEstimate();
     return;

@@ -159,11 +159,14 @@ class BbrNetworkController : public NetworkControllerInterface {
   };
   // Containing values that when changed should trigger an update.
   struct UpdateState {
+    UpdateState();
+    UpdateState(const UpdateState&);
+    ~UpdateState();
     Mode mode = Mode::STARTUP;
-    DataRate bandwidth;
-    TimeDelta rtt;
-    DataRate pacing_rate;
-    DataRate target_rate;
+    rtc::Optional<DataRate> bandwidth;
+    rtc::Optional<TimeDelta> rtt;
+    rtc::Optional<DataRate> pacing_rate;
+    rtc::Optional<DataRate> target_rate;
     bool probing_for_bandwidth = false;
   };
 
@@ -273,11 +276,7 @@ class BbrNetworkController : public NetworkControllerInterface {
   BbrControllerConfig config_;
 
   // The total number of congestion controlled bytes which were acknowledged.
-  DataSize total_bytes_acked_;
-
-  // The total number of congestion controlled bytes sent during the connection.
-  DataSize total_bytes_sent_;
-
+  DataSize total_bytes_acked_ = DataSize::Zero();
   // The time at which the last acknowledged packet was sent. Set to
   // Timestamp::ms(0) if no valid timestamp is available.
   Timestamp last_acked_packet_sent_time_ = Timestamp::ms(0);
@@ -311,12 +310,12 @@ class BbrNetworkController : public NetworkControllerInterface {
   MaxAckHeightFilter max_ack_height_;
 
   // The time this aggregation started and the number of bytes acked during it.
-  Timestamp aggregation_epoch_start_time_;
-  DataSize aggregation_epoch_bytes_;
+  rtc::Optional<Timestamp> aggregation_epoch_start_time_;
+  DataSize aggregation_epoch_bytes_ = DataSize::Zero();
 
   // The number of bytes acknowledged since the last time bytes in flight
   // dropped below the target window.
-  DataSize bytes_acked_since_queue_drained_;
+  DataSize bytes_acked_since_queue_drained_ = DataSize::Zero();
 
   // The muliplier for calculating the max amount of extra CWND to add to
   // compensate for ack aggregation.
@@ -360,7 +359,7 @@ class BbrNetworkController : public NetworkControllerInterface {
   // pacing gain cycle.
   int cycle_current_offset_ = 0;
   // The time at which the last pacing gain cycle was started.
-  Timestamp last_cycle_start_;
+  Timestamp last_cycle_start_ = Timestamp::ms(0);
 
   // Indicates whether the connection has reached the full bandwidth mode.
   bool is_at_full_bandwidth_ = false;
@@ -372,7 +371,7 @@ class BbrNetworkController : public NetworkControllerInterface {
   // Time at which PROBE_RTT has to be exited.  Setting it to zero indicates
   // that the time is yet unknown as the number of packets in flight has not
   // reached the required value.
-  Timestamp exit_probe_rtt_at_;
+  rtc::Optional<Timestamp> exit_probe_rtt_at_;
   // Indicates whether a round-trip has passed since PROBE_RTT became active.
   bool probe_rtt_round_passed_ = false;
 
@@ -385,7 +384,7 @@ class BbrNetworkController : public NetworkControllerInterface {
   // Receiving acknowledgement of a packet after |end_recovery_at_| will cause
   // BBR to exit the recovery mode.  A value after epoch indicates at least one
   // loss has been detected, so it must not be set back to epoch.
-  Timestamp end_recovery_at_ = Timestamp::ms(0);
+  rtc::Optional<Timestamp> end_recovery_at_;
   // A window used to limit the number of bytes in flight during loss recovery.
   DataSize recovery_window_;
 
