@@ -16,6 +16,7 @@
 #include <limits>
 #include <string>
 
+#include "api/optional.h"
 #include "rtc_base/checks.h"
 
 #include "modules/congestion_controller/network_control/units/data_size.h"
@@ -132,6 +133,15 @@ inline DataSize operator*(const DataRate& rate, const TimeDelta& duration) {
 }
 inline DataSize operator*(const TimeDelta& duration, const DataRate& rate) {
   return rate * duration;
+}
+
+inline int64_t GetBpsOrDefault(const rtc::Optional<DataRate>& rate,
+                               int64_t fallback_bps) {
+  if (rate && rate->IsFinite()) {
+    return rate->bps();
+  } else {
+    return fallback_bps;
+  }
 }
 
 std::string ToString(const DataRate& value);

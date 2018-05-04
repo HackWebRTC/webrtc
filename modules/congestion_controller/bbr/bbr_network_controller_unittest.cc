@@ -92,9 +92,7 @@ TEST_F(BbrNetworkControllerTest, SendsConfigurationOnFirstProcess) {
   EXPECT_THAT(*update.target_rate, TargetRateCloseTo(kInitialBitrate));
   EXPECT_THAT(*update.pacer_config,
               Property(&PacerConfig::data_rate, Ge(kInitialBitrate)));
-  EXPECT_THAT(*update.congestion_window,
-              Field(&CongestionWindow::data_window,
-                    Property(&DataSize::IsFinite, true)));
+  EXPECT_THAT(*update.congestion_window, Property(&DataSize::IsFinite, true));
 }
 
 TEST_F(BbrNetworkControllerTest, SendsConfigurationOnNetworkRouteChanged) {

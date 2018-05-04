@@ -37,7 +37,7 @@ struct NetworkControllerConfig {
   // The initial bandwidth estimate to base target rate on. This should be used
   // as the basis for initial OnTargetTransferRate and OnPacerConfig callbacks.
   // Note that starting rate is only provided on construction.
-  DataRate starting_bandwidth;
+  DataRate starting_bandwidth = DataRate::Infinity();
 };
 
 // NetworkControllerInterface is implemented by network controllers. A network

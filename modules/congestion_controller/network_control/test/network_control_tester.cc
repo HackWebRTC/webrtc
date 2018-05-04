@@ -21,7 +21,7 @@ namespace {
 void Update(NetworkControlUpdate* target, const NetworkControlUpdate& update) {
   if (update.congestion_window) {
     RTC_LOG(LS_INFO) << "Received window="
-                     << ToString(update.congestion_window->data_window) << "\n";
+                     << ToString(*update.congestion_window) << "\n";
     target->congestion_window = update.congestion_window;
   }
   if (update.pacer_config) {
@@ -98,11 +98,11 @@ void NetworkControllerTester::RunSimulation(TimeDelta duration,
   Timestamp last_process_time = current_time_;
   while (current_time_ - start_time < duration) {
     bool send_packet = true;
-    if (state_.congestion_window && state_.congestion_window->enabled) {
+    if (state_.congestion_window && state_.congestion_window->IsFinite()) {
       DataSize data_in_flight = DataSize::Zero();
       for (PacketResult& packet : outstanding_packets_)
         data_in_flight += packet.sent_packet->size;
-      if (data_in_flight > state_.congestion_window->data_window)
+      if (data_in_flight > *state_.congestion_window)
         send_packet = false;
     }
 

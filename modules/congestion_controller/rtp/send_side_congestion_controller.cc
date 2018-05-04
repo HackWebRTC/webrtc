@@ -166,7 +166,7 @@ class ControlHandler {
   void PostUpdates(NetworkControlUpdate update);
 
   void OnNetworkAvailability(NetworkAvailability msg);
-  void OnPacerQueueUpdate(PacerQueueUpdate msg);
+  void OnPacerQueueUpdate(TimeDelta expected_queue_time);
 
   rtc::Optional<TargetTransferRate> last_transfer_rate();
 
@@ -227,9 +227,9 @@ void ControlHandler::OnNetworkAvailability(NetworkAvailability msg) {
   OnNetworkInvalidation();
 }
 
-void ControlHandler::OnPacerQueueUpdate(PacerQueueUpdate msg) {
+void ControlHandler::OnPacerQueueUpdate(TimeDelta expected_queue_time) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
-  pacer_expected_queue_ms_ = msg.expected_queue_time.ms();
+  pacer_expected_queue_ms_ = expected_queue_time.ms();
   OnNetworkInvalidation();
 }
 
@@ -318,6 +318,7 @@ SendSideCongestionController::SendSideCongestionController(
           rtc::MakeUnique<GoogCcNetworkControllerFactory>(event_log)),
       pacer_controller_(MakeUnique<PacerController>(pacer_)),
       process_interval_(controller_factory_fallback_->GetProcessInterval()),
+      last_report_block_time_(Timestamp::ms(clock_->TimeInMilliseconds())),
       observer_(nullptr),
       send_side_bwe_with_overhead_(
           webrtc::field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")),
@@ -456,14 +457,15 @@ void SendSideCongestionController::OnNetworkRouteChanged(
   msg.at_time = Timestamp::ms(clock_->TimeInMilliseconds());
   msg.constraints =
       ConvertConstraints(min_bitrate_bps, max_bitrate_bps, clock_);
-  msg.starting_rate =
-      start_bitrate_bps > 0 ? DataRate::bps(start_bitrate_bps) : DataRate();
+  if (start_bitrate_bps > 0)
+    msg.starting_rate = DataRate::bps(start_bitrate_bps);
   task_queue_->PostTask([this, msg]() {
     RTC_DCHECK_RUN_ON(task_queue_ptr_);
     if (controller_) {
       control_handler_->PostUpdates(controller_->OnNetworkRouteChange(msg));
     } else {
-      initial_config_.starting_bandwidth = msg.starting_rate;
+      if (msg.starting_rate)
+        initial_config_.starting_bandwidth = *msg.starting_rate;
       initial_config_.constraints = msg.constraints;
     }
     pacer_controller_->OnNetworkRouteChange(msg);
@@ -626,9 +628,9 @@ void SendSideCongestionController::UpdateControllerWithTimeInterval() {
 
 void SendSideCongestionController::UpdatePacerQueue() {
   if (control_handler_) {
-    PacerQueueUpdate msg;
-    msg.expected_queue_time = TimeDelta::ms(pacer_->ExpectedQueueTimeMs());
-    control_handler_->OnPacerQueueUpdate(msg);
+    TimeDelta expected_queue_time =
+        TimeDelta::ms(pacer_->ExpectedQueueTimeMs());
+    control_handler_->OnPacerQueueUpdate(expected_queue_time);
   }
 }
 
@@ -675,12 +677,11 @@ void SendSideCongestionController::OnTransportFeedback(
 }
 
 void SendSideCongestionController::MaybeUpdateOutstandingData() {
-  OutstandingData msg;
-  msg.in_flight_data =
+  DataSize in_flight_data =
       DataSize::bytes(transport_feedback_adapter_.GetOutstandingBytes());
-  task_queue_->PostTask([this, msg]() {
+  task_queue_->PostTask([this, in_flight_data]() {
     RTC_DCHECK_RUN_ON(task_queue_ptr_);
-    pacer_controller_->OnOutstandingData(msg);
+    pacer_controller_->OnOutstandingData(in_flight_data);
   });
 }
 

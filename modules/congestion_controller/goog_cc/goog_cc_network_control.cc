@@ -117,6 +117,7 @@ GoogCcNetworkController::GoogCcNetworkController(RtcEventLog* event_log,
       pacing_factor_(kDefaultPaceMultiplier),
       min_pacing_rate_(DataRate::Zero()),
       max_padding_rate_(DataRate::Zero()),
+      max_total_allocated_bitrate_(DataRate::Zero()),
       in_cwnd_experiment_(CwndExperimentEnabled()),
       accepted_queue_ms_(kDefaultAcceptedQueueMs) {
   delay_based_bwe_->SetMinBitrate(congestion_controller::GetMinBitrateBps());
@@ -140,9 +141,9 @@ NetworkControlUpdate GoogCcNetworkController::OnNetworkAvailability(
 
 NetworkControlUpdate GoogCcNetworkController::OnNetworkRouteChange(
     NetworkRouteChange msg) {
-  int64_t min_bitrate_bps = msg.constraints.min_data_rate.bps_or(-1);
-  int64_t max_bitrate_bps = msg.constraints.max_data_rate.bps_or(-1);
-  int64_t start_bitrate_bps = msg.starting_rate.bps_or(-1);
+  int64_t min_bitrate_bps = GetBpsOrDefault(msg.constraints.min_data_rate, -1);
+  int64_t max_bitrate_bps = GetBpsOrDefault(msg.constraints.max_data_rate, -1);
+  int64_t start_bitrate_bps = GetBpsOrDefault(msg.starting_rate, -1);
 
   ClampBitrates(&start_bitrate_bps, &min_bitrate_bps, &max_bitrate_bps);
 
@@ -234,17 +235,16 @@ NetworkControlUpdate GoogCcNetworkController::OnStreamsConfig(
 
 NetworkControlUpdate GoogCcNetworkController::OnTargetRateConstraints(
     TargetRateConstraints constraints) {
-  NetworkControlUpdate update;
-  UpdateBitrateConstraints(constraints, DataRate());
+  UpdateBitrateConstraints(constraints, rtc::nullopt);
   return MaybeTriggerOnNetworkChanged(constraints.at_time);
 }
 
 void GoogCcNetworkController::UpdateBitrateConstraints(
     TargetRateConstraints constraints,
-    DataRate starting_rate) {
-  int64_t min_bitrate_bps = constraints.min_data_rate.bps_or(0);
-  int64_t max_bitrate_bps = constraints.max_data_rate.bps_or(-1);
-  int64_t start_bitrate_bps = starting_rate.bps_or(-1);
+    rtc::Optional<DataRate> starting_rate) {
+  int64_t min_bitrate_bps = GetBpsOrDefault(constraints.min_data_rate, 0);
+  int64_t max_bitrate_bps = GetBpsOrDefault(constraints.max_data_rate, -1);
+  int64_t start_bitrate_bps = GetBpsOrDefault(starting_rate, -1);
 
   ClampBitrates(&start_bitrate_bps, &min_bitrate_bps, &max_bitrate_bps);
 
@@ -327,8 +327,7 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
   return update;
 }
 
-rtc::Optional<CongestionWindow>
-GoogCcNetworkController::MaybeUpdateCongestionWindow() {
+rtc::Optional<DataSize> GoogCcNetworkController::MaybeUpdateCongestionWindow() {
   if (!in_cwnd_experiment_)
     return rtc::nullopt;
   // No valid RTT. Could be because send-side BWE isn't used, in which case
@@ -340,12 +339,10 @@ GoogCcNetworkController::MaybeUpdateCongestionWindow() {
   TimeDelta time_window =
       TimeDelta::ms(*min_feedback_rtt_ms_ + accepted_queue_ms_);
   DataSize data_window = last_bandwidth_ * time_window;
-  CongestionWindow msg;
-  msg.enabled = true;
-  msg.data_window = std::max(kMinCwnd, data_window);
+  data_window = std::max(kMinCwnd, data_window);
   RTC_LOG(LS_INFO) << "Feedback rtt: " << *min_feedback_rtt_ms_
                    << " Bitrate: " << last_bandwidth_.bps();
-  return msg;
+  return data_window;
 }
 
 NetworkControlUpdate GoogCcNetworkController::MaybeTriggerOnNetworkChanged(
@@ -366,7 +363,6 @@ NetworkControlUpdate GoogCcNetworkController::MaybeTriggerOnNetworkChanged(
     new_estimate.bandwidth = DataRate::bps(estimated_bitrate_bps);
     new_estimate.loss_rate_ratio = fraction_loss / 255.0f;
     new_estimate.bwe_period = bwe_period;
-    new_estimate.changed = true;
     last_bandwidth_ = new_estimate.bandwidth;
     return OnNetworkEstimate(new_estimate);
   }
@@ -405,9 +401,6 @@ bool GoogCcNetworkController::GetNetworkParameters(
 NetworkControlUpdate GoogCcNetworkController::OnNetworkEstimate(
     NetworkEstimate estimate) {
   NetworkControlUpdate update;
-  if (!estimate.changed)
-    return update;
-
   update.pacer_config = UpdatePacingRates(estimate.at_time);
   alr_detector_->SetEstimatedBitrate(estimate.bandwidth.bps());
   probe_controller_->SetEstimatedBitrate(estimate.bandwidth.bps(),

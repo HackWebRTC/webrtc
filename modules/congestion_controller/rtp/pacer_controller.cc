@@ -22,10 +22,10 @@ PacerController::PacerController(PacedSender* pacer) : pacer_(pacer) {
 
 PacerController::~PacerController() = default;
 
-void PacerController::OnCongestionWindow(CongestionWindow congestion_window) {
+void PacerController::OnCongestionWindow(DataSize congestion_window) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
-  if (congestion_window.enabled)
-    pacer_->SetCongestionWindow(congestion_window.data_window.bytes());
+  if (congestion_window.IsFinite())
+    pacer_->SetCongestionWindow(congestion_window.bytes());
   else
     pacer_->SetCongestionWindow(PacedSender::kNoCongestionWindow);
 }
@@ -55,9 +55,9 @@ void PacerController::OnProbeClusterConfig(ProbeClusterConfig config) {
   pacer_->CreateProbeCluster(bitrate_bps);
 }
 
-void PacerController::OnOutstandingData(OutstandingData msg) {
+void PacerController::OnOutstandingData(DataSize in_flight_data) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
-  pacer_->UpdateOutstandingData(msg.in_flight_data.bytes());
+  pacer_->UpdateOutstandingData(in_flight_data.bytes());
 }
 
 void PacerController::SetPacerState(bool paused) {

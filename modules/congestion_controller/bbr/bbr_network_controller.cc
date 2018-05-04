@@ -214,8 +214,10 @@ NetworkControlUpdate BbrNetworkController::CreateRateUpdate(Timestamp at_time) {
   target_rate = std::min(target_rate, pacing_rate);
 
   if (constraints_) {
-    target_rate = std::min(target_rate, constraints_->max_data_rate);
-    target_rate = std::max(target_rate, constraints_->min_data_rate);
+    if (constraints_->max_data_rate)
+      target_rate = std::min(target_rate, *constraints_->max_data_rate);
+    if (constraints_->min_data_rate)
+      target_rate = std::max(target_rate, *constraints_->min_data_rate);
   }
   bool probing_for_bandwidth = IsProbingForMoreBandwidth();
   if (last_update_state_.mode == mode_ &&
@@ -260,9 +262,7 @@ NetworkControlUpdate BbrNetworkController::CreateRateUpdate(Timestamp at_time) {
   pacer_config.at_time = at_time;
   update.pacer_config = pacer_config;
 
-  CongestionWindow congestion_window;
-  congestion_window.data_window = GetCongestionWindow();
-  update.congestion_window = congestion_window;
+  update.congestion_window = GetCongestionWindow();
   return update;
 }
 
@@ -277,8 +277,9 @@ NetworkControlUpdate BbrNetworkController::OnNetworkRouteChange(
     NetworkRouteChange msg) {
   constraints_ = msg.constraints;
   Reset();
-  if (msg.starting_rate.IsFinite())
-    default_bandwidth_ = msg.starting_rate;
+  if (msg.starting_rate)
+    default_bandwidth_ = *msg.starting_rate;
+
   rtt_stats_.OnConnectionMigration();
   return CreateRateUpdate(msg.at_time);
 }

@@ -64,7 +64,7 @@ class NetworkControllerTester {
                             TimeDelta propagation_delay,
                             DataRate actual_bandwidth);
   std::unique_ptr<NetworkControllerInterface> controller_;
-  TimeDelta process_interval_;
+  TimeDelta process_interval_ = TimeDelta::PlusInfinity();
   Timestamp current_time_;
   TimeDelta accumulated_delay_;
   std::deque<PacketResult> outstanding_packets_;

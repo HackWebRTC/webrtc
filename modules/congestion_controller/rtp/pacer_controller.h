@@ -30,10 +30,10 @@ class PacerController {
  public:
   explicit PacerController(PacedSender* pacer);
   ~PacerController();
-  void OnCongestionWindow(CongestionWindow msg);
+  void OnCongestionWindow(DataSize msg);
   void OnNetworkAvailability(NetworkAvailability msg);
   void OnNetworkRouteChange(NetworkRouteChange msg);
-  void OnOutstandingData(OutstandingData msg);
+  void OnOutstandingData(DataSize in_flight_data);
   void OnPacerConfig(PacerConfig msg);
   void OnProbeClusterConfig(ProbeClusterConfig msg);
 

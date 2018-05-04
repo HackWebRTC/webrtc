@@ -51,8 +51,8 @@ class GoogCcNetworkController : public NetworkControllerInterface {
 
  private:
   void UpdateBitrateConstraints(TargetRateConstraints constraints,
-                                DataRate starting_rate);
-  rtc::Optional<CongestionWindow> MaybeUpdateCongestionWindow();
+                                rtc::Optional<DataRate> starting_rate);
+  rtc::Optional<DataSize> MaybeUpdateCongestionWindow();
   NetworkControlUpdate MaybeTriggerOnNetworkChanged(Timestamp at_time);
   bool GetNetworkParameters(int32_t* estimated_bitrate_bps,
                             uint8_t* fraction_loss,

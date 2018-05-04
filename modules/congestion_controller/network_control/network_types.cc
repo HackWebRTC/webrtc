@@ -16,6 +16,15 @@ StreamsConfig::StreamsConfig() = default;
 StreamsConfig::StreamsConfig(const StreamsConfig&) = default;
 StreamsConfig::~StreamsConfig() = default;
 
+TargetRateConstraints::TargetRateConstraints() = default;
+TargetRateConstraints::TargetRateConstraints(const TargetRateConstraints&) =
+    default;
+TargetRateConstraints::~TargetRateConstraints() = default;
+
+NetworkRouteChange::NetworkRouteChange() = default;
+NetworkRouteChange::NetworkRouteChange(const NetworkRouteChange&) = default;
+NetworkRouteChange::~NetworkRouteChange() = default;
+
 PacketResult::PacketResult() = default;
 PacketResult::PacketResult(const PacketResult& other) = default;
 PacketResult::~PacketResult() = default;
