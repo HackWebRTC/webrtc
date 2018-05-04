@@ -182,7 +182,11 @@ BbrNetworkController::BbrNetworkController(NetworkControllerConfig config)
     default_bandwidth_ = config.starting_bandwidth;
   constraints_ = config.constraints;
   Reset();
-  EnterStartupMode();
+  if (config_.num_startup_rtts > 0) {
+    EnterStartupMode();
+  } else {
+    EnterProbeBandwidthMode(constraints_->at_time);
+  }
 }
 
 BbrNetworkController::~BbrNetworkController() {}
