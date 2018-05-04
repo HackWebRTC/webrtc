@@ -123,6 +123,16 @@ class LogSink {
 class LogMessage {
  public:
   LogMessage(const char* file, int line, LoggingSeverity sev);
+
+  // Same as the above, but using a compile-time constant for the logging
+  // severity. This saves space at the call site, since passing an empty struct
+  // is generally the same as not passing an argument at all.
+  template <LoggingSeverity S>
+  RTC_NO_INLINE LogMessage(const char* file,
+                           int line,
+                           std::integral_constant<LoggingSeverity, S>)
+      : LogMessage(file, line, S) {}
+
   LogMessage(const char* file,
              int line,
              LoggingSeverity sev,
@@ -281,9 +291,11 @@ class LogMessageVoidify {
 
 #define RTC_LOG_SEVERITY_PRECONDITION_C(sev) \
   !(rtc::LogMessage::Loggable<rtc::sev>()) ? (void)0 : rtc::LogMessageVoidify()&
-#define RTC_LOG(sev)                   \
-  RTC_LOG_SEVERITY_PRECONDITION_C(sev) \
-  rtc::LogMessage(__FILE__, __LINE__, rtc::sev).stream()
+#define RTC_LOG(sev)                                                        \
+  RTC_LOG_SEVERITY_PRECONDITION_C(sev)                                      \
+  rtc::LogMessage(__FILE__, __LINE__,                                       \
+                  std::integral_constant<rtc::LoggingSeverity, rtc::sev>()) \
+      .stream()
 
 // The _V version is for when a variable is passed in.  It doesn't do the
 // namespace concatenation.
