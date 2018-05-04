@@ -43,6 +43,8 @@ constexpr size_t kMaxPitch12kHz = kMaxPitch24kHz / 2;
 constexpr size_t kMinPitch48kHz = kMinPitch24kHz * 2;
 constexpr size_t kMaxPitch48kHz = kMaxPitch24kHz * 2;
 
+constexpr size_t kFeatureVectorSize = 42;
+
 }  // namespace rnn_vad
 }  // namespace webrtc
 

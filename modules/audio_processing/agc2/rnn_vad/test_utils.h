@@ -95,6 +95,12 @@ CreatePitchBuffer24kHzReader();
 // and gain values.
 std::pair<std::unique_ptr<BinaryFileReader<float>>, const size_t>
 CreateLpResidualAndPitchPeriodGainReader();
+// Instance a reader for the silence flags and the feature matrix.
+std::pair<std::unique_ptr<BinaryFileReader<float>>, const size_t>
+CreateSilenceFlagsFeatureMatrixReader();
+// Instance a reader for the VAD probabilities.
+std::pair<std::unique_ptr<BinaryFileReader<float>>, const size_t>
+CreateVadProbsReader();
 
 }  // namespace test
 }  // namespace rnn_vad
