@@ -333,7 +333,8 @@ int main(int argc, char* argv[]) {
       wav_path = webrtc::test::ResourcePath(
           "audio_processing/conversational_speech/EN_script2_F_sp2_B1", "wav");
     }
-    analyzer.CreateAudioJitterBufferGraph(wav_path, 48000,
+    auto neteq_stats = analyzer.SimulateNetEq(wav_path, 48000);
+    analyzer.CreateAudioJitterBufferGraph(neteq_stats,
                                           collection->AppendNewPlot());
   }
 
