@@ -15,11 +15,21 @@
 #include <vector>
 
 #include "rtc_base/checks.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
+namespace {
+
+bool EnableSoftTransparentMode() {
+  return !field_trial::IsEnabled("WebRTC-Aec3SoftTransparentModeKillSwitch");
+}
+
+}  // namespace
 
 ResidualEchoEstimator::ResidualEchoEstimator(const EchoCanceller3Config& config)
-    : config_(config), S2_old_(config_.filter.main.length_blocks) {
+    : config_(config),
+      S2_old_(config_.filter.main.length_blocks),
+      soft_transparent_mode_(EnableSoftTransparentMode()) {
   Reset();
 }
 
@@ -64,7 +74,10 @@ void ResidualEchoEstimator::Estimate(
                          0.f, a - config_.echo_model.stationary_gate_slope * b);
                    });
 
-    NonLinearEstimate(aec_state.EchoPathGain(), X2, Y2, R2);
+    float echo_path_gain = aec_state.TransparentMode() && soft_transparent_mode_
+                               ? 0.01f
+                               : aec_state.EchoPathGain();
+    NonLinearEstimate(echo_path_gain, X2, Y2, R2);
 
     // If the echo is saturated, estimate the echo power as the maximum echo
     // power with a leakage factor.
@@ -87,12 +100,13 @@ void ResidualEchoEstimator::Estimate(
       }
     }
   }
-
-  // If the echo is deemed inaudible, set the residual echo to zero.
-  if (aec_state.TransparentMode()) {
-    R2->fill(0.f);
-    R2_old_.fill(0.f);
-    R2_hold_counter_.fill(0.f);
+  if (!soft_transparent_mode_) {
+    // If the echo is deemed inaudible, set the residual echo to zero.
+    if (aec_state.TransparentMode()) {
+      R2->fill(0.f);
+      R2_old_.fill(0.f);
+      R2_hold_counter_.fill(0.f);
+    }
   }
 
   std::copy(R2->begin(), R2->end(), R2_old_.begin());
