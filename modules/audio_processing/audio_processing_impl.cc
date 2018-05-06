@@ -1264,7 +1264,7 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
   // Ensure that the stream delay was set before the call to the
   // AEC ProcessCaptureAudio function.
   if (public_submodules_->echo_cancellation->is_enabled() &&
-      !was_stream_delay_set()) {
+      !private_submodules_->echo_controller && !was_stream_delay_set()) {
     return AudioProcessing::kStreamParameterNotSetError;
   }
 
