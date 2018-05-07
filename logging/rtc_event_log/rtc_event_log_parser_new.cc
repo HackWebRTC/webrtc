@@ -633,8 +633,7 @@ void ParsedRtcEventLogNew::StoreParsedEvent(const rtclog::Event& event) {
     }
     case ParsedRtcEventLogNew::AUDIO_PLAYOUT_EVENT: {
       LoggedAudioPlayoutEvent playout_event = GetAudioPlayout(event);
-      audio_playout_events_[playout_event.ssrc].push_back(
-          playout_event.timestamp_us);
+      audio_playout_events_[playout_event.ssrc].push_back(playout_event);
       break;
     }
     case ParsedRtcEventLogNew::LOSS_BASED_BWE_UPDATE: {

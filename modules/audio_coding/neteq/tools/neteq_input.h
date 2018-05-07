@@ -32,7 +32,7 @@ class NetEqInput {
 
     RTPHeader header;
     rtc::Buffer payload;
-    double time_ms;
+    int64_t time_ms;
   };
 
   virtual ~NetEqInput() = default;

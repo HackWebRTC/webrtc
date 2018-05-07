@@ -636,7 +636,8 @@ class ParsedRtcEventLogNew {
   const std::vector<LoggedStopEvent>& stop_log_events() const {
     return stop_log_events_;
   }
-  const std::map<uint32_t, std::vector<int64_t>>& audio_playout_events() const {
+  const std::map<uint32_t, std::vector<LoggedAudioPlayoutEvent>>&
+  audio_playout_events() const {
     return audio_playout_events_;
   }
   const std::vector<LoggedAudioNetworkAdaptationEvent>&
@@ -874,8 +875,8 @@ class ParsedRtcEventLogNew {
   std::vector<LoggedStartEvent> start_log_events_;
   std::vector<LoggedStopEvent> stop_log_events_;
 
-  // Maps an SSRC to the timestamps of parsed audio playout events.
-  std::map<uint32_t, std::vector<int64_t>> audio_playout_events_;
+  std::map<uint32_t, std::vector<LoggedAudioPlayoutEvent>>
+      audio_playout_events_;
 
   std::vector<LoggedAudioNetworkAdaptationEvent>
       audio_network_adaptation_events_;

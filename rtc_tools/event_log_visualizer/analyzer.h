@@ -79,6 +79,11 @@ class EventLogAnalyzer {
   void CreateAudioJitterBufferGraph(
       const NetEqStatsGetterMap& neteq_stats_getters,
       Plot* plot) const;
+  void CreateNetEqStatsGraph(
+      const NetEqStatsGetterMap& neteq_stats_getters,
+      rtc::FunctionView<float(const NetEqNetworkStatistics&)> stats_extractor,
+      const std::string& plot_name,
+      Plot* plot) const;
 
   void CreateIceCandidatePairConfigGraph(Plot* plot);
   void CreateIceConnectivityCheckGraph(Plot* plot);
