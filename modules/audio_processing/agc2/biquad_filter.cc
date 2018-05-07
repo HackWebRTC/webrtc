@@ -12,9 +12,8 @@
 
 namespace webrtc {
 
-// This method applies a biquad filter to an input signal x to produce an
-// output signal y. The biquad coefficients are specified at the construction
-// of the object.
+// Transposed direct form I implementation of a bi-quad filter applied to an
+// input signal |x| to produce an output signal |y|.
 void BiQuadFilter::Process(rtc::ArrayView<const float> x,
                            rtc::ArrayView<float> y) {
   for (size_t k = 0; k < x.size(); ++k) {

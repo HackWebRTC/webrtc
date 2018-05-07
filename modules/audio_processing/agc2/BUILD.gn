@@ -47,6 +47,27 @@ rtc_source_set("adaptive_digital") {
   ]
 }
 
+rtc_source_set("biquad_filter") {
+  visibility = [ ":*" ]
+  sources = [
+    "biquad_filter.cc",
+    "biquad_filter.h",
+  ]
+  deps = [
+    "../../../api:array_view",
+    "../../../rtc_base:rtc_base_approved",
+  ]
+}
+
+rtc_source_set("common") {
+  sources = [
+    "agc2_common.h",
+  ]
+  deps = [
+    "../../../rtc_base:rtc_base_approved",
+  ]
+}
+
 rtc_source_set("fixed_digital") {
   sources = [
     "fixed_digital_level_estimator.cc",
@@ -75,41 +96,6 @@ rtc_source_set("fixed_digital") {
   ]
 }
 
-rtc_source_set("common") {
-  sources = [
-    "agc2_common.h",
-  ]
-  deps = [
-    "../../../rtc_base:rtc_base_approved",
-  ]
-}
-
-rtc_source_set("noise_level_estimator") {
-  sources = [
-    "biquad_filter.cc",
-    "biquad_filter.h",
-    "down_sampler.cc",
-    "down_sampler.h",
-    "noise_level_estimator.cc",
-    "noise_level_estimator.h",
-    "noise_spectrum_estimator.cc",
-    "noise_spectrum_estimator.h",
-    "signal_classifier.cc",
-    "signal_classifier.h",
-  ]
-  deps = [
-    "..:aec_core",
-    "..:apm_logging",
-    "..:audio_frame_view",
-    "../../../api:array_view",
-    "../../../common_audio",
-    "../../../rtc_base:checks",
-    "../../../rtc_base:macromagic",
-  ]
-
-  configs += [ "..:apm_debug_dump" ]
-}
-
 rtc_source_set("gain_applier") {
   sources = [
     "gain_applier.cc",
@@ -122,19 +108,65 @@ rtc_source_set("gain_applier") {
   ]
 }
 
-rtc_source_set("test_utils") {
-  testonly = true
-  visibility = [ ":*" ]
+rtc_source_set("noise_level_estimator") {
   sources = [
-    "agc2_testing_common.cc",
-    "agc2_testing_common.h",
-    "vector_float_frame.cc",
-    "vector_float_frame.h",
+    "down_sampler.cc",
+    "down_sampler.h",
+    "noise_level_estimator.cc",
+    "noise_level_estimator.h",
+    "noise_spectrum_estimator.cc",
+    "noise_spectrum_estimator.h",
+    "signal_classifier.cc",
+    "signal_classifier.h",
   ]
   deps = [
+    ":biquad_filter",
+    "..:aec_core",
+    "..:apm_logging",
     "..:audio_frame_view",
+    "../../../api:array_view",
+    "../../../common_audio",
+    "../../../rtc_base:checks",
+    "../../../rtc_base:macromagic",
+  ]
+
+  configs += [ "..:apm_debug_dump" ]
+}
+
+rtc_source_set("adaptive_digital_unittests") {
+  testonly = true
+  configs += [ "..:apm_debug_dump" ]
+
+  sources = [
+    "adaptive_digital_gain_applier_unittest.cc",
+    "adaptive_mode_level_estimator_unittest.cc",
+    "gain_applier_unittest.cc",
+    "saturation_protector_unittest.cc",
+  ]
+  deps = [
+    ":adaptive_digital",
+    ":common",
+    ":gain_applier",
+    ":test_utils",
+    "..:apm_logging",
+    "..:audio_frame_view",
+    "../../../api:array_view",
+    "../../../common_audio",
     "../../../rtc_base:checks",
     "../../../rtc_base:rtc_base_approved",
+    "../../../rtc_base:rtc_base_tests_utils",
+    "../vad:vad_with_level",
+  ]
+}
+
+rtc_source_set("biquad_filter_unittests") {
+  testonly = true
+  sources = [
+    "biquad_filter_unittest.cc",
+  ]
+  deps = [
+    ":biquad_filter",
+    "../../../rtc_base:rtc_base_tests_utils",
   ]
 }
 
@@ -168,32 +200,6 @@ rtc_source_set("fixed_digital_unittests") {
   ]
 }
 
-rtc_source_set("adaptive_digital_unittests") {
-  testonly = true
-  configs += [ "..:apm_debug_dump" ]
-
-  sources = [
-    "adaptive_digital_gain_applier_unittest.cc",
-    "adaptive_mode_level_estimator_unittest.cc",
-    "gain_applier_unittest.cc",
-    "saturation_protector_unittest.cc",
-  ]
-  deps = [
-    ":adaptive_digital",
-    ":common",
-    ":gain_applier",
-    ":test_utils",
-    "..:apm_logging",
-    "..:audio_frame_view",
-    "../../../api:array_view",
-    "../../../common_audio",
-    "../../../rtc_base:checks",
-    "../../../rtc_base:rtc_base_approved",
-    "../../../rtc_base:rtc_base_tests_utils",
-    "../vad:vad_with_level",
-  ]
-}
-
 rtc_source_set("noise_estimator_unittests") {
   testonly = true
   configs += [ "..:apm_debug_dump" ]
@@ -211,5 +217,21 @@ rtc_source_set("noise_estimator_unittests") {
     "../../../rtc_base:checks",
     "../../../rtc_base:rtc_base_approved",
     "../../../rtc_base:rtc_base_tests_utils",
+  ]
+}
+
+rtc_source_set("test_utils") {
+  testonly = true
+  visibility = [ ":*" ]
+  sources = [
+    "agc2_testing_common.cc",
+    "agc2_testing_common.h",
+    "vector_float_frame.cc",
+    "vector_float_frame.h",
+  ]
+  deps = [
+    "..:audio_frame_view",
+    "../../../rtc_base:checks",
+    "../../../rtc_base:rtc_base_approved",
   ]
 }
