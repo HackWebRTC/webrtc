@@ -74,7 +74,7 @@ TEST(ObjCVideoDecoderFactoryTest, DecodeReturnsOKOnSuccess) {
   webrtc::CodecSpecificInfo info;
   info.codecType = webrtc::kVideoCodecH264;
 
-  EXPECT_EQ(decoder->Decode(encoded_image, false, nullptr, &info, 0), WEBRTC_VIDEO_CODEC_OK);
+  EXPECT_EQ(decoder->Decode(encoded_image, false, &info, 0), WEBRTC_VIDEO_CODEC_OK);
 }
 
 TEST(ObjCVideoDecoderFactoryTest, DecodeReturnsErrorOnFail) {
@@ -84,7 +84,7 @@ TEST(ObjCVideoDecoderFactoryTest, DecodeReturnsErrorOnFail) {
   webrtc::CodecSpecificInfo info;
   info.codecType = webrtc::kVideoCodecH264;
 
-  EXPECT_EQ(decoder->Decode(encoded_image, false, nullptr, &info, 0), WEBRTC_VIDEO_CODEC_ERROR);
+  EXPECT_EQ(decoder->Decode(encoded_image, false, &info, 0), WEBRTC_VIDEO_CODEC_ERROR);
 }
 
 TEST(ObjCVideoDecoderFactoryTest, ReleaseDecodeReturnsOKOnSuccess) {

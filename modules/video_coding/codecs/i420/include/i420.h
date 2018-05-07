@@ -108,7 +108,6 @@ class I420Decoder : public VideoDecoder {
   //                                 <0 - Error
   int Decode(const EncodedImage& inputImage,
              bool missingFrames,
-             const RTPFragmentationHeader* /*fragmentation*/,
              const CodecSpecificInfo* /*codecSpecificInfo*/,
              int64_t /*renderTimeMs*/) override;
 

@@ -206,7 +206,6 @@ VideoStreamDecoderImpl::DecodeResult VideoStreamDecoderImpl::DecodeNextFrame(
     int32_t decode_result =
         decoder->Decode(frame->EncodedImage(),
                         false,    // missing_frame
-                        nullptr,  // rtp fragmentation header
                         nullptr,  // codec specific info
                         frame->RenderTimeMs());
 

@@ -57,7 +57,6 @@ int32_t FakeWebRtcVideoDecoder::InitDecode(const webrtc::VideoCodec*, int32_t) {
 
 int32_t FakeWebRtcVideoDecoder::Decode(const webrtc::EncodedImage&,
                                        bool,
-                                       const webrtc::RTPFragmentationHeader*,
                                        const webrtc::CodecSpecificInfo*,
                                        int64_t) {
   num_frames_received_++;

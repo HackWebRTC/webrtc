@@ -40,7 +40,6 @@ class FakeWebRtcVideoDecoder : public webrtc::VideoDecoder {
   virtual int32_t InitDecode(const webrtc::VideoCodec*, int32_t);
   virtual int32_t Decode(const webrtc::EncodedImage&,
                          bool,
-                         const webrtc::RTPFragmentationHeader*,
                          const webrtc::CodecSpecificInfo*,
                          int64_t);
   virtual int32_t RegisterDecodeCompleteCallback(webrtc::DecodedImageCallback*);

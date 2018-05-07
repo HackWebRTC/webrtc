@@ -69,10 +69,9 @@ class MockVideoDecoder : public VideoDecoder {
  public:
   MOCK_METHOD2(InitDecode,
                int32_t(const VideoCodec* codecSettings, int32_t numberOfCores));
-  MOCK_METHOD5(Decode,
+  MOCK_METHOD4(Decode,
                int32_t(const EncodedImage& inputImage,
                        bool missingFrames,
-                       const RTPFragmentationHeader* fragmentation,
                        const CodecSpecificInfo* codecSpecificInfo,
                        int64_t renderTimeMs));
   MOCK_METHOD1(RegisterDecodeCompleteCallback,

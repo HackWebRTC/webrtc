@@ -152,7 +152,6 @@ int I420Decoder::InitDecode(const VideoCodec* codecSettings,
 
 int I420Decoder::Decode(const EncodedImage& inputImage,
                         bool /*missingFrames*/,
-                        const RTPFragmentationHeader* /*fragmentation*/,
                         const CodecSpecificInfo* /*codecSpecificInfo*/,
                         int64_t /*renderTimeMs*/) {
   if (inputImage._buffer == NULL) {

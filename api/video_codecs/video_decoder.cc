@@ -41,4 +41,23 @@ const char* VideoDecoder::ImplementationName() const {
   return "unknown";
 }
 
+int32_t VideoDecoder::Decode(
+    const EncodedImage& input_image,
+    bool missing_frames,
+    const CodecSpecificInfo* codec_specific_info,
+    int64_t render_time_ms) {
+  return Decode(input_image, missing_frames, nullptr, codec_specific_info,
+                render_time_ms);
+}
+
+int32_t VideoDecoder::Decode(
+    const EncodedImage& input_image,
+    bool missing_frames,
+    const RTPFragmentationHeader* fragmentation,
+    const CodecSpecificInfo* codec_specific_info /* = NULL */,
+    int64_t render_time_ms /* = -1 */) {
+  return Decode(input_image, missing_frames, codec_specific_info,
+                render_time_ms);
+}
+
 }  // namespace webrtc

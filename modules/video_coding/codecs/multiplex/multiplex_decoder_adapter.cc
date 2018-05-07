@@ -111,7 +111,6 @@ int32_t MultiplexDecoderAdapter::InitDecode(const VideoCodec* codec_settings,
 int32_t MultiplexDecoderAdapter::Decode(
     const EncodedImage& input_image,
     bool missing_frames,
-    const RTPFragmentationHeader* /*fragmentation*/,
     const CodecSpecificInfo* codec_specific_info,
     int64_t render_time_ms) {
   const MultiplexImage& image =
@@ -127,7 +126,7 @@ int32_t MultiplexDecoderAdapter::Decode(
   int32_t rv = 0;
   for (size_t i = 0; i < image.image_components.size(); i++) {
     rv = decoders_[image.image_components[i].component_index]->Decode(
-        image.image_components[i].encoded_image, missing_frames, nullptr,
+        image.image_components[i].encoded_image, missing_frames,
         nullptr, render_time_ms);
     if (rv != WEBRTC_VIDEO_CODEC_OK)
       return rv;

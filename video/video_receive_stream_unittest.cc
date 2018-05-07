@@ -50,10 +50,9 @@ class MockVideoDecoder : public VideoDecoder {
  public:
   MOCK_METHOD2(InitDecode,
                int32_t(const VideoCodec* config, int32_t number_of_cores));
-  MOCK_METHOD5(Decode,
+  MOCK_METHOD4(Decode,
                int32_t(const EncodedImage& input,
                        bool missing_frames,
-                       const RTPFragmentationHeader* fragmentation,
                        const CodecSpecificInfo* codec_specific_info,
                        int64_t render_time_ms));
   MOCK_METHOD1(RegisterDecodeCompleteCallback,
@@ -128,7 +127,7 @@ TEST_F(VideoReceiveStreamTest, CreateFrameFromH264FmtpSpropAndIdr) {
       }));
   EXPECT_CALL(mock_h264_video_decoder_, RegisterDecodeCompleteCallback(_));
   video_receive_stream_->Start();
-  EXPECT_CALL(mock_h264_video_decoder_, Decode(_, false, _, _, _));
+  EXPECT_CALL(mock_h264_video_decoder_, Decode(_, false, _, _));
   RtpPacketReceived parsed_packet;
   ASSERT_TRUE(parsed_packet.Parse(rtppacket.data(), rtppacket.size()));
   rtp_stream_receiver_controller_.OnRtpPacket(parsed_packet);
