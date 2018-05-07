@@ -203,7 +203,7 @@ void RenderDelayBufferImpl::Reset() {
 
   // Check for any external audio buffer delay and whether it is feasible.
   if (external_audio_buffer_delay_) {
-    constexpr size_t kHeadroom = 1;
+    constexpr size_t kHeadroom = 2;
     size_t external_delay_to_set = 0;
     if (*external_audio_buffer_delay_ < kHeadroom) {
       external_delay_to_set = 0;
@@ -211,13 +211,14 @@ void RenderDelayBufferImpl::Reset() {
       external_delay_to_set = *external_audio_buffer_delay_ - kHeadroom;
     }
 
-    constexpr size_t kMaxExternalDelay = 170 / 4;
-    external_delay_to_set = std::min(external_delay_to_set, kMaxExternalDelay);
+    external_delay_to_set = std::min(external_delay_to_set, MaxDelay());
 
     // When an external delay estimate is available, use that delay as the
-    // initial render buffer delay. Avoid verifying the set delay.
-    external_delay_verified_after_reset_ = true;
-    SetDelay(external_delay_to_set);
+    // initial render buffer delay.
+    internal_delay_ = external_delay_to_set;
+    ApplyDelay(*internal_delay_);
+    delay_ = MapInternalDelayToExternalDelay();
+
     external_delay_verified_after_reset_ = false;
   } else {
     // If an external delay estimate is not available, use that delay as the
@@ -330,7 +331,12 @@ RenderDelayBufferImpl::PrepareCaptureProcessing() {
 
 // Sets the delay and returns a bool indicating whether the delay was changed.
 bool RenderDelayBufferImpl::SetDelay(size_t delay) {
-  if (!external_delay_verified_after_reset_ && external_audio_buffer_delay_) {
+  if (!external_delay_verified_after_reset_ && external_audio_buffer_delay_ &&
+      delay_) {
+    int difference = static_cast<int>(delay) - static_cast<int>(*delay_);
+    RTC_LOG(LS_WARNING) << "Mismatch between first estimated delay after reset "
+                           "and external delay: "
+                        << difference << " blocks";
     external_delay_verified_after_reset_ = true;
   }
   if (delay_ && *delay_ == delay) {
@@ -365,6 +371,8 @@ void RenderDelayBufferImpl::SetAudioBufferDelay(size_t delay_ms) {
         << "Receiving a first reported externally buffer delay of " << delay_ms
         << " ms.";
   }
+
+  // Convert delay from milliseconds to blocks (rounded down).
   external_audio_buffer_delay_ = delay_ms / 4;
 }
 
