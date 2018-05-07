@@ -25,7 +25,6 @@
 namespace webrtc {
 namespace data_rate_impl {
 constexpr int64_t kPlusInfinityVal = std::numeric_limits<int64_t>::max();
-constexpr int64_t kNotInitializedVal = -1;
 
 inline int64_t Microbits(const DataSize& size) {
   constexpr int64_t kMaxBeforeConversion =
@@ -41,7 +40,7 @@ inline int64_t Microbits(const DataSize& size) {
 // second (bps).
 class DataRate {
  public:
-  DataRate() : DataRate(data_rate_impl::kNotInitializedVal) {}
+  DataRate() = delete;
   static DataRate Zero() { return DataRate(0); }
   static DataRate Infinity() {
     return DataRate(data_rate_impl::kPlusInfinityVal);
@@ -61,18 +60,12 @@ class DataRate {
     return bits_per_sec_;
   }
   int64_t bps() const { return bits_per_second(); }
-  int64_t bps_or(int64_t fallback) const {
-    return IsFinite() ? bits_per_second() : fallback;
-  }
   int64_t kbps() const { return (bps() + 500) / 1000; }
   bool IsZero() const { return bits_per_sec_ == 0; }
   bool IsInfinite() const {
     return bits_per_sec_ == data_rate_impl::kPlusInfinityVal;
   }
-  bool IsInitialized() const {
-    return bits_per_sec_ != data_rate_impl::kNotInitializedVal;
-  }
-  bool IsFinite() const { return IsInitialized() && !IsInfinite(); }
+  bool IsFinite() const { return !IsInfinite(); }
 
   bool operator==(const DataRate& other) const {
     return bits_per_sec_ == other.bits_per_sec_;

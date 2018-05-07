@@ -22,8 +22,6 @@ namespace webrtc {
 namespace timestamp_impl {
 constexpr int64_t kPlusInfinityVal = std::numeric_limits<int64_t>::max();
 constexpr int64_t kMinusInfinityVal = std::numeric_limits<int64_t>::min();
-constexpr int64_t kSignedNotInitializedVal = kMinusInfinityVal + 1;
-constexpr int64_t kNotInitializedVal = -1;
 }  // namespace timestamp_impl
 
 // Timestamp represents the time that has passed since some unspecified epoch.
@@ -32,7 +30,7 @@ constexpr int64_t kNotInitializedVal = -1;
 // difference of two Timestamps results in a TimeDelta.
 class Timestamp {
  public:
-  Timestamp() : Timestamp(timestamp_impl::kNotInitializedVal) {}
+  Timestamp() = delete;
   static Timestamp Infinity() {
     return Timestamp(timestamp_impl::kPlusInfinityVal);
   }
@@ -56,10 +54,7 @@ class Timestamp {
   bool IsInfinite() const {
     return microseconds_ == timestamp_impl::kPlusInfinityVal;
   }
-  bool IsInitialized() const {
-    return microseconds_ != timestamp_impl::kNotInitializedVal;
-  }
-  bool IsFinite() const { return IsInitialized() && !IsInfinite(); }
+  bool IsFinite() const { return !IsInfinite(); }
   TimeDelta operator-(const Timestamp& other) const {
     return TimeDelta::us(us() - other.us());
   }

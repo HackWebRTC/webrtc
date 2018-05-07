@@ -21,8 +21,6 @@ std::string ToString(const TimeDelta& value) {
     sb << "+inf ms";
   } else if (value.IsMinusInfinity()) {
     sb << "-inf ms";
-  } else if (!value.IsInitialized()) {
-    sb << "? ms";
   } else {
     sb << value.ms() << " ms";
   }

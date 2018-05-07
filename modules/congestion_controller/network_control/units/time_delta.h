@@ -22,8 +22,6 @@ namespace webrtc {
 namespace timedelta_impl {
 constexpr int64_t kPlusInfinityVal = std::numeric_limits<int64_t>::max();
 constexpr int64_t kMinusInfinityVal = std::numeric_limits<int64_t>::min();
-constexpr int64_t kSignedNotInitializedVal = kMinusInfinityVal + 1;
-
 }  // namespace timedelta_impl
 
 // TimeDelta represents the difference between two timestamps. Commonly this can
@@ -35,7 +33,7 @@ constexpr int64_t kSignedNotInitializedVal = kMinusInfinityVal + 1;
 // microseconds (us).
 class TimeDelta {
  public:
-  TimeDelta() : TimeDelta(timedelta_impl::kSignedNotInitializedVal) {}
+  TimeDelta() = delete;
   static TimeDelta Zero() { return TimeDelta(0); }
   static TimeDelta PlusInfinity() {
     return TimeDelta(timedelta_impl::kPlusInfinityVal);
@@ -53,7 +51,6 @@ class TimeDelta {
     // Infinities only allowed via use of explicit constants.
     RTC_DCHECK(microseconds > std::numeric_limits<int64_t>::min());
     RTC_DCHECK(microseconds < std::numeric_limits<int64_t>::max());
-    RTC_DCHECK(microseconds != timedelta_impl::kSignedNotInitializedVal);
     return TimeDelta(microseconds);
   }
   int64_t seconds() const {
@@ -69,10 +66,7 @@ class TimeDelta {
 
   TimeDelta Abs() const { return TimeDelta::us(std::abs(us())); }
   bool IsZero() const { return microseconds_ == 0; }
-  bool IsFinite() const { return IsInitialized() && !IsInfinite(); }
-  bool IsInitialized() const {
-    return microseconds_ != timedelta_impl::kSignedNotInitializedVal;
-  }
+  bool IsFinite() const { return !IsInfinite(); }
   bool IsInfinite() const {
     return microseconds_ == timedelta_impl::kPlusInfinityVal ||
            microseconds_ == timedelta_impl::kMinusInfinityVal;

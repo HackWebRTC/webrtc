@@ -37,7 +37,6 @@ TEST(TimestampTest, IdentityChecks) {
   EXPECT_TRUE(Timestamp::Infinity().IsInfinite());
   EXPECT_FALSE(Timestamp::ms(kValue).IsInfinite());
 
-  EXPECT_FALSE(Timestamp().IsFinite());
   EXPECT_FALSE(Timestamp::Infinity().IsFinite());
   EXPECT_TRUE(Timestamp::ms(kValue).IsFinite());
 }

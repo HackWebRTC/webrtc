@@ -21,13 +21,12 @@
 namespace webrtc {
 namespace data_size_impl {
 constexpr int64_t kPlusInfinityVal = std::numeric_limits<int64_t>::max();
-constexpr int64_t kNotInitializedVal = -1;
 }  // namespace data_size_impl
 
 // DataSize is a class represeting a count of bytes.
 class DataSize {
  public:
-  DataSize() : DataSize(data_size_impl::kNotInitializedVal) {}
+  DataSize() = delete;
   static DataSize Zero() { return DataSize(0); }
   static DataSize Infinity() {
     return DataSize(data_size_impl::kPlusInfinityVal);
@@ -43,10 +42,7 @@ class DataSize {
   int64_t kilobytes() const { return (bytes() + 500) / 1000; }
   bool IsZero() const { return bytes_ == 0; }
   bool IsInfinite() const { return bytes_ == data_size_impl::kPlusInfinityVal; }
-  bool IsInitialized() const {
-    return bytes_ != data_size_impl::kNotInitializedVal;
-  }
-  bool IsFinite() const { return IsInitialized() && !IsInfinite(); }
+  bool IsFinite() const { return !IsInfinite(); }
   DataSize operator-(const DataSize& other) const {
     return DataSize::bytes(bytes() - other.bytes());
   }

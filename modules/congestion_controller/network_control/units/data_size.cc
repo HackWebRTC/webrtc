@@ -19,8 +19,6 @@ std::string ToString(const DataSize& value) {
   rtc::SimpleStringBuilder sb(buf);
   if (value.IsInfinite()) {
     sb << "inf bytes";
-  } else if (!value.IsInitialized()) {
-    sb << "? bytes";
   } else {
     sb << value.bytes() << " bytes";
   }

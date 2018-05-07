@@ -16,8 +16,6 @@ namespace webrtc {
 double Timestamp::SecondsAsDouble() const {
   if (IsInfinite()) {
     return std::numeric_limits<double>::infinity();
-  } else if (!IsInitialized()) {
-    return std::numeric_limits<double>::signaling_NaN();
   } else {
     return us() * 1e-6;
   }
@@ -28,8 +26,6 @@ std::string ToString(const Timestamp& value) {
   rtc::SimpleStringBuilder sb(buf);
   if (value.IsInfinite()) {
     sb << "inf ms";
-  } else if (!value.IsInitialized()) {
-    sb << "? ms";
   } else {
     sb << value.ms() << " ms";
   }

@@ -19,8 +19,6 @@ std::string ToString(const DataRate& value) {
   rtc::SimpleStringBuilder sb(buf);
   if (value.IsInfinite()) {
     sb << "inf bps";
-  } else if (!value.IsInitialized()) {
-    sb << "? bps";
   } else {
     sb << value.bps() << " bps";
   }
