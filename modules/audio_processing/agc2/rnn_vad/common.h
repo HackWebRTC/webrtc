@@ -14,6 +14,8 @@
 namespace webrtc {
 namespace rnn_vad {
 
+constexpr double kPi = 3.14159265358979323846;
+
 constexpr size_t kSampleRate24kHz = 24000;
 constexpr size_t kFrameSize10ms24kHz = kSampleRate24kHz / 100;
 constexpr size_t kFrameSize20ms24kHz = kFrameSize10ms24kHz * 2;
