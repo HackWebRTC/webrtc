@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "api/optional.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "system_wrappers/include/metrics.h"
 #include "system_wrappers/include/metrics_default.h"
 #include "test/call_test.h"
 #include "test/function_video_encoder_factory.h"
 #include "test/gtest.h"
-#include "test/rtcp_packet_parser.h"
 
 namespace webrtc {
 
@@ -26,19 +26,16 @@ class HistogramTest : public test::CallTest {
 void HistogramTest::VerifyHistogramStats(bool use_rtx,
                                          bool use_fec,
                                          bool screenshare) {
-  class StatsObserver : public test::EndToEndTest,
+  class FrameObserver : public test::EndToEndTest,
                         public rtc::VideoSinkInterface<VideoFrame> {
    public:
-    StatsObserver(bool use_rtx, bool use_fec, bool screenshare)
+    FrameObserver(bool use_rtx, bool use_fec, bool screenshare)
         : EndToEndTest(kLongTimeoutMs),
           use_rtx_(use_rtx),
           use_fec_(use_fec),
           screenshare_(screenshare),
           // This test uses NACK, so to send FEC we can't use a fake encoder.
           encoder_factory_([]() { return VP8Encoder::Create(); }),
-          sender_call_(nullptr),
-          receiver_call_(nullptr),
-          start_runtime_ms_(-1),
           num_frames_received_(0) {}
 
    private:
@@ -62,12 +59,12 @@ void HistogramTest::VerifyHistogramStats(bool use_rtx,
     }
 
     bool MinMetricRunTimePassed() {
-      int64_t now = Clock::GetRealTimeClock()->TimeInMilliseconds();
-      if (start_runtime_ms_ == -1) {
-        start_runtime_ms_ = now;
+      int64_t now_ms = Clock::GetRealTimeClock()->TimeInMilliseconds();
+      if (!start_runtime_ms_) {
+        start_runtime_ms_ = now_ms;
         return false;
       }
-      int64_t elapsed_sec = (now - start_runtime_ms_) / 1000;
+      int64_t elapsed_sec = (now_ms - *start_runtime_ms_) / 1000;
       return elapsed_sec > metrics::kMinRunTimeInSeconds * 2;
     }
 
@@ -118,13 +115,8 @@ void HistogramTest::VerifyHistogramStats(bool use_rtx,
                        : VideoEncoderConfig::ContentType::kRealtimeVideo;
     }
 
-    void OnCallsCreated(Call* sender_call, Call* receiver_call) override {
-      sender_call_ = sender_call;
-      receiver_call_ = receiver_call;
-    }
-
     void PerformTest() override {
-      EXPECT_TRUE(Wait()) << "Timed out waiting for packet to be NACKed.";
+      EXPECT_TRUE(Wait()) << "Timed out waiting for min frames to be received.";
     }
 
     rtc::CriticalSection crit_;
@@ -132,20 +124,19 @@ void HistogramTest::VerifyHistogramStats(bool use_rtx,
     const bool use_fec_;
     const bool screenshare_;
     test::FunctionVideoEncoderFactory encoder_factory_;
-    Call* sender_call_;
-    Call* receiver_call_;
-    int64_t start_runtime_ms_;
+    rtc::Optional<int64_t> start_runtime_ms_;
     int num_frames_received_ RTC_GUARDED_BY(&crit_);
   } test(use_rtx, use_fec, screenshare);
 
   metrics::Reset();
   RunBaseTest(&test);
 
-  std::string video_prefix =
+  const std::string video_prefix =
       screenshare ? "WebRTC.Video.Screenshare." : "WebRTC.Video.";
   // The content type extension is disabled in non screenshare test,
   // therefore no slicing on simulcast id should be present.
-  std::string video_suffix = screenshare ? ".S0" : "";
+  const std::string video_suffix = screenshare ? ".S0" : "";
+
   // Verify that stats have been updated once.
   EXPECT_EQ(2, metrics::NumSamples("WebRTC.Call.LifetimeInSeconds"));
   EXPECT_EQ(1, metrics::NumSamples(
@@ -255,21 +246,21 @@ void HistogramTest::VerifyHistogramStats(bool use_rtx,
             metrics::NumSamples("WebRTC.Video.ReceivedFecPacketsInPercent"));
 }
 
-TEST_F(HistogramTest, VerifyHistogramStatsWithRtx) {
+TEST_F(HistogramTest, VerifyStatsWithRtx) {
   const bool kEnabledRtx = true;
   const bool kEnabledRed = false;
   const bool kScreenshare = false;
   VerifyHistogramStats(kEnabledRtx, kEnabledRed, kScreenshare);
 }
 
-TEST_F(HistogramTest, VerifyHistogramStatsWithRed) {
+TEST_F(HistogramTest, VerifyStatsWithRed) {
   const bool kEnabledRtx = false;
   const bool kEnabledRed = true;
   const bool kScreenshare = false;
   VerifyHistogramStats(kEnabledRtx, kEnabledRed, kScreenshare);
 }
 
-TEST_F(HistogramTest, VerifyHistogramStatsWithScreenshare) {
+TEST_F(HistogramTest, VerifyStatsWithScreenshare) {
   const bool kEnabledRtx = false;
   const bool kEnabledRed = false;
   const bool kScreenshare = true;
