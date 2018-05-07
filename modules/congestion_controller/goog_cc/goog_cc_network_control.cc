@@ -101,6 +101,15 @@ std::vector<PacketFeedback> ReceivedPacketsFeedbackAsRtp(
   return packet_feedback_vector;
 }
 
+int64_t GetBpsOrDefault(const rtc::Optional<DataRate>& rate,
+                        int64_t fallback_bps) {
+  if (rate && rate->IsFinite()) {
+    return rate->bps();
+  } else {
+    return fallback_bps;
+  }
+}
+
 }  // namespace
 
 GoogCcNetworkController::GoogCcNetworkController(RtcEventLog* event_log,

@@ -17,7 +17,6 @@ rtc_source_set("data_rate") {
   deps = [
     ":data_size",
     ":time_delta",
-    "../../../../api:optional",
     "../../../../rtc_base:checks",
     "../../../../rtc_base:rtc_base_approved",
   ]
@@ -30,7 +29,6 @@ rtc_source_set("data_size") {
   ]
 
   deps = [
-    "../../../../api:optional",
     "../../../../rtc_base:checks",
     "../../../../rtc_base:rtc_base_approved",
   ]
@@ -42,7 +40,6 @@ rtc_source_set("time_delta") {
   ]
 
   deps = [
-    "../../../../api:optional",
     "../../../../rtc_base:checks",
     "../../../../rtc_base:rtc_base_approved",
   ]
@@ -56,7 +53,6 @@ rtc_source_set("timestamp") {
 
   deps = [
     ":time_delta",
-    "../../../../api:optional",
     "../../../../rtc_base:checks",
     "../../../../rtc_base:rtc_base_approved",
   ]
