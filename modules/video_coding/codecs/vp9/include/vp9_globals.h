@@ -79,10 +79,9 @@ struct GofInfoVP9 {
         pid_diff[2][0] = 2;
 
         temporal_idx[3] = 2;
-        temporal_up_switch[3] = false;
-        num_ref_pics[3] = 2;
+        temporal_up_switch[3] = true;
+        num_ref_pics[3] = 1;
         pid_diff[3][0] = 1;
-        pid_diff[3][1] = 2;
         break;
       case kTemporalStructureMode4:
         num_frames_in_gof = 8;

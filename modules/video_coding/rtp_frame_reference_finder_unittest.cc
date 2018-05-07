@@ -880,7 +880,7 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9GofSkipFramesTemporalLayers_0212) {
   CheckReferencesVp9(0, 0);
   CheckReferencesVp9(1, 0, 0);
   CheckReferencesVp9(2, 0, 0);
-  CheckReferencesVp9(3, 0, 1, 2);
+  CheckReferencesVp9(3, 0, 2);
 
   // Skip frames with tl0 = 1
 
@@ -893,7 +893,7 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9GofSkipFramesTemporalLayers_0212) {
   CheckReferencesVp9(8, 0);
   CheckReferencesVp9(9, 0, 8);
   CheckReferencesVp9(10, 0, 8);
-  CheckReferencesVp9(11, 0, 9, 10);
+  CheckReferencesVp9(11, 0, 10);
 
   // Now insert frames with tl0 = 1
   InsertVp9Gof(sn + 4, sn + 4, true, pid + 4, 0, 0, 1, false, &ss);
@@ -1043,23 +1043,23 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9GofTemporalLayers_0212) {
   CheckReferencesVp9(0, 0);
   CheckReferencesVp9(1, 0, 0);
   CheckReferencesVp9(2, 0, 0);
-  CheckReferencesVp9(3, 0, 1, 2);
+  CheckReferencesVp9(3, 0, 2);
   CheckReferencesVp9(4, 0, 0);
   CheckReferencesVp9(5, 0, 4);
   CheckReferencesVp9(6, 0, 4);
-  CheckReferencesVp9(7, 0, 5, 6);
+  CheckReferencesVp9(7, 0, 6);
   CheckReferencesVp9(8, 0, 4);
   CheckReferencesVp9(9, 0, 8);
   CheckReferencesVp9(10, 0, 8);
-  CheckReferencesVp9(11, 0, 9, 10);
+  CheckReferencesVp9(11, 0, 10);
   CheckReferencesVp9(12, 0, 8);
   CheckReferencesVp9(13, 0, 12);
   CheckReferencesVp9(14, 0, 12);
-  CheckReferencesVp9(15, 0, 13, 14);
+  CheckReferencesVp9(15, 0, 14);
   CheckReferencesVp9(16, 0, 12);
   CheckReferencesVp9(17, 0, 16);
   CheckReferencesVp9(18, 0, 16);
-  CheckReferencesVp9(19, 0, 17, 18);
+  CheckReferencesVp9(19, 0, 18);
 }
 
 TEST_F(TestRtpFrameReferenceFinder, Vp9GofTemporalLayersReordered_0212) {
@@ -1093,23 +1093,23 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9GofTemporalLayersReordered_0212) {
   CheckReferencesVp9(0, 0);
   CheckReferencesVp9(1, 0, 0);
   CheckReferencesVp9(2, 0, 0);
-  CheckReferencesVp9(3, 0, 1, 2);
+  CheckReferencesVp9(3, 0, 2);
   CheckReferencesVp9(4, 0, 0);
   CheckReferencesVp9(5, 0, 4);
   CheckReferencesVp9(6, 0, 4);
-  CheckReferencesVp9(7, 0, 5, 6);
+  CheckReferencesVp9(7, 0, 6);
   CheckReferencesVp9(8, 0, 4);
   CheckReferencesVp9(9, 0, 8);
   CheckReferencesVp9(10, 0, 8);
-  CheckReferencesVp9(11, 0, 9, 10);
+  CheckReferencesVp9(11, 0, 10);
   CheckReferencesVp9(12, 0, 8);
   CheckReferencesVp9(13, 0, 12);
   CheckReferencesVp9(14, 0, 12);
-  CheckReferencesVp9(15, 0, 13, 14);
+  CheckReferencesVp9(15, 0, 14);
   CheckReferencesVp9(16, 0, 12);
   CheckReferencesVp9(17, 0, 16);
   CheckReferencesVp9(18, 0, 16);
-  CheckReferencesVp9(19, 0, 17, 18);
+  CheckReferencesVp9(19, 0, 18);
 }
 
 TEST_F(TestRtpFrameReferenceFinder, Vp9GofTemporalLayersUpSwitch_02120212) {
@@ -1225,11 +1225,11 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9GofTemporalLayersReordered_01_0212) {
   CheckReferencesVp9(4, 0, 0);
   CheckReferencesVp9(5, 0, 4);
   CheckReferencesVp9(6, 0, 4);
-  CheckReferencesVp9(7, 0, 5, 6);
+  CheckReferencesVp9(7, 0, 6);
   CheckReferencesVp9(8, 0, 4);
   CheckReferencesVp9(9, 0, 8);
   CheckReferencesVp9(10, 0, 8);
-  CheckReferencesVp9(11, 0, 9, 10);
+  CheckReferencesVp9(11, 0, 10);
 }
 
 TEST_F(TestRtpFrameReferenceFinder, Vp9FlexibleModeOneFrame) {

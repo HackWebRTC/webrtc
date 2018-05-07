@@ -3276,7 +3276,8 @@ class Vp9HeaderObserver : public test::SendTest {
           EXPECT_TRUE(vp9.temporal_up_switch);
           break;
         case 2:
-          EXPECT_EQ(last_vp9_.temporal_idx == 0, vp9.temporal_up_switch);
+          EXPECT_LT(last_vp9_.temporal_idx, 2);
+          EXPECT_TRUE(vp9.temporal_up_switch);
           break;
       }
     }

@@ -189,10 +189,9 @@ TEST_F(Vp9SsMapTest, UpdatePacket) {
   packet_.video_header.codecHeader.VP9.gof_idx = 3;
   EXPECT_TRUE(map_.UpdatePacket(&packet_));
   EXPECT_EQ(2, packet_.video_header.codecHeader.VP9.temporal_idx);
-  EXPECT_FALSE(packet_.video_header.codecHeader.VP9.temporal_up_switch);
-  EXPECT_EQ(2U, packet_.video_header.codecHeader.VP9.num_ref_pics);
+  EXPECT_TRUE(packet_.video_header.codecHeader.VP9.temporal_up_switch);
+  EXPECT_EQ(1U, packet_.video_header.codecHeader.VP9.num_ref_pics);
   EXPECT_EQ(1, packet_.video_header.codecHeader.VP9.pid_diff[0]);
-  EXPECT_EQ(2, packet_.video_header.codecHeader.VP9.pid_diff[1]);
 }
 
 class TestBasicJitterBuffer : public ::testing::TestWithParam<std::string>,
