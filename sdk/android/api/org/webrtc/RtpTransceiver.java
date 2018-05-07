@@ -196,6 +196,7 @@ public class RtpTransceiver {
     nativeStop(nativeRtpTransceiver);
   }
 
+  @CalledByNative
   public void dispose() {
     cachedSender.dispose();
     cachedReceiver.dispose();

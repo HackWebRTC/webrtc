@@ -62,6 +62,20 @@ ScopedJavaLocalRef<jobject> NativeToJavaRtpTransceiver(
       env, jlongFromPointer(transceiver.release()));
 }
 
+JavaRtpTransceiverGlobalOwner::JavaRtpTransceiverGlobalOwner(
+    JNIEnv* env,
+    const JavaRef<jobject>& j_transceiver)
+    : j_transceiver_(env, j_transceiver){};
+
+JavaRtpTransceiverGlobalOwner::JavaRtpTransceiverGlobalOwner(
+    JavaRtpTransceiverGlobalOwner&& other) = default;
+
+JavaRtpTransceiverGlobalOwner::~JavaRtpTransceiverGlobalOwner() {
+  if (j_transceiver_.obj()) {
+    Java_RtpTransceiver_dispose(AttachCurrentThreadIfNeeded(), j_transceiver_);
+  }
+}
+
 ScopedJavaLocalRef<jobject> JNI_RtpTransceiver_GetMediaType(
     JNIEnv* jni,
     const base::android::JavaParamRef<jclass>&,

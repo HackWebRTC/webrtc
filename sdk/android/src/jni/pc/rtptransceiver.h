@@ -27,6 +27,19 @@ ScopedJavaLocalRef<jobject> NativeToJavaRtpTransceiver(
     JNIEnv* env,
     rtc::scoped_refptr<RtpTransceiverInterface> transceiver);
 
+// This takes ownership of the of the |j_transceiver| and stores it as a global
+// reference. This calls the Java Transceiver's dispose() method with the dtor.
+class JavaRtpTransceiverGlobalOwner {
+ public:
+  JavaRtpTransceiverGlobalOwner(JNIEnv* env,
+                                const JavaRef<jobject>& j_transceiver);
+  JavaRtpTransceiverGlobalOwner(JavaRtpTransceiverGlobalOwner&& other);
+  ~JavaRtpTransceiverGlobalOwner();
+
+ private:
+  ScopedJavaGlobalRef<jobject> j_transceiver_;
+};
+
 }  // namespace jni
 }  // namespace webrtc
 

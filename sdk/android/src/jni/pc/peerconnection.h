@@ -21,6 +21,7 @@
 #include "sdk/android/src/jni/pc/mediaconstraints.h"
 #include "sdk/android/src/jni/pc/mediastream.h"
 #include "sdk/android/src/jni/pc/rtpreceiver.h"
+#include "sdk/android/src/jni/pc/rtptransceiver.h"
 
 namespace webrtc {
 namespace jni {
@@ -60,6 +61,8 @@ class PeerConnectionObserverJni : public PeerConnectionObserver {
   void OnAddTrack(rtc::scoped_refptr<RtpReceiverInterface> receiver,
                   const std::vector<rtc::scoped_refptr<MediaStreamInterface>>&
                       streams) override;
+  void OnTrack(
+      rtc::scoped_refptr<RtpTransceiverInterface> transceiver) override;
 
  private:
   typedef std::map<MediaStreamInterface*, JavaMediaStream>
@@ -83,6 +86,10 @@ class PeerConnectionObserverJni : public PeerConnectionObserver {
   // C++ -> Java remote streams.
   NativeToJavaStreamsMap remote_streams_;
   std::vector<JavaRtpReceiverGlobalOwner> rtp_receivers_;
+  // Holds a reference to the Java transceivers given to the AddTrack
+  // callback, so that the shared ownership by the Java object will be
+  // properly disposed.
+  std::vector<JavaRtpTransceiverGlobalOwner> rtp_transceivers_;
 };
 
 // PeerConnection doesn't take ownership of the observer. In Java API, we don't

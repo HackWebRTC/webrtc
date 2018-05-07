@@ -49,7 +49,6 @@
 #include "sdk/android/src/jni/pc/mediastreamtrack.h"
 #include "sdk/android/src/jni/pc/rtcstatscollectorcallbackwrapper.h"
 #include "sdk/android/src/jni/pc/rtpsender.h"
-#include "sdk/android/src/jni/pc/rtptransceiver.h"
 #include "sdk/android/src/jni/pc/sdpobserver.h"
 #include "sdk/android/src/jni/pc/sessiondescription.h"
 #include "sdk/android/src/jni/pc/statsobserver.h"
@@ -333,6 +332,16 @@ void PeerConnectionObserverJni::OnAddTrack(
 
   Java_Observer_onAddTrack(env, j_observer_global_, j_rtp_receiver,
                            NativeToJavaMediaStreamArray(env, streams));
+}
+
+void PeerConnectionObserverJni::OnTrack(
+    rtc::scoped_refptr<RtpTransceiverInterface> transceiver) {
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  ScopedJavaLocalRef<jobject> j_rtp_transceiver =
+      NativeToJavaRtpTransceiver(env, transceiver);
+  rtp_transceivers_.emplace_back(env, j_rtp_transceiver);
+
+  Java_Observer_onTrack(env, j_observer_global_, j_rtp_transceiver);
 }
 
 // If the NativeToJavaStreamsMap contains the stream, return it.
