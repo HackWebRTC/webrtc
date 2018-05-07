@@ -41,7 +41,6 @@ LIB_TO_LICENSES_DICT = {
     'libsrtp': ['third_party/libsrtp/LICENSE'],
     'libvpx': ['third_party/libvpx/source/libvpx/LICENSE'],
     'libyuv': ['third_party/libyuv/LICENSE'],
-    'openmax_dl': ['third_party/openmax_dl/LICENSE'],
     'opus': ['third_party/opus/src/COPYING'],
     'protobuf': ['third_party/protobuf/LICENSE'],
     'rnnoise': ['third_party/rnnoise/COPYING'],

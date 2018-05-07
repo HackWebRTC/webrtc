@@ -75,16 +75,6 @@ rtc_static_library("common_audio") {
   ]
 
   defines = []
-  if (rtc_use_openmax_dl) {
-    sources += [
-      "real_fourier_openmax.cc",
-      "real_fourier_openmax.h",
-    ]
-    defines += [ "RTC_USE_OPENMAX_DL" ]
-    if (rtc_build_openmax_dl) {
-      deps += [ "//third_party/openmax_dl/dl" ]
-    }
-  }
 
   if (rtc_build_with_neon) {
     deps += [ ":common_audio_neon" ]
@@ -436,10 +426,6 @@ if (rtc_include_tests) {
     # Does not compile on iOS for arm: webrtc:5544.
     if (!is_ios || target_cpu != "arm") {
       sources += [ "resampler/sinc_resampler_unittest.cc" ]
-    }
-
-    if (rtc_use_openmax_dl) {
-      defines = [ "RTC_USE_OPENMAX_DL" ]
     }
 
     if (!build_with_chromium && is_clang) {

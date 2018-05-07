@@ -14,7 +14,6 @@
 #include "typedefs.h"  // NOLINT(build/include)
 
 // For ComplexFFT(), the maximum fft order is 10;
-// for OpenMax FFT in ARM, it is 12;
 // WebRTC APM uses orders of only 7 and 8.
 enum {kMaxFFTOrder = 10};
 

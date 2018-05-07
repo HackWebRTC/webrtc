@@ -14,10 +14,6 @@ vars = {
   # and whatever else without interference from each other.
   'swarming_revision': '88229872dd17e71658fe96763feaa77915d8cbd6',
   # Three lines of non-changing comments so that
-  # the commit queue can handle CLs rolling openmax_dl
-  # and whatever else without interference from each other.
-  'openmax_dl_revision': '59265e0e9105ec94e473b59c5c7ca1941e4dbd83',
-  # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling BoringSSL
   # and whatever else without interference from each other.
   'boringssl_revision': '8e75ae488047c519f14f2c08b02a55bf7712fa1d',
@@ -142,8 +138,6 @@ deps = {
   },
   'src/third_party/openh264/src':
     Var('chromium_git') + '/external/github.com/cisco/openh264' + '@' + '3b51f16a4a41df729f8d647f03e48c5f272911ff',
-  'src/third_party/openmax_dl':
-    Var('webrtc_git') + '/deps/third_party/openmax.git' + '@' +  Var('openmax_dl_revision'),
   'src/third_party/requests/src': {
     'url': Var('chromium_git') + '/external/github.com/kennethreitz/requests.git' + '@' + 'f172b30356d821d180fa4ecfa3e71c7274a32de4',
     'condition': 'checkout_android',
