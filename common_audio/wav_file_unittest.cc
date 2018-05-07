@@ -19,12 +19,22 @@
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
 
+// WavWriterTest.CPPFileDescriptor and WavWriterTest.CPP flaky on Mac.
+// See webrtc:9247.
+#if defined(WEBRTC_MAC)
+#define MAYBE_CPP DISABLED_CPP
+#define MAYBE_CPPFileDescriptor DISABLED_CPPFileDescriptor
+#else
+#define MAYBE_CPP CPP
+#define MAYBE_CPPFileDescriptor CPPFileDescriptor
+#endif
+
 namespace webrtc {
 
 static const float kSamples[] = {0.0, 10.0, 4e4, -1e9};
 
 // Write a tiny WAV file with the C++ interface and verify the result.
-TEST(WavWriterTest, CPP) {
+TEST(WavWriterTest, MAYBE_CPP) {
   const std::string outfile = test::OutputPath() + "wavtest1.wav";
   static const size_t kNumSamples = 3;
   {
@@ -176,7 +186,7 @@ TEST(WavWriterTest, LargeFile) {
 
 // Write a tiny WAV file with the the std::FILE interface and verify the
 // result.
-TEST(WavWriterTest, CPPFileDescriptor) {
+TEST(WavWriterTest, MAYBE_CPPFileDescriptor) {
   const std::string outfile = test::OutputPath() + "wavtest1.wav";
   static constexpr size_t kNumSamples = 3;
   {
