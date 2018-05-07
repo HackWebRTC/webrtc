@@ -15,7 +15,9 @@
 #include <map>
 #include <memory>
 #include <queue>
+#include <set>
 #include <string>
+#include <vector>
 
 #include "api/call/transport.h"
 #include "call/call.h"
@@ -82,12 +84,38 @@ class NetworkPacket {
   rtc::Optional<PacketTime> packet_time_;
 };
 
+struct PacketInFlightInfo {
+  PacketInFlightInfo(size_t size, int64_t send_time_us, uint64_t packet_id)
+      : size(size), send_time_us(send_time_us), packet_id(packet_id) {}
 
-// Class faking a network link. This is a simple and naive solution just faking
-// capacity and adding an extra transport delay in addition to the capacity
-// introduced delay.
+  size_t size;
+  int64_t send_time_us;
+  // Unique identifier for the packet in relation to other packets in flight.
+  uint64_t packet_id;
+};
 
-class FakeNetworkPipe : public Transport, public PacketReceiver, public Module {
+struct PacketDeliveryInfo {
+  static constexpr int kNotReceived = -1;
+  PacketDeliveryInfo(PacketInFlightInfo source, int64_t receive_time_us)
+      : receive_time_us(receive_time_us), packet_id(source.packet_id) {}
+  int64_t receive_time_us;
+  uint64_t packet_id;
+};
+
+class NetworkSimulationInterface {
+ public:
+  virtual bool EnqueuePacket(PacketInFlightInfo packet_info) = 0;
+  // Retrieves all packets that should be delivered by the given receive time.
+  virtual std::vector<PacketDeliveryInfo> DequeueDeliverablePackets(
+      int64_t receive_time_us) = 0;
+  virtual rtc::Optional<int64_t> NextDeliveryTimeUs() const = 0;
+  virtual ~NetworkSimulationInterface() = default;
+};
+
+// Class simulating a network link. This is a simple and naive solution just
+// faking capacity and adding an extra transport delay in addition to the
+// capacity introduced delay.
+class SimulatedNetwork : public NetworkSimulationInterface {
  public:
   struct Config {
     Config() {}
@@ -106,6 +134,53 @@ class FakeNetworkPipe : public Transport, public PacketReceiver, public Module {
     // The average length of a burst of lost packets.
     int avg_burst_loss_length = -1;
   };
+  explicit SimulatedNetwork(Config config, uint64_t random_seed = 1);
+
+  // Sets a new configuration. This won't affect packets already in the pipe.
+  void SetConfig(const Config& config);
+
+  // NetworkSimulationInterface
+  bool EnqueuePacket(PacketInFlightInfo packet) override;
+  std::vector<PacketDeliveryInfo> DequeueDeliverablePackets(
+      int64_t receive_time_us) override;
+
+  rtc::Optional<int64_t> NextDeliveryTimeUs() const override;
+
+ private:
+  struct PacketInfo {
+    PacketInFlightInfo packet;
+    int64_t arrival_time_us;
+  };
+  rtc::CriticalSection config_lock_;
+
+  // |process_lock| guards the data structures involved in delay and loss
+  // processes, such as the packet queues.
+  rtc::CriticalSection process_lock_;
+  std::queue<PacketInfo> capacity_link_ RTC_GUARDED_BY(process_lock_);
+  Random random_;
+
+  std::deque<PacketInfo> delay_link_;
+
+  // Link configuration.
+  Config config_ RTC_GUARDED_BY(config_lock_);
+
+  // Are we currently dropping a burst of packets?
+  bool bursting_;
+
+  // The probability to drop the packet if we are currently dropping a
+  // burst of packet
+  double prob_loss_bursting_ RTC_GUARDED_BY(config_lock_);
+
+  // The probability to drop a burst of packets.
+  double prob_start_bursting_ RTC_GUARDED_BY(config_lock_);
+  int64_t capacity_delay_error_bytes_ = 0;
+};
+
+// Class faking a network link, internally is uses an implementation of a
+// SimulatedNetworkInterface to simulate network behavior.
+class FakeNetworkPipe : public Transport, public PacketReceiver, public Module {
+ public:
+  using Config = SimulatedNetwork::Config;
 
   // Use these constructors if you plan to insert packets using DeliverPacket().
   FakeNetworkPipe(Clock* clock, const FakeNetworkPipe::Config& config);
@@ -165,16 +240,24 @@ class FakeNetworkPipe : public Transport, public PacketReceiver, public Module {
 
  protected:
   void DeliverPacketWithLock(NetworkPacket* packet);
-  int GetConfigCapacityKbps() const;
   void AddToPacketDropCount();
   void AddToPacketSentCount(int count);
   void AddToTotalDelay(int delay_us);
   int64_t GetTimeInMicroseconds() const;
-  bool IsRandomLoss(double prob_loss);
   bool ShouldProcess(int64_t time_now_us) const;
   void SetTimeToNextProcess(int64_t skip_us);
 
  private:
+  struct StoredPacket {
+    NetworkPacket packet;
+    bool removed = false;
+    explicit StoredPacket(NetworkPacket&& packet);
+    StoredPacket(StoredPacket&&) = default;
+    StoredPacket(const StoredPacket&) = delete;
+    StoredPacket& operator=(const StoredPacket&) = delete;
+    StoredPacket() = delete;
+  };
+
   // Returns true if enqueued, or false if packet was dropped.
   virtual bool EnqueuePacket(rtc::CopyOnWriteBuffer packet,
                      rtc::Optional<PacketOptions> options,
@@ -189,42 +272,31 @@ class FakeNetworkPipe : public Transport, public PacketReceiver, public Module {
   Clock* const clock_;
   // |config_lock| guards the mostly constant things like the callbacks.
   rtc::CriticalSection config_lock_;
+  const std::unique_ptr<SimulatedNetwork> network_simulation_;
   PacketReceiver* receiver_ RTC_GUARDED_BY(config_lock_);
   Transport* const transport_ RTC_GUARDED_BY(config_lock_);
 
   // |process_lock| guards the data structures involved in delay and loss
   // processes, such as the packet queues.
   rtc::CriticalSection process_lock_;
-  std::queue<NetworkPacket> capacity_link_ RTC_GUARDED_BY(process_lock_);
-  Random random_;
 
-  std::deque<NetworkPacket> delay_link_;
+  // Packets  are added at the back of the deque, this makes the deque ordered
+  // by increasing send time. The common case when removing packets from the
+  // deque is removing early packets, which will be close to the front of the
+  // deque. This makes finding the packets in the deque efficient in the common
+  // case.
+  std::deque<StoredPacket> packets_in_flight_ RTC_GUARDED_BY(process_lock_);
 
   int64_t clock_offset_ms_ RTC_GUARDED_BY(config_lock_);
-
-  // Link configuration.
-  Config config_ RTC_GUARDED_BY(config_lock_);
 
   // Statistics.
   size_t dropped_packets_ RTC_GUARDED_BY(process_lock_);
   size_t sent_packets_ RTC_GUARDED_BY(process_lock_);
   int64_t total_packet_delay_us_ RTC_GUARDED_BY(process_lock_);
 
-  // Are we currently dropping a burst of packets?
-  bool bursting_;
-
-  // The probability to drop the packet if we are currently dropping a
-  // burst of packet
-  double prob_loss_bursting_ RTC_GUARDED_BY(config_lock_);
-
-  // The probability to drop a burst of packets.
-  double prob_start_bursting_ RTC_GUARDED_BY(config_lock_);
-
   int64_t next_process_time_us_;
 
   int64_t last_log_time_us_;
-
-  int64_t capacity_delay_error_bytes_ = 0;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(FakeNetworkPipe);
 };
