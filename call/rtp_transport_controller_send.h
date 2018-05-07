@@ -93,17 +93,7 @@ class RtpTransportControllerSend final
   const std::unique_ptr<ProcessThread> process_thread_;
   rtc::CriticalSection observer_crit_;
   TargetTransferRateObserver* observer_ RTC_GUARDED_BY(observer_crit_);
-  // Caches send_side_cc_.get(), to avoid racing with destructor.
-  // Note that this is declared before send_side_cc_ to ensure that it is not
-  // invalidated until no more tasks can be running on the send_side_cc_ task
-  // queue.
-  // TODO(srte): Remove this when only the task queue based send side congestion
-  // controller is used and it is no longer accessed synchronously in the
-  // OnNetworkChanged callback.
-  SendSideCongestionControllerInterface* send_side_cc_ptr_;
-  // Declared last since it will issue callbacks from a task queue. Declaring it
-  // last ensures that it is destroyed first.
-  const std::unique_ptr<SendSideCongestionControllerInterface> send_side_cc_;
+  std::unique_ptr<SendSideCongestionControllerInterface> send_side_cc_;
   // TODO(perkj): |task_queue_| is supposed to replace |process_thread_|.
   // |task_queue_| is defined last to ensure all pending tasks are cancelled
   // and deleted before any other members.

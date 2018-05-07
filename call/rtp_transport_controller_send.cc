@@ -29,6 +29,7 @@ bool TaskQueueExperimentEnabled() {
 
 std::unique_ptr<SendSideCongestionControllerInterface> CreateController(
     Clock* clock,
+    rtc::TaskQueue* task_queue,
     webrtc::RtcEventLog* event_log,
     PacedSender* pacer,
     const BitrateConstraints& bitrate_config,
@@ -36,7 +37,7 @@ std::unique_ptr<SendSideCongestionControllerInterface> CreateController(
   if (task_queue_controller) {
     RTC_LOG(LS_INFO) << "Using TaskQueue based SSCC";
     return rtc::MakeUnique<webrtc::webrtc_cc::SendSideCongestionController>(
-        clock, event_log, pacer, bitrate_config.start_bitrate_bps,
+        clock, task_queue, event_log, pacer, bitrate_config.start_bitrate_bps,
         bitrate_config.min_bitrate_bps, bitrate_config.max_bitrate_bps);
   }
   RTC_LOG(LS_INFO) << "Using Legacy SSCC";
@@ -59,13 +60,12 @@ RtpTransportControllerSend::RtpTransportControllerSend(
       bitrate_configurator_(bitrate_config),
       process_thread_(ProcessThread::Create("SendControllerThread")),
       observer_(nullptr),
-      send_side_cc_(CreateController(clock,
-                                     event_log,
-                                     &pacer_,
-                                     bitrate_config,
-                                     TaskQueueExperimentEnabled())),
       task_queue_("rtp_send_controller") {
-  send_side_cc_ptr_ = send_side_cc_.get();
+  // Created after task_queue to be able to post to the task queue internally.
+  send_side_cc_ =
+      CreateController(clock, &task_queue_, event_log, &pacer_, bitrate_config,
+                       TaskQueueExperimentEnabled());
+
   process_thread_->RegisterModule(&pacer_, RTC_FROM_HERE);
   process_thread_->RegisterModule(send_side_cc_.get(), RTC_FROM_HERE);
   process_thread_->Start();
@@ -89,7 +89,7 @@ void RtpTransportControllerSend::OnNetworkChanged(uint32_t bitrate_bps,
   msg.network_estimate.at_time = msg.at_time;
   msg.network_estimate.bwe_period = TimeDelta::ms(probing_interval_ms);
   uint32_t bandwidth_bps;
-  if (send_side_cc_ptr_->AvailableBandwidth(&bandwidth_bps))
+  if (send_side_cc_->AvailableBandwidth(&bandwidth_bps))
     msg.network_estimate.bandwidth = DataRate::bps(bandwidth_bps);
   msg.network_estimate.loss_rate_ratio = fraction_loss / 255.0;
   msg.network_estimate.round_trip_time = TimeDelta::ms(rtt_ms);
