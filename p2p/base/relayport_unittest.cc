@@ -210,7 +210,7 @@ class RelayPortTest : public testing::Test,
  private:
   rtc::AsyncUDPSocket* CreateAsyncUdpSocket(const SocketAddress addr) {
     rtc::AsyncSocket* socket =
-        virtual_socket_server_->CreateAsyncSocket(SOCK_DGRAM);
+        virtual_socket_server_->CreateAsyncSocket(AF_INET, SOCK_DGRAM);
     rtc::AsyncUDPSocket* packet_socket =
         rtc::AsyncUDPSocket::Create(socket, addr);
     EXPECT_TRUE(packet_socket != NULL);
@@ -220,7 +220,7 @@ class RelayPortTest : public testing::Test,
 
   rtc::AsyncSocket* CreateServerSocket(const SocketAddress addr) {
     rtc::AsyncSocket* socket =
-        virtual_socket_server_->CreateAsyncSocket(SOCK_STREAM);
+        virtual_socket_server_->CreateAsyncSocket(AF_INET, SOCK_STREAM);
     EXPECT_GE(socket->Bind(addr), 0);
     EXPECT_GE(socket->Listen(5), 0);
     return socket;

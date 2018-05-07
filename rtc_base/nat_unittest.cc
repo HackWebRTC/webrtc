@@ -359,11 +359,11 @@ class NatTcpTest : public testing::Test, public sigslot::has_slots<> {
 };
 
 TEST_F(NatTcpTest, DISABLED_TestConnectOut) {
-  server_.reset(ext_vss_->CreateAsyncSocket(SOCK_STREAM));
+  server_.reset(ext_vss_->CreateAsyncSocket(AF_INET, SOCK_STREAM));
   server_->Bind(ext_addr_);
   server_->Listen(5);
 
-  client_.reset(natsf_->CreateAsyncSocket(SOCK_STREAM));
+  client_.reset(natsf_->CreateAsyncSocket(AF_INET, SOCK_STREAM));
   EXPECT_GE(0, client_->Bind(int_addr_));
   EXPECT_GE(0, client_->Connect(server_->GetLocalAddress()));
 

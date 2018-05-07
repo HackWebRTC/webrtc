@@ -713,16 +713,8 @@ Win32SocketServer::~Win32SocketServer() {
   }
 }
 
-Socket* Win32SocketServer::CreateSocket(int type) {
-  return CreateSocket(AF_INET, type);
-}
-
 Socket* Win32SocketServer::CreateSocket(int family, int type) {
   return CreateAsyncSocket(family, type);
-}
-
-AsyncSocket* Win32SocketServer::CreateAsyncSocket(int type) {
-  return CreateAsyncSocket(AF_INET, type);
 }
 
 AsyncSocket* Win32SocketServer::CreateAsyncSocket(int family, int type) {

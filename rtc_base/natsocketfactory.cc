@@ -335,16 +335,8 @@ NATSocketFactory::NATSocketFactory(SocketFactory* factory,
       nat_tcp_addr_(nat_tcp_addr) {
 }
 
-Socket* NATSocketFactory::CreateSocket(int type) {
-  return CreateSocket(AF_INET, type);
-}
-
 Socket* NATSocketFactory::CreateSocket(int family, int type) {
   return new NATSocket(this, family, type);
-}
-
-AsyncSocket* NATSocketFactory::CreateAsyncSocket(int type) {
-  return CreateAsyncSocket(AF_INET, type);
 }
 
 AsyncSocket* NATSocketFactory::CreateAsyncSocket(int family, int type) {
@@ -384,16 +376,8 @@ void NATSocketServer::RemoveTranslator(
   nats_.Remove(ext_ip);
 }
 
-Socket* NATSocketServer::CreateSocket(int type) {
-  return CreateSocket(AF_INET, type);
-}
-
 Socket* NATSocketServer::CreateSocket(int family, int type) {
   return new NATSocket(this, family, type);
-}
-
-AsyncSocket* NATSocketServer::CreateAsyncSocket(int type) {
-  return CreateAsyncSocket(AF_INET, type);
 }
 
 AsyncSocket* NATSocketServer::CreateAsyncSocket(int family, int type) {

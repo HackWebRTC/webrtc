@@ -87,7 +87,7 @@ class TestTurnServer : public TurnAuthInterface {
       // For TCP we need to create a server socket which can listen for incoming
       // new connections.
       rtc::AsyncSocket* socket =
-          thread_->socketserver()->CreateAsyncSocket(SOCK_STREAM);
+          thread_->socketserver()->CreateAsyncSocket(AF_INET, SOCK_STREAM);
       if (proto == cricket::PROTO_TLS) {
         // For TLS, wrap the TCP socket with an SSL adapter. The adapter must
         // be configured with a self-signed certificate for testing.

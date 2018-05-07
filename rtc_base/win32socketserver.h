@@ -102,10 +102,7 @@ class Win32SocketServer : public SocketServer {
   }
 
   // SocketServer Interface
-  Socket* CreateSocket(int type) override;
   Socket* CreateSocket(int family, int type) override;
-
-  AsyncSocket* CreateAsyncSocket(int type) override;
   AsyncSocket* CreateAsyncSocket(int family, int type) override;
 
   void SetMessageQueue(MessageQueue* queue) override;

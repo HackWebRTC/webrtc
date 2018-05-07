@@ -590,16 +590,8 @@ void VirtualSocketServer::SetSendingBlocked(bool blocked) {
   }
 }
 
-Socket* VirtualSocketServer::CreateSocket(int type) {
-  return CreateSocket(AF_INET, type);
-}
-
 Socket* VirtualSocketServer::CreateSocket(int family, int type) {
   return CreateSocketInternal(family, type);
-}
-
-AsyncSocket* VirtualSocketServer::CreateAsyncSocket(int type) {
-  return CreateAsyncSocket(AF_INET, type);
 }
 
 AsyncSocket* VirtualSocketServer::CreateAsyncSocket(int family, int type) {

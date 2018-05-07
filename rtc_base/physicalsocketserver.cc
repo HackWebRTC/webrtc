@@ -1248,10 +1248,6 @@ void PhysicalSocketServer::WakeUp() {
   signal_wakeup_->Signal();
 }
 
-Socket* PhysicalSocketServer::CreateSocket(int type) {
-  return CreateSocket(AF_INET, type);
-}
-
 Socket* PhysicalSocketServer::CreateSocket(int family, int type) {
   PhysicalSocket* socket = new PhysicalSocket(this);
   if (socket->Create(family, type)) {
@@ -1260,10 +1256,6 @@ Socket* PhysicalSocketServer::CreateSocket(int family, int type) {
     delete socket;
     return nullptr;
   }
-}
-
-AsyncSocket* PhysicalSocketServer::CreateAsyncSocket(int type) {
-  return CreateAsyncSocket(AF_INET, type);
 }
 
 AsyncSocket* PhysicalSocketServer::CreateAsyncSocket(int family, int type) {

@@ -43,9 +43,7 @@ class NATSocketFactory : public SocketFactory, public NATInternalSocketFactory {
                    const SocketAddress& nat_tcp_addr);
 
   // SocketFactory implementation
-  Socket* CreateSocket(int type) override;
   Socket* CreateSocket(int family, int type) override;
-  AsyncSocket* CreateAsyncSocket(int type) override;
   AsyncSocket* CreateAsyncSocket(int family, int type) override;
 
   // NATInternalSocketFactory implementation
@@ -135,10 +133,7 @@ class NATSocketServer : public SocketServer, public NATInternalSocketFactory {
   void RemoveTranslator(const SocketAddress& ext_ip);
 
   // SocketServer implementation
-  Socket* CreateSocket(int type) override;
   Socket* CreateSocket(int family, int type) override;
-
-  AsyncSocket* CreateAsyncSocket(int type) override;
   AsyncSocket* CreateAsyncSocket(int family, int type) override;
 
   void SetMessageQueue(MessageQueue* queue) override;

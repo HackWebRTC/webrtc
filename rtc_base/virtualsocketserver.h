@@ -103,10 +103,7 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
   void SetSendingBlocked(bool blocked);
 
   // SocketFactory:
-  Socket* CreateSocket(int type) override;
   Socket* CreateSocket(int family, int type) override;
-
-  AsyncSocket* CreateAsyncSocket(int type) override;
   AsyncSocket* CreateAsyncSocket(int family, int type) override;
 
   // SocketServer:

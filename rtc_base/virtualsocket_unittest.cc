@@ -815,13 +815,13 @@ class VirtualSocketServerTest : public testing::Test {
   void CrossFamilyDatagramTest(const SocketAddress& client_addr,
                                const SocketAddress& server_addr,
                                bool shouldSucceed) {
-    AsyncSocket* socket = ss_.CreateAsyncSocket(SOCK_DGRAM);
+    AsyncSocket* socket = ss_.CreateAsyncSocket(AF_INET, SOCK_DGRAM);
     socket->Bind(server_addr);
     SocketAddress bound_server_addr = socket->GetLocalAddress();
     auto client1 = MakeUnique<TestClient>(MakeUnique<AsyncUDPSocket>(socket),
                                           &fake_clock_);
 
-    AsyncSocket* socket2 = ss_.CreateAsyncSocket(SOCK_DGRAM);
+    AsyncSocket* socket2 = ss_.CreateAsyncSocket(AF_INET, SOCK_DGRAM);
     socket2->Bind(client_addr);
     auto client2 = MakeUnique<TestClient>(MakeUnique<AsyncUDPSocket>(socket2),
                                           &fake_clock_);

@@ -59,15 +59,6 @@ class FakePhysicalSocketServer : public PhysicalSocketServer {
     : test_(test) {
   }
 
-  AsyncSocket* CreateAsyncSocket(int type) override {
-    SocketDispatcher* dispatcher = new FakeSocketDispatcher(this);
-    if (!dispatcher->Create(type)) {
-      delete dispatcher;
-      return nullptr;
-    }
-    return dispatcher;
-  }
-
   AsyncSocket* CreateAsyncSocket(int family, int type) override {
     SocketDispatcher* dispatcher = new FakeSocketDispatcher(this);
     if (!dispatcher->Create(family, type)) {
