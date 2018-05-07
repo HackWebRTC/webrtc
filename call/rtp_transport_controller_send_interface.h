@@ -16,6 +16,7 @@
 #include <string>
 
 #include "api/optional.h"
+#include "api/transport/bitrate_settings.h"
 #include "call/bitrate_constraints.h"
 
 namespace rtc {
@@ -108,7 +109,7 @@ class RtpTransportControllerSendInterface {
   virtual void SetSdpBitrateParameters(
       const BitrateConstraints& constraints) = 0;
   virtual void SetClientBitratePreferences(
-      const BitrateConstraintsMask& preferences) = 0;
+      const BitrateSettings& preferences) = 0;
 };
 
 }  // namespace webrtc

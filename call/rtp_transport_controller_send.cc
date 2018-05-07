@@ -248,7 +248,7 @@ void RtpTransportControllerSend::SetSdpBitrateParameters(
 }
 
 void RtpTransportControllerSend::SetClientBitratePreferences(
-    const BitrateConstraintsMask& preferences) {
+    const BitrateSettings& preferences) {
   rtc::Optional<BitrateConstraints> updated =
       bitrate_configurator_.UpdateWithClientPreferences(preferences);
   if (updated.has_value()) {

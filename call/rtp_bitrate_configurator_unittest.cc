@@ -35,7 +35,7 @@ class RtpBitrateConfiguratorTest : public testing::Test {
       EXPECT_EQ(result->max_bitrate_bps, max_bitrate_bps);
   }
 
-  void UpdateMaskMatches(BitrateConstraintsMask bitrate_mask,
+  void UpdateMaskMatches(BitrateSettings bitrate_mask,
                          rtc::Optional<int> min_bitrate_bps,
                          rtc::Optional<int> start_bitrate_bps,
                          rtc::Optional<int> max_bitrate_bps) {
@@ -120,13 +120,13 @@ TEST_F(RtpBitrateConfiguratorTest,
 }
 
 TEST_F(RtpBitrateConfiguratorTest, BiggerMaskMinUsed) {
-  BitrateConstraintsMask mask;
+  BitrateSettings mask;
   mask.min_bitrate_bps = 1234;
   UpdateMaskMatches(mask, *mask.min_bitrate_bps, nullopt, nullopt);
 }
 
 TEST_F(RtpBitrateConfiguratorTest, BiggerConfigMinUsed) {
-  BitrateConstraintsMask mask;
+  BitrateSettings mask;
   mask.min_bitrate_bps = 1000;
   UpdateMaskMatches(mask, 1000, nullopt, nullopt);
 
@@ -137,7 +137,7 @@ TEST_F(RtpBitrateConfiguratorTest, BiggerConfigMinUsed) {
 
 // The last call to set start should be used.
 TEST_F(RtpBitrateConfiguratorTest, LatestStartMaskPreferred) {
-  BitrateConstraintsMask mask;
+  BitrateSettings mask;
   mask.start_bitrate_bps = 1300;
   UpdateMaskMatches(mask, nullopt, *mask.start_bitrate_bps, nullopt);
 
@@ -153,7 +153,7 @@ TEST_F(RtpBitrateConfiguratorTest, SmallerMaskMaxUsed) {
   bitrate_config.max_bitrate_bps = bitrate_config.start_bitrate_bps + 2000;
   configurator_.reset(new RtpBitrateConfigurator(bitrate_config));
 
-  BitrateConstraintsMask mask;
+  BitrateSettings mask;
   mask.max_bitrate_bps = bitrate_config.start_bitrate_bps + 1000;
 
   UpdateMaskMatches(mask, nullopt, nullopt, *mask.max_bitrate_bps);
@@ -164,7 +164,7 @@ TEST_F(RtpBitrateConfiguratorTest, SmallerConfigMaxUsed) {
   bitrate_config.max_bitrate_bps = bitrate_config.start_bitrate_bps + 1000;
   configurator_.reset(new RtpBitrateConfigurator(bitrate_config));
 
-  BitrateConstraintsMask mask;
+  BitrateSettings mask;
   mask.max_bitrate_bps = bitrate_config.start_bitrate_bps + 2000;
 
   // Expect no return because nothing changes
@@ -176,7 +176,7 @@ TEST_F(RtpBitrateConfiguratorTest, MaskStartLessThanConfigMinClamped) {
   bitrate_config.min_bitrate_bps = 2000;
   configurator_.reset(new RtpBitrateConfigurator(bitrate_config));
 
-  BitrateConstraintsMask mask;
+  BitrateSettings mask;
   mask.start_bitrate_bps = 1000;
   UpdateMaskMatches(mask, 2000, 2000, nullopt);
 }
@@ -186,7 +186,7 @@ TEST_F(RtpBitrateConfiguratorTest, MaskStartGreaterThanConfigMaxClamped) {
   bitrate_config.start_bitrate_bps = 2000;
   configurator_.reset(new RtpBitrateConfigurator(bitrate_config));
 
-  BitrateConstraintsMask mask;
+  BitrateSettings mask;
   mask.max_bitrate_bps = 1000;
 
   UpdateMaskMatches(mask, nullopt, -1, 1000);
@@ -197,14 +197,14 @@ TEST_F(RtpBitrateConfiguratorTest, MaskMinGreaterThanConfigMaxClamped) {
   bitrate_config.min_bitrate_bps = 2000;
   configurator_.reset(new RtpBitrateConfigurator(bitrate_config));
 
-  BitrateConstraintsMask mask;
+  BitrateSettings mask;
   mask.max_bitrate_bps = 1000;
 
   UpdateMaskMatches(mask, 1000, nullopt, 1000);
 }
 
 TEST_F(RtpBitrateConfiguratorTest, SettingMaskStartForcesUpdate) {
-  BitrateConstraintsMask mask;
+  BitrateSettings mask;
   mask.start_bitrate_bps = 1000;
 
   // Config should be returned twice with the same params since
@@ -242,7 +242,7 @@ TEST_F(RtpBitrateConfiguratorTest,
   UpdateConfigMatches(config, nullopt, nullopt, 2000);
 
   // Reduce effective max to 1000 with the mask.
-  BitrateConstraintsMask mask;
+  BitrateSettings mask;
   mask.max_bitrate_bps = 1000;
   UpdateMaskMatches(mask, nullopt, nullopt, 1000);
 
@@ -255,7 +255,7 @@ TEST_F(RtpBitrateConfiguratorTest,
 // When the "start bitrate" mask is removed, new config shouldn't be returned
 // again, since nothing's changing.
 TEST_F(RtpBitrateConfiguratorTest, NewConfigNotReturnedWhenStartMaskRemoved) {
-  BitrateConstraintsMask mask;
+  BitrateSettings mask;
   mask.start_bitrate_bps = 1000;
   UpdateMaskMatches(mask, 0, 1000, -1);
 
@@ -263,11 +263,11 @@ TEST_F(RtpBitrateConfiguratorTest, NewConfigNotReturnedWhenStartMaskRemoved) {
   EXPECT_FALSE(configurator_->UpdateWithClientPreferences(mask).has_value());
 }
 
-// Test that if a new config is returned after BitrateConstraintsMask applies a
+// Test that if a new config is returned after BitrateSettings applies a
 // "start" value, the new config won't return that start value a
 // second time.
 TEST_F(RtpBitrateConfiguratorTest, NewConfigAfterBitrateConfigMaskWithStart) {
-  BitrateConstraintsMask mask;
+  BitrateSettings mask;
   mask.start_bitrate_bps = 1000;
   UpdateMaskMatches(mask, 0, 1000, -1);
 
@@ -288,7 +288,7 @@ TEST_F(RtpBitrateConfiguratorTest,
   configurator_.reset(new RtpBitrateConfigurator(bitrate_config));
 
   // Set min to 2000; it is clamped to the max (1000).
-  BitrateConstraintsMask mask;
+  BitrateSettings mask;
   mask.min_bitrate_bps = 2000;
   UpdateMaskMatches(mask, 1000, -1, 1000);
 

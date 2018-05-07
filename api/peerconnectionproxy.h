@@ -135,7 +135,7 @@ BEGIN_SIGNALING_PROXY_MAP(PeerConnection)
   PROXY_METHOD1(void, SetAudioPlayout, bool)
   PROXY_METHOD1(void, SetAudioRecording, bool)
   PROXY_METHOD1(void, RegisterUMAObserver, UMAObserver*)
-  PROXY_METHOD1(RTCError, SetBitrate, const BitrateParameters&);
+  PROXY_METHOD1(RTCError, SetBitrate, const BitrateSettings&);
   PROXY_METHOD1(void,
                 SetBitrateAllocationStrategy,
                 std::unique_ptr<rtc::BitrateAllocationStrategy>);

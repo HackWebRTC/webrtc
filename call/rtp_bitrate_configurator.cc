@@ -58,7 +58,7 @@ RtpBitrateConfigurator::UpdateWithSdpParameters(
 
 rtc::Optional<BitrateConstraints>
 RtpBitrateConfigurator::UpdateWithClientPreferences(
-    const BitrateConstraintsMask& bitrate_mask) {
+    const BitrateSettings& bitrate_mask) {
   bitrate_config_mask_ = bitrate_mask;
   return UpdateConstraints(bitrate_mask.start_bitrate_bps);
 }

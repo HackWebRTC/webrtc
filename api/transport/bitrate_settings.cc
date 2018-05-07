@@ -8,11 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "call/bitrate_constraints.h"
+#include "api/transport/bitrate_settings.h"
 
 namespace webrtc {
-BitrateConstraintsMask::BitrateConstraintsMask() = default;
-BitrateConstraintsMask::~BitrateConstraintsMask() = default;
-BitrateConstraintsMask::BitrateConstraintsMask(const BitrateConstraintsMask&) =
-    default;
+
+BitrateSettings::BitrateSettings() = default;
+BitrateSettings::~BitrateSettings() = default;
+BitrateSettings::BitrateSettings(const BitrateSettings&) = default;
+
 }  // namespace webrtc

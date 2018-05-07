@@ -11,6 +11,7 @@
 #ifndef CALL_RTP_BITRATE_CONFIGURATOR_H_
 #define CALL_RTP_BITRATE_CONFIGURATOR_H_
 
+#include "api/transport/bitrate_settings.h"
 #include "call/bitrate_constraints.h"
 #include "rtc_base/constructormagic.h"
 
@@ -41,7 +42,7 @@ class RtpBitrateConfigurator {
   // Update the bitrate configuration
   // The optional return value is set with new configuration if it was updated.
   rtc::Optional<BitrateConstraints> UpdateWithClientPreferences(
-      const BitrateConstraintsMask& bitrate_mask);
+      const BitrateSettings& bitrate_mask);
 
  private:
   // Applies update to the BitrateConstraints cached in |config_|, resetting
@@ -55,7 +56,7 @@ class RtpBitrateConfigurator {
 
   // The config mask set by SetClientBitratePreferences.
   // 0 <= min <= start <= max
-  BitrateConstraintsMask bitrate_config_mask_;
+  BitrateSettings bitrate_config_mask_;
 
   // The config set by SetSdpBitrateParameters.
   // min >= 0, start != 0, max == -1 || max > 0

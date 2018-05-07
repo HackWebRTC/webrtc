@@ -108,6 +108,7 @@ rtc_static_library("libjingle_peerconnection_api") {
     ":video_frame_api",
     "audio:audio_mixer_api",
     "audio_codecs:audio_codecs_api",
+    "transport:bitrate_settings",
 
     # Basically, don't add stuff here. You might break sensitive downstream
     # targets like pnacl. API should not depend on anything outside of this

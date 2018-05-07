@@ -3772,7 +3772,7 @@ TEST_P(PeerConnectionInterfaceTest,
   CreatePeerConnection(config, nullptr);
 }
 
-// The current bitrate from Call's BitrateConstraintsMask is currently clamped
+// The current bitrate from BitrateSettings is currently clamped
 // by Call's BitrateConstraints, which comes from the SDP or a default value.
 // This test checks that a call to SetBitrate with a current bitrate that will
 // be clamped succeeds.
