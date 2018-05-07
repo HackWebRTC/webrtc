@@ -82,7 +82,7 @@ static const AudioCodec kAudioCodecs1[] = {
     AudioCodec(107, "CN", 48000, 0, 1)};
 
 static const AudioCodec kAudioCodecs2[] = {
-    AudioCodec(126, "speex", 16000, 22000, 1),
+    AudioCodec(126, "foo", 16000, 22000, 1),
     AudioCodec(0, "PCMU", 8000, 64000, 1),
     AudioCodec(127, "iLBC", 8000, 13300, 1),
 };
