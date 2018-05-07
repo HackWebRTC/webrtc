@@ -23,7 +23,6 @@
 #include "api/proxy.h"
 #include "api/rtcerror.h"
 #include "api/rtpparameters.h"
-#include "rtc_base/deprecation.h"
 #include "rtc_base/refcount.h"
 #include "rtc_base/scoped_ref_ptr.h"
 
@@ -54,13 +53,7 @@ class RtpSenderInterface : public rtc::RefCountInterface {
   // tracks.
   virtual std::vector<std::string> stream_ids() const = 0;
 
-  // TODO(orphis): Transitional implementation
-  // Remove the const implementation and make the non-const pure virtual once
-  // when external code depending on this has updated
-  virtual RtpParameters GetParameters() { return RtpParameters(); }
-  RTC_DEPRECATED virtual RtpParameters GetParameters() const {
-    return const_cast<RtpSenderInterface*>(this)->GetParameters();
-  }
+  virtual RtpParameters GetParameters() const = 0;
   // Note that only a subset of the parameters can currently be changed. See
   // rtpparameters.h
   virtual RTCError SetParameters(const RtpParameters& parameters) = 0;
@@ -83,7 +76,7 @@ BEGIN_SIGNALING_PROXY_MAP(RtpSender)
   PROXY_CONSTMETHOD0(cricket::MediaType, media_type)
   PROXY_CONSTMETHOD0(std::string, id)
   PROXY_CONSTMETHOD0(std::vector<std::string>, stream_ids)
-  PROXY_METHOD0(RtpParameters, GetParameters);
+  PROXY_CONSTMETHOD0(RtpParameters, GetParameters);
   PROXY_METHOD1(RTCError, SetParameters, const RtpParameters&)
   PROXY_CONSTMETHOD0(rtc::scoped_refptr<DtmfSenderInterface>, GetDtmfSender);
   END_PROXY_MAP()

@@ -606,65 +606,6 @@ TEST_F(RtpSenderReceiverTest, AudioSenderCanSetParameters) {
   DestroyAudioRtpSender();
 }
 
-TEST_F(RtpSenderReceiverTest,
-       AudioSenderMustCallGetParametersBeforeSetParameters) {
-  CreateAudioRtpSender();
-
-  RtpParameters params;
-  RTCError result = audio_rtp_sender_->SetParameters(params);
-  EXPECT_EQ(RTCErrorType::INVALID_STATE, result.type());
-
-  DestroyAudioRtpSender();
-}
-
-TEST_F(RtpSenderReceiverTest,
-       AudioSenderSetParametersInvalidatesTransactionId) {
-  CreateAudioRtpSender();
-
-  RtpParameters params = audio_rtp_sender_->GetParameters();
-  EXPECT_EQ(1u, params.encodings.size());
-  EXPECT_TRUE(audio_rtp_sender_->SetParameters(params).ok());
-  RTCError result = audio_rtp_sender_->SetParameters(params);
-  EXPECT_EQ(RTCErrorType::INVALID_STATE, result.type());
-
-  DestroyAudioRtpSender();
-}
-
-TEST_F(RtpSenderReceiverTest, AudioSenderDetectTransactionIdModification) {
-  CreateAudioRtpSender();
-
-  RtpParameters params = audio_rtp_sender_->GetParameters();
-  params.transaction_id = "";
-  RTCError result = audio_rtp_sender_->SetParameters(params);
-  EXPECT_EQ(RTCErrorType::INVALID_MODIFICATION, result.type());
-
-  DestroyAudioRtpSender();
-}
-
-TEST_F(RtpSenderReceiverTest, AudioSenderCheckTransactionIdRefresh) {
-  CreateAudioRtpSender();
-
-  RtpParameters params = audio_rtp_sender_->GetParameters();
-  EXPECT_NE(params.transaction_id.size(), 0);
-  auto saved_transaction_id = params.transaction_id;
-  params = audio_rtp_sender_->GetParameters();
-  EXPECT_NE(saved_transaction_id, params.transaction_id);
-
-  DestroyAudioRtpSender();
-}
-
-TEST_F(RtpSenderReceiverTest, AudioSenderSetParametersOldValueFail) {
-  CreateAudioRtpSender();
-
-  RtpParameters params = audio_rtp_sender_->GetParameters();
-  RtpParameters second_params = audio_rtp_sender_->GetParameters();
-
-  RTCError result = audio_rtp_sender_->SetParameters(params);
-  EXPECT_EQ(RTCErrorType::INVALID_MODIFICATION, result.type());
-
-  DestroyAudioRtpSender();
-}
-
 TEST_F(RtpSenderReceiverTest, SetAudioMaxSendBitrate) {
   CreateAudioRtpSender();
 
@@ -719,65 +660,6 @@ TEST_F(RtpSenderReceiverTest, VideoSenderCanSetParameters) {
   RtpParameters params = video_rtp_sender_->GetParameters();
   EXPECT_EQ(1u, params.encodings.size());
   EXPECT_TRUE(video_rtp_sender_->SetParameters(params).ok());
-
-  DestroyVideoRtpSender();
-}
-
-TEST_F(RtpSenderReceiverTest,
-       VideoSenderMustCallGetParametersBeforeSetParameters) {
-  CreateVideoRtpSender();
-
-  RtpParameters params;
-  RTCError result = video_rtp_sender_->SetParameters(params);
-  EXPECT_EQ(RTCErrorType::INVALID_STATE, result.type());
-
-  DestroyVideoRtpSender();
-}
-
-TEST_F(RtpSenderReceiverTest,
-       VideoSenderSetParametersInvalidatesTransactionId) {
-  CreateVideoRtpSender();
-
-  RtpParameters params = video_rtp_sender_->GetParameters();
-  EXPECT_EQ(1u, params.encodings.size());
-  EXPECT_TRUE(video_rtp_sender_->SetParameters(params).ok());
-  RTCError result = video_rtp_sender_->SetParameters(params);
-  EXPECT_EQ(RTCErrorType::INVALID_STATE, result.type());
-
-  DestroyVideoRtpSender();
-}
-
-TEST_F(RtpSenderReceiverTest, VideoSenderDetectTransactionIdModification) {
-  CreateVideoRtpSender();
-
-  RtpParameters params = video_rtp_sender_->GetParameters();
-  params.transaction_id = "";
-  RTCError result = video_rtp_sender_->SetParameters(params);
-  EXPECT_EQ(RTCErrorType::INVALID_MODIFICATION, result.type());
-
-  DestroyVideoRtpSender();
-}
-
-TEST_F(RtpSenderReceiverTest, VideoSenderCheckTransactionIdRefresh) {
-  CreateVideoRtpSender();
-
-  RtpParameters params = video_rtp_sender_->GetParameters();
-  EXPECT_NE(params.transaction_id.size(), 0);
-  auto saved_transaction_id = params.transaction_id;
-  params = video_rtp_sender_->GetParameters();
-  EXPECT_NE(saved_transaction_id, params.transaction_id);
-
-  DestroyVideoRtpSender();
-}
-
-TEST_F(RtpSenderReceiverTest, VideoSenderSetParametersOldValueFail) {
-  CreateVideoRtpSender();
-
-  RtpParameters params = video_rtp_sender_->GetParameters();
-  RtpParameters second_params = video_rtp_sender_->GetParameters();
-
-  RTCError result = video_rtp_sender_->SetParameters(params);
-  EXPECT_EQ(RTCErrorType::INVALID_MODIFICATION, result.type());
 
   DestroyVideoRtpSender();
 }

@@ -109,24 +109,21 @@ public class RtpParameters {
     }
   }
 
-  public final String transactionId;
-
   public final List<Encoding> encodings;
   // Codec parameters can't currently be changed between getParameters and
   // setParameters. Though in the future it will be possible to reorder them or
   // remove them.
   public final List<Codec> codecs;
 
-  @CalledByNative
-  RtpParameters(String transactionId, List<Encoding> encodings, List<Codec> codecs) {
-    this.transactionId = transactionId;
-    this.encodings = encodings;
-    this.codecs = codecs;
+  public RtpParameters() {
+    this.encodings = new ArrayList<>();
+    this.codecs = new ArrayList<>();
   }
 
   @CalledByNative
-  String getTransactionId() {
-    return transactionId;
+  RtpParameters(List<Encoding> encodings, List<Codec> codecs) {
+    this.encodings = encodings;
+    this.codecs = codecs;
   }
 
   @CalledByNative

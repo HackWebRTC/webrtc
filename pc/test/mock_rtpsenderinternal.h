@@ -29,7 +29,7 @@ class MockRtpSenderInternal : public RtpSenderInternal {
   MOCK_CONST_METHOD0(media_type, cricket::MediaType());
   MOCK_CONST_METHOD0(id, std::string());
   MOCK_CONST_METHOD0(stream_ids, std::vector<std::string>());
-  MOCK_METHOD0(GetParameters, RtpParameters());
+  MOCK_CONST_METHOD0(GetParameters, RtpParameters());
   MOCK_METHOD1(SetParameters, RTCError(const RtpParameters&));
   MOCK_CONST_METHOD0(GetDtmfSender, rtc::scoped_refptr<DtmfSenderInterface>());
 

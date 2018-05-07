@@ -59,10 +59,6 @@ RtpParameters JavaToNativeRtpParameters(JNIEnv* jni,
                                         const JavaRef<jobject>& j_parameters) {
   RtpParameters parameters;
 
-  ScopedJavaLocalRef<jstring> j_transaction_id =
-      Java_RtpParameters_getTransactionId(jni, j_parameters);
-  parameters.transaction_id = JavaToNativeString(jni, j_transaction_id);
-
   // Convert encodings.
   ScopedJavaLocalRef<jobject> j_encodings =
       Java_RtpParameters_getEncodings(jni, j_parameters);
@@ -94,7 +90,7 @@ ScopedJavaLocalRef<jobject> NativeToJavaRtpParameters(
     JNIEnv* env,
     const RtpParameters& parameters) {
   return Java_RtpParameters_Constructor(
-      env, NativeToJavaString(env, parameters.transaction_id),
+      env,
       NativeToJavaList(env, parameters.encodings,
                        &NativeToJavaRtpEncodingParameter),
       NativeToJavaList(env, parameters.codecs, &NativeToJavaRtpCodecParameter));

@@ -187,15 +187,12 @@ bool AudioRtpSender::SetTrack(MediaStreamTrackInterface* track) {
   return true;
 }
 
-RtpParameters AudioRtpSender::GetParameters() {
+RtpParameters AudioRtpSender::GetParameters() const {
   if (!media_channel_ || stopped_) {
     return RtpParameters();
   }
   return worker_thread_->Invoke<RtpParameters>(RTC_FROM_HERE, [&] {
-    RtpParameters result = media_channel_->GetRtpSendParameters(ssrc_);
-    last_transaction_id_ = rtc::CreateRandomUuid();
-    result.transaction_id = last_transaction_id_.value();
-    return result;
+    return media_channel_->GetRtpSendParameters(ssrc_);
   });
 }
 
@@ -204,23 +201,8 @@ RTCError AudioRtpSender::SetParameters(const RtpParameters& parameters) {
   if (!media_channel_ || stopped_) {
     return RTCError(RTCErrorType::INVALID_STATE);
   }
-  if (!last_transaction_id_) {
-    LOG_AND_RETURN_ERROR(
-        RTCErrorType::INVALID_STATE,
-        "Failed to set parameters since getParameters() has never been called"
-        " on this sender");
-  }
-  if (last_transaction_id_ != parameters.transaction_id) {
-    LOG_AND_RETURN_ERROR(
-        RTCErrorType::INVALID_MODIFICATION,
-        "Failed to set parameters since the transaction_id doesn't match"
-        " the last value returned from getParameters()");
-  }
-
   return worker_thread_->Invoke<RTCError>(RTC_FROM_HERE, [&] {
-    RTCError result = media_channel_->SetRtpSendParameters(ssrc_, parameters);
-    last_transaction_id_.reset();
-    return result;
+    return media_channel_->SetRtpSendParameters(ssrc_, parameters);
   });
 }
 
@@ -391,15 +373,12 @@ bool VideoRtpSender::SetTrack(MediaStreamTrackInterface* track) {
   return true;
 }
 
-RtpParameters VideoRtpSender::GetParameters() {
+RtpParameters VideoRtpSender::GetParameters() const {
   if (!media_channel_ || stopped_) {
     return RtpParameters();
   }
   return worker_thread_->Invoke<RtpParameters>(RTC_FROM_HERE, [&] {
-    RtpParameters result = media_channel_->GetRtpSendParameters(ssrc_);
-    last_transaction_id_ = rtc::CreateRandomUuid();
-    result.transaction_id = last_transaction_id_.value();
-    return result;
+    return media_channel_->GetRtpSendParameters(ssrc_);
   });
 }
 
@@ -408,23 +387,8 @@ RTCError VideoRtpSender::SetParameters(const RtpParameters& parameters) {
   if (!media_channel_ || stopped_) {
     return RTCError(RTCErrorType::INVALID_STATE);
   }
-  if (!last_transaction_id_) {
-    LOG_AND_RETURN_ERROR(
-        RTCErrorType::INVALID_STATE,
-        "Failed to set parameters since getParameters() has never been called"
-        " on this sender");
-  }
-  if (last_transaction_id_ != parameters.transaction_id) {
-    LOG_AND_RETURN_ERROR(
-        RTCErrorType::INVALID_MODIFICATION,
-        "Failed to set parameters since the transaction_id doesn't match"
-        " the last value returned from getParameters()");
-  }
-
   return worker_thread_->Invoke<RTCError>(RTC_FROM_HERE, [&] {
-    RTCError result = media_channel_->SetRtpSendParameters(ssrc_, parameters);
-    last_transaction_id_.reset();
-    return result;
+    return media_channel_->SetRtpSendParameters(ssrc_, parameters);
   });
 }
 
