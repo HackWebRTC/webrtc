@@ -102,13 +102,7 @@ if (rtc_include_internal_audio_device && is_ios) {
 }
 
 rtc_source_set("audio_device_api") {
-  visibility = [
-    ":audio_device",
-    ":audio_device_buffer",
-    ":audio_device_impl",
-    ":audio_device_ios_objc",
-    ":audio_device_generic",
-  ]
+  visibility = [ "*" ]
   sources = [
     "include/audio_device.h",
     "include/audio_device_defines.h",
