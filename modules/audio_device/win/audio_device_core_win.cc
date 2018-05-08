@@ -2070,7 +2070,7 @@ int32_t AudioDeviceWindowsCore::InitRecordingDMO() {
     return -1;
   }
 
-  DMO_MEDIA_TYPE mt = {0};
+  DMO_MEDIA_TYPE mt = {};
   HRESULT hr = MoInitMediaType(&mt, sizeof(WAVEFORMATEX));
   if (FAILED(hr)) {
     MoFreeMediaType(&mt);
