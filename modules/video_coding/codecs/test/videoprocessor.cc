@@ -497,7 +497,7 @@ void VideoProcessor::DecodeFrame(const EncodedImage& encoded_image,
 
   frame_stat->decode_start_ns = rtc::TimeNanos();
   frame_stat->decode_return_code =
-      decoders_->at(spatial_idx)->Decode(encoded_image, false, nullptr);
+      decoders_->at(spatial_idx)->Decode(encoded_image, false, nullptr, 0);
 }
 
 const webrtc::EncodedImage* VideoProcessor::BuildAndStoreSuperframe(

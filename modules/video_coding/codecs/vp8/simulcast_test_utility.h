@@ -791,9 +791,9 @@ class TestVp8Simulcast : public ::testing::Test {
     EncodedImage encoded_frame;
     // Only encoding one frame - so will be a key frame.
     encoder_callback.GetLastEncodedKeyFrame(&encoded_frame);
-    EXPECT_EQ(0, decoder_->Decode(encoded_frame, false, NULL));
+    EXPECT_EQ(0, decoder_->Decode(encoded_frame, false, NULL, 0));
     encoder_callback.GetLastEncodedFrame(&encoded_frame);
-    decoder_->Decode(encoded_frame, false, NULL);
+    decoder_->Decode(encoded_frame, false, NULL, 0);
     EXPECT_EQ(2, decoder_callback.DecodedFrames());
   }
 
