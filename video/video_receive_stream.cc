@@ -354,6 +354,10 @@ void VideoReceiveStream::RequestKeyFrame() {
 
 void VideoReceiveStream::OnCompleteFrame(
     std::unique_ptr<video_coding::EncodedFrame> frame) {
+  // TODO(webrtc:9249): Workaround to allow decoding of VP9 SVC stream with
+  // partially enabled inter-layer prediction.
+  frame->id.spatial_layer = 0;
+
   int64_t last_continuous_pid = frame_buffer_->InsertFrame(std::move(frame));
   if (last_continuous_pid != -1)
     rtp_video_stream_receiver_.FrameContinuous(last_continuous_pid);
