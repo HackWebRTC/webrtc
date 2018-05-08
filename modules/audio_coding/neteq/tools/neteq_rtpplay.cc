@@ -530,7 +530,8 @@ int RunTest(int argc, char* argv[]) {
                  '_');
     std::cout << "Creating Matlab plot script " << matlab_script_name + ".m"
               << std::endl;
-    delay_analyzer->CreateMatlabScript(matlab_script_name + ".m");
+    stats_getter.delay_analyzer()->CreateMatlabScript(matlab_script_name +
+                                                      ".m");
   }
   if (FLAG_pythonplot) {
     auto python_script_name = output_file_name;
@@ -538,7 +539,8 @@ int RunTest(int argc, char* argv[]) {
                  '_');
     std::cout << "Creating Python plot script " << python_script_name + ".py"
               << std::endl;
-    delay_analyzer->CreatePythonScript(python_script_name + ".py");
+    stats_getter.delay_analyzer()->CreatePythonScript(python_script_name +
+                                                      ".py");
   }
 
   printf("Simulation statistics:\n");
