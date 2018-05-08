@@ -13,8 +13,8 @@ package org.webrtc;
 import android.graphics.Matrix;
 import android.graphics.Point;
 import android.opengl.GLES20;
-import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
+import javax.annotation.Nullable;
 
 /**
  * Helper class to draw VideoFrames. Calls either drawer.drawOes, drawer.drawRgb, or
@@ -98,8 +98,8 @@ public class VideoFrameDrawer {
           // Input is packed already.
           packedByteBuffer = planes[i];
         } else {
-          nativeCopyPlane(
-              planes[i], planeWidths[i], planeHeights[i], strides[i], copyBuffer, planeWidths[i]);
+          YuvHelper.copyPlane(
+              planes[i], strides[i], copyBuffer, planeWidths[i], planeWidths[i], planeHeights[i]);
           packedByteBuffer = copyBuffer;
         }
         GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_LUMINANCE, planeWidths[i],
@@ -229,8 +229,4 @@ public class VideoFrameDrawer {
     yuvUploader.release();
     lastI420Frame = null;
   }
-
-  // Helper native function to do a video frame plane copying.
-  static native void nativeCopyPlane(
-      ByteBuffer src, int width, int height, int srcStride, ByteBuffer dst, int dstStride);
 }

@@ -13,9 +13,26 @@
 #include "sdk/android/generated_video_jni/jni/YuvHelper_jni.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 #include "third_party/libyuv/include/libyuv/convert.h"
+#include "third_party/libyuv/include/libyuv/planar_functions.h"
 
 namespace webrtc {
 namespace jni {
+
+void JNI_YuvHelper_CopyPlane(JNIEnv* jni,
+                             const JavaParamRef<jclass>&,
+                             const JavaParamRef<jobject>& j_src,
+                             jint src_stride,
+                             const JavaParamRef<jobject>& j_dst,
+                             jint dst_stride,
+                             jint width,
+                             jint height) {
+  const uint8_t* src =
+      static_cast<const uint8_t*>(jni->GetDirectBufferAddress(j_src.obj()));
+  uint8_t* dst =
+      static_cast<uint8_t*>(jni->GetDirectBufferAddress(j_dst.obj()));
+
+  libyuv::CopyPlane(src, src_stride, dst, dst_stride, width, height);
+}
 
 void JNI_YuvHelper_I420Copy(JNIEnv* jni,
                             const JavaParamRef<jclass>&,

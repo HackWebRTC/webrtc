@@ -97,6 +97,12 @@ public class YuvHelper {
         dstChromaWidth, dstV, dstChromaWidth, srcWidth, srcHeight, rotationMode);
   }
 
+  /** Helper method for copying a single colour plane. */
+  public static void copyPlane(
+      ByteBuffer src, int srcStride, ByteBuffer dst, int dstStride, int width, int height) {
+    nativeCopyPlane(src, srcStride, dst, dstStride, width, height);
+  }
+
   public static void I420Copy(ByteBuffer srcY, int srcStrideY, ByteBuffer srcU, int srcStrideU,
       ByteBuffer srcV, int srcStrideV, ByteBuffer dstY, int dstStrideY, ByteBuffer dstU,
       int dstStrideU, ByteBuffer dstV, int dstStrideV, int width, int height) {
@@ -119,6 +125,8 @@ public class YuvHelper {
         dstStrideU, dstV, dstStrideV, srcWidth, srcHeight, rotationMode);
   }
 
+  private static native void nativeCopyPlane(
+      ByteBuffer src, int srcStride, ByteBuffer dst, int dstStride, int width, int height);
   private static native void nativeI420Copy(ByteBuffer srcY, int srcStrideY, ByteBuffer srcU,
       int srcStrideU, ByteBuffer srcV, int srcStrideV, ByteBuffer dstY, int dstStrideY,
       ByteBuffer dstU, int dstStrideU, ByteBuffer dstV, int dstStrideV, int width, int height);

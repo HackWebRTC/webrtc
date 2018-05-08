@@ -45,6 +45,12 @@ public final class HardwareVideoDecoderTest {
     CLASS_PARAMS.add(new ParameterSet()
                          .value("VP8" /* codecType */, true /* useEglContext */)
                          .name("VP8WithEglContext"));
+    CLASS_PARAMS.add(new ParameterSet()
+                         .value("H264" /* codecType */, false /* useEglContext */)
+                         .name("H264WithoutEglContext"));
+    CLASS_PARAMS.add(new ParameterSet()
+                         .value("H264" /* codecType */, true /* useEglContext */)
+                         .name("H264WithEglContext"));
   }
 
   private final String codecType;
@@ -65,12 +71,12 @@ public final class HardwareVideoDecoderTest {
   private static final boolean ENABLE_INTEL_VP8_ENCODER = true;
   private static final boolean ENABLE_H264_HIGH_PROFILE = true;
   private static final VideoEncoder.Settings ENCODER_SETTINGS =
-      new VideoEncoder.Settings(1 /* core */, 640 /* width */, 480 /* height */, 300 /* kbps */,
+      new VideoEncoder.Settings(1 /* core */, TEST_FRAME_WIDTH, TEST_FRAME_HEIGHT, 300 /* kbps */,
           30 /* fps */, true /* automaticResizeOn */);
 
   private static final int DECODE_TIMEOUT_MS = 1000;
   private static final VideoDecoder.Settings SETTINGS =
-      new VideoDecoder.Settings(1 /* core */, 640 /* width */, 480 /* height */);
+      new VideoDecoder.Settings(1 /* core */, TEST_FRAME_WIDTH, TEST_FRAME_HEIGHT);
 
   private static class MockDecodeCallback implements VideoDecoder.Callback {
     private BlockingQueue<VideoFrame> frameQueue = new LinkedBlockingQueue<>();

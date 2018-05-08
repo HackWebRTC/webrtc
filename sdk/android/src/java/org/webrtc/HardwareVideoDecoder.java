@@ -15,13 +15,13 @@ import android.media.MediaCodec;
 import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaFormat;
 import android.os.SystemClock;
-import javax.annotation.Nullable;
 import android.view.Surface;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
 import org.webrtc.ThreadUtils.ThreadChecker;
 
 /** Android hardware video decoder. */
@@ -512,37 +512,57 @@ class HardwareVideoDecoder
 
   private VideoFrame.Buffer copyI420Buffer(
       ByteBuffer buffer, int stride, int sliceHeight, int width, int height) {
+    if (stride % 2 != 0) {
+      throw new AssertionError("Stride is not divisible by two: " + stride);
+    }
+
+    // Note that the case with odd |sliceHeight| is handled in a special way.
+    // The chroma height contained in the payload is rounded down instead of
+    // up, making it one row less than what we expect in WebRTC. Therefore, we
+    // have to duplicate the last chroma rows for this case. Also, the offset
+    // between the Y plane and the U plane is unintuitive for this case. See
+    // http://bugs.webrtc.org/6651 for more info.
+    final int chromaWidth = (width + 1) / 2;
+    final int chromaHeight = (sliceHeight % 2 == 0) ? (height + 1) / 2 : height / 2;
+
     final int uvStride = stride / 2;
 
     final int yPos = 0;
+    final int yEnd = yPos + stride * height;
     final int uPos = yPos + stride * sliceHeight;
-    final int uEnd = uPos + uvStride * (sliceHeight / 2);
+    final int uEnd = uPos + uvStride * chromaHeight;
     final int vPos = uPos + uvStride * sliceHeight / 2;
-    final int vEnd = vPos + uvStride * (sliceHeight / 2);
+    final int vEnd = vPos + uvStride * chromaHeight;
 
     VideoFrame.I420Buffer frameBuffer = JavaI420Buffer.allocate(width, height);
 
-    ByteBuffer dataY = frameBuffer.getDataY();
+    buffer.limit(yEnd);
     buffer.position(yPos);
-    buffer.limit(uPos);
-    dataY.put(buffer);
+    YuvHelper.copyPlane(
+        buffer.slice(), stride, frameBuffer.getDataY(), frameBuffer.getStrideY(), width, height);
 
-    ByteBuffer dataU = frameBuffer.getDataU();
-    buffer.position(uPos);
     buffer.limit(uEnd);
-    dataU.put(buffer);
-    if (sliceHeight % 2 != 0) {
-      buffer.position(uEnd - uvStride); // Repeat the last row.
-      dataU.put(buffer);
+    buffer.position(uPos);
+    YuvHelper.copyPlane(buffer.slice(), uvStride, frameBuffer.getDataU(), frameBuffer.getStrideU(),
+        chromaWidth, chromaHeight);
+    if (sliceHeight % 2 == 1) {
+      buffer.position(uPos + uvStride * (chromaHeight - 1)); // Seek to beginning of last full row.
+
+      ByteBuffer dataU = frameBuffer.getDataU();
+      dataU.position(frameBuffer.getStrideU() * chromaHeight); // Seek to beginning of last row.
+      dataU.put(buffer); // Copy the last row.
     }
 
-    ByteBuffer dataV = frameBuffer.getDataV();
-    buffer.position(vPos);
     buffer.limit(vEnd);
-    dataV.put(buffer);
-    if (sliceHeight % 2 != 0) {
-      buffer.position(vEnd - uvStride); // Repeat the last row.
-      dataV.put(buffer);
+    buffer.position(vPos);
+    YuvHelper.copyPlane(buffer.slice(), uvStride, frameBuffer.getDataV(), frameBuffer.getStrideV(),
+        chromaWidth, chromaHeight);
+    if (sliceHeight % 2 == 1) {
+      buffer.position(vPos + uvStride * (chromaHeight - 1)); // Seek to beginning of last full row.
+
+      ByteBuffer dataV = frameBuffer.getDataV();
+      dataV.position(frameBuffer.getStrideV() * chromaHeight); // Seek to beginning of last row.
+      dataV.put(buffer); // Copy the last row.
     }
 
     return frameBuffer;

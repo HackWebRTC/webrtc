@@ -114,8 +114,8 @@ TEST(VideoProcessorIntegrationTestMediaCodec,
 TEST(VideoProcessorIntegrationTestMediaCodec, ForemanMixedRes100kbpsVp8H264) {
   auto config = CreateTestConfig();
   const int kNumFrames = 30;
-  // TODO(brandtr): Add H.264 when we have fixed the encoder.
-  const std::vector<std::string> codecs = {cricket::kVp8CodecName};
+  const std::vector<std::string> codecs = {cricket::kVp8CodecName,
+                                           cricket::kH264CodecName};
   const std::vector<std::tuple<int, int>> resolutions = {
       {128, 96}, {160, 120}, {176, 144}, {240, 136}, {320, 240}, {480, 272}};
   const std::vector<RateProfile> rate_profiles = {
