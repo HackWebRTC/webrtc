@@ -604,7 +604,6 @@ config("test_renderer_exported_config") {
     # come from a config and cannot be on the target directly.
     cflags = [
       "-Wno-bool-conversion",
-      "-Wno-comment",
       "-Wno-delete-non-virtual-dtor",
     ]
   }

@@ -81,7 +81,6 @@ if (!build_with_chromium) {
   config("video_capture_internal_impl_warnings_config") {
     if (is_win && is_clang) {
       cflags = [
-        "-Wno-comment",
         "-Wno-ignored-attributes",
 
         # See https://bugs.chromium.org/p/webrtc/issues/detail?id=6269

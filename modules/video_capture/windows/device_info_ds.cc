@@ -539,13 +539,12 @@ int32_t DeviceInfoDS::CreateCapabilityMap(const char* deviceUniqueIdUTF8)
   return static_cast<int32_t>(_captureCapabilities.size());
 }
 
-/* Constructs a product ID from the Windows DevicePath. on a USB device the
- devicePath contains product id and vendor id. This seems to work for firewire
- as well
- /* Example of device path
- "\\?\usb#vid_0408&pid_2010&mi_00#7&258e7aaf&0&0000#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\global"
- "\\?\avc#sony&dv-vcr&camcorder&dv#65b2d50301460008#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\global"
- */
+// Constructs a product ID from the Windows DevicePath. on a USB device the
+// devicePath contains product id and vendor id. This seems to work for firewire
+// as well.
+// Example of device path:
+// "\\?\usb#vid_0408&pid_2010&mi_00#7&258e7aaf&0&0000#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\global"
+// "\\?\avc#sony&dv-vcr&camcorder&dv#65b2d50301460008#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\global"
 void DeviceInfoDS::GetProductId(const char* devicePath,
                                 char* productUniqueIdUTF8,
                                 uint32_t productUniqueIdUTF8Length) {
