@@ -45,6 +45,12 @@ constexpr size_t kMaxPitch12kHz = kMaxPitch24kHz / 2;
 constexpr size_t kMinPitch48kHz = kMinPitch24kHz * 2;
 constexpr size_t kMaxPitch48kHz = kMaxPitch24kHz * 2;
 
+// Sub-band frequency boundaries.
+constexpr size_t kNumBands = 22;
+constexpr int kBandFrequencyBoundaries[kNumBands] = {
+    0,    200,  400,  600,  800,  1000, 1200, 1400, 1600,  2000,  2400,
+    2800, 3200, 4000, 4800, 5600, 6800, 8000, 9600, 12000, 15600, 20000};
+
 constexpr size_t kFeatureVectorSize = 42;
 
 }  // namespace rnn_vad

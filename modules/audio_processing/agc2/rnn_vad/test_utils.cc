@@ -27,6 +27,15 @@ using ReaderPairType =
 
 using webrtc::test::ResourcePath;
 
+void ExpectEqualFloatArray(rtc::ArrayView<const float> expected,
+                           rtc::ArrayView<const float> computed) {
+  ASSERT_EQ(expected.size(), computed.size());
+  for (size_t i = 0; i < expected.size(); ++i) {
+    SCOPED_TRACE(i);
+    EXPECT_FLOAT_EQ(expected[i], computed[i]);
+  }
+}
+
 void ExpectNearAbsolute(rtc::ArrayView<const float> expected,
                         rtc::ArrayView<const float> computed,
                         float tolerance) {
@@ -38,10 +47,10 @@ void ExpectNearAbsolute(rtc::ArrayView<const float> expected,
 }
 
 ReaderPairType CreatePitchBuffer24kHzReader() {
+  constexpr size_t cols = 864;
   auto ptr = rtc::MakeUnique<BinaryFileReader<float>>(
-      ResourcePath("audio_processing/agc2/rnn_vad/pitch_buf_24k", "dat"), 864);
-  return {std::move(ptr),
-          rtc::CheckedDivExact(ptr->data_length(), static_cast<size_t>(864))};
+      ResourcePath("audio_processing/agc2/rnn_vad/pitch_buf_24k", "dat"), cols);
+  return {std::move(ptr), rtc::CheckedDivExact(ptr->data_length(), cols)};
 }
 
 ReaderPairType CreateLpResidualAndPitchPeriodGainReader() {
@@ -53,13 +62,31 @@ ReaderPairType CreateLpResidualAndPitchPeriodGainReader() {
           rtc::CheckedDivExact(ptr->data_length(), 2 + num_lp_residual_coeffs)};
 }
 
+ReaderPairType CreateFftCoeffsReader() {
+  constexpr size_t num_fft_points = 481;
+  constexpr size_t row_size = 2 * num_fft_points;  // Real and imaginary values.
+  auto ptr = rtc::MakeUnique<BinaryFileReader<float>>(
+      test::ResourcePath("audio_processing/agc2/rnn_vad/fft", "dat"),
+      num_fft_points);
+  return {std::move(ptr), rtc::CheckedDivExact(ptr->data_length(), row_size)};
+}
+
+ReaderPairType CreateBandEnergyCoeffsReader() {
+  constexpr size_t num_bands = 22;
+  auto ptr = rtc::MakeUnique<BinaryFileReader<float>>(
+      test::ResourcePath("audio_processing/agc2/rnn_vad/band_energies", "dat"),
+      num_bands);
+  return {std::move(ptr), rtc::CheckedDivExact(ptr->data_length(), num_bands)};
+}
+
 ReaderPairType CreateSilenceFlagsFeatureMatrixReader() {
+  constexpr size_t feature_vector_size = 42;
   auto ptr = rtc::MakeUnique<BinaryFileReader<float>>(
       test::ResourcePath("audio_processing/agc2/rnn_vad/sil_features", "dat"),
-      42);
-  // Features (42) and silence flag.
+      feature_vector_size);
+  // Features and silence flag.
   return {std::move(ptr),
-          rtc::CheckedDivExact(ptr->data_length(), static_cast<size_t>(43))};
+          rtc::CheckedDivExact(ptr->data_length(), feature_vector_size + 1)};
 }
 
 ReaderPairType CreateVadProbsReader() {

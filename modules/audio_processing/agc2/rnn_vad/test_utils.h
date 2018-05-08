@@ -28,7 +28,12 @@ namespace test {
 
 constexpr float kFloatMin = std::numeric_limits<float>::min();
 
-// Fail for every pair from two equally sized rtc::ArrayView<float> views such
+// Fails for every pair from two equally sized rtc::ArrayView<float> views such
+// that the values in the pair do not match.
+void ExpectEqualFloatArray(rtc::ArrayView<const float> expected,
+                           rtc::ArrayView<const float> computed);
+
+// Fails for every pair from two equally sized rtc::ArrayView<float> views such
 // that their absolute error is above a given threshold.
 void ExpectNearAbsolute(rtc::ArrayView<const float> expected,
                         rtc::ArrayView<const float> computed,
@@ -95,10 +100,16 @@ CreatePitchBuffer24kHzReader();
 // and gain values.
 std::pair<std::unique_ptr<BinaryFileReader<float>>, const size_t>
 CreateLpResidualAndPitchPeriodGainReader();
-// Instance a reader for the silence flags and the feature matrix.
+// Creates a reader for the FFT coefficients.
+std::pair<std::unique_ptr<BinaryFileReader<float>>, const size_t>
+CreateFftCoeffsReader();
+// Instance a reader for the band energy coefficients.
+std::pair<std::unique_ptr<BinaryFileReader<float>>, const size_t>
+CreateBandEnergyCoeffsReader();
+// Creates a reader for the silence flags and the feature matrix.
 std::pair<std::unique_ptr<BinaryFileReader<float>>, const size_t>
 CreateSilenceFlagsFeatureMatrixReader();
-// Instance a reader for the VAD probabilities.
+// Creates a reader for the VAD probabilities.
 std::pair<std::unique_ptr<BinaryFileReader<float>>, const size_t>
 CreateVadProbsReader();
 
