@@ -117,6 +117,8 @@ DEFINE_string(ssrc,
 DEFINE_int(audio_level, 1, "Extension ID for audio level (RFC 6464)");
 DEFINE_int(abs_send_time, 3, "Extension ID for absolute sender time");
 DEFINE_int(transport_seq_no, 5, "Extension ID for transport sequence number");
+DEFINE_int(video_content_type, 7, "Extension ID for video content type");
+DEFINE_int(video_timing, 8, "Extension ID for video timing");
 DEFINE_bool(matlabplot,
             false,
             "Generates a matlab script for plotting the delay profile");
@@ -356,12 +358,16 @@ int RunTest(int argc, char* argv[]) {
   RTC_CHECK(ValidateExtensionId(FLAG_audio_level));
   RTC_CHECK(ValidateExtensionId(FLAG_abs_send_time));
   RTC_CHECK(ValidateExtensionId(FLAG_transport_seq_no));
+  RTC_CHECK(ValidateExtensionId(FLAG_video_content_type));
+  RTC_CHECK(ValidateExtensionId(FLAG_video_timing));
 
   // Gather RTP header extensions in a map.
   NetEqPacketSourceInput::RtpHeaderExtensionMap rtp_ext_map = {
       {FLAG_audio_level, kRtpExtensionAudioLevel},
       {FLAG_abs_send_time, kRtpExtensionAbsoluteSendTime},
-      {FLAG_transport_seq_no, kRtpExtensionTransportSequenceNumber}};
+      {FLAG_transport_seq_no, kRtpExtensionTransportSequenceNumber},
+      {FLAG_video_content_type, kRtpExtensionVideoContentType},
+      {FLAG_video_timing, kRtpExtensionVideoTiming}};
 
   const std::string input_file_name = argv[1];
   std::unique_ptr<NetEqInput> input;
