@@ -642,7 +642,7 @@ bool VirtualSocketServer::ProcessMessagesUntilIdle() {
     if (fake_clock_) {
       // If using a fake clock, advance it in millisecond increments until the
       // queue is empty.
-      fake_clock_->AdvanceTime(rtc::TimeDelta::FromMilliseconds(1));
+      fake_clock_->AdvanceTime(webrtc::TimeDelta::ms(1));
     } else {
       // Otherwise, run a normal message loop.
       Message msg;

@@ -2910,7 +2910,7 @@ TEST_P(PeerConnectionIntegrationTest,
   // Some things use a time of "0" as a special value, so we need to start out
   // the fake clock at a nonzero time.
   // TODO(deadbeef): Fix this.
-  fake_clock.AdvanceTime(rtc::TimeDelta::FromSeconds(1));
+  fake_clock.AdvanceTime(webrtc::TimeDelta::seconds(1));
   virtual_socket_server()->set_delay_mean(5);  // 5 ms per hop.
   virtual_socket_server()->UpdateDelayDistribution();
 
@@ -3786,7 +3786,7 @@ TEST_P(PeerConnectionIntegrationTest, EndToEndConnectionTimeWithTurnTurnPair) {
   // Some things use a time of "0" as a special value, so we need to start out
   // the fake clock at a nonzero time.
   // TODO(deadbeef): Fix this.
-  fake_clock.AdvanceTime(rtc::TimeDelta::FromSeconds(1));
+  fake_clock.AdvanceTime(webrtc::TimeDelta::seconds(1));
 
   static constexpr int media_hop_delay_ms = 50;
   static constexpr int signaling_trip_delay_ms = 500;

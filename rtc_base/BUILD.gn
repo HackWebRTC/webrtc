@@ -1028,7 +1028,6 @@ rtc_source_set("rtc_base_tests_utils") {
     "testechoserver.h",
     "testutils.cc",
     "testutils.h",
-    "timedelta.h",
     "virtualsocketserver.cc",
     "virtualsocketserver.h",
   ]
@@ -1038,6 +1037,7 @@ rtc_source_set("rtc_base_tests_utils") {
     ":checks",
     ":rtc_base",
     ":stringutils",
+    "../api/units:time_delta",
     "../test:field_trial",
     "../test:test_support",
     "system:fallthrough",

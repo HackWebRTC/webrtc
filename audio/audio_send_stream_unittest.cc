@@ -12,6 +12,7 @@
 #include <utility>
 #include <vector>
 
+#include "api/units/time_delta.h"
 #include "audio/audio_send_stream.h"
 #include "audio/audio_state.h"
 #include "audio/conversion.h"
@@ -28,7 +29,6 @@
 #include "rtc_base/fakeclock.h"
 #include "rtc_base/ptr_util.h"
 #include "rtc_base/task_queue.h"
-#include "rtc_base/timedelta.h"
 #include "test/gtest.h"
 #include "test/mock_audio_encoder.h"
 #include "test/mock_audio_encoder_factory.h"
@@ -545,8 +545,7 @@ TEST(AudioSendStreamTest, UpdateLifetime) {
     EXPECT_CALL(mock_transport, SendRtp(_, _, _)).Times(2);
     const PacketOptions options;
     registered_transport->SendRtp(nullptr, 0, options);
-    fake_clock.AdvanceTime(
-        rtc::TimeDelta::FromMilliseconds(kTimeBetweenSendRtpCallsMs));
+    fake_clock.AdvanceTime(TimeDelta::ms(kTimeBetweenSendRtpCallsMs));
     registered_transport->SendRtp(nullptr, 0, options);
   }
   EXPECT_TRUE(!helper.active_lifetime()->Empty());

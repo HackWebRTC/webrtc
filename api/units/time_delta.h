@@ -61,6 +61,11 @@ class TimeDelta {
     RTC_DCHECK(IsFinite());
     return microseconds_;
   }
+  int64_t ns() const {
+    RTC_DCHECK(us() > std::numeric_limits<int64_t>::min() / 1000);
+    RTC_DCHECK(us() < std::numeric_limits<int64_t>::max() / 1000);
+    return us() * 1000;
+  }
 
   double SecondsAsDouble() const;
 

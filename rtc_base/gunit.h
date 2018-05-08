@@ -101,23 +101,23 @@
 // Wait until "ex" is true, or "timeout" expires, using fake clock where
 // messages are processed every millisecond.
 // TODO(pthatcher): Allow tests to control how many milliseconds to advance.
-#define SIMULATED_WAIT(ex, timeout, clock)                    \
-  for (int64_t start = rtc::TimeMillis();                     \
-       !(ex) && rtc::TimeMillis() < start + (timeout);) {     \
-    (clock).AdvanceTime(rtc::TimeDelta::FromMilliseconds(1)); \
+#define SIMULATED_WAIT(ex, timeout, clock)                \
+  for (int64_t start = rtc::TimeMillis();                 \
+       !(ex) && rtc::TimeMillis() < start + (timeout);) { \
+    (clock).AdvanceTime(webrtc::TimeDelta::ms(1));        \
   }
 
 // This returns the result of the test in res, so that we don't re-evaluate
 // the expression in the XXXX_WAIT macros below, since that causes problems
 // when the expression is only true the first time you check it.
-#define SIMULATED_WAIT_(ex, timeout, res, clock)                \
-  do {                                                          \
-    int64_t start = rtc::TimeMillis();                          \
-    res = (ex);                                                 \
-    while (!res && rtc::TimeMillis() < start + (timeout)) {     \
-      (clock).AdvanceTime(rtc::TimeDelta::FromMilliseconds(1)); \
-      res = (ex);                                               \
-    }                                                           \
+#define SIMULATED_WAIT_(ex, timeout, res, clock)            \
+  do {                                                      \
+    int64_t start = rtc::TimeMillis();                      \
+    res = (ex);                                             \
+    while (!res && rtc::TimeMillis() < start + (timeout)) { \
+      (clock).AdvanceTime(webrtc::TimeDelta::ms(1));        \
+      res = (ex);                                           \
+    }                                                       \
   } while (0)
 
 // The typical EXPECT_XXXX, but done until true or a timeout with a fake clock.

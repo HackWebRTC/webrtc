@@ -237,7 +237,7 @@ static void SendPingAndReceiveResponse(
   rconn->OnReadPacket(lport->last_stun_buf()->data<char>(),
                       lport->last_stun_buf()->size(),
                       rtc::PacketTime());
-  clock->AdvanceTime(rtc::TimeDelta::FromMilliseconds(ms));
+  clock->AdvanceTime(webrtc::TimeDelta::ms(ms));
   ASSERT_TRUE_WAIT(rport->last_stun_msg(), kDefaultTimeout);
   ASSERT_TRUE(rport->last_stun_buf());
   lconn->OnReadPacket(rport->last_stun_buf()->data<char>(),

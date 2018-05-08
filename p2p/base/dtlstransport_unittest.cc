@@ -579,10 +579,9 @@ TEST_F(DtlsTransportTest, TestRetransmissionSchedule) {
     // millisecond before the expected time and verify that no unexpected
     // retransmissions were sent. Then advance it the final millisecond and
     // verify that the expected retransmission was sent.
-    fake_clock_.AdvanceTime(
-        rtc::TimeDelta::FromMilliseconds(timeout_schedule_ms[i] - 1));
+    fake_clock_.AdvanceTime(webrtc::TimeDelta::ms(timeout_schedule_ms[i] - 1));
     EXPECT_EQ(expected_hellos, client1_.received_dtls_client_hellos());
-    fake_clock_.AdvanceTime(rtc::TimeDelta::FromMilliseconds(1));
+    fake_clock_.AdvanceTime(webrtc::TimeDelta::ms(1));
     EXPECT_EQ(++expected_hellos, client1_.received_dtls_client_hellos());
   }
 }

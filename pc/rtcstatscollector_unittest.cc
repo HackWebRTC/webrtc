@@ -18,6 +18,7 @@
 #include "api/rtpparameters.h"
 #include "api/stats/rtcstats_objects.h"
 #include "api/stats/rtcstatsreport.h"
+#include "api/units/time_delta.h"
 #include "p2p/base/p2pconstants.h"
 #include "p2p/base/port.h"
 #include "pc/mediastream.h"
@@ -35,7 +36,6 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/ptr_util.h"
 #include "rtc_base/stringutils.h"
-#include "rtc_base/timedelta.h"
 #include "rtc_base/timeutils.h"
 
 using testing::AtLeast;
@@ -670,7 +670,7 @@ TEST_F(RTCStatsCollectorTest, CachedStatsReports) {
   rtc::scoped_refptr<const RTCStatsReport> c = stats_->GetStatsReport();
   EXPECT_NE(b.get(), c.get());
   // Invalidate cache by advancing time.
-  fake_clock_.AdvanceTime(rtc::TimeDelta::FromMilliseconds(51));
+  fake_clock_.AdvanceTime(TimeDelta::ms(51));
   rtc::scoped_refptr<const RTCStatsReport> d = stats_->GetStatsReport();
   EXPECT_TRUE(d);
   EXPECT_NE(c.get(), d.get());
@@ -681,7 +681,7 @@ TEST_F(RTCStatsCollectorTest, MultipleCallbacksWithInvalidatedCacheInBetween) {
   stats_->stats_collector()->GetStatsReport(RTCStatsObtainer::Create(&a));
   stats_->stats_collector()->GetStatsReport(RTCStatsObtainer::Create(&b));
   // Cache is invalidated after 50 ms.
-  fake_clock_.AdvanceTime(rtc::TimeDelta::FromMilliseconds(51));
+  fake_clock_.AdvanceTime(TimeDelta::ms(51));
   stats_->stats_collector()->GetStatsReport(RTCStatsObtainer::Create(&c));
   EXPECT_TRUE_WAIT(a, kGetStatsReportTimeoutMs);
   EXPECT_TRUE_WAIT(b, kGetStatsReportTimeoutMs);

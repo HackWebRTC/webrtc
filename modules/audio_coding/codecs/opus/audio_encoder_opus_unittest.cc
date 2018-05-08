@@ -243,8 +243,7 @@ void TestSetPacketLossRate(const AudioEncoderOpusStates* states,
   constexpr int64_t kSampleIntervalMs = 184198;
   for (float loss : losses) {
     states->encoder->OnReceivedUplinkPacketLossFraction(loss);
-    states->fake_clock->AdvanceTime(
-        rtc::TimeDelta::FromMilliseconds(kSampleIntervalMs));
+    states->fake_clock->AdvanceTime(TimeDelta::ms(kSampleIntervalMs));
     EXPECT_FLOAT_EQ(expected_return, states->encoder->packet_loss_rate());
   }
 }
@@ -376,8 +375,7 @@ TEST(AudioEncoderOpusTest,
   states->encoder->OnReceivedUplinkPacketLossFraction(kPacketLossFraction_1);
   EXPECT_FLOAT_EQ(0.01f, states->encoder->packet_loss_rate());
 
-  states->fake_clock->AdvanceTime(
-      rtc::TimeDelta::FromMilliseconds(kSecondSampleTimeMs));
+  states->fake_clock->AdvanceTime(TimeDelta::ms(kSecondSampleTimeMs));
   states->encoder->OnReceivedUplinkPacketLossFraction(kPacketLossFraction_2);
 
   // Now the output of packet loss fraction smoother should be
@@ -564,8 +562,8 @@ TEST(AudioEncoderOpusTest, UpdateUplinkBandwidthInAudioNetworkAdaptor) {
   // Repeat update uplink bandwidth tests.
   for (int i = 0; i < 5; i++) {
     // Don't update till it is time to update again.
-    states->fake_clock->AdvanceTime(rtc::TimeDelta::FromMilliseconds(
-        states->config.uplink_bandwidth_update_interval_ms - 1));
+    states->fake_clock->AdvanceTime(
+        TimeDelta::ms(states->config.uplink_bandwidth_update_interval_ms - 1));
     states->encoder->Encode(
         0, rtc::ArrayView<const int16_t>(audio.data(), audio.size()), &encoded);
 
@@ -573,7 +571,7 @@ TEST(AudioEncoderOpusTest, UpdateUplinkBandwidthInAudioNetworkAdaptor) {
     EXPECT_CALL(*states->mock_bitrate_smoother, GetAverage())
         .WillOnce(Return(40000));
     EXPECT_CALL(*states->mock_audio_network_adaptor, SetUplinkBandwidth(40000));
-    states->fake_clock->AdvanceTime(rtc::TimeDelta::FromMilliseconds(1));
+    states->fake_clock->AdvanceTime(TimeDelta::ms(1));
     states->encoder->Encode(
         0, rtc::ArrayView<const int16_t>(audio.data(), audio.size()), &encoded);
   }
