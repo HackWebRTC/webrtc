@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/congestion_controller/network_control/units/data_rate.h"
+#include "api/units/data_size.h"
 
 #include "rtc_base/strings/string_builder.h"
 
 namespace webrtc {
 
-std::string ToString(const DataRate& value) {
+std::string ToString(const DataSize& value) {
   char buf[64];
   rtc::SimpleStringBuilder sb(buf);
   if (value.IsInfinite()) {
-    sb << "inf bps";
+    sb << "inf bytes";
   } else {
-    sb << value.bps() << " bps";
+    sb << value.bytes() << " bytes";
   }
   return sb.str();
 }

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/congestion_controller/network_control/units/data_size.h"
+#include "api/units/data_size.h"
 #include "test/gtest.h"
 
 namespace webrtc {

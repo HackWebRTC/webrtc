@@ -23,6 +23,7 @@
 // https://code.google.com/p/chromium/codesearch#chromium/src/base/time/time.h
 namespace rtc {
 
+// TODO(srte): Replace usage of this class with webrtc::TimeDelta.
 class TimeDelta {
  public:
   TimeDelta() : delta_(0) {}

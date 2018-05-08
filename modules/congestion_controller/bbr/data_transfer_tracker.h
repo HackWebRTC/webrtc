@@ -11,9 +11,10 @@
 #define MODULES_CONGESTION_CONTROLLER_BBR_DATA_TRANSFER_TRACKER_H_
 
 #include <deque>
-#include "modules/congestion_controller/network_control/units/data_size.h"
-#include "modules/congestion_controller/network_control/units/time_delta.h"
-#include "modules/congestion_controller/network_control/units/timestamp.h"
+
+#include "api/units/data_size.h"
+#include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
 
 namespace webrtc {
 namespace bbr {

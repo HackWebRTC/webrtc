@@ -18,12 +18,12 @@ rtc_static_library("network_control") {
   deps = [
     "../../:module_api",
     "../../../api:optional",
+    "../../../api/units:data_rate",
+    "../../../api/units:data_size",
+    "../../../api/units:time_delta",
+    "../../../api/units:timestamp",
     "../../../rtc_base:checks",
     "../../../rtc_base:rtc_base_approved",
-    "units:data_rate",
-    "units:data_size",
-    "units:time_delta",
-    "units:timestamp",
   ]
 }
 
@@ -49,7 +49,6 @@ if (rtc_include_tests) {
     deps = [
       ":network_control",
       "../../../test:test_support",
-      "units:units_unittests",
     ]
   }
 }

@@ -45,11 +45,11 @@ rtc_source_set("data_transfer_tracker") {
     "data_transfer_tracker.h",
   ]
   deps = [
+    "../../../api/units:data_size",
+    "../../../api/units:time_delta",
+    "../../../api/units:timestamp",
     "../../../rtc_base:checks",
     "../../../rtc_base:rtc_base_approved",
-    "../network_control/units:data_size",
-    "../network_control/units:time_delta",
-    "../network_control/units:timestamp",
   ]
 }
 rtc_source_set("rtt_stats") {
@@ -59,9 +59,9 @@ rtc_source_set("rtt_stats") {
     "rtt_stats.h",
   ]
   deps = [
+    "../../../api/units:time_delta",
+    "../../../api/units:timestamp",
     "../../../rtc_base:rtc_base_approved",
-    "../network_control/units:time_delta",
-    "../network_control/units:timestamp",
   ]
 }
 rtc_source_set("windowed_filter") {
@@ -85,10 +85,10 @@ if (rtc_include_tests) {
       ":data_transfer_tracker",
       ":rtt_stats",
       ":windowed_filter",
+      "../../../api/units:data_rate",
+      "../../../api/units:time_delta",
       "../../../test:test_support",
       "../network_control:network_control_test",
-      "../network_control/units:data_rate",
-      "../network_control/units:time_delta",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
