@@ -170,20 +170,46 @@ std::string MakeNetworkKey(const std::string& name, const IPAddress& prefix,
   ost << name << "%" << prefix.ToString() << "/" << prefix_length;
   return ost.str();
 }
+// Test if the network name matches the type<number> pattern, e.g. eth0. The
+// matching is case-sensitive.
+bool MatchTypeNameWithIndexPattern(const std::string& network_name,
+                                   const std::string& type_name) {
+  if (network_name.find(type_name) != 0) {
+    return false;
+  }
+  return std::find_if(network_name.begin() + type_name.size(),
+                      network_name.end(),
+                      [](char c) { return !isdigit(c); }) == network_name.end();
+}
 
+// A cautious note that this method may not provide an accurate adapter type
+// based on the string matching. Incorrect type of adapters can affect the
+// result of the downstream network filtering, see e.g.
+// BasicPortAllocatorSession::GetNetworks when
+// PORTALLOCATOR_DISABLE_COSTLY_NETWORKS is turned on.
 AdapterType GetAdapterTypeFromName(const char* network_name) {
-  if (strncmp(network_name, "ipsec", 5) == 0 ||
-      strncmp(network_name, "tun", 3) == 0 ||
-      strncmp(network_name, "utun", 4) == 0 ||
-      strncmp(network_name, "tap", 3) == 0) {
+  if (MatchTypeNameWithIndexPattern(network_name, "lo")) {
+    // Note that we have a more robust way to determine if a network interface
+    // is a loopback interface by checking the flag IFF_LOOPBACK in ifa_flags of
+    // an ifaddr struct. See ConvertIfAddrs in this file.
+    return ADAPTER_TYPE_LOOPBACK;
+  }
+  if (MatchTypeNameWithIndexPattern(network_name, "eth")) {
+    return ADAPTER_TYPE_ETHERNET;
+  }
+
+  if (MatchTypeNameWithIndexPattern(network_name, "ipsec") ||
+      MatchTypeNameWithIndexPattern(network_name, "tun") ||
+      MatchTypeNameWithIndexPattern(network_name, "utun") ||
+      MatchTypeNameWithIndexPattern(network_name, "tap")) {
     return ADAPTER_TYPE_VPN;
   }
 #if defined(WEBRTC_IOS)
   // Cell networks are pdp_ipN on iOS.
-  if (strncmp(network_name, "pdp_ip", 6) == 0) {
+  if (MatchTypeNameWithIndexPattern(network_name, "pdp_ip")) {
     return ADAPTER_TYPE_CELLULAR;
   }
-  if (strncmp(network_name, "en", 2) == 0) {
+  if (MatchTypeNameWithIndexPattern(network_name, "en")) {
     // This may not be most accurate because sometimes Ethernet interface
     // name also starts with "en" but it is better than showing it as
     // "unknown" type.
@@ -191,11 +217,13 @@ AdapterType GetAdapterTypeFromName(const char* network_name) {
     return ADAPTER_TYPE_WIFI;
   }
 #elif defined(WEBRTC_ANDROID)
-  if (strncmp(network_name, "rmnet", 5) == 0 ||
-      strncmp(network_name, "v4-rmnet", 8) == 0) {
+  if (MatchTypeNameWithIndexPattern(network_name, "rmnet") ||
+      MatchTypeNameWithIndexPattern(network_name, "rmnet_data") ||
+      MatchTypeNameWithIndexPattern(network_name, "v4-rmnet") ||
+      MatchTypeNameWithIndexPattern(network_name, "v4-rmnet_data")) {
     return ADAPTER_TYPE_CELLULAR;
   }
-  if (strncmp(network_name, "wlan", 4) == 0) {
+  if (MatchTypeNameWithIndexPattern(network_name, "wlan")) {
     return ADAPTER_TYPE_WIFI;
   }
 #endif

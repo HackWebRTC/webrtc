@@ -837,6 +837,18 @@ TEST_F(NetworkTest, TestGetAdapterTypeFromNameMatching) {
   ClearNetworks(manager);
   ReleaseIfAddrs(addr_list);
 
+  strcpy(if_name, "lo0");
+  addr_list = InstallIpv6Network(if_name, ipv6_address1, ipv6_mask, manager);
+  EXPECT_EQ(ADAPTER_TYPE_LOOPBACK, GetAdapterType(manager));
+  ClearNetworks(manager);
+  ReleaseIfAddrs(addr_list);
+
+  strcpy(if_name, "eth0");
+  addr_list = InstallIpv6Network(if_name, ipv6_address1, ipv6_mask, manager);
+  EXPECT_EQ(ADAPTER_TYPE_ETHERNET, GetAdapterType(manager));
+  ClearNetworks(manager);
+  ReleaseIfAddrs(addr_list);
+
 #if defined(WEBRTC_IOS)
   strcpy(if_name, "pdp_ip0");
   addr_list = InstallIpv6Network(if_name, ipv6_address1, ipv6_mask, manager);
