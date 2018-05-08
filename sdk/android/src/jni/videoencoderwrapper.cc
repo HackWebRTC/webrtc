@@ -75,8 +75,8 @@ int32_t VideoEncoderWrapper::InitEncodeInternal(JNIEnv* jni) {
 
   ScopedJavaLocalRef<jobject> settings = Java_Settings_Constructor(
       jni, number_of_cores_, codec_settings_.width, codec_settings_.height,
-      codec_settings_.startBitrate, codec_settings_.maxFramerate,
-      automatic_resize_on);
+      static_cast<int>(codec_settings_.startBitrate),
+      static_cast<int>(codec_settings_.maxFramerate), automatic_resize_on);
 
   ScopedJavaLocalRef<jobject> callback =
       Java_VideoEncoderWrapper_createEncoderCallback(jni,

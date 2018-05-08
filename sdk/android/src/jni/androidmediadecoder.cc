@@ -522,7 +522,7 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
   // Feed input to decoder.
   bool success = Java_MediaCodecVideoDecoder_queueInputBuffer(
       jni, j_media_codec_video_decoder_, j_input_buffer_index,
-      inputImage._length, presentation_timestamp_us,
+      static_cast<int>(inputImage._length), presentation_timestamp_us,
       static_cast<int64_t>(inputImage._timeStamp), inputImage.ntp_time_ms_);
   if (CheckException(jni) || !success) {
     ALOGE << "queueInputBuffer error";

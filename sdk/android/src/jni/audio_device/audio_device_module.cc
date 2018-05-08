@@ -605,8 +605,8 @@ void GetAudioParameters(JNIEnv* env,
                         bool use_stereo_output,
                         AudioParameters* input_parameters,
                         AudioParameters* output_parameters) {
-  const size_t output_channels = use_stereo_output ? 2 : 1;
-  const size_t input_channels = use_stereo_input ? 2 : 1;
+  const int output_channels = use_stereo_output ? 2 : 1;
+  const int input_channels = use_stereo_input ? 2 : 1;
   const size_t output_buffer_size = Java_WebRtcAudioManager_getOutputBufferSize(
       env, j_context, j_audio_manager, sample_rate, output_channels);
   const size_t input_buffer_size = Java_WebRtcAudioManager_getInputBufferSize(

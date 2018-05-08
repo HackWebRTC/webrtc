@@ -9,9 +9,7 @@
  */
 // Do not include this file directly. It's intended to be used only by the JNI
 // generation script. We are exporting types in strange namespaces in order to
-// be compatible with the generated code targeted for Chromium. We are bypassing
-// the wrapping done by Chromium's JniIntWrapper, JavaRef, and
-// ScopedJavaLocalRef, and use raw jobjects instead.
+// be compatible with the generated code targeted for Chromium.
 
 #ifndef SDK_ANDROID_SRC_JNI_JNI_GENERATOR_HELPER_H_
 #define SDK_ANDROID_SRC_JNI_JNI_GENERATOR_HELPER_H_
@@ -19,6 +17,7 @@
 #include <jni.h>
 
 #include "rtc_base/checks.h"
+#include "sdk/android/native_api/jni/jni_int_wrapper.h"
 #include "sdk/android/native_api/jni/scoped_java_ref.h"
 
 #define CHECK_CLAZZ(env, jcaller, clazz, ...) RTC_DCHECK(clazz);
@@ -38,15 +37,6 @@ inline void CheckException(JNIEnv* env) {
   CHECK_EXCEPTION(env);
 }
 }  // namespace jni_generator
-
-namespace {  // NOLINT(build/namespaces)
-// Bypass JniIntWrapper.
-// TODO(magjed): Start using Chromium's JniIntWrapper.
-typedef jint JniIntWrapper;
-inline jint as_jint(JniIntWrapper wrapper) {
-  return wrapper;
-}
-}  // namespace
 
 namespace base {
 

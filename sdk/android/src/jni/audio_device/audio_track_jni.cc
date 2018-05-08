@@ -77,9 +77,9 @@ int32_t AudioTrackJni::InitPlayout() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(!initialized_);
   RTC_DCHECK(!playing_);
-  if (!Java_WebRtcAudioTrack_initPlayout(env_, j_audio_track_,
-                                         audio_parameters_.sample_rate(),
-                                         audio_parameters_.channels())) {
+  if (!Java_WebRtcAudioTrack_initPlayout(
+          env_, j_audio_track_, audio_parameters_.sample_rate(),
+          static_cast<int>(audio_parameters_.channels()))) {
     RTC_LOG(LS_ERROR) << "InitPlayout failed";
     return -1;
   }
@@ -138,7 +138,8 @@ bool AudioTrackJni::SpeakerVolumeIsAvailable() {
 int AudioTrackJni::SetSpeakerVolume(uint32_t volume) {
   RTC_LOG(INFO) << "SetSpeakerVolume(" << volume << ")";
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  return Java_WebRtcAudioTrack_setStreamVolume(env_, j_audio_track_, volume)
+  return Java_WebRtcAudioTrack_setStreamVolume(env_, j_audio_track_,
+                                               static_cast<int>(volume))
              ? 0
              : -1;
 }

@@ -35,7 +35,8 @@ ScopedJavaLocalRef<jobject> NativeToJavaEncodedImage(
   if (image.qp_ != -1)
     qp = NativeToJavaInteger(jni, image.qp_);
   return Java_EncodedImage_Constructor(
-      jni, buffer, image._encodedWidth, image._encodedHeight,
+      jni, buffer, static_cast<int>(image._encodedWidth),
+      static_cast<int>(image._encodedHeight),
       image.capture_time_ms_ * rtc::kNumNanosecsPerMillisec, frame_type,
       static_cast<jint>(image.rotation_), image._completeFrame, qp);
 }

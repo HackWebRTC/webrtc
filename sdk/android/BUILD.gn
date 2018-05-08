@@ -1142,12 +1142,8 @@ rtc_static_library("native_api_jni") {
   visibility = [ "*" ]
   sources = [
     "native_api/jni/class_loader.cc",
-    "native_api/jni/class_loader.h",
     "native_api/jni/java_types.cc",
-    "native_api/jni/java_types.h",
     "native_api/jni/jvm.cc",
-    "native_api/jni/jvm.h",
-    "native_api/jni/scoped_java_ref.h",
     "src/jni/jni_generator_helper.cc",
     "src/jni/jni_generator_helper.h",
   ]
@@ -1155,6 +1151,7 @@ rtc_static_library("native_api_jni") {
   public = [
     "native_api/jni/class_loader.h",
     "native_api/jni/java_types.h",
+    "native_api/jni/jni_int_wrapper.h",
     "native_api/jni/jvm.h",
     "native_api/jni/scoped_java_ref.h",
   ]
