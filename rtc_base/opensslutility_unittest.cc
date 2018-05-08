@@ -32,7 +32,7 @@
 #include "rtc_base/gunit.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/openssl.h"
-#include "rtc_base/opensslcommon.h"
+#include "rtc_base/opensslutility.h"
 #include "rtc_base/sslroots.h"
 #include "test/gmock.h"
 
@@ -174,13 +174,14 @@ const unsigned char kFakeSSLCertificateLegacy[] = {
 // The server is deallocated. This client will have a peer certificate available
 // and is thus suitable for testing VerifyPeerCertMatchesHost.
 SSL* CreateSSLWithPeerCertificate(const unsigned char* cert, size_t cert_len) {
-  X509* x509 = d2i_X509(nullptr, &cert, checked_cast<long>(cert_len));
+  X509* x509 =
+      d2i_X509(nullptr, &cert, checked_cast<long>(cert_len));  // NOLINT
   RTC_CHECK(x509);
 
   const unsigned char* key_ptr = kFakeSSLPrivateKey;
-  EVP_PKEY* key =
-      d2i_PrivateKey(EVP_PKEY_EC, nullptr, &key_ptr,
-                     checked_cast<long>(arraysize(kFakeSSLPrivateKey)));
+  EVP_PKEY* key = d2i_PrivateKey(
+      EVP_PKEY_EC, nullptr, &key_ptr,
+      checked_cast<long>(arraysize(kFakeSSLPrivateKey)));  // NOLINT
   RTC_CHECK(key);
 
   SSL_CTX* ctx = SSL_CTX_new(SSLv23_method());
@@ -225,7 +226,7 @@ SSL* CreateSSLWithPeerCertificate(const unsigned char* cert, size_t cert_len) {
 }
 }  // namespace
 
-TEST(OpenSSLCommonTest, VerifyPeerCertMatchesHostFailsOnNoPeerCertificate) {
+TEST(OpenSSLUtilityTest, VerifyPeerCertMatchesHostFailsOnNoPeerCertificate) {
   SSL_CTX* ssl_ctx = SSL_CTX_new(DTLSv1_2_client_method());
   SSL* ssl = SSL_new(ssl_ctx);
 
@@ -235,7 +236,7 @@ TEST(OpenSSLCommonTest, VerifyPeerCertMatchesHostFailsOnNoPeerCertificate) {
   SSL_CTX_free(ssl_ctx);
 }
 
-TEST(OpenSSLCommonTest, VerifyPeerCertMatchesHost) {
+TEST(OpenSSLUtilityTest, VerifyPeerCertMatchesHost) {
   SSL* ssl = CreateSSLWithPeerCertificate(kFakeSSLCertificate,
                                           arraysize(kFakeSSLCertificate));
 
@@ -256,7 +257,7 @@ TEST(OpenSSLCommonTest, VerifyPeerCertMatchesHost) {
   SSL_free(ssl);
 }
 
-TEST(OpenSSLCommonTest, VerifyPeerCertMatchesHostLegacy) {
+TEST(OpenSSLUtilityTest, VerifyPeerCertMatchesHostLegacy) {
   SSL* ssl = CreateSSLWithPeerCertificate(kFakeSSLCertificateLegacy,
                                           arraysize(kFakeSSLCertificateLegacy));
 

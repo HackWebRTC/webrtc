@@ -544,7 +544,7 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
         &main_, socket_factory, MakeNetwork(addr), 0, 0, username_, password_,
         ProtocolAddress(server_addr, int_proto), kRelayCredentials, 0,
         std::string(), std::vector<std::string>(), std::vector<std::string>(),
-        nullptr);
+        nullptr, nullptr);
   }
   RelayPort* CreateGturnPort(const SocketAddress& addr,
                              ProtocolType int_proto, ProtocolType ext_proto) {
@@ -1486,7 +1486,7 @@ TEST_F(PortTest, TestTcpNoDelay) {
 }
 
 TEST_F(PortTest, TestDelayedBindingUdp) {
-  FakeAsyncPacketSocket *socket = new FakeAsyncPacketSocket();
+  FakeAsyncPacketSocket* socket = new FakeAsyncPacketSocket();
   FakePacketSocketFactory socket_factory;
 
   socket_factory.set_next_udp_socket(socket);
@@ -1502,7 +1502,7 @@ TEST_F(PortTest, TestDelayedBindingUdp) {
 }
 
 TEST_F(PortTest, TestDelayedBindingTcp) {
-  FakeAsyncPacketSocket *socket = new FakeAsyncPacketSocket();
+  FakeAsyncPacketSocket* socket = new FakeAsyncPacketSocket();
   FakePacketSocketFactory socket_factory;
 
   socket_factory.set_next_server_tcp_socket(socket);
@@ -1525,7 +1525,7 @@ void PortTest::TestCrossFamilyPorts(int type) {
                                 SocketAddress("2001:db8::1", 0),
                                 SocketAddress("2001:db8::2", 0)};
   for (int i = 0; i < 4; i++) {
-    FakeAsyncPacketSocket *socket = new FakeAsyncPacketSocket();
+    FakeAsyncPacketSocket* socket = new FakeAsyncPacketSocket();
     if (type == SOCK_DGRAM) {
       factory.set_next_udp_socket(socket);
       ports[i].reset(CreateUdpPort(addresses[i], &factory));
@@ -1595,7 +1595,7 @@ TEST_F(PortTest, TestUdpV6CrossTypePorts) {
                                 SocketAddress("fe80::2", 0),
                                 SocketAddress("::1", 0)};
   for (int i = 0; i < 4; i++) {
-    FakeAsyncPacketSocket *socket = new FakeAsyncPacketSocket();
+    FakeAsyncPacketSocket* socket = new FakeAsyncPacketSocket();
     factory.set_next_udp_socket(socket);
     ports[i].reset(CreateUdpPort(addresses[i], &factory));
     socket->set_state(AsyncPacketSocket::STATE_BINDING);

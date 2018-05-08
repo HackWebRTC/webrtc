@@ -53,9 +53,11 @@ class TestTurnServer : public TurnAuthInterface {
   TestTurnServer(rtc::Thread* thread,
                  const rtc::SocketAddress& int_addr,
                  const rtc::SocketAddress& udp_ext_addr,
-                 ProtocolType int_protocol = PROTO_UDP)
+                 ProtocolType int_protocol = PROTO_UDP,
+                 bool ignore_bad_cert = true,
+                 const std::string& common_name = "test turn server")
       : server_(thread), thread_(thread) {
-    AddInternalSocket(int_addr, int_protocol);
+    AddInternalSocket(int_addr, int_protocol, ignore_bad_cert, common_name);
     server_.SetExternalSocketFactory(new rtc::BasicPacketSocketFactory(thread),
                                      udp_ext_addr);
     server_.set_realm(kTestRealm);
@@ -78,7 +80,9 @@ class TestTurnServer : public TurnAuthInterface {
   }
 
   void AddInternalSocket(const rtc::SocketAddress& int_addr,
-                         ProtocolType proto) {
+                         ProtocolType proto,
+                         bool ignore_bad_cert = true,
+                         const std::string& common_name = "test turn server") {
     if (proto == cricket::PROTO_UDP) {
       server_.AddInternalSocket(
           rtc::AsyncUDPSocket::Create(thread_->socketserver(), int_addr),
@@ -96,8 +100,8 @@ class TestTurnServer : public TurnAuthInterface {
         rtc::SSLAdapter* adapter = rtc::SSLAdapter::Create(socket);
         adapter->SetRole(rtc::SSL_SERVER);
         adapter->SetIdentity(
-            rtc::SSLIdentity::Generate("test turn server", rtc::KeyParams()));
-        adapter->SetIgnoreBadCert(true);
+            rtc::SSLIdentity::Generate(common_name, rtc::KeyParams()));
+        adapter->SetIgnoreBadCert(ignore_bad_cert);
         socket = adapter;
       }
       socket->Bind(int_addr);

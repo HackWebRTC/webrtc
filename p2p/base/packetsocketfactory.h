@@ -16,6 +16,7 @@
 
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/proxyinfo.h"
+#include "rtc_base/sslcertificate.h"
 
 namespace rtc {
 
@@ -27,6 +28,9 @@ struct PacketSocketTcpOptions {
   int opts = 0;
   std::vector<std::string> tls_alpn_protocols;
   std::vector<std::string> tls_elliptic_curves;
+  // An optional custom SSL certificate verifier that an API user can provide to
+  // inject their own certificate verification logic.
+  SSLCertificateVerifier* tls_cert_verifier = nullptr;
 };
 
 class AsyncPacketSocket;

@@ -21,6 +21,7 @@
 #include "rtc_base/helpers.h"
 #include "rtc_base/proxyinfo.h"
 #include "rtc_base/sigslot.h"
+#include "rtc_base/sslcertificate.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/thread_checker.h"
 
@@ -180,6 +181,7 @@ struct RelayServerConfig {
   TlsCertPolicy tls_cert_policy = TlsCertPolicy::TLS_CERT_POLICY_SECURE;
   std::vector<std::string> tls_alpn_protocols;
   std::vector<std::string> tls_elliptic_curves;
+  rtc::SSLCertificateVerifier* tls_cert_verifier = nullptr;
 };
 
 class PortAllocatorSession : public sigslot::has_slots<> {

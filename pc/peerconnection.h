@@ -906,6 +906,7 @@ class PeerConnection : public PeerConnectionInternal,
   PeerConnectionInterface::RTCConfiguration configuration_;
 
   std::unique_ptr<cricket::PortAllocator> port_allocator_;
+  std::unique_ptr<rtc::SSLCertificateVerifier> tls_cert_verifier_;
   int port_allocator_flags_ = 0;
 
   // One PeerConnection has only one RTCP CNAME.

@@ -904,8 +904,10 @@ bool PeerConnection::Initialize(
                          "PeerConnectionObserver";
     return false;
   }
+
   observer_ = dependencies.observer;
   port_allocator_ = std::move(dependencies.allocator);
+  tls_cert_verifier_ = std::move(dependencies.tls_cert_verifier);
 
   // The port allocator lives on the network thread and should be initialized
   // there.
@@ -4674,6 +4676,11 @@ bool PeerConnection::InitializePortAllocator_n(
       ConvertIceTransportTypeToCandidateFilter(configuration.type));
   port_allocator_->set_max_ipv6_networks(configuration.max_ipv6_networks);
 
+  if (tls_cert_verifier_ != nullptr) {
+    for (auto& turn_server : turn_servers) {
+      turn_server.tls_cert_verifier = tls_cert_verifier_.get();
+    }
+  }
   // Call this last since it may create pooled allocator sessions using the
   // properties set above.
   port_allocator_->SetConfiguration(

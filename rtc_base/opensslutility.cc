@@ -8,7 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/opensslcommon.h"
+#include "rtc_base/opensslutility.h"
+
+#include <memory>
 
 #if defined(WEBRTC_POSIX)
 #include <unistd.h>
@@ -24,9 +26,15 @@
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
+#include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/openssl.h"
+#include "rtc_base/opensslcertificate.h"
+#ifdef WEBRTC_ENABLE_BUILT_IN_SSL_ROOT_CERTIFICATES
+#include "rtc_base/sslroots.h"
+#endif  // WEBRTC_ENABLE_BUILT_IN_SSL_ROOT_CERTIFICATES
 
 namespace rtc {
 namespace openssl {
@@ -90,6 +98,38 @@ bool VerifyPeerCertMatchesHost(SSL* ssl, const std::string& host) {
   X509_free(certificate);
   return is_valid_cert_name;
 }
+
+void LogSSLErrors(const std::string& prefix) {
+  char error_buf[200];
+  unsigned long err;  // NOLINT
+
+  while ((err = ERR_get_error()) != 0) {
+    ERR_error_string_n(err, error_buf, sizeof(error_buf));
+    RTC_LOG(LS_ERROR) << prefix << ": " << error_buf << "\n";
+  }
+}
+
+#ifdef WEBRTC_ENABLE_BUILT_IN_SSL_ROOT_CERTIFICATES
+bool LoadBuiltinSSLRootCertificates(SSL_CTX* ctx) {
+  int count_of_added_certs = 0;
+  for (size_t i = 0; i < arraysize(kSSLCertCertificateList); i++) {
+    const unsigned char* cert_buffer = kSSLCertCertificateList[i];
+    size_t cert_buffer_len = kSSLCertCertificateSizeList[i];
+    X509* cert = d2i_X509(nullptr, &cert_buffer,
+                          checked_cast<long>(cert_buffer_len));  // NOLINT
+    if (cert) {
+      int return_value = X509_STORE_add_cert(SSL_CTX_get_cert_store(ctx), cert);
+      if (return_value == 0) {
+        RTC_LOG(LS_WARNING) << "Unable to add certificate.";
+      } else {
+        count_of_added_certs++;
+      }
+      X509_free(cert);
+    }
+  }
+  return count_of_added_certs > 0;
+}
+#endif  // WEBRTC_ENABLE_BUILT_IN_SSL_ROOT_CERTIFICATES
 
 }  // namespace openssl
 }  // namespace rtc

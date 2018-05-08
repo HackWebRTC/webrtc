@@ -782,8 +782,8 @@ rtc_static_library("rtc_base_generic") {
     "openssl.h",
     "openssladapter.cc",
     "openssladapter.h",
-    "opensslcommon.cc",
-    "opensslcommon.h",
+    "opensslcertificate.cc",
+    "opensslcertificate.h",
     "openssldigest.cc",
     "openssldigest.h",
     "opensslidentity.cc",
@@ -792,6 +792,8 @@ rtc_static_library("rtc_base_generic") {
     "opensslsessioncache.h",
     "opensslstreamadapter.cc",
     "opensslstreamadapter.h",
+    "opensslutility.cc",
+    "opensslutility.h",
     "physicalsocketserver.cc",
     "physicalsocketserver.h",
     "proxyinfo.cc",
@@ -819,6 +821,8 @@ rtc_static_library("rtc_base_generic") {
     "socketstream.h",
     "ssladapter.cc",
     "ssladapter.h",
+    "sslcertificate.cc",
+    "sslcertificate.h",
     "sslfingerprint.cc",
     "sslfingerprint.h",
     "sslidentity.cc",
@@ -879,6 +883,10 @@ rtc_static_library("rtc_base_generic") {
     deps += [ "//third_party/boringssl" ]
   } else {
     configs += [ ":external_ssl_library" ]
+  }
+
+  if (rtc_builtin_ssl_root_certificates) {
+    defines += [ "WEBRTC_ENABLE_BUILT_IN_SSL_ROOT_CERTIFICATES" ]
   }
 
   if (is_android) {
@@ -1021,6 +1029,7 @@ rtc_source_set("rtc_base_tests_utils") {
     "sigslottester.h",
     "sigslottester.h.pump",
     "testbase64.h",
+    "testcertificateverifier.h",
     "testclient.cc",
     "testclient.h",
     "testechoserver.cc",
@@ -1255,6 +1264,7 @@ if (rtc_include_tests) {
   }
   rtc_source_set("rtc_base_unittests") {
     testonly = true
+    defines = []
 
     sources = [
       "callback_unittest.cc",
@@ -1292,8 +1302,8 @@ if (rtc_include_tests) {
     if (is_posix || is_fuchsia) {
       sources += [
         "openssladapter_unittest.cc",
-        "opensslcommon_unittest.cc",
         "opensslsessioncache_unittest.cc",
+        "opensslutility_unittest.cc",
         "ssladapter_unittest.cc",
         "sslidentity_unittest.cc",
         "sslstreamadapter_unittest.cc",
@@ -1320,6 +1330,10 @@ if (rtc_include_tests) {
       deps += [ "//third_party/boringssl" ]
     } else {
       configs += [ ":external_ssl_library" ]
+    }
+
+    if (!rtc_builtin_ssl_root_certificates) {
+      defines += [ "WEBRTC_DISABLE_BUILT_IN_SSL_ROOT_CERTIFICATES" ]
     }
   }
 }
