@@ -45,6 +45,8 @@ RealFourierOoura::RealFourierOoura(int fft_order)
   RTC_CHECK_GE(fft_order, 1);
 }
 
+RealFourierOoura::~RealFourierOoura() = default;
+
 void RealFourierOoura::Forward(const float* src, complex<float>* dest) const {
   {
     // This cast is well-defined since C++11. See "Non-static data members" at:
@@ -80,6 +82,10 @@ void RealFourierOoura::Inverse(const complex<float>* src, float* dest) const {
   // Ooura returns a scaled version.
   const float scale = 2.0f / length_;
   std::for_each(dest, dest + length_, [scale](float& v) { v *= scale; });
+}
+
+int RealFourierOoura::order() const {
+  return order_;
 }
 
 }  // namespace webrtc

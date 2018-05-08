@@ -15,7 +15,8 @@ namespace webrtc {
 namespace rnn_vad {
 
 PitchInfo PitchSearch(rtc::ArrayView<const float, kBufSize24kHz> pitch_buf,
-                      PitchInfo prev_pitch_48kHz) {
+                      PitchInfo prev_pitch_48kHz,
+                      RealFourier* fft) {
   // Perform the initial pitch search at 12 kHz.
   std::array<float, kBufSize12kHz> pitch_buf_decimated;
   Decimate2x(pitch_buf,
@@ -24,7 +25,8 @@ PitchInfo PitchSearch(rtc::ArrayView<const float, kBufSize24kHz> pitch_buf,
   std::array<float, kNumInvertedLags12kHz> auto_corr;
   ComputePitchAutoCorrelation(
       {pitch_buf_decimated.data(), pitch_buf_decimated.size()}, kMaxPitch12kHz,
-      {auto_corr.data(), auto_corr.size()});
+      {auto_corr.data(), auto_corr.size()}, fft);
+
   // Search for pitch at 12 kHz.
   std::array<size_t, 2> pitch_candidates_inv_lags = FindBestPitchPeriods(
       {auto_corr.data(), auto_corr.size()},

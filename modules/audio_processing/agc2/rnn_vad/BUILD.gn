@@ -36,6 +36,7 @@ source_set("lib") {
   ]
   deps = [
     "../../../../api:array_view",
+    "../../../../common_audio/",
     "../../../../rtc_base:checks",
     "../../../../rtc_base:rtc_base_approved",
     "//third_party/rnnoise:kiss_fft",
@@ -95,6 +96,7 @@ if (rtc_include_tests) {
       ":lib",
       ":lib_test",
       "../../../../api:array_view",
+      "../../../../common_audio/",
       "../../../../rtc_base:checks",
       "../../../../test:test_support",
       "//third_party/rnnoise:rnn_vad",

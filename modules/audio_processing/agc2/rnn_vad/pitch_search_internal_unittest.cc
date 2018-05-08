@@ -9,6 +9,7 @@
  */
 
 #include "modules/audio_processing/agc2/rnn_vad/pitch_search_internal.h"
+#include "common_audio/real_fourier.h"
 
 #include <array>
 #include <tuple>
@@ -415,14 +416,45 @@ TEST(RnnVadTest, ComputePitchAutoCorrelationBitExactness) {
   {
     // TODO(bugs.webrtc.org/8948): Add when the issue is fixed.
     // FloatingPointExceptionObserver fpe_observer;
-
+    std::unique_ptr<RealFourier> fft =
+        RealFourier::Create(kAutoCorrelationFftOrder);
     ComputePitchAutoCorrelation(
         {pitch_buf_decimated.data(), pitch_buf_decimated.size()},
-        kMaxPitch12kHz, {computed_output.data(), computed_output.size()});
+        kMaxPitch12kHz, {computed_output.data(), computed_output.size()},
+        fft.get());
   }
   ExpectNearAbsolute(
       {kPitchBufferAutoCorrCoeffs.data(), kPitchBufferAutoCorrCoeffs.size()},
       {computed_output.data(), computed_output.size()}, 3e-3f);
+}
+
+// Check that the auto correlation function computes the right thing for a
+// simple use case.
+TEST(RnnVadTest, ComputePitchAutoCorrelationConstantBuffer) {
+  // Create constant signal with no pitch.
+  std::array<float, kBufSize12kHz> pitch_buf_decimated;
+  std::fill(pitch_buf_decimated.begin(), pitch_buf_decimated.end(), 1.f);
+
+  std::array<float, kPitchBufferAutoCorrCoeffs.size()> computed_output;
+  {
+    // TODO(bugs.webrtc.org/8948): Add when the issue is fixed.
+    // FloatingPointExceptionObserver fpe_observer;
+
+    std::unique_ptr<RealFourier> fft =
+        RealFourier::Create(kAutoCorrelationFftOrder);
+    ComputePitchAutoCorrelation(
+        {pitch_buf_decimated.data(), pitch_buf_decimated.size()},
+        kMaxPitch12kHz, {computed_output.data(), computed_output.size()},
+        fft.get());
+  }
+
+  // The expected output is constantly the length of the fixed 'x'
+  // array in ComputePitchAutoCorrelation.
+  std::array<float, kPitchBufferAutoCorrCoeffs.size()> expected_output;
+  std::fill(expected_output.begin(), expected_output.end(),
+            kBufSize12kHz - kMaxPitch12kHz);
+  ExpectNearAbsolute({expected_output.data(), expected_output.size()},
+                     {computed_output.data(), computed_output.size()}, 4e-5f);
 }
 
 TEST(RnnVadTest, FindBestPitchPeriodsBitExactness) {

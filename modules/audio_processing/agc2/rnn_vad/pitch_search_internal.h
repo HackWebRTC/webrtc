@@ -14,6 +14,7 @@
 #include <array>
 
 #include "api/array_view.h"
+#include "common_audio/real_fourier.h"
 #include "modules/audio_processing/agc2/rnn_vad/common.h"
 #include "modules/audio_processing/agc2/rnn_vad/pitch_info.h"
 
@@ -26,6 +27,11 @@ static_assert(kMaxPitch12kHz > kInitialMinPitch12kHz, "");
 static_assert(kMaxPitch24kHz > kInitialMinPitch24kHz, "");
 constexpr size_t kNumInvertedLags12kHz = kMaxPitch12kHz - kInitialMinPitch12kHz;
 constexpr size_t kNumInvertedLags24kHz = kMaxPitch24kHz - kInitialMinPitch24kHz;
+constexpr int kAutoCorrelationFftOrder = 9;  // Length-512 FFT.
+
+static_assert(1 << kAutoCorrelationFftOrder >
+                  kNumInvertedLags12kHz + kBufSize12kHz - kMaxPitch12kHz,
+              "");
 
 // Performs 2x decimation without any anti-aliasing filter.
 void Decimate2x(rtc::ArrayView<const float, kBufSize24kHz> src,
@@ -70,7 +76,8 @@ void ComputeSlidingFrameSquareEnergies(
 void ComputePitchAutoCorrelation(
     rtc::ArrayView<const float, kBufSize12kHz> pitch_buf,
     size_t max_pitch_period,
-    rtc::ArrayView<float, kNumInvertedLags12kHz> auto_corr);
+    rtc::ArrayView<float, kNumInvertedLags12kHz> auto_corr,
+    webrtc::RealFourier* fft);
 
 // Given the auto-correlation coefficients stored according to
 // ComputePitchAutoCorrelation() (i.e., using inverted lags), returns the best

@@ -12,6 +12,7 @@
 #define MODULES_AUDIO_PROCESSING_AGC2_RNN_VAD_PITCH_SEARCH_H_
 
 #include "api/array_view.h"
+#include "common_audio/real_fourier.h"
 #include "modules/audio_processing/agc2/rnn_vad/common.h"
 #include "modules/audio_processing/agc2/rnn_vad/pitch_info.h"
 
@@ -21,7 +22,8 @@ namespace rnn_vad {
 // Searches the pitch period and gain. Return the pitch estimation data for
 // 48 kHz.
 PitchInfo PitchSearch(rtc::ArrayView<const float, kBufSize24kHz> pitch_buf,
-                      PitchInfo prev_pitch_48kHz);
+                      PitchInfo prev_pitch_48kHz,
+                      RealFourier* fft);
 
 }  // namespace rnn_vad
 }  // namespace webrtc
