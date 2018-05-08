@@ -465,6 +465,7 @@ TEST_F(OrtcFactoryIntegrationTest, SetTrackWhileSending) {
   // Destroy old source, set a new track, and verify new frames are received
   // from the new track. The VideoTrackSource is reference counted and may live
   // a little longer, so tell it that its source is going away now.
+  fake_video_sources_[0]->Stop();
   fake_video_track_sources_[0]->OnSourceDestroyed();
   fake_video_track_sources_[0] = nullptr;
   fake_video_sources_[0].reset();

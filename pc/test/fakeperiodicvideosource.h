@@ -11,9 +11,12 @@
 #ifndef PC_TEST_FAKEPERIODICVIDEOSOURCE_H_
 #define PC_TEST_FAKEPERIODICVIDEOSOURCE_H_
 
+#include <memory>
+
 #include "api/videosourceinterface.h"
 #include "media/base/fakeframesource.h"
 #include "media/base/videobroadcaster.h"
+#include "rtc_base/ptr_util.h"
 #include "rtc_base/task_queue.h"
 
 namespace webrtc {
@@ -25,9 +28,11 @@ class FakePeriodicVideoSource final
   static constexpr int kWidth = 640;
   static constexpr int kHeight = 480;
 
-  FakePeriodicVideoSource() {
+  FakePeriodicVideoSource()
+      : task_queue_(
+            rtc::MakeUnique<rtc::TaskQueue>("FakePeriodicVideoTrackSource")) {
     thread_checker_.DetachFromThread();
-    task_queue_.PostTask(rtc::MakeUnique<FrameTask>(&broadcaster_));
+    task_queue_->PostTask(rtc::MakeUnique<FrameTask>(&broadcaster_));
   }
 
   void RemoveSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) override {
@@ -39,6 +44,11 @@ class FakePeriodicVideoSource final
                        const rtc::VideoSinkWants& wants) override {
     RTC_DCHECK(thread_checker_.CalledOnValidThread());
     broadcaster_.AddOrUpdateSink(sink, wants);
+  }
+
+  void Stop() {
+    RTC_DCHECK(task_queue_);
+    task_queue_.reset();
   }
 
  private:
@@ -65,8 +75,7 @@ class FakePeriodicVideoSource final
 
   rtc::VideoBroadcaster broadcaster_;
 
-  // Last member, depend on detruction order.
-  rtc::TaskQueue task_queue_{"FakePeriodicVideoTrackSource"};
+  std::unique_ptr<rtc::TaskQueue> task_queue_;
 };
 
 }  // namespace webrtc
