@@ -31,7 +31,6 @@ config("audio_device_warnings_config") {
       "-Wno-logical-op-parentheses",
       "-Wno-microsoft-extra-qualification",
       "-Wno-microsoft-goto",
-      "-Wno-parentheses-equality",
       "-Wno-reorder",
       "-Wno-shift-overflow",
 
