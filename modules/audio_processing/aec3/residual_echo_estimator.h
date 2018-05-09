@@ -83,6 +83,7 @@ class ResidualEchoEstimator {
   std::array<float, kFftLengthBy2Plus1> X2_noise_floor_;
   std::array<int, kFftLengthBy2Plus1> X2_noise_floor_counter_;
   const bool soft_transparent_mode_;
+  const bool override_estimated_echo_path_gain_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(ResidualEchoEstimator);
 };

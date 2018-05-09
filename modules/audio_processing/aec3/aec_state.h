@@ -49,7 +49,7 @@ class AecState {
   bool UseLinearFilterOutput() const { return use_linear_filter_output_; }
 
   // Returns the estimated echo path gain.
-  bool EchoPathGain() const { return filter_analyzer_.Gain(); }
+  float EchoPathGain() const { return filter_analyzer_.Gain(); }
 
   // Returns whether the render signal is currently active.
   bool ActiveRender() const { return blocks_with_active_render_ > 200; }

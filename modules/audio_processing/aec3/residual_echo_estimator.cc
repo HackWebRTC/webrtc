@@ -24,12 +24,17 @@ bool EnableSoftTransparentMode() {
   return !field_trial::IsEnabled("WebRTC-Aec3SoftTransparentModeKillSwitch");
 }
 
+bool OverrideEstimatedEchoPathGain() {
+  return !field_trial::IsEnabled("WebRTC-Aec3OverrideEchoPathGainKillSwitch");
+}
+
 }  // namespace
 
 ResidualEchoEstimator::ResidualEchoEstimator(const EchoCanceller3Config& config)
     : config_(config),
       S2_old_(config_.filter.main.length_blocks),
-      soft_transparent_mode_(EnableSoftTransparentMode()) {
+      soft_transparent_mode_(EnableSoftTransparentMode()),
+      override_estimated_echo_path_gain_(OverrideEstimatedEchoPathGain()) {
   Reset();
 }
 
@@ -74,9 +79,15 @@ void ResidualEchoEstimator::Estimate(
                          0.f, a - config_.echo_model.stationary_gate_slope * b);
                    });
 
-    float echo_path_gain = aec_state.TransparentMode() && soft_transparent_mode_
-                               ? 0.01f
-                               : aec_state.EchoPathGain();
+    float echo_path_gain;
+    if (override_estimated_echo_path_gain_) {
+      echo_path_gain =
+          aec_state.TransparentMode() && soft_transparent_mode_ ? 0.01f : 1.f;
+    } else {
+      echo_path_gain = aec_state.TransparentMode() && soft_transparent_mode_
+                           ? 0.01f
+                           : aec_state.EchoPathGain();
+    }
     NonLinearEstimate(echo_path_gain, X2, Y2, R2);
 
     // If the echo is saturated, estimate the echo power as the maximum echo
