@@ -444,14 +444,22 @@ def CheckNoStreamUsageIsAdded(input_api, output_api,
     return [output_api.PresubmitError(error_msg, errors)]
   return []
 
-def CheckPublicDepsIsNotUsed(gn_files, output_api):
+def CheckPublicDepsIsNotUsed(gn_files, input_api, output_api):
+  """Checks that public_deps is not used without a good reason."""
   result = []
-  error_msg = ('public_deps is not allowed in WebRTC BUILD.gn files because '
-               'it doesn\'t map well to downstream build systems.\n'
-               'Used in: %s (line %d).')
+  no_presubmit_check_re = input_api.re.compile(
+      r'# no-presubmit-check TODO\(webrtc:8603\)')
+  error_msg = ('public_deps is not recommended in WebRTC BUILD.gn files '
+               'because it doesn\'t map well to downstream build systems.\n'
+               'Used in: %s (line %d).\n'
+               'If you are not adding this code (e.g. you are just moving '
+               'existing code) or you have a good reason, you can add a '
+               'comment on the line that causes the problem:\n\n'
+               'public_deps = [  # no-presubmit-check TODO(webrtc:8603)\n')
   for affected_file in gn_files:
     for (line_number, affected_line) in affected_file.ChangedContents():
-      if 'public_deps' in affected_line:
+      if ('public_deps' in affected_line
+          and not no_presubmit_check_re.search(affected_line)):
         result.append(
             output_api.PresubmitError(error_msg % (affected_file.LocalPath(),
                                                    line_number)))
@@ -489,7 +497,7 @@ def CheckGnChanges(input_api, output_api):
     result.extend(CheckNoMixingSources(input_api, gn_files, output_api))
     result.extend(CheckNoPackageBoundaryViolations(input_api, gn_files,
                                                    output_api))
-    result.extend(CheckPublicDepsIsNotUsed(gn_files, output_api))
+    result.extend(CheckPublicDepsIsNotUsed(gn_files, input_api, output_api))
     result.extend(CheckCheckIncludesIsNotUsed(gn_files, output_api))
   return result
 
