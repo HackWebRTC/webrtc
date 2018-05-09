@@ -8,17 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_CONGESTION_CONTROLLER_NETWORK_CONTROL_INCLUDE_NETWORK_TYPES_H_
-#define MODULES_CONGESTION_CONTROLLER_NETWORK_CONTROL_INCLUDE_NETWORK_TYPES_H_
+#ifndef API_TRANSPORT_NETWORK_TYPES_H_
+#define API_TRANSPORT_NETWORK_TYPES_H_
 #include <stdint.h>
 #include <vector>
 
+#include "api/optional.h"
 #include "api/units/data_rate.h"
 #include "api/units/data_size.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
-#include "modules/include/module_common_types.h"
-#include "rtc_base/constructormagic.h"
 
 namespace webrtc {
 
@@ -64,6 +63,22 @@ struct NetworkRouteChange {
   // when network route changes.
   TargetRateConstraints constraints;
   rtc::Optional<DataRate> starting_rate;
+};
+
+struct PacedPacketInfo {
+  PacedPacketInfo();
+  PacedPacketInfo(int probe_cluster_id,
+                  int probe_cluster_min_probes,
+                  int probe_cluster_min_bytes);
+
+  bool operator==(const PacedPacketInfo& rhs) const;
+
+  // TODO(srte): Move probing info to a separate, optional struct.
+  static constexpr int kNotAProbe = -1;
+  int send_bitrate_bps = -1;
+  int probe_cluster_id = kNotAProbe;
+  int probe_cluster_min_probes = -1;
+  int probe_cluster_min_bytes = -1;
 };
 
 struct SentPacket {
@@ -176,4 +191,4 @@ struct ProcessInterval {
 };
 }  // namespace webrtc
 
-#endif  // MODULES_CONGESTION_CONTROLLER_NETWORK_CONTROL_INCLUDE_NETWORK_TYPES_H_
+#endif  // API_TRANSPORT_NETWORK_TYPES_H_

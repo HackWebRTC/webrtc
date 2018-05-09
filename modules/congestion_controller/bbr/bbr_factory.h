@@ -13,7 +13,7 @@
 
 #include <memory>
 
-#include "modules/congestion_controller/network_control/include/network_control.h"
+#include "api/transport/network_control.h"
 
 namespace webrtc {
 

@@ -11,9 +11,9 @@
 #include <algorithm>
 #include <memory>
 
+#include "api/transport/test/network_control_tester.h"
 #include "modules/congestion_controller/bbr/bbr_factory.h"
 #include "modules/congestion_controller/bbr/bbr_network_controller.h"
-#include "modules/congestion_controller/network_control/test/network_control_tester.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 

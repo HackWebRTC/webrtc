@@ -19,6 +19,7 @@
 
 #include "api/optional.h"
 #include "api/rtp_headers.h"
+#include "api/transport/network_types.h"
 #include "api/video/video_rotation.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/include/module_common_types_public.h"
@@ -272,30 +273,6 @@ class CallStatsObserver {
 
   virtual ~CallStatsObserver() {}
 };
-
-struct PacedPacketInfo {
-  PacedPacketInfo() {}
-  PacedPacketInfo(int probe_cluster_id,
-                  int probe_cluster_min_probes,
-                  int probe_cluster_min_bytes)
-      : probe_cluster_id(probe_cluster_id),
-        probe_cluster_min_probes(probe_cluster_min_probes),
-        probe_cluster_min_bytes(probe_cluster_min_bytes) {}
-
-  bool operator==(const PacedPacketInfo& rhs) const {
-    return send_bitrate_bps == rhs.send_bitrate_bps &&
-           probe_cluster_id == rhs.probe_cluster_id &&
-           probe_cluster_min_probes == rhs.probe_cluster_min_probes &&
-           probe_cluster_min_bytes == rhs.probe_cluster_min_bytes;
-  }
-
-  static constexpr int kNotAProbe = -1;
-  int send_bitrate_bps = -1;
-  int probe_cluster_id = kNotAProbe;
-  int probe_cluster_min_probes = -1;
-  int probe_cluster_min_bytes = -1;
-};
-
 }  // namespace webrtc
 
 #endif  // MODULES_INCLUDE_MODULE_COMMON_TYPES_H_

@@ -14,9 +14,9 @@
 #include <functional>
 #include <memory>
 #include <vector>
+#include "api/transport/network_types.h"
 #include "modules/congestion_controller/bbr/bbr_factory.h"
 #include "modules/congestion_controller/goog_cc/include/goog_cc_factory.h"
-#include "modules/congestion_controller/network_control/include/network_types.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "rtc_base/bind.h"
 #include "rtc_base/checks.h"

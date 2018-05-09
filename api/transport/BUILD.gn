@@ -18,3 +18,37 @@ rtc_source_set("bitrate_settings") {
     "..:optional",
   ]
 }
+
+rtc_static_library("network_control") {
+  sources = [
+    "network_control.h",
+    "network_types.cc",
+    "network_types.h",
+  ]
+
+  deps = [
+    "..:optional",
+    "../units:data_rate",
+    "../units:data_size",
+    "../units:time_delta",
+    "../units:timestamp",
+  ]
+}
+
+if (rtc_include_tests) {
+  rtc_source_set("network_control_test") {
+    testonly = true
+    sources = [
+      "test/mock_network_control.h",
+      "test/network_control_tester.cc",
+      "test/network_control_tester.h",
+    ]
+    deps = [
+      ":network_control",
+      "../:optional",
+      "../../rtc_base:checks",
+      "../../rtc_base:rtc_base_approved",
+      "../../test:test_support",
+    ]
+  }
+}

@@ -39,6 +39,7 @@ rtc_static_library("congestion_controller") {
     "../:congestion_controller",
     "../..:module_api",
     "../../..:webrtc_common",
+    "../../../api/transport:network_control",
     "../../../rtc_base:checks",
     "../../../rtc_base:rate_limiter",
     "../../../rtc_base:rtc_task_queue_api",
@@ -54,7 +55,6 @@ rtc_static_library("congestion_controller") {
     "../../rtp_rtcp:rtp_rtcp_format",
     "../bbr",
     "../goog_cc",
-    "../network_control",
   ]
 
   if (!build_with_mozilla) {
@@ -96,6 +96,7 @@ if (rtc_include_tests) {
       ":transport_feedback",
       "../:congestion_controller",
       "../:mock_congestion_controller",
+      "../../../api/transport:network_control",
       "../../../logging:mocks",
       "../../../rtc_base:checks",
       "../../../rtc_base:rtc_base",
@@ -109,7 +110,6 @@ if (rtc_include_tests) {
       "../../pacing:pacing",
       "../../remote_bitrate_estimator:remote_bitrate_estimator",
       "../../rtp_rtcp:rtp_rtcp_format",
-      "../network_control",
       "//testing/gmock",
     ]
     if (!build_with_chromium && is_clang) {

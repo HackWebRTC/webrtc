@@ -17,10 +17,10 @@
 #include <memory>
 #include <vector>
 
+#include "api/transport/network_control.h"
+#include "api/transport/network_types.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/congestion_controller/include/send_side_congestion_controller_interface.h"
-#include "modules/congestion_controller/network_control/include/network_control.h"
-#include "modules/congestion_controller/network_control/include/network_types.h"
 #include "modules/congestion_controller/rtp/pacer_controller.h"
 #include "modules/congestion_controller/rtp/transport_feedback_adapter.h"
 #include "modules/include/module.h"

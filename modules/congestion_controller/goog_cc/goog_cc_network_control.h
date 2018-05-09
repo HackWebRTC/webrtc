@@ -17,13 +17,13 @@
 #include <vector>
 
 #include "api/optional.h"
+#include "api/transport/network_control.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/bitrate_controller/send_side_bandwidth_estimation.h"
 #include "modules/congestion_controller/goog_cc/acknowledged_bitrate_estimator.h"
 #include "modules/congestion_controller/goog_cc/alr_detector.h"
 #include "modules/congestion_controller/goog_cc/delay_based_bwe.h"
 #include "modules/congestion_controller/goog_cc/probe_controller.h"
-#include "modules/congestion_controller/network_control/include/network_control.h"
 #include "rtc_base/constructormagic.h"
 
 namespace webrtc {

@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/congestion_controller/network_control/test/network_control_tester.h"
+#include "api/transport/test/network_control_tester.h"
 
 #include <algorithm>
 
-#include "modules/congestion_controller/network_control/include/network_control.h"
+#include "api/transport/network_control.h"
 #include "rtc_base/logging.h"
 
 namespace webrtc {

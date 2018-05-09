@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/congestion_controller/network_control/include/network_types.h"
+#include "api/transport/network_types.h"
 
 namespace webrtc {
 
@@ -64,5 +64,21 @@ NetworkControlUpdate::NetworkControlUpdate() = default;
 NetworkControlUpdate::NetworkControlUpdate(const NetworkControlUpdate&) =
     default;
 NetworkControlUpdate::~NetworkControlUpdate() = default;
+
+PacedPacketInfo::PacedPacketInfo() = default;
+
+PacedPacketInfo::PacedPacketInfo(int probe_cluster_id,
+                                 int probe_cluster_min_probes,
+                                 int probe_cluster_min_bytes)
+    : probe_cluster_id(probe_cluster_id),
+      probe_cluster_min_probes(probe_cluster_min_probes),
+      probe_cluster_min_bytes(probe_cluster_min_bytes) {}
+
+bool PacedPacketInfo::operator==(const PacedPacketInfo& rhs) const {
+  return send_bitrate_bps == rhs.send_bitrate_bps &&
+         probe_cluster_id == rhs.probe_cluster_id &&
+         probe_cluster_min_probes == rhs.probe_cluster_min_probes &&
+         probe_cluster_min_bytes == rhs.probe_cluster_min_bytes;
+}
 
 }  // namespace webrtc

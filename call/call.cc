@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "api/optional.h"
+#include "api/transport/network_control.h"
 #include "audio/audio_receive_stream.h"
 #include "audio/audio_send_stream.h"
 #include "audio/audio_state.h"
@@ -37,7 +38,6 @@
 #include "logging/rtc_event_log/rtc_stream_config.h"
 #include "modules/bitrate_controller/include/bitrate_controller.h"
 #include "modules/congestion_controller/include/receive_side_congestion_controller.h"
-#include "modules/congestion_controller/network_control/include/network_control.h"
 #include "modules/rtp_rtcp/include/flexfec_receiver.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/include/rtp_header_parser.h"
@@ -54,8 +54,8 @@
 #include "rtc_base/ptr_util.h"
 #include "rtc_base/rate_limiter.h"
 #include "rtc_base/sequenced_task_checker.h"
-#include "rtc_base/synchronization/rw_lock_wrapper.h"
 #include "rtc_base/strings/string_builder.h"
+#include "rtc_base/synchronization/rw_lock_wrapper.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/trace_event.h"

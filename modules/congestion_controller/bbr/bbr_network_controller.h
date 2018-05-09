@@ -18,11 +18,11 @@
 #include <string>
 #include <vector>
 
+#include "api/transport/network_control.h"
+#include "api/transport/network_types.h"
 #include "modules/congestion_controller/bbr/data_transfer_tracker.h"
 #include "modules/congestion_controller/bbr/rtt_stats.h"
 #include "modules/congestion_controller/bbr/windowed_filter.h"
-#include "modules/congestion_controller/network_control/include/network_control.h"
-#include "modules/congestion_controller/network_control/include/network_types.h"
 
 #include "api/optional.h"
 #include "rtc_base/random.h"
