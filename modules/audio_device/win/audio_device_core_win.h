@@ -308,8 +308,6 @@ private:
     uint16_t                          _inputDeviceIndex;
     uint16_t                          _outputDeviceIndex;
 
-    uint16_t                          _playBufDelay;
-
     mutable char                            _str[512];
 };
 

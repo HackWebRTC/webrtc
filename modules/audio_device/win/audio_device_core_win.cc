@@ -425,7 +425,6 @@ AudioDeviceWindowsCore::AudioDeviceWindowsCore()
       _playIsInitialized(false),
       _speakerIsInitialized(false),
       _microphoneIsInitialized(false),
-      _playBufDelay(80),
       _usingInputDeviceIndex(false),
       _usingOutputDeviceIndex(false),
       _inputDevice(AudioDeviceModule::kDefaultCommunicationDevice),
