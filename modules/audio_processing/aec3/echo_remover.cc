@@ -74,7 +74,8 @@ class EchoRemoverImpl final : public EchoRemover {
 
   // Returns the internal delay estimate in blocks.
   rtc::Optional<int> Delay() const override {
-    return aec_state_.InternalDelay();
+    // TODO(peah): Remove or reactivate this functionality.
+    return rtc::nullopt;
   }
 
   // Updates the status on whether echo leakage is detected in the output of the

@@ -25,9 +25,15 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/logging.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 namespace {
+
+bool EnableZeroExternalDelayHeadroom() {
+  return !field_trial::IsEnabled(
+      "WebRTC-Aec3ZeroExternalDelayHeadroomKillSwitch");
+}
 
 class RenderDelayBufferImpl final : public RenderDelayBuffer {
  public:
@@ -57,6 +63,7 @@ class RenderDelayBufferImpl final : public RenderDelayBuffer {
   std::unique_ptr<ApmDataDumper> data_dumper_;
   const Aec3Optimization optimization_;
   const EchoCanceller3Config config_;
+  const bool use_zero_external_delay_headroom_;
   const int sub_block_size_;
   MatrixBuffer blocks_;
   VectorBuffer spectra_;
@@ -161,6 +168,7 @@ RenderDelayBufferImpl::RenderDelayBufferImpl(const EchoCanceller3Config& config,
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
       optimization_(DetectOptimization()),
       config_(config),
+      use_zero_external_delay_headroom_(EnableZeroExternalDelayHeadroom()),
       sub_block_size_(
           static_cast<int>(config.delay.down_sampling_factor > 0
                                ? kBlockSize / config.delay.down_sampling_factor
@@ -203,12 +211,12 @@ void RenderDelayBufferImpl::Reset() {
 
   // Check for any external audio buffer delay and whether it is feasible.
   if (external_audio_buffer_delay_) {
-    constexpr size_t kHeadroom = 2;
+    const size_t headroom = use_zero_external_delay_headroom_ ? 0 : 2;
     size_t external_delay_to_set = 0;
-    if (*external_audio_buffer_delay_ < kHeadroom) {
+    if (*external_audio_buffer_delay_ < headroom) {
       external_delay_to_set = 0;
     } else {
-      external_delay_to_set = *external_audio_buffer_delay_ - kHeadroom;
+      external_delay_to_set = *external_audio_buffer_delay_ - headroom;
     }
 
     external_delay_to_set = std::min(external_delay_to_set, MaxDelay());
