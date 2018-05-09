@@ -315,6 +315,19 @@ webrtc_fuzzer_test("audio_decoder_opus_redundant_fuzzer") {
   ]
 }
 
+webrtc_fuzzer_test("audio_encoder_opus_fuzzer") {
+  sources = [
+    "audio_encoder_opus_fuzzer.cc",
+  ]
+  deps = [
+    ":fuzz_data_helper",
+    "../../api:array_view",
+    "../../api/audio_codecs/opus:audio_encoder_opus",
+    "../../rtc_base:checks",
+    "../../rtc_base:rtc_base_approved",
+  ]
+}
+
 webrtc_fuzzer_test("turn_unwrap_fuzzer") {
   sources = [
     "turn_unwrap_fuzzer.cc",
