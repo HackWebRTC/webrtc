@@ -19,9 +19,14 @@
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/atomicops.h"
 #include "rtc_base/checks.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 namespace {
+
+bool EnableTransparentMode() {
+  return !field_trial::IsEnabled("WebRTC-Aec3TransparentModeKillSwitch");
+}
 
 float ComputeGainRampupIncrease(const EchoCanceller3Config& config) {
   const auto& c = config.echo_removal_control.gain_rampup;
@@ -38,6 +43,7 @@ int AecState::instance_count_ = 0;
 AecState::AecState(const EchoCanceller3Config& config)
     : data_dumper_(
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
+      allow_transparent_mode_(EnableTransparentMode()),
       erle_estimator_(config.erle.min, config.erle.max_l, config.erle.max_h),
       config_(config),
       max_render_(config_.filter.main.length_blocks, 0.f),
@@ -223,10 +229,8 @@ void AecState::Update(
   transparent_mode_ =
       transparent_mode_ &&
       (consistent_filter_estimate_not_seen || !converged_filter_seen_);
-  transparent_mode_ = transparent_mode_ &&
-                      (filter_should_have_converged_ ||
-                       (!external_delay_seen_ &&
-                        capture_block_counter_ > 10 * kNumBlocksPerSecond));
+  transparent_mode_ = transparent_mode_ && filter_should_have_converged_;
+  transparent_mode_ = transparent_mode_ && allow_transparent_mode_;
 
   usable_linear_estimate_ = !echo_saturation_;
   usable_linear_estimate_ =

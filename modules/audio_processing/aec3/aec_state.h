@@ -142,6 +142,7 @@ class AecState {
 
   static int instance_count_;
   std::unique_ptr<ApmDataDumper> data_dumper_;
+  const bool allow_transparent_mode_;
   ErlEstimator erl_estimator_;
   ErleEstimator erle_estimator_;
   size_t capture_block_counter_ = 0;
