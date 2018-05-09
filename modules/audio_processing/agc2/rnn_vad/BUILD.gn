@@ -30,6 +30,8 @@ source_set("lib") {
     "rnn.cc",
     "rnn.h",
     "sequence_buffer.h",
+    "spectral_features.cc",
+    "spectral_features.h",
     "spectral_features_internal.cc",
     "spectral_features_internal.h",
     "symmetric_matrix_buffer.h",
@@ -90,6 +92,7 @@ if (rtc_include_tests) {
       "rnn_unittest.cc",
       "sequence_buffer_unittest.cc",
       "spectral_features_internal_unittest.cc",
+      "spectral_features_unittest.cc",
       "symmetric_matrix_buffer_unittest.cc",
     ]
     deps = [

@@ -14,7 +14,6 @@
 #include <cmath>
 
 #include "rtc_base/checks.h"
-#include "rtc_base/function_view.h"
 
 namespace webrtc {
 namespace rnn_vad {
@@ -23,11 +22,19 @@ namespace {
 // DCT scaling factor.
 const float kDctScalingFactor = std::sqrt(2.f / kNumBands);
 
-// Iterates through frequency bands and computes coefficients via |functor| for
-// triangular bands with peak response at each band boundary. |functor| returns
-// a floating point value for the FFT coefficient having index equal to the
-// argument passed to |functor|; that argument is in the range {0, ...
-// |max_freq_bin_index| - 1}.
+}  // namespace
+
+std::array<size_t, kNumBands> ComputeBandBoundaryIndexes(
+    size_t sample_rate_hz,
+    size_t frame_size_samples) {
+  std::array<size_t, kNumBands> indexes;
+  for (size_t i = 0; i < kNumBands; ++i) {
+    indexes[i] =
+        kBandFrequencyBoundaries[i] * frame_size_samples / sample_rate_hz;
+  }
+  return indexes;
+}
+
 void ComputeBandCoefficients(
     rtc::FunctionView<float(size_t)> functor,
     rtc::ArrayView<const size_t, kNumBands> band_boundaries,
@@ -64,25 +71,12 @@ void ComputeBandCoefficients(
   // (*): "size_t i" must be declared before the main loop.
 }
 
-}  // namespace
-
-std::array<size_t, kNumBands> ComputeBandBoundaryIndexes(
-    size_t sample_rate_hz,
-    size_t frame_size_samples) {
-  std::array<size_t, kNumBands> indexes;
-  for (size_t i = 0; i < kNumBands; ++i) {
-    indexes[i] =
-        kBandFrequencyBoundaries[i] * frame_size_samples / sample_rate_hz;
-  }
-  return indexes;
-}
-
 void ComputeBandEnergies(
     rtc::ArrayView<const std::complex<float>> fft_coeffs,
     rtc::ArrayView<const size_t, kNumBands> band_boundaries,
     rtc::ArrayView<float, kNumBands> band_energies) {
   RTC_DCHECK_EQ(band_boundaries.size(), band_energies.size());
-  auto functor = [fft_coeffs](const size_t freq_bin_index) {
+  auto functor = [fft_coeffs](const size_t freq_bin_index) -> float {
     return std::norm(fft_coeffs[freq_bin_index]);
   };
   ComputeBandCoefficients(functor, band_boundaries, fft_coeffs.size() - 1,

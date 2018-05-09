@@ -51,6 +51,14 @@ constexpr int kBandFrequencyBoundaries[kNumBands] = {
     0,    200,  400,  600,  800,  1000, 1200, 1400, 1600,  2000,  2400,
     2800, 3200, 4000, 4800, 5600, 6800, 8000, 9600, 12000, 15600, 20000};
 
+// Feature extraction parameters.
+constexpr size_t kNumLowerBands = 6;
+static_assert((0 < kNumLowerBands) && (kNumLowerBands < kNumBands), "");
+constexpr size_t kSpectralCoeffsHistorySize = 8;
+static_assert(kSpectralCoeffsHistorySize > 2,
+              "The history size must at least be 3 to compute first and second "
+              "derivatives.");
+
 constexpr size_t kFeatureVectorSize = 42;
 
 }  // namespace rnn_vad

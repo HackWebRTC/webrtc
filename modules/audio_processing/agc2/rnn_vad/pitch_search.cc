@@ -14,6 +14,10 @@
 namespace webrtc {
 namespace rnn_vad {
 
+// TODO(bugs.webrtc.org/9076): To decrease the stack size, add a class that uses
+// std::vector instances instead of the local arrays used in PitchSearch(). It
+// is also useful once https://webrtc-review.googlesource.com/c/src/+/73366
+// lands.
 PitchInfo PitchSearch(rtc::ArrayView<const float, kBufSize24kHz> pitch_buf,
                       PitchInfo prev_pitch_48kHz,
                       RealFourier* fft) {

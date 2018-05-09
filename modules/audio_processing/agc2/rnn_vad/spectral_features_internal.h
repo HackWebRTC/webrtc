@@ -16,6 +16,7 @@
 
 #include "api/array_view.h"
 #include "modules/audio_processing/agc2/rnn_vad/common.h"
+#include "rtc_base/function_view.h"
 
 namespace webrtc {
 namespace rnn_vad {
@@ -24,6 +25,17 @@ namespace rnn_vad {
 std::array<size_t, kNumBands> ComputeBandBoundaryIndexes(
     size_t sample_rate_hz,
     size_t frame_size_samples);
+
+// Iterates through frequency bands and computes coefficients via |functor| for
+// triangular bands with peak response at each band boundary. |functor| returns
+// a floating point value for the FFT coefficient having index equal to the
+// argument passed to |functor|; that argument is in the range {0, ...
+// |max_freq_bin_index| - 1}.
+void ComputeBandCoefficients(
+    rtc::FunctionView<float(size_t)> functor,
+    rtc::ArrayView<const size_t, kNumBands> band_boundaries,
+    const size_t max_freq_bin_index,
+    rtc::ArrayView<float, kNumBands> coefficients);
 
 // Given an array of FFT coefficients and a vector of band boundary indexes,
 // computes band energy coefficients.

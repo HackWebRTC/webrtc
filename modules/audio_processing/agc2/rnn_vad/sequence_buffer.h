@@ -72,6 +72,7 @@ class SequenceBuffer {
   }
 
  private:
+  // TODO(bugs.webrtc.org/9076): Switch to std::vector to decrease stack size.
   std::array<T, S> buffer_;
 };
 
