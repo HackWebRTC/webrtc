@@ -2725,8 +2725,7 @@ TEST_F(WebRtcVideoChannelTest, UsesCorrectSettingsForScreencast) {
 
 TEST_F(WebRtcVideoChannelTest,
        ConferenceModeScreencastConfiguresTemporalLayer) {
-  static const int kConferenceScreencastTemporalBitrateBps =
-      ScreenshareLayerConfig::GetDefault().tl0_bitrate_kbps * 1000;
+  static const int kConferenceScreencastTemporalBitrateBps = 200 * 1000;
   send_parameters_.conference_mode = true;
   channel_->SetSendParameters(send_parameters_);
 

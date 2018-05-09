@@ -571,7 +571,6 @@ if (rtc_include_tests) {
       "engine/nullwebrtcvideoengine_unittest.cc",
       "engine/payload_type_mapper_unittest.cc",
       "engine/simulcast_encoder_adapter_unittest.cc",
-      "engine/simulcast_unittest.cc",
       "engine/videodecodersoftwarefallbackwrapper_unittest.cc",
       "engine/videoencodersoftwarefallbackwrapper_unittest.cc",
       "engine/vp8_encoder_simulcast_proxy_unittest.cc",
