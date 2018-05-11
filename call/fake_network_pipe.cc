@@ -308,10 +308,10 @@ std::vector<PacketDeliveryInfo> SimulatedNetwork::DequeueDeliverablePackets(
           bursting_ = false;
         }
 
-        int64_t arrival_time_jitter_us =
-            random_.Gaussian(config.queue_delay_ms,
-                             config.delay_standard_deviation_ms) *
-            1000;
+        int64_t arrival_time_jitter_us = std::max(
+            random_.Gaussian(config.queue_delay_ms * 1000,
+                             config.delay_standard_deviation_ms * 1000),
+            0.0);
 
         // If reordering is not allowed then adjust arrival_time_jitter
         // to make sure all packets are sent in order.
