@@ -417,8 +417,8 @@ def _ReportErrorFileAndLineNumber(filename, line_num):
 
 
 def CheckNoStreamUsageIsAdded(input_api, output_api,
-                              error_formatter=_ReportErrorFileAndLineNumber,
-                              source_file_filter):
+                              source_file_filter,
+                              error_formatter=_ReportErrorFileAndLineNumber):
   """Make sure that no more dependencies on stringstream are added."""
   error_msg = ('Usage of <sstream>, <istream> and <ostream> in WebRTC is '
                'deprecated.\n'
@@ -813,7 +813,7 @@ def CommonChecks(input_api, output_api):
   results.extend(CheckNewlineAtTheEndOfProtoFiles(
       input_api, output_api, source_file_filter=non_third_party_sources))
   results.extend(CheckNoStreamUsageIsAdded(
-      input_api, output_api, source_file_filter=non_third_party_sources))
+      input_api, output_api, non_third_party_sources))
   return results
 
 

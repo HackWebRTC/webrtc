@@ -86,7 +86,8 @@ class CheckNewlineAtTheEndOfProtoFilesTest(unittest.TestCase):
     self._GenerateProtoWithoutNewlineAtTheEnd()
     self.input_api.files = [MockFile(self.proto_file_path)]
     errors = PRESUBMIT.CheckNewlineAtTheEndOfProtoFiles(self.input_api,
-                                                        self.output_api)
+                                                        self.output_api,
+                                                        lambda x: True)
     self.assertEqual(1, len(errors))
     self.assertEqual(
         'File %s must end with exactly one newline.' % self.proto_file_path,
@@ -96,7 +97,8 @@ class CheckNewlineAtTheEndOfProtoFilesTest(unittest.TestCase):
     self._GenerateProtoWithNewlineAtTheEnd()
     self.input_api.files = [MockFile(self.proto_file_path)]
     errors = PRESUBMIT.CheckNewlineAtTheEndOfProtoFiles(self.input_api,
-                                                        self.output_api)
+                                                        self.output_api,
+                                                        lambda x: True)
     self.assertEqual(0, len(errors))
 
   def _GenerateProtoWithNewlineAtTheEnd(self):
