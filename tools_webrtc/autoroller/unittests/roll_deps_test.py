@@ -20,7 +20,8 @@ PARENT_DIR = os.path.join(SCRIPT_DIR, os.pardir)
 sys.path.append(PARENT_DIR)
 import roll_deps
 from roll_deps import CalculateChangedDeps, ChooseCQMode, \
-  GetMatchingDepsEntries, ParseDepsDict, ParseLocalDepsFile, UpdateDepsFile
+  GetMatchingDepsEntries, ParseDepsDict, ParseLocalDepsFile, UpdateDepsFile, \
+  ChromiumRevisionUpdate
 
 
 TEST_DATA_VARS = {
@@ -90,7 +91,10 @@ class TestRollChromiumRevision(unittest.TestCase):
     new_rev = 'aaaaabbbbbcccccdddddeeeeefffff0000011111'
 
     current_rev = TEST_DATA_VARS['chromium_revision']
-    UpdateDepsFile(self._webrtc_depsfile, current_rev, new_rev, [])
+    UpdateDepsFile(self._webrtc_depsfile,
+                   ChromiumRevisionUpdate(
+                       current_rev, new_rev, current_rev, new_rev),
+                   [])
     with open(self._webrtc_depsfile) as deps_file:
       deps_contents = deps_file.read()
       self.assertTrue(new_rev in deps_contents,

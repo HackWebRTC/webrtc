@@ -40,6 +40,7 @@ CPPLINT_BLACKLIST = [
   'test',
   'tools_webrtc',
   'voice_engine',
+  'third_party',
 ]
 
 # These filters will always be removed, even if the caller specifies a filter
@@ -180,12 +181,15 @@ def CheckNativeApiHeaderChanges(input_api, output_api):
   return []
 
 
-def CheckNoIOStreamInHeaders(input_api, output_api):
+def CheckNoIOStreamInHeaders(input_api, output_api,
+                             source_file_filter):
   """Checks to make sure no .h files include <iostream>."""
   files = []
   pattern = input_api.re.compile(r'^#include\s*<iostream>',
                                  input_api.re.MULTILINE)
-  for f in input_api.AffectedSourceFiles(input_api.FilterSourceFile):
+  file_filter = lambda x: (input_api.FilterSourceFile(x)
+                           and source_file_filter(x))
+  for f in input_api.AffectedSourceFiles(file_filter):
     if not f.LocalPath().endswith('.h'):
       continue
     contents = input_api.ReadFile(f)
@@ -201,12 +205,15 @@ def CheckNoIOStreamInHeaders(input_api, output_api):
   return []
 
 
-def CheckNoPragmaOnce(input_api, output_api):
+def CheckNoPragmaOnce(input_api, output_api,
+                      source_file_filter):
   """Make sure that banned functions are not used."""
   files = []
   pattern = input_api.re.compile(r'^#pragma\s+once',
                                  input_api.re.MULTILINE)
-  for f in input_api.AffectedSourceFiles(input_api.FilterSourceFile):
+  file_filter = lambda x: (input_api.FilterSourceFile(x)
+                           and source_file_filter(x))
+  for f in input_api.AffectedSourceFiles(file_filter):
     if not f.LocalPath().endswith('.h'):
       continue
     contents = input_api.ReadFile(f)
@@ -221,13 +228,15 @@ def CheckNoPragmaOnce(input_api, output_api):
   return []
 
 
-def CheckNoFRIEND_TEST(input_api, output_api):  # pylint: disable=invalid-name
+def CheckNoFRIEND_TEST(input_api, output_api,  # pylint: disable=invalid-name
+                       source_file_filter):
   """Make sure that gtest's FRIEND_TEST() macro is not used, the
   FRIEND_TEST_ALL_PREFIXES() macro from testsupport/gtest_prod_util.h should be
   used instead since that allows for FLAKY_, FAILS_ and DISABLED_ prefixes."""
   problems = []
 
-  file_filter = lambda f: f.LocalPath().endswith(('.cc', '.h'))
+  file_filter = lambda f: (f.LocalPath().endswith(('.cc', '.h'))
+                           and source_file_filter(f))
   for f in input_api.AffectedFiles(file_filter=file_filter):
     for line_num, line in f.ChangedContents():
       if 'FRIEND_TEST(' in line:
@@ -249,7 +258,7 @@ def IsLintBlacklisted(blacklist_paths, file_path):
 
 
 def CheckApprovedFilesLintClean(input_api, output_api,
-                                 source_file_filter=None):
+                                source_file_filter=None):
   """Checks that all new or non-blacklisted .cc and .h files pass cpplint.py.
   This check is based on CheckChangeLintsClean in
   depot_tools/presubmit_canned_checks.py but has less filters and only checks
@@ -408,7 +417,8 @@ def _ReportErrorFileAndLineNumber(filename, line_num):
 
 
 def CheckNoStreamUsageIsAdded(input_api, output_api,
-                              error_formatter=_ReportErrorFileAndLineNumber):
+                              error_formatter=_ReportErrorFileAndLineNumber,
+                              source_file_filter):
   """Make sure that no more dependencies on stringstream are added."""
   error_msg = ('Usage of <sstream>, <istream> and <ostream> in WebRTC is '
                'deprecated.\n'
@@ -433,7 +443,9 @@ def CheckNoStreamUsageIsAdded(input_api, output_api,
   usage_re = input_api.re.compile(r'std::(w|i|o|io|wi|wo|wio)(string)*stream')
   no_presubmit_re = input_api.re.compile(
       r'// no-presubmit-check TODO\(webrtc:8982\)')
-  for f in input_api.AffectedSourceFiles(input_api.FilterSourceFile):
+  file_filter = lambda x: (input_api.FilterSourceFile(x)
+                           and source_file_filter(x))
+  for f in input_api.AffectedSourceFiles(file_filter):
     if f.LocalPath() == 'PRESUBMIT.py':
       continue
     for line_num, line in f.ChangedContents():
@@ -482,13 +494,14 @@ def CheckCheckIncludesIsNotUsed(gn_files, output_api):
                                                    line_number)))
   return result
 
-def CheckGnChanges(input_api, output_api):
-  source_file_filter = lambda x: input_api.FilterSourceFile(
+def CheckGnChanges(input_api, output_api, source_file_filter):
+  file_filter = lambda x: (input_api.FilterSourceFile(
       x, white_list=(r'.+\.(gn|gni)$',),
       black_list=(r'.*/presubmit_checks_lib/testdata/.*',))
+      and source_file_filter(x))
 
   gn_files = []
-  for f in input_api.AffectedSourceFiles(source_file_filter):
+  for f in input_api.AffectedSourceFiles(file_filter):
     gn_files.append(f)
 
   result = []
@@ -517,7 +530,7 @@ def CheckGnGen(input_api, output_api):
         long_text='\n\n'.join(errors))]
   return []
 
-def CheckUnwantedDependencies(input_api, output_api):
+def CheckUnwantedDependencies(input_api, output_api, source_file_filter):
   """Runs checkdeps on #include statements added in this
   change. Breaking - rules is an error, breaking ! rules is a
   warning.
@@ -539,7 +552,7 @@ def CheckUnwantedDependencies(input_api, output_api):
     from rules import Rule
 
   added_includes = []
-  for f in input_api.AffectedFiles():
+  for f in input_api.AffectedFiles(file_filter=source_file_filter):
     if not CppChecker.IsCppFile(f.LocalPath()):
       continue
 
@@ -620,11 +633,12 @@ def CheckChangeHasBugField(input_api, output_api):
         ' * https://bugs.webrtc.org - reference it using Bug: webrtc:XXXX\n'
         ' * https://crbug.com - reference it using Bug: chromium:XXXXXX')]
 
-def CheckJSONParseErrors(input_api, output_api):
+def CheckJSONParseErrors(input_api, output_api, source_file_filter):
   """Check that JSON files do not contain syntax errors."""
 
   def FilterFile(affected_file):
-    return input_api.os_path.splitext(affected_file.LocalPath())[1] == '.json'
+    return (input_api.os_path.splitext(affected_file.LocalPath())[1] == '.json'
+            and source_file_filter(affected_file))
 
   def GetJSONParseError(input_api, filename):
     try:
@@ -670,12 +684,15 @@ def RunPythonTests(input_api, output_api):
   return input_api.RunTests(tests, parallel=True)
 
 
-def CheckUsageOfGoogleProtobufNamespace(input_api, output_api):
+def CheckUsageOfGoogleProtobufNamespace(input_api, output_api,
+                                        source_file_filter):
   """Checks that the namespace google::protobuf has not been used."""
   files = []
   pattern = input_api.re.compile(r'google::protobuf')
   proto_utils_path = os.path.join('rtc_base', 'protobuf_utils.h')
-  for f in input_api.AffectedSourceFiles(input_api.FilterSourceFile):
+  file_filter = lambda x: (input_api.FilterSourceFile(x)
+                           and source_file_filter(x))
+  for f in input_api.AffectedSourceFiles(file_filter):
     if f.LocalPath() in [proto_utils_path, 'PRESUBMIT.py']:
       continue
     contents = input_api.ReadFile(f)
@@ -752,8 +769,11 @@ def CommonChecks(input_api, output_api):
   objc_filter_list = (r'.+\.m$', r'.+\.mm$', r'.+objc\/.+\.h$')
   # Skip long-lines check for DEPS and GN files.
   build_file_filter_list = (r'.+\.gn$', r'.+\.gni$', 'DEPS')
+  # Also we will skip most checks for third_party directory.
+  third_party_filter_list = (r'^third_party[\\\/].+',)
   eighty_char_sources = lambda x: input_api.FilterSourceFile(x,
-      black_list=build_file_filter_list + objc_filter_list)
+      black_list=build_file_filter_list + objc_filter_list +
+                 third_party_filter_list)
   hundred_char_sources = lambda x: input_api.FilterSourceFile(x,
       white_list=objc_filter_list)
   results.extend(input_api.canned_checks.CheckLongLines(
@@ -762,26 +782,38 @@ def CommonChecks(input_api, output_api):
       input_api, output_api, maxlen=100,
       source_file_filter=hundred_char_sources))
 
+  non_third_party_sources = lambda x: input_api.FilterSourceFile(x,
+      black_list=third_party_filter_list)
   results.extend(input_api.canned_checks.CheckChangeHasNoTabs(
-      input_api, output_api))
+      input_api, output_api, source_file_filter=non_third_party_sources))
   results.extend(input_api.canned_checks.CheckChangeHasNoStrayWhitespace(
-      input_api, output_api))
+      input_api, output_api, source_file_filter=non_third_party_sources))
   results.extend(input_api.canned_checks.CheckAuthorizedAuthor(
       input_api, output_api))
   results.extend(input_api.canned_checks.CheckChangeTodoHasOwner(
-      input_api, output_api))
+      input_api, output_api, source_file_filter=non_third_party_sources))
   results.extend(CheckNativeApiHeaderChanges(input_api, output_api))
-  results.extend(CheckNoIOStreamInHeaders(input_api, output_api))
-  results.extend(CheckNoPragmaOnce(input_api, output_api))
-  results.extend(CheckNoFRIEND_TEST(input_api, output_api))
-  results.extend(CheckGnChanges(input_api, output_api))
-  results.extend(CheckUnwantedDependencies(input_api, output_api))
-  results.extend(CheckJSONParseErrors(input_api, output_api))
+  results.extend(CheckNoIOStreamInHeaders(
+      input_api, output_api, source_file_filter=non_third_party_sources))
+  results.extend(CheckNoPragmaOnce(
+      input_api, output_api, source_file_filter=non_third_party_sources))
+  results.extend(CheckNoFRIEND_TEST(
+      input_api, output_api, source_file_filter=non_third_party_sources))
+  results.extend(CheckGnChanges(
+      input_api, output_api, source_file_filter=non_third_party_sources))
+  results.extend(CheckUnwantedDependencies(
+      input_api, output_api, source_file_filter=non_third_party_sources))
+  results.extend(CheckJSONParseErrors(
+      input_api, output_api, source_file_filter=non_third_party_sources))
   results.extend(RunPythonTests(input_api, output_api))
-  results.extend(CheckUsageOfGoogleProtobufNamespace(input_api, output_api))
-  results.extend(CheckOrphanHeaders(input_api, output_api))
-  results.extend(CheckNewlineAtTheEndOfProtoFiles(input_api, output_api))
-  results.extend(CheckNoStreamUsageIsAdded(input_api, output_api))
+  results.extend(CheckUsageOfGoogleProtobufNamespace(
+      input_api, output_api, source_file_filter=non_third_party_sources))
+  results.extend(CheckOrphanHeaders(
+      input_api, output_api, source_file_filter=non_third_party_sources))
+  results.extend(CheckNewlineAtTheEndOfProtoFiles(
+      input_api, output_api, source_file_filter=non_third_party_sources))
+  results.extend(CheckNoStreamUsageIsAdded(
+      input_api, output_api, source_file_filter=non_third_party_sources))
   return results
 
 
@@ -811,7 +843,7 @@ def CheckChangeOnCommit(input_api, output_api):
   return results
 
 
-def CheckOrphanHeaders(input_api, output_api):
+def CheckOrphanHeaders(input_api, output_api, source_file_filter):
   # We need to wait until we have an input_api object and use this
   # roundabout construct to import prebubmit_checks_lib because this file is
   # eval-ed and thus doesn't have __file__.
@@ -825,9 +857,9 @@ def CheckOrphanHeaders(input_api, output_api):
     from check_orphan_headers import GetBuildGnPathFromFilePath
     from check_orphan_headers import IsHeaderInBuildGn
 
-  source_file_filter = lambda x: input_api.FilterSourceFile(
-      x, black_list=orphan_blacklist)
-  for f in input_api.AffectedSourceFiles(source_file_filter):
+  file_filter = lambda x: input_api.FilterSourceFile(
+      x, black_list=orphan_blacklist) and source_file_filter(x)
+  for f in input_api.AffectedSourceFiles(file_filter):
     if f.LocalPath().endswith('.h'):
       file_path = os.path.abspath(f.LocalPath())
       root_dir = os.getcwd()
@@ -840,13 +872,14 @@ def CheckOrphanHeaders(input_api, output_api):
   return results
 
 
-def CheckNewlineAtTheEndOfProtoFiles(input_api, output_api):
+def CheckNewlineAtTheEndOfProtoFiles(input_api, output_api,
+                                     source_file_filter):
   """Checks that all .proto files are terminated with a newline."""
   error_msg = 'File {} must end with exactly one newline.'
   results = []
-  source_file_filter = lambda x: input_api.FilterSourceFile(
-      x, white_list=(r'.+\.proto$',))
-  for f in input_api.AffectedSourceFiles(source_file_filter):
+  file_filter = lambda x: input_api.FilterSourceFile(
+      x, white_list=(r'.+\.proto$',)) and source_file_filter(x)
+  for f in input_api.AffectedSourceFiles(file_filter):
     file_path = f.LocalPath()
     with open(file_path) as f:
       lines = f.readlines()
