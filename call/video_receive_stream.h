@@ -21,7 +21,7 @@
 #include "api/rtpparameters.h"
 #include "api/video/video_content_type.h"
 #include "api/video/video_timing.h"
-#include "api/videosinkinterface.h"
+#include "api/video/video_sink_interface.h"
 #include "call/rtp_config.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "common_video/include/frame_callback.h"

@@ -105,10 +105,10 @@ rtc_static_library("libjingle_peerconnection_api") {
     ":libjingle_logging_api",
     ":optional",
     ":rtc_stats_api",
-    ":video_frame_api",
     "audio:audio_mixer_api",
     "audio_codecs:audio_codecs_api",
     "transport:bitrate_settings",
+    "video:video_frame",
 
     # Basically, don't add stuff here. You might break sensitive downstream
     # targets like pnacl. API should not depend on anything outside of this
@@ -220,80 +220,56 @@ rtc_source_set("fec_controller_api") {
   ]
 }
 
+# TODO(bugs.webrtc.org/9253): Deprecated, replaced by video:video_frame.
+# Delete after downstream users are updated.
 rtc_source_set("video_frame_api") {
   visibility = [ "*" ]
   sources = [
-    "video/video_content_type.cc",
-    "video/video_content_type.h",
-    "video/video_frame.cc",
-    "video/video_frame.h",
-    "video/video_frame_buffer.cc",
-    "video/video_frame_buffer.h",
-    "video/video_rotation.h",
-    "video/video_timing.cc",
-    "video/video_timing.h",
     "videosinkinterface.h",
   ]
 
-  deps = [
-    "../rtc_base:checks",
-    "../rtc_base:rtc_base_approved",
+  public_deps = [  # no-presubmit-check TODO(webrtc:8603)
+    "video:video_frame",
   ]
 }
 
+# TODO(bugs.webrtc.org/9253): Deprecated, replaced by video:encoded_frame.
+# Delete after downstream users are updated.
 rtc_source_set("encoded_frame_api") {
   visibility = [ "*" ]
-  sources = [
-    "video/encoded_frame.cc",
-    "video/encoded_frame.h",
-  ]
 
-  deps = [
-    "../modules/video_coding:encoded_frame",
+  public_deps = [  # no-presubmit-check TODO(webrtc:8603)
+    "video:encoded_frame",
   ]
 }
 
+# TODO(bugs.webrtc.org/9253): Deprecated, replaced by video:video_stream_decoder.
+# Delete after downstream users are updated.
 rtc_source_set("video_stream_decoder") {
   visibility = [ "*" ]
-  sources = [
-    "video/video_stream_decoder.h",
-  ]
 
-  deps = [
-    ":encoded_frame_api",
-    ":optional",
-    ":video_frame_api",
-    "../api/video_codecs:video_codecs_api",
+  public_deps = [  # no-presubmit-check TODO(webrtc:8603)
+    "video:video_stream_decoder",
   ]
 }
 
+# TODO(bugs.webrtc.org/9253): Deprecated, replaced by video:video_stream_decoder_create.
+# Delete after downstream users are updated.
 rtc_source_set("video_stream_decoder_create") {
   visibility = [ "*" ]
   allow_poison = [ "software_video_codecs" ]  # TODO(bugs.webrtc.org/7925): Remove.
-  sources = [
-    "video/video_stream_decoder_create.cc",
-    "video/video_stream_decoder_create.h",
-  ]
 
-  deps = [
-    ":video_stream_decoder",
-    "../rtc_base:rtc_base_approved",
-    "../video:video_stream_decoder_impl",
+  public_deps = [  # no-presubmit-check TODO(webrtc:8603)
+    "video:video_stream_decoder_create",
   ]
 }
 
+# TODO(bugs.webrtc.org/9253): Deprecated, replaced by video:video_frame_i420.
+# Delete after downstream users are updated.
 rtc_source_set("video_frame_api_i420") {
   visibility = [ "*" ]
-  sources = [
-    "video/i420_buffer.cc",
-    "video/i420_buffer.h",
-  ]
-  deps = [
-    ":video_frame_api",
-    "../rtc_base:checks",
-    "../rtc_base:rtc_base",
-    "../rtc_base/memory:aligned_malloc",
-    "//third_party/libyuv",
+  public_deps = [  # no-presubmit-check TODO(webrtc:8603)
+    "video:video_frame_i420",
   ]
 }
 
@@ -344,18 +320,12 @@ rtc_source_set("libjingle_peerconnection_test_api") {
   ]
 }
 
+# TODO(bugs.webrtc.org/9253): Deprecated, replaced by video:video_bitrate_allocation.
+# Delete after downstream users are updated.
 rtc_source_set("video_bitrate_allocation") {
   visibility = [ "*" ]
-  sources = [
-    "video/video_bitrate_allocation.cc",
-    "video/video_bitrate_allocation.h",
-  ]
-  deps = [
-    ":optional",
-    "..:typedefs",
-    "../rtc_base:checks",
-    "../rtc_base:safe_conversions",
-    "../rtc_base:stringutils",
+  public_deps = [  # no-presubmit-check TODO(webrtc:8603)
+    "video:video_bitrate_allocation",
   ]
 }
 

@@ -19,7 +19,7 @@
 
 #include "api/video/video_rotation.h"
 #include "api/video_codecs/video_encoder.h"
-#include "api/videosinkinterface.h"
+#include "api/video/video_sink_interface.h"
 #include "call/call.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "common_video/include/video_bitrate_allocator.h"

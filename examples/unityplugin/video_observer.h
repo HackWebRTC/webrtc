@@ -14,7 +14,7 @@
 #include <mutex>
 
 #include "api/mediastreaminterface.h"
-#include "api/videosinkinterface.h"
+#include "api/video/video_sink_interface.h"
 #include "examples/unityplugin/unity_plugin_apis.h"
 
 class VideoObserver : public rtc::VideoSinkInterface<webrtc::VideoFrame> {

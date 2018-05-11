@@ -16,7 +16,7 @@
 #include <memory>
 
 #include "api/video/video_frame.h"
-#include "api/videosinkinterface.h"
+#include "api/video/video_sink_interface.h"
 
 namespace webrtc {
 

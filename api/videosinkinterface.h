@@ -11,22 +11,8 @@
 #ifndef API_VIDEOSINKINTERFACE_H_
 #define API_VIDEOSINKINTERFACE_H_
 
-#include <rtc_base/checks.h>
-
-namespace rtc {
-
-template <typename VideoFrameT>
-class VideoSinkInterface {
- public:
-  virtual ~VideoSinkInterface() {}
-
-  virtual void OnFrame(const VideoFrameT& frame) = 0;
-
-  // Should be called by the source when it discards the frame due to rate
-  // limiting.
-  virtual void OnDiscardedFrame() {}
-};
-
-}  // namespace rtc
+// TODO(nisse): Place holder for moved file. Delete after applications are
+// updated.
+#include "api/video/video_sink_interface.h"
 
 #endif  // API_VIDEOSINKINTERFACE_H_

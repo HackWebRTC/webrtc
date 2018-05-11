@@ -345,7 +345,7 @@ if (!build_with_chromium) {
 
     if (build_with_mozilla) {
       deps += [
-        "api:video_frame_api",
+        "api/video:video_frame",
         "system_wrappers:field_trial_default",
         "system_wrappers:metrics_default",
       ]
@@ -381,7 +381,7 @@ rtc_static_library("webrtc_common") {
     ":typedefs",
     "api:array_view",
     "api:optional",
-    "api:video_bitrate_allocation",
+    "api/video:video_bitrate_allocation",
     "rtc_base:checks",
     "rtc_base:deprecation",
     "rtc_base:stringutils",

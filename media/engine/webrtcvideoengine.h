@@ -21,7 +21,7 @@
 #include "api/optional.h"
 #include "api/video/video_frame.h"
 #include "api/video_codecs/sdp_video_format.h"
-#include "api/videosinkinterface.h"
+#include "api/video/video_sink_interface.h"
 #include "api/videosourceinterface.h"
 #include "call/call.h"
 #include "call/flexfec_receive_stream.h"

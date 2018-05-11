@@ -27,7 +27,7 @@
 // TODO(zhihuang): Remove unrelated headers once downstream applications stop
 // relying on them; they were previously transitively included by
 // mediachannel.h, which is no longer a dependency of this file.
-#include "api/videosinkinterface.h"
+#include "api/video/video_sink_interface.h"
 #include "api/videosourceinterface.h"
 #include "modules/audio_processing/include/audio_processing_statistics.h"
 #include "rtc_base/ratetracker.h"

@@ -19,7 +19,7 @@
 #include "api/call/transport.h"
 #include "api/rtpparameters.h"
 #include "api/rtp_headers.h"
-#include "api/videosinkinterface.h"
+#include "api/video/video_sink_interface.h"
 #include "api/videosourceinterface.h"
 #include "api/video_codecs/video_encoder_factory.h"
 #include "call/rtp_config.h"

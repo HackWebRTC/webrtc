@@ -13,7 +13,7 @@
 
 #include "api/mediastreaminterface.h"
 #include "api/notifier.h"
-#include "api/videosinkinterface.h"
+#include "api/video/video_sink_interface.h"
 #include "media/base/mediachannel.h"
 #include "rtc_base/thread_checker.h"
 
