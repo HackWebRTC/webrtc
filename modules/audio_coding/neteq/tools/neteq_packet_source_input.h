@@ -33,6 +33,7 @@ class NetEqPacketSourceInput : public NetEqInput {
   std::unique_ptr<PacketData> PopPacket() override;
   rtc::Optional<RTPHeader> NextHeader() const override;
   bool ended() const override { return !next_output_event_ms_; }
+  void SelectSsrc(uint32_t);
 
  protected:
   virtual PacketSource* source() = 0;

@@ -87,8 +87,10 @@ int64_t RtcEventLogSource::NextAudioOutputEventMs() {
         ParsedRtcEventLogNew::AUDIO_PLAYOUT_EVENT) {
       LoggedAudioPlayoutEvent playout_event =
           parsed_stream_.GetAudioPlayout(audio_output_index_);
-      audio_output_index_++;
-      return playout_event.timestamp_us / 1000;
+      if (!(use_ssrc_filter_ && playout_event.ssrc != ssrc_)) {
+        audio_output_index_++;
+        return playout_event.timestamp_us / 1000;
+      }
     }
     audio_output_index_++;
   }

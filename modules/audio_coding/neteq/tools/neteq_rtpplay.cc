@@ -226,56 +226,6 @@ rtc::Optional<int> CodecSampleRate(uint8_t payload_type) {
   return rtc::nullopt;
 }
 
-// Class to let through only the packets with a given SSRC. Should be used as an
-// outer layer on another NetEqInput object.
-class FilterSsrcInput : public NetEqInput {
- public:
-  FilterSsrcInput(std::unique_ptr<NetEqInput> source, uint32_t ssrc)
-      : source_(std::move(source)), ssrc_(ssrc) {
-    FindNextWithCorrectSsrc();
-    RTC_CHECK(source_->NextHeader()) << "Found no packet with SSRC = 0x"
-                                     << std::hex << ssrc_;
-  }
-
-  // All methods but PopPacket() simply relay to the |source_| object.
-  rtc::Optional<int64_t> NextPacketTime() const override {
-    return source_->NextPacketTime();
-  }
-  rtc::Optional<int64_t> NextOutputEventTime() const override {
-    return source_->NextOutputEventTime();
-  }
-
-  // Returns the next packet, and throws away upcoming packets that do not match
-  // the desired SSRC.
-  std::unique_ptr<PacketData> PopPacket() override {
-    std::unique_ptr<PacketData> packet_to_return = source_->PopPacket();
-    RTC_DCHECK(!packet_to_return || packet_to_return->header.ssrc == ssrc_);
-    // Pre-fetch the next packet with correct SSRC. Hence, |source_| will always
-    // be have a valid packet (or empty if no more packets are available) when
-    // this method returns.
-    FindNextWithCorrectSsrc();
-    return packet_to_return;
-  }
-
-  void AdvanceOutputEvent() override { source_->AdvanceOutputEvent(); }
-
-  bool ended() const override { return source_->ended(); }
-
-  rtc::Optional<RTPHeader> NextHeader() const override {
-    return source_->NextHeader();
-  }
-
- private:
-  void FindNextWithCorrectSsrc() {
-    while (source_->NextHeader() && source_->NextHeader()->ssrc != ssrc_) {
-      source_->PopPacket();
-    }
-  }
-
-  std::unique_ptr<NetEqInput> source_;
-  uint32_t ssrc_;
-};
-
 // A callback class which prints whenver the inserted packet stream changes
 // the SSRC.
 class SsrcSwitchDetector : public NetEqPostInsertPacket {
@@ -386,14 +336,13 @@ int RunTest(int argc, char* argv[]) {
   if (strlen(FLAG_ssrc) > 0) {
     uint32_t ssrc;
     RTC_CHECK(ParseSsrc(FLAG_ssrc, &ssrc)) << "Flag verification has failed.";
-    input.reset(new FilterSsrcInput(std::move(input), ssrc));
+    static_cast<NetEqPacketSourceInput*>(input.get())->SelectSsrc(ssrc);
   }
 
   // Check the sample rate.
   rtc::Optional<int> sample_rate_hz;
   std::set<std::pair<int, uint32_t>> discarded_pt_and_ssrc;
-  while (input->NextHeader()) {
-    rtc::Optional<RTPHeader> first_rtp_header = input->NextHeader();
+  while (rtc::Optional<RTPHeader> first_rtp_header = input->NextHeader()) {
     RTC_DCHECK(first_rtp_header);
     sample_rate_hz = CodecSampleRate(first_rtp_header->payloadType);
     if (sample_rate_hz) {
