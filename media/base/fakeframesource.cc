@@ -11,6 +11,7 @@
 #include "media/base/fakeframesource.h"
 
 #include "api/video/i420_buffer.h"
+#include "rtc_base/checks.h"
 
 namespace cricket {
 
@@ -21,7 +22,7 @@ FakeFrameSource::FakeFrameSource(int width, int height, int interval_us)
   RTC_CHECK_GT(interval_us_, 0);
 }
 
-webrtc::VideoRotation FakeFrameSource::GetRotation() {
+webrtc::VideoRotation FakeFrameSource::GetRotation() const {
   return rotation_;
 }
 
@@ -29,12 +30,28 @@ void FakeFrameSource::SetRotation(webrtc::VideoRotation rotation) {
   rotation_ = rotation;
 }
 
+webrtc::VideoFrame FakeFrameSource::GetFrameRotationApplied() {
+  switch (rotation_) {
+    case webrtc::kVideoRotation_0:
+    case webrtc::kVideoRotation_180:
+      return GetFrame(width_, height_, webrtc::kVideoRotation_0, interval_us_);
+    case webrtc::kVideoRotation_90:
+    case webrtc::kVideoRotation_270:
+      return GetFrame(height_, width_, webrtc::kVideoRotation_0, interval_us_);
+  }
+  RTC_NOTREACHED() << "Invalid rotation value: " << static_cast<int>(rotation_);
+  // Without this return, the Windows Visual Studio compiler complains
+  // "not all control paths return a value".
+  return GetFrame();
+}
+
 webrtc::VideoFrame FakeFrameSource::GetFrame() {
-  return GetFrame(width_, height_, interval_us_);
+  return GetFrame(width_, height_, rotation_, interval_us_);
 }
 
 webrtc::VideoFrame FakeFrameSource::GetFrame(int width,
                                              int height,
+                                             webrtc::VideoRotation rotation,
                                              int interval_us) {
   RTC_CHECK_GT(width, 0);
   RTC_CHECK_GT(height, 0);
@@ -45,7 +62,7 @@ webrtc::VideoFrame FakeFrameSource::GetFrame(int width,
 
   buffer->InitializeData();
   webrtc::VideoFrame frame =
-      webrtc::VideoFrame(buffer, rotation_, next_timestamp_us_);
+      webrtc::VideoFrame(buffer, rotation, next_timestamp_us_);
 
   next_timestamp_us_ += interval_us;
   return frame;

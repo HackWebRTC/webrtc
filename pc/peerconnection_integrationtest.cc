@@ -48,7 +48,7 @@
 #include "pc/rtpmediautils.h"
 #include "pc/sessiondescription.h"
 #include "pc/test/fakeaudiocapturemodule.h"
-#include "pc/test/fakeperiodicvideocapturer.h"
+#include "pc/test/fakeperiodicvideosource.h"
 #include "pc/test/fakertccertificategenerator.h"
 #include "pc/test/fakevideotrackrenderer.h"
 #include "pc/test/mockpeerconnectionobservers.h"
@@ -238,6 +238,20 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
     return client;
   }
 
+  ~PeerConnectionWrapper() {
+    // Tear down video sources in the proper order.
+    for (const auto& video_source : fake_video_sources_) {
+      // No more calls to downstream OnFrame
+      video_source->Stop();
+    }
+    for (const auto& track_source : video_track_sources_) {
+      // No more calls to upstream AddOrUpdateSink
+      track_source->OnSourceDestroyed();
+    }
+    fake_video_sources_.clear();
+    video_track_sources_.clear();
+  }
+
   webrtc::PeerConnectionFactoryInterface* pc_factory() const {
     return peer_connection_factory_.get();
   }
@@ -325,18 +339,21 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
   }
 
   rtc::scoped_refptr<webrtc::VideoTrackInterface> CreateLocalVideoTrack() {
-    return CreateLocalVideoTrackInternal(FakeConstraints(),
-                                         webrtc::kVideoRotation_0);
+    return CreateLocalVideoTrackInternal(
+        webrtc::FakePeriodicVideoSource::Config());
   }
 
   rtc::scoped_refptr<webrtc::VideoTrackInterface>
-  CreateLocalVideoTrackWithConstraints(const FakeConstraints& constraints) {
-    return CreateLocalVideoTrackInternal(constraints, webrtc::kVideoRotation_0);
+  CreateLocalVideoTrackWithConfig(
+      webrtc::FakePeriodicVideoSource::Config config) {
+    return CreateLocalVideoTrackInternal(config);
   }
 
   rtc::scoped_refptr<webrtc::VideoTrackInterface>
   CreateLocalVideoTrackWithRotation(webrtc::VideoRotation rotation) {
-    return CreateLocalVideoTrackInternal(FakeConstraints(), rotation);
+    webrtc::FakePeriodicVideoSource::Config config;
+    config.rotation = rotation;
+    return CreateLocalVideoTrackInternal(config);
   }
 
   rtc::scoped_refptr<RtpSenderInterface> AddTrack(
@@ -679,23 +696,20 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
   }
 
   rtc::scoped_refptr<webrtc::VideoTrackInterface> CreateLocalVideoTrackInternal(
-      const FakeConstraints& constraints,
-      webrtc::VideoRotation rotation) {
+      webrtc::FakePeriodicVideoSource::Config config) {
     // Set max frame rate to 10fps to reduce the risk of test flakiness.
     // TODO(deadbeef): Do something more robust.
-    FakeConstraints source_constraints = constraints;
-    source_constraints.SetMandatoryMaxFrameRate(10);
+    config.frame_interval_ms = 100;
 
-    cricket::FakeVideoCapturer* fake_capturer =
-        new webrtc::FakePeriodicVideoCapturer();
-    fake_capturer->SetRotation(rotation);
-    video_capturers_.push_back(fake_capturer);
-    rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> source =
-        peer_connection_factory_->CreateVideoSource(fake_capturer,
-                                                    &source_constraints);
+    fake_video_sources_.emplace_back(
+        rtc::MakeUnique<webrtc::FakePeriodicVideoSource>(config));
+
+    video_track_sources_.emplace_back(
+        new rtc::RefCountedObject<webrtc::VideoTrackSource>(
+            fake_video_sources_.back().get(), false /* remote */));
     rtc::scoped_refptr<webrtc::VideoTrackInterface> track(
-        peer_connection_factory_->CreateVideoTrack(rtc::CreateRandomUuid(),
-                                                   source));
+        peer_connection_factory_->CreateVideoTrack(
+            rtc::CreateRandomUuid(), video_track_sources_.back()));
     if (!local_video_renderer_) {
       local_video_renderer_.reset(new webrtc::FakeVideoTrackRenderer(track));
     }
@@ -975,9 +989,12 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
   int signaling_delay_ms_ = 0;
   bool signal_ice_candidates_ = true;
 
-  // Store references to the video capturers we've created, so that we can stop
+  // Store references to the video sources we've created, so that we can stop
   // them, if required.
-  std::vector<cricket::FakeVideoCapturer*> video_capturers_;
+  std::vector<std::unique_ptr<webrtc::FakePeriodicVideoSource>>
+      fake_video_sources_;
+  std::vector<rtc::scoped_refptr<webrtc::VideoTrackSource>>
+      video_track_sources_;
   // |local_video_renderer_| attached to the first created local video track.
   std::unique_ptr<webrtc::FakeVideoTrackRenderer> local_video_renderer_;
 
@@ -1750,35 +1767,6 @@ TEST_P(PeerConnectionIntegrationTest,
             remote_cert->ToPEMString());
 }
 
-// This test sets up a call between two parties (using DTLS) and tests that we
-// can get a video aspect ratio of 16:9.
-TEST_P(PeerConnectionIntegrationTest, SendAndReceive16To9AspectRatio) {
-  ASSERT_TRUE(CreatePeerConnectionWrappers());
-  ConnectFakeSignaling();
-
-  // Add video tracks with 16:9 constraint.
-  FakeConstraints constraints;
-  double requested_ratio = 16.0 / 9;
-  constraints.SetMandatoryMinAspectRatio(requested_ratio);
-  caller()->AddTrack(
-      caller()->CreateLocalVideoTrackWithConstraints(constraints));
-  callee()->AddTrack(
-      callee()->CreateLocalVideoTrackWithConstraints(constraints));
-
-  // Do normal offer/answer and wait for at least one frame to be received in
-  // each direction.
-  caller()->CreateAndSetAndSignalOffer();
-  ASSERT_TRUE_WAIT(caller()->min_video_frames_received_per_track() > 0 &&
-                       callee()->min_video_frames_received_per_track() > 0,
-                   kMaxWaitForFramesMs);
-
-  // Check rendered aspect ratio.
-  EXPECT_EQ(requested_ratio, caller()->local_rendered_aspect_ratio());
-  EXPECT_EQ(requested_ratio, caller()->rendered_aspect_ratio());
-  EXPECT_EQ(requested_ratio, callee()->local_rendered_aspect_ratio());
-  EXPECT_EQ(requested_ratio, callee()->rendered_aspect_ratio());
-}
-
 // This test sets up a call between two parties with a source resolution of
 // 1280x720 and verifies that a 16:9 aspect ratio is received.
 TEST_P(PeerConnectionIntegrationTest,
@@ -1786,15 +1774,12 @@ TEST_P(PeerConnectionIntegrationTest,
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
 
-  // Similar to above test, but uses MandatoryMin[Width/Height] constraint
-  // instead of aspect ratio constraint.
-  FakeConstraints constraints;
-  constraints.SetMandatoryMinWidth(1280);
-  constraints.SetMandatoryMinHeight(720);
-  caller()->AddTrack(
-      caller()->CreateLocalVideoTrackWithConstraints(constraints));
-  callee()->AddTrack(
-      callee()->CreateLocalVideoTrackWithConstraints(constraints));
+  // Add video tracks with 16:9 aspect ratio, size 1280 x 720.
+  webrtc::FakePeriodicVideoSource::Config config;
+  config.width = 1280;
+  config.height = 720;
+  caller()->AddTrack(caller()->CreateLocalVideoTrackWithConfig(config));
+  callee()->AddTrack(callee()->CreateLocalVideoTrackWithConfig(config));
 
   // Do normal offer/answer and wait for at least one frame to be received in
   // each direction.
