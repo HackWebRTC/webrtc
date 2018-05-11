@@ -38,6 +38,9 @@ DEFINE_string(delay_file, "delay.int32", "The name of the delay file.");
 DEFINE_string(drift_file, "drift.int32", "The name of the drift file.");
 DEFINE_string(level_file, "level.int32", "The name of the level file.");
 DEFINE_string(keypress_file, "keypress.bool", "The name of the keypress file.");
+DEFINE_string(callorder_file,
+              "callorder",
+              "The name of the render/capture call order file.");
 DEFINE_string(settings_file, "settings.txt", "The name of the settings file.");
 DEFINE_bool(full, false,
             "Unpack the full set of files (normally not needed).");
@@ -64,6 +67,8 @@ using audioproc::ReverseStream;
 using audioproc::Stream;
 using audioproc::Init;
 
+namespace {
+
 void WriteData(const void* data, size_t size, FILE* file,
                const std::string& filename) {
   if (fwrite(data, size, 1, file) != 1) {
@@ -71,6 +76,15 @@ void WriteData(const void* data, size_t size, FILE* file,
     exit(1);
   }
 }
+
+void WriteCallOrderData(const bool render_call,
+                        FILE* file,
+                        const std::string& filename) {
+  const char call_type = render_call ? 'r' : 'c';
+  WriteData(&call_type, sizeof(call_type), file, filename.c_str());
+}
+
+}  // namespace
 
 int do_main(int argc, char* argv[]) {
   std::string program_name = argv[0];
@@ -104,6 +118,9 @@ int do_main(int argc, char* argv[]) {
   std::unique_ptr<RawFile> input_raw_file;
   std::unique_ptr<RawFile> output_raw_file;
 
+  std::stringstream callorder_raw_name;
+  callorder_raw_name << FLAG_callorder_file << ".char";
+  FILE* callorder_char_file = OpenFile(callorder_raw_name.str(), "wb");
   FILE* settings_file = OpenFile(FLAG_settings_file, "wb");
 
   while (ReadMessageFromFile(debug_file, &event_msg)) {
@@ -142,6 +159,10 @@ int do_main(int argc, char* argv[]) {
                        num_reverse_channels,
                        reverse_wav_file.get(),
                        reverse_raw_file.get());
+      }
+      if (FLAG_full) {
+        WriteCallOrderData(true /* render_call */, callorder_char_file,
+                           FLAG_callorder_file);
       }
     } else if (event_msg.type() == Event::STREAM) {
       frame_count++;
@@ -205,6 +226,8 @@ int do_main(int argc, char* argv[]) {
       }
 
       if (FLAG_full) {
+        WriteCallOrderData(false /* render_call */, callorder_char_file,
+                           FLAG_callorder_file);
         if (msg.has_delay()) {
           static FILE* delay_file = OpenFile(FLAG_delay_file, "wb");
           int32_t delay = msg.delay();
@@ -340,6 +363,10 @@ int do_main(int argc, char* argv[]) {
         output_wav_file.reset(new WavWriter(output_name.str(),
                                             output_sample_rate,
                                             num_output_channels));
+
+        std::stringstream callorder_name;
+        callorder_name << FLAG_callorder_file << frame_count << ".char";
+        callorder_char_file = OpenFile(callorder_name.str(), "wb");
       }
     }
   }
