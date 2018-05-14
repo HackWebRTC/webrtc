@@ -201,8 +201,8 @@ private:    // thread functions
     static DWORD WINAPI WSAPIRenderThread(LPVOID context);
     DWORD DoRenderThread();
 
-    void _Lock() { _critSect.Enter(); };
-    void _UnLock() { _critSect.Leave(); };
+    void _Lock();
+    void _UnLock();
 
     int SetDMOProperties();
 

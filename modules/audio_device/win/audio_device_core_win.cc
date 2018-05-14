@@ -40,6 +40,7 @@
 
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
+#include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/sleep.h"
 
 // Macro that calls a COM method returning HRESULT value.
@@ -3397,6 +3398,14 @@ int32_t AudioDeviceWindowsCore::EnableBuiltInAEC(bool enable) {
 
   _builtInAecEnabled = enable;
   return 0;
+}
+
+void AudioDeviceWindowsCore::_Lock() RTC_NO_THREAD_SAFETY_ANALYSIS {
+  _critSect.Enter();
+}
+
+void AudioDeviceWindowsCore::_UnLock() RTC_NO_THREAD_SAFETY_ANALYSIS {
+  _critSect.Leave();
 }
 
 int AudioDeviceWindowsCore::SetDMOProperties() {

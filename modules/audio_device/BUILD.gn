@@ -33,10 +33,6 @@ config("audio_device_warnings_config") {
       "-Wno-microsoft-goto",
       "-Wno-reorder",
       "-Wno-shift-overflow",
-
-      # See https://bugs.chromium.org/p/webrtc/issues/detail?id=6265
-      # for -Wno-thread-safety-analysis
-      "-Wno-thread-safety-analysis",
     ]
   }
 }
