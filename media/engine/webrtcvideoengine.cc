@@ -479,6 +479,9 @@ WebRtcVideoChannel::WebRtcVideoSendStream::ConfigureVideoEncoderSettings(
           num_spatial_layers, kConferenceMaxNumSpatialLayers);
       vp9_settings.numberOfTemporalLayers = std::min<unsigned char>(
           num_temporal_layers, kConferenceMaxNumTemporalLayers);
+
+      // Limit inter-layer prediction to key pictures.
+      vp9_settings.interLayerPred = webrtc::InterLayerPredMode::kOnKeyPic;
     }
 
     // VP9 denoising is disabled by default.
