@@ -214,7 +214,7 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
           spatial_layers =
               GetSvcConfig(video_codec.width, video_codec.height,
                            video_codec.VP9()->numberOfSpatialLayers,
-                           video_codec.VP9()->numberOfTemporalLayers);
+                           video_codec.VP9()->numberOfTemporalLayers, false);
 
           const bool no_spatial_layering = (spatial_layers.size() == 1);
           if (no_spatial_layering) {

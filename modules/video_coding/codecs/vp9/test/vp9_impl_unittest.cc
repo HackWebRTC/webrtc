@@ -53,8 +53,9 @@ class TestVp9Impl : public VideoCodecUnitTest {
     codec_settings_.VP9()->numberOfTemporalLayers = 1;
     codec_settings_.VP9()->frameDroppingOn = false;
 
-    std::vector<SpatialLayer> layers = GetSvcConfig(
-        codec_settings_.width, codec_settings_.height, num_spatial_layers, 1);
+    std::vector<SpatialLayer> layers =
+        GetSvcConfig(codec_settings_.width, codec_settings_.height,
+                     num_spatial_layers, 1, false);
     for (size_t i = 0; i < layers.size(); ++i) {
       codec_settings_.spatialLayers[i] = layers[i];
     }

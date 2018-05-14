@@ -19,7 +19,8 @@ namespace webrtc {
 std::vector<SpatialLayer> GetSvcConfig(size_t input_width,
                                        size_t input_height,
                                        size_t num_spatial_layers,
-                                       size_t num_temporal_layers);
+                                       size_t num_temporal_layers,
+                                       bool is_screen_sharing);
 
 }  // namespace webrtc
 

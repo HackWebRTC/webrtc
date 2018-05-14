@@ -19,14 +19,17 @@ namespace {
 static VideoCodec Configure(size_t width,
                             size_t height,
                             size_t num_spatial_layers,
-                            size_t num_temporal_layers) {
+                            size_t num_temporal_layers,
+                            bool is_screen_sharing) {
   VideoCodec codec;
   codec.width = width;
   codec.height = height;
   codec.codecType = kVideoCodecVP9;
+  codec.mode = is_screen_sharing ? kScreensharing : kRealtimeVideo;
 
   std::vector<SpatialLayer> spatial_layers =
-      GetSvcConfig(width, height, num_spatial_layers, num_temporal_layers);
+      GetSvcConfig(width, height, num_spatial_layers, num_temporal_layers,
+                   is_screen_sharing);
   RTC_CHECK_LE(spatial_layers.size(), kMaxSpatialLayers);
 
   codec.VP9()->numberOfSpatialLayers =
@@ -43,7 +46,7 @@ static VideoCodec Configure(size_t width,
 }  // namespace
 
 TEST(SvcRateAllocatorTest, SingleLayerFor320x180Input) {
-  VideoCodec codec = Configure(320, 180, 3, 3);
+  VideoCodec codec = Configure(320, 180, 3, 3, false);
   SvcRateAllocator allocator = SvcRateAllocator(codec);
 
   VideoBitrateAllocation allocation = allocator.GetAllocation(1000 * 1000, 30);
@@ -53,7 +56,7 @@ TEST(SvcRateAllocatorTest, SingleLayerFor320x180Input) {
 }
 
 TEST(SvcRateAllocatorTest, TwoLayersFor640x360Input) {
-  VideoCodec codec = Configure(640, 360, 3, 3);
+  VideoCodec codec = Configure(640, 360, 3, 3, false);
   SvcRateAllocator allocator = SvcRateAllocator(codec);
 
   VideoBitrateAllocation allocation = allocator.GetAllocation(1000 * 1000, 30);
@@ -64,7 +67,7 @@ TEST(SvcRateAllocatorTest, TwoLayersFor640x360Input) {
 }
 
 TEST(SvcRateAllocatorTest, ThreeLayersFor1280x720Input) {
-  VideoCodec codec = Configure(1280, 720, 3, 3);
+  VideoCodec codec = Configure(1280, 720, 3, 3, false);
   SvcRateAllocator allocator = SvcRateAllocator(codec);
 
   VideoBitrateAllocation allocation = allocator.GetAllocation(1000 * 1000, 30);
@@ -76,7 +79,7 @@ TEST(SvcRateAllocatorTest, ThreeLayersFor1280x720Input) {
 
 TEST(SvcRateAllocatorTest,
      BaseLayerNonZeroBitrateEvenIfTotalIfLessThanMinimum) {
-  VideoCodec codec = Configure(1280, 720, 3, 3);
+  VideoCodec codec = Configure(1280, 720, 3, 3, false);
   SvcRateAllocator allocator = SvcRateAllocator(codec);
 
   const SpatialLayer* layers = codec.spatialLayers;
@@ -90,7 +93,7 @@ TEST(SvcRateAllocatorTest,
 }
 
 TEST(SvcRateAllocatorTest, Disable640x360Layer) {
-  VideoCodec codec = Configure(1280, 720, 3, 3);
+  VideoCodec codec = Configure(1280, 720, 3, 3, false);
   SvcRateAllocator allocator = SvcRateAllocator(codec);
 
   const SpatialLayer* layers = codec.spatialLayers;
@@ -106,7 +109,7 @@ TEST(SvcRateAllocatorTest, Disable640x360Layer) {
 }
 
 TEST(SvcRateAllocatorTest, Disable1280x720Layer) {
-  VideoCodec codec = Configure(1280, 720, 3, 3);
+  VideoCodec codec = Configure(1280, 720, 3, 3, false);
   SvcRateAllocator allocator = SvcRateAllocator(codec);
 
   const SpatialLayer* layers = codec.spatialLayers;
@@ -123,7 +126,7 @@ TEST(SvcRateAllocatorTest, Disable1280x720Layer) {
 }
 
 TEST(SvcRateAllocatorTest, BitrateIsCapped) {
-  VideoCodec codec = Configure(1280, 720, 3, 3);
+  VideoCodec codec = Configure(1280, 720, 3, 3, false);
   SvcRateAllocator allocator = SvcRateAllocator(codec);
 
   const SpatialLayer* layers = codec.spatialLayers;
@@ -137,6 +140,25 @@ TEST(SvcRateAllocatorTest, BitrateIsCapped) {
   EXPECT_EQ(allocation.GetSpatialLayerSum(0) / 1000, layers[0].maxBitrate);
   EXPECT_EQ(allocation.GetSpatialLayerSum(1) / 1000, layers[1].maxBitrate);
   EXPECT_EQ(allocation.GetSpatialLayerSum(2) / 1000, layers[2].maxBitrate);
+}
+
+TEST(SvcRateAllocatorTest, MinBitrateToGetQualityLayer) {
+  VideoCodec codec = Configure(1280, 720, 3, 1, true);
+  SvcRateAllocator allocator = SvcRateAllocator(codec);
+
+  const SpatialLayer* layers = codec.spatialLayers;
+
+  EXPECT_LE(codec.VP9()->numberOfSpatialLayers, 2U);
+
+  VideoBitrateAllocation allocation =
+      allocator.GetAllocation(layers[0].minBitrate * 1000, 30);
+  EXPECT_EQ(allocation.GetSpatialLayerSum(0) / 1000, layers[0].minBitrate);
+  EXPECT_EQ(allocation.GetSpatialLayerSum(1), 0UL);
+
+  allocation = allocator.GetAllocation(
+      (layers[0].maxBitrate + layers[1].minBitrate) * 1000, 30);
+  EXPECT_EQ(allocation.GetSpatialLayerSum(0) / 1000, layers[0].maxBitrate);
+  EXPECT_EQ(allocation.GetSpatialLayerSum(1) / 1000, layers[1].minBitrate);
 }
 
 }  // namespace webrtc

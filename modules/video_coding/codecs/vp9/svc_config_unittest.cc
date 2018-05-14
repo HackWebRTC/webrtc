@@ -24,7 +24,7 @@ TEST(SvcConfig, NumSpatialLayers) {
   std::vector<SpatialLayer> spatial_layers =
       GetSvcConfig(kMinVp9SpatialLayerWidth << (num_spatial_layers - 1),
                    kMinVp9SpatialLayerHeight << (num_spatial_layers - 1),
-                   max_num_spatial_layers, 1);
+                   max_num_spatial_layers, 1, false);
 
   EXPECT_EQ(spatial_layers.size(), num_spatial_layers);
 }
@@ -34,11 +34,27 @@ TEST(SvcConfig, BitrateThresholds) {
   std::vector<SpatialLayer> spatial_layers =
       GetSvcConfig(kMinVp9SpatialLayerWidth << (num_spatial_layers - 1),
                    kMinVp9SpatialLayerHeight << (num_spatial_layers - 1),
-                   num_spatial_layers, 1);
+                   num_spatial_layers, 1, false);
 
   EXPECT_EQ(spatial_layers.size(), num_spatial_layers);
 
   for (const SpatialLayer& layer : spatial_layers) {
+    EXPECT_LE(layer.minBitrate, layer.maxBitrate);
+    EXPECT_LE(layer.minBitrate, layer.targetBitrate);
+    EXPECT_LE(layer.targetBitrate, layer.maxBitrate);
+  }
+}
+
+TEST(SvcConfig, ScreenSharing) {
+  std::vector<SpatialLayer> spatial_layers =
+      GetSvcConfig(1920, 1080, 3, 3, true);
+
+  EXPECT_EQ(spatial_layers.size(), 2UL);
+
+  for (const SpatialLayer& layer : spatial_layers) {
+    EXPECT_EQ(layer.width, 1920);
+    EXPECT_EQ(layer.height, 1080);
+    EXPECT_EQ(layer.numberOfTemporalLayers, 1);
     EXPECT_LE(layer.minBitrate, layer.maxBitrate);
     EXPECT_LE(layer.minBitrate, layer.targetBitrate);
     EXPECT_LE(layer.targetBitrate, layer.maxBitrate);

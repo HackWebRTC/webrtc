@@ -56,7 +56,7 @@ void ConfigureSvc(VideoCodec* codec_settings) {
   const std::vector<SpatialLayer> layers =
       GetSvcConfig(codec_settings->width, codec_settings->height,
                    codec_settings->VP9()->numberOfSpatialLayers,
-                   codec_settings->VP9()->numberOfTemporalLayers);
+                   codec_settings->VP9()->numberOfTemporalLayers, false);
 
   for (size_t i = 0; i < layers.size(); ++i) {
     codec_settings->spatialLayers[i] = layers[i];
