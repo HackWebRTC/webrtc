@@ -9,6 +9,7 @@
  */
 
 #include <algorithm>
+#include <array>
 #include <string>
 #include <utility>
 #include <vector>
@@ -178,6 +179,19 @@ TEST(ArrayViewTest, TestCopyAssignmentFixed) {
   EXPECT_EQ(arr, wv.data());
   // ArrayView<char> v;
   // v = z;  // Compile error, because can't drop const.
+}
+
+TEST(ArrayViewTest, TestStdArray) {
+  constexpr size_t size = 5;
+  std::array<float, size> arr{};
+  // Fixed size view.
+  rtc::ArrayView<float, size> arr_view_fixed(arr);
+  EXPECT_EQ(arr.data(), arr_view_fixed.data());
+  static_assert(size == arr_view_fixed.size(), "");
+  // Variable size view.
+  rtc::ArrayView<float> arr_view(arr);
+  EXPECT_EQ(arr.data(), arr_view.data());
+  EXPECT_EQ(size, arr_view.size());
 }
 
 TEST(ArrayViewTest, TestStdVector) {
