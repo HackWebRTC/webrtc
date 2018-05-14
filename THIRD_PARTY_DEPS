@@ -19,6 +19,7 @@
 
 DEPS = [
   # Common
+  'abseil-cpp',
   'binutils',
   'boringssl',
   'ced',
