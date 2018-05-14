@@ -10,7 +10,7 @@
 
 #include "api/video/video_timing.h"
 
-#include <sstream>
+#include "rtc_base/strings/string_builder.h"
 
 namespace webrtc {
 
@@ -60,19 +60,22 @@ bool TimingFrameInfo::IsInvalid() const {
 }
 
 std::string TimingFrameInfo::ToString() const {
-  std::stringstream out;
   if (IsInvalid()) {
-    out << "";
-  } else {
-    out << rtp_timestamp << ',' << capture_time_ms << ',' << encode_start_ms
-        << ',' << encode_finish_ms << ',' << packetization_finish_ms << ','
-        << pacer_exit_ms << ',' << network_timestamp_ms << ','
-        << network2_timestamp_ms << ',' << receive_start_ms << ','
-        << receive_finish_ms << ',' << decode_start_ms << ','
-        << decode_finish_ms << ',' << render_time_ms << ','
-        << IsOutlier() << ',' << IsTimerTriggered();
+    return "";
   }
-  return out.str();
+
+  char buf[1024];
+  rtc::SimpleStringBuilder sb(buf);
+
+  sb << rtp_timestamp << ',' << capture_time_ms << ',' << encode_start_ms << ','
+     << encode_finish_ms << ',' << packetization_finish_ms << ','
+     << pacer_exit_ms << ',' << network_timestamp_ms << ','
+     << network2_timestamp_ms << ',' << receive_start_ms << ','
+     << receive_finish_ms << ',' << decode_start_ms << ',' << decode_finish_ms
+     << ',' << render_time_ms << ',' << IsOutlier() << ','
+     << IsTimerTriggered();
+
+  return sb.str();
 }
 
 }  // namespace webrtc

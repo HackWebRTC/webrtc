@@ -10,10 +10,10 @@
 #include "api/rtpparameters.h"
 
 #include <algorithm>
-#include <sstream>
 #include <string>
 
 #include "rtc_base/checks.h"
+#include "rtc_base/strings/string_builder.h"
 
 namespace webrtc {
 
@@ -69,14 +69,15 @@ RtpParameters::RtpParameters() {}
 RtpParameters::~RtpParameters() {}
 
 std::string RtpExtension::ToString() const {
-  std::stringstream ss;
-  ss << "{uri: " << uri;
-  ss << ", id: " << id;
+  char buf[256];
+  rtc::SimpleStringBuilder sb(buf);
+  sb << "{uri: " << uri;
+  sb << ", id: " << id;
   if (encrypt) {
-    ss << ", encrypt";
+    sb << ", encrypt";
   }
-  ss << '}';
-  return ss.str();
+  sb << '}';
+  return sb.str();
 }
 
 const char RtpExtension::kAudioLevelUri[] =
