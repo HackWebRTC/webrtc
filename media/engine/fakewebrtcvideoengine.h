@@ -19,8 +19,6 @@
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/video_encoder_factory.h"
-#include "media/engine/internaldecoderfactory.h"
-#include "media/engine/internalencoderfactory.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/event.h"
 #include "rtc_base/ptr_util.h"
@@ -37,13 +35,14 @@ class FakeWebRtcVideoDecoder : public webrtc::VideoDecoder {
   explicit FakeWebRtcVideoDecoder(FakeWebRtcVideoDecoderFactory* factory);
   ~FakeWebRtcVideoDecoder();
 
-  virtual int32_t InitDecode(const webrtc::VideoCodec*, int32_t);
-  virtual int32_t Decode(const webrtc::EncodedImage&,
-                         bool,
-                         const webrtc::CodecSpecificInfo*,
-                         int64_t);
-  virtual int32_t RegisterDecodeCompleteCallback(webrtc::DecodedImageCallback*);
-  virtual int32_t Release();
+  int32_t InitDecode(const webrtc::VideoCodec*, int32_t) override;
+  int32_t Decode(const webrtc::EncodedImage&,
+                 bool,
+                 const webrtc::CodecSpecificInfo*,
+                 int64_t) override;
+  int32_t RegisterDecodeCompleteCallback(
+      webrtc::DecodedImageCallback*) override;
+  int32_t Release() override;
 
   int GetNumFramesReceived() const;
 
@@ -53,11 +52,9 @@ class FakeWebRtcVideoDecoder : public webrtc::VideoDecoder {
 };
 
 // Fake class for mocking out webrtc::VideoDecoderFactory.
-// TODO(bugs.webrtc.org/9228): Remove internal_decoder_factory_.
 class FakeWebRtcVideoDecoderFactory : public webrtc::VideoDecoderFactory {
  public:
   FakeWebRtcVideoDecoderFactory();
-  ~FakeWebRtcVideoDecoderFactory();
 
   std::vector<webrtc::SdpVideoFormat> GetSupportedFormats() const override;
   std::unique_ptr<webrtc::VideoDecoder> CreateVideoDecoder(
@@ -72,7 +69,6 @@ class FakeWebRtcVideoDecoderFactory : public webrtc::VideoDecoderFactory {
   std::vector<webrtc::SdpVideoFormat> supported_codec_formats_;
   std::vector<FakeWebRtcVideoDecoder*> decoders_;
   int num_created_decoders_;
-  webrtc::InternalDecoderFactory* internal_decoder_factory_;
 };
 
 // Fake class for mocking out webrtc::VideoEnoder
@@ -107,11 +103,9 @@ class FakeWebRtcVideoEncoder : public webrtc::VideoEncoder {
 };
 
 // Fake class for mocking out webrtc::VideoEncoderFactory.
-// TODO(bugs.webrtc.org/9228): Remove internal_encoder_factory_.
 class FakeWebRtcVideoEncoderFactory : public webrtc::VideoEncoderFactory {
  public:
   FakeWebRtcVideoEncoderFactory();
-  ~FakeWebRtcVideoEncoderFactory();
 
   std::vector<webrtc::SdpVideoFormat> GetSupportedFormats() const override;
   std::unique_ptr<webrtc::VideoEncoder> CreateVideoEncoder(
@@ -134,7 +128,6 @@ class FakeWebRtcVideoEncoderFactory : public webrtc::VideoEncoderFactory {
   std::vector<FakeWebRtcVideoEncoder*> encoders_ RTC_GUARDED_BY(crit_);
   int num_created_encoders_ RTC_GUARDED_BY(crit_);
   bool encoders_have_internal_sources_;
-  webrtc::InternalEncoderFactory* internal_encoder_factory_;
   bool vp8_factory_mode_;
 };
 

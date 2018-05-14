@@ -420,48 +420,14 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
   // frames.
   int min_video_frames_received_per_track() const {
     int min_frames = INT_MAX;
-    if (video_decoder_factory_enabled_) {
-      const std::vector<FakeWebRtcVideoDecoder*>& decoders =
-          fake_video_decoder_factory_->decoders();
-      if (decoders.empty()) {
-        return 0;
-      }
-      for (FakeWebRtcVideoDecoder* decoder : decoders) {
-        min_frames = std::min(min_frames, decoder->GetNumFramesReceived());
-      }
-      return min_frames;
-    } else {
-      if (fake_video_renderers_.empty()) {
-        return 0;
-      }
-
-      for (const auto& pair : fake_video_renderers_) {
-        min_frames = std::min(min_frames, pair.second->num_rendered_frames());
-      }
-      return min_frames;
+    if (fake_video_renderers_.empty()) {
+      return 0;
     }
-  }
 
-  // In contrast to the above, sums the video frames received for all tracks.
-  // Can be used to verify that no video frames were received, or that the
-  // counts didn't increase.
-  int total_video_frames_received() const {
-    int total = 0;
-    if (video_decoder_factory_enabled_) {
-      const std::vector<FakeWebRtcVideoDecoder*>& decoders =
-          fake_video_decoder_factory_->decoders();
-      for (const FakeWebRtcVideoDecoder* decoder : decoders) {
-        total += decoder->GetNumFramesReceived();
-      }
-    } else {
-      for (const auto& pair : fake_video_renderers_) {
-        total += pair.second->num_rendered_frames();
-      }
-      for (const auto& renderer : removed_fake_video_renderers_) {
-        total += renderer->num_rendered_frames();
-      }
+    for (const auto& pair : fake_video_renderers_) {
+      min_frames = std::min(min_frames, pair.second->num_rendered_frames());
     }
-    return total;
+    return min_frames;
   }
 
   // Returns a MockStatsObserver in a state after stats gathering finished,
@@ -619,10 +585,6 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
     if (!fake_audio_capture_module_) {
       return false;
     }
-    // Note that these factories don't end up getting used unless supported
-    // codecs are added to them.
-    fake_video_decoder_factory_ = new FakeWebRtcVideoDecoderFactory();
-    fake_video_encoder_factory_ = new FakeWebRtcVideoEncoderFactory();
     rtc::Thread* const signaling_thread = rtc::Thread::Current();
     peer_connection_factory_ = webrtc::CreatePeerConnectionFactory(
         network_thread, worker_thread, signaling_thread,
@@ -630,11 +592,9 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
             fake_audio_capture_module_),
         webrtc::CreateBuiltinAudioEncoderFactory(),
         webrtc::CreateBuiltinAudioDecoderFactory(),
-        std::unique_ptr<FakeWebRtcVideoEncoderFactory>(
-            fake_video_encoder_factory_),
-        std::unique_ptr<FakeWebRtcVideoDecoderFactory>(
-            fake_video_decoder_factory_),
-        nullptr /* audio_mixer */, nullptr /* audio_processing */);
+        webrtc::CreateBuiltinVideoEncoderFactory(),
+        webrtc::CreateBuiltinVideoDecoderFactory(), nullptr /* audio_mixer */,
+        nullptr /* audio_processing */);
     if (!peer_connection_factory_) {
       return false;
     }
@@ -687,12 +647,6 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
 
   void set_signal_ice_candidates(bool signal) {
     signal_ice_candidates_ = signal;
-  }
-
-  void EnableVideoDecoderFactory() {
-    video_decoder_factory_enabled_ = true;
-    fake_video_decoder_factory_->AddSupportedVideoCodecType(
-        webrtc::SdpVideoFormat("VP8"));
   }
 
   rtc::scoped_refptr<webrtc::VideoTrackInterface> CreateLocalVideoTrackInternal(
@@ -978,11 +932,6 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
   // Needed to ensure frames aren't received for removed tracks.
   std::vector<std::unique_ptr<webrtc::FakeVideoTrackRenderer>>
       removed_fake_video_renderers_;
-  // Needed to keep track of number of frames received when external decoder
-  // used.
-  FakeWebRtcVideoDecoderFactory* fake_video_decoder_factory_ = nullptr;
-  FakeWebRtcVideoEncoderFactory* fake_video_encoder_factory_ = nullptr;
-  bool video_decoder_factory_enabled_ = false;
 
   // For remote peer communication.
   SignalingMessageReceiver* signaling_message_receiver_ = nullptr;
@@ -1315,11 +1264,6 @@ class PeerConnectionIntegrationBaseTest : public testing::Test {
   void SetSignalIceCandidates(bool signal) {
     caller_->set_signal_ice_candidates(signal);
     callee_->set_signal_ice_candidates(signal);
-  }
-
-  void EnableVideoDecoderFactory() {
-    caller_->EnableVideoDecoderFactory();
-    callee_->EnableVideoDecoderFactory();
   }
 
   // Messages may get lost on the unreliable DataChannel, so we send multiple
@@ -3672,24 +3616,6 @@ TEST_P(PeerConnectionIntegrationTest,
   MediaExpectations media_expectations;
   media_expectations.CalleeExpectsSomeAudio();
   media_expectations.ExpectBidirectionalVideo();
-  ASSERT_TRUE(ExpectNewFrames(media_expectations));
-}
-
-// This test sets up a Jsep call between two parties with external
-// VideoDecoderFactory.
-// TODO(holmer): Disabled due to sometimes crashing on buildbots.
-// See issue webrtc/2378.
-TEST_P(PeerConnectionIntegrationTest,
-       DISABLED_EndToEndCallWithVideoDecoderFactory) {
-  ASSERT_TRUE(CreatePeerConnectionWrappers());
-  EnableVideoDecoderFactory();
-  ConnectFakeSignaling();
-  caller()->AddAudioVideoTracks();
-  callee()->AddAudioVideoTracks();
-  caller()->CreateAndSetAndSignalOffer();
-  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
-  MediaExpectations media_expectations;
-  media_expectations.ExpectBidirectionalAudioAndVideo();
   ASSERT_TRUE(ExpectNewFrames(media_expectations));
 }
 
