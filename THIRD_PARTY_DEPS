@@ -1,3 +1,22 @@
+# This file determines which parts of Chromium's third_party/ we copy.
+# If a dependency is missing, add <dep> to the DEPS list in order to start
+# copying third_party/<dep> from Chromium's third_party.
+#
+# Test your change like this:
+# 1. Edit this file
+# 2. Add
+#   "custom_vars": {
+#     "roll_chromium_into_webrtc": True,
+#   },
+#   to the WebRTC solution in your gclient.
+# 3. gclient sync --deps=all
+# 4. python tools_webrtc/autoroller/roll_deps.py --dry-run --ignore-unclean-workdir
+# 5. git checkout -- . # Throw away rolls of existing deps.
+# 6. You should now get untracked files in third_party/<dep>.
+# 7. git add third_party/<dep>
+# 8. git commit -am "Add third_party/<dep> to WebRTC"
+# 9. git cl upload
+
 DEPS = [
   # Common
   'binutils',
@@ -15,6 +34,7 @@ DEPS = [
   'openh264',
   'opus',
   'protobuf',
+  'pymock',
   'requests',
   'rnnoise',
   'usrsctp',
