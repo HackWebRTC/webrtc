@@ -736,7 +736,9 @@ chrome.fileManagerPrivate.isCrostiniEnabled = function(callback) {};
 
 /**
  * Starts and mounts crostini container.
- * @param {function(boolean)} callback
+ * @param {function()} callback Callback called after the crostini container
+ *     is started and mounted.
+ *     chrome.runtime.lastError will be set if there was an error.
  */
 chrome.fileManagerPrivate.mountCrostiniContainer = function(callback) {};
 

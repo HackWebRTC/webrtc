@@ -18,11 +18,10 @@ addtrybots() {
 }
 
 addotherprojectbugs() {
-  STEP="add pdfium and chromiumos bugs" &&
+  STEP="add pdfium bug" &&
   OLD_MSG=$(git show -s --format=%B HEAD) &&
   git commit --amend -m"$OLD_MSG" -m"
-PDFium-Issue: pdfium:
-ChromiumOS-Issue: chromium:"
+PDFium-Issue: pdfium:"
 }
 
 checkmodules() {

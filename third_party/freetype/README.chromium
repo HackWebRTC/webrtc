@@ -1,7 +1,7 @@
 Name: FreeType
 URL: http://www.freetype.org/
-Version: VER-2-9-67
-Revision: 2157d8fa6f7e12063ca166476ed2223d24234db7
+Version: VER-2-9-1-7
+Revision: 9e345c911714ed62250be13d03d72e25d91fbc77
 License: Custom license "inspired by the BSD, Artistic, and IJG (Independent
          JPEG Group) licenses"
 License File: src/docs/FTL.TXT
