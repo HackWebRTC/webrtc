@@ -19,8 +19,6 @@
 namespace webrtc {
 namespace test {
 
-#if defined(WEBRTC_USE_H264)
-
 namespace {
 // Codec settings.
 const int kCifWidth = 352;
@@ -86,8 +84,6 @@ TEST(VideoProcessorIntegrationTestOpenH264, SingleNalUnit) {
   fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds,
                    &bs_thresholds, nullptr);
 }
-
-#endif  // defined(WEBRTC_USE_H264)
 
 }  // namespace test
 }  // namespace webrtc

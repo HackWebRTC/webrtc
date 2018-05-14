@@ -715,11 +715,13 @@ if (rtc_include_tests) {
       "codecs/multiplex/test/multiplex_adapter_unittest.cc",
       "codecs/test/video_encoder_decoder_instantiation_tests.cc",
       "codecs/test/videocodec_test_libvpx.cc",
-      "codecs/test/videocodec_test_openh264.cc",
       "codecs/test/videocodec_test_parameterized.cc",
       "codecs/vp8/test/vp8_impl_unittest.cc",
       "codecs/vp9/test/vp9_impl_unittest.cc",
     ]
+    if (rtc_use_h264) {
+      sources += [ "codecs/test/videocodec_test_openh264.cc" ]
+    }
 
     deps = [
       ":video_codecs_test_framework",
@@ -763,10 +765,6 @@ if (rtc_include_tests) {
       if (num_video_coding_modules_tests_resources > 0) {
         deps += [ ":video_coding_modules_tests_resources_bundle_data" ]
       }
-    }
-
-    if (rtc_use_h264) {
-      defines = [ "WEBRTC_USE_H264" ]
     }
 
     if (!build_with_chromium && is_clang) {
