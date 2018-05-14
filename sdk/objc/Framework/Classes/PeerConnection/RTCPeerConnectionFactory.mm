@@ -38,10 +38,6 @@
 #include "sdk/objc/Framework/Native/src/objc_video_encoder_factory.h"
 #endif
 
-#if defined(WEBRTC_IOS)
-#import "sdk/objc/Framework/Native/api/audio_device_module.h"
-#endif
-
 // Adding the nogncheck to disable the including header check.
 // The no-media version PeerConnectionFactory doesn't depend on media related
 // C++ target.
@@ -59,14 +55,6 @@
 
 @synthesize nativeFactory = _nativeFactory;
 
-- (rtc::scoped_refptr<webrtc::AudioDeviceModule>)audioDeviceModule {
-#if defined(WEBRTC_IOS)
-  return webrtc::CreateAudioDeviceModule();
-#else
-  return nullptr;
-#endif
-}
-
 - (instancetype)init {
 #ifdef HAVE_NO_MEDIA
   return [self initWithNoMedia];
@@ -77,7 +65,7 @@
                                                      [[RTCVideoEncoderFactoryH264 alloc] init])
                        nativeVideoDecoderFactory:webrtc::ObjCToNativeVideoDecoderFactory(
                                                      [[RTCVideoDecoderFactoryH264 alloc] init])
-                               audioDeviceModule:[self audioDeviceModule]
+                               audioDeviceModule:nullptr
                            audioProcessingModule:nullptr];
 #endif
 }
@@ -99,7 +87,7 @@
                        nativeAudioDecoderFactory:webrtc::CreateBuiltinAudioDecoderFactory()
                        nativeVideoEncoderFactory:std::move(native_encoder_factory)
                        nativeVideoDecoderFactory:std::move(native_decoder_factory)
-                               audioDeviceModule:[self audioDeviceModule]
+                               audioDeviceModule:nullptr
                            audioProcessingModule:nullptr];
 #endif
 }
