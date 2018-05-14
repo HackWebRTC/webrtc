@@ -13,6 +13,7 @@
 #include "modules/audio_processing/audio_buffer.h"
 #include "test/gtest.h"
 
+namespace webrtc {
 TEST(AudioFrameTest, ConstructFromAudioBuffer) {
   constexpr int kSampleRateHz = 48000;
   constexpr int kNumChannels = 2;
@@ -47,3 +48,4 @@ TEST(AudioFrameTest, ConstructFromAudioBuffer) {
   non_const_int16_view.channel(0)[0] = kIntConstant;
   EXPECT_EQ(buffer.channels()[0][0], kIntConstant);
 }
+}  // namespace webrtc

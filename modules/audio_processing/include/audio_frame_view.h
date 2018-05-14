@@ -13,6 +13,8 @@
 
 #include "api/array_view.h"
 
+namespace webrtc {
+
 // Class to pass audio data in T** format, where T is a numeric type.
 template <class T>
 class AudioFrameView {
@@ -60,5 +62,6 @@ class AudioFrameView {
   size_t num_channels_;
   size_t channel_size_;
 };
+}  // namespace webrtc
 
 #endif  // MODULES_AUDIO_PROCESSING_INCLUDE_AUDIO_FRAME_VIEW_H_
