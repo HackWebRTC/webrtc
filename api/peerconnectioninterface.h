@@ -1269,8 +1269,9 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
       const PeerConnectionInterface::RTCConfiguration& configuration,
       std::unique_ptr<cricket::PortAllocator> allocator,
       std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
-      PeerConnectionObserver* observer) = 0;
-
+      PeerConnectionObserver* observer) {
+    return nullptr;
+  }
   // Deprecated; should use RTCConfiguration for everything that previously
   // used constraints.
   virtual rtc::scoped_refptr<PeerConnectionInterface> CreatePeerConnection(
@@ -1278,7 +1279,9 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
       const MediaConstraintsInterface* constraints,
       std::unique_ptr<cricket::PortAllocator> allocator,
       std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
-      PeerConnectionObserver* observer) = 0;
+      PeerConnectionObserver* observer) {
+    return nullptr;
+  }
 
   virtual rtc::scoped_refptr<MediaStreamInterface> CreateLocalMediaStream(
       const std::string& stream_id) = 0;
@@ -1290,7 +1293,9 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
   // Deprecated - use version above.
   // Can use CopyConstraintsIntoAudioOptions to bridge the gap.
   virtual rtc::scoped_refptr<AudioSourceInterface> CreateAudioSource(
-      const MediaConstraintsInterface* constraints) = 0;
+      const MediaConstraintsInterface* constraints) {
+    return nullptr;
+  }
 
   // Creates a VideoTrackSourceInterface from |capturer|.
   // TODO(deadbeef): We should aim to remove cricket::VideoCapturer from the
