@@ -41,6 +41,12 @@ config("gmock_config") {
     "custom",
     "src/googlemock/include",
   ]
+
+  if (is_clang) {
+    # TODO(tikuta): remove this when the issue is fixed.
+    # https://github.com/google/googletest/issues/533
+    cflags = [ "-Wno-inconsistent-missing-override" ]
+  }
 }
 
 # Do NOT depend on this directly. Use //testing/gtest instead.
@@ -102,7 +108,10 @@ source_set("gtest") {
       "//base",
     ]
     if (is_fuchsia) {
-      deps += [ "//third_party/fuchsia-sdk:launchpad" ]
+      deps += [
+        "//third_party/fuchsia-sdk:fdio",
+        "//third_party/fuchsia-sdk:launchpad",
+      ]
     }
   }
 }
