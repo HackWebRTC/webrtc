@@ -701,7 +701,7 @@ TEST_F(WebRtcVideoEngineTest, ChannelWithH264CanChangeToVp8) {
   // Sending one frame will switch encoder.
   EXPECT_TRUE(capturer.CaptureFrame());
 
-  EXPECT_EQ_WAIT(0u, encoder_factory_->encoders().size(), kTimeout);
+  EXPECT_EQ_WAIT(1u, encoder_factory_->encoders().size(), kTimeout);
 }
 
 TEST_F(WebRtcVideoEngineTest,
