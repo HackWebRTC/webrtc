@@ -9,32 +9,33 @@
  */
 
 #include "modules/audio_processing/agc2/rnn_vad/pitch_search.h"
-#include "modules/audio_processing/agc2/rnn_vad/pitch_search_internal.h"
 
 namespace webrtc {
 namespace rnn_vad {
 
-// TODO(bugs.webrtc.org/9076): To decrease the stack size, add a class that uses
-// std::vector instances instead of the local arrays used in PitchSearch(). It
-// is also useful once https://webrtc-review.googlesource.com/c/src/+/73366
-// lands.
-PitchInfo PitchSearch(rtc::ArrayView<const float, kBufSize24kHz> pitch_buf,
-                      PitchInfo prev_pitch_48kHz,
-                      RealFourier* fft) {
+PitchEstimator::PitchEstimator()
+    : fft_(RealFourier::Create(kAutoCorrelationFftOrder)),
+      pitch_buf_decimated_(kBufSize12kHz),
+      pitch_buf_decimated_view_(pitch_buf_decimated_.data(), kBufSize12kHz),
+      auto_corr_(kNumInvertedLags12kHz),
+      auto_corr_view_(auto_corr_.data(), kNumInvertedLags12kHz) {
+  RTC_DCHECK_EQ(kBufSize12kHz, pitch_buf_decimated_.size());
+  RTC_DCHECK_EQ(kNumInvertedLags12kHz, auto_corr_view_.size());
+}
+
+PitchEstimator::~PitchEstimator() = default;
+
+PitchInfo PitchEstimator::Estimate(
+    rtc::ArrayView<const float, kBufSize24kHz> pitch_buf) {
   // Perform the initial pitch search at 12 kHz.
-  std::array<float, kBufSize12kHz> pitch_buf_decimated;
-  Decimate2x(pitch_buf,
-             {pitch_buf_decimated.data(), pitch_buf_decimated.size()});
+  Decimate2x(pitch_buf, pitch_buf_decimated_view_);
   // Compute auto-correlation terms.
-  std::array<float, kNumInvertedLags12kHz> auto_corr;
-  ComputePitchAutoCorrelation(
-      {pitch_buf_decimated.data(), pitch_buf_decimated.size()}, kMaxPitch12kHz,
-      {auto_corr.data(), auto_corr.size()}, fft);
+  ComputePitchAutoCorrelation(pitch_buf_decimated_view_, kMaxPitch12kHz,
+                              auto_corr_view_, fft_.get());
 
   // Search for pitch at 12 kHz.
   std::array<size_t, 2> pitch_candidates_inv_lags = FindBestPitchPeriods(
-      {auto_corr.data(), auto_corr.size()},
-      {pitch_buf_decimated.data(), pitch_buf_decimated.size()}, kMaxPitch12kHz);
+      auto_corr_view_, pitch_buf_decimated_view_, kMaxPitch12kHz);
 
   // Refine the pitch period estimation.
   // The refinement is done using the pitch buffer that contains 24 kHz samples.
@@ -47,8 +48,9 @@ PitchInfo PitchSearch(rtc::ArrayView<const float, kBufSize24kHz> pitch_buf,
       {pitch_candidates_inv_lags.data(), pitch_candidates_inv_lags.size()});
   // Look for stronger harmonics to find the final pitch period and its gain.
   RTC_DCHECK_LT(pitch_inv_lag_48kHz, kMaxPitch48kHz);
-  return CheckLowerPitchPeriodsAndComputePitchGain(
-      pitch_buf, kMaxPitch48kHz - pitch_inv_lag_48kHz, prev_pitch_48kHz);
+  last_pitch_48kHz_ = CheckLowerPitchPeriodsAndComputePitchGain(
+      pitch_buf, kMaxPitch48kHz - pitch_inv_lag_48kHz, last_pitch_48kHz_);
+  return last_pitch_48kHz_;
 }
 
 }  // namespace rnn_vad

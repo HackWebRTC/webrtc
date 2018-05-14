@@ -11,9 +11,10 @@
 #ifndef MODULES_AUDIO_PROCESSING_AGC2_RNN_VAD_SEQUENCE_BUFFER_H_
 #define MODULES_AUDIO_PROCESSING_AGC2_RNN_VAD_SEQUENCE_BUFFER_H_
 
-#include <array>
+#include <algorithm>
 #include <cstring>
 #include <type_traits>
+#include <vector>
 
 #include "api/array_view.h"
 #include "rtc_base/checks.h"
@@ -26,41 +27,38 @@ namespace rnn_vad {
 // chunks have size S and N respectively. For instance, when S = 2N the first
 // half of the sequence buffer is replaced with its second half, and the new N
 // values are written at the end of the buffer.
-template <typename T, size_t S, size_t N>
+// The class also provides a view on the most recent M values, where 0 < M <= S
+// and by default M = N.
+template <typename T, size_t S, size_t N, size_t M = N>
 class SequenceBuffer {
-  static_assert(S >= N,
-                "The new chunk size is larger than the sequence buffer size.");
+  static_assert(N <= S,
+                "The new chunk size cannot be larger than the sequence buffer "
+                "size.");
   static_assert(std::is_arithmetic<T>::value,
                 "Integral or floating point required.");
 
  public:
-  SequenceBuffer() { buffer_.fill(0); }
+  SequenceBuffer() : buffer_(S) {
+    RTC_DCHECK_EQ(S, buffer_.size());
+    Reset();
+  }
   SequenceBuffer(const SequenceBuffer&) = delete;
   SequenceBuffer& operator=(const SequenceBuffer&) = delete;
   ~SequenceBuffer() = default;
   size_t size() const { return S; }
   size_t chunks_size() const { return N; }
   // Sets the sequence buffer values to zero.
-  void Reset() { buffer_.fill(0); }
+  void Reset() { std::fill(buffer_.begin(), buffer_.end(), 0); }
   // Returns a view on the whole buffer.
   rtc::ArrayView<const T, S> GetBufferView() const {
     return {buffer_.data(), S};
   }
-  // Returns a view on part of the buffer; the first element starts at the given
-  // offset and the last one is the last one in the buffer.
-  rtc::ArrayView<const T> GetBufferView(int offset) const {
-    RTC_DCHECK_LE(0, offset);
-    RTC_DCHECK_LT(offset, S);
-    return {buffer_.data() + offset, S - offset};
-  }
-  // Returns a view on part of the buffer; the first element starts at the given
-  // offset and the size of the view is |size|.
-  rtc::ArrayView<const T> GetBufferView(int offset, size_t size) const {
-    RTC_DCHECK_LE(0, offset);
-    RTC_DCHECK_LT(offset, S);
-    RTC_DCHECK_LT(0, size);
-    RTC_DCHECK_LE(size, S - offset);
-    return {buffer_.data() + offset, size};
+  // Returns a view on the M most recent values of the buffer.
+  rtc::ArrayView<const T, M> GetMostRecentValuesView() const {
+    static_assert(M <= S,
+                  "The number of most recent values cannot be larger than the "
+                  "sequence buffer size.");
+    return {buffer_.data() + S - M, M};
   }
   // Shifts left the buffer by N items and add new N items at the end.
   void Push(rtc::ArrayView<const T, N> new_values) {
@@ -72,8 +70,7 @@ class SequenceBuffer {
   }
 
  private:
-  // TODO(bugs.webrtc.org/9076): Switch to std::vector to decrease stack size.
-  std::array<T, S> buffer_;
+  std::vector<T> buffer_;
 };
 
 }  // namespace rnn_vad

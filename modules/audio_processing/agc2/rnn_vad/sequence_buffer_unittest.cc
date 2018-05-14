@@ -11,6 +11,7 @@
 #include "modules/audio_processing/agc2/rnn_vad/sequence_buffer.h"
 
 #include <algorithm>
+#include <array>
 
 #include "test/gtest.h"
 

@@ -113,5 +113,24 @@ TEST(BiQuadFilterTest, FilterInPlace) {
     ExpectNearRelative(kBiQuadOutputSeq[i], samples, 2e-4f);
   }
 }
+
+TEST(BiQuadFilterTest, Reset) {
+  BiQuadFilter filter;
+  filter.Initialize(kBiQuadConfig);
+
+  std::array<float, kFrameSize> samples1;
+  for (size_t i = 0; i < kNumFrames; ++i) {
+    filter.Process(kBiQuadInputSeq[i], samples1);
+  }
+
+  filter.Reset();
+  std::array<float, kFrameSize> samples2;
+  for (size_t i = 0; i < kNumFrames; ++i) {
+    filter.Process(kBiQuadInputSeq[i], samples2);
+  }
+
+  EXPECT_EQ(samples1, samples2);
+}
+
 }  // namespace test
 }  // namespace webrtc

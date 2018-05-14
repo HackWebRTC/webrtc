@@ -48,7 +48,7 @@ rtc_source_set("adaptive_digital") {
 }
 
 rtc_source_set("biquad_filter") {
-  visibility = [ ":*" ]
+  visibility = [ "./*" ]
   sources = [
     "biquad_filter.cc",
     "biquad_filter.h",

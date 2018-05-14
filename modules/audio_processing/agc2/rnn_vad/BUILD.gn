@@ -17,6 +17,8 @@ group("rnn_vad") {
 source_set("lib") {
   sources = [
     "common.h",
+    "features_extraction.cc",
+    "features_extraction.h",
     "fft_util.cc",
     "fft_util.h",
     "lp_residual.cc",
@@ -37,6 +39,7 @@ source_set("lib") {
     "symmetric_matrix_buffer.h",
   ]
   deps = [
+    "..:biquad_filter",
     "../../../../api:array_view",
     "../../../../common_audio/",
     "../../../../rtc_base:checks",
@@ -84,6 +87,7 @@ if (rtc_include_tests) {
   rtc_source_set("unittests") {
     testonly = true
     sources = [
+      "features_extraction_unittest.cc",
       "fft_util_unittest.cc",
       "lp_residual_unittest.cc",
       "pitch_search_internal_unittest.cc",
