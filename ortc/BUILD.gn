@@ -36,6 +36,8 @@ rtc_static_library("ortc") {
     "../api:libjingle_peerconnection_api",
     "../api:optional",
     "../api:ortc_api",
+    "../api/video_codecs:builtin_video_decoder_factory",
+    "../api/video_codecs:builtin_video_encoder_factory",
     "../call:call_interfaces",
     "../call:rtp_sender",
     "../logging:rtc_event_log_api",

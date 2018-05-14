@@ -10,6 +10,8 @@
 
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
+#include "api/video_codecs/builtin_video_decoder_factory.h"
+#include "api/video_codecs/builtin_video_encoder_factory.h"
 #include "media/engine/webrtcmediaengine.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "pc/mediasession.h"
@@ -44,20 +46,20 @@ using ::testing::UnorderedElementsAre;
 class PeerConnectionFactoryForJsepTest : public PeerConnectionFactory {
  public:
   PeerConnectionFactoryForJsepTest()
-      : PeerConnectionFactory(
-            rtc::Thread::Current(),
-            rtc::Thread::Current(),
-            rtc::Thread::Current(),
-            rtc::WrapUnique(cricket::WebRtcMediaEngineFactory::Create(
-                FakeAudioCaptureModule::Create(),
-                CreateBuiltinAudioEncoderFactory(),
-                CreateBuiltinAudioDecoderFactory(),
-                nullptr,
-                nullptr,
-                nullptr,
-                AudioProcessingBuilder().Create())),
-            CreateCallFactory(),
-            nullptr) {}
+      : PeerConnectionFactory(rtc::Thread::Current(),
+                              rtc::Thread::Current(),
+                              rtc::Thread::Current(),
+                              cricket::WebRtcMediaEngineFactory::Create(
+                                  rtc::scoped_refptr<AudioDeviceModule>(
+                                      FakeAudioCaptureModule::Create()),
+                                  CreateBuiltinAudioEncoderFactory(),
+                                  CreateBuiltinAudioDecoderFactory(),
+                                  CreateBuiltinVideoEncoderFactory(),
+                                  CreateBuiltinVideoDecoderFactory(),
+                                  nullptr,
+                                  AudioProcessingBuilder().Create()),
+                              CreateCallFactory(),
+                              nullptr) {}
 
   std::unique_ptr<cricket::SctpTransportInternalFactory>
   CreateSctpTransportInternalFactory() {

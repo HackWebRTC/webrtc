@@ -634,13 +634,16 @@ class PeerConnectionFactoryForTest : public webrtc::PeerConnectionFactory {
   CreatePeerConnectionFactoryForTest() {
     auto audio_encoder_factory = webrtc::CreateBuiltinAudioEncoderFactory();
     auto audio_decoder_factory = webrtc::CreateBuiltinAudioDecoderFactory();
+    auto video_encoder_factory = webrtc::CreateBuiltinVideoEncoderFactory();
+    auto video_decoder_factory = webrtc::CreateBuiltinVideoDecoderFactory();
 
     // Use fake audio device module since we're only testing the interface
     // level, and using a real one could make tests flaky when run in parallel.
     auto media_engine = std::unique_ptr<cricket::MediaEngineInterface>(
         cricket::WebRtcMediaEngineFactory::Create(
             FakeAudioCaptureModule::Create(), audio_encoder_factory,
-            audio_decoder_factory, nullptr, nullptr, nullptr,
+            audio_decoder_factory, std::move(video_encoder_factory),
+            std::move(video_decoder_factory), nullptr,
             webrtc::AudioProcessingBuilder().Create()));
 
     std::unique_ptr<webrtc::CallFactoryInterface> call_factory =

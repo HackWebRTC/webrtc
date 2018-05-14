@@ -739,6 +739,7 @@ if (rtc_include_tests) {
       "../../api/video_codecs:video_codecs_api",
       "../../common_video",
       "../../media:rtc_h264_profile_id",
+      "../../media:rtc_internal_video_codecs",
       "../../media:rtc_media_base",
       "../../rtc_base:rtc_base",
       "../../test:fileutils",
@@ -822,6 +823,7 @@ if (rtc_include_tests) {
     if (rtc_use_h264) {
       sources += [ "codecs/h264/h264_encoder_impl_unittest.cc" ]
     }
+
     deps = [
       ":codec_globals_headers",
       ":encoded_frame",

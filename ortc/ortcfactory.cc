@@ -17,6 +17,8 @@
 #include "api/mediastreamtrackproxy.h"
 #include "api/proxy.h"
 #include "api/rtcerror.h"
+#include "api/video_codecs/builtin_video_decoder_factory.h"
+#include "api/video_codecs/builtin_video_encoder_factory.h"
 #include "api/videosourceproxy.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "media/base/mediaconstants.h"
@@ -551,8 +553,11 @@ OrtcFactory::CreateMediaEngine_w() {
   // AudioDeviceModule will be used.
   return std::unique_ptr<cricket::MediaEngineInterface>(
       cricket::WebRtcMediaEngineFactory::Create(
-          adm_, audio_encoder_factory_, audio_decoder_factory_, nullptr,
-          nullptr, nullptr, webrtc::AudioProcessingBuilder().Create()));
+          rtc::scoped_refptr<webrtc::AudioDeviceModule>(adm_),
+          audio_encoder_factory_, audio_decoder_factory_,
+          webrtc::CreateBuiltinVideoEncoderFactory(),
+          webrtc::CreateBuiltinVideoDecoderFactory(), nullptr,
+          webrtc::AudioProcessingBuilder().Create()));
 }
 
 }  // namespace webrtc

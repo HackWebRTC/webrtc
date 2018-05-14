@@ -67,7 +67,6 @@ rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
       network_thread, worker_thread, signaling_thread, std::move(media_engine),
       std::move(call_factory), std::move(event_log_factory));
 }
-#endif
 
 rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
     rtc::Thread* network_thread,
@@ -102,6 +101,7 @@ rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
       std::move(call_factory), std::move(event_log_factory),
       std::move(fec_controller_factory));
 }
+#endif
 
 rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
     rtc::Thread* network_thread,
