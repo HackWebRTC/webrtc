@@ -53,13 +53,31 @@ const SimulcastFormat kSimulcastFormats[] = {
 
 const int kMaxScreenshareSimulcastLayers = 2;
 
-// Multiway: Number of temporal layers for each simulcast stream, for maximum
-// possible number of simulcast streams |kMaxSimulcastStreams|. The array
-// goes from lowest resolution at position 0 to highest resolution.
-// For example, first three elements correspond to say: QVGA, VGA, WHD.
-static const int
-    kDefaultConferenceNumberOfTemporalLayers[webrtc::kMaxSimulcastStreams] =
-    {3, 3, 3, 3};
+// Multiway: Number of temporal layers for each simulcast stream.
+int DefaultNumberOfTemporalLayers(int simulcast_id) {
+  RTC_CHECK_GE(simulcast_id, 0);
+  RTC_CHECK_LT(simulcast_id, webrtc::kMaxSimulcastStreams);
+
+  const int kDefaultNumTemporalLayers = 3;
+
+  const std::string group_name =
+      webrtc::field_trial::FindFullName("WebRTC-VP8ConferenceTemporalLayers");
+  if (group_name.empty())
+    return kDefaultNumTemporalLayers;
+
+  int num_temporal_layers = kDefaultNumTemporalLayers;
+  if (sscanf(group_name.c_str(), "%d", &num_temporal_layers) == 1 &&
+      num_temporal_layers > 0 &&
+      num_temporal_layers <= webrtc::kMaxTemporalStreams) {
+    return num_temporal_layers;
+  }
+
+  RTC_LOG(LS_WARNING) << "Attempt to set number of temporal layers to "
+                         "incorrect value: "
+                      << group_name;
+
+  return kDefaultNumTemporalLayers;
+}
 
 int FindSimulcastFormatIndex(int width, int height) {
   RTC_DCHECK_GE(width, 0);
@@ -196,7 +214,7 @@ std::vector<webrtc::VideoStream> GetNormalSimulcastLayers(
     layers[s].height = height;
     // TODO(pbos): Fill actual temporal-layer bitrate thresholds.
     layers[s].max_qp = max_qp;
-    layers[s].num_temporal_layers = kDefaultConferenceNumberOfTemporalLayers[s];
+    layers[s].num_temporal_layers = DefaultNumberOfTemporalLayers(s);
     layers[s].max_bitrate_bps = FindSimulcastMaxBitrateBps(width, height);
     layers[s].target_bitrate_bps = FindSimulcastTargetBitrateBps(width, height);
     layers[s].min_bitrate_bps = FindSimulcastMinBitrateBps(width, height);
