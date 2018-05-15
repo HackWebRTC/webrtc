@@ -210,17 +210,10 @@ void WindowCapturerMac::CaptureFrame() {
 
   frame->mutable_updated_region()->SetRect(
       DesktopRect::MakeSize(frame->size()));
-  DesktopVector top_left;
-  if (configuration_monitor_) {
-    configuration_monitor_->Lock();
-    auto configuration = configuration_monitor_->desktop_configuration();
-    configuration_monitor_->Unlock();
-    top_left = GetWindowBounds(configuration, on_screen_window).top_left();
-    top_left = top_left.subtract(configuration.bounds.top_left());
-  } else {
-    top_left = GetWindowBounds(on_screen_window).top_left();
-  }
-  frame->set_top_left(top_left);
+  frame->set_top_left(GetWindowBounds(on_screen_window).top_left());
+
+  float scale_factor = GetWindowScaleFactor(window_id_, frame->size());
+  frame->set_dpi(DesktopVector(kStandardDPI * scale_factor, kStandardDPI * scale_factor));
 
   callback_->OnCaptureResult(Result::SUCCESS, std::move(frame));
 
