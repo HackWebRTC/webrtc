@@ -78,7 +78,7 @@ TEST(RnnVadTest, CheckFullyConnectedLayerOutput) {
         0.f,           0.0461241305f, 0.106401242f, 0.223070428f, 0.630603909f,
         0.690453172f,  0.f,           0.387645692f, 0.166913897f, 0.f,
         0.0327451192f, 0.f,           0.136149868f, 0.446351469f};
-    TestFullyConnectedLayer(&fc, {input_vector}, 0.436567038f);
+    TestFullyConnectedLayer(&fc, input_vector, 0.436567038f);
   }
   {
     const std::array<float, 24> input_vector = {
@@ -90,7 +90,7 @@ TEST(RnnVadTest, CheckFullyConnectedLayerOutput) {
         0.9688586f,    0.0320267938f, 0.244722098f,
         0.312745273f,  0.f,           0.00650715502f,
         0.312553257f,  1.62619662f,   0.782880902f};
-    TestFullyConnectedLayer(&fc, {input_vector}, 0.874741316f);
+    TestFullyConnectedLayer(&fc, input_vector, 0.874741316f);
   }
   {
     const std::array<float, 24> input_vector = {
@@ -102,7 +102,7 @@ TEST(RnnVadTest, CheckFullyConnectedLayerOutput) {
         1.20532358f,   0.0254284926f, 0.283327013f,
         0.726210058f,  0.0550272502f, 0.000344108557f,
         0.369803518f,  1.56680179f,   0.997883797f};
-    TestFullyConnectedLayer(&fc, {input_vector}, 0.672785878f);
+    TestFullyConnectedLayer(&fc, input_vector, 0.672785878f);
   }
 }
 
@@ -161,17 +161,16 @@ TEST(RnnVadTest, RnnBitExactness) {
     RTC_CHECK(vad_probs_reader.first->ReadValue(&expected_vad_probability));
     // The features file also includes a silence flag for each frame.
     RTC_CHECK(features_reader.first->ReadValue(&is_silence));
-    RTC_CHECK(
-        features_reader.first->ReadChunk({features.data(), features.size()}));
-    // Skip silent frames.
+    RTC_CHECK(features_reader.first->ReadChunk(features));
+    // Compute and check VAD probability.
+    float vad_probability = vad.ComputeVadProbability(features, is_silence);
     ASSERT_TRUE(is_silence == 0.f || is_silence == 1.f);
     if (is_silence == 1.f) {
-      ASSERT_EQ(expected_vad_probability, 0.f);
-      continue;
+      ASSERT_EQ(0.f, expected_vad_probability);
+      EXPECT_EQ(0.f, vad_probability);
+    } else {
+      EXPECT_NEAR(expected_vad_probability, vad_probability, 3e-6f);
     }
-    // Compute and check VAD probability.
-    vad.ComputeVadProbability({features.data(), features.size()});
-    EXPECT_NEAR(expected_vad_probability, vad.vad_probability(), 3e-6f);
   }
 }
 

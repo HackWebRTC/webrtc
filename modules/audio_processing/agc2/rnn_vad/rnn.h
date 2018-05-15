@@ -97,17 +97,16 @@ class RnnBasedVad {
   RnnBasedVad(const RnnBasedVad&) = delete;
   RnnBasedVad& operator=(const RnnBasedVad&) = delete;
   ~RnnBasedVad();
-  float vad_probability() const { return vad_probability_; }
   void Reset();
   // Compute and returns the probability of voice (range: [0.0, 1.0]).
-  void ComputeVadProbability(
-      rtc::ArrayView<const float, kFeatureVectorSize> feature_vector);
+  float ComputeVadProbability(
+      rtc::ArrayView<const float, kFeatureVectorSize> feature_vector,
+      bool is_silence);
 
  private:
   FullyConnectedLayer input_layer_;
   GatedRecurrentLayer hidden_layer_;
   FullyConnectedLayer output_layer_;
-  float vad_probability_;
 };
 
 }  // namespace rnn_vad

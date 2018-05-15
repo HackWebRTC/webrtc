@@ -23,10 +23,11 @@ constexpr size_t kHalfFrameSize = kFrameSize20ms24kHz / 2;
 // Computes the first half of the Vorbis window.
 std::array<float, kHalfFrameSize> ComputeHalfVorbisWindow() {
   std::array<float, kHalfFrameSize> half_window{};
-  for (size_t i = 0; i < kHalfFrameSize; ++i)
+  for (size_t i = 0; i < kHalfFrameSize; ++i) {
     half_window[i] =
         std::sin(0.5 * kPi * std::sin(0.5 * kPi * (i + 0.5) / kHalfFrameSize) *
                  std::sin(0.5 * kPi * (i + 0.5) / kHalfFrameSize));
+  }
   return half_window;
 }
 

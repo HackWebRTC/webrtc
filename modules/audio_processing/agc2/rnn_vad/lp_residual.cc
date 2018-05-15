@@ -33,9 +33,10 @@ void ComputeCrossCorrelation(
   constexpr size_t max_lag = x_corr.size();
   RTC_DCHECK_EQ(x.size(), y.size());
   RTC_DCHECK_LT(max_lag, x.size());
-  for (size_t lag = 0; lag < max_lag; ++lag)
+  for (size_t lag = 0; lag < max_lag; ++lag) {
     x_corr[lag] =
         std::inner_product(x.begin(), x.end() - lag, y.begin() + lag, 0.f);
+  }
 }
 
 // Applies denoising to the auto-correlation coefficients.
@@ -43,8 +44,9 @@ void DenoiseAutoCorrelation(
     rtc::ArrayView<float, kNumLpcCoefficients> auto_corr) {
   // Assume -40 dB white noise floor.
   auto_corr[0] *= 1.0001f;
-  for (size_t i = 1; i < kNumLpcCoefficients; ++i)
+  for (size_t i = 1; i < kNumLpcCoefficients; ++i) {
     auto_corr[i] -= auto_corr[i] * (0.008f * i) * (0.008f * i);
+  }
 }
 
 // Computes the initial inverse filter coefficients given the auto-correlation
@@ -55,8 +57,9 @@ void ComputeInitialInverseFilterCoefficients(
   float error = auto_corr[0];
   for (size_t i = 0; i < kNumLpcCoefficients - 1; ++i) {
     float reflection_coeff = 0.f;
-    for (size_t j = 0; j < i; ++j)
+    for (size_t j = 0; j < i; ++j) {
       reflection_coeff += lpc_coeffs[j] * auto_corr[i - j];
+    }
     reflection_coeff += auto_corr[i + 1];
     reflection_coeff /= -error;
     // Update LPC coefficients and total error.
@@ -68,8 +71,9 @@ void ComputeInitialInverseFilterCoefficients(
       lpc_coeffs[i - 1 - j] = tmp2 + reflection_coeff * tmp1;
     }
     error -= reflection_coeff * reflection_coeff * error;
-    if (error < 0.001f * auto_corr[0])
+    if (error < 0.001f * auto_corr[0]) {
       break;
+    }
   }
 }
 
@@ -86,9 +90,7 @@ void ComputeAndPostProcessLpcCoefficients(
   }
   DenoiseAutoCorrelation({auto_corr.data(), auto_corr.size()});
   std::array<float, kNumLpcCoefficients - 1> lpc_coeffs_pre{};
-  ComputeInitialInverseFilterCoefficients(
-      {auto_corr.data(), auto_corr.size()},
-      {lpc_coeffs_pre.data(), lpc_coeffs_pre.size()});
+  ComputeInitialInverseFilterCoefficients(auto_corr, lpc_coeffs_pre);
   // LPC coefficients post-processing.
   // TODO(bugs.webrtc.org/9076): Consider removing these steps.
   float c1 = 1.f;

@@ -54,17 +54,15 @@ bool FeaturesExtractor::CheckSilenceComputeFeatures(
     std::array<float, kFrameSize10ms24kHz> samples_filtered;
     hpf_.Process(samples, samples_filtered);
     // Feed buffer with the pre-processed version of |samples|.
-    pitch_buf_24kHz_.Push({samples_filtered.data(), samples_filtered.size()});
+    pitch_buf_24kHz_.Push(samples_filtered);
   } else {
     // Feed buffer with |samples|.
     pitch_buf_24kHz_.Push(samples);
   }
   // Extract the LP residual.
   float lpc_coeffs[kNumLpcCoefficients];
-  ComputeAndPostProcessLpcCoefficients(pitch_buf_24kHz_view_,
-                                       {lpc_coeffs, kNumLpcCoefficients});
-  ComputeLpResidual({lpc_coeffs, kNumLpcCoefficients}, pitch_buf_24kHz_view_,
-                    lp_residual_view_);
+  ComputeAndPostProcessLpcCoefficients(pitch_buf_24kHz_view_, lpc_coeffs);
+  ComputeLpResidual(lpc_coeffs, pitch_buf_24kHz_view_, lp_residual_view_);
   // Estimate pitch on the LP-residual and write the normalized pitch period
   // into the output vector (normalization based on training data stats).
   pitch_info_48kHz_ = pitch_estimator_.Estimate(lp_residual_view_);

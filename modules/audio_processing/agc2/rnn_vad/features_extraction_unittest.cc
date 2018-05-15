@@ -42,8 +42,9 @@ bool PitchIsValid(float pitch_hz) {
 }
 
 void CreatePureTone(float amplitude, float freq_hz, rtc::ArrayView<float> dst) {
-  for (size_t i = 0; i < dst.size(); ++i)
+  for (size_t i = 0; i < dst.size(); ++i) {
     dst[i] = amplitude * std::sin(2.f * kPi * freq_hz * i / kSampleRate24kHz);
+  }
 }
 
 // Feeds |features_extractor| with |samples| splitting it in 10 ms frames.

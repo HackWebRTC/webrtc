@@ -43,9 +43,8 @@ PitchInfo PitchEstimator::Estimate(
   // to 24 kHz.
   for (size_t i = 0; i < pitch_candidates_inv_lags.size(); ++i)
     pitch_candidates_inv_lags[i] *= 2;
-  size_t pitch_inv_lag_48kHz = RefinePitchPeriod48kHz(
-      pitch_buf,
-      {pitch_candidates_inv_lags.data(), pitch_candidates_inv_lags.size()});
+  size_t pitch_inv_lag_48kHz =
+      RefinePitchPeriod48kHz(pitch_buf, pitch_candidates_inv_lags);
   // Look for stronger harmonics to find the final pitch period and its gain.
   RTC_DCHECK_LT(pitch_inv_lag_48kHz, kMaxPitch48kHz);
   last_pitch_48kHz_ = CheckLowerPitchPeriodsAndComputePitchGain(

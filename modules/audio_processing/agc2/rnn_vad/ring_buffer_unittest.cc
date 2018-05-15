@@ -85,7 +85,7 @@ TEST(RnnVadTest, RingBufferArrayViews) {
         EXPECT_NE(view_i, view_j);
       }
     }
-    ring_buf.Push({pushed_array.data(), pushed_array.size()});
+    ring_buf.Push(pushed_array);
   }
 }
 

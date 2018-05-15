@@ -31,7 +31,7 @@ TEST(RnnVadTest, CheckBandAnalysisFftOutput) {
   // FloatingPointExceptionObserver fpe_observer;
   BandAnalysisFft fft;
   std::array<std::complex<float>, kFrameSize20ms24kHz> fft_coeffs;
-  fft.ForwardFft({samples}, {fft_coeffs});
+  fft.ForwardFft(samples, fft_coeffs);
   // First coefficient is DC - i.e., real number.
   EXPECT_EQ(0.f, fft_coeffs[0].imag());
   // Check conjugated symmetry of the FFT output.

@@ -31,12 +31,10 @@ TEST(RnnVadTest, LpResidualOfEmptyFrame) {
   empty_frame.fill(0.f);
   // Compute inverse filter coefficients.
   std::array<float, kNumLpcCoefficients> lpc_coeffs;
-  ComputeAndPostProcessLpcCoefficients({empty_frame},
-                                       {lpc_coeffs.data(), lpc_coeffs.size()});
+  ComputeAndPostProcessLpcCoefficients(empty_frame, lpc_coeffs);
   // Compute LP residual.
   std::array<float, kFrameSize10ms24kHz> lp_residual;
-  ComputeLpResidual({lpc_coeffs.data(), lpc_coeffs.size()}, {empty_frame},
-                    {lp_residual});
+  ComputeLpResidual(lpc_coeffs, empty_frame, lp_residual);
 }
 
 // TODO(bugs.webrtc.org/9076): Remove when the issue is fixed.
@@ -45,8 +43,6 @@ TEST(RnnVadTest, LpResidualPipelineBitExactness) {
   auto pitch_buf_24kHz_reader = CreatePitchBuffer24kHzReader();
   const size_t num_frames = pitch_buf_24kHz_reader.second;
   std::array<float, kBufSize24kHz> pitch_buf_data;
-  rtc::ArrayView<float, kBufSize24kHz> pitch_buf_data_view(
-      pitch_buf_data.data(), pitch_buf_data.size());
   // Read ground-truth.
   auto lp_residual_reader = CreateLpResidualAndPitchPeriodGainReader();
   ASSERT_EQ(num_frames, lp_residual_reader.second);
@@ -63,20 +59,18 @@ TEST(RnnVadTest, LpResidualPipelineBitExactness) {
   {
     // TODO(bugs.webrtc.org/8948): Add when the issue is fixed.
     // FloatingPointExceptionObserver fpe_observer;
-
     for (size_t i = 0; i < num_frames; ++i) {
       SCOPED_TRACE(i);
       // Read input and expected output.
-      pitch_buf_24kHz_reader.first->ReadChunk(pitch_buf_data_view);
+      pitch_buf_24kHz_reader.first->ReadChunk(pitch_buf_data);
       lp_residual_reader.first->ReadChunk(expected_lp_residual_view);
       // Skip pitch gain and period.
       float unused;
       lp_residual_reader.first->ReadValue(&unused);
       lp_residual_reader.first->ReadValue(&unused);
       // Run pipeline.
-      ComputeAndPostProcessLpcCoefficients(pitch_buf_data_view,
-                                           lpc_coeffs_view);
-      ComputeLpResidual(lpc_coeffs_view, pitch_buf_data_view,
+      ComputeAndPostProcessLpcCoefficients(pitch_buf_data, lpc_coeffs_view);
+      ComputeLpResidual(lpc_coeffs_view, pitch_buf_data,
                         computed_lp_residual_view);
       // Compare.
       ExpectNearAbsolute(expected_lp_residual_view, computed_lp_residual_view,

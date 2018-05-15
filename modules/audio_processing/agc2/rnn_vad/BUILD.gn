@@ -69,7 +69,9 @@ if (rtc_include_tests) {
     "../../../../resources/audio_processing/agc2/rnn_vad/band_energies.dat",
     "../../../../resources/audio_processing/agc2/rnn_vad/fft.dat",
     "../../../../resources/audio_processing/agc2/rnn_vad/pitch_buf_24k.dat",
+    "../../../../resources/audio_processing/agc2/rnn_vad/pitch_search_int.dat",
     "../../../../resources/audio_processing/agc2/rnn_vad/pitch_lp_res.dat",
+    "../../../../resources/audio_processing/agc2/rnn_vad/samples.pcm",
     "../../../../resources/audio_processing/agc2/rnn_vad/sil_features.dat",
     "../../../../resources/audio_processing/agc2/rnn_vad/vad_prob.dat",
   ]
@@ -94,6 +96,7 @@ if (rtc_include_tests) {
       "pitch_search_unittest.cc",
       "ring_buffer_unittest.cc",
       "rnn_unittest.cc",
+      "rnn_vad_unittest.cc",
       "sequence_buffer_unittest.cc",
       "spectral_features_internal_unittest.cc",
       "spectral_features_unittest.cc",
@@ -102,9 +105,11 @@ if (rtc_include_tests) {
     deps = [
       ":lib",
       ":lib_test",
+      "../..:audioproc_test_utils",
       "../../../../api:array_view",
       "../../../../common_audio/",
       "../../../../rtc_base:checks",
+      "../../../../rtc_base:logging",
       "../../../../test:test_support",
       "//third_party/rnnoise:rnn_vad",
     ]

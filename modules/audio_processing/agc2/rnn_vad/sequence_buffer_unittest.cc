@@ -27,22 +27,21 @@ void TestSequenceBufferPushOp() {
   SequenceBuffer<T, S, N> seq_buf;
   auto seq_buf_view = seq_buf.GetBufferView();
   std::array<T, N> chunk;
-  rtc::ArrayView<T, N> chunk_view(chunk.data(), chunk.size());
 
   // Check that a chunk is fully gone after ceil(S / N) push ops.
   chunk.fill(1);
-  seq_buf.Push(chunk_view);
+  seq_buf.Push(chunk);
   chunk.fill(0);
   constexpr size_t required_push_ops = (S % N) ? S / N + 1 : S / N;
   for (size_t i = 0; i < required_push_ops - 1; ++i) {
     SCOPED_TRACE(i);
-    seq_buf.Push(chunk_view);
+    seq_buf.Push(chunk);
     // Still in the buffer.
     const auto* m = std::max_element(seq_buf_view.begin(), seq_buf_view.end());
     EXPECT_EQ(1, *m);
   }
   // Gone after another push.
-  seq_buf.Push(chunk_view);
+  seq_buf.Push(chunk);
   const auto* m = std::max_element(seq_buf_view.begin(), seq_buf_view.end());
   EXPECT_EQ(0, *m);
 
@@ -51,12 +50,12 @@ void TestSequenceBufferPushOp() {
     // Fill in with non-zero values.
     for (size_t i = 0; i < N; ++i)
       chunk[i] = static_cast<T>(i + 1);
-    seq_buf.Push(chunk_view);
+    seq_buf.Push(chunk);
     // With the next Push(), |last| will be moved left by N positions.
     const T last = chunk[N - 1];
     for (size_t i = 0; i < N; ++i)
       chunk[i] = static_cast<T>(last + i + 1);
-    seq_buf.Push(chunk_view);
+    seq_buf.Push(chunk);
     EXPECT_EQ(last, seq_buf_view[S - N - 1]);
   }
 }
@@ -75,7 +74,7 @@ TEST(RnnVadTest, SequenceBufferGetters) {
   EXPECT_EQ(0, seq_buf_view[seq_buf_view.size() - 1]);
   constexpr std::array<int, chunk_size> chunk = {10, 20, 30, 40,
                                                  50, 60, 70, 80};
-  seq_buf.Push({chunk.data(), chunk_size});
+  seq_buf.Push(chunk);
   EXPECT_EQ(10, *seq_buf_view.begin());
   EXPECT_EQ(80, *(seq_buf_view.end() - 1));
 }

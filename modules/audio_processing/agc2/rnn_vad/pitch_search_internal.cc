@@ -140,8 +140,9 @@ void Decimate2x(rtc::ArrayView<const float, kBufSize24kHz> src,
                 rtc::ArrayView<float, kBufSize12kHz> dst) {
   // TODO(bugs.webrtc.org/9076): Consider adding anti-aliasing filter.
   static_assert(2 * dst.size() == src.size(), "");
-  for (size_t i = 0; i < dst.size(); ++i)
+  for (size_t i = 0; i < dst.size(); ++i) {
     dst[i] = src[2 * i];
+  }
 }
 
 float ComputePitchGainThreshold(size_t candidate_pitch_period,
@@ -342,8 +343,7 @@ size_t RefinePitchPeriod48kHz(
       {pitch_buf.data(), pitch_buf.size()}, kMaxPitch24kHz);
   const auto inv_lag = pitch_candidates_inv_lags[0];  // Refine the best.
   // Pseudo-interpolation.
-  return PitchPseudoInterpolationInvLagAutoCorr(
-      inv_lag, {auto_corr.data(), auto_corr.size()});
+  return PitchPseudoInterpolationInvLagAutoCorr(inv_lag, auto_corr);
 }
 
 PitchInfo CheckLowerPitchPeriodsAndComputePitchGain(

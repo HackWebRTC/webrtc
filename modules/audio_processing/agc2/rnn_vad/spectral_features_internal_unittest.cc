@@ -53,25 +53,19 @@ TEST(RnnVadTest, ComputeBandEnergies48kHzBitExactness) {
   {
     // TODO(bugs.webrtc.org/8948): Add when the issue is fixed.
     // FloatingPointExceptionObserver fpe_observer;
-
     for (size_t i = 0; i < num_frames; ++i) {
       SCOPED_TRACE(i);
       // Read input.
-      fft_coeffs_reader.first->ReadChunk(
-          {fft_coeffs_real.data(), fft_coeffs_real.size()});
-      fft_coeffs_reader.first->ReadChunk(
-          {fft_coeffs_imag.data(), fft_coeffs_imag.size()});
+      fft_coeffs_reader.first->ReadChunk(fft_coeffs_real);
+      fft_coeffs_reader.first->ReadChunk(fft_coeffs_imag);
       for (size_t i = 0; i < kFftNumCoeffs20ms48kHz; ++i) {
         fft_coeffs[i].real(fft_coeffs_real[i]);
         fft_coeffs[i].imag(fft_coeffs_imag[i]);
       }
-      band_energies_reader.first->ReadChunk(
-          {expected_band_energies.data(), expected_band_energies.size()});
+      band_energies_reader.first->ReadChunk(expected_band_energies);
       // Compute band energy coefficients and check output.
-      ComputeBandEnergies(
-          {fft_coeffs.data(), fft_coeffs.size()},
-          {band_boundary_indexes.data(), band_boundary_indexes.size()},
-          {computed_band_energies.data(), computed_band_energies.size()});
+      ComputeBandEnergies(fft_coeffs, band_boundary_indexes,
+                          computed_band_energies);
       ExpectEqualFloatArray(expected_band_energies, computed_band_energies);
     }
   }
@@ -96,10 +90,7 @@ TEST(RnnVadTest, ComputeLogBandEnergiesCoefficientsBitExactness) {
   {
     // TODO(bugs.webrtc.org/8948): Add when the issue is fixed.
     // FloatingPointExceptionObserver fpe_observer;
-
-    ComputeLogBandEnergiesCoefficients(
-        {input.data(), input.size()},
-        {computed_output.data(), computed_output.size()});
+    ComputeLogBandEnergiesCoefficients(input, computed_output);
     ExpectNearAbsolute(expected_output, computed_output, 1e-5f);
   }
 }
@@ -119,15 +110,12 @@ TEST(RnnVadTest, ComputeDctBitExactness) {
        -0.388507157564f, -0.032798115164f, 0.044605545700f,  0.112466648221f,
        -0.050096966326f, 0.045971218497f,  -0.029815061018f, -0.410366982222f,
        -0.209233760834f, -0.128037497401f}};
-  const auto dct_table = ComputeDctTable();
+  auto dct_table = ComputeDctTable();
   std::array<float, kNumBands> computed_output;
   {
     // TODO(bugs.webrtc.org/8948): Add when the issue is fixed.
     // FloatingPointExceptionObserver fpe_observer;
-
-    ComputeDct({input.data(), input.size()},
-               {dct_table.data(), dct_table.size()},
-               {computed_output.data(), computed_output.size()});
+    ComputeDct(input, dct_table, computed_output);
     ExpectNearAbsolute(expected_output, computed_output, 1e-5f);
   }
 }

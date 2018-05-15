@@ -51,8 +51,7 @@ TEST(RnnVadTest, SpectralFeaturesWithAndWithoutSilence) {
   // Initialize.
   SpectralFeaturesExtractor sfe;
   std::array<float, kFrameSize20ms24kHz> samples;
-  rtc::ArrayView<float, kFrameSize20ms24kHz> samples_view(samples.data(),
-                                                          samples.size());
+  rtc::ArrayView<float, kFrameSize20ms24kHz> samples_view(samples);
   bool is_silence;
   std::array<float, kTestFeatureVectorSize> feature_vector;
   auto feature_vector_view = GetSpectralFeaturesView(&feature_vector);
@@ -89,8 +88,7 @@ TEST(RnnVadTest, SpectralFeaturesConstantAverageZeroDerivative) {
   // Initialize.
   SpectralFeaturesExtractor sfe;
   std::array<float, kFrameSize20ms24kHz> samples;
-  rtc::ArrayView<float, kFrameSize20ms24kHz> samples_view(samples.data(),
-                                                          samples.size());
+  rtc::ArrayView<float, kFrameSize20ms24kHz> samples_view(samples);
   WriteTestData(samples);
   bool is_silence;
 
@@ -114,11 +112,10 @@ TEST(RnnVadTest, SpectralFeaturesConstantAverageZeroDerivative) {
   // First and second derivatives are zero.
   constexpr std::array<float, kNumLowerBands> zeros{};
   ExpectEqualFloatArray(
-      {feature_vector_last.data() + kNumBands, kNumLowerBands},
-      {zeros.data(), zeros.size()});
+      {feature_vector_last.data() + kNumBands, kNumLowerBands}, zeros);
   ExpectEqualFloatArray(
       {feature_vector_last.data() + kNumBands + kNumLowerBands, kNumLowerBands},
-      {zeros.data(), zeros.size()});
+      zeros);
   // Spectral variability is unchanged.
   EXPECT_FLOAT_EQ(feature_vector[kNumBands + 3 * kNumLowerBands],
                   feature_vector_last[kNumBands + 3 * kNumLowerBands]);

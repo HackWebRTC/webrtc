@@ -214,13 +214,18 @@ void RnnBasedVad::Reset() {
   hidden_layer_.Reset();
 }
 
-void RnnBasedVad::ComputeVadProbability(
-    rtc::ArrayView<const float, kFeatureVectorSize> feature_vector) {
+float RnnBasedVad::ComputeVadProbability(
+    rtc::ArrayView<const float, kFeatureVectorSize> feature_vector,
+    bool is_silence) {
+  if (is_silence) {
+    Reset();
+    return 0.f;
+  }
   input_layer_.ComputeOutput(feature_vector);
   hidden_layer_.ComputeOutput(input_layer_.GetOutput());
   output_layer_.ComputeOutput(hidden_layer_.GetOutput());
   const auto vad_output = output_layer_.GetOutput();
-  vad_probability_ = vad_output[0];
+  return vad_output[0];
 }
 
 }  // namespace rnn_vad

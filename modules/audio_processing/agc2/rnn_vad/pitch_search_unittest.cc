@@ -33,15 +33,12 @@ TEST(RnnVadTest, PitchSearchBitExactness) {
   {
     // TODO(bugs.webrtc.org/8948): Add when the issue is fixed.
     // FloatingPointExceptionObserver fpe_observer;
-
     for (size_t i = 0; i < num_frames; ++i) {
       SCOPED_TRACE(i);
-      lp_residual_reader.first->ReadChunk(
-          {lp_residual.data(), lp_residual.size()});
+      lp_residual_reader.first->ReadChunk(lp_residual);
       lp_residual_reader.first->ReadValue(&expected_pitch_period);
       lp_residual_reader.first->ReadValue(&expected_pitch_gain);
-      PitchInfo pitch_info =
-          pitch_estimator.Estimate({lp_residual.data(), lp_residual.size()});
+      PitchInfo pitch_info = pitch_estimator.Estimate(lp_residual);
       EXPECT_EQ(static_cast<size_t>(expected_pitch_period), pitch_info.period);
       EXPECT_NEAR(expected_pitch_gain, pitch_info.gain, 1e-5f);
     }

@@ -43,7 +43,7 @@ void UpdateSpectralDifferenceStats(
     }
   }
   // Push the new spectral distance stats into the symmetric matrix buffer.
-  sym_matrix_buf->Push({distances.data(), distances.size()});
+  sym_matrix_buf->Push(distances);
 }
 
 }  // namespace
@@ -87,10 +87,8 @@ bool SpectralFeaturesExtractor::CheckSilenceComputeFeatures(
     SpectralFeaturesView spectral_features) {
   // Analyze reference frame.
   fft_.ForwardFft(reference_frame, reference_frame_fft_);
-  ComputeBandEnergies(reference_frame_fft_,
-                      {band_boundaries_.data(), band_boundaries_.size()},
-                      {reference_frame_energy_coeffs_.data(),
-                       reference_frame_energy_coeffs_.size()});
+  ComputeBandEnergies(reference_frame_fft_, band_boundaries_,
+                      reference_frame_energy_coeffs_);
   // Check if the reference frame has silence.
   const float tot_energy =
       std::accumulate(reference_frame_energy_coeffs_.begin(),
@@ -99,29 +97,22 @@ bool SpectralFeaturesExtractor::CheckSilenceComputeFeatures(
     return true;
   // Analyze lagged frame.
   fft_.ForwardFft(lagged_frame, lagged_frame_fft_);
-  ComputeBandEnergies(
-      lagged_frame_fft_, {band_boundaries_.data(), band_boundaries_.size()},
-      {lagged_frame_energy_coeffs_.data(), lagged_frame_energy_coeffs_.size()});
+  ComputeBandEnergies(lagged_frame_fft_, band_boundaries_,
+                      lagged_frame_energy_coeffs_);
   // Log of the band energies for the reference frame.
   std::array<float, kNumBands> log_band_energy_coeffs;
-  ComputeLogBandEnergiesCoefficients(
-      {reference_frame_energy_coeffs_.data(),
-       reference_frame_energy_coeffs_.size()},
-      {log_band_energy_coeffs.data(), log_band_energy_coeffs.size()});
+  ComputeLogBandEnergiesCoefficients(reference_frame_energy_coeffs_,
+                                     log_band_energy_coeffs);
   // Decorrelate band-wise log energy coefficients via DCT.
   std::array<float, kNumBands> log_band_energy_coeffs_decorrelated;
-  ComputeDct({log_band_energy_coeffs.data(), log_band_energy_coeffs.size()},
-             {dct_table_.data(), dct_table_.size()},
-             {log_band_energy_coeffs_decorrelated.data(),
-              log_band_energy_coeffs_decorrelated.size()});
+  ComputeDct(log_band_energy_coeffs, dct_table_,
+             log_band_energy_coeffs_decorrelated);
   // Normalize (based on training set stats).
   log_band_energy_coeffs_decorrelated[0] -= 12;
   log_band_energy_coeffs_decorrelated[1] -= 4;
   // Update the ring buffer and the spectral difference stats.
-  spectral_coeffs_ring_buf_.Push({log_band_energy_coeffs_decorrelated.data(),
-                                  log_band_energy_coeffs_decorrelated.size()});
-  UpdateSpectralDifferenceStats({log_band_energy_coeffs_decorrelated.data(),
-                                 log_band_energy_coeffs_decorrelated.size()},
+  spectral_coeffs_ring_buf_.Push(log_band_energy_coeffs_decorrelated);
+  UpdateSpectralDifferenceStats(log_band_energy_coeffs_decorrelated,
                                 spectral_coeffs_ring_buf_,
                                 &spectral_diffs_buf_);
   // Write the higher bands spectral coefficients.
@@ -170,9 +161,8 @@ void SpectralFeaturesExtractor::ComputeCrossCorrelation(
   };
   std::array<float, kNumBands> cross_corr_coeffs;
   constexpr size_t kNumFftPoints = kFrameSize20ms24kHz / 2 + 1;
-  ComputeBandCoefficients(
-      cross_corr, {band_boundaries_.data(), band_boundaries_.size()},
-      kNumFftPoints - 1, {cross_corr_coeffs.data(), cross_corr_coeffs.size()});
+  ComputeBandCoefficients(cross_corr, band_boundaries_, kNumFftPoints - 1,
+                          cross_corr_coeffs);
   // Normalize.
   for (size_t i = 0; i < cross_corr_coeffs.size(); ++i) {
     cross_corr_coeffs[i] =
@@ -181,9 +171,7 @@ void SpectralFeaturesExtractor::ComputeCrossCorrelation(
                                lagged_frame_energy_coeffs_[i]);
   }
   // Decorrelate.
-  ComputeDct({cross_corr_coeffs.data(), cross_corr_coeffs.size()},
-             {dct_table_.data(), dct_table_.size()},
-             {cross_correlations.data(), cross_correlations.size()});
+  ComputeDct(cross_corr_coeffs, dct_table_, cross_correlations);
   // Normalize (based on training set stats).
   cross_correlations[0] -= 1.3f;
   cross_correlations[1] -= 0.9f;
