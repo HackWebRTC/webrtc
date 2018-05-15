@@ -18,17 +18,6 @@ namespace webrtc {
 namespace jni {
 
 JNI_FUNCTION_DECLARATION(void,
-                         Logging_nativeEnableLogToDebugOutput,
-                         JNIEnv* jni,
-                         jclass,
-                         jint nativeSeverity) {
-  if (nativeSeverity >= rtc::LS_SENSITIVE && nativeSeverity <= rtc::LS_NONE) {
-    rtc::LogMessage::LogToDebug(
-        static_cast<rtc::LoggingSeverity>(nativeSeverity));
-  }
-}
-
-JNI_FUNCTION_DECLARATION(void,
                          Logging_nativeEnableLogThreads,
                          JNIEnv* jni,
                          jclass) {
@@ -40,19 +29,6 @@ JNI_FUNCTION_DECLARATION(void,
                          JNIEnv* jni,
                          jclass) {
   rtc::LogMessage::LogTimestamps(true);
-}
-
-JNI_FUNCTION_DECLARATION(void,
-                         Logging_nativeLog,
-                         JNIEnv* jni,
-                         jclass,
-                         jint j_severity,
-                         jstring j_tag,
-                         jstring j_message) {
-  std::string message = JavaToStdString(jni, JavaParamRef<jstring>(j_message));
-  std::string tag = JavaToStdString(jni, JavaParamRef<jstring>(j_tag));
-  RTC_LOG_TAG(static_cast<rtc::LoggingSeverity>(j_severity), tag.c_str())
-      << message;
 }
 
 }  // namespace jni
