@@ -327,7 +327,7 @@ HRESULT CaptureInputPin::SetMatchingMediaType(
   return S_OK;
 }
 //  ----------------------------------------------------------------------------
-CaptureSinkFilter::CaptureSinkFilter(IN TCHAR* tszName,
+CaptureSinkFilter::CaptureSinkFilter(const IN TCHAR* tszName,
                                      IN LPUNKNOWN punk,
                                      OUT HRESULT* phr,
                                      VideoCaptureExternal& captureObserver)
@@ -335,8 +335,9 @@ CaptureSinkFilter::CaptureSinkFilter(IN TCHAR* tszName,
       m_pInput(NULL),
       _captureObserver(captureObserver) {
   (*phr) = S_OK;
-  m_pInput = new CaptureInputPin(NAME("VideoCaptureInputPin"), this,
-                                 &m_crtFilter, phr, L"VideoCapture");
+  TCHAR inputPinName[] = L"VideoCaptureInputPin";
+  m_pInput = new CaptureInputPin(inputPinName, this, &m_crtFilter, phr,
+                                 L"VideoCapture");
   if (m_pInput == NULL || FAILED(*phr)) {
     (*phr) = FAILED(*phr) ? (*phr) : E_OUTOFMEMORY;
     goto cleanup;

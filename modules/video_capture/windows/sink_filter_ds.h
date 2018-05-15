@@ -50,7 +50,7 @@ class CaptureSinkFilter: public CBaseFilter
 {
 
 public:
-    CaptureSinkFilter(IN TCHAR * tszName,
+    CaptureSinkFilter(const IN TCHAR * tszName,
                       IN LPUNKNOWN punk,
                       OUT HRESULT * phr,
                       VideoCaptureExternal& captureObserver);

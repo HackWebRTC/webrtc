@@ -57,7 +57,7 @@ protected:
     int32_t
         SetCameraOutput(const VideoCaptureCapability& requestedCapability);
     int32_t DisconnectGraph();
-    HRESULT VideoCaptureDS::ConnectDVCamera();
+    HRESULT ConnectDVCamera();
 
     DeviceInfoDS _dsInfo;
 
