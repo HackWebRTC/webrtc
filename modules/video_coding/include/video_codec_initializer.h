@@ -37,17 +37,6 @@ class VideoCodecInitializer {
       VideoCodec* codec,
       std::unique_ptr<VideoBitrateAllocator>* bitrate_allocator);
 
-  // TODO(nisse): Deprecated, delete as soon as downstream projects are
-  // updated.
-  static bool SetupCodec(
-      const VideoEncoderConfig& config,
-      const std::vector<VideoStream>& streams,
-      bool /* nack_enabled */,
-      VideoCodec* codec,
-      std::unique_ptr<VideoBitrateAllocator>* bitrate_allocator) {
-    return SetupCodec(config, streams, codec, bitrate_allocator);
-  }
-
   // Create a bitrate allocator for the specified codec.
   static std::unique_ptr<VideoBitrateAllocator> CreateBitrateAllocator(
       const VideoCodec& codec);
