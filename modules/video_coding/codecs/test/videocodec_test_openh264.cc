@@ -38,7 +38,7 @@ TestConfig CreateTestConfig() {
 }
 }  // namespace
 
-TEST(VideoProcessorIntegrationTestOpenH264, ConstantHighBitrate) {
+TEST(VideoCodecTestOpenH264, ConstantHighBitrate) {
   auto frame_checker = rtc::MakeUnique<
       VideoCodecTestFixtureImpl::H264KeyframeChecker>();
   auto config = CreateTestConfig();
@@ -60,7 +60,7 @@ TEST(VideoProcessorIntegrationTestOpenH264, ConstantHighBitrate) {
 
 // H264: Enable SingleNalUnit packetization mode. Encoder should split
 // large frames into multiple slices and limit length of NAL units.
-TEST(VideoProcessorIntegrationTestOpenH264, SingleNalUnit) {
+TEST(VideoCodecTestOpenH264, SingleNalUnit) {
   auto frame_checker = rtc::MakeUnique<
       VideoCodecTestFixtureImpl::H264KeyframeChecker>();
   auto config = CreateTestConfig();

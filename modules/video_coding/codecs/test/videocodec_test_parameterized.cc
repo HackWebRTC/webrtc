@@ -40,16 +40,16 @@ const int kNumFrames = 30;
 }  // namespace
 
 // Tests for plotting statistics from logs.
-class VideoProcessorIntegrationTestParameterized
+class VideoCodecTestParameterized
     : public ::testing::Test,
       public ::testing::WithParamInterface<
           ::testing::tuple<size_t, VideoCodecType, bool>> {
  protected:
-  VideoProcessorIntegrationTestParameterized()
+  VideoCodecTestParameterized()
       : bitrate_(::testing::get<0>(GetParam())),
         codec_type_(::testing::get<1>(GetParam())),
         hw_codec_(::testing::get<2>(GetParam())) {}
-  ~VideoProcessorIntegrationTestParameterized() override = default;
+  ~VideoCodecTestParameterized() override = default;
 
   void RunTest(size_t width,
                size_t height,
@@ -89,17 +89,16 @@ class VideoProcessorIntegrationTestParameterized
 };
 
 INSTANTIATE_TEST_CASE_P(CodecSettings,
-                        VideoProcessorIntegrationTestParameterized,
+                        VideoCodecTestParameterized,
                         ::testing::Combine(::testing::ValuesIn(kBitrates),
                                            ::testing::ValuesIn(kVideoCodecType),
                                            ::testing::ValuesIn(kHwCodec)));
 
-TEST_P(VideoProcessorIntegrationTestParameterized, Foreman_352x288_30) {
+TEST_P(VideoCodecTestParameterized, Foreman_352x288_30) {
   RunTest(352, 288, 30, "foreman_cif");
 }
 
-TEST_P(VideoProcessorIntegrationTestParameterized,
-       DISABLED_FourPeople_1280x720_30) {
+TEST_P(VideoCodecTestParameterized, DISABLED_FourPeople_1280x720_30) {
   RunTest(1280, 720, 30, "FourPeople_1280x720_30");
 }
 

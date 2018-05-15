@@ -92,7 +92,7 @@ void PrintRdPerf(std::map<size_t, std::vector<VideoStatistics>> rd_stats) {
 #if !defined(WEBRTC_IOS)
 
 #if !defined(RTC_DISABLE_VP9)
-TEST(VideoProcessorIntegrationTestLibvpx, HighBitrateVP9) {
+TEST(VideoCodecTestLibvpx, HighBitrateVP9) {
   auto config = CreateTestConfig();
   config.SetCodecSettings(cricket::kVp9CodecName, 1, 1, 1, false, true, false,
                           kCifWidth, kCifHeight);
@@ -112,7 +112,7 @@ TEST(VideoProcessorIntegrationTestLibvpx, HighBitrateVP9) {
                    nullptr);
 }
 
-TEST(VideoProcessorIntegrationTestLibvpx, ChangeBitrateVP9) {
+TEST(VideoCodecTestLibvpx, ChangeBitrateVP9) {
   auto config = CreateTestConfig();
   config.SetCodecSettings(cricket::kVp9CodecName, 1, 1, 1, false, true, false,
                           kCifWidth, kCifHeight);
@@ -137,7 +137,7 @@ TEST(VideoProcessorIntegrationTestLibvpx, ChangeBitrateVP9) {
                    nullptr);
 }
 
-TEST(VideoProcessorIntegrationTestLibvpx, ChangeFramerateVP9) {
+TEST(VideoCodecTestLibvpx, ChangeFramerateVP9) {
   auto config = CreateTestConfig();
   config.SetCodecSettings(cricket::kVp9CodecName, 1, 1, 1, false, true, false,
                           kCifWidth, kCifHeight);
@@ -164,7 +164,7 @@ TEST(VideoProcessorIntegrationTestLibvpx, ChangeFramerateVP9) {
                    nullptr);
 }
 
-TEST(VideoProcessorIntegrationTestLibvpx, DenoiserOnVP9) {
+TEST(VideoCodecTestLibvpx, DenoiserOnVP9) {
   auto config = CreateTestConfig();
   config.SetCodecSettings(cricket::kVp9CodecName, 1, 1, 1, true, true, false,
                           kCifWidth, kCifHeight);
@@ -184,7 +184,7 @@ TEST(VideoProcessorIntegrationTestLibvpx, DenoiserOnVP9) {
                    nullptr);
 }
 
-TEST(VideoProcessorIntegrationTestLibvpx, VeryLowBitrateVP9) {
+TEST(VideoCodecTestLibvpx, VeryLowBitrateVP9) {
   auto config = CreateTestConfig();
   config.SetCodecSettings(cricket::kVp9CodecName, 1, 1, 1, false, true, true,
                           kCifWidth, kCifHeight);
@@ -208,7 +208,7 @@ TEST(VideoProcessorIntegrationTestLibvpx, VeryLowBitrateVP9) {
 
 #endif  // !defined(RTC_DISABLE_VP9)
 
-TEST(VideoProcessorIntegrationTestLibvpx, HighBitrateVP8) {
+TEST(VideoCodecTestLibvpx, HighBitrateVP8) {
   auto config = CreateTestConfig();
   config.SetCodecSettings(cricket::kVp8CodecName, 1, 1, 1, true, true, false,
                           kCifWidth, kCifHeight);
@@ -248,7 +248,7 @@ TEST(VideoProcessorIntegrationTestLibvpx, HighBitrateVP8) {
 #else
 #define MAYBE_ChangeBitrateVP8 ChangeBitrateVP8
 #endif
-TEST(VideoProcessorIntegrationTestLibvpx, MAYBE_ChangeBitrateVP8) {
+TEST(VideoCodecTestLibvpx, MAYBE_ChangeBitrateVP8) {
   auto config = CreateTestConfig();
   config.SetCodecSettings(cricket::kVp8CodecName, 1, 1, 1, true, true, false,
                           kCifWidth, kCifHeight);
@@ -283,7 +283,7 @@ TEST(VideoProcessorIntegrationTestLibvpx, MAYBE_ChangeBitrateVP8) {
 #else
 #define MAYBE_ChangeFramerateVP8 ChangeFramerateVP8
 #endif
-TEST(VideoProcessorIntegrationTestLibvpx, MAYBE_ChangeFramerateVP8) {
+TEST(VideoCodecTestLibvpx, MAYBE_ChangeFramerateVP8) {
   auto config = CreateTestConfig();
   config.SetCodecSettings(cricket::kVp8CodecName, 1, 1, 1, true, true, false,
                           kCifWidth, kCifHeight);
@@ -324,7 +324,7 @@ TEST(VideoProcessorIntegrationTestLibvpx, MAYBE_ChangeFramerateVP8) {
 #else
 #define MAYBE_TemporalLayersVP8 TemporalLayersVP8
 #endif
-TEST(VideoProcessorIntegrationTestLibvpx, MAYBE_TemporalLayersVP8) {
+TEST(VideoCodecTestLibvpx, MAYBE_TemporalLayersVP8) {
   auto config = CreateTestConfig();
   config.SetCodecSettings(cricket::kVp8CodecName, 1, 1, 3, true, true, false,
                           kCifWidth, kCifHeight);
@@ -360,7 +360,7 @@ TEST(VideoProcessorIntegrationTestLibvpx, MAYBE_TemporalLayersVP8) {
 #else
 #define MAYBE_MultiresVP8 MultiresVP8
 #endif
-TEST(VideoProcessorIntegrationTestLibvpx, MAYBE_MultiresVP8) {
+TEST(VideoCodecTestLibvpx, MAYBE_MultiresVP8) {
   auto config = CreateTestConfig();
   config.filename = "ConferenceMotion_1280_720_50";
   config.filepath = ResourcePath(config.filename, "yuv");
@@ -387,7 +387,7 @@ TEST(VideoProcessorIntegrationTestLibvpx, MAYBE_MultiresVP8) {
 #else
 #define MAYBE_SimulcastVP8 SimulcastVP8
 #endif
-TEST(VideoProcessorIntegrationTestLibvpx, MAYBE_SimulcastVP8) {
+TEST(VideoCodecTestLibvpx, MAYBE_SimulcastVP8) {
   auto config = CreateTestConfig();
   config.filename = "ConferenceMotion_1280_720_50";
   config.filepath = ResourcePath(config.filename, "yuv");
@@ -415,7 +415,7 @@ TEST(VideoProcessorIntegrationTestLibvpx, MAYBE_SimulcastVP8) {
 #else
 #define MAYBE_SvcVP9 SvcVP9
 #endif
-TEST(VideoProcessorIntegrationTestLibvpx, MAYBE_SvcVP9) {
+TEST(VideoCodecTestLibvpx, MAYBE_SvcVP9) {
   auto config = CreateTestConfig();
   config.filename = "ConferenceMotion_1280_720_50";
   config.filepath = ResourcePath(config.filename, "yuv");
@@ -436,7 +436,7 @@ TEST(VideoProcessorIntegrationTestLibvpx, MAYBE_SvcVP9) {
                    nullptr);
 }
 
-TEST(VideoProcessorIntegrationTestLibvpx, DISABLED_MultiresVP8RdPerf) {
+TEST(VideoCodecTestLibvpx, DISABLED_MultiresVP8RdPerf) {
   auto config = CreateTestConfig();
   config.filename = "FourPeople_1280x720_30";
   config.filepath = ResourcePath(config.filename, "yuv");
@@ -463,7 +463,7 @@ TEST(VideoProcessorIntegrationTestLibvpx, DISABLED_MultiresVP8RdPerf) {
   PrintRdPerf(rd_stats);
 }
 
-TEST(VideoProcessorIntegrationTestLibvpx, DISABLED_SvcVP9RdPerf) {
+TEST(VideoCodecTestLibvpx, DISABLED_SvcVP9RdPerf) {
   auto config = CreateTestConfig();
   config.filename = "FourPeople_1280x720_30";
   config.filepath = ResourcePath(config.filename, "yuv");

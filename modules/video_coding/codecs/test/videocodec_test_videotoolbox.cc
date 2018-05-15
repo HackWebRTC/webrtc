@@ -52,8 +52,7 @@ std::unique_ptr<VideoCodecTestFixture> CreateTestFixtureWithConfig(
 
 // TODO(kthelgason): Use RC Thresholds when the internal bitrateAdjuster is no
 // longer in use.
-MAYBE_TEST(VideoProcessorIntegrationTestVideoToolbox,
-           ForemanCif500kbpsH264CBP) {
+MAYBE_TEST(VideoCodecTestVideoToolbox, ForemanCif500kbpsH264CBP) {
   const auto frame_checker = rtc::MakeUnique<
       VideoCodecTestFixtureImpl::H264KeyframeChecker>();
   auto config = CreateTestConfig();
@@ -70,8 +69,7 @@ MAYBE_TEST(VideoProcessorIntegrationTestVideoToolbox,
                    nullptr);
 }
 
-MAYBE_TEST(VideoProcessorIntegrationTestVideoToolbox,
-           ForemanCif500kbpsH264CHP) {
+MAYBE_TEST(VideoCodecTestVideoToolbox, ForemanCif500kbpsH264CHP) {
   const auto frame_checker = rtc::MakeUnique<
       VideoCodecTestFixtureImpl::H264KeyframeChecker>();
   auto config = CreateTestConfig();

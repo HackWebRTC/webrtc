@@ -18,9 +18,8 @@ import re
 import matplotlib.pyplot as plt
 
 # Log events.
-EVENT_START = \
-  'RUN      ] CodecSettings/VideoProcessorIntegrationTestParameterized.'
-EVENT_END = 'OK ] CodecSettings/VideoProcessorIntegrationTestParameterized.'
+EVENT_START = 'RUN      ] CodecSettings/VideoCodecTestParameterized.'
+EVENT_END = 'OK ] CodecSettings/VideoCodecTestParameterized.'
 
 # Metrics to plot, tuple: (name to parse in file, label to use when plotting).
 WIDTH = ('width', 'width')

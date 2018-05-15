@@ -37,7 +37,7 @@ TestConfig CreateTestConfig() {
 }
 }  // namespace
 
-TEST(VideoProcessorIntegrationTestMediaCodec, ForemanCif500kbpsVp8) {
+TEST(VideoCodecTestMediaCodec, ForemanCif500kbpsVp8) {
   auto config = CreateTestConfig();
   config.SetCodecSettings(cricket::kVp8CodecName, 1, 1, 1, false, false, false,
                           352, 288);
@@ -58,7 +58,7 @@ TEST(VideoProcessorIntegrationTestMediaCodec, ForemanCif500kbpsVp8) {
                    nullptr);
 }
 
-TEST(VideoProcessorIntegrationTestMediaCodec, ForemanCif500kbpsH264CBP) {
+TEST(VideoCodecTestMediaCodec, ForemanCif500kbpsH264CBP) {
   auto config = CreateTestConfig();
   const auto frame_checker = rtc::MakeUnique<
       VideoCodecTestFixtureImpl::H264KeyframeChecker>();
@@ -84,8 +84,7 @@ TEST(VideoProcessorIntegrationTestMediaCodec, ForemanCif500kbpsH264CBP) {
 
 // TODO(brandtr): Enable this test when we have trybots/buildbots with
 // HW encoders that support CHP.
-TEST(VideoProcessorIntegrationTestMediaCodec,
-     DISABLED_ForemanCif500kbpsH264CHP) {
+TEST(VideoCodecTestMediaCodec, DISABLED_ForemanCif500kbpsH264CHP) {
   auto config = CreateTestConfig();
   const auto frame_checker = rtc::MakeUnique<
       VideoCodecTestFixtureImpl::H264KeyframeChecker>();
@@ -111,7 +110,7 @@ TEST(VideoProcessorIntegrationTestMediaCodec,
                    nullptr);
 }
 
-TEST(VideoProcessorIntegrationTestMediaCodec, ForemanMixedRes100kbpsVp8H264) {
+TEST(VideoCodecTestMediaCodec, ForemanMixedRes100kbpsVp8H264) {
   auto config = CreateTestConfig();
   const int kNumFrames = 30;
   const std::vector<std::string> codecs = {cricket::kVp8CodecName,
