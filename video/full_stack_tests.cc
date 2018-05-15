@@ -521,7 +521,9 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_3TL_Simulcast) {
   std::vector<VideoStream> streams = {
       DefaultVideoStream(screenshare_params_low, 0),
       DefaultVideoStream(screenshare_params_high, 0)};
-  screenshare.ss[0] = {streams, 1, 1, 0, std::vector<SpatialLayer>(), false};
+  screenshare.ss[0] = {
+      streams, 1, 1, 0, InterLayerPredMode::kOn, std::vector<SpatialLayer>(),
+      false};
   RunTest(screenshare);
 }
 
@@ -670,7 +672,9 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_3TL_Simulcast_ALR) {
   std::vector<VideoStream> streams = {
       DefaultVideoStream(screenshare_params_low, 0),
       DefaultVideoStream(screenshare_params_high, 0)};
-  screenshare.ss[0] = {streams, 1, 1, 0, std::vector<SpatialLayer>(), false};
+  screenshare.ss[0] = {
+      streams, 1, 1, 0, InterLayerPredMode::kOn, std::vector<SpatialLayer>(),
+      false};
   RunTest(screenshare);
 }
 
@@ -704,8 +708,9 @@ TEST_F(FullStackTest, ScreenshareSlidesVP9_2SL) {
   screenshare.screenshare[0] = {true, false, 10};
   screenshare.analyzer = {"screenshare_slides_vp9_2sl", 0.0, 0.0,
                           kFullStackTestDurationSecs};
-  screenshare.ss[0] = {std::vector<VideoStream>(),  0,    2, 1,
-                       std::vector<SpatialLayer>(), false};
+  screenshare.ss[0] = {
+      std::vector<VideoStream>(),  0,    2, 1, InterLayerPredMode::kOn,
+      std::vector<SpatialLayer>(), false};
   RunTest(screenshare);
 }
 
@@ -715,8 +720,9 @@ TEST_F(FullStackTest, VP9SVC_3SL_High) {
   simulcast.video[0] = kSvcVp9Video;
   simulcast.analyzer = {"vp9svc_3sl_high", 0.0, 0.0,
                         kFullStackTestDurationSecs};
-  simulcast.ss[0] = {std::vector<VideoStream>(),  0,    3, 2,
-                     std::vector<SpatialLayer>(), false};
+  simulcast.ss[0] = {
+      std::vector<VideoStream>(),  0,    3, 2, InterLayerPredMode::kOn,
+      std::vector<SpatialLayer>(), false};
   RunTest(simulcast);
 }
 
@@ -726,8 +732,9 @@ TEST_F(FullStackTest, VP9SVC_3SL_Medium) {
   simulcast.video[0] = kSvcVp9Video;
   simulcast.analyzer = {"vp9svc_3sl_medium", 0.0, 0.0,
                         kFullStackTestDurationSecs};
-  simulcast.ss[0] = {std::vector<VideoStream>(),  0,    3, 1,
-                     std::vector<SpatialLayer>(), false};
+  simulcast.ss[0] = {
+      std::vector<VideoStream>(),  0,    3, 1, InterLayerPredMode::kOn,
+      std::vector<SpatialLayer>(), false};
   RunTest(simulcast);
 }
 
@@ -736,8 +743,9 @@ TEST_F(FullStackTest, VP9SVC_3SL_Low) {
   simulcast.call.send_side_bwe = true;
   simulcast.video[0] = kSvcVp9Video;
   simulcast.analyzer = {"vp9svc_3sl_low", 0.0, 0.0, kFullStackTestDurationSecs};
-  simulcast.ss[0] = {std::vector<VideoStream>(),  0,    3, 0,
-                     std::vector<SpatialLayer>(), false};
+  simulcast.ss[0] = {
+      std::vector<VideoStream>(),  0,    3, 0, InterLayerPredMode::kOn,
+      std::vector<SpatialLayer>(), false};
   RunTest(simulcast);
 }
 #endif  // !defined(RTC_DISABLE_VP9)
@@ -763,7 +771,9 @@ TEST_F(FullStackTest, MAYBE_SimulcastFullHdOveruse) {
   std::vector<VideoStream> streams = {DefaultVideoStream(simulcast, 0),
                                       DefaultVideoStream(simulcast, 0),
                                       DefaultVideoStream(simulcast, 0)};
-  simulcast.ss[0] = {streams, 2, 1, 0, std::vector<SpatialLayer>(), true};
+  simulcast.ss[0] = {
+      streams, 2, 1, 0, InterLayerPredMode::kOn, std::vector<SpatialLayer>(),
+      true};
   webrtc::test::ScopedFieldTrials override_trials(
       "WebRTC-ForceSimulatedOveruseIntervalMs/1000-50000-300/");
   RunTest(simulcast);
@@ -788,7 +798,9 @@ TEST_F(FullStackTest, SimulcastVP8_3SL_High) {
       DefaultVideoStream(video_params_low, 0),
       DefaultVideoStream(video_params_medium, 0),
       DefaultVideoStream(video_params_high, 0)};
-  simulcast.ss[0] = {streams, 2, 1, 0, std::vector<SpatialLayer>(), false};
+  simulcast.ss[0] = {
+      streams, 2, 1, 0, InterLayerPredMode::kOn, std::vector<SpatialLayer>(),
+      false};
   RunTest(simulcast);
 }
 
@@ -811,7 +823,9 @@ TEST_F(FullStackTest, SimulcastVP8_3SL_Medium) {
       DefaultVideoStream(video_params_low, 0),
       DefaultVideoStream(video_params_medium, 0),
       DefaultVideoStream(video_params_high, 0)};
-  simulcast.ss[0] = {streams, 1, 1, 0, std::vector<SpatialLayer>(), false};
+  simulcast.ss[0] = {
+      streams, 1, 1, 0, InterLayerPredMode::kOn, std::vector<SpatialLayer>(),
+      false};
   RunTest(simulcast);
 }
 
@@ -834,7 +848,9 @@ TEST_F(FullStackTest, SimulcastVP8_3SL_Low) {
       DefaultVideoStream(video_params_low, 0),
       DefaultVideoStream(video_params_medium, 0),
       DefaultVideoStream(video_params_high, 0)};
-  simulcast.ss[0] = {streams, 0, 1, 0, std::vector<SpatialLayer>(), false};
+  simulcast.ss[0] = {
+      streams, 0, 1, 0, InterLayerPredMode::kOn, std::vector<SpatialLayer>(),
+      false};
   RunTest(simulcast);
 }
 
@@ -858,7 +874,9 @@ TEST_F(FullStackTest, LargeRoomVP8_5thumb) {
       DefaultVideoStream(video_params_medium, 0),
       DefaultVideoStream(video_params_high, 0)};
   large_room.call.num_thumbnails = 5;
-  large_room.ss[0] = {streams, 2, 1, 0, std::vector<SpatialLayer>(), false};
+  large_room.ss[0] = {
+      streams, 2, 1, 0, InterLayerPredMode::kOn, std::vector<SpatialLayer>(),
+      false};
   RunTest(large_room);
 }
 
@@ -892,7 +910,9 @@ TEST_F(FullStackTest, MAYBE_LargeRoomVP8_15thumb) {
       DefaultVideoStream(video_params_medium, 0),
       DefaultVideoStream(video_params_high, 0)};
   large_room.call.num_thumbnails = 15;
-  large_room.ss[0] = {streams, 2, 1, 0, std::vector<SpatialLayer>(), false};
+  large_room.ss[0] = {
+      streams, 2, 1, 0, InterLayerPredMode::kOn, std::vector<SpatialLayer>(),
+      false};
   RunTest(large_room);
 }
 
@@ -916,7 +936,9 @@ TEST_F(FullStackTest, MAYBE_LargeRoomVP8_50thumb) {
       DefaultVideoStream(video_params_medium, 0),
       DefaultVideoStream(video_params_high, 0)};
   large_room.call.num_thumbnails = 50;
-  large_room.ss[0] = {streams, 2, 1, 0, std::vector<SpatialLayer>(), false};
+  large_room.ss[0] = {
+      streams, 2, 1, 0, InterLayerPredMode::kOn, std::vector<SpatialLayer>(),
+      false};
   RunTest(large_room);
 }
 
@@ -951,8 +973,9 @@ TEST_P(DualStreamsTest,
       DefaultVideoStream(screenshare_params_low, 0),
       DefaultVideoStream(screenshare_params_high, 0)};
 
-  dual_streams.ss[first_stream] = {screenhsare_streams,         1,    1, 0,
-                                   std::vector<SpatialLayer>(), false};
+  dual_streams.ss[first_stream] = {
+      screenhsare_streams,         1,    1, 0, InterLayerPredMode::kOn,
+      std::vector<SpatialLayer>(), false};
 
   // Video settings.
   dual_streams.video[1 - first_stream] = kSimulcastVp8VideoHigh;
@@ -969,7 +992,8 @@ TEST_P(DualStreamsTest,
       DefaultVideoStream(video_params_high, 0)};
 
   dual_streams.ss[1 - first_stream] = {
-      streams, 2, 1, 0, std::vector<SpatialLayer>(), false};
+      streams, 2, 1, 0, InterLayerPredMode::kOn, std::vector<SpatialLayer>(),
+      false};
 
   // Call settings.
   dual_streams.call.send_side_bwe = true;

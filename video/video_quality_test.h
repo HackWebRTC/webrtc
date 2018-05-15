@@ -82,6 +82,7 @@ class VideoQualityTest : public test::CallTest {
       size_t selected_stream;
       int num_spatial_layers;
       int selected_sl;
+      InterLayerPredMode inter_layer_pred;
       // If empty, bitrates are generated in VP9Impl automatically.
       std::vector<SpatialLayer> spatial_layers;
       // If set, default parameters will be used instead of |streams|.
@@ -109,6 +110,7 @@ class VideoQualityTest : public test::CallTest {
       size_t selected_stream,
       int num_spatial_layers,
       int selected_sl,
+      InterLayerPredMode inter_layer_pred,
       const std::vector<std::string>& sl_descriptors);
 
  protected:

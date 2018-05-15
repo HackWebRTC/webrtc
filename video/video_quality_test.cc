@@ -1135,8 +1135,10 @@ VideoQualityTest::Params::Params()
       screenshare{{false, false, 10, 0}, {false, false, 10, 0}},
       analyzer({"", 0.0, 0.0, 0, "", ""}),
       pipe(),
-      ss{{std::vector<VideoStream>(), 0, 0, -1, std::vector<SpatialLayer>()},
-         {std::vector<VideoStream>(), 0, 0, -1, std::vector<SpatialLayer>()}},
+      ss{{std::vector<VideoStream>(), 0, 0, -1, InterLayerPredMode::kOn,
+          std::vector<SpatialLayer>()},
+         {std::vector<VideoStream>(), 0, 0, -1, InterLayerPredMode::kOn,
+          std::vector<SpatialLayer>()}},
       logging({false, "", "", ""}) {}
 
 VideoQualityTest::Params::~Params() = default;
@@ -1292,6 +1294,7 @@ void VideoQualityTest::FillScalabilitySettings(
     size_t selected_stream,
     int num_spatial_layers,
     int selected_sl,
+    InterLayerPredMode inter_layer_pred,
     const std::vector<std::string>& sl_descriptors) {
   if (params->ss[video_idx].streams.empty() &&
       params->ss[video_idx].infer_streams) {
@@ -1356,6 +1359,7 @@ void VideoQualityTest::FillScalabilitySettings(
   params->ss[video_idx].selected_stream = selected_stream;
 
   params->ss[video_idx].selected_sl = selected_sl;
+  params->ss[video_idx].inter_layer_pred = inter_layer_pred;
   RTC_CHECK(params->ss[video_idx].spatial_layers.empty());
   for (auto descriptor : sl_descriptors) {
     if (descriptor.empty())
@@ -1533,6 +1537,7 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
             params_.video[video_idx].num_temporal_layers);
         vp9_settings.numberOfSpatialLayers = static_cast<unsigned char>(
             params_.ss[video_idx].num_spatial_layers);
+        vp9_settings.interLayerPred = params_.ss[video_idx].inter_layer_pred;
         video_encoder_configs_[video_idx].encoder_specific_settings =
             new rtc::RefCountedObject<
                 VideoEncoderConfig::Vp9EncoderSpecificSettings>(vp9_settings);
@@ -1545,6 +1550,7 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
           params_.video[video_idx].num_temporal_layers);
       vp9_settings.numberOfSpatialLayers =
           static_cast<unsigned char>(params_.ss[video_idx].num_spatial_layers);
+      vp9_settings.interLayerPred = params_.ss[video_idx].inter_layer_pred;
       video_encoder_configs_[video_idx].encoder_specific_settings =
           new rtc::RefCountedObject<
               VideoEncoderConfig::Vp9EncoderSpecificSettings>(vp9_settings);

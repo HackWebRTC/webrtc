@@ -157,6 +157,21 @@ int NumSpatialLayers() {
   return static_cast<int>(FLAG_num_spatial_layers);
 }
 
+DEFINE_int(inter_layer_pred,
+           1,
+           "Inter-layer prediction mode. "
+           "0 - enabled, 1 - disabled, 2 - enabled only for key pictures.");
+InterLayerPredMode InterLayerPred() {
+  if (FLAG_inter_layer_pred == 0) {
+    return InterLayerPredMode::kOn;
+  } else if (FLAG_inter_layer_pred == 1) {
+    return InterLayerPredMode::kOff;
+  } else {
+    RTC_DCHECK_EQ(FLAG_inter_layer_pred, 2);
+    return InterLayerPredMode::kOnKeyPic;
+  }
+}
+
 DEFINE_int(selected_sl,
            -1,
            "Spatial layer to show or analyze. -1 to disable filtering.");
@@ -310,7 +325,7 @@ void Loopback() {
   VideoQualityTest::FillScalabilitySettings(
       &params, 0, stream_descriptors, flags::NumStreams(),
       flags::SelectedStream(), flags::NumSpatialLayers(), flags::SelectedSL(),
-      SL_descriptors);
+      flags::InterLayerPred(), SL_descriptors);
 
   VideoQualityTest test;
   if (flags::DurationSecs()) {

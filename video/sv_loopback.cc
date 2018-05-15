@@ -21,6 +21,17 @@
 namespace webrtc {
 namespace flags {
 
+InterLayerPredMode IntToInterLayerPredMode(int inter_layer_pred) {
+  if (inter_layer_pred == 0) {
+    return InterLayerPredMode::kOn;
+  } else if (inter_layer_pred == 1) {
+    return InterLayerPredMode::kOff;
+  } else {
+    RTC_DCHECK_EQ(inter_layer_pred, 2);
+    return InterLayerPredMode::kOnKeyPic;
+  }
+}
+
 // Flags for video.
 DEFINE_int(vwidth, 640, "Video width.");
 size_t VideoWidth() {
@@ -78,6 +89,14 @@ int VideoNumStreams() {
 DEFINE_int(vnum_spatial_layers, 1, "Number of video spatial layers to use.");
 int VideoNumSpatialLayers() {
   return static_cast<int>(FLAG_vnum_spatial_layers);
+}
+
+DEFINE_int(vinter_layer_pred,
+           1,
+           "Video inter-layer prediction mode. "
+           "0 - enabled, 1 - disabled, 2 - enabled only for key pictures.");
+InterLayerPredMode VideoInterLayerPred() {
+  return IntToInterLayerPredMode(FLAG_vinter_layer_pred);
 }
 
 DEFINE_string(
@@ -190,9 +209,17 @@ int ScreenshareNumStreams() {
 
 DEFINE_int(snum_spatial_layers,
            1,
-           "Number of screemshare spatial layers to use.");
+           "Number of screenshare spatial layers to use.");
 int ScreenshareNumSpatialLayers() {
   return static_cast<int>(FLAG_snum_spatial_layers);
+}
+
+DEFINE_int(sinter_layer_pred,
+           1,
+           "Screenshare inter-layer prediction mode. "
+           "0 - enabled, 1 - disabled, 2 - enabled only for key pictures.");
+InterLayerPredMode ScreenshareInterLayerPred() {
+  return IntToInterLayerPredMode(FLAG_sinter_layer_pred);
 }
 
 DEFINE_string(
@@ -536,7 +563,7 @@ void Loopback() {
       &params, screenshare_idx, stream_descriptors,
       flags::ScreenshareNumStreams(), flags::ScreenshareSelectedStream(),
       flags::ScreenshareNumSpatialLayers(), flags::ScreenshareSelectedSL(),
-      SL_descriptors);
+      flags::ScreenshareInterLayerPred(), SL_descriptors);
 
   stream_descriptors.clear();
   stream_descriptors.push_back(flags::VideoStream0());
@@ -547,7 +574,7 @@ void Loopback() {
   VideoQualityTest::FillScalabilitySettings(
       &params, camera_idx, stream_descriptors, flags::VideoNumStreams(),
       flags::VideoSelectedStream(), flags::VideoNumSpatialLayers(),
-      flags::VideoSelectedSL(), SL_descriptors);
+      flags::VideoSelectedSL(), flags::VideoInterLayerPred(), SL_descriptors);
 
   VideoQualityTest test;
   if (flags::DurationSecs()) {

@@ -72,6 +72,21 @@ int NumTemporalLayers() {
   return static_cast<int>(FLAG_num_temporal_layers);
 }
 
+DEFINE_int(inter_layer_pred,
+           1,
+           "Inter-layer prediction mode. "
+           "0 - enabled, 1 - disabled, 2 - enabled only for key pictures.");
+InterLayerPredMode InterLayerPred() {
+  if (FLAG_inter_layer_pred == 0) {
+    return InterLayerPredMode::kOn;
+  } else if (FLAG_inter_layer_pred == 1) {
+    return InterLayerPredMode::kOff;
+  } else {
+    RTC_DCHECK_EQ(FLAG_inter_layer_pred, 2);
+    return InterLayerPredMode::kOnKeyPic;
+  }
+}
+
 // Flags common with screenshare loopback, with equal default values.
 DEFINE_string(codec, "VP8", "Video codec to use.");
 std::string Codec() {
@@ -310,7 +325,7 @@ void Loopback() {
   VideoQualityTest::FillScalabilitySettings(
       &params, 0, stream_descriptors, flags::NumStreams(),
       flags::SelectedStream(), flags::NumSpatialLayers(), flags::SelectedSL(),
-      SL_descriptors);
+      flags::InterLayerPred(), SL_descriptors);
 
   VideoQualityTest test;
   if (flags::DurationSecs()) {
