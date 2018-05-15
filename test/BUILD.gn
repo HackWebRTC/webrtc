@@ -172,7 +172,6 @@ rtc_source_set("test_support") {
   sources = [
     "gmock.h",
     "gtest.h",
-    "testsupport/unittest_utils.h",
   ]
 
   public_deps = []
