@@ -708,9 +708,29 @@ bool BasicNetworkManager::CreateNetworks(bool include_ignored,
         auto existing_network = current_networks.find(key);
         if (existing_network == current_networks.end()) {
           AdapterType adapter_type = ADAPTER_TYPE_UNKNOWN;
-          if (adapter_addrs->IfType == IF_TYPE_SOFTWARE_LOOPBACK) {
-            // TODO(phoglund): Need to recognize other types as well.
-            adapter_type = ADAPTER_TYPE_LOOPBACK;
+          switch (adapter_addrs->IfType) {
+            case IF_TYPE_SOFTWARE_LOOPBACK:
+              adapter_type = ADAPTER_TYPE_LOOPBACK;
+              break;
+            case IF_TYPE_ETHERNET_CSMACD:
+            case IF_TYPE_ETHERNET_3MBIT:
+            case IF_TYPE_IEEE80212:
+            case IF_TYPE_FASTETHER:
+            case IF_TYPE_FASTETHER_FX:
+            case IF_TYPE_GIGABITETHERNET:
+              adapter_type = ADAPTER_TYPE_ETHERNET;
+              break;
+            case IF_TYPE_IEEE80211:
+              adapter_type = ADAPTER_TYPE_WIFI;
+              break;
+            case IF_TYPE_WWANPP:
+            case IF_TYPE_WWANPP2:
+              adapter_type = ADAPTER_TYPE_CELLULAR;
+              break;
+            default:
+              // TODO(phoglund): Need to recognize other types as well.
+              adapter_type = ADAPTER_TYPE_UNKNOWN;
+              break;
           }
           std::unique_ptr<Network> network(new Network(
               name, description, prefix, prefix_length, adapter_type));
