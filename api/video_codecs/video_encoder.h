@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "api/optional.h"
+#include "api/video/video_bitrate_allocation.h"
 #include "api/video/video_frame.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "common_video/include/video_frame.h"
