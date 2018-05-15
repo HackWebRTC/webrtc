@@ -110,6 +110,8 @@ class MockCustomProcessing : public CustomProcessing {
   virtual ~MockCustomProcessing() {}
   MOCK_METHOD2(Initialize, void(int sample_rate_hz, int num_channels));
   MOCK_METHOD1(Process, void(AudioBuffer* audio));
+  MOCK_METHOD1(SetRuntimeSetting,
+               void(AudioProcessing::RuntimeSetting setting));
   MOCK_CONST_METHOD0(ToString, std::string());
 };
 

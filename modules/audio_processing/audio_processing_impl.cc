@@ -66,6 +66,7 @@
 namespace webrtc {
 
 constexpr int AudioProcessing::kNativeSampleRatesHz[];
+constexpr int kRuntimeSettingQueueSize = 100;
 
 namespace {
 
@@ -384,8 +385,10 @@ AudioProcessingImpl::AudioProcessingImpl(
     NonlinearBeamformer* beamformer)
     : data_dumper_(
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
-      runtime_settings_(100),
-      runtime_settings_enqueuer_(&runtime_settings_),
+      capture_runtime_settings_(kRuntimeSettingQueueSize),
+      render_runtime_settings_(kRuntimeSettingQueueSize),
+      capture_runtime_settings_enqueuer_(&capture_runtime_settings_),
+      render_runtime_settings_enqueuer_(&render_runtime_settings_),
       high_pass_filter_impl_(new HighPassFilterImpl(this)),
       echo_control_factory_(std::move(echo_control_factory)),
       submodule_states_(!!capture_post_processor, !!render_pre_processor),
@@ -806,8 +809,20 @@ void AudioProcessingImpl::set_output_will_be_muted(bool muted) {
 }
 
 void AudioProcessingImpl::SetRuntimeSetting(RuntimeSetting setting) {
-  RTC_DCHECK(setting.type() != RuntimeSetting::Type::kNotSpecified);
-  runtime_settings_enqueuer_.Enqueue(setting);
+  switch (setting.type()) {
+    case RuntimeSetting::Type::kCustomRenderProcessingRuntimeSetting:
+      render_runtime_settings_enqueuer_.Enqueue(setting);
+      return;
+    case RuntimeSetting::Type::kNotSpecified:
+      RTC_NOTREACHED();
+      return;
+    case RuntimeSetting::Type::kCapturePreGain:
+      capture_runtime_settings_enqueuer_.Enqueue(setting);
+      return;
+  }
+  // The language allows the enum to have a non-enumerator
+  // value. Check that this doesn't happen.
+  RTC_NOTREACHED();
 }
 
 AudioProcessingImpl::RuntimeSettingEnqueuer::RuntimeSettingEnqueuer(
@@ -913,9 +928,9 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
   return kNoError;
 }
 
-void AudioProcessingImpl::HandleRuntimeSettings() {
+void AudioProcessingImpl::HandleCaptureRuntimeSettings() {
   RuntimeSetting setting;
-  while (runtime_settings_.Remove(&setting)) {
+  while (capture_runtime_settings_.Remove(&setting)) {
     switch (setting.type()) {
       case RuntimeSetting::Type::kCapturePreGain:
         if (config_.pre_amplifier.enabled) {
@@ -924,6 +939,28 @@ void AudioProcessingImpl::HandleRuntimeSettings() {
           private_submodules_->pre_amplifier->SetGainFactor(value);
         }
         // TODO(bugs.chromium.org/9138): Log setting handling by Aec Dump.
+        break;
+      case RuntimeSetting::Type::kCustomRenderProcessingRuntimeSetting:
+        RTC_NOTREACHED();
+        break;
+      case RuntimeSetting::Type::kNotSpecified:
+        RTC_NOTREACHED();
+        break;
+    }
+  }
+}
+
+void AudioProcessingImpl::HandleRenderRuntimeSettings() {
+  RuntimeSetting setting;
+  while (render_runtime_settings_.Remove(&setting)) {
+    switch (setting.type()) {
+      case RuntimeSetting::Type::kCustomRenderProcessingRuntimeSetting:
+        if (private_submodules_->render_pre_processor) {
+          private_submodules_->render_pre_processor->SetRuntimeSetting(setting);
+        }
+        break;
+      case RuntimeSetting::Type::kCapturePreGain:
+        RTC_NOTREACHED();
         break;
       case RuntimeSetting::Type::kNotSpecified:
         RTC_NOTREACHED();
@@ -1186,7 +1223,7 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
 }
 
 int AudioProcessingImpl::ProcessCaptureStreamLocked() {
-  HandleRuntimeSettings();
+  HandleCaptureRuntimeSettings();
 
   // Ensure that not both the AEC and AECM are active at the same time.
   // TODO(peah): Simplify once the public API Enable functions for these
@@ -1508,6 +1545,8 @@ int AudioProcessingImpl::ProcessRenderStreamLocked() {
   AudioBuffer* render_buffer = render_.render_audio.get();  // For brevity.
 
   QueueNonbandedRenderAudio(render_buffer);
+
+  HandleRenderRuntimeSettings();
 
   if (private_submodules_->render_pre_processor) {
     private_submodules_->render_pre_processor->Process(render_buffer);

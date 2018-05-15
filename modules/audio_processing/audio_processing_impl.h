@@ -143,13 +143,6 @@ class AudioProcessingImpl : public AudioProcessing {
   FRIEND_TEST_ALL_PREFIXES(ApmConfiguration, DefaultBehavior);
   FRIEND_TEST_ALL_PREFIXES(ApmConfiguration, ValidConfigBehavior);
   FRIEND_TEST_ALL_PREFIXES(ApmConfiguration, InValidConfigBehavior);
-  struct ApmPublicSubmodules;
-  struct ApmPrivateSubmodules;
-
-  std::unique_ptr<ApmDataDumper> data_dumper_;
-  static int instance_count_;
-
-  SwapQueue<RuntimeSetting> runtime_settings_;
 
   // Class providing thread-safe message pipe functionality for
   // |runtime_settings_|.
@@ -162,7 +155,18 @@ class AudioProcessingImpl : public AudioProcessing {
 
    private:
     SwapQueue<RuntimeSetting>& runtime_settings_;
-  } runtime_settings_enqueuer_;
+  };
+  struct ApmPublicSubmodules;
+  struct ApmPrivateSubmodules;
+
+  std::unique_ptr<ApmDataDumper> data_dumper_;
+  static int instance_count_;
+
+  SwapQueue<RuntimeSetting> capture_runtime_settings_;
+  SwapQueue<RuntimeSetting> render_runtime_settings_;
+
+  RuntimeSettingEnqueuer capture_runtime_settings_enqueuer_;
+  RuntimeSettingEnqueuer render_runtime_settings_enqueuer_;
 
   // Submodule interface implementations.
   std::unique_ptr<HighPassFilter> high_pass_filter_impl_;
@@ -257,8 +261,10 @@ class AudioProcessingImpl : public AudioProcessing {
   void InitializePostProcessor() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   void InitializePreProcessor() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
 
-  // Handle all the runtime settings in the queue.
-  void HandleRuntimeSettings() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+  // Empties and handles the respective RuntimeSetting queues.
+  void HandleCaptureRuntimeSettings()
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+  void HandleRenderRuntimeSettings() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
 
   void EmptyQueuedRenderAudio();
   void AllocateRenderQueue()

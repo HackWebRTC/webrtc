@@ -313,7 +313,11 @@ class AudioProcessing : public rtc::RefCountInterface {
   // runtime.
   class RuntimeSetting {
    public:
-    enum class Type { kNotSpecified, kCapturePreGain };
+    enum class Type {
+      kNotSpecified,
+      kCapturePreGain,
+      kCustomRenderProcessingRuntimeSetting
+    };
 
     RuntimeSetting() : type_(Type::kNotSpecified), value_(0.f) {}
     ~RuntimeSetting() = default;
@@ -321,6 +325,10 @@ class AudioProcessing : public rtc::RefCountInterface {
     static RuntimeSetting CreateCapturePreGain(float gain) {
       RTC_DCHECK_GE(gain, 1.f) << "Attenuation is not allowed.";
       return {Type::kCapturePreGain, gain};
+    }
+
+    static RuntimeSetting CreateCustomRenderSetting(float payload) {
+      return {Type::kCustomRenderProcessingRuntimeSetting, payload};
     }
 
     Type type() const { return type_; }
@@ -1119,6 +1127,9 @@ class CustomProcessing {
   virtual void Process(AudioBuffer* audio) = 0;
   // Returns a string representation of the module state.
   virtual std::string ToString() const = 0;
+  // Handles RuntimeSettings. TODO(webrtc:9262): make pure virtual
+  // after updating dependencies.
+  virtual void SetRuntimeSetting(AudioProcessing::RuntimeSetting setting);
 
   virtual ~CustomProcessing() {}
 };
