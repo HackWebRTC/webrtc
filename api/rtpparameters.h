@@ -498,8 +498,6 @@ struct RtpCodecParameters {
   // Contrary to ORTC, these parameters are named using all lowercase strings.
   // This helps make the mapping to SDP simpler, if an application is using
   // SDP. Boolean values are represented by the string "1".
-  //
-  // TODO(deadbeef): Not implemented with PeerConnection senders/receivers.
   std::unordered_map<std::string, std::string> parameters;
 
   bool operator==(const RtpCodecParameters& o) const {

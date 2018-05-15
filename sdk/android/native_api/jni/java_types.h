@@ -285,6 +285,18 @@ ScopedJavaLocalRef<jobject> NativeToJavaMap(JNIEnv* env,
   return builder.GetJavaMap();
 }
 
+template <typename C>
+ScopedJavaLocalRef<jobject> NativeToJavaStringMap(JNIEnv* env,
+                                                  const C& container) {
+  JavaMapBuilder builder(env);
+  for (const auto& e : container) {
+    const auto key_value_pair = std::make_pair(
+        NativeToJavaString(env, e.first), NativeToJavaString(env, e.second));
+    builder.put(key_value_pair.first, key_value_pair.second);
+  }
+  return builder.GetJavaMap();
+}
+
 // Return a |jlong| that will correctly convert back to |ptr|.  This is needed
 // because the alternative (of silently passing a 32-bit pointer to a vararg
 // function expecting a 64-bit param) picks up garbage in the high 32 bits.

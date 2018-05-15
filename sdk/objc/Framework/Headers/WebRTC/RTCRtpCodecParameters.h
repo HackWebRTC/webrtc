@@ -63,6 +63,9 @@ RTC_EXPORT
  **/
 @property(nonatomic, readonly, nullable) NSNumber *numChannels;
 
+/** The "format specific parameters" field from the "a=fmtp" line in the SDP */
+@property(nonatomic, readonly, nonnull) NSDictionary *parameters;
+
 - (instancetype)init NS_DESIGNATED_INITIALIZER;
 
 @end

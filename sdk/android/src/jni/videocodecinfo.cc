@@ -27,12 +27,8 @@ SdpVideoFormat VideoCodecInfoToSdpVideoFormat(JNIEnv* jni,
 ScopedJavaLocalRef<jobject> SdpVideoFormatToVideoCodecInfo(
     JNIEnv* jni,
     const SdpVideoFormat& format) {
-  ScopedJavaLocalRef<jobject> j_params = NativeToJavaMap(
-      jni, format.parameters,
-      [](JNIEnv* env, const std::pair<std::string, std::string>& entry) {
-        return std::make_pair(NativeToJavaString(env, entry.first),
-                              NativeToJavaString(env, entry.second));
-      });
+  ScopedJavaLocalRef<jobject> j_params =
+      NativeToJavaStringMap(jni, format.parameters);
   return Java_VideoCodecInfo_Constructor(
       jni, NativeToJavaString(jni, format.name), j_params);
 }

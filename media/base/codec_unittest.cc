@@ -347,19 +347,27 @@ TEST(CodecTest, TestValidateCodecFormat) {
 }
 
 TEST(CodecTest, TestToCodecParameters) {
-  const VideoCodec v(96, "V");
+  VideoCodec v(96, "V");
+  v.SetParam("p1", "v1");
   webrtc::RtpCodecParameters codec_params_1 = v.ToCodecParameters();
   EXPECT_EQ(96, codec_params_1.payload_type);
   EXPECT_EQ(cricket::MEDIA_TYPE_VIDEO, codec_params_1.kind);
   EXPECT_EQ("V", codec_params_1.name);
   EXPECT_EQ(cricket::kVideoCodecClockrate, codec_params_1.clock_rate);
   EXPECT_EQ(rtc::nullopt, codec_params_1.num_channels);
+  ASSERT_EQ(1, codec_params_1.parameters.size());
+  EXPECT_EQ("p1", codec_params_1.parameters.begin()->first);
+  EXPECT_EQ("v1", codec_params_1.parameters.begin()->second);
 
-  const AudioCodec a(97, "A", 44100, 20000, 2);
+  AudioCodec a(97, "A", 44100, 20000, 2);
+  a.SetParam("p1", "a1");
   webrtc::RtpCodecParameters codec_params_2 = a.ToCodecParameters();
   EXPECT_EQ(97, codec_params_2.payload_type);
   EXPECT_EQ(cricket::MEDIA_TYPE_AUDIO, codec_params_2.kind);
   EXPECT_EQ("A", codec_params_2.name);
   EXPECT_EQ(44100, codec_params_2.clock_rate);
   EXPECT_EQ(2, codec_params_2.num_channels);
+  ASSERT_EQ(1, codec_params_2.parameters.size());
+  EXPECT_EQ("p1", codec_params_2.parameters.begin()->first);
+  EXPECT_EQ("a1", codec_params_2.parameters.begin()->second);
 }

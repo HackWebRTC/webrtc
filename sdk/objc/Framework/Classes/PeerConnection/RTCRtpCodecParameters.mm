@@ -41,6 +41,7 @@ const NSString * const kRTCH264CodecName = @(cricket::kH264CodecName);
 @synthesize kind = _kind;
 @synthesize clockRate = _clockRate;
 @synthesize numChannels = _numChannels;
+@synthesize parameters = _parameters;
 
 - (instancetype)init {
   return [super init];
@@ -68,6 +69,12 @@ const NSString * const kRTCH264CodecName = @(cricket::kH264CodecName);
     if (nativeParameters.num_channels) {
       _numChannels = [NSNumber numberWithInt:*nativeParameters.num_channels];
     }
+    NSMutableDictionary *parameters = [NSMutableDictionary dictionary];
+    for (const auto &parameter : nativeParameters.parameters) {
+      [parameters setObject:[NSString stringForStdString:parameter.second]
+                     forKey:[NSString stringForStdString:parameter.first]];
+    }
+    _parameters = parameters;
   }
   return self;
 }
@@ -90,6 +97,11 @@ const NSString * const kRTCH264CodecName = @(cricket::kH264CodecName);
   }
   if (_numChannels != nil) {
     parameters.num_channels = rtc::Optional<int>(_numChannels.intValue);
+  }
+  for (NSString *paramKey in _parameters.allKeys) {
+    std::string key = [NSString stdStringForString:paramKey];
+    std::string value = [NSString stdStringForString:_parameters[paramKey]];
+    parameters.parameters[key] = value;
   }
   return parameters;
 }

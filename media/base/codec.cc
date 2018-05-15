@@ -143,6 +143,7 @@ webrtc::RtpCodecParameters Codec::ToCodecParameters() const {
   codec_params.payload_type = id;
   codec_params.name = name;
   codec_params.clock_rate = clockrate;
+  codec_params.parameters.insert(params.begin(), params.end());
   return codec_params;
 }
 
