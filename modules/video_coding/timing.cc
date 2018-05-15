@@ -204,21 +204,19 @@ void VCMTiming::IncomingTimestamp(uint32_t time_stamp, int64_t now_ms) {
 int64_t VCMTiming::RenderTimeMs(uint32_t frame_timestamp,
                                 int64_t now_ms) const {
   rtc::CritScope cs(&crit_sect_);
-  const int64_t render_time_ms = RenderTimeMsInternal(frame_timestamp, now_ms);
-  return render_time_ms;
+  return RenderTimeMsInternal(frame_timestamp, now_ms);
 }
 
 int64_t VCMTiming::RenderTimeMsInternal(uint32_t frame_timestamp,
                                         int64_t now_ms) const {
+  if (min_playout_delay_ms_ == 0 && max_playout_delay_ms_ == 0) {
+    // Render as soon as possible.
+    return 0;
+  }
   int64_t estimated_complete_time_ms =
       ts_extrapolator_->ExtrapolateLocalTime(frame_timestamp);
   if (estimated_complete_time_ms == -1) {
     estimated_complete_time_ms = now_ms;
-  }
-
-  if (min_playout_delay_ms_ == 0 && max_playout_delay_ms_ == 0) {
-    // Render as soon as possible.
-    return now_ms;
   }
 
   // Make sure the actual delay stays in the range of |min_playout_delay_ms_|

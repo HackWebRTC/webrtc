@@ -219,10 +219,14 @@ bool FrameBuffer::HasBadRenderTiming(const EncodedFrame& frame,
                                      int64_t now_ms) {
   // Assume that render timing errors are due to changes in the video stream.
   int64_t render_time_ms = frame.RenderTimeMs();
-  const int64_t kMaxVideoDelayMs = 10000;
+  // Zero render time means render immediately.
+  if (render_time_ms == 0) {
+    return false;
+  }
   if (render_time_ms < 0) {
     return true;
   }
+  const int64_t kMaxVideoDelayMs = 10000;
   if (std::abs(render_time_ms - now_ms) > kMaxVideoDelayMs) {
     int frame_delay = static_cast<int>(std::abs(render_time_ms - now_ms));
     RTC_LOG(LS_WARNING)
