@@ -12,7 +12,6 @@
 #include <utility>
 
 #include "media/base/fakemediaengine.h"
-#include "media/base/fakevideocapturer.h"
 #include "media/base/testutils.h"
 #include "media/engine/fakewebrtccall.h"
 #include "p2p/base/fakedtlstransport.h"
