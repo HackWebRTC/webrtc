@@ -14,6 +14,7 @@
 #include <string>
 
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
+#include "api/video/video_bitrate_allocation.h"
 #include "call/call.h"
 #include "call/video_config.h"
 #include "logging/rtc_event_log/rtc_event_log.h"

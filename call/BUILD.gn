@@ -327,6 +327,7 @@ if (rtc_include_tests) {
       ":video_stream_api",
       "..:webrtc_common",
       "../api/audio_codecs:builtin_audio_encoder_factory",
+      "../api/video:video_bitrate_allocation",
       "../logging:rtc_event_log_api",
       "../modules/audio_coding",
       "../modules/audio_device",
