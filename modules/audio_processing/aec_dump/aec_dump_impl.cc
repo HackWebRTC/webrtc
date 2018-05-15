@@ -74,26 +74,27 @@ AecDumpImpl::~AecDumpImpl() {
   thread_sync_event.Wait(rtc::Event::kForever);
 }
 
-void AecDumpImpl::WriteInitMessage(
-    const InternalAPMStreamsConfig& streams_config) {
+void AecDumpImpl::WriteInitMessage(const ProcessingConfig& api_format) {
   auto task = CreateWriteToFileTask();
   auto* event = task->GetEvent();
   event->set_type(audioproc::Event::INIT);
   audioproc::Init* msg = event->mutable_init();
 
-  msg->set_sample_rate(streams_config.input_sample_rate);
-  msg->set_output_sample_rate(streams_config.output_sample_rate);
-  msg->set_reverse_sample_rate(streams_config.render_input_sample_rate);
-  msg->set_reverse_output_sample_rate(streams_config.render_output_sample_rate);
+  msg->set_sample_rate(api_format.input_stream().sample_rate_hz());
+  msg->set_output_sample_rate(api_format.output_stream().sample_rate_hz());
+  msg->set_reverse_sample_rate(
+      api_format.reverse_input_stream().sample_rate_hz());
+  msg->set_reverse_output_sample_rate(
+      api_format.reverse_output_stream().sample_rate_hz());
 
   msg->set_num_input_channels(
-      static_cast<int32_t>(streams_config.input_num_channels));
+      static_cast<int32_t>(api_format.input_stream().num_channels()));
   msg->set_num_output_channels(
-      static_cast<int32_t>(streams_config.output_num_channels));
+      static_cast<int32_t>(api_format.output_stream().num_channels()));
   msg->set_num_reverse_channels(
-      static_cast<int32_t>(streams_config.render_input_num_channels));
+      static_cast<int32_t>(api_format.reverse_input_stream().num_channels()));
   msg->set_num_reverse_output_channels(
-      streams_config.render_output_num_channels);
+      api_format.reverse_output_stream().num_channels());
 
   worker_queue_->PostTask(std::unique_ptr<rtc::QueuedTask>(std::move(task)));
 }

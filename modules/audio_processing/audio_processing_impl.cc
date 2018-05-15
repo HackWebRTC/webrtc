@@ -148,24 +148,6 @@ class HighPassFilterImpl : public HighPassFilter {
   AudioProcessingImpl* apm_;
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(HighPassFilterImpl);
 };
-
-webrtc::InternalAPMStreamsConfig ToStreamsConfig(
-    const ProcessingConfig& api_format) {
-  webrtc::InternalAPMStreamsConfig result;
-  result.input_sample_rate = api_format.input_stream().sample_rate_hz();
-  result.input_num_channels = api_format.input_stream().num_channels();
-  result.output_num_channels = api_format.output_stream().num_channels();
-  result.render_input_num_channels =
-      api_format.reverse_input_stream().num_channels();
-  result.render_input_sample_rate =
-      api_format.reverse_input_stream().sample_rate_hz();
-  result.output_sample_rate = api_format.output_stream().sample_rate_hz();
-  result.render_output_sample_rate =
-      api_format.reverse_output_stream().sample_rate_hz();
-  result.render_output_num_channels =
-      api_format.reverse_output_stream().num_channels();
-  return result;
-}
 }  // namespace
 
 // Throughout webrtc, it's assumed that success is represented by zero.
@@ -608,7 +590,7 @@ int AudioProcessingImpl::InitializeLocked() {
   InitializePreProcessor();
 
   if (aec_dump_) {
-    aec_dump_->WriteInitMessage(ToStreamsConfig(formats_.api_format));
+    aec_dump_->WriteInitMessage(formats_.api_format);
   }
   return kNoError;
 }
@@ -1638,7 +1620,7 @@ void AudioProcessingImpl::AttachAecDump(std::unique_ptr<AecDump> aec_dump) {
   // 'aec_dump' parameter, which is after locks are released.
   aec_dump_.swap(aec_dump);
   WriteAecDumpConfigMessage(true);
-  aec_dump_->WriteInitMessage(ToStreamsConfig(formats_.api_format));
+  aec_dump_->WriteInitMessage(formats_.api_format);
 }
 
 void AudioProcessingImpl::DetachAecDump() {

@@ -52,7 +52,7 @@ class AecDumpImpl : public AecDump {
 
   ~AecDumpImpl() override;
 
-  void WriteInitMessage(const InternalAPMStreamsConfig& api_format) override;
+  void WriteInitMessage(const ProcessingConfig& api_format) override;
 
   void AddCaptureStreamInput(const AudioFrameView<const float>& src) override;
   void AddCaptureStreamOutput(const AudioFrameView<const float>& src) override;

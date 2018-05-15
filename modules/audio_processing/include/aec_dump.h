@@ -18,6 +18,7 @@
 #include "api/array_view.h"
 #include "api/audio/audio_frame.h"
 #include "modules/audio_processing/include/audio_frame_view.h"
+#include "modules/audio_processing/include/audio_processing.h"
 
 namespace webrtc {
 
@@ -55,18 +56,6 @@ struct InternalAPMConfig {
   std::string experiments_description = "";
 };
 
-struct InternalAPMStreamsConfig {
-  int input_sample_rate = 0;
-  int output_sample_rate = 0;
-  int render_input_sample_rate = 0;
-  int render_output_sample_rate = 0;
-
-  size_t input_num_channels = 0;
-  size_t output_num_channels = 0;
-  size_t render_input_num_channels = 0;
-  size_t render_output_num_channels = 0;
-};
-
 // An interface for recording configuration and input/output streams
 // of the Audio Processing Module. The recordings are called
 // 'aec-dumps' and are stored in a protobuf format defined in
@@ -87,8 +76,7 @@ class AecDump {
   virtual ~AecDump() = default;
 
   // Logs Event::Type INIT message.
-  virtual void WriteInitMessage(
-      const InternalAPMStreamsConfig& streams_config) = 0;
+  virtual void WriteInitMessage(const ProcessingConfig& api_format) = 0;
 
   // Logs Event::Type STREAM message. To log an input/output pair,
   // call the AddCapture* and AddAudioProcessingState methods followed

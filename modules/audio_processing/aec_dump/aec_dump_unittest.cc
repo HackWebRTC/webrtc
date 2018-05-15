@@ -39,8 +39,8 @@ TEST(AecDumper, APICallsDoNotCrash) {
     webrtc::InternalAPMConfig apm_config;
     aec_dump->WriteConfig(apm_config);
 
-    webrtc::InternalAPMStreamsConfig streams_config;
-    aec_dump->WriteInitMessage(streams_config);
+    webrtc::ProcessingConfig api_format;
+    aec_dump->WriteInitMessage(api_format);
   }
   // Remove file after the AecDump d-tor has finished.
   ASSERT_EQ(0, remove(filename.c_str()));
