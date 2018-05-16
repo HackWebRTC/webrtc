@@ -163,9 +163,9 @@ class FakeVideoSendStream final
       const std::vector<bool> active_layers) override;
   void Start() override;
   void Stop() override;
-  void SetSource(rtc::VideoSourceInterface<webrtc::VideoFrame>* source,
-                 const webrtc::VideoSendStream::DegradationPreference&
-                     degradation_preference) override;
+  void SetSource(
+      rtc::VideoSourceInterface<webrtc::VideoFrame>* source,
+      const webrtc::DegradationPreference& degradation_preference) override;
   webrtc::VideoSendStream::Stats GetStats() override;
   void ReconfigureVideoEncoder(webrtc::VideoEncoderConfig config) override;
 

@@ -1864,9 +1864,8 @@ TEST_F(VideoSendStreamTest, RespectsMinTransmitBitrateAfterContentSwitch) {
       video_encoder_config_ = encoder_config.Copy();
       video_send_stream_ = sender_call_->CreateVideoSendStream(
           video_send_config_.Copy(), video_encoder_config_.Copy());
-      video_send_stream_->SetSource(
-          frame_generator_capturer_.get(),
-          VideoSendStream::DegradationPreference::kMaintainResolution);
+      video_send_stream_->SetSource(frame_generator_capturer_.get(),
+                                    DegradationPreference::MAINTAIN_RESOLUTION);
       Start();
     });
   };
@@ -2110,9 +2109,7 @@ TEST_F(VideoSendStreamTest, VideoSendStreamStopSetEncoderRateToZero) {
     CreateVideoStreams();
     // Inject a frame, to force encoder creation.
     video_send_stream_->Start();
-    video_send_stream_->SetSource(
-        &forwarder,
-        VideoSendStream::DegradationPreference::kDegradationDisabled);
+    video_send_stream_->SetSource(&forwarder, DegradationPreference::DISABLED);
     forwarder.IncomingCapturedFrame(CreateVideoFrame(640, 480, 4));
   });
 
@@ -2164,9 +2161,7 @@ TEST_F(VideoSendStreamTest, VideoSendStreamUpdateActiveSimulcastLayers) {
 
     // Inject a frame, to force encoder creation.
     video_send_stream_->Start();
-    video_send_stream_->SetSource(
-        &forwarder,
-        VideoSendStream::DegradationPreference::kDegradationDisabled);
+    video_send_stream_->SetSource(&forwarder, DegradationPreference::DISABLED);
     forwarder.IncomingCapturedFrame(CreateVideoFrame(640, 480, 4));
   });
 
@@ -2262,8 +2257,8 @@ TEST_F(VideoSendStreamTest, CapturesTextureAndVideoFrames) {
 
     video_send_stream_->Start();
     test::FrameForwarder forwarder;
-    video_send_stream_->SetSource(
-        &forwarder, VideoSendStream::DegradationPreference::kMaintainFramerate);
+    video_send_stream_->SetSource(&forwarder,
+                                  DegradationPreference::MAINTAIN_FRAMERATE);
     for (size_t i = 0; i < input_frames.size(); i++) {
       forwarder.IncomingCapturedFrame(input_frames[i]);
       // Wait until the output frame is received before sending the next input
@@ -2271,8 +2266,8 @@ TEST_F(VideoSendStreamTest, CapturesTextureAndVideoFrames) {
       observer.WaitOutputFrame();
     }
     video_send_stream_->Stop();
-    video_send_stream_->SetSource(
-        nullptr, VideoSendStream::DegradationPreference::kMaintainFramerate);
+    video_send_stream_->SetSource(nullptr,
+                                  DegradationPreference::MAINTAIN_FRAMERATE);
   });
 
   // Test if the input and output frames are the same. render_time_ms and
@@ -3619,8 +3614,8 @@ void VideoSendStreamTest::TestRequestSourceRotateVideo(
 
   CreateVideoStreams();
   test::FrameForwarder forwarder;
-  video_send_stream_->SetSource(
-      &forwarder, VideoSendStream::DegradationPreference::kMaintainFramerate);
+  video_send_stream_->SetSource(&forwarder,
+                                DegradationPreference::MAINTAIN_FRAMERATE);
 
   EXPECT_TRUE(forwarder.sink_wants().rotation_applied !=
               support_orientation_ext);
@@ -3991,9 +3986,8 @@ TEST_F(VideoSendStreamTest, SwitchesToScreenshareAndBack) {
       video_encoder_config_ = encoder_config.Copy();
       video_send_stream_ = sender_call_->CreateVideoSendStream(
           video_send_config_.Copy(), video_encoder_config_.Copy());
-      video_send_stream_->SetSource(
-          frame_generator_capturer_.get(),
-          VideoSendStream::DegradationPreference::kMaintainResolution);
+      video_send_stream_->SetSource(frame_generator_capturer_.get(),
+                                    DegradationPreference::MAINTAIN_RESOLUTION);
       test->OnVideoStreamsCreated(video_send_stream_, video_receive_streams_);
       Start();
     });

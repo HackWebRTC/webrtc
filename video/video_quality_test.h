@@ -179,8 +179,8 @@ class VideoQualityTest : public test::CallTest {
   int receive_logs_;
   int send_logs_;
 
-  VideoSendStream::DegradationPreference degradation_preference_ =
-      VideoSendStream::DegradationPreference::kMaintainFramerate;
+  DegradationPreference degradation_preference_ =
+      DegradationPreference::MAINTAIN_FRAMERATE;
   Params params_;
 
   std::unique_ptr<webrtc::RtcEventLog> recv_event_log_;

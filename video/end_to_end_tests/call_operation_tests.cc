@@ -135,9 +135,8 @@ TEST_P(CallOperationEndToEndTest, RendersSingleDelayedFrame) {
     std::unique_ptr<test::FrameGenerator> frame_generator(
         test::FrameGenerator::CreateSquareGenerator(
             kWidth, kHeight, rtc::nullopt, rtc::nullopt));
-    video_send_stream_->SetSource(
-        &frame_forwarder,
-        VideoSendStream::DegradationPreference::kMaintainFramerate);
+    video_send_stream_->SetSource(&frame_forwarder,
+                                  DegradationPreference::MAINTAIN_FRAMERATE);
 
     frame_forwarder.IncomingCapturedFrame(*frame_generator->NextFrame());
   });
@@ -192,9 +191,8 @@ TEST_P(CallOperationEndToEndTest, TransmitsFirstFrame) {
 
     frame_generator = test::FrameGenerator::CreateSquareGenerator(
         kDefaultWidth, kDefaultHeight, rtc::nullopt, rtc::nullopt);
-    video_send_stream_->SetSource(
-        &frame_forwarder,
-        VideoSendStream::DegradationPreference::kMaintainFramerate);
+    video_send_stream_->SetSource(&frame_forwarder,
+                                  DegradationPreference::MAINTAIN_FRAMERATE);
     frame_forwarder.IncomingCapturedFrame(*frame_generator->NextFrame());
   });
 
@@ -271,8 +269,8 @@ TEST_P(CallOperationEndToEndTest, ObserversEncodedFrames) {
 
     frame_generator = test::FrameGenerator::CreateSquareGenerator(
         kDefaultWidth, kDefaultHeight, rtc::nullopt, rtc::nullopt);
-    video_send_stream_->SetSource(
-        &forwarder, VideoSendStream::DegradationPreference::kMaintainFramerate);
+    video_send_stream_->SetSource(&forwarder,
+                                  DegradationPreference::MAINTAIN_FRAMERATE);
     forwarder.IncomingCapturedFrame(*frame_generator->NextFrame());
   });
 

@@ -39,8 +39,6 @@
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/field_trial.h"
 
-using DegradationPreference = webrtc::VideoSendStream::DegradationPreference;
-
 namespace cricket {
 
 // Hack in order to pass in |receive_stream_id| to legacy clients.
@@ -1686,7 +1684,7 @@ bool WebRtcVideoChannel::WebRtcVideoSendStream::SetVideoSend(
   }
 
   if (source_ && stream_) {
-    stream_->SetSource(nullptr, DegradationPreference::kDegradationDisabled);
+    stream_->SetSource(nullptr, webrtc::DegradationPreference::DISABLED);
   }
   // Switch to the new source.
   source_ = source;
@@ -1696,23 +1694,25 @@ bool WebRtcVideoChannel::WebRtcVideoSendStream::SetVideoSend(
   return true;
 }
 
-webrtc::VideoSendStream::DegradationPreference
+webrtc::DegradationPreference
 WebRtcVideoChannel::WebRtcVideoSendStream::GetDegradationPreference() const {
   // Do not adapt resolution for screen content as this will likely
   // result in blurry and unreadable text.
   // |this| acts like a VideoSource to make sure SinkWants are handled on the
   // correct thread.
-  DegradationPreference degradation_preference;
+  webrtc::DegradationPreference degradation_preference;
   if (!enable_cpu_overuse_detection_) {
-    degradation_preference = DegradationPreference::kDegradationDisabled;
+    degradation_preference = webrtc::DegradationPreference::DISABLED;
   } else {
     if (parameters_.options.is_screencast.value_or(false)) {
-      degradation_preference = DegradationPreference::kMaintainResolution;
+      degradation_preference =
+          webrtc::DegradationPreference::MAINTAIN_RESOLUTION;
     } else if (webrtc::field_trial::IsEnabled(
                    "WebRTC-Video-BalancedDegradation")) {
-      degradation_preference = DegradationPreference::kBalanced;
+      degradation_preference = webrtc::DegradationPreference::BALANCED;
     } else {
-      degradation_preference = DegradationPreference::kMaintainFramerate;
+      degradation_preference =
+          webrtc::DegradationPreference::MAINTAIN_FRAMERATE;
     }
   }
   return degradation_preference;

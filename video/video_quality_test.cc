@@ -1518,8 +1518,7 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
       // Fill out codec settings.
       video_encoder_configs_[video_idx].content_type =
           VideoEncoderConfig::ContentType::kScreen;
-      degradation_preference_ =
-          VideoSendStream::DegradationPreference::kMaintainResolution;
+      degradation_preference_ = DegradationPreference::MAINTAIN_RESOLUTION;
       if (params_.video[video_idx].codec == "VP8") {
         VideoCodecVP8 vp8_settings = VideoEncoder::GetDefaultVp8Settings();
         vp8_settings.denoisingOn = false;

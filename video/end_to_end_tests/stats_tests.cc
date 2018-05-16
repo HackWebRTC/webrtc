@@ -560,9 +560,8 @@ TEST_F(StatsEndToEndTest, MAYBE_ContentTypeSwitches) {
     sender_call_->DestroyVideoSendStream(video_send_stream_);
     video_send_stream_ = sender_call_->CreateVideoSendStream(
         video_send_config_.Copy(), encoder_config_with_screenshare.Copy());
-    video_send_stream_->SetSource(
-        frame_generator_capturer_.get(),
-        VideoSendStream::DegradationPreference::kBalanced);
+    video_send_stream_->SetSource(frame_generator_capturer_.get(),
+                                  DegradationPreference::BALANCED);
     video_send_stream_->Start();
   });
 

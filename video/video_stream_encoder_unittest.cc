@@ -39,7 +39,6 @@ const int64_t kFrameTimeoutMs = 100;
 
 namespace webrtc {
 
-using DegredationPreference = VideoSendStream::DegradationPreference;
 using ScaleReason = AdaptationObserverInterface::AdaptReason;
 using ::testing::_;
 using ::testing::Return;
@@ -311,8 +310,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
         stats_proxy_.get(), video_send_config_.encoder_settings));
     video_stream_encoder_->SetSink(&sink_, false /* rotation_applied */);
     video_stream_encoder_->SetSource(
-        &video_source_,
-        VideoSendStream::DegradationPreference::kMaintainFramerate);
+        &video_source_, webrtc::DegradationPreference::MAINTAIN_FRAMERATE);
     video_stream_encoder_->SetStartBitrate(kTargetBitrateBps);
     video_stream_encoder_->ConfigureEncoder(std::move(video_encoder_config),
                                             kMaxPayloadLength);
@@ -837,8 +835,7 @@ TEST_F(VideoStreamEncoderTest, SwitchSourceDeregisterEncoderAsSink) {
   EXPECT_TRUE(video_source_.has_sinks());
   test::FrameForwarder new_video_source;
   video_stream_encoder_->SetSource(
-      &new_video_source,
-      VideoSendStream::DegradationPreference::kMaintainFramerate);
+      &new_video_source, webrtc::DegradationPreference::MAINTAIN_FRAMERATE);
   EXPECT_FALSE(video_source_.has_sinks());
   EXPECT_TRUE(new_video_source.has_sinks());
 
@@ -861,11 +858,10 @@ TEST_F(VideoStreamEncoderTest, TestCpuDowngrades_BalancedMode) {
   // adaptation manually by mocking the stats proxy.
   video_source_.set_adaptation_enabled(true);
 
-  // Enable kBalanced preference, no initial limitation.
+  // Enable BALANCED preference, no initial limitation.
   video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
-  video_stream_encoder_->SetSource(
-      &video_source_,
-      VideoSendStream::DegradationPreference::kBalanced);
+  video_stream_encoder_->SetSource(&video_source_,
+                                   webrtc::DegradationPreference::BALANCED);
   VerifyNoLimitation(video_source_.sink_wants());
   EXPECT_FALSE(stats_proxy_->GetStats().cpu_limited_resolution);
   EXPECT_FALSE(stats_proxy_->GetStats().cpu_limited_framerate);
@@ -977,8 +973,7 @@ TEST_F(VideoStreamEncoderTest, SinkWantsStoredByDegradationPreference) {
   // Set new source, switch to maintain-resolution.
   test::FrameForwarder new_video_source;
   video_stream_encoder_->SetSource(
-      &new_video_source,
-      VideoSendStream::DegradationPreference::kMaintainResolution);
+      &new_video_source, webrtc::DegradationPreference::MAINTAIN_RESOLUTION);
 
   // Initially no degradation registered.
   VerifyNoLimitation(new_video_source.sink_wants());
@@ -1003,9 +998,8 @@ TEST_F(VideoStreamEncoderTest, SinkWantsStoredByDegradationPreference) {
   EXPECT_LT(new_video_source.sink_wants().max_framerate_fps, kInputFps);
 
   // Turn off degradation completely.
-  video_stream_encoder_->SetSource(
-      &new_video_source,
-      VideoSendStream::DegradationPreference::kDegradationDisabled);
+  video_stream_encoder_->SetSource(&new_video_source,
+                                   webrtc::DegradationPreference::DISABLED);
   VerifyNoLimitation(new_video_source.sink_wants());
 
   video_stream_encoder_->TriggerCpuOveruse();
@@ -1019,8 +1013,7 @@ TEST_F(VideoStreamEncoderTest, SinkWantsStoredByDegradationPreference) {
 
   // Calling SetSource with resolution scaling enabled apply the old SinkWants.
   video_stream_encoder_->SetSource(
-      &new_video_source,
-      VideoSendStream::DegradationPreference::kMaintainFramerate);
+      &new_video_source, webrtc::DegradationPreference::MAINTAIN_FRAMERATE);
   EXPECT_LT(new_video_source.sink_wants().max_pixel_count,
             kFrameWidth * kFrameHeight);
   EXPECT_FALSE(new_video_source.sink_wants().target_pixel_count);
@@ -1029,8 +1022,7 @@ TEST_F(VideoStreamEncoderTest, SinkWantsStoredByDegradationPreference) {
 
   // Calling SetSource with framerate scaling enabled apply the old SinkWants.
   video_stream_encoder_->SetSource(
-      &new_video_source,
-      VideoSendStream::DegradationPreference::kMaintainResolution);
+      &new_video_source, webrtc::DegradationPreference::MAINTAIN_RESOLUTION);
   EXPECT_FALSE(new_video_source.sink_wants().target_pixel_count);
   EXPECT_EQ(std::numeric_limits<int>::max(),
             new_video_source.sink_wants().max_pixel_count);
@@ -1129,8 +1121,7 @@ TEST_F(VideoStreamEncoderTest, SwitchingSourceKeepsCpuAdaptation) {
   // Set new source with adaptation still enabled.
   test::FrameForwarder new_video_source;
   video_stream_encoder_->SetSource(
-      &new_video_source,
-      VideoSendStream::DegradationPreference::kMaintainFramerate);
+      &new_video_source, webrtc::DegradationPreference::MAINTAIN_FRAMERATE);
 
   new_video_source.IncomingCapturedFrame(CreateFrame(3, kWidth, kHeight));
   WaitForEncodedFrame(3);
@@ -1140,9 +1131,8 @@ TEST_F(VideoStreamEncoderTest, SwitchingSourceKeepsCpuAdaptation) {
   EXPECT_EQ(1, stats.number_of_cpu_adapt_changes);
 
   // Set adaptation disabled.
-  video_stream_encoder_->SetSource(
-      &new_video_source,
-      VideoSendStream::DegradationPreference::kDegradationDisabled);
+  video_stream_encoder_->SetSource(&new_video_source,
+                                   webrtc::DegradationPreference::DISABLED);
 
   new_video_source.IncomingCapturedFrame(CreateFrame(4, kWidth, kHeight));
   WaitForEncodedFrame(4);
@@ -1153,8 +1143,7 @@ TEST_F(VideoStreamEncoderTest, SwitchingSourceKeepsCpuAdaptation) {
 
   // Set adaptation back to enabled.
   video_stream_encoder_->SetSource(
-      &new_video_source,
-      VideoSendStream::DegradationPreference::kMaintainFramerate);
+      &new_video_source, webrtc::DegradationPreference::MAINTAIN_FRAMERATE);
 
   new_video_source.IncomingCapturedFrame(CreateFrame(5, kWidth, kHeight));
   WaitForEncodedFrame(5);
@@ -1190,9 +1179,8 @@ TEST_F(VideoStreamEncoderTest, SwitchingSourceKeepsQualityAdaptation) {
 
   // Set new source with adaptation still enabled.
   test::FrameForwarder new_video_source;
-  video_stream_encoder_->SetSource(
-      &new_video_source,
-      VideoSendStream::DegradationPreference::kBalanced);
+  video_stream_encoder_->SetSource(&new_video_source,
+                                   webrtc::DegradationPreference::BALANCED);
 
   new_video_source.IncomingCapturedFrame(CreateFrame(2, kWidth, kHeight));
   WaitForEncodedFrame(2);
@@ -1211,9 +1199,8 @@ TEST_F(VideoStreamEncoderTest, SwitchingSourceKeepsQualityAdaptation) {
   EXPECT_EQ(1, stats.number_of_quality_adapt_changes);
 
   // Set new source with adaptation still enabled.
-  video_stream_encoder_->SetSource(
-      &new_video_source,
-      VideoSendStream::DegradationPreference::kBalanced);
+  video_stream_encoder_->SetSource(&new_video_source,
+                                   webrtc::DegradationPreference::BALANCED);
 
   new_video_source.IncomingCapturedFrame(CreateFrame(4, kWidth, kHeight));
   WaitForEncodedFrame(4);
@@ -1224,8 +1211,7 @@ TEST_F(VideoStreamEncoderTest, SwitchingSourceKeepsQualityAdaptation) {
 
   // Disable resolution scaling.
   video_stream_encoder_->SetSource(
-      &new_video_source,
-      VideoSendStream::DegradationPreference::kMaintainResolution);
+      &new_video_source, webrtc::DegradationPreference::MAINTAIN_RESOLUTION);
 
   new_video_source.IncomingCapturedFrame(CreateFrame(5, kWidth, kHeight));
   WaitForEncodedFrame(5);
@@ -1313,8 +1299,7 @@ TEST_F(VideoStreamEncoderTest,
   // Set new source with adaptation still enabled.
   test::FrameForwarder new_video_source;
   video_stream_encoder_->SetSource(
-      &new_video_source,
-      VideoSendStream::DegradationPreference::kMaintainFramerate);
+      &new_video_source, webrtc::DegradationPreference::MAINTAIN_FRAMERATE);
 
   new_video_source.IncomingCapturedFrame(
       CreateFrame(sequence, kWidth, kHeight));
@@ -1326,8 +1311,7 @@ TEST_F(VideoStreamEncoderTest,
 
   // Set cpu adaptation by frame dropping.
   video_stream_encoder_->SetSource(
-      &new_video_source,
-      VideoSendStream::DegradationPreference::kMaintainResolution);
+      &new_video_source, webrtc::DegradationPreference::MAINTAIN_RESOLUTION);
   new_video_source.IncomingCapturedFrame(
       CreateFrame(sequence, kWidth, kHeight));
   WaitForEncodedFrame(sequence++);
@@ -1356,9 +1340,8 @@ TEST_F(VideoStreamEncoderTest,
   EXPECT_EQ(2, stats.number_of_cpu_adapt_changes);
 
   // Disable CPU adaptation.
-  video_stream_encoder_->SetSource(
-      &new_video_source,
-      VideoSendStream::DegradationPreference::kDegradationDisabled);
+  video_stream_encoder_->SetSource(&new_video_source,
+                                   webrtc::DegradationPreference::DISABLED);
   new_video_source.IncomingCapturedFrame(
       CreateFrame(sequence, kWidth, kHeight));
   WaitForEncodedFrame(sequence++);
@@ -1380,8 +1363,7 @@ TEST_F(VideoStreamEncoderTest,
 
   // Switch back the source with resolution adaptation enabled.
   video_stream_encoder_->SetSource(
-      &video_source_,
-      VideoSendStream::DegradationPreference::kMaintainFramerate);
+      &video_source_, webrtc::DegradationPreference::MAINTAIN_FRAMERATE);
   video_source_.IncomingCapturedFrame(CreateFrame(sequence, kWidth, kHeight));
   WaitForEncodedFrame(sequence++);
   stats = stats_proxy_->GetStats();
@@ -1400,8 +1382,7 @@ TEST_F(VideoStreamEncoderTest,
 
   // Back to the source with adaptation off, set it back to maintain-resolution.
   video_stream_encoder_->SetSource(
-      &new_video_source,
-      VideoSendStream::DegradationPreference::kMaintainResolution);
+      &new_video_source, webrtc::DegradationPreference::MAINTAIN_RESOLUTION);
   new_video_source.IncomingCapturedFrame(
       CreateFrame(sequence, kWidth, kHeight));
   WaitForEncodedFrame(sequence++);
@@ -1465,8 +1446,7 @@ TEST_F(VideoStreamEncoderTest,
   // Set resolution scaling disabled.
   test::FrameForwarder new_video_source;
   video_stream_encoder_->SetSource(
-      &new_video_source,
-      VideoSendStream::DegradationPreference::kMaintainResolution);
+      &new_video_source, webrtc::DegradationPreference::MAINTAIN_RESOLUTION);
 
   // Trigger scale down.
   video_stream_encoder_->TriggerQualityLow();
@@ -1495,10 +1475,10 @@ TEST_F(VideoStreamEncoderTest,
   const int kHeight = 720;
   video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
-  // Enable kMaintainFramerate preference, no initial limitation.
+  // Enable MAINTAIN_FRAMERATE preference, no initial limitation.
   test::FrameForwarder source;
   video_stream_encoder_->SetSource(
-      &source, VideoSendStream::DegradationPreference::kMaintainFramerate);
+      &source, webrtc::DegradationPreference::MAINTAIN_FRAMERATE);
 
   source.IncomingCapturedFrame(CreateFrame(1, kWidth, kHeight));
   WaitForEncodedFrame(1);
@@ -1527,11 +1507,10 @@ TEST_F(VideoStreamEncoderTest, SkipsSameOrLargerAdaptDownRequest_BalancedMode) {
   const int kHeight = 720;
   video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
-  // Enable kBalanced preference, no initial limitation.
+  // Enable BALANCED preference, no initial limitation.
   test::FrameForwarder source;
-  video_stream_encoder_->SetSource(
-      &source,
-      VideoSendStream::DegradationPreference::kBalanced);
+  video_stream_encoder_->SetSource(&source,
+                                   webrtc::DegradationPreference::BALANCED);
   source.IncomingCapturedFrame(CreateFrame(1, kWidth, kHeight));
   sink_.WaitForEncodedFrame(1);
   VerifyNoLimitation(source.sink_wants());
@@ -1568,10 +1547,10 @@ TEST_F(VideoStreamEncoderTest,
   const int kHeight = 720;
   video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
-  // Enable kMaintainFramerate preference, no initial limitation.
+  // Enable MAINTAIN_FRAMERATE preference, no initial limitation.
   test::FrameForwarder source;
   video_stream_encoder_->SetSource(
-      &source, VideoSendStream::DegradationPreference::kMaintainFramerate);
+      &source, webrtc::DegradationPreference::MAINTAIN_FRAMERATE);
 
   source.IncomingCapturedFrame(CreateFrame(1, kWidth, kHeight));
   WaitForEncodedFrame(kWidth, kHeight);
@@ -1594,10 +1573,10 @@ TEST_F(VideoStreamEncoderTest,
   const int kHeight = 720;
   video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
-  // Enable kMaintainResolution preference, no initial limitation.
+  // Enable MAINTAIN_RESOLUTION preference, no initial limitation.
   test::FrameForwarder source;
   video_stream_encoder_->SetSource(
-      &source, VideoSendStream::DegradationPreference::kMaintainResolution);
+      &source, webrtc::DegradationPreference::MAINTAIN_RESOLUTION);
 
   source.IncomingCapturedFrame(CreateFrame(1, kWidth, kHeight));
   WaitForEncodedFrame(kWidth, kHeight);
@@ -1619,11 +1598,10 @@ TEST_F(VideoStreamEncoderTest, NoChangeForInitialNormalUsage_BalancedMode) {
   const int kHeight = 720;
   video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
-  // Enable kBalanced preference, no initial limitation.
+  // Enable BALANCED preference, no initial limitation.
   test::FrameForwarder source;
-  video_stream_encoder_->SetSource(
-      &source,
-      VideoSendStream::DegradationPreference::kBalanced);
+  video_stream_encoder_->SetSource(&source,
+                                   webrtc::DegradationPreference::BALANCED);
 
   source.IncomingCapturedFrame(CreateFrame(1, kWidth, kHeight));
   sink_.WaitForEncodedFrame(kWidth, kHeight);
@@ -1647,10 +1625,10 @@ TEST_F(VideoStreamEncoderTest, NoChangeForInitialNormalUsage_DisabledMode) {
   const int kHeight = 720;
   video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
-  // Enable kDegradationDisabled preference, no initial limitation.
+  // Enable DISABLED preference, no initial limitation.
   test::FrameForwarder source;
-  video_stream_encoder_->SetSource(
-      &source, VideoSendStream::DegradationPreference::kDegradationDisabled);
+  video_stream_encoder_->SetSource(&source,
+                                   webrtc::DegradationPreference::DISABLED);
 
   source.IncomingCapturedFrame(CreateFrame(1, kWidth, kHeight));
   sink_.WaitForEncodedFrame(kWidth, kHeight);
@@ -1675,11 +1653,11 @@ TEST_F(VideoStreamEncoderTest,
   const int kHeight = 720;
   video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
-  // Enable kMaintainFramerate preference, no initial limitation.
+  // Enable MAINTAIN_FRAMERATE preference, no initial limitation.
   AdaptingFrameForwarder source;
   source.set_adaptation_enabled(true);
   video_stream_encoder_->SetSource(
-      &source, VideoSendStream::DegradationPreference::kMaintainFramerate);
+      &source, webrtc::DegradationPreference::MAINTAIN_FRAMERATE);
 
   source.IncomingCapturedFrame(CreateFrame(1, kWidth, kHeight));
   WaitForEncodedFrame(1);
@@ -1716,7 +1694,7 @@ TEST_F(VideoStreamEncoderTest,
   stats.input_frame_rate = kInputFps;
   stats_proxy_->SetMockStats(stats);
 
-  // Expect no scaling to begin with (preference: kMaintainFramerate).
+  // Expect no scaling to begin with (preference: MAINTAIN_FRAMERATE).
   video_source_.IncomingCapturedFrame(CreateFrame(1, kWidth, kHeight));
   sink_.WaitForEncodedFrame(1);
   VerifyNoLimitation(video_source_.sink_wants());
@@ -1727,11 +1705,10 @@ TEST_F(VideoStreamEncoderTest,
   sink_.WaitForEncodedFrame(2);
   VerifyFpsMaxResolutionLt(video_source_.sink_wants(), kWidth * kHeight);
 
-  // Enable kMaintainResolution preference.
+  // Enable MAINTAIN_RESOLUTION preference.
   test::FrameForwarder new_video_source;
   video_stream_encoder_->SetSource(
-      &new_video_source,
-      VideoSendStream::DegradationPreference::kMaintainResolution);
+      &new_video_source, webrtc::DegradationPreference::MAINTAIN_RESOLUTION);
   VerifyNoLimitation(new_video_source.sink_wants());
 
   // Trigger adapt down, expect reduced framerate.
@@ -1788,11 +1765,11 @@ TEST_F(VideoStreamEncoderTest,
   const int kHeight = 720;
   video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
-  // Enable kMaintainFramerate preference, no initial limitation.
+  // Enable MAINTAIN_FRAMERATE preference, no initial limitation.
   AdaptingFrameForwarder source;
   source.set_adaptation_enabled(true);
   video_stream_encoder_->SetSource(
-      &source, VideoSendStream::DegradationPreference::kMaintainFramerate);
+      &source, webrtc::DegradationPreference::MAINTAIN_FRAMERATE);
 
   source.IncomingCapturedFrame(CreateFrame(1, kWidth, kHeight));
   WaitForEncodedFrame(kWidth, kHeight);
@@ -1841,12 +1818,11 @@ TEST_F(VideoStreamEncoderTest,
   const int kHeight = 720;
   video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
-  // Enable kBalanced preference, no initial limitation.
+  // Enable BALANCED preference, no initial limitation.
   AdaptingFrameForwarder source;
   source.set_adaptation_enabled(true);
-  video_stream_encoder_->SetSource(
-      &source,
-      VideoSendStream::DegradationPreference::kBalanced);
+  video_stream_encoder_->SetSource(&source,
+                                   webrtc::DegradationPreference::BALANCED);
 
   source.IncomingCapturedFrame(CreateFrame(1, kWidth, kHeight));
   sink_.WaitForEncodedFrame(kWidth, kHeight);
@@ -1895,11 +1871,11 @@ TEST_F(VideoStreamEncoderTest,
   const int kHeight = 720;
   video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
-  // Enable kMaintainFramerate preference, no initial limitation.
+  // Enable MAINTAIN_FRAMERATE preference, no initial limitation.
   AdaptingFrameForwarder source;
   source.set_adaptation_enabled(true);
   video_stream_encoder_->SetSource(
-      &source, VideoSendStream::DegradationPreference::kMaintainFramerate);
+      &source, webrtc::DegradationPreference::MAINTAIN_FRAMERATE);
 
   source.IncomingCapturedFrame(CreateFrame(1, kWidth, kHeight));
   WaitForEncodedFrame(kWidth, kHeight);
@@ -2049,9 +2025,8 @@ TEST_F(VideoStreamEncoderTest,
   const int kWidth = 640;
   const int kHeight = 360;
 
-  video_stream_encoder_->SetSource(
-      &video_source_,
-      VideoSendStream::DegradationPreference::kDegradationDisabled);
+  video_stream_encoder_->SetSource(&video_source_,
+                                   webrtc::DegradationPreference::DISABLED);
 
   for (int i = 1; i <= SendStatisticsProxy::kMinRequiredMetricsSamples; ++i) {
     video_source_.IncomingCapturedFrame(CreateFrame(i, kWidth, kHeight));
@@ -2114,7 +2089,7 @@ TEST_F(VideoStreamEncoderTest, OveruseDetectorUpdatedOnReconfigureAndAdaption) {
   video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
   test::FrameForwarder source;
   video_stream_encoder_->SetSource(
-      &source, VideoSendStream::DegradationPreference::kMaintainResolution);
+      &source, webrtc::DegradationPreference::MAINTAIN_RESOLUTION);
 
   // Insert a single frame, triggering initial configuration.
   source.IncomingCapturedFrame(CreateFrame(1, kFrameWidth, kFrameHeight));
@@ -2174,7 +2149,7 @@ TEST_F(VideoStreamEncoderTest,
   video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
   test::FrameForwarder source;
   video_stream_encoder_->SetSource(
-      &source, VideoSendStream::DegradationPreference::kMaintainResolution);
+      &source, webrtc::DegradationPreference::MAINTAIN_RESOLUTION);
 
   // Trigger initial configuration.
   VideoEncoderConfig video_encoder_config;
@@ -2237,7 +2212,7 @@ TEST_F(VideoStreamEncoderTest,
   video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
   test::FrameForwarder source;
   video_stream_encoder_->SetSource(
-      &source, VideoSendStream::DegradationPreference::kMaintainResolution);
+      &source, webrtc::DegradationPreference::MAINTAIN_RESOLUTION);
 
   // Trigger initial configuration.
   VideoEncoderConfig video_encoder_config;
@@ -2268,7 +2243,7 @@ TEST_F(VideoStreamEncoderTest,
   // Change degradation preference to not enable framerate scaling. Target
   // framerate should be changed to codec defined limit.
   video_stream_encoder_->SetSource(
-      &source, VideoSendStream::DegradationPreference::kMaintainFramerate);
+      &source, webrtc::DegradationPreference::MAINTAIN_FRAMERATE);
   video_stream_encoder_->WaitUntilTaskQueueIsIdle();
   EXPECT_EQ(
       video_stream_encoder_->overuse_detector_proxy_->GetLastTargetFramerate(),
@@ -2336,8 +2311,7 @@ TEST_F(VideoStreamEncoderTest,
 
   // Set degradation preference.
   video_stream_encoder_->SetSource(
-      &video_source_,
-      VideoSendStream::DegradationPreference::kMaintainResolution);
+      &video_source_, webrtc::DegradationPreference::MAINTAIN_RESOLUTION);
 
   video_source_.IncomingCapturedFrame(CreateFrame(1, kWidth, kHeight));
   // Frame should not be dropped, even if it's too large.
@@ -2360,9 +2334,8 @@ TEST_F(VideoStreamEncoderTest, InitialFrameDropOffWhenEncoderDisabledScaling) {
   video_stream_encoder_->OnBitrateUpdated(kLowTargetBitrateBps, 0, 0);
 
   // Force quality scaler reconfiguration by resetting the source.
-  video_stream_encoder_->SetSource(
-      &video_source_,
-      VideoSendStream::DegradationPreference::kBalanced);
+  video_stream_encoder_->SetSource(&video_source_,
+                                   webrtc::DegradationPreference::BALANCED);
 
   video_source_.IncomingCapturedFrame(CreateFrame(1, kWidth, kHeight));
   // Frame should not be dropped, even if it's too large.
@@ -2378,10 +2351,10 @@ TEST_F(VideoStreamEncoderTest,
   const int kTooSmallHeight = 10;
   video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
-  // Enable kMaintainFramerate preference, no initial limitation.
+  // Enable MAINTAIN_FRAMERATE preference, no initial limitation.
   test::FrameForwarder source;
   video_stream_encoder_->SetSource(
-      &source, VideoSendStream::DegradationPreference::kMaintainFramerate);
+      &source, webrtc::DegradationPreference::MAINTAIN_FRAMERATE);
   VerifyNoLimitation(source.sink_wants());
   EXPECT_FALSE(stats_proxy_->GetStats().cpu_limited_resolution);
 
@@ -2403,11 +2376,10 @@ TEST_F(VideoStreamEncoderTest,
   const int kFpsLimit = 7;
   video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
-  // Enable kBalanced preference, no initial limitation.
+  // Enable BALANCED preference, no initial limitation.
   test::FrameForwarder source;
-  video_stream_encoder_->SetSource(
-      &source,
-      VideoSendStream::DegradationPreference::kBalanced);
+  video_stream_encoder_->SetSource(&source,
+                                   webrtc::DegradationPreference::BALANCED);
   VerifyNoLimitation(source.sink_wants());
   EXPECT_FALSE(stats_proxy_->GetStats().bw_limited_resolution);
   EXPECT_FALSE(stats_proxy_->GetStats().bw_limited_framerate);
@@ -2484,8 +2456,7 @@ TEST_F(VideoStreamEncoderTest,
 
   video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
   video_stream_encoder_->SetSource(
-      &video_source_,
-      VideoSendStream::DegradationPreference::kMaintainResolution);
+      &video_source_, webrtc::DegradationPreference::MAINTAIN_RESOLUTION);
   video_source_.set_adaptation_enabled(true);
 
   int64_t timestamp_ms = fake_clock_.TimeNanos() / rtc::kNumNanosecsPerMillisec;
@@ -2586,8 +2557,7 @@ TEST_F(VideoStreamEncoderTest, DoesntAdaptDownPastMinFramerate) {
 
   video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
   video_stream_encoder_->SetSource(
-      &video_source_,
-      VideoSendStream::DegradationPreference::kMaintainResolution);
+      &video_source_, webrtc::DegradationPreference::MAINTAIN_RESOLUTION);
   video_source_.set_adaptation_enabled(true);
 
   int64_t timestamp_ms = fake_clock_.TimeNanos() / rtc::kNumNanosecsPerMillisec;
@@ -2626,12 +2596,11 @@ TEST_F(VideoStreamEncoderTest,
   int64_t timestamp_ms = kFrameIntervalMs;
   video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
-  // Enable kBalanced preference, no initial limitation.
+  // Enable BALANCED preference, no initial limitation.
   AdaptingFrameForwarder source;
   source.set_adaptation_enabled(true);
-  video_stream_encoder_->SetSource(
-      &source,
-      VideoSendStream::DegradationPreference::kBalanced);
+  video_stream_encoder_->SetSource(&source,
+                                   webrtc::DegradationPreference::BALANCED);
   timestamp_ms += kFrameIntervalMs;
   source.IncomingCapturedFrame(CreateFrame(timestamp_ms, kWidth, kHeight));
   WaitForEncodedFrame(kWidth, kHeight);
@@ -2807,12 +2776,11 @@ TEST_F(VideoStreamEncoderTest, AdaptWithTwoReasonsAndDifferentOrder_Framerate) {
   int64_t timestamp_ms = kFrameIntervalMs;
   video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
-  // Enable kBalanced preference, no initial limitation.
+  // Enable BALANCED preference, no initial limitation.
   AdaptingFrameForwarder source;
   source.set_adaptation_enabled(true);
-  video_stream_encoder_->SetSource(
-      &source,
-      VideoSendStream::DegradationPreference::kBalanced);
+  video_stream_encoder_->SetSource(&source,
+                                   webrtc::DegradationPreference::BALANCED);
   timestamp_ms += kFrameIntervalMs;
   source.IncomingCapturedFrame(CreateFrame(timestamp_ms, kWidth, kHeight));
   WaitForEncodedFrame(kWidth, kHeight);
@@ -2921,12 +2889,11 @@ TEST_F(VideoStreamEncoderTest,
   int64_t timestamp_ms = kFrameIntervalMs;
   video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
 
-  // Enable kBalanced preference, no initial limitation.
+  // Enable BALANCED preference, no initial limitation.
   AdaptingFrameForwarder source;
   source.set_adaptation_enabled(true);
-  video_stream_encoder_->SetSource(
-      &source,
-      VideoSendStream::DegradationPreference::kBalanced);
+  video_stream_encoder_->SetSource(&source,
+                                   webrtc::DegradationPreference::BALANCED);
   timestamp_ms += kFrameIntervalMs;
   source.IncomingCapturedFrame(CreateFrame(timestamp_ms, kWidth, kHeight));
   WaitForEncodedFrame(kWidth, kHeight);

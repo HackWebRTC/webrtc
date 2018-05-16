@@ -66,10 +66,27 @@ enum class DtxStatus {
   ENABLED,
 };
 
+// Based on the spec in
+// https://w3c.github.io/webrtc-pc/#idl-def-rtcdegradationpreference.
+// These options are enforced on a best-effort basis. For instance, all of
+// these options may suffer some frame drops in order to avoid queuing.
+// TODO(sprang): Look into possibility of more strictly enforcing the
+// maintain-framerate option.
+// TODO(deadbeef): Default to "balanced", as the spec indicates?
 enum class DegradationPreference {
+  // Don't take any actions based on over-utilization signals. Not part of the
+  // web API.
+  DISABLED,
+  // On over-use, request lower frame rate, possibly causing frame drops.
   MAINTAIN_FRAMERATE,
+  // On over-use, request lower resolution, possibly causing down-scaling.
   MAINTAIN_RESOLUTION,
+  // Try to strike a "pleasing" balance between frame rate or resolution.
   BALANCED,
+  // TODO(deadbeef): Remove once downstream code referencing
+  // "webrtc::VideoSendStream::DegradationPreference::kMaintainResolution" is
+  // updated.
+  kMaintainResolution = MAINTAIN_RESOLUTION
 };
 
 extern const double kDefaultBitratePriority;

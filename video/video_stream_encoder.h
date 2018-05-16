@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 
+#include "api/rtpparameters.h"  // For DegradationPreference.
 #include "api/video/video_rotation.h"
 #include "api/video_codecs/video_encoder.h"
 #include "api/video/video_sink_interface.h"
@@ -32,7 +33,6 @@
 #include "rtc_base/task_queue.h"
 #include "typedefs.h"  // NOLINT(build/include)
 #include "video/overuse_frame_detector.h"
-#include "call/video_send_stream.h"
 
 namespace webrtc {
 
@@ -51,7 +51,7 @@ class VideoStreamEncoderInterface : public rtc::VideoSinkInterface<VideoFrame> {
   };
   virtual void SetSource(
       rtc::VideoSourceInterface<VideoFrame>* source,
-      const VideoSendStream::DegradationPreference& degradation_preference) = 0;
+      const DegradationPreference& degradation_preference) = 0;
   virtual void SetSink(EncoderSink* sink, bool rotation_applied) = 0;
 
   virtual void SetStartBitrate(int start_bitrate_bps) = 0;
@@ -99,8 +99,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   // |degradation_preference| control whether or not resolution or frame rate
   // may be reduced.
   void SetSource(rtc::VideoSourceInterface<VideoFrame>* source,
-                 const VideoSendStream::DegradationPreference&
-                     degradation_preference) override;
+                 const DegradationPreference& degradation_preference) override;
 
   // Sets the |sink| that gets the encoded frames. |rotation_applied| means
   // that the source must support rotation. Only set |rotation_applied| if the
@@ -281,11 +280,10 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   // basis.
   // TODO(sprang): Replace this with a state holding a relative overuse measure
   // instead, that can be translated into suitable down-scale or fps limit.
-  std::map<const VideoSendStream::DegradationPreference, AdaptCounter>
-      adapt_counters_ RTC_GUARDED_BY(&encoder_queue_);
-  // Set depending on degradation preferences.
-  VideoSendStream::DegradationPreference degradation_preference_
+  std::map<const DegradationPreference, AdaptCounter> adapt_counters_
       RTC_GUARDED_BY(&encoder_queue_);
+  // Set depending on degradation preferences.
+  DegradationPreference degradation_preference_ RTC_GUARDED_BY(&encoder_queue_);
 
   struct AdaptationRequest {
     // The pixel count produced by the source at the time of the adaptation.

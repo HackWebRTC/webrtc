@@ -324,8 +324,8 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
     // and whether or not the encoding in |rtp_parameters_| is active.
     void UpdateSendState();
 
-    webrtc::VideoSendStream::DegradationPreference GetDegradationPreference()
-        const RTC_EXCLUSIVE_LOCKS_REQUIRED(&thread_checker_);
+    webrtc::DegradationPreference GetDegradationPreference() const
+        RTC_EXCLUSIVE_LOCKS_REQUIRED(&thread_checker_);
 
     rtc::ThreadChecker thread_checker_;
     rtc::AsyncInvoker invoker_;

@@ -171,9 +171,8 @@ class BitrateEstimatorTest : public test::CallTest {
       frame_generator_capturer_.reset(test::FrameGeneratorCapturer::Create(
           kDefaultWidth, kDefaultHeight, rtc::nullopt, rtc::nullopt,
           kDefaultFramerate, Clock::GetRealTimeClock()));
-      send_stream_->SetSource(
-          frame_generator_capturer_.get(),
-          VideoSendStream::DegradationPreference::kMaintainFramerate);
+      send_stream_->SetSource(frame_generator_capturer_.get(),
+                              DegradationPreference::MAINTAIN_FRAMERATE);
       send_stream_->Start();
       frame_generator_capturer_->Start();
 

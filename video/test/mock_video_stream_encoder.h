@@ -19,7 +19,7 @@ class MockVideoStreamEncoder : public VideoStreamEncoderInterface {
  public:
   MOCK_METHOD2(SetSource,
                void(rtc::VideoSourceInterface<VideoFrame>*,
-                    const VideoSendStream::DegradationPreference&));
+                    const DegradationPreference&));
   MOCK_METHOD2(SetSink, void(EncoderSink*, bool));
   MOCK_METHOD1(SetStartBitrate, void(int));
   MOCK_METHOD0(SendKeyFrame, void());

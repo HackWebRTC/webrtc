@@ -270,26 +270,25 @@ void FakeVideoSendStream::Stop() {
 
 void FakeVideoSendStream::SetSource(
     rtc::VideoSourceInterface<webrtc::VideoFrame>* source,
-    const webrtc::VideoSendStream::DegradationPreference&
-        degradation_preference) {
+    const webrtc::DegradationPreference& degradation_preference) {
   RTC_DCHECK(source != source_);
   if (source_)
     source_->RemoveSink(this);
   source_ = source;
   switch (degradation_preference) {
-    case DegradationPreference::kMaintainFramerate:
+    case webrtc::DegradationPreference::MAINTAIN_FRAMERATE:
       resolution_scaling_enabled_ = true;
       framerate_scaling_enabled_ = false;
       break;
-    case DegradationPreference::kMaintainResolution:
+    case webrtc::DegradationPreference::MAINTAIN_RESOLUTION:
       resolution_scaling_enabled_ = false;
       framerate_scaling_enabled_ = true;
       break;
-    case DegradationPreference::kBalanced:
+    case webrtc::DegradationPreference::BALANCED:
       resolution_scaling_enabled_ = true;
       framerate_scaling_enabled_ = true;
       break;
-    case DegradationPreference::kDegradationDisabled:
+    case webrtc::DegradationPreference::DISABLED:
       resolution_scaling_enabled_ = false;
       framerate_scaling_enabled_ = false;
       break;
