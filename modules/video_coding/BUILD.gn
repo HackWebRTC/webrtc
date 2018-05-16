@@ -647,7 +647,7 @@ if (rtc_include_tests) {
       "../../resources/foreman_480x272.yuv",
     ]
   }
-  if (!(is_ios || is_android)) {
+  if (!is_android) {
     video_coding_modules_tests_resources += [
       "../../resources/FourPeople_1280x720_30.yuv",
       "../../resources/ConferenceMotion_1280_720_50.yuv",

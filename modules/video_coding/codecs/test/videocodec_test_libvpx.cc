@@ -26,9 +26,7 @@ namespace {
 // Codec settings.
 const int kCifWidth = 352;
 const int kCifHeight = 288;
-#if !defined(WEBRTC_IOS)
 const int kNumFramesShort = 100;
-#endif
 const int kNumFramesLong = 300;
 const size_t kBitrateRdPerfKbps[] = {100,  200,  300,  400,  500,  600,
                                      700,  800,  1000, 1250, 1400, 1600,
@@ -87,9 +85,6 @@ void PrintRdPerf(std::map<size_t, std::vector<VideoStatistics>> rd_stats) {
   }
 }
 }  // namespace
-
-// Fails on iOS. See webrtc:4755.
-#if !defined(WEBRTC_IOS)
 
 #if !defined(RTC_DISABLE_VP9)
 TEST(VideoCodecTestLibvpx, HighBitrateVP9) {
@@ -231,8 +226,6 @@ TEST(VideoCodecTestLibvpx, HighBitrateVP8) {
                    nullptr);
 }
 
-#endif  // !defined(WEBRTC_IOS)
-
 // The tests below are currently disabled for Android. For ARM, the encoder
 // uses |cpu_speed| = 12, as opposed to default |cpu_speed| <= 6 for x86,
 // which leads to significantly different quality. The quality and rate control
@@ -242,7 +235,7 @@ TEST(VideoCodecTestLibvpx, HighBitrateVP8) {
 // disabled on Android. Some quality parameter in the above test has been
 // adjusted to also pass for |cpu_speed| <= 12.
 
-// Too slow to finish before timeout on iOS. See webrtc:4755.
+// TODO(webrtc:9267): Fails on iOS
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
 #define MAYBE_ChangeBitrateVP8 DISABLED_ChangeBitrateVP8
 #else
@@ -277,7 +270,7 @@ TEST(VideoCodecTestLibvpx, MAYBE_ChangeBitrateVP8) {
                    nullptr);
 }
 
-// Too slow to finish before timeout on iOS. See webrtc:4755.
+// TODO(webrtc:9267): Fails on iOS
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
 #define MAYBE_ChangeFramerateVP8 DISABLED_ChangeFramerateVP8
 #else
@@ -318,8 +311,7 @@ TEST(VideoCodecTestLibvpx, MAYBE_ChangeFramerateVP8) {
                    nullptr);
 }
 
-// Too slow to finish before timeout on iOS. See webrtc:4755.
-#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
+#if defined(WEBRTC_ANDROID)
 #define MAYBE_TemporalLayersVP8 DISABLED_TemporalLayersVP8
 #else
 #define MAYBE_TemporalLayersVP8 TemporalLayersVP8
@@ -354,7 +346,7 @@ TEST(VideoCodecTestLibvpx, MAYBE_TemporalLayersVP8) {
                    nullptr);
 }
 
-// Might be too slow on mobile platforms.
+// TODO(webrtc:9267): Fails on iOS
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
 #define MAYBE_MultiresVP8 DISABLED_MultiresVP8
 #else
@@ -381,8 +373,7 @@ TEST(VideoCodecTestLibvpx, MAYBE_MultiresVP8) {
                    nullptr);
 }
 
-// Might be too slow on mobile platforms.
-#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
+#if defined(WEBRTC_ANDROID)
 #define MAYBE_SimulcastVP8 DISABLED_SimulcastVP8
 #else
 #define MAYBE_SimulcastVP8 SimulcastVP8
@@ -409,8 +400,7 @@ TEST(VideoCodecTestLibvpx, MAYBE_SimulcastVP8) {
                    nullptr);
 }
 
-// Might be too slow on mobile platforms.
-#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
+#if defined(WEBRTC_ANDROID)
 #define MAYBE_SvcVP9 DISABLED_SvcVP9
 #else
 #define MAYBE_SvcVP9 SvcVP9
