@@ -26,15 +26,6 @@ config("rtc_media_defines_config") {
   ]
 }
 
-config("rtc_media_warnings_config") {
-  # GN orders flags on a target before flags from configs. The default config
-  # adds these flags so to cancel them out they need to come from a config and
-  # cannot be on the target directly.
-  if (!is_win) {
-    cflags = [ "-Wno-deprecated-declarations" ]
-  }
-}
-
 rtc_source_set("rtc_h264_profile_id") {
   visibility = [ "*" ]
   sources = [
@@ -183,8 +174,6 @@ rtc_static_library("rtc_internal_video_codecs") {
     "engine/webrtcvideoencoderfactory.h",
   ]
 
-  configs += [ ":rtc_media_warnings_config" ]
-
   if (!build_with_chromium && is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
     suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
@@ -232,8 +221,6 @@ rtc_static_library("rtc_software_fallback_wrappers") {
     "engine/videoencodersoftwarefallbackwrapper.cc",
     "engine/videoencodersoftwarefallbackwrapper.h",
   ]
-
-  configs += [ ":rtc_media_warnings_config" ]
 
   if (!build_with_chromium && is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -293,8 +280,6 @@ rtc_static_library("rtc_audio_video") {
     "engine/webrtcvoiceengine.cc",
     "engine/webrtcvoiceengine.h",
   ]
-
-  configs += [ ":rtc_media_warnings_config" ]
 
   if (!build_with_chromium && is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -386,8 +371,6 @@ rtc_static_library("rtc_data") {
       "sctp/noop.cc",
     ]
   }
-
-  configs += [ ":rtc_media_warnings_config" ]
 
   if (!build_with_chromium && is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
