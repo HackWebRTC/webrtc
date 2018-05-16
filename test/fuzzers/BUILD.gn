@@ -489,3 +489,15 @@ rtc_static_library("fuzz_data_helper") {
   ]
   visibility = [ ":*" ]  # Only targets in this file can depend on this.
 }
+
+webrtc_fuzzer_test("rtp_frame_reference_finder_fuzzer") {
+  sources = [
+    "rtp_frame_reference_finder_fuzzer.cc",
+  ]
+  deps = [
+    "../../modules/video_coding/",
+    "../../rtc_base:ptr_util",
+    "../../system_wrappers",
+  ]
+  libfuzzer_options = [ "max_len=20000" ]
+}
