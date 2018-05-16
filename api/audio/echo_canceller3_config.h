@@ -97,7 +97,7 @@ struct EchoCanceller3Config {
     float audibility_threshold_lf = 10;
     float audibility_threshold_mf = 10;
     float audibility_threshold_hf = 10;
-    bool use_stationary_properties = false;
+    bool use_stationary_properties = true;
   } echo_audibility;
 
   struct RenderLevels {

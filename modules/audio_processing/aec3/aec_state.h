@@ -62,9 +62,7 @@ class AecState {
 
   // Returns whether the stationary properties of the signals are used in the
   // aec.
-  bool UseStationaryProperties() const {
-    return config_.echo_audibility.use_stationary_properties;
-  }
+  bool UseStationaryProperties() const { return use_stationary_properties_; }
 
   // Returns the ERLE.
   const std::array<float, kFftLengthBy2Plus1>& Erle() const {
@@ -142,7 +140,9 @@ class AecState {
 
   static int instance_count_;
   std::unique_ptr<ApmDataDumper> data_dumper_;
+  const EchoCanceller3Config config_;
   const bool allow_transparent_mode_;
+  const bool use_stationary_properties_;
   ErlEstimator erl_estimator_;
   ErleEstimator erle_estimator_;
   size_t capture_block_counter_ = 0;
@@ -166,7 +166,6 @@ class AecState {
   bool found_end_of_reverb_decay_ = false;
   bool main_filter_is_adapting_ = true;
   std::array<float, kMaxAdaptiveFilterLength> block_energies_;
-  const EchoCanceller3Config config_;
   std::vector<float> max_render_;
   float reverb_decay_ = fabsf(config_.ep_strength.default_len);
   bool filter_has_had_time_to_converge_ = false;

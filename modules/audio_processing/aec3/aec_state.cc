@@ -28,6 +28,11 @@ bool EnableTransparentMode() {
   return !field_trial::IsEnabled("WebRTC-Aec3TransparentModeKillSwitch");
 }
 
+bool EnableStationaryRenderImprovements() {
+  return !field_trial::IsEnabled(
+      "WebRTC-Aec3StationaryRenderImprovementsKillSwitch");
+}
+
 float ComputeGainRampupIncrease(const EchoCanceller3Config& config) {
   const auto& c = config.echo_removal_control.gain_rampup;
   return powf(1.f / c.first_non_zero_gain, 1.f / c.non_zero_gain_blocks);
@@ -43,9 +48,12 @@ int AecState::instance_count_ = 0;
 AecState::AecState(const EchoCanceller3Config& config)
     : data_dumper_(
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
-      allow_transparent_mode_(EnableTransparentMode()),
-      erle_estimator_(config.erle.min, config.erle.max_l, config.erle.max_h),
       config_(config),
+      allow_transparent_mode_(EnableTransparentMode()),
+      use_stationary_properties_(
+          EnableStationaryRenderImprovements() &&
+          config_.echo_audibility.use_stationary_properties),
+      erle_estimator_(config.erle.min, config.erle.max_l, config.erle.max_h),
       max_render_(config_.filter.main.length_blocks, 0.f),
       reverb_decay_(fabsf(config_.ep_strength.default_len)),
       gain_rampup_increase_(ComputeGainRampupIncrease(config_)),
