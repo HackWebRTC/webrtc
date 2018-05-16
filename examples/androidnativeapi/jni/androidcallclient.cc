@@ -20,7 +20,6 @@
 #include "media/engine/internalencoderfactory.h"
 #include "media/engine/webrtcmediaengine.h"
 #include "modules/audio_processing/include/audio_processing.h"
-#include "pc/test/fakeperiodicvideocapturer.h"
 #include "rtc_base/ptr_util.h"
 #include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/native_api/video/wrapper.h"
@@ -97,16 +96,8 @@ void AndroidCallClient::Call(JNIEnv* env,
   local_sink_ = webrtc::JavaToNativeVideoSink(env, local_sink.obj());
   remote_sink_ = webrtc::JavaToNativeVideoSink(env, remote_sink.obj());
 
-  // The fake video source wants to be created on the same thread as it is
-  // destroyed. It is destroyed on the signaling thread so we have to invoke
-  // here.
-  // TODO(sakal): Get picture from camera?
-  video_source_ = pcf_->CreateVideoSource(
-      signaling_thread_
-          ->Invoke<std::unique_ptr<webrtc::FakePeriodicVideoCapturer>>(
-              RTC_FROM_HERE, [&] {
-                return rtc::MakeUnique<webrtc::FakePeriodicVideoCapturer>();
-              }));
+  video_source_ = webrtc::CreateJavaVideoSource(env, signaling_thread_.get(),
+                                                false /* is_screencast */);
 
   CreatePeerConnection();
   Connect();
@@ -136,6 +127,15 @@ void AndroidCallClient::Delete(JNIEnv* env,
   RTC_DCHECK_RUN_ON(&thread_checker_);
 
   delete this;
+}
+
+webrtc::ScopedJavaLocalRef<jobject>
+AndroidCallClient::GetJavaVideoCapturerObserver(
+    JNIEnv* env,
+    const webrtc::JavaRef<jobject>& cls) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
+
+  return video_source_->GetJavaVideoCapturerObserver(env);
 }
 
 void AndroidCallClient::CreatePeerConnectionFactory() {
@@ -277,10 +277,10 @@ void SetLocalSessionDescriptionObserver::OnFailure(const std::string& error) {
   RTC_LOG(LS_INFO) << "Set local description failure: " << error;
 }
 
-}  // namespace webrtc_examples
-
 static jlong JNI_CallClient_CreateClient(
     JNIEnv* env,
     const webrtc::JavaParamRef<jclass>& cls) {
   return webrtc::NativeToJavaPointer(new webrtc_examples::AndroidCallClient());
 }
+
+}  // namespace webrtc_examples

@@ -10,28 +10,46 @@
 
 package org.webrtc.examples.androidnativeapi;
 
+import android.content.Context;
 import android.os.Handler;
 import android.os.HandlerThread;
+import org.webrtc.JNINamespace;
 import org.webrtc.NativeClassQualifiedName;
+import org.webrtc.SurfaceTextureHelper;
+import org.webrtc.VideoCapturer;
 import org.webrtc.VideoSink;
 
+@JNINamespace("webrtc_examples")
 public class CallClient {
   private static final String TAG = "CallClient";
+  private static final int CAPTURE_WIDTH = 640;
+  private static final int CAPTURE_HEIGHT = 480;
+  private static final int CAPTURE_FPS = 30;
 
+  private final Context applicationContext;
   private final HandlerThread thread;
   private final Handler handler;
 
   private long nativeClient;
+  private SurfaceTextureHelper surfaceTextureHelper;
+  private VideoCapturer videoCapturer;
 
-  public CallClient() {
+  public CallClient(Context applicationContext) {
+    this.applicationContext = applicationContext;
     thread = new HandlerThread(TAG + "Thread");
     thread.start();
     handler = new Handler(thread.getLooper());
     handler.post(() -> { nativeClient = nativeCreateClient(); });
   }
 
-  public void call(VideoSink localSink, VideoSink remoteSink) {
-    handler.post(() -> { nativeCall(nativeClient, localSink, remoteSink); });
+  public void call(VideoSink localSink, VideoSink remoteSink, VideoCapturer videoCapturer,
+      SurfaceTextureHelper videoCapturerSurfaceTextureHelper) {
+    handler.post(() -> {
+      nativeCall(nativeClient, localSink, remoteSink);
+      videoCapturer.initialize(videoCapturerSurfaceTextureHelper, applicationContext,
+          nativeGetJavaVideoCapturerObserver(nativeClient));
+      videoCapturer.startCapture(CAPTURE_WIDTH, CAPTURE_HEIGHT, CAPTURE_FPS);
+    });
   }
 
   public void hangup() {
@@ -53,4 +71,7 @@ public class CallClient {
   private static native void nativeHangup(long nativePtr);
   @NativeClassQualifiedName("webrtc_examples::AndroidCallClient")
   private static native void nativeDelete(long nativePtr);
+  @NativeClassQualifiedName("webrtc_examples::AndroidCallClient")
+  private static native VideoCapturer.CapturerObserver nativeGetJavaVideoCapturerObserver(
+      long nativePtr);
 }

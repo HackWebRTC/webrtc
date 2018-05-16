@@ -12,8 +12,11 @@ rtc_android_apk("androidnativeapi") {
 
   deps = [
     ":resources",
+    "//modules/audio_device:audio_device_java",
+    "//sdk/android:camera_java",
     "//sdk/android:surfaceviewrenderer_java",
     "//sdk/android:video_api_java",
+    "//sdk/android:video_java",
   ]
 
   shared_libraries = [ ":examples_androidnativeapi_jni" ]
@@ -58,7 +61,6 @@ rtc_shared_library("examples_androidnativeapi_jni") {
     "//modules/audio_processing",
     "//modules/utility:utility",
     "//pc:libjingle_peerconnection",
-    "//pc:pc_test_utils",
     "//rtc_base:rtc_base",
     "//rtc_base:rtc_base_approved",
     "//sdk/android:native_api_base",

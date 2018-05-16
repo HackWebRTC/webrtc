@@ -21,6 +21,7 @@
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/thread_checker.h"
 #include "sdk/android/native_api/jni/scoped_java_ref.h"
+#include "sdk/android/native_api/video/videosource.h"
 
 namespace webrtc_examples {
 
@@ -35,6 +36,10 @@ class AndroidCallClient {
   void Hangup(JNIEnv* env, const webrtc::JavaRef<jobject>& cls);
   // A helper method for Java code to delete this object. Calls delete this.
   void Delete(JNIEnv* env, const webrtc::JavaRef<jobject>& cls);
+
+  webrtc::ScopedJavaLocalRef<jobject> GetJavaVideoCapturerObserver(
+      JNIEnv* env,
+      const webrtc::JavaRef<jobject>& cls);
 
  private:
   class PCObserver;
@@ -60,7 +65,7 @@ class AndroidCallClient {
       RTC_GUARDED_BY(thread_checker_);
   std::unique_ptr<rtc::VideoSinkInterface<webrtc::VideoFrame>> remote_sink_
       RTC_GUARDED_BY(thread_checker_);
-  rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source_
+  rtc::scoped_refptr<webrtc::JavaVideoTrackSourceInterface> video_source_
       RTC_GUARDED_BY(thread_checker_);
 
   rtc::CriticalSection pc_mutex_;

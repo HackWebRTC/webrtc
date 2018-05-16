@@ -11,19 +11,27 @@
 package org.webrtc.examples.androidnativeapi;
 
 import android.app.Activity;
+import android.content.Context;
 import android.os.Bundle;
 import android.widget.Button;
 import javax.annotation.Nullable;
+import org.webrtc.Camera1Enumerator;
+import org.webrtc.Camera2Enumerator;
+import org.webrtc.CameraEnumerator;
 import org.webrtc.ContextUtils;
 import org.webrtc.EglBase;
 import org.webrtc.GlRectDrawer;
+import org.webrtc.SurfaceTextureHelper;
 import org.webrtc.SurfaceViewRenderer;
+import org.webrtc.VideoCapturer;
 
 public class MainActivity extends Activity {
   private @Nullable CallClient callClient;
   private @Nullable EglBase eglBase;
   private @Nullable SurfaceViewRenderer localRenderer;
   private @Nullable SurfaceViewRenderer remoteRenderer;
+  private @Nullable SurfaceTextureHelper videoCapturerSurfaceTextureHelper;
+  private @Nullable VideoCapturer videoCapturer;
 
   @Override
   protected void onCreate(Bundle savedInstance) {
@@ -33,13 +41,19 @@ public class MainActivity extends Activity {
     setContentView(R.layout.activity_main);
 
     System.loadLibrary("examples_androidnativeapi_jni");
-    callClient = new CallClient();
+    callClient = new CallClient(getApplicationContext());
 
     Button callButton = (Button) findViewById(R.id.call_button);
-    callButton.setOnClickListener((view) -> { callClient.call(localRenderer, remoteRenderer); });
+    callButton.setOnClickListener((view) -> {
+      if (videoCapturer == null) {
+        videoCapturer = createVideoCapturer(getApplicationContext());
+      }
+      callClient.call(
+          localRenderer, remoteRenderer, videoCapturer, videoCapturerSurfaceTextureHelper);
+    });
 
     Button hangupButton = (Button) findViewById(R.id.hangup_button);
-    hangupButton.setOnClickListener((view) -> { callClient.hangup(); });
+    hangupButton.setOnClickListener((view) -> { hangup(); });
   }
 
   @Override
@@ -54,18 +68,23 @@ public class MainActivity extends Activity {
         new GlRectDrawer());
     remoteRenderer.init(eglBase.getEglBaseContext(), null /* rendererEvents */,
         EglBase.CONFIG_PLAIN, new GlRectDrawer());
+
+    videoCapturerSurfaceTextureHelper =
+        SurfaceTextureHelper.create("VideoCapturerThread", eglBase.getEglBaseContext());
   }
 
   @Override
   protected void onStop() {
-    callClient.hangup();
+    hangup();
 
     localRenderer.release();
     remoteRenderer.release();
+    videoCapturerSurfaceTextureHelper.dispose();
     eglBase.release();
 
     localRenderer = null;
     remoteRenderer = null;
+    videoCapturerSurfaceTextureHelper = null;
     eglBase = null;
 
     super.onStop();
@@ -77,5 +96,25 @@ public class MainActivity extends Activity {
     callClient = null;
 
     super.onDestroy();
+  }
+
+  private void hangup() {
+    if (videoCapturer != null) {
+      try {
+        videoCapturer.stopCapture();
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+      videoCapturer.dispose();
+      videoCapturer = null;
+    }
+    callClient.hangup();
+  }
+
+  private static VideoCapturer createVideoCapturer(Context context) {
+    CameraEnumerator enumerator = Camera2Enumerator.isSupported(context)
+        ? new Camera2Enumerator(context)
+        : new Camera1Enumerator();
+    return enumerator.createCapturer(enumerator.getDeviceNames()[0], null /* eventsHandler */);
   }
 }
