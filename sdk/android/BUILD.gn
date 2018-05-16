@@ -286,6 +286,7 @@ generate_jni("generated_video_jni") {
     "src/java/org/webrtc/EglBase14.java",
     "src/java/org/webrtc/NV12Buffer.java",
     "src/java/org/webrtc/NV21Buffer.java",
+    "src/java/org/webrtc/NativeCapturerObserver.java",
     "src/java/org/webrtc/VideoDecoderWrapper.java",
     "src/java/org/webrtc/VideoEncoderWrapper.java",
     "src/java/org/webrtc/WrappedNativeI420Buffer.java",
@@ -309,6 +310,8 @@ rtc_static_library("video_jni") {
     "src/jni/encodedimage.cc",
     "src/jni/encodedimage.h",
     "src/jni/jni_generator_helper.h",
+    "src/jni/nativecapturerobserver.cc",
+    "src/jni/nativecapturerobserver.h",
     "src/jni/nv12buffer.cc",
     "src/jni/nv21buffer.cc",
     "src/jni/pc/video.cc",
@@ -331,6 +334,7 @@ rtc_static_library("video_jni") {
     "src/jni/videoframe.h",
     "src/jni/videosink.cc",
     "src/jni/videosink.h",
+    "src/jni/videosource.cc",
     "src/jni/videotrack.cc",
     "src/jni/wrapped_native_i420_buffer.cc",
     "src/jni/wrapped_native_i420_buffer.h",
@@ -833,6 +837,7 @@ rtc_android_library("video_java") {
     "api/org/webrtc/VideoDecoderFallback.java",
     "api/org/webrtc/VideoEncoderFallback.java",
     "api/org/webrtc/VideoFrameDrawer.java",
+    "src/java/org/webrtc/NativeCapturerObserver.java",
     "src/java/org/webrtc/NV21Buffer.java",
     "src/java/org/webrtc/VideoDecoderWrapper.java",
     "src/java/org/webrtc/VideoEncoderWrapper.java",
@@ -1002,7 +1007,7 @@ rtc_android_library("peerconnection_java") {
     ":audio_api_java",
     ":base_java",
     ":video_api_java",
-    ":video_java",  # TODO(sakal): Remove dependency.
+    ":video_java",
     "//modules/audio_device:audio_device_java",
     "//rtc_base:base_java",
   ]
@@ -1222,6 +1227,8 @@ rtc_static_library("native_api_video") {
     "software_video_codecs",  # TODO(bugs.webrtc.org/7925): Remove.
   ]
   sources = [
+    "native_api/video/videosource.cc",
+    "native_api/video/videosource.h",
     "native_api/video/wrapper.cc",
     "native_api/video/wrapper.h",
   ]
@@ -1241,6 +1248,7 @@ generate_jni("generated_native_unittests_jni") {
     "native_unittests/org/webrtc/ApplicationContextProvider.java",
     "native_unittests/org/webrtc/BuildInfo.java",
     "native_unittests/org/webrtc/JavaTypesTestHelper.java",
+    "native_unittests/org/webrtc/JavaVideoSourceTestHelper.java",
     "native_unittests/org/webrtc/PeerConnectionFactoryInitializationHelper.java",
   ]
   jni_package = ""
@@ -1254,6 +1262,7 @@ rtc_android_library("native_unittests_java") {
     "native_unittests/org/webrtc/ApplicationContextProvider.java",
     "native_unittests/org/webrtc/BuildInfo.java",
     "native_unittests/org/webrtc/JavaTypesTestHelper.java",
+    "native_unittests/org/webrtc/JavaVideoSourceTestHelper.java",
     "native_unittests/org/webrtc/PeerConnectionFactoryInitializationHelper.java",
   ]
 
@@ -1271,6 +1280,7 @@ rtc_source_set("native_unittests") {
     "native_unittests/java_types_unittest.cc",
     "native_unittests/peerconnection/peerconnectionfactory_unittest.cc",
     "native_unittests/test_jni_onload.cc",
+    "native_unittests/video/videosource_unittest.cc",
   ]
 
   data = [
@@ -1296,12 +1306,14 @@ rtc_source_set("native_unittests") {
     ":native_api_base",
     ":native_api_jni",
     ":native_api_peerconnection",
+    ":native_api_video",
     ":native_unittests_java",
     ":opensles_audio_device_module",
     ":video_jni",
     "../../system_wrappers:system_wrappers",
     "//api/audio_codecs:builtin_audio_decoder_factory",
     "//api/audio_codecs:builtin_audio_encoder_factory",
+    "//api/video:video_frame",
     "//media:rtc_audio_video",
     "//media:rtc_internal_video_codecs",
     "//media:rtc_media_base",

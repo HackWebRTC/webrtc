@@ -14,7 +14,6 @@
 
 #include "api/videosourceproxy.h"
 #include "rtc_base/logging.h"
-#include "sdk/android/generated_video_jni/jni/VideoSource_jni.h"
 
 namespace webrtc {
 namespace jni {
@@ -22,18 +21,6 @@ namespace jni {
 namespace {
 // MediaCodec wants resolution to be divisible by 2.
 const int kRequiredResolutionAlignment = 2;
-
-VideoRotation jintToVideoRotation(jint rotation) {
-  RTC_DCHECK(rotation == 0 || rotation == 90 || rotation == 180 ||
-             rotation == 270);
-  return static_cast<VideoRotation>(rotation);
-}
-
-AndroidVideoTrackSource* AndroidVideoTrackSourceFromJavaProxy(jlong j_proxy) {
-  auto* proxy_source = reinterpret_cast<VideoTrackSourceProxy*>(j_proxy);
-  return reinterpret_cast<AndroidVideoTrackSource*>(proxy_source->internal());
-}
-
 }  // namespace
 
 AndroidVideoTrackSource::AndroidVideoTrackSource(
@@ -123,54 +110,6 @@ void AndroidVideoTrackSource::OnOutputFormatRequest(int width,
   cricket::VideoFormat format(width, height,
                               cricket::VideoFormat::FpsToInterval(fps), 0);
   video_adapter()->OnOutputFormatRequest(format);
-}
-
-static void JNI_VideoSource_OnFrameCaptured(
-    JNIEnv* jni,
-    const JavaParamRef<jclass>&,
-    jlong j_source,
-    jint j_width,
-    jint j_height,
-    jint j_rotation,
-    jlong j_timestamp_ns,
-    const JavaParamRef<jobject>& j_video_frame_buffer) {
-  AndroidVideoTrackSource* source =
-      AndroidVideoTrackSourceFromJavaProxy(j_source);
-  source->OnFrameCaptured(jni, j_width, j_height, j_timestamp_ns,
-                          jintToVideoRotation(j_rotation),
-                          j_video_frame_buffer);
-}
-
-static void JNI_VideoSource_CapturerStarted(JNIEnv* jni,
-                                            const JavaParamRef<jclass>&,
-                                            jlong j_source,
-                                            jboolean j_success) {
-  RTC_LOG(LS_INFO) << "AndroidVideoTrackSourceObserve_nativeCapturerStarted";
-  AndroidVideoTrackSource* source =
-      AndroidVideoTrackSourceFromJavaProxy(j_source);
-  source->SetState(j_success ? AndroidVideoTrackSource::SourceState::kLive
-                             : AndroidVideoTrackSource::SourceState::kEnded);
-}
-
-static void JNI_VideoSource_CapturerStopped(JNIEnv* jni,
-                                            const JavaParamRef<jclass>&,
-                                            jlong j_source) {
-  RTC_LOG(LS_INFO) << "AndroidVideoTrackSourceObserve_nativeCapturerStopped";
-  AndroidVideoTrackSource* source =
-      AndroidVideoTrackSourceFromJavaProxy(j_source);
-  source->SetState(AndroidVideoTrackSource::SourceState::kEnded);
-}
-
-static void JNI_VideoSource_AdaptOutputFormat(JNIEnv* jni,
-                                              const JavaParamRef<jclass>&,
-                                              jlong j_source,
-                                              jint j_width,
-                                              jint j_height,
-                                              jint j_fps) {
-  RTC_LOG(LS_INFO) << "VideoSource_nativeAdaptOutputFormat";
-  AndroidVideoTrackSource* source =
-      AndroidVideoTrackSourceFromJavaProxy(j_source);
-  source->OnOutputFormatRequest(j_width, j_height, j_fps);
 }
 
 }  // namespace jni
