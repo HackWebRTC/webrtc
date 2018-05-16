@@ -1580,19 +1580,24 @@ std::string Connection::ToString() const {
     "S",  // STATE_SUCCEEDED
     "F"   // STATE_FAILED
   };
+  const std::string SELECTED_STATE_ABBREV[2] = {
+      "-",  // candidate pair not selected (false)
+      "S",  // selected (true)
+  };
   const Candidate& local = local_candidate();
   const Candidate& remote = remote_candidate();
   std::stringstream ss;
   ss << "Conn[" << ToDebugId() << ":" << port_->content_name() << ":"
-     << local.id() << ":" << local.component() << ":" << local.generation()
-     << ":" << local.type() << ":" << local.protocol() << ":"
-     << local.address().ToSensitiveString() << "->" << remote.id() << ":"
-     << remote.component() << ":" << remote.priority() << ":" << remote.type()
-     << ":" << remote.protocol() << ":" << remote.address().ToSensitiveString()
-     << "|" << CONNECT_STATE_ABBREV[connected()]
-     << RECEIVE_STATE_ABBREV[receiving()] << WRITE_STATE_ABBREV[write_state()]
-     << ICESTATE[static_cast<int>(state())] << "|" << remote_nomination() << "|"
-     << nomination() << "|" << priority() << "|";
+     << port_->Network()->ToString() << ":" << local.id() << ":"
+     << local.component() << ":" << local.generation() << ":" << local.type()
+     << ":" << local.protocol() << ":" << local.address().ToSensitiveString()
+     << "->" << remote.id() << ":" << remote.component() << ":"
+     << remote.priority() << ":" << remote.type() << ":" << remote.protocol()
+     << ":" << remote.address().ToSensitiveString() << "|"
+     << CONNECT_STATE_ABBREV[connected()] << RECEIVE_STATE_ABBREV[receiving()]
+     << WRITE_STATE_ABBREV[write_state()] << ICESTATE[static_cast<int>(state())]
+     << "|" << SELECTED_STATE_ABBREV[selected()] << "|" << remote_nomination()
+     << "|" << nomination() << "|" << priority() << "|";
   if (rtt_ < DEFAULT_RTT) {
     ss << rtt_ << "]";
   } else {

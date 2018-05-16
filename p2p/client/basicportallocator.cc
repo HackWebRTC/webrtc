@@ -11,6 +11,7 @@
 #include "p2p/client/basicportallocator.h"
 
 #include <algorithm>
+#include <functional>
 #include <set>
 #include <string>
 #include <vector>
@@ -86,6 +87,28 @@ int ComparePort(const cricket::Port* a, const cricket::Port* b) {
   int a_family = GetAddressFamilyPriority(a->Network()->GetBestIP().family());
   int b_family = GetAddressFamilyPriority(b->Network()->GetBestIP().family());
   return a_family - b_family;
+}
+
+struct NetworkFilter {
+  using Predicate = std::function<bool(rtc::Network*)>;
+  NetworkFilter(Predicate pred, const std::string& description)
+      : pred(pred), description(description) {}
+  Predicate pred;
+  const std::string description;
+};
+
+using NetworkList = rtc::NetworkManager::NetworkList;
+void FilterNetworks(NetworkList* networks, NetworkFilter filter) {
+  auto start_to_remove =
+      std::remove_if(networks->begin(), networks->end(), filter.pred);
+  if (start_to_remove == networks->end()) {
+    return;
+  }
+  RTC_LOG(INFO) << "Filtered out " << filter.description << " networks:";
+  for (auto it = start_to_remove; it != networks->end(); ++it) {
+    RTC_LOG(INFO) << (*it)->ToString();
+  }
+  networks->erase(start_to_remove, networks->end());
 }
 
 }  // namespace
@@ -653,20 +676,19 @@ std::vector<rtc::Network*> BasicPortAllocatorSession::GetNetworks() {
   }
   // Filter out link-local networks if needed.
   if (flags() & PORTALLOCATOR_DISABLE_LINK_LOCAL_NETWORKS) {
-    networks.erase(std::remove_if(networks.begin(), networks.end(),
-                                  [](rtc::Network* network) {
-                                    return IPIsLinkLocal(network->prefix());
-                                  }),
-                   networks.end());
+    NetworkFilter link_local_filter(
+        [](rtc::Network* network) { return IPIsLinkLocal(network->prefix()); },
+        "link-local");
+    FilterNetworks(&networks, link_local_filter);
   }
   // Do some more filtering, depending on the network ignore mask and "disable
   // costly networks" flag.
-  networks.erase(std::remove_if(networks.begin(), networks.end(),
-                                [this](rtc::Network* network) {
-                                  return allocator_->network_ignore_mask() &
-                                         network->type();
-                                }),
-                 networks.end());
+  NetworkFilter ignored_filter(
+      [this](rtc::Network* network) {
+        return allocator_->network_ignore_mask() & network->type();
+      },
+      "ignored");
+  FilterNetworks(&networks, ignored_filter);
   if (flags() & PORTALLOCATOR_DISABLE_COSTLY_NETWORKS) {
     uint16_t lowest_cost = rtc::kNetworkCostMax;
     for (rtc::Network* network : networks) {
@@ -679,12 +701,12 @@ std::vector<rtc::Network*> BasicPortAllocatorSession::GetNetworks() {
       }
       lowest_cost = std::min<uint16_t>(lowest_cost, network->GetCost());
     }
-    networks.erase(std::remove_if(networks.begin(), networks.end(),
-                                  [lowest_cost](rtc::Network* network) {
-                                    return network->GetCost() >
-                                           lowest_cost + rtc::kNetworkCostLow;
-                                  }),
-                   networks.end());
+    NetworkFilter costly_filter(
+        [lowest_cost](rtc::Network* network) {
+          return network->GetCost() > lowest_cost + rtc::kNetworkCostLow;
+        },
+        "costly");
+    FilterNetworks(&networks, costly_filter);
   }
   // Lastly, if we have a limit for the number of IPv6 network interfaces (by
   // default, it's 5), remove networks to ensure that limit is satisfied.

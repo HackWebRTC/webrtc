@@ -190,7 +190,7 @@ class P2PTransportChannel : public IceTransportInternal,
   // Returns true if it's possible to send packets on |connection|.
   bool ReadyToSend(Connection* connection) const;
   void UpdateConnectionStates();
-  void RequestSortAndStateUpdate();
+  void RequestSortAndStateUpdate(const std::string& reason_to_sort);
   // Start pinging if we haven't already started, and we now have a connection
   // that's pingable.
   void MaybeStartPinging();
@@ -226,7 +226,7 @@ class P2PTransportChannel : public IceTransportInternal,
 
   bool PresumedWritable(const cricket::Connection* conn) const;
 
-  void SortConnectionsAndUpdateState();
+  void SortConnectionsAndUpdateState(const std::string& reason_to_sort);
   void SwitchSelectedConnection(Connection* conn);
   void UpdateState();
   void HandleAllTimedOut();

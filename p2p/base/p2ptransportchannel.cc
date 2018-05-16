@@ -42,6 +42,12 @@ enum {
 // The minimum improvement in RTT that justifies a switch.
 const int kMinImprovement = 10;
 
+struct SortCandidatePairRequest : public rtc::MessageData {
+  explicit SortCandidatePairRequest(const std::string& reason_to_sort)
+      : reason_to_sort(reason_to_sort) {}
+  const std::string reason_to_sort;
+};
+
 bool IsRelayRelay(const cricket::Connection* conn) {
   return conn->local_candidate().type() == cricket::RELAY_PORT_TYPE &&
          conn->remote_candidate().type() == cricket::RELAY_PORT_TYPE;
@@ -258,7 +264,7 @@ bool P2PTransportChannel::MaybeSwitchSelectedConnection(
   bool missed_receiving_unchanged_threshold = false;
   if (ShouldSwitchSelectedConnection(new_connection,
                                      &missed_receiving_unchanged_threshold)) {
-    RTC_LOG(LS_INFO) << "Switching selected connection due to " << reason;
+    RTC_LOG(LS_INFO) << "Switching selected connection due to: " << reason;
     SwitchSelectedConnection(new_connection);
     return true;
   }
@@ -268,9 +274,12 @@ bool P2PTransportChannel::MaybeSwitchSelectedConnection(
     // threshold, the new connection is in a better receiving state than the
     // currently selected connection. So we need to re-check whether it needs
     // to be switched at a later time.
+    std::unique_ptr<SortCandidatePairRequest> request_message(
+        new SortCandidatePairRequest(reason +
+                                     " (after switching dampening interval)"));
     thread()->PostDelayed(RTC_FROM_HERE,
                           config_.receiving_switching_delay_or_default(), this,
-                          MSG_SORT_AND_UPDATE_STATE);
+                          MSG_SORT_AND_UPDATE_STATE, request_message.release());
   }
   return false;
 }
@@ -410,7 +419,7 @@ void P2PTransportChannel::SetRemoteIceParameters(
         ice_params, static_cast<int>(remote_ice_parameters_.size() - 1));
   }
   // Updating the remote ICE candidate generation could change the sort order.
-  RequestSortAndStateUpdate();
+  RequestSortAndStateUpdate("remote candidate generation maybe changed");
 }
 
 void P2PTransportChannel::SetRemoteIceMode(IceMode mode) {
@@ -502,7 +511,7 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
 
   if (config_.receiving_switching_delay != config.receiving_switching_delay) {
     config_.receiving_switching_delay = config.receiving_switching_delay;
-    RTC_LOG(LS_INFO) << "Set receiving_switching_delay to"
+    RTC_LOG(LS_INFO) << "Set receiving_switching_delay to "
                      << config_.receiving_switching_delay_or_default();
   }
 
@@ -556,7 +565,7 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
 
   if (config_.network_preference != config.network_preference) {
     config_.network_preference = config.network_preference;
-    RequestSortAndStateUpdate();
+    RequestSortAndStateUpdate("network preference changed");
     RTC_LOG(LS_INFO) << "Set network preference to "
                      << (config_.network_preference.has_value()
                              ? config_.network_preference.value()
@@ -742,7 +751,8 @@ void P2PTransportChannel::OnPortReady(PortAllocatorSession *session,
     CreateConnection(port, *iter, iter->origin_port());
   }
 
-  SortConnectionsAndUpdateState();
+  SortConnectionsAndUpdateState(
+      "new candidate pairs created from a new local candidate");
 }
 
 // A new candidate is available, let listeners know
@@ -893,7 +903,8 @@ void P2PTransportChannel::OnUnknownAddress(
   // Update the list of connections since we just added another.  We do this
   // after sending the response since it could (in principle) delete the
   // connection in question.
-  SortConnectionsAndUpdateState();
+  SortConnectionsAndUpdateState(
+      "a new candidate pair created from an unknown remote address");
 }
 
 void P2PTransportChannel::OnRoleConflict(PortInterface* port) {
@@ -924,11 +935,13 @@ void P2PTransportChannel::OnNominated(Connection* conn) {
     return;
   }
 
+  // TODO(qingsi): RequestSortAndStateUpdate will eventually call
+  // MaybeSwitchSelectedConnection again. Rewrite this logic.
   if (MaybeSwitchSelectedConnection(conn,
                                     "nomination on the controlled side")) {
     // Now that we have selected a connection, it is time to prune other
     // connections and update the read/write state of the channel.
-    RequestSortAndStateUpdate();
+    RequestSortAndStateUpdate("nomination on the controlled side");
   } else {
     RTC_LOG(LS_INFO)
         << "Not switching the selected connection on controlled side yet: "
@@ -981,7 +994,8 @@ void P2PTransportChannel::AddRemoteCandidate(const Candidate& candidate) {
   CreateConnections(new_remote_candidate, NULL);
 
   // Resort the connections list, which may have new elements.
-  SortConnectionsAndUpdateState();
+  SortConnectionsAndUpdateState(
+      "new candidate pairs created from a new remote candidate");
 }
 
 void P2PTransportChannel::RemoveRemoteCandidate(
@@ -1264,9 +1278,13 @@ void P2PTransportChannel::UpdateConnectionStates() {
 }
 
 // Prepare for best candidate sorting.
-void P2PTransportChannel::RequestSortAndStateUpdate() {
+void P2PTransportChannel::RequestSortAndStateUpdate(
+    const std::string& reason_to_sort) {
   if (!sort_dirty_) {
-    network_thread_->Post(RTC_FROM_HERE, this, MSG_SORT_AND_UPDATE_STATE);
+    std::unique_ptr<SortCandidatePairRequest> request_message(
+        new SortCandidatePairRequest(reason_to_sort));
+    network_thread_->Post(RTC_FROM_HERE, this, MSG_SORT_AND_UPDATE_STATE,
+                          request_message.release());
     sort_dirty_ = true;
   }
 }
@@ -1501,7 +1519,8 @@ bool P2PTransportChannel::PresumedWritable(const Connection* conn) const {
 
 // Sort the available connections to find the best one.  We also monitor
 // the number of available connections and the current state.
-void P2PTransportChannel::SortConnectionsAndUpdateState() {
+void P2PTransportChannel::SortConnectionsAndUpdateState(
+    const std::string& reason_to_sort) {
   RTC_DCHECK(network_thread_ == rtc::Thread::Current());
 
   // Make sure the connection states are up-to-date since this affects how they
@@ -1538,7 +1557,7 @@ void P2PTransportChannel::SortConnectionsAndUpdateState() {
   // If necessary, switch to the new choice. Note that |top_connection| doesn't
   // have to be writable to become the selected connection although it will
   // have higher priority if it is writable.
-  MaybeSwitchSelectedConnection(top_connection, "sorting");
+  MaybeSwitchSelectedConnection(top_connection, reason_to_sort);
 
   // The controlled side can prune only if the selected connection has been
   // nominated because otherwise it may prune the connection that will be
@@ -1651,8 +1670,12 @@ void P2PTransportChannel::SwitchSelectedConnection(Connection* conn) {
   selected_connection_ = conn;
   LogCandidatePairEvent(conn, webrtc::IceCandidatePairEventType::kSelected);
   network_route_.reset();
+  if (old_selected_connection) {
+    old_selected_connection->set_selected(false);
+  }
   if (selected_connection_) {
     ++nomination_;
+    selected_connection_->set_selected(true);
     if (old_selected_connection) {
       RTC_LOG(LS_INFO) << ToString()
                        << ": Previous selected connection: "
@@ -1801,9 +1824,13 @@ bool P2PTransportChannel::ReadyToSend(Connection* connection) const {
 // Handle any queued up requests
 void P2PTransportChannel::OnMessage(rtc::Message *pmsg) {
   switch (pmsg->message_id) {
-    case MSG_SORT_AND_UPDATE_STATE:
-      SortConnectionsAndUpdateState();
+    case MSG_SORT_AND_UPDATE_STATE: {
+      RTC_DCHECK(pmsg->pdata);
+      std::unique_ptr<SortCandidatePairRequest> request_message(
+          static_cast<SortCandidatePairRequest*>(pmsg->pdata));
+      SortConnectionsAndUpdateState(request_message->reason_to_sort);
       break;
+    }
     case MSG_CHECK_AND_PING:
       OnCheckAndPing();
       break;
@@ -2106,7 +2133,7 @@ void P2PTransportChannel::OnConnectionStateChange(Connection* connection) {
 
   // We have to unroll the stack before doing this because we may be changing
   // the state of connections while sorting.
-  RequestSortAndStateUpdate();
+  RequestSortAndStateUpdate("candidate pair state changed");
 }
 
 // When a connection is removed, edit it out, and then update our best
@@ -2138,7 +2165,7 @@ void P2PTransportChannel::OnConnectionDestroyed(Connection* connection) {
   if (selected_connection_ == connection) {
     RTC_LOG(LS_INFO) << "Selected connection destroyed. Will choose a new one.";
     SwitchSelectedConnection(nullptr);
-    RequestSortAndStateUpdate();
+    RequestSortAndStateUpdate("selected candidate pair destroyed");
   } else {
     // If a non-selected connection was destroyed, we don't need to re-sort but
     // we do need to update state, because we could be switching to "failed" or

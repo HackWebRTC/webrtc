@@ -1041,7 +1041,7 @@ std::string Network::ToString() const {
   if (IsVpn()) {
     ss << "/" << AdapterTypeToString(underlying_type_for_vpn_);
   }
-  ss << "]";
+  ss << ":id=" << id_ << "]";
   return ss.str();
 }
 

@@ -679,6 +679,11 @@ class Connection : public CandidatePairInterface,
 
   bool reported() const { return reported_; }
   void set_reported(bool reported) { reported_ = reported;}
+  // The following two methods are only used for logging in ToString above, and
+  // this flag is set true by P2PTransportChannel for its selected candidate
+  // pair.
+  bool selected() const { return selected_; }
+  void set_selected(bool selected) { selected_ = selected; }
 
   // This signal will be fired if this connection is nominated by the
   // controlling side.
@@ -769,6 +774,7 @@ class Connection : public CandidatePairInterface,
   bool receiving_;
   bool connected_;
   bool pruned_;
+  bool selected_ = false;
   // By default |use_candidate_attr_| flag will be true,
   // as we will be using aggressive nomination.
   // But when peer is ice-lite, this flag "must" be initialized to false and
