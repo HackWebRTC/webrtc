@@ -259,6 +259,13 @@ config("common_config") {
         cflags += [ "-Wunused-lambda-capture" ]
       }
     }
+
+    if (is_win && !is_clang) {
+      # MSVC warning suppressions (needed to use Abseil).
+      # TODO(bugs.webrtc.org/9274): Remove these warnings as soon as MSVC allows
+      # external headers warning suppression (or fix them upstream).
+      cflags += [ "/wd4702" ]  # unreachable code
+    }
   }
 
   if (current_cpu == "arm64") {
