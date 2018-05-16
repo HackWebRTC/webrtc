@@ -160,9 +160,9 @@ void VideoCodecTestFixtureImpl::RunTest(
     const VisualizationParams* visualization_params) {
   RTC_DCHECK(!rate_profiles.empty());
 
-  // The Android HW codec needs to be run on a task queue, so we simply always
-  // run the test on a task queue.
-  rtc::TaskQueue task_queue("VidProc TQ");
+  // To emulate operation on a production VideoStreamEncoder, we call the
+  // codecs on a task queue.
+  rtc::test::TaskQueueForTest task_queue("VidProc TQ");
 
   SetUpAndInitObjects(
       &task_queue, static_cast<const int>(rate_profiles[0].target_kbps),
@@ -212,6 +212,7 @@ void VideoCodecTestFixtureImpl::ProcessAllFrames(
     }
   }
 
+  // Wait until we know that the last frame has been sent for encode.
   rtc::Event sync_event(false, false);
   task_queue->PostTask([&sync_event] { sync_event.Set(); });
   sync_event.Wait(rtc::Event::kForever);
@@ -397,12 +398,10 @@ Stats VideoCodecTestFixtureImpl::GetStats() {
 }
 
 void VideoCodecTestFixtureImpl::SetUpAndInitObjects(
-    rtc::TaskQueue* task_queue,
+    rtc::test::TaskQueueForTest* task_queue,
     int initial_bitrate_kbps,
     int initial_framerate_fps,
     const VisualizationParams* visualization_params) {
-  CreateEncoderAndDecoder();
-
   config_.codec_settings.minBitrate = 0;
   config_.codec_settings.startBitrate = initial_bitrate_kbps;
   config_.codec_settings.maxFramerate = initial_framerate_fps;
@@ -448,29 +447,23 @@ void VideoCodecTestFixtureImpl::SetUpAndInitObjects(
 
   cpu_process_time_.reset(new CpuProcessTime(config_));
 
-  rtc::Event sync_event(false, false);
-  task_queue->PostTask([this, &sync_event]() {
+  task_queue->SendTask([this]() {
+    CreateEncoderAndDecoder();
     processor_ = rtc::MakeUnique<VideoProcessor>(
         encoder_.get(), &decoders_, source_frame_reader_.get(), config_,
         &stats_,
         encoded_frame_writers_.empty() ? nullptr : &encoded_frame_writers_,
         decoded_frame_writers_.empty() ? nullptr : &decoded_frame_writers_);
-    sync_event.Set();
   });
-  sync_event.Wait(rtc::Event::kForever);
 }
 
 void VideoCodecTestFixtureImpl::ReleaseAndCloseObjects(
-    rtc::TaskQueue* task_queue) {
-  rtc::Event sync_event(false, false);
-  task_queue->PostTask([this, &sync_event]() {
+    rtc::test::TaskQueueForTest* task_queue) {
+  task_queue->SendTask([this]() {
     processor_.reset();
-    sync_event.Set();
+    // The VideoProcessor must be destroyed before the codecs.
+    DestroyEncoderAndDecoder();
   });
-  sync_event.Wait(rtc::Event::kForever);
-
-  // The VideoProcessor must be destroyed before the codecs.
-  DestroyEncoderAndDecoder();
 
   source_frame_reader_->Close();
 
@@ -486,20 +479,17 @@ void VideoCodecTestFixtureImpl::ReleaseAndCloseObjects(
 }
 
 void VideoCodecTestFixtureImpl::PrintSettings(
-    rtc::TaskQueue* task_queue) const {
+    rtc::test::TaskQueueForTest* task_queue) const {
   printf("==> TestConfig\n");
   printf("%s\n", config_.ToString().c_str());
 
   printf("==> Codec names\n");
   std::string encoder_name;
   std::string decoder_name;
-  rtc::Event sync_event(false, false);
-  task_queue->PostTask([this, &encoder_name, &decoder_name, &sync_event] {
+  task_queue->SendTask([this, &encoder_name, &decoder_name] {
     encoder_name = encoder_->ImplementationName();
     decoder_name = decoders_.at(0)->ImplementationName();
-    sync_event.Set();
   });
-  sync_event.Wait(rtc::Event::kForever);
   printf("enc_impl_name: %s\n", encoder_name.c_str());
   printf("dec_impl_name: %s\n", decoder_name.c_str());
   if (encoder_name == decoder_name) {

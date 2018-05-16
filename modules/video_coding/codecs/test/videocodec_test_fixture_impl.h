@@ -24,6 +24,7 @@
 #include "modules/video_coding/codecs/test/test_config.h"
 #include "modules/video_coding/codecs/test/videoprocessor.h"
 #include "modules/video_coding/utility/ivf_file_writer.h"
+#include "rtc_base/task_queue_for_test.h"
 #include "test/testsupport/frame_reader.h"
 #include "test/testsupport/frame_writer.h"
 
@@ -63,11 +64,11 @@ class VideoCodecTestFixtureImpl : public VideoCodecTestFixture {
 
   void CreateEncoderAndDecoder();
   void DestroyEncoderAndDecoder();
-  void SetUpAndInitObjects(rtc::TaskQueue* task_queue,
+  void SetUpAndInitObjects(rtc::test::TaskQueueForTest* task_queue,
                            int initial_bitrate_kbps,
                            int initial_framerate_fps,
                            const VisualizationParams* visualization_params);
-  void ReleaseAndCloseObjects(rtc::TaskQueue* task_queue);
+  void ReleaseAndCloseObjects(rtc::test::TaskQueueForTest* task_queue);
 
   void ProcessAllFrames(rtc::TaskQueue* task_queue,
                         const std::vector<RateProfile>& rate_profiles);
@@ -84,7 +85,7 @@ class VideoCodecTestFixtureImpl : public VideoCodecTestFixture {
                             size_t target_bitrate_kbps,
                             float input_framerate_fps);
 
-  void PrintSettings(rtc::TaskQueue* task_queue) const;
+  void PrintSettings(rtc::test::TaskQueueForTest* task_queue) const;
   std::unique_ptr<VideoDecoderFactory> CreateDecoderFactory();
   std::unique_ptr<VideoEncoderFactory> CreateEncoderFactory();
 
