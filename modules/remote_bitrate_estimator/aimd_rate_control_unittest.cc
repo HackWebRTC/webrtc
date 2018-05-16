@@ -105,6 +105,50 @@ TEST(AimdRateControlTest, GetIncreaseRateAndBandwidthPeriodSmoothingExp) {
             states.aimd_rate_control->GetExpectedBandwidthPeriodMs());
 }
 
+TEST(AimdRateControlTest, BweLimitedByConfiguredMin) {
+  auto states = CreateAimdRateControlStates();
+  constexpr int kMinBitrate = 50000;
+  constexpr int kMaxBitrate = 200000;
+  constexpr int kStartBitrate = kMinBitrate + 1;
+  states.aimd_rate_control->SetBitrateConstraints(kMinBitrate, kMaxBitrate);
+  states.aimd_rate_control->SetStartBitrate(kStartBitrate);
+  states.aimd_rate_control->SetEstimate(
+      kStartBitrate, states.simulated_clock->TimeInMilliseconds());
+  while (states.simulated_clock->TimeInMilliseconds() - kClockInitialTime <
+         20000) {
+    // Don't decrease below minimum even if the actual throughput is lower.
+    constexpr int kAckedBitrate = kMinBitrate - 1000;
+    UpdateRateControl(states, BandwidthUsage::kBwOverusing, kAckedBitrate,
+                      states.simulated_clock->TimeInMilliseconds());
+    states.simulated_clock->AdvanceTimeMilliseconds(100);
+  }
+  ASSERT_TRUE(states.aimd_rate_control->ValidEstimate());
+  EXPECT_EQ(static_cast<uint32_t>(kMinBitrate),
+            states.aimd_rate_control->LatestEstimate());
+}
+
+TEST(AimdRateControlTest, BweLimitedByConfiguredMax) {
+  auto states = CreateAimdRateControlStates();
+  constexpr int kMinBitrate = 50000;
+  constexpr int kMaxBitrate = 200000;
+  constexpr int kStartBitrate = kMaxBitrate - 1;
+  states.aimd_rate_control->SetBitrateConstraints(kMinBitrate, kMaxBitrate);
+  states.aimd_rate_control->SetStartBitrate(kStartBitrate);
+  states.aimd_rate_control->SetEstimate(
+      kStartBitrate, states.simulated_clock->TimeInMilliseconds());
+  while (states.simulated_clock->TimeInMilliseconds() - kClockInitialTime <
+         20000) {
+    // Don't increase above maximum even if the actual throughput is higher.
+    constexpr int kAckedBitrate = kMaxBitrate + 10000;
+    UpdateRateControl(states, BandwidthUsage::kBwNormal, kAckedBitrate,
+                      states.simulated_clock->TimeInMilliseconds());
+    states.simulated_clock->AdvanceTimeMilliseconds(100);
+  }
+  ASSERT_TRUE(states.aimd_rate_control->ValidEstimate());
+  EXPECT_EQ(static_cast<uint32_t>(kMaxBitrate),
+            states.aimd_rate_control->LatestEstimate());
+}
+
 TEST(AimdRateControlTest, BweLimitedByAckedBitrate) {
   auto states = CreateAimdRateControlStates();
   constexpr int kAckedBitrate = 10000;
@@ -222,6 +266,7 @@ TEST(AimdRateControlTest, BandwidthPeriodIsNotAboveMaxSmoothingExp) {
   test::ScopedFieldTrials override_field_trials(kSmoothingExpFieldTrial);
   auto states = CreateAimdRateControlStates();
   constexpr int kInitialBitrate = 50000000;
+  states.aimd_rate_control->SetBitrateConstraints(10000, 60000000);
   states.aimd_rate_control->SetEstimate(
       kInitialBitrate, states.simulated_clock->TimeInMilliseconds());
   states.simulated_clock->AdvanceTimeMilliseconds(100);

@@ -52,7 +52,7 @@ class DelayBasedBwe {
   bool LatestEstimate(std::vector<uint32_t>* ssrcs,
                       uint32_t* bitrate_bps) const;
   void SetStartBitrate(int start_bitrate_bps);
-  void SetMinBitrate(int min_bitrate_bps);
+  void SetBitrateConstraints(int min_bitrate_bps, int max_bitrate_bps);
   int64_t GetExpectedBwePeriodMs() const;
 
  private:

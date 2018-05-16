@@ -28,9 +28,14 @@
 
 namespace webrtc {
 
-static const int64_t kDefaultRttMs = 200;
-static const int64_t kMaxFeedbackIntervalMs = 1000;
-static const float kDefaultBackoffFactor = 0.85f;
+namespace {
+constexpr int64_t kDefaultRttMs = 200;
+constexpr int64_t kMinFeedbackIntervalMs = 200;
+constexpr int64_t kMaxFeedbackIntervalMs = 1000;
+constexpr float kDefaultBackoffFactor = 0.85f;
+constexpr int kDefaultMaxBandwidthBps = 30000000;
+constexpr int kDefaultStartBandwidthBps = 300000;
+}  // namespace
 
 const char kBweBackOffFactorExperiment[] = "WebRTC-BweBackOffFactor";
 
@@ -56,8 +61,8 @@ float ReadTrendlineFilterWindowSize() {
 
 AimdRateControl::AimdRateControl()
     : min_configured_bitrate_bps_(congestion_controller::GetMinBitrateBps()),
-      max_configured_bitrate_bps_(30000000),
-      current_bitrate_bps_(max_configured_bitrate_bps_),
+      max_configured_bitrate_bps_(kDefaultMaxBandwidthBps),
+      current_bitrate_bps_(kDefaultStartBandwidthBps),
       avg_max_bitrate_kbps_(-1.0f),
       var_max_bitrate_kbps_(0.4f),
       rate_control_state_(kRcHold),
@@ -78,13 +83,30 @@ AimdRateControl::AimdRateControl()
 AimdRateControl::~AimdRateControl() {}
 
 void AimdRateControl::SetStartBitrate(int start_bitrate_bps) {
-  current_bitrate_bps_ = start_bitrate_bps;
-  bitrate_is_initialized_ = true;
+  // TODO(terelius): It would make sense to not change the estimate if we have
+  // already initialized a bitrate. However, some code recreates and resets
+  // parameters multiple times and those tests break when changing this.
+  if (start_bitrate_bps > 0) {
+    // TODO(terelius): I think this should clamp the bitrate to the configured
+    // max and min, but that would be a brekaing change because SetStartBitrate
+    // and SetBitrateConstraints are separate calls that can occur in either
+    // order. Consider merging the calls in the future.
+    current_bitrate_bps_ = start_bitrate_bps;
+    bitrate_is_initialized_ = true;
+  }
 }
 
-void AimdRateControl::SetMinBitrate(int min_bitrate_bps) {
-  min_configured_bitrate_bps_ = min_bitrate_bps;
-  current_bitrate_bps_ = std::max<int>(min_bitrate_bps, current_bitrate_bps_);
+void AimdRateControl::SetBitrateConstraints(int min_bitrate_bps,
+                                            int max_bitrate_bps) {
+  if (min_bitrate_bps > 0)
+    min_configured_bitrate_bps_ = min_bitrate_bps;
+  if (max_bitrate_bps > 0) {
+    max_configured_bitrate_bps_ =
+        rtc::SafeMax(min_configured_bitrate_bps_, max_bitrate_bps);
+  }
+  current_bitrate_bps_ = rtc::SafeClamp<uint32_t>(current_bitrate_bps_,
+                                                  min_configured_bitrate_bps_,
+                                                  max_configured_bitrate_bps_);
 }
 
 bool AimdRateControl::ValidEstimate() const {
@@ -97,7 +119,6 @@ int64_t AimdRateControl::GetFeedbackInterval() const {
   static const int kRtcpSize = 80;
   const int64_t interval = static_cast<int64_t>(
       kRtcpSize * 8.0 * 1000.0 / (0.05 * current_bitrate_bps_) + 0.5);
-  const int64_t kMinFeedbackIntervalMs = 200;
   return rtc::SafeClamp(interval, kMinFeedbackIntervalMs,
                         kMaxFeedbackIntervalMs);
 }
@@ -177,10 +198,9 @@ int AimdRateControl::GetExpectedBandwidthPeriodMs() const {
   if (!last_decrease_)
     return smoothing_experiment_ ? kMinPeriodMs : kDefaultPeriodMs;
 
-  return std::min(kMaxPeriodMs,
-                  std::max<int>(1000 * static_cast<int64_t>(*last_decrease_) /
-                                    increase_rate,
-                                kMinPeriodMs));
+  return rtc::SafeClamp<int>(
+      1000 * static_cast<int64_t>(*last_decrease_) / increase_rate,
+      kMinPeriodMs, kMaxPeriodMs);
 }
 
 uint32_t AimdRateControl::ChangeBitrate(uint32_t new_bitrate_bps,
@@ -280,7 +300,8 @@ uint32_t AimdRateControl::ClampBitrate(uint32_t new_bitrate_bps,
   // We allow a bit more lag at very low rates to not too easily get stuck if
   // the encoder produces uneven outputs.
   const uint32_t max_bitrate_bps =
-      static_cast<uint32_t>(1.5f * incoming_bitrate_bps) + 10000;
+      rtc::SafeMin(static_cast<uint32_t>(1.5f * incoming_bitrate_bps) + 10000,
+                   max_configured_bitrate_bps_);
   if (new_bitrate_bps > current_bitrate_bps_ &&
       new_bitrate_bps > max_bitrate_bps) {
     new_bitrate_bps = std::max(current_bitrate_bps_, max_bitrate_bps);

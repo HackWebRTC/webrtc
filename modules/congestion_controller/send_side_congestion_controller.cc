@@ -137,7 +137,9 @@ SendSideCongestionController::SendSideCongestionController(
           webrtc::field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")),
       transport_overhead_bytes_per_packet_(0),
       pacer_pushback_experiment_(IsPacerPushbackExperimentEnabled()) {
-  delay_based_bwe_->SetMinBitrate(min_bitrate_bps_);
+  constexpr int kMaxBitrateUnchanged = -1;
+  delay_based_bwe_->SetBitrateConstraints(min_bitrate_bps_,
+                                          kMaxBitrateUnchanged);
   if (in_cwnd_experiment_ &&
       !ReadCwndExperimentParameter(&accepted_queue_ms_)) {
     RTC_LOG(LS_WARNING) << "Failed to parse parameters for CwndExperiment "
@@ -186,7 +188,7 @@ void SendSideCongestionController::SetBweBitrates(int min_bitrate_bps,
     if (start_bitrate_bps > 0)
       delay_based_bwe_->SetStartBitrate(start_bitrate_bps);
     min_bitrate_bps_ = min_bitrate_bps;
-    delay_based_bwe_->SetMinBitrate(min_bitrate_bps_);
+    delay_based_bwe_->SetBitrateConstraints(min_bitrate_bps, max_bitrate_bps);
   }
   MaybeTriggerOnNetworkChanged();
 }
@@ -220,8 +222,8 @@ void SendSideCongestionController::OnNetworkRouteChanged(
     min_bitrate_bps_ = min_bitrate_bps;
     delay_based_bwe_.reset(new DelayBasedBwe(event_log_, clock_));
     acknowledged_bitrate_estimator_.reset(new AcknowledgedBitrateEstimator());
+    delay_based_bwe_->SetBitrateConstraints(min_bitrate_bps, max_bitrate_bps);
     delay_based_bwe_->SetStartBitrate(bitrate_bps);
-    delay_based_bwe_->SetMinBitrate(min_bitrate_bps);
   }
 
   probe_controller_->Reset();

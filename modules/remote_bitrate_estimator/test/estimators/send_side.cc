@@ -44,7 +44,7 @@ SendSideBweSender::SendSideBweSender(int kbps,
   bitrate_controller_->SetStartBitrate(1000 * kbps);
   bitrate_controller_->SetMinMaxBitrate(1000 * kMinBitrateKbps,
                                         1000 * kMaxBitrateKbps);
-  bwe_->SetMinBitrate(1000 * kMinBitrateKbps);
+  bwe_->SetBitrateConstraints(1000 * kMinBitrateKbps, 1000 * kMaxBitrateKbps);
 }
 
 SendSideBweSender::~SendSideBweSender() {}
