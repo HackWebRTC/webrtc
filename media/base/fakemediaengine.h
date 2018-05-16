@@ -110,7 +110,7 @@ template <class Base> class RtpHelper : public Base {
     }
     send_streams_.push_back(sp);
     rtp_send_parameters_[sp.first_ssrc()] =
-        CreateRtpParametersWithOneEncoding();
+        CreateRtpParametersWithEncodings(sp);
     return true;
   }
   virtual bool RemoveSendStream(uint32_t ssrc) {

@@ -426,11 +426,11 @@ struct RtpEncodingParameters {
 
   // For video, scale the resolution down by this factor.
   // TODO(deadbeef): Not implemented.
-  double scale_resolution_down_by = 1.0;
+  rtc::Optional<double> scale_resolution_down_by;
 
   // Scale the framerate down by this factor.
   // TODO(deadbeef): Not implemented.
-  double scale_framerate_down_by = 1.0;
+  rtc::Optional<double> scale_framerate_down_by;
 
   // For an RtpSender, set to true to cause this encoding to be encoded and
   // sent, and false for it not to be encoded and sent. This allows control

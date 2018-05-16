@@ -30,6 +30,62 @@ int GenerateUniqueId() {
   return ++g_unique_id;
 }
 
+// Returns an true if any RtpEncodingParameters member that isn't implemented
+// contains a value.
+bool UnimplementedRtpEncodingParameterHasValue(
+    const RtpEncodingParameters& encoding_params) {
+  if (encoding_params.codec_payload_type.has_value() ||
+      encoding_params.fec.has_value() || encoding_params.rtx.has_value() ||
+      encoding_params.dtx.has_value() || encoding_params.ptime.has_value() ||
+      encoding_params.max_framerate.has_value() ||
+      !encoding_params.rid.empty() ||
+      encoding_params.scale_resolution_down_by.has_value() ||
+      encoding_params.scale_framerate_down_by.has_value() ||
+      !encoding_params.dependency_rids.empty()) {
+    return true;
+  }
+  return false;
+}
+
+// Returns true if a "per-sender" encoding parameter contains a value that isn't
+// its default. Currently max_bitrate_bps and bitrate_priority both are
+// implemented "per-sender," meaning that these encoding parameters
+// are used for the RtpSender as a whole, not for a specific encoding layer.
+// This is done by setting these encoding parameters at index 0 of
+// RtpParameters.encodings. This function can be used to check if these
+// parameters are set at any index other than 0 of RtpParameters.encodings,
+// because they are currently unimplemented to be used for a specific encoding
+// layer.
+bool PerSenderRtpEncodingParameterHasValue(
+    const RtpEncodingParameters& encoding_params) {
+  if (encoding_params.max_bitrate_bps.has_value() ||
+      encoding_params.bitrate_priority != kDefaultBitratePriority) {
+    return true;
+  }
+  return false;
+}
+
+// Returns true if any RtpParameters member that isn't implemented contains a
+// value.
+bool UnimplementedRtpParameterHasValue(const RtpParameters& parameters) {
+  if (!parameters.mid.empty() || !parameters.header_extensions.empty() ||
+      parameters.degradation_preference != DegradationPreference::BALANCED) {
+    return true;
+  }
+  for (size_t i = 0; i < parameters.encodings.size(); ++i) {
+    if (UnimplementedRtpEncodingParameterHasValue(parameters.encodings[i])) {
+      return true;
+    }
+    // Encoding parameters that are per-sender should only contain value at
+    // index 0.
+    if (i != 0 &&
+        PerSenderRtpEncodingParameterHasValue(parameters.encodings[i])) {
+      return true;
+    }
+  }
+  return false;
+}
+
 }  // namespace
 
 LocalAudioSinkAdapter::LocalAudioSinkAdapter() : sink_(nullptr) {}
@@ -217,6 +273,11 @@ RTCError AudioRtpSender::SetParameters(const RtpParameters& parameters) {
         " the last value returned from getParameters()");
   }
 
+  if (UnimplementedRtpParameterHasValue(parameters)) {
+    LOG_AND_RETURN_ERROR(
+        RTCErrorType::UNSUPPORTED_PARAMETER,
+        "Attempted to set an unimplemented parameter of RtpParameters.");
+  }
   return worker_thread_->Invoke<RTCError>(RTC_FROM_HERE, [&] {
     RTCError result = media_channel_->SetRtpSendParameters(ssrc_, parameters);
     last_transaction_id_.reset();
@@ -421,6 +482,11 @@ RTCError VideoRtpSender::SetParameters(const RtpParameters& parameters) {
         " the last value returned from getParameters()");
   }
 
+  if (UnimplementedRtpParameterHasValue(parameters)) {
+    LOG_AND_RETURN_ERROR(
+        RTCErrorType::UNSUPPORTED_PARAMETER,
+        "Attempted to set an unimplemented parameter of RtpParameters.");
+  }
   return worker_thread_->Invoke<RTCError>(RTC_FROM_HERE, [&] {
     RTCError result = media_channel_->SetRtpSendParameters(ssrc_, parameters);
     last_transaction_id_.reset();
