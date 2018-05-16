@@ -15,7 +15,6 @@
 #include <stdio.h>
 
 #include <algorithm>
-#include <sstream>
 #include <string>
 
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
