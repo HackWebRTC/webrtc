@@ -34,7 +34,7 @@ static const float kDefaultBackoffFactor = 0.85f;
 
 const char kBweBackOffFactorExperiment[] = "WebRTC-BweBackOffFactor";
 
-float ReadTrendlineFilterWindowSize() {
+float ReadBackoffFactor() {
   std::string experiment_string =
       webrtc::field_trial::FindFullName(kBweBackOffFactorExperiment);
   float backoff_factor;
@@ -66,7 +66,7 @@ AimdRateControl::AimdRateControl()
       time_first_incoming_estimate_(-1),
       bitrate_is_initialized_(false),
       beta_(webrtc::field_trial::IsEnabled(kBweBackOffFactorExperiment)
-                ? ReadTrendlineFilterWindowSize()
+                ? ReadBackoffFactor()
                 : kDefaultBackoffFactor),
       rtt_(kDefaultRttMs),
       in_experiment_(!AdaptiveThresholdExperimentIsDisabled()),
