@@ -440,6 +440,11 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp9(
                              "layer frame. Scalability structure ignored.";
     } else {
       current_ss_idx_ = Add<kMaxGofSaved>(current_ss_idx_, 1);
+      if (codec_header.gof.num_frames_in_gof == 0 ||
+          codec_header.gof.num_frames_in_gof > kMaxVp9FramesInGof) {
+        return kDrop;
+      }
+
       scalability_structures_[current_ss_idx_] = codec_header.gof;
       scalability_structures_[current_ss_idx_].pid_start = frame->id.picture_id;
       gof_info_.emplace(codec_header.tl0_pic_idx,
