@@ -2210,7 +2210,8 @@ void vpx_subtract_block_neon(int rows,
 #define vpx_subtract_block vpx_subtract_block_neon
 
 uint64_t vpx_sum_squares_2d_i16_c(const int16_t* src, int stride, int size);
-#define vpx_sum_squares_2d_i16 vpx_sum_squares_2d_i16_c
+uint64_t vpx_sum_squares_2d_i16_neon(const int16_t* src, int stride, int size);
+#define vpx_sum_squares_2d_i16 vpx_sum_squares_2d_i16_neon
 
 void vpx_tm_predictor_16x16_c(uint8_t* dst,
                               ptrdiff_t y_stride,

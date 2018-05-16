@@ -2891,7 +2891,10 @@ RTCD_EXTERN void (*vpx_subtract_block)(int rows,
                                        ptrdiff_t pred_stride);
 
 uint64_t vpx_sum_squares_2d_i16_c(const int16_t* src, int stride, int size);
-#define vpx_sum_squares_2d_i16 vpx_sum_squares_2d_i16_c
+uint64_t vpx_sum_squares_2d_i16_neon(const int16_t* src, int stride, int size);
+RTCD_EXTERN uint64_t (*vpx_sum_squares_2d_i16)(const int16_t* src,
+                                               int stride,
+                                               int size);
 
 void vpx_tm_predictor_16x16_c(uint8_t* dst,
                               ptrdiff_t y_stride,
@@ -3694,6 +3697,9 @@ static void setup_rtcd_internal(void) {
   vpx_subtract_block = vpx_subtract_block_c;
   if (flags & HAS_NEON)
     vpx_subtract_block = vpx_subtract_block_neon;
+  vpx_sum_squares_2d_i16 = vpx_sum_squares_2d_i16_c;
+  if (flags & HAS_NEON)
+    vpx_sum_squares_2d_i16 = vpx_sum_squares_2d_i16_neon;
   vpx_tm_predictor_16x16 = vpx_tm_predictor_16x16_c;
   if (flags & HAS_NEON)
     vpx_tm_predictor_16x16 = vpx_tm_predictor_16x16_neon;
