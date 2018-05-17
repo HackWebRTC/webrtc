@@ -28,7 +28,8 @@ constexpr int kRembSendIntervalMs = 200;
 }  // namespace
 
 PacketRouter::PacketRouter()
-    : last_remb_time_ms_(rtc::TimeMillis()),
+    : last_send_module_(nullptr),
+      last_remb_time_ms_(rtc::TimeMillis()),
       last_send_bitrate_bps_(0),
       bitrate_bps_(0),
       max_bitrate_bps_(std::numeric_limits<decltype(max_bitrate_bps_)>::max()),
@@ -67,6 +68,9 @@ void PacketRouter::RemoveSendRtpModule(RtpRtcp* rtp_module) {
       std::find(rtp_send_modules_.begin(), rtp_send_modules_.end(), rtp_module);
   RTC_DCHECK(it != rtp_send_modules_.end());
   rtp_send_modules_.erase(it);
+  if (last_send_module_ == rtp_module) {
+    last_send_module_ = nullptr;
+  }
 }
 
 void PacketRouter::AddReceiveRtpModule(RtcpFeedbackSenderInterface* rtcp_sender,
@@ -100,9 +104,16 @@ bool PacketRouter::TimeToSendPacket(uint32_t ssrc,
                                     const PacedPacketInfo& pacing_info) {
   rtc::CritScope cs(&modules_crit_);
   for (auto* rtp_module : rtp_send_modules_) {
-    if (!rtp_module->SendingMedia())
+    if (!rtp_module->SendingMedia()) {
       continue;
+    }
     if (ssrc == rtp_module->SSRC() || ssrc == rtp_module->FlexfecSsrc()) {
+      if ((rtp_module->RtxSendStatus() & kRtxRedundantPayloads) &&
+          rtp_module->HasBweExtensions()) {
+        // This is now the last module to send media, and has the desired
+        // properties needed for payload based padding. Cache it for later use.
+        last_send_module_ = rtp_module;
+      }
       return rtp_module->TimeToSendPacket(ssrc, sequence_number,
                                           capture_timestamp, retransmission,
                                           pacing_info);
@@ -115,6 +126,23 @@ size_t PacketRouter::TimeToSendPadding(size_t bytes_to_send,
                                        const PacedPacketInfo& pacing_info) {
   size_t total_bytes_sent = 0;
   rtc::CritScope cs(&modules_crit_);
+  // First try on the last rtp module to have sent media. This increases the
+  // the chance that any payload based padding will be useful as it will be
+  // somewhat distributed over modules according the packet rate, even if it
+  // will be more skewed towards the highest bitrate stream. At the very least
+  // this prevents sending payload padding on a disabled stream where it's
+  // guaranteed not to be useful.
+  if (last_send_module_ != nullptr) {
+    RTC_DCHECK(std::find(rtp_send_modules_.begin(), rtp_send_modules_.end(),
+                         last_send_module_) != rtp_send_modules_.end());
+    RTC_DCHECK(last_send_module_->HasBweExtensions());
+    total_bytes_sent += last_send_module_->TimeToSendPadding(
+        bytes_to_send - total_bytes_sent, pacing_info);
+    if (total_bytes_sent >= bytes_to_send) {
+      return total_bytes_sent;
+    }
+  }
+
   // Rtp modules are ordered by which stream can most benefit from padding.
   for (RtpRtcp* module : rtp_send_modules_) {
     if (module->SendingMedia() && module->HasBweExtensions()) {
@@ -225,13 +253,15 @@ bool PacketRouter::SendTransportFeedback(rtcp::TransportFeedback* packet) {
   // Prefer send modules.
   for (auto* rtp_module : rtp_send_modules_) {
     packet->SetSenderSsrc(rtp_module->SSRC());
-    if (rtp_module->SendFeedbackPacket(*packet))
+    if (rtp_module->SendFeedbackPacket(*packet)) {
       return true;
+    }
   }
   for (auto* rtcp_sender : rtcp_feedback_senders_) {
     packet->SetSenderSsrc(rtcp_sender->SSRC());
-    if (rtcp_sender->SendFeedbackPacket(*packet))
+    if (rtcp_sender->SendFeedbackPacket(*packet)) {
       return true;
+    }
   }
   return false;
 }

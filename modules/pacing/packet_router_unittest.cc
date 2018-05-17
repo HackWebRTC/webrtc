@@ -271,6 +271,84 @@ TEST(PacketRouterTest, TimeToSendPadding) {
   packet_router.RemoveSendRtpModule(&rtp_2);
 }
 
+TEST(PacketRouterTest, PadsOnLastActiveMediaStream) {
+  PacketRouter packet_router;
+
+  const uint16_t kSsrc1 = 1234;
+  const uint16_t kSsrc2 = 4567;
+  const uint16_t kSsrc3 = 8901;
+
+  // First two rtp modules send media and have rtx.
+  NiceMock<MockRtpRtcp> rtp_1;
+  EXPECT_CALL(rtp_1, RtxSendStatus())
+      .WillRepeatedly(Return(kRtxRedundantPayloads));
+  EXPECT_CALL(rtp_1, SSRC()).WillRepeatedly(Return(kSsrc1));
+  EXPECT_CALL(rtp_1, SendingMedia()).WillRepeatedly(Return(true));
+  EXPECT_CALL(rtp_1, HasBweExtensions()).WillRepeatedly(Return(true));
+
+  NiceMock<MockRtpRtcp> rtp_2;
+  EXPECT_CALL(rtp_2, RtxSendStatus())
+      .WillRepeatedly(Return(kRtxRedundantPayloads));
+  EXPECT_CALL(rtp_2, SSRC()).WillRepeatedly(Return(kSsrc2));
+  EXPECT_CALL(rtp_2, SendingMedia()).WillRepeatedly(Return(true));
+  EXPECT_CALL(rtp_2, HasBweExtensions()).WillRepeatedly(Return(true));
+
+  // Third module is sending media, but does not support rtx.
+  NiceMock<MockRtpRtcp> rtp_3;
+  EXPECT_CALL(rtp_3, RtxSendStatus()).WillRepeatedly(Return(kRtxOff));
+  EXPECT_CALL(rtp_3, SSRC()).WillRepeatedly(Return(kSsrc3));
+  EXPECT_CALL(rtp_3, SendingMedia()).WillRepeatedly(Return(true));
+  EXPECT_CALL(rtp_3, HasBweExtensions()).WillRepeatedly(Return(true));
+
+  packet_router.AddSendRtpModule(&rtp_1, false);
+  packet_router.AddSendRtpModule(&rtp_2, false);
+  packet_router.AddSendRtpModule(&rtp_3, false);
+
+  const size_t kPaddingBytes = 100;
+
+  // Initially, padding will be sent on last added rtp module that sends media
+  // and supports rtx.
+  EXPECT_CALL(rtp_2, TimeToSendPadding(kPaddingBytes, _))
+      .Times(1)
+      .WillOnce(Return(kPaddingBytes));
+  packet_router.TimeToSendPadding(kPaddingBytes, PacedPacketInfo());
+
+  // Send media on first module. Padding should be sent on that module.
+  EXPECT_CALL(rtp_1, TimeToSendPacket(kSsrc1, _, _, _, _));
+  packet_router.TimeToSendPacket(kSsrc1, 0, 0, false, PacedPacketInfo());
+
+  EXPECT_CALL(rtp_1, TimeToSendPadding(kPaddingBytes, _))
+      .Times(1)
+      .WillOnce(Return(kPaddingBytes));
+  packet_router.TimeToSendPadding(kPaddingBytes, PacedPacketInfo());
+
+  // Send media on second module. Padding should be sent there.
+  EXPECT_CALL(rtp_2, TimeToSendPacket(kSsrc2, _, _, _, _));
+  packet_router.TimeToSendPacket(kSsrc2, 0, 0, false, PacedPacketInfo());
+
+  EXPECT_CALL(rtp_2, TimeToSendPadding(kPaddingBytes, _))
+      .Times(1)
+      .WillOnce(Return(kPaddingBytes));
+  packet_router.TimeToSendPadding(kPaddingBytes, PacedPacketInfo());
+
+  // Remove second module, padding should now fall back to first module.
+  packet_router.RemoveSendRtpModule(&rtp_2);
+  EXPECT_CALL(rtp_1, TimeToSendPadding(kPaddingBytes, _))
+      .Times(1)
+      .WillOnce(Return(kPaddingBytes));
+  packet_router.TimeToSendPadding(kPaddingBytes, PacedPacketInfo());
+
+  // Remove first module too, leaving only the one without rtx.
+  packet_router.RemoveSendRtpModule(&rtp_1);
+
+  EXPECT_CALL(rtp_3, TimeToSendPadding(kPaddingBytes, _))
+      .Times(1)
+      .WillOnce(Return(kPaddingBytes));
+  packet_router.TimeToSendPadding(kPaddingBytes, PacedPacketInfo());
+
+  packet_router.RemoveSendRtpModule(&rtp_3);
+}
+
 TEST(PacketRouterTest, SenderOnlyFunctionsRespectSendingMedia) {
   PacketRouter packet_router;
   NiceMock<MockRtpRtcp> rtp;
