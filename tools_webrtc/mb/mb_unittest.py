@@ -374,6 +374,7 @@ class UnitTest(unittest.TestCase):
     command = isolate_file_contents['variables']['command']
 
     self.assertEqual(files, [
+        '../../.vpython',
         '../../testing/test_env.py',
         '../../third_party/gtest-parallel/gtest-parallel',
         '../../third_party/gtest-parallel/gtest_parallel.py',
@@ -456,6 +457,7 @@ class UnitTest(unittest.TestCase):
     command = isolate_file_contents['variables']['command']
 
     self.assertEqual(files, [
+        '../../.vpython',
         '../../testing/test_env.py',
         'base_unittests',
     ])
@@ -493,6 +495,7 @@ class UnitTest(unittest.TestCase):
     command = isolate_file_contents['variables']['command']
 
     self.assertEqual(files, [
+        '../../.vpython',
         '../../testing/test_env.py',
         '../../third_party/gtest-parallel/gtest-parallel',
         '../../third_party/gtest-parallel/gtest_parallel.py',
@@ -541,6 +544,7 @@ class UnitTest(unittest.TestCase):
     command = isolate_file_contents['variables']['command']
 
     self.assertEqual(files, [
+        '../../.vpython',
         '../../testing/test_env.py',
         '../../testing/xvfb.py',
         '../../third_party/gtest-parallel/gtest-parallel',
@@ -592,6 +596,7 @@ class UnitTest(unittest.TestCase):
     command = isolate_file_contents['variables']['command']
 
     self.assertEqual(files, [
+        '../../.vpython',
         '../../testing/test_env.py',
         '../../third_party/gtest-parallel/gtest-parallel',
         '../../third_party/gtest-parallel/gtest_parallel.py',
@@ -639,6 +644,7 @@ class UnitTest(unittest.TestCase):
     command = isolate_file_contents['variables']['command']
 
     self.assertEqual(files, [
+        '../../.vpython',
         '../../testing/test_env.py',
         '../../third_party/gtest-parallel/gtest-parallel',
         '../../third_party/gtest-parallel/gtest_parallel.py',
@@ -687,6 +693,7 @@ class UnitTest(unittest.TestCase):
     command = isolate_file_contents['variables']['command']
 
     self.assertEqual(files, [
+        '../../.vpython',
         '../../testing/test_env.py',
         '../../tools_webrtc/valgrind/webrtc_tests.sh',
         'base_unittests',
@@ -703,6 +710,58 @@ class UnitTest(unittest.TestCase):
         '--build-dir',
         '..',
         '--test',
+        './base_unittests',
+        '--',
+        '--asan=0',
+        '--lsan=0',
+        '--msan=0',
+        '--tsan=0',
+    ])
+
+  def test_isolate_test_launcher_with_webcam(self):
+    test_files = {
+      '/tmp/swarming_targets': 'base_unittests\n',
+      '/fake_src/testing/buildbot/gn_isolate_map.pyl': (
+          "{'base_unittests': {"
+          "  'label': '//base:base_unittests',"
+          "  'type': 'console_test_launcher',"
+          "  'use_webcam': True,"
+          "}}\n"
+      ),
+      '/fake_src/out/Default/base_unittests.runtime_deps': (
+          "base_unittests\n"
+          "some_resource_file\n"
+      ),
+    }
+    mbw = self.check(['gen', '-c', 'debug_goma', '//out/Default',
+                      '--swarming-targets-file', '/tmp/swarming_targets',
+                      '--isolate-map-file',
+                      '/fake_src/testing/buildbot/gn_isolate_map.pyl'],
+                     files=test_files, ret=0)
+
+    isolate_file = mbw.files['/fake_src/out/Default/base_unittests.isolate']
+    isolate_file_contents = ast.literal_eval(isolate_file)
+    files = isolate_file_contents['variables']['files']
+    command = isolate_file_contents['variables']['command']
+
+    self.assertEqual(files, [
+        '../../.vpython',
+        '../../testing/test_env.py',
+        '../../third_party/gtest-parallel/gtest-parallel',
+        '../../third_party/gtest-parallel/gtest_parallel.py',
+        '../../tools_webrtc/ensure_webcam_is_running.py',
+        '../../tools_webrtc/gtest-parallel-wrapper.py',
+        'base_unittests',
+        'some_resource_file',
+    ])
+    self.assertEqual(command, [
+        '../../tools_webrtc/ensure_webcam_is_running.py',
+        '../../testing/test_env.py',
+        '../../tools_webrtc/gtest-parallel-wrapper.py',
+        '--output_dir=${ISOLATED_OUTDIR}/test_logs',
+        '--gtest_color=no',
+        '--timeout=900',
+        '--retry_failed=3',
         './base_unittests',
         '--',
         '--asan=0',
