@@ -27,8 +27,6 @@
 
 namespace rtc {
 
-class AsyncResolverTest;
-
 // AsyncResolver will perform async DNS resolution, signaling the result on
 // the SignalDone from AsyncResolverInterface when the operation completes.
 class AsyncResolver : public SignalThread, public AsyncResolverInterface {

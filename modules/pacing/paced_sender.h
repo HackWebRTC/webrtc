@@ -24,7 +24,6 @@ namespace webrtc {
 class AlrDetector;
 class BitrateProber;
 class Clock;
-class ProbeClusterCreatedObserver;
 class RtcEventLog;
 class IntervalBudget;
 

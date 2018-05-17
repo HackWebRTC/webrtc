@@ -35,8 +35,6 @@
 namespace webrtc {
 
 class Clock;
-class ViECodec;
-class ViEDecoderObserver;
 struct CodecSpecificInfo;
 
 class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,

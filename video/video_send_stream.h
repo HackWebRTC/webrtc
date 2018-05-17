@@ -105,7 +105,6 @@ class VideoSendStream : public webrtc::VideoSendStream {
   friend class test::VideoSendStreamPeer;
 
   class ConstructionTask;
-  class DestructAndGetRtpStateTask;
 
   rtc::Optional<float> GetPacingFactorOverride() const;
 

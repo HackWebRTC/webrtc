@@ -26,11 +26,7 @@
 
 namespace webrtc {
 
-class CallStatsObserver;
-class ChannelStatsObserver;
-class EncodedImageCallback;
 class ReceiveStatisticsProxy;
-class VideoRenderCallback;
 
 namespace vcm {
 class VideoReceiver;
@@ -44,8 +40,6 @@ enum StreamType {
 class VideoStreamDecoder : public VCMReceiveCallback,
                            public VCMReceiveStatisticsCallback {
  public:
-  friend class ChannelStatsObserver;
-
   VideoStreamDecoder(
       vcm::VideoReceiver* video_receiver,
       VCMFrameTypeCallback* vcm_frame_type_callback,

@@ -51,19 +51,7 @@ class Thread;
 namespace cricket {
 
 class DecoderFactoryAdapter;
-class VideoCapturer;
-class VideoProcessor;
-class VideoRenderer;
-class VoiceMediaChannel;
-class WebRtcDecoderObserver;
-class WebRtcEncoderObserver;
-class WebRtcLocalStreamInfo;
-class WebRtcRenderAdapter;
 class WebRtcVideoChannel;
-class WebRtcVideoChannelRecvInfo;
-class WebRtcVideoChannelSendInfo;
-class WebRtcVoiceEngine;
-class WebRtcVoiceMediaChannel;
 
 class UnsignalledSsrcHandler {
  public:
