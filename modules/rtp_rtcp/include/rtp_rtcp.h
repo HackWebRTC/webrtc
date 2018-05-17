@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "api/optional.h"
+#include "api/video/video_bitrate_allocation.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/include/module.h"
 #include "modules/rtp_rtcp/include/flexfec_sender.h"

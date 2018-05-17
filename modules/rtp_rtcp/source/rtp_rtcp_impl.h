@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "api/optional.h"
+#include "api/video/video_bitrate_allocation.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/packet_loss_stats.h"

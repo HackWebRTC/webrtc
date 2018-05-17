@@ -13,9 +13,11 @@
 
 #include <string>
 
-#include "common_types.h"  // NOLINT(build/include)
+#include "api/rtp_headers.h"
+#include "api/video/video_bitrate_allocation.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/task_queue.h"
+#include "system_wrappers/include/ntp_time.h"
 
 namespace webrtc {
 class ReceiveStatisticsProvider;

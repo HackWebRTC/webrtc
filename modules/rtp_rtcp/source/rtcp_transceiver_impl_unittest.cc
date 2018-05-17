@@ -12,6 +12,7 @@
 
 #include <vector>
 
+#include "api/video/video_bitrate_allocation.h"
 #include "modules/rtp_rtcp/include/receive_statistics.h"
 #include "modules/rtp_rtcp/mocks/mock_rtcp_rtt_stats.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/app.h"
