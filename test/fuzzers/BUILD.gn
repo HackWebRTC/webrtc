@@ -23,10 +23,23 @@ rtc_static_library("webrtc_fuzzer_main") {
   ]
 }
 
+rtc_static_library("fuzz_data_helper") {
+  sources = [
+    "fuzz_data_helper.cc",
+    "fuzz_data_helper.h",
+  ]
+  deps = [
+    "../../api:array_view",
+    "../../modules/rtp_rtcp:rtp_rtcp_format",
+  ]
+  visibility = [ ":*" ]  # Only targets in this file can depend on this.
+}
+
 template("webrtc_fuzzer_test") {
   fuzzer_test(target_name) {
     forward_variables_from(invoker, "*")
     deps += [
+      ":fuzz_data_helper",
       ":webrtc_fuzzer_main",
 
       # Link unconditionally with webrtc's TaskQueue, regardless of
@@ -189,7 +202,7 @@ webrtc_fuzzer_test("packet_buffer_fuzzer") {
     "../../modules/video_coding/",
     "../../system_wrappers",
   ]
-  libfuzzer_options = [ "max_len=2000" ]
+  libfuzzer_options = [ "max_len=200000" ]
 }
 
 webrtc_fuzzer_test("rtcp_receiver_fuzzer") {
@@ -320,7 +333,6 @@ webrtc_fuzzer_test("audio_encoder_opus_fuzzer") {
     "audio_encoder_opus_fuzzer.cc",
   ]
   deps = [
-    ":fuzz_data_helper",
     "../../api:array_view",
     "../../api/audio_codecs/opus:audio_encoder_opus",
     "../../rtc_base:checks",
@@ -359,7 +371,6 @@ webrtc_fuzzer_test("neteq_signal_fuzzer") {
     "neteq_signal_fuzzer.cc",
   ]
   deps = [
-    ":fuzz_data_helper",
     "../../api:array_view",
     "../../modules/audio_coding:neteq",
     "../../modules/audio_coding:neteq_test_tools",
@@ -457,7 +468,6 @@ webrtc_fuzzer_test("audio_processing_fuzzer") {
   ]
   deps = [
     ":audio_processing_fuzzer_helper",
-    ":fuzz_data_helper",
     "../../api/audio:aec3_factory",
     "../../modules/audio_processing",
     "../../modules/audio_processing/aec3",
@@ -472,23 +482,10 @@ webrtc_fuzzer_test("comfort_noise_decoder_fuzzer") {
     "comfort_noise_decoder_fuzzer.cc",
   ]
   deps = [
-    ":fuzz_data_helper",
     "../../api:array_view",
     "../../modules/audio_coding:cng",
     "../../rtc_base:rtc_base_approved",
   ]
-}
-
-rtc_static_library("fuzz_data_helper") {
-  sources = [
-    "fuzz_data_helper.cc",
-    "fuzz_data_helper.h",
-  ]
-  deps = [
-    "../../api:array_view",
-    "../../modules/rtp_rtcp:rtp_rtcp_format",
-  ]
-  visibility = [ ":*" ]  # Only targets in this file can depend on this.
 }
 
 webrtc_fuzzer_test("rtp_frame_reference_finder_fuzzer") {

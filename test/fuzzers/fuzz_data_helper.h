@@ -79,7 +79,20 @@ class FuzzDataHelper {
     return data_.subview(index_to_return, bytes);
   }
 
+  // If sizeof(T) > BytesLeft then the remaining bytes will be used and the rest
+  // of the object will be zero initialized.
+  template <typename T>
+  void CopyTo(T* object) {
+    memset(object, 0, sizeof(T));
+
+    size_t bytes_to_copy = std::min(BytesLeft(), sizeof(T));
+    memcpy(object, data_.data() + data_ix_, bytes_to_copy);
+    data_ix_ += bytes_to_copy;
+  }
+
   size_t BytesRead() const { return data_ix_; }
+
+  size_t BytesLeft() const { return data_.size() - data_ix_; };
 
  private:
   rtc::ArrayView<const uint8_t> data_;

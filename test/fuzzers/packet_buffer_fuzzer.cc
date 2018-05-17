@@ -10,9 +10,9 @@
 
 #include "modules/video_coding/packet_buffer.h"
 #include "system_wrappers/include/clock.h"
+#include "test/fuzzers/fuzz_data_helper.h"
 
 namespace webrtc {
-
 namespace {
 class NullCallback : public video_coding::OnReceivedFrameCallback {
   void OnReceivedFrame(std::unique_ptr<video_coding::RtpFrameObject> frame) {}
@@ -20,27 +20,16 @@ class NullCallback : public video_coding::OnReceivedFrameCallback {
 }  // namespace
 
 void FuzzOneInput(const uint8_t* data, size_t size) {
-  // Two bytes for the sequence number,
-  // one byte for |is_first_packet_in_frame| and |markerBit|.
-  constexpr size_t kMinDataNeeded = 3;
-  if (size < kMinDataNeeded) {
-    return;
-  }
 
   VCMPacket packet;
   NullCallback callback;
   SimulatedClock clock(0);
   rtc::scoped_refptr<video_coding::PacketBuffer> packet_buffer(
       video_coding::PacketBuffer::Create(&clock, 8, 1024, &callback));
+  test::FuzzDataHelper helper(rtc::ArrayView<const uint8_t>(data, size));
 
-  size_t i = kMinDataNeeded;
-  while (i < size) {
-    memcpy(&packet.seqNum, &data[i - kMinDataNeeded], 2);
-    packet.is_first_packet_in_frame = data[i] & 1;
-    packet.markerBit = data[i] & 2;
-    packet_buffer->InsertPacket(&packet);
-    i += kMinDataNeeded;
-  }
+  while (helper.BytesLeft())
+    helper.CopyTo(&packet);
 }
 
 }  // namespace webrtc
