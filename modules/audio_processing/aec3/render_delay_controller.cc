@@ -23,10 +23,22 @@
 #include "rtc_base/atomicops.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/logging.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 
 namespace {
+
+int GetSkewHysteresis(const EchoCanceller3Config& config) {
+  if (field_trial::IsEnabled("WebRTC-Aec3EnforceSkewHysteresis1")) {
+    return 1;
+  }
+  if (field_trial::IsEnabled("WebRTC-Aec3EnforceSkewHysteresis2")) {
+    return 2;
+  }
+
+  return static_cast<int>(config.delay.skew_hysteresis_blocks);
+}
 
 constexpr int kSkewHistorySizeLog2 = 8;
 
@@ -118,8 +130,7 @@ RenderDelayControllerImpl::RenderDelayControllerImpl(
           static_cast<int>(config.delay.hysteresis_limit_1_blocks)),
       hysteresis_limit_2_blocks_(
           static_cast<int>(config.delay.hysteresis_limit_2_blocks)),
-      skew_hysteresis_blocks_(
-          static_cast<int>(config.delay.skew_hysteresis_blocks)),
+      skew_hysteresis_blocks_(GetSkewHysteresis(config)),
       delay_estimator_(data_dumper_.get(), config),
       delay_buf_(kBlockSize * non_causal_offset, 0.f),
       skew_estimator_(kSkewHistorySizeLog2) {
