@@ -14,7 +14,6 @@
 #include <utility>
 #include <vector>
 
-#include "call/video_config.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "media/base/mediaconstants.h"
 #include "modules/pacing/packet_router.h"

@@ -117,7 +117,6 @@ rtc_static_library("rtc_media_base") {
     "../api/video:video_frame_i420",
     "../api/video_codecs:video_codecs_api",
     "../call:call_interfaces",
-    "../call:video_stream_api",
     "../common_video",
     "../modules/audio_processing:audio_processing_statistics",
     "../rtc_base:rtc_base",

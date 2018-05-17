@@ -21,7 +21,6 @@ namespace webrtc {
 
 class VideoBitrateAllocator;
 class VideoCodec;
-class VideoEncoderConfig;
 
 class VideoCodecInitializer {
  public:

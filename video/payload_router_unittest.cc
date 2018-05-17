@@ -11,7 +11,6 @@
 #include <memory>
 #include <string>
 
-#include "call/video_config.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
 #include "modules/video_coding/include/video_codec_interface.h"

@@ -27,7 +27,6 @@
 #include "api/video/video_timing.h"
 #include "api/video/video_sink_interface.h"
 #include "api/videosourceinterface.h"
-#include "call/video_config.h"
 #include "media/base/codec.h"
 #include "media/base/mediaconfig.h"
 #include "media/base/mediaconstants.h"

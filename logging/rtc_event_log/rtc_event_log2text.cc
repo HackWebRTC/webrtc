@@ -16,7 +16,6 @@
 #include <string>
 #include <utility>  // pair
 
-#include "call/video_config.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "logging/rtc_event_log/rtc_event_log_parser_new.h"
 #include "modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor_config.h"
