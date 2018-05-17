@@ -59,6 +59,8 @@ class MouseCursorMonitor {
     // Called in response to Capture(). |position| indicates cursor absolute
     // position on the system in fullscreen coordinate, i.e. the top-left
     // monitor always starts from (0, 0).
+    // The coordinates of the position is controlled by OS, but it's always
+    // consistent with DesktopFrame.rect().top_left().
     // TODO(zijiehe): Ensure all implementations return the absolute position.
     // TODO(zijiehe): Make this function pure virtual after Chromium changes.
     // TODO(zijiehe): Current this overload works correctly only when capturing

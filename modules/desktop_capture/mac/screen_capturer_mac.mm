@@ -86,10 +86,6 @@ class DisplayStreamManager {
 
 namespace {
 
-// Standard Mac displays have 72dpi, but we report 96dpi for
-// consistency with Windows and Linux.
-const int kStandardDPI = 96;
-
 // Scales all coordinates of a rect by a specified factor.
 DesktopRect ScaleAndRoundCGRect(const CGRect& rect, float scale) {
   return DesktopRect::MakeLTRB(static_cast<int>(floor(rect.origin.x * scale)),

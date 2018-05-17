@@ -170,8 +170,11 @@ void DesktopAndCursorComposer::OnCaptureResult(
   if (frame && cursor_) {
     if (frame->rect().Contains(cursor_position_) &&
         !desktop_capturer_->IsOccluded(cursor_position_)) {
-      const DesktopVector relative_position =
+      const float scale = frame->scale_factor();
+      DesktopVector relative_position =
           cursor_position_.subtract(frame->top_left());
+      relative_position.set(relative_position.x() * scale,
+                            relative_position.y() * scale);
       frame = rtc::MakeUnique<DesktopFrameWithCursor>(
           std::move(frame), *cursor_, relative_position);
     }
