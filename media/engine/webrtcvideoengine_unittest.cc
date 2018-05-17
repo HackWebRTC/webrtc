@@ -2962,14 +2962,14 @@ TEST_F(Vp9SettingsTest, VerifyVp9SpecificSettings) {
 
   ASSERT_TRUE(stream->GetVp9Settings(&vp9_settings)) << "No VP9 config set.";
   EXPECT_FALSE(vp9_settings.denoisingOn);
-  // Frame dropping always off for screen sharing.
-  EXPECT_FALSE(vp9_settings.frameDroppingOn);
+  // Frame dropping always on for screen sharing.
+  EXPECT_TRUE(vp9_settings.frameDroppingOn);
 
   stream = SetDenoisingOption(last_ssrc_, &capturer, false);
 
   ASSERT_TRUE(stream->GetVp9Settings(&vp9_settings)) << "No VP9 config set.";
   EXPECT_FALSE(vp9_settings.denoisingOn);
-  EXPECT_FALSE(vp9_settings.frameDroppingOn);
+  EXPECT_TRUE(vp9_settings.frameDroppingOn);
 
   EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, nullptr, nullptr));
 }

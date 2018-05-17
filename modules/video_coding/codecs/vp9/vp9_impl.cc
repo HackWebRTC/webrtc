@@ -23,7 +23,6 @@
 
 #include "common_video/include/video_frame_buffer.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
-#include "modules/video_coding/codecs/vp9/screenshare_layers.h"
 #include "modules/video_coding/codecs/vp9/svc_rate_allocator.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/keep_ref_until_done.h"
@@ -79,10 +78,7 @@ VP9EncoderImpl::VP9EncoderImpl()
       num_temporal_layers_(0),
       num_spatial_layers_(0),
       inter_layer_pred_(InterLayerPredMode::kOn),
-      is_flexible_mode_(false),
-      frames_encoded_(0),
-      // Use two spatial when screensharing with flexible mode.
-      spatial_layer_(new ScreenshareLayersVP9(2)) {
+      is_flexible_mode_(false) {
   memset(&codec_, 0, sizeof(codec_));
   memset(&svc_params_, 0, sizeof(vpx_svc_extra_cfg_t));
 }
@@ -130,7 +126,6 @@ bool VP9EncoderImpl::SetSvcRates(
   uint8_t i = 0;
 
   config_->rc_target_bitrate = bitrate_allocation.get_sum_kbps();
-  spatial_layer_->ConfigureBitrate(bitrate_allocation.get_sum_kbps(), 0);
 
   if (ExplicitlyConfiguredSpatialLayers()) {
     for (size_t sl_idx = 0; sl_idx < num_spatial_layers_; ++sl_idx) {
@@ -342,12 +337,11 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   // TODO(asapersson): Check configuration of temporal switch up and increase
   // pattern length.
   is_flexible_mode_ = inst->VP9().flexibleMode;
-  if (is_flexible_mode_) {
-    config_->temporal_layering_mode = VP9E_TEMPORAL_LAYERING_MODE_BYPASS;
-    config_->ts_number_layers = num_temporal_layers_;
-    if (codec_.mode == kScreensharing)
-      spatial_layer_->ConfigureBitrate(inst->startBitrate, 0);
-  } else if (num_temporal_layers_ == 1) {
+
+  // TODO(ssilkin): Only non-flexible mode is supported for now.
+  RTC_DCHECK(!is_flexible_mode_);
+
+  if (num_temporal_layers_ == 1) {
     gof_.SetGofInfoVP9(kTemporalStructureMode1);
     config_->temporal_layering_mode = VP9E_TEMPORAL_LAYERING_MODE_NOLAYERING;
     config_->ts_number_layers = 1;
@@ -490,6 +484,22 @@ int VP9EncoderImpl::InitAndSetControlSettings(const VideoCodec* inst) {
       default:
         RTC_NOTREACHED();
     }
+
+    if (!is_flexible_mode_) {
+      // In RTP non-flexible mode, frame dropping of individual layers in a
+      // superframe leads to incorrect reference picture ID values in the
+      // RTP header. Dropping the entire superframe if the base is dropped
+      // or not dropping upper layers if base is not dropped mitigates
+      // the problem.
+      vpx_svc_frame_drop_t svc_drop_frame;
+      svc_drop_frame.framedrop_mode = CONSTRAINED_LAYER_DROP;
+      for (size_t i = 0; i < num_spatial_layers_; ++i) {
+        svc_drop_frame.framedrop_thresh[i] =
+            (i == 0) ? config_->rc_dropframe_thresh : 0;
+      }
+      vpx_codec_control(encoder_, VP9E_SET_SVC_FRAME_DROP_LAYER,
+                        &svc_drop_frame);
+    }
   }
 
   // Register callback for getting each spatial layer.
@@ -582,41 +592,6 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
     flags = VPX_EFLAG_FORCE_KF;
   }
 
-  if (is_flexible_mode_) {
-    SuperFrameRefSettings settings;
-
-    // These structs are copied when calling vpx_codec_control,
-    // therefore it is ok for them to go out of scope.
-    vpx_svc_ref_frame_config enc_layer_conf;
-    vpx_svc_layer_id layer_id;
-
-    if (codec_.mode == kRealtimeVideo) {
-      // Real time video not yet implemented in flexible mode.
-      RTC_NOTREACHED();
-    } else {
-      settings = spatial_layer_->GetSuperFrameSettings(input_image.timestamp(),
-                                                       force_key_frame_);
-    }
-    enc_layer_conf = GenerateRefsAndFlags(settings);
-    layer_id.temporal_layer_id = 0;
-    layer_id.spatial_layer_id = settings.start_layer;
-    vpx_codec_control(encoder_, VP9E_SET_SVC_LAYER_ID, &layer_id);
-    vpx_codec_control(encoder_, VP9E_SET_SVC_REF_FRAME_CONFIG, &enc_layer_conf);
-  } else if (codec_.mode == kRealtimeVideo && num_spatial_layers_ > 1) {
-    // In RTP non-flexible mode, frame dropping of individual layers in a
-    // superframe leads to incorrect reference picture ID values in the
-    // RTP header. Dropping the entire superframe if the base is dropped
-    // or not dropping upper layers if base is not dropped mitigates
-    // the problem.
-    vpx_svc_frame_drop_t svc_drop_frame;
-    svc_drop_frame.framedrop_mode = CONSTRAINED_LAYER_DROP;
-    for (size_t i = 0; i < num_spatial_layers_; ++i) {
-      svc_drop_frame.framedrop_thresh[i] =
-        (i == 0) ? config_->rc_dropframe_thresh : 0;
-    }
-    vpx_codec_control(encoder_, VP9E_SET_SVC_FRAME_DROP_LAYER, &svc_drop_frame);
-  }
-
   RTC_CHECK_GT(codec_.maxFramerate, 0);
   uint32_t duration = 90000 / codec_.maxFramerate;
   if (vpx_codec_encode(encoder_, raw_, timestamp_, duration, flags,
@@ -703,18 +678,12 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
   // bit.
   vp9_info->num_spatial_layers = num_spatial_layers_;
 
-  vp9_info->num_ref_pics = 0;
-  if (vp9_info->flexible_mode) {
-    vp9_info->gof_idx = kNoGofIdx;
-    vp9_info->num_ref_pics = num_ref_pics_[layer_id.spatial_layer_id];
-    for (int i = 0; i < num_ref_pics_[layer_id.spatial_layer_id]; ++i) {
-      vp9_info->p_diff[i] = p_diff_[layer_id.spatial_layer_id][i];
-    }
-  } else {
-    vp9_info->gof_idx =
-        static_cast<uint8_t>(pics_since_key_ % gof_.num_frames_in_gof);
-    vp9_info->temporal_up_switch = gof_.temporal_up_switch[vp9_info->gof_idx];
-  }
+  RTC_DCHECK(!vp9_info->flexible_mode);
+  vp9_info->gof_idx =
+      static_cast<uint8_t>(pics_since_key_ % gof_.num_frames_in_gof);
+  vp9_info->temporal_up_switch = gof_.temporal_up_switch[vp9_info->gof_idx];
+  vp9_info->num_ref_pics =
+      is_key_pic ? 0 : gof_.num_ref_pics[vp9_info->gof_idx];
 
   if (vp9_info->ss_data_available) {
     vp9_info->spatial_layer_resolution_present = true;
@@ -757,12 +726,6 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
   }
   memcpy(encoded_image_._buffer, pkt->data.frame.buf, pkt->data.frame.sz);
   encoded_image_._length = pkt->data.frame.sz;
-
-  if (is_flexible_mode_ && codec_.mode == kScreensharing) {
-    spatial_layer_->LayerFrameEncoded(
-        static_cast<unsigned int>(encoded_image_._length),
-        layer_id.spatial_layer_id);
-  }
 
   const bool is_key_frame =
       (pkt->data.frame.flags & VPX_FRAME_IS_KEY) ? true : false;
@@ -817,108 +780,6 @@ void VP9EncoderImpl::DeliverBufferedFrame(bool end_of_picture) {
                                                &frag_info);
     encoded_image_._length = 0;
   }
-}
-
-vpx_svc_ref_frame_config VP9EncoderImpl::GenerateRefsAndFlags(
-    const SuperFrameRefSettings& settings) {
-  static const vpx_enc_frame_flags_t kAllFlags =
-      VP8_EFLAG_NO_REF_ARF | VP8_EFLAG_NO_REF_GF | VP8_EFLAG_NO_REF_LAST |
-      VP8_EFLAG_NO_UPD_LAST | VP8_EFLAG_NO_UPD_ARF | VP8_EFLAG_NO_UPD_GF;
-  vpx_svc_ref_frame_config sf_conf = {};
-  if (settings.is_keyframe) {
-    // Used later on to make sure we don't make any invalid references.
-    memset(buffer_updated_at_frame_, -1, sizeof(buffer_updated_at_frame_));
-    for (int layer = settings.start_layer; layer <= settings.stop_layer;
-         ++layer) {
-      num_ref_pics_[layer] = 0;
-      buffer_updated_at_frame_[settings.layer[layer].upd_buf] = frames_encoded_;
-      // When encoding a keyframe only the alt_fb_idx is used
-      // to specify which layer ends up in which buffer.
-      sf_conf.alt_fb_idx[layer] = settings.layer[layer].upd_buf;
-    }
-  } else {
-    for (int layer_idx = settings.start_layer; layer_idx <= settings.stop_layer;
-         ++layer_idx) {
-      vpx_enc_frame_flags_t layer_flags = kAllFlags;
-      num_ref_pics_[layer_idx] = 0;
-      int8_t refs[3] = {settings.layer[layer_idx].ref_buf1,
-                        settings.layer[layer_idx].ref_buf2,
-                        settings.layer[layer_idx].ref_buf3};
-
-      for (unsigned int ref_idx = 0; ref_idx < kMaxVp9RefPics; ++ref_idx) {
-        if (refs[ref_idx] == -1)
-          continue;
-
-        RTC_DCHECK_GE(refs[ref_idx], 0);
-        RTC_DCHECK_LE(refs[ref_idx], 7);
-        // Easier to remove flags from all flags rather than having to
-        // build the flags from 0.
-        switch (num_ref_pics_[layer_idx]) {
-          case 0: {
-            sf_conf.lst_fb_idx[layer_idx] = refs[ref_idx];
-            layer_flags &= ~VP8_EFLAG_NO_REF_LAST;
-            break;
-          }
-          case 1: {
-            sf_conf.gld_fb_idx[layer_idx] = refs[ref_idx];
-            layer_flags &= ~VP8_EFLAG_NO_REF_GF;
-            break;
-          }
-          case 2: {
-            sf_conf.alt_fb_idx[layer_idx] = refs[ref_idx];
-            layer_flags &= ~VP8_EFLAG_NO_REF_ARF;
-            break;
-          }
-        }
-        // Make sure we don't reference a buffer that hasn't been
-        // used at all or hasn't been used since a keyframe.
-        RTC_DCHECK_NE(buffer_updated_at_frame_[refs[ref_idx]], -1);
-
-        p_diff_[layer_idx][num_ref_pics_[layer_idx]] =
-            frames_encoded_ - buffer_updated_at_frame_[refs[ref_idx]];
-        num_ref_pics_[layer_idx]++;
-      }
-
-      bool upd_buf_same_as_a_ref = false;
-      if (settings.layer[layer_idx].upd_buf != -1) {
-        for (unsigned int ref_idx = 0; ref_idx < kMaxVp9RefPics; ++ref_idx) {
-          if (settings.layer[layer_idx].upd_buf == refs[ref_idx]) {
-            switch (ref_idx) {
-              case 0: {
-                layer_flags &= ~VP8_EFLAG_NO_UPD_LAST;
-                break;
-              }
-              case 1: {
-                layer_flags &= ~VP8_EFLAG_NO_UPD_GF;
-                break;
-              }
-              case 2: {
-                layer_flags &= ~VP8_EFLAG_NO_UPD_ARF;
-                break;
-              }
-            }
-            upd_buf_same_as_a_ref = true;
-            break;
-          }
-        }
-        if (!upd_buf_same_as_a_ref) {
-          // If we have three references and a buffer is specified to be
-          // updated, then that buffer must be the same as one of the
-          // three references.
-          RTC_CHECK_LT(num_ref_pics_[layer_idx], kMaxVp9RefPics);
-
-          sf_conf.alt_fb_idx[layer_idx] = settings.layer[layer_idx].upd_buf;
-          layer_flags ^= VP8_EFLAG_NO_UPD_ARF;
-        }
-
-        int updated_buffer = settings.layer[layer_idx].upd_buf;
-        buffer_updated_at_frame_[updated_buffer] = frames_encoded_;
-        sf_conf.frame_flags[layer_idx] = layer_flags;
-      }
-    }
-  }
-  ++frames_encoded_;
-  return sf_conf;
 }
 
 int VP9EncoderImpl::SetChannelParameters(uint32_t packet_loss, int64_t rtt) {

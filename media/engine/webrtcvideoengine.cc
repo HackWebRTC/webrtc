@@ -455,37 +455,32 @@ WebRtcVideoChannel::WebRtcVideoSendStream::ConfigureVideoEncoderSettings(
   if (CodecNamesEq(codec.name, kVp9CodecName)) {
     webrtc::VideoCodecVP9 vp9_settings =
         webrtc::VideoEncoder::GetDefaultVp9Settings();
-    if (is_screencast) {
-      // TODO(asapersson): Set to 2 for now since there is a DCHECK in
-      // VideoSendStream::ReconfigureVideoEncoder.
-      vp9_settings.numberOfSpatialLayers = 2;
-      vp9_settings.numberOfTemporalLayers = 1;
-    } else {
-      const size_t default_num_spatial_layers =
-          parameters_.config.rtp.ssrcs.size();
-      const size_t num_spatial_layers =
-          GetVp9SpatialLayersFromFieldTrial().value_or(
-              default_num_spatial_layers);
+    const size_t default_num_spatial_layers =
+        parameters_.config.rtp.ssrcs.size();
+    const size_t num_spatial_layers =
+        GetVp9SpatialLayersFromFieldTrial().value_or(
+            default_num_spatial_layers);
 
-      const size_t default_num_temporal_layers =
-          num_spatial_layers > 1 ? kConferenceDefaultNumTemporalLayers : 1;
-      const size_t num_temporal_layers =
-          GetVp9TemporalLayersFromFieldTrial().value_or(
-              default_num_temporal_layers);
+    const size_t default_num_temporal_layers =
+        num_spatial_layers > 1 ? kConferenceDefaultNumTemporalLayers : 1;
+    const size_t num_temporal_layers =
+        GetVp9TemporalLayersFromFieldTrial().value_or(
+            default_num_temporal_layers);
 
-      vp9_settings.numberOfSpatialLayers = std::min<unsigned char>(
-          num_spatial_layers, kConferenceMaxNumSpatialLayers);
-      vp9_settings.numberOfTemporalLayers = std::min<unsigned char>(
-          num_temporal_layers, kConferenceMaxNumTemporalLayers);
-
-      // Limit inter-layer prediction to key pictures.
-      vp9_settings.interLayerPred = webrtc::InterLayerPredMode::kOnKeyPic;
-    }
+    vp9_settings.numberOfSpatialLayers = std::min<unsigned char>(
+        num_spatial_layers, kConferenceMaxNumSpatialLayers);
+    vp9_settings.numberOfTemporalLayers = std::min<unsigned char>(
+        num_temporal_layers, kConferenceMaxNumTemporalLayers);
 
     // VP9 denoising is disabled by default.
     vp9_settings.denoisingOn = codec_default_denoising ? true : denoising;
-    vp9_settings.frameDroppingOn = frame_dropping;
     vp9_settings.automaticResizeOn = automatic_resize;
+    // Ensure frame dropping is always enabled.
+    RTC_DCHECK(vp9_settings.frameDroppingOn);
+    if (!is_screencast) {
+      // Limit inter-layer prediction to key pictures.
+      vp9_settings.interLayerPred = webrtc::InterLayerPredMode::kOnKeyPic;
+    }
     return new rtc::RefCountedObject<
         webrtc::VideoEncoderConfig::Vp9EncoderSpecificSettings>(vp9_settings);
   }
