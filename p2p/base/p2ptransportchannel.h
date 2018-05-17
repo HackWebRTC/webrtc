@@ -36,6 +36,7 @@
 #include "p2p/base/p2pconstants.h"
 #include "p2p/base/portallocator.h"
 #include "p2p/base/portinterface.h"
+#include "rtc_base/asyncinvoker.h"
 #include "rtc_base/asyncpacketsocket.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/random.h"
@@ -72,8 +73,7 @@ class RemoteCandidate : public Candidate {
 
 // P2PTransportChannel manages the candidates and connection process to keep
 // two P2P clients connected to each other.
-class P2PTransportChannel : public IceTransportInternal,
-                            public rtc::MessageHandler {
+class P2PTransportChannel : public IceTransportInternal {
  public:
   P2PTransportChannel(const std::string& transport_name,
                       int component,
@@ -288,10 +288,9 @@ class P2PTransportChannel : public IceTransportInternal,
 
   void OnNominated(Connection* conn);
 
-  void OnMessage(rtc::Message* pmsg) override;
-  void OnCheckAndPing();
-  void OnRegatherOnFailedNetworks();
-  void OnRegatherOnAllNetworks();
+  void CheckAndPing();
+  void RegatherOnFailedNetworks();
+  void RegatherOnAllNetworks();
 
   void LogCandidatePairEvent(Connection* conn,
                              webrtc::IceCandidatePairEventType type);
@@ -412,10 +411,9 @@ class P2PTransportChannel : public IceTransportInternal,
   bool receiving_ = false;
   bool writable_ = false;
 
+  rtc::AsyncInvoker invoker_;
   webrtc::MetricsObserverInterface* metrics_observer_ = nullptr;
-
   rtc::Optional<rtc::NetworkRoute> network_route_;
-
   webrtc::IceEventLog ice_event_log_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(P2PTransportChannel);
