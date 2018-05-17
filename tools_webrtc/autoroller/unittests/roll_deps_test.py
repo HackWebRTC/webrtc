@@ -68,7 +68,8 @@ class FakeCmd(object):
 class TestRollChromiumRevision(unittest.TestCase):
   def setUp(self):
     self._output_dir = tempfile.mkdtemp()
-    for test_file in glob.glob(os.path.join(SCRIPT_DIR, 'testdata', '*')):
+    test_data_dir = os.path.join(SCRIPT_DIR, 'testdata', 'roll_deps')
+    for test_file in glob.glob(os.path.join(test_data_dir, '*')):
       shutil.copy(test_file, self._output_dir)
     self._webrtc_depsfile = os.path.join(self._output_dir, 'DEPS')
     self._new_cr_depsfile = os.path.join(self._output_dir, 'DEPS.chromium.new')

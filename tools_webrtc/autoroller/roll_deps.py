@@ -12,6 +12,7 @@
 import argparse
 import base64
 import collections
+import json
 import logging
 import os
 import re
@@ -414,12 +415,9 @@ def UpdateDepsFile(deps_filename, rev_update, changed_deps):
 
 
 def _LoadThirdPartyDepsAndFiles(filename):
-  third_party_deps = {}
   with open(filename, 'rb') as f:
-    deps_content = f.read()
-    global_scope = {}
-    exec (deps_content, global_scope, third_party_deps)
-  return third_party_deps.get('DEPS', [])
+    data = json.load(f)
+    return data.get('dependencies', [])
 
 
 def UpdateThirdPartyDeps(new_rev, dest_dir, source_dir,
@@ -613,10 +611,12 @@ def main():
   logging.debug('Commit message:\n%s', commit_msg)
 
   _CreateRollBranch(opts.dry_run)
+  third_party_chromium_deps_list = os.path.join(
+      CHECKOUT_SRC_DIR, 'THIRD_PARTY_CHROMIUM_DEPS.json')
   UpdateThirdPartyDeps(rev_update.new_third_party_rev,
                        os.path.join(CHECKOUT_SRC_DIR, 'third_party'),
                        cr_3p_repo,
-                       os.path.join(CHECKOUT_SRC_DIR, 'THIRD_PARTY_DEPS'))
+                       third_party_chromium_deps_list)
   UpdateDepsFile(deps_filename, rev_update, changed_deps)
   if _IsTreeClean():
     logging.info("No DEPS changes detected, skipping CL creation.")
