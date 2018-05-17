@@ -748,6 +748,42 @@ TEST_F(FullStackTest, VP9SVC_3SL_Low) {
       std::vector<SpatialLayer>(), false};
   RunTest(simulcast);
 }
+
+TEST_F(FullStackTest, VP9KSVC_3SL_High) {
+  VideoQualityTest::Params simulcast;
+  simulcast.call.send_side_bwe = true;
+  simulcast.video[0] = kSvcVp9Video;
+  simulcast.analyzer = {"vp9ksvc_3sl_high", 0.0, 0.0,
+                        kFullStackTestDurationSecs};
+  simulcast.ss[0] = {
+      std::vector<VideoStream>(),  0,    3, 2, InterLayerPredMode::kOnKeyPic,
+      std::vector<SpatialLayer>(), false};
+  RunTest(simulcast);
+}
+
+TEST_F(FullStackTest, VP9KSVC_3SL_Medium) {
+  VideoQualityTest::Params simulcast;
+  simulcast.call.send_side_bwe = true;
+  simulcast.video[0] = kSvcVp9Video;
+  simulcast.analyzer = {"vp9ksvc_3sl_medium", 0.0, 0.0,
+                        kFullStackTestDurationSecs};
+  simulcast.ss[0] = {
+      std::vector<VideoStream>(),  0,    3, 1, InterLayerPredMode::kOnKeyPic,
+      std::vector<SpatialLayer>(), false};
+  RunTest(simulcast);
+}
+
+TEST_F(FullStackTest, VP9KSVC_3SL_Low) {
+  VideoQualityTest::Params simulcast;
+  simulcast.call.send_side_bwe = true;
+  simulcast.video[0] = kSvcVp9Video;
+  simulcast.analyzer = {"vp9ksvc_3sl_low", 0.0, 0.0,
+                        kFullStackTestDurationSecs};
+  simulcast.ss[0] = {
+      std::vector<VideoStream>(),  0,    3, 0, InterLayerPredMode::kOnKeyPic,
+      std::vector<SpatialLayer>(), false};
+  RunTest(simulcast);
+}
 #endif  // !defined(RTC_DISABLE_VP9)
 
 // Android bots can't handle FullHD, so disable the test.
