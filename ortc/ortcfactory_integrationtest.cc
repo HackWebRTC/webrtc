@@ -17,7 +17,7 @@
 #include "ortc/testrtpparameters.h"
 #include "p2p/base/udptransport.h"
 #include "pc/test/fakeaudiocapturemodule.h"
-#include "pc/test/fakeperiodicvideosource.h"
+#include "pc/test/fakeperiodicvideotracksource.h"
 #include "pc/test/fakevideotrackrenderer.h"
 #include "pc/videotracksource.h"
 #include "rtc_base/criticalsection.h"
@@ -219,15 +219,13 @@ class OrtcFactoryIntegrationTest : public testing::Test {
     return ortc_factory->CreateAudioTrack(id, source);
   }
 
-  // Stores created video source in |fake_video_sources_|.
+  // Stores created video source in |fake_video_track_sources_|.
   rtc::scoped_refptr<webrtc::VideoTrackInterface>
   CreateLocalVideoTrackAndFakeSource(const std::string& id,
                                      OrtcFactoryInterface* ortc_factory) {
-    fake_video_sources_.emplace_back(
-        rtc::MakeUnique<FakePeriodicVideoSource>());
     fake_video_track_sources_.emplace_back(
-        new rtc::RefCountedObject<VideoTrackSource>(
-            fake_video_sources_.back().get(), false /* remote */));
+        new rtc::RefCountedObject<FakePeriodicVideoTrackSource>(
+            false /* remote */));
     return rtc::scoped_refptr<VideoTrackInterface>(
         ortc_factory->CreateVideoTrack(
             id, fake_video_track_sources_.back()));
@@ -352,7 +350,6 @@ class OrtcFactoryIntegrationTest : public testing::Test {
   rtc::scoped_refptr<FakeAudioCaptureModule> fake_audio_capture_module2_;
   std::unique_ptr<OrtcFactoryInterface> ortc_factory1_;
   std::unique_ptr<OrtcFactoryInterface> ortc_factory2_;
-  std::vector<std::unique_ptr<FakePeriodicVideoSource>> fake_video_sources_;
   std::vector<rtc::scoped_refptr<VideoTrackSource>> fake_video_track_sources_;
   int received_audio_frames1_ = 0;
   int received_audio_frames2_ = 0;
@@ -465,10 +462,7 @@ TEST_F(OrtcFactoryIntegrationTest, SetTrackWhileSending) {
   // Destroy old source, set a new track, and verify new frames are received
   // from the new track. The VideoTrackSource is reference counted and may live
   // a little longer, so tell it that its source is going away now.
-  fake_video_sources_[0]->Stop();
-  fake_video_track_sources_[0]->OnSourceDestroyed();
   fake_video_track_sources_[0] = nullptr;
-  fake_video_sources_[0].reset();
   int prev_num_frames = fake_renderer.num_rendered_frames();
   error = sender->SetTrack(
       CreateLocalVideoTrackAndFakeSource("video_2", ortc_factory1_.get()));

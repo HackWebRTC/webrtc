@@ -48,7 +48,7 @@
 #include "pc/rtpmediautils.h"
 #include "pc/sessiondescription.h"
 #include "pc/test/fakeaudiocapturemodule.h"
-#include "pc/test/fakeperiodicvideosource.h"
+#include "pc/test/fakeperiodicvideotracksource.h"
 #include "pc/test/fakertccertificategenerator.h"
 #include "pc/test/fakevideotrackrenderer.h"
 #include "pc/test/mockpeerconnectionobservers.h"
@@ -236,20 +236,6 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
       return nullptr;
     }
     return client;
-  }
-
-  ~PeerConnectionWrapper() {
-    // Tear down video sources in the proper order.
-    for (const auto& video_source : fake_video_sources_) {
-      // No more calls to downstream OnFrame
-      video_source->Stop();
-    }
-    for (const auto& track_source : video_track_sources_) {
-      // No more calls to upstream AddOrUpdateSink
-      track_source->OnSourceDestroyed();
-    }
-    fake_video_sources_.clear();
-    video_track_sources_.clear();
   }
 
   webrtc::PeerConnectionFactoryInterface* pc_factory() const {
@@ -655,12 +641,9 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
     // TODO(deadbeef): Do something more robust.
     config.frame_interval_ms = 100;
 
-    fake_video_sources_.emplace_back(
-        rtc::MakeUnique<webrtc::FakePeriodicVideoSource>(config));
-
     video_track_sources_.emplace_back(
-        new rtc::RefCountedObject<webrtc::VideoTrackSource>(
-            fake_video_sources_.back().get(), false /* remote */));
+        new rtc::RefCountedObject<webrtc::FakePeriodicVideoTrackSource>(
+            config, false /* remote */));
     rtc::scoped_refptr<webrtc::VideoTrackInterface> track(
         peer_connection_factory_->CreateVideoTrack(
             rtc::CreateRandomUuid(), video_track_sources_.back()));
@@ -940,8 +923,6 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
 
   // Store references to the video sources we've created, so that we can stop
   // them, if required.
-  std::vector<std::unique_ptr<webrtc::FakePeriodicVideoSource>>
-      fake_video_sources_;
   std::vector<rtc::scoped_refptr<webrtc::VideoTrackSource>>
       video_track_sources_;
   // |local_video_renderer_| attached to the first created local video track.

@@ -354,6 +354,7 @@ if (rtc_include_tests) {
       "test/fakepeerconnectionforstats.h",
       "test/fakeperiodicvideocapturer.h",
       "test/fakeperiodicvideosource.h",
+      "test/fakeperiodicvideotracksource.h",
       "test/fakertccertificategenerator.h",
       "test/fakesctptransport.h",
       "test/fakevideotrackrenderer.h",
