@@ -7,7 +7,7 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "call/video_config.h"
+#include "api/video_codecs/video_encoder_config.h"
 
 #include <algorithm>
 #include <string>

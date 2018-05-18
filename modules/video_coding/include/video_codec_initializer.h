@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-#include "call/video_config.h"
+#include "api/video_codecs/video_encoder_config.h"
 
 namespace webrtc {
 

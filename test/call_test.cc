@@ -14,8 +14,8 @@
 
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
+#include "api/video_codecs/video_encoder_config.h"
 #include "call/rtp_transport_controller_send.h"
-#include "call/video_config.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/event.h"

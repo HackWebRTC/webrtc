@@ -208,7 +208,6 @@ rtc_static_library("call") {
 
 rtc_source_set("video_stream_api") {
   sources = [
-    "video_config.cc",
     "video_config.h",
     "video_receive_stream.cc",
     "video_receive_stream.h",
@@ -328,6 +327,7 @@ if (rtc_include_tests) {
       "..:webrtc_common",
       "../api/audio_codecs:builtin_audio_encoder_factory",
       "../api/video:video_bitrate_allocation",
+      "../api/video_codecs:video_codecs_api",
       "../logging:rtc_event_log_api",
       "../modules/audio_coding",
       "../modules/audio_device",

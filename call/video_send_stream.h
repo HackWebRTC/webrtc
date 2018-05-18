@@ -21,17 +21,15 @@
 #include "api/rtp_headers.h"
 #include "api/video/video_sink_interface.h"
 #include "api/videosourceinterface.h"
+#include "api/video_codecs/video_encoder_config.h"
 #include "api/video_codecs/video_encoder_factory.h"
 #include "call/rtp_config.h"
-#include "call/video_config.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "common_video/include/frame_callback.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/platform_file.h"
 
 namespace webrtc {
-
-class VideoEncoder;
 
 class VideoSendStream {
  public:

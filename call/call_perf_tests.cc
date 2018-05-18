@@ -15,8 +15,8 @@
 
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/video/video_bitrate_allocation.h"
+#include "api/video_codecs/video_encoder_config.h"
 #include "call/call.h"
-#include "call/video_config.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "modules/audio_device/include/test_audio_device.h"

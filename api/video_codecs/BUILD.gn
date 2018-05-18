@@ -22,13 +22,14 @@ rtc_source_set("video_codecs_api") {
     "video_decoder_factory.h",
     "video_encoder.cc",
     "video_encoder.h",
+    "video_encoder_config.cc",
+    "video_encoder_config.h",
     "video_encoder_factory.h",
   ]
 
   deps = [
     "..:optional",
     "../..:webrtc_common",
-    "../../:typedefs",
     "../../common_video",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
