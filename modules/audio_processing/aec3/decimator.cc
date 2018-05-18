@@ -35,6 +35,12 @@ const CascadedBiQuadFilter::BiQuadCoefficients kLowPassFilterCoefficients8 = {
     {-1.56101808f, 0.64135154f}};
 constexpr int kNumFilters8 = 4;
 
+// b, a = signal.butter(2, 1000/8000.0, 'highpass', analog=False)
+const CascadedBiQuadFilter::BiQuadCoefficients kHighPassFilterCoefficients4 = {
+    {0.75707638f, -1.51415275f, 0.75707638f},
+    {-1.45424359f, 0.57406192f}};
+constexpr int kNumFiltersHP4 = 1;
+
 }  // namespace
 
 Decimator::Decimator(size_t down_sampling_factor)
@@ -46,7 +52,8 @@ Decimator::Decimator(size_t down_sampling_factor)
                                             : kLowPassFilterCoefficients2),
           down_sampling_factor_ == 4
               ? kNumFilters4
-              : (down_sampling_factor_ == 8 ? kNumFilters8 : kNumFilters2)) {
+              : (down_sampling_factor_ == 8 ? kNumFilters8 : kNumFilters2)),
+      high_pass_filter_(kHighPassFilterCoefficients4, kNumFiltersHP4) {
   RTC_DCHECK(down_sampling_factor_ == 2 || down_sampling_factor_ == 4 ||
              down_sampling_factor_ == 8);
 }
@@ -59,6 +66,10 @@ void Decimator::Decimate(rtc::ArrayView<const float> in,
 
   // Limit the frequency content of the signal to avoid aliasing.
   low_pass_filter_.Process(in, x);
+
+  // High-pass filter to reduce the impact of near-end noise.
+  if (down_sampling_factor_ == 4)
+    high_pass_filter_.Process(x, x);
 
   // Downsample the signal.
   for (size_t j = 0, k = 0; j < out.size(); ++j, k += down_sampling_factor_) {
