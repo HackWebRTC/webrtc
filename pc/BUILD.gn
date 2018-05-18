@@ -29,13 +29,10 @@ rtc_static_library("rtc_pc_base") {
   visibility = [ "*" ]
   defines = []
   sources = [
-    "audiomonitor.h",
     "channel.cc",
     "channel.h",
     "channelmanager.cc",
     "channelmanager.h",
-    "currentspeakermonitor.cc",
-    "currentspeakermonitor.h",
     "dtlssrtptransport.cc",
     "dtlssrtptransport.h",
     "externalhmac.cc",
@@ -283,7 +280,6 @@ if (rtc_include_tests) {
     sources = [
       "channel_unittest.cc",
       "channelmanager_unittest.cc",
-      "currentspeakermonitor_unittest.cc",
       "dtlssrtptransport_unittest.cc",
       "jseptransport_unittest.cc",
       "jseptransportcontroller_unittest.cc",

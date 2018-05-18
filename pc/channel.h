@@ -29,7 +29,6 @@
 #include "media/base/streamparams.h"
 #include "p2p/base/dtlstransportinternal.h"
 #include "p2p/base/packettransportinternal.h"
-#include "pc/audiomonitor.h"
 #include "pc/dtlssrtptransport.h"
 #include "pc/mediasession.h"
 #include "pc/rtptransport.h"
