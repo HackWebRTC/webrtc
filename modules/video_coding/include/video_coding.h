@@ -32,6 +32,7 @@ namespace webrtc {
 
 class Clock;
 class EncodedImageCallback;
+class VideoDecoder;
 class VideoEncoder;
 struct CodecSpecificInfo;
 
@@ -204,6 +205,14 @@ class VideoCodingModule : public Module {
   virtual int32_t RegisterReceiveCodec(const VideoCodec* receiveCodec,
                                        int32_t numberOfCores,
                                        bool requireKeyFrame = false) = 0;
+
+  // Register an external decoder object.
+  //
+  // Input:
+  //      - externalDecoder : Decoder object to be used for decoding frames.
+  //      - payloadType     : The payload type which this decoder is bound to.
+  virtual void RegisterExternalDecoder(VideoDecoder* externalDecoder,
+                                       uint8_t payloadType) = 0;
 
   // Register a receive callback. Will be called whenever there is a new frame
   // ready

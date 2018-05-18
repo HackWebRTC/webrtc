@@ -163,6 +163,11 @@ class VideoCodingModuleImpl : public VideoCodingModule {
                                           requireKeyFrame);
   }
 
+  void RegisterExternalDecoder(VideoDecoder* externalDecoder,
+                               uint8_t payloadType) override {
+    receiver_.RegisterExternalDecoder(externalDecoder, payloadType);
+  }
+
   int32_t RegisterReceiveCallback(
       VCMReceiveCallback* receiveCallback) override {
     RTC_DCHECK(construction_thread_.CalledOnValidThread());
