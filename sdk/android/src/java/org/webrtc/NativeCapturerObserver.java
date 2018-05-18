@@ -44,32 +44,6 @@ class NativeCapturerObserver implements VideoCapturer.CapturerObserver {
     nativeCapturerStopped(nativeSource);
   }
 
-  // TODO(bugs.webrtc.org/9181): Remove.
-  @Override
-  @SuppressWarnings("deprecation")
-  public void onByteBufferFrameCaptured(
-      byte[] data, int width, int height, int rotation, long timestampNs) {
-    // This NV21Buffer is not possible to retain. This is safe only because the native code will
-    // always call cropAndScale() and directly make a deep copy of the buffer.
-    final VideoFrame.Buffer nv21Buffer =
-        new NV21Buffer(data, width, height, null /* releaseCallback */);
-    final VideoFrame frame = new VideoFrame(nv21Buffer, rotation, timestampNs);
-    onFrameCaptured(frame);
-    frame.release();
-  }
-
-  // TODO(bugs.webrtc.org/9181): Remove.
-  @Override
-  @SuppressWarnings("deprecation")
-  public void onTextureFrameCaptured(int width, int height, int oesTextureId,
-      float[] transformMatrix, int rotation, long timestampNs) {
-    final VideoFrame.Buffer buffer = surfaceTextureHelper.createTextureBuffer(
-        width, height, RendererCommon.convertMatrixToAndroidGraphicsMatrix(transformMatrix));
-    final VideoFrame frame = new VideoFrame(buffer, rotation, timestampNs);
-    onFrameCaptured(frame);
-    frame.release();
-  }
-
   @Override
   public void onFrameCaptured(VideoFrame frame) {
     nativeOnFrameCaptured(nativeSource, frame.getBuffer().getWidth(), frame.getBuffer().getHeight(),

@@ -23,21 +23,6 @@ public interface VideoCapturer {
     void onCapturerStopped();
 
     // Delivers a captured frame. Called on a Java thread owned by VideoCapturer.
-    @Deprecated
-    default void onByteBufferFrameCaptured(
-        byte[] data, int width, int height, int rotation, long timeStamp) {
-      throw new UnsupportedOperationException("Deprecated and not implemented.");
-    }
-
-    // Delivers a captured frame in a texture with id {@code oesTextureId}. Called on a Java thread
-    // owned by VideoCapturer.
-    @Deprecated
-    default void onTextureFrameCaptured(int width, int height, int oesTextureId,
-        float[] transformMatrix, int rotation, long timestamp) {
-      throw new UnsupportedOperationException("Deprecated and not implemented.");
-    }
-
-    // Delivers a captured frame. Called on a Java thread owned by VideoCapturer.
     void onFrameCaptured(VideoFrame frame);
   }
 
