@@ -318,11 +318,10 @@ void DelayBasedBwe::SetStartBitrate(int start_bitrate_bps) {
   rate_control_.SetStartBitrate(start_bitrate_bps);
 }
 
-void DelayBasedBwe::SetBitrateConstraints(int min_bitrate_bps,
-                                          int max_bitrate_bps) {
+void DelayBasedBwe::SetMinBitrate(int min_bitrate_bps) {
   // Called from both the configuration thread and the network thread. Shouldn't
   // be called from the network thread in the future.
-  rate_control_.SetBitrateConstraints(min_bitrate_bps, max_bitrate_bps);
+  rate_control_.SetMinBitrate(min_bitrate_bps);
 }
 
 int64_t DelayBasedBwe::GetExpectedBwePeriodMs() const {

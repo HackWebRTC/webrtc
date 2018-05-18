@@ -30,7 +30,7 @@ class AimdRateControl {
   // otherwise.
   bool ValidEstimate() const;
   void SetStartBitrate(int start_bitrate_bps);
-  void SetBitrateConstraints(int min_bitrate_bps, int max_bitrate_bps);
+  void SetMinBitrate(int min_bitrate_bps);
   int64_t GetFeedbackInterval() const;
   // Returns true if the bitrate estimate hasn't been changed for more than
   // an RTT, or if the incoming_bitrate is less than half of the current

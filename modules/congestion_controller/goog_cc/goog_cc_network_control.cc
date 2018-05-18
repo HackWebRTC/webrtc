@@ -129,9 +129,7 @@ GoogCcNetworkController::GoogCcNetworkController(RtcEventLog* event_log,
       max_total_allocated_bitrate_(DataRate::Zero()),
       in_cwnd_experiment_(CwndExperimentEnabled()),
       accepted_queue_ms_(kDefaultAcceptedQueueMs) {
-  constexpr int kMaxBitrateUnchanged = -1;
-  delay_based_bwe_->SetBitrateConstraints(
-      congestion_controller::GetMinBitrateBps(), kMaxBitrateUnchanged);
+  delay_based_bwe_->SetMinBitrate(congestion_controller::GetMinBitrateBps());
   UpdateBitrateConstraints(config.constraints, config.starting_bandwidth);
   OnStreamsConfig(config.stream_based_config);
   if (in_cwnd_experiment_ &&
@@ -165,7 +163,7 @@ NetworkControlUpdate GoogCcNetworkController::OnNetworkRouteChange(
   delay_based_bwe_.reset(new DelayBasedBwe(event_log_));
   acknowledged_bitrate_estimator_.reset(new AcknowledgedBitrateEstimator());
   delay_based_bwe_->SetStartBitrate(start_bitrate_bps);
-  delay_based_bwe_->SetBitrateConstraints(min_bitrate_bps, max_bitrate_bps);
+  delay_based_bwe_->SetMinBitrate(min_bitrate_bps);
 
   probe_controller_->Reset(msg.at_time.ms());
   probe_controller_->SetBitrates(min_bitrate_bps, start_bitrate_bps,
@@ -264,10 +262,9 @@ void GoogCcNetworkController::UpdateBitrateConstraints(
 
   bandwidth_estimation_->SetBitrates(start_bitrate_bps, min_bitrate_bps,
                                      max_bitrate_bps);
-
   if (start_bitrate_bps > 0)
     delay_based_bwe_->SetStartBitrate(start_bitrate_bps);
-  delay_based_bwe_->SetBitrateConstraints(min_bitrate_bps, max_bitrate_bps);
+  delay_based_bwe_->SetMinBitrate(min_bitrate_bps);
 }
 
 NetworkControlUpdate GoogCcNetworkController::OnTransportLossReport(
