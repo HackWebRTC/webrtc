@@ -13,7 +13,6 @@ package org.webrtc;
 import java.nio.ByteBuffer;
 
 /** Class with static JNI helper functions that are used in many places. */
-@JNINamespace("webrtc::jni")
 public class JniCommon {
   /** Functions to increment/decrement an rtc::RefCountInterface pointer. */
   public static native void nativeAddRef(long refCountedPointer);

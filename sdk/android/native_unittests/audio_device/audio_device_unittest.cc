@@ -50,7 +50,7 @@ using ::testing::Return;
 
 namespace webrtc {
 
-namespace android_adm {
+namespace jni {
 
 // Number of callbacks (input or output) the tests waits for before we set
 // an event indicating that the test was OK.
@@ -1135,6 +1135,6 @@ TEST_F(AudioDeviceTest, DISABLED_MeasureLoopbackLatency) {
   latency_audio_stream->PrintResults();
 }
 
-}  // namespace android_adm
+}  // namespace jni
 
 }  // namespace webrtc

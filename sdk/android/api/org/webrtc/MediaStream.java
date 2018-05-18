@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Iterator;
 
 /** Java wrapper for a C++ MediaStreamInterface. */
-@JNINamespace("webrtc::jni")
 public class MediaStream {
   private static final String TAG = "MediaStream";
 

@@ -20,7 +20,6 @@ import org.webrtc.audio.LegacyAudioDeviceModule;
  * Java wrapper for a C++ PeerConnectionFactoryInterface.  Main entry point to
  * the PeerConnection API for clients.
  */
-@JNINamespace("webrtc::jni")
 public class PeerConnectionFactory {
   public static final String TRIAL_ENABLED = "Enabled";
   @Deprecated public static final String VIDEO_FRAME_EMIT_TRIAL = "VideoFrameEmit";

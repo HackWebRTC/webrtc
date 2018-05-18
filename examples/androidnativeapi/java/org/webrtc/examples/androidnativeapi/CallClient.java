@@ -13,13 +13,10 @@ package org.webrtc.examples.androidnativeapi;
 import android.content.Context;
 import android.os.Handler;
 import android.os.HandlerThread;
-import org.webrtc.JNINamespace;
-import org.webrtc.NativeClassQualifiedName;
 import org.webrtc.SurfaceTextureHelper;
 import org.webrtc.VideoCapturer;
 import org.webrtc.VideoSink;
 
-@JNINamespace("webrtc_examples")
 public class CallClient {
   private static final String TAG = "CallClient";
   private static final int CAPTURE_WIDTH = 640;
@@ -65,13 +62,10 @@ public class CallClient {
   }
 
   private static native long nativeCreateClient();
-  @NativeClassQualifiedName("webrtc_examples::AndroidCallClient")
-  private static native void nativeCall(long nativePtr, VideoSink localSink, VideoSink remoteSink);
-  @NativeClassQualifiedName("webrtc_examples::AndroidCallClient")
-  private static native void nativeHangup(long nativePtr);
-  @NativeClassQualifiedName("webrtc_examples::AndroidCallClient")
-  private static native void nativeDelete(long nativePtr);
-  @NativeClassQualifiedName("webrtc_examples::AndroidCallClient")
+  private static native void nativeCall(
+      long nativeAndroidCallClient, VideoSink localSink, VideoSink remoteSink);
+  private static native void nativeHangup(long nativeAndroidCallClient);
+  private static native void nativeDelete(long nativeAndroidCallClient);
   private static native VideoCapturer.CapturerObserver nativeGetJavaVideoCapturerObserver(
-      long nativePtr);
+      long nativeAndroidCallClient);
 }

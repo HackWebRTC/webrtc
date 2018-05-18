@@ -26,7 +26,6 @@ import org.webrtc.ThreadUtils;
 import org.webrtc.audio.JavaAudioDeviceModule.AudioTrackErrorCallback;
 import org.webrtc.audio.JavaAudioDeviceModule.AudioTrackStartErrorCode;
 import org.webrtc.CalledByNative;
-import org.webrtc.NativeClassQualifiedName;
 
 class WebRtcAudioTrack {
   private static final String TAG = "WebRtcAudioTrackExternal";
@@ -443,12 +442,9 @@ class WebRtcAudioTrack {
     return (channels == 1 ? AudioFormat.CHANNEL_OUT_MONO : AudioFormat.CHANNEL_OUT_STEREO);
   }
 
-  @NativeClassQualifiedName("webrtc::android_adm::AudioTrackJni")
   private static native void nativeCacheDirectBufferAddress(
-      long nativeAudioRecord, ByteBuffer byteBuffer);
-
-  @NativeClassQualifiedName("webrtc::android_adm::AudioTrackJni")
-  private static native void nativeGetPlayoutData(long nativeAudioRecord, int bytes);
+      long nativeAudioTrackJni, ByteBuffer byteBuffer);
+  private static native void nativeGetPlayoutData(long nativeAudioTrackJni, int bytes);
 
   // Sets all samples to be played out to zero if |mute| is true, i.e.,
   // ensures that the speaker is muted.

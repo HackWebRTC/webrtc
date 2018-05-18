@@ -20,7 +20,6 @@ import org.webrtc.VideoFrame;
  * class also provides a createGui() method for creating a GUI-rendering window
  * on various platforms.
  */
-@JNINamespace("webrtc::jni")
 public class VideoRenderer {
   /**
    * Java version of webrtc::VideoFrame. Frames are only constructed from native code and test

@@ -13,7 +13,6 @@ package org.webrtc;
 import javax.annotation.Nullable;
 
 /** Java wrapper for a C++ RtpSenderInterface. */
-@JNINamespace("webrtc::jni")
 public class RtpSender {
   final long nativeRtpSender;
 

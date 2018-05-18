@@ -15,7 +15,6 @@ import javax.annotation.Nullable;
 /**
  * Java wrapper of native AndroidVideoTrackSource.
  */
-@JNINamespace("webrtc::jni")
 public class VideoSource extends MediaSource {
   private final NativeCapturerObserver capturerObserver;
 

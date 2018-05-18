@@ -12,7 +12,6 @@ package org.webrtc.audio;
 
 import android.media.AudioManager;
 import android.content.Context;
-import org.webrtc.JNINamespace;
 import org.webrtc.JniCommon;
 import org.webrtc.Logging;
 
@@ -20,7 +19,6 @@ import org.webrtc.Logging;
  * AudioDeviceModule implemented using android.media.AudioRecord as input and
  * android.media.AudioTrack as output.
  */
-@JNINamespace("webrtc::jni")
 public class JavaAudioDeviceModule implements AudioDeviceModule {
   private static final String TAG = "JavaAudioDeviceModule";
 

@@ -29,7 +29,7 @@ namespace webrtc {
 class AudioDeviceBuffer;
 class FineAudioBuffer;
 
-namespace android_adm {
+namespace jni {
 
 // Implements low-latency 16-bit mono PCM audio output support for Android
 // using the C based AAudio API.
@@ -146,7 +146,7 @@ class AAudioPlayer final : public AudioOutput,
   double latency_millis_ RTC_GUARDED_BY(thread_checker_aaudio_) = 0;
 };
 
-}  // namespace android_adm
+}  // namespace jni
 
 }  // namespace webrtc
 

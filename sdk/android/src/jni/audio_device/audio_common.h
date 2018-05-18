@@ -13,7 +13,7 @@
 
 namespace webrtc {
 
-namespace android_adm {
+namespace jni {
 
 const int kDefaultSampleRate = 44100;
 // Delay estimates for the two different supported modes. These values are based
@@ -25,7 +25,7 @@ const int kDefaultSampleRate = 44100;
 const int kLowLatencyModeDelayEstimateInMilliseconds = 50;
 const int kHighLatencyModeDelayEstimateInMilliseconds = 150;
 
-}  // namespace android_adm
+}  // namespace jni
 
 }  // namespace webrtc
 

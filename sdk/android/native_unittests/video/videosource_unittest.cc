@@ -62,10 +62,10 @@ TEST(JavaVideoSourceTest, OnFrameCapturedFrameIsDeliveredToSink) {
                             false /* is_screencast */);
   video_track_source->AddOrUpdateSink(&test_video_sink, rtc::VideoSinkWants());
 
-  Java_JavaVideoSourceTestHelper_startCapture(
+  jni::Java_JavaVideoSourceTestHelper_startCapture(
       env, video_track_source->GetJavaVideoCapturerObserver(env),
       true /* success */);
-  Java_JavaVideoSourceTestHelper_deliverFrame(
+  jni::Java_JavaVideoSourceTestHelper_deliverFrame(
       env, video_track_source->GetJavaVideoCapturerObserver(env));
 
   std::vector<VideoFrame> frames = test_video_sink.GetFrames();
@@ -86,7 +86,7 @@ TEST(JavaVideoSourceTest, CapturerStartedSuccessStateBecomesLive) {
                             rtc::ThreadManager::Instance()->CurrentThread(),
                             false /* is_screencast */);
 
-  Java_JavaVideoSourceTestHelper_startCapture(
+  jni::Java_JavaVideoSourceTestHelper_startCapture(
       env, video_track_source->GetJavaVideoCapturerObserver(env),
       true /* success */);
 
@@ -104,7 +104,7 @@ TEST(JavaVideoSourceTest, CapturerStartedFailureStateBecomesEnded) {
                             rtc::ThreadManager::Instance()->CurrentThread(),
                             false /* is_screencast */);
 
-  Java_JavaVideoSourceTestHelper_startCapture(
+  jni::Java_JavaVideoSourceTestHelper_startCapture(
       env, video_track_source->GetJavaVideoCapturerObserver(env),
       false /* success */);
 
@@ -122,10 +122,10 @@ TEST(JavaVideoSourceTest, CapturerStoppedStateBecomesEnded) {
                             rtc::ThreadManager::Instance()->CurrentThread(),
                             false /* is_screencast */);
 
-  Java_JavaVideoSourceTestHelper_startCapture(
+  jni::Java_JavaVideoSourceTestHelper_startCapture(
       env, video_track_source->GetJavaVideoCapturerObserver(env),
       true /* success */);
-  Java_JavaVideoSourceTestHelper_stopCapture(
+  jni::Java_JavaVideoSourceTestHelper_stopCapture(
       env, video_track_source->GetJavaVideoCapturerObserver(env));
 
   EXPECT_EQ(VideoTrackSourceInterface::SourceState::kEnded,

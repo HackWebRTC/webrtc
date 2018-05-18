@@ -24,7 +24,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 /**
  * Can be used to save the video frames to file.
  */
-@JNINamespace("webrtc::jni")
 public class VideoFileRenderer implements VideoSink {
   private static final String TAG = "VideoFileRenderer";
 

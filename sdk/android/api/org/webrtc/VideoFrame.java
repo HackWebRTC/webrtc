@@ -26,7 +26,6 @@ import javax.annotation.Nullable;
  * format and serves as a fallback for video sinks that can only handle I420, e.g. the internal
  * WebRTC software encoders.
  */
-@JNINamespace("webrtc::jni")
 public class VideoFrame implements RefCounted {
   /**
    * Implements image storage medium. Might be for example an OpenGL texture or a memory region

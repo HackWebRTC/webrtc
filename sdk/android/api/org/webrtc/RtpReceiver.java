@@ -14,7 +14,6 @@ import javax.annotation.Nullable;
 import org.webrtc.MediaStreamTrack;
 
 /** Java wrapper for a C++ RtpReceiverInterface. */
-@JNINamespace("webrtc::jni")
 public class RtpReceiver {
   /** Java wrapper for a C++ RtpReceiverObserverInterface*/
   public static interface Observer {

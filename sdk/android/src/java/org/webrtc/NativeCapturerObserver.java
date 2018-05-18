@@ -16,7 +16,6 @@ import javax.annotation.Nullable;
  * Implements VideoCapturer.CapturerObserver and feeds frames to
  * webrtc::jni::AndroidVideoTrackSource.
  */
-@JNINamespace("webrtc::jni")
 class NativeCapturerObserver implements VideoCapturer.CapturerObserver {
   // Pointer to webrtc::jni::AndroidVideoTrackSource.
   private final long nativeSource;

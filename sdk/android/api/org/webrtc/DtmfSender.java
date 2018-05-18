@@ -11,7 +11,6 @@
 package org.webrtc;
 
 /** Java wrapper for a C++ DtmfSenderInterface. */
-@JNINamespace("webrtc::jni")
 public class DtmfSender {
   final long nativeDtmfSender;
 

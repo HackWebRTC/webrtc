@@ -21,7 +21,6 @@ import javax.annotation.Nullable;
  * JS APIs: http://dev.w3.org/2011/webrtc/editor/webrtc.html and
  * http://www.w3.org/TR/mediacapture-streams/
  */
-@JNINamespace("webrtc::jni")
 public class PeerConnection {
   /** Tracks PeerConnectionInterface::IceGatheringState */
   public enum IceGatheringState {

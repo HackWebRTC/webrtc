@@ -21,7 +21,6 @@ import javax.annotation.Nullable;
  * drawer.drawYuv depending on the type of the buffer. The frame will be rendered with rotation
  * taken into account. You can supply an additional render matrix for custom transformations.
  */
-@JNINamespace("webrtc::jni")
 public class VideoFrameDrawer {
   /**
    * Draws a VideoFrame.TextureBuffer. Calls either drawer.drawOes or drawer.drawRgb

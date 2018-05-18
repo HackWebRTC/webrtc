@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** Java version of VideoTrackInterface. */
-@JNINamespace("webrtc::jni")
 public class VideoTrack extends MediaStreamTrack {
   private final List<VideoRenderer> renderers = new ArrayList<>();
   private final IdentityHashMap<VideoSink, Long> sinks = new IdentityHashMap<VideoSink, Long>();

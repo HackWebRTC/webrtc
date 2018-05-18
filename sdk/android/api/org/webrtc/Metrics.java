@@ -28,7 +28,6 @@ import java.util.Map;
 // Most histograms are not updated frequently (e.g. most video metrics are an
 // average over the call and recorded when a stream is removed).
 // The metrics can for example be retrieved when a peer connection is closed.
-@JNINamespace("webrtc::jni")
 public class Metrics {
   private static final String TAG = "Metrics";
 

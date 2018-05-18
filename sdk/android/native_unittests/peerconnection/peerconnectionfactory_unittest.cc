@@ -61,7 +61,8 @@ TEST(PeerConnectionFactoryTest, NativeToJavaPeerConnectionFactory) {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
 
   RTC_LOG(INFO) << "Initializing java peer connection factory.";
-  Java_PeerConnectionFactoryInitializationHelper_initializeFactoryForTests(jni);
+  jni::Java_PeerConnectionFactoryInitializationHelper_initializeFactoryForTests(
+      jni);
   RTC_LOG(INFO) << "Java peer connection factory initialized.";
 
   // Create threads.

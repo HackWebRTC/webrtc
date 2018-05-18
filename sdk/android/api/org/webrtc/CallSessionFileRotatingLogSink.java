@@ -10,7 +10,6 @@
 
 package org.webrtc;
 
-@JNINamespace("webrtc::jni")
 public class CallSessionFileRotatingLogSink {
   private long nativeSink;
 

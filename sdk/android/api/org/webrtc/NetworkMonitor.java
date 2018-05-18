@@ -278,18 +278,13 @@ public class NetworkMonitor {
     return connectionType != ConnectionType.CONNECTION_NONE;
   }
 
-  @NativeClassQualifiedName("webrtc::jni::AndroidNetworkMonitor")
-  private native void nativeNotifyConnectionTypeChanged(long nativePtr);
-
-  @NativeClassQualifiedName("webrtc::jni::AndroidNetworkMonitor")
-  private native void nativeNotifyOfNetworkConnect(long nativePtr, NetworkInformation networkInfo);
-
-  @NativeClassQualifiedName("webrtc::jni::AndroidNetworkMonitor")
-  private native void nativeNotifyOfNetworkDisconnect(long nativePtr, long networkHandle);
-
-  @NativeClassQualifiedName("webrtc::jni::AndroidNetworkMonitor")
+  private native void nativeNotifyConnectionTypeChanged(long nativeAndroidNetworkMonitor);
+  private native void nativeNotifyOfNetworkConnect(
+      long nativeAndroidNetworkMonitor, NetworkInformation networkInfo);
+  private native void nativeNotifyOfNetworkDisconnect(
+      long nativeAndroidNetworkMonitor, long networkHandle);
   private native void nativeNotifyOfActiveNetworkList(
-      long nativePtr, NetworkInformation[] networkInfos);
+      long nativeAndroidNetworkMonitor, NetworkInformation[] networkInfos);
 
   // For testing only.
   @Nullable

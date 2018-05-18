@@ -18,7 +18,7 @@
 
 namespace webrtc {
 
-namespace android_adm {
+namespace jni {
 
 // AAudio callback interface for audio transport to/from the AAudio stream.
 // The interface also contains an error callback method for notifications of
@@ -122,7 +122,7 @@ class AAudioWrapper {
   int32_t frames_per_burst_ = 0;
 };
 
-}  // namespace android_adm
+}  // namespace jni
 
 }  // namespace webrtc
 

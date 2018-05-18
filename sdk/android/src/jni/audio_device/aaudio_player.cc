@@ -18,7 +18,7 @@
 
 namespace webrtc {
 
-namespace android_adm {
+namespace jni {
 
 enum AudioDeviceMessageType : uint32_t {
   kMessageOutputStreamDisconnected,
@@ -241,6 +241,6 @@ void AAudioPlayer::HandleStreamDisconnected() {
   StartPlayout();
 }
 
-}  // namespace android_adm
+}  // namespace jni
 
 }  // namespace webrtc

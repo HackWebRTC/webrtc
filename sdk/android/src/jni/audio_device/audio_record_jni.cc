@@ -26,7 +26,7 @@
 
 namespace webrtc {
 
-namespace android_adm {
+namespace jni {
 
 namespace {
 // Scoped class which logs its time of life as a UMA statistic. It generates
@@ -243,6 +243,6 @@ void AudioRecordJni::DataIsRecorded(JNIEnv* env,
   }
 }
 
-}  // namespace android_adm
+}  // namespace jni
 
 }  // namespace webrtc

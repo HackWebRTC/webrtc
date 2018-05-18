@@ -13,7 +13,6 @@ package org.webrtc;
 import java.nio.ByteBuffer;
 
 /** Wraps libyuv methods to Java. All passed byte buffers must be direct byte buffers. */
-@JNINamespace("webrtc::jni")
 public class YuvHelper {
   /** Helper method for copying I420 to tightly packed destination buffer. */
   public static void I420Copy(ByteBuffer srcY, int srcStrideY, ByteBuffer srcU, int srcStrideU,

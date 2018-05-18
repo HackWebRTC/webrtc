@@ -24,7 +24,6 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import org.webrtc.CalledByNative;
 import org.webrtc.Logging;
-import org.webrtc.NativeClassQualifiedName;
 import org.webrtc.ThreadUtils;
 import org.webrtc.audio.JavaAudioDeviceModule.AudioRecordErrorCallback;
 import org.webrtc.audio.JavaAudioDeviceModule.AudioRecordStartErrorCode;
@@ -321,11 +320,9 @@ class WebRtcAudioRecord {
     return (channels == 1 ? AudioFormat.CHANNEL_IN_MONO : AudioFormat.CHANNEL_IN_STEREO);
   }
 
-  @NativeClassQualifiedName("webrtc::android_adm::AudioRecordJni")
-  private native void nativeCacheDirectBufferAddress(long nativeAudioRecord, ByteBuffer byteBuffer);
-
-  @NativeClassQualifiedName("webrtc::android_adm::AudioRecordJni")
-  private native void nativeDataIsRecorded(long nativeAudioRecord, int bytes);
+  private native void nativeCacheDirectBufferAddress(
+      long nativeAudioRecordJni, ByteBuffer byteBuffer);
+  private native void nativeDataIsRecorded(long nativeAudioRecordJni, int bytes);
 
   // Sets all recorded samples to zero if |mute| is true, i.e., ensures that
   // the microphone is muted.

@@ -20,7 +20,7 @@
 
 namespace webrtc {
 
-namespace android_adm {
+namespace jni {
 
 // Returns a string representation given an integer SL_RESULT_XXX code.
 // The mapping can be found in <SLES/OpenSLES.h>.
@@ -83,7 +83,7 @@ class OpenSLEngineManager {
   ScopedSLObjectItf engine_object_;
 };
 
-}  // namespace android_adm
+}  // namespace jni
 
 }  // namespace webrtc
 

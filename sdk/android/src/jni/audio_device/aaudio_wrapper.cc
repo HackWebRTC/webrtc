@@ -33,7 +33,7 @@
 
 namespace webrtc {
 
-namespace android_adm {
+namespace jni {
 
 namespace {
 
@@ -496,6 +496,6 @@ bool AAudioWrapper::OptimizeBuffers() {
   return true;
 }
 
-}  // namespace android_adm
+}  // namespace jni
 
 }  // namespace webrtc

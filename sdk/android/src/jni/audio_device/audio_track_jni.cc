@@ -22,7 +22,7 @@
 
 namespace webrtc {
 
-namespace android_adm {
+namespace jni {
 
 ScopedJavaLocalRef<jobject> AudioTrackJni::CreateJavaWebRtcAudioTrack(
     JNIEnv* env,
@@ -216,6 +216,6 @@ void AudioTrackJni::GetPlayoutData(JNIEnv* env,
   RTC_DCHECK_EQ(length, bytes_per_frame * samples);
 }
 
-}  // namespace android_adm
+}  // namespace jni
 
 }  // namespace webrtc

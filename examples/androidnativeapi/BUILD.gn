@@ -28,6 +28,7 @@ generate_jni("generated_jni") {
     "java/org/webrtc/examples/androidnativeapi/CallClient.java",
   ]
   jni_package = ""
+  namespace = "webrtc_examples"
   jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
 }
 

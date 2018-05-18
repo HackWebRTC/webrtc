@@ -41,7 +41,7 @@
 
 namespace webrtc {
 
-namespace android_adm {
+namespace jni {
 
 OpenSLESRecorder::OpenSLESRecorder(const AudioParameters& audio_parameters,
                                    OpenSLEngineManager* engine_manager)
@@ -441,6 +441,6 @@ SLuint32 OpenSLESRecorder::GetBufferCount() {
   return state.count;
 }
 
-}  // namespace android_adm
+}  // namespace jni
 
 }  // namespace webrtc

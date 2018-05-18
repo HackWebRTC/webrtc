@@ -32,7 +32,7 @@ namespace {
 class ClassLoader {
  public:
   explicit ClassLoader(JNIEnv* env)
-      : class_loader_(Java_WebRtcClassLoader_getClassLoader(env)) {
+      : class_loader_(jni::Java_WebRtcClassLoader_getClassLoader(env)) {
     class_loader_class_ = reinterpret_cast<jclass>(
         env->NewGlobalRef(env->FindClass("java/lang/ClassLoader")));
     CHECK_EXCEPTION(env);

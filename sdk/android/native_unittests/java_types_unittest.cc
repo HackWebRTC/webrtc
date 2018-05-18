@@ -21,7 +21,7 @@ namespace {
 TEST(JavaTypesTest, TestJavaToNativeStringMap) {
   JNIEnv* env = AttachCurrentThreadIfNeeded();
   ScopedJavaLocalRef<jobject> j_map =
-      Java_JavaTypesTestHelper_createTestStringMap(env);
+      jni::Java_JavaTypesTestHelper_createTestStringMap(env);
 
   std::map<std::string, std::string> output = JavaToNativeStringMap(env, j_map);
 

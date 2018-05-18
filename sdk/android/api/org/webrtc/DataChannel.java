@@ -13,7 +13,6 @@ package org.webrtc;
 import java.nio.ByteBuffer;
 
 /** Java wrapper for a C++ DataChannelInterface. */
-@JNINamespace("webrtc::jni")
 public class DataChannel {
   /** Java wrapper for WebIDL RTCDataChannel. */
   public static class Init {

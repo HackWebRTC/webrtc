@@ -20,8 +20,7 @@
 #include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
-
-namespace android_adm {
+namespace jni {
 
 namespace {
 
@@ -632,6 +631,5 @@ rtc::scoped_refptr<AudioDeviceModule> CreateAudioDeviceModuleFromInputAndOutput(
       playout_delay_ms, std::move(audio_input), std::move(audio_output));
 }
 
-}  // namespace android_adm
-
+}  // namespace jni
 }  // namespace webrtc

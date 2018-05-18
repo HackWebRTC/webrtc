@@ -28,22 +28,20 @@ static jlong JNI_JavaAudioDeviceModule_CreateAudioDeviceModule(
     jboolean j_use_stereo_output) {
   AudioParameters input_parameters;
   AudioParameters output_parameters;
-  android_adm::GetAudioParameters(env, j_context, j_audio_manager, sample_rate,
-                                  j_use_stereo_input, j_use_stereo_output,
-                                  &input_parameters, &output_parameters);
-  auto audio_input = rtc::MakeUnique<android_adm::AudioRecordJni>(
-      env, input_parameters,
-      android_adm::kHighLatencyModeDelayEstimateInMilliseconds,
+  GetAudioParameters(env, j_context, j_audio_manager, sample_rate,
+                     j_use_stereo_input, j_use_stereo_output, &input_parameters,
+                     &output_parameters);
+  auto audio_input = rtc::MakeUnique<AudioRecordJni>(
+      env, input_parameters, kHighLatencyModeDelayEstimateInMilliseconds,
       j_webrtc_audio_record);
-  auto audio_output = rtc::MakeUnique<android_adm::AudioTrackJni>(
-      env, output_parameters, j_webrtc_audio_track);
-  return jlongFromPointer(
-      CreateAudioDeviceModuleFromInputAndOutput(
-          AudioDeviceModule::kAndroidJavaAudio, j_use_stereo_input,
-          j_use_stereo_output,
-          android_adm::kHighLatencyModeDelayEstimateInMilliseconds,
-          std::move(audio_input), std::move(audio_output))
-          .release());
+  auto audio_output = rtc::MakeUnique<AudioTrackJni>(env, output_parameters,
+                                                     j_webrtc_audio_track);
+  return jlongFromPointer(CreateAudioDeviceModuleFromInputAndOutput(
+                              AudioDeviceModule::kAndroidJavaAudio,
+                              j_use_stereo_input, j_use_stereo_output,
+                              kHighLatencyModeDelayEstimateInMilliseconds,
+                              std::move(audio_input), std::move(audio_output))
+                              .release());
 }
 
 }  // namespace jni

@@ -40,7 +40,7 @@
 
 namespace webrtc {
 
-namespace android_adm {
+namespace jni {
 
 OpenSLESPlayer::OpenSLESPlayer(
     const AudioParameters& audio_parameters,
@@ -441,6 +441,6 @@ SLuint32 OpenSLESPlayer::GetPlayState() const {
   return state;
 }
 
-}  // namespace android_adm
+}  // namespace jni
 
 }  // namespace webrtc

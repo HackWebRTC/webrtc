@@ -18,8 +18,7 @@
 #include "sdk/android/native_api/jni/scoped_java_ref.h"
 
 namespace webrtc {
-
-namespace android_adm {
+namespace jni {
 
 class AudioInput {
  public:
@@ -91,7 +90,7 @@ rtc::scoped_refptr<AudioDeviceModule> CreateAudioDeviceModuleFromInputAndOutput(
     std::unique_ptr<AudioInput> audio_input,
     std::unique_ptr<AudioOutput> audio_output);
 
-}  // namespace android_adm
+}  // namespace jni
 
 }  // namespace webrtc
 

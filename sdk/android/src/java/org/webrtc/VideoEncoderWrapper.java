@@ -44,8 +44,7 @@ class VideoEncoderWrapper {
                    frame.rotation, frame.completeFrame, frame.qp);
   }
 
-  @NativeClassQualifiedName("webrtc::jni::VideoEncoderWrapper")
-  private static native void nativeOnEncodedFrame(long nativeEncoder, ByteBuffer buffer,
+  private static native void nativeOnEncodedFrame(long nativeVideoEncoderWrapper, ByteBuffer buffer,
       int encodedWidth, int encodedHeight, long captureTimeNs, int frameType, int rotation,
       boolean completeFrame, Integer qp);
 }

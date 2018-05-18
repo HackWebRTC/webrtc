@@ -11,7 +11,6 @@
 package org.webrtc;
 
 /** Java wrapper for a C++ MediaSourceInterface. */
-@JNINamespace("webrtc::jni")
 public class MediaSource {
   /** Tracks MediaSourceInterface.SourceState */
   public enum State {

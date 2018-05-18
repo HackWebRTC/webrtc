@@ -37,7 +37,6 @@ import org.webrtc.VideoFrame;
 // This class is an implementation detail of the Java PeerConnection API.
 @TargetApi(19)
 @SuppressWarnings("deprecation")
-@JNINamespace("webrtc::jni")
 public class MediaCodecVideoEncoder {
   // This class is constructed, operated, and destroyed by its C++ incarnation,
   // so the class and its methods have non-public visibility.  The API this

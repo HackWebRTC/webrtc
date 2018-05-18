@@ -26,7 +26,6 @@ import javax.annotation.Nullable;
 
 /** Factory for android hardware video encoders. */
 @SuppressWarnings("deprecation") // API 16 requires the use of deprecated methods.
-@JNINamespace("webrtc::jni")
 public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
   private static final String TAG = "HardwareVideoEncoderFactory";
 

@@ -112,13 +112,13 @@ Iterable GetJavaMapEntrySet(JNIEnv* jni, const JavaRef<jobject>& j_map) {
 ScopedJavaLocalRef<jobject> GetJavaMapEntryKey(
     JNIEnv* jni,
     const JavaRef<jobject>& j_entry) {
-  return Java_JniHelper_getKey(jni, j_entry);
+  return jni::Java_JniHelper_getKey(jni, j_entry);
 }
 
 ScopedJavaLocalRef<jobject> GetJavaMapEntryValue(
     JNIEnv* jni,
     const JavaRef<jobject>& j_entry) {
-  return Java_JniHelper_getValue(jni, j_entry);
+  return jni::Java_JniHelper_getValue(jni, j_entry);
 }
 
 int64_t JavaToNativeLong(JNIEnv* env, const JavaRef<jobject>& j_long) {
@@ -143,7 +143,7 @@ rtc::Optional<int32_t> JavaToNativeOptionalInt(
 // Given a jstring, reinterprets it to a new native string.
 std::string JavaToNativeString(JNIEnv* jni, const JavaRef<jstring>& j_string) {
   const ScopedJavaLocalRef<jbyteArray> j_byte_array =
-      Java_JniHelper_getStringBytes(jni, j_string);
+      jni::Java_JniHelper_getStringBytes(jni, j_string);
 
   const size_t len = jni->GetArrayLength(j_byte_array.obj());
   CHECK_EXCEPTION(jni) << "error during GetArrayLength";
@@ -243,7 +243,8 @@ ScopedJavaLocalRef<jobjectArray> NativeToJavaStringArray(
       &NativeToJavaString;
   return NativeToJavaObjectArray(
       env, container,
-      static_cast<jclass>(Java_JniHelper_getStringClass(env).obj()), convert);
+      static_cast<jclass>(jni::Java_JniHelper_getStringClass(env).obj()),
+      convert);
 }
 
 JavaListBuilder::JavaListBuilder(JNIEnv* env)

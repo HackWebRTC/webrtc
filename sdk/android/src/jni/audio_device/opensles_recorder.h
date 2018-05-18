@@ -29,7 +29,7 @@ namespace webrtc {
 
 class FineAudioBuffer;
 
-namespace android_adm {
+namespace jni {
 
 // Implements 16-bit mono PCM audio input support for Android using the
 // C based OpenSL ES API. No calls from C/C++ to Java using JNI is done.
@@ -185,7 +185,7 @@ class OpenSLESRecorder : public AudioInput {
   uint32_t last_rec_time_;
 };
 
-}  // namespace android_adm
+}  // namespace jni
 
 }  // namespace webrtc
 

@@ -21,7 +21,7 @@
 
 namespace webrtc {
 
-namespace android_adm {
+namespace jni {
 
 // Implements 16-bit mono PCM audio input support for Android using the Java
 // AudioRecord interface. Most of the work is done by its Java counterpart in
@@ -131,7 +131,7 @@ class AudioRecordJni : public AudioInput {
   AudioDeviceBuffer* audio_device_buffer_;
 };
 
-}  // namespace android_adm
+}  // namespace jni
 
 }  // namespace webrtc
 

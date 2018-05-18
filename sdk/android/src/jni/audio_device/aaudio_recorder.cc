@@ -21,7 +21,7 @@
 
 namespace webrtc {
 
-namespace android_adm {
+namespace jni {
 
 enum AudioDeviceMessageType : uint32_t {
   kMessageInputStreamDisconnected,
@@ -230,6 +230,6 @@ void AAudioRecorder::HandleStreamDisconnected() {
   StartRecording();
 }
 
-}  // namespace android_adm
+}  // namespace jni
 
 }  // namespace webrtc

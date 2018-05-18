@@ -14,7 +14,6 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.Nullable;
 
-@JNINamespace("webrtc::jni")
 public class NV21Buffer implements VideoFrame.Buffer {
   private final byte[] data;
   private final int width;

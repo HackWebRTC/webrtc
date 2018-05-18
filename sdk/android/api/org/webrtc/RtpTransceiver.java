@@ -31,7 +31,6 @@ import org.webrtc.RtpParameters.Encoding;
  * <p>WebRTC specification for RTCRtpTransceiver, the JavaScript analog:
  * https://w3c.github.io/webrtc-pc/#dom-rtcrtptransceiver
  */
-@JNINamespace("webrtc::jni")
 public class RtpTransceiver {
   /** Java version of webrtc::RtpTransceiverDirection - the ordering must be kept in sync. */
   public enum RtpTransceiverDirection {
