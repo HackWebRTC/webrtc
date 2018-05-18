@@ -344,6 +344,7 @@ rtc_static_library("rtc_audio_video") {
     "../modules/audio_mixer:audio_mixer_impl",
     "../modules/audio_processing:audio_processing",
     "../modules/video_capture:video_capture_module",
+    "../modules/video_coding:webrtc_vp8_helpers",
     "../pc:rtc_pc_base",
     "../rtc_base:rtc_base",
     "../rtc_base:rtc_task_queue",
