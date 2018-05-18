@@ -313,6 +313,9 @@ all_poison_types = [
   "software_video_codecs",
 ]
 
+absl_include_config = "//third_party/abseil-cpp:absl_include_config"
+absl_define_config = "//third_party/abseil-cpp:absl_define_config"
+
 template("rtc_test") {
   test(target_name) {
     forward_variables_from(invoker,
@@ -331,7 +334,11 @@ template("rtc_test") {
     configs += invoker.configs
     configs -= rtc_remove_configs
     configs -= invoker.suppressed_configs
-    public_configs = [ rtc_common_inherited_config ]
+    public_configs = [
+      rtc_common_inherited_config,
+      absl_include_config,
+      absl_define_config,
+    ]
     if (defined(invoker.public_configs)) {
       public_configs += invoker.public_configs
     }
@@ -398,7 +405,11 @@ template("rtc_source_set") {
     configs += invoker.configs
     configs -= rtc_remove_configs
     configs -= invoker.suppressed_configs
-    public_configs = [ rtc_common_inherited_config ]
+    public_configs = [
+      rtc_common_inherited_config,
+      absl_include_config,
+      absl_define_config,
+    ]
     if (defined(invoker.public_configs)) {
       public_configs += invoker.public_configs
     }
@@ -428,7 +439,11 @@ template("rtc_executable") {
     ]
     deps += invoker.deps
 
-    public_configs = [ rtc_common_inherited_config ]
+    public_configs = [
+      rtc_common_inherited_config,
+      absl_include_config,
+      absl_define_config,
+    ]
     if (defined(invoker.public_configs)) {
       public_configs += invoker.public_configs
     }
@@ -491,7 +506,11 @@ template("rtc_static_library") {
     configs += invoker.configs
     configs -= rtc_remove_configs
     configs -= invoker.suppressed_configs
-    public_configs = [ rtc_common_inherited_config ]
+    public_configs = [
+      rtc_common_inherited_config,
+      absl_include_config,
+      absl_define_config,
+    ]
     if (defined(invoker.public_configs)) {
       public_configs += invoker.public_configs
     }
@@ -554,7 +573,11 @@ template("rtc_shared_library") {
     configs += invoker.configs
     configs -= rtc_remove_configs
     configs -= invoker.suppressed_configs
-    public_configs = [ rtc_common_inherited_config ]
+    public_configs = [
+      rtc_common_inherited_config,
+      absl_include_config,
+      absl_define_config,
+    ]
     if (defined(invoker.public_configs)) {
       public_configs += invoker.public_configs
     }
