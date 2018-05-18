@@ -1634,16 +1634,20 @@ class AcmSetBitRateNewApi : public AcmSetBitRateTest {
   void Run(int expected_total_bits) { RunInner(expected_total_bits); }
 };
 
-TEST_F(AcmSetBitRateOldApi, Opus_48khz_20ms_10kbps) {
+// TODO(bugs.webrtc.org/9280): Re-enable when the new Opus revision is rolled
+// into WebRTC.
+TEST_F(AcmSetBitRateOldApi, DISABLED_Opus_48khz_20ms_10kbps) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 1, 107, 960, 960));
 #if defined(WEBRTC_ANDROID)
   Run(10000, 8640);
 #else
-  Run(10000, 8696);
+  Run(10000, 8680);
 #endif  // WEBRTC_ANDROID
 }
 
-TEST_F(AcmSetBitRateNewApi, OpusFromFormat_48khz_20ms_10kbps) {
+// TODO(bugs.webrtc.org/9280): Re-enable when the new Opus revision is rolled
+// into WebRTC.
+TEST_F(AcmSetBitRateNewApi, DISABLED_OpusFromFormat_48khz_20ms_10kbps) {
   const auto config = AudioEncoderOpus::SdpToConfig(
       SdpAudioFormat("opus", 48000, 2, {{"maxaveragebitrate", "10000"}}));
   const auto encoder = AudioEncoderOpus::MakeAudioEncoder(*config, 107);
@@ -1652,20 +1656,24 @@ TEST_F(AcmSetBitRateNewApi, OpusFromFormat_48khz_20ms_10kbps) {
 #if defined(WEBRTC_ANDROID)
   RunInner(8640);
 #else
-  RunInner(8696);
+  RunInner(8680);
 #endif  // WEBRTC_ANDROID
 }
 
-TEST_F(AcmSetBitRateOldApi, Opus_48khz_20ms_50kbps) {
+// TODO(bugs.webrtc.org/9280): Re-enable when the new Opus revision is rolled
+// into WebRTC.
+TEST_F(AcmSetBitRateOldApi, DISABLED_Opus_48khz_20ms_50kbps) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 1, 107, 960, 960));
 #if defined(WEBRTC_ANDROID)
   Run(50000, 45792);
 #else
-  Run(50000, 45600);
+  Run(50000, 45520);
 #endif  // WEBRTC_ANDROID
 }
 
-TEST_F(AcmSetBitRateNewApi, OpusFromFormat_48khz_20ms_50kbps) {
+// TODO(bugs.webrtc.org/9280): Re-enable when the new Opus revision is rolled
+// into WebRTC.
+TEST_F(AcmSetBitRateNewApi, DISABLED_OpusFromFormat_48khz_20ms_50kbps) {
   const auto config = AudioEncoderOpus::SdpToConfig(
       SdpAudioFormat("opus", 48000, 2, {{"maxaveragebitrate", "50000"}}));
   const auto encoder = AudioEncoderOpus::MakeAudioEncoder(*config, 107);
@@ -1674,7 +1682,7 @@ TEST_F(AcmSetBitRateNewApi, OpusFromFormat_48khz_20ms_50kbps) {
 #if defined(WEBRTC_ANDROID)
   RunInner(45792);
 #else
-  RunInner(45600);
+  RunInner(45520);
 #endif  // WEBRTC_ANDROID
 }
 
@@ -1766,21 +1774,25 @@ class AcmChangeBitRateOldApi : public AcmSetBitRateOldApi {
   uint32_t frame_size_samples_;
 };
 
-TEST_F(AcmChangeBitRateOldApi, Opus_48khz_20ms_10kbps_2) {
+// TODO(bugs.webrtc.org/9280): Re-enable when the new Opus revision is rolled
+// into WebRTC.
+TEST_F(AcmChangeBitRateOldApi, DISABLED_Opus_48khz_20ms_10kbps_2) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 1, 107, 960, 960));
 #if defined(WEBRTC_ANDROID)
   Run(10000, 29512, 4800);
 #else
-  Run(10000, 32200, 5208);
+  Run(10000, 32200, 5368);
 #endif  // WEBRTC_ANDROID
 }
 
-TEST_F(AcmChangeBitRateOldApi, Opus_48khz_20ms_50kbps_2) {
+// TODO(bugs.webrtc.org/9280): Re-enable when the new Opus revision is rolled
+// into WebRTC.
+TEST_F(AcmChangeBitRateOldApi, DISABLED_Opus_48khz_20ms_50kbps_2) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 1, 107, 960, 960));
 #if defined(WEBRTC_ANDROID)
   Run(50000, 29512, 23304);
 #else
-  Run(50000, 32200, 23928);
+  Run(50000, 32200, 23920);
 #endif  // WEBRTC_ANDROID
 }
 
