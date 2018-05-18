@@ -90,6 +90,7 @@ rtc_source_set("base_jni") {
     "src/jni/jni_helpers.cc",
     "src/jni/jni_helpers.h",
     "src/jni/pc/audio.h",
+    "src/jni/pc/logging.cc",
     "src/jni/pc/media.h",
     "src/jni/pc/video.h",
   ]
@@ -519,6 +520,38 @@ generate_jni("generated_peerconnection_jni") {
   jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
 }
 
+rtc_android_library("logging_java") {
+  java_files = [ "src/java/org/webrtc/JNILogging.java" ]
+
+  deps = [
+    ":base_java",
+    "//rtc_base:base_java",
+  ]
+}
+
+generate_jni("generated_logging_jni") {
+  sources = [
+    "src/java/org/webrtc/JNILogging.java",
+  ]
+  jni_package = ""
+  jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
+}
+
+rtc_static_library("logging_jni") {
+  visibility = [ "*" ]
+  sources = [
+    "src/jni/logging/logsink.cc",
+    "src/jni/logging/logsink.h",
+  ]
+
+  deps = [
+    ":base_jni",
+    ":generated_logging_jni",
+    ":native_api_jni",
+    "../../rtc_base:rtc_base",
+  ]
+}
+
 rtc_static_library("peerconnection_jni") {
   # Do not depend on this target externally unless you absolute have to. It is
   # made public because we don't have a proper NDK yet. Header APIs here are not
@@ -535,7 +568,6 @@ rtc_static_library("peerconnection_jni") {
     "src/jni/pc/dtmfsender.cc",
     "src/jni/pc/icecandidate.cc",
     "src/jni/pc/icecandidate.h",
-    "src/jni/pc/logging.cc",
     "src/jni/pc/mediaconstraints.cc",
     "src/jni/pc/mediaconstraints.h",
     "src/jni/pc/mediasource.cc",
@@ -593,6 +625,7 @@ rtc_static_library("peerconnection_jni") {
     ":base_jni",
     ":generated_external_classes_jni",
     ":generated_peerconnection_jni",
+    ":logging_jni",
     ":native_api_jni",
     "../..:webrtc_common",
     "../../api:libjingle_peerconnection_api",
@@ -719,6 +752,7 @@ dist_jar("libwebrtc") {
     ":java_audio_device_module_java",
     ":libjingle_peerconnection_java",
     ":libjingle_peerconnection_metrics_default_java",
+    ":logging_java",
     ":peerconnection_java",
     ":screencapturer_java",
     ":surfaceviewrenderer_java",
@@ -1013,6 +1047,7 @@ rtc_android_library("peerconnection_java") {
   deps = [
     ":audio_api_java",
     ":base_java",
+    ":logging_java",
     ":video_api_java",
     ":video_java",
     "//modules/audio_device:audio_device_java",
