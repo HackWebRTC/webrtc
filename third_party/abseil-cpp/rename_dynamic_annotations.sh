@@ -52,6 +52,10 @@ for w in \
   AnnotateUnpublishMemoryRange \
   GetRunningOnValgrind \
   RunningOnValgrind \
+  StaticAnnotateIgnoreReadsBegin \
+  StaticAnnotateIgnoreReadsEnd \
+  StaticAnnotateIgnoreWritesBegin \
+  StaticAnnotateIgnoreWritesEnd \
   ValgrindSlowdown \
 ; do
   find absl/ -type f -exec sed -i "s/\b$w\b/Absl$w/g" {} \;

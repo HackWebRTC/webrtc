@@ -191,16 +191,16 @@
 #elif defined(ABSL_ANNOTALYSIS_ENABLED)
 
   #define ABSL_ANNOTATE_IGNORE_READS_BEGIN() \
-    StaticAnnotateIgnoreReadsBegin(__FILE__, __LINE__)
+    AbslStaticAnnotateIgnoreReadsBegin(__FILE__, __LINE__)
 
   #define ABSL_ANNOTATE_IGNORE_READS_END() \
-    StaticAnnotateIgnoreReadsEnd(__FILE__, __LINE__)
+    AbslStaticAnnotateIgnoreReadsEnd(__FILE__, __LINE__)
 
   #define ABSL_ANNOTATE_IGNORE_WRITES_BEGIN() \
-    StaticAnnotateIgnoreWritesBegin(__FILE__, __LINE__)
+    AbslStaticAnnotateIgnoreWritesBegin(__FILE__, __LINE__)
 
   #define ABSL_ANNOTATE_IGNORE_WRITES_END() \
-    StaticAnnotateIgnoreWritesEnd(__FILE__, __LINE__)
+    AbslStaticAnnotateIgnoreWritesEnd(__FILE__, __LINE__)
 
 #else
   #define ABSL_ANNOTATE_IGNORE_READS_BEGIN()  /* empty */
@@ -282,13 +282,13 @@ void AbslAnnotateIgnoreWritesEnd(const char *file, int line);
    allows IGNORE_READS_AND_WRITES to work properly. */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
-static inline void StaticAnnotateIgnoreReadsBegin(const char *file, int line)
+static inline void AbslStaticAnnotateIgnoreReadsBegin(const char *file, int line)
     ABSL_ATTRIBUTE_IGNORE_READS_BEGIN { (void)file; (void)line; }
-static inline void StaticAnnotateIgnoreReadsEnd(const char *file, int line)
+static inline void AbslStaticAnnotateIgnoreReadsEnd(const char *file, int line)
     ABSL_ATTRIBUTE_IGNORE_READS_END { (void)file; (void)line; }
-static inline void StaticAnnotateIgnoreWritesBegin(
+static inline void AbslStaticAnnotateIgnoreWritesBegin(
     const char *file, int line) { (void)file; (void)line; }
-static inline void StaticAnnotateIgnoreWritesEnd(
+static inline void AbslStaticAnnotateIgnoreWritesEnd(
     const char *file, int line) { (void)file; (void)line; }
 #pragma GCC diagnostic pop
 #endif
