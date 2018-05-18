@@ -73,6 +73,7 @@ source_set("synchronization") {
     "../base:dynamic_annotations",
     "../base:malloc_internal",
     "../debugging:stacktrace",
+    "../debugging:symbolize",
     "../time",
   ]
 }

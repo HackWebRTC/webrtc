@@ -16,3 +16,5 @@ Local changes:
 * set 'x' flags: "chmod 750 win32/genversion.bat"
 * Apply https://git.xiph.org/?p=opus.git;a=commitdiff;h=46560534fcb5710a894a341c2f9526db58fd7087#patch1
 * Apply https://github.com/xiph/opus/pull/73
+* Apply https://github.com/xiph/opus/pull/87
+* Make sure HB_gain is not NaN in an attempt to fix chromium:826914

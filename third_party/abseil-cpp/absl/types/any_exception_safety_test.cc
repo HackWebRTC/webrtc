@@ -20,20 +20,15 @@
 #include "gtest/gtest.h"
 #include "absl/base/internal/exception_safety_testing.h"
 
-using Thrower = absl::ThrowingValue<>;
+using Thrower = testing::ThrowingValue<>;
 using NoThrowMoveThrower =
-    absl::ThrowingValue<absl::NoThrow::kMoveCtor | absl::NoThrow::kMoveAssign>;
+    testing::ThrowingValue<testing::TypeSpec::kNoThrowMove>;
 using ThrowerList = std::initializer_list<Thrower>;
 using ThrowerVec = std::vector<Thrower>;
-using ThrowingAlloc = absl::ThrowingAllocator<Thrower>;
+using ThrowingAlloc = testing::ThrowingAllocator<Thrower>;
 using ThrowingThrowerVec = std::vector<Thrower, ThrowingAlloc>;
 
 namespace {
-
-class AnyExceptionSafety : public ::testing::Test {
- private:
-  absl::ConstructorTracker inspector_;
-};
 
 testing::AssertionResult AnyInvariants(absl::any* a) {
   using testing::AssertionFailure;
@@ -84,30 +79,33 @@ testing::AssertionResult AnyIsEmpty(absl::any* a) {
          << absl::any_cast<Thrower>(*a).Get();
 }
 
-TEST_F(AnyExceptionSafety, Ctors) {
+TEST(AnyExceptionSafety, Ctors) {
   Thrower val(1);
-  auto with_val = absl::TestThrowingCtor<absl::any>(val);
-  auto copy = absl::TestThrowingCtor<absl::any>(with_val);
-  auto in_place =
-      absl::TestThrowingCtor<absl::any>(absl::in_place_type_t<Thrower>(), 1);
-  auto in_place_list = absl::TestThrowingCtor<absl::any>(
-      absl::in_place_type_t<ThrowerVec>(), ThrowerList{val});
-  auto in_place_list_again =
-      absl::TestThrowingCtor<absl::any,
-                             absl::in_place_type_t<ThrowingThrowerVec>,
-                             ThrowerList, ThrowingAlloc>(
-          absl::in_place_type_t<ThrowingThrowerVec>(), {val}, ThrowingAlloc());
+  testing::TestThrowingCtor<absl::any>(val);
+
+  Thrower copy(val);
+  testing::TestThrowingCtor<absl::any>(copy);
+
+  testing::TestThrowingCtor<absl::any>(absl::in_place_type_t<Thrower>(), 1);
+
+  testing::TestThrowingCtor<absl::any>(absl::in_place_type_t<ThrowerVec>(),
+                                       ThrowerList{val});
+
+  testing::TestThrowingCtor<absl::any,
+                            absl::in_place_type_t<ThrowingThrowerVec>,
+                            ThrowerList, ThrowingAlloc>(
+      absl::in_place_type_t<ThrowingThrowerVec>(), {val}, ThrowingAlloc());
 }
 
-TEST_F(AnyExceptionSafety, Assignment) {
+TEST(AnyExceptionSafety, Assignment) {
   auto original =
-      absl::any(absl::in_place_type_t<Thrower>(), 1, absl::no_throw_ctor);
+      absl::any(absl::in_place_type_t<Thrower>(), 1, testing::nothrow_ctor);
   auto any_is_strong = [original](absl::any* ap) {
     return testing::AssertionResult(ap->has_value() &&
                                     absl::any_cast<Thrower>(original) ==
                                         absl::any_cast<Thrower>(*ap));
   };
-  auto any_strong_tester = absl::MakeExceptionSafetyTester()
+  auto any_strong_tester = testing::MakeExceptionSafetyTester()
                                .WithInitialValue(original)
                                .WithInvariants(AnyInvariants, any_is_strong);
 
@@ -129,7 +127,7 @@ TEST_F(AnyExceptionSafety, Assignment) {
     return testing::AssertionResult{!ap->has_value()};
   };
   auto strong_empty_any_tester =
-      absl::MakeExceptionSafetyTester()
+      testing::MakeExceptionSafetyTester()
           .WithInitialValue(absl::any{})
           .WithInvariants(AnyInvariants, empty_any_is_strong);
 
@@ -139,16 +137,16 @@ TEST_F(AnyExceptionSafety, Assignment) {
 }
 // libstdc++ std::any fails this test
 #if !defined(ABSL_HAVE_STD_ANY)
-TEST_F(AnyExceptionSafety, Emplace) {
+TEST(AnyExceptionSafety, Emplace) {
   auto initial_val =
-      absl::any{absl::in_place_type_t<Thrower>(), 1, absl::no_throw_ctor};
-  auto one_tester = absl::MakeExceptionSafetyTester()
+      absl::any{absl::in_place_type_t<Thrower>(), 1, testing::nothrow_ctor};
+  auto one_tester = testing::MakeExceptionSafetyTester()
                         .WithInitialValue(initial_val)
                         .WithInvariants(AnyInvariants, AnyIsEmpty);
 
   auto emp_thrower = [](absl::any* ap) { ap->emplace<Thrower>(2); };
   auto emp_throwervec = [](absl::any* ap) {
-    std::initializer_list<Thrower> il{Thrower(2, absl::no_throw_ctor)};
+    std::initializer_list<Thrower> il{Thrower(2, testing::nothrow_ctor)};
     ap->emplace<ThrowerVec>(il);
   };
   auto emp_movethrower = [](absl::any* ap) {

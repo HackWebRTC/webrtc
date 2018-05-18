@@ -46,6 +46,7 @@ cc_library(
         "symbolize.cc",
         "symbolize_elf.inc",
         "symbolize_unimplemented.inc",
+        "symbolize_win32.inc",
     ],
     hdrs = [
         "internal/symbolize.h",
@@ -90,6 +91,38 @@ cc_library(
         ":symbolize",
         "//absl/base",
         "//absl/base:core_headers",
+    ],
+)
+
+cc_library(
+    name = "failure_signal_handler",
+    srcs = ["failure_signal_handler.cc"],
+    hdrs = ["failure_signal_handler.h"],
+    copts = ABSL_DEFAULT_COPTS,
+    deps = [
+        ":examine_stack",
+        ":stacktrace",
+        "//absl/base",
+        "//absl/base:config",
+        "//absl/base:core_headers",
+    ],
+)
+
+cc_test(
+    name = "failure_signal_handler_test",
+    srcs = ["failure_signal_handler_test.cc"],
+    copts = ABSL_TEST_COPTS,
+    linkopts = select({
+        "//absl:windows": [],
+        "//conditions:default": ["-pthread"],
+    }),
+    deps = [
+        ":failure_signal_handler",
+        ":stacktrace",
+        ":symbolize",
+        "//absl/base",
+        "//absl/strings",
+        "@com_google_googletest//:gtest",
     ],
 )
 

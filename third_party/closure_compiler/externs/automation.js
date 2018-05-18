@@ -285,6 +285,7 @@ chrome.automation.StateType = {
  */
 chrome.automation.ActionType = {
   BLUR: 'blur',
+  CLEAR_ACCESSIBILITY_FOCUS: 'clearAccessibilityFocus',
   CUSTOM_ACTION: 'customAction',
   DECREMENT: 'decrement',
   DO_DEFAULT: 'doDefault',
@@ -302,6 +303,7 @@ chrome.automation.ActionType = {
   SCROLL_TO_MAKE_VISIBLE: 'scrollToMakeVisible',
   SCROLL_TO_POINT: 'scrollToPoint',
   SCROLL_UP: 'scrollUp',
+  SET_ACCESSIBILITY_FOCUS: 'setAccessibilityFocus',
   SET_SCROLL_OFFSET: 'setScrollOffset',
   SET_SELECTION: 'setSelection',
   SET_SEQUENTIAL_FOCUS_NAVIGATION_STARTING_POINT: 'setSequentialFocusNavigationStartingPoint',

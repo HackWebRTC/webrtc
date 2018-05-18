@@ -15,12 +15,14 @@
 #
 
 list(APPEND DEBUGGING_PUBLIC_HEADERS
+  "failure_signal_handler.h"
   "leak_check.h"
   "stacktrace.h"
   "symbolize.h"
 )
 
-
+# TODO(cohenjon) The below is all kinds of wrong.  Make this match what we do in
+# Bazel
 list(APPEND DEBUGGING_INTERNAL_HEADERS
   "internal/address_is_readable.h"
   "internal/demangle.h"
@@ -31,12 +33,16 @@ list(APPEND DEBUGGING_INTERNAL_HEADERS
   "internal/vdso_support.h"
 )
 
-
-list(APPEND STACKTRACE_SRC
-  "stacktrace.cc"
+list(APPEND DEBUGGING_INTERNAL_SRC
   "internal/address_is_readable.cc"
   "internal/elf_mem_image.cc"
   "internal/vdso_support.cc"
+)
+
+
+list(APPEND STACKTRACE_SRC
+  "stacktrace.cc"
+  ${DEBUGGING_INTERNAL_SRC}
   ${DEBUGGING_PUBLIC_HEADERS}
   ${DEBUGGING_INTERNAL_HEADERS}
 )
@@ -45,9 +51,16 @@ list(APPEND SYMBOLIZE_SRC
   "symbolize.cc"
   "symbolize_elf.inc"
   "symbolize_unimplemented.inc"
+  "symbolize_win32.inc"
   "internal/demangle.cc"
   ${DEBUGGING_PUBLIC_HEADERS}
   ${DEBUGGING_INTERNAL_HEADERS}
+  ${DEBUGGING_INTERNAL_SRC}
+)
+
+list(APPEND FAILURE_SIGNAL_HANDLER_SRC
+  "failure_signal_handler.cc"
+  ${DEBUGGING_PUBLIC_HEADERS}
 )
 
 list(APPEND EXAMINE_STACK_SRC
@@ -70,8 +83,22 @@ absl_library(
     absl_symbolize
   SOURCES
     ${SYMBOLIZE_SRC}
+  PUBLIC_LIBRARIES
+    absl::base
+    absl_malloc_internal
   EXPORT_NAME
     symbolize
+)
+
+absl_library(
+  TARGET
+    absl_failure_signal_handler
+  SOURCES
+    ${FAILURE_SIGNAL_HANDLER_SRC}
+  PUBLIC_LIBRARIES
+    absl_base absl::examine_stack absl::stacktrace absl_synchronization
+  EXPORT_NAME
+    failure_signal_handler
 )
 
 # Internal-only. Projects external to Abseil should not depend
@@ -117,13 +144,9 @@ absl_header_library(
 ## TESTS
 #
 
-list(APPEND DEBUGGING_INTERNAL_TEST_HEADERS
-  "internal/stack_consumption.h"
-)
-
 list(APPEND STACK_CONSUMPTION_SRC
   "internal/stack_consumption.cc"
-  ${DEBUGGING_INTERNAL_TEST_HEADERS}
+  "internal/stack_consumption.h"
 )
 
 absl_library(
@@ -137,10 +160,13 @@ absl_test(
   TARGET
     absl_stack_consumption_test
   SOURCES
-    ${STACK_CONSUMPTION_SRC}
+    "internal/stack_consumption_test.cc"
+  PUBLIC_LIBRARIES
+    absl_stack_consumption
+    absl::base
 )
 
-list(APPEND DEMANGLE_TEST_SRC "demangle_test.cc")
+list(APPEND DEMANGLE_TEST_SRC "internal/demangle_test.cc")
 
 absl_test(
   TARGET
@@ -159,7 +185,23 @@ absl_test(
   SOURCES
     ${SYMBOLIZE_TEST_SRC}
   PUBLIC_LIBRARIES
-    absl_symbolize absl_stack_consumption
+    absl::base absl::memory absl_symbolize absl_stack_consumption
+)
+
+list(APPEND FAILURE_SIGNAL_HANDLER_TEST_SRC "failure_signal_handler_test.cc")
+
+absl_test(
+  TARGET
+    failure_signal_handler_test
+  SOURCES
+    ${FAILURE_SIGNAL_HANDLER_TEST_SRC}
+  PUBLIC_LIBRARIES
+    absl_examine_stack
+    absl_failure_signal_handler
+    absl_stacktrace
+    absl_symbolize
+    absl::base
+    absl::strings
 )
 
 # test leak_check_test
