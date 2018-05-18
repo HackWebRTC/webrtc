@@ -77,7 +77,7 @@ class SendSideCongestionControllerTest : public ::testing::Test {
     task_queue_ = rtc::MakeUnique<rtc::TaskQueue>("SSCC Test");
     controller_.reset(new SendSideCongestionControllerForTest(
         &clock_, task_queue_.get(), &event_log_, pacer_.get(),
-        kInitialBitrateBps, 0, 5 * kInitialBitrateBps));
+        kInitialBitrateBps, 0, 5 * kInitialBitrateBps, nullptr));
     controller_->DisablePeriodicTasks();
     controller_->RegisterNetworkObserver(&observer_);
     controller_->SignalNetworkState(NetworkState::kNetworkUp);
@@ -97,7 +97,7 @@ class SendSideCongestionControllerTest : public ::testing::Test {
     task_queue_ = rtc::MakeUnique<rtc::TaskQueue>("SSCC Test");
     controller_.reset(new SendSideCongestionControllerForTest(
         &clock_, task_queue_.get(), &event_log_, pacer_.get(),
-        kInitialBitrateBps, 0, 5 * kInitialBitrateBps));
+        kInitialBitrateBps, 0, 5 * kInitialBitrateBps, nullptr));
     controller_->DisablePeriodicTasks();
     controller_->RegisterNetworkObserver(&target_bitrate_observer_);
     controller_->SignalNetworkState(NetworkState::kNetworkUp);

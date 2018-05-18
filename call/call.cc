@@ -396,9 +396,9 @@ std::string Call::Stats::ToString(int64_t time_ms) const {
 
 Call* Call::Create(const Call::Config& config) {
   return new internal::Call(
-      config,
-      rtc::MakeUnique<RtpTransportControllerSend>(
-          Clock::GetRealTimeClock(), config.event_log, config.bitrate_config));
+      config, rtc::MakeUnique<RtpTransportControllerSend>(
+                  Clock::GetRealTimeClock(), config.event_log,
+                  config.network_controller_factory, config.bitrate_config));
 }
 
 Call* Call::Create(

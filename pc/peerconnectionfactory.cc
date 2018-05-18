@@ -34,6 +34,7 @@
 #include "media/engine/webrtcvideodecoderfactory.h"     // nogncheck
 #include "media/engine/webrtcvideoencoderfactory.h"     // nogncheck
 #include "modules/audio_device/include/audio_device.h"  // nogncheck
+#include "modules/congestion_controller/bbr/bbr_factory.h"
 #include "p2p/base/basicpacketsocketfactory.h"
 #include "p2p/client/basicportallocator.h"
 #include "pc/audiotrack.h"
@@ -42,6 +43,7 @@
 #include "pc/peerconnection.h"
 #include "pc/videocapturertracksource.h"
 #include "pc/videotrack.h"
+#include "rtc_base/experiments/congestion_controller_experiment.h"
 
 namespace webrtc {
 
@@ -55,7 +57,7 @@ CreateModularPeerConnectionFactory(
     std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory) {
   return CreateModularPeerConnectionFactory(
       network_thread, worker_thread, signaling_thread, std::move(media_engine),
-      std::move(call_factory), std::move(event_log_factory), nullptr);
+      std::move(call_factory), std::move(event_log_factory), nullptr, nullptr);
 }
 
 rtc::scoped_refptr<PeerConnectionFactoryInterface>
@@ -66,12 +68,15 @@ CreateModularPeerConnectionFactory(
     std::unique_ptr<cricket::MediaEngineInterface> media_engine,
     std::unique_ptr<CallFactoryInterface> call_factory,
     std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory,
-    std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory) {
+    std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory,
+    std::unique_ptr<NetworkControllerFactoryInterface>
+        network_controller_factory) {
   rtc::scoped_refptr<PeerConnectionFactory> pc_factory(
       new rtc::RefCountedObject<PeerConnectionFactory>(
           network_thread, worker_thread, signaling_thread,
           std::move(media_engine), std::move(call_factory),
-          std::move(event_log_factory), std::move(fec_controller_factory)));
+          std::move(event_log_factory), std::move(fec_controller_factory),
+          std::move(network_controller_factory)));
 
   // Call Initialize synchronously but make sure it is executed on
   // |signaling_thread|.
@@ -99,6 +104,7 @@ PeerConnectionFactory::PeerConnectionFactory(
                             std::move(media_engine),
                             std::move(call_factory),
                             std::move(event_log_factory),
+                            nullptr,
                             nullptr) {}
 
 PeerConnectionFactory::PeerConnectionFactory(
@@ -108,7 +114,9 @@ PeerConnectionFactory::PeerConnectionFactory(
     std::unique_ptr<cricket::MediaEngineInterface> media_engine,
     std::unique_ptr<webrtc::CallFactoryInterface> call_factory,
     std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory,
-    std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory)
+    std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory,
+    std::unique_ptr<NetworkControllerFactoryInterface>
+        network_controller_factory)
     : wraps_current_thread_(false),
       network_thread_(network_thread),
       worker_thread_(worker_thread),
@@ -116,7 +124,11 @@ PeerConnectionFactory::PeerConnectionFactory(
       media_engine_(std::move(media_engine)),
       call_factory_(std::move(call_factory)),
       event_log_factory_(std::move(event_log_factory)),
-      fec_controller_factory_(std::move(fec_controller_factory)) {
+      fec_controller_factory_(std::move(fec_controller_factory)),
+      injected_network_controller_factory_(
+          std::move(network_controller_factory)),
+      bbr_network_controller_factory_(
+          rtc::MakeUnique<BbrNetworkControllerFactory>()) {
   if (!network_thread_) {
     owned_network_thread_ = rtc::Thread::CreateWithSocketServer();
     owned_network_thread_->SetName("pc_network_thread", nullptr);
@@ -390,6 +402,18 @@ std::unique_ptr<Call> PeerConnectionFactory::CreateCall_w(
   call_config.bitrate_config.max_bitrate_bps = kMaxBandwidthBps;
 
   call_config.fec_controller_factory = fec_controller_factory_.get();
+
+  if (CongestionControllerExperiment::BbrControllerEnabled()) {
+    RTC_LOG(LS_INFO) << "Using BBR network controller factory";
+    call_config.network_controller_factory =
+        bbr_network_controller_factory_.get();
+  } else if (CongestionControllerExperiment::InjectedControllerEnabled()) {
+    RTC_LOG(LS_INFO) << "Using injected network controller factory";
+    call_config.network_controller_factory =
+        injected_network_controller_factory_.get();
+  } else {
+    RTC_LOG(LS_INFO) << "Using default network controller factory";
+  }
 
   return std::unique_ptr<Call>(call_factory_->CreateCall(call_config));
 }

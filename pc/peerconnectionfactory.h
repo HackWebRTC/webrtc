@@ -116,7 +116,9 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
       std::unique_ptr<cricket::MediaEngineInterface> media_engine,
       std::unique_ptr<webrtc::CallFactoryInterface> call_factory,
       std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory,
-      std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory);
+      std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory,
+      std::unique_ptr<NetworkControllerFactoryInterface>
+          network_controller_factory);
   virtual ~PeerConnectionFactory();
 
  private:
@@ -137,6 +139,10 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   std::unique_ptr<webrtc::CallFactoryInterface> call_factory_;
   std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory_;
   std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory_;
+  std::unique_ptr<NetworkControllerFactoryInterface>
+      injected_network_controller_factory_;
+  std::unique_ptr<NetworkControllerFactoryInterface>
+      bbr_network_controller_factory_;
 };
 
 }  // namespace webrtc

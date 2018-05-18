@@ -15,6 +15,7 @@
 #include <memory>
 #include <string>
 
+#include "api/transport/network_control.h"
 #include "call/rtp_bitrate_configurator.h"
 #include "call/rtp_transport_controller_send_interface.h"
 #include "common_types.h"  // NOLINT(build/include)
@@ -36,9 +37,11 @@ class RtpTransportControllerSend final
     : public RtpTransportControllerSendInterface,
       public NetworkChangedObserver {
  public:
-  RtpTransportControllerSend(Clock* clock,
-                             RtcEventLog* event_log,
-                             const BitrateConstraints& bitrate_config);
+  RtpTransportControllerSend(
+      Clock* clock,
+      RtcEventLog* event_log,
+      NetworkControllerFactoryInterface* controller_factory,
+      const BitrateConstraints& bitrate_config);
   ~RtpTransportControllerSend() override;
 
   // Implements NetworkChangedObserver interface.

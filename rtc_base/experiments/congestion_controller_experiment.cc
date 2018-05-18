@@ -16,13 +16,19 @@
 namespace webrtc {
 namespace {
 
-const char kBbrControllerExperiment[] = "WebRTC-BweCongestionController";
+const char kControllerExperiment[] = "WebRTC-BweCongestionController";
 }  // namespace
 
 bool CongestionControllerExperiment::BbrControllerEnabled() {
   std::string trial_string =
-      webrtc::field_trial::FindFullName(kBbrControllerExperiment);
+      webrtc::field_trial::FindFullName(kControllerExperiment);
   return trial_string.find("Enabled,BBR") == 0;
+}
+
+bool CongestionControllerExperiment::InjectedControllerEnabled() {
+  std::string trial_string =
+      webrtc::field_trial::FindFullName(kControllerExperiment);
+  return trial_string.find("Enabled,Injected") == 0;
 }
 
 rtc::Optional<CongestionControllerExperiment::BbrExperimentConfig>
@@ -30,7 +36,7 @@ CongestionControllerExperiment::GetBbrExperimentConfig() {
   if (!BbrControllerEnabled())
     return rtc::nullopt;
   std::string trial_string =
-      webrtc::field_trial::FindFullName(kBbrControllerExperiment);
+      webrtc::field_trial::FindFullName(kControllerExperiment);
   BbrExperimentConfig config;
   if (sscanf(
           trial_string.c_str(),

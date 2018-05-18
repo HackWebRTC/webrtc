@@ -177,6 +177,7 @@ BbrNetworkController::BbrNetworkController(NetworkControllerConfig config)
       congestion_window_gain_constant_(kProbeBWCongestionWindowGain),
       rtt_variance_weight_(kBbrRttVariationWeight),
       recovery_window_(max_congestion_window_) {
+  RTC_LOG(LS_INFO) << "Creating BBR controller";
   config_ = BbrControllerConfig::ExperimentConfig();
   if (config.starting_bandwidth.IsFinite())
     default_bandwidth_ = config.starting_bandwidth;

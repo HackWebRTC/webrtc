@@ -33,6 +33,7 @@ class CongestionControllerExperiment {
     double probe_rtt_congestion_window_gain;
   };
   static bool BbrControllerEnabled();
+  static bool InjectedControllerEnabled();
   static rtc::Optional<BbrExperimentConfig> GetBbrExperimentConfig();
 };
 

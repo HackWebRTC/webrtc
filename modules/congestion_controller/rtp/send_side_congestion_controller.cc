@@ -15,12 +15,10 @@
 #include <memory>
 #include <vector>
 #include "api/transport/network_types.h"
-#include "modules/congestion_controller/bbr/bbr_factory.h"
 #include "modules/congestion_controller/goog_cc/include/goog_cc_factory.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/experiments/congestion_controller_experiment.h"
 #include "rtc_base/format_macros.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
@@ -48,16 +46,6 @@ bool IsPacerPushbackExperimentEnabled() {
          (!webrtc::field_trial::IsDisabled(kPacerPushbackExperiment) &&
           webrtc::runtime_enabled_features::IsFeatureEnabled(
               webrtc::runtime_enabled_features::kDualStreamModeFeatureName));
-}
-
-std::unique_ptr<NetworkControllerFactoryInterface> MaybeCreateBbrFactory() {
-  if (CongestionControllerExperiment::BbrControllerEnabled()) {
-    RTC_LOG(LS_INFO) << "Creating BBR factory";
-    return rtc::MakeUnique<BbrNetworkControllerFactory>();
-  } else {
-    RTC_LOG(LS_INFO) << "Not creating BBR factory";
-    return nullptr;
-  }
 }
 
 void SortPacketFeedbackVector(std::vector<webrtc::PacketFeedback>* input) {
@@ -310,11 +298,12 @@ SendSideCongestionController::SendSideCongestionController(
     PacedSender* pacer,
     int start_bitrate_bps,
     int min_bitrate_bps,
-    int max_bitrate_bps)
+    int max_bitrate_bps,
+    NetworkControllerFactoryInterface* controller_factory)
     : clock_(clock),
       pacer_(pacer),
       transport_feedback_adapter_(clock_),
-      controller_factory_with_feedback_(MaybeCreateBbrFactory()),
+      controller_factory_with_feedback_(controller_factory),
       controller_factory_fallback_(
           rtc::MakeUnique<GoogCcNetworkControllerFactory>(event_log)),
       pacer_controller_(MakeUnique<PacerController>(pacer_)),
