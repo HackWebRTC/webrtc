@@ -23,6 +23,7 @@
 
 #include "common_video/include/video_frame_buffer.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/video_coding/codecs/vp9/svc_rate_allocator.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/keep_ref_until_done.h"
@@ -32,6 +33,10 @@
 #include "rtc_base/trace_event.h"
 
 namespace webrtc {
+
+namespace {
+const float kMaxScreenSharingFramerateFps = 5.0f;
+}
 
 // Only positive speeds, range for real-time coding currently is: 5 - 8.
 // Lower means slower/better quality, higher means fastest/lower quality.
@@ -78,6 +83,8 @@ VP9EncoderImpl::VP9EncoderImpl()
       num_temporal_layers_(0),
       num_spatial_layers_(0),
       inter_layer_pred_(InterLayerPredMode::kOn),
+      output_framerate_(1000.0, 1000.0),
+      last_encoded_frame_rtp_timestamp_(0),
       is_flexible_mode_(false) {
   memset(&codec_, 0, sizeof(codec_));
   memset(&svc_params_, 0, sizeof(vpx_svc_extra_cfg_t));
@@ -278,6 +285,14 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   if (num_temporal_layers_ == 0)
     num_temporal_layers_ = 1;
 
+  // Init framerate controller.
+  output_framerate_.Reset();
+  if (codec_.mode == kScreensharing) {
+    target_framerate_fps_ = kMaxScreenSharingFramerateFps;
+  } else {
+    target_framerate_fps_.reset();
+  }
+
   // Allocate memory for encoded image
   if (encoded_image_._buffer != nullptr) {
     delete[] encoded_image_._buffer;
@@ -439,8 +454,6 @@ int VP9EncoderImpl::InitAndSetControlSettings(const VideoCodec* inst) {
       // 1:2 scaling in each dimension.
       svc_params_.scaling_factor_num[i] = scaling_factor_num;
       svc_params_.scaling_factor_den[i] = 256;
-      if (codec_.mode != kScreensharing)
-        scaling_factor_num /= 2;
     }
   }
 
@@ -567,6 +580,13 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
       force_key_frame_ = true;
     }
   }
+
+  if (kScreensharing == codec_.mode && !force_key_frame_) {
+    if (DropFrame(input_image.timestamp())) {
+      return WEBRTC_VIDEO_CODEC_OK;
+    }
+  }
+
   RTC_DCHECK_EQ(input_image.width(), raw_->d_w);
   RTC_DCHECK_EQ(input_image.height(), raw_->d_h);
 
@@ -593,7 +613,8 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
   }
 
   RTC_CHECK_GT(codec_.maxFramerate, 0);
-  uint32_t duration = 90000 / codec_.maxFramerate;
+  uint32_t duration =
+      90000 / target_framerate_fps_.value_or(codec_.maxFramerate);
   if (vpx_codec_encode(encoder_, raw_, timestamp_, duration, flags,
                        VPX_DL_REALTIME)) {
     return WEBRTC_VIDEO_CODEC_ERROR;
@@ -779,7 +800,44 @@ void VP9EncoderImpl::DeliverBufferedFrame(bool end_of_picture) {
     encoded_complete_callback_->OnEncodedImage(encoded_image_, &codec_specific_,
                                                &frag_info);
     encoded_image_._length = 0;
+
+    if (end_of_picture) {
+      const uint32_t timestamp_ms =
+          1000 * encoded_image_._timeStamp / kVideoPayloadTypeFrequency;
+      output_framerate_.Update(1, timestamp_ms);
+      last_encoded_frame_rtp_timestamp_ = encoded_image_._timeStamp;
+    }
   }
+}
+
+bool VP9EncoderImpl::DropFrame(uint32_t rtp_timestamp) {
+  if (target_framerate_fps_) {
+    if (rtp_timestamp < last_encoded_frame_rtp_timestamp_) {
+      // Timestamp has wrapped around. Reset framerate statistic.
+      output_framerate_.Reset();
+      return false;
+    }
+
+    const uint32_t timestamp_ms =
+        1000 * rtp_timestamp / kVideoPayloadTypeFrequency;
+    const uint32_t framerate_fps =
+        output_framerate_.Rate(timestamp_ms).value_or(0);
+    if (framerate_fps > *target_framerate_fps_) {
+      return true;
+    }
+
+    // Primarily check if frame interval is too short using frame timestamps,
+    // as if they are correct they won't be affected by queuing in webrtc.
+    const uint32_t expected_frame_interval =
+        kVideoPayloadTypeFrequency / *target_framerate_fps_;
+
+    const uint32_t ts_diff = rtp_timestamp - last_encoded_frame_rtp_timestamp_;
+    if (ts_diff < 85 * expected_frame_interval / 100) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 int VP9EncoderImpl::SetChannelParameters(uint32_t packet_loss, int64_t rtt) {

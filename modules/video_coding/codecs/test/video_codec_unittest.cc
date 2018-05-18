@@ -157,4 +157,9 @@ bool VideoCodecUnitTest::WaitForDecodedFrame(std::unique_ptr<VideoFrame>* frame,
   }
 }
 
+size_t VideoCodecUnitTest::GetNumEncodedFrames() {
+  rtc::CritScope lock(&encoded_frame_section_);
+  return encoded_frames_.size();
+}
+
 }  // namespace webrtc

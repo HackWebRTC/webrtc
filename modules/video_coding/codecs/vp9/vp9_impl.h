@@ -17,6 +17,7 @@
 
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
 #include "modules/video_coding/codecs/vp9/vp9_frame_buffer_pool.h"
+#include "rtc_base/rate_statistics.h"
 
 #include "vpx/vp8cx.h"
 #include "vpx/vpx_decoder.h"
@@ -102,6 +103,11 @@ class VP9EncoderImpl : public VP9Encoder {
   uint8_t num_temporal_layers_;
   uint8_t num_spatial_layers_;
   InterLayerPredMode inter_layer_pred_;
+
+  // Framerate controller.
+  rtc::Optional<float> target_framerate_fps_;
+  RateStatistics output_framerate_;
+  uint32_t last_encoded_frame_rtp_timestamp_;
 
   // Used for flexible mode.
   bool is_flexible_mode_;

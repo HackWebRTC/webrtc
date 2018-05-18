@@ -99,6 +99,8 @@ class VideoCodecUnitTest : public ::testing::Test {
   bool WaitForDecodedFrame(std::unique_ptr<VideoFrame>* frame,
                            rtc::Optional<uint8_t>* qp);
 
+  size_t GetNumEncodedFrames();
+
   VideoCodec codec_settings_;
 
   std::unique_ptr<VideoEncoder> encoder_;

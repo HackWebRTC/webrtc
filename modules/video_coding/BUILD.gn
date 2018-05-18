@@ -503,6 +503,7 @@ rtc_static_library("webrtc_vp9") {
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base",
     "../../system_wrappers",
+    "../rtp_rtcp:rtp_rtcp_format",
   ]
   if (rtc_build_libvpx) {
     deps += [ rtc_libvpx_dir ]
@@ -746,6 +747,7 @@ if (rtc_include_tests) {
       "../../test:fileutils",
       "../../test:test_support",
       "../../test:video_test_common",
+      "../rtp_rtcp:rtp_rtcp_format",
     ]
 
     data = video_coding_modules_tests_resources
