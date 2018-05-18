@@ -9,6 +9,9 @@
 # This file is inspired to [1].
 # [1] - https://cs.chromium.org/chromium/src/PRESUBMIT_test_mocks.py
 
+import os.path
+import re
+
 
 class MockInputApi(object):
   """Mock class for the InputApi class.
@@ -20,10 +23,38 @@ class MockInputApi(object):
   def __init__(self):
     self.change = MockChange([], [])
     self.files = []
+    self.presubmit_local_path = os.path.dirname(__file__)
 
   def AffectedSourceFiles(self, file_filter=None):
-    # pylint: disable=unused-argument
-    return self.files
+    return self.AffectedFiles(file_filter=file_filter)
+
+  def AffectedFiles(self, file_filter=None, include_deletes=False):
+    for f in self.files:
+      if file_filter and not file_filter(f):
+        continue
+      if not include_deletes and f.Action() == 'D':
+        continue
+      yield f
+
+  @classmethod
+  def FilterSourceFile(cls, affected_file, white_list=(), black_list=()):
+    local_path = affected_file.LocalPath()
+    found_in_white_list = not white_list
+    if white_list:
+      for pattern in white_list:
+        compiled_pattern = re.compile(pattern)
+        if compiled_pattern.search(local_path):
+          found_in_white_list = True
+          break
+    if black_list:
+      for pattern in black_list:
+        compiled_pattern = re.compile(pattern)
+        if compiled_pattern.search(local_path):
+          return False
+    return found_in_white_list
+
+  def PresubmitLocalPath(self):
+    return self.presubmit_local_path
 
   def ReadFile(self, affected_file, mode='rU'):
     filename = affected_file.AbsoluteLocalPath()
@@ -79,11 +110,30 @@ class MockFile(object):
   MockInputApi for presubmit unittests.
   """
 
-  def __init__(self, local_path):
+  def __init__(self, local_path, new_contents=None, old_contents=None,
+      action='A'):
+    if new_contents is None:
+      new_contents = ["Data"]
     self._local_path = local_path
+    self._new_contents = new_contents
+    self._changed_contents = [(i + 1, l) for i, l in enumerate(new_contents)]
+    self._action = action
+    self._old_contents = old_contents
+
+  def Action(self):
+    return self._action
+
+  def ChangedContents(self):
+    return self._changed_contents
+
+  def NewContents(self):
+    return self._new_contents
 
   def LocalPath(self):
     return self._local_path
 
   def AbsoluteLocalPath(self):
     return self._local_path
+
+  def OldContents(self):
+    return self._old_contents
