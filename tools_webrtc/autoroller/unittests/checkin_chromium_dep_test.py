@@ -8,9 +8,11 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 
+import errno
 import json
 import os.path
 import shutil
+import stat
 import sys
 import tempfile
 import unittest
@@ -28,6 +30,15 @@ FAKE_REMOTE_TEMPLATE_ROOT = os.path.join(SCRIPT_DIR, 'testdata',
                                          'checkin_chromium_dep', 'remote_root')
 FAKE_SOURCE_TEMPLATE_ROOT = os.path.join(SCRIPT_DIR, 'testdata',
                                          'checkin_chromium_dep', 'src_root')
+
+
+def _HandleRemoveReadonly(func, path, exc):
+  excvalue = exc[1]
+  if func in (os.rmdir, os.remove) and excvalue.errno == errno.EACCES:
+    os.chmod(path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)  # 0777
+    func(path)
+  else:
+    raise excvalue
 
 
 class TestCheckInChromiumDep(unittest.TestCase):
@@ -74,9 +85,12 @@ class TestCheckInChromiumDep(unittest.TestCase):
                working_dir=repo_dir)
 
   def tearDown(self):
-    shutil.rmtree(self._temp_dir)
-    shutil.rmtree(self._fake_chromium_repo)
-    shutil.rmtree(self._fake_source_repo)
+    shutil.rmtree(self._temp_dir, ignore_errors=False,
+                  onerror=_HandleRemoveReadonly)
+    shutil.rmtree(self._fake_chromium_repo, ignore_errors=False,
+                  onerror=_HandleRemoveReadonly)
+    shutil.rmtree(self._fake_source_repo, ignore_errors=False,
+                  onerror=_HandleRemoveReadonly)
 
   def testCheckIn(self):
     third_party_dir = os.path.join(self._fake_source_repo, 'third_party')
