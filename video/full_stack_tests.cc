@@ -714,7 +714,8 @@ TEST_F(FullStackTest, ScreenshareSlidesVP9_2SL) {
   RunTest(screenshare);
 }
 
-TEST_F(FullStackTest, VP9SVC_3SL_High) {
+// TODO(bugs.webrtc.org/9220): Re-enable this test once the issue is fixed.
+TEST_F(FullStackTest, DISABLED_VP9SVC_3SL_High) {
   VideoQualityTest::Params simulcast;
   simulcast.call.send_side_bwe = true;
   simulcast.video[0] = kSvcVp9Video;
