@@ -734,4 +734,7 @@ include_rules = [
   "+rtc_base",
   "+test",
   "+rtc_tools",
+
+  # Abseil whitelist.
+  "+absl/types/optional.h",
 ]
