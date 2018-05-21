@@ -264,11 +264,6 @@ class VideoSendStream {
   // When a stream is stopped, it can't receive, process or deliver packets.
   virtual void Stop() = 0;
 
-  // TODO(deadbeef): Remove once downstream code referencing
-  // "webrtc::VideoSendStream::DegradationPreference::kMaintainResolution" is
-  // updated.
-  using DegradationPreference = webrtc::DegradationPreference;
-
   virtual void SetSource(
       rtc::VideoSourceInterface<webrtc::VideoFrame>* source,
       const DegradationPreference& degradation_preference) = 0;

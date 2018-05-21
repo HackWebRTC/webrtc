@@ -83,10 +83,6 @@ enum class DegradationPreference {
   MAINTAIN_RESOLUTION,
   // Try to strike a "pleasing" balance between frame rate or resolution.
   BALANCED,
-  // TODO(deadbeef): Remove once downstream code referencing
-  // "webrtc::VideoSendStream::DegradationPreference::kMaintainResolution" is
-  // updated.
-  kMaintainResolution = MAINTAIN_RESOLUTION
 };
 
 extern const double kDefaultBitratePriority;
