@@ -17,7 +17,6 @@
 #include "modules/rtp_rtcp/source/flexfec_header_reader_writer.h"
 #include "modules/rtp_rtcp/source/forward_error_correction.h"
 #include "modules/rtp_rtcp/source/ulpfec_header_reader_writer.h"
-#include "rtc_base/basictypes.h"
 #include "rtc_base/random.h"
 #include "test/gtest.h"
 

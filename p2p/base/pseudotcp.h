@@ -13,7 +13,6 @@
 
 #include <list>
 
-#include "rtc_base/basictypes.h"
 #include "rtc_base/stream.h"
 
 namespace cricket {

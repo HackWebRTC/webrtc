@@ -12,7 +12,6 @@
 #define RTC_BASE_HELPERS_H_
 
 #include <string>
-#include "rtc_base/basictypes.h"
 
 namespace rtc {
 

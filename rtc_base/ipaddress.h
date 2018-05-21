@@ -25,7 +25,6 @@
 #include <string>
 #include <vector>
 
-#include "rtc_base/basictypes.h"
 #include "rtc_base/byteorder.h"
 #if defined(WEBRTC_WIN)
 #include "rtc_base/win32.h"

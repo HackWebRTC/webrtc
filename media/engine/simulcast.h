@@ -15,7 +15,6 @@
 #include <vector>
 
 #include "api/video_codecs/video_encoder_config.h"
-#include "rtc_base/basictypes.h"
 
 namespace cricket {
 

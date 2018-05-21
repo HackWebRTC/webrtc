@@ -18,7 +18,6 @@
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/rtp_rtcp/source/rtcp_packet/bye.h"
 #include "rtc_base/arraysize.h"
-#include "rtc_base/basictypes.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/ptr_util.h"
 #include "test/gmock.h"

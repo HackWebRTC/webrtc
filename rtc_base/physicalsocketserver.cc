@@ -45,7 +45,6 @@
 #include <map>
 
 #include "rtc_base/arraysize.h"
-#include "rtc_base/basictypes.h"
 #include "rtc_base/byteorder.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"

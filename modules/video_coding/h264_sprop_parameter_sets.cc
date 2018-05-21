@@ -14,7 +14,6 @@
 #include <vector>
 
 #include "rtc_base/base64.h"
-#include "rtc_base/basictypes.h"
 #include "rtc_base/logging.h"
 
 namespace {

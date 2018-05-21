@@ -22,7 +22,6 @@
 #include "api/jsep.h"
 #include "api/optional.h"
 #include "pc/sessiondescription.h"
-#include "rtc_base/basictypes.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/criticalsection.h"

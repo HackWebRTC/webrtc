@@ -18,7 +18,6 @@
 #include <algorithm>
 #include <string>
 
-#include "rtc_base/basictypes.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/messagequeue.h"

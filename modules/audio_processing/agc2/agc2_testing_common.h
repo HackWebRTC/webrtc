@@ -16,7 +16,6 @@
 #include <limits>
 #include <vector>
 
-#include "rtc_base/basictypes.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {

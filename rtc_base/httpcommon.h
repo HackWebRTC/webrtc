@@ -15,7 +15,7 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include "rtc_base/basictypes.h"
+
 #include "rtc_base/checks.h"
 #include "rtc_base/stream.h"
 #include "rtc_base/stringutils.h"

@@ -55,7 +55,6 @@
 #include <CoreServices/CoreServices.h>
 #endif
 
-#include "rtc_base/basictypes.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/deprecation.h"
 #include "rtc_base/system/no_inline.h"

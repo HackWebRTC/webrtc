@@ -18,7 +18,6 @@
 #include <string>
 #include <vector>
 
-#include "rtc_base/basictypes.h"
 #include "rtc_base/bytebuffer.h"
 #include "rtc_base/socketaddress.h"
 

@@ -26,7 +26,6 @@
 #endif
 
 #include "api/optional.h"
-#include "rtc_base/basictypes.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/socketaddress.h"
 

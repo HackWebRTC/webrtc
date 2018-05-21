@@ -25,7 +25,6 @@
 #include "media/base/videobroadcaster.h"
 #include "pc/remoteaudiosource.h"
 #include "pc/videotracksource.h"
-#include "rtc_base/basictypes.h"
 
 namespace webrtc {
 

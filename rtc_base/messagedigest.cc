@@ -14,7 +14,6 @@
 
 #include <string.h>
 
-#include "rtc_base/basictypes.h"
 #include "rtc_base/openssldigest.h"
 #include "rtc_base/stringencode.h"
 

@@ -15,7 +15,6 @@
 #include "media/engine/webrtcvideodecoderfactory.h"
 #include "media/engine/webrtcvideoencoderfactory.h"
 #include "modules/video_coding/include/video_error_codes.h"
-#include "rtc_base/basictypes.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/stringutils.h"
 

@@ -33,7 +33,6 @@
 #include "media/base/streamparams.h"
 #include "modules/audio_processing/include/audio_processing_statistics.h"
 #include "rtc_base/asyncpacketsocket.h"
-#include "rtc_base/basictypes.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/copyonwritebuffer.h"
 #include "rtc_base/dscp.h"

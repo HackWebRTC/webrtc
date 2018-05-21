@@ -20,7 +20,6 @@
 #include "modules/rtp_rtcp/source/rtcp_packet/receiver_report.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/sender_report.h"
 #include "rtc_base/arraysize.h"
-#include "rtc_base/basictypes.h"
 #include "rtc_base/buffer.h"
 #include "test/gtest.h"
 

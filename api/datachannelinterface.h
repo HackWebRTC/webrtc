@@ -16,7 +16,6 @@
 
 #include <string>
 
-#include "rtc_base/basictypes.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/copyonwritebuffer.h"
 #include "rtc_base/refcount.h"

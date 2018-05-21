@@ -13,7 +13,6 @@
 
 #include <string>
 
-#include "rtc_base/basictypes.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/byteorder.h"
 #include "rtc_base/constructormagic.h"

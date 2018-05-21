@@ -10,7 +10,6 @@
 
 #include "test/video_capturer.h"
 
-#include "rtc_base/basictypes.h"
 #include "rtc_base/constructormagic.h"
 
 namespace webrtc {

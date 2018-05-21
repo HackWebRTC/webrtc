@@ -16,7 +16,6 @@
 #include "modules/rtp_rtcp/source/fec_test_helper.h"
 #include "modules/rtp_rtcp/source/forward_error_correction.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
-#include "rtc_base/basictypes.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 

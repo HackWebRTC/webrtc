@@ -12,7 +12,6 @@
 #define MODULES_RTP_RTCP_MOCKS_MOCK_RECOVERED_PACKET_RECEIVER_H_
 
 #include "modules/rtp_rtcp/include/flexfec_receiver.h"
-#include "rtc_base/basictypes.h"
 #include "test/gmock.h"
 
 namespace webrtc {

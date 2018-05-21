@@ -14,7 +14,6 @@
 
 #include "api/array_view.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "rtc_base/basictypes.h"
 #include "rtc_base/copyonwritebuffer.h"
 
 namespace webrtc {

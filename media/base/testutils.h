@@ -18,7 +18,6 @@
 #include "media/base/videocapturer.h"
 #include "media/base/videocommon.h"
 #include "rtc_base/arraysize.h"
-#include "rtc_base/basictypes.h"
 #include "rtc_base/sigslot.h"
 
 namespace rtc {

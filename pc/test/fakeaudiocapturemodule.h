@@ -24,7 +24,6 @@
 
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_device/include/audio_device.h"
-#include "rtc_base/basictypes.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/messagehandler.h"
 #include "rtc_base/scoped_ref_ptr.h"

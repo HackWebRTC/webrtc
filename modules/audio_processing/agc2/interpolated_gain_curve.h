@@ -14,7 +14,7 @@
 #include <array>
 
 #include "modules/audio_processing/agc2/agc2_common.h"
-#include "rtc_base/basictypes.h"
+
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/gtest_prod_util.h"
 

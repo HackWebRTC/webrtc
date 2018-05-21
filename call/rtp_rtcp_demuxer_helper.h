@@ -17,7 +17,6 @@
 
 #include "api/array_view.h"
 #include "api/optional.h"
-#include "rtc_base/basictypes.h"
 
 namespace webrtc {
 

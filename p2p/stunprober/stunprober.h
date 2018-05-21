@@ -16,7 +16,6 @@
 #include <vector>
 
 #include "rtc_base/asyncinvoker.h"
-#include "rtc_base/basictypes.h"
 #include "rtc_base/bytebuffer.h"
 #include "rtc_base/callback.h"
 #include "rtc_base/constructormagic.h"

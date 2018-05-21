@@ -21,7 +21,6 @@
 
 #include "api/mediastreaminterface.h"
 #include "api/rtpsenderinterface.h"
-#include "rtc_base/basictypes.h"
 #include "rtc_base/criticalsection.h"
 #include "media/base/audiosource.h"
 #include "media/base/mediachannel.h"

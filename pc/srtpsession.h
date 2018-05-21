@@ -14,7 +14,6 @@
 #include <vector>
 
 #include "api/umametrics.h"
-#include "rtc_base/basictypes.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/thread_checker.h"
 

@@ -14,8 +14,6 @@
 
 #include <algorithm>
 
-#include "rtc_base/basictypes.h"
-
 namespace rtc {
 
 ByteBufferWriter::ByteBufferWriter() : ByteBufferWriterT() {}

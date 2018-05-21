@@ -20,7 +20,6 @@
 #include "modules/video_coding/codecs/vp9/svc_rate_allocator.h"
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "modules/video_coding/utility/default_video_bitrate_allocator.h"
-#include "rtc_base/basictypes.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/clock.h"
 
