@@ -743,9 +743,9 @@ void Expand::AnalyzeSignal(int16_t* random_vector) {
       // the division.
       // Shift the denominator from Q13 to Q5 before the division. The result of
       // the division will then be in Q20.
-      int temp_ratio = WebRtcSpl_DivW32W16(
-          (slope - 8192) << 12,
-          static_cast<int16_t>((distortion_lag * slope) >> 8));
+      int16_t denom =
+          rtc::saturated_cast<int16_t>((distortion_lag * slope) >> 8);
+      int temp_ratio = WebRtcSpl_DivW32W16((slope - 8192) << 12, denom);
       if (slope > 14746) {
         // slope > 1.8.
         // Divide by 2, with proper rounding.
