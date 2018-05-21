@@ -13,7 +13,7 @@
 
 #include <memory>
 
-#include "api/videosourceinterface.h"
+#include "api/video/video_source_interface.h"
 #include "media/base/fakeframesource.h"
 #include "media/base/videobroadcaster.h"
 #include "rtc_base/ptr_util.h"

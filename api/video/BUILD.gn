@@ -19,11 +19,14 @@ rtc_source_set("video_frame") {
     "video_frame_buffer.h",
     "video_rotation.h",
     "video_sink_interface.h",
+    "video_source_interface.cc",
+    "video_source_interface.h",
     "video_timing.cc",
     "video_timing.h",
   ]
 
   deps = [
+    "..:optional",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
   ]
@@ -97,5 +100,20 @@ rtc_source_set("video_stream_decoder_create") {
     ":video_stream_decoder",
     "../../rtc_base:rtc_base_approved",
     "../../video:video_stream_decoder_impl",
+  ]
+}
+
+rtc_source_set("video_stream_encoder") {
+  visibility = [ "*" ]
+  sources = [
+    "video_stream_encoder_interface.h",
+  ]
+
+  deps = [
+    ":video_frame",
+
+    # For rtpparameters.h
+    "..:libjingle_peerconnection_api",
+    "../video_codecs:video_codecs_api",
   ]
 }

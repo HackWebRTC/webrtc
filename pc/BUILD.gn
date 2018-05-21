@@ -378,6 +378,7 @@ if (rtc_include_tests) {
       "../api:libjingle_peerconnection_api",
       "../api:libjingle_peerconnection_test_api",
       "../api:rtc_stats_api",
+      "../api/video:video_frame",
       "../api/video_codecs:builtin_video_decoder_factory",
       "../api/video_codecs:builtin_video_encoder_factory",
       "../call:call_interfaces",

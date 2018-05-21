@@ -12,7 +12,7 @@
 #define PC_TEST_FAKEVIDEOTRACKSOURCE_H_
 
 #include "api/mediastreaminterface.h"
-#include "api/videosourceinterface.h"
+#include "api/video/video_source_interface.h"
 #include "pc/videotracksource.h"
 
 namespace webrtc {

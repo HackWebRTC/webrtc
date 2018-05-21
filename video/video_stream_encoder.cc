@@ -374,7 +374,7 @@ void VideoStreamEncoder::Stop() {
   shutdown_event_.Wait(rtc::Event::kForever);
 }
 
-void VideoStreamEncoder::SetBitrateObserver(
+void VideoStreamEncoder::SetBitrateAllocationObserver(
     VideoBitrateAllocationObserver* bitrate_observer) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   encoder_queue_.PostTask([this, bitrate_observer] {

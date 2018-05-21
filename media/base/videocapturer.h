@@ -20,7 +20,7 @@
 #include <string>
 #include <vector>
 
-#include "api/videosourceinterface.h"
+#include "api/video/video_source_interface.h"
 #include "media/base/videoadapter.h"
 #include "media/base/videobroadcaster.h"
 #include "media/base/videocommon.h"

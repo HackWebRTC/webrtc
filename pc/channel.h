@@ -22,7 +22,7 @@
 #include "api/jsep.h"
 #include "api/rtpreceiverinterface.h"
 #include "api/video/video_sink_interface.h"
-#include "api/videosourceinterface.h"
+#include "api/video/video_source_interface.h"
 #include "call/rtp_packet_sink_interface.h"
 #include "media/base/mediachannel.h"
 #include "media/base/mediaengine.h"

@@ -109,7 +109,7 @@ VideoSendStream::VideoSendStream(
   // TODO(sprang): Enable this also for regular video calls if it works well.
   if (encoder_config.content_type == VideoEncoderConfig::ContentType::kScreen) {
     // Only signal target bitrate for screenshare streams, for now.
-    video_stream_encoder_->SetBitrateObserver(send_stream_.get());
+    video_stream_encoder_->SetBitrateAllocationObserver(send_stream_.get());
   }
 
   ReconfigureVideoEncoder(std::move(encoder_config));

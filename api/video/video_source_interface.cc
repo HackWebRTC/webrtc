@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "api/videosourceinterface.h"
+#include "api/video/video_source_interface.h"
 
 namespace rtc {
 
