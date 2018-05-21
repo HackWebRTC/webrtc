@@ -26,6 +26,7 @@
 #include "modules/audio_device/include/audio_device_defines.h"
 #include "rtc_base/logging.h"
 
+namespace webrtc {
 namespace webrtc_win {
 
 static const int64_t kNumMicrosecsPerSec = webrtc::TimeDelta::seconds(1).us();
@@ -427,5 +428,6 @@ std::string ErrorToString(const _com_error& error);
 
 }  // namespace core_audio_utility
 }  // namespace webrtc_win
+}  // namespace webrtc
 
 #endif  //  MODULES_AUDIO_DEVICE_WIN_CORE_AUDIO_UTILITY_WIN_H_

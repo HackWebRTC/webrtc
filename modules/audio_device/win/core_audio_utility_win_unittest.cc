@@ -16,6 +16,7 @@
 using Microsoft::WRL::ComPtr;
 using webrtc::AudioDeviceName;
 
+namespace webrtc {
 namespace webrtc_win {
 namespace {
 
@@ -561,3 +562,4 @@ TEST_F(CoreAudioUtilityWinTest, FillRenderEndpointBufferWithSilence) {
 }
 
 }  // namespace webrtc_win
+}  // namespace webrtc

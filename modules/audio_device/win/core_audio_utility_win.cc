@@ -28,6 +28,7 @@ using Microsoft::WRL::ComPtr;
 using webrtc::AudioDeviceName;
 using webrtc::AudioParameters;
 
+namespace webrtc {
 namespace webrtc_win {
 namespace {
 
@@ -824,3 +825,4 @@ std::string ErrorToString(const _com_error& error) {
 
 }  // namespace core_audio_utility
 }  // namespace webrtc_win
+}  // namespace webrtc
