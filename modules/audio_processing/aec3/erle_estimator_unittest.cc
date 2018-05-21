@@ -9,6 +9,7 @@
  */
 
 #include "modules/audio_processing/aec3/erle_estimator.h"
+#include "api/array_view.h"
 #include "test/gtest.h"
 
 namespace webrtc {
@@ -22,7 +23,7 @@ constexpr float kMinErle = 1.0f;
 constexpr float kTrueErle = 10.f;
 constexpr float kTrueErleOnsets = 1.0f;
 
-void VerifyErleBands(const std::array<float, kFftLengthBy2Plus1>& erle,
+void VerifyErleBands(rtc::ArrayView<const float> erle,
                      float reference_lf,
                      float reference_hf) {
   std::for_each(
@@ -33,7 +34,7 @@ void VerifyErleBands(const std::array<float, kFftLengthBy2Plus1>& erle,
       [reference_hf](float a) { EXPECT_NEAR(reference_hf, a, 0.001); });
 }
 
-void VerifyErle(const std::array<float, kFftLengthBy2Plus1>& erle,
+void VerifyErle(rtc::ArrayView<const float> erle,
                 float erle_time_domain,
                 float reference_lf,
                 float reference_hf) {
@@ -71,15 +72,15 @@ TEST(ErleEstimator, VerifyErleIncreaseAndHold) {
   FormFarendFrame(&X2, &E2, &Y2, kTrueErle);
 
   for (size_t k = 0; k < 200; ++k) {
-    estimator.Update(X2, Y2, E2);
+    estimator.Update(X2, Y2, E2, true);
   }
   VerifyErle(estimator.Erle(), estimator.ErleTimeDomain(), 8.f, 1.5f);
 
   FormNearendFrame(&X2, &E2, &Y2);
   // Verifies that the ERLE is not immediately decreased during nearend
   // activity.
-  for (size_t k = 0; k < 98; ++k) {
-    estimator.Update(X2, Y2, E2);
+  for (size_t k = 0; k < 50; ++k) {
+    estimator.Update(X2, Y2, E2, true);
   }
   VerifyErle(estimator.Erle(), estimator.ErleTimeDomain(), 8.f, 1.5f);
 }
@@ -94,21 +95,21 @@ TEST(ErleEstimator, VerifyErleTrackingOnOnsets) {
   for (size_t burst = 0; burst < 20; ++burst) {
     FormFarendFrame(&X2, &E2, &Y2, kTrueErleOnsets);
     for (size_t k = 0; k < 10; ++k) {
-      estimator.Update(X2, Y2, E2);
+      estimator.Update(X2, Y2, E2, true);
     }
     FormFarendFrame(&X2, &E2, &Y2, kTrueErle);
     for (size_t k = 0; k < 200; ++k) {
-      estimator.Update(X2, Y2, E2);
+      estimator.Update(X2, Y2, E2, true);
     }
     FormNearendFrame(&X2, &E2, &Y2);
-    for (size_t k = 0; k < 100; ++k) {
-      estimator.Update(X2, Y2, E2);
+    for (size_t k = 0; k < 300; ++k) {
+      estimator.Update(X2, Y2, E2, true);
     }
   }
   VerifyErleBands(estimator.ErleOnsets(), kMinErle, kMinErle);
   FormNearendFrame(&X2, &E2, &Y2);
   for (size_t k = 0; k < 1000; k++) {
-    estimator.Update(X2, Y2, E2);
+    estimator.Update(X2, Y2, E2, true);
   }
   // Verifies that during ne activity, Erle converges to the Erle for onsets.
   VerifyErle(estimator.Erle(), estimator.ErleTimeDomain(), kMinErle, kMinErle);
@@ -125,7 +126,7 @@ TEST(ErleEstimator, VerifyNoErleUpdateDuringLowActivity) {
   X2.fill(1000.f * 1000.f);
   Y2.fill(10 * E2[0]);
   for (size_t k = 0; k < 200; ++k) {
-    estimator.Update(X2, Y2, E2);
+    estimator.Update(X2, Y2, E2, true);
   }
   VerifyErle(estimator.Erle(), estimator.ErleTimeDomain(), kMinErle, kMinErle);
 }

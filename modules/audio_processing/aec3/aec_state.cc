@@ -153,10 +153,12 @@ void AecState::Update(
   }
 
   // Update the ERL and ERLE measures.
-  if (converged_filter && blocks_since_reset_ >= 2 * kNumBlocksPerSecond) {
+  if (blocks_since_reset_ >= 2 * kNumBlocksPerSecond) {
     const auto& X2 = render_buffer.Spectrum(filter_delay_blocks_);
-    erle_estimator_.Update(X2, Y2, E2_main);
-    erl_estimator_.Update(X2, Y2);
+    erle_estimator_.Update(X2, Y2, E2_main, converged_filter);
+    if (converged_filter) {
+      erl_estimator_.Update(X2, Y2);
+    }
   }
 
   // Detect and flag echo saturation.
