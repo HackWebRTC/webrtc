@@ -18,6 +18,12 @@
 #error "Either WEBRTC_WIN or WEBRTC_POSIX needs to be defined."
 #endif
 
+#if defined(WEBRTC_WIN)
+// Disable warning that we don't care about:
+// warning C4722: destructor never returns, potential memory leak
+#pragma warning(disable : 4722)
+#endif
+
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/nullsocketserver.h"
