@@ -105,7 +105,7 @@ TEST(BandwidthAdaptationTest, BandwidthAdaptationTest) {
   test::ScopedFieldTrials override_field_trials(
       "WebRTC-AdjustOpusBandwidth/Enabled/");
 
-  constexpr float kMaxNarrowbandRatio = 0.003f;
+  constexpr float kMaxNarrowbandRatio = 0.0035f;
   constexpr float kMinWidebandRatio = 0.03f;
 
   // Create encoder.

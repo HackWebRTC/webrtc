@@ -1591,13 +1591,14 @@ class AcmSetBitRateTest : public ::testing::Test {
     return send_test_->RegisterExternalCodec(external_speech_encoder);
   }
 
-  void RunInner(int expected_total_bits) {
+  void RunInner(int min_expected_total_bits, int max_expected_total_bits) {
     int nr_bytes = 0;
     while (std::unique_ptr<test::Packet> next_packet =
                send_test_->NextPacket()) {
       nr_bytes += rtc::checked_cast<int>(next_packet->payload_length_bytes());
     }
-    EXPECT_EQ(expected_total_bits, nr_bytes * 8);
+    EXPECT_LE(min_expected_total_bits, nr_bytes * 8);
+    EXPECT_GE(max_expected_total_bits, nr_bytes * 8);
   }
 
   void SetUpTest(const char* codec_name,
@@ -1620,10 +1621,12 @@ class AcmSetBitRateOldApi : public AcmSetBitRateTest {
  protected:
   // Runs the test. SetUpSender() must have been called and a codec must be set
   // up before calling this method.
-  void Run(int target_bitrate_bps, int expected_total_bits) {
+  void Run(int target_bitrate_bps,
+           int min_expected_total_bits,
+           int max_expected_total_bits) {
     ASSERT_TRUE(send_test_->acm());
     send_test_->acm()->SetBitRate(target_bitrate_bps);
-    RunInner(expected_total_bits);
+    RunInner(min_expected_total_bits, max_expected_total_bits);
   }
 };
 
@@ -1631,16 +1634,14 @@ class AcmSetBitRateNewApi : public AcmSetBitRateTest {
  protected:
   // Runs the test. SetUpSender() must have been called and a codec must be set
   // up before calling this method.
-  void Run(int expected_total_bits) { RunInner(expected_total_bits); }
+  void Run(int min_expected_total_bits, int max_expected_total_bits) {
+    RunInner(min_expected_total_bits, max_expected_total_bits);
+  }
 };
 
 TEST_F(AcmSetBitRateOldApi, Opus_48khz_20ms_10kbps) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 1, 107, 960, 960));
-#if defined(WEBRTC_ANDROID)
-  Run(10000, 8640);
-#else
-  Run(10000, 8696);
-#endif  // WEBRTC_ANDROID
+  Run(10000, 8000, 12000);
 }
 
 TEST_F(AcmSetBitRateNewApi, OpusFromFormat_48khz_20ms_10kbps) {
@@ -1649,20 +1650,12 @@ TEST_F(AcmSetBitRateNewApi, OpusFromFormat_48khz_20ms_10kbps) {
   const auto encoder = AudioEncoderOpus::MakeAudioEncoder(*config, 107);
   ASSERT_TRUE(SetUpSender());
   ASSERT_TRUE(RegisterExternalSendCodec(encoder.get(), 107));
-#if defined(WEBRTC_ANDROID)
-  RunInner(8640);
-#else
-  RunInner(8696);
-#endif  // WEBRTC_ANDROID
+  RunInner(8000, 12000);
 }
 
 TEST_F(AcmSetBitRateOldApi, Opus_48khz_20ms_50kbps) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 1, 107, 960, 960));
-#if defined(WEBRTC_ANDROID)
-  Run(50000, 45792);
-#else
-  Run(50000, 45600);
-#endif  // WEBRTC_ANDROID
+  Run(50000, 40000, 60000);
 }
 
 TEST_F(AcmSetBitRateNewApi, OpusFromFormat_48khz_20ms_50kbps) {
@@ -1671,11 +1664,7 @@ TEST_F(AcmSetBitRateNewApi, OpusFromFormat_48khz_20ms_50kbps) {
   const auto encoder = AudioEncoderOpus::MakeAudioEncoder(*config, 107);
   ASSERT_TRUE(SetUpSender());
   ASSERT_TRUE(RegisterExternalSendCodec(encoder.get(), 107));
-#if defined(WEBRTC_ANDROID)
-  RunInner(45792);
-#else
-  RunInner(45600);
-#endif  // WEBRTC_ANDROID
+  RunInner(40000, 60000);
 }
 
 // The result on the Android platforms is inconsistent for this test case.
@@ -1691,7 +1680,7 @@ TEST_F(AcmSetBitRateNewApi, OpusFromFormat_48khz_20ms_50kbps) {
 #endif
 TEST_F(AcmSetBitRateOldApi, MAYBE_Opus_48khz_20ms_100kbps) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 1, 107, 960, 960));
-  Run(100000, 100832);
+  Run(100000, 80000, 120000);
 }
 
 TEST_F(AcmSetBitRateNewApi, MAYBE_OpusFromFormat_48khz_20ms_100kbps) {
@@ -1700,18 +1689,18 @@ TEST_F(AcmSetBitRateNewApi, MAYBE_OpusFromFormat_48khz_20ms_100kbps) {
   const auto encoder = AudioEncoderOpus::MakeAudioEncoder(*config, 107);
   ASSERT_TRUE(SetUpSender());
   ASSERT_TRUE(RegisterExternalSendCodec(encoder.get(), 107));
-  RunInner(100832);
+  RunInner(80000, 120000);
 }
 
 // These next 2 tests ensure that the SetBitRate function has no effect on PCM
 TEST_F(AcmSetBitRateOldApi, Pcm16_8khz_10ms_8kbps) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("L16", 8000, 1, 107, 80, 80));
-  Run(8000, 128000);
+  Run(8000, 128000, 128000);
 }
 
 TEST_F(AcmSetBitRateOldApi, Pcm16_8khz_10ms_32kbps) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("L16", 8000, 1, 107, 80, 80));
-  Run(32000, 128000);
+  Run(32000, 128000, 128000);
 }
 
 // This test is for verifying the SetBitRate function. The bitrate is changed
@@ -1758,8 +1747,11 @@ class AcmChangeBitRateOldApi : public AcmSetBitRateOldApi {
             next_packet->payload_length_bytes());
       packet_counter++;
     }
-    EXPECT_EQ(expected_before_switch_bits, nr_bytes_before * 8);
-    EXPECT_EQ(expected_after_switch_bits, nr_bytes_after * 8);
+    // Check that bitrate is 80-120 percent of expected value.
+    EXPECT_GE(expected_before_switch_bits, nr_bytes_before * 8 * 8 / 10);
+    EXPECT_LE(expected_before_switch_bits, nr_bytes_before * 8 * 12 / 10);
+    EXPECT_GE(expected_after_switch_bits, nr_bytes_after * 8 * 8 / 10);
+    EXPECT_LE(expected_after_switch_bits, nr_bytes_after * 8 * 12 / 10);
   }
 
   uint32_t sampling_freq_hz_;
@@ -1768,33 +1760,17 @@ class AcmChangeBitRateOldApi : public AcmSetBitRateOldApi {
 
 TEST_F(AcmChangeBitRateOldApi, Opus_48khz_20ms_10kbps_2) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 1, 107, 960, 960));
-#if defined(WEBRTC_ANDROID)
-  Run(10000, 29512, 4800);
-#else
   Run(10000, 32200, 5208);
-#endif  // WEBRTC_ANDROID
 }
 
 TEST_F(AcmChangeBitRateOldApi, Opus_48khz_20ms_50kbps_2) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 1, 107, 960, 960));
-#if defined(WEBRTC_ANDROID)
-  Run(50000, 29512, 23304);
-#else
   Run(50000, 32200, 23928);
-#endif  // WEBRTC_ANDROID
 }
 
 TEST_F(AcmChangeBitRateOldApi, Opus_48khz_20ms_100kbps_2) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 1, 107, 960, 960));
-#if defined(WEBRTC_ANDROID)
-  #if defined(WEBRTC_ARCH_ARM64)
-    Run(100000, 29512, 50440);
-  #else
-    Run(100000, 29512, 50496);
-  #endif  // WEBRTC_ARCH_ARM64
-#else
   Run(100000, 32200, 50448);
-#endif  // WEBRTC_ANDROID
 }
 
 // These next 2 tests ensure that the SetBitRate function has no effect on PCM
