@@ -251,10 +251,10 @@ bool PeerConnectionTestWrapper::CheckForVideo() {
 }
 
 void PeerConnectionTestWrapper::GetAndAddUserMedia(
-    bool audio, const webrtc::FakeConstraints& audio_constraints,
+    bool audio, const cricket::AudioOptions& audio_options,
     bool video, const webrtc::FakeConstraints& video_constraints) {
   rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
-      GetUserMedia(audio, audio_constraints, video, video_constraints);
+      GetUserMedia(audio, audio_options, video, video_constraints);
   for (auto audio_track : stream->GetAudioTracks()) {
     EXPECT_TRUE(peer_connection_->AddTrack(audio_track, {stream->id()}).ok());
   }
@@ -264,21 +264,20 @@ void PeerConnectionTestWrapper::GetAndAddUserMedia(
 }
 
 rtc::scoped_refptr<webrtc::MediaStreamInterface>
-    PeerConnectionTestWrapper::GetUserMedia(
-        bool audio, const webrtc::FakeConstraints& audio_constraints,
-        bool video, const webrtc::FakeConstraints& video_constraints) {
+PeerConnectionTestWrapper::GetUserMedia(
+    bool audio, const cricket::AudioOptions& audio_options,
+    bool video, const webrtc::FakeConstraints& video_constraints) {
   std::string stream_id =
       kStreamIdBase + rtc::ToString(num_get_user_media_calls_++);
   rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
       peer_connection_factory_->CreateLocalMediaStream(stream_id);
 
   if (audio) {
-    FakeConstraints constraints = audio_constraints;
+    cricket::AudioOptions options = audio_options;
     // Disable highpass filter so that we can get all the test audio frames.
-    constraints.AddMandatory(
-        MediaConstraintsInterface::kHighpassFilter, false);
+    options.highpass_filter = false;
     rtc::scoped_refptr<webrtc::AudioSourceInterface> source =
-        peer_connection_factory_->CreateAudioSource(&constraints);
+        peer_connection_factory_->CreateAudioSource(options);
     rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track(
         peer_connection_factory_->CreateAudioTrack(kAudioTrackLabelBase,
                                                    source));

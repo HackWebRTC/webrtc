@@ -67,9 +67,6 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
 
   rtc::scoped_refptr<AudioSourceInterface> CreateAudioSource(
       const cricket::AudioOptions& options) override;
-  // Deprecated, use version without constraints.
-  rtc::scoped_refptr<AudioSourceInterface> CreateAudioSource(
-      const MediaConstraintsInterface* constraints) override;
 
   rtc::scoped_refptr<VideoTrackSourceInterface> CreateVideoSource(
       std::unique_ptr<cricket::VideoCapturer> capturer) override;

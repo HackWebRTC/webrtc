@@ -77,7 +77,7 @@ class PeerConnectionTestWrapper
   void WaitForAudio();
   void WaitForVideo();
   void GetAndAddUserMedia(
-    bool audio, const webrtc::FakeConstraints& audio_constraints,
+      bool audio, const cricket::AudioOptions& audio_options,
     bool video, const webrtc::FakeConstraints& video_constraints);
 
   // sigslots
@@ -96,7 +96,7 @@ class PeerConnectionTestWrapper
   bool CheckForAudio();
   bool CheckForVideo();
   rtc::scoped_refptr<webrtc::MediaStreamInterface> GetUserMedia(
-      bool audio, const webrtc::FakeConstraints& audio_constraints,
+      bool audio, const cricket::AudioOptions& audio_options,
       bool video, const webrtc::FakeConstraints& video_constraints);
 
   std::string name_;

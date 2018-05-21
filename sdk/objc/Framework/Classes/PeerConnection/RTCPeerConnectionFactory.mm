@@ -175,8 +175,11 @@
   if (constraints) {
     nativeConstraints = constraints.nativeConstraints;
   }
+  cricket::AudioOptions options;
+  CopyConstraintsIntoAudioOptions(nativeConstraints.get(), &options);
+
   rtc::scoped_refptr<webrtc::AudioSourceInterface> source =
-      _nativeFactory->CreateAudioSource(nativeConstraints.get());
+      _nativeFactory->CreateAudioSource(options);
   return [[RTCAudioSource alloc] initWithNativeAudioSource:source];
 }
 

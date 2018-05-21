@@ -1331,12 +1331,6 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
   // |options| decides audio processing settings.
   virtual rtc::scoped_refptr<AudioSourceInterface> CreateAudioSource(
       const cricket::AudioOptions& options) = 0;
-  // Deprecated - use version above.
-  // Can use CopyConstraintsIntoAudioOptions to bridge the gap.
-  virtual rtc::scoped_refptr<AudioSourceInterface> CreateAudioSource(
-      const MediaConstraintsInterface* constraints) {
-    return nullptr;
-  }
 
   // Creates a VideoTrackSourceInterface from |capturer|.
   // TODO(deadbeef): We should aim to remove cricket::VideoCapturer from the
