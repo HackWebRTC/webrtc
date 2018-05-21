@@ -456,7 +456,11 @@ rtc_source_set("rtc_base_approved_generic") {
   }
 
   if (is_win) {
-    sources += [ "file_win.cc" ]
+    sources += [
+      "file_win.cc",
+      "win/windows_version.cc",
+      "win/windows_version.h",
+    ]
     data_deps += [ "//build/win:runtime_libs" ]
   }
 
@@ -1159,6 +1163,9 @@ if (rtc_include_tests) {
       "virtualsocket_unittest.cc",
       "zero_memory_unittest.cc",
     ]
+    if (is_win) {
+      sources += [ "win/windows_version_unittest.cc" ]
+    }
     deps = [
       ":checks",
       ":rate_limiter",
