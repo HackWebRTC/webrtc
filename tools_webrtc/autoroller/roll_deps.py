@@ -434,11 +434,26 @@ def UpdateThirdPartyDeps(new_rev, dest_dir, source_dir,
 
   deps_to_checkout = _LoadThirdPartyDepsAndFiles(third_party_deps_file)
   # Update existing chromium third_party checkout to new rev.
-  _RunCommand(['git', 'fetch', 'origin', new_rev], working_dir=source_dir)
+  _RunCommand(['git', 'fetch', 'origin'], working_dir=source_dir)
+  _RunCommand(['git', 'checkout', new_rev], working_dir=source_dir)
   # Checkout chromium repo into dest dir basing on source checkout.
   _RunCommand(
       ['git', '--git-dir', '%s/.git' % source_dir, 'checkout',
        new_rev] + deps_to_checkout, working_dir=dest_dir)
+  # Ensure all chromium dependencies are presented
+  deps_set = set(deps_to_checkout)
+  stdout, _ = _RunCommand(['git', 'ls-tree', '--name-only', 'HEAD'],
+                          working_dir=source_dir)
+  if not deps_set.issubset(set(stdout.split('\n'))):
+    raise RollError('Missed required chromium dependencies in chromium '
+                    'third_party repo: %s' % json.dumps(
+        list(deps_set.difference(set(stdout.split('\n'))))))
+  stdout, _ = _RunCommand(['git', 'ls-tree', '--name-only', 'HEAD'],
+                          working_dir=dest_dir)
+  if not deps_set.issubset(set(stdout.split('\n'))):
+    raise RollError('Missed required chromium dependencies after checking in '
+                    'chromium third_party repo: %s' % json.dumps(
+        list(deps_set.difference(set(stdout.split('\n'))))))
 
 
 def _IsTreeClean():
