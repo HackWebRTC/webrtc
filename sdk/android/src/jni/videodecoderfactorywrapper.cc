@@ -16,6 +16,7 @@
 #include "rtc_base/logging.h"
 #include "sdk/android/generated_video_jni/jni/VideoDecoderFactory_jni.h"
 #include "sdk/android/native_api/jni/java_types.h"
+#include "sdk/android/src/jni/videocodecinfo.h"
 #include "sdk/android/src/jni/wrappednativecodec.h"
 
 namespace webrtc {
@@ -39,8 +40,10 @@ std::unique_ptr<VideoDecoder> VideoDecoderFactoryWrapper::CreateVideoDecoder(
 
 std::vector<SdpVideoFormat> VideoDecoderFactoryWrapper::GetSupportedFormats()
     const {
-  // TODO(andersc): VideoDecoderFactory.java does not have this method.
-  return std::vector<SdpVideoFormat>();
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  return JavaToNativeVector<SdpVideoFormat>(
+      env, Java_VideoDecoderFactory_getSupportedCodecs(env, decoder_factory_),
+      &VideoCodecInfoToSdpVideoFormat);
 }
 
 }  // namespace jni

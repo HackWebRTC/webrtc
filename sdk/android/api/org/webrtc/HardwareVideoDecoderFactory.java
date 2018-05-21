@@ -19,6 +19,8 @@ import android.media.MediaCodecInfo;
 import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaCodecList;
 import android.os.Build;
+import java.util.ArrayList;
+import java.util.List;
 import javax.annotation.Nullable;
 
 /** Factory for Android hardware VideoDecoders. */
@@ -70,6 +72,39 @@ public class HardwareVideoDecoderFactory implements VideoDecoderFactory {
     return new HardwareVideoDecoder(info.getName(), type,
         MediaCodecUtils.selectColorFormat(MediaCodecUtils.DECODER_COLOR_FORMATS, capabilities),
         sharedContext);
+  }
+
+  @Override
+  public VideoCodecInfo[] getSupportedCodecs() {
+    List<VideoCodecInfo> supportedCodecInfos = new ArrayList<VideoCodecInfo>();
+    // Generate a list of supported codecs in order of preference:
+    // VP8, VP9, H264 (high profile), and H264 (baseline profile).
+    for (VideoCodecType type :
+        new VideoCodecType[] {VideoCodecType.VP8, VideoCodecType.VP9, VideoCodecType.H264}) {
+      MediaCodecInfo codec = findCodecForType(type);
+      if (codec != null) {
+        String name = type.name();
+        if (type == VideoCodecType.H264 && isH264HighProfileSupported(codec)) {
+          supportedCodecInfos.add(new VideoCodecInfo(
+              name, MediaCodecUtils.getCodecProperties(type, /* highProfile= */ true)));
+        }
+
+        supportedCodecInfos.add(new VideoCodecInfo(
+            name, MediaCodecUtils.getCodecProperties(type, /* highProfile= */ false)));
+      }
+    }
+
+    // TODO(andersc): This is for backwards compatibility. Remove when clients have migrated to
+    // new DefaultVideoEncoderFactory.
+    if (fallbackToSoftware) {
+      for (VideoCodecInfo info : SoftwareVideoDecoderFactory.supportedCodecs()) {
+        if (!supportedCodecInfos.contains(info)) {
+          supportedCodecInfos.add(info);
+        }
+      }
+    }
+
+    return supportedCodecInfos.toArray(new VideoCodecInfo[supportedCodecInfos.size()]);
   }
 
   private @Nullable MediaCodecInfo findCodecForType(VideoCodecType type) {
@@ -128,5 +163,18 @@ public class HardwareVideoDecoderFactory implements VideoDecoderFactory {
       default:
         return false;
     }
+  }
+
+  private boolean isH264HighProfileSupported(MediaCodecInfo info) {
+    String name = info.getName();
+    // Support H.264 HP decoding on QCOM chips for Android L and above.
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && name.startsWith(QCOM_PREFIX)) {
+      return true;
+    }
+    // Support H.264 HP decoding on Exynos chips for Android M and above.
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && name.startsWith(EXYNOS_PREFIX)) {
+      return true;
+    }
+    return false;
   }
 }

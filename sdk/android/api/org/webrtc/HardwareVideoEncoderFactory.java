@@ -19,7 +19,6 @@ import android.media.MediaCodecList;
 import android.os.Build;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
@@ -96,10 +95,11 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
         MediaCodecUtils.ENCODER_COLOR_FORMATS, info.getCapabilitiesForType(mime));
 
     if (type == VideoCodecType.H264) {
-      boolean isHighProfile = nativeIsSameH264Profile(input.params, getCodecProperties(type, true))
+      boolean isHighProfile = nativeIsSameH264Profile(input.params,
+                                  MediaCodecUtils.getCodecProperties(type, /* highProfile= */ true))
           && isH264HighProfileSupported(info);
-      boolean isBaselineProfile =
-          nativeIsSameH264Profile(input.params, getCodecProperties(type, false));
+      boolean isBaselineProfile = nativeIsSameH264Profile(
+          input.params, MediaCodecUtils.getCodecProperties(type, /* highProfile= */ false));
 
       if (!isHighProfile && !isBaselineProfile) {
         return null;
@@ -121,11 +121,15 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
       MediaCodecInfo codec = findCodecForType(type);
       if (codec != null) {
         String name = type.name();
+        // TODO(sakal): Always add H264 HP once WebRTC correctly removes codecs that are not
+        // supported by the decoder.
         if (type == VideoCodecType.H264 && isH264HighProfileSupported(codec)) {
-          supportedCodecInfos.add(new VideoCodecInfo(name, getCodecProperties(type, true)));
+          supportedCodecInfos.add(new VideoCodecInfo(
+              name, MediaCodecUtils.getCodecProperties(type, /* highProfile= */ true)));
         }
 
-        supportedCodecInfos.add(new VideoCodecInfo(name, getCodecProperties(type, false)));
+        supportedCodecInfos.add(new VideoCodecInfo(
+            name, MediaCodecUtils.getCodecProperties(type, /* highProfile= */ false)));
       }
     }
 
@@ -264,24 +268,6 @@ public class HardwareVideoEncoderFactory implements VideoEncoderFactory {
   private boolean isH264HighProfileSupported(MediaCodecInfo info) {
     return enableH264HighProfile && Build.VERSION.SDK_INT > Build.VERSION_CODES.M
         && info.getName().startsWith(EXYNOS_PREFIX);
-  }
-
-  private Map<String, String> getCodecProperties(VideoCodecType type, boolean highProfile) {
-    switch (type) {
-      case VP8:
-      case VP9:
-        return new HashMap<String, String>();
-      case H264:
-        Map<String, String> properties = new HashMap<>();
-        properties.put(VideoCodecInfo.H264_FMTP_LEVEL_ASYMMETRY_ALLOWED, "1");
-        properties.put(VideoCodecInfo.H264_FMTP_PACKETIZATION_MODE, "1");
-        properties.put(VideoCodecInfo.H264_FMTP_PROFILE_LEVEL_ID,
-            highProfile ? VideoCodecInfo.H264_CONSTRAINED_HIGH_3_1
-                        : VideoCodecInfo.H264_CONSTRAINED_BASELINE_3_1);
-        return properties;
-      default:
-        throw new IllegalArgumentException("Unsupported codec: " + type);
-    }
   }
 
   private static native boolean nativeIsSameH264Profile(
