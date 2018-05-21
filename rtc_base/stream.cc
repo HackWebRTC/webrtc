@@ -583,26 +583,25 @@ StreamResult MemoryStreamBase::DoReserve(size_t size, int* error) {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-MemoryStream::MemoryStream() : buffer_alloc_(nullptr) {}
 
-MemoryStream::MemoryStream(const char* data) : buffer_alloc_(nullptr) {
+MemoryStream::MemoryStream() {}
+
+MemoryStream::MemoryStream(const char* data) {
   SetData(data, strlen(data));
 }
 
-MemoryStream::MemoryStream(const void* data, size_t length)
-    : buffer_alloc_(nullptr) {
+MemoryStream::MemoryStream(const void* data, size_t length) {
   SetData(data, length);
 }
 
 MemoryStream::~MemoryStream() {
-  delete [] buffer_alloc_;
+  delete [] buffer_;
 }
 
 void MemoryStream::SetData(const void* data, size_t length) {
   data_length_ = buffer_length_ = length;
-  delete [] buffer_alloc_;
-  buffer_alloc_ = new char[buffer_length_ + kAlignment];
-  buffer_ = reinterpret_cast<char*>(ALIGNP(buffer_alloc_, kAlignment));
+  delete [] buffer_;
+  buffer_ = new char[buffer_length_];
   memcpy(buffer_, data, data_length_);
   seek_position_ = 0;
 }
@@ -611,12 +610,9 @@ StreamResult MemoryStream::DoReserve(size_t size, int* error) {
   if (buffer_length_ >= size)
     return SR_SUCCESS;
 
-  if (char* new_buffer_alloc = new char[size + kAlignment]) {
-    char* new_buffer = reinterpret_cast<char*>(
-        ALIGNP(new_buffer_alloc, kAlignment));
+  if (char* new_buffer = new char[size]) {
     memcpy(new_buffer, buffer_, data_length_);
-    delete [] buffer_alloc_;
-    buffer_alloc_ = new_buffer_alloc;
+    delete [] buffer_;
     buffer_ = new_buffer;
     buffer_length_ = size;
     return SR_SUCCESS;

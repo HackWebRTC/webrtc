@@ -52,14 +52,6 @@ typedef int socklen_t;
 // The following only works for C++
 #ifdef __cplusplus
 
-#ifndef ALIGNP
-#define ALIGNP(p, t)                                             \
-  (reinterpret_cast<uint8_t*>(((reinterpret_cast<uintptr_t>(p) + \
-  ((t) - 1)) & ~((t) - 1))))
-#endif
-
-#define RTC_IS_ALIGNED(p, a) (!((uintptr_t)(p) & ((a) - 1)))
-
 // Use these to declare and define a static local variable that gets leaked so
 // that its destructors are not called at exit.
 #define RTC_DEFINE_STATIC_LOCAL(type, name, arguments) \
