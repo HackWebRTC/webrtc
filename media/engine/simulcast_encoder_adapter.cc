@@ -14,6 +14,7 @@
 
 
 #include "api/video/i420_buffer.h"
+#include "api/video/video_bitrate_allocation.h"
 #include "api/video_codecs/video_encoder_factory.h"
 #include "media/engine/scopedvideoencoder.h"
 #include "modules/video_coding/codecs/vp8/screenshare_layers.h"

@@ -12,6 +12,7 @@
 
 #include <vector>
 
+#include "api/video/video_bitrate_allocation.h"
 #include "api/video_codecs/video_encoder.h"
 
 namespace cricket {

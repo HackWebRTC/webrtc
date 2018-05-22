@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "api/video/i420_buffer.h"
+#include "api/video/video_bitrate_allocation.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/codecs/vp8/simulcast_rate_allocator.h"
 #include "modules/video_coding/codecs/vp8/temporal_layers.h"
