@@ -379,6 +379,7 @@ def GenerateCommitMessage(rev_update, current_commit_pos,
   commit_msg.append('TBR=%s' % tbr_authors)
   commit_msg.append('BUG=None')
   commit_msg.append('CQ_INCLUDE_TRYBOTS=%s' % EXTRA_TRYBOTS)
+  commit_msg.append('NO_AUTOIMPORT_DEPS_CHECK=true')
   return '\n'.join(commit_msg)
 
 
