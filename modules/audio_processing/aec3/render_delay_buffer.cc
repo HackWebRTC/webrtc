@@ -429,7 +429,11 @@ void RenderDelayBufferImpl::InsertBlock(
     std::copy(block[k].begin(), block[k].end(), b.buffer[b.write][k].begin());
   }
 
+  data_dumper_->DumpWav("aec3_render_decimator_input", block[0].size(),
+                        block[0].data(), 16000, 1);
   render_decimator_.Decimate(block[0], ds);
+  data_dumper_->DumpWav("aec3_render_decimator_output", ds.size(), ds.data(),
+                        16000 / config_.delay.down_sampling_factor, 1);
   std::copy(ds.rbegin(), ds.rend(), lr.buffer.begin() + lr.write);
   fft_.PaddedFft(block[0], b.buffer[previous_write][0], &f.buffer[f.write]);
   f.buffer[f.write].Spectrum(optimization_, s.buffer[s.write]);
