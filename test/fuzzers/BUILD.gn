@@ -390,6 +390,7 @@ webrtc_fuzzer_test("sdp_parser_fuzzer") {
     "../../pc:libjingle_peerconnection",
   ]
   seed_corpus = "corpora/sdp-corpus"
+  libfuzzer_options = [ "max_len=16384" ]
 }
 
 webrtc_fuzzer_test("stun_parser_fuzzer") {
