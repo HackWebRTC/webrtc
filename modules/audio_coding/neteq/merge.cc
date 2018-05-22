@@ -44,7 +44,6 @@ Merge::Merge(int fs_hz,
 Merge::~Merge() = default;
 
 size_t Merge::Process(int16_t* input, size_t input_length,
-                      int16_t* external_mute_factor_array,
                       AudioMultiVector* output) {
   // TODO(hlundin): Change to an enumerator and skip assert.
   assert(fs_hz_ == 8000 || fs_hz_ == 16000 || fs_hz_ ==  32000 ||
@@ -73,20 +72,9 @@ size_t Merge::Process(int16_t* input, size_t input_length,
         input_length_per_channel, 0, input_channel.get());
     expanded_[channel].CopyTo(expanded_length, 0, expanded_channel.get());
 
-    int16_t new_mute_factor = SignalScaling(
-        input_channel.get(), input_length_per_channel, expanded_channel.get());
-
-    // Adjust muting factor (product of "main" muting factor and expand muting
-    // factor).
-    int16_t* external_mute_factor = &external_mute_factor_array[channel];
-    *external_mute_factor =
-        (*external_mute_factor * expand_->MuteFactor(channel)) >> 14;
-
-    // Update |external_mute_factor| if it is lower than |new_mute_factor|.
-    if (new_mute_factor > *external_mute_factor) {
-      *external_mute_factor = std::min(new_mute_factor,
-                                       static_cast<int16_t>(16384));
-    }
+    const int16_t new_mute_factor = std::min<int16_t>(
+        16384, SignalScaling(input_channel.get(), input_length_per_channel,
+                             expanded_channel.get()));
 
     if (channel == 0) {
       // Downsample, correlate, and find strongest correlation period for the
@@ -110,18 +98,24 @@ size_t Merge::Process(int16_t* input, size_t input_length,
         expanded_length - best_correlation_index);
     interpolation_length = std::min(interpolation_length,
                                     input_length_per_channel);
-    if (*external_mute_factor < 16384) {
+
+    RTC_DCHECK_LE(new_mute_factor, 16384);
+    int16_t mute_factor =
+        std::max(expand_->MuteFactor(channel), new_mute_factor);
+    RTC_DCHECK_GE(mute_factor, 0);
+
+    if (mute_factor < 16384) {
       // Set a suitable muting slope (Q20). 0.004 for NB, 0.002 for WB,
-      // and so on.
-      int increment = 4194 / fs_mult_;
-      *external_mute_factor =
-          static_cast<int16_t>(DspHelper::RampSignal(input_channel.get(),
-                                                     interpolation_length,
-                                                     *external_mute_factor,
-                                                     increment));
+      // and so on, or as fast as it takes to come back to full gain within the
+      // frame length.
+      const int back_to_fullscale_inc = static_cast<int>(
+          ((16384 - mute_factor) << 6) / input_length_per_channel);
+      const int increment = std::max(4194 / fs_mult_, back_to_fullscale_inc);
+      mute_factor = static_cast<int16_t>(DspHelper::RampSignal(
+          input_channel.get(), interpolation_length, mute_factor, increment));
       DspHelper::UnmuteSignal(&input_channel[interpolation_length],
                               input_length_per_channel - interpolation_length,
-                              external_mute_factor, increment,
+                              &mute_factor, increment,
                               &decoded_output[interpolation_length]);
     } else {
       // No muting needed.
@@ -134,12 +128,12 @@ size_t Merge::Process(int16_t* input, size_t input_length,
     // Do overlap and mix linearly.
     int16_t increment =
         static_cast<int16_t>(16384 / (interpolation_length + 1));  // In Q14.
-    int16_t mute_factor = 16384 - increment;
+    int16_t local_mute_factor = 16384 - increment;
     memmove(temp_data_.data(), expanded_channel.get(),
             sizeof(int16_t) * best_correlation_index);
     DspHelper::CrossFade(&expanded_channel[best_correlation_index],
                          input_channel.get(), interpolation_length,
-                         &mute_factor, increment, decoded_output);
+                         &local_mute_factor, increment, decoded_output);
 
     output_length = best_correlation_index + input_length_per_channel;
     if (channel == 0) {

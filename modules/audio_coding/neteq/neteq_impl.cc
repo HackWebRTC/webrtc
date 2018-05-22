@@ -1536,9 +1536,8 @@ int NetEqImpl::DecodeLoop(PacketList* packet_list, const Operations& operation,
 void NetEqImpl::DoNormal(const int16_t* decoded_buffer, size_t decoded_length,
                          AudioDecoder::SpeechType speech_type, bool play_dtmf) {
   assert(normal_.get());
-  assert(mute_factor_array_.get());
   normal_->Process(decoded_buffer, decoded_length, last_mode_,
-                   mute_factor_array_.get(), algorithm_buffer_.get());
+                   algorithm_buffer_.get());
   if (decoded_length != 0) {
     last_mode_ = kModeNormal;
   }
@@ -1558,10 +1557,8 @@ void NetEqImpl::DoNormal(const int16_t* decoded_buffer, size_t decoded_length,
 
 void NetEqImpl::DoMerge(int16_t* decoded_buffer, size_t decoded_length,
                         AudioDecoder::SpeechType speech_type, bool play_dtmf) {
-  assert(mute_factor_array_.get());
   assert(merge_.get());
   size_t new_length = merge_->Process(decoded_buffer, decoded_length,
-                                      mute_factor_array_.get(),
                                       algorithm_buffer_.get());
   // Correction can be negative.
   int expand_length_correction =
@@ -1803,9 +1800,8 @@ int NetEqImpl::DoRfc3389Cng(PacketList* packet_list, bool play_dtmf) {
 void NetEqImpl::DoCodecInternalCng(const int16_t* decoded_buffer,
                                    size_t decoded_length) {
   RTC_DCHECK(normal_.get());
-  RTC_DCHECK(mute_factor_array_.get());
   normal_->Process(decoded_buffer, decoded_length, last_mode_,
-                   mute_factor_array_.get(), algorithm_buffer_.get());
+                   algorithm_buffer_.get());
   last_mode_ = kModeCodecInternalCng;
   expand_->Reset();
 }
@@ -2064,12 +2060,6 @@ void NetEqImpl::SetSampleRateAndChannels(int fs_hz, size_t channels) {
   decoder_frame_length_ = 3 * output_size_samples_;  // Initialize to 30ms.
 
   last_mode_ = kModeNormal;
-
-  // Create a new array of mute factors and set all to 1.
-  mute_factor_array_.reset(new int16_t[channels]);
-  for (size_t i = 0; i < channels; ++i) {
-    mute_factor_array_[i] = 16384;  // 1.0 in Q14.
-  }
 
   ComfortNoiseDecoder* cng_decoder = decoder_database_->GetActiveCngDecoder();
   if (cng_decoder)

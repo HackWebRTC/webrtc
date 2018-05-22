@@ -984,35 +984,35 @@ class AcmReceiverBitExactnessOldApi : public ::testing::Test {
 #if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)) && \
     defined(WEBRTC_CODEC_ILBC)
 TEST_F(AcmReceiverBitExactnessOldApi, 8kHzOutput) {
-  Run(8000, PlatformChecksum("2adede965c6f87de7142c51552111d08",
-                             "028c0fc414b1c9ab7e582dccdf381e98",
-                             "36c95170c1393d4b765d1c17b61ef977",
+  Run(8000, PlatformChecksum("7294941b62293e143d6d6c84955923fd",
+                             "f26b8c9aa8257c7185925fa5b102f46a",
+                             "65e5ef5c3de9c2abf3c8d0989772e9fc",
                              "4598140b5e4f7ee66c5adad609e65a3e",
-                             "bac5db6dff44323be401060f1279a532"));
+                             "04a1d3e735730b6d7dbd5df10f717d27"));
 }
 
 TEST_F(AcmReceiverBitExactnessOldApi, 16kHzOutput) {
-  Run(16000, PlatformChecksum("c2550a3db7632de409e8db0093df1c12",
-                              "edd31f4b6665cd5b9041fb93f2316594",
-                              "22128bca51650cb61c80bed63b595603",
+  Run(16000, PlatformChecksum("de8143dd3cc23241f1e1d5cf14e04b8a",
+                              "eada3f321120d8d5afffbe4170a55d2f",
+                              "135d8c3c7b92aa13d45cad7c91068e3e",
                               "f2aad418af974a3b1694d5ae5cc2c3c7",
-                              "61c3cb9386b9503feebcb829c9be54bd"));
+                              "728b69068332efade35b1a9c32029e1b"));
 }
 
 TEST_F(AcmReceiverBitExactnessOldApi, 32kHzOutput) {
-  Run(32000, PlatformChecksum("85e28d7950132d56f90b099c90f82153",
-                              "7b903f5c89997f271b405e63c245ef45",
-                              "8b8fc6c6fd1dcdcfb3dd90e1ce597f10",
+  Run(32000, PlatformChecksum("521d336237bdcc9ab44050e9da8917fc",
+                              "73d44a7bedb6dfa7c70cf997223d8c10",
+                              "f3ee2f14b03fb8e98f526f82583f84d9",
                               "100869c8dcde51346c2073e52a272d98",
-                              "fdec5301dc649a47d407382b587e14da"));
+                              "5f338b4bc38707d0a14d75a357e1546e"));
 }
 
 TEST_F(AcmReceiverBitExactnessOldApi, 48kHzOutput) {
-  Run(48000, PlatformChecksum("ab611510e8fd6d5210a23cc04d3f0e8e",
-                              "d8609bc9b495d81f29779344c68bcc47",
-                              "ec5ebb90cda0ea5bb89e79d698af65de",
+  Run(48000, PlatformChecksum("5955e31373828969de7fb308fb58a84e",
+                              "83c0eca235b1a806426ff6ca8655cdf7",
+                              "1126a8c03d1ebc6aa7348b9c541e2082",
                               "bd44bf97e7899186532f91235cef444d",
-                              "0baae2972cca142027d4af44f95f0bd5"));
+                              "9d092dbc96e7ef6870b78c1056e87315"));
 }
 
 TEST_F(AcmReceiverBitExactnessOldApi, 48kHzOutputExternalDecoder) {
@@ -1094,11 +1094,11 @@ TEST_F(AcmReceiverBitExactnessOldApi, 48kHzOutputExternalDecoder) {
 
   rtc::scoped_refptr<rtc::RefCountedObject<ADFactory>> factory(
       new rtc::RefCountedObject<ADFactory>);
-  Run(48000, PlatformChecksum("ab611510e8fd6d5210a23cc04d3f0e8e",
-                              "d8609bc9b495d81f29779344c68bcc47",
-                              "ec5ebb90cda0ea5bb89e79d698af65de",
+  Run(48000, PlatformChecksum("5955e31373828969de7fb308fb58a84e",
+                              "83c0eca235b1a806426ff6ca8655cdf7",
+                              "1126a8c03d1ebc6aa7348b9c541e2082",
                               "bd44bf97e7899186532f91235cef444d",
-                              "0baae2972cca142027d4af44f95f0bd5"),
+                              "9d092dbc96e7ef6870b78c1056e87315"),
       factory, [](AudioCodingModule* acm) {
         acm->RegisterReceiveCodec(0, {"MockPCMu", 8000, 1});
       });

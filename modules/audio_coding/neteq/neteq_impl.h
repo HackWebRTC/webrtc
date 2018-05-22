@@ -418,7 +418,6 @@ class NetEqImpl : public webrtc::NetEq {
   size_t decoder_frame_length_ RTC_GUARDED_BY(crit_sect_);
   Modes last_mode_ RTC_GUARDED_BY(crit_sect_);
   Operations last_operation_ RTC_GUARDED_BY(crit_sect_);
-  std::unique_ptr<int16_t[]> mute_factor_array_ RTC_GUARDED_BY(crit_sect_);
   size_t decoded_buffer_length_ RTC_GUARDED_BY(crit_sect_);
   std::unique_ptr<int16_t[]> decoded_buffer_ RTC_GUARDED_BY(crit_sect_);
   uint32_t playout_timestamp_ RTC_GUARDED_BY(crit_sect_);

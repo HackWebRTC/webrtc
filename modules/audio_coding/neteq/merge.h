@@ -43,11 +43,8 @@ class Merge {
   // |input|, having |input_length| samples in total for all channels
   // (interleaved). The result is written to |output|. The number of channels
   // allocated in |output| defines the number of channels that will be used when
-  // de-interleaving |input|. The values in |external_mute_factor_array| (Q14)
-  // will be used to scale the audio, and is updated in the process. The array
-  // must have |num_channels_| elements.
+  // de-interleaving |input|.
   virtual size_t Process(int16_t* input, size_t input_length,
-                         int16_t* external_mute_factor_array,
                          AudioMultiVector* output);
 
   virtual size_t RequiredFutureSamples();
