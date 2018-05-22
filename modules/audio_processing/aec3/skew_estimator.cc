@@ -38,9 +38,9 @@ rtc::Optional<int> SkewEstimator::GetSkewFromCapture() {
     sufficient_skew_stored_ = true;
   }
 
-  return sufficient_skew_stored_
-             ? rtc::Optional<int>(skew_sum_ >> skew_history_size_log2_)
-             : rtc::nullopt;
+  const int bias = static_cast<int>(skew_history_.size()) >> 1;
+  const int average = (skew_sum_ + bias) >> skew_history_size_log2_;
+  return sufficient_skew_stored_ ? rtc::Optional<int>(average) : rtc::nullopt;
 }
 
 }  // namespace webrtc

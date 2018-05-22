@@ -120,5 +120,38 @@ TEST(SkewEstimator, NullEstimate) {
     EXPECT_FALSE(skew);
   }
 }
+
+// Tests that the skew estimator properly rounds the average skew.
+TEST(SkewEstimator, SkewRounding) {
+  constexpr int kNumSkewsLog2 = 4;
+  constexpr int kNumSkews = 1 << kNumSkewsLog2;
+
+  SkewEstimator estimator(kNumSkewsLog2);
+
+  rtc::Optional<int> skew;
+  for (int k = 0; k < kNumSkews; ++k) {
+    if (k == kNumSkews - 1) {
+      // Reverse call order once.
+      skew = estimator.GetSkewFromCapture();
+      estimator.LogRenderCall();
+    } else {
+      // Normal call order.
+      estimator.LogRenderCall();
+      skew = estimator.GetSkewFromCapture();
+    }
+  }
+  EXPECT_EQ(*skew, 0);
+
+  estimator.Reset();
+  for (int k = 0; k < kNumSkews; ++k) {
+    estimator.LogRenderCall();
+    estimator.LogRenderCall();
+    estimator.LogRenderCall();
+    estimator.GetSkewFromCapture();
+    estimator.GetSkewFromCapture();
+    skew = estimator.GetSkewFromCapture();
+  }
+  EXPECT_EQ(*skew, 1);
+}
 }  // namespace aec3
 }  // namespace webrtc
