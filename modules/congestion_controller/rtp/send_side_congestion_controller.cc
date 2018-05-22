@@ -61,6 +61,7 @@ PacketResult NetworkPacketFeedbackFromRtpPacketFeedback(
     feedback.receive_time = Timestamp::ms(pf.arrival_time_ms);
   if (pf.send_time_ms != webrtc::PacketFeedback::kNoSendTime) {
     feedback.sent_packet = SentPacket();
+    feedback.sent_packet->sequence_number = pf.long_sequence_number;
     feedback.sent_packet->send_time = Timestamp::ms(pf.send_time_ms);
     feedback.sent_packet->size = DataSize::bytes(pf.payload_size);
     feedback.sent_packet->pacing_info = pf.pacing_info;
@@ -542,6 +543,7 @@ void SendSideCongestionController::OnSentPacket(
     SentPacket msg;
     msg.size = DataSize::bytes(packet->payload_size);
     msg.send_time = Timestamp::ms(packet->send_time_ms);
+    msg.sequence_number = packet->long_sequence_number;
     task_queue_->PostTask([this, msg]() {
       RTC_DCHECK_RUN_ON(task_queue_);
       if (controller_)

@@ -62,6 +62,7 @@ NetworkControllerTester::NetworkControllerTester(
     NetworkControllerFactoryInterface* factory,
     NetworkControllerConfig initial_config)
     : current_time_(Timestamp::seconds(100000)),
+      packet_sequence_number_(1),
       accumulated_delay_(TimeDelta::ms(0)) {
   initial_config.constraints.at_time = current_time_;
   controller_ = factory->Create(initial_config);
@@ -107,8 +108,9 @@ void NetworkControllerTester::RunSimulation(TimeDelta duration,
     }
 
     if (send_packet) {
-      SentPacket sent_packet =
-          next_packet(state_, current_time_, packet_interval);
+      SentPacket sent_packet;
+      sent_packet = next_packet(state_, current_time_, packet_interval);
+      sent_packet.sequence_number = packet_sequence_number_++;
       Update(&state_, controller_->OnSentPacket(sent_packet));
       outstanding_packets_.push_back(SimulateSend(
           sent_packet, packet_interval, propagation_delay, actual_bandwidth));
