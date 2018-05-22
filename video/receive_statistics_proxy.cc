@@ -190,10 +190,12 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
         round(render_pixel_tracker_.ComputeTotalRate()));
   }
 
-  int sync_offset_ms = sync_offset_counter_.Avg(kMinRequiredSamples);
-  if (sync_offset_ms != -1) {
-    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.AVSyncOffsetInMs", sync_offset_ms);
-    log_stream << "WebRTC.Video.AVSyncOffsetInMs " << sync_offset_ms << '\n';
+  rtc::Optional<int> sync_offset_ms =
+      sync_offset_counter_.Avg(kMinRequiredSamples);
+  if (sync_offset_ms) {
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.AVSyncOffsetInMs",
+                               *sync_offset_ms);
+    log_stream << "WebRTC.Video.AVSyncOffsetInMs " << *sync_offset_ms << '\n';
   }
   AggregatedStats freq_offset_stats = freq_offset_counter_.GetStats();
   if (freq_offset_stats.num_samples > 0) {
@@ -215,37 +217,41 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
                << key_frames_permille << '\n';
   }
 
-  int qp = qp_counters_.vp8.Avg(kMinRequiredSamples);
-  if (qp != -1) {
-    RTC_HISTOGRAM_COUNTS_200("WebRTC.Video.Decoded.Vp8.Qp", qp);
-    log_stream << "WebRTC.Video.Decoded.Vp8.Qp " << qp << '\n';
+  rtc::Optional<int> qp = qp_counters_.vp8.Avg(kMinRequiredSamples);
+  if (qp) {
+    RTC_HISTOGRAM_COUNTS_200("WebRTC.Video.Decoded.Vp8.Qp", *qp);
+    log_stream << "WebRTC.Video.Decoded.Vp8.Qp " << *qp << '\n';
   }
-  int decode_ms = decode_time_counter_.Avg(kMinRequiredSamples);
-  if (decode_ms != -1) {
-    RTC_HISTOGRAM_COUNTS_1000("WebRTC.Video.DecodeTimeInMs", decode_ms);
-    log_stream << "WebRTC.Video.DecodeTimeInMs " << decode_ms << '\n';
+  rtc::Optional<int> decode_ms = decode_time_counter_.Avg(kMinRequiredSamples);
+  if (decode_ms) {
+    RTC_HISTOGRAM_COUNTS_1000("WebRTC.Video.DecodeTimeInMs", *decode_ms);
+    log_stream << "WebRTC.Video.DecodeTimeInMs " << *decode_ms << '\n';
   }
-  int jb_delay_ms = jitter_buffer_delay_counter_.Avg(kMinRequiredSamples);
-  if (jb_delay_ms != -1) {
+  rtc::Optional<int> jb_delay_ms =
+      jitter_buffer_delay_counter_.Avg(kMinRequiredSamples);
+  if (jb_delay_ms) {
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.JitterBufferDelayInMs",
-                               jb_delay_ms);
-    log_stream << "WebRTC.Video.JitterBufferDelayInMs " << jb_delay_ms << '\n';
+                               *jb_delay_ms);
+    log_stream << "WebRTC.Video.JitterBufferDelayInMs " << *jb_delay_ms << '\n';
   }
 
-  int target_delay_ms = target_delay_counter_.Avg(kMinRequiredSamples);
-  if (target_delay_ms != -1) {
-    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.TargetDelayInMs", target_delay_ms);
-    log_stream << "WebRTC.Video.TargetDelayInMs " << target_delay_ms << '\n';
+  rtc::Optional<int> target_delay_ms =
+      target_delay_counter_.Avg(kMinRequiredSamples);
+  if (target_delay_ms) {
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.TargetDelayInMs",
+                               *target_delay_ms);
+    log_stream << "WebRTC.Video.TargetDelayInMs " << *target_delay_ms << '\n';
   }
-  int current_delay_ms = current_delay_counter_.Avg(kMinRequiredSamples);
-  if (current_delay_ms != -1) {
+  rtc::Optional<int> current_delay_ms =
+      current_delay_counter_.Avg(kMinRequiredSamples);
+  if (current_delay_ms) {
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.CurrentDelayInMs",
-                               current_delay_ms);
-    log_stream << "WebRTC.Video.CurrentDelayInMs " << current_delay_ms << '\n';
+                               *current_delay_ms);
+    log_stream << "WebRTC.Video.CurrentDelayInMs " << *current_delay_ms << '\n';
   }
-  int delay_ms = delay_counter_.Avg(kMinRequiredSamples);
-  if (delay_ms != -1)
-    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.OnewayDelayInMs", delay_ms);
+  rtc::Optional<int> delay_ms = delay_counter_.Avg(kMinRequiredSamples);
+  if (delay_ms)
+    RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.OnewayDelayInMs", *delay_ms);
 
   // Aggregate content_specific_stats_ by removing experiment or simulcast
   // information;
@@ -289,36 +295,38 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
     RTC_DCHECK(videocontenttypehelpers::GetExperimentId(content_type) == 0 ||
                videocontenttypehelpers::GetSimulcastId(content_type) == 0);
 
-    int e2e_delay_ms = stats.e2e_delay_counter.Avg(kMinRequiredSamples);
-    if (e2e_delay_ms != -1) {
+    rtc::Optional<int> e2e_delay_ms =
+        stats.e2e_delay_counter.Avg(kMinRequiredSamples);
+    if (e2e_delay_ms) {
       RTC_HISTOGRAM_COUNTS_SPARSE_10000(
-          uma_prefix + ".EndToEndDelayInMs" + uma_suffix, e2e_delay_ms);
+          uma_prefix + ".EndToEndDelayInMs" + uma_suffix, *e2e_delay_ms);
       log_stream << uma_prefix << ".EndToEndDelayInMs" << uma_suffix << " "
-                 << e2e_delay_ms << '\n';
+                 << *e2e_delay_ms << '\n';
     }
-    int e2e_delay_max_ms = stats.e2e_delay_counter.Max();
-    if (e2e_delay_max_ms != -1 && e2e_delay_ms != -1) {
+    rtc::Optional<int> e2e_delay_max_ms = stats.e2e_delay_counter.Max();
+    if (e2e_delay_max_ms && e2e_delay_ms) {
       RTC_HISTOGRAM_COUNTS_SPARSE_100000(
-          uma_prefix + ".EndToEndDelayMaxInMs" + uma_suffix, e2e_delay_max_ms);
+          uma_prefix + ".EndToEndDelayMaxInMs" + uma_suffix, *e2e_delay_max_ms);
       log_stream << uma_prefix << ".EndToEndDelayMaxInMs" << uma_suffix << " "
-                 << e2e_delay_max_ms << '\n';
+                 << *e2e_delay_max_ms << '\n';
     }
-    int interframe_delay_ms =
+    rtc::Optional<int> interframe_delay_ms =
         stats.interframe_delay_counter.Avg(kMinRequiredSamples);
-    if (interframe_delay_ms != -1) {
+    if (interframe_delay_ms) {
       RTC_HISTOGRAM_COUNTS_SPARSE_10000(
           uma_prefix + ".InterframeDelayInMs" + uma_suffix,
-          interframe_delay_ms);
+          *interframe_delay_ms);
       log_stream << uma_prefix << ".InterframeDelayInMs" << uma_suffix << " "
-                 << interframe_delay_ms << '\n';
+                 << *interframe_delay_ms << '\n';
     }
-    int interframe_delay_max_ms = stats.interframe_delay_counter.Max();
-    if (interframe_delay_max_ms != -1 && interframe_delay_ms != -1) {
+    rtc::Optional<int> interframe_delay_max_ms =
+        stats.interframe_delay_counter.Max();
+    if (interframe_delay_max_ms && interframe_delay_ms) {
       RTC_HISTOGRAM_COUNTS_SPARSE_10000(
           uma_prefix + ".InterframeDelayMaxInMs" + uma_suffix,
-          interframe_delay_max_ms);
+          *interframe_delay_max_ms);
       log_stream << uma_prefix << ".InterframeDelayMaxInMs" << uma_suffix << " "
-                 << interframe_delay_max_ms << '\n';
+                 << *interframe_delay_max_ms << '\n';
     }
 
     rtc::Optional<uint32_t> interframe_delay_95p_ms =
@@ -331,20 +339,20 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
                  << uma_suffix << " " << *interframe_delay_95p_ms << '\n';
     }
 
-    int width = stats.received_width.Avg(kMinRequiredSamples);
-    if (width != -1) {
+    rtc::Optional<int> width = stats.received_width.Avg(kMinRequiredSamples);
+    if (width) {
       RTC_HISTOGRAM_COUNTS_SPARSE_10000(
-          uma_prefix + ".ReceivedWidthInPixels" + uma_suffix, width);
+          uma_prefix + ".ReceivedWidthInPixels" + uma_suffix, *width);
       log_stream << uma_prefix << ".ReceivedWidthInPixels" << uma_suffix << " "
-                 << width << '\n';
+                 << *width << '\n';
     }
 
-    int height = stats.received_height.Avg(kMinRequiredSamples);
-    if (height != -1) {
+    rtc::Optional<int> height = stats.received_height.Avg(kMinRequiredSamples);
+    if (height) {
       RTC_HISTOGRAM_COUNTS_SPARSE_10000(
-          uma_prefix + ".ReceivedHeightInPixels" + uma_suffix, height);
+          uma_prefix + ".ReceivedHeightInPixels" + uma_suffix, *height);
       log_stream << uma_prefix << ".ReceivedHeightInPixels" << uma_suffix << " "
-                 << height << '\n';
+                 << *height << '\n';
     }
 
     if (content_type != VideoContentType::UNSPECIFIED) {
@@ -374,12 +382,12 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
                    << " " << key_frames_permille << '\n';
       }
 
-      int qp = stats.qp_counter.Avg(kMinRequiredSamples);
-      if (qp != -1) {
+      rtc::Optional<int> qp = stats.qp_counter.Avg(kMinRequiredSamples);
+      if (qp) {
         RTC_HISTOGRAM_COUNTS_SPARSE_200(
-            uma_prefix + ".Decoded.Vp8.Qp" + uma_suffix, qp);
-        log_stream << uma_prefix << ".Decoded.Vp8.Qp" << uma_suffix << " " << qp
-                   << '\n';
+            uma_prefix + ".Decoded.Vp8.Qp" + uma_suffix, *qp);
+        log_stream << uma_prefix << ".Decoded.Vp8.Qp" << uma_suffix << " "
+                   << *qp << '\n';
       }
     }
   }
@@ -469,7 +477,7 @@ void ReceiveStatisticsProxy::QualitySample() {
 
   double fps =
       render_fps_tracker_.ComputeRateForInterval(now - last_sample_time_);
-  int qp = qp_sample_.Avg(1);
+  rtc::Optional<int> qp = qp_sample_.Avg(1);
 
   bool prev_fps_bad = !fps_threshold_.IsHigh().value_or(true);
   bool prev_qp_bad = qp_threshold_.IsHigh().value_or(false);
@@ -477,8 +485,8 @@ void ReceiveStatisticsProxy::QualitySample() {
   bool prev_any_bad = prev_fps_bad || prev_qp_bad || prev_variance_bad;
 
   fps_threshold_.AddMeasurement(static_cast<int>(fps));
-  if (qp != -1)
-    qp_threshold_.AddMeasurement(qp);
+  if (qp)
+    qp_threshold_.AddMeasurement(*qp);
   rtc::Optional<double> fps_variance_opt = fps_threshold_.CalculateVariance();
   double fps_variance = fps_variance_opt.value_or(0);
   if (fps_variance_opt) {
@@ -516,7 +524,7 @@ void ReceiveStatisticsProxy::QualitySample() {
 
   RTC_LOG(LS_VERBOSE) << "SAMPLE: sample_length: " << (now - last_sample_time_)
                       << " fps: " << fps << " fps_bad: " << fps_bad
-                      << " qp: " << qp << " qp_bad: " << qp_bad
+                      << " qp: " << qp.value_or(-1) << " qp_bad: " << qp_bad
                       << " variance_bad: " << variance_bad
                       << " fps_variance: " << fps_variance;
 
@@ -814,38 +822,6 @@ void ReceiveStatisticsProxy::OnStreamInactive() {
   rtc::CritScope lock(&crit_);
   // Don't report inter-frame delay if stream was paused.
   last_decoded_frame_time_ms_.reset();
-}
-
-void ReceiveStatisticsProxy::SampleCounter::Add(int sample) {
-  sum += sample;
-  ++num_samples;
-  if (!max || sample > *max) {
-    max.emplace(sample);
-  }
-}
-
-void ReceiveStatisticsProxy::SampleCounter::Add(const SampleCounter& other) {
-  sum += other.sum;
-  num_samples += other.num_samples;
-  if (other.max && (!max || *max < *other.max))
-    max = other.max;
-}
-
-int ReceiveStatisticsProxy::SampleCounter::Avg(
-    int64_t min_required_samples) const {
-  if (num_samples < min_required_samples || num_samples == 0)
-    return -1;
-  return static_cast<int>(sum / num_samples);
-}
-
-int ReceiveStatisticsProxy::SampleCounter::Max() const {
-  return max.value_or(-1);
-}
-
-void ReceiveStatisticsProxy::SampleCounter::Reset() {
-  num_samples = 0;
-  sum = 0;
-  max.reset();
 }
 
 void ReceiveStatisticsProxy::OnRttUpdate(int64_t avg_rtt_ms,
