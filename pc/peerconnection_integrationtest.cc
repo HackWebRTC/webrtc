@@ -3852,6 +3852,48 @@ TEST_P(PeerConnectionIntegrationTest, TurnCustomizerUsedForTurnConnections) {
   delete SetCalleePcWrapperAndReturnCurrent(nullptr);
 }
 
+// Verifies that you can use TCP instead of UDP to connect to a TURN server and
+// send media between the caller and the callee.
+TEST_P(PeerConnectionIntegrationTest, TCPUsedForTurnConnections) {
+  static const rtc::SocketAddress turn_server_internal_address{"88.88.88.0",
+                                                               3478};
+  static const rtc::SocketAddress turn_server_external_address{"88.88.88.1", 0};
+
+  // Enable TCP for the fake turn server.
+  cricket::TestTurnServer turn_server(
+      network_thread(), turn_server_internal_address,
+      turn_server_external_address, cricket::PROTO_TCP);
+
+  webrtc::PeerConnectionInterface::IceServer ice_server;
+  ice_server.urls.push_back("turn:88.88.88.0:3478?transport=tcp");
+  ice_server.username = "test";
+  ice_server.password = "test";
+
+  PeerConnectionInterface::RTCConfiguration client_1_config;
+  client_1_config.servers.push_back(ice_server);
+  client_1_config.type = webrtc::PeerConnectionInterface::kRelay;
+
+  PeerConnectionInterface::RTCConfiguration client_2_config;
+  client_2_config.servers.push_back(ice_server);
+  client_2_config.type = webrtc::PeerConnectionInterface::kRelay;
+
+  ASSERT_TRUE(
+      CreatePeerConnectionWrappersWithConfig(client_1_config, client_2_config));
+
+  // Do normal offer/answer and wait for ICE to complete.
+  ConnectFakeSignaling();
+  caller()->AddAudioVideoTracks();
+  callee()->AddAudioVideoTracks();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  EXPECT_EQ_WAIT(webrtc::PeerConnectionInterface::kIceConnectionConnected,
+                 callee()->ice_connection_state(), kMaxWaitForFramesMs);
+
+  MediaExpectations media_expectations;
+  media_expectations.ExpectBidirectionalAudioAndVideo();
+  EXPECT_TRUE(ExpectNewFrames(media_expectations));
+}
+
 // Verify that a SSLCertificateVerifier passed in through
 // PeerConnectionDependencies is actually used by the underlying SSL
 // implementation to determine whether a certificate presented by the TURN
