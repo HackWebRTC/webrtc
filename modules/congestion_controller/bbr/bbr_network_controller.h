@@ -157,19 +157,6 @@ class BbrNetworkController : public NetworkControllerInterface {
     // recently app limited.
     bool probe_rtt_disabled_if_app_limited;
   };
-  // Containing values that when changed should trigger an update.
-  struct UpdateState {
-    UpdateState();
-    UpdateState(const UpdateState&);
-    ~UpdateState();
-    Mode mode = Mode::STARTUP;
-    rtc::Optional<DataRate> bandwidth;
-    rtc::Optional<TimeDelta> rtt;
-    rtc::Optional<DataRate> pacing_rate;
-    rtc::Optional<DataRate> target_rate;
-    bool probing_for_bandwidth = false;
-  };
-
   void Reset();
   NetworkControlUpdate CreateRateUpdate(Timestamp at_time);
 
@@ -390,7 +377,6 @@ class BbrNetworkController : public NetworkControllerInterface {
 
   bool app_limited_since_last_probe_rtt_ = false;
   TimeDelta min_rtt_since_last_probe_rtt_ = TimeDelta::PlusInfinity();
-  UpdateState last_update_state_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(BbrNetworkController);
 };

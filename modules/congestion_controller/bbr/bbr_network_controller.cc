@@ -84,11 +84,6 @@ constexpr int64_t kDefaultMaxCongestionWindowBytes =
     (kMaxRttMs * kMaxBandwidthKbps) / 8;
 }  // namespace
 
-BbrNetworkController::UpdateState::UpdateState() = default;
-BbrNetworkController::UpdateState::UpdateState(
-    const BbrNetworkController::UpdateState&) = default;
-BbrNetworkController::UpdateState::~UpdateState() = default;
-
 BbrNetworkController::BbrControllerConfig
 BbrNetworkController::BbrControllerConfig::DefaultConfig() {
   BbrControllerConfig config;
@@ -196,12 +191,6 @@ void BbrNetworkController::Reset() {
   round_trip_count_ = 0;
   rounds_without_bandwidth_gain_ = 0;
   is_at_full_bandwidth_ = false;
-  last_update_state_.mode = Mode::STARTUP;
-  last_update_state_.bandwidth.reset();
-  last_update_state_.rtt.reset();
-  last_update_state_.pacing_rate.reset();
-  last_update_state_.target_rate.reset();
-  last_update_state_.probing_for_bandwidth = false;
   EnterStartupMode();
 }
 
@@ -224,20 +213,6 @@ NetworkControlUpdate BbrNetworkController::CreateRateUpdate(Timestamp at_time) {
     if (constraints_->min_data_rate)
       target_rate = std::max(target_rate, *constraints_->min_data_rate);
   }
-  bool probing_for_bandwidth = IsProbingForMoreBandwidth();
-  if (last_update_state_.mode == mode_ &&
-      last_update_state_.bandwidth == bandwidth &&
-      last_update_state_.rtt == rtt &&
-      last_update_state_.pacing_rate == pacing_rate &&
-      last_update_state_.target_rate == target_rate &&
-      last_update_state_.probing_for_bandwidth == probing_for_bandwidth)
-    return NetworkControlUpdate();
-  last_update_state_.mode = mode_;
-  last_update_state_.bandwidth = bandwidth;
-  last_update_state_.rtt = rtt;
-  last_update_state_.pacing_rate = pacing_rate;
-  last_update_state_.target_rate = target_rate;
-  last_update_state_.probing_for_bandwidth = probing_for_bandwidth;
 
   NetworkControlUpdate update;
 
