@@ -10,9 +10,11 @@
 
 #include <memory>
 
+#include "api/test/videocodec_test_fixture.h"
 #include "api/video/i420_buffer.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "media/base/mediaconstants.h"
+#include "modules/video_coding/codecs/test/videocodec_test_stats_impl.h"
 #include "modules/video_coding/codecs/test/videoprocessor.h"
 #include "modules/video_coding/include/mock/mock_video_codec_interface.h"
 #include "modules/video_coding/include/video_coding.h"
@@ -79,13 +81,13 @@ class VideoProcessorTest : public testing::Test {
 
   rtc::test::TaskQueueForTest q_;
 
-  TestConfig config_;
+  VideoCodecTestFixture::Config config_;
 
   MockVideoEncoder encoder_mock_;
   MockVideoDecoder* decoder_mock_;
   std::vector<std::unique_ptr<VideoDecoder>> decoders_;
   MockFrameReader frame_reader_mock_;
-  Stats stats_;
+  VideoCodecTestStatsImpl stats_;
   std::unique_ptr<VideoProcessor> video_processor_;
 };
 

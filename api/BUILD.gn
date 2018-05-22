@@ -351,9 +351,12 @@ if (rtc_include_tests) {
     testonly = true
     sources = [
       "test/videocodec_test_fixture.h",
+      "test/videocodec_test_stats.cc",
+      "test/videocodec_test_stats.h",
     ]
     deps = [
-      "../modules/video_coding:video_codecs_test_framework",
+      "..:webrtc_common",
+      "../modules/video_coding:video_codec_interface",
       "video_codecs:video_codecs_api",
     ]
   }

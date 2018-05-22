@@ -23,8 +23,8 @@ namespace test {
 namespace {
 const int kForemanNumFrames = 300;
 
-TestConfig CreateTestConfig() {
-  TestConfig config;
+VideoCodecTestFixture::Config CreateConfig() {
+  VideoCodecTestFixture::Config config;
   config.filename = "foreman_cif";
   config.filepath = ResourcePath(config.filename, "yuv");
   config.num_frames = kForemanNumFrames;
@@ -34,7 +34,7 @@ TestConfig CreateTestConfig() {
 }
 
 std::unique_ptr<VideoCodecTestFixture> CreateTestFixtureWithConfig(
-    TestConfig config) {
+    VideoCodecTestFixture::Config config) {
   auto decoder_factory = CreateObjCDecoderFactory();
   auto encoder_factory = CreateObjCEncoderFactory();
   return CreateVideoCodecTestFixture(
@@ -55,7 +55,7 @@ std::unique_ptr<VideoCodecTestFixture> CreateTestFixtureWithConfig(
 MAYBE_TEST(VideoCodecTestVideoToolbox, ForemanCif500kbpsH264CBP) {
   const auto frame_checker = rtc::MakeUnique<
       VideoCodecTestFixtureImpl::H264KeyframeChecker>();
-  auto config = CreateTestConfig();
+  auto config = CreateConfig();
   config.SetCodecSettings(cricket::kH264CodecName, 1, 1, 1, false, false, false,
                           352, 288);
   config.encoded_frame_checker = frame_checker.get();
@@ -72,7 +72,7 @@ MAYBE_TEST(VideoCodecTestVideoToolbox, ForemanCif500kbpsH264CBP) {
 MAYBE_TEST(VideoCodecTestVideoToolbox, ForemanCif500kbpsH264CHP) {
   const auto frame_checker = rtc::MakeUnique<
       VideoCodecTestFixtureImpl::H264KeyframeChecker>();
-  auto config = CreateTestConfig();
+  auto config = CreateConfig();
   config.h264_codec_settings.profile = H264::kProfileConstrainedHigh;
   config.SetCodecSettings(cricket::kH264CodecName, 1, 1, 1, false, false, false,
                           352, 288);

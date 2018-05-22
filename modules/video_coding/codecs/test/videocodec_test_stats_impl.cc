@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/video_coding/codecs/test/stats.h"
+#include "modules/video_coding/codecs/test/videocodec_test_stats_impl.h"
 
 #include <algorithm>
 #include <cmath>
@@ -21,77 +21,18 @@
 namespace webrtc {
 namespace test {
 
+using FrameStatistics = VideoCodecTestStats::FrameStatistics;
+using VideoStatistics = VideoCodecTestStats::VideoStatistics;
+
 namespace {
 const int kMaxBitrateMismatchPercent = 20;
 }
 
-std::string FrameStatistics::ToString() const {
-  std::stringstream ss;
-  ss << "frame_number " << frame_number;
-  ss << " decoded_width " << decoded_width;
-  ss << " decoded_height " << decoded_height;
-  ss << " spatial_idx " << spatial_idx;
-  ss << " temporal_idx " << temporal_idx;
-  ss << " inter_layer_predicted " << inter_layer_predicted;
-  ss << " non_ref_for_inter_layer_pred " << non_ref_for_inter_layer_pred;
-  ss << " frame_type " << frame_type;
-  ss << " length_bytes " << length_bytes;
-  ss << " qp " << qp;
-  ss << " psnr " << psnr;
-  ss << " psnr_y " << psnr_y;
-  ss << " psnr_u " << psnr_u;
-  ss << " psnr_v " << psnr_v;
-  ss << " ssim " << ssim;
-  ss << " encode_time_us " << encode_time_us;
-  ss << " decode_time_us " << decode_time_us;
-  ss << " rtp_timestamp " << rtp_timestamp;
-  ss << " target_bitrate_kbps " << target_bitrate_kbps;
-  return ss.str();
-}
+VideoCodecTestStatsImpl::VideoCodecTestStatsImpl() = default;
+VideoCodecTestStatsImpl::~VideoCodecTestStatsImpl() = default;
 
-std::string VideoStatistics::ToString(std::string prefix) const {
-  std::stringstream ss;
-  ss << prefix << "target_bitrate_kbps: " << target_bitrate_kbps;
-  ss << "\n" << prefix << "input_framerate_fps: " << input_framerate_fps;
-  ss << "\n" << prefix << "spatial_idx: " << spatial_idx;
-  ss << "\n" << prefix << "temporal_idx: " << temporal_idx;
-  ss << "\n" << prefix << "width: " << width;
-  ss << "\n" << prefix << "height: " << height;
-  ss << "\n" << prefix << "length_bytes: " << length_bytes;
-  ss << "\n" << prefix << "bitrate_kbps: " << bitrate_kbps;
-  ss << "\n" << prefix << "framerate_fps: " << framerate_fps;
-  ss << "\n" << prefix << "enc_speed_fps: " << enc_speed_fps;
-  ss << "\n" << prefix << "dec_speed_fps: " << dec_speed_fps;
-  ss << "\n" << prefix << "avg_delay_sec: " << avg_delay_sec;
-  ss << "\n"
-     << prefix << "max_key_frame_delay_sec: " << max_key_frame_delay_sec;
-  ss << "\n"
-     << prefix << "max_delta_frame_delay_sec: " << max_delta_frame_delay_sec;
-  ss << "\n"
-     << prefix << "time_to_reach_target_bitrate_sec: "
-     << time_to_reach_target_bitrate_sec;
-  ss << "\n"
-     << prefix << "avg_key_frame_size_bytes: " << avg_key_frame_size_bytes;
-  ss << "\n"
-     << prefix << "avg_delta_frame_size_bytes: " << avg_delta_frame_size_bytes;
-  ss << "\n" << prefix << "avg_qp: " << avg_qp;
-  ss << "\n" << prefix << "avg_psnr: " << avg_psnr;
-  ss << "\n" << prefix << "min_psnr: " << min_psnr;
-  ss << "\n" << prefix << "avg_ssim: " << avg_ssim;
-  ss << "\n" << prefix << "min_ssim: " << min_ssim;
-  ss << "\n" << prefix << "num_input_frames: " << num_input_frames;
-  ss << "\n" << prefix << "num_encoded_frames: " << num_encoded_frames;
-  ss << "\n" << prefix << "num_decoded_frames: " << num_decoded_frames;
-  ss << "\n"
-     << prefix
-     << "num_dropped_frames: " << num_input_frames - num_encoded_frames;
-  ss << "\n" << prefix << "num_key_frames: " << num_key_frames;
-  ss << "\n" << prefix << "num_spatial_resizes: " << num_spatial_resizes;
-  ss << "\n" << prefix << "max_nalu_size_bytes: " << max_nalu_size_bytes;
-  return ss.str();
-}
-
-FrameStatistics* Stats::AddFrame(size_t timestamp, size_t layer_idx) {
+FrameStatistics* VideoCodecTestStatsImpl::AddFrame(size_t timestamp,
+                                                   size_t layer_idx) {
   RTC_DCHECK(rtp_timestamp_to_frame_num_[layer_idx].find(timestamp) ==
              rtp_timestamp_to_frame_num_[layer_idx].end());
   const size_t frame_num = layer_stats_[layer_idx].size();
@@ -100,20 +41,23 @@ FrameStatistics* Stats::AddFrame(size_t timestamp, size_t layer_idx) {
   return &layer_stats_[layer_idx].back();
 }
 
-FrameStatistics* Stats::GetFrame(size_t frame_num, size_t layer_idx) {
+FrameStatistics* VideoCodecTestStatsImpl::GetFrame(size_t frame_num,
+                                                   size_t layer_idx) {
   RTC_CHECK_LT(frame_num, layer_stats_[layer_idx].size());
   return &layer_stats_[layer_idx][frame_num];
 }
 
-FrameStatistics* Stats::GetFrameWithTimestamp(size_t timestamp,
-                                              size_t layer_idx) {
+FrameStatistics* VideoCodecTestStatsImpl::GetFrameWithTimestamp(
+    size_t timestamp,
+    size_t layer_idx) {
   RTC_DCHECK(rtp_timestamp_to_frame_num_[layer_idx].find(timestamp) !=
              rtp_timestamp_to_frame_num_[layer_idx].end());
 
   return GetFrame(rtp_timestamp_to_frame_num_[layer_idx][timestamp], layer_idx);
 }
 
-std::vector<VideoStatistics> Stats::SliceAndCalcLayerVideoStatistic(
+std::vector<VideoStatistics>
+VideoCodecTestStatsImpl::SliceAndCalcLayerVideoStatistic(
     size_t first_frame_num,
     size_t last_frame_num) {
   std::vector<VideoStatistics> layer_stats;
@@ -138,7 +82,7 @@ std::vector<VideoStatistics> Stats::SliceAndCalcLayerVideoStatistic(
   return layer_stats;
 }
 
-VideoStatistics Stats::SliceAndCalcAggregatedVideoStatistic(
+VideoStatistics VideoCodecTestStatsImpl::SliceAndCalcAggregatedVideoStatistic(
     size_t first_frame_num,
     size_t last_frame_num) {
   size_t num_spatial_layers = 0;
@@ -153,7 +97,7 @@ VideoStatistics Stats::SliceAndCalcAggregatedVideoStatistic(
                                     num_temporal_layers - 1, true);
 }
 
-void Stats::PrintFrameStatistics() {
+void VideoCodecTestStatsImpl::PrintFrameStatistics() {
   for (size_t frame_num = 0; frame_num < layer_stats_[0].size(); ++frame_num) {
     for (const auto& it : layer_stats_) {
       const FrameStatistics& frame_stat = it.second[frame_num];
@@ -162,16 +106,16 @@ void Stats::PrintFrameStatistics() {
   }
 }
 
-size_t Stats::Size(size_t spatial_idx) {
+size_t VideoCodecTestStatsImpl::Size(size_t spatial_idx) {
   return layer_stats_[spatial_idx].size();
 }
 
-void Stats::Clear() {
+void VideoCodecTestStatsImpl::Clear() {
   layer_stats_.clear();
   rtp_timestamp_to_frame_num_.clear();
 }
 
-FrameStatistics Stats::AggregateFrameStatistic(
+FrameStatistics VideoCodecTestStatsImpl::AggregateFrameStatistic(
     size_t frame_num,
     size_t spatial_idx,
     bool aggregate_independent_layers) {
@@ -190,11 +134,12 @@ FrameStatistics Stats::AggregateFrameStatistic(
   return frame_stat;
 }
 
-size_t Stats::CalcLayerTargetBitrateKbps(size_t first_frame_num,
-                                         size_t last_frame_num,
-                                         size_t spatial_idx,
-                                         size_t temporal_idx,
-                                         bool aggregate_independent_layers) {
+size_t VideoCodecTestStatsImpl::CalcLayerTargetBitrateKbps(
+    size_t first_frame_num,
+    size_t last_frame_num,
+    size_t spatial_idx,
+    size_t temporal_idx,
+    bool aggregate_independent_layers) {
   size_t target_bitrate_kbps = 0;
 
   // We don't know if superframe includes all required spatial layers because
@@ -216,7 +161,7 @@ size_t Stats::CalcLayerTargetBitrateKbps(size_t first_frame_num,
   return target_bitrate_kbps;
 }
 
-VideoStatistics Stats::SliceAndCalcVideoStatistic(
+VideoStatistics VideoCodecTestStatsImpl::SliceAndCalcVideoStatistic(
     size_t first_frame_num,
     size_t last_frame_num,
     size_t spatial_idx,
@@ -380,10 +325,11 @@ VideoStatistics Stats::SliceAndCalcVideoStatistic(
   return video_stat;
 }
 
-void Stats::GetNumberOfEncodedLayers(size_t first_frame_num,
-                                     size_t last_frame_num,
-                                     size_t* num_encoded_spatial_layers,
-                                     size_t* num_encoded_temporal_layers) {
+void VideoCodecTestStatsImpl::GetNumberOfEncodedLayers(
+    size_t first_frame_num,
+    size_t last_frame_num,
+    size_t* num_encoded_spatial_layers,
+    size_t* num_encoded_temporal_layers) {
   *num_encoded_spatial_layers = 0;
   *num_encoded_temporal_layers = 0;
 

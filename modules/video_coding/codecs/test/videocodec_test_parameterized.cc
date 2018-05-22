@@ -55,7 +55,7 @@ class VideoCodecTestParameterized
                size_t height,
                size_t framerate,
                const std::string& filename) {
-    TestConfig config;
+    VideoCodecTestFixture::Config config;
     config.filename = filename;
     config.filepath = ResourcePath(filename, "yuv");
     config.use_single_core = kUseSingleCore;

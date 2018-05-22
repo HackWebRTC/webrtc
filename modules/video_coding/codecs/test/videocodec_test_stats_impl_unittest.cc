@@ -8,18 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/video_coding/codecs/test/stats.h"
+#include "modules/video_coding/codecs/test/videocodec_test_stats_impl.h"
 
 #include "test/gtest.h"
 
 namespace webrtc {
 namespace test {
+using FrameStatistics = VideoCodecTestStatsImpl::FrameStatistics;
 namespace {
 const size_t kTimestamp = 12345;
 }  // namespace
 
 TEST(StatsTest, AddFrame) {
-  Stats stats;
+  VideoCodecTestStatsImpl stats;
   FrameStatistics* frame_stat = stats.AddFrame(kTimestamp, 0);
   EXPECT_EQ(0ull, frame_stat->frame_number);
   EXPECT_EQ(kTimestamp, frame_stat->rtp_timestamp);
@@ -27,7 +28,7 @@ TEST(StatsTest, AddFrame) {
 }
 
 TEST(StatsTest, GetFrame) {
-  Stats stats;
+  VideoCodecTestStatsImpl stats;
   stats.AddFrame(kTimestamp, 0);
   FrameStatistics* frame_stat = stats.GetFrame(0u, 0);
   EXPECT_EQ(0u, frame_stat->frame_number);
@@ -35,7 +36,7 @@ TEST(StatsTest, GetFrame) {
 }
 
 TEST(StatsTest, AddFrames) {
-  Stats stats;
+  VideoCodecTestStatsImpl stats;
   const size_t kNumFrames = 1000;
   for (size_t i = 0; i < kNumFrames; ++i) {
     FrameStatistics* frame_stat = stats.AddFrame(kTimestamp + i, 0);
@@ -51,7 +52,7 @@ TEST(StatsTest, AddFrames) {
 }
 
 TEST(StatsTest, AddFrameLayering) {
-  Stats stats;
+  VideoCodecTestStatsImpl stats;
   for (size_t i = 0; i < 3; ++i) {
     stats.AddFrame(kTimestamp + i, i);
     FrameStatistics* frame_stat = stats.GetFrame(0u, i);

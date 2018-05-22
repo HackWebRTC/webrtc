@@ -23,5 +23,6 @@ specific_include_rules = {
   ".*\.cc": [
     "+modules/audio_coding",
     "+modules/audio_processing",
+    "+modules/video_coding",
   ],
 }

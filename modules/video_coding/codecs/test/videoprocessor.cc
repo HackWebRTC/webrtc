@@ -32,13 +32,14 @@
 namespace webrtc {
 namespace test {
 
-namespace {
+using FrameStatistics = VideoCodecTestStats::FrameStatistics;
 
+namespace {
 const int kMsToRtpTimestamp = kVideoPayloadTypeFrequency / 1000;
 const int kMaxBufferedInputFrames = 10;
 
 size_t GetMaxNaluSizeBytes(const EncodedImage& encoded_frame,
-                           const TestConfig& config) {
+                           const VideoCodecTestFixture::Config& config) {
   if (config.codec_settings.codecType != kVideoCodecH264)
     return 0;
 
@@ -151,13 +152,23 @@ void CalculateFrameQuality(const I420BufferInterface& ref_buffer,
   }
 }
 
+std::vector<FrameType> FrameTypeForFrame(
+    const VideoCodecTestFixture::Config& config,
+    size_t frame_idx) {
+  if (config.keyframe_interval > 0 &&
+      (frame_idx % config.keyframe_interval == 0)) {
+    return {kVideoFrameKey};
+  }
+  return {kVideoFrameDelta};
+}
+
 }  // namespace
 
 VideoProcessor::VideoProcessor(webrtc::VideoEncoder* encoder,
                                VideoDecoderList* decoders,
                                FrameReader* input_frame_reader,
-                               const TestConfig& config,
-                               Stats* stats,
+                               const VideoCodecTestFixture::Config& config,
+                               VideoCodecTestStats* stats,
                                IvfFileWriterList* encoded_frame_writers,
                                FrameWriterList* decoded_frame_writers)
     : config_(config),
@@ -279,7 +290,7 @@ void VideoProcessor::ProcessFrame() {
 
   // Encode.
   const std::vector<FrameType> frame_types =
-      config_.FrameTypeForFrame(frame_number);
+      FrameTypeForFrame(config_, frame_number);
   const int encode_return_code =
       encoder_->Encode(input_frame, nullptr, &frame_types);
   for (size_t i = 0; i < num_simulcast_or_spatial_layers_; ++i) {

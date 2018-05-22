@@ -25,8 +25,8 @@ const int kCifWidth = 352;
 const int kCifHeight = 288;
 const int kNumFrames = 100;
 
-TestConfig CreateTestConfig() {
-  TestConfig config;
+VideoCodecTestFixture::Config CreateConfig() {
+  VideoCodecTestFixture::Config config;
   config.filename = "foreman_cif";
   config.filepath = ResourcePath(config.filename, "yuv");
   config.num_frames = kNumFrames;
@@ -41,7 +41,7 @@ TestConfig CreateTestConfig() {
 TEST(VideoCodecTestOpenH264, ConstantHighBitrate) {
   auto frame_checker = rtc::MakeUnique<
       VideoCodecTestFixtureImpl::H264KeyframeChecker>();
-  auto config = CreateTestConfig();
+  auto config = CreateConfig();
   config.SetCodecSettings(cricket::kH264CodecName, 1, 1, 1, false, true, false,
                           kCifWidth, kCifHeight);
   config.encoded_frame_checker = frame_checker.get();
@@ -63,7 +63,7 @@ TEST(VideoCodecTestOpenH264, ConstantHighBitrate) {
 TEST(VideoCodecTestOpenH264, SingleNalUnit) {
   auto frame_checker = rtc::MakeUnique<
       VideoCodecTestFixtureImpl::H264KeyframeChecker>();
-  auto config = CreateTestConfig();
+  auto config = CreateConfig();
   config.h264_codec_settings.packetization_mode =
       H264PacketizationMode::SingleNalUnit;
   config.max_payload_size_bytes = 500;
