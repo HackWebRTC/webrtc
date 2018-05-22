@@ -27,7 +27,8 @@ Operations DecisionLogicFax::GetDecisionSpecialized(
     Modes prev_mode,
     bool play_dtmf,
     bool* reset_decoder,
-    size_t generated_noise_samples) {
+    size_t generated_noise_samples,
+    size_t /*cur_size_samples*/) {
   assert(playout_mode_ == kPlayoutFax || playout_mode_ == kPlayoutOff);
   uint32_t target_timestamp = sync_buffer.end_timestamp();
   uint32_t available_timestamp = 0;

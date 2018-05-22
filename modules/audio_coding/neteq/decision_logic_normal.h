@@ -13,6 +13,7 @@
 
 #include "modules/audio_coding/neteq/decision_logic.h"
 #include "rtc_base/constructormagic.h"
+#include "system_wrappers/include/field_trial.h"
 #include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
@@ -37,7 +38,9 @@ class DecisionLogicNormal : public DecisionLogic {
                       packet_buffer,
                       delay_manager,
                       buffer_level_filter,
-                      tick_timer) {}
+                      tick_timer),
+        postpone_decoding_after_expand_(field_trial::IsEnabled(
+            "WebRTC-Audio-NetEqPostponeDecodingAfterExpand")) {}
 
  protected:
   static const int kReinitAfterExpands = 100;
@@ -50,7 +53,8 @@ class DecisionLogicNormal : public DecisionLogic {
                                     Modes prev_mode,
                                     bool play_dtmf,
                                     bool* reset_decoder,
-                                    size_t generated_noise_samples) override;
+                                    size_t generated_noise_samples,
+                                    size_t cur_size_samples) override;
 
   // Returns the operation to do given that the expected packet is not
   // available, but a packet further into the future is at hand.
@@ -99,6 +103,8 @@ class DecisionLogicNormal : public DecisionLogic {
 
   // Checks if num_consecutive_expands_ >= kMaxWaitForPacket.
   bool MaxWaitForPacket() const;
+
+  const bool postpone_decoding_after_expand_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(DecisionLogicNormal);
 };

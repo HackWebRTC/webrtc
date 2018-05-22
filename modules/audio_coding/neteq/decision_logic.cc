@@ -130,9 +130,9 @@ Operations DecisionLogic::GetDecision(const SyncBuffer& sync_buffer,
 
   FilterBufferLevel(cur_size_samples, prev_mode);
 
-  return GetDecisionSpecialized(sync_buffer, expand, decoder_frame_length,
-                                next_packet, prev_mode, play_dtmf,
-                                reset_decoder, generated_noise_samples);
+  return GetDecisionSpecialized(
+      sync_buffer, expand, decoder_frame_length, next_packet, prev_mode,
+      play_dtmf, reset_decoder, generated_noise_samples, cur_size_samples);
 }
 
 void DecisionLogic::ExpandDecision(Operations operation) {

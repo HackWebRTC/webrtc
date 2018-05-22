@@ -48,6 +48,9 @@ class AudioDecoder {
     // If no duration can be ascertained, returns zero.
     virtual size_t Duration() const = 0;
 
+    // Returns true if this packet contains DTX.
+    virtual bool IsDtxPacket() const;
+
     // Decodes this frame of audio and writes the result in |decoded|.
     // |decoded| must be large enough to store as many samples as indicated by a
     // call to Duration() . On success, returns an rtc::Optional containing the

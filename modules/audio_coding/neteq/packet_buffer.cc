@@ -285,6 +285,18 @@ size_t PacketBuffer::NumSamplesInBuffer(size_t last_decoded_length) const {
   return num_samples;
 }
 
+bool PacketBuffer::ContainsDtxOrCngPacket(
+    const DecoderDatabase* decoder_database) const {
+  RTC_DCHECK(decoder_database);
+  for (const Packet& packet : buffer_) {
+    if ((packet.frame && packet.frame->IsDtxPacket()) ||
+        decoder_database->IsComfortNoise(packet.payload_type)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void PacketBuffer::BufferStat(int* num_packets, int* max_num_packets) const {
   *num_packets = static_cast<int>(buffer_.size());
   *max_num_packets = static_cast<int>(max_number_of_packets_);

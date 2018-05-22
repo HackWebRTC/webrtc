@@ -137,7 +137,8 @@ class DecisionLogic {
                                             Modes prev_mode,
                                             bool play_dtmf,
                                             bool* reset_decoder,
-                                            size_t generated_noise_samples) = 0;
+                                            size_t generated_noise_samples,
+                                            size_t cur_size_samples) = 0;
 
   // Updates the |buffer_level_filter_| with the current buffer level
   // |buffer_size_packets|.

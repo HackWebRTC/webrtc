@@ -47,7 +47,8 @@ class DecisionLogicFax : public DecisionLogic {
                                     Modes prev_mode,
                                     bool play_dtmf,
                                     bool* reset_decoder,
-                                    size_t generated_noise_samples) override;
+                                    size_t generated_noise_samples,
+                                    size_t cur_size_samples) override;
 
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(DecisionLogicFax);

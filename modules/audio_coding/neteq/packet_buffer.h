@@ -12,6 +12,7 @@
 #define MODULES_AUDIO_CODING_NETEQ_PACKET_BUFFER_H_
 
 #include "api/optional.h"
+#include "modules/audio_coding/neteq/decoder_database.h"
 #include "modules/audio_coding/neteq/packet.h"
 #include "modules/include/module_common_types.h"
 #include "rtc_base/constructormagic.h"
@@ -120,6 +121,10 @@ class PacketBuffer {
   // Returns the number of samples in the buffer, including samples carried in
   // duplicate and redundant packets.
   virtual size_t NumSamplesInBuffer(size_t last_decoded_length) const;
+
+  // Returns true if the packet buffer contains any DTX or CNG packets.
+  virtual bool ContainsDtxOrCngPacket(
+      const DecoderDatabase* decoder_database) const;
 
   virtual void BufferStat(int* num_packets, int* max_num_packets) const;
 
