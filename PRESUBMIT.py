@@ -852,9 +852,23 @@ def CheckChangeOnUpload(input_api, output_api):
 
 def CheckChangeOnCommit(input_api, output_api):
   results = []
+
+  # We have to skip OWNERS check for chromium-specific third_party deps.
+  chromium_deps_file = input_api.os_path.join(
+      input_api.PresubmitLocalPath(),
+      'THIRD_PARTY_CHROMIUM_DEPS.json')
+  with open(chromium_deps_file, 'rb') as f:
+    chromium_deps = json.load(f).get('dependencies', [])
+  deps_blacklist = []
+  for dep in chromium_deps:
+    deps_blacklist.append(r'^third_party[\\\/]%s[\\\/].+' % dep)
+  deps_filter = lambda x: input_api.FilterSourceFile(
+      x, black_list=deps_blacklist)
+
   results.extend(CommonChecks(input_api, output_api))
   results.extend(VerifyNativeApiHeadersListIsValid(input_api, output_api))
-  results.extend(input_api.canned_checks.CheckOwners(input_api, output_api))
+  results.extend(input_api.canned_checks.CheckOwners(input_api, output_api,
+      source_file_filter=deps_filter))
   results.extend(input_api.canned_checks.CheckChangeWasUploaded(
       input_api, output_api))
   results.extend(input_api.canned_checks.CheckChangeHasDescription(
