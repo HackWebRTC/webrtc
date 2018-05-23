@@ -899,8 +899,6 @@ class MetaBuildWrapper(object):
       executable = executable_prefix + target + executable_suffix
 
       cmdline.append(executable)
-      if test_type != 'raw':
-        cmdline.append('--')
 
       asan = 'is_asan=true' in vals['gn_args']
       lsan = 'is_lsan=true' in vals['gn_args']
