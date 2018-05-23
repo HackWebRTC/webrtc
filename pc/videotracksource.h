@@ -44,7 +44,6 @@ class VideoTrackSource : public Notifier<VideoTrackSourceInterface> {
  private:
   rtc::ThreadChecker worker_thread_checker_;
   rtc::VideoSourceInterface<VideoFrame>* source_;
-  cricket::VideoOptions options_;
   SourceState state_;
   const bool remote_;
 };
