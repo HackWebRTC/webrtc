@@ -327,6 +327,7 @@ if (rtc_include_tests) {
       "end_to_end_tests/fec_tests.cc",
       "end_to_end_tests/histogram_tests.cc",
       "end_to_end_tests/log_tests.cc",
+      "end_to_end_tests/multi_codec_receive_tests.cc",
       "end_to_end_tests/multi_stream_tester.cc",
       "end_to_end_tests/multi_stream_tester.h",
       "end_to_end_tests/multi_stream_tests.cc",
