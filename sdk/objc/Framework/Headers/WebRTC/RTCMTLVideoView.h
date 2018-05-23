@@ -10,6 +10,7 @@
 
 #import <Foundation/Foundation.h>
 
+#import "WebRTC/RTCVideoFrame.h"
 #import "WebRTC/RTCVideoRenderer.h"
 
 // Check if metal is supported in WebRTC.
@@ -35,7 +36,21 @@ RTC_EXPORT
 
 @property(nonatomic, weak) id<RTCVideoViewDelegate> delegate;
 
-- (void)setVideoContentMode:(UIViewContentMode)mode;
+@property(nonatomic) UIViewContentMode videoContentMode;
+
+/** @abstract Enables/disables rendering.
+ */
+@property(nonatomic, getter=isEnabled) BOOL enabled;
+
+/** @abstract   If YES, the backing MTKView will use a display link to issue
+   draw calls.
+    @discussion Default is YES.
+ */
+@property(nonatomic) BOOL useDisplayLink;
+
+/** @abstract Wrapped RTCVideoRotation, or nil.
+ */
+@property(nullable) NSValue* rotationOverride;
 
 @end
 
