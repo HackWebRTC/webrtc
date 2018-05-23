@@ -795,6 +795,7 @@ def CommonChecks(input_api, output_api):
   non_third_party_sources = lambda x: input_api.FilterSourceFile(x,
       black_list=third_party_filter_list)
 
+  results.extend(CheckNoGitRepoInThirdParty(input_api, output_api))
   results.extend(input_api.canned_checks.CheckLongLines(
       input_api, output_api, maxlen=80, source_file_filter=eighty_char_sources))
   results.extend(input_api.canned_checks.CheckLongLines(
@@ -832,6 +833,17 @@ def CommonChecks(input_api, output_api):
       input_api, output_api, non_third_party_sources))
   results.extend(CheckThirdPartyChanges(input_api, output_api))
   return results
+
+
+def CheckNoGitRepoInThirdParty(input_api, output_api):
+  if os.path.isdir(input_api.os_path.join(
+      input_api.PresubmitLocalPath(), 'third_party', '.git')):
+    return [output_api.PresubmitError("Please remove third_party/.git "
+                                      "directory. This error means that "
+                                      "possibly you also have to apply other "
+                                      "instructions from the May 11th PSA from "
+                                      "titovartem@.")]
+  return []
 
 
 def CheckThirdPartyChanges(input_api, output_api):
