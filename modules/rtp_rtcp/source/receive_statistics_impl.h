@@ -39,8 +39,7 @@ class StreamStatisticianImpl : public StreamStatistician {
   void GetReceiveStreamDataCounters(
       StreamDataCounters* data_counters) const override;
   uint32_t BitrateReceived() const override;
-  bool IsRetransmitOfOldPacket(const RTPHeader& header,
-                               int64_t min_rtt) const override;
+  bool IsRetransmitOfOldPacket(const RTPHeader& header) const override;
   bool IsPacketInOrder(uint16_t sequence_number) const override;
 
   void IncomingPacket(const RTPHeader& rtp_header,

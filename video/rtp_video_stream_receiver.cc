@@ -552,11 +552,8 @@ bool RtpVideoStreamReceiver::IsPacketRetransmitted(const RTPHeader& header,
       rtp_receive_statistics_->GetStatistician(header.ssrc);
   if (!statistician)
     return false;
-  // Check if this is a retransmission.
-  int64_t min_rtt = 0;
-  rtp_rtcp_->RTT(config_.rtp.remote_ssrc, nullptr, nullptr, &min_rtt, nullptr);
   return !in_order &&
-      statistician->IsRetransmitOfOldPacket(header, min_rtt);
+      statistician->IsRetransmitOfOldPacket(header);
 }
 
 void RtpVideoStreamReceiver::UpdateHistograms() {

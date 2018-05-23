@@ -916,9 +916,7 @@ bool Channel::IsPacketRetransmitted(const RTPHeader& header,
   if (!statistician)
     return false;
   // Check if this is a retransmission.
-  int64_t min_rtt = 0;
-  _rtpRtcpModule->RTT(rtp_receiver_->SSRC(), NULL, NULL, &min_rtt, NULL);
-  return !in_order && statistician->IsRetransmitOfOldPacket(header, min_rtt);
+  return !in_order && statistician->IsRetransmitOfOldPacket(header);
 }
 
 int32_t Channel::ReceivedRTCPPacket(const uint8_t* data, size_t length) {

@@ -301,7 +301,7 @@ uint32_t StreamStatisticianImpl::BitrateReceived() const {
 }
 
 bool StreamStatisticianImpl::IsRetransmitOfOldPacket(
-    const RTPHeader& header, int64_t min_rtt) const {
+    const RTPHeader& header) const {
   rtc::CritScope cs(&stream_lock_);
   if (InOrderPacketInternal(header.sequenceNumber)) {
     return false;
@@ -317,20 +317,17 @@ bool StreamStatisticianImpl::IsRetransmitOfOldPacket(
   uint32_t rtp_time_stamp_diff_ms = timestamp_diff / frequency_khz;
 
   int64_t max_delay_ms = 0;
-  if (min_rtt == 0) {
-    // Jitter standard deviation in samples.
-    float jitter_std = sqrt(static_cast<float>(jitter_q4_ >> 4));
 
-    // 2 times the standard deviation => 95% confidence.
-    // And transform to milliseconds by dividing by the frequency in kHz.
-    max_delay_ms = static_cast<int64_t>((2 * jitter_std) / frequency_khz);
+  // Jitter standard deviation in samples.
+  float jitter_std = sqrt(static_cast<float>(jitter_q4_ >> 4));
 
-    // Min max_delay_ms is 1.
-    if (max_delay_ms == 0) {
-      max_delay_ms = 1;
-    }
-  } else {
-    max_delay_ms = (min_rtt / 3) + 1;
+  // 2 times the standard deviation => 95% confidence.
+  // And transform to milliseconds by dividing by the frequency in kHz.
+  max_delay_ms = static_cast<int64_t>((2 * jitter_std) / frequency_khz);
+
+  // Min max_delay_ms is 1.
+  if (max_delay_ms == 0) {
+    max_delay_ms = 1;
   }
   return time_diff_ms > rtp_time_stamp_diff_ms + max_delay_ms;
 }
