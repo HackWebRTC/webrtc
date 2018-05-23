@@ -24,6 +24,7 @@ import urllib2
 DONT_AUTOROLL_THESE = [
   'src/examples/androidtests/third_party/gradle',
   'src/third_party_chromium',
+  'src/third_party/ffmpeg',
 ]
 
 # Run these CQ trybots in addition to the default ones in infra/config/cq.cfg.
