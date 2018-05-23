@@ -472,7 +472,7 @@ void BbrNetworkController::EnterProbeBandwidthMode(Timestamp now) {
   // Pick a random offset for the gain cycle out of {0, 2..7} range. 1 is
   // excluded because in that case increased gain and decreased gain would not
   // follow each other.
-  cycle_current_offset_ = random_.Rand(kGainCycleLength - 1);
+  cycle_current_offset_ = random_.Rand(kGainCycleLength - 2);
   if (cycle_current_offset_ >= 1) {
     cycle_current_offset_ += 1;
   }
