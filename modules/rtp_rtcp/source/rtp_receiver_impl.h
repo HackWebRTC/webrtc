@@ -73,7 +73,6 @@ class RtpReceiverImpl : public RtpReceiver {
   void CheckSSRCChanged(const RTPHeader& rtp_header);
   void CheckCSRC(const WebRtcRTPHeader& rtp_header);
   int32_t CheckPayloadChanged(const RTPHeader& rtp_header,
-                              const int8_t first_payload_byte,
                               PayloadUnion* payload);
 
   void UpdateSources(const rtc::Optional<uint8_t>& ssrc_audio_level);

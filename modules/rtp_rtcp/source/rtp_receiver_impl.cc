@@ -166,9 +166,7 @@ bool RtpReceiverImpl::IncomingRtpPacket(const RTPHeader& rtp_header,
   // Trigger our callbacks.
   CheckSSRCChanged(rtp_header);
 
-  int8_t first_payload_byte = payload_length > 0 ? payload[0] : 0;
-
-  if (CheckPayloadChanged(rtp_header, first_payload_byte,
+  if (CheckPayloadChanged(rtp_header,
                           &payload_specific) == -1) {
     if (payload_length == 0) {
       // OK, keep-alive packet.
@@ -301,7 +299,6 @@ void RtpReceiverImpl::CheckSSRCChanged(const RTPHeader& rtp_header) {
 // media_specific interface (such as CheckPayloadChange, possibly get/set
 // last known payload).
 int32_t RtpReceiverImpl::CheckPayloadChanged(const RTPHeader& rtp_header,
-                                             const int8_t first_payload_byte,
                                              PayloadUnion* specific_payload) {
   int8_t payload_type = rtp_header.payloadType;
 
