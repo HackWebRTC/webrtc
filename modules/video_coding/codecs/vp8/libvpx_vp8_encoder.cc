@@ -606,7 +606,12 @@ int LibvpxVp8Encoder::NumberOfThreads(int width, int height, int cpus) {
     // 3 threads for 1080p.
     return 3;
   } else if (width * height > 640 * 480 && cpus >= 3) {
-    // 2 threads for qHD/HD.
+    // Default 2 threads for qHD/HD, but allow 3 if core count is high enough,
+    // as this will allow more margin for high-core/low clock machines or if
+    // not built with highest optimization.
+    if (cpus >= 6) {
+      return 3;
+    }
     return 2;
   } else {
     // 1 thread for VGA or less.
