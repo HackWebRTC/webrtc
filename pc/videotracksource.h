@@ -17,17 +17,16 @@
 #include "media/base/mediachannel.h"
 #include "rtc_base/thread_checker.h"
 
-// VideoTrackSource implements VideoTrackSourceInterface.
 namespace webrtc {
 
+// VideoTrackSource is a convenience base class for implementations of
+// VideoTrackSourceInterface.
 class VideoTrackSource : public Notifier<VideoTrackSourceInterface> {
  public:
+  explicit VideoTrackSource(bool remote);
+  // TODO(nisse): Delete, kept only for temporary backwards compatibility.
   VideoTrackSource(rtc::VideoSourceInterface<VideoFrame>* source, bool remote);
   void SetState(SourceState new_state);
-  // OnSourceDestroyed clears this instance pointer to |source_|. It is useful
-  // when the underlying rtc::VideoSourceInterface is destroyed before the
-  // reference counted VideoTrackSource.
-  void OnSourceDestroyed();
 
   SourceState state() const override { return state_; }
   bool remote() const override { return remote_; }
@@ -41,8 +40,14 @@ class VideoTrackSource : public Notifier<VideoTrackSourceInterface> {
                        const rtc::VideoSinkWants& wants) override;
   void RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) override;
 
+ protected:
+  // TODO(nisse): Default implementations for temporary backwards
+  // compatibility.
+  virtual rtc::VideoSourceInterface<VideoFrame>* source() { return source_; }
+
  private:
   rtc::ThreadChecker worker_thread_checker_;
+  // TODO(nisse): Delete, kept only for temporary backwards compatibility.
   rtc::VideoSourceInterface<VideoFrame>* source_;
   SourceState state_;
   const bool remote_;

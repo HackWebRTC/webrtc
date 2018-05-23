@@ -202,19 +202,31 @@ class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInternal> {
   int AttachmentId() const override { return attachment_id_; }
 
  private:
+  class VideoRtpTrackSource : public VideoTrackSource {
+   public:
+    VideoRtpTrackSource() : VideoTrackSource(true /* remote */) {}
+
+    rtc::VideoSourceInterface<VideoFrame>* source() override {
+      return &broadcaster_;
+    }
+    rtc::VideoSinkInterface<VideoFrame>* sink() { return &broadcaster_; }
+
+   private:
+    // |broadcaster_| is needed since the decoder can only handle one sink.
+    // It might be better if the decoder can handle multiple sinks and consider
+    // the VideoSinkWants.
+    rtc::VideoBroadcaster broadcaster_;
+  };
+
   bool SetSink(rtc::VideoSinkInterface<VideoFrame>* sink);
 
   rtc::Thread* const worker_thread_;
   const std::string id_;
   cricket::VideoMediaChannel* media_channel_ = nullptr;
   rtc::Optional<uint32_t> ssrc_;
-  // |broadcaster_| is needed since the decoder can only handle one sink.
-  // It might be better if the decoder can handle multiple sinks and consider
-  // the VideoSinkWants.
-  rtc::VideoBroadcaster broadcaster_;
   // |source_| is held here to be able to change the state of the source when
   // the VideoRtpReceiver is stopped.
-  rtc::scoped_refptr<VideoTrackSource> source_;
+  rtc::scoped_refptr<VideoRtpTrackSource> source_;
   rtc::scoped_refptr<VideoTrackInterface> track_;
   std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams_;
   bool stopped_ = false;

@@ -215,8 +215,7 @@ VideoRtpReceiver::VideoRtpReceiver(
     const std::vector<rtc::scoped_refptr<MediaStreamInterface>>& streams)
     : worker_thread_(worker_thread),
       id_(receiver_id),
-      source_(new RefCountedObject<VideoTrackSource>(&broadcaster_,
-                                                     true /* remote */)),
+      source_(new RefCountedObject<VideoRtpTrackSource>()),
       track_(VideoTrackProxy::Create(
           rtc::Thread::Current(),
           worker_thread,
@@ -270,7 +269,6 @@ void VideoRtpReceiver::Stop() {
     return;
   }
   source_->SetState(MediaSourceInterface::kEnded);
-  source_->OnSourceDestroyed();
   if (!media_channel_ || !ssrc_) {
     RTC_LOG(LS_WARNING) << "VideoRtpReceiver::Stop: No video channel exists.";
   } else {
@@ -293,7 +291,7 @@ void VideoRtpReceiver::SetupMediaChannel(uint32_t ssrc) {
     SetSink(nullptr);
   }
   ssrc_ = ssrc;
-  SetSink(&broadcaster_);
+  SetSink(source_->sink());
 }
 
 void VideoRtpReceiver::SetStreams(

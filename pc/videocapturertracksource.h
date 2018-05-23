@@ -57,6 +57,11 @@ class VideoCapturerTrackSource : public VideoTrackSource,
                            std::unique_ptr<cricket::VideoCapturer> capturer,
                            bool remote);
   virtual ~VideoCapturerTrackSource();
+
+  rtc::VideoSourceInterface<VideoFrame>* source() override {
+    return video_capturer_.get();
+  }
+
   void Initialize(const webrtc::MediaConstraintsInterface* constraints);
 
  private:

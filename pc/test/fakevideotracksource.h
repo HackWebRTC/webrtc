@@ -12,7 +12,6 @@
 #define PC_TEST_FAKEVIDEOTRACKSOURCE_H_
 
 #include "api/mediastreaminterface.h"
-#include "api/video/video_source_interface.h"
 #include "pc/videotracksource.h"
 
 namespace webrtc {
@@ -30,23 +29,19 @@ class FakeVideoTrackSource : public VideoTrackSource {
   }
 
   bool is_screencast() const override { return is_screencast_; }
+  void AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
+                       const rtc::VideoSinkWants& wants) override {}
+  void RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) {}
 
  protected:
   explicit FakeVideoTrackSource(bool is_screencast)
-      : VideoTrackSource(&source_, false /* remote */),
-        is_screencast_(is_screencast) {}
-  virtual ~FakeVideoTrackSource() {}
+      : VideoTrackSource(false /* remote */), is_screencast_(is_screencast) {}
+  ~FakeVideoTrackSource() override = default;
+
+  // Unused, since we override AddOrUpdateSink and RemoveSink above.
+  rtc::VideoSourceInterface<VideoFrame>* source() override { return nullptr; }
 
  private:
-  class Source : public rtc::VideoSourceInterface<VideoFrame> {
-   public:
-    void AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
-                         const rtc::VideoSinkWants& wants) override {}
-
-    void RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) override {}
-  };
-
-  Source source_;
   const bool is_screencast_;
 };
 

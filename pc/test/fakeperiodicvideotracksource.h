@@ -25,12 +25,12 @@ class FakePeriodicVideoTrackSource : public VideoTrackSource {
 
   FakePeriodicVideoTrackSource(FakePeriodicVideoSource::Config config,
                                bool remote)
-      // Note that VideoTrack constructor gets a pointer to an
-      // uninitialized source object; that works because it only
-      // stores the pointer for later use.
-      : VideoTrackSource(&source_, remote), source_(config) {}
+      : VideoTrackSource(remote), source_(config) {}
 
   ~FakePeriodicVideoTrackSource() = default;
+
+ protected:
+  rtc::VideoSourceInterface<VideoFrame>* source() override { return &source_; }
 
  private:
   FakePeriodicVideoSource source_;

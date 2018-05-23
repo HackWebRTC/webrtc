@@ -288,7 +288,7 @@ VideoCapturerTrackSource::VideoCapturerTrackSource(
     rtc::Thread* worker_thread,
     std::unique_ptr<cricket::VideoCapturer> capturer,
     bool remote)
-    : VideoTrackSource(capturer.get(), remote),
+    : VideoTrackSource(remote),
       signaling_thread_(rtc::Thread::Current()),
       worker_thread_(worker_thread),
       video_capturer_(std::move(capturer)),
