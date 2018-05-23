@@ -49,9 +49,9 @@ rtc_source_set("ignore_warnings") {
   ]
 }
 
-rtc_source_set("no_inline") {
+rtc_source_set("inline") {
   sources = [
-    "no_inline.h",
+    "inline.h",
   ]
 }
 

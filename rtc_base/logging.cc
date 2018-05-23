@@ -33,6 +33,7 @@ static const int kMaxLogLineSize = 1024 - 60;
 #include <limits.h>
 
 #include <algorithm>
+#include <cstdarg>
 #include <iomanip>
 #include <ostream>
 #include <vector>
@@ -235,6 +236,14 @@ LogMessage::~LogMessage() {
 #endif
     }
   }
+}
+
+void LogMessage::AddTag(const char* tag) {
+#ifdef WEBRTC_ANDROID
+  if (!is_noop_) {
+    tag_ = tag;
+  }
+#endif
 }
 
 std::ostream& LogMessage::stream() {
@@ -488,6 +497,87 @@ void LogMessage::FinishPrintStream() {
   print_stream_ << std::endl;
 }
 
-//////////////////////////////////////////////////////////////////////
+namespace webrtc_logging_impl {
 
+void Log(const LogArgType* fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+
+  LogMetadataErr meta;
+  const char* tag = nullptr;
+  switch (*fmt) {
+    case LogArgType::kLogMetadata: {
+      meta = {va_arg(args, LogMetadata), ERRCTX_NONE, 0};
+      break;
+    }
+    case LogArgType::kLogMetadataErr: {
+      meta = va_arg(args, LogMetadataErr);
+      break;
+    }
+#ifdef WEBRTC_ANDROID
+    case LogArgType::kLogMetadataTag: {
+      const LogMetadataTag tag_meta = va_arg(args, LogMetadataTag);
+      meta = {{nullptr, 0, tag_meta.severity}, ERRCTX_NONE, 0};
+      tag = tag_meta.tag;
+      break;
+    }
+#endif
+    default: {
+      RTC_NOTREACHED();
+      va_end(args);
+      return;
+    }
+  }
+  LogMessage log_message(meta.meta.File(), meta.meta.Line(),
+                         meta.meta.Severity(), meta.err_ctx, meta.err);
+  if (tag) {
+    log_message.AddTag(tag);
+  }
+
+  for (++fmt; *fmt != LogArgType::kEnd; ++fmt) {
+    switch (*fmt) {
+      case LogArgType::kInt:
+        log_message.stream() << va_arg(args, int);
+        break;
+      case LogArgType::kLong:
+        log_message.stream() << va_arg(args, long);
+        break;
+      case LogArgType::kLongLong:
+        log_message.stream() << va_arg(args, long long);
+        break;
+      case LogArgType::kUInt:
+        log_message.stream() << va_arg(args, unsigned);
+        break;
+      case LogArgType::kULong:
+        log_message.stream() << va_arg(args, unsigned long);
+        break;
+      case LogArgType::kULongLong:
+        log_message.stream() << va_arg(args, unsigned long long);
+        break;
+      case LogArgType::kDouble:
+        log_message.stream() << va_arg(args, double);
+        break;
+      case LogArgType::kLongDouble:
+        log_message.stream() << va_arg(args, long double);
+        break;
+      case LogArgType::kCharP:
+        log_message.stream() << va_arg(args, const char*);
+        break;
+      case LogArgType::kStdString:
+        log_message.stream() << *va_arg(args, const std::string*);
+        break;
+      case LogArgType::kVoidP:
+        log_message.stream() << va_arg(args, const void*);
+        break;
+      default:
+        RTC_NOTREACHED();
+        va_end(args);
+        return;
+    }
+  }
+
+  va_end(args);
+}
+
+}  // namespace webrtc_logging_impl
 }  // namespace rtc

@@ -218,7 +218,7 @@ rtc_source_set("logging") {
       "logging.cc",
       "logging.h",
     ]
-    deps += [ "system:no_inline" ]
+    deps += [ "system:inline" ]
 
     # logging.h needs the deprecation header while downstream projects are
     # removing code that depends on logging implementation details.

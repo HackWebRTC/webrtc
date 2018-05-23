@@ -641,7 +641,7 @@ HRESULT SharedModeInitialize(IAudioClient* client,
     stream_flags |= AUDCLNT_STREAMFLAGS_EVENTCALLBACK;
     RTC_DLOG(INFO) << "The stream is initialized to be event driven";
   }
-  RTC_DLOG(INFO) << "stream_flags: 0x" << std::hex << stream_flags;
+  RTC_DLOG(INFO) << "stream_flags: 0x" << rtc::ToHex(stream_flags);
 
   // Initialize the shared mode client for minimal delay.
   _com_error error = client->Initialize(
