@@ -1108,10 +1108,9 @@ int OpenSSLStreamAdapter::SSLVerifyCallback(X509_STORE_CTX* store, void* arg) {
   stream->peer_cert_chain_.reset(new SSLCertChain(std::move(cert_chain)));
 #else
   // Record the peer's certificate.
-  X509* cert = SSL_get_peer_certificate(ssl);
+  X509* cert = X509_STORE_CTX_get0_cert(store);
   stream->peer_cert_chain_.reset(
       new SSLCertChain(new OpenSSLCertificate(cert)));
-  X509_free(cert);
 #endif
 
   // If the peer certificate digest isn't known yet, we'll wait to verify
