@@ -106,11 +106,14 @@ ReceiveStatisticsProxy::ReceiveStatisticsProxy(
       render_fps_tracker_(100, 10u),
       render_pixel_tracker_(100, 10u),
       total_byte_tracker_(100, 10u),  // bucket_interval_ms, bucket_count
+      video_quality_observer_(
+          new VideoQualityObserver(VideoContentType::UNSPECIFIED)),
       interframe_delay_max_moving_(kMovingMaxWindowMs),
       freq_offset_counter_(clock, nullptr, kFreqOffsetProcessIntervalMs),
       first_report_block_time_ms_(-1),
       avg_rtt_ms_(0),
       last_content_type_(VideoContentType::UNSPECIFIED),
+      last_codec_type_(kVideoCodecVP8),
       timing_frame_info_counter_(kMovingMaxWindowMs) {
   decode_thread_.DetachFromThread();
   network_thread_.DetachFromThread();
@@ -147,13 +150,14 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
                << stream_duration_sec << '\n';
   }
 
-  log_stream << "Frames decoded " << stats_.frames_decoded;
+  log_stream << "Frames decoded " << stats_.frames_decoded << '\n';
 
   if (num_unique_frames_) {
     int num_dropped_frames = *num_unique_frames_ - stats_.frames_decoded;
     RTC_HISTOGRAM_COUNTS_1000("WebRTC.Video.DroppedFrames.Receiver",
                               num_dropped_frames);
-    log_stream << "WebRTC.Video.DroppedFrames.Receiver " << num_dropped_frames;
+    log_stream << "WebRTC.Video.DroppedFrames.Receiver " << num_dropped_frames
+               << '\n';
   }
 
   if (first_report_block_time_ms_ != -1 &&
@@ -680,11 +684,29 @@ void ReceiveStatisticsProxy::DataCountersUpdated(
     total_byte_tracker_.AddSamples(total_bytes - last_total_bytes);
 }
 
+// Deprecated. TODO(ilnik): remove once all depending projects are updated.
 void ReceiveStatisticsProxy::OnDecodedFrame(rtc::Optional<uint8_t> qp,
+                                            VideoContentType content_type) {
+  OnDecodedFrame(qp, 0, 0, content_type);
+}
+
+void ReceiveStatisticsProxy::OnDecodedFrame(rtc::Optional<uint8_t> qp,
+                                            int width,
+                                            int height,
                                             VideoContentType content_type) {
   rtc::CritScope lock(&crit_);
 
   uint64_t now = clock_->TimeInMilliseconds();
+
+  if (videocontenttypehelpers::IsScreenshare(content_type) !=
+      videocontenttypehelpers::IsScreenshare(last_content_type_)) {
+    // Reset the quality observer if content type is switched. This will
+    // report stats for the previous part of the call.
+    video_quality_observer_.reset(new VideoQualityObserver(content_type));
+  }
+
+  video_quality_observer_->OnDecodedFrame(qp, width, height, now,
+                                          last_codec_type_);
 
   ContentSpecificStats* content_specific_stats =
       &content_specific_stats_[content_type];
@@ -809,9 +831,10 @@ void ReceiveStatisticsProxy::OnPreDecode(
   if (!codec_specific_info || encoded_image.qp_ == -1) {
     return;
   }
-  if (codec_specific_info->codecType == kVideoCodecVP8) {
+  rtc::CritScope lock(&crit_);
+  last_codec_type_ = codec_specific_info->codecType;
+  if (last_codec_type_ == kVideoCodecVP8) {
     qp_counters_.vp8.Add(encoded_image.qp_);
-    rtc::CritScope lock(&crit_);
     qp_sample_.Add(encoded_image.qp_);
   }
 }
@@ -822,6 +845,7 @@ void ReceiveStatisticsProxy::OnStreamInactive() {
   rtc::CritScope lock(&crit_);
   // Don't report inter-frame delay if stream was paused.
   last_decoded_frame_time_ms_.reset();
+  video_quality_observer_->OnStreamInactive();
 }
 
 void ReceiveStatisticsProxy::OnRttUpdate(int64_t avg_rtt_ms,

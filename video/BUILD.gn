@@ -38,6 +38,8 @@ rtc_static_library("video") {
     "stream_synchronization.h",
     "transport_adapter.cc",
     "transport_adapter.h",
+    "video_quality_observer.cc",
+    "video_quality_observer.h",
     "video_receive_stream.cc",
     "video_receive_stream.h",
     "video_send_stream.cc",
