@@ -40,17 +40,14 @@ bool IsH264CodecSupported() {
 #endif
 }
 
-SdpVideoFormat CreateH264Format(H264::Profile profile,
-                                H264::Level level,
-                                const std::string& packetization_mode) {
+SdpVideoFormat CreateH264Format(H264::Profile profile, H264::Level level) {
   const rtc::Optional<std::string> profile_string =
       H264::ProfileLevelIdToString(H264::ProfileLevelId(profile, level));
   RTC_CHECK(profile_string);
-  return SdpVideoFormat(
-      cricket::kH264CodecName,
-      {{cricket::kH264FmtpProfileLevelId, *profile_string},
-       {cricket::kH264FmtpLevelAsymmetryAllowed, "1"},
-       {cricket::kH264FmtpPacketizationMode, packetization_mode}});
+  return SdpVideoFormat(cricket::kH264CodecName,
+                        {{cricket::kH264FmtpProfileLevelId, *profile_string},
+                         {cricket::kH264FmtpLevelAsymmetryAllowed, "1"},
+                         {cricket::kH264FmtpPacketizationMode, "1"}});
 }
 
 }  // namespace
@@ -70,15 +67,8 @@ std::vector<SdpVideoFormat> SupportedH264Codecs() {
   // decoder for that profile is required to be able to decode CBP. This means
   // we can encode and send CBP even though we negotiated a potentially
   // higher profile. See the H264 spec for more information.
-  //
-  // We support both packetization modes 0 (mandatory) and 1 (optional,
-  // preferred).
-  return {
-      CreateH264Format(H264::kProfileBaseline, H264::kLevel3_1, "1"),
-      CreateH264Format(H264::kProfileBaseline, H264::kLevel3_1, "0"),
-      CreateH264Format(H264::kProfileConstrainedBaseline, H264::kLevel3_1, "1"),
-      CreateH264Format(H264::kProfileConstrainedBaseline, H264::kLevel3_1,
-                       "0")};
+  return {CreateH264Format(H264::kProfileBaseline, H264::kLevel3_1),
+          CreateH264Format(H264::kProfileConstrainedBaseline, H264::kLevel3_1)};
 }
 
 std::unique_ptr<H264Encoder> H264Encoder::Create(
