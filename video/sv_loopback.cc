@@ -92,7 +92,7 @@ int VideoNumSpatialLayers() {
 }
 
 DEFINE_int(vinter_layer_pred,
-           1,
+           2,
            "Video inter-layer prediction mode. "
            "0 - enabled, 1 - disabled, 2 - enabled only for key pictures.");
 InterLayerPredMode VideoInterLayerPred() {
@@ -215,7 +215,7 @@ int ScreenshareNumSpatialLayers() {
 }
 
 DEFINE_int(sinter_layer_pred,
-           1,
+           0,
            "Screenshare inter-layer prediction mode. "
            "0 - enabled, 1 - disabled, 2 - enabled only for key pictures.");
 InterLayerPredMode ScreenshareInterLayerPred() {

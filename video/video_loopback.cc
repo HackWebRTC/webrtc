@@ -73,7 +73,7 @@ int NumTemporalLayers() {
 }
 
 DEFINE_int(inter_layer_pred,
-           1,
+           2,
            "Inter-layer prediction mode. "
            "0 - enabled, 1 - disabled, 2 - enabled only for key pictures.");
 InterLayerPredMode InterLayerPred() {

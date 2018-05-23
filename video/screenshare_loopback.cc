@@ -158,7 +158,7 @@ int NumSpatialLayers() {
 }
 
 DEFINE_int(inter_layer_pred,
-           1,
+           0,
            "Inter-layer prediction mode. "
            "0 - enabled, 1 - disabled, 2 - enabled only for key pictures.");
 InterLayerPredMode InterLayerPred() {
