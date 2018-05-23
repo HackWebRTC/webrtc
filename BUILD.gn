@@ -377,6 +377,10 @@ rtc_source_set("typedefs") {
   sources = [
     "typedefs.h",
   ]
+  deps = [
+    "rtc_base/system:arch",
+    "rtc_base/system:unused",
+  ]
 }
 
 rtc_static_library("webrtc_common") {

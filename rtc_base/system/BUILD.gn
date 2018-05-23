@@ -12,6 +12,12 @@ if (is_android) {
   import("//build/config/android/rules.gni")
 }
 
+rtc_source_set("arch") {
+  sources = [
+    "arch.h",
+  ]
+}
+
 rtc_source_set("asm_defines") {
   sources = [
     "asm_defines.h",
@@ -46,5 +52,11 @@ rtc_source_set("ignore_warnings") {
 rtc_source_set("no_inline") {
   sources = [
     "no_inline.h",
+  ]
+}
+
+rtc_source_set("unused") {
+  sources = [
+    "unused.h",
   ]
 }

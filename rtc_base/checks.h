@@ -11,8 +11,6 @@
 #ifndef RTC_BASE_CHECKS_H_
 #define RTC_BASE_CHECKS_H_
 
-#include "typedefs.h"  // NOLINT(build/include)
-
 // If you for some reson need to know if DCHECKs are on, test the value of
 // RTC_DCHECK_IS_ON. (Test its value, not if it's defined; it'll always be
 // defined, to either a true or a false value.)
@@ -22,10 +20,19 @@
 #define RTC_DCHECK_IS_ON 0
 #endif
 
+// Annotate a function that will not return control flow to the caller.
+#if defined(_MSC_VER)
+#define RTC_NORETURN __declspec(noreturn)
+#elif defined(__GNUC__)
+#define RTC_NORETURN __attribute__ ((__noreturn__))
+#else
+#define RTC_NORETURN
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-NO_RETURN void rtc_FatalMessage(const char* file, int line, const char* msg);
+RTC_NORETURN void rtc_FatalMessage(const char* file, int line, const char* msg);
 #ifdef __cplusplus
 }  // extern "C"
 #endif
@@ -233,7 +240,7 @@ class FatalMessage {
   FatalMessage(const char* file, int line);
   // Used for RTC_CHECK_EQ(), etc. Takes ownership of the given string.
   FatalMessage(const char* file, int line, std::string* result);
-  NO_RETURN ~FatalMessage();
+  RTC_NORETURN ~FatalMessage();
 
   std::ostream& stream() { return stream_; }
 
