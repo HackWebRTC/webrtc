@@ -225,9 +225,13 @@ NetworkControlUpdate BbrNetworkController::CreateRateUpdate(Timestamp at_time) {
   target_rate_msg.network_estimate.bandwidth = bandwidth;
   target_rate_msg.network_estimate.round_trip_time = rtt;
 
-  // TODO(srte): Fill in fields below with proper values.
+  // TODO(srte): Fill in field below with proper value.
   target_rate_msg.network_estimate.loss_rate_ratio = 0;
-  target_rate_msg.network_estimate.bwe_period = TimeDelta::Zero();
+  // In in PROBE_BW, target bandwidth is expected to vary over the cycle period.
+  // In other modes the is no given period, therefore the same value as in
+  // PROBE_BW is used for consistency.
+  target_rate_msg.network_estimate.bwe_period =
+      rtt * static_cast<int64_t>(kGainCycleLength);
 
   target_rate_msg.target_rate = target_rate;
   target_rate_msg.at_time = at_time;
