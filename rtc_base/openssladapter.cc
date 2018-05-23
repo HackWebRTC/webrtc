@@ -377,7 +377,7 @@ int OpenSSLAdapter::BeginSSL() {
     if (!tls_alpn_string.empty()) {
       SSL_set_alpn_protos(
           ssl_, reinterpret_cast<const unsigned char*>(tls_alpn_string.data()),
-          tls_alpn_string.size());
+          rtc::dchecked_cast<unsigned>(tls_alpn_string.size()));
     }
   }
 
@@ -593,7 +593,7 @@ int OpenSSLAdapter::Send(const void* pv, size_t cb) {
     pending_data_.SetData(static_cast<const uint8_t*>(pv), cb);
     // Since we're taking responsibility for sending this data, return its full
     // size. The user of this class can consider it sent.
-    return cb;
+    return rtc::dchecked_cast<int>(cb);
   }
 
   return ret;

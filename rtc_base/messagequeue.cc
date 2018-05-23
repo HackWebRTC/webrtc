@@ -118,7 +118,6 @@ void MessageQueueManager::ClearInternal(MessageHandler *handler) {
   // allowed as the list of message queues does not change while queues are
   // cleared.
   MarkProcessingCritScope cs(&crit_, &processing_);
-  std::vector<MessageQueue *>::iterator iter;
   for (MessageQueue* queue : message_queues_) {
     queue->Clear(handler);
   }

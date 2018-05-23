@@ -112,36 +112,6 @@ std::unique_ptr<SocketServer> SocketServer::CreateDefault() {
 #endif
 }
 
-#if defined(WEBRTC_WIN)
-// Standard MTUs, from RFC 1191
-const uint16_t PACKET_MAXIMUMS[] = {
-    65535,  // Theoretical maximum, Hyperchannel
-    32000,  // Nothing
-    17914,  // 16Mb IBM Token Ring
-    8166,   // IEEE 802.4
-    // 4464,   // IEEE 802.5 (4Mb max)
-    4352,   // FDDI
-    // 2048,   // Wideband Network
-    2002,   // IEEE 802.5 (4Mb recommended)
-    // 1536,   // Expermental Ethernet Networks
-    // 1500,   // Ethernet, Point-to-Point (default)
-    1492,   // IEEE 802.3
-    1006,   // SLIP, ARPANET
-    // 576,    // X.25 Networks
-    // 544,    // DEC IP Portal
-    // 512,    // NETBIOS
-    508,    // IEEE 802/Source-Rt Bridge, ARCNET
-    296,    // Point-to-Point (low delay)
-    68,     // Official minimum
-    0,      // End of list marker
-};
-
-static const int IP_HEADER_SIZE = 20u;
-static const int IPV6_HEADER_SIZE = 40u;
-static const int ICMP_HEADER_SIZE = 8u;
-static const int ICMP_PING_TIMEOUT_MILLIS = 10000u;
-#endif
-
 PhysicalSocket::PhysicalSocket(PhysicalSocketServer* ss, SOCKET s)
   : ss_(ss), s_(s), error_(0),
     state_((s == INVALID_SOCKET) ? CS_CLOSED : CS_CONNECTED),

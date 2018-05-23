@@ -836,14 +836,6 @@ rtc_static_library("rtc_base_generic") {
     ":rtc_base_objc",
   ]
 
-  # TODO(henrike): issue 3307, make rtc_base build with the Chromium default
-  # compiler settings.
-  suppressed_configs += [ "//build/config/compiler:chromium_code" ]
-  configs += [ "//build/config/compiler:no_chromium_code" ]
-  if (!is_win) {
-    cflags += [ "-Wno-uninitialized" ]
-  }
-
   if (build_with_chromium) {
     if (is_win) {
       sources += [ "../../webrtc_overrides/rtc_base/win32socketinit.cc" ]
@@ -981,16 +973,6 @@ config("rtc_base_tests_utils_exported_config") {
   defines = [ "GTEST_RELATIVE_PATH" ]
 }
 
-config("rtc_base_tests_utils_warnings_config") {
-  if (is_win && is_clang) {
-    cflags = [
-      # See https://bugs.chromium.org/p/webrtc/issues/detail?id=6270
-      "-Wno-reorder",
-      "-Wno-sign-compare",
-    ]
-  }
-}
-
 rtc_source_set("rtc_base_tests_utils") {
   testonly = true
   sources = [
@@ -1034,7 +1016,6 @@ rtc_source_set("rtc_base_tests_utils") {
     "virtualsocketserver.cc",
     "virtualsocketserver.h",
   ]
-  configs += [ ":rtc_base_tests_utils_warnings_config" ]
   public_configs = [ ":rtc_base_tests_utils_exported_config" ]
   deps = [
     ":checks",
@@ -1256,11 +1237,6 @@ if (rtc_include_tests) {
     ]
   }
 
-  config("rtc_base_unittests_config") {
-    if (is_clang) {
-      cflags = [ "-Wno-unused-const-variable" ]
-    }
-  }
   rtc_source_set("rtc_base_unittests") {
     testonly = true
     defines = []
@@ -1321,7 +1297,6 @@ if (rtc_include_tests) {
     public_deps = [
       ":rtc_base",
     ]
-    configs += [ ":rtc_base_unittests_config" ]
     if (build_with_chromium) {
       include_dirs = [ "../../boringssl/src/include" ]
     }

@@ -29,6 +29,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/helpers.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/openssl.h"
 #include "rtc_base/openssldigest.h"
 #include "rtc_base/opensslutility.h"
@@ -267,7 +268,8 @@ SSLIdentity* OpenSSLIdentity::FromPEMChainStrings(
     const std::string& private_key,
     const std::string& certificate_chain) {
   BIO* bio =
-      BIO_new_mem_buf(certificate_chain.data(), certificate_chain.size());
+      BIO_new_mem_buf(certificate_chain.data(),
+                      rtc::dchecked_cast<int>(certificate_chain.size()));
   if (!bio)
     return nullptr;
   BIO_set_mem_eof_return(bio, 0);
