@@ -45,11 +45,10 @@ void TestInvalidParameterHandler(const wchar_t* expression,
                                  const wchar_t* file,
                                  unsigned int line,
                                  uintptr_t pReserved) {
+  // In order to log `expression`, `function`, and `file` here, we would have
+  // to convert them to const char*. std::wcsrtombs can do that, but it's
+  // locale dependent.
   RTC_LOG(LS_ERROR) << "InvalidParameter Handler called.  Exiting.";
-  RTC_LOG(LS_ERROR) << expression << std::endl
-                    << function << std::endl
-                    << file << std::endl
-                    << line;
   exit(1);
 }
 void TestPureCallHandler() {

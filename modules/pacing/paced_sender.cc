@@ -353,7 +353,7 @@ void PacedSender::Process() {
 }
 
 void PacedSender::ProcessThreadAttached(ProcessThread* process_thread) {
-  RTC_LOG(LS_INFO) << "ProcessThreadAttached 0x" << std::hex << process_thread;
+  RTC_LOG(LS_INFO) << "ProcessThreadAttached 0x" << process_thread;
   rtc::CritScope cs(&process_thread_lock_);
   process_thread_ = process_thread;
 }

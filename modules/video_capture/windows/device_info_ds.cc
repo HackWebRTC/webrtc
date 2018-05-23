@@ -10,11 +10,10 @@
 
 #include "modules/video_capture/windows/device_info_ds.h"
 
-#include <ios>  // std::hex
-
 #include "modules/video_capture/video_capture_config.h"
 #include "modules/video_capture/windows/help_functions_ds.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/stringutils.h"
 
 #include <dvdmedia.h>
 #include <streams.h>
@@ -75,7 +74,7 @@ DeviceInfoDS::DeviceInfoDS()
       //
       RTC_LOG(LS_INFO) << __FUNCTION__
                        << ": CoInitializeEx(NULL, COINIT_APARTMENTTHREADED)"
-                       << " => RPC_E_CHANGED_MODE, error 0x" << std::hex << hr;
+                       << " => RPC_E_CHANGED_MODE, error 0x" << rtc::ToHex(hr);
     }
   }
 }
@@ -93,7 +92,7 @@ int32_t DeviceInfoDS::Init() {
                                 IID_ICreateDevEnum, (void**)&_dsDevEnum);
   if (hr != NOERROR) {
     RTC_LOG(LS_INFO) << "Failed to create CLSID_SystemDeviceEnum, error 0x"
-                     << std::hex << hr;
+                     << rtc::ToHex(hr);
     return -1;
   }
   return 0;
@@ -132,7 +131,7 @@ int32_t DeviceInfoDS::GetDeviceInfo(uint32_t deviceNumber,
                                                  &_dsMonikerDevEnum, 0);
   if (hr != NOERROR) {
     RTC_LOG(LS_INFO) << "Failed to enumerate CLSID_SystemDeviceEnum, error 0x"
-                     << std::hex << hr << ". No webcam exist?";
+                     << rtc::ToHex(hr) << ". No webcam exist?";
     return 0;
   }
 
@@ -223,7 +222,7 @@ IBaseFilter* DeviceInfoDS::GetDeviceFilter(const char* deviceUniqueIdUTF8,
                                                  &_dsMonikerDevEnum, 0);
   if (hr != NOERROR) {
     RTC_LOG(LS_INFO) << "Failed to enumerate CLSID_SystemDeviceEnum, error 0x"
-                     << std::hex << hr << ". No webcam exist?";
+                     << rtc::ToHex(hr) << ". No webcam exist?";
     return 0;
   }
   _dsMonikerDevEnum->Reset();

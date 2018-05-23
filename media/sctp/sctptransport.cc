@@ -36,6 +36,7 @@ enum PreservedErrno {
 #include "rtc_base/helpers.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
+#include "rtc_base/stringutils.h"
 #include "rtc_base/thread_checker.h"
 #include "rtc_base/trace_event.h"
 #include "usrsctplib/usrsctp.h"
@@ -312,8 +313,8 @@ class SctpTransport::UsrSctpWrapper {
     SctpTransport* transport = static_cast<SctpTransport*>(addr);
     RTC_LOG(LS_VERBOSE) << "global OnSctpOutboundPacket():"
                         << "addr: " << addr << "; length: " << length
-                        << "; tos: " << std::hex << static_cast<int>(tos)
-                        << "; set_df: " << std::hex << static_cast<int>(set_df);
+                        << "; tos: " << rtc::ToHex(tos)
+                        << "; set_df: " << rtc::ToHex(set_df);
 
     VerboseLogPacket(data, length, SCTP_DUMP_OUTBOUND);
     // Note: We have to copy the data; the caller will delete it.
@@ -1056,7 +1057,7 @@ void SctpTransport::OnStreamResetEvent(
   const int num_sids = (evt->strreset_length - sizeof(*evt)) /
                        sizeof(evt->strreset_stream_list[0]);
   RTC_LOG(LS_VERBOSE) << "SCTP_STREAM_RESET_EVENT(" << debug_name_
-                      << "): Flags = 0x" << std::hex << evt->strreset_flags
+                      << "): Flags = 0x" << rtc::ToHex(evt->strreset_flags)
                       << " (" << ListFlags(evt->strreset_flags) << ")";
   RTC_LOG(LS_VERBOSE) << "Assoc = " << evt->strreset_assoc_id << ", Streams = ["
                       << ListArray(evt->strreset_stream_list, num_sids)

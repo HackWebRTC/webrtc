@@ -2119,9 +2119,8 @@ void P2PTransportChannel::OnConnectionDestroyed(Connection* connection) {
   unpinged_connections_.erase(*iter);
   connections_.erase(iter);
 
-  RTC_LOG(LS_INFO) << ToString() << ": Removed connection "
-                   << std::hex << connection << std::dec << " ("
-                   << connections_.size() << " remaining)";
+  RTC_LOG(LS_INFO) << ToString() << ": Removed connection " << connection
+                   << " (" << connections_.size() << " remaining)";
 
   // If this is currently the selected connection, then we need to pick a new
   // one. The call to SortConnectionsAndUpdateState will pick a new one. It
