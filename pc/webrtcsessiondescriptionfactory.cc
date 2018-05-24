@@ -67,12 +67,12 @@ enum {
 
 struct CreateSessionDescriptionMsg : public rtc::MessageData {
   explicit CreateSessionDescriptionMsg(
-      webrtc::CreateSessionDescriptionObserver* observer)
-      : observer(observer) {
-  }
+      webrtc::CreateSessionDescriptionObserver* observer,
+      RTCError error_in)
+      : observer(observer), error(std::move(error_in)) {}
 
   rtc::scoped_refptr<webrtc::CreateSessionDescriptionObserver> observer;
-  std::string error;
+  RTCError error;
   std::unique_ptr<webrtc::SessionDescriptionInterface> description;
 };
 }  // namespace
@@ -297,7 +297,7 @@ void WebRtcSessionDescriptionFactory::OnMessage(rtc::Message* msg) {
     case MSG_CREATE_SESSIONDESCRIPTION_FAILED: {
       CreateSessionDescriptionMsg* param =
           static_cast<CreateSessionDescriptionMsg*>(msg->pdata);
-      param->observer->OnFailure(param->error);
+      param->observer->OnFailure(std::move(param->error));
       delete param;
       break;
     }
@@ -432,8 +432,8 @@ void WebRtcSessionDescriptionFactory::FailPendingRequests(
 
 void WebRtcSessionDescriptionFactory::PostCreateSessionDescriptionFailed(
     CreateSessionDescriptionObserver* observer, const std::string& error) {
-  CreateSessionDescriptionMsg* msg = new CreateSessionDescriptionMsg(observer);
-  msg->error = error;
+  CreateSessionDescriptionMsg* msg = new CreateSessionDescriptionMsg(
+      observer, RTCError(RTCErrorType::INTERNAL_ERROR, std::string(error)));
   signaling_thread_->Post(RTC_FROM_HERE, this,
                           MSG_CREATE_SESSIONDESCRIPTION_FAILED, msg);
   RTC_LOG(LS_ERROR) << "Create SDP failed: " << error;
@@ -442,7 +442,8 @@ void WebRtcSessionDescriptionFactory::PostCreateSessionDescriptionFailed(
 void WebRtcSessionDescriptionFactory::PostCreateSessionDescriptionSucceeded(
     CreateSessionDescriptionObserver* observer,
     std::unique_ptr<SessionDescriptionInterface> description) {
-  CreateSessionDescriptionMsg* msg = new CreateSessionDescriptionMsg(observer);
+  CreateSessionDescriptionMsg* msg =
+      new CreateSessionDescriptionMsg(observer, RTCError::OK());
   msg->description = std::move(description);
   signaling_thread_->Post(RTC_FROM_HERE, this,
                           MSG_CREATE_SESSIONDESCRIPTION_SUCCESS, msg);

@@ -61,9 +61,10 @@ class CreateSessionDescriptionObserverAdapter
     completion_handler_ = nil;
   }
 
-  void OnFailure(const std::string& error) override {
+  void OnFailure(RTCError error) override {
     RTC_DCHECK(completion_handler_);
-    NSString* str = [NSString stringForStdString:error];
+    // TODO(hta): Add handling of error.type()
+    NSString *str = [NSString stringForStdString:error.message()];
     NSError* err =
         [NSError errorWithDomain:kRTCPeerConnectionErrorDomain
                             code:kRTCPeerConnnectionSessionDescriptionError
@@ -95,9 +96,10 @@ class SetSessionDescriptionObserverAdapter :
     completion_handler_ = nil;
   }
 
-  void OnFailure(const std::string& error) override {
+  void OnFailure(RTCError error) override {
     RTC_DCHECK(completion_handler_);
-    NSString* str = [NSString stringForStdString:error];
+    // TODO(hta): Add handling of error.type()
+    NSString *str = [NSString stringForStdString:error.message()];
     NSError* err =
         [NSError errorWithDomain:kRTCPeerConnectionErrorDomain
                             code:kRTCPeerConnnectionSessionDescriptionError

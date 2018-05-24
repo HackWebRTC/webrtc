@@ -45,8 +45,9 @@ class DummySetSessionDescriptionObserver
         new rtc::RefCountedObject<DummySetSessionDescriptionObserver>();
   }
   virtual void OnSuccess() { RTC_LOG(INFO) << __FUNCTION__; }
-  virtual void OnFailure(const std::string& error) {
-    RTC_LOG(INFO) << __FUNCTION__ << " " << error;
+  virtual void OnFailure(webrtc::RTCError error) {
+    RTC_LOG(INFO) << __FUNCTION__ << " " << ToString(error.type()) << ": "
+                  << error.message();
   }
 };
 
@@ -545,8 +546,8 @@ void Conductor::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
   SendMessage(writer.write(jmessage));
 }
 
-void Conductor::OnFailure(const std::string& error) {
-  RTC_LOG(LERROR) << error;
+void Conductor::OnFailure(webrtc::RTCError error) {
+  RTC_LOG(LERROR) << ToString(error.type()) << ": " << error.message();
 }
 
 void Conductor::SendMessage(const std::string& json_object) {

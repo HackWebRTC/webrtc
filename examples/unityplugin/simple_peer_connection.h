@@ -88,7 +88,7 @@ class SimplePeerConnection : public webrtc::PeerConnectionObserver,
 
   // CreateSessionDescriptionObserver implementation.
   void OnSuccess(webrtc::SessionDescriptionInterface* desc) override;
-  void OnFailure(const std::string& error) override;
+  void OnFailure(webrtc::RTCError error) override;
 
   // DataChannelObserver implementation.
   void OnStateChange() override;

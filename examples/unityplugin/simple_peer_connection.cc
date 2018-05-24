@@ -76,8 +76,9 @@ class DummySetSessionDescriptionObserver
     return new rtc::RefCountedObject<DummySetSessionDescriptionObserver>();
   }
   virtual void OnSuccess() { RTC_LOG(INFO) << __FUNCTION__; }
-  virtual void OnFailure(const std::string& error) {
-    RTC_LOG(INFO) << __FUNCTION__ << " " << error;
+  virtual void OnFailure(webrtc::RTCError error) {
+    RTC_LOG(INFO) << __FUNCTION__ << " " << ToString(error.type()) << ": "
+                  << error.message();
   }
 
  protected:
@@ -240,11 +241,12 @@ void SimplePeerConnection::OnSuccess(
     OnLocalSdpReady(desc->type().c_str(), sdp.c_str());
 }
 
-void SimplePeerConnection::OnFailure(const std::string& error) {
-  RTC_LOG(LERROR) << error;
+void SimplePeerConnection::OnFailure(webrtc::RTCError error) {
+  RTC_LOG(LERROR) << ToString(error.type()) << ": " << error.message();
 
+  // TODO(hta): include error.type in the message
   if (OnFailureMessage)
-    OnFailureMessage(error.c_str());
+    OnFailureMessage(error.message());
 }
 
 void SimplePeerConnection::OnIceCandidate(

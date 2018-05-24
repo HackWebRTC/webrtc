@@ -53,7 +53,7 @@ class CreateOfferObserver : public webrtc::CreateSessionDescriptionObserver {
       rtc::scoped_refptr<webrtc::PeerConnectionInterface> pc);
 
   void OnSuccess(webrtc::SessionDescriptionInterface* desc) override;
-  void OnFailure(const std::string& error) override;
+  void OnFailure(webrtc::RTCError error) override;
 
  private:
   const rtc::scoped_refptr<webrtc::PeerConnectionInterface> pc_;
@@ -69,7 +69,7 @@ class SetLocalSessionDescriptionObserver
     : public webrtc::SetSessionDescriptionObserver {
  public:
   void OnSuccess() override;
-  void OnFailure(const std::string& error) override;
+  void OnFailure(webrtc::RTCError error) override;
 };
 
 }  // namespace
@@ -260,8 +260,9 @@ void CreateOfferObserver::OnSuccess(webrtc::SessionDescriptionInterface* desc) {
       new rtc::RefCountedObject<SetRemoteSessionDescriptionObserver>());
 }
 
-void CreateOfferObserver::OnFailure(const std::string& error) {
-  RTC_LOG(LS_INFO) << "Failed to create offer: " << error;
+void CreateOfferObserver::OnFailure(webrtc::RTCError error) {
+  RTC_LOG(LS_INFO) << "Failed to create offer: " << ToString(error.type())
+                   << ": " << error.message();
 }
 
 void SetRemoteSessionDescriptionObserver::OnSetRemoteDescriptionComplete(
@@ -273,8 +274,9 @@ void SetLocalSessionDescriptionObserver::OnSuccess() {
   RTC_LOG(LS_INFO) << "Set local description success!";
 }
 
-void SetLocalSessionDescriptionObserver::OnFailure(const std::string& error) {
-  RTC_LOG(LS_INFO) << "Set local description failure: " << error;
+void SetLocalSessionDescriptionObserver::OnFailure(webrtc::RTCError error) {
+  RTC_LOG(LS_INFO) << "Set local description failure: "
+                   << ToString(error.type()) << ": " << error.message();
 }
 
 static jlong JNI_CallClient_CreateClient(

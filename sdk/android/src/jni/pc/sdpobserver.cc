@@ -36,10 +36,10 @@ void CreateSdpObserverJni::OnSuccess(SessionDescriptionInterface* desc) {
   delete desc;
 }
 
-void CreateSdpObserverJni::OnFailure(const std::string& error) {
+void CreateSdpObserverJni::OnFailure(webrtc::RTCError error) {
   JNIEnv* env = AttachCurrentThreadIfNeeded();
   Java_SdpObserver_onCreateFailure(env, j_observer_global_,
-                                   NativeToJavaString(env, error));
+                                   NativeToJavaString(env, error.message()));
 }
 
 SetSdpObserverJni::SetSdpObserverJni(
@@ -54,10 +54,10 @@ void SetSdpObserverJni::OnSuccess() {
   Java_SdpObserver_onSetSuccess(env, j_observer_global_);
 }
 
-void SetSdpObserverJni::OnFailure(const std::string& error) {
+void SetSdpObserverJni::OnFailure(webrtc::RTCError error) {
   JNIEnv* env = AttachCurrentThreadIfNeeded();
   Java_SdpObserver_onSetFailure(env, j_observer_global_,
-                                NativeToJavaString(env, error));
+                                NativeToJavaString(env, error.message()));
 }
 
 }  // namespace jni
