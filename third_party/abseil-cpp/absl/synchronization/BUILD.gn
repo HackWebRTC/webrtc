@@ -30,6 +30,7 @@ source_set("graphcycles_internal") {
   ]
   deps = [
     "../base",
+    "../base:base_internal",
     "../base:core_headers",
     "../base:malloc_internal",
   ]

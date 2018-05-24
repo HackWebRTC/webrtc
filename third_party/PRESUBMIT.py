@@ -50,7 +50,13 @@ def _CheckThirdPartyReadmesUpdated(input_api, output_api):
         not local_path.startswith('third_party' + input_api.os_path.sep +
                                   'mojo' + input_api.os_path.sep) and
         not local_path.startswith('third_party' + input_api.os_path.sep +
-                                  'boringssl' + input_api.os_path.sep)):
+                                  'boringssl' + input_api.os_path.sep) and
+        not local_path.startswith('third_party' + input_api.os_path.sep +
+                                  'closure_compiler' + input_api.os_path.sep +
+                                  'externs' + input_api.os_path.sep) and
+        not local_path.startswith('third_party' + input_api.os_path.sep +
+                                  'closure_compiler' + input_api.os_path.sep +
+                                  'interfaces' + input_api.os_path.sep)):
       files.append(f)
       if local_path.endswith("README.chromium"):
         readmes.append(f)

@@ -131,6 +131,7 @@ source_set("base_internal") {
   ]
   public_configs = [ "//third_party/abseil-cpp:absl_include_config" ]
   public = [
+    "internal/hide_ptr.h",
     "internal/identity.h",
     "internal/inline_variable.h",
     "internal/invoke.h",
