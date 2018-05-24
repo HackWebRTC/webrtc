@@ -257,7 +257,6 @@ rtc_source_set("video_stream_decoder") {
 # Delete after downstream users are updated.
 rtc_source_set("video_stream_decoder_create") {
   visibility = [ "*" ]
-  allow_poison = [ "software_video_codecs" ]  # TODO(bugs.webrtc.org/7925): Remove.
 
   public_deps = [  # no-presubmit-check TODO(webrtc:8603)
     "video:video_stream_decoder_create",
