@@ -11,9 +11,6 @@
 #ifndef RTC_BASE_BASICTYPES_H_
 #define RTC_BASE_BASICTYPES_H_
 
-#include <stddef.h>  // for NULL, size_t
-#include <stdint.h>  // for uintptr_t and (u)int_t types.
-
 // Detect compiler is for x86 or x64.
 #if defined(__x86_64__) || defined(_M_X64) || \
     defined(__i386__) || defined(_M_IX86)
@@ -48,15 +45,5 @@
 #if defined(WEBRTC_WIN)
 typedef int socklen_t;
 #endif
-
-// The following only works for C++
-#ifdef __cplusplus
-
-// Use these to declare and define a static local variable that gets leaked so
-// that its destructors are not called at exit.
-#define RTC_DEFINE_STATIC_LOCAL(type, name, arguments) \
-  static type& name = *new type arguments
-
-#endif  // __cplusplus
 
 #endif  // RTC_BASE_BASICTYPES_H_

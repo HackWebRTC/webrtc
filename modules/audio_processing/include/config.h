@@ -13,7 +13,6 @@
 
 #include <map>
 
-#include "rtc_base/basictypes.h"
 #include "rtc_base/constructormagic.h"
 
 namespace webrtc {
@@ -98,8 +97,8 @@ class Config {
   // locks.
   template<typename T>
   static const T& default_value() {
-    RTC_DEFINE_STATIC_LOCAL(const T, def, ());
-    return def;
+    static const T* const def = new T();
+    return *def;
   }
 
   typedef std::map<ConfigOptionID, BaseOption*> OptionMap;

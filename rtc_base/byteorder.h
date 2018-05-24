@@ -11,6 +11,8 @@
 #ifndef RTC_BASE_BYTEORDER_H_
 #define RTC_BASE_BYTEORDER_H_
 
+#include <stdint.h>
+
 #if defined(WEBRTC_POSIX) && !defined(__native_client__)
 #include <arpa/inet.h>
 #endif

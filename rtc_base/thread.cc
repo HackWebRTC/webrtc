@@ -35,8 +35,8 @@
 namespace rtc {
 
 ThreadManager* ThreadManager::Instance() {
-  RTC_DEFINE_STATIC_LOCAL(ThreadManager, thread_manager, ());
-  return &thread_manager;
+  static ThreadManager* const thread_manager = new ThreadManager();
+  return thread_manager;
 }
 
 ThreadManager::~ThreadManager() {
