@@ -78,10 +78,18 @@ class Timestamp {
   bool operator!=(const Timestamp& other) const {
     return microseconds_ != other.microseconds_;
   }
-  bool operator<=(const Timestamp& other) const { return us() <= other.us(); }
-  bool operator>=(const Timestamp& other) const { return us() >= other.us(); }
-  bool operator>(const Timestamp& other) const { return us() > other.us(); }
-  bool operator<(const Timestamp& other) const { return us() < other.us(); }
+  bool operator<=(const Timestamp& other) const {
+    return microseconds_ <= other.microseconds_;
+  }
+  bool operator>=(const Timestamp& other) const {
+    return microseconds_ >= other.microseconds_;
+  }
+  bool operator>(const Timestamp& other) const {
+    return microseconds_ > other.microseconds_;
+  }
+  bool operator<(const Timestamp& other) const {
+    return microseconds_ < other.microseconds_;
+  }
 
  private:
   explicit Timestamp(int64_t us) : microseconds_(us) {}

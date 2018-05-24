@@ -46,6 +46,8 @@ TEST(TimestampTest, ComparisonOperators) {
   const int64_t kLarge = 451;
 
   EXPECT_EQ(Timestamp::Infinity(), Timestamp::Infinity());
+  EXPECT_GE(Timestamp::Infinity(), Timestamp::Infinity());
+  EXPECT_GT(Timestamp::Infinity(), Timestamp::ms(kLarge));
   EXPECT_EQ(Timestamp::ms(kSmall), Timestamp::ms(kSmall));
   EXPECT_LE(Timestamp::ms(kSmall), Timestamp::ms(kSmall));
   EXPECT_GE(Timestamp::ms(kSmall), Timestamp::ms(kSmall));
