@@ -849,6 +849,19 @@ std::string SdpSerialize(const JsepSessionDescription& jdesc) {
   }
   AddLine(os.str(), &message);
 
+  // a=ice-lite
+  //
+  // TODO(deadbeef): It's weird that we need to iterate TransportInfos for
+  // this, when it's a session-level attribute. It really should be moved to a
+  // session-level structure like SessionDescription.
+  for (const cricket::TransportInfo& transport : desc->transport_infos()) {
+    if (transport.description.ice_mode == cricket::ICEMODE_LITE) {
+      InitAttrLine(kAttributeIceLite, &os);
+      AddLine(os.str(), &message);
+      break;
+    }
+  }
+
   // Preserve the order of the media contents.
   int mline_index = -1;
   for (cricket::ContentInfos::const_iterator it = desc->contents().begin();

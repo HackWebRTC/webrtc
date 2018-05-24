@@ -1381,6 +1381,8 @@ class WebRtcSdpTest : public testing::Test {
                 transport2.description.ice_ufrag);
       EXPECT_EQ(transport1.description.ice_pwd,
                 transport2.description.ice_pwd);
+      EXPECT_EQ(transport1.description.ice_mode,
+                transport2.description.ice_mode);
       if (transport1.description.identity_fingerprint) {
         EXPECT_EQ(*transport1.description.identity_fingerprint,
                   *transport2.description.identity_fingerprint);
@@ -3198,7 +3200,8 @@ TEST_F(WebRtcSdpTest, SerializeVideoFmtp) {
   EXPECT_EQ(sdp_with_fmtp, message);
 }
 
-TEST_F(WebRtcSdpTest, DeserializeSdpWithIceLite) {
+TEST_F(WebRtcSdpTest, DeserializeAndSerializeSdpWithIceLite) {
+  // Deserialize the baseline description, making sure it's ICE full.
   JsepSessionDescription jdesc_with_icelite(kDummyType);
   std::string sdp_with_icelite = kSdpFullString;
   EXPECT_TRUE(SdpDeserialize(sdp_with_icelite, &jdesc_with_icelite));
@@ -3209,6 +3212,8 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithIceLite) {
   const cricket::TransportInfo* tinfo2 =
       desc->GetTransportInfoByName("video_content_name");
   EXPECT_EQ(cricket::ICEMODE_FULL, tinfo2->description.ice_mode);
+
+  // Add "a=ice-lite" and deserialize, making sure it's ICE lite.
   InjectAfter(kSessionTime,
               "a=ice-lite\r\n",
               &sdp_with_icelite);
@@ -3220,6 +3225,10 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithIceLite) {
   const cricket::TransportInfo* vtinfo =
         desc->GetTransportInfoByName("video_content_name");
   EXPECT_EQ(cricket::ICEMODE_LITE, vtinfo->description.ice_mode);
+
+  // Now that we know deserialization works, we can use TestSerialize to test
+  // serialization.
+  TestSerialize(jdesc_with_icelite);
 }
 
 // Verifies that the candidates in the input SDP are parsed and serialized
