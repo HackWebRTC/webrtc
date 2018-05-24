@@ -42,8 +42,4 @@
 #error RTC_ARCH_CPU_BIG_ENDIAN and RTC_ARCH_CPU_LITTLE_ENDIAN both defined.
 #endif
 
-#if defined(WEBRTC_WIN)
-typedef int socklen_t;
-#endif
-
 #endif  // RTC_BASE_BASICTYPES_H_

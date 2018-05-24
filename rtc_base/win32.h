@@ -27,6 +27,8 @@
 #include <winsock2.h>
 #include <windows.h>
 
+typedef int socklen_t;
+
 #ifndef SECURITY_MANDATORY_LABEL_AUTHORITY
 // Add defines that we use if we are compiling against older sdks
 #define SECURITY_MANDATORY_MEDIUM_RID               (0x00002000L)
@@ -39,9 +41,6 @@ typedef struct _TOKEN_MANDATORY_LABEL {
 #undef SetPort
 
 #include <string>
-
-#include "rtc_base/basictypes.h"
-#include "rtc_base/stringutils.h"
 
 namespace rtc {
 

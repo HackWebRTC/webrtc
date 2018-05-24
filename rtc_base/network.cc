@@ -40,6 +40,7 @@
 #include "rtc_base/socket.h"  // includes something that makes windows happy
 #include "rtc_base/stream.h"
 #include "rtc_base/stringencode.h"
+#include "rtc_base/stringutils.h"
 #include "rtc_base/thread.h"
 
 namespace rtc {

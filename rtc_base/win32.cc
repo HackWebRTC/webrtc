@@ -18,6 +18,7 @@
 #include "rtc_base/byteorder.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/stringutils.h"
 
 namespace rtc {
 

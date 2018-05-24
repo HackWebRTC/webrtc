@@ -20,6 +20,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/stringutils.h"
 #include "rtc_base/trace_event.h"
 #include "rtc_base/win32.h"
 

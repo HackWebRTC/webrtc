@@ -17,6 +17,7 @@
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/stringutils.h"
 #include "third_party/libyuv/include/libyuv/convert_argb.h"
 
 ATOM MainWnd::wnd_class_ = 0;
