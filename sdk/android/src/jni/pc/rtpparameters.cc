@@ -39,6 +39,13 @@ ScopedJavaLocalRef<jobject> NativeToJavaRtpCodecParameter(
                                 NativeToJavaStringMap(env, codec.parameters));
 }
 
+ScopedJavaLocalRef<jobject> NativeToJavaRtpRtcpParameters(
+    JNIEnv* env,
+    const RtcpParameters& rtcp) {
+  return Java_Rtcp_Constructor(env, NativeToJavaString(env, rtcp.cname),
+                               rtcp.reduced_size);
+}
+
 }  // namespace
 
 RtpEncodingParameters JavaToNativeRtpEncodingParameters(
@@ -63,6 +70,13 @@ RtpParameters JavaToNativeRtpParameters(JNIEnv* jni,
   ScopedJavaLocalRef<jstring> j_transaction_id =
       Java_RtpParameters_getTransactionId(jni, j_parameters);
   parameters.transaction_id = JavaToNativeString(jni, j_transaction_id);
+
+  ScopedJavaLocalRef<jobject> j_rtcp =
+      Java_RtpParameters_getRtcp(jni, j_parameters);
+  ScopedJavaLocalRef<jstring> j_rtcp_cname = Java_Rtcp_getCname(jni, j_rtcp);
+  jboolean j_rtcp_reduced_size = Java_Rtcp_getReducedSize(jni, j_rtcp);
+  parameters.rtcp.cname = JavaToNativeString(jni, j_rtcp_cname);
+  parameters.rtcp.reduced_size = j_rtcp_reduced_size;
 
   // Convert encodings.
   ScopedJavaLocalRef<jobject> j_encodings =
@@ -99,6 +113,7 @@ ScopedJavaLocalRef<jobject> NativeToJavaRtpParameters(
     const RtpParameters& parameters) {
   return Java_RtpParameters_Constructor(
       env, NativeToJavaString(env, parameters.transaction_id),
+      NativeToJavaRtpRtcpParameters(env, parameters.rtcp),
       NativeToJavaList(env, parameters.encodings,
                        &NativeToJavaRtpEncodingParameter),
       NativeToJavaList(env, parameters.codecs, &NativeToJavaRtpCodecParameter));

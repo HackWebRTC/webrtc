@@ -65,6 +65,9 @@ RtpCodecParameters::~RtpCodecParameters() {}
 RtpCapabilities::RtpCapabilities() {}
 RtpCapabilities::~RtpCapabilities() {}
 
+RtcpParameters::RtcpParameters() {}
+RtcpParameters::~RtcpParameters() {}
+
 RtpParameters::RtpParameters() {}
 RtpParameters::~RtpParameters() {}
 

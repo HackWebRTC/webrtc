@@ -217,10 +217,14 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
   }
 
   bool SetupSendStream() {
+    return SetupSendStream(cricket::StreamParams::CreateLegacy(kSsrcX));
+  }
+
+  bool SetupSendStream(const cricket::StreamParams& sp) {
     if (!SetupChannel()) {
       return false;
     }
-    if (!channel_->AddSendStream(cricket::StreamParams::CreateLegacy(kSsrcX))) {
+    if (!channel_->AddSendStream(sp)) {
       return false;
     }
     EXPECT_CALL(*apm_, set_output_will_be_muted(false));
@@ -1129,6 +1133,16 @@ TEST_F(WebRtcVoiceEngineTestFake, GetRtpSendParametersCodecs) {
   ASSERT_EQ(2u, rtp_parameters.codecs.size());
   EXPECT_EQ(kIsacCodec.ToCodecParameters(), rtp_parameters.codecs[0]);
   EXPECT_EQ(kPcmuCodec.ToCodecParameters(), rtp_parameters.codecs[1]);
+}
+
+// Test that GetRtpSendParameters returns the currently configured RTCP CNAME.
+TEST_F(WebRtcVoiceEngineTestFake, GetRtpSendParametersRtcpCname) {
+  cricket::StreamParams params = cricket::StreamParams::CreateLegacy(kSsrcX);
+  params.cname = "rtcpcname";
+  EXPECT_TRUE(SetupSendStream(params));
+
+  webrtc::RtpParameters rtp_parameters = channel_->GetRtpSendParameters(kSsrcX);
+  EXPECT_STREQ("rtcpcname", rtp_parameters.rtcp.cname.c_str());
 }
 
 // Test that GetRtpSendParameters returns an SSRC.

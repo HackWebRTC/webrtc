@@ -11,12 +11,14 @@
 #import "RTCRtpParameters+Private.h"
 
 #import "NSString+StdString.h"
+#import "RTCRtcpParameters+Private.h"
 #import "RTCRtpCodecParameters+Private.h"
 #import "RTCRtpEncodingParameters+Private.h"
 
 @implementation RTCRtpParameters
 
 @synthesize transactionId = _transactionId;
+@synthesize rtcp = _rtcp;
 @synthesize encodings = _encodings;
 @synthesize codecs = _codecs;
 
@@ -28,6 +30,7 @@
     (const webrtc::RtpParameters &)nativeParameters {
   if (self = [self init]) {
     _transactionId = [NSString stringForStdString:nativeParameters.transaction_id];
+    _rtcp = [[RTCRtcpParameters alloc] initWithNativeParameters:nativeParameters.rtcp];
     NSMutableArray *encodings = [[NSMutableArray alloc] init];
     for (const auto &encoding : nativeParameters.encodings) {
       [encodings addObject:[[RTCRtpEncodingParameters alloc]
@@ -48,6 +51,7 @@
 - (webrtc::RtpParameters)nativeParameters {
   webrtc::RtpParameters parameters;
   parameters.transaction_id = [NSString stdStringForString:_transactionId];
+  parameters.rtcp = [_rtcp nativeParameters];
   for (RTCRtpEncodingParameters *encoding in _encodings) {
     parameters.encodings.push_back(encoding.nativeParameters);
   }

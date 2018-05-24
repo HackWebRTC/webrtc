@@ -33,6 +33,7 @@ webrtc::RtpParameters CreateRtpParametersWithEncodings(StreamParams sp) {
   }
   webrtc::RtpParameters parameters;
   parameters.encodings = encodings;
+  parameters.rtcp.cname = sp.cname;
   return parameters;
 }
 

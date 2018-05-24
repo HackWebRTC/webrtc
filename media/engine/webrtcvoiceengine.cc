@@ -776,6 +776,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     config_.codec_pair_id = codec_pair_id;
     config_.track_id = track_id;
     rtp_parameters_.encodings[0].ssrc = ssrc;
+    rtp_parameters_.rtcp.cname = c_name;
 
     if (send_codec_spec) {
       UpdateSendCodecSpec(*send_codec_spec);
@@ -945,6 +946,11 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
           RTCErrorType::INVALID_MODIFICATION,
           "Attempted to set RtpParameters with different encoding count");
     }
+    if (rtp_parameters.rtcp != rtp_parameters_.rtcp) {
+      LOG_AND_RETURN_ERROR(
+          RTCErrorType::INVALID_MODIFICATION,
+          "Attempted to set RtpParameters with modified RTCP parameters");
+    }
     if (rtp_parameters.encodings[0].ssrc != rtp_parameters_.encodings[0].ssrc) {
       LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_MODIFICATION,
                            "Attempted to set RtpParameters with modified SSRC");
@@ -992,6 +998,10 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     if (reconfigure_send_stream) {
       ReconfigureAudioSendStream();
     }
+
+    rtp_parameters_.rtcp.cname = config_.rtp.c_name;
+    rtp_parameters_.rtcp.reduced_size = false;
+
     // parameters.encodings[0].active could have changed.
     UpdateSendState();
     return webrtc::RTCError::OK();

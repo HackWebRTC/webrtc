@@ -4439,12 +4439,17 @@ TEST_F(WebRtcVideoChannelTest, TestSetSendRtcpReducedSize) {
   // Create stream, expecting that default mode is "compound".
   FakeVideoSendStream* stream1 = AddSendStream();
   EXPECT_EQ(webrtc::RtcpMode::kCompound, stream1->GetConfig().rtp.rtcp_mode);
+  webrtc::RtpParameters rtp_parameters =
+      channel_->GetRtpSendParameters(last_ssrc_);
+  EXPECT_FALSE(rtp_parameters.rtcp.reduced_size);
 
   // Now enable reduced size mode.
   send_parameters_.rtcp.reduced_size = true;
   EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
   stream1 = fake_call_->GetVideoSendStreams()[0];
   EXPECT_EQ(webrtc::RtcpMode::kReducedSize, stream1->GetConfig().rtp.rtcp_mode);
+  rtp_parameters = channel_->GetRtpSendParameters(last_ssrc_);
+  EXPECT_TRUE(rtp_parameters.rtcp.reduced_size);
 
   // Create a new stream and ensure it picks up the reduced size mode.
   FakeVideoSendStream* stream2 = AddSendStream();
@@ -5541,6 +5546,16 @@ TEST_F(WebRtcVideoChannelTest, GetRtpSendParametersCodecs) {
             rtp_parameters.codecs[0]);
   EXPECT_EQ(GetEngineCodec("VP9").ToCodecParameters(),
             rtp_parameters.codecs[1]);
+}
+
+// Test that GetRtpSendParameters returns the currently configured RTCP CNAME.
+TEST_F(WebRtcVideoChannelTest, GetRtpSendParametersRtcpCname) {
+  StreamParams params = StreamParams::CreateLegacy(kSsrc);
+  params.cname = "rtcpcname";
+  AddSendStream(params);
+
+  webrtc::RtpParameters rtp_parameters = channel_->GetRtpSendParameters(kSsrc);
+  EXPECT_STREQ("rtcpcname", rtp_parameters.rtcp.cname.c_str());
 }
 
 // Test that RtpParameters for send stream has one encoding and it has
