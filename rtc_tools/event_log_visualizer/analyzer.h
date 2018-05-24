@@ -31,7 +31,7 @@ class EventLogAnalyzer {
   // The EventLogAnalyzer keeps a reference to the ParsedRtcEventLogNew for the
   // duration of its lifetime. The ParsedRtcEventLogNew must not be destroyed or
   // modified while the EventLogAnalyzer is being used.
-  explicit EventLogAnalyzer(const ParsedRtcEventLogNew& log);
+  EventLogAnalyzer(const ParsedRtcEventLogNew& log, bool normalize_time);
 
   void CreatePacketGraph(PacketDirection direction, Plot* plot);
 
@@ -151,7 +151,8 @@ class EventLogAnalyzer {
     return name.str();
   }
 
-  float ToCallTime(int64_t timestamp) const;
+  int64_t ToCallTimeUs(int64_t timestamp) const;
+  float ToCallTimeSec(int64_t timestamp) const;
 
   void Alert_RtpLogTimeGap(PacketDirection direction,
                            float time_seconds,
@@ -231,6 +232,7 @@ class EventLogAnalyzer {
   // First and last events of the log.
   int64_t begin_time_;
   int64_t end_time_;
+  const bool normalize_time_;
 
   // Duration (in seconds) of log file.
   float call_duration_s_;

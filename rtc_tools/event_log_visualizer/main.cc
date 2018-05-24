@@ -151,6 +151,10 @@ DEFINE_bool(print_triage_alerts,
             false,
             "Print triage alerts, i.e. a list of potential problems.");
 
+DEFINE_bool(normalize_time,
+            true,
+            "Normalize the log timestamps so that the call starts at time 0.");
+
 void SetAllPlotFlags(bool setting);
 
 
@@ -227,7 +231,7 @@ int main(int argc, char* argv[]) {
               << std::endl;
   }
 
-  webrtc::EventLogAnalyzer analyzer(parsed_log);
+  webrtc::EventLogAnalyzer analyzer(parsed_log, FLAG_normalize_time);
   std::unique_ptr<webrtc::PlotCollection> collection(
       new webrtc::PythonPlotCollection());
 
