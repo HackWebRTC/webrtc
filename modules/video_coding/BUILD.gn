@@ -700,9 +700,6 @@ if (rtc_include_tests) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
-    if (is_android) {
-      deps += [ ":android_codec_factory_helper" ]
-    }
   }
 
   rtc_source_set("video_coding_modules_tests") {

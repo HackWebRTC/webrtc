@@ -86,13 +86,11 @@ class VideoCodecTestFixtureImpl : public VideoCodecTestFixture {
       float input_framerate_fps);
 
   void PrintSettings(rtc::test::TaskQueueForTest* task_queue) const;
-  std::unique_ptr<VideoDecoderFactory> CreateDecoderFactory();
-  std::unique_ptr<VideoEncoderFactory> CreateEncoderFactory();
 
   // Codecs.
-  std::unique_ptr<VideoDecoderFactory> decoder_factory_;
-  std::unique_ptr<VideoEncoderFactory> encoder_factory_;
+  const std::unique_ptr<VideoEncoderFactory> encoder_factory_;
   std::unique_ptr<VideoEncoder> encoder_;
+  const std::unique_ptr<VideoDecoderFactory> decoder_factory_;
   VideoProcessor::VideoDecoderList decoders_;
 
   // Helper objects.

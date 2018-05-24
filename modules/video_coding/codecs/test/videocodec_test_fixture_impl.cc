@@ -14,10 +14,6 @@
 #include <memory>
 #include <utility>
 
-#if defined(WEBRTC_ANDROID)
-#include "modules/video_coding/codecs/test/android_codec_factory_helper.h"
-#endif
-
 #include "api/video_codecs/sdp_video_format.h"
 #include "call/video_config.h"
 #include "common_types.h"  // NOLINT(build/include)
@@ -367,26 +363,18 @@ class VideoCodecTestFixtureImpl::CpuProcessTime final {
   int64_t wallclock_time_ = 0;
 };
 
-VideoCodecTestFixtureImpl::
-    VideoCodecTestFixtureImpl(Config config)
-    : config_(config) {
-#if defined(WEBRTC_ANDROID)
-  InitializeAndroidObjects();
-#endif
-}
+VideoCodecTestFixtureImpl::VideoCodecTestFixtureImpl(Config config)
+    : encoder_factory_(rtc::MakeUnique<InternalEncoderFactory>()),
+      decoder_factory_(rtc::MakeUnique<InternalDecoderFactory>()),
+      config_(config) {}
 
-VideoCodecTestFixtureImpl::
-    VideoCodecTestFixtureImpl(
-        Config config,
-        std::unique_ptr<VideoDecoderFactory> decoder_factory,
-        std::unique_ptr<VideoEncoderFactory> encoder_factory)
-    : decoder_factory_(std::move(decoder_factory)),
-      encoder_factory_(std::move(encoder_factory)),
-      config_(config) {
-#if defined(WEBRTC_ANDROID)
-  InitializeAndroidObjects();
-#endif
-}
+VideoCodecTestFixtureImpl::VideoCodecTestFixtureImpl(
+    Config config,
+    std::unique_ptr<VideoDecoderFactory> decoder_factory,
+    std::unique_ptr<VideoEncoderFactory> encoder_factory)
+    : encoder_factory_(std::move(encoder_factory)),
+      decoder_factory_(std::move(decoder_factory)),
+      config_(config) {}
 
 VideoCodecTestFixtureImpl::
     ~VideoCodecTestFixtureImpl() = default;
@@ -556,34 +544,6 @@ void VideoCodecTestFixtureImpl::VerifyVideoStatistic(
   }
 }
 
-std::unique_ptr<VideoDecoderFactory>
-VideoCodecTestFixtureImpl::CreateDecoderFactory() {
-  if (config_.hw_decoder) {
-#if defined(WEBRTC_ANDROID)
-    return CreateAndroidDecoderFactory();
-#else
-    RTC_NOTREACHED() << "Only support HW decoder on Android.";
-    return nullptr;
-#endif
-  } else {
-    return rtc::MakeUnique<InternalDecoderFactory>();
-  }
-}
-
-std::unique_ptr<VideoEncoderFactory>
-VideoCodecTestFixtureImpl::CreateEncoderFactory() {
-  if (config_.hw_encoder) {
-#if defined(WEBRTC_ANDROID)
-    return CreateAndroidEncoderFactory();
-#else
-    RTC_NOTREACHED() << "Only support HW encoder on Android.";
-    return nullptr;
-#endif
-  } else {
-    return rtc::MakeUnique<InternalEncoderFactory>();
-  }
-}
-
 void VideoCodecTestFixtureImpl::CreateEncoderAndDecoder() {
   SdpVideoFormat::Parameters params;
   if (config_.codec_settings.codecType == kVideoCodecH264) {
@@ -600,10 +560,6 @@ void VideoCodecTestFixtureImpl::CreateEncoderAndDecoder() {
     params = {};
   }
   SdpVideoFormat format(config_.codec_name);
-  if (!decoder_factory_)
-    decoder_factory_ = CreateDecoderFactory();
-  if (!encoder_factory_)
-    encoder_factory_ = CreateEncoderFactory();
   if (config_.simulcast_adapted_encoder) {
     EXPECT_EQ("VP8", format.name);
     encoder_.reset(new SimulcastEncoderAdapter(encoder_factory_.get()));
