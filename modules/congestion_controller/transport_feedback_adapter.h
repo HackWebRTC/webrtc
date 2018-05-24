@@ -14,7 +14,7 @@
 #include <deque>
 #include <vector>
 
-#include "modules/congestion_controller/send_time_history.h"
+#include "modules/congestion_controller/rtp/send_time_history.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/thread_checker.h"

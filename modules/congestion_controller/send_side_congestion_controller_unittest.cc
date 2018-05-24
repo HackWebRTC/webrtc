@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "modules/congestion_controller/include/send_side_congestion_controller.h"
 #include "logging/rtc_event_log/mock/mock_rtc_event_log.h"
 #include "modules/bitrate_controller/include/bitrate_controller.h"
-#include "modules/congestion_controller/congestion_controller_unittests_helper.h"
 #include "modules/congestion_controller/include/mock/mock_congestion_observer.h"
-#include "modules/congestion_controller/include/send_side_congestion_controller.h"
+#include "modules/congestion_controller/rtp/congestion_controller_unittests_helper.h"
 #include "modules/pacing/mock/mock_paced_sender.h"
 #include "modules/pacing/packet_router.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"

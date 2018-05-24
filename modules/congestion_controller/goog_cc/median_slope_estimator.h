@@ -20,7 +20,6 @@
 #include "rtc_base/numerics/percentile_filter.h"
 
 namespace webrtc {
-namespace webrtc_cc {
 
 class MedianSlopeEstimator {
  public:
@@ -68,7 +67,7 @@ class MedianSlopeEstimator {
 
   RTC_DISALLOW_COPY_AND_ASSIGN(MedianSlopeEstimator);
 };
-}  // namespace webrtc_cc
+
 }  // namespace webrtc
 
 #endif  // MODULES_CONGESTION_CONTROLLER_GOOG_CC_MEDIAN_SLOPE_ESTIMATOR_H_

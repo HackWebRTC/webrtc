@@ -18,7 +18,6 @@
 #include "test/gtest.h"
 
 namespace webrtc {
-namespace webrtc_cc {
 
 namespace {
 constexpr int kInvalidBitrate = -1;
@@ -219,5 +218,4 @@ TEST_F(TestProbeBitrateEstimator, FetchLastEstimatedBitrateBps) {
   EXPECT_FALSE(probe_bitrate_estimator_.FetchAndResetLastEstimatedBitrateBps());
 }
 
-}  // namespace webrtc_cc
 }  // namespace webrtc

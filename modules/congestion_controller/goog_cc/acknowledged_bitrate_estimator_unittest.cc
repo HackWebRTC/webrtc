@@ -24,7 +24,6 @@ using testing::InSequence;
 using testing::Return;
 
 namespace webrtc {
-namespace webrtc_cc {
 
 namespace {
 
@@ -132,5 +131,4 @@ TEST(TestAcknowledgedBitrateEstimator, ReturnBitrate) {
   EXPECT_EQ(return_value, states.acknowledged_bitrate_estimator->bitrate_bps());
 }
 
-}  // namespace webrtc_cc
 }  // namespace webrtc*/

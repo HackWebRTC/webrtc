@@ -53,7 +53,6 @@ constexpr int kMaxProbeIntervalMs = 1000;
 }  // namespace
 
 namespace webrtc {
-namespace webrtc_cc {
 
 ProbeBitrateEstimator::ProbeBitrateEstimator(RtcEventLog* event_log)
     : event_log_(event_log) {}
@@ -187,5 +186,4 @@ void ProbeBitrateEstimator::EraseOldClusters(int64_t timestamp_ms) {
     }
   }
 }
-}  // namespace webrtc_cc
 }  // namespace webrtc

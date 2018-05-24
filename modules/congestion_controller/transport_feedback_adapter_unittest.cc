@@ -13,7 +13,7 @@
 #include <vector>
 
 #include "modules/bitrate_controller/include/mock/mock_bitrate_controller.h"
-#include "modules/congestion_controller/congestion_controller_unittests_helper.h"
+#include "modules/congestion_controller/rtp/congestion_controller_unittests_helper.h"
 #include "modules/congestion_controller/transport_feedback_adapter.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"

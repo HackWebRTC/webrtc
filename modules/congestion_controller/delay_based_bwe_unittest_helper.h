@@ -17,8 +17,8 @@
 #include <utility>
 #include <vector>
 
-#include "modules/congestion_controller/acknowledged_bitrate_estimator.h"
 #include "modules/congestion_controller/delay_based_bwe.h"
+#include "modules/congestion_controller/goog_cc/acknowledged_bitrate_estimator.h"
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "rtc_base/constructormagic.h"
 #include "system_wrappers/include/clock.h"
