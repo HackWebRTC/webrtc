@@ -32,6 +32,7 @@ void SendTimeHistory::AddAndRemoveOld(const PacketFeedback& packet) {
          now_ms - history_.begin()->second.creation_time_ms >
              packet_age_limit_ms_) {
     // TODO(sprang): Warn if erasing (too many) old items?
+    RemovePacketBytes(history_.begin()->second);
     history_.erase(history_.begin());
   }
 
@@ -40,6 +41,8 @@ void SendTimeHistory::AddAndRemoveOld(const PacketFeedback& packet) {
   PacketFeedback packet_copy = packet;
   packet_copy.long_sequence_number = unwrapped_seq_num;
   history_.insert(std::make_pair(unwrapped_seq_num, packet_copy));
+  if (packet.send_time_ms >= 0)
+    AddPacketBytes(packet_copy);
 }
 
 bool SendTimeHistory::OnSentPacket(uint16_t sequence_number,
@@ -48,7 +51,10 @@ bool SendTimeHistory::OnSentPacket(uint16_t sequence_number,
   auto it = history_.find(unwrapped_seq_num);
   if (it == history_.end())
     return false;
+  bool packet_retransmit = it->second.send_time_ms >= 0;
   it->second.send_time_ms = send_time_ms;
+  if (!packet_retransmit)
+    AddPacketBytes(it->second);
   return true;
 }
 
@@ -68,9 +74,8 @@ bool SendTimeHistory::GetFeedback(PacketFeedback* packet_feedback,
   RTC_DCHECK(packet_feedback);
   int64_t unwrapped_seq_num =
       seq_num_unwrapper_.Unwrap(packet_feedback->sequence_number);
-  latest_acked_seq_num_.emplace(
-      std::max(unwrapped_seq_num, latest_acked_seq_num_.value_or(0)));
-  RTC_DCHECK_GE(*latest_acked_seq_num_, 0);
+  UpdateAckedSeqNum(unwrapped_seq_num);
+  RTC_DCHECK_GE(*last_ack_seq_num_, 0);
   auto it = history_.find(unwrapped_seq_num);
   if (it == history_.end())
     return false;
@@ -87,19 +92,51 @@ bool SendTimeHistory::GetFeedback(PacketFeedback* packet_feedback,
 
 size_t SendTimeHistory::GetOutstandingBytes(uint16_t local_net_id,
                                             uint16_t remote_net_id) const {
-  size_t outstanding_bytes = 0;
-  auto unacked_it = history_.begin();
-  if (latest_acked_seq_num_) {
-    unacked_it = history_.lower_bound(*latest_acked_seq_num_);
+  auto it = in_flight_bytes_.find({local_net_id, remote_net_id});
+  if (it != in_flight_bytes_.end()) {
+    return it->second;
+  } else {
+    return 0;
   }
-  for (; unacked_it != history_.end(); ++unacked_it) {
-    if (unacked_it->second.local_net_id == local_net_id &&
-        unacked_it->second.remote_net_id == remote_net_id &&
-        unacked_it->second.send_time_ms >= 0) {
-      outstanding_bytes += unacked_it->second.payload_size;
-    }
-  }
-  return outstanding_bytes;
 }
 
+void SendTimeHistory::AddPacketBytes(const PacketFeedback& packet) {
+  if (packet.send_time_ms < 0 || packet.payload_size == 0 ||
+      (last_ack_seq_num_ && *last_ack_seq_num_ >= packet.long_sequence_number))
+    return;
+  auto it = in_flight_bytes_.find({packet.local_net_id, packet.remote_net_id});
+  if (it != in_flight_bytes_.end()) {
+    it->second += packet.payload_size;
+  } else {
+    in_flight_bytes_[{packet.local_net_id, packet.remote_net_id}] =
+        packet.payload_size;
+  }
+}
+
+void SendTimeHistory::RemovePacketBytes(const PacketFeedback& packet) {
+  if (packet.send_time_ms < 0 || packet.payload_size == 0 ||
+      (last_ack_seq_num_ && *last_ack_seq_num_ >= packet.long_sequence_number))
+    return;
+  auto it = in_flight_bytes_.find({packet.local_net_id, packet.remote_net_id});
+  if (it != in_flight_bytes_.end()) {
+    it->second -= packet.payload_size;
+    if (it->second == 0)
+      in_flight_bytes_.erase(it);
+  }
+}
+
+void SendTimeHistory::UpdateAckedSeqNum(int64_t acked_seq_num) {
+  if (last_ack_seq_num_ && *last_ack_seq_num_ >= acked_seq_num)
+    return;
+
+  auto unacked_it = history_.begin();
+  if (last_ack_seq_num_)
+    unacked_it = history_.lower_bound(*last_ack_seq_num_);
+
+  auto newly_acked_end = history_.upper_bound(acked_seq_num);
+  for (; unacked_it != newly_acked_end; ++unacked_it) {
+    RemovePacketBytes(unacked_it->second);
+  }
+  last_ack_seq_num_.emplace(acked_seq_num);
+}
 }  // namespace webrtc
