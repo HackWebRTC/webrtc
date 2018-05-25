@@ -10,7 +10,7 @@
 
 #include "rtc_base/logsinks.h"
 
-#include <iostream>
+#include <cstdio>
 #include <string>
 
 #include "rtc_base/checks.h"
@@ -37,7 +37,7 @@ FileRotatingLogSink::~FileRotatingLogSink() {
 
 void FileRotatingLogSink::OnLogMessage(const std::string& message) {
   if (stream_->GetState() != SS_OPEN) {
-    std::cerr << "Init() must be called before adding this sink." << std::endl;
+    std::fprintf(stderr, "Init() must be called before adding this sink.\n");
     return;
   }
   stream_->WriteAll(message.c_str(), message.size(), nullptr, nullptr);

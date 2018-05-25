@@ -10,7 +10,6 @@
 
 #include <cstring>
 #include <memory>
-#include <sstream>
 
 #include <sys/utsname.h>
 
