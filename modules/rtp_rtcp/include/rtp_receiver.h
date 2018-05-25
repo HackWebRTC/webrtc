@@ -19,6 +19,9 @@
 
 namespace webrtc {
 
+// TODO(nisse): RtpFeedback class is deleted, forward declare only for below
+// deprecated methods.
+class RtpFeedback;
 class RTPPayloadRegistry;
 class VideoCodec;
 
@@ -43,15 +46,32 @@ class RtpReceiver {
   static RtpReceiver* CreateVideoReceiver(
       Clock* clock,
       RtpData* incoming_payload_callback,
-      RtpFeedback* incoming_messages_callback,
       RTPPayloadRegistry* rtp_payload_registry);
 
   // Creates an audio-enabled RTP receiver.
   static RtpReceiver* CreateAudioReceiver(
       Clock* clock,
       RtpData* incoming_payload_callback,
-      RtpFeedback* incoming_messages_callback,
       RTPPayloadRegistry* rtp_payload_registry);
+
+  // TODO(nisse): Deprecated, delete as soon as downstream projects are updated.
+  static RtpReceiver* CreateVideoReceiver(
+      Clock* clock,
+      RtpData* incoming_payload_callback,
+      RtpFeedback*,
+      RTPPayloadRegistry* rtp_payload_registry) {
+    return CreateVideoReceiver(clock, incoming_payload_callback,
+                               rtp_payload_registry);
+  }
+  // TODO(nisse): Deprecated, delete as soon as downstream projects are updated.
+  static RtpReceiver* CreateAudioReceiver(
+      Clock* clock,
+      RtpData* incoming_payload_callback,
+      RtpFeedback*,
+      RTPPayloadRegistry* rtp_payload_registry) {
+    return CreateAudioReceiver(clock, incoming_payload_callback,
+                               rtp_payload_registry);
+  }
 
   virtual ~RtpReceiver() {}
 

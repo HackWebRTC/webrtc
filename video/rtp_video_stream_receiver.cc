@@ -98,7 +98,6 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
       rtp_header_extensions_(config_.rtp.extensions),
       rtp_receiver_(RtpReceiver::CreateVideoReceiver(clock_,
                                                      this,
-                                                     this,
                                                      &rtp_payload_registry_)),
       rtp_receive_statistics_(rtp_receive_statistics),
       ulpfec_receiver_(UlpfecReceiver::Create(config->rtp.remote_ssrc, this)),

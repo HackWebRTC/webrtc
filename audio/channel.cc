@@ -356,11 +356,6 @@ bool Channel::SendRtcp(const uint8_t* data, size_t len) {
   return true;
 }
 
-void Channel::OnIncomingSSRCChanged(uint32_t ssrc) {
-  // Update ssrc so that NTP for AV sync can be updated.
-  _rtpRtcpModule->SetRemoteSSRC(ssrc);
-}
-
 int32_t Channel::OnReceivedPayloadData(const uint8_t* payloadData,
                                        size_t payloadSize,
                                        const WebRtcRTPHeader* rtpHeader) {
@@ -532,7 +527,6 @@ Channel::Channel(ProcessThread* module_process_thread,
           ReceiveStatistics::Create(Clock::GetRealTimeClock())),
       rtp_receiver_(
           RtpReceiver::CreateAudioReceiver(Clock::GetRealTimeClock(),
-                                           this,
                                            this,
                                            rtp_payload_registry_.get())),
       telephone_event_handler_(rtp_receiver_->GetTelephoneEventHandler()),
@@ -1033,6 +1027,11 @@ int Channel::SetLocalSSRC(unsigned int ssrc) {
   }
   _rtpRtcpModule->SetSSRC(ssrc);
   return 0;
+}
+
+void Channel::SetRemoteSSRC(uint32_t ssrc) {
+  // Update ssrc so that NTP for AV sync can be updated.
+  _rtpRtcpModule->SetRemoteSSRC(ssrc);
 }
 
 void Channel::SetMid(const std::string& mid, int extension_id) {

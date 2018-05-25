@@ -48,7 +48,6 @@ class RtpReceiverTest : public ::testing::Test {
         rtp_receiver_(
             RtpReceiver::CreateAudioReceiver(&fake_clock_,
                                              &mock_rtp_data_,
-                                             nullptr,
                                              &rtp_payload_registry_)) {
     rtp_receiver_->RegisterReceivePayload(kPcmuPayloadType,
                                           SdpAudioFormat("PCMU", 8000, 1));

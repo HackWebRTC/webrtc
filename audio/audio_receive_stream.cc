@@ -363,6 +363,14 @@ void AudioReceiveStream::ConfigureStream(AudioReceiveStream* stream,
   if (first_time || old_config.rtp.local_ssrc != new_config.rtp.local_ssrc) {
     channel_proxy->SetLocalSSRC(new_config.rtp.local_ssrc);
   }
+
+  if (first_time) {
+    channel_proxy->SetRemoteSSRC(new_config.rtp.remote_ssrc);
+  } else {
+    // Remote ssrc can't be changed mid-stream.
+    RTC_DCHECK_EQ(old_config.rtp.remote_ssrc, new_config.rtp.remote_ssrc);
+  }
+
   // TODO(solenberg): Config NACK history window (which is a packet count),
   // using the actual packet size for the configured codec.
   if (first_time || old_config.rtp.nack.rtp_history_ms !=

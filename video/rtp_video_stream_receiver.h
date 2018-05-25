@@ -55,7 +55,6 @@ class VideoReceiver;
 
 class RtpVideoStreamReceiver : public RtpData,
                                public RecoveredPacketReceiver,
-                               public RtpFeedback,
                                public RtpPacketSinkInterface,
                                public VCMFrameTypeCallback,
                                public VCMPacketRequestCallback,
@@ -106,9 +105,6 @@ class RtpVideoStreamReceiver : public RtpData,
                                 const WebRtcRTPHeader* rtp_header) override;
   // Implements RecoveredPacketReceiver.
   void OnRecoveredPacket(const uint8_t* packet, size_t packet_length) override;
-
-  // Implements RtpFeedback.
-  void OnIncomingSSRCChanged(uint32_t ssrc) override {}
 
   // Implements VCMFrameTypeCallback.
   int32_t RequestKeyFrame() override;

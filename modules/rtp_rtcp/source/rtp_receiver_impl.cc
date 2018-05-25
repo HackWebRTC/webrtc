@@ -56,26 +56,20 @@ const int64_t kGetSourcesTimeoutMs = 10000;
 RtpReceiver* RtpReceiver::CreateVideoReceiver(
     Clock* clock,
     RtpData* incoming_payload_callback,
-    RtpFeedback* incoming_messages_callback,
     RTPPayloadRegistry* rtp_payload_registry) {
   RTC_DCHECK(incoming_payload_callback != nullptr);
-  if (!incoming_messages_callback)
-    incoming_messages_callback = NullObjectRtpFeedback();
   return new RtpReceiverImpl(
-      clock, incoming_messages_callback, rtp_payload_registry,
+      clock, rtp_payload_registry,
       RTPReceiverStrategy::CreateVideoStrategy(incoming_payload_callback));
 }
 
 RtpReceiver* RtpReceiver::CreateAudioReceiver(
     Clock* clock,
     RtpData* incoming_payload_callback,
-    RtpFeedback* incoming_messages_callback,
     RTPPayloadRegistry* rtp_payload_registry) {
   RTC_DCHECK(incoming_payload_callback != nullptr);
-  if (!incoming_messages_callback)
-    incoming_messages_callback = NullObjectRtpFeedback();
   return new RtpReceiverImpl(
-      clock, incoming_messages_callback, rtp_payload_registry,
+      clock, rtp_payload_registry,
       RTPReceiverStrategy::CreateAudioStrategy(incoming_payload_callback));
 }
 
@@ -85,19 +79,16 @@ int32_t RtpReceiver::RegisterReceivePayload(const CodecInst& audio_codec) {
 }
 
 RtpReceiverImpl::RtpReceiverImpl(Clock* clock,
-                                 RtpFeedback* incoming_messages_callback,
                                  RTPPayloadRegistry* rtp_payload_registry,
                                  RTPReceiverStrategy* rtp_media_receiver)
     : clock_(clock),
       rtp_payload_registry_(rtp_payload_registry),
       rtp_media_receiver_(rtp_media_receiver),
-      cb_rtp_feedback_(incoming_messages_callback),
       ssrc_(0),
       num_csrcs_(0),
       current_remote_csrc_(),
       last_received_timestamp_(0),
       last_received_frame_time_ms_(-1) {
-  assert(incoming_messages_callback);
 
   memset(current_remote_csrc_, 0, sizeof(current_remote_csrc_));
 }
@@ -263,32 +254,11 @@ bool RtpReceiverImpl::GetLatestTimestamps(uint32_t* timestamp,
   return true;
 }
 
+// TODO(nisse): Delete.
 // Implementation note: must not hold critsect when called.
 void RtpReceiverImpl::CheckSSRCChanged(const RTPHeader& rtp_header) {
-  bool new_ssrc = false;
-
-  {
-    rtc::CritScope lock(&critical_section_rtp_receiver_);
-
-    int8_t last_received_payload_type =
-        rtp_payload_registry_->last_received_payload_type();
-    if (ssrc_ != rtp_header.ssrc ||
-        (last_received_payload_type == -1 && ssrc_ == 0)) {
-      // We need the payload_type_ to make the call if the remote SSRC is 0.
-      new_ssrc = true;
-
-      last_received_timestamp_ = 0;
-      last_received_frame_time_ms_ = -1;
-
-      ssrc_ = rtp_header.ssrc;
-    }
-  }
-
-  if (new_ssrc) {
-    // We need to get this to our RTCP sender and receiver.
-    // We need to do this outside critical section.
-    cb_rtp_feedback_->OnIncomingSSRCChanged(rtp_header.ssrc);
-  }
+  rtc::CritScope lock(&critical_section_rtp_receiver_);
+  ssrc_ = rtp_header.ssrc;
 }
 
 // Implementation note: must not hold critsect when called.

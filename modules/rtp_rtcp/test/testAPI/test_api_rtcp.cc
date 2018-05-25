@@ -41,19 +41,6 @@ class RtcpCallback : public RtcpIntraFrameObserver {
   RtpRtcp* _rtpRtcpModule;
 };
 
-class TestRtpFeedback : public NullRtpFeedback {
- public:
-  explicit TestRtpFeedback(RtpRtcp* rtp_rtcp) : rtp_rtcp_(rtp_rtcp) {}
-  ~TestRtpFeedback() override = default;
-
-  void OnIncomingSSRCChanged(uint32_t ssrc) override {
-    rtp_rtcp_->SetRemoteSSRC(ssrc);
-  }
-
- private:
-  RtpRtcp* rtp_rtcp_;
-};
-
 class RtpRtcpRtcpTest : public ::testing::Test {
  protected:
   RtpRtcpRtcpTest()
@@ -89,11 +76,8 @@ class RtpRtcpRtcpTest : public ::testing::Test {
 
     module1 = RtpRtcp::CreateRtpRtcp(configuration);
 
-    rtp_feedback1_.reset(new TestRtpFeedback(module1));
-
     rtp_receiver1_.reset(RtpReceiver::CreateAudioReceiver(
-        &fake_clock, receiver, rtp_feedback1_.get(),
-        rtp_payload_registry1_.get()));
+        &fake_clock, receiver, rtp_payload_registry1_.get()));
 
     configuration.receive_statistics = receive_statistics2_.get();
     configuration.outgoing_transport = transport2;
@@ -101,11 +85,8 @@ class RtpRtcpRtcpTest : public ::testing::Test {
 
     module2 = RtpRtcp::CreateRtpRtcp(configuration);
 
-    rtp_feedback2_.reset(new TestRtpFeedback(module2));
-
     rtp_receiver2_.reset(RtpReceiver::CreateAudioReceiver(
-        &fake_clock, receiver, rtp_feedback2_.get(),
-        rtp_payload_registry2_.get()));
+        &fake_clock, receiver, rtp_payload_registry2_.get()));
 
     transport1->SetSendModule(module2, rtp_payload_registry2_.get(),
                               rtp_receiver2_.get(), receive_statistics2_.get());
@@ -118,6 +99,7 @@ class RtpRtcpRtcpTest : public ::testing::Test {
     module2->SetRTCPStatus(RtcpMode::kCompound);
 
     module2->SetSSRC(test_ssrc + 1);
+    module2->SetRemoteSSRC(test_ssrc);
     module1->SetSSRC(test_ssrc);
     module1->SetSequenceNumber(test_sequence_number);
     module1->SetStartTimestamp(test_timestamp);
@@ -159,8 +141,6 @@ class RtpRtcpRtcpTest : public ::testing::Test {
     delete receiver;
   }
 
-  std::unique_ptr<TestRtpFeedback> rtp_feedback1_;
-  std::unique_ptr<TestRtpFeedback> rtp_feedback2_;
   std::unique_ptr<ReceiveStatistics> receive_statistics1_;
   std::unique_ptr<ReceiveStatistics> receive_statistics2_;
   std::unique_ptr<RTPPayloadRegistry> rtp_payload_registry1_;

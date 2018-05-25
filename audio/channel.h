@@ -137,7 +137,6 @@ class ChannelState {
 
 class Channel
     : public RtpData,
-      public RtpFeedback,
       public Transport,
       public AudioPacketizationCallback,  // receive encoded packets from the
                                           // ACM
@@ -219,6 +218,8 @@ class Channel
 
   // RTP+RTCP
   int SetLocalSSRC(unsigned int ssrc);
+  void SetRemoteSSRC(uint32_t ssrc);
+
   void SetMid(const std::string& mid, int extension_id);
   int SetSendAudioLevelIndicationStatus(bool enable, unsigned char id);
   void EnableSendTransportSequenceNumber(int id);
@@ -247,9 +248,6 @@ class Channel
   int32_t OnReceivedPayloadData(const uint8_t* payloadData,
                                 size_t payloadSize,
                                 const WebRtcRTPHeader* rtpHeader) override;
-
-  // From RtpFeedback in the RTP/RTCP module
-  void OnIncomingSSRCChanged(uint32_t ssrc) override;
 
   // From Transport (called by the RTP/RTCP module)
   bool SendRtp(const uint8_t* data,

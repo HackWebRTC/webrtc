@@ -85,6 +85,7 @@ struct ConfigHelper {
 
     channel_proxy_ = new testing::StrictMock<MockVoEChannelProxy>();
     EXPECT_CALL(*channel_proxy_, SetLocalSSRC(kLocalSsrc)).Times(1);
+    EXPECT_CALL(*channel_proxy_, SetRemoteSSRC(kRemoteSsrc)).Times(1);
     EXPECT_CALL(*channel_proxy_, SetNACKStatus(true, 15)).Times(1);
     EXPECT_CALL(*channel_proxy_,
         RegisterReceiverCongestionControlObjects(&packet_router_))

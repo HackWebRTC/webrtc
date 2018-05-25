@@ -62,6 +62,7 @@ class ChannelProxy : public RtpPacketSinkInterface {
 
   virtual void SetRTCPStatus(bool enable);
   virtual void SetLocalSSRC(uint32_t ssrc);
+  virtual void SetRemoteSSRC(uint32_t ssrc);
   virtual void SetMid(const std::string& mid, int extension_id);
   virtual void SetRTCP_CNAME(const std::string& c_name);
   virtual void SetNACKStatus(bool enable, int max_packets);

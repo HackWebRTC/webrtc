@@ -252,13 +252,6 @@ class RecoveredPacketReceiver {
   virtual ~RecoveredPacketReceiver() = default;
 };
 
-class RtpFeedback {
- public:
-  virtual ~RtpFeedback() {}
-
-  virtual void OnIncomingSSRCChanged(uint32_t ssrc) = 0;
-};
-
 class RtcpIntraFrameObserver {
  public:
   virtual void OnReceivedIntraFrameRequest(uint32_t ssrc) = 0;
@@ -436,14 +429,6 @@ class RtcpRttStats {
   virtual int64_t LastProcessedRtt() const = 0;
 
   virtual ~RtcpRttStats() {}
-};
-
-// Null object version of RtpFeedback.
-class NullRtpFeedback : public RtpFeedback {
- public:
-  ~NullRtpFeedback() override {}
-
-  void OnIncomingSSRCChanged(uint32_t ssrc) override {}
 };
 
 // Statistics about packet loss for a single directional connection. All values

@@ -53,6 +53,11 @@ void ChannelProxy::SetLocalSSRC(uint32_t ssrc) {
   RTC_DCHECK_EQ(0, error);
 }
 
+void ChannelProxy::SetRemoteSSRC(uint32_t ssrc) {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  channel_->SetRemoteSSRC(ssrc);
+}
+
 void ChannelProxy::SetMid(const std::string& mid, int extension_id) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   channel_->SetMid(mid, extension_id);

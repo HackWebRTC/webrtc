@@ -99,16 +99,14 @@ class RtpRtcpAudioTest : public ::testing::Test {
 
     module1.reset(RtpRtcp::CreateRtpRtcp(configuration));
     rtp_receiver1_.reset(RtpReceiver::CreateAudioReceiver(
-        &fake_clock, &data_receiver1, &rtp_callback,
-        rtp_payload_registry1_.get()));
+        &fake_clock, &data_receiver1, rtp_payload_registry1_.get()));
 
     configuration.receive_statistics = receive_statistics2_.get();
     configuration.outgoing_transport = &transport2;
 
     module2.reset(RtpRtcp::CreateRtpRtcp(configuration));
     rtp_receiver2_.reset(RtpReceiver::CreateAudioReceiver(
-        &fake_clock, &data_receiver2, &rtp_callback,
-        rtp_payload_registry2_.get()));
+        &fake_clock, &data_receiver2, rtp_payload_registry2_.get()));
 
     transport1.SetSendModule(module2.get(), rtp_payload_registry2_.get(),
                              rtp_receiver2_.get(), receive_statistics2_.get());
@@ -127,7 +125,6 @@ class RtpRtcpAudioTest : public ::testing::Test {
 
   VerifyingAudioReceiver data_receiver1;
   VerifyingAudioReceiver data_receiver2;
-  NullRtpFeedback rtp_callback;
   std::unique_ptr<ReceiveStatistics> receive_statistics1_;
   std::unique_ptr<ReceiveStatistics> receive_statistics2_;
   std::unique_ptr<RTPPayloadRegistry> rtp_payload_registry1_;

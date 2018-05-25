@@ -54,7 +54,7 @@ class RtpRtcpVideoTest : public ::testing::Test {
 
     video_module_ = RtpRtcp::CreateRtpRtcp(configuration);
     rtp_receiver_.reset(RtpReceiver::CreateVideoReceiver(
-        &fake_clock, receiver_, NULL, &rtp_payload_registry_));
+        &fake_clock, receiver_, &rtp_payload_registry_));
 
     video_module_->SetRTCPStatus(RtcpMode::kCompound);
     video_module_->SetSSRC(test_ssrc_);

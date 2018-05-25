@@ -18,11 +18,6 @@
 
 namespace webrtc {
 
-RtpFeedback* NullObjectRtpFeedback() {
-  static NullRtpFeedback null_rtp_feedback;
-  return &null_rtp_feedback;
-}
-
 namespace RtpUtility {
 
 enum {
