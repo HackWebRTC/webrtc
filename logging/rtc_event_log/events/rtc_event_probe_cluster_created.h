@@ -17,20 +17,20 @@ namespace webrtc {
 
 class RtcEventProbeClusterCreated final : public RtcEvent {
  public:
-  RtcEventProbeClusterCreated(int id,
-                              int bitrate_bps,
-                              int min_probes,
-                              int min_bytes);
+  RtcEventProbeClusterCreated(int32_t id,
+                              int32_t bitrate_bps,
+                              uint32_t min_probes,
+                              uint32_t min_bytes);
   ~RtcEventProbeClusterCreated() override = default;
 
   Type GetType() const override;
 
   bool IsConfigEvent() const override;
 
-  const int id_;
-  const int bitrate_bps_;
-  const int min_probes_;
-  const int min_bytes_;
+  const int32_t id_;
+  const int32_t bitrate_bps_;
+  const uint32_t min_probes_;
+  const uint32_t min_bytes_;
 };
 
 }  // namespace webrtc

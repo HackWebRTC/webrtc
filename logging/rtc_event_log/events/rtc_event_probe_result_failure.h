@@ -24,14 +24,14 @@ enum class ProbeFailureReason {
 
 class RtcEventProbeResultFailure final : public RtcEvent {
  public:
-  RtcEventProbeResultFailure(int id, ProbeFailureReason failure_reason);
+  RtcEventProbeResultFailure(int32_t id, ProbeFailureReason failure_reason);
   ~RtcEventProbeResultFailure() override = default;
 
   Type GetType() const override;
 
   bool IsConfigEvent() const override;
 
-  const int id_;
+  const int32_t id_;
   const ProbeFailureReason failure_reason_;
 };
 

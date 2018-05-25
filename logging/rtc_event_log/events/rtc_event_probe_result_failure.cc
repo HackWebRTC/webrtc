@@ -13,7 +13,7 @@
 namespace webrtc {
 
 RtcEventProbeResultFailure::RtcEventProbeResultFailure(
-    int id,
+    int32_t id,
     ProbeFailureReason failure_reason)
     : id_(id), failure_reason_(failure_reason) {}
 
