@@ -32,10 +32,6 @@ const bool kFrameDropperOn = false;
 // Test settings.
 const bool kUseSingleCore = false;
 const bool kMeasureCpu = false;
-const VisualizationParams kVisualizationParams = {
-    false,  // save_encoded_ivf
-    false,  // save_decoded_y4m
-};
 const int kNumFrames = 30;
 }  // namespace
 
@@ -79,8 +75,7 @@ class VideoCodecTestParameterized
         {bitrate_, framerate, kNumFrames}};
 
     fixture_ = CreateVideoCodecTestFixture(config);
-    fixture_->RunTest(rate_profiles, nullptr, nullptr, nullptr,
-                      &kVisualizationParams);
+    fixture_->RunTest(rate_profiles, nullptr, nullptr, nullptr);
   }
   std::unique_ptr<VideoCodecTestFixture> fixture_;
   const size_t bitrate_;

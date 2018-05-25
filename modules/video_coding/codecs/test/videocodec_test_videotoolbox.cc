@@ -65,8 +65,7 @@ MAYBE_TEST(VideoCodecTestVideoToolbox, ForemanCif500kbpsH264CBP) {
 
   std::vector<QualityThresholds> quality_thresholds = {{33, 29, 0.9, 0.82}};
 
-  fixture->RunTest(rate_profiles, nullptr, &quality_thresholds, nullptr,
-                   nullptr);
+  fixture->RunTest(rate_profiles, nullptr, &quality_thresholds, nullptr);
 }
 
 MAYBE_TEST(VideoCodecTestVideoToolbox, ForemanCif500kbpsH264CHP) {
@@ -83,8 +82,7 @@ MAYBE_TEST(VideoCodecTestVideoToolbox, ForemanCif500kbpsH264CHP) {
 
   std::vector<QualityThresholds> quality_thresholds = {{33, 30, 0.91, 0.83}};
 
-  fixture->RunTest(rate_profiles, nullptr, &quality_thresholds, nullptr,
-                   nullptr);
+  fixture->RunTest(rate_profiles, nullptr, &quality_thresholds, nullptr);
 }
 
 }  // namespace test

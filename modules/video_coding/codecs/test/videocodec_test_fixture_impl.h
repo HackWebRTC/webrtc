@@ -53,8 +53,7 @@ class VideoCodecTestFixtureImpl : public VideoCodecTestFixture {
   void RunTest(const std::vector<RateProfile>& rate_profiles,
                const std::vector<RateControlThresholds>* rc_thresholds,
                const std::vector<QualityThresholds>* quality_thresholds,
-               const BitstreamThresholds* bs_thresholds,
-               const VisualizationParams* visualization_params) override;
+               const BitstreamThresholds* bs_thresholds) override;
 
   VideoCodecTestStats& GetStats() override;
 
@@ -65,8 +64,7 @@ class VideoCodecTestFixtureImpl : public VideoCodecTestFixture {
   void DestroyEncoderAndDecoder();
   void SetUpAndInitObjects(rtc::test::TaskQueueForTest* task_queue,
                            int initial_bitrate_kbps,
-                           int initial_framerate_fps,
-                           const VisualizationParams* visualization_params);
+                           int initial_framerate_fps);
   void ReleaseAndCloseObjects(rtc::test::TaskQueueForTest* task_queue);
 
   void ProcessAllFrames(rtc::TaskQueue* task_queue,

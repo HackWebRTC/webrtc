@@ -104,8 +104,7 @@ TEST(VideoCodecTestLibvpx, HighBitrateVP9) {
 
   std::vector<QualityThresholds> quality_thresholds = {{37, 36, 0.94, 0.92}};
 
-  fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr,
-                   nullptr);
+  fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr);
 }
 
 TEST(VideoCodecTestLibvpx, ChangeBitrateVP9) {
@@ -129,8 +128,7 @@ TEST(VideoCodecTestLibvpx, ChangeBitrateVP9) {
   std::vector<QualityThresholds> quality_thresholds = {
       {34, 33, 0.90, 0.88}, {38, 35, 0.95, 0.91}, {35, 34, 0.93, 0.90}};
 
-  fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr,
-                   nullptr);
+  fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr);
 }
 
 TEST(VideoCodecTestLibvpx, ChangeFramerateVP9) {
@@ -156,8 +154,7 @@ TEST(VideoCodecTestLibvpx, ChangeFramerateVP9) {
   std::vector<QualityThresholds> quality_thresholds = {
       {33, 32, 0.89, 0.87}, {33.5, 32, 0.90, 0.86}, {33.5, 31.5, 0.90, 0.85}};
 
-  fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr,
-                   nullptr);
+  fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr);
 }
 
 TEST(VideoCodecTestLibvpx, DenoiserOnVP9) {
@@ -176,8 +173,7 @@ TEST(VideoCodecTestLibvpx, DenoiserOnVP9) {
 
   std::vector<QualityThresholds> quality_thresholds = {{37.5, 36, 0.94, 0.93}};
 
-  fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr,
-                   nullptr);
+  fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr);
 }
 
 TEST(VideoCodecTestLibvpx, VeryLowBitrateVP9) {
@@ -195,8 +191,7 @@ TEST(VideoCodecTestLibvpx, VeryLowBitrateVP9) {
 
   std::vector<QualityThresholds> quality_thresholds = {{28, 25, 0.80, 0.65}};
 
-  fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr,
-                   nullptr);
+  fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr);
 }
 
 // TODO(marpan): Add temporal layer test for VP9, once changes are in
@@ -223,8 +218,7 @@ TEST(VideoCodecTestLibvpx, HighBitrateVP8) {
   // than quality of x86 version. Use lower thresholds for now.
   std::vector<QualityThresholds> quality_thresholds = {{35, 33, 0.91, 0.89}};
 
-  fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr,
-                   nullptr);
+  fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr);
 }
 
 // The tests below are currently disabled for Android. For ARM, the encoder
@@ -267,8 +261,7 @@ TEST(VideoCodecTestLibvpx, MAYBE_ChangeBitrateVP8) {
   std::vector<QualityThresholds> quality_thresholds = {
       {31.8, 31, 0.86, 0.85}, {36, 34.8, 0.92, 0.90}, {33.5, 32, 0.90, 0.88}};
 
-  fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr,
-                   nullptr);
+  fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr);
 }
 
 // TODO(webrtc:9267): Fails on iOS
@@ -308,8 +301,7 @@ TEST(VideoCodecTestLibvpx, MAYBE_ChangeFramerateVP8) {
   std::vector<QualityThresholds> quality_thresholds = {
       {31, 30, 0.85, 0.84}, {31.5, 30.5, 0.86, 0.84}, {30.5, 29, 0.83, 0.78}};
 
-  fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr,
-                   nullptr);
+  fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr);
 }
 
 #if defined(WEBRTC_ANDROID)
@@ -343,8 +335,7 @@ TEST(VideoCodecTestLibvpx, MAYBE_TemporalLayersVP8) {
   std::vector<QualityThresholds> quality_thresholds = {{31, 30, 0.85, 0.84},
                                                        {31, 28, 0.85, 0.75}};
 
-  fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr,
-                   nullptr);
+  fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr);
 }
 
 // TODO(webrtc:9267): Fails on iOS
@@ -370,8 +361,7 @@ TEST(VideoCodecTestLibvpx, MAYBE_MultiresVP8) {
       {5, 1, 5, 0.2, 0.3, 0.1, 0, 1}};
   std::vector<QualityThresholds> quality_thresholds = {{34, 32, 0.90, 0.88}};
 
-  fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr,
-                   nullptr);
+  fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr);
 }
 
 #if defined(WEBRTC_ANDROID)
@@ -397,8 +387,7 @@ TEST(VideoCodecTestLibvpx, MAYBE_SimulcastVP8) {
       {20, 5, 90, 0.8, 0.5, 0.3, 0, 1}};
   std::vector<QualityThresholds> quality_thresholds = {{34, 32, 0.90, 0.88}};
 
-  fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr,
-                   nullptr);
+  fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr);
 }
 
 #if defined(WEBRTC_ANDROID)
@@ -423,8 +412,7 @@ TEST(VideoCodecTestLibvpx, MAYBE_SvcVP9) {
       {5, 1, 5, 0.2, 0.3, 0.1, 0, 1}};
   std::vector<QualityThresholds> quality_thresholds = {{36, 34, 0.93, 0.91}};
 
-  fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr,
-                   nullptr);
+  fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr);
 }
 
 TEST(VideoCodecTestLibvpx, DISABLED_MultiresVP8RdPerf) {
@@ -444,7 +432,7 @@ TEST(VideoCodecTestLibvpx, DISABLED_MultiresVP8RdPerf) {
     std::vector<RateProfile> rate_profiles = {
         {bitrate_kbps, 30, config.num_frames}};
 
-    fixture->RunTest(rate_profiles, nullptr, nullptr, nullptr, nullptr);
+    fixture->RunTest(rate_profiles, nullptr, nullptr, nullptr);
 
     rd_stats[bitrate_kbps] =
         fixture->GetStats().SliceAndCalcLayerVideoStatistic(
@@ -471,7 +459,7 @@ TEST(VideoCodecTestLibvpx, DISABLED_SvcVP9RdPerf) {
     std::vector<RateProfile> rate_profiles = {
         {bitrate_kbps, 30, config.num_frames}};
 
-    fixture->RunTest(rate_profiles, nullptr, nullptr, nullptr, nullptr);
+    fixture->RunTest(rate_profiles, nullptr, nullptr, nullptr);
 
     rd_stats[bitrate_kbps] =
         fixture->GetStats().SliceAndCalcLayerVideoStatistic(

@@ -384,17 +384,16 @@ void VideoCodecTestFixtureImpl::RunTest(
     const std::vector<RateProfile>& rate_profiles,
     const std::vector<RateControlThresholds>* rc_thresholds,
     const std::vector<QualityThresholds>* quality_thresholds,
-    const BitstreamThresholds* bs_thresholds,
-    const VisualizationParams* visualization_params) {
+    const BitstreamThresholds* bs_thresholds) {
   RTC_DCHECK(!rate_profiles.empty());
 
   // To emulate operation on a production VideoStreamEncoder, we call the
   // codecs on a task queue.
   rtc::test::TaskQueueForTest task_queue("VidProc TQ");
 
-  SetUpAndInitObjects(
-      &task_queue, static_cast<const int>(rate_profiles[0].target_kbps),
-      static_cast<const int>(rate_profiles[0].input_fps), visualization_params);
+  SetUpAndInitObjects(&task_queue,
+                      static_cast<const int>(rate_profiles[0].target_kbps),
+                      static_cast<const int>(rate_profiles[0].input_fps));
   PrintSettings(&task_queue);
   ProcessAllFrames(&task_queue, rate_profiles);
   ReleaseAndCloseObjects(&task_queue);
@@ -610,8 +609,7 @@ VideoCodecTestStats& VideoCodecTestFixtureImpl::GetStats() {
 void VideoCodecTestFixtureImpl::SetUpAndInitObjects(
     rtc::test::TaskQueueForTest* task_queue,
     int initial_bitrate_kbps,
-    int initial_framerate_fps,
-    const VisualizationParams* visualization_params) {
+    int initial_framerate_fps) {
   config_.codec_settings.minBitrate = 0;
   config_.codec_settings.startBitrate = initial_bitrate_kbps;
   config_.codec_settings.maxFramerate = initial_framerate_fps;
@@ -622,34 +620,31 @@ void VideoCodecTestFixtureImpl::SetUpAndInitObjects(
                              config_.codec_settings.height));
   EXPECT_TRUE(source_frame_reader_->Init());
 
+  RTC_DCHECK(encoded_frame_writers_.empty());
+  RTC_DCHECK(decoded_frame_writers_.empty());
   const size_t num_simulcast_or_spatial_layers = std::max(
       config_.NumberOfSimulcastStreams(), config_.NumberOfSpatialLayers());
+  for (size_t simulcast_svc_idx = 0;
+       simulcast_svc_idx < num_simulcast_or_spatial_layers;
+       ++simulcast_svc_idx) {
+    const std::string output_filename_base = OutputPath() +
+                                             FilenameWithParams(config_) + "_" +
+                                             std::to_string(simulcast_svc_idx);
 
-  if (visualization_params) {
-    RTC_DCHECK(encoded_frame_writers_.empty());
-    RTC_DCHECK(decoded_frame_writers_.empty());
-    for (size_t simulcast_svc_idx = 0;
-         simulcast_svc_idx < num_simulcast_or_spatial_layers;
-         ++simulcast_svc_idx) {
-      const std::string output_filename_base =
-          OutputPath() + FilenameWithParams(config_) + "_" +
-          std::to_string(simulcast_svc_idx);
+    if (config_.visualization_params.save_encoded_ivf) {
+      rtc::File post_encode_file =
+          rtc::File::Create(output_filename_base + ".ivf");
+      encoded_frame_writers_.push_back(
+          IvfFileWriter::Wrap(std::move(post_encode_file), 0));
+    }
 
-      if (visualization_params->save_encoded_ivf) {
-        rtc::File post_encode_file =
-            rtc::File::Create(output_filename_base + ".ivf");
-        encoded_frame_writers_.push_back(
-            IvfFileWriter::Wrap(std::move(post_encode_file), 0));
-      }
-
-      if (visualization_params->save_decoded_y4m) {
-        FrameWriter* decoded_frame_writer = new Y4mFrameWriterImpl(
-            output_filename_base + ".y4m", config_.codec_settings.width,
-            config_.codec_settings.height, initial_framerate_fps);
-        EXPECT_TRUE(decoded_frame_writer->Init());
-        decoded_frame_writers_.push_back(
-            std::unique_ptr<FrameWriter>(decoded_frame_writer));
-      }
+    if (config_.visualization_params.save_decoded_y4m) {
+      FrameWriter* decoded_frame_writer = new Y4mFrameWriterImpl(
+          output_filename_base + ".y4m", config_.codec_settings.width,
+          config_.codec_settings.height, initial_framerate_fps);
+      EXPECT_TRUE(decoded_frame_writer->Init());
+      decoded_frame_writers_.push_back(
+          std::unique_ptr<FrameWriter>(decoded_frame_writer));
     }
   }
 

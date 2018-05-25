@@ -65,8 +65,7 @@ TEST(VideoCodecTestMediaCodec, ForemanCif500kbpsVp8) {
 
   std::vector<QualityThresholds> quality_thresholds = {{36, 31, 0.92, 0.86}};
 
-  fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr,
-                   nullptr);
+  fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr);
 }
 
 TEST(VideoCodecTestMediaCodec, ForemanCif500kbpsH264CBP) {
@@ -89,8 +88,7 @@ TEST(VideoCodecTestMediaCodec, ForemanCif500kbpsH264CBP) {
 
   std::vector<QualityThresholds> quality_thresholds = {{36, 31, 0.92, 0.86}};
 
-  fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr,
-                   nullptr);
+  fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr);
 }
 
 // TODO(brandtr): Enable this test when we have trybots/buildbots with
@@ -117,8 +115,7 @@ TEST(VideoCodecTestMediaCodec, DISABLED_ForemanCif500kbpsH264CHP) {
 
   std::vector<QualityThresholds> quality_thresholds = {{37, 35, 0.93, 0.91}};
 
-  fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr,
-                   nullptr);
+  fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr);
 }
 
 TEST(VideoCodecTestMediaCodec, ForemanMixedRes100kbpsVp8H264) {
@@ -146,8 +143,7 @@ TEST(VideoCodecTestMediaCodec, ForemanMixedRes100kbpsVp8H264) {
 
       auto fixture = CreateTestFixtureWithConfig(config);
       fixture->RunTest(rate_profiles, nullptr /* rc_thresholds */,
-                       &quality_thresholds, nullptr /* bs_thresholds */,
-                       nullptr /* visualization_params */);
+                       &quality_thresholds, nullptr /* bs_thresholds */);
     }
   }
 }

@@ -52,12 +52,7 @@ struct BitstreamThresholds {
   size_t max_max_nalu_size_bytes;
 };
 
-// Should video files be saved persistently to disk for post-run visualization?
-struct VisualizationParams {
-  bool save_encoded_ivf;
-  bool save_decoded_y4m;
-};
-
+// NOTE: This class is still under development and may change without notice.
 class VideoCodecTestFixture {
  public:
   class EncodedFrameChecker {
@@ -66,6 +61,7 @@ class VideoCodecTestFixture {
     virtual void CheckEncodedFrame(webrtc::VideoCodecType codec,
                                    const EncodedImage& encoded_frame) const = 0;
   };
+
   struct Config {
     Config();
     void SetCodecSettings(std::string codec_name,
@@ -141,6 +137,12 @@ class VideoCodecTestFixture {
 
     // Print out frame level stats.
     bool print_frame_level_stats = false;
+
+    // Should video be saved persistently to disk for post-run visualization?
+    struct VisualizationParams {
+      bool save_encoded_ivf = false;
+      bool save_decoded_y4m = false;
+    } visualization_params;
   };
 
   virtual ~VideoCodecTestFixture() = default;
@@ -148,8 +150,7 @@ class VideoCodecTestFixture {
   virtual void RunTest(const std::vector<RateProfile>& rate_profiles,
                        const std::vector<RateControlThresholds>* rc_thresholds,
                        const std::vector<QualityThresholds>* quality_thresholds,
-                       const BitstreamThresholds* bs_thresholds,
-                       const VisualizationParams* visualization_params) = 0;
+                       const BitstreamThresholds* bs_thresholds) = 0;
   virtual VideoCodecTestStats& GetStats() = 0;
 };
 
