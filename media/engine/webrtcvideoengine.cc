@@ -2068,7 +2068,6 @@ VideoSenderInfo WebRtcVideoChannel::WebRtcVideoSendStream::GetVideoSenderInfo(
   info.qp_sum = stats.qp_sum;
 
   info.nominal_bitrate = stats.media_bitrate_bps;
-  info.preferred_bitrate = stats.preferred_media_bitrate_bps;
 
   info.content_type = stats.content_type;
   info.huge_frames_sent = stats.huge_frames_sent;

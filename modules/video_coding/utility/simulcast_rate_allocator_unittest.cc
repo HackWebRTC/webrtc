@@ -464,42 +464,6 @@ TEST_F(SimulcastRateAllocatorTest, ThreeStreamsMiddleInactive) {
   }
 }
 
-TEST_F(SimulcastRateAllocatorTest, GetPreferredBitrateBps) {
-  MockTemporalLayers mock_layers;
-  allocator_.reset(new SimulcastRateAllocator(codec_));
-  EXPECT_CALL(mock_layers, OnRatesUpdated(_, _)).Times(0);
-  EXPECT_EQ(codec_.maxBitrate * 1000,
-            allocator_->GetPreferredBitrateBps(codec_.maxFramerate));
-}
-
-TEST_F(SimulcastRateAllocatorTest, GetPreferredBitrateSimulcast) {
-  codec_.numberOfSimulcastStreams = 3;
-  codec_.maxBitrate = 999999;
-  codec_.simulcastStream[0].minBitrate = 10;
-  codec_.simulcastStream[0].targetBitrate = 100;
-  codec_.simulcastStream[0].active = true;
-
-  codec_.simulcastStream[0].maxBitrate = 500;
-  codec_.simulcastStream[1].minBitrate = 50;
-  codec_.simulcastStream[1].targetBitrate = 500;
-  codec_.simulcastStream[1].maxBitrate = 1000;
-  codec_.simulcastStream[1].active = true;
-
-  codec_.simulcastStream[2].minBitrate = 2000;
-  codec_.simulcastStream[2].targetBitrate = 3000;
-  codec_.simulcastStream[2].maxBitrate = 4000;
-  codec_.simulcastStream[2].active = true;
-  CreateAllocator();
-
-  uint32_t preferred_bitrate_kbps;
-  preferred_bitrate_kbps = codec_.simulcastStream[0].targetBitrate;
-  preferred_bitrate_kbps += codec_.simulcastStream[1].targetBitrate;
-  preferred_bitrate_kbps += codec_.simulcastStream[2].maxBitrate;
-
-  EXPECT_EQ(preferred_bitrate_kbps * 1000,
-            allocator_->GetPreferredBitrateBps(codec_.maxFramerate));
-}
-
 class ScreenshareRateAllocationTest : public SimulcastRateAllocatorTest {
  public:
   void SetupConferenceScreenshare(bool use_simulcast, bool active = true) {

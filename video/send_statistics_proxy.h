@@ -80,10 +80,9 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   void OnInactiveSsrc(uint32_t ssrc);
 
   // Used to indicate change in content type, which may require a change in
-  // how stats are collected and set the configured preferred media bitrate.
+  // how stats are collected.
   void OnEncoderReconfigured(const VideoEncoderConfig& encoder_config,
-                             const std::vector<VideoStream>& streams,
-                             uint32_t preferred_bitrate_bps);
+                             const std::vector<VideoStream>& streams);
 
   // Used to update the encoder target rate.
   void OnSetEncoderTargetRate(uint32_t bitrate_bps);

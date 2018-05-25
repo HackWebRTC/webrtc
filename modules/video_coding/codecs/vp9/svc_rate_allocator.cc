@@ -158,10 +158,6 @@ VideoBitrateAllocation SvcRateAllocator::GetAllocationScreenSharing(
   return bitrate_allocation;
 }
 
-uint32_t SvcRateAllocator::GetPreferredBitrateBps(uint32_t framerate) {
-  return GetAllocation(codec_.maxBitrate * 1000, framerate).get_sum_bps();
-}
-
 std::vector<size_t> SvcRateAllocator::SplitBitrate(
     size_t num_layers,
     size_t total_bitrate,

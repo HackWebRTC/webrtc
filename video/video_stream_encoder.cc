@@ -585,16 +585,8 @@ void VideoStreamEncoder::ReconfigureEncoder() {
   video_sender_.UpdateChannelParameters(rate_allocator_.get(),
                                         bitrate_observer_);
 
-  // Get the current actual framerate, as measured by the stats proxy. This is
-  // used to get the correct bitrate layer allocation.
-  int current_framerate = stats_proxy_->GetSendFrameRate();
-  if (current_framerate == 0)
-    current_framerate = codec.maxFramerate;
   stats_proxy_->OnEncoderReconfigured(
-      encoder_config_, streams,
-      rate_allocator_.get()
-          ? rate_allocator_->GetPreferredBitrateBps(current_framerate)
-          : codec.maxBitrate);
+      encoder_config_, streams);
 
   pending_encoder_reconfiguration_ = false;
 

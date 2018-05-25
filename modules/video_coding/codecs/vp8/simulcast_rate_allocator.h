@@ -31,7 +31,6 @@ class SimulcastRateAllocator : public VideoBitrateAllocator {
 
   VideoBitrateAllocation GetAllocation(uint32_t total_bitrate_bps,
                                        uint32_t framerate) override;
-  uint32_t GetPreferredBitrateBps(uint32_t framerate) override;
   const VideoCodec& GetCodec() const;
 
  private:

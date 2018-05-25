@@ -158,9 +158,6 @@ TEST_F(StatsEndToEndTest, GetStats) {
           stats.encoder_implementation_name ==
           test::FakeEncoder::kImplementationName;
 
-      send_stats_filled_["EncoderPreferredBitrate"] |=
-          stats.preferred_media_bitrate_bps > 0;
-
       for (std::map<uint32_t, VideoSendStream::StreamStats>::const_iterator it =
                stats.substreams.begin();
            it != stats.substreams.end(); ++it) {

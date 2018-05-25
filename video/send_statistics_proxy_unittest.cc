@@ -28,7 +28,6 @@ const uint32_t kFirstRtxSsrc = 18;
 const uint32_t kSecondRtxSsrc = 43;
 const uint32_t kFlexFecSsrc = 55;
 const int kFpsPeriodicIntervalMs = 2000;
-const int kPreferredBps = 50000;
 const int kWidth = 640;
 const int kHeight = 480;
 const int kQpIdx0 = 21;
@@ -106,8 +105,6 @@ class SendStatisticsProxyTest : public ::testing::Test {
     EXPECT_EQ(one.input_frame_rate, other.input_frame_rate);
     EXPECT_EQ(one.encode_frame_rate, other.encode_frame_rate);
     EXPECT_EQ(one.media_bitrate_bps, other.media_bitrate_bps);
-    EXPECT_EQ(one.preferred_media_bitrate_bps,
-              other.preferred_media_bitrate_bps);
     EXPECT_EQ(one.suspended, other.suspended);
 
     EXPECT_EQ(one.substreams.size(), other.substreams.size());
@@ -319,16 +316,6 @@ TEST_F(SendStatisticsProxyTest, OnEncodedFrameTimeMeasured) {
   VideoSendStream::Stats stats = statistics_proxy_->GetStats();
   EXPECT_EQ(kEncodeTimeMs, stats.avg_encode_time_ms);
   EXPECT_EQ(metrics.encode_usage_percent, stats.encode_usage_percent);
-}
-
-TEST_F(SendStatisticsProxyTest, OnEncoderReconfiguredChangePreferredBitrate) {
-  VideoSendStream::Stats stats = statistics_proxy_->GetStats();
-  EXPECT_EQ(0, stats.preferred_media_bitrate_bps);
-
-  VideoEncoderConfig config;
-  statistics_proxy_->OnEncoderReconfigured(config, {}, kPreferredBps);
-  stats = statistics_proxy_->GetStats();
-  EXPECT_EQ(kPreferredBps, stats.preferred_media_bitrate_bps);
 }
 
 TEST_F(SendStatisticsProxyTest, OnSendEncodedImageIncreasesFramesEncoded) {
@@ -849,7 +836,7 @@ TEST_F(SendStatisticsProxyTest, AdaptChangesReportedAfterContentSwitch) {
   // Switch content type, real-time stats should be updated.
   VideoEncoderConfig config;
   config.content_type = VideoEncoderConfig::ContentType::kScreen;
-  statistics_proxy_->OnEncoderReconfigured(config, {}, kPreferredBps);
+  statistics_proxy_->OnEncoderReconfigured(config, {});
   EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.AdaptChangesPerMinute.Cpu"));
   EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.AdaptChangesPerMinute.Cpu", 8));
   EXPECT_EQ(0,
@@ -882,12 +869,12 @@ TEST_F(SendStatisticsProxyTest, SwitchContentTypeUpdatesHistograms) {
   // No switch, stats should not be updated.
   VideoEncoderConfig config;
   config.content_type = VideoEncoderConfig::ContentType::kRealtimeVideo;
-  statistics_proxy_->OnEncoderReconfigured(config, {}, kPreferredBps);
+  statistics_proxy_->OnEncoderReconfigured(config, {});
   EXPECT_EQ(0, metrics::NumSamples("WebRTC.Video.InputWidthInPixels"));
 
   // Switch to screenshare, real-time stats should be updated.
   config.content_type = VideoEncoderConfig::ContentType::kScreen;
-  statistics_proxy_->OnEncoderReconfigured(config, {}, kPreferredBps);
+  statistics_proxy_->OnEncoderReconfigured(config, {});
   EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.InputWidthInPixels"));
 }
 
@@ -1282,7 +1269,7 @@ TEST_F(SendStatisticsProxyTest,
   VideoStream stream1;
   stream1.width = kWidth;
   stream1.height = kHeight;
-  statistics_proxy_->OnEncoderReconfigured(config, {stream1}, kPreferredBps);
+  statistics_proxy_->OnEncoderReconfigured(config, {stream1});
 
   const int64_t kMaxEncodedFrameWindowMs = 800;
   const int kFps = 20;
@@ -1319,8 +1306,7 @@ TEST_F(SendStatisticsProxyTest,
   VideoStream stream2;
   stream2.width = kWidth;
   stream2.height = kHeight;
-  statistics_proxy_->OnEncoderReconfigured(config, {stream1, stream2},
-                                           kPreferredBps);
+  statistics_proxy_->OnEncoderReconfigured(config, {stream1, stream2});
 
   const int64_t kMaxEncodedFrameWindowMs = 800;
   const int kFps = 20;
@@ -1363,8 +1349,7 @@ TEST_F(SendStatisticsProxyTest,
   VideoStream stream2;
   stream2.width = kWidth;
   stream2.height = kHeight;
-  statistics_proxy_->OnEncoderReconfigured(config, {stream1, stream2},
-                                           kPreferredBps);
+  statistics_proxy_->OnEncoderReconfigured(config, {stream1, stream2});
 
   const int64_t kMaxEncodedFrameWindowMs = 800;
   const int kFps = 20;
@@ -1471,8 +1456,7 @@ TEST_F(SendStatisticsProxyTest, GetStatsReportsBandwidthLimitedResolution) {
   VideoStream stream2;
   stream2.width = kWidth;
   stream2.height = kHeight;
-  statistics_proxy_->OnEncoderReconfigured(config, {stream1, stream2},
-                                           kPreferredBps);
+  statistics_proxy_->OnEncoderReconfigured(config, {stream1, stream2});
 
   const int64_t kMaxEncodedFrameWindowMs = 800;
   const int kFps = 20;
@@ -1675,7 +1659,7 @@ TEST_F(SendStatisticsProxyTest, ResetsRtcpCountersOnContentChange) {
   // Changing content type causes histograms to be reported.
   VideoEncoderConfig config;
   config.content_type = VideoEncoderConfig::ContentType::kScreen;
-  statistics_proxy_->OnEncoderReconfigured(config, {}, kPreferredBps);
+  statistics_proxy_->OnEncoderReconfigured(config, {});
 
   EXPECT_EQ(1,
             metrics::NumSamples("WebRTC.Video.NackPacketsReceivedPerMinute"));
@@ -1839,7 +1823,7 @@ TEST_F(SendStatisticsProxyTest, ResetsRtpCountersOnContentChange) {
   // Changing content type causes histograms to be reported.
   VideoEncoderConfig config;
   config.content_type = VideoEncoderConfig::ContentType::kScreen;
-  statistics_proxy_->OnEncoderReconfigured(config, {}, kPreferredBps);
+  statistics_proxy_->OnEncoderReconfigured(config, {});
 
   // Interval: 3500 bytes * 4 / 2 sec = 7000 bytes / sec  = 56 kbps
   EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.BitrateSentInKbps"));

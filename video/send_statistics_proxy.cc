@@ -626,10 +626,8 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
 
 void SendStatisticsProxy::OnEncoderReconfigured(
     const VideoEncoderConfig& config,
-    const std::vector<VideoStream>& streams,
-    uint32_t preferred_bitrate_bps) {
+    const std::vector<VideoStream>& streams) {
   rtc::CritScope lock(&crit_);
-  stats_.preferred_media_bitrate_bps = preferred_bitrate_bps;
 
   if (content_type_ != config.content_type) {
     uma_container_->UpdateHistograms(rtp_config_, stats_);

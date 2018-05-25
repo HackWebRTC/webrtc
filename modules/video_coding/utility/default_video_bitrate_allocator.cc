@@ -38,9 +38,4 @@ VideoBitrateAllocation DefaultVideoBitrateAllocator::GetAllocation(
   return allocation;
 }
 
-uint32_t DefaultVideoBitrateAllocator::GetPreferredBitrateBps(
-    uint32_t framerate) {
-  return GetAllocation(codec_.maxBitrate * 1000, framerate).get_sum_bps();
-}
-
 }  // namespace webrtc

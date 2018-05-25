@@ -462,7 +462,6 @@ struct VideoSenderInfo : public MediaSenderInfo {
   int framerate_input = 0;
   int framerate_sent = 0;
   int nominal_bitrate = 0;
-  int preferred_bitrate = 0;
   int adapt_reason = 0;
   int adapt_changes = 0;
   int avg_encode_ms = 0;

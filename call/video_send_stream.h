@@ -74,9 +74,6 @@ class VideoSendStream {
     int target_media_bitrate_bps = 0;
     // Bitrate the encoder is actually producing.
     int media_bitrate_bps = 0;
-    // Media bitrate this VideoSendStream is configured to prefer if there are
-    // no bandwidth limitations.
-    int preferred_media_bitrate_bps = 0;
     bool suspended = false;
     bool bw_limited_resolution = false;
     bool cpu_limited_resolution = false;

@@ -1406,21 +1406,6 @@ TEST_F(VideoStreamEncoderTest,
   video_stream_encoder_->Stop();
 }
 
-TEST_F(VideoStreamEncoderTest, StatsTracksPreferredBitrate) {
-  video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
-
-  const int kWidth = 1280;
-  const int kHeight = 720;
-  video_source_.IncomingCapturedFrame(CreateFrame(1, kWidth, kHeight));
-  WaitForEncodedFrame(1);
-
-  VideoSendStream::Stats stats = stats_proxy_->GetStats();
-  EXPECT_EQ(video_encoder_config_.max_bitrate_bps,
-            stats.preferred_media_bitrate_bps);
-
-  video_stream_encoder_->Stop();
-}
-
 TEST_F(VideoStreamEncoderTest,
        ScalingUpAndDownDoesNothingWithMaintainResolution) {
   const int kWidth = 1280;

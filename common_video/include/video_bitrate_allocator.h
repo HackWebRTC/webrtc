@@ -22,7 +22,6 @@ class VideoBitrateAllocator {
 
   virtual VideoBitrateAllocation GetAllocation(uint32_t total_bitrate,
                                                uint32_t framerate) = 0;
-  virtual uint32_t GetPreferredBitrateBps(uint32_t framerate) = 0;
 };
 
 class VideoBitrateAllocationObserver {

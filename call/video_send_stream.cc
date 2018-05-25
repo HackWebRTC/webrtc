@@ -48,7 +48,6 @@ std::string VideoSendStream::Stats::ToString(int64_t time_ms) const {
   ss << "encode_usage_perc: " << encode_usage_percent << ", ";
   ss << "target_bps: " << target_media_bitrate_bps << ", ";
   ss << "media_bps: " << media_bitrate_bps << ", ";
-  ss << "preferred_media_bitrate_bps: " << preferred_media_bitrate_bps << ", ";
   ss << "suspended: " << (suspended ? "true" : "false") << ", ";
   ss << "bw_adapted: " << (bw_limited_resolution ? "true" : "false");
   ss << '}';

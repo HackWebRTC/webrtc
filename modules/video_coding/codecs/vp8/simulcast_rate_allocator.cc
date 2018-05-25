@@ -228,10 +228,6 @@ SimulcastRateAllocator::ScreenshareTemporalLayerAllocation(
   return allocation;
 }
 
-uint32_t SimulcastRateAllocator::GetPreferredBitrateBps(uint32_t framerate) {
-  return GetAllocation(codec_.maxBitrate * 1000, framerate).get_sum_bps();
-}
-
 const VideoCodec& webrtc::SimulcastRateAllocator::GetCodec() const {
   return codec_;
 }
