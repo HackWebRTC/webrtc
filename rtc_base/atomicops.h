@@ -13,9 +13,8 @@
 
 #if defined(WEBRTC_WIN)
 // Include winsock2.h before including <windows.h> to maintain consistency with
-// win32.h.  We can't include win32.h directly here since it pulls in
-// headers such as basictypes.h which causes problems in Chromium where webrtc
-// exists as two separate projects, webrtc and libjingle.
+// win32.h. To include win32.h directly, it must be broken out into its own
+// build target.
 #include <winsock2.h>
 #include <windows.h>
 #endif  // defined(WEBRTC_WIN)
