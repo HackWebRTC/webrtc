@@ -28,32 +28,39 @@ const CascadedBiQuadFilter::BiQuadCoefficients kLowPassFilterCoefficients4 = {
     {-1.5879f, 0.6594f}};
 constexpr int kNumFilters4 = 3;
 
-// b, a = signal.butter(2, 800/8000.0, 'lowpass', analog=False) which are the
-// same as b, a = signal.butter(2, 400/4000.0, 'lowpass', analog=False).
-const CascadedBiQuadFilter::BiQuadCoefficients kLowPassFilterCoefficients8 = {
-    {0.02008337f, 0.04016673f, 0.02008337f},
-    {-1.56101808f, 0.64135154f}};
-constexpr int kNumFilters8 = 4;
+// b, a = signal.cheby1(1, 6, [1000/8000, 2000/8000], btype='bandpass',
+// analog=False)
+const CascadedBiQuadFilter::BiQuadCoefficients kBandPassFilterCoefficients8 = {
+    {0.10330478f, 0.f, -0.10330478f},
+    {-1.520363f, 0.79339043f}};
+constexpr int kNumFilters8 = 5;
 
 // b, a = signal.butter(2, 1000/8000.0, 'highpass', analog=False)
-const CascadedBiQuadFilter::BiQuadCoefficients kHighPassFilterCoefficients4 = {
+const CascadedBiQuadFilter::BiQuadCoefficients kHighPassFilterCoefficients = {
     {0.75707638f, -1.51415275f, 0.75707638f},
     {-1.45424359f, 0.57406192f}};
+constexpr int kNumFiltersHP2 = 1;
 constexpr int kNumFiltersHP4 = 1;
+constexpr int kNumFiltersHP8 = 0;
 
 }  // namespace
 
 Decimator::Decimator(size_t down_sampling_factor)
     : down_sampling_factor_(down_sampling_factor),
-      low_pass_filter_(
+      anti_aliasing_filter_(
           down_sampling_factor_ == 4
               ? kLowPassFilterCoefficients4
-              : (down_sampling_factor_ == 8 ? kLowPassFilterCoefficients8
+              : (down_sampling_factor_ == 8 ? kBandPassFilterCoefficients8
                                             : kLowPassFilterCoefficients2),
           down_sampling_factor_ == 4
               ? kNumFilters4
               : (down_sampling_factor_ == 8 ? kNumFilters8 : kNumFilters2)),
-      high_pass_filter_(kHighPassFilterCoefficients4, kNumFiltersHP4) {
+      noise_reduction_filter_(
+          kHighPassFilterCoefficients,
+          down_sampling_factor_ == 4
+              ? kNumFiltersHP4
+              : (down_sampling_factor_ == 8 ? kNumFiltersHP8
+                                            : kNumFiltersHP2)) {
   RTC_DCHECK(down_sampling_factor_ == 2 || down_sampling_factor_ == 4 ||
              down_sampling_factor_ == 8);
 }
@@ -65,11 +72,10 @@ void Decimator::Decimate(rtc::ArrayView<const float> in,
   std::array<float, kBlockSize> x;
 
   // Limit the frequency content of the signal to avoid aliasing.
-  low_pass_filter_.Process(in, x);
+  anti_aliasing_filter_.Process(in, x);
 
-  // High-pass filter to reduce the impact of near-end noise.
-  if (down_sampling_factor_ == 4)
-    high_pass_filter_.Process(x, x);
+  // Reduce the impact of near-end noise.
+  noise_reduction_filter_.Process(x);
 
   // Downsample the signal.
   for (size_t j = 0, k = 0; j < out.size(); ++j, k += down_sampling_factor_) {

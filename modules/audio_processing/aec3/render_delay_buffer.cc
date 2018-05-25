@@ -35,6 +35,14 @@ bool EnableZeroExternalDelayHeadroom() {
       "WebRTC-Aec3ZeroExternalDelayHeadroomKillSwitch");
 }
 
+size_t GetDownSamplingFactor(const EchoCanceller3Config& config) {
+  // Do not use down sampling factor 8 if kill switch is triggered.
+  return (config.delay.down_sampling_factor == 8 &&
+          field_trial::IsEnabled("WebRTC-Aec3DownSamplingFactor8KillSwitch"))
+             ? 4
+             : config.delay.down_sampling_factor;
+}
+
 class RenderDelayBufferImpl final : public RenderDelayBuffer {
  public:
   RenderDelayBufferImpl(const EchoCanceller3Config& config, size_t num_bands);
@@ -63,6 +71,7 @@ class RenderDelayBufferImpl final : public RenderDelayBuffer {
   std::unique_ptr<ApmDataDumper> data_dumper_;
   const Aec3Optimization optimization_;
   const EchoCanceller3Config config_;
+  size_t down_sampling_factor_;
   const bool use_zero_external_delay_headroom_;
   const int sub_block_size_;
   MatrixBuffer blocks_;
@@ -168,12 +177,12 @@ RenderDelayBufferImpl::RenderDelayBufferImpl(const EchoCanceller3Config& config,
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
       optimization_(DetectOptimization()),
       config_(config),
+      down_sampling_factor_(GetDownSamplingFactor(config)),
       use_zero_external_delay_headroom_(EnableZeroExternalDelayHeadroom()),
-      sub_block_size_(
-          static_cast<int>(config.delay.down_sampling_factor > 0
-                               ? kBlockSize / config.delay.down_sampling_factor
-                               : kBlockSize)),
-      blocks_(GetRenderDelayBufferSize(config.delay.down_sampling_factor,
+      sub_block_size_(static_cast<int>(down_sampling_factor_ > 0
+                                           ? kBlockSize / down_sampling_factor_
+                                           : kBlockSize)),
+      blocks_(GetRenderDelayBufferSize(down_sampling_factor_,
                                        config.delay.num_filters,
                                        config.filter.main.length_blocks),
               num_bands,
@@ -182,9 +191,9 @@ RenderDelayBufferImpl::RenderDelayBufferImpl(const EchoCanceller3Config& config,
       ffts_(blocks_.buffer.size()),
       delay_(config_.delay.default_delay),
       echo_remover_buffer_(&blocks_, &spectra_, &ffts_),
-      low_rate_(GetDownSampledBufferSize(config.delay.down_sampling_factor,
+      low_rate_(GetDownSampledBufferSize(down_sampling_factor_,
                                          config.delay.num_filters)),
-      render_decimator_(config.delay.down_sampling_factor),
+      render_decimator_(down_sampling_factor_),
       zero_block_(num_bands, std::vector<float>(kBlockSize, 0.f)),
       fft_(),
       render_ds_(sub_block_size_, 0.f),
@@ -433,7 +442,7 @@ void RenderDelayBufferImpl::InsertBlock(
                         block[0].data(), 16000, 1);
   render_decimator_.Decimate(block[0], ds);
   data_dumper_->DumpWav("aec3_render_decimator_output", ds.size(), ds.data(),
-                        16000 / config_.delay.down_sampling_factor, 1);
+                        16000 / down_sampling_factor_, 1);
   std::copy(ds.rbegin(), ds.rend(), lr.buffer.begin() + lr.write);
   fft_.PaddedFft(block[0], b.buffer[previous_write][0], &f.buffer[f.write]);
   f.buffer[f.write].Spectrum(optimization_, s.buffer[s.write]);
