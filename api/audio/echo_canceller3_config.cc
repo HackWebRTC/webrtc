@@ -17,4 +17,8 @@ EchoCanceller3Config::EchoCanceller3Config(const EchoCanceller3Config& e) =
 EchoCanceller3Config::Mask::Mask() = default;
 EchoCanceller3Config::Mask::Mask(const EchoCanceller3Config::Mask& m) = default;
 
+EchoCanceller3Config::EchoModel::EchoModel() = default;
+EchoCanceller3Config::EchoModel::EchoModel(
+    const EchoCanceller3Config::EchoModel& e) = default;
+
 }  // namespace webrtc

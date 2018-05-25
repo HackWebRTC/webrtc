@@ -64,7 +64,7 @@ void SuppressionGainUpperLimiter::Update(bool render_activity,
   recent_reset_ = false;
 
   // Do not enforce any gain limit on the suppressor.
-  if (realignment_counter_ <= 0) {
+  if (!IsActive()) {
     suppressor_gain_limit_ = 1.f;
     return;
   }
@@ -72,7 +72,7 @@ void SuppressionGainUpperLimiter::Update(bool render_activity,
   // Enforce full suppression.
   if (realignment_counter_ > rampup_config_.non_zero_gain_blocks ||
       (!call_startup_phase_ && realignment_counter_ > 0)) {
-    suppressor_gain_limit_ = 0.f;
+    suppressor_gain_limit_ = rampup_config_.initial_gain;
     return;
   }
 

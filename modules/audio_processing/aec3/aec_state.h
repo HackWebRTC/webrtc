@@ -111,6 +111,11 @@ class AecState {
     return suppression_gain_limiter_.Limit();
   }
 
+  // Returns whether the suppression gain limiter is active.
+  bool IsSuppressionGainLimitActive() const {
+    return suppression_gain_limiter_.IsActive();
+  }
+
   // Returns whether the linear filter should have been able to properly adapt.
   bool FilterHasHadTimeToConverge() const {
     return filter_has_had_time_to_converge_;

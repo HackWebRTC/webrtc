@@ -61,9 +61,11 @@ class ResidualEchoEstimator {
 
   // Estimates the echo generating signal power as gated maximal power over a
   // time window.
-  void EchoGeneratingPower(const RenderBuffer& render_buffer,
-                           size_t min_delay,
-                           size_t max_delay,
+  void EchoGeneratingPower(const VectorBuffer& spectrum_buffer,
+                           const EchoCanceller3Config::EchoModel& echo_model,
+                           int headroom_spectrum_buffer,
+                           int filter_delay_blocks,
+                           bool gain_limiter_running,
                            bool apply_noise_gating,
                            std::array<float, kFftLengthBy2Plus1>* X2) const;
 

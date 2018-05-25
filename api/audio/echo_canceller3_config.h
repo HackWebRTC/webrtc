@@ -128,15 +128,17 @@ struct EchoCanceller3Config {
 
   struct EchoRemovalControl {
     struct GainRampup {
+      float initial_gain = 0.0f;
       float first_non_zero_gain = 0.001f;
       int non_zero_gain_blocks = 187;
       int full_gain_blocks = 312;
     } gain_rampup;
-
     bool has_clock_drift = false;
   } echo_removal_control;
 
   struct EchoModel {
+    EchoModel();
+    EchoModel(const EchoModel& e);
     size_t noise_floor_hold = 50;
     float min_noise_floor_power = 1638400.f;
     float stationary_gate_slope = 10.f;
@@ -144,6 +146,8 @@ struct EchoCanceller3Config {
     float noise_gate_slope = 0.3f;
     size_t render_pre_window_size = 1;
     size_t render_post_window_size = 1;
+    size_t render_pre_window_size_init = 10;
+    size_t render_post_window_size_init = 10;
     float nonlinear_hold = 1;
     float nonlinear_release = 0.001f;
   } echo_model;
