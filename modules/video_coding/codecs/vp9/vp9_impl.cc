@@ -505,6 +505,7 @@ int VP9EncoderImpl::InitAndSetControlSettings(const VideoCodec* inst) {
       // or not dropping upper layers if base is not dropped mitigates
       // the problem.
       vpx_svc_frame_drop_t svc_drop_frame;
+      memset(&svc_drop_frame, 0, sizeof(svc_drop_frame));
       svc_drop_frame.framedrop_mode = CONSTRAINED_LAYER_DROP;
       for (size_t i = 0; i < num_spatial_layers_; ++i) {
         svc_drop_frame.framedrop_thresh[i] =
