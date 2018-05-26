@@ -623,55 +623,55 @@ void ParsedRtcEventLogNew::StoreParsedEvent(const rtclog::Event& event) {
       }
       break;
     }
-    case ParsedRtcEventLogNew::LOG_START: {
+    case rtclog::Event::LOG_START: {
       start_log_events_.push_back(LoggedStartEvent(GetTimestamp(event)));
       break;
     }
-    case ParsedRtcEventLogNew::LOG_END: {
+    case rtclog::Event::LOG_END: {
       stop_log_events_.push_back(LoggedStopEvent(GetTimestamp(event)));
       break;
     }
-    case ParsedRtcEventLogNew::AUDIO_PLAYOUT_EVENT: {
+    case rtclog::Event::AUDIO_PLAYOUT_EVENT: {
       LoggedAudioPlayoutEvent playout_event = GetAudioPlayout(event);
       audio_playout_events_[playout_event.ssrc].push_back(playout_event);
       break;
     }
-    case ParsedRtcEventLogNew::LOSS_BASED_BWE_UPDATE: {
+    case rtclog::Event::LOSS_BASED_BWE_UPDATE: {
       bwe_loss_updates_.push_back(GetLossBasedBweUpdate(event));
       break;
     }
-    case ParsedRtcEventLogNew::DELAY_BASED_BWE_UPDATE: {
+    case rtclog::Event::DELAY_BASED_BWE_UPDATE: {
       bwe_delay_updates_.push_back(GetDelayBasedBweUpdate(event));
       break;
     }
-    case ParsedRtcEventLogNew::AUDIO_NETWORK_ADAPTATION_EVENT: {
+    case rtclog::Event::AUDIO_NETWORK_ADAPTATION_EVENT: {
       LoggedAudioNetworkAdaptationEvent ana_event =
           GetAudioNetworkAdaptation(event);
       audio_network_adaptation_events_.push_back(ana_event);
       break;
     }
-    case ParsedRtcEventLogNew::BWE_PROBE_CLUSTER_CREATED_EVENT: {
+    case rtclog::Event::BWE_PROBE_CLUSTER_CREATED_EVENT: {
       bwe_probe_cluster_created_events_.push_back(
           GetBweProbeClusterCreated(event));
       break;
     }
-    case ParsedRtcEventLogNew::BWE_PROBE_RESULT_EVENT: {
+    case rtclog::Event::BWE_PROBE_RESULT_EVENT: {
       bwe_probe_result_events_.push_back(GetBweProbeResult(event));
       break;
     }
-    case ParsedRtcEventLogNew::ALR_STATE_EVENT: {
+    case rtclog::Event::ALR_STATE_EVENT: {
       alr_state_events_.push_back(GetAlrState(event));
       break;
     }
-    case ParsedRtcEventLogNew::ICE_CANDIDATE_PAIR_CONFIG: {
+    case rtclog::Event::ICE_CANDIDATE_PAIR_CONFIG: {
       ice_candidate_pair_configs_.push_back(GetIceCandidatePairConfig(event));
       break;
     }
-    case ParsedRtcEventLogNew::ICE_CANDIDATE_PAIR_EVENT: {
+    case rtclog::Event::ICE_CANDIDATE_PAIR_EVENT: {
       ice_candidate_pair_events_.push_back(GetIceCandidatePairEvent(event));
       break;
     }
-    case ParsedRtcEventLogNew::UNKNOWN_EVENT: {
+    case rtclog::Event::UNKNOWN_EVENT: {
       break;
     }
   }
