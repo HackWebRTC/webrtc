@@ -165,6 +165,9 @@ DEFINE_int(ns_level,
 DEFINE_int(stream_delay,
            kParameterNotSpecifiedValue,
            "Specify the stream delay in ms to use");
+DEFINE_int(use_stream_delay,
+           kParameterNotSpecifiedValue,
+           "Activate (1) or deactivate(0) reporting the stream delay");
 DEFINE_int(stream_drift_samples,
            kParameterNotSpecifiedValue,
            "Specify the number of stream drift samples to use");
@@ -286,6 +289,7 @@ SimulationSettings CreateSettings() {
   SetSettingIfSpecified(FLAG_vad_likelihood, &settings.vad_likelihood);
   SetSettingIfSpecified(FLAG_ns_level, &settings.ns_level);
   SetSettingIfSpecified(FLAG_stream_delay, &settings.stream_delay);
+  SetSettingIfFlagSet(FLAG_use_stream_delay, &settings.use_stream_delay);
   SetSettingIfSpecified(FLAG_stream_drift_samples,
                         &settings.stream_drift_samples);
   SetSettingIfSpecified(FLAG_custom_call_order_file,

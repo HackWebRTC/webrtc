@@ -74,9 +74,11 @@ void WavBasedSimulator::PrepareProcessStreamCall() {
   }
   ap_->set_stream_key_pressed(settings_.use_ts && (*settings_.use_ts));
 
-  RTC_CHECK_EQ(AudioProcessing::kNoError,
-               ap_->set_stream_delay_ms(
-                   settings_.stream_delay ? *settings_.stream_delay : 0));
+  if (!settings_.use_stream_delay || *settings_.use_stream_delay) {
+    RTC_CHECK_EQ(AudioProcessing::kNoError,
+                 ap_->set_stream_delay_ms(
+                     settings_.stream_delay ? *settings_.stream_delay : 0));
+  }
 
   ap_->echo_cancellation()->set_stream_drift_samples(
       settings_.stream_drift_samples ? *settings_.stream_drift_samples : 0);

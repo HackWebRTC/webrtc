@@ -133,14 +133,16 @@ void AecDumpBasedSimulator::PrepareProcessStreamCall(
     }
   }
 
-  if (!settings_.stream_delay) {
-    if (msg.has_delay()) {
+  if (!settings_.use_stream_delay || *settings_.use_stream_delay) {
+    if (!settings_.stream_delay) {
+      if (msg.has_delay()) {
+        RTC_CHECK_EQ(AudioProcessing::kNoError,
+                     ap_->set_stream_delay_ms(msg.delay()));
+      }
+    } else {
       RTC_CHECK_EQ(AudioProcessing::kNoError,
-                   ap_->set_stream_delay_ms(msg.delay()));
+                   ap_->set_stream_delay_ms(*settings_.stream_delay));
     }
-  } else {
-    RTC_CHECK_EQ(AudioProcessing::kNoError,
-                 ap_->set_stream_delay_ms(*settings_.stream_delay));
   }
 
   if (!settings_.stream_drift_samples) {

@@ -35,6 +35,7 @@ struct SimulationSettings {
   SimulationSettings(const SimulationSettings&);
   ~SimulationSettings();
   rtc::Optional<int> stream_delay;
+  rtc::Optional<bool> use_stream_delay;
   rtc::Optional<int> stream_drift_samples;
   rtc::Optional<int> output_sample_rate_hz;
   rtc::Optional<int> output_num_channels;
