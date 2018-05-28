@@ -89,6 +89,8 @@ class GoogCcNetworkController : public NetworkControllerInterface {
   int64_t accepted_queue_ms_;
   bool previously_in_alr = false;
 
+  rtc::Optional<DataSize> current_data_window_;
+
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(GoogCcNetworkController);
 };
 

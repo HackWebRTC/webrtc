@@ -348,7 +348,13 @@ rtc::Optional<DataSize> GoogCcNetworkController::MaybeUpdateCongestionWindow() {
   TimeDelta time_window =
       TimeDelta::ms(*min_feedback_rtt_ms_ + accepted_queue_ms_);
   DataSize data_window = last_bandwidth_ * time_window;
-  data_window = std::max(kMinCwnd, data_window);
+  if (current_data_window_) {
+    data_window =
+        std::max(kMinCwnd, (data_window + current_data_window_.value()) / 2);
+  } else {
+    data_window = std::max(kMinCwnd, data_window);
+  }
+  current_data_window_ = data_window;
   RTC_LOG(LS_INFO) << "Feedback rtt: " << *min_feedback_rtt_ms_
                    << " Bitrate: " << last_bandwidth_.bps();
   return data_window;
