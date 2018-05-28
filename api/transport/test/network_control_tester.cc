@@ -95,6 +95,9 @@ void NetworkControllerTester::RunSimulation(TimeDelta duration,
       SentPacket sent_packet;
       sent_packet = next_packet(state_, current_time_, packet_interval);
       sent_packet.sequence_number = packet_sequence_number_++;
+      sent_packet.data_in_flight = sent_packet.size;
+      for (PacketResult& packet : outstanding_packets_)
+        sent_packet.data_in_flight += packet.sent_packet->size;
       Update(&state_, controller_->OnSentPacket(sent_packet));
 
       accumulated_buffer_ += sent_packet.size;
