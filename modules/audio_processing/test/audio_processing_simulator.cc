@@ -266,6 +266,8 @@ EchoCanceller3Config ParseAec3Parameters(const std::string& filename) {
     }
     ReadParam(section, "has_clock_drift",
               &cfg.echo_removal_control.has_clock_drift);
+    ReadParam(section, "linear_and_stable_echo_path",
+              &cfg.echo_removal_control.linear_and_stable_echo_path);
   }
 
   if (rtc::GetValueFromJsonObject(root, "echo_model", &section)) {

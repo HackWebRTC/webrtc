@@ -134,6 +134,7 @@ struct EchoCanceller3Config {
       int full_gain_blocks = 312;
     } gain_rampup;
     bool has_clock_drift = false;
+    bool linear_and_stable_echo_path = false;
   } echo_removal_control;
 
   struct EchoModel {

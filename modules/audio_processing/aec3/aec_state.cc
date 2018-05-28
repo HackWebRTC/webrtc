@@ -245,10 +245,13 @@ void AecState::Update(
   usable_linear_estimate_ = !echo_saturation_;
   usable_linear_estimate_ =
       usable_linear_estimate_ && filter_has_had_time_to_converge;
-  usable_linear_estimate_ =
-      usable_linear_estimate_ && recently_converged_filter;
-  usable_linear_estimate_ = usable_linear_estimate_ && !diverged_filter;
+
   usable_linear_estimate_ = usable_linear_estimate_ && external_delay;
+  if (!config_.echo_removal_control.linear_and_stable_echo_path) {
+    usable_linear_estimate_ =
+        usable_linear_estimate_ && recently_converged_filter;
+    usable_linear_estimate_ = usable_linear_estimate_ && !diverged_filter;
+  }
 
   use_linear_filter_output_ = usable_linear_estimate_ && !TransparentMode();
 
