@@ -19,7 +19,6 @@
 #include "api/rtp_headers.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/include/module_common_types.h"
-#include "rtc_base/deprecation.h"
 #include "system_wrappers/include/clock.h"
 #include "typedefs.h"  // NOLINT(build/include)
 
@@ -254,15 +253,9 @@ class RecoveredPacketReceiver {
 
 class RtcpIntraFrameObserver {
  public:
-  virtual void OnReceivedIntraFrameRequest(uint32_t ssrc) = 0;
-
-  RTC_DEPRECATED virtual void OnReceivedSLI(uint32_t ssrc,
-                             uint8_t picture_id) {}
-
-  RTC_DEPRECATED virtual void OnReceivedRPSI(uint32_t ssrc,
-                              uint64_t picture_id) {}
-
   virtual ~RtcpIntraFrameObserver() {}
+
+  virtual void OnReceivedIntraFrameRequest(uint32_t ssrc) = 0;
 };
 
 class RtcpBandwidthObserver {
