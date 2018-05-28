@@ -562,7 +562,7 @@ void VideoCodecTestFixtureImpl::CreateEncoderAndDecoder() {
   SdpVideoFormat format(config_.codec_name);
   if (config_.simulcast_adapted_encoder) {
     EXPECT_EQ("VP8", format.name);
-    encoder_.reset(new SimulcastEncoderAdapter(encoder_factory_.get()));
+    encoder_.reset(new SimulcastEncoderAdapter(encoder_factory_.get(), format));
   } else {
     encoder_ = encoder_factory_->CreateVideoEncoder(format);
   }

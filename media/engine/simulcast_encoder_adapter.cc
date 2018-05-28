@@ -108,9 +108,11 @@ class AdapterEncodedImageCallback : public webrtc::EncodedImageCallback {
 
 namespace webrtc {
 
-SimulcastEncoderAdapter::SimulcastEncoderAdapter(VideoEncoderFactory* factory)
+SimulcastEncoderAdapter::SimulcastEncoderAdapter(VideoEncoderFactory* factory,
+                                                 const SdpVideoFormat& format)
     : inited_(0),
       factory_(factory),
+      video_format_(format),
       encoded_complete_callback_(nullptr),
       implementation_name_("SimulcastEncoderAdapter") {
   RTC_DCHECK(factory_);
@@ -218,7 +220,7 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
       encoder = std::move(stored_encoders_.top());
       stored_encoders_.pop();
     } else {
-      encoder = factory_->CreateVideoEncoder(SdpVideoFormat("VP8"));
+      encoder = factory_->CreateVideoEncoder(video_format_);
     }
 
     ret = encoder->InitEncode(&stream_codec, number_of_cores, max_payload_size);

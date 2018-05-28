@@ -31,7 +31,8 @@ class TestSimulcastEncoderAdapter : public TestVp8Simulcast {
 
  protected:
   std::unique_ptr<VP8Encoder> CreateEncoder() override {
-    return rtc::MakeUnique<SimulcastEncoderAdapter>(factory_.get());
+    return rtc::MakeUnique<SimulcastEncoderAdapter>(factory_.get(),
+                                                    SdpVideoFormat("VP8"));
   }
   std::unique_ptr<VP8Decoder> CreateDecoder() override {
     return VP8Decoder::Create();
@@ -251,7 +252,7 @@ class TestSimulcastEncoderAdapterFakeHelper {
   // Can only be called once as the SimulcastEncoderAdapter will take the
   // ownership of |factory_|.
   VP8Encoder* CreateMockEncoderAdapter() {
-    return new SimulcastEncoderAdapter(factory_.get());
+    return new SimulcastEncoderAdapter(factory_.get(), SdpVideoFormat("VP8"));
   }
 
   void ExpectCallSetChannelParameters(uint32_t packetLoss, int64_t rtt) {

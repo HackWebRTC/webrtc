@@ -61,7 +61,7 @@ class BuiltinVideoEncoderFactory : public VideoEncoderFactory {
       internal_encoder =
           cricket::CodecNamesEq(format.name.c_str(), cricket::kVp8CodecName)
               ? rtc::MakeUnique<VP8EncoderSimulcastProxy>(
-                    internal_encoder_factory_.get())
+                    internal_encoder_factory_.get(), format)
               : internal_encoder_factory_->CreateVideoEncoder(format);
     }
 

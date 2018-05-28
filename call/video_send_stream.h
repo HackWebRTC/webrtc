@@ -117,6 +117,11 @@ class VideoSendStream {
       // cpu adaptation.
       bool experiment_cpu_load_estimator = false;
 
+      // Enables hardware VAAPI VP8 encoding if supported by the provided
+      // VideoEncoderFactory.
+      // TODO(ilnik): remove this when VAAPI VP8 experiment is over.
+      bool experiment_vaapi_vp8_hw_encoding = false;
+
       // Ownership stays with WebrtcVideoEngine (delegated from PeerConnection).
       VideoEncoderFactory* encoder_factory = nullptr;
     } encoder_settings;

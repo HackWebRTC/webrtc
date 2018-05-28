@@ -126,7 +126,7 @@ class EncoderAdapter : public webrtc::VideoEncoderFactory {
       internal_encoder =
           CodecNamesEq(format.name.c_str(), kVp8CodecName)
               ? rtc::MakeUnique<webrtc::VP8EncoderSimulcastProxy>(
-                    internal_encoder_factory_.get())
+                    internal_encoder_factory_.get(), format)
               : internal_encoder_factory_->CreateVideoEncoder(format);
     }
 
@@ -137,7 +137,7 @@ class EncoderAdapter : public webrtc::VideoEncoderFactory {
       external_encoder =
           CodecNamesEq(format.name.c_str(), kVp8CodecName)
               ? rtc::MakeUnique<webrtc::SimulcastEncoderAdapter>(
-                    external_encoder_factory_.get())
+                    external_encoder_factory_.get(), format)
               : external_encoder_factory_->CreateVideoEncoder(format);
     }
 

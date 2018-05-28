@@ -1125,6 +1125,8 @@ bool WebRtcVideoChannel::AddSendStream(const StreamParams& sp) {
       video_config_.periodic_alr_bandwidth_probing;
   config.encoder_settings.experiment_cpu_load_estimator =
       video_config_.experiment_cpu_load_estimator;
+  config.encoder_settings.experiment_vaapi_vp8_hw_encoding =
+      video_config_.experiment_vaapi_vp8_hw_encoding;
   config.encoder_settings.encoder_factory = encoder_factory_;
 
   WebRtcVideoSendStream* stream = new WebRtcVideoSendStream(

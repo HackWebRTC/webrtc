@@ -36,6 +36,13 @@ namespace webrtc {
 
 namespace {
 
+// This artificial SDP parameter is used to pass the experiment status to
+// video encoder factory. It's added explicitly before call to
+// |CreateVideoEncoder()| with value "Enabled" if experiment is enabled.
+// TODO(ilnik): remove this when VAAPI VP8 experiment is over.
+const char kExprimentVaapiVp8HwEncodingParameter[] =
+    "ExprimentVaapiVp8HwEncoding";
+
 // Time interval for logging frame counts.
 const int64_t kFrameLogIntervalMs = 60000;
 const int kMinFramerateFps = 2;
@@ -521,8 +528,13 @@ void VideoStreamEncoder::ReconfigureEncoder() {
       video_sender_.RegisterExternalEncoder(nullptr, false);
     }
 
-    encoder_ = settings_.encoder_factory->CreateVideoEncoder(
-        encoder_config_.video_format);
+    SdpVideoFormat video_format = encoder_config_.video_format;
+    if (video_format.name == "VP8" &&
+        settings_.experiment_vaapi_vp8_hw_encoding) {
+      video_format.parameters[kExprimentVaapiVp8HwEncodingParameter] =
+          "Enabled";
+    }
+    encoder_ = settings_.encoder_factory->CreateVideoEncoder(video_format);
     // TODO(nisse): What to do if creating the encoder fails? Crash,
     // or just discard incoming frames?
     RTC_CHECK(encoder_);

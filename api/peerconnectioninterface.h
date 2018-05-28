@@ -339,6 +339,16 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     void set_experiment_cpu_load_estimator(bool enable) {
       media_config.video.experiment_cpu_load_estimator = enable;
     }
+
+    // Hardware VP8 encoding using VA-API on intel kaby-lake processors.
+    // crbug.com/794608
+    bool experiment_vaapi_vp8_hw_encoding() const {
+      return media_config.video.experiment_vaapi_vp8_hw_encoding;
+    }
+    void set_experiment_vaapi_vp8_hw_encoding(bool enable) {
+      media_config.video.experiment_vaapi_vp8_hw_encoding = enable;
+    }
+
     static const int kUndefined = -1;
     // Default maximum number of packets in the audio jitter buffer.
     static const int kAudioJitterBufferMaxPackets = 50;

@@ -1095,8 +1095,8 @@ std::unique_ptr<VideoEncoder>
 VideoQualityTest::TestVideoEncoderFactory::CreateVideoEncoder(
     const SdpVideoFormat& format) {
   if (format.name == "VP8") {
-    return rtc::MakeUnique<VP8EncoderSimulcastProxy>(
-        &internal_encoder_factory_);
+    return rtc::MakeUnique<VP8EncoderSimulcastProxy>(&internal_encoder_factory_,
+                                                     format);
   } else if (format.name == "multiplex") {
     return rtc::MakeUnique<MultiplexEncoderAdapter>(
         &internal_encoder_factory_, SdpVideoFormat(cricket::kVp9CodecName));

@@ -15,6 +15,7 @@
 #include <memory>
 #include <vector>
 
+#include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_encoder_factory.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 
@@ -24,7 +25,12 @@ namespace webrtc {
 // doesn't support simulcast for provided settings.
 class VP8EncoderSimulcastProxy : public VP8Encoder {
  public:
+  VP8EncoderSimulcastProxy(VideoEncoderFactory* factory,
+                           const SdpVideoFormat& format);
+  // Deprecated. Remove once all clients use constructor with both factory and
+  // SdpVideoFormat;
   explicit VP8EncoderSimulcastProxy(VideoEncoderFactory* factory);
+
   ~VP8EncoderSimulcastProxy() override;
 
   // Implements VideoEncoder.
@@ -47,6 +53,7 @@ class VP8EncoderSimulcastProxy : public VP8Encoder {
 
  private:
   VideoEncoderFactory* const factory_;
+  SdpVideoFormat video_format_;
   std::unique_ptr<VideoEncoder> encoder_;
   EncodedImageCallback* callback_;
 };

@@ -224,7 +224,7 @@ FakeWebRtcVideoEncoderFactory::CreateVideoEncoder(
       // encoders. Enter vp8_factory_mode so that we now create these encoders
       // instead of more adapters.
       vp8_factory_mode_ = true;
-      encoder = rtc::MakeUnique<webrtc::SimulcastEncoderAdapter>(this);
+      encoder = rtc::MakeUnique<webrtc::SimulcastEncoderAdapter>(this, format);
     } else {
       num_created_encoders_++;
       created_video_encoder_event_.Set();
