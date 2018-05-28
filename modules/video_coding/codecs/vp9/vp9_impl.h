@@ -12,6 +12,7 @@
 #ifndef MODULES_VIDEO_CODING_CODECS_VP9_VP9_IMPL_H_
 #define MODULES_VIDEO_CODING_CODECS_VP9_VP9_IMPL_H_
 
+#include <map>
 #include <memory>
 #include <vector>
 
@@ -61,6 +62,12 @@ class VP9EncoderImpl : public VP9Encoder {
                              const vpx_codec_cx_pkt& pkt,
                              uint32_t timestamp,
                              bool first_frame_in_picture);
+  void FillReferenceIndices(const vpx_codec_cx_pkt& pkt,
+                            const size_t pic_num,
+                            const bool inter_layer_predicted,
+                            CodecSpecificInfoVP9* vp9_info);
+  void UpdateReferenceBuffers(const vpx_codec_cx_pkt& pkt,
+                              const size_t pic_num);
 
   bool ExplicitlyConfiguredSpatialLayers() const;
   bool SetSvcRates(const VideoBitrateAllocation& bitrate_allocation);
@@ -96,12 +103,13 @@ class VP9EncoderImpl : public VP9Encoder {
   vpx_image_t* raw_;
   vpx_svc_extra_cfg_t svc_params_;
   const VideoFrame* input_image_;
-  GofInfoVP9 gof_;       // Contains each frame's temporal information for
-                         // non-flexible mode.
+  GofInfoVP9 gof_;  // Contains each frame's temporal information for
+                    // non-flexible mode.
   bool force_key_frame_;
   size_t pics_since_key_;
   uint8_t num_temporal_layers_;
   uint8_t num_spatial_layers_;
+  bool is_svc_;
   InterLayerPredMode inter_layer_pred_;
 
   // Framerate controller.
@@ -111,6 +119,19 @@ class VP9EncoderImpl : public VP9Encoder {
 
   // Used for flexible mode.
   bool is_flexible_mode_;
+  struct RefFrameBuffer {
+    RefFrameBuffer(size_t pic_num,
+                   size_t spatial_layer_id,
+                   size_t temporal_layer_id)
+        : pic_num(pic_num),
+          spatial_layer_id(spatial_layer_id),
+          temporal_layer_id(temporal_layer_id) {}
+    RefFrameBuffer() {}
+    size_t pic_num = 0;
+    size_t spatial_layer_id = 0;
+    size_t temporal_layer_id = 0;
+  };
+  std::map<size_t, RefFrameBuffer> ref_buf_;
 };
 
 class VP9DecoderImpl : public VP9Decoder {

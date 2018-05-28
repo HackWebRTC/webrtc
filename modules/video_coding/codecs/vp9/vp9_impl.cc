@@ -11,9 +11,7 @@
 
 #include "modules/video_coding/codecs/vp9/vp9_impl.h"
 
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+#include <algorithm>
 #include <vector>
 
 #include "vpx/vpx_encoder.h"
@@ -82,6 +80,7 @@ VP9EncoderImpl::VP9EncoderImpl()
       pics_since_key_(0),
       num_temporal_layers_(0),
       num_spatial_layers_(0),
+      is_svc_(false),
       inter_layer_pred_(InterLayerPredMode::kOn),
       output_framerate_(1000.0, 1000.0),
       last_encoded_frame_rtp_timestamp_(0),
@@ -293,6 +292,11 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
     target_framerate_fps_.reset();
   }
 
+  is_svc_ = (num_spatial_layers_ > 1 || num_temporal_layers_ > 1);
+  // Flexible mode requires SVC to be enabled since libvpx API only allows
+  // to get reference list in SVC mode.
+  RTC_DCHECK(!inst->VP9().flexibleMode || is_svc_);
+
   // Allocate memory for encoded image
   if (encoded_image_._buffer != nullptr) {
     delete[] encoded_image_._buffer;
@@ -313,8 +317,7 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   config_->g_w = codec_.width;
   config_->g_h = codec_.height;
   config_->rc_target_bitrate = inst->startBitrate;  // in kbit/s
-  config_->g_error_resilient =
-      (num_spatial_layers_ > 1 || num_temporal_layers_ > 1) ? 1 : 0;
+  config_->g_error_resilient = is_svc_ ? VPX_ERROR_RESILIENT_DEFAULT : 0;
   // Setting the time base of the codec.
   config_->g_timebase.num = 1;
   config_->g_timebase.den = 90000;
@@ -389,6 +392,8 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   }
 
   inter_layer_pred_ = inst->VP9().interLayerPred;
+
+  ref_buf_.clear();
 
   return InitAndSetControlSettings(inst);
 }
@@ -474,13 +479,10 @@ int VP9EncoderImpl::InitAndSetControlSettings(const VideoCodec* inst) {
                     inst->VP9().adaptiveQpMode ? 3 : 0);
 
   vpx_codec_control(encoder_, VP9E_SET_FRAME_PARALLEL_DECODING, 0);
-  vpx_codec_control(
-      encoder_, VP9E_SET_SVC,
-      (num_temporal_layers_ > 1 || num_spatial_layers_ > 1) ? 1 : 0);
 
-  if (num_temporal_layers_ > 1 || num_spatial_layers_ > 1) {
-    vpx_codec_control(encoder_, VP9E_SET_SVC_PARAMETERS,
-                      &svc_params_);
+  if (is_svc_) {
+    vpx_codec_control(encoder_, VP9E_SET_SVC, 1);
+    vpx_codec_control(encoder_, VP9E_SET_SVC_PARAMETERS, &svc_params_);
   }
 
   if (num_spatial_layers_ > 1) {
@@ -638,9 +640,6 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
   CodecSpecificInfoVP9* vp9_info = &(codec_specific->codecSpecific.VP9);
 
   vp9_info->first_frame_in_picture = first_frame_in_picture;
-  // TODO(asapersson): Set correct value.
-  vp9_info->inter_pic_predicted =
-      (pkt.data.frame.flags & VPX_FRAME_IS_KEY) ? false : true;
   vp9_info->flexible_mode = codec_.VP9()->flexibleMode;
   vp9_info->ss_data_available =
       ((pkt.data.frame.flags & VPX_FRAME_IS_KEY) && !codec_.VP9()->flexibleMode)
@@ -701,11 +700,22 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
   vp9_info->num_spatial_layers = num_spatial_layers_;
 
   RTC_DCHECK(!vp9_info->flexible_mode);
-  vp9_info->gof_idx =
-      static_cast<uint8_t>(pics_since_key_ % gof_.num_frames_in_gof);
-  vp9_info->temporal_up_switch = gof_.temporal_up_switch[vp9_info->gof_idx];
-  vp9_info->num_ref_pics =
-      is_key_pic ? 0 : gof_.num_ref_pics[vp9_info->gof_idx];
+
+  vp9_info->num_ref_pics = 0;
+  if (vp9_info->flexible_mode) {
+    vp9_info->gof_idx = kNoGofIdx;
+    FillReferenceIndices(pkt, pics_since_key_, vp9_info->inter_layer_predicted,
+                         vp9_info);
+  } else {
+    vp9_info->gof_idx =
+        static_cast<uint8_t>(pics_since_key_ % gof_.num_frames_in_gof);
+    vp9_info->temporal_up_switch = gof_.temporal_up_switch[vp9_info->gof_idx];
+    vp9_info->num_ref_pics = gof_.num_ref_pics[vp9_info->gof_idx];
+  }
+
+  vp9_info->inter_pic_predicted = (!is_key_pic && vp9_info->num_ref_pics > 0);
+
+  vp9_info->num_spatial_layers = num_spatial_layers_;
 
   if (vp9_info->ss_data_available) {
     vp9_info->spatial_layer_resolution_present = true;
@@ -719,6 +729,107 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
     }
     if (!vp9_info->flexible_mode) {
       vp9_info->gof.CopyGofInfoVP9(gof_);
+    }
+  }
+}
+
+void VP9EncoderImpl::FillReferenceIndices(const vpx_codec_cx_pkt& pkt,
+                                          const size_t pic_num,
+                                          const bool inter_layer_predicted,
+                                          CodecSpecificInfoVP9* vp9_info) {
+  vpx_svc_layer_id_t layer_id = {0};
+  vpx_codec_control(encoder_, VP9E_GET_SVC_LAYER_ID, &layer_id);
+
+  vpx_svc_ref_frame_config_t enc_layer_conf = {{0}};
+  vpx_codec_control(encoder_, VP9E_GET_SVC_REF_FRAME_CONFIG, &enc_layer_conf);
+
+  std::vector<RefFrameBuffer> ref_buf_list;
+  if (enc_layer_conf.reference_last[layer_id.spatial_layer_id]) {
+    const size_t fb_idx = enc_layer_conf.lst_fb_idx[layer_id.spatial_layer_id];
+    RTC_DCHECK(ref_buf_.find(fb_idx) != ref_buf_.end());
+    ref_buf_list.push_back(ref_buf_.at(fb_idx));
+  }
+
+  if (enc_layer_conf.reference_alt_ref[layer_id.spatial_layer_id]) {
+    const size_t fb_idx = enc_layer_conf.alt_fb_idx[layer_id.spatial_layer_id];
+    RTC_DCHECK(ref_buf_.find(fb_idx) != ref_buf_.end());
+    ref_buf_list.push_back(ref_buf_.at(fb_idx));
+  }
+
+  if (enc_layer_conf.reference_golden[layer_id.spatial_layer_id]) {
+    const size_t fb_idx = enc_layer_conf.gld_fb_idx[layer_id.spatial_layer_id];
+    RTC_DCHECK(ref_buf_.find(fb_idx) != ref_buf_.end());
+    ref_buf_list.push_back(ref_buf_.at(fb_idx));
+  }
+
+  size_t max_ref_temporal_layer_id = 0;
+
+  vp9_info->num_ref_pics = 0;
+  for (const RefFrameBuffer& ref_buf : ref_buf_list) {
+    RTC_DCHECK_LE(ref_buf.pic_num, pic_num);
+    if (ref_buf.pic_num < pic_num) {
+      if (inter_layer_pred_ != InterLayerPredMode::kOn) {
+        // RTP spec limits temporal prediction to the same spatial layer.
+        // It is safe to ignore this requirement if inter-layer prediction is
+        // enabled for all frames when all base frames are relayed to receiver.
+        RTC_DCHECK_EQ(ref_buf.spatial_layer_id, layer_id.spatial_layer_id);
+      }
+      RTC_DCHECK_LE(ref_buf.temporal_layer_id, layer_id.temporal_layer_id);
+
+      const size_t p_diff = pic_num - ref_buf.pic_num;
+      RTC_DCHECK_LE(p_diff, 127UL);
+
+      vp9_info->p_diff[vp9_info->num_ref_pics] = static_cast<uint8_t>(p_diff);
+      ++vp9_info->num_ref_pics;
+
+      max_ref_temporal_layer_id =
+          std::max(max_ref_temporal_layer_id, ref_buf.temporal_layer_id);
+    } else {
+      RTC_DCHECK(inter_layer_predicted);
+      // RTP spec only allows to use previous spatial layer for inter-layer
+      // prediction.
+      RTC_DCHECK_EQ(ref_buf.spatial_layer_id + 1, layer_id.spatial_layer_id);
+    }
+  }
+
+  vp9_info->temporal_up_switch =
+      (max_ref_temporal_layer_id <
+       static_cast<size_t>(layer_id.temporal_layer_id));
+}
+
+void VP9EncoderImpl::UpdateReferenceBuffers(const vpx_codec_cx_pkt& pkt,
+                                            const size_t pic_num) {
+  vpx_svc_layer_id_t layer_id = {0};
+  vpx_codec_control(encoder_, VP9E_GET_SVC_LAYER_ID, &layer_id);
+
+  vpx_svc_ref_frame_config_t enc_layer_conf = {{0}};
+  vpx_codec_control(encoder_, VP9E_GET_SVC_REF_FRAME_CONFIG, &enc_layer_conf);
+
+  const bool is_key_frame =
+      (pkt.data.frame.flags & VPX_FRAME_IS_KEY) ? true : false;
+
+  RefFrameBuffer frame_buf(pic_num, layer_id.spatial_layer_id,
+                           layer_id.temporal_layer_id);
+
+  if (is_key_frame && layer_id.spatial_layer_id == 0) {
+    // Key frame updates all ref buffers.
+    for (size_t i = 0; i < kNumVp9Buffers; ++i) {
+      ref_buf_[i] = frame_buf;
+    }
+  } else {
+    if (enc_layer_conf.update_last[layer_id.spatial_layer_id]) {
+      ref_buf_[enc_layer_conf.lst_fb_idx[layer_id.spatial_layer_id]] =
+          frame_buf;
+    }
+
+    if (enc_layer_conf.update_alt_ref[layer_id.spatial_layer_id]) {
+      ref_buf_[enc_layer_conf.alt_fb_idx[layer_id.spatial_layer_id]] =
+          frame_buf;
+    }
+
+    if (enc_layer_conf.update_golden[layer_id.spatial_layer_id]) {
+      ref_buf_[enc_layer_conf.gld_fb_idx[layer_id.spatial_layer_id]] =
+          frame_buf;
     }
   }
 }
@@ -765,6 +876,10 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
   memset(&codec_specific_, 0, sizeof(codec_specific_));
   PopulateCodecSpecific(&codec_specific_, *pkt, input_image_->timestamp(),
                         first_frame_in_picture);
+
+  if (is_flexible_mode_) {
+    UpdateReferenceBuffers(*pkt, pics_since_key_);
+  }
 
   TRACE_COUNTER1("webrtc", "EncodedFrameSize", encoded_image_._length);
   encoded_image_._timeStamp = input_image_->timestamp();
