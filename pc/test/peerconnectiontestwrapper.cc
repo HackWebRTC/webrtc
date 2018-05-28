@@ -17,7 +17,7 @@
 #include "modules/audio_processing/include/audio_processing.h"
 #include "p2p/base/fakeportallocator.h"
 #include "pc/sdputils.h"
-#include "pc/test/fakeperiodicvideocapturer.h"
+#include "pc/test/fakeperiodicvideotracksource.h"
 #include "pc/test/fakertccertificategenerator.h"
 #include "pc/test/mockpeerconnectionobservers.h"
 #include "pc/test/peerconnectiontestwrapper.h"
@@ -287,14 +287,13 @@ rtc::scoped_refptr<webrtc::MediaStreamInterface>
 
   if (video) {
     // Set max frame rate to 10fps to reduce the risk of the tests to be flaky.
-    FakeConstraints constraints = video_constraints;
-    constraints.SetMandatoryMaxFrameRate(10);
+    webrtc::FakePeriodicVideoSource::Config config;
+    config.frame_interval_ms = 100;
 
     rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> source =
-        peer_connection_factory_->CreateVideoSource(
-            std::unique_ptr<cricket::VideoCapturer>(
-                new webrtc::FakePeriodicVideoCapturer()),
-            &constraints);
+        new rtc::RefCountedObject<webrtc::FakePeriodicVideoTrackSource>(
+            config, /* remote */ false);
+
     std::string videotrack_label = stream_id + kVideoTrackLabelBase;
     rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
         peer_connection_factory_->CreateVideoTrack(videotrack_label, source));
