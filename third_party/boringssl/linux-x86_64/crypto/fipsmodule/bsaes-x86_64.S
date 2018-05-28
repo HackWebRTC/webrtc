@@ -1,10 +1,10 @@
 #if defined(__x86_64__) && !defined(OPENSSL_NO_ASM)
 .text	
 
-.extern	asm_AES_encrypt
-.hidden asm_AES_encrypt
-.extern	asm_AES_decrypt
-.hidden asm_AES_decrypt
+.extern	aes_nohw_encrypt
+.hidden aes_nohw_encrypt
+.extern	aes_nohw_decrypt
+.hidden aes_nohw_decrypt
 
 .type	_bsaes_encrypt8,@function
 .align	64
@@ -1065,8 +1065,8 @@ _bsaes_key_convert:
 
 	.byte	0xf3,0xc3
 .size	_bsaes_key_convert,.-_bsaes_key_convert
-.extern	asm_AES_cbc_encrypt
-.hidden asm_AES_cbc_encrypt
+.extern	aes_nohw_cbc_encrypt
+.hidden aes_nohw_cbc_encrypt
 .globl	bsaes_cbc_encrypt
 .hidden bsaes_cbc_encrypt
 .type	bsaes_cbc_encrypt,@function
@@ -1074,9 +1074,9 @@ _bsaes_key_convert:
 bsaes_cbc_encrypt:
 .cfi_startproc	
 	cmpl	$0,%r9d
-	jne	asm_AES_cbc_encrypt
+	jne	aes_nohw_cbc_encrypt
 	cmpq	$128,%rdx
-	jb	asm_AES_cbc_encrypt
+	jb	aes_nohw_cbc_encrypt
 
 	movq	%rsp,%rax
 .Lcbc_dec_prologue:
@@ -1304,7 +1304,7 @@ bsaes_cbc_encrypt:
 	leaq	(%r12),%rdi
 	leaq	32(%rbp),%rsi
 	leaq	(%r15),%rdx
-	call	asm_AES_decrypt
+	call	aes_nohw_decrypt
 	pxor	32(%rbp),%xmm14
 	movdqu	%xmm14,(%r13)
 	movdqa	%xmm15,%xmm14
@@ -1520,7 +1520,7 @@ bsaes_ctr32_encrypt_blocks:
 	leaq	32(%rbp),%rdi
 	leaq	48(%rbp),%rsi
 	leaq	(%r15),%rdx
-	call	asm_AES_encrypt
+	call	aes_nohw_encrypt
 	movdqu	(%r12),%xmm0
 	leaq	16(%r12),%r12
 	movl	44(%rbp),%eax
@@ -1602,7 +1602,7 @@ bsaes_xts_encrypt:
 	leaq	(%r9),%rdi
 	leaq	32(%rbp),%rsi
 	leaq	(%r8),%rdx
-	call	asm_AES_encrypt
+	call	aes_nohw_encrypt
 
 	movl	240(%r15),%eax
 	movq	%r14,%rbx
@@ -1972,7 +1972,7 @@ bsaes_xts_encrypt:
 	leaq	32(%rbp),%rdi
 	leaq	32(%rbp),%rsi
 	leaq	(%r15),%rdx
-	call	asm_AES_encrypt
+	call	aes_nohw_encrypt
 	pxor	32(%rbp),%xmm15
 
 
@@ -2005,7 +2005,7 @@ bsaes_xts_encrypt:
 	leaq	32(%rbp),%rsi
 	movdqa	%xmm15,32(%rbp)
 	leaq	(%r15),%rdx
-	call	asm_AES_encrypt
+	call	aes_nohw_encrypt
 	pxor	32(%rbp),%xmm6
 	movdqu	%xmm6,-16(%r13)
 
@@ -2077,7 +2077,7 @@ bsaes_xts_decrypt:
 	leaq	(%r9),%rdi
 	leaq	32(%rbp),%rsi
 	leaq	(%r8),%rdx
-	call	asm_AES_encrypt
+	call	aes_nohw_encrypt
 
 	movl	240(%r15),%eax
 	movq	%r14,%rbx
@@ -2454,7 +2454,7 @@ bsaes_xts_decrypt:
 	leaq	32(%rbp),%rdi
 	leaq	32(%rbp),%rsi
 	leaq	(%r15),%rdx
-	call	asm_AES_decrypt
+	call	aes_nohw_decrypt
 	pxor	32(%rbp),%xmm15
 
 
@@ -2485,7 +2485,7 @@ bsaes_xts_decrypt:
 	leaq	32(%rbp),%rsi
 	movdqa	%xmm15,32(%rbp)
 	leaq	(%r15),%rdx
-	call	asm_AES_decrypt
+	call	aes_nohw_decrypt
 	pxor	32(%rbp),%xmm6
 	movq	%r13,%rdx
 	movdqu	%xmm6,(%r13)
@@ -2506,7 +2506,7 @@ bsaes_xts_decrypt:
 	leaq	32(%rbp),%rsi
 	movdqa	%xmm15,32(%rbp)
 	leaq	(%r15),%rdx
-	call	asm_AES_decrypt
+	call	aes_nohw_decrypt
 	pxor	32(%rbp),%xmm5
 	movdqu	%xmm5,(%r13)
 

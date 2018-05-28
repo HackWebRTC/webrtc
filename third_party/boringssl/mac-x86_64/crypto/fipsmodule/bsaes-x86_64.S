@@ -1071,9 +1071,9 @@ L$key_loop:
 _bsaes_cbc_encrypt:
 
 	cmpl	$0,%r9d
-	jne	_asm_AES_cbc_encrypt
+	jne	_aes_nohw_cbc_encrypt
 	cmpq	$128,%rdx
-	jb	_asm_AES_cbc_encrypt
+	jb	_aes_nohw_cbc_encrypt
 
 	movq	%rsp,%rax
 L$cbc_dec_prologue:
@@ -1295,7 +1295,7 @@ L$cbc_dec_one:
 	leaq	(%r12),%rdi
 	leaq	32(%rbp),%rsi
 	leaq	(%r15),%rdx
-	call	_asm_AES_decrypt
+	call	_aes_nohw_decrypt
 	pxor	32(%rbp),%xmm14
 	movdqu	%xmm14,(%r13)
 	movdqa	%xmm15,%xmm14
@@ -1505,7 +1505,7 @@ L$ctr_enc_short:
 	leaq	32(%rbp),%rdi
 	leaq	48(%rbp),%rsi
 	leaq	(%r15),%rdx
-	call	_asm_AES_encrypt
+	call	_aes_nohw_encrypt
 	movdqu	(%r12),%xmm0
 	leaq	16(%r12),%r12
 	movl	44(%rbp),%eax
@@ -1581,7 +1581,7 @@ L$xts_enc_prologue:
 	leaq	(%r9),%rdi
 	leaq	32(%rbp),%rsi
 	leaq	(%r8),%rdx
-	call	_asm_AES_encrypt
+	call	_aes_nohw_encrypt
 
 	movl	240(%r15),%eax
 	movq	%r14,%rbx
@@ -1951,7 +1951,7 @@ L$xts_enc_1:
 	leaq	32(%rbp),%rdi
 	leaq	32(%rbp),%rsi
 	leaq	(%r15),%rdx
-	call	_asm_AES_encrypt
+	call	_aes_nohw_encrypt
 	pxor	32(%rbp),%xmm15
 
 
@@ -1984,7 +1984,7 @@ L$xts_enc_steal:
 	leaq	32(%rbp),%rsi
 	movdqa	%xmm15,32(%rbp)
 	leaq	(%r15),%rdx
-	call	_asm_AES_encrypt
+	call	_aes_nohw_encrypt
 	pxor	32(%rbp),%xmm6
 	movdqu	%xmm6,-16(%r13)
 
@@ -2050,7 +2050,7 @@ L$xts_dec_prologue:
 	leaq	(%r9),%rdi
 	leaq	32(%rbp),%rsi
 	leaq	(%r8),%rdx
-	call	_asm_AES_encrypt
+	call	_aes_nohw_encrypt
 
 	movl	240(%r15),%eax
 	movq	%r14,%rbx
@@ -2427,7 +2427,7 @@ L$xts_dec_1:
 	leaq	32(%rbp),%rdi
 	leaq	32(%rbp),%rsi
 	leaq	(%r15),%rdx
-	call	_asm_AES_decrypt
+	call	_aes_nohw_decrypt
 	pxor	32(%rbp),%xmm15
 
 
@@ -2458,7 +2458,7 @@ L$xts_dec_done:
 	leaq	32(%rbp),%rsi
 	movdqa	%xmm15,32(%rbp)
 	leaq	(%r15),%rdx
-	call	_asm_AES_decrypt
+	call	_aes_nohw_decrypt
 	pxor	32(%rbp),%xmm6
 	movq	%r13,%rdx
 	movdqu	%xmm6,(%r13)
@@ -2479,7 +2479,7 @@ L$xts_dec_steal:
 	leaq	32(%rbp),%rsi
 	movdqa	%xmm15,32(%rbp)
 	leaq	(%r15),%rdx
-	call	_asm_AES_decrypt
+	call	_aes_nohw_decrypt
 	pxor	32(%rbp),%xmm5
 	movdqu	%xmm5,(%r13)
 

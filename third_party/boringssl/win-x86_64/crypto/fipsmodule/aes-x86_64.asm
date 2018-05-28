@@ -331,14 +331,14 @@ $L$enc_compact_done:
 DB	0xf3,0xc3
 
 ALIGN	16
-global	asm_AES_encrypt
+global	aes_nohw_encrypt
 
 
-asm_AES_encrypt:
+aes_nohw_encrypt:
 	mov	QWORD[8+rsp],rdi	;WIN64 prologue
 	mov	QWORD[16+rsp],rsi
 	mov	rax,rsp
-$L$SEH_begin_asm_AES_encrypt:
+$L$SEH_begin_aes_nohw_encrypt:
 	mov	rdi,rcx
 	mov	rsi,rdx
 	mov	rdx,r8
@@ -423,7 +423,7 @@ $L$enc_epilogue:
 	mov	rsi,QWORD[16+rsp]
 	DB	0F3h,0C3h		;repret
 
-$L$SEH_end_asm_AES_encrypt:
+$L$SEH_end_aes_nohw_encrypt:
 
 ALIGN	16
 _x86_64_AES_decrypt:
@@ -805,14 +805,14 @@ $L$dec_compact_done:
 DB	0xf3,0xc3
 
 ALIGN	16
-global	asm_AES_decrypt
+global	aes_nohw_decrypt
 
 
-asm_AES_decrypt:
+aes_nohw_decrypt:
 	mov	QWORD[8+rsp],rdi	;WIN64 prologue
 	mov	QWORD[16+rsp],rsi
 	mov	rax,rsp
-$L$SEH_begin_asm_AES_decrypt:
+$L$SEH_begin_aes_nohw_decrypt:
 	mov	rdi,rcx
 	mov	rsi,rdx
 	mov	rdx,r8
@@ -899,15 +899,15 @@ $L$dec_epilogue:
 	mov	rsi,QWORD[16+rsp]
 	DB	0F3h,0C3h		;repret
 
-$L$SEH_end_asm_AES_decrypt:
+$L$SEH_end_aes_nohw_decrypt:
 ALIGN	16
-global	asm_AES_set_encrypt_key
+global	aes_nohw_set_encrypt_key
 
-asm_AES_set_encrypt_key:
+aes_nohw_set_encrypt_key:
 	mov	QWORD[8+rsp],rdi	;WIN64 prologue
 	mov	QWORD[16+rsp],rsi
 	mov	rax,rsp
-$L$SEH_begin_asm_AES_set_encrypt_key:
+$L$SEH_begin_aes_nohw_set_encrypt_key:
 	mov	rdi,rcx
 	mov	rsi,rdx
 	mov	rdx,r8
@@ -943,7 +943,7 @@ $L$enc_key_epilogue:
 	mov	rsi,QWORD[16+rsp]
 	DB	0F3h,0C3h		;repret
 
-$L$SEH_end_asm_AES_set_encrypt_key:
+$L$SEH_end_aes_nohw_set_encrypt_key:
 
 
 ALIGN	16
@@ -1185,13 +1185,13 @@ $L$exit:
 DB	0xf3,0xc3
 
 ALIGN	16
-global	asm_AES_set_decrypt_key
+global	aes_nohw_set_decrypt_key
 
-asm_AES_set_decrypt_key:
+aes_nohw_set_decrypt_key:
 	mov	QWORD[8+rsp],rdi	;WIN64 prologue
 	mov	QWORD[16+rsp],rsi
 	mov	rax,rsp
-$L$SEH_begin_asm_AES_set_decrypt_key:
+$L$SEH_begin_aes_nohw_set_decrypt_key:
 	mov	rdi,rcx
 	mov	rsi,rdx
 	mov	rdx,r8
@@ -1397,17 +1397,17 @@ $L$dec_key_epilogue:
 	mov	rsi,QWORD[16+rsp]
 	DB	0F3h,0C3h		;repret
 
-$L$SEH_end_asm_AES_set_decrypt_key:
+$L$SEH_end_aes_nohw_set_decrypt_key:
 ALIGN	16
-global	asm_AES_cbc_encrypt
+global	aes_nohw_cbc_encrypt
 
 EXTERN	OPENSSL_ia32cap_P
 
-asm_AES_cbc_encrypt:
+aes_nohw_cbc_encrypt:
 	mov	QWORD[8+rsp],rdi	;WIN64 prologue
 	mov	QWORD[16+rsp],rsi
 	mov	rax,rsp
-$L$SEH_begin_asm_AES_cbc_encrypt:
+$L$SEH_begin_aes_nohw_cbc_encrypt:
 	mov	rdi,rcx
 	mov	rsi,rdx
 	mov	rdx,r8
@@ -1886,7 +1886,7 @@ $L$cbc_epilogue:
 	mov	rsi,QWORD[16+rsp]
 	DB	0F3h,0C3h		;repret
 
-$L$SEH_end_asm_AES_cbc_encrypt:
+$L$SEH_end_aes_nohw_cbc_encrypt:
 ALIGN	64
 $L$AES_Te:
 	DD	0xa56363c6,0xa56363c6
@@ -2898,44 +2898,44 @@ $L$common_seh_exit:
 
 section	.pdata rdata align=4
 ALIGN	4
-	DD	$L$SEH_begin_asm_AES_encrypt wrt ..imagebase
-	DD	$L$SEH_end_asm_AES_encrypt wrt ..imagebase
-	DD	$L$SEH_info_asm_AES_encrypt wrt ..imagebase
+	DD	$L$SEH_begin_aes_nohw_encrypt wrt ..imagebase
+	DD	$L$SEH_end_aes_nohw_encrypt wrt ..imagebase
+	DD	$L$SEH_info_aes_nohw_encrypt wrt ..imagebase
 
-	DD	$L$SEH_begin_asm_AES_decrypt wrt ..imagebase
-	DD	$L$SEH_end_asm_AES_decrypt wrt ..imagebase
-	DD	$L$SEH_info_asm_AES_decrypt wrt ..imagebase
+	DD	$L$SEH_begin_aes_nohw_decrypt wrt ..imagebase
+	DD	$L$SEH_end_aes_nohw_decrypt wrt ..imagebase
+	DD	$L$SEH_info_aes_nohw_decrypt wrt ..imagebase
 
-	DD	$L$SEH_begin_asm_AES_set_encrypt_key wrt ..imagebase
-	DD	$L$SEH_end_asm_AES_set_encrypt_key wrt ..imagebase
-	DD	$L$SEH_info_asm_AES_set_encrypt_key wrt ..imagebase
+	DD	$L$SEH_begin_aes_nohw_set_encrypt_key wrt ..imagebase
+	DD	$L$SEH_end_aes_nohw_set_encrypt_key wrt ..imagebase
+	DD	$L$SEH_info_aes_nohw_set_encrypt_key wrt ..imagebase
 
-	DD	$L$SEH_begin_asm_AES_set_decrypt_key wrt ..imagebase
-	DD	$L$SEH_end_asm_AES_set_decrypt_key wrt ..imagebase
-	DD	$L$SEH_info_asm_AES_set_decrypt_key wrt ..imagebase
+	DD	$L$SEH_begin_aes_nohw_set_decrypt_key wrt ..imagebase
+	DD	$L$SEH_end_aes_nohw_set_decrypt_key wrt ..imagebase
+	DD	$L$SEH_info_aes_nohw_set_decrypt_key wrt ..imagebase
 
-	DD	$L$SEH_begin_asm_AES_cbc_encrypt wrt ..imagebase
-	DD	$L$SEH_end_asm_AES_cbc_encrypt wrt ..imagebase
-	DD	$L$SEH_info_asm_AES_cbc_encrypt wrt ..imagebase
+	DD	$L$SEH_begin_aes_nohw_cbc_encrypt wrt ..imagebase
+	DD	$L$SEH_end_aes_nohw_cbc_encrypt wrt ..imagebase
+	DD	$L$SEH_info_aes_nohw_cbc_encrypt wrt ..imagebase
 
 section	.xdata rdata align=8
 ALIGN	8
-$L$SEH_info_asm_AES_encrypt:
+$L$SEH_info_aes_nohw_encrypt:
 DB	9,0,0,0
 	DD	block_se_handler wrt ..imagebase
 	DD	$L$enc_prologue wrt ..imagebase,$L$enc_epilogue wrt ..imagebase
-$L$SEH_info_asm_AES_decrypt:
+$L$SEH_info_aes_nohw_decrypt:
 DB	9,0,0,0
 	DD	block_se_handler wrt ..imagebase
 	DD	$L$dec_prologue wrt ..imagebase,$L$dec_epilogue wrt ..imagebase
-$L$SEH_info_asm_AES_set_encrypt_key:
+$L$SEH_info_aes_nohw_set_encrypt_key:
 DB	9,0,0,0
 	DD	key_se_handler wrt ..imagebase
 	DD	$L$enc_key_prologue wrt ..imagebase,$L$enc_key_epilogue wrt ..imagebase
-$L$SEH_info_asm_AES_set_decrypt_key:
+$L$SEH_info_aes_nohw_set_decrypt_key:
 DB	9,0,0,0
 	DD	key_se_handler wrt ..imagebase
 	DD	$L$dec_key_prologue wrt ..imagebase,$L$dec_key_epilogue wrt ..imagebase
-$L$SEH_info_asm_AES_cbc_encrypt:
+$L$SEH_info_aes_nohw_cbc_encrypt:
 DB	9,0,0,0
 	DD	cbc_se_handler wrt ..imagebase

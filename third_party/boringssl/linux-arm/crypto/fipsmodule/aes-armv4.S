@@ -165,15 +165,15 @@ AES_Te:
 .word	0x1B000000, 0x36000000, 0, 0, 0, 0, 0, 0
 .size	AES_Te,.-AES_Te
 
-@ void asm_AES_encrypt(const unsigned char *in, unsigned char *out,
-@ 		       const AES_KEY *key) {
-.globl	asm_AES_encrypt
-.hidden	asm_AES_encrypt
-.type	asm_AES_encrypt,%function
+@ void aes_nohw_encrypt(const unsigned char *in, unsigned char *out,
+@ 		                  const AES_KEY *key) {
+.globl	aes_nohw_encrypt
+.hidden	aes_nohw_encrypt
+.type	aes_nohw_encrypt,%function
 .align	5
-asm_AES_encrypt:
+aes_nohw_encrypt:
 #ifndef	__thumb2__
-	sub	r3,pc,#8		@ asm_AES_encrypt
+	sub	r3,pc,#8		@ aes_nohw_encrypt
 #else
 	adr	r3,.
 #endif
@@ -181,7 +181,7 @@ asm_AES_encrypt:
 #if defined(__thumb2__) || defined(__APPLE__)
 	adr	r10,AES_Te
 #else
-	sub	r10,r3,#asm_AES_encrypt-AES_Te	@ Te
+	sub	r10,r3,#aes_nohw_encrypt-AES_Te	@ Te
 #endif
 	mov	r12,r0		@ inp
 	mov	r11,r2
@@ -278,7 +278,7 @@ asm_AES_encrypt:
 	moveq	pc,lr			@ be binary compatible with V4, yet
 .word	0xe12fff1e			@ interoperable with Thumb ISA:-)
 #endif
-.size	asm_AES_encrypt,.-asm_AES_encrypt
+.size	aes_nohw_encrypt,.-aes_nohw_encrypt
 
 .type	_armv4_AES_encrypt,%function
 .align	2
@@ -417,14 +417,14 @@ _armv4_AES_encrypt:
 	ldr	pc,[sp],#4		@ pop and return
 .size	_armv4_AES_encrypt,.-_armv4_AES_encrypt
 
-.globl	asm_AES_set_encrypt_key
-.hidden	asm_AES_set_encrypt_key
-.type	asm_AES_set_encrypt_key,%function
+.globl	aes_nohw_set_encrypt_key
+.hidden	aes_nohw_set_encrypt_key
+.type	aes_nohw_set_encrypt_key,%function
 .align	5
-asm_AES_set_encrypt_key:
+aes_nohw_set_encrypt_key:
 _armv4_AES_set_encrypt_key:
 #ifndef	__thumb2__
-	sub	r3,pc,#8		@ asm_AES_set_encrypt_key
+	sub	r3,pc,#8		@ aes_nohw_set_encrypt_key
 #else
 	adr	r3,.
 #endif
@@ -722,23 +722,23 @@ _armv4_AES_set_encrypt_key:
 	moveq	pc,lr			@ be binary compatible with V4, yet
 .word	0xe12fff1e			@ interoperable with Thumb ISA:-)
 #endif
-.size	asm_AES_set_encrypt_key,.-asm_AES_set_encrypt_key
+.size	aes_nohw_set_encrypt_key,.-aes_nohw_set_encrypt_key
 
-.globl	asm_AES_set_decrypt_key
-.hidden	asm_AES_set_decrypt_key
-.type	asm_AES_set_decrypt_key,%function
+.globl	aes_nohw_set_decrypt_key
+.hidden	aes_nohw_set_decrypt_key
+.type	aes_nohw_set_decrypt_key,%function
 .align	5
-asm_AES_set_decrypt_key:
+aes_nohw_set_decrypt_key:
 	str	lr,[sp,#-4]!            @ push lr
 	bl	_armv4_AES_set_encrypt_key
 	teq	r0,#0
 	ldr	lr,[sp],#4              @ pop lr
 	bne	.Labrt
 
-	mov	r0,r2			@ asm_AES_set_encrypt_key preserves r2,
+	mov	r0,r2			@ aes_nohw_set_encrypt_key preserves r2,
 	mov	r1,r2			@ which is AES_KEY *key
 	b	_armv4_AES_set_enc2dec_key
-.size	asm_AES_set_decrypt_key,.-asm_AES_set_decrypt_key
+.size	aes_nohw_set_decrypt_key,.-aes_nohw_set_decrypt_key
 
 @ void AES_set_enc2dec_key(const AES_KEY *inp,AES_KEY *out)
 .globl	AES_set_enc2dec_key
@@ -940,15 +940,15 @@ AES_Td:
 .byte	0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d
 .size	AES_Td,.-AES_Td
 
-@ void asm_AES_decrypt(const unsigned char *in, unsigned char *out,
-@ 		       const AES_KEY *key) {
-.globl	asm_AES_decrypt
-.hidden	asm_AES_decrypt
-.type	asm_AES_decrypt,%function
+@ void aes_nohw_decrypt(const unsigned char *in, unsigned char *out,
+@ 		                  const AES_KEY *key) {
+.globl	aes_nohw_decrypt
+.hidden	aes_nohw_decrypt
+.type	aes_nohw_decrypt,%function
 .align	5
-asm_AES_decrypt:
+aes_nohw_decrypt:
 #ifndef	__thumb2__
-	sub	r3,pc,#8		@ asm_AES_decrypt
+	sub	r3,pc,#8		@ aes_nohw_decrypt
 #else
 	adr	r3,.
 #endif
@@ -956,7 +956,7 @@ asm_AES_decrypt:
 #if defined(__thumb2__) || defined(__APPLE__)
 	adr	r10,AES_Td
 #else
-	sub	r10,r3,#asm_AES_decrypt-AES_Td	@ Td
+	sub	r10,r3,#aes_nohw_decrypt-AES_Td	@ Td
 #endif
 	mov	r12,r0		@ inp
 	mov	r11,r2
@@ -1053,7 +1053,7 @@ asm_AES_decrypt:
 	moveq	pc,lr			@ be binary compatible with V4, yet
 .word	0xe12fff1e			@ interoperable with Thumb ISA:-)
 #endif
-.size	asm_AES_decrypt,.-asm_AES_decrypt
+.size	aes_nohw_decrypt,.-aes_nohw_decrypt
 
 .type	_armv4_AES_decrypt,%function
 .align	2

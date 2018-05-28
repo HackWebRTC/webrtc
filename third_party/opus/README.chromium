@@ -18,3 +18,5 @@ Local changes:
 * Apply https://github.com/xiph/opus/pull/73
 * Apply https://github.com/xiph/opus/pull/87
 * Make sure HB_gain is not NaN in an attempt to fix chromium:826914
+* Saturate add to avoid int overflow to fix chromium:842528. This should be
+  reverted when updating to v1.3

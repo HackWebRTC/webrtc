@@ -5,8 +5,8 @@ default	rel
 section	.text code align=64
 
 
-EXTERN	asm_AES_encrypt
-EXTERN	asm_AES_decrypt
+EXTERN	aes_nohw_encrypt
+EXTERN	aes_nohw_decrypt
 
 
 ALIGN	64
@@ -1067,7 +1067,7 @@ DB	102,15,56,0,244
 
 	DB	0F3h,0C3h		;repret
 
-EXTERN	asm_AES_cbc_encrypt
+EXTERN	aes_nohw_cbc_encrypt
 global	bsaes_cbc_encrypt
 
 ALIGN	16
@@ -1075,9 +1075,9 @@ bsaes_cbc_encrypt:
 
 	mov	r11d,DWORD[48+rsp]
 	cmp	r11d,0
-	jne	NEAR asm_AES_cbc_encrypt
+	jne	NEAR aes_nohw_cbc_encrypt
 	cmp	r8,128
-	jb	NEAR asm_AES_cbc_encrypt
+	jb	NEAR aes_nohw_cbc_encrypt
 
 	mov	rax,rsp
 $L$cbc_dec_prologue:
@@ -1312,7 +1312,7 @@ $L$cbc_dec_one:
 	lea	rcx,[r12]
 	lea	rdx,[32+rbp]
 	lea	r8,[r15]
-	call	asm_AES_decrypt
+	call	aes_nohw_decrypt
 	pxor	xmm14,XMMWORD[32+rbp]
 	movdqu	XMMWORD[r13],xmm14
 	movdqa	xmm14,xmm15
@@ -1546,7 +1546,7 @@ $L$ctr_enc_short:
 	lea	rcx,[32+rbp]
 	lea	rdx,[48+rbp]
 	lea	r8,[r15]
-	call	asm_AES_encrypt
+	call	aes_nohw_encrypt
 	movdqu	xmm0,XMMWORD[r12]
 	lea	r12,[16+r12]
 	mov	eax,DWORD[44+rbp]
@@ -1647,7 +1647,7 @@ $L$xts_enc_body:
 	lea	rcx,[r11]
 	lea	rdx,[32+rbp]
 	lea	r8,[r10]
-	call	asm_AES_encrypt
+	call	aes_nohw_encrypt
 
 	mov	eax,DWORD[240+r15]
 	mov	rbx,r14
@@ -2017,7 +2017,7 @@ $L$xts_enc_1:
 	lea	rcx,[32+rbp]
 	lea	rdx,[32+rbp]
 	lea	r8,[r15]
-	call	asm_AES_encrypt
+	call	aes_nohw_encrypt
 	pxor	xmm15,XMMWORD[32+rbp]
 
 
@@ -2050,7 +2050,7 @@ $L$xts_enc_steal:
 	lea	rdx,[32+rbp]
 	movdqa	XMMWORD[32+rbp],xmm15
 	lea	r8,[r15]
-	call	asm_AES_encrypt
+	call	aes_nohw_encrypt
 	pxor	xmm6,XMMWORD[32+rbp]
 	movdqu	XMMWORD[(-16)+r13],xmm6
 
@@ -2141,7 +2141,7 @@ $L$xts_dec_body:
 	lea	rcx,[r11]
 	lea	rdx,[32+rbp]
 	lea	r8,[r10]
-	call	asm_AES_encrypt
+	call	aes_nohw_encrypt
 
 	mov	eax,DWORD[240+r15]
 	mov	rbx,r14
@@ -2518,7 +2518,7 @@ $L$xts_dec_1:
 	lea	rcx,[32+rbp]
 	lea	rdx,[32+rbp]
 	lea	r8,[r15]
-	call	asm_AES_decrypt
+	call	aes_nohw_decrypt
 	pxor	xmm15,XMMWORD[32+rbp]
 
 
@@ -2549,7 +2549,7 @@ $L$xts_dec_done:
 	lea	rdx,[32+rbp]
 	movdqa	XMMWORD[32+rbp],xmm15
 	lea	r8,[r15]
-	call	asm_AES_decrypt
+	call	aes_nohw_decrypt
 	pxor	xmm6,XMMWORD[32+rbp]
 	mov	rdx,r13
 	movdqu	XMMWORD[r13],xmm6
@@ -2570,7 +2570,7 @@ $L$xts_dec_steal:
 	lea	rdx,[32+rbp]
 	movdqa	XMMWORD[32+rbp],xmm15
 	lea	r8,[r15]
-	call	asm_AES_decrypt
+	call	aes_nohw_decrypt
 	pxor	xmm5,XMMWORD[32+rbp]
 	movdqu	XMMWORD[r13],xmm5
 

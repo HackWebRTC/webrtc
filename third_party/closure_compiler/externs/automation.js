@@ -101,6 +101,8 @@ chrome.automation.RoleType = {
   COMBO_BOX_GROUPING: 'comboBoxGrouping',
   COMBO_BOX_MENU_BUTTON: 'comboBoxMenuButton',
   COMPLEMENTARY: 'complementary',
+  CONTENT_DELETION: 'contentDeletion',
+  CONTENT_INSERTION: 'contentInsertion',
   CONTENT_INFO: 'contentInfo',
   DATE: 'date',
   DATE_TIME: 'dateTime',
@@ -1199,6 +1201,20 @@ chrome.automation.AutomationNode.prototype.backgroundColor;
 chrome.automation.AutomationNode.prototype.colorValue;
 
 /**
+ * Indicates node text is subscript.
+ * @type {boolean}
+ * @see https://developer.chrome.com/extensions/automation#type-subscript
+ */
+chrome.automation.AutomationNode.prototype.subscript;
+
+/**
+ * Indicates node text is superscript.
+ * @type {boolean}
+ * @see https://developer.chrome.com/extensions/automation#type-superscript
+ */
+chrome.automation.AutomationNode.prototype.superscript;
+
+/**
  * Indicates node text is bold.
  * @type {boolean}
  * @see https://developer.chrome.com/extensions/automation#type-bold
@@ -1536,6 +1552,14 @@ chrome.automation.AutomationNode.prototype.findAll = function(params) {};
  * @see https://developer.chrome.com/extensions/automation#method-matches
  */
 chrome.automation.AutomationNode.prototype.matches = function(params) {};
+
+/**
+ * @param {string} searchStr
+ * @param {boolean} backward
+ * @return {!chrome.automation.AutomationNode}
+ * @see https://developer.chrome.com/extensions/automation#method-getNextTextMatch
+ */
+chrome.automation.AutomationNode.prototype.getNextTextMatch = function(searchStr, backward) {};
 
 
 /**

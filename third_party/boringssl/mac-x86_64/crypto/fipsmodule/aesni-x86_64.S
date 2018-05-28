@@ -1,11 +1,11 @@
 #if defined(__x86_64__) && !defined(OPENSSL_NO_ASM)
 .text	
 
-.globl	_aesni_encrypt
-.private_extern _aesni_encrypt
+.globl	_aes_hw_encrypt
+.private_extern _aes_hw_encrypt
 
 .p2align	4
-_aesni_encrypt:
+_aes_hw_encrypt:
 	movups	(%rdi),%xmm2
 	movl	240(%rdx),%eax
 	movups	(%rdx),%xmm0
@@ -26,11 +26,11 @@ L$oop_enc1_1:
 	.byte	0xf3,0xc3
 
 
-.globl	_aesni_decrypt
-.private_extern _aesni_decrypt
+.globl	_aes_hw_decrypt
+.private_extern _aes_hw_decrypt
 
 .p2align	4
-_aesni_decrypt:
+_aes_hw_decrypt:
 	movups	(%rdi),%xmm2
 	movl	240(%rdx),%eax
 	movups	(%rdx),%xmm0
@@ -492,11 +492,11 @@ L$dec_loop8_enter:
 .byte	102,68,15,56,223,200
 	.byte	0xf3,0xc3
 
-.globl	_aesni_ecb_encrypt
-.private_extern _aesni_ecb_encrypt
+.globl	_aes_hw_ecb_encrypt
+.private_extern _aes_hw_ecb_encrypt
 
 .p2align	4
-_aesni_ecb_encrypt:
+_aes_hw_ecb_encrypt:
 	andq	$-16,%rdx
 	jz	L$ecb_ret
 
@@ -835,11 +835,11 @@ L$ecb_ret:
 	pxor	%xmm1,%xmm1
 	.byte	0xf3,0xc3
 
-.globl	_aesni_ccm64_encrypt_blocks
-.private_extern _aesni_ccm64_encrypt_blocks
+.globl	_aes_hw_ccm64_encrypt_blocks
+.private_extern _aes_hw_ccm64_encrypt_blocks
 
 .p2align	4
-_aesni_ccm64_encrypt_blocks:
+_aes_hw_ccm64_encrypt_blocks:
 	movl	240(%rcx),%eax
 	movdqu	(%r8),%xmm6
 	movdqa	L$increment64(%rip),%xmm9
@@ -899,11 +899,11 @@ L$ccm64_enc2_loop:
 	pxor	%xmm6,%xmm6
 	.byte	0xf3,0xc3
 
-.globl	_aesni_ccm64_decrypt_blocks
-.private_extern _aesni_ccm64_decrypt_blocks
+.globl	_aes_hw_ccm64_decrypt_blocks
+.private_extern _aes_hw_ccm64_decrypt_blocks
 
 .p2align	4
-_aesni_ccm64_decrypt_blocks:
+_aes_hw_ccm64_decrypt_blocks:
 	movl	240(%rcx),%eax
 	movups	(%r8),%xmm6
 	movdqu	(%r9),%xmm3
@@ -997,11 +997,11 @@ L$oop_enc1_6:
 	pxor	%xmm6,%xmm6
 	.byte	0xf3,0xc3
 
-.globl	_aesni_ctr32_encrypt_blocks
-.private_extern _aesni_ctr32_encrypt_blocks
+.globl	_aes_hw_ctr32_encrypt_blocks
+.private_extern _aes_hw_ctr32_encrypt_blocks
 
 .p2align	4
-_aesni_ctr32_encrypt_blocks:
+_aes_hw_ctr32_encrypt_blocks:
 
 	cmpq	$1,%rdx
 	jne	L$ctr32_bulk
@@ -1577,11 +1577,11 @@ L$ctr32_epilogue:
 	.byte	0xf3,0xc3
 
 
-.globl	_aesni_xts_encrypt
-.private_extern _aesni_xts_encrypt
+.globl	_aes_hw_xts_encrypt
+.private_extern _aes_hw_xts_encrypt
 
 .p2align	4
-_aesni_xts_encrypt:
+_aes_hw_xts_encrypt:
 
 	leaq	(%rsp),%r11
 
@@ -2048,11 +2048,11 @@ L$xts_enc_epilogue:
 	.byte	0xf3,0xc3
 
 
-.globl	_aesni_xts_decrypt
-.private_extern _aesni_xts_decrypt
+.globl	_aes_hw_xts_decrypt
+.private_extern _aes_hw_xts_decrypt
 
 .p2align	4
-_aesni_xts_decrypt:
+_aes_hw_xts_decrypt:
 
 	leaq	(%rsp),%r11
 
@@ -2556,11 +2556,11 @@ L$xts_dec_epilogue:
 	.byte	0xf3,0xc3
 
 
-.globl	_aesni_ocb_encrypt
-.private_extern _aesni_ocb_encrypt
+.globl	_aes_hw_ocb_encrypt
+.private_extern _aes_hw_ocb_encrypt
 
 .p2align	5
-_aesni_ocb_encrypt:
+_aes_hw_ocb_encrypt:
 
 	leaq	(%rsp),%rax
 	pushq	%rbx
@@ -2973,11 +2973,11 @@ L$ocb_enc_loop1:
 	.byte	0xf3,0xc3
 
 
-.globl	_aesni_ocb_decrypt
-.private_extern _aesni_ocb_decrypt
+.globl	_aes_hw_ocb_decrypt
+.private_extern _aes_hw_ocb_decrypt
 
 .p2align	5
-_aesni_ocb_decrypt:
+_aes_hw_ocb_decrypt:
 
 	leaq	(%rsp),%rax
 	pushq	%rbx
@@ -3400,11 +3400,11 @@ L$ocb_dec_loop1:
 .byte	102,15,56,223,215
 	.byte	0xf3,0xc3
 
-.globl	_aesni_cbc_encrypt
-.private_extern _aesni_cbc_encrypt
+.globl	_aes_hw_cbc_encrypt
+.private_extern _aes_hw_cbc_encrypt
 
 .p2align	4
-_aesni_cbc_encrypt:
+_aes_hw_cbc_encrypt:
 
 	testq	%rdx,%rdx
 	jz	L$cbc_ret
@@ -3993,11 +3993,11 @@ L$cbc_ret:
 	.byte	0xf3,0xc3
 
 
-.globl	_aesni_set_decrypt_key
-.private_extern _aesni_set_decrypt_key
+.globl	_aes_hw_set_decrypt_key
+.private_extern _aes_hw_set_decrypt_key
 
 .p2align	4
-_aesni_set_decrypt_key:
+_aes_hw_set_decrypt_key:
 
 .byte	0x48,0x83,0xEC,0x08
 
@@ -4038,11 +4038,11 @@ L$dec_key_ret:
 
 L$SEH_end_set_decrypt_key:
 
-.globl	_aesni_set_encrypt_key
-.private_extern _aesni_set_encrypt_key
+.globl	_aes_hw_set_encrypt_key
+.private_extern _aes_hw_set_encrypt_key
 
 .p2align	4
-_aesni_set_encrypt_key:
+_aes_hw_set_encrypt_key:
 __aesni_set_encrypt_key:
 
 .byte	0x48,0x83,0xEC,0x08

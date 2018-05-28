@@ -2,11 +2,11 @@
 .text	
 .extern	OPENSSL_ia32cap_P
 .hidden OPENSSL_ia32cap_P
-.globl	aesni_encrypt
-.hidden aesni_encrypt
-.type	aesni_encrypt,@function
+.globl	aes_hw_encrypt
+.hidden aes_hw_encrypt
+.type	aes_hw_encrypt,@function
 .align	16
-aesni_encrypt:
+aes_hw_encrypt:
 	movups	(%rdi),%xmm2
 	movl	240(%rdx),%eax
 	movups	(%rdx),%xmm0
@@ -25,13 +25,13 @@ aesni_encrypt:
 	movups	%xmm2,(%rsi)
 	pxor	%xmm2,%xmm2
 	.byte	0xf3,0xc3
-.size	aesni_encrypt,.-aesni_encrypt
+.size	aes_hw_encrypt,.-aes_hw_encrypt
 
-.globl	aesni_decrypt
-.hidden aesni_decrypt
-.type	aesni_decrypt,@function
+.globl	aes_hw_decrypt
+.hidden aes_hw_decrypt
+.type	aes_hw_decrypt,@function
 .align	16
-aesni_decrypt:
+aes_hw_decrypt:
 	movups	(%rdi),%xmm2
 	movl	240(%rdx),%eax
 	movups	(%rdx),%xmm0
@@ -50,7 +50,7 @@ aesni_decrypt:
 	movups	%xmm2,(%rsi)
 	pxor	%xmm2,%xmm2
 	.byte	0xf3,0xc3
-.size	aesni_decrypt, .-aesni_decrypt
+.size	aes_hw_decrypt, .-aes_hw_decrypt
 .type	_aesni_encrypt2,@function
 .align	16
 _aesni_encrypt2:
@@ -493,11 +493,11 @@ _aesni_decrypt8:
 .byte	102,68,15,56,223,200
 	.byte	0xf3,0xc3
 .size	_aesni_decrypt8,.-_aesni_decrypt8
-.globl	aesni_ecb_encrypt
-.hidden aesni_ecb_encrypt
-.type	aesni_ecb_encrypt,@function
+.globl	aes_hw_ecb_encrypt
+.hidden aes_hw_ecb_encrypt
+.type	aes_hw_ecb_encrypt,@function
 .align	16
-aesni_ecb_encrypt:
+aes_hw_ecb_encrypt:
 	andq	$-16,%rdx
 	jz	.Lecb_ret
 
@@ -835,12 +835,12 @@ aesni_ecb_encrypt:
 	xorps	%xmm0,%xmm0
 	pxor	%xmm1,%xmm1
 	.byte	0xf3,0xc3
-.size	aesni_ecb_encrypt,.-aesni_ecb_encrypt
-.globl	aesni_ccm64_encrypt_blocks
-.hidden aesni_ccm64_encrypt_blocks
-.type	aesni_ccm64_encrypt_blocks,@function
+.size	aes_hw_ecb_encrypt,.-aes_hw_ecb_encrypt
+.globl	aes_hw_ccm64_encrypt_blocks
+.hidden aes_hw_ccm64_encrypt_blocks
+.type	aes_hw_ccm64_encrypt_blocks,@function
 .align	16
-aesni_ccm64_encrypt_blocks:
+aes_hw_ccm64_encrypt_blocks:
 	movl	240(%rcx),%eax
 	movdqu	(%r8),%xmm6
 	movdqa	.Lincrement64(%rip),%xmm9
@@ -899,12 +899,12 @@ aesni_ccm64_encrypt_blocks:
 	pxor	%xmm8,%xmm8
 	pxor	%xmm6,%xmm6
 	.byte	0xf3,0xc3
-.size	aesni_ccm64_encrypt_blocks,.-aesni_ccm64_encrypt_blocks
-.globl	aesni_ccm64_decrypt_blocks
-.hidden aesni_ccm64_decrypt_blocks
-.type	aesni_ccm64_decrypt_blocks,@function
+.size	aes_hw_ccm64_encrypt_blocks,.-aes_hw_ccm64_encrypt_blocks
+.globl	aes_hw_ccm64_decrypt_blocks
+.hidden aes_hw_ccm64_decrypt_blocks
+.type	aes_hw_ccm64_decrypt_blocks,@function
 .align	16
-aesni_ccm64_decrypt_blocks:
+aes_hw_ccm64_decrypt_blocks:
 	movl	240(%rcx),%eax
 	movups	(%r8),%xmm6
 	movdqu	(%r9),%xmm3
@@ -997,12 +997,12 @@ aesni_ccm64_decrypt_blocks:
 	pxor	%xmm8,%xmm8
 	pxor	%xmm6,%xmm6
 	.byte	0xf3,0xc3
-.size	aesni_ccm64_decrypt_blocks,.-aesni_ccm64_decrypt_blocks
-.globl	aesni_ctr32_encrypt_blocks
-.hidden aesni_ctr32_encrypt_blocks
-.type	aesni_ctr32_encrypt_blocks,@function
+.size	aes_hw_ccm64_decrypt_blocks,.-aes_hw_ccm64_decrypt_blocks
+.globl	aes_hw_ctr32_encrypt_blocks
+.hidden aes_hw_ctr32_encrypt_blocks
+.type	aes_hw_ctr32_encrypt_blocks,@function
 .align	16
-aesni_ctr32_encrypt_blocks:
+aes_hw_ctr32_encrypt_blocks:
 .cfi_startproc	
 	cmpq	$1,%rdx
 	jne	.Lctr32_bulk
@@ -1577,12 +1577,12 @@ aesni_ctr32_encrypt_blocks:
 .Lctr32_epilogue:
 	.byte	0xf3,0xc3
 .cfi_endproc	
-.size	aesni_ctr32_encrypt_blocks,.-aesni_ctr32_encrypt_blocks
-.globl	aesni_xts_encrypt
-.hidden aesni_xts_encrypt
-.type	aesni_xts_encrypt,@function
+.size	aes_hw_ctr32_encrypt_blocks,.-aes_hw_ctr32_encrypt_blocks
+.globl	aes_hw_xts_encrypt
+.hidden aes_hw_xts_encrypt
+.type	aes_hw_xts_encrypt,@function
 .align	16
-aesni_xts_encrypt:
+aes_hw_xts_encrypt:
 .cfi_startproc	
 	leaq	(%rsp),%r11
 .cfi_def_cfa_register	%r11
@@ -2048,12 +2048,12 @@ aesni_xts_encrypt:
 .Lxts_enc_epilogue:
 	.byte	0xf3,0xc3
 .cfi_endproc	
-.size	aesni_xts_encrypt,.-aesni_xts_encrypt
-.globl	aesni_xts_decrypt
-.hidden aesni_xts_decrypt
-.type	aesni_xts_decrypt,@function
+.size	aes_hw_xts_encrypt,.-aes_hw_xts_encrypt
+.globl	aes_hw_xts_decrypt
+.hidden aes_hw_xts_decrypt
+.type	aes_hw_xts_decrypt,@function
 .align	16
-aesni_xts_decrypt:
+aes_hw_xts_decrypt:
 .cfi_startproc	
 	leaq	(%rsp),%r11
 .cfi_def_cfa_register	%r11
@@ -2556,12 +2556,12 @@ aesni_xts_decrypt:
 .Lxts_dec_epilogue:
 	.byte	0xf3,0xc3
 .cfi_endproc	
-.size	aesni_xts_decrypt,.-aesni_xts_decrypt
-.globl	aesni_ocb_encrypt
-.hidden aesni_ocb_encrypt
-.type	aesni_ocb_encrypt,@function
+.size	aes_hw_xts_decrypt,.-aes_hw_xts_decrypt
+.globl	aes_hw_ocb_encrypt
+.hidden aes_hw_ocb_encrypt
+.type	aes_hw_ocb_encrypt,@function
 .align	32
-aesni_ocb_encrypt:
+aes_hw_ocb_encrypt:
 .cfi_startproc	
 	leaq	(%rsp),%rax
 	pushq	%rbx
@@ -2771,7 +2771,7 @@ aesni_ocb_encrypt:
 .Locb_enc_epilogue:
 	.byte	0xf3,0xc3
 .cfi_endproc	
-.size	aesni_ocb_encrypt,.-aesni_ocb_encrypt
+.size	aes_hw_ocb_encrypt,.-aes_hw_ocb_encrypt
 
 .type	__ocb_encrypt6,@function
 .align	32
@@ -2979,11 +2979,11 @@ __ocb_encrypt1:
 	.byte	0xf3,0xc3
 .size	__ocb_encrypt1,.-__ocb_encrypt1
 
-.globl	aesni_ocb_decrypt
-.hidden aesni_ocb_decrypt
-.type	aesni_ocb_decrypt,@function
+.globl	aes_hw_ocb_decrypt
+.hidden aes_hw_ocb_decrypt
+.type	aes_hw_ocb_decrypt,@function
 .align	32
-aesni_ocb_decrypt:
+aes_hw_ocb_decrypt:
 .cfi_startproc	
 	leaq	(%rsp),%rax
 	pushq	%rbx
@@ -3215,7 +3215,7 @@ aesni_ocb_decrypt:
 .Locb_dec_epilogue:
 	.byte	0xf3,0xc3
 .cfi_endproc	
-.size	aesni_ocb_decrypt,.-aesni_ocb_decrypt
+.size	aes_hw_ocb_decrypt,.-aes_hw_ocb_decrypt
 
 .type	__ocb_decrypt6,@function
 .align	32
@@ -3411,11 +3411,11 @@ __ocb_decrypt1:
 .byte	102,15,56,223,215
 	.byte	0xf3,0xc3
 .size	__ocb_decrypt1,.-__ocb_decrypt1
-.globl	aesni_cbc_encrypt
-.hidden aesni_cbc_encrypt
-.type	aesni_cbc_encrypt,@function
+.globl	aes_hw_cbc_encrypt
+.hidden aes_hw_cbc_encrypt
+.type	aes_hw_cbc_encrypt,@function
 .align	16
-aesni_cbc_encrypt:
+aes_hw_cbc_encrypt:
 .cfi_startproc	
 	testq	%rdx,%rdx
 	jz	.Lcbc_ret
@@ -4003,12 +4003,12 @@ aesni_cbc_encrypt:
 .Lcbc_ret:
 	.byte	0xf3,0xc3
 .cfi_endproc	
-.size	aesni_cbc_encrypt,.-aesni_cbc_encrypt
-.globl	aesni_set_decrypt_key
-.hidden aesni_set_decrypt_key
-.type	aesni_set_decrypt_key,@function
+.size	aes_hw_cbc_encrypt,.-aes_hw_cbc_encrypt
+.globl	aes_hw_set_decrypt_key
+.hidden aes_hw_set_decrypt_key
+.type	aes_hw_set_decrypt_key,@function
 .align	16
-aesni_set_decrypt_key:
+aes_hw_set_decrypt_key:
 .cfi_startproc	
 .byte	0x48,0x83,0xEC,0x08
 .cfi_adjust_cfa_offset	8
@@ -4048,12 +4048,12 @@ aesni_set_decrypt_key:
 	.byte	0xf3,0xc3
 .cfi_endproc	
 .LSEH_end_set_decrypt_key:
-.size	aesni_set_decrypt_key,.-aesni_set_decrypt_key
-.globl	aesni_set_encrypt_key
-.hidden aesni_set_encrypt_key
-.type	aesni_set_encrypt_key,@function
+.size	aes_hw_set_decrypt_key,.-aes_hw_set_decrypt_key
+.globl	aes_hw_set_encrypt_key
+.hidden aes_hw_set_encrypt_key
+.type	aes_hw_set_encrypt_key,@function
 .align	16
-aesni_set_encrypt_key:
+aes_hw_set_encrypt_key:
 __aesni_set_encrypt_key:
 .cfi_startproc	
 .byte	0x48,0x83,0xEC,0x08
@@ -4424,7 +4424,7 @@ __aesni_set_encrypt_key:
 	shufps	$170,%xmm1,%xmm1
 	xorps	%xmm1,%xmm2
 	.byte	0xf3,0xc3
-.size	aesni_set_encrypt_key,.-aesni_set_encrypt_key
+.size	aes_hw_set_encrypt_key,.-aes_hw_set_encrypt_key
 .size	__aesni_set_encrypt_key,.-__aesni_set_encrypt_key
 .align	64
 .Lbswap_mask:

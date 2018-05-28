@@ -327,11 +327,11 @@ _x86_64_AES_encrypt_compact:
 .byte	0xf3,0xc3
 .size	_x86_64_AES_encrypt_compact,.-_x86_64_AES_encrypt_compact
 .align	16
-.globl	asm_AES_encrypt
-.hidden asm_AES_encrypt
-.type	asm_AES_encrypt,@function
-.hidden	asm_AES_encrypt
-asm_AES_encrypt:
+.globl	aes_nohw_encrypt
+.hidden aes_nohw_encrypt
+.type	aes_nohw_encrypt,@function
+.hidden	aes_nohw_encrypt
+aes_nohw_encrypt:
 .cfi_startproc	
 	movq	%rsp,%rax
 .cfi_def_cfa_register	%rax
@@ -409,7 +409,7 @@ asm_AES_encrypt:
 .Lenc_epilogue:
 	.byte	0xf3,0xc3
 .cfi_endproc	
-.size	asm_AES_encrypt,.-asm_AES_encrypt
+.size	aes_nohw_encrypt,.-aes_nohw_encrypt
 .type	_x86_64_AES_decrypt,@function
 .align	16
 _x86_64_AES_decrypt:
@@ -791,11 +791,11 @@ _x86_64_AES_decrypt_compact:
 .byte	0xf3,0xc3
 .size	_x86_64_AES_decrypt_compact,.-_x86_64_AES_decrypt_compact
 .align	16
-.globl	asm_AES_decrypt
-.hidden asm_AES_decrypt
-.type	asm_AES_decrypt,@function
-.hidden	asm_AES_decrypt
-asm_AES_decrypt:
+.globl	aes_nohw_decrypt
+.hidden aes_nohw_decrypt
+.type	aes_nohw_decrypt,@function
+.hidden	aes_nohw_decrypt
+aes_nohw_decrypt:
 .cfi_startproc	
 	movq	%rsp,%rax
 .cfi_def_cfa_register	%rax
@@ -875,12 +875,12 @@ asm_AES_decrypt:
 .Ldec_epilogue:
 	.byte	0xf3,0xc3
 .cfi_endproc	
-.size	asm_AES_decrypt,.-asm_AES_decrypt
+.size	aes_nohw_decrypt,.-aes_nohw_decrypt
 .align	16
-.globl	asm_AES_set_encrypt_key
-.hidden asm_AES_set_encrypt_key
-.type	asm_AES_set_encrypt_key,@function
-asm_AES_set_encrypt_key:
+.globl	aes_nohw_set_encrypt_key
+.hidden aes_nohw_set_encrypt_key
+.type	aes_nohw_set_encrypt_key,@function
+aes_nohw_set_encrypt_key:
 .cfi_startproc	
 	pushq	%rbx
 .cfi_adjust_cfa_offset	8
@@ -915,7 +915,7 @@ asm_AES_set_encrypt_key:
 .Lenc_key_epilogue:
 	.byte	0xf3,0xc3
 .cfi_endproc	
-.size	asm_AES_set_encrypt_key,.-asm_AES_set_encrypt_key
+.size	aes_nohw_set_encrypt_key,.-aes_nohw_set_encrypt_key
 
 .type	_x86_64_AES_set_encrypt_key,@function
 .align	16
@@ -1157,10 +1157,10 @@ _x86_64_AES_set_encrypt_key:
 .byte	0xf3,0xc3
 .size	_x86_64_AES_set_encrypt_key,.-_x86_64_AES_set_encrypt_key
 .align	16
-.globl	asm_AES_set_decrypt_key
-.hidden asm_AES_set_decrypt_key
-.type	asm_AES_set_decrypt_key,@function
-asm_AES_set_decrypt_key:
+.globl	aes_nohw_set_decrypt_key
+.hidden aes_nohw_set_decrypt_key
+.type	aes_nohw_set_decrypt_key,@function
+aes_nohw_set_decrypt_key:
 .cfi_startproc	
 	pushq	%rbx
 .cfi_adjust_cfa_offset	8
@@ -1365,15 +1365,15 @@ asm_AES_set_decrypt_key:
 .Ldec_key_epilogue:
 	.byte	0xf3,0xc3
 .cfi_endproc	
-.size	asm_AES_set_decrypt_key,.-asm_AES_set_decrypt_key
+.size	aes_nohw_set_decrypt_key,.-aes_nohw_set_decrypt_key
 .align	16
-.globl	asm_AES_cbc_encrypt
-.hidden asm_AES_cbc_encrypt
-.type	asm_AES_cbc_encrypt,@function
+.globl	aes_nohw_cbc_encrypt
+.hidden aes_nohw_cbc_encrypt
+.type	aes_nohw_cbc_encrypt,@function
 .extern	OPENSSL_ia32cap_P
 .hidden OPENSSL_ia32cap_P
-.hidden	asm_AES_cbc_encrypt
-asm_AES_cbc_encrypt:
+.hidden	aes_nohw_cbc_encrypt
+aes_nohw_cbc_encrypt:
 .cfi_startproc	
 	cmpq	$0,%rdx
 	je	.Lcbc_epilogue
@@ -1850,7 +1850,7 @@ asm_AES_cbc_encrypt:
 .Lcbc_epilogue:
 	.byte	0xf3,0xc3
 .cfi_endproc	
-.size	asm_AES_cbc_encrypt,.-asm_AES_cbc_encrypt
+.size	aes_nohw_cbc_encrypt,.-aes_nohw_cbc_encrypt
 .align	64
 .LAES_Te:
 .long	0xa56363c6,0xa56363c6
