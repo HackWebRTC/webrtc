@@ -27,7 +27,7 @@ rtc_source_set("bbr_controller") {
     "bbr_network_controller.h",
   ]
   deps = [
-    ":data_transfer_tracker",
+    ":bandwidth_sampler",
     ":rtt_stats",
     ":windowed_filter",
     "../../../api:optional",

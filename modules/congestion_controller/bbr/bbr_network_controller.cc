@@ -156,22 +156,49 @@ BbrNetworkController::DebugState::DebugState(const BbrNetworkController& sender)
       recovery_state(sender.recovery_state_),
       recovery_window(sender.recovery_window_),
       last_sample_is_app_limited(sender.last_sample_is_app_limited_),
-      end_of_app_limited_phase(sender.end_of_app_limited_phase_) {}
+      end_of_app_limited_phase(sender.sampler_->end_of_app_limited_phase()) {}
 
 BbrNetworkController::DebugState::DebugState(const DebugState& state) = default;
 
 BbrNetworkController::BbrNetworkController(NetworkControllerConfig config)
-    : random_(10),
+    : rtt_stats_(),
+      random_(10),
+      mode_(STARTUP),
+      sampler_(new BandwidthSampler()),
+      round_trip_count_(0),
+      last_sent_packet_(0),
+      current_round_trip_end_(0),
       max_bandwidth_(kBandwidthWindowSize, DataRate::Zero(), 0),
       default_bandwidth_(DataRate::kbps(kInitialBandwidthKbps)),
       max_ack_height_(kBandwidthWindowSize, DataSize::Zero(), 0),
+      aggregation_epoch_start_time_(),
+      aggregation_epoch_bytes_(DataSize::Zero()),
+      bytes_acked_since_queue_drained_(DataSize::Zero()),
+      max_aggregation_bytes_multiplier_(0),
+      min_rtt_(TimeDelta::Zero()),
+      last_rtt_(TimeDelta::Zero()),
+      min_rtt_timestamp_(Timestamp::ms(0)),
       congestion_window_(DataSize::bytes(kInitialCongestionWindowBytes)),
       initial_congestion_window_(
           DataSize::bytes(kInitialCongestionWindowBytes)),
       max_congestion_window_(DataSize::bytes(kDefaultMaxCongestionWindowBytes)),
+      pacing_rate_(DataRate::Zero()),
+      pacing_gain_(1),
       congestion_window_gain_constant_(kProbeBWCongestionWindowGain),
       rtt_variance_weight_(kBbrRttVariationWeight),
-      recovery_window_(max_congestion_window_) {
+      cycle_current_offset_(0),
+      last_cycle_start_(Timestamp::ms(0)),
+      is_at_full_bandwidth_(false),
+      rounds_without_bandwidth_gain_(0),
+      bandwidth_at_last_round_(DataRate::Zero()),
+      exit_probe_rtt_at_(),
+      probe_rtt_round_passed_(false),
+      last_sample_is_app_limited_(false),
+      recovery_state_(NOT_IN_RECOVERY),
+      end_recovery_at_(),
+      recovery_window_(max_congestion_window_),
+      app_limited_since_last_probe_rtt_(false),
+      min_rtt_since_last_probe_rtt_(TimeDelta::PlusInfinity()) {
   RTC_LOG(LS_INFO) << "Creating BBR controller";
   config_ = BbrControllerConfig::ExperimentConfig();
   if (config.starting_bandwidth.IsFinite())
@@ -181,6 +208,7 @@ BbrNetworkController::BbrNetworkController(NetworkControllerConfig config)
   if (config_.num_startup_rtts > 0) {
     EnterStartupMode();
   } else {
+    is_at_full_bandwidth_ = true;
     EnterProbeBandwidthMode(constraints_->at_time);
   }
 }
@@ -292,11 +320,14 @@ bool BbrNetworkController::InSlowStart() const {
 }
 
 NetworkControlUpdate BbrNetworkController::OnSentPacket(SentPacket msg) {
-  last_send_time_ = msg.send_time;
+  last_sent_packet_ = msg.sequence_number;
+
   if (!aggregation_epoch_start_time_) {
     aggregation_epoch_start_time_ = msg.send_time;
-    aggregation_epoch_bytes_ = DataSize::Zero();
   }
+
+  sampler_->OnPacketSent(msg.send_time, msg.sequence_number, msg.size,
+                         msg.data_in_flight);
   return NetworkControlUpdate();
 }
 
@@ -358,44 +389,39 @@ NetworkControlUpdate BbrNetworkController::OnTransportPacketsFeedback(
     rtt_stats_.UpdateRtt(send_delta, TimeDelta::Zero(), feedback_recv_time);
   }
 
-  DataSize bytes_in_flight = msg.data_in_flight;
-  DataSize total_acked_size = DataSize::Zero();
+  const DataSize total_data_acked_before = sampler_->total_data_acked();
 
   bool is_round_start = false;
   bool min_rtt_expired = false;
 
-  std::vector<PacketResult> acked_packets = msg.ReceivedWithSendInfo();
   std::vector<PacketResult> lost_packets = msg.LostWithSendInfo();
+  DiscardLostPackets(lost_packets);
+
+  std::vector<PacketResult> acked_packets = msg.ReceivedWithSendInfo();
   // Input the new data into the BBR model of the connection.
   if (!acked_packets.empty()) {
-    for (const PacketResult& packet : acked_packets) {
-      const SentPacket& sent_packet = *packet.sent_packet;
-      send_ack_tracker_.AddSample(sent_packet.size, sent_packet.send_time,
-                                  msg.feedback_time);
-      total_acked_size += sent_packet.size;
-    }
-    Timestamp last_acked_send_time =
-        acked_packets.rbegin()->sent_packet->send_time;
-    is_round_start = UpdateRoundTripCounter(last_acked_send_time);
-    UpdateBandwidth(msg.feedback_time, acked_packets);
-    // Min rtt will be the rtt for the last packet, since all packets are acked
-    // at the same time.
-    Timestamp last_send_time = acked_packets.back().sent_packet->send_time;
-    min_rtt_expired = UpdateMinRtt(msg.feedback_time, last_send_time);
-    UpdateRecoveryState(last_acked_send_time, !lost_packets.empty(),
+    int64_t last_acked_packet =
+        acked_packets.rbegin()->sent_packet->sequence_number;
+
+    is_round_start = UpdateRoundTripCounter(last_acked_packet);
+    min_rtt_expired =
+        UpdateBandwidthAndMinRtt(msg.feedback_time, acked_packets);
+    UpdateRecoveryState(last_acked_packet, !lost_packets.empty(),
                         is_round_start);
 
-    UpdateAckAggregationBytes(msg.feedback_time, total_acked_size);
+    const DataSize data_acked =
+        sampler_->total_data_acked() - total_data_acked_before;
+
+    UpdateAckAggregationBytes(msg.feedback_time, data_acked);
     if (max_aggregation_bytes_multiplier_ > 0) {
       if (msg.data_in_flight <=
           1.25 * GetTargetCongestionWindow(pacing_gain_)) {
         bytes_acked_since_queue_drained_ = DataSize::Zero();
       } else {
-        bytes_acked_since_queue_drained_ += total_acked_size;
+        bytes_acked_since_queue_drained_ += data_acked;
       }
-    }
+      }
   }
-  total_bytes_acked_ += total_acked_size;
 
   // Handle logic specific to PROBE_BW mode.
   if (mode_ == PROBE_BW) {
@@ -413,16 +439,22 @@ NetworkControlUpdate BbrNetworkController::OnTransportPacketsFeedback(
   MaybeEnterOrExitProbeRtt(msg, is_round_start, min_rtt_expired);
 
   // Calculate number of packets acked and lost.
-  DataSize bytes_lost = DataSize::Zero();
+  DataSize data_acked = sampler_->total_data_acked() - total_data_acked_before;
+  DataSize data_lost = DataSize::Zero();
   for (const PacketResult& packet : lost_packets) {
-    bytes_lost += packet.sent_packet->size;
+    data_lost += packet.sent_packet->size;
   }
 
   // After the model is updated, recalculate the pacing rate and congestion
   // window.
   CalculatePacingRate();
-  CalculateCongestionWindow(total_acked_size);
-  CalculateRecoveryWindow(total_acked_size, bytes_lost, bytes_in_flight);
+  CalculateCongestionWindow(data_acked);
+  CalculateRecoveryWindow(data_acked, data_lost, msg.data_in_flight);
+  // Cleanup internal state.
+  if (!acked_packets.empty()) {
+    sampler_->RemoveObsoletePackets(
+        acked_packets.back().sent_packet->sequence_number);
+  }
   return CreateRateUpdate(msg.feedback_time);
 }
 
@@ -485,32 +517,54 @@ void BbrNetworkController::EnterProbeBandwidthMode(Timestamp now) {
   pacing_gain_ = GetPacingGain(cycle_current_offset_);
 }
 
-bool BbrNetworkController::UpdateRoundTripCounter(
-    Timestamp last_acked_send_time) {
-  if (last_acked_send_time > current_round_trip_end_) {
+void BbrNetworkController::DiscardLostPackets(
+    const std::vector<PacketResult>& lost_packets) {
+  for (const PacketResult& packet : lost_packets) {
+    sampler_->OnPacketLost(packet.sent_packet->sequence_number);
+  }
+}
+
+bool BbrNetworkController::UpdateRoundTripCounter(int64_t last_acked_packet) {
+  if (last_acked_packet > current_round_trip_end_) {
     round_trip_count_++;
-    current_round_trip_end_ = last_send_time_;
+    current_round_trip_end_ = last_sent_packet_;
     return true;
   }
 
   return false;
 }
 
-bool BbrNetworkController::UpdateMinRtt(Timestamp ack_time,
-                                        Timestamp last_packet_send_time) {
-  // Note: This sample does not account for delayed acknowledgement time.  This
-  // means that the RTT measurements here can be artificially high, especially
-  // on low bandwidth connections.
-  TimeDelta sample_rtt = ack_time - last_packet_send_time;
+bool BbrNetworkController::UpdateBandwidthAndMinRtt(
+    Timestamp now,
+    const std::vector<PacketResult>& acked_packets) {
+  TimeDelta sample_rtt = TimeDelta::PlusInfinity();
+  for (const auto& packet : acked_packets) {
+    BandwidthSample bandwidth_sample = sampler_->OnPacketAcknowledged(
+        now, packet.sent_packet->sequence_number);
+    last_sample_is_app_limited_ = bandwidth_sample.is_app_limited;
+    if (!bandwidth_sample.rtt.IsZero()) {
+      sample_rtt = std::min(sample_rtt, bandwidth_sample.rtt);
+    }
+
+    if (!bandwidth_sample.is_app_limited ||
+        bandwidth_sample.bandwidth > BandwidthEstimate()) {
+      max_bandwidth_.Update(bandwidth_sample.bandwidth, round_trip_count_);
+    }
+  }
+
+  // If none of the RTT samples are valid, return immediately.
+  if (sample_rtt.IsInfinite()) {
+    return false;
+  }
+
   last_rtt_ = sample_rtt;
   min_rtt_since_last_probe_rtt_ =
       std::min(min_rtt_since_last_probe_rtt_, sample_rtt);
 
+  const TimeDelta kMinRttExpiry = TimeDelta::seconds(kMinRttExpirySeconds);
   // Do not expire min_rtt if none was ever available.
   bool min_rtt_expired =
-      !min_rtt_.IsZero() &&
-      (ack_time >
-       (min_rtt_timestamp_ + TimeDelta::seconds(kMinRttExpirySeconds)));
+      !min_rtt_.IsZero() && (now > (min_rtt_timestamp_ + kMinRttExpiry));
 
   if (min_rtt_expired || sample_rtt < min_rtt_ || min_rtt_.IsZero()) {
     if (ShouldExtendMinRttExpiry()) {
@@ -518,44 +572,13 @@ bool BbrNetworkController::UpdateMinRtt(Timestamp ack_time,
     } else {
       min_rtt_ = sample_rtt;
     }
-    min_rtt_timestamp_ = ack_time;
+    min_rtt_timestamp_ = now;
     // Reset since_last_probe_rtt fields.
     min_rtt_since_last_probe_rtt_ = TimeDelta::PlusInfinity();
     app_limited_since_last_probe_rtt_ = false;
   }
 
   return min_rtt_expired;
-}
-
-void BbrNetworkController::UpdateBandwidth(
-    Timestamp ack_time,
-    const std::vector<PacketResult>& acked_packets) {
-  // There are two possible maximum receive bandwidths based on the duration
-  // from send to ack of a packet, either including or excluding the time until
-  // the current ack was received. Therefore looking at the last and the first
-  // packet is enough. This holds if at most one feedback was received during
-  // the sending of the acked packets.
-  std::array<const PacketResult, 2> packets = {
-      {acked_packets.front(), acked_packets.back()}};
-  for (const PacketResult& packet : packets) {
-    const Timestamp& send_time = packet.sent_packet->send_time;
-    is_app_limited_ = send_time > end_of_app_limited_phase_;
-    auto result = send_ack_tracker_.GetRatesByAckTime(send_time, ack_time);
-    if (result.acked_data == DataSize::Zero())
-      continue;
-    send_ack_tracker_.ClearOldSamples(send_time);
-
-    DataRate ack_rate = result.acked_data / result.ack_timespan;
-    DataRate send_rate = result.send_timespan.IsZero()
-                             ? DataRate::Infinity()
-                             : result.acked_data / result.send_timespan;
-    DataRate bandwidth = std::min(send_rate, ack_rate);
-    if (!bandwidth.IsFinite())
-      continue;
-    if (!is_app_limited_ || bandwidth > BandwidthEstimate()) {
-      max_bandwidth_.Update(bandwidth, round_trip_count_);
-    }
-  }
 }
 
 bool BbrNetworkController::ShouldExtendMinRttExpiry() const {
@@ -629,7 +652,7 @@ void BbrNetworkController::CheckIfFullBandwidthReached() {
 
   rounds_without_bandwidth_gain_++;
   if ((rounds_without_bandwidth_gain_ >= config_.num_startup_rtts) ||
-      (exit_startup_on_loss_ && InRecovery())) {
+      (config_.exit_startup_on_loss && InRecovery())) {
     is_at_full_bandwidth_ = true;
   }
 }
@@ -667,8 +690,7 @@ void BbrNetworkController::MaybeEnterOrExitProbeRtt(
   }
 
   if (mode_ == PROBE_RTT) {
-    is_app_limited_ = true;
-    end_of_app_limited_phase_ = last_send_time_;
+    sampler_->OnAppLimited();
 
     if (!exit_probe_rtt_at_) {
       // If the window has reached the appropriate size, schedule exiting
@@ -695,12 +717,12 @@ void BbrNetworkController::MaybeEnterOrExitProbeRtt(
   }
 }
 
-void BbrNetworkController::UpdateRecoveryState(Timestamp last_acked_send_time,
+void BbrNetworkController::UpdateRecoveryState(int64_t last_acked_packet,
                                                bool has_losses,
                                                bool is_round_start) {
   // Exit recovery when there are no losses for a round.
   if (has_losses) {
-    end_recovery_at_ = last_acked_send_time;
+    end_recovery_at_ = last_sent_packet_;
   }
 
   switch (recovery_state_) {
@@ -716,7 +738,7 @@ void BbrNetworkController::UpdateRecoveryState(Timestamp last_acked_send_time,
         recovery_window_ = DataSize::Zero();
         // Since the conservation phase is meant to be lasting for a whole
         // round, extend the current round as if it were started right now.
-        current_round_trip_end_ = last_send_time_;
+        current_round_trip_end_ = last_sent_packet_;
       }
       break;
 
@@ -729,7 +751,7 @@ void BbrNetworkController::UpdateRecoveryState(Timestamp last_acked_send_time,
     case GROWTH:
       // Exit recovery if appropriate.
       if (!has_losses && end_recovery_at_ &&
-          last_acked_send_time > *end_recovery_at_) {
+          last_acked_packet > *end_recovery_at_) {
         recovery_state_ = NOT_IN_RECOVERY;
       }
 
@@ -828,7 +850,7 @@ void BbrNetworkController::CalculateCongestionWindow(DataSize bytes_acked) {
     congestion_window_ =
         std::min(target_window, congestion_window_ + bytes_acked);
   } else if (congestion_window_ < target_window ||
-             total_bytes_acked_ < initial_congestion_window_) {
+             sampler_->total_data_acked() < initial_congestion_window_) {
     // If the connection is not yet out of startup phase, do not decrease the
     // window.
     congestion_window_ = congestion_window_ + bytes_acked;
@@ -873,7 +895,7 @@ void BbrNetworkController::CalculateRecoveryWindow(DataSize bytes_acked,
     recovery_window_ += bytes_acked / 2;
   }
 
-  // Sanity checks.  Ensure that we always allow to send at leastś
+  // Sanity checks.  Ensure that we always allow to send at least
   // |bytes_acked| in response.
   recovery_window_ = std::max(recovery_window_, bytes_in_flight + bytes_acked);
   recovery_window_ = std::max(kMinimumCongestionWindow, recovery_window_);
@@ -885,12 +907,10 @@ void BbrNetworkController::OnApplicationLimited(DataSize bytes_in_flight) {
   }
 
   app_limited_since_last_probe_rtt_ = true;
+  sampler_->OnAppLimited();
 
-  is_app_limited_ = true;
-  end_of_app_limited_phase_ = last_send_time_;
-
-  RTC_LOG(LS_INFO) << "Becoming application limited. Last sent time: "
-                   << ToString(last_send_time_)
+  RTC_LOG(LS_INFO) << "Becoming application limited. Last sent packet: "
+                   << last_sent_packet_
                    << ", CWND: " << ToString(GetCongestionWindow());
 }
 }  // namespace bbr
