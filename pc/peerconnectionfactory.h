@@ -119,6 +119,12 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
       std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory,
       std::unique_ptr<NetworkControllerFactoryInterface>
           network_controller_factory);
+  // Use this implementation for all future use. This structure allows simple
+  // management of all new dependencies being added to the
+  // PeerConnectionFactory.
+  explicit PeerConnectionFactory(
+      PeerConnectionFactoryDependencies dependencies);
+
   virtual ~PeerConnectionFactory();
 
  private:

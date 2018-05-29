@@ -55,9 +55,14 @@ CreateModularPeerConnectionFactory(
     std::unique_ptr<cricket::MediaEngineInterface> media_engine,
     std::unique_ptr<CallFactoryInterface> call_factory,
     std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory) {
-  return CreateModularPeerConnectionFactory(
-      network_thread, worker_thread, signaling_thread, std::move(media_engine),
-      std::move(call_factory), std::move(event_log_factory), nullptr, nullptr);
+  PeerConnectionFactoryDependencies dependencies;
+  dependencies.network_thread = network_thread;
+  dependencies.worker_thread = worker_thread;
+  dependencies.signaling_thread = signaling_thread;
+  dependencies.media_engine = std::move(media_engine);
+  dependencies.call_factory = std::move(call_factory);
+  dependencies.event_log_factory = std::move(event_log_factory);
+  return CreateModularPeerConnectionFactory(std::move(dependencies));
 }
 
 rtc::scoped_refptr<PeerConnectionFactoryInterface>
@@ -71,13 +76,25 @@ CreateModularPeerConnectionFactory(
     std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory,
     std::unique_ptr<NetworkControllerFactoryInterface>
         network_controller_factory) {
+  PeerConnectionFactoryDependencies dependencies;
+  dependencies.network_thread = network_thread;
+  dependencies.worker_thread = worker_thread;
+  dependencies.signaling_thread = signaling_thread;
+  dependencies.media_engine = std::move(media_engine);
+  dependencies.call_factory = std::move(call_factory);
+  dependencies.event_log_factory = std::move(event_log_factory);
+  dependencies.fec_controller_factory = std::move(fec_controller_factory);
+  dependencies.network_controller_factory =
+      std::move(network_controller_factory);
+  return CreateModularPeerConnectionFactory(std::move(dependencies));
+}
+
+rtc::scoped_refptr<PeerConnectionFactoryInterface>
+CreateModularPeerConnectionFactory(
+    PeerConnectionFactoryDependencies dependencies) {
   rtc::scoped_refptr<PeerConnectionFactory> pc_factory(
       new rtc::RefCountedObject<PeerConnectionFactory>(
-          network_thread, worker_thread, signaling_thread,
-          std::move(media_engine), std::move(call_factory),
-          std::move(event_log_factory), std::move(fec_controller_factory),
-          std::move(network_controller_factory)));
-
+          std::move(dependencies)));
   // Call Initialize synchronously but make sure it is executed on
   // |signaling_thread|.
   MethodCall0<PeerConnectionFactory, bool> call(
@@ -157,6 +174,18 @@ PeerConnectionFactory::PeerConnectionFactory(
   // libjingle source tree. So we can 't currently assert if this is NULL.
   // RTC_DCHECK(default_adm != NULL);
 }
+
+PeerConnectionFactory::PeerConnectionFactory(
+    PeerConnectionFactoryDependencies dependencies)
+    : PeerConnectionFactory(
+          dependencies.network_thread,
+          dependencies.worker_thread,
+          dependencies.signaling_thread,
+          std::move(dependencies.media_engine),
+          std::move(dependencies.call_factory),
+          std::move(dependencies.event_log_factory),
+          std::move(dependencies.fec_controller_factory),
+          std::move(dependencies.network_controller_factory)) {}
 
 PeerConnectionFactory::~PeerConnectionFactory() {
   RTC_DCHECK(signaling_thread_->IsCurrent());

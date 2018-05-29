@@ -1205,6 +1205,36 @@ struct PeerConnectionDependencies final {
   std::unique_ptr<rtc::SSLCertificateVerifier> tls_cert_verifier;
 };
 
+// PeerConnectionFactoryDependencies holds all of the PeerConnectionFactory
+// dependencies. All new dependencies should be added here instead of
+// overloading the function. This simplifies dependency injection and makes it
+// clear which are mandatory and optional. If possible please allow the peer
+// connection factory to take ownership of the dependency by adding a unique_ptr
+// to this structure.
+struct PeerConnectionFactoryDependencies final {
+  PeerConnectionFactoryDependencies() = default;
+  // This object is not copyable or assignable.
+  PeerConnectionFactoryDependencies(const PeerConnectionFactoryDependencies&) =
+      delete;
+  PeerConnectionFactoryDependencies& operator=(
+      const PeerConnectionFactoryDependencies&) = delete;
+  // This object is only moveable.
+  PeerConnectionFactoryDependencies(PeerConnectionFactoryDependencies&&) =
+      default;
+  PeerConnectionFactoryDependencies& operator=(
+      PeerConnectionFactoryDependencies&&) = default;
+
+  // Optional dependencies
+  rtc::Thread* network_thread = nullptr;
+  rtc::Thread* worker_thread = nullptr;
+  rtc::Thread* signaling_thread = nullptr;
+  std::unique_ptr<cricket::MediaEngineInterface> media_engine;
+  std::unique_ptr<CallFactoryInterface> call_factory;
+  std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory;
+  std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory;
+  std::unique_ptr<NetworkControllerFactoryInterface> network_controller_factory;
+};
+
 // PeerConnectionFactoryInterface is the factory interface used for creating
 // PeerConnection, MediaStream and MediaStreamTrack objects.
 //
@@ -1554,6 +1584,10 @@ CreateModularPeerConnectionFactory(
     std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory,
     std::unique_ptr<NetworkControllerFactoryInterface>
         network_controller_factory = nullptr);
+
+rtc::scoped_refptr<PeerConnectionFactoryInterface>
+CreateModularPeerConnectionFactory(
+    PeerConnectionFactoryDependencies dependencies);
 
 }  // namespace webrtc
 
