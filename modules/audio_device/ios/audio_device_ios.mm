@@ -491,15 +491,7 @@ void AudioDeviceIOS::HandleInterruptionBegin() {
     if (!audio_unit_->Stop()) {
       RTCLogError(@"Failed to stop the audio unit for interruption begin.");
     } else {
-      // The audio unit has been stopped but will be restarted when the
-      // interruption ends in HandleInterruptionEnd(). It will result in audio
-      // callbacks from a new native I/O thread which means that we must detach
-      // thread checkers here to be prepared for an upcoming new audio stream.
-      io_thread_checker_.DetachFromThread();
-      // The audio device buffer must also be informed about the interrupted
-      // state so it can detach its thread checkers as well.
-      audio_device_buffer_->NativeAudioPlayoutInterrupted();
-      audio_device_buffer_->NativeAudioRecordingInterrupted();
+      PrepareForNewStart();
     }
   }
   is_interrupted_ = true;
@@ -581,6 +573,7 @@ void AudioDeviceIOS::HandleSampleRateChange(float sample_rate) {
   if (audio_unit_->GetState() == VoiceProcessingAudioUnit::kStarted) {
     audio_unit_->Stop();
     restart_audio_unit = true;
+    PrepareForNewStart();
   }
   if (audio_unit_->GetState() == VoiceProcessingAudioUnit::kInitialized) {
     audio_unit_->Uninitialize();
@@ -899,6 +892,21 @@ void AudioDeviceIOS::ShutdownPlayOrRecord() {
   UnconfigureAudioSession();
   [session endWebRTCSession:nil];
   [session unlockForConfiguration];
+}
+
+void AudioDeviceIOS::PrepareForNewStart() {
+  LOGI() << "PrepareForNewStart";
+  // The audio unit has been stopped and preparations are needed for an upcoming
+  // restart. It will result in audio callbacks from a new native I/O thread
+  // which means that we must detach thread checkers here to be prepared for an
+  // upcoming new audio stream.
+  io_thread_checker_.DetachFromThread();
+  // The audio device buffer must also be informed about the interrupted
+  // state so it can detach its thread checkers as well.
+  if (audio_device_buffer_) {
+    audio_device_buffer_->NativeAudioPlayoutInterrupted();
+    audio_device_buffer_->NativeAudioRecordingInterrupted();
+  }
 }
 
 }  // namespace webrtc

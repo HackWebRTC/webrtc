@@ -198,6 +198,9 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
   // Closes and deletes the voice-processing I/O unit.
   void ShutdownPlayOrRecord();
 
+  // Resets thread-checkers before a call is restarted.
+  void PrepareForNewStart();
+
   // Ensures that methods are called from the same thread as this object is
   // created on.
   rtc::ThreadChecker thread_checker_;
