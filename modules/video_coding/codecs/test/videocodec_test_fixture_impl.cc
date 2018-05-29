@@ -18,16 +18,12 @@
 #include "call/video_config.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "media/base/h264_profile_level_id.h"
+#include "media/base/mediaconstants.h"
 #include "media/engine/internaldecoderfactory.h"
 #include "media/engine/internalencoderfactory.h"
 #include "media/engine/simulcast.h"
-#include "media/engine/simulcast_encoder_adapter.h"
-#include "media/engine/videodecodersoftwarefallbackwrapper.h"
-#include "media/engine/videoencodersoftwarefallbackwrapper.h"
-#include "modules/video_coding/codecs/vp8/include/vp8_common_types.h"
 #include "modules/video_coding/codecs/vp9/svc_config.h"
 #include "modules/video_coding/include/video_codec_interface.h"
-#include "modules/video_coding/include/video_coding.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/cpu_time.h"
 #include "rtc_base/event.h"
@@ -559,38 +555,16 @@ void VideoCodecTestFixtureImpl::CreateEncoderAndDecoder() {
     params = {};
   }
   SdpVideoFormat format(config_.codec_name);
-  if (config_.simulcast_adapted_encoder) {
-    EXPECT_EQ("VP8", format.name);
-    encoder_.reset(new SimulcastEncoderAdapter(encoder_factory_.get(), format));
-  } else {
-    encoder_ = encoder_factory_->CreateVideoEncoder(format);
-  }
+
+  encoder_ = encoder_factory_->CreateVideoEncoder(format);
+  EXPECT_TRUE(encoder_) << "Encoder not successfully created.";
 
   const size_t num_simulcast_or_spatial_layers = std::max(
       config_.NumberOfSimulcastStreams(), config_.NumberOfSpatialLayers());
-
   for (size_t i = 0; i < num_simulcast_or_spatial_layers; ++i) {
     decoders_.push_back(std::unique_ptr<VideoDecoder>(
         decoder_factory_->CreateVideoDecoder(format)));
   }
-
-  if (config_.sw_fallback_encoder) {
-    EXPECT_FALSE(config_.simulcast_adapted_encoder)
-        << "SimulcastEncoderAdapter and VideoEncoderSoftwareFallbackWrapper "
-           "are not jointly supported.";
-    encoder_ = rtc::MakeUnique<VideoEncoderSoftwareFallbackWrapper>(
-        InternalEncoderFactory().CreateVideoEncoder(format),
-        std::move(encoder_));
-  }
-  if (config_.sw_fallback_decoder) {
-    for (auto& decoder : decoders_) {
-      decoder = rtc::MakeUnique<VideoDecoderSoftwareFallbackWrapper>(
-          InternalDecoderFactory().CreateVideoDecoder(format),
-          std::move(decoder));
-    }
-  }
-
-  EXPECT_TRUE(encoder_) << "Encoder not successfully created.";
 
   for (const auto& decoder : decoders_) {
     EXPECT_TRUE(decoder) << "Decoder not successfully created.";

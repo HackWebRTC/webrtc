@@ -125,13 +125,6 @@ class VideoCodecTestFixture {
     bool hw_encoder = false;
     bool hw_decoder = false;
 
-    // Should the encoder be wrapped in a SimulcastEncoderAdapter?
-    bool simulcast_adapted_encoder = false;
-
-    // Should the hardware codecs be wrapped in software fallbacks?
-    bool sw_fallback_encoder = false;
-    bool sw_fallback_decoder = false;
-
     // Custom checker that will be called for each frame.
     const EncodedFrameChecker* encoded_frame_checker = nullptr;
 

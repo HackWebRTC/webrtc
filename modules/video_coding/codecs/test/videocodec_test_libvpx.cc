@@ -11,10 +11,15 @@
 #include <vector>
 
 #include "api/test/create_videocodec_test_fixture.h"
+#include "api/video_codecs/sdp_video_format.h"
 #include "media/base/mediaconstants.h"
+#include "media/engine/internaldecoderfactory.h"
+#include "media/engine/internalencoderfactory.h"
+#include "media/engine/simulcast_encoder_adapter.h"
 #include "modules/video_coding/utility/vp8_header_parser.h"
 #include "modules/video_coding/utility/vp9_uncompressed_header_parser.h"
 #include "rtc_base/ptr_util.h"
+#include "test/function_video_encoder_factory.h"
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
 
@@ -374,12 +379,23 @@ TEST(VideoCodecTestLibvpx, MAYBE_SimulcastVP8) {
   config.filename = "ConferenceMotion_1280_720_50";
   config.filepath = ResourcePath(config.filename, "yuv");
   config.num_frames = 100;
-  config.simulcast_adapted_encoder = true;
   config.SetCodecSettings(cricket::kVp8CodecName, 3, 1, 3, true, true, false,
                           1280, 720);
   const auto frame_checker = rtc::MakeUnique<QpFrameChecker>();
   config.encoded_frame_checker = frame_checker.get();
-  auto fixture = CreateVideoCodecTestFixture(config);
+
+  InternalEncoderFactory internal_encoder_factory;
+  std::unique_ptr<VideoEncoderFactory> adapted_encoder_factory =
+      rtc::MakeUnique<FunctionVideoEncoderFactory>([&]() {
+        return rtc::MakeUnique<SimulcastEncoderAdapter>(
+            &internal_encoder_factory, SdpVideoFormat(cricket::kVp8CodecName));
+      });
+  std::unique_ptr<InternalDecoderFactory> internal_decoder_factory(
+      new InternalDecoderFactory());
+
+  auto fixture =
+      CreateVideoCodecTestFixture(config, std::move(internal_decoder_factory),
+                                  std::move(adapted_encoder_factory));
 
   std::vector<RateProfile> rate_profiles = {{1500, 30, config.num_frames}};
 
