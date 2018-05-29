@@ -148,7 +148,7 @@ class PeerConnectionWrapper {
       const std::vector<std::string>& stream_ids = {});
 
   // Calls the underlying PeerConnection's AddTrack method with a video media
-  // stream track fed by a fake video capturer.
+  // stream track fed by a FakeVideoTrackSource.
   rtc::scoped_refptr<RtpSenderInterface> AddVideoTrack(
       const std::string& track_label,
       const std::vector<std::string>& stream_ids = {});
