@@ -190,9 +190,10 @@ class VideoCaptureTest : public testing::Test {
   unsigned int number_of_devices_;
 };
 
-#ifdef WEBRTC_MAC
 // Currently fails on Mac 64-bit, see
 // https://bugs.chromium.org/p/webrtc/issues/detail?id=5406
+// And flaky on Linux, see bugs.webrtc.org/9292.
+#if defined(WEBRTC_MAC) || defined(WEBRTC_LINUX)
 #define MAYBE_CreateDelete DISABLED_CreateDelete
 #else
 #define MAYBE_CreateDelete CreateDelete
@@ -232,9 +233,10 @@ TEST_F(VideoCaptureTest, MAYBE_CreateDelete) {
   }
 }
 
-#ifdef WEBRTC_MAC
 // Currently fails on Mac 64-bit, see
 // https://bugs.chromium.org/p/webrtc/issues/detail?id=5406
+// And flaky on Linux, see bugs.webrtc.org/9292.
+#if defined(WEBRTC_MAC) || defined(WEBRTC_LINUX)
 #define MAYBE_Capabilities DISABLED_Capabilities
 #else
 #define MAYBE_Capabilities Capabilities
