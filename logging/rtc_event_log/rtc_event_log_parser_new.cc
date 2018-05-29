@@ -80,7 +80,10 @@ ParsedRtcEventLogNew::EventType GetRuntimeEventType(
     case rtclog::Event::BWE_PROBE_CLUSTER_CREATED_EVENT:
       return ParsedRtcEventLogNew::EventType::BWE_PROBE_CLUSTER_CREATED_EVENT;
     case rtclog::Event::BWE_PROBE_RESULT_EVENT:
-      return ParsedRtcEventLogNew::EventType::BWE_PROBE_RESULT_EVENT;
+      // Probe successes and failures are currently stored in the same proto
+      // message, we are moving towards separate messages. Probe results
+      // therefore need special treatment in the parser.
+      return ParsedRtcEventLogNew::EventType::UNKNOWN_EVENT;
     case rtclog::Event::ALR_STATE_EVENT:
       return ParsedRtcEventLogNew::EventType::ALR_STATE_EVENT;
     case rtclog::Event::ICE_CANDIDATE_PAIR_CONFIG:
@@ -313,7 +316,8 @@ void ParsedRtcEventLogNew::Clear() {
   audio_playout_events_.clear();
   audio_network_adaptation_events_.clear();
   bwe_probe_cluster_created_events_.clear();
-  bwe_probe_result_events_.clear();
+  bwe_probe_failure_events_.clear();
+  bwe_probe_success_events_.clear();
   bwe_delay_updates_.clear();
   bwe_loss_updates_.clear();
   alr_state_events_.clear();
@@ -467,8 +471,8 @@ void ParsedRtcEventLogNew::StoreParsedEvent(const rtclog::Event& event) {
     last_timestamp_ = std::max(last_timestamp_, timestamp);
   }
 
-  switch (event.type()) {
-    case rtclog::Event::VIDEO_RECEIVER_CONFIG_EVENT: {
+  switch (GetEventType(event)) {
+    case ParsedRtcEventLogNew::EventType::VIDEO_RECEIVER_CONFIG_EVENT: {
       rtclog::StreamConfig config = GetVideoReceiveConfig(event);
       video_recv_configs_.emplace_back(GetTimestamp(event), config);
       incoming_rtp_extensions_maps_[config.remote_ssrc] =
@@ -483,7 +487,7 @@ void ParsedRtcEventLogNew::StoreParsedEvent(const rtclog::Event& event) {
       incoming_rtx_ssrcs_.insert(config.rtx_ssrc);
       break;
     }
-    case rtclog::Event::VIDEO_SENDER_CONFIG_EVENT: {
+    case ParsedRtcEventLogNew::EventType::VIDEO_SENDER_CONFIG_EVENT: {
       std::vector<rtclog::StreamConfig> configs = GetVideoSendConfig(event);
       video_send_configs_.emplace_back(GetTimestamp(event), configs);
       for (const auto& config : configs) {
@@ -497,7 +501,7 @@ void ParsedRtcEventLogNew::StoreParsedEvent(const rtclog::Event& event) {
       }
       break;
     }
-    case rtclog::Event::AUDIO_RECEIVER_CONFIG_EVENT: {
+    case ParsedRtcEventLogNew::EventType::AUDIO_RECEIVER_CONFIG_EVENT: {
       rtclog::StreamConfig config = GetAudioReceiveConfig(event);
       audio_recv_configs_.emplace_back(GetTimestamp(event), config);
       incoming_rtp_extensions_maps_[config.remote_ssrc] =
@@ -507,7 +511,7 @@ void ParsedRtcEventLogNew::StoreParsedEvent(const rtclog::Event& event) {
       incoming_audio_ssrcs_.insert(config.remote_ssrc);
       break;
     }
-    case rtclog::Event::AUDIO_SENDER_CONFIG_EVENT: {
+    case ParsedRtcEventLogNew::EventType::AUDIO_SENDER_CONFIG_EVENT: {
       rtclog::StreamConfig config = GetAudioSendConfig(event);
       audio_send_configs_.emplace_back(GetTimestamp(event), config);
       outgoing_rtp_extensions_maps_[config.local_ssrc] =
@@ -515,7 +519,7 @@ void ParsedRtcEventLogNew::StoreParsedEvent(const rtclog::Event& event) {
       outgoing_audio_ssrcs_.insert(config.local_ssrc);
       break;
     }
-    case rtclog::Event::RTP_EVENT: {
+    case ParsedRtcEventLogNew::EventType::RTP_EVENT: {
       PacketDirection direction;
       uint8_t header[IP_PACKET_SIZE];
       size_t header_length;
@@ -546,7 +550,7 @@ void ParsedRtcEventLogNew::StoreParsedEvent(const rtclog::Event& event) {
       }
       break;
     }
-    case rtclog::Event::RTCP_EVENT: {
+    case ParsedRtcEventLogNew::EventType::RTCP_EVENT: {
       PacketDirection direction;
       uint8_t packet[IP_PACKET_SIZE];
       size_t total_length;
@@ -632,55 +636,59 @@ void ParsedRtcEventLogNew::StoreParsedEvent(const rtclog::Event& event) {
       }
       break;
     }
-    case rtclog::Event::LOG_START: {
+    case ParsedRtcEventLogNew::EventType::LOG_START: {
       start_log_events_.push_back(LoggedStartEvent(GetTimestamp(event)));
       break;
     }
-    case rtclog::Event::LOG_END: {
+    case ParsedRtcEventLogNew::EventType::LOG_END: {
       stop_log_events_.push_back(LoggedStopEvent(GetTimestamp(event)));
       break;
     }
-    case rtclog::Event::AUDIO_PLAYOUT_EVENT: {
+    case ParsedRtcEventLogNew::EventType::AUDIO_PLAYOUT_EVENT: {
       LoggedAudioPlayoutEvent playout_event = GetAudioPlayout(event);
       audio_playout_events_[playout_event.ssrc].push_back(playout_event);
       break;
     }
-    case rtclog::Event::LOSS_BASED_BWE_UPDATE: {
+    case ParsedRtcEventLogNew::EventType::LOSS_BASED_BWE_UPDATE: {
       bwe_loss_updates_.push_back(GetLossBasedBweUpdate(event));
       break;
     }
-    case rtclog::Event::DELAY_BASED_BWE_UPDATE: {
+    case ParsedRtcEventLogNew::EventType::DELAY_BASED_BWE_UPDATE: {
       bwe_delay_updates_.push_back(GetDelayBasedBweUpdate(event));
       break;
     }
-    case rtclog::Event::AUDIO_NETWORK_ADAPTATION_EVENT: {
+    case ParsedRtcEventLogNew::EventType::AUDIO_NETWORK_ADAPTATION_EVENT: {
       LoggedAudioNetworkAdaptationEvent ana_event =
           GetAudioNetworkAdaptation(event);
       audio_network_adaptation_events_.push_back(ana_event);
       break;
     }
-    case rtclog::Event::BWE_PROBE_CLUSTER_CREATED_EVENT: {
+    case ParsedRtcEventLogNew::EventType::BWE_PROBE_CLUSTER_CREATED_EVENT: {
       bwe_probe_cluster_created_events_.push_back(
           GetBweProbeClusterCreated(event));
       break;
     }
-    case rtclog::Event::BWE_PROBE_RESULT_EVENT: {
-      bwe_probe_result_events_.push_back(GetBweProbeResult(event));
+    case ParsedRtcEventLogNew::EventType::BWE_PROBE_FAILURE_EVENT: {
+      bwe_probe_failure_events_.push_back(GetBweProbeFailure(event));
       break;
     }
-    case rtclog::Event::ALR_STATE_EVENT: {
+    case ParsedRtcEventLogNew::EventType::BWE_PROBE_SUCCESS_EVENT: {
+      bwe_probe_success_events_.push_back(GetBweProbeSuccess(event));
+      break;
+    }
+    case ParsedRtcEventLogNew::EventType::ALR_STATE_EVENT: {
       alr_state_events_.push_back(GetAlrState(event));
       break;
     }
-    case rtclog::Event::ICE_CANDIDATE_PAIR_CONFIG: {
+    case ParsedRtcEventLogNew::EventType::ICE_CANDIDATE_PAIR_CONFIG: {
       ice_candidate_pair_configs_.push_back(GetIceCandidatePairConfig(event));
       break;
     }
-    case rtclog::Event::ICE_CANDIDATE_PAIR_EVENT: {
+    case ParsedRtcEventLogNew::EventType::ICE_CANDIDATE_PAIR_EVENT: {
       ice_candidate_pair_events_.push_back(GetIceCandidatePairEvent(event));
       break;
     }
-    case rtclog::Event::UNKNOWN_EVENT: {
+    case ParsedRtcEventLogNew::EventType::UNKNOWN_EVENT: {
       break;
     }
   }
@@ -705,7 +713,19 @@ ParsedRtcEventLogNew::EventType ParsedRtcEventLogNew::GetEventType(
     size_t index) const {
   RTC_CHECK_LT(index, GetNumberOfEvents());
   const rtclog::Event& event = events_[index];
+  return GetEventType(event);
+}
+
+ParsedRtcEventLogNew::EventType ParsedRtcEventLogNew::GetEventType(
+    const rtclog::Event& event) const {
   RTC_CHECK(event.has_type());
+  if (event.type() == rtclog::Event::BWE_PROBE_RESULT_EVENT) {
+    RTC_CHECK(event.has_probe_result());
+    RTC_CHECK(event.probe_result().has_result());
+    if (event.probe_result().result() == rtclog::BweProbeResult::SUCCESS)
+      return ParsedRtcEventLogNew::EventType::BWE_PROBE_SUCCESS_EVENT;
+    return ParsedRtcEventLogNew::EventType::BWE_PROBE_FAILURE_EVENT;
+  }
   return GetRuntimeEventType(event.type());
 }
 
@@ -1108,30 +1128,29 @@ ParsedRtcEventLogNew::GetBweProbeClusterCreated(
   return res;
 }
 
-LoggedBweProbeResultEvent ParsedRtcEventLogNew::GetBweProbeResult(
+LoggedBweProbeFailureEvent ParsedRtcEventLogNew::GetBweProbeFailure(
     size_t index) const {
   RTC_CHECK_LT(index, GetNumberOfEvents());
   const rtclog::Event& event = events_[index];
-  return GetBweProbeResult(event);
+  return GetBweProbeFailure(event);
 }
 
-LoggedBweProbeResultEvent ParsedRtcEventLogNew::GetBweProbeResult(
+LoggedBweProbeFailureEvent ParsedRtcEventLogNew::GetBweProbeFailure(
     const rtclog::Event& event) const {
   RTC_CHECK(event.has_type());
   RTC_CHECK_EQ(event.type(), rtclog::Event::BWE_PROBE_RESULT_EVENT);
   RTC_CHECK(event.has_probe_result());
   const rtclog::BweProbeResult& pr_event = event.probe_result();
-  LoggedBweProbeResultEvent res;
+  RTC_CHECK(pr_event.has_result());
+  RTC_CHECK_NE(pr_event.result(), rtclog::BweProbeResult::SUCCESS);
+
+  LoggedBweProbeFailureEvent res;
   res.timestamp_us = GetTimestamp(event);
   RTC_CHECK(pr_event.has_id());
   res.id = pr_event.id();
-
   RTC_CHECK(pr_event.has_result());
-  if (pr_event.result() == rtclog::BweProbeResult::SUCCESS) {
-    RTC_CHECK(pr_event.has_bitrate_bps());
-    res.bitrate_bps = pr_event.bitrate_bps();
-  } else if (pr_event.result() ==
-             rtclog::BweProbeResult::INVALID_SEND_RECEIVE_INTERVAL) {
+  if (pr_event.result() ==
+      rtclog::BweProbeResult::INVALID_SEND_RECEIVE_INTERVAL) {
     res.failure_reason = ProbeFailureReason::kInvalidSendReceiveInterval;
   } else if (pr_event.result() ==
              rtclog::BweProbeResult::INVALID_SEND_RECEIVE_RATIO) {
@@ -1141,6 +1160,33 @@ LoggedBweProbeResultEvent ParsedRtcEventLogNew::GetBweProbeResult(
   } else {
     RTC_NOTREACHED();
   }
+  RTC_CHECK(!pr_event.has_bitrate_bps());
+
+  return res;
+}
+
+LoggedBweProbeSuccessEvent ParsedRtcEventLogNew::GetBweProbeSuccess(
+    size_t index) const {
+  RTC_CHECK_LT(index, GetNumberOfEvents());
+  const rtclog::Event& event = events_[index];
+  return GetBweProbeSuccess(event);
+}
+
+LoggedBweProbeSuccessEvent ParsedRtcEventLogNew::GetBweProbeSuccess(
+    const rtclog::Event& event) const {
+  RTC_CHECK(event.has_type());
+  RTC_CHECK_EQ(event.type(), rtclog::Event::BWE_PROBE_RESULT_EVENT);
+  RTC_CHECK(event.has_probe_result());
+  const rtclog::BweProbeResult& pr_event = event.probe_result();
+  RTC_CHECK(pr_event.has_result());
+  RTC_CHECK_EQ(pr_event.result(), rtclog::BweProbeResult::SUCCESS);
+
+  LoggedBweProbeSuccessEvent res;
+  res.timestamp_us = GetTimestamp(event);
+  RTC_CHECK(pr_event.has_id());
+  res.id = pr_event.id();
+  RTC_CHECK(pr_event.has_bitrate_bps());
+  res.bitrate_bps = pr_event.bitrate_bps();
 
   return res;
 }

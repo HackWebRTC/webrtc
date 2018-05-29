@@ -96,11 +96,18 @@ struct LoggedBweProbeClusterCreatedEvent {
   int64_t log_time_ms() const { return timestamp_us / 1000; }
 };
 
-struct LoggedBweProbeResultEvent {
+struct LoggedBweProbeSuccessEvent {
   int64_t timestamp_us;
   int32_t id;
-  rtc::Optional<int32_t> bitrate_bps;
-  rtc::Optional<ProbeFailureReason> failure_reason;
+  int32_t bitrate_bps;
+  int64_t log_time_us() const { return timestamp_us; }
+  int64_t log_time_ms() const { return timestamp_us / 1000; }
+};
+
+struct LoggedBweProbeFailureEvent {
+  int64_t timestamp_us;
+  int32_t id;
+  ProbeFailureReason failure_reason;
   int64_t log_time_us() const { return timestamp_us; }
   int64_t log_time_ms() const { return timestamp_us / 1000; }
 };
@@ -463,7 +470,7 @@ class ParsedRtcEventLogNew {
   friend class RtcEventLogTestHelper;
 
  public:
-  enum EventType {
+  enum class EventType {
     UNKNOWN_EVENT = 0,
     LOG_START = 1,
     LOG_END = 2,
@@ -478,16 +485,48 @@ class ParsedRtcEventLogNew {
     AUDIO_SENDER_CONFIG_EVENT = 11,
     AUDIO_NETWORK_ADAPTATION_EVENT = 16,
     BWE_PROBE_CLUSTER_CREATED_EVENT = 17,
-    BWE_PROBE_RESULT_EVENT = 18,
-    ALR_STATE_EVENT = 19,
-    ICE_CANDIDATE_PAIR_CONFIG = 20,
-    ICE_CANDIDATE_PAIR_EVENT = 21,
+    BWE_PROBE_FAILURE_EVENT = 18,
+    BWE_PROBE_SUCCESS_EVENT = 19,
+    ALR_STATE_EVENT = 20,
+    ICE_CANDIDATE_PAIR_CONFIG = 21,
+    ICE_CANDIDATE_PAIR_EVENT = 22,
   };
 
   enum class MediaType { ANY, AUDIO, VIDEO, DATA };
   enum class UnconfiguredHeaderExtensions {
     kDontParse,
     kAttemptWebrtcDefaultConfig
+  };
+
+  struct LoggedRtpStreamIncoming {
+    uint32_t ssrc;
+    std::vector<LoggedRtpPacketIncoming> incoming_packets;
+  };
+
+  struct LoggedRtpStreamOutgoing {
+    uint32_t ssrc;
+    std::vector<LoggedRtpPacketOutgoing> outgoing_packets;
+  };
+
+  struct LoggedRtpStreamView {
+    LoggedRtpStreamView(uint32_t ssrc,
+                        const LoggedRtpPacketIncoming* ptr,
+                        size_t num_elements)
+        : ssrc(ssrc),
+          packet_view(PacketView<const LoggedRtpPacket>::Create(
+              ptr,
+              num_elements,
+              offsetof(LoggedRtpPacketIncoming, rtp))) {}
+    LoggedRtpStreamView(uint32_t ssrc,
+                        const LoggedRtpPacketOutgoing* ptr,
+                        size_t num_elements)
+        : ssrc(ssrc),
+          packet_view(PacketView<const LoggedRtpPacket>::Create(
+              ptr,
+              num_elements,
+              offsetof(LoggedRtpPacketOutgoing, rtp))) {}
+    uint32_t ssrc;
+    PacketView<const LoggedRtpPacket> packet_view;
   };
 
   explicit ParsedRtcEventLogNew(
@@ -517,6 +556,7 @@ class ParsedRtcEventLogNew {
 
   // Reads the event type of the rtclog::Event at |index|.
   EventType GetEventType(size_t index) const;
+  EventType GetEventType(const rtclog::Event& event) const;
 
   // Reads the header, direction, header length and packet length from the RTP
   // event at |index|, and stores the values in the corresponding output
@@ -601,7 +641,8 @@ class ParsedRtcEventLogNew {
   LoggedBweProbeClusterCreatedEvent GetBweProbeClusterCreated(
       size_t index) const;
 
-  LoggedBweProbeResultEvent GetBweProbeResult(size_t index) const;
+  LoggedBweProbeFailureEvent GetBweProbeFailure(size_t index) const;
+  LoggedBweProbeSuccessEvent GetBweProbeSuccess(size_t index) const;
 
   MediaType GetMediaType(uint32_t ssrc, PacketDirection direction) const;
 
@@ -611,96 +652,91 @@ class ParsedRtcEventLogNew {
 
   LoggedIceCandidatePairEvent GetIceCandidatePairEvent(size_t index) const;
 
+  // Configured SSRCs.
   const std::set<uint32_t>& incoming_rtx_ssrcs() const {
     return incoming_rtx_ssrcs_;
   }
+
   const std::set<uint32_t>& incoming_video_ssrcs() const {
     return incoming_video_ssrcs_;
   }
+
   const std::set<uint32_t>& incoming_audio_ssrcs() const {
     return incoming_audio_ssrcs_;
   }
+
   const std::set<uint32_t>& outgoing_rtx_ssrcs() const {
     return outgoing_rtx_ssrcs_;
   }
+
   const std::set<uint32_t>& outgoing_video_ssrcs() const {
     return outgoing_video_ssrcs_;
   }
+
   const std::set<uint32_t>& outgoing_audio_ssrcs() const {
     return outgoing_audio_ssrcs_;
   }
 
+  // Beginning and end of log segments.
   const std::vector<LoggedStartEvent>& start_log_events() const {
     return start_log_events_;
   }
+
   const std::vector<LoggedStopEvent>& stop_log_events() const {
     return stop_log_events_;
   }
+
+  // Audio
   const std::map<uint32_t, std::vector<LoggedAudioPlayoutEvent>>&
   audio_playout_events() const {
     return audio_playout_events_;
   }
+
   const std::vector<LoggedAudioNetworkAdaptationEvent>&
   audio_network_adaptation_events() const {
     return audio_network_adaptation_events_;
   }
+
+  // Bandwidth estimation
   const std::vector<LoggedBweProbeClusterCreatedEvent>&
   bwe_probe_cluster_created_events() const {
     return bwe_probe_cluster_created_events_;
   }
-  const std::vector<LoggedBweProbeResultEvent>& bwe_probe_result_events()
+
+  const std::vector<LoggedBweProbeFailureEvent>& bwe_probe_failure_events()
       const {
-    return bwe_probe_result_events_;
+    return bwe_probe_failure_events_;
   }
+
+  const std::vector<LoggedBweProbeSuccessEvent>& bwe_probe_success_events()
+      const {
+    return bwe_probe_success_events_;
+  }
+
   const std::vector<LoggedBweDelayBasedUpdate>& bwe_delay_updates() const {
     return bwe_delay_updates_;
   }
+
   const std::vector<LoggedBweLossBasedUpdate>& bwe_loss_updates() const {
     return bwe_loss_updates_;
   }
+
   const std::vector<LoggedAlrStateEvent>& alr_state_events() const {
     return alr_state_events_;
   }
+
+  // ICE events
   const std::vector<LoggedIceCandidatePairConfig>& ice_candidate_pair_configs()
       const {
     return ice_candidate_pair_configs_;
   }
+
   const std::vector<LoggedIceCandidatePairEvent>& ice_candidate_pair_events()
       const {
     return ice_candidate_pair_events_;
   }
 
-  struct LoggedRtpStreamIncoming {
-    uint32_t ssrc;
-    std::vector<LoggedRtpPacketIncoming> incoming_packets;
-  };
-
-  struct LoggedRtpStreamOutgoing {
-    uint32_t ssrc;
-    std::vector<LoggedRtpPacketOutgoing> outgoing_packets;
-  };
-
-  struct LoggedRtpStreamView {
-    LoggedRtpStreamView(uint32_t ssrc,
-                        const LoggedRtpPacketIncoming* ptr,
-                        size_t num_elements)
-        : ssrc(ssrc),
-          packet_view(PacketView<const LoggedRtpPacket>::Create(
-              ptr,
-              num_elements,
-              offsetof(LoggedRtpPacketIncoming, rtp))) {}
-    LoggedRtpStreamView(uint32_t ssrc,
-                        const LoggedRtpPacketOutgoing* ptr,
-                        size_t num_elements)
-        : ssrc(ssrc),
-          packet_view(PacketView<const LoggedRtpPacket>::Create(
-              ptr,
-              num_elements,
-              offsetof(LoggedRtpPacketOutgoing, rtp))) {}
-    uint32_t ssrc;
-    PacketView<const LoggedRtpPacket> packet_view;
-  };
-
+  // RTP
   const std::vector<LoggedRtpStreamIncoming>& incoming_rtp_packets_by_ssrc()
       const {
     return incoming_rtp_packets_by_ssrc_;
@@ -711,20 +747,21 @@ class ParsedRtcEventLogNew {
     return outgoing_rtp_packets_by_ssrc_;
   }
 
-  const std::vector<LoggedRtcpPacketIncoming>& incoming_rtcp_packets() const {
-    return incoming_rtcp_packets_;
-  }
-
-  const std::vector<LoggedRtcpPacketOutgoing>& outgoing_rtcp_packets() const {
-    return outgoing_rtcp_packets_;
-  }
-
   const std::vector<LoggedRtpStreamView>& rtp_packets_by_ssrc(
       PacketDirection direction) const {
     if (direction == kIncomingPacket)
       return incoming_rtp_packet_views_by_ssrc_;
     else
       return outgoing_rtp_packet_views_by_ssrc_;
+  }
+
+  // RTCP
+  const std::vector<LoggedRtcpPacketIncoming>& incoming_rtcp_packets() const {
+    return incoming_rtcp_packets_;
+  }
+
+  const std::vector<LoggedRtcpPacketOutgoing>& outgoing_rtcp_packets() const {
+    return outgoing_rtcp_packets_;
   }
 
   const std::vector<LoggedRtcpPacketReceiverReport>& receiver_reports(
@@ -799,7 +836,10 @@ class ParsedRtcEventLogNew {
 
   LoggedBweProbeClusterCreatedEvent GetBweProbeClusterCreated(
       const rtclog::Event& event) const;
-  LoggedBweProbeResultEvent GetBweProbeResult(const rtclog::Event& event) const;
+  LoggedBweProbeFailureEvent GetBweProbeFailure(
+      const rtclog::Event& event) const;
+  LoggedBweProbeSuccessEvent GetBweProbeSuccess(
+      const rtclog::Event& event) const;
 
   LoggedAlrStateEvent GetAlrState(const rtclog::Event& event) const;
 
@@ -887,7 +927,8 @@ class ParsedRtcEventLogNew {
   std::vector<LoggedBweProbeClusterCreatedEvent>
       bwe_probe_cluster_created_events_;
 
-  std::vector<LoggedBweProbeResultEvent> bwe_probe_result_events_;
+  std::vector<LoggedBweProbeFailureEvent> bwe_probe_failure_events_;
+  std::vector<LoggedBweProbeSuccessEvent> bwe_probe_success_events_;
 
   std::vector<LoggedBweDelayBasedUpdate> bwe_delay_updates_;
 

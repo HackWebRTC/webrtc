@@ -140,7 +140,7 @@ void RtcEventLogEncoderTest::TestRtcEventAudioNetworkAdaptation(
   ASSERT_TRUE(parsed_log_.ParseString(encoded));
   ASSERT_EQ(parsed_log_.GetNumberOfEvents(), 1u);
   ASSERT_EQ(parsed_log_.GetEventType(0),
-            ParsedRtcEventLogNew::AUDIO_NETWORK_ADAPTATION_EVENT);
+            ParsedRtcEventLogNew::EventType::AUDIO_NETWORK_ADAPTATION_EVENT);
 
   LoggedAudioNetworkAdaptationEvent parsed_event =
       parsed_log_.GetAudioNetworkAdaptation(0);
@@ -232,7 +232,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventAudioPlayout) {
   ASSERT_TRUE(parsed_log_.ParseString(encoded));
   ASSERT_EQ(parsed_log_.GetNumberOfEvents(), 1u);
   ASSERT_EQ(parsed_log_.GetEventType(0),
-            ParsedRtcEventLogNew::AUDIO_PLAYOUT_EVENT);
+            ParsedRtcEventLogNew::EventType::AUDIO_PLAYOUT_EVENT);
 
   LoggedAudioPlayoutEvent playout_event = parsed_log_.GetAudioPlayout(0);
 
@@ -261,7 +261,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventAudioReceiveStreamConfig) {
   ASSERT_TRUE(parsed_log_.ParseString(encoded));
   ASSERT_EQ(parsed_log_.GetNumberOfEvents(), 1u);
   ASSERT_EQ(parsed_log_.GetEventType(0),
-            ParsedRtcEventLogNew::AUDIO_RECEIVER_CONFIG_EVENT);
+            ParsedRtcEventLogNew::EventType::AUDIO_RECEIVER_CONFIG_EVENT);
 
   auto parsed_event = parsed_log_.GetAudioReceiveConfig(0);
   EXPECT_EQ(parsed_log_.GetTimestamp(0), timestamp_us);
@@ -286,7 +286,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventAudioSendStreamConfig) {
   ASSERT_TRUE(parsed_log_.ParseString(encoded));
   ASSERT_EQ(parsed_log_.GetNumberOfEvents(), 1u);
   ASSERT_EQ(parsed_log_.GetEventType(0),
-            ParsedRtcEventLogNew::AUDIO_SENDER_CONFIG_EVENT);
+            ParsedRtcEventLogNew::EventType::AUDIO_SENDER_CONFIG_EVENT);
 
   auto parsed_event = parsed_log_.GetAudioSendConfig(0);
   EXPECT_EQ(parsed_log_.GetTimestamp(0), timestamp_us);
@@ -306,7 +306,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventBweUpdateDelayBased) {
   ASSERT_TRUE(parsed_log_.ParseString(encoded));
   ASSERT_EQ(parsed_log_.GetNumberOfEvents(), 1u);
   ASSERT_EQ(parsed_log_.GetEventType(0),
-            ParsedRtcEventLogNew::DELAY_BASED_BWE_UPDATE);
+            ParsedRtcEventLogNew::EventType::DELAY_BASED_BWE_UPDATE);
 
   auto parsed_event = parsed_log_.GetDelayBasedBweUpdate(0);
 
@@ -330,7 +330,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventBweUpdateLossBased) {
   ASSERT_TRUE(parsed_log_.ParseString(encoded));
   ASSERT_EQ(parsed_log_.GetNumberOfEvents(), 1u);
   ASSERT_EQ(parsed_log_.GetEventType(0),
-            ParsedRtcEventLogNew::LOSS_BASED_BWE_UPDATE);
+            ParsedRtcEventLogNew::EventType::LOSS_BASED_BWE_UPDATE);
 
   LoggedBweLossBasedUpdate bwe_update = parsed_log_.GetLossBasedBweUpdate(0);
 
@@ -345,7 +345,8 @@ TEST_P(RtcEventLogEncoderTest, RtcEventLoggingStarted) {
 
   ASSERT_TRUE(parsed_log_.ParseString(encoder_->EncodeLogStart(timestamp_us)));
   ASSERT_EQ(parsed_log_.GetNumberOfEvents(), 1u);
-  ASSERT_EQ(parsed_log_.GetEventType(0), ParsedRtcEventLogNew::LOG_START);
+  ASSERT_EQ(parsed_log_.GetEventType(0),
+            ParsedRtcEventLogNew::EventType::LOG_START);
 
   EXPECT_EQ(parsed_log_.GetTimestamp(0), timestamp_us);
 }
@@ -355,16 +356,17 @@ TEST_P(RtcEventLogEncoderTest, RtcEventLoggingStopped) {
 
   ASSERT_TRUE(parsed_log_.ParseString(encoder_->EncodeLogEnd(timestamp_us)));
   ASSERT_EQ(parsed_log_.GetNumberOfEvents(), 1u);
-  ASSERT_EQ(parsed_log_.GetEventType(0), ParsedRtcEventLogNew::LOG_END);
+  ASSERT_EQ(parsed_log_.GetEventType(0),
+            ParsedRtcEventLogNew::EventType::LOG_END);
 
   EXPECT_EQ(parsed_log_.GetTimestamp(0), timestamp_us);
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventProbeClusterCreated) {
-  const int id = RandomPositiveInt();
-  const int bitrate_bps = RandomBitrate();
-  const int min_probes = RandomPositiveInt();
-  const int min_bytes = RandomPositiveInt();
+  const int32_t id = RandomPositiveInt();
+  const int32_t bitrate_bps = RandomBitrate();
+  const uint32_t min_probes = RandomPositiveInt();
+  const uint32_t min_bytes = RandomPositiveInt();
 
   auto event = rtc::MakeUnique<RtcEventProbeClusterCreated>(
       id, bitrate_bps, min_probes, min_bytes);
@@ -375,15 +377,15 @@ TEST_P(RtcEventLogEncoderTest, RtcEventProbeClusterCreated) {
   ASSERT_TRUE(parsed_log_.ParseString(encoded));
   ASSERT_EQ(parsed_log_.GetNumberOfEvents(), 1u);
   ASSERT_EQ(parsed_log_.GetEventType(0),
-            ParsedRtcEventLogNew::BWE_PROBE_CLUSTER_CREATED_EVENT);
+            ParsedRtcEventLogNew::EventType::BWE_PROBE_CLUSTER_CREATED_EVENT);
 
   auto parsed_event = parsed_log_.GetBweProbeClusterCreated(0);
 
   EXPECT_EQ(parsed_log_.GetTimestamp(0), timestamp_us);
-  EXPECT_EQ(rtc::dchecked_cast<int>(parsed_event.id), id);
-  EXPECT_EQ(rtc::dchecked_cast<int>(parsed_event.bitrate_bps), bitrate_bps);
-  EXPECT_EQ(rtc::dchecked_cast<int>(parsed_event.min_packets), min_probes);
-  EXPECT_EQ(rtc::dchecked_cast<int>(parsed_event.min_bytes), min_bytes);
+  EXPECT_EQ(parsed_event.id, id);
+  EXPECT_EQ(parsed_event.bitrate_bps, bitrate_bps);
+  EXPECT_EQ(parsed_event.min_packets, min_probes);
+  EXPECT_EQ(parsed_event.min_bytes, min_bytes);
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventProbeResultFailure) {
@@ -399,20 +401,18 @@ TEST_P(RtcEventLogEncoderTest, RtcEventProbeResultFailure) {
   ASSERT_TRUE(parsed_log_.ParseString(encoded));
   ASSERT_EQ(parsed_log_.GetNumberOfEvents(), 1u);
   ASSERT_EQ(parsed_log_.GetEventType(0),
-            ParsedRtcEventLogNew::BWE_PROBE_RESULT_EVENT);
+            ParsedRtcEventLogNew::EventType::BWE_PROBE_FAILURE_EVENT);
 
-  auto parsed_event = parsed_log_.GetBweProbeResult(0);
+  auto parsed_event = parsed_log_.GetBweProbeFailure(0);
 
   EXPECT_EQ(parsed_log_.GetTimestamp(0), timestamp_us);
-  EXPECT_EQ(rtc::dchecked_cast<int>(parsed_event.id), id);
-  ASSERT_FALSE(parsed_event.bitrate_bps);
-  ASSERT_TRUE(parsed_event.failure_reason);
+  EXPECT_EQ(parsed_event.id, id);
   EXPECT_EQ(parsed_event.failure_reason, failure_reason);
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventProbeResultSuccess) {
-  const int id = RandomPositiveInt();
-  const uint64_t bitrate_bps = rtc::checked_cast<uint64_t>(RandomBitrate());
+  const int32_t id = RandomPositiveInt();
+  const int32_t bitrate_bps = RandomBitrate();
 
   auto event = rtc::MakeUnique<RtcEventProbeResultSuccess>(id, bitrate_bps);
   const int64_t timestamp_us = event->timestamp_us_;
@@ -422,14 +422,13 @@ TEST_P(RtcEventLogEncoderTest, RtcEventProbeResultSuccess) {
   ASSERT_TRUE(parsed_log_.ParseString(encoded));
   ASSERT_EQ(parsed_log_.GetNumberOfEvents(), 1u);
   ASSERT_EQ(parsed_log_.GetEventType(0),
-            ParsedRtcEventLogNew::BWE_PROBE_RESULT_EVENT);
+            ParsedRtcEventLogNew::EventType::BWE_PROBE_SUCCESS_EVENT);
 
-  auto parsed_event = parsed_log_.GetBweProbeResult(0);
+  auto parsed_event = parsed_log_.GetBweProbeSuccess(0);
 
   EXPECT_EQ(parsed_log_.GetTimestamp(0), timestamp_us);
-  EXPECT_EQ(rtc::dchecked_cast<int>(parsed_event.id), id);
+  EXPECT_EQ(parsed_event.id, id);
   EXPECT_EQ(parsed_event.bitrate_bps, bitrate_bps);
-  ASSERT_FALSE(parsed_event.failure_reason);
 }
 
 void RtcEventLogEncoderTest::TestRtcEventRtcpPacket(PacketDirection direction) {
@@ -449,7 +448,8 @@ void RtcEventLogEncoderTest::TestRtcEventRtcpPacket(PacketDirection direction) {
   std::string encoded = encoder_->EncodeBatch(history_.begin(), history_.end());
   ASSERT_TRUE(parsed_log_.ParseString(encoded));
   ASSERT_EQ(parsed_log_.GetNumberOfEvents(), 1u);
-  ASSERT_EQ(parsed_log_.GetEventType(0), ParsedRtcEventLogNew::RTCP_EVENT);
+  ASSERT_EQ(parsed_log_.GetEventType(0),
+            ParsedRtcEventLogNew::EventType::RTCP_EVENT);
 
   PacketDirection parsed_direction;
   uint8_t parsed_packet[IP_PACKET_SIZE];  // "Parsed" = after event-encoding.
@@ -503,7 +503,8 @@ void RtcEventLogEncoderTest::TestRtcEventRtpPacket(PacketDirection direction) {
   std::string encoded = encoder_->EncodeBatch(history_.begin(), history_.end());
   ASSERT_TRUE(parsed_log_.ParseString(encoded));
   ASSERT_EQ(parsed_log_.GetNumberOfEvents(), 1u);
-  ASSERT_EQ(parsed_log_.GetEventType(0), ParsedRtcEventLogNew::RTP_EVENT);
+  ASSERT_EQ(parsed_log_.GetEventType(0),
+            ParsedRtcEventLogNew::EventType::RTP_EVENT);
 
   PacketDirection parsed_direction;
   uint8_t parsed_rtp_header[IP_PACKET_SIZE];
@@ -554,7 +555,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventVideoReceiveStreamConfig) {
   ASSERT_TRUE(parsed_log_.ParseString(encoded));
   ASSERT_EQ(parsed_log_.GetNumberOfEvents(), 1u);
   ASSERT_EQ(parsed_log_.GetEventType(0),
-            ParsedRtcEventLogNew::VIDEO_RECEIVER_CONFIG_EVENT);
+            ParsedRtcEventLogNew::EventType::VIDEO_RECEIVER_CONFIG_EVENT);
 
   auto parsed_event = parsed_log_.GetVideoReceiveConfig(0);
   EXPECT_EQ(parsed_log_.GetTimestamp(0), timestamp_us);
@@ -580,7 +581,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventVideoSendStreamConfig) {
   ASSERT_TRUE(parsed_log_.ParseString(encoded));
   ASSERT_EQ(parsed_log_.GetNumberOfEvents(), 1u);
   ASSERT_EQ(parsed_log_.GetEventType(0),
-            ParsedRtcEventLogNew::VIDEO_SENDER_CONFIG_EVENT);
+            ParsedRtcEventLogNew::EventType::VIDEO_SENDER_CONFIG_EVENT);
 
   auto parsed_event = parsed_log_.GetVideoSendConfig(0)[0];
   EXPECT_EQ(parsed_log_.GetTimestamp(0), timestamp_us);

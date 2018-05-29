@@ -977,12 +977,10 @@ void EventLogAnalyzer::CreateTotalOutgoingBitrateGraph(Plot* plot,
 
   TimeSeries result_series("Probing results.", LineStyle::kNone,
                            PointStyle::kHighlight);
-  for (auto& result : parsed_log_.bwe_probe_result_events()) {
-    if (result.bitrate_bps) {
-      float x = ToCallTimeSec(result.log_time_us());
-      float y = static_cast<float>(*result.bitrate_bps) / 1000;
-      result_series.points.emplace_back(x, y);
-    }
+  for (auto& result : parsed_log_.bwe_probe_success_events()) {
+    float x = ToCallTimeSec(result.log_time_us());
+    float y = static_cast<float>(result.bitrate_bps) / 1000;
+    result_series.points.emplace_back(x, y);
   }
 
   IntervalSeries alr_state("ALR", "#555555", IntervalSeries::kHorizontal);

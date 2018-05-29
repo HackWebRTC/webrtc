@@ -128,7 +128,7 @@ int main(int argc, char* argv[]) {
     // a softer failure option, but it does not seem useful to generate
     // RTP dumps based on broken event logs.
     if (FLAG_rtp && parsed_stream.GetEventType(i) ==
-                        webrtc::ParsedRtcEventLogNew::RTP_EVENT) {
+                        webrtc::ParsedRtcEventLogNew::EventType::RTP_EVENT) {
       webrtc::test::RtpPacket packet;
       webrtc::PacketDirection direction;
       parsed_stream.GetRtpHeader(i, &direction, packet.data, &packet.length,
@@ -166,7 +166,7 @@ int main(int argc, char* argv[]) {
       rtp_counter++;
     }
     if (FLAG_rtcp && parsed_stream.GetEventType(i) ==
-                         webrtc::ParsedRtcEventLogNew::RTCP_EVENT) {
+                         webrtc::ParsedRtcEventLogNew::EventType::RTCP_EVENT) {
       webrtc::test::RtpPacket packet;
       webrtc::PacketDirection direction;
       parsed_stream.GetRtcpPacket(i, &direction, packet.data, &packet.length);

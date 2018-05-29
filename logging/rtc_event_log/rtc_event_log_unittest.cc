@@ -145,8 +145,10 @@ const std::map<ParsedRtcEventLogNew::EventType, std::string>
           "AUDIO_NETWORK_ADAPTATION"},
          {ParsedRtcEventLogNew::EventType::BWE_PROBE_CLUSTER_CREATED_EVENT,
           "BWE_PROBE_CREATED"},
-         {ParsedRtcEventLogNew::EventType::BWE_PROBE_RESULT_EVENT,
-          "BWE_PROBE_RESULT"}});
+         {ParsedRtcEventLogNew::EventType::BWE_PROBE_SUCCESS_EVENT,
+          "BWE_PROBE_SUCCESS"},
+         {ParsedRtcEventLogNew::EventType::BWE_PROBE_FAILURE_EVENT,
+          "BWE_PROBE_FAILURE"}});
 }  // namespace
 
 void PrintActualEvents(const ParsedRtcEventLogNew& parsed_log,

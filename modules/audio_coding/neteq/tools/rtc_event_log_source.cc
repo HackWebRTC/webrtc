@@ -40,7 +40,7 @@ std::unique_ptr<Packet> RtcEventLogSource::NextPacket() {
   for (; rtp_packet_index_ < parsed_stream_.GetNumberOfEvents();
        rtp_packet_index_++) {
     if (parsed_stream_.GetEventType(rtp_packet_index_) ==
-        ParsedRtcEventLogNew::RTP_EVENT) {
+        ParsedRtcEventLogNew::EventType::RTP_EVENT) {
       PacketDirection direction;
       size_t header_length;
       size_t packet_length;
@@ -84,7 +84,7 @@ std::unique_ptr<Packet> RtcEventLogSource::NextPacket() {
 int64_t RtcEventLogSource::NextAudioOutputEventMs() {
   while (audio_output_index_ < parsed_stream_.GetNumberOfEvents()) {
     if (parsed_stream_.GetEventType(audio_output_index_) ==
-        ParsedRtcEventLogNew::AUDIO_PLAYOUT_EVENT) {
+        ParsedRtcEventLogNew::EventType::AUDIO_PLAYOUT_EVENT) {
       LoggedAudioPlayoutEvent playout_event =
           parsed_stream_.GetAudioPlayout(audio_output_index_);
       if (!(use_ssrc_filter_ && playout_event.ssrc != ssrc_)) {
