@@ -18,6 +18,10 @@
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/sslstreamadapter.h"
 
+#ifndef OPENSSL_IS_BORINGSSL
+typedef struct ssl_session_st SSL_SESSION;
+#endif
+
 namespace rtc {
 
 // The OpenSSLSessionCache maps hostnames to SSL_SESSIONS. This cache is
