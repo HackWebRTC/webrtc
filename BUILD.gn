@@ -312,7 +312,7 @@ config("common_config") {
     ]
   }
 
-  if (use_libfuzzer || use_drfuzz || use_afl) {
+  if (use_fuzzing_engine && optimize_for_fuzzing) {
     # Used in Chromium's overrides to disable logging
     defines += [ "WEBRTC_UNSAFE_FUZZER_MODE" ]
   }
