@@ -10,7 +10,7 @@ vars = {
   'checkout_configuration': 'default',
   'checkout_instrumented_libraries': 'checkout_linux and checkout_configuration == "default"',
   'webrtc_git': 'https://webrtc.googlesource.com',
-  'chromium_revision': '04484f1ad87b6168ee66c77fa6b58671b156b5e3',
+  'chromium_revision': 'eb7233cee8436ea524be3eb000e21c54c1c64f69',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
@@ -43,7 +43,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling Chromium third_party
   # and whatever else without interference from each other.
-  'chromium_third_party_revision': 'df47e603552ded44d8fdbbfaa73444aa015c2f0c',
+  'chromium_third_party_revision': '964479cf9407b632a1f99af98382eea3d749173b',
 }
 deps = {
   # TODO(kjellander): Move this to be Android-only once the libevent dependency
@@ -51,7 +51,7 @@ deps = {
   'src/base':
     Var('chromium_git') + '/chromium/src/base' + '@' + '60caf964a31a0c0850372a2e421485f0c783c32c',
   'src/build':
-    Var('chromium_git') + '/chromium/src/build' + '@' + '39cffdabab587544c4bb01f3618ea3f7ae65a889',
+    Var('chromium_git') + '/chromium/src/build' + '@' + '25be5e8c8e4bfc814c6ad19b7e9ff8bd8f44a563',
   'src/buildtools':
     Var('chromium_git') + '/chromium/buildtools.git' + '@' + '893eb86b02b2571894e328f05551112b96df1cce',
   # Gradle 4.3-rc4. Used for testing Android Studio project generation for WebRTC.
@@ -61,11 +61,11 @@ deps = {
     'condition': 'checkout_android',
   },
   'src/ios': {
-    'url': Var('chromium_git') + '/chromium/src/ios' + '@' + '9b90eea6f1e1e92d1557ccf7ffe3741504c73672',
+    'url': Var('chromium_git') + '/chromium/src/ios' + '@' + 'e05d522249d3a9648341e7492ff133c96c5e1398',
     'condition': 'checkout_ios',
   },
   'src/testing':
-    Var('chromium_git') + '/chromium/src/testing' + '@' + '8092ac5e3aac276c87d07a9f53285a36af677d70',
+    Var('chromium_git') + '/chromium/src/testing' + '@' + 'c23170bef6bfb427056071e71573cf09a3a9991a',
   # This entry is used for chromium third_party rolling into webrtc third_party only.
   'src/third_party_chromium': {
       'url': Var('chromium_git') + '/chromium/src/third_party' + '@' + Var('chromium_third_party_revision'),
@@ -175,7 +175,7 @@ deps = {
   'src/third_party/yasm/source/patched-yasm':
     Var('chromium_git') + '/chromium/deps/yasm/patched-yasm.git' + '@' + 'b98114e18d8b9b84586b10d24353ab8616d4c5fc',
   'src/tools':
-    Var('chromium_git') + '/chromium/src/tools' + '@' + '331f1e2bf624a5835ad5fb89ea882e9ea23a1ca5',
+    Var('chromium_git') + '/chromium/src/tools' + '@' + '907746419506e2c9cbe6ae07eaf6c46779a97616',
   'src/tools/gyp':
     Var('chromium_git') + '/external/gyp.git' + '@' + 'd61a9397e668fa9843c4aa7da9e79460fe590bfb',
   'src/tools/swarming_client':

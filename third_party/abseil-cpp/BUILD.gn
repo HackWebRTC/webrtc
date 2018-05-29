@@ -8,6 +8,8 @@
 # opts will be linked together, and in some cases headers compiled with and
 # without these options will be part of the same program.
 
+import("//build/toolchain/toolchain.gni")
+
 group("default") {
   deps = [
     "absl/types:any",
@@ -141,10 +143,15 @@ config("absl_test_cflags_cc") {
       "-Wno-unused-member-function",
       "-Wno-unused-parameter",
       "-Wno-unused-private-field",
-      "-Wno-unused-template",
       "-Wno-used-but-marked-unused",
-      "-Wno-zero-as-null-pointer-constant",
     ]
+    if (!use_xcode_clang) {
+      # xcode clang does not recognize the following flags.
+      cflags_cc += [
+        "-Wno-unused-template",
+        "-Wno-zero-as-null-pointer-constant",
+      ]
+    }
   } else {
     if (is_linux) {
       # GCC flags:
