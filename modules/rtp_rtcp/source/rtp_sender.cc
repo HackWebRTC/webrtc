@@ -594,6 +594,8 @@ size_t RTPSender::SendPadData(size_t bytes,
     padding_packet.SetExtension<AbsoluteSendTime>(
         AbsoluteSendTime::MsTo24Bits(now_ms));
     PacketOptions options;
+    // Padding packets are never retransmissions.
+    options.is_retransmit = false;
     bool has_transport_seq_num =
         UpdateTransportSequenceNumber(&padding_packet, &options.packet_id);
     padding_packet.SetPadding(padding_bytes_in_packet, &random_);
@@ -811,6 +813,10 @@ bool RTPSender::PrepareAndSendPacket(std::unique_ptr<RtpPacketToSend> packet,
   }
 
   PacketOptions options;
+  // If we are sending over RTX, it also means this is a retransmission.
+  // E.g. RTPSender::TrySendRedundantPayloads calls PrepareAndSendPacket with
+  // send_over_rtx = true but is_retransmit = false.
+  options.is_retransmit = is_retransmit || send_over_rtx;
   if (UpdateTransportSequenceNumber(packet_to_send, &options.packet_id)) {
     AddPacketToTransportFeedback(options.packet_id, *packet_to_send,
                                  pacing_info);
@@ -946,6 +952,7 @@ bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
   }
 
   PacketOptions options;
+  options.is_retransmit = false;
   if (UpdateTransportSequenceNumber(packet.get(), &options.packet_id)) {
     AddPacketToTransportFeedback(options.packet_id, *packet.get(),
                                  PacedPacketInfo());

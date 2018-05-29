@@ -71,7 +71,7 @@ uint64_t ConvertMsToAbsSendTime(int64_t time_ms) {
 
 class LoopbackTransportTest : public webrtc::Transport {
  public:
-  LoopbackTransportTest() : total_bytes_sent_(0), last_packet_id_(-1) {
+  LoopbackTransportTest() : total_bytes_sent_(0) {
     receivers_extensions_.Register(kRtpExtensionTransmissionTimeOffset,
                                    kTransmissionTimeOffsetExtensionId);
     receivers_extensions_.Register(kRtpExtensionAbsoluteSendTime,
@@ -90,7 +90,7 @@ class LoopbackTransportTest : public webrtc::Transport {
   bool SendRtp(const uint8_t* data,
                size_t len,
                const PacketOptions& options) override {
-    last_packet_id_ = options.packet_id;
+    last_options_ = options;
     total_bytes_sent_ += len;
     sent_packets_.push_back(RtpPacketReceived(&receivers_extensions_));
     EXPECT_TRUE(sent_packets_.back().Parse(data, len));
@@ -101,7 +101,7 @@ class LoopbackTransportTest : public webrtc::Transport {
   int packets_sent() { return sent_packets_.size(); }
 
   size_t total_bytes_sent_;
-  int last_packet_id_;
+  PacketOptions last_options_;
   std::vector<RtpPacketReceived> sent_packets_;
 
  private:
@@ -467,7 +467,19 @@ TEST_P(RtpSenderTestWithoutPacer, SendsPacketsWithTransportSequenceNumber) {
   uint16_t transport_seq_no;
   ASSERT_TRUE(packet.GetExtension<TransportSequenceNumber>(&transport_seq_no));
   EXPECT_EQ(kTransportSequenceNumber, transport_seq_no);
-  EXPECT_EQ(transport_.last_packet_id_, transport_seq_no);
+  EXPECT_EQ(transport_.last_options_.packet_id, transport_seq_no);
+}
+
+TEST_P(RtpSenderTestWithoutPacer, PacketOptionsNoRetransmission) {
+  rtp_sender_.reset(new RTPSender(
+      false, &fake_clock_, &transport_, nullptr, nullptr, &seq_num_allocator_,
+      &feedback_observer_, nullptr, nullptr, nullptr, &mock_rtc_event_log_,
+      &send_packet_observer_, &retransmission_rate_limiter_, nullptr, false));
+  rtp_sender_->SetSSRC(kSsrc);
+
+  SendGenericPayload();
+
+  EXPECT_FALSE(transport_.last_options_.is_retransmit);
 }
 
 TEST_P(RtpSenderTestWithoutPacer, NoAllocationIfNotRegistered) {
@@ -520,7 +532,7 @@ TEST_P(RtpSenderTest, SendsPacketsWithTransportSequenceNumber) {
   uint16_t transport_seq_no;
   EXPECT_TRUE(packet.GetExtension<TransportSequenceNumber>(&transport_seq_no));
   EXPECT_EQ(kTransportSequenceNumber, transport_seq_no);
-  EXPECT_EQ(transport_.last_packet_id_, transport_seq_no);
+  EXPECT_EQ(transport_.last_options_.packet_id, transport_seq_no);
 }
 
 TEST_P(RtpSenderTest, WritesPacerExitToTimingExtension) {
@@ -844,6 +856,7 @@ TEST_P(RtpSenderTest, OnSendPacketNotUpdatedForRetransmits) {
                                 fake_clock_.TimeInMilliseconds(), kIsRetransmit,
                                 PacedPacketInfo());
   EXPECT_EQ(1, transport_.packets_sent());
+  EXPECT_TRUE(transport_.last_options_.is_retransmit);
 }
 
 TEST_P(RtpSenderTest, OnSendPacketNotUpdatedWithoutSeqNumAllocator) {
@@ -925,20 +938,27 @@ TEST_P(RtpSenderTest, SendRedundantPayloads) {
   EXPECT_EQ(kMaxPaddingSize,
             rtp_sender_->TimeToSendPadding(49, PacedPacketInfo()));
 
+  PacketOptions options;
   EXPECT_CALL(transport,
               SendRtp(_, kPayloadSizes[0] + rtp_header_len + kRtxHeaderSize, _))
-      .WillOnce(testing::Return(true));
+      .WillOnce(testing::DoAll(testing::SaveArg<2>(&options),
+                               testing::Return(true)));
   EXPECT_EQ(kPayloadSizes[0],
             rtp_sender_->TimeToSendPadding(500, PacedPacketInfo()));
+  EXPECT_TRUE(options.is_retransmit);
 
   EXPECT_CALL(transport, SendRtp(_, kPayloadSizes[kNumPayloadSizes - 1] +
                                         rtp_header_len + kRtxHeaderSize,
                                  _))
       .WillOnce(testing::Return(true));
+
+  options.is_retransmit = false;
   EXPECT_CALL(transport, SendRtp(_, kMaxPaddingSize + rtp_header_len, _))
-      .WillOnce(testing::Return(true));
+      .WillOnce(testing::DoAll(testing::SaveArg<2>(&options),
+                               testing::Return(true)));
   EXPECT_EQ(kPayloadSizes[kNumPayloadSizes - 1] + kMaxPaddingSize,
             rtp_sender_->TimeToSendPadding(999, PacedPacketInfo()));
+  EXPECT_FALSE(options.is_retransmit);
 }
 
 TEST_P(RtpSenderTestWithoutPacer, SendGenericVideo) {
