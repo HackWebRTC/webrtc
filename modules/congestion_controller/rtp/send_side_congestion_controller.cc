@@ -213,11 +213,9 @@ ControlHandler::ControlHandler(NetworkChangedObserver* observer,
 
 void ControlHandler::PostUpdates(NetworkControlUpdate update) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
-  if (congestion_window_pushback_experiment_) {
-    if (update.congestion_window) {
-      congestion_window_ = update.congestion_window;
-      pacer_controller_->OnCongestionWindow(*update.congestion_window);
-    }
+  if (update.congestion_window) {
+    congestion_window_ = update.congestion_window;
+    pacer_controller_->OnCongestionWindow(*update.congestion_window);
   }
   if (update.pacer_config) {
     pacer_controller_->OnPacerConfig(*update.pacer_config);
