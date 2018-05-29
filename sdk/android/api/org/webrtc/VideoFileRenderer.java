@@ -37,7 +37,7 @@ public class VideoFileRenderer implements VideoSink {
   private final ByteBuffer outputFrameBuffer;
   private EglBase eglBase;
   private YuvConverter yuvConverter;
-  private ArrayList<ByteBuffer> rawFrames = new ArrayList<>();
+  private int frameCount;
 
   public VideoFileRenderer(String outputFile, int outputFileWidth, int outputFileHeight,
       final EglBase.Context sharedContext) throws IOException {
@@ -108,14 +108,19 @@ public class VideoFileRenderer implements VideoSink {
     final VideoFrame.I420Buffer i420 = scaledBuffer.toI420();
     scaledBuffer.release();
 
-    ByteBuffer byteBuffer = JniCommon.nativeAllocateByteBuffer(outputFrameSize);
     YuvHelper.I420Rotate(i420.getDataY(), i420.getStrideY(), i420.getDataU(), i420.getStrideU(),
-        i420.getDataV(), i420.getStrideV(), byteBuffer, i420.getWidth(), i420.getHeight(),
+        i420.getDataV(), i420.getStrideV(), outputFrameBuffer, i420.getWidth(), i420.getHeight(),
         frame.getRotation());
     i420.release();
 
-    byteBuffer.rewind();
-    rawFrames.add(byteBuffer);
+    try {
+      videoOutFile.write("FRAME\n".getBytes(Charset.forName("US-ASCII")));
+      videoOutFile.write(
+          outputFrameBuffer.array(), outputFrameBuffer.arrayOffset(), outputFrameSize);
+    } catch (IOException e) {
+      throw new RuntimeException("Error writing video to disk", e);
+    }
+    frameCount++;
   }
 
   /**
@@ -131,23 +136,13 @@ public class VideoFileRenderer implements VideoSink {
     });
     ThreadUtils.awaitUninterruptibly(cleanupBarrier);
     try {
-      for (ByteBuffer buffer : rawFrames) {
-        videoOutFile.write("FRAME\n".getBytes(Charset.forName("US-ASCII")));
-
-        byte[] data = new byte[outputFrameSize];
-        buffer.get(data);
-
-        videoOutFile.write(data);
-
-        JniCommon.nativeFreeByteBuffer(buffer);
-      }
       videoOutFile.close();
       Logging.d(TAG,
-          "Video written to disk as " + outputFileName + ". Number frames are " + rawFrames.size()
-              + " and the dimension of the frames are " + outputFileWidth + "x" + outputFileHeight
+          "Video written to disk as " + outputFileName + ". The number of frames is " + frameCount
+              + " and the dimensions of the frames are " + outputFileWidth + "x" + outputFileHeight
               + ".");
     } catch (IOException e) {
-      Logging.e(TAG, "Error writing video to disk", e);
+      throw new RuntimeException("Error closing output file", e);
     }
   }
 }
