@@ -354,6 +354,45 @@ bool ParsedRtcEventLogNew::ParseString(const std::string& s) {
 bool ParsedRtcEventLogNew::ParseStream(
     std::istream& stream) {  // no-presubmit-check TODO(webrtc:8982)
   Clear();
+  bool success = ParseStreamInternal(stream);
+
+  // ParseStreamInternal stores the RTP packets in a map indexed by SSRC.
+  // Since we dont need rapid lookup based on SSRC after parsing, we move the
+  // packets_streams from map to vector.
+  incoming_rtp_packets_by_ssrc_.reserve(incoming_rtp_packets_map_.size());
+  for (const auto& kv : incoming_rtp_packets_map_) {
+    incoming_rtp_packets_by_ssrc_.emplace_back(LoggedRtpStreamIncoming());
+    incoming_rtp_packets_by_ssrc_.back().ssrc = kv.first;
+    incoming_rtp_packets_by_ssrc_.back().incoming_packets =
+        std::move(kv.second);
+  }
+  incoming_rtp_packets_map_.clear();
+  outgoing_rtp_packets_by_ssrc_.reserve(outgoing_rtp_packets_map_.size());
+  for (const auto& kv : outgoing_rtp_packets_map_) {
+    outgoing_rtp_packets_by_ssrc_.emplace_back(LoggedRtpStreamOutgoing());
+    outgoing_rtp_packets_by_ssrc_.back().ssrc = kv.first;
+    outgoing_rtp_packets_by_ssrc_.back().outgoing_packets =
+        std::move(kv.second);
+  }
+  outgoing_rtp_packets_map_.clear();
+
+  // Build PacketViews for easier iteration over RTP packets
+  for (const auto& stream : incoming_rtp_packets_by_ssrc_) {
+    incoming_rtp_packet_views_by_ssrc_.emplace_back(
+        LoggedRtpStreamView(stream.ssrc, stream.incoming_packets.data(),
+                            stream.incoming_packets.size()));
+  }
+  for (const auto& stream : outgoing_rtp_packets_by_ssrc_) {
+    outgoing_rtp_packet_views_by_ssrc_.emplace_back(
+        LoggedRtpStreamView(stream.ssrc, stream.outgoing_packets.data(),
+                            stream.outgoing_packets.size()));
+  }
+
+  return success;
+}
+
+bool ParsedRtcEventLogNew::ParseStreamInternal(
+    std::istream& stream) {  // no-presubmit-check TODO(webrtc:8982)
   const size_t kMaxEventSize = (1u << 16) - 1;
   std::vector<char> tmp_buffer(kMaxEventSize);
   uint64_t tag;
@@ -410,38 +449,8 @@ bool ParsedRtcEventLogNew::ParseStream(
     }
 
     StoreParsedEvent(event);
-
     events_.push_back(event);
   }
-
-  // Move packets_streams from map to vector.
-  incoming_rtp_packets_by_ssrc_.reserve(incoming_rtp_packets_map_.size());
-  for (const auto& kv : incoming_rtp_packets_map_) {
-    incoming_rtp_packets_by_ssrc_.emplace_back(LoggedRtpStreamIncoming());
-    incoming_rtp_packets_by_ssrc_.back().ssrc = kv.first;
-    incoming_rtp_packets_by_ssrc_.back().incoming_packets =
-        std::move(kv.second);
-  }
-  outgoing_rtp_packets_by_ssrc_.reserve(outgoing_rtp_packets_map_.size());
-  for (const auto& kv : outgoing_rtp_packets_map_) {
-    outgoing_rtp_packets_by_ssrc_.emplace_back(LoggedRtpStreamOutgoing());
-    outgoing_rtp_packets_by_ssrc_.back().ssrc = kv.first;
-    outgoing_rtp_packets_by_ssrc_.back().outgoing_packets =
-        std::move(kv.second);
-  }
-
-  // Build PacketViews for easier iteration over RTP packets
-  for (const auto& stream : incoming_rtp_packets_by_ssrc_) {
-    incoming_rtp_packet_views_by_ssrc_.emplace_back(
-        LoggedRtpStreamView(stream.ssrc, stream.incoming_packets.data(),
-                            stream.incoming_packets.size()));
-  }
-  for (const auto& stream : outgoing_rtp_packets_by_ssrc_) {
-    outgoing_rtp_packet_views_by_ssrc_.emplace_back(
-        LoggedRtpStreamView(stream.ssrc, stream.outgoing_packets.data(),
-                            stream.outgoing_packets.size()));
-  }
-
   return true;
 }
 

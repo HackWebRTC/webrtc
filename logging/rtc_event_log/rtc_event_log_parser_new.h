@@ -776,6 +776,9 @@ class ParsedRtcEventLogNew {
   int64_t last_timestamp() const { return last_timestamp_; }
 
  private:
+  bool ParseStreamInternal(
+      std::istream& stream);  // no-presubmit-check TODO(webrtc:8982)
+
   void StoreParsedEvent(const rtclog::Event& event);
 
   rtclog::StreamConfig GetVideoReceiveConfig(const rtclog::Event& event) const;
