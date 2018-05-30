@@ -32,9 +32,9 @@
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/openssl.h"
 #include "rtc_base/opensslcertificate.h"
-#ifdef WEBRTC_ENABLE_BUILT_IN_SSL_ROOT_CERTIFICATES
+#ifdef WEBRTC_BUILT_IN_SSL_ROOT_CERTIFICATES
 #include "rtc_base/sslroots.h"
-#endif  // WEBRTC_ENABLE_BUILT_IN_SSL_ROOT_CERTIFICATES
+#endif  // WEBRTC_BUILT_IN_SSL_ROOT_CERTIFICATES
 
 namespace rtc {
 namespace openssl {
@@ -109,7 +109,7 @@ void LogSSLErrors(const std::string& prefix) {
   }
 }
 
-#ifdef WEBRTC_ENABLE_BUILT_IN_SSL_ROOT_CERTIFICATES
+#ifdef WEBRTC_BUILT_IN_SSL_ROOT_CERTIFICATES
 bool LoadBuiltinSSLRootCertificates(SSL_CTX* ctx) {
   int count_of_added_certs = 0;
   for (size_t i = 0; i < arraysize(kSSLCertCertificateList); i++) {
@@ -129,7 +129,7 @@ bool LoadBuiltinSSLRootCertificates(SSL_CTX* ctx) {
   }
   return count_of_added_certs > 0;
 }
-#endif  // WEBRTC_ENABLE_BUILT_IN_SSL_ROOT_CERTIFICATES
+#endif  // WEBRTC_BUILT_IN_SSL_ROOT_CERTIFICATES
 
 }  // namespace openssl
 }  // namespace rtc

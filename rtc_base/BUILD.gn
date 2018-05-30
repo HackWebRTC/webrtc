@@ -874,7 +874,7 @@ rtc_static_library("rtc_base_generic") {
   }
 
   if (rtc_builtin_ssl_root_certificates) {
-    defines += [ "WEBRTC_ENABLE_BUILT_IN_SSL_ROOT_CERTIFICATES" ]
+    defines += [ "WEBRTC_BUILT_IN_SSL_ROOT_CERTIFICATES" ]
   }
 
   if (is_android) {
@@ -1305,9 +1305,8 @@ if (rtc_include_tests) {
     } else {
       configs += [ ":external_ssl_library" ]
     }
-
-    if (!rtc_builtin_ssl_root_certificates) {
-      defines += [ "WEBRTC_DISABLE_BUILT_IN_SSL_ROOT_CERTIFICATES" ]
+    if (rtc_builtin_ssl_root_certificates) {
+      defines += [ "WEBRTC_BUILT_IN_SSL_ROOT_CERTIFICATES" ]
     }
   }
 }

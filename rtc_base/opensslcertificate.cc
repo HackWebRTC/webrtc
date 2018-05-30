@@ -36,7 +36,7 @@
 #include "rtc_base/opensslidentity.h"
 #include "rtc_base/opensslutility.h"
 #include "rtc_base/ptr_util.h"
-#ifndef WEBRTC_DISABLE_BUILT_IN_SSL_ROOT_CERTIFICATES
+#ifdef WEBRTC_BUILT_IN_SSL_ROOT_CERTIFICATES
 #include "rtc_base/sslroots.h"
 #endif
 
