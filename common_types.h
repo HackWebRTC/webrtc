@@ -30,10 +30,6 @@
 #pragma warning(disable : 4351)
 #endif
 
-#ifndef NULL
-#define NULL 0
-#endif
-
 #define RTP_PAYLOAD_NAME_SIZE 32u
 
 #if defined(WEBRTC_WIN) || defined(WIN32)

@@ -17,10 +17,6 @@
 
 namespace webrtc
 {
-// Defines
-#ifndef NULL
-    #define NULL    0
-#endif
 
 enum {kVideoCaptureUniqueNameLength =1024}; //Max unique capture device name lenght
 enum {kVideoCaptureDeviceNameLength =256}; //Max capture device name lenght
