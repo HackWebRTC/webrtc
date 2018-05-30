@@ -15,7 +15,6 @@ namespace webrtc {
 namespace test {
 TEST(DataRateTest, GetBackSameValues) {
   const int64_t kValue = 123 * 8;
-  EXPECT_EQ(DataRate::bits_per_second(kValue).bits_per_second(), kValue);
   EXPECT_EQ(DataRate::bps(kValue).bps(), kValue);
   EXPECT_EQ(DataRate::kbps(kValue).kbps(), kValue);
 }
@@ -28,22 +27,22 @@ TEST(DataRateTest, GetDifferentPrefix) {
 TEST(DataRateTest, IdentityChecks) {
   const int64_t kValue = 3000;
   EXPECT_TRUE(DataRate::Zero().IsZero());
-  EXPECT_FALSE(DataRate::bits_per_second(kValue).IsZero());
+  EXPECT_FALSE(DataRate::bps(kValue).IsZero());
 
   EXPECT_TRUE(DataRate::Infinity().IsInfinite());
   EXPECT_FALSE(DataRate::Zero().IsInfinite());
-  EXPECT_FALSE(DataRate::bits_per_second(kValue).IsInfinite());
+  EXPECT_FALSE(DataRate::bps(kValue).IsInfinite());
 
   EXPECT_FALSE(DataRate::Infinity().IsFinite());
-  EXPECT_TRUE(DataRate::bits_per_second(kValue).IsFinite());
+  EXPECT_TRUE(DataRate::bps(kValue).IsFinite());
   EXPECT_TRUE(DataRate::Zero().IsFinite());
 }
 
 TEST(DataRateTest, ComparisonOperators) {
   const int64_t kSmall = 450;
   const int64_t kLarge = 451;
-  const DataRate small = DataRate::bits_per_second(kSmall);
-  const DataRate large = DataRate::bits_per_second(kLarge);
+  const DataRate small = DataRate::bps(kSmall);
+  const DataRate large = DataRate::bps(kLarge);
 
   EXPECT_EQ(DataRate::Zero(), DataRate::bps(0));
   EXPECT_EQ(DataRate::Infinity(), DataRate::Infinity());
@@ -59,15 +58,36 @@ TEST(DataRateTest, ComparisonOperators) {
   EXPECT_GT(DataRate::Infinity(), large);
 }
 
+TEST(DataRateTest, ConvertsToAndFromDouble) {
+  const int64_t kValue = 128;
+  const double kDoubleValue = static_cast<double>(kValue);
+  const double kDoubleKbps = kValue * 1e-3;
+  const double kFloatKbps = static_cast<float>(kDoubleKbps);
+
+  EXPECT_EQ(DataRate::bps(kValue).bps<double>(), kDoubleValue);
+  EXPECT_EQ(DataRate::bps(kValue).kbps<double>(), kDoubleKbps);
+  EXPECT_EQ(DataRate::bps(kValue).kbps<float>(), kFloatKbps);
+  EXPECT_EQ(DataRate::bps(kDoubleValue).bps(), kValue);
+  EXPECT_EQ(DataRate::kbps(kDoubleKbps).bps(), kValue);
+
+  const double kInfinity = std::numeric_limits<double>::infinity();
+  EXPECT_EQ(DataRate::Infinity().bps<double>(), kInfinity);
+  EXPECT_TRUE(DataRate::bps(kInfinity).IsInfinite());
+  EXPECT_TRUE(DataRate::kbps(kInfinity).IsInfinite());
+}
+
 TEST(DataRateTest, MathOperations) {
   const int64_t kValueA = 450;
   const int64_t kValueB = 267;
-  const DataRate size_a = DataRate::bits_per_second(kValueA);
+  const DataRate rate_a = DataRate::bps(kValueA);
+  const DataRate rate_b = DataRate::bps(kValueB);
   const int32_t kInt32Value = 123;
   const double kFloatValue = 123.0;
-  EXPECT_EQ((size_a * kValueB).bits_per_second(), kValueA * kValueB);
-  EXPECT_EQ((size_a * kInt32Value).bits_per_second(), kValueA * kInt32Value);
-  EXPECT_EQ((size_a * kFloatValue).bits_per_second(), kValueA * kFloatValue);
+  EXPECT_EQ((rate_a * kValueB).bps(), kValueA * kValueB);
+  EXPECT_EQ((rate_a * kInt32Value).bps(), kValueA * kInt32Value);
+  EXPECT_EQ((rate_a * kFloatValue).bps(), kValueA * kFloatValue);
+
+  EXPECT_EQ(rate_a / rate_b, static_cast<double>(kValueA) / kValueB);
 }
 
 TEST(UnitConversionTest, DataRateAndDataSizeAndTimeDelta) {
@@ -75,11 +95,11 @@ TEST(UnitConversionTest, DataRateAndDataSizeAndTimeDelta) {
   const int64_t kBitsPerSecond = 440;
   const int64_t kBytes = 44000;
   const TimeDelta delta_a = TimeDelta::seconds(kSeconds);
-  const DataRate rate_b = DataRate::bits_per_second(kBitsPerSecond);
+  const DataRate rate_b = DataRate::bps(kBitsPerSecond);
   const DataSize size_c = DataSize::bytes(kBytes);
   EXPECT_EQ((delta_a * rate_b).bytes(), kSeconds * kBitsPerSecond / 8);
   EXPECT_EQ((rate_b * delta_a).bytes(), kSeconds * kBitsPerSecond / 8);
-  EXPECT_EQ((size_c / delta_a).bits_per_second(), kBytes * 8 / kSeconds);
+  EXPECT_EQ((size_c / delta_a).bps(), kBytes * 8 / kSeconds);
   EXPECT_EQ((size_c / rate_b).seconds(), kBytes * 8 / kBitsPerSecond);
 }
 

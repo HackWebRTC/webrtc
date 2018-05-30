@@ -17,6 +17,7 @@
 
 #include "api/units/time_delta.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/numerics/safe_conversions.h"
 
 namespace webrtc {
 namespace timestamp_impl {
@@ -34,22 +35,94 @@ class Timestamp {
   static Timestamp Infinity() {
     return Timestamp(timestamp_impl::kPlusInfinityVal);
   }
-  static Timestamp seconds(int64_t seconds) {
-    return Timestamp::us(seconds * 1000000);
-  }
-  static Timestamp ms(int64_t millis) { return Timestamp::us(millis * 1000); }
-  static Timestamp us(int64_t micros) {
-    RTC_DCHECK_GE(micros, 0);
-    return Timestamp(micros);
-  }
-  int64_t seconds() const { return (us() + 500000) / 1000000; }
-  int64_t ms() const { return (us() + 500) / 1000; }
-  int64_t us() const {
-    RTC_DCHECK(IsFinite());
-    return microseconds_;
+
+  template <
+      typename T,
+      typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+  static Timestamp seconds(T seconds) {
+    RTC_DCHECK_GE(seconds, 0);
+    RTC_DCHECK_LT(seconds, timestamp_impl::kPlusInfinityVal / 1000000);
+    return Timestamp(rtc::dchecked_cast<int64_t>(seconds) * 1000000);
   }
 
-  double SecondsAsDouble() const;
+  template <
+      typename T,
+      typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+  static Timestamp ms(T milliseconds) {
+    RTC_DCHECK_GE(milliseconds, 0);
+    RTC_DCHECK_LT(milliseconds, timestamp_impl::kPlusInfinityVal / 1000);
+    return Timestamp(rtc::dchecked_cast<int64_t>(milliseconds) * 1000);
+  }
+
+  template <
+      typename T,
+      typename std::enable_if<std::is_integral<T>::value>::type* = nullptr>
+  static Timestamp us(T microseconds) {
+    RTC_DCHECK_GE(microseconds, 0);
+    RTC_DCHECK_LT(microseconds, timestamp_impl::kPlusInfinityVal);
+    return Timestamp(rtc::dchecked_cast<int64_t>(microseconds));
+  }
+
+  template <typename T,
+            typename std::enable_if<std::is_floating_point<T>::value>::type* =
+                nullptr>
+  static Timestamp seconds(T seconds) {
+    return Timestamp::us(seconds * 1e6);
+  }
+
+  template <typename T,
+            typename std::enable_if<std::is_floating_point<T>::value>::type* =
+                nullptr>
+  static Timestamp ms(T milliseconds) {
+    return Timestamp::us(milliseconds * 1e3);
+  }
+  template <typename T,
+            typename std::enable_if<std::is_floating_point<T>::value>::type* =
+                nullptr>
+  static Timestamp us(T microseconds) {
+    if (microseconds == std::numeric_limits<double>::infinity()) {
+      return Infinity();
+    } else {
+      RTC_DCHECK(!std::isnan(microseconds));
+      RTC_DCHECK_GE(microseconds, 0);
+      RTC_DCHECK_LT(microseconds, timestamp_impl::kPlusInfinityVal);
+      return Timestamp(rtc::dchecked_cast<int64_t>(microseconds));
+    }
+  }
+
+  template <typename T = int64_t>
+  typename std::enable_if<std::is_integral<T>::value, T>::type seconds() const {
+    return rtc::dchecked_cast<T>((us() + 500000) / 1000000);
+  }
+  template <typename T = int64_t>
+  typename std::enable_if<std::is_integral<T>::value, T>::type ms() const {
+    return rtc::dchecked_cast<T>((us() + 500) / 1000);
+  }
+  template <typename T = int64_t>
+  typename std::enable_if<std::is_integral<T>::value, T>::type us() const {
+    RTC_DCHECK(IsFinite());
+    return rtc::dchecked_cast<T>(microseconds_);
+  }
+
+  template <typename T>
+  typename std::enable_if<std::is_floating_point<T>::value, T>::type seconds()
+      const {
+    return us<T>() * 1e-6;
+  }
+  template <typename T>
+  typename std::enable_if<std::is_floating_point<T>::value, T>::type ms()
+      const {
+    return us<T>() * 1e-3;
+  }
+  template <typename T>
+  typename std::enable_if<std::is_floating_point<T>::value, T>::type us()
+      const {
+    if (IsInfinite()) {
+      return std::numeric_limits<T>::infinity();
+    } else {
+      return microseconds_;
+    }
+  }
 
   bool IsInfinite() const {
     return microseconds_ == timestamp_impl::kPlusInfinityVal;

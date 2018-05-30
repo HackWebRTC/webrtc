@@ -80,6 +80,51 @@ TEST(TimeDeltaTest, ComparisonOperators) {
   EXPECT_LT(TimeDelta::MinusInfinity(), TimeDelta::Zero());
 }
 
+TEST(TimeDeltaTest, CanBeInititializedFromLargeInt) {
+  const int kMaxInt = std::numeric_limits<int>::max();
+  EXPECT_EQ(TimeDelta::seconds(kMaxInt).us(),
+            static_cast<int64_t>(kMaxInt) * 1000000);
+  EXPECT_EQ(TimeDelta::ms(kMaxInt).us(), static_cast<int64_t>(kMaxInt) * 1000);
+}
+
+TEST(TimeDeltaTest, ConvertsToAndFromDouble) {
+  const int64_t kMicros = 17017;
+  const double kNanosDouble = kMicros * 1e3;
+  const double kMicrosDouble = kMicros;
+  const double kMillisDouble = kMicros * 1e-3;
+  const double kSecondsDouble = kMillisDouble * 1e-3;
+
+  EXPECT_EQ(TimeDelta::us(kMicros).seconds<double>(), kSecondsDouble);
+  EXPECT_EQ(TimeDelta::seconds(kSecondsDouble).us(), kMicros);
+
+  EXPECT_EQ(TimeDelta::us(kMicros).ms<double>(), kMillisDouble);
+  EXPECT_EQ(TimeDelta::ms(kMillisDouble).us(), kMicros);
+
+  EXPECT_EQ(TimeDelta::us(kMicros).us<double>(), kMicrosDouble);
+  EXPECT_EQ(TimeDelta::us(kMicrosDouble).us(), kMicros);
+
+  EXPECT_NEAR(TimeDelta::us(kMicros).ns<double>(), kNanosDouble, 1);
+
+  const double kPlusInfinity = std::numeric_limits<double>::infinity();
+  const double kMinusInfinity = -kPlusInfinity;
+
+  EXPECT_EQ(TimeDelta::PlusInfinity().seconds<double>(), kPlusInfinity);
+  EXPECT_EQ(TimeDelta::MinusInfinity().seconds<double>(), kMinusInfinity);
+  EXPECT_EQ(TimeDelta::PlusInfinity().ms<double>(), kPlusInfinity);
+  EXPECT_EQ(TimeDelta::MinusInfinity().ms<double>(), kMinusInfinity);
+  EXPECT_EQ(TimeDelta::PlusInfinity().us<double>(), kPlusInfinity);
+  EXPECT_EQ(TimeDelta::MinusInfinity().us<double>(), kMinusInfinity);
+  EXPECT_EQ(TimeDelta::PlusInfinity().ns<double>(), kPlusInfinity);
+  EXPECT_EQ(TimeDelta::MinusInfinity().ns<double>(), kMinusInfinity);
+
+  EXPECT_TRUE(TimeDelta::seconds(kPlusInfinity).IsPlusInfinity());
+  EXPECT_TRUE(TimeDelta::seconds(kMinusInfinity).IsMinusInfinity());
+  EXPECT_TRUE(TimeDelta::ms(kPlusInfinity).IsPlusInfinity());
+  EXPECT_TRUE(TimeDelta::ms(kMinusInfinity).IsMinusInfinity());
+  EXPECT_TRUE(TimeDelta::us(kPlusInfinity).IsPlusInfinity());
+  EXPECT_TRUE(TimeDelta::us(kMinusInfinity).IsMinusInfinity());
+}
+
 TEST(TimeDeltaTest, MathOperations) {
   const int64_t kValueA = 267;
   const int64_t kValueB = 450;
@@ -93,6 +138,9 @@ TEST(TimeDeltaTest, MathOperations) {
   EXPECT_EQ((TimeDelta::us(kValueA) * kValueB).us(), kValueA * kValueB);
   EXPECT_EQ((TimeDelta::us(kValueA) * kInt32Value).us(), kValueA * kInt32Value);
   EXPECT_EQ((TimeDelta::us(kValueA) * kFloatValue).us(), kValueA * kFloatValue);
+
+  EXPECT_EQ((delta_b / 10).ms(), kValueB / 10);
+  EXPECT_EQ(delta_b / delta_a, static_cast<double>(kValueB) / kValueA);
 
   EXPECT_EQ(TimeDelta::us(-kValueA).Abs().us(), kValueA);
   EXPECT_EQ(TimeDelta::us(kValueA).Abs().us(), kValueA);
