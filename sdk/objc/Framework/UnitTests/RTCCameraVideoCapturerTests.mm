@@ -177,15 +177,6 @@ CMSampleBufferRef createTestSampleBufferRef() {
   invalidFormat = nil;
 }
 
-- (void)testCaptureDevices {
-  OCMStub([self.deviceMock devicesWithMediaType:AVMediaTypeVideo]).andReturn(@[ [NSObject new] ]);
-  OCMStub([self.deviceMock devicesWithMediaType:AVMediaTypeAudio]).andReturn(@[ [NSObject new] ]);
-
-  NSArray *captureDevices = [RTCCameraVideoCapturer captureDevices];
-
-  EXPECT_EQ(captureDevices.count, 1u);
-}
-
 - (void)testDelegateCallbackNotCalledWhenInvalidBuffer {
   // given
   CMSampleBufferRef sampleBuffer = nullptr;
@@ -501,13 +492,6 @@ TEST(RTCCameraVideoCapturerTests, SupportedFormatsForDevice) {
   RTCCameraVideoCapturerTests *test = [[RTCCameraVideoCapturerTests alloc] init];
   [test setup];
   [test testSupportedFormatsForDevice];
-  [test tearDown];
-}
-
-TEST(RTCCameraVideoCapturerTests, CaptureDevices) {
-  RTCCameraVideoCapturerTests *test = [[RTCCameraVideoCapturerTests alloc] init];
-  [test setup];
-  [test testCaptureDevices];
   [test tearDown];
 }
 

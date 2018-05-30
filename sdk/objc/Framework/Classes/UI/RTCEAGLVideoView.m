@@ -45,8 +45,11 @@
         [CADisplayLink displayLinkWithTarget:self
                                     selector:@selector(displayLinkDidFire:)];
     _displayLink.paused = YES;
-    // Set to half of screen refresh, which should be 30fps.
+#if __IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_10_0
+    _displayLink.preferredFramesPerSecond = 30;
+#else
     [_displayLink setFrameInterval:2];
+#endif
     [_displayLink addToRunLoop:[NSRunLoop currentRunLoop]
                        forMode:NSRunLoopCommonModes];
   }
