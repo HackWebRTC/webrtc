@@ -426,7 +426,7 @@ TEST(VideoCodecTestLibvpx, MAYBE_SvcVP9) {
 
   std::vector<RateControlThresholds> rc_thresholds = {
       {5, 1, 5, 0.2, 0.3, 0.1, 0, 1}};
-  std::vector<QualityThresholds> quality_thresholds = {{36, 34, 0.93, 0.91}};
+  std::vector<QualityThresholds> quality_thresholds = {{36, 34, 0.93, 0.90}};
 
   fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr);
 }

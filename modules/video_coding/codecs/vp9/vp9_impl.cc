@@ -500,22 +500,16 @@ int VP9EncoderImpl::InitAndSetControlSettings(const VideoCodec* inst) {
         RTC_NOTREACHED();
     }
 
-    if (!is_flexible_mode_) {
-      // In RTP non-flexible mode, frame dropping of individual layers in a
-      // superframe leads to incorrect reference picture ID values in the
-      // RTP header. Dropping the entire superframe if the base is dropped
-      // or not dropping upper layers if base is not dropped mitigates
-      // the problem.
-      vpx_svc_frame_drop_t svc_drop_frame;
-      memset(&svc_drop_frame, 0, sizeof(svc_drop_frame));
-      svc_drop_frame.framedrop_mode = CONSTRAINED_LAYER_DROP;
-      for (size_t i = 0; i < num_spatial_layers_; ++i) {
-        svc_drop_frame.framedrop_thresh[i] =
-            (i == 0) ? config_->rc_dropframe_thresh : 0;
-      }
-      vpx_codec_control(encoder_, VP9E_SET_SVC_FRAME_DROP_LAYER,
-                        &svc_drop_frame);
+    // Configure encoder to drop entire superframe whenever it needs to drop
+    // a layer. This mode is prefered over per-layer dropping which causes
+    // quality flickering and is not compatible with RTP non-flexible mode.
+    vpx_svc_frame_drop_t svc_drop_frame;
+    memset(&svc_drop_frame, 0, sizeof(svc_drop_frame));
+    svc_drop_frame.framedrop_mode = FULL_SUPERFRAME_DROP;
+    for (size_t i = 0; i < num_spatial_layers_; ++i) {
+      svc_drop_frame.framedrop_thresh[i] = config_->rc_dropframe_thresh;
     }
+    vpx_codec_control(encoder_, VP9E_SET_SVC_FRAME_DROP_LAYER, &svc_drop_frame);
   }
 
   // Register callback for getting each spatial layer.
