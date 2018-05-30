@@ -13,6 +13,8 @@
 #import "ARDSettingsModel.h"
 #import "WebRTC/RTCLogging.h"
 
+const Float64 kFramerateLimit = 30.0;
+
 @implementation ARDCaptureController {
   RTCCameraVideoCapturer *_capturer;
   ARDSettingsModel *_settings;
@@ -93,11 +95,11 @@
 }
 
 - (NSInteger)selectFpsForFormat:(AVCaptureDeviceFormat *)format {
-  Float64 maxFramerate = 0;
+  Float64 maxSupportedFramerate = 0;
   for (AVFrameRateRange *fpsRange in format.videoSupportedFrameRateRanges) {
-    maxFramerate = fmax(maxFramerate, fpsRange.maxFrameRate);
+    maxSupportedFramerate = fmax(maxSupportedFramerate, fpsRange.maxFrameRate);
   }
-  return maxFramerate;
+  return fmin(maxSupportedFramerate, kFramerateLimit);
 }
 
 @end
