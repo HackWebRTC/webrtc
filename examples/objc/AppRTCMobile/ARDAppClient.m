@@ -696,6 +696,7 @@ static int const kKbpsMultiplier = 1000;
   _localVideoTrack = [self createLocalVideoTrack];
   if (_localVideoTrack) {
     [_peerConnection addTrack:_localVideoTrack streamIds:@[ kARDMediaStreamId ]];
+    [_delegate appClient:self didReceiveLocalVideoTrack:_localVideoTrack];
     // We can set up rendering for the remote track right away since the transceiver already has an
     // RTCRtpReceiver with a track. The track will automatically get unmuted and produce frames
     // once RTP is received.
