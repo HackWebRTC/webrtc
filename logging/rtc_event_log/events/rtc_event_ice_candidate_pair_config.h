@@ -13,11 +13,16 @@
 
 #include "logging/rtc_event_log/events/rtc_event.h"
 
-#include "logging/rtc_event_log/events/rtc_event_ice_candidate_pair.h"
-
 #include <string>
 
 namespace webrtc {
+
+enum class IceCandidatePairConfigType {
+  kAdded,
+  kUpdated,
+  kDestroyed,
+  kSelected,
+};
 
 // TODO(qingsi): Change the names of candidate types to "host", "srflx", "prflx"
 // and "relay" after the naming is spec-compliant in the signaling part
@@ -72,7 +77,7 @@ class IceCandidatePairDescription {
 class RtcEventIceCandidatePairConfig final : public RtcEvent {
  public:
   RtcEventIceCandidatePairConfig(
-      IceCandidatePairEventType type,
+      IceCandidatePairConfigType type,
       uint32_t candidate_pair_id,
       const IceCandidatePairDescription& candidate_pair_desc);
 
@@ -82,7 +87,7 @@ class RtcEventIceCandidatePairConfig final : public RtcEvent {
 
   bool IsConfigEvent() const override;
 
-  const IceCandidatePairEventType type_;
+  const IceCandidatePairConfigType type_;
   const uint32_t candidate_pair_id_;
   const IceCandidatePairDescription candidate_pair_desc_;
 };

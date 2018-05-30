@@ -74,7 +74,7 @@ class ParsedRtcEventLog {
 
   struct IceCandidatePairConfig {
     uint64_t timestamp;
-    IceCandidatePairEventType type;
+    IceCandidatePairConfigType type;
     uint32_t candidate_pair_id;
     IceCandidateType local_candidate_type;
     IceCandidatePairProtocol local_relay_protocol;

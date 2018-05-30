@@ -27,11 +27,17 @@ class IceEventLog {
  public:
   IceEventLog();
   ~IceEventLog();
+
   void set_event_log(RtcEventLog* event_log) { event_log_ = event_log; }
-  void LogCandidatePairEvent(
-      IceCandidatePairEventType type,
+
+  void LogCandidatePairConfig(
+      IceCandidatePairConfigType type,
       uint32_t candidate_pair_id,
       const IceCandidatePairDescription& candidate_pair_desc);
+
+  void LogCandidatePairEvent(IceCandidatePairEventType type,
+                             uint32_t candidate_pair_id);
+
   // This method constructs a config event for each candidate pair with their
   // description and logs these config events. It is intended to be called when
   // logging starts to ensure that we have at least one config for each
@@ -39,8 +45,6 @@ class IceEventLog {
   void DumpCandidatePairDescriptionToMemoryAsConfigEvents() const;
 
  private:
-  bool IsIceCandidatePairConfigEvent(IceCandidatePairEventType type);
-
   RtcEventLog* event_log_ = nullptr;
   std::unordered_map<uint32_t, IceCandidatePairDescription>
       candidate_pair_desc_by_id_;

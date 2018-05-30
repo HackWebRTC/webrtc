@@ -292,8 +292,8 @@ class P2PTransportChannel : public IceTransportInternal {
   void RegatherOnFailedNetworks();
   void RegatherOnAllNetworks();
 
-  void LogCandidatePairEvent(Connection* conn,
-                             webrtc::IceCandidatePairEventType type);
+  void LogCandidatePairConfig(Connection* conn,
+                              webrtc::IceCandidatePairConfigType type);
 
   uint32_t GetNominationAttr(Connection* conn) const;
   bool GetUseCandidateAttr(Connection* conn, NominationMode mode) const;

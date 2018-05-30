@@ -36,7 +36,7 @@ IceCandidatePairDescription::IceCandidatePairDescription(
 IceCandidatePairDescription::~IceCandidatePairDescription() {}
 
 RtcEventIceCandidatePairConfig::RtcEventIceCandidatePairConfig(
-    IceCandidatePairEventType type,
+    IceCandidatePairConfigType type,
     uint32_t candidate_pair_id,
     const IceCandidatePairDescription& candidate_pair_desc)
     : type_(type),

@@ -108,20 +108,20 @@ BandwidthUsage GetRuntimeDetectorState(
   return BandwidthUsage::kBwNormal;
 }
 
-IceCandidatePairEventType GetRuntimeIceCandidatePairConfigType(
+IceCandidatePairConfigType GetRuntimeIceCandidatePairConfigType(
     rtclog::IceCandidatePairConfig::IceCandidatePairConfigType type) {
   switch (type) {
     case rtclog::IceCandidatePairConfig::ADDED:
-      return IceCandidatePairEventType::kAdded;
+      return IceCandidatePairConfigType::kAdded;
     case rtclog::IceCandidatePairConfig::UPDATED:
-      return IceCandidatePairEventType::kUpdated;
+      return IceCandidatePairConfigType::kUpdated;
     case rtclog::IceCandidatePairConfig::DESTROYED:
-      return IceCandidatePairEventType::kDestroyed;
+      return IceCandidatePairConfigType::kDestroyed;
     case rtclog::IceCandidatePairConfig::SELECTED:
-      return IceCandidatePairEventType::kSelected;
+      return IceCandidatePairConfigType::kSelected;
   }
   RTC_NOTREACHED();
-  return IceCandidatePairEventType::kAdded;
+  return IceCandidatePairConfigType::kAdded;
 }
 
 IceCandidateType GetRuntimeIceCandidateType(

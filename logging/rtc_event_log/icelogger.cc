@@ -18,25 +18,21 @@ namespace webrtc {
 IceEventLog::IceEventLog() {}
 IceEventLog::~IceEventLog() {}
 
-bool IceEventLog::IsIceCandidatePairConfigEvent(
-    IceCandidatePairEventType type) {
-  return (type == IceCandidatePairEventType::kAdded) ||
-         (type == IceCandidatePairEventType::kUpdated) ||
-         (type == IceCandidatePairEventType::kDestroyed) ||
-         (type == IceCandidatePairEventType::kSelected);
-}
-
-void IceEventLog::LogCandidatePairEvent(
-    IceCandidatePairEventType type,
+void IceEventLog::LogCandidatePairConfig(
+    IceCandidatePairConfigType type,
     uint32_t candidate_pair_id,
     const IceCandidatePairDescription& candidate_pair_desc) {
   if (event_log_ == nullptr) {
     return;
   }
-  if (IsIceCandidatePairConfigEvent(type)) {
-    candidate_pair_desc_by_id_[candidate_pair_id] = candidate_pair_desc;
-    event_log_->Log(rtc::MakeUnique<RtcEventIceCandidatePairConfig>(
-        type, candidate_pair_id, candidate_pair_desc));
+  candidate_pair_desc_by_id_[candidate_pair_id] = candidate_pair_desc;
+  event_log_->Log(rtc::MakeUnique<RtcEventIceCandidatePairConfig>(
+      type, candidate_pair_id, candidate_pair_desc));
+}
+
+void IceEventLog::LogCandidatePairEvent(IceCandidatePairEventType type,
+                                        uint32_t candidate_pair_id) {
+  if (event_log_ == nullptr) {
     return;
   }
   event_log_->Log(
@@ -46,7 +42,7 @@ void IceEventLog::LogCandidatePairEvent(
 void IceEventLog::DumpCandidatePairDescriptionToMemoryAsConfigEvents() const {
   for (const auto& desc_id_pair : candidate_pair_desc_by_id_) {
     event_log_->Log(rtc::MakeUnique<RtcEventIceCandidatePairConfig>(
-        IceCandidatePairEventType::kUpdated, desc_id_pair.first,
+        IceCandidatePairConfigType::kUpdated, desc_id_pair.first,
         desc_id_pair.second));
   }
 }

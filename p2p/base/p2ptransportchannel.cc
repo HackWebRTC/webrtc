@@ -191,7 +191,8 @@ void P2PTransportChannel::AddConnection(Connection* connection) {
   had_connection_ = true;
 
   connection->set_ice_event_log(&ice_event_log_);
-  LogCandidatePairEvent(connection, webrtc::IceCandidatePairEventType::kAdded);
+  LogCandidatePairConfig(connection,
+                         webrtc::IceCandidatePairConfigType::kAdded);
 }
 
 // Determines whether we should switch the selected connection to
@@ -1658,7 +1659,7 @@ void P2PTransportChannel::SwitchSelectedConnection(Connection* conn) {
   // destroyed, so don't use it.
   Connection* old_selected_connection = selected_connection_;
   selected_connection_ = conn;
-  LogCandidatePairEvent(conn, webrtc::IceCandidatePairEventType::kSelected);
+  LogCandidatePairConfig(conn, webrtc::IceCandidatePairConfigType::kSelected);
   network_route_.reset();
   if (old_selected_connection) {
     old_selected_connection->set_selected(false);
@@ -2368,15 +2369,15 @@ int P2PTransportChannel::SampleRegatherAllNetworksInterval() {
   return rand_.Rand(interval->min(), interval->max());
 }
 
-void P2PTransportChannel::LogCandidatePairEvent(
+void P2PTransportChannel::LogCandidatePairConfig(
     Connection* conn,
-    webrtc::IceCandidatePairEventType type) {
+    webrtc::IceCandidatePairConfigType type) {
   if (conn == nullptr) {
     return;
   }
   auto candidate_pair_id = conn->hash();
-  ice_event_log_.LogCandidatePairEvent(type, candidate_pair_id,
-                                       conn->ToLogDescription());
+  ice_event_log_.LogCandidatePairConfig(type, candidate_pair_id,
+                                        conn->ToLogDescription());
 }
 
 }  // namespace cricket

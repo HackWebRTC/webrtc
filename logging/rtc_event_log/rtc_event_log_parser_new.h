@@ -114,7 +114,7 @@ struct LoggedBweProbeFailureEvent {
 
 struct LoggedIceCandidatePairConfig {
   int64_t timestamp_us;
-  IceCandidatePairEventType type;
+  IceCandidatePairConfigType type;
   uint32_t candidate_pair_id;
   IceCandidateType local_candidate_type;
   IceCandidatePairProtocol local_relay_protocol;

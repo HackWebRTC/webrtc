@@ -18,13 +18,6 @@
 namespace webrtc {
 
 enum class IceCandidatePairEventType {
-  // Config event types for events related to the candiate pair creation and
-  // life-cycle management.
-  kAdded,
-  kUpdated,
-  kDestroyed,
-  kSelected,
-  // Non-config event types.
   kCheckSent,
   kCheckReceived,
   kCheckResponseSent,

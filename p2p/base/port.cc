@@ -1370,7 +1370,7 @@ void Connection::Destroy() {
   RTC_LOG(LS_VERBOSE) << ToString()
                       << ": Connection destroyed";
   port_->thread()->Post(RTC_FROM_HERE, this, MSG_DELETE);
-  LogCandidatePairEvent(webrtc::IceCandidatePairEventType::kDestroyed);
+  LogCandidatePairConfig(webrtc::IceCandidatePairConfigType::kDestroyed);
 }
 
 void Connection::FailAndDestroy() {
@@ -1460,7 +1460,7 @@ void Connection::UpdateState(int64_t now) {
 
 void Connection::Ping(int64_t now) {
   last_ping_sent_ = now;
-  ConnectionRequest *req = new ConnectionRequest(this);
+  ConnectionRequest* req = new ConnectionRequest(this);
   // If not using renomination, we use "1" to mean "nominated" and "0" to mean
   // "not nominated". If using renomination, values greater than 1 are used for
   // re-nominated pairs.
@@ -1634,11 +1634,19 @@ const webrtc::IceCandidatePairDescription& Connection::ToLogDescription() {
   return log_description_.value();
 }
 
+void Connection::LogCandidatePairConfig(
+    webrtc::IceCandidatePairConfigType type) {
+  if (ice_event_log_ == nullptr) {
+    return;
+  }
+  ice_event_log_->LogCandidatePairConfig(type, hash(), ToLogDescription());
+}
+
 void Connection::LogCandidatePairEvent(webrtc::IceCandidatePairEventType type) {
   if (ice_event_log_ == nullptr) {
     return;
   }
-  ice_event_log_->LogCandidatePairEvent(type, hash(), ToLogDescription());
+  ice_event_log_->LogCandidatePairEvent(type, hash());
 }
 
 void Connection::OnConnectionRequestResponse(ConnectionRequest* request,
