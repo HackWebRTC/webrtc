@@ -128,7 +128,7 @@ void VideoQualityObserver::OnDecodedFrame(rtc::Optional<uint8_t> qp,
     rtc::Optional<int> avg_interframe_delay =
         interframe_delays_.Avg(kMinFrameSamplesToDetectFreeze);
     // Check if it was a freeze.
-    if (num_frames_decoded_ > kMinFrameSamplesToDetectFreeze &&
+    if (avg_interframe_delay &&
         interframe_delay_ms >=
             std::max(3 * *avg_interframe_delay,
                      *avg_interframe_delay + kMinIncreaseForFreezeMs)) {
