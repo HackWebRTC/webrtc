@@ -89,9 +89,7 @@ static NSString *const shaderSource = MTL_STRINGIFY(
 
 - (BOOL)setupTexturesForFrame:(nonnull RTCVideoFrame *)frame {
   RTC_DCHECK([frame.buffer isKindOfClass:[RTCCVPixelBuffer class]]);
-  if ([super setupTexturesForFrame:frame] == NO) {
-    return NO;
-  }
+  [super setupTexturesForFrame:frame];
   CVPixelBufferRef pixelBuffer = ((RTCCVPixelBuffer *)frame.buffer).pixelBuffer;
 
   id<MTLTexture> lumaTexture = nil;

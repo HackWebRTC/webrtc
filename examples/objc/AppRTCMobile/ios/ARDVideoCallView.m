@@ -43,9 +43,7 @@ static CGFloat const kStatusBarHeight = 20;
   if (self = [super initWithFrame:frame]) {
 
 #if defined(RTC_SUPPORTS_METAL)
-    RTCMTLVideoView *metalView = [[RTCMTLVideoView alloc] initWithFrame:CGRectZero];
-    metalView.useDisplayLink = NO;
-    _remoteVideoView = metalView;
+    _remoteVideoView = [[RTCMTLVideoView alloc] initWithFrame:CGRectZero];
 #else
     RTCEAGLVideoView *remoteView = [[RTCEAGLVideoView alloc] initWithFrame:CGRectZero];
     remoteView.delegate = self;

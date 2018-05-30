@@ -29,16 +29,17 @@
 #define RTCMTLRGBRendererClass NSClassFromString(@"RTCMTLRGBRenderer")
 
 @interface RTCMTLVideoView () <MTKViewDelegate>
-@property(nonatomic) RTCMTLI420Renderer *rendererI420;
-@property(nonatomic) RTCMTLNV12Renderer *rendererNV12;
-@property(nonatomic) RTCMTLRGBRenderer *rendererRGB;
-@property(nonatomic) MTKView *metalView;
-@property(atomic) RTCVideoFrame *videoFrame;
-@property(nonatomic) CGSize videoFrameSize;
-@property(nonatomic) int64_t lastFrameTimeNs;
+@property(nonatomic, strong) RTCMTLI420Renderer *rendererI420;
+@property(nonatomic, strong) RTCMTLNV12Renderer *rendererNV12;
+@property(nonatomic, strong) RTCMTLRGBRenderer *rendererRGB;
+@property(nonatomic, strong) MTKView *metalView;
+@property(atomic, strong) RTCVideoFrame *videoFrame;
 @end
 
-@implementation RTCMTLVideoView
+@implementation RTCMTLVideoView {
+  int64_t _lastFrameTimeNs;
+  CGSize _videoFrameSize;
+}
 
 @synthesize delegate = _delegate;
 @synthesize rendererI420 = _rendererI420;
@@ -46,11 +47,6 @@
 @synthesize rendererRGB = _rendererRGB;
 @synthesize metalView = _metalView;
 @synthesize videoFrame = _videoFrame;
-@synthesize useDisplayLink = _useDisplayLink;
-@synthesize videoFrameSize = _videoFrameSize;
-@synthesize lastFrameTimeNs = _lastFrameTimeNs;
-@synthesize enabled = _enabled;
-@synthesize rotationOverride = _rotationOverride;
 
 - (instancetype)initWithFrame:(CGRect)frameRect {
   self = [super initWithFrame:frameRect];
@@ -68,35 +64,7 @@
   return self;
 }
 
-- (void)setUseDisplayLink:(BOOL)useDisplayLink {
-  _useDisplayLink = useDisplayLink;
-  [self updateRunningState];
-}
-
-- (void)setEnabled:(BOOL)enabled {
-  _enabled = enabled;
-  [self updateRunningState];
-}
-
-- (UIViewContentMode)videoContentMode {
-  return self.metalView.contentMode;
-}
-
-- (void)setVideoContentMode:(UIViewContentMode)mode {
-  self.metalView.contentMode = mode;
-}
-
 #pragma mark - Private
-
-- (void)updateRunningState {
-  if (self.useDisplayLink) {
-    self.metalView.paused = !self.enabled;
-    self.metalView.enableSetNeedsDisplay = YES;
-  } else {
-    self.metalView.paused = YES;
-    self.metalView.enableSetNeedsDisplay = NO;
-  }
-}
 
 + (BOOL)isMetalAvailable {
 #if defined(RTC_SUPPORTS_METAL)
@@ -104,6 +72,11 @@
 #else
   return NO;
 #endif
+}
+
++ (MTKView *)createMetalView:(CGRect)frame {
+  MTKView *view = [[MTKViewClass alloc] initWithFrame:frame];
+  return view;
 }
 
 + (RTCMTLNV12Renderer *)createNV12Renderer {
@@ -121,28 +94,33 @@
 - (void)configure {
   NSAssert([RTCMTLVideoView isMetalAvailable], @"Metal not availiable on this device");
 
-  _enabled = YES;
-  _useDisplayLink = YES;
-  [self updateRunningState];
-
-  self.metalView = [[MTKViewClass alloc] initWithFrame:self.bounds];
-  self.metalView.delegate = self;
-  self.metalView.paused = YES;
-  self.metalView.enableSetNeedsDisplay = NO;
-  self.metalView.contentMode = UIViewContentModeScaleAspectFill;
-  [self addSubview:self.metalView];
-  self.videoFrameSize = CGSizeZero;
+  _metalView = [RTCMTLVideoView createMetalView:self.bounds];
+  [self configureMetalView];
 }
+
+- (void)configureMetalView {
+  if (_metalView) {
+    _metalView.delegate = self;
+    [self addSubview:_metalView];
+    _metalView.contentMode = UIViewContentModeScaleAspectFit;
+    _videoFrameSize = CGSizeZero;
+  }
+}
+
+- (void)setVideoContentMode:(UIViewContentMode)mode {
+  _metalView.contentMode = mode;
+}
+
+#pragma mark - Private
 
 - (void)layoutSubviews {
   [super layoutSubviews];
-
   CGRect bounds = self.bounds;
-  self.metalView.frame = bounds;
-  if (!CGSizeEqualToSize(self.videoFrameSize, CGSizeZero)) {
-    self.metalView.drawableSize = [self drawableSize];
+  _metalView.frame = bounds;
+  if (!CGSizeEqualToSize(_videoFrameSize, CGSizeZero)) {
+    _metalView.drawableSize = _videoFrameSize;
   } else {
-    self.metalView.drawableSize = bounds.size;
+    _metalView.drawableSize = bounds.size;
   }
 }
 
@@ -152,11 +130,10 @@
   NSAssert(view == self.metalView, @"Receiving draw callbacks from foreign instance.");
   RTCVideoFrame *videoFrame = self.videoFrame;
   // Skip rendering if we've already rendered this frame.
-  if (!videoFrame || videoFrame.timeStampNs == self.lastFrameTimeNs) {
+  if (!videoFrame || videoFrame.timeStampNs == _lastFrameTimeNs) {
     return;
   }
 
-  RTCMTLRenderer *renderer;
   if ([videoFrame.buffer isKindOfClass:[RTCCVPixelBuffer class]]) {
     RTCCVPixelBuffer *buffer = (RTCCVPixelBuffer*)videoFrame.buffer;
     const OSType pixelFormat = CVPixelBufferGetPixelFormatType(buffer.pixelBuffer);
@@ -169,7 +146,7 @@
           return;
         }
       }
-      renderer = self.rendererRGB;
+      [self.rendererRGB drawFrame:videoFrame];
     } else {
       if (!self.rendererNV12) {
         self.rendererNV12 = [RTCMTLVideoView createNV12Renderer];
@@ -179,7 +156,7 @@
           return;
         }
       }
-      renderer = self.rendererNV12;
+      [self.rendererNV12 drawFrame:videoFrame];
     }
   } else {
     if (!self.rendererI420) {
@@ -190,82 +167,30 @@
         return;
       }
     }
-    renderer = self.rendererI420;
+    [self.rendererI420 drawFrame:videoFrame];
   }
-
-  renderer.rotationOverride = self.rotationOverride;
-
-  [renderer drawFrame:videoFrame];
-  self.lastFrameTimeNs = videoFrame.timeStampNs;
+  _lastFrameTimeNs = videoFrame.timeStampNs;
 }
 
 - (void)mtkView:(MTKView *)view drawableSizeWillChange:(CGSize)size {
 }
 
-- (RTCVideoRotation)frameRotation {
-  if (self.rotationOverride) {
-    RTCVideoRotation rotation;
-#if defined(__IPHONE_11_0) && (__IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_11_0)
-    if (@available(iOS 11, *)) {
-      [self.rotationOverride getValue:&rotation size:sizeof(rotation)];
-    } else
-#endif
-    {
-      [self.rotationOverride getValue:&rotation];
-    }
-    return rotation;
-  }
-
-  return self.videoFrame.rotation;
-}
-
-- (CGSize)drawableSize {
-  // Flip width/height if the rotations are not the same.
-  CGSize videoFrameSize = self.videoFrameSize;
-
-  BOOL useLandscape = ([self frameRotation] == RTCVideoRotation_0) ||
-      ([self frameRotation] == RTCVideoRotation_180);
-  BOOL sizeIsLandscape = (self.videoFrame.rotation == RTCVideoRotation_0) ||
-      (self.videoFrame.rotation == RTCVideoRotation_180);
-
-  if (useLandscape == sizeIsLandscape) {
-    return videoFrameSize;
-  } else {
-    return CGSizeMake(videoFrameSize.height, videoFrameSize.width);
-  }
-}
-
 #pragma mark - RTCVideoRenderer
 
 - (void)setSize:(CGSize)size {
-  __weak RTCMTLVideoView *weakSelf = self;
+  self.metalView.drawableSize = size;
   dispatch_async(dispatch_get_main_queue(), ^{
-    RTCMTLVideoView *strongSelf = weakSelf;
-
-    strongSelf.videoFrameSize = size;
-    CGSize drawableSize = [strongSelf drawableSize];
-
-    strongSelf.metalView.drawableSize = drawableSize;
-    [strongSelf setNeedsLayout];
-    [strongSelf.delegate videoView:self didChangeVideoSize:size];
+    _videoFrameSize = size;
+    [self.delegate videoView:self didChangeVideoSize:size];
   });
 }
 
 - (void)renderFrame:(nullable RTCVideoFrame *)frame {
-  if (!self.isEnabled) {
-    return;
-  }
-
   if (frame == nil) {
     RTCLogInfo(@"Incoming frame is nil. Exiting render callback.");
     return;
   }
-
   self.videoFrame = frame;
-
-  if (!self.useDisplayLink) {
-    [self.metalView draw];
-  }
 }
 
 @end

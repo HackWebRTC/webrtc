@@ -15,7 +15,6 @@
 
 #import "WebRTC/RTCLogging.h"
 #import "WebRTC/RTCVideoFrame.h"
-#import "WebRTC/RTCVideoFrameBuffer.h"
 
 #include "api/video/video_rotation.h"
 #include "rtc_base/checks.h"
@@ -29,57 +28,31 @@ static NSString *const commandBufferLabel = @"RTCCommandBuffer";
 static NSString *const renderEncoderLabel = @"RTCEncoder";
 static NSString *const renderEncoderDebugGroup = @"RTCDrawFrame";
 
-// Computes the texture coordinates given rotation and cropping.
-static inline void getCubeVertexData(int cropX,
-                                     int cropY,
-                                     int cropWidth,
-                                     int cropHeight,
-                                     size_t frameWidth,
-                                     size_t frameHeight,
-                                     RTCVideoRotation rotation,
-                                     float *buffer) {
-  // The computed values are the adjusted texture coordinates, in [0..1].
-  // For the left and top, 0.0 means no cropping and e.g. 0.2 means we're skipping 20% of the
-  // left/top edge.
-  // For the right and bottom, 1.0 means no cropping and e.g. 0.8 means we're skipping 20% of the
-  // right/bottom edge (i.e. keeping 80%).
-  float cropLeft = cropX / (float)frameWidth;
-  float cropRight = (cropX + cropWidth) / (float)frameWidth;
-  float cropTop = cropY / (float)frameHeight;
-  float cropBottom = (cropY + cropHeight) / (float)frameHeight;
+static const float cubeVertexData[64] = {
+    -1.0, -1.0, 0.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0,
 
-  // These arrays map the view coordinates to texture coordinates, taking cropping and rotation
-  // into account. The first two columns are view coordinates, the last two are texture coordinates.
+    // rotation = 90, offset = 16.
+    -1.0, -1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 0.0, -1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0,
+
+    // rotation = 180, offset = 32.
+    -1.0, -1.0, 1.0, 0.0, 1.0, -1.0, 0.0, 0.0, -1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 1.0,
+
+    // rotation = 270, offset = 48.
+    -1.0, -1.0, 0.0, 0.0, 1.0, -1.0, 0.0, 1.0, -1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0,
+};
+
+static inline int offsetForRotation(RTCVideoRotation rotation) {
   switch (rotation) {
-    case RTCVideoRotation_0: {
-      float values[16] = {-1.0, -1.0, cropLeft, cropBottom,
-                           1.0, -1.0, cropRight, cropBottom,
-                          -1.0,  1.0, cropLeft, cropTop,
-                           1.0,  1.0, cropRight, cropTop};
-      memcpy(buffer, &values, sizeof(values));
-    } break;
-    case RTCVideoRotation_90: {
-      float values[16] = {-1.0, -1.0, cropRight, cropBottom,
-                           1.0, -1.0, cropRight, cropTop,
-                          -1.0,  1.0, cropLeft, cropBottom,
-                           1.0,  1.0, cropLeft, cropTop};
-      memcpy(buffer, &values, sizeof(values));
-    } break;
-    case RTCVideoRotation_180: {
-      float values[16] = {-1.0, -1.0, cropRight, cropTop,
-                           1.0, -1.0, cropLeft, cropTop,
-                          -1.0,  1.0, cropRight, cropBottom,
-                           1.0,  1.0, cropLeft, cropBottom};
-      memcpy(buffer, &values, sizeof(values));
-    } break;
-    case RTCVideoRotation_270: {
-      float values[16] = {-1.0, -1.0, cropLeft, cropTop,
-                           1.0, -1.0, cropLeft, cropBottom,
-                          -1.0, 1.0, cropRight, cropTop,
-                           1.0, 1.0, cropRight, cropBottom};
-      memcpy(buffer, &values, sizeof(values));
-    } break;
+    case RTCVideoRotation_0:
+      return 0;
+    case RTCVideoRotation_90:
+      return 16;
+    case RTCVideoRotation_180:
+      return 32;
+    case RTCVideoRotation_270:
+      return 48;
   }
+  return 0;
 }
 
 // The max number of command buffers in flight (submitted to GPU).
@@ -102,20 +75,14 @@ static const NSInteger kMaxInflightBuffers = 1;
   // Buffers.
   id<MTLBuffer> _vertexBuffer;
 
-  // Values affecting the vertex buffer. Stored for comparison to avoid unnecessary recreation.
-  size_t _oldFrameWidth;
-  size_t _oldFrameHeight;
-  int _oldCropWidth;
-  int _oldCropHeight;
-  int _oldCropX;
-  int _oldCropY;
-  RTCVideoRotation _oldRotation;
+  // RTC Frame parameters.
+  int _offset;
 }
-
-@synthesize rotationOverride = _rotationOverride;
 
 - (instancetype)init {
   if (self = [super init]) {
+    // _offset of 0 is equal to rotation of 0.
+    _offset = 0;
     _inflight_semaphore = dispatch_semaphore_create(kMaxInflightBuffers);
   }
 
@@ -131,22 +98,13 @@ static const NSInteger kMaxInflightBuffers = 1;
 - (BOOL)setupWithView:(__kindof MTKView *)view {
   BOOL success = NO;
   if ([self setupMetal]) {
-    _view = view;
-    view.device = _device;
-    view.preferredFramesPerSecond = 30;
-    view.autoResizeDrawable = NO;
-
-    float vertexBufferArray[16] = {0};
-    _vertexBuffer = [_device newBufferWithBytes:vertexBufferArray
-                                         length:sizeof(vertexBufferArray)
-                                        options:MTLResourceCPUCacheModeWriteCombined];
-
+    [self setupView:view];
     [self loadAssets];
+    [self setupBuffers];
     success = YES;
   }
   return success;
 }
-
 #pragma mark - Inheritance
 
 - (id<MTLDevice>)currentMetalDevice {
@@ -163,47 +121,7 @@ static const NSInteger kMaxInflightBuffers = 1;
 }
 
 - (BOOL)setupTexturesForFrame:(nonnull RTCVideoFrame *)frame {
-  // Apply rotation override if set.
-  RTCVideoRotation rotation;
-  NSValue *rotationOverride = self.rotationOverride;
-  if (rotationOverride) {
-#if defined(__IPHONE_11_0) && (__IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_11_0)
-    if (@available(iOS 11, *)) {
-      [rotationOverride getValue:&rotation size:sizeof(rotation)];
-    } else
-#endif
-    {
-      [rotationOverride getValue:&rotation];
-    }
-  } else {
-    rotation = frame.rotation;
-  }
-
-  RTCCVPixelBuffer *pixelBuffer = (RTCCVPixelBuffer *)frame.buffer;
-  size_t frameWidth = CVPixelBufferGetWidth(pixelBuffer.pixelBuffer);
-  size_t frameHeight = CVPixelBufferGetHeight(pixelBuffer.pixelBuffer);
-
-  // Recompute the texture cropping and recreate vertexBuffer if necessary.
-  if (pixelBuffer.cropX != _oldCropX || pixelBuffer.cropY != _oldCropY ||
-      pixelBuffer.cropWidth != _oldCropWidth || pixelBuffer.cropHeight != _oldCropHeight ||
-      rotation != _oldRotation || frameWidth != _oldFrameWidth || frameHeight != _oldFrameHeight) {
-    getCubeVertexData(pixelBuffer.cropX,
-                      pixelBuffer.cropY,
-                      pixelBuffer.cropWidth,
-                      pixelBuffer.cropHeight,
-                      frameWidth,
-                      frameHeight,
-                      rotation,
-                      (float *)_vertexBuffer.contents);
-    _oldCropX = pixelBuffer.cropX;
-    _oldCropY = pixelBuffer.cropY;
-    _oldCropWidth = pixelBuffer.cropWidth;
-    _oldCropHeight = pixelBuffer.cropHeight;
-    _oldRotation = rotation;
-    _oldFrameWidth = frameWidth;
-    _oldFrameHeight = frameHeight;
-  }
-
+  _offset = offsetForRotation(frame.rotation);
   return YES;
 }
 
@@ -240,6 +158,16 @@ static const NSInteger kMaxInflightBuffers = 1;
   return YES;
 }
 
+- (void)setupView:(__kindof MTKView *)view {
+  view.device = _device;
+
+  view.preferredFramesPerSecond = 30;
+  view.autoResizeDrawable = NO;
+
+  // We need to keep reference to the view as it's needed down the rendering pipeline.
+  _view = view;
+}
+
 - (void)loadAssets {
   id<MTLFunction> vertexFunction = [_defaultLibrary newFunctionWithName:vertexFunctionName];
   id<MTLFunction> fragmentFunction = [_defaultLibrary newFunctionWithName:fragmentFunctionName];
@@ -256,6 +184,12 @@ static const NSInteger kMaxInflightBuffers = 1;
   if (!_pipelineState) {
     RTCLogError(@"Metal: Failed to create pipeline state. %@", error);
   }
+}
+
+- (void)setupBuffers {
+  _vertexBuffer = [_device newBufferWithBytes:cubeVertexData
+                                       length:sizeof(cubeVertexData)
+                                      options:MTLResourceOptionCPUCacheModeDefault];
 }
 
 - (void)render {
@@ -281,8 +215,7 @@ static const NSInteger kMaxInflightBuffers = 1;
     // Set context state.
     [renderEncoder pushDebugGroup:renderEncoderDebugGroup];
     [renderEncoder setRenderPipelineState:_pipelineState];
-
-    [renderEncoder setVertexBuffer:_vertexBuffer offset:0 atIndex:0];
+    [renderEncoder setVertexBuffer:_vertexBuffer offset:_offset * sizeof(float) atIndex:0];
     [self uploadTexturesToRenderEncoder:renderEncoder];
 
     [renderEncoder drawPrimitives:MTLPrimitiveTypeTriangleStrip

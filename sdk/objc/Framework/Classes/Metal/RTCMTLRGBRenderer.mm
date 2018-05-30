@@ -88,9 +88,7 @@ static NSString *const shaderSource = MTL_STRINGIFY(
 
 - (BOOL)setupTexturesForFrame:(nonnull RTCVideoFrame *)frame {
   RTC_DCHECK([frame.buffer isKindOfClass:[RTCCVPixelBuffer class]]);
-  if ([super setupTexturesForFrame:frame] == NO) {
-    return NO;
-  }
+  [super setupTexturesForFrame:frame];
   CVPixelBufferRef pixelBuffer = ((RTCCVPixelBuffer *)frame.buffer).pixelBuffer;
 
   id<MTLTexture> gpuTexture = nil;
@@ -123,9 +121,10 @@ static NSString *const shaderSource = MTL_STRINGIFY(
 
   if (gpuTexture != nil) {
     _texture = gpuTexture;
-    _uniformsBuffer = [[self currentMetalDevice] newBufferWithBytes:&isARGB
-                                                             length:sizeof(isARGB)
-                                                            options:MTLResourceStorageModePrivate];
+    _uniformsBuffer =
+        [[self currentMetalDevice] newBufferWithBytes:&isARGB
+                                               length:sizeof(isARGB)
+                                              options:MTLResourceCPUCacheModeDefaultCache];
     return YES;
   }
 
