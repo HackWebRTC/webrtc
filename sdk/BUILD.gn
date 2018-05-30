@@ -980,6 +980,7 @@ if (is_ios || is_mac) {
           "objc/Framework/Headers/WebRTC/RTCPeerConnection.h",
           "objc/Framework/Headers/WebRTC/RTCPeerConnectionFactory.h",
           "objc/Framework/Headers/WebRTC/RTCPeerConnectionFactoryOptions.h",
+          "objc/Framework/Headers/WebRTC/RTCRtcpParameters.h",
           "objc/Framework/Headers/WebRTC/RTCRtpCodecParameters.h",
           "objc/Framework/Headers/WebRTC/RTCRtpEncodingParameters.h",
           "objc/Framework/Headers/WebRTC/RTCRtpParameters.h",
