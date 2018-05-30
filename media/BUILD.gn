@@ -421,15 +421,6 @@ rtc_source_set("rtc_media") {
 }
 
 if (rtc_include_tests) {
-  config("rtc_unittest_main_config") {
-    # GN orders flags on a target before flags from configs. The default config
-    # adds -Wall, and this flag have to be after -Wall -- so they need to
-    # come from a config and can"t be on the target directly.
-    if (is_clang && is_ios) {
-      cflags = [ "-Wno-unused-variable" ]
-    }
-  }
-
   rtc_source_set("rtc_media_tests_utils") {
     testonly = true
 
@@ -472,8 +463,6 @@ if (rtc_include_tests) {
       "engine/fakewebrtcvideoengine.h",
     ]
 
-    configs += [ ":rtc_unittest_main_config" ]
-
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
@@ -501,24 +490,6 @@ if (rtc_include_tests) {
       "../test:test_support",
       "//testing/gtest",
     ]
-  }
-
-  config("rtc_media_unittests_config") {
-    # GN orders flags on a target before flags from configs. The default config
-    # adds -Wall, and this flag have to be after -Wall -- so they need to
-    # come from a config and can"t be on the target directly.
-    # TODO(kjellander): Make the code compile without disabling these flags.
-    # See https://bugs.webrtc.org/3307.
-    if (is_clang && is_win) {
-      cflags = [
-        # See https://bugs.chromium.org/p/webrtc/issues/detail?id=6266
-        # for -Wno-sign-compare
-        "-Wno-sign-compare",
-      ]
-    }
-    if (!is_win) {
-      cflags = [ "-Wno-sign-compare" ]
-    }
   }
 
   rtc_media_unittests_resources = [
@@ -593,8 +564,6 @@ if (rtc_include_tests) {
     if (rtc_enable_sctp) {
       sources += [ "sctp/sctptransport_unittest.cc" ]
     }
-
-    configs += [ ":rtc_media_unittests_config" ]
 
     if (rtc_use_h264) {
       defines += [ "WEBRTC_USE_H264" ]

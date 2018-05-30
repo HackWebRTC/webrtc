@@ -355,7 +355,7 @@ TEST(CodecTest, TestToCodecParameters) {
   EXPECT_EQ("V", codec_params_1.name);
   EXPECT_EQ(cricket::kVideoCodecClockrate, codec_params_1.clock_rate);
   EXPECT_EQ(rtc::nullopt, codec_params_1.num_channels);
-  ASSERT_EQ(1, codec_params_1.parameters.size());
+  ASSERT_EQ(1u, codec_params_1.parameters.size());
   EXPECT_EQ("p1", codec_params_1.parameters.begin()->first);
   EXPECT_EQ("v1", codec_params_1.parameters.begin()->second);
 
@@ -367,7 +367,7 @@ TEST(CodecTest, TestToCodecParameters) {
   EXPECT_EQ("A", codec_params_2.name);
   EXPECT_EQ(44100, codec_params_2.clock_rate);
   EXPECT_EQ(2, codec_params_2.num_channels);
-  ASSERT_EQ(1, codec_params_2.parameters.size());
+  ASSERT_EQ(1u, codec_params_2.parameters.size());
   EXPECT_EQ("p1", codec_params_2.parameters.begin()->first);
   EXPECT_EQ("a1", codec_params_2.parameters.begin()->second);
 }
