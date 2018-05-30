@@ -140,7 +140,6 @@ class RtpVideoStreamReceiver : public RtpData,
   void RemoveSecondarySink(const RtpPacketSinkInterface* sink);
 
  private:
-  bool AddReceiveCodec(const VideoCodec& video_codec);
   void ReceivePacket(const uint8_t* packet,
                      size_t packet_length,
                      const RTPHeader& header);

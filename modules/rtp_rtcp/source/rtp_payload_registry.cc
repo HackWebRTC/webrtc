@@ -226,35 +226,6 @@ void RTPPayloadRegistry::DeregisterAudioCodecOrRedTypeRegardlessOfPayloadType(
   }
 }
 
-int32_t RTPPayloadRegistry::ReceivePayloadType(
-    const SdpAudioFormat& audio_format,
-    int8_t* payload_type) const {
-  assert(payload_type);
-  rtc::CritScope cs(&crit_sect_);
-
-  for (const auto& it : payload_type_map_) {
-    if (PayloadIsCompatible(it.second, audio_format)) {
-      *payload_type = it.first;
-      return 0;
-    }
-  }
-  return -1;
-}
-
-int32_t RTPPayloadRegistry::ReceivePayloadType(const VideoCodec& video_codec,
-                                               int8_t* payload_type) const {
-  assert(payload_type);
-  rtc::CritScope cs(&crit_sect_);
-
-  for (const auto& it : payload_type_map_) {
-    if (PayloadIsCompatible(it.second, video_codec)) {
-      *payload_type = it.first;
-      return 0;
-    }
-  }
-  return -1;
-}
-
 int RTPPayloadRegistry::GetPayloadTypeFrequency(
     uint8_t payload_type) const {
   const auto payload = PayloadTypeToPayload(payload_type);

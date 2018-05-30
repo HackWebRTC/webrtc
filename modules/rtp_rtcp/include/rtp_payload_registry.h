@@ -41,11 +41,6 @@ class RTPPayloadRegistry {
 
   int32_t DeRegisterReceivePayload(int8_t payload_type);
 
-  int32_t ReceivePayloadType(const SdpAudioFormat& audio_format,
-                             int8_t* payload_type) const;
-  int32_t ReceivePayloadType(const VideoCodec& video_codec,
-                             int8_t* payload_type) const;
-
   int GetPayloadTypeFrequency(uint8_t payload_type) const;
 
   rtc::Optional<RtpUtility::Payload> PayloadTypeToPayload(
