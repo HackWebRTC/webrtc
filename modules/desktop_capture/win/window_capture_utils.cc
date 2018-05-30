@@ -17,6 +17,9 @@
 
 namespace webrtc {
 
+// Prefix used to match the window class for Chrome windows.
+const wchar_t kChromeWindowClassPrefix[] = L"Chrome_WidgetWin_";
+
 bool GetWindowRect(HWND window, DesktopRect* result) {
   RECT rect;
   if (!::GetWindowRect(window, &rect)) {
@@ -164,6 +167,37 @@ bool WindowCaptureHelperWin::IsAeroEnabled() {
     func_(&result);
   }
   return result != FALSE;
+}
+
+// This is just a best guess of a notification window. Chrome uses the Windows
+// native framework for showing notifications. So far what we know about such a
+// window includes: no title, class name with prefix "Chrome_WidgetWin_" and
+// with certain extended styles.
+bool WindowCaptureHelperWin::IsWindowChromeNotification(HWND hwnd) {
+  const size_t kTitleLength = 32;
+  WCHAR window_title[kTitleLength];
+  GetWindowText(hwnd, window_title, kTitleLength);
+  if (wcsnlen_s(window_title, kTitleLength) != 0) {
+    return false;
+  }
+
+  const size_t kClassLength = 256;
+  WCHAR class_name[kClassLength];
+  const int class_name_length = GetClassName(hwnd, class_name, kClassLength);
+  RTC_DCHECK(class_name_length)
+      << "Error retrieving the application's class name";
+  if (wcsncmp(class_name, kChromeWindowClassPrefix,
+              wcsnlen_s(kChromeWindowClassPrefix, kClassLength)) != 0) {
+    return false;
+  }
+
+  const LONG exstyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+  if ((exstyle & WS_EX_NOACTIVATE) && (exstyle & WS_EX_TOOLWINDOW) &&
+      (exstyle & WS_EX_TOPMOST)) {
+    return true;
+  }
+
+  return false;
 }
 
 bool WindowCaptureHelperWin::IsWindowOnCurrentDesktop(HWND hwnd) {

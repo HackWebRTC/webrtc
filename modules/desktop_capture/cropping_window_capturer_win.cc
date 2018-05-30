@@ -44,6 +44,10 @@ struct TopWindowVerifierContext {
 
 // The function is called during EnumWindow for every window enumerated and is
 // responsible for verifying if the selected window is on top.
+// Return TRUE to continue enumerating if the current window belongs to the
+// selected window or is to be ignored.
+// Return FALSE to stop enumerating if the selected window is found or decided
+// if it's on top most.
 BOOL CALLBACK TopWindowVerifier(HWND hwnd, LPARAM param) {
   TopWindowVerifierContext* context =
       reinterpret_cast<TopWindowVerifierContext*>(param);
@@ -60,6 +64,17 @@ BOOL CALLBACK TopWindowVerifier(HWND hwnd, LPARAM param) {
 
   // Ignore invisible window on current desktop.
   if (!context->window_capture_helper->IsWindowVisibleOnCurrentDesktop(hwnd)) {
+    return TRUE;
+  }
+
+  // Ignore Chrome notification windows, especially the notification for the
+  // ongoing window sharing.
+  // Notes:
+  // - This only works with notifications from Chrome, not other Apps.
+  // - All notifications from Chrome will be ignored.
+  // - This may cause part or whole of notification window being cropped into
+  // the capturing of the target window if there is overlapping.
+  if (context->window_capture_helper->IsWindowChromeNotification(hwnd)) {
     return TRUE;
   }
 
