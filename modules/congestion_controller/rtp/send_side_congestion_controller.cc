@@ -47,7 +47,22 @@ const char kCongestionPushbackExperiment[] = "WebRTC-CongestionWindowPushback";
 // the congestion window and/or data spikes reduces encoder allocations.
 const char kPacerPushbackExperiment[] = "WebRTC-PacerPushbackExperiment";
 const int64_t PacerQueueUpdateIntervalMs = 25;
-const uint32_t MinPushbackTargetBitrateBps = 30000;
+const uint32_t kDefaultMinPushbackTargetBitrateBps = 30000;
+
+bool ReadCongestionWindowPushbackExperimentParameter(
+    uint32_t* min_pushback_target_bitrate_bps) {
+  RTC_DCHECK(min_pushback_target_bitrate_bps);
+  std::string experiment_string =
+      webrtc::field_trial::FindFullName(kCongestionPushbackExperiment);
+  int parsed_values = sscanf(experiment_string.c_str(), "Enabled-%" PRIu32,
+                             min_pushback_target_bitrate_bps);
+  if (parsed_values == 1) {
+    RTC_CHECK_GE(*min_pushback_target_bitrate_bps, 0)
+        << "Min pushback target bitrate must be greater than or equal to 0.";
+    return true;
+  }
+  return false;
+}
 
 bool IsPacerPushbackExperimentEnabled() {
   return webrtc::field_trial::IsEnabled(kPacerPushbackExperiment) ||
@@ -193,6 +208,7 @@ class ControlHandler {
   int64_t last_reported_rtt_ms_ = 0;
   const bool pacer_pushback_experiment_ = false;
   const bool congestion_window_pushback_experiment_ = false;
+  uint32_t min_pushback_target_bitrate_bps_;
   int64_t pacer_expected_queue_ms_ = 0;
   double encoding_rate_ratio_ = 1.0;
 
@@ -209,6 +225,11 @@ ControlHandler::ControlHandler(NetworkChangedObserver* observer,
       congestion_window_pushback_experiment_(
           IsCongestionWindowExperimentEnabled()) {
   sequenced_checker_.Detach();
+  if (congestion_window_pushback_experiment_ &&
+      !ReadCongestionWindowPushbackExperimentParameter(
+          &min_pushback_target_bitrate_bps_)) {
+    min_pushback_target_bitrate_bps_ = kDefaultMinPushbackTargetBitrateBps;
+  }
 }
 
 void ControlHandler::PostUpdates(NetworkControlUpdate update) {
@@ -286,8 +307,8 @@ void ControlHandler::OnNetworkInvalidation() {
     // If adjusted target bitrate is lower than minimum target bitrate,
     // does not reduce target bitrate lower than minimum target bitrate.
     target_bitrate_bps =
-        adjusted_target_bitrate_bps < MinPushbackTargetBitrateBps
-            ? std::min(target_bitrate_bps, MinPushbackTargetBitrateBps)
+        adjusted_target_bitrate_bps < min_pushback_target_bitrate_bps_
+            ? std::min(target_bitrate_bps, min_pushback_target_bitrate_bps_)
             : adjusted_target_bitrate_bps;
   } else if (!pacer_pushback_experiment_) {
     target_bitrate_bps = IsSendQueueFull() ? 0 : target_bitrate_bps;
