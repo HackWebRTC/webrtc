@@ -27,6 +27,9 @@ namespace webrtc {
 
 class DataChannel;
 
+// TODO(deadbeef): Once RTP data channels go away, get rid of this and have
+// DataChannel depend on SctpTransportInternal (pure virtual SctpTransport
+// interface) instead.
 class DataChannelProviderInterface {
  public:
   // Sends the data to the transport.
@@ -39,7 +42,8 @@ class DataChannelProviderInterface {
   virtual void DisconnectDataChannel(DataChannel* data_channel) = 0;
   // Adds the data channel SID to the transport for SCTP.
   virtual void AddSctpDataStream(int sid) = 0;
-  // Removes the data channel SID from the transport for SCTP.
+  // Begins the closing procedure by sending an outgoing stream reset. Still
+  // need to wait for callbacks to tell when this completes.
   virtual void RemoveSctpDataStream(int sid) = 0;
   // Returns true if the transport channel is ready to send data.
   virtual bool ReadyToSendData() const = 0;
@@ -73,7 +77,7 @@ class SctpSidAllocator {
   // Gets the first unused odd/even id based on the DTLS role. If |role| is
   // SSL_CLIENT, the allocated id starts from 0 and takes even numbers;
   // otherwise, the id starts from 1 and takes odd numbers.
-  // Returns false if no id can be allocated.
+  // Returns false if no ID can be allocated.
   bool AllocateSid(rtc::SSLRole role, int* sid);
 
   // Attempts to reserve a specific sid. Returns false if it's unavailable.
@@ -92,7 +96,7 @@ class SctpSidAllocator {
 // DataChannel is a an implementation of the DataChannelInterface based on
 // libjingle's data engine. It provides an implementation of unreliable or
 // reliabledata channels. Currently this class is specifically designed to use
-// both RtpDataEngine and SctpDataEngine.
+// both RtpDataChannel and SctpTransport.
 
 // DataChannel states:
 // kConnecting: The channel has been created the transport might not yet be
@@ -104,6 +108,16 @@ class SctpSidAllocator {
 //           has been called with SSRC==0
 // kClosed: Both UpdateReceiveSsrc and UpdateSendSsrc has been called with
 //          SSRC==0.
+//
+// How the closing procedure works for SCTP:
+// 1. Alice calls Close(), state changes to kClosing.
+// 2. Alice finishes sending any queued data.
+// 3. Alice calls RemoveSctpDataStream, sends outgoing stream reset.
+// 4. Bob receives incoming stream reset; OnClosingProcedureStartedRemotely
+//    called.
+// 5. Bob sends outgoing stream reset. 6. Alice receives incoming reset,
+//    Bob receives acknowledgement. Both receive OnClosingProcedureComplete
+//    callback and transition to kClosed.
 class DataChannel : public DataChannelInterface,
                     public sigslot::has_slots<>,
                     public rtc::MessageHandler {
@@ -147,16 +161,21 @@ class DataChannel : public DataChannelInterface,
   // Slots for provider to connect signals to.
   void OnDataReceived(const cricket::ReceiveDataParams& params,
                       const rtc::CopyOnWriteBuffer& payload);
-  void OnStreamClosedRemotely(int sid);
 
-  // The remote peer request that this channel should be closed.
-  void RemotePeerRequestClose();
-
-  // The following methods are for SCTP only.
+  /********************************************
+   * The following methods are for SCTP only. *
+   ********************************************/
 
   // Sets the SCTP sid and adds to transport layer if not set yet. Should only
   // be called once.
   void SetSctpSid(int sid);
+  // The remote side started the closing procedure by resetting its outgoing
+  // stream (our incoming stream). Sets state to kClosing.
+  void OnClosingProcedureStartedRemotely(int sid);
+  // The closing procedure is complete; both incoming and outgoing stream
+  // resets are done and the channel can transition to kClosed. Called
+  // asynchronously after RemoveSctpDataStream.
+  void OnClosingProcedureComplete(int sid);
   // Called when the transport channel is created.
   // Only needs to be called for SCTP data channels.
   void OnTransportChannelCreated();
@@ -165,8 +184,12 @@ class DataChannel : public DataChannelInterface,
   // to kClosed.
   void OnTransportChannelDestroyed();
 
-  // The following methods are for RTP only.
+  /*******************************************
+   * The following methods are for RTP only. *
+   *******************************************/
 
+  // The remote peer requested that this channel should be closed.
+  void RemotePeerRequestClose();
   // Set the SSRC this channel should use to send data on the
   // underlying data engine. |send_ssrc| == 0 means that the channel is no
   // longer part of the session negotiation.
@@ -231,7 +254,11 @@ class DataChannel : public DataChannelInterface,
   };
 
   bool Init(const InternalDataChannelInit& config);
-  void DoClose();
+  // Close immediately, ignoring any queued data or closing procedure.
+  // This is called for RTP data channels when SDP indicates a channel should
+  // be removed, or SCTP data channels when the underlying SctpTransport is
+  // being destroyed.
+  void CloseAbruptly();
   void UpdateState();
   void SetState(DataState state);
   void DisconnectFromProvider();
@@ -261,6 +288,8 @@ class DataChannel : public DataChannelInterface,
   bool send_ssrc_set_;
   bool receive_ssrc_set_;
   bool writable_;
+  // Did we already start the graceful SCTP closing procedure?
+  bool started_closing_procedure_ = false;
   uint32_t send_ssrc_;
   uint32_t receive_ssrc_;
   // Control messages that always have to get sent out before any queued

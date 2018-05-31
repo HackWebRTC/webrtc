@@ -168,7 +168,7 @@ class PeerConnectionEndToEndBaseTest : public sigslot::has_slots<>,
                                  size_t remote_dc_index) {
     EXPECT_EQ_WAIT(DataChannelInterface::kOpen, local_dc->state(), kMaxWait);
 
-    EXPECT_TRUE_WAIT(remote_dc_list.size() > remote_dc_index, kMaxWait);
+    ASSERT_TRUE_WAIT(remote_dc_list.size() > remote_dc_index, kMaxWait);
     EXPECT_EQ_WAIT(DataChannelInterface::kOpen,
                    remote_dc_list[remote_dc_index]->state(),
                    kMaxWait);
@@ -605,14 +605,10 @@ TEST_P(PeerConnectionEndToEndTest,
 
 // Verifies that a DataChannel added from an OPEN message functions after
 // a channel has been previously closed (webrtc issue 3778).
-// This previously failed because the new channel re-uses the ID of the closed
-// channel, and the closed channel was incorrectly still assigned to the id.
-// TODO(deadbeef): This is disabled because there's currently a race condition
-// caused by the fact that a data channel signals that it's closed before it
-// really is. Re-enable this test once that's fixed.
-// See: https://bugs.chromium.org/p/webrtc/issues/detail?id=4453
+// This previously failed because the new channel re-used the ID of the closed
+// channel, and the closed channel was incorrectly still assigned to the ID.
 TEST_P(PeerConnectionEndToEndTest,
-       DISABLED_DataChannelFromOpenWorksAfterClose) {
+       DataChannelFromOpenWorksAfterPreviousChannelClosed) {
   CreatePcs(nullptr, webrtc::CreateBuiltinAudioEncoderFactory(),
             webrtc::MockAudioDecoderFactory::CreateEmptyFactory());
 
@@ -624,12 +620,49 @@ TEST_P(PeerConnectionEndToEndTest,
   WaitForConnection();
 
   WaitForDataChannelsToOpen(caller_dc, callee_signaled_data_channels_, 0);
-  CloseDataChannels(caller_dc, callee_signaled_data_channels_, 0);
+  int first_channel_id = caller_dc->id();
+  // Wait for the local side to say it's closed, but not the remote side.
+  // Previously, the channel on which Close is called reported being closed
+  // prematurely, and this caused issues; see bugs.webrtc.org/4453.
+  caller_dc->Close();
+  EXPECT_EQ_WAIT(DataChannelInterface::kClosed, caller_dc->state(), kMaxWait);
 
   // Create a new channel and ensure it works after closing the previous one.
   caller_dc = caller_->CreateDataChannel("data2", init);
-
   WaitForDataChannelsToOpen(caller_dc, callee_signaled_data_channels_, 1);
+  // Since the second channel was created after the first finished closing, it
+  // should be able to re-use the first one's ID.
+  EXPECT_EQ(first_channel_id, caller_dc->id());
+  TestDataChannelSendAndReceive(caller_dc, callee_signaled_data_channels_[1]);
+
+  CloseDataChannels(caller_dc, callee_signaled_data_channels_, 1);
+}
+
+// Similar to the above test, but don't wait for the first channel to finish
+// closing before creating the second one.
+TEST_P(PeerConnectionEndToEndTest,
+       DataChannelFromOpenWorksWhilePreviousChannelClosing) {
+  CreatePcs(nullptr, webrtc::CreateBuiltinAudioEncoderFactory(),
+            webrtc::MockAudioDecoderFactory::CreateEmptyFactory());
+
+  webrtc::DataChannelInit init;
+  rtc::scoped_refptr<DataChannelInterface> caller_dc(
+      caller_->CreateDataChannel("data", init));
+
+  Negotiate();
+  WaitForConnection();
+
+  WaitForDataChannelsToOpen(caller_dc, callee_signaled_data_channels_, 0);
+  int first_channel_id = caller_dc->id();
+  caller_dc->Close();
+
+  // Immediately create a new channel, before waiting for the previous one to
+  // transition to "closed".
+  caller_dc = caller_->CreateDataChannel("data2", init);
+  WaitForDataChannelsToOpen(caller_dc, callee_signaled_data_channels_, 1);
+  // Since the second channel was created while the first was still closing,
+  // it should have been assigned a different ID.
+  EXPECT_NE(first_channel_id, caller_dc->id());
   TestDataChannelSendAndReceive(caller_dc, callee_signaled_data_channels_[1]);
 
   CloseDataChannels(caller_dc, callee_signaled_data_channels_, 1);

@@ -811,7 +811,8 @@ class PeerConnection : public PeerConnectionInternal,
   // CONTROL messages on unused SIDs and processes them as OPEN messages.
   void OnSctpTransportDataReceived_s(const cricket::ReceiveDataParams& params,
                                      const rtc::CopyOnWriteBuffer& payload);
-  void OnSctpStreamClosedRemotely_n(int sid);
+  void OnSctpClosingProcedureStartedRemotely_n(int sid);
+  void OnSctpClosingProcedureComplete_n(int sid);
 
   bool ValidateBundleSettings(const cricket::SessionDescription* desc);
   bool HasRtcpMuxEnabled(const cricket::ContentInfo* content);
@@ -993,7 +994,8 @@ class PeerConnection : public PeerConnectionInternal,
   sigslot::signal2<const cricket::ReceiveDataParams&,
                    const rtc::CopyOnWriteBuffer&>
       SignalSctpDataReceived;
-  sigslot::signal1<int> SignalSctpStreamClosedRemotely;
+  sigslot::signal1<int> SignalSctpClosingProcedureStartedRemotely;
+  sigslot::signal1<int> SignalSctpClosingProcedureComplete;
 
   std::unique_ptr<SessionDescriptionInterface> current_local_description_;
   std::unique_ptr<SessionDescriptionInterface> pending_local_description_;

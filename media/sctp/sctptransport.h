@@ -13,6 +13,7 @@
 
 #include <errno.h>
 
+#include <map>
 #include <memory>  // for unique_ptr.
 #include <set>
 #include <string>
@@ -152,17 +153,48 @@ class SctpTransport : public SctpTransportInternal,
   // congestion control)? Different than |transport_|'s "ready to send".
   bool ready_to_send_data_ = false;
 
-  typedef std::set<uint32_t> StreamSet;
-  // When a data channel opens a stream, it goes into open_streams_.  When we
-  // want to close it, the stream's ID goes into queued_reset_streams_.  When
-  // we actually transmit a RE-CONFIG chunk with that stream ID, the ID goes
-  // into sent_reset_streams_.  When we get a response RE-CONFIG chunk back
-  // acknowledging the reset, we remove the stream ID from
-  // sent_reset_streams_.  We use sent_reset_streams_ to differentiate
-  // between acknowledgment RE-CONFIG and peer-initiated RE-CONFIGs.
-  StreamSet open_streams_;
-  StreamSet queued_reset_streams_;
-  StreamSet sent_reset_streams_;
+  // Used to keep track of the status of each stream (or rather, each pair of
+  // incoming/outgoing streams with matching IDs). It's specifically used to
+  // keep track of the status of resets, but more information could be put here
+  // later.
+  //
+  // See datachannel.h for a summary of the closing procedure.
+  struct StreamStatus {
+    // Closure initiated by application via ResetStream? Note that
+    // this may be true while outgoing_reset_initiated is false if the outgoing
+    // reset needed to be queued.
+    bool closure_initiated = false;
+    // Whether we've initiated the outgoing stream reset via
+    // SCTP_RESET_STREAMS.
+    bool outgoing_reset_initiated = false;
+    // Whether usrsctp has indicated that the incoming/outgoing streams have
+    // been reset. It's expected that the peer will reset its outgoing stream
+    // (our incoming stream) after receiving the reset for our outgoing stream,
+    // though older versions of chromium won't do this. See crbug.com/559394
+    // for context.
+    bool outgoing_reset_complete = false;
+    bool incoming_reset_complete = false;
+
+    // Some helper methods to improve code readability.
+    bool is_open() const {
+      return !closure_initiated && !incoming_reset_complete &&
+             !outgoing_reset_complete;
+    }
+    // We need to send an outgoing reset if the application has closed the data
+    // channel, or if we received a reset of the incoming stream from the
+    // remote endpoint, indicating the data channel was closed remotely.
+    bool need_outgoing_reset() const {
+      return (incoming_reset_complete || closure_initiated) &&
+             !outgoing_reset_initiated;
+    }
+    bool reset_complete() const {
+      return outgoing_reset_complete && incoming_reset_complete;
+    }
+  };
+
+  // Entries should only be removed from this map if |reset_complete| is
+  // true.
+  std::map<uint32_t, StreamStatus> stream_status_by_sid_;
 
   // A static human-readable name for debugging messages.
   const char* debug_name_ = "SctpTransport";

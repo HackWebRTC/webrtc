@@ -66,6 +66,9 @@ class FakeDataChannelObserver : public webrtc::DataChannelObserver {
   size_t on_buffered_amount_change_count_;
 };
 
+// TODO(deadbeef): The fact that these tests use a fake provider makes them not
+// too valuable. Should rewrite using the
+// peerconnection_datachannel_unittest.cc infrastructure.
 class SctpDataChannelTest : public testing::Test {
  protected:
   SctpDataChannelTest()
@@ -556,29 +559,6 @@ TEST_F(SctpDataChannelTest, ClosedOnTransportError) {
 
   EXPECT_TRUE(webrtc_data_channel_->Send(buffer));
 
-  EXPECT_EQ(webrtc::DataChannelInterface::kClosed,
-            webrtc_data_channel_->state());
-}
-
-// Tests that a already closed DataChannel does not fire onStateChange again.
-TEST_F(SctpDataChannelTest, ClosedDataChannelDoesNotFireOnStateChange) {
-  AddObserver();
-  webrtc_data_channel_->Close();
-  // OnStateChange called for kClosing and kClosed.
-  EXPECT_EQ(2U, observer_->on_state_change_count());
-
-  observer_->ResetOnStateChangeCount();
-  webrtc_data_channel_->RemotePeerRequestClose();
-  EXPECT_EQ(0U, observer_->on_state_change_count());
-}
-
-// Tests that RemotePeerRequestClose closes the local DataChannel.
-TEST_F(SctpDataChannelTest, RemotePeerRequestClose) {
-  AddObserver();
-  webrtc_data_channel_->RemotePeerRequestClose();
-
-  // OnStateChange called for kClosing and kClosed.
-  EXPECT_EQ(2U, observer_->on_state_change_count());
   EXPECT_EQ(webrtc::DataChannelInterface::kClosed,
             webrtc_data_channel_->state());
 }

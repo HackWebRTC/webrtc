@@ -75,6 +75,14 @@ class FakeDataChannelProvider : public webrtc::DataChannelProviderInterface {
     RTC_CHECK(sid >= 0);
     send_ssrcs_.erase(sid);
     recv_ssrcs_.erase(sid);
+    // Unlike the real SCTP transport, act like the closing procedure finished
+    // instantly, doing the same snapshot thing as below.
+    for (webrtc::DataChannel* ch : std::set<webrtc::DataChannel*>(
+             connected_channels_.begin(), connected_channels_.end())) {
+      if (connected_channels_.count(ch)) {
+        ch->OnClosingProcedureComplete(sid);
+      }
+    }
   }
 
   bool ReadyToSendData() const override { return ready_to_send_; }

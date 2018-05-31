@@ -4479,6 +4479,8 @@ void PeerConnection::OnSctpDataChannelClosed(DataChannel* channel) {
        ++it) {
     if (it->get() == channel) {
       if (channel->id() >= 0) {
+        // After the closing procedure is done, it's safe to use this ID for
+        // another data channel.
         sid_allocator_.ReleaseSid(channel->id());
       }
       // Since this method is triggered by a signal from the DataChannel,
@@ -5062,8 +5064,10 @@ bool PeerConnection::ConnectDataChannel(DataChannel* webrtc_data_channel) {
                                       &DataChannel::OnChannelReady);
     SignalSctpDataReceived.connect(webrtc_data_channel,
                                    &DataChannel::OnDataReceived);
-    SignalSctpStreamClosedRemotely.connect(
-        webrtc_data_channel, &DataChannel::OnStreamClosedRemotely);
+    SignalSctpClosingProcedureStartedRemotely.connect(
+        webrtc_data_channel, &DataChannel::OnClosingProcedureStartedRemotely);
+    SignalSctpClosingProcedureComplete.connect(
+        webrtc_data_channel, &DataChannel::OnClosingProcedureComplete);
   }
   return true;
 }
@@ -5081,7 +5085,8 @@ void PeerConnection::DisconnectDataChannel(DataChannel* webrtc_data_channel) {
   } else {
     SignalSctpReadyToSendData.disconnect(webrtc_data_channel);
     SignalSctpDataReceived.disconnect(webrtc_data_channel);
-    SignalSctpStreamClosedRemotely.disconnect(webrtc_data_channel);
+    SignalSctpClosingProcedureStartedRemotely.disconnect(webrtc_data_channel);
+    SignalSctpClosingProcedureComplete.disconnect(webrtc_data_channel);
   }
 }
 
@@ -5601,8 +5606,14 @@ bool PeerConnection::CreateSctpTransport_n(const std::string& mid) {
       this, &PeerConnection::OnSctpTransportReadyToSendData_n);
   sctp_transport_->SignalDataReceived.connect(
       this, &PeerConnection::OnSctpTransportDataReceived_n);
-  sctp_transport_->SignalStreamClosedRemotely.connect(
-      this, &PeerConnection::OnSctpStreamClosedRemotely_n);
+  // TODO(deadbeef): All we do here is AsyncInvoke to fire the signal on
+  // another thread. Would be nice if there was a helper class similar to
+  // sigslot::repeater that did this for us, eliminating a bunch of boilerplate
+  // code.
+  sctp_transport_->SignalClosingProcedureStartedRemotely.connect(
+      this, &PeerConnection::OnSctpClosingProcedureStartedRemotely_n);
+  sctp_transport_->SignalClosingProcedureComplete.connect(
+      this, &PeerConnection::OnSctpClosingProcedureComplete_n);
   sctp_mid_ = mid;
   sctp_transport_->SetDtlsTransport(dtls_transport);
   return true;
@@ -5674,13 +5685,22 @@ void PeerConnection::OnSctpTransportDataReceived_s(
   }
 }
 
-void PeerConnection::OnSctpStreamClosedRemotely_n(int sid) {
+void PeerConnection::OnSctpClosingProcedureStartedRemotely_n(int sid) {
   RTC_DCHECK(data_channel_type_ == cricket::DCT_SCTP);
   RTC_DCHECK(network_thread()->IsCurrent());
   sctp_invoker_->AsyncInvoke<void>(
       RTC_FROM_HERE, signaling_thread(),
       rtc::Bind(&sigslot::signal1<int>::operator(),
-                &SignalSctpStreamClosedRemotely, sid));
+                &SignalSctpClosingProcedureStartedRemotely, sid));
+}
+
+void PeerConnection::OnSctpClosingProcedureComplete_n(int sid) {
+  RTC_DCHECK(data_channel_type_ == cricket::DCT_SCTP);
+  RTC_DCHECK(network_thread()->IsCurrent());
+  sctp_invoker_->AsyncInvoke<void>(
+      RTC_FROM_HERE, signaling_thread(),
+      rtc::Bind(&sigslot::signal1<int>::operator(),
+                &SignalSctpClosingProcedureComplete, sid));
 }
 
 // Returns false if bundle is enabled and rtcp_mux is disabled.
