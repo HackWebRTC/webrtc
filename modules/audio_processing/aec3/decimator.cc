@@ -21,8 +21,8 @@ const CascadedBiQuadFilter::BiQuadCoefficients kLowPassFilterCoefficients2 = {
     {-0.27666461f, 0.18513647f}};
 constexpr int kNumFilters2 = 3;
 
-// b, a = signal.butter(2, 1500/8000.0, 'lowpass', analog=False) which are the
-// same as b, a = signal.butter(2, 75/4000.0, 'lowpass', analog=False).
+// b, a = signal.butter(2, 750/8000.0, 'lowpass', analog=False) which are the
+// same as b, a = signal.butter(2, 375/4000.0, 'lowpass', analog=False).
 const CascadedBiQuadFilter::BiQuadCoefficients kLowPassFilterCoefficients4 = {
     {0.0179f, 0.0357f, 0.0179f},
     {-1.5879f, 0.6594f}};
