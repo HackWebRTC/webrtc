@@ -43,8 +43,8 @@ updatereadme() {
   STEP="update README.chromium" &&
   FTVERSION=$(git -C third_party/freetype/src/ describe --long) &&
   FTCOMMIT=$(git -C third_party/freetype/src/ rev-parse HEAD) &&
-  sed -i "s/^Version: .*\$/Version: ${FTVERSION%-*}/" third_party/freetype/README.chromium &&
-  sed -i "s/^Revision: .*\$/Revision: ${FTCOMMIT}/" third_party/freetype/README.chromium &&
+  sed -i'' -e "s/^Version: .*\$/Version: ${FTVERSION%-*}/" third_party/freetype/README.chromium &&
+  sed -i'' -e "s/^Revision: .*\$/Revision: ${FTCOMMIT}/" third_party/freetype/README.chromium &&
   git add third_party/freetype/README.chromium
 }
 
