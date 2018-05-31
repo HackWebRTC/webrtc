@@ -230,15 +230,16 @@ rtc_source_set("array_view") {
   ]
 }
 
-# TODO(bugs.webrtc.org/9078): Deprecated, replaced by absl/types:optional.
-# Delete after webrtc and downstreams users are updated.
 rtc_source_set("optional") {
   visibility = [ "*" ]
   sources = [
+    "optional.cc",
     "optional.h",
   ]
   deps = [
-    "//third_party/abseil-cpp/absl/types:optional",
+    ":array_view",
+    "../rtc_base:checks",
+    "../rtc_base:sanitizer",
   ]
 }
 
@@ -380,9 +381,6 @@ if (rtc_include_tests) {
 
     sources = [
       "array_view_unittest.cc",
-
-      # TODO(bugs.webrtc.org/8821): Remove optional_unittests when webrtc starts
-      # running absl unittest on each commit.
       "optional_unittest.cc",
       "ortc/mediadescription_unittest.cc",
       "ortc/sessiondescription_unittest.cc",

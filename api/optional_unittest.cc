@@ -8,9 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-// TODO(bugs.webrtc.org/8821): Delete this file when absl unittests run on
-// webrtc bots.
-
 #include <memory>
 #include <sstream>
 #include <string>
@@ -705,16 +702,31 @@ TEST(OptionalTest, TestDereference) {
 
 TEST(OptionalTest, TestDereferenceWithDefault) {
   auto log = Logger::Setup();
-  const Logger a(17), b(42);
-  Optional<Logger> x(a);
-  Optional<Logger> y;
-  EXPECT_EQ(a, x.value_or(Logger(42)));
-  EXPECT_EQ(b, y.value_or(Logger(42)));
-  EXPECT_EQ(a, Optional<Logger>(Logger(17)).value_or(b));
-  EXPECT_EQ(b, Optional<Logger>().value_or(b));
-  // Can't expect exact list of constructors and destructors because it is
-  // compiler-dependent. i.e. msvc produce different output than clang. Calls
-  // above are subject to copy elision that allow to change behavior.
+  {
+    const Logger a(17), b(42);
+    Optional<Logger> x(a);
+    Optional<Logger> y;
+    log->push_back("-1-");
+    EXPECT_EQ(a, x.value_or(Logger(42)));
+    log->push_back("-2-");
+    EXPECT_EQ(b, y.value_or(Logger(42)));
+    log->push_back("-3-");
+    EXPECT_EQ(a, Optional<Logger>(Logger(17)).value_or(b));
+    log->push_back("-4-");
+    EXPECT_EQ(b, Optional<Logger>().value_or(b));
+    log->push_back("-5-");
+  }
+  EXPECT_EQ(
+      V("0:17. explicit constructor", "1:42. explicit constructor",
+        "2:17. copy constructor (from 0:17)", "-1-",
+        "3:42. explicit constructor", "operator== 0:17, 2:17",
+        "3:42. destructor", "-2-", "4:42. explicit constructor",
+        "operator== 1:42, 4:42", "4:42. destructor", "-3-",
+        "5:17. explicit constructor", "6:17. move constructor (from 5:17)",
+        "operator== 0:17, 6:17", "6:17. destructor", "5:17. destructor", "-4-",
+        "operator== 1:42, 1:42", "-5-", "2:17. destructor", "1:42. destructor",
+        "0:17. destructor"),
+      *log);
 }
 
 TEST(OptionalTest, TestEquality) {
@@ -859,16 +871,8 @@ TEST(OptionalTest, TestMoveValue) {
       *log);
 }
 
-// Nice printing available only when GTEST aware ABSL is present
-#ifdef GTEST_HAS_ABSL
-#define MaybeTestPrintTo TestPrintTo
-#define MaybeTestUnprintablePrintTo TestUnprintablePrintTo
-#else
-#define MaybeTestPrintTo DISABLED_TestPrintTo
-#define MaybeTestUnprintablePrintTo DISABLED_TestUnprintablePrintTo
-#endif
-TEST(OptionalTest, MaybeTestPrintTo) {
-  constexpr char kEmptyOptionalMessage[] = "(nullopt)";
+TEST(OptionalTest, TestPrintTo) {
+  constexpr char kEmptyOptionalMessage[] = "<empty optional>";
   const Optional<MyUnprintableType> empty_unprintable;
   const Optional<MyPrintableType> empty_printable;
   const Optional<MyOstreamPrintableType> empty_ostream_printable;
@@ -876,20 +880,12 @@ TEST(OptionalTest, MaybeTestPrintTo) {
   EXPECT_EQ(kEmptyOptionalMessage, ::testing::PrintToString(empty_printable));
   EXPECT_EQ(kEmptyOptionalMessage,
             ::testing::PrintToString(empty_ostream_printable));
-  EXPECT_NE("(1)", ::testing::PrintToString(Optional<MyUnprintableType>({1})));
-  EXPECT_NE("(1)", ::testing::PrintToString(Optional<MyPrintableType>({1})));
-  EXPECT_EQ("(The value is 1)",
+  EXPECT_NE("1", ::testing::PrintToString(Optional<MyUnprintableType>({1})));
+  EXPECT_NE("1", ::testing::PrintToString(Optional<MyPrintableType>({1})));
+  EXPECT_EQ("The value is 1",
             ::testing::PrintToString(Optional<MyPrintableType>({1})));
-  EXPECT_EQ("(1)",
+  EXPECT_EQ("1",
             ::testing::PrintToString(Optional<MyOstreamPrintableType>({1})));
-}
-
-TEST(OptionalTest, MaybeTestUnprintablePrintTo) {
-  struct UnprintableType {
-    uint8_t value[5];
-  };
-  Optional<UnprintableType> opt({0xa1, 0xb2, 0xc3, 0xd4, 0xe5});
-  EXPECT_EQ("(5-byte object <A1-B2 C3-D4 E5>)", ::testing::PrintToString(opt));
 }
 
 void UnusedFunctionWorkaround() {
