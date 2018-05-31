@@ -549,10 +549,11 @@ if (rtc_include_tests) {
     }
   }
 
-  rtc_source_set("simulcast_test_utility") {
+  rtc_source_set("simulcast_test_fixture_impl") {
     testonly = true
     sources = [
-      "codecs/vp8/simulcast_test_utility.h",
+      "codecs/vp8/simulcast_test_fixture_impl.cc",
+      "codecs/vp8/simulcast_test_fixture_impl.h",
     ]
 
     if (!build_with_chromium && is_clang) {
@@ -565,8 +566,11 @@ if (rtc_include_tests) {
       ":video_codec_interface",
       ":video_coding",
       ":webrtc_vp8_helpers",
+      "../../:webrtc_common",
+      "../../api:simulcast_test_fixture_api",
       "../../api/video:video_frame",
       "../../api/video:video_frame_i420",
+      "../../api/video_codecs:video_codecs_api",
       "../../common_video:common_video",
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
@@ -767,8 +771,8 @@ if (rtc_include_tests) {
       "codecs/test/videocodec_test_stats_impl_unittest.cc",
       "codecs/test/videoprocessor_unittest.cc",
       "codecs/vp8/default_temporal_layers_unittest.cc",
+      "codecs/vp8/libvpx_vp8_simulcast_test.cc",
       "codecs/vp8/screenshare_layers_unittest.cc",
-      "codecs/vp8/simulcast_unittest.cc",
       "codecs/vp9/svc_config_unittest.cc",
       "codecs/vp9/svc_rate_allocator_unittest.cc",
       "decoding_state_unittest.cc",
@@ -809,7 +813,6 @@ if (rtc_include_tests) {
       ":codec_globals_headers",
       ":encoded_frame",
       ":mock_headers",
-      ":simulcast_test_utility",
       ":video_codec_interface",
       ":video_codecs_test_framework",
       ":video_coding",
@@ -823,6 +826,8 @@ if (rtc_include_tests) {
       "..:module_api",
       "../..:webrtc_common",
       "../../:typedefs",
+      "../../api:create_simulcast_test_fixture_api",
+      "../../api:simulcast_test_fixture_api",
       "../../api:videocodec_test_fixture_api",
       "../../api/video:video_frame",
       "../../api/video:video_frame_i420",
@@ -842,6 +847,7 @@ if (rtc_include_tests) {
       "../../system_wrappers:metrics_default",
       "../../test:field_trial",
       "../../test:fileutils",
+      "../../test:test_common",
       "../../test:test_support",
       "../../test:video_test_common",
       "../../test:video_test_support",

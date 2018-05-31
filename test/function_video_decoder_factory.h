@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef TEST_FUNCTION_VIDEO_ENCODER_FACTORY_H_
-#define TEST_FUNCTION_VIDEO_ENCODER_FACTORY_H_
+#ifndef TEST_FUNCTION_VIDEO_DECODER_FACTORY_H_
+#define TEST_FUNCTION_VIDEO_DECODER_FACTORY_H_
 
 #include <functional>
 #include <memory>
@@ -17,22 +17,18 @@
 #include <vector>
 
 #include "api/video_codecs/sdp_video_format.h"
-#include "api/video_codecs/video_encoder_factory.h"
+#include "api/video_codecs/video_decoder_factory.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {
 namespace test {
 
-// An encoder factory producing encoders by calling a supplied create
-// function.
-class FunctionVideoEncoderFactory final : public VideoEncoderFactory {
+// A decoder factory producing decoders by calling a supplied create function.
+class FunctionVideoDecoderFactory final : public VideoDecoderFactory {
  public:
-  explicit FunctionVideoEncoderFactory(
-      std::function<std::unique_ptr<VideoEncoder>()> create)
-      : create_(std::move(create)) {
-    codec_info_.is_hardware_accelerated = false;
-    codec_info_.has_internal_source = false;
-  }
+  explicit FunctionVideoDecoderFactory(
+      std::function<std::unique_ptr<VideoDecoder>()> create)
+      : create_(std::move(create)) {}
 
   // Unused by tests.
   std::vector<SdpVideoFormat> GetSupportedFormats() const override {
@@ -40,22 +36,16 @@ class FunctionVideoEncoderFactory final : public VideoEncoderFactory {
     return {};
   }
 
-  CodecInfo QueryVideoEncoder(
-      const SdpVideoFormat& /* format */) const override {
-    return codec_info_;
-  }
-
-  std::unique_ptr<VideoEncoder> CreateVideoEncoder(
+  std::unique_ptr<VideoDecoder> CreateVideoDecoder(
       const SdpVideoFormat& /* format */) override {
     return create_();
   }
 
  private:
-  const std::function<std::unique_ptr<VideoEncoder>()> create_;
-  CodecInfo codec_info_;
+  const std::function<std::unique_ptr<VideoDecoder>()> create_;
 };
 
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // TEST_FUNCTION_VIDEO_ENCODER_FACTORY_H_
+#endif  // TEST_FUNCTION_VIDEO_DECODER_FACTORY_H_

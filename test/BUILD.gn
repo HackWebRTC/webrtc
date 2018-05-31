@@ -518,6 +518,7 @@ rtc_source_set("test_common") {
     "fake_encoder.cc",
     "fake_encoder.h",
     "fake_videorenderer.h",
+    "function_video_decoder_factory.h",
     "function_video_encoder_factory.h",
     "layer_filtering_transport.cc",
     "layer_filtering_transport.h",

@@ -283,6 +283,33 @@ if (rtc_include_tests) {
     }
   }
 
+  rtc_source_set("simulcast_test_fixture_api") {
+    visibility = [ "*" ]
+    testonly = true
+    sources = [
+      "test/simulcast_test_fixture.h",
+    ]
+  }
+
+  rtc_source_set("create_simulcast_test_fixture_api") {
+    visibility = [ "*" ]
+    testonly = true
+    sources = [
+      "test/create_simulcast_test_fixture.cc",
+      "test/create_simulcast_test_fixture.h",
+    ]
+    deps = [
+      ":simulcast_test_fixture_api",
+      "../modules/video_coding:simulcast_test_fixture_impl",
+      "../rtc_base:rtc_base_approved",
+      "video_codecs:video_codecs_api",
+    ]
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+
   rtc_source_set("videocodec_test_fixture_api") {
     visibility = [ "*" ]
     testonly = true
