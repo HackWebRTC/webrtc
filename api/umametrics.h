@@ -45,6 +45,7 @@ enum PeerConnectionEnumCounterType {
   // The next 2 counters log the value of srtp_err_status_t defined in libsrtp.
   kEnumCounterSrtpUnprotectError,
   kEnumCounterSrtcpUnprotectError,
+  kEnumCounterUsagePattern,
   kPeerConnectionEnumCounterMax
 };
 

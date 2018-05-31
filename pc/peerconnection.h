@@ -55,6 +55,20 @@ class PeerConnection : public PeerConnectionInternal,
                        public rtc::MessageHandler,
                        public sigslot::has_slots<> {
  public:
+  enum class UsageEvent : int {
+    TURN_SERVER_ADDED = 0x01,
+    STUN_SERVER_ADDED = 0x02,
+    DATA_ADDED = 0x04,
+    AUDIO_ADDED = 0x08,
+    VIDEO_ADDED = 0x10,
+    SET_LOCAL_DESCRIPTION_CALLED = 0x20,
+    SET_REMOTE_DESCRIPTION_CALLED = 0x40,
+    CANDIDATE_COLLECTED = 0x80,
+    REMOTE_CANDIDATE_ADDED = 0x100,
+    ICE_STATE_CONNECTED = 0x200,
+    CLOSE_CALLED = 0x400
+  };
+
   explicit PeerConnection(PeerConnectionFactory* factory,
                           std::unique_ptr<RtcEventLog> event_log,
                           std::unique_ptr<Call> call);
@@ -857,6 +871,9 @@ class PeerConnection : public PeerConnectionInternal,
   void ReportNegotiatedCiphers(const cricket::TransportStats& stats,
                                const std::set<cricket::MediaType>& media_types);
 
+  void NoteUsageEvent(UsageEvent event);
+  void ReportUsagePattern() const;
+
   void OnSentPacket_w(const rtc::SentPacket& sent_packet);
 
   const std::string GetTransportName(const std::string& content_name);
@@ -999,6 +1016,8 @@ class PeerConnection : public PeerConnectionInternal,
   // Member variables for caching global options.
   cricket::AudioOptions audio_options_;
   cricket::VideoOptions video_options_;
+
+  int usage_event_accumulator_ = 0;
 };
 
 }  // namespace webrtc

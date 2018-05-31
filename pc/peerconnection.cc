@@ -11,6 +11,7 @@
 #include "pc/peerconnection.h"
 
 #include <algorithm>
+#include <limits>
 #include <queue>
 #include <set>
 #include <utility>
@@ -1034,7 +1035,6 @@ bool PeerConnection::Initialize(
         RtpTransceiverProxyWithInternal<RtpTransceiver>::Create(
             signaling_thread(), new RtpTransceiver(cricket::MEDIA_TYPE_VIDEO)));
   }
-
   return true;
 }
 
@@ -1417,6 +1417,7 @@ PeerConnection::CreateSender(
         new AudioRtpSender(worker_thread(),
                            static_cast<AudioTrackInterface*>(track.get()),
                            stream_ids, stats_.get()));
+    NoteUsageEvent(UsageEvent::AUDIO_ADDED);
   } else {
     RTC_DCHECK_EQ(media_type, cricket::MEDIA_TYPE_VIDEO);
     RTC_DCHECK(!track ||
@@ -1426,6 +1427,7 @@ PeerConnection::CreateSender(
         new VideoRtpSender(worker_thread(),
                            static_cast<VideoTrackInterface*>(track.get()),
                            stream_ids));
+    NoteUsageEvent(UsageEvent::VIDEO_ADDED);
   }
   sender->internal()->set_stream_ids(stream_ids);
   return sender;
@@ -1440,11 +1442,13 @@ PeerConnection::CreateReceiver(cricket::MediaType media_type,
     receiver = RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
         signaling_thread(),
         new AudioRtpReceiver(worker_thread(), receiver_id, {}));
+    NoteUsageEvent(UsageEvent::AUDIO_ADDED);
   } else {
     RTC_DCHECK_EQ(media_type, cricket::MEDIA_TYPE_VIDEO);
     receiver = RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
         signaling_thread(),
         new VideoRtpReceiver(worker_thread(), receiver_id, {}));
+    NoteUsageEvent(UsageEvent::VIDEO_ADDED);
   }
   return receiver;
 }
@@ -1711,7 +1715,7 @@ PeerConnection::CreateDataChannel(
   if (data_channel_type() == cricket::DCT_RTP || first_datachannel) {
     observer_->OnRenegotiationNeeded();
   }
-
+  NoteUsageEvent(UsageEvent::DATA_ADDED);
   return DataChannelProxy::Create(signaling_thread(), channel.get());
 }
 
@@ -1991,6 +1995,7 @@ void PeerConnection::SetLocalDescription(
     // Make UMA notes about what was agreed to.
     ReportNegotiatedSdpSemantics(*local_description());
   }
+  NoteUsageEvent(UsageEvent::SET_LOCAL_DESCRIPTION_CALLED);
 }
 
 RTCError PeerConnection::ApplyLocalDescription(
@@ -2233,6 +2238,7 @@ void PeerConnection::SetRemoteDescription(
   }
 
   observer->OnSetRemoteDescriptionComplete(RTCError::OK());
+  NoteUsageEvent(UsageEvent::SET_REMOTE_DESCRIPTION_CALLED);
 }
 
 RTCError PeerConnection::ApplyRemoteDescription(
@@ -2899,6 +2905,13 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
   if (parse_error != RTCErrorType::NONE) {
     return SafeSetError(parse_error, error);
   }
+  // Note if STUN or TURN servers were supplied.
+  if (!stun_servers.empty()) {
+    NoteUsageEvent(UsageEvent::STUN_SERVER_ADDED);
+  }
+  if (!turn_servers.empty()) {
+    NoteUsageEvent(UsageEvent::TURN_SERVER_ADDED);
+  }
 
   // In theory this shouldn't fail.
   if (!network_thread()->Invoke<bool>(
@@ -2958,6 +2971,7 @@ bool PeerConnection::AddIceCandidate(
     RTC_LOG(LS_ERROR) << "AddIceCandidate: Candidate cannot be used.";
     return false;
   }
+  NoteUsageEvent(UsageEvent::REMOTE_CANDIDATE_ADDED);
 
   if (ready) {
     return UseCandidate(ice_candidate);
@@ -3224,6 +3238,7 @@ void PeerConnection::Close() {
   stats_->UpdateStats(kStatsOutputLevelStandard);
 
   ChangeSignalingState(PeerConnectionInterface::kClosed);
+  NoteUsageEvent(UsageEvent::CLOSE_CALLED);
 
   for (auto transceiver : transceivers_) {
     transceiver->Stop();
@@ -3257,6 +3272,7 @@ void PeerConnection::Close() {
     // The event log must outlive call (and any other object that uses it).
     event_log_.reset();
   });
+  ReportUsagePattern();
 }
 
 void PeerConnection::OnMessage(rtc::Message* msg) {
@@ -3335,6 +3351,7 @@ void PeerConnection::CreateAudioReceiver(
       signaling_thread(), audio_receiver);
   GetAudioTransceiver()->internal()->AddReceiver(receiver);
   observer_->OnAddTrack(receiver, std::move(streams));
+  NoteUsageEvent(UsageEvent::AUDIO_ADDED);
 }
 
 void PeerConnection::CreateVideoReceiver(
@@ -3350,6 +3367,7 @@ void PeerConnection::CreateVideoReceiver(
       signaling_thread(), video_receiver);
   GetVideoTransceiver()->internal()->AddReceiver(receiver);
   observer_->OnAddTrack(receiver, std::move(streams));
+  NoteUsageEvent(UsageEvent::VIDEO_ADDED);
 }
 
 // TODO(deadbeef): Keep RtpReceivers around even if track goes away in remote
@@ -3485,6 +3503,7 @@ void PeerConnection::OnIceCandidate(
   if (IsClosed()) {
     return;
   }
+  NoteUsageEvent(UsageEvent::CANDIDATE_COLLECTED);
   observer_->OnIceCandidate(candidate.get());
 }
 
@@ -5223,6 +5242,7 @@ void PeerConnection::OnTransportControllerConnectionState(
       RTC_LOG(LS_INFO) << "Changing to ICE connected state because "
                           "all transports are writable.";
       SetIceConnectionState(PeerConnectionInterface::kIceConnectionConnected);
+      NoteUsageEvent(UsageEvent::ICE_STATE_CONNECTED);
       break;
     case cricket::kIceConnectionCompleted:
       RTC_LOG(LS_INFO) << "Changing to ICE completed state because "
@@ -5234,6 +5254,7 @@ void PeerConnection::OnTransportControllerConnectionState(
         SetIceConnectionState(PeerConnectionInterface::kIceConnectionConnected);
       }
       SetIceConnectionState(PeerConnectionInterface::kIceConnectionCompleted);
+      NoteUsageEvent(UsageEvent::ICE_STATE_CONNECTED);
       if (metrics_observer()) {
         ReportTransportStats();
       }
@@ -5872,6 +5893,19 @@ void PeerConnection::ReportSdpFormatReceived(
   }
   uma_observer_->IncrementEnumCounter(kEnumCounterSdpFormatReceived, format,
                                       kSdpFormatReceivedMax);
+}
+
+void PeerConnection::NoteUsageEvent(UsageEvent event) {
+  RTC_DCHECK_RUN_ON(signaling_thread());
+  usage_event_accumulator_ |= static_cast<int>(event);
+}
+
+void PeerConnection::ReportUsagePattern() const {
+  RTC_DLOG(LS_INFO) << "Usage signature is " << usage_event_accumulator_;
+  if (uma_observer_) {
+    uma_observer_->IncrementSparseEnumCounter(kEnumCounterUsagePattern,
+                                              usage_event_accumulator_);
+  }
 }
 
 void PeerConnection::ReportNegotiatedSdpSemantics(
