@@ -1429,7 +1429,6 @@ PeerConnection::CreateSender(
                            stream_ids));
     NoteUsageEvent(UsageEvent::VIDEO_ADDED);
   }
-  sender->internal()->set_stream_ids(stream_ids);
   return sender;
 }
 
