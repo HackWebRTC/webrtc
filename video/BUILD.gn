@@ -188,6 +188,7 @@ if (rtc_include_tests) {
     deps = [
       ":video_quality_test",
       "../modules/pacing:pacing",
+      "../rtc_base:rtc_base_approved",
       "../rtc_base/experiments:alr_experiment",
       "../test:field_trial",
       "../test:test_common",

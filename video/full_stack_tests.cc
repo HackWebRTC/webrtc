@@ -10,9 +10,36 @@
 #include <stdio.h>
 
 #include "rtc_base/experiments/alr_experiment.h"
+#include "rtc_base/flags.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
 #include "video/video_quality_test.h"
+
+namespace webrtc {
+namespace flags {
+
+DEFINE_bool(logs, false, "print logs to stderr");
+
+DEFINE_string(rtc_event_log_name,
+              "",
+              "Filename for rtc event log. Two files "
+              "with \"_send\" and \"_recv\" suffixes will be created.");
+std::string RtcEventLogName() {
+  return static_cast<std::string>(FLAG_rtc_event_log_name);
+}
+DEFINE_string(rtp_dump_name, "", "Filename for dumped received RTP stream.");
+std::string RtpDumpName() {
+  return static_cast<std::string>(FLAG_rtp_dump_name);
+}
+DEFINE_string(encoded_frame_path,
+              "",
+              "The base path for encoded frame logs. Created files will have "
+              "the form <encoded_frame_path>.<n>.(recv|send.<m>).ivf");
+std::string EncodedFramePath() {
+  return static_cast<std::string>(FLAG_encoded_frame_path);
+}
+}  // namespace flags
+}  // namespace webrtc
 
 namespace webrtc {
 
@@ -22,7 +49,9 @@ static const int kFullStackTestDurationSecs = 45;
 
 class FullStackTest : public VideoQualityTest {
  public:
-  void RunTest(const VideoQualityTest::Params &params) {
+  void RunTest(VideoQualityTest::Params params) {
+    params.logging = {flags::FLAG_logs, flags::RtcEventLogName(),
+                      flags::RtpDumpName(), flags::EncodedFramePath()};
     RunWithAnalyzer(params);
   }
 
