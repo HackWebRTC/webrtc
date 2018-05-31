@@ -1046,6 +1046,33 @@ TEST_P(ReceiveStatisticsProxyTest, PausesAreIgnored) {
   }
 }
 
+TEST_P(ReceiveStatisticsProxyTest, ManyPausesAtTheBeginning) {
+  const VideoContentType content_type = GetParam();
+  const int kInterFrameDelayMs = 33;
+  const int kPauseDurationMs = 10000;
+  for (int i = 0; i <= kMinRequiredSamples; ++i) {
+    statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
+                                      content_type);
+    fake_clock_.AdvanceTimeMilliseconds(kInterFrameDelayMs);
+
+    statistics_proxy_->OnStreamInactive();
+    fake_clock_.AdvanceTimeMilliseconds(kPauseDurationMs);
+
+    statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
+                                          content_type);
+    fake_clock_.AdvanceTimeMilliseconds(kInterFrameDelayMs);
+  }
+
+  statistics_proxy_.reset();
+  // No freezes should be detected, as all long inter-frame delays were pauses.
+  if (videocontenttypehelpers::IsScreenshare(content_type)) {
+    EXPECT_EQ(-1, metrics::MinSample(
+                      "WebRTC.Video.Screenshare.MeanFreezeDurationMs"));
+  } else {
+    EXPECT_EQ(-1, metrics::MinSample("WebRTC.Video.MeanFreezeDurationMs"));
+  }
+}
+
 TEST_P(ReceiveStatisticsProxyTest, TimeInHdReported) {
   const VideoContentType content_type = GetParam();
   const int kInterFrameDelayMs = 20;
