@@ -28,6 +28,7 @@ rtc_source_set("bbr_controller") {
   ]
   deps = [
     ":bandwidth_sampler",
+    ":loss_rate_filter",
     ":rtt_stats",
     ":windowed_filter",
     "../../../api:optional",
@@ -82,6 +83,16 @@ rtc_source_set("packet_number_indexed_queue") {
   ]
 }
 
+rtc_source_set("loss_rate_filter") {
+  visibility = [ ":*" ]
+  sources = [
+    "loss_rate_filter.cc",
+    "loss_rate_filter.h",
+  ]
+  deps = [
+    "../../../api:optional",
+  ]
+}
 rtc_source_set("rtt_stats") {
   visibility = [ ":*" ]
   sources = [
@@ -107,6 +118,7 @@ if (rtc_include_tests) {
       "bandwidth_sampler_unittest.cc",
       "bbr_network_controller_unittest.cc",
       "data_transfer_tracker_unittest.cc",
+      "loss_rate_filter_unittest.cc",
       "packet_number_indexed_queue_unittest.cc",
       "rtt_stats_unittest.cc",
       "windowed_filter_unittest.cc",
@@ -116,12 +128,14 @@ if (rtc_include_tests) {
       ":bbr",
       ":bbr_controller",
       ":data_transfer_tracker",
+      ":loss_rate_filter",
       ":packet_number_indexed_queue",
       ":rtt_stats",
       ":windowed_filter",
       "../../../api/transport:network_control_test",
       "../../../api/units:data_rate",
       "../../../api/units:time_delta",
+      "../../../api/units:timestamp",
       "../../../test:test_support",
     ]
     if (!build_with_chromium && is_clang) {

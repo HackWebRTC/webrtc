@@ -22,6 +22,7 @@
 #include "api/transport/network_control.h"
 #include "api/transport/network_types.h"
 #include "modules/congestion_controller/bbr/bandwidth_sampler.h"
+#include "modules/congestion_controller/bbr/loss_rate_filter.h"
 #include "modules/congestion_controller/bbr/rtt_stats.h"
 #include "modules/congestion_controller/bbr/windowed_filter.h"
 
@@ -215,6 +216,7 @@ class BbrNetworkController : public NetworkControllerInterface {
 
   RttStats rtt_stats_;
   webrtc::Random random_;
+  LossRateFilter loss_rate_;
 
   rtc::Optional<TargetRateConstraints> constraints_;
 
