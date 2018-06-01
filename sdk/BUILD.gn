@@ -439,6 +439,7 @@ if (is_ios || is_mac) {
       visibility = [ "*" ]
       sources = [
         "objc/Framework/Classes/PeerConnection/RTCEncodedImage.mm",
+        "objc/Framework/Classes/PeerConnection/RTCH264ProfileLevelId.mm",
         "objc/Framework/Classes/PeerConnection/RTCRtpFragmentationHeader.mm",
         "objc/Framework/Classes/PeerConnection/RTCVideoCodec+Private.h",
         "objc/Framework/Classes/PeerConnection/RTCVideoCodec.mm",
@@ -788,6 +789,7 @@ if (is_ios || is_mac) {
             "objc/Framework/UnitTests/RTCCallbackLogger_xctest.m",
             "objc/Framework/UnitTests/RTCDoNotPutCPlusPlusInFrameworkHeaders_xctest.m",
             "objc/Framework/UnitTests/RTCFileVideoCapturer_xctest.mm",
+            "objc/Framework/UnitTests/RTCH264ProfileLevelId_xctest.m",
             "objc/Framework/UnitTests/frame_buffer_helpers.h",
             "objc/Framework/UnitTests/frame_buffer_helpers.mm",
           ]
@@ -810,6 +812,7 @@ if (is_ios || is_mac) {
             ":native_api_audio_device_module",
             ":native_video",
             ":videocapture_objc",
+            ":videocodec_objc",
             ":videoframebuffer_objc",
             ":videosource_objc",
             ":videotoolbox_objc",
