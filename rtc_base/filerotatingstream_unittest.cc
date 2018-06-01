@@ -195,10 +195,10 @@ TEST_F(MAYBE_FileRotatingStreamTest, WriteOverflowAndRead) {
 // Tests that the returned file paths have the right folder and prefix.
 TEST_F(MAYBE_FileRotatingStreamTest, GetFilePath) {
   Init("FileRotatingStreamTestGetFilePath", kFilePrefix, kMaxFileSize, 20);
+  // dir_path_ includes a trailing delimiter.
+  const std::string prefix = dir_path_ + kFilePrefix;
   for (auto i = 0; i < 20; ++i) {
-    Pathname path(stream_->GetFilePath(i));
-    EXPECT_EQ(0, path.folder().compare(dir_path_));
-    EXPECT_EQ(0, path.filename().compare(0, strlen(kFilePrefix), kFilePrefix));
+    EXPECT_EQ(0, stream_->GetFilePath(i).compare(0, prefix.size(), prefix));
   }
 }
 
