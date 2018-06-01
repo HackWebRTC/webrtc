@@ -47,26 +47,19 @@ class VCMDecoderDataBase {
   void RegisterExternalDecoder(VideoDecoder* external_decoder,
                                uint8_t payload_type);
 
-  bool DecoderRegistered() const;
-
   bool RegisterReceiveCodec(const VideoCodec* receive_codec,
                             int number_of_cores,
                             bool require_key_frame);
-
   bool DeregisterReceiveCodec(uint8_t payload_type);
 
-  // Returns a decoder specified by |payload_type|. The decoded frame callback
-  // of the encoder is set to |decoded_frame_callback|. If no such decoder
-  // already exists an instance will be created and initialized.
-  // NULL is returned if no encoder with the specified payload type was found
+  // Returns a decoder specified by frame.PayloadType. The decoded frame
+  // callback of the decoder is set to |decoded_frame_callback|. If no such
+  // decoder already exists an instance will be created and initialized.
+  // nullptr is returned if no decoder with the specified payload type was found
   // and the function failed to create one.
   VCMGenericDecoder* GetDecoder(
       const VCMEncodedFrame& frame,
       VCMDecodedFrameCallback* decoded_frame_callback);
-
-  // Returns the current decoder (i.e. the same value as was last returned from
-  // GetDecoder();
-  VCMGenericDecoder* GetCurrentDecoder();
 
   // Returns true if the currently active decoder prefer to decode frames late.
   // That means that frames must be decoded near the render times stamp.

@@ -43,12 +43,12 @@ VCMDecoderDataBase::~VCMDecoderDataBase() {
 bool VCMDecoderDataBase::DeregisterExternalDecoder(uint8_t payload_type) {
   ExternalDecoderMap::iterator it = dec_external_map_.find(payload_type);
   if (it == dec_external_map_.end()) {
-    // Not found
+    // Not found.
     return false;
   }
   // We can't use payload_type to check if the decoder is currently in use,
   // because payload type may be out of date (e.g. before we decode the first
-  // frame after RegisterReceiveCodec)
+  // frame after RegisterReceiveCodec).
   if (ptr_decoder_ &&
       ptr_decoder_->IsSameDecoder((*it).second->external_decoder_instance)) {
     // Release it if it was registered and in use.
@@ -60,19 +60,15 @@ bool VCMDecoderDataBase::DeregisterExternalDecoder(uint8_t payload_type) {
   return true;
 }
 
-// Add the external encoder object to the list of external decoders.
+// Add the external decoder object to the list of external decoders.
 // Won't be registered as a receive codec until RegisterReceiveCodec is called.
 void VCMDecoderDataBase::RegisterExternalDecoder(VideoDecoder* external_decoder,
                                                  uint8_t payload_type) {
-  // Check if payload value already exists, if so  - erase old and insert new.
+  // If payload value already exists, erase old and insert new.
   VCMExtDecoderMapItem* ext_decoder =
       new VCMExtDecoderMapItem(external_decoder, payload_type);
   DeregisterExternalDecoder(payload_type);
   dec_external_map_[payload_type] = ext_decoder;
-}
-
-bool VCMDecoderDataBase::DecoderRegistered() const {
-  return !dec_map_.empty();
 }
 
 bool VCMDecoderDataBase::RegisterReceiveCodec(const VideoCodec* receive_codec,
@@ -81,7 +77,7 @@ bool VCMDecoderDataBase::RegisterReceiveCodec(const VideoCodec* receive_codec,
   if (number_of_cores < 0) {
     return false;
   }
-  // Check if payload value already exists, if so  - erase old and insert new.
+  // If payload value already exists, erase old and insert new.
   DeregisterReceiveCodec(receive_codec->plType);
   if (receive_codec->codecType == kVideoCodecUnknown) {
     return false;
@@ -114,7 +110,7 @@ VCMGenericDecoder* VCMDecoderDataBase::GetDecoder(
   if (payload_type == receive_codec_.plType || payload_type == 0) {
     return ptr_decoder_.get();
   }
-  // Check for exisitng decoder, if exists - delete.
+  // If decoder exists - delete.
   if (ptr_decoder_) {
     ptr_decoder_.reset();
     memset(&receive_codec_, 0, sizeof(VideoCodec));
@@ -131,10 +127,6 @@ VCMGenericDecoder* VCMDecoderDataBase::GetDecoder(
     memset(&receive_codec_, 0, sizeof(VideoCodec));
     return nullptr;
   }
-  return ptr_decoder_.get();
-}
-
-VCMGenericDecoder* VCMDecoderDataBase::GetCurrentDecoder() {
   return ptr_decoder_.get();
 }
 
