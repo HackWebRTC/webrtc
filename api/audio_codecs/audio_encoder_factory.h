@@ -50,12 +50,7 @@ class AudioEncoderFactory : public rtc::RefCountInterface {
   virtual std::unique_ptr<AudioEncoder> MakeAudioEncoder(
       int payload_type,
       const SdpAudioFormat& format,
-      rtc::Optional<AudioCodecPairId> codec_pair_id);
-
-  // Deprecated version of the above.
-  virtual std::unique_ptr<AudioEncoder> MakeAudioEncoder(
-      int payload_type,
-      const SdpAudioFormat& format);
+      rtc::Optional<AudioCodecPairId> codec_pair_id) = 0;
 };
 
 }  // namespace webrtc
