@@ -59,6 +59,22 @@ config("breakpad_unittest_config") {
   ldflags = [ "-Wl,--build-id=0x000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f" ]
 }
 
+config("default_logging_severity_config") {
+  defines = [ "BPLOG_MINIMUM_SEVERITY=SEVERITY_ERROR" ]
+}
+
+config("fuzzing_logging_severity_config") {
+  defines = [ "BPLOG_MINIMUM_SEVERITY=SEVERITY_CRITICAL" ]
+}
+
+default_breakpad_configs = [ ":tools_config" ]
+
+if (use_fuzzing_engine) {
+  default_breakpad_configs += [ ":fuzzing_logging_severity_config" ]
+} else {
+  default_breakpad_configs += [ ":default_logging_severity_config" ]
+}
+
 # {micro,mini}dump_stackwalk and minidump_dump are tool-type executables
 # that do not build on Windows.
 if (!is_win) {
@@ -142,11 +158,9 @@ if (!is_win) {
         "breakpad/src/third_party/libdisasm/x86_operand_list.h",
       ]
 
-      defines = [ "BPLOG_MINIMUM_SEVERITY=SEVERITY_ERROR" ]
-
       configs -= [ "//build/config/compiler:chromium_code" ]
       configs += [ "//build/config/compiler:no_chromium_code" ]
-      configs += [ ":tools_config" ]
+      configs += default_breakpad_configs
     }
 
     fuzzer_test("minidump_fuzzer") {
@@ -162,7 +176,7 @@ if (!is_win) {
         "//base",
       ]
 
-      defines = [ "BPLOG_MINIMUM_SEVERITY=SEVERITY_CRITICAL" ]
+      additional_configs = [ ":fuzzing_logging_severity_config" ]
       include_dirs = [ "breakpad/src" ]
 
       libfuzzer_options = [
@@ -193,11 +207,9 @@ if (!is_win) {
         ":stackwalk_common",
       ]
 
-      defines = [ "BPLOG_MINIMUM_SEVERITY=SEVERITY_ERROR" ]
-
       configs -= [ "//build/config/compiler:chromium_code" ]
       configs += [ "//build/config/compiler:no_chromium_code" ]
-      configs += [ ":tools_config" ]
+      configs += default_breakpad_configs
     }
 
     executable("minidump_stackwalk") {
@@ -212,11 +224,9 @@ if (!is_win) {
         ":stackwalk_common",
       ]
 
-      defines = [ "BPLOG_MINIMUM_SEVERITY=SEVERITY_ERROR" ]
-
       configs -= [ "//build/config/compiler:chromium_code" ]
       configs += [ "//build/config/compiler:no_chromium_code" ]
-      configs += [ ":tools_config" ]
+      configs += default_breakpad_configs
 
       # Always want these files included regardless of platform.
       set_sources_assignment_filter([])
