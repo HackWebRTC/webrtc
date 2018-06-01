@@ -71,9 +71,6 @@ class EncodedImageCallback {
       const CodecSpecificInfo* codec_specific_info,
       const RTPFragmentationHeader* fragmentation) = 0;
 
-  // Deprecated. TODO(ilnik): Remove this in few weeks.
-  virtual void OnDroppedFrame() {}
-
   virtual void OnDroppedFrame(DropReason reason) {}
 };
 

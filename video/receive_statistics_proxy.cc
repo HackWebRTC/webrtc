@@ -684,12 +684,6 @@ void ReceiveStatisticsProxy::DataCountersUpdated(
     total_byte_tracker_.AddSamples(total_bytes - last_total_bytes);
 }
 
-// Deprecated. TODO(ilnik): remove once all depending projects are updated.
-void ReceiveStatisticsProxy::OnDecodedFrame(rtc::Optional<uint8_t> qp,
-                                            VideoContentType content_type) {
-  OnDecodedFrame(qp, 0, 0, content_type);
-}
-
 void ReceiveStatisticsProxy::OnDecodedFrame(rtc::Optional<uint8_t> qp,
                                             int width,
                                             int height,

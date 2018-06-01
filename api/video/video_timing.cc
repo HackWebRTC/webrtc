@@ -28,7 +28,7 @@ TimingFrameInfo::TimingFrameInfo()
       decode_start_ms(-1),
       decode_finish_ms(-1),
       render_time_ms(-1),
-      flags(TimingFrameFlags::kDefault) {}
+      flags(TimingFrameFlags::kNotTriggered) {}
 
 int64_t TimingFrameInfo::EndToEndDelay() const {
   return capture_time_ms >= 0 ? decode_finish_ms - capture_time_ms : -1;

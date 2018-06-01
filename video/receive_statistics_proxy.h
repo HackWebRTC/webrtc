@@ -52,10 +52,6 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
 
   VideoReceiveStream::Stats GetStats() const;
 
-  // Deprecated. TODO(ilnik): remove once all depending projects are updated.
-  RTC_DEPRECATED void OnDecodedFrame(rtc::Optional<uint8_t> qp,
-                                     VideoContentType content_type);
-
   void OnDecodedFrame(rtc::Optional<uint8_t> qp,
                       int width,
                       int height,
