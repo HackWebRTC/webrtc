@@ -355,6 +355,11 @@ std::string ResourcePath(const std::string& name,
 #endif  // defined (WEBRTC_IOS)
 }
 
+std::string JoinFilename(const std::string& dir, const std::string& name) {
+  RTC_CHECK(!dir.empty()) << "Special cases not implemented.";
+  return dir + kPathDelimiter + name;
+}
+
 size_t GetFileSize(const std::string& filename) {
   FILE* f = fopen(filename.c_str(), "rb");
   size_t size = 0;

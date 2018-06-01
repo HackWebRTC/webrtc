@@ -15,7 +15,6 @@
 #include "rtc_base/file.h"
 #include "rtc_base/flags.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/pathutils.h"
 #include "test/testsupport/fileutils.h"
 
 namespace {
@@ -55,7 +54,7 @@ bool WriteToTestArtifactsDir(const char* filename,
   }
 
   rtc::File output =
-      rtc::File::Create(rtc::Pathname(FLAG_test_artifacts_dir, filename));
+      rtc::File::Create(JoinFilename(FLAG_test_artifacts_dir, filename));
 
   return output.IsOpen() && output.Write(buffer, length) == length;
 }
