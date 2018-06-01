@@ -18,10 +18,8 @@
 
 namespace webrtc {
 
-namespace {
 const float kSpatialLayeringRateScalingFactor = 0.55f;
 const float kTemporalLayeringRateScalingFactor = 0.55f;
-}  // namespace
 
 SvcRateAllocator::SvcRateAllocator(const VideoCodec& codec) : codec_(codec) {
   RTC_DCHECK_EQ(codec.codecType, kVideoCodecVP9);
