@@ -22,18 +22,6 @@ group("android") {
   }
 }
 
-config("libjingle_peerconnection_jni_warnings_config") {
-  # The warnings below are enabled by default. Since GN orders compiler flags
-  # for a target before flags from configs, the only way to disable such
-  # warnings is by having them in a separate config, loaded from the target.
-  if (!is_win) {
-    cflags = [
-      "-Wno-sign-compare",
-      "-Wno-unused-variable",
-    ]
-  }
-}
-
 generate_jni("generated_base_jni") {
   sources = [
     "api/org/webrtc/NetworkMonitor.java",
@@ -347,8 +335,6 @@ rtc_static_library("video_jni") {
     "src/jni/yuvhelper.cc",
   ]
 
-  configs += [ ":libjingle_peerconnection_jni_warnings_config" ]
-
   # TODO(jschuh): Bug 1348: fix this warning.
   configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
 
@@ -569,8 +555,6 @@ rtc_static_library("peerconnection_jni") {
     "src/jni/pc/turncustomizer.h",
   ]
 
-  configs += [ ":libjingle_peerconnection_jni_warnings_config" ]
-
   if (is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
     suppressed_configs += [
@@ -644,8 +628,6 @@ rtc_static_library("libjingle_peerconnection_metrics_default_jni") {
   sources = [
     "src/jni/androidmetrics.cc",
   ]
-
-  configs += [ ":libjingle_peerconnection_jni_warnings_config" ]
 
   deps = [
     ":base_jni",

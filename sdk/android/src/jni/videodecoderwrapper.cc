@@ -159,7 +159,7 @@ void VideoDecoderWrapper::OnDecodedFrame(
     const JavaRef<jobject>& j_decode_time_ms,
     const JavaRef<jobject>& j_qp) {
   RTC_DCHECK_RUNS_SERIALIZED(&callback_race_checker_);
-  const uint64_t timestamp_ns = GetJavaVideoFrameTimestampNs(env, j_frame);
+  const int64_t timestamp_ns = GetJavaVideoFrameTimestampNs(env, j_frame);
 
   FrameExtraInfo frame_extra_info;
   {

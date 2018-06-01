@@ -200,9 +200,6 @@ void Matrix::Crop(float xFraction,
   Multiply(crop_matrix, old.elem_, this->elem_);
 }
 
-// Aligning pointer to 64 bytes for improved performance, e.g. use SIMD.
-static const int kBufferAlignment = 64;
-
 NativeHandleImpl::NativeHandleImpl(int id, const Matrix& matrix)
     : oes_texture_id(id), sampling_matrix(matrix) {}
 

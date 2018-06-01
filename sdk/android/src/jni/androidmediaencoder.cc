@@ -79,7 +79,7 @@ __android_log_print(ANDROID_LOG_VERBOSE, TAG_ENCODER, __VA_ARGS__)
 
 namespace {
   // Maximum time limit between incoming frames before requesting a key frame.
-  const size_t kFrameDiffThresholdMs = 350;
+  const int64_t kFrameDiffThresholdMs = 350;
   const int kMinKeyFrameInterval = 6;
   const char kCustomQPThresholdsFieldTrial[] = "WebRTC-CustomQPThresholds";
 }  // namespace
@@ -213,8 +213,8 @@ class MediaCodecVideoEncoder : public VideoEncoder {
   bool inited_;
   bool use_surface_;
   enum libyuv::FourCC encoder_fourcc_;  // Encoder color space format.
-  int last_set_bitrate_kbps_;  // Last-requested bitrate in kbps.
-  int last_set_fps_;  // Last-requested frame rate.
+  uint32_t last_set_bitrate_kbps_;  // Last-requested bitrate in kbps.
+  uint32_t last_set_fps_;  // Last-requested frame rate.
   int64_t current_timestamp_us_;  // Current frame timestamps in us.
   int frames_received_;  // Number of frames received by encoder.
   int frames_encoded_;  // Number of frames encoded by encoder.
@@ -923,7 +923,9 @@ int32_t MediaCodecVideoEncoder::SetRateAllocation(
     last_set_fps_ = frame_rate;
   }
   bool ret = Java_MediaCodecVideoEncoder_setRates(
-      jni, j_media_codec_video_encoder_, last_set_bitrate_kbps_, last_set_fps_);
+      jni, j_media_codec_video_encoder_,
+      rtc::dchecked_cast<int>(last_set_bitrate_kbps_),
+      rtc::dchecked_cast<int>(last_set_fps_));
   if (CheckException(jni) || !ret) {
     ProcessHWError(true /* reset_if_fallback_unavailable */);
     return sw_fallback_required_ ? WEBRTC_VIDEO_CODEC_OK

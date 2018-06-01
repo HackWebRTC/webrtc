@@ -24,6 +24,7 @@
 #include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/timeutils.h"
@@ -120,7 +121,7 @@ class MediaCodecVideoDecoder : public VideoDecoder, public rtc::MessageHandler {
   int current_bytes_;  // Encoded bytes in the current statistics interval.
   int current_decoding_time_ms_;  // Overall decoding time in the current second
   int current_delay_time_ms_;  // Overall delay time in the current second.
-  uint32_t max_pending_frames_;  // Maximum number of pending input frames.
+  int32_t max_pending_frames_;  // Maximum number of pending input frames.
   H264BitstreamParser h264_bitstream_parser_;
   std::deque<rtc::Optional<uint8_t>> pending_frame_qps_;
 
@@ -482,7 +483,8 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
   uint8_t* buffer =
       reinterpret_cast<uint8_t*>(jni->GetDirectBufferAddress(j_input_buffer));
   RTC_CHECK(buffer) << "Indirect buffer??";
-  int64_t buffer_capacity = jni->GetDirectBufferCapacity(j_input_buffer);
+  size_t buffer_capacity = rtc::dchecked_cast<size_t>(
+      jni->GetDirectBufferCapacity(j_input_buffer));
   if (CheckException(jni) || buffer_capacity < inputImage._length) {
     ALOGE << "Input frame size "<<  inputImage._length <<
         " is bigger than buffer size " << buffer_capacity;

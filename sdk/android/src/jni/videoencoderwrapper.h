@@ -70,7 +70,7 @@ class VideoEncoderWrapper : public VideoEncoder {
 
  private:
   struct FrameExtraInfo {
-    uint64_t capture_time_ns;  // Used as an identifier of the frame.
+    int64_t capture_time_ns;  // Used as an identifier of the frame.
 
     uint32_t timestamp_rtp;
   };
