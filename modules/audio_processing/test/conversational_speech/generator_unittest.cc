@@ -51,7 +51,6 @@
 #include "modules/audio_processing/test/conversational_speech/timing.h"
 #include "modules/audio_processing/test/conversational_speech/wavreader_factory.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/pathutils.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
@@ -125,18 +124,18 @@ struct SineAudioTrackParams {
 std::string CreateTemporarySineAudioTracks(
     const std::map<std::string, SineAudioTrackParams>& sine_tracks_params) {
   // Create temporary directory.
-  rtc::Pathname temp_directory(OutputPath());
-  temp_directory.AppendFolder("TempConversationalSpeechAudioTracks");
-  CreateDir(temp_directory.pathname());
+  std::string temp_directory =
+      OutputPath() + "TempConversationalSpeechAudioTracks";
+  CreateDir(temp_directory);
 
   // Create sine tracks.
   for (const auto& it : sine_tracks_params) {
-    const rtc::Pathname temp_filepath(temp_directory.pathname(), it.first);
+    const std::string temp_filepath = JoinFilename(temp_directory, it.first);
     CreateSineWavFile(
-        temp_filepath.pathname(), it.second.params, it.second.frequency);
+        temp_filepath, it.second.params, it.second.frequency);
   }
 
-  return temp_directory.pathname();
+  return temp_directory;
 }
 
 void CheckAudioTrackParams(const WavReaderFactory& wav_reader_factory,
@@ -188,7 +187,7 @@ TEST(ConversationalSpeechTest, TimingSaveLoad) {
 
   // Create a std::vector<Turn> instance by loading from file.
   std::vector<Turn> actual_timing = LoadTiming(temporary_filepath);
-  std::remove(temporary_filepath.c_str());
+  RemoveFile(temporary_filepath);
 
   // Check size.
   EXPECT_EQ(expected_timing.size(), actual_timing.size());
@@ -580,24 +579,24 @@ TEST(ConversationalSpeechTest, MultiEndCallWavReaderAdaptorSine) {
   const int sample_rates[] = {8000, 11025, 16000, 22050, 32000, 44100, 48000};
 
   for (int sample_rate : sample_rates) {
-    const rtc::Pathname temp_filename(
-        OutputPath(), "TempSineWavFile_" + std::to_string(sample_rate)
-            + ".wav");
+    const std::string temp_filename =
+        OutputPath() + "TempSineWavFile_" +
+        std::to_string(sample_rate) + ".wav";
 
     // Write wav file.
     const std::size_t num_samples = duration_seconds * sample_rate;
     MockWavReaderFactory::Params params = {sample_rate, 1u, num_samples};
-    CreateSineWavFile(temp_filename.pathname(), params);
+    CreateSineWavFile(temp_filename, params);
 
     // Load wav file and check if params match.
     WavReaderFactory wav_reader_factory;
     MockWavReaderFactory::Params expeted_params = {
         sample_rate, 1u, num_samples};
     CheckAudioTrackParams(
-        wav_reader_factory, temp_filename.pathname(), expeted_params);
+        wav_reader_factory, temp_filename, expeted_params);
 
     // Clean up.
-    remove(temp_filename.pathname().c_str());
+    RemoveFile(temp_filename);
   }
 }
 
@@ -629,12 +628,11 @@ TEST(ConversationalSpeechTest, DISABLED_MultiEndCallSimulator) {
       expected_timing, audiotracks_path, std::move(wavreader_factory));
 
   // Simulate the call.
-  rtc::Pathname output_path(audiotracks_path);
-  output_path.AppendFolder("output");
-  CreateDir(output_path.pathname());
-  RTC_LOG(LS_VERBOSE) << "simulator output path: " << output_path.pathname();
+  std::string output_path = JoinFilename(audiotracks_path, "output");
+  CreateDir(output_path);
+  RTC_LOG(LS_VERBOSE) << "simulator output path: " << output_path;
   auto generated_audiotrak_pairs = conversational_speech::Simulate(
-      multiend_call, output_path.pathname());
+      multiend_call, output_path);
   EXPECT_EQ(2u, generated_audiotrak_pairs->size());
 
   // Check the output.
