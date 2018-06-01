@@ -116,9 +116,6 @@ class LogSink {
  public:
   LogSink() {}
   virtual ~LogSink() {}
-  virtual void OnLogMessage(const std::string& msg,
-                            LoggingSeverity severity,
-                            const char* tag);
   virtual void OnLogMessage(const std::string& message) = 0;
 };
 
@@ -496,7 +493,7 @@ class LogMessage {
   LoggingSeverity severity_;
 
 #if defined(WEBRTC_ANDROID)
-  // The default Android debug output tag.
+  // The Android debug output tag.
   const char* tag_ = "libjingle";
 #endif
 
