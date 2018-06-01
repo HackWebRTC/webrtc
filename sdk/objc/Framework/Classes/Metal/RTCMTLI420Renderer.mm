@@ -90,7 +90,9 @@ static NSString *const shaderSource = MTL_STRINGIFY(
 }
 
 - (BOOL)setupTexturesForFrame:(nonnull RTCVideoFrame *)frame {
-  [super setupTexturesForFrame:frame];
+  if (![super setupTexturesForFrame:frame]) {
+    return NO;
+  }
 
   id<MTLDevice> device = [self currentMetalDevice];
   if (!device) {
