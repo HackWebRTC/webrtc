@@ -38,13 +38,16 @@ EchoPathDelayEstimator::EchoPathDelayEstimator(
                           ? kBlockSize / down_sampling_factor_
                           : kBlockSize),
       capture_decimator_(down_sampling_factor_),
-      matched_filter_(data_dumper_,
-                      DetectOptimization(),
-                      sub_block_size_,
-                      kMatchedFilterWindowSizeSubBlocks,
-                      config.delay.num_filters,
-                      kMatchedFilterAlignmentShiftSizeSubBlocks,
-                      config.render_levels.poor_excitation_render_limit),
+      matched_filter_(
+          data_dumper_,
+          DetectOptimization(),
+          sub_block_size_,
+          kMatchedFilterWindowSizeSubBlocks,
+          config.delay.num_filters,
+          kMatchedFilterAlignmentShiftSizeSubBlocks,
+          GetDownSamplingFactor(config) == 8
+              ? config.render_levels.poor_excitation_render_limit_ds8
+              : config.render_levels.poor_excitation_render_limit),
       matched_filter_lag_aggregator_(data_dumper_,
                                      matched_filter_.GetMaxFilterLag()) {
   RTC_DCHECK(data_dumper);

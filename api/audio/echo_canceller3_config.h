@@ -103,6 +103,7 @@ struct EchoCanceller3Config {
   struct RenderLevels {
     float active_render_limit = 100.f;
     float poor_excitation_render_limit = 150.f;
+    float poor_excitation_render_limit_ds8 = 20.f;
   } render_levels;
 
   struct GainUpdates {
