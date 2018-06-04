@@ -307,7 +307,7 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
     RTC_LOG(LS_INFO) << "Using profile " << CFStringToString(_profile);
     RTC_CHECK([codecInfo.name isEqualToString:kRTCVideoCodecH264Name]);
 
-#if defined(WEBRTC_IOS)
+#if defined(WEBRTC_IOS) && !defined(RTC_APPRTCMOBILE_BROADCAST_EXTENSION)
     [RTCUIApplicationStatusObserver prepareForUse];
 #endif
   }
@@ -345,7 +345,7 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
   if (!_callback || !_compressionSession) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
-#if defined(WEBRTC_IOS)
+#if defined(WEBRTC_IOS) && !defined(RTC_APPRTCMOBILE_BROADCAST_EXTENSION)
   if (![[RTCUIApplicationStatusObserver sharedInstance] isApplicationActive]) {
     // Ignore all encode requests when app isn't active. In this state, the
     // hardware encoder has been invalidated by the OS.

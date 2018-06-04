@@ -151,6 +151,12 @@ declare_args() {
 
   # Disable this to build without support for built-in software codecs.
   rtc_use_builtin_sw_codecs = true
+
+  if (is_ios) {
+    # Build broadcast extension in AppRTCMobile for iOS. This results in the
+    # binary only running on iOS 11+, which is why it is disabled by default.
+    rtc_apprtcmobile_broadcast_extension = false
+  }
 }
 
 if (!build_with_mozilla) {

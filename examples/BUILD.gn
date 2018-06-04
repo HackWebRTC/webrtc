@@ -245,6 +245,8 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       "objc/AppRTCMobile/ARDBitrateTracker.m",
       "objc/AppRTCMobile/ARDCaptureController.h",
       "objc/AppRTCMobile/ARDCaptureController.m",
+      "objc/AppRTCMobile/ARDExternalSampleCapturer.h",
+      "objc/AppRTCMobile/ARDExternalSampleCapturer.m",
       "objc/AppRTCMobile/ARDJoinResponse+Internal.h",
       "objc/AppRTCMobile/ARDJoinResponse.h",
       "objc/AppRTCMobile/ARDJoinResponse.m",
@@ -297,6 +299,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
         "../sdk:peerconnectionfactory_base_objc",
         "../sdk:videocapture_objc",
         "../sdk:videocodec_objc",
+        "../sdk:videoframebuffer_objc",
         "../sdk:videosource_objc",
       ]
     }
@@ -365,8 +368,88 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
         "../sdk:framework_objc",
       ]
 
+      if (rtc_apprtcmobile_broadcast_extension) {
+        deps += [
+          ":AppRTCMobileBroadcastSetupUI_extension_bundle",
+          ":AppRTCMobileBroadcastUpload_extension_bundle",
+        ]
+      }
+
       if (target_cpu == "x86") {
         deps += [ "//testing/iossim:iossim" ]
+      }
+    }
+
+    if (rtc_apprtcmobile_broadcast_extension) {
+      bundle_data("AppRTCMobileBroadcastUpload_extension_bundle") {
+        testonly = true
+        public_deps = [
+          ":AppRTCMobileBroadcastUpload",
+        ]
+        sources = [
+          "$root_out_dir/AppRTCMobileBroadcastUpload.appex",
+        ]
+        outputs = [
+          "{{bundle_plugins_dir}}/{{source_file_part}}",
+        ]
+      }
+
+      bundle_data("AppRTCMobileBroadcastSetupUI_extension_bundle") {
+        testonly = true
+        public_deps = [
+          ":AppRTCMobileBroadcastSetupUI",
+        ]
+        sources = [
+          "$root_out_dir/AppRTCMobileBroadcastSetupUI.appex",
+        ]
+        outputs = [
+          "{{bundle_plugins_dir}}/{{source_file_part}}",
+        ]
+      }
+
+      rtc_static_library("AppRTCMobileBroadcastUpload_lib") {
+        check_includes = false
+        testonly = true
+        sources = [
+          "objc/AppRTCMobile/ios/broadcast_extension/ARDBroadcastSampleHandler.h",
+          "objc/AppRTCMobile/ios/broadcast_extension/ARDBroadcastSampleHandler.m",
+        ]
+
+        deps = [
+          ":AppRTCMobile_ios_frameworks",
+          ":apprtc_signaling",
+          "../sdk:framework_objc",
+        ]
+
+        libs = [ "ReplayKit.framework" ]
+      }
+
+      ios_appex_bundle("AppRTCMobileBroadcastUpload") {
+        testonly = true
+        configs += [ "..:common_config" ]
+        public_configs = [ "..:common_inherited_config" ]
+
+        info_plist = "objc/AppRTCMobile/ios/broadcast_extension/BroadcastUploadInfo.plist"
+
+        deps = [
+          ":AppRTCMobileBroadcastUpload_lib",
+          "../sdk:framework_objc",
+        ]
+      }
+
+      ios_appex_bundle("AppRTCMobileBroadcastSetupUI") {
+        sources = [
+          "objc/AppRTCMobile/ios/broadcast_extension/ARDBroadcastSetupViewController.h",
+          "objc/AppRTCMobile/ios/broadcast_extension/ARDBroadcastSetupViewController.m",
+        ]
+
+        info_plist = "objc/AppRTCMobile/ios/broadcast_extension/BroadcastSetupUIInfo.plist"
+
+        libs = [ "ReplayKit.framework" ]
+
+        deps = [
+          ":AppRTCMobile_ios_bundle_data",
+        ]
       }
     }
 

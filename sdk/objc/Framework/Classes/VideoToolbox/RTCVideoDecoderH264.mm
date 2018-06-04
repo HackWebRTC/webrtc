@@ -78,7 +78,7 @@ void decompressionOutputCallback(void *decoderRef,
 
 - (instancetype)init {
   if (self = [super init]) {
-#if defined(WEBRTC_IOS)
+#if defined(WEBRTC_IOS) && !defined(RTC_APPRTCMOBILE_BROADCAST_EXTENSION)
     [RTCUIApplicationStatusObserver prepareForUse];
     _error = noErr;
 #endif
@@ -113,7 +113,7 @@ void decompressionOutputCallback(void *decoderRef,
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
-#if defined(WEBRTC_IOS)
+#if defined(WEBRTC_IOS) && !defined(RTC_APPRTCMOBILE_BROADCAST_EXTENSION)
   if (![[RTCUIApplicationStatusObserver sharedInstance] isApplicationActive]) {
     // Ignore all decode requests when app isn't active. In this state, the
     // hardware decoder has been invalidated by the OS.

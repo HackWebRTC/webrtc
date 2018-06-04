@@ -28,6 +28,7 @@
 #import "WebRTC/RTCVideoTrack.h"
 
 #import "ARDAppEngineClient.h"
+#import "ARDExternalSampleCapturer.h"
 #import "ARDJoinResponse.h"
 #import "ARDMessageResponse.h"
 #import "ARDSettingsModel.h"
@@ -128,6 +129,7 @@ static int const kKbpsMultiplier = 1000;
 @synthesize defaultPeerConnectionConstraints =
     _defaultPeerConnectionConstraints;
 @synthesize isLoopback = _isLoopback;
+@synthesize broadcast = _broadcast;
 
 - (instancetype)init {
   return [self initWithDelegate:nil];
@@ -237,8 +239,7 @@ static int const kKbpsMultiplier = 1000;
   [_turnClient requestServersWithCompletionHandler:^(NSArray *turnServers,
                                                      NSError *error) {
     if (error) {
-      RTCLogError("Error retrieving TURN servers: %@",
-                  error.localizedDescription);
+      RTCLogError(@"Error retrieving TURN servers: %@", error.localizedDescription);
     }
     ARDAppClient *strongSelf = weakSelf;
     [strongSelf.iceServers addObjectsFromArray:turnServers];
@@ -713,9 +714,14 @@ static int const kKbpsMultiplier = 1000;
   RTCVideoSource *source = [_factory videoSource];
 
 #if !TARGET_IPHONE_SIMULATOR
-  RTCCameraVideoCapturer *capturer = [[RTCCameraVideoCapturer alloc] initWithDelegate:source];
-  [_delegate appClient:self didCreateLocalCapturer:capturer];
-
+  if (self.isBroadcast) {
+    ARDExternalSampleCapturer *capturer =
+        [[ARDExternalSampleCapturer alloc] initWithDelegate:source];
+    [_delegate appClient:self didCreateLocalExternalSampleCapturer:capturer];
+  } else {
+    RTCCameraVideoCapturer *capturer = [[RTCCameraVideoCapturer alloc] initWithDelegate:source];
+    [_delegate appClient:self didCreateLocalCapturer:capturer];
+  }
 #else
 #if defined(__IPHONE_11_0) && (__IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_11_0)
   if (@available(iOS 10, *)) {

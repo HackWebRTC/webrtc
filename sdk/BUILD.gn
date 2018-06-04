@@ -48,6 +48,12 @@ if (is_ios || is_mac) {
     ]
   }
 
+  config("used_from_extension") {
+    if (is_ios && rtc_apprtcmobile_broadcast_extension) {
+      cflags = [ "-fapplication-extension" ]
+    }
+  }
+
   rtc_static_library("common_objc") {
     sources = [
       "objc/Framework/Classes/Common/NSString+StdString.h",
@@ -71,7 +77,10 @@ if (is_ios || is_mac) {
       "../rtc_base:checks",
       "../rtc_base:rtc_base",
     ]
-    configs += [ "..:common_objc" ]
+    configs += [
+      "..:common_objc",
+      ":used_from_extension",
+    ]
 
     public_configs = [ ":common_config_objc" ]
 
@@ -176,7 +185,10 @@ if (is_ios || is_mac) {
           "objc/Framework/Headers/WebRTC/RTCAudioSession.h",
           "objc/Framework/Headers/WebRTC/RTCAudioSessionConfiguration.h",
         ]
-        configs += [ "..:common_objc" ]
+        configs += [
+          "..:common_objc",
+          ":used_from_extension",
+        ]
 
         public_configs = [ ":common_config_objc" ]
 
@@ -218,7 +230,10 @@ if (is_ios || is_mac) {
         "//third_party/libyuv",
       ]
 
-      configs += [ "..:common_objc" ]
+      configs += [
+        "..:common_objc",
+        ":used_from_extension",
+      ]
       if (!build_with_chromium && is_clang) {
         # Suppress warnings from the Chromium Clang plugin
         # (bugs.webrtc.org/163).
@@ -244,7 +259,10 @@ if (is_ios || is_mac) {
         "//rtc_base:rtc_base_approved",
         "//third_party/libyuv",
       ]
-      configs += [ "..:common_objc" ]
+      configs += [
+        "..:common_objc",
+        ":used_from_extension",
+      ]
     }
 
     rtc_static_library("video_objc") {
@@ -294,7 +312,10 @@ if (is_ios || is_mac) {
         "../rtc_base:rtc_base",
       ]
 
-      configs += [ "..:common_objc" ]
+      configs += [
+        "..:common_objc",
+        ":used_from_extension",
+      ]
       if (!build_with_chromium && is_clang) {
         # Suppress warnings from the Chromium Clang plugin
         # (bugs.webrtc.org/163).
@@ -629,7 +650,10 @@ if (is_ios || is_mac) {
         "objc/Framework/Headers/WebRTC/RTCMediaSource.h",
       ]
 
-      configs += [ "..:common_objc" ]
+      configs += [
+        "..:common_objc",
+        ":used_from_extension",
+      ]
       public_configs = [ ":common_config_objc" ]
 
       deps = [
@@ -734,7 +758,10 @@ if (is_ios || is_mac) {
         "objc/Framework/Headers/WebRTC/RTCVideoTrack.h",
       ]
 
-      configs += [ "..:common_objc" ]
+      configs += [
+        "..:common_objc",
+        ":used_from_extension",
+      ]
       public_configs = [ ":common_config_objc" ]
 
       if (!build_with_chromium && is_clang) {
@@ -1056,7 +1083,10 @@ if (is_ios || is_mac) {
           "GLKit.framework",
         ]
 
-        configs += [ "..:common_objc" ]
+        configs += [
+          "..:common_objc",
+          ":used_from_extension",
+        ]
 
         public_configs = [ ":common_config_objc" ]
 
@@ -1218,7 +1248,14 @@ if (is_ios || is_mac) {
         "objc/Framework/Classes/VideoToolbox/RTCVideoEncoderH264.mm",
       ]
 
-      configs += [ "..:common_objc" ]
+      configs += [
+        "..:common_objc",
+        ":used_from_extension",
+      ]
+
+      if (is_ios && rtc_apprtcmobile_broadcast_extension) {
+        defines = [ "RTC_APPRTCMOBILE_BROADCAST_EXTENSION" ]
+      }
 
       deps = [
         ":common_objc",
