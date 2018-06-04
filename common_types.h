@@ -405,6 +405,9 @@ struct VideoCodecH264 {
 
 // Video codec types
 enum VideoCodecType {
+  // There are various memset(..., 0, ...) calls in the code that rely on
+  // kVideoCodecUnknown being zero.
+  kVideoCodecUnknown = 0,
   kVideoCodecVP8,
   kVideoCodecVP9,
   kVideoCodecH264,
@@ -414,7 +417,13 @@ enum VideoCodecType {
   kVideoCodecFlexfec,
   kVideoCodecGeneric,
   kVideoCodecMultiplex,
-  kVideoCodecUnknown
+
+  // TODO(nisse): Deprecated aliases, for code expecting RtpVideoCodecTypes.
+  kRtpVideoNone = kVideoCodecUnknown,
+  kRtpVideoGeneric = kVideoCodecGeneric,
+  kRtpVideoVp8 = kVideoCodecVP8,
+  kRtpVideoVp9 = kVideoCodecVP9,
+  kRtpVideoH264 = kVideoCodecH264,
 };
 
 // Translates from name of codec to codec type and vice versa.

@@ -47,6 +47,7 @@ public class MediaCodecVideoEncoder {
 
   // Tracks webrtc::VideoCodecType.
   public enum VideoCodecType {
+    VIDEO_CODEC_UNKNOWN,
     VIDEO_CODEC_VP8,
     VIDEO_CODEC_VP9,
     VIDEO_CODEC_H264;
@@ -486,6 +487,8 @@ public class MediaCodecVideoEncoder {
         }
       }
       keyFrameIntervalSec = 20;
+    } else {
+      throw new RuntimeException("initEncode: Non-supported codec " + type);
     }
     if (properties == null) {
       throw new RuntimeException("Can not find HW encoder for " + type);

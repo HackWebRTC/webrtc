@@ -132,7 +132,7 @@ bool LayerFilteringTransport::SendRtp(const uint8_t* packet,
 
     const bool is_vp8 = header.payloadType == vp8_video_payload_type_;
     std::unique_ptr<RtpDepacketizer> depacketizer(
-        RtpDepacketizer::Create(is_vp8 ? kRtpVideoVp8 : kRtpVideoVp9));
+        RtpDepacketizer::Create(is_vp8 ? kVideoCodecVP8 : kVideoCodecVP9));
     RtpDepacketizer::ParsedPayload parsed_payload;
     if (depacketizer->Parse(&parsed_payload, payload, payload_data_length)) {
       const int temporal_idx = static_cast<int>(

@@ -716,7 +716,7 @@ bool RtpDepacketizerVp9::Parse(ParsedPayload* parsed_payload,
   parsed_payload->type.Video.width = 0;
   parsed_payload->type.Video.height = 0;
   parsed_payload->type.Video.simulcastIdx = 0;
-  parsed_payload->type.Video.codec = kRtpVideoVp9;
+  parsed_payload->type.Video.codec = kVideoCodecVP9;
 
   parsed_payload->frame_type = p_bit ? kVideoFrameDelta : kVideoFrameKey;
 

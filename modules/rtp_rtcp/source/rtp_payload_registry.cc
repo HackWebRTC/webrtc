@@ -51,22 +51,15 @@ RtpUtility::Payload CreatePayloadType(const SdpAudioFormat& audio_format) {
 RtpVideoCodecTypes ConvertToRtpVideoCodecType(VideoCodecType type) {
   switch (type) {
     case kVideoCodecVP8:
-      return kRtpVideoVp8;
     case kVideoCodecVP9:
-      return kRtpVideoVp9;
     case kVideoCodecH264:
-      return kRtpVideoH264;
+      return type;
     case kVideoCodecRED:
     case kVideoCodecULPFEC:
-      return kRtpVideoNone;
-    case kVideoCodecI420:
-    case kVideoCodecFlexfec:
-    case kVideoCodecGeneric:
-    case kVideoCodecMultiplex:
-    case kVideoCodecUnknown:
-      return kRtpVideoGeneric;
+      return kVideoCodecUnknown;
+    default:
+      return kVideoCodecGeneric;
   }
-  return kRtpVideoGeneric;
 }
 
 RtpUtility::Payload CreatePayloadType(const VideoCodec& video_codec) {

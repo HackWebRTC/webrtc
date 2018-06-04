@@ -336,7 +336,7 @@ TEST(PayloadRouterTest, InfoMappedToRtpVideoHeader_Vp8) {
         EXPECT_EQ(kVideoRotation_90, header->rotation);
         EXPECT_EQ(VideoContentType::SCREENSHARE, header->content_type);
         EXPECT_EQ(1, header->simulcastIdx);
-        EXPECT_EQ(kRtpVideoVp8, header->codec);
+        EXPECT_EQ(kVideoCodecVP8, header->codec);
         EXPECT_EQ(kPictureId + 1, header->codecHeader.VP8.pictureId);
         EXPECT_EQ(kTemporalIdx, header->codecHeader.VP8.temporalIdx);
         EXPECT_EQ(kTl0PicIdx, header->codecHeader.VP8.tl0PicIdx);
@@ -381,7 +381,7 @@ TEST(PayloadRouterTest, InfoMappedToRtpVideoHeader_Vp9) {
                                Unused, const RTPVideoHeader* header, Unused) {
             EXPECT_EQ(kVideoRotation_90, header->rotation);
             EXPECT_EQ(VideoContentType::SCREENSHARE, header->content_type);
-            EXPECT_EQ(kRtpVideoVp9, header->codec);
+            EXPECT_EQ(kVideoCodecVP9, header->codec);
             EXPECT_EQ(kPictureId + 1, header->codecHeader.VP9.picture_id);
             EXPECT_EQ(kTl0PicIdx, header->codecHeader.VP9.tl0_pic_idx);
             EXPECT_EQ(header->codecHeader.VP9.temporal_idx,
@@ -410,7 +410,7 @@ TEST(PayloadRouterTest, InfoMappedToRtpVideoHeader_Vp9) {
                                Unused, const RTPVideoHeader* header, Unused) {
             EXPECT_EQ(kVideoRotation_90, header->rotation);
             EXPECT_EQ(VideoContentType::SCREENSHARE, header->content_type);
-            EXPECT_EQ(kRtpVideoVp9, header->codec);
+            EXPECT_EQ(kVideoCodecVP9, header->codec);
             EXPECT_EQ(kPictureId + 1, header->codecHeader.VP9.picture_id);
             EXPECT_EQ(kTl0PicIdx, header->codecHeader.VP9.tl0_pic_idx);
             EXPECT_EQ(header->codecHeader.VP9.temporal_idx,
@@ -447,7 +447,7 @@ TEST(PayloadRouterTest, InfoMappedToRtpVideoHeader_H264) {
       .WillOnce(Invoke([](Unused, Unused, Unused, Unused, Unused, Unused,
                           Unused, const RTPVideoHeader* header, Unused) {
         EXPECT_EQ(0, header->simulcastIdx);
-        EXPECT_EQ(kRtpVideoH264, header->codec);
+        EXPECT_EQ(kVideoCodecH264, header->codec);
         EXPECT_EQ(H264PacketizationMode::SingleNalUnit,
                   header->codecHeader.H264.packetization_mode);
         return true;
@@ -524,7 +524,7 @@ TEST(PayloadRouterTest, PictureIdIsSetForVp8) {
   EXPECT_CALL(rtp1, SendOutgoingData(_, _, _, _, _, _, nullptr, _, _))
       .WillOnce(Invoke([](Unused, Unused, Unused, Unused, Unused, Unused,
                           Unused, const RTPVideoHeader* header, Unused) {
-        EXPECT_EQ(kRtpVideoVp8, header->codec);
+        EXPECT_EQ(kVideoCodecVP8, header->codec);
         EXPECT_EQ(kInitialPictureId1 + 1, header->codecHeader.VP8.pictureId);
         return true;
       }));
@@ -539,7 +539,7 @@ TEST(PayloadRouterTest, PictureIdIsSetForVp8) {
   EXPECT_CALL(rtp2, SendOutgoingData(_, _, _, _, _, _, nullptr, _, _))
       .WillOnce(Invoke([](Unused, Unused, Unused, Unused, Unused, Unused,
                           Unused, const RTPVideoHeader* header, Unused) {
-        EXPECT_EQ(kRtpVideoVp8, header->codec);
+        EXPECT_EQ(kVideoCodecVP8, header->codec);
         EXPECT_EQ(kInitialPictureId2 + 1, header->codecHeader.VP8.pictureId);
         return true;
       }));
@@ -576,7 +576,7 @@ TEST(PayloadRouterTest, PictureIdWraps) {
   EXPECT_CALL(rtp, SendOutgoingData(_, _, _, _, _, _, nullptr, _, _))
       .WillOnce(Invoke([](Unused, Unused, Unused, Unused, Unused, Unused,
                           Unused, const RTPVideoHeader* header, Unused) {
-        EXPECT_EQ(kRtpVideoVp8, header->codec);
+        EXPECT_EQ(kVideoCodecVP8, header->codec);
         EXPECT_EQ(0, header->codecHeader.VP8.pictureId);
         return true;
       }));
@@ -614,7 +614,7 @@ TEST(PayloadRouterTest, Tl0PicIdxUpdatedForVp8) {
   EXPECT_CALL(rtp, SendOutgoingData(_, _, _, _, _, _, nullptr, _, _))
       .WillOnce(Invoke([](Unused, Unused, Unused, Unused, Unused, Unused,
                           Unused, const RTPVideoHeader* header, Unused) {
-        EXPECT_EQ(kRtpVideoVp8, header->codec);
+        EXPECT_EQ(kVideoCodecVP8, header->codec);
         EXPECT_EQ(kInitialPictureId1 + 1, header->codecHeader.VP8.pictureId);
         EXPECT_EQ(kInitialTl0PicIdx1, header->codecHeader.VP8.tl0PicIdx);
         return true;
@@ -630,7 +630,7 @@ TEST(PayloadRouterTest, Tl0PicIdxUpdatedForVp8) {
   EXPECT_CALL(rtp, SendOutgoingData(_, _, _, _, _, _, nullptr, _, _))
       .WillOnce(Invoke([](Unused, Unused, Unused, Unused, Unused, Unused,
                           Unused, const RTPVideoHeader* header, Unused) {
-        EXPECT_EQ(kRtpVideoVp8, header->codec);
+        EXPECT_EQ(kVideoCodecVP8, header->codec);
         EXPECT_EQ(kInitialPictureId1 + 2, header->codecHeader.VP8.pictureId);
         EXPECT_EQ(kInitialTl0PicIdx1 + 1, header->codecHeader.VP8.tl0PicIdx);
         return true;
@@ -670,7 +670,7 @@ TEST(PayloadRouterTest, Tl0PicIdxUpdatedForVp9) {
   EXPECT_CALL(rtp, SendOutgoingData(_, _, _, _, _, _, nullptr, _, _))
       .WillOnce(Invoke([](Unused, Unused, Unused, Unused, Unused, Unused,
                           Unused, const RTPVideoHeader* header, Unused) {
-        EXPECT_EQ(kRtpVideoVp9, header->codec);
+        EXPECT_EQ(kVideoCodecVP9, header->codec);
         EXPECT_EQ(kInitialPictureId1 + 1, header->codecHeader.VP9.picture_id);
         EXPECT_EQ(kInitialTl0PicIdx1, header->codecHeader.VP9.tl0_pic_idx);
         return true;
@@ -686,7 +686,7 @@ TEST(PayloadRouterTest, Tl0PicIdxUpdatedForVp9) {
   EXPECT_CALL(rtp, SendOutgoingData(_, _, _, _, _, _, nullptr, _, _))
       .WillOnce(Invoke([](Unused, Unused, Unused, Unused, Unused, Unused,
                           Unused, const RTPVideoHeader* header, Unused) {
-        EXPECT_EQ(kRtpVideoVp9, header->codec);
+        EXPECT_EQ(kVideoCodecVP9, header->codec);
         EXPECT_EQ(kInitialPictureId1 + 2, header->codecHeader.VP9.picture_id);
         EXPECT_EQ(kInitialTl0PicIdx1 + 1, header->codecHeader.VP9.tl0_pic_idx);
         return true;
@@ -702,7 +702,7 @@ TEST(PayloadRouterTest, Tl0PicIdxUpdatedForVp9) {
   EXPECT_CALL(rtp, SendOutgoingData(_, _, _, _, _, _, nullptr, _, _))
       .WillOnce(Invoke([](Unused, Unused, Unused, Unused, Unused, Unused,
                           Unused, const RTPVideoHeader* header, Unused) {
-        EXPECT_EQ(kRtpVideoVp9, header->codec);
+        EXPECT_EQ(kVideoCodecVP9, header->codec);
         EXPECT_EQ(kInitialPictureId1 + 2, header->codecHeader.VP9.picture_id);
         EXPECT_EQ(kInitialTl0PicIdx1 + 1, header->codecHeader.VP9.tl0_pic_idx);
         return true;

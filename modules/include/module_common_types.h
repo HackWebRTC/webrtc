@@ -42,13 +42,8 @@ struct RTPAudioHeader {
   size_t channel;                     // number of channels 2 = stereo
 };
 
-enum RtpVideoCodecTypes {
-  kRtpVideoNone = 0,
-  kRtpVideoGeneric = 1,
-  kRtpVideoVp8 = 2,
-  kRtpVideoVp9 = 3,
-  kRtpVideoH264 = 4
-};
+// TODO(nisse): Deprecated, use webrtc::VideoCodecType instead.
+using RtpVideoCodecTypes = VideoCodecType;
 
 union RTPVideoTypeHeader {
   RTPVideoHeaderVP8 VP8;
@@ -72,7 +67,7 @@ struct RTPVideoHeader {
   bool is_first_packet_in_frame;
   uint8_t simulcastIdx;  // Index if the simulcast encoder creating
                          // this frame, 0 if not using simulcast.
-  RtpVideoCodecTypes codec;
+  VideoCodecType codec;
   RTPVideoTypeHeader codecHeader;
 };
 union RTPTypeHeader {

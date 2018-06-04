@@ -18,45 +18,45 @@
 #include "modules/rtp_rtcp/source/rtp_format_vp9.h"
 
 namespace webrtc {
-RtpPacketizer* RtpPacketizer::Create(RtpVideoCodecTypes type,
+RtpPacketizer* RtpPacketizer::Create(VideoCodecType type,
                                      size_t max_payload_len,
                                      size_t last_packet_reduction_len,
                                      const RTPVideoTypeHeader* rtp_type_header,
                                      FrameType frame_type) {
   switch (type) {
-    case kRtpVideoH264:
+    case kVideoCodecH264:
       RTC_CHECK(rtp_type_header);
       return new RtpPacketizerH264(max_payload_len, last_packet_reduction_len,
                                    rtp_type_header->H264.packetization_mode);
-    case kRtpVideoVp8:
+    case kVideoCodecVP8:
       RTC_CHECK(rtp_type_header);
       return new RtpPacketizerVp8(rtp_type_header->VP8, max_payload_len,
                                   last_packet_reduction_len);
-    case kRtpVideoVp9:
+    case kVideoCodecVP9:
       RTC_CHECK(rtp_type_header);
       return new RtpPacketizerVp9(rtp_type_header->VP9, max_payload_len,
                                   last_packet_reduction_len);
-    case kRtpVideoGeneric:
+    case kVideoCodecGeneric:
       return new RtpPacketizerGeneric(frame_type, max_payload_len,
                                       last_packet_reduction_len);
-    case kRtpVideoNone:
+    default:
       RTC_NOTREACHED();
   }
   return nullptr;
 }
 
-RtpDepacketizer* RtpDepacketizer::Create(RtpVideoCodecTypes type) {
+RtpDepacketizer* RtpDepacketizer::Create(VideoCodecType type) {
   switch (type) {
-    case kRtpVideoH264:
+    case kVideoCodecH264:
       return new RtpDepacketizerH264();
-    case kRtpVideoVp8:
+    case kVideoCodecVP8:
       return new RtpDepacketizerVp8();
-    case kRtpVideoVp9:
+    case kVideoCodecVP9:
       return new RtpDepacketizerVp9();
-    case kRtpVideoGeneric:
+    case kVideoCodecGeneric:
       return new RtpDepacketizerGeneric();
-    case kRtpVideoNone:
-      assert(false);
+    default:
+      RTC_NOTREACHED();
   }
   return nullptr;
 }

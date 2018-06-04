@@ -36,7 +36,7 @@ TEST(TestDecodingState, FrameContinuity) {
   packet.timestamp = 1;
   packet.seqNum = 0xffff;
   packet.frameType = kVideoFrameDelta;
-  packet.video_header.codec = kRtpVideoVp8;
+  packet.video_header.codec = kVideoCodecVP8;
   packet.video_header.codecHeader.VP8.pictureId = 0x007F;
   FrameData frame_data;
   frame_data.rtt_ms = 0;
@@ -211,7 +211,7 @@ TEST(TestDecodingState, MultiLayerBehavior) {
   VCMFrameBuffer frame;
   VCMPacket packet;
   packet.frameType = kVideoFrameDelta;
-  packet.video_header.codec = kRtpVideoVp8;
+  packet.video_header.codec = kVideoCodecVP8;
   packet.timestamp = 0;
   packet.seqNum = 0;
   packet.video_header.codecHeader.VP8.tl0PicIdx = 0;
@@ -365,7 +365,7 @@ TEST(TestDecodingState, DiscontinuousPicIdContinuousSeqNum) {
   VCMPacket packet;
   frame.Reset();
   packet.frameType = kVideoFrameKey;
-  packet.video_header.codec = kRtpVideoVp8;
+  packet.video_header.codec = kVideoCodecVP8;
   packet.timestamp = 0;
   packet.seqNum = 0;
   packet.video_header.codecHeader.VP8.tl0PicIdx = 0;
@@ -418,7 +418,7 @@ TEST(TestDecodingState, PictureIdRepeat) {
   VCMFrameBuffer frame;
   VCMPacket packet;
   packet.frameType = kVideoFrameDelta;
-  packet.video_header.codec = kRtpVideoVp8;
+  packet.video_header.codec = kVideoCodecVP8;
   packet.timestamp = 0;
   packet.seqNum = 0;
   packet.video_header.codecHeader.VP8.tl0PicIdx = 0;
@@ -456,7 +456,7 @@ TEST(TestDecodingState, FrameContinuityFlexibleModeKeyFrame) {
   uint8_t data[] = "I need a data pointer for this test!";
   packet.sizeBytes = sizeof(data);
   packet.dataPtr = data;
-  packet.video_header.codec = kRtpVideoVp9;
+  packet.video_header.codec = kVideoCodecVP9;
 
   RTPVideoHeaderVP9& vp9_hdr = packet.video_header.codecHeader.VP9;
   vp9_hdr.picture_id = 10;
@@ -499,7 +499,7 @@ TEST(TestDecodingState, FrameContinuityFlexibleModeOutOfOrderFrames) {
   uint8_t data[] = "I need a data pointer for this test!";
   packet.sizeBytes = sizeof(data);
   packet.dataPtr = data;
-  packet.video_header.codec = kRtpVideoVp9;
+  packet.video_header.codec = kVideoCodecVP9;
 
   RTPVideoHeaderVP9& vp9_hdr = packet.video_header.codecHeader.VP9;
   vp9_hdr.picture_id = 10;
@@ -554,7 +554,7 @@ TEST(TestDecodingState, FrameContinuityFlexibleModeGeneral) {
   uint8_t data[] = "I need a data pointer for this test!";
   packet.sizeBytes = sizeof(data);
   packet.dataPtr = data;
-  packet.video_header.codec = kRtpVideoVp9;
+  packet.video_header.codec = kVideoCodecVP9;
 
   RTPVideoHeaderVP9& vp9_hdr = packet.video_header.codecHeader.VP9;
   vp9_hdr.picture_id = 10;

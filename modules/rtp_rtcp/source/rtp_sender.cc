@@ -353,7 +353,7 @@ void RTPSender::SetRtxPayloadType(int payload_type,
 }
 
 int32_t RTPSender::CheckPayloadType(int8_t payload_type,
-                                    RtpVideoCodecTypes* video_type) {
+                                    VideoCodecType* video_type) {
   rtc::CritScope lock(&send_critsect_);
 
   if (payload_type < 0) {
@@ -409,7 +409,7 @@ bool RTPSender::SendOutgoingData(FrameType frame_type,
     if (!sending_media_)
       return true;
   }
-  RtpVideoCodecTypes video_type = kRtpVideoGeneric;
+  VideoCodecType video_type = kVideoCodecGeneric;
   if (CheckPayloadType(payload_type, &video_type) != 0) {
     RTC_LOG(LS_ERROR) << "Don't send data with unknown payload type: "
                       << static_cast<int>(payload_type) << ".";
@@ -1209,11 +1209,6 @@ int32_t RTPSender::SendTelephoneEvent(uint8_t key,
 
 int32_t RTPSender::SetAudioLevel(uint8_t level_d_bov) {
   return audio_->SetAudioLevel(level_d_bov);
-}
-
-RtpVideoCodecTypes RTPSender::VideoCodecType() const {
-  RTC_DCHECK(!audio_configured_) << "Sender is an audio stream!";
-  return video_->VideoCodecType();
 }
 
 void RTPSender::SetUlpfecConfig(int red_payload_type, int ulpfec_payload_type) {

@@ -23,9 +23,9 @@ namespace {
 // Map information from info into rtp.
 void CopyCodecSpecific(const CodecSpecificInfo* info, RTPVideoHeader* rtp) {
   RTC_DCHECK(info);
+  rtp->codec = info->codecType;
   switch (info->codecType) {
     case kVideoCodecVP8: {
-      rtp->codec = kRtpVideoVp8;
       rtp->codecHeader.VP8.InitRTPVideoHeaderVP8();
       rtp->codecHeader.VP8.nonReference = info->codecSpecific.VP8.nonReference;
       rtp->codecHeader.VP8.temporalIdx = info->codecSpecific.VP8.temporalIdx;
@@ -35,7 +35,6 @@ void CopyCodecSpecific(const CodecSpecificInfo* info, RTPVideoHeader* rtp) {
       return;
     }
     case kVideoCodecVP9: {
-      rtp->codec = kRtpVideoVp9;
       rtp->codecHeader.VP9.InitRTPVideoHeaderVP9();
       rtp->codecHeader.VP9.inter_pic_predicted =
           info->codecSpecific.VP9.inter_pic_predicted;
@@ -77,13 +76,12 @@ void CopyCodecSpecific(const CodecSpecificInfo* info, RTPVideoHeader* rtp) {
       return;
     }
     case kVideoCodecH264:
-      rtp->codec = kRtpVideoH264;
       rtp->codecHeader.H264.packetization_mode =
           info->codecSpecific.H264.packetization_mode;
       return;
     case kVideoCodecMultiplex:
     case kVideoCodecGeneric:
-      rtp->codec = kRtpVideoGeneric;
+      rtp->codec = kVideoCodecGeneric;
       rtp->simulcastIdx = info->codecSpecific.generic.simulcast_idx;
       return;
     default:
@@ -112,7 +110,7 @@ class PayloadRouter::RtpPayloadParams final {
       state_.picture_id =
           (static_cast<uint16_t>(state_.picture_id) + 1) & 0x7FFF;
     }
-    if (rtp_video_header->codec == kRtpVideoVp8) {
+    if (rtp_video_header->codec == kVideoCodecVP8) {
       rtp_video_header->codecHeader.VP8.pictureId = state_.picture_id;
 
       if (rtp_video_header->codecHeader.VP8.temporalIdx != kNoTemporalIdx) {
@@ -122,7 +120,7 @@ class PayloadRouter::RtpPayloadParams final {
         rtp_video_header->codecHeader.VP8.tl0PicIdx = state_.tl0_pic_idx;
       }
     }
-    if (rtp_video_header->codec == kRtpVideoVp9) {
+    if (rtp_video_header->codec == kVideoCodecVP9) {
       rtp_video_header->codecHeader.VP9.picture_id = state_.picture_id;
 
       // Note that in the case that we have no temporal layers but we do have

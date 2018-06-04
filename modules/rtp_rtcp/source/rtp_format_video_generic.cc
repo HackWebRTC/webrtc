@@ -132,7 +132,7 @@ bool RtpDepacketizerGeneric::Parse(ParsedPayload* parsed_payload,
           : kVideoFrameDelta;
   parsed_payload->type.Video.is_first_packet_in_frame =
       (generic_header & RtpFormatVideoGeneric::kFirstPacketBit) != 0;
-  parsed_payload->type.Video.codec = kRtpVideoGeneric;
+  parsed_payload->type.Video.codec = kVideoCodecGeneric;
   parsed_payload->type.Video.width = 0;
   parsed_payload->type.Video.height = 0;
 

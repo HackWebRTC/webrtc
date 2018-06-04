@@ -3177,7 +3177,7 @@ class Vp9HeaderObserver : public test::SendTest {
       RtpDepacketizer::ParsedPayload parsed;
       RtpDepacketizerVp9 depacketizer;
       EXPECT_TRUE(depacketizer.Parse(&parsed, payload, payload_length));
-      EXPECT_EQ(RtpVideoCodecTypes::kRtpVideoVp9, parsed.type.Video.codec);
+      EXPECT_EQ(VideoCodecType::kVideoCodecVP9, parsed.type.Video.codec);
       // Verify common fields for all configurations.
       VerifyCommonHeader(parsed.type.Video.codecHeader.VP9);
       CompareConsecutiveFrames(header, parsed.type.Video);

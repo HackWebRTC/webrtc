@@ -187,8 +187,6 @@ class RTPSender {
   // header-extension-for-audio-level-indication.
   int32_t SetAudioLevel(uint8_t level_d_bov);
 
-  RtpVideoCodecTypes VideoCodecType() const;
-
   uint32_t MaxConfiguredBitrateVideo() const;
 
   // ULPFEC.
@@ -214,7 +212,7 @@ class RTPSender {
   void SetRtt(int64_t rtt_ms);
 
  protected:
-  int32_t CheckPayloadType(int8_t payload_type, RtpVideoCodecTypes* video_type);
+  int32_t CheckPayloadType(int8_t payload_type, VideoCodecType* video_type);
 
  private:
   // Maps capture time in milliseconds to send-side delay in milliseconds.

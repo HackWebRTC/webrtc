@@ -488,7 +488,7 @@ bool RtpDepacketizerVp8::Parse(ParsedPayload* parsed_payload,
   parsed_payload->type.Video.is_first_packet_in_frame =
       beginning_of_partition && (partition_id == 0);
   parsed_payload->type.Video.simulcastIdx = 0;
-  parsed_payload->type.Video.codec = kRtpVideoVp8;
+  parsed_payload->type.Video.codec = kVideoCodecVP8;
   parsed_payload->type.Video.codecHeader.VP8.nonReference =
       (*payload_data & 0x20) ? true : false;  // N bit
   parsed_payload->type.Video.codecHeader.VP8.partitionId = partition_id;

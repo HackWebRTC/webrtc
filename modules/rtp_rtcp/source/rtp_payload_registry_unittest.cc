@@ -41,7 +41,7 @@ TEST(RtpPayloadRegistryTest,
   // We should get back the corresponding payload that we registered.
   EXPECT_STREQ("VP8", retrieved_payload->name);
   EXPECT_TRUE(retrieved_payload->typeSpecific.is_video());
-  EXPECT_EQ(kRtpVideoVp8,
+  EXPECT_EQ(kVideoCodecVP8,
             retrieved_payload->typeSpecific.video_payload().videoCodecType);
 
   // Now forget about it and verify it's gone.

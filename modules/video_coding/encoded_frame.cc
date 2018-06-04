@@ -92,7 +92,7 @@ void VCMEncodedFrame::Reset() {
 void VCMEncodedFrame::CopyCodecSpecific(const RTPVideoHeader* header) {
   if (header) {
     switch (header->codec) {
-      case kRtpVideoVp8: {
+      case kVideoCodecVP8: {
         if (_codecSpecificInfo.codecType != kVideoCodecVP8) {
           // This is the first packet for this frame.
           _codecSpecificInfo.codecSpecific.VP8.pictureId = -1;
@@ -119,7 +119,7 @@ void VCMEncodedFrame::CopyCodecSpecific(const RTPVideoHeader* header) {
         }
         break;
       }
-      case kRtpVideoVp9: {
+      case kVideoCodecVP9: {
         if (_codecSpecificInfo.codecType != kVideoCodecVP9) {
           // This is the first packet for this frame.
           _codecSpecificInfo.codecSpecific.VP9.picture_id = -1;
@@ -186,12 +186,11 @@ void VCMEncodedFrame::CopyCodecSpecific(const RTPVideoHeader* header) {
         }
         break;
       }
-      case kRtpVideoH264: {
+      case kVideoCodecH264: {
         _codecSpecificInfo.codecType = kVideoCodecH264;
         break;
       }
-      case kRtpVideoNone:
-      case kRtpVideoGeneric: {
+      default: {
         _codecSpecificInfo.codecType = kVideoCodecUnknown;
         break;
       }

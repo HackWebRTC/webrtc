@@ -28,22 +28,11 @@ const int kEncoderBitrateBps = 300000;
 const uint32_t kPictureIdWraparound = (1 << 15);
 const size_t kNumTemporalLayers[] = {1, 2, 3};
 
-RtpVideoCodecTypes PayloadNameToRtpVideoCodecType(
-    const std::string& payload_name) {
-  if (payload_name == "VP8") {
-    return kRtpVideoVp8;
-  } else if (payload_name == "VP9") {
-    return kRtpVideoVp9;
-  } else {
-    RTC_NOTREACHED();
-    return kRtpVideoNone;
-  }
-}
 }  // namespace
 
 class PictureIdObserver : public test::RtpRtcpObserver {
  public:
-  explicit PictureIdObserver(RtpVideoCodecTypes codec_type)
+  explicit PictureIdObserver(VideoCodecType codec_type)
       : test::RtpRtcpObserver(test::CallTest::kDefaultTimeoutMs),
         codec_type_(codec_type),
         max_expected_picture_id_gap_(0),
@@ -106,7 +95,7 @@ class PictureIdObserver : public test::RtpRtcpObserver {
         &parsed_payload, &packet[header.headerLength], payload_length));
 
     switch (codec_type_) {
-      case kRtpVideoVp8:
+      case kVideoCodecVP8:
         parsed->picture_id =
             parsed_payload.type.Video.codecHeader.VP8.pictureId;
         parsed->tl0_pic_idx =
@@ -114,7 +103,7 @@ class PictureIdObserver : public test::RtpRtcpObserver {
         parsed->temporal_idx =
             parsed_payload.type.Video.codecHeader.VP8.temporalIdx;
         break;
-      case kRtpVideoVp9:
+      case kVideoCodecVP9:
         parsed->picture_id =
             parsed_payload.type.Video.codecHeader.VP9.picture_id;
         parsed->tl0_pic_idx =
@@ -211,7 +200,7 @@ class PictureIdObserver : public test::RtpRtcpObserver {
   }
 
   rtc::CriticalSection crit_;
-  const RtpVideoCodecTypes codec_type_;
+  const VideoCodecType codec_type_;
   std::map<uint32_t, ParsedPacket> last_observed_packet_ RTC_GUARDED_BY(crit_);
   std::map<uint32_t, size_t> num_packets_sent_ RTC_GUARDED_BY(crit_);
   int max_expected_picture_id_gap_ RTC_GUARDED_BY(crit_);
@@ -297,7 +286,7 @@ class VideoStreamFactory
 void PictureIdTest::SetupEncoder(VideoEncoderFactory* encoder_factory,
                                  const std::string& payload_name) {
   observer_.reset(
-      new PictureIdObserver(PayloadNameToRtpVideoCodecType(payload_name)));
+      new PictureIdObserver(PayloadStringToCodecType(payload_name)));
 
   task_queue_.SendTask([this, encoder_factory, payload_name]() {
     Call::Config config(event_log_.get());

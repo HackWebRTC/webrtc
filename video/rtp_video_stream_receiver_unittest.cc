@@ -136,7 +136,7 @@ class RtpVideoStreamReceiverTest : public testing::Test {
   WebRtcRTPHeader GetDefaultPacket() {
     WebRtcRTPHeader packet;
     memset(&packet, 0, sizeof(packet));
-    packet.type.Video.codec = kRtpVideoH264;
+    packet.type.Video.codec = kVideoCodecH264;
     return packet;
   }
 
@@ -206,7 +206,7 @@ TEST_F(RtpVideoStreamReceiverTest, GenericKeyFrame) {
   rtp_header.header.markerBit = 1;
   rtp_header.type.Video.is_first_packet_in_frame = true;
   rtp_header.frameType = kVideoFrameKey;
-  rtp_header.type.Video.codec = kRtpVideoGeneric;
+  rtp_header.type.Video.codec = kVideoCodecGeneric;
   mock_on_complete_frame_callback_.AppendExpectedBitstream(data.data(),
                                                            data.size());
   EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame(_));
@@ -240,7 +240,7 @@ TEST_F(RtpVideoStreamReceiverTest, GenericKeyFrameBitstreamError) {
   rtp_header.header.markerBit = 1;
   rtp_header.type.Video.is_first_packet_in_frame = true;
   rtp_header.frameType = kVideoFrameKey;
-  rtp_header.type.Video.codec = kRtpVideoGeneric;
+  rtp_header.type.Video.codec = kVideoCodecGeneric;
   constexpr uint8_t expected_bitsteam[] = {1, 2, 3, 0xff};
   mock_on_complete_frame_callback_.AppendExpectedBitstream(
       expected_bitsteam, sizeof(expected_bitsteam));
@@ -335,7 +335,7 @@ TEST_P(RtpVideoStreamReceiverTestH264, OutOfBandFmtpSpsPps) {
   idr_packet.header.markerBit = 1;
   idr_packet.type.Video.is_first_packet_in_frame = true;
   idr_packet.frameType = kVideoFrameKey;
-  idr_packet.type.Video.codec = kRtpVideoH264;
+  idr_packet.type.Video.codec = kVideoCodecH264;
   data.insert(data.end(), {1, 2, 3});
   mock_on_complete_frame_callback_.AppendExpectedBitstream(
       kH264StartCode, sizeof(kH264StartCode));
@@ -355,7 +355,7 @@ TEST_F(RtpVideoStreamReceiverTest, PaddingInMediaStream) {
   header.header.sequenceNumber = 2;
   header.header.markerBit = true;
   header.frameType = kVideoFrameKey;
-  header.type.Video.codec = kRtpVideoGeneric;
+  header.type.Video.codec = kVideoCodecGeneric;
   mock_on_complete_frame_callback_.AppendExpectedBitstream(data.data(),
                                                            data.size());
 
@@ -389,7 +389,7 @@ TEST_F(RtpVideoStreamReceiverTest, RequestKeyframeIfFirstFrameIsDelta) {
   rtp_header.header.markerBit = 1;
   rtp_header.type.Video.is_first_packet_in_frame = true;
   rtp_header.frameType = kVideoFrameDelta;
-  rtp_header.type.Video.codec = kRtpVideoGeneric;
+  rtp_header.type.Video.codec = kVideoCodecGeneric;
 
   EXPECT_CALL(mock_key_frame_request_sender_, RequestKeyFrame());
   rtp_video_stream_receiver_->OnReceivedPayloadData(data.data(), data.size(),

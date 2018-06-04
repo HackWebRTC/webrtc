@@ -570,7 +570,7 @@ class VideoAnalyzer : public PacketReceiver,
       const size_t payload_data_length = payload_length - header.paddingLength;
       const bool is_vp8 = header.payloadType == test::CallTest::kPayloadTypeVP8;
       std::unique_ptr<RtpDepacketizer> depacketizer(
-          RtpDepacketizer::Create(is_vp8 ? kRtpVideoVp8 : kRtpVideoVp9));
+          RtpDepacketizer::Create(is_vp8 ? kVideoCodecVP8 : kVideoCodecVP9));
       RtpDepacketizer::ParsedPayload parsed_payload;
       bool result =
           depacketizer->Parse(&parsed_payload, payload, payload_data_length);

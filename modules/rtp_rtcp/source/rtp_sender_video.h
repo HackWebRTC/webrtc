@@ -42,13 +42,13 @@ class RTPSenderVideo {
                  FlexfecSender* flexfec_sender);
   virtual ~RTPSenderVideo();
 
-  virtual RtpVideoCodecTypes VideoCodecType() const;
+  virtual enum VideoCodecType VideoCodecType() const;
 
   static RtpUtility::Payload* CreateVideoPayload(
       const char payload_name[RTP_PAYLOAD_NAME_SIZE],
       int8_t payload_type);
 
-  bool SendVideo(RtpVideoCodecTypes video_type,
+  bool SendVideo(enum VideoCodecType video_type,
                  FrameType frame_type,
                  int8_t payload_type,
                  uint32_t capture_timestamp,
@@ -59,7 +59,7 @@ class RTPSenderVideo {
                  const RTPVideoHeader* video_header,
                  int64_t expected_retransmission_time_ms);
 
-  void SetVideoCodecType(RtpVideoCodecTypes type);
+  void SetVideoCodecType(enum VideoCodecType type);
 
   // ULPFEC.
   void SetUlpfecConfig(int red_payload_type, int ulpfec_payload_type);
@@ -132,7 +132,7 @@ class RTPSenderVideo {
   // Should never be held when calling out of this class.
   rtc::CriticalSection crit_;
 
-  RtpVideoCodecTypes video_type_;
+  enum VideoCodecType video_type_;
   int32_t retransmission_settings_ RTC_GUARDED_BY(crit_);
   VideoRotation last_rotation_ RTC_GUARDED_BY(crit_);
 

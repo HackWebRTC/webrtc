@@ -55,8 +55,8 @@ struct AudioPayload {
 };
 
 struct VideoPayload {
-  RtpVideoCodecTypes videoCodecType;
-  // The H264 profile only matters if videoCodecType == kRtpVideoH264.
+  VideoCodecType videoCodecType;
+  // The H264 profile only matters if videoCodecType == kVideoCodecH264.
   H264::Profile h264_profile;
 };
 

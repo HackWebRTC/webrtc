@@ -287,7 +287,7 @@ TEST_F(RtpPacketizerVp8Test, TestTIDAndKeyIdx) {
 class RtpDepacketizerVp8Test : public ::testing::Test {
  protected:
   RtpDepacketizerVp8Test()
-      : depacketizer_(RtpDepacketizer::Create(kRtpVideoVp8)) {}
+      : depacketizer_(RtpDepacketizer::Create(kVideoCodecVP8)) {}
 
   void ExpectPacket(RtpDepacketizer::ParsedPayload* parsed_payload,
                     const uint8_t* data,
@@ -314,7 +314,7 @@ TEST_F(RtpDepacketizerVp8Test, BasicHeader) {
       &payload, packet + kHeaderLength, sizeof(packet) - kHeaderLength);
 
   EXPECT_EQ(kVideoFrameDelta, payload.frame_type);
-  EXPECT_EQ(kRtpVideoVp8, payload.type.Video.codec);
+  EXPECT_EQ(kVideoCodecVP8, payload.type.Video.codec);
   VerifyBasicHeader(&payload.type, 0, 1, 4);
   VerifyExtensions(
       &payload.type, kNoPictureId, kNoTl0PicIdx, kNoTemporalIdx, kNoKeyIdx);
@@ -334,7 +334,7 @@ TEST_F(RtpDepacketizerVp8Test, PictureID) {
   ExpectPacket(
       &payload, packet + kHeaderLength1, sizeof(packet) - kHeaderLength1);
   EXPECT_EQ(kVideoFrameDelta, payload.frame_type);
-  EXPECT_EQ(kRtpVideoVp8, payload.type.Video.codec);
+  EXPECT_EQ(kVideoCodecVP8, payload.type.Video.codec);
   VerifyBasicHeader(&payload.type, 1, 0, 0);
   VerifyExtensions(
       &payload.type, kPictureId, kNoTl0PicIdx, kNoTemporalIdx, kNoKeyIdx);
@@ -368,7 +368,7 @@ TEST_F(RtpDepacketizerVp8Test, Tl0PicIdx) {
   ExpectPacket(
       &payload, packet + kHeaderLength, sizeof(packet) - kHeaderLength);
   EXPECT_EQ(kVideoFrameKey, payload.frame_type);
-  EXPECT_EQ(kRtpVideoVp8, payload.type.Video.codec);
+  EXPECT_EQ(kVideoCodecVP8, payload.type.Video.codec);
   VerifyBasicHeader(&payload.type, 0, 1, 0);
   VerifyExtensions(
       &payload.type, kNoPictureId, kTl0PicIdx, kNoTemporalIdx, kNoKeyIdx);
@@ -386,7 +386,7 @@ TEST_F(RtpDepacketizerVp8Test, TIDAndLayerSync) {
   ExpectPacket(
       &payload, packet + kHeaderLength, sizeof(packet) - kHeaderLength);
   EXPECT_EQ(kVideoFrameDelta, payload.frame_type);
-  EXPECT_EQ(kRtpVideoVp8, payload.type.Video.codec);
+  EXPECT_EQ(kVideoCodecVP8, payload.type.Video.codec);
   VerifyBasicHeader(&payload.type, 0, 0, 8);
   VerifyExtensions(&payload.type, kNoPictureId, kNoTl0PicIdx, 2, kNoKeyIdx);
   EXPECT_FALSE(payload.type.Video.codecHeader.VP8.layerSync);
@@ -405,7 +405,7 @@ TEST_F(RtpDepacketizerVp8Test, KeyIdx) {
   ExpectPacket(
       &payload, packet + kHeaderLength, sizeof(packet) - kHeaderLength);
   EXPECT_EQ(kVideoFrameDelta, payload.frame_type);
-  EXPECT_EQ(kRtpVideoVp8, payload.type.Video.codec);
+  EXPECT_EQ(kVideoCodecVP8, payload.type.Video.codec);
   VerifyBasicHeader(&payload.type, 0, 0, 8);
   VerifyExtensions(
       &payload.type, kNoPictureId, kNoTl0PicIdx, kNoTemporalIdx, kKeyIdx);
@@ -426,7 +426,7 @@ TEST_F(RtpDepacketizerVp8Test, MultipleExtensions) {
   ExpectPacket(
       &payload, packet + kHeaderLength, sizeof(packet) - kHeaderLength);
   EXPECT_EQ(kVideoFrameDelta, payload.frame_type);
-  EXPECT_EQ(kRtpVideoVp8, payload.type.Video.codec);
+  EXPECT_EQ(kVideoCodecVP8, payload.type.Video.codec);
   VerifyBasicHeader(&payload.type, 0, 0, 8);
   VerifyExtensions(&payload.type, (17 << 8) + 17, 42, 1, 17);
 }
@@ -465,7 +465,7 @@ TEST_F(RtpDepacketizerVp8Test, TestWithPacketizer) {
   auto vp8_payload = rtp_payload.subview(kHeaderLength);
   ExpectPacket(&payload, vp8_payload.data(), vp8_payload.size());
   EXPECT_EQ(kVideoFrameKey, payload.frame_type);
-  EXPECT_EQ(kRtpVideoVp8, payload.type.Video.codec);
+  EXPECT_EQ(kVideoCodecVP8, payload.type.Video.codec);
   VerifyBasicHeader(&payload.type, 1, 1, 0);
   VerifyExtensions(&payload.type,
                    input_header.pictureId,

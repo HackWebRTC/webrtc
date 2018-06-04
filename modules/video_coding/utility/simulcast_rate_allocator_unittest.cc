@@ -48,6 +48,7 @@ class SimulcastRateAllocatorTest : public ::testing::TestWithParam<bool> {
  public:
   SimulcastRateAllocatorTest() {
     memset(&codec_, 0, sizeof(VideoCodec));
+    codec_.codecType = kVideoCodecVP8;
     codec_.minBitrate = kMinBitrateKbps;
     codec_.targetBitrate = kTargetBitrateKbps;
     codec_.maxBitrate = kMaxBitrateKbps;

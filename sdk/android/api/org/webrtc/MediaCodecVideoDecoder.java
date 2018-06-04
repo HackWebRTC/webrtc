@@ -55,6 +55,7 @@ public class MediaCodecVideoDecoder {
 
   // Tracks webrtc::VideoCodecType.
   public enum VideoCodecType {
+    VIDEO_CODEC_UNKNOWN,
     VIDEO_CODEC_VP8,
     VIDEO_CODEC_VP9,
     VIDEO_CODEC_H264;
