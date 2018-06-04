@@ -54,13 +54,7 @@ class RtpSenderInterface : public rtc::RefCountInterface {
   // tracks.
   virtual std::vector<std::string> stream_ids() const = 0;
 
-  // TODO(orphis): Transitional implementation
-  // Remove the const implementation and make the non-const pure virtual once
-  // when external code depending on this has updated
-  virtual RtpParameters GetParameters() { return RtpParameters(); }
-  RTC_DEPRECATED virtual RtpParameters GetParameters() const {
-    return const_cast<RtpSenderInterface*>(this)->GetParameters();
-  }
+  virtual RtpParameters GetParameters() = 0;
   // Note that only a subset of the parameters can currently be changed. See
   // rtpparameters.h
   virtual RTCError SetParameters(const RtpParameters& parameters) = 0;
