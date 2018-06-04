@@ -416,7 +416,7 @@ int main(int argc, char* argv[]) {
   printf("Rate Limit.................. %d bits/sec \n", rateLimit);
 
 #ifdef WIN32
-  fprintf(bitrateFile, "%d  %10u     %d     %6.3f  %6.3f    %6.3f\n",
+  fprintf(bitrateFile, "%d  %10lu     %d     %6.3f  %6.3f    %6.3f\n",
           sampFreqKHz, framecnt, bottleneck, rateLB, rateUB, rate);
   fclose(bitrateFile);
 #endif  // WIN32

@@ -2027,16 +2027,6 @@ if (rtc_include_tests) {
     }
   }
 
-  config("isac_test_warnings_config") {
-    if (is_win && is_clang) {
-      cflags = [
-        # Disable warnings failing when compiling with Clang on Windows.
-        # https://bugs.chromium.org/p/webrtc/issues/detail?id=5366
-        "-Wno-format",
-      ]
-    }
-  }
-
   rtc_source_set("isac_test_util") {
     testonly = true
     sources = [
@@ -2063,8 +2053,6 @@ if (rtc_include_tests) {
       ":isac_test_util",
       "../../rtc_base:rtc_base_approved",
     ]
-
-    configs += [ ":isac_test_warnings_config" ]
   }
 
   rtc_executable("g711_test") {
