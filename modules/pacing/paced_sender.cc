@@ -255,8 +255,8 @@ int64_t PacedSender::TimeUntilNextProcess() {
 void PacedSender::Process() {
   int64_t now_us = clock_->TimeInMicroseconds();
   rtc::CritScope cs(&critsect_);
+  int64_t elapsed_time_ms = (now_us - time_last_process_us_ + 500) / 1000;
   time_last_process_us_ = now_us;
-  int64_t elapsed_time_ms = (now_us - last_send_time_us_ + 500) / 1000;
   if (elapsed_time_ms > kMaxElapsedTimeMs) {
     RTC_LOG(LS_WARNING) << "Elapsed time (" << elapsed_time_ms
                         << " ms) longer than expected, limiting to "
@@ -268,7 +268,8 @@ void PacedSender::Process() {
   // TODO(srte): Stop sending packet in paused state when pause is no longer
   // used for congestion windows.
   if (paused_ || Congested()) {
-    if (elapsed_time_ms >= kCongestedPacketIntervalMs) {
+    int64_t elapsed_since_last_send_us = now_us - last_send_time_us_;
+    if (elapsed_since_last_send_us >= kCongestedPacketIntervalMs * 1000) {
       // We can not send padding unless a normal packet has first been sent. If
       // we do, timestamps get messed up.
       if (packet_counter_ > 0) {

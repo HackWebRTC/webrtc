@@ -600,6 +600,48 @@ TEST_F(PacedSenderTest, SendsOnlyPaddingWhenCongested) {
   EXPECT_EQ(blocked_packets, send_bucket_->QueueSizePackets());
 }
 
+TEST_F(PacedSenderTest, DoesNotAllowOveruseAfterCongestion) {
+  uint32_t ssrc = 202020;
+  uint16_t seq_num = 1000;
+  RtpPacketSender::Priority prio = PacedSender::kNormalPriority;
+  int size = 1000;
+  auto now_ms = [this] { return clock_.TimeInMilliseconds(); };
+  EXPECT_CALL(callback_, TimeToSendPadding).Times(0);
+  // The pacing rate is low enough that the budget should not allow two packets
+  // to be sent in a row.
+  send_bucket_->SetPacingRates(400 * 8 * 1000 / 5, 0);
+  // The congestion window is small enough to only let one packet through.
+  send_bucket_->SetCongestionWindow(800);
+  send_bucket_->UpdateOutstandingData(0);
+  // Not yet budget limited or congested, packet is sent.
+  send_bucket_->InsertPacket(prio, ssrc, seq_num++, now_ms(), size, false);
+  EXPECT_CALL(callback_, TimeToSendPacket).WillOnce(Return(true));
+  clock_.AdvanceTimeMilliseconds(5);
+  send_bucket_->Process();
+  // Packet blocked due to congestion.
+  send_bucket_->InsertPacket(prio, ssrc, seq_num++, now_ms(), size, false);
+  EXPECT_CALL(callback_, TimeToSendPacket).Times(0);
+  clock_.AdvanceTimeMilliseconds(5);
+  send_bucket_->Process();
+  // Packet blocked due to congestion.
+  send_bucket_->InsertPacket(prio, ssrc, seq_num++, now_ms(), size, false);
+  EXPECT_CALL(callback_, TimeToSendPacket).Times(0);
+  clock_.AdvanceTimeMilliseconds(5);
+  send_bucket_->Process();
+  send_bucket_->UpdateOutstandingData(0);
+  // Congestion removed and budget has recovered, packet is sent.
+  send_bucket_->InsertPacket(prio, ssrc, seq_num++, now_ms(), size, false);
+  EXPECT_CALL(callback_, TimeToSendPacket).WillOnce(Return(true));
+  clock_.AdvanceTimeMilliseconds(5);
+  send_bucket_->Process();
+  send_bucket_->UpdateOutstandingData(0);
+  // Should be blocked due to budget limitation as congestion has be removed.
+  send_bucket_->InsertPacket(prio, ssrc, seq_num++, now_ms(), size, false);
+  EXPECT_CALL(callback_, TimeToSendPacket).Times(0);
+  clock_.AdvanceTimeMilliseconds(5);
+  send_bucket_->Process();
+}
+
 TEST_F(PacedSenderTest, ResumesSendingWhenCongestionEnds) {
   uint32_t ssrc = 202020;
   uint16_t sequence_number = 1000;
