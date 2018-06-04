@@ -280,7 +280,7 @@ rtc_static_library("webrtc_h264") {
       "//third_party/openh264:encoder",
     ]
 
-    # TODO(bugs.webrtc.org/8745): stop using av_lockmgr_register
+    # TODO(bugs.webrtc.org/9352): Stop using ffmpeg deprecated functions.
     if (!is_win) {
       cflags = [ "-Wno-deprecated-declarations" ]
     }
