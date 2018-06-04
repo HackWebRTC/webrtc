@@ -50,37 +50,9 @@ enum H264DecoderImplEvent {
 rtc::CriticalSection ffmpeg_init_lock;
 bool ffmpeg_initialized = false;
 
-// Called by FFmpeg to do mutex operations if initialized using
-// |InitializeFFmpeg|. Disabling thread safety analysis because void** does not
-// play nicely with thread_annotations.h macros.
-int LockManagerOperation(void** lock,
-                         AVLockOp op) RTC_NO_THREAD_SAFETY_ANALYSIS {
-  switch (op) {
-    case AV_LOCK_CREATE:
-      *lock = new rtc::CriticalSection();
-      return 0;
-    case AV_LOCK_OBTAIN:
-      static_cast<rtc::CriticalSection*>(*lock)->Enter();
-      return 0;
-    case AV_LOCK_RELEASE:
-      static_cast<rtc::CriticalSection*>(*lock)->Leave();
-      return 0;
-    case AV_LOCK_DESTROY:
-      delete static_cast<rtc::CriticalSection*>(*lock);
-      *lock = nullptr;
-      return 0;
-  }
-  RTC_NOTREACHED() << "Unrecognized AVLockOp.";
-  return -1;
-}
-
 void InitializeFFmpeg() {
   rtc::CritScope cs(&ffmpeg_init_lock);
   if (!ffmpeg_initialized) {
-    if (av_lockmgr_register(LockManagerOperation) < 0) {
-      RTC_NOTREACHED() << "av_lockmgr_register failed.";
-      return;
-    }
     av_register_all();
     ffmpeg_initialized = true;
   }
@@ -200,12 +172,12 @@ int32_t H264DecoderImpl::InitDecode(const VideoCodec* codec_settings,
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
 
-  // FFmpeg must have been initialized (with |av_lockmgr_register| and
-  // |av_register_all|) before we proceed. |InitializeFFmpeg| does this, which
-  // makes sense for WebRTC standalone. In other cases, such as Chromium, FFmpeg
-  // is initialized externally and calling |InitializeFFmpeg| would be
-  // thread-unsafe and result in FFmpeg being initialized twice, which could
-  // break other FFmpeg usage. See the |rtc_initialize_ffmpeg| flag.
+  // FFmpeg must have been initialized (with |av_register_all|) before we
+  // proceed. |InitializeFFmpeg| does this, which makes sense for WebRTC
+  // standalone. In other cases, such as Chromium, FFmpeg is initialized
+  // externally and calling |InitializeFFmpeg| would be thread-unsafe and result
+  // in FFmpeg being initialized twice, which could break other FFmpeg usage.
+  // See the |rtc_initialize_ffmpeg| flag.
 #if defined(WEBRTC_INITIALIZE_FFMPEG)
   // Make sure FFmpeg has been initialized. Subsequent |InitializeFFmpeg| calls
   // do nothing.
