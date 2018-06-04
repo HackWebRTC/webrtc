@@ -143,12 +143,6 @@ if (!build_with_chromium) {
       sources = [
         "test/video_capture_unittest.cc",
       ]
-
-      cflags = []
-      if (is_linux || is_mac) {
-        cflags += [ "-Wno-write-strings" ]
-      }
-
       ldflags = []
       if (is_linux || is_mac) {
         ldflags += [
