@@ -54,9 +54,6 @@ RtpVideoCodecTypes ConvertToRtpVideoCodecType(VideoCodecType type) {
     case kVideoCodecVP9:
     case kVideoCodecH264:
       return type;
-    case kVideoCodecRED:
-    case kVideoCodecULPFEC:
-      return kVideoCodecUnknown;
     default:
       return kVideoCodecGeneric;
   }

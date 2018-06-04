@@ -159,9 +159,6 @@ bool VCMEncoderDataBase::RequiresEncoderReset(
       break;
     // Known codecs without payload-specifics
     case kVideoCodecI420:
-    case kVideoCodecRED:
-    case kVideoCodecULPFEC:
-    case kVideoCodecFlexfec:
     case kVideoCodecMultiplex:
       break;
     // Unknown codec type, reset just to be sure.

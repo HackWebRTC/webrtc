@@ -69,9 +69,6 @@ static void CodecSettings(VideoCodecType codec_type, VideoCodec* settings) {
           3 * kTestWidth * kTestHeight * 8 * kTestFrameRate / 1000 / 2;
       settings->maxBitrate = settings->startBitrate;
       return;
-    case kVideoCodecRED:
-    case kVideoCodecULPFEC:
-    case kVideoCodecFlexfec:
     case kVideoCodecMultiplex:
     case kVideoCodecGeneric:
     case kVideoCodecUnknown:

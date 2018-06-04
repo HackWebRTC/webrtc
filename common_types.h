@@ -412,9 +412,6 @@ enum VideoCodecType {
   kVideoCodecVP9,
   kVideoCodecH264,
   kVideoCodecI420,
-  kVideoCodecRED,
-  kVideoCodecULPFEC,
-  kVideoCodecFlexfec,
   kVideoCodecGeneric,
   kVideoCodecMultiplex,
 

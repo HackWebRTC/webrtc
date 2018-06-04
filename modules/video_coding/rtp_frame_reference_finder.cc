@@ -83,11 +83,6 @@ void RtpFrameReferenceFinder::RetryStashedFrames() {
 RtpFrameReferenceFinder::FrameDecision
 RtpFrameReferenceFinder::ManageFrameInternal(RtpFrameObject* frame) {
   switch (frame->codec_type()) {
-    case kVideoCodecFlexfec:
-    case kVideoCodecULPFEC:
-    case kVideoCodecRED:
-      RTC_NOTREACHED();
-      break;
     case kVideoCodecVP8:
       return ManageFrameVp8(frame);
     case kVideoCodecVP9:

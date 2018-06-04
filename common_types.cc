@@ -117,9 +117,6 @@ static const char* kPayloadNameVp8 = "VP8";
 static const char* kPayloadNameVp9 = "VP9";
 static const char* kPayloadNameH264 = "H264";
 static const char* kPayloadNameI420 = "I420";
-static const char* kPayloadNameRED = "RED";
-static const char* kPayloadNameULPFEC = "ULPFEC";
-static const char* kPayloadNameFlexfec = "flexfec-03";
 static const char* kPayloadNameGeneric = "Generic";
 static const char* kPayloadNameMultiplex = "Multiplex";
 
@@ -137,12 +134,6 @@ const char* CodecTypeToPayloadString(VideoCodecType type) {
       return kPayloadNameH264;
     case kVideoCodecI420:
       return kPayloadNameI420;
-    case kVideoCodecRED:
-      return kPayloadNameRED;
-    case kVideoCodecULPFEC:
-      return kPayloadNameULPFEC;
-    case kVideoCodecFlexfec:
-      return kPayloadNameFlexfec;
     // Other codecs default to generic.
     case kVideoCodecMultiplex:
     case kVideoCodecGeneric:
@@ -161,12 +152,6 @@ VideoCodecType PayloadStringToCodecType(const std::string& name) {
     return kVideoCodecH264;
   if (CodecNamesEq(name.c_str(), kPayloadNameI420))
     return kVideoCodecI420;
-  if (CodecNamesEq(name.c_str(), kPayloadNameRED))
-    return kVideoCodecRED;
-  if (CodecNamesEq(name.c_str(), kPayloadNameULPFEC))
-    return kVideoCodecULPFEC;
-  if (CodecNamesEq(name.c_str(), kPayloadNameFlexfec))
-    return kVideoCodecFlexfec;
   if (CodecNamesEq(name.c_str(), kPayloadNameMultiplex))
     return kVideoCodecMultiplex;
   return kVideoCodecGeneric;
