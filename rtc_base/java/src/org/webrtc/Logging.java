@@ -88,6 +88,9 @@ public class Logging {
   }
 
   public static void log(Severity severity, String tag, String message) {
+    if (tag == null || message == null) {
+      throw new IllegalArgumentException("Logging tag or message may not be null.");
+    }
     if (loggingEnabled) {
       nativeLog(severity.ordinal(), tag, message);
       return;
