@@ -224,7 +224,6 @@
       'android_compile_x86_dbg': 'android_debug_static_bot_x86',
       'android_compile_x86_rel': 'android_release_bot_x86',
       'android_compile_x64_dbg': 'android_debug_static_bot_x64',
-      'android_compile_mips_dbg': 'android_debug_static_bot_mipsel',
       'android_dbg': 'android_debug_static_bot_arm',
       'android_rel': 'android_release_bot_arm',
       'android_arm64_rel': 'android_release_bot_arm64',
@@ -395,9 +394,6 @@
     'android_release_bot_x86': [
       'android', 'gn', 'release_bot', 'x86'
     ],
-    'android_debug_static_bot_mipsel': [
-      'android', 'gn', 'debug_static_bot', 'mipsel'
-    ],
     'android_debug_static_bot_arm64': [
       'android', 'gn', 'debug_static_bot', 'arm64'
     ],
@@ -543,10 +539,6 @@
 
     'minimal_symbols': {
       'gn_args': 'symbol_level=1 strip_absolute_paths_from_debug_symbols=true',
-    },
-
-    'mipsel': {
-      'gn_args': 'target_cpu="mipsel"',
     },
 
     'msan': {
