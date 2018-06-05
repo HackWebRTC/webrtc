@@ -91,7 +91,7 @@ void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
                            frameInfo->renderTimeMs);
 
   // Report timing information.
-  if (frameInfo->timing.flags != TimingFrameFlags::kInvalid) {
+  if (frameInfo->timing.flags != VideoSendTiming::kInvalid) {
     int64_t capture_time_ms = decodedImage.ntp_time_ms() - ntp_offset_;
     // Convert remote timestamps to local time from ntp timestamps.
     frameInfo->timing.encode_start_ms -= ntp_offset_;

@@ -310,7 +310,7 @@ void VCMEncodedFrameCallback::FillTimingInfo(size_t simulcast_svc_idx,
                                              EncodedImage* encoded_image) {
   rtc::Optional<size_t> outlier_frame_size;
   rtc::Optional<int64_t> encode_start_ms;
-  uint8_t timing_flags = TimingFrameFlags::kNotTriggered;
+  uint8_t timing_flags = VideoSendTiming::kNotTriggered;
   {
     rtc::CritScope crit(&timing_params_lock_);
 
@@ -336,7 +336,7 @@ void VCMEncodedFrameCallback::FillTimingInfo(size_t simulcast_svc_idx,
     // Outliers trigger timing frames, but do not affect scheduled timing
     // frames.
     if (outlier_frame_size && encoded_image->_length >= *outlier_frame_size) {
-      timing_flags |= TimingFrameFlags::kTriggeredBySize;
+      timing_flags |= VideoSendTiming::kTriggeredBySize;
     }
 
     // Check if it's time to send a timing frame.
@@ -348,7 +348,7 @@ void VCMEncodedFrameCallback::FillTimingInfo(size_t simulcast_svc_idx,
     if (last_timing_frame_time_ms_ == -1 ||
         timing_frame_delay_ms >= timing_frames_thresholds_.delay_ms ||
         timing_frame_delay_ms == 0) {
-      timing_flags = TimingFrameFlags::kTriggeredByTimer;
+      timing_flags |= VideoSendTiming::kTriggeredByTimer;
       last_timing_frame_time_ms_ = encoded_image->capture_time_ms_;
     }
   }  // rtc::CritScope crit(&timing_params_lock_);
@@ -377,7 +377,7 @@ void VCMEncodedFrameCallback::FillTimingInfo(size_t simulcast_svc_idx,
     encoded_image->SetEncodeTime(*encode_start_ms, now_ms);
     encoded_image->timing_.flags = timing_flags;
   } else {
-    encoded_image->timing_.flags = TimingFrameFlags::kInvalid;
+    encoded_image->timing_.flags = VideoSendTiming::kInvalid;
   }
 }
 

@@ -927,7 +927,7 @@ int LibvpxVp8Encoder::GetEncodedPartitions(
     encoded_images_[encoder_idx].content_type_ =
         (codec_.mode == kScreensharing) ? VideoContentType::SCREENSHARE
                                         : VideoContentType::UNSPECIFIED;
-    encoded_images_[encoder_idx].timing_.flags = TimingFrameFlags::kInvalid;
+    encoded_images_[encoder_idx].timing_.flags = VideoSendTiming::kInvalid;
 
     int qp = -1;
     vpx_codec_control(&encoders_[encoder_idx], VP8E_GET_LAST_QUANTIZER_64, &qp);

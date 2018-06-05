@@ -60,7 +60,7 @@ class EncodedImage {
   PlayoutDelay playout_delay_ = {-1, -1};
 
   struct Timing {
-    uint8_t flags = TimingFrameFlags::kInvalid;
+    uint8_t flags = VideoSendTiming::kInvalid;
     int64_t encode_start_ms = 0;
     int64_t encode_finish_ms = 0;
     int64_t packetization_finish_ms = 0;

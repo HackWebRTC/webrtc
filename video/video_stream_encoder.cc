@@ -901,7 +901,7 @@ EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
       encoded_image.capture_time_ms_ * rtc::kNumMicrosecsPerMillisec;
 
   rtc::Optional<int> encode_duration_us;
-  if (encoded_image.timing_.flags != TimingFrameFlags::kInvalid) {
+  if (encoded_image.timing_.flags != VideoSendTiming::kInvalid) {
     encode_duration_us.emplace(
         // TODO(nisse): Maybe use capture_time_ms_ rather than encode_start_ms_?
         rtc::kNumMicrosecsPerMillisec *

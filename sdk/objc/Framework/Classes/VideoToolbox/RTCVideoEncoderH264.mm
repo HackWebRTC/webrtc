@@ -739,7 +739,7 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
   frame.rotation = rotation;
   frame.contentType = (_mode == RTCVideoCodecModeScreensharing) ? RTCVideoContentTypeScreenshare :
                                                                   RTCVideoContentTypeUnspecified;
-  frame.flags = webrtc::TimingFrameFlags::kInvalid;
+  frame.flags = webrtc::VideoSendTiming::kInvalid;
 
   int qp;
   _h264BitstreamParser.ParseBitstream(buffer->data(), buffer->size());

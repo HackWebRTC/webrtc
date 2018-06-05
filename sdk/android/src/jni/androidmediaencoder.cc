@@ -1004,7 +1004,7 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
       image->content_type_ = (codec_mode_ == VideoCodecMode::kScreensharing)
                                  ? VideoContentType::SCREENSHARE
                                  : VideoContentType::UNSPECIFIED;
-      image->timing_.flags = TimingFrameFlags::kInvalid;
+      image->timing_.flags = VideoSendTiming::kInvalid;
       image->_frameType = (key_frame ? kVideoFrameKey : kVideoFrameDelta);
       image->_completeFrame = true;
       CodecSpecificInfo info;

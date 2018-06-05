@@ -84,7 +84,7 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
   _rotation_set = true;
   content_type_ = last_packet->video_header.content_type;
   if (last_packet->video_header.video_timing.flags !=
-      TimingFrameFlags::kInvalid) {
+      VideoSendTiming::kInvalid) {
     // ntp_time_ms_ may be -1 if not estimated yet. This is not a problem,
     // as this will be dealt with at the time of reporting.
     timing_.encode_start_ms =

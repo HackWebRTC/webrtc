@@ -888,7 +888,7 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
       pkt->data.frame.height[layer_id.spatial_layer_id];
   encoded_image_._encodedWidth =
       pkt->data.frame.width[layer_id.spatial_layer_id];
-  encoded_image_.timing_.flags = TimingFrameFlags::kInvalid;
+  encoded_image_.timing_.flags = VideoSendTiming::kInvalid;
   int qp = -1;
   vpx_codec_control(encoder_, VP8E_GET_LAST_QUANTIZER, &qp);
   encoded_image_.qp_ = qp;

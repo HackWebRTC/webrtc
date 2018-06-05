@@ -526,7 +526,7 @@ TEST(RtpPacketTest, CreateAndParseTimingFrameExtension) {
   timing.packetization_finish_delta_ms = 3;
   timing.pacer_exit_delta_ms = 4;
   timing.flags =
-      TimingFrameFlags::kTriggeredByTimer + TimingFrameFlags::kTriggeredBySize;
+      VideoSendTiming::kTriggeredByTimer | VideoSendTiming::kTriggeredBySize;
 
   send_packet.SetExtension<VideoTimingExtension>(timing);
 

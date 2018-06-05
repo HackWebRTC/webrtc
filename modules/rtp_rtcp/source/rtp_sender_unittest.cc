@@ -1103,7 +1103,7 @@ TEST_P(RtpSenderTest, NoFlexfecForTimingFrames) {
                                             0, 1500));
   RTPVideoHeader video_header;
   memset(&video_header, 0, sizeof(RTPVideoHeader));
-  video_header.video_timing.flags = TimingFrameFlags::kTriggeredByTimer;
+  video_header.video_timing.flags = VideoSendTiming::kTriggeredByTimer;
   EXPECT_TRUE(rtp_sender_->SendOutgoingData(
       kVideoFrameKey, kPayloadType, kTimestamp, kCaptureTimeMs, kPayloadData,
       sizeof(kPayloadData), nullptr, &video_header, nullptr,
@@ -1129,7 +1129,7 @@ TEST_P(RtpSenderTest, NoFlexfecForTimingFrames) {
   EXPECT_CALL(mock_paced_sender_,
               InsertPacket(RtpPacketSender::kLowPriority, kMediaSsrc,
                            kSeqNum + 1, _, _, false));
-  video_header.video_timing.flags = TimingFrameFlags::kInvalid;
+  video_header.video_timing.flags = VideoSendTiming::kInvalid;
   EXPECT_TRUE(rtp_sender_->SendOutgoingData(
       kVideoFrameKey, kPayloadType, kTimestamp + 1, kCaptureTimeMs + 1,
       kPayloadData, sizeof(kPayloadData), nullptr, &video_header, nullptr,
@@ -1705,7 +1705,7 @@ TEST_P(RtpSenderVideoTest, TimingFrameHasPacketizationTimstampSet) {
   const int64_t kCaptureTimestamp = fake_clock_.TimeInMilliseconds();
 
   RTPVideoHeader hdr = {0};
-  hdr.video_timing.flags = TimingFrameFlags::kTriggeredByTimer;
+  hdr.video_timing.flags = VideoSendTiming::kTriggeredByTimer;
   hdr.video_timing.encode_start_delta_ms = kEncodeStartDeltaMs;
   hdr.video_timing.encode_finish_delta_ms = kEncodeFinishDeltaMs;
 
