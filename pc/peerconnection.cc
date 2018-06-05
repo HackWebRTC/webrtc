@@ -4987,8 +4987,6 @@ bool PeerConnection::GetTransportDescription(
 cricket::IceConfig PeerConnection::ParseIceConfig(
     const PeerConnectionInterface::RTCConfiguration& config) const {
   cricket::ContinualGatheringPolicy gathering_policy;
-  // TODO(honghaiz): Add the third continual gathering policy in
-  // PeerConnectionInterface and map it to GATHER_CONTINUALLY_AND_RECOVER.
   switch (config.continual_gathering_policy) {
     case PeerConnectionInterface::GATHER_ONCE:
       gathering_policy = cricket::GATHER_ONCE;

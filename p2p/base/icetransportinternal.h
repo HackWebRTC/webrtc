@@ -51,9 +51,6 @@ enum ContinualGatheringPolicy {
   GATHER_ONCE = 0,
   // The most recent port allocator session will keep on running.
   GATHER_CONTINUALLY,
-  // The most recent port allocator session will keep on running, and it will
-  // try to recover connectivity if the channel becomes disconnected.
-  GATHER_CONTINUALLY_AND_RECOVER,
 };
 
 // ICE Nomination mode.
@@ -78,8 +75,7 @@ struct IceConfig {
   ContinualGatheringPolicy continual_gathering_policy = GATHER_ONCE;
 
   bool gather_continually() const {
-    return continual_gathering_policy == GATHER_CONTINUALLY ||
-           continual_gathering_policy == GATHER_CONTINUALLY_AND_RECOVER;
+    return continual_gathering_policy == GATHER_CONTINUALLY;
   }
 
   // Whether we should prioritize Relay/Relay candidate when nothing

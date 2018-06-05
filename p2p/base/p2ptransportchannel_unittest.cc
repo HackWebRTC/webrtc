@@ -3011,54 +3011,6 @@ TEST_F(P2PTransportChannelMultihomedTest,
   DestroyChannels();
 }
 
-/*
-TODO(honghaiz) Once continual gathering fully supports
-GATHER_CONTINUALLY_AND_RECOVER, put this test back.
-
-// Tests that if the backup connections are lost and then the interface with the
-// selected connection is gone, continual gathering will restore the
-// connectivity.
-TEST_F(P2PTransportChannelMultihomedTest,
-       TestBackupConnectionLostThenInterfaceGone) {
-  rtc::ScopedFakeClock clock;
-  auto& wifi = kAlternateAddrs;
-  auto& cellular = kPublicAddrs;
-  AddAddress(0, wifi[0], "test_wifi0", rtc::ADAPTER_TYPE_WIFI);
-  AddAddress(0, cellular[0], "test_cell0", rtc::ADAPTER_TYPE_CELLULAR);
-  AddAddress(1, wifi[1], "test_wifi1", rtc::ADAPTER_TYPE_WIFI);
-  AddAddress(1, cellular[1], "test_cell1", rtc::ADAPTER_TYPE_CELLULAR);
-  // Use only local ports for simplicity.
-  SetAllocatorFlags(0, kOnlyLocalPorts);
-  SetAllocatorFlags(1, kOnlyLocalPorts);
-
-  // Set continual gathering policy.
-  IceConfig config = CreateIceConfig(1000, GATHER_CONTINUALLY_AND_RECOVER);
-  // Create channels and let them go writable, as usual.
-  CreateChannels(config, config);
-  EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
-                              ep2_ch1()->receiving() && ep2_ch1()->writable(),
-                          kMediumTimeout, clock);
-  EXPECT_TRUE(ep1_ch1()->selected_connection() &&
-              ep2_ch1()->selected_connection() &&
-              LocalCandidate(ep1_ch1())->address().EqualIPs(wifi[0]) &&
-              RemoteCandidate(ep1_ch1())->address().EqualIPs(wifi[1]));
-
-  // First destroy all backup connection.
-  DestroyAllButBestConnection(ep1_ch1());
-
-  SIMULATED_WAIT(false, 10, clock);
-  // Then the interface of the best connection goes away.
-  RemoveAddress(0, wifi[0]);
-  EXPECT_TRUE_SIMULATED_WAIT(
-      ep1_ch1()->selected_connection() && ep2_ch1()->selected_connection() &&
-          LocalCandidate(ep1_ch1())->address().EqualIPs(cellular[0]) &&
-          RemoteCandidate(ep1_ch1())->address().EqualIPs(wifi[1]),
-      kMediumTimeout, clock);
-
-  DestroyChannels();
-}
-*/
-
 // Tests that the backup connection will be restored after it is destroyed.
 TEST_F(P2PTransportChannelMultihomedTest, TestRestoreBackupConnection) {
   rtc::ScopedFakeClock clock;
