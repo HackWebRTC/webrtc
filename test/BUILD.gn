@@ -597,18 +597,6 @@ rtc_source_set("test_common") {
   }
 }
 
-config("test_renderer_exported_config") {
-  if (is_win && is_clang) {
-    # GN orders flags on a target before flags from configs. The default config
-    # adds -Wall, and this flag have to be after -Wall -- so they need to
-    # come from a config and cannot be on the target directly.
-    cflags = [
-      "-Wno-bool-conversion",
-      "-Wno-delete-non-virtual-dtor",
-    ]
-  }
-}
-
 rtc_source_set("test_renderer") {
   public_deps = [
     ":test_renderer_generic",
@@ -695,8 +683,6 @@ rtc_source_set("test_renderer_generic") {
       "log",
     ]
   }
-
-  public_configs = [ ":test_renderer_exported_config" ]
 
   if (!build_with_chromium && is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).

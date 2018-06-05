@@ -148,13 +148,13 @@ D3dRenderer* D3dRenderer::Create(const char* window_title,
 
     wc_atom = RegisterClassA(&wc);
     if (wc_atom == 0)
-      return false;
+      return nullptr;
   }
 
   D3dRenderer* d3d_renderer = new D3dRenderer(width, height);
   if (!d3d_renderer->Init(window_title)) {
     delete d3d_renderer;
-    return NULL;
+    return nullptr;
   }
 
   return d3d_renderer;
