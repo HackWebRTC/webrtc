@@ -28,7 +28,6 @@ const int64_t kFreqOffsetProcessIntervalInMs = 40000;
 const uint32_t kLocalSsrc = 123;
 const uint32_t kRemoteSsrc = 456;
 const int kMinRequiredSamples = 200;
-
 const int kWidth = 1280;
 const int kHeight = 720;
 
@@ -61,7 +60,16 @@ class ReceiveStatisticsProxyTest
   }
 
   VideoFrame CreateFrame(int width, int height) {
-    VideoFrame frame(I420Buffer::Create(width, height), 0, 0, kVideoRotation_0);
+    return CreateVideoFrame(width, height, 0);
+  }
+
+  VideoFrame CreateFrameWithRenderTimeMs(int64_t render_time_ms) {
+    return CreateVideoFrame(kWidth, kHeight, render_time_ms);
+  }
+
+  VideoFrame CreateVideoFrame(int width, int height, int64_t render_time_ms) {
+    VideoFrame frame(I420Buffer::Create(width, height), 0, render_time_ms,
+                     kVideoRotation_0);
     frame.set_ntp_time_ms(fake_clock_.CurrentNtpInMilliseconds());
     return frame;
   }
@@ -725,9 +733,6 @@ TEST_F(ReceiveStatisticsProxyTest, TimingHistogramsAreUpdated) {
 
 TEST_F(ReceiveStatisticsProxyTest, DoesNotReportStaleFramerates) {
   const int kDefaultFps = 30;
-  const int kWidth = 320;
-  const int kHeight = 240;
-
   rtc::scoped_refptr<VideoFrameBuffer> video_frame_buffer(
       I420Buffer::Create(kWidth, kHeight));
   VideoFrame frame(video_frame_buffer, kVideoRotation_0, 0);
@@ -752,8 +757,6 @@ TEST_F(ReceiveStatisticsProxyTest, DoesNotReportStaleFramerates) {
 }
 
 TEST_F(ReceiveStatisticsProxyTest, GetStatsReportsReceivedFrameStats) {
-  const int kWidth = 160;
-  const int kHeight = 120;
   EXPECT_EQ(0, statistics_proxy_->GetStats().width);
   EXPECT_EQ(0, statistics_proxy_->GetStats().height);
   EXPECT_EQ(0u, statistics_proxy_->GetStats().frames_rendered);
@@ -767,9 +770,6 @@ TEST_F(ReceiveStatisticsProxyTest, GetStatsReportsReceivedFrameStats) {
 
 TEST_F(ReceiveStatisticsProxyTest,
        ReceivedFrameHistogramsAreNotUpdatedForTooFewSamples) {
-  const int kWidth = 160;
-  const int kHeight = 120;
-
   for (int i = 0; i < kMinRequiredSamples - 1; ++i)
     statistics_proxy_->OnRenderedFrame(CreateFrame(kWidth, kHeight));
 
@@ -781,9 +781,6 @@ TEST_F(ReceiveStatisticsProxyTest,
 }
 
 TEST_F(ReceiveStatisticsProxyTest, ReceivedFrameHistogramsAreUpdated) {
-  const int kWidth = 160;
-  const int kHeight = 120;
-
   for (int i = 0; i < kMinRequiredSamples; ++i)
     statistics_proxy_->OnRenderedFrame(CreateFrame(kWidth, kHeight));
 
@@ -796,6 +793,95 @@ TEST_F(ReceiveStatisticsProxyTest, ReceivedFrameHistogramsAreUpdated) {
             metrics::NumEvents("WebRTC.Video.ReceivedWidthInPixels", kWidth));
   EXPECT_EQ(1,
             metrics::NumEvents("WebRTC.Video.ReceivedHeightInPixels", kHeight));
+}
+
+TEST_F(ReceiveStatisticsProxyTest, ZeroDelayReportedIfFrameNotDelayed) {
+  statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
+                                    VideoContentType::UNSPECIFIED);
+
+  // Frame not delayed, delayed frames to render: 0%.
+  const int64_t kNowMs = fake_clock_.TimeInMilliseconds();
+  statistics_proxy_->OnRenderedFrame(CreateFrameWithRenderTimeMs(kNowMs));
+
+  // Min run time has passed.
+  fake_clock_.AdvanceTimeMilliseconds((metrics::kMinRunTimeInSeconds * 1000));
+  statistics_proxy_.reset();
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.DelayedFramesToRenderer"));
+  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.DelayedFramesToRenderer", 0));
+  EXPECT_EQ(0, metrics::NumSamples(
+                   "WebRTC.Video.DelayedFramesToRenderer_AvgDelayInMs"));
+}
+
+TEST_F(ReceiveStatisticsProxyTest,
+       DelayedFrameHistogramsAreNotUpdatedIfMinRuntimeHasNotPassed) {
+  statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
+                                    VideoContentType::UNSPECIFIED);
+
+  // Frame not delayed, delayed frames to render: 0%.
+  const int64_t kNowMs = fake_clock_.TimeInMilliseconds();
+  statistics_proxy_->OnRenderedFrame(CreateFrameWithRenderTimeMs(kNowMs));
+
+  // Min run time has not passed.
+  fake_clock_.AdvanceTimeMilliseconds((metrics::kMinRunTimeInSeconds * 1000) -
+                                      1);
+  statistics_proxy_.reset();
+  EXPECT_EQ(0, metrics::NumSamples("WebRTC.Video.DelayedFramesToRenderer"));
+  EXPECT_EQ(0, metrics::NumSamples(
+                   "WebRTC.Video.DelayedFramesToRenderer_AvgDelayInMs"));
+}
+
+TEST_F(ReceiveStatisticsProxyTest,
+       DelayedFramesHistogramsAreNotUpdatedIfNoRenderedFrames) {
+  statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
+                                    VideoContentType::UNSPECIFIED);
+
+  // Min run time has passed. No rendered frames.
+  fake_clock_.AdvanceTimeMilliseconds((metrics::kMinRunTimeInSeconds * 1000));
+  statistics_proxy_.reset();
+  EXPECT_EQ(0, metrics::NumSamples("WebRTC.Video.DelayedFramesToRenderer"));
+  EXPECT_EQ(0, metrics::NumSamples(
+                   "WebRTC.Video.DelayedFramesToRenderer_AvgDelayInMs"));
+}
+
+TEST_F(ReceiveStatisticsProxyTest, DelayReportedIfFrameIsDelayed) {
+  statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
+                                    VideoContentType::UNSPECIFIED);
+
+  // Frame delayed 1 ms, delayed frames to render: 100%.
+  const int64_t kNowMs = fake_clock_.TimeInMilliseconds();
+  statistics_proxy_->OnRenderedFrame(CreateFrameWithRenderTimeMs(kNowMs - 1));
+
+  // Min run time has passed.
+  fake_clock_.AdvanceTimeMilliseconds((metrics::kMinRunTimeInSeconds * 1000));
+  statistics_proxy_.reset();
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.DelayedFramesToRenderer"));
+  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.DelayedFramesToRenderer", 100));
+  EXPECT_EQ(1, metrics::NumSamples(
+                   "WebRTC.Video.DelayedFramesToRenderer_AvgDelayInMs"));
+  EXPECT_EQ(1, metrics::NumEvents(
+                   "WebRTC.Video.DelayedFramesToRenderer_AvgDelayInMs", 1));
+}
+
+TEST_F(ReceiveStatisticsProxyTest, AverageDelayOfDelayedFramesIsReported) {
+  statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
+                                    VideoContentType::UNSPECIFIED);
+
+  // Two frames delayed (6 ms, 10 ms), delayed frames to render: 50%.
+  const int64_t kNowMs = fake_clock_.TimeInMilliseconds();
+  statistics_proxy_->OnRenderedFrame(CreateFrameWithRenderTimeMs(kNowMs - 10));
+  statistics_proxy_->OnRenderedFrame(CreateFrameWithRenderTimeMs(kNowMs - 6));
+  statistics_proxy_->OnRenderedFrame(CreateFrameWithRenderTimeMs(kNowMs));
+  statistics_proxy_->OnRenderedFrame(CreateFrameWithRenderTimeMs(kNowMs + 1));
+
+  // Min run time has passed.
+  fake_clock_.AdvanceTimeMilliseconds((metrics::kMinRunTimeInSeconds * 1000));
+  statistics_proxy_.reset();
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.DelayedFramesToRenderer"));
+  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.DelayedFramesToRenderer", 50));
+  EXPECT_EQ(1, metrics::NumSamples(
+                   "WebRTC.Video.DelayedFramesToRenderer_AvgDelayInMs"));
+  EXPECT_EQ(1, metrics::NumEvents(
+                   "WebRTC.Video.DelayedFramesToRenderer_AvgDelayInMs", 8));
 }
 
 TEST_F(ReceiveStatisticsProxyTest,

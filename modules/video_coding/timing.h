@@ -107,8 +107,6 @@ class VCMTiming {
   int TargetDelayInternal() const RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
  private:
-  void UpdateHistograms() const;
-
   rtc::CriticalSection crit_sect_;
   Clock* const clock_;
   bool master_ RTC_GUARDED_BY(crit_sect_);
@@ -127,12 +125,7 @@ class VCMTiming {
   int last_decode_ms_ RTC_GUARDED_BY(crit_sect_);
   uint32_t prev_frame_timestamp_ RTC_GUARDED_BY(crit_sect_);
   rtc::Optional<TimingFrameInfo> timing_frame_info_ RTC_GUARDED_BY(crit_sect_);
-
-  // Statistics.
   size_t num_decoded_frames_ RTC_GUARDED_BY(crit_sect_);
-  size_t num_delayed_decoded_frames_ RTC_GUARDED_BY(crit_sect_);
-  int64_t first_decoded_frame_ms_ RTC_GUARDED_BY(crit_sect_);
-  uint64_t sum_missed_render_deadline_ms_ RTC_GUARDED_BY(crit_sect_);
 };
 }  // namespace webrtc
 

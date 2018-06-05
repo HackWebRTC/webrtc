@@ -60,10 +60,9 @@ void HistogramTest::VerifyHistogramStats(bool use_rtx,
 
     bool MinMetricRunTimePassed() {
       int64_t now_ms = Clock::GetRealTimeClock()->TimeInMilliseconds();
-      if (!start_runtime_ms_) {
+      if (!start_runtime_ms_)
         start_runtime_ms_ = now_ms;
-        return false;
-      }
+
       int64_t elapsed_sec = (now_ms - *start_runtime_ms_) / 1000;
       return elapsed_sec > metrics::kMinRunTimeInSeconds * 2;
     }
@@ -192,6 +191,7 @@ void HistogramTest::VerifyHistogramStats(bool use_rtx,
   EXPECT_EQ(1, metrics::NumSamples(video_prefix + "SentFramesPerSecond"));
   EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.DecodedFramesPerSecond"));
   EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.RenderFramesPerSecond"));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.DelayedFramesToRenderer"));
 
   EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.JitterBufferDelayInMs"));
   EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.TargetDelayInMs"));

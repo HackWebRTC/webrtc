@@ -14,7 +14,6 @@
 
 #include "rtc_base/time/timestamp_extrapolator.h"
 #include "system_wrappers/include/clock.h"
-#include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
 
@@ -31,10 +30,7 @@ VCMTiming::VCMTiming(Clock* clock, VCMTiming* master_timing)
       last_decode_ms_(0),
       prev_frame_timestamp_(0),
       timing_frame_info_(),
-      num_decoded_frames_(0),
-      num_delayed_decoded_frames_(0),
-      first_decoded_frame_ms_(-1),
-      sum_missed_render_deadline_ms_(0) {
+      num_decoded_frames_(0) {
   if (master_timing == NULL) {
     master_ = true;
     ts_extrapolator_ = new TimestampExtrapolator(clock_->TimeInMilliseconds());
@@ -44,30 +40,8 @@ VCMTiming::VCMTiming(Clock* clock, VCMTiming* master_timing)
 }
 
 VCMTiming::~VCMTiming() {
-  UpdateHistograms();
   if (master_) {
     delete ts_extrapolator_;
-  }
-}
-
-// TODO(asapersson): Move stats to ReceiveStatisticsProxy.
-void VCMTiming::UpdateHistograms() const {
-  rtc::CritScope cs(&crit_sect_);
-  if (num_decoded_frames_ == 0) {
-    return;
-  }
-  int64_t elapsed_sec =
-      (clock_->TimeInMilliseconds() - first_decoded_frame_ms_) / 1000;
-  if (elapsed_sec < metrics::kMinRunTimeInSeconds) {
-    return;
-  }
-  RTC_HISTOGRAM_PERCENTAGE(
-      "WebRTC.Video.DelayedFramesToRenderer",
-      num_delayed_decoded_frames_ * 100 / num_decoded_frames_);
-  if (num_delayed_decoded_frames_ > 0) {
-    RTC_HISTOGRAM_COUNTS_1000(
-        "WebRTC.Video.DelayedFramesToRenderer_AvgDelayInMs",
-        sum_missed_render_deadline_ms_ / num_delayed_decoded_frames_);
   }
 }
 
@@ -183,17 +157,7 @@ void VCMTiming::StopDecodeTimer(uint32_t time_stamp,
   codec_timer_->AddTiming(decode_time_ms, now_ms);
   assert(decode_time_ms >= 0);
   last_decode_ms_ = decode_time_ms;
-
-  // Update stats.
   ++num_decoded_frames_;
-  if (num_decoded_frames_ == 1) {
-    first_decoded_frame_ms_ = now_ms;
-  }
-  int time_until_rendering_ms = render_time_ms - render_delay_ms_ - now_ms;
-  if (time_until_rendering_ms < 0) {
-    sum_missed_render_deadline_ms_ += -time_until_rendering_ms;
-    ++num_delayed_decoded_frames_;
-  }
 }
 
 void VCMTiming::IncomingTimestamp(uint32_t time_stamp, int64_t now_ms) {

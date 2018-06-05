@@ -185,6 +185,8 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   VideoCodecType last_codec_type_ RTC_GUARDED_BY(&crit_);
   rtc::Optional<int64_t> first_decoded_frame_time_ms_ RTC_GUARDED_BY(&crit_);
   rtc::Optional<int64_t> last_decoded_frame_time_ms_ RTC_GUARDED_BY(&crit_);
+  size_t num_delayed_frames_rendered_ RTC_GUARDED_BY(&crit_);
+  int64_t sum_missed_render_deadline_ms_ RTC_GUARDED_BY(&crit_);
   // Mutable because calling Max() on MovingMaxCounter is not const. Yet it is
   // called from const GetStats().
   mutable rtc::MovingMaxCounter<TimingFrameInfo> timing_frame_info_counter_
