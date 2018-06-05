@@ -8,9 +8,20 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+from contextlib import contextmanager
+
+import os
+import tempfile
 import unittest
 
 script = __import__('gtest-parallel-wrapper')  # pylint: disable=invalid-name
+
+
+@contextmanager
+def TemporaryDirectory():
+  tmp_dir = tempfile.mkdtemp()
+  yield tmp_dir
+  os.rmdir(tmp_dir)
 
 
 class GtestParallelWrapperTest(unittest.TestCase):
@@ -50,14 +61,17 @@ class GtestParallelWrapperTest(unittest.TestCase):
     self.assertEqual(result.gtest_parallel_args, expected)
 
   def testArtifacts(self):
-    result = script.ParseArgs(['exec', '--store-test-artifacts',
-                               '--output_dir', '/tmp/foo'])
-    expected = self._Expected(['--output_dir=/tmp/foo', 'exec', '--',
-                               '--test_artifacts_dir=/tmp/foo/test_artifacts'])
-    self.assertEqual(result.gtest_parallel_args, expected)
-    self.assertEqual(result.output_dir, '/tmp/foo')
-    self.assertRegexpMatches(result.test_artifacts_dir,
-                             '/tmp/foo.test_artifacts')
+    with TemporaryDirectory() as tmp_dir:
+      output_dir = os.path.join(tmp_dir, 'foo')
+      result = script.ParseArgs(['exec', '--store-test-artifacts',
+                                 '--output_dir', output_dir])
+      exp_artifacts_dir = os.path.join(output_dir, 'test_artifacts')
+      exp = self._Expected(['--output_dir=' + output_dir, 'exec', '--',
+                            '--test_artifacts_dir=' + exp_artifacts_dir])
+      self.assertEqual(result.gtest_parallel_args, exp)
+      self.assertEqual(result.output_dir, output_dir)
+      self.assertRegexpMatches(result.test_artifacts_dir,
+                               output_dir + '.test_artifacts')
 
   def testNoDirsSpecified(self):
     result = script.ParseArgs(['exec'])
@@ -92,20 +106,23 @@ class GtestParallelWrapperTest(unittest.TestCase):
     self.assertEqual(result.gtest_parallel_args, expected)
 
   def testDocExample(self):
-    result = script.ParseArgs([
-        'some_test', '--some_flag=some_value', '--another_flag',
-        '--output_dir=SOME_OUTPUT_DIR', '--store-test-artifacts',
-        '--isolated-script-test-output=SOME_DIR',
-        '--isolated-script-test-perf-output=SOME_OTHER_DIR',
-        '--foo=bar', '--baz'])
-    expected = self._Expected([
-        '--output_dir=SOME_OUTPUT_DIR', '--dump_json_test_results=SOME_DIR',
-        'some_test', '--',
-        '--test_artifacts_dir=SOME_OUTPUT_DIR/test_artifacts',
-        '--some_flag=some_value', '--another_flag',
-        '--isolated-script-test-perf-output=SOME_OTHER_DIR',
-        '--foo=bar', '--baz'])
-    self.assertEqual(result.gtest_parallel_args, expected)
+    with TemporaryDirectory() as tmp_dir:
+      output_dir = os.path.join(tmp_dir, 'foo')
+      result = script.ParseArgs([
+          'some_test', '--some_flag=some_value', '--another_flag',
+          '--output_dir=' + output_dir, '--store-test-artifacts',
+          '--isolated-script-test-output=SOME_DIR',
+          '--isolated-script-test-perf-output=SOME_OTHER_DIR',
+          '--foo=bar', '--baz'])
+      expected_artifacts_dir = os.path.join(output_dir, 'test_artifacts')
+      expected = self._Expected([
+          '--output_dir=' + output_dir, '--dump_json_test_results=SOME_DIR',
+          'some_test', '--',
+          '--test_artifacts_dir=' + expected_artifacts_dir,
+          '--some_flag=some_value', '--another_flag',
+          '--isolated-script-test-perf-output=SOME_OTHER_DIR',
+          '--foo=bar', '--baz'])
+      self.assertEqual(result.gtest_parallel_args, expected)
 
 
 if __name__ == '__main__':
