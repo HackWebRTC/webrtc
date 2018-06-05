@@ -17,8 +17,11 @@
 #include "rtc_base/ptr_util.h"
 #include "rtc_base/refcount.h"
 #include "rtc_base/refcountedobject.h"
+
+#if defined(AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO)
 #include "sdk/android/src/jni/audio_device/aaudio_player.h"
 #include "sdk/android/src/jni/audio_device/aaudio_recorder.h"
+#endif
 
 #include "sdk/android/src/jni/audio_device/audio_record_jni.h"
 #include "sdk/android/src/jni/audio_device/audio_track_jni.h"
