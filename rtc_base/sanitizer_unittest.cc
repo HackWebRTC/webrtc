@@ -122,28 +122,20 @@ struct Bar {
   Foo foo;
 };
 
-// Run the callback, and crash if it *doesn't* make an uninitialized memory
-// read. If MSan isn't on, just run the callback.
+// Run the callback, and expect a crash if it *doesn't* make an uninitialized
+// memory read. If MSan isn't on, just run the callback.
 template <typename F>
 void MsanExpectUninitializedRead(F&& f) {
 #if RTC_HAS_MSAN
-  // Allow uninitialized memory reads.
-  RTC_LOG(LS_INFO) << "__msan_set_expect_umr(1)";
-  __msan_set_expect_umr(1);
-#endif
+  EXPECT_DEATH(f(), "");
+#else
   f();
-#if RTC_HAS_MSAN
-  // Disallow uninitialized memory reads again, and verify that at least
-  // one uninitialized memory read happened while we weren't looking.
-  RTC_LOG(LS_INFO) << "__msan_set_expect_umr(0)";
-  __msan_set_expect_umr(0);
 #endif
 }
 
 }  // namespace
 
-// TODO(b/9116): Enable the test when the bug is fixed.
-TEST(SanitizerTest, DISABLED_MsanUninitialized) {
+TEST(SanitizerTest, MsanUninitialized) {
   Bar bar = MsanUninitialized<Bar>({});
   // Check that a read after initialization is OK.
   bar.ID = 1;
