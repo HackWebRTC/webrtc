@@ -33,6 +33,11 @@ bool EnableStationaryRenderImprovements() {
       "WebRTC-Aec3StationaryRenderImprovementsKillSwitch");
 }
 
+bool EnableEnforcingDelayAfterRealignment() {
+  return !field_trial::IsEnabled(
+      "WebRTC-Aec3EnforceDelayAfterRealignmentKillSwitch");
+}
+
 float ComputeGainRampupIncrease(const EchoCanceller3Config& config) {
   const auto& c = config.echo_removal_control.gain_rampup;
   return powf(1.f / c.first_non_zero_gain, 1.f / c.non_zero_gain_blocks);
@@ -53,6 +58,7 @@ AecState::AecState(const EchoCanceller3Config& config)
       use_stationary_properties_(
           EnableStationaryRenderImprovements() &&
           config_.echo_audibility.use_stationary_properties),
+      enforce_delay_after_realignment_(EnableEnforcingDelayAfterRealignment()),
       erle_estimator_(config.erle.min, config.erle.max_l, config.erle.max_h),
       max_render_(config_.filter.main.length_blocks, 0.f),
       reverb_decay_(fabsf(config_.ep_strength.default_len)),
@@ -122,6 +128,17 @@ void AecState::Update(
   // Analyze the filter and compute the delays.
   filter_analyzer_.Update(adaptive_filter_impulse_response, render_buffer);
   filter_delay_blocks_ = filter_analyzer_.DelayBlocks();
+  if (enforce_delay_after_realignment_) {
+    if (external_delay &&
+        (!external_delay_ || external_delay_->delay != external_delay->delay)) {
+      frames_since_external_delay_change_ = 0;
+      external_delay_ = external_delay;
+    }
+    if (blocks_with_proper_filter_adaptation_ < 2 * kNumBlocksPerSecond &&
+        external_delay_) {
+      filter_delay_blocks_ = config_.delay.delay_headroom_blocks;
+    }
+  }
 
   if (filter_analyzer_.Consistent()) {
     internal_delay_ = filter_analyzer_.DelayBlocks();
