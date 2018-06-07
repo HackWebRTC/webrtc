@@ -131,22 +131,6 @@ class VCMPacketRequestCallback {
   virtual ~VCMPacketRequestCallback() {}
 };
 
-class NackSender {
- public:
-  virtual void SendNack(const std::vector<uint16_t>& sequence_numbers) = 0;
-
- protected:
-  virtual ~NackSender() {}
-};
-
-class KeyFrameRequestSender {
- public:
-  virtual void RequestKeyFrame() = 0;
-
- protected:
-  virtual ~KeyFrameRequestSender() {}
-};
-
 }  // namespace webrtc
 
 #endif  // MODULES_VIDEO_CODING_INCLUDE_VIDEO_CODING_DEFINES_H_

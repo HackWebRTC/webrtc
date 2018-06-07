@@ -268,6 +268,33 @@ class CallStatsObserver {
 
   virtual ~CallStatsObserver() {}
 };
+
+// Interface used by NackModule and JitterBuffer.
+class NackSender {
+ public:
+  virtual void SendNack(const std::vector<uint16_t>& sequence_numbers) = 0;
+
+ protected:
+  virtual ~NackSender() {}
+};
+
+// Interface used by NackModule and JitterBuffer.
+class KeyFrameRequestSender {
+ public:
+  virtual void RequestKeyFrame() = 0;
+
+ protected:
+  virtual ~KeyFrameRequestSender() {}
+};
+
+// Used to indicate if a received packet contain a complete NALU (or equivalent)
+enum VCMNaluCompleteness {
+  kNaluUnset = 0,     // Packet has not been filled.
+  kNaluComplete = 1,  // Packet can be decoded as is.
+  kNaluStart,         // Packet contain beginning of NALU
+  kNaluIncomplete,    // Packet is not beginning or end of NALU
+  kNaluEnd,           // Packet is the end of a NALU
+};
 }  // namespace webrtc
 
 #endif  // MODULES_INCLUDE_MODULE_COMMON_TYPES_H_

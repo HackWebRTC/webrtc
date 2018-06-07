@@ -9,7 +9,7 @@
  */
 
 #include "modules/video_coding/session_info.h"
-
+#include "modules/video_coding/jitter_buffer_common.h"
 #include "modules/video_coding/packet.h"
 #include "rtc_base/logging.h"
 

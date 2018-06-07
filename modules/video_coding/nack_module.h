@@ -16,8 +16,8 @@
 #include <set>
 
 #include "modules/include/module.h"
+#include "modules/include/module_common_types.h"
 #include "modules/video_coding/histogram.h"
-#include "modules/video_coding/include/video_coding_defines.h"
 #include "modules/video_coding/packet.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/numerics/sequence_number_util.h"
