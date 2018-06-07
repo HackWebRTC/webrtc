@@ -116,7 +116,6 @@ std::string CodecSpecificToString(const VideoCodec& codec) {
     default:
       break;
   }
-  ss << "\n";
   return ss.str();
 }
 
@@ -254,7 +253,7 @@ std::string VideoCodecTestFixtureImpl::Config::ToString() const {
   ss << "\nnum_cores: " << NumberOfCores();
   ss << "\nkeyframe_interval: " << keyframe_interval;
   ss << "\ncodec_type: " << codec_type;
-  ss << "\n--> codec_settings";
+  ss << "\n\n--> codec_settings";
   ss << "\nwidth: " << codec_settings.width;
   ss << "\nheight: " << codec_settings.height;
   ss << "\nmax_framerate_fps: " << codec_settings.maxFramerate;
@@ -262,11 +261,27 @@ std::string VideoCodecTestFixtureImpl::Config::ToString() const {
   ss << "\nmax_bitrate_kbps: " << codec_settings.maxBitrate;
   ss << "\nmin_bitrate_kbps: " << codec_settings.minBitrate;
   ss << "\nmax_qp: " << codec_settings.qpMax;
-  ss << "\nnum_simulcast_streams : "
+  ss << "\nnum_simulcast_streams: "
      << static_cast<int>(codec_settings.numberOfSimulcastStreams);
-  ss << "\n"
-     << "--> codec_settings." << codec_type << "\n";
-  ss << CodecSpecificToString(codec_settings);
+  ss << "\n\n--> codec_settings." << codec_type;
+  ss << "\n" << CodecSpecificToString(codec_settings);
+  if (codec_settings.numberOfSimulcastStreams > 1) {
+    for (int i = 0; i < codec_settings.numberOfSimulcastStreams; ++i) {
+      ss << "\n\n--> codec_settings.simulcastStream[" << i << "]";
+      const SimulcastStream& simulcast_stream =
+          codec_settings.simulcastStream[i];
+      ss << "\nwidth: " << simulcast_stream.width;
+      ss << "\nheight: " << simulcast_stream.height;
+      ss << "\nnum_temporal_layers: "
+         << static_cast<int>(simulcast_stream.numberOfTemporalLayers);
+      ss << "\nmin_bitrate_kbps: " << simulcast_stream.minBitrate;
+      ss << "\ntarget_bitrate_kbps: " << simulcast_stream.targetBitrate;
+      ss << "\nmax_bitrate_kbps: " << simulcast_stream.maxBitrate;
+      ss << "\nmax_qp: " << simulcast_stream.qpMax;
+      ss << "\nactive: " << simulcast_stream.active;
+    }
+  }
+  ss << "\n";
   return ss.str();
 }
 
