@@ -24,10 +24,15 @@ namespace webrtc {
 class CascadedBiQuadFilter {
  public:
   struct BiQuadParam {
-    BiQuadParam(std::complex<float> zero, std::complex<float> pole, float gain);
+    BiQuadParam(std::complex<float> zero,
+                std::complex<float> pole,
+                float gain,
+                bool mirror_zero_along_i_axis = false);
+    BiQuadParam(const BiQuadParam&);
     std::complex<float> zero;
     std::complex<float> pole;
     float gain;
+    bool mirror_zero_along_i_axis;
   };
 
   struct BiQuadCoefficients {

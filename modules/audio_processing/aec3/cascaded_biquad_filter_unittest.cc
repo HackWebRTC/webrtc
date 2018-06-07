@@ -123,4 +123,18 @@ TEST(CascadedBiquadFilter, BiQuadParamHighPass) {
   EXPECT_NEAR(filter.coefficients.a[1], 0.57406192f, epsilon);
 }
 
+// Verifies the conversion from zero, pole, gain to filter coefficients for
+// bandpass filter.
+TEST(CascadedBiquadFilter, BiQuadParamBandPass) {
+  CascadedBiQuadFilter::BiQuadParam param(
+      {1.0f, 0.0f}, {1.11022302e-16f, 0.71381051f}, 0.2452372752527856f, true);
+  CascadedBiQuadFilter::BiQuad filter(param);
+  const float epsilon = 1e-6f;
+  EXPECT_NEAR(filter.coefficients.b[0], 0.24523728f, epsilon);
+  EXPECT_NEAR(filter.coefficients.b[1], 0.f, epsilon);
+  EXPECT_NEAR(filter.coefficients.b[2], -0.24523728f, epsilon);
+  EXPECT_NEAR(filter.coefficients.a[0], -2.22044605e-16f, epsilon);
+  EXPECT_NEAR(filter.coefficients.a[1], 5.09525449e-01f, epsilon);
+}
+
 }  // namespace webrtc

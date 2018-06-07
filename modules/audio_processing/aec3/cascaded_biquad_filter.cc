@@ -15,8 +15,14 @@ namespace webrtc {
 
 CascadedBiQuadFilter::BiQuadParam::BiQuadParam(std::complex<float> zero,
                                                std::complex<float> pole,
-                                               float gain)
-    : zero(zero), pole(pole), gain(gain) {}
+                                               float gain,
+                                               bool mirror_zero_along_i_axis)
+    : zero(zero),
+      pole(pole),
+      gain(gain),
+      mirror_zero_along_i_axis(mirror_zero_along_i_axis) {}
+
+CascadedBiQuadFilter::BiQuadParam::BiQuadParam(const BiQuadParam&) = default;
 
 CascadedBiQuadFilter::BiQuad::BiQuad(
     const CascadedBiQuadFilter::BiQuadParam& param)
@@ -27,10 +33,20 @@ CascadedBiQuadFilter::BiQuad::BiQuad(
   float p_i = std::imag(param.pole);
   float gain = param.gain;
 
-  coefficients.b[0] = gain * 1.f;
-  coefficients.b[1] = gain * -2.f * z_r;
-  coefficients.b[2] = gain * (z_r * z_r + z_i * z_i);
+  if (param.mirror_zero_along_i_axis) {
+    // Assuming zeroes at z_r and -z_r.
+    RTC_DCHECK(z_i == 0.f);
+    coefficients.b[0] = gain * 1.f;
+    coefficients.b[1] = 0.f;
+    coefficients.b[2] = gain * -(z_r * z_r);
+  } else {
+    // Assuming zeros at (z_r + z_i*i) and (z_r - z_i*i).
+    coefficients.b[0] = gain * 1.f;
+    coefficients.b[1] = gain * -2.f * z_r;
+    coefficients.b[2] = gain * (z_r * z_r + z_i * z_i);
+  }
 
+  // Assuming poles at (p_r + p_i*i) and (p_r - p_i*i).
   coefficients.a[0] = -2.f * p_r;
   coefficients.a[1] = p_r * p_r + p_i * p_i;
 }
