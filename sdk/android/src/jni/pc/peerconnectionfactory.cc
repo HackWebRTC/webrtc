@@ -75,7 +75,7 @@ JavaToNativePeerConnectionFactoryOptions(JNIEnv* jni,
 // dependencies.
 
 // Field trials initialization string
-static char* field_trials_init_string = nullptr;
+static std::unique_ptr<std::string> field_trials_init_string;
 
 // Set in PeerConnectionFactory_initializeAndroidGlobals().
 static bool factory_static_initialized = false;
@@ -133,18 +133,15 @@ static void JNI_PeerConnectionFactory_InitializeFieldTrials(
     JNIEnv* jni,
     const JavaParamRef<jclass>&,
     const JavaParamRef<jstring>& j_trials_init_string) {
-  field_trials_init_string = NULL;
-  if (!j_trials_init_string.is_null()) {
-    const char* init_string =
-        jni->GetStringUTFChars(j_trials_init_string.obj(), NULL);
-    int init_string_length =
-        jni->GetStringUTFLength(j_trials_init_string.obj());
-    field_trials_init_string = new char[init_string_length + 1];
-    rtc::strcpyn(field_trials_init_string, init_string_length + 1, init_string);
-    jni->ReleaseStringUTFChars(j_trials_init_string.obj(), init_string);
-    RTC_LOG(LS_INFO) << "initializeFieldTrials: " << field_trials_init_string;
+  if (j_trials_init_string.is_null()) {
+    field_trials_init_string = nullptr;
+    field_trial::InitFieldTrialsFromString(nullptr);
+    return;
   }
-  field_trial::InitFieldTrialsFromString(field_trials_init_string);
+  field_trials_init_string = rtc::MakeUnique<std::string>(
+      JavaToNativeString(jni, j_trials_init_string));
+  RTC_LOG(LS_INFO) << "initializeFieldTrials: " << *field_trials_init_string;
+  field_trial::InitFieldTrialsFromString(field_trials_init_string->c_str());
 }
 
 static void JNI_PeerConnectionFactory_InitializeInternalTracer(
@@ -335,11 +332,8 @@ static void JNI_PeerConnectionFactory_FreeFactory(JNIEnv*,
                                                   const JavaParamRef<jclass>&,
                                                   jlong j_p) {
   delete reinterpret_cast<OwnedFactoryAndThreads*>(j_p);
-  if (field_trials_init_string) {
-    field_trial::InitFieldTrialsFromString(NULL);
-    delete field_trials_init_string;
-    field_trials_init_string = NULL;
-  }
+  field_trial::InitFieldTrialsFromString(nullptr);
+  field_trials_init_string = nullptr;
 }
 
 static void JNI_PeerConnectionFactory_InvokeThreadsCallbacks(
