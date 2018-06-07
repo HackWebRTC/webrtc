@@ -13,7 +13,6 @@
 #include <vector>
 
 #include "modules/audio_coding/include/audio_coding_module.h"
-#include "modules/audio_coding/test/APITest.h"
 #include "modules/audio_coding/test/EncodeDecodeTest.h"
 #include "modules/audio_coding/test/PacketLossTest.h"
 #include "modules/audio_coding/test/TestAllCodecs.h"
@@ -129,11 +128,3 @@ TEST(AudioCodingModuleTest, TestPacketLossStereoBurst) {
 #endif
   webrtc::PacketLossTest(2, 10, 10, 2).Perform();
 }
-
-// The full API test is too long to run automatically on bots, but can be used
-// for offline testing. User interaction is needed.
-#ifdef ACM_TEST_FULL_API
-  TEST(AudioCodingModuleTest, TestAPI) {
-    webrtc::APITest().Perform();
-  }
-#endif

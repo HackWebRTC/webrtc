@@ -1386,8 +1386,6 @@ if (rtc_include_tests) {
 
     sources = [
       "test/ACMTest.h",
-      "test/APITest.cc",
-      "test/APITest.h",
       "test/Channel.cc",
       "test/Channel.h",
       "test/EncodeDecodeTest.cc",
