@@ -17,10 +17,13 @@
 #include "api/audio/echo_canceller3_config.h"
 #include "api/optional.h"
 #include "modules/audio_processing/aec3/aec3_common.h"
+#include "modules/audio_processing/aec3/cascaded_biquad_filter.h"
 #include "modules/audio_processing/aec3/render_buffer.h"
 #include "rtc_base/constructormagic.h"
 
 namespace webrtc {
+
+class ApmDataDumper;
 
 // Class for analyzing the properties of an adaptive filter.
 class FilterAnalyzer {
@@ -48,11 +51,15 @@ class FilterAnalyzer {
  private:
   void UpdateFilterGain(rtc::ArrayView<const float> filter_time_domain,
                         size_t max_index);
+  void PreProcessFilter(rtc::ArrayView<const float> filter_time_domain);
 
+  static int instance_count_;
+  std::unique_ptr<ApmDataDumper> data_dumper_;
+  const bool use_preprocessed_filter_;
   const bool bounded_erl_;
   const float default_gain_;
   const float active_render_threshold_;
-
+  std::vector<float> h_highpass_;
   int delay_blocks_ = 0;
   size_t blocks_since_reset_ = 0;
   bool consistent_estimate_ = false;
