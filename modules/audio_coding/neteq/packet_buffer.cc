@@ -118,7 +118,7 @@ int PacketBuffer::InsertPacket(Packet&& packet, StatisticsCalculator* stats) {
   // packet.
   PacketList::iterator it = rit.base();
   if (it != buffer_.end() && packet.timestamp == it->timestamp) {
-    LogPacketDiscarded(packet.priority.codec_level, stats);
+    LogPacketDiscarded(it->priority.codec_level, stats);
     it = buffer_.erase(it);
   }
   buffer_.insert(it, std::move(packet));  // Insert the packet at that position.
