@@ -1128,9 +1128,9 @@ VideoQualityTest::VideoQualityTest(
 VideoQualityTest::Params::Params()
     : call({false, BitrateConstraints(), 0}),
       video{{false, 640, 480, 30, 50, 800, 800, false, "VP8", 1, -1, 0, false,
-             false, ""},
+             false, false, ""},
             {false, 640, 480, 30, 50, 800, 800, false, "VP8", 1, -1, 0, false,
-             false, ""}},
+             false, false, ""}},
       audio({false, false, false}),
       screenshare{{false, false, 10, 0}, {false, false, 10, 0}},
       analyzer({"", 0.0, 0.0, 0, "", ""}),
@@ -1553,6 +1553,24 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
       video_encoder_configs_[video_idx].encoder_specific_settings =
           new rtc::RefCountedObject<
               VideoEncoderConfig::Vp9EncoderSpecificSettings>(vp9_settings);
+    } else if (params_.video[video_idx].automatic_scaling) {
+      if (params_.video[video_idx].codec == "VP8") {
+        VideoCodecVP8 vp8_settings = VideoEncoder::GetDefaultVp8Settings();
+        vp8_settings.automaticResizeOn = true;
+        video_encoder_configs_[video_idx].encoder_specific_settings =
+            new rtc::RefCountedObject<
+                VideoEncoderConfig::Vp8EncoderSpecificSettings>(vp8_settings);
+      } else if (params_.video[video_idx].codec == "VP9") {
+        VideoCodecVP9 vp9_settings = VideoEncoder::GetDefaultVp9Settings();
+        vp9_settings.automaticResizeOn = true;
+        video_encoder_configs_[video_idx].encoder_specific_settings =
+            new rtc::RefCountedObject<
+                VideoEncoderConfig::Vp9EncoderSpecificSettings>(vp9_settings);
+      } else {
+        RTC_NOTREACHED() << "Automatic scaling not supported for codec "
+                         << params_.video[video_idx].codec
+                         << ", stream " << video_idx;
+      }
     }
     total_streams_used += num_video_substreams;
   }

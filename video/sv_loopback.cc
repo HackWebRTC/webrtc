@@ -508,6 +508,7 @@ void Loopback() {
       flags::ScreenshareMinTransmitBitrateKbps() * 1000,
       false,  // ULPFEC disabled.
       false,  // FlexFEC disabled.
+      false,  // Automatic scaling disabled
       ""};
   params.video[camera_idx] = {flags::FLAG_video,
                               flags::VideoWidth(),
@@ -523,6 +524,7 @@ void Loopback() {
                               0,  // No min transmit bitrate.
                               flags::FLAG_use_ulpfec,
                               flags::FLAG_use_flexfec,
+                              false,
                               flags::VideoClip(),
                               flags::GetCaptureDevice()};
   params.audio = {flags::FLAG_audio, flags::FLAG_audio_video_sync,

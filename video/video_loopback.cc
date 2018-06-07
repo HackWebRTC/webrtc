@@ -300,6 +300,7 @@ void Loopback() {
                      0,  // No min transmit bitrate.
                      flags::FLAG_use_ulpfec,
                      flags::FLAG_use_flexfec,
+                     false,
                      flags::Clip(),
                      flags::GetCaptureDevice()};
   params.audio = {flags::FLAG_audio, flags::FLAG_audio_video_sync,

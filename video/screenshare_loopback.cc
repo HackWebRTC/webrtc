@@ -301,6 +301,7 @@ void Loopback() {
                      flags::MinTransmitBitrateKbps() * 1000,
                      false,  // ULPFEC disabled.
                      false,  // FlexFEC disabled.
+                     false,  // Automatic scaling disabled.
                      ""};
   params.screenshare[0] = {true, flags::GenerateSlides(),
                            flags::SlideChangeInterval(),

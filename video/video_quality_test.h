@@ -53,6 +53,7 @@ class VideoQualityTest : public test::CallTest {
       int min_transmit_bps;
       bool ulpfec;
       bool flexfec;
+      bool automatic_scaling;
       std::string clip_name;  // "Generator" to generate frames instead.
       size_t capture_device_index;
     } video[2];

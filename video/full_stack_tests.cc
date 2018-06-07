@@ -84,7 +84,7 @@ TEST_F(FullStackTest, ForemanCifWithoutPacketLossVp9) {
   foreman_cif.call.send_side_bwe = true;
   foreman_cif.video[0] = {true,   352,    288,   30,    700000,
                           700000, 700000, false, "VP9", 1,
-                          0,      0,      false, false, "foreman_cif"};
+                          0,      0,      false, false, false, "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_net_delay_0_0_plr_0_VP9", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   RunTest(foreman_cif);
@@ -95,7 +95,7 @@ TEST_F(FullStackTest, ForemanCifPlr5Vp9) {
   foreman_cif.call.send_side_bwe = true;
   foreman_cif.video[0] = {true,   352,     288,   30,    30000,
                           500000, 2000000, false, "VP9", 1,
-                          0,      0,       false, false, "foreman_cif"};
+                          0,      0,       false, false, false, "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_delay_50_0_plr_5_VP9", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   foreman_cif.pipe.loss_percent = 5;
@@ -108,7 +108,8 @@ TEST_F(FullStackTest, ForemanCifWithoutPacketLossMultiplexI420Frame) {
   foreman_cif.call.send_side_bwe = true;
   foreman_cif.video[0] = {true,   352,    288,   30,          700000,
                           700000, 700000, false, "multiplex", 1,
-                          0,      0,      false, false,       "foreman_cif"};
+                          0,      0,      false, false,       false,
+                          "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_net_delay_0_0_plr_0_Multiplex", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   RunTest(foreman_cif);
@@ -119,7 +120,8 @@ TEST_F(FullStackTest, GeneratorWithoutPacketLossMultiplexI420AFrame) {
   generator.call.send_side_bwe = true;
   generator.video[0] = {true,   352,    288,   30,          700000,
                         700000, 700000, false, "multiplex", 1,
-                        0,      0,      false, false,       "GeneratorI420A"};
+                        0,      0,      false, false,       false,
+                        "GeneratorI420A"};
   generator.analyzer = {"generator_net_delay_0_0_plr_0_Multiplex", 0.0, 0.0,
                         kFullStackTestDurationSecs};
   RunTest(generator);
@@ -138,7 +140,7 @@ TEST_F(FullStackTest, MAYBE_ParisQcifWithoutPacketLoss) {
   paris_qcif.call.send_side_bwe = true;
   paris_qcif.video[0] = {true,   176,    144,   30,    300000,
                          300000, 300000, false, "VP8", 1,
-                         0,      0,      false, false, "paris_qcif"};
+                         0,      0,      false, false, false, "paris_qcif"};
   paris_qcif.analyzer = {"net_delay_0_0_plr_0", 36.0, 0.96,
                          kFullStackTestDurationSecs};
   RunTest(paris_qcif);
@@ -150,7 +152,7 @@ TEST_F(FullStackTest, ForemanCifWithoutPacketLoss) {
   foreman_cif.call.send_side_bwe = true;
   foreman_cif.video[0] = {true,   352,    288,   30,    700000,
                           700000, 700000, false, "VP8", 1,
-                          0,      0,      false, false, "foreman_cif"};
+                          0,      0,      false, false, false, "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_net_delay_0_0_plr_0", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   RunTest(foreman_cif);
@@ -161,9 +163,23 @@ TEST_F(FullStackTest, ForemanCif30kbpsWithoutPacketLoss) {
   foreman_cif.call.send_side_bwe = true;
   foreman_cif.video[0] = {true,  352,   288,   10,    30000,
                           30000, 30000, false, "VP8", 1,
-                          0,     0,     false, false, "foreman_cif"};
+                          0,     0,     false, false, false, "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_30kbps_net_delay_0_0_plr_0", 0.0, 0.0,
                           kFullStackTestDurationSecs};
+  RunTest(foreman_cif);
+}
+
+// Link capacity below default start rate. Automatic down scaling enabled.
+TEST_F(FullStackTest, ForemanCifLink150kbpsWithoutPacketLoss) {
+  VideoQualityTest::Params foreman_cif;
+  foreman_cif.call.send_side_bwe = true;
+  foreman_cif.video[0] = {true,   352,     288,   30,    30000,
+                          500000, 2000000, false, "VP8", 1,
+                          0,      0,       false,  false, true, "foreman_cif"};
+  foreman_cif.analyzer = {"foreman_cif_link_150kbps_net_delay_0_0_plr_0",
+                          0.0, 0.0,
+                          kFullStackTestDurationSecs};
+  foreman_cif.pipe.link_capacity_kbps = 150;
   RunTest(foreman_cif);
 }
 
@@ -172,7 +188,7 @@ TEST_F(FullStackTest, ForemanCifPlr5) {
   foreman_cif.call.send_side_bwe = true;
   foreman_cif.video[0] = {true,   352,     288,   30,    30000,
                           500000, 2000000, false, "VP8", 1,
-                          0,      0,       false, false, "foreman_cif"};
+                          0,      0,       false, false, false, "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_delay_50_0_plr_5", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   foreman_cif.pipe.loss_percent = 5;
@@ -185,7 +201,7 @@ TEST_F(FullStackTest, ForemanCifPlr5Ulpfec) {
   foreman_cif.call.send_side_bwe = true;
   foreman_cif.video[0] = {true,   352,     288,   30,    30000,
                           500000, 2000000, false, "VP8", 1,
-                          0,      0,       true,  false, "foreman_cif"};
+                          0,      0,       true,  false, false, "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_delay_50_0_plr_5_ulpfec", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   foreman_cif.pipe.loss_percent = 5;
@@ -198,7 +214,7 @@ TEST_F(FullStackTest, ForemanCifPlr5Flexfec) {
   foreman_cif.call.send_side_bwe = true;
   foreman_cif.video[0] = {true,   352,     288,   30,    30000,
                           500000, 2000000, false, "VP8", 1,
-                          0,      0,       false, true,  "foreman_cif"};
+                          0,      0,       false, true,  false, "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_delay_50_0_plr_5_flexfec", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   foreman_cif.pipe.loss_percent = 5;
@@ -211,7 +227,7 @@ TEST_F(FullStackTest, ForemanCif500kbpsPlr3Flexfec) {
   foreman_cif.call.send_side_bwe = true;
   foreman_cif.video[0] = {true,   352,     288,   30,    30000,
                           500000, 2000000, false, "VP8", 1,
-                          0,      0,       false, true,  "foreman_cif"};
+                          0,      0,       false, true,  false, "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_500kbps_delay_50_0_plr_3_flexfec", 0.0,
                           0.0, kFullStackTestDurationSecs};
   foreman_cif.pipe.loss_percent = 3;
@@ -225,7 +241,7 @@ TEST_F(FullStackTest, ForemanCif500kbpsPlr3Ulpfec) {
   foreman_cif.call.send_side_bwe = true;
   foreman_cif.video[0] = {true,   352,     288,   30,    30000,
                           500000, 2000000, false, "VP8", 1,
-                          0,      0,       true,  false, "foreman_cif"};
+                          0,      0,       true,  false, false, "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_500kbps_delay_50_0_plr_3_ulpfec", 0.0,
                           0.0, kFullStackTestDurationSecs};
   foreman_cif.pipe.loss_percent = 3;
@@ -241,7 +257,7 @@ TEST_F(FullStackTest, ForemanCifWithoutPacketlossH264) {
   foreman_cif.call.send_side_bwe = true;
   foreman_cif.video[0] = {true,   352,    288,   30,     700000,
                           700000, 700000, false, "H264", 1,
-                          0,      0,      false, false,  "foreman_cif"};
+                          0,      0,      false, false,  false, "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_net_delay_0_0_plr_0_H264", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   RunTest(foreman_cif);
@@ -252,7 +268,7 @@ TEST_F(FullStackTest, ForemanCif30kbpsWithoutPacketlossH264) {
   foreman_cif.call.send_side_bwe = true;
   foreman_cif.video[0] = {true,  352,   288,   10,     30000,
                           30000, 30000, false, "H264", 1,
-                          0,     0,     false, false,  "foreman_cif"};
+                          0,     0,     false, false,  false, "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_30kbps_net_delay_0_0_plr_0_H264", 0.0,
                           0.0, kFullStackTestDurationSecs};
   RunTest(foreman_cif);
@@ -263,7 +279,7 @@ TEST_F(FullStackTest, ForemanCifPlr5H264) {
   foreman_cif.call.send_side_bwe = true;
   foreman_cif.video[0] = {true,   352,     288,   30,     30000,
                           500000, 2000000, false, "H264", 1,
-                          0,      0,       false, false,  "foreman_cif"};
+                          0,      0,       false, false,  false, "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_delay_50_0_plr_5_H264", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   foreman_cif.pipe.loss_percent = 5;
@@ -279,7 +295,7 @@ TEST_F(FullStackTest, ForemanCifPlr5H264SpsPpsIdrIsKeyframe) {
   foreman_cif.call.send_side_bwe = true;
   foreman_cif.video[0] = {true,   352,     288,   30,     30000,
                           500000, 2000000, false, "H264", 1,
-                          0,      0,       false, false,  "foreman_cif"};
+                          0,      0,       false, false,  false, "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_delay_50_0_plr_5_H264_sps_pps_idr", 0.0,
                           0.0, kFullStackTestDurationSecs};
   foreman_cif.pipe.loss_percent = 5;
@@ -293,7 +309,7 @@ TEST_F(FullStackTest, ForemanCifPlr5H264Flexfec) {
   foreman_cif.call.send_side_bwe = true;
   foreman_cif.video[0] = {true,   352,     288,   30,     30000,
                           500000, 2000000, false, "H264", 1,
-                          0,      0,       false, true,   "foreman_cif"};
+                          0,      0,       false, true,   false, "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_delay_50_0_plr_5_H264_flexfec", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   foreman_cif.pipe.loss_percent = 5;
@@ -308,7 +324,7 @@ TEST_F(FullStackTest, DISABLED_ForemanCifPlr5H264Ulpfec) {
   foreman_cif.call.send_side_bwe = true;
   foreman_cif.video[0] = {true,   352,     288,   30,     30000,
                           500000, 2000000, false, "H264", 1,
-                          0,      0,       true,  false,  "foreman_cif"};
+                          0,      0,       true,  false,  false, "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_delay_50_0_plr_5_H264_ulpfec", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   foreman_cif.pipe.loss_percent = 5;
@@ -322,7 +338,7 @@ TEST_F(FullStackTest, ForemanCif500kbps) {
   foreman_cif.call.send_side_bwe = true;
   foreman_cif.video[0] = {true,   352,     288,   30,    30000,
                           500000, 2000000, false, "VP8", 1,
-                          0,      0,       false, false, "foreman_cif"};
+                          0,      0,       false, false, false, "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_500kbps", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   foreman_cif.pipe.queue_length_packets = 0;
@@ -336,7 +352,7 @@ TEST_F(FullStackTest, ForemanCif500kbpsLimitedQueue) {
   foreman_cif.call.send_side_bwe = true;
   foreman_cif.video[0] = {true,   352,     288,   30,    30000,
                           500000, 2000000, false, "VP8", 1,
-                          0,      0,       false, false, "foreman_cif"};
+                          0,      0,       false, false, false, "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_500kbps_32pkts_queue", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   foreman_cif.pipe.queue_length_packets = 32;
@@ -350,7 +366,7 @@ TEST_F(FullStackTest, ForemanCif500kbps100ms) {
   foreman_cif.call.send_side_bwe = true;
   foreman_cif.video[0] = {true,   352,     288,   30,    30000,
                           500000, 2000000, false, "VP8", 1,
-                          0,      0,       false, false, "foreman_cif"};
+                          0,      0,       false, false, false, "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_500kbps_100ms", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   foreman_cif.pipe.queue_length_packets = 0;
@@ -364,7 +380,7 @@ TEST_F(FullStackTest, ForemanCif500kbps100msLimitedQueue) {
   foreman_cif.call.send_side_bwe = true;
   foreman_cif.video[0] = {true,   352,     288,   30,    30000,
                           500000, 2000000, false, "VP8", 1,
-                          0,      0,       false, false, "foreman_cif"};
+                          0,      0,       false, false, false, "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_500kbps_100ms_32pkts_queue", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   foreman_cif.pipe.queue_length_packets = 32;
@@ -378,7 +394,7 @@ TEST_F(FullStackTest, ForemanCif500kbps100msLimitedQueueRecvBwe) {
   foreman_cif.call.send_side_bwe = false;
   foreman_cif.video[0] = {true,   352,     288,   30,    30000,
                           500000, 2000000, false, "VP8", 1,
-                          0,      0,       false, false, "foreman_cif"};
+                          0,      0,       false, false, false, "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_500kbps_100ms_32pkts_queue_recv_bwe",
                           0.0, 0.0, kFullStackTestDurationSecs};
   foreman_cif.pipe.queue_length_packets = 32;
@@ -392,7 +408,7 @@ TEST_F(FullStackTest, ForemanCif1000kbps100msLimitedQueue) {
   foreman_cif.call.send_side_bwe = true;
   foreman_cif.video[0] = {true,    352,     288,   30,    30000,
                           2000000, 2000000, false, "VP8", 1,
-                          0,       0,       false, false, "foreman_cif"};
+                          0,       0,       false, false, false, "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_1000kbps_100ms_32pkts_queue", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   foreman_cif.pipe.queue_length_packets = 32;
@@ -408,7 +424,7 @@ TEST_F(FullStackTest, ConferenceMotionHd2000kbps100msLimitedQueue) {
   conf_motion_hd.video[0] = {
       true,    1280,    720,   50,    30000,
       3000000, 3000000, false, "VP8", 1,
-      0,       0,       false, false, "ConferenceMotion_1280_720_50"};
+      0,       0,       false, false, false, "ConferenceMotion_1280_720_50"};
   conf_motion_hd.analyzer = {"conference_motion_hd_2000kbps_100ms_32pkts_queue",
                              0.0, 0.0, kFullStackTestDurationSecs};
   conf_motion_hd.pipe.queue_length_packets = 32;
@@ -423,7 +439,7 @@ TEST_F(FullStackTest, ConferenceMotionHd1TLModerateLimits) {
   conf_motion_hd.video[0] = {
       true,    1280,    720,   50,    30000,
       3000000, 3000000, false, "VP8", 1,
-      -1,      0,       false, false, "ConferenceMotion_1280_720_50"};
+      -1,      0,       false, false, false, "ConferenceMotion_1280_720_50"};
   conf_motion_hd.analyzer = {"conference_motion_hd_1tl_moderate_limits", 0.0,
                              0.0, kFullStackTestDurationSecs};
   conf_motion_hd.pipe.queue_length_packets = 50;
@@ -439,7 +455,7 @@ TEST_F(FullStackTest, ConferenceMotionHd2TLModerateLimits) {
   conf_motion_hd.video[0] = {
       true,    1280,    720,   50,    30000,
       3000000, 3000000, false, "VP8", 2,
-      -1,      0,       false, false, "ConferenceMotion_1280_720_50"};
+      -1,      0,       false, false, false, "ConferenceMotion_1280_720_50"};
   conf_motion_hd.analyzer = {"conference_motion_hd_2tl_moderate_limits", 0.0,
                              0.0, kFullStackTestDurationSecs};
   conf_motion_hd.pipe.queue_length_packets = 50;
@@ -455,7 +471,7 @@ TEST_F(FullStackTest, ConferenceMotionHd3TLModerateLimits) {
   conf_motion_hd.video[0] = {
       true,    1280,    720,   50,    30000,
       3000000, 3000000, false, "VP8", 3,
-      -1,      0,       false, false, "ConferenceMotion_1280_720_50"};
+      -1,      0,       false, false, false, "ConferenceMotion_1280_720_50"};
   conf_motion_hd.analyzer = {"conference_motion_hd_3tl_moderate_limits", 0.0,
                              0.0, kFullStackTestDurationSecs};
   conf_motion_hd.pipe.queue_length_packets = 50;
@@ -471,7 +487,7 @@ TEST_F(FullStackTest, ConferenceMotionHd4TLModerateLimits) {
   conf_motion_hd.video[0] = {
       true,    1280,    720,   50,    30000,
       3000000, 3000000, false, "VP8", 4,
-      -1,      0,       false, false, "ConferenceMotion_1280_720_50"};
+      -1,      0,       false, false, false, "ConferenceMotion_1280_720_50"};
   conf_motion_hd.analyzer = {"conference_motion_hd_4tl_moderate_limits", 0.0,
                              0.0, kFullStackTestDurationSecs};
   conf_motion_hd.pipe.queue_length_packets = 50;
@@ -488,7 +504,7 @@ TEST_F(FullStackTest, ConferenceMotionHd3TLModerateLimitsAltTLPattern) {
   conf_motion_hd.video[0] = {
       true,    1280,    720,   50,    30000,
       3000000, 3000000, false, "VP8", 3,
-      -1,      0,       false, false, "ConferenceMotion_1280_720_50"};
+      -1,      0,       false, false, false, "ConferenceMotion_1280_720_50"};
   conf_motion_hd.analyzer = {"conference_motion_hd_3tl_alt_moderate_limits",
                              0.0, 0.0, kFullStackTestDurationSecs};
   conf_motion_hd.pipe.queue_length_packets = 50;
@@ -505,7 +521,7 @@ TEST_F(FullStackTest, ConferenceMotionHd2000kbps100msLimitedQueueVP9) {
   conf_motion_hd.video[0] = {
       true,    1280,    720,   50,    30000,
       3000000, 3000000, false, "VP9", 1,
-      0,       0,       false, false, "ConferenceMotion_1280_720_50"};
+      0,       0,       false, false, false, "ConferenceMotion_1280_720_50"};
   conf_motion_hd.analyzer = {
       "conference_motion_hd_2000kbps_100ms_32pkts_queue_vp9", 0.0, 0.0,
       kFullStackTestDurationSecs};
@@ -521,7 +537,7 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL) {
   screenshare.call.send_side_bwe = true;
   screenshare.video[0] = {true,   1850,    1110,  5,     50000,
                           200000, 2000000, false, "VP8", 2,
-                          1,      400000,  false, false, ""};
+                          1,      400000,  false, false, false, ""};
   screenshare.screenshare[0] = {true, false, 10};
   screenshare.analyzer = {"screenshare_slides", 0.0, 0.0,
                           kFullStackTestDurationSecs};
@@ -535,17 +551,18 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_3TL_Simulcast) {
   screenshare.screenshare[0] = {true, false, 10};
   screenshare.video[0] = {true,    1850,    1110,  5,     800000,
                           2500000, 2500000, false, "VP8", 3,
-                          2,       400000,  false, false, ""};
+                          2,       400000,  false, false, false, ""};
   screenshare.analyzer = {"screenshare_slides_simulcast", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   VideoQualityTest::Params screenshare_params_high;
   screenshare_params_high.video[0] = {true,    1850,    1110,  5,     800000,
                                       2500000, 2500000, false, "VP8", 3,
-                                      0,       400000,  false, false, ""};
+                                      0,       400000,  false, false, false,
+                                      ""};
   VideoQualityTest::Params screenshare_params_low;
   screenshare_params_low.video[0] = {true,   1850,    1110,  5,     50000,
                                      200000, 2000000, false, "VP8", 2,
-                                     0,      400000,  false, false, ""};
+                                     0,      400000,  false, false, false, ""};
 
   std::vector<VideoStream> streams = {
       DefaultVideoStream(screenshare_params_low, 0),
@@ -561,7 +578,7 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL_Scroll) {
   config.call.send_side_bwe = true;
   config.video[0] = {true,   1850,    1110 / 2, 5,     50000,
                      200000, 2000000, false,    "VP8", 2,
-                     1,      400000,  false,    false, ""};
+                     1,      400000,  false,    false, false, ""};
   config.screenshare[0] = {true, false, 10, 2};
   config.analyzer = {"screenshare_slides_scrolling", 0.0, 0.0,
                      kFullStackTestDurationSecs};
@@ -573,7 +590,7 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL_LossyNet) {
   screenshare.call.send_side_bwe = true;
   screenshare.video[0] = {true,   1850,    1110,  5,     50000,
                           200000, 2000000, false, "VP8", 2,
-                          1,      400000,  false, false, ""};
+                          1,      400000,  false, false, false, ""};
   screenshare.screenshare[0] = {true, false, 10};
   screenshare.analyzer = {"screenshare_slides_lossy_net", 0.0, 0.0,
                           kFullStackTestDurationSecs};
@@ -588,7 +605,7 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL_VeryLossyNet) {
   screenshare.call.send_side_bwe = true;
   screenshare.video[0] = {true,   1850,    1110,  5,     50000,
                           200000, 2000000, false, "VP8", 2,
-                          1,      400000,  false, false, ""};
+                          1,      400000,  false, false, false, ""};
   screenshare.screenshare[0] = {true, false, 10};
   screenshare.analyzer = {"screenshare_slides_very_lossy", 0.0, 0.0,
                           kFullStackTestDurationSecs};
@@ -603,7 +620,7 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL_LossyNetRestrictedQueue) {
   screenshare.call.send_side_bwe = true;
   screenshare.video[0] = {true,   1850,    1110,  5,     50000,
                           200000, 2000000, false, "VP8", 2,
-                          1,      400000,  false, false, ""};
+                          1,      400000,  false, false, false, ""};
   screenshare.screenshare[0] = {true, false, 10};
   screenshare.analyzer = {"screenshare_slides_lossy_limited", 0.0, 0.0,
                           kFullStackTestDurationSecs};
@@ -619,7 +636,7 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL_ModeratelyRestricted) {
   screenshare.call.send_side_bwe = true;
   screenshare.video[0] = {true,   1850,    1110,  5,     50000,
                           200000, 2000000, false, "VP8", 2,
-                          1,      400000,  false, false, ""};
+                          1,      400000,  false, false, false, ""};
   screenshare.screenshare[0] = {true, false, 10};
   screenshare.analyzer = {"screenshare_slides_moderately_restricted", 0.0, 0.0,
                           kFullStackTestDurationSecs};
@@ -637,7 +654,7 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL_LossyNetRestrictedQueue_ALR) {
   screenshare.call.send_side_bwe = true;
   screenshare.video[0] = {true,   1850,    1110,  5,     50000,
                           200000, 2000000, false, "VP8", 2,
-                          1,      400000,  false, false, ""};
+                          1,      400000,  false, false, false, ""};
   screenshare.screenshare[0] = {true, false, 10};
   screenshare.analyzer = {"screenshare_slides_lossy_limited_ALR", 0.0, 0.0,
                           kFullStackTestDurationSecs};
@@ -654,7 +671,7 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL_ALR) {
   screenshare.call.send_side_bwe = true;
   screenshare.video[0] = {true,   1850,    1110,  5,     50000,
                           200000, 2000000, false, "VP8", 2,
-                          1,      400000,  false, false, ""};
+                          1,      400000,  false, false, false, ""};
   screenshare.screenshare[0] = {true, false, 10};
   screenshare.analyzer = {"screenshare_slides_ALR", 0.0, 0.0,
                           kFullStackTestDurationSecs};
@@ -667,7 +684,7 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_2TL_ModeratelyRestricted_ALR) {
   screenshare.call.send_side_bwe = true;
   screenshare.video[0] = {true,   1850,    1110,  5,     50000,
                           200000, 2000000, false, "VP8", 2,
-                          1,      400000,  false, false, ""};
+                          1,      400000,  false, false, false, ""};
   screenshare.screenshare[0] = {true, false, 10};
   screenshare.analyzer = {"screenshare_slides_moderately_restricted_ALR", 0.0,
                           0.0, kFullStackTestDurationSecs};
@@ -686,17 +703,18 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_3TL_Simulcast_ALR) {
   screenshare.screenshare[0] = {true, false, 10};
   screenshare.video[0] = {true,    1850,    1110,  5,     800000,
                           2500000, 2500000, false, "VP8", 3,
-                          2,       400000,  false, false, ""};
+                          2,       400000,  false, false, false, ""};
   screenshare.analyzer = {"screenshare_slides_simulcast_alr", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   VideoQualityTest::Params screenshare_params_high;
   screenshare_params_high.video[0] = {true,    1850,    1110,  5,     800000,
                                       2500000, 2500000, false, "VP8", 3,
-                                      0,       400000,  false, false, ""};
+                                      0,       400000,  false, false, false,
+                                      ""};
   VideoQualityTest::Params screenshare_params_low;
   screenshare_params_low.video[0] = {true,   1850,    1110,  5,     50000,
                                      200000, 2000000, false, "VP8", 2,
-                                     0,      400000,  false, false, ""};
+                                     0,      400000,  false, false, false, ""};
 
   std::vector<VideoStream> streams = {
       DefaultVideoStream(screenshare_params_low, 0),
@@ -710,22 +728,22 @@ TEST_F(FullStackTest, ScreenshareSlidesVP8_3TL_Simulcast_ALR) {
 const VideoQualityTest::Params::Video kSvcVp9Video = {
     true,    1280,    720,   30,    800000,
     2500000, 2500000, false, "VP9", 3,
-    2,       400000,  false, false, "ConferenceMotion_1280_720_50"};
+    2,       400000,  false, false, false, "ConferenceMotion_1280_720_50"};
 
 const VideoQualityTest::Params::Video kSimulcastVp8VideoHigh = {
     true,    1280,    720,   30,    800000,
     2500000, 2500000, false, "VP8", 3,
-    2,       400000,  false, false, "ConferenceMotion_1280_720_50"};
+    2,       400000,  false, false, false, "ConferenceMotion_1280_720_50"};
 
 const VideoQualityTest::Params::Video kSimulcastVp8VideoMedium = {
     true,   640,    360,   30,    150000,
     500000, 700000, false, "VP8", 3,
-    2,      400000, false, false, "ConferenceMotion_1280_720_50"};
+    2,      400000, false, false, false, "ConferenceMotion_1280_720_50"};
 
 const VideoQualityTest::Params::Video kSimulcastVp8VideoLow = {
     true,   320,    180,   30,    30000,
     150000, 200000, false, "VP8", 3,
-    2,      400000, false, false, "ConferenceMotion_1280_720_50"};
+    2,      400000, false, false, false, "ConferenceMotion_1280_720_50"};
 
 #if !defined(RTC_DISABLE_VP9)
 TEST_F(FullStackTest, ScreenshareSlidesVP9_2SL) {
@@ -733,7 +751,7 @@ TEST_F(FullStackTest, ScreenshareSlidesVP9_2SL) {
   screenshare.call.send_side_bwe = true;
   screenshare.video[0] = {true,   1850,    1110,  5,     50000,
                           200000, 2000000, false, "VP9", 1,
-                          0,      400000,  false, false, ""};
+                          0,      400000,  false, false, false, ""};
   screenshare.screenshare[0] = {true, false, 10};
   screenshare.analyzer = {"screenshare_slides_vp9_2sl", 0.0, 0.0,
                           kFullStackTestDurationSecs};
@@ -842,7 +860,7 @@ TEST_F(FullStackTest, MAYBE_SimulcastFullHdOveruse) {
   simulcast.call.send_side_bwe = true;
   simulcast.video[0] = {true,    1920,    1080,  30,    800000,
                         2500000, 2500000, false, "VP8", 3,
-                        2,       400000,  false, false, "Generator"};
+                        2,       400000,  false, false, false, "Generator"};
   simulcast.analyzer = {"simulcast_HD_high", 0.0, 0.0,
                         kFullStackTestDurationSecs};
   simulcast.pipe.loss_percent = 0;
@@ -1038,16 +1056,18 @@ TEST_P(DualStreamsTest,
   dual_streams.screenshare[first_stream] = {true, false, 10};
   dual_streams.video[first_stream] = {true,    1850,    1110,  5,     800000,
                                       2500000, 2500000, false, "VP8", 3,
-                                      2,       400000,  false, false, ""};
+                                      2,       400000,  false, false, false,
+                                      ""};
 
   VideoQualityTest::Params screenshare_params_high;
   screenshare_params_high.video[0] = {true,    1850,    1110,  5,     800000,
                                       2500000, 2500000, false, "VP8", 3,
-                                      0,       400000,  false, false, ""};
+                                      0,       400000,  false, false, false,
+                                      ""};
   VideoQualityTest::Params screenshare_params_low;
   screenshare_params_low.video[0] = {true,   1850,    1110,  5,     50000,
                                      200000, 2000000, false, "VP8", 2,
-                                     0,      400000,  false, false, ""};
+                                     0,      400000,  false, false, false, ""};
   std::vector<VideoStream> screenhsare_streams = {
       DefaultVideoStream(screenshare_params_low, 0),
       DefaultVideoStream(screenshare_params_high, 0)};
@@ -1099,12 +1119,13 @@ TEST_P(DualStreamsTest, Conference_Restricted) {
   dual_streams.screenshare[first_stream] = {true, false, 10};
   dual_streams.video[first_stream] = {true,    1850,    1110,  5,     800000,
                                       2500000, 2500000, false, "VP8", 3,
-                                      2,       400000,  false, false, ""};
+                                      2,       400000,  false, false, false,
+                                      ""};
   // Video settings.
   dual_streams.video[1 - first_stream] = {
       true,   1280,   720,   30,    150000,
       500000, 700000, false, "VP8", 3,
-      2,      400000, false, false, "ConferenceMotion_1280_720_50"};
+      2,      400000, false, false, false, "ConferenceMotion_1280_720_50"};
 
   // Call settings.
   dual_streams.call.send_side_bwe = true;
