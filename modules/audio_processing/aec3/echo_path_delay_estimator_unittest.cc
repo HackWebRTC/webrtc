@@ -93,12 +93,14 @@ TEST(EchoPathDelayEstimator, DelayEstimation) {
       }
 
       if (estimated_delay_samples) {
-        // Due to the internal down-sampling done inside the delay estimator
-        // the estimated delay cannot be expected to be exact to the true delay.
-        EXPECT_NEAR(delay_samples,
-                    estimated_delay_samples->delay -
-                        (config.delay.api_call_jitter_blocks + 1) * 64,
-                    config.delay.down_sampling_factor);
+        // Allow estimated delay to be off by one sample in the down-sampled
+        // domain.
+        size_t delay_ds = delay_samples / down_sampling_factor;
+        size_t estimated_delay_ds =
+            (estimated_delay_samples->delay -
+             (config.delay.api_call_jitter_blocks + 1) * 64) /
+            down_sampling_factor;
+        EXPECT_NEAR(delay_ds, estimated_delay_ds, 1);
       } else {
         ADD_FAILURE();
       }

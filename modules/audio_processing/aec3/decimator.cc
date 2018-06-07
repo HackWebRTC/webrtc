@@ -20,11 +20,11 @@ const std::vector<CascadedBiQuadFilter::BiQuadParam> kLowPassFilterDS2 = {
     {{-1.f, 0.f}, {0.13833231f, 0.40743176f}, 0.22711796393486466f},
     {{-1.f, 0.f}, {0.13833231f, 0.40743176f}, 0.22711796393486466f}};
 
-// signal.butter(2, 750/8000.0, 'lowpass', analog=False)
+// signal.ellip(6, 1, 40, 1800/8000, btype='lowpass', analog=False)
 const std::vector<CascadedBiQuadFilter::BiQuadParam> kLowPassFilterDS4 = {
-    {{-1.f, 0.f}, {0.79396855f, 0.17030506f}, 0.017863192751682862f},
-    {{-1.f, 0.f}, {0.79396855f, 0.17030506f}, 0.017863192751682862f},
-    {{-1.f, 0.f}, {0.79396855f, 0.17030506f}, 0.017863192751682862f}};
+    {{-0.08873842f, 0.99605496f}, {0.75916227f, 0.23841065f}, 0.26250696827f},
+    {{0.62273832f, 0.78243018f}, {0.74892112f, 0.5410152f}, 0.26250696827f},
+    {{0.71107693f, 0.70311421f}, {0.74895534f, 0.63924616f}, 0.26250696827f}};
 
 // signal.cheby1(1, 6, [1000/8000, 2000/8000], btype='bandpass', analog=False)
 const std::vector<CascadedBiQuadFilter::BiQuadParam> kBandPassFilterDS8 = {
