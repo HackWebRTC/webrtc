@@ -510,3 +510,51 @@ TEST_F(DtlsSrtpTransportTest, SrtpSessionNotResetWhenRtcpTransportRemoved) {
   // errors when a packet with a duplicate SRTCP index is received.
   SendRecvRtcpPackets();
 }
+
+// Tests that RTCP packets can be sent and received if both sides actively reset
+// the SRTP parameters with the |active_reset_srtp_params_| flag.
+TEST_F(DtlsSrtpTransportTest, ActivelyResetSrtpParams) {
+  auto rtp_dtls1 = rtc::MakeUnique<FakeDtlsTransport>(
+      "audio", cricket::ICE_CANDIDATE_COMPONENT_RTP);
+  auto rtcp_dtls1 = rtc::MakeUnique<FakeDtlsTransport>(
+      "audio", cricket::ICE_CANDIDATE_COMPONENT_RTCP);
+  auto rtp_dtls2 = rtc::MakeUnique<FakeDtlsTransport>(
+      "audio", cricket::ICE_CANDIDATE_COMPONENT_RTP);
+  auto rtcp_dtls2 = rtc::MakeUnique<FakeDtlsTransport>(
+      "audio", cricket::ICE_CANDIDATE_COMPONENT_RTCP);
+
+  MakeDtlsSrtpTransports(rtp_dtls1.get(), rtcp_dtls1.get(), rtp_dtls2.get(),
+                         rtcp_dtls2.get(), /*rtcp_mux_enabled=*/true);
+  CompleteDtlsHandshake(rtp_dtls1.get(), rtp_dtls2.get());
+  CompleteDtlsHandshake(rtcp_dtls1.get(), rtcp_dtls2.get());
+
+  // Send some RTCP packets, causing the SRTCP index to be incremented.
+  SendRecvRtcpPackets();
+
+  // Only set the |active_reset_srtp_params_| flag to be true one side.
+  dtls_srtp_transport1_->SetActiveResetSrtpParams(true);
+  // Set RTCP transport to null to trigger the SRTP parameters update.
+  dtls_srtp_transport1_->SetDtlsTransports(rtp_dtls1.get(), nullptr);
+  dtls_srtp_transport2_->SetDtlsTransports(rtp_dtls2.get(), nullptr);
+
+  // Sending some RTCP packets.
+  size_t rtcp_len = sizeof(kRtcpReport);
+  size_t packet_size = rtcp_len + 4 + kRtpAuthTagLen;
+  rtc::Buffer rtcp_packet_buffer(packet_size);
+  rtc::CopyOnWriteBuffer rtcp_packet(kRtcpReport, rtcp_len, packet_size);
+  int prev_received_packets = transport_observer2_.rtcp_count();
+  ASSERT_TRUE(dtls_srtp_transport1_->SendRtcpPacket(
+      &rtcp_packet, rtc::PacketOptions(), cricket::PF_SRTP_BYPASS));
+  // The RTCP packet is not exepected to be received because the SRTP parameters
+  // are only reset on one side and the SRTCP index is out of sync.
+  EXPECT_EQ(prev_received_packets, transport_observer2_.rtcp_count());
+
+  // Set the flag to be true on the other side.
+  dtls_srtp_transport2_->SetActiveResetSrtpParams(true);
+  // Set RTCP transport to null to trigger the SRTP parameters update.
+  dtls_srtp_transport1_->SetDtlsTransports(rtp_dtls1.get(), nullptr);
+  dtls_srtp_transport2_->SetDtlsTransports(rtp_dtls2.get(), nullptr);
+
+  // RTCP packets flow is expected to work just fine.
+  SendRecvRtcpPackets();
+}

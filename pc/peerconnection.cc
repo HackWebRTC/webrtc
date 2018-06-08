@@ -693,6 +693,7 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
     webrtc::TurnCustomizer* turn_customizer;
     SdpSemantics sdp_semantics;
     rtc::Optional<rtc::AdapterType> network_preference;
+    bool active_reset_srtp_params;
   };
   static_assert(sizeof(stuff_being_tested_for_equality) == sizeof(*this),
                 "Did you add something to RTCConfiguration and forget to "
@@ -739,7 +740,8 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
          ice_regather_interval_range == o.ice_regather_interval_range &&
          turn_customizer == o.turn_customizer &&
          sdp_semantics == o.sdp_semantics &&
-         network_preference == o.network_preference;
+         network_preference == o.network_preference &&
+         active_reset_srtp_params == o.active_reset_srtp_params;
 }
 
 bool PeerConnectionInterface::RTCConfiguration::operator!=(
@@ -937,6 +939,7 @@ bool PeerConnection::Initialize(
 #if defined(ENABLE_EXTERNAL_AUTH)
   config.enable_external_auth = true;
 #endif
+  config.active_reset_srtp_params = configuration.active_reset_srtp_params;
   transport_controller_.reset(new JsepTransportController(
       signaling_thread(), network_thread(), port_allocator_.get(), config));
   transport_controller_->SignalIceConnectionState.connect(

@@ -478,6 +478,8 @@ JsepTransportController::CreateDtlsSrtpTransport(
 
   dtls_srtp_transport->SetDtlsTransports(rtp_dtls_transport,
                                          rtcp_dtls_transport);
+  dtls_srtp_transport->SetActiveResetSrtpParams(
+      config_.active_reset_srtp_params);
   return dtls_srtp_transport;
 }
 
