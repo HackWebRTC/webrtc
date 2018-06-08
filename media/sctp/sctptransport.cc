@@ -25,7 +25,6 @@ enum PreservedErrno {
 
 #include <algorithm>
 #include <memory>
-#include <sstream>
 
 #include "media/base/codec.h"
 #include "media/base/mediaconstants.h"
