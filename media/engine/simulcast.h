@@ -24,7 +24,6 @@ namespace cricket {
 int GetTotalMaxBitrateBps(const std::vector<webrtc::VideoStream>& streams);
 
 // Get simulcast settings.
-// TODO(sprang): Remove default parameter when it's not longer referenced.
 std::vector<webrtc::VideoStream> GetSimulcastConfig(
     size_t max_layers,
     int width,
@@ -33,7 +32,7 @@ std::vector<webrtc::VideoStream> GetSimulcastConfig(
     double bitrate_priority,
     int max_qp,
     int max_framerate,
-    bool is_screenshare = false);
+    bool is_screenshare);
 
 // Gets the simulcast config layers for a non-screensharing case.
 std::vector<webrtc::VideoStream> GetNormalSimulcastLayers(
