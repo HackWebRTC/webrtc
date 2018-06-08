@@ -5,6 +5,26 @@
 /** @fileoverview Externs generated from namespace: fileManagerPrivate */
 
 /**
+ * @const
+ */
+chrome.fileManagerPrivate = {};
+
+/** @enum {string} */
+chrome.fileManagerPrivate.Verb = {
+  OPEN_WITH: 'open_with',
+  ADD_TO: 'add_to',
+  PACK_WITH: 'pack_with',
+  SHARE_WITH: 'share_with',
+};
+
+/** @enum {string} */
+chrome.fileManagerPrivate.SourceRestriction = {
+  ANY_SOURCE: 'any_source',
+  NATIVE_SOURCE: 'native_source',
+  NATIVE_OR_DRIVE_SOURCE: 'native_or_drive_source',
+};
+
+/**
  * @typedef {{
  *   taskId: string,
  *   title: string,
@@ -16,35 +36,27 @@ var FileTask;
 
 /**
  * @typedef {{
- *   icon16x16Url: (string|undefined),
- *   icon32x32Url: (string|undefined)
- * }}
- */
-var IconSet;
-
-/**
- * @typedef {{
  *   size: (number|undefined),
  *   modificationTime: (number|undefined),
  *   modificationByMeTime: (number|undefined),
  *   thumbnailUrl: (string|undefined),
  *   croppedThumbnailUrl: (string|undefined),
- *   externalFileUrl: (string|undefined),
- *   alternateUrl: (string|undefined),
- *   shareUrl: (string|undefined),
  *   imageWidth: (number|undefined),
  *   imageHeight: (number|undefined),
  *   imageRotation: (number|undefined),
  *   pinned: (boolean|undefined),
  *   present: (boolean|undefined),
  *   hosted: (boolean|undefined),
- *   dirty: (boolean|undefined),
  *   availableOffline: (boolean|undefined),
  *   availableWhenMetered: (boolean|undefined),
+ *   dirty: (boolean|undefined),
  *   customIconUrl: (string|undefined),
  *   contentMimeType: (string|undefined),
  *   sharedWithMe: (boolean|undefined),
- *   shared: (boolean|undefined)
+ *   shared: (boolean|undefined),
+ *   externalFileUrl: (string|undefined),
+ *   alternateUrl: (string|undefined),
+ *   shareUrl: (string|undefined)
  * }}
  */
 var EntryProperties;
@@ -68,9 +80,16 @@ var ProfileInfo;
 
 /**
  * @typedef {{
+ *   icon16x16Url: (string|undefined),
+ *   icon32x32Url: (string|undefined)
+ * }}
+ */
+var IconSet;
+
+/**
+ * @typedef {{
  *   volumeId: string,
  *   fileSystemId: (string|undefined),
- *   iconSet: IconSet,
  *   source: string,
  *   volumeLabel: (string|undefined),
  *   profile: ProfileInfo,
@@ -86,7 +105,8 @@ var ProfileInfo;
  *   watchable: boolean,
  *   mountCondition: (string|undefined),
  *   mountContext: (string|undefined),
- *   diskFileSystemType: (string|undefined)
+ *   diskFileSystemType: (string|undefined),
+ *   iconSet: IconSet
  * }}
  */
 var VolumeMetadata;
@@ -105,10 +125,10 @@ var MountCompletedEvent;
  * @typedef {{
  *   fileUrl: string,
  *   transferState: string,
- *   transferType: string,
  *   processed: number,
  *   total: number,
- *   num_total_jobs: number
+ *   num_total_jobs: number,
+ *   hideWhenZeroJobs: boolean
  * }}
  */
 var FileTransferStatus;
@@ -225,19 +245,6 @@ var DeviceEvent;
 var Provider;
 
 /**
- * @typedef {{
- *   id: string,
- *   title: (string|undefined)
- * }}
- */
-var EntryAction;
-
-/**
- * @const
- */
-chrome.fileManagerPrivate = {};
-
-/**
  * Logout the current user for navigating to the re-authentication screen for
  * the Google account.
  */
@@ -280,6 +287,14 @@ chrome.fileManagerPrivate.setDefaultTask = function(taskId, entries, mimeTypes,
  *     matched file entries for this task.
  */
 chrome.fileManagerPrivate.getFileTasks = function(entries, callback) {};
+
+/**
+ * Gets the MIME type of a file.
+ * @param {!Entry} entry
+ * @param {function((string|undefined))} callback Callback that MIME type of the
+ *     file is passed.
+ */
+chrome.fileManagerPrivate.getMimeType = function(entry, callback) {};
 
 /**
  * Gets localized strings and initialization data. |callback|
@@ -603,17 +618,6 @@ chrome.fileManagerPrivate.requestDriveShare = function(entry, shareType,
     callback) {};
 
 /**
- * Requests to install a webstore item. |item_id| The id of the item to
- * install. |silentInstallation| False to show installation prompt. True not to
- * show. |callback|
- * @param {string} itemId
- * @param {boolean} silentInstallation
- * @param {function()} callback Callback that does not take arguments.
- */
-chrome.fileManagerPrivate.installWebstoreItem = function(itemId,
-    silentInstallation, callback) {};
-
-/**
  * Obtains a list of profiles that are logged-in.
  * @param {function((!Array<!ProfileInfo>|undefined), (string|undefined),
  *     (string|undefined))} callback Callback with list of profile information,
@@ -641,14 +645,6 @@ chrome.fileManagerPrivate.openSettingsSubpage = function(sub_page) {};
  * @param {function((string|undefined))} callback
  */
 chrome.fileManagerPrivate.computeChecksum = function(entry, callback) {};
-
-/**
- * Gets the MIME type of a file.
- * @param {!Entry} entry
- * @param {function((string|undefined))} callback Callback that MIME type of the
- *     file is passed.
- */
-chrome.fileManagerPrivate.getMimeType = function(entry, callback) {};
 
 /**
  * Gets a flag indicating whether user metrics reporting is enabled.
@@ -705,6 +701,16 @@ chrome.fileManagerPrivate.configureVolume = function(volumeId, callback) {};
 chrome.fileManagerPrivate.getCustomActions = function(entries, callback) {};
 
 /**
+ * Executes the action on the specified set of entries. If not possible, then
+ * returns an error via chrome.runtime.lastError.
+ * @param {!Array<!Entry>} entries
+ * @param {string} actionId
+ * @param {function()} callback
+ */
+chrome.fileManagerPrivate.executeCustomAction = function(
+    entries, actionId, callback) {};
+
+/**
  * Get the total size of a directory. |entry| Entry of the target directory.
  * |callback|
  * @param {!DirectoryEntry} entry
@@ -718,16 +724,6 @@ chrome.fileManagerPrivate.getDirectorySize = function(entry, callback) {};
  * @param {function((!Array<!FileEntry>))} callback
  */
 chrome.fileManagerPrivate.getRecentFiles = function(restriction, callback) {};
-
-/**
- * Executes the action on the specified set of entries. If not possible, then
- * returns an error via chrome.runtime.lastError.
- * @param {!Array<!Entry>} entries
- * @param {string} actionId
- * @param {function()} callback
- */
-chrome.fileManagerPrivate.executeCustomAction = function(
-    entries, actionId, callback) {};
 
 /**
  * Returns true if crostini is enabled.
@@ -770,17 +766,27 @@ chrome.fileManagerPrivate.onDriveSyncError;
 /** @type {!ChromeEvent} */
 chrome.fileManagerPrivate.onAppsUpdated;
 
-/** @enum {string} */
-chrome.fileManagerPrivate.Verb = {
-  OPEN_WITH: 'open_with',
-  ADD_TO: 'add_to',
-  PACK_WITH: 'pack_with',
-  SHARE_WITH: 'share_with',
-};
+/* The two declarations below (EntryAction, installWebstoreItem) don't have any
+ * corresponding entry in the file_manager_private.idl file.
+ *
+ * TODO(nigeltao): delete them.
+ */
 
-/** @enum {string} */
-chrome.fileManagerPrivate.SourceRestriction = {
-  ANY_SOURCE: 'any_source',
-  NATIVE_SOURCE: 'native_source',
-  NATIVE_OR_DRIVE_SOURCE: 'native_or_drive_source',
-};
+/**
+ * @typedef {{
+ *   id: string,
+ *   title: (string|undefined)
+ * }}
+ */
+var EntryAction;
+
+/**
+ * Requests to install a webstore item. |item_id| The id of the item to
+ * install. |silentInstallation| False to show installation prompt. True not to
+ * show. |callback|
+ * @param {string} itemId
+ * @param {boolean} silentInstallation
+ * @param {function()} callback Callback that does not take arguments.
+ */
+chrome.fileManagerPrivate.installWebstoreItem = function(
+    itemId, silentInstallation, callback) {};

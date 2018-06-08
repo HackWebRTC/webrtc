@@ -180,7 +180,8 @@ if (!is_win) {
       include_dirs = [ "breakpad/src" ]
 
       libfuzzer_options = [
-        "close_fd_mask=3",
+        # Suppress stdout from stackwalk_common, as it uses printf() directly.
+        "close_fd_mask=1",
         "max_len=128000",
       ]
 
