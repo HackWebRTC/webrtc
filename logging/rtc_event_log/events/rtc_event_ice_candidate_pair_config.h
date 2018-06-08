@@ -22,39 +22,44 @@ enum class IceCandidatePairConfigType {
   kUpdated,
   kDestroyed,
   kSelected,
+  kNumValues,
 };
 
 // TODO(qingsi): Change the names of candidate types to "host", "srflx", "prflx"
 // and "relay" after the naming is spec-compliant in the signaling part
 enum class IceCandidateType {
+  kUnknown,
   kLocal,
   kStun,
   kPrflx,
   kRelay,
-  kUnknown,
+  kNumValues,
 };
 
 enum class IceCandidatePairProtocol {
+  kUnknown,
   kUdp,
   kTcp,
   kSsltcp,
   kTls,
-  kUnknown,
+  kNumValues,
 };
 
 enum class IceCandidatePairAddressFamily {
+  kUnknown,
   kIpv4,
   kIpv6,
-  kUnknown,
+  kNumValues,
 };
 
 enum class IceCandidateNetworkType {
+  kUnknown,
   kEthernet,
   kLoopback,
   kWifi,
   kVpn,
   kCellular,
-  kUnknown,
+  kNumValues,
 };
 
 class IceCandidatePairDescription {
