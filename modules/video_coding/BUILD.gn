@@ -456,6 +456,7 @@ rtc_static_library("webrtc_vp9_helpers") {
   deps = [
     ":video_codec_interface",
     "../..:webrtc_common",
+    "../../api/video_codecs:video_codecs_api",
     "../../common_video",
     "../../rtc_base:checks",
   ]
