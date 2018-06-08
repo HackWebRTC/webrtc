@@ -160,6 +160,57 @@ rtc_source_set("audio_device_name") {
   ]
 }
 
+rtc_source_set("windows_core_audio_utility") {
+  if (is_win && !build_with_chromium) {
+    sources = [
+      "win/core_audio_utility_win.cc",
+      "win/core_audio_utility_win.h",
+    ]
+
+    deps = [
+      ":audio_device_api",
+      ":audio_device_name",
+      "../../api/units:time_delta",
+      "../../rtc_base:checks",
+      "../../rtc_base:rtc_base_approved",
+    ]
+  }
+}
+
+# An ADM with a dedicated factory method which does not depend on the
+# audio_device_impl target. The goal is to use this new structure and
+# gradually phase out the old design.
+# TODO(henrika): currently only supported on Windows.
+rtc_source_set("audio_device_module_from_input_and_output") {
+  visibility = [ ":*" ]
+
+  if (is_win && !build_with_chromium) {
+    sources = [
+      "include/audio_device_factory.cc",
+      "include/audio_device_factory.h",
+    ]
+    sources += [
+      "win/audio_device_module_win.cc",
+      "win/audio_device_module_win.h",
+      "win/core_audio_base_win.cc",
+      "win/core_audio_base_win.h",
+      "win/core_audio_input_win.cc",
+      "win/core_audio_input_win.h",
+      "win/core_audio_output_win.cc",
+      "win/core_audio_output_win.h",
+    ]
+
+    deps = [
+      ":audio_device_api",
+      ":audio_device_buffer",
+      ":windows_core_audio_utility",
+      "../../api:optional",
+      "../../rtc_base:checks",
+      "../../rtc_base:rtc_base_approved",
+    ]
+  }
+}
+
 # Contains default implementations of webrtc::AudioDeviceModule for Windows,
 # Linux, Mac, iOS and Android.
 rtc_source_set("audio_device_impl") {
@@ -186,9 +237,6 @@ rtc_source_set("audio_device_impl") {
   ]
   if (rtc_include_internal_audio_device && is_ios) {
     deps += [ ":audio_device_ios_objc" ]
-  }
-  if (is_win) {
-    deps += [ ":audio_device_name" ]
   }
 
   sources = [
@@ -339,8 +387,6 @@ rtc_source_set("audio_device_impl") {
         sources += [
           "win/audio_device_core_win.cc",
           "win/audio_device_core_win.h",
-          "win/core_audio_utility_win.cc",
-          "win/core_audio_utility_win.h",
         ]
         libs = [
           # Required for the built-in WASAPI AEC.
@@ -449,8 +495,12 @@ if (rtc_include_tests) {
     if (is_linux || is_mac || is_win) {
       sources += [ "audio_device_unittest.cc" ]
     }
-    if (is_win && !rtc_use_dummy_audio_file_devices) {
+    if (is_win) {
       sources += [ "win/core_audio_utility_win_unittest.cc" ]
+      deps += [
+        ":audio_device_module_from_input_and_output",
+        ":windows_core_audio_utility",
+      ]
     }
     if (is_android) {
       # Need to disable error due to the line in

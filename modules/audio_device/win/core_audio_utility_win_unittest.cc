@@ -11,7 +11,10 @@
 #include "modules/audio_device/win/core_audio_utility_win.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/win/windows_version.h"
 #include "test/gtest.h"
+
+#include "system_wrappers/include/sleep.h"
 
 using Microsoft::WRL::ComPtr;
 using webrtc::AudioDeviceName;
@@ -53,7 +56,8 @@ bool ShouldAbortTest(bool requirements_satisfied,
 // CoreAudioUtilityWinTest test fixture.
 class CoreAudioUtilityWinTest : public ::testing::Test {
  protected:
-  CoreAudioUtilityWinTest() {
+  CoreAudioUtilityWinTest()
+      : com_init_(webrtc_win::ScopedCOMInitializer::kMTA) {
     // We must initialize the COM library on a thread before we calling any of
     // the library functions. All COM functions will return CO_E_NOTINITIALIZED
     // otherwise.
@@ -242,31 +246,107 @@ TEST_F(CoreAudioUtilityWinTest, GetOutputDeviceNames) {
             2 + core_audio_utility::NumberOfActiveDevices(eRender));
 }
 
+TEST_F(CoreAudioUtilityWinTest, CreateSessionManager2) {
+  ABORT_TEST_IF_NOT(DevicesAvailable() &&
+                    rtc::rtc_win::GetVersion() >= rtc::rtc_win::VERSION_WIN7);
+
+  EDataFlow data_flow[] = {eRender, eCapture};
+
+  // Obtain reference to an IAudioSessionManager2 interface for a default audio
+  // endpoint device specified by two different data flows and the |eConsole|
+  // role.
+  for (size_t i = 0; i < arraysize(data_flow); ++i) {
+    ComPtr<IMMDevice> device(core_audio_utility::CreateDevice(
+        AudioDeviceName::kDefaultDeviceId, data_flow[i], eConsole));
+    EXPECT_TRUE(device.Get());
+    ComPtr<IAudioSessionManager2> session_manager =
+        core_audio_utility::CreateSessionManager2(device.Get());
+    EXPECT_TRUE(session_manager.Get());
+  }
+}
+
+TEST_F(CoreAudioUtilityWinTest, CreateSessionEnumerator) {
+  ABORT_TEST_IF_NOT(DevicesAvailable() &&
+                    rtc::rtc_win::GetVersion() >= rtc::rtc_win::VERSION_WIN7);
+
+  EDataFlow data_flow[] = {eRender, eCapture};
+
+  // Obtain reference to an IAudioSessionEnumerator interface for a default
+  // audio endpoint device specified by two different data flows and the
+  // |eConsole| role.
+  for (size_t i = 0; i < arraysize(data_flow); ++i) {
+    ComPtr<IMMDevice> device(core_audio_utility::CreateDevice(
+        AudioDeviceName::kDefaultDeviceId, data_flow[i], eConsole));
+    EXPECT_TRUE(device.Get());
+    ComPtr<IAudioSessionEnumerator> session_enumerator =
+        core_audio_utility::CreateSessionEnumerator(device.Get());
+    EXPECT_TRUE(session_enumerator.Get());
+
+    // Perform a sanity test of the interface by asking for the total number
+    // of audio sessions that are open on the audio device. Note that, we do
+    // not check if the session is active or not.
+    int session_count = 0;
+    EXPECT_TRUE(SUCCEEDED(session_enumerator->GetCount(&session_count)));
+    EXPECT_GE(session_count, 0);
+  }
+}
+
+TEST_F(CoreAudioUtilityWinTest, NumberOfActiveSessions) {
+  ABORT_TEST_IF_NOT(DevicesAvailable() &&
+                    rtc::rtc_win::GetVersion() >= rtc::rtc_win::VERSION_WIN7);
+
+  EDataFlow data_flow[] = {eRender, eCapture};
+
+  // Count number of active audio session for a default audio endpoint device
+  // specified by two different data flows and the |eConsole| role.
+  // Ensure that the number of active audio sessions is less than or equal to
+  // the total number of audio sessions on that same device.
+  for (size_t i = 0; i < arraysize(data_flow); ++i) {
+    // Create an audio endpoint device.
+    ComPtr<IMMDevice> device(core_audio_utility::CreateDevice(
+        AudioDeviceName::kDefaultDeviceId, data_flow[i], eConsole));
+    EXPECT_TRUE(device.Get());
+
+    // Ask for total number of audio sessions on the created device.
+    ComPtr<IAudioSessionEnumerator> session_enumerator =
+        core_audio_utility::CreateSessionEnumerator(device.Get());
+    EXPECT_TRUE(session_enumerator.Get());
+    int total_session_count = 0;
+    EXPECT_TRUE(SUCCEEDED(session_enumerator->GetCount(&total_session_count)));
+    EXPECT_GE(total_session_count, 0);
+
+    // Use NumberOfActiveSessions and get number of active audio sessions.
+    int active_session_count =
+        core_audio_utility::NumberOfActiveSessions(device.Get());
+    EXPECT_LE(active_session_count, total_session_count);
+  }
+}
+
 TEST_F(CoreAudioUtilityWinTest, CreateClient) {
   ABORT_TEST_IF_NOT(DevicesAvailable());
 
-  EDataFlow data[] = {eRender, eCapture};
+  EDataFlow data_flow[] = {eRender, eCapture};
 
   // Obtain reference to an IAudioClient interface for a default audio endpoint
   // device specified by two different data flows and the |eConsole| role.
-  for (size_t i = 0; i < arraysize(data); ++i) {
+  for (size_t i = 0; i < arraysize(data_flow); ++i) {
     ComPtr<IAudioClient> client = core_audio_utility::CreateClient(
-        AudioDeviceName::kDefaultDeviceId, data[i], eConsole);
+        AudioDeviceName::kDefaultDeviceId, data_flow[i], eConsole);
     EXPECT_TRUE(client.Get());
   }
 }
 
-// TODO(henrik): enable when support for Windows version querying is added.
-TEST_F(CoreAudioUtilityWinTest, DISABLED_CreateClient2) {
-  ABORT_TEST_IF_NOT(DevicesAvailable());
+TEST_F(CoreAudioUtilityWinTest, CreateClient2) {
+  ABORT_TEST_IF_NOT(DevicesAvailable() &&
+                    rtc::rtc_win::GetVersion() >= rtc::rtc_win::VERSION_WIN10);
 
-  EDataFlow data[] = {eRender, eCapture};
+  EDataFlow data_flow[] = {eRender, eCapture};
 
   // Obtain reference to an IAudioClient2 interface for a default audio endpoint
   // device specified by two different data flows and the |eConsole| role.
-  for (size_t i = 0; i < arraysize(data); ++i) {
+  for (size_t i = 0; i < arraysize(data_flow); ++i) {
     ComPtr<IAudioClient2> client = core_audio_utility::CreateClient2(
-        AudioDeviceName::kDefaultDeviceId, data[i], eConsole);
+        AudioDeviceName::kDefaultDeviceId, data_flow[i], eConsole);
     EXPECT_TRUE(client.Get());
   }
 }
@@ -325,16 +405,16 @@ TEST_F(CoreAudioUtilityWinTest, IsFormatSupported) {
 TEST_F(CoreAudioUtilityWinTest, GetDevicePeriod) {
   ABORT_TEST_IF_NOT(DevicesAvailable());
 
-  EDataFlow data[] = {eRender, eCapture};
+  EDataFlow data_flow[] = {eRender, eCapture};
 
   // Verify that the device periods are valid for the default render and
   // capture devices.
-  for (size_t i = 0; i < arraysize(data); ++i) {
+  for (size_t i = 0; i < arraysize(data_flow); ++i) {
     ComPtr<IAudioClient> client;
     REFERENCE_TIME shared_time_period = 0;
     REFERENCE_TIME exclusive_time_period = 0;
     client = core_audio_utility::CreateClient(AudioDeviceName::kDefaultDeviceId,
-                                              data[i], eConsole);
+                                              data_flow[i], eConsole);
     EXPECT_TRUE(client.Get());
     EXPECT_TRUE(SUCCEEDED(core_audio_utility::GetDevicePeriod(
         client.Get(), AUDCLNT_SHAREMODE_SHARED, &shared_time_period)));
@@ -349,25 +429,25 @@ TEST_F(CoreAudioUtilityWinTest, GetDevicePeriod) {
 TEST_F(CoreAudioUtilityWinTest, GetPreferredAudioParameters) {
   ABORT_TEST_IF_NOT(DevicesAvailable());
 
-  EDataFlow data[] = {eRender, eCapture};
+  EDataFlow data_flow[] = {eRender, eCapture};
 
   // Verify that the preferred audio parameters are OK for the default render
   // and capture devices.
-  for (size_t i = 0; i < arraysize(data); ++i) {
+  for (size_t i = 0; i < arraysize(data_flow); ++i) {
     webrtc::AudioParameters params;
     EXPECT_TRUE(SUCCEEDED(core_audio_utility::GetPreferredAudioParameters(
-        AudioDeviceName::kDefaultDeviceId, data[i] == eRender, &params)));
+        AudioDeviceName::kDefaultDeviceId, data_flow[i] == eRender, &params)));
     EXPECT_TRUE(params.is_valid());
     EXPECT_TRUE(params.is_complete());
   }
 
   // Verify that the preferred audio parameters are OK for the default
   // communication devices.
-  for (size_t i = 0; i < arraysize(data); ++i) {
+  for (size_t i = 0; i < arraysize(data_flow); ++i) {
     webrtc::AudioParameters params;
     EXPECT_TRUE(SUCCEEDED(core_audio_utility::GetPreferredAudioParameters(
-        AudioDeviceName::kDefaultCommunicationsDeviceId, data[i] == eRender,
-        &params)));
+        AudioDeviceName::kDefaultCommunicationsDeviceId,
+        data_flow[i] == eRender, &params)));
     EXPECT_TRUE(params.is_valid());
     EXPECT_TRUE(params.is_complete());
   }
@@ -443,23 +523,23 @@ TEST_F(CoreAudioUtilityWinTest, SharedModeInitialize) {
 TEST_F(CoreAudioUtilityWinTest, CreateRenderAndCaptureClients) {
   ABORT_TEST_IF_NOT(DevicesAvailable());
 
-  EDataFlow data[] = {eRender, eCapture};
+  EDataFlow data_flow[] = {eRender, eCapture};
 
   WAVEFORMATPCMEX format;
   uint32_t endpoint_buffer_size = 0;
 
-  for (size_t i = 0; i < arraysize(data); ++i) {
+  for (size_t i = 0; i < arraysize(data_flow); ++i) {
     ComPtr<IAudioClient> client;
     ComPtr<IAudioRenderClient> render_client;
     ComPtr<IAudioCaptureClient> capture_client;
 
     // Create a default client for the given data-flow direction.
     client = core_audio_utility::CreateClient(AudioDeviceName::kDefaultDeviceId,
-                                              data[i], eConsole);
+                                              data_flow[i], eConsole);
     EXPECT_TRUE(client.Get());
     EXPECT_TRUE(SUCCEEDED(
         core_audio_utility::GetSharedModeMixFormat(client.Get(), &format)));
-    if (data[i] == eRender) {
+    if (data_flow[i] == eRender) {
       // It is not possible to create a render client using an unitialized
       // client interface.
       render_client = core_audio_utility::CreateRenderClient(client.Get());
@@ -471,7 +551,7 @@ TEST_F(CoreAudioUtilityWinTest, CreateRenderAndCaptureClients) {
       render_client = core_audio_utility::CreateRenderClient(client.Get());
       EXPECT_TRUE(render_client.Get());
       EXPECT_GT(endpoint_buffer_size, 0u);
-    } else if (data[i] == eCapture) {
+    } else if (data_flow[i] == eCapture) {
       // It is not possible to create a capture client using an unitialized
       // client interface.
       capture_client = core_audio_utility::CreateCaptureClient(client.Get());
@@ -490,18 +570,18 @@ TEST_F(CoreAudioUtilityWinTest, CreateRenderAndCaptureClients) {
 TEST_F(CoreAudioUtilityWinTest, CreateAudioClock) {
   ABORT_TEST_IF_NOT(DevicesAvailable());
 
-  EDataFlow data[] = {eRender, eCapture};
+  EDataFlow data_flow[] = {eRender, eCapture};
 
   WAVEFORMATPCMEX format;
   uint32_t endpoint_buffer_size = 0;
 
-  for (size_t i = 0; i < arraysize(data); ++i) {
+  for (size_t i = 0; i < arraysize(data_flow); ++i) {
     ComPtr<IAudioClient> client;
     ComPtr<IAudioClock> audio_clock;
 
     // Create a default client for the given data-flow direction.
     client = core_audio_utility::CreateClient(AudioDeviceName::kDefaultDeviceId,
-                                              data[i], eConsole);
+                                              data_flow[i], eConsole);
     EXPECT_TRUE(client.Get());
     EXPECT_TRUE(SUCCEEDED(
         core_audio_utility::GetSharedModeMixFormat(client.Get(), &format)));
@@ -522,6 +602,55 @@ TEST_F(CoreAudioUtilityWinTest, CreateAudioClock) {
     UINT64 frequency = 0;
     EXPECT_TRUE(SUCCEEDED(audio_clock->GetFrequency(&frequency)));
     EXPECT_GT(frequency, 0u);
+  }
+}
+
+TEST_F(CoreAudioUtilityWinTest, CreateSimpleAudioVolume) {
+  ABORT_TEST_IF_NOT(DevicesAvailable());
+
+  EDataFlow data_flow[] = {eRender, eCapture};
+
+  WAVEFORMATPCMEX format;
+  uint32_t endpoint_buffer_size = 0;
+
+  for (size_t i = 0; i < arraysize(data_flow); ++i) {
+    ComPtr<IAudioClient> client;
+    ComPtr<ISimpleAudioVolume> simple_audio_volume;
+
+    // Create a default client for the given data-flow direction.
+    client = core_audio_utility::CreateClient(AudioDeviceName::kDefaultDeviceId,
+                                              data_flow[i], eConsole);
+    EXPECT_TRUE(client.Get());
+    EXPECT_TRUE(SUCCEEDED(
+        core_audio_utility::GetSharedModeMixFormat(client.Get(), &format)));
+
+    // It is not possible to create an audio volume using an uninitialized
+    // client interface.
+    simple_audio_volume =
+        core_audio_utility::CreateSimpleAudioVolume(client.Get());
+    EXPECT_FALSE(simple_audio_volume.Get());
+
+    // Do a proper initialization and verify that it works this time.
+    core_audio_utility::SharedModeInitialize(client.Get(), &format, nullptr,
+                                             &endpoint_buffer_size);
+    simple_audio_volume =
+        core_audio_utility::CreateSimpleAudioVolume(client.Get());
+    EXPECT_TRUE(simple_audio_volume.Get());
+    EXPECT_GT(endpoint_buffer_size, 0u);
+
+    // Use the audio volume interface and validate that it works. The volume
+    // level should be value in the range 0.0 to 1.0 at first call.
+    float volume = 0.0;
+    EXPECT_TRUE(SUCCEEDED(simple_audio_volume->GetMasterVolume(&volume)));
+    EXPECT_GE(volume, 0.0);
+    EXPECT_LE(volume, 1.0);
+
+    // Next, set a new volume and verify that the setter does its job.
+    const float target_volume = 0.5;
+    EXPECT_TRUE(SUCCEEDED(
+        simple_audio_volume->SetMasterVolume(target_volume, nullptr)));
+    EXPECT_TRUE(SUCCEEDED(simple_audio_volume->GetMasterVolume(&volume)));
+    EXPECT_EQ(volume, target_volume);
   }
 }
 

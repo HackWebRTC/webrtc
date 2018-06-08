@@ -31,8 +31,12 @@ namespace {
 // implementations.
 //
 // An instance can be created on any thread, but must then be used on one and
-// the same thread. All public methods must also be called on the same thread. A
-// thread checker will RTC_DCHECK if any method is called on an invalid thread.
+// the same thread. All public methods must also be called on the same thread.
+// A thread checker will RTC_DCHECK if any method is called on an invalid
+// thread.
+// TODO(henrika): it might be useful to also support a scenario where the ADM
+// is constructed on thread T1, used on thread T2 and destructed on T2 or T3.
+// If so, care must be taken to ensure that only T2 is a COM thread.
 class AndroidAudioDeviceModule : public AudioDeviceModule {
  public:
   // For use with UMA logging. Must be kept in sync with histograms.xml in

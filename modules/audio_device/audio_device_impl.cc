@@ -72,6 +72,15 @@ namespace webrtc {
 rtc::scoped_refptr<AudioDeviceModule> AudioDeviceModule::Create(
     const AudioLayer audio_layer) {
   RTC_LOG(INFO) << __FUNCTION__;
+
+  // The "AudioDeviceModule::kWindowsCoreAudio2" audio layer has its own
+  // dedicated factory method which should be used instead.
+  if (audio_layer == AudioDeviceModule::kWindowsCoreAudio2) {
+    RTC_LOG(LS_ERROR) << "Use the CreateWindowsCoreAudioAudioDeviceModule() "
+                         "factory method instead for this option.";
+    return nullptr;
+  }
+
   // Create the generic reference counted (platform independent) implementation.
   rtc::scoped_refptr<AudioDeviceModuleImpl> audioDevice(
       new rtc::RefCountedObject<AudioDeviceModuleImpl>(audio_layer));

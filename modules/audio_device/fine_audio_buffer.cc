@@ -65,18 +65,27 @@ void FineAudioBuffer::GetPlayoutData(rtc::ArrayView<int16_t> audio_buffer,
   while (playout_buffer_.size() < audio_buffer.size()) {
     // Get 10ms decoded audio from WebRTC. The ADB knows about number of
     // channels; hence we can ask for number of samples per channel here.
-    audio_device_buffer_->RequestPlayoutData(playout_samples_per_channel_10ms_);
-    // Append 10ms to the end of the local buffer taking number of channels
-    // into account.
-    const size_t num_elements_10ms =
-        playout_channels_ * playout_samples_per_channel_10ms_;
-    const size_t written_elements = playout_buffer_.AppendData(
-        num_elements_10ms, [&](rtc::ArrayView<int16_t> buf) {
-          const size_t samples_per_channel_10ms =
-              audio_device_buffer_->GetPlayoutData(buf.data());
-          return playout_channels_ * samples_per_channel_10ms;
-        });
-    RTC_DCHECK_EQ(num_elements_10ms, written_elements);
+    if (audio_device_buffer_->RequestPlayoutData(
+            playout_samples_per_channel_10ms_) ==
+        static_cast<int32_t>(playout_samples_per_channel_10ms_)) {
+      // Append 10ms to the end of the local buffer taking number of channels
+      // into account.
+      const size_t num_elements_10ms =
+          playout_channels_ * playout_samples_per_channel_10ms_;
+      const size_t written_elements = playout_buffer_.AppendData(
+          num_elements_10ms, [&](rtc::ArrayView<int16_t> buf) {
+            const size_t samples_per_channel_10ms =
+                audio_device_buffer_->GetPlayoutData(buf.data());
+            return playout_channels_ * samples_per_channel_10ms;
+          });
+      RTC_DCHECK_EQ(num_elements_10ms, written_elements);
+    } else {
+      // Provide silence if AudioDeviceBuffer::RequestPlayoutData() fails.
+      // Can e.g. happen when an AudioTransport has not been registered.
+      const size_t num_bytes = audio_buffer.size() * sizeof(int16_t);
+      std::memset(audio_buffer.data(), 0, num_bytes);
+      return;
+    }
   }
 
   // Provide the requested number of bytes to the consumer.

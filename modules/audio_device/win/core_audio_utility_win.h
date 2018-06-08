@@ -12,6 +12,7 @@
 #define MODULES_AUDIO_DEVICE_WIN_CORE_AUDIO_UTILITY_WIN_H_
 
 #include <Audioclient.h>
+#include <Audiopolicy.h>
 #include <Mmdeviceapi.h>
 #include <avrt.h>
 #include <comdef.h>
@@ -25,6 +26,8 @@
 #include "modules/audio_device/audio_device_name.h"
 #include "modules/audio_device/include/audio_device_defines.h"
 #include "rtc_base/logging.h"
+
+#pragma comment(lib, "Avrt.lib")
 
 namespace webrtc {
 namespace webrtc_win {
@@ -78,6 +81,10 @@ class ScopedMMCSSRegistration {
 class ScopedCOMInitializer {
  public:
   // Enum value provided to initialize the thread as an MTA instead of STA.
+  // There are two types of apartments, Single Threaded Apartments (STAs)
+  // and Multi Threaded Apartments (MTAs). Within a given process there can
+  // be multiple STA’s but there is only one MTA. STA is typically used by
+  // "GUI applications" and MTA by "worker threads" with no UI message loop.
   enum SelectMTA { kMTA };
 
   // Constructor for STA initialization.
@@ -107,9 +114,23 @@ class ScopedCOMInitializer {
   void Initialize(COINIT init) {
     // Initializes the COM library for use by the calling thread, sets the
     // thread's concurrency model, and creates a new apartment for the thread
-    // if one is required.
+    // if one is required. CoInitializeEx must be called at least once, and is
+    // usually called only once, for each thread that uses the COM library.
     hr_ = CoInitializeEx(NULL, init);
-    RTC_CHECK_NE(RPC_E_CHANGED_MODE, hr_) << "Invalid COM thread model change";
+    RTC_CHECK_NE(RPC_E_CHANGED_MODE, hr_)
+        << "Invalid COM thread model change (MTA->STA)";
+    // Multiple calls to CoInitializeEx by the same thread are allowed as long
+    // as they pass the same concurrency flag, but subsequent valid calls
+    // return S_FALSE. To close the COM library gracefully on a thread, each
+    // successful call to CoInitializeEx, including any call that returns
+    // S_FALSE, must be balanced by a corresponding call to CoUninitialize.
+    if (hr_ == S_OK) {
+      RTC_DLOG(INFO)
+          << "The COM library was initialized successfully on this thread";
+    } else if (hr_ == S_FALSE) {
+      RTC_DLOG(WARNING)
+          << "The COM library is already initialized on this thread";
+    }
   }
   HRESULT hr_;
 };
@@ -263,6 +284,12 @@ namespace core_audio_utility {
 // other methods in this class.
 bool IsSupported();
 
+// Returns true if Multimedia Class Scheduler service (MMCSS) is supported.
+// The MMCSS enables multimedia applications to ensure that their time-sensitive
+// processing receives prioritized access to CPU resources without denying CPU
+// resources to lower-priority applications.
+bool IsMMCSSSupported();
+
 // The MMDevice API lets clients discover the audio endpoint devices in the
 // system and determine which devices are suitable for the application to use.
 // Header file Mmdeviceapi.h defines the interfaces in the MMDevice API.
@@ -320,7 +347,22 @@ bool GetOutputDeviceNames(webrtc::AudioDeviceNames* device_names);
 // device. Header files Audioclient.h and Audiopolicy.h define the WASAPI
 // interfaces.
 
-// Create an IAudioClient instance for a specific device or the default
+// Creates an IAudioSessionManager2 interface for the specified |device|.
+// This interface provides access to e.g. the IAudioSessionEnumerator
+Microsoft::WRL::ComPtr<IAudioSessionManager2> CreateSessionManager2(
+    IMMDevice* device);
+
+// Creates an IAudioSessionEnumerator interface for the specified |device|.
+// The client can use the interface to enumerate audio sessions on the audio
+// device
+Microsoft::WRL::ComPtr<IAudioSessionEnumerator> CreateSessionEnumerator(
+    IMMDevice* device);
+
+// Number of active audio sessions for the given |device|. Expired or inactive
+// sessions are not included.
+int NumberOfActiveSessions(IMMDevice* device);
+
+// Creates an IAudioClient instance for a specific device or the default
 // device specified by data-flow direction and role.
 Microsoft::WRL::ComPtr<IAudioClient> CreateClient(const std::string& device_id,
                                                   EDataFlow data_flow,
@@ -384,8 +426,7 @@ HRESULT GetPreferredAudioParameters(IAudioClient* client,
 // TODO(henrika):
 // - use IAudioClient2::SetClientProperties before calling this method
 // - IAudioClient::Initialize(your_format, AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM
-// |
-//   AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY)
+//                            AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY)
 HRESULT SharedModeInitialize(IAudioClient* client,
                              const WAVEFORMATEXTENSIBLE* format,
                              HANDLE event_handle,
@@ -410,12 +451,17 @@ Microsoft::WRL::ComPtr<IAudioCaptureClient> CreateCaptureClient(
 // data rate and the current position in the stream.
 Microsoft::WRL::ComPtr<IAudioClock> CreateAudioClock(IAudioClient* client);
 
+// Creates an ISimpleAudioVolume interface for an existing IAudioClient given by
+// |client|. This interface enables a client to control the master volume level
+// of an active audio session.
+Microsoft::WRL::ComPtr<ISimpleAudioVolume> CreateSimpleAudioVolume(
+    IAudioClient* client);
+
 // Fills up the endpoint rendering buffer with silence for an existing
 // IAudioClient given by |client| and a corresponding IAudioRenderClient
 // given by |render_client|.
 bool FillRenderEndpointBufferWithSilence(IAudioClient* client,
                                          IAudioRenderClient* render_client);
-
 // Transforms a WAVEFORMATEXTENSIBLE struct to a human-readable string.
 std::string WaveFormatExToString(const WAVEFORMATEXTENSIBLE* format);
 
