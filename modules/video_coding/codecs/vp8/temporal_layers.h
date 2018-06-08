@@ -15,7 +15,8 @@
 #include <vector>
 #include <memory>
 
-#include "api/video_codecs/video_codec.h"
+#include "common_types.h"  // NOLINT(build/include)
+#include "typedefs.h"  // NOLINT(build/include)
 
 #define VP8_TS_MAX_PERIODICITY 16
 #define VP8_TS_MAX_LAYERS 5

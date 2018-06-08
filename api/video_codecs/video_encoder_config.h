@@ -15,8 +15,8 @@
 #include <vector>
 
 #include "api/optional.h"
-#include "api/video_codecs/video_codec.h"
 #include "api/video_codecs/sdp_video_format.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/refcount.h"
 #include "rtc_base/scoped_ref_ptr.h"
 
@@ -28,8 +28,8 @@ struct VideoStream {
   VideoStream(const VideoStream& other);
   std::string ToString() const;
 
-  int width;
-  int height;
+  size_t width;
+  size_t height;
   int max_framerate;
 
   int min_bitrate_bps;

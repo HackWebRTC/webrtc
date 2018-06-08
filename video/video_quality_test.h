@@ -40,8 +40,6 @@ class VideoQualityTest : public test::CallTest {
     } call;
     struct Video {
       bool enabled;
-      // TODO(nisse): Change type of |width| and |height| to int, which is what
-      // the majority of the webrtc code uses for frame dimensions.
       size_t width;
       size_t height;
       int32_t fps;

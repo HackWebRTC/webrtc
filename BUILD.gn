@@ -383,8 +383,9 @@ rtc_source_set("typedefs") {
   ]
 }
 
-rtc_source_set("webrtc_common") {
+rtc_static_library("webrtc_common") {
   sources = [
+    "common_types.cc",
     "common_types.h",
   ]
   deps = [

@@ -41,10 +41,10 @@ std::vector<VideoStream> CreateVideoStreams(
   int bitrate_left_bps = encoder_config.max_bitrate_bps;
 
   for (size_t i = 0; i < encoder_config.number_of_streams; ++i) {
-    stream_settings[i].width = static_cast<int>(
-        (i + 1) * width / encoder_config.number_of_streams);
-    stream_settings[i].height = static_cast<int>(
-        (i + 1) * height / encoder_config.number_of_streams);
+    stream_settings[i].width =
+        (i + 1) * width / encoder_config.number_of_streams;
+    stream_settings[i].height =
+        (i + 1) * height / encoder_config.number_of_streams;
     stream_settings[i].max_framerate = 30;
     stream_settings[i].min_bitrate_bps =
         DefaultVideoStreamFactory::kDefaultMinBitratePerStream[i];

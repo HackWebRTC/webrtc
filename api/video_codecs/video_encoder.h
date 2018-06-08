@@ -27,6 +27,7 @@ namespace webrtc {
 class RTPFragmentationHeader;
 // TODO(pbos): Expose these through a public (root) header or change these APIs.
 struct CodecSpecificInfo;
+class VideoCodec;
 
 class EncodedImageCallback {
  public:
