@@ -81,6 +81,35 @@ class ObjCCallbackVideoSink : public rtc::VideoSinkInterface<webrtc::VideoFrame>
   CVBufferRelease(pixelBufferRef);
 }
 
+- (void)testOnCapturedFrameAdaptsFrameWithAlignment {
+  // Requesting to adapt 1280x720 to 912x514 gives 639x360 without alignment. The 639 causes issues
+  // with some hardware encoders (e.g. HEVC) so in this test we verify that the alignment is set and
+  // respected.
+
+  CVPixelBufferRef pixelBufferRef = NULL;
+  CVPixelBufferCreate(
+      NULL, 720, 1280, kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange, NULL, &pixelBufferRef);
+
+  RTCCVPixelBuffer *buffer = [[RTCCVPixelBuffer alloc] initWithPixelBuffer:pixelBufferRef];
+
+  RTCVideoFrame *frame =
+      [[RTCVideoFrame alloc] initWithBuffer:buffer rotation:RTCVideoRotation_0 timeStampNs:0];
+
+  cricket::FakeVideoRenderer *video_renderer = new cricket::FakeVideoRenderer();
+  const rtc::VideoSinkWants video_sink_wants;
+  rtc::VideoSourceInterface<webrtc::VideoFrame> *video_source_interface = _video_source;
+  video_source_interface->AddOrUpdateSink(video_renderer, video_sink_wants);
+
+  _video_source->OnOutputFormatRequest(912, 514, 30);
+  _video_source->OnCapturedFrame(frame);
+
+  XCTAssertEqual(video_renderer->num_rendered_frames(), 1);
+  XCTAssertEqual(video_renderer->width(), 360);
+  XCTAssertEqual(video_renderer->height(), 640);
+
+  CVBufferRelease(pixelBufferRef);
+}
+
 - (void)testOnCapturedFrameWithoutAdaptation {
   CVPixelBufferRef pixelBufferRef = NULL;
   CVPixelBufferCreate(
@@ -197,14 +226,14 @@ class ObjCCallbackVideoSink : public rtc::VideoSinkInterface<webrtc::VideoFrame>
 
   XCTestExpectation *callbackExpectation = [self expectationWithDescription:@"videoSinkCallback"];
   ObjCCallbackVideoSink callback_video_sink(^void(RTCVideoFrame *outputFrame) {
-    XCTAssertEqual(outputFrame.width, 297);
-    XCTAssertEqual(outputFrame.height, 525);
+    XCTAssertEqual(outputFrame.width, 300);
+    XCTAssertEqual(outputFrame.height, 516);
 
     RTCCVPixelBuffer *outputBuffer = outputFrame.buffer;
-    XCTAssertEqual(outputBuffer.cropX, 152);
-    XCTAssertEqual(outputBuffer.cropY, 0);
-    XCTAssertEqual(outputBuffer.cropWidth, 396);
-    XCTAssertEqual(outputBuffer.cropHeight, 700);
+    XCTAssertEqual(outputBuffer.cropX, 150);
+    XCTAssertEqual(outputBuffer.cropY, 6);
+    XCTAssertEqual(outputBuffer.cropWidth, 400);
+    XCTAssertEqual(outputBuffer.cropHeight, 688);
     XCTAssertEqual(buffer.pixelBuffer, outputBuffer.pixelBuffer);
 
     [callbackExpectation fulfill];
@@ -280,13 +309,13 @@ class ObjCCallbackVideoSink : public rtc::VideoSinkInterface<webrtc::VideoFrame>
   XCTestExpectation *callbackExpectation = [self expectationWithDescription:@"videoSinkCallback"];
   ObjCCallbackVideoSink callback_video_sink(^void(RTCVideoFrame *outputFrame) {
     XCTAssertEqual(outputFrame.width, 300);
-    XCTAssertEqual(outputFrame.height, 533);
+    XCTAssertEqual(outputFrame.height, 536);
 
     RTCCVPixelBuffer *outputBuffer = outputFrame.buffer;
     XCTAssertEqual(outputBuffer.cropX, 40);
     XCTAssertEqual(outputBuffer.cropY, 52);
     XCTAssertEqual(outputBuffer.cropWidth, 300);
-    XCTAssertEqual(outputBuffer.cropHeight, 533);
+    XCTAssertEqual(outputBuffer.cropHeight, 536);
     XCTAssertEqual(buffer.pixelBuffer, outputBuffer.pixelBuffer);
 
     [callbackExpectation fulfill];

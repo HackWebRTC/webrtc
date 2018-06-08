@@ -32,7 +32,8 @@
 
 namespace webrtc {
 
-ObjCVideoTrackSource::ObjCVideoTrackSource() {}
+ObjCVideoTrackSource::ObjCVideoTrackSource() :
+  AdaptedVideoTrackSource(/* required resolution alignment */ 4) {}
 
 ObjCVideoTrackSource::ObjCVideoTrackSource(RTCObjCVideoSourceAdapter *adapter) : adapter_(adapter) {
   adapter_.objCVideoTrackSource = this;
