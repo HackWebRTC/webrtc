@@ -30,9 +30,6 @@ class WavFile {
   virtual int sample_rate() const = 0;
   virtual size_t num_channels() const = 0;
   virtual size_t num_samples() const = 0;
-
-  // Returns a human-readable string containing the audio format.
-  std::string FormatAsString() const;
 };
 
 // Simple C++ class for writing 16-bit PCM WAV files. All error handling is
