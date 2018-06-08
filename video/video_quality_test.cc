@@ -1260,8 +1260,8 @@ std::vector<int> VideoQualityTest::ParseCSV(const std::string& str) {
 VideoStream VideoQualityTest::DefaultVideoStream(const Params& params,
                                                  size_t video_idx) {
   VideoStream stream;
-  stream.width = params.video[video_idx].width;
-  stream.height = params.video[video_idx].height;
+  stream.width = static_cast<int>(params.video[video_idx].width);
+  stream.height = static_cast<int>(params.video[video_idx].height);
   stream.max_framerate = params.video[video_idx].fps;
   stream.min_bitrate_bps = params.video[video_idx].min_bitrate_bps;
   stream.target_bitrate_bps = params.video[video_idx].target_bitrate_bps;

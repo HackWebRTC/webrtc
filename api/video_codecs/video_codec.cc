@@ -8,11 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "common_types.h"  // NOLINT(build/include)
+#include "api/video_codecs/video_codec.h"
 
 #include <string.h>
 #include <algorithm>
 #include <limits>
+#include <string>
 #include <type_traits>
 
 #include "rtc_base/checks.h"

@@ -140,9 +140,9 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
     sim_stream->active = streams[i].active;
 
     video_codec.width =
-        std::max(video_codec.width, static_cast<uint16_t>(streams[i].width));
+        std::max(video_codec.width, streams[i].width);
     video_codec.height =
-        std::max(video_codec.height, static_cast<uint16_t>(streams[i].height));
+        std::max(video_codec.height, streams[i].height);
     video_codec.minBitrate =
         std::min(static_cast<uint16_t>(video_codec.minBitrate),
                  static_cast<uint16_t>(streams[i].min_bitrate_bps / 1000));

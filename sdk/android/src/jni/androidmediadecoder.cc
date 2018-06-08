@@ -380,8 +380,8 @@ int32_t MediaCodecVideoDecoder::Decode(
 
   // Check if encoded frame dimension has changed.
   if ((inputImage._encodedWidth * inputImage._encodedHeight > 0) &&
-      (inputImage._encodedWidth != codec_.width ||
-      inputImage._encodedHeight != codec_.height)) {
+      (static_cast<int>(inputImage._encodedWidth) != codec_.width ||
+       static_cast<int>(inputImage._encodedHeight) != codec_.height)) {
     ALOGW << "Input resolution changed from " <<
         codec_.width << " x " << codec_.height << " to " <<
         inputImage._encodedWidth << " x " << inputImage._encodedHeight;

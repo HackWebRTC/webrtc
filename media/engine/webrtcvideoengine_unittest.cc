@@ -2643,8 +2643,8 @@ TEST_F(WebRtcVideoChannelTest, ReconfiguresEncodersWhenNotSending) {
 
   // No frames entered.
   std::vector<webrtc::VideoStream> streams = stream->GetVideoStreams();
-  EXPECT_EQ(0u, streams[0].width);
-  EXPECT_EQ(0u, streams[0].height);
+  EXPECT_EQ(0, streams[0].width);
+  EXPECT_EQ(0, streams[0].height);
 
   FakeVideoCapturerWithTaskQueue capturer;
   EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, nullptr, &capturer));
@@ -2654,9 +2654,8 @@ TEST_F(WebRtcVideoChannelTest, ReconfiguresEncodersWhenNotSending) {
 
   // Frame entered, should be reconfigured to new dimensions.
   streams = stream->GetVideoStreams();
-  EXPECT_EQ(rtc::checked_cast<size_t>(capture_format.width), streams[0].width);
-  EXPECT_EQ(rtc::checked_cast<size_t>(capture_format.height),
-            streams[0].height);
+  EXPECT_EQ(capture_format.width, streams[0].width);
+  EXPECT_EQ(capture_format.height, streams[0].height);
 
   EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, nullptr, nullptr));
 }
@@ -2694,10 +2693,8 @@ TEST_F(WebRtcVideoChannelTest, UsesCorrectSettingsForScreencast) {
   EXPECT_EQ(webrtc::VideoEncoderConfig::ContentType::kRealtimeVideo,
             encoder_config.content_type);
   std::vector<webrtc::VideoStream> streams = send_stream->GetVideoStreams();
-  EXPECT_EQ(rtc::checked_cast<size_t>(capture_format_hd.width),
-            streams.front().width);
-  EXPECT_EQ(rtc::checked_cast<size_t>(capture_format_hd.height),
-            streams.front().height);
+  EXPECT_EQ(capture_format_hd.width, streams.front().width);
+  EXPECT_EQ(capture_format_hd.height, streams.front().height);
   EXPECT_EQ(0, encoder_config.min_transmit_bitrate_bps)
       << "Non-screenshare shouldn't use min-transmit bitrate.";
 
@@ -2721,10 +2718,8 @@ TEST_F(WebRtcVideoChannelTest, UsesCorrectSettingsForScreencast) {
             encoder_config.min_transmit_bitrate_bps);
 
   streams = send_stream->GetVideoStreams();
-  EXPECT_EQ(rtc::checked_cast<size_t>(capture_format_hd.width),
-            streams.front().width);
-  EXPECT_EQ(rtc::checked_cast<size_t>(capture_format_hd.height),
-            streams.front().height);
+  EXPECT_EQ(capture_format_hd.width, streams.front().width);
+  EXPECT_EQ(capture_format_hd.height, streams.front().height);
   EXPECT_FALSE(streams[0].num_temporal_layers.has_value());
   EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, nullptr, nullptr));
 }
@@ -5839,8 +5834,8 @@ class WebRtcVideoChannelSimulcastTest : public testing::Test {
       if (screenshare) {
         for (const webrtc::VideoStream& stream : expected_streams) {
           // Never scale screen content.
-          EXPECT_EQ(stream.width, rtc::checked_cast<size_t>(capture_width));
-          EXPECT_EQ(stream.height, rtc::checked_cast<size_t>(capture_height));
+          EXPECT_EQ(stream.width, capture_width);
+          EXPECT_EQ(stream.height, capture_height);
         }
       }
     } else {
