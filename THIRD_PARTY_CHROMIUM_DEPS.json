@@ -74,6 +74,7 @@
     "libjpeg.gni",
     "PRESUBMIT.py",
     "README.chromium",
-    "README.chromium.template"
+    "README.chromium.template",
+    "r8"
   ]
 }

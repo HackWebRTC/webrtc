@@ -1,0 +1,5 @@
+package: chromium/third_party/r8
+description: >
+  D8 is a dexer that converts java byte code to dex code (part of the R8 repo).
+data:
+  - file: lib/compatdx.jar

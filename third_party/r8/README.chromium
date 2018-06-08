@@ -1,0 +1,14 @@
+Name: R8
+URL: https://r8.googlesource.com/r8
+Version: 1.0.26
+License: BSD 3-Clause
+License File: NOT_SHIPPED
+Security Critical: no
+
+Description:
+D8 is a dexer that converts java byte code to dex code.
+It is contained in the R8 repo.
+We use a wrapper (compatdx) which lets D8 take the same arguments as DX,
+which it replaces.
+
+Local Modifications: None
