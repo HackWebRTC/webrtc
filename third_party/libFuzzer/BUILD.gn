@@ -13,8 +13,8 @@ fuzzing_engine_add_configs =
 
 source_set("libfuzzer") {
   sources = [
-    "src/FuzzerClangCounters.cpp",
     "src/FuzzerCrossOver.cpp",
+    "src/FuzzerDataFlowTrace.cpp",
     "src/FuzzerDriver.cpp",
     "src/FuzzerExtFunctionsDlsym.cpp",
     "src/FuzzerExtFunctionsDlsymWin.cpp",
@@ -29,11 +29,13 @@ source_set("libfuzzer") {
     "src/FuzzerMerge.cpp",
     "src/FuzzerMutate.cpp",
     "src/FuzzerSHA1.cpp",
+    "src/FuzzerShmemFuchsia.cpp",
     "src/FuzzerShmemPosix.cpp",
     "src/FuzzerShmemWindows.cpp",
     "src/FuzzerTracePC.cpp",
     "src/FuzzerUtil.cpp",
     "src/FuzzerUtilDarwin.cpp",
+    "src/FuzzerUtilFuchsia.cpp",
     "src/FuzzerUtilLinux.cpp",
     "src/FuzzerUtilPosix.cpp",
     "src/FuzzerUtilWindows.cpp",
