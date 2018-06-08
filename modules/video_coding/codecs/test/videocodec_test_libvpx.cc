@@ -181,8 +181,7 @@ TEST(VideoCodecTestLibvpx, DenoiserOnVP9) {
   fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr);
 }
 
-// TODO(bugs.webrtc.org/9367): Temporarily disabled to unblock roll.
-TEST(VideoCodecTestLibvpx, DISABLED_VeryLowBitrateVP9) {
+TEST(VideoCodecTestLibvpx, VeryLowBitrateVP9) {
   auto config = CreateConfig();
   config.SetCodecSettings(cricket::kVp9CodecName, 1, 1, 1, false, true, true,
                           kCifWidth, kCifHeight);
