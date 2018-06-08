@@ -63,10 +63,6 @@ int VCMFrameBuffer::Tl0PicId() const {
   return _sessionInfo.Tl0PicId();
 }
 
-bool VCMFrameBuffer::NonReference() const {
-  return _sessionInfo.NonReference();
-}
-
 std::vector<NaluInfo> VCMFrameBuffer::GetNaluInfos() const {
   return _sessionInfo.GetNaluInfos();
 }
@@ -219,11 +215,6 @@ bool VCMFrameBuffer::HaveFirstPacket() const {
   return _sessionInfo.HaveFirstPacket();
 }
 
-bool VCMFrameBuffer::HaveLastPacket() const {
-  TRACE_EVENT0("webrtc", "VCMFrameBuffer::HaveLastPacket");
-  return _sessionInfo.HaveLastPacket();
-}
-
 int VCMFrameBuffer::NumPackets() const {
   TRACE_EVENT0("webrtc", "VCMFrameBuffer::NumPackets");
   return _sessionInfo.NumPackets();
@@ -276,17 +267,6 @@ void VCMFrameBuffer::SetState(VCMFrameBufferStateEnum state) {
 // Get current state of frame
 VCMFrameBufferStateEnum VCMFrameBuffer::GetState() const {
   return _state;
-}
-
-// Get current state of frame
-VCMFrameBufferStateEnum VCMFrameBuffer::GetState(uint32_t& timeStamp) const {
-  TRACE_EVENT0("webrtc", "VCMFrameBuffer::GetState");
-  timeStamp = TimeStamp();
-  return GetState();
-}
-
-bool VCMFrameBuffer::IsRetransmitted() const {
-  return _sessionInfo.session_nack();
 }
 
 void VCMFrameBuffer::PrepareForDecode(bool continuous) {
