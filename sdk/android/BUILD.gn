@@ -271,7 +271,6 @@ generate_jni("generated_video_jni") {
     "api/org/webrtc/VideoEncoderFactory.java",
     "api/org/webrtc/VideoEncoderFallback.java",
     "api/org/webrtc/VideoFrame.java",
-    "api/org/webrtc/VideoRenderer.java",
     "api/org/webrtc/VideoSink.java",
     "api/org/webrtc/VideoSource.java",
     "api/org/webrtc/VideoTrack.java",
@@ -306,7 +305,6 @@ rtc_static_library("video_jni") {
     "src/jni/nv12buffer.cc",
     "src/jni/nv21buffer.cc",
     "src/jni/pc/video.cc",
-    "src/jni/video_renderer.cc",
     "src/jni/videocodecinfo.cc",
     "src/jni/videocodecinfo.h",
     "src/jni/videocodecstatus.cc",
@@ -753,7 +751,6 @@ rtc_android_library("video_api_java") {
     "api/org/webrtc/VideoEncoder.java",
     "api/org/webrtc/VideoEncoderFactory.java",
     "api/org/webrtc/VideoFrame.java",
-    "api/org/webrtc/VideoRenderer.java",  # TODO(sakal): Remove
     "api/org/webrtc/VideoSink.java",
   ]
 

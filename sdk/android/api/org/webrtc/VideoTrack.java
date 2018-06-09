@@ -16,7 +16,6 @@ import java.util.List;
 
 /** Java version of VideoTrackInterface. */
 public class VideoTrack extends MediaStreamTrack {
-  private final List<VideoRenderer> renderers = new ArrayList<>();
   private final IdentityHashMap<VideoSink, Long> sinks = new IdentityHashMap<VideoSink, Long>();
 
   public VideoTrack(long nativeTrack) {
@@ -57,26 +56,8 @@ public class VideoTrack extends MediaStreamTrack {
     }
   }
 
-  public void addRenderer(VideoRenderer renderer) {
-    renderers.add(renderer);
-    nativeAddSink(nativeTrack, renderer.nativeVideoRenderer);
-  }
-
-  public void removeRenderer(VideoRenderer renderer) {
-    if (!renderers.remove(renderer)) {
-      return;
-    }
-    nativeRemoveSink(nativeTrack, renderer.nativeVideoRenderer);
-    renderer.dispose();
-  }
-
   @Override
   public void dispose() {
-    for (VideoRenderer renderer : renderers) {
-      nativeRemoveSink(nativeTrack, renderer.nativeVideoRenderer);
-      renderer.dispose();
-    }
-    renderers.clear();
     for (long nativeSink : sinks.values()) {
       nativeRemoveSink(nativeTrack, nativeSink);
       nativeFreeSink(nativeSink);

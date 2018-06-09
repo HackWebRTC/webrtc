@@ -27,11 +27,10 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 
 /**
- * Implements org.webrtc.VideoRenderer.Callbacks by displaying the video stream on an EGL Surface.
- * This class is intended to be used as a helper class for rendering on SurfaceViews and
- * TextureViews.
+ * Implements VideoSink by displaying the video stream on an EGL Surface. This class is intended to
+ * be used as a helper class for rendering on SurfaceViews and TextureViews.
  */
-public class EglRenderer implements VideoRenderer.Callbacks, VideoSink {
+public class EglRenderer implements VideoSink {
   private static final String TAG = "EglRenderer";
   private static final long LOG_INTERVAL_SEC = 4;
 
@@ -419,14 +418,6 @@ public class EglRenderer implements VideoRenderer.Callbacks, VideoSink {
       });
     }
     ThreadUtils.awaitUninterruptibly(latch);
-  }
-
-  // VideoRenderer.Callbacks interface.
-  @Override
-  public void renderFrame(VideoRenderer.I420Frame frame) {
-    VideoFrame videoFrame = frame.toVideoFrame();
-    onFrame(videoFrame);
-    videoFrame.release();
   }
 
   // VideoSink interface.
