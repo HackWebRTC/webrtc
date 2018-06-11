@@ -58,6 +58,7 @@ AimdRateControl::AimdRateControl()
     : min_configured_bitrate_bps_(congestion_controller::GetMinBitrateBps()),
       max_configured_bitrate_bps_(30000000),
       current_bitrate_bps_(max_configured_bitrate_bps_),
+      latest_incoming_bitrate_bps_(current_bitrate_bps_),
       avg_max_bitrate_kbps_(-1.0f),
       var_max_bitrate_kbps_(0.4f),
       rate_control_state_(kRcHold),
@@ -79,6 +80,7 @@ AimdRateControl::~AimdRateControl() {}
 
 void AimdRateControl::SetStartBitrate(int start_bitrate_bps) {
   current_bitrate_bps_ = start_bitrate_bps;
+  latest_incoming_bitrate_bps_ = current_bitrate_bps_;
   bitrate_is_initialized_ = true;
 }
 
@@ -132,6 +134,7 @@ uint32_t AimdRateControl::Update(const RateControlInput* input,
 
   // Set the initial bit rate value to what we're receiving the first half
   // second.
+  // TODO(bugs.webrtc.org/9379): The comment above doesn't match to the code.
   if (!bitrate_is_initialized_) {
     const int64_t kInitializationTimeMs = 5000;
     RTC_DCHECK_LE(kBitrateWindowMs, kInitializationTimeMs);
@@ -187,7 +190,9 @@ uint32_t AimdRateControl::ChangeBitrate(uint32_t new_bitrate_bps,
                                         const RateControlInput& input,
                                         int64_t now_ms) {
   uint32_t incoming_bitrate_bps =
-      input.incoming_bitrate.value_or(current_bitrate_bps_);
+      input.incoming_bitrate.value_or(latest_incoming_bitrate_bps_);
+  if (input.incoming_bitrate)
+    latest_incoming_bitrate_bps_ = *input.incoming_bitrate;
 
   // An over-use should always trigger us to reduce the bitrate, even though
   // we have not yet established our first estimate. By acting on the over-use,

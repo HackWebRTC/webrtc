@@ -43,7 +43,7 @@ AimdRateControlStates CreateAimdRateControlStates() {
 
 void UpdateRateControl(const AimdRateControlStates& states,
                        const BandwidthUsage& bandwidth_usage,
-                       int bitrate,
+                       rtc::Optional<uint32_t> bitrate,
                        int64_t now_ms) {
   RateControlInput input(bandwidth_usage, bitrate, now_ms);
   states.aimd_rate_control->Update(&input, now_ms);
@@ -245,6 +245,28 @@ TEST(AimdRateControlTest, BandwidthPeriodIsNotAboveMaxNoSmoothingExp) {
                     states.simulated_clock->TimeInMilliseconds());
   EXPECT_EQ(kMaxBwePeriodMs,
             states.aimd_rate_control->GetExpectedBandwidthPeriodMs());
+}
+
+TEST(AimdRateControlTest, SendingRateBoundedWhenThroughputNotEstimated) {
+  auto states = CreateAimdRateControlStates();
+  constexpr int kInitialBitrateBps = 123000;
+  UpdateRateControl(states, BandwidthUsage::kBwNormal, kInitialBitrateBps,
+                    states.simulated_clock->TimeInMilliseconds());
+  // AimdRateControl sets the initial bit rate to what it receives after
+  // five seconds has passed.
+  // TODO(bugs.webrtc.org/9379): The comment in the AimdRateControl does not
+  // match the constant.
+  constexpr int kInitializationTimeMs = 5000;
+  states.simulated_clock->AdvanceTimeMilliseconds(kInitializationTimeMs + 1);
+  UpdateRateControl(states, BandwidthUsage::kBwNormal, kInitialBitrateBps,
+                    states.simulated_clock->TimeInMilliseconds());
+  for (int i = 0; i < 100; ++i) {
+    UpdateRateControl(states, BandwidthUsage::kBwNormal, rtc::nullopt,
+                      states.simulated_clock->TimeInMilliseconds());
+    states.simulated_clock->AdvanceTimeMilliseconds(100);
+  }
+  EXPECT_LE(states.aimd_rate_control->LatestEstimate(),
+            kInitialBitrateBps * 1.5 + 10000);
 }
 
 }  // namespace webrtc
