@@ -11,7 +11,6 @@
 #include "pc/rtcstatscollector.h"
 
 #include <memory>
-#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -26,7 +25,7 @@
 #include "pc/rtcstatstraversal.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/ptr_util.h"
-#include "rtc_base/stringutils.h"
+#include "rtc_base/strings/string_builder.h"
 #include "rtc_base/timeutils.h"
 #include "rtc_base/trace_event.h"
 
@@ -41,14 +40,20 @@ std::string RTCCertificateIDFromFingerprint(const std::string& fingerprint) {
 std::string RTCCodecStatsIDFromMidDirectionAndPayload(const std::string& mid,
                                                       bool inbound,
                                                       uint32_t payload_type) {
-  return "RTCCodec_" + mid + "_" + (inbound ? "Inbound" : "Outbound") + "_" +
-         rtc::ToString<>(payload_type);
+  char buf[1024];
+  rtc::SimpleStringBuilder sb(buf);
+  sb << "RTCCodec_" << mid << (inbound ? "_Inbound_" : "_Outbound_")
+     << payload_type;
+  return sb.str();
 }
 
 std::string RTCIceCandidatePairStatsIDFromConnectionInfo(
     const cricket::ConnectionInfo& info) {
-  return "RTCIceCandidatePair_" + info.local_candidate.id() + "_" +
-      info.remote_candidate.id();
+  char buf[4096];
+  rtc::SimpleStringBuilder sb(buf);
+  sb << "RTCIceCandidatePair_" << info.local_candidate.id() << "_"
+     << info.remote_candidate.id();
+  return sb.str();
 }
 
 const char kSender[] = "sender";
@@ -57,25 +62,32 @@ const char kReceiver[] = "receiver";
 std::string RTCMediaStreamTrackStatsIDFromDirectionAndAttachment(
     const char* direction,
     int attachment_id) {
-  std::ostringstream oss;
-  oss << "RTCMediaStreamTrack_" << direction << "_" << attachment_id;
-  return oss.str();
+  char buf[1024];
+  rtc::SimpleStringBuilder sb(buf);
+  sb << "RTCMediaStreamTrack_" << direction << "_" << attachment_id;
+  return sb.str();
 }
 
 std::string RTCTransportStatsIDFromTransportChannel(
     const std::string& transport_name, int channel_component) {
-  return "RTCTransport_" + transport_name + "_" +
-      rtc::ToString<>(channel_component);
+  char buf[1024];
+  rtc::SimpleStringBuilder sb(buf);
+  sb << "RTCTransport_" << transport_name << "_" << channel_component;
+  return sb.str();
 }
 
 std::string RTCInboundRTPStreamStatsIDFromSSRC(bool audio, uint32_t ssrc) {
-  return audio ? "RTCInboundRTPAudioStream_" + rtc::ToString<>(ssrc)
-               : "RTCInboundRTPVideoStream_" + rtc::ToString<>(ssrc);
+  char buf[1024];
+  rtc::SimpleStringBuilder sb(buf);
+  sb << "RTCInboundRTP" << (audio ? "Audio" : "Video") << "Stream_" << ssrc;
+  return sb.str();
 }
 
 std::string RTCOutboundRTPStreamStatsIDFromSSRC(bool audio, uint32_t ssrc) {
-  return audio ? "RTCOutboundRTPAudioStream_" + rtc::ToString<>(ssrc)
-               : "RTCOutboundRTPVideoStream_" + rtc::ToString<>(ssrc);
+  char buf[1024];
+  rtc::SimpleStringBuilder sb(buf);
+  sb << "RTCOutboundRTP" << (audio ? "Audio" : "Video") << "Stream_" << ssrc;
+  return sb.str();
 }
 
 const char* CandidateTypeToRTCIceCandidateType(const std::string& type) {
