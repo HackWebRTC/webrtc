@@ -61,10 +61,7 @@ class TestAudioDeviceModuleImpl
         capturing_(false),
         done_rendering_(true, true),
         done_capturing_(true, true),
-        tick_(EventTimerWrapper::Create()),
-        thread_(TestAudioDeviceModuleImpl::Run,
-                this,
-                "TestAudioDeviceModuleImpl") {
+        tick_(EventTimerWrapper::Create()) {
     auto good_sample_rate = [](int sr) {
       return sr == 8000 || sr == 16000 || sr == 32000 || sr == 44100 ||
              sr == 48000;
@@ -84,13 +81,15 @@ class TestAudioDeviceModuleImpl
   ~TestAudioDeviceModuleImpl() {
     StopPlayout();
     StopRecording();
-    thread_.Stop();
+    thread_->Stop();
   }
 
   int32_t Init() {
     RTC_CHECK(tick_->StartTimer(true, kFrameLengthMs / speed_));
-    thread_.Start();
-    thread_.SetPriority(rtc::kHighPriority);
+    thread_ = rtc::MakeUnique<rtc::PlatformThread>(
+        TestAudioDeviceModuleImpl::Run, this, "TestAudioDeviceModuleImpl");
+    thread_->Start();
+    thread_->SetPriority(rtc::kHighPriority);
     return 0;
   }
 
@@ -212,7 +211,7 @@ class TestAudioDeviceModuleImpl
   rtc::BufferT<int16_t> recording_buffer_ RTC_GUARDED_BY(lock_);
 
   std::unique_ptr<EventTimerWrapper> tick_;
-  rtc::PlatformThread thread_;
+  std::unique_ptr<rtc::PlatformThread> thread_;
 };
 
 // A fake capturer that generates pulses with random samples between
