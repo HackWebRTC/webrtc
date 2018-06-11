@@ -334,7 +334,8 @@ class TurnPort : public Port {
 
   rtc::AsyncInvoker invoker_;
 
-  // Optional TurnCustomizer that can modify outgoing messages.
+  // Optional TurnCustomizer that can modify outgoing messages. Once set, this
+  // must outlive the TurnPort's lifetime.
   webrtc::TurnCustomizer *turn_customizer_ = nullptr;
 
   friend class TurnEntry;
