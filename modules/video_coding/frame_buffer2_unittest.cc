@@ -592,5 +592,15 @@ TEST_F(TestFrameBuffer2, KeyframeClearsFullBuffer) {
   CheckFrame(1, kMaxBufferSize + 1, 0);
 }
 
+TEST_F(TestFrameBuffer2, DontUpdateOnUndecodableFrame) {
+  InsertFrame(1, 0, 0, false);
+  ExtractFrame(0, true);
+  InsertFrame(3, 0, 0, false, 2, 0);
+  InsertFrame(3, 0, 0, false, 0);
+  InsertFrame(2, 0, 0, false);
+  ExtractFrame(0, true);
+  ExtractFrame(0, true);
+}
+
 }  // namespace video_coding
 }  // namespace webrtc
