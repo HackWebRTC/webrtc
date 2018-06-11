@@ -25,11 +25,11 @@ VideoFrame::VideoFrame(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
       rotation_(rotation) {}
 
 VideoFrame::VideoFrame(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
-                       uint32_t timestamp,
+                       uint32_t timestamp_rtp,
                        int64_t render_time_ms,
                        VideoRotation rotation)
     : video_frame_buffer_(buffer),
-      timestamp_rtp_(timestamp),
+      timestamp_rtp_(timestamp_rtp),
       ntp_time_ms_(0),
       timestamp_us_(render_time_ms * rtc::kNumMicrosecsPerMillisec),
       rotation_(rotation) {

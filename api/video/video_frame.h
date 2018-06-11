@@ -20,16 +20,14 @@ namespace webrtc {
 
 class VideoFrame {
  public:
-  // TODO(nisse): This constructor is consistent with the now deleted
-  // cricket::WebRtcVideoFrame. We should consider whether or not we
-  // want to stick to this style and deprecate the other constructor.
+  // Preferred constructor.
   VideoFrame(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
              webrtc::VideoRotation rotation,
              int64_t timestamp_us);
 
-  // Preferred constructor.
+  // For use by the parts of the pipeline that needs the RTP 90kHz timestamp.
   VideoFrame(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
-             uint32_t timestamp,
+             uint32_t timestamp_rtp,
              int64_t render_time_ms,
              VideoRotation rotation);
 

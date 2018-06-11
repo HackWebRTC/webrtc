@@ -370,8 +370,8 @@ class VideoCaptureExternalTest : public testing::Test {
            buffer->ChromaHeight() * buffer->StrideU());
     memset(buffer->MutableDataV(), 127,
            buffer->ChromaHeight() * buffer->StrideV());
-    test_frame_.reset(
-        new webrtc::VideoFrame(buffer, 0, 0, webrtc::kVideoRotation_0));
+    test_frame_.reset(new webrtc::VideoFrame(buffer, webrtc::kVideoRotation_0,
+                                             0 /* timestamp_us */));
 
     SleepMs(1);  // Wait 1ms so that two tests can't have the same timestamp.
 

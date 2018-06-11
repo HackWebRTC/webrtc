@@ -90,7 +90,8 @@ class SquareGenerator : public FrameGenerator {
     for (const auto& square : squares_)
       square->Draw(buffer);
 
-    frame_.reset(new VideoFrame(buffer, 0, 0, webrtc::kVideoRotation_0));
+    frame_.reset(
+        new VideoFrame(buffer, webrtc::kVideoRotation_0, 0 /* timestamp_us */));
     return frame_.get();
   }
 
@@ -192,8 +193,8 @@ class YuvFileGenerator : public FrameGenerator {
     if (++current_display_count_ >= frame_display_count_)
       current_display_count_ = 0;
 
-    temp_frame_.reset(
-        new VideoFrame(last_read_buffer_, 0, 0, webrtc::kVideoRotation_0));
+    temp_frame_.reset(new VideoFrame(
+        last_read_buffer_, webrtc::kVideoRotation_0, 0 /* timestamp_us */));
     return temp_frame_.get();
   }
 
@@ -249,8 +250,8 @@ class SlideGenerator : public FrameGenerator {
     if (++current_display_count_ >= frame_display_count_)
       current_display_count_ = 0;
 
-    frame_.reset(
-        new VideoFrame(buffer_, 0, 0, webrtc::kVideoRotation_0));
+    frame_.reset(new VideoFrame(buffer_, webrtc::kVideoRotation_0,
+                                0 /* timestamp_us */));
     return frame_.get();
   }
 

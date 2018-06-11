@@ -66,7 +66,7 @@ class TestMultiplexAdapter : public VideoCodecUnitTest {
         yuv_buffer->DataV(), yuv_buffer->StrideV(), yuv_buffer->DataY(),
         yuv_buffer->StrideY(), rtc::KeepRefUntilDone(yuv_buffer));
     return rtc::WrapUnique<VideoFrame>(
-        new VideoFrame(yuva_buffer, 123 /* timestamp_us */,
+        new VideoFrame(yuva_buffer, 123 /* RTP timestamp */,
                        345 /* render_time_ms */, kVideoRotation_0));
   }
 
@@ -79,7 +79,7 @@ class TestMultiplexAdapter : public VideoCodecUnitTest {
         yuva_buffer->DataV(), yuva_buffer->StrideV(),
         rtc::KeepRefUntilDone(yuva_frame.video_frame_buffer()));
     return rtc::WrapUnique<VideoFrame>(
-        new VideoFrame(axx_buffer, 123 /* timestamp_us */,
+        new VideoFrame(axx_buffer, 123 /* RTP timestamp */,
                        345 /* render_time_ms */, kVideoRotation_0));
   }
 

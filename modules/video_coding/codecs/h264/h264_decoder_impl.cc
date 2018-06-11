@@ -137,9 +137,8 @@ int H264DecoderImpl::AVGetBuffer2(
       total_size,
       AVFreeBuffer2,
       static_cast<void*>(new VideoFrame(frame_buffer,
-                                        0 /* timestamp */,
-                                        0 /* render_time_ms */,
-                                        kVideoRotation_0)),
+                                        kVideoRotation_0,
+                                        0 /* timestamp_us */)),
       0);
   RTC_CHECK(av_frame->buf[0]);
   return 0;
