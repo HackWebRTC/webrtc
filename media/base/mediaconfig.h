@@ -59,11 +59,6 @@ struct MediaConfig {
     // TODO(bugs.webrtc.org/8504): If all goes well, the flag will be removed
     // together with the old method of estimation.
     bool experiment_cpu_load_estimator = false;
-
-    // Enables experimental VAAPI VP8 hardware encoder, if supported by the
-    // provided VideoEncoderFactory.
-    // TODO(ilnik): remove this when VAAPI VP8 experiment is over.
-    bool experiment_vaapi_vp8_hw_encoding = false;
   } video;
 
   bool operator==(const MediaConfig& o) const {
@@ -76,9 +71,7 @@ struct MediaConfig {
            video.periodic_alr_bandwidth_probing ==
                o.video.periodic_alr_bandwidth_probing &&
            video.experiment_cpu_load_estimator ==
-               o.video.experiment_cpu_load_estimator &&
-           video.experiment_vaapi_vp8_hw_encoding ==
-               o.video.experiment_vaapi_vp8_hw_encoding;
+               o.video.experiment_cpu_load_estimator;
   }
 
   bool operator!=(const MediaConfig& o) const { return !(*this == o); }
