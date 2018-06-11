@@ -20,8 +20,7 @@ public class DefaultVideoDecoderFactory implements VideoDecoderFactory {
   private final SoftwareVideoDecoderFactory softwareVideoDecoderFactory;
 
   public DefaultVideoDecoderFactory(EglBase.Context eglContext) {
-    hardwareVideoDecoderFactory =
-        new HardwareVideoDecoderFactory(eglContext, false /* fallbackToSoftware */);
+    hardwareVideoDecoderFactory = new HardwareVideoDecoderFactory(eglContext);
     softwareVideoDecoderFactory = new SoftwareVideoDecoderFactory();
   }
 

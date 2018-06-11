@@ -21,8 +21,8 @@ public class DefaultVideoEncoderFactory implements VideoEncoderFactory {
 
   public DefaultVideoEncoderFactory(
       EglBase.Context eglContext, boolean enableIntelVp8Encoder, boolean enableH264HighProfile) {
-    hardwareVideoEncoderFactory = new HardwareVideoEncoderFactory(
-        eglContext, enableIntelVp8Encoder, enableH264HighProfile, false /* fallbackToSoftware */);
+    hardwareVideoEncoderFactory =
+        new HardwareVideoEncoderFactory(eglContext, enableIntelVp8Encoder, enableH264HighProfile);
     softwareVideoEncoderFactory = new SoftwareVideoEncoderFactory();
   }
 

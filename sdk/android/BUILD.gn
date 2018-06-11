@@ -258,6 +258,7 @@ generate_jni("generated_java_audio_device_module_native_jni") {
 generate_jni("generated_video_jni") {
   sources = [
     "api/org/webrtc/EncodedImage.java",
+    "api/org/webrtc/HardwareVideoEncoderFactory.java",
     "api/org/webrtc/MediaCodecVideoDecoder.java",
     "api/org/webrtc/MediaCodecVideoEncoder.java",
     "api/org/webrtc/VideoCodecInfo.java",
@@ -284,9 +285,6 @@ generate_jni("generated_video_jni") {
     "src/java/org/webrtc/WrappedNativeVideoDecoder.java",
     "src/java/org/webrtc/WrappedNativeVideoEncoder.java",
   ]
-  if (rtc_use_builtin_sw_codecs) {
-    sources += [ "api/org/webrtc/HardwareVideoEncoderFactory.java" ]  # TODO(andersc): This currently depends on SoftwareVideoEncoderFactory
-  }
   jni_package = ""
   namespace = "webrtc::jni"
   jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
@@ -924,6 +922,8 @@ if (rtc_use_builtin_sw_codecs) {
 
 rtc_android_library("hwcodecs_java") {
   java_files = [
+    "api/org/webrtc/HardwareVideoDecoderFactory.java",
+    "api/org/webrtc/HardwareVideoEncoderFactory.java",
     "src/java/org/webrtc/BaseBitrateAdjuster.java",
     "src/java/org/webrtc/BitrateAdjuster.java",
     "src/java/org/webrtc/DynamicBitrateAdjuster.java",
@@ -941,15 +941,6 @@ rtc_android_library("hwcodecs_java") {
     ":video_java",
     "//rtc_base:base_java",
   ]
-
-  if (rtc_use_builtin_sw_codecs) {
-    java_files += [
-      "api/org/webrtc/HardwareVideoDecoderFactory.java",  # TODO(andersc): make this not depend on SoftwareVideoDecoderFactory
-      "api/org/webrtc/HardwareVideoEncoderFactory.java",  # TODO(andersc): make this not depend on SoftwareVideoEncoderFactory
-    ]
-
-    deps += [ ":swcodecs_java" ]
-  }
 }
 
 rtc_android_library("peerconnection_java") {
