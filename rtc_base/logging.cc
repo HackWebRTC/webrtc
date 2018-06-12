@@ -357,8 +357,9 @@ void LogMessage::ConfigureLogging(const char* params) {
 void LogMessage::UpdateMinLogSeverity()
     RTC_EXCLUSIVE_LOCKS_REQUIRED(g_log_crit) {
   LoggingSeverity min_sev = g_dbg_sev;
-  for (auto& kv : streams_) {
-    min_sev = std::min(g_dbg_sev, kv.second);
+  for (const auto& kv : streams_) {
+    const LoggingSeverity sev = kv.second;
+    min_sev = std::min(min_sev, sev);
   }
   g_min_sev = min_sev;
 }
