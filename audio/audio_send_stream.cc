@@ -242,13 +242,17 @@ void AudioSendStream::ConfigureStream(
   }
   bool transport_seq_num_id_changed =
       new_ids.transport_sequence_number != old_ids.transport_sequence_number;
-  if (first_time || transport_seq_num_id_changed) {
+  if (first_time ||
+      (transport_seq_num_id_changed &&
+       !webrtc::field_trial::IsEnabled("WebRTC-Audio-ForceNoTWCC"))) {
     if (!first_time) {
       channel_proxy->ResetSenderCongestionControlObjects();
     }
 
     RtcpBandwidthObserver* bandwidth_observer = nullptr;
-    bool has_transport_sequence_number = new_ids.transport_sequence_number != 0;
+    bool has_transport_sequence_number =
+        new_ids.transport_sequence_number != 0 &&
+        !webrtc::field_trial::IsEnabled("WebRTC-Audio-ForceNoTWCC");
     if (has_transport_sequence_number) {
       channel_proxy->EnableSendTransportSequenceNumber(
           new_ids.transport_sequence_number);
@@ -287,7 +291,8 @@ void AudioSendStream::Start() {
   }
 
   bool has_transport_sequence_number =
-      FindExtensionIds(config_.rtp.extensions).transport_sequence_number != 0;
+      FindExtensionIds(config_.rtp.extensions).transport_sequence_number != 0 &&
+      !webrtc::field_trial::IsEnabled("WebRTC-Audio-ForceNoTWCC");
   if (config_.min_bitrate_bps != -1 && config_.max_bitrate_bps != -1 &&
       (has_transport_sequence_number ||
        !webrtc::field_trial::IsEnabled("WebRTC-Audio-SendSideBwe"))) {
