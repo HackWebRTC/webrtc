@@ -68,7 +68,7 @@ bool PerSenderRtpEncodingParameterHasValue(
 // Returns true if any RtpParameters member that isn't implemented contains a
 // value.
 bool UnimplementedRtpParameterHasValue(const RtpParameters& parameters) {
-  if (!parameters.mid.empty() || !parameters.header_extensions.empty() ||
+  if (!parameters.mid.empty() ||
       parameters.degradation_preference != DegradationPreference::BALANCED) {
     return true;
   }

@@ -47,6 +47,14 @@ ScopedJavaLocalRef<jobject> NativeToJavaRtpRtcpParameters(
                                rtcp.reduced_size);
 }
 
+ScopedJavaLocalRef<jobject> NativeToJavaRtpHeaderExtensionParameter(
+    JNIEnv* env,
+    const RtpExtension& extension) {
+  return Java_HeaderExtension_Constructor(
+      env, NativeToJavaString(env, extension.uri), extension.id,
+      extension.encrypt);
+}
+
 }  // namespace
 
 RtpEncodingParameters JavaToNativeRtpEncodingParameters(
@@ -81,6 +89,19 @@ RtpParameters JavaToNativeRtpParameters(JNIEnv* jni,
   jboolean j_rtcp_reduced_size = Java_Rtcp_getReducedSize(jni, j_rtcp);
   parameters.rtcp.cname = JavaToNativeString(jni, j_rtcp_cname);
   parameters.rtcp.reduced_size = j_rtcp_reduced_size;
+
+  ScopedJavaLocalRef<jobject> j_header_extensions =
+      Java_RtpParameters_getHeaderExtensions(jni, j_parameters);
+  for (const JavaRef<jobject>& j_header_extension :
+       Iterable(jni, j_header_extensions)) {
+    RtpExtension header_extension;
+    header_extension.uri = JavaToStdString(
+        jni, Java_HeaderExtension_getUri(jni, j_header_extension));
+    header_extension.id = Java_HeaderExtension_getId(jni, j_header_extension);
+    header_extension.encrypt =
+        Java_HeaderExtension_getEncrypted(jni, j_header_extension);
+    parameters.header_extensions.push_back(header_extension);
+  }
 
   // Convert encodings.
   ScopedJavaLocalRef<jobject> j_encodings =
@@ -118,6 +139,8 @@ ScopedJavaLocalRef<jobject> NativeToJavaRtpParameters(
   return Java_RtpParameters_Constructor(
       env, NativeToJavaString(env, parameters.transaction_id),
       NativeToJavaRtpRtcpParameters(env, parameters.rtcp),
+      NativeToJavaList(env, parameters.header_extensions,
+                       &NativeToJavaRtpHeaderExtensionParameter),
       NativeToJavaList(env, parameters.encodings,
                        &NativeToJavaRtpEncodingParameter),
       NativeToJavaList(env, parameters.codecs, &NativeToJavaRtpCodecParameter));

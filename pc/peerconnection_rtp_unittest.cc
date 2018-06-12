@@ -566,6 +566,34 @@ TEST_P(PeerConnectionRtpTest, RemoveTrackWithSharedStreamRemovesReceiver) {
   }
 }
 
+TEST_P(PeerConnectionRtpTest, AudioGetParametersHasHeaderExtensions) {
+  auto caller = CreatePeerConnection();
+  auto callee = CreatePeerConnection();
+  auto sender = caller->AddAudioTrack("audio_track");
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+
+  ASSERT_GT(caller->pc()->GetSenders().size(), 0u);
+  EXPECT_GT(sender->GetParameters().header_extensions.size(), 0u);
+
+  ASSERT_GT(callee->pc()->GetReceivers().size(), 0u);
+  auto receiver = callee->pc()->GetReceivers()[0];
+  EXPECT_GT(receiver->GetParameters().header_extensions.size(), 0u);
+}
+
+TEST_P(PeerConnectionRtpTest, VideoGetParametersHasHeaderExtensions) {
+  auto caller = CreatePeerConnection();
+  auto callee = CreatePeerConnection();
+  auto sender = caller->AddVideoTrack("video_track");
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+
+  ASSERT_GT(caller->pc()->GetSenders().size(), 0u);
+  EXPECT_GT(sender->GetParameters().header_extensions.size(), 0u);
+
+  ASSERT_GT(callee->pc()->GetReceivers().size(), 0u);
+  auto receiver = callee->pc()->GetReceivers()[0];
+  EXPECT_GT(receiver->GetParameters().header_extensions.size(), 0u);
+}
+
 // Invokes SetRemoteDescription() twice in a row without synchronizing the two
 // calls and examine the state of the peer connection inside the callbacks to
 // ensure that the second call does not occur prematurely, contaminating the

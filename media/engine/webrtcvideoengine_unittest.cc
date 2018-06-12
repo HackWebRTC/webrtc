@@ -5572,6 +5572,20 @@ TEST_F(WebRtcVideoChannelTest, GetRtpSendParametersSsrc) {
   EXPECT_EQ(last_ssrc_, rtp_parameters.encodings[0].ssrc);
 }
 
+TEST_F(WebRtcVideoChannelTest, DetectRtpSendParameterHeaderExtensionsChange) {
+  AddSendStream();
+
+  webrtc::RtpParameters rtp_parameters =
+      channel_->GetRtpSendParameters(last_ssrc_);
+  rtp_parameters.header_extensions.emplace_back();
+
+  EXPECT_NE(0u, rtp_parameters.header_extensions.size());
+
+  webrtc::RTCError result =
+      channel_->SetRtpSendParameters(last_ssrc_, rtp_parameters);
+  EXPECT_EQ(webrtc::RTCErrorType::INVALID_MODIFICATION, result.type());
+}
+
 // Test that if we set/get parameters multiple times, we get the same results.
 TEST_F(WebRtcVideoChannelTest, SetAndGetRtpSendParameters) {
   AddSendStream();

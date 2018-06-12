@@ -681,11 +681,6 @@ TEST_F(RtpSenderReceiverTest, AudioSenderCantSetUnimplementedRtpParameters) {
             audio_rtp_sender_->SetParameters(params).type());
   params = audio_rtp_sender_->GetParameters();
 
-  params.header_extensions.emplace_back();
-  EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
-            audio_rtp_sender_->SetParameters(params).type());
-  params = audio_rtp_sender_->GetParameters();
-
   ASSERT_EQ(DegradationPreference::BALANCED, params.degradation_preference);
   params.degradation_preference = DegradationPreference::MAINTAIN_FRAMERATE;
   EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
@@ -875,11 +870,6 @@ TEST_F(RtpSenderReceiverTest, VideoSenderCantSetUnimplementedRtpParameters) {
   // Unimplemented RtpParameters: mid, header_extensions,
   // degredation_preference.
   params.mid = "dummy_mid";
-  EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
-            video_rtp_sender_->SetParameters(params).type());
-  params = video_rtp_sender_->GetParameters();
-
-  params.header_extensions.emplace_back();
   EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
             video_rtp_sender_->SetParameters(params).type());
   params = video_rtp_sender_->GetParameters();

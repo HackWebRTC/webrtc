@@ -1150,6 +1150,20 @@ TEST_F(WebRtcVoiceEngineTestFake, GetRtpSendParametersRtcpCname) {
   EXPECT_STREQ("rtcpcname", rtp_parameters.rtcp.cname.c_str());
 }
 
+TEST_F(WebRtcVoiceEngineTestFake,
+       DetectRtpSendParameterHeaderExtensionsChange) {
+  EXPECT_TRUE(SetupSendStream());
+
+  webrtc::RtpParameters rtp_parameters = channel_->GetRtpSendParameters(kSsrcX);
+  rtp_parameters.header_extensions.emplace_back();
+
+  EXPECT_NE(0u, rtp_parameters.header_extensions.size());
+
+  webrtc::RTCError result =
+      channel_->SetRtpSendParameters(kSsrcX, rtp_parameters);
+  EXPECT_EQ(webrtc::RTCErrorType::INVALID_MODIFICATION, result.type());
+}
+
 // Test that GetRtpSendParameters returns an SSRC.
 TEST_F(WebRtcVoiceEngineTestFake, GetRtpSendParametersSsrc) {
   EXPECT_TRUE(SetupSendStream());

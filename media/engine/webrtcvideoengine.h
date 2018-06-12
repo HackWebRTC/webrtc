@@ -358,7 +358,9 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
     ~WebRtcVideoReceiveStream();
 
     const std::vector<uint32_t>& GetSsrcs() const;
-    rtc::Optional<uint32_t> GetFirstPrimarySsrc() const;
+
+    // Does not return codecs, they are filled by the owning WebRtcVideoChannel.
+    webrtc::RtpParameters GetRtpParameters() const;
 
     void SetLocalSsrc(uint32_t local_ssrc);
     // TODO(deadbeef): Move these feedback parameters into the recv parameters.
@@ -399,6 +401,8 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
     void ConfigureFlexfecCodec(int flexfec_payload_type);
 
     std::string GetCodecNameFromPayloadType(int payload_type);
+
+    rtc::Optional<uint32_t> GetFirstPrimarySsrc() const;
 
     webrtc::Call* const call_;
     StreamParams stream_params_;

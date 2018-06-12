@@ -14,11 +14,13 @@
 #import "RTCRtcpParameters+Private.h"
 #import "RTCRtpCodecParameters+Private.h"
 #import "RTCRtpEncodingParameters+Private.h"
+#import "RTCRtpHeaderExtension+Private.h"
 
 @implementation RTCRtpParameters
 
 @synthesize transactionId = _transactionId;
 @synthesize rtcp = _rtcp;
+@synthesize headerExtensions = _headerExtensions;
 @synthesize encodings = _encodings;
 @synthesize codecs = _codecs;
 
@@ -31,6 +33,14 @@
   if (self = [self init]) {
     _transactionId = [NSString stringForStdString:nativeParameters.transaction_id];
     _rtcp = [[RTCRtcpParameters alloc] initWithNativeParameters:nativeParameters.rtcp];
+
+    NSMutableArray *headerExtensions = [[NSMutableArray alloc] init];
+    for (const auto &headerExtension : nativeParameters.header_extensions) {
+      [headerExtensions
+          addObject:[[RTCRtpHeaderExtension alloc] initWithNativeParameters:headerExtension]];
+    }
+    _headerExtensions = headerExtensions;
+
     NSMutableArray *encodings = [[NSMutableArray alloc] init];
     for (const auto &encoding : nativeParameters.encodings) {
       [encodings addObject:[[RTCRtpEncodingParameters alloc]
@@ -52,6 +62,9 @@
   webrtc::RtpParameters parameters;
   parameters.transaction_id = [NSString stdStringForString:_transactionId];
   parameters.rtcp = [_rtcp nativeParameters];
+  for (RTCRtpHeaderExtension *headerExtension in _headerExtensions) {
+    parameters.header_extensions.push_back(headerExtension.nativeParameters);
+  }
   for (RTCRtpEncodingParameters *encoding in _encodings) {
     parameters.encodings.push_back(encoding.nativeParameters);
   }

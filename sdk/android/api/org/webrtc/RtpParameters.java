@@ -150,9 +150,42 @@ public class RtpParameters {
     }
   }
 
+  public static class HeaderExtension {
+    /** The URI of the RTP header extension, as defined in RFC5285. */
+    private final String uri;
+    /** The value put in the RTP packet to identify the header extension. */
+    private final int id;
+    /** Whether the header extension is encrypted or not. */
+    private final boolean encrypted;
+
+    @CalledByNative("HeaderExtension")
+    HeaderExtension(String uri, int id, boolean encrypted) {
+      this.uri = uri;
+      this.id = id;
+      this.encrypted = encrypted;
+    }
+
+    @CalledByNative("HeaderExtension")
+    public String getUri() {
+      return uri;
+    }
+
+    @CalledByNative("HeaderExtension")
+    public int getId() {
+      return id;
+    }
+
+    @CalledByNative("HeaderExtension")
+    public boolean getEncrypted() {
+      return encrypted;
+    }
+  }
+
   public final String transactionId;
 
   private final Rtcp rtcp;
+
+  private final List<HeaderExtension> headerExtensions;
 
   public final List<Encoding> encodings;
   // Codec parameters can't currently be changed between getParameters and
@@ -161,9 +194,11 @@ public class RtpParameters {
   public final List<Codec> codecs;
 
   @CalledByNative
-  RtpParameters(String transactionId, Rtcp rtcp, List<Encoding> encodings, List<Codec> codecs) {
+  RtpParameters(String transactionId, Rtcp rtcp, List<HeaderExtension> headerExtensions,
+      List<Encoding> encodings, List<Codec> codecs) {
     this.transactionId = transactionId;
     this.rtcp = rtcp;
+    this.headerExtensions = headerExtensions;
     this.encodings = encodings;
     this.codecs = codecs;
   }
@@ -176,6 +211,11 @@ public class RtpParameters {
   @CalledByNative
   public Rtcp getRtcp() {
     return rtcp;
+  }
+
+  @CalledByNative
+  public List<HeaderExtension> getHeaderExtensions() {
+    return headerExtensions;
   }
 
   @CalledByNative

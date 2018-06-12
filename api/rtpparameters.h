@@ -600,7 +600,6 @@ struct RtpParameters {
 
   std::vector<RtpCodecParameters> codecs;
 
-  // TODO(deadbeef): Not implemented with PeerConnection senders/receivers.
   std::vector<RtpHeaderExtensionParameters> header_extensions;
 
   std::vector<RtpEncodingParameters> encodings;

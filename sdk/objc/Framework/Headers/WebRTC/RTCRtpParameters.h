@@ -14,6 +14,7 @@
 #import <WebRTC/RTCRtcpParameters.h>
 #import <WebRTC/RTCRtpCodecParameters.h>
 #import <WebRTC/RTCRtpEncodingParameters.h>
+#import <WebRTC/RTCRtpHeaderExtension.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -25,6 +26,9 @@ RTC_EXPORT
 
 /** Parameters used for RTCP. */
 @property(nonatomic, readonly, copy) RTCRtcpParameters *rtcp;
+
+/** An array containing parameters for RTP header extensions. */
+@property(nonatomic, readonly, copy) NSArray<RTCRtpHeaderExtension *> *headerExtensions;
 
 /** The currently active encodings in the order of preference. */
 @property(nonatomic, copy) NSArray<RTCRtpEncodingParameters *> *encodings;
