@@ -360,16 +360,16 @@
       'gn', 'clang', 'openh264_release_bot', 'x64',
     ],
     'win_msvc_debug_bot_x86': [
-      'gn', 'no_clang', 'openh264_debug_bot', 'x86',
+      'gn', 'no_clang', 'openh264_debug_bot', 'x86', 'no_lld',
     ],
     'win_msvc_release_bot_x86': [
-      'gn', 'no_clang', 'openh264_release_bot', 'x86',
+      'gn', 'no_clang', 'openh264_release_bot', 'x86', 'no_lld',
     ],
     'win_msvc_debug_bot_x64': [
-      'gn', 'no_clang', 'openh264_debug_bot', 'x64',
+      'gn', 'no_clang', 'openh264_debug_bot', 'x64', 'no_lld'
     ],
     'win_msvc_release_bot_x64': [
-      'gn', 'no_clang', 'openh264_release_bot', 'x64',
+      'gn', 'no_clang', 'openh264_release_bot', 'x64', 'no_lld',
     ],
     'win_asan_clang_release_bot_x86': [
       'gn', 'asan', 'clang',  'full_symbols', 'openh264_release_bot', 'x86',
