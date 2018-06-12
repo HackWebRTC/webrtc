@@ -139,7 +139,16 @@ class FakePortAllocatorSession : public PortAllocatorSession {
 
   void StopGettingPorts() override { running_ = false; }
   bool IsGettingPorts() override { return running_; }
-  void ClearGettingPorts() override {}
+  void ClearGettingPorts() override { is_cleared = true; }
+  bool IsCleared() const override { return is_cleared; }
+
+  void RegatherOnAllNetworks() override {
+    SignalIceRegathering(this, IceRegatheringReason::OCCASIONAL_REFRESH);
+  }
+
+  void RegatherOnFailedNetworks() override {
+    SignalIceRegathering(this, IceRegatheringReason::NETWORK_FAILURE);
+  }
 
   std::vector<PortInterface*> ReadyPorts() const override {
     return ready_ports_;
@@ -204,6 +213,7 @@ class FakePortAllocatorSession : public PortAllocatorSession {
   std::vector<Candidate> candidates_;
   std::vector<PortInterface*> ready_ports_;
   bool allocation_done_ = false;
+  bool is_cleared = false;
   ServerAddresses stun_servers_;
   std::vector<RelayServerConfig> turn_servers_;
   uint32_t candidate_filter_ = CF_ALL;
