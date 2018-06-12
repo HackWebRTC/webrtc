@@ -59,7 +59,7 @@ class EncodedFrame : public webrtc::VCMEncodedFrame {
   virtual bool GetBitstream(uint8_t* destination) const = 0;
 
   // The capture timestamp of this frame.
-  virtual uint32_t Timestamp() const = 0;
+  virtual uint32_t Timestamp() const;
 
   // When this frame was received.
   virtual int64_t ReceivedTime() const = 0;
