@@ -14,15 +14,15 @@
 #include <vector>
 
 #include "api/video_codecs/video_decoder_factory.h"
+#include "api/video_codecs/video_decoder_software_fallback_wrapper.h"
 #include "api/video_codecs/video_encoder_factory.h"
+#include "api/video_codecs/video_encoder_software_fallback_wrapper.h"
 #include "media/base/h264_profile_level_id.h"
 #include "media/engine/internaldecoderfactory.h"
 #include "media/engine/internalencoderfactory.h"
 #include "media/engine/scopedvideodecoder.h"
 #include "media/engine/scopedvideoencoder.h"
 #include "media/engine/simulcast_encoder_adapter.h"
-#include "media/engine/videodecodersoftwarefallbackwrapper.h"
-#include "media/engine/videoencodersoftwarefallbackwrapper.h"
 #include "media/engine/vp8_encoder_simulcast_proxy.h"
 #include "media/engine/webrtcvideodecoderfactory.h"
 #include "media/engine/webrtcvideoencoderfactory.h"
@@ -144,7 +144,7 @@ class EncoderAdapter : public webrtc::VideoEncoderFactory {
     if (internal_encoder && external_encoder) {
       // Both internal SW encoder and external HW encoder available - create
       // fallback encoder.
-      return rtc::MakeUnique<webrtc::VideoEncoderSoftwareFallbackWrapper>(
+      return webrtc::CreateVideoEncoderSoftwareFallbackWrapper(
           std::move(internal_encoder), std::move(external_encoder));
     }
     return external_encoder ? std::move(external_encoder)
@@ -199,9 +199,8 @@ class DecoderAdapter : public webrtc::VideoDecoderFactory {
           return external_decoder;
         // Both external and internal decoder available - create fallback
         // wrapper.
-        return std::unique_ptr<webrtc::VideoDecoder>(
-            new webrtc::VideoDecoderSoftwareFallbackWrapper(
-                std::move(internal_decoder), std::move(external_decoder)));
+        return webrtc::CreateVideoDecoderSoftwareFallbackWrapper(
+            std::move(internal_decoder), std::move(external_decoder));
       }
     }
 

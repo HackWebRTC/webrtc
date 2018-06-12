@@ -76,3 +76,31 @@ rtc_static_library("builtin_video_encoder_factory") {
     "../../rtc_base:ptr_util",
   ]
 }
+
+rtc_static_library("rtc_software_fallback_wrappers") {
+  visibility = [ "*" ]
+
+  sources = [
+    "video_decoder_software_fallback_wrapper.cc",
+    "video_decoder_software_fallback_wrapper.h",
+    "video_encoder_software_fallback_wrapper.cc",
+    "video_encoder_software_fallback_wrapper.h",
+  ]
+
+  if (!build_with_chromium && is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+  }
+
+  deps = [
+    ":video_codecs_api",
+    "../../media:rtc_h264_profile_id",
+    "../../media:rtc_media_base",
+    "../../modules/video_coding:video_codec_interface",
+    "../../rtc_base:checks",
+    "../../rtc_base:rtc_base_approved",
+    "../../rtc_base/system:fallthrough",
+    "../../system_wrappers:field_trial_api",
+    "../video:video_bitrate_allocation",
+  ]
+}

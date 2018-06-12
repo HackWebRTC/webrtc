@@ -10,7 +10,7 @@
 
 #include <jni.h>
 
-#include "media/engine/videodecodersoftwarefallbackwrapper.h"
+#include "api/video_codecs/video_decoder_software_fallback_wrapper.h"
 #include "sdk/android/generated_video_jni/jni/VideoDecoderFallback_jni.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 #include "sdk/android/src/jni/wrappednativecodec.h"
@@ -28,9 +28,10 @@ static jlong JNI_VideoDecoderFallback_CreateDecoder(
   std::unique_ptr<VideoDecoder> primary_decoder =
       JavaToNativeVideoDecoder(jni, j_primary_decoder);
 
-  VideoDecoderSoftwareFallbackWrapper* nativeWrapper =
-      new VideoDecoderSoftwareFallbackWrapper(std::move(fallback_decoder),
-                                              std::move(primary_decoder));
+  VideoDecoder* nativeWrapper =
+      CreateVideoDecoderSoftwareFallbackWrapper(std::move(fallback_decoder),
+                                                std::move(primary_decoder))
+          .release();
 
   return jlongFromPointer(nativeWrapper);
 }

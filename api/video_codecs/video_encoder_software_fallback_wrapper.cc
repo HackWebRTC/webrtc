@@ -8,20 +8,26 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "media/engine/videoencodersoftwarefallbackwrapper.h"
+#include "api/video_codecs/video_encoder_software_fallback_wrapper.h"
 
 #include <cstdio>
+#include <string>
 #include <utility>
+#include <vector>
 
+#include "media/base/codec.h"
 #include "media/base/h264_profile_level_id.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/ptr_util.h"
 #include "rtc_base/timeutils.h"
 #include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
+
 namespace {
+
 const char kVp8ForceFallbackEncoderFieldTrial[] =
     "WebRTC-VP8-Forced-Fallback-Encoder-v2";
 
@@ -62,7 +68,81 @@ void GetForcedFallbackParamsFromFieldTrialGroup(int* param_min_pixels,
   *param_min_pixels = min_pixels;
   *param_max_pixels = max_pixels;
 }
-}  // namespace
+
+class VideoEncoderSoftwareFallbackWrapper final : public VideoEncoder {
+ public:
+  VideoEncoderSoftwareFallbackWrapper(
+      std::unique_ptr<webrtc::VideoEncoder> sw_encoder,
+      std::unique_ptr<webrtc::VideoEncoder> hw_encoder);
+  ~VideoEncoderSoftwareFallbackWrapper() override;
+
+  int32_t InitEncode(const VideoCodec* codec_settings,
+                     int32_t number_of_cores,
+                     size_t max_payload_size) override;
+
+  int32_t RegisterEncodeCompleteCallback(
+      EncodedImageCallback* callback) override;
+
+  int32_t Release() override;
+  int32_t Encode(const VideoFrame& frame,
+                 const CodecSpecificInfo* codec_specific_info,
+                 const std::vector<FrameType>* frame_types) override;
+  int32_t SetChannelParameters(uint32_t packet_loss, int64_t rtt) override;
+  int32_t SetRateAllocation(const VideoBitrateAllocation& bitrate_allocation,
+                            uint32_t framerate) override;
+  bool SupportsNativeHandle() const override;
+  ScalingSettings GetScalingSettings() const override;
+  const char* ImplementationName() const override;
+
+ private:
+  bool InitFallbackEncoder();
+
+  // If |forced_fallback_possible_| is true:
+  // The forced fallback is requested if the resolution is less than or equal to
+  // |max_pixels_|. The resolution is allowed to be scaled down to
+  // |min_pixels_|.
+  class ForcedFallbackParams {
+   public:
+    bool IsValid(const VideoCodec& codec) const {
+      return codec.width * codec.height <= max_pixels_;
+    }
+
+    bool active_ = false;
+    int min_pixels_ = 320 * 180;
+    int max_pixels_ = 320 * 240;
+  };
+
+  bool TryInitForcedFallbackEncoder();
+  bool TryReInitForcedFallbackEncoder();
+  void ValidateSettingsForForcedFallback();
+  bool IsForcedFallbackActive() const;
+  void MaybeModifyCodecForFallback();
+
+  // Settings used in the last InitEncode call and used if a dynamic fallback to
+  // software is required.
+  VideoCodec codec_settings_;
+  int32_t number_of_cores_;
+  size_t max_payload_size_;
+
+  // The last bitrate/framerate set, and a flag for noting they are set.
+  bool rates_set_;
+  VideoBitrateAllocation bitrate_allocation_;
+  uint32_t framerate_;
+
+  // The last channel parameters set, and a flag for noting they are set.
+  bool channel_parameters_set_;
+  uint32_t packet_loss_;
+  int64_t rtt_;
+
+  bool use_fallback_encoder_;
+  const std::unique_ptr<webrtc::VideoEncoder> encoder_;
+
+  const std::unique_ptr<webrtc::VideoEncoder> fallback_encoder_;
+  EncodedImageCallback* callback_;
+
+  bool forced_fallback_possible_;
+  ForcedFallbackParams forced_fallback_;
+};
 
 VideoEncoderSoftwareFallbackWrapper::VideoEncoderSoftwareFallbackWrapper(
     std::unique_ptr<webrtc::VideoEncoder> sw_encoder,
@@ -293,6 +373,15 @@ void VideoEncoderSoftwareFallbackWrapper::ValidateSettingsForForcedFallback() {
     RTC_LOG(LS_INFO) << "Disable forced_fallback_possible_ due to settings.";
     forced_fallback_possible_ = false;
   }
+}
+
+}  // namespace
+
+std::unique_ptr<VideoEncoder> CreateVideoEncoderSoftwareFallbackWrapper(
+    std::unique_ptr<VideoEncoder> sw_fallback_encoder,
+    std::unique_ptr<VideoEncoder> hw_encoder) {
+  return rtc::MakeUnique<VideoEncoderSoftwareFallbackWrapper>(
+      std::move(sw_fallback_encoder), std::move(hw_encoder));
 }
 
 }  // namespace webrtc

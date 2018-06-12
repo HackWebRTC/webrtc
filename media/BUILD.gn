@@ -192,10 +192,10 @@ rtc_static_library("rtc_internal_video_codecs") {
   deps += [
     ":rtc_constants",
     ":rtc_media_base",
-    ":rtc_software_fallback_wrappers",
     "..:webrtc_common",
     "../api/video:video_bitrate_allocation",
     "../api/video:video_frame_i420",
+    "../api/video_codecs:rtc_software_fallback_wrappers",
     "../api/video_codecs:video_codecs_api",
     "../call:call_interfaces",
     "../call:video_stream_api",
@@ -211,32 +211,6 @@ rtc_static_library("rtc_internal_video_codecs") {
     "../system_wrappers:field_trial_api",
     "../system_wrappers:metrics_api",
     "//third_party/libyuv",
-  ]
-}
-
-rtc_static_library("rtc_software_fallback_wrappers") {
-  sources = [
-    "engine/videodecodersoftwarefallbackwrapper.cc",
-    "engine/videodecodersoftwarefallbackwrapper.h",
-    "engine/videoencodersoftwarefallbackwrapper.cc",
-    "engine/videoencodersoftwarefallbackwrapper.h",
-  ]
-
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-
-  deps = [
-    ":rtc_h264_profile_id",
-    ":rtc_media_base",
-    "../api/video:video_bitrate_allocation",
-    "../api/video_codecs:video_codecs_api",
-    "../modules/video_coding:video_codec_interface",
-    "../rtc_base:checks",
-    "../rtc_base:rtc_base_approved",
-    "../rtc_base/system:fallthrough",
-    "../system_wrappers:field_trial_api",
   ]
 }
 
@@ -327,7 +301,6 @@ rtc_static_library("rtc_audio_video") {
   deps += [
     ":rtc_constants",
     ":rtc_media_base",
-    ":rtc_software_fallback_wrappers",
     "..:webrtc_common",
     "../api:call_api",
     "../api:libjingle_peerconnection_api",
@@ -336,6 +309,7 @@ rtc_static_library("rtc_audio_video") {
     "../api/audio_codecs:audio_codecs_api",
     "../api/video:video_frame",
     "../api/video:video_frame_i420",
+    "../api/video_codecs:rtc_software_fallback_wrappers",
     "../api/video_codecs:video_codecs_api",
     "../call",
     "../call:call_interfaces",
@@ -547,8 +521,6 @@ if (rtc_include_tests) {
       "engine/nullwebrtcvideoengine_unittest.cc",
       "engine/payload_type_mapper_unittest.cc",
       "engine/simulcast_encoder_adapter_unittest.cc",
-      "engine/videodecodersoftwarefallbackwrapper_unittest.cc",
-      "engine/videoencodersoftwarefallbackwrapper_unittest.cc",
       "engine/vp8_encoder_simulcast_proxy_unittest.cc",
       "engine/webrtcmediaengine_unittest.cc",
       "engine/webrtcvideocapturer_unittest.cc",
@@ -608,7 +580,6 @@ if (rtc_include_tests) {
       ":rtc_media",
       ":rtc_media_base",
       ":rtc_media_tests_utils",
-      ":rtc_software_fallback_wrappers",
       "../api:create_simulcast_test_fixture_api",
       "../api:libjingle_peerconnection_api",
       "../api:mock_video_codec_factory",

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "media/engine/videodecodersoftwarefallbackwrapper.h"
+#include "api/video_codecs/video_decoder_software_fallback_wrapper.h"
 
 #include <string>
 #include <utility>
@@ -16,10 +16,57 @@
 #include "modules/video_coding/include/video_error_codes.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/ptr_util.h"
 #include "rtc_base/system/fallthrough.h"
 #include "rtc_base/trace_event.h"
 
 namespace webrtc {
+
+namespace {
+
+class VideoDecoderSoftwareFallbackWrapper final : public VideoDecoder {
+ public:
+  VideoDecoderSoftwareFallbackWrapper(
+      std::unique_ptr<VideoDecoder> sw_fallback_decoder,
+      std::unique_ptr<VideoDecoder> hw_decoder);
+  ~VideoDecoderSoftwareFallbackWrapper() override;
+
+  int32_t InitDecode(const VideoCodec* codec_settings,
+                     int32_t number_of_cores) override;
+
+  int32_t Decode(const EncodedImage& input_image,
+                 bool missing_frames,
+                 const CodecSpecificInfo* codec_specific_info,
+                 int64_t render_time_ms) override;
+
+  int32_t RegisterDecodeCompleteCallback(
+      DecodedImageCallback* callback) override;
+
+  int32_t Release() override;
+  bool PrefersLateDecoding() const override;
+
+  const char* ImplementationName() const override;
+
+ private:
+  bool InitFallbackDecoder();
+  int32_t InitHwDecoder();
+
+  VideoDecoder& active_decoder() const;
+
+  // Determines if we are trying to use the HW or SW decoder.
+  enum class DecoderType {
+    kNone,
+    kHardware,
+    kFallback,
+  } decoder_type_;
+  std::unique_ptr<VideoDecoder> hw_decoder_;
+
+  VideoCodec codec_settings_;
+  int32_t number_of_cores_;
+  const std::unique_ptr<VideoDecoder> fallback_decoder_;
+  const std::string fallback_implementation_name_;
+  DecodedImageCallback* callback_;
+};
 
 VideoDecoderSoftwareFallbackWrapper::VideoDecoderSoftwareFallbackWrapper(
     std::unique_ptr<VideoDecoder> sw_fallback_decoder,
@@ -115,8 +162,7 @@ int32_t VideoDecoderSoftwareFallbackWrapper::Decode(
     }
     case DecoderType::kFallback:
       return fallback_decoder_->Decode(input_image, missing_frames,
-                                       codec_specific_info,
-                                       render_time_ms);
+                                       codec_specific_info, render_time_ms);
     default:
       RTC_NOTREACHED();
       return WEBRTC_VIDEO_CODEC_ERROR;
@@ -164,6 +210,15 @@ const char* VideoDecoderSoftwareFallbackWrapper::ImplementationName() const {
 VideoDecoder& VideoDecoderSoftwareFallbackWrapper::active_decoder() const {
   return decoder_type_ == DecoderType::kFallback ? *fallback_decoder_
                                                  : *hw_decoder_;
+}
+
+}  // namespace
+
+std::unique_ptr<VideoDecoder> CreateVideoDecoderSoftwareFallbackWrapper(
+    std::unique_ptr<VideoDecoder> sw_fallback_decoder,
+    std::unique_ptr<VideoDecoder> hw_decoder) {
+  return rtc::MakeUnique<VideoDecoderSoftwareFallbackWrapper>(
+      std::move(sw_fallback_decoder), std::move(hw_decoder));
 }
 
 }  // namespace webrtc

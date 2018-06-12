@@ -6,6 +6,7 @@ include_rules = [
   "+pc",
   "+logging/rtc_event_log/rtc_event_log_factory_interface.h",
   "+modules/audio_processing/include",
+  "+system_wrappers/include",
 ]
 
 specific_include_rules = {
