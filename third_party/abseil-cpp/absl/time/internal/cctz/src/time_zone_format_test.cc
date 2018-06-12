@@ -463,8 +463,12 @@ TEST(Format, ExtendedSecondOffset) {
 
   EXPECT_TRUE(load_time_zone("Europe/Moscow", &tz));
   tp = convert(civil_second(1919, 6, 30, 23, 59, 59), utc);
+#if defined(__ANDROID__) && __ANDROID_API__ < 25
+  // Only Android 'N'.1 and beyond have this tz2016g transition.
+#else
   TestFormatSpecifier(tp, tz, "%E*z", "+04:31:19");
   TestFormatSpecifier(tp, tz, "%Ez", "+04:31");
+#endif
   tp += seconds(1);
   TestFormatSpecifier(tp, tz, "%E*z", "+04:00:00");
 }

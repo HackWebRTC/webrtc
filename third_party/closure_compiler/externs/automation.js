@@ -265,7 +265,6 @@ chrome.automation.StateType = {
   EXPANDED: 'expanded',
   FOCUSABLE: 'focusable',
   FOCUSED: 'focused',
-  HAS_POPUP: 'hasPopup',
   HORIZONTAL: 'horizontal',
   HOVERED: 'hovered',
   IGNORED: 'ignored',

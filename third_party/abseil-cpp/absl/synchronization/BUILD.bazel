@@ -130,7 +130,7 @@ cc_test(
     deps = [
         ":graphcycles_internal",
         "//absl/base",
-        "@com_github_google_benchmark//:benchmark",
+        "@com_github_google_benchmark//:benchmark_main",
     ],
 )
 
@@ -150,6 +150,9 @@ cc_test(
     srcs = ["mutex_test.cc"],
     copts = ABSL_TEST_COPTS,
     tags = [
+        "no_test_android_arm",
+        "no_test_android_arm64",
+        "no_test_android_x86",
         "no_test_loonix",  # Too slow.
     ],
     deps = [
@@ -173,7 +176,7 @@ cc_test(
         ":synchronization",
         ":thread_pool",
         "//absl/base",
-        "@com_github_google_benchmark//:benchmark",
+        "@com_github_google_benchmark//:benchmark_main",
     ],
 )
 

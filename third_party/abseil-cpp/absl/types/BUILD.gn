@@ -41,6 +41,21 @@ source_set("bad_any_cast") {
     "//third_party/abseil-cpp:absl_default_cflags_cc",
   ]
   public_configs = [ "//third_party/abseil-cpp:absl_include_config" ]
+  public = [
+    "bad_any_cast.h",
+  ]
+  deps = [
+    ":bad_any_cast_impl",
+  ]
+}
+
+source_set("bad_any_cast_impl") {
+  configs -= [ "//build/config/compiler:chromium_code" ]
+  configs += [
+    "//build/config/compiler:no_chromium_code",
+    "//third_party/abseil-cpp:absl_default_cflags_cc",
+  ]
+  public_configs = [ "//third_party/abseil-cpp:absl_include_config" ]
   sources = [
     "bad_any_cast.cc",
   ]
@@ -51,6 +66,8 @@ source_set("bad_any_cast") {
     "../base",
     "../base:config",
   ]
+  visibility = []
+  visibility += [ ":*" ]
 }
 
 source_set("span") {

@@ -69,7 +69,7 @@ cc_test(
     tags = ["benchmark"],
     deps = [
         ":fixed_array",
-        "@com_github_google_benchmark//:benchmark",
+        "@com_github_google_benchmark//:benchmark_main",
     ],
 )
 
@@ -126,7 +126,7 @@ cc_test(
         ":inlined_vector",
         "//absl/base",
         "//absl/strings",
-        "@com_github_google_benchmark//:benchmark",
+        "@com_github_google_benchmark//:benchmark_main",
     ],
 )
 

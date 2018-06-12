@@ -250,7 +250,12 @@ chrome.fileManagerPrivate.FileTask;
  *   starred: (boolean|undefined),
  *   externalFileUrl: (string|undefined),
  *   alternateUrl: (string|undefined),
- *   shareUrl: (string|undefined)
+ *   shareUrl: (string|undefined),
+ *   canCopy: (boolean|undefined),
+ *   canDelete: (boolean|undefined),
+ *   canRename: (boolean|undefined),
+ *   canAddChildren: (boolean|undefined),
+ *   canShare: (boolean|undefined)
  * }}
  */
 chrome.fileManagerPrivate.EntryProperties;
