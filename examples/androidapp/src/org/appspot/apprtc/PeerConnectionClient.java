@@ -449,6 +449,7 @@ public class PeerConnectionClient {
                   .setVideoDecoderFactory(decoderFactory)
                   .createPeerConnectionFactory();
     Log.d(TAG, "Peer connection factory created.");
+    adm.release();
   }
 
   AudioDeviceModule createLegacyAudioDevice() {
