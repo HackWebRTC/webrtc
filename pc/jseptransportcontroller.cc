@@ -379,6 +379,24 @@ void JsepTransportController::SetMetricsObserver(
   }
 }
 
+void JsepTransportController::SetActiveResetSrtpParams(
+    bool active_reset_srtp_params) {
+  if (!network_thread_->IsCurrent()) {
+    network_thread_->Invoke<void>(RTC_FROM_HERE, [=] {
+      SetActiveResetSrtpParams(active_reset_srtp_params);
+    });
+    return;
+  }
+
+  RTC_LOG(INFO)
+      << "Updating the active_reset_srtp_params for JsepTransportController: "
+      << active_reset_srtp_params;
+  config_.active_reset_srtp_params = active_reset_srtp_params;
+  for (auto& kv : jsep_transports_by_name_) {
+    kv.second->SetActiveResetSrtpParams(active_reset_srtp_params);
+  }
+}
+
 std::unique_ptr<cricket::DtlsTransportInternal>
 JsepTransportController::CreateDtlsTransport(const std::string& transport_name,
                                              bool rtcp) {
@@ -478,6 +496,8 @@ JsepTransportController::CreateDtlsSrtpTransport(
 
   dtls_srtp_transport->SetDtlsTransports(rtp_dtls_transport,
                                          rtcp_dtls_transport);
+  dtls_srtp_transport->SetActiveResetSrtpParams(
+      config_.active_reset_srtp_params);
   return dtls_srtp_transport;
 }
 

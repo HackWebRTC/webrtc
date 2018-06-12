@@ -45,6 +45,7 @@
 @synthesize iceRegatherIntervalRange = _iceRegatherIntervalRange;
 @synthesize sdpSemantics = _sdpSemantics;
 @synthesize turnCustomizer = _turnCustomizer;
+@synthesize activeResetSrtpParams = _activeResetSrtpParams;
 
 - (instancetype)init {
   // Copy defaults.
@@ -99,6 +100,7 @@
     }
     _sdpSemantics = [[self class] sdpSemanticsForNativeSdpSemantics:config.sdp_semantics];
     _turnCustomizer = config.turn_customizer;
+    _activeResetSrtpParams = config.active_reset_srtp_params;
   }
   return self;
 }
@@ -106,7 +108,7 @@
 - (NSString *)description {
   static NSString *formatString =
       @"RTCConfiguration: "
-      @"{\n%@\n%@\n%@\n%@\n%@\n%@\n%@\n%@\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%@\n%@\n%d\n%d\n}\n";
+      @"{\n%@\n%@\n%@\n%@\n%@\n%@\n%@\n%@\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%@\n%@\n%d\n%d\n%d\n}\n";
 
   return [NSString
       stringWithFormat:formatString,
@@ -128,7 +130,8 @@
                        _iceCheckMinInterval,
                        _iceRegatherIntervalRange,
                        _disableLinkLocalNetworks,
-                       _maxIPv6Networks];
+                       _maxIPv6Networks,
+                       _activeResetSrtpParams];
 }
 
 #pragma mark - Private
@@ -194,6 +197,7 @@
   if (_turnCustomizer) {
     nativeConfig->turn_customizer = _turnCustomizer;
   }
+  nativeConfig->active_reset_srtp_params = _activeResetSrtpParams ? true : false;
   return nativeConfig.release();
 }
 

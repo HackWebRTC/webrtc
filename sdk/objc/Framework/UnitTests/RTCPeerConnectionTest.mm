@@ -49,6 +49,7 @@
   config.continualGatheringPolicy =
       RTCContinualGatheringPolicyGatherContinually;
   config.shouldPruneTurnPorts = YES;
+  config.activeResetSrtpParams = YES;
 
   RTCMediaConstraints *contraints = [[RTCMediaConstraints alloc] initWithMandatoryConstraints:@{}
       optionalConstraints:nil];
@@ -87,6 +88,7 @@
             newConfig.iceBackupCandidatePairPingInterval);
   EXPECT_EQ(config.continualGatheringPolicy, newConfig.continualGatheringPolicy);
   EXPECT_EQ(config.shouldPruneTurnPorts, newConfig.shouldPruneTurnPorts);
+  EXPECT_EQ(config.activeResetSrtpParams, newConfig.activeResetSrtpParams);
 }
 
 @end

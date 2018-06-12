@@ -693,6 +693,7 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
     webrtc::TurnCustomizer* turn_customizer;
     SdpSemantics sdp_semantics;
     rtc::Optional<rtc::AdapterType> network_preference;
+    bool active_reset_srtp_params;
   };
   static_assert(sizeof(stuff_being_tested_for_equality) == sizeof(*this),
                 "Did you add something to RTCConfiguration and forget to "
@@ -739,7 +740,8 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
          ice_regather_interval_range == o.ice_regather_interval_range &&
          turn_customizer == o.turn_customizer &&
          sdp_semantics == o.sdp_semantics &&
-         network_preference == o.network_preference;
+         network_preference == o.network_preference &&
+         active_reset_srtp_params == o.active_reset_srtp_params;
 }
 
 bool PeerConnectionInterface::RTCConfiguration::operator!=(
@@ -938,6 +940,7 @@ bool PeerConnection::Initialize(
 #if defined(ENABLE_EXTERNAL_AUTH)
   config.enable_external_auth = true;
 #endif
+  config.active_reset_srtp_params = configuration.active_reset_srtp_params;
   transport_controller_.reset(new JsepTransportController(
       signaling_thread(), network_thread(), port_allocator_.get(), config));
   transport_controller_->SignalIceConnectionState.connect(
@@ -2841,7 +2844,6 @@ PeerConnectionInterface::RTCConfiguration PeerConnection::GetConfiguration() {
 bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
                                       RTCError* error) {
   TRACE_EVENT0("webrtc", "PeerConnection::SetConfiguration");
-
   if (IsClosed()) {
     RTC_LOG(LS_ERROR) << "SetConfiguration: PeerConnection is closed.";
     return SafeSetError(RTCErrorType::INVALID_STATE, error);
@@ -2879,6 +2881,8 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
       configuration.stun_candidate_keepalive_interval;
   modified_config.turn_customizer = configuration.turn_customizer;
   modified_config.network_preference = configuration.network_preference;
+  modified_config.active_reset_srtp_params =
+      configuration.active_reset_srtp_params;
   if (configuration != modified_config) {
     RTC_LOG(LS_ERROR) << "Modifying the configuration in an unsupported way.";
     return SafeSetError(RTCErrorType::INVALID_MODIFICATION, error);
@@ -2936,6 +2940,12 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
   }
 
   transport_controller_->SetIceConfig(ParseIceConfig(modified_config));
+
+  if (configuration_.active_reset_srtp_params !=
+      modified_config.active_reset_srtp_params) {
+    transport_controller_->SetActiveResetSrtpParams(
+        modified_config.active_reset_srtp_params);
+  }
 
   configuration_ = modified_config;
   return SafeSetError(RTCErrorType::NONE, error);

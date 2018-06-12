@@ -173,6 +173,8 @@ class JsepTransport : public sigslot::has_slots<> {
       const rtc::RTCCertificate* certificate,
       const rtc::SSLFingerprint* fingerprint) const;
 
+  void SetActiveResetSrtpParams(bool active_reset_srtp_params);
+
  private:
   bool SetRtcpMux(bool enable, webrtc::SdpType type, ContentSource source);
 

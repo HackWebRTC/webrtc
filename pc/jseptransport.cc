@@ -330,6 +330,15 @@ webrtc::RTCError JsepTransport::VerifyCertificateFingerprint(
                           std::string(desc.str()));
 }
 
+void JsepTransport::SetActiveResetSrtpParams(bool active_reset_srtp_params) {
+  if (dtls_srtp_transport_) {
+    RTC_LOG(INFO)
+        << "Setting active_reset_srtp_params of DtlsSrtpTransport to: "
+        << active_reset_srtp_params;
+    dtls_srtp_transport_->SetActiveResetSrtpParams(active_reset_srtp_params);
+  }
+}
+
 void JsepTransport::SetLocalIceParameters(IceTransportInternal* ice_transport) {
   RTC_DCHECK(ice_transport);
   RTC_DCHECK(local_description_);
