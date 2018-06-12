@@ -934,6 +934,7 @@ bool PeerConnection::Initialize(
   config.rtcp_mux_policy = configuration.rtcp_mux_policy;
   config.crypto_options = options.crypto_options;
   config.transport_observer = this;
+  config.event_log = event_log_.get();
 #if defined(ENABLE_EXTERNAL_AUTH)
   config.enable_external_auth = true;
 #endif

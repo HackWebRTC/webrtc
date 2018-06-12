@@ -394,7 +394,7 @@ JsepTransportController::CreateDtlsTransport(const std::string& transport_name,
         std::move(ice), config_.crypto_options);
   } else {
     auto ice = rtc::MakeUnique<cricket::P2PTransportChannel>(
-        transport_name, component, port_allocator_);
+        transport_name, component, port_allocator_, config_.event_log);
     dtls = rtc::MakeUnique<cricket::DtlsTransport>(std::move(ice),
                                                    config_.crypto_options);
   }

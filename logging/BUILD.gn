@@ -232,6 +232,23 @@ rtc_static_library("rtc_event_log_impl_base") {
   }
 }
 
+rtc_source_set("fake_rtc_event_log") {
+  testonly = true
+  sources = [
+    "rtc_event_log/fake_rtc_event_log.cc",
+    "rtc_event_log/fake_rtc_event_log.h",
+    "rtc_event_log/fake_rtc_event_log_factory.cc",
+    "rtc_event_log/fake_rtc_event_log_factory.h",
+  ]
+
+  deps = [
+    ":ice_log",
+    ":rtc_event_log_api",
+    "../rtc_base:checks",
+    "../rtc_base:rtc_base",
+  ]
+}
+
 if (rtc_enable_protobuf) {
   proto_library("rtc_event_log_proto") {
     sources = [

@@ -19,6 +19,7 @@
 
 #include "api/candidate.h"
 #include "api/peerconnectioninterface.h"
+#include "logging/rtc_event_log/rtc_event_log.h"
 #include "media/sctp/sctptransportinternal.h"
 #include "p2p/base/dtlstransport.h"
 #include "p2p/base/p2ptransportchannel.h"
@@ -77,6 +78,7 @@ class JsepTransportController : public sigslot::has_slots<>,
     // Used to inject the ICE/DTLS transports created externally.
     cricket::TransportFactoryInterface* external_transport_factory = nullptr;
     Observer* transport_observer = nullptr;
+    RtcEventLog* event_log = nullptr;
   };
 
   // The ICE related events are signaled on the |signaling_thread|.
@@ -317,7 +319,7 @@ class JsepTransportController : public sigslot::has_slots<>,
   rtc::scoped_refptr<rtc::RTCCertificate> certificate_;
   rtc::AsyncInvoker invoker_;
 
-  webrtc::MetricsObserverInterface* metrics_observer_ = nullptr;
+  MetricsObserverInterface* metrics_observer_ = nullptr;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(JsepTransportController);
 };
