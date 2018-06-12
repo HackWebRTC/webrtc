@@ -53,12 +53,6 @@ class DtlsSrtpTransport : public SrtpTransport {
                     "Set SRTP keys for DTLS-SRTP is not supported.");
   }
 
-  // If |active_reset_srtp_params_| is set to be true, the SRTP parameters will
-  // be reset whenever the DtlsTransports are reset.
-  void SetActiveResetSrtpParams(bool active_reset_srtp_params) {
-    active_reset_srtp_params_ = active_reset_srtp_params;
-  }
-
  private:
   bool IsDtlsActive();
   bool IsDtlsConnected();
@@ -90,8 +84,6 @@ class DtlsSrtpTransport : public SrtpTransport {
   // The encrypted header extension IDs.
   rtc::Optional<std::vector<int>> send_extension_ids_;
   rtc::Optional<std::vector<int>> recv_extension_ids_;
-
-  bool active_reset_srtp_params_ = false;
 };
 
 }  // namespace webrtc
