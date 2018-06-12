@@ -89,6 +89,21 @@ static NSString *const shaderSource = MTL_STRINGIFY(
   return shaderSource;
 }
 
+- (void)getWidth:(nonnull int *)width
+          height:(nonnull int *)height
+       cropWidth:(nonnull int *)cropWidth
+      cropHeight:(nonnull int *)cropHeight
+           cropX:(nonnull int *)cropX
+           cropY:(nonnull int *)cropY
+         ofFrame:(nonnull RTCVideoFrame *)frame {
+  *width = frame.width;
+  *height = frame.height;
+  *cropWidth = frame.width;
+  *cropHeight = frame.height;
+  *cropX = 0;
+  *cropY = 0;
+}
+
 - (BOOL)setupTexturesForFrame:(nonnull RTCVideoFrame *)frame {
   if (![super setupTexturesForFrame:frame]) {
     return NO;

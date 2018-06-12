@@ -103,8 +103,8 @@ static const NSInteger kMaxInflightBuffers = 1;
   id<MTLBuffer> _vertexBuffer;
 
   // Values affecting the vertex buffer. Stored for comparison to avoid unnecessary recreation.
-  size_t _oldFrameWidth;
-  size_t _oldFrameHeight;
+  int _oldFrameWidth;
+  int _oldFrameHeight;
   int _oldCropWidth;
   int _oldCropHeight;
   int _oldCropX;
@@ -161,6 +161,16 @@ static const NSInteger kMaxInflightBuffers = 1;
   RTC_NOTREACHED() << "Virtual method not implemented in subclass.";
 }
 
+- (void)getWidth:(int *)width
+          height:(int *)height
+       cropWidth:(int *)cropWidth
+      cropHeight:(int *)cropHeight
+           cropX:(int *)cropX
+           cropY:(int *)cropY
+         ofFrame:(nonnull RTCVideoFrame *)frame {
+  RTC_NOTREACHED() << "Virtual method not implemented in subclass.";
+}
+
 - (BOOL)setupTexturesForFrame:(nonnull RTCVideoFrame *)frame {
   // Apply rotation override if set.
   RTCVideoRotation rotation;
@@ -178,26 +188,31 @@ static const NSInteger kMaxInflightBuffers = 1;
     rotation = frame.rotation;
   }
 
-  RTCCVPixelBuffer *pixelBuffer = (RTCCVPixelBuffer *)frame.buffer;
-  size_t frameWidth = CVPixelBufferGetWidth(pixelBuffer.pixelBuffer);
-  size_t frameHeight = CVPixelBufferGetHeight(pixelBuffer.pixelBuffer);
+  int frameWidth, frameHeight, cropWidth, cropHeight, cropX, cropY;
+  [self getWidth:&frameWidth
+          height:&frameHeight
+       cropWidth:&cropWidth
+      cropHeight:&cropHeight
+           cropX:&cropX
+           cropY:&cropY
+         ofFrame:frame];
 
   // Recompute the texture cropping and recreate vertexBuffer if necessary.
-  if (pixelBuffer.cropX != _oldCropX || pixelBuffer.cropY != _oldCropY ||
-      pixelBuffer.cropWidth != _oldCropWidth || pixelBuffer.cropHeight != _oldCropHeight ||
-      rotation != _oldRotation || frameWidth != _oldFrameWidth || frameHeight != _oldFrameHeight) {
-    getCubeVertexData(pixelBuffer.cropX,
-                      pixelBuffer.cropY,
-                      pixelBuffer.cropWidth,
-                      pixelBuffer.cropHeight,
+  if (cropX != _oldCropX || cropY != _oldCropY || cropWidth != _oldCropWidth ||
+      cropHeight != _oldCropHeight || rotation != _oldRotation || frameWidth != _oldFrameWidth ||
+      frameHeight != _oldFrameHeight) {
+    getCubeVertexData(cropX,
+                      cropY,
+                      cropWidth,
+                      cropHeight,
                       frameWidth,
                       frameHeight,
                       rotation,
                       (float *)_vertexBuffer.contents);
-    _oldCropX = pixelBuffer.cropX;
-    _oldCropY = pixelBuffer.cropY;
-    _oldCropWidth = pixelBuffer.cropWidth;
-    _oldCropHeight = pixelBuffer.cropHeight;
+    _oldCropX = cropX;
+    _oldCropY = cropY;
+    _oldCropWidth = cropWidth;
+    _oldCropHeight = cropHeight;
     _oldRotation = rotation;
     _oldFrameWidth = frameWidth;
     _oldFrameHeight = frameHeight;
