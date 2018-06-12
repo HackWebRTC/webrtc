@@ -50,6 +50,7 @@ LIB_TO_LICENSES_DICT = {
 
     # Compile time dependencies, no license needed:
     'yasm': [],
+    'ow2_asm': [],
 }
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(sys.argv[0]))
