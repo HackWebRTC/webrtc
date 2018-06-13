@@ -89,6 +89,24 @@ void CopyCodecSpecific(const CodecSpecificInfo* info, RTPVideoHeader* rtp) {
   }
 }
 
+void SetVideoTiming(VideoSendTiming* timing, const EncodedImage& image) {
+  if (image.timing_.flags == VideoSendTiming::TimingFrameFlags::kInvalid ||
+      image.timing_.flags == VideoSendTiming::TimingFrameFlags::kNotTriggered) {
+    timing->flags = VideoSendTiming::TimingFrameFlags::kInvalid;
+    return;
+  }
+
+  timing->encode_start_delta_ms = VideoSendTiming::GetDeltaCappedMs(
+      image.capture_time_ms_, image.timing_.encode_start_ms);
+  timing->encode_finish_delta_ms = VideoSendTiming::GetDeltaCappedMs(
+      image.capture_time_ms_, image.timing_.encode_finish_ms);
+  timing->packetization_finish_delta_ms = 0;
+  timing->pacer_exit_delta_ms = 0;
+  timing->network_timestamp_delta_ms = 0;
+  timing->network2_timestamp_delta_ms = 0;
+  timing->flags = image.timing_.flags;
+}
+
 }  // namespace
 
 // State for setting picture id and tl0 pic idx, for VP8 and VP9
@@ -218,27 +236,12 @@ EncodedImageCallback::Result PayloadRouter::OnEncodedImage(
   memset(&rtp_video_header, 0, sizeof(RTPVideoHeader));
   if (codec_specific_info)
     CopyCodecSpecific(codec_specific_info, &rtp_video_header);
+
   rtp_video_header.rotation = encoded_image.rotation_;
   rtp_video_header.content_type = encoded_image.content_type_;
-  if (encoded_image.timing_.flags != VideoSendTiming::kInvalid &&
-      encoded_image.timing_.flags != VideoSendTiming::kNotTriggered) {
-    rtp_video_header.video_timing.encode_start_delta_ms =
-        VideoSendTiming::GetDeltaCappedMs(
-            encoded_image.capture_time_ms_,
-            encoded_image.timing_.encode_start_ms);
-    rtp_video_header.video_timing.encode_finish_delta_ms =
-        VideoSendTiming::GetDeltaCappedMs(
-            encoded_image.capture_time_ms_,
-            encoded_image.timing_.encode_finish_ms);
-    rtp_video_header.video_timing.packetization_finish_delta_ms = 0;
-    rtp_video_header.video_timing.pacer_exit_delta_ms = 0;
-    rtp_video_header.video_timing.network_timestamp_delta_ms = 0;
-    rtp_video_header.video_timing.network2_timestamp_delta_ms = 0;
-    rtp_video_header.video_timing.flags = encoded_image.timing_.flags;
-  } else {
-    rtp_video_header.video_timing.flags = VideoSendTiming::kInvalid;
-  }
   rtp_video_header.playout_delay = encoded_image.playout_delay_;
+
+  SetVideoTiming(&rtp_video_header.video_timing, encoded_image);
 
   int stream_index = rtp_video_header.simulcastIdx;
   RTC_DCHECK_LT(stream_index, rtp_modules_.size());
