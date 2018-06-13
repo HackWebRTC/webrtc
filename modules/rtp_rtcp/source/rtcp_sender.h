@@ -14,7 +14,6 @@
 #include <map>
 #include <memory>
 #include <set>
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -40,21 +39,6 @@ namespace webrtc {
 
 class ModuleRtpRtcpImpl;
 class RtcEventLog;
-
-class NACKStringBuilder {
- public:
-  NACKStringBuilder();
-  ~NACKStringBuilder();
-
-  void PushNACK(uint16_t nack);
-  std::string GetResult();
-
- private:
-  std::ostringstream stream_;
-  int count_;
-  uint16_t prevNack_;
-  bool consecutive_;
-};
 
 class RTCPSender {
  public:

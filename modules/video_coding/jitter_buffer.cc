@@ -1049,8 +1049,6 @@ bool VCMJitterBuffer::UpdateNackList(uint16_t sequence_number) {
     for (uint16_t i = latest_received_sequence_number_ + 1;
          IsNewerSequenceNumber(sequence_number, i); ++i) {
       missing_sequence_numbers_.insert(missing_sequence_numbers_.end(), i);
-      TRACE_EVENT_INSTANT1(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "AddNack",
-                           "seqnum", i);
     }
     if (TooLargeNackList() && !HandleTooLargeNackList()) {
       RTC_LOG(LS_WARNING) << "Requesting key frame due to too large NACK list.";
@@ -1064,8 +1062,6 @@ bool VCMJitterBuffer::UpdateNackList(uint16_t sequence_number) {
     }
   } else {
     missing_sequence_numbers_.erase(sequence_number);
-    TRACE_EVENT_INSTANT1(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "RemoveNack",
-                         "seqnum", sequence_number);
   }
   return true;
 }

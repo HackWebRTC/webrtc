@@ -687,9 +687,6 @@ bool RTPSender::SendPacketToNetwork(const RtpPacketToSend& packet,
           packet, pacing_info.probe_cluster_id));
     }
   }
-  TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
-                       "RTPSender::SendPacketToNetwork", "size", packet.size(),
-                       "sent", bytes_sent);
   // TODO(pwestin): Add a separate bitrate for sent bitrate after pacer.
   if (bytes_sent <= 0) {
     RTC_LOG(LS_WARNING) << "Transport failed to send packet.";
@@ -714,9 +711,6 @@ int RTPSender::SetSelectiveRetransmissions(uint8_t settings) {
 void RTPSender::OnReceivedNack(
     const std::vector<uint16_t>& nack_sequence_numbers,
     int64_t avg_rtt) {
-  TRACE_EVENT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
-               "RTPSender::OnReceivedNACK", "num_seqnum",
-               nack_sequence_numbers.size(), "avg_rtt", avg_rtt);
   packet_history_.SetRtt(5 + avg_rtt);
   for (uint16_t seq_no : nack_sequence_numbers) {
     const int32_t bytes_sent = ReSendPacket(seq_no);
@@ -771,15 +765,6 @@ bool RTPSender::PrepareAndSendPacket(std::unique_ptr<RtpPacketToSend> packet,
   RTC_DCHECK(packet);
   int64_t capture_time_ms = packet->capture_time_ms();
   RtpPacketToSend* packet_to_send = packet.get();
-
-  if (!is_retransmit && packet->Marker()) {
-    TRACE_EVENT_ASYNC_END0(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "PacedSend",
-                           capture_time_ms);
-  }
-
-  TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
-                       "PrepareAndSendPacket", "timestamp", packet->Timestamp(),
-                       "seqnum", packet->SequenceNumber());
 
   std::unique_ptr<RtpPacketToSend> packet_rtx;
   if (send_over_rtx) {
@@ -944,9 +929,6 @@ bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
     if (last_capture_time_ms_sent_ == 0 ||
         corrected_time_ms > last_capture_time_ms_sent_) {
       last_capture_time_ms_sent_ = corrected_time_ms;
-      TRACE_EVENT_ASYNC_BEGIN1(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
-                               "PacedSend", corrected_time_ms,
-                               "capture_time_ms", corrected_time_ms);
     }
     return true;
   }

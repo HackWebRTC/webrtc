@@ -321,9 +321,6 @@ bool RTPSenderAudio::SendTelephoneEventPacket(bool ended,
     dtmfbuffer[1] = E | R | volume;
     ByteWriter<uint16_t>::WriteBigEndian(dtmfbuffer + 2, duration);
 
-    TRACE_EVENT_INSTANT2(
-        TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "Audio::SendTelephoneEvent",
-        "timestamp", packet->Timestamp(), "seqnum", packet->SequenceNumber());
     result = rtp_sender_->SendToNetwork(std::move(packet), kAllowRetransmission,
                                         RtpPacketSender::kHighPriority);
     send_count--;

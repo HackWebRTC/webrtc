@@ -135,9 +135,6 @@ int32_t RTPReceiverAudio::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
                                          const uint8_t* payload,
                                          size_t payload_length,
                                          int64_t timestamp_ms) {
-  TRACE_EVENT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "Audio::ParseRtp",
-               "seqnum", rtp_header->header.sequenceNumber, "timestamp",
-               rtp_header->header.timestamp);
   rtp_header->type.Audio.numEnergy = rtp_header->header.numCSRCs;
   num_energy_ = rtp_header->type.Audio.numEnergy;
   if (rtp_header->type.Audio.numEnergy > 0 &&

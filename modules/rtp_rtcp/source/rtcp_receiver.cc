@@ -420,9 +420,6 @@ void RTCPReceiver::HandleSenderReport(const CommonHeader& rtcp_block,
 
   UpdateTmmbrRemoteIsAlive(remote_ssrc);
 
-  TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "SR",
-                       "remote_ssrc", remote_ssrc, "ssrc", main_ssrc_);
-
   // Have I received RTP packets from this party?
   if (remote_ssrc_ == remote_ssrc) {
     // Only signal that we have received a SR when we accept one.
@@ -454,9 +451,6 @@ void RTCPReceiver::HandleReceiverReport(const CommonHeader& rtcp_block,
   packet_information->remote_ssrc = remote_ssrc;
 
   UpdateTmmbrRemoteIsAlive(remote_ssrc);
-
-  TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "RR",
-                       "remote_ssrc", remote_ssrc, "ssrc", main_ssrc_);
 
   packet_information->packet_type_flags |= kRtcpRr;
 
@@ -532,8 +526,6 @@ void RTCPReceiver::HandleReportBlock(const ReportBlock& report_block,
     packet_information->rtt_ms = rtt_ms;
   }
 
-  TRACE_COUNTER_ID1(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "RR_RTT",
-                    report_block.source_ssrc(), rtt_ms);
   packet_information->report_blocks.push_back(report_block_info->report_block);
 }
 
@@ -801,8 +793,6 @@ void RTCPReceiver::HandlePli(const CommonHeader& rtcp_block,
   }
 
   if (main_ssrc_ == pli.media_ssrc()) {
-    TRACE_EVENT_INSTANT0(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "PLI");
-
     ++packet_type_counter_.pli_packets;
     // Received a signal that we need to send a new key frame.
     packet_information->packet_type_flags |= kRtcpPli;

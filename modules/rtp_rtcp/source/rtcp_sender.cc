@@ -49,35 +49,6 @@ const uint32_t kRtcpAnyExtendedReports =
     kRtcpXrTargetBitrate;
 }  // namespace
 
-NACKStringBuilder::NACKStringBuilder()
-    : stream_(""), count_(0), prevNack_(0), consecutive_(false) {}
-
-NACKStringBuilder::~NACKStringBuilder() {}
-
-void NACKStringBuilder::PushNACK(uint16_t nack) {
-  if (count_ == 0) {
-    stream_ << nack;
-  } else if (nack == prevNack_ + 1) {
-    consecutive_ = true;
-  } else {
-    if (consecutive_) {
-      stream_ << "-" << prevNack_;
-      consecutive_ = false;
-    }
-    stream_ << "," << nack;
-  }
-  count_++;
-  prevNack_ = nack;
-}
-
-std::string NACKStringBuilder::GetResult() {
-  if (consecutive_) {
-    stream_ << "-" << prevNack_;
-    consecutive_ = false;
-  }
-  return stream_.str();
-}
-
 RTCPSender::FeedbackState::FeedbackState()
     : packets_sent(0),
       media_bytes_sent(0),
@@ -482,11 +453,7 @@ std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildPLI(const RtcpContext& ctx) {
   pli->SetSenderSsrc(ssrc_);
   pli->SetMediaSsrc(remote_ssrc_);
 
-  TRACE_EVENT_INSTANT0(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
-                       "RTCPSender::PLI");
   ++packet_type_counter_.pli_packets;
-  TRACE_COUNTER_ID1(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "RTCP_PLICount",
-                    ssrc_, packet_type_counter_.pli_packets);
 
   return std::unique_ptr<rtcp::RtcpPacket>(pli);
 }
@@ -498,11 +465,7 @@ std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildFIR(const RtcpContext& ctx) {
   fir->SetSenderSsrc(ssrc_);
   fir->AddRequestTo(remote_ssrc_, sequence_number_fir_);
 
-  TRACE_EVENT_INSTANT0(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
-                       "RTCPSender::FIR");
   ++packet_type_counter_.fir_packets;
-  TRACE_COUNTER_ID1(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "RTCP_FIRCount",
-                    ssrc_, packet_type_counter_.fir_packets);
 
   return std::unique_ptr<rtcp::RtcpPacket>(fir);
 }
@@ -513,9 +476,6 @@ std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildREMB(
   remb->SetSenderSsrc(ssrc_);
   remb->SetBitrateBps(remb_bitrate_);
   remb->SetSsrcs(remb_ssrcs_);
-
-  TRACE_EVENT_INSTANT0(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
-                       "RTCPSender::REMB");
 
   return std::unique_ptr<rtcp::RtcpPacket>(remb);
 }
@@ -612,20 +572,13 @@ std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildNACK(
   nack->SetPacketIds(ctx.nack_list_, ctx.nack_size_);
 
   // Report stats.
-  NACKStringBuilder stringBuilder;
   for (int idx = 0; idx < ctx.nack_size_; ++idx) {
-    stringBuilder.PushNACK(ctx.nack_list_[idx]);
     nack_stats_.ReportRequest(ctx.nack_list_[idx]);
   }
   packet_type_counter_.nack_requests = nack_stats_.requests();
   packet_type_counter_.unique_nack_requests = nack_stats_.unique_requests();
 
-  TRACE_EVENT_INSTANT1(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
-                       "RTCPSender::NACK", "nacks",
-                       TRACE_STR_COPY(stringBuilder.GetResult().c_str()));
   ++packet_type_counter_.nack_packets;
-  TRACE_COUNTER_ID1(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"), "RTCP_NACKCount",
-                    ssrc_, packet_type_counter_.nack_packets);
 
   return std::unique_ptr<rtcp::RtcpPacket>(nack);
 }

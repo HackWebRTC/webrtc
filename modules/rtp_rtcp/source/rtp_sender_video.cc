@@ -104,7 +104,6 @@ void RTPSenderVideo::SendVideoPacket(std::unique_ptr<RtpPacketToSend> packet,
   // Remember some values about the packet before sending it away.
   size_t packet_size = packet->size();
   uint16_t seq_num = packet->SequenceNumber();
-  uint32_t rtp_timestamp = packet->Timestamp();
   if (!rtp_sender_->SendToNetwork(std::move(packet), storage,
                                   RtpPacketSender::kLowPriority)) {
     RTC_LOG(LS_WARNING) << "Failed to send video packet " << seq_num;
@@ -112,16 +111,12 @@ void RTPSenderVideo::SendVideoPacket(std::unique_ptr<RtpPacketToSend> packet,
   }
   rtc::CritScope cs(&stats_crit_);
   video_bitrate_.Update(packet_size, clock_->TimeInMilliseconds());
-  TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
-                       "Video::PacketNormal", "timestamp", rtp_timestamp,
-                       "seqnum", seq_num);
 }
 
 void RTPSenderVideo::SendVideoPacketAsRedMaybeWithUlpfec(
     std::unique_ptr<RtpPacketToSend> media_packet,
     StorageType media_packet_storage,
     bool protect_media_packet) {
-  uint32_t rtp_timestamp = media_packet->Timestamp();
   uint16_t media_seq_num = media_packet->SequenceNumber();
 
   std::unique_ptr<RtpPacketToSend> red_packet(
@@ -158,9 +153,6 @@ void RTPSenderVideo::SendVideoPacketAsRedMaybeWithUlpfec(
                                  RtpPacketSender::kLowPriority)) {
     rtc::CritScope cs(&stats_crit_);
     video_bitrate_.Update(red_packet_size, clock_->TimeInMilliseconds());
-    TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
-                         "Video::PacketRed", "timestamp", rtp_timestamp,
-                         "seqnum", media_seq_num);
   } else {
     RTC_LOG(LS_WARNING) << "Failed to send RED packet " << media_seq_num;
   }
@@ -176,9 +168,6 @@ void RTPSenderVideo::SendVideoPacketAsRedMaybeWithUlpfec(
                                    RtpPacketSender::kLowPriority)) {
       rtc::CritScope cs(&stats_crit_);
       fec_bitrate_.Update(fec_packet->length(), clock_->TimeInMilliseconds());
-      TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
-                           "Video::PacketUlpfec", "timestamp", rtp_timestamp,
-                           "seqnum", fec_sequence_number);
     } else {
       RTC_LOG(LS_WARNING) << "Failed to send ULPFEC packet "
                           << fec_sequence_number;
@@ -202,15 +191,11 @@ void RTPSenderVideo::SendVideoPacketWithFlexfec(
         flexfec_sender_->GetFecPackets();
     for (auto& fec_packet : fec_packets) {
       size_t packet_length = fec_packet->size();
-      uint32_t timestamp = fec_packet->Timestamp();
       uint16_t seq_num = fec_packet->SequenceNumber();
       if (rtp_sender_->SendToNetwork(std::move(fec_packet), kDontRetransmit,
                                      RtpPacketSender::kLowPriority)) {
         rtc::CritScope cs(&stats_crit_);
         fec_bitrate_.Update(packet_length, clock_->TimeInMilliseconds());
-        TRACE_EVENT_INSTANT2(TRACE_DISABLED_BY_DEFAULT("webrtc_rtp"),
-                             "Video::PacketFlexfec", "timestamp", timestamp,
-                             "seqnum", seq_num);
       } else {
         RTC_LOG(LS_WARNING) << "Failed to send FlexFEC packet " << seq_num;
       }
