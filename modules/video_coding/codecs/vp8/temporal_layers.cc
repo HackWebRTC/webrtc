@@ -40,7 +40,7 @@ uint8_t NumTemporalLayers(const VideoCodec& codec, int spatial_id) {
 }
 
 bool IsConferenceModeScreenshare(const VideoCodec& codec) {
-  if (codec.mode != kScreensharing) {
+  if (codec.mode != VideoCodecMode::kScreensharing) {
     return false;
   }
   return NumTemporalLayers(codec, 0) == 2;

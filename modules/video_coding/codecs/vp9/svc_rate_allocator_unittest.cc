@@ -25,7 +25,8 @@ static VideoCodec Configure(size_t width,
   codec.width = width;
   codec.height = height;
   codec.codecType = kVideoCodecVP9;
-  codec.mode = is_screen_sharing ? kScreensharing : kRealtimeVideo;
+  codec.mode = is_screen_sharing ? VideoCodecMode::kScreensharing
+                                 : VideoCodecMode::kRealtimeVideo;
 
   std::vector<SpatialLayer> spatial_layers =
       GetSvcConfig(width, height, num_spatial_layers, num_temporal_layers,

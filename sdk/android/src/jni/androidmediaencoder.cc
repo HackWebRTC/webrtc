@@ -614,7 +614,7 @@ int32_t MediaCodecVideoEncoder::Encode(
   }
 
   bool send_key_frame = false;
-  if (codec_mode_ == kRealtimeVideo) {
+  if (codec_mode_ == VideoCodecMode::kRealtimeVideo) {
     ++frames_received_since_last_key_;
     int64_t now_ms = rtc::TimeMillis();
     if (last_frame_received_ms_ != -1 &&

@@ -407,7 +407,8 @@ class TestSimulcastEncoderAdapterFake : public ::testing::Test,
     // stream 0, the lowest resolution stream.
     InitRefCodec(0, &ref_codec);
     ref_codec.qpMax = 45;
-    ref_codec.VP8()->complexity = webrtc::kComplexityHigher;
+    ref_codec.VP8()->complexity =
+        webrtc::VideoCodecComplexity::kComplexityHigher;
     ref_codec.VP8()->denoisingOn = false;
     ref_codec.startBitrate = 100;  // Should equal to the target bitrate.
     VerifyCodec(ref_codec, 0);

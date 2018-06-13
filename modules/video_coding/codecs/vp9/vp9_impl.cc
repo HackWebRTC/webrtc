@@ -287,7 +287,7 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
 
   // Init framerate controller.
   output_framerate_.Reset();
-  if (codec_.mode == kScreensharing) {
+  if (codec_.mode == VideoCodecMode::kScreensharing) {
     target_framerate_fps_ = kMaxScreenSharingFramerateFps;
   } else {
     target_framerate_fps_.reset();
@@ -538,7 +538,7 @@ int VP9EncoderImpl::InitAndSetControlSettings(const VideoCodec* inst) {
                     inst->VP9().denoisingOn ? 1 : 0);
 #endif
 
-  if (codec_.mode == kScreensharing) {
+  if (codec_.mode == VideoCodecMode::kScreensharing) {
     // Adjust internal parameters to screen content.
     vpx_codec_control(encoder_, VP9E_SET_TUNE_CONTENT, 1);
   }
@@ -580,7 +580,7 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
     }
   }
 
-  if (kScreensharing == codec_.mode && !force_key_frame_) {
+  if (VideoCodecMode::kScreensharing == codec_.mode && !force_key_frame_) {
     if (DropFrame(input_image.timestamp())) {
       return WEBRTC_VIDEO_CODEC_OK;
     }
@@ -881,7 +881,7 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
   encoded_image_._timeStamp = input_image_->timestamp();
   encoded_image_.capture_time_ms_ = input_image_->render_time_ms();
   encoded_image_.rotation_ = input_image_->rotation();
-  encoded_image_.content_type_ = (codec_.mode == kScreensharing)
+  encoded_image_.content_type_ = (codec_.mode == VideoCodecMode::kScreensharing)
                                      ? VideoContentType::SCREENSHARE
                                      : VideoContentType::UNSPECIFIED;
   encoded_image_._encodedHeight =

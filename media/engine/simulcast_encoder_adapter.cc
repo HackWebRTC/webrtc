@@ -471,7 +471,8 @@ void SimulcastEncoderAdapter::PopulateStreamCodec(
     // kComplexityHigher, which maps to cpu_used = -4.
     int pixels_per_frame = stream_codec->width * stream_codec->height;
     if (pixels_per_frame < 352 * 288) {
-      stream_codec->VP8()->complexity = webrtc::kComplexityHigher;
+      stream_codec->VP8()->complexity =
+          webrtc::VideoCodecComplexity::kComplexityHigher;
     }
     // Turn off denoising for all streams but the highest resolution.
     stream_codec->VP8()->denoisingOn = false;

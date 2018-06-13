@@ -21,7 +21,7 @@ namespace webrtc {
 // away from slowly.
 
 // Video codec
-enum VideoCodecComplexity {
+enum class VideoCodecComplexity {
   kComplexityNormal = 0,
   kComplexityHigh = 1,
   kComplexityHigher = 2,
@@ -95,7 +95,7 @@ union VideoCodecUnion {
   VideoCodecH264 H264;
 };
 
-enum VideoCodecMode { kRealtimeVideo, kScreensharing };
+enum class VideoCodecMode { kRealtimeVideo, kScreensharing };
 
 // Common video codec properties
 class VideoCodec {

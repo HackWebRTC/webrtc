@@ -1101,7 +1101,7 @@ TEST_F(WebRtcVideoEngineTest, DISABLED_RecreatesEncoderOnContentTypeChange) {
             capturer.Start(capturer.GetSupportedFormats()->front()));
   EXPECT_TRUE(capturer.CaptureFrame());
   ASSERT_TRUE(encoder_factory_->WaitForCreatedVideoEncoders(1));
-  EXPECT_EQ(webrtc::kRealtimeVideo,
+  EXPECT_EQ(webrtc::VideoCodecMode::kRealtimeVideo,
             encoder_factory_->encoders().back()->GetCodecSettings().mode);
 
   EXPECT_TRUE(channel->SetVideoSend(kSsrc, &options, &capturer));
@@ -1116,7 +1116,7 @@ TEST_F(WebRtcVideoEngineTest, DISABLED_RecreatesEncoderOnContentTypeChange) {
   // adapter case, this will result in two calls since InitEncode triggers a
   // a new instance.
   ASSERT_TRUE(encoder_factory_->WaitForCreatedVideoEncoders(2));
-  EXPECT_EQ(webrtc::kScreensharing,
+  EXPECT_EQ(webrtc::VideoCodecMode::kScreensharing,
             encoder_factory_->encoders().back()->GetCodecSettings().mode);
 
   EXPECT_TRUE(channel->SetVideoSend(kSsrc, &options, &capturer));
@@ -1131,7 +1131,7 @@ TEST_F(WebRtcVideoEngineTest, DISABLED_RecreatesEncoderOnContentTypeChange) {
   // a non |is_screencast| option just to verify it doesn't affect recreation.
   EXPECT_TRUE(capturer.CaptureFrame());
   ASSERT_TRUE(encoder_factory_->WaitForCreatedVideoEncoders(3));
-  EXPECT_EQ(webrtc::kRealtimeVideo,
+  EXPECT_EQ(webrtc::VideoCodecMode::kRealtimeVideo,
             encoder_factory_->encoders().back()->GetCodecSettings().mode);
 
   // Remove stream previously added to free the external encoder instance.

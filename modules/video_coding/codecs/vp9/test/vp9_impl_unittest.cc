@@ -434,7 +434,7 @@ class TestVp9ImplFrameDropping : public TestVp9Impl {
     // to reduce execution time.
     codec_settings->width = 64;
     codec_settings->height = 64;
-    codec_settings->mode = kScreensharing;
+    codec_settings->mode = VideoCodecMode::kScreensharing;
   }
 };
 

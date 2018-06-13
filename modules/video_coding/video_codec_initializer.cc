@@ -82,10 +82,10 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
 
   switch (config.content_type) {
     case VideoEncoderConfig::ContentType::kRealtimeVideo:
-      video_codec.mode = kRealtimeVideo;
+      video_codec.mode = VideoCodecMode::kRealtimeVideo;
       break;
     case VideoEncoderConfig::ContentType::kScreen:
-      video_codec.mode = kScreensharing;
+      video_codec.mode = VideoCodecMode::kScreensharing;
       if (!streams.empty() && streams[0].num_temporal_layers == 2u) {
         video_codec.targetBitrate = streams[0].target_bitrate_bps / 1000;
       }
@@ -203,10 +203,11 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
         // Layering is set explicitly.
         spatial_layers = config.spatial_layers;
       } else {
-        spatial_layers = GetSvcConfig(video_codec.width, video_codec.height,
-                                      video_codec.VP9()->numberOfSpatialLayers,
-                                      video_codec.VP9()->numberOfTemporalLayers,
-                                      video_codec.mode == kScreensharing);
+        spatial_layers =
+            GetSvcConfig(video_codec.width, video_codec.height,
+                         video_codec.VP9()->numberOfSpatialLayers,
+                         video_codec.VP9()->numberOfTemporalLayers,
+                         video_codec.mode == VideoCodecMode::kScreensharing);
 
         const bool no_spatial_layering = (spatial_layers.size() == 1);
         if (no_spatial_layering) {

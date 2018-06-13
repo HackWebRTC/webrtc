@@ -50,7 +50,7 @@ class TestVp8Impl : public VideoCodecUnitTest {
     codec_settings->VP8()->denoisingOn = true;
     codec_settings->VP8()->frameDroppingOn = false;
     codec_settings->VP8()->automaticResizeOn = false;
-    codec_settings->VP8()->complexity = kComplexityNormal;
+    codec_settings->VP8()->complexity = VideoCodecComplexity::kComplexityNormal;
   }
 
   void EncodeAndWaitForFrame(const VideoFrame& input_frame,

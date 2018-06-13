@@ -473,13 +473,13 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
 
   // Allow the user to set the complexity for the base stream.
   switch (inst->VP8().complexity) {
-    case kComplexityHigh:
+    case VideoCodecComplexity::kComplexityHigh:
       cpu_speed_[0] = -5;
       break;
-    case kComplexityHigher:
+    case VideoCodecComplexity::kComplexityHigher:
       cpu_speed_[0] = -4;
       break;
-    case kComplexityMax:
+    case VideoCodecComplexity::kComplexityMax:
       cpu_speed_[0] = -3;
       break;
     default:
@@ -661,7 +661,7 @@ int LibvpxVp8Encoder::InitAndSetControlSettings() {
   for (size_t i = 0; i < encoders_.size(); ++i) {
     // Allow more screen content to be detected as static.
     vpx_codec_control(&(encoders_[i]), VP8E_SET_STATIC_THRESHOLD,
-                      codec_.mode == kScreensharing ? 300 : 1);
+                      codec_.mode == VideoCodecMode::kScreensharing ? 300 : 1);
     vpx_codec_control(&(encoders_[i]), VP8E_SET_CPUUSED, cpu_speed_[i]);
     vpx_codec_control(&(encoders_[i]), VP8E_SET_TOKEN_PARTITIONS,
                       static_cast<vp8e_token_partitions>(kTokenPartitions));
@@ -670,7 +670,7 @@ int LibvpxVp8Encoder::InitAndSetControlSettings() {
     // VP8E_SET_SCREEN_CONTENT_MODE 2 = screen content with more aggressive
     // rate control (drop frames on large target bitrate overshoot)
     vpx_codec_control(&(encoders_[i]), VP8E_SET_SCREEN_CONTENT_MODE,
-                      codec_.mode == kScreensharing ? 2 : 0);
+                      codec_.mode == VideoCodecMode::kScreensharing ? 2 : 0);
     // Apply boost on golden frames (has only effect when resilience is off).
     if (use_gf_boost_ && configurations_[0].g_error_resilient == 0) {
       int gf_boost_percent;
@@ -778,7 +778,8 @@ int LibvpxVp8Encoder::Encode(const VideoFrame& frame,
   if (send_key_frame) {
     // Adapt the size of the key frame when in screenshare with 1 temporal
     // layer.
-    if (encoders_.size() == 1 && codec_.mode == kScreensharing &&
+    if (encoders_.size() == 1 &&
+        codec_.mode == VideoCodecMode::kScreensharing &&
         codec_.VP8()->numberOfTemporalLayers <= 1) {
       const uint32_t forceKeyFrameIntraTh = 100;
       vpx_codec_control(&(encoders_[0]), VP8E_SET_MAX_INTRA_BITRATE_PCT,
@@ -925,8 +926,9 @@ int LibvpxVp8Encoder::GetEncodedPartitions(
         input_image.render_time_ms();
     encoded_images_[encoder_idx].rotation_ = input_image.rotation();
     encoded_images_[encoder_idx].content_type_ =
-        (codec_.mode == kScreensharing) ? VideoContentType::SCREENSHARE
-                                        : VideoContentType::UNSPECIFIED;
+        (codec_.mode == VideoCodecMode::kScreensharing)
+            ? VideoContentType::SCREENSHARE
+            : VideoContentType::UNSPECIFIED;
     encoded_images_[encoder_idx].timing_.flags = VideoSendTiming::kInvalid;
 
     int qp = -1;
@@ -947,7 +949,7 @@ int LibvpxVp8Encoder::GetEncodedPartitions(
         encoded_images_[encoder_idx].qp_ = qp_128;
         encoded_complete_callback_->OnEncodedImage(encoded_images_[encoder_idx],
                                                    &codec_specific, &frag_info);
-      } else if (codec_.mode == kScreensharing) {
+      } else if (codec_.mode == VideoCodecMode::kScreensharing) {
         result = WEBRTC_VIDEO_CODEC_TARGET_BITRATE_OVERSHOOT;
       }
     }

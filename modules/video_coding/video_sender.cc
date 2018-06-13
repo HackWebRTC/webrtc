@@ -92,7 +92,7 @@ int32_t VideoSender::RegisterSendCodec(const VideoCodec* sendCodec,
 
   // If we have screensharing and we have layers, we disable frame dropper.
   bool disable_frame_dropper =
-      numLayers > 1 && sendCodec->mode == kScreensharing;
+      numLayers > 1 && sendCodec->mode == VideoCodecMode::kScreensharing;
   if (disable_frame_dropper) {
     _mediaOpt.EnableFrameDropper(false);
   } else if (frame_dropper_enabled_) {

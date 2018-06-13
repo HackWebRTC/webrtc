@@ -164,7 +164,7 @@ H264EncoderImpl::H264EncoderImpl(const cricket::VideoCodec& codec)
       max_frame_rate_(0.0f),
       target_bps_(0),
       max_bps_(0),
-      mode_(kRealtimeVideo),
+      mode_(VideoCodecMode::kRealtimeVideo),
       frame_dropping_on_(false),
       key_frame_interval_(0),
       packetization_mode_(H264PacketizationMode::SingleNalUnit),
@@ -373,7 +373,7 @@ int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
   encoded_image_.ntp_time_ms_ = input_frame.ntp_time_ms();
   encoded_image_.capture_time_ms_ = input_frame.render_time_ms();
   encoded_image_.rotation_ = input_frame.rotation();
-  encoded_image_.content_type_ = (mode_ == kScreensharing)
+  encoded_image_.content_type_ = (mode_ == VideoCodecMode::kScreensharing)
                                      ? VideoContentType::SCREENSHARE
                                      : VideoContentType::UNSPECIFIED;
   encoded_image_.timing_.flags = VideoSendTiming::kInvalid;
@@ -419,9 +419,9 @@ SEncParamExt H264EncoderImpl::CreateEncoderParams() const {
   RTC_DCHECK(openh264_encoder_);
   SEncParamExt encoder_params;
   openh264_encoder_->GetDefaultParams(&encoder_params);
-  if (mode_ == kRealtimeVideo) {
+  if (mode_ == VideoCodecMode::kRealtimeVideo) {
     encoder_params.iUsageType = CAMERA_VIDEO_REAL_TIME;
-  } else if (mode_ == kScreensharing) {
+  } else if (mode_ == VideoCodecMode::kScreensharing) {
     encoder_params.iUsageType = SCREEN_CONTENT_REAL_TIME;
   } else {
     RTC_NOTREACHED();

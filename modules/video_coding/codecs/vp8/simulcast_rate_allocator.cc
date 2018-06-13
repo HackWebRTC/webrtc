@@ -134,7 +134,8 @@ void SimulcastRateAllocator::DistributeAllocationToTemporalLayers(
     // Legacy temporal-layered only screenshare, or simulcast screenshare
     // with legacy mode for simulcast stream 0.
     const bool conference_screenshare_mode =
-        codec_.mode == kScreensharing && codec_.targetBitrate > 0 &&
+        codec_.mode == VideoCodecMode::kScreensharing &&
+        codec_.targetBitrate > 0 &&
         ((num_spatial_streams == 1 && num_temporal_streams == 2) ||  // Legacy.
          (num_spatial_streams > 1 && simulcast_id == 0));  // Simulcast.
     if (conference_screenshare_mode) {

@@ -150,7 +150,7 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
     encoded._encodedWidth = simulcast_streams[i].width;
     encoded._encodedHeight = simulcast_streams[i].height;
     encoded.rotation_ = input_image.rotation();
-    encoded.content_type_ = (mode == kScreensharing)
+    encoded.content_type_ = (mode == VideoCodecMode::kScreensharing)
                                 ? VideoContentType::SCREENSHARE
                                 : VideoContentType::UNSPECIFIED;
     specifics.codec_name = ImplementationName();

@@ -79,7 +79,7 @@ VideoCodec::VideoCodec()
       numberOfSimulcastStreams(0),
       simulcastStream(),
       spatialLayers(),
-      mode(kRealtimeVideo),
+      mode(VideoCodecMode::kRealtimeVideo),
       expect_encode_from_texture(false),
       timing_frame_thresholds({0, 0}),
       codec_specific_() {}
