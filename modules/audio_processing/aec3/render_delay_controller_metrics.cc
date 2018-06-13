@@ -49,14 +49,17 @@ void RenderDelayControllerMetrics::Update(
   ++call_counter_;
 
   if (!initial_update) {
+    size_t delay_blocks;
     if (delay_samples) {
       ++reliable_delay_estimate_counter_;
-      size_t delay_blocks = (*delay_samples) / kBlockSize;
+      delay_blocks = (*delay_samples) / kBlockSize + 2;
+    } else {
+      delay_blocks = 0;
+    }
 
-      if (delay_blocks != delay_blocks_) {
-        ++delay_change_counter_;
-        delay_blocks_ = delay_blocks;
-      }
+    if (delay_blocks != delay_blocks_) {
+      ++delay_change_counter_;
+      delay_blocks_ = delay_blocks;
     }
 
     if (skew_shift_blocks) {
@@ -68,12 +71,12 @@ void RenderDelayControllerMetrics::Update(
 
   if (call_counter_ == kMetricsReportingIntervalBlocks) {
     int value_to_report = static_cast<int>(delay_blocks_);
-    value_to_report = std::min(124, value_to_report);
+    value_to_report = std::min(124, value_to_report >> 1);
     RTC_HISTOGRAM_COUNTS_LINEAR("WebRTC.Audio.EchoCanceller.EchoPathDelay",
                                 value_to_report, 0, 124, 125);
 
-    value_to_report = static_cast<int>(buffer_delay_blocks);
-    value_to_report = std::min(124, value_to_report);
+    value_to_report = static_cast<int>(buffer_delay_blocks + 2);
+    value_to_report = std::min(124, value_to_report >> 1);
     RTC_HISTOGRAM_COUNTS_LINEAR("WebRTC.Audio.EchoCanceller.BufferDelay",
                                 value_to_report, 0, 124, 125);
 
