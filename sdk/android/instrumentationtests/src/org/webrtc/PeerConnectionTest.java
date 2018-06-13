@@ -15,6 +15,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import android.support.test.InstrumentationRegistry;
 import android.support.test.filters.MediumTest;
@@ -1368,6 +1369,101 @@ public class PeerConnectionTest {
     videoCapturer.dispose();
     videoSource.dispose();
     factory.dispose();
+  }
+
+  @Test
+  @MediumTest
+  public void testAddingNullVideoSink() {
+    final PeerConnectionFactory factory =
+        PeerConnectionFactory.builder().createPeerConnectionFactory();
+    final VideoSource videoSource = factory.createVideoSource(/* isScreencast= */ false);
+    final VideoTrack videoTrack = factory.createVideoTrack("video", videoSource);
+    try {
+      videoTrack.addSink(/* sink= */ null);
+      fail("Should have thrown an IllegalArgumentException.");
+    } catch (IllegalArgumentException e) {
+      // Expected path.
+    }
+  }
+
+  @Test
+  @MediumTest
+  public void testRemovingNullVideoSink() {
+    final PeerConnectionFactory factory =
+        PeerConnectionFactory.builder().createPeerConnectionFactory();
+    final VideoSource videoSource = factory.createVideoSource(/* isScreencast= */ false);
+    final VideoTrack videoTrack = factory.createVideoTrack("video", videoSource);
+    videoTrack.removeSink(/* sink= */ null);
+  }
+
+  @Test
+  @MediumTest
+  public void testRemovingNonExistantVideoSink() {
+    final PeerConnectionFactory factory =
+        PeerConnectionFactory.builder().createPeerConnectionFactory();
+    final VideoSource videoSource = factory.createVideoSource(/* isScreencast= */ false);
+    final VideoTrack videoTrack = factory.createVideoTrack("video", videoSource);
+    final VideoSink videoSink = new VideoSink() {
+      @Override
+      public void onFrame(VideoFrame frame) {}
+    };
+    videoTrack.removeSink(videoSink);
+  }
+
+  @Test
+  @MediumTest
+  public void testAddingSameVideoSinkMultipleTimes() {
+    final PeerConnectionFactory factory =
+        PeerConnectionFactory.builder().createPeerConnectionFactory();
+    final VideoSource videoSource = factory.createVideoSource(/* isScreencast= */ false);
+    final VideoTrack videoTrack = factory.createVideoTrack("video", videoSource);
+
+    class FrameCounter implements VideoSink {
+      private int count = 0;
+
+      public int getCount() {
+        return count;
+      }
+
+      @Override
+      public void onFrame(VideoFrame frame) {
+        count += 1;
+      }
+    }
+    final FrameCounter frameCounter = new FrameCounter();
+
+    final VideoFrame videoFrame = new VideoFrame(
+        JavaI420Buffer.allocate(/* width= */ 32, /* height= */ 32), /* rotation= */ 0,
+        /* timestampNs= */ 0);
+
+    videoTrack.addSink(frameCounter);
+    videoTrack.addSink(frameCounter);
+    videoSource.getCapturerObserver().onFrameCaptured(videoFrame);
+
+    // Even though we called addSink() multiple times, we should only get one frame out.
+    assertEquals(1, frameCounter.count);
+  }
+
+  @Test
+  @MediumTest
+  public void testAddingAndRemovingVideoSink() {
+    final PeerConnectionFactory factory =
+        PeerConnectionFactory.builder().createPeerConnectionFactory();
+    final VideoSource videoSource = factory.createVideoSource(/* isScreencast= */ false);
+    final VideoTrack videoTrack = factory.createVideoTrack("video", videoSource);
+    final VideoFrame videoFrame = new VideoFrame(
+        JavaI420Buffer.allocate(/* width= */ 32, /* height= */ 32), /* rotation= */ 0,
+        /* timestampNs= */ 0);
+
+    final VideoSink failSink = new VideoSink() {
+      @Override
+      public void onFrame(VideoFrame frame) {
+        fail("onFrame() should not be called on removed sink");
+      }
+    };
+    videoTrack.addSink(failSink);
+    videoTrack.removeSink(failSink);
+    videoSource.getCapturerObserver().onFrameCaptured(videoFrame);
   }
 
   private static void negotiate(PeerConnection offeringPC,
