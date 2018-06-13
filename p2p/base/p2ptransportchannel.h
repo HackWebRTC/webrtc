@@ -36,10 +36,10 @@
 #include "p2p/base/p2pconstants.h"
 #include "p2p/base/portallocator.h"
 #include "p2p/base/portinterface.h"
-#include "p2p/base/regatheringcontroller.h"
 #include "rtc_base/asyncinvoker.h"
 #include "rtc_base/asyncpacketsocket.h"
 #include "rtc_base/constructormagic.h"
+#include "rtc_base/random.h"
 #include "rtc_base/sigslot.h"
 
 namespace webrtc {
@@ -151,10 +151,7 @@ class P2PTransportChannel : public IceTransportInternal {
   const std::vector<Connection*>& connections() const { return connections_; }
 
   // Public for unit tests.
-  PortAllocatorSession* allocator_session() const {
-    if (allocator_sessions_.empty()) {
-      return nullptr;
-    }
+  PortAllocatorSession* allocator_session() {
     return allocator_sessions_.back().get();
   }
 
@@ -174,7 +171,6 @@ class P2PTransportChannel : public IceTransportInternal {
 
  private:
   rtc::Thread* thread() const { return network_thread_; }
-
   bool IsGettingPorts() { return allocator_session()->IsGettingPorts(); }
 
   // A transport channel is weak if the current best connection is either
@@ -293,6 +289,8 @@ class P2PTransportChannel : public IceTransportInternal {
   void OnNominated(Connection* conn);
 
   void CheckAndPing();
+  void RegatherOnFailedNetworks();
+  void RegatherOnAllNetworks();
 
   void LogCandidatePairConfig(Connection* conn,
                               webrtc::IceCandidatePairConfigType type);
@@ -344,6 +342,10 @@ class P2PTransportChannel : public IceTransportInternal {
                : static_cast<uint32_t>(remote_ice_parameters_.size() - 1);
   }
 
+  // Samples a delay from the uniform distribution defined by the
+  // regather_on_all_networks_interval ICE configuration pair.
+  int SampleRegatherAllNetworksInterval();
+
   // Indicates if the given local port has been pruned.
   bool IsPortPruned(const Port* port) const;
 
@@ -393,7 +395,10 @@ class P2PTransportChannel : public IceTransportInternal {
   IceRole ice_role_;
   uint64_t tiebreaker_;
   IceGatheringState gathering_state_;
-  std::unique_ptr<webrtc::BasicRegatheringController> regathering_controller_;
+
+  // Used to generate random intervals for regather_all_networks_interval_range.
+  webrtc::Random rand_;
+
   int64_t last_ping_sent_ms_ = 0;
   int weak_ping_interval_ = WEAK_PING_INTERVAL;
   IceTransportState state_ = IceTransportState::STATE_INIT;
