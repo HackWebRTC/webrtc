@@ -15,6 +15,7 @@
 #include <array>
 #include <numeric>
 
+#include "modules/audio_processing/aec3/aec3_common.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/atomicops.h"
 #include "rtc_base/checks.h"
@@ -55,7 +56,8 @@ FilterAnalyzer::FilterAnalyzer(const EchoCanceller3Config& config)
       active_render_threshold_(config.render_levels.active_render_limit *
                                config.render_levels.active_render_limit *
                                kFftLengthBy2),
-      h_highpass_(GetTimeDomainLength(config.filter.main.length_blocks), 0.f) {
+      h_highpass_(GetTimeDomainLength(config.filter.main.length_blocks), 0.f),
+      filter_length_blocks_(config.filter.main_initial.length_blocks) {
   Reset();
 }
 
@@ -141,6 +143,8 @@ void FilterAnalyzer::Update(rtc::ArrayView<const float> filter_time_domain,
 
   consistent_estimate_ =
       consistent_estimate_counter_ > 1.5f * kNumBlocksPerSecond;
+  UpdateFilterTailGain(filter_time_domain);
+  filter_length_blocks_ = filter_time_domain.size() * (1.f / kBlockSize);
 }
 
 void FilterAnalyzer::UpdateFilterGain(
@@ -160,6 +164,26 @@ void FilterAnalyzer::UpdateFilterGain(
   if (bounded_erl_ && gain_) {
     gain_ = std::max(gain_, 0.01f);
   }
+}
+
+/* Estimates a bound of the contributions of the filter tail to the
+ * energy of the echo signal. The estimation is done as the maximum
+ * energy of the impulse response at the tail times the number of
+ * coefficients used for describing the tail (kFftLengthBy2 in this case). */
+
+void FilterAnalyzer::UpdateFilterTailGain(
+    rtc::ArrayView<const float> filter_time_domain) {
+  float tail_max_energy = 0.f;
+
+  const auto& h = filter_time_domain;
+  RTC_DCHECK_GE(h.size(), kFftLengthBy2);
+  for (size_t k = h.size() - kFftLengthBy2; k < h.size(); ++k) {
+    tail_max_energy = std::max(tail_max_energy, h[k] * h[k]);
+  }
+
+  tail_max_energy *= kFftLengthBy2;
+
+  tail_gain_ += 0.1f * (tail_max_energy - tail_gain_);
 }
 
 }  // namespace webrtc

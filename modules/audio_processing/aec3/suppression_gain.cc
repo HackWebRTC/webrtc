@@ -182,6 +182,8 @@ void GainToNoAudibleEcho(
           : config.gain_mask.m8;
 
   for (size_t k = 0; k < gain->size(); ++k) {
+    // TODO(devicentepena): Experiment by removing the reverberation estimation
+    // from the nearend signal before computing the gains.
     const float unity_gain_masker = std::max(nearend[k], masker[k]);
     RTC_DCHECK_LE(0.f, nearend_masking_margin * unity_gain_masker);
     if (weighted_echo[k] <= nearend_masking_margin * unity_gain_masker ||

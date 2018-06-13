@@ -28,13 +28,14 @@ EchoAudibility::~EchoAudibility() = default;
 
 void EchoAudibility::Update(const RenderBuffer& render_buffer,
                             int delay_blocks,
-                            bool external_delay_seen) {
+                            bool external_delay_seen,
+                            float reverb_decay) {
   UpdateRenderNoiseEstimator(render_buffer.GetSpectrumBuffer(),
                              render_buffer.GetBlockBuffer(),
                              external_delay_seen);
 
   if (external_delay_seen) {
-    UpdateRenderStationarityFlags(render_buffer, delay_blocks);
+    UpdateRenderStationarityFlags(render_buffer, delay_blocks, reverb_decay);
   }
 }
 
@@ -46,7 +47,8 @@ void EchoAudibility::Reset() {
 
 void EchoAudibility::UpdateRenderStationarityFlags(
     const RenderBuffer& render_buffer,
-    int delay_blocks) {
+    int delay_blocks,
+    float reverb_decay) {
   const VectorBuffer& spectrum_buffer = render_buffer.GetSpectrumBuffer();
   int idx_at_delay =
       spectrum_buffer.OffsetIndex(spectrum_buffer.read, delay_blocks);
@@ -55,7 +57,7 @@ void EchoAudibility::UpdateRenderStationarityFlags(
   num_lookahead = std::max(0, num_lookahead);
 
   render_stationarity_.UpdateStationarityFlags(spectrum_buffer, idx_at_delay,
-                                               num_lookahead);
+                                               num_lookahead, reverb_decay);
 }
 
 void EchoAudibility::UpdateRenderNoiseEstimator(

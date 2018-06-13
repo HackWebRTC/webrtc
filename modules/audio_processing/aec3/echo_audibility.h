@@ -37,7 +37,8 @@ class EchoAudibility {
   // Feed new render data to the echo audibility estimator.
   void Update(const RenderBuffer& render_buffer,
               int delay_blocks,
-              bool external_delay_seen);
+              bool external_delay_seen,
+              float reverb_decay);
 
   // Get the residual echo scaling.
   void GetResidualEchoScaling(rtc::ArrayView<float> residual_scaling) const {
@@ -56,7 +57,8 @@ class EchoAudibility {
 
   // Updates the render stationarity flags for the current frame.
   void UpdateRenderStationarityFlags(const RenderBuffer& render_buffer,
-                                     int delay_blocks);
+                                     int delay_blocks,
+                                     float reverb_decay);
 
   // Updates the noise estimator with the new render data since the previous
   // call to this method.

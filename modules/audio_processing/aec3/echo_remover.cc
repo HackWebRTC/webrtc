@@ -276,6 +276,8 @@ void EchoRemoverImpl::ProcessCapture(
   data_dumper_->DumpRaw(
       "aec3_X2", render_buffer->Spectrum(aec_state_.FilterDelayBlocks()));
   data_dumper_->DumpRaw("aec3_R2", R2);
+  data_dumper_->DumpRaw("aec3_R2_reverb",
+                        residual_echo_estimator_.GetReverbPowerSpectrum());
   data_dumper_->DumpRaw("aec3_filter_delay", aec_state_.FilterDelayBlocks());
   data_dumper_->DumpRaw("aec3_capture_saturation",
                         aec_state_.SaturatedCapture() ? 1 : 0);

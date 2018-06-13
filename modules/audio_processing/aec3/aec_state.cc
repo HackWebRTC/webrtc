@@ -165,8 +165,9 @@ void AecState::Update(
 
   if (UseStationaryProperties()) {
     // Update the echo audibility evaluator.
-    echo_audibility_.Update(render_buffer, FilterDelayBlocks(),
-                            external_delay_seen_);
+    echo_audibility_.Update(
+        render_buffer, FilterDelayBlocks(), external_delay_seen_,
+        config_.ep_strength.reverb_based_on_render ? ReverbDecay() : 0.f);
   }
 
   // Update the ERL and ERLE measures.
@@ -272,6 +273,8 @@ void AecState::Update(
 
   use_linear_filter_output_ = usable_linear_estimate_ && !TransparentMode();
 
+  UpdateReverb(adaptive_filter_impulse_response);
+
   data_dumper_->DumpRaw("aec3_erle", Erle());
   data_dumper_->DumpRaw("aec3_erle_onset", erle_estimator_.ErleOnsets());
   data_dumper_->DumpRaw("aec3_erl", Erl());
@@ -304,11 +307,12 @@ void AecState::Update(
                         recently_converged_filter);
   data_dumper_->DumpRaw("aec3_suppresion_gain_limiter_running",
                         IsSuppressionGainLimitActive());
+  data_dumper_->DumpRaw("aec3_filter_tail_energy", GetFilterTailGain());
 }
 
 void AecState::UpdateReverb(const std::vector<float>& impulse_response) {
   // Echo tail estimation enabled if the below variable is set as negative.
-  if (config_.ep_strength.default_len > 0.f) {
+  if (config_.ep_strength.default_len >= 0.f) {
     return;
   }
 
@@ -438,7 +442,7 @@ void AecState::UpdateReverb(const std::vector<float>& impulse_response) {
     const float N = num_reverb_decay_sections_ * kFftLengthBy2;
     accumulated_nz_ = 0.f;
     const float k1By12 = 1.f / 12.f;
-    // Arithmetic sum $2 \sum_{i=0}^{(N-1)/2}i^2$ calculated directly.
+    // Arithmetic sum $2 \sum_{i=0.5}^{(N-1)/2}i^2$ calculated directly.
     accumulated_nn_ = N * (N * N - 1.0f) * k1By12;
     accumulated_count_ = -N * 0.5f;
     // Linear regression approach assumes symmetric index around 0.

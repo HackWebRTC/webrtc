@@ -40,6 +40,7 @@ void StationarityEstimator::Reset() {
   noise_.Reset();
   hangovers_.fill(0);
   stationarity_flags_.fill(false);
+  render_reverb_.Reset();
 }
 
 // Update just the noise estimator. Usefull until the delay is known
@@ -52,7 +53,8 @@ void StationarityEstimator::UpdateNoiseEstimator(
 void StationarityEstimator::UpdateStationarityFlags(
     const VectorBuffer& spectrum_buffer,
     int idx_current,
-    int num_lookahead) {
+    int num_lookahead,
+    float reverb_decay) {
   std::array<int, kWindowLength> indexes;
   int num_lookahead_bounded = std::min(num_lookahead, kWindowLength - 1);
   int idx = idx_current;
@@ -75,9 +77,12 @@ void StationarityEstimator::UpdateStationarityFlags(
       spectrum_buffer.DecIndex(indexes[kWindowLength - 1]),
       spectrum_buffer.OffsetIndex(idx_current, -(num_lookahead_bounded + 1)));
 
+  int idx_past = spectrum_buffer.IncIndex(idx_current);
+  render_reverb_.UpdateReverbContributions(spectrum_buffer.buffer[idx_past], 1.,
+                                           reverb_decay);
   for (size_t k = 0; k < stationarity_flags_.size(); ++k) {
-    stationarity_flags_[k] =
-        EstimateBandStationarity(spectrum_buffer, indexes, k);
+    stationarity_flags_[k] = EstimateBandStationarity(
+        spectrum_buffer, render_reverb_.GetPowerSpectrum(), indexes, k);
   }
   UpdateHangover();
   SmoothStationaryPerFreq();
@@ -86,6 +91,7 @@ void StationarityEstimator::UpdateStationarityFlags(
 
 bool StationarityEstimator::EstimateBandStationarity(
     const VectorBuffer& spectrum_buffer,
+    const std::array<float, kFftLengthBy2Plus1>& reverb,
     const std::array<int, kWindowLength>& indexes,
     size_t band) const {
   constexpr float kThrStationarity = 10.f;
@@ -93,6 +99,7 @@ bool StationarityEstimator::EstimateBandStationarity(
   for (auto idx : indexes) {
     acum_power += spectrum_buffer.buffer[idx][band];
   }
+  acum_power += reverb[band];
   float noise = kWindowLength * GetStationarityPowerBand(band);
   RTC_CHECK_LT(0.f, noise);
   bool stationary = acum_power < kThrStationarity * noise;
