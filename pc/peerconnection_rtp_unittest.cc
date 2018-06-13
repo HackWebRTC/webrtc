@@ -1219,6 +1219,42 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan,
   EXPECT_FALSE(caller->observer()->negotiation_needed());
 }
 
+// Test that setting offers that add/remove/add a track repeatedly without
+// setting the appropriate answer in between works.
+// These are regression tests for bugs.webrtc.org/9401
+TEST_F(PeerConnectionRtpTestUnifiedPlan, AddRemoveAddTrackOffersWorksAudio) {
+  auto caller = CreatePeerConnection();
+
+  auto sender1 = caller->AddAudioTrack("audio1");
+  ASSERT_TRUE(caller->SetLocalDescription(caller->CreateOffer()));
+
+  caller->pc()->RemoveTrack(sender1);
+  ASSERT_TRUE(caller->SetLocalDescription(caller->CreateOffer()));
+
+  // This will re-use the transceiver created by the first AddTrack.
+  auto sender2 = caller->AddAudioTrack("audio2");
+  ASSERT_TRUE(caller->SetLocalDescription(caller->CreateOffer()));
+
+  EXPECT_EQ(1u, caller->pc()->GetTransceivers().size());
+  EXPECT_EQ(sender1, sender2);
+}
+TEST_F(PeerConnectionRtpTestUnifiedPlan, AddRemoveAddTrackOffersWorksVideo) {
+  auto caller = CreatePeerConnection();
+
+  auto sender1 = caller->AddVideoTrack("video1");
+  ASSERT_TRUE(caller->SetLocalDescription(caller->CreateOffer()));
+
+  caller->pc()->RemoveTrack(sender1);
+  ASSERT_TRUE(caller->SetLocalDescription(caller->CreateOffer()));
+
+  // This will re-use the transceiver created by the first AddTrack.
+  auto sender2 = caller->AddVideoTrack("video2");
+  ASSERT_TRUE(caller->SetLocalDescription(caller->CreateOffer()));
+
+  EXPECT_EQ(1u, caller->pc()->GetTransceivers().size());
+  EXPECT_EQ(sender1, sender2);
+}
+
 // Test that OnRenegotiationNeeded is fired if SetDirection is called on an
 // active RtpTransceiver with a new direction.
 TEST_F(PeerConnectionRtpTestUnifiedPlan,

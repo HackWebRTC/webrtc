@@ -2113,6 +2113,12 @@ RTCError PeerConnection::ApplyLocalDescription(
             streams[0].stream_ids());
         transceiver->internal()->sender_internal()->SetSsrc(
             streams[0].first_ssrc());
+      } else {
+        // 0 is a special value meaning "this sender has no associated send
+        // stream". Need to call this so the sender won't attempt to configure
+        // a no longer existing stream and run into DCHECKs in the lower
+        // layers.
+        transceiver->internal()->sender_internal()->SetSsrc(0);
       }
     }
   } else {
