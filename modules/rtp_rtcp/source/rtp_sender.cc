@@ -630,7 +630,7 @@ bool RTPSender::StorePackets() const {
 int32_t RTPSender::ReSendPacket(uint16_t packet_id) {
   // Try to find packet in RTP packet history. Also verify RTT here, so that we
   // don't retransmit too often.
-  rtc::Optional<RtpPacketHistory::PacketState> stored_packet =
+  absl::optional<RtpPacketHistory::PacketState> stored_packet =
       packet_history_.GetPacketState(packet_id, true);
   if (!stored_packet) {
     // Packet not found.
@@ -908,7 +908,7 @@ bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
   }
 
   uint32_t ssrc = packet->Ssrc();
-  rtc::Optional<uint32_t> flexfec_ssrc = FlexfecSsrc();
+  absl::optional<uint32_t> flexfec_ssrc = FlexfecSsrc();
   if (paced_sender_) {
     uint16_t seq_no = packet->SequenceNumber();
     // Correct offset between implementations of millisecond time stamps in
@@ -919,9 +919,9 @@ bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
       // Store FlexFEC packets in the history here, so they can be found
       // when the pacer calls TimeToSendPacket.
       flexfec_packet_history_.PutRtpPacket(std::move(packet), storage,
-                                           rtc::nullopt);
+                                           absl::nullopt);
     } else {
-      packet_history_.PutRtpPacket(std::move(packet), storage, rtc::nullopt);
+      packet_history_.PutRtpPacket(std::move(packet), storage, absl::nullopt);
     }
 
     paced_sender_->InsertPacket(priority, ssrc, seq_no, corrected_time_ms,
@@ -1155,11 +1155,11 @@ void RTPSender::SetMid(const std::string& mid) {
   mid_ = mid;
 }
 
-rtc::Optional<uint32_t> RTPSender::FlexfecSsrc() const {
+absl::optional<uint32_t> RTPSender::FlexfecSsrc() const {
   if (video_) {
     return video_->FlexfecSsrc();
   }
-  return rtc::nullopt;
+  return absl::nullopt;
 }
 
 void RTPSender::SetCsrcs(const std::vector<uint32_t>& csrcs) {

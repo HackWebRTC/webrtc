@@ -29,7 +29,7 @@
 namespace webrtc {
 
 namespace {
-bool InOrderPacket(rtc::Optional<uint16_t> latest_sequence_number,
+bool InOrderPacket(absl::optional<uint16_t> latest_sequence_number,
                    uint16_t current_sequence_number) {
   if (!latest_sequence_number)
     return true;
@@ -174,8 +174,8 @@ bool RtpReceiverImpl::IncomingRtpPacket(const RTPHeader& rtp_header,
 
   auto audio_level =
       rtp_header.extension.hasAudioLevel
-          ? rtc::Optional<uint8_t>(rtp_header.extension.audioLevel)
-          : rtc::nullopt;
+          ? absl::optional<uint8_t>(rtp_header.extension.audioLevel)
+          : absl::nullopt;
   UpdateSources(audio_level);
 
   int32_t ret_val = rtp_media_receiver_->ParseRtpPacket(
@@ -323,7 +323,7 @@ void RtpReceiverImpl::CheckCSRC(const WebRtcRTPHeader& rtp_header) {
 }
 
 void RtpReceiverImpl::UpdateSources(
-    const rtc::Optional<uint8_t>& ssrc_audio_level) {
+    const absl::optional<uint8_t>& ssrc_audio_level) {
   rtc::CritScope lock(&critical_section_rtp_receiver_);
   int64_t now_ms = clock_->TimeInMilliseconds();
 

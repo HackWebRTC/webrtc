@@ -16,8 +16,8 @@
 #include <string>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "api/array_view.h"
-#include "api/optional.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/common_header.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/dlrr.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/remb.h"
@@ -91,7 +91,7 @@ class RtcpTransceiverImpl {
   const RtcpTransceiverConfig config_;
 
   bool ready_to_send_;
-  rtc::Optional<rtcp::Remb> remb_;
+  absl::optional<rtcp::Remb> remb_;
   // TODO(danilchap): Remove entries from remote_senders_ that are no longer
   // needed.
   std::map<uint32_t, RemoteSenderState> remote_senders_;

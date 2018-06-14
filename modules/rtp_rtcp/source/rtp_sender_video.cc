@@ -264,11 +264,11 @@ void RTPSenderVideo::SetFecParameters(const FecProtectionParams& delta_params,
   key_fec_params_ = key_params;
 }
 
-rtc::Optional<uint32_t> RTPSenderVideo::FlexfecSsrc() const {
+absl::optional<uint32_t> RTPSenderVideo::FlexfecSsrc() const {
   if (flexfec_sender_) {
     return flexfec_sender_->ssrc();
   }
-  return rtc::nullopt;
+  return absl::nullopt;
 }
 
 bool RTPSenderVideo::SendVideo(enum VideoCodecType video_type,
@@ -503,7 +503,7 @@ bool RTPSenderVideo::UpdateConditionalRetransmit(
       int64_t expected_next_frame_time = kUndefined;
       for (int i = temporal_id - 1; i >= 0; --i) {
         TemporalLayerStats* stats = &frame_stats_by_temporal_layer_[i];
-        rtc::Optional<uint32_t> rate = stats->frame_rate_fp1000s.Rate(now_ms);
+        absl::optional<uint32_t> rate = stats->frame_rate_fp1000s.Rate(now_ms);
         if (rate) {
           int64_t tl_next = stats->last_frame_time_ms + 1000000 / *rate;
           if (tl_next - now_ms > -expected_retransmission_time_ms &&

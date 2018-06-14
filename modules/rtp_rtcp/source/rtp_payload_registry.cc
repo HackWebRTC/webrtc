@@ -227,13 +227,13 @@ int RTPPayloadRegistry::GetPayloadTypeFrequency(
              : kVideoPayloadTypeFrequency;
 }
 
-rtc::Optional<RtpUtility::Payload> RTPPayloadRegistry::PayloadTypeToPayload(
+absl::optional<RtpUtility::Payload> RTPPayloadRegistry::PayloadTypeToPayload(
     uint8_t payload_type) const {
   rtc::CritScope cs(&crit_sect_);
   const auto it = payload_type_map_.find(payload_type);
   return it == payload_type_map_.end()
-             ? rtc::nullopt
-             : rtc::Optional<RtpUtility::Payload>(it->second);
+             ? absl::nullopt
+             : absl::optional<RtpUtility::Payload>(it->second);
 }
 
 }  // namespace webrtc

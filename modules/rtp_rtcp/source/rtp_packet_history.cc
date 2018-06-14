@@ -84,7 +84,7 @@ void RtpPacketHistory::SetRtt(int64_t rtt_ms) {
 
 void RtpPacketHistory::PutRtpPacket(std::unique_ptr<RtpPacketToSend> packet,
                                     StorageType type,
-                                    rtc::Optional<int64_t> send_time_ms) {
+                                    absl::optional<int64_t> send_time_ms) {
   RTC_DCHECK(packet);
   rtc::CritScope cs(&lock_);
   int64_t now_ms = clock_->TimeInMilliseconds();
@@ -146,21 +146,21 @@ std::unique_ptr<RtpPacketToSend> RtpPacketHistory::GetPacketAndSetSendTime(
   return rtc::MakeUnique<RtpPacketToSend>(*packet.packet);
 }
 
-rtc::Optional<RtpPacketHistory::PacketState> RtpPacketHistory::GetPacketState(
+absl::optional<RtpPacketHistory::PacketState> RtpPacketHistory::GetPacketState(
     uint16_t sequence_number,
     bool verify_rtt) const {
   rtc::CritScope cs(&lock_);
   if (mode_ == StorageMode::kDisabled) {
-    return rtc::nullopt;
+    return absl::nullopt;
   }
 
   auto rtp_it = packet_history_.find(sequence_number);
   if (rtp_it == packet_history_.end()) {
-    return rtc::nullopt;
+    return absl::nullopt;
   }
 
   if (verify_rtt && !VerifyRtt(rtp_it->second, clock_->TimeInMilliseconds())) {
-    return rtc::nullopt;
+    return absl::nullopt;
   }
 
   return StoredPacketToPacketState(rtp_it->second);

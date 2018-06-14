@@ -17,7 +17,7 @@
 #include <utility>
 #include <vector>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -102,7 +102,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
   void SetRtxSendPayloadType(int payload_type,
                              int associated_payload_type) override;
 
-  rtc::Optional<uint32_t> FlexfecSsrc() const override;
+  absl::optional<uint32_t> FlexfecSsrc() const override;
 
   // Sends kRtcpByeCode when going from true to false.
   int32_t SetSendingStatus(bool sending) override;

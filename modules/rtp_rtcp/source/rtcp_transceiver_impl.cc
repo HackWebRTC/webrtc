@@ -46,7 +46,7 @@ struct SenderReportTimes {
 
 struct RtcpTransceiverImpl::RemoteSenderState {
   uint8_t fir_sequence_number = 0;
-  rtc::Optional<SenderReportTimes> last_received_sender_report;
+  absl::optional<SenderReportTimes> last_received_sender_report;
   std::vector<MediaReceiverRtcpObserver*> observers;
 };
 
@@ -245,7 +245,7 @@ void RtcpTransceiverImpl::HandleSenderReport(
     return;
   RemoteSenderState& remote_sender =
       remote_senders_[sender_report.sender_ssrc()];
-  rtc::Optional<SenderReportTimes>& last =
+  absl::optional<SenderReportTimes>& last =
       remote_sender.last_received_sender_report;
   last.emplace();
   last->local_received_time_us = now_us;

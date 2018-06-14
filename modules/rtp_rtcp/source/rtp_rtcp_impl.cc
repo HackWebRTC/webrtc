@@ -266,10 +266,10 @@ void ModuleRtpRtcpImpl::SetRtxSendPayloadType(int payload_type,
   rtp_sender_->SetRtxPayloadType(payload_type, associated_payload_type);
 }
 
-rtc::Optional<uint32_t> ModuleRtpRtcpImpl::FlexfecSsrc() const {
+absl::optional<uint32_t> ModuleRtpRtcpImpl::FlexfecSsrc() const {
   if (rtp_sender_)
     return rtp_sender_->FlexfecSsrc();
-  return rtc::nullopt;
+  return absl::nullopt;
 }
 
 void ModuleRtpRtcpImpl::IncomingRtcpPacket(const uint8_t* rtcp_packet,
@@ -898,7 +898,7 @@ void ModuleRtpRtcpImpl::SetRtcpReceiverSsrcs(uint32_t main_ssrc) {
   ssrcs.insert(main_ssrc);
   if (RtxSendStatus() != kRtxOff)
     ssrcs.insert(rtp_sender_->RtxSsrc());
-  rtc::Optional<uint32_t> flexfec_ssrc = FlexfecSsrc();
+  absl::optional<uint32_t> flexfec_ssrc = FlexfecSsrc();
   if (flexfec_ssrc)
     ssrcs.insert(*flexfec_ssrc);
   rtcp_receiver_.SetSsrcs(main_ssrc, ssrcs);

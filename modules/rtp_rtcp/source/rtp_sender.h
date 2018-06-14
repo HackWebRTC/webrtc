@@ -17,9 +17,9 @@
 #include <utility>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/call/transport.h"
-#include "api/optional.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/rtp_rtcp/include/flexfec_sender.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
@@ -172,7 +172,7 @@ class RTPSender {
 
   uint32_t SSRC() const;
 
-  rtc::Optional<uint32_t> FlexfecSsrc() const;
+  absl::optional<uint32_t> FlexfecSsrc() const;
 
   bool SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
                      StorageType storage,
@@ -315,9 +315,9 @@ class RTPSender {
   bool sequence_number_forced_ RTC_GUARDED_BY(send_critsect_);
   uint16_t sequence_number_ RTC_GUARDED_BY(send_critsect_);
   uint16_t sequence_number_rtx_ RTC_GUARDED_BY(send_critsect_);
-  // Must be explicitly set by the application, use of rtc::Optional
+  // Must be explicitly set by the application, use of absl::optional
   // only to keep track of correct use.
-  rtc::Optional<uint32_t> ssrc_ RTC_GUARDED_BY(send_critsect_);
+  absl::optional<uint32_t> ssrc_ RTC_GUARDED_BY(send_critsect_);
   // MID value to send in the MID header extension.
   std::string mid_ RTC_GUARDED_BY(send_critsect_);
   uint32_t last_rtp_timestamp_ RTC_GUARDED_BY(send_critsect_);
@@ -327,7 +327,7 @@ class RTPSender {
   bool last_packet_marker_bit_ RTC_GUARDED_BY(send_critsect_);
   std::vector<uint32_t> csrcs_ RTC_GUARDED_BY(send_critsect_);
   int rtx_ RTC_GUARDED_BY(send_critsect_);
-  rtc::Optional<uint32_t> ssrc_rtx_ RTC_GUARDED_BY(send_critsect_);
+  absl::optional<uint32_t> ssrc_rtx_ RTC_GUARDED_BY(send_critsect_);
   // Mapping rtx_payload_type_map_[associated] = rtx.
   std::map<int8_t, int8_t> rtx_payload_type_map_ RTC_GUARDED_BY(send_critsect_);
   size_t rtp_overhead_bytes_per_packet_ RTC_GUARDED_BY(send_critsect_);

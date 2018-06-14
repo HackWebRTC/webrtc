@@ -42,7 +42,7 @@ class RtpPacketHistory {
     ~PacketState();
 
     uint16_t rtp_sequence_number = 0;
-    rtc::Optional<int64_t> send_time_ms;
+    absl::optional<int64_t> send_time_ms;
     int64_t capture_time_ms = 0;
     uint32_t ssrc = 0;
     size_t payload_size = 0;
@@ -74,7 +74,7 @@ class RtpPacketHistory {
   // be set accordingly.
   void PutRtpPacket(std::unique_ptr<RtpPacketToSend> packet,
                     StorageType type,
-                    rtc::Optional<int64_t> send_time_ms);
+                    absl::optional<int64_t> send_time_ms);
 
   // Gets stored RTP packet corresponding to the input |sequence number|.
   // Returns nullptr if packet is not found. If |verify_rtt| is true, doesn't
@@ -85,8 +85,8 @@ class RtpPacketHistory {
 
   // Similar to GetPacketAndSetSendTime(), but only returns a snapshot of the
   // current state for packet, and never updates internal state.
-  rtc::Optional<PacketState> GetPacketState(uint16_t sequence_number,
-                                            bool verify_rtt) const;
+  absl::optional<PacketState> GetPacketState(uint16_t sequence_number,
+                                             bool verify_rtt) const;
 
   // Get the packet (if any) from the history, with size closest to
   // |packet_size|. The exact size of the packet is not guaranteed.
@@ -101,7 +101,7 @@ class RtpPacketHistory {
     ~StoredPacket();
 
     // The time of last transmission, including retransmissions.
-    rtc::Optional<int64_t> send_time_ms;
+    absl::optional<int64_t> send_time_ms;
 
     // Number of times RE-transmitted, ie excluding the first transmission.
     size_t times_retransmitted = 0;
@@ -140,7 +140,7 @@ class RtpPacketHistory {
 
   // The earliest packet in the history. This might not be the lowest sequence
   // number, in case there is a wraparound.
-  rtc::Optional<uint16_t> start_seqno_ RTC_GUARDED_BY(lock_);
+  absl::optional<uint16_t> start_seqno_ RTC_GUARDED_BY(lock_);
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RtpPacketHistory);
 };

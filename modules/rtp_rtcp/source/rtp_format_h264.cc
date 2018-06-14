@@ -129,7 +129,7 @@ size_t RtpPacketizerH264::SetPayloadData(
       // RtpDepacketizerH264::ParseSingleNalu (receive side, in orderer to
       // protect us from unknown or legacy send clients).
 
-      rtc::Optional<SpsParser::SpsState> sps;
+      absl::optional<SpsParser::SpsState> sps;
 
       std::unique_ptr<rtc::Buffer> output_buffer(new rtc::Buffer());
       // Add the type header to the output buffer first, so that the rewriter
@@ -514,7 +514,7 @@ bool RtpDepacketizerH264::ProcessStapAOrSingleNalu(
         if (start_offset)
           output_buffer->AppendData(payload_data, start_offset);
 
-        rtc::Optional<SpsParser::SpsState> sps;
+        absl::optional<SpsParser::SpsState> sps;
 
         SpsVuiRewriter::ParseResult result = SpsVuiRewriter::ParseAndRewriteSps(
             &payload_data[start_offset], end_offset - start_offset, &sps,
@@ -596,7 +596,7 @@ bool RtpDepacketizerH264::ProcessStapAOrSingleNalu(
         parsed_payload->frame_type = kVideoFrameKey;
         RTC_FALLTHROUGH();
       case H264::NaluType::kSlice: {
-        rtc::Optional<uint32_t> pps_id = PpsParser::ParsePpsIdFromSlice(
+        absl::optional<uint32_t> pps_id = PpsParser::ParsePpsIdFromSlice(
             &payload_data[start_offset], end_offset - start_offset);
         if (pps_id) {
           nalu.pps_id = *pps_id;
@@ -648,7 +648,7 @@ bool RtpDepacketizerH264::ParseFuaNalu(
   if (first_fragment) {
     offset_ = 0;
     length_ -= kNalHeaderSize;
-    rtc::Optional<uint32_t> pps_id = PpsParser::ParsePpsIdFromSlice(
+    absl::optional<uint32_t> pps_id = PpsParser::ParsePpsIdFromSlice(
         payload_data + 2 * kNalHeaderSize, length_ - kNalHeaderSize);
     if (pps_id) {
       nalu.pps_id = *pps_id;

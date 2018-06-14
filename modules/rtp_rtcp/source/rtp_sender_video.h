@@ -14,7 +14,7 @@
 #include <map>
 #include <memory>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/rtp_rtcp/include/flexfec_sender.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -70,7 +70,7 @@ class RTPSenderVideo {
                         const FecProtectionParams& key_params);
 
   // FlexFEC.
-  rtc::Optional<uint32_t> FlexfecSsrc() const;
+  absl::optional<uint32_t> FlexfecSsrc() const;
 
   uint32_t VideoBitrateSent() const;
   uint32_t FecOverheadRate() const;

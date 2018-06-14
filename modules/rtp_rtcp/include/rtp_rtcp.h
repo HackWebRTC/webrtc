@@ -16,7 +16,7 @@
 #include <utility>
 #include <vector>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/include/module.h"
@@ -199,7 +199,7 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
                                      int associated_payload_type) = 0;
 
   // Returns the FlexFEC SSRC, if there is one.
-  virtual rtc::Optional<uint32_t> FlexfecSsrc() const = 0;
+  virtual absl::optional<uint32_t> FlexfecSsrc() const = 0;
 
   // Sets sending status. Sends kRtcpByeCode when going from true to false.
   // Returns -1 on failure else 0.

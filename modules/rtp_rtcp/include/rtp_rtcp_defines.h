@@ -91,8 +91,8 @@ class PayloadUnion {
   }
 
  private:
-  rtc::Optional<AudioPayload> audio_payload_;
-  rtc::Optional<VideoPayload> video_payload_;
+  absl::optional<AudioPayload> audio_payload_;
+  absl::optional<VideoPayload> video_payload_;
 };
 
 enum RTPAliveType { kRtpDead = 0, kRtpNoRtp = 1, kRtpAlive = 2 };

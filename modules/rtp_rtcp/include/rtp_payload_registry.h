@@ -14,8 +14,8 @@
 #include <map>
 #include <set>
 
+#include "absl/types/optional.h"
 #include "api/audio_codecs/audio_format.h"
-#include "api/optional.h"
 #include "api/video_codecs/video_codec.h"
 #include "modules/rtp_rtcp/source/rtp_utility.h"
 #include "rtc_base/criticalsection.h"
@@ -42,7 +42,7 @@ class RTPPayloadRegistry {
 
   int GetPayloadTypeFrequency(uint8_t payload_type) const;
 
-  rtc::Optional<RtpUtility::Payload> PayloadTypeToPayload(
+  absl::optional<RtpUtility::Payload> PayloadTypeToPayload(
       uint8_t payload_type) const;
 
   void ResetLastReceivedPayloadTypes() {

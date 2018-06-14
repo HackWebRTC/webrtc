@@ -679,7 +679,7 @@ TEST_F(RtcpSenderTest, SendXrWithTargetBitrate) {
   EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpReport));
   EXPECT_EQ(1, parser()->xr()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser()->xr()->sender_ssrc());
-  const rtc::Optional<rtcp::TargetBitrate>& target_bitrate =
+  const absl::optional<rtcp::TargetBitrate>& target_bitrate =
       parser()->xr()->target_bitrate();
   ASSERT_TRUE(target_bitrate);
   const std::vector<rtcp::TargetBitrate::BitrateItem>& bitrates =
