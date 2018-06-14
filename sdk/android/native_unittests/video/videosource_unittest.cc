@@ -65,15 +65,19 @@ TEST(JavaVideoSourceTest, OnFrameCapturedFrameIsDeliveredToSink) {
   jni::Java_JavaVideoSourceTestHelper_startCapture(
       env, video_track_source->GetJavaVideoCapturerObserver(env),
       true /* success */);
+  const int width = 20;
+  const int height = 32;
+  const int rotation = 180;
   jni::Java_JavaVideoSourceTestHelper_deliverFrame(
-      env, video_track_source->GetJavaVideoCapturerObserver(env));
+      env, width, height, rotation,
+      video_track_source->GetJavaVideoCapturerObserver(env));
 
   std::vector<VideoFrame> frames = test_video_sink.GetFrames();
   ASSERT_EQ(1u, frames.size());
   webrtc::VideoFrame frame = frames[0];
-  EXPECT_EQ(2, frame.width());
-  EXPECT_EQ(3, frame.height());
-  EXPECT_EQ(180, frame.rotation());
+  EXPECT_EQ(width, frame.width());
+  EXPECT_EQ(height, frame.height());
+  EXPECT_EQ(rotation, frame.rotation());
 }
 
 TEST(JavaVideoSourceTest, CapturerStartedSuccessStateBecomesLive) {

@@ -1048,6 +1048,7 @@ if (rtc_include_tests) {
       "instrumentationtests/src/org/webrtc/EglRendererTest.java",
       "instrumentationtests/src/org/webrtc/FileVideoCapturerTest.java",
       "instrumentationtests/src/org/webrtc/GlRectDrawerTest.java",
+      "instrumentationtests/src/org/webrtc/VideoFrameBufferTest.java",
       "instrumentationtests/src/org/webrtc/HardwareVideoDecoderTest.java",
       "instrumentationtests/src/org/webrtc/HardwareVideoEncoderTest.java",
       "instrumentationtests/src/org/webrtc/MediaCodecVideoEncoderTest.java",

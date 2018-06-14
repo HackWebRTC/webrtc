@@ -286,7 +286,7 @@ public class YuvConverter {
     // Y'UV444 to RGB888, see
     // https://en.wikipedia.org/wiki/YUV#Y.27UV444_to_RGB888_conversion.
     // We use the ITU-R coefficients for U and V */
-    GLES20.glUniform4f(coeffsLoc, 0.299f, 0.587f, 0.114f, 0.0f);
+    GLES20.glUniform4f(coeffsLoc, 0.2987856f, 0.5871095f, 0.1141049f, 0.0f);
     GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
 
     // Draw U
@@ -294,12 +294,12 @@ public class YuvConverter {
     // Matrix * (1;0;0;0) / (width / 2). Note that opengl uses column major order.
     GLES20.glUniform2f(
         xUnitLoc, 2.0f * transformMatrix[0] / width, 2.0f * transformMatrix[1] / width);
-    GLES20.glUniform4f(coeffsLoc, -0.169f, -0.331f, 0.499f, 0.5f);
+    GLES20.glUniform4f(coeffsLoc, -0.168805420f, -0.3317003f, 0.5005057f, 0.5f);
     GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
 
     // Draw V
     GLES20.glViewport(stride / 8, height, uv_width, uv_height);
-    GLES20.glUniform4f(coeffsLoc, 0.499f, -0.418f, -0.0813f, 0.5f);
+    GLES20.glUniform4f(coeffsLoc, 0.4997964f, -0.4184672f, -0.0813292f, 0.5f);
     GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
 
     GLES20.glReadPixels(

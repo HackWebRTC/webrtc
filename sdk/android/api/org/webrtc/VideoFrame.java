@@ -204,9 +204,8 @@ public class VideoFrame implements RefCounted {
       dataV.position(cropX / 2 + cropY / 2 * buffer.getStrideV());
 
       buffer.retain();
-      return JavaI420Buffer.wrap(buffer.getWidth(), buffer.getHeight(), dataY.slice(),
-          buffer.getStrideY(), dataU.slice(), buffer.getStrideU(), dataV.slice(),
-          buffer.getStrideV(), buffer::release);
+      return JavaI420Buffer.wrap(scaleWidth, scaleHeight, dataY.slice(), buffer.getStrideY(),
+          dataU.slice(), buffer.getStrideU(), dataV.slice(), buffer.getStrideV(), buffer::release);
     }
 
     JavaI420Buffer newBuffer = JavaI420Buffer.allocate(scaleWidth, scaleHeight);

@@ -39,6 +39,15 @@ public class JavaI420Buffer implements VideoFrame.I420Buffer {
     this.refCountDelegate = new RefCountDelegate(releaseCallback);
   }
 
+  private static void checkCapacity(ByteBuffer data, int width, int height, int stride) {
+    // The last row does not necessarily need padding.
+    final int minCapacity = stride * (height - 1) + width;
+    if (data.capacity() < minCapacity) {
+      throw new IllegalArgumentException(
+          "Buffer must be at least " + minCapacity + " bytes, but was " + data.capacity());
+    }
+  }
+
   /** Wraps existing ByteBuffers into JavaI420Buffer object without copying the contents. */
   public static JavaI420Buffer wrap(int width, int height, ByteBuffer dataY, int strideY,
       ByteBuffer dataU, int strideU, ByteBuffer dataV, int strideV, Runnable releaseCallback) {
@@ -55,19 +64,11 @@ public class JavaI420Buffer implements VideoFrame.I420Buffer {
     dataU = dataU.slice();
     dataV = dataV.slice();
 
+    final int chromaWidth = (width + 1) / 2;
     final int chromaHeight = (height + 1) / 2;
-    final int minCapacityY = strideY * height;
-    final int minCapacityU = strideU * chromaHeight;
-    final int minCapacityV = strideV * chromaHeight;
-    if (dataY.capacity() < minCapacityY) {
-      throw new IllegalArgumentException("Y-buffer must be at least " + minCapacityY + " bytes.");
-    }
-    if (dataU.capacity() < minCapacityU) {
-      throw new IllegalArgumentException("U-buffer must be at least " + minCapacityU + " bytes.");
-    }
-    if (dataV.capacity() < minCapacityV) {
-      throw new IllegalArgumentException("V-buffer must be at least " + minCapacityV + " bytes.");
-    }
+    checkCapacity(dataY, width, height, strideY);
+    checkCapacity(dataU, chromaWidth, chromaHeight, strideU);
+    checkCapacity(dataV, chromaWidth, chromaHeight, strideV);
 
     return new JavaI420Buffer(
         width, height, dataY, strideY, dataU, strideU, dataV, strideV, releaseCallback);

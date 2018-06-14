@@ -85,7 +85,10 @@ public class TextureBufferImpl implements VideoFrame.TextureBuffer {
   public VideoFrame.Buffer cropAndScale(
       int cropX, int cropY, int cropWidth, int cropHeight, int scaleWidth, int scaleHeight) {
     final Matrix newMatrix = new Matrix(transformMatrix);
-    newMatrix.preTranslate(cropX / (float) width, cropY / (float) height);
+    // In WebRTC, Y=0 is the top row, while in OpenGL Y=0 is the bottom row. This means that the Y
+    // direction is effectively reversed.
+    final int cropYFromBottom = height - (cropY + cropHeight);
+    newMatrix.preTranslate(cropX / (float) width, cropYFromBottom / (float) height);
     newMatrix.preScale(cropWidth / (float) width, cropHeight / (float) height);
 
     retain();
