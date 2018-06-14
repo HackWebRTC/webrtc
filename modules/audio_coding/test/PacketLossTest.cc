@@ -142,7 +142,6 @@ void PacketLossTest::Perform() {
   rtpFile.Open(fileName.c_str(), "wb+");
   rtpFile.WriteHeader();
 
-  sender_->testMode = 0;
   sender_->codeId = codec_id;
 
   sender_->Setup(acm.get(), &rtpFile, in_file_name_, sample_rate_hz_, channels_,
@@ -157,7 +156,6 @@ void PacketLossTest::Perform() {
   rtpFile.Open(fileName.c_str(), "rb");
   rtpFile.ReadHeader();
 
-  receiver_->testMode = 0;
   receiver_->codeId = codec_id;
 
   receiver_->Setup(acm.get(), &rtpFile, "packetLoss_out", channels_,
