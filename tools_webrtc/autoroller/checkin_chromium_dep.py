@@ -179,9 +179,13 @@ def CheckinDependency(dep_name, config):
   CopyDependency(dep_name, dep_path, config.third_party_dir)
   AppendToChromiumOwnedDependenciesList(dep_name, config.dependencies_file)
   AddToGitIndex(dep_name, config)
-  logging.info('Dependency checked into current working tree and added into\n'
-               'git index. You have to commit generated changes and\n'
-               'file the CL to finish adding the dependency')
+  logging.info('Successfully added %s.', dep_path)
+  logging.info('You now have to:')
+  logging.info('1. Check if you need to add an entry to DEPS (check if ')
+  logging.info('   Chromium has %s in its DEPS file and copy that)', dep_name)
+  logging.info('2. Copy third_party/.gitignore for %s from Chromium to\n'
+               '   third_party/.gitignore', dep_name)
+  logging.info('3. Commit locally and upload.')
 
 
 def DefaultConfig(temp_dir):
@@ -214,7 +218,9 @@ def CheckDependencyNotCheckedIn(dep_name):
 def main():
   p = argparse.ArgumentParser()
   p.add_argument('-d', '--dependency', required=True,
-                 help='Name of chromium dependency to check in.')
+                 help=('Name of chromium dependency to check in. For instance, '
+                       'if you want to check in third_party/xyz, then pass '
+                       '-d xyz.'))
   p.add_argument('--temp-dir',
                  help='Temp working directory to use. By default the one '
                       'provided via tempfile will be used')
