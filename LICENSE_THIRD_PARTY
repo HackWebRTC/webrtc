@@ -2,10 +2,10 @@ This source tree contains third party source code which is governed by third
 party licenses. Paths to the files and associated licenses are collected here.
 
 Files governed by third party licenses:
-base/base64.cc
-base/base64.h
-base/sigslot.cc
-base/sigslot.h
+rtc_base/base64.cc
+rtc_base/base64.h
+rtc_base/sigslot.cc
+rtc_base/sigslot.h
 common_audio/fft4g.c
 common_audio/signal_processing/spl_sqrt_floor.c
 common_audio/signal_processing/spl_sqrt_floor_arm.S
@@ -25,8 +25,8 @@ system_wrappers/source/set_thread_name_win.h
 Individual licenses for each file:
 -------------------------------------------------------------------------------
 Files:
-base/base64.cc
-base/base64.h
+rtc_base/base64.cc
+rtc_base/base64.h
 
 License:
 //*********************************************************************
@@ -45,8 +45,8 @@ License:
 //*********************************************************************
 -------------------------------------------------------------------------------
 Files:
-base/sigslot.cc
-base/sigslot.h
+rtc_base/sigslot.cc
+rtc_base/sigslot.h
 
 License:
 // sigslot.h: Signal/Slot classes

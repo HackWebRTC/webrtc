@@ -5,6 +5,7 @@
     "THIRD_PARTY_CHROMIUM_DEPS.json)."
   ],
   "dependencies": [
-    "OWNERS"
+    "OWNERS",
+    "base64"
   ]
 }
