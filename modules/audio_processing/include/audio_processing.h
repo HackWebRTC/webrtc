@@ -674,6 +674,7 @@ class AudioProcessingBuilder {
   AudioProcessingBuilder& SetRenderPreProcessing(
       std::unique_ptr<CustomProcessing> render_pre_processing);
   // The AudioProcessingBuilder takes ownership of the nonlinear beamformer.
+  RTC_DEPRECATED
   AudioProcessingBuilder& SetNonlinearBeamformer(
       std::unique_ptr<NonlinearBeamformer> nonlinear_beamformer);
   // The AudioProcessingBuilder takes ownership of the echo_detector.

@@ -185,7 +185,6 @@ class AudioProcessingImpl : public AudioProcessing {
                 bool residual_echo_detector_enabled,
                 bool noise_suppressor_enabled,
                 bool intelligibility_enhancer_enabled,
-                bool beamformer_enabled,
                 bool adaptive_gain_controller_enabled,
                 bool gain_controller2_enabled,
                 bool pre_amplifier_enabled,
@@ -209,7 +208,6 @@ class AudioProcessingImpl : public AudioProcessing {
     bool residual_echo_detector_enabled_ = false;
     bool noise_suppressor_enabled_ = false;
     bool intelligibility_enhancer_enabled_ = false;
-    bool beamformer_enabled_ = false;
     bool adaptive_gain_controller_enabled_ = false;
     bool gain_controller2_enabled_ = false;
     bool pre_amplifier_enabled_ = false;
@@ -370,9 +368,7 @@ class AudioProcessingImpl : public AudioProcessing {
   } constants_;
 
   struct ApmCaptureState {
-    ApmCaptureState(bool transient_suppressor_enabled,
-                    const std::vector<Point>& array_geometry,
-                    SphericalPointf target_direction);
+    ApmCaptureState(bool transient_suppressor_enabled);
     ~ApmCaptureState();
     int aec_system_delay_jumps;
     int delay_offset_ms;
@@ -383,8 +379,6 @@ class AudioProcessingImpl : public AudioProcessing {
     bool output_will_be_muted;
     bool key_pressed;
     bool transient_suppressor_enabled;
-    std::vector<Point> array_geometry;
-    SphericalPointf target_direction;
     std::unique_ptr<AudioBuffer> capture_audio;
     // Only the rate and samples fields of capture_processing_format_ are used
     // because the capture processing number of channels is mutable and is
@@ -395,12 +389,10 @@ class AudioProcessingImpl : public AudioProcessing {
   } capture_ RTC_GUARDED_BY(crit_capture_);
 
   struct ApmCaptureNonLockedState {
-    ApmCaptureNonLockedState(bool beamformer_enabled,
-                             bool intelligibility_enabled)
+    ApmCaptureNonLockedState(bool intelligibility_enabled)
         : capture_processing_format(kSampleRate16kHz),
           split_rate(kSampleRate16kHz),
           stream_delay_ms(0),
-          beamformer_enabled(beamformer_enabled),
           intelligibility_enabled(intelligibility_enabled) {}
     // Only the rate and samples fields of capture_processing_format_ are used
     // because the forward processing number of channels is mutable and is
@@ -408,7 +400,6 @@ class AudioProcessingImpl : public AudioProcessing {
     StreamConfig capture_processing_format;
     int split_rate;
     int stream_delay_ms;
-    bool beamformer_enabled;
     bool intelligibility_enabled;
     bool echo_controller_enabled = false;
   } capture_nonlocked_;
