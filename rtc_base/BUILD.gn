@@ -254,6 +254,7 @@ rtc_source_set("checks") {
   deps = [
     ":safe_compare",
     "..:typedefs",
+    "system:inline",
   ]
 }
 

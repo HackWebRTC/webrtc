@@ -35,64 +35,7 @@
 
 #include "rtc_base/checks.h"
 
-#if defined(_MSC_VER)
-// Warning C4722: destructor never returns, potential memory leak.
-// FatalMessage's dtor very intentionally aborts.
-#pragma warning(disable:4722)
-#endif
-
 namespace rtc {
-namespace {
-
-void VPrintError(const char* format, va_list args) {
-#if defined(WEBRTC_ANDROID)
-  __android_log_vprint(ANDROID_LOG_ERROR, RTC_LOG_TAG_ANDROID, format, args);
-#else
-  vfprintf(stderr, format, args);
-#endif
-}
-
-#if defined(__GNUC__)
-void PrintError(const char* format, ...)
-    __attribute__((__format__(__printf__, 1, 2)));
-#endif
-
-void PrintError(const char* format, ...) {
-  va_list args;
-  va_start(args, format);
-  VPrintError(format, args);
-  va_end(args);
-}
-
-}  // namespace
-
-FatalMessage::FatalMessage(const char* file, int line) {
-  Init(file, line);
-}
-
-FatalMessage::FatalMessage(const char* file, int line, std::string* result) {
-  Init(file, line);
-  stream_ << "Check failed: " << *result << std::endl << "# ";
-  delete result;
-}
-
-RTC_NORETURN FatalMessage::~FatalMessage() {
-  fflush(stdout);
-  fflush(stderr);
-  stream_ << std::endl << "#" << std::endl;
-  PrintError("%s", stream_.str().c_str());
-  fflush(stderr);
-  abort();
-}
-
-void FatalMessage::Init(const char* file, int line) {
-  stream_ << std::endl
-          << std::endl
-          << "#" << std::endl
-          << "# Fatal error in " << file << ", line " << line << std::endl
-          << "# last system error: " << LAST_SYSTEM_ERROR << std::endl
-          << "# ";
-}
 
 // MSVC doesn't like complex extern templates and DLLs.
 #if !defined(COMPILER_MSVC)
@@ -108,11 +51,83 @@ template std::string* MakeCheckOpString<unsigned int, unsigned long>(
 template std::string* MakeCheckOpString<std::string, std::string>(
     const std::string&, const std::string&, const char* name);
 #endif
+namespace webrtc_checks_impl {
+RTC_NORETURN void FatalLog(const char* file,
+                           int line,
+                           const char* message,
+                           const CheckArgType* fmt,
+                           ...) {
+  va_list args;
+  va_start(args, fmt);
 
+  std::ostringstream ss;  // no-presubmit-check TODO(webrtc:8982)
+  ss << "\n\n#\n# Fatal error in: " << file << ", line " << line
+     << "\n# last system error: " << LAST_SYSTEM_ERROR
+     << "\n# Check failed: " << message << "\n# ";
+
+  for (; *fmt != CheckArgType::kEnd; ++fmt) {
+    switch (*fmt) {
+      case CheckArgType::kInt:
+        ss << va_arg(args, int);
+        break;
+      case CheckArgType::kLong:
+        ss << va_arg(args, long);
+        break;
+      case CheckArgType::kLongLong:
+        ss << va_arg(args, long long);
+        break;
+      case CheckArgType::kUInt:
+        ss << va_arg(args, unsigned);
+        break;
+      case CheckArgType::kULong:
+        ss << va_arg(args, unsigned long);
+        break;
+      case CheckArgType::kULongLong:
+        ss << va_arg(args, unsigned long long);
+        break;
+      case CheckArgType::kDouble:
+        ss << va_arg(args, double);
+        break;
+      case CheckArgType::kLongDouble:
+        ss << va_arg(args, long double);
+        break;
+      case CheckArgType::kCharP:
+        ss << va_arg(args, const char*);
+        break;
+      case CheckArgType::kStdString:
+        ss << *va_arg(args, const std::string*);
+        break;
+      case CheckArgType::kVoidP:
+        ss << va_arg(args, const void*);
+        break;
+      default:
+        ss << "[Invalid CheckArgType:" << static_cast<int8_t>(*fmt) << "]";
+        goto processing_loop_end;
+    }
+  }
+processing_loop_end:
+  va_end(args);
+
+  std::string s = ss.str();
+  const char* output = s.c_str();
+
+#if defined(WEBRTC_ANDROID)
+  __android_log_print(ANDROID_LOG_ERROR, RTC_LOG_TAG_ANDROID, "%s\n", output);
+#endif
+
+  fflush(stdout);
+  fprintf(stderr, "%s", output);
+  fflush(stderr);
+  abort();
+}
+
+}  // namespace webrtc_checks_impl
 }  // namespace rtc
 
 // Function to call from the C version of the RTC_CHECK and RTC_DCHECK macros.
 RTC_NORETURN void rtc_FatalMessage(const char* file, int line,
                                    const char* msg) {
-  rtc::FatalMessage(file, line).stream() << msg;
+  static constexpr rtc::webrtc_checks_impl::CheckArgType t[] = {
+      rtc::webrtc_checks_impl::CheckArgType::kEnd};
+  FatalLog(file, line, msg, t);
 }

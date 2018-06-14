@@ -87,6 +87,37 @@ TEST(LogTest, SingleStream) {
   EXPECT_EQ(sev, LogMessage::GetLogToStream(nullptr));
 }
 
+#if GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
+TEST(LogTest, Checks) {
+  EXPECT_DEATH(FATAL() << "message",
+               "\n\n#\n"
+               "# Fatal error in: \\S+, line \\d+\n"
+               "# last system error: \\d+\n"
+               "# Check failed: FATAL\\(\\)\n"
+               "# message"
+               );
+
+  int a = 1, b = 2;
+  EXPECT_DEATH(RTC_CHECK_EQ(a, b) << 1 << 2u,
+               "\n\n#\n"
+               "# Fatal error in: \\S+, line \\d+\n"
+               "# last system error: \\d+\n"
+               "# Check failed: a == b \\(1 vs. 2\\)\n"
+               "# 12"
+               );
+  RTC_CHECK_EQ(5, 5);
+
+  RTC_CHECK(true) << "Shouldn't crash" << 1;
+  EXPECT_DEATH(RTC_CHECK(false) << "Hi there!",
+               "\n\n#\n"
+               "# Fatal error in: \\S+, line \\d+\n"
+               "# last system error: \\d+\n"
+               "# Check failed: false\n"
+               "# Hi there!"
+               );
+}
+#endif
+
 // Test using multiple log streams. The INFO stream should get the INFO message,
 // the VERBOSE stream should get the INFO and the VERBOSE.
 // We should restore the correct global state at the end.
