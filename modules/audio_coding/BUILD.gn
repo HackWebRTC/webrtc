@@ -1358,7 +1358,6 @@ if (rtc_include_tests) {
       ":g711_test",
       ":g722_test",
       ":ilbc_test",
-      ":insert_packet_with_timing",
       ":isac_api_test",
       ":isac_fix_test",
       ":isac_switch_samprate_test",
@@ -1551,41 +1550,6 @@ if (rtc_include_tests) {
       "//testing/gtest",
     ]
   }  # delay_test
-
-  rtc_executable("insert_packet_with_timing") {
-    testonly = true
-    sources = [
-      "test/Channel.cc",
-      "test/Channel.h",
-      "test/PCMFile.cc",
-      "test/PCMFile.h",
-      "test/insert_packet_with_timing.cc",
-    ]
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
-
-    deps = [
-      ":audio_coding",
-      ":audio_format_conversion",
-      "..:module_api",
-      "../..:typedefs",
-      "../../:webrtc_common",
-      "../../api:optional",
-      "../../api/audio:audio_frame_api",
-      "../../api/audio_codecs:builtin_audio_decoder_factory",
-      "../../rtc_base:checks",
-      "../../rtc_base:rtc_base_approved",
-      "../../system_wrappers",
-      "../../system_wrappers:system_wrappers_default",
-      "../../test:fileutils",
-      "../../test:test_support",
-      "../rtp_rtcp",
-      "//testing/gtest",
-    ]
-  }  # insert_packet_with_timing
 
   audio_decoder_unittests_resources =
       [ "../../resources/audio_coding/testfile32kHz.pcm" ]
