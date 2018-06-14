@@ -44,7 +44,7 @@ RTC_EXPORT
 
 /** @abstract Wrapped RTCVideoRotation, or nil.
  */
-@property(nullable) NSValue* rotationOverride;
+@property(nonatomic, nullable) NSValue* rotationOverride;
 
 @end
 

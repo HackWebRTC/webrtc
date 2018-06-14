@@ -182,6 +182,15 @@
 - (void)mtkView:(MTKView *)view drawableSizeWillChange:(CGSize)size {
 }
 
+#pragma mark -
+
+- (void)setRotationOverride:(NSValue *)rotationOverride {
+  _rotationOverride = rotationOverride;
+
+  self.metalView.drawableSize = [self drawableSize];
+  [self setNeedsLayout];
+}
+
 - (RTCVideoRotation)frameRotation {
   if (self.rotationOverride) {
     RTCVideoRotation rotation;
