@@ -285,7 +285,7 @@ struct AudioProcessingImpl::ApmPrivateSubmodules {
   ApmPrivateSubmodules(NonlinearBeamformer* beamformer,
                        std::unique_ptr<CustomProcessing> capture_post_processor,
                        std::unique_ptr<CustomProcessing> render_pre_processor,
-                       std::unique_ptr<EchoDetector> echo_detector)
+                       rtc::scoped_refptr<EchoDetector> echo_detector)
       : beamformer(beamformer),
         echo_detector(std::move(echo_detector)),
         capture_post_processor(std::move(capture_post_processor)),
@@ -295,7 +295,7 @@ struct AudioProcessingImpl::ApmPrivateSubmodules {
   std::unique_ptr<AgcManagerDirect> agc_manager;
   std::unique_ptr<GainController2> gain_controller2;
   std::unique_ptr<LowCutFilter> low_cut_filter;
-  std::unique_ptr<EchoDetector> echo_detector;
+  rtc::scoped_refptr<EchoDetector> echo_detector;
   std::unique_ptr<EchoControl> echo_controller;
   std::unique_ptr<CustomProcessing> capture_post_processor;
   std::unique_ptr<CustomProcessing> render_pre_processor;
@@ -330,7 +330,7 @@ AudioProcessingBuilder& AudioProcessingBuilder::SetNonlinearBeamformer(
 }
 
 AudioProcessingBuilder& AudioProcessingBuilder::SetEchoDetector(
-    std::unique_ptr<EchoDetector> echo_detector) {
+    rtc::scoped_refptr<EchoDetector> echo_detector) {
   echo_detector_ = std::move(echo_detector);
   return *this;
 }
@@ -363,7 +363,7 @@ AudioProcessingImpl::AudioProcessingImpl(
     std::unique_ptr<CustomProcessing> capture_post_processor,
     std::unique_ptr<CustomProcessing> render_pre_processor,
     std::unique_ptr<EchoControlFactory> echo_control_factory,
-    std::unique_ptr<EchoDetector> echo_detector,
+    rtc::scoped_refptr<EchoDetector> echo_detector,
     NonlinearBeamformer* beamformer)
     : data_dumper_(
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
@@ -422,7 +422,8 @@ AudioProcessingImpl::AudioProcessingImpl(
 
     // If no echo detector is injected, use the ResidualEchoDetector.
     if (!private_submodules_->echo_detector) {
-      private_submodules_->echo_detector.reset(new ResidualEchoDetector());
+      private_submodules_->echo_detector =
+          new rtc::RefCountedObject<ResidualEchoDetector>();
     }
 
     // TODO(alessiob): Move the injected gain controller once injection is

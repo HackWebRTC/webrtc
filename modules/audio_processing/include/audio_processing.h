@@ -678,7 +678,7 @@ class AudioProcessingBuilder {
       std::unique_ptr<NonlinearBeamformer> nonlinear_beamformer);
   // The AudioProcessingBuilder takes ownership of the echo_detector.
   AudioProcessingBuilder& SetEchoDetector(
-      std::unique_ptr<EchoDetector> echo_detector);
+      rtc::scoped_refptr<EchoDetector> echo_detector);
   // This creates an APM instance using the previously set components. Calling
   // the Create function resets the AudioProcessingBuilder to its initial state.
   AudioProcessing* Create();
@@ -689,7 +689,7 @@ class AudioProcessingBuilder {
   std::unique_ptr<CustomProcessing> capture_post_processing_;
   std::unique_ptr<CustomProcessing> render_pre_processing_;
   std::unique_ptr<NonlinearBeamformer> nonlinear_beamformer_;
-  std::unique_ptr<EchoDetector> echo_detector_;
+  rtc::scoped_refptr<EchoDetector> echo_detector_;
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioProcessingBuilder);
 };
 
@@ -1135,7 +1135,7 @@ class CustomProcessing {
 };
 
 // Interface for an echo detector submodule.
-class EchoDetector {
+class EchoDetector : public rtc::RefCountInterface {
  public:
   // (Re-)Initializes the submodule.
   virtual void Initialize(int capture_sample_rate_hz,
@@ -1161,8 +1161,6 @@ class EchoDetector {
 
   // Collect current metrics from the echo detector.
   virtual Metrics GetMetrics() const = 0;
-
-  virtual ~EchoDetector() {}
 };
 
 // The voice activity detection (VAD) component analyzes the stream to
