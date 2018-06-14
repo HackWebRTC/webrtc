@@ -84,6 +84,7 @@ rtc_static_library("rtc_pc_base") {
     "../rtc_base:rtc_base",
     "../rtc_base:rtc_task_queue",
     "../rtc_base:stringutils",
+    "../system_wrappers:metrics_api",
   ]
 
   if (rtc_build_libsrtp) {

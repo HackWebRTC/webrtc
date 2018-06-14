@@ -15,10 +15,16 @@
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/sslstreamadapter.h"
+#include "system_wrappers/include/metrics.h"
 #include "third_party/libsrtp/include/srtp.h"
 #include "third_party/libsrtp/include/srtp_priv.h"
 
 namespace cricket {
+
+// One more than the maximum libsrtp error code. Required by
+// RTC_HISTOGRAM_ENUMERATION. Keep this in sync with srtp_error_status_t defined
+// in srtp.h.
+constexpr int kSrtpErrorCodeBoundary = 28;
 
 SrtpSession::SrtpSession() {}
 
@@ -137,6 +143,8 @@ bool SrtpSession::UnprotectRtp(void* p, int in_len, int* out_len) {
       metrics_observer_->IncrementSparseEnumCounter(
           webrtc::kEnumCounterSrtpUnprotectError, err);
     }
+    RTC_HISTOGRAM_ENUMERATION("WebRTC.PeerConnection.UnprotectSrtpError",
+                              static_cast<int>(err), kSrtpErrorCodeBoundary);
     return false;
   }
   return true;
@@ -157,6 +165,8 @@ bool SrtpSession::UnprotectRtcp(void* p, int in_len, int* out_len) {
       metrics_observer_->IncrementSparseEnumCounter(
           webrtc::kEnumCounterSrtcpUnprotectError, err);
     }
+    RTC_HISTOGRAM_ENUMERATION("WebRTC.PeerConnection.UnprotectSrtcpError",
+                              static_cast<int>(err), kSrtpErrorCodeBoundary);
     return false;
   }
   return true;
