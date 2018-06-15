@@ -18,14 +18,12 @@
 #include "media/engine/webrtcvideocapturer.h"
 #include "rtc_base/task_queue_for_test.h"
 
-class FakeWebRtcVcmFactory;
-
 // Fake class for mocking out webrtc::VideoCaptureModule.
 class FakeWebRtcVideoCaptureModule : public webrtc::VideoCaptureModule {
  public:
-  explicit FakeWebRtcVideoCaptureModule(FakeWebRtcVcmFactory* factory)
-      : factory_(factory), callback_(NULL), running_(false) {}
-  ~FakeWebRtcVideoCaptureModule();
+  FakeWebRtcVideoCaptureModule()
+      : callback_(NULL), running_(false) {}
+  ~FakeWebRtcVideoCaptureModule() {}
   void RegisterCaptureDataCallback(
       rtc::VideoSinkInterface<webrtc::VideoFrame>* callback) override {
     callback_ = callback;
@@ -81,7 +79,6 @@ class FakeWebRtcVideoCaptureModule : public webrtc::VideoCaptureModule {
 
  private:
   rtc::test::TaskQueueForTest task_queue_{"FakeWebRtcVideoCaptureModule"};
-  FakeWebRtcVcmFactory* factory_;
   rtc::VideoSinkInterface<webrtc::VideoFrame>* callback_;
   bool running_;
   webrtc::VideoCaptureCapability cap_;
