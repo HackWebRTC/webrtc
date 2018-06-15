@@ -498,6 +498,8 @@ void CopyColumn(uint8_t* new_mask,
                 int num_fec_packets,
                 int new_bit_index,
                 int old_bit_index) {
+  RTC_CHECK_LT(new_bit_index, 8 * new_mask_bytes);
+
   // Copy column from the old mask to the beginning of the new mask and shift it
   // out from the old mask.
   for (uint16_t row = 0; row < num_fec_packets; ++row) {
