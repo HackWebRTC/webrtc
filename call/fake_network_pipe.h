@@ -40,10 +40,10 @@ class NetworkPacket {
   NetworkPacket(rtc::CopyOnWriteBuffer packet,
                 int64_t send_time,
                 int64_t arrival_time,
-                rtc::Optional<PacketOptions> packet_options,
+                absl::optional<PacketOptions> packet_options,
                 bool is_rtcp,
                 MediaType media_type_,
-                rtc::Optional<PacketTime> packet_time_);
+                absl::optional<PacketTime> packet_time_);
   // Disallow copy constructor and copy assignment (no deep copies of |data_|).
   NetworkPacket(const NetworkPacket&) = delete;
   NetworkPacket& operator=(const NetworkPacket&) = delete;
@@ -74,14 +74,14 @@ class NetworkPacket {
   int64_t arrival_time_;
   // If using a Transport for outgoing degradation, populate with
   // PacketOptions (transport-wide sequence number) for RTP.
-  rtc::Optional<PacketOptions> packet_options_;
+  absl::optional<PacketOptions> packet_options_;
   bool is_rtcp_;
   // If using a PacketReceiver for incoming degradation, populate with
   // appropriate MediaType and PacketTime. This type/timing will be kept and
   // forwarded. The PacketTime might be altered to reflect time spent in fake
   // network pipe.
   MediaType media_type_;
-  rtc::Optional<PacketTime> packet_time_;
+  absl::optional<PacketTime> packet_time_;
 };
 
 struct PacketInFlightInfo {
@@ -108,7 +108,7 @@ class NetworkSimulationInterface {
   // Retrieves all packets that should be delivered by the given receive time.
   virtual std::vector<PacketDeliveryInfo> DequeueDeliverablePackets(
       int64_t receive_time_us) = 0;
-  virtual rtc::Optional<int64_t> NextDeliveryTimeUs() const = 0;
+  virtual absl::optional<int64_t> NextDeliveryTimeUs() const = 0;
   virtual ~NetworkSimulationInterface() = default;
 };
 
@@ -144,7 +144,7 @@ class SimulatedNetwork : public NetworkSimulationInterface {
   std::vector<PacketDeliveryInfo> DequeueDeliverablePackets(
       int64_t receive_time_us) override;
 
-  rtc::Optional<int64_t> NextDeliveryTimeUs() const override;
+  absl::optional<int64_t> NextDeliveryTimeUs() const override;
 
  private:
   struct PacketInfo {
@@ -260,10 +260,10 @@ class FakeNetworkPipe : public Transport, public PacketReceiver, public Module {
 
   // Returns true if enqueued, or false if packet was dropped.
   virtual bool EnqueuePacket(rtc::CopyOnWriteBuffer packet,
-                     rtc::Optional<PacketOptions> options,
-                     bool is_rtcp,
-                     MediaType media_type,
-                     rtc::Optional<PacketTime> packet_time);
+                             absl::optional<PacketOptions> options,
+                             bool is_rtcp,
+                             MediaType media_type,
+                             absl::optional<PacketTime> packet_time);
   void DeliverPacket(NetworkPacket* packet)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(config_lock_);
   bool HasTransport() const;

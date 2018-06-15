@@ -33,7 +33,7 @@ BitrateConstraints RtpBitrateConfigurator::GetConfig() const {
   return bitrate_config_;
 }
 
-rtc::Optional<BitrateConstraints>
+absl::optional<BitrateConstraints>
 RtpBitrateConfigurator::UpdateWithSdpParameters(
     const BitrateConstraints& bitrate_config) {
   RTC_DCHECK_GE(bitrate_config.min_bitrate_bps, 0);
@@ -42,7 +42,7 @@ RtpBitrateConfigurator::UpdateWithSdpParameters(
     RTC_DCHECK_GT(bitrate_config.max_bitrate_bps, 0);
   }
 
-  rtc::Optional<int> new_start;
+  absl::optional<int> new_start;
   // Only update the "start" bitrate if it's set, and different from the old
   // value. In practice, this value comes from the x-google-start-bitrate codec
   // parameter in SDP, and setting the same remote description twice shouldn't
@@ -56,15 +56,15 @@ RtpBitrateConfigurator::UpdateWithSdpParameters(
   return UpdateConstraints(new_start);
 }
 
-rtc::Optional<BitrateConstraints>
+absl::optional<BitrateConstraints>
 RtpBitrateConfigurator::UpdateWithClientPreferences(
     const BitrateSettings& bitrate_mask) {
   bitrate_config_mask_ = bitrate_mask;
   return UpdateConstraints(bitrate_mask.start_bitrate_bps);
 }
 
-rtc::Optional<BitrateConstraints> RtpBitrateConfigurator::UpdateConstraints(
-    const rtc::Optional<int>& new_start) {
+absl::optional<BitrateConstraints> RtpBitrateConfigurator::UpdateConstraints(
+    const absl::optional<int>& new_start) {
   BitrateConstraints updated;
   updated.min_bitrate_bps =
       std::max(bitrate_config_mask_.min_bitrate_bps.value_or(0),
@@ -86,7 +86,7 @@ rtc::Optional<BitrateConstraints> RtpBitrateConfigurator::UpdateConstraints(
   if (updated.min_bitrate_bps == bitrate_config_.min_bitrate_bps &&
       updated.max_bitrate_bps == bitrate_config_.max_bitrate_bps &&
       !new_start) {
-    return rtc::nullopt;
+    return absl::nullopt;
   }
 
   if (new_start) {

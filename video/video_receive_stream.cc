@@ -16,13 +16,13 @@
 #include <string>
 #include <utility>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "call/rtp_stream_receiver_controller_interface.h"
 #include "call/rtx_receive_stream.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "common_video/h264/profile_level_id.h"
-#include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "common_video/include/incoming_video_stream.h"
+#include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/rtp_rtcp/include/rtp_receiver.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/utility/include/process_thread.h"
@@ -375,7 +375,7 @@ int VideoReceiveStream::id() const {
   return config_.rtp.remote_ssrc;
 }
 
-rtc::Optional<Syncable::Info> VideoReceiveStream::GetInfo() const {
+absl::optional<Syncable::Info> VideoReceiveStream::GetInfo() const {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&module_process_sequence_checker_);
   Syncable::Info info;
 
@@ -384,7 +384,7 @@ rtc::Optional<Syncable::Info> VideoReceiveStream::GetInfo() const {
   if (!rtp_receiver->GetLatestTimestamps(
           &info.latest_received_capture_timestamp,
           &info.latest_receive_time_ms))
-    return rtc::nullopt;
+    return absl::nullopt;
 
   RtpRtcp* rtp_rtcp = rtp_video_stream_receiver_.rtp_rtcp();
   RTC_DCHECK(rtp_rtcp);
@@ -393,7 +393,7 @@ rtc::Optional<Syncable::Info> VideoReceiveStream::GetInfo() const {
                           nullptr,
                           nullptr,
                           &info.capture_time_source_clock) != 0) {
-    return rtc::nullopt;
+    return absl::nullopt;
   }
 
   info.current_delay_ms = video_receiver_.Delay();
@@ -454,9 +454,9 @@ bool VideoReceiveStream::Decode() {
   } else {
     RTC_DCHECK_EQ(res, video_coding::FrameBuffer::ReturnReason::kTimeout);
     int64_t now_ms = clock_->TimeInMilliseconds();
-    rtc::Optional<int64_t> last_packet_ms =
+    absl::optional<int64_t> last_packet_ms =
         rtp_video_stream_receiver_.LastReceivedPacketMs();
-    rtc::Optional<int64_t> last_keyframe_packet_ms =
+    absl::optional<int64_t> last_keyframe_packet_ms =
         rtp_video_stream_receiver_.LastReceivedKeyframePacketMs();
 
     // To avoid spamming keyframe requests for a stream that is not active we

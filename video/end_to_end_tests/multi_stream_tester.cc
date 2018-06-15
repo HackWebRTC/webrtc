@@ -99,7 +99,7 @@ void MultiStreamTester::RunTest() {
       receive_streams[i]->Start();
 
       frame_generators[i] = test::FrameGeneratorCapturer::Create(
-          width, height, rtc::nullopt, rtc::nullopt, 30,
+          width, height, absl::nullopt, absl::nullopt, 30,
           Clock::GetRealTimeClock());
       send_streams[i]->SetSource(frame_generators[i],
                                  DegradationPreference::MAINTAIN_FRAMERATE);

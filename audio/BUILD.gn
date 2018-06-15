@@ -49,7 +49,6 @@ rtc_static_library("audio") {
     "../api:array_view",
     "../api:call_api",
     "../api:libjingle_peerconnection_api",
-    "../api:optional",
     "../api:transport_api",
     "../api/audio:aec3_factory",
     "../api/audio:audio_frame_api",
@@ -87,6 +86,7 @@ rtc_static_library("audio") {
     "../system_wrappers:field_trial_api",
     "../system_wrappers:metrics_api",
     "utility:audio_frame_operations",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 if (rtc_include_tests) {

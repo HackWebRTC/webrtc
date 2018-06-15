@@ -179,7 +179,7 @@ VideoSendStream::Stats VideoSendStream::GetStats() {
   return stats_proxy_.GetStats();
 }
 
-rtc::Optional<float> VideoSendStream::GetPacingFactorOverride() const {
+absl::optional<float> VideoSendStream::GetPacingFactorOverride() const {
   return send_stream_->configured_pacing_factor_;
 }
 

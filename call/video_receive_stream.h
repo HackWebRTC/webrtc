@@ -82,7 +82,7 @@ class VideoReceiveStream {
     int render_delay_ms = 10;
     int64_t interframe_delay_max_ms = -1;
     uint32_t frames_decoded = 0;
-    rtc::Optional<uint64_t> qp_sum;
+    absl::optional<uint64_t> qp_sum;
 
     int current_payload_type = -1;
 
@@ -104,7 +104,7 @@ class VideoReceiveStream {
 
     // Timing frame info: all important timestamps for a full lifetime of a
     // single 'timing frame'.
-    rtc::Optional<webrtc::TimingFrameInfo> timing_frame_info;
+    absl::optional<webrtc::TimingFrameInfo> timing_frame_info;
   };
 
   struct Config {

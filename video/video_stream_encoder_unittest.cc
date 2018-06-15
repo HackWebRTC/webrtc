@@ -180,8 +180,8 @@ class AdaptingFrameForwarder : public test::FrameForwarder {
     return last_wants_;
   }
 
-  rtc::Optional<int> last_sent_width() const { return last_width_; }
-  rtc::Optional<int> last_sent_height() const { return last_height_; }
+  absl::optional<int> last_sent_width() const { return last_width_; }
+  absl::optional<int> last_sent_height() const { return last_height_; }
 
   void IncomingCapturedFrame(const VideoFrame& video_frame) override {
     int cropped_width = 0;
@@ -201,8 +201,8 @@ class AdaptingFrameForwarder : public test::FrameForwarder {
         last_width_.emplace(adapted_frame.width());
         last_height_.emplace(adapted_frame.height());
       } else {
-        last_width_ = rtc::nullopt;
-        last_height_ = rtc::nullopt;
+        last_width_ = absl::nullopt;
+        last_height_ = absl::nullopt;
       }
     } else {
       test::FrameForwarder::IncomingCapturedFrame(video_frame);
@@ -223,8 +223,8 @@ class AdaptingFrameForwarder : public test::FrameForwarder {
   cricket::VideoAdapter adapter_;
   bool adaptation_enabled_ RTC_GUARDED_BY(crit_);
   rtc::VideoSinkWants last_wants_ RTC_GUARDED_BY(crit_);
-  rtc::Optional<int> last_width_;
-  rtc::Optional<int> last_height_;
+  absl::optional<int> last_width_;
+  absl::optional<int> last_height_;
 };
 
 class MockableSendStatisticsProxy : public SendStatisticsProxy {
@@ -253,7 +253,7 @@ class MockableSendStatisticsProxy : public SendStatisticsProxy {
 
  private:
   rtc::CriticalSection lock_;
-  rtc::Optional<VideoSendStream::Stats> mock_stats_ RTC_GUARDED_BY(lock_);
+  absl::optional<VideoSendStream::Stats> mock_stats_ RTC_GUARDED_BY(lock_);
 };
 
 class MockBitrateObserver : public VideoBitrateAllocationObserver {

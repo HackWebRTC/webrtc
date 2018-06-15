@@ -354,11 +354,11 @@ void RtpVideoStreamReceiver::UpdateRtt(int64_t max_rtt_ms) {
     nack_module_->UpdateRtt(max_rtt_ms);
 }
 
-rtc::Optional<int64_t> RtpVideoStreamReceiver::LastReceivedPacketMs() const {
+absl::optional<int64_t> RtpVideoStreamReceiver::LastReceivedPacketMs() const {
   return packet_buffer_->LastReceivedPacketMs();
 }
 
-rtc::Optional<int64_t> RtpVideoStreamReceiver::LastReceivedKeyframePacketMs()
+absl::optional<int64_t> RtpVideoStreamReceiver::LastReceivedKeyframePacketMs()
     const {
   return packet_buffer_->LastReceivedKeyframePacketMs();
 }

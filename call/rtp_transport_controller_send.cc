@@ -237,7 +237,7 @@ void RtpTransportControllerSend::OnSentPacket(
 
 void RtpTransportControllerSend::SetSdpBitrateParameters(
     const BitrateConstraints& constraints) {
-  rtc::Optional<BitrateConstraints> updated =
+  absl::optional<BitrateConstraints> updated =
       bitrate_configurator_.UpdateWithSdpParameters(constraints);
   if (updated.has_value()) {
     send_side_cc_->SetBweBitrates(updated->min_bitrate_bps,
@@ -252,7 +252,7 @@ void RtpTransportControllerSend::SetSdpBitrateParameters(
 
 void RtpTransportControllerSend::SetClientBitratePreferences(
     const BitrateSettings& preferences) {
-  rtc::Optional<BitrateConstraints> updated =
+  absl::optional<BitrateConstraints> updated =
       bitrate_configurator_.UpdateWithClientPreferences(preferences);
   if (updated.has_value()) {
     send_side_cc_->SetBweBitrates(updated->min_bitrate_bps,

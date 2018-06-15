@@ -13,7 +13,7 @@
 #include "test/gtest.h"
 
 namespace webrtc {
-using rtc::nullopt;
+using absl::nullopt;
 
 class RtpBitrateConfiguratorTest : public testing::Test {
  public:
@@ -21,10 +21,10 @@ class RtpBitrateConfiguratorTest : public testing::Test {
       : configurator_(new RtpBitrateConfigurator(BitrateConstraints())) {}
   std::unique_ptr<RtpBitrateConfigurator> configurator_;
   void UpdateConfigMatches(BitrateConstraints bitrate_config,
-                           rtc::Optional<int> min_bitrate_bps,
-                           rtc::Optional<int> start_bitrate_bps,
-                           rtc::Optional<int> max_bitrate_bps) {
-    rtc::Optional<BitrateConstraints> result =
+                           absl::optional<int> min_bitrate_bps,
+                           absl::optional<int> start_bitrate_bps,
+                           absl::optional<int> max_bitrate_bps) {
+    absl::optional<BitrateConstraints> result =
         configurator_->UpdateWithSdpParameters(bitrate_config);
     EXPECT_TRUE(result.has_value());
     if (start_bitrate_bps.has_value())
@@ -36,10 +36,10 @@ class RtpBitrateConfiguratorTest : public testing::Test {
   }
 
   void UpdateMaskMatches(BitrateSettings bitrate_mask,
-                         rtc::Optional<int> min_bitrate_bps,
-                         rtc::Optional<int> start_bitrate_bps,
-                         rtc::Optional<int> max_bitrate_bps) {
-    rtc::Optional<BitrateConstraints> result =
+                         absl::optional<int> min_bitrate_bps,
+                         absl::optional<int> start_bitrate_bps,
+                         absl::optional<int> max_bitrate_bps) {
+    absl::optional<BitrateConstraints> result =
         configurator_->UpdateWithClientPreferences(bitrate_mask);
     EXPECT_TRUE(result.has_value());
     if (start_bitrate_bps.has_value())

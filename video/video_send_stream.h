@@ -106,7 +106,7 @@ class VideoSendStream : public webrtc::VideoSendStream {
 
   class ConstructionTask;
 
-  rtc::Optional<float> GetPacingFactorOverride() const;
+  absl::optional<float> GetPacingFactorOverride() const;
 
   rtc::ThreadChecker thread_checker_;
   rtc::TaskQueue* const worker_queue_;

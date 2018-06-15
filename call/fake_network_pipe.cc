@@ -32,10 +32,10 @@ constexpr int64_t kLogIntervalMs = 5000;
 NetworkPacket::NetworkPacket(rtc::CopyOnWriteBuffer packet,
                              int64_t send_time,
                              int64_t arrival_time,
-                             rtc::Optional<PacketOptions> packet_options,
+                             absl::optional<PacketOptions> packet_options,
                              bool is_rtcp,
                              MediaType media_type,
-                             rtc::Optional<PacketTime> packet_time)
+                             absl::optional<PacketTime> packet_time)
     : packet_(std::move(packet)),
       send_time_(send_time),
       arrival_time_(arrival_time),
@@ -115,14 +115,14 @@ bool FakeNetworkPipe::SendRtp(const uint8_t* packet,
                               const PacketOptions& options) {
   RTC_DCHECK(HasTransport());
   EnqueuePacket(rtc::CopyOnWriteBuffer(packet, length), options, false,
-                MediaType::ANY, rtc::nullopt);
+                MediaType::ANY, absl::nullopt);
   return true;
 }
 
 bool FakeNetworkPipe::SendRtcp(const uint8_t* packet, size_t length) {
   RTC_DCHECK(HasTransport());
-  EnqueuePacket(rtc::CopyOnWriteBuffer(packet, length), rtc::nullopt, true,
-                MediaType::ANY, rtc::nullopt);
+  EnqueuePacket(rtc::CopyOnWriteBuffer(packet, length), absl::nullopt, true,
+                MediaType::ANY, absl::nullopt);
   return true;
 }
 
@@ -130,7 +130,7 @@ PacketReceiver::DeliveryStatus FakeNetworkPipe::DeliverPacket(
     MediaType media_type,
     rtc::CopyOnWriteBuffer packet,
     const PacketTime& packet_time) {
-  return EnqueuePacket(std::move(packet), rtc::nullopt, false, media_type,
+  return EnqueuePacket(std::move(packet), absl::nullopt, false, media_type,
                        packet_time)
              ? PacketReceiver::DELIVERY_OK
              : PacketReceiver::DELIVERY_PACKET_ERROR;
@@ -213,20 +213,20 @@ bool SimulatedNetwork::EnqueuePacket(PacketInFlightInfo packet) {
   return true;
 }
 
-rtc::Optional<int64_t> SimulatedNetwork::NextDeliveryTimeUs() const {
+absl::optional<int64_t> SimulatedNetwork::NextDeliveryTimeUs() const {
   if (!delay_link_.empty())
     return delay_link_.begin()->arrival_time_us;
-  return rtc::nullopt;
+  return absl::nullopt;
 }
 
 FakeNetworkPipe::StoredPacket::StoredPacket(NetworkPacket&& packet)
     : packet(std::move(packet)) {}
 
 bool FakeNetworkPipe::EnqueuePacket(rtc::CopyOnWriteBuffer packet,
-                                    rtc::Optional<PacketOptions> options,
+                                    absl::optional<PacketOptions> options,
                                     bool is_rtcp,
                                     MediaType media_type,
-                                    rtc::Optional<PacketTime> packet_time) {
+                                    absl::optional<PacketTime> packet_time) {
   int64_t time_now_us = clock_->TimeInMicroseconds();
   rtc::CritScope crit(&process_lock_);
   size_t packet_size = packet.size();
@@ -413,7 +413,7 @@ void FakeNetworkPipe::Process() {
     packets_to_deliver.pop();
     DeliverPacket(&packet);
   }
-  rtc::Optional<int64_t> delivery_us =
+  absl::optional<int64_t> delivery_us =
       network_simulation_->NextDeliveryTimeUs();
   next_process_time_us_ = delivery_us
                               ? *delivery_us

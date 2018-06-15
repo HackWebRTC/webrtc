@@ -14,7 +14,7 @@
 #include <stdint.h>
 #include <vector>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "api/video/video_content_type.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/numerics/sample_counter.h"
@@ -30,7 +30,7 @@ class VideoQualityObserver {
   explicit VideoQualityObserver(VideoContentType content_type);
   ~VideoQualityObserver();
 
-  void OnDecodedFrame(rtc::Optional<uint8_t> qp,
+  void OnDecodedFrame(absl::optional<uint8_t> qp,
                       int width,
                       int height,
                       int64_t now_ms,

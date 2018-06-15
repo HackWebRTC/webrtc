@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "system_wrappers/include/metrics.h"
 #include "system_wrappers/include/metrics_default.h"
@@ -123,7 +123,7 @@ void HistogramTest::VerifyHistogramStats(bool use_rtx,
     const bool use_fec_;
     const bool screenshare_;
     test::FunctionVideoEncoderFactory encoder_factory_;
-    rtc::Optional<int64_t> start_runtime_ms_;
+    absl::optional<int64_t> start_runtime_ms_;
     int num_frames_received_ RTC_GUARDED_BY(&crit_);
   } test(use_rtx, use_fec, screenshare);
 

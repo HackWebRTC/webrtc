@@ -91,7 +91,7 @@ AudioSendStream::AudioSendStream(
     BitrateAllocator* bitrate_allocator,
     RtcEventLog* event_log,
     RtcpRttStats* rtcp_rtt_stats,
-    const rtc::Optional<RtpState>& suspended_rtp_state,
+    const absl::optional<RtpState>& suspended_rtp_state,
     TimeInterval* overall_call_lifetime)
     : AudioSendStream(config,
                       audio_state,
@@ -115,7 +115,7 @@ AudioSendStream::AudioSendStream(
     BitrateAllocator* bitrate_allocator,
     RtcEventLog* event_log,
     RtcpRttStats* rtcp_rtt_stats,
-    const rtc::Optional<RtpState>& suspended_rtp_state,
+    const absl::optional<RtpState>& suspended_rtp_state,
     TimeInterval* overall_call_lifetime,
     std::unique_ptr<voe::ChannelProxy> channel_proxy)
     : worker_queue_(worker_queue),
@@ -445,8 +445,8 @@ void AudioSendStream::OnPacketAdded(uint32_t ssrc, uint16_t seq_num) {
 void AudioSendStream::OnPacketFeedbackVector(
     const std::vector<PacketFeedback>& packet_feedback_vector) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  rtc::Optional<float> plr;
-  rtc::Optional<float> rplr;
+  absl::optional<float> plr;
+  absl::optional<float> rplr;
   {
     rtc::CritScope lock(&packet_loss_tracker_cs_);
     packet_loss_tracker_.OnPacketFeedbackVector(packet_feedback_vector);
@@ -584,7 +584,7 @@ bool AudioSendStream::ReconfigureSendCodec(AudioSendStream* stream,
     return SetupSendCodec(stream, new_config);
   }
 
-  const rtc::Optional<int>& new_target_bitrate_bps =
+  const absl::optional<int>& new_target_bitrate_bps =
       new_config.send_codec_spec->target_bitrate_bps;
   // If a bitrate has been specified for the codec, use it over the
   // codec's default.

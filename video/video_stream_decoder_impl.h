@@ -15,7 +15,7 @@
 #include <memory>
 #include <utility>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "api/video/video_stream_decoder.h"
 #include "modules/video_coding/frame_buffer2.h"
 #include "modules/video_coding/jitter_estimator.h"
@@ -64,8 +64,8 @@ class VideoStreamDecoderImpl : public VideoStreamDecoder,
   int32_t Decoded(VideoFrame& decodedImage) override;
   int32_t Decoded(VideoFrame& decodedImage, int64_t decode_time_ms) override;
   void Decoded(VideoFrame& decodedImage,
-               rtc::Optional<int32_t> decode_time_ms,
-               rtc::Optional<uint8_t> qp) override;
+               absl::optional<int32_t> decode_time_ms,
+               absl::optional<uint8_t> qp) override;
 
   VideoStreamDecoder::Callbacks* const callbacks_
       RTC_PT_GUARDED_BY(bookkeeping_queue_);
@@ -83,7 +83,7 @@ class VideoStreamDecoderImpl : public VideoStreamDecoder,
   VCMTiming timing_;
   video_coding::FrameBuffer frame_buffer_;
   video_coding::VideoLayerFrameId last_continuous_id_;
-  rtc::Optional<int> current_payload_type_;
+  absl::optional<int> current_payload_type_;
   std::unique_ptr<VideoDecoder> decoder_;
 
   // Some decoders are pipelined so it is not sufficient to save frame info

@@ -88,7 +88,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
 
   void SetTransportOverhead(size_t transport_overhead_per_packet);
 
-  rtc::Optional<float> configured_pacing_factor_;
+  absl::optional<float> configured_pacing_factor_;
 
   // From PacketFeedbackObserver.
   void OnPacketAdded(uint32_t ssrc, uint16_t seq_num) override;

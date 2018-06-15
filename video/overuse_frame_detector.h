@@ -14,7 +14,7 @@
 #include <list>
 #include <memory>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "modules/video_coding/utility/quality_scaler.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/numerics/exp_filter.h"
@@ -90,7 +90,7 @@ class OveruseFrameDetector {
   void FrameSent(uint32_t timestamp,
                  int64_t time_sent_in_us,
                  int64_t capture_time_us,
-                 rtc::Optional<int> encode_duration_us);
+                 absl::optional<int> encode_duration_us);
 
   // Interface for cpu load estimation. Intended for internal use only.
   class ProcessingUsage {
@@ -101,13 +101,13 @@ class OveruseFrameDetector {
                                int64_t time_when_first_seen_us,
                                int64_t last_capture_time_us) = 0;
     // Returns encode_time in us, if there's a new measurement.
-    virtual rtc::Optional<int> FrameSent(
+    virtual absl::optional<int> FrameSent(
         // These two argument used by old estimator.
         uint32_t timestamp,
         int64_t time_sent_in_us,
         // And these two by the new estimator.
         int64_t capture_time_us,
-        rtc::Optional<int> encode_duration_us) = 0;
+        absl::optional<int> encode_duration_us) = 0;
 
     virtual int Value() = 0;
     virtual ~ProcessingUsage() = default;
@@ -141,7 +141,7 @@ class OveruseFrameDetector {
 
   // Stats metrics.
   CpuOveruseMetricsObserver* const metrics_observer_;
-  rtc::Optional<CpuOveruseMetrics> metrics_ RTC_GUARDED_BY(task_checker_);
+  absl::optional<CpuOveruseMetrics> metrics_ RTC_GUARDED_BY(task_checker_);
 
   int64_t num_process_times_ RTC_GUARDED_BY(task_checker_);
 

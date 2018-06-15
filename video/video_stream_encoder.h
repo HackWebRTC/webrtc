@@ -230,7 +230,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   // Set when configuration must create a new encoder object, e.g.,
   // because of a codec change.
   bool pending_encoder_creation_ RTC_GUARDED_BY(&encoder_queue_);
-  rtc::Optional<VideoFrameInfo> last_frame_info_
+  absl::optional<VideoFrameInfo> last_frame_info_
       RTC_GUARDED_BY(&encoder_queue_);
   int crop_width_ RTC_GUARDED_BY(&encoder_queue_);
   int crop_height_ RTC_GUARDED_BY(&encoder_queue_);
@@ -259,7 +259,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   };
   // Stores a snapshot of the last adaptation request triggered by an AdaptUp
   // or AdaptDown signal.
-  rtc::Optional<AdaptationRequest> last_adaptation_request_
+  absl::optional<AdaptationRequest> last_adaptation_request_
       RTC_GUARDED_BY(&encoder_queue_);
 
   rtc::RaceChecker incoming_frame_race_checker_
@@ -274,12 +274,12 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   int64_t last_frame_log_ms_ RTC_GUARDED_BY(incoming_frame_race_checker_);
   int captured_frame_count_ RTC_GUARDED_BY(&encoder_queue_);
   int dropped_frame_count_ RTC_GUARDED_BY(&encoder_queue_);
-  rtc::Optional<VideoFrame> pending_frame_ RTC_GUARDED_BY(&encoder_queue_);
+  absl::optional<VideoFrame> pending_frame_ RTC_GUARDED_BY(&encoder_queue_);
   int64_t pending_frame_post_time_us_ RTC_GUARDED_BY(&encoder_queue_);
 
   VideoBitrateAllocationObserver* bitrate_observer_
       RTC_GUARDED_BY(&encoder_queue_);
-  rtc::Optional<int64_t> last_parameters_update_ms_
+  absl::optional<int64_t> last_parameters_update_ms_
       RTC_GUARDED_BY(&encoder_queue_);
 
   // All public methods are proxied to |encoder_queue_|. It must must be

@@ -257,7 +257,7 @@ int AudioReceiveStream::id() const {
   return config_.rtp.remote_ssrc;
 }
 
-rtc::Optional<Syncable::Info> AudioReceiveStream::GetInfo() const {
+absl::optional<Syncable::Info> AudioReceiveStream::GetInfo() const {
   RTC_DCHECK_RUN_ON(&module_process_thread_checker_);
   Syncable::Info info;
 
@@ -270,14 +270,14 @@ rtc::Optional<Syncable::Info> AudioReceiveStream::GetInfo() const {
   if (!rtp_receiver->GetLatestTimestamps(
           &info.latest_received_capture_timestamp,
           &info.latest_receive_time_ms)) {
-    return rtc::nullopt;
+    return absl::nullopt;
   }
   if (rtp_rtcp->RemoteNTP(&info.capture_time_ntp_secs,
                           &info.capture_time_ntp_frac,
                           nullptr,
                           nullptr,
                           &info.capture_time_source_clock) != 0) {
-    return rtc::nullopt;
+    return absl::nullopt;
   }
 
   info.current_delay_ms = channel_proxy_->GetDelayEstimate();

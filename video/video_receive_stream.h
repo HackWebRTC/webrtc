@@ -108,7 +108,7 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
 
   // Implements Syncable.
   int id() const override;
-  rtc::Optional<Syncable::Info> GetInfo() const override;
+  absl::optional<Syncable::Info> GetInfo() const override;
   uint32_t GetPlayoutTimestamp() const override;
   void SetMinimumPlayoutDelay(int delay_ms) override;
 

@@ -76,13 +76,13 @@ void RtpStreamsSynchronizer::Process() {
   }
   RTC_DCHECK(sync_.get());
 
-  rtc::Optional<Syncable::Info> audio_info = syncable_audio_->GetInfo();
+  absl::optional<Syncable::Info> audio_info = syncable_audio_->GetInfo();
   if (!audio_info || !UpdateMeasurements(&audio_measurement_, *audio_info)) {
     return;
   }
 
   int64_t last_video_receive_ms = video_measurement_.latest_receive_time_ms;
-  rtc::Optional<Syncable::Info> video_info = syncable_video_->GetInfo();
+  absl::optional<Syncable::Info> video_info = syncable_video_->GetInfo();
   if (!video_info || !UpdateMeasurements(&video_measurement_, *video_info)) {
     return;
   }

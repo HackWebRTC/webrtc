@@ -162,7 +162,7 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
     bool is_active = false;
     int on_off_events = 0;
     int64_t elapsed_ms = 0;
-    rtc::Optional<int64_t> last_update_ms;
+    absl::optional<int64_t> last_update_ms;
     const int max_frame_diff_ms = 2000;
   };
   struct FallbackEncoderInfoDisabled {
@@ -235,8 +235,8 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   Clock* const clock_;
   const std::string payload_name_;
   const VideoSendStream::Config::Rtp rtp_config_;
-  const rtc::Optional<int> fallback_max_pixels_;
-  const rtc::Optional<int> fallback_max_pixels_disabled_;
+  const absl::optional<int> fallback_max_pixels_;
+  const absl::optional<int> fallback_max_pixels_disabled_;
   rtc::CriticalSection crit_;
   VideoEncoderConfig::ContentType content_type_ RTC_GUARDED_BY(crit_);
   const int64_t start_ms_;
@@ -248,7 +248,7 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   rtc::RateTracker media_byte_rate_tracker_ RTC_GUARDED_BY(crit_);
   rtc::RateTracker encoded_frame_rate_tracker_ RTC_GUARDED_BY(crit_);
 
-  rtc::Optional<int64_t> last_outlier_timestamp_ RTC_GUARDED_BY(crit_);
+  absl::optional<int64_t> last_outlier_timestamp_ RTC_GUARDED_BY(crit_);
 
   // Contains stats used for UMA histograms. These stats will be reset if
   // content type changes between real-time video and screenshare, since these

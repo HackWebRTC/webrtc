@@ -167,7 +167,7 @@ class BitrateEstimatorTest : public test::CallTest {
           test_->video_encoder_config_.Copy());
       RTC_DCHECK_EQ(1, test_->video_encoder_config_.number_of_streams);
       frame_generator_capturer_.reset(test::FrameGeneratorCapturer::Create(
-          kDefaultWidth, kDefaultHeight, rtc::nullopt, rtc::nullopt,
+          kDefaultWidth, kDefaultHeight, absl::nullopt, absl::nullopt,
           kDefaultFramerate, Clock::GetRealTimeClock()));
       send_stream_->SetSource(frame_generator_capturer_.get(),
                               DegradationPreference::MAINTAIN_FRAMERATE);

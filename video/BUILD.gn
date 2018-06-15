@@ -62,7 +62,6 @@ rtc_static_library("video") {
     "../:typedefs",
     "../api:fec_controller_api",
     "../api:libjingle_peerconnection_api",
-    "../api:optional",
     "../api:transport_api",
     "../api/video:video_frame",
     "../api/video:video_frame_i420",
@@ -84,6 +83,7 @@ rtc_static_library("video") {
     "../rtc_base/system:fallthrough",
     "../system_wrappers:field_trial_api",
     "../system_wrappers:metrics_api",
+    "//third_party/abseil-cpp/absl/types:optional",
 
     # For RtxReceiveStream.
     "../call:rtp_receiver",
@@ -121,7 +121,6 @@ rtc_source_set("video_stream_decoder_impl") {
   ]
 
   deps = [
-    "../api:optional",
     "../api/video:encoded_frame",
     "../api/video:video_frame",
     "../api/video:video_stream_decoder",
@@ -130,6 +129,7 @@ rtc_source_set("video_stream_decoder_impl") {
     "../rtc_base:rtc_base_approved",
     "../rtc_base:rtc_task_queue_api",
     "../system_wrappers:system_wrappers",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 
@@ -364,7 +364,6 @@ if (rtc_include_tests) {
     deps = [
       ":video",
       ":video_mocks",
-      "../api:optional",
       "../api/video:video_frame",
       "../api/video:video_frame_i420",
       "../api/video_codecs:video_codecs_api",
@@ -417,6 +416,7 @@ if (rtc_include_tests) {
       "../test:test_support",
       "../test:video_test_common",
       "//testing/gtest",
+      "//third_party/abseil-cpp/absl/types:optional",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).

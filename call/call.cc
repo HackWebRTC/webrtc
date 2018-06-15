@@ -16,7 +16,7 @@
 #include <utility>
 #include <vector>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "api/transport/network_control.h"
 #include "audio/audio_receive_stream.h"
 #include "audio/audio_send_stream.h"
@@ -343,10 +343,10 @@ class Call final : public webrtc::Call,
   RateCounter received_audio_bytes_per_second_counter_;
   RateCounter received_video_bytes_per_second_counter_;
   RateCounter received_rtcp_bytes_per_second_counter_;
-  rtc::Optional<int64_t> first_received_rtp_audio_ms_;
-  rtc::Optional<int64_t> last_received_rtp_audio_ms_;
-  rtc::Optional<int64_t> first_received_rtp_video_ms_;
-  rtc::Optional<int64_t> last_received_rtp_video_ms_;
+  absl::optional<int64_t> first_received_rtp_audio_ms_;
+  absl::optional<int64_t> last_received_rtp_audio_ms_;
+  absl::optional<int64_t> first_received_rtp_video_ms_;
+  absl::optional<int64_t> last_received_rtp_video_ms_;
   TimeInterval sent_rtp_audio_timer_ms_;
 
   rtc::CriticalSection last_bandwidth_bps_crit_;
@@ -584,7 +584,7 @@ webrtc::AudioSendStream* Call::CreateAudioSendStream(
   event_log_->Log(rtc::MakeUnique<RtcEventAudioSendStreamConfig>(
       CreateRtcLogStreamConfig(config)));
 
-  rtc::Optional<RtpState> suspended_rtp_state;
+  absl::optional<RtpState> suspended_rtp_state;
   {
     const auto& iter = suspended_audio_send_ssrcs_.find(config.rtp.ssrc);
     if (iter != suspended_audio_send_ssrcs_.end()) {

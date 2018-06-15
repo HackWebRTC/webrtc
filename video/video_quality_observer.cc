@@ -109,7 +109,7 @@ void VideoQualityObserver::UpdateHistograms() {
   RTC_LOG(LS_INFO) << log_stream.str();
 }
 
-void VideoQualityObserver::OnDecodedFrame(rtc::Optional<uint8_t> qp,
+void VideoQualityObserver::OnDecodedFrame(absl::optional<uint8_t> qp,
                                           int width,
                                           int height,
                                           int64_t now_ms,
@@ -125,7 +125,7 @@ void VideoQualityObserver::OnDecodedFrame(rtc::Optional<uint8_t> qp,
     // Process inter-frame delay.
     int64_t interframe_delay_ms = now_ms - last_frame_decoded_ms_;
     interframe_delays_.Add(interframe_delay_ms);
-    rtc::Optional<int> avg_interframe_delay =
+    absl::optional<int> avg_interframe_delay =
         interframe_delays_.Avg(kMinFrameSamplesToDetectFreeze);
     // Check if it was a freeze.
     if (avg_interframe_delay &&
@@ -140,7 +140,7 @@ void VideoQualityObserver::OnDecodedFrame(rtc::Optional<uint8_t> qp,
       // Only count inter-frame delay as playback time if there
       // was no freeze.
       time_in_resolution_ms_[current_resolution_] += interframe_delay_ms;
-      rtc::Optional<int> qp_blocky_threshold;
+      absl::optional<int> qp_blocky_threshold;
       // TODO(ilnik): add other codec types when we have QP for them.
       switch (codec) {
         case kVideoCodecVP8:
@@ -150,7 +150,7 @@ void VideoQualityObserver::OnDecodedFrame(rtc::Optional<uint8_t> qp,
           qp_blocky_threshold = kBlockyQpThresholdVp9;
           break;
         default:
-          qp_blocky_threshold = rtc::nullopt;
+          qp_blocky_threshold = absl::nullopt;
       }
       if (qp_blocky_threshold && qp.value_or(0) > *qp_blocky_threshold) {
         time_in_blocky_video_ms_ += interframe_delay_ms;

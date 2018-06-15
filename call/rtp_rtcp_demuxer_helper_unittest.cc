@@ -34,7 +34,7 @@ TEST(RtpRtcpDemuxerHelperTest, ParseRtcpPacketSenderSsrc_ByePacket) {
   rtcp_packet.SetSenderSsrc(kSsrc);
   rtc::Buffer raw_packet = rtcp_packet.Build();
 
-  rtc::Optional<uint32_t> ssrc = ParseRtcpPacketSenderSsrc(raw_packet);
+  absl::optional<uint32_t> ssrc = ParseRtcpPacketSenderSsrc(raw_packet);
   EXPECT_EQ(ssrc, kSsrc);
 }
 
@@ -44,7 +44,7 @@ TEST(RtpRtcpDemuxerHelperTest,
   rtcp_packet.SetSenderSsrc(kSsrc);
   rtc::Buffer raw_packet = rtcp_packet.Build();
 
-  rtc::Optional<uint32_t> ssrc = ParseRtcpPacketSenderSsrc(raw_packet);
+  absl::optional<uint32_t> ssrc = ParseRtcpPacketSenderSsrc(raw_packet);
   EXPECT_EQ(ssrc, kSsrc);
 }
 
@@ -53,7 +53,7 @@ TEST(RtpRtcpDemuxerHelperTest, ParseRtcpPacketSenderSsrc_PsfbPacket) {
   rtcp_packet.SetSenderSsrc(kSsrc);
   rtc::Buffer raw_packet = rtcp_packet.Build();
 
-  rtc::Optional<uint32_t> ssrc = ParseRtcpPacketSenderSsrc(raw_packet);
+  absl::optional<uint32_t> ssrc = ParseRtcpPacketSenderSsrc(raw_packet);
   EXPECT_EQ(ssrc, kSsrc);
 }
 
@@ -62,7 +62,7 @@ TEST(RtpRtcpDemuxerHelperTest, ParseRtcpPacketSenderSsrc_ReceiverReportPacket) {
   rtcp_packet.SetSenderSsrc(kSsrc);
   rtc::Buffer raw_packet = rtcp_packet.Build();
 
-  rtc::Optional<uint32_t> ssrc = ParseRtcpPacketSenderSsrc(raw_packet);
+  absl::optional<uint32_t> ssrc = ParseRtcpPacketSenderSsrc(raw_packet);
   EXPECT_EQ(ssrc, kSsrc);
 }
 
@@ -72,7 +72,7 @@ TEST(RtpRtcpDemuxerHelperTest, ParseRtcpPacketSenderSsrc_RtpfbPacket) {
   rtcp_packet.SetSenderSsrc(kSsrc);
   rtc::Buffer raw_packet = rtcp_packet.Build();
 
-  rtc::Optional<uint32_t> ssrc = ParseRtcpPacketSenderSsrc(raw_packet);
+  absl::optional<uint32_t> ssrc = ParseRtcpPacketSenderSsrc(raw_packet);
   EXPECT_EQ(ssrc, kSsrc);
 }
 
@@ -81,7 +81,7 @@ TEST(RtpRtcpDemuxerHelperTest, ParseRtcpPacketSenderSsrc_SenderReportPacket) {
   rtcp_packet.SetSenderSsrc(kSsrc);
   rtc::Buffer raw_packet = rtcp_packet.Build();
 
-  rtc::Optional<uint32_t> ssrc = ParseRtcpPacketSenderSsrc(raw_packet);
+  absl::optional<uint32_t> ssrc = ParseRtcpPacketSenderSsrc(raw_packet);
   EXPECT_EQ(ssrc, kSsrc);
 }
 
@@ -89,7 +89,7 @@ TEST(RtpRtcpDemuxerHelperTest, ParseRtcpPacketSenderSsrc_MalformedRtcpPacket) {
   uint8_t garbage[100];
   memset(&garbage[0], 0, arraysize(garbage));
 
-  rtc::Optional<uint32_t> ssrc = ParseRtcpPacketSenderSsrc(garbage);
+  absl::optional<uint32_t> ssrc = ParseRtcpPacketSenderSsrc(garbage);
   EXPECT_FALSE(ssrc);
 }
 
@@ -98,7 +98,7 @@ TEST(RtpRtcpDemuxerHelperTest,
   webrtc::rtcp::ExtendedJitterReport rtcp_packet;  // Has no sender SSRC.
   rtc::Buffer raw_packet = rtcp_packet.Build();
 
-  rtc::Optional<uint32_t> ssrc = ParseRtcpPacketSenderSsrc(raw_packet);
+  absl::optional<uint32_t> ssrc = ParseRtcpPacketSenderSsrc(raw_packet);
   EXPECT_FALSE(ssrc);
 }
 
@@ -110,7 +110,7 @@ TEST(RtpRtcpDemuxerHelperTest, ParseRtcpPacketSenderSsrc_TruncatedRtcpMessage) {
   constexpr size_t rtcp_length_bytes = 8;
   ASSERT_EQ(rtcp_length_bytes, raw_packet.size());
 
-  rtc::Optional<uint32_t> ssrc = ParseRtcpPacketSenderSsrc(
+  absl::optional<uint32_t> ssrc = ParseRtcpPacketSenderSsrc(
       rtc::ArrayView<const uint8_t>(raw_packet.data(), rtcp_length_bytes - 1));
   EXPECT_FALSE(ssrc);
 }

@@ -190,7 +190,7 @@ TEST_P(RetransmissionEndToEndTest, ReceivesNackAndRetransmitsAudio) {
     uint32_t local_ssrc_;
     uint32_t remote_ssrc_;
     Transport* receive_transport_;
-    rtc::Optional<uint16_t> sequence_number_to_retransmit_;
+    absl::optional<uint16_t> sequence_number_to_retransmit_;
   } test;
 
   RunBaseTest(&test);

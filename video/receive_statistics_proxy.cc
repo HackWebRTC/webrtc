@@ -209,7 +209,7 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
         round(render_pixel_tracker_.ComputeTotalRate()));
   }
 
-  rtc::Optional<int> sync_offset_ms =
+  absl::optional<int> sync_offset_ms =
       sync_offset_counter_.Avg(kMinRequiredSamples);
   if (sync_offset_ms) {
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.AVSyncOffsetInMs",
@@ -236,17 +236,17 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
                << key_frames_permille << '\n';
   }
 
-  rtc::Optional<int> qp = qp_counters_.vp8.Avg(kMinRequiredSamples);
+  absl::optional<int> qp = qp_counters_.vp8.Avg(kMinRequiredSamples);
   if (qp) {
     RTC_HISTOGRAM_COUNTS_200("WebRTC.Video.Decoded.Vp8.Qp", *qp);
     log_stream << "WebRTC.Video.Decoded.Vp8.Qp " << *qp << '\n';
   }
-  rtc::Optional<int> decode_ms = decode_time_counter_.Avg(kMinRequiredSamples);
+  absl::optional<int> decode_ms = decode_time_counter_.Avg(kMinRequiredSamples);
   if (decode_ms) {
     RTC_HISTOGRAM_COUNTS_1000("WebRTC.Video.DecodeTimeInMs", *decode_ms);
     log_stream << "WebRTC.Video.DecodeTimeInMs " << *decode_ms << '\n';
   }
-  rtc::Optional<int> jb_delay_ms =
+  absl::optional<int> jb_delay_ms =
       jitter_buffer_delay_counter_.Avg(kMinRequiredSamples);
   if (jb_delay_ms) {
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.JitterBufferDelayInMs",
@@ -254,21 +254,21 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
     log_stream << "WebRTC.Video.JitterBufferDelayInMs " << *jb_delay_ms << '\n';
   }
 
-  rtc::Optional<int> target_delay_ms =
+  absl::optional<int> target_delay_ms =
       target_delay_counter_.Avg(kMinRequiredSamples);
   if (target_delay_ms) {
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.TargetDelayInMs",
                                *target_delay_ms);
     log_stream << "WebRTC.Video.TargetDelayInMs " << *target_delay_ms << '\n';
   }
-  rtc::Optional<int> current_delay_ms =
+  absl::optional<int> current_delay_ms =
       current_delay_counter_.Avg(kMinRequiredSamples);
   if (current_delay_ms) {
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.CurrentDelayInMs",
                                *current_delay_ms);
     log_stream << "WebRTC.Video.CurrentDelayInMs " << *current_delay_ms << '\n';
   }
-  rtc::Optional<int> delay_ms = delay_counter_.Avg(kMinRequiredSamples);
+  absl::optional<int> delay_ms = delay_counter_.Avg(kMinRequiredSamples);
   if (delay_ms)
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.OnewayDelayInMs", *delay_ms);
 
@@ -314,7 +314,7 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
     RTC_DCHECK(videocontenttypehelpers::GetExperimentId(content_type) == 0 ||
                videocontenttypehelpers::GetSimulcastId(content_type) == 0);
 
-    rtc::Optional<int> e2e_delay_ms =
+    absl::optional<int> e2e_delay_ms =
         stats.e2e_delay_counter.Avg(kMinRequiredSamples);
     if (e2e_delay_ms) {
       RTC_HISTOGRAM_COUNTS_SPARSE_10000(
@@ -322,14 +322,14 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
       log_stream << uma_prefix << ".EndToEndDelayInMs" << uma_suffix << " "
                  << *e2e_delay_ms << '\n';
     }
-    rtc::Optional<int> e2e_delay_max_ms = stats.e2e_delay_counter.Max();
+    absl::optional<int> e2e_delay_max_ms = stats.e2e_delay_counter.Max();
     if (e2e_delay_max_ms && e2e_delay_ms) {
       RTC_HISTOGRAM_COUNTS_SPARSE_100000(
           uma_prefix + ".EndToEndDelayMaxInMs" + uma_suffix, *e2e_delay_max_ms);
       log_stream << uma_prefix << ".EndToEndDelayMaxInMs" << uma_suffix << " "
                  << *e2e_delay_max_ms << '\n';
     }
-    rtc::Optional<int> interframe_delay_ms =
+    absl::optional<int> interframe_delay_ms =
         stats.interframe_delay_counter.Avg(kMinRequiredSamples);
     if (interframe_delay_ms) {
       RTC_HISTOGRAM_COUNTS_SPARSE_10000(
@@ -338,7 +338,7 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
       log_stream << uma_prefix << ".InterframeDelayInMs" << uma_suffix << " "
                  << *interframe_delay_ms << '\n';
     }
-    rtc::Optional<int> interframe_delay_max_ms =
+    absl::optional<int> interframe_delay_max_ms =
         stats.interframe_delay_counter.Max();
     if (interframe_delay_max_ms && interframe_delay_ms) {
       RTC_HISTOGRAM_COUNTS_SPARSE_10000(
@@ -348,7 +348,7 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
                  << *interframe_delay_max_ms << '\n';
     }
 
-    rtc::Optional<uint32_t> interframe_delay_95p_ms =
+    absl::optional<uint32_t> interframe_delay_95p_ms =
         stats.interframe_delay_percentiles.GetPercentile(0.95f);
     if (interframe_delay_95p_ms && interframe_delay_ms != -1) {
       RTC_HISTOGRAM_COUNTS_SPARSE_10000(
@@ -358,7 +358,7 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
                  << uma_suffix << " " << *interframe_delay_95p_ms << '\n';
     }
 
-    rtc::Optional<int> width = stats.received_width.Avg(kMinRequiredSamples);
+    absl::optional<int> width = stats.received_width.Avg(kMinRequiredSamples);
     if (width) {
       RTC_HISTOGRAM_COUNTS_SPARSE_10000(
           uma_prefix + ".ReceivedWidthInPixels" + uma_suffix, *width);
@@ -366,7 +366,7 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
                  << *width << '\n';
     }
 
-    rtc::Optional<int> height = stats.received_height.Avg(kMinRequiredSamples);
+    absl::optional<int> height = stats.received_height.Avg(kMinRequiredSamples);
     if (height) {
       RTC_HISTOGRAM_COUNTS_SPARSE_10000(
           uma_prefix + ".ReceivedHeightInPixels" + uma_suffix, *height);
@@ -401,7 +401,7 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
                    << " " << key_frames_permille << '\n';
       }
 
-      rtc::Optional<int> qp = stats.qp_counter.Avg(kMinRequiredSamples);
+      absl::optional<int> qp = stats.qp_counter.Avg(kMinRequiredSamples);
       if (qp) {
         RTC_HISTOGRAM_COUNTS_SPARSE_200(
             uma_prefix + ".Decoded.Vp8.Qp" + uma_suffix, *qp);
@@ -465,19 +465,19 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
     RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.BadCall.Any",
                              100 * num_bad_states_ / num_certain_states_);
   }
-  rtc::Optional<double> fps_fraction =
+  absl::optional<double> fps_fraction =
       fps_threshold_.FractionHigh(kBadCallMinRequiredSamples);
   if (fps_fraction) {
     RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.BadCall.FrameRate",
                              static_cast<int>(100 * (1 - *fps_fraction)));
   }
-  rtc::Optional<double> variance_fraction =
+  absl::optional<double> variance_fraction =
       variance_threshold_.FractionHigh(kBadCallMinRequiredSamples);
   if (variance_fraction) {
     RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.BadCall.FrameRateVariance",
                              static_cast<int>(100 * *variance_fraction));
   }
-  rtc::Optional<double> qp_fraction =
+  absl::optional<double> qp_fraction =
       qp_threshold_.FractionHigh(kBadCallMinRequiredSamples);
   if (qp_fraction) {
     RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.BadCall.Qp",
@@ -496,7 +496,7 @@ void ReceiveStatisticsProxy::QualitySample() {
 
   double fps =
       render_fps_tracker_.ComputeRateForInterval(now - last_sample_time_);
-  rtc::Optional<int> qp = qp_sample_.Avg(1);
+  absl::optional<int> qp = qp_sample_.Avg(1);
 
   bool prev_fps_bad = !fps_threshold_.IsHigh().value_or(true);
   bool prev_qp_bad = qp_threshold_.IsHigh().value_or(false);
@@ -506,7 +506,7 @@ void ReceiveStatisticsProxy::QualitySample() {
   fps_threshold_.AddMeasurement(static_cast<int>(fps));
   if (qp)
     qp_threshold_.AddMeasurement(*qp);
-  rtc::Optional<double> fps_variance_opt = fps_threshold_.CalculateVariance();
+  absl::optional<double> fps_variance_opt = fps_threshold_.CalculateVariance();
   double fps_variance = fps_variance_opt.value_or(0);
   if (fps_variance_opt) {
     variance_threshold_.AddMeasurement(static_cast<int>(fps_variance));
@@ -699,7 +699,7 @@ void ReceiveStatisticsProxy::DataCountersUpdated(
     total_byte_tracker_.AddSamples(total_bytes - last_total_bytes);
 }
 
-void ReceiveStatisticsProxy::OnDecodedFrame(rtc::Optional<uint8_t> qp,
+void ReceiveStatisticsProxy::OnDecodedFrame(absl::optional<uint8_t> qp,
                                             int width,
                                             int height,
                                             VideoContentType content_type) {
@@ -734,7 +734,7 @@ void ReceiveStatisticsProxy::OnDecodedFrame(rtc::Optional<uint8_t> qp,
   } else if (stats_.qp_sum) {
     RTC_LOG(LS_WARNING)
         << "QP sum was already set and no QP was given for a frame.";
-    stats_.qp_sum = rtc::nullopt;
+    stats_.qp_sum = absl::nullopt;
   }
   last_content_type_ = content_type;
   decode_fps_estimator_.Update(1, now);

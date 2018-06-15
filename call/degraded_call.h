@@ -13,8 +13,8 @@
 
 #include <memory>
 
+#include "absl/types/optional.h"
 #include "api/call/transport.h"
-#include "api/optional.h"
 #include "call/call.h"
 #include "call/fake_network_pipe.h"
 #include "modules/utility/include/process_thread.h"
@@ -25,8 +25,8 @@ namespace webrtc {
 class DegradedCall : public Call, private Transport, private PacketReceiver {
  public:
   explicit DegradedCall(std::unique_ptr<Call> call,
-                        rtc::Optional<FakeNetworkPipe::Config> send_config,
-                        rtc::Optional<FakeNetworkPipe::Config> receive_config);
+                        absl::optional<FakeNetworkPipe::Config> send_config,
+                        absl::optional<FakeNetworkPipe::Config> receive_config);
   ~DegradedCall() override;
 
   // Implements Call.
@@ -90,12 +90,12 @@ class DegradedCall : public Call, private Transport, private PacketReceiver {
   Clock* const clock_;
   const std::unique_ptr<Call> call_;
 
-  const rtc::Optional<FakeNetworkPipe::Config> send_config_;
+  const absl::optional<FakeNetworkPipe::Config> send_config_;
   const std::unique_ptr<ProcessThread> send_process_thread_;
   std::unique_ptr<FakeNetworkPipe> send_pipe_;
   size_t num_send_streams_;
 
-  const rtc::Optional<FakeNetworkPipe::Config> receive_config_;
+  const absl::optional<FakeNetworkPipe::Config> receive_config_;
   std::unique_ptr<FakeNetworkPipe> receive_pipe_;
 };
 

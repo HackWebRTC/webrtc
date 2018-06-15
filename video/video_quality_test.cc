@@ -491,8 +491,8 @@ class VideoAnalyzer : public PacketReceiver,
           render_time_ms(render_time_ms),
           encoded_frame_size(encoded_frame_size) {}
 
-    rtc::Optional<VideoFrame> reference;
-    rtc::Optional<VideoFrame> render;
+    absl::optional<VideoFrame> reference;
+    absl::optional<VideoFrame> render;
     bool dropped;
     int64_t input_time_ms;
     int64_t send_time_ms;
@@ -1028,7 +1028,7 @@ class VideoAnalyzer : public PacketReceiver,
   };
 
   // Rendered frame with worst PSNR is saved for further analysis.
-  rtc::Optional<FrameWithPsnr> worst_frame_ RTC_GUARDED_BY(comparison_lock_);
+  absl::optional<FrameWithPsnr> worst_frame_ RTC_GUARDED_BY(comparison_lock_);
 
   size_t last_fec_bytes_;
 
@@ -1052,13 +1052,13 @@ class VideoAnalyzer : public PacketReceiver,
 
   rtc::CriticalSection crit_;
   std::deque<VideoFrame> frames_ RTC_GUARDED_BY(crit_);
-  rtc::Optional<VideoFrame> last_rendered_frame_ RTC_GUARDED_BY(crit_);
+  absl::optional<VideoFrame> last_rendered_frame_ RTC_GUARDED_BY(crit_);
   rtc::TimestampWrapAroundHandler wrap_handler_ RTC_GUARDED_BY(crit_);
   std::map<int64_t, int64_t> send_times_ RTC_GUARDED_BY(crit_);
   std::map<int64_t, int64_t> recv_times_ RTC_GUARDED_BY(crit_);
   std::map<int64_t, size_t> encoded_frame_sizes_ RTC_GUARDED_BY(crit_);
-  rtc::Optional<uint32_t> first_encoded_timestamp_ RTC_GUARDED_BY(crit_);
-  rtc::Optional<uint32_t> first_sent_timestamp_ RTC_GUARDED_BY(crit_);
+  absl::optional<uint32_t> first_encoded_timestamp_ RTC_GUARDED_BY(crit_);
+  absl::optional<uint32_t> first_sent_timestamp_ RTC_GUARDED_BY(crit_);
   const double avg_psnr_threshold_;
   const double avg_ssim_threshold_;
   bool is_quick_test_enabled_;
@@ -1751,7 +1751,7 @@ void VideoQualityTest::SetupThumbnailCapturers(size_t num_thumbnail_streams) {
   for (size_t i = 0; i < num_thumbnail_streams; ++i) {
     thumbnail_capturers_.emplace_back(test::FrameGeneratorCapturer::Create(
         static_cast<int>(thumbnail.width), static_cast<int>(thumbnail.height),
-        rtc::nullopt, rtc::nullopt, thumbnail.max_framerate, clock_));
+        absl::nullopt, absl::nullopt, thumbnail.max_framerate, clock_));
     RTC_DCHECK(thumbnail_capturers_.back());
   }
 }
@@ -1817,13 +1817,13 @@ void VideoQualityTest::CreateCapturers() {
       if (params_.video[video_idx].clip_name == "Generator") {
         video_capturers_[video_idx].reset(test::FrameGeneratorCapturer::Create(
             static_cast<int>(params_.video[video_idx].width),
-            static_cast<int>(params_.video[video_idx].height), rtc::nullopt,
-            rtc::nullopt, params_.video[video_idx].fps, clock_));
+            static_cast<int>(params_.video[video_idx].height), absl::nullopt,
+            absl::nullopt, params_.video[video_idx].fps, clock_));
       } else if (params_.video[video_idx].clip_name == "GeneratorI420A") {
         video_capturers_[video_idx].reset(test::FrameGeneratorCapturer::Create(
             static_cast<int>(params_.video[video_idx].width),
             static_cast<int>(params_.video[video_idx].height),
-            test::FrameGenerator::OutputType::I420A, rtc::nullopt,
+            test::FrameGenerator::OutputType::I420A, absl::nullopt,
             params_.video[video_idx].fps, clock_));
       } else if (params_.video[video_idx].clip_name.empty()) {
         video_capturers_[video_idx].reset(test::VcmCapturer::Create(
@@ -1836,7 +1836,7 @@ void VideoQualityTest::CreateCapturers() {
               test::FrameGeneratorCapturer::Create(
                   static_cast<int>(params_.video[video_idx].width),
                   static_cast<int>(params_.video[video_idx].height),
-                  rtc::nullopt, rtc::nullopt, params_.video[video_idx].fps,
+                  absl::nullopt, absl::nullopt, params_.video[video_idx].fps,
                   clock_));
         }
       } else {

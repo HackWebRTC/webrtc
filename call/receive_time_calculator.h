@@ -13,7 +13,7 @@
 #include <stdint.h>
 #include <memory>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 
 namespace webrtc {
 
@@ -39,7 +39,7 @@ class ReceiveTimeCalculator {
  private:
   const int64_t min_delta_us_;
   const int64_t max_delta_diff_us_;
-  rtc::Optional<int64_t> receive_time_offset_us_;
+  absl::optional<int64_t> receive_time_offset_us_;
   int64_t last_packet_time_us_ = 0;
   int64_t last_safe_time_us_ = 0;
 };

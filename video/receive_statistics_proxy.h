@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "call/video_receive_stream.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "common_video/include/frame_callback.h"
@@ -52,7 +52,7 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
 
   VideoReceiveStream::Stats GetStats() const;
 
-  void OnDecodedFrame(rtc::Optional<uint8_t> qp,
+  void OnDecodedFrame(absl::optional<uint8_t> qp,
                       int width,
                       int height,
                       VideoContentType content_type);
@@ -183,15 +183,15 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   mutable std::map<int64_t, size_t> frame_window_ RTC_GUARDED_BY(&crit_);
   VideoContentType last_content_type_ RTC_GUARDED_BY(&crit_);
   VideoCodecType last_codec_type_ RTC_GUARDED_BY(&crit_);
-  rtc::Optional<int64_t> first_decoded_frame_time_ms_ RTC_GUARDED_BY(&crit_);
-  rtc::Optional<int64_t> last_decoded_frame_time_ms_ RTC_GUARDED_BY(&crit_);
+  absl::optional<int64_t> first_decoded_frame_time_ms_ RTC_GUARDED_BY(&crit_);
+  absl::optional<int64_t> last_decoded_frame_time_ms_ RTC_GUARDED_BY(&crit_);
   size_t num_delayed_frames_rendered_ RTC_GUARDED_BY(&crit_);
   int64_t sum_missed_render_deadline_ms_ RTC_GUARDED_BY(&crit_);
   // Mutable because calling Max() on MovingMaxCounter is not const. Yet it is
   // called from const GetStats().
   mutable rtc::MovingMaxCounter<TimingFrameInfo> timing_frame_info_counter_
       RTC_GUARDED_BY(&crit_);
-  rtc::Optional<int> num_unique_frames_ RTC_GUARDED_BY(crit_);
+  absl::optional<int> num_unique_frames_ RTC_GUARDED_BY(crit_);
   rtc::ThreadChecker decode_thread_;
   rtc::ThreadChecker network_thread_;
   rtc::ThreadChecker main_thread_;

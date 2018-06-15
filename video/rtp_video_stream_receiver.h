@@ -129,8 +129,8 @@ class RtpVideoStreamReceiver : public RtpData,
   // Called by VideoReceiveStream when stats are updated.
   void UpdateRtt(int64_t max_rtt_ms);
 
-  rtc::Optional<int64_t> LastReceivedPacketMs() const;
-  rtc::Optional<int64_t> LastReceivedKeyframePacketMs() const;
+  absl::optional<int64_t> LastReceivedPacketMs() const;
+  absl::optional<int64_t> LastReceivedKeyframePacketMs() const;
 
   // RtpDemuxer only forwards a given RTP packet to one sink. However, some
   // sinks, such as FlexFEC, might wish to be informed of all of the packets

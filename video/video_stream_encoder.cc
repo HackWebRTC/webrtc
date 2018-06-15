@@ -183,7 +183,7 @@ class VideoStreamEncoder::VideoSourceProxy {
     RTC_LOG(LS_INFO) << "Scaling down resolution, max pixels: "
                      << pixels_wanted;
     sink_wants_.max_pixel_count = pixels_wanted;
-    sink_wants_.target_pixel_count = rtc::nullopt;
+    sink_wants_.target_pixel_count = absl::nullopt;
     source_->AddOrUpdateSink(video_stream_encoder_,
                              GetActiveSinkWantsInternal());
     return true;
@@ -606,7 +606,7 @@ void VideoStreamEncoder::ConfigureQualityScaler() {
       // Drop frames and scale down until desired quality is achieved.
 
       // Use experimental thresholds if available.
-      rtc::Optional<VideoEncoder::QpThresholds> experimental_thresholds;
+      absl::optional<VideoEncoder::QpThresholds> experimental_thresholds;
       if (quality_scaling_experiment_enabled_) {
         experimental_thresholds = QualityScalingExperiment::GetQpThresholds(
             encoder_config_.codec_type);
@@ -880,7 +880,7 @@ EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
   int64_t capture_time_us =
       encoded_image.capture_time_ms_ * rtc::kNumMicrosecsPerMillisec;
 
-  rtc::Optional<int> encode_duration_us;
+  absl::optional<int> encode_duration_us;
   if (encoded_image.timing_.flags != VideoSendTiming::kInvalid) {
     encode_duration_us.emplace(
         // TODO(nisse): Maybe use capture_time_ms_ rather than encode_start_ms_?

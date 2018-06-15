@@ -17,8 +17,8 @@
 namespace webrtc {
 DegradedCall::DegradedCall(
     std::unique_ptr<Call> call,
-    rtc::Optional<FakeNetworkPipe::Config> send_config,
-    rtc::Optional<FakeNetworkPipe::Config> receive_config)
+    absl::optional<FakeNetworkPipe::Config> send_config,
+    absl::optional<FakeNetworkPipe::Config> receive_config)
     : clock_(Clock::GetRealTimeClock()),
       call_(std::move(call)),
       send_config_(send_config),

@@ -16,9 +16,9 @@
 #include <string>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "api/audio_codecs/audio_decoder_factory.h"
 #include "api/call/transport.h"
-#include "api/optional.h"
 #include "api/rtpparameters.h"
 #include "api/rtpreceiverinterface.h"
 #include "call/rtp_config.h"
@@ -40,7 +40,7 @@ class AudioReceiveStream {
     uint32_t packets_lost = 0;
     float fraction_lost = 0.0f;
     std::string codec_name;
-    rtc::Optional<int> codec_payload_type;
+    absl::optional<int> codec_payload_type;
     uint32_t ext_seqnum = 0;
     uint32_t jitter_ms = 0;
     uint32_t jitter_buffer_ms = 0;
@@ -120,7 +120,7 @@ class AudioReceiveStream {
 
     rtc::scoped_refptr<AudioDecoderFactory> decoder_factory;
 
-    rtc::Optional<AudioCodecPairId> codec_pair_id;
+    absl::optional<AudioCodecPairId> codec_pair_id;
   };
 
   // Reconfigure the stream according to the Configuration.

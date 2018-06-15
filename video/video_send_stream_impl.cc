@@ -151,25 +151,25 @@ bool TransportSeqNumExtensionConfigured(const VideoSendStream::Config& config) {
 const char kForcedFallbackFieldTrial[] =
     "WebRTC-VP8-Forced-Fallback-Encoder-v2";
 
-rtc::Optional<int> GetFallbackMinBpsFromFieldTrial() {
+absl::optional<int> GetFallbackMinBpsFromFieldTrial() {
   if (!webrtc::field_trial::IsEnabled(kForcedFallbackFieldTrial))
-    return rtc::nullopt;
+    return absl::nullopt;
 
   std::string group =
       webrtc::field_trial::FindFullName(kForcedFallbackFieldTrial);
   if (group.empty())
-    return rtc::nullopt;
+    return absl::nullopt;
 
   int min_pixels;
   int max_pixels;
   int min_bps;
   if (sscanf(group.c_str(), "Enabled-%d,%d,%d", &min_pixels, &max_pixels,
              &min_bps) != 3) {
-    return rtc::nullopt;
+    return absl::nullopt;
   }
 
   if (min_bps <= 0)
-    return rtc::nullopt;
+    return absl::nullopt;
 
   return min_bps;
 }
@@ -370,7 +370,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
   if (TransportSeqNumExtensionConfigured(*config_)) {
     has_packet_feedback_ = true;
 
-    rtc::Optional<AlrExperimentSettings> alr_settings;
+    absl::optional<AlrExperimentSettings> alr_settings;
     if (content_type == VideoEncoderConfig::ContentType::kScreen) {
       alr_settings = AlrExperimentSettings::CreateFromFieldTrial(
           AlrExperimentSettings::kScreenshareProbingBweExperimentName);

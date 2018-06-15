@@ -85,36 +85,36 @@ bool IsForcedFallbackPossible(const CodecSpecificInfo* codec_info) {
           codec_info->codecSpecific.VP8.temporalIdx == kNoTemporalIdx);
 }
 
-rtc::Optional<int> GetFallbackMaxPixels(const std::string& group) {
+absl::optional<int> GetFallbackMaxPixels(const std::string& group) {
   if (group.empty())
-    return rtc::nullopt;
+    return absl::nullopt;
 
   int min_pixels;
   int max_pixels;
   int min_bps;
   if (sscanf(group.c_str(), "-%d,%d,%d", &min_pixels, &max_pixels, &min_bps) !=
       3) {
-    return rtc::Optional<int>();
+    return absl::optional<int>();
   }
 
   if (min_pixels <= 0 || max_pixels <= 0 || max_pixels < min_pixels)
-    return rtc::Optional<int>();
+    return absl::optional<int>();
 
-  return rtc::Optional<int>(max_pixels);
+  return absl::optional<int>(max_pixels);
 }
 
-rtc::Optional<int> GetFallbackMaxPixelsIfFieldTrialEnabled() {
+absl::optional<int> GetFallbackMaxPixelsIfFieldTrialEnabled() {
   std::string group =
       webrtc::field_trial::FindFullName(kVp8ForcedFallbackEncoderFieldTrial);
   return (group.find("Enabled") == 0) ? GetFallbackMaxPixels(group.substr(7))
-                                      : rtc::Optional<int>();
+                                      : absl::optional<int>();
 }
 
-rtc::Optional<int> GetFallbackMaxPixelsIfFieldTrialDisabled() {
+absl::optional<int> GetFallbackMaxPixelsIfFieldTrialDisabled() {
   std::string group =
       webrtc::field_trial::FindFullName(kVp8ForcedFallbackEncoderFieldTrial);
   return (group.find("Disabled") == 0) ? GetFallbackMaxPixels(group.substr(8))
-                                       : rtc::Optional<int>();
+                                       : absl::optional<int>();
 }
 }  // namespace
 

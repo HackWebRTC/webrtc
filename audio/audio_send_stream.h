@@ -49,7 +49,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
                   BitrateAllocator* bitrate_allocator,
                   RtcEventLog* event_log,
                   RtcpRttStats* rtcp_rtt_stats,
-                  const rtc::Optional<RtpState>& suspended_rtp_state,
+                  const absl::optional<RtpState>& suspended_rtp_state,
                   TimeInterval* overall_call_lifetime);
   // For unit tests, which need to supply a mock channel proxy.
   AudioSendStream(const webrtc::AudioSendStream::Config& config,
@@ -59,7 +59,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
                   BitrateAllocator* bitrate_allocator,
                   RtcEventLog* event_log,
                   RtcpRttStats* rtcp_rtt_stats,
-                  const rtc::Optional<RtpState>& suspended_rtp_state,
+                  const absl::optional<RtpState>& suspended_rtp_state,
                   TimeInterval* overall_call_lifetime,
                   std::unique_ptr<voe::ChannelProxy> channel_proxy);
   ~AudioSendStream() override;
@@ -146,7 +146,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
       RTC_GUARDED_BY(&packet_loss_tracker_cs_);
 
   RtpRtcp* rtp_rtcp_module_;
-  rtc::Optional<RtpState> const suspended_rtp_state_;
+  absl::optional<RtpState> const suspended_rtp_state_;
 
   std::unique_ptr<TimedTransport> timed_send_transport_adapter_;
   TimeInterval active_lifetime_;

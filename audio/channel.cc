@@ -509,7 +509,7 @@ Channel::Channel(rtc::TaskQueue* encoder_queue,
               0,
               false,
               rtc::scoped_refptr<AudioDecoderFactory>(),
-              rtc::nullopt) {
+              absl::nullopt) {
   RTC_DCHECK(encoder_queue);
   encoder_queue_ = encoder_queue;
 }
@@ -520,7 +520,7 @@ Channel::Channel(ProcessThread* module_process_thread,
                  size_t jitter_buffer_max_packets,
                  bool jitter_buffer_fast_playout,
                  rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
-                 rtc::Optional<AudioCodecPairId> codec_pair_id)
+                 absl::optional<AudioCodecPairId> codec_pair_id)
     : event_log_proxy_(new RtcEventLogProxy()),
       rtp_payload_registry_(new RTPPayloadRegistry()),
       rtp_receive_statistics_(

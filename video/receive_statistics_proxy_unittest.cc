@@ -82,7 +82,7 @@ class ReceiveStatisticsProxyTest
 TEST_F(ReceiveStatisticsProxyTest, OnDecodedFrameIncreasesFramesDecoded) {
   EXPECT_EQ(0u, statistics_proxy_->GetStats().frames_decoded);
   for (uint32_t i = 1; i <= 3; ++i) {
-    statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
+    statistics_proxy_->OnDecodedFrame(absl::nullopt, kWidth, kHeight,
                                       VideoContentType::UNSPECIFIED);
     EXPECT_EQ(i, statistics_proxy_->GetStats().frames_decoded);
   }
@@ -92,8 +92,8 @@ TEST_F(ReceiveStatisticsProxyTest, DecodedFpsIsReported) {
   const int kFps = 20;
   const int kRequiredSamples = metrics::kMinRunTimeInSeconds * kFps;
   for (int i = 0; i < kRequiredSamples; ++i) {
-    statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>(), kWidth, kHeight,
-                                      VideoContentType::UNSPECIFIED);
+    statistics_proxy_->OnDecodedFrame(absl::optional<uint8_t>(), kWidth,
+                                      kHeight, VideoContentType::UNSPECIFIED);
     fake_clock_.AdvanceTimeMilliseconds(1000 / kFps);
   }
   statistics_proxy_.reset();
@@ -105,8 +105,8 @@ TEST_F(ReceiveStatisticsProxyTest, DecodedFpsIsNotReportedForTooFewSamples) {
   const int kFps = 20;
   const int kRequiredSamples = metrics::kMinRunTimeInSeconds * kFps;
   for (int i = 0; i < kRequiredSamples - 1; ++i) {
-    statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>(), kWidth, kHeight,
-                                      VideoContentType::UNSPECIFIED);
+    statistics_proxy_->OnDecodedFrame(absl::optional<uint8_t>(), kWidth,
+                                      kHeight, VideoContentType::UNSPECIFIED);
     fake_clock_.AdvanceTimeMilliseconds(1000 / kFps);
   }
   statistics_proxy_.reset();
@@ -116,14 +116,14 @@ TEST_F(ReceiveStatisticsProxyTest, DecodedFpsIsNotReportedForTooFewSamples) {
 TEST_F(ReceiveStatisticsProxyTest, DecodedFpsIsReportedWithQpReset) {
   const int kFps1 = 10;
   for (int i = 0; i < metrics::kMinRunTimeInSeconds * kFps1; ++i) {
-    statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>(), kWidth, kHeight,
-                                      VideoContentType::UNSPECIFIED);
+    statistics_proxy_->OnDecodedFrame(absl::optional<uint8_t>(), kWidth,
+                                      kHeight, VideoContentType::UNSPECIFIED);
     fake_clock_.AdvanceTimeMilliseconds(1000 / kFps1);
   }
   // First QP value received, resets frames decoded.
   const int kFps2 = 20;
   for (int i = 0; i < metrics::kMinRunTimeInSeconds * kFps2; ++i) {
-    statistics_proxy_->OnDecodedFrame(rtc::Optional<uint8_t>(1u), kWidth,
+    statistics_proxy_->OnDecodedFrame(absl::optional<uint8_t>(1u), kWidth,
                                       kHeight, VideoContentType::UNSPECIFIED);
     fake_clock_.AdvanceTimeMilliseconds(1000 / kFps2);
   }
@@ -136,7 +136,7 @@ TEST_F(ReceiveStatisticsProxyTest, DecodedFpsIsReportedWithQpReset) {
 TEST_F(ReceiveStatisticsProxyTest, OnDecodedFrameWithQpResetsFramesDecoded) {
   EXPECT_EQ(0u, statistics_proxy_->GetStats().frames_decoded);
   for (uint32_t i = 1; i <= 3; ++i) {
-    statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
+    statistics_proxy_->OnDecodedFrame(absl::nullopt, kWidth, kHeight,
                                       VideoContentType::UNSPECIFIED);
     EXPECT_EQ(i, statistics_proxy_->GetStats().frames_decoded);
   }
@@ -146,7 +146,7 @@ TEST_F(ReceiveStatisticsProxyTest, OnDecodedFrameWithQpResetsFramesDecoded) {
 }
 
 TEST_F(ReceiveStatisticsProxyTest, OnDecodedFrameIncreasesQpSum) {
-  EXPECT_EQ(rtc::nullopt, statistics_proxy_->GetStats().qp_sum);
+  EXPECT_EQ(absl::nullopt, statistics_proxy_->GetStats().qp_sum);
   statistics_proxy_->OnDecodedFrame(3u, kWidth, kHeight,
                                     VideoContentType::UNSPECIFIED);
   EXPECT_EQ(3u, statistics_proxy_->GetStats().qp_sum);
@@ -230,20 +230,20 @@ TEST_F(ReceiveStatisticsProxyTest, ReportInterframeDelayInWindow) {
 }
 
 TEST_F(ReceiveStatisticsProxyTest, OnDecodedFrameWithoutQpQpSumWontExist) {
-  EXPECT_EQ(rtc::nullopt, statistics_proxy_->GetStats().qp_sum);
-  statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
+  EXPECT_EQ(absl::nullopt, statistics_proxy_->GetStats().qp_sum);
+  statistics_proxy_->OnDecodedFrame(absl::nullopt, kWidth, kHeight,
                                     VideoContentType::UNSPECIFIED);
-  EXPECT_EQ(rtc::nullopt, statistics_proxy_->GetStats().qp_sum);
+  EXPECT_EQ(absl::nullopt, statistics_proxy_->GetStats().qp_sum);
 }
 
 TEST_F(ReceiveStatisticsProxyTest, OnDecodedFrameWithoutQpResetsQpSum) {
-  EXPECT_EQ(rtc::nullopt, statistics_proxy_->GetStats().qp_sum);
+  EXPECT_EQ(absl::nullopt, statistics_proxy_->GetStats().qp_sum);
   statistics_proxy_->OnDecodedFrame(3u, kWidth, kHeight,
                                     VideoContentType::UNSPECIFIED);
   EXPECT_EQ(3u, statistics_proxy_->GetStats().qp_sum);
-  statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
+  statistics_proxy_->OnDecodedFrame(absl::nullopt, kWidth, kHeight,
                                     VideoContentType::UNSPECIFIED);
-  EXPECT_EQ(rtc::nullopt, statistics_proxy_->GetStats().qp_sum);
+  EXPECT_EQ(absl::nullopt, statistics_proxy_->GetStats().qp_sum);
 }
 
 TEST_F(ReceiveStatisticsProxyTest, OnRenderedFrameIncreasesFramesRendered) {
@@ -387,7 +387,7 @@ TEST_F(ReceiveStatisticsProxyTest,
   const int64_t kLongEndToEndDelay = 100;
   const uint32_t kExpectedRtpTimestamp = 2;
   TimingFrameInfo info;
-  rtc::Optional<TimingFrameInfo> result;
+  absl::optional<TimingFrameInfo> result;
   info.rtp_timestamp = kExpectedRtpTimestamp - 1;
   info.capture_time_ms = 0;
   info.decode_finish_ms = kShortEndToEndDelay;
@@ -412,7 +412,7 @@ TEST_F(ReceiveStatisticsProxyTest, RespectsReportingIntervalForTimingFrames) {
   const uint32_t kExpectedRtpTimestamp = 2;
   const int64_t kShortDelayMs = 1000;
   const int64_t kLongDelayMs = 10000;
-  rtc::Optional<TimingFrameInfo> result;
+  absl::optional<TimingFrameInfo> result;
   info.rtp_timestamp = kExpectedRtpTimestamp;
   info.capture_time_ms = 0;
   info.decode_finish_ms = kShortEndToEndDelay;
@@ -741,7 +741,7 @@ TEST_F(ReceiveStatisticsProxyTest, DoesNotReportStaleFramerates) {
     // Since OnRenderedFrame is never called the fps in each sample will be 0,
     // i.e. bad
     frame.set_ntp_time_ms(fake_clock_.CurrentNtpInMilliseconds());
-    statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
+    statistics_proxy_->OnDecodedFrame(absl::nullopt, kWidth, kHeight,
                                       VideoContentType::UNSPECIFIED);
     statistics_proxy_->OnRenderedFrame(frame);
     fake_clock_.AdvanceTimeMilliseconds(1000 / kDefaultFps);
@@ -796,7 +796,7 @@ TEST_F(ReceiveStatisticsProxyTest, ReceivedFrameHistogramsAreUpdated) {
 }
 
 TEST_F(ReceiveStatisticsProxyTest, ZeroDelayReportedIfFrameNotDelayed) {
-  statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
+  statistics_proxy_->OnDecodedFrame(absl::nullopt, kWidth, kHeight,
                                     VideoContentType::UNSPECIFIED);
 
   // Frame not delayed, delayed frames to render: 0%.
@@ -814,7 +814,7 @@ TEST_F(ReceiveStatisticsProxyTest, ZeroDelayReportedIfFrameNotDelayed) {
 
 TEST_F(ReceiveStatisticsProxyTest,
        DelayedFrameHistogramsAreNotUpdatedIfMinRuntimeHasNotPassed) {
-  statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
+  statistics_proxy_->OnDecodedFrame(absl::nullopt, kWidth, kHeight,
                                     VideoContentType::UNSPECIFIED);
 
   // Frame not delayed, delayed frames to render: 0%.
@@ -832,7 +832,7 @@ TEST_F(ReceiveStatisticsProxyTest,
 
 TEST_F(ReceiveStatisticsProxyTest,
        DelayedFramesHistogramsAreNotUpdatedIfNoRenderedFrames) {
-  statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
+  statistics_proxy_->OnDecodedFrame(absl::nullopt, kWidth, kHeight,
                                     VideoContentType::UNSPECIFIED);
 
   // Min run time has passed. No rendered frames.
@@ -844,7 +844,7 @@ TEST_F(ReceiveStatisticsProxyTest,
 }
 
 TEST_F(ReceiveStatisticsProxyTest, DelayReportedIfFrameIsDelayed) {
-  statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
+  statistics_proxy_->OnDecodedFrame(absl::nullopt, kWidth, kHeight,
                                     VideoContentType::UNSPECIFIED);
 
   // Frame delayed 1 ms, delayed frames to render: 100%.
@@ -863,7 +863,7 @@ TEST_F(ReceiveStatisticsProxyTest, DelayReportedIfFrameIsDelayed) {
 }
 
 TEST_F(ReceiveStatisticsProxyTest, AverageDelayOfDelayedFramesIsReported) {
-  statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
+  statistics_proxy_->OnDecodedFrame(absl::nullopt, kWidth, kHeight,
                                     VideoContentType::UNSPECIFIED);
 
   // Two frames delayed (6 ms, 10 ms), delayed frames to render: 50%.
@@ -937,13 +937,13 @@ TEST_P(ReceiveStatisticsProxyTest, InterFrameDelaysAreReported) {
   const VideoContentType content_type = GetParam();
   const int kInterFrameDelayMs = 33;
   for (int i = 0; i < kMinRequiredSamples; ++i) {
-    statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
+    statistics_proxy_->OnDecodedFrame(absl::nullopt, kWidth, kHeight,
                                       content_type);
     fake_clock_.AdvanceTimeMilliseconds(kInterFrameDelayMs);
   }
   // One extra with double the interval.
   fake_clock_.AdvanceTimeMilliseconds(kInterFrameDelayMs);
-  statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
+  statistics_proxy_->OnDecodedFrame(absl::nullopt, kWidth, kHeight,
                                     content_type);
 
   statistics_proxy_.reset();
@@ -972,18 +972,18 @@ TEST_P(ReceiveStatisticsProxyTest, InterFrameDelaysPercentilesAreReported) {
   const int kLastFivePercentsSamples = kMinRequiredSamples * 5 / 100;
   for (int i = 0; i <= kMinRequiredSamples - kLastFivePercentsSamples; ++i) {
     fake_clock_.AdvanceTimeMilliseconds(kInterFrameDelayMs);
-    statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
+    statistics_proxy_->OnDecodedFrame(absl::nullopt, kWidth, kHeight,
                                       content_type);
   }
   // Last 5% of intervals are double in size.
   for (int i = 0; i < kLastFivePercentsSamples; ++i) {
     fake_clock_.AdvanceTimeMilliseconds(2 * kInterFrameDelayMs);
-    statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
+    statistics_proxy_->OnDecodedFrame(absl::nullopt, kWidth, kHeight,
                                       content_type);
   }
   // Final sample is outlier and 10 times as big.
   fake_clock_.AdvanceTimeMilliseconds(10 * kInterFrameDelayMs);
-  statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
+  statistics_proxy_->OnDecodedFrame(absl::nullopt, kWidth, kHeight,
                                     content_type);
 
   statistics_proxy_.reset();
@@ -1003,7 +1003,7 @@ TEST_P(ReceiveStatisticsProxyTest, MaxInterFrameDelayOnlyWithValidAverage) {
   const VideoContentType content_type = GetParam();
   const int kInterFrameDelayMs = 33;
   for (int i = 0; i < kMinRequiredSamples; ++i) {
-    statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
+    statistics_proxy_->OnDecodedFrame(absl::nullopt, kWidth, kHeight,
                                       content_type);
     fake_clock_.AdvanceTimeMilliseconds(kInterFrameDelayMs);
   }
@@ -1023,7 +1023,7 @@ TEST_P(ReceiveStatisticsProxyTest, MaxInterFrameDelayOnlyWithPause) {
   const VideoContentType content_type = GetParam();
   const int kInterFrameDelayMs = 33;
   for (int i = 0; i <= kMinRequiredSamples; ++i) {
-    statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
+    statistics_proxy_->OnDecodedFrame(absl::nullopt, kWidth, kHeight,
                                       content_type);
     fake_clock_.AdvanceTimeMilliseconds(kInterFrameDelayMs);
   }
@@ -1035,10 +1035,10 @@ TEST_P(ReceiveStatisticsProxyTest, MaxInterFrameDelayOnlyWithPause) {
 
   // Insert two more frames. The interval during the pause should be disregarded
   // in the stats.
-  statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
+  statistics_proxy_->OnDecodedFrame(absl::nullopt, kWidth, kHeight,
                                     content_type);
   fake_clock_.AdvanceTimeMilliseconds(kInterFrameDelayMs);
-  statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
+  statistics_proxy_->OnDecodedFrame(absl::nullopt, kWidth, kHeight,
                                     content_type);
 
   statistics_proxy_.reset();
@@ -1068,13 +1068,13 @@ TEST_P(ReceiveStatisticsProxyTest, FreezesAreReported) {
   const int kInterFrameDelayMs = 33;
   const int kFreezeDelayMs = 200;
   for (int i = 0; i < kMinRequiredSamples; ++i) {
-    statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
+    statistics_proxy_->OnDecodedFrame(absl::nullopt, kWidth, kHeight,
                                       content_type);
     fake_clock_.AdvanceTimeMilliseconds(kInterFrameDelayMs);
   }
   // Add extra freeze.
   fake_clock_.AdvanceTimeMilliseconds(kFreezeDelayMs);
-  statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
+  statistics_proxy_->OnDecodedFrame(absl::nullopt, kWidth, kHeight,
                                     content_type);
 
   statistics_proxy_.reset();
@@ -1100,7 +1100,7 @@ TEST_P(ReceiveStatisticsProxyTest, PausesAreIgnored) {
   const int kInterFrameDelayMs = 33;
   const int kPauseDurationMs = 10000;
   for (int i = 0; i <= kMinRequiredSamples; ++i) {
-    statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
+    statistics_proxy_->OnDecodedFrame(absl::nullopt, kWidth, kHeight,
                                       content_type);
     fake_clock_.AdvanceTimeMilliseconds(kInterFrameDelayMs);
   }
@@ -1110,7 +1110,7 @@ TEST_P(ReceiveStatisticsProxyTest, PausesAreIgnored) {
 
   // Second playback interval with triple the length.
   for (int i = 0; i <= kMinRequiredSamples * 3; ++i) {
-    statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
+    statistics_proxy_->OnDecodedFrame(absl::nullopt, kWidth, kHeight,
                                       content_type);
     fake_clock_.AdvanceTimeMilliseconds(kInterFrameDelayMs);
   }
@@ -1137,15 +1137,15 @@ TEST_P(ReceiveStatisticsProxyTest, ManyPausesAtTheBeginning) {
   const int kInterFrameDelayMs = 33;
   const int kPauseDurationMs = 10000;
   for (int i = 0; i <= kMinRequiredSamples; ++i) {
-    statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
+    statistics_proxy_->OnDecodedFrame(absl::nullopt, kWidth, kHeight,
                                       content_type);
     fake_clock_.AdvanceTimeMilliseconds(kInterFrameDelayMs);
 
     statistics_proxy_->OnStreamInactive();
     fake_clock_.AdvanceTimeMilliseconds(kPauseDurationMs);
 
-    statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
-                                          content_type);
+    statistics_proxy_->OnDecodedFrame(absl::nullopt, kWidth, kHeight,
+                                      content_type);
     fake_clock_.AdvanceTimeMilliseconds(kInterFrameDelayMs);
   }
 
@@ -1164,18 +1164,18 @@ TEST_P(ReceiveStatisticsProxyTest, TimeInHdReported) {
   const int kInterFrameDelayMs = 20;
   // HD frames.
   for (int i = 0; i < kMinRequiredSamples; ++i) {
-    statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
+    statistics_proxy_->OnDecodedFrame(absl::nullopt, kWidth, kHeight,
                                       content_type);
     fake_clock_.AdvanceTimeMilliseconds(kInterFrameDelayMs);
   }
   // SD frames.
   for (int i = 0; i < 2 * kMinRequiredSamples; ++i) {
-    statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth / 2, kHeight / 2,
+    statistics_proxy_->OnDecodedFrame(absl::nullopt, kWidth / 2, kHeight / 2,
                                       content_type);
     fake_clock_.AdvanceTimeMilliseconds(kInterFrameDelayMs);
   }
   // Extra last frame.
-  statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth / 2, kHeight / 2,
+  statistics_proxy_->OnDecodedFrame(absl::nullopt, kWidth / 2, kHeight / 2,
                                     content_type);
   statistics_proxy_.reset();
   const int kExpectedTimeInHdPercents = 33;
@@ -1268,14 +1268,14 @@ TEST_P(ReceiveStatisticsProxyTest, StatsAreSlicedOnSimulcastAndExperiment) {
   videocontenttypehelpers::SetSimulcastId(&content_type, 1);
   for (int i = 0; i <= kMinRequiredSamples; ++i) {
     fake_clock_.AdvanceTimeMilliseconds(kInterFrameDelayMs1);
-    statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
+    statistics_proxy_->OnDecodedFrame(absl::nullopt, kWidth, kHeight,
                                       content_type);
   }
 
   videocontenttypehelpers::SetSimulcastId(&content_type, 2);
   for (int i = 0; i <= kMinRequiredSamples; ++i) {
     fake_clock_.AdvanceTimeMilliseconds(kInterFrameDelayMs2);
-    statistics_proxy_->OnDecodedFrame(rtc::nullopt, kWidth, kHeight,
+    statistics_proxy_->OnDecodedFrame(absl::nullopt, kWidth, kHeight,
                                       content_type);
   }
   statistics_proxy_.reset();

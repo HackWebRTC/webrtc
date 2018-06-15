@@ -58,7 +58,7 @@ class VideoSendStreamPeer {
   explicit VideoSendStreamPeer(webrtc::VideoSendStream* base_class_stream)
       : internal_stream_(
             static_cast<internal::VideoSendStream*>(base_class_stream)) {}
-  rtc::Optional<float> GetPacingFactorOverride() const {
+  absl::optional<float> GetPacingFactorOverride() const {
     return internal_stream_->GetPacingFactorOverride();
   }
 
@@ -2065,7 +2065,7 @@ class StartStopBitrateObserver : public test::FakeEncoder {
 
   bool WaitBitrateChanged(bool non_zero) {
     do {
-      rtc::Optional<int> bitrate_kbps;
+      absl::optional<int> bitrate_kbps;
       {
         rtc::CritScope lock(&crit_);
         bitrate_kbps = bitrate_kbps_;
@@ -2085,7 +2085,7 @@ class StartStopBitrateObserver : public test::FakeEncoder {
   rtc::CriticalSection crit_;
   rtc::Event encoder_init_;
   rtc::Event bitrate_changed_;
-  rtc::Optional<int> bitrate_kbps_ RTC_GUARDED_BY(crit_);
+  absl::optional<int> bitrate_kbps_ RTC_GUARDED_BY(crit_);
 };
 
 // This test that if the encoder use an internal source, VideoEncoder::SetRates
@@ -3773,7 +3773,7 @@ TEST_F(VideoSendStreamTest, SendsKeepAlive) {
 class PacingFactorObserver : public test::SendTest {
  public:
   PacingFactorObserver(bool configure_send_side,
-                       rtc::Optional<float> expected_pacing_factor)
+                       absl::optional<float> expected_pacing_factor)
       : test::SendTest(VideoSendStreamTest::kDefaultTimeoutMs),
         configure_send_side_(configure_send_side),
         expected_pacing_factor_(expected_pacing_factor) {}
@@ -3824,7 +3824,7 @@ class PacingFactorObserver : public test::SendTest {
 
  private:
   const bool configure_send_side_;
-  const rtc::Optional<float> expected_pacing_factor_;
+  const absl::optional<float> expected_pacing_factor_;
 };
 
 std::string GetAlrProbingExperimentString() {
@@ -3845,7 +3845,7 @@ TEST_F(VideoSendStreamTest, AlrConfiguredWhenSendSideOn) {
 TEST_F(VideoSendStreamTest, AlrNotConfiguredWhenSendSideOff) {
   test::ScopedFieldTrials alr_experiment(GetAlrProbingExperimentString());
   // Send-side bwe off, use configuration should not be overridden.
-  PacingFactorObserver test_without_send_side(false, rtc::nullopt);
+  PacingFactorObserver test_without_send_side(false, absl::nullopt);
   RunBaseTest(&test_without_send_side);
 }
 

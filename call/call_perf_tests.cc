@@ -914,7 +914,7 @@ void CallPerfTest::TestMinAudioVideoBitrate(
         send_config->max_bitrate_bps = kOpusBitrateFbBps;
       } else {
         send_config->send_codec_spec->target_bitrate_bps =
-            rtc::Optional<int>(kOpusBitrateFbBps);
+            absl::optional<int>(kOpusBitrateFbBps);
       }
     }
 
