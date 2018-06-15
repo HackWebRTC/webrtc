@@ -31,7 +31,12 @@ public class RendererCommon {
     public void onFrameResolutionChanged(int videoWidth, int videoHeight, int rotation);
   }
 
-  /** Interface for rendering frames on an EGLSurface. */
+  /**
+   * Interface for rendering frames on an EGLSurface with specified viewport location. Rotation,
+   * mirror, and cropping is specified using a 4x4 texture coordinate transform matrix. The frame
+   * input can either be an OES texture, RGB texture, or YUV textures in I420 format. The function
+   * release() must be called manually to free the resources held by this object.
+   */
   public static interface GlDrawer {
     /**
      * Functions for drawing frames with different sources. The rendering surface target is
