@@ -199,6 +199,81 @@ TEST_F(PacedSenderFieldTrialTest, PaddingInSilenceWithTrial) {
   pacer.Process();
 }
 
+TEST_F(PacedSenderFieldTrialTest, DefaultCongestionWindowAffectsAudio) {
+  EXPECT_CALL(callback_, TimeToSendPadding).Times(0);
+  PacedSender pacer(&clock_, &callback_, nullptr);
+  pacer.SetPacingRates(10000000, 0);
+  pacer.SetCongestionWindow(800);
+  pacer.UpdateOutstandingData(0);
+  // Video packet fills congestion window.
+  InsertPacket(&pacer, &video);
+  EXPECT_CALL(callback_, TimeToSendPacket).WillOnce(Return(true));
+  ProcessNext(&pacer);
+  // Audio packet blocked due to congestion.
+  InsertPacket(&pacer, &audio);
+  EXPECT_CALL(callback_, TimeToSendPacket).Times(0);
+  ProcessNext(&pacer);
+  ProcessNext(&pacer);
+  // Audio packet unblocked when congestion window clear.
+  testing::Mock::VerifyAndClearExpectations(&callback_);
+  pacer.UpdateOutstandingData(0);
+  EXPECT_CALL(callback_, TimeToSendPacket).WillOnce(Return(true));
+  ProcessNext(&pacer);
+}
+
+TEST_F(PacedSenderFieldTrialTest, CongestionWindowDoesNotAffectAudioInTrial) {
+  ScopedFieldTrials trial("WebRTC-Pacer-BlockAudio/Disabled/");
+  EXPECT_CALL(callback_, TimeToSendPadding).Times(0);
+  PacedSender pacer(&clock_, &callback_, nullptr);
+  pacer.SetPacingRates(10000000, 0);
+  pacer.SetCongestionWindow(800);
+  pacer.UpdateOutstandingData(0);
+  // Video packet fills congestion window.
+  InsertPacket(&pacer, &video);
+  EXPECT_CALL(callback_, TimeToSendPacket).WillOnce(Return(true));
+  ProcessNext(&pacer);
+  // Audio not blocked due to congestion.
+  InsertPacket(&pacer, &audio);
+  EXPECT_CALL(callback_, TimeToSendPacket).WillOnce(Return(true));
+  ProcessNext(&pacer);
+}
+
+TEST_F(PacedSenderFieldTrialTest, DefaultBudgetAffectsAudio) {
+  PacedSender pacer(&clock_, &callback_, nullptr);
+  pacer.SetPacingRates(video.packet_size / 3 * 8 * kProcessIntervalsPerSecond,
+                       0);
+  // Video fills budget for following process periods.
+  InsertPacket(&pacer, &video);
+  EXPECT_CALL(callback_, TimeToSendPacket).WillOnce(Return(true));
+  ProcessNext(&pacer);
+  // Audio packet blocked due to budget limit.
+  EXPECT_CALL(callback_, TimeToSendPacket).Times(0);
+  InsertPacket(&pacer, &audio);
+  ProcessNext(&pacer);
+  ProcessNext(&pacer);
+  testing::Mock::VerifyAndClearExpectations(&callback_);
+  // Audio packet unblocked when the budget has recovered.
+  EXPECT_CALL(callback_, TimeToSendPacket).WillOnce(Return(true));
+  ProcessNext(&pacer);
+  ProcessNext(&pacer);
+}
+
+TEST_F(PacedSenderFieldTrialTest, BudgetDoesNotAffectAudioInTrial) {
+  ScopedFieldTrials trial("WebRTC-Pacer-BlockAudio/Disabled/");
+  EXPECT_CALL(callback_, TimeToSendPadding).Times(0);
+  PacedSender pacer(&clock_, &callback_, nullptr);
+  pacer.SetPacingRates(video.packet_size / 3 * 8 * kProcessIntervalsPerSecond,
+                       0);
+  // Video fills budget for following process periods.
+  InsertPacket(&pacer, &video);
+  EXPECT_CALL(callback_, TimeToSendPacket).WillOnce(Return(true));
+  ProcessNext(&pacer);
+  // Audio packet not blocked due to budget limit.
+  EXPECT_CALL(callback_, TimeToSendPacket).WillOnce(Return(true));
+  InsertPacket(&pacer, &audio);
+  ProcessNext(&pacer);
+}
+
 TEST_F(PacedSenderTest, FirstSentPacketTimeIsSet) {
   uint16_t sequence_number = 1234;
   const uint32_t kSsrc = 12345;

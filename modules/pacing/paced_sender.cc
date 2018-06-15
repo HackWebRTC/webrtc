@@ -65,6 +65,7 @@ PacedSender::PacedSender(const Clock* clock,
       alr_detector_(rtc::MakeUnique<AlrDetector>(event_log)),
       send_padding_if_silent_(
           field_trial::IsEnabled("WebRTC-Pacer-PadInSilence")),
+      video_blocks_audio_(!field_trial::IsDisabled("WebRTC-Pacer-BlockAudio")),
       paused_(false),
       media_budget_(rtc::MakeUnique<IntervalBudget>(0)),
       padding_budget_(rtc::MakeUnique<IntervalBudget>(0)),
@@ -360,9 +361,12 @@ void PacedSender::ProcessThreadAttached(ProcessThread* process_thread) {
 bool PacedSender::SendPacket(const PacketQueueInterface::Packet& packet,
                              const PacedPacketInfo& pacing_info) {
   RTC_DCHECK(!paused_);
-  if (Congested() ||
-      (media_budget_->bytes_remaining() == 0 &&
-       pacing_info.probe_cluster_id == PacedPacketInfo::kNotAProbe)) {
+  bool audio_packet = packet.priority == kHighPriority;
+  bool apply_pacing =
+      !audio_packet || account_for_audio_ || video_blocks_audio_;
+  if (apply_pacing && (Congested() || (media_budget_->bytes_remaining() == 0 &&
+                                       pacing_info.probe_cluster_id ==
+                                           PacedPacketInfo::kNotAProbe))) {
     return false;
   }
 
@@ -375,7 +379,7 @@ bool PacedSender::SendPacket(const PacketQueueInterface::Packet& packet,
   if (success) {
     if (first_sent_packet_ms_ == -1)
       first_sent_packet_ms_ = clock_->TimeInMilliseconds();
-    if (packet.priority != kHighPriority || account_for_audio_) {
+    if (!audio_packet || account_for_audio_) {
       // Update media bytes sent.
       // TODO(eladalon): TimeToSendPacket() can also return |true| in some
       // situations where nothing actually ended up being sent to the network,
