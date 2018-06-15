@@ -74,7 +74,7 @@ class StunPortTestBase : public testing::Test, public sigslot::has_slots<> {
     stun_port_.reset(cricket::StunPort::Create(
         rtc::Thread::Current(), &socket_factory_, &network_, 0, 0,
         rtc::CreateRandomString(16), rtc::CreateRandomString(22), stun_servers,
-        std::string(), rtc::nullopt));
+        std::string(), absl::nullopt));
     stun_port_->set_stun_keepalive_delay(stun_keepalive_delay_);
     // If |stun_keepalive_lifetime_| is negative, let the stun port
     // choose its lifetime from the network type.
@@ -94,7 +94,7 @@ class StunPortTestBase : public testing::Test, public sigslot::has_slots<> {
     stun_port_.reset(cricket::UDPPort::Create(
         rtc::Thread::Current(), &socket_factory_, &network_, socket_.get(),
         rtc::CreateRandomString(16), rtc::CreateRandomString(22), std::string(),
-        false, rtc::nullopt));
+        false, absl::nullopt));
     ASSERT_TRUE(stun_port_ != NULL);
     ServerAddresses stun_servers;
     stun_servers.insert(server_addr);

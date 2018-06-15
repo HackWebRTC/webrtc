@@ -457,7 +457,7 @@ int DtlsTransport::GetError() {
   return ice_transport_->GetError();
 }
 
-rtc::Optional<rtc::NetworkRoute> DtlsTransport::network_route() const {
+absl::optional<rtc::NetworkRoute> DtlsTransport::network_route() const {
   return ice_transport_->network_route();
 }
 
@@ -693,7 +693,7 @@ void DtlsTransport::OnDtlsEvent(rtc::StreamInterface* dtls, int sig, int err) {
 }
 
 void DtlsTransport::OnNetworkRouteChanged(
-    rtc::Optional<rtc::NetworkRoute> network_route) {
+    absl::optional<rtc::NetworkRoute> network_route) {
   SignalNetworkRouteChanged(network_route);
 }
 
@@ -799,7 +799,7 @@ void DtlsTransport::OnDtlsHandshakeError(rtc::SSLHandshakeError error) {
 
 void DtlsTransport::ConfigureHandshakeTimeout() {
   RTC_DCHECK(dtls_);
-  rtc::Optional<int> rtt = ice_transport_->GetRttEstimate();
+  absl::optional<int> rtt = ice_transport_->GetRttEstimate();
   if (rtt) {
     // Limit the timeout to a reasonable range in case the ICE RTT takes
     // extreme values.

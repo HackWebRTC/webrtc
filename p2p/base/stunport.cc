@@ -314,11 +314,11 @@ ProtocolType UDPPort::GetProtocol() const {
   return PROTO_UDP;
 }
 
-void UDPPort::GetStunStats(rtc::Optional<StunStats>* stats) {
+void UDPPort::GetStunStats(absl::optional<StunStats>* stats) {
   *stats = stats_;
 }
 
-void UDPPort::set_stun_keepalive_delay(const rtc::Optional<int>& delay) {
+void UDPPort::set_stun_keepalive_delay(const absl::optional<int>& delay) {
   stun_keepalive_delay_ = delay.value_or(STUN_KEEPALIVE_INTERVAL);
 }
 
@@ -555,7 +555,7 @@ StunPort* StunPort::Create(rtc::Thread* thread,
                            const std::string& password,
                            const ServerAddresses& servers,
                            const std::string& origin,
-                           rtc::Optional<int> stun_keepalive_interval) {
+                           absl::optional<int> stun_keepalive_interval) {
   StunPort* port = new StunPort(thread, factory, network, min_port, max_port,
                                 username, password, servers, origin);
   port->set_stun_keepalive_delay(stun_keepalive_interval);

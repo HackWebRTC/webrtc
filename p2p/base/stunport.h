@@ -43,7 +43,7 @@ class UDPPort : public Port {
                          const std::string& password,
                          const std::string& origin,
                          bool emit_local_for_anyaddress,
-                         rtc::Optional<int> stun_keepalive_interval) {
+                         absl::optional<int> stun_keepalive_interval) {
     UDPPort* port = new UDPPort(thread, factory, network, socket, username,
                                 password, origin, emit_local_for_anyaddress);
     port->set_stun_keepalive_delay(stun_keepalive_interval);
@@ -63,7 +63,7 @@ class UDPPort : public Port {
                          const std::string& password,
                          const std::string& origin,
                          bool emit_local_for_anyaddress,
-                         rtc::Optional<int> stun_keepalive_interval) {
+                         absl::optional<int> stun_keepalive_interval) {
     UDPPort* port =
         new UDPPort(thread, factory, network, min_port, max_port, username,
                     password, origin, emit_local_for_anyaddress);
@@ -105,9 +105,9 @@ class UDPPort : public Port {
   bool SupportsProtocol(const std::string& protocol) const override;
   ProtocolType GetProtocol() const override;
 
-  void GetStunStats(rtc::Optional<StunStats>* stats) override;
+  void GetStunStats(absl::optional<StunStats>* stats) override;
 
-  void set_stun_keepalive_delay(const rtc::Optional<int>& delay);
+  void set_stun_keepalive_delay(const absl::optional<int>& delay);
   int stun_keepalive_delay() const {
     return stun_keepalive_delay_;
   }
@@ -267,7 +267,7 @@ class StunPort : public UDPPort {
                           const std::string& password,
                           const ServerAddresses& servers,
                           const std::string& origin,
-                          rtc::Optional<int> stun_keepalive_interval);
+                          absl::optional<int> stun_keepalive_interval);
 
   void PrepareAddress() override;
 

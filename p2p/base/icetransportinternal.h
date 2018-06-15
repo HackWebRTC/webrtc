@@ -63,14 +63,14 @@ enum class NominationMode {
 };
 
 // Information about ICE configuration.
-// TODO(deadbeef): Use rtc::Optional to represent unset values, instead of
+// TODO(deadbeef): Use absl::optional to represent unset values, instead of
 // -1.
 struct IceConfig {
   // The ICE connection receiving timeout value in milliseconds.
-  rtc::Optional<int> receiving_timeout;
+  absl::optional<int> receiving_timeout;
   // Time interval in milliseconds to ping a backup connection when the ICE
   // channel is strongly connected.
-  rtc::Optional<int> backup_connection_ping_interval;
+  absl::optional<int> backup_connection_ping_interval;
 
   ContinualGatheringPolicy continual_gathering_policy = GATHER_ONCE;
 
@@ -83,7 +83,7 @@ struct IceConfig {
   bool prioritize_most_likely_candidate_pairs = false;
 
   // Writable connections are pinged at a slower rate once stablized.
-  rtc::Optional<int> stable_writable_connection_ping_interval;
+  absl::optional<int> stable_writable_connection_ping_interval;
 
   // If set to true, this means the ICE transport should presume TURN-to-TURN
   // candidate pairs will succeed, even before a binding response is received.
@@ -91,16 +91,16 @@ struct IceConfig {
 
   // Interval to check on all networks and to perform ICE regathering on any
   // active network having no connection on it.
-  rtc::Optional<int> regather_on_failed_networks_interval;
+  absl::optional<int> regather_on_failed_networks_interval;
 
   // Interval to perform ICE regathering on all networks
   // The delay in milliseconds is sampled from the uniform distribution [a, b]
-  rtc::Optional<rtc::IntervalRange> regather_all_networks_interval_range;
+  absl::optional<rtc::IntervalRange> regather_all_networks_interval_range;
 
   // The time period in which we will not switch the selected connection
   // when a new connection becomes receiving but the selected connection is not
   // in case that the selected connection may become receiving soon.
-  rtc::Optional<int> receiving_switching_delay;
+  absl::optional<int> receiving_switching_delay;
 
   // TODO(honghaiz): Change the default to regular nomination.
   // Default nomination mode if the remote does not support renomination.
@@ -110,12 +110,12 @@ struct IceConfig {
   // for a candidate pair when it is both writable and receiving (strong
   // connectivity). This parameter overrides the default value given by
   // |STRONG_PING_INTERVAL| in p2ptransport.h if set.
-  rtc::Optional<int> ice_check_interval_strong_connectivity;
+  absl::optional<int> ice_check_interval_strong_connectivity;
   // The interval in milliseconds at which ICE checks (STUN pings) will be sent
   // for a candidate pair when it is either not writable or not receiving (weak
   // connectivity). This parameter overrides the default value given by
   // |WEAK_PING_INTERVAL| in p2ptransport.h if set.
-  rtc::Optional<int> ice_check_interval_weak_connectivity;
+  absl::optional<int> ice_check_interval_weak_connectivity;
   // ICE checks (STUN pings) will not be sent at higher rate (lower interval)
   // than this, no matter what other settings there are.
   // Measure in milliseconds.
@@ -123,23 +123,23 @@ struct IceConfig {
   // Note that this parameter overrides both the above check intervals for
   // candidate pairs with strong or weak connectivity, if either of the above
   // interval is shorter than the min interval.
-  rtc::Optional<int> ice_check_min_interval;
+  absl::optional<int> ice_check_min_interval;
   // The min time period for which a candidate pair must wait for response to
   // connectivity checks before it becomes unwritable. This parameter
   // overrides the default value given by |CONNECTION_WRITE_CONNECT_TIMEOUT|
   // in port.h if set, when determining the writability of a candidate pair.
-  rtc::Optional<int> ice_unwritable_timeout;
+  absl::optional<int> ice_unwritable_timeout;
 
   // The min number of connectivity checks that a candidate pair must sent
   // without receiving response before it becomes unwritable. This parameter
   // overrides the default value given by |CONNECTION_WRITE_CONNECT_FAILURES| in
   // port.h if set, when determining the writability of a candidate pair.
-  rtc::Optional<int> ice_unwritable_min_checks;
+  absl::optional<int> ice_unwritable_min_checks;
   // The interval in milliseconds at which STUN candidates will resend STUN
   // binding requests to keep NAT bindings open.
-  rtc::Optional<int> stun_keepalive_interval;
+  absl::optional<int> stun_keepalive_interval;
 
-  rtc::Optional<rtc::AdapterType> network_preference;
+  absl::optional<rtc::AdapterType> network_preference;
 
   IceConfig();
   IceConfig(int receiving_timeout_ms,
@@ -154,7 +154,7 @@ struct IceConfig {
 
   // Helper getters for parameters with implementation-specific default value.
   // By convention, parameters with default value are represented by
-  // rtc::Optional and setting a parameter to null restores its default value.
+  // absl::optional and setting a parameter to null restores its default value.
   int receiving_timeout_or_default() const;
   int backup_connection_ping_interval_or_default() const;
   int stable_writable_connection_ping_interval_or_default() const;
@@ -240,8 +240,8 @@ class IceTransportInternal : public rtc::PacketTransportInternal {
                         CandidateStatsList* candidate_stats_list) = 0;
 
   // Returns RTT estimate over the currently active connection, or an empty
-  // rtc::Optional if there is none.
-  virtual rtc::Optional<int> GetRttEstimate() = 0;
+  // absl::optional if there is none.
+  virtual absl::optional<int> GetRttEstimate() = 0;
 
   sigslot::signal1<IceTransportInternal*> SignalGatheringState;
 

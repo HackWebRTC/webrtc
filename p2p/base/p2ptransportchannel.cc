@@ -61,7 +61,7 @@ static constexpr int a_and_b_equal = 0;
 
 bool LocalCandidateUsesPreferredNetwork(
     const cricket::Connection* conn,
-    rtc::Optional<rtc::AdapterType> network_preference) {
+    absl::optional<rtc::AdapterType> network_preference) {
   rtc::AdapterType network_type = conn->port()->Network()->type();
   return network_preference.has_value() && (network_type == network_preference);
 }
@@ -69,7 +69,7 @@ bool LocalCandidateUsesPreferredNetwork(
 int CompareCandidatePairsByNetworkPreference(
     const cricket::Connection* a,
     const cricket::Connection* b,
-    rtc::Optional<rtc::AdapterType> network_preference) {
+    absl::optional<rtc::AdapterType> network_preference) {
   bool a_uses_preferred_network =
       LocalCandidateUsesPreferredNetwork(a, network_preference);
   bool b_uses_preferred_network =
@@ -236,7 +236,7 @@ bool P2PTransportChannel::ShouldSwitchSelectedConnection(
     return false;
   }
 
-  rtc::Optional<int64_t> receiving_unchanged_threshold(
+  absl::optional<int64_t> receiving_unchanged_threshold(
       rtc::TimeMillis() - config_.receiving_switching_delay_or_default());
   int cmp = CompareConnections(selected_connection_, new_connection,
                                receiving_unchanged_threshold,
@@ -331,12 +331,12 @@ IceGatheringState P2PTransportChannel::gathering_state() const {
   return gathering_state_;
 }
 
-rtc::Optional<int> P2PTransportChannel::GetRttEstimate() {
+absl::optional<int> P2PTransportChannel::GetRttEstimate() {
   if (selected_connection_ != nullptr
       && selected_connection_->rtt_samples() > 0) {
     return selected_connection_->rtt();
   } else {
-    return rtc::nullopt;
+    return absl::nullopt;
   }
 }
 
@@ -419,9 +419,9 @@ void P2PTransportChannel::SetRemoteIceMode(IceMode mode) {
   remote_ice_mode_ = mode;
 }
 
-// TODO(qingsi): We apply the convention that setting a rtc::Optional parameter
+// TODO(qingsi): We apply the convention that setting a absl::optional parameter
 // to null restores its default value in the implementation. However, some
-// rtc::Optional parameters are only processed below if non-null, e.g.,
+// absl::optional parameters are only processed below if non-null, e.g.,
 // regather_on_failed_networks_interval, and thus there is no way to restore the
 // defaults. Fix this issue later for consistency.
 void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
@@ -1261,7 +1261,7 @@ bool P2PTransportChannel::GetStats(ConnectionInfos* candidate_pair_stats_list,
   return true;
 }
 
-rtc::Optional<rtc::NetworkRoute> P2PTransportChannel::network_route() const {
+absl::optional<rtc::NetworkRoute> P2PTransportChannel::network_route() const {
   return network_route_;
 }
 
@@ -1319,7 +1319,7 @@ void P2PTransportChannel::MaybeStartPinging() {
 int P2PTransportChannel::CompareCandidatePairNetworks(
     const Connection* a,
     const Connection* b,
-    rtc::Optional<rtc::AdapterType> network_preference) const {
+    absl::optional<rtc::AdapterType> network_preference) const {
   int compare_a_b_by_network_preference =
       CompareCandidatePairsByNetworkPreference(a, b,
                                                config_.network_preference);
@@ -1345,7 +1345,7 @@ int P2PTransportChannel::CompareCandidatePairNetworks(
 int P2PTransportChannel::CompareConnectionStates(
     const Connection* a,
     const Connection* b,
-    rtc::Optional<int64_t> receiving_unchanged_threshold,
+    absl::optional<int64_t> receiving_unchanged_threshold,
     bool* missed_receiving_unchanged_threshold) const {
   // First, prefer a connection that's writable or presumed writable over
   // one that's not writable.
@@ -1474,7 +1474,7 @@ bool P2PTransportChannel::IsRemoteCandidatePruned(const Candidate& cand) const {
 int P2PTransportChannel::CompareConnections(
     const Connection* a,
     const Connection* b,
-    rtc::Optional<int64_t> receiving_unchanged_threshold,
+    absl::optional<int64_t> receiving_unchanged_threshold,
     bool* missed_receiving_unchanged_threshold) const {
   RTC_CHECK(a != nullptr);
   RTC_CHECK(b != nullptr);
@@ -1538,7 +1538,7 @@ void P2PTransportChannel::SortConnectionsAndUpdateState(
   // TODO(honghaiz): Don't sort;  Just use std::max_element in the right places.
   std::stable_sort(connections_.begin(), connections_.end(),
                    [this](const Connection* a, const Connection* b) {
-                     int cmp = CompareConnections(a, b, rtc::nullopt, nullptr);
+                     int cmp = CompareConnections(a, b, absl::nullopt, nullptr);
                      if (cmp != 0) {
                        return cmp > 0;
                      }

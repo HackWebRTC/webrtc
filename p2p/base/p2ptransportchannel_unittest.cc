@@ -113,7 +113,7 @@ enum { MSG_ADD_CANDIDATES, MSG_REMOVE_CANDIDATES };
 cricket::IceConfig CreateIceConfig(
     int receiving_timeout,
     cricket::ContinualGatheringPolicy continual_gathering_policy,
-    rtc::Optional<int> backup_ping_interval = rtc::nullopt) {
+    absl::optional<int> backup_ping_interval = absl::nullopt) {
   cricket::IceConfig config;
   config.receiving_timeout = receiving_timeout;
   config.continual_gathering_policy = continual_gathering_policy;
@@ -709,7 +709,7 @@ class P2PTransportChannelTestBase : public testing::Test,
     }
   }
 
-  void OnNetworkRouteChanged(rtc::Optional<rtc::NetworkRoute> network_route) {
+  void OnNetworkRouteChanged(absl::optional<rtc::NetworkRoute> network_route) {
     // If the |network_route| is unset, don't count. This is used in the case
     // when the network on remote side is down, the signal will be fired with an
     // unset network route and it shouldn't trigger a connection switch.
@@ -3153,7 +3153,7 @@ class P2PTransportChannelPingTest : public testing::Test,
     conn->SignalNominated(conn);
   }
 
-  void OnNetworkRouteChanged(rtc::Optional<rtc::NetworkRoute> network_route) {
+  void OnNetworkRouteChanged(absl::optional<rtc::NetworkRoute> network_route) {
     last_network_route_ = network_route;
     if (last_network_route_) {
       last_sent_packet_id_ = last_network_route_->last_sent_packet_id;
@@ -3220,7 +3220,7 @@ class P2PTransportChannelPingTest : public testing::Test,
   int last_sent_packet_id_ = -1;
   bool channel_ready_to_send_ = false;
   IceTransportState channel_state_ = IceTransportState::STATE_INIT;
-  rtc::Optional<rtc::NetworkRoute> last_network_route_;
+  absl::optional<rtc::NetworkRoute> last_network_route_;
 };
 
 TEST_F(P2PTransportChannelPingTest, TestTriggeredChecks) {

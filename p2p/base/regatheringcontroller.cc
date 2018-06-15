@@ -14,7 +14,7 @@ namespace webrtc {
 
 using Config = BasicRegatheringController::Config;
 
-Config::Config(const rtc::Optional<rtc::IntervalRange>&
+Config::Config(const absl::optional<rtc::IntervalRange>&
                    regather_on_all_networks_interval_range,
                int regather_on_failed_networks_interval)
     : regather_on_all_networks_interval_range(

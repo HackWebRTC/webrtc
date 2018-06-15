@@ -124,10 +124,10 @@ class WebRtcVoiceEngine final {
   // in case they are missing in the audio options. We need to do this because
   // SetExtraOptions() will revert to defaults for options which are not
   // provided.
-  rtc::Optional<bool> extended_filter_aec_;
-  rtc::Optional<bool> delay_agnostic_aec_;
-  rtc::Optional<bool> experimental_ns_;
-  rtc::Optional<bool> intelligibility_enhancer_;
+  absl::optional<bool> extended_filter_aec_;
+  absl::optional<bool> delay_agnostic_aec_;
+  absl::optional<bool> experimental_ns_;
+  absl::optional<bool> intelligibility_enhancer_;
   // Jitter buffer settings for new streams.
   size_t audio_jitter_buffer_max_packets_ = 50;
   bool audio_jitter_buffer_fast_accelerate_ = false;
@@ -241,7 +241,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
 
   int max_send_bitrate_bps_ = 0;
   AudioOptions options_;
-  rtc::Optional<int> dtmf_payload_type_;
+  absl::optional<int> dtmf_payload_type_;
   int dtmf_payload_freq_ = -1;
   bool recv_transport_cc_enabled_ = false;
   bool recv_nack_enabled_ = false;
@@ -277,7 +277,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   std::map<uint32_t, WebRtcAudioReceiveStream*> recv_streams_;
   std::vector<webrtc::RtpExtension> recv_rtp_extensions_;
 
-  rtc::Optional<webrtc::AudioSendStream::Config::SendCodecSpec>
+  absl::optional<webrtc::AudioSendStream::Config::SendCodecSpec>
       send_codec_spec_;
 
   // TODO(kwiberg): Per-SSRC codec pair IDs?

@@ -85,7 +85,7 @@ PayloadTypeMapper::PayloadTypeMapper()
 
 PayloadTypeMapper::~PayloadTypeMapper() = default;
 
-rtc::Optional<int> PayloadTypeMapper::GetMappingFor(
+absl::optional<int> PayloadTypeMapper::GetMappingFor(
     const webrtc::SdpAudioFormat& format) {
   auto iter = mappings_.find(format);
   if (iter != mappings_.end())
@@ -102,19 +102,19 @@ rtc::Optional<int> PayloadTypeMapper::GetMappingFor(
     }
   }
 
-  return rtc::nullopt;
+  return absl::nullopt;
 }
 
-rtc::Optional<int> PayloadTypeMapper::FindMappingFor(
+absl::optional<int> PayloadTypeMapper::FindMappingFor(
     const webrtc::SdpAudioFormat& format) const {
   auto iter = mappings_.find(format);
   if (iter != mappings_.end())
     return iter->second;
 
-  return rtc::nullopt;
+  return absl::nullopt;
 }
 
-rtc::Optional<AudioCodec> PayloadTypeMapper::ToAudioCodec(
+absl::optional<AudioCodec> PayloadTypeMapper::ToAudioCodec(
     const webrtc::SdpAudioFormat& format) {
   // TODO(ossu): We can safely set bitrate to zero here, since that field is
   // not presented in the SDP. It is used to ferry around some target bitrate
@@ -129,7 +129,7 @@ rtc::Optional<AudioCodec> PayloadTypeMapper::ToAudioCodec(
     return std::move(codec);
   }
 
-  return rtc::nullopt;
+  return absl::nullopt;
 }
 
 bool PayloadTypeMapper::SdpAudioFormatOrdering::operator()(

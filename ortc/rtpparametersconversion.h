@@ -14,7 +14,7 @@
 #include <memory>
 #include <vector>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "api/rtcerror.h"
 #include "api/rtpparameters.h"
 #include "media/base/codec.h"
@@ -80,7 +80,7 @@ RTCErrorOr<cricket::StreamParamsVec> ToCricketStreamParamsVec(
 
 // Returns empty value if |cricket_feedback| is a feedback type not
 // supported/recognized.
-rtc::Optional<RtcpFeedback> ToRtcpFeedback(
+absl::optional<RtcpFeedback> ToRtcpFeedback(
     const cricket::FeedbackParam& cricket_feedback);
 
 std::vector<RtpEncodingParameters> ToRtpEncodings(

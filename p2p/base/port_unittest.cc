@@ -502,7 +502,7 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
                          PacketSocketFactory* socket_factory) {
     return UDPPort::Create(&main_, socket_factory, MakeNetwork(addr), 0, 0,
                            username_, password_, std::string(), true,
-                           rtc::nullopt);
+                           absl::nullopt);
   }
   TCPPort* CreateTcpPort(const SocketAddress& addr) {
     return CreateTcpPort(addr, &socket_factory_);
@@ -518,7 +518,7 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
     stun_servers.insert(kStunAddr);
     return StunPort::Create(&main_, factory, MakeNetwork(addr), 0, 0, username_,
                             password_, stun_servers, std::string(),
-                            rtc::nullopt);
+                            absl::nullopt);
   }
   Port* CreateRelayPort(const SocketAddress& addr, RelayType rtype,
                         ProtocolType int_proto, ProtocolType ext_proto) {

@@ -14,8 +14,8 @@
 #include <string>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "api/candidate.h"
-#include "api/optional.h"
 #include "p2p/base/transportdescription.h"
 #include "rtc_base/asyncpacketsocket.h"
 #include "rtc_base/socketaddress.h"
@@ -127,7 +127,7 @@ class PortInterface {
 
   virtual std::string ToString() const = 0;
 
-  virtual void GetStunStats(rtc::Optional<StunStats>* stats) = 0;
+  virtual void GetStunStats(absl::optional<StunStats>* stats) = 0;
 
  protected:
   PortInterface();

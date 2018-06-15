@@ -16,7 +16,7 @@
 #include <limits>
 #include <utility>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "media/base/mediaconstants.h"
 #include "media/base/videocommon.h"
 #include "rtc_base/arraysize.h"
@@ -256,14 +256,14 @@ bool VideoAdapter::AdaptFrameResolution(int in_width,
 }
 
 void VideoAdapter::OnOutputFormatRequest(
-    const rtc::Optional<VideoFormat>& format) {
+    const absl::optional<VideoFormat>& format) {
   rtc::CritScope cs(&critical_section_);
   requested_format_ = format;
-  next_frame_timestamp_ns_ = rtc::nullopt;
+  next_frame_timestamp_ns_ = absl::nullopt;
 }
 
 void VideoAdapter::OnResolutionFramerateRequest(
-    const rtc::Optional<int>& target_pixel_count,
+    const absl::optional<int>& target_pixel_count,
     int max_pixel_count,
     int max_framerate_fps) {
   rtc::CritScope cs(&critical_section_);

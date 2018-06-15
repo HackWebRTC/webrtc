@@ -46,13 +46,13 @@ namespace webrtc {
 class BasicRegatheringController : public sigslot::has_slots<> {
  public:
   struct Config {
-    Config(const rtc::Optional<rtc::IntervalRange>&
+    Config(const absl::optional<rtc::IntervalRange>&
                regather_on_all_networks_interval_range,
            int regather_on_failed_networks_interval);
     Config(const Config& other);
     ~Config();
     Config& operator=(const Config& other);
-    rtc::Optional<rtc::IntervalRange> regather_on_all_networks_interval_range;
+    absl::optional<rtc::IntervalRange> regather_on_all_networks_interval_range;
     int regather_on_failed_networks_interval;
   };
 
@@ -82,7 +82,7 @@ class BasicRegatheringController : public sigslot::has_slots<> {
   void OnIceTransportStateChanged(cricket::IceTransportInternal*) {}
   void OnIceTransportWritableState(rtc::PacketTransportInternal*) {}
   void OnIceTransportReceivingState(rtc::PacketTransportInternal*) {}
-  void OnIceTransportNetworkRouteChanged(rtc::Optional<rtc::NetworkRoute>) {}
+  void OnIceTransportNetworkRouteChanged(absl::optional<rtc::NetworkRoute>) {}
   // Schedules delayed and repeated regathering of local candidates on all
   // networks, where the delay in milliseconds is randomly sampled from the
   // range in the config. The delay of each repetition is independently sampled

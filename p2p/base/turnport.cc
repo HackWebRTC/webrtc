@@ -15,7 +15,7 @@
 #include <utility>
 #include <vector>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "p2p/base/stun.h"
 #include "rtc_base/asyncpacketsocket.h"
 #include "rtc_base/byteorder.h"
@@ -151,7 +151,7 @@ class TurnEntry : public sigslot::has_slots<> {
 
   // If the destruction timestamp is set, that means destruction has been
   // scheduled (will occur TURN_PERMISSION_TIMEOUT after it's scheduled).
-  rtc::Optional<int64_t> destruction_timestamp() {
+  absl::optional<int64_t> destruction_timestamp() {
     return destruction_timestamp_;
   }
   void set_destruction_timestamp(int64_t destruction_timestamp) {
@@ -185,7 +185,7 @@ class TurnEntry : public sigslot::has_slots<> {
   // is also used as an ID of the event scheduling. When the destruction event
   // actually fires, the TurnEntry will be destroyed only if the timestamp here
   // matches the one in the firing event.
-  rtc::Optional<int64_t> destruction_timestamp_;
+  absl::optional<int64_t> destruction_timestamp_;
 };
 
 TurnPort::TurnPort(rtc::Thread* thread,

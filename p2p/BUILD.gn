@@ -83,7 +83,6 @@ rtc_static_library("rtc_p2p") {
 
   deps = [
     "../api:libjingle_peerconnection_api",
-    "../api:optional",
     "../api:ortc_api",
     "../logging:ice_log",
     "../rtc_base:checks",
@@ -91,6 +90,7 @@ rtc_static_library("rtc_p2p") {
     "../rtc_base:safe_minmax",
     "../rtc_base:stringutils",
     "../system_wrappers:field_trial_api",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 
   if (build_with_chromium) {

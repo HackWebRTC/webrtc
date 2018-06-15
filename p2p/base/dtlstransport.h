@@ -171,7 +171,7 @@ class DtlsTransport : public DtlsTransportInternal {
 
   int GetError() override;
 
-  rtc::Optional<rtc::NetworkRoute> network_route() const override;
+  absl::optional<rtc::NetworkRoute> network_route() const override;
 
   int SetOption(rtc::Socket::Option opt, int value) override;
 
@@ -198,7 +198,7 @@ class DtlsTransport : public DtlsTransportInternal {
   void OnReadyToSend(rtc::PacketTransportInternal* transport);
   void OnReceivingState(rtc::PacketTransportInternal* transport);
   void OnDtlsEvent(rtc::StreamInterface* stream_, int sig, int err);
-  void OnNetworkRouteChanged(rtc::Optional<rtc::NetworkRoute> network_route);
+  void OnNetworkRouteChanged(absl::optional<rtc::NetworkRoute> network_route);
   bool SetupDtls();
   void MaybeStartDtls();
   bool HandleDtlsPacket(const char* data, size_t size);
@@ -223,7 +223,7 @@ class DtlsTransport : public DtlsTransportInternal {
   std::vector<int> srtp_ciphers_;  // SRTP ciphers to use with DTLS.
   bool dtls_active_ = false;
   rtc::scoped_refptr<rtc::RTCCertificate> local_certificate_;
-  rtc::Optional<rtc::SSLRole> dtls_role_;
+  absl::optional<rtc::SSLRole> dtls_role_;
   rtc::SSLProtocolVersion ssl_max_version_;
   rtc::CryptoOptions crypto_options_;
   rtc::Buffer remote_fingerprint_value_;

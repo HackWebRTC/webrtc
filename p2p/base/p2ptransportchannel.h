@@ -104,7 +104,7 @@ class P2PTransportChannel : public IceTransportInternal {
   // only update the parameter if it is considered set in |config|. For example,
   // a negative value of receiving_timeout will be considered "not set" and we
   // will not use it to update the respective parameter in |config_|.
-  // TODO(deadbeef): Use rtc::Optional instead of negative values.
+  // TODO(deadbeef): Use absl::optional instead of negative values.
   void SetIceConfig(const IceConfig& config) override;
   const IceConfig& config() const;
   static webrtc::RTCError ValidateIceConfig(const IceConfig& config);
@@ -120,7 +120,7 @@ class P2PTransportChannel : public IceTransportInternal {
   int GetError() override;
   bool GetStats(std::vector<ConnectionInfo>* candidate_pair_stats_list,
                 std::vector<CandidateStats>* candidate_stats_list) override;
-  rtc::Optional<int> GetRttEstimate() override;
+  absl::optional<int> GetRttEstimate() override;
 
   // TODO(honghaiz): Remove this method once the reference of it in
   // Chromoting is removed.
@@ -138,7 +138,7 @@ class P2PTransportChannel : public IceTransportInternal {
 
   void PruneAllPorts();
   int check_receiving_interval() const;
-  rtc::Optional<rtc::NetworkRoute> network_route() const override;
+  absl::optional<rtc::NetworkRoute> network_route() const override;
 
   // Helper method used only in unittest.
   rtc::DiffServCodePoint DefaultDscpValue() const;
@@ -202,7 +202,7 @@ class P2PTransportChannel : public IceTransportInternal {
   int CompareCandidatePairNetworks(
       const Connection* a,
       const Connection* b,
-      rtc::Optional<rtc::AdapterType> network_preference) const;
+      absl::optional<rtc::AdapterType> network_preference) const;
 
   // The methods below return a positive value if |a| is preferable to |b|,
   // a negative value if |b| is preferable, and 0 if they're equally preferable.
@@ -214,7 +214,7 @@ class P2PTransportChannel : public IceTransportInternal {
   int CompareConnectionStates(
       const cricket::Connection* a,
       const cricket::Connection* b,
-      rtc::Optional<int64_t> receiving_unchanged_threshold,
+      absl::optional<int64_t> receiving_unchanged_threshold,
       bool* missed_receiving_unchanged_threshold) const;
   int CompareConnectionCandidates(const cricket::Connection* a,
                                   const cricket::Connection* b) const;
@@ -225,7 +225,7 @@ class P2PTransportChannel : public IceTransportInternal {
   // Returns a positive value if |a| is better than |b|.
   int CompareConnections(const cricket::Connection* a,
                          const cricket::Connection* b,
-                         rtc::Optional<int64_t> receiving_unchanged_threshold,
+                         absl::optional<int64_t> receiving_unchanged_threshold,
                          bool* missed_receiving_unchanged_threshold) const;
 
   bool PresumedWritable(const cricket::Connection* conn) const;
@@ -408,7 +408,7 @@ class P2PTransportChannel : public IceTransportInternal {
 
   rtc::AsyncInvoker invoker_;
   webrtc::MetricsObserverInterface* metrics_observer_ = nullptr;
-  rtc::Optional<rtc::NetworkRoute> network_route_;
+  absl::optional<rtc::NetworkRoute> network_route_;
   webrtc::IceEventLog ice_event_log_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(P2PTransportChannel);

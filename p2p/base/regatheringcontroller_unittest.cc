@@ -54,7 +54,7 @@ class RegatheringControllerTest : public testing::Test,
         ice_transport_(new cricket::MockIceTransport()),
         allocator_(
             new cricket::FakePortAllocator(rtc::Thread::Current(), nullptr)) {
-    BasicRegatheringController::Config regathering_config(rtc::nullopt, 0);
+    BasicRegatheringController::Config regathering_config(absl::nullopt, 0);
     regathering_controller_.reset(new BasicRegatheringController(
         regathering_config, ice_transport_.get(), rtc::Thread::Current()));
   }
@@ -171,7 +171,7 @@ TEST_F(RegatheringControllerTest,
   rtc::ScopedFakeClock clock;
   InitializeAndGatherOnceWithSessionCleared();
 
-  BasicRegatheringController::Config config(rtc::nullopt, 2000);
+  BasicRegatheringController::Config config(absl::nullopt, 2000);
   regathering_controller()->SetConfig(config);
   regathering_controller()->Start();
   SIMULATED_WAIT(false, 3000, clock);

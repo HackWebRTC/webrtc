@@ -1740,7 +1740,7 @@ void Connection::MaybeSetRemoteIceParametersAndGeneration(
   }
   // TODO(deadbeef): A value of '0' for the generation is used for both
   // generation 0 and "generation unknown". It should be changed to an
-  // rtc::Optional to fix this.
+  // absl::optional to fix this.
   if (remote_candidate_.username() == ice_params.ufrag &&
       remote_candidate_.password() == ice_params.pwd &&
       remote_candidate_.generation() == 0) {

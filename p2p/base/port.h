@@ -17,8 +17,8 @@
 #include <string>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "api/candidate.h"
-#include "api/optional.h"
 #include "api/rtcerror.h"
 #include "logging/rtc_event_log/events/rtc_event_ice_candidate_pair.h"
 #include "logging/rtc_event_log/events/rtc_event_ice_candidate_pair_config.h"
@@ -107,7 +107,7 @@ class CandidateStats {
 
   Candidate candidate;
   // STUN port stats if this candidate is a STUN candidate.
-  rtc::Optional<StunStats> stun_stats;
+  absl::optional<StunStats> stun_stats;
 };
 
 typedef std::vector<CandidateStats> CandidateStatsList;
@@ -152,7 +152,7 @@ struct ConnectionInfo {
   // https://w3c.github.io/webrtc-stats/#dom-rtcicecandidatepairstats-totalroundtriptime
   uint64_t total_round_trip_time_ms;
   // https://w3c.github.io/webrtc-stats/#dom-rtcicecandidatepairstats-currentroundtriptime
-  rtc::Optional<uint32_t> current_round_trip_time_ms;
+  absl::optional<uint32_t> current_round_trip_time_ms;
 };
 
 // Information about all the candidate pairs of a channel.
@@ -379,7 +379,7 @@ class Port : public PortInterface, public rtc::MessageHandler,
 
   int16_t network_cost() const { return network_cost_; }
 
-  void GetStunStats(rtc::Optional<StunStats>* stats) override{};
+  void GetStunStats(absl::optional<StunStats>* stats) override{};
 
  protected:
   enum { MSG_DESTROY_IF_DEAD = 0, MSG_FIRST_AVAILABLE };
@@ -554,11 +554,11 @@ class Connection : public CandidatePairInterface,
   int rtt() const { return rtt_; }
 
   int unwritable_timeout() const;
-  void set_unwritable_timeout(const rtc::Optional<int>& value_ms) {
+  void set_unwritable_timeout(const absl::optional<int>& value_ms) {
     unwritable_timeout_ = value_ms;
   }
   int unwritable_min_checks() const;
-  void set_unwritable_min_checks(const rtc::Optional<int>& value) {
+  void set_unwritable_min_checks(const absl::optional<int>& value) {
     unwritable_min_checks_ = value;
   }
 
@@ -626,7 +626,7 @@ class Connection : public CandidatePairInterface,
   }
 
   int receiving_timeout() const;
-  void set_receiving_timeout(rtc::Optional<int> receiving_timeout_ms) {
+  void set_receiving_timeout(absl::optional<int> receiving_timeout_ms) {
     receiving_timeout_ = receiving_timeout_ms;
   }
 
@@ -801,7 +801,7 @@ class Connection : public CandidatePairInterface,
   // https://w3c.github.io/webrtc-stats/#dom-rtcicecandidatepairstats-totalroundtriptime
   uint64_t total_round_trip_time_ms_ = 0;
   // https://w3c.github.io/webrtc-stats/#dom-rtcicecandidatepairstats-currentroundtriptime
-  rtc::Optional<uint32_t> current_round_trip_time_ms_;
+  absl::optional<uint32_t> current_round_trip_time_ms_;
   int64_t last_ping_sent_;      // last time we sent a ping to the other side
   int64_t last_ping_received_;  // last time we received a ping from the other
                                 // side
@@ -812,17 +812,17 @@ class Connection : public CandidatePairInterface,
 
   PacketLossEstimator packet_loss_estimator_;
 
-  rtc::Optional<int> unwritable_timeout_;
-  rtc::Optional<int> unwritable_min_checks_;
+  absl::optional<int> unwritable_timeout_;
+  absl::optional<int> unwritable_min_checks_;
 
   bool reported_;
   IceCandidatePairState state_;
   // Time duration to switch from receiving to not receiving.
-  rtc::Optional<int> receiving_timeout_;
+  absl::optional<int> receiving_timeout_;
   int64_t time_created_ms_;
   int num_pings_sent_ = 0;
 
-  rtc::Optional<webrtc::IceCandidatePairDescription> log_description_;
+  absl::optional<webrtc::IceCandidatePairDescription> log_description_;
   uint32_t hash_;
   webrtc::IceEventLog* ice_event_log_ = nullptr;
 

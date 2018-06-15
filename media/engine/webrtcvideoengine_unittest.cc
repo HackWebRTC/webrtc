@@ -584,7 +584,7 @@ size_t WebRtcVideoEngineTest::GetEngineCodecIndex(
     // The tests only use H264 Constrained Baseline. Make sure we don't return
     // an internal H264 codec from the engine with a different H264 profile.
     if (CodecNamesEq(name.c_str(), kH264CodecName)) {
-      const rtc::Optional<webrtc::H264::ProfileLevelId> profile_level_id =
+      const absl::optional<webrtc::H264::ProfileLevelId> profile_level_id =
           webrtc::H264::ParseSdpProfileLevelId(engine_codec.params);
       if (profile_level_id->profile !=
           webrtc::H264::kProfileConstrainedBaseline) {
@@ -5320,7 +5320,7 @@ TEST_F(WebRtcVideoChannelTest, SetRtpSendParametersPriorityOneStream) {
   // Check that the vector of VideoStreams also was propagated correctly. Note
   // that this is testing the behavior of the FakeVideoSendStream, which mimics
   // the calls to CreateEncoderStreams to get the VideoStreams.
-  EXPECT_EQ(rtc::Optional<double>(new_bitrate_priority),
+  EXPECT_EQ(absl::optional<double>(new_bitrate_priority),
             video_send_stream->GetVideoStreams()[0].bitrate_priority);
 }
 
@@ -5381,13 +5381,13 @@ TEST_F(WebRtcVideoChannelTest, SetRtpSendParametersPrioritySimulcastStreams) {
   // these are created appropriately for the simulcast case.
   EXPECT_EQ(rtc::checked_cast<size_t>(kNumSimulcastStreams),
             video_send_stream->GetVideoStreams().size());
-  EXPECT_EQ(rtc::Optional<double>(new_bitrate_priority),
+  EXPECT_EQ(absl::optional<double>(new_bitrate_priority),
             video_send_stream->GetVideoStreams()[0].bitrate_priority);
   // Since we are only setting bitrate priority per-sender, the other
   // VideoStreams should have a bitrate priority of 0.
-  EXPECT_EQ(rtc::nullopt,
+  EXPECT_EQ(absl::nullopt,
             video_send_stream->GetVideoStreams()[1].bitrate_priority);
-  EXPECT_EQ(rtc::nullopt,
+  EXPECT_EQ(absl::nullopt,
             video_send_stream->GetVideoStreams()[2].bitrate_priority);
   EXPECT_TRUE(channel_->SetVideoSend(primary_ssrc, nullptr, nullptr));
 }

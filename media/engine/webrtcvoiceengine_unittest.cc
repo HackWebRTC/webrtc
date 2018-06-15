@@ -386,11 +386,12 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_EQ(expected_bitrate, spec->target_bitrate_bps);
   }
 
-  rtc::Optional<int> GetCodecBitrate(int32_t ssrc) {
+  absl::optional<int> GetCodecBitrate(int32_t ssrc) {
     return GetSendStreamConfig(ssrc).send_codec_spec->target_bitrate_bps;
   }
 
-  const rtc::Optional<std::string>& GetAudioNetworkAdaptorConfig(int32_t ssrc) {
+  const absl::optional<std::string>& GetAudioNetworkAdaptorConfig(
+      int32_t ssrc) {
     return GetSendStreamConfig(ssrc).audio_network_adaptor_config;
   }
 
@@ -1092,7 +1093,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetRtpParametersEncodingsActive) {
   // Now change it back to active and verify we resume sending.
   // This should occur even when other parameters are updated.
   parameters.encodings[0].active = true;
-  parameters.encodings[0].max_bitrate_bps = rtc::Optional<int>(6000);
+  parameters.encodings[0].max_bitrate_bps = absl::optional<int>(6000);
   EXPECT_TRUE(channel_->SetRtpSendParameters(kSsrcX, parameters).ok());
   EXPECT_TRUE(GetSendStream(kSsrcX).IsSending());
 }
@@ -1344,7 +1345,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecs) {
   EXPECT_EQ(22000, send_codec_spec.target_bitrate_bps);
   EXPECT_STRCASEEQ("ISAC", send_codec_spec.format.name.c_str());
   EXPECT_NE(send_codec_spec.format.clockrate_hz, 8000);
-  EXPECT_EQ(rtc::nullopt, send_codec_spec.cng_payload_type);
+  EXPECT_EQ(absl::nullopt, send_codec_spec.cng_payload_type);
   EXPECT_FALSE(channel_->CanInsertDtmf());
 }
 
@@ -1943,7 +1944,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsCNNoMatch) {
   {
     const auto& send_codec_spec = *GetSendStreamConfig(kSsrcX).send_codec_spec;
     EXPECT_STRCASEEQ("PCMU", send_codec_spec.format.name.c_str());
-    EXPECT_EQ(rtc::nullopt, send_codec_spec.cng_payload_type);
+    EXPECT_EQ(absl::nullopt, send_codec_spec.cng_payload_type);
   }
   // Set PCMU(8K) and CN(8K). VAD should be activated.
   parameters.codecs[1] = kCn8000Codec;
@@ -1960,7 +1961,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsCNNoMatch) {
   {
     const auto& send_codec_spec = *GetSendStreamConfig(kSsrcX).send_codec_spec;
     EXPECT_STRCASEEQ("ISAC", send_codec_spec.format.name.c_str());
-    EXPECT_EQ(rtc::nullopt, send_codec_spec.cng_payload_type);
+    EXPECT_EQ(absl::nullopt, send_codec_spec.cng_payload_type);
   }
 }
 
@@ -2155,7 +2156,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecsWithMultipleSendStreams) {
     const auto& send_codec_spec =
         *call_.GetAudioSendStream(ssrc)->GetConfig().send_codec_spec;
     EXPECT_STRCASEEQ("PCMU", send_codec_spec.format.name.c_str());
-    EXPECT_EQ(rtc::nullopt, send_codec_spec.cng_payload_type);
+    EXPECT_EQ(absl::nullopt, send_codec_spec.cng_payload_type);
   }
 }
 
@@ -2322,7 +2323,7 @@ TEST_F(WebRtcVoiceEngineTestFake, AudioSendResetAudioNetworkAdaptor) {
   cricket::AudioOptions options;
   options.audio_network_adaptor = false;
   SetAudioSend(kSsrcX, true, nullptr, &options);
-  EXPECT_EQ(rtc::nullopt, GetAudioNetworkAdaptorConfig(kSsrcX));
+  EXPECT_EQ(absl::nullopt, GetAudioNetworkAdaptorConfig(kSsrcX));
 }
 
 TEST_F(WebRtcVoiceEngineTestFake, AudioNetworkAdaptorNotGetOverridden) {
@@ -2334,7 +2335,7 @@ TEST_F(WebRtcVoiceEngineTestFake, AudioNetworkAdaptorNotGetOverridden) {
             GetAudioNetworkAdaptorConfig(kSsrcX));
   const int initial_num = call_.GetNumCreatedSendStreams();
   cricket::AudioOptions options;
-  options.audio_network_adaptor = rtc::nullopt;
+  options.audio_network_adaptor = absl::nullopt;
   // Unvalued |options.audio_network_adaptor|.should not reset audio network
   // adaptor.
   SetAudioSend(kSsrcX, true, nullptr, &options);

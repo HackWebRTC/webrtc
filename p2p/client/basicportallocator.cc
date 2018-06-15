@@ -456,7 +456,7 @@ void BasicPortAllocatorSession::Regather(
 }
 
 void BasicPortAllocatorSession::SetStunKeepaliveIntervalForReadyPorts(
-    const rtc::Optional<int>& stun_keepalive_interval) {
+    const absl::optional<int>& stun_keepalive_interval) {
   auto ports = ReadyPorts();
   for (PortInterface* port : ports) {
     // The port type and protocol can be used to identify different subclasses

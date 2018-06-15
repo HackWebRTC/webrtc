@@ -250,7 +250,7 @@ class PortAllocatorSession : public sigslot::has_slots<> {
   // The default value of the interval in implementation is restored if a null
   // optional value is passed.
   virtual void SetStunKeepaliveIntervalForReadyPorts(
-      const rtc::Optional<int>& stun_keepalive_interval) {}
+      const absl::optional<int>& stun_keepalive_interval) {}
   // Another way of getting the information provided by the signals below.
   //
   // Ports and candidates are not guaranteed to be in the same order as the
@@ -353,8 +353,8 @@ class PortAllocator : public sigslot::has_slots<> {
                         int candidate_pool_size,
                         bool prune_turn_ports,
                         webrtc::TurnCustomizer* turn_customizer = nullptr,
-                        const rtc::Optional<int>&
-                            stun_candidate_keepalive_interval = rtc::nullopt);
+                        const absl::optional<int>&
+                            stun_candidate_keepalive_interval = absl::nullopt);
 
   const ServerAddresses& stun_servers() const {
     CheckRunOnValidThreadIfInitialized();
@@ -371,7 +371,7 @@ class PortAllocator : public sigslot::has_slots<> {
     return candidate_pool_size_;
   }
 
-  const rtc::Optional<int>& stun_candidate_keepalive_interval() const {
+  const absl::optional<int>& stun_candidate_keepalive_interval() const {
     CheckRunOnValidThreadIfInitialized();
     return stun_candidate_keepalive_interval_;
   }
@@ -607,7 +607,7 @@ class PortAllocator : public sigslot::has_slots<> {
   // all TurnPort(s) created.
   webrtc::TurnCustomizer* turn_customizer_ = nullptr;
 
-  rtc::Optional<int> stun_candidate_keepalive_interval_;
+  absl::optional<int> stun_candidate_keepalive_interval_;
 };
 
 }  // namespace cricket

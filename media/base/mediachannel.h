@@ -17,9 +17,9 @@
 #include <utility>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "api/audio_codecs/audio_encoder.h"
 #include "api/audio_options.h"
-#include "api/optional.h"
 #include "api/rtcerror.h"
 #include "api/rtpparameters.h"
 #include "api/rtpreceiverinterface.h"
@@ -62,7 +62,8 @@ struct VideoFormat;
 const int kScreencastDefaultFps = 5;
 
 template <class T>
-static std::string ToStringIfSet(const char* key, const rtc::Optional<T>& val) {
+static std::string ToStringIfSet(const char* key,
+                                 const absl::optional<T>& val) {
   std::string str;
   if (val) {
     str = key;
@@ -122,20 +123,20 @@ struct VideoOptions {
   // Enable denoising? This flag comes from the getUserMedia
   // constraint 'googNoiseReduction', and WebRtcVideoEngine passes it
   // on to the codec options. Disabled by default.
-  rtc::Optional<bool> video_noise_reduction;
+  absl::optional<bool> video_noise_reduction;
   // Force screencast to use a minimum bitrate. This flag comes from
   // the PeerConnection constraint 'googScreencastMinBitrate'. It is
   // copied to the encoder config by WebRtcVideoChannel.
-  rtc::Optional<int> screencast_min_bitrate_kbps;
+  absl::optional<int> screencast_min_bitrate_kbps;
   // Set by screencast sources. Implies selection of encoding settings
   // suitable for screencast. Most likely not the right way to do
   // things, e.g., screencast of a text document and screencast of a
   // youtube video have different needs.
-  rtc::Optional<bool> is_screencast;
+  absl::optional<bool> is_screencast;
 
  private:
   template <typename T>
-  static void SetFrom(rtc::Optional<T>* s, const rtc::Optional<T>& o) {
+  static void SetFrom(absl::optional<T>* s, const absl::optional<T>& o) {
     if (o) {
       *s = o;
     }
@@ -328,7 +329,7 @@ struct MediaSenderInfo {
   float fraction_lost = 0.0f;
   int64_t rtt_ms = 0;
   std::string codec_name;
-  rtc::Optional<int> codec_payload_type;
+  absl::optional<int> codec_payload_type;
   std::vector<SsrcSenderInfo> local_stats;
   std::vector<SsrcReceiverInfo> remote_stats;
 };
@@ -374,7 +375,7 @@ struct MediaReceiverInfo {
   int packets_lost = 0;
   float fraction_lost = 0.0f;
   std::string codec_name;
-  rtc::Optional<int> codec_payload_type;
+  absl::optional<int> codec_payload_type;
   std::vector<SsrcReceiverInfo> local_stats;
   std::vector<SsrcSenderInfo> remote_stats;
 };
@@ -468,7 +469,7 @@ struct VideoSenderInfo : public MediaSenderInfo {
   int encode_usage_percent = 0;
   uint32_t frames_encoded = 0;
   bool has_entered_low_resolution = false;
-  rtc::Optional<uint64_t> qp_sum;
+  absl::optional<uint64_t> qp_sum;
   webrtc::VideoContentType content_type = webrtc::VideoContentType::UNSPECIFIED;
   // https://w3c.github.io/webrtc-stats/#dom-rtcvideosenderstats-hugeframessent
   uint32_t huge_frames_sent = 0;
@@ -496,7 +497,7 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
   uint32_t frames_received = 0;
   uint32_t frames_decoded = 0;
   uint32_t frames_rendered = 0;
-  rtc::Optional<uint64_t> qp_sum;
+  absl::optional<uint64_t> qp_sum;
   int64_t interframe_delay_max_ms = -1;
 
   webrtc::VideoContentType content_type = webrtc::VideoContentType::UNSPECIFIED;
@@ -526,7 +527,7 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
 
   // Timing frame info: all important timestamps for a full lifetime of a
   // single 'timing frame'.
-  rtc::Optional<webrtc::TimingFrameInfo> timing_frame_info;
+  absl::optional<webrtc::TimingFrameInfo> timing_frame_info;
 };
 
 struct DataSenderInfo : public MediaSenderInfo {
