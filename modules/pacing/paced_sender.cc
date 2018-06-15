@@ -63,6 +63,8 @@ PacedSender::PacedSender(const Clock* clock,
     : clock_(clock),
       packet_sender_(packet_sender),
       alr_detector_(rtc::MakeUnique<AlrDetector>(event_log)),
+      send_padding_if_silent_(
+          field_trial::IsEnabled("WebRTC-Pacer-PadInSilence")),
       paused_(false),
       media_budget_(rtc::MakeUnique<IntervalBudget>(0)),
       padding_budget_(rtc::MakeUnique<IntervalBudget>(0)),
@@ -263,11 +265,9 @@ void PacedSender::Process() {
                         << kMaxElapsedTimeMs << " ms";
     elapsed_time_ms = kMaxElapsedTimeMs;
   }
-  // When congested we send a padding packet every 500 ms to ensure we won't get
-  // stuck in the congested state due to no feedback being received.
-  // TODO(srte): Stop sending packet in paused state when pause is no longer
-  // used for congestion windows.
-  if (paused_ || Congested()) {
+  if (send_padding_if_silent_ || paused_ || Congested()) {
+    // We send a padding packet every 500 ms to ensure we won't get stuck in
+    // congested state due to no feedback being received.
     int64_t elapsed_since_last_send_us = now_us - last_send_time_us_;
     if (elapsed_since_last_send_us >= kCongestedPacketIntervalMs * 1000) {
       // We can not send padding unless a normal packet has first been sent. If
@@ -277,13 +277,13 @@ void PacedSender::Process() {
         size_t bytes_sent = SendPadding(1, pacing_info);
         alr_detector_->OnBytesSent(bytes_sent, elapsed_time_ms);
       }
-      last_send_time_us_ = clock_->TimeInMicroseconds();
     }
-    return;
   }
+  if (paused_)
+    return;
 
-  int target_bitrate_kbps = pacing_bitrate_kbps_;
   if (elapsed_time_ms > 0) {
+    int target_bitrate_kbps = pacing_bitrate_kbps_;
     size_t queue_size_bytes = packets_->SizeInBytes();
     if (queue_size_bytes > 0) {
       // Assuming equal size packets and input/output rate, the average packet
@@ -302,8 +302,6 @@ void PacedSender::Process() {
     UpdateBudgetWithElapsedTime(elapsed_time_ms);
   }
 
-  last_send_time_us_ = clock_->TimeInMicroseconds();
-
   bool is_probing = prober_->IsProbing();
   PacedPacketInfo pacing_info;
   size_t bytes_sent = 0;
@@ -314,7 +312,7 @@ void PacedSender::Process() {
   }
   // The paused state is checked in the loop since SendPacket leaves the
   // critical section allowing the paused state to be changed from other code.
-  while (!packets_->Empty() && !paused_ && !Congested()) {
+  while (!packets_->Empty() && !paused_) {
     // Since we need to release the lock in order to send, we first pop the
     // element from the priority queue but keep it in storage, so that we can
     // reinsert it if send fails.
@@ -362,8 +360,9 @@ void PacedSender::ProcessThreadAttached(ProcessThread* process_thread) {
 bool PacedSender::SendPacket(const PacketQueueInterface::Packet& packet,
                              const PacedPacketInfo& pacing_info) {
   RTC_DCHECK(!paused_);
-  if (media_budget_->bytes_remaining() == 0 &&
-      pacing_info.probe_cluster_id == PacedPacketInfo::kNotAProbe) {
+  if (Congested() ||
+      (media_budget_->bytes_remaining() == 0 &&
+       pacing_info.probe_cluster_id == PacedPacketInfo::kNotAProbe)) {
     return false;
   }
 
@@ -383,6 +382,7 @@ bool PacedSender::SendPacket(const PacketQueueInterface::Packet& packet,
       // and we probably don't want to update the budget in such cases.
       // https://bugs.chromium.org/p/webrtc/issues/detail?id=8052
       UpdateBudgetWithBytesSent(packet.bytes);
+      last_send_time_us_ = clock_->TimeInMicroseconds();
     }
   }
 
@@ -400,6 +400,7 @@ size_t PacedSender::SendPadding(size_t padding_needed,
   if (bytes_sent > 0) {
     UpdateBudgetWithBytesSent(bytes_sent);
   }
+  last_send_time_us_ = clock_->TimeInMicroseconds();
   return bytes_sent;
 }
 

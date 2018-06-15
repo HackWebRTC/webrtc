@@ -141,6 +141,64 @@ class PacedSenderTest : public testing::TestWithParam<std::string> {
   std::unique_ptr<PacedSender> send_bucket_;
 };
 
+class PacedSenderFieldTrialTest : public testing::Test {
+ protected:
+  struct MediaStream {
+    const RtpPacketSender::Priority priority;
+    const uint32_t ssrc;
+    const size_t packet_size;
+    uint16_t seq_num;
+  };
+
+  const int kProcessIntervalsPerSecond = 1000 / 5;
+
+  PacedSenderFieldTrialTest() : clock_(123456) {}
+  void InsertPacket(PacedSender* pacer, MediaStream* stream) {
+    pacer->InsertPacket(stream->priority, stream->ssrc, stream->seq_num++,
+                        clock_.TimeInMilliseconds(), stream->packet_size,
+                        false);
+  }
+  void ProcessNext(PacedSender* pacer) {
+    clock_.AdvanceTimeMilliseconds(5);
+    pacer->Process();
+  }
+  MediaStream audio{/*priority*/ PacedSender::kHighPriority,
+                    /*ssrc*/ 3333, /*packet_size*/ 100, /*seq_num*/ 1000};
+  MediaStream video{/*priority*/ PacedSender::kNormalPriority,
+                    /*ssrc*/ 4444, /*packet_size*/ 1000, /*seq_num*/ 1000};
+  SimulatedClock clock_;
+  MockPacedSenderCallback callback_;
+};
+
+TEST_F(PacedSenderFieldTrialTest, DefaultNoPaddingInSilence) {
+  PacedSender pacer(&clock_, &callback_, nullptr);
+  pacer.SetPacingRates(kTargetBitrateBps, 0);
+  // Video packet to reset last send time and provide padding data.
+  InsertPacket(&pacer, &video);
+  EXPECT_CALL(callback_, TimeToSendPacket).WillOnce(Return(true));
+  clock_.AdvanceTimeMilliseconds(5);
+  pacer.Process();
+  EXPECT_CALL(callback_, TimeToSendPadding).Times(0);
+  // Waiting 500 ms should not trigger sending of padding.
+  clock_.AdvanceTimeMilliseconds(500);
+  pacer.Process();
+}
+
+TEST_F(PacedSenderFieldTrialTest, PaddingInSilenceWithTrial) {
+  ScopedFieldTrials trial("WebRTC-Pacer-PadInSilence/Enabled/");
+  PacedSender pacer(&clock_, &callback_, nullptr);
+  pacer.SetPacingRates(kTargetBitrateBps, 0);
+  // Video packet to reset last send time and provide padding data.
+  InsertPacket(&pacer, &video);
+  EXPECT_CALL(callback_, TimeToSendPacket).WillOnce(Return(true));
+  clock_.AdvanceTimeMilliseconds(5);
+  pacer.Process();
+  EXPECT_CALL(callback_, TimeToSendPadding).WillOnce(Return(1000));
+  // Waiting 500 ms should trigger sending of padding.
+  clock_.AdvanceTimeMilliseconds(500);
+  pacer.Process();
+}
+
 TEST_F(PacedSenderTest, FirstSentPacketTimeIsSet) {
   uint16_t sequence_number = 1234;
   const uint32_t kSsrc = 12345;
