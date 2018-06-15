@@ -31,7 +31,6 @@
 #include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/random.h"
 #include "rtc_base/sequenced_task_checker.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread.h"
@@ -283,10 +282,6 @@ class MediaCodecVideoEncoder : public VideoEncoder {
   int frames_received_since_last_key_;
   VideoCodecMode codec_mode_;
 
-  // RTP state.
-  uint16_t picture_id_;
-  uint8_t tl0_pic_idx_;
-
   bool sw_fallback_required_;
 
   // All other member variables should be before WeakPtrFactory. Valid only from
@@ -314,10 +309,6 @@ MediaCodecVideoEncoder::MediaCodecVideoEncoder(JNIEnv* jni,
       egl_context_(egl_context),
       sw_fallback_required_(false) {
   encoder_queue_checker_.Detach();
-
-  Random random(rtc::TimeMicros());
-  picture_id_ = random.Rand<uint16_t>() & 0x7FFF;
-  tl0_pic_idx_ = random.Rand<uint8_t>();
 }
 
 int32_t MediaCodecVideoEncoder::InitEncode(const VideoCodec* codec_settings,
@@ -1011,22 +1002,18 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
       memset(&info, 0, sizeof(info));
       info.codecType = codec_type;
       if (codec_type == kVideoCodecVP8) {
-        info.codecSpecific.VP8.pictureId = picture_id_;
         info.codecSpecific.VP8.nonReference = false;
         info.codecSpecific.VP8.simulcastIdx = 0;
         info.codecSpecific.VP8.temporalIdx = kNoTemporalIdx;
         info.codecSpecific.VP8.layerSync = false;
-        info.codecSpecific.VP8.tl0PicIdx = kNoTl0PicIdx;
         info.codecSpecific.VP8.keyIdx = kNoKeyIdx;
       } else if (codec_type == kVideoCodecVP9) {
         if (key_frame) {
           gof_idx_ = 0;
         }
-        info.codecSpecific.VP9.picture_id = picture_id_;
         info.codecSpecific.VP9.inter_pic_predicted = key_frame ? false : true;
         info.codecSpecific.VP9.flexible_mode = false;
         info.codecSpecific.VP9.ss_data_available = key_frame ? true : false;
-        info.codecSpecific.VP9.tl0_pic_idx = tl0_pic_idx_++;
         info.codecSpecific.VP9.temporal_idx = kNoTemporalIdx;
         info.codecSpecific.VP9.spatial_idx = kNoSpatialIdx;
         info.codecSpecific.VP9.temporal_up_switch = true;
@@ -1044,7 +1031,6 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
           info.codecSpecific.VP9.gof.CopyGofInfoVP9(gof_);
         }
       }
-      picture_id_ = (picture_id_ + 1) & 0x7FFF;
 
       // Generate a header describing a single fragment.
       RTPFragmentationHeader header;

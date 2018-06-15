@@ -106,10 +106,6 @@ class VideoEncoderWrapper : public VideoEncoder {
   VideoCodec codec_settings_;
   H264BitstreamParser h264_bitstream_parser_;
 
-  // RTP state.
-  uint16_t picture_id_;
-  uint8_t tl0_pic_idx_;
-
   // VP9 variables to populate codec specific structure.
   GofInfoVP9 gof_;  // Contains each frame's temporal information for
                     // non-flexible VP9 mode.
