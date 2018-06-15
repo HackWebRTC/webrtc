@@ -63,7 +63,7 @@ NetworkControllerTester::NetworkControllerTester(
     NetworkControllerConfig initial_config)
     : current_time_(Timestamp::seconds(100000)),
       packet_sequence_number_(1),
-      accumulated_buffer_(DataSize::Zero()) {
+      accumulated_buffer_(TimeDelta::Zero()) {
   initial_config.constraints.at_time = current_time_;
   controller_ = factory->Create(initial_config);
   process_interval_ = factory->GetProcessInterval();
@@ -79,6 +79,7 @@ void NetworkControllerTester::RunSimulation(TimeDelta duration,
                                             DataRate actual_bandwidth,
                                             TimeDelta propagation_delay,
                                             PacketProducer next_packet) {
+  RTC_CHECK(actual_bandwidth.bps() > 0);
   Timestamp start_time = current_time_;
   Timestamp last_process_time = current_time_;
   while (current_time_ - start_time < duration) {
@@ -100,9 +101,9 @@ void NetworkControllerTester::RunSimulation(TimeDelta duration,
         sent_packet.data_in_flight += packet.sent_packet->size;
       Update(&state_, controller_->OnSentPacket(sent_packet));
 
-      accumulated_buffer_ += sent_packet.size;
-      TimeDelta buffer_delay = accumulated_buffer_ / actual_bandwidth;
-      TimeDelta total_delay = propagation_delay + buffer_delay;
+      TimeDelta time_in_flight = sent_packet.size / actual_bandwidth;
+      accumulated_buffer_ += time_in_flight;
+      TimeDelta total_delay = propagation_delay + accumulated_buffer_;
       PacketResult result;
       result.sent_packet = sent_packet;
       result.receive_time = sent_packet.send_time + total_delay;
@@ -110,8 +111,7 @@ void NetworkControllerTester::RunSimulation(TimeDelta duration,
       outstanding_packets_.push_back(result);
     }
 
-    DataSize buffer_consumed =
-        std::min(accumulated_buffer_, packet_interval * actual_bandwidth);
+    TimeDelta buffer_consumed = std::min(accumulated_buffer_, packet_interval);
     accumulated_buffer_ -= buffer_consumed;
 
     if (outstanding_packets_.size() >= 2 &&

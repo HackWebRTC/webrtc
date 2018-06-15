@@ -63,7 +63,7 @@ class NetworkControllerTester {
   TimeDelta process_interval_ = TimeDelta::PlusInfinity();
   Timestamp current_time_;
   int64_t packet_sequence_number_;
-  DataSize accumulated_buffer_;
+  TimeDelta accumulated_buffer_;
   std::deque<PacketResult> outstanding_packets_;
   NetworkControlUpdate state_;
 };
