@@ -12,7 +12,6 @@
 
 #include <algorithm>
 #include <limits>
-#include <sstream>
 #include <utility>
 
 #include "common_video/h264/h264_common.h"
@@ -349,17 +348,13 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
       if (is_h264) {
         // Warn if this is an unsafe frame.
         if (has_h264_idr && (!has_h264_sps || !has_h264_pps)) {
-          std::stringstream ss;
-          ss << "Received H.264-IDR frame "
-             << "(SPS: " << has_h264_sps << ", PPS: " << has_h264_pps << "). ";
-          if (sps_pps_idr_is_h264_keyframe_) {
-            ss << "Treating as delta frame since "
-                  "WebRTC-SpsPpsIdrIsH264Keyframe is enabled.";
-          } else {
-            ss << "Treating as key frame since "
-                  "WebRTC-SpsPpsIdrIsH264Keyframe is disabled.";
-          }
-          RTC_LOG(LS_WARNING) << ss.str();
+          RTC_LOG(LS_WARNING)
+              << "Received H.264-IDR frame "
+              << "(SPS: " << has_h264_sps << ", PPS: " << has_h264_pps
+              << "). Treating as "
+              << (sps_pps_idr_is_h264_keyframe_ ? "delta" : "key")
+              << " frame since WebRTC-SpsPpsIdrIsH264Keyframe is "
+              << (sps_pps_idr_is_h264_keyframe_ ? "enabled." : "disabled");
         }
 
         // Now that we have decided whether to treat this frame as a key frame
