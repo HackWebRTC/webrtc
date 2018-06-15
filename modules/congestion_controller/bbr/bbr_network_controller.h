@@ -32,7 +32,6 @@
 namespace webrtc {
 namespace bbr {
 
-typedef int64_t BbrPacketCount;
 typedef int64_t BbrRoundTripCount;
 
 // BbrSender implements BBR congestion control algorithm.  BBR aims to estimate
@@ -269,6 +268,9 @@ class BbrNetworkController : public NetworkControllerInterface {
   // The initial value of the |congestion_window_|.
   DataSize initial_congestion_window_;
 
+  // The smallest value the |congestion_window_| can achieve.
+  DataSize min_congestion_window_;
+
   // The largest value the |congestion_window_| can achieve.
   DataSize max_congestion_window_;
 
@@ -300,6 +302,9 @@ class BbrNetworkController : public NetworkControllerInterface {
   // The bandwidth compared to which the increase is measured.
   DataRate bandwidth_at_last_round_;
 
+  // Set to true upon exiting quiescence.
+  bool exiting_quiescence_;
+
   // Time at which PROBE_RTT has to be exited.  Setting it to zero indicates
   // that the time is yet unknown as the number of packets in flight has not
   // reached the required value.
@@ -314,7 +319,7 @@ class BbrNetworkController : public NetworkControllerInterface {
   // Current state of recovery.
   RecoveryState recovery_state_;
   // Receiving acknowledgement of a packet after |end_recovery_at_| will cause
-  // BBR to exit the recovery mode.  An unset value indicates at least one
+  // BBR to exit the recovery mode.  A set value indicates at least one
   // loss has been detected, so it must not be reset.
   rtc::Optional<int64_t> end_recovery_at_;
   // A window used to limit the number of bytes in flight during loss recovery.

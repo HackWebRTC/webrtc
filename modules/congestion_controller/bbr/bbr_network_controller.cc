@@ -42,9 +42,6 @@ const DataSize kMaxPacketSize = DataSize::bytes(1452);
 const DataSize kDefaultTCPMSS = DataSize::bytes(1460);
 // Constants based on TCP defaults.
 const DataSize kMaxSegmentSize = kDefaultTCPMSS;
-// The minimum CWND to ensure delayed acks don't reduce bandwidth measurements.
-// Does not inflate the pacing rate.
-const DataSize kMinimumCongestionWindow = DataSize::bytes(1000);
 
 // The gain used for the slow start, equal to 2/ln(2).
 const double kHighGain = 2.885f;
@@ -72,16 +69,14 @@ const double kStartupGrowthTarget = 1.25;
 // we don't need to enter PROBE_RTT.
 const double kSimilarMinRttThreshold = 1.125;
 
-constexpr int64_t kInitialRttMs = 200;
 constexpr int64_t kInitialBandwidthKbps = 300;
 
-constexpr int64_t kMaxRttMs = 1000;
-constexpr int64_t kMaxBandwidthKbps = 5000;
+const int64_t kInitialCongestionWindowPackets = 32;
+// The minimum CWND to ensure delayed acks don't reduce bandwidth measurements.
+// Does not inflate the pacing rate.
+const int64_t kDefaultMinCongestionWindowPackets = 4;
+const int64_t kDefaultMaxCongestionWindowPackets = 2000;
 
-constexpr int64_t kInitialCongestionWindowBytes =
-    (kInitialRttMs * kInitialBandwidthKbps) / 8;
-constexpr int64_t kDefaultMaxCongestionWindowBytes =
-    (kMaxRttMs * kMaxBandwidthKbps) / 8;
 }  // namespace
 
 BbrNetworkController::BbrControllerConfig
@@ -179,10 +174,13 @@ BbrNetworkController::BbrNetworkController(NetworkControllerConfig config)
       min_rtt_(TimeDelta::Zero()),
       last_rtt_(TimeDelta::Zero()),
       min_rtt_timestamp_(Timestamp::ms(0)),
-      congestion_window_(DataSize::bytes(kInitialCongestionWindowBytes)),
-      initial_congestion_window_(
-          DataSize::bytes(kInitialCongestionWindowBytes)),
-      max_congestion_window_(DataSize::bytes(kDefaultMaxCongestionWindowBytes)),
+      congestion_window_(kInitialCongestionWindowPackets * kDefaultTCPMSS),
+      initial_congestion_window_(kInitialCongestionWindowPackets *
+                                 kDefaultTCPMSS),
+      min_congestion_window_(kDefaultMinCongestionWindowPackets *
+                             kDefaultTCPMSS),
+      max_congestion_window_(kDefaultMaxCongestionWindowPackets *
+                             kDefaultTCPMSS),
       pacing_rate_(DataRate::Zero()),
       pacing_gain_(1),
       congestion_window_gain_constant_(kProbeBWCongestionWindowGain),
@@ -192,6 +190,7 @@ BbrNetworkController::BbrNetworkController(NetworkControllerConfig config)
       is_at_full_bandwidth_(false),
       rounds_without_bandwidth_gain_(0),
       bandwidth_at_last_round_(DataRate::Zero()),
+      exiting_quiescence_(false),
       exit_probe_rtt_at_(),
       probe_rtt_round_passed_(false),
       last_sample_is_app_limited_(false),
@@ -206,12 +205,6 @@ BbrNetworkController::BbrNetworkController(NetworkControllerConfig config)
     default_bandwidth_ = config.starting_bandwidth;
   constraints_ = config.constraints;
   Reset();
-  if (config_.num_startup_rtts > 0) {
-    EnterStartupMode();
-  } else {
-    is_at_full_bandwidth_ = true;
-    EnterProbeBandwidthMode(constraints_->at_time);
-  }
 }
 
 BbrNetworkController::~BbrNetworkController() {}
@@ -219,8 +212,13 @@ BbrNetworkController::~BbrNetworkController() {}
 void BbrNetworkController::Reset() {
   round_trip_count_ = 0;
   rounds_without_bandwidth_gain_ = 0;
-  is_at_full_bandwidth_ = false;
-  EnterStartupMode();
+  if (config_.num_startup_rtts > 0) {
+    is_at_full_bandwidth_ = false;
+    EnterStartupMode();
+  } else {
+    is_at_full_bandwidth_ = true;
+    EnterProbeBandwidthMode(constraints_->at_time);
+  }
 }
 
 NetworkControlUpdate BbrNetworkController::CreateRateUpdate(Timestamp at_time) {
@@ -322,6 +320,10 @@ bool BbrNetworkController::InSlowStart() const {
 
 NetworkControlUpdate BbrNetworkController::OnSentPacket(SentPacket msg) {
   last_sent_packet_ = msg.sequence_number;
+
+  if (msg.data_in_flight.IsZero() && sampler_->is_app_limited()) {
+    exiting_quiescence_ = true;
+  }
 
   if (!aggregation_epoch_start_time_) {
     aggregation_epoch_start_time_ = msg.send_time;
@@ -493,14 +495,14 @@ DataSize BbrNetworkController::GetTargetCongestionWindow(double gain) const {
     congestion_window = gain * initial_congestion_window_;
   }
 
-  return std::max(congestion_window, kMinimumCongestionWindow);
+  return std::max(congestion_window, min_congestion_window_);
 }
 
 DataSize BbrNetworkController::ProbeRttCongestionWindow() const {
   if (config_.probe_rtt_based_on_bdp) {
     return GetTargetCongestionWindow(config_.probe_rtt_congestion_window_gain);
   }
-  return kMinimumCongestionWindow;
+  return min_congestion_window_;
 }
 
 void BbrNetworkController::EnterStartupMode() {
@@ -689,7 +691,7 @@ void BbrNetworkController::MaybeEnterOrExitProbeRtt(
     const TransportPacketsFeedback& msg,
     bool is_round_start,
     bool min_rtt_expired) {
-  if (min_rtt_expired && mode_ != PROBE_RTT) {
+  if (min_rtt_expired && !exiting_quiescence_ && mode_ != PROBE_RTT) {
     mode_ = PROBE_RTT;
     pacing_gain_ = 1;
     // Do not decide on the time to exit PROBE_RTT until the |bytes_in_flight|
@@ -723,6 +725,8 @@ void BbrNetworkController::MaybeEnterOrExitProbeRtt(
       }
     }
   }
+
+  exiting_quiescence_ = false;
 }
 
 void BbrNetworkController::UpdateRecoveryState(int64_t last_acked_packet,
@@ -758,8 +762,8 @@ void BbrNetworkController::UpdateRecoveryState(int64_t last_acked_packet,
       RTC_FALLTHROUGH();
     case GROWTH:
       // Exit recovery if appropriate.
-      if (!has_losses && end_recovery_at_ &&
-          last_acked_packet > *end_recovery_at_) {
+      if (!has_losses &&
+          (!end_recovery_at_ || last_acked_packet > *end_recovery_at_)) {
         recovery_state_ = NOT_IN_RECOVERY;
       }
 
@@ -865,7 +869,7 @@ void BbrNetworkController::CalculateCongestionWindow(DataSize bytes_acked) {
   }
 
   // Enforce the limits on the congestion window.
-  congestion_window_ = std::max(congestion_window_, kMinimumCongestionWindow);
+  congestion_window_ = std::max(congestion_window_, min_congestion_window_);
   congestion_window_ = std::min(congestion_window_, max_congestion_window_);
 }
 
@@ -884,7 +888,7 @@ void BbrNetworkController::CalculateRecoveryWindow(DataSize bytes_acked,
   // Set up the initial recovery window.
   if (recovery_window_.IsZero()) {
     recovery_window_ = bytes_in_flight + bytes_acked;
-    recovery_window_ = std::max(kMinimumCongestionWindow, recovery_window_);
+    recovery_window_ = std::max(min_congestion_window_, recovery_window_);
     return;
   }
 
@@ -906,7 +910,7 @@ void BbrNetworkController::CalculateRecoveryWindow(DataSize bytes_acked,
   // Sanity checks.  Ensure that we always allow to send at least
   // |bytes_acked| in response.
   recovery_window_ = std::max(recovery_window_, bytes_in_flight + bytes_acked);
-  recovery_window_ = std::max(kMinimumCongestionWindow, recovery_window_);
+  recovery_window_ = std::max(min_congestion_window_, recovery_window_);
 }
 
 void BbrNetworkController::OnApplicationLimited(DataSize bytes_in_flight) {
