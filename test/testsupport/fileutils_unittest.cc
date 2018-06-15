@@ -19,7 +19,6 @@
 
 #include "api/optional.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/pathutils.h"
 #include "test/gtest.h"
 
 #ifdef WIN32
