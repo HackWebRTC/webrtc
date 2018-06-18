@@ -368,6 +368,7 @@ rtc_source_set("rtc_base_approved_generic") {
   data_deps = []
   deps = [
     ":atomicops",
+    ":base64",
     ":checks",
     ":criticalsection",
     ":logging",
@@ -389,8 +390,6 @@ rtc_source_set("rtc_base_approved_generic") {
   ]
 
   sources = [
-    "base64.cc",
-    "base64.h",
     "bind.h",
     "bitbuffer.cc",
     "bitbuffer.h",
@@ -488,6 +487,18 @@ if (is_mac && !build_with_chromium) {
       ":logging",
     ]
   }
+}
+
+rtc_source_set("base64") {
+  visibility = [ "*" ]
+  sources = [
+    "base64.cc",
+    "base64.h",
+  ]
+
+  deps = [
+    ":checks",
+  ]
 }
 
 rtc_source_set("rtc_task_queue") {
@@ -712,6 +723,7 @@ rtc_static_library("rtc_base_generic") {
   libs = []
   defines = []
   deps = [
+    ":base64",
     ":checks",
     ":stringutils",
     "..:webrtc_common",
@@ -1152,6 +1164,7 @@ if (rtc_include_tests) {
       sources += [ "win/windows_version_unittest.cc" ]
     }
     deps = [
+      ":base64",
       ":checks",
       ":rate_limiter",
       ":rtc_base",

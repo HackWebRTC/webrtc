@@ -170,6 +170,7 @@ rtc_static_library("video_coding") {
     "../../api/video:video_frame_i420",
     "../../api/video_codecs:video_codecs_api",
     "../../common_video",
+    "../../rtc_base:base64",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base",
     "../../rtc_base:rtc_base_approved",

@@ -227,6 +227,7 @@ rtc_static_library("rtc_audio_video") {
     "../modules/video_coding:video_codec_interface",
     "../modules/video_coding:video_coding",
     "../rtc_base:audio_format_to_string",
+    "../rtc_base:base64",
     "../rtc_base:checks",
   ]
 

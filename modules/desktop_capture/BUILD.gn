@@ -51,6 +51,7 @@ if (rtc_include_tests) {
         ":desktop_capture_mock",
         ":primitives",
         ":screen_drawer",
+        "../../rtc_base:base64",
         "../../rtc_base:rtc_base",
         "../../rtc_base:rtc_base_approved",
         "../../system_wrappers",
