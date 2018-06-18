@@ -206,12 +206,12 @@ TEST(RtpPacketTest, CreateWithExtensionsWithoutManager) {
   auto raw = packet.AllocateRawExtension(kTransmissionOffsetExtensionId,
                                          TransmissionOffset::kValueSizeBytes);
   EXPECT_EQ(raw.size(), TransmissionOffset::kValueSizeBytes);
-  TransmissionOffset::Write(raw.data(), kTimeOffset);
+  TransmissionOffset::Write(raw, kTimeOffset);
 
   raw = packet.AllocateRawExtension(kAudioLevelExtensionId,
                                     AudioLevel::kValueSizeBytes);
   EXPECT_EQ(raw.size(), AudioLevel::kValueSizeBytes);
-  AudioLevel::Write(raw.data(), kVoiceActive, kAudioLevel);
+  AudioLevel::Write(raw, kVoiceActive, kAudioLevel);
 
   EXPECT_THAT(kPacketWithTOAndAL,
               ElementsAreArray(packet.data(), packet.size()));

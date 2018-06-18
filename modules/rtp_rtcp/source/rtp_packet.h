@@ -181,7 +181,7 @@ bool RtpPacket::SetExtension(Values... values) {
   auto buffer = AllocateExtension(Extension::kId, value_size);
   if (buffer.empty())
     return false;
-  return Extension::Write(buffer.data(), values...);
+  return Extension::Write(buffer, values...);
 }
 
 template <typename Extension>
