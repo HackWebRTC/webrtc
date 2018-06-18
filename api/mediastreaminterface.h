@@ -155,8 +155,8 @@ class VideoTrackInterface : public MediaStreamTrackInterface,
  public:
   // Video track content hint, used to override the source is_screencast
   // property.
-  // See https://crbug.com/653531 and https://github.com/WICG/mst-content-hint.
-  enum class ContentHint { kNone, kFluid, kDetailed };
+  // See https://crbug.com/653531 and https://w3c.github.io/mst-content-hint.
+  enum class ContentHint { kNone, kFluid, kDetailed, kText };
 
   // Register a video sink for this track. Used to connect the track to the
   // underlying video engine.

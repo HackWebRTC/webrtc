@@ -1084,6 +1084,9 @@ TEST_F(RtpSenderReceiverTest, PropagatesVideoTrackContentHint) {
   // Setting fluid should remain in non-screencast mode (its default).
   video_track_->set_content_hint(VideoTrackInterface::ContentHint::kFluid);
   EXPECT_EQ(false, video_media_channel_->options().is_screencast);
+  // Setting text should have the same effect as Detailed
+  video_track_->set_content_hint(VideoTrackInterface::ContentHint::kText);
+  EXPECT_EQ(true, video_media_channel_->options().is_screencast);
 
   DestroyVideoRtpSender();
 }
@@ -1109,6 +1112,9 @@ TEST_F(RtpSenderReceiverTest,
   EXPECT_EQ(true, video_media_channel_->options().is_screencast);
   // Setting detailed should still remain in screencast mode (its default).
   video_track_->set_content_hint(VideoTrackInterface::ContentHint::kDetailed);
+  EXPECT_EQ(true, video_media_channel_->options().is_screencast);
+  // Setting text should have the same effect as Detailed
+  video_track_->set_content_hint(VideoTrackInterface::ContentHint::kText);
   EXPECT_EQ(true, video_media_channel_->options().is_screencast);
 
   DestroyVideoRtpSender();

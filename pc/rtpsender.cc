@@ -549,6 +549,7 @@ void VideoRtpSender::SetVideoSend() {
       options.is_screencast = false;
       break;
     case VideoTrackInterface::ContentHint::kDetailed:
+    case VideoTrackInterface::ContentHint::kText:
       options.is_screencast = true;
       break;
   }
