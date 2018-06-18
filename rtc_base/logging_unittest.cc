@@ -87,6 +87,7 @@ TEST(LogTest, SingleStream) {
   EXPECT_EQ(sev, LogMessage::GetLogToStream(nullptr));
 }
 
+/*
 #if GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 TEST(LogTest, Checks) {
   EXPECT_DEATH(FATAL() << "message",
@@ -117,7 +118,7 @@ TEST(LogTest, Checks) {
                );
 }
 #endif
-
+*/
 // Test using multiple log streams. The INFO stream should get the INFO message,
 // the VERBOSE stream should get the INFO and the VERBOSE.
 // We should restore the correct global state at the end.
