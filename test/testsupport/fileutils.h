@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 
 namespace webrtc {
 namespace test {
@@ -81,7 +81,7 @@ std::string WorkingDir();
 // of strings with one element for each found file or directory. Each element is
 // a path created by prepending |dir| to the file/directory name. "." and ".."
 // are never added in the returned vector.
-rtc::Optional<std::vector<std::string>> ReadDirectory(std::string path);
+absl::optional<std::vector<std::string>> ReadDirectory(std::string path);
 
 // Creates a directory if it not already exists.
 // Returns true if successful. Will print an error message to stderr and return

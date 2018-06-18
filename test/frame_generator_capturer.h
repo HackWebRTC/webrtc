@@ -44,8 +44,8 @@ class FrameGeneratorCapturer : public VideoCapturer {
   static FrameGeneratorCapturer* Create(
       int width,
       int height,
-      rtc::Optional<FrameGenerator::OutputType> type,
-      rtc::Optional<int> num_squares,
+      absl::optional<FrameGenerator::OutputType> type,
+      absl::optional<int> num_squares,
       int target_fps,
       Clock* clock);
 
@@ -98,7 +98,7 @@ class FrameGeneratorCapturer : public VideoCapturer {
   std::unique_ptr<FrameGenerator> frame_generator_;
 
   int target_fps_ RTC_GUARDED_BY(&lock_);
-  rtc::Optional<int> wanted_fps_ RTC_GUARDED_BY(&lock_);
+  absl::optional<int> wanted_fps_ RTC_GUARDED_BY(&lock_);
   VideoRotation fake_rotation_ = kVideoRotation_0;
 
   int64_t first_frame_capture_time_;

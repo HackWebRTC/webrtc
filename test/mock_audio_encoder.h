@@ -43,7 +43,7 @@ class MockAudioEncoder : public AudioEncoder {
   MOCK_METHOD1(SetMaxPayloadSize, void(int max_payload_size_bytes));
   MOCK_METHOD2(OnReceivedUplinkBandwidth,
                void(int target_audio_bitrate_bps,
-                    rtc::Optional<int64_t> probing_interval_ms));
+                    absl::optional<int64_t> probing_interval_ms));
   MOCK_METHOD1(OnReceivedUplinkPacketLossFraction,
                void(float uplink_packet_loss_fraction));
 

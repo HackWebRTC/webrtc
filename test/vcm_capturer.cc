@@ -108,7 +108,7 @@ VcmCapturer::~VcmCapturer() { Destroy(); }
 void VcmCapturer::OnFrame(const VideoFrame& frame) {
   rtc::CritScope lock(&crit_);
   if (started_ && sink_) {
-    rtc::Optional<VideoFrame> out_frame = AdaptFrame(frame);
+    absl::optional<VideoFrame> out_frame = AdaptFrame(frame);
     if (out_frame)
       sink_->OnFrame(*out_frame);
   }

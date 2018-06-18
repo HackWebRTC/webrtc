@@ -260,11 +260,11 @@ rtc_static_library("audio_decoder_fuzzer") {
   deps = [
     "../..:webrtc_common",
     "../../:typedefs",
-    "../../api:optional",
     "../../api/audio_codecs:audio_codecs_api",
     "../../modules/rtp_rtcp:rtp_rtcp_format",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 
@@ -454,11 +454,11 @@ rtc_static_library("audio_processing_fuzzer_helper") {
   ]
   deps = [
     ":fuzz_data_helper",
-    "../../api:optional",
     "../../api/audio:audio_frame_api",
     "../../modules/audio_processing",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 

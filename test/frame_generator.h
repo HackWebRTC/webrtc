@@ -67,8 +67,8 @@ class FrameGenerator {
   static std::unique_ptr<FrameGenerator> CreateSquareGenerator(
       int width,
       int height,
-      rtc::Optional<OutputType> type,
-      rtc::Optional<int> num_squares);
+      absl::optional<OutputType> type,
+      absl::optional<int> num_squares);
 
   // Creates a frame generator that repeatedly plays a set of yuv files.
   // The frame_repeat_count determines how many times each frame is shown,

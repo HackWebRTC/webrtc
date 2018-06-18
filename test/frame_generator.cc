@@ -402,7 +402,7 @@ class ScrollingImageFrameGenerator : public FrameGenerator {
 
   size_t current_frame_num_;
   VideoFrame* current_source_frame_;
-  rtc::Optional<VideoFrame> current_frame_;
+  absl::optional<VideoFrame> current_frame_;
   YuvFileGenerator file_generator_;
 };
 
@@ -444,8 +444,8 @@ bool FrameForwarder::has_sinks() const {
 std::unique_ptr<FrameGenerator> FrameGenerator::CreateSquareGenerator(
     int width,
     int height,
-    rtc::Optional<OutputType> type,
-    rtc::Optional<int> num_squares) {
+    absl::optional<OutputType> type,
+    absl::optional<int> num_squares) {
   return std::unique_ptr<FrameGenerator>(
       new SquareGenerator(width, height, type.value_or(OutputType::I420),
                           num_squares.value_or(10)));

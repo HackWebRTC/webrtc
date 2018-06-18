@@ -65,11 +65,11 @@ class FuzzRtpInput : public NetEqInput {
     FuzzHeader();
   }
 
-  rtc::Optional<int64_t> NextPacketTime() const override {
+  absl::optional<int64_t> NextPacketTime() const override {
     return packet_->time_ms;
   }
 
-  rtc::Optional<int64_t> NextOutputEventTime() const override {
+  absl::optional<int64_t> NextOutputEventTime() const override {
     return input_->NextOutputEventTime();
   }
 
@@ -85,7 +85,7 @@ class FuzzRtpInput : public NetEqInput {
 
   bool ended() const override { return ended_; }
 
-  rtc::Optional<RTPHeader> NextHeader() const override {
+  absl::optional<RTPHeader> NextHeader() const override {
     RTC_DCHECK(packet_);
     return packet_->header;
   }

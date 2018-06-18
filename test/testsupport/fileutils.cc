@@ -223,9 +223,9 @@ std::string GenerateTempFilename(const std::string& dir,
   return filename;
 }
 
-rtc::Optional<std::vector<std::string>> ReadDirectory(std::string path) {
+absl::optional<std::vector<std::string>> ReadDirectory(std::string path) {
   if (path.length() == 0)
-    return rtc::Optional<std::vector<std::string>>();
+    return absl::optional<std::vector<std::string>>();
 
 #if defined(WEBRTC_WIN)
   // Append separator character if needed.
@@ -236,7 +236,7 @@ rtc::Optional<std::vector<std::string>> ReadDirectory(std::string path) {
   WIN32_FIND_DATA data;
   HANDLE handle = ::FindFirstFile(rtc::ToUtf16(path + '*').c_str(), &data);
   if (handle == INVALID_HANDLE_VALUE)
-    return rtc::Optional<std::vector<std::string>>();
+    return absl::optional<std::vector<std::string>>();
 
   // Populate output.
   std::vector<std::string> found_entries;
@@ -257,7 +257,7 @@ rtc::Optional<std::vector<std::string>> ReadDirectory(std::string path) {
   // Init.
   DIR* dir = ::opendir(path.c_str());
   if (dir == nullptr)
-    return rtc::Optional<std::vector<std::string>>();
+    return absl::optional<std::vector<std::string>>();
 
   // Populate output.
   std::vector<std::string> found_entries;
@@ -271,7 +271,7 @@ rtc::Optional<std::vector<std::string>> ReadDirectory(std::string path) {
   closedir(dir);
 #endif
 
-  return rtc::Optional<std::vector<std::string>>(std::move(found_entries));
+  return absl::optional<std::vector<std::string>>(std::move(found_entries));
 }
 
 bool CreateDir(const std::string& directory_name) {

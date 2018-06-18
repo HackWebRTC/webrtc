@@ -87,8 +87,8 @@ class FrameGeneratorCapturer::InsertFrameTask : public rtc::QueuedTask {
 FrameGeneratorCapturer* FrameGeneratorCapturer::Create(
     int width,
     int height,
-    rtc::Optional<FrameGenerator::OutputType> type,
-    rtc::Optional<int> num_squares,
+    absl::optional<FrameGenerator::OutputType> type,
+    absl::optional<int> num_squares,
     int target_fps,
     Clock* clock) {
   std::unique_ptr<FrameGeneratorCapturer> capturer(new FrameGeneratorCapturer(
@@ -187,7 +187,7 @@ void FrameGeneratorCapturer::InsertFrame() {
     }
 
     if (sink_) {
-      rtc::Optional<VideoFrame> out_frame = AdaptFrame(*frame);
+      absl::optional<VideoFrame> out_frame = AdaptFrame(*frame);
       if (out_frame)
         sink_->OnFrame(*out_frame);
     }

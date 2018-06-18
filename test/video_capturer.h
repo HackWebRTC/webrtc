@@ -14,7 +14,7 @@
 
 #include <memory>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "api/video/i420_buffer.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_source_interface.h"
@@ -41,7 +41,7 @@ class VideoCapturer : public rtc::VideoSourceInterface<VideoFrame> {
                        const rtc::VideoSinkWants& wants) override;
 
  protected:
-  rtc::Optional<VideoFrame> AdaptFrame(const VideoFrame& frame);
+  absl::optional<VideoFrame> AdaptFrame(const VideoFrame& frame);
   rtc::VideoSinkWants GetSinkWants();
 
  private:

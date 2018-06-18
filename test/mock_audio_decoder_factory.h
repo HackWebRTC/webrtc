@@ -28,14 +28,14 @@ class MockAudioDecoderFactory : public AudioDecoderFactory {
   MOCK_METHOD1(IsSupportedDecoder, bool(const SdpAudioFormat&));
   std::unique_ptr<AudioDecoder> MakeAudioDecoder(
       const SdpAudioFormat& format,
-      rtc::Optional<AudioCodecPairId> codec_pair_id) {
+      absl::optional<AudioCodecPairId> codec_pair_id) {
     std::unique_ptr<AudioDecoder> return_value;
     MakeAudioDecoderMock(format, codec_pair_id, &return_value);
     return return_value;
   }
   MOCK_METHOD3(MakeAudioDecoderMock,
                void(const SdpAudioFormat& format,
-                    rtc::Optional<AudioCodecPairId> codec_pair_id,
+                    absl::optional<AudioCodecPairId> codec_pair_id,
                     std::unique_ptr<AudioDecoder>* return_value));
 
   // Creates a MockAudioDecoderFactory with no formats and that may not be

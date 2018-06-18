@@ -17,7 +17,7 @@
 #include <list>
 #include <string>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "rtc_base/checks.h"
 #include "test/gtest.h"
 
@@ -41,7 +41,7 @@ namespace {
 void CleanDir(const std::string& dir, size_t* num_deleted_entries) {
   RTC_DCHECK(num_deleted_entries);
   *num_deleted_entries = 0;
-  rtc::Optional<std::vector<std::string>> dir_content = ReadDirectory(dir);
+  absl::optional<std::vector<std::string>> dir_content = ReadDirectory(dir);
   EXPECT_TRUE(dir_content);
   for (const auto& entry : *dir_content) {
     if (DirExists(entry)) {
@@ -238,7 +238,7 @@ TEST_F(FileUtilsTest, WriteReadDeleteFilesAndDirs) {
   EXPECT_TRUE(DirExists(temp_subdir));
 
   // Checks.
-  rtc::Optional<std::vector<std::string>> dir_content =
+  absl::optional<std::vector<std::string>> dir_content =
       ReadDirectory(temp_directory);
   EXPECT_TRUE(dir_content);
   EXPECT_EQ(2u, dir_content->size());
