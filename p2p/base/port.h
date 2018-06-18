@@ -194,14 +194,6 @@ class Port : public PortInterface, public rtc::MessageHandler,
        rtc::Network* network,
        const std::string& username_fragment,
        const std::string& password);
-  // TODO(deadbeef): Delete this constructor once clients are moved off of it.
-  Port(rtc::Thread* thread,
-       const std::string& type,
-       rtc::PacketSocketFactory* factory,
-       rtc::Network* network,
-       const rtc::IPAddress& ip,
-       const std::string& username_fragment,
-       const std::string& password);
   Port(rtc::Thread* thread,
        const std::string& type,
        rtc::PacketSocketFactory* factory,
