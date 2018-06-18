@@ -18,7 +18,7 @@
 #include <memory>
 
 #include "modules/desktop_capture/shared_desktop_frame.h"
-#include "rtc_base/synchronization/rw_lock_wrapper.h"
+#include "rtc_base/thread_checker.h"
 #include "sdk/objc/Framework/Classes/Common/scoped_cftyperef.h"
 
 namespace webrtc {
@@ -44,10 +44,8 @@ class DesktopFrameProvider {
   void Release();
 
  private:
+  rtc::ThreadChecker thread_checker_;
   const bool allow_iosurface_;
-
-  // A lock protecting |io_surfaces_| across threads.
-  const std::unique_ptr<RWLockWrapper> io_surfaces_lock_;
 
   // Most recent IOSurface that contains a capture of matching display.
   std::map<CGDirectDisplayID, std::unique_ptr<SharedDesktopFrame>> io_surfaces_;

@@ -234,11 +234,7 @@ bool ScreenCapturerMac::Init() {
   desktop_config_monitor_->Lock();
   desktop_config_ = desktop_config_monitor_->desktop_configuration();
   desktop_config_monitor_->Unlock();
-  if (!RegisterRefreshAndMoveHandlers()) {
-    RTC_LOG(LS_ERROR) << "Failed to register refresh and move handlers.";
-    return false;
-  }
-  ScreenConfigurationChanged();
+
   return true;
 }
 
@@ -256,6 +252,13 @@ void ScreenCapturerMac::Start(Callback* callback) {
       "webrtc", "ScreenCapturermac::Start", "target display id ", current_display_);
 
   callback_ = callback;
+  // Start and operate CGDisplayStream handler all from capture thread.
+  if (!RegisterRefreshAndMoveHandlers()) {
+    RTC_LOG(LS_ERROR) << "Failed to register refresh and move handlers.";
+    callback_->OnCaptureResult(Result::ERROR_PERMANENT, nullptr);
+    return;
+  }
+  ScreenConfigurationChanged();
 }
 
 void ScreenCapturerMac::CaptureFrame() {
@@ -273,7 +276,11 @@ void ScreenCapturerMac::CaptureFrame() {
     // structures. Occasionally, the refresh and move handlers are lost when
     // the screen mode changes, so re-register them here.
     UnregisterRefreshAndMoveHandlers();
-    RegisterRefreshAndMoveHandlers();
+    if (!RegisterRefreshAndMoveHandlers()) {
+      RTC_LOG(LS_ERROR) << "Failed to register refresh and move handlers.";
+      callback_->OnCaptureResult(Result::ERROR_PERMANENT, nullptr);
+      return;
+    }
     ScreenConfigurationChanged();
   }
 
@@ -554,10 +561,9 @@ bool ScreenCapturerMac::RegisterRefreshAndMoveHandlers() {
 }
 
 void ScreenCapturerMac::UnregisterRefreshAndMoveHandlers() {
+  display_stream_manager_->UnregisterActiveStreams();
   // Release obsolete io surfaces.
   desktop_frame_provider_.Release();
-
-  display_stream_manager_->UnregisterActiveStreams();
 }
 
 void ScreenCapturerMac::ScreenRefresh(CGDirectDisplayID display_id,

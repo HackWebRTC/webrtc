@@ -18,24 +18,25 @@
 namespace webrtc {
 
 DesktopFrameProvider::DesktopFrameProvider(bool allow_iosurface)
-    : allow_iosurface_(allow_iosurface), io_surfaces_lock_(RWLockWrapper::CreateRWLock()) {}
+    : allow_iosurface_(allow_iosurface) {
+  thread_checker_.DetachFromThread();
+}
 
 DesktopFrameProvider::~DesktopFrameProvider() {
-  // Might be called from a thread which is not the one running the CGDisplayStream
-  // handler. Indeed chromium's content destroys it from a dedicated thread.
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+
   Release();
 }
 
 std::unique_ptr<DesktopFrame> DesktopFrameProvider::TakeLatestFrameForDisplay(
     CGDirectDisplayID display_id) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+
   if (!allow_iosurface_) {
     // Regenerate a snapshot.
     return DesktopFrameCGImage::CreateForDisplay(display_id);
   }
 
-  // Might be called from a thread which is not the one running the CGDisplayStream
-  // handler. Indeed chromium's content uses a dedicates thread.
-  WriteLockScoped scoped_io_surfaces_lock(*io_surfaces_lock_);
   if (io_surfaces_[display_id]) {
     return io_surfaces_[display_id]->Share();
   }
@@ -45,6 +46,8 @@ std::unique_ptr<DesktopFrame> DesktopFrameProvider::TakeLatestFrameForDisplay(
 
 void DesktopFrameProvider::InvalidateIOSurface(CGDirectDisplayID display_id,
                                                rtc::ScopedCFTypeRef<IOSurfaceRef> io_surface) {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+
   if (!allow_iosurface_) {
     return;
   }
@@ -52,19 +55,18 @@ void DesktopFrameProvider::InvalidateIOSurface(CGDirectDisplayID display_id,
   std::unique_ptr<DesktopFrameIOSurface> desktop_frame_iosurface =
       DesktopFrameIOSurface::Wrap(io_surface);
 
-  // Call from the thread which runs the CGDisplayStream handler.
-  WriteLockScoped scoped_io_surfaces_lock(*io_surfaces_lock_);
   io_surfaces_[display_id] = desktop_frame_iosurface ?
       SharedDesktopFrame::Wrap(std::move(desktop_frame_iosurface)) :
       nullptr;
 }
 
 void DesktopFrameProvider::Release() {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+
   if (!allow_iosurface_) {
     return;
   }
 
-  WriteLockScoped scoped_io_surfaces_lock(*io_surfaces_lock_);
   io_surfaces_.clear();
 }
 
