@@ -151,6 +151,9 @@ void SlotSimulcastMaxResolution(size_t max_layers, int* width, int* height) {
 
 void BoostMaxSimulcastLayer(int max_bitrate_bps,
                             std::vector<webrtc::VideoStream>* layers) {
+  if (layers->empty())
+    return;
+
   // Spend additional bits to boost the max layer.
   int bitrate_left_bps = max_bitrate_bps - GetTotalMaxBitrateBps(*layers);
   if (bitrate_left_bps > 0) {
@@ -159,6 +162,9 @@ void BoostMaxSimulcastLayer(int max_bitrate_bps,
 }
 
 int GetTotalMaxBitrateBps(const std::vector<webrtc::VideoStream>& layers) {
+  if (layers.empty())
+    return 0;
+
   int total_max_bitrate_bps = 0;
   for (size_t s = 0; s < layers.size() - 1; ++s) {
     total_max_bitrate_bps += layers[s].target_bitrate_bps;
@@ -170,18 +176,18 @@ int GetTotalMaxBitrateBps(const std::vector<webrtc::VideoStream>& layers) {
 std::vector<webrtc::VideoStream> GetSimulcastConfig(size_t max_layers,
                                                     int width,
                                                     int height,
-                                                    int max_bitrate_bps,
+                                                    int /*max_bitrate_bps*/,
                                                     double bitrate_priority,
                                                     int max_qp,
                                                     int max_framerate,
                                                     bool is_screenshare) {
   if (is_screenshare) {
-    return GetScreenshareLayers(max_layers, width, height, max_bitrate_bps,
-                                bitrate_priority, max_qp, max_framerate,
+    return GetScreenshareLayers(max_layers, width, height, bitrate_priority,
+                                max_qp, max_framerate,
                                 ScreenshareSimulcastFieldTrialEnabled());
   } else {
-    return GetNormalSimulcastLayers(max_layers, width, height, max_bitrate_bps,
-                                    bitrate_priority, max_qp, max_framerate);
+    return GetNormalSimulcastLayers(max_layers, width, height, bitrate_priority,
+                                    max_qp, max_framerate);
   }
 }
 
@@ -189,7 +195,6 @@ std::vector<webrtc::VideoStream> GetNormalSimulcastLayers(
     size_t max_layers,
     int width,
     int height,
-    int max_bitrate_bps,
     double bitrate_priority,
     int max_qp,
     int max_framerate) {
@@ -249,8 +254,6 @@ std::vector<webrtc::VideoStream> GetNormalSimulcastLayers(
       break;
     }
   }
-  // If there is bitrate leftover, give it to the largest layer.
-  BoostMaxSimulcastLayer(max_bitrate_bps, &layers);
   // Currently the relative bitrate priority of the sender is controlled by
   // the value of the lowest VideoStream.
   // TODO(bugs.webrtc.org/8630): The web specification describes being able to
@@ -264,7 +267,6 @@ std::vector<webrtc::VideoStream> GetScreenshareLayers(
     size_t max_layers,
     int width,
     int height,
-    int max_bitrate_bps,
     double bitrate_priority,
     int max_qp,
     int max_framerate,

@@ -58,8 +58,7 @@ bool UnimplementedRtpEncodingParameterHasValue(
 // layer.
 bool PerSenderRtpEncodingParameterHasValue(
     const RtpEncodingParameters& encoding_params) {
-  if (encoding_params.max_bitrate_bps.has_value() ||
-      encoding_params.bitrate_priority != kDefaultBitratePriority) {
+  if (encoding_params.bitrate_priority != kDefaultBitratePriority) {
     return true;
   }
   return false;

@@ -21,35 +21,39 @@ namespace cricket {
 // TODO(pthatcher): Write unit tests just for these functions,
 // independent of WebrtcVideoEngine.
 
+// Gets the total maximum bitrate for the |streams|.
 int GetTotalMaxBitrateBps(const std::vector<webrtc::VideoStream>& streams);
 
-// Get simulcast settings.
-std::vector<webrtc::VideoStream> GetSimulcastConfig(
-    size_t max_layers,
-    int width,
-    int height,
-    int max_bitrate_bps,
-    double bitrate_priority,
-    int max_qp,
-    int max_framerate,
-    bool is_screenshare);
+// Adds any bitrate of |max_bitrate_bps| that is above the total maximum bitrate
+// for the |layers| to the highest quality layer.
+void BoostMaxSimulcastLayer(int max_bitrate_bps,
+                            std::vector<webrtc::VideoStream>* layers);
+
+// Gets simulcast settings.
+// TODO(asapersson): Remove max_bitrate_bps.
+std::vector<webrtc::VideoStream> GetSimulcastConfig(size_t max_layers,
+                                                    int width,
+                                                    int height,
+                                                    int /*max_bitrate_bps*/,
+                                                    double bitrate_priority,
+                                                    int max_qp,
+                                                    int max_framerate,
+                                                    bool is_screenshare);
 
 // Gets the simulcast config layers for a non-screensharing case.
 std::vector<webrtc::VideoStream> GetNormalSimulcastLayers(
     size_t max_layers,
     int width,
     int height,
-    int max_bitrate_bps,
     double bitrate_priority,
     int max_qp,
     int max_framerate);
 
-// Get simulcast config layers for screenshare settings.
+// Gets simulcast config layers for screenshare settings.
 std::vector<webrtc::VideoStream> GetScreenshareLayers(
     size_t max_layers,
     int width,
     int height,
-    int max_bitrate_bps,
     double bitrate_priority,
     int max_qp,
     int max_framerate,

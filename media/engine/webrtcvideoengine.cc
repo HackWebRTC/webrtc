@@ -1800,13 +1800,23 @@ webrtc::RTCError WebRtcVideoChannel::WebRtcVideoSendStream::SetRtpParameters(
     return error;
   }
 
+  bool new_bitrate = false;
+  for (size_t i = 0; i < rtp_parameters_.encodings.size(); ++i) {
+    if ((new_parameters.encodings[i].min_bitrate_bps !=
+         rtp_parameters_.encodings[i].min_bitrate_bps) ||
+        (new_parameters.encodings[i].max_bitrate_bps !=
+         rtp_parameters_.encodings[i].max_bitrate_bps)) {
+      new_bitrate = true;
+    }
+  }
+
   // TODO(bugs.webrtc.org/8807): The bitrate priority really doesn't require an
   // entire encoder reconfiguration, it just needs to update the bitrate
   // allocator.
-  bool reconfigure_encoder = (new_parameters.encodings[0].max_bitrate_bps !=
-                              rtp_parameters_.encodings[0].max_bitrate_bps) ||
-                             (new_parameters.encodings[0].bitrate_priority !=
-                              rtp_parameters_.encodings[0].bitrate_priority);
+  bool reconfigure_encoder =
+      new_bitrate || (new_parameters.encodings[0].bitrate_priority !=
+                      rtp_parameters_.encodings[0].bitrate_priority);
+
   // TODO(bugs.webrtc.org/8807): The active field as well should not require
   // a full encoder reconfiguration, but it needs to update both the bitrate
   // allocator and the video bitrate allocator.
@@ -1864,6 +1874,17 @@ WebRtcVideoChannel::WebRtcVideoSendStream::ValidateRtpParameters(
                          "Attempted to set RtpParameters bitrate_priority to "
                          "an invalid number. bitrate_priority must be > 0.");
   }
+  for (size_t i = 0; i < rtp_parameters.encodings.size(); ++i) {
+    if (rtp_parameters.encodings[i].min_bitrate_bps &&
+        rtp_parameters.encodings[i].max_bitrate_bps) {
+      if (*rtp_parameters.encodings[i].max_bitrate_bps <
+          *rtp_parameters.encodings[i].min_bitrate_bps) {
+        LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_RANGE,
+                             "Attempted to set RtpParameters min bitrate "
+                             "larger than max bitrate.");
+      }
+    }
+  }
   return webrtc::RTCError::OK();
 }
 
@@ -1918,7 +1939,13 @@ WebRtcVideoChannel::WebRtcVideoSendStream::CreateVideoEncoderConfig(
   }
 
   int stream_max_bitrate = parameters_.max_bitrate_bps;
-  if (rtp_parameters_.encodings[0].max_bitrate_bps) {
+  // When simulcast is enabled (when there are multiple encodings),
+  // encodings[i].max_bitrate_bps will be enforced by
+  // encoder_config.simulcast_layers[i].max_bitrate_bps. Otherwise, it's
+  // enforced by stream_max_bitrate, taking the minimum of the two maximums
+  // (one coming from SDP, the other coming from RtpParameters).
+  if (rtp_parameters_.encodings[0].max_bitrate_bps &&
+      rtp_parameters_.encodings.size() == 1) {
     stream_max_bitrate =
         webrtc::MinPositive(*(rtp_parameters_.encodings[0].max_bitrate_bps),
                             parameters_.max_bitrate_bps);
@@ -1939,7 +1966,7 @@ WebRtcVideoChannel::WebRtcVideoSendStream::CreateVideoEncoderConfig(
 
   // Application-controlled state is held in the encoder_config's
   // simulcast_layers. Currently this is used to control which simulcast layers
-  // are active.
+  // are active and for configuring the min/max bitrate.
   RTC_DCHECK_GE(rtp_parameters_.encodings.size(),
                 encoder_config.number_of_streams);
   RTC_DCHECK_GT(encoder_config.number_of_streams, 0);
@@ -1947,6 +1974,14 @@ WebRtcVideoChannel::WebRtcVideoSendStream::CreateVideoEncoderConfig(
   for (size_t i = 0; i < encoder_config.simulcast_layers.size(); ++i) {
     encoder_config.simulcast_layers[i].active =
         rtp_parameters_.encodings[i].active;
+    if (rtp_parameters_.encodings[i].min_bitrate_bps) {
+      encoder_config.simulcast_layers[i].min_bitrate_bps =
+          *rtp_parameters_.encodings[i].min_bitrate_bps;
+    }
+    if (rtp_parameters_.encodings[i].max_bitrate_bps) {
+      encoder_config.simulcast_layers[i].max_bitrate_bps =
+          *rtp_parameters_.encodings[i].max_bitrate_bps;
+    }
   }
 
   int max_qp = kDefaultQpMax;
@@ -2681,12 +2716,50 @@ std::vector<webrtc::VideoStream> EncoderStreamFactory::CreateEncoderStreams(
       (CodecNamesEq(codec_name_, kVp8CodecName) && is_screenshare_ &&
        screenshare_config_explicitly_enabled_)) {
     layers = GetSimulcastConfig(encoder_config.number_of_streams, width, height,
-                                encoder_config.max_bitrate_bps,
-                                encoder_config.bitrate_priority, max_qp_,
-                                max_framerate_, is_screenshare_);
-    // Update the active simulcast layers.
+                                0 /*not used*/, encoder_config.bitrate_priority,
+                                max_qp_, max_framerate_, is_screenshare_);
+    // Update the active simulcast layers and configured bitrates.
+    bool is_highest_layer_max_bitrate_configured = false;
     for (size_t i = 0; i < layers.size(); ++i) {
       layers[i].active = encoder_config.simulcast_layers[i].active;
+      // Update simulcast bitrates with configured min and max bitrate.
+      if (encoder_config.simulcast_layers[i].min_bitrate_bps > 0) {
+        layers[i].min_bitrate_bps =
+            encoder_config.simulcast_layers[i].min_bitrate_bps;
+      }
+      if (encoder_config.simulcast_layers[i].max_bitrate_bps > 0) {
+        layers[i].max_bitrate_bps =
+            encoder_config.simulcast_layers[i].max_bitrate_bps;
+      }
+      if (encoder_config.simulcast_layers[i].min_bitrate_bps > 0 &&
+          encoder_config.simulcast_layers[i].max_bitrate_bps > 0) {
+        // Min and max bitrate are configured.
+        // Set target to 3/4 of the max bitrate (or to max if below min).
+        layers[i].target_bitrate_bps = layers[i].max_bitrate_bps * 3 / 4;
+        if (layers[i].target_bitrate_bps < layers[i].min_bitrate_bps)
+          layers[i].target_bitrate_bps = layers[i].max_bitrate_bps;
+      } else if (encoder_config.simulcast_layers[i].min_bitrate_bps > 0) {
+        // Only min bitrate is configured, make sure target/max are above min.
+        layers[i].target_bitrate_bps =
+            std::max(layers[i].target_bitrate_bps, layers[i].min_bitrate_bps);
+        layers[i].max_bitrate_bps =
+            std::max(layers[i].max_bitrate_bps, layers[i].min_bitrate_bps);
+      } else if (encoder_config.simulcast_layers[i].max_bitrate_bps > 0) {
+        // Only max bitrate is configured, make sure min/target are below max.
+        layers[i].min_bitrate_bps =
+            std::min(layers[i].min_bitrate_bps, layers[i].max_bitrate_bps);
+        layers[i].target_bitrate_bps =
+            std::min(layers[i].target_bitrate_bps, layers[i].max_bitrate_bps);
+      }
+      if (i == layers.size() - 1) {
+        is_highest_layer_max_bitrate_configured =
+            encoder_config.simulcast_layers[i].max_bitrate_bps > 0;
+      }
+    }
+    if (!is_screenshare_ && !is_highest_layer_max_bitrate_configured) {
+      // No application-configured maximum for the largest layer.
+      // If there is bitrate leftover, give it to the largest layer.
+      BoostMaxSimulcastLayer(encoder_config.max_bitrate_bps, &layers);
     }
     return layers;
   }

@@ -401,14 +401,6 @@ struct RtpEncodingParameters {
   // bitrate. Currently this is implemented for the entire rtp sender by using
   // the value of the first encoding parameter.
   //
-  // TODO(webrtc.bugs.org/8655): Implement this per encoding parameter.
-  // Current implementation for a sender:
-  // The max bitrate is decided by taking the minimum of the first encoding
-  // parameter's max_bitrate_bps and the max bitrate specified by the sdp with
-  // the b=AS attribute. In the case of simulcast video, default values are used
-  // for each simulcast layer, and if there is some bitrate left over from the
-  // sender's max bitrate then it will roll over into the highest quality layer.
-  //
   // Just called "maxBitrate" in ORTC spec.
   //
   // TODO(deadbeef): With ORTC RtpSenders, this currently sets the total
@@ -417,7 +409,9 @@ struct RtpEncodingParameters {
   // fixed.
   rtc::Optional<int> max_bitrate_bps;
 
-  // TODO(asapersson): Not implemented.
+  // Specifies the minimum bitrate in bps for video.
+  // TODO(asapersson): Not implemented for ORTC API.
+  // TODO(asapersson): Not implemented for single layer.
   rtc::Optional<int> min_bitrate_bps;
 
   // TODO(deadbeef): Not implemented.

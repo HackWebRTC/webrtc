@@ -57,6 +57,7 @@ class RtpSenderInterface : public rtc::RefCountInterface {
   virtual RtpParameters GetParameters() = 0;
   // Note that only a subset of the parameters can currently be changed. See
   // rtpparameters.h
+  // The encodings are in increasing quality order for simulcast.
   virtual RTCError SetParameters(const RtpParameters& parameters) = 0;
 
   // Returns null for a video sender.

@@ -959,35 +959,63 @@ TEST_F(RtpSenderReceiverTest, VideoSenderCantSetPerSenderEncodingParameters) {
             video_rtp_sender_->SetParameters(params).type());
   params = video_rtp_sender_->GetParameters();
 
-  params.encodings[1].max_bitrate_bps = 200000;
-  EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
-            video_rtp_sender_->SetParameters(params).type());
-
   DestroyVideoRtpSender();
 }
 
-TEST_F(RtpSenderReceiverTest, SetVideoMaxSendBitrate) {
+TEST_F(RtpSenderReceiverTest, SetVideoMinMaxSendBitrate) {
   CreateVideoRtpSender();
 
   EXPECT_EQ(-1, video_media_channel_->max_bps());
   webrtc::RtpParameters params = video_rtp_sender_->GetParameters();
   EXPECT_EQ(1, params.encodings.size());
+  EXPECT_FALSE(params.encodings[0].min_bitrate_bps);
   EXPECT_FALSE(params.encodings[0].max_bitrate_bps);
+  params.encodings[0].min_bitrate_bps = 100;
   params.encodings[0].max_bitrate_bps = 1000;
   EXPECT_TRUE(video_rtp_sender_->SetParameters(params).ok());
 
   // Read back the parameters and verify they have been changed.
   params = video_rtp_sender_->GetParameters();
   EXPECT_EQ(1, params.encodings.size());
+  EXPECT_EQ(100, params.encodings[0].min_bitrate_bps);
   EXPECT_EQ(1000, params.encodings[0].max_bitrate_bps);
 
   // Verify that the video channel received the new parameters.
   params = video_media_channel_->GetRtpSendParameters(kVideoSsrc);
   EXPECT_EQ(1, params.encodings.size());
+  EXPECT_EQ(100, params.encodings[0].min_bitrate_bps);
   EXPECT_EQ(1000, params.encodings[0].max_bitrate_bps);
 
   // Verify that the global bitrate limit has not been changed.
   EXPECT_EQ(-1, video_media_channel_->max_bps());
+
+  DestroyVideoRtpSender();
+}
+
+TEST_F(RtpSenderReceiverTest, SetVideoMinMaxSendBitrateSimulcast) {
+  // Add a simulcast specific send stream that contains 2 encoding parameters.
+  std::vector<uint32_t> ssrcs({1, 2});
+  cricket::StreamParams stream_params =
+      cricket::CreateSimStreamParams("cname", ssrcs);
+  video_media_channel_->AddSendStream(stream_params);
+  uint32_t primary_ssrc = stream_params.first_ssrc();
+  CreateVideoRtpSender(primary_ssrc);
+
+  RtpParameters params = video_rtp_sender_->GetParameters();
+  EXPECT_EQ(ssrcs.size(), params.encodings.size());
+  params.encodings[0].min_bitrate_bps = 100;
+  params.encodings[0].max_bitrate_bps = 1000;
+  params.encodings[1].min_bitrate_bps = 200;
+  params.encodings[1].max_bitrate_bps = 2000;
+  EXPECT_TRUE(video_rtp_sender_->SetParameters(params).ok());
+
+  // Verify that the video channel received the new parameters.
+  params = video_media_channel_->GetRtpSendParameters(primary_ssrc);
+  EXPECT_EQ(ssrcs.size(), params.encodings.size());
+  EXPECT_EQ(100, params.encodings[0].min_bitrate_bps);
+  EXPECT_EQ(1000, params.encodings[0].max_bitrate_bps);
+  EXPECT_EQ(200, params.encodings[1].min_bitrate_bps);
+  EXPECT_EQ(2000, params.encodings[1].max_bitrate_bps);
 
   DestroyVideoRtpSender();
 }

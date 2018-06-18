@@ -2212,6 +2212,21 @@ class WebRtcVideoChannelTest : public WebRtcVideoEngineTest {
     EXPECT_EQ(expected_encoder_bitrate, GetMaxEncoderBitrate());
   }
 
+  // Values from kSimulcastConfigs in simulcast.cc.
+  const std::vector<webrtc::VideoStream> GetSimulcastBitrates720p() const {
+    std::vector<webrtc::VideoStream> layers(3);
+    layers[0].min_bitrate_bps = 30000;
+    layers[0].target_bitrate_bps = 150000;
+    layers[0].max_bitrate_bps = 200000;
+    layers[1].min_bitrate_bps = 150000;
+    layers[1].target_bitrate_bps = 500000;
+    layers[1].max_bitrate_bps = 700000;
+    layers[2].min_bitrate_bps = 600000;
+    layers[2].target_bitrate_bps = 2500000;
+    layers[2].max_bitrate_bps = 2500000;
+    return layers;
+  }
+
   std::unique_ptr<FakeCall> fake_call_;
   std::unique_ptr<VideoMediaChannel> channel_;
   cricket::VideoSendParameters send_parameters_;
@@ -3980,6 +3995,31 @@ TEST_F(WebRtcVideoChannelTest, SetMaxSendBandwidthAndAddSendStream) {
             stream->GetVideoStreams()[0].max_bitrate_bps);
 }
 
+TEST_F(WebRtcVideoChannelTest,
+       MaxBitrateIsMinimumOfMaxSendBandwidthAndMaxEncodingBitrate) {
+  send_parameters_.max_bandwidth_bps = 99999;
+  FakeVideoSendStream* stream = AddSendStream();
+  ExpectSetMaxBitrate(send_parameters_.max_bandwidth_bps);
+  ASSERT_TRUE(channel_->SetSendParameters(send_parameters_));
+  ASSERT_EQ(1u, stream->GetVideoStreams().size());
+  EXPECT_EQ(send_parameters_.max_bandwidth_bps,
+            stream->GetVideoStreams()[0].max_bitrate_bps);
+
+  // Get and set the rtp encoding parameters.
+  webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(last_ssrc_);
+  EXPECT_EQ(1u, parameters.encodings.size());
+
+  parameters.encodings[0].max_bitrate_bps = 99999 - 1;
+  EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters).ok());
+  EXPECT_EQ(parameters.encodings[0].max_bitrate_bps,
+            stream->GetVideoStreams()[0].max_bitrate_bps);
+
+  parameters.encodings[0].max_bitrate_bps = 99999 + 1;
+  EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters).ok());
+  EXPECT_EQ(send_parameters_.max_bandwidth_bps,
+            stream->GetVideoStreams()[0].max_bitrate_bps);
+}
+
 TEST_F(WebRtcVideoChannelTest, SetMaxSendBitrateCanIncreaseSenderBitrate) {
   cricket::VideoSendParameters parameters;
   parameters.codecs.push_back(GetEngineCodec("VP8"));
@@ -5369,6 +5409,325 @@ TEST_F(WebRtcVideoChannelTest, SetRtpSendParametersPrioritySimulcastStreams) {
   EXPECT_EQ(absl::nullopt,
             video_send_stream->GetVideoStreams()[2].bitrate_priority);
   EXPECT_TRUE(channel_->SetVideoSend(primary_ssrc, nullptr, nullptr));
+}
+
+TEST_F(WebRtcVideoChannelTest, GetAndSetRtpSendParametersMinAndMaxBitrate) {
+  const size_t kNumSimulcastStreams = 3;
+  SetUpSimulcast(true, false);
+
+  // Get and set the rtp encoding parameters.
+  webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(last_ssrc_);
+  EXPECT_EQ(kNumSimulcastStreams, parameters.encodings.size());
+  for (const auto& encoding : parameters.encodings) {
+    EXPECT_FALSE(encoding.min_bitrate_bps);
+    EXPECT_FALSE(encoding.max_bitrate_bps);
+  }
+
+  // Change the value and set it on the VideoChannel.
+  parameters.encodings[0].min_bitrate_bps = 100000;
+  parameters.encodings[0].max_bitrate_bps = 200000;
+  parameters.encodings[1].min_bitrate_bps = 300000;
+  parameters.encodings[1].max_bitrate_bps = 400000;
+  parameters.encodings[2].min_bitrate_bps = 500000;
+  parameters.encodings[2].max_bitrate_bps = 600000;
+  EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters).ok());
+
+  // Verify that the bitrates are set on the VideoChannel.
+  parameters = channel_->GetRtpSendParameters(last_ssrc_);
+  EXPECT_EQ(kNumSimulcastStreams, parameters.encodings.size());
+  EXPECT_EQ(100000, parameters.encodings[0].min_bitrate_bps);
+  EXPECT_EQ(200000, parameters.encodings[0].max_bitrate_bps);
+  EXPECT_EQ(300000, parameters.encodings[1].min_bitrate_bps);
+  EXPECT_EQ(400000, parameters.encodings[1].max_bitrate_bps);
+  EXPECT_EQ(500000, parameters.encodings[2].min_bitrate_bps);
+  EXPECT_EQ(600000, parameters.encodings[2].max_bitrate_bps);
+}
+
+TEST_F(WebRtcVideoChannelTest, SetRtpSendParametersFailsWithIncorrectBitrate) {
+  const size_t kNumSimulcastStreams = 3;
+  SetUpSimulcast(true, false);
+
+  // Get and set the rtp encoding parameters.
+  webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(last_ssrc_);
+  EXPECT_EQ(kNumSimulcastStreams, parameters.encodings.size());
+
+  // Max bitrate lower than min bitrate should fail.
+  parameters.encodings[2].min_bitrate_bps = 100000;
+  parameters.encodings[2].max_bitrate_bps = 100000 - 1;
+  EXPECT_EQ(webrtc::RTCErrorType::INVALID_RANGE,
+            channel_->SetRtpSendParameters(last_ssrc_, parameters).type());
+}
+
+// Test that min and max bitrate values set via RtpParameters are correctly
+// propagated to the underlying encoder, and that the target is set to 3/4 of
+// the maximum (3/4 was chosen because it's similar to the simulcast defaults
+// that are used if no min/max are specified).
+TEST_F(WebRtcVideoChannelTest, MinAndMaxSimulcastBitratePropagatedToEncoder) {
+  const size_t kNumSimulcastStreams = 3;
+  FakeVideoSendStream* stream = SetUpSimulcast(true, false);
+
+  // Send a full size frame so all simulcast layers are used when reconfiguring.
+  FakeVideoCapturerWithTaskQueue capturer;
+  VideoOptions options;
+  EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, &options, &capturer));
+  EXPECT_EQ(cricket::CS_RUNNING,
+            capturer.Start(capturer.GetSupportedFormats()->front()));
+  channel_->SetSend(true);
+  EXPECT_TRUE(capturer.CaptureFrame());
+
+  // Get and set the rtp encoding parameters.
+  // Change the value and set it on the VideoChannel.
+  webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(last_ssrc_);
+  EXPECT_EQ(kNumSimulcastStreams, parameters.encodings.size());
+  parameters.encodings[0].min_bitrate_bps = 100000;
+  parameters.encodings[0].max_bitrate_bps = 200000;
+  parameters.encodings[1].min_bitrate_bps = 300000;
+  parameters.encodings[1].max_bitrate_bps = 400000;
+  parameters.encodings[2].min_bitrate_bps = 500000;
+  parameters.encodings[2].max_bitrate_bps = 600000;
+  EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters).ok());
+
+  // Verify that the new value propagated down to the encoder.
+  // Check that WebRtcVideoSendStream updates VideoEncoderConfig correctly.
+  EXPECT_EQ(2, stream->num_encoder_reconfigurations());
+  webrtc::VideoEncoderConfig encoder_config = stream->GetEncoderConfig().Copy();
+  EXPECT_EQ(kNumSimulcastStreams, encoder_config.number_of_streams);
+  EXPECT_EQ(kNumSimulcastStreams, encoder_config.simulcast_layers.size());
+  EXPECT_EQ(100000, encoder_config.simulcast_layers[0].min_bitrate_bps);
+  EXPECT_EQ(200000, encoder_config.simulcast_layers[0].max_bitrate_bps);
+  EXPECT_EQ(300000, encoder_config.simulcast_layers[1].min_bitrate_bps);
+  EXPECT_EQ(400000, encoder_config.simulcast_layers[1].max_bitrate_bps);
+  EXPECT_EQ(500000, encoder_config.simulcast_layers[2].min_bitrate_bps);
+  EXPECT_EQ(600000, encoder_config.simulcast_layers[2].max_bitrate_bps);
+
+  // FakeVideoSendStream calls CreateEncoderStreams, test that the vector of
+  // VideoStreams are created appropriately for the simulcast case.
+  EXPECT_EQ(kNumSimulcastStreams, stream->GetVideoStreams().size());
+  // Target bitrate: 200000 * 3 / 4 = 150000.
+  EXPECT_EQ(100000, stream->GetVideoStreams()[0].min_bitrate_bps);
+  EXPECT_EQ(150000, stream->GetVideoStreams()[0].target_bitrate_bps);
+  EXPECT_EQ(200000, stream->GetVideoStreams()[0].max_bitrate_bps);
+  // Target bitrate: 400000 * 3 / 4 = 300000.
+  EXPECT_EQ(300000, stream->GetVideoStreams()[1].min_bitrate_bps);
+  EXPECT_EQ(300000, stream->GetVideoStreams()[1].target_bitrate_bps);
+  EXPECT_EQ(400000, stream->GetVideoStreams()[1].max_bitrate_bps);
+  // Target bitrate: 600000 * 3 / 4 = 450000, less than min -> max.
+  EXPECT_EQ(500000, stream->GetVideoStreams()[2].min_bitrate_bps);
+  EXPECT_EQ(600000, stream->GetVideoStreams()[2].target_bitrate_bps);
+  EXPECT_EQ(600000, stream->GetVideoStreams()[2].max_bitrate_bps);
+
+  // No parameter changed, encoder should not be reconfigured.
+  EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters).ok());
+  EXPECT_EQ(2, stream->num_encoder_reconfigurations());
+
+  EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, nullptr, nullptr));
+}
+
+// Test to only specify the min or max bitrate value for a layer via
+// RtpParameters. The unspecified min/max and target value should be set to the
+// simulcast default that is used if no min/max are specified.
+TEST_F(WebRtcVideoChannelTest, MinOrMaxSimulcastBitratePropagatedToEncoder) {
+  const size_t kNumSimulcastStreams = 3;
+  const std::vector<webrtc::VideoStream> kDefault = GetSimulcastBitrates720p();
+  FakeVideoSendStream* stream = SetUpSimulcast(true, false);
+
+  // Send a full size frame so all simulcast layers are used when reconfiguring.
+  FakeVideoCapturerWithTaskQueue capturer;
+  VideoOptions options;
+  EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, &options, &capturer));
+  EXPECT_EQ(cricket::CS_RUNNING,
+            capturer.Start(capturer.GetSupportedFormats()->front()));
+  channel_->SetSend(true);
+  EXPECT_TRUE(capturer.CaptureFrame());
+
+  // Get and set the rtp encoding parameters.
+  webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(last_ssrc_);
+  EXPECT_EQ(kNumSimulcastStreams, parameters.encodings.size());
+
+  // Change the value and set it on the VideoChannel.
+  // Layer 0: only configure min bitrate.
+  const int kMinBpsLayer0 = kDefault[0].min_bitrate_bps + 1;
+  parameters.encodings[0].min_bitrate_bps = kMinBpsLayer0;
+  // Layer 1: only configure max bitrate.
+  const int kMaxBpsLayer1 = kDefault[1].max_bitrate_bps - 1;
+  parameters.encodings[1].max_bitrate_bps = kMaxBpsLayer1;
+  EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters).ok());
+
+  // Verify that the new value propagated down to the encoder.
+  // Check that WebRtcVideoSendStream updates VideoEncoderConfig correctly.
+  webrtc::VideoEncoderConfig encoder_config = stream->GetEncoderConfig().Copy();
+  EXPECT_EQ(kNumSimulcastStreams, encoder_config.number_of_streams);
+  EXPECT_EQ(kNumSimulcastStreams, encoder_config.simulcast_layers.size());
+  EXPECT_EQ(kMinBpsLayer0, encoder_config.simulcast_layers[0].min_bitrate_bps);
+  EXPECT_EQ(-1, encoder_config.simulcast_layers[0].max_bitrate_bps);
+  EXPECT_EQ(-1, encoder_config.simulcast_layers[1].min_bitrate_bps);
+  EXPECT_EQ(kMaxBpsLayer1, encoder_config.simulcast_layers[1].max_bitrate_bps);
+  EXPECT_EQ(-1, encoder_config.simulcast_layers[2].min_bitrate_bps);
+  EXPECT_EQ(-1, encoder_config.simulcast_layers[2].max_bitrate_bps);
+
+  // FakeVideoSendStream calls CreateEncoderStreams, test that the vector of
+  // VideoStreams are created appropriately for the simulcast case.
+  EXPECT_EQ(kNumSimulcastStreams, stream->GetVideoStreams().size());
+  // Layer 0: min configured bitrate should overwrite min default.
+  EXPECT_EQ(kMinBpsLayer0, stream->GetVideoStreams()[0].min_bitrate_bps);
+  EXPECT_EQ(kDefault[0].target_bitrate_bps,
+            stream->GetVideoStreams()[0].target_bitrate_bps);
+  EXPECT_EQ(kDefault[0].max_bitrate_bps,
+            stream->GetVideoStreams()[0].max_bitrate_bps);
+  // Layer 1: max configured bitrate should overwrite max default.
+  EXPECT_EQ(kDefault[1].min_bitrate_bps,
+            stream->GetVideoStreams()[1].min_bitrate_bps);
+  EXPECT_EQ(kDefault[1].target_bitrate_bps,
+            stream->GetVideoStreams()[1].target_bitrate_bps);
+  EXPECT_EQ(kMaxBpsLayer1, stream->GetVideoStreams()[1].max_bitrate_bps);
+  // Layer 2: min and max bitrate not configured, default expected.
+  EXPECT_EQ(kDefault[2].min_bitrate_bps,
+            stream->GetVideoStreams()[2].min_bitrate_bps);
+  EXPECT_EQ(kDefault[2].target_bitrate_bps,
+            stream->GetVideoStreams()[2].target_bitrate_bps);
+  EXPECT_EQ(kDefault[2].max_bitrate_bps,
+            stream->GetVideoStreams()[2].max_bitrate_bps);
+
+  EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, nullptr, nullptr));
+}
+
+// Test that specifying the min (or max) bitrate value for a layer via
+// RtpParameters above (or below) the simulcast default max (or min) adjusts the
+// unspecified values accordingly.
+TEST_F(WebRtcVideoChannelTest, SetMinAndMaxSimulcastBitrateAboveBelowDefault) {
+  const size_t kNumSimulcastStreams = 3;
+  const std::vector<webrtc::VideoStream> kDefault = GetSimulcastBitrates720p();
+  FakeVideoSendStream* stream = SetUpSimulcast(true, false);
+
+  // Send a full size frame so all simulcast layers are used when reconfiguring.
+  FakeVideoCapturerWithTaskQueue capturer;
+  VideoOptions options;
+  EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, &options, &capturer));
+  EXPECT_EQ(cricket::CS_RUNNING,
+            capturer.Start(capturer.GetSupportedFormats()->front()));
+  channel_->SetSend(true);
+  EXPECT_TRUE(capturer.CaptureFrame());
+
+  // Get and set the rtp encoding parameters.
+  webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(last_ssrc_);
+  EXPECT_EQ(kNumSimulcastStreams, parameters.encodings.size());
+
+  // Change the value and set it on the VideoChannel.
+  // For layer 0, set the min bitrate above the default max.
+  const int kMinBpsLayer0 = kDefault[0].max_bitrate_bps + 1;
+  parameters.encodings[0].min_bitrate_bps = kMinBpsLayer0;
+  // For layer 1, set the max bitrate below the default min.
+  const int kMaxBpsLayer1 = kDefault[1].min_bitrate_bps - 1;
+  parameters.encodings[1].max_bitrate_bps = kMaxBpsLayer1;
+  EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters).ok());
+
+  // Verify that the new value propagated down to the encoder.
+  // FakeVideoSendStream calls CreateEncoderStreams, test that the vector of
+  // VideoStreams are created appropriately for the simulcast case.
+  EXPECT_EQ(kNumSimulcastStreams, stream->GetVideoStreams().size());
+  // Layer 0: Min bitrate above default max (target/max should be adjusted).
+  EXPECT_EQ(kMinBpsLayer0, stream->GetVideoStreams()[0].min_bitrate_bps);
+  EXPECT_EQ(kMinBpsLayer0, stream->GetVideoStreams()[0].target_bitrate_bps);
+  EXPECT_EQ(kMinBpsLayer0, stream->GetVideoStreams()[0].max_bitrate_bps);
+  // Layer 1: Max bitrate below default min (min/target should be adjusted).
+  EXPECT_EQ(kMaxBpsLayer1, stream->GetVideoStreams()[1].min_bitrate_bps);
+  EXPECT_EQ(kMaxBpsLayer1, stream->GetVideoStreams()[1].target_bitrate_bps);
+  EXPECT_EQ(kMaxBpsLayer1, stream->GetVideoStreams()[1].max_bitrate_bps);
+  // Layer 2: min and max bitrate not configured, default expected.
+  EXPECT_EQ(kDefault[2].min_bitrate_bps,
+            stream->GetVideoStreams()[2].min_bitrate_bps);
+  EXPECT_EQ(kDefault[2].target_bitrate_bps,
+            stream->GetVideoStreams()[2].target_bitrate_bps);
+  EXPECT_EQ(kDefault[2].max_bitrate_bps,
+            stream->GetVideoStreams()[2].max_bitrate_bps);
+
+  EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, nullptr, nullptr));
+}
+
+TEST_F(WebRtcVideoChannelTest, BandwidthAboveTotalMaxBitrateGivenToMaxLayer) {
+  const size_t kNumSimulcastStreams = 3;
+  const std::vector<webrtc::VideoStream> kDefault = GetSimulcastBitrates720p();
+  FakeVideoSendStream* stream = SetUpSimulcast(true, false);
+
+  // Send a full size frame so all simulcast layers are used when reconfiguring.
+  FakeVideoCapturerWithTaskQueue capturer;
+  VideoOptions options;
+  EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, &options, &capturer));
+  EXPECT_EQ(cricket::CS_RUNNING,
+            capturer.Start(capturer.GetSupportedFormats()->front()));
+  channel_->SetSend(true);
+  EXPECT_TRUE(capturer.CaptureFrame());
+
+  // Set max bitrate for all but the highest layer.
+  webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(last_ssrc_);
+  EXPECT_EQ(kNumSimulcastStreams, parameters.encodings.size());
+  parameters.encodings[0].max_bitrate_bps = kDefault[0].max_bitrate_bps;
+  parameters.encodings[1].max_bitrate_bps = kDefault[1].max_bitrate_bps;
+  EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters).ok());
+
+  // Set max bandwidth equal to total max bitrate.
+  send_parameters_.max_bandwidth_bps =
+      GetTotalMaxBitrateBps(stream->GetVideoStreams());
+  ExpectSetMaxBitrate(send_parameters_.max_bandwidth_bps);
+  ASSERT_TRUE(channel_->SetSendParameters(send_parameters_));
+
+  // No bitrate above the total max to give to the highest layer.
+  EXPECT_EQ(kNumSimulcastStreams, stream->GetVideoStreams().size());
+  EXPECT_EQ(kDefault[2].max_bitrate_bps,
+            stream->GetVideoStreams()[2].max_bitrate_bps);
+
+  // Set max bandwidth above the total max bitrate.
+  send_parameters_.max_bandwidth_bps =
+      GetTotalMaxBitrateBps(stream->GetVideoStreams()) + 1;
+  ExpectSetMaxBitrate(send_parameters_.max_bandwidth_bps);
+  ASSERT_TRUE(channel_->SetSendParameters(send_parameters_));
+
+  // The highest layer has no max bitrate set -> the bitrate above the total
+  // max should be given to the highest layer.
+  EXPECT_EQ(kNumSimulcastStreams, stream->GetVideoStreams().size());
+  EXPECT_EQ(send_parameters_.max_bandwidth_bps,
+            GetTotalMaxBitrateBps(stream->GetVideoStreams()));
+  EXPECT_EQ(kDefault[2].max_bitrate_bps + 1,
+            stream->GetVideoStreams()[2].max_bitrate_bps);
+
+  EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, nullptr, nullptr));
+}
+
+TEST_F(WebRtcVideoChannelTest,
+       BandwidthAboveTotalMaxBitrateNotGivenToMaxLayerIfMaxBitrateSet) {
+  const size_t kNumSimulcastStreams = 3;
+  const std::vector<webrtc::VideoStream> kDefault = GetSimulcastBitrates720p();
+  EXPECT_EQ(kNumSimulcastStreams, kDefault.size());
+  FakeVideoSendStream* stream = SetUpSimulcast(true, false);
+
+  // Send a full size frame so all simulcast layers are used when reconfiguring.
+  FakeVideoCapturerWithTaskQueue capturer;
+  VideoOptions options;
+  EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, &options, &capturer));
+  EXPECT_EQ(cricket::CS_RUNNING,
+            capturer.Start(capturer.GetSupportedFormats()->front()));
+  channel_->SetSend(true);
+  EXPECT_TRUE(capturer.CaptureFrame());
+
+  // Set max bitrate for the highest layer.
+  webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(last_ssrc_);
+  EXPECT_EQ(kNumSimulcastStreams, parameters.encodings.size());
+  parameters.encodings[2].max_bitrate_bps = kDefault[2].max_bitrate_bps;
+  EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters).ok());
+
+  // Set max bandwidth above the total max bitrate.
+  send_parameters_.max_bandwidth_bps =
+      GetTotalMaxBitrateBps(stream->GetVideoStreams()) + 1;
+  ExpectSetMaxBitrate(send_parameters_.max_bandwidth_bps);
+  ASSERT_TRUE(channel_->SetSendParameters(send_parameters_));
+
+  // The highest layer has the max bitrate set -> the bitrate above the total
+  // max should not be given to the highest layer.
+  EXPECT_EQ(kNumSimulcastStreams, stream->GetVideoStreams().size());
+  EXPECT_EQ(*parameters.encodings[2].max_bitrate_bps,
+            stream->GetVideoStreams()[2].max_bitrate_bps);
+
+  EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, nullptr, nullptr));
 }
 
 // Test that a stream will not be sending if its encoding is made inactive
