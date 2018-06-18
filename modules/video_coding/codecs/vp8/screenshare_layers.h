@@ -72,9 +72,9 @@ class ScreenshareLayers : public TemporalLayers {
   uint32_t max_debt_bytes_;
 
   // Configured max framerate.
-  rtc::Optional<uint32_t> target_framerate_;
+  absl::optional<uint32_t> target_framerate_;
   // Incoming framerate from capturer.
-  rtc::Optional<uint32_t> capture_framerate_;
+  absl::optional<uint32_t> capture_framerate_;
   // Tracks what framerate we actually encode, and drops frames on overshoot.
   RateStatistics encode_framerate_;
   bool bitrate_updated_;

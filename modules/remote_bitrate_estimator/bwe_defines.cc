@@ -30,7 +30,7 @@ int GetMinBitrateBps() {
 
 RateControlInput::RateControlInput(
     BandwidthUsage bw_state,
-    const rtc::Optional<uint32_t>& incoming_bitrate,
+    const absl::optional<uint32_t>& incoming_bitrate,
     double noise_var)
     : bw_state(bw_state),
       incoming_bitrate(incoming_bitrate),

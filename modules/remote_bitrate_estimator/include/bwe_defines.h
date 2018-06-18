@@ -11,7 +11,7 @@
 #ifndef MODULES_REMOTE_BITRATE_ESTIMATOR_INCLUDE_BWE_DEFINES_H_
 #define MODULES_REMOTE_BITRATE_ESTIMATOR_INCLUDE_BWE_DEFINES_H_
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "typedefs.h"  // NOLINT(build/include)
 
 #define BWE_MAX(a, b) ((a) > (b) ? (a) : (b))
@@ -48,12 +48,12 @@ enum RateControlRegion { kRcNearMax, kRcAboveMax, kRcMaxUnknown };
 
 struct RateControlInput {
   RateControlInput(BandwidthUsage bw_state,
-                   const rtc::Optional<uint32_t>& incoming_bitrate,
+                   const absl::optional<uint32_t>& incoming_bitrate,
                    double noise_var);
   ~RateControlInput();
 
   BandwidthUsage bw_state;
-  rtc::Optional<uint32_t> incoming_bitrate;
+  absl::optional<uint32_t> incoming_bitrate;
   double noise_var;
 };
 }  // namespace webrtc

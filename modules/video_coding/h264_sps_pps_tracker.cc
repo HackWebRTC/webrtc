@@ -219,9 +219,9 @@ void H264SpsPpsTracker::InsertSpsPpsNalus(const std::vector<uint8_t>& sps,
     RTC_LOG(LS_WARNING) << "SPS Nalu header missing";
     return;
   }
-  rtc::Optional<SpsParser::SpsState> parsed_sps = SpsParser::ParseSps(
+  absl::optional<SpsParser::SpsState> parsed_sps = SpsParser::ParseSps(
       sps.data() + kNaluHeaderOffset, sps.size() - kNaluHeaderOffset);
-  rtc::Optional<PpsParser::PpsState> parsed_pps = PpsParser::ParsePps(
+  absl::optional<PpsParser::PpsState> parsed_pps = PpsParser::ParsePps(
       pps.data() + kNaluHeaderOffset, pps.size() - kNaluHeaderOffset);
 
   if (!parsed_sps) {

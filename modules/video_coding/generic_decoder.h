@@ -46,8 +46,8 @@ class VCMDecodedFrameCallback : public DecodedImageCallback {
   int32_t Decoded(VideoFrame& decodedImage) override;
   int32_t Decoded(VideoFrame& decodedImage, int64_t decode_time_ms) override;
   void Decoded(VideoFrame& decodedImage,
-               rtc::Optional<int32_t> decode_time_ms,
-               rtc::Optional<uint8_t> qp) override;
+               absl::optional<int32_t> decode_time_ms,
+               absl::optional<uint8_t> qp) override;
   int32_t ReceivedDecodedReferenceFrame(const uint64_t pictureId) override;
   int32_t ReceivedDecodedFrame(const uint64_t pictureId) override;
 

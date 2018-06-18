@@ -240,7 +240,7 @@ RtpFrameReferenceFinder::ManageFrameGeneric(RtpFrameObject* frame,
 
 RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp8(
     RtpFrameObject* frame) {
-  rtc::Optional<RTPVideoTypeHeader> rtp_codec_header = frame->GetCodecHeader();
+  absl::optional<RTPVideoTypeHeader> rtp_codec_header = frame->GetCodecHeader();
   if (!rtp_codec_header) {
     RTC_LOG(LS_WARNING)
         << "Failed to get codec header from frame, dropping frame.";
@@ -393,7 +393,7 @@ void RtpFrameReferenceFinder::UpdateLayerInfoVp8(
 
 RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp9(
     RtpFrameObject* frame) {
-  rtc::Optional<RTPVideoTypeHeader> rtp_codec_header = frame->GetCodecHeader();
+  absl::optional<RTPVideoTypeHeader> rtp_codec_header = frame->GetCodecHeader();
   if (!rtp_codec_header) {
     RTC_LOG(LS_WARNING)
         << "Failed to get codec header from frame, dropping frame.";

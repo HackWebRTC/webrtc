@@ -13,7 +13,7 @@
 
 #include <vector>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 
 namespace webrtc {
 
@@ -28,7 +28,7 @@ class BitrateEstimator {
   virtual ~BitrateEstimator();
   virtual void Update(int64_t now_ms, int bytes);
 
-  virtual rtc::Optional<uint32_t> bitrate_bps() const;
+  virtual absl::optional<uint32_t> bitrate_bps() const;
 
   virtual void ExpectFastRateChange();
 

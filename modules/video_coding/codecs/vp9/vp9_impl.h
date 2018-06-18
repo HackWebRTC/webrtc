@@ -113,7 +113,7 @@ class VP9EncoderImpl : public VP9Encoder {
   InterLayerPredMode inter_layer_pred_;
 
   // Framerate controller.
-  rtc::Optional<float> target_framerate_fps_;
+  absl::optional<float> target_framerate_fps_;
   RateStatistics output_framerate_;
   uint32_t last_encoded_frame_rtp_timestamp_;
 

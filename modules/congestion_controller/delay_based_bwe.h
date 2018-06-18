@@ -47,7 +47,7 @@ class DelayBasedBwe {
 
   Result IncomingPacketFeedbackVector(
       const std::vector<PacketFeedback>& packet_feedback_vector,
-      rtc::Optional<uint32_t> acked_bitrate_bps);
+      absl::optional<uint32_t> acked_bitrate_bps);
   void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms);
   bool LatestEstimate(std::vector<uint32_t>* ssrcs,
                       uint32_t* bitrate_bps) const;
@@ -58,12 +58,12 @@ class DelayBasedBwe {
  private:
   void IncomingPacketFeedback(const PacketFeedback& packet_feedback);
   Result OnLongFeedbackDelay(int64_t arrival_time_ms);
-  Result MaybeUpdateEstimate(rtc::Optional<uint32_t> acked_bitrate_bps,
+  Result MaybeUpdateEstimate(absl::optional<uint32_t> acked_bitrate_bps,
                              bool request_probe);
   // Updates the current remote rate estimate and returns true if a valid
   // estimate exists.
   bool UpdateEstimate(int64_t now_ms,
-                      rtc::Optional<uint32_t> acked_bitrate_bps,
+                      absl::optional<uint32_t> acked_bitrate_bps,
                       uint32_t* target_bitrate_bps);
 
   rtc::RaceChecker network_race_;

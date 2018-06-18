@@ -285,7 +285,7 @@ void ProbeController::Process() {
     return;
 
   // Probe bandwidth periodically when in ALR state.
-  rtc::Optional<int64_t> alr_start_time =
+  absl::optional<int64_t> alr_start_time =
       pacer_->GetApplicationLimitedRegionStartTime();
   if (alr_start_time && estimated_bitrate_bps_ > 0) {
     int64_t next_probe_time_ms =

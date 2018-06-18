@@ -16,7 +16,7 @@
 #include <memory>
 #include <vector>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "api/transport/network_control.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/bitrate_controller/send_side_bandwidth_estimation.h"
@@ -51,8 +51,8 @@ class GoogCcNetworkController : public NetworkControllerInterface {
 
  private:
   void UpdateBitrateConstraints(TargetRateConstraints constraints,
-                                rtc::Optional<DataRate> starting_rate);
-  rtc::Optional<DataSize> MaybeUpdateCongestionWindow();
+                                absl::optional<DataRate> starting_rate);
+  absl::optional<DataSize> MaybeUpdateCongestionWindow();
   NetworkControlUpdate MaybeTriggerOnNetworkChanged(Timestamp at_time);
   bool GetNetworkParameters(int32_t* estimated_bitrate_bps,
                             uint8_t* fraction_loss,
@@ -71,10 +71,10 @@ class GoogCcNetworkController : public NetworkControllerInterface {
   std::unique_ptr<AcknowledgedBitrateEstimator> acknowledged_bitrate_estimator_;
 
   std::deque<int64_t> feedback_rtts_;
-  rtc::Optional<int64_t> min_feedback_rtt_ms_;
+  absl::optional<int64_t> min_feedback_rtt_ms_;
 
   DataRate last_bandwidth_;
-  rtc::Optional<TargetTransferRate> last_target_rate_;
+  absl::optional<TargetTransferRate> last_target_rate_;
 
   int32_t last_estimated_bitrate_bps_ = 0;
   uint8_t last_estimated_fraction_loss_ = 0;
@@ -89,7 +89,7 @@ class GoogCcNetworkController : public NetworkControllerInterface {
   int64_t accepted_queue_ms_;
   bool previously_in_alr = false;
 
-  rtc::Optional<DataSize> current_data_window_;
+  absl::optional<DataSize> current_data_window_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(GoogCcNetworkController);
 };

@@ -35,7 +35,7 @@ constexpr size_t kPayloadSize = 10;
 class MockBitrateEstimator : public BitrateEstimator {
  public:
   MOCK_METHOD2(Update, void(int64_t now_ms, int bytes));
-  MOCK_CONST_METHOD0(bitrate_bps, rtc::Optional<uint32_t>());
+  MOCK_CONST_METHOD0(bitrate_bps, absl::optional<uint32_t>());
   MOCK_METHOD0(ExpectFastRateChange, void());
 };
 
@@ -124,7 +124,7 @@ TEST(TestAcknowledgedBitrateEstimator, ExpectFastRateChangeWhenLeftAlr) {
 
 TEST(TestAcknowledgedBitrateEstimator, ReturnBitrate) {
   auto states = CreateTestStates();
-  rtc::Optional<uint32_t> return_value(42);
+  absl::optional<uint32_t> return_value(42);
   EXPECT_CALL(*states.mock_bitrate_estimator, bitrate_bps())
       .Times(1)
       .WillOnce(Return(return_value));

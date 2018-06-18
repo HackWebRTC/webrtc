@@ -42,8 +42,8 @@ class MultiplexDecoderAdapter : public VideoDecoder {
 
   void Decoded(AlphaCodecStream stream_idx,
                VideoFrame* decoded_image,
-               rtc::Optional<int32_t> decode_time_ms,
-               rtc::Optional<uint8_t> qp);
+               absl::optional<int32_t> decode_time_ms,
+               absl::optional<uint8_t> qp);
 
  private:
   // Wrapper class that redirects Decoded() calls.
@@ -53,11 +53,11 @@ class MultiplexDecoderAdapter : public VideoDecoder {
   struct DecodedImageData;
 
   void MergeAlphaImages(VideoFrame* decoded_image,
-                        const rtc::Optional<int32_t>& decode_time_ms,
-                        const rtc::Optional<uint8_t>& qp,
+                        const absl::optional<int32_t>& decode_time_ms,
+                        const absl::optional<uint8_t>& qp,
                         VideoFrame* multiplex_decoded_image,
-                        const rtc::Optional<int32_t>& multiplex_decode_time_ms,
-                        const rtc::Optional<uint8_t>& multiplex_qp);
+                        const absl::optional<int32_t>& multiplex_decode_time_ms,
+                        const absl::optional<uint8_t>& multiplex_qp);
 
   VideoDecoderFactory* const factory_;
   const SdpVideoFormat associated_format_;

@@ -58,11 +58,11 @@ bool SendTimeHistory::OnSentPacket(uint16_t sequence_number,
   return true;
 }
 
-rtc::Optional<PacketFeedback> SendTimeHistory::GetPacket(
+absl::optional<PacketFeedback> SendTimeHistory::GetPacket(
     uint16_t sequence_number) const {
   int64_t unwrapped_seq_num =
       seq_num_unwrapper_.UnwrapWithoutUpdate(sequence_number);
-  rtc::Optional<PacketFeedback> optional_feedback;
+  absl::optional<PacketFeedback> optional_feedback;
   auto it = history_.find(unwrapped_seq_num);
   if (it != history_.end())
     optional_feedback.emplace(it->second);

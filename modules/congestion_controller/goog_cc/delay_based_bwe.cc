@@ -114,7 +114,7 @@ DelayBasedBwe::~DelayBasedBwe() {}
 
 DelayBasedBwe::Result DelayBasedBwe::IncomingPacketFeedbackVector(
     const std::vector<PacketFeedback>& packet_feedback_vector,
-    rtc::Optional<uint32_t> acked_bitrate_bps,
+    absl::optional<uint32_t> acked_bitrate_bps,
     int64_t at_time_ms) {
   RTC_DCHECK(std::is_sorted(packet_feedback_vector.begin(),
                             packet_feedback_vector.end(),
@@ -225,13 +225,13 @@ void DelayBasedBwe::IncomingPacketFeedback(
 }
 
 DelayBasedBwe::Result DelayBasedBwe::MaybeUpdateEstimate(
-    rtc::Optional<uint32_t> acked_bitrate_bps,
+    absl::optional<uint32_t> acked_bitrate_bps,
     bool recovered_from_overuse,
     int64_t at_time_ms) {
   Result result;
   int64_t now_ms = at_time_ms;
 
-  rtc::Optional<int> probe_bitrate_bps =
+  absl::optional<int> probe_bitrate_bps =
       probe_bitrate_estimator_.FetchAndResetLastEstimatedBitrateBps();
   // Currently overusing the bandwidth.
   if (delay_detector_->State() == BandwidthUsage::kBwOverusing) {
@@ -284,7 +284,7 @@ DelayBasedBwe::Result DelayBasedBwe::MaybeUpdateEstimate(
 }
 
 bool DelayBasedBwe::UpdateEstimate(int64_t now_ms,
-                                   rtc::Optional<uint32_t> acked_bitrate_bps,
+                                   absl::optional<uint32_t> acked_bitrate_bps,
                                    uint32_t* target_bitrate_bps) {
   // TODO(terelius): RateControlInput::noise_var is deprecated and will be
   // removed. In the meantime, we set it to zero.

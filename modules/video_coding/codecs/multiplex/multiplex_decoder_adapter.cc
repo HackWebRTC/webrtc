@@ -33,8 +33,8 @@ class MultiplexDecoderAdapter::AdapterDecodedImageCallback
       : adapter_(adapter), stream_idx_(stream_idx) {}
 
   void Decoded(VideoFrame& decoded_image,
-               rtc::Optional<int32_t> decode_time_ms,
-               rtc::Optional<uint8_t> qp) override {
+               absl::optional<int32_t> decode_time_ms,
+               absl::optional<uint8_t> qp) override {
     if (!adapter_)
       return;
     adapter_->Decoded(stream_idx_, &decoded_image, decode_time_ms, qp);
@@ -64,16 +64,16 @@ struct MultiplexDecoderAdapter::DecodedImageData {
   }
   DecodedImageData(AlphaCodecStream stream_idx,
                    const VideoFrame& decoded_image,
-                   const rtc::Optional<int32_t>& decode_time_ms,
-                   const rtc::Optional<uint8_t>& qp)
+                   const absl::optional<int32_t>& decode_time_ms,
+                   const absl::optional<uint8_t>& qp)
       : stream_idx_(stream_idx),
         decoded_image_(decoded_image),
         decode_time_ms_(decode_time_ms),
         qp_(qp) {}
   const AlphaCodecStream stream_idx_;
   VideoFrame decoded_image_;
-  const rtc::Optional<int32_t> decode_time_ms_;
-  const rtc::Optional<uint8_t> qp_;
+  const absl::optional<int32_t> decode_time_ms_;
+  const absl::optional<uint8_t> qp_;
 
  private:
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(DecodedImageData);
@@ -153,8 +153,8 @@ int32_t MultiplexDecoderAdapter::Release() {
 
 void MultiplexDecoderAdapter::Decoded(AlphaCodecStream stream_idx,
                                       VideoFrame* decoded_image,
-                                      rtc::Optional<int32_t> decode_time_ms,
-                                      rtc::Optional<uint8_t> qp) {
+                                      absl::optional<int32_t> decode_time_ms,
+                                      absl::optional<uint8_t> qp) {
   const auto& other_decoded_data_it =
       decoded_data_.find(decoded_image->timestamp());
   if (other_decoded_data_it != decoded_data_.end()) {
@@ -184,11 +184,11 @@ void MultiplexDecoderAdapter::Decoded(AlphaCodecStream stream_idx,
 
 void MultiplexDecoderAdapter::MergeAlphaImages(
     VideoFrame* decoded_image,
-    const rtc::Optional<int32_t>& decode_time_ms,
-    const rtc::Optional<uint8_t>& qp,
+    const absl::optional<int32_t>& decode_time_ms,
+    const absl::optional<uint8_t>& qp,
     VideoFrame* alpha_decoded_image,
-    const rtc::Optional<int32_t>& alpha_decode_time_ms,
-    const rtc::Optional<uint8_t>& alpha_qp) {
+    const absl::optional<int32_t>& alpha_decode_time_ms,
+    const absl::optional<uint8_t>& alpha_qp) {
   if (!alpha_decoded_image->timestamp()) {
     decoded_complete_callback_->Decoded(*decoded_image, decode_time_ms, qp);
     return;

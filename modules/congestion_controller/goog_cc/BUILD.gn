@@ -43,7 +43,6 @@ rtc_static_library("goog_cc") {
     "../..:module_api",
     "../../..:webrtc_common",
     "../../../:typedefs",
-    "../../../api:optional",
     "../../../api/transport:network_control",
     "../../../logging:rtc_event_log_api",
     "../../../logging:rtc_event_pacing",
@@ -57,6 +56,7 @@ rtc_static_library("goog_cc") {
     "../../pacing",
     "../../remote_bitrate_estimator",
     "../../rtp_rtcp:rtp_rtcp_format",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 
@@ -85,7 +85,6 @@ rtc_source_set("estimators") {
   }
 
   deps = [
-    "../../../api:optional",
     "../../../logging:rtc_event_bwe",
     "../../../logging:rtc_event_log_api",
     "../../../rtc_base:checks",
@@ -96,6 +95,7 @@ rtc_source_set("estimators") {
     "../../../system_wrappers:metrics_api",
     "../../remote_bitrate_estimator",
     "../../rtp_rtcp:rtp_rtcp_format",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 

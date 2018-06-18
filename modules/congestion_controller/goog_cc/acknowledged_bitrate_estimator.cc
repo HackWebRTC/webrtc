@@ -47,7 +47,7 @@ void AcknowledgedBitrateEstimator::IncomingPacketFeedbackVector(
   }
 }
 
-rtc::Optional<uint32_t> AcknowledgedBitrateEstimator::bitrate_bps() const {
+absl::optional<uint32_t> AcknowledgedBitrateEstimator::bitrate_bps() const {
   return bitrate_estimator_->bitrate_bps();
 }
 

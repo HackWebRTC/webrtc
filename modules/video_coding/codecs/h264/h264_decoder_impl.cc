@@ -325,7 +325,7 @@ int32_t H264DecoderImpl::Decode(const EncodedImage& input_image,
   RTC_CHECK_EQ(av_frame_->data[kVPlaneIndex], i420_buffer->DataV());
   video_frame->set_timestamp(input_image._timeStamp);
 
-  rtc::Optional<uint8_t> qp;
+  absl::optional<uint8_t> qp;
   // TODO(sakal): Maybe it is possible to get QP directly from FFmpeg.
   h264_bitstream_parser_.ParseBitstream(input_image._buffer,
                                         input_image._length);
@@ -351,10 +351,10 @@ int32_t H264DecoderImpl::Decode(const EncodedImage& input_image,
         video_frame->rotation());
     // TODO(nisse): Timestamp and rotation are all zero here. Change decoder
     // interface to pass a VideoFrameBuffer instead of a VideoFrame?
-    decoded_image_callback_->Decoded(cropped_frame, rtc::nullopt, qp);
+    decoded_image_callback_->Decoded(cropped_frame, absl::nullopt, qp);
   } else {
     // Return decoded frame.
-    decoded_image_callback_->Decoded(*video_frame, rtc::nullopt, qp);
+    decoded_image_callback_->Decoded(*video_frame, absl::nullopt, qp);
   }
   // Stop referencing it, possibly freeing |video_frame|.
   av_frame_unref(av_frame_.get());

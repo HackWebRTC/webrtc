@@ -26,7 +26,7 @@
 #include "modules/congestion_controller/bbr/rtt_stats.h"
 #include "modules/congestion_controller/bbr/windowed_filter.h"
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "rtc_base/random.h"
 
 namespace webrtc {
@@ -217,7 +217,7 @@ class BbrNetworkController : public NetworkControllerInterface {
   webrtc::Random random_;
   LossRateFilter loss_rate_;
 
-  rtc::Optional<TargetRateConstraints> constraints_;
+  absl::optional<TargetRateConstraints> constraints_;
 
   Mode mode_;
 
@@ -244,7 +244,7 @@ class BbrNetworkController : public NetworkControllerInterface {
   MaxAckHeightFilter max_ack_height_;
 
   // The time this aggregation started and the number of bytes acked during it.
-  rtc::Optional<Timestamp> aggregation_epoch_start_time_;
+  absl::optional<Timestamp> aggregation_epoch_start_time_;
   DataSize aggregation_epoch_bytes_;
 
   // The number of bytes acknowledged since the last time bytes in flight
@@ -308,7 +308,7 @@ class BbrNetworkController : public NetworkControllerInterface {
   // Time at which PROBE_RTT has to be exited.  Setting it to zero indicates
   // that the time is yet unknown as the number of packets in flight has not
   // reached the required value.
-  rtc::Optional<Timestamp> exit_probe_rtt_at_;
+  absl::optional<Timestamp> exit_probe_rtt_at_;
   // Indicates whether a round-trip has passed since PROBE_RTT became active.
   bool probe_rtt_round_passed_;
 
@@ -321,7 +321,7 @@ class BbrNetworkController : public NetworkControllerInterface {
   // Receiving acknowledgement of a packet after |end_recovery_at_| will cause
   // BBR to exit the recovery mode.  A set value indicates at least one
   // loss has been detected, so it must not be reset.
-  rtc::Optional<int64_t> end_recovery_at_;
+  absl::optional<int64_t> end_recovery_at_;
   // A window used to limit the number of bytes in flight during loss recovery.
   DataSize recovery_window_;
 

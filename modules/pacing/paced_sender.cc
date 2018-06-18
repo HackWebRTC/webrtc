@@ -211,7 +211,7 @@ int64_t PacedSender::ExpectedQueueTimeMs() const {
                               pacing_bitrate_kbps_);
 }
 
-rtc::Optional<int64_t> PacedSender::GetApplicationLimitedRegionStartTime()
+absl::optional<int64_t> PacedSender::GetApplicationLimitedRegionStartTime()
     const {
   rtc::CritScope cs(&critsect_);
   return alr_detector_->GetApplicationLimitedRegionStartTime();

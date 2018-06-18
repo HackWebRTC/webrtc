@@ -599,7 +599,7 @@ void FrameBuffer::UpdateJitterDelay() {
 
 void FrameBuffer::UpdateTimingFrameInfo() {
   TRACE_EVENT0("webrtc", "FrameBuffer::UpdateTimingFrameInfo");
-  rtc::Optional<TimingFrameInfo> info = timing_->GetTimingFrameInfo();
+  absl::optional<TimingFrameInfo> info = timing_->GetTimingFrameInfo();
   if (info && stats_callback_)
     stats_callback_->OnTimingFrameInfoUpdated(*info);
 }

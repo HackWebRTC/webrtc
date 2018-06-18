@@ -97,7 +97,7 @@ void RemoteBitrateEstimatorSingleStream::IncomingPacket(
   estimator->last_packet_time_ms = now_ms;
 
   // Check if incoming bitrate estimate is valid, and if it needs to be reset.
-  rtc::Optional<uint32_t> incoming_bitrate = incoming_bitrate_.Rate(now_ms);
+  absl::optional<uint32_t> incoming_bitrate = incoming_bitrate_.Rate(now_ms);
   if (incoming_bitrate) {
     last_valid_incoming_bitrate_ = *incoming_bitrate;
   } else if (last_valid_incoming_bitrate_ > 0) {
@@ -124,7 +124,7 @@ void RemoteBitrateEstimatorSingleStream::IncomingPacket(
                                estimator->estimator.num_of_deltas(), now_ms);
   }
   if (estimator->detector.State() == BandwidthUsage::kBwOverusing) {
-    rtc::Optional<uint32_t> incoming_bitrate_bps =
+    absl::optional<uint32_t> incoming_bitrate_bps =
         incoming_bitrate_.Rate(now_ms);
     if (incoming_bitrate_bps &&
         (prior_state != BandwidthUsage::kBwOverusing ||

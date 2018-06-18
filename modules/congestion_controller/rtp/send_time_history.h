@@ -34,7 +34,7 @@ class SendTimeHistory {
   bool OnSentPacket(uint16_t sequence_number, int64_t send_time_ms);
 
   // Retrieves packet info identified by |sequence_number|.
-  rtc::Optional<PacketFeedback> GetPacket(uint16_t sequence_number) const;
+  absl::optional<PacketFeedback> GetPacket(uint16_t sequence_number) const;
 
   // Look up PacketFeedback for a sent packet, based on the sequence number, and
   // populate all fields except for arrival_time. The packet parameter must
@@ -54,7 +54,7 @@ class SendTimeHistory {
   const int64_t packet_age_limit_ms_;
   SequenceNumberUnwrapper seq_num_unwrapper_;
   std::map<int64_t, PacketFeedback> history_;
-  rtc::Optional<int64_t> last_ack_seq_num_;
+  absl::optional<int64_t> last_ack_seq_num_;
   std::map<RemoteAndLocalNetworkId, size_t> in_flight_bytes_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(SendTimeHistory);

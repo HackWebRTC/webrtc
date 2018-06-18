@@ -70,7 +70,7 @@ struct VCMFrameCount {
 class VCMReceiveCallback {
  public:
   virtual int32_t FrameToRender(VideoFrame& videoFrame,  // NOLINT
-                                rtc::Optional<uint8_t> qp,
+                                absl::optional<uint8_t> qp,
                                 VideoContentType content_type) = 0;
 
   virtual int32_t ReceivedDecodedReferenceFrame(const uint64_t pictureId);

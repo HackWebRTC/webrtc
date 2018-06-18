@@ -11,7 +11,7 @@
 #ifndef MODULES_PACING_ALR_DETECTOR_H_
 #define MODULES_PACING_ALR_DETECTOR_H_
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/pacing/interval_budget.h"
 #include "modules/pacing/paced_sender.h"
@@ -42,7 +42,7 @@ class AlrDetector {
 
   // Returns time in milliseconds when the current application-limited region
   // started or empty result if the sender is currently not application-limited.
-  rtc::Optional<int64_t> GetApplicationLimitedRegionStartTime() const;
+  absl::optional<int64_t> GetApplicationLimitedRegionStartTime() const;
 
   // Sent traffic percentage as a function of network capacity used to determine
   // application-limited region. ALR region start when bandwidth usage drops
@@ -62,7 +62,7 @@ class AlrDetector {
   int alr_stop_budget_level_percent_;
 
   IntervalBudget alr_budget_;
-  rtc::Optional<int64_t> alr_started_time_ms_;
+  absl::optional<int64_t> alr_started_time_ms_;
 
   RtcEventLog* event_log_;
 };

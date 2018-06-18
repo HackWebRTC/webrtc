@@ -12,7 +12,7 @@
 #ifndef MODULES_CONGESTION_CONTROLLER_BBR_BANDWIDTH_SAMPLER_H_
 #define MODULES_CONGESTION_CONTROLLER_BBR_BANDWIDTH_SAMPLER_H_
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "api/units/data_rate.h"
 #include "api/units/data_size.h"
 #include "api/units/time_delta.h"
@@ -187,11 +187,11 @@ class BandwidthSampler {
 
     // The value of |last_acked_packet_sent_time_| at the time the packet was
     // sent.
-    rtc::Optional<Timestamp> last_acked_packet_sent_time;
+    absl::optional<Timestamp> last_acked_packet_sent_time;
 
     // The value of |last_acked_packet_ack_time_| at the time the packet was
     // sent.
-    rtc::Optional<Timestamp> last_acked_packet_ack_time;
+    absl::optional<Timestamp> last_acked_packet_ack_time;
 
     // The value of |total_data_acked_| at the time the packet was
     // sent.
@@ -227,10 +227,10 @@ class BandwidthSampler {
 
   // The time at which the last acknowledged packet was sent. Set to
   // Timestamp::Zero() if no valid timestamp is available.
-  rtc::Optional<Timestamp> last_acked_packet_sent_time_;
+  absl::optional<Timestamp> last_acked_packet_sent_time_;
 
   // The time at which the most recent packet was acknowledged.
-  rtc::Optional<Timestamp> last_acked_packet_ack_time_;
+  absl::optional<Timestamp> last_acked_packet_ack_time_;
 
   // The most recently sent packet.
   int64_t last_sent_packet_;

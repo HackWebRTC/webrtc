@@ -67,8 +67,8 @@ class VideoCodecUnitTest : public ::testing::Test {
       return -1;
     }
     void Decoded(VideoFrame& frame,
-                 rtc::Optional<int32_t> decode_time_ms,
-                 rtc::Optional<uint8_t> qp) override;
+                 absl::optional<int32_t> decode_time_ms,
+                 absl::optional<uint8_t> qp) override;
 
    private:
     VideoCodecUnitTest* const test_;
@@ -97,7 +97,7 @@ class VideoCodecUnitTest : public ::testing::Test {
 
   // Helper method for waiting a single decoded frame.
   bool WaitForDecodedFrame(std::unique_ptr<VideoFrame>* frame,
-                           rtc::Optional<uint8_t>* qp);
+                           absl::optional<uint8_t>* qp);
 
   size_t GetNumEncodedFrames();
 
@@ -120,9 +120,9 @@ class VideoCodecUnitTest : public ::testing::Test {
 
   rtc::Event decoded_frame_event_;
   rtc::CriticalSection decoded_frame_section_;
-  rtc::Optional<VideoFrame> decoded_frame_
+  absl::optional<VideoFrame> decoded_frame_
       RTC_GUARDED_BY(decoded_frame_section_);
-  rtc::Optional<uint8_t> decoded_qp_ RTC_GUARDED_BY(decoded_frame_section_);
+  absl::optional<uint8_t> decoded_qp_ RTC_GUARDED_BY(decoded_frame_section_);
 
   std::unique_ptr<test::FrameGenerator> input_frame_generator_;
   uint32_t last_input_frame_timestamp_;

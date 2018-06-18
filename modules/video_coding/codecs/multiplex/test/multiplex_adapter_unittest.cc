@@ -132,7 +132,7 @@ TEST_F(TestMultiplexAdapter, EncodeDecodeI420Frame) {
       WEBRTC_VIDEO_CODEC_OK,
       decoder_->Decode(encoded_frame, false, &codec_specific_info, -1));
   std::unique_ptr<VideoFrame> decoded_frame;
-  rtc::Optional<uint8_t> decoded_qp;
+  absl::optional<uint8_t> decoded_qp;
   ASSERT_TRUE(WaitForDecodedFrame(&decoded_frame, &decoded_qp));
   ASSERT_TRUE(decoded_frame);
   EXPECT_GT(I420PSNR(input_frame, decoded_frame.get()), 36);
@@ -150,7 +150,7 @@ TEST_F(TestMultiplexAdapter, EncodeDecodeI420AFrame) {
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             decoder_->Decode(encoded_frame, false, nullptr, 0));
   std::unique_ptr<VideoFrame> decoded_frame;
-  rtc::Optional<uint8_t> decoded_qp;
+  absl::optional<uint8_t> decoded_qp;
   ASSERT_TRUE(WaitForDecodedFrame(&decoded_frame, &decoded_qp));
   ASSERT_TRUE(decoded_frame);
   EXPECT_GT(I420PSNR(yuva_frame.get(), decoded_frame.get()), 36);

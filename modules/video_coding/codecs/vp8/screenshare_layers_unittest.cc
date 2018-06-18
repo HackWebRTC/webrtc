@@ -138,11 +138,11 @@ class ScreenshareLayerTest : public ::testing::Test {
   // FrameEncoded() call will be omitted and needs to be done by the caller.
   // Returns the flags for the last frame.
   int SkipUntilTl(int layer) {
-    return SkipUntilTlAndSync(layer, rtc::nullopt);
+    return SkipUntilTlAndSync(layer, absl::nullopt);
   }
 
   // Same as SkipUntilTl, but also waits until the sync bit condition is met.
-  int SkipUntilTlAndSync(int layer, rtc::Optional<bool> sync) {
+  int SkipUntilTlAndSync(int layer, absl::optional<bool> sync) {
     int flags = 0;
     const int kMaxFramesToSkip =
         1 + (sync.value_or(false) ? kMaxSyncPeriodSeconds : 1) * kFrameRate;

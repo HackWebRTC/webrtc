@@ -170,9 +170,9 @@ int ProbeBitrateEstimator::HandleProbeAndEstimateBitrate(
   return *estimated_bitrate_bps_;
 }
 
-rtc::Optional<int>
+absl::optional<int>
 ProbeBitrateEstimator::FetchAndResetLastEstimatedBitrateBps() {
-  rtc::Optional<int> estimated_bitrate_bps = estimated_bitrate_bps_;
+  absl::optional<int> estimated_bitrate_bps = estimated_bitrate_bps_;
   estimated_bitrate_bps_.reset();
   return estimated_bitrate_bps;
 }

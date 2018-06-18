@@ -142,7 +142,7 @@ class LegacySendSideCongestionControllerTest : public ::testing::Test {
   std::unique_ptr<NiceMock<MockPacedSender>> pacer_;
   std::unique_ptr<SendSideCongestionController> controller_;
 
-  rtc::Optional<uint32_t> target_bitrate_bps_;
+  absl::optional<uint32_t> target_bitrate_bps_;
 };
 
 TEST_F(LegacySendSideCongestionControllerTest, OnNetworkChanged) {

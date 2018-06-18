@@ -161,7 +161,7 @@ TEST_F(ProbeControllerTest, RequestProbeWhenAlrEndedRecently) {
   probe_controller_->SetEstimatedBitrate(500, NowMs());
   EXPECT_EQ(probe_controller_->GetAndResetPendingProbes().size(), 2u);
 
-  probe_controller_->SetAlrStartTimeMs(rtc::nullopt);
+  probe_controller_->SetAlrStartTimeMs(absl::nullopt);
   clock_.AdvanceTimeMilliseconds(kAlrProbeInterval + 1);
   probe_controller_->Process(NowMs());
   probe_controller_->SetEstimatedBitrate(250, NowMs());
@@ -181,7 +181,7 @@ TEST_F(ProbeControllerTest, RequestProbeWhenAlrNotEndedRecently) {
   probe_controller_->SetEstimatedBitrate(500, NowMs());
   EXPECT_EQ(probe_controller_->GetAndResetPendingProbes().size(), 2u);
 
-  probe_controller_->SetAlrStartTimeMs(rtc::nullopt);
+  probe_controller_->SetAlrStartTimeMs(absl::nullopt);
   clock_.AdvanceTimeMilliseconds(kAlrProbeInterval + 1);
   probe_controller_->Process(NowMs());
   probe_controller_->SetEstimatedBitrate(250, NowMs());

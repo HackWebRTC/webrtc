@@ -31,12 +31,12 @@ rtc_source_set("bbr_controller") {
     ":loss_rate_filter",
     ":rtt_stats",
     ":windowed_filter",
-    "../../../api:optional",
     "../../../api/transport:network_control",
     "../../../rtc_base:checks",
     "../../../rtc_base:rtc_base_approved",
     "../../../rtc_base/experiments:congestion_controller_experiment",
     "../../../rtc_base/system:fallthrough",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 
@@ -48,13 +48,13 @@ rtc_source_set("bandwidth_sampler") {
   ]
   deps = [
     ":packet_number_indexed_queue",
-    "../../../api:optional",
     "../../../api/units:data_rate",
     "../../../api/units:data_size",
     "../../../api/units:time_delta",
     "../../../api/units:timestamp",
     "../../../rtc_base:checks",
     "../../../rtc_base:rtc_base_approved",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 
@@ -90,7 +90,7 @@ rtc_source_set("loss_rate_filter") {
     "loss_rate_filter.h",
   ]
   deps = [
-    "../../../api:optional",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 rtc_source_set("rtt_stats") {

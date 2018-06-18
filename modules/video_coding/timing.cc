@@ -239,7 +239,7 @@ void VCMTiming::SetTimingFrameInfo(const TimingFrameInfo& info) {
   timing_frame_info_.emplace(info);
 }
 
-rtc::Optional<TimingFrameInfo> VCMTiming::GetTimingFrameInfo() {
+absl::optional<TimingFrameInfo> VCMTiming::GetTimingFrameInfo() {
   rtc::CritScope cs(&crit_sect_);
   return timing_frame_info_;
 }

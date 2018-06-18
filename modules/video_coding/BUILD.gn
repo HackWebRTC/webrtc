@@ -17,7 +17,6 @@ rtc_static_library("encoded_frame") {
   deps = [
     ":video_codec_interface",
     "../../:webrtc_common",
-    "../../api:optional",
     "../../api/video:video_frame_i420",
     "../../common_video:common_video",
     "../../modules:module_api",
@@ -28,6 +27,7 @@ rtc_static_library("encoded_frame") {
     "../../rtc_base/experiments:alr_experiment",
     "../../system_wrappers:field_trial_api",
     "../../system_wrappers:system_wrappers",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 
   if (!build_with_chromium && is_clang) {
@@ -165,7 +165,6 @@ rtc_static_library("video_coding") {
     "../..:webrtc_common",
     "../../:typedefs",
     "../../api:fec_controller_api",
-    "../../api:optional",
     "../../api/video:encoded_frame",
     "../../api/video:video_frame",
     "../../api/video:video_frame_i420",
@@ -185,6 +184,7 @@ rtc_static_library("video_coding") {
     "../../system_wrappers:metrics_api",
     "../rtp_rtcp:rtp_rtcp_format",
     "../utility:utility",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 
@@ -258,7 +258,6 @@ rtc_source_set("video_coding_utility") {
     "..:module_api",
     "../..:webrtc_common",
     "../../:typedefs",
-    "../../api:optional",
     "../../api/video_codecs:video_codecs_api",
     "../../common_video",
     "../../modules/rtp_rtcp",
@@ -270,6 +269,7 @@ rtc_source_set("video_coding_utility") {
     "../../rtc_base/experiments:quality_scaling_experiment",
     "../../system_wrappers",
     "../rtp_rtcp:rtp_rtcp_format",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 
@@ -412,7 +412,6 @@ rtc_static_library("webrtc_vp8_helpers") {
     "..:module_api",
     "../..:webrtc_common",
     "../../:typedefs",
-    "../../api:optional",
     "../../api/video:video_frame",
     "../../api/video_codecs:video_codecs_api",
     "../../common_video",
@@ -422,6 +421,7 @@ rtc_static_library("webrtc_vp8_helpers") {
     "../../system_wrappers",
     "../../system_wrappers:field_trial_api",
     "../../system_wrappers:metrics_api",
+    "//third_party/abseil-cpp/absl/types:optional",
     "//third_party/libyuv",
   ]
 }
@@ -454,7 +454,6 @@ rtc_static_library("webrtc_vp8") {
     "..:module_api",
     "../..:webrtc_common",
     "../../:typedefs",
-    "../../api:optional",
     "../../api/video:video_frame",
     "../../api/video_codecs:video_codecs_api",
     "../../common_video",
@@ -464,6 +463,7 @@ rtc_static_library("webrtc_vp8") {
     "../../system_wrappers",
     "../../system_wrappers:field_trial_api",
     "../../system_wrappers:metrics_api",
+    "//third_party/abseil-cpp/absl/types:optional",
     "//third_party/libyuv",
   ]
   if (rtc_build_libvpx) {
@@ -758,7 +758,6 @@ if (rtc_include_tests) {
       "../..:webrtc_common",
       "../../api:create_videocodec_test_fixture_api",
       "../../api:mock_video_codec_factory",
-      "../../api:optional",
       "../../api:videocodec_test_fixture_api",
       "../../api/video:video_frame_i420",
       "../../api/video_codecs:rtc_software_fallback_wrappers",
@@ -773,6 +772,7 @@ if (rtc_include_tests) {
       "../../test:test_support",
       "../../test:video_test_common",
       "../rtp_rtcp:rtp_rtcp_format",
+      "//third_party/abseil-cpp/absl/types:optional",
     ]
 
     data = video_coding_modules_tests_resources

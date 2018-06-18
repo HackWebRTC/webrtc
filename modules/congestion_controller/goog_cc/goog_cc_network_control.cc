@@ -101,7 +101,7 @@ std::vector<PacketFeedback> ReceivedPacketsFeedbackAsRtp(
   return packet_feedback_vector;
 }
 
-int64_t GetBpsOrDefault(const rtc::Optional<DataRate>& rate,
+int64_t GetBpsOrDefault(const absl::optional<DataRate>& rate,
                         int64_t fallback_bps) {
   if (rate && rate->IsFinite()) {
     return rate->bps();
@@ -175,7 +175,7 @@ NetworkControlUpdate GoogCcNetworkController::OnNetworkRouteChange(
 NetworkControlUpdate GoogCcNetworkController::OnProcessInterval(
     ProcessInterval msg) {
   bandwidth_estimation_->UpdateEstimate(msg.at_time.ms());
-  rtc::Optional<int64_t> start_time_ms =
+  absl::optional<int64_t> start_time_ms =
       alr_detector_->GetApplicationLimitedRegionStartTime();
   probe_controller_->SetAlrStartTimeMs(start_time_ms);
   probe_controller_->Process(msg.at_time.ms());
@@ -244,13 +244,13 @@ NetworkControlUpdate GoogCcNetworkController::OnStreamsConfig(
 
 NetworkControlUpdate GoogCcNetworkController::OnTargetRateConstraints(
     TargetRateConstraints constraints) {
-  UpdateBitrateConstraints(constraints, rtc::nullopt);
+  UpdateBitrateConstraints(constraints, absl::nullopt);
   return MaybeTriggerOnNetworkChanged(constraints.at_time);
 }
 
 void GoogCcNetworkController::UpdateBitrateConstraints(
     TargetRateConstraints constraints,
-    rtc::Optional<DataRate> starting_rate) {
+    absl::optional<DataRate> starting_rate) {
   int64_t min_bitrate_bps = GetBpsOrDefault(constraints.min_data_rate, 0);
   int64_t max_bitrate_bps = GetBpsOrDefault(constraints.max_data_rate, -1);
   int64_t start_bitrate_bps = GetBpsOrDefault(starting_rate, -1);
@@ -301,7 +301,7 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
   std::vector<PacketFeedback> received_feedback_vector =
       ReceivedPacketsFeedbackAsRtp(report);
 
-  rtc::Optional<int64_t> alr_start_time =
+  absl::optional<int64_t> alr_start_time =
       alr_detector_->GetApplicationLimitedRegionStartTime();
 
   if (previously_in_alr && !alr_start_time.has_value()) {
@@ -336,13 +336,14 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
   return update;
 }
 
-rtc::Optional<DataSize> GoogCcNetworkController::MaybeUpdateCongestionWindow() {
+absl::optional<DataSize>
+GoogCcNetworkController::MaybeUpdateCongestionWindow() {
   if (!in_cwnd_experiment_)
-    return rtc::nullopt;
+    return absl::nullopt;
   // No valid RTT. Could be because send-side BWE isn't used, in which case
   // we don't try to limit the outstanding packets.
   if (!min_feedback_rtt_ms_)
-    return rtc::nullopt;
+    return absl::nullopt;
 
   const DataSize kMinCwnd = DataSize::bytes(2 * 1500);
   TimeDelta time_window =

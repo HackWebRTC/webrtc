@@ -29,7 +29,7 @@ constexpr float kTargetUtilizationFraction = 0.95f;
 TEST_F(LegacyDelayBasedBweTest, NoCrashEmptyFeedback) {
   std::vector<PacketFeedback> packet_feedback_vector;
   bitrate_estimator_->IncomingPacketFeedbackVector(packet_feedback_vector,
-                                                   rtc::nullopt);
+                                                   absl::nullopt);
 }
 
 TEST_F(LegacyDelayBasedBweTest, NoCrashOnlyLostFeedback) {
@@ -41,7 +41,7 @@ TEST_F(LegacyDelayBasedBweTest, NoCrashOnlyLostFeedback) {
                                                   PacketFeedback::kNoSendTime,
                                                   1, 1500, PacedPacketInfo()));
   bitrate_estimator_->IncomingPacketFeedbackVector(packet_feedback_vector,
-                                                   rtc::nullopt);
+                                                   absl::nullopt);
 }
 
 TEST_F(LegacyDelayBasedBweTest, ProbeDetection) {

@@ -48,7 +48,7 @@ class TransportFeedbackAdapter {
   // to the CongestionController interface.
   void OnTransportFeedback(const rtcp::TransportFeedback& feedback);
   std::vector<PacketFeedback> GetTransportFeedbackVector() const;
-  rtc::Optional<PacketFeedback> GetPacket(uint16_t sequence_number) const;
+  absl::optional<PacketFeedback> GetPacket(uint16_t sequence_number) const;
 
   void SetTransportOverhead(int transport_overhead_bytes_per_packet);
 

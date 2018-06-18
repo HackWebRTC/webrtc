@@ -12,7 +12,7 @@
 
 #include <vector>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "api/video/i420_buffer.h"
 #include "modules/include/module_common_types_public.h"
 #include "modules/video_coding/encoded_frame.h"
@@ -178,7 +178,7 @@ VCMEncodedFrameCallback::VCMEncodedFrameCallback(
       incorrect_capture_time_logged_messages_(0),
       reordered_frames_logged_messages_(0),
       stalled_encoder_logged_messages_(0) {
-  rtc::Optional<AlrExperimentSettings> experiment_settings =
+  absl::optional<AlrExperimentSettings> experiment_settings =
       AlrExperimentSettings::CreateFromFieldTrial(
           AlrExperimentSettings::kStrictPacingAndProbingExperimentName);
   if (experiment_settings) {
@@ -249,10 +249,10 @@ void VCMEncodedFrameCallback::OnEncodeStarted(uint32_t rtp_timestamp,
       rtp_timestamp, capture_time_ms, rtc::TimeMillis());
 }
 
-rtc::Optional<int64_t> VCMEncodedFrameCallback::ExtractEncodeStartTime(
+absl::optional<int64_t> VCMEncodedFrameCallback::ExtractEncodeStartTime(
     size_t simulcast_svc_idx,
     EncodedImage* encoded_image) {
-  rtc::Optional<int64_t> result;
+  absl::optional<int64_t> result;
   size_t num_simulcast_svc_streams = timing_frames_info_.size();
   if (simulcast_svc_idx < num_simulcast_svc_streams) {
     auto encode_start_list =
@@ -308,8 +308,8 @@ rtc::Optional<int64_t> VCMEncodedFrameCallback::ExtractEncodeStartTime(
 
 void VCMEncodedFrameCallback::FillTimingInfo(size_t simulcast_svc_idx,
                                              EncodedImage* encoded_image) {
-  rtc::Optional<size_t> outlier_frame_size;
-  rtc::Optional<int64_t> encode_start_ms;
+  absl::optional<size_t> outlier_frame_size;
+  absl::optional<int64_t> encode_start_ms;
   uint8_t timing_flags = VideoSendTiming::kNotTriggered;
   {
     rtc::CritScope crit(&timing_params_lock_);

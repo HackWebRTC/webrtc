@@ -13,7 +13,7 @@
 
 #include <vector>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 
 namespace webrtc {
 class MovingAverage {
@@ -21,8 +21,8 @@ class MovingAverage {
   explicit MovingAverage(size_t s);
   ~MovingAverage();
   void AddSample(int sample);
-  rtc::Optional<int> GetAverage() const;
-  rtc::Optional<int> GetAverage(size_t num_samples) const;
+  absl::optional<int> GetAverage() const;
+  absl::optional<int> GetAverage(size_t num_samples) const;
   void Reset();
   size_t size() const;
 

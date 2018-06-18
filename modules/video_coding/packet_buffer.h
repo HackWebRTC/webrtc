@@ -58,8 +58,8 @@ class PacketBuffer {
   void PaddingReceived(uint16_t seq_num);
 
   // Timestamp (not RTP timestamp) of the last received packet/keyframe packet.
-  rtc::Optional<int64_t> LastReceivedPacketMs() const;
-  rtc::Optional<int64_t> LastReceivedKeyframePacketMs() const;
+  absl::optional<int64_t> LastReceivedPacketMs() const;
+  absl::optional<int64_t> LastReceivedKeyframePacketMs() const;
 
   // Returns number of different frames seen in the packet buffer
   int GetUniqueFramesSeen() const;
@@ -159,13 +159,13 @@ class PacketBuffer {
   OnReceivedFrameCallback* const received_frame_callback_;
 
   // Timestamp (not RTP timestamp) of the last received packet/keyframe packet.
-  rtc::Optional<int64_t> last_received_packet_ms_ RTC_GUARDED_BY(crit_);
-  rtc::Optional<int64_t> last_received_keyframe_packet_ms_
+  absl::optional<int64_t> last_received_packet_ms_ RTC_GUARDED_BY(crit_);
+  absl::optional<int64_t> last_received_keyframe_packet_ms_
       RTC_GUARDED_BY(crit_);
 
   int unique_frames_seen_ RTC_GUARDED_BY(crit_);
 
-  rtc::Optional<uint16_t> newest_inserted_seq_num_ RTC_GUARDED_BY(crit_);
+  absl::optional<uint16_t> newest_inserted_seq_num_ RTC_GUARDED_BY(crit_);
   std::set<uint16_t, DescendingSeqNumComp<uint16_t>> missing_packets_
       RTC_GUARDED_BY(crit_);
 

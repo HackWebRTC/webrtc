@@ -17,7 +17,7 @@
 
 #include "modules/video_coding/codecs/vp8/temporal_layers.h"
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 
 namespace webrtc {
 
@@ -52,7 +52,7 @@ class DefaultTemporalLayers : public TemporalLayers {
   uint8_t pattern_idx_;
   bool last_base_layer_sync_;
   // Updated cumulative bitrates, per temporal layer.
-  rtc::Optional<std::vector<uint32_t>> new_bitrates_bps_;
+  absl::optional<std::vector<uint32_t>> new_bitrates_bps_;
 };
 
 class DefaultTemporalLayersChecker : public TemporalLayersChecker {

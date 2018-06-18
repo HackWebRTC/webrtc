@@ -711,8 +711,8 @@ TEST_F(TestPacketBuffer, ContinuousSeqNumDoubleMarkerBit) {
 }
 
 TEST_F(TestPacketBuffer, PacketTimestamps) {
-  rtc::Optional<int64_t> packet_ms;
-  rtc::Optional<int64_t> packet_keyframe_ms;
+  absl::optional<int64_t> packet_ms;
+  absl::optional<int64_t> packet_keyframe_ms;
 
   packet_ms = packet_buffer_->LastReceivedPacketMs();
   packet_keyframe_ms = packet_buffer_->LastReceivedKeyframePacketMs();

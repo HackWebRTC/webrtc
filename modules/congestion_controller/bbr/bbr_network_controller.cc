@@ -382,7 +382,7 @@ bool BbrNetworkController::IsProbingForMoreBandwidth() const {
 NetworkControlUpdate BbrNetworkController::OnTransportPacketsFeedback(
     TransportPacketsFeedback msg) {
   Timestamp feedback_recv_time = msg.feedback_time;
-  rtc::Optional<SentPacket> last_sent_packet =
+  absl::optional<SentPacket> last_sent_packet =
       msg.PacketsWithFeedback().back().sent_packet;
   if (!last_sent_packet.has_value()) {
     RTC_LOG(LS_WARNING) << "Last ack packet not in history, no RTT update";

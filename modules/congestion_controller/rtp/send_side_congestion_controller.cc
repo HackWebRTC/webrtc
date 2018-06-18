@@ -185,7 +185,7 @@ class ControlHandler {
   void OnOutstandingData(DataSize in_flight_data);
   void OnPacerQueueUpdate(TimeDelta expected_queue_time);
 
-  rtc::Optional<TargetTransferRate> last_transfer_rate();
+  absl::optional<TargetTransferRate> last_transfer_rate();
 
  private:
   void OnNetworkInvalidation();
@@ -199,8 +199,8 @@ class ControlHandler {
   NetworkChangedObserver* observer_ = nullptr;
   PacerController* pacer_controller_;
 
-  rtc::Optional<TargetTransferRate> current_target_rate_msg_;
-  rtc::Optional<DataSize> congestion_window_;
+  absl::optional<TargetTransferRate> current_target_rate_msg_;
+  absl::optional<DataSize> congestion_window_;
   DataSize outstanding_data_ = DataSize::Zero();
   bool network_available_ = true;
   int64_t last_reported_target_bitrate_bps_ = 0;
@@ -357,7 +357,7 @@ bool ControlHandler::IsSendQueueFull() const {
   return pacer_expected_queue_ms_ > PacedSender::kMaxQueueLengthMs;
 }
 
-rtc::Optional<TargetTransferRate> ControlHandler::last_transfer_rate() {
+absl::optional<TargetTransferRate> ControlHandler::last_transfer_rate() {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
   return current_target_rate_msg_;
 }

@@ -79,8 +79,8 @@ class VCMEncodedFrameCallback : public EncodedImageCallback {
  private:
   // For non-internal-source encoders, returns encode started time and fixes
   // capture timestamp for the frame, if corrupted by the encoder.
-  rtc::Optional<int64_t> ExtractEncodeStartTime(size_t simulcast_svc_idx,
-                                                EncodedImage* encoded_image)
+  absl::optional<int64_t> ExtractEncodeStartTime(size_t simulcast_svc_idx,
+                                                 EncodedImage* encoded_image)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(timing_params_lock_);
 
   void FillTimingInfo(size_t simulcast_svc_idx, EncodedImage* encoded_image);

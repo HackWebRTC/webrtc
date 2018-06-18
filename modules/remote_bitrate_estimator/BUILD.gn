@@ -46,7 +46,6 @@ rtc_static_library("remote_bitrate_estimator") {
   deps = [
     "../..:webrtc_common",
     "../../:typedefs",
-    "../../api:optional",
     "../../modules:module_api",
     "../../modules/rtp_rtcp:rtp_rtcp_format",
     "../../rtc_base:checks",
@@ -55,6 +54,7 @@ rtc_static_library("remote_bitrate_estimator") {
     "../../system_wrappers",
     "../../system_wrappers:field_trial_api",
     "../../system_wrappers:metrics_api",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 
@@ -135,7 +135,6 @@ if (rtc_include_tests) {
       "..:module_api",
       "../..:webrtc_common",
       "../../:typedefs",
-      "../../api:optional",
       "../../logging:mocks",
       "../../rtc_base:checks",
       "../../rtc_base:gtest_prod",
@@ -161,6 +160,7 @@ if (rtc_include_tests) {
       "../rtp_rtcp:rtp_rtcp_format",
       "../video_coding:video_coding_utility",
       "//testing/gtest",
+      "//third_party/abseil-cpp/absl/types:optional",
     ]
   }
 

@@ -58,8 +58,8 @@ class MockDecodedImageCallback : public DecodedImageCallback {
                        int64_t decode_time_ms));
   MOCK_METHOD3(Decoded,
                void(VideoFrame& decodedImage,  // NOLINT
-                    rtc::Optional<int32_t> decode_time_ms,
-                    rtc::Optional<uint8_t> qp));
+                    absl::optional<int32_t> decode_time_ms,
+                    absl::optional<uint8_t> qp));
   MOCK_METHOD1(ReceivedDecodedReferenceFrame,
                int32_t(const uint64_t pictureId));
   MOCK_METHOD1(ReceivedDecodedFrame, int32_t(const uint64_t pictureId));

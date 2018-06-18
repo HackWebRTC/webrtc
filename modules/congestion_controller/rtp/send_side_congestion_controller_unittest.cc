@@ -167,7 +167,7 @@ class SendSideCongestionControllerTest : public ::testing::Test {
   PacketRouter packet_router_;
   std::unique_ptr<NiceMock<MockPacedSender>> pacer_;
   std::unique_ptr<SendSideCongestionControllerForTest> controller_;
-  rtc::Optional<uint32_t> target_bitrate_bps_;
+  absl::optional<uint32_t> target_bitrate_bps_;
   std::unique_ptr<rtc::TaskQueue> task_queue_;
 };
 

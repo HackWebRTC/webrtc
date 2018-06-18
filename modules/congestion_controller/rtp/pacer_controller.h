@@ -41,7 +41,7 @@ class PacerController {
   void SetPacerState(bool paused);
   PacedSender* const pacer_;
 
-  rtc::Optional<PacerConfig> current_pacer_config_;
+  absl::optional<PacerConfig> current_pacer_config_;
   bool pacer_paused_ = false;
   bool network_available_ = true;
 

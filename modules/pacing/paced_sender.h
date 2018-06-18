@@ -13,7 +13,7 @@
 
 #include <memory>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "modules/pacing/pacer.h"
 #include "modules/pacing/packet_queue_interface.h"
 #include "rtc_base/criticalsection.h"
@@ -128,7 +128,7 @@ class PacedSender : public Pacer {
   virtual int64_t ExpectedQueueTimeMs() const;
 
   // Deprecated, alr detection will be moved out of the pacer.
-  virtual rtc::Optional<int64_t> GetApplicationLimitedRegionStartTime() const;
+  virtual absl::optional<int64_t> GetApplicationLimitedRegionStartTime() const;
 
   // Returns the number of milliseconds until the module want a worker thread
   // to call Process.

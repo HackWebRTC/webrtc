@@ -38,7 +38,6 @@ rtc_static_library("pacing") {
     "..:module_api",
     "../../:typedefs",
     "../../:webrtc_common",
-    "../../api:optional",
     "../../logging:rtc_event_bwe",
     "../../logging:rtc_event_log_api",
     "../../logging:rtc_event_pacing",
@@ -52,6 +51,7 @@ rtc_static_library("pacing") {
     "../rtp_rtcp",
     "../rtp_rtcp:rtp_rtcp_format",
     "../utility",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 

@@ -11,7 +11,7 @@
 #ifndef MODULES_VIDEO_CODING_FRAME_OBJECT_H_
 #define MODULES_VIDEO_CODING_FRAME_OBJECT_H_
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "api/video/encoded_frame.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/include/module_common_types.h"
@@ -41,7 +41,7 @@ class RtpFrameObject : public EncodedFrame {
   int64_t ReceivedTime() const override;
   int64_t RenderTime() const override;
   bool delayed_by_retransmission() const override;
-  rtc::Optional<RTPVideoTypeHeader> GetCodecHeader() const;
+  absl::optional<RTPVideoTypeHeader> GetCodecHeader() const;
 
  private:
   rtc::scoped_refptr<PacketBuffer> packet_buffer_;

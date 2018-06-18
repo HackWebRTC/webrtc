@@ -193,7 +193,8 @@ TransportFeedbackAdapter::GetTransportFeedbackVector() const {
   return last_packet_feedback_vector_;
 }
 
-rtc::Optional<int64_t> TransportFeedbackAdapter::GetMinFeedbackLoopRtt() const {
+absl::optional<int64_t> TransportFeedbackAdapter::GetMinFeedbackLoopRtt()
+    const {
   rtc::CritScope cs(&lock_);
   return min_feedback_rtt_;
 }

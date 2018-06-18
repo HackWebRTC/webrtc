@@ -44,10 +44,10 @@ class QualityScaler::QpSmoother {
   explicit QpSmoother(float alpha)
       : alpha_(alpha), last_sample_ms_(rtc::TimeMillis()), smoother_(alpha) {}
 
-  rtc::Optional<int> GetAvg() const {
+  absl::optional<int> GetAvg() const {
     float value = smoother_.filtered();
     if (value == rtc::ExpFilter::kValueUndefined) {
-      return rtc::nullopt;
+      return absl::nullopt;
     }
     return static_cast<int>(value);
   }
@@ -182,7 +182,7 @@ void QualityScaler::CheckQp() {
   observed_enough_frames_ = true;
 
   // Check if we should scale down due to high frame drop.
-  const rtc::Optional<int> drop_rate =
+  const absl::optional<int> drop_rate =
       config_.use_all_drop_reasons ? framedrop_percent_all_.GetAverage()
                                    : framedrop_percent_media_opt_.GetAverage();
   if (drop_rate && *drop_rate >= kFramedropPercentThreshold) {
@@ -192,10 +192,10 @@ void QualityScaler::CheckQp() {
   }
 
   // Check if we should scale up or down based on QP.
-  const rtc::Optional<int> avg_qp_high = qp_smoother_high_
-                                             ? qp_smoother_high_->GetAvg()
-                                             : average_qp_.GetAverage();
-  const rtc::Optional<int> avg_qp_low =
+  const absl::optional<int> avg_qp_high = qp_smoother_high_
+                                              ? qp_smoother_high_->GetAvg()
+                                              : average_qp_.GetAverage();
+  const absl::optional<int> avg_qp_low =
       qp_smoother_low_ ? qp_smoother_low_->GetAvg() : average_qp_.GetAverage();
   if (avg_qp_high && avg_qp_low) {
     RTC_LOG(LS_INFO) << "Checking average QP " << *avg_qp_high << " ("

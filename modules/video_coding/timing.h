@@ -95,7 +95,7 @@ class VCMTiming {
                           int* render_delay_ms) const;
 
   void SetTimingFrameInfo(const TimingFrameInfo& info);
-  rtc::Optional<TimingFrameInfo> GetTimingFrameInfo();
+  absl::optional<TimingFrameInfo> GetTimingFrameInfo();
 
   enum { kDefaultRenderDelayMs = 10 };
   enum { kDelayMaxChangeMsPerS = 100 };
@@ -124,7 +124,7 @@ class VCMTiming {
   int current_delay_ms_ RTC_GUARDED_BY(crit_sect_);
   int last_decode_ms_ RTC_GUARDED_BY(crit_sect_);
   uint32_t prev_frame_timestamp_ RTC_GUARDED_BY(crit_sect_);
-  rtc::Optional<TimingFrameInfo> timing_frame_info_ RTC_GUARDED_BY(crit_sect_);
+  absl::optional<TimingFrameInfo> timing_frame_info_ RTC_GUARDED_BY(crit_sect_);
   size_t num_decoded_frames_ RTC_GUARDED_BY(crit_sect_);
 };
 }  // namespace webrtc

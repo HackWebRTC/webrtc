@@ -209,7 +209,7 @@ void ProbeController::EnablePeriodicAlrProbing(bool enable) {
 }
 
 void ProbeController::SetAlrStartTimeMs(
-    rtc::Optional<int64_t> alr_start_time_ms) {
+    absl::optional<int64_t> alr_start_time_ms) {
   alr_start_time_ms_ = alr_start_time_ms;
 }
 void ProbeController::SetAlrEndedTimeMs(int64_t alr_end_time_ms) {

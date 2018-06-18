@@ -385,7 +385,7 @@ void SendSideCongestionController::LimitOutstandingBytes(
     size_t num_outstanding_bytes) {
   RTC_DCHECK(in_cwnd_experiment_);
   rtc::CritScope lock(&network_state_lock_);
-  rtc::Optional<int64_t> min_rtt_ms =
+  absl::optional<int64_t> min_rtt_ms =
       transport_feedback_adapter_.GetMinFeedbackLoopRtt();
   // No valid RTT. Could be because send-side BWE isn't used, in which case
   // we don't try to limit the outstanding packets.

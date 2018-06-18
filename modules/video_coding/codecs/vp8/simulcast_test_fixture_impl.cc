@@ -150,8 +150,8 @@ class SimulcastTestFixtureImpl::Vp8TestDecodedImageCallback
     return -1;
   }
   void Decoded(VideoFrame& decoded_image,
-               rtc::Optional<int32_t> decode_time_ms,
-               rtc::Optional<uint8_t> qp) override {
+               absl::optional<int32_t> decode_time_ms,
+               absl::optional<uint8_t> qp) override {
     Decoded(decoded_image);
   }
   int DecodedFrames() { return decoded_frames_; }

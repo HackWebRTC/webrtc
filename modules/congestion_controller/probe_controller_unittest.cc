@@ -147,7 +147,7 @@ TEST_F(LegacyProbeControllerTest, RequestProbeWhenAlrEndedRecently) {
   testing::Mock::VerifyAndClearExpectations(&pacer_);
   EXPECT_CALL(pacer_, CreateProbeCluster(0.85 * 500)).Times(1);
   EXPECT_CALL(pacer_, GetApplicationLimitedRegionStartTime())
-      .WillRepeatedly(Return(rtc::nullopt));
+      .WillRepeatedly(Return(absl::nullopt));
   clock_.AdvanceTimeMilliseconds(kAlrProbeInterval + 1);
   probe_controller_->Process();
   probe_controller_->SetEstimatedBitrate(250);
@@ -164,7 +164,7 @@ TEST_F(LegacyProbeControllerTest, RequestProbeWhenAlrNotEndedRecently) {
   testing::Mock::VerifyAndClearExpectations(&pacer_);
   EXPECT_CALL(pacer_, CreateProbeCluster(_)).Times(0);
   EXPECT_CALL(pacer_, GetApplicationLimitedRegionStartTime())
-      .WillRepeatedly(Return(rtc::nullopt));
+      .WillRepeatedly(Return(absl::nullopt));
   clock_.AdvanceTimeMilliseconds(kAlrProbeInterval + 1);
   probe_controller_->Process();
   probe_controller_->SetEstimatedBitrate(250);

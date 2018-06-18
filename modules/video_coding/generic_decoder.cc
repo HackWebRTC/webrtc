@@ -57,15 +57,15 @@ int32_t VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage) {
 int32_t VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
                                          int64_t decode_time_ms) {
   Decoded(decodedImage,
-          decode_time_ms >= 0 ? rtc::Optional<int32_t>(decode_time_ms)
-                              : rtc::nullopt,
-          rtc::nullopt);
+          decode_time_ms >= 0 ? absl::optional<int32_t>(decode_time_ms)
+                              : absl::nullopt,
+          absl::nullopt);
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
 void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
-                                      rtc::Optional<int32_t> decode_time_ms,
-                                      rtc::Optional<uint8_t> qp) {
+                                      absl::optional<int32_t> decode_time_ms,
+                                      absl::optional<uint8_t> qp) {
   RTC_DCHECK(_receiveCallback) << "Callback must not be null at this point";
   TRACE_EVENT_INSTANT1("webrtc", "VCMDecodedFrameCallback::Decoded",
                        "timestamp", decodedImage.timestamp());

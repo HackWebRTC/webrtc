@@ -83,8 +83,8 @@ class RoundRobinPacketQueue : public PacketQueueInterface {
 
   const Clock* const clock_;
   int64_t time_last_updated_;
-  rtc::Optional<Packet> pop_packet_;
-  rtc::Optional<Stream*> pop_stream_;
+  absl::optional<Packet> pop_packet_;
+  absl::optional<Stream*> pop_stream_;
 
   bool paused_ = false;
   size_t size_packets_ = 0;

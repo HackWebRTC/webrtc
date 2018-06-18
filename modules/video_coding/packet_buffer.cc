@@ -199,12 +199,12 @@ void PacketBuffer::PaddingReceived(uint16_t seq_num) {
     received_frame_callback_->OnReceivedFrame(std::move(frame));
 }
 
-rtc::Optional<int64_t> PacketBuffer::LastReceivedPacketMs() const {
+absl::optional<int64_t> PacketBuffer::LastReceivedPacketMs() const {
   rtc::CritScope lock(&crit_);
   return last_received_packet_ms_;
 }
 
-rtc::Optional<int64_t> PacketBuffer::LastReceivedKeyframePacketMs() const {
+absl::optional<int64_t> PacketBuffer::LastReceivedKeyframePacketMs() const {
   rtc::CritScope lock(&crit_);
   return last_received_keyframe_packet_ms_;
 }

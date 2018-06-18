@@ -60,8 +60,8 @@ class SimulateOutgoingTrafficIn {
     }
   }
   AlrDetector* const alr_detector_;
-  rtc::Optional<int> interval_ms_;
-  rtc::Optional<int> usage_percentage_;
+  absl::optional<int> interval_ms_;
+  absl::optional<int> usage_percentage_;
 };
 }  // namespace
 
@@ -146,7 +146,7 @@ TEST_F(LegacyAlrDetectorTest, BandwidthEstimateChanges) {
 TEST_F(LegacyAlrDetectorTest, ParseControlFieldTrial) {
   webrtc::test::ScopedFieldTrials field_trial(
       "WebRTC-ProbingScreenshareBwe/Control/");
-  rtc::Optional<AlrExperimentSettings> parsed_params =
+  absl::optional<AlrExperimentSettings> parsed_params =
       AlrExperimentSettings::CreateFromFieldTrial(
           "WebRTC-ProbingScreenshareBwe");
   EXPECT_FALSE(static_cast<bool>(parsed_params));
@@ -155,7 +155,7 @@ TEST_F(LegacyAlrDetectorTest, ParseControlFieldTrial) {
 TEST_F(LegacyAlrDetectorTest, ParseActiveFieldTrial) {
   webrtc::test::ScopedFieldTrials field_trial(
       "WebRTC-ProbingScreenshareBwe/1.1,2875,85,20,-20,1/");
-  rtc::Optional<AlrExperimentSettings> parsed_params =
+  absl::optional<AlrExperimentSettings> parsed_params =
       AlrExperimentSettings::CreateFromFieldTrial(
           "WebRTC-ProbingScreenshareBwe");
   ASSERT_TRUE(static_cast<bool>(parsed_params));

@@ -87,7 +87,7 @@ class AimdRateControl {
   int64_t rtt_;
   bool in_experiment_;
   bool smoothing_experiment_;
-  rtc::Optional<int> last_decrease_;
+  absl::optional<int> last_decrease_;
 };
 }  // namespace webrtc
 
