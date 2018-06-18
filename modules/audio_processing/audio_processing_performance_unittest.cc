@@ -49,7 +49,6 @@ enum class ProcessorType { kRender, kCapture };
 enum class SettingsType {
   kDefaultApmDesktop,
   kDefaultApmMobile,
-  kDefaultApmDesktopAndBeamformer,
   kDefaultApmDesktopAndIntelligibilityEnhancer,
   kAllSubmodulesTurnedOff,
   kDefaultApmDesktopWithoutDelayAgnostic,
@@ -114,17 +113,6 @@ struct SimulationConfig {
       }
     }
 #endif
-
-    const SettingsType beamformer_settings[] = {
-        SettingsType::kDefaultApmDesktopAndBeamformer};
-
-    const int beamformer_sample_rates[] = {8000, 16000, 32000, 48000};
-
-    for (auto sample_rate : beamformer_sample_rates) {
-      for (auto settings : beamformer_settings) {
-        simulation_configs.push_back(SimulationConfig(sample_rate, settings));
-      }
-    }
 #endif
 
     const SettingsType mobile_settings[] = {SettingsType::kDefaultApmMobile};
@@ -148,9 +136,6 @@ struct SimulationConfig {
         break;
       case SettingsType::kDefaultApmDesktop:
         description = "DefaultApmDesktop";
-        break;
-      case SettingsType::kDefaultApmDesktopAndBeamformer:
-        description = "DefaultApmDesktopAndBeamformer";
         break;
       case SettingsType::kDefaultApmDesktopAndIntelligibilityEnhancer:
         description = "DefaultApmDesktopAndIntelligibilityEnhancer";
@@ -543,18 +528,6 @@ class CallSimulator : public ::testing::TestWithParam<SimulationConfig> {
       config->Set<DelayAgnostic>(new DelayAgnostic(true));
     };
 
-    // Lambda function for adding beamformer settings to a config.
-    auto add_beamformer_config = [](Config* config) {
-      const size_t num_mics = 2;
-      const std::vector<Point> array_geometry =
-          ParseArrayGeometry("0 0 0 0.05 0 0", num_mics);
-      RTC_CHECK_EQ(array_geometry.size(), num_mics);
-
-      config->Set<Beamforming>(
-          new Beamforming(true, array_geometry,
-                          SphericalPointf(DegreesToRadians(90), 0.f, 1.f)));
-    };
-
     int num_capture_channels = 1;
     switch (simulation_config_.simulation_settings) {
       case SettingsType::kDefaultApmMobile: {
@@ -570,17 +543,6 @@ class CallSimulator : public ::testing::TestWithParam<SimulationConfig> {
         ASSERT_TRUE(!!apm_);
         set_default_desktop_apm_runtime_settings(apm_.get());
         apm_->SetExtraOptions(config);
-        break;
-      }
-      case SettingsType::kDefaultApmDesktopAndBeamformer: {
-        Config config;
-        add_beamformer_config(&config);
-        add_default_desktop_config(&config);
-        apm_.reset(AudioProcessingBuilder().Create(config));
-        ASSERT_TRUE(!!apm_);
-        set_default_desktop_apm_runtime_settings(apm_.get());
-        apm_->SetExtraOptions(config);
-        num_capture_channels = 2;
         break;
       }
       case SettingsType::kDefaultApmDesktopAndIntelligibilityEnhancer: {

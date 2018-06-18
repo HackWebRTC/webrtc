@@ -56,15 +56,6 @@ DEFINE_int(output_sample_rate_hz,
 DEFINE_int(reverse_output_sample_rate_hz,
            kParameterNotSpecifiedValue,
            "Reverse stream output sample rate in Hz");
-DEFINE_string(mic_positions,
-              "",
-              "Space delimited cartesian coordinates of microphones in "
-              "meters. The coordinates of each point are contiguous. For a "
-              "two element array: \"x1 y1 z1 x2 y2 z2\"");
-DEFINE_float(target_angle_degrees,
-             90.f,
-             "The azimuth of the target in degrees (0-360). Only applies to "
-             "beamforming.");
 DEFINE_bool(fixed_interface,
             false,
             "Use the fixed interface when operating on wav files");
@@ -96,9 +87,6 @@ DEFINE_int(ns,
 DEFINE_int(ts,
            kParameterNotSpecifiedValue,
            "Activate (1) or deactivate(0) the transient suppressor");
-DEFINE_int(bf,
-           kParameterNotSpecifiedValue,
-           "Activate (1) or deactivate(0) the beamformer");
 DEFINE_int(ie,
            kParameterNotSpecifiedValue,
            "Activate (1) or deactivate(0) the intelligibility enhancer");
@@ -222,7 +210,6 @@ SimulationSettings CreateSettings() {
     settings.use_le = true;
     settings.use_vad = true;
     settings.use_ie = false;
-    settings.use_bf = false;
     settings.use_ts = true;
     settings.use_ns = true;
     settings.use_hpf = true;
@@ -249,8 +236,6 @@ SimulationSettings CreateSettings() {
                         &settings.output_sample_rate_hz);
   SetSettingIfSpecified(FLAG_reverse_output_sample_rate_hz,
                         &settings.reverse_output_sample_rate_hz);
-  SetSettingIfSpecified(FLAG_mic_positions, &settings.microphone_positions);
-  settings.target_angle_degrees = FLAG_target_angle_degrees;
   SetSettingIfFlagSet(FLAG_aec, &settings.use_aec);
   SetSettingIfFlagSet(FLAG_aecm, &settings.use_aecm);
   SetSettingIfFlagSet(FLAG_ed, &settings.use_ed);
@@ -261,7 +246,6 @@ SimulationSettings CreateSettings() {
   SetSettingIfFlagSet(FLAG_hpf, &settings.use_hpf);
   SetSettingIfFlagSet(FLAG_ns, &settings.use_ns);
   SetSettingIfFlagSet(FLAG_ts, &settings.use_ts);
-  SetSettingIfFlagSet(FLAG_bf, &settings.use_bf);
   SetSettingIfFlagSet(FLAG_ie, &settings.use_ie);
   SetSettingIfFlagSet(FLAG_vad, &settings.use_vad);
   SetSettingIfFlagSet(FLAG_le, &settings.use_le);
@@ -363,16 +347,6 @@ void PerformBasicParameterSanityChecks(const SimulationSettings& settings) {
       settings.reverse_output_num_channels &&
           *settings.reverse_output_num_channels <= 0,
       "Error: --reverse_output_num_channels must be positive!\n");
-
-  ReportConditionalErrorAndExit(
-      settings.use_bf && *settings.use_bf && !settings.microphone_positions,
-      "Error: --mic_positions must be specified when the beamformer is "
-      "activated.\n");
-
-  ReportConditionalErrorAndExit(
-      settings.target_angle_degrees < 0.f ||
-          settings.target_angle_degrees >= 360.f,
-      "Error: -target_angle_degrees must be specified between 0 and 360.\n");
 
   ReportConditionalErrorAndExit(
       settings.aec_suppression_level &&

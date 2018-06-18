@@ -579,12 +579,6 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
   Config config;
   AudioProcessing::Config apm_config;
   std::unique_ptr<EchoControlFactory> echo_control_factory;
-  if (settings_.use_bf && *settings_.use_bf) {
-    config.Set<Beamforming>(new Beamforming(
-        true, ParseArrayGeometry(*settings_.microphone_positions),
-        SphericalPointf(DegreesToRadians(settings_.target_angle_degrees), 0.f,
-                        1.f)));
-  }
   if (settings_.use_ts) {
     config.Set<ExperimentalNs>(new ExperimentalNs(*settings_.use_ts));
   }

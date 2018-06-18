@@ -132,27 +132,4 @@ AudioProcessing::ChannelLayout LayoutFromChannels(size_t num_channels) {
   }
 }
 
-std::vector<Point> ParseArrayGeometry(const std::string& mic_positions) {
-  const std::vector<float> values = ParseList<float>(mic_positions);
-  const size_t num_mics =
-      rtc::CheckedDivExact(values.size(), static_cast<size_t>(3));
-  RTC_CHECK_GT(num_mics, 0) << "mic_positions is not large enough.";
-
-  std::vector<Point> result;
-  result.reserve(num_mics);
-  for (size_t i = 0; i < values.size(); i += 3) {
-    result.push_back(Point(values[i + 0], values[i + 1], values[i + 2]));
-  }
-
-  return result;
-}
-
-std::vector<Point> ParseArrayGeometry(const std::string& mic_positions,
-                                      size_t num_mics) {
-  std::vector<Point> result = ParseArrayGeometry(mic_positions);
-  RTC_CHECK_EQ(result.size(), num_mics)
-      << "Could not parse mic_positions or incorrect number of points.";
-  return result;
-}
-
 }  // namespace webrtc

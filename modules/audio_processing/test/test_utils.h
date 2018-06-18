@@ -143,16 +143,6 @@ std::vector<T> ParseList(const std::string& to_parse) {
   return values;
 }
 
-// Parses the array geometry from the command line.
-//
-// If a vector with size != num_mics is returned, an error has occurred and an
-// appropriate error message has been printed to stdout.
-std::vector<Point> ParseArrayGeometry(const std::string& mic_positions,
-                                      size_t num_mics);
-
-// Same as above, but without the num_mics check for when it isn't available.
-std::vector<Point> ParseArrayGeometry(const std::string& mic_positions);
-
 }  // namespace webrtc
 
 #endif  // MODULES_AUDIO_PROCESSING_TEST_TEST_UTILS_H_
