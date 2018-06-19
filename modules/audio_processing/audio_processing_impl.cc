@@ -402,7 +402,7 @@ AudioProcessingImpl::AudioProcessingImpl(
     public_submodules_->echo_control_mobile.reset(
         new EchoControlMobileImpl(&crit_render_, &crit_capture_));
     public_submodules_->gain_control.reset(
-        new GainControlImpl(&crit_capture_, &crit_capture_));
+        new GainControlImpl(&crit_render_, &crit_capture_));
     public_submodules_->level_estimator.reset(
         new LevelEstimatorImpl(&crit_capture_));
     public_submodules_->noise_suppression.reset(
