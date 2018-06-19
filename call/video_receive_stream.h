@@ -213,11 +213,6 @@ class VideoReceiveStream {
     // to one of the audio streams.
     std::string sync_group;
 
-    // Called for each incoming video frame, i.e. in encoded state. E.g. used
-    // when
-    // saving the stream to a file. 'nullptr' disables the callback.
-    EncodedFrameObserver* pre_decode_callback = nullptr;
-
     // Target delay in milliseconds. A positive value indicates this stream is
     // used for streaming instead of a real-time call.
     int target_delay_ms = 0;

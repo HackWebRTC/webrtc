@@ -225,15 +225,6 @@ TEST_P(CallOperationEndToEndTest, ObserversEncodedFrames) {
 
     bool Wait() { return called_.Wait(kDefaultTimeoutMs); }
 
-    void ExpectEqualFrames(const EncodedFrameTestObserver& observer) {
-      ASSERT_EQ(length_, observer.length_)
-          << "Observed frames are of different lengths.";
-      EXPECT_EQ(frame_type_, observer.frame_type_)
-          << "Observed frames have different frame types.";
-      EXPECT_EQ(0, memcmp(buffer_.get(), observer.buffer_.get(), length_))
-          << "Observed encoded frames have different content.";
-    }
-
    private:
     std::unique_ptr<uint8_t[]> buffer_;
     size_t length_;
@@ -242,7 +233,6 @@ TEST_P(CallOperationEndToEndTest, ObserversEncodedFrames) {
   };
 
   EncodedFrameTestObserver post_encode_observer;
-  EncodedFrameTestObserver pre_decode_observer;
   test::FrameForwarder forwarder;
   std::unique_ptr<test::FrameGenerator> frame_generator;
 
@@ -262,7 +252,6 @@ TEST_P(CallOperationEndToEndTest, ObserversEncodedFrames) {
     CreateSendConfig(1, 0, 0, sender_transport.get());
     CreateMatchingReceiveConfigs(receiver_transport.get());
     video_send_config_.post_encode_callback = &post_encode_observer;
-    video_receive_configs_[0].pre_decode_callback = &pre_decode_observer;
 
     CreateVideoStreams();
     Start();
@@ -276,11 +265,6 @@ TEST_P(CallOperationEndToEndTest, ObserversEncodedFrames) {
 
   EXPECT_TRUE(post_encode_observer.Wait())
       << "Timed out while waiting for send-side encoded-frame callback.";
-
-  EXPECT_TRUE(pre_decode_observer.Wait())
-      << "Timed out while waiting for pre-decode encoded-frame callback.";
-
-  post_encode_observer.ExpectEqualFrames(pre_decode_observer);
 
   task_queue_.SendTask([this, &sender_transport, &receiver_transport]() {
     Stop();

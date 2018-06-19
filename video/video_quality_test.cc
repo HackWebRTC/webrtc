@@ -97,7 +97,8 @@ namespace webrtc {
 
 class VideoAnalyzer : public PacketReceiver,
                       public Transport,
-                      public rtc::VideoSinkInterface<VideoFrame> {
+                      public rtc::VideoSinkInterface<VideoFrame>,
+                      public EncodedFrameObserver {
  public:
   VideoAnalyzer(test::LayerFilteringTransport* transport,
                 const std::string& test_label,
@@ -129,7 +130,6 @@ class VideoAnalyzer : public PacketReceiver,
         selected_sl_(selected_sl),
         selected_tl_(selected_tl),
         pre_encode_proxy_(this),
-        encode_timing_proxy_(this),
         last_fec_bytes_(0),
         frames_to_process_(duration_frames),
         frames_recorded_(0),
@@ -279,7 +279,8 @@ class VideoAnalyzer : public PacketReceiver,
     }
   }
 
-  void PostEncodeFrameCallback(const EncodedFrame& encoded_frame) {
+  // EncodedFrameObserver implementation, wired to post_encode_callback.
+  void EncodedFrameCallback(const EncodedFrame& encoded_frame) override {
     rtc::CritScope lock(&crit_);
     if (!first_sent_timestamp_ &&
         encoded_frame.stream_id_ == selected_stream_) {
@@ -419,7 +420,6 @@ class VideoAnalyzer : public PacketReceiver,
   rtc::VideoSinkInterface<VideoFrame>* pre_encode_proxy() {
     return &pre_encode_proxy_;
   }
-  EncodedFrameObserver* encode_timing_proxy() { return &encode_timing_proxy_; }
 
   void StartMeasuringCpuProcessTime() {
     rtc::CritScope lock(&cpu_measurement_lock_);
@@ -527,20 +527,6 @@ class VideoAnalyzer : public PacketReceiver,
     size_t encoded_frame_size;
     double psnr;
     double ssim;
-  };
-
-  // This class receives the send-side OnEncodeTiming and is provided to not
-  // conflict with the receiver-side pre_decode_callback.
-  class OnEncodeTimingProxy : public EncodedFrameObserver {
-   public:
-    explicit OnEncodeTimingProxy(VideoAnalyzer* parent) : parent_(parent) {}
-
-    void EncodedFrameCallback(const EncodedFrame& frame) override {
-      parent_->PostEncodeFrameCallback(frame);
-    }
-
-   private:
-    VideoAnalyzer* const parent_;
   };
 
   // This class receives the send-side OnFrame callback and is provided to not
@@ -1000,7 +986,6 @@ class VideoAnalyzer : public PacketReceiver,
   const int selected_sl_;
   const int selected_tl_;
   PreEncodeProxy pre_encode_proxy_;
-  OnEncodeTimingProxy encode_timing_proxy_;
   std::vector<Sample> samples_ RTC_GUARDED_BY(comparison_lock_);
   test::Statistics sender_time_ RTC_GUARDED_BY(comparison_lock_);
   test::Statistics receiver_time_ RTC_GUARDED_BY(comparison_lock_);
@@ -2007,8 +1992,7 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
         analyzer.get();
     video_send_configs_[0].pre_encode_callback = analyzer->pre_encode_proxy();
     RTC_DCHECK(!video_send_configs_[0].post_encode_callback);
-    video_send_configs_[0].post_encode_callback =
-        analyzer->encode_timing_proxy();
+    video_send_configs_[0].post_encode_callback = analyzer.get();
 
     CreateFlexfecStreams();
     CreateVideoStreams();

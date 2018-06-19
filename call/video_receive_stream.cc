@@ -88,8 +88,6 @@ std::string VideoReceiveStream::Config::ToString() const {
   ss << ", render_delay_ms: " << render_delay_ms;
   if (!sync_group.empty())
     ss << ", sync_group: " << sync_group;
-  ss << ", pre_decode_callback: "
-     << (pre_decode_callback ? "(EncodedFrameObserver)" : "nullptr");
   ss << ", target_delay_ms: " << target_delay_ms;
   ss << '}';
 

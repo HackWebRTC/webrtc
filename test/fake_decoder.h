@@ -57,17 +57,6 @@ class FakeH264Decoder : public FakeDecoder {
                  int64_t render_time_ms) override;
 };
 
-class FakeNullDecoder : public FakeDecoder {
- public:
-  virtual ~FakeNullDecoder() {}
-
-  int32_t Decode(const EncodedImage& input,
-                 bool missing_frames,
-                 const CodecSpecificInfo* codec_specific_info,
-                 int64_t render_time_ms) override {
-    return 0;
-  }
-};
 }  // namespace test
 }  // namespace webrtc
 

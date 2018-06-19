@@ -201,7 +201,7 @@ class FileRenderPassthrough : public rtc::VideoSinkInterface<VideoFrame> {
   size_t count_;
 };
 
-class DecoderBitstreamFileWriter : public EncodedFrameObserver {
+class DecoderBitstreamFileWriter : public test::FakeDecoder {
  public:
   explicit DecoderBitstreamFileWriter(const char* filename)
       : file_(fopen(filename, "wb")) {
@@ -209,8 +209,16 @@ class DecoderBitstreamFileWriter : public EncodedFrameObserver {
   }
   ~DecoderBitstreamFileWriter() { fclose(file_); }
 
-  virtual void EncodedFrameCallback(const EncodedFrame& encoded_frame) {
-    fwrite(encoded_frame.data_, 1, encoded_frame.length_, file_);
+  int32_t Decode(const EncodedImage& encoded_frame,
+                      bool /* missing_frames */,
+                      const CodecSpecificInfo* /* codec_specific_info */,
+                      int64_t /* render_time_ms */) override {
+    if (fwrite(encoded_frame._buffer, 1, encoded_frame._length, file_)
+        < encoded_frame._length) {
+      RTC_LOG_ERR(LS_ERROR) << "fwrite of encoded frame failed.";
+      return WEBRTC_VIDEO_CODEC_ERROR;
+    }
+    return WEBRTC_VIDEO_CODEC_OK;
   }
 
  private:
@@ -252,19 +260,14 @@ void RtpReplay() {
   receive_config.renderer = &file_passthrough;
 
   VideoReceiveStream::Decoder decoder;
-  std::unique_ptr<DecoderBitstreamFileWriter> bitstream_writer;
-  if (!flags::DecoderBitstreamFilename().empty()) {
-    bitstream_writer.reset(new DecoderBitstreamFileWriter(
-        flags::DecoderBitstreamFilename().c_str()));
-    receive_config.pre_decode_callback = bitstream_writer.get();
-  }
   decoder =
       test::CreateMatchingDecoder(flags::MediaPayloadType(), flags::Codec());
   if (!flags::DecoderBitstreamFilename().empty()) {
-    // Replace with a null decoder if we're writing the bitstream to a file
+    // Replace decoder with file writer if we're writing the bitstream to a file
     // instead.
     delete decoder.decoder;
-    decoder.decoder = new test::FakeNullDecoder();
+    decoder.decoder = new DecoderBitstreamFileWriter(
+        flags::DecoderBitstreamFilename().c_str());
   }
   receive_config.decoders.push_back(decoder);
 
