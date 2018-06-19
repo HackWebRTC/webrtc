@@ -81,7 +81,9 @@ class TestAudioDeviceModuleImpl
   ~TestAudioDeviceModuleImpl() {
     StopPlayout();
     StopRecording();
-    thread_->Stop();
+    if (thread_) {
+      thread_->Stop();
+    }
   }
 
   int32_t Init() {
