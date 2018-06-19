@@ -21,5 +21,9 @@ uint32_t EncodedFrame::Timestamp() const {
   return timestamp;
 }
 
+void EncodedFrame::SetTimestamp(uint32_t rtp_timestamp) {
+  timestamp = rtp_timestamp;
+}
+
 }  // namespace video_coding
 }  // namespace webrtc
