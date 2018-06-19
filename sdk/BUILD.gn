@@ -820,6 +820,7 @@ if (is_ios || is_mac) {
             "objc/Framework/UnitTests/RTCDoNotPutCPlusPlusInFrameworkHeaders_xctest.m",
             "objc/Framework/UnitTests/RTCFileVideoCapturer_xctest.mm",
             "objc/Framework/UnitTests/RTCH264ProfileLevelId_xctest.m",
+            "objc/Framework/UnitTests/RTCPeerConnectionFactory_xctest.m",
             "objc/Framework/UnitTests/frame_buffer_helpers.h",
             "objc/Framework/UnitTests/frame_buffer_helpers.mm",
           ]
@@ -900,6 +901,7 @@ if (is_ios || is_mac) {
           _bundle_id_suffix = ios_generic_test_bundle_id_suffix
           extra_substitutions = [ "GTEST_BUNDLE_ID_SUFFIX=$_bundle_id_suffix" ]
           deps = [
+            ":peerconnectionfactory_base_objc",
             ":sdk_unittests_bundle_data",
             ":sdk_unittests_sources",
           ]

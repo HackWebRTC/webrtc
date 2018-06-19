@@ -240,6 +240,7 @@ void PeerConnectionDelegateAdapter::OnAddTrack(
 
 
 @implementation RTCPeerConnection {
+  RTCPeerConnectionFactory *_factory;
   NSMutableArray<RTCMediaStream *> *_localStreams;
   std::unique_ptr<webrtc::PeerConnectionDelegateAdapter> _observer;
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> _peerConnection;
@@ -272,6 +273,7 @@ void PeerConnectionDelegateAdapter::OnAddTrack(
     if (!_peerConnection) {
       return nil;
     }
+    _factory = factory;
     _localStreams = [[NSMutableArray alloc] init];
     _delegate = delegate;
   }
