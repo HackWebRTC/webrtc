@@ -8,15 +8,38 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <bitset>
+#include <string>
+
 #include "api/audio/echo_canceller3_factory.h"
 #include "modules/audio_processing/include/audio_processing.h"
+#include "rtc_base/arraysize.h"
 #include "rtc_base/numerics/safe_minmax.h"
+#include "system_wrappers/include/field_trial_default.h"
 #include "test/fuzzers/audio_processing_fuzzer_helper.h"
 #include "test/fuzzers/fuzz_data_helper.h"
 
 namespace webrtc {
 namespace {
-std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data) {
+
+const std::string kFieldTrialNames[] = {
+    "WebRTC-Aec3TransparentModeKillSwitch",
+    "WebRTC-Aec3StationaryRenderImprovementsKillSwitch",
+    "WebRTC-Aec3EnforceDelayAfterRealignmentKillSwitch",
+    "WebRTC-Aec3UseShortDelayEstimatorWindow",
+    "WebRTC-Aec3ReverbBasedOnRenderKillSwitch",
+    "WebRTC-Aec3ReverbModellingKillSwitch",
+    "WebRTC-Aec3FilterAnalyzerPreprocessorKillSwitch",
+    "WebRTC-Aec3TransparencyImprovementsKillSwitch",
+    "WebRTC-Aec3SoftTransparentModeKillSwitch",
+    "WebRTC-Aec3OverrideEchoPathGainKillSwitch",
+    "WebRTC-Aec3ZeroExternalDelayHeadroomKillSwitch",
+    "WebRTC-Aec3DownSamplingFactor8KillSwitch",
+    "WebRTC-Aec3EnforceSkewHysteresis1",
+    "WebRTC-Aec3EnforceSkewHysteresis2"};
+
+std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data,
+                                           std::string* field_trial_string) {
   // Parse boolean values for optionally enabling different
   // configurable public components of APM.
   bool exp_agc = fuzz_data->ReadOrDefaultValue(true);
@@ -42,6 +65,19 @@ std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data) {
   // Read an int8 value, but don't let it be too large or small.
   const float gain_controller2_gain_db =
       rtc::SafeClamp<int>(fuzz_data->ReadOrDefaultValue<int8_t>(0), -50, 50);
+
+  constexpr size_t kNumFieldTrials = arraysize(kFieldTrialNames);
+  // This check ensures the uint16_t that is read has enough bits to cover all
+  // the field trials.
+  RTC_DCHECK_LE(kNumFieldTrials, 16);
+  std::bitset<kNumFieldTrials> field_trial_bitmask(
+      fuzz_data->ReadOrDefaultValue<uint16_t>(0));
+  for (size_t i = 0; i < kNumFieldTrials; ++i) {
+    if (field_trial_bitmask[i]) {
+      *field_trial_string += kFieldTrialNames[i] + "/Enabled/";
+    }
+  }
+  field_trial::InitFieldTrialsFromString(field_trial_string->c_str());
 
   // Ignore a few bytes. Bytes from this segment will be used for
   // future config flag changes. We assume 40 bytes is enough for
@@ -103,7 +139,10 @@ std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data) {
 
 void FuzzOneInput(const uint8_t* data, size_t size) {
   test::FuzzDataHelper fuzz_data(rtc::ArrayView<const uint8_t>(data, size));
-  auto apm = CreateApm(&fuzz_data);
+  // This string must be in scope during execution, according to documentation
+  // for field_trial_default.h. Hence it's created here and not in CreateApm.
+  std::string field_trial_string = "";
+  auto apm = CreateApm(&fuzz_data, &field_trial_string);
 
   if (apm) {
     FuzzAudioProcessing(&fuzz_data, std::move(apm));
