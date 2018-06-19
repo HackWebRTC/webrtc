@@ -189,6 +189,7 @@ chrome.networkingPrivate.ManagedProxySettingsType;
 /**
  * @typedef {{
  *   AccessPointName: string,
+ *   Authentication: (string|undefined),
  *   Language: (string|undefined),
  *   LocalizedName: (string|undefined),
  *   Name: (string|undefined),
@@ -202,6 +203,7 @@ chrome.networkingPrivate.APNProperties;
 /**
  * @typedef {{
  *   AccessPointName: !chrome.networkingPrivate.ManagedDOMString,
+ *   Authentication: (!chrome.networkingPrivate.ManagedDOMString|undefined),
  *   Language: (!chrome.networkingPrivate.ManagedDOMString|undefined),
  *   LocalizedName: (!chrome.networkingPrivate.ManagedDOMString|undefined),
  *   Name: (!chrome.networkingPrivate.ManagedDOMString|undefined),

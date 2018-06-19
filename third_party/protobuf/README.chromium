@@ -122,3 +122,7 @@ Description of the patches:
 - 0020-Add-support-for-libc-on-Windows.patch
 
   Cherry-picks upstream https://github.com/google/protobuf/commit/3ba21cd5f
+
+-- patches/0023-php_generator.patch
+
+  Cherry-picks upstream https://github.com/google/protobuf/commit/662e8b20

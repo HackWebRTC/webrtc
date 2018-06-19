@@ -69,6 +69,7 @@ template("js_library") {
     args += [ "--sources" ] + rebase_path(sources, root_build_dir)
     if (defined(extra_sources)) {
       args += rebase_path(extra_sources, root_build_dir)
+      sources += extra_sources
     }
 
     if (defined(deps)) {
@@ -83,6 +84,7 @@ template("js_library") {
     }
     if (defined(externs_list)) {
       args += [ "--externs" ] + rebase_path(externs_list, root_build_dir)
+      sources += externs_list
     }
     if (defined(extra_deps)) {
       if (!defined(deps)) {
