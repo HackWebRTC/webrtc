@@ -129,8 +129,8 @@ int PacketBuffer::InsertPacket(Packet&& packet, StatisticsCalculator* stats) {
 int PacketBuffer::InsertPacketList(
     PacketList* packet_list,
     const DecoderDatabase& decoder_database,
-    rtc::Optional<uint8_t>* current_rtp_payload_type,
-    rtc::Optional<uint8_t>* current_cng_rtp_payload_type,
+    absl::optional<uint8_t>* current_rtp_payload_type,
+    absl::optional<uint8_t>* current_cng_rtp_payload_type,
     StatisticsCalculator* stats) {
   RTC_DCHECK(stats);
   bool flushed = false;
@@ -139,7 +139,7 @@ int PacketBuffer::InsertPacketList(
       if (*current_cng_rtp_payload_type &&
           **current_cng_rtp_payload_type != packet.payload_type) {
         // New CNG payload type implies new codec type.
-        *current_rtp_payload_type = rtc::nullopt;
+        *current_rtp_payload_type = absl::nullopt;
         Flush();
         flushed = true;
       }
@@ -152,7 +152,7 @@ int PacketBuffer::InsertPacketList(
            !EqualSampleRates(packet.payload_type,
                              **current_cng_rtp_payload_type,
                              decoder_database))) {
-        *current_cng_rtp_payload_type = rtc::nullopt;
+        *current_cng_rtp_payload_type = absl::nullopt;
         Flush();
         flushed = true;
       }
@@ -206,13 +206,13 @@ const Packet* PacketBuffer::PeekNextPacket() const {
   return buffer_.empty() ? nullptr : &buffer_.front();
 }
 
-rtc::Optional<Packet> PacketBuffer::GetNextPacket() {
+absl::optional<Packet> PacketBuffer::GetNextPacket() {
   if (Empty()) {
     // Buffer is empty.
-    return rtc::nullopt;
+    return absl::nullopt;
   }
 
-  rtc::Optional<Packet> packet(std::move(buffer_.front()));
+  absl::optional<Packet> packet(std::move(buffer_.front()));
   // Assert that the packet sanity checks in InsertPacket method works.
   RTC_DCHECK(!packet->empty());
   buffer_.pop_front();

@@ -15,9 +15,9 @@
 #include <string>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "api/audio_codecs/audio_decoder_factory.h"
 #include "api/audio_codecs/audio_encoder.h"
-#include "api/optional.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/include/audio_coding_module_typedefs.h"
 #include "modules/audio_coding/neteq/include/neteq.h"
@@ -228,7 +228,7 @@ class AudioCodingModule {
   // Return value:
   //   The send codec, or nothing if we don't have one
   //
-  virtual rtc::Optional<CodecInst> SendCodec() const = 0;
+  virtual absl::optional<CodecInst> SendCodec() const = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // int32_t SendFrequency()
@@ -546,7 +546,7 @@ class AudioCodingModule {
   virtual int32_t ReceiveCodec(CodecInst* curr_receive_codec) const = 0;
 
   ///////////////////////////////////////////////////////////////////////////
-  // rtc::Optional<SdpAudioFormat> ReceiveFormat()
+  // absl::optional<SdpAudioFormat> ReceiveFormat()
   // Get the format associated with last received payload.
   //
   // Return value:
@@ -554,7 +554,7 @@ class AudioCodingModule {
   //    received payload.
   //    An empty Optional if no payload has yet been received.
   //
-  virtual rtc::Optional<SdpAudioFormat> ReceiveFormat() const = 0;
+  virtual absl::optional<SdpAudioFormat> ReceiveFormat() const = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // int32_t IncomingPacket()
@@ -631,7 +631,7 @@ class AudioCodingModule {
   // the latest audio obtained by calling PlayoutData10ms(), or empty if no
   // valid timestamp is available.
   //
-  virtual rtc::Optional<uint32_t> PlayoutTimestamp() = 0;
+  virtual absl::optional<uint32_t> PlayoutTimestamp() = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // int FilteredCurrentDelayMs()

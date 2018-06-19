@@ -28,12 +28,12 @@ class NetEqReplacementInput : public NetEqInput {
                         const std::set<uint8_t>& comfort_noise_types,
                         const std::set<uint8_t>& forbidden_types);
 
-  rtc::Optional<int64_t> NextPacketTime() const override;
-  rtc::Optional<int64_t> NextOutputEventTime() const override;
+  absl::optional<int64_t> NextPacketTime() const override;
+  absl::optional<int64_t> NextOutputEventTime() const override;
   std::unique_ptr<PacketData> PopPacket() override;
   void AdvanceOutputEvent() override;
   bool ended() const override;
-  rtc::Optional<RTPHeader> NextHeader() const override;
+  absl::optional<RTPHeader> NextHeader() const override;
 
  private:
   void ReplacePacket();

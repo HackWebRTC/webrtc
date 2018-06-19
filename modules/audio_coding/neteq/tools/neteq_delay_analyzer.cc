@@ -101,8 +101,8 @@ void NetEqDelayAnalyzer::CreateGraphs(
     std::vector<float>* send_time_s,
     std::vector<float>* arrival_delay_ms,
     std::vector<float>* corrected_arrival_delay_ms,
-    std::vector<rtc::Optional<float>>* playout_delay_ms,
-    std::vector<rtc::Optional<float>>* target_delay_ms) const {
+    std::vector<absl::optional<float>>* playout_delay_ms,
+    std::vector<absl::optional<float>>* target_delay_ms) const {
   if (get_audio_time_ms_.empty()) {
     return;
   }
@@ -167,8 +167,8 @@ void NetEqDelayAnalyzer::CreateGraphs(
       target_delay_ms->push_back(target);
     } else {
       // This packet was never decoded. Mark target and playout delays as empty.
-      playout_delay_ms->push_back(rtc::nullopt);
-      target_delay_ms->push_back(rtc::nullopt);
+      playout_delay_ms->push_back(absl::nullopt);
+      target_delay_ms->push_back(absl::nullopt);
     }
   }
   RTC_DCHECK(data_it == data_.end());
@@ -182,8 +182,8 @@ void NetEqDelayAnalyzer::CreateMatlabScript(
   std::vector<float> send_time_s;
   std::vector<float> arrival_delay_ms;
   std::vector<float> corrected_arrival_delay_ms;
-  std::vector<rtc::Optional<float>> playout_delay_ms;
-  std::vector<rtc::Optional<float>> target_delay_ms;
+  std::vector<absl::optional<float>> playout_delay_ms;
+  std::vector<absl::optional<float>> target_delay_ms;
   CreateGraphs(&send_time_s, &arrival_delay_ms, &corrected_arrival_delay_ms,
                &playout_delay_ms, &target_delay_ms);
 
@@ -258,8 +258,8 @@ void NetEqDelayAnalyzer::CreatePythonScript(
   std::vector<float> send_time_s;
   std::vector<float> arrival_delay_ms;
   std::vector<float> corrected_arrival_delay_ms;
-  std::vector<rtc::Optional<float>> playout_delay_ms;
-  std::vector<rtc::Optional<float>> target_delay_ms;
+  std::vector<absl::optional<float>> playout_delay_ms;
+  std::vector<absl::optional<float>> target_delay_ms;
   CreateGraphs(&send_time_s, &arrival_delay_ms, &corrected_arrival_delay_ms,
                &playout_delay_ms, &target_delay_ms);
 

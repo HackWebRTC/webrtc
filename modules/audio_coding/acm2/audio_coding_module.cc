@@ -54,7 +54,7 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
       rtc::FunctionView<void(const AudioEncoder*)> query) override;
 
   // Get current send codec.
-  rtc::Optional<CodecInst> SendCodec() const override;
+  absl::optional<CodecInst> SendCodec() const override;
 
   // Get current send frequency.
   int SendFrequency() const override;
@@ -142,7 +142,7 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   // Get current received codec.
   int ReceiveCodec(CodecInst* current_codec) const override;
 
-  rtc::Optional<SdpAudioFormat> ReceiveFormat() const override;
+  absl::optional<SdpAudioFormat> ReceiveFormat() const override;
 
   // Incoming packet from network parsed and ready for decode.
   int IncomingPacket(const uint8_t* incoming_payload,
@@ -160,7 +160,7 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
 
   RTC_DEPRECATED int32_t PlayoutTimestamp(uint32_t* timestamp) override;
 
-  rtc::Optional<uint32_t> PlayoutTimestamp() override;
+  absl::optional<uint32_t> PlayoutTimestamp() override;
 
   int FilteredCurrentDelayMs() const override;
 
@@ -603,7 +603,7 @@ void AudioCodingModuleImpl::QueryEncoder(
 }
 
 // Get current send codec.
-rtc::Optional<CodecInst> AudioCodingModuleImpl::SendCodec() const {
+absl::optional<CodecInst> AudioCodingModuleImpl::SendCodec() const {
   rtc::CritScope lock(&acm_crit_sect_);
   if (encoder_factory_) {
     auto* ci = encoder_factory_->codec_manager.GetCodecInst();
@@ -616,12 +616,12 @@ rtc::Optional<CodecInst> AudioCodingModuleImpl::SendCodec() const {
     if (enc) {
       return acm2::CodecManager::ForgeCodecInst(enc.get());
     }
-    return rtc::nullopt;
+    return absl::nullopt;
   } else {
     return encoder_stack_
-               ? rtc::Optional<CodecInst>(
+               ? absl::optional<CodecInst>(
                      acm2::CodecManager::ForgeCodecInst(encoder_stack_.get()))
-               : rtc::nullopt;
+               : absl::nullopt;
   }
 }
 
@@ -640,7 +640,7 @@ int AudioCodingModuleImpl::SendFrequency() const {
 void AudioCodingModuleImpl::SetBitRate(int bitrate_bps) {
   rtc::CritScope lock(&acm_crit_sect_);
   if (encoder_stack_) {
-    encoder_stack_->OnReceivedUplinkBandwidth(bitrate_bps, rtc::nullopt);
+    encoder_stack_->OnReceivedUplinkBandwidth(bitrate_bps, absl::nullopt);
   }
 }
 
@@ -1062,7 +1062,7 @@ int AudioCodingModuleImpl::ReceiveCodec(CodecInst* current_codec) const {
   return receiver_.LastAudioCodec(current_codec);
 }
 
-rtc::Optional<SdpAudioFormat> AudioCodingModuleImpl::ReceiveFormat() const {
+absl::optional<SdpAudioFormat> AudioCodingModuleImpl::ReceiveFormat() const {
   rtc::CritScope lock(&acm_crit_sect_);
   return receiver_.LastAudioFormat();
 }
@@ -1180,14 +1180,14 @@ int AudioCodingModuleImpl::DisableOpusDtx() {
 }
 
 int32_t AudioCodingModuleImpl::PlayoutTimestamp(uint32_t* timestamp) {
-  rtc::Optional<uint32_t> ts = PlayoutTimestamp();
+  absl::optional<uint32_t> ts = PlayoutTimestamp();
   if (!ts)
     return -1;
   *timestamp = *ts;
   return 0;
 }
 
-rtc::Optional<uint32_t> AudioCodingModuleImpl::PlayoutTimestamp() {
+absl::optional<uint32_t> AudioCodingModuleImpl::PlayoutTimestamp() {
   return receiver_.GetPlayoutTimestamp();
 }
 
@@ -1279,7 +1279,7 @@ int AudioCodingModule::Codec(const char* payload_name,
                              CodecInst* codec,
                              int sampling_freq_hz,
                              size_t channels) {
-  rtc::Optional<CodecInst> ci = acm2::RentACodec::CodecInstByParams(
+  absl::optional<CodecInst> ci = acm2::RentACodec::CodecInstByParams(
       payload_name, sampling_freq_hz, channels);
   if (ci) {
     *codec = *ci;
@@ -1299,12 +1299,12 @@ int AudioCodingModule::Codec(const char* payload_name,
 int AudioCodingModule::Codec(const char* payload_name,
                              int sampling_freq_hz,
                              size_t channels) {
-  rtc::Optional<acm2::RentACodec::CodecId> ci =
+  absl::optional<acm2::RentACodec::CodecId> ci =
       acm2::RentACodec::CodecIdByParams(payload_name, sampling_freq_hz,
                                         channels);
   if (!ci)
     return -1;
-  rtc::Optional<int> i = acm2::RentACodec::CodecIndexFromId(*ci);
+  absl::optional<int> i = acm2::RentACodec::CodecIndexFromId(*ci);
   return i ? *i : -1;
 }
 

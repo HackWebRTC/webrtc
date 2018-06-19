@@ -241,7 +241,7 @@ class AudioCodingModuleTestOldApi : public ::testing::Test {
 
   // These two have to be kept in sync for now. In the future, we'll be able to
   // eliminate the CodecInst and keep only the SdpAudioFormat.
-  rtc::Optional<SdpAudioFormat> audio_format_;
+  absl::optional<SdpAudioFormat> audio_format_;
   CodecInst codec_;
 
   Clock* clock_;
@@ -1058,7 +1058,7 @@ TEST_F(AcmReceiverBitExactnessOldApi, 48kHzOutputExternalDecoder) {
     }
     std::unique_ptr<AudioDecoder> MakeAudioDecoder(
         const SdpAudioFormat& format,
-        rtc::Optional<AudioCodecPairId> codec_pair_id) override {
+        absl::optional<AudioCodecPairId> codec_pair_id) override {
       return format.name == "MockPCMu"
                  ? std::move(mock_decoder_)
                  : fact_->MakeAudioDecoder(format, codec_pair_id);

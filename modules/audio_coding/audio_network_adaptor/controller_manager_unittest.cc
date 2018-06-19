@@ -87,8 +87,8 @@ ControllerManagerStates CreateControllerManager() {
 // exists in the vector.
 void CheckControllersOrder(
     ControllerManagerStates* states,
-    const rtc::Optional<int>& uplink_bandwidth_bps,
-    const rtc::Optional<float>& uplink_packet_loss_fraction,
+    const absl::optional<int>& uplink_bandwidth_bps,
+    const absl::optional<float>& uplink_packet_loss_fraction,
     const std::vector<int>& expected_order) {
   RTC_DCHECK_EQ(kNumControllers, expected_order.size());
   Controller::NetworkMetrics metrics;
@@ -124,8 +124,7 @@ TEST(ControllerManagerTest, ControllersInDefaultOrderOnEmptyNetworkMetrics) {
   auto states = CreateControllerManager();
   // |network_metrics| are empty, and the controllers are supposed to follow the
   // default order.
-  CheckControllersOrder(&states, rtc::nullopt, rtc::nullopt,
-                        {0, 1, 2, 3});
+  CheckControllersOrder(&states, absl::nullopt, absl::nullopt, {0, 1, 2, 3});
 }
 
 TEST(ControllerManagerTest, ControllersWithoutCharPointAtEndAndInDefaultOrder) {

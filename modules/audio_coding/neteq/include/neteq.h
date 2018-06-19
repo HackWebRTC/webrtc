@@ -16,9 +16,9 @@
 #include <string>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "api/audio_codecs/audio_codec_pair_id.h"
 #include "api/audio_codecs/audio_decoder.h"
-#include "api/optional.h"
 #include "api/rtp_headers.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/neteq/neteq_decoder_enum.h"
@@ -101,7 +101,7 @@ class NetEq {
     NetEqPlayoutMode playout_mode = kPlayoutOn;
     bool enable_fast_accelerate = false;
     bool enable_muted_state = false;
-    rtc::Optional<AudioCodecPairId> codec_pair_id;
+    absl::optional<AudioCodecPairId> codec_pair_id;
   };
 
   enum ReturnCodes {
@@ -247,7 +247,7 @@ class NetEq {
 
   // Returns the RTP timestamp for the last sample delivered by GetAudio().
   // The return value will be empty if no valid timestamp is available.
-  virtual rtc::Optional<uint32_t> GetPlayoutTimestamp() const = 0;
+  virtual absl::optional<uint32_t> GetPlayoutTimestamp() const = 0;
 
   // Returns the sample rate in Hz of the audio produced in the last GetAudio
   // call. If GetAudio has not been called yet, the configured sample rate
@@ -256,11 +256,11 @@ class NetEq {
 
   // Returns info about the decoder for the given payload type, or an empty
   // value if we have no decoder for that payload type.
-  virtual rtc::Optional<CodecInst> GetDecoder(int payload_type) const = 0;
+  virtual absl::optional<CodecInst> GetDecoder(int payload_type) const = 0;
 
   // Returns the decoder format for the given payload type. Returns empty if no
   // such payload type was registered.
-  virtual rtc::Optional<SdpAudioFormat> GetDecoderFormat(
+  virtual absl::optional<SdpAudioFormat> GetDecoderFormat(
       int payload_type) const = 0;
 
   // Not implemented.

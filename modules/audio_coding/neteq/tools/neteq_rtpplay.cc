@@ -206,7 +206,7 @@ void PrintCodecMapping() {
   PrintCodecMappingEntry(NetEqDecoder::kDecoderCNGswb48kHz, FLAG_cn_swb48);
 }
 
-rtc::Optional<int> CodecSampleRate(uint8_t payload_type) {
+absl::optional<int> CodecSampleRate(uint8_t payload_type) {
   if (payload_type == FLAG_pcmu || payload_type == FLAG_pcma ||
       payload_type == FLAG_ilbc || payload_type == FLAG_pcm16b ||
       payload_type == FLAG_cn_nb || payload_type == FLAG_avt)
@@ -223,7 +223,7 @@ rtc::Optional<int> CodecSampleRate(uint8_t payload_type) {
     return 48000;
   if (payload_type == FLAG_red)
     return 0;
-  return rtc::nullopt;
+  return absl::nullopt;
 }
 
 // A callback class which prints whenver the inserted packet stream changes
@@ -253,7 +253,7 @@ class SsrcSwitchDetector : public NetEqPostInsertPacket {
 
  private:
   NetEqPostInsertPacket* other_callback_;
-  rtc::Optional<uint32_t> last_ssrc_;
+  absl::optional<uint32_t> last_ssrc_;
 };
 
 int RunTest(int argc, char* argv[]) {
@@ -340,9 +340,9 @@ int RunTest(int argc, char* argv[]) {
   }
 
   // Check the sample rate.
-  rtc::Optional<int> sample_rate_hz;
+  absl::optional<int> sample_rate_hz;
   std::set<std::pair<int, uint32_t>> discarded_pt_and_ssrc;
-  while (rtc::Optional<RTPHeader> first_rtp_header = input->NextHeader()) {
+  while (absl::optional<RTPHeader> first_rtp_header = input->NextHeader()) {
     RTC_DCHECK(first_rtp_header);
     sample_rate_hz = CodecSampleRate(first_rtp_header->payloadType);
     if (sample_rate_hz) {

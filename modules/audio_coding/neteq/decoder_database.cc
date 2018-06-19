@@ -21,7 +21,7 @@ namespace webrtc {
 
 DecoderDatabase::DecoderDatabase(
     const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory,
-    rtc::Optional<AudioCodecPairId> codec_pair_id)
+    absl::optional<AudioCodecPairId> codec_pair_id)
     : active_decoder_type_(-1),
       active_cng_decoder_type_(-1),
       decoder_factory_(decoder_factory),
@@ -31,7 +31,7 @@ DecoderDatabase::~DecoderDatabase() = default;
 
 DecoderDatabase::DecoderInfo::DecoderInfo(
     const SdpAudioFormat& audio_format,
-    rtc::Optional<AudioCodecPairId> codec_pair_id,
+    absl::optional<AudioCodecPairId> codec_pair_id,
     AudioDecoderFactory* factory,
     const std::string& codec_name)
     : name_(codec_name),
@@ -44,13 +44,13 @@ DecoderDatabase::DecoderInfo::DecoderInfo(
 
 DecoderDatabase::DecoderInfo::DecoderInfo(
     const SdpAudioFormat& audio_format,
-    rtc::Optional<AudioCodecPairId> codec_pair_id,
+    absl::optional<AudioCodecPairId> codec_pair_id,
     AudioDecoderFactory* factory)
     : DecoderInfo(audio_format, codec_pair_id, factory, audio_format.name) {}
 
 DecoderDatabase::DecoderInfo::DecoderInfo(
     NetEqDecoder ct,
-    rtc::Optional<AudioCodecPairId> codec_pair_id,
+    absl::optional<AudioCodecPairId> codec_pair_id,
     AudioDecoderFactory* factory)
     : DecoderInfo(*NetEqDecoderToSdpAudioFormat(ct), codec_pair_id, factory) {}
 
@@ -59,7 +59,7 @@ DecoderDatabase::DecoderInfo::DecoderInfo(const SdpAudioFormat& audio_format,
                                           const std::string& codec_name)
     : name_(codec_name),
       audio_format_(audio_format),
-      codec_pair_id_(rtc::nullopt),
+      codec_pair_id_(absl::nullopt),
       factory_(nullptr),
       external_decoder_(ext_dec),
       subtype_(Subtype::kNormal) {
@@ -108,7 +108,7 @@ bool DecoderDatabase::DecoderInfo::IsType(const std::string& name) const {
   return IsType(name.c_str());
 }
 
-rtc::Optional<DecoderDatabase::DecoderInfo::CngDecoder>
+absl::optional<DecoderDatabase::DecoderInfo::CngDecoder>
 DecoderDatabase::DecoderInfo::CngDecoder::Create(const SdpAudioFormat& format) {
   if (STR_CASE_CMP(format.name.c_str(), "CN") == 0) {
     // CN has a 1:1 RTP clock rate to sample rate ratio.
@@ -117,7 +117,7 @@ DecoderDatabase::DecoderInfo::CngDecoder::Create(const SdpAudioFormat& format) {
                sample_rate_hz == 32000 || sample_rate_hz == 48000);
     return DecoderDatabase::DecoderInfo::CngDecoder{sample_rate_hz};
   } else {
-    return rtc::nullopt;
+    return absl::nullopt;
   }
 }
 

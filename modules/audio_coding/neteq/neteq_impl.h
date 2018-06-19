@@ -14,7 +14,7 @@
 #include <memory>
 #include <string>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "api/audio/audio_frame.h"
 #include "modules/audio_coding/neteq/audio_multi_vector.h"
 #include "modules/audio_coding/neteq/defines.h"
@@ -198,13 +198,13 @@ class NetEqImpl : public webrtc::NetEq {
   // Disables post-decode VAD.
   void DisableVad() override;
 
-  rtc::Optional<uint32_t> GetPlayoutTimestamp() const override;
+  absl::optional<uint32_t> GetPlayoutTimestamp() const override;
 
   int last_output_sample_rate_hz() const override;
 
-  rtc::Optional<CodecInst> GetDecoder(int payload_type) const override;
+  absl::optional<CodecInst> GetDecoder(int payload_type) const override;
 
-  rtc::Optional<SdpAudioFormat> GetDecoderFormat(
+  absl::optional<SdpAudioFormat> GetDecoderFormat(
       int payload_type) const override;
 
   int SetTargetNumberOfChannels() override;
@@ -424,8 +424,8 @@ class NetEqImpl : public webrtc::NetEq {
   bool new_codec_ RTC_GUARDED_BY(crit_sect_);
   uint32_t timestamp_ RTC_GUARDED_BY(crit_sect_);
   bool reset_decoder_ RTC_GUARDED_BY(crit_sect_);
-  rtc::Optional<uint8_t> current_rtp_payload_type_ RTC_GUARDED_BY(crit_sect_);
-  rtc::Optional<uint8_t> current_cng_rtp_payload_type_
+  absl::optional<uint8_t> current_rtp_payload_type_ RTC_GUARDED_BY(crit_sect_);
+  absl::optional<uint8_t> current_cng_rtp_payload_type_
       RTC_GUARDED_BY(crit_sect_);
   uint32_t ssrc_ RTC_GUARDED_BY(crit_sect_);
   bool first_packet_ RTC_GUARDED_BY(crit_sect_);

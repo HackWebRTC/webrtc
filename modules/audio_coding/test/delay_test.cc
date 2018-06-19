@@ -217,7 +217,7 @@ class DelayTest {
           audio_frame.data(),
           audio_frame.samples_per_channel_ * audio_frame.num_channels_);
       received_ts = channel_a2b_->LastInTimestamp();
-      rtc::Optional<uint32_t> playout_timestamp = acm_b_->PlayoutTimestamp();
+      absl::optional<uint32_t> playout_timestamp = acm_b_->PlayoutTimestamp();
       ASSERT_TRUE(playout_timestamp);
       inst_delay_sec = static_cast<uint32_t>(received_ts - *playout_timestamp) /
                        static_cast<double>(encoding_sample_rate_hz_);

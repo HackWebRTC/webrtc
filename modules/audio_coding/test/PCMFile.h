@@ -16,8 +16,8 @@
 
 #include <string>
 
+#include "absl/types/optional.h"
 #include "api/audio/audio_frame.h"
-#include "api/optional.h"
 #include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
@@ -67,7 +67,7 @@ class PCMFile {
   uint32_t timestamp_;
   bool read_stereo_;
   bool save_stereo_;
-  rtc::Optional<int> num_10ms_blocks_to_read_;
+  absl::optional<int> num_10ms_blocks_to_read_;
   int blocks_read_ = 0;
 };
 

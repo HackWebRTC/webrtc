@@ -314,7 +314,7 @@ TEST_F(NetEqImplTest, InsertPacket) {
       new rtc::RefCountedObject<MockAudioDecoderFactory>);
   EXPECT_CALL(*mock_decoder_factory, MakeAudioDecoderMock(_, _, _))
       .WillOnce(Invoke([&](const SdpAudioFormat& format,
-                           rtc::Optional<AudioCodecPairId> codec_pair_id,
+                           absl::optional<AudioCodecPairId> codec_pair_id,
                            std::unique_ptr<AudioDecoder>* dec) {
         EXPECT_EQ("pcmu", format.name);
 
@@ -334,7 +334,7 @@ TEST_F(NetEqImplTest, InsertPacket) {
 
         *dec = std::move(mock_decoder);
       }));
-  DecoderDatabase::DecoderInfo info(NetEqDecoder::kDecoderPCMu, rtc::nullopt,
+  DecoderDatabase::DecoderInfo info(NetEqDecoder::kDecoderPCMu, absl::nullopt,
                                     mock_decoder_factory);
 
   // Expectations for decoder database.
@@ -518,10 +518,10 @@ TEST_F(NetEqImplTest, VerifyTimestampPropagation) {
   // The value of the last of the output samples is the same as the number of
   // samples played from the decoded packet. Thus, this number + the RTP
   // timestamp should match the playout timestamp.
-  // Wrap the expected value in an rtc::Optional to compare them as such.
+  // Wrap the expected value in an absl::optional to compare them as such.
   EXPECT_EQ(
-      rtc::Optional<uint32_t>(rtp_header.timestamp +
-                              output.data()[output.samples_per_channel_ - 1]),
+      absl::optional<uint32_t>(rtp_header.timestamp +
+                               output.data()[output.samples_per_channel_ - 1]),
       neteq_->GetPlayoutTimestamp());
 
   // Check the timestamp for the last value in the sync buffer. This should
@@ -783,12 +783,12 @@ TEST_F(NetEqImplTest, CodecInternalCng) {
 
   bool muted;
   EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
-  rtc::Optional<uint32_t> last_timestamp = neteq_->GetPlayoutTimestamp();
+  absl::optional<uint32_t> last_timestamp = neteq_->GetPlayoutTimestamp();
   ASSERT_TRUE(last_timestamp);
 
   // Lambda for verifying the timestamps.
   auto verify_timestamp = [&last_timestamp, &expected_timestamp_increment](
-      rtc::Optional<uint32_t> ts, size_t i) {
+                              absl::optional<uint32_t> ts, size_t i) {
     if (expected_timestamp_increment[i] == -1) {
       // Expect to get an empty timestamp value during CNG and PLC.
       EXPECT_FALSE(ts) << "i = " << i;

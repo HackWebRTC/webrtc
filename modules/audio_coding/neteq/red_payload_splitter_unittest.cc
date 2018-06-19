@@ -299,7 +299,7 @@ TEST(RedPayloadSplitter, CheckRedPayloads) {
   // easier to just register the payload types and let the actual implementation
   // do its job.
   DecoderDatabase decoder_database(
-      new rtc::RefCountedObject<MockAudioDecoderFactory>, rtc::nullopt);
+      new rtc::RefCountedObject<MockAudioDecoderFactory>, absl::nullopt);
   decoder_database.RegisterPayload(0, NetEqDecoder::kDecoderCNGnb, "cng-nb");
   decoder_database.RegisterPayload(1, NetEqDecoder::kDecoderPCMu, "pcmu");
   decoder_database.RegisterPayload(2, NetEqDecoder::kDecoderAVT, "avt");

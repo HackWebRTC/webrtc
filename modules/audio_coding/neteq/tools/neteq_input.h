@@ -15,7 +15,7 @@
 #include <memory>
 #include <string>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/neteq/tools/packet.h"
 #include "modules/audio_coding/neteq/tools/packet_source.h"
@@ -39,22 +39,22 @@ class NetEqInput {
 
   // Returns at what time (in ms) NetEq::InsertPacket should be called next, or
   // empty if the source is out of packets.
-  virtual rtc::Optional<int64_t> NextPacketTime() const = 0;
+  virtual absl::optional<int64_t> NextPacketTime() const = 0;
 
   // Returns at what time (in ms) NetEq::GetAudio should be called next, or
   // empty if no more output events are available.
-  virtual rtc::Optional<int64_t> NextOutputEventTime() const = 0;
+  virtual absl::optional<int64_t> NextOutputEventTime() const = 0;
 
   // Returns the time (in ms) for the next event from either NextPacketTime()
   // or NextOutputEventTime(), or empty if both are out of events.
-  rtc::Optional<int64_t> NextEventTime() const {
+  absl::optional<int64_t> NextEventTime() const {
     const auto a = NextPacketTime();
     const auto b = NextOutputEventTime();
     // Return the minimum of non-empty |a| and |b|, or empty if both are empty.
     if (a) {
       return b ? std::min(*a, *b) : a;
     }
-    return b ? b : rtc::nullopt;
+    return b ? b : absl::nullopt;
   }
 
   // Returns the next packet to be inserted into NetEq. The packet following the
@@ -75,7 +75,7 @@ class NetEqInput {
 
   // Returns the RTP header for the next packet, i.e., the packet that will be
   // delivered next by PopPacket().
-  virtual rtc::Optional<RTPHeader> NextHeader() const = 0;
+  virtual absl::optional<RTPHeader> NextHeader() const = 0;
 };
 
 }  // namespace test

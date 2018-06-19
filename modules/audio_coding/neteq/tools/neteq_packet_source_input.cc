@@ -22,15 +22,14 @@ namespace test {
 
 NetEqPacketSourceInput::NetEqPacketSourceInput() : next_output_event_ms_(0) {}
 
-rtc::Optional<int64_t> NetEqPacketSourceInput::NextPacketTime() const {
+absl::optional<int64_t> NetEqPacketSourceInput::NextPacketTime() const {
   return packet_
-             ? rtc::Optional<int64_t>(static_cast<int64_t>(packet_->time_ms()))
-             : rtc::nullopt;
+             ? absl::optional<int64_t>(static_cast<int64_t>(packet_->time_ms()))
+             : absl::nullopt;
 }
 
-rtc::Optional<RTPHeader> NetEqPacketSourceInput::NextHeader() const {
-  return packet_ ? rtc::Optional<RTPHeader>(packet_->header())
-                 : rtc::nullopt;
+absl::optional<RTPHeader> NetEqPacketSourceInput::NextHeader() const {
+  return packet_ ? absl::optional<RTPHeader>(packet_->header()) : absl::nullopt;
 }
 
 void NetEqPacketSourceInput::LoadNextPacket() {
@@ -75,7 +74,7 @@ NetEqRtpDumpInput::NetEqRtpDumpInput(const std::string& file_name,
   LoadNextPacket();
 }
 
-rtc::Optional<int64_t> NetEqRtpDumpInput::NextOutputEventTime() const {
+absl::optional<int64_t> NetEqRtpDumpInput::NextOutputEventTime() const {
   return next_output_event_ms_;
 }
 
@@ -84,7 +83,7 @@ void NetEqRtpDumpInput::AdvanceOutputEvent() {
     *next_output_event_ms_ += kOutputPeriodMs;
   }
   if (!NextPacketTime()) {
-    next_output_event_ms_ = rtc::nullopt;
+    next_output_event_ms_ = absl::nullopt;
   }
 }
 
@@ -102,14 +101,14 @@ NetEqEventLogInput::NetEqEventLogInput(const std::string& file_name,
   AdvanceOutputEvent();
 }
 
-rtc::Optional<int64_t> NetEqEventLogInput::NextOutputEventTime() const {
+absl::optional<int64_t> NetEqEventLogInput::NextOutputEventTime() const {
   return next_output_event_ms_;
 }
 
 void NetEqEventLogInput::AdvanceOutputEvent() {
   next_output_event_ms_ = source_->NextAudioOutputEventMs();
   if (*next_output_event_ms_ == std::numeric_limits<int64_t>::max()) {
-    next_output_event_ms_ = rtc::nullopt;
+    next_output_event_ms_ = absl::nullopt;
   }
 }
 

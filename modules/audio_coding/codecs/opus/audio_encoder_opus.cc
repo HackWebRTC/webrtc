@@ -105,18 +105,18 @@ float OptimizePacketLossRate(float new_loss_rate, float old_loss_rate) {
   }
 }
 
-rtc::Optional<std::string> GetFormatParameter(const SdpAudioFormat& format,
-                                              const std::string& param) {
+absl::optional<std::string> GetFormatParameter(const SdpAudioFormat& format,
+                                               const std::string& param) {
   auto it = format.parameters.find(param);
   if (it == format.parameters.end())
-    return rtc::nullopt;
+    return absl::nullopt;
 
   return it->second;
 }
 
 template <typename T>
-rtc::Optional<T> GetFormatParameter(const SdpAudioFormat& format,
-                                    const std::string& param) {
+absl::optional<T> GetFormatParameter(const SdpAudioFormat& format,
+                                     const std::string& param) {
   return rtc::StringToNumber<T>(GetFormatParameter(format, param).value_or(""));
 }
 
@@ -139,7 +139,7 @@ int CalculateDefaultBitrate(int max_playback_rate, size_t num_channels) {
 // out how invalid it is and accurately log invalid values.
 int CalculateBitrate(int max_playback_rate_hz,
                      size_t num_channels,
-                     rtc::Optional<std::string> bitrate_param) {
+                     absl::optional<std::string> bitrate_param) {
   const int default_bitrate =
       CalculateDefaultBitrate(max_playback_rate_hz, num_channels);
 
@@ -242,7 +242,7 @@ std::unique_ptr<AudioEncoder> AudioEncoderOpusImpl::MakeAudioEncoder(
   return rtc::MakeUnique<AudioEncoderOpusImpl>(config, payload_type);
 }
 
-rtc::Optional<AudioCodecInfo> AudioEncoderOpusImpl::QueryAudioEncoder(
+absl::optional<AudioCodecInfo> AudioEncoderOpusImpl::QueryAudioEncoder(
     const SdpAudioFormat& format) {
   if (STR_CASE_CMP(format.name.c_str(), GetPayloadName()) == 0 &&
       format.clockrate_hz == 48000 && format.num_channels == 2) {
@@ -258,7 +258,7 @@ rtc::Optional<AudioCodecInfo> AudioEncoderOpusImpl::QueryAudioEncoder(
 
     return info;
   }
-  return rtc::nullopt;
+  return absl::nullopt;
 }
 
 AudioEncoderOpusConfig AudioEncoderOpusImpl::CreateConfig(
@@ -274,11 +274,11 @@ AudioEncoderOpusConfig AudioEncoderOpusImpl::CreateConfig(
   return config;
 }
 
-rtc::Optional<AudioEncoderOpusConfig> AudioEncoderOpusImpl::SdpToConfig(
+absl::optional<AudioEncoderOpusConfig> AudioEncoderOpusImpl::SdpToConfig(
     const SdpAudioFormat& format) {
   if (STR_CASE_CMP(format.name.c_str(), "opus") != 0 ||
       format.clockrate_hz != 48000 || format.num_channels != 2) {
-    return rtc::nullopt;
+    return absl::nullopt;
   }
 
   AudioEncoderOpusConfig config;
@@ -313,7 +313,7 @@ rtc::Optional<AudioEncoderOpusConfig> AudioEncoderOpusImpl::SdpToConfig(
   return config;
 }
 
-rtc::Optional<int> AudioEncoderOpusImpl::GetNewComplexity(
+absl::optional<int> AudioEncoderOpusImpl::GetNewComplexity(
     const AudioEncoderOpusConfig& config) {
   RTC_DCHECK(config.IsOk());
   const int bitrate_bps = GetBitrateBps(config);
@@ -322,7 +322,7 @@ rtc::Optional<int> AudioEncoderOpusImpl::GetNewComplexity(
       bitrate_bps <= config.complexity_threshold_bps +
                          config.complexity_threshold_window_bps) {
     // Within the hysteresis window; make no change.
-    return rtc::nullopt;
+    return absl::nullopt;
   } else {
     return bitrate_bps <= config.complexity_threshold_bps
                ? config.low_rate_complexity
@@ -330,7 +330,7 @@ rtc::Optional<int> AudioEncoderOpusImpl::GetNewComplexity(
   }
 }
 
-rtc::Optional<int> AudioEncoderOpusImpl::GetNewBandwidth(
+absl::optional<int> AudioEncoderOpusImpl::GetNewBandwidth(
     const AudioEncoderOpusConfig& config,
     OpusEncInst* inst) {
   constexpr int kMinWidebandBitrate = 8000;
@@ -339,17 +339,17 @@ rtc::Optional<int> AudioEncoderOpusImpl::GetNewBandwidth(
   RTC_DCHECK(config.IsOk());
   const int bitrate = GetBitrateBps(config);
   if (bitrate > kAutomaticThreshold) {
-    return rtc::Optional<int>(OPUS_AUTO);
+    return absl::optional<int>(OPUS_AUTO);
   }
   const int bandwidth = WebRtcOpus_GetBandwidth(inst);
   RTC_DCHECK_GE(bandwidth, 0);
   if (bitrate > kMaxNarrowbandBitrate && bandwidth < OPUS_BANDWIDTH_WIDEBAND) {
-    return rtc::Optional<int>(OPUS_BANDWIDTH_WIDEBAND);
+    return absl::optional<int>(OPUS_BANDWIDTH_WIDEBAND);
   } else if (bitrate < kMinWidebandBitrate &&
              bandwidth > OPUS_BANDWIDTH_NARROWBAND) {
-    return rtc::Optional<int>(OPUS_BANDWIDTH_NARROWBAND);
+    return absl::optional<int>(OPUS_BANDWIDTH_NARROWBAND);
   }
-  return rtc::Optional<int>();
+  return absl::optional<int>();
 }
 
 class AudioEncoderOpusImpl::PacketLossFractionSmoother {
@@ -529,7 +529,7 @@ void AudioEncoderOpusImpl::OnReceivedUplinkRecoverablePacketLossFraction(
 
 void AudioEncoderOpusImpl::OnReceivedUplinkBandwidth(
     int target_audio_bitrate_bps,
-    rtc::Optional<int64_t> bwe_period_ms) {
+    absl::optional<int64_t> bwe_period_ms) {
   if (audio_network_adaptor_) {
     audio_network_adaptor_->SetTargetAudioBitrate(target_audio_bitrate_bps);
     // We give smoothed bitrate allocation to audio network adaptor as
@@ -801,7 +801,7 @@ void AudioEncoderOpusImpl::MaybeUpdateUplinkBandwidth() {
     if (!bitrate_smoother_last_update_time_ ||
         now_ms - *bitrate_smoother_last_update_time_ >=
             config_.uplink_bandwidth_update_interval_ms) {
-      rtc::Optional<float> smoothed_bitrate = bitrate_smoother_->GetAverage();
+      absl::optional<float> smoothed_bitrate = bitrate_smoother_->GetAverage();
       if (smoothed_bitrate)
         audio_network_adaptor_->SetUplinkBandwidth(*smoothed_bitrate);
       bitrate_smoother_last_update_time_ = now_ms;

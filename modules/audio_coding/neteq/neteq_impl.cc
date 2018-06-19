@@ -422,14 +422,14 @@ void NetEqImpl::DisableVad() {
   vad_->Disable();
 }
 
-rtc::Optional<uint32_t> NetEqImpl::GetPlayoutTimestamp() const {
+absl::optional<uint32_t> NetEqImpl::GetPlayoutTimestamp() const {
   rtc::CritScope lock(&crit_sect_);
   if (first_packet_ || last_mode_ == kModeRfc3389Cng ||
       last_mode_ == kModeCodecInternalCng) {
     // We don't have a valid RTP timestamp until we have decoded our first
     // RTP packet. Also, the RTP timestamp is not accurate while playing CNG,
     // which is indicated by returning an empty value.
-    return rtc::nullopt;
+    return absl::nullopt;
   }
   return timestamp_scaler_->ToExternal(playout_timestamp_);
 }
@@ -439,12 +439,12 @@ int NetEqImpl::last_output_sample_rate_hz() const {
   return last_output_sample_rate_hz_;
 }
 
-rtc::Optional<CodecInst> NetEqImpl::GetDecoder(int payload_type) const {
+absl::optional<CodecInst> NetEqImpl::GetDecoder(int payload_type) const {
   rtc::CritScope lock(&crit_sect_);
   const DecoderDatabase::DecoderInfo* di =
       decoder_database_->GetDecoderInfo(payload_type);
   if (!di) {
-    return rtc::nullopt;
+    return absl::nullopt;
   }
 
   // Create a CodecInst with some fields set. The remaining fields are zeroed,
@@ -460,13 +460,13 @@ rtc::Optional<CodecInst> NetEqImpl::GetDecoder(int payload_type) const {
   return ci;
 }
 
-rtc::Optional<SdpAudioFormat> NetEqImpl::GetDecoderFormat(
+absl::optional<SdpAudioFormat> NetEqImpl::GetDecoderFormat(
     int payload_type) const {
   rtc::CritScope lock(&crit_sect_);
   const DecoderDatabase::DecoderInfo* const di =
       decoder_database_->GetDecoderInfo(payload_type);
   if (!di) {
-    return rtc::nullopt;  // Payload type not registered.
+    return absl::nullopt;  // Payload type not registered.
   }
   return di->GetFormat();
 }
@@ -1957,7 +1957,7 @@ int NetEqImpl::ExtractPackets(size_t required_samples,
   // Packet extraction loop.
   do {
     timestamp_ = next_packet->timestamp;
-    rtc::Optional<Packet> packet = packet_buffer_->GetNextPacket();
+    absl::optional<Packet> packet = packet_buffer_->GetNextPacket();
     // |next_packet| may be invalid after the |packet_buffer_| operation.
     next_packet = nullptr;
     if (!packet) {
@@ -2009,7 +2009,7 @@ int NetEqImpl::ExtractPackets(size_t required_samples,
     stats_.JitterBufferDelay(extracted_samples, waiting_time_ms);
 
     packet_list->push_back(std::move(*packet));  // Store packet in list.
-    packet = rtc::nullopt;  // Ensure it's never used after the move.
+    packet = absl::nullopt;  // Ensure it's never used after the move.
 
     // Check what packet is available next.
     next_packet = packet_buffer_->PeekNextPacket();

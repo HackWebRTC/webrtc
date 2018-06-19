@@ -198,20 +198,20 @@ TEST(AudioEncoderOpusTest,
   const int kMinBitrateBps = 6000;
   const int kMaxBitrateBps = 510000;
   // Set a too low bitrate.
-  states->encoder->OnReceivedUplinkBandwidth(kMinBitrateBps - 1, rtc::nullopt);
+  states->encoder->OnReceivedUplinkBandwidth(kMinBitrateBps - 1, absl::nullopt);
   EXPECT_EQ(kMinBitrateBps, states->encoder->GetTargetBitrate());
   // Set a too high bitrate.
-  states->encoder->OnReceivedUplinkBandwidth(kMaxBitrateBps + 1, rtc::nullopt);
+  states->encoder->OnReceivedUplinkBandwidth(kMaxBitrateBps + 1, absl::nullopt);
   EXPECT_EQ(kMaxBitrateBps, states->encoder->GetTargetBitrate());
   // Set the minimum rate.
-  states->encoder->OnReceivedUplinkBandwidth(kMinBitrateBps, rtc::nullopt);
+  states->encoder->OnReceivedUplinkBandwidth(kMinBitrateBps, absl::nullopt);
   EXPECT_EQ(kMinBitrateBps, states->encoder->GetTargetBitrate());
   // Set the maximum rate.
-  states->encoder->OnReceivedUplinkBandwidth(kMaxBitrateBps, rtc::nullopt);
+  states->encoder->OnReceivedUplinkBandwidth(kMaxBitrateBps, absl::nullopt);
   EXPECT_EQ(kMaxBitrateBps, states->encoder->GetTargetBitrate());
   // Set rates from kMaxBitrateBps up to 32000 bps.
   for (int rate = kMinBitrateBps; rate <= 32000; rate += 1000) {
-    states->encoder->OnReceivedUplinkBandwidth(rate, rtc::nullopt);
+    states->encoder->OnReceivedUplinkBandwidth(rate, absl::nullopt);
     EXPECT_EQ(rate, states->encoder->GetTargetBitrate());
   }
 }
@@ -392,7 +392,7 @@ TEST(AudioEncoderOpusTest, DoNotInvokeSetTargetBitrateIfOverheadUnknown) {
   auto states = CreateCodec(2);
 
   states->encoder->OnReceivedUplinkBandwidth(kDefaultOpusSettings.rate * 2,
-                                             rtc::nullopt);
+                                             absl::nullopt);
 
   // Since |OnReceivedOverhead| has not been called, the codec bitrate should
   // not change.
@@ -409,7 +409,7 @@ TEST(AudioEncoderOpusTest, OverheadRemovedFromTargetAudioBitrate) {
   states->encoder->OnReceivedOverhead(kOverheadBytesPerPacket);
 
   constexpr int kTargetBitrateBps = 40000;
-  states->encoder->OnReceivedUplinkBandwidth(kTargetBitrateBps, rtc::nullopt);
+  states->encoder->OnReceivedUplinkBandwidth(kTargetBitrateBps, absl::nullopt);
 
   int packet_rate = rtc::CheckedDivExact(48000, kDefaultOpusSettings.pacsize);
   EXPECT_EQ(kTargetBitrateBps -
@@ -435,14 +435,14 @@ TEST(AudioEncoderOpusTest, BitrateBounded) {
   // subtracted. The eventual codec rate should be bounded by |kMinBitrateBps|.
   int target_bitrate =
       kOverheadBytesPerPacket * 8 * packet_rate + kMinBitrateBps - 1;
-  states->encoder->OnReceivedUplinkBandwidth(target_bitrate, rtc::nullopt);
+  states->encoder->OnReceivedUplinkBandwidth(target_bitrate, absl::nullopt);
   EXPECT_EQ(kMinBitrateBps, states->encoder->GetTargetBitrate());
 
   // Set a target rate that is greater than |kMaxBitrateBps| when overhead is
   // subtracted. The eventual codec rate should be bounded by |kMaxBitrateBps|.
   target_bitrate =
       kOverheadBytesPerPacket * 8 * packet_rate + kMaxBitrateBps + 1;
-  states->encoder->OnReceivedUplinkBandwidth(target_bitrate, rtc::nullopt);
+  states->encoder->OnReceivedUplinkBandwidth(target_bitrate, absl::nullopt);
   EXPECT_EQ(kMaxBitrateBps, states->encoder->GetTargetBitrate());
 }
 
@@ -454,7 +454,7 @@ TEST(AudioEncoderOpusTest, ConfigComplexityAdaptation) {
 
   // Bitrate within hysteresis window. Expect empty output.
   config.bitrate_bps = 12500;
-  EXPECT_EQ(rtc::nullopt, AudioEncoderOpusImpl::GetNewComplexity(config));
+  EXPECT_EQ(absl::nullopt, AudioEncoderOpusImpl::GetNewComplexity(config));
 
   // Bitrate below hysteresis window. Expect higher complexity.
   config.bitrate_bps = 10999;
@@ -462,7 +462,7 @@ TEST(AudioEncoderOpusTest, ConfigComplexityAdaptation) {
 
   // Bitrate within hysteresis window. Expect empty output.
   config.bitrate_bps = 12500;
-  EXPECT_EQ(rtc::nullopt, AudioEncoderOpusImpl::GetNewComplexity(config));
+  EXPECT_EQ(absl::nullopt, AudioEncoderOpusImpl::GetNewComplexity(config));
 
   // Bitrate above hysteresis window. Expect lower complexity.
   config.bitrate_bps = 14001;
@@ -488,9 +488,9 @@ TEST(AudioEncoderOpusTest, ConfigBandwidthAdaptation) {
                        : 1));
 
   // Bitrate below minmum wideband. Expect narrowband.
-  config.bitrate_bps = rtc::Optional<int>(7999);
+  config.bitrate_bps = absl::optional<int>(7999);
   auto bandwidth = AudioEncoderOpusImpl::GetNewBandwidth(config, inst);
-  EXPECT_EQ(rtc::Optional<int>(OPUS_BANDWIDTH_NARROWBAND), bandwidth);
+  EXPECT_EQ(absl::optional<int>(OPUS_BANDWIDTH_NARROWBAND), bandwidth);
   WebRtcOpus_SetBandwidth(inst, *bandwidth);
   // It is necessary to encode here because Opus has some logic in the encoder
   // that goes from the user-set bandwidth to the used and returned one.
@@ -499,14 +499,14 @@ TEST(AudioEncoderOpusTest, ConfigBandwidthAdaptation) {
                     kMaxBytes, bitstream);
 
   // Bitrate not yet above maximum narrowband. Expect empty.
-  config.bitrate_bps = rtc::Optional<int>(9000);
+  config.bitrate_bps = absl::optional<int>(9000);
   bandwidth = AudioEncoderOpusImpl::GetNewBandwidth(config, inst);
-  EXPECT_EQ(rtc::Optional<int>(), bandwidth);
+  EXPECT_EQ(absl::optional<int>(), bandwidth);
 
   // Bitrate above maximum narrowband. Expect wideband.
-  config.bitrate_bps = rtc::Optional<int>(9001);
+  config.bitrate_bps = absl::optional<int>(9001);
   bandwidth = AudioEncoderOpusImpl::GetNewBandwidth(config, inst);
-  EXPECT_EQ(rtc::Optional<int>(OPUS_BANDWIDTH_WIDEBAND), bandwidth);
+  EXPECT_EQ(absl::optional<int>(OPUS_BANDWIDTH_WIDEBAND), bandwidth);
   WebRtcOpus_SetBandwidth(inst, *bandwidth);
   // It is necessary to encode here because Opus has some logic in the encoder
   // that goes from the user-set bandwidth to the used and returned one.
@@ -515,14 +515,14 @@ TEST(AudioEncoderOpusTest, ConfigBandwidthAdaptation) {
                     kMaxBytes, bitstream);
 
   // Bitrate not yet below minimum wideband. Expect empty.
-  config.bitrate_bps = rtc::Optional<int>(8000);
+  config.bitrate_bps = absl::optional<int>(8000);
   bandwidth = AudioEncoderOpusImpl::GetNewBandwidth(config, inst);
-  EXPECT_EQ(rtc::Optional<int>(), bandwidth);
+  EXPECT_EQ(absl::optional<int>(), bandwidth);
 
   // Bitrate above automatic threshold. Expect automatic.
-  config.bitrate_bps = rtc::Optional<int>(12001);
+  config.bitrate_bps = absl::optional<int>(12001);
   bandwidth = AudioEncoderOpusImpl::GetNewBandwidth(config, inst);
-  EXPECT_EQ(rtc::Optional<int>(OPUS_AUTO), bandwidth);
+  EXPECT_EQ(absl::optional<int>(OPUS_AUTO), bandwidth);
 
   EXPECT_EQ(0, WebRtcOpus_EncoderFree(inst));
 }
@@ -586,7 +586,7 @@ TEST(AudioEncoderOpusTest, EncodeAtMinBitrate) {
   rtc::Buffer encoded;
   uint32_t rtp_timestamp = 12345;  // Just a number not important to this test.
 
-  states->encoder->OnReceivedUplinkBandwidth(0, rtc::nullopt);
+  states->encoder->OnReceivedUplinkBandwidth(0, absl::nullopt);
   for (int packet_index = 0; packet_index < kNumPacketsToEncode;
        packet_index++) {
     // Make sure we are not encoding before we have enough data for
