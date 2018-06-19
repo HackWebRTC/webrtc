@@ -182,6 +182,7 @@ if (rtc_include_tests) {
         "main_filter_update_gain_unittest.cc",
         "matched_filter_lag_aggregator_unittest.cc",
         "matched_filter_unittest.cc",
+        "moving_average_unittest.cc",
         "render_buffer_unittest.cc",
         "render_delay_buffer_unittest.cc",
         "render_delay_controller_metrics_unittest.cc",
