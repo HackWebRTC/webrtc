@@ -66,11 +66,11 @@ class PeerConnectionWrapperForDataChannelTest : public PeerConnectionWrapper {
     sctp_transport_factory_ = sctp_transport_factory;
   }
 
-  rtc::Optional<std::string> sctp_content_name() {
+  absl::optional<std::string> sctp_content_name() {
     return GetInternalPeerConnection()->sctp_content_name();
   }
 
-  rtc::Optional<std::string> sctp_transport_name() {
+  absl::optional<std::string> sctp_transport_name() {
     return GetInternalPeerConnection()->sctp_transport_name();
   }
 

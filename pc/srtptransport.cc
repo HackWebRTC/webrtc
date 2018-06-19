@@ -237,7 +237,7 @@ void SrtpTransport::OnRtcpPacketReceived(rtc::CopyOnWriteBuffer* packet,
 }
 
 void SrtpTransport::OnNetworkRouteChanged(
-    rtc::Optional<rtc::NetworkRoute> network_route) {
+    absl::optional<rtc::NetworkRoute> network_route) {
   // Only append the SRTP overhead when there is a selected network route.
   if (network_route) {
     int srtp_overhead = 0;

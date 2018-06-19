@@ -524,7 +524,7 @@ TEST_F(JsepTransportControllerTest, GetDtlsRole) {
                   ->SetLocalDescription(SdpType::kOffer, offer_desc.get())
                   .ok());
 
-  rtc::Optional<rtc::SSLRole> role =
+  absl::optional<rtc::SSLRole> role =
       transport_controller_->GetDtlsRole(kAudioMid1);
   // The DTLS role is not decided yet.
   EXPECT_FALSE(role);

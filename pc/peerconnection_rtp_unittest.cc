@@ -791,10 +791,10 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan,
   auto caller = CreatePeerConnection();
 
   auto transceiver = caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO);
-  EXPECT_EQ(rtc::nullopt, transceiver->mid());
+  EXPECT_EQ(absl::nullopt, transceiver->mid());
   EXPECT_FALSE(transceiver->stopped());
   EXPECT_EQ(RtpTransceiverDirection::kSendRecv, transceiver->direction());
-  EXPECT_EQ(rtc::nullopt, transceiver->current_direction());
+  EXPECT_EQ(absl::nullopt, transceiver->current_direction());
 }
 
 // Test that adding a transceiver with the audio kind creates an audio sender

@@ -304,7 +304,7 @@ TEST_F(PeerConnectionJsepTest,
 
   auto transceivers = callee->pc()->GetTransceivers();
   ASSERT_EQ(2u, transceivers.size());
-  EXPECT_EQ(rtc::nullopt, transceivers[0]->mid());
+  EXPECT_EQ(absl::nullopt, transceivers[0]->mid());
   EXPECT_EQ(caller_audio->mid(), transceivers[1]->mid());
 }
 
@@ -322,7 +322,7 @@ TEST_F(PeerConnectionJsepTest,
 
   auto transceivers = callee->pc()->GetTransceivers();
   ASSERT_EQ(2u, transceivers.size());
-  EXPECT_EQ(rtc::nullopt, transceivers[0]->mid());
+  EXPECT_EQ(absl::nullopt, transceivers[0]->mid());
   EXPECT_EQ(caller->pc()->GetTransceivers()[0]->mid(), transceivers[1]->mid());
   EXPECT_EQ(MediaStreamTrackInterface::kAudioKind,
             transceivers[1]->receiver()->track()->kind());
@@ -341,7 +341,7 @@ TEST_F(PeerConnectionJsepTest,
 
   auto transceivers = callee->pc()->GetTransceivers();
   ASSERT_EQ(2u, transceivers.size());
-  EXPECT_EQ(rtc::nullopt, transceivers[0]->mid());
+  EXPECT_EQ(absl::nullopt, transceivers[0]->mid());
   EXPECT_EQ(caller->pc()->GetTransceivers()[0]->mid(), transceivers[1]->mid());
   EXPECT_EQ(MediaStreamTrackInterface::kAudioKind,
             transceivers[1]->receiver()->track()->kind());
@@ -360,7 +360,7 @@ TEST_F(PeerConnectionJsepTest, SetRemoteOfferDoesNotReuseStoppedTransceiver) {
 
   auto transceivers = callee->pc()->GetTransceivers();
   ASSERT_EQ(2u, transceivers.size());
-  EXPECT_EQ(rtc::nullopt, transceivers[0]->mid());
+  EXPECT_EQ(absl::nullopt, transceivers[0]->mid());
   EXPECT_TRUE(transceivers[0]->stopped());
   EXPECT_EQ(caller->pc()->GetTransceivers()[0]->mid(), transceivers[1]->mid());
   EXPECT_FALSE(transceivers[1]->stopped());
@@ -606,7 +606,7 @@ TEST_F(PeerConnectionJsepTest,
       caller->SetRemoteDescription(callee->CreateAnswerAndSetAsLocal()));
   EXPECT_TRUE(first_transceiver->stopped());
   // First transceivers aren't dissociated yet.
-  ASSERT_NE(rtc::nullopt, first_transceiver->mid());
+  ASSERT_NE(absl::nullopt, first_transceiver->mid());
   std::string first_mid = *first_transceiver->mid();
   EXPECT_EQ(first_mid, callee->pc()->GetTransceivers()[0]->mid());
 
@@ -625,10 +625,10 @@ TEST_F(PeerConnectionJsepTest,
   // associate the new transceivers.
   ASSERT_TRUE(
       caller->SetLocalDescription(CloneSessionDescription(offer.get())));
-  EXPECT_EQ(rtc::nullopt, first_transceiver->mid());
+  EXPECT_EQ(absl::nullopt, first_transceiver->mid());
   EXPECT_EQ(second_mid, caller->pc()->GetTransceivers()[1]->mid());
   ASSERT_TRUE(callee->SetRemoteDescription(std::move(offer)));
-  EXPECT_EQ(rtc::nullopt, callee->pc()->GetTransceivers()[0]->mid());
+  EXPECT_EQ(absl::nullopt, callee->pc()->GetTransceivers()[0]->mid());
   EXPECT_EQ(second_mid, callee->pc()->GetTransceivers()[1]->mid());
 
   // The new answer should also recycle the m section correctly.
@@ -644,11 +644,11 @@ TEST_F(PeerConnectionJsepTest,
   ASSERT_TRUE(caller->SetRemoteDescription(std::move(answer)));
   auto caller_transceivers = caller->pc()->GetTransceivers();
   ASSERT_EQ(2u, caller_transceivers.size());
-  EXPECT_EQ(rtc::nullopt, caller_transceivers[0]->mid());
+  EXPECT_EQ(absl::nullopt, caller_transceivers[0]->mid());
   EXPECT_EQ(second_mid, caller_transceivers[1]->mid());
   auto callee_transceivers = callee->pc()->GetTransceivers();
   ASSERT_EQ(2u, callee_transceivers.size());
-  EXPECT_EQ(rtc::nullopt, callee_transceivers[0]->mid());
+  EXPECT_EQ(absl::nullopt, callee_transceivers[0]->mid());
   EXPECT_EQ(second_mid, callee_transceivers[1]->mid());
 }
 
@@ -687,7 +687,7 @@ TEST_F(PeerConnectionJsepTest, CreateOfferRecyclesWhenOfferingTwice) {
   // Make sure that the caller's transceivers are associated correctly.
   auto caller_transceivers = caller->pc()->GetTransceivers();
   ASSERT_EQ(2u, caller_transceivers.size());
-  EXPECT_EQ(rtc::nullopt, caller_transceivers[0]->mid());
+  EXPECT_EQ(absl::nullopt, caller_transceivers[0]->mid());
   EXPECT_EQ(second_mid, caller_transceivers[1]->mid());
   EXPECT_FALSE(caller_transceivers[1]->stopped());
 }
@@ -737,7 +737,7 @@ TEST_P(RecycleMediaSectionTest, VerifyOfferAnswerAndTransceivers) {
   // the MID for the new transceiver.
   ASSERT_TRUE(
       caller->SetLocalDescription(CloneSessionDescription(offer.get())));
-  EXPECT_EQ(rtc::nullopt, first_transceiver->mid());
+  EXPECT_EQ(absl::nullopt, first_transceiver->mid());
   EXPECT_EQ(second_mid, second_transceiver->mid());
 
   // Setting the remote offer will dissociate the previous transceiver and
@@ -745,7 +745,7 @@ TEST_P(RecycleMediaSectionTest, VerifyOfferAnswerAndTransceivers) {
   ASSERT_TRUE(callee->SetRemoteDescription(std::move(offer)));
   auto callee_transceivers = callee->pc()->GetTransceivers();
   ASSERT_EQ(2u, callee_transceivers.size());
-  EXPECT_EQ(rtc::nullopt, callee_transceivers[0]->mid());
+  EXPECT_EQ(absl::nullopt, callee_transceivers[0]->mid());
   EXPECT_EQ(first_type_, callee_transceivers[0]->media_type());
   EXPECT_EQ(second_mid, callee_transceivers[1]->mid());
   EXPECT_EQ(second_type_, callee_transceivers[1]->media_type());

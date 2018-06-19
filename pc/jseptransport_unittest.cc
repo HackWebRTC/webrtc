@@ -759,7 +759,7 @@ TEST_F(JsepTransport2Test, RemoteOfferWithCurrentNegotiatedDtlsRole) {
           .ok());
 
   // Sanity check that role was actually negotiated.
-  rtc::Optional<rtc::SSLRole> role = jsep_transport_->GetDtlsRole();
+  absl::optional<rtc::SSLRole> role = jsep_transport_->GetDtlsRole();
   ASSERT_TRUE(role);
   EXPECT_EQ(rtc::SSL_CLIENT, *role);
 
@@ -804,7 +804,7 @@ TEST_F(JsepTransport2Test, RemoteOfferThatChangesNegotiatedDtlsRole) {
           .ok());
 
   // Sanity check that role was actually negotiated.
-  rtc::Optional<rtc::SSLRole> role = jsep_transport_->GetDtlsRole();
+  absl::optional<rtc::SSLRole> role = jsep_transport_->GetDtlsRole();
   ASSERT_TRUE(role);
   EXPECT_EQ(rtc::SSL_CLIENT, *role);
 
@@ -849,7 +849,7 @@ TEST_F(JsepTransport2Test, DtlsSetupWithLegacyAsAnswerer) {
           ->SetRemoteJsepTransportDescription(remote_desc, SdpType::kAnswer)
           .ok());
 
-  rtc::Optional<rtc::SSLRole> role = jsep_transport_->GetDtlsRole();
+  absl::optional<rtc::SSLRole> role = jsep_transport_->GetDtlsRole();
   ASSERT_TRUE(role);
   // Since legacy answer ommitted setup atribute, and we offered actpass, we
   // should act as passive (server).

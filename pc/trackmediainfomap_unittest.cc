@@ -408,7 +408,7 @@ TEST_F(TrackMediaInfoMapTest, GetAttachmentIdByTrack) {
   CreateMap();
   EXPECT_EQ(rtp_senders_[0]->AttachmentId(),
             map_->GetAttachmentIdByTrack(local_audio_track_));
-  EXPECT_EQ(rtc::nullopt, map_->GetAttachmentIdByTrack(local_video_track_));
+  EXPECT_EQ(absl::nullopt, map_->GetAttachmentIdByTrack(local_video_track_));
 }
 
 // Death tests.

@@ -1096,7 +1096,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
   connection_info.sent_total_bytes = 42;
   connection_info.recv_total_bytes = 1234;
   connection_info.total_round_trip_time_ms = 0;
-  connection_info.current_round_trip_time_ms = rtc::nullopt;
+  connection_info.current_round_trip_time_ms = absl::nullopt;
   connection_info.recv_ping_requests = 2020;
   connection_info.sent_ping_requests_total = 2020;
   connection_info.sent_ping_requests_before_first_response = 2000;
@@ -1638,7 +1638,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
   video_media_info.receivers[0].plis_sent = 6;
   video_media_info.receivers[0].nacks_sent = 7;
   video_media_info.receivers[0].frames_decoded = 8;
-  video_media_info.receivers[0].qp_sum = rtc::nullopt;
+  video_media_info.receivers[0].qp_sum = absl::nullopt;
 
   RtpCodecParameters codec_parameters;
   codec_parameters.payload_type = 42;
@@ -1757,7 +1757,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
   video_media_info.senders[0].bytes_sent = 6;
   video_media_info.senders[0].codec_payload_type = 42;
   video_media_info.senders[0].frames_encoded = 8;
-  video_media_info.senders[0].qp_sum = rtc::nullopt;
+  video_media_info.senders[0].qp_sum = absl::nullopt;
 
   RtpCodecParameters codec_parameters;
   codec_parameters.payload_type = 42;

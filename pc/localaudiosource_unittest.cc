@@ -33,5 +33,5 @@ TEST(LocalAudioSourceTest, InitWithAudioOptions) {
 TEST(LocalAudioSourceTest, InitWithNoOptions) {
   rtc::scoped_refptr<LocalAudioSource> source =
       LocalAudioSource::Create(nullptr);
-  EXPECT_EQ(rtc::nullopt, source->options().highpass_filter);
+  EXPECT_EQ(absl::nullopt, source->options().highpass_filter);
 }

@@ -117,7 +117,7 @@ class SrtpTransport : public RtpTransport {
   void OnRtcpPacketReceived(rtc::CopyOnWriteBuffer* packet,
                             const rtc::PacketTime& packet_time) override;
   void OnNetworkRouteChanged(
-      rtc::Optional<rtc::NetworkRoute> network_route) override;
+      absl::optional<rtc::NetworkRoute> network_route) override;
 
   // Override the RtpTransport::OnWritableState.
   void OnWritableState(rtc::PacketTransportInternal* packet_transport) override;
@@ -151,10 +151,10 @@ class SrtpTransport : public RtpTransport {
   std::unique_ptr<cricket::SrtpSession> send_rtcp_session_;
   std::unique_ptr<cricket::SrtpSession> recv_rtcp_session_;
 
-  rtc::Optional<cricket::CryptoParams> send_params_;
-  rtc::Optional<cricket::CryptoParams> recv_params_;
-  rtc::Optional<int> send_cipher_suite_;
-  rtc::Optional<int> recv_cipher_suite_;
+  absl::optional<cricket::CryptoParams> send_params_;
+  absl::optional<cricket::CryptoParams> recv_params_;
+  absl::optional<int> send_cipher_suite_;
+  absl::optional<int> recv_cipher_suite_;
   rtc::ZeroOnFreeBuffer<uint8_t> send_key_;
   rtc::ZeroOnFreeBuffer<uint8_t> recv_key_;
 

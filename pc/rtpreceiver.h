@@ -137,7 +137,7 @@ class AudioRtpReceiver : public ObserverInterface,
   const rtc::scoped_refptr<RemoteAudioSource> source_;
   const rtc::scoped_refptr<AudioTrackInterface> track_;
   cricket::VoiceMediaChannel* media_channel_ = nullptr;
-  rtc::Optional<uint32_t> ssrc_;
+  absl::optional<uint32_t> ssrc_;
   std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams_;
   bool cached_track_enabled_;
   double cached_volume_ = 1;
@@ -223,7 +223,7 @@ class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInternal> {
   rtc::Thread* const worker_thread_;
   const std::string id_;
   cricket::VideoMediaChannel* media_channel_ = nullptr;
-  rtc::Optional<uint32_t> ssrc_;
+  absl::optional<uint32_t> ssrc_;
   // |source_| is held here to be able to change the state of the source when
   // the VideoRtpReceiver is stopped.
   rtc::scoped_refptr<VideoRtpTrackSource> source_;

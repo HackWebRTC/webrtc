@@ -266,11 +266,11 @@ rtc::scoped_refptr<VideoTrackInterface> TrackMediaInfoMap::GetVideoTrack(
   return FindValueOrNull(video_track_by_receiver_info_, &video_receiver_info);
 }
 
-rtc::Optional<int> TrackMediaInfoMap::GetAttachmentIdByTrack(
+absl::optional<int> TrackMediaInfoMap::GetAttachmentIdByTrack(
     const MediaStreamTrackInterface* track) const {
   auto it = attachment_id_by_track_.find(track);
-  return it != attachment_id_by_track_.end() ? rtc::Optional<int>(it->second)
-                                             : rtc::nullopt;
+  return it != attachment_id_by_track_.end() ? absl::optional<int>(it->second)
+                                             : absl::nullopt;
 }
 
 }  // namespace webrtc

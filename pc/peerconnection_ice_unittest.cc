@@ -981,7 +981,7 @@ TEST_F(PeerConnectionIceConfigTest, SetStunCandidateKeepaliveInterval) {
   config.ice_candidate_pool_size = 1;
   CreatePeerConnection(config);
   ASSERT_NE(port_allocator_, nullptr);
-  rtc::Optional<int> actual_stun_keepalive_interval =
+  absl::optional<int> actual_stun_keepalive_interval =
       port_allocator_->stun_candidate_keepalive_interval();
   EXPECT_EQ(actual_stun_keepalive_interval.value_or(-1), 123);
   config.stun_candidate_keepalive_interval = 321;

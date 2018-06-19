@@ -863,7 +863,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
       // The transport channel becomes disconnected.
       fake_rtp_dtls_transport1_->ice_transport()->SignalNetworkRouteChanged(
 
-          rtc::Optional<rtc::NetworkRoute>(network_route));
+          absl::optional<rtc::NetworkRoute>(network_route));
     });
     WaitForThreads();
     EXPECT_EQ(1, media_channel1->num_network_route_changes());
@@ -880,7 +880,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
       // The transport channel becomes connected.
       fake_rtp_dtls_transport1_->ice_transport()->SignalNetworkRouteChanged(
 
-          rtc::Optional<rtc::NetworkRoute>(network_route));
+          absl::optional<rtc::NetworkRoute>(network_route));
     });
     WaitForThreads();
     EXPECT_EQ(1, media_channel1->num_network_route_changes());
@@ -1348,7 +1348,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     return channel1_->SetRemoteContent(&content, SdpType::kOffer, NULL);
   }
 
-  webrtc::RtpParameters BitrateLimitedParameters(rtc::Optional<int> limit) {
+  webrtc::RtpParameters BitrateLimitedParameters(absl::optional<int> limit) {
     webrtc::RtpParameters parameters;
     webrtc::RtpEncodingParameters encoding;
     encoding.max_bitrate_bps = std::move(limit);
@@ -1357,7 +1357,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   }
 
   void VerifyMaxBitrate(const webrtc::RtpParameters& parameters,
-                        rtc::Optional<int> expected_bitrate) {
+                        absl::optional<int> expected_bitrate) {
     EXPECT_EQ(1UL, parameters.encodings.size());
     EXPECT_EQ(expected_bitrate, parameters.encodings[0].max_bitrate_bps);
   }
@@ -1368,7 +1368,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
                                            SdpType::kOffer, NULL));
     EXPECT_EQ(media_channel1_->max_bps(), -1);
     VerifyMaxBitrate(media_channel1_->GetRtpSendParameters(kSsrc1),
-                     rtc::nullopt);
+                     absl::nullopt);
   }
 
   // Test that when a channel gets new RtpTransport with a call to

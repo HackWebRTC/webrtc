@@ -270,7 +270,7 @@ CreateForwardingMockDecoderFactory(
       .WillRepeatedly(
           Invoke([real_decoder_factory](
                      const webrtc::SdpAudioFormat& format,
-                     rtc::Optional<webrtc::AudioCodecPairId> codec_pair_id,
+                     absl::optional<webrtc::AudioCodecPairId> codec_pair_id,
                      std::unique_ptr<webrtc::AudioDecoder>* return_value) {
             auto real_decoder =
                 real_decoder_factory->MakeAudioDecoder(format, codec_pair_id);
@@ -284,7 +284,7 @@ CreateForwardingMockDecoderFactory(
 
 struct AudioEncoderUnicornSparklesRainbow {
   using Config = webrtc::AudioEncoderL16::Config;
-  static rtc::Optional<Config> SdpToConfig(webrtc::SdpAudioFormat format) {
+  static absl::optional<Config> SdpToConfig(webrtc::SdpAudioFormat format) {
     if (STR_CASE_CMP(format.name.c_str(), "UnicornSparklesRainbow") == 0) {
       const webrtc::SdpAudioFormat::Parameters expected_params = {
           {"num_horns", "1"}};
@@ -293,7 +293,7 @@ struct AudioEncoderUnicornSparklesRainbow {
       format.name = "L16";
       return webrtc::AudioEncoderL16::SdpToConfig(format);
     } else {
-      return rtc::nullopt;
+      return absl::nullopt;
     }
   }
   static void AppendSupportedEncoders(
@@ -313,7 +313,7 @@ struct AudioEncoderUnicornSparklesRainbow {
   static std::unique_ptr<webrtc::AudioEncoder> MakeAudioEncoder(
       const Config& config,
       int payload_type,
-      rtc::Optional<webrtc::AudioCodecPairId> codec_pair_id = rtc::nullopt) {
+      absl::optional<webrtc::AudioCodecPairId> codec_pair_id = absl::nullopt) {
     return webrtc::AudioEncoderL16::MakeAudioEncoder(config, payload_type,
                                                      codec_pair_id);
   }
@@ -321,7 +321,7 @@ struct AudioEncoderUnicornSparklesRainbow {
 
 struct AudioDecoderUnicornSparklesRainbow {
   using Config = webrtc::AudioDecoderL16::Config;
-  static rtc::Optional<Config> SdpToConfig(webrtc::SdpAudioFormat format) {
+  static absl::optional<Config> SdpToConfig(webrtc::SdpAudioFormat format) {
     if (STR_CASE_CMP(format.name.c_str(), "UnicornSparklesRainbow") == 0) {
       const webrtc::SdpAudioFormat::Parameters expected_params = {
           {"num_horns", "1"}};
@@ -330,7 +330,7 @@ struct AudioDecoderUnicornSparklesRainbow {
       format.name = "L16";
       return webrtc::AudioDecoderL16::SdpToConfig(format);
     } else {
-      return rtc::nullopt;
+      return absl::nullopt;
     }
   }
   static void AppendSupportedDecoders(
@@ -346,7 +346,7 @@ struct AudioDecoderUnicornSparklesRainbow {
   }
   static std::unique_ptr<webrtc::AudioDecoder> MakeAudioDecoder(
       const Config& config,
-      rtc::Optional<webrtc::AudioCodecPairId> codec_pair_id = rtc::nullopt) {
+      absl::optional<webrtc::AudioCodecPairId> codec_pair_id = absl::nullopt) {
     return webrtc::AudioDecoderL16::MakeAudioDecoder(config, codec_pair_id);
   }
 };
@@ -392,14 +392,14 @@ TEST_P(PeerConnectionEndToEndTest, CallWithCustomCodec) {
     std::vector<webrtc::AudioCodecSpec> GetSupportedEncoders() override {
       return fact_->GetSupportedEncoders();
     }
-    rtc::Optional<webrtc::AudioCodecInfo> QueryAudioEncoder(
+    absl::optional<webrtc::AudioCodecInfo> QueryAudioEncoder(
         const webrtc::SdpAudioFormat& format) override {
       return fact_->QueryAudioEncoder(format);
     }
     std::unique_ptr<webrtc::AudioEncoder> MakeAudioEncoder(
         int payload_type,
         const webrtc::SdpAudioFormat& format,
-        rtc::Optional<webrtc::AudioCodecPairId> codec_pair_id) override {
+        absl::optional<webrtc::AudioCodecPairId> codec_pair_id) override {
       EXPECT_TRUE(codec_pair_id.has_value());
       codec_ids_->push_back(*codec_pair_id);
       return fact_->MakeAudioEncoder(payload_type, format, codec_pair_id);
@@ -424,7 +424,7 @@ TEST_P(PeerConnectionEndToEndTest, CallWithCustomCodec) {
     }
     std::unique_ptr<webrtc::AudioDecoder> MakeAudioDecoder(
         const webrtc::SdpAudioFormat& format,
-        rtc::Optional<webrtc::AudioCodecPairId> codec_pair_id) override {
+        absl::optional<webrtc::AudioCodecPairId> codec_pair_id) override {
       EXPECT_TRUE(codec_pair_id.has_value());
       codec_ids_->push_back(*codec_pair_id);
       return fact_->MakeAudioDecoder(format, codec_pair_id);

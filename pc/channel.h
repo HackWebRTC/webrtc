@@ -218,7 +218,7 @@ class BaseChannel : public rtc::MessageHandler,
   // From RtpTransportInternal
   void OnWritableState(bool writable);
 
-  void OnNetworkRouteChanged(rtc::Optional<rtc::NetworkRoute> network_route);
+  void OnNetworkRouteChanged(absl::optional<rtc::NetworkRoute> network_route);
 
   bool PacketIsRtcp(const rtc::PacketTransportInternal* transport,
                     const char* data,

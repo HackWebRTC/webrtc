@@ -2487,7 +2487,7 @@ TEST_P(PeerConnectionInterfaceTest, SetConfigurationChangesPruneTurnPortsFlag) {
 // require a very complex set of mocks.
 TEST_P(PeerConnectionInterfaceTest, SetConfigurationChangesIceCheckInterval) {
   PeerConnectionInterface::RTCConfiguration config;
-  config.ice_check_min_interval = rtc::nullopt;
+  config.ice_check_min_interval = absl::nullopt;
   CreatePeerConnection(config, nullptr);
   config = pc_->GetConfiguration();
   config.ice_check_min_interval = 100;

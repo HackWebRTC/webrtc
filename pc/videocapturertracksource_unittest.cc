@@ -322,7 +322,7 @@ TEST_F(VideoCapturerTrackSourceTest, SetValidDenoisingConstraint) {
 TEST_F(VideoCapturerTrackSourceTest, NoiseReductionConstraintNotSet) {
   FakeConstraints constraints;
   CreateVideoCapturerSource(&constraints);
-  EXPECT_EQ(rtc::nullopt, source_->needs_denoising());
+  EXPECT_EQ(absl::nullopt, source_->needs_denoising());
 }
 
 TEST_F(VideoCapturerTrackSourceTest,
@@ -357,7 +357,7 @@ TEST_F(VideoCapturerTrackSourceTest, NoiseReductionAndInvalidKeyMandatory) {
 
   EXPECT_EQ_WAIT(MediaSourceInterface::kEnded, state_observer_->state(),
                  kMaxWaitMs);
-  EXPECT_EQ(rtc::nullopt, source_->needs_denoising());
+  EXPECT_EQ(absl::nullopt, source_->needs_denoising());
 }
 
 TEST_F(VideoCapturerTrackSourceTest, InvalidDenoisingValueOptional) {
@@ -370,12 +370,13 @@ TEST_F(VideoCapturerTrackSourceTest, InvalidDenoisingValueOptional) {
   EXPECT_EQ_WAIT(MediaSourceInterface::kLive, state_observer_->state(),
                  kMaxWaitMs);
 
-  EXPECT_EQ(rtc::nullopt, source_->needs_denoising());
+  EXPECT_EQ(absl::nullopt, source_->needs_denoising());
 }
 
 TEST_F(VideoCapturerTrackSourceTest, InvalidDenoisingValueMandatory) {
   FakeConstraints constraints;
-  // Optional constraints should be ignored if the mandatory constraints fail.
+  // absl::optional constraints should be ignored if the mandatory constraints
+  // fail.
   constraints.AddOptional(MediaConstraintsInterface::kNoiseReduction, "false");
   // Values are case-sensitive and must be all lower-case.
   constraints.AddMandatory(MediaConstraintsInterface::kNoiseReduction, "True");
@@ -384,7 +385,7 @@ TEST_F(VideoCapturerTrackSourceTest, InvalidDenoisingValueMandatory) {
 
   EXPECT_EQ_WAIT(MediaSourceInterface::kEnded, state_observer_->state(),
                  kMaxWaitMs);
-  EXPECT_EQ(rtc::nullopt, source_->needs_denoising());
+  EXPECT_EQ(absl::nullopt, source_->needs_denoising());
 }
 
 TEST_F(VideoCapturerTrackSourceTest, MixedOptionsAndConstraints) {

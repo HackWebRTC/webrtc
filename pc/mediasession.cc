@@ -18,8 +18,8 @@
 #include <unordered_map>
 #include <utility>
 
+#include "absl/types/optional.h"
 #include "api/cryptoparams.h"
-#include "api/optional.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "media/base/h264_profile_level_id.h"
 #include "media/base/mediaconstants.h"

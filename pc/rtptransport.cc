@@ -39,7 +39,7 @@ void RtpTransport::SetRtpPacketTransport(
     rtp_packet_transport_->SignalWritableState.disconnect(this);
     rtp_packet_transport_->SignalSentPacket.disconnect(this);
     // Reset the network route of the old transport.
-    SignalNetworkRouteChanged(rtc::Optional<rtc::NetworkRoute>());
+    SignalNetworkRouteChanged(absl::optional<rtc::NetworkRoute>());
   }
   if (new_packet_transport) {
     new_packet_transport->SignalReadyToSend.connect(
@@ -75,7 +75,7 @@ void RtpTransport::SetRtcpPacketTransport(
     rtcp_packet_transport_->SignalWritableState.disconnect(this);
     rtcp_packet_transport_->SignalSentPacket.disconnect(this);
     // Reset the network route of the old transport.
-    SignalNetworkRouteChanged(rtc::Optional<rtc::NetworkRoute>());
+    SignalNetworkRouteChanged(absl::optional<rtc::NetworkRoute>());
   }
   if (new_packet_transport) {
     new_packet_transport->SignalReadyToSend.connect(
@@ -217,7 +217,7 @@ void RtpTransport::OnReadyToSend(rtc::PacketTransportInternal* transport) {
 }
 
 void RtpTransport::OnNetworkRouteChanged(
-    rtc::Optional<rtc::NetworkRoute> network_route) {
+    absl::optional<rtc::NetworkRoute> network_route) {
   SignalNetworkRouteChanged(network_route);
 }
 

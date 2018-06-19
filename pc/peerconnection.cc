@@ -609,11 +609,11 @@ std::string GetStreamIdsString(rtc::ArrayView<const std::string> stream_ids) {
   return output;
 }
 
-rtc::Optional<int> RTCConfigurationToIceConfigOptionalInt(
+absl::optional<int> RTCConfigurationToIceConfigOptionalInt(
     int rtc_configuration_parameter) {
   if (rtc_configuration_parameter ==
       webrtc::PeerConnectionInterface::RTCConfiguration::kUndefined) {
-    return rtc::nullopt;
+    return absl::nullopt;
   }
   return rtc_configuration_parameter;
 }
@@ -665,9 +665,9 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
     int max_ipv6_networks;
     bool disable_link_local_networks;
     bool enable_rtp_data_channel;
-    rtc::Optional<int> screencast_min_bitrate;
-    rtc::Optional<bool> combined_audio_video_bwe;
-    rtc::Optional<bool> enable_dtls_srtp;
+    absl::optional<int> screencast_min_bitrate;
+    absl::optional<bool> combined_audio_video_bwe;
+    absl::optional<bool> enable_dtls_srtp;
     TcpCandidatePolicy tcp_candidate_policy;
     CandidateNetworkPolicy candidate_network_policy;
     int audio_jitter_buffer_max_packets;
@@ -681,16 +681,16 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
     bool presume_writable_when_fully_relayed;
     bool enable_ice_renomination;
     bool redetermine_role_on_ice_restart;
-    rtc::Optional<int> ice_check_interval_strong_connectivity;
-    rtc::Optional<int> ice_check_interval_weak_connectivity;
-    rtc::Optional<int> ice_check_min_interval;
-    rtc::Optional<int> ice_unwritable_timeout;
-    rtc::Optional<int> ice_unwritable_min_checks;
-    rtc::Optional<int> stun_candidate_keepalive_interval;
-    rtc::Optional<rtc::IntervalRange> ice_regather_interval_range;
+    absl::optional<int> ice_check_interval_strong_connectivity;
+    absl::optional<int> ice_check_interval_weak_connectivity;
+    absl::optional<int> ice_check_min_interval;
+    absl::optional<int> ice_unwritable_timeout;
+    absl::optional<int> ice_unwritable_min_checks;
+    absl::optional<int> stun_candidate_keepalive_interval;
+    absl::optional<rtc::IntervalRange> ice_regather_interval_range;
     webrtc::TurnCustomizer* turn_customizer;
     SdpSemantics sdp_semantics;
-    rtc::Optional<rtc::AdapterType> network_preference;
+    absl::optional<rtc::AdapterType> network_preference;
     bool active_reset_srtp_params;
   };
   static_assert(sizeof(stuff_being_tested_for_equality) == sizeof(*this),
@@ -2714,8 +2714,8 @@ PeerConnection::AssociateTransceiver(cricket::ContentSource source,
     if (old_transceiver) {
       RTC_LOG(LS_INFO) << "Dissociating transceiver for MID=" << old_mid
                        << " since the media section is being recycled.";
-      old_transceiver->internal()->set_mid(rtc::nullopt);
-      old_transceiver->internal()->set_mline_index(rtc::nullopt);
+      old_transceiver->internal()->set_mid(absl::nullopt);
+      old_transceiver->internal()->set_mline_index(absl::nullopt);
     }
   }
   const MediaContentDescription* media_desc = content.media_description();
@@ -3674,9 +3674,9 @@ void PeerConnection::GetOptionsForPlanBOffer(
         (offer_answer_options.offer_to_receive_video > 0);
   }
 
-  rtc::Optional<size_t> audio_index;
-  rtc::Optional<size_t> video_index;
-  rtc::Optional<size_t> data_index;
+  absl::optional<size_t> audio_index;
+  absl::optional<size_t> video_index;
+  absl::optional<size_t> data_index;
   // If a current description exists, generate m= sections in the same order,
   // using the first audio/video/data section that appears and rejecting
   // extraneous ones.
@@ -3922,9 +3922,9 @@ void PeerConnection::GetOptionsForPlanBAnswer(
     recv_video = (offer_answer_options.offer_to_receive_video > 0);
   }
 
-  rtc::Optional<size_t> audio_index;
-  rtc::Optional<size_t> video_index;
-  rtc::Optional<size_t> data_index;
+  absl::optional<size_t> audio_index;
+  absl::optional<size_t> video_index;
+  absl::optional<size_t> data_index;
 
   // Generate m= sections that match those in the offer.
   // Note that mediasession.cc will handle intersection our preferred
@@ -3983,9 +3983,9 @@ void PeerConnection::GenerateMediaDescriptionOptions(
     const SessionDescriptionInterface* session_desc,
     RtpTransceiverDirection audio_direction,
     RtpTransceiverDirection video_direction,
-    rtc::Optional<size_t>* audio_index,
-    rtc::Optional<size_t>* video_index,
-    rtc::Optional<size_t>* data_index,
+    absl::optional<size_t>* audio_index,
+    absl::optional<size_t>* video_index,
+    absl::optional<size_t>* data_index,
     cricket::MediaSessionOptions* session_options) {
   for (const cricket::ContentInfo& content :
        session_desc->description()->contents()) {
@@ -4054,17 +4054,17 @@ PeerConnection::GetMediaDescriptionOptionsForRejectedData(
   return options;
 }
 
-rtc::Optional<std::string> PeerConnection::GetDataMid() const {
+absl::optional<std::string> PeerConnection::GetDataMid() const {
   switch (data_channel_type_) {
     case cricket::DCT_RTP:
       if (!rtp_data_channel_) {
-        return rtc::nullopt;
+        return absl::nullopt;
       }
       return rtp_data_channel_->content_name();
     case cricket::DCT_SCTP:
       return sctp_mid_;
     default:
-      return rtc::nullopt;
+      return absl::nullopt;
   }
 }
 
@@ -4727,7 +4727,7 @@ bool PeerConnection::ReconfigurePortAllocator_n(
     int candidate_pool_size,
     bool prune_turn_ports,
     webrtc::TurnCustomizer* turn_customizer,
-    rtc::Optional<int> stun_candidate_keepalive_interval) {
+    absl::optional<int> stun_candidate_keepalive_interval) {
   port_allocator_->set_candidate_filter(
       ConvertIceTransportTypeToCandidateFilter(type));
   // According to JSEP, after setLocalDescription, changing the candidate pool
@@ -5123,15 +5123,15 @@ bool PeerConnection::ReadyToSendData() const {
          sctp_ready_to_send_data_;
 }
 
-rtc::Optional<std::string> PeerConnection::sctp_transport_name() const {
+absl::optional<std::string> PeerConnection::sctp_transport_name() const {
   if (sctp_mid_ && transport_controller_) {
     auto dtls_transport = transport_controller_->GetDtlsTransport(*sctp_mid_);
     if (dtls_transport) {
       return dtls_transport->transport_name();
     }
-    return rtc::Optional<std::string>();
+    return absl::optional<std::string>();
   }
-  return rtc::Optional<std::string>();
+  return absl::optional<std::string>();
 }
 
 cricket::CandidateStatsList PeerConnection::GetPooledCandidateStats() const {
@@ -5158,7 +5158,7 @@ std::map<std::string, std::string> PeerConnection::GetTransportNamesByMid()
         rtp_data_channel_->transport_name();
   }
   if (sctp_transport_) {
-    rtc::Optional<std::string> transport_name = sctp_transport_name();
+    absl::optional<std::string> transport_name = sctp_transport_name();
     RTC_DCHECK(transport_name);
     transport_names_by_mid[*sctp_mid_] = *transport_name;
   }
@@ -6036,7 +6036,7 @@ void PeerConnection::ReportTransportStats() {
         cricket::MEDIA_TYPE_DATA);
   }
 
-  rtc::Optional<std::string> transport_name = sctp_transport_name();
+  absl::optional<std::string> transport_name = sctp_transport_name();
   if (transport_name) {
     media_types_by_transport_name[*transport_name].insert(
         cricket::MEDIA_TYPE_DATA);

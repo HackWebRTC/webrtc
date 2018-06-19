@@ -40,8 +40,8 @@ class FakeSctpTransport : public cricket::SctpTransportInternal {
   int remote_port() const { return *remote_port_; }
 
  private:
-  rtc::Optional<int> local_port_;
-  rtc::Optional<int> remote_port_;
+  absl::optional<int> local_port_;
+  absl::optional<int> remote_port_;
 };
 
 class FakeSctpTransportFactory : public cricket::SctpTransportInternalFactory {

@@ -100,7 +100,7 @@ class RtpTransport : public RtpTransportInternal {
 
   // Overridden by SrtpTransport.
   virtual void OnNetworkRouteChanged(
-      rtc::Optional<rtc::NetworkRoute> network_route);
+      absl::optional<rtc::NetworkRoute> network_route);
   virtual void OnRtpPacketReceived(rtc::CopyOnWriteBuffer* packet,
                                    const rtc::PacketTime& packet_time);
   virtual void OnRtcpPacketReceived(rtc::CopyOnWriteBuffer* packet,

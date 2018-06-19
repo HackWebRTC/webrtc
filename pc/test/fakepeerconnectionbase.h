@@ -266,12 +266,12 @@ class FakePeerConnectionBase : public PeerConnectionInternal {
     return {};
   }
 
-  rtc::Optional<std::string> sctp_content_name() const override {
-    return rtc::nullopt;
+  absl::optional<std::string> sctp_content_name() const override {
+    return absl::nullopt;
   }
 
-  rtc::Optional<std::string> sctp_transport_name() const override {
-    return rtc::nullopt;
+  absl::optional<std::string> sctp_transport_name() const override {
+    return absl::nullopt;
   }
 
   std::map<std::string, std::string> GetTransportNamesByMid() const override {

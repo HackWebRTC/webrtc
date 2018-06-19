@@ -146,7 +146,7 @@ class JsepTransportController : public sigslot::has_slots<>,
   std::unique_ptr<rtc::SSLCertChain> GetRemoteSSLCertChain(
       const std::string& mid) const;
   // Get negotiated role, if one has been negotiated.
-  rtc::Optional<rtc::SSLRole> GetDtlsRole(const std::string& mid) const;
+  absl::optional<rtc::SSLRole> GetDtlsRole(const std::string& mid) const;
 
   // TODO(deadbeef): GetStats isn't const because all the way down to
   // OpenSSLStreamAdapter, GetSslCipherSuite and GetDtlsSrtpCryptoSuite are not
@@ -206,8 +206,8 @@ class JsepTransportController : public sigslot::has_slots<>,
       const std::vector<int>& encrypted_extension_ids,
       int rtp_abs_sendtime_extn_id);
 
-  rtc::Optional<std::string> bundled_mid() const {
-    rtc::Optional<std::string> bundled_mid;
+  absl::optional<std::string> bundled_mid() const {
+    absl::optional<std::string> bundled_mid;
     if (bundle_group_ && bundle_group_->FirstContentName()) {
       bundled_mid = *(bundle_group_->FirstContentName());
     }
@@ -312,9 +312,9 @@ class JsepTransportController : public sigslot::has_slots<>,
   Config config_;
   const cricket::SessionDescription* local_desc_ = nullptr;
   const cricket::SessionDescription* remote_desc_ = nullptr;
-  rtc::Optional<bool> initial_offerer_;
+  absl::optional<bool> initial_offerer_;
 
-  rtc::Optional<cricket::ContentGroup> bundle_group_;
+  absl::optional<cricket::ContentGroup> bundle_group_;
 
   cricket::IceConfig ice_config_;
   cricket::IceRole ice_role_ = cricket::ICEROLE_CONTROLLING;

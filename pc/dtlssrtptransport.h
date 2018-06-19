@@ -88,8 +88,8 @@ class DtlsSrtpTransport : public SrtpTransport {
   cricket::DtlsTransportInternal* rtcp_dtls_transport_ = nullptr;
 
   // The encrypted header extension IDs.
-  rtc::Optional<std::vector<int>> send_extension_ids_;
-  rtc::Optional<std::vector<int>> recv_extension_ids_;
+  absl::optional<std::vector<int>> send_extension_ids_;
+  absl::optional<std::vector<int>> recv_extension_ids_;
 
   bool active_reset_srtp_params_ = false;
 };

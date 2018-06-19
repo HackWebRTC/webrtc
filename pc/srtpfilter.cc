@@ -186,8 +186,8 @@ bool SrtpFilter::ResetParams() {
   offer_params_.clear();
   applied_send_params_ = CryptoParams();
   applied_recv_params_ = CryptoParams();
-  send_cipher_suite_ = rtc::nullopt;
-  recv_cipher_suite_ = rtc::nullopt;
+  send_cipher_suite_ = absl::nullopt;
+  recv_cipher_suite_ = absl::nullopt;
   send_key_.Clear();
   recv_key_.Clear();
   state_ = ST_INIT;

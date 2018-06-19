@@ -293,7 +293,7 @@ class MockSetRemoteDescriptionObserver
 
  private:
   // Set on complete, on success this is set to an RTCError::OK() error.
-  rtc::Optional<RTCError> error_;
+  absl::optional<RTCError> error_;
 };
 
 class MockDataChannelObserver : public webrtc::DataChannelObserver {

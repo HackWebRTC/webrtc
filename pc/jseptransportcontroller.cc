@@ -192,16 +192,16 @@ bool JsepTransportController::NeedsIceRestart(
   return transport->needs_ice_restart();
 }
 
-rtc::Optional<rtc::SSLRole> JsepTransportController::GetDtlsRole(
+absl::optional<rtc::SSLRole> JsepTransportController::GetDtlsRole(
     const std::string& mid) const {
   if (!network_thread_->IsCurrent()) {
-    return network_thread_->Invoke<rtc::Optional<rtc::SSLRole>>(
+    return network_thread_->Invoke<absl::optional<rtc::SSLRole>>(
         RTC_FROM_HERE, [&] { return GetDtlsRole(mid); });
   }
 
   const cricket::JsepTransport* t = GetJsepTransportForMid(mid);
   if (!t) {
-    return rtc::Optional<rtc::SSLRole>();
+    return absl::optional<rtc::SSLRole>();
   }
   return t->GetDtlsRole();
 }

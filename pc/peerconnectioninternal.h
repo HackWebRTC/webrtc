@@ -53,8 +53,8 @@ class PeerConnectionInternal : public PeerConnectionInterface {
   virtual std::vector<rtc::scoped_refptr<DataChannel>> sctp_data_channels()
       const = 0;
 
-  virtual rtc::Optional<std::string> sctp_content_name() const = 0;
-  virtual rtc::Optional<std::string> sctp_transport_name() const = 0;
+  virtual absl::optional<std::string> sctp_content_name() const = 0;
+  virtual absl::optional<std::string> sctp_transport_name() const = 0;
 
   virtual cricket::CandidateStatsList GetPooledCandidateStats() const = 0;
 

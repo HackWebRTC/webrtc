@@ -2032,7 +2032,7 @@ bool ParseSessionDescription(const std::string& message,
                                  std::string(), error);
   }
 
-  // Optional lines
+  // absl::optional lines
   // Those are the optional lines, so shouldn't return false if not present.
   // RFC 4566
   // i=* (session information)

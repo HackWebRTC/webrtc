@@ -175,7 +175,7 @@ WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
 
     // Request certificate. This happens asynchronously, so that the caller gets
     // a chance to connect to |SignalCertificateReady|.
-    cert_generator_->GenerateCertificateAsync(key_params, rtc::nullopt,
+    cert_generator_->GenerateCertificateAsync(key_params, absl::nullopt,
                                               callback);
   }
 }

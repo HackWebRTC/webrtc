@@ -45,7 +45,7 @@ class FakeVoiceMediaChannelForStats : public cricket::FakeVoiceMediaChannel {
   }
 
  private:
-  rtc::Optional<cricket::VoiceMediaInfo> stats_;
+  absl::optional<cricket::VoiceMediaInfo> stats_;
 };
 
 // Fake VideoMediaChannel where the result of GetStats can be configured.
@@ -68,7 +68,7 @@ class FakeVideoMediaChannelForStats : public cricket::FakeVideoMediaChannel {
   }
 
  private:
-  rtc::Optional<cricket::VideoMediaInfo> stats_;
+  absl::optional<cricket::VideoMediaInfo> stats_;
 };
 
 constexpr bool kDefaultRtcpMuxRequired = true;

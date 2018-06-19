@@ -16,9 +16,9 @@
 #include <string>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "api/candidate.h"
 #include "api/jsep.h"
-#include "api/optional.h"
 #include "p2p/base/dtlstransport.h"
 #include "p2p/base/p2pconstants.h"
 #include "p2p/base/transportinfo.h"
@@ -125,9 +125,9 @@ class JsepTransport : public sigslot::has_slots<> {
   // changed ufrag/password).
   bool needs_ice_restart() const { return needs_ice_restart_; }
 
-  // Returns role if negotiated, or empty Optional if it hasn't been negotiated
-  // yet.
-  rtc::Optional<rtc::SSLRole> GetDtlsRole() const;
+  // Returns role if negotiated, or empty absl::optional if it hasn't been
+  // negotiated yet.
+  absl::optional<rtc::SSLRole> GetDtlsRole() const;
 
   // TODO(deadbeef): Make this const. See comment in transportcontroller.h.
   bool GetStats(TransportStats* stats);
@@ -200,7 +200,7 @@ class JsepTransport : public sigslot::has_slots<> {
       webrtc::SdpType local_description_type,
       ConnectionRole local_connection_role,
       ConnectionRole remote_connection_role,
-      rtc::Optional<rtc::SSLRole>* negotiated_dtls_role);
+      absl::optional<rtc::SSLRole>* negotiated_dtls_role);
 
   // Pushes down the ICE parameters from the local description, such
   // as the ICE ufrag and pwd.
@@ -212,7 +212,7 @@ class JsepTransport : public sigslot::has_slots<> {
   // Pushes down the DTLS parameters obtained via negotiation.
   webrtc::RTCError SetNegotiatedDtlsParameters(
       DtlsTransportInternal* dtls_transport,
-      rtc::Optional<rtc::SSLRole> dtls_role,
+      absl::optional<rtc::SSLRole> dtls_role,
       rtc::SSLFingerprint* remote_fingerprint);
 
   bool GetTransportStats(DtlsTransportInternal* dtls_transport,
@@ -238,8 +238,8 @@ class JsepTransport : public sigslot::has_slots<> {
   RtcpMuxFilter rtcp_mux_negotiator_;
 
   // Cache the encrypted header extension IDs for SDES negoitation.
-  rtc::Optional<std::vector<int>> send_extension_ids_;
-  rtc::Optional<std::vector<int>> recv_extension_ids_;
+  absl::optional<std::vector<int>> send_extension_ids_;
+  absl::optional<std::vector<int>> recv_extension_ids_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(JsepTransport);
 };

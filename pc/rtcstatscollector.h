@@ -17,7 +17,7 @@
 #include <string>
 #include <vector>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "api/stats/rtcstats_objects.h"
 #include "api/stats/rtcstatscollectorcallback.h"
 #include "api/stats/rtcstatsreport.h"
@@ -145,8 +145,8 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
   struct RtpTransceiverStatsInfo {
     rtc::scoped_refptr<RtpTransceiver> transceiver;
     cricket::MediaType media_type;
-    rtc::Optional<std::string> mid;
-    rtc::Optional<std::string> transport_name;
+    absl::optional<std::string> mid;
+    absl::optional<std::string> transport_name;
     std::unique_ptr<TrackMediaInfoMap> track_media_info_map;
   };
 

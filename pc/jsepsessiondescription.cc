@@ -112,7 +112,7 @@ const char* SdpTypeToString(SdpType type) {
   return "";
 }
 
-rtc::Optional<SdpType> SdpTypeFromString(const std::string& type_str) {
+absl::optional<SdpType> SdpTypeFromString(const std::string& type_str) {
   if (type_str == SessionDescriptionInterface::kOffer) {
     return SdpType::kOffer;
   } else if (type_str == SessionDescriptionInterface::kPrAnswer) {
@@ -120,14 +120,14 @@ rtc::Optional<SdpType> SdpTypeFromString(const std::string& type_str) {
   } else if (type_str == SessionDescriptionInterface::kAnswer) {
     return SdpType::kAnswer;
   } else {
-    return rtc::nullopt;
+    return absl::nullopt;
   }
 }
 
 // TODO(steveanton): Remove this default implementation once Chromium has been
 // updated.
 SdpType SessionDescriptionInterface::GetType() const {
-  rtc::Optional<SdpType> maybe_type = SdpTypeFromString(type());
+  absl::optional<SdpType> maybe_type = SdpTypeFromString(type());
   if (maybe_type) {
     return *maybe_type;
   } else {
@@ -142,7 +142,7 @@ SdpType SessionDescriptionInterface::GetType() const {
 SessionDescriptionInterface* CreateSessionDescription(const std::string& type,
                                                       const std::string& sdp,
                                                       SdpParseError* error) {
-  rtc::Optional<SdpType> maybe_type = SdpTypeFromString(type);
+  absl::optional<SdpType> maybe_type = SdpTypeFromString(type);
   if (!maybe_type) {
     return nullptr;
   }
@@ -170,7 +170,7 @@ std::unique_ptr<SessionDescriptionInterface> CreateSessionDescription(
 JsepSessionDescription::JsepSessionDescription(SdpType type) : type_(type) {}
 
 JsepSessionDescription::JsepSessionDescription(const std::string& type) {
-  rtc::Optional<SdpType> maybe_type = SdpTypeFromString(type);
+  absl::optional<SdpType> maybe_type = SdpTypeFromString(type);
   if (maybe_type) {
     type_ = *maybe_type;
   } else {

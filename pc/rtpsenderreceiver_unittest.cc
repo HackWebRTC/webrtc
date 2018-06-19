@@ -1101,7 +1101,7 @@ TEST_F(RtpSenderReceiverTest,
   video_track_->set_enabled(true);
 
   // Sender is not ready to send (no SSRC) so no option should have been set.
-  EXPECT_EQ(rtc::nullopt, video_media_channel_->options().is_screencast);
+  EXPECT_EQ(absl::nullopt, video_media_channel_->options().is_screencast);
 
   // Verify that the content hint is accounted for when video_rtp_sender_ does
   // get enabled.
