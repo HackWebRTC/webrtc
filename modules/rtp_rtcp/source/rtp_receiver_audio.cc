@@ -32,11 +32,7 @@ RTPReceiverAudio::RTPReceiverAudio(RtpData* data_callback)
       cng_nb_payload_type_(-1),
       cng_wb_payload_type_(-1),
       cng_swb_payload_type_(-1),
-      cng_fb_payload_type_(-1),
-      num_energy_(0),
-      current_remote_energy_() {
-  memset(current_remote_energy_, 0, sizeof(current_remote_energy_));
-}
+      cng_fb_payload_type_(-1) {}
 
 RTPReceiverAudio::~RTPReceiverAudio() = default;
 
@@ -134,14 +130,6 @@ int32_t RTPReceiverAudio::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
                                          const uint8_t* payload,
                                          size_t payload_length,
                                          int64_t timestamp_ms) {
-  rtp_header->type.Audio.numEnergy = rtp_header->header.numCSRCs;
-  num_energy_ = rtp_header->type.Audio.numEnergy;
-  if (rtp_header->type.Audio.numEnergy > 0 &&
-      rtp_header->type.Audio.numEnergy <= kRtpCsrcSize) {
-    memcpy(current_remote_energy_, rtp_header->type.Audio.arrOfEnergy,
-           rtp_header->type.Audio.numEnergy);
-  }
-
   if (first_packet_received_()) {
     RTC_LOG(LS_INFO) << "Received first audio RTP packet";
   }
@@ -168,18 +156,6 @@ void RTPReceiverAudio::CheckPayloadChanged(int8_t payload_type,
       TelephoneEventPayloadType(payload_type) || CNGPayloadType(payload_type);
 }
 
-int RTPReceiverAudio::Energy(uint8_t array_of_energy[kRtpCsrcSize]) const {
-  rtc::CritScope cs(&crit_sect_);
-
-  assert(num_energy_ <= kRtpCsrcSize);
-
-  if (num_energy_ > 0) {
-    memcpy(array_of_energy, current_remote_energy_,
-           sizeof(uint8_t) * num_energy_);
-  }
-  return num_energy_;
-}
-
 // We are not allowed to have any critsects when calling data_callback.
 int32_t RTPReceiverAudio::ParseAudioCodecSpecific(
     WebRtcRTPHeader* rtp_header,
@@ -190,7 +166,6 @@ int32_t RTPReceiverAudio::ParseAudioCodecSpecific(
   const size_t payload_data_length =
       payload_length - rtp_header->header.paddingLength;
   if (payload_data_length == 0) {
-    rtp_header->type.Audio.isCNG = false;
     rtp_header->frameType = kEmptyFrame;
     return data_callback_->OnReceivedPayloadData(nullptr, 0, rtp_header);
   }
@@ -246,15 +221,6 @@ int32_t RTPReceiverAudio::ParseAudioCodecSpecific(
   {
     rtc::CritScope lock(&crit_sect_);
 
-    // Check if this is a CNG packet, receiver might want to know
-    if (CNGPayloadType(rtp_header->header.payloadType)) {
-      rtp_header->type.Audio.isCNG = true;
-      rtp_header->frameType = kAudioFrameCN;
-    } else {
-      rtp_header->frameType = kAudioFrameSpeech;
-      rtp_header->type.Audio.isCNG = false;
-    }
-
     // check if it's a DTMF event, hence something we can playout
     if (telephone_event_packet) {
       if (!telephone_event_forward_to_decoder_) {
@@ -269,7 +235,6 @@ int32_t RTPReceiverAudio::ParseAudioCodecSpecific(
     }
   }
 
-  rtp_header->type.Audio.channel = audio_specific.format.num_channels;
   return data_callback_->OnReceivedPayloadData(payload_data,
                                                payload_data_length, rtp_header);
 }

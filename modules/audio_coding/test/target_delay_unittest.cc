@@ -43,8 +43,6 @@ class TargetDelayTest : public ::testing::Test {
     rtp_info_.header.ssrc = 0x12345678;
     rtp_info_.header.markerBit = false;
     rtp_info_.header.sequenceNumber = 0;
-    rtp_info_.type.Audio.channel = 1;
-    rtp_info_.type.Audio.isCNG = false;
     rtp_info_.frameType = kAudioFrameSpeech;
 
     int16_t audio[kFrameSizeSamples];

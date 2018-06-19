@@ -143,10 +143,6 @@ int32_t RtpReceiverImpl::CSRCs(uint32_t array_of_csrcs[kRtpCsrcSize]) const {
   return num_csrcs_;
 }
 
-int32_t RtpReceiverImpl::Energy(uint8_t array_of_energy[kRtpCsrcSize]) const {
-  return rtp_media_receiver_->Energy(array_of_energy);
-}
-
 bool RtpReceiverImpl::IncomingRtpPacket(const RTPHeader& rtp_header,
                                         const uint8_t* payload,
                                         size_t payload_length,

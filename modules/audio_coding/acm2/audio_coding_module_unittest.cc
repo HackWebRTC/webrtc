@@ -78,8 +78,6 @@ class RtpUtility {
     rtp_header->frameType = kAudioFrameSpeech;
 
     rtp_header->header.payload_type_frequency = kSampleRateHz;
-    rtp_header->type.Audio.channel = 1;
-    rtp_header->type.Audio.isCNG = false;
   }
 
   void Forward(WebRtcRTPHeader* rtp_header) {

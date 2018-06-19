@@ -199,7 +199,6 @@ void AcmReceiveTestOldApi::Run() {
     WebRtcRTPHeader header;
     header.header = packet->header();
     header.frameType = kAudioFrameSpeech;
-    memset(&header.type.Audio, 0, sizeof(RTPAudioHeader));
     EXPECT_EQ(0,
               acm_->IncomingPacket(
                   packet->payload(),

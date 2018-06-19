@@ -63,13 +63,6 @@ int32_t TestPackStereo::SendData(const FrameType frame_type,
   }
 
   if (lost_packet_ == false) {
-    if (frame_type != kAudioFrameCN) {
-      rtp_info.type.Audio.isCNG = false;
-      rtp_info.type.Audio.channel = static_cast<int>(codec_mode_);
-    } else {
-      rtp_info.type.Audio.isCNG = true;
-      rtp_info.type.Audio.channel = static_cast<int>(kMono);
-    }
     status =
         receiver_acm_->IncomingPacket(payload_data, payload_size, rtp_info);
 

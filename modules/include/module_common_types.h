@@ -35,13 +35,6 @@
 
 namespace webrtc {
 
-struct RTPAudioHeader {
-  uint8_t numEnergy;                  // number of valid entries in arrOfEnergy
-  uint8_t arrOfEnergy[kRtpCsrcSize];  // one energy byte (0-9) per channel
-  bool isCNG;                         // is this CNG
-  size_t channel;                     // number of channels 2 = stereo
-};
-
 // TODO(nisse): Deprecated, use webrtc::VideoCodecType instead.
 using RtpVideoCodecTypes = VideoCodecType;
 
@@ -71,7 +64,6 @@ struct RTPVideoHeader {
   RTPVideoTypeHeader codecHeader;
 };
 union RTPTypeHeader {
-  RTPAudioHeader Audio;
   RTPVideoHeader Video;
 };
 

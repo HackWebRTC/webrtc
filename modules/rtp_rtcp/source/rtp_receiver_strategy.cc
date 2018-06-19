@@ -26,8 +26,4 @@ void RTPReceiverStrategy::CheckPayloadChanged(int8_t payload_type,
   *should_discard_changes = false;
 }
 
-int RTPReceiverStrategy::Energy(uint8_t array_of_energy[kRtpCsrcSize]) const {
-  return -1;
-}
-
 }  // namespace webrtc

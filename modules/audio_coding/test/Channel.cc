@@ -40,11 +40,6 @@ int32_t Channel::SendData(FrameType frameType,
           ? timeStamp
           : static_cast<uint32_t>(external_send_timestamp_);
 
-  if (frameType == kAudioFrameCN) {
-    rtpInfo.type.Audio.isCNG = true;
-  } else {
-    rtpInfo.type.Audio.isCNG = false;
-  }
   if (frameType == kEmptyFrame) {
     // When frame is empty, we should not transmit it. The frame size of the
     // next non-empty frame will be based on the previous frame size.
@@ -52,7 +47,6 @@ int32_t Channel::SendData(FrameType frameType,
     return 0;
   }
 
-  rtpInfo.type.Audio.channel = 1;
   // Treat fragmentation separately
   if (fragmentation != NULL) {
     // If silence for too long, send only new data.
@@ -89,11 +83,9 @@ int32_t Channel::SendData(FrameType frameType,
       if (_leftChannel) {
         memcpy(&_rtpInfo, &rtpInfo, sizeof(WebRtcRTPHeader));
         _leftChannel = false;
-        rtpInfo.type.Audio.channel = 1;
       } else {
         memcpy(&rtpInfo, &_rtpInfo, sizeof(WebRtcRTPHeader));
         _leftChannel = true;
-        rtpInfo.type.Audio.channel = 2;
       }
     }
   }

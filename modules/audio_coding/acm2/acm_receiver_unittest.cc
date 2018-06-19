@@ -82,7 +82,6 @@ class AcmReceiverTestOldApi : public AudioPacketizationCallback,
     rtp_header_.header.numCSRCs = 0;
     rtp_header_.header.payloadType = 0;
     rtp_header_.frameType = kAudioFrameSpeech;
-    rtp_header_.type.Audio.isCNG = false;
   }
 
   void TearDown() override {}
@@ -135,10 +134,6 @@ class AcmReceiverTestOldApi : public AudioPacketizationCallback,
 
     rtp_header_.header.payloadType = payload_type;
     rtp_header_.frameType = frame_type;
-    if (frame_type == kAudioFrameSpeech)
-      rtp_header_.type.Audio.isCNG = false;
-    else
-      rtp_header_.type.Audio.isCNG = true;
     rtp_header_.header.timestamp = timestamp;
 
     int ret_val = receiver_->InsertPacket(

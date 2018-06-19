@@ -69,18 +69,13 @@ int32_t TestPack::SendData(FrameType frame_type,
   rtp_info.header.sequenceNumber = sequence_number_++;
   rtp_info.header.payloadType = payload_type;
   rtp_info.header.timestamp = timestamp;
-  if (frame_type == kAudioFrameCN) {
-    rtp_info.type.Audio.isCNG = true;
-  } else {
-    rtp_info.type.Audio.isCNG = false;
-  }
+
   if (frame_type == kEmptyFrame) {
     // Skip this frame.
     return 0;
   }
 
   // Only run mono for all test cases.
-  rtp_info.type.Audio.channel = 1;
   memcpy(payload_data_, payload_data, payload_size);
 
   status = receiver_acm_->IncomingPacket(payload_data_, payload_size, rtp_info);

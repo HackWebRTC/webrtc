@@ -61,8 +61,6 @@ class RTPReceiverAudio : public RTPReceiverStrategy,
                            PayloadUnion* specific_payload,
                            bool* should_discard_changes) override;
 
-  int Energy(uint8_t array_of_energy[kRtpCsrcSize]) const override;
-
  private:
   int32_t ParseAudioCodecSpecific(WebRtcRTPHeader* rtp_header,
                                   const uint8_t* payload_data,
@@ -77,9 +75,6 @@ class RTPReceiverAudio : public RTPReceiverStrategy,
   int8_t cng_wb_payload_type_;
   int8_t cng_swb_payload_type_;
   int8_t cng_fb_payload_type_;
-
-  uint8_t num_energy_;
-  uint8_t current_remote_energy_[kRtpCsrcSize];
 
   ThreadUnsafeOneTimeEvent first_packet_received_;
 };

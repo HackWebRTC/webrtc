@@ -39,14 +39,6 @@ const CngCodecSpec kCngCodecs[] = {{13, 8000},
                                    {104, 32000},
                                    {105, 48000}};
 
-bool IsComfortNoisePayload(uint8_t payload_type) {
-  for (const auto& c : kCngCodecs) {
-    if (c.payload_type == payload_type)
-      return true;
-  }
-
-  return false;
-}
 
 class VerifyingAudioReceiver : public RtpData {
  public:
@@ -60,11 +52,8 @@ class VerifyingAudioReceiver : public RtpData {
       // All our test vectors for PCMU and DTMF are equal to |kTestPayload|.
       const size_t min_size = std::min(sizeof(kTestPayload), payloadSize);
       EXPECT_EQ(0, memcmp(payloadData, kTestPayload, min_size));
-    } else if (IsComfortNoisePayload(payload_type)) {
-      // CNG types should be recognized properly.
-      EXPECT_EQ(kAudioFrameCN, rtpHeader->frameType);
-      EXPECT_TRUE(rtpHeader->type.Audio.isCNG);
     }
+
     return 0;
   }
 };

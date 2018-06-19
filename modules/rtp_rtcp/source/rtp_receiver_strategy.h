@@ -61,8 +61,6 @@ class RTPReceiverStrategy {
                                    PayloadUnion* specific_payload,
                                    bool* should_discard_changes);
 
-  virtual int Energy(uint8_t array_of_energy[kRtpCsrcSize]) const;
-
  protected:
   // The data callback is where we should send received payload data.
   // See ParseRtpPacket. This class does not claim ownership of the callback.
