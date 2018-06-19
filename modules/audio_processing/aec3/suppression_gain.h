@@ -18,6 +18,7 @@
 #include "modules/audio_processing/aec3/aec3_common.h"
 #include "modules/audio_processing/aec3/aec_state.h"
 #include "modules/audio_processing/aec3/coherence_gain.h"
+#include "modules/audio_processing/aec3/moving_average.h"
 #include "modules/audio_processing/aec3/render_signal_analyzer.h"
 #include "rtc_base/constructormagic.h"
 
@@ -85,6 +86,7 @@ class SuppressionGain {
   int initial_state_change_counter_ = 0;
   CoherenceGain coherence_gain_;
   const bool enable_transparency_improvements_;
+  aec3::MovingAverage moving_average_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(SuppressionGain);
 };

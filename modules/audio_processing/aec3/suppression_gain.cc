@@ -20,6 +20,7 @@
 #include <functional>
 #include <numeric>
 
+#include "modules/audio_processing/aec3/moving_average.h"
 #include "modules/audio_processing/aec3/vector_math.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/atomicops.h"
@@ -386,7 +387,9 @@ SuppressionGain::SuppressionGain(const EchoCanceller3Config& config,
           static_cast<int>(config_.filter.config_change_duration_blocks)),
       coherence_gain_(sample_rate_hz,
                       config_.suppressor.bands_with_reliable_coherence),
-      enable_transparency_improvements_(EnableTransparencyImprovements()) {
+      enable_transparency_improvements_(EnableTransparencyImprovements()),
+      moving_average_(kFftLengthBy2Plus1,
+                      config.suppressor.nearend_average_blocks) {
   RTC_DCHECK_LT(0, state_change_duration_blocks_);
   one_by_state_change_duration_blocks_ = 1.f / state_change_duration_blocks_;
   last_gain_.fill(1.f);
@@ -413,11 +416,14 @@ void SuppressionGain::GetGain(
   RTC_DCHECK(high_bands_gain);
   RTC_DCHECK(low_band_gain);
 
+  std::array<float, kFftLengthBy2Plus1> nearend_average;
+  moving_average_.Average(nearend_spectrum, nearend_average);
+
   // Compute gain for the lower band.
   bool low_noise_render = low_render_detector_.Detect(render);
   const absl::optional<int> narrow_peak_band =
       render_signal_analyzer.NarrowPeakBand();
-  LowerBandGain(low_noise_render, aec_state, nearend_spectrum, echo_spectrum,
+  LowerBandGain(low_noise_render, aec_state, nearend_average, echo_spectrum,
                 comfort_noise_spectrum, low_band_gain);
 
   // Adjust the gain for bands where the coherence indicates not echo.

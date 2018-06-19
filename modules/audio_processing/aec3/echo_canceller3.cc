@@ -41,6 +41,11 @@ bool EnableReverbModelling() {
   return !field_trial::IsEnabled("WebRTC-Aec3ReverbModellingKillSwitch");
 }
 
+bool EnableSuppressorNearendAveraging() {
+  return !field_trial::IsEnabled(
+      "WebRTC-Aec3SuppressorNearendAveragingKillSwitch");
+}
+
 // Method for adjusting config parameter dependencies..
 EchoCanceller3Config AdjustConfig(const EchoCanceller3Config& config) {
   EchoCanceller3Config adjusted_cfg = config;
@@ -87,6 +92,10 @@ EchoCanceller3Config AdjustConfig(const EchoCanceller3Config& config) {
 
   if (EnableReverbBasedOnRender() == false) {
     adjusted_cfg.ep_strength.reverb_based_on_render = false;
+  }
+
+  if (!EnableSuppressorNearendAveraging()) {
+    adjusted_cfg.suppressor.nearend_average_blocks = 1;
   }
 
   return adjusted_cfg;
